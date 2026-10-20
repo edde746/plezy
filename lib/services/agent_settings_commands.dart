@@ -416,7 +416,7 @@ class AgentSettingsCommands {
             pref == SettingsService.subtitleBackgroundColor)
           'format': '#RRGGBB',
         if (pref == SettingsService.subtitleSearchLanguage) 'format': 'ISO 639 language code or null',
-        if (pref == SettingsService.customRelayUrl)
+        if (pref == SettingsService.watchPartyRelayUrl)
           'format': 'HTTP(S) base URL without user info, query or fragment; null uses the default relay',
         if (pref.jsonType == 'string' || pref.jsonType == 'string|null') 'maxUtf8Bytes': maxResourceBytes,
         if (pref is StringListPref) ...{'items': 'unique nonempty identifiers', 'uniqueItems': true},
@@ -426,7 +426,7 @@ class AgentSettingsCommands {
       if (pref == SettingsService.crashReporting)
         'note': 'Controls event submission; reporting must also be compiled into this build.',
       if (pref == SettingsService.directPlayCoveredQuality) 'note': 'Only Plex uses this startup quality decision.',
-      if (pref == SettingsService.customRelayUrl || pref == SettingsService.mpvConfigText)
+      if (pref == SettingsService.watchPartyRelayUrl || pref == SettingsService.mpvConfigText)
         'valueRequiresExplicitGet': true,
     };
   }

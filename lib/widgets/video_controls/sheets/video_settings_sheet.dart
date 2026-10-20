@@ -42,6 +42,7 @@ import '../../../widgets/file_info_bottom_sheet.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
 import '../../../watch_together/providers/watch_together_provider.dart';
+import '../../../watch_together/widgets/watch_session_sheet.dart';
 import '../models/track_controls_state.dart';
 import '../widgets/sync_offset_control.dart';
 import '../widgets/sleep_timer_content.dart';
@@ -1007,6 +1008,17 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               OverlaySheetController.of(context).push<void>(
                 builder: (_) => _FileInfoPage(client: client, item: _state.metadata!),
               ),
+            ),
+          ),
+
+        // The Watch Together room, as the header's room pill opens it.
+        if (context.watch<WatchTogetherProvider?>() case final watchTogether? when watchTogether.isInSession)
+          _SettingsMenuItem(
+            icon: Symbols.group_rounded,
+            title: t.watchTogether.title,
+            valueText: t.watchTogether.participantCount(n: watchTogether.participantCount),
+            onTap: () => unawaited(
+              OverlaySheetController.of(context).push<void>(builder: (_) => const WatchSessionSheet(nested: true)),
             ),
           ),
 

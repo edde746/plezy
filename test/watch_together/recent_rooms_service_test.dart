@@ -2,16 +2,32 @@ import 'dart:convert';
 
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/services/settings_service.dart';
-import 'package:plezy/watch_together/models/watch_session.dart';
 import 'package:plezy/watch_together/services/recent_rooms_service.dart';
-import 'package:plezy/watch_together/services/watch_together_relay_endpoint.dart';
+import 'package:plezy/watch_together/services/watch_party_relays.dart';
 
 import '../test_helpers/prefs.dart';
 
+const _alphabet = '23456789ABCDEFGHJKMNPQRSTUVWXYZ';
+
+/// The [index]th of a run of distinct valid room codes.
+String _code(int index) => 'K7MQ${_alphabet[index ~/ _alphabet.length]}${_alphabet[index % _alphabet.length]}';
+
 void main() {
   late SettingsService settings;
-  final endpointA = WatchTogetherRelayEndpoint.resolve('https://relay-a.example.test/base/');
-  final endpointB = WatchTogetherRelayEndpoint.resolve('http://relay-b.example.test:8080');
+  final public = relayScopeOf(null);
+  final custom = relayScopeOf('https://relay.example.test');
+
+  Future<void> seed(String profileId, List<Map<String, Object?>> rows) =>
+      settings.write(SettingsService.recentRoomsForProfile(profileId), jsonEncode(rows));
+
+  List<Map<String, dynamic>> stored(String profileId) => [
+    for (final row in jsonDecode(settings.read(SettingsService.recentRoomsForProfile(profileId))!) as List<dynamic>)
+      row as Map<String, dynamic>,
+  ];
+
+  List<String> codes(String profileId, String relayScope) => [
+    for (final room in RecentRoomsService.getRecentRooms(profileId: profileId, relayScope: relayScope)) room.code,
+  ];
 
   setUp(() async {
     resetSharedPreferencesForTest();
@@ -19,84 +35,88 @@ void main() {
     settings = await SettingsService.getInstance();
   });
 
-  test('rooms are isolated by profile', () async {
-    await RecentRoomsService.addOrUpdateRoom(
-      'ROOM1',
-      profileId: 'profile-a',
-      endpoint: endpointA,
-      name: 'Profile A room',
-      controlMode: ControlMode.hostOnly,
-    );
+  test('rooms are kept per profile and per relay scope', () async {
+    await RecentRoomsService.addOrUpdateRoom('K7MQ2X', profileId: 'profile-a', relayScope: public);
 
-    expect(RecentRoomsService.getRecentRooms(profileId: 'profile-b', endpoint: endpointA), isEmpty);
-
-    await RecentRoomsService.addOrUpdateRoom(
-      'ROOM1',
-      profileId: 'profile-b',
-      endpoint: endpointA,
-      name: 'Profile B room',
-      controlMode: ControlMode.anyone,
-    );
-
-    final profileA = RecentRoomsService.getRecentRooms(profileId: 'profile-a', endpoint: endpointA);
-    final profileB = RecentRoomsService.getRecentRooms(profileId: 'profile-b', endpoint: endpointA);
-    expect(profileA.single.name, 'Profile A room');
-    expect(profileA.single.controlMode, ControlMode.hostOnly);
-    expect(profileB.single.name, 'Profile B room');
-    expect(profileB.single.controlMode, ControlMode.anyone);
+    expect(codes('profile-a', public), ['K7MQ2X']);
+    expect(codes('profile-b', public), isEmpty);
+    expect(codes('profile-a', custom), isEmpty);
   });
 
-  test('same code is independently mutable on different relay bases', () async {
-    await RecentRoomsService.addOrUpdateRoom(
-      'SAME1',
-      profileId: 'profile-a',
-      endpoint: endpointA,
-      name: 'Relay A',
-      controlMode: ControlMode.hostOnly,
-    );
-    await RecentRoomsService.addOrUpdateRoom(
-      'SAME1',
-      profileId: 'profile-a',
-      endpoint: endpointB,
-      name: 'Relay B',
-      controlMode: ControlMode.anyone,
-    );
+  test('the same code on two relays is renamed and removed independently', () async {
+    await RecentRoomsService.addOrUpdateRoom('K7MQ2X', profileId: 'profile-a', relayScope: public);
+    await RecentRoomsService.addOrUpdateRoom('K7MQ2X', profileId: 'profile-a', relayScope: custom);
 
-    await RecentRoomsService.renameRoom('SAME1', 'Renamed A', profileId: 'profile-a', endpoint: endpointA);
-    expect(RecentRoomsService.getRecentRooms(profileId: 'profile-a', endpoint: endpointA).single.name, 'Renamed A');
-    expect(RecentRoomsService.getRecentRooms(profileId: 'profile-a', endpoint: endpointB).single.name, 'Relay B');
+    await RecentRoomsService.renameRoom('K7MQ2X', 'Movie night', profileId: 'profile-a', relayScope: public);
+    expect(RecentRoomsService.getRecentRooms(profileId: 'profile-a', relayScope: public).single.name, 'Movie night');
+    expect(RecentRoomsService.getRecentRooms(profileId: 'profile-a', relayScope: custom).single.name, isNull);
 
-    await RecentRoomsService.removeRoom('SAME1', profileId: 'profile-a', endpoint: endpointA);
-    expect(RecentRoomsService.getRecentRooms(profileId: 'profile-a', endpoint: endpointA), isEmpty);
-    expect(RecentRoomsService.getRecentRooms(profileId: 'profile-a', endpoint: endpointB).single.code, 'SAME1');
+    await RecentRoomsService.removeRoom('K7MQ2X', profileId: 'profile-a', relayScope: custom);
+    expect(codes('profile-a', custom), isEmpty);
+    expect(codes('profile-a', public), ['K7MQ2X']);
   });
 
-  test('profile history remains bounded across relay scopes and deduplicates tuples', () async {
-    for (var index = 0; index < 21; index++) {
-      await RecentRoomsService.addOrUpdateRoom(
-        'R${index.toString().padLeft(4, '0')}',
-        profileId: 'profile-a',
-        endpoint: index.isEven ? endpointA : endpointB,
-      );
-      await Future<void>.delayed(const Duration(milliseconds: 2));
-    }
+  test('renaming to null clears the name; renaming an unknown room changes nothing', () async {
+    await RecentRoomsService.addOrUpdateRoom('K7MQ2X', profileId: 'profile-a', relayScope: public);
+    await RecentRoomsService.renameRoom('K7MQ2X', 'Movie night', profileId: 'profile-a', relayScope: public);
+    await RecentRoomsService.renameRoom('K7MQ2X', null, profileId: 'profile-a', relayScope: public);
+    expect(RecentRoomsService.getRecentRooms(profileId: 'profile-a', relayScope: public).single.name, isNull);
+    expect(stored('profile-a').single.containsKey('name'), isFalse);
 
-    final raw = settings.read(SettingsService.recentRoomsForProfile('profile-a'));
-    final rows = jsonDecode(raw!) as List<dynamic>;
+    final before = settings.read(SettingsService.recentRoomsForProfile('profile-a'));
+    await RecentRoomsService.renameRoom('ABCDEF', 'Nope', profileId: 'profile-a', relayScope: public);
+    expect(settings.read(SettingsService.recentRoomsForProfile('profile-a')), before);
+  });
+
+  test('joining a known room again moves it first and keeps its name', () async {
+    await seed('profile-a', [
+      {'code': 'K7MQ2X', 'relayScope': public, 'name': 'Old friends', 'lastUsed': 1},
+      {'code': 'ABCDEF', 'relayScope': public, 'lastUsed': 2},
+    ]);
+    expect(codes('profile-a', public), ['ABCDEF', 'K7MQ2X']);
+
+    await RecentRoomsService.addOrUpdateRoom('K7MQ2X', profileId: 'profile-a', relayScope: public);
+
+    final rooms = RecentRoomsService.getRecentRooms(profileId: 'profile-a', relayScope: public);
+    expect(rooms.map((room) => room.code), ['K7MQ2X', 'ABCDEF']);
+    expect(rooms.first.name, 'Old friends');
+    expect(stored('profile-a'), hasLength(2));
+  });
+
+  test('keeps the 20 most recent rooms across relay scopes', () async {
+    await seed('profile-a', [
+      for (var i = 0; i < 20; i++) {'code': _code(i), 'relayScope': i.isEven ? public : custom, 'lastUsed': i + 1},
+    ]);
+
+    await RecentRoomsService.addOrUpdateRoom(_code(20), profileId: 'profile-a', relayScope: custom);
+
+    final rows = stored('profile-a');
     expect(rows, hasLength(20));
-    expect(rows.map((row) => (row as Map<String, dynamic>)['code']), isNot(contains('R0000')));
+    expect(rows.map((row) => row['code']), isNot(contains(_code(0))), reason: 'the oldest room goes');
+    expect(rows.first['code'], _code(20));
+    expect(codes('profile-a', custom).first, _code(20));
+  });
 
-    await RecentRoomsService.addOrUpdateRoom('R0020', profileId: 'profile-a', endpoint: endpointA, name: 'Updated');
-    final updatedRows = jsonDecode(settings.read(SettingsService.recentRoomsForProfile('profile-a'))!) as List<dynamic>;
-    expect(updatedRows, hasLength(20));
-    expect(
-      updatedRows.where(
-        (row) =>
-            (row as Map<String, dynamic>)['code'] == 'R0020' &&
-            row['relayScope'] == RecentRoomsService.relayScopeFor(endpointA),
-      ),
-      hasLength(1),
-    );
+  test('codes of the former relay (5 symbols) and unnormalized codes are not shown', () async {
+    await seed('profile-a', [
+      {'code': 'ROOM1', 'relayScope': public, 'name': 'Former relay', 'lastUsed': 3, 'controlMode': 0},
+      {'code': 'AB2CD', 'relayScope': public, 'lastUsed': 2},
+      {'code': 'k7m-q2x', 'relayScope': public, 'lastUsed': 4},
+      {'code': 'K7MQ2X', 'relayScope': public, 'lastUsed': 1},
+    ]);
+
+    expect(codes('profile-a', public), ['K7MQ2X']);
+
+    await RecentRoomsService.addOrUpdateRoom('ABCDEF', profileId: 'profile-a', relayScope: public);
+    expect(stored('profile-a').map((row) => row['code']), ['ABCDEF', 'K7MQ2X']);
+  });
+
+  test('unreadable history reads as empty and gives way to the next room', () async {
+    await settings.write(SettingsService.recentRoomsForProfile('profile-a'), '{not json');
+    expect(codes('profile-a', public), isEmpty);
+
+    await RecentRoomsService.addOrUpdateRoom('K7MQ2X', profileId: 'profile-a', relayScope: public);
+    expect(codes('profile-a', public), ['K7MQ2X']);
   });
 
   test('startup drops unattributable legacy history', () async {
@@ -111,6 +131,6 @@ void main() {
 
     final initialized = await SettingsService.getInstance();
     expect(initialized.prefs.containsKey('watch_together_recent_rooms'), isFalse);
-    expect(RecentRoomsService.getRecentRooms(profileId: 'profile-a', endpoint: endpointA), isEmpty);
+    expect(codes('profile-a', public), isEmpty);
   });
 }

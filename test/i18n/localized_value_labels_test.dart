@@ -11,7 +11,7 @@ void main() {
         'accessibility.expandText': translations.accessibility.expandText,
         'accessibility.collapseText': translations.accessibility.collapseText,
         'watchTogether.openSessionControls': translations.watchTogether.openSessionControls,
-        'watchTogether.copySessionCode': translations.watchTogether.copySessionCode,
+        'watchTogether.copyCode': translations.watchTogether.copyCode,
         'services.deviceCode.copyCode': translations.services.deviceCode.copyCode,
         'services.pendingAuth.copyUrl': translations.services.pendingAuth.copyUrl,
       };

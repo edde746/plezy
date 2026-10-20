@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:openwatchparty/openwatchparty.dart' as owp;
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/i18n/strings.g.dart';
@@ -33,16 +34,13 @@ import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/sleep_timer_service.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/utils/active_client_scope.dart';
+import 'package:plezy/utils/external_ids.dart';
 import 'package:plezy/utils/video_player_navigation.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
-import 'package:plezy/watch_together/models/playback_state.dart';
-import 'package:plezy/watch_together/models/sync_message.dart';
-import 'package:plezy/watch_together/models/watch_session.dart';
 import 'package:plezy/watch_together/providers/watch_together_provider.dart';
-import 'package:plezy/watch_together/services/watch_together_peer_service.dart';
-import 'package:plezy/watch_together/services/watch_together_relay_endpoint.dart';
 import 'package:provider/provider.dart';
 
+import '../../test_helpers/fake_owp_relay.dart';
 import '../../test_helpers/io_fakes.dart';
 import '../../test_helpers/media_items.dart';
 import '../../test_helpers/mock_player_channels.dart';
@@ -84,6 +82,38 @@ void main() {
     }
   });
 
+  /// This user hosts a room on an in-process relay where everyone controls;
+  /// the files it shares come from [client].
+  Future<({WatchTogetherProvider watchTogether, FakeOwpRelay relay})> hostRoom(
+    WidgetTester tester,
+    MediaServerClient client,
+  ) async {
+    final relay = FakeOwpRelay();
+    final watchTogether = WatchTogetherProvider(
+      clientFor: (serverId) => serverId == client.serverId ? client : null,
+      partyFactory: relay.party,
+      clientName: () async => 'Plezy/1.0',
+      displayName: () => 'Anna',
+    );
+    final created = watchTogether.createRoom();
+    await tester.pump(const Duration(milliseconds: 50));
+    await tester.pump(const Duration(milliseconds: 50));
+    expect(await created, FakeOwpRelay.code);
+    watchTogether.setControl(owp.Control.everyone);
+    await tester.pump(const Duration(milliseconds: 50));
+    return (watchTogether: watchTogether, relay: relay);
+  }
+
+  /// Unmounts every screen, then leaves the room so no party timer outlives
+  /// the test.
+  Future<void> closeRooms(WidgetTester tester, List<WatchTogetherProvider> rooms) async {
+    await tester.pumpWidget(const SizedBox.shrink());
+    for (final room in rooms) {
+      room.dispose();
+    }
+    await tester.pump(const Duration(milliseconds: 500));
+  }
+
   for (final opens in [false, true]) {
     testWidgets(
       opens
@@ -103,23 +133,8 @@ void main() {
           backend: MediaBackend.jellyfin,
         );
 
-        final peer = _ScreenPeerService();
-        final watchTogether = WatchTogetherProvider(peerServiceFactory: ({endpoint}) => peer);
-        await watchTogether.createSession(
-          controlMode: ControlMode.anyone,
-          relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-        );
-        watchTogether.selectMedia(
-          ratingKey: priorItem.id,
-          serverId: ServerId('srv-1'),
-          mediaTitle: priorItem.displayTitle,
-          position: const Duration(seconds: 121),
-          rate: 1.25,
-          lease: watchTogether.capturePlaybackLease(selection: true),
-        );
-        addTearDown(watchTogether.dispose);
-
         final client = _ReloadClient();
+        final (:watchTogether, :relay) = await hostRoom(tester, client);
         final multi = testMultiServer(clients: [client]);
         final offlineWatch = OfflineWatchSyncService(database: db, serverManager: multi.manager);
         final accountPreferences = AccountPreferencesController();
@@ -157,7 +172,6 @@ void main() {
                     key: key,
                     metadata: priorItem,
                     selectedQualityPreset: TranscodeQualityPreset.original,
-                    watchTogetherLease: watchTogether.capturePlaybackLease(),
                   ),
                 ),
               ),
@@ -171,10 +185,16 @@ void main() {
             fakePlayer.emitPlaybackRestart();
             await tester.pump();
             await tester.pump(const Duration(seconds: 1));
-            fakePlayer.emitPlaying(false);
-            await tester.pump();
-            expect(peer.latestState.phase, PlaybackPhase.paused);
-            final beforeNext = peer.states.length;
+            // The host shared the file where it played, and the room drives it.
+            expect(relay.sent('setMedia').single['positionMs'], 121000);
+            expect(watchTogether.media?.title, priorItem.title);
+            expect(watchTogether.isFollowing, isTrue);
+            // The viewer pauses the room, which then pauses the player.
+            expect(watchTogether.pause(), isTrue);
+            await tester.pump(const Duration(milliseconds: 300));
+            expect(relay.phase, 'paused');
+            expect(fakePlayer.state.playing, isFalse);
+            final roomAdapter = key.currentState!.debugWatchTogetherAdapter;
 
             var navDone = false;
             final nav = key.currentState!.navigateToQueueItem(targetItem).whenComplete(() => navDone = true);
@@ -190,14 +210,20 @@ void main() {
 
             expect(fakePlayer.openCalls, 1);
 
-            expect(watchTogether.currentMediaRatingKey, opens ? targetItem.id : priorItem.id);
-            expect(watchTogether.hasAttachedPlayer, isTrue);
+            await tester.pump(const Duration(milliseconds: 300));
+            expect(relay.sent('clearMedia'), isEmpty, reason: 'the room keeps media between items');
+            expect(watchTogether.isFollowing, isTrue);
             if (opens) {
-              expect(peer.latestState.anchorPositionMs, 0);
+              // The next item is the room's, from its start.
+              expect(relay.sent('setMedia'), hasLength(2));
+              expect(relay.sent('setMedia').last['positionMs'] ?? 0, 0);
+              expect(watchTogether.media?.title, targetItem.title);
+              expect(key.currentState!.debugWatchTogetherAdapter?.copy.itemId, targetItem.id);
             } else {
-              expect(peer.states.skip(beforeNext).every((state) => state.ratingKey == priorItem.id), isTrue);
-              expect(peer.latestState.phase, PlaybackPhase.paused);
-              expect(peer.latestState.anchorPositionMs, 121000);
+              expect(relay.sent('setMedia'), hasLength(1), reason: 'a failed next leaves the room its media');
+              expect(watchTogether.media?.title, priorItem.title);
+              expect(key.currentState!.debugWatchTogetherAdapter, same(roomAdapter));
+              expect(relay.phase, 'paused');
               fakePlayer.setCompleted(true);
               expect(await key.currentState!.debugInterceptEofForTesting(), isTrue);
               for (var i = 0; i < 400 && !key.currentState!.debugPlaybackParkedForTesting; i++) {
@@ -207,33 +233,35 @@ void main() {
               expect(key.currentState!.debugPlaybackParkedForTesting, isTrue);
               expect(fakePlayer.openCalls, 2);
               fakePlayer.opens = true;
-              var seekDone = false;
-              final seek = key.currentState!
-                  .debugSeekPlaybackForTesting(const Duration(seconds: 90))
-                  .whenComplete(() => seekDone = true);
-              for (var i = 0; i < 400 && !seekDone; i++) {
+              // The viewer's seek goes to the room; the room's seek of the
+              // parked player reloads the source at the target.
+              await key.currentState!.debugSeekPlaybackForTesting(const Duration(seconds: 90));
+              for (
+                var i = 0;
+                i < 400 && (fakePlayer.openCalls < 3 || key.currentState!.debugPlaybackParkedForTesting);
+                i++
+              ) {
                 await tester.pump(const Duration(milliseconds: 50));
                 await tester.runAsync(() => Future<void>.delayed(const Duration(milliseconds: 2)));
               }
-              expect(seekDone, isTrue);
-              await seek;
               await tester.pump(const Duration(milliseconds: 200));
               expect(fakePlayer.openCalls, 3, reason: 'parked EOF seek uses the actual source reload, not native seek');
-              expect(watchTogether.currentMediaRatingKey, priorItem.id);
-              expect(peer.latestState.anchorPositionMs, 90000);
-              expect(peer.latestState.phase, PlaybackPhase.paused);
+              expect(relay.sent('seek').last['positionMs'], 90000);
+              expect(relay.phase, 'paused');
+              expect(watchTogether.media?.title, priorItem.title);
+              expect(relay.sent('setMedia'), hasLength(1), reason: 'the reload is the same file');
 
               final pendingNativeSeek = Completer<void>();
               fakePlayer.nextCommandFuture = pendingNativeSeek.future;
-              final olderSeek = key.currentState!.debugSeekPlaybackForTesting(const Duration(seconds: 60));
-              final newerSeek = key.currentState!.debugSeekPlaybackForTesting(const Duration(seconds: 70));
-              await tester.pump();
+              await key.currentState!.debugSeekPlaybackForTesting(const Duration(seconds: 60));
+              await key.currentState!.debugSeekPlaybackForTesting(const Duration(seconds: 70));
+              await tester.pump(const Duration(milliseconds: 100));
               pendingNativeSeek.complete();
-              await Future.wait([olderSeek, newerSeek]);
-              expect(fakePlayer.currentPosition, const Duration(seconds: 70));
+              await pumpUntil(tester, () => fakePlayer.currentPosition == const Duration(seconds: 70));
               await tester.pump(const Duration(milliseconds: 200));
-              expect(peer.latestState.anchorPositionMs, 70000);
-              expect(peer.latestState.phase, PlaybackPhase.paused);
+              expect(relay.sent('seek').map((seek) => seek['positionMs']), containsAllInOrder([60000, 70000]));
+              expect(fakePlayer.currentPosition, const Duration(seconds: 70), reason: 'the later seek wins');
+              expect(relay.phase, 'paused');
             }
 
             // Exit after a committed reload must report the item actually
@@ -277,14 +305,14 @@ void main() {
             await Future.wait([shutdown, repeatedShutdown]);
             expect(shutdownDone, isTrue);
             expect(fakePlayer.stopCalls, 1);
+            expect(relay.sent('clearMedia'), hasLength(1), reason: 'the host left the player, so its media stopped');
 
             // Let the rollback's failure snackbar run its display timer down so
             // nothing is pending when the tree unmounts.
             await tester.pump(const Duration(seconds: 5));
             await tester.pump(const Duration(seconds: 1));
 
-            await tester.pumpWidget(const SizedBox.shrink());
-            await tester.pump();
+            await closeRooms(tester, [watchTogether]);
           },
         );
       },
@@ -414,22 +442,9 @@ void main() {
   }
 
   for (final target in ['same room', 'offline', 'live', 'superseded before build']) {
-    testWidgets('replacement by $target only retains continuing room media', (tester) async {
-      final peer = _ScreenPeerService();
-      final watchTogether = WatchTogetherProvider(peerServiceFactory: ({endpoint}) => peer);
-      await watchTogether.createSession(
-        controlMode: ControlMode.anyone,
-        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-      );
-      watchTogether.selectMedia(
-        ratingKey: 'exit-original',
-        serverId: ServerId('srv-1'),
-        mediaTitle: 'Original',
-        position: Duration.zero,
-        rate: 1.25,
-        lease: watchTogether.capturePlaybackLease(selection: true),
-      );
-      addTearDown(watchTogether.dispose);
+    testWidgets('replacement by $target only keeps the room media for a player in the room', (tester) async {
+      final client = _ReloadClient();
+      final (:watchTogether, :relay) = await hostRoom(tester, client);
       final oldPlayer = _ExitPlayer();
       await withMockPlayerChannels(
         methodChannelName: 'com.plezy/mpv_player',
@@ -438,36 +453,34 @@ void main() {
           final screen = await _pushExitScreen(
             tester,
             db: db,
-            client: _ReloadClient(),
+            client: client,
             fakePlayer: oldPlayer,
             watchTogether: watchTogether,
           );
           screen.key.currentState!.debugBindWatchTogetherForTesting();
           oldPlayer.emitPlaybackRestart();
-          await tester.pump();
-          expect(watchTogether.hasAttachedPlayer, isTrue);
-          final lease = watchTogether.capturePlaybackLease();
+          await tester.pump(const Duration(milliseconds: 300));
+          expect(watchTogether.isFollowing, isTrue);
+          expect(relay.sent('setMedia'), hasLength(1));
           final continuesRoom = target == 'same room';
           final successorKey = GlobalKey<VideoPlayerScreenState>();
           final successorPlayer = _ExitPlayer();
           if (target == 'superseded before build') {
             unawaited(
               VideoPlayerRoute(
-                watchTogetherLease: lease,
+                joinsWatchTogether: true,
                 builder: (_) => VideoPlayerScreen(
                   metadata: testMediaItem(id: 'intermediate', serverId: 'srv-1'),
-                  watchTogetherLease: lease,
                 ),
               ).push(screen.navigator.currentState!),
             );
           }
           unawaited(
             VideoPlayerRoute(
-              watchTogetherLease: continuesRoom ? lease : null,
+              joinsWatchTogether: continuesRoom,
               builder: (_) => VideoPlayerScreen(
                 key: successorKey,
-                metadata: testMediaItem(id: 'successor', serverId: 'srv-1'),
-                watchTogetherLease: continuesRoom ? lease : null,
+                metadata: testMediaItem(id: 'successor', serverId: 'srv-1', backend: MediaBackend.jellyfin),
                 isOffline: !continuesRoom && target != 'live',
                 selectedQualityPreset: TranscodeQualityPreset.original,
                 live: target == 'live'
@@ -481,22 +494,24 @@ void main() {
           await tester.pump();
           successorKey.currentState!.player = successorPlayer;
           await pumpUntil(tester, () => screen.key.currentState == null && oldPlayer.disposed);
-          expect(watchTogether.isPlaybackLeaseCurrent(lease), continuesRoom);
-          expect(peer.hostExitCount, continuesRoom ? 0 : 1);
-          expect(watchTogether.hasAttachedPlayer, isFalse);
-          // The disposed screen releases its own media-switch registration
-          // but never the one a continuing successor made in its place.
-          expect(watchTogether.onPlayerMediaSwitched, continuesRoom ? isNotNull : isNull);
+          await tester.pump(const Duration(milliseconds: 300));
+          // A player that takes part in the room keeps the host's media until
+          // it shares its own; anything else stops it for everyone.
+          expect(relay.sent('clearMedia'), hasLength(continuesRoom ? 0 : 1));
+          expect(watchTogether.hasMedia, continuesRoom);
+          expect(watchTogether.isFollowing, isFalse);
+          // The disposed screen drops its own registration, never the one its
+          // successor made in its place.
+          expect(watchTogether.debugPlayerOwner, continuesRoom ? same(successorKey.currentState) : isNull);
           if (continuesRoom) {
             successorKey.currentState!.debugBindWatchTogetherForTesting();
             successorPlayer.emitPlaybackRestart();
-            await tester.pump();
-            expect(watchTogether.hasAttachedPlayer, isTrue);
-            expect(peer.hostExitCount, 0, reason: 'rebinding cannot advertise a room exit between episodes');
+            await tester.pump(const Duration(milliseconds: 300));
+            expect(watchTogether.isFollowing, isTrue);
+            expect(relay.sent('setMedia'), hasLength(2), reason: 'the successor shares its own file');
+            expect(relay.sent('clearMedia'), isEmpty, reason: 'the media never stopped between the players');
           }
-          await tester.pumpWidget(const SizedBox.shrink());
-          await tester.pump();
-          await watchTogether.leaveSession();
+          await closeRooms(tester, [watchTogether]);
         },
       );
     });
@@ -542,109 +557,70 @@ void main() {
     );
   });
 
-  testWidgets('replacement cancels the outgoing guest dialog without leaving the room or exposing it on Back', (
-    tester,
-  ) async {
-    final peer = _GuestExitPeer();
-    final watchTogether = WatchTogetherProvider(peerServiceFactory: ({endpoint}) => peer);
-    await watchTogether.joinSession('SCREEN', relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint);
-    addTearDown(watchTogether.dispose);
-    await withMockPlayerChannels(
-      methodChannelName: 'com.plezy/mpv_player',
-      eventChannelName: 'com.plezy/mpv_player/events',
-      testBody: () async {
-        final screen = await _pushExitScreen(
-          tester,
-          db: db,
-          client: _ReloadClient(),
-          fakePlayer: _ExitPlayer(),
-          watchTogether: watchTogether,
+  for (final transferred in [false, true]) {
+    testWidgets(
+      transferred
+          ? 'Back after handing the host on leaves the player and keeps the room its media'
+          : "Back as host leaves the player and stops the room's media, without asking",
+      (tester) async {
+        final client = _ReloadClient();
+        final (:watchTogether, :relay) = await hostRoom(tester, client);
+        final guest = WatchTogetherProvider(
+          partyFactory: relay.party,
+          clientName: () async => 'Plezy/1.0',
+          displayName: () => 'Ben',
         );
-        await tester.binding.handlePopRoute();
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 300));
-        expect(find.byType(AlertDialog), findsOneWidget);
-        final successorKey = GlobalKey<VideoPlayerScreenState>();
-        unawaited(
-          VideoPlayerRoute(
-            builder: (_) => VideoPlayerScreen(
-              key: successorKey,
-              metadata: testMediaItem(id: 'dialog-successor'),
-              isOffline: true,
-            ),
-          ).push(screen.navigator.currentState!),
-        );
-        await tester.pump();
-        successorKey.currentState!.player = _ExitPlayer();
-        await pumpUntil(tester, () => screen.key.currentState == null);
-        expect(find.byType(AlertDialog, skipOffstage: false), findsNothing);
-        expect(watchTogether.isInSession, isTrue, reason: 'retiring the dialog is cancellation, not consent');
-        expect(peer.releaseCalls, 0);
-        await tester.binding.handlePopRoute();
-        await tester.pump(const Duration(seconds: 1));
-        await tester.pump();
-        expect(successorKey.currentState, isNull);
-        expect(find.text('Browse'), findsOneWidget);
-        expect(find.byType(AlertDialog, skipOffstage: false), findsNothing);
-        peer.releaseGate.complete();
-        await watchTogether.leaveSession();
-      },
-    );
-  });
+        final joining = guest.joinRoom(FakeOwpRelay.code);
+        await tester.pump(const Duration(milliseconds: 100));
+        await joining;
+        final fakePlayer = _ExitPlayer();
+        await withMockPlayerChannels(
+          methodChannelName: 'com.plezy/mpv_player',
+          eventChannelName: 'com.plezy/mpv_player/events',
+          testBody: () async {
+            final screen = await _pushExitScreen(
+              tester,
+              db: db,
+              client: client,
+              fakePlayer: fakePlayer,
+              watchTogether: watchTogether,
+            );
+            screen.key.currentState!.debugBindWatchTogetherForTesting();
+            fakePlayer.emitPlaybackRestart();
+            await tester.pump(const Duration(milliseconds: 300));
+            expect(watchTogether.isFollowing, isTrue);
+            expect(guest.hasMedia, isTrue);
+            if (transferred) {
+              watchTogether.transferHost(guest.myPeerId!);
+              await tester.pump(const Duration(milliseconds: 300));
+              expect(watchTogether.isHost, isFalse);
+              expect(guest.isHost, isTrue);
+            }
 
-  testWidgets('guest cancellation stays interactive; confirmed transport leave cannot hold Back', (tester) async {
-    final peer = _GuestExitPeer();
-    final watchTogether = WatchTogetherProvider(peerServiceFactory: ({endpoint}) => peer);
-    await watchTogether.joinSession('SCREEN', relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint);
-    addTearDown(watchTogether.dispose);
-    final fakePlayer = _ExitPlayer();
-    await withMockPlayerChannels(
-      methodChannelName: 'com.plezy/mpv_player',
-      eventChannelName: 'com.plezy/mpv_player/events',
-      testBody: () async {
-        final screen = await _pushExitScreen(
-          tester,
-          db: db,
-          client: _ReloadClient(),
-          fakePlayer: fakePlayer,
-          watchTogether: watchTogether,
+            await tester.binding.handlePopRoute();
+            await tester.pump();
+            expect(find.byType(AlertDialog), findsNothing, reason: 'leaving the player never asks');
+            await tester.pump(const Duration(seconds: 1));
+            await tester.pump();
+            expect(screen.key.currentState, isNull);
+            expect(find.text('Browse'), findsOneWidget);
+            expect(watchTogether.isInSession, isTrue, reason: 'leaving the player is not leaving the room');
+            expect(relay.sent('leave'), isEmpty);
+            expect(relay.sent('clearMedia'), hasLength(transferred ? 0 : 1));
+            expect(guest.hasMedia, transferred);
+            await closeRooms(tester, [watchTogether, guest]);
+          },
         );
-        await tester.binding.handlePopRoute();
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 300));
-        expect(find.byType(AlertDialog), findsOneWidget);
-        await tester.pump(const Duration(seconds: 30));
-        expect(screen.key.currentState, isNotNull, reason: 'confirmation has no navigation deadline');
-        await tester.tap(find.text('Cancel'));
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 300));
-        expect(watchTogether.isInSession, isTrue);
-        expect(fakePlayer.pauseCalls, 0);
-        expect(peer.releaseCalls, 0);
-        await tester.binding.handlePopRoute();
-        await tester.pump();
-        await tester.pump(const Duration(milliseconds: 300));
-        await tester.tap(find.text('Leave'));
-        await tester.pump();
-        await tester.pump(const Duration(seconds: 1));
-        await tester.pump();
-        expect(screen.key.currentState, isNull);
-        expect(watchTogether.isInSession, isFalse);
-        expect(peer.releaseCalls, 1);
-        expect(peer.releaseGate.isCompleted, isFalse);
-        peer.releaseGate.complete();
-        await tester.pump();
-        expect(find.text('Browse'), findsOneWidget);
-        await tester.pumpWidget(const SizedBox.shrink());
       },
     );
-  });
+  }
 
   Future<({GlobalKey<VideoPlayerScreenState> key, _ReloadPlayer player})> pumpReloadScreen(
     WidgetTester tester, {
     WatchTogetherProvider? watchTogether,
+    _ReloadClient? client,
   }) async {
-    final client = _ReloadClient();
+    client ??= _ReloadClient();
     final multi = testMultiServer(clients: [client]);
     final offlineWatch = OfflineWatchSyncService(database: db, serverManager: multi.manager);
     final accountPreferences = AccountPreferencesController();
@@ -673,12 +649,7 @@ void main() {
           ChangeNotifierProvider(create: (_) => CompanionRemoteProvider()),
         ],
         child: MaterialApp(
-          home: VideoPlayerScreen(
-            key: key,
-            metadata: item,
-            selectedQualityPreset: TranscodeQualityPreset.original,
-            watchTogetherLease: watchTogether?.capturePlaybackLease(),
-          ),
+          home: VideoPlayerScreen(key: key, metadata: item, selectedQualityPreset: TranscodeQualityPreset.original),
         ),
       ),
     );
@@ -773,40 +744,24 @@ void main() {
   });
 
   group('Windows display-switch hold', () {
-    testWidgets('the hold is not broadcast to the Watch Together room', (tester) async {
-      final peer = _ScreenPeerService();
-      final watchTogether = WatchTogetherProvider(peerServiceFactory: ({endpoint}) => peer);
-      await watchTogether.createSession(
-        controlMode: ControlMode.anyone,
-        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-      );
-      watchTogether.selectMedia(
-        ratingKey: 'movie-prior',
-        serverId: ServerId('srv-1'),
-        mediaTitle: 'Prior movie',
-        position: const Duration(seconds: 121),
-        rate: 1.25,
-        lease: watchTogether.capturePlaybackLease(selection: true),
-      );
-      addTearDown(watchTogether.dispose);
+    testWidgets('the hold does not reach the Watch Together room', (tester) async {
+      final client = _ReloadClient();
+      final (:watchTogether, :relay) = await hostRoom(tester, client);
 
       await withMockPlayerChannels(
         methodChannelName: 'com.plezy/mpv_player',
         eventChannelName: 'com.plezy/mpv_player/events',
         testBody: () async {
-          final screen = await pumpReloadScreen(tester, watchTogether: watchTogether);
+          final screen = await pumpReloadScreen(tester, watchTogether: watchTogether, client: client);
           final fakePlayer = screen.player;
           screen.key.currentState!.debugBindWatchTogetherForTesting();
           fakePlayer.emitPlaybackRestart();
           await tester.pump();
           await tester.pump(const Duration(seconds: 1));
-          // The viewer plays: the room follows.
-          fakePlayer.emitPlaying(false);
-          await tester.pump();
-          fakePlayer.emitPlaying(true);
-          await tester.pump();
-          expect(peer.latestState.phase, PlaybackPhase.playing);
-          final beforeHold = peer.states.length;
+          // The room plays the host's file once everyone is ready.
+          expect(relay.phase, 'playing');
+          expect(fakePlayer.state.playing, isTrue);
+          final adapter = screen.key.currentState!.debugWatchTogetherAdapter;
 
           var held = false;
           final hold = screen.key.currentState!
@@ -817,46 +772,34 @@ void main() {
           await tester.pump(const Duration(seconds: 3));
           await pumpUntil(tester, () => held);
           await hold;
+          await tester.pump(const Duration(milliseconds: 300));
 
           expect(fakePlayer.state.playing, isTrue);
-          expect(
-            peer.states.skip(beforeHold).where((state) => state.phase == PlaybackPhase.paused),
-            isEmpty,
-            reason: 'the internal hold must not pause the room',
-          );
-          expect(watchTogether.hasAttachedPlayer, isTrue, reason: 'the room rebinds once the hold ends');
+          expect(relay.sent('pause'), isEmpty, reason: 'the internal hold must not pause the room');
+          expect(relay.phase, 'playing');
+          expect(screen.key.currentState!.debugWatchTogetherAdapter, same(adapter));
+          expect(watchTogether.isFollowing, isTrue, reason: 'the room drives the player again once the hold ends');
+          await closeRooms(tester, [watchTogether]);
         },
       );
     });
 
-    testWidgets('a hold outlasted by a room source reload leaves reattachment to the reload', (tester) async {
-      final peer = _ScreenPeerService();
-      final watchTogether = WatchTogetherProvider(peerServiceFactory: ({endpoint}) => peer);
-      await watchTogether.createSession(
-        controlMode: ControlMode.anyone,
-        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-      );
-      watchTogether.selectMedia(
-        ratingKey: 'movie-prior',
-        serverId: ServerId('srv-1'),
-        mediaTitle: 'Prior movie',
-        position: const Duration(seconds: 121),
-        rate: 1.25,
-        lease: watchTogether.capturePlaybackLease(selection: true),
-      );
-      addTearDown(watchTogether.dispose);
+    testWidgets('a hold outlasted by a room source reload leaves the room waiting for the reload', (tester) async {
+      final client = _ReloadClient();
+      final (:watchTogether, :relay) = await hostRoom(tester, client);
 
       await withMockPlayerChannels(
         methodChannelName: 'com.plezy/mpv_player',
         eventChannelName: 'com.plezy/mpv_player/events',
         testBody: () async {
-          final screen = await pumpReloadScreen(tester, watchTogether: watchTogether);
+          final screen = await pumpReloadScreen(tester, watchTogether: watchTogether, client: client);
           final fakePlayer = screen.player;
           screen.key.currentState!.debugBindWatchTogetherForTesting();
           fakePlayer.emitPlaybackRestart();
           await tester.pump();
           await tester.pump(const Duration(seconds: 1));
-          expect(watchTogether.hasAttachedPlayer, isTrue);
+          expect(watchTogether.isFollowing, isTrue);
+          final adapter = screen.key.currentState!.debugWatchTogetherAdapter;
 
           var held = false;
           final hold = screen.key.currentState!
@@ -865,8 +808,7 @@ void main() {
           await tester.pump();
 
           // The replacement's open is held past the display delay: the reload
-          // is still in flight, with the room detached, when the hold's delay
-          // runs out.
+          // is still in flight when the hold's delay runs out.
           final openGate = Completer<void>();
           fakePlayer.openGate = openGate;
           PlaybackSourceChangeOutcome? outcome;
@@ -882,7 +824,7 @@ void main() {
 
           expect(outcome, isNull);
           expect(held, isFalse, reason: 'the hold waits out the reload in flight');
-          expect(watchTogether.hasAttachedPlayer, isFalse, reason: 'the room stays detached until the reload settles');
+          expect(watchTogether.state.me?.player, owp.PlayerState.loading, reason: 'the room waits for the reload');
 
           openGate.complete();
           for (var i = 0; i < 400 && (outcome == null || !held); i++) {
@@ -891,11 +833,15 @@ void main() {
           }
           await switching;
           await hold;
+          await tester.pump(const Duration(milliseconds: 300));
 
           expect(outcome, PlaybackSourceChangeOutcome.applied);
-          // The room, not the hold, starts the replacement once its startup
-          // hold clears, so play commands here are the room's own.
-          expect(watchTogether.hasAttachedPlayer, isTrue, reason: 'the reload reattaches the room itself');
+          // Another quality of the same file stays the room's file.
+          expect(screen.key.currentState!.debugWatchTogetherAdapter, same(adapter));
+          expect(watchTogether.isFollowing, isTrue);
+          expect(relay.sent('setMedia'), hasLength(1));
+          expect(relay.sent('pause'), isEmpty);
+          await closeRooms(tester, [watchTogether]);
         },
       );
     });
@@ -1097,30 +1043,6 @@ class _ReloadPlayer extends FakeSyncPlayer {
   Future<void> selectSubtitleTrack(SubtitleTrack track) async {}
 }
 
-class _ScreenPeerService extends WatchTogetherPeerService {
-  final states = <PlaybackState>[];
-  int hostExitCount = 0;
-  PlaybackState get latestState => states.last;
-  @override
-  String get myPeerId => 'host';
-  @override
-  String get hostPeerId => 'host';
-  @override
-  bool get isHost => true;
-  @override
-  Future<String> createSession({String? sessionId}) async => 'SCREEN';
-  @override
-  void broadcast(SyncMessage message) {
-    if (message.state case final state?) states.add(state);
-    if (message.type == SyncMessageType.hostExitedPlayer) hostExitCount++;
-  }
-
-  @override
-  Future<void> releaseSession() async {}
-  @override
-  Future<void> disconnect() async {}
-}
-
 class _ReloadClient with PlaybackReportRecorder implements MediaServerClient {
   final reports = <PlaybackReportCall>[];
   Completer<void>? stopGate;
@@ -1135,6 +1057,8 @@ class _ReloadClient with PlaybackReportRecorder implements MediaServerClient {
   ServerCapabilities get capabilities => ServerCapabilities.jellyfin;
   @override
   double get watchedThreshold => 0.9;
+  @override
+  Future<ExternalIds> fetchExternalIds(String itemId) async => const ExternalIds();
   @override
   bool get marksWatchedOnPlaybackStopped => true;
   @override
@@ -1259,12 +1183,11 @@ _pushExitScreen(
   );
   unawaited(
     VideoPlayerRoute(
-      watchTogetherLease: watchTogether?.capturePlaybackLease(),
+      joinsWatchTogether: true,
       builder: (_) => VideoPlayerScreen(
         key: key,
         metadata: testMediaItem(id: 'exit-original', serverId: 'srv-1', backend: MediaBackend.jellyfin),
         selectedQualityPreset: TranscodeQualityPreset.original,
-        watchTogetherLease: watchTogether?.capturePlaybackLease(),
       ),
     ).push(navigator.currentState!),
   );
@@ -1316,22 +1239,5 @@ class _ExitPlayer extends _ReloadPlayer {
     await disposalGate?.future;
     await super.dispose(preserveDisplayMode: preserveDisplayMode);
     disposalFinished = true;
-  }
-}
-
-class _GuestExitPeer extends _ScreenPeerService {
-  final releaseGate = Completer<void>();
-  int releaseCalls = 0;
-
-  @override
-  String get myPeerId => 'guest';
-  @override
-  bool get isHost => false;
-  @override
-  Future<void> joinSession(String sessionId) async {}
-  @override
-  Future<void> releaseSession() async {
-    releaseCalls++;
-    await releaseGate.future;
   }
 }

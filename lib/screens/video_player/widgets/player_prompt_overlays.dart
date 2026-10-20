@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' show ImageFilter;
 
 import 'package:flutter/foundation.dart' show ValueListenable, listEquals;
@@ -6,6 +7,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../../focus/focusable_button.dart';
+import '../../../focus/input_mode_tracker.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../media/ids.dart';
 import '../../../media/media_item.dart';
@@ -123,6 +125,8 @@ class VideoPlayerBufferingOverlay extends StatelessWidget {
   }
 }
 
+/// The room's surfaces over the player: the reconnecting pill, the mismatch
+/// prompt (a sheet in the player's host), and the play-blocked prompt.
 class VideoPlayerWatchTogetherOverlays extends StatelessWidget {
   const VideoPlayerWatchTogetherOverlays({super.key});
 
@@ -133,9 +137,9 @@ class VideoPlayerWatchTogetherOverlays extends StatelessWidget {
         fit: StackFit.expand,
         children: [
           Selector<WatchTogetherProvider, bool>(
-            selector: (_, provider) => provider.isWaitingForHostReconnect,
-            builder: (context, isWaiting, child) {
-              if (!isWaiting) return const SizedBox.shrink();
+            selector: (_, provider) => provider.isReconnecting,
+            builder: (context, reconnecting, child) {
+              if (!reconnecting) return const SizedBox.shrink();
               return Positioned(
                 bottom: 120,
                 left: 0,
@@ -159,10 +163,7 @@ class VideoPlayerWatchTogetherOverlays extends StatelessWidget {
                             child: CircularProgressIndicator(strokeWidth: 2, color: Colors.white),
                           ),
                         const SizedBox(width: 8),
-                        Text(
-                          t.watchTogether.reconnectingToHost,
-                          style: const TextStyle(color: Colors.white, fontSize: 12),
-                        ),
+                        Text(t.watchTogether.reconnecting, style: const TextStyle(color: Colors.white, fontSize: 12)),
                       ],
                     ),
                   ),
@@ -170,10 +171,113 @@ class VideoPlayerWatchTogetherOverlays extends StatelessWidget {
               );
             },
           ),
-          const ParticipantNotificationOverlay(),
-          const WaitingForParticipantsIndicator(),
-          const SyncingIndicator(),
+          const WatchMismatchPromptLauncher(),
+          const _WatchPlayBlockedPrompt(),
         ],
+      ),
+    );
+  }
+}
+
+/// The player refused to start in a playing room: a Play button that starts
+/// it, focused for the D-pad while it shows, and focus handed back after.
+class _WatchPlayBlockedPrompt extends StatefulWidget {
+  const _WatchPlayBlockedPrompt();
+
+  @override
+  State<_WatchPlayBlockedPrompt> createState() => _WatchPlayBlockedPromptState();
+}
+
+class _WatchPlayBlockedPromptState extends State<_WatchPlayBlockedPrompt> {
+  final _playFocusNode = FocusNode(debugLabel: 'WatchPlayBlockedPlay');
+  FocusNode? _returnFocus;
+  bool _shown = false;
+
+  @override
+  void dispose() {
+    _playFocusNode.dispose();
+    super.dispose();
+  }
+
+  void _sync(bool visible) {
+    if (visible == _shown) return;
+    _shown = visible;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || visible != _shown) return;
+      if (!visible) return _restoreFocus();
+      if (!InputModeTracker.isKeyboardMode(context, listen: false)) return;
+      final current = FocusManager.instance.primaryFocus;
+      _returnFocus = identical(current, _playFocusNode) ? null : current;
+      _playFocusNode.requestFocus();
+    });
+  }
+
+  void _restoreFocus() {
+    final target = _returnFocus;
+    _returnFocus = null;
+    if (!_playFocusNode.hasFocus) return;
+    if (target != null && target.context != null && target.canRequestFocus) {
+      target.requestFocus();
+    } else {
+      _playFocusNode.unfocus(disposition: UnfocusDisposition.previouslyFocusedChild);
+    }
+  }
+
+  void _play() {
+    _restoreFocus();
+    unawaited(context.read<WatchTogetherProvider>().playBlockedPlayer());
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final visible = context.select<WatchTogetherProvider, bool>((provider) => provider.playBlocked);
+    _sync(visible);
+    if (!visible) return const SizedBox.shrink();
+    return ValueListenableBuilder<bool>(
+      valueListenable: PipService().isPipActive,
+      builder: (context, inPip, child) => inPip ? const SizedBox.shrink() : child!,
+      child: Positioned(
+        right: 24,
+        bottom: 100,
+        child: _VideoPlayerPromptCard(
+          child: Column(
+            mainAxisSize: .min,
+            crossAxisAlignment: .start,
+            children: [
+              Text(
+                t.watchTogether.playBlockedTitle,
+                style: TextStyle(color: Colors.white.withValues(alpha: 0.7), fontSize: 12, fontWeight: .w500),
+              ),
+              const SizedBox(height: 4),
+              Text(
+                t.watchTogether.playBlockedDescription,
+                style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: .w600),
+              ),
+              const SizedBox(height: 12),
+              SizedBox(
+                width: double.infinity,
+                child: FocusableButton(
+                  focusNode: _playFocusNode,
+                  onPressed: _play,
+                  autoScroll: false,
+                  onNavigateUp: () {},
+                  onNavigateDown: () {},
+                  useBackgroundFocus: true,
+                  child: FilledButton.icon(
+                    onPressed: _play,
+                    style: FilledButton.styleFrom(
+                      backgroundColor: Colors.white,
+                      foregroundColor: Colors.black,
+                      padding: const EdgeInsets.symmetric(vertical: 12),
+                    ),
+                    icon: const AppIcon(Symbols.play_arrow_rounded, fill: 1),
+                    label: Text(t.common.play),
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
       ),
     );
   }

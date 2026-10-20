@@ -13,11 +13,14 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/download_models.dart';
+import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/services/cached_playback_metadata_service.dart';
 import 'package:plezy/services/download_storage_service.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/jellyfin_media_info_mapper.dart';
+import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/playback_initialization_service.dart';
+import 'package:plezy/services/playback_source_resolver.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_mappers.dart';
 import 'package:plezy/services/saf_storage_service.dart';
@@ -225,6 +228,39 @@ void main() {
     expect(result.videoUrl, 'content://offline/movie-1');
     expect(result.availableVersions, isEmpty);
     expect(result.mediaInfo?.audioTracks.single.languageCode, 'eng');
+  });
+
+  test('a Watch Together room streams an Original-quality item that is downloaded', () async {
+    await _insertDownloaded(
+      db,
+      serverId: ServerId('srv-1'),
+      ratingKey: 'movie-1',
+      videoFilePath: 'content://offline/movie-1',
+    );
+    await PlexApiCache.instance.put(ServerId('srv-1'), '/library/metadata/movie-1', _plexMetadataEnvelope());
+    final client = _FailingPlaybackClient(serverId: ServerId('srv-1'));
+    final manager = MultiServerManager();
+    addTearDown(manager.dispose);
+    manager.debugRegisterClientForTesting(client, online: true);
+    final resolver = PlaybackSourceResolver(serverManager: manager, database: db);
+    final options = PlaybackInitializationOptions(
+      metadata: testMediaItem(
+        id: 'movie-1',
+        backend: MediaBackend.plex,
+        kind: MediaKind.movie,
+        serverId: ServerId('srv-1'),
+      ),
+      selectedMediaIndex: 0,
+      qualityPreset: TranscodeQualityPreset.original,
+    );
+
+    final alone = await resolver.resolve(options, offlineLibraryMode: false);
+    expect(alone.result.isOffline, isTrue, reason: 'Original quality prefers the download');
+    expect(client.playbackInitializationCalls, 0);
+
+    // The room never gets a downloaded file, so the room's launch streams it.
+    await expectLater(resolver.resolve(options, offlineLibraryMode: false, streamOnly: true), throwsStateError);
+    expect(client.playbackInitializationCalls, 1);
   });
 
   test('pure-offline playback uses cached Plex media source for selected version', () async {
@@ -591,6 +627,9 @@ class _FailingPlaybackClient implements MediaServerClient {
     playbackInitializationCalls++;
     throw StateError('live playback initialization should not be called for downloaded playback');
   }
+
+  @override
+  void close() {}
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);

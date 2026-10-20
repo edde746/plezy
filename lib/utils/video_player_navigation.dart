@@ -15,8 +15,7 @@ import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/watch_state_store.dart';
 import '../watch_together/providers/watch_together_provider.dart';
-import '../watch_together/models/playback_state.dart';
-import '../watch_together/services/watch_together_controller.dart';
+import '../watch_together/models/watch_copy.dart';
 import '../screens/video_player_screen.dart';
 import '../services/external_player_service.dart';
 import '../services/local_playback_history.dart';
@@ -42,7 +41,9 @@ const String kVideoPlayerRouteName = '/video_player';
 /// Commit through [push], not Navigator.push: a covered player still owns the
 /// native channel and must leave before another playback can take ownership.
 class VideoPlayerRoute extends PageRouteBuilder<bool> {
-  VideoPlayerRoute({required WidgetBuilder builder, this.watchTogetherLease})
+  /// [joinsWatchTogether]: the player can take part in a Watch Together
+  /// room (streamed video on demand, not a download or Live TV).
+  VideoPlayerRoute({required WidgetBuilder builder, this.joinsWatchTogether = false})
     : super(
         settings: const RouteSettings(name: kVideoPlayerRouteName),
         pageBuilder: (context, _, _) => builder(context),
@@ -55,15 +56,16 @@ class VideoPlayerRoute extends PageRouteBuilder<bool> {
   static final _activeRoutes = Expando<VideoPlayerRoute>();
   bool get isReplacingWithVideo => _isReplacingWithVideo;
   bool _isReplacingWithVideo = false;
-  final WatchPlaybackLease? watchTogetherLease;
+  final bool joinsWatchTogether;
 
-  /// Consult the committed successor, not just the first replacement: several
-  /// launches can commit before the outgoing screen is disposed.
-  WatchPlaybackLease? get replacementWatchTogetherLease {
+  /// Whether a player that can take part in a Watch Together room replaces
+  /// this one. Consults the committed successor, not just the first
+  /// replacement: several launches can commit before this screen is disposed.
+  bool get replacedByWatchTogetherPlayer {
     final owner = navigator;
-    if (!_isReplacingWithVideo || owner == null) return null;
+    if (!_isReplacingWithVideo || owner == null) return false;
     final successor = _activeRoutes[owner];
-    return successor != this && successor?.isActive == true ? successor?.watchTogetherLease : null;
+    return successor != this && successor?.isActive == true && successor!.joinsWatchTogether;
   }
 
   Future<bool?> push(NavigatorState navigator, {bool replaceCurrent = false}) {
@@ -262,23 +264,17 @@ Future<ResolvedMediaVersionPreference?> resolveSavedMediaVersionFor(MediaItem me
   return (index: index, sourceId: version.id.isEmpty ? null : version.id, signature: version.signature);
 }
 
-/// Resolve the version a Watch Together room's host opened (#2536) against
-/// [metadata]'s version list: the host's exact source, else the closest
-/// signature match. Null when [room] is null or nothing on offer matches —
-/// the viewer's own remembered version applies then.
-ResolvedMediaVersionPreference? resolveRoomMediaVersion(RoomMediaVersion? room, MediaItem metadata) {
-  if (room == null) return null;
+/// The index and source id of [copy]'s version among [metadata]'s versions,
+/// for opening the Watch Together room's file; null when [copy] names no
+/// version or [metadata] doesn't list it (the viewer's own remembered version
+/// applies then).
+({int index, String? sourceId})? watchTogetherVersionOf(MediaItem metadata, WatchCopy copy) {
+  if (copy.versionId.isEmpty) return null;
   final versions = metadata.mediaVersions ?? const <MediaVersion>[];
-  // Nothing to verify against: the host's id names this exact item, so it
-  // passes through to the backend's own sourceId > signature > index order.
-  if (versions.isEmpty) return (index: 0, sourceId: room.sourceId, signature: room.signature);
-  final sourceId = room.sourceId;
-  final signature = room.signature;
-  var index = sourceId == null ? -1 : versions.indexWhere((v) => v.id == sourceId);
-  if (index < 0 && signature != null) index = MediaVersion.findMatchingIndex(versions, {signature}) ?? -1;
+  if (versions.isEmpty) return (index: 0, sourceId: copy.versionId);
+  final index = versions.indexWhere((v) => v.id == copy.versionId);
   if (index < 0) return null;
-  final version = versions[index];
-  return (index: index, sourceId: version.id.isEmpty ? null : version.id, signature: version.signature);
+  return (index: index, sourceId: copy.versionId);
 }
 
 /// Navigates to the VideoPlayerScreen with instant transitions to prevent white flash.
@@ -316,18 +312,19 @@ Future<bool?> navigateToVideoPlayer(
   bool usePushReplacement = false,
   bool isOffline = false,
   bool resolveWatchState = true,
-  WatchPlaybackLease? watchTogetherLease,
+  WatchCopy? watchTogetherCopy,
   bool Function()? isLaunchCurrent,
   Duration? initialPosition,
   bool strictMediaSelection = false,
   bool explicitStartPolicy = false,
   PlaybackLaunchObserver? launchObserver,
 }) async {
-  final watchTogether = isOffline ? null : context.read<WatchTogetherProvider?>();
-  watchTogetherLease ??= watchTogether?.capturePlaybackLease(selection: watchTogether.isHost);
-  final playbackLease = watchTogetherLease;
+  final watchTogether = isOffline || watchTogetherCopy == null ? null : context.read<WatchTogetherProvider?>();
+  // A launch for the Watch Together room is stale once the room moved on.
   bool launchCurrent() =>
-      (isLaunchCurrent?.call() ?? true) && (launchObserver?.isCurrent ?? true) && (playbackLease?.isCurrent ?? true);
+      (isLaunchCurrent?.call() ?? true) &&
+      (launchObserver?.isCurrent ?? true) &&
+      (watchTogetherCopy == null || watchTogether?.roomCopy?.ref == watchTogetherCopy);
   if (!launchCurrent()) return null;
   if (resolveWatchState) {
     metadata = context.readFreshWatchState(metadata);
@@ -350,11 +347,11 @@ Future<bool?> navigateToVideoPlayer(
   // streaming it (issue #2466). Only one version can be downloaded per item,
   // and saved version preferences describe online intent — they may point at
   // a version that was never downloaded (issue #1440). Explicit caller
-  // selections still win. A Watch Together launch is never retargeted: the
-  // host's pick becomes the room's version, and followers open that one.
+  // selections still win. A Watch Together launch is never retargeted: it
+  // opens the room's file.
   int? downloadedMediaIndex;
   String? downloadedMediaSourceId;
-  if ((isOffline || playbackLease == null) && selectedMediaIndex == null && selectedMediaSourceId == null) {
+  if ((isOffline || watchTogetherCopy == null) && selectedMediaIndex == null && selectedMediaSourceId == null) {
     final downloaded = await downloadProvider.getCompletedDownload(metadata.globalKey);
     if (downloaded != null) {
       downloadedMediaIndex = downloaded.mediaIndex;
@@ -362,18 +359,11 @@ Future<bool?> navigateToVideoPlayer(
     }
   }
 
-  // A launch that follows a Watch Together room opens the version its host
-  // opened, not this viewer's remembered one (#2536). The host's own
-  // launches (canSelect) pick the room's version instead of following it.
-  final roomVersion =
-      watchTogether != null &&
-          playbackLease != null &&
-          !playbackLease.canSelect &&
-          serverId != null &&
-          selectedMediaIndex == null &&
-          selectedMediaSourceId == null
-      ? resolveRoomMediaVersion(watchTogether.roomMediaVersionFor(ratingKey: metadata.id, serverId: serverId), metadata)
-      : null;
+  // A launch for the Watch Together room opens the room's file, not this
+  // viewer's remembered version.
+  final roomVersion = watchTogetherCopy == null || selectedMediaIndex != null || selectedMediaSourceId != null
+      ? null
+      : watchTogetherVersionOf(metadata, watchTogetherCopy);
 
   // Saved preferences only apply when nothing explicit is in play — an
   // explicit caller selection, a downloaded version, or the room's version
@@ -387,9 +377,10 @@ Future<bool?> navigateToVideoPlayer(
     savedVersion = await resolveSavedMediaVersionFor(metadata);
   }
   if (!launchCurrent()) return null;
-  final preferredVersion = roomVersion ?? savedVersion;
-  final mediaIndex = selectedMediaIndex ?? downloadedMediaIndex ?? preferredVersion?.index ?? 0;
-  final mediaSourceId = selectedMediaSourceId ?? downloadedMediaSourceId ?? preferredVersion?.sourceId;
+  final preferredVersion = savedVersion;
+  final mediaIndex = selectedMediaIndex ?? downloadedMediaIndex ?? roomVersion?.index ?? preferredVersion?.index ?? 0;
+  final mediaSourceId =
+      selectedMediaSourceId ?? downloadedMediaSourceId ?? roomVersion?.sourceId ?? preferredVersion?.sourceId;
 
   final launchIdentity = VideoPlayerLaunchIdentity(
     metadata: metadata,
@@ -425,9 +416,9 @@ Future<bool?> navigateToVideoPlayer(
       if (PlatformDetector.supportsExternalPlayers()) {
         final settingsService = SettingsService.instanceOrNull ?? await SettingsService.getInstance();
         if (!launchCurrent()) return null;
-        if (settingsService.read(SettingsService.useExternalPlayer)) {
-          if (launchObserver != null &&
-              (initialPosition != null || strictMediaSelection || explicitStartPolicy || playbackLease != null)) {
+        // The room can't drive an external player: its launches stay inside.
+        if (settingsService.read(SettingsService.useExternalPlayer) && watchTogetherCopy == null) {
+          if (launchObserver != null && (initialPosition != null || strictMediaSelection || explicitStartPolicy)) {
             launchObserver.mark('blocked', blocker: 'externalPlayerOptionsUnsupported');
             return null;
           }
@@ -497,7 +488,7 @@ Future<bool?> navigateToVideoPlayer(
     }
 
     final route = VideoPlayerRoute(
-      watchTogetherLease: playbackLease,
+      joinsWatchTogether: !isOffline,
       builder: (_) => VideoPlayerScreen(
         metadata: metadata,
         preferredAudioTrack: preferredAudioTrack,
@@ -508,7 +499,7 @@ Future<bool?> navigateToVideoPlayer(
         preferredVersionSignature: preferredVersion?.signature,
         selectedQualityPreset: selectedQualityPreset,
         isOffline: isOffline,
-        watchTogetherLease: playbackLease,
+        watchTogetherCopy: watchTogetherCopy,
         initialPosition: initialPosition,
         strictMediaSelection: strictMediaSelection,
         isLaunchCurrent: isLaunchCurrent,
@@ -647,40 +638,22 @@ Future<bool> promptAndPlayVersion(BuildContext context, MediaItem item) async {
   return true;
 }
 
-/// Resolves the current Watch Together media and opens the video player.
-///
-/// Returns whether navigation was initiated. The fetch can outlive the
-/// dispatch that requested it (slow server, host switching again, dispatcher
-/// timeout); navigating then would stack a stale player route on top of the
-/// live one, so the key is re-validated against the session's current
-/// playback snapshot before the push.
-Future<bool> navigateToWatchTogetherPlayback(
-  BuildContext context, {
-  required String ratingKey,
-  required ServerId serverId,
-  VoidCallback? onBeforeNavigate,
-}) async {
+/// Opens the Watch Together room's file [copy] in a new player. Returns
+/// whether navigation started; false when the item can't be fetched or the
+/// room moved on meanwhile.
+Future<bool> navigateToWatchTogetherPlayback(BuildContext context, WatchCopy copy) async {
   final watchTogether = context.read<WatchTogetherProvider>();
-  final lease = watchTogether.capturePlaybackLease();
-  if (lease == null) return false;
-  final multiServer = context.read<MultiServerProvider>();
-  final client = multiServer.getClientForServer(serverId);
-
-  if (client == null) throw StateError('Watch Together server is unavailable');
-
-  final metadata = await client.fetchItem(ratingKey);
-  if (metadata == null) throw StateError('Current Watch Together media is unavailable');
-
-  if (!context.mounted) return false;
-
-  if (!watchTogether.isPlaybackLeaseCurrent(lease) ||
-      watchTogether.currentMediaRatingKey != ratingKey ||
-      watchTogether.currentMediaServerId != serverId) {
-    appLogger.d('WatchTogether: Skipping stale navigation to $ratingKey');
+  var metadata = copy.item;
+  if (metadata == null) {
+    final client = context.read<MultiServerProvider>().getClientForServer(ServerId(copy.serverId));
+    if (client == null) return false;
+    metadata = await client.fetchItem(copy.itemId);
+    if (metadata == null || !context.mounted) return false;
+  }
+  if (watchTogether.roomCopy?.ref != copy) {
+    appLogger.d('WatchTogether: skipping stale navigation to $copy');
     return false;
   }
-
-  onBeforeNavigate?.call();
-  unawaited(navigateToVideoPlayer(context, metadata: metadata, watchTogetherLease: lease));
+  unawaited(navigateToVideoPlayer(context, metadata: metadata, watchTogetherCopy: copy));
   return true;
 }

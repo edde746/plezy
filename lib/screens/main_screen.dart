@@ -867,31 +867,12 @@ class _MainScreenState extends State<MainScreen>
     showSkipVersion: true,
   );
 
-  /// Set up the Watch Together navigation callback for guests
+  /// Lets the Watch Together room open its file when no player is open.
   void _setupWatchTogetherCallback() {
     try {
       final watchTogether = context.read<WatchTogetherProvider>();
-      watchTogether.onMediaSwitched = (ratingKey, serverId, mediaTitle) {
-        appLogger.d('WatchTogether: Media switch received - navigating to $mediaTitle');
-        return _navigateToWatchTogetherMedia(ratingKey, serverId);
-      };
-      watchTogether.onHostExitedPlayer = () {
-        appLogger.d('WatchTogether: Host exited player - exiting player for guest');
-        // Watch Together playback lives in the profile navigator; root-level
-        // dialogs/profile picker must not be affected.
-        if (!mounted) return;
-        final navigator = Navigator.of(context);
-        bool isVideoPlayerOnTop = false;
-        navigator.popUntil((route) {
-          if (route.isCurrent) {
-            isVideoPlayerOnTop = route.settings.name == kVideoPlayerRouteName;
-          }
-          return true;
-        });
-        if (isVideoPlayerOnTop && navigator.canPop()) {
-          navigator.pop();
-        }
-      };
+      _watchTogether = watchTogether;
+      watchTogether.navigatorOpener = _navigateToWatchTogetherMedia;
     } catch (e) {
       appLogger.w('Could not set up Watch Together callback', error: e);
     }
@@ -962,14 +943,12 @@ class _MainScreenState extends State<MainScreen>
     }
   }
 
-  /// Navigate to media when host switches content in Watch Together session.
-  /// Returns whether navigation was initiated; failures are re-dispatched on
-  /// the host's next state heartbeat.
-  Future<bool> _navigateToWatchTogetherMedia(String ratingKey, ServerId serverId) async {
-    if (!mounted) return false; // Check before any context usage
-
+  /// Opens the Watch Together room's file in a new player. Returns whether
+  /// navigation started.
+  Future<bool> _navigateToWatchTogetherMedia(WatchCopy copy) async {
+    if (!mounted) return false;
     try {
-      return await navigateToWatchTogetherPlayback(context, ratingKey: ratingKey, serverId: serverId);
+      return await navigateToWatchTogetherPlayback(context, copy);
     } catch (e) {
       appLogger.e('WatchTogether: Failed to navigate to media', error: e);
       return false;
@@ -977,6 +956,7 @@ class _MainScreenState extends State<MainScreen>
   }
 
   bool _companionRemoteSetup = false;
+  WatchTogetherProvider? _watchTogether;
   ValueChanged<String>? _systemShelfTapCallback;
 
   @override
@@ -1094,6 +1074,7 @@ class _MainScreenState extends State<MainScreen>
 
   @override
   void dispose() {
+    if (_watchTogether?.navigatorOpener == _navigateToWatchTogetherMedia) _watchTogether?.navigatorOpener = null;
     WidgetsBinding.instance.removeObserver(this);
     _profileRouteObserver?.unsubscribe(this);
     if (PlatformDetector.isDesktopOS()) {

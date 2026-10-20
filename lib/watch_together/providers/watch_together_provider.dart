@@ -1,63 +1,685 @@
 import 'dart:async';
-import '../../media/ids.dart';
-import 'dart:math';
 
+import 'package:clock/clock.dart';
 import 'package:flutter/foundation.dart';
+import 'package:openwatchparty/openwatchparty.dart' as owp;
+import 'package:package_info_plus/package_info_plus.dart';
 
-import '../../mpv/mpv.dart';
-import '../../i18n/strings.g.dart';
+import '../../media/media_item.dart';
+import '../../media/media_server_client.dart';
+import '../../media/media_version.dart';
+import '../../media/title_copies.dart';
+import '../../services/data_aggregation_service.dart';
+import '../../services/settings_service.dart';
 import '../../utils/app_logger.dart';
-import '../models/playback_state.dart';
-import '../models/sync_message.dart';
-import '../models/watch_session.dart';
-import '../services/current_playback_dispatcher.dart';
-import '../services/relay_protocol.g.dart';
-import '../services/watch_together_controller.dart';
-import '../services/watch_together_peer_service.dart';
-import '../services/watch_together_relay_endpoint.dart';
+import '../../utils/media_server_http_client.dart';
+import '../models/watch_copy.dart';
+import '../models/watch_notice.dart';
+import '../services/library_resolver.dart';
+import '../services/media_descriptor.dart';
+import '../services/player_adapter.dart';
+import '../services/recent_rooms_service.dart';
+import '../services/watch_party_relays.dart';
 
-/// Callback type for when media switches (for guest navigation). Returns
-/// whether the switch was handled; unhandled keys are re-dispatched on the
-/// host's next state heartbeat.
-typedef MediaSwitchCallback = Future<bool> Function(String ratingKey, ServerId serverId, String mediaTitle);
+typedef WatchPartyFactory =
+    owp.WatchParty<WatchCopy> Function({
+      required owp.Relays relays,
+      required String client,
+      required String name,
+      required owp.Resolver<WatchCopy>? resolver,
+    });
 
-typedef WatchTogetherPeerServiceFactory = WatchTogetherPeerService Function({WatchTogetherRelayEndpoint? endpoint});
+/// Opens [copy] for the room: in place in an open player, or by pushing one.
+/// Returns whether it is opening.
+typedef ChoiceOpener = Future<bool> Function(WatchCopy copy);
 
-WatchTogetherPeerService _createWatchTogetherPeerService({WatchTogetherRelayEndpoint? endpoint}) =>
-    WatchTogetherPeerService(endpoint: endpoint);
+/// What an open player screen gives the room.
+class WatchPlayerHooks {
+  const WatchPlayerHooks({required this.openInPlace, required this.exitPlayer});
 
-/// Provider for Watch Together functionality
+  /// Switches the open player to [copy].
+  final ChoiceOpener openInPlace;
+
+  /// Closes the player: the room stopped its media.
+  final VoidCallback exitPlayer;
+}
+
+/// Watch Together on Open Watch Party: one [owp.WatchParty] per room session,
+/// the user's player attached to it, and the room's state and notices for the
+/// UI.
 ///
-/// This provider manages:
-/// - Session creation/joining
-/// - Peer connections
-/// - Playback synchronization
-/// - Participant list
-/// - Media switching across the session
-class WatchTogetherProvider with ChangeNotifier {
-  WatchTogetherProvider({this._peerServiceFactory = _createWatchTogetherPeerService});
+/// The provider lives in the profile session, so a profile switch disposes of
+/// it and the party with it.
+class WatchTogetherProvider extends ChangeNotifier {
+  /// Without [clientFor] and [findCopies] the user has no libraries: other
+  /// participants' media finds nothing (widget tests that only need a room).
+  WatchTogetherProvider({
+    ServerClientLookup? clientFor,
+    TitleCopyFinder? findCopies,
+    String Function()? displayName,
+    String? Function()? profileId,
+    String? Function()? customRelayBaseUrl,
+    Future<String> Function()? clientName,
+    WatchPartyFactory? partyFactory,
+    this.shareDurationWait = const Duration(seconds: 30),
+  }) : _clientFor = clientFor ?? _noClient,
+       _displayName = displayName ?? _defaultName,
+       _profileId = profileId ?? _noProfile,
+       _customRelayBaseUrl = customRelayBaseUrl ?? _relaySetting,
+       _clientName = clientName ?? _plezyClientName,
+       _partyFactory = partyFactory ?? _defaultParty,
+       _resolver = LibraryResolver(clientFor: clientFor ?? _noClient, findCopies: findCopies ?? _noCopies);
 
-  final WatchTogetherPeerServiceFactory _peerServiceFactory;
+  static MediaServerClient? _noClient(String serverId) => null;
+  static String _defaultName() => 'Plezy';
+  static String? _noProfile() => null;
+  static String? _relaySetting() => SettingsService.instanceOrNull?.read(SettingsService.watchPartyRelayUrl);
+  static Future<LibraryLookupResult> _noCopies(TitleQuery query, {AbortController? abort}) async => (
+    items: const <MediaItem>[],
+    succeededServerIds: const <String>{},
+    cancelledServerIds: const <String>{},
+    failedServerIds: const <String>{},
+    unqueriedServerIds: const <String>{},
+  );
 
-  WatchSession? _session;
-  WatchTogetherPeerService? _peerService;
-  WatchTogetherController? _controller;
-  PeerError? _recoverableTransportError;
-  final List<Participant> _participants = [];
-  bool _isSyncing = false;
-  bool _isWaitingForPeers = false;
-  List<String> _waitingOnPeerIds = const [];
-  PlaybackPhase? _playbackPhase;
-  String _displayName = t.watchTogether.defaultDisplayName;
-  final CurrentPlaybackDispatcher _playbackDispatcher = CurrentPlaybackDispatcher();
+  final ServerClientLookup _clientFor;
+  final String Function() _displayName;
+  final String? Function() _profileId;
+  final String? Function() _customRelayBaseUrl;
+  final Future<String> Function() _clientName;
+  final WatchPartyFactory _partyFactory;
 
-  // Coalesce rapid-fire notifyListeners() calls into a single rebuild per frame.
-  // During Watch Together join, 4-5 notifications fire within milliseconds;
-  // this batches them into one rebuild to avoid overwhelming low-end devices.
-  bool _notifyScheduled = false;
+  /// How long a host's share waits for the player's length.
+  final Duration shareDurationWait;
+  final LibraryResolver _resolver;
+
+  owp.WatchParty<WatchCopy>? _party;
+  StreamSubscription<owp.PartyState<WatchCopy>>? _stateSubscription;
+  StreamSubscription<owp.PartyEvent>? _eventSubscription;
+  owp.PartyState<WatchCopy> _state = const owp.PartyState.initial();
+  final _notices = StreamController<WatchNotice>.broadcast();
+
+  ({owp.Relays relays, String? base})? _relays;
+
+  /// The player that has a file open, whether or not the room follows it.
+  ({PlezyPlayerAdapter adapter, bool shareable})? _player;
+  bool _attached = false;
+
+  /// Why the user is away from the player (the app in the background, a car
+  /// that forbids video): the room stops waiting for them meanwhile.
+  final Set<_Away> _away = {};
+  bool get _isAway => _away.isNotEmpty;
+  bool _playBlocked = false;
   bool _disposed = false;
-  int _sessionOperation = 0;
+  bool _notifyScheduled = false;
+  String? _openedKey;
+  int _shareGeneration = 0;
 
+  WatchPlayerHooks? _playerHooks;
+  Object? _playerHooksOwner;
+
+  /// Opens the room's file when no player is open; set by the main screen.
+  ChoiceOpener? navigatorOpener;
+
+  static Future<String> _plezyClientName() async {
+    final info = await PackageInfo.fromPlatform();
+    return 'Plezy/${info.version}';
+  }
+
+  static owp.WatchParty<WatchCopy> _defaultParty({
+    required owp.Relays relays,
+    required String client,
+    required String name,
+    required owp.Resolver<WatchCopy>? resolver,
+  }) => owp.WatchParty<WatchCopy>(relays: relays, client: client, name: name, resolver: resolver);
+
+  // ---------------------------------------------------------------------------
+  // State
+
+  owp.PartyState<WatchCopy> get state => _state;
+  owp.Connection get connection => _state.connection;
+
+  /// In a room, or joining one.
+  bool get isInSession =>
+      connection == owp.Connection.connecting ||
+      connection == owp.Connection.connected ||
+      connection == owp.Connection.reconnecting;
+  bool get isConnected => connection == owp.Connection.connected;
+  bool get isReconnecting => connection == owp.Connection.reconnecting;
+  owp.Room? get room => isInSession ? _state.room : null;
+  String? get roomCode => room?.code;
+  String? get formattedRoomCode => roomCode == null ? null : owp.formatCode(roomCode!);
+  List<owp.Participant> get participants => room?.participants ?? const [];
+  int get participantCount => participants.length;
+  String? get myPeerId => _state.peerId;
+  bool get isHost => isInSession && _state.isHost;
+  bool get canControl => isInSession && _state.canControl;
+  owp.Control get control => room?.control ?? owp.Control.host;
+  bool get isLocked => room?.locked ?? false;
+  owp.Media? get media => isInSession ? _state.media : null;
+  bool get hasMedia => media != null;
+
+  /// The room's file is open in this user's player and the room drives it.
+  bool get isFollowing {
+    final player = _player;
+    return player != null && follows(player.adapter);
+  }
+
+  /// The room drives [adapter]: it is the attached player and has the room's
+  /// file open.
+  bool follows(PlezyPlayerAdapter adapter) {
+    final choice = _state.choice;
+    final match = _state.match?.state;
+    return isConnected &&
+        _attached &&
+        identical(_player?.adapter, adapter) &&
+        choice != null &&
+        choice.ref == adapter.copy &&
+        (match == owp.MatchState.matched || match == owp.MatchState.mismatched);
+  }
+
+  /// The room's file this user would open: their match, or the media they
+  /// shared themselves (id `""`). Null while searching or without a copy.
+  owp.Candidate<WatchCopy>? get roomCopy => isInSession ? _state.choice : null;
+
+  /// The room plays a file this user has but isn't watching: offer to join.
+  bool get canJoinPlayback {
+    final copy = roomCopy;
+    return isConnected && copy != null && media != null && (_player == null || _player!.adapter.copy != copy.ref);
+  }
+
+  /// The player refused to start; the user has to press play on it.
+  bool get playBlocked => _playBlocked;
+
+  /// Events for snackbars and toasts.
+  Stream<WatchNotice> get notices => _notices.stream;
+
+  /// The participant who is host.
+  owp.Participant? get host => participants.where((p) => p.host).firstOrNull;
+
+  // ---------------------------------------------------------------------------
+  // Rooms
+
+  owp.Relays _currentRelays() {
+    final base = _customRelayBaseUrl();
+    final cached = _relays;
+    if (cached != null && cached.base == base) return cached.relays;
+    final relays = relaysFor(base);
+    _relays = (relays: relays, base: base);
+    return relays;
+  }
+
+  /// The relay setting's scope, for recent rooms.
+  String get relayScope => relayScopeOf(_customRelayBaseUrl());
+
+  /// The self-hosted relay's base URL rooms use; null for the public relays.
+  String? get customRelayBaseUrl => _customRelayBaseUrl();
+
+  /// The profile whose recent rooms this provider remembers.
+  String? get profileId => _profileId();
+
+  Future<owp.WatchParty<WatchCopy>> _newParty() async {
+    await _closeParty();
+    final name = _sanitizedName(_displayName());
+    final party = _partyFactory(relays: _currentRelays(), client: await _clientName(), name: name, resolver: _resolver);
+    _party = party;
+    _openedKey = null;
+    _playBlocked = false;
+    _stateSubscription = party.states.listen(_onState);
+    _eventSubscription = party.events.listen(_onEvent);
+    final player = _player;
+    if (player != null && !_isAway) {
+      party.attachPlayer(player.adapter, player.adapter.copy);
+      _attached = true;
+    }
+    return party;
+  }
+
+  /// Creates a room and joins it as host; returns its code. Throws
+  /// [owp.PartyException] with the SDK's code when it fails.
+  Future<String> createRoom() async {
+    final party = await _newParty();
+    final code = await party.create();
+    await _rememberRoom(code);
+    final player = _player;
+    if (player != null && player.shareable) {
+      unawaited(shareCopy(player.adapter, positionMs: player.adapter.positionMs));
+    }
+    return code;
+  }
+
+  /// Joins the room with [code] as typed or pasted. Throws
+  /// [owp.PartyException] with the SDK's code when it fails.
+  Future<void> joinRoom(String code) async {
+    final normalized = normalizeRoomCode(code);
+    if (normalized == null) throw const owp.PartyException(owp.ErrorCode.invalidCode, 'not a room code');
+    final party = await _newParty();
+    await party.join(normalized);
+    await _rememberRoom(normalized);
+  }
+
+  Future<void> _rememberRoom(String code) async {
+    final profileId = _profileId();
+    if (profileId == null) return;
+    try {
+      await RecentRoomsService.addOrUpdateRoom(code, profileId: profileId, relayScope: relayScope);
+    } catch (error, stackTrace) {
+      appLogger.w('WatchTogether: could not remember room', error: error, stackTrace: stackTrace);
+    }
+  }
+
+  /// Leaves the room, or cancels a create or join under way.
+  void leave() => _party?.leave();
+
+  /// Host: ends the room for everyone.
+  void endRoom() => _guard(() => _party?.end());
+
+  void setControl(owp.Control mode) => _guard(() => _party?.setControl(mode));
+  void transferHost(String peerId) => _guard(() => _party?.transferHost(peerId));
+  void kick(String peerId) => _guard(() => _party?.kick(peerId));
+  void setLocked(bool locked) => _guard(() => _party?.lock(locked));
+
+  /// Host: stops the media for everyone.
+  void stopMedia() => _guard(() => _party?.clearMedia());
+
+  void _guard(void Function() command) {
+    try {
+      command();
+    } on owp.PartyException catch (error) {
+      appLogger.d('WatchTogether: ${error.code}: ${error.message}');
+      _notify(RefusedNotice(error.code));
+    }
+  }
+
+  // ---------------------------------------------------------------------------
+  // Matching
+
+  void acceptMismatch() => _guard(() => _party?.acceptMismatch());
+  void declineMismatch() => _guard(() => _party?.declineMismatch());
+
+  /// Searches the libraries again for the room's media.
+  void searchAgain() => _guard(() => _party?.resolveAgain());
+
+  /// Plays [candidate] for the room's media. False when it can't (no length,
+  /// the media changed meanwhile).
+  Future<bool> choose(owp.Candidate<WatchCopy> candidate) async {
+    final party = _party;
+    if (party == null) return false;
+    try {
+      return await party.choose(candidate);
+    } on owp.PartyException catch (error) {
+      _notify(RefusedNotice(error.code));
+      return false;
+    }
+  }
+
+  /// Plays [version] of [item], found anywhere in the app, for the room's media.
+  Future<bool> chooseCopy(MediaItem item, MediaVersion? version) {
+    if (item.serverId == null) return Future.value(false);
+    return choose(candidateFor(item, version, clientFor: _clientFor));
+  }
+
+  /// Shifts this user's file against the room: local = room + [offsetMs].
+  void setOffset(int offsetMs) => _guard(() => _party?.setOffset(offsetMs.clamp(-maxRoomOffsetMs, maxRoomOffsetMs)));
+
+  // ---------------------------------------------------------------------------
+  // Playback presses. Each returns true when the room took it: the screen must
+  // then leave the player alone, since the party commands it.
+
+  bool _routes() => isFollowing && _party != null;
+
+  bool _refuseWithoutControl() {
+    if (canControl) return false;
+    _notify(const ControlRefusedNotice());
+    return true;
+  }
+
+  /// False while the player refused to start in a playing room: the user's
+  /// press then starts the player itself (SDK.md §15).
+  bool play() {
+    if (!_routes()) return false;
+    if (_playBlocked && room?.phase == owp.Phase.playing) {
+      _playBlocked = false;
+      notifyListeners();
+      return false;
+    }
+    if (_refuseWithoutControl()) return true;
+    _guard(() => _party!.play());
+    return true;
+  }
+
+  /// Starts the player that refused to start in a playing room, from the
+  /// player's own prompt (SDK.md §15). Refused again, it stays blocked.
+  Future<void> playBlockedPlayer() async {
+    final adapter = _player?.adapter;
+    if (!_playBlocked || adapter == null || !follows(adapter)) return;
+    _playBlocked = false;
+    notifyListeners();
+    try {
+      await adapter.commands.play();
+    } catch (error) {
+      appLogger.d('WatchTogether: the player refused to start again: $error');
+      if (_disposed || !follows(adapter)) return;
+      _notify(_blocked());
+    }
+  }
+
+  bool pause() {
+    if (!_routes()) return false;
+    if (_refuseWithoutControl()) return true;
+    _guard(() => _party!.pause());
+    return true;
+  }
+
+  /// [position] is in this user's own file.
+  bool seek(Duration position) {
+    if (!_routes()) return false;
+    if (_refuseWithoutControl()) return true;
+    _guard(() => _party!.seek(position.inMilliseconds < 0 ? 0 : position.inMilliseconds));
+    return true;
+  }
+
+  bool setRate(double rate) {
+    if (!_routes()) return false;
+    if (_refuseWithoutControl()) return true;
+    _guard(() => _party!.setRate(rate.clamp(minRoomRate, maxRoomRate)));
+    return true;
+  }
+
+  /// The room sets this player's rate, so its rate changes are not the user's.
+  bool get syncOwnsRate => isFollowing;
+
+  /// The room's playback rate: the speed the user chose for everyone, as
+  /// opposed to the player's momentary drift-correcting rate.
+  double? get roomRate => room?.rate;
+
+  // ---------------------------------------------------------------------------
+  // The player
+
+  /// The screen registered as the player, for tests.
+  @visibleForTesting
+  Object? get debugPlayerOwner => _playerHooksOwner;
+
+  /// An open player screen registers how the room switches it to another file
+  /// and closes it. Replaces any earlier registration.
+  void registerPlayer(Object owner, WatchPlayerHooks hooks) {
+    _playerHooksOwner = owner;
+    _playerHooks = hooks;
+  }
+
+  void unregisterPlayer(Object owner) {
+    if (!identical(_playerHooksOwner, owner)) return;
+    _playerHooksOwner = null;
+    _playerHooks = null;
+  }
+
+  /// The player opened [adapter]'s file. [shareable] is false for files the
+  /// room can't get (downloads, Live TV). [roomLaunch] is true when the room
+  /// asked for this file.
+  ///
+  /// A host shares the file with the room. A guest's player follows the room
+  /// when it opened the room's file, and else sits out so the room doesn't
+  /// wait for it.
+  void playerOpened(PlezyPlayerAdapter adapter, {required bool shareable, required bool roomLaunch}) {
+    final previous = _player?.adapter;
+    if (previous != null && !identical(previous, adapter)) previous.release();
+    _player = (adapter: adapter, shareable: shareable);
+    final party = _party;
+    if (party == null || _isAway) return;
+    final copy = adapter.copy;
+    if (!isConnected) {
+      party.attachPlayer(adapter, copy);
+      _attached = true;
+      return;
+    }
+    if (isHost) {
+      if (!shareable) {
+        // The room keeps its media; this file plays on its own meanwhile.
+        _attached = false;
+        unawaited(party.detachPlayer());
+        _notify(const NotSharedNotice());
+      } else {
+        party.attachPlayer(adapter, copy);
+        _attached = true;
+        if (!(_state.choice?.ref == copy && _state.choice?.id == '')) {
+          unawaited(shareCopy(adapter, positionMs: adapter.positionMs));
+        }
+      }
+      notifyListeners();
+      return;
+    }
+    if (_state.choice?.ref == copy) {
+      party.attachPlayer(adapter, copy);
+      _attached = true;
+    } else if (roomLaunch && media != null && copy.item != null) {
+      party.attachPlayer(adapter, copy);
+      _attached = true;
+      unawaited(chooseCopy(copy.item!, copy.version));
+    } else {
+      _attached = false;
+      unawaited(party.detachPlayer());
+    }
+    notifyListeners();
+  }
+
+  /// The player is going away. A host's media stops for everyone unless
+  /// [continuing] (another player takes over, such as the next episode).
+  /// Completes once the party no longer commands [adapter]: dispose of the
+  /// player after it.
+  Future<void> playerClosed(PlezyPlayerAdapter adapter, {required bool continuing}) {
+    adapter.release();
+    if (!identical(_player?.adapter, adapter)) return Future.value();
+    _player = null;
+    _attached = false;
+    _playBlocked = false;
+    final party = _party;
+    if (party == null) return Future.value();
+    if (!continuing && isConnected && isHost && _state.choice?.ref == adapter.copy && _state.choice?.id == '') {
+      _guard(party.clearMedia);
+    }
+    final released = party.detachPlayer(adapter);
+    notifyListeners();
+    return released;
+  }
+
+  /// The app went to the background (or came back): the room stops waiting
+  /// for this user meanwhile, and catches the player up on return.
+  void setBackgrounded(bool backgrounded) => _setAway(_Away.background, backgrounded);
+
+  /// The car forbids video while driving (or allows it again), as
+  /// [setBackgrounded].
+  void setVehicleRestricted(bool restricted) => _setAway(_Away.vehicle, restricted);
+
+  void _setAway(_Away reason, bool away) {
+    final wasAway = _isAway;
+    if (away) {
+      _away.add(reason);
+    } else {
+      _away.remove(reason);
+    }
+    if (wasAway == _isAway) return;
+    final party = _party;
+    final player = _player;
+    if (party == null) return;
+    if (_isAway) {
+      if (player != null) unawaited(party.detachPlayer(player.adapter));
+      _attached = false;
+      notifyListeners();
+    } else if (player != null) {
+      playerOpened(player.adapter, shareable: player.shareable, roomLaunch: false);
+    }
+  }
+
+  /// The player's state changed: the party reads it now.
+  void playerChanged(PlezyPlayerAdapter adapter) {
+    if (_attached && identical(_player?.adapter, adapter)) _party?.playerChanged();
+  }
+
+  /// Host: shares the file [adapter] has open with the room, starting at
+  /// [positionMs]. Waits up to 30 s for the player's length when the server
+  /// has none. When the room can't get it, the room's media stops and the
+  /// host is told.
+  Future<bool> shareCopy(PlezyPlayerAdapter adapter, {int positionMs = 0}) async {
+    final party = _party;
+    final copy = adapter.copy;
+    if (party == null || !isHost || copy.item == null) return false;
+    final generation = ++_shareGeneration;
+    bool current() =>
+        !_disposed && identical(_party, party) && generation == _shareGeneration && isHost && !adapter.isReleased;
+    final client = _clientFor(copy.serverId);
+    if (client == null) return _shareFailed(party, current);
+    var result = await describeCopy(copy, client: client, playerDurationMs: adapter.durationMs);
+    if (result.failure == DescribeFailure.noDuration) {
+      final waited = clock.stopwatch()..start();
+      while (current() && adapter.durationMs == null && waited.elapsed < shareDurationWait) {
+        await Future<void>.delayed(const Duration(milliseconds: 250));
+      }
+      if (!current()) return false;
+      result = await describeCopy(copy, client: client, playerDurationMs: adapter.durationMs);
+    }
+    if (!current()) return false;
+    final media = result.media;
+    if (media == null) return _shareFailed(party, current);
+    try {
+      party.setMedia(media, copy, positionMs: positionMs < 0 ? 0 : positionMs);
+      return true;
+    } on owp.PartyException catch (error) {
+      appLogger.w('WatchTogether: setMedia refused: ${error.code} ${error.message}');
+      return _shareFailed(party, current);
+    }
+  }
+
+  bool _shareFailed(owp.WatchParty<WatchCopy> party, bool Function() current) {
+    if (!current()) return false;
+    _notify(const ShareFailedNotice());
+    if (_state.media != null) _guard(party.clearMedia);
+    return false;
+  }
+
+  /// Opens the room's file for this user, from the Watch Together screen's
+  /// "join playback" card.
+  Future<bool> openRoomCopy() {
+    final copy = roomCopy;
+    if (copy == null) return Future.value(false);
+    _openedKey = _keyFor(copy);
+    return _open(copy.ref);
+  }
+
+  // ---------------------------------------------------------------------------
+  // SDK streams
+
+  String _keyFor(owp.Candidate<WatchCopy> choice) => '${_state.room?.epoch}|${choice.ref}';
+
+  void _onState(owp.PartyState<WatchCopy> next) {
+    final previous = _state;
+    final wasFollowing = isFollowing;
+    _state = next;
+    if (next.connection == owp.Connection.ended || next.room?.phase != owp.Phase.playing) _playBlocked = false;
+    // The room stopped the media this guest was watching with it.
+    if (wasFollowing &&
+        previous.media != null &&
+        next.media == null &&
+        next.connection == owp.Connection.connected &&
+        !next.isHost) {
+      _playerHooks?.exitPlayer();
+    }
+    _openChoice();
+    notifyListeners();
+  }
+
+  /// SDK.md §16.7: opens a new choice once per epoch and file. The party's
+  /// own media (id `""`) is never reopened on its own: the host is offered it.
+  void _openChoice() {
+    final choice = _state.choice;
+    if (choice == null || choice.id.isEmpty || _isAway || !isConnected) return;
+    if (_player?.adapter.copy == choice.ref) return;
+    final key = _keyFor(choice);
+    if (key == _openedKey) return;
+    _openedKey = key;
+    unawaited(_open(choice.ref));
+  }
+
+  Future<bool> _open(WatchCopy copy) async {
+    final opener = _playerHooks?.openInPlace ?? navigatorOpener;
+    var opening = false;
+    try {
+      opening = opener != null && await opener(copy);
+    } catch (error, stackTrace) {
+      appLogger.w('WatchTogether: could not open $copy', error: error, stackTrace: stackTrace);
+    }
+    if (!opening && !_disposed && _player == null && isConnected) {
+      _notify(const OpenFailedNotice());
+      unawaited(_party?.detachPlayer());
+    }
+    return opening;
+  }
+
+  void _onEvent(owp.PartyEvent event) {
+    final notice = switch (event) {
+      owp.ActionEvent(:final kind, :final by, :final byMe, :final room) when !byMe => ActionNotice(
+        kind: kind,
+        name: by?.name,
+        positionMs: kind == 'seek' ? room.positionMs + _state.offsetMs : null,
+        rate: kind == 'rate' ? room.rate : null,
+      ),
+      owp.ParticipantJoinedEvent(:final participant) => JoinedNotice(participant.name),
+      owp.ParticipantLeftEvent(:final participant) => LeftNotice(participant.name),
+      owp.ErrorEvent(:final error) => RefusedNotice(error.code),
+      owp.ResolveFailedEvent(:final error) => _resolveFailed(error),
+      owp.PlayBlockedEvent() => _blocked(),
+      owp.EndedEvent(:final reason) => _ended(reason),
+      _ => null,
+    };
+    if (notice != null) _notify(notice);
+  }
+
+  WatchNotice _resolveFailed(Object error) {
+    appLogger.w('WatchTogether: library search failed: $error');
+    return const SearchFailedNotice();
+  }
+
+  WatchNotice _blocked() {
+    _playBlocked = true;
+    notifyListeners();
+    return const PlayBlockedNotice();
+  }
+
+  WatchNotice? _ended(owp.EndReason reason) {
+    _attached = false;
+    final party = _party;
+    // A player that keeps its file open is the next party's to attach.
+    if (party != null) {
+      scheduleMicrotask(() {
+        if (identical(_party, party) && party.state.connection == owp.Connection.ended) unawaited(_closeParty());
+      });
+    }
+    return reason == owp.EndReason.left ? null : EndedNotice(reason);
+  }
+
+  void _notify(WatchNotice notice) {
+    if (!_disposed) _notices.add(notice);
+  }
+
+  Future<void> _closeParty() async {
+    final party = _party;
+    if (party == null) return;
+    _party = null;
+    _attached = false;
+    // Cancelling stops the callbacks at once; the party closes now rather than
+    // after the cancels' futures, which may only complete on a later turn.
+    unawaited(_stateSubscription?.cancel());
+    unawaited(_eventSubscription?.cancel());
+    _stateSubscription = null;
+    _eventSubscription = null;
+    // The last state stays readable (the end reason) until the next party.
+    _state = party.state;
+    await party.close();
+    notifyListeners();
+  }
+
+  /// Batches the notifications of one turn (a room snapshot often changes
+  /// several things at once) into one rebuild, and keeps a player screen's
+  /// dispose, which reports its release here, from rebuilding a locked tree.
   @override
   void notifyListeners() {
     if (_disposed || _notifyScheduled) return;
@@ -68,1078 +690,24 @@ class WatchTogetherProvider with ChangeNotifier {
     });
   }
 
-  // Host reconnect grace period
-  Timer? _hostReconnectTimer;
-  bool _isWaitingForHostReconnect = false;
-  bool _hostIntentionallyLeft = false;
-
-  // Display name of the guest a host transfer was requested for; names the
-  // failure toast if the relay rejects the request.
-  String? _pendingTransferTargetName;
-
-  // Debounce map for action events (peerId+type → last emission timestamp)
-  final Map<String, int> _lastActionEventMs = {};
-
-  // Peers the relay admitted since their last join reached us. Each is owed
-  // our join once, even if it is still listed: a peer that reconnects before
-  // the relay notices its old connection died is re-admitted without a leave,
-  // and it has already forgotten everyone else.
-  final Set<String> _peersOwedJoin = {};
-
-  static String _generateDisplayName() {
-    const adjectives = ['Happy', 'Sleepy', 'Sunny', 'Cozy', 'Chill', 'Swift', 'Brave', 'Calm', 'Jolly', 'Lucky'];
-    const nouns = ['Panda', 'Koala', 'Fox', 'Owl', 'Cat', 'Dog', 'Bear', 'Bunny', 'Duck', 'Penguin'];
-    final random = Random();
-    return '${adjectives[random.nextInt(adjectives.length)]} ${nouns[random.nextInt(nouns.length)]}';
-  }
-
-  /// Callback for when host switches media (guests should navigate)
-  /// Used by MainScreen when VideoPlayerScreen is not active
-  MediaSwitchCallback? onMediaSwitched;
-
-  /// Mounted VideoPlayerScreen's media-switch owner, regardless of its role.
-  /// Invoked for guest state only; takes priority over lobby navigation.
-  MediaSwitchCallback? onPlayerMediaSwitched;
-
-  /// Callback for when host exits the video player (guests should exit too)
-  VoidCallback? onHostExitedPlayer;
-
-  // Stream subscriptions
-  StreamSubscription<String>? _peerConnectedSubscription;
-  StreamSubscription<String>? _peerDisconnectedSubscription;
-  StreamSubscription<SyncMessage>? _messageSubscription;
-  StreamSubscription<PeerError>? _errorSubscription;
-  StreamSubscription<void>? _sessionEndedSubscription;
-  StreamSubscription<String>? _hostChangedSubscription;
-  StreamSubscription<void>? _hostTransferEligibilitySubscription;
-
-  // Getters
-  bool get isInSession => _session != null;
-  bool get isHost => _session?.isHost ?? false;
-  bool get isConnected => _session?.isConnected ?? false;
-  bool get isSyncing => _isSyncing;
-  WatchSession? get session => _session;
-  List<Participant> get participants => List.unmodifiable(_participants);
-  int get participantCount => _participants.length;
-  ControlMode get controlMode => _session?.controlMode ?? ControlMode.hostOnly;
-  String? get sessionId => _session?.sessionId;
-  bool get isWaitingForHostReconnect => _isWaitingForHostReconnect;
-
-  /// Whether the room is held up waiting on peers (readiness or stalls) —
-  /// drives the "Waiting for …" pill.
-  bool get isWaitingForPeers => _isWaitingForPeers;
-
-  String? _displayNameForPeer(String? peerId) {
-    if (peerId == null) return null;
-    return _participants
-        .where((participant) => participant.peerId == peerId)
-        .map((participant) => participant.displayName)
-        .firstOrNull;
-  }
-
-  /// Display names of the peers the room is waiting on (excluding self).
-  List<String> get waitingOnNames {
-    final myPeerId = _peerService?.myPeerId;
-    if (_waitingOnPeerIds.isEmpty) {
-      // Guests waiting on a still-loading host have an empty digest.
-      if (!isHost && _playbackPhase == PlaybackPhase.loading) {
-        final hostName = _participants.where((p) => p.isHost).map((p) => p.displayName).firstOrNull;
-        return [?hostName];
-      }
-      return const [];
-    }
-    return [
-      for (final peerId in _waitingOnPeerIds)
-        if (peerId != myPeerId) _displayNameForPeer(peerId) ?? '?',
-    ];
-  }
-
-  /// Whether a player is currently attached to the sync controller.
-  bool get hasAttachedPlayer => _controller?.hasPlayer ?? false;
-
-  WatchPlaybackLease? capturePlaybackLease({bool selection = false}) =>
-      _controller?.capturePlaybackLease(selection: selection);
-  bool isPlaybackLeaseCurrent(WatchPlaybackLease? lease) => lease?.belongsTo(_controller) ?? false;
-  bool isSamePlaybackSession(WatchPlaybackLease lease) => lease.belongsToSession(_controller);
-  bool ownsBinding(Object binding) => _controller?.ownsBinding(binding) ?? false;
-  Future<void> get pendingRateCommands => _controller?.pendingRateCommands ?? Future<void>.value();
-
-  // Participant join/leave event stream
-  final StreamController<ParticipantEvent> _participantEventController = StreamController<ParticipantEvent>.broadcast();
-  Stream<ParticipantEvent> get participantEvents => _participantEventController.stream;
-
-  // Current media getters
-  String? get currentMediaRatingKey => _session?.mediaRatingKey;
-  String? get currentMediaServerId => _session?.mediaServerId;
-  String? get currentMediaTitle => _session?.mediaTitle;
-  bool get hasCurrentPlayback =>
-      currentMediaRatingKey != null && currentMediaServerId != null && currentMediaTitle != null;
-
-  /// The version the room's host opened for [ratingKey] on [serverId], for a
-  /// launch that follows the room to open too; null for any other item or
-  /// when the host named none.
-  RoomMediaVersion? roomMediaVersionFor({required String ratingKey, required ServerId serverId}) =>
-      _controller?.roomMediaVersionFor(ratingKey: ratingKey, serverId: serverId);
-
-  String? _buildPlaybackKey(String? ratingKey, ServerId? serverId) {
-    if (ratingKey == null || serverId == null) return null;
-    return '$serverId:$ratingKey';
-  }
-
-  void _updateCurrentPlaybackSnapshot({
-    required String ratingKey,
-    required ServerId serverId,
-    required String mediaTitle,
-  }) {
-    _session = _session?.copyWith(mediaRatingKey: ratingKey, mediaServerId: serverId, mediaTitle: mediaTitle);
-  }
-
-  void _clearCurrentPlaybackSnapshot() {
-    final session = _session;
-    if (session == null) return;
-
-    _session = WatchSession(
-      sessionId: session.sessionId,
-      role: session.role,
-      controlMode: session.controlMode,
-      state: session.state,
-      errorMessage: session.errorMessage,
-      hostPeerId: session.hostPeerId,
-    );
-    _playbackDispatcher.reset();
-  }
-
-  void _dispatchCurrentPlayback({
-    required String ratingKey,
-    required ServerId serverId,
-    required String mediaTitle,
-    required String source,
-  }) {
-    final callback = onPlayerMediaSwitched ?? onMediaSwitched;
-    if (callback == null) {
-      appLogger.d('WatchTogether: No media switch callback set, keeping snapshot from $source only');
-      return;
-    }
-
-    appLogger.d('WatchTogether: Dispatching current playback from $source: $mediaTitle');
-    // The key is only marked handled if the callback reports success; a
-    // failed switch is retried on the host's next state heartbeat.
-    unawaited(
-      _playbackDispatcher.dispatch(
-        _buildPlaybackKey(ratingKey, serverId)!,
-        () => callback(ratingKey, serverId, mediaTitle),
-      ),
-    );
-  }
-
-  void markCurrentPlaybackHandled({required String ratingKey, required ServerId serverId}) {
-    _playbackDispatcher.markHandled(_buildPlaybackKey(ratingKey, serverId)!);
-  }
-
-  void requestCurrentPlaybackSnapshot() {
-    if (isHost) return;
-    appLogger.d('WatchTogether: Requesting current playback state from host');
-    _controller?.requestState();
-  }
-
-  void _requestCurrentPlaybackSnapshotIfHostConnected(WatchTogetherPeerService peerService) {
-    if (!identical(_peerService, peerService)) return;
-    final session = _session;
-    final hostPeerId = session?.hostPeerId;
-    if (session == null || session.isHost || hostPeerId == null || !peerService.connectedPeers.contains(hostPeerId)) {
-      return;
-    }
-    _controller?.updateSession(session);
-    requestCurrentPlaybackSnapshot();
-  }
-
-  /// Wire up reconnection handler to re-announce join and re-sync state
-  void _wireReconnectHandler() {
-    final peerService = _peerService!;
-    peerService.onReconnected = () {
-      if (_disposed || !identical(_peerService, peerService)) return;
-
-      final recoverableError = _recoverableTransportError;
-      final session = _session;
-      if (recoverableError != null &&
-          session != null &&
-          session.state == SessionState.error &&
-          session.errorMessage == recoverableError.message) {
-        _session = session.copyWith(state: SessionState.connected, errorMessage: null);
-        _recoverableTransportError = null;
-        notifyListeners();
-      } else {
-        _recoverableTransportError = null;
-      }
-
-      _controller?.announceJoin(_displayName);
-      _controller?.onReconnected();
-    };
-  }
-
-  /// Wire the controller's callbacks into provider/UI state
-  void _wireController() {
-    final controller = _controller!;
-
-    controller.onCorrectingChanged = (correcting) {
-      _isSyncing = correcting;
-      notifyListeners();
-    };
-
-    controller.onPhaseChanged = (phase) {
-      _playbackPhase = phase;
-      _updateWaitingState();
-    };
-
-    controller.onWaitingOnChanged = (peerIds) {
-      _waitingOnPeerIds = peerIds;
-      for (var i = 0; i < _participants.length; i++) {
-        final isWaitedOn = peerIds.contains(_participants[i].peerId);
-        if (_participants[i].isBuffering != isWaitedOn) {
-          _participants[i] = _participants[i].copyWith(isBuffering: isWaitedOn);
-          if (isWaitedOn) {
-            _emitActionEvent(_participants[i].peerId, ParticipantEventType.buffering);
-          }
-        }
-      }
-      _updateWaitingState();
-    };
-
-    controller.onControlModeReceived = (mode) {
-      if (isHost || _session == null) return;
-      if (_session!.controlMode == mode) return;
-      _session = _session!.copyWith(controlMode: mode);
-      controller.updateSession(_session!);
-      notifyListeners();
-    };
-
-    controller.onMediaStateReceived = _handleMediaStateReceived;
-
-    controller.onHostExitedPlayer = _handleHostExitedPlayer;
-
-    controller.onRemoteAction = (peerId, hint) {
-      final type = switch (hint) {
-        PlaybackActionHint.play => ParticipantEventType.resumed,
-        PlaybackActionHint.pause => ParticipantEventType.paused,
-        PlaybackActionHint.seek => ParticipantEventType.seeked,
-        PlaybackActionHint.rate => ParticipantEventType.changedSpeed,
-        PlaybackActionHint.mediaSwitch => null,
-      };
-      if (type != null) _emitActionEvent(peerId, type, rate: controller.roomRate);
-    };
-
-    controller.onPeerNeedsUpdate = (peerId) {
-      final name = _displayNameForPeer(peerId);
-      _participantEventController.add(
-        ParticipantEvent(displayName: name ?? peerId, type: ParticipantEventType.needsUpdate),
-      );
-    };
-
-    controller.onResumedWithout = (peerIds) {
-      for (final peerId in peerIds) {
-        final name = _displayNameForPeer(peerId);
-        if (name != null) {
-          _participantEventController.add(
-            ParticipantEvent(displayName: name, type: ParticipantEventType.resumedWithout),
-          );
-        }
-      }
-    };
-  }
-
-  void _updateWaitingState() {
-    final phase = _playbackPhase;
-    final waiting =
-        phase == PlaybackPhase.waitingForPeers ||
-        // Guests waiting on a still-loading host (no digest in that phase).
-        (!isHost && phase == PlaybackPhase.loading && hasCurrentPlayback);
-    if (waiting != _isWaitingForPeers) {
-      _isWaitingForPeers = waiting;
-    }
-    notifyListeners();
-  }
-
-  /// Create a new watch together session as host
-  Future<String> createSession({
-    required ControlMode controlMode,
-    required WatchTogetherRelayEndpoint relayEndpoint,
-    String? displayName,
-    String? sessionId,
-    String? mediaRatingKey,
-    String? mediaServerId,
-    String? mediaTitle,
-  }) async {
-    final cleanup = leaveSession();
-    final operation = _sessionOperation;
-    await cleanup;
-    if (_disposed || operation != _sessionOperation) throw StateError('Watch Together create became stale');
-    _playbackDispatcher.reset();
-
-    appLogger.d('WatchTogether: Creating session with control mode: $controlMode');
-
-    final peerService = _peerServiceFactory(endpoint: relayEndpoint);
-    _peerService = peerService;
-    _setupPeerServiceListeners();
-
-    try {
-      final createdSessionId = await peerService.createSession(sessionId: sessionId);
-      if (!identical(_peerService, peerService) || _disposed) {
-        throw StateError('Watch Together create became stale');
-      }
-      _session = WatchSession.createAsHost(
-        sessionId: createdSessionId,
-        hostPeerId: peerService.hostPeerId!,
-        controlMode: controlMode,
-        mediaRatingKey: peerService.isHost ? mediaRatingKey : null,
-        mediaServerId: peerService.isHost ? mediaServerId : null,
-        mediaTitle: peerService.isHost ? mediaTitle : null,
-      ).copyWith(state: SessionState.connected, role: peerService.isHost ? SessionRole.host : SessionRole.guest);
-
-      _displayName = displayName ?? _generateDisplayName();
-      _participants.add(
-        Participant(peerId: peerService.myPeerId!, displayName: _displayName, isHost: peerService.isHost),
-      );
-
-      _controller = WatchTogetherController(peerService: peerService, session: _session!);
-
-      _wireController();
-      _wireReconnectHandler();
-
-      notifyListeners();
-      appLogger.d('WatchTogether: Session created: $createdSessionId');
-
-      return createdSessionId;
-    } catch (e) {
-      appLogger.e('WatchTogether: Failed to create session', error: e);
-      if (identical(_peerService, peerService)) await leaveSession();
-      rethrow;
-    }
-  }
-
-  /// Join an existing session as guest
-  Future<void> joinSession(
-    String sessionId, {
-    required WatchTogetherRelayEndpoint relayEndpoint,
-    String? displayName,
-  }) async {
-    final cleanup = leaveSession();
-    final operation = _sessionOperation;
-    await cleanup;
-    if (_disposed || operation != _sessionOperation) throw StateError('Watch Together join became stale');
-    _playbackDispatcher.reset();
-
-    appLogger.d('WatchTogether: Joining session: $sessionId');
-
-    final peerService = _peerServiceFactory(endpoint: relayEndpoint);
-    _peerService = peerService;
-    _setupPeerServiceListeners();
-
-    final joiningSession = WatchSession.joinAsGuest(sessionId: sessionId);
-    _session = joiningSession;
-    notifyListeners();
-
-    try {
-      await peerService.joinSession(sessionId);
-      if (!identical(_peerService, peerService)) {
-        throw StateError('Watch Together join became stale');
-      }
-
-      // Host authority comes from the relay setup response rather than the
-      // public room code or a client-derived routing label.
-      _session = joiningSession.copyWith(
-        state: SessionState.connected,
-        hostPeerId: peerService.hostPeerId,
-        role: peerService.isHost ? SessionRole.host : SessionRole.guest,
-      );
-
-      _displayName = displayName ?? _generateDisplayName();
-
-      _controller = WatchTogetherController(peerService: peerService, session: _session!);
-
-      _wireController();
-      _wireReconnectHandler();
-
-      _participants.add(
-        Participant(peerId: peerService.myPeerId!, displayName: _displayName, isHost: peerService.isHost),
-      );
-
-      // Announce join to other participants
-      _controller!.announceJoin(_displayName);
-      _requestCurrentPlaybackSnapshotIfHostConnected(peerService);
-
-      notifyListeners();
-      appLogger.d('WatchTogether: Joined session successfully');
-    } catch (e) {
-      appLogger.e('WatchTogether: Failed to join session', error: e);
-      if (identical(_peerService, peerService)) {
-        await leaveSession();
-      }
-      rethrow;
-    }
-  }
-
-  /// Enter a room by code — joins a room that still has someone in it and
-  /// hosts the code otherwise.
-  Future<void> enterRoom(
-    String sessionId, {
-    required WatchTogetherRelayEndpoint relayEndpoint,
-    ControlMode controlMode = ControlMode.anyone,
-    String? displayName,
-  }) async {
-    final operation = ++_sessionOperation;
-    // A successful join reserves a durable guest identity. Release that probe
-    // identity before opening the provider's real connection.
-    final probe = _peerServiceFactory(endpoint: relayEndpoint);
-    var shouldBeHost = false;
-    try {
-      var probeJoined = false;
-      try {
-        await probe.joinSession(sessionId);
-        probeJoined = true;
-      } on PeerError catch (error) {
-        if (error.serverCode != RelayProtocol.roomNotFoundCode) rethrow;
-      }
-      // A room the relay still holds but nobody is connected to is an
-      // abandoned code, not a session: its declared host is gone and the
-      // reservation only survives until the next cleanup sweep. Take the code
-      // over instead of waiting on a host that is never coming back.
-      shouldBeHost = !probeJoined || probe.connectedPeers.isEmpty;
-      if (probeJoined) {
-        await probe.releaseSession();
-      }
-    } finally {
-      await probe.disconnect();
-      probe.dispose();
-    }
-    if (_disposed || operation != _sessionOperation) throw StateError('Watch Together room entry became stale');
-
-    if (shouldBeHost) {
-      await createSession(
-        controlMode: controlMode,
-        relayEndpoint: relayEndpoint,
-        displayName: displayName,
-        sessionId: sessionId,
-      );
-    } else {
-      await joinSession(sessionId, relayEndpoint: relayEndpoint, displayName: displayName);
-    }
-  }
-
-  /// Leave the current session. Local callbacks and player bindings are
-  /// detached synchronously; relay release remains awaitable and observable.
-  Future<void> leaveSession() async {
-    _sessionOperation++;
-    if (_session == null && _peerService == null) return;
-    appLogger.d('WatchTogether: Leaving session');
-    final peerService = _detachLocalSession(announceLeave: true);
-    if (peerService != null) {
-      await _finishPeerTeardown(peerService, release: true);
-    }
-    appLogger.d('WatchTogether: Session left');
-  }
-
-  WatchTogetherPeerService? _detachLocalSession({required bool announceLeave}) {
-    _sessionOperation++;
-    _recoverableTransportError = null;
-    if (announceLeave) _controller?.announceLeave();
-
-    final peerService = _peerService;
-    if (peerService != null) peerService.onReconnected = null;
-
-    _observeSubscriptionCancellation(_peerConnectedSubscription?.cancel());
-    _observeSubscriptionCancellation(_peerDisconnectedSubscription?.cancel());
-    _observeSubscriptionCancellation(_messageSubscription?.cancel());
-    _observeSubscriptionCancellation(_errorSubscription?.cancel());
-    _observeSubscriptionCancellation(_sessionEndedSubscription?.cancel());
-    _observeSubscriptionCancellation(_hostChangedSubscription?.cancel());
-    _observeSubscriptionCancellation(_hostTransferEligibilitySubscription?.cancel());
-    _peerConnectedSubscription = null;
-    _peerDisconnectedSubscription = null;
-    _messageSubscription = null;
-    _errorSubscription = null;
-    _sessionEndedSubscription = null;
-    _hostChangedSubscription = null;
-    _hostTransferEligibilitySubscription = null;
-
-    _hostReconnectTimer?.cancel();
-    _hostReconnectTimer = null;
-    _isWaitingForHostReconnect = false;
-
-    _controller?.dispose();
-    _controller = null;
-    _peerService = null;
-    _session = null;
-    _participants.clear();
-    _isSyncing = false;
-    _isWaitingForPeers = false;
-    _waitingOnPeerIds = const [];
-    _playbackPhase = null;
-    _playbackDispatcher.reset();
-    _lastActionEventMs.clear();
-    _peersOwedJoin.clear();
-    _pendingTransferTargetName = null;
-    _hostIntentionallyLeft = false;
-
-    if (!_disposed) notifyListeners();
-    return peerService;
-  }
-
-  void _observeSubscriptionCancellation(Future<void>? cancellation) {
-    if (cancellation == null) return;
-    unawaited(
-      cancellation.catchError((Object error, StackTrace stackTrace) {
-        appLogger.e('WatchTogether: Failed to cancel local subscription', error: error, stackTrace: stackTrace);
-      }),
-    );
-  }
-
-  Future<void> _finishPeerTeardown(WatchTogetherPeerService peerService, {required bool release}) async {
-    Object? failure;
-    StackTrace? failureStackTrace;
-    if (release) {
-      try {
-        await peerService.releaseSession();
-      } catch (error, stackTrace) {
-        failure = error;
-        failureStackTrace = stackTrace;
-        appLogger.e('WatchTogether: Failed to release relay ownership', error: error, stackTrace: stackTrace);
-      }
-    }
-    try {
-      await peerService.disconnect();
-    } catch (error, stackTrace) {
-      failure ??= error;
-      failureStackTrace ??= stackTrace;
-      appLogger.e('WatchTogether: Failed to disconnect relay transport', error: error, stackTrace: stackTrace);
-    } finally {
-      peerService.dispose();
-    }
-    if (failure != null) {
-      Error.throwWithStackTrace(failure, failureStackTrace!);
-    }
-  }
-
-  void _leaveSessionBestEffort(String reason) {
-    unawaited(
-      leaveSession().catchError((Object error, StackTrace stackTrace) {
-        appLogger.e('WatchTogether: Best-effort $reason failed', error: error, stackTrace: stackTrace);
-      }),
-    );
-  }
-
-  /// Bind an opened source under its originating session/media lease.
-  Object? bindPlayer(
-    Player player, {
-    required String ratingKey,
-    required String serverId,
-    String? mediaTitle,
-    Future<void>? startupHold,
-    Future<void> Function(Duration target)? remoteSeek,
-    required WatchPlaybackLease lease,
-  }) {
-    if (!isPlaybackLeaseCurrent(lease)) return null;
-    return _controller!.bindPlayer(
-      player,
-      ratingKey: ratingKey,
-      serverId: serverId,
-      mediaTitle: mediaTitle,
-      startupHold: startupHold,
-      remoteSeek: remoteSeek,
-    );
-  }
-
-  void unbindPlayer({Object? expectedBinding}) {
-    _controller?.unbindPlayer(expectedBinding: expectedBinding);
-  }
-
-  /// True exit ends the epoch even during a reload gap, exactly once.
-  void endMedia({Object? expectedBinding}) {
-    final ended = _controller?.endMedia(expectedBinding: expectedBinding) ?? false;
-    if (!ended) return;
-    _clearCurrentPlaybackSnapshot();
-    if (isHost) {
-      _peerService?.broadcast(SyncMessage.hostExitedPlayer(peerId: _peerService?.myPeerId));
-    }
-    notifyListeners();
-  }
-
-  /// Pause a guest's player without pausing the room — see
-  /// [WatchTogetherController.pauseLocallyForSystem]. Returns false when there is no attachment, or
-  /// when this peer is the host and must pause the room the ordinary way, so the caller falls back
-  /// to its own pause.
-  Future<bool> pauseLocallyForSystem() async {
-    final controller = _controller;
-    if (controller == null) return false;
-    return controller.pauseLocallyForSystem();
-  }
-
-  /// Suppress sync heartbeats/corrections while the app is backgrounded.
-  void setBackgrounded(bool value) {
-    _controller?.setBackgrounded(value);
-  }
-
-  /// Set up listeners for peer service events
-  void _setupPeerServiceListeners() {
-    final peerService = _peerService!;
-    _peerConnectedSubscription = peerService.onPeerConnected.listen((peerId) {
-      if (_disposed || !identical(_peerService, peerService)) return;
-      appLogger.d('WatchTogether: Peer connected: $peerId');
-      _peersOwedJoin.add(peerId);
-
-      // If host reconnected during grace period, cancel the timer
-      if (!isHost && peerId == _session?.hostPeerId && _isWaitingForHostReconnect) {
-        _cancelHostReconnectGracePeriod();
-      }
-
-      if (!isHost && peerId == _session?.hostPeerId) {
-        _requestCurrentPlaybackSnapshotIfHostConnected(peerService);
-      }
-
-      // Peer will announce themselves with a join message
-      notifyListeners();
-    });
-
-    _peerDisconnectedSubscription = peerService.onPeerDisconnected.listen((peerId) {
-      if (_disposed || !identical(_peerService, peerService)) return;
-      appLogger.d('WatchTogether: Peer disconnected: $peerId');
-
-      // Capture display name before removal for notification
-      final disconnectedName = _displayNameForPeer(peerId);
-
-      // The sync controller observes peer disconnects itself.
-      _participants.removeWhere((p) => p.peerId == peerId);
-      _peersOwedJoin.remove(peerId);
-
-      // If host disconnected unexpectedly, start grace period for reconnection.
-      // Skip if the host already sent a deliberate leave message.
-      if (!isHost && peerId == _session?.hostPeerId && !_hostIntentionallyLeft) {
-        _startHostReconnectGracePeriod();
-      } else if (disconnectedName != null) {
-        _participantEventController.add(
-          ParticipantEvent(displayName: disconnectedName, type: ParticipantEventType.left),
-        );
-      }
-
-      notifyListeners();
-    });
-
-    _messageSubscription = peerService.onMessageReceived.listen((message) {
-      if (_disposed || !identical(_peerService, peerService)) return;
-      _handleSyncMessage(message);
-    });
-
-    _errorSubscription = peerService.onError.listen((error) {
-      if (_disposed || !identical(_peerService, peerService)) return;
-      // Membership ends through `ended`, a closed transport, or our own
-      // release after this listener is detached, so the relay reports
-      // not_in_room here only for a directed send whose target is not
-      // connected: a guest reaching a retained room's absent host, or a reply
-      // racing the target's own departure (which arrives separately as
-      // peerLeft). Either way the room is intact for us.
-      if (error.serverCode == RelayProtocol.notInRoomCode) {
-        appLogger.d('WatchTogether: Directed message target is not connected; keeping the session');
-        return;
-      }
-      // A relay-atomic roster rejection is a failed transfer, not a failed
-      // session. Keep playback connected and use the existing transfer toast.
-      if (error.serverCode == RelayProtocol.notHostCode ||
-          error.serverCode == RelayProtocol.peerNotFoundCode ||
-          error.serverCode == RelayProtocol.hostTransferUnavailableCode) {
-        appLogger.w('WatchTogether: Host transfer rejected: ${error.message}');
-        final targetName = _pendingTransferTargetName;
-        _pendingTransferTargetName = null;
-        if (targetName != null) {
-          _participantEventController.add(
-            ParticipantEvent(displayName: targetName, type: ParticipantEventType.hostTransferFailed),
-          );
-        }
-        return;
-      }
-      appLogger.e('WatchTogether: Peer error: ${error.message}');
-
-      // Only established transport stream errors are recoverable. Relay and
-      // terminal errors must survive any later reconnect callback.
-      if (_session != null && _session!.state == SessionState.connected) {
-        _recoverableTransportError = error.originalError != null && error.serverCode == null ? error : null;
-        _session = _session!.copyWith(state: SessionState.error, errorMessage: error.message);
-        notifyListeners();
-      }
-    });
-    _sessionEndedSubscription = peerService.onSessionEnded.listen((_) {
-      if (_disposed || !identical(_peerService, peerService)) return;
-      appLogger.w('WatchTogether: ${t.watchTogether.errors.sessionUnavailable}');
-      final exitPlayer = onHostExitedPlayer;
-      onPlayerMediaSwitched = null;
-      final detachedPeerService = _detachLocalSession(announceLeave: false);
-      exitPlayer?.call();
-      if (detachedPeerService != null) {
-        unawaited(
-          _finishPeerTeardown(detachedPeerService, release: false).catchError((Object error, StackTrace stackTrace) {
-            appLogger.e('WatchTogether: Failed to close an ended relay session', error: error, stackTrace: stackTrace);
-          }),
-        );
-      }
-    });
-    _hostChangedSubscription = peerService.onHostChanged.listen((newHostPeerId) {
-      if (_disposed || !identical(_peerService, peerService)) return;
-      _handleHostChanged(newHostPeerId);
-    });
-    _hostTransferEligibilitySubscription = peerService.onHostTransferEligibilityChanged.listen((_) {
-      if (_disposed || !identical(_peerService, peerService)) return;
-      notifyListeners();
-    });
-  }
-
-  /// Handle incoming sync messages for participant management
-  void _handleSyncMessage(SyncMessage message) {
-    switch (message.type) {
-      case SyncMessageType.join:
-        if (message.peerId != null && message.displayName != null) {
-          // Check if participant already exists
-          final existingIndex = _participants.indexWhere((p) => p.peerId == message.peerId);
-          final owedJoin = _peersOwedJoin.remove(message.peerId);
-          if (existingIndex >= 0) {
-            _participants[existingIndex] = Participant(
-              peerId: message.peerId!,
-              displayName: message.displayName!,
-              isHost: message.isHost ?? false,
-            );
-          } else {
-            _participants.add(
-              Participant(peerId: message.peerId!, displayName: message.displayName!, isHost: message.isHost ?? false),
-            );
-            _participantEventController.add(
-              ParticipantEvent(displayName: message.displayName!, type: ParticipantEventType.joined),
-            );
-          }
-
-          // Send our join info back so the peer adds us to their participant
-          // list. Only reply to a NEW peer, or to one the relay re-admitted
-          // since its last join, to avoid an infinite join ping-pong
-          // (A→join→B→join→A→...). The host's reply also carries the room's
-          // control mode so lobby guests learn it before any playback state
-          // exists.
-          if ((existingIndex < 0 || owedJoin) && _peerService != null) {
-            _peerService!.sendTo(
-              message.peerId!,
-              SyncMessage.join(
-                peerId: _peerService!.myPeerId!,
-                displayName: _displayName,
-                isHost: isHost,
-                controlMode: isHost ? _session?.controlMode : null,
-              ),
-            );
-          }
-
-          notifyListeners();
-        }
-        break;
-
-      case SyncMessageType.leave:
-        if (message.peerId != null) {
-          final leavingName = _displayNameForPeer(message.peerId);
-          _participants.removeWhere((p) => p.peerId == message.peerId);
-          _peersOwedJoin.remove(message.peerId);
-          if (leavingName != null) {
-            _participantEventController.add(
-              ParticipantEvent(displayName: leavingName, type: ParticipantEventType.left),
-            );
-          }
-
-          // If the host deliberately left, end the session for everyone.
-          if (!isHost && message.peerId == _session?.hostPeerId) {
-            _hostIntentionallyLeft = true;
-            _handleHostExitedPlayer();
-            _leaveSessionBestEffort('host-leave cleanup');
-          }
-
-          notifyListeners();
-        }
-        break;
-
-      // hostExitedPlayer is routed through the controller's ordered message
-      // queue so it can't overtake (or be overtaken by) state messages.
-
-      default:
-        // Playback sync messages (state/status/control/...) are handled by
-        // the session controller.
-        break;
-    }
-  }
-
-  /// Emit an action event for a remote peer (with 1s debounce per peer+type)
-  void _emitActionEvent(String? peerId, ParticipantEventType type, {double? rate}) {
-    if (peerId == null || peerId == _peerService?.myPeerId) return;
-
-    final key = '$peerId:${type.name}';
-    final now = DateTime.now().millisecondsSinceEpoch;
-    final last = _lastActionEventMs[key] ?? 0;
-    if (now - last < 1000) return;
-    _lastActionEventMs[key] = now;
-
-    final name = _displayNameForPeer(peerId);
-    if (name != null) {
-      _participantEventController.add(ParticipantEvent(displayName: name, type: type, rate: rate));
-    }
-  }
-
-  /// Handle current-media info carried in the host's playback state
-  /// (guest only). Processed even when no player is attached so guests can
-  /// navigate into (or between) playback.
-  void _handleMediaStateReceived(String ratingKey, String serverId, String? mediaTitle) {
-    final typedServerId = serverIdOrNull(serverId);
-    if (typedServerId == null) {
-      appLogger.w('WatchTogether: Ignoring playback state with blank serverId');
-      return;
-    }
-    final playbackKey = _buildPlaybackKey(ratingKey, typedServerId);
-
-    // Detached guests receive this on every heartbeat; only rebuild when the
-    // snapshot actually changes.
-    final session = _session;
-    final snapshotChanged =
-        session == null ||
-        session.mediaRatingKey != ratingKey ||
-        session.mediaServerId != typedServerId ||
-        session.mediaTitle != (mediaTitle ?? '');
-    _updateCurrentPlaybackSnapshot(ratingKey: ratingKey, serverId: typedServerId, mediaTitle: mediaTitle ?? '');
-    if (snapshotChanged) notifyListeners();
-
-    if (_playbackDispatcher.shouldDispatch(playbackKey)) {
-      _dispatchCurrentPlayback(
-        ratingKey: ratingKey,
-        serverId: typedServerId,
-        mediaTitle: mediaTitle ?? '',
-        source: 'playback state',
-      );
-    }
-  }
-
-  @visibleForTesting
-  void debugHandleMediaState(String ratingKey, String serverId, String? mediaTitle) =>
-      _handleMediaStateReceived(ratingKey, serverId, mediaTitle);
-
-  /// Called when user seeks locally (to sync with peers)
-  void onLocalSeek(Duration position) {
-    _controller?.onLocalSeek(position);
-  }
-
-  /// Called when the user changes the playback rate locally. The screen has
-  /// already applied it to the player; this declares it to the room.
-  void onLocalRate(double rate) {
-    _controller?.onLocalRate(rate);
-  }
-
-  /// The room's current playback rate, or null outside a room / before the
-  /// first state arrives.
-  double? get roomRate => _controller?.roomRate;
-
-  /// Whether a sync correction currently owns the player's rate. The player
-  /// surface suppresses rate feedback (toast, picker) while this is true.
-  bool get syncOwnsRate => _controller?.syncOwnsRate ?? false;
-
-  /// Whether the current user can control playback
-  bool canControl() {
-    if (_session == null) return true; // Not in session, can control
-    if (_session!.controlMode == ControlMode.anyone) return true;
-    return isHost;
-  }
-
-  /// Commit a successful, explicitly local open before binding its output.
-  bool selectMedia({
-    required String ratingKey,
-    required ServerId serverId,
-    required String mediaTitle,
-    RoomMediaVersion? mediaVersion,
-    required Duration position,
-    required double rate,
-    required WatchPlaybackLease? lease,
-  }) {
-    if (lease == null || !isPlaybackLeaseCurrent(lease)) return false;
-    if (!(_controller?.selectMedia(
-          ratingKey: ratingKey,
-          serverId: serverId,
-          mediaTitle: mediaTitle,
-          mediaVersion: mediaVersion,
-          position: position,
-          rate: rate,
-          lease: lease,
-        ) ??
-        false)) {
-      return false;
-    }
-    _updateCurrentPlaybackSnapshot(ratingKey: ratingKey, serverId: serverId, mediaTitle: mediaTitle);
-    notifyListeners();
-    return true;
-  }
-
-  /// Whether the current user (as host) may hand host authority to
-  /// [participant]: a connected guest that can take the room over, in a room
-  /// where every other peer will follow the change.
-  bool canTransferHostTo(Participant participant) {
-    final peerService = _peerService;
-    if (peerService == null) return false;
-    if (!isHost || !isConnected) return false;
-    if (participant.isHost || participant.peerId == peerService.myPeerId) return false;
-    if (!peerService.connectedPeers.contains(participant.peerId)) return false;
-    return peerService.canTransferHostTo(participant.peerId);
-  }
-
-  /// Ask the relay to make [participant] the host (host only). Roles flip
-  /// when the relay's `hostChanged` broadcast arrives; a rejection surfaces
-  /// as a [ParticipantEventType.hostTransferFailed] event.
-  void transferHost(Participant participant) {
-    if (!canTransferHostTo(participant)) {
-      appLogger.w('WatchTogether: Ignoring host transfer to ineligible peer ${participant.peerId}');
-      return;
-    }
-    appLogger.d('WatchTogether: Requesting host transfer to ${participant.peerId}');
-    _pendingTransferTargetName = participant.displayName;
-    _peerService!.transferHost(participant.peerId);
-  }
-
-  /// The relay reassigned host authority ([peerService] already flipped its
-  /// own role state): rebuild session/participants and swap the controller's
-  /// role engine in place.
-  void _handleHostChanged(String newHostPeerId) {
-    final session = _session;
-    final peerService = _peerService;
-    if (session == null || peerService == null) return;
-
-    final wasHost = session.isHost;
-    final amHost = newHostPeerId == peerService.myPeerId;
-    _pendingTransferTargetName = null;
-
-    // Any host-departure bookkeeping referred to the previous host.
-    _cancelHostReconnectGracePeriod();
-    _hostIntentionallyLeft = false;
-
-    final updated = session.copyWith(role: amHost ? SessionRole.host : SessionRole.guest, hostPeerId: newHostPeerId);
-    _session = updated;
-    // A handled guest target may have been left while we were host. Also
-    // invalidate pending completions before the new authority requests state.
-    if (!amHost) _playbackDispatcher.reset();
-
-    for (var i = 0; i < _participants.length; i++) {
-      final isHostNow = _participants[i].peerId == newHostPeerId;
-      if (_participants[i].isHost != isHostNow) {
-        _participants[i] = _participants[i].copyWith(isHost: isHostNow);
-      }
-    }
-
-    _controller?.applyHostChange(updated);
-
-    if (amHost && !wasHost) {
-      // Re-announce as host — the lobby-safe carrier that teaches guests the
-      // room's control mode now comes from this peer.
-      _controller?.announceJoin(_displayName);
-      _participantEventController.add(
-        ParticipantEvent(displayName: _displayName, type: ParticipantEventType.becameHost),
-      );
-    } else if (!amHost) {
-      _participantEventController.add(
-        ParticipantEvent(
-          displayName: _displayNameForPeer(newHostPeerId) ?? '?',
-          type: ParticipantEventType.hostChanged,
-        ),
-      );
-    }
-
-    appLogger.d('WatchTogether: Host changed to $newHostPeerId (self: $amHost)');
-    notifyListeners();
-  }
-
-  /// Handle host exited player message (guest only)
-  void _handleHostExitedPlayer() {
-    if (isHost) return; // Host doesn't need to handle their own exit
-
-    appLogger.d('WatchTogether: Host exited player, callback set: ${onHostExitedPlayer != null}');
-
-    _clearCurrentPlaybackSnapshot();
-
-    // Clear the player callback BEFORE popping so that any mediaSwitch message
-    // arriving during the pop animation routes to MainScreen's handler instead
-    // of the dying VideoPlayerScreen.
-    onPlayerMediaSwitched = null;
-    notifyListeners();
-
-    // Trigger callback for the app to navigate guest out of player
-    if (onHostExitedPlayer != null) {
-      onHostExitedPlayer!.call();
-    } else {
-      appLogger.w('WatchTogether: onHostExitedPlayer callback not set!');
-    }
-  }
-
-  /// Start a grace period for host reconnection (guest only)
-  void _startHostReconnectGracePeriod() {
-    _cancelHostReconnectGracePeriod();
-    _isWaitingForHostReconnect = true;
-    appLogger.d('WatchTogether: Host disconnected, waiting 15s for reconnection');
-    notifyListeners();
-
-    _hostReconnectTimer = Timer(const Duration(seconds: 15), () {
-      if (_isWaitingForHostReconnect) {
-        appLogger.d('WatchTogether: Host reconnect grace period expired');
-        _isWaitingForHostReconnect = false;
-        _recoverableTransportError = null;
-        _session = _session?.copyWith(state: SessionState.error, errorMessage: 'Host left the session');
-        onHostExitedPlayer?.call();
-        notifyListeners();
-      }
-    });
-  }
-
-  /// Cancel host reconnect grace period
-  void _cancelHostReconnectGracePeriod() {
-    _hostReconnectTimer?.cancel();
-    _hostReconnectTimer = null;
-    if (_isWaitingForHostReconnect) {
-      _isWaitingForHostReconnect = false;
-      appLogger.d('WatchTogether: Host reconnected, grace period cancelled');
-      notifyListeners();
-    }
-  }
-
   @override
   void dispose() {
-    if (_disposed) return;
     _disposed = true;
-    final peerService = _detachLocalSession(announceLeave: true);
-    unawaited(_participantEventController.close());
+    _player?.adapter.release();
+    _player = null;
+    unawaited(_closeParty());
+    unawaited(_notices.close());
     super.dispose();
-    if (peerService != null) {
-      unawaited(
-        _finishPeerTeardown(peerService, release: true).catchError((Object error, StackTrace stackTrace) {
-          appLogger.e('WatchTogether: Failed to release session during dispose', error: error, stackTrace: stackTrace);
-        }),
-      );
-    }
   }
 }
 
-enum ParticipantEventType {
-  joined,
-  left,
-  paused,
-  resumed,
-  seeked,
-  changedSpeed,
-  buffering,
-  needsUpdate,
-  resumedWithout,
-  hostChanged,
-  becameHost,
-  hostTransferFailed,
+/// [name] as an Open Watch Party display name: 1 to 32 code points of
+/// protocol text; "Plezy" when nothing is left.
+String _sanitizedName(String name) {
+  final text = descriptorText(name);
+  if (text == null) return 'Plezy';
+  final kept = String.fromCharCodes(text.runes.take(32)).trim();
+  return kept.isEmpty ? 'Plezy' : kept;
 }
 
-/// Event emitted when a participant joins or leaves
-class ParticipantEvent {
-  final String displayName;
-  final ParticipantEventType type;
-
-  /// The room rate a [ParticipantEventType.changedSpeed] event refers to.
-  final double? rate;
-
-  const ParticipantEvent({required this.displayName, required this.type, this.rate});
-}
+enum _Away { background, vehicle }

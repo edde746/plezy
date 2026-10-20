@@ -272,6 +272,9 @@ List<MediaVersion> jellyfinSourcesToVersions(List<dynamic> sources) {
         versionId: sourceId.isNotEmpty ? sourceId : i.toString(),
         partId: i.toString(),
         streamPath: sourceId,
+        // Each source's own length: a room needs the version's duration,
+        // and the item's length belongs to no version once there are several.
+        includePartDuration: true,
         name: useName ? src['Name'] as String? : null,
       ),
     );

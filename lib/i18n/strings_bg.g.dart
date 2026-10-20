@@ -345,7 +345,6 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get videoPlayerNavigation => 'Навигация във видео плейъра';
 	@override String get videoPlayerNavigationDescription => 'Използвай стрелките за навигация в контролите на видео плейъра';
 	@override String get watchTogetherRelay => 'Релеен сървър за гледане заедно';
-	@override String get watchTogetherRelayDescription => 'Задай собствен релеен сървър. Всички трябва да използват един и същ сървър.';
 	@override String get watchTogetherRelayHint => 'https://my-relay.example.com';
 	@override String get watchTogetherRelayInvalid => 'Въведете валиден основен HTTP или HTTPS URL адрес на релейния сървър.';
 	@override String get crashReporting => 'Докладване на сривове';
@@ -1692,79 +1691,24 @@ class _Translations$watchTogether$bg extends Translations$watchTogether$en {
 	// Translations
 	@override String get title => 'Гледане заедно';
 	@override String get description => 'Гледайте съдържание синхронизирано с приятели и семейство';
-	@override String get createSession => 'Създай сесия';
-	@override String get creating => 'Създаване...';
-	@override String get joinSession => 'Присъедини се към сесия';
-	@override String get joining => 'Присъединяване...';
-	@override String get controlMode => 'Режим на управление';
-	@override String get controlModeQuestion => 'Кой може да управлява възпроизвеждането?';
-	@override String get hostOnly => 'Само организаторът';
-	@override String get anyone => 'Всеки';
-	@override String get hostingSession => 'Организирана сесия';
-	@override String get inSession => 'В сесия';
-	@override String get sessionCode => 'Код на сесията';
+	@override String get recentRooms => 'Скорошни стаи';
+	@override String get renameRoom => 'Преименувай стая';
+	@override String get removeRoom => 'Премахни';
 	@override String get openSessionControls => 'Отвори контролите за сесията „Гледане заедно“';
-	@override String get copySessionCode => 'Копирай кода на сесията';
+	@override String get youAreHost => 'Вие сте организаторът';
 	@override String get hostControlsPlayback => 'Организаторът управлява възпроизвеждането';
 	@override String get anyoneCanControl => 'Всеки може да управлява възпроизвеждането';
-	@override String get hostControls => 'Контроли на организатора';
-	@override String get anyoneControls => 'Всеки управлява';
+	@override String get joinCurrentPlayback => 'Присъедини се към текущото възпроизвеждане';
+	@override String get joinCurrentPlaybackDescription => 'Върнете се към това, което организаторът гледа в момента';
 	@override String get participants => 'Участници';
-	@override String get host => 'Организатор';
 	@override String get hostBadge => 'ОРГАНИЗАТОР';
-	@override String get youAreHost => 'Вие сте организаторът';
 	@override String get makeHost => 'Направи организатор';
 	@override String get makeHostQuestion => 'Предаване на ролята на организатор?';
 	@override String makeHostConfirm({required Object name}) => '${name} ще управлява възпроизвеждането и ще води сесията за всички.';
 	@override String get transfer => 'Предай';
-	@override String hostChangedTo({required Object name}) => '${name} вече е организатор';
-	@override String get youAreNowHost => 'Вече сте организаторът';
-	@override String hostTransferFailed({required Object name}) => '${name} не можа да стане организатор';
-	@override String get watchingWithOthers => 'Гледате с други';
-	@override String get endSession => 'Край на сесията';
-	@override String get leaveSession => 'Напусни сесията';
-	@override String get endSessionQuestion => 'Край на сесията?';
-	@override String get leaveSessionQuestion => 'Напускане на сесията?';
-	@override String get endSessionConfirm => 'Това ще прекрати сесията за всички участници.';
-	@override String get leaveSessionConfirm => 'Ще бъдете премахнати от сесията.';
-	@override String get endSessionConfirmOverlay => 'Това ще прекрати сесията за гледане за всички участници.';
-	@override String get leaveSessionConfirmOverlay => 'Ще бъдете изключени от сесията за гледане.';
-	@override String get end => 'Край';
 	@override String get leave => 'Напусни';
-	@override String get syncing => 'Синхронизиране...';
-	@override String get joinWatchSession => 'Присъедини се към сесия за гледане';
-	@override String get enterCodeHint => 'Въведете 5-символен код';
-	@override String get pasteFromClipboard => 'Постави от клипборда';
-	@override String get pleaseEnterCode => 'Моля, въведете код на сесия';
-	@override String get codeMustBe5Chars => 'Кодът на сесията трябва да е 5 символа';
-	@override String get joinInstructions => 'Въведете кода на сесията от организатора, за да се присъедините.';
-	@override String get failedToCreate => 'Неуспешно създаване на сесия';
-	@override String get failedToJoin => 'Неуспешно присъединяване към сесия';
-	@override String get sessionCodeCopied => 'Кодът на сесията е копиран в клипборда';
-	@override String get relayUnreachable => 'Релейният сървър е недостъпен. Възможно е интернет доставчикът да блокира гледането заедно.';
-	@override String get reconnectingToHost => 'Повторно свързване с организатора...';
-	@override String get currentPlayback => 'Текущо възпроизвеждане';
-	@override String get joinCurrentPlayback => 'Присъедини се към текущото възпроизвеждане';
-	@override String get joinCurrentPlaybackDescription => 'Върнете се към това, което организаторът гледа в момента';
-	@override String get failedToOpenCurrentPlayback => 'Неуспешно отваряне на текущото възпроизвеждане';
-	@override String participantJoined({required Object name}) => '${name} се присъедини';
-	@override String participantLeft({required Object name}) => '${name} напусна';
-	@override String participantPaused({required Object name}) => '${name} постави на пауза';
-	@override String participantResumed({required Object name}) => '${name} продължи';
-	@override String participantSeeked({required Object name}) => '${name} промени позицията на възпроизвеждане';
-	@override String participantChangedSpeed({required Object name, required Object speed}) => '${name} промени скоростта на ${speed}';
-	@override String participantBuffering({required Object name}) => '${name} буферира';
-	@override String participantNeedsUpdate({required Object name}) => '${name} е с по-стара версия на приложението — синхронизирането не е налично';
-	@override String resumingWithout({required Object name}) => 'Продължаване без ${name}';
-	@override String get waitingForParticipants => 'Изчакване другите да заредят...';
-	@override String waitingForName({required Object name}) => 'Изчакване на ${name}...';
-	@override String get recentRooms => 'Скорошни стаи';
-	@override String get renameRoom => 'Преименувай стая';
-	@override String get removeRoom => 'Премахни';
-	@override String get guestSwitchUnavailable => 'Превключването не е възможно — сървърът е недостъпен за синхронизация';
-	@override String get guestSwitchFailed => 'Превключването не е възможно — съдържанието не е намерено на този сървър';
-	@override String get defaultDisplayName => 'Потребител';
-	@override late final _Translations$watchTogether$errors$bg errors = _Translations$watchTogether$errors$bg._(_root);
+	@override String get end => 'Край';
+	@override late final _Translations$watchTogether$notices$bg notices = _Translations$watchTogether$notices$bg._(_root);
 }
 
 // Path: downloads
@@ -2801,18 +2745,20 @@ class _Translations$music$discography$bg extends Translations$music$discography$
 	@override String get compilations => 'Компилации';
 }
 
-// Path: watchTogether.errors
-class _Translations$watchTogether$errors$bg extends Translations$watchTogether$errors$en {
-	_Translations$watchTogether$errors$bg._(TranslationsBg root) : this._root = root, super.internal(root);
+// Path: watchTogether.notices
+class _Translations$watchTogether$notices$bg extends Translations$watchTogether$notices$en {
+	_Translations$watchTogether$notices$bg._(TranslationsBg root) : this._root = root, super.internal(root);
 
 	final TranslationsBg _root; // ignore: unused_field
 
 	// Translations
-	@override String get timedOut => 'Релейният сървър не отговори навреме';
-	@override String get connectionLost => 'Връзката се затвори, преди сесията да е готова';
-	@override String get invalidRelayResponse => 'Релейният сървър изпрати неочакван отговор';
-	@override String get sessionEnded => 'Организаторът прекрати сесията';
-	@override String get sessionUnavailable => 'Тази сесия не може да бъде възобновена. Присъединете се към стая или създайте нова, за да продължите.';
+	@override String paused({required Object name}) => '${name} постави на пауза';
+	@override String changedSpeed({required Object name, required Object speed}) => '${name} промени скоростта на ${speed}';
+	@override String waitingFor({required Object name}) => 'Изчакване на ${name}...';
+	@override String hostChangedTo({required Object name}) => '${name} вече е организатор';
+	@override String get youAreNowHost => 'Вече сте организаторът';
+	@override String joined({required Object name}) => '${name} се присъедини';
+	@override String left({required Object name}) => '${name} напусна';
 }
 
 // Path: downloads.backgroundWarning
@@ -3263,7 +3209,6 @@ extension on TranslationsBg {
 			'settings.videoPlayerNavigation' => 'Навигация във видео плейъра',
 			'settings.videoPlayerNavigationDescription' => 'Използвай стрелките за навигация в контролите на видео плейъра',
 			'settings.watchTogetherRelay' => 'Релеен сървър за гледане заедно',
-			'settings.watchTogetherRelayDescription' => 'Задай собствен релеен сървър. Всички трябва да използват един и същ сървър.',
 			'settings.watchTogetherRelayHint' => 'https://my-relay.example.com',
 			'settings.watchTogetherRelayInvalid' => 'Въведете валиден основен HTTP или HTTPS URL адрес на релейния сървър.',
 			'settings.crashReporting' => 'Докладване на сривове',
@@ -3551,9 +3496,9 @@ extension on TranslationsBg {
 			'fileInfo.streamIdentifier' => 'Идентификатор на потока',
 			'fileInfo.streamIndex' => 'Индекс на потока',
 			'fileInfo.streamId' => 'ID на потока',
+			'fileInfo.language' => 'Език',
 			_ => null,
 		} ?? switch (path) {
-			'fileInfo.language' => 'Език',
 			'fileInfo.languageCode' => 'Код на езика',
 			'fileInfo.streamTitle' => 'Заглавие на пистата',
 			'fileInfo.channels' => 'Канали',
@@ -4065,9 +4010,9 @@ extension on TranslationsBg {
 			'libraries.analyze' => 'Анализирай',
 			'libraries.analyzeLibrary' => 'Анализирай библиотеката',
 			'libraries.refreshMetadata' => 'Опресни метаданни',
+			'libraries.emptyTrash' => 'Изпразни кошчето',
 			_ => null,
 		} ?? switch (path) {
-			'libraries.emptyTrash' => 'Изпразни кошчето',
 			'libraries.emptyingTrash' => ({required Object title}) => 'Изпразване на кошчето за "${title}"...',
 			'libraries.trashEmptied' => ({required Object title}) => 'Кошчето е изпразнено за "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Неуспешно изпразване на кошчето: ${error}',
@@ -4511,85 +4456,30 @@ extension on TranslationsBg {
 			'music.discography.compilations' => 'Компилации',
 			'watchTogether.title' => 'Гледане заедно',
 			'watchTogether.description' => 'Гледайте съдържание синхронизирано с приятели и семейство',
-			'watchTogether.createSession' => 'Създай сесия',
-			'watchTogether.creating' => 'Създаване...',
-			'watchTogether.joinSession' => 'Присъедини се към сесия',
-			'watchTogether.joining' => 'Присъединяване...',
-			'watchTogether.controlMode' => 'Режим на управление',
-			'watchTogether.controlModeQuestion' => 'Кой може да управлява възпроизвеждането?',
-			'watchTogether.hostOnly' => 'Само организаторът',
-			'watchTogether.anyone' => 'Всеки',
-			'watchTogether.hostingSession' => 'Организирана сесия',
-			'watchTogether.inSession' => 'В сесия',
-			'watchTogether.sessionCode' => 'Код на сесията',
+			'watchTogether.recentRooms' => 'Скорошни стаи',
+			'watchTogether.renameRoom' => 'Преименувай стая',
+			'watchTogether.removeRoom' => 'Премахни',
 			'watchTogether.openSessionControls' => 'Отвори контролите за сесията „Гледане заедно“',
-			'watchTogether.copySessionCode' => 'Копирай кода на сесията',
+			'watchTogether.youAreHost' => 'Вие сте организаторът',
 			'watchTogether.hostControlsPlayback' => 'Организаторът управлява възпроизвеждането',
 			'watchTogether.anyoneCanControl' => 'Всеки може да управлява възпроизвеждането',
-			'watchTogether.hostControls' => 'Контроли на организатора',
-			'watchTogether.anyoneControls' => 'Всеки управлява',
+			'watchTogether.joinCurrentPlayback' => 'Присъедини се към текущото възпроизвеждане',
+			'watchTogether.joinCurrentPlaybackDescription' => 'Върнете се към това, което организаторът гледа в момента',
 			'watchTogether.participants' => 'Участници',
-			'watchTogether.host' => 'Организатор',
 			'watchTogether.hostBadge' => 'ОРГАНИЗАТОР',
-			'watchTogether.youAreHost' => 'Вие сте организаторът',
 			'watchTogether.makeHost' => 'Направи организатор',
 			'watchTogether.makeHostQuestion' => 'Предаване на ролята на организатор?',
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} ще управлява възпроизвеждането и ще води сесията за всички.',
 			'watchTogether.transfer' => 'Предай',
-			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} вече е организатор',
-			'watchTogether.youAreNowHost' => 'Вече сте организаторът',
-			'watchTogether.hostTransferFailed' => ({required Object name}) => '${name} не можа да стане организатор',
-			'watchTogether.watchingWithOthers' => 'Гледате с други',
-			'watchTogether.endSession' => 'Край на сесията',
-			'watchTogether.leaveSession' => 'Напусни сесията',
-			'watchTogether.endSessionQuestion' => 'Край на сесията?',
-			'watchTogether.leaveSessionQuestion' => 'Напускане на сесията?',
-			'watchTogether.endSessionConfirm' => 'Това ще прекрати сесията за всички участници.',
-			'watchTogether.leaveSessionConfirm' => 'Ще бъдете премахнати от сесията.',
-			'watchTogether.endSessionConfirmOverlay' => 'Това ще прекрати сесията за гледане за всички участници.',
-			'watchTogether.leaveSessionConfirmOverlay' => 'Ще бъдете изключени от сесията за гледане.',
-			'watchTogether.end' => 'Край',
 			'watchTogether.leave' => 'Напусни',
-			'watchTogether.syncing' => 'Синхронизиране...',
-			'watchTogether.joinWatchSession' => 'Присъедини се към сесия за гледане',
-			'watchTogether.enterCodeHint' => 'Въведете 5-символен код',
-			'watchTogether.pasteFromClipboard' => 'Постави от клипборда',
-			'watchTogether.pleaseEnterCode' => 'Моля, въведете код на сесия',
-			'watchTogether.codeMustBe5Chars' => 'Кодът на сесията трябва да е 5 символа',
-			'watchTogether.joinInstructions' => 'Въведете кода на сесията от организатора, за да се присъедините.',
-			'watchTogether.failedToCreate' => 'Неуспешно създаване на сесия',
-			'watchTogether.failedToJoin' => 'Неуспешно присъединяване към сесия',
-			'watchTogether.sessionCodeCopied' => 'Кодът на сесията е копиран в клипборда',
-			'watchTogether.relayUnreachable' => 'Релейният сървър е недостъпен. Възможно е интернет доставчикът да блокира гледането заедно.',
-			'watchTogether.reconnectingToHost' => 'Повторно свързване с организатора...',
-			'watchTogether.currentPlayback' => 'Текущо възпроизвеждане',
-			'watchTogether.joinCurrentPlayback' => 'Присъедини се към текущото възпроизвеждане',
-			'watchTogether.joinCurrentPlaybackDescription' => 'Върнете се към това, което организаторът гледа в момента',
-			'watchTogether.failedToOpenCurrentPlayback' => 'Неуспешно отваряне на текущото възпроизвеждане',
-			'watchTogether.participantJoined' => ({required Object name}) => '${name} се присъедини',
-			'watchTogether.participantLeft' => ({required Object name}) => '${name} напусна',
-			'watchTogether.participantPaused' => ({required Object name}) => '${name} постави на пауза',
-			'watchTogether.participantResumed' => ({required Object name}) => '${name} продължи',
-			'watchTogether.participantSeeked' => ({required Object name}) => '${name} промени позицията на възпроизвеждане',
-			'watchTogether.participantChangedSpeed' => ({required Object name, required Object speed}) => '${name} промени скоростта на ${speed}',
-			'watchTogether.participantBuffering' => ({required Object name}) => '${name} буферира',
-			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} е с по-стара версия на приложението — синхронизирането не е налично',
-			'watchTogether.resumingWithout' => ({required Object name}) => 'Продължаване без ${name}',
-			'watchTogether.waitingForParticipants' => 'Изчакване другите да заредят...',
-			'watchTogether.waitingForName' => ({required Object name}) => 'Изчакване на ${name}...',
-			'watchTogether.recentRooms' => 'Скорошни стаи',
-			'watchTogether.renameRoom' => 'Преименувай стая',
-			_ => null,
-		} ?? switch (path) {
-			'watchTogether.removeRoom' => 'Премахни',
-			'watchTogether.guestSwitchUnavailable' => 'Превключването не е възможно — сървърът е недостъпен за синхронизация',
-			'watchTogether.guestSwitchFailed' => 'Превключването не е възможно — съдържанието не е намерено на този сървър',
-			'watchTogether.defaultDisplayName' => 'Потребител',
-			'watchTogether.errors.timedOut' => 'Релейният сървър не отговори навреме',
-			'watchTogether.errors.connectionLost' => 'Връзката се затвори, преди сесията да е готова',
-			'watchTogether.errors.invalidRelayResponse' => 'Релейният сървър изпрати неочакван отговор',
-			'watchTogether.errors.sessionEnded' => 'Организаторът прекрати сесията',
-			'watchTogether.errors.sessionUnavailable' => 'Тази сесия не може да бъде възобновена. Присъединете се към стая или създайте нова, за да продължите.',
+			'watchTogether.end' => 'Край',
+			'watchTogether.notices.paused' => ({required Object name}) => '${name} постави на пауза',
+			'watchTogether.notices.changedSpeed' => ({required Object name, required Object speed}) => '${name} промени скоростта на ${speed}',
+			'watchTogether.notices.waitingFor' => ({required Object name}) => 'Изчакване на ${name}...',
+			'watchTogether.notices.hostChangedTo' => ({required Object name}) => '${name} вече е организатор',
+			'watchTogether.notices.youAreNowHost' => 'Вече сте организаторът',
+			'watchTogether.notices.joined' => ({required Object name}) => '${name} се присъедини',
+			'watchTogether.notices.left' => ({required Object name}) => '${name} напусна',
 			'downloads.title' => 'Изтегляния',
 			'downloads.manage' => 'Управление',
 			'downloads.tvShows' => 'ТВ сериали',
@@ -4635,6 +4525,8 @@ extension on TranslationsBg {
 			'downloads.includeSpecials' => 'Включи специалните',
 			'downloads.howManyEpisodes' => 'Колко епизода?',
 			'downloads.invalidEpisodeCount' => 'Въведете валиден брой епизоди.',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.keepSynced' => 'Поддържай синхронизирано',
 			'downloads.downloadOnce' => 'Изтегли еднократно',
 			'downloads.keepNUnwatched' => ({required Object count}) => 'Пази ${count} негледани',
@@ -5093,8 +4985,6 @@ extension on TranslationsBg {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Впишете се в своя ${product} сървър. Обвързва се с ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Използвай от друг профил',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Използвай връзка от друг профил. PIN-защитените профили изискват PIN.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.invalidCredentials' => 'Невалидно потребителско име или парола',
 			'addServer.authResponseNotJson' => 'Отговорът при удостоверяване не беше валиден JSON',
 			'addServer.authResponseIncomplete' => 'Отговорът за вход от сървъра беше непълен',

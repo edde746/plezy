@@ -345,7 +345,6 @@ class _Translations$settings$fr extends Translations$settings$en {
 	@override String get videoPlayerNavigation => 'Navigation dans le lecteur vidéo';
 	@override String get videoPlayerNavigationDescription => 'Utiliser les touches fléchées pour parcourir les commandes du lecteur vidéo';
 	@override String get watchTogetherRelay => 'Relais pour Regarder ensemble';
-	@override String get watchTogetherRelayDescription => 'Définir un relais personnalisé. Tous les participants doivent utiliser le même serveur.';
 	@override String get watchTogetherRelayHint => 'https://mon-relais.exemple.fr';
 	@override String get watchTogetherRelayInvalid => 'Saisissez une URL de base HTTP ou HTTPS valide pour le relais.';
 	@override String get crashReporting => 'Rapports de plantage';
@@ -1692,79 +1691,24 @@ class _Translations$watchTogether$fr extends Translations$watchTogether$en {
 	// Translations
 	@override String get title => 'Regarder ensemble';
 	@override String get description => 'Regarder du contenu en synchronisation avec vos proches';
-	@override String get createSession => 'Créer une session';
-	@override String get creating => 'Création...';
-	@override String get joinSession => 'Rejoindre la session';
-	@override String get joining => 'Connexion…';
-	@override String get controlMode => 'Mode de contrôle';
-	@override String get controlModeQuestion => 'Qui peut contrôler la lecture ?';
-	@override String get hostOnly => 'Hôte uniquement';
-	@override String get anyone => 'N\'importe qui';
-	@override String get hostingSession => 'Session hébergée';
-	@override String get inSession => 'Session en cours';
-	@override String get sessionCode => 'Code de session';
+	@override String get recentRooms => 'Salons récents';
+	@override String get renameRoom => 'Renommer le salon';
+	@override String get removeRoom => 'Supprimer';
 	@override String get openSessionControls => 'Ouvrir les commandes de la session Regarder ensemble';
-	@override String get copySessionCode => 'Copier le code de session';
+	@override String get youAreHost => 'Vous êtes l\'hôte';
 	@override String get hostControlsPlayback => 'L\'hôte contrôle la lecture';
 	@override String get anyoneCanControl => 'Tout le monde peut contrôler la lecture';
-	@override String get hostControls => 'Commandes de l\'hôte';
-	@override String get anyoneControls => 'Tout le monde contrôle';
+	@override String get joinCurrentPlayback => 'Rejoindre la lecture en cours';
+	@override String get joinCurrentPlaybackDescription => 'Reprendre le contenu que l’hôte regarde actuellement';
 	@override String get participants => 'Participants';
-	@override String get host => 'Hôte';
 	@override String get hostBadge => 'HÔTE';
-	@override String get youAreHost => 'Vous êtes l\'hôte';
 	@override String get makeHost => 'Nommer hôte';
 	@override String get makeHostQuestion => 'Transférer le rôle d’hôte ?';
 	@override String makeHostConfirm({required Object name}) => '${name} contrôlera la lecture et dirigera la session pour tout le monde.';
 	@override String get transfer => 'Transférer';
-	@override String hostChangedTo({required Object name}) => '${name} est maintenant l’hôte';
-	@override String get youAreNowHost => 'Vous êtes maintenant l’hôte';
-	@override String hostTransferFailed({required Object name}) => 'Impossible de nommer ${name} hôte';
-	@override String get watchingWithOthers => 'Regarder avec d\'autres personnes';
-	@override String get endSession => 'Terminer la session';
-	@override String get leaveSession => 'Quitter la session';
-	@override String get endSessionQuestion => 'Terminer la session ?';
-	@override String get leaveSessionQuestion => 'Quitter la session ?';
-	@override String get endSessionConfirm => 'Cela mettra fin à la session pour tous les participants.';
-	@override String get leaveSessionConfirm => 'Vous allez être déconnecté de la session.';
-	@override String get endSessionConfirmOverlay => 'Cela mettra fin à la session de visionnage pour tous les participants.';
-	@override String get leaveSessionConfirmOverlay => 'Vous serez déconnecté de la session de visionnage.';
-	@override String get end => 'Terminer';
 	@override String get leave => 'Quitter';
-	@override String get syncing => 'Synchronisation…';
-	@override String get joinWatchSession => 'Rejoindre la session de visionnage';
-	@override String get enterCodeHint => 'Entrez le code à 5 caractères';
-	@override String get pasteFromClipboard => 'Coller depuis le presse-papiers';
-	@override String get pleaseEnterCode => 'Veuillez saisir un code de session';
-	@override String get codeMustBe5Chars => 'Le code de session doit comporter 5 caractères';
-	@override String get joinInstructions => 'Saisissez le code de session de l\'hôte pour rejoindre.';
-	@override String get failedToCreate => 'Échec de la création de la session';
-	@override String get failedToJoin => 'Échec de la connexion à la session';
-	@override String get sessionCodeCopied => 'Code de session copié dans le presse-papiers';
-	@override String get relayUnreachable => 'Serveur relais inaccessible. Un blocage par le fournisseur d’accès peut empêcher le fonctionnement de Regarder ensemble.';
-	@override String get reconnectingToHost => 'Reconnexion à l\'hôte...';
-	@override String get currentPlayback => 'Lecture en cours';
-	@override String get joinCurrentPlayback => 'Rejoindre la lecture en cours';
-	@override String get joinCurrentPlaybackDescription => 'Reprendre le contenu que l’hôte regarde actuellement';
-	@override String get failedToOpenCurrentPlayback => 'Impossible d\'ouvrir la lecture en cours';
-	@override String participantJoined({required Object name}) => '${name} a rejoint';
-	@override String participantLeft({required Object name}) => '${name} est parti';
-	@override String participantPaused({required Object name}) => '${name} a mis en pause';
-	@override String participantResumed({required Object name}) => '${name} a repris';
-	@override String participantSeeked({required Object name}) => '${name} a changé la position de lecture';
-	@override String participantChangedSpeed({required Object name, required Object speed}) => '${name} a réglé la vitesse sur ${speed}';
-	@override String participantBuffering({required Object name}) => 'La lecture de ${name} est en cours de mise en mémoire tampon';
-	@override String participantNeedsUpdate({required Object name}) => '${name} utilise une ancienne version de l’app — synchronisation indisponible';
-	@override String resumingWithout({required Object name}) => 'Reprise sans ${name}';
-	@override String get waitingForParticipants => 'En attente du chargement des autres...';
-	@override String waitingForName({required Object name}) => 'En attente de ${name}...';
-	@override String get recentRooms => 'Salons récents';
-	@override String get renameRoom => 'Renommer le salon';
-	@override String get removeRoom => 'Supprimer';
-	@override String get guestSwitchUnavailable => 'Impossible de changer — serveur indisponible pour la synchronisation';
-	@override String get guestSwitchFailed => 'Impossible de changer — contenu introuvable sur ce serveur';
-	@override String get defaultDisplayName => 'Utilisateur';
-	@override late final _Translations$watchTogether$errors$fr errors = _Translations$watchTogether$errors$fr._(_root);
+	@override String get end => 'Terminer';
+	@override late final _Translations$watchTogether$notices$fr notices = _Translations$watchTogether$notices$fr._(_root);
 }
 
 // Path: downloads
@@ -2801,18 +2745,20 @@ class _Translations$music$discography$fr extends Translations$music$discography$
 	@override String get compilations => 'Compilations';
 }
 
-// Path: watchTogether.errors
-class _Translations$watchTogether$errors$fr extends Translations$watchTogether$errors$en {
-	_Translations$watchTogether$errors$fr._(TranslationsFr root) : this._root = root, super.internal(root);
+// Path: watchTogether.notices
+class _Translations$watchTogether$notices$fr extends Translations$watchTogether$notices$en {
+	_Translations$watchTogether$notices$fr._(TranslationsFr root) : this._root = root, super.internal(root);
 
 	final TranslationsFr _root; // ignore: unused_field
 
 	// Translations
-	@override String get timedOut => 'Le serveur relais n’a pas répondu à temps';
-	@override String get connectionLost => 'La connexion s’est fermée avant que la session ne soit prête';
-	@override String get invalidRelayResponse => 'Le serveur relais a renvoyé une réponse inattendue';
-	@override String get sessionEnded => 'L’hôte a mis fin à la session';
-	@override String get sessionUnavailable => 'Impossible de reprendre cette session. Rejoignez ou créez un salon pour continuer.';
+	@override String paused({required Object name}) => '${name} a mis en pause';
+	@override String changedSpeed({required Object name, required Object speed}) => '${name} a réglé la vitesse sur ${speed}';
+	@override String waitingFor({required Object name}) => 'En attente de ${name}...';
+	@override String hostChangedTo({required Object name}) => '${name} est maintenant l’hôte';
+	@override String get youAreNowHost => 'Vous êtes maintenant l’hôte';
+	@override String joined({required Object name}) => '${name} a rejoint';
+	@override String left({required Object name}) => '${name} est parti';
 }
 
 // Path: downloads.backgroundWarning
@@ -3263,7 +3209,6 @@ extension on TranslationsFr {
 			'settings.videoPlayerNavigation' => 'Navigation dans le lecteur vidéo',
 			'settings.videoPlayerNavigationDescription' => 'Utiliser les touches fléchées pour parcourir les commandes du lecteur vidéo',
 			'settings.watchTogetherRelay' => 'Relais pour Regarder ensemble',
-			'settings.watchTogetherRelayDescription' => 'Définir un relais personnalisé. Tous les participants doivent utiliser le même serveur.',
 			'settings.watchTogetherRelayHint' => 'https://mon-relais.exemple.fr',
 			'settings.watchTogetherRelayInvalid' => 'Saisissez une URL de base HTTP ou HTTPS valide pour le relais.',
 			'settings.crashReporting' => 'Rapports de plantage',
@@ -3551,9 +3496,9 @@ extension on TranslationsFr {
 			'fileInfo.streamIdentifier' => 'Identifiant de flux',
 			'fileInfo.streamIndex' => 'Index de flux',
 			'fileInfo.streamId' => 'ID de flux',
+			'fileInfo.language' => 'Langue',
 			_ => null,
 		} ?? switch (path) {
-			'fileInfo.language' => 'Langue',
 			'fileInfo.languageCode' => 'Code de langue',
 			'fileInfo.streamTitle' => 'Titre de la piste',
 			'fileInfo.channels' => 'Canaux',
@@ -4065,9 +4010,9 @@ extension on TranslationsFr {
 			'libraries.analyze' => 'Analyser',
 			'libraries.analyzeLibrary' => 'Analyser la bibliothèque',
 			'libraries.refreshMetadata' => 'Actualiser les métadonnées',
+			'libraries.emptyTrash' => 'Vider la corbeille',
 			_ => null,
 		} ?? switch (path) {
-			'libraries.emptyTrash' => 'Vider la corbeille',
 			'libraries.emptyingTrash' => ({required Object title}) => 'Vidage de la corbeille de « ${title} »…',
 			'libraries.trashEmptied' => ({required Object title}) => 'Corbeille vidée pour « ${title} »',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Échec du vidage de la corbeille : ${error}',
@@ -4511,85 +4456,30 @@ extension on TranslationsFr {
 			'music.discography.compilations' => 'Compilations',
 			'watchTogether.title' => 'Regarder ensemble',
 			'watchTogether.description' => 'Regarder du contenu en synchronisation avec vos proches',
-			'watchTogether.createSession' => 'Créer une session',
-			'watchTogether.creating' => 'Création...',
-			'watchTogether.joinSession' => 'Rejoindre la session',
-			'watchTogether.joining' => 'Connexion…',
-			'watchTogether.controlMode' => 'Mode de contrôle',
-			'watchTogether.controlModeQuestion' => 'Qui peut contrôler la lecture ?',
-			'watchTogether.hostOnly' => 'Hôte uniquement',
-			'watchTogether.anyone' => 'N\'importe qui',
-			'watchTogether.hostingSession' => 'Session hébergée',
-			'watchTogether.inSession' => 'Session en cours',
-			'watchTogether.sessionCode' => 'Code de session',
+			'watchTogether.recentRooms' => 'Salons récents',
+			'watchTogether.renameRoom' => 'Renommer le salon',
+			'watchTogether.removeRoom' => 'Supprimer',
 			'watchTogether.openSessionControls' => 'Ouvrir les commandes de la session Regarder ensemble',
-			'watchTogether.copySessionCode' => 'Copier le code de session',
+			'watchTogether.youAreHost' => 'Vous êtes l\'hôte',
 			'watchTogether.hostControlsPlayback' => 'L\'hôte contrôle la lecture',
 			'watchTogether.anyoneCanControl' => 'Tout le monde peut contrôler la lecture',
-			'watchTogether.hostControls' => 'Commandes de l\'hôte',
-			'watchTogether.anyoneControls' => 'Tout le monde contrôle',
+			'watchTogether.joinCurrentPlayback' => 'Rejoindre la lecture en cours',
+			'watchTogether.joinCurrentPlaybackDescription' => 'Reprendre le contenu que l’hôte regarde actuellement',
 			'watchTogether.participants' => 'Participants',
-			'watchTogether.host' => 'Hôte',
 			'watchTogether.hostBadge' => 'HÔTE',
-			'watchTogether.youAreHost' => 'Vous êtes l\'hôte',
 			'watchTogether.makeHost' => 'Nommer hôte',
 			'watchTogether.makeHostQuestion' => 'Transférer le rôle d’hôte ?',
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} contrôlera la lecture et dirigera la session pour tout le monde.',
 			'watchTogether.transfer' => 'Transférer',
-			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} est maintenant l’hôte',
-			'watchTogether.youAreNowHost' => 'Vous êtes maintenant l’hôte',
-			'watchTogether.hostTransferFailed' => ({required Object name}) => 'Impossible de nommer ${name} hôte',
-			'watchTogether.watchingWithOthers' => 'Regarder avec d\'autres personnes',
-			'watchTogether.endSession' => 'Terminer la session',
-			'watchTogether.leaveSession' => 'Quitter la session',
-			'watchTogether.endSessionQuestion' => 'Terminer la session ?',
-			'watchTogether.leaveSessionQuestion' => 'Quitter la session ?',
-			'watchTogether.endSessionConfirm' => 'Cela mettra fin à la session pour tous les participants.',
-			'watchTogether.leaveSessionConfirm' => 'Vous allez être déconnecté de la session.',
-			'watchTogether.endSessionConfirmOverlay' => 'Cela mettra fin à la session de visionnage pour tous les participants.',
-			'watchTogether.leaveSessionConfirmOverlay' => 'Vous serez déconnecté de la session de visionnage.',
-			'watchTogether.end' => 'Terminer',
 			'watchTogether.leave' => 'Quitter',
-			'watchTogether.syncing' => 'Synchronisation…',
-			'watchTogether.joinWatchSession' => 'Rejoindre la session de visionnage',
-			'watchTogether.enterCodeHint' => 'Entrez le code à 5 caractères',
-			'watchTogether.pasteFromClipboard' => 'Coller depuis le presse-papiers',
-			'watchTogether.pleaseEnterCode' => 'Veuillez saisir un code de session',
-			'watchTogether.codeMustBe5Chars' => 'Le code de session doit comporter 5 caractères',
-			'watchTogether.joinInstructions' => 'Saisissez le code de session de l\'hôte pour rejoindre.',
-			'watchTogether.failedToCreate' => 'Échec de la création de la session',
-			'watchTogether.failedToJoin' => 'Échec de la connexion à la session',
-			'watchTogether.sessionCodeCopied' => 'Code de session copié dans le presse-papiers',
-			'watchTogether.relayUnreachable' => 'Serveur relais inaccessible. Un blocage par le fournisseur d’accès peut empêcher le fonctionnement de Regarder ensemble.',
-			'watchTogether.reconnectingToHost' => 'Reconnexion à l\'hôte...',
-			'watchTogether.currentPlayback' => 'Lecture en cours',
-			'watchTogether.joinCurrentPlayback' => 'Rejoindre la lecture en cours',
-			'watchTogether.joinCurrentPlaybackDescription' => 'Reprendre le contenu que l’hôte regarde actuellement',
-			'watchTogether.failedToOpenCurrentPlayback' => 'Impossible d\'ouvrir la lecture en cours',
-			'watchTogether.participantJoined' => ({required Object name}) => '${name} a rejoint',
-			'watchTogether.participantLeft' => ({required Object name}) => '${name} est parti',
-			'watchTogether.participantPaused' => ({required Object name}) => '${name} a mis en pause',
-			'watchTogether.participantResumed' => ({required Object name}) => '${name} a repris',
-			'watchTogether.participantSeeked' => ({required Object name}) => '${name} a changé la position de lecture',
-			'watchTogether.participantChangedSpeed' => ({required Object name, required Object speed}) => '${name} a réglé la vitesse sur ${speed}',
-			'watchTogether.participantBuffering' => ({required Object name}) => 'La lecture de ${name} est en cours de mise en mémoire tampon',
-			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} utilise une ancienne version de l’app — synchronisation indisponible',
-			'watchTogether.resumingWithout' => ({required Object name}) => 'Reprise sans ${name}',
-			'watchTogether.waitingForParticipants' => 'En attente du chargement des autres...',
-			'watchTogether.waitingForName' => ({required Object name}) => 'En attente de ${name}...',
-			'watchTogether.recentRooms' => 'Salons récents',
-			'watchTogether.renameRoom' => 'Renommer le salon',
-			_ => null,
-		} ?? switch (path) {
-			'watchTogether.removeRoom' => 'Supprimer',
-			'watchTogether.guestSwitchUnavailable' => 'Impossible de changer — serveur indisponible pour la synchronisation',
-			'watchTogether.guestSwitchFailed' => 'Impossible de changer — contenu introuvable sur ce serveur',
-			'watchTogether.defaultDisplayName' => 'Utilisateur',
-			'watchTogether.errors.timedOut' => 'Le serveur relais n’a pas répondu à temps',
-			'watchTogether.errors.connectionLost' => 'La connexion s’est fermée avant que la session ne soit prête',
-			'watchTogether.errors.invalidRelayResponse' => 'Le serveur relais a renvoyé une réponse inattendue',
-			'watchTogether.errors.sessionEnded' => 'L’hôte a mis fin à la session',
-			'watchTogether.errors.sessionUnavailable' => 'Impossible de reprendre cette session. Rejoignez ou créez un salon pour continuer.',
+			'watchTogether.end' => 'Terminer',
+			'watchTogether.notices.paused' => ({required Object name}) => '${name} a mis en pause',
+			'watchTogether.notices.changedSpeed' => ({required Object name, required Object speed}) => '${name} a réglé la vitesse sur ${speed}',
+			'watchTogether.notices.waitingFor' => ({required Object name}) => 'En attente de ${name}...',
+			'watchTogether.notices.hostChangedTo' => ({required Object name}) => '${name} est maintenant l’hôte',
+			'watchTogether.notices.youAreNowHost' => 'Vous êtes maintenant l’hôte',
+			'watchTogether.notices.joined' => ({required Object name}) => '${name} a rejoint',
+			'watchTogether.notices.left' => ({required Object name}) => '${name} est parti',
 			'downloads.title' => 'Téléchargements',
 			'downloads.manage' => 'Gérer',
 			'downloads.tvShows' => 'Séries TV',
@@ -4635,6 +4525,8 @@ extension on TranslationsFr {
 			'downloads.includeSpecials' => 'Inclure les spéciaux',
 			'downloads.howManyEpisodes' => 'Combien d\'épisodes ?',
 			'downloads.invalidEpisodeCount' => 'Saisissez un nombre d\'épisodes valide.',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.keepSynced' => 'Garder synchronisé',
 			'downloads.downloadOnce' => 'Télécharger une fois',
 			'downloads.keepNUnwatched' => ({required Object count}) => 'Garder ${count} non vus',
@@ -5093,8 +4985,6 @@ extension on TranslationsFr {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Connectez-vous à votre serveur ${product}. Sera associé à ${name}.',
 			'addServer.borrowFromAnotherProfile' => 'Emprunter à un autre profil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Réutiliser la connexion d\'un autre profil. Les profils protégés par PIN exigent un PIN.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.invalidCredentials' => 'Nom d’utilisateur ou mot de passe incorrect',
 			'addServer.authResponseNotJson' => 'La réponse d’authentification n’était pas au format JSON valide',
 			'addServer.authResponseIncomplete' => 'La réponse de connexion du serveur était incomplète',

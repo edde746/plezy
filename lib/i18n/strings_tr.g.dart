@@ -345,7 +345,6 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get videoPlayerNavigation => 'Video Oynatıcı Gezinmesi';
 	@override String get videoPlayerNavigationDescription => 'Video oynatıcı kontrollerinde gezinmek için yön tuşlarını kullanın';
 	@override String get watchTogetherRelay => 'Birlikte İzle Aktarıcısı (Relay)';
-	@override String get watchTogetherRelayDescription => 'Özel bir aktarıcı ayarlayın. Herkes aynı sunucuyu kullanmalıdır.';
 	@override String get watchTogetherRelayHint => 'https://ornek-aktarici.com';
 	@override String get watchTogetherRelayInvalid => 'Geçerli bir HTTP veya HTTPS aktarıcı adresi girin.';
 	@override String get crashReporting => 'Çökme Bildirimi';
@@ -1692,79 +1691,24 @@ class _Translations$watchTogether$tr extends Translations$watchTogether$en {
 	// Translations
 	@override String get title => 'Birlikte İzle';
 	@override String get description => 'Arkadaşlarınızla ve ailenizle eş zamanlı içerik izleyin';
-	@override String get createSession => 'Oturum Oluştur';
-	@override String get creating => 'Oluşturuluyor...';
-	@override String get joinSession => 'Oturuma Katıl';
-	@override String get joining => 'Katılınıyor...';
-	@override String get controlMode => 'Kontrol Modu';
-	@override String get controlModeQuestion => 'Oynatmayı kimler kontrol edebilir?';
-	@override String get hostOnly => 'Yalnızca Kurucu';
-	@override String get anyone => 'Herkes';
-	@override String get hostingSession => 'Oturum Sunuluyor';
-	@override String get inSession => 'Oturumda';
-	@override String get sessionCode => 'Oturum Kodu';
+	@override String get recentRooms => 'Son Odalar';
+	@override String get renameRoom => 'Odayı Yeniden Adlandır';
+	@override String get removeRoom => 'Kaldır';
 	@override String get openSessionControls => 'Birlikte İzle oturum kontrollerini aç';
-	@override String get copySessionCode => 'Oturum kodunu kopyala';
+	@override String get youAreHost => 'Kurucu sizsiniz';
 	@override String get hostControlsPlayback => 'Oynatmayı kurucu kontrol eder';
 	@override String get anyoneCanControl => 'Oynatmayı herkes kontrol edebilir';
-	@override String get hostControls => 'Kurucu kontrol eder';
-	@override String get anyoneControls => 'Herkes kontrol eder';
+	@override String get joinCurrentPlayback => 'Mevcut Oynatmaya Katıl';
+	@override String get joinCurrentPlaybackDescription => 'Kurucunun şu anda izlediği şeye doğrudan atlayın';
 	@override String get participants => 'Katılımcılar';
-	@override String get host => 'Kurucu';
 	@override String get hostBadge => 'KURUCU';
-	@override String get youAreHost => 'Kurucu sizsiniz';
 	@override String get makeHost => 'Kurucu Yap';
 	@override String get makeHostQuestion => 'Kuruculuk Aktarılsın mı?';
 	@override String makeHostConfirm({required Object name}) => '${name} oynatmayı kontrol edecek ve oturumu herkes için yönetecek.';
 	@override String get transfer => 'Aktar';
-	@override String hostChangedTo({required Object name}) => '${name} artık kurucu';
-	@override String get youAreNowHost => 'Artık kurucu sizsiniz';
-	@override String hostTransferFailed({required Object name}) => '${name} kurucu yapılamadı';
-	@override String get watchingWithOthers => 'Başkalarıyla birlikte izleniyor';
-	@override String get endSession => 'Oturumu Bitir';
-	@override String get leaveSession => 'Oturumdan Ayrıl';
-	@override String get endSessionQuestion => 'Oturum Bitirilsin mi?';
-	@override String get leaveSessionQuestion => 'Oturumdan Ayrılınsın mı?';
-	@override String get endSessionConfirm => 'Bu işlem tüm katılımcılar için oturumu bitirecektir.';
-	@override String get leaveSessionConfirm => 'Oturumdan çıkarılacaksınız.';
-	@override String get endSessionConfirmOverlay => 'Bu işlem tüm katılımcılar için izleme oturumunu bitirecektir.';
-	@override String get leaveSessionConfirmOverlay => 'İzleme oturumuyla bağlantınız kesilecek.';
-	@override String get end => 'Bitir';
 	@override String get leave => 'Ayrıl';
-	@override String get syncing => 'Eşitleniyor...';
-	@override String get joinWatchSession => 'İzleme Oturumuna Katıl';
-	@override String get enterCodeHint => '5 karakterlik kodu girin';
-	@override String get pasteFromClipboard => 'Panodan yapıştır';
-	@override String get pleaseEnterCode => 'Lütfen bir oturum kodu girin';
-	@override String get codeMustBe5Chars => 'Oturum kodu 5 karakter olmalıdır';
-	@override String get joinInstructions => 'Katılmak için kurucunun oturum kodunu girin.';
-	@override String get failedToCreate => 'Oturum oluşturulamadı';
-	@override String get failedToJoin => 'Oturuma katılınamadı';
-	@override String get sessionCodeCopied => 'Oturum kodu panoya kopyalandı';
-	@override String get relayUnreachable => 'Aktarıcı sunucusuna ulaşılamıyor. İSS engellemesi Birlikte İzle\'yi önleyebilir.';
-	@override String get reconnectingToHost => 'Kurucuya yeniden bağlanılıyor...';
-	@override String get currentPlayback => 'Mevcut Oynatma';
-	@override String get joinCurrentPlayback => 'Mevcut Oynatmaya Katıl';
-	@override String get joinCurrentPlaybackDescription => 'Kurucunun şu anda izlediği şeye doğrudan atlayın';
-	@override String get failedToOpenCurrentPlayback => 'Mevcut oynatma açılamadı';
-	@override String participantJoined({required Object name}) => '${name} katıldı';
-	@override String participantLeft({required Object name}) => '${name} ayrıldı';
-	@override String participantPaused({required Object name}) => '${name} duraklattı';
-	@override String participantResumed({required Object name}) => '${name} devam ettirdi';
-	@override String participantSeeked({required Object name}) => '${name} oynatma konumunu değiştirdi';
-	@override String participantChangedSpeed({required Object name, required Object speed}) => '${name} hızı ${speed} olarak ayarladı';
-	@override String participantBuffering({required Object name}) => '${name} arabelleğe alıyor';
-	@override String participantNeedsUpdate({required Object name}) => '${name} eski bir uygulama sürümünde — eşitleme kullanılamıyor';
-	@override String resumingWithout({required Object name}) => '${name} olmadan devam ediliyor';
-	@override String get waitingForParticipants => 'Diğerlerinin yüklemesi bekleniyor...';
-	@override String waitingForName({required Object name}) => '${name} bekleniyor...';
-	@override String get recentRooms => 'Son Odalar';
-	@override String get renameRoom => 'Odayı Yeniden Adlandır';
-	@override String get removeRoom => 'Kaldır';
-	@override String get guestSwitchUnavailable => 'Geçiş yapılamadı — eşitleme için sunucu mevcut değil';
-	@override String get guestSwitchFailed => 'Geçiş yapılamadı — içerik bu sunucuda bulunamadı';
-	@override String get defaultDisplayName => 'Kullanıcı';
-	@override late final _Translations$watchTogether$errors$tr errors = _Translations$watchTogether$errors$tr._(_root);
+	@override String get end => 'Bitir';
+	@override late final _Translations$watchTogether$notices$tr notices = _Translations$watchTogether$notices$tr._(_root);
 }
 
 // Path: downloads
@@ -2801,18 +2745,20 @@ class _Translations$music$discography$tr extends Translations$music$discography$
 	@override String get compilations => 'Derlemeler';
 }
 
-// Path: watchTogether.errors
-class _Translations$watchTogether$errors$tr extends Translations$watchTogether$errors$en {
-	_Translations$watchTogether$errors$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+// Path: watchTogether.notices
+class _Translations$watchTogether$notices$tr extends Translations$watchTogether$notices$en {
+	_Translations$watchTogether$notices$tr._(TranslationsTr root) : this._root = root, super.internal(root);
 
 	final TranslationsTr _root; // ignore: unused_field
 
 	// Translations
-	@override String get timedOut => 'Aktarıcı sunucusu zamanında yanıt vermedi';
-	@override String get connectionLost => 'Oturum hazır olmadan bağlantı kapandı';
-	@override String get invalidRelayResponse => 'Aktarıcı sunucusu beklenmeyen bir yanıt gönderdi';
-	@override String get sessionEnded => 'Kurucu oturumu sonlandırdı';
-	@override String get sessionUnavailable => 'Bu oturum sürdürülemiyor. Devam etmek için bir odaya katılın veya oda oluşturun.';
+	@override String paused({required Object name}) => '${name} duraklattı';
+	@override String changedSpeed({required Object name, required Object speed}) => '${name} hızı ${speed} olarak ayarladı';
+	@override String waitingFor({required Object name}) => '${name} bekleniyor...';
+	@override String hostChangedTo({required Object name}) => '${name} artık kurucu';
+	@override String get youAreNowHost => 'Artık kurucu sizsiniz';
+	@override String joined({required Object name}) => '${name} katıldı';
+	@override String left({required Object name}) => '${name} ayrıldı';
 }
 
 // Path: downloads.backgroundWarning
@@ -3263,7 +3209,6 @@ extension on TranslationsTr {
 			'settings.videoPlayerNavigation' => 'Video Oynatıcı Gezinmesi',
 			'settings.videoPlayerNavigationDescription' => 'Video oynatıcı kontrollerinde gezinmek için yön tuşlarını kullanın',
 			'settings.watchTogetherRelay' => 'Birlikte İzle Aktarıcısı (Relay)',
-			'settings.watchTogetherRelayDescription' => 'Özel bir aktarıcı ayarlayın. Herkes aynı sunucuyu kullanmalıdır.',
 			'settings.watchTogetherRelayHint' => 'https://ornek-aktarici.com',
 			'settings.watchTogetherRelayInvalid' => 'Geçerli bir HTTP veya HTTPS aktarıcı adresi girin.',
 			'settings.crashReporting' => 'Çökme Bildirimi',
@@ -3551,9 +3496,9 @@ extension on TranslationsTr {
 			'fileInfo.streamIdentifier' => 'Akış Tanımlayıcısı',
 			'fileInfo.streamIndex' => 'Akış Dizini',
 			'fileInfo.streamId' => 'Akış Kimliği',
+			'fileInfo.language' => 'Dil',
 			_ => null,
 		} ?? switch (path) {
-			'fileInfo.language' => 'Dil',
 			'fileInfo.languageCode' => 'Dil Kodu',
 			'fileInfo.streamTitle' => 'Parça Başlığı',
 			'fileInfo.channels' => 'Kanallar',
@@ -4065,9 +4010,9 @@ extension on TranslationsTr {
 			'libraries.analyze' => 'Analiz Et',
 			'libraries.analyzeLibrary' => 'Kitaplığı Analiz Et',
 			'libraries.refreshMetadata' => 'Meta Verileri Yenile',
+			'libraries.emptyTrash' => 'Çöpü Boşalt',
 			_ => null,
 		} ?? switch (path) {
-			'libraries.emptyTrash' => 'Çöpü Boşalt',
 			'libraries.emptyingTrash' => ({required Object title}) => '"${title}" için çöp boşaltılıyor...',
 			'libraries.trashEmptied' => ({required Object title}) => '"${title}" için çöp boşaltıldı',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Çöp boşaltılamadı: ${error}',
@@ -4511,85 +4456,30 @@ extension on TranslationsTr {
 			'music.discography.compilations' => 'Derlemeler',
 			'watchTogether.title' => 'Birlikte İzle',
 			'watchTogether.description' => 'Arkadaşlarınızla ve ailenizle eş zamanlı içerik izleyin',
-			'watchTogether.createSession' => 'Oturum Oluştur',
-			'watchTogether.creating' => 'Oluşturuluyor...',
-			'watchTogether.joinSession' => 'Oturuma Katıl',
-			'watchTogether.joining' => 'Katılınıyor...',
-			'watchTogether.controlMode' => 'Kontrol Modu',
-			'watchTogether.controlModeQuestion' => 'Oynatmayı kimler kontrol edebilir?',
-			'watchTogether.hostOnly' => 'Yalnızca Kurucu',
-			'watchTogether.anyone' => 'Herkes',
-			'watchTogether.hostingSession' => 'Oturum Sunuluyor',
-			'watchTogether.inSession' => 'Oturumda',
-			'watchTogether.sessionCode' => 'Oturum Kodu',
+			'watchTogether.recentRooms' => 'Son Odalar',
+			'watchTogether.renameRoom' => 'Odayı Yeniden Adlandır',
+			'watchTogether.removeRoom' => 'Kaldır',
 			'watchTogether.openSessionControls' => 'Birlikte İzle oturum kontrollerini aç',
-			'watchTogether.copySessionCode' => 'Oturum kodunu kopyala',
+			'watchTogether.youAreHost' => 'Kurucu sizsiniz',
 			'watchTogether.hostControlsPlayback' => 'Oynatmayı kurucu kontrol eder',
 			'watchTogether.anyoneCanControl' => 'Oynatmayı herkes kontrol edebilir',
-			'watchTogether.hostControls' => 'Kurucu kontrol eder',
-			'watchTogether.anyoneControls' => 'Herkes kontrol eder',
+			'watchTogether.joinCurrentPlayback' => 'Mevcut Oynatmaya Katıl',
+			'watchTogether.joinCurrentPlaybackDescription' => 'Kurucunun şu anda izlediği şeye doğrudan atlayın',
 			'watchTogether.participants' => 'Katılımcılar',
-			'watchTogether.host' => 'Kurucu',
 			'watchTogether.hostBadge' => 'KURUCU',
-			'watchTogether.youAreHost' => 'Kurucu sizsiniz',
 			'watchTogether.makeHost' => 'Kurucu Yap',
 			'watchTogether.makeHostQuestion' => 'Kuruculuk Aktarılsın mı?',
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} oynatmayı kontrol edecek ve oturumu herkes için yönetecek.',
 			'watchTogether.transfer' => 'Aktar',
-			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} artık kurucu',
-			'watchTogether.youAreNowHost' => 'Artık kurucu sizsiniz',
-			'watchTogether.hostTransferFailed' => ({required Object name}) => '${name} kurucu yapılamadı',
-			'watchTogether.watchingWithOthers' => 'Başkalarıyla birlikte izleniyor',
-			'watchTogether.endSession' => 'Oturumu Bitir',
-			'watchTogether.leaveSession' => 'Oturumdan Ayrıl',
-			'watchTogether.endSessionQuestion' => 'Oturum Bitirilsin mi?',
-			'watchTogether.leaveSessionQuestion' => 'Oturumdan Ayrılınsın mı?',
-			'watchTogether.endSessionConfirm' => 'Bu işlem tüm katılımcılar için oturumu bitirecektir.',
-			'watchTogether.leaveSessionConfirm' => 'Oturumdan çıkarılacaksınız.',
-			'watchTogether.endSessionConfirmOverlay' => 'Bu işlem tüm katılımcılar için izleme oturumunu bitirecektir.',
-			'watchTogether.leaveSessionConfirmOverlay' => 'İzleme oturumuyla bağlantınız kesilecek.',
-			'watchTogether.end' => 'Bitir',
 			'watchTogether.leave' => 'Ayrıl',
-			'watchTogether.syncing' => 'Eşitleniyor...',
-			'watchTogether.joinWatchSession' => 'İzleme Oturumuna Katıl',
-			'watchTogether.enterCodeHint' => '5 karakterlik kodu girin',
-			'watchTogether.pasteFromClipboard' => 'Panodan yapıştır',
-			'watchTogether.pleaseEnterCode' => 'Lütfen bir oturum kodu girin',
-			'watchTogether.codeMustBe5Chars' => 'Oturum kodu 5 karakter olmalıdır',
-			'watchTogether.joinInstructions' => 'Katılmak için kurucunun oturum kodunu girin.',
-			'watchTogether.failedToCreate' => 'Oturum oluşturulamadı',
-			'watchTogether.failedToJoin' => 'Oturuma katılınamadı',
-			'watchTogether.sessionCodeCopied' => 'Oturum kodu panoya kopyalandı',
-			'watchTogether.relayUnreachable' => 'Aktarıcı sunucusuna ulaşılamıyor. İSS engellemesi Birlikte İzle\'yi önleyebilir.',
-			'watchTogether.reconnectingToHost' => 'Kurucuya yeniden bağlanılıyor...',
-			'watchTogether.currentPlayback' => 'Mevcut Oynatma',
-			'watchTogether.joinCurrentPlayback' => 'Mevcut Oynatmaya Katıl',
-			'watchTogether.joinCurrentPlaybackDescription' => 'Kurucunun şu anda izlediği şeye doğrudan atlayın',
-			'watchTogether.failedToOpenCurrentPlayback' => 'Mevcut oynatma açılamadı',
-			'watchTogether.participantJoined' => ({required Object name}) => '${name} katıldı',
-			'watchTogether.participantLeft' => ({required Object name}) => '${name} ayrıldı',
-			'watchTogether.participantPaused' => ({required Object name}) => '${name} duraklattı',
-			'watchTogether.participantResumed' => ({required Object name}) => '${name} devam ettirdi',
-			'watchTogether.participantSeeked' => ({required Object name}) => '${name} oynatma konumunu değiştirdi',
-			'watchTogether.participantChangedSpeed' => ({required Object name, required Object speed}) => '${name} hızı ${speed} olarak ayarladı',
-			'watchTogether.participantBuffering' => ({required Object name}) => '${name} arabelleğe alıyor',
-			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} eski bir uygulama sürümünde — eşitleme kullanılamıyor',
-			'watchTogether.resumingWithout' => ({required Object name}) => '${name} olmadan devam ediliyor',
-			'watchTogether.waitingForParticipants' => 'Diğerlerinin yüklemesi bekleniyor...',
-			'watchTogether.waitingForName' => ({required Object name}) => '${name} bekleniyor...',
-			'watchTogether.recentRooms' => 'Son Odalar',
-			'watchTogether.renameRoom' => 'Odayı Yeniden Adlandır',
-			_ => null,
-		} ?? switch (path) {
-			'watchTogether.removeRoom' => 'Kaldır',
-			'watchTogether.guestSwitchUnavailable' => 'Geçiş yapılamadı — eşitleme için sunucu mevcut değil',
-			'watchTogether.guestSwitchFailed' => 'Geçiş yapılamadı — içerik bu sunucuda bulunamadı',
-			'watchTogether.defaultDisplayName' => 'Kullanıcı',
-			'watchTogether.errors.timedOut' => 'Aktarıcı sunucusu zamanında yanıt vermedi',
-			'watchTogether.errors.connectionLost' => 'Oturum hazır olmadan bağlantı kapandı',
-			'watchTogether.errors.invalidRelayResponse' => 'Aktarıcı sunucusu beklenmeyen bir yanıt gönderdi',
-			'watchTogether.errors.sessionEnded' => 'Kurucu oturumu sonlandırdı',
-			'watchTogether.errors.sessionUnavailable' => 'Bu oturum sürdürülemiyor. Devam etmek için bir odaya katılın veya oda oluşturun.',
+			'watchTogether.end' => 'Bitir',
+			'watchTogether.notices.paused' => ({required Object name}) => '${name} duraklattı',
+			'watchTogether.notices.changedSpeed' => ({required Object name, required Object speed}) => '${name} hızı ${speed} olarak ayarladı',
+			'watchTogether.notices.waitingFor' => ({required Object name}) => '${name} bekleniyor...',
+			'watchTogether.notices.hostChangedTo' => ({required Object name}) => '${name} artık kurucu',
+			'watchTogether.notices.youAreNowHost' => 'Artık kurucu sizsiniz',
+			'watchTogether.notices.joined' => ({required Object name}) => '${name} katıldı',
+			'watchTogether.notices.left' => ({required Object name}) => '${name} ayrıldı',
 			'downloads.title' => 'İndirmeler',
 			'downloads.manage' => 'Yönet',
 			'downloads.tvShows' => 'TV Dizileri',
@@ -4635,6 +4525,8 @@ extension on TranslationsTr {
 			'downloads.includeSpecials' => 'Özel Bölümleri Dahil Et',
 			'downloads.howManyEpisodes' => 'Kaç bölüm?',
 			'downloads.invalidEpisodeCount' => 'Geçerli bir bölüm sayısı girin.',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.keepSynced' => 'Eşitlenmiş tut',
 			'downloads.downloadOnce' => 'Bir kez indir',
 			'downloads.keepNUnwatched' => ({required Object count}) => '${count} izlenmeyen bölümü tut',
@@ -5093,8 +4985,6 @@ extension on TranslationsTr {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} sunucunuza giriş yapın. ${name} profiline bağlanır.',
 			'addServer.borrowFromAnotherProfile' => 'Başka bir profilden ödünç al',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Başka bir profilin bağlantısını yeniden kullanın. PIN korumalı profiller bir PIN gerektirir.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.invalidCredentials' => 'Geçersiz kullanıcı adı veya şifre',
 			'addServer.authResponseNotJson' => 'Kimlik doğrulama yanıtı geçerli bir JSON değildi',
 			'addServer.authResponseIncomplete' => 'Sunucudan gelen oturum açma yanıtı eksikti',

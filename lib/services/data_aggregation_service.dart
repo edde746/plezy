@@ -9,6 +9,7 @@ import '../media/media_library.dart';
 import '../media/media_person.dart';
 import '../media/media_server_client.dart';
 import '../media/search_hit.dart';
+import '../media/title_copies.dart';
 import '../exceptions/media_server_exceptions.dart';
 import '../utils/app_logger.dart';
 import '../utils/external_ids.dart';
@@ -958,6 +959,33 @@ class DataAggregationService {
       cancelledServerIds: fetched.cancelledServerIds,
       failedServerIds: fetched.failedServerIds,
       unqueriedServerIds: unqueriedServerIds,
+    );
+  }
+
+  /// Every copy of [query] (a movie, or an episode by its show and numbers) on
+  /// the active profile's online servers, each with its versions. One
+  /// composed lookup per server ([TitleCopiesLookup.findTitleCopies]) under
+  /// one deadline; a server that fails, times out or is cancelled contributes
+  /// nothing and lands in its accounting set, so the others still answer.
+  Future<LibraryLookupResult> findTitleCopiesAcrossServers(TitleQuery query, {AbortController? abort}) async {
+    abort?.throwIfAborted();
+    final clients = _serverManager.visibleOnlineClients;
+    final fetched = await _fanOut<MediaItem>(
+      clients,
+      failureMessage: (serverId) => 'Title copy lookup failed on $serverId',
+      fetch: (serverId, client) => _withinServerDeadline(
+        MediaServerTimeouts.libraryLookup,
+        operation: 'Title copy lookup on $serverId',
+        parent: abort,
+        run: (legAbort) => client.findTitleCopies(query, abort: legAbort),
+      ),
+    );
+    return (
+      items: mergeLibraryCopies(const [], fetched.items),
+      succeededServerIds: fetched.succeededServerIds,
+      cancelledServerIds: fetched.cancelledServerIds,
+      failedServerIds: fetched.failedServerIds,
+      unqueriedServerIds: fetched.unqueriedServerIds,
     );
   }
 
