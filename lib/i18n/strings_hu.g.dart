@@ -345,7 +345,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get videoPlayerNavigation => 'Videólejátszó-navigáció';
 	@override String get videoPlayerNavigationDescription => 'A nyílbillentyűk használata a videólejátszó vezérlői közötti navigáláshoz';
 	@override String get watchTogetherRelay => 'Watch Together-relé';
-	@override String get watchTogetherRelayDescription => 'Egyéni relé beállítása. Mindenkinek ugyanazt a szervert kell használnia.';
 	@override String get watchTogetherRelayHint => 'https://my-relay.example.com';
 	@override String get watchTogetherRelayInvalid => 'Adj meg egy érvényes HTTP- vagy HTTPS-alapú relészerver-URL-t.';
 	@override String get crashReporting => 'Összeomlási jelentések';
@@ -1692,79 +1691,24 @@ class _Translations$watchTogether$hu extends Translations$watchTogether$en {
 	// Translations
 	@override String get title => 'Watch Together (Közös nézés)';
 	@override String get description => 'Nézz tartalmat szinkronban barátaiddal és családoddal';
-	@override String get createSession => 'Munkamenet létrehozása';
-	@override String get creating => 'Létrehozás...';
-	@override String get joinSession => 'Csatlakozás munkamenethez';
-	@override String get joining => 'Csatlakozás...';
-	@override String get controlMode => 'Vezérlési mód';
-	@override String get controlModeQuestion => 'Ki vezérelheti a lejátszást?';
-	@override String get hostOnly => 'Csak a házigazda';
-	@override String get anyone => 'Bárki';
-	@override String get hostingSession => 'Munkamenet indítása';
-	@override String get inSession => 'Munkamenetben';
-	@override String get sessionCode => 'Munkamenet kódja';
+	@override String get recentRooms => 'Legutóbbi szobák';
+	@override String get renameRoom => 'Szoba átnevezése';
+	@override String get removeRoom => 'Eltávolítás';
 	@override String get openSessionControls => 'Watch Together munkamenet-vezérlők megnyitása';
-	@override String get copySessionCode => 'Munkamenet-kód másolása';
+	@override String get youAreHost => 'Te vagy a házigazda';
 	@override String get hostControlsPlayback => 'A házigazda vezérli a lejátszást';
 	@override String get anyoneCanControl => 'Bárki vezérelheti a lejátszást';
-	@override String get hostControls => 'A házigazda vezérel';
-	@override String get anyoneControls => 'Bárki vezérelheti';
+	@override String get joinCurrentPlayback => 'Csatlakozás a jelenlegi lejátszáshoz';
+	@override String get joinCurrentPlaybackDescription => 'Visszatérés ahhoz, amit a házigazda éppen néz';
 	@override String get participants => 'Résztvevők';
-	@override String get host => 'Házigazda';
 	@override String get hostBadge => 'HÁZIGAZDA';
-	@override String get youAreHost => 'Te vagy a házigazda';
 	@override String get makeHost => 'Házigazdává tétel';
 	@override String get makeHostQuestion => 'Átadod a házigazdaságot?';
 	@override String makeHostConfirm({required Object name}) => '${name} vezérli majd a lejátszást és a munkamenetet mindenki számára.';
 	@override String get transfer => 'Átadás';
-	@override String hostChangedTo({required Object name}) => '${name} lett a házigazda';
-	@override String get youAreNowHost => 'Mostantól te vagy a házigazda';
-	@override String hostTransferFailed({required Object name}) => '${name} nem tehető házigazdává';
-	@override String get watchingWithOthers => 'Nézés másokkal';
-	@override String get endSession => 'Munkamenet befejezése';
-	@override String get leaveSession => 'Munkamenet elhagyása';
-	@override String get endSessionQuestion => 'Befejezed a munkamenetet?';
-	@override String get leaveSessionQuestion => 'Elhagyod a munkamenetet?';
-	@override String get endSessionConfirm => 'Ezzel minden résztvevő számára véget ér a munkamenet.';
-	@override String get leaveSessionConfirm => 'Eltávolításra kerülsz a munkamenetből.';
-	@override String get endSessionConfirmOverlay => 'Ezzel minden résztvevő számára véget ér a közös nézés.';
-	@override String get leaveSessionConfirmOverlay => 'Kilépsz a közös nézésből.';
-	@override String get end => 'Befejezés';
 	@override String get leave => 'Kilépés';
-	@override String get syncing => 'Szinkronizálás...';
-	@override String get joinWatchSession => 'Csatlakozás közös nézéshez';
-	@override String get enterCodeHint => 'Add meg az 5 karakteres kódot';
-	@override String get pasteFromClipboard => 'Beillesztés a vágólapról';
-	@override String get pleaseEnterCode => 'Adj meg egy munkamenetkódot';
-	@override String get codeMustBe5Chars => 'A munkamenetkódnak 5 karakterből kell állnia';
-	@override String get joinInstructions => 'Add meg a házigazda kódját a csatlakozáshoz.';
-	@override String get failedToCreate => 'Nem sikerült a munkamenet létrehozása';
-	@override String get failedToJoin => 'Nem sikerült csatlakozni a munkamenethez';
-	@override String get sessionCodeCopied => 'A munkamenetkód a vágólapra másolva';
-	@override String get relayUnreachable => 'A relészerver nem érhető el. Az internetszolgáltató blokkolása megakadályozhatja a közös nézést.';
-	@override String get reconnectingToHost => 'Újracsatlakozás a házigazdához...';
-	@override String get currentPlayback => 'Jelenlegi lejátszás';
-	@override String get joinCurrentPlayback => 'Csatlakozás a jelenlegi lejátszáshoz';
-	@override String get joinCurrentPlaybackDescription => 'Visszatérés ahhoz, amit a házigazda éppen néz';
-	@override String get failedToOpenCurrentPlayback => 'Nem sikerült megnyitni a jelenlegi lejátszást';
-	@override String participantJoined({required Object name}) => '${name} csatlakozott';
-	@override String participantLeft({required Object name}) => '${name} kilépett';
-	@override String participantPaused({required Object name}) => '${name} szüneteltette a lejátszást';
-	@override String participantResumed({required Object name}) => '${name} folytatta a lejátszást';
-	@override String participantSeeked({required Object name}) => '${name} módosította a lejátszási pozíciót';
-	@override String participantChangedSpeed({required Object name, required Object speed}) => '${name} a sebességet ${speed} értékre állította';
-	@override String participantBuffering({required Object name}) => '${name} pufferel';
-	@override String participantNeedsUpdate({required Object name}) => '${name} régebbi alkalmazásverziót használ — a szinkronizálás nem érhető el';
-	@override String resumingWithout({required Object name}) => 'Folytatás a következő nélkül: ${name}';
-	@override String get waitingForParticipants => 'Várakozás, amíg a többieknél betöltődik a tartalom...';
-	@override String waitingForName({required Object name}) => 'Várakozás: ${name}...';
-	@override String get recentRooms => 'Legutóbbi szobák';
-	@override String get renameRoom => 'Szoba átnevezése';
-	@override String get removeRoom => 'Eltávolítás';
-	@override String get guestSwitchUnavailable => 'Nem sikerült a váltás — a szerver nem érhető el szinkronizáláshoz';
-	@override String get guestSwitchFailed => 'Nem sikerült a váltás — a tartalom nem található ezen a szerveren';
-	@override String get defaultDisplayName => 'Felhasználó';
-	@override late final _Translations$watchTogether$errors$hu errors = _Translations$watchTogether$errors$hu._(_root);
+	@override String get end => 'Befejezés';
+	@override late final _Translations$watchTogether$notices$hu notices = _Translations$watchTogether$notices$hu._(_root);
 }
 
 // Path: downloads
@@ -2801,18 +2745,20 @@ class _Translations$music$discography$hu extends Translations$music$discography$
 	@override String get compilations => 'Válogatások';
 }
 
-// Path: watchTogether.errors
-class _Translations$watchTogether$errors$hu extends Translations$watchTogether$errors$en {
-	_Translations$watchTogether$errors$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+// Path: watchTogether.notices
+class _Translations$watchTogether$notices$hu extends Translations$watchTogether$notices$en {
+	_Translations$watchTogether$notices$hu._(TranslationsHu root) : this._root = root, super.internal(root);
 
 	final TranslationsHu _root; // ignore: unused_field
 
 	// Translations
-	@override String get timedOut => 'A relészerver nem válaszolt időben';
-	@override String get connectionLost => 'A kapcsolat lezárult, mielőtt a munkamenet elkészült volna';
-	@override String get invalidRelayResponse => 'A relészerver váratlan választ küldött';
-	@override String get sessionEnded => 'A házigazda befejezte a munkamenetet';
-	@override String get sessionUnavailable => 'Ez a munkamenet nem folytatható. A folytatáshoz csatlakozz egy szobához vagy hozz létre egyet.';
+	@override String paused({required Object name}) => '${name} szüneteltette a lejátszást';
+	@override String changedSpeed({required Object name, required Object speed}) => '${name} a sebességet ${speed} értékre állította';
+	@override String waitingFor({required Object name}) => 'Várakozás: ${name}...';
+	@override String hostChangedTo({required Object name}) => '${name} lett a házigazda';
+	@override String get youAreNowHost => 'Mostantól te vagy a házigazda';
+	@override String joined({required Object name}) => '${name} csatlakozott';
+	@override String left({required Object name}) => '${name} kilépett';
 }
 
 // Path: downloads.backgroundWarning
@@ -3263,7 +3209,6 @@ extension on TranslationsHu {
 			'settings.videoPlayerNavigation' => 'Videólejátszó-navigáció',
 			'settings.videoPlayerNavigationDescription' => 'A nyílbillentyűk használata a videólejátszó vezérlői közötti navigáláshoz',
 			'settings.watchTogetherRelay' => 'Watch Together-relé',
-			'settings.watchTogetherRelayDescription' => 'Egyéni relé beállítása. Mindenkinek ugyanazt a szervert kell használnia.',
 			'settings.watchTogetherRelayHint' => 'https://my-relay.example.com',
 			'settings.watchTogetherRelayInvalid' => 'Adj meg egy érvényes HTTP- vagy HTTPS-alapú relészerver-URL-t.',
 			'settings.crashReporting' => 'Összeomlási jelentések',
@@ -3551,9 +3496,9 @@ extension on TranslationsHu {
 			'fileInfo.streamIdentifier' => 'Adatfolyam-azonosító',
 			'fileInfo.streamIndex' => 'Adatfolyam-index',
 			'fileInfo.streamId' => 'Adatfolyam azonosítója',
+			'fileInfo.language' => 'Nyelv',
 			_ => null,
 		} ?? switch (path) {
-			'fileInfo.language' => 'Nyelv',
 			'fileInfo.languageCode' => 'Nyelvkód',
 			'fileInfo.streamTitle' => 'Sáv címe',
 			'fileInfo.channels' => 'Csatornák',
@@ -4065,9 +4010,9 @@ extension on TranslationsHu {
 			'libraries.analyze' => 'Elemzés',
 			'libraries.analyzeLibrary' => 'Könyvtár elemzése',
 			'libraries.refreshMetadata' => 'Metaadatok frissítése',
+			'libraries.emptyTrash' => 'Lomtár ürítése',
 			_ => null,
 		} ?? switch (path) {
-			'libraries.emptyTrash' => 'Lomtár ürítése',
 			'libraries.emptyingTrash' => ({required Object title}) => 'Lomtár ürítése a következőhöz: "${title}"...',
 			'libraries.trashEmptied' => ({required Object title}) => 'Lomtár kiürítve a következőhöz: "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Nem sikerült a lomtár ürítése: ${error}',
@@ -4511,85 +4456,30 @@ extension on TranslationsHu {
 			'music.discography.compilations' => 'Válogatások',
 			'watchTogether.title' => 'Watch Together (Közös nézés)',
 			'watchTogether.description' => 'Nézz tartalmat szinkronban barátaiddal és családoddal',
-			'watchTogether.createSession' => 'Munkamenet létrehozása',
-			'watchTogether.creating' => 'Létrehozás...',
-			'watchTogether.joinSession' => 'Csatlakozás munkamenethez',
-			'watchTogether.joining' => 'Csatlakozás...',
-			'watchTogether.controlMode' => 'Vezérlési mód',
-			'watchTogether.controlModeQuestion' => 'Ki vezérelheti a lejátszást?',
-			'watchTogether.hostOnly' => 'Csak a házigazda',
-			'watchTogether.anyone' => 'Bárki',
-			'watchTogether.hostingSession' => 'Munkamenet indítása',
-			'watchTogether.inSession' => 'Munkamenetben',
-			'watchTogether.sessionCode' => 'Munkamenet kódja',
+			'watchTogether.recentRooms' => 'Legutóbbi szobák',
+			'watchTogether.renameRoom' => 'Szoba átnevezése',
+			'watchTogether.removeRoom' => 'Eltávolítás',
 			'watchTogether.openSessionControls' => 'Watch Together munkamenet-vezérlők megnyitása',
-			'watchTogether.copySessionCode' => 'Munkamenet-kód másolása',
+			'watchTogether.youAreHost' => 'Te vagy a házigazda',
 			'watchTogether.hostControlsPlayback' => 'A házigazda vezérli a lejátszást',
 			'watchTogether.anyoneCanControl' => 'Bárki vezérelheti a lejátszást',
-			'watchTogether.hostControls' => 'A házigazda vezérel',
-			'watchTogether.anyoneControls' => 'Bárki vezérelheti',
+			'watchTogether.joinCurrentPlayback' => 'Csatlakozás a jelenlegi lejátszáshoz',
+			'watchTogether.joinCurrentPlaybackDescription' => 'Visszatérés ahhoz, amit a házigazda éppen néz',
 			'watchTogether.participants' => 'Résztvevők',
-			'watchTogether.host' => 'Házigazda',
 			'watchTogether.hostBadge' => 'HÁZIGAZDA',
-			'watchTogether.youAreHost' => 'Te vagy a házigazda',
 			'watchTogether.makeHost' => 'Házigazdává tétel',
 			'watchTogether.makeHostQuestion' => 'Átadod a házigazdaságot?',
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} vezérli majd a lejátszást és a munkamenetet mindenki számára.',
 			'watchTogether.transfer' => 'Átadás',
-			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} lett a házigazda',
-			'watchTogether.youAreNowHost' => 'Mostantól te vagy a házigazda',
-			'watchTogether.hostTransferFailed' => ({required Object name}) => '${name} nem tehető házigazdává',
-			'watchTogether.watchingWithOthers' => 'Nézés másokkal',
-			'watchTogether.endSession' => 'Munkamenet befejezése',
-			'watchTogether.leaveSession' => 'Munkamenet elhagyása',
-			'watchTogether.endSessionQuestion' => 'Befejezed a munkamenetet?',
-			'watchTogether.leaveSessionQuestion' => 'Elhagyod a munkamenetet?',
-			'watchTogether.endSessionConfirm' => 'Ezzel minden résztvevő számára véget ér a munkamenet.',
-			'watchTogether.leaveSessionConfirm' => 'Eltávolításra kerülsz a munkamenetből.',
-			'watchTogether.endSessionConfirmOverlay' => 'Ezzel minden résztvevő számára véget ér a közös nézés.',
-			'watchTogether.leaveSessionConfirmOverlay' => 'Kilépsz a közös nézésből.',
-			'watchTogether.end' => 'Befejezés',
 			'watchTogether.leave' => 'Kilépés',
-			'watchTogether.syncing' => 'Szinkronizálás...',
-			'watchTogether.joinWatchSession' => 'Csatlakozás közös nézéshez',
-			'watchTogether.enterCodeHint' => 'Add meg az 5 karakteres kódot',
-			'watchTogether.pasteFromClipboard' => 'Beillesztés a vágólapról',
-			'watchTogether.pleaseEnterCode' => 'Adj meg egy munkamenetkódot',
-			'watchTogether.codeMustBe5Chars' => 'A munkamenetkódnak 5 karakterből kell állnia',
-			'watchTogether.joinInstructions' => 'Add meg a házigazda kódját a csatlakozáshoz.',
-			'watchTogether.failedToCreate' => 'Nem sikerült a munkamenet létrehozása',
-			'watchTogether.failedToJoin' => 'Nem sikerült csatlakozni a munkamenethez',
-			'watchTogether.sessionCodeCopied' => 'A munkamenetkód a vágólapra másolva',
-			'watchTogether.relayUnreachable' => 'A relészerver nem érhető el. Az internetszolgáltató blokkolása megakadályozhatja a közös nézést.',
-			'watchTogether.reconnectingToHost' => 'Újracsatlakozás a házigazdához...',
-			'watchTogether.currentPlayback' => 'Jelenlegi lejátszás',
-			'watchTogether.joinCurrentPlayback' => 'Csatlakozás a jelenlegi lejátszáshoz',
-			'watchTogether.joinCurrentPlaybackDescription' => 'Visszatérés ahhoz, amit a házigazda éppen néz',
-			'watchTogether.failedToOpenCurrentPlayback' => 'Nem sikerült megnyitni a jelenlegi lejátszást',
-			'watchTogether.participantJoined' => ({required Object name}) => '${name} csatlakozott',
-			'watchTogether.participantLeft' => ({required Object name}) => '${name} kilépett',
-			'watchTogether.participantPaused' => ({required Object name}) => '${name} szüneteltette a lejátszást',
-			'watchTogether.participantResumed' => ({required Object name}) => '${name} folytatta a lejátszást',
-			'watchTogether.participantSeeked' => ({required Object name}) => '${name} módosította a lejátszási pozíciót',
-			'watchTogether.participantChangedSpeed' => ({required Object name, required Object speed}) => '${name} a sebességet ${speed} értékre állította',
-			'watchTogether.participantBuffering' => ({required Object name}) => '${name} pufferel',
-			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} régebbi alkalmazásverziót használ — a szinkronizálás nem érhető el',
-			'watchTogether.resumingWithout' => ({required Object name}) => 'Folytatás a következő nélkül: ${name}',
-			'watchTogether.waitingForParticipants' => 'Várakozás, amíg a többieknél betöltődik a tartalom...',
-			'watchTogether.waitingForName' => ({required Object name}) => 'Várakozás: ${name}...',
-			'watchTogether.recentRooms' => 'Legutóbbi szobák',
-			'watchTogether.renameRoom' => 'Szoba átnevezése',
-			_ => null,
-		} ?? switch (path) {
-			'watchTogether.removeRoom' => 'Eltávolítás',
-			'watchTogether.guestSwitchUnavailable' => 'Nem sikerült a váltás — a szerver nem érhető el szinkronizáláshoz',
-			'watchTogether.guestSwitchFailed' => 'Nem sikerült a váltás — a tartalom nem található ezen a szerveren',
-			'watchTogether.defaultDisplayName' => 'Felhasználó',
-			'watchTogether.errors.timedOut' => 'A relészerver nem válaszolt időben',
-			'watchTogether.errors.connectionLost' => 'A kapcsolat lezárult, mielőtt a munkamenet elkészült volna',
-			'watchTogether.errors.invalidRelayResponse' => 'A relészerver váratlan választ küldött',
-			'watchTogether.errors.sessionEnded' => 'A házigazda befejezte a munkamenetet',
-			'watchTogether.errors.sessionUnavailable' => 'Ez a munkamenet nem folytatható. A folytatáshoz csatlakozz egy szobához vagy hozz létre egyet.',
+			'watchTogether.end' => 'Befejezés',
+			'watchTogether.notices.paused' => ({required Object name}) => '${name} szüneteltette a lejátszást',
+			'watchTogether.notices.changedSpeed' => ({required Object name, required Object speed}) => '${name} a sebességet ${speed} értékre állította',
+			'watchTogether.notices.waitingFor' => ({required Object name}) => 'Várakozás: ${name}...',
+			'watchTogether.notices.hostChangedTo' => ({required Object name}) => '${name} lett a házigazda',
+			'watchTogether.notices.youAreNowHost' => 'Mostantól te vagy a házigazda',
+			'watchTogether.notices.joined' => ({required Object name}) => '${name} csatlakozott',
+			'watchTogether.notices.left' => ({required Object name}) => '${name} kilépett',
 			'downloads.title' => 'Letöltések',
 			'downloads.manage' => 'Kezelés',
 			'downloads.tvShows' => 'TV-sorozatok',
@@ -4635,6 +4525,8 @@ extension on TranslationsHu {
 			'downloads.includeSpecials' => 'Különkiadások is',
 			'downloads.howManyEpisodes' => 'Hány epizód?',
 			'downloads.invalidEpisodeCount' => 'Adj meg egy érvényes epizódszámot.',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.keepSynced' => 'Szinkronban tartás',
 			'downloads.downloadOnce' => 'Egyszeri letöltés',
 			'downloads.keepNUnwatched' => ({required Object count}) => '${count} nem látott epizód megtartása',
@@ -5093,8 +4985,6 @@ extension on TranslationsHu {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Jelentkezzen be a(z) ${product} szerverére. A(z) ${name} szolgáltatáshoz kötődik.',
 			'addServer.borrowFromAnotherProfile' => 'Kapcsolat használata másik profilból',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Egy másik profil kapcsolatának használata. A PIN-kóddal védett profilokhoz PIN-kód szükséges.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.invalidCredentials' => 'Érvénytelen felhasználónév vagy jelszó',
 			'addServer.authResponseNotJson' => 'A hitelesítési válasz nem érvényes JSON',
 			'addServer.authResponseIncomplete' => 'A szerver bejelentkezési válasza hiányos volt',

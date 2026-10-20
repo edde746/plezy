@@ -37,6 +37,7 @@ import '../services/storage_service.dart';
 import '../services/system_shelf_service.dart';
 import '../utils/app_logger.dart';
 import '../watch_together/providers/watch_together_provider.dart';
+import '../watch_together/watch_together.dart' show WatchNoticeListener;
 import '../widgets/music/mini_player.dart';
 import '../widgets/agent_control_scope.dart';
 import 'profile_navigation_scope.dart';
@@ -266,7 +267,20 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                       : MusicSessionStore(database: context.read<AppDatabase>(), profileId: activeId),
                 ),
               ),
-              ChangeNotifierProvider(create: (context) => WatchTogetherProvider()),
+              // Per profile: a profile switch disposes of it, which leaves the
+              // room and closes the party.
+              ChangeNotifierProvider(
+                create: (context) {
+                  final multiServer = context.read<MultiServerProvider>();
+                  final activeProfile = context.read<ActiveProfileProvider>();
+                  return WatchTogetherProvider(
+                    clientFor: (serverId) => multiServer.getClientForServer(ServerId(serverId)),
+                    findCopies: multiServer.aggregationService.findTitleCopiesAcrossServers,
+                    displayName: () => activeProfile.active?.displayName ?? 'Plezy',
+                    profileId: () => activeProfile.activeId,
+                  );
+                },
+              ),
               ChangeNotifierProvider(
                 create: (context) {
                   final provider = CompanionRemoteProvider();
@@ -283,11 +297,13 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                 },
               ),
             ],
-            child: CoveredRouteFocusBoundary(
-              child: _ProfileSessionNavigator(
-                isOfflineMode: widget.isOfflineMode,
-                initialPromptHandled: initialPromptHandled,
-                profileShellBuilder: widget.profileShellBuilder,
+            child: WatchNoticeListener(
+              child: CoveredRouteFocusBoundary(
+                child: _ProfileSessionNavigator(
+                  isOfflineMode: widget.isOfflineMode,
+                  initialPromptHandled: initialPromptHandled,
+                  profileShellBuilder: widget.profileShellBuilder,
+                ),
               ),
             ),
           ),

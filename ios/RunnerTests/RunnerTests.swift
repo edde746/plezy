@@ -263,6 +263,39 @@ final class MpvPlayerContractTests: XCTestCase {
     wait(for: [completion], timeout: 2)
   }
 
+  // ao_avfoundation queues seconds of audio filtered at the old speed. A Watch
+  // Together room pauses, changes its rate and plays; playback must run at the
+  // new rate from the paused position, not drift off while that queue drains.
+  func testSpeedWrittenWhilePausedTakesEffectOnPlay() throws {
+    let (core, file) = try startSilentPlayback()
+    defer { stopSilentPlayback(core, file: file) }
+
+    XCTAssertSuccess(awaitProperty(core, name: "pause", value: "yes"))
+    pump(0.5)
+    let pausedAt = try timePos(core)
+    XCTAssertSuccess(awaitProperty(core, name: "speed", value: "2"))
+    pump(0.5)
+    XCTAssertSuccess(awaitProperty(core, name: "pause", value: "no"))
+    let playedAt = Date()
+    pump(3)
+
+    let expected = pausedAt + 2 * Date().timeIntervalSince(playedAt)
+    XCTAssertEqual(try timePos(core), expected, accuracy: 0.5)
+  }
+
+  func testSpeedWrittenWhilePlayingTakesEffectAtOnce() throws {
+    let (core, file) = try startSilentPlayback()
+    defer { stopSilentPlayback(core, file: file) }
+
+    let changedFrom = try timePos(core)
+    let changedAt = Date()
+    XCTAssertSuccess(awaitProperty(core, name: "speed", value: "2"))
+    pump(3)
+
+    let expected = changedFrom + 2 * Date().timeIntervalSince(changedAt)
+    XCTAssertEqual(try timePos(core), expected, accuracy: 0.5)
+  }
+
   func testOlderPauseReplyCannotOverwriteNewerUserIntent() {
     let core = ControllablePropertyCore()
     let olderResume = core.beginCachedPauseIntent(false)
@@ -807,6 +840,63 @@ final class MpvPlayerContractTests: XCTestCase {
   ) -> Bool {
     event.name == "log-message" && event.data?["level"] as? String == level
       && (event.data?["text"] as? String)?.contains(text) == true
+  }
+
+  /// An audio core playing 30 s of silence through ao_avfoundation for three
+  /// seconds, long enough to fill the renderer's read-ahead.
+  private func startSilentPlayback() throws -> (MpvAudioPlayerCore, URL) {
+    let file = FileManager.default.temporaryDirectory
+      .appendingPathComponent("plezy-silence-\(UUID().uuidString).wav")
+    try silentWav(seconds: 30).write(to: file)
+    let core = MpvAudioPlayerCore()
+    XCTAssertTrue(core.initialize())
+    core.command(["loadfile", file.path])
+    XCTAssertSuccess(awaitProperty(core, name: "pause", value: "no"))
+    pump(3)
+    XCTAssertEqual(try awaitGetProperty(core, name: "current-ao").get(), "avfoundation")
+    XCTAssertGreaterThan(try timePos(core), 2)
+    return (core, file)
+  }
+
+  private func stopSilentPlayback(_ core: MpvAudioPlayerCore, file: URL) {
+    core.dispose()
+    core.queue.sync {}
+    try? FileManager.default.removeItem(at: file)
+  }
+
+  /// 48 kHz stereo 16-bit PCM silence.
+  private func silentWav(seconds: Int) -> Data {
+    let sampleRate = 48_000
+    let blockAlign = 4
+    let dataSize = seconds * sampleRate * blockAlign
+    var wav = Data()
+    func append<T: FixedWidthInteger>(_ value: T) {
+      withUnsafeBytes(of: value.littleEndian) { wav.append(contentsOf: $0) }
+    }
+    wav.append(contentsOf: Array("RIFF".utf8))
+    append(UInt32(36 + dataSize))
+    wav.append(contentsOf: Array("WAVEfmt ".utf8))
+    append(UInt32(16))
+    append(UInt16(1))
+    append(UInt16(2))
+    append(UInt32(sampleRate))
+    append(UInt32(sampleRate * blockAlign))
+    append(UInt16(blockAlign))
+    append(UInt16(16))
+    wav.append(contentsOf: Array("data".utf8))
+    append(UInt32(dataSize))
+    wav.append(Data(count: dataSize))
+    return wav
+  }
+
+  private func pump(_ seconds: TimeInterval) {
+    let elapsed = expectation(description: "\(seconds) s elapsed")
+    DispatchQueue.main.asyncAfter(deadline: .now() + seconds) { elapsed.fulfill() }
+    wait(for: [elapsed], timeout: seconds + 2)
+  }
+
+  private func timePos(_ core: MpvPlayerCoreBase) throws -> Double {
+    try XCTUnwrap(Double(try awaitGetProperty(core, name: "time-pos").get() ?? ""))
   }
 
   private func awaitProperty(

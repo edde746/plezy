@@ -39,7 +39,7 @@ import '../utils/platform_detector.dart';
 import 'trackers/tracker_constants.dart';
 import '../profiles/profile.dart';
 import '../theme/mono_theme.dart' show MonoPalette;
-import '../watch_together/services/watch_together_relay_endpoint.dart';
+import '../watch_together/services/watch_party_relays.dart';
 
 /// The app theme. Value names are the persisted ids. [system] follows the
 /// platform between [light] and [dark]; every other value is one fixed palette,
@@ -237,6 +237,7 @@ const String _legacyDemuxerModeKey = 'demuxer_mode';
 const String _legacyUseSeasonPosterKey = 'use_season_poster';
 const String _legacyMpvConfigEntriesKey = 'mpv_config_entries';
 const String _legacyUseExoPlayerKey = 'use_exoplayer';
+const String _legacyCustomRelayUrlKey = 'custom_relay_url';
 const String _legacyAutoSkipIntroKey = 'auto_skip_intro';
 const String _legacyAutoSkipCreditsKey = 'auto_skip_credits';
 const String _legacyAudioDownmixKey = 'audio_downmix';
@@ -511,11 +512,11 @@ String? _trimEmptyAsNull(String? v) {
 
 String? _normalizeRelayBaseUrl(String? value) {
   if (value == null || value.trim().isEmpty) return null;
-  final endpoint = WatchTogetherRelayEndpoint.tryParseCustom(value);
-  if (endpoint == null) {
-    throw FormatException('Invalid Watch Together relay base URL');
+  final base = canonicalRelayBaseUrl(value);
+  if (base == null) {
+    throw FormatException('Invalid Open Watch Party relay base URL');
   }
-  return endpoint.canonicalBaseUrl;
+  return base;
 }
 
 String _legacyMpvEntriesToText(List<dynamic> entries) {
@@ -915,7 +916,10 @@ class SettingsService extends BaseSharedPreferencesService {
   static const appLocale = _AppLocalePref();
   static const autoPip = _AutoPipPref();
   static const customDownloadPath = NullableStringPref('custom_download_path');
-  static final customRelayUrl = NullableStringPref('custom_relay_url', transform: _normalizeRelayBaseUrl);
+
+  /// A self-hosted Open Watch Party relay's base URL; null for the public
+  /// relays.
+  static final watchPartyRelayUrl = NullableStringPref('watch_party_relay_url', transform: _normalizeRelayBaseUrl);
 
   static NullableStringPref recentRoomsForProfile(String profileId) {
     if (profileId.trim().isEmpty) {
@@ -1149,13 +1153,16 @@ class SettingsService extends BaseSharedPreferencesService {
     await prefs.remove(_legacyUseExoPlayerKey);
     await _resetGlobalsOfKeyedPlayerScopes();
 
-    final storedRelay = readNullableString(customRelayUrl.key);
+    // The custom relay of Plezy's former Watch Together protocol: no Open
+    // Watch Party relay answers there.
+    await prefs.remove(_legacyCustomRelayUrlKey);
+    final storedRelay = readNullableString(watchPartyRelayUrl.key);
     if (storedRelay == null) return;
-    final endpoint = WatchTogetherRelayEndpoint.tryParseCustom(storedRelay);
-    if (endpoint == null) {
-      await prefs.remove(customRelayUrl.key);
-    } else if (endpoint.canonicalBaseUrl != storedRelay) {
-      await prefs.setString(customRelayUrl.key, endpoint.canonicalBaseUrl);
+    final base = canonicalRelayBaseUrl(storedRelay);
+    if (base == null) {
+      await prefs.remove(watchPartyRelayUrl.key);
+    } else if (base != storedRelay) {
+      await prefs.setString(watchPartyRelayUrl.key, base);
     }
   }
 
@@ -1611,7 +1618,7 @@ class SettingsService extends BaseSharedPreferencesService {
     customShaderPresets,
     selectedExternalPlayer,
     customExternalPlayers,
-    customRelayUrl,
+    watchPartyRelayUrl,
     companionRemoteLastHostAddress,
     rememberedBrightnessLevel,
     refusedVideoCodecs,
@@ -1635,7 +1642,7 @@ class SettingsService extends BaseSharedPreferencesService {
         pref,
     crashReporting,
     mpvConfigText,
-    customRelayUrl,
+    watchPartyRelayUrl,
     rememberedBrightnessLevel,
   ]);
 

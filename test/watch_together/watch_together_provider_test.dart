@@ -2,1571 +2,950 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 
-import 'package:fake_async/fake_async.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:openwatchparty/openwatchparty.dart' as owp;
 import 'package:plezy/media/ids.dart';
-import 'package:plezy/watch_together/services/watch_together_relay_endpoint.dart';
-import 'package:plezy/watch_together/models/playback_state.dart';
-import 'package:plezy/watch_together/models/sync_message.dart';
-import 'package:plezy/watch_together/models/watch_session.dart';
+import 'package:plezy/media/media_backend.dart';
+import 'package:plezy/media/media_item.dart';
+import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_part.dart';
+import 'package:plezy/media/media_server_client.dart';
+import 'package:plezy/media/media_version.dart';
+import 'package:plezy/media/title_copies.dart';
+import 'package:plezy/services/data_aggregation_service.dart';
+import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/utils/external_ids.dart';
+import 'package:plezy/watch_together/models/watch_copy.dart';
+import 'package:plezy/watch_together/models/watch_notice.dart';
 import 'package:plezy/watch_together/providers/watch_together_provider.dart';
-import 'package:plezy/watch_together/services/watch_together_peer_service.dart';
-import 'package:plezy/watch_together/services/relay_protocol.g.dart';
+import 'package:plezy/watch_together/services/library_resolver.dart';
+import 'package:plezy/watch_together/services/player_adapter.dart';
+import 'package:plezy/watch_together/services/recent_rooms_service.dart';
+import 'package:plezy/watch_together/services/watch_party_relays.dart';
 
+import '../test_helpers/fake_owp_relay.dart';
+import '../test_helpers/library_lookup.dart';
+import '../test_helpers/media_items.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/watch_together_fakes.dart';
 
-class _FakeWatchTogetherPeerService extends WatchTogetherPeerService {
-  _FakeWatchTogetherPeerService(
-    this.sequence, {
-    required bool hostInitiallyConnected,
-    required this.rejectDisconnectedTargets,
-    this.releaseError,
-    this.releaseBarrier,
-    this.admittedAsHost,
-  }) : _hostConnected = hostInitiallyConnected;
+/// One server of a user, answering the descriptor's ID lookups.
+class _Server implements MediaServerClient {
+  _Server(String id, {this.ids = const {}}) : serverId = ServerId(id);
 
-  final int sequence;
-  final bool rejectDisconnectedTargets;
-  final Object? releaseError;
-  final Future<void>? releaseBarrier;
-  final bool? admittedAsHost;
-  final _peerConnectedController = StreamController<String>.broadcast();
-  final _peerDisconnectedController = StreamController<String>.broadcast();
-  final _messageController = StreamController<SyncMessage>.broadcast();
-  final _errorController = StreamController<PeerError>.broadcast();
-  final _sessionEndedController = StreamController<void>.broadcast();
-  final _hostChangedController = StreamController<String>.broadcast();
-  final _hostTransferEligibilityController = StreamController<void>.broadcast();
-  final Set<String> eligibleTransferTargets = {};
-  final List<SyncMessage> broadcasts = [];
-  final List<(String, SyncMessage)> directMessages = [];
-  final List<String> transferRequests = [];
+  @override
+  final ServerId serverId;
+  final Map<String, ExternalIds> ids;
 
-  /// Extra peers reported as connected on top of the modeled host link.
-  final Set<String> connectedGuests = {};
+  @override
+  MediaBackend get backend => MediaBackend.plex;
 
-  String? _sessionId;
-  String? _myPeerId;
-  String? _hostPeerId;
-  bool _isHost = false;
+  @override
+  Future<ExternalIds> fetchExternalIds(String itemId) async => ids[itemId] ?? const ExternalIds();
+
+  @override
+  Future<MediaItem?> fetchItem(String id) async => null;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+const _alienMs = 7020000;
+
+MediaItem _alien(String id, String serverId, {int? durationMs = _alienMs, String version = 'hd'}) => testMediaItem(
+  id: id,
+  title: 'Alien',
+  year: 1979,
+  serverId: serverId,
+  durationMs: durationMs,
+  mediaVersions: [
+    MediaVersion(
+      id: version,
+      parts: [MediaPart(id: '$version-p', durationMs: durationMs, sizeBytes: 4000000, file: '/m/Alien.mkv')],
+    ),
+  ],
+);
+
+WatchCopy _copyOf(MediaItem item) => WatchCopy.of(item, item.mediaVersions?.first);
+
+final _hostServer = _Server('host-nas', ids: {'alien': const ExternalIds(imdb: 'tt0078748', tmdb: 348)});
+final _hostAlien = _alien('alien', 'host-nas');
+final _guestAlien = _alien('g-alien', 'guest-nas', durationMs: _alienMs + 800, version: 'g-hd');
+
+typedef _OpenPlayer = ({PlezyPlayerAdapter adapter, FakeSyncPlayer player});
+
+/// A player with [copy] open, as the player screen hands it to the provider.
+/// [refusePlay] makes its play command throw, as a car or a browser refusing
+/// to start playback would.
+_OpenPlayer _openPlayer(WatchCopy copy, {Duration? duration, bool Function()? refusePlay}) {
+  final player = FakeSyncPlayer(
+    hasRenderedFrame: true,
+    duration: duration ?? Duration(milliseconds: copy.durationMs ?? 0),
+  );
+  final adapter = PlezyPlayerAdapter(
+    player: player,
+    copy: copy,
+    commands: PlayerCommands(
+      play: () => refusePlay?.call() ?? false ? Future.error(StateError('playback refused')) : player.play(),
+      pause: player.pause,
+      seek: player.seek,
+      setRate: player.setRate,
+    ),
+  );
+  return (adapter: adapter, player: player);
+}
+
+/// A provider and every notice it gave.
+final class _Member {
+  _Member(this.provider) {
+    _subscription = provider.notices.listen(notices.add);
+  }
+
+  final WatchTogetherProvider provider;
+  final List<WatchNotice> notices = [];
+  late final StreamSubscription<WatchNotice> _subscription;
+
+  String get peerId => provider.myPeerId!;
+
+  owp.Participant participant(String peerId) => provider.participants.firstWhere((p) => p.peerId == peerId);
+
+  Iterable<T> noticesOf<T extends WatchNotice>() => notices.whereType<T>();
+
   bool _disposed = false;
-  bool _didDisconnect = false;
-  int releaseCalls = 0;
-  bool _hostConnected;
 
-  @override
-  Stream<String> get onPeerConnected => _peerConnectedController.stream;
-
-  @override
-  Stream<String> get onPeerDisconnected => _peerDisconnectedController.stream;
-
-  @override
-  Stream<SyncMessage> get onMessageReceived => _messageController.stream;
-
-  @override
-  Stream<PeerError> get onError => _errorController.stream;
-
-  @override
-  Stream<void> get onSessionEnded => _sessionEndedController.stream;
-
-  @override
-  Stream<String> get onHostChanged => _hostChangedController.stream;
-
-  @override
-  Stream<void> get onHostTransferEligibilityChanged => _hostTransferEligibilityController.stream;
-
-  @override
-  bool canTransferHostTo(String peerId) => eligibleTransferTargets.contains(peerId);
-
-  void emitHostTransferEligibility(Iterable<String> targets) {
-    eligibleTransferTargets
-      ..clear()
-      ..addAll(targets);
-    _hostTransferEligibilityController.add(null);
-  }
-
-  @override
-  String? get sessionId => _sessionId;
-
-  @override
-  String? get myPeerId => _myPeerId;
-
-  @override
-  String? get hostPeerId => _hostPeerId;
-
-  @override
-  bool get isHost => _isHost;
-
-  @override
-  List<String> get connectedPeers => [
-    if (!_isHost && _sessionId != null && _hostConnected) 'wt-$_sessionId',
-    ...connectedGuests,
-  ];
-
-  @override
-  Future<String> createSession({String? sessionId}) {
-    _sessionId = (sessionId ?? 'ROOM$sequence').toUpperCase();
-    _myPeerId = 'wt-$_sessionId';
-    _isHost = admittedAsHost ?? true;
-    _hostPeerId = _isHost ? _myPeerId : 'resumed-host';
-    return Future.value(_sessionId);
-  }
-
-  @override
-  Future<void> joinSession(String sessionId) {
-    _sessionId = sessionId.toUpperCase();
-    _myPeerId = 'guest-$sequence';
-    _isHost = admittedAsHost ?? false;
-    _hostPeerId = _isHost ? _myPeerId : 'wt-$_sessionId';
-    return Future.value();
-  }
-
-  @override
-  void broadcast(SyncMessage message) {
-    broadcasts.add(message);
-  }
-
-  @override
-  void sendTo(String peerId, SyncMessage message) {
-    if (rejectDisconnectedTargets && !connectedPeers.contains(peerId)) {
-      _errorController.add(
-        const PeerError(type: PeerErrorType.serverError, message: 'Peer is not in the room', serverCode: 'not_in_room'),
-      );
-      return;
-    }
-    directMessages.add((peerId, message));
-  }
-
-  @override
-  void transferHost(String peerId) => transferRequests.add(peerId);
-
-  void emitHostChanged(String newHostPeerId) {
-    _hostPeerId = newHostPeerId;
-    _isHost = newHostPeerId == _myPeerId;
-    eligibleTransferTargets.clear();
-    _hostChangedController.add(newHostPeerId);
-  }
-
-  void emitError(PeerError error) => _errorController.add(error);
-  void emitPeerConnected(String peerId) {
-    if (peerId == _hostPeerId) _hostConnected = true;
-    _peerConnectedController.add(peerId);
-  }
-
-  void emitPeerDisconnected(String peerId) {
-    if (peerId == _hostPeerId) _hostConnected = false;
-    _peerDisconnectedController.add(peerId);
-  }
-
-  void emitSessionEnded() => _sessionEndedController.add(null);
-  void emitMessage(SyncMessage message) => _messageController.add(message);
-
-  bool get hasRelayListeners =>
-      _peerConnectedController.hasListener ||
-      _peerDisconnectedController.hasListener ||
-      _messageController.hasListener ||
-      _errorController.hasListener ||
-      _sessionEndedController.hasListener ||
-      _hostChangedController.hasListener ||
-      _hostTransferEligibilityController.hasListener;
-
-  bool get isDisposed => _disposed;
-  bool get didDisconnect => _didDisconnect;
-
-  @override
-  Future<void> releaseSession() async {
-    releaseCalls++;
-    final barrier = releaseBarrier;
-    if (barrier != null) await barrier;
-    final error = releaseError;
-    if (error != null) throw error;
-  }
-
-  void reconnect() => onReconnected?.call();
-  @override
-  Future<void> disconnect() {
-    _didDisconnect = true;
-    _sessionId = null;
-    _myPeerId = null;
-    _hostPeerId = null;
-    _isHost = false;
-    _hostConnected = false;
-    return Future.value();
-  }
-
-  @override
+  /// Not awaiting the cancel: a broadcast subscription's cancel future
+  /// belongs to the root zone, which widget-test time never runs.
   void dispose() {
     if (_disposed) return;
     _disposed = true;
-    _peerConnectedController.close();
-    _peerDisconnectedController.close();
-    _messageController.close();
-    _errorController.close();
-    _sessionEndedController.close();
-    _hostChangedController.close();
-    _hostTransferEligibilityController.close();
-    super.dispose();
+    provider.dispose();
+    unawaited(_subscription.cancel());
   }
 }
 
-class _FakePeerServiceFactory {
-  _FakePeerServiceFactory({
-    this.hostInitiallyConnected = true,
-    this.rejectDisconnectedTargets = false,
-    this.releaseError,
-    this.releaseBarrier,
-    this.admittedAsHost,
+/// The player screen the app opens for the room: it opens the room's file
+/// when asked, registers its hooks and reports the player.
+final class _Screen {
+  _Screen(this.member);
+
+  final _Member member;
+  final List<_OpenPlayer> players = [];
+  int exits = 0;
+  bool refusePlay = false;
+
+  WatchTogetherProvider get _provider => member.provider;
+
+  /// Opens the files the room asks for from now on.
+  void listen() => _provider.navigatorOpener = open;
+
+  Future<bool> open(WatchCopy copy) async {
+    // A route push: the player reports back after the room's update.
+    await Future<void>.delayed(Duration.zero);
+    final opened = _openPlayer(copy, refusePlay: () => refusePlay);
+    players.add(opened);
+    _provider.registerPlayer(this, WatchPlayerHooks(openInPlace: open, exitPlayer: () => exits++));
+    _provider.playerOpened(opened.adapter, shareable: true, roomLaunch: true);
+    return true;
+  }
+}
+
+typedef _Following = ({_Member host, _Member guest, _OpenPlayer hostPlayer, _Screen screen});
+
+/// Participants on one relay, the host with Alien on `host-nas`, guests with
+/// their own copy on `guest-nas`, and the time the test runs in.
+abstract base class _World {
+  final List<_Member> _members = [];
+  final List<TitleQuery> guestQueries = [];
+  Future<LibraryLookupResult> Function(TitleQuery query) guestAnswer = (_) async =>
+      libraryLookupResult([_guestAlien], succeeded: {'guest-nas'});
+
+  WatchTogetherProvider newProvider({
+    required String name,
+    required String? profileId,
+    required ServerClientLookup? clientFor,
+    required TitleCopyFinder? findCopies,
+    required Duration shareDurationWait,
   });
 
-  final bool hostInitiallyConnected;
-  final bool rejectDisconnectedTargets;
-  final Object? releaseError;
-  final Future<void>? releaseBarrier;
-  final bool? admittedAsHost;
-  final List<_FakeWatchTogetherPeerService> services = [];
-  WatchTogetherPeerService call({WatchTogetherRelayEndpoint? endpoint}) {
-    final service = _FakeWatchTogetherPeerService(
-      services.length + 1,
-      hostInitiallyConnected: hostInitiallyConnected,
-      rejectDisconnectedTargets: rejectDisconnectedTargets,
-      releaseError: releaseError,
-      releaseBarrier: releaseBarrier,
-      admittedAsHost: admittedAsHost,
-    );
-    services.add(service);
-    return service;
-  }
-}
+  Future<void> wait(Duration duration);
 
-PeerError _transportError([String message = 'WebSocket error: connection reset']) {
-  return PeerError(type: PeerErrorType.serverError, message: message, originalError: StateError('connection reset'));
-}
-
-Future<void> _flushProviderEvents() async {
-  await Future<void>.delayed(Duration.zero);
-  await Future<void>.delayed(Duration.zero);
-}
-
-const _providerHostId = 'relay-authoritative-host';
-
-typedef _ProviderRelayHandler = void Function(WebSocket socket, Map<String, dynamic> message);
-
-class _ProviderRelay {
-  _ProviderRelay._(this._server);
-
-  final HttpServer _server;
-  final List<WebSocket> _sockets = [];
-  final List<Map<String, dynamic>> messages = [];
-
-  String get baseUrl => 'http://${_server.address.address}:${_server.port}';
-
-  static Future<_ProviderRelay> start(_ProviderRelayHandler handler) async {
-    final server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
-    final relay = _ProviderRelay._(server);
-    server.listen((request) async {
-      if (request.uri.path != '/relay') {
-        request.response.statusCode = HttpStatus.notFound;
-        await request.response.close();
-        return;
-      }
-      final socket = await WebSocketTransformer.upgrade(request);
-      relay._sockets.add(socket);
-      socket.listen((data) {
-        final message = jsonDecode(data as String) as Map<String, dynamic>;
-        relay.messages.add(message);
-        handler(socket, message);
-      });
-    });
-    return relay;
-  }
-
-  void send(WebSocket socket, Map<String, dynamic> message) => socket.add(jsonEncode(message));
-
-  Future<void> close() async {
-    for (final socket in _sockets) {
-      await socket.close();
+  Future<void> until(bool Function() check, String what) async {
+    for (var i = 0; i < 500; i++) {
+      if (check()) return;
+      await wait(const Duration(milliseconds: 20));
     }
-    await _server.close(force: true);
+    fail('timed out waiting until $what');
+  }
+
+  /// [future], with time running until it completes.
+  Future<T> settle<T>(Future<T> future) async {
+    var done = false;
+    unawaited(future.then<void>((_) => done = true, onError: (Object _) => done = true));
+    await until(() => done, 'the call completed');
+    return future;
+  }
+
+  /// The `code` of the [owp.PartyException] [future] fails with, time running
+  /// until it does; null when it completes. (`expectLater` can't wait here: in
+  /// a widget test it holds the tester while time has to run.)
+  Future<String?> refusal(Future<void> future) async {
+    try {
+      await settle(future);
+      return null;
+    } on owp.PartyException catch (error) {
+      return error.code;
+    }
+  }
+
+  Future<void> noticed<T extends WatchNotice>(_Member member, String what, [bool Function(T notice)? test]) =>
+      until(() => member.noticesOf<T>().any(test ?? (_) => true), what);
+
+  _Member member(
+    String name, {
+    String? profileId,
+    ServerClientLookup? clientFor,
+    TitleCopyFinder? findCopies,
+    Duration shareDurationWait = const Duration(seconds: 30),
+  }) {
+    final member = _Member(
+      newProvider(
+        name: name,
+        profileId: profileId,
+        clientFor: clientFor,
+        findCopies: findCopies,
+        shareDurationWait: shareDurationWait,
+      ),
+    );
+    _members.add(member);
+    return member;
+  }
+
+  _Member host({String? profileId, Duration shareDurationWait = const Duration(seconds: 30)}) => member(
+    'Host',
+    profileId: profileId,
+    clientFor: (serverId) => serverId == 'host-nas' ? _hostServer : null,
+    shareDurationWait: shareDurationWait,
+  );
+
+  _Member guest([String name = 'Guest', String? profileId]) => member(
+    name,
+    profileId: profileId,
+    findCopies: (query, {abort}) {
+      guestQueries.add(query);
+      return guestAnswer(query);
+    },
+  );
+
+  Future<void> together(_Member host, List<_Member> guests) async {
+    final code = await settle(host.provider.createRoom());
+    for (final guest in guests) {
+      await settle(guest.provider.joinRoom(code));
+    }
+    final everyone = [host, ...guests];
+    await until(
+      () => everyone.every((m) => m.provider.participantCount == everyone.length),
+      'everyone sees ${everyone.length} participants',
+    );
+  }
+
+  /// The host opens [item]; completes once the room plays it.
+  Future<_OpenPlayer> hostPlays(_Member host, MediaItem item) async {
+    final opened = _openPlayer(_copyOf(item));
+    host.provider.playerOpened(opened.adapter, shareable: true, roomLaunch: false);
+    await until(() => host.provider.roomCopy?.ref == opened.adapter.copy, 'the room plays the host file');
+    return opened;
+  }
+
+  /// A room whose host plays Alien and whose guest follows it with its own copy.
+  Future<_Following> following() async {
+    final h = host();
+    final g = guest();
+    final screen = _Screen(g)..listen();
+    await together(h, [g]);
+    final hostPlayer = await hostPlays(h, _hostAlien);
+    await until(() => g.provider.isFollowing, 'the guest follows the room');
+    return (host: h, guest: g, hostPlayer: hostPlayer, screen: screen);
+  }
+
+  /// Disposes of every provider and lets their parties close.
+  Future<void> close() async {
+    for (final member in _members) {
+      member.dispose();
+    }
+    await wait(const Duration(milliseconds: 300));
   }
 }
+
+/// [FakeOwpRelay] in widget-test time.
+final class _FakeWorld extends _World {
+  _FakeWorld(this.tester);
+
+  final WidgetTester tester;
+  final relay = FakeOwpRelay();
+
+  @override
+  WatchTogetherProvider newProvider({
+    required String name,
+    required String? profileId,
+    required ServerClientLookup? clientFor,
+    required TitleCopyFinder? findCopies,
+    required Duration shareDurationWait,
+  }) => WatchTogetherProvider(
+    partyFactory: relay.party,
+    clientName: () async => 'Plezy/9.9.9',
+    displayName: () => name,
+    profileId: () => profileId,
+    clientFor: clientFor,
+    findCopies: findCopies,
+    shareDurationWait: shareDurationWait,
+  );
+
+  @override
+  Future<void> wait(Duration duration) => tester.pump(duration);
+}
+
+void _roomTest(String description, Future<void> Function(_FakeWorld world) body) {
+  testWidgets(description, (tester) async {
+    final world = _FakeWorld(tester);
+    try {
+      await body(world);
+    } finally {
+      await world.close();
+    }
+  });
+}
+
+Matcher _action(String kind, {String? name, int? positionMs, double? rate}) => isA<ActionNotice>()
+    .having((n) => n.kind, 'kind', kind)
+    .having((n) => n.name, 'name', name)
+    .having((n) => n.positionMs, 'positionMs', positionMs)
+    .having((n) => n.rate, 'rate', rate);
+
+Matcher _partyError(String code) => throwsA(isA<owp.PartyException>().having((e) => e.code, 'code', code));
 
 void main() {
-  test('generated relay versions match the protocol specification', () {
-    final spec = (jsonDecode(File('relay_protocol.json').readAsStringSync()) as Map).cast<String, dynamic>();
-    expect(RelayProtocol.protocolVersion, spec['protocolVersion']);
-    expect(RelayProtocol.legacyProtocolVersion, spec['legacyProtocolVersion']);
-  });
-
-  TestWidgetsFlutterBinding.ensureInitialized();
-
-  setUp(() {
-    // The provider reads SettingsService.instanceOrNull?.read(...) when
-    // creating/joining sessions; ensure prefs are reset between tests.
-    resetSharedPreferencesForTest();
-  });
-
-  group('WatchTogetherProvider — initial state', () {
-    test('starts disconnected with no session, peers, or sync state', () {
-      final p = WatchTogetherProvider();
-      expect(p.session, isNull);
-      expect(p.sessionId, isNull);
-      expect(p.isInSession, isFalse);
-      expect(p.isHost, isFalse);
-      expect(p.isConnected, isFalse);
-      expect(p.isSyncing, isFalse);
-      expect(p.isWaitingForPeers, isFalse);
-      expect(p.waitingOnNames, isEmpty);
-      expect(p.isWaitingForHostReconnect, isFalse);
-      expect(p.participants, isEmpty);
-      expect(p.participantCount, 0);
-      // Default control mode falls back to hostOnly when there's no session.
-      expect(p.controlMode, ControlMode.hostOnly);
-      expect(p.hasAttachedPlayer, isFalse);
-      p.dispose();
-    });
-
-    test('current media getters all return null on a fresh provider', () {
-      final p = WatchTogetherProvider();
-      expect(p.currentMediaRatingKey, isNull);
-      expect(p.currentMediaServerId, isNull);
-      expect(p.currentMediaTitle, isNull);
-      expect(p.hasCurrentPlayback, isFalse);
-      p.dispose();
-    });
-
-    test('participants list is unmodifiable', () {
-      final p = WatchTogetherProvider();
-      // Even when empty, the unmodifiable view must reject mutation so
-      // callers can't smuggle peers in by mutating the returned list.
-      expect(
-        () => p.participants.add(const Participant(peerId: 'x', displayName: 'y', isHost: false)),
-        throwsUnsupportedError,
-      );
-      p.dispose();
-    });
-
-    test('canControl returns true outside of a session (no gating)', () {
-      final p = WatchTogetherProvider();
-      expect(p.canControl(), isTrue);
-      p.dispose();
-    });
-  });
-
-  group('WatchTogetherProvider — session guards', () {
-    test('selection is rejected outside a session', () {
-      final p = WatchTogetherProvider();
-      var notified = 0;
-      p.addListener(() => notified++);
-      expect(
-        p.selectMedia(
-          ratingKey: 'rk1',
-          serverId: ServerId('s1'),
-          mediaTitle: 't1',
-          position: Duration.zero,
-          rate: 1,
-          lease: null,
-        ),
-        isFalse,
-      );
-      expect(notified, 0);
-      expect(p.currentMediaRatingKey, isNull);
-      p.dispose();
-    });
-  });
-
-  group('WatchTogetherProvider — media switch dispatch', () {
-    test('dispatches once with typed args and suppresses the key after success', () async {
-      final p = WatchTogetherProvider();
-      final calls = <(String, String, String)>[];
-      p.onMediaSwitched = (ratingKey, serverId, mediaTitle) async {
-        calls.add((ratingKey, serverId, mediaTitle));
-        return true;
-      };
-
-      p.debugHandleMediaState('rk1', 's1', 'Ep 1');
-      await Future<void>.delayed(Duration.zero);
-      expect(calls, [('rk1', 's1', 'Ep 1')]);
-
-      // Heartbeat repeat of the handled key: no re-dispatch.
-      p.debugHandleMediaState('rk1', 's1', 'Ep 1');
-      await Future<void>.delayed(Duration.zero);
-      expect(calls.length, 1);
-      p.dispose();
-    });
-
-    test('a false result is retried on the next heartbeat state', () async {
-      final p = WatchTogetherProvider();
-      var calls = 0;
-      p.onMediaSwitched = (ratingKey, serverId, mediaTitle) async {
-        calls++;
-        return calls > 1; // Fail once, then succeed.
-      };
-
-      p.debugHandleMediaState('rk1', 's1', null);
-      await Future<void>.delayed(Duration.zero);
-      p.debugHandleMediaState('rk1', 's1', null);
-      await Future<void>.delayed(Duration.zero);
-      expect(calls, 2);
-
-      p.debugHandleMediaState('rk1', 's1', null);
-      await Future<void>.delayed(Duration.zero);
-      expect(calls, 2); // Second attempt succeeded; key now handled.
-      p.dispose();
-    });
-
-    test('a throwing callback is contained and retried', () async {
-      final p = WatchTogetherProvider();
-      var calls = 0;
-      p.onMediaSwitched = (ratingKey, serverId, mediaTitle) async {
-        calls++;
-        throw StateError('network down');
-      };
-
-      expect(() => p.debugHandleMediaState('rk1', 's1', null), returnsNormally);
-      await Future<void>.delayed(Duration.zero);
-      p.debugHandleMediaState('rk1', 's1', null);
-      await Future<void>.delayed(Duration.zero);
-      expect(calls, 2);
-      p.dispose();
-    });
-
-    test('no double dispatch while a switch is pending, even for another key', () async {
-      final p = WatchTogetherProvider();
-      final pending = Completer<bool>();
-      final calls = <String>[];
-      p.onMediaSwitched = (ratingKey, serverId, mediaTitle) {
-        calls.add(ratingKey);
-        return pending.future;
-      };
-
-      p.debugHandleMediaState('rk1', 's1', null);
-      p.debugHandleMediaState('rk1', 's1', null);
-      p.debugHandleMediaState('rk2', 's1', null); // Serialized behind rk1.
-      await Future<void>.delayed(Duration.zero);
-      expect(calls, ['rk1']);
-
-      pending.complete(false);
-      await Future<void>.delayed(Duration.zero);
-      // The slot is free again; the next heartbeat re-dispatches.
-      p.debugHandleMediaState('rk2', 's1', null);
-      await Future<void>.delayed(Duration.zero);
-      expect(calls, ['rk1', 'rk2']);
-      p.dispose();
-    });
-
-    test('onPlayerMediaSwitched takes priority over onMediaSwitched', () async {
-      final p = WatchTogetherProvider();
-      final calls = <String>[];
-      p.onMediaSwitched = (ratingKey, serverId, mediaTitle) async {
-        calls.add('main');
-        return true;
-      };
-      p.onPlayerMediaSwitched = (ratingKey, serverId, mediaTitle) async {
-        calls.add('player');
-        return true;
-      };
-
-      p.debugHandleMediaState('rk1', 's1', null);
-      await Future<void>.delayed(Duration.zero);
-      expect(calls, ['player']);
-      p.dispose();
-    });
-
-    test('markCurrentPlaybackHandled suppresses the marked key', () async {
-      final p = WatchTogetherProvider();
-      var calls = 0;
-      p.onMediaSwitched = (ratingKey, serverId, mediaTitle) async {
-        calls++;
-        return true;
-      };
-
-      p.markCurrentPlaybackHandled(ratingKey: 'rk1', serverId: ServerId('s1'));
-      p.debugHandleMediaState('rk1', 's1', null);
-      await Future<void>.delayed(Duration.zero);
-      expect(calls, 0);
-      p.dispose();
-    });
-
-    test('a blank serverId is ignored without throwing', () {
-      final p = WatchTogetherProvider();
-      var calls = 0;
-      p.onMediaSwitched = (ratingKey, serverId, mediaTitle) async {
-        calls++;
-        return true;
-      };
-
-      expect(() => p.debugHandleMediaState('rk1', '', null), returnsNormally);
-      expect(calls, 0);
-      p.dispose();
-    });
-  });
-
-  group('WatchTogetherProvider — reconnect recovery', () {
-    test('restores only the matching host transport error and preserves session fields', () async {
-      final factory = _FakePeerServiceFactory();
-      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
-      final observedStates = <SessionState?>[];
-      provider.addListener(() => observedStates.add(provider.session?.state));
-
-      await provider.createSession(
-        controlMode: ControlMode.anyone,
-        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-        displayName: 'Host',
-        sessionId: 'room1',
-        mediaRatingKey: 'rating-1',
-        mediaServerId: 'server-1',
-        mediaTitle: 'Episode 1',
-      );
-      await _flushProviderEvents();
-      final established = provider.session!;
-      final service = factory.services.single;
-      observedStates.clear();
-      service.broadcasts.clear();
-
-      service.emitError(_transportError());
-      await _flushProviderEvents();
-      expect(provider.session?.state, SessionState.error);
-      expect(provider.isConnected, isFalse);
-
-      service.reconnect();
-      await _flushProviderEvents();
-
-      expect(observedStates, [SessionState.error, SessionState.connected]);
-      expect(provider.isConnected, isTrue);
-      expect(provider.session?.errorMessage, isNull);
-      expect(provider.session?.sessionId, established.sessionId);
-      expect(provider.session?.role, established.role);
-      expect(provider.session?.controlMode, established.controlMode);
-      expect(provider.session?.mediaRatingKey, established.mediaRatingKey);
-      expect(provider.session?.mediaServerId, established.mediaServerId);
-      expect(provider.session?.mediaTitle, established.mediaTitle);
-      expect(service.broadcasts.where((message) => message.type == SyncMessageType.join), hasLength(1));
-
-      await provider.leaveSession();
-      provider.dispose();
-    });
-
-    test('guest waits for a reconnecting declared host before requesting state', () async {
-      final factory = _FakePeerServiceFactory(hostInitiallyConnected: false, rejectDisconnectedTargets: true);
-      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
-
-      await provider.joinSession(
-        'late1',
-        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-        displayName: 'Guest',
-      );
-      await _flushProviderEvents();
-      final service = factory.services.single;
-      final hostPeerId = provider.session!.hostPeerId!;
-
-      expect(provider.session?.state, SessionState.connected);
-      expect(service.connectedPeers, isEmpty);
-      expect(service.directMessages.where((entry) => entry.$2.type == SyncMessageType.requestState), isEmpty);
-
-      service.emitPeerConnected(hostPeerId);
-      await _flushProviderEvents();
-
-      expect(service.connectedPeers, [hostPeerId]);
-      expect(
-        service.directMessages.where(
-          (entry) => entry.$1 == hostPeerId && entry.$2.type == SyncMessageType.requestState,
-        ),
-        hasLength(1),
-      );
-      expect(provider.session?.state, SessionState.connected);
-
-      await provider.leaveSession();
-      provider.dispose();
-    });
-
-    test('guest recovery re-announces and re-requests authoritative state once', () async {
-      final factory = _FakePeerServiceFactory();
-      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
-      await provider.joinSession(
-        'room2',
-        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-        displayName: 'Guest',
-      );
-      await _flushProviderEvents();
-      final service = factory.services.single;
-      service.broadcasts.clear();
-      service.directMessages.clear();
-
-      service.emitError(_transportError());
-      await _flushProviderEvents();
-      service.reconnect();
-      await _flushProviderEvents();
-
-      expect(provider.session?.state, SessionState.connected);
-      expect(service.broadcasts.where((message) => message.type == SyncMessageType.join), hasLength(1));
-      expect(service.directMessages.where((entry) => entry.$2.type == SyncMessageType.requestState), hasLength(1));
-
-      await provider.leaveSession();
-      provider.dispose();
-    });
-
-    test('relay errors remain terminal when the current service reconnects', () async {
-      final factory = _FakePeerServiceFactory();
-      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
-      final observedStates = <SessionState?>[];
-      provider.addListener(() => observedStates.add(provider.session?.state));
-      await provider.createSession(
-        controlMode: ControlMode.hostOnly,
-        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-        sessionId: 'room3',
-      );
-      await _flushProviderEvents();
-      final service = factory.services.single;
-      observedStates.clear();
-
-      service.emitError(
-        const PeerError(type: PeerErrorType.serverError, message: 'Room was rejected', serverCode: 'room_rejected'),
-      );
-      await _flushProviderEvents();
-      service.reconnect();
-      await _flushProviderEvents();
-
-      expect(observedStates, [SessionState.error]);
-      expect(provider.session?.state, SessionState.error);
-      expect(provider.session?.errorMessage, 'Room was rejected');
-      expect(provider.isConnected, isFalse);
-
-      await provider.leaveSession();
-      provider.dispose();
-    });
-
-    test('host-loss expiry supersedes a recoverable guest transport error', () {
-      fakeAsync((async) {
-        final factory = _FakePeerServiceFactory();
-        final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
-        var joined = false;
-        unawaited(
-          provider
-              .joinSession('room4', relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint, displayName: 'Guest')
-              .then((_) => joined = true),
-        );
-        async.flushMicrotasks();
-        expect(joined, isTrue);
-        final service = factory.services.single;
-        final hostPeerId = provider.session!.hostPeerId!;
-
-        service.emitError(_transportError());
-        async.flushMicrotasks();
-        expect(provider.session?.state, SessionState.error);
-
-        service.emitPeerDisconnected(hostPeerId);
-        async.flushMicrotasks();
-        expect(provider.isWaitingForHostReconnect, isTrue);
-        async.elapse(const Duration(seconds: 15));
-        async.flushMicrotasks();
-        expect(provider.session?.errorMessage, 'Host left the session');
-
-        service.reconnect();
-        async.flushMicrotasks();
-        expect(provider.session?.state, SessionState.error);
-        expect(provider.session?.errorMessage, 'Host left the session');
-
-        unawaited(provider.leaveSession());
-        async.flushMicrotasks();
-        provider.dispose();
-        async.flushMicrotasks();
-      });
-    });
-
-    test('stale service callback cannot mutate or resync a replacement session', () async {
-      final factory = _FakePeerServiceFactory();
-      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
-      var notifications = 0;
-      provider.addListener(() => notifications++);
-
-      await provider.createSession(
-        controlMode: ControlMode.hostOnly,
-        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-        sessionId: 'old1',
-      );
-      await _flushProviderEvents();
-      final oldService = factory.services.single;
-      final staleReconnect = oldService.onReconnected!;
-      oldService.emitError(_transportError('old transport error'));
-      await _flushProviderEvents();
-
-      await provider.createSession(
-        controlMode: ControlMode.anyone,
-        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-        sessionId: 'new1',
-      );
-      await _flushProviderEvents();
-      final currentService = factory.services.last;
-      currentService.broadcasts.clear();
-      notifications = 0;
-      final replacement = provider.session;
-
-      staleReconnect();
-      await _flushProviderEvents();
-      expect(provider.session, replacement);
-      expect(notifications, 0);
-      expect(currentService.broadcasts, isEmpty);
-
-      currentService.emitError(_transportError('current transport error'));
-      await _flushProviderEvents();
-      currentService.reconnect();
-      await _flushProviderEvents();
-      expect(provider.session?.state, SessionState.connected);
-      expect(provider.session?.errorMessage, isNull);
-      expect(currentService.broadcasts.where((message) => message.type == SyncMessageType.join), hasLength(1));
-
-      await provider.leaveSession();
-      provider.dispose();
-    });
-  });
-
-  group('WatchTogetherProvider — lobby control mode', () {
-    test('guest adopts the mode from the host join before any playback state', () async {
-      final factory = _FakePeerServiceFactory();
-      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
-      await provider.joinSession(
-        'lobby1',
-        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-        displayName: 'Guest',
-      );
-      await _flushProviderEvents();
-      final service = factory.services.single;
-      final hostPeerId = provider.session!.hostPeerId!;
-
-      // Production guest default until the room's real mode arrives.
-      expect(provider.controlMode, ControlMode.hostOnly);
-      expect(provider.canControl(), isFalse);
-
-      // A non-host peer claiming a mode must not be believed (the relay
-      // stamps sender IDs, so hostPeerId is the only authority).
-      service.emitMessage(
-        SyncMessage.join(peerId: 'other-guest', displayName: 'Liar', isHost: true, controlMode: ControlMode.anyone),
-      );
-      await _flushProviderEvents();
-      expect(provider.controlMode, ControlMode.hostOnly);
-
-      // The host's join reply carries the room's mode — the only carrier in
-      // an idle lobby, where no PlaybackState exists yet (issue #1950).
-      service.emitMessage(
-        SyncMessage.join(peerId: hostPeerId, displayName: 'Host', isHost: true, controlMode: ControlMode.anyone),
-      );
-      await _flushProviderEvents();
-      expect(provider.controlMode, ControlMode.anyone);
-      expect(provider.canControl(), isTrue);
-
-      await provider.leaveSession();
-      provider.dispose();
-    });
-
-    test('host replies to a new guest join with the room control mode', () async {
-      final factory = _FakePeerServiceFactory();
-      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
-      await provider.createSession(
-        controlMode: ControlMode.anyone,
-        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-        displayName: 'Host',
-        sessionId: 'lobby2',
-      );
-      await _flushProviderEvents();
-      final service = factory.services.single;
-
-      service.emitMessage(SyncMessage.join(peerId: 'guest-9', displayName: 'Guest', isHost: false));
-      await _flushProviderEvents();
-
-      final reply = service.directMessages.singleWhere(
-        (entry) => entry.$1 == 'guest-9' && entry.$2.type == SyncMessageType.join,
-      );
-      expect(reply.$2.controlMode, ControlMode.anyone);
-
-      await provider.leaveSession();
-      provider.dispose();
-    });
-  });
-
-  group('WatchTogetherProvider — participant roster', () {
-    test('a peer re-admitted without a leave is sent our join again, once', () async {
-      final factory = _FakePeerServiceFactory();
-      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
-      await provider.joinSession(
-        'roster1',
-        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-        displayName: 'Guest',
-      );
-      await _flushProviderEvents();
-      final service = factory.services.single;
-      final hostPeerId = provider.session!.hostPeerId!;
-      Iterable<SyncMessage> joinsToHost() => service.directMessages
-          .where((entry) => entry.$1 == hostPeerId && entry.$2.type == SyncMessageType.join)
-          .map((entry) => entry.$2);
-      SyncMessage hostJoin() => SyncMessage.join(peerId: hostPeerId, displayName: 'Host', isHost: true);
-
-      service.emitMessage(hostJoin());
-      await _flushProviderEvents();
-      expect(joinsToHost(), hasLength(1));
-
-      // The host reconnects before the relay notices its old connection
-      // died: the relay re-admits it without a leave, and the host, which
-      // dropped its roster with the old connection, announces itself again.
-      service.emitPeerConnected(hostPeerId);
-      service.emitMessage(hostJoin());
-      await _flushProviderEvents();
-      expect(joinsToHost(), hasLength(2));
-      expect(joinsToHost().last.peerId, service.myPeerId);
-      expect(provider.participants.where((participant) => participant.peerId == hostPeerId), hasLength(1));
-
-      // The host's answer to that reply is not answered again.
-      service.emitMessage(hostJoin());
-      await _flushProviderEvents();
-      expect(joinsToHost(), hasLength(2));
-
-      await provider.leaveSession();
-      provider.dispose();
-    });
-
-    test('a join reply racing its target out of the room keeps the host session', () async {
-      final factory = _FakePeerServiceFactory(rejectDisconnectedTargets: true);
-      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
-      await provider.createSession(
-        controlMode: ControlMode.anyone,
-        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-        displayName: 'Host',
-        sessionId: 'race1',
-      );
-      await _flushProviderEvents();
-      final service = factory.services.single;
-
-      // The guest is already gone when its join is answered, so the relay
-      // rejects the directed reply with not_in_room.
-      service.emitMessage(SyncMessage.join(peerId: 'guest-9', displayName: 'Guest', isHost: false));
-      await _flushProviderEvents();
-
-      expect(provider.isInSession, isTrue);
-      expect(provider.session?.state, SessionState.connected);
-      expect(provider.session?.errorMessage, isNull);
-
-      await provider.leaveSession();
-      provider.dispose();
-    });
-  });
-
-  group('WatchTogetherProvider — release cleanup', () {
-    test('release failure is surfaced after local session teardown completes', () async {
-      final releaseFailure = StateError('relay release failed');
-      final factory = _FakePeerServiceFactory(releaseError: releaseFailure);
-      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
+  group('outside a room', () {
+    setUp(SettingsService.resetForTesting);
+
+    test('works without arguments: no room, presses left to the player, the public relays', () async {
+      final provider = WatchTogetherProvider();
       addTearDown(provider.dispose);
 
-      await provider.createSession(
-        controlMode: ControlMode.hostOnly,
-        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-        sessionId: 'fail1',
-      );
-      final service = factory.services.single;
-
-      await expectLater(provider.leaveSession(), throwsA(same(releaseFailure)));
-
-      expect(service.releaseCalls, 1);
-      expect(service.didDisconnect, isTrue);
-      expect(service.isDisposed, isTrue);
-      expect(provider.session, isNull);
       expect(provider.isInSession, isFalse);
+      expect(provider.room, isNull);
       expect(provider.participants, isEmpty);
+      expect(provider.control, owp.Control.host);
+      expect(provider.hasMedia, isFalse);
+      expect(provider.relayScope, relayScopeOf(null));
+      expect(provider.customRelayBaseUrl, isNull);
+      expect(provider.play(), isFalse);
+      expect(provider.pause(), isFalse);
+      expect(provider.seek(const Duration(seconds: 5)), isFalse);
+      expect(provider.setRate(1.5), isFalse);
+      provider.leave();
+
+      await expectLater(provider.joinRoom('K7M-Q2'), _partyError(owp.ErrorCode.invalidCode));
+      expect(provider.isInSession, isFalse);
+    });
+
+    test('a player opened outside a room is only remembered; another one releases it', () async {
+      final provider = WatchTogetherProvider();
+      addTearDown(provider.dispose);
+      final first = _openPlayer(_copyOf(_alien('alien', 'nas')));
+      final second = _openPlayer(_copyOf(_alien('alien-2', 'nas')));
+
+      provider.playerOpened(first.adapter, shareable: true, roomLaunch: false);
+      expect(provider.isFollowing, isFalse);
+      expect(await provider.shareCopy(first.adapter), isFalse);
+      expect(first.adapter.isReleased, isFalse);
+
+      provider.playerOpened(second.adapter, shareable: true, roomLaunch: false);
+      expect(first.adapter.isReleased, isTrue);
+
+      await provider.playerClosed(second.adapter, continuing: false);
+      expect(second.adapter.isReleased, isTrue);
+      expect(first.player.commandLog, isEmpty);
     });
   });
 
-  group('WatchTogetherProvider — relay authority', () {
-    // These drive a real loopback relay; the widget binding's mock HttpClient
-    // (400 for everything) must not intercept the per-attempt upgrade client.
-    setUp(() {
-      final previousHttpOverrides = HttpOverrides.current;
-      HttpOverrides.global = null;
-      addTearDown(() => HttpOverrides.global = previousHttpOverrides);
+  group('in a room', () {
+    setUp(() async {
+      resetSharedPreferencesForTest();
+      SettingsService.resetForTesting();
+      await SettingsService.getInstance();
     });
 
-    test('an occupied room is joined as a guest without creating', () async {
-      late final _ProviderRelay relay;
-      relay = await _ProviderRelay.start((socket, message) {
-        if (message['type'] == 'join') {
-          relay.send(socket, {
-            'type': 'joined',
-            'sessionId': message['sessionId'],
-            'hostPeerId': _providerHostId,
-            'reconnectToken': message['reconnectToken'],
-            'protocolVersion': 2,
-            'peers': [_providerHostId],
-          });
-        } else if (message['type'] == 'leave') {
-          relay.send(socket, {
-            'type': 'left',
-            'sessionId': message['sessionId'],
-            'peerId': message['peerId'],
-            'protocolVersion': 2,
-          });
-        }
-      });
-      addTearDown(relay.close);
-      final endpoint = WatchTogetherRelayEndpoint.resolve(relay.baseUrl);
-      final provider = WatchTogetherProvider();
-      addTearDown(() async {
-        await provider.leaveSession();
-        provider.dispose();
-      });
+    _roomTest('create and join: the code, participants with their names and clients, a join notice', (world) async {
+      final h = world.host(profileId: 'profile-host');
+      final g = world.guest(' \u200FGuest\tOne\n', 'profile-guest');
 
-      await provider.enterRoom('busy01', relayEndpoint: endpoint, displayName: 'Guest');
+      final code = await world.settle(h.provider.createRoom());
+      expect(code, FakeOwpRelay.code);
+      expect((h.provider.roomCode, h.provider.formattedRoomCode), (code, 'K7M-Q2X'));
+      expect((h.provider.isConnected, h.provider.isInSession, h.provider.isHost), (true, true, true));
+      expect(h.provider.relayScope, relayScopeOf(null));
 
-      expect(provider.isHost, isFalse);
-      expect(provider.session?.hostPeerId, _providerHostId);
-      final joins = relay.messages.where((message) => message['type'] == 'join').toList();
-      expect(joins, hasLength(2));
-      for (final join in joins) {
-        expect(join['protocolVersion'], 2);
-        expect(join['reconnectToken'], matches(RegExp(r'^[A-Za-z0-9_-]{43}$')));
-      }
-      final leave = relay.messages.singleWhere((message) => message['type'] == 'leave');
-      expect(leave['peerId'], joins.first['peerId']);
-      expect(leave['reconnectToken'], joins.first['reconnectToken']);
-      expect(leave['protocolVersion'], RelayProtocol.protocolVersion);
-      expect(joins.last['peerId'], isNot(joins.first['peerId']));
-      expect(relay.messages.map((message) => message['type']).take(3), ['join', 'leave', 'join']);
-      expect(relay.messages.where((message) => message['type'] == 'create'), isEmpty);
-    });
+      await world.settle(g.provider.joinRoom('k7m-q2x'));
+      await world.until(() => h.provider.participantCount == 2, 'the host sees the guest');
 
-    test('an abandoned room with no peers is hosted instead of joined', () async {
-      late final _ProviderRelay relay;
-      relay = await _ProviderRelay.start((socket, message) {
-        switch (message['type']) {
-          case 'join':
-            relay.send(socket, {
-              'type': 'joined',
-              'sessionId': message['sessionId'],
-              'hostPeerId': _providerHostId,
-              'reconnectToken': message['reconnectToken'],
-              'protocolVersion': 2,
-            });
-          case 'leave':
-            relay.send(socket, {
-              'type': 'left',
-              'sessionId': message['sessionId'],
-              'peerId': message['peerId'],
-              'protocolVersion': 2,
-            });
-          case 'create':
-            relay.send(socket, {
-              'type': 'created',
-              'sessionId': message['sessionId'],
-              'hostPeerId': message['peerId'],
-              'reconnectToken': message['reconnectToken'],
-              'protocolVersion': 2,
-            });
-          case 'endSession':
-            relay.send(socket, {'type': 'ended', 'sessionId': message['sessionId'], 'protocolVersion': 2});
-        }
-      });
-      addTearDown(relay.close);
-      final endpoint = WatchTogetherRelayEndpoint.resolve(relay.baseUrl);
-      final provider = WatchTogetherProvider();
-      addTearDown(() async {
-        await provider.leaveSession();
-        provider.dispose();
-      });
-
-      await provider.enterRoom('empty1', relayEndpoint: endpoint, displayName: 'Host');
-
-      expect(provider.isHost, isTrue);
-      // The probe identity is released before the code is taken over, so the
-      // relay sees an empty room when the create lands.
-      expect(relay.messages.map((message) => message['type']).take(3), ['join', 'leave', 'create']);
-      final create = relay.messages.singleWhere((message) => message['type'] == 'create');
-      expect(create['sessionId'], 'EMPTY1');
-      expect(provider.session?.hostPeerId, create['peerId']);
-      final probeJoin = relay.messages.firstWhere((message) => message['type'] == 'join');
-      expect(create['peerId'], isNot(probeJoin['peerId']));
-      expect(provider.session?.hostPeerId, isNot(_providerHostId));
-    });
-
-    test('a room-not-found probe creates with relay-declared host authority', () async {
-      late final _ProviderRelay relay;
-      relay = await _ProviderRelay.start((socket, message) {
-        if (message['type'] == 'join') {
-          relay.send(socket, {'type': 'error', 'code': 'room_not_found', 'message': 'Room not found'});
-        } else if (message['type'] == 'create') {
-          relay.send(socket, {
-            'type': 'created',
-            'sessionId': message['sessionId'],
-            'hostPeerId': message['peerId'],
-            'reconnectToken': message['reconnectToken'],
-            'protocolVersion': 2,
-          });
-        } else if (message['type'] == 'endSession') {
-          relay.send(socket, {'type': 'ended', 'sessionId': message['sessionId'], 'protocolVersion': 2});
-        }
-      });
-      addTearDown(relay.close);
-      final endpoint = WatchTogetherRelayEndpoint.resolve(relay.baseUrl);
-      final provider = WatchTogetherProvider();
-      addTearDown(() async {
-        await provider.leaveSession();
-        provider.dispose();
-      });
-
-      await provider.enterRoom('new01', relayEndpoint: endpoint, displayName: 'Host');
-
-      expect(provider.isHost, isTrue);
-      final create = relay.messages.singleWhere((message) => message['type'] == 'create');
-      expect(provider.session?.hostPeerId, create['peerId']);
-      expect(create['peerId'], isNot('wt-NEW01'));
-      expect(create['protocolVersion'], 2);
-      expect(create['reconnectToken'], matches(RegExp(r'^[A-Za-z0-9_-]{43}$')));
-    });
-  });
-
-  test('create and join use the final admitted role, not the initiating verb', () async {
-    for (final create in [true, false]) {
-      final factory = _FakePeerServiceFactory(admittedAsHost: !create);
-      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
-      if (create) {
-        await provider.createSession(
-          controlMode: ControlMode.anyone,
-          relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
+      expect(g.provider.roomCode, code);
+      expect((g.provider.isHost, g.provider.canControl, g.provider.control), (false, false, owp.Control.host));
+      expect(g.provider.host?.peerId, h.peerId);
+      expect(g.peerId, isNot(h.peerId));
+      for (final view in [h, g]) {
+        expect(
+          {for (final p in view.provider.participants) p.peerId: p.name},
+          {h.peerId: 'Host', g.peerId: 'Guest One'},
         );
-      } else {
-        await provider.joinSession('promoted', relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint);
+        expect(view.provider.participants.map((p) => p.client).toSet(), {'Plezy/9.9.9'});
       }
-      expect(provider.isHost, !create);
-      expect(provider.participants.single.isHost, !create);
-      expect(provider.session!.hostPeerId, factory.services.single.hostPeerId);
-      await provider.leaveSession();
-      provider.dispose();
+      expect(world.relay.sent('join').single['name'], 'Guest One');
+      await world.noticed<JoinedNotice>(h, 'the host is told', (n) => n.name == 'Guest One');
+      expect(g.noticesOf<JoinedNotice>(), isEmpty);
+
+      for (final profile in ['profile-host', 'profile-guest']) {
+        final rooms = RecentRoomsService.getRecentRooms(profileId: profile, relayScope: relayScopeOf(null));
+        expect(rooms.map((r) => r.code), [code], reason: profile);
+        expect(
+          RecentRoomsService.getRecentRooms(profileId: profile, relayScope: relayScopeOf('http://x.test')),
+          isEmpty,
+        );
+      }
+    });
+
+    _roomTest('a code without a room is refused, and a display name without text is Plezy', (world) async {
+      final h = world.member('\u202E\n');
+      await world.settle(h.provider.createRoom());
+      final g = world.guest();
+
+      expect(await world.refusal(g.provider.joinRoom('K7M-Q2Y')), owp.ErrorCode.roomNotFound);
+      expect(g.provider.isInSession, isFalse);
+      expect(h.provider.participants.single.name, 'Plezy');
+    });
+
+    _roomTest('host transfer, control mode and lock; a guest is refused host commands', (world) async {
+      final h = world.host();
+      final g = world.guest();
+      await world.together(h, [g]);
+
+      g.provider.setLocked(true);
+      g.provider.setControl(owp.Control.everyone);
+      g.provider.transferHost(h.peerId);
+      g.provider.endRoom();
+      await world.wait(Duration.zero);
+      expect(g.noticesOf<RefusedNotice>().map((n) => n.code), List.filled(4, owp.ErrorCode.forbidden));
+
+      h.provider.setControl(owp.Control.everyone);
+      await world.until(() => g.provider.canControl && g.provider.control == owp.Control.everyone, 'all control');
+
+      h.provider.setLocked(true);
+      await world.until(() => g.provider.isLocked, 'the guest sees the lock');
+      final latecomer = world.guest('Late');
+      expect(await world.refusal(latecomer.provider.joinRoom(h.provider.roomCode!)), owp.ErrorCode.roomLocked);
+      h.provider.setLocked(false);
+      await world.until(() => !g.provider.isLocked, 'the guest sees the unlock');
+      await world.settle(latecomer.provider.joinRoom(h.provider.roomCode!));
+      await world.until(() => h.provider.participantCount == 3, 'the latecomer is in');
+
+      h.provider.transferHost(g.peerId);
+      await world.until(() => g.provider.isHost && !h.provider.isHost, 'the guest is host');
+      expect(h.provider.host?.peerId, g.peerId);
+      expect(latecomer.provider.host?.peerId, g.peerId);
+      h.provider.kick(latecomer.peerId);
+      await world.wait(Duration.zero);
+      expect(h.noticesOf<RefusedNotice>().single.code, owp.ErrorCode.forbidden);
+    });
+
+    _roomTest('a kicked guest is told; the room goes on without them', (world) async {
+      final h = world.host();
+      final g = world.guest();
+      await world.together(h, [g]);
+
+      h.provider.kick(g.peerId);
+      await world.noticed<EndedNotice>(g, 'the guest is told', (n) => n.reason == owp.EndReason.kicked);
+      await world.until(() => !g.provider.isInSession, 'the guest is out');
+      expect(g.provider.state.endReason, owp.EndReason.kicked);
+      expect(g.provider.room, isNull);
+      await world.until(() => h.provider.participantCount == 1, 'the host is alone');
+      expect(h.provider.isConnected, isTrue);
+      expect(h.noticesOf<EndedNotice>(), isEmpty);
+    });
+
+    _roomTest('disposing the provider, as a profile switch does, leaves the room at once', (world) async {
+      final h = world.host();
+      final g = world.guest();
+      await world.together(h, [g]);
+
+      g.dispose();
+      // Left, not dropped: a dropped guest would stay listed while the relay
+      // keeps its place for a resume.
+      await world.noticed<LeftNotice>(h, 'the host sees the guest go', (n) => n.name == 'Guest');
+      await world.until(() => h.provider.participantCount == 1, 'the host is alone');
+    });
+
+    _roomTest('leaving tells the others without an end notice; ending ends it for everyone', (world) async {
+      final h = world.host();
+      final g = world.guest();
+      final other = world.guest('Other');
+      await world.together(h, [g, other]);
+
+      g.provider.leave();
+      await world.until(() => !g.provider.isInSession, 'the guest is out');
+      await world.noticed<LeftNotice>(h, 'the host is told', (n) => n.name == 'Guest');
+      await world.until(() => other.provider.participantCount == 2, 'the other guest sees two');
+      expect(g.provider.state.endReason, owp.EndReason.left);
+      expect(g.noticesOf<EndedNotice>(), isEmpty);
+      g.provider.leave();
+
+      h.provider.endRoom();
+      await world.noticed<EndedNotice>(other, 'the other guest is told', (n) => n.reason == owp.EndReason.ended);
+      await world.until(() => !h.provider.isInSession && !other.provider.isInSession, 'the room is over');
+      expect(other.provider.state.endReason, owp.EndReason.ended);
+    });
+
+    _roomTest('the host shares its file; a guest finds its own copy, opens it and follows', (world) async {
+      final (host: h, guest: g, :hostPlayer, :screen) = await world.following();
+
+      final shared = world.relay.sent('setMedia').single;
+      expect(shared['positionMs'], 0);
+      final media = h.provider.media!;
+      expect((media.kind, media.title, media.year, media.durationMs), (owp.MediaKind.movie, 'Alien', 1979, _alienMs));
+      expect(media.ids, {'imdb': 'tt0078748', 'tmdb': '348'});
+      expect(media.ext, {
+        'app.plezy': {'server': 'host-nas', 'item': 'alien', 'version': 'hd'},
+      });
+      expect(h.provider.roomCopy?.id, '');
+      expect(h.provider.isFollowing, isTrue);
+      expect(h.provider.canJoinPlayback, isFalse);
+
+      // The guest searched by the identity the descriptor carried.
+      final query = world.guestQueries.single;
+      expect((query.kind, query.title, query.year), (MediaKind.movie, 'Alien', 1979));
+      expect(query.ids.toJson(), {'imdb': 'tt0078748', 'tmdb': 348});
+
+      expect(g.provider.media, media);
+      expect(g.provider.state.match?.state, owp.MatchState.matched);
+      expect(g.provider.state.match?.deltaMs, 800);
+      expect(screen.players.single.adapter.copy, _copyOf(_guestAlien));
+      expect(g.provider.roomCopy?.ref, _copyOf(_guestAlien));
+      expect(g.provider.canJoinPlayback, isFalse);
+      await world.until(
+        () => h.participant(g.peerId).match?.state == owp.MatchState.matched,
+        'the host sees the guest matched',
+      );
+      expect(hostPlayer.adapter.isReleased, isFalse);
+    });
+
+    _roomTest('presses go through the room while following; without control they are refused', (world) async {
+      final (host: h, guest: g, :hostPlayer, :screen) = await world.following();
+      final bystander = world.guest('Bystander');
+      await world.settle(bystander.provider.joinRoom(h.provider.roomCode!));
+      await world.until(() => h.provider.participantCount == 3, 'the bystander is in');
+      await world.until(() => hostPlayer.player.state.playing, 'the shared file plays');
+
+      expect(g.provider.pause(), isTrue, reason: 'the screen leaves its player alone');
+      expect(bystander.provider.pause(), isFalse, reason: 'without the room file open the player is the user own');
+      await world.wait(const Duration(milliseconds: 100));
+      expect(g.notices.last, isA<ControlRefusedNotice>());
+      expect(world.relay.sent('pause'), isEmpty);
+
+      h.provider.setControl(owp.Control.everyone);
+      await world.until(() => g.provider.canControl, 'the guest controls');
+
+      expect(g.provider.pause(), isTrue);
+      await world.noticed<ActionNotice>(h, 'the host sees the pause', (n) => n.kind == 'pause' && n.name == 'Guest');
+      await world.until(() => !hostPlayer.player.state.playing, 'the host player pauses');
+
+      expect(g.provider.play(), isTrue);
+      await world.noticed<ActionNotice>(h, 'the host sees the play', (n) => n.kind == 'play');
+      await world.until(() => hostPlayer.player.state.playing, 'the host player plays');
+
+      expect(g.provider.seek(const Duration(minutes: 10)), isTrue);
+      await world.noticed<ActionNotice>(h, 'the host sees the seek', (n) => n.kind == 'seek');
+      expect(h.noticesOf<ActionNotice>().last, _action('seek', name: 'Guest', positionMs: 600000));
+
+      expect(g.provider.setRate(3), isTrue);
+      await world.noticed<ActionNotice>(h, 'the host sees the rate', (n) => n.kind == 'rate');
+      expect(h.noticesOf<ActionNotice>().last, _action('rate', name: 'Guest', rate: maxRoomRate));
+      expect(h.provider.room?.rate, maxRoomRate);
+
+      expect(h.provider.seek(const Duration(milliseconds: -5)), isTrue);
+      await world.noticed<ActionNotice>(
+        g,
+        'the guest sees the host seek',
+        (n) => n.kind == 'seek' && n.positionMs == 0,
+      );
+      expect(world.relay.sent('seek').last['positionMs'], 0);
+      expect(g.noticesOf<ActionNotice>().where((n) => n.name == 'Guest'), isEmpty, reason: 'not its own');
+      expect(g.noticesOf<RefusedNotice>(), isEmpty);
+      expect(screen.players.single.player.commandLog, contains('rate:2.0'));
+    });
+
+    _roomTest('a player that refuses to start blocks until the user presses play', (world) async {
+      final h = world.host();
+      final g = world.guest();
+      final screen = _Screen(g)
+        ..refusePlay = true
+        ..listen();
+      await world.together(h, [g]);
+      await world.hostPlays(h, _hostAlien);
+
+      await world.noticed<PlayBlockedNotice>(g, 'the guest is told to press play');
+      expect(g.provider.playBlocked, isTrue);
+
+      await world.settle(g.provider.playBlockedPlayer());
+      expect(g.noticesOf<PlayBlockedNotice>(), hasLength(2), reason: 'refused again, it stays blocked');
+      expect(g.provider.playBlocked, isTrue);
+
+      expect(g.provider.room?.phase, owp.Phase.playing);
+      expect(g.provider.play(), isFalse, reason: 'the press starts the player itself');
+      expect(g.provider.playBlocked, isFalse);
+      expect(screen.players.single.player.state.playing, isFalse);
+    });
+
+    _roomTest('an offset is the guest own: it shifts its file, bounded, and the room sees it', (world) async {
+      final (host: h, guest: g, hostPlayer: _, screen: _) = await world.following();
+
+      g.provider.setOffset(1500);
+      await world.until(() => g.provider.state.offsetMs == 1500, 'the guest file is shifted');
+      await world.until(() => h.participant(g.peerId).offsetMs == 1500, 'the host sees the offset');
+
+      g.provider.setOffset(maxRoomOffsetMs * 2);
+      await world.until(() => g.provider.state.offsetMs == maxRoomOffsetMs, 'the offset stops at 7 days');
+      g.provider.setOffset(-maxRoomOffsetMs * 2);
+      await world.until(() => g.provider.state.offsetMs == -maxRoomOffsetMs, 'and at minus 7 days');
+      expect(g.noticesOf<RefusedNotice>(), isEmpty);
+      expect(h.provider.state.offsetMs, 0);
+    });
+
+    _roomTest('the host closing its player stops the media, and the following guest player closes', (world) async {
+      final (host: h, guest: g, :hostPlayer, :screen) = await world.following();
+
+      await world.settle(h.provider.playerClosed(hostPlayer.adapter, continuing: false));
+      expect(hostPlayer.adapter.isReleased, isTrue);
+      expect(world.relay.sent('clearMedia'), hasLength(1));
+      await world.until(() => !g.provider.hasMedia && !h.provider.hasMedia, 'the room has no media');
+      expect(screen.exits, 1);
+      expect(h.provider.isFollowing, isFalse);
+      expect(g.provider.isInSession, isTrue);
+    });
+
+    _roomTest('a host player that hands over to the next file keeps the room media', (world) async {
+      final (host: h, guest: g, :hostPlayer, :screen) = await world.following();
+
+      await world.settle(h.provider.playerClosed(hostPlayer.adapter, continuing: true));
+      final next = await world.hostPlays(h, _alien('alien-2', 'host-nas', version: 'remux'));
+
+      expect(world.relay.sent('clearMedia'), isEmpty);
+      expect(world.relay.sent('setMedia'), hasLength(2));
+      await world.until(() => world.guestQueries.length == 2, 'the guest searches for the next media');
+      await world.until(() => g.provider.isFollowing, 'the guest follows the next media');
+      expect(screen.exits, 0);
+      expect(next.adapter.isReleased, isFalse);
+    });
+
+    _roomTest('the host sharing the same file again keeps the guest player, and the room still seeks it', (
+      world,
+    ) async {
+      final (host: h, guest: g, :hostPlayer, :screen) = await world.following();
+      final guestPlayer = screen.players.single;
+
+      expect(await world.settle(h.provider.shareCopy(hostPlayer.adapter)), isTrue);
+      expect(world.relay.sent('setMedia'), hasLength(2));
+      await world.until(() => world.guestQueries.length == 2, 'the guest searches for the new epoch');
+      await world.until(() => g.provider.isFollowing, 'the guest follows again');
+      expect(screen.players, hasLength(1), reason: 'the open file is the match again, so nothing reopens');
+      expect(screen.exits, 0);
+      expect(guestPlayer.adapter.isReleased, isFalse);
+
+      expect(h.provider.seek(const Duration(minutes: 20)), isTrue);
+      await world.until(
+        () => guestPlayer.player.commandLog.any(
+          (command) => command.startsWith('seek:') && int.parse(command.substring(5)) >= 1200000,
+        ),
+        'the room seeks the guest player',
+      );
+      expect(g.noticesOf<RefusedNotice>(), isEmpty);
+    });
+
+    _roomTest('a search again that fails keeps the file playing and says the search failed', (world) async {
+      final (host: _, guest: g, hostPlayer: _, :screen) = await world.following();
+      world.guestAnswer = (_) async => libraryLookupResult(const [], failed: {'guest-nas'});
+
+      g.provider.searchAgain();
+      await world.noticed<SearchFailedNotice>(g, 'the guest is told');
+      expect(g.provider.searchFailed, isTrue);
+      expect(g.provider.state.candidates, isEmpty);
+      expect(g.provider.isFollowing, isTrue, reason: 'the open file goes on');
+      expect(g.provider.roomCopy?.ref, _copyOf(_guestAlien));
+      expect(screen.players.single.adapter.isReleased, isFalse);
+    });
+
+    _roomTest('a host that hands over keeps its own file as the room copy, not a search', (world) async {
+      final (host: h, guest: g, :hostPlayer, screen: _) = await world.following();
+
+      h.provider.transferHost(g.peerId);
+      await world.until(() => g.provider.isHost && !h.provider.isHost, 'the guest is host');
+      expect(h.provider.state.match?.state, owp.MatchState.matched);
+      expect(h.provider.roomCopy?.id, '', reason: 'the media is still this participant own');
+      expect(h.provider.roomCopy?.ref, hostPlayer.adapter.copy);
+      expect(h.provider.isFollowing, isTrue);
+      expect(h.provider.canJoinPlayback, isFalse);
+
+      // Out of the player, the former host is offered its own file again.
+      await world.settle(h.provider.playerClosed(hostPlayer.adapter, continuing: false));
+      expect(world.relay.sent('clearMedia'), isEmpty, reason: 'a guest leaving its player keeps the room media');
+      await world.wait(const Duration(milliseconds: 100));
+      expect(h.provider.hasMedia, isTrue);
+      expect(h.provider.roomCopy?.id, '');
+      expect(h.provider.canJoinPlayback, isTrue);
+    });
+
+    _roomTest('a file the room cannot get is not shared, and stops what the room played', (world) async {
+      final h = world.host(shareDurationWait: const Duration(milliseconds: 300));
+      final g = world.guest();
+      await world.together(h, [g]);
+      await world.hostPlays(h, _hostAlien);
+      await world.until(() => g.provider.hasMedia, 'the guest has the media');
+
+      // A download: the room keeps its media.
+      final download = _openPlayer(_copyOf(_alien('alien', 'host-nas', version: 'sd')));
+      h.provider.playerOpened(download.adapter, shareable: false, roomLaunch: false);
+      await world.wait(Duration.zero);
+      expect(h.notices.last, isA<NotSharedNotice>());
+      expect(h.provider.isFollowing, isFalse);
+      expect(h.provider.canJoinPlayback, isTrue);
+
+      // No length anywhere: the share waits for the player, then gives up.
+      final unknown = _openPlayer(
+        _copyOf(_alien('home', 'host-nas', durationMs: null, version: 'raw')),
+        duration: Duration.zero,
+      );
+      h.provider.playerOpened(unknown.adapter, shareable: true, roomLaunch: false);
+      await world.wait(const Duration(milliseconds: 200));
+      expect(h.noticesOf<ShareFailedNotice>(), isEmpty, reason: 'still waiting for the player length');
+      await world.noticed<ShareFailedNotice>(h, 'the host is told');
+      await world.until(() => !g.provider.hasMedia && !h.provider.hasMedia, 'the room media stops');
+
+      // A server this profile can't describe from.
+      final foreign = _openPlayer(_copyOf(_alien('alien', 'usb-drive')));
+      h.provider.playerOpened(foreign.adapter, shareable: true, roomLaunch: false);
+      await world.until(() => h.noticesOf<ShareFailedNotice>().length == 2, 'the host is told again');
+      expect(world.relay.sent('setMedia'), hasLength(1));
+      expect(world.relay.sent('clearMedia'), hasLength(1));
+      expect(h.noticesOf<RefusedNotice>(), isEmpty);
+    });
+
+    _roomTest('a host file without a server length is shared once the player knows it', (world) async {
+      final h = world.host();
+      await world.settle(h.provider.createRoom());
+      final opened = _openPlayer(
+        _copyOf(_alien('home', 'host-nas', durationMs: null, version: 'raw')),
+        duration: Duration.zero,
+      );
+      h.provider.playerOpened(opened.adapter, shareable: true, roomLaunch: false);
+      await world.wait(const Duration(seconds: 1));
+      expect(world.relay.sent('setMedia'), isEmpty);
+
+      opened.player.emitDuration(const Duration(minutes: 90));
+      await world.until(() => h.provider.hasMedia, 'the room plays it');
+      expect(h.provider.media?.durationMs, 5400000);
+    });
+
+    _roomTest('a file the host opened before the room is shared once the room exists', (world) async {
+      final h = world.host();
+      final opened = _openPlayer(_copyOf(_hostAlien));
+      h.provider.playerOpened(opened.adapter, shareable: true, roomLaunch: false);
+
+      await world.settle(h.provider.createRoom());
+
+      await world.until(() => h.provider.isFollowing, 'the room plays the host file');
+      expect(h.provider.media?.title, 'Alien');
+      expect(h.provider.roomCopy?.ref, opened.adapter.copy);
+    });
+
+    _roomTest('a failed search is reported and searched again; without a player the file is offered', (world) async {
+      final h = world.host();
+      final g = world.guest();
+      var failing = true;
+      world.guestAnswer = (_) async => failing
+          ? libraryLookupResult(const [], failed: {'guest-nas'})
+          : libraryLookupResult([_guestAlien], succeeded: {'guest-nas'});
+      await world.together(h, [g]);
+      await world.hostPlays(h, _hostAlien);
+
+      await world.noticed<SearchFailedNotice>(g, 'the guest is told the search failed');
+      await world.until(() => g.provider.state.match?.state == owp.MatchState.unavailable, 'nothing to play');
+      expect(g.provider.roomCopy, isNull);
+      expect(g.provider.searchFailed, isTrue, reason: 'nothing found is not taken as absence');
+
+      failing = false;
+      g.provider.searchAgain();
+      expect(g.provider.searchFailed, isFalse);
+      await world.until(() => g.provider.state.match?.state == owp.MatchState.matched, 'the copy is found');
+      // Nothing can open the file: the guest sits out and is offered to join.
+      await world.noticed<OpenFailedNotice>(g, 'the guest is told the file did not open');
+      expect(g.provider.canJoinPlayback, isTrue);
+      expect(g.provider.isFollowing, isFalse);
+
+      final screen = _Screen(g);
+      g.provider.navigatorOpener = screen.open;
+      expect(await world.settle(g.provider.openRoomCopy()), isTrue);
+      await world.until(() => g.provider.isFollowing, 'the guest follows');
+      expect(screen.players.single.adapter.copy, _copyOf(_guestAlien));
+      expect(g.provider.canJoinPlayback, isFalse);
+    });
+  });
+
+  group('on a real relay', skip: _relayBinary == null ? 'OWP_RELAY_BIN is not set' : false, () {
+    late _Relay relay;
+
+    setUpAll(() async => relay = await _Relay.start(_relayBinary!));
+    tearDownAll(() => relay.stop());
+
+    test('create, join, share, follow, presses, stop and leave', () async {
+      // The widget-test binding answers every HttpClient with a 400.
+      await HttpOverrides.runWithHttpOverrides(() async {
+        final world = _RealWorld(relay.baseUrl);
+        try {
+          final (host: h, guest: g, :hostPlayer, :screen) = await world.following();
+          expect(h.provider.relayScope, relayScopeOf(relay.baseUrl));
+          expect(g.provider.roomCode, h.provider.roomCode);
+          expect(g.provider.participants.map((p) => p.name).toSet(), {'Host', 'Guest'});
+          await world.noticed<JoinedNotice>(h, 'the host is told', (n) => n.name == 'Guest');
+          expect(world.guestQueries.single.ids.toJson(), {'imdb': 'tt0078748', 'tmdb': 348});
+          expect(g.provider.state.match?.deltaMs, 800);
+
+          expect(g.provider.pause(), isTrue);
+          await world.wait(const Duration(milliseconds: 50));
+          expect(g.notices.last, isA<ControlRefusedNotice>());
+          h.provider.setControl(owp.Control.everyone);
+          await world.until(() => g.provider.canControl, 'the guest controls');
+          await world.until(() => h.provider.room?.phase == owp.Phase.playing, 'the room plays');
+          expect(g.provider.pause(), isTrue);
+          await world.noticed<ActionNotice>(h, 'the host sees the pause', (n) => n.kind == 'pause');
+          await world.until(() => !hostPlayer.player.state.playing, 'the host player pauses');
+          expect(g.provider.seek(const Duration(minutes: 10)), isTrue);
+          await world.noticed<ActionNotice>(h, 'the host sees the seek', (n) => n.kind == 'seek');
+          expect(h.noticesOf<ActionNotice>().last, _action('seek', name: 'Guest', positionMs: 600000));
+
+          await h.provider.playerClosed(hostPlayer.adapter, continuing: false);
+          await world.until(() => !g.provider.hasMedia, 'the room media stops');
+          expect(screen.exits, 1);
+
+          g.provider.leave();
+          await world.noticed<LeftNotice>(h, 'the host is told', (n) => n.name == 'Guest');
+          expect(g.noticesOf<EndedNotice>(), isEmpty);
+        } finally {
+          await world.close();
+        }
+      }, _NetworkHttp());
+    });
+  });
+}
+
+/// The `OWP_RELAY_BIN` relay binary (`go build -o <path> ./cmd/owp-relay` in
+/// the Open Watch Party repository); without it the real-relay test is
+/// skipped. Tests never reach the public relays.
+final String? _relayBinary = switch (Platform.environment['OWP_RELAY_BIN']) {
+  final path? when path.isNotEmpty => path,
+  _ => null,
+};
+
+/// The default [HttpClient], for the real relay's WebSockets.
+final class _NetworkHttp extends HttpOverrides {}
+
+/// Providers on [_Relay] in real time.
+final class _RealWorld extends _World {
+  _RealWorld(this.baseUrl);
+
+  final String baseUrl;
+
+  @override
+  WatchTogetherProvider newProvider({
+    required String name,
+    required String? profileId,
+    required ServerClientLookup? clientFor,
+    required TitleCopyFinder? findCopies,
+    required Duration shareDurationWait,
+  }) => WatchTogetherProvider(
+    clientName: () async => 'Plezy/9.9.9',
+    displayName: () => name,
+    customRelayBaseUrl: () => baseUrl,
+    profileId: () => profileId,
+    clientFor: clientFor,
+    findCopies: findCopies,
+    shareDurationWait: shareDurationWait,
+  );
+
+  @override
+  Future<void> wait(Duration duration) => Future<void>.delayed(duration);
+}
+
+/// An `owp-relay` on 127.0.0.1, on a free port of this file's range
+/// (19030-19069), with its per-IP limits raised: every participant of the
+/// test connects from the same address.
+final class _Relay {
+  _Relay._(this.port, this._process);
+
+  static const _firstPort = 19030;
+  static const _lastPort = 19069;
+
+  final int port;
+  final Process _process;
+
+  String get baseUrl => 'http://127.0.0.1:$port';
+
+  static Future<_Relay> start(String binary) async {
+    for (var port = _firstPort; port <= _lastPort; port++) {
+      try {
+        await (await ServerSocket.bind(InternetAddress.loopbackIPv4, port)).close();
+      } on SocketException {
+        continue;
+      }
+      return _launch(binary, port);
     }
-  });
+    throw StateError('no free port in $_firstPort-$_lastPort');
+  }
 
-  test('terminal membership loss also detaches the host and revokes old screen work', () async {
-    final factory = _FakePeerServiceFactory();
-    final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
-    final player = FakeSyncPlayer();
-    var exits = 0;
-    provider.onHostExitedPlayer = () => exits++;
-    await provider.createSession(
-      controlMode: ControlMode.anyone,
-      relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-    );
-    final oldLease = provider.capturePlaybackLease(selection: true)!;
-    provider.selectMedia(
-      ratingKey: 'A',
-      serverId: ServerId('srv'),
-      mediaTitle: 'A',
-      position: const Duration(seconds: 121),
-      rate: 1,
-      lease: oldLease,
-    );
-    final oldBinding = provider.bindPlayer(player, ratingKey: 'A', serverId: 'srv', lease: oldLease)!;
-    provider.unbindPlayer(expectedBinding: oldBinding);
-    factory.services.single.emitSessionEnded();
-    await _flushProviderEvents();
-    expect(exits, 1);
-    expect(provider.isInSession, isFalse);
-    expect(provider.hasCurrentPlayback, isFalse);
-    await provider.createSession(
-      controlMode: ControlMode.anyone,
-      relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-    );
-    expect(provider.bindPlayer(player, ratingKey: 'A', serverId: 'srv', lease: oldLease), isNull);
-    expect(
-      provider.selectMedia(
-        ratingKey: 'A',
-        serverId: ServerId('srv'),
-        mediaTitle: 'A',
-        position: Duration.zero,
-        rate: 1,
-        lease: oldLease,
-      ),
-      isFalse,
-    );
-    provider.endMedia(expectedBinding: oldBinding);
-    expect(provider.hasCurrentPlayback, isFalse);
-    await provider.leaveSession();
-    provider.dispose();
-    await player.dispose();
-  });
-
-  group('WatchTogetherProvider — terminal room lifecycle', () {
-    test('relay ended notification exits immediately without release or reconnect grace', () async {
-      final factory = _FakePeerServiceFactory();
-      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
-      var hostExitCalls = 0;
-      provider.onHostExitedPlayer = () => hostExitCalls++;
-
-      await provider.joinSession(
-        'ended1',
-        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-        displayName: 'Guest',
-      );
-      final service = factory.services.single;
-      service.emitPeerDisconnected(provider.session!.hostPeerId!);
-      await _flushProviderEvents();
-      expect(provider.isWaitingForHostReconnect, isTrue);
-
-      service.emitSessionEnded();
-      await _flushProviderEvents();
-
-      expect(hostExitCalls, 1);
-      expect(provider.session, isNull);
-      expect(provider.isWaitingForHostReconnect, isFalse);
-      expect(service.releaseCalls, 0);
-      expect(service.didDisconnect, isTrue);
-      expect(service.isDisposed, isTrue);
-      provider.dispose();
-    });
-
-    test('best-effort host-leave cleanup observes release failures', () async {
-      final releaseFailure = StateError('relay release failed');
-      final factory = _FakePeerServiceFactory(releaseError: releaseFailure);
-      final uncaught = <Object>[];
-
-      await runZonedGuarded(() async {
-        final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
-        await provider.joinSession(
-          'leave2',
-          relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-          displayName: 'Guest',
-        );
-        final service = factory.services.single;
-        service.emitMessage(SyncMessage.leave(peerId: provider.session!.hostPeerId!));
-        await _flushProviderEvents();
-        expect(provider.session, isNull);
-        expect(service.releaseCalls, 1);
-        provider.dispose();
-      }, (error, _) => uncaught.add(error));
-
-      expect(uncaught, isEmpty);
-    });
-  });
-
-  group('WatchTogetherProvider — dispose hygiene', () {
-    test('participantEvents stream is closed after dispose', () async {
-      final p = WatchTogetherProvider();
-      // Attach a listener; capture done via the stream's done future.
-      final events = <ParticipantEvent>[];
-      var streamDone = false;
-      final sub = p.participantEvents.listen(events.add, onDone: () => streamDone = true);
-      p.dispose();
-      // Yield so the broadcast controller's close microtask runs.
-      await Future<void>.delayed(Duration.zero);
-      await sub.cancel();
-      expect(streamDone, isTrue);
-    });
-
-    test('dispose detaches local listeners before relay release completes', () async {
-      final releaseCompleter = Completer<void>();
-      final factory = _FakePeerServiceFactory(releaseBarrier: releaseCompleter.future);
-      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
-      await provider.joinSession(
-        'dispose1',
-        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-        displayName: 'Guest',
-      );
-      final service = factory.services.single;
-      expect(service.hasRelayListeners, isTrue);
-
-      provider.dispose();
-
-      expect(provider.session, isNull);
-      expect(provider.participants, isEmpty);
-      expect(provider.isWaitingForHostReconnect, isFalse);
-      expect(service.hasRelayListeners, isFalse);
-      expect(service.releaseCalls, 1);
-      expect(service.didDisconnect, isFalse);
-
-      service.emitPeerConnected('late-peer');
-      service.emitMessage(SyncMessage.join(peerId: 'late-peer', displayName: 'Late', isHost: false));
-      await _flushProviderEvents();
-      expect(provider.participants, isEmpty);
-
-      releaseCompleter.complete();
-      await _flushProviderEvents();
-      expect(service.didDisconnect, isTrue);
-      expect(service.isDisposed, isTrue);
-    });
-  });
-
-  group('WatchTogetherProvider — host transfer', () {
-    test('guest A, host B, guest A reloads the mounted player and converges', () async {
-      final factory = _FakePeerServiceFactory();
-      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
-      addTearDown(provider.dispose);
-      final player = FakeSyncPlayer(hasRenderedFrame: true);
-      addTearDown(player.dispose);
-      await provider.joinSession('roundtrip', relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint);
-      final service = factory.services.single;
-      final originalHost = service.hostPeerId!;
-      final reloads = <String>[];
-      var lobbyPushes = 0;
-      provider.onMediaSwitched = (_, _, _) async {
-        lobbyPushes++;
-        return true;
-      };
-      provider.onPlayerMediaSwitched = (key, server, _) async {
-        reloads.add(key);
-        provider.bindPlayer(player, ratingKey: key, serverId: server, lease: provider.capturePlaybackLease()!);
-        return true;
-      };
-      void publishA(int seq) => service.emitMessage(
-        SyncMessage.state(
-          PlaybackState(
-            seq: seq,
-            ratingKey: 'A',
-            serverId: 'srv',
-            phase: PlaybackPhase.paused,
-            anchorPositionMs: 30000,
-            anchorHostTimeMs: 0,
-            rate: 1,
-            controlMode: ControlMode.anyone,
-          ),
-          peerId: originalHost,
-        ),
-      );
-
-      publishA(1);
-      await _flushProviderEvents();
-      expect(reloads, ['A']);
-      expect(player.state.position, const Duration(seconds: 30));
-      service.emitHostChanged(service.myPeerId!);
-      await _flushProviderEvents();
-      provider.selectMedia(
-        ratingKey: 'B',
-        serverId: ServerId('srv'),
-        mediaTitle: 'B',
-        position: Duration.zero,
-        rate: 1,
-        lease: provider.capturePlaybackLease(selection: true),
-      );
-      provider.unbindPlayer();
-      player.setPosition(Duration.zero);
-      provider.bindPlayer(player, ratingKey: 'B', serverId: 'srv', lease: provider.capturePlaybackLease()!);
-      service.emitHostChanged(originalHost);
-      await _flushProviderEvents();
-
-      publishA(1); // A new authority resets sequence numbering as well.
-      await _flushProviderEvents();
-      publishA(2);
-      await _flushProviderEvents();
-      expect(reloads, ['A', 'A']);
-      expect(player.state.position, const Duration(seconds: 30));
-      expect(player.state.playing, isFalse);
-      expect(lobbyPushes, 0);
-    });
-
-    test('demotion invalidates pending guest completion as well as handled history', () async {
-      final factory = _FakePeerServiceFactory();
-      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
-      addTearDown(provider.dispose);
-      await provider.joinSession('pending', relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint);
-      final service = factory.services.single;
-      final originalHost = service.hostPeerId!;
-      final oldSwitch = Completer<bool>();
-      var attempts = 0;
-      provider.onPlayerMediaSwitched = (_, _, _) {
-        attempts++;
-        return attempts == 1 ? oldSwitch.future : Future.value(attempts > 2);
-      };
-      provider.debugHandleMediaState('A', 'srv', 'A');
-      await _flushProviderEvents();
-      service.emitHostChanged(service.myPeerId!);
-      await _flushProviderEvents();
-      provider.selectMedia(
-        ratingKey: 'B',
-        serverId: ServerId('srv'),
-        mediaTitle: 'B',
-        position: Duration.zero,
-        rate: 1,
-        lease: provider.capturePlaybackLease(selection: true),
-      );
-      service.emitHostChanged(originalHost);
-      await _flushProviderEvents();
-      provider.debugHandleMediaState('A', 'srv', 'A');
-      await _flushProviderEvents();
-      expect(attempts, 2);
-      oldSwitch.complete(true);
-      await _flushProviderEvents();
-      // The failed current-generation switch must still retry, regardless
-      // of the old generation's late success.
-      provider.debugHandleMediaState('A', 'srv', 'A');
-      await _flushProviderEvents();
-      expect(attempts, 3);
-      provider.debugHandleMediaState('A', 'srv', 'A');
-      await _flushProviderEvents();
-      expect(attempts, 3);
-    });
-
-    test('host-started player remains the media owner after demotion and reloads', () async {
-      final factory = _FakePeerServiceFactory();
-      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
-      addTearDown(provider.dispose);
-      final player = FakeSyncPlayer(hasRenderedFrame: true);
-      addTearDown(player.dispose);
-      await provider.createSession(
-        controlMode: ControlMode.anyone,
-        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-        sessionId: 'owner',
-      );
-      final service = factory.services.single;
-      var currentKey = 'A';
-      final reloads = <String>[];
-      var lobbyPushes = 0;
-      provider.onMediaSwitched = (_, _, _) async {
-        lobbyPushes++;
-        return true;
-      };
-      provider.onPlayerMediaSwitched = (key, server, _) async {
-        provider.unbindPlayer();
-        currentKey = key;
-        reloads.add(key);
-        provider.bindPlayer(player, ratingKey: key, serverId: server, lease: provider.capturePlaybackLease()!);
-        return true;
-      };
-      provider.selectMedia(
-        ratingKey: currentKey,
-        serverId: ServerId('srv'),
-        mediaTitle: currentKey,
-        position: Duration.zero,
-        rate: 1,
-        lease: provider.capturePlaybackLease(selection: true),
-      );
-      provider.bindPlayer(player, ratingKey: currentKey, serverId: 'srv', lease: provider.capturePlaybackLease()!);
-      service.emitHostChanged('other-host');
-      await _flushProviderEvents();
-      for (final (seq, key) in [(1, 'B'), (2, 'C')]) {
-        service.emitMessage(
-          SyncMessage.state(
-            PlaybackState(
-              seq: seq,
-              ratingKey: key,
-              serverId: 'srv',
-              phase: PlaybackPhase.paused,
-              anchorPositionMs: 0,
-              anchorHostTimeMs: 0,
-              rate: 1,
-              controlMode: ControlMode.anyone,
-            ),
-            peerId: 'other-host',
-          ),
-        );
-        await _flushProviderEvents();
+  static Future<_Relay> _launch(String binary, int port) async {
+    final process = await Process.start(binary, [
+      '--addr', '127.0.0.1:$port', //
+      '--admin-addr', '',
+      '--max-connections-per-ip', '100',
+      '--max-rooms-per-ip', '100',
+      '--join-burst', '1000',
+      '--joins-per-second', '1000',
+      '--message-burst', '1000',
+      '--messages-per-second', '1000',
+    ]);
+    final log = StringBuffer();
+    process.stdout.transform(utf8.decoder).listen(log.write);
+    process.stderr.transform(utf8.decoder).listen(log.write);
+    final relay = _Relay._(port, process);
+    final waited = Stopwatch()..start();
+    while (true) {
+      try {
+        (await Socket.connect(InternetAddress.loopbackIPv4, port)).destroy();
+        return relay;
+      } on SocketException {
+        if (waited.elapsed > const Duration(seconds: 10)) {
+          await relay.stop();
+          throw StateError('owp-relay did not listen on $port:\n$log');
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 50));
       }
-      expect(currentKey, 'C');
-      expect(reloads, ['B', 'C']);
-      expect(lobbyPushes, 0);
-      var exits = 0;
-      provider.onHostExitedPlayer = () {
-        exits++;
-        provider.endMedia();
-      };
-      service.emitMessage(SyncMessage.hostExitedPlayer(peerId: 'other-host'));
-      await _flushProviderEvents();
-      expect(exits, 1);
-      expect(provider.onPlayerMediaSwitched, isNull);
-      expect(provider.hasCurrentPlayback, isFalse);
-    });
+    }
+  }
 
-    test('hostChanged demotes the host, updates participants, and toasts the new host', () async {
-      final factory = _FakePeerServiceFactory();
-      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
-      addTearDown(provider.dispose);
-      final events = <ParticipantEvent>[];
-      final subscription = provider.participantEvents.listen(events.add);
-      addTearDown(subscription.cancel);
-
-      await provider.createSession(
-        controlMode: ControlMode.anyone,
-        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-        displayName: 'Host',
-        sessionId: 'xfer1',
-      );
-      final service = factory.services.single;
-      service.connectedGuests.add('guest-a');
-      service.emitMessage(SyncMessage.join(peerId: 'guest-a', displayName: 'Guest A', isHost: false));
-      service.emitHostTransferEligibility(['guest-a']);
-      await _flushProviderEvents();
-
-      final guest = provider.participants.singleWhere((p) => p.peerId == 'guest-a');
-      expect(provider.canTransferHostTo(guest), isTrue);
-      provider.transferHost(guest);
-      expect(service.transferRequests, ['guest-a']);
-
-      // Roles only flip when the relay's broadcast lands.
-      expect(provider.isHost, isTrue);
-      service.emitHostChanged('guest-a');
-      await _flushProviderEvents();
-
-      expect(provider.isHost, isFalse);
-      expect(provider.session?.hostPeerId, 'guest-a');
-      expect(provider.session?.state, SessionState.connected);
-      expect(provider.participants.singleWhere((p) => p.peerId == 'guest-a').isHost, isTrue);
-      expect(provider.participants.singleWhere((p) => p.peerId != 'guest-a').isHost, isFalse);
-      final event = events.singleWhere((e) => e.type == ParticipantEventType.hostChanged);
-      expect(event.displayName, 'Guest A');
-    });
-
-    test('hostChanged promotion re-announces the room control mode as host', () async {
-      final factory = _FakePeerServiceFactory();
-      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
-      addTearDown(provider.dispose);
-      final events = <ParticipantEvent>[];
-      final subscription = provider.participantEvents.listen(events.add);
-      addTearDown(subscription.cancel);
-
-      await provider.joinSession(
-        'xfer2',
-        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-        displayName: 'Guest',
-      );
-      final service = factory.services.single;
-      // The host's join teaches guests the room's real control mode.
-      service.emitMessage(
-        SyncMessage.join(peerId: 'wt-XFER2', displayName: 'Host', isHost: true, controlMode: ControlMode.anyone),
-      );
-      await _flushProviderEvents();
-      expect(provider.controlMode, ControlMode.anyone);
-
-      service.emitHostChanged(service.myPeerId!);
-      await _flushProviderEvents();
-
-      expect(provider.isHost, isTrue);
-      expect(provider.session?.role, SessionRole.host);
-      expect(provider.session?.hostPeerId, service.myPeerId);
-      expect(provider.participants.singleWhere((p) => p.peerId == service.myPeerId).isHost, isTrue);
-      expect(provider.participants.singleWhere((p) => p.peerId == 'wt-XFER2').isHost, isFalse);
-      expect(events.map((e) => e.type), contains(ParticipantEventType.becameHost));
-      // The promoted host re-broadcasts a join carrying the inherited mode.
-      final announced = service.broadcasts.lastWhere((m) => m.type == SyncMessageType.join);
-      expect(announced.isHost, isTrue);
-      expect(announced.controlMode, ControlMode.anyone);
-      // Reverse state: the demoted-side wiring is exercised by the demotion
-      // test above; a promoted host can end the session (host-only path).
-      expect(provider.canControl(), isTrue);
-    });
-
-    test('a rejected transfer keeps the session connected and toasts the failure', () async {
-      final factory = _FakePeerServiceFactory();
-      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
-      addTearDown(provider.dispose);
-      final events = <ParticipantEvent>[];
-      final subscription = provider.participantEvents.listen(events.add);
-      addTearDown(subscription.cancel);
-
-      await provider.createSession(
-        controlMode: ControlMode.hostOnly,
-        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-        displayName: 'Host',
-        sessionId: 'xfer3',
-      );
-      final service = factory.services.single;
-      service.connectedGuests.add('guest-b');
-      service.emitMessage(SyncMessage.join(peerId: 'guest-b', displayName: 'Guest B', isHost: false));
-      service.emitHostTransferEligibility(['guest-b']);
-      await _flushProviderEvents();
-
-      provider.transferHost(provider.participants.singleWhere((p) => p.peerId == 'guest-b'));
-      service.emitError(
-        const PeerError(
-          type: PeerErrorType.serverError,
-          message: 'Host transfer unavailable',
-          serverCode: RelayProtocol.hostTransferUnavailableCode,
-        ),
-      );
-      await _flushProviderEvents();
-
-      expect(provider.session?.state, SessionState.connected);
-      expect(provider.isHost, isTrue);
-      final event = events.singleWhere((e) => e.type == ParticipantEventType.hostTransferFailed);
-      expect(event.displayName, 'Guest B');
-    });
-
-    test('transfer requires host role, a connected target, and relay authorization', () async {
-      final factory = _FakePeerServiceFactory();
-      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
-      addTearDown(provider.dispose);
-
-      await provider.createSession(
-        controlMode: ControlMode.anyone,
-        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-        displayName: 'Host',
-        sessionId: 'xfer4',
-      );
-      final service = factory.services.single;
-      service.connectedGuests.add('guest-new');
-      service.emitMessage(SyncMessage.join(peerId: 'guest-new', displayName: 'New', isHost: false));
-      // An old-protocol guest (version below the current sync protocol).
-      service.connectedGuests.add('guest-old');
-      service.emitMessage(
-        SyncMessage.fromJson('{"t":"join","ts":0,"pid":"guest-old","name":"Old","host":false,"v":2}'),
-      );
-      // A guest the relay no longer reports as connected.
-      service.emitMessage(SyncMessage.join(peerId: 'guest-gone', displayName: 'Gone', isHost: false));
-      service.emitHostTransferEligibility(['guest-new', 'guest-gone']);
-      await _flushProviderEvents();
-
-      Participant byId(String id) => provider.participants.singleWhere((p) => p.peerId == id);
-      expect(provider.canTransferHostTo(byId('guest-new')), isTrue);
-      expect(provider.canTransferHostTo(byId('guest-old')), isFalse);
-      expect(provider.canTransferHostTo(byId('guest-gone')), isFalse);
-      expect(provider.canTransferHostTo(byId(service.myPeerId!)), isFalse);
-
-      // Ineligible targets never reach the relay.
-      provider.transferHost(byId('guest-old'));
-      expect(service.transferRequests, isEmpty);
-
-      // A guest can never initiate a transfer.
-      service.emitHostChanged('guest-new');
-      await _flushProviderEvents();
-      expect(provider.isHost, isFalse);
-      expect(provider.canTransferHostTo(byId('guest-old')), isFalse);
-    });
-
-    test('relay eligibility updates block transfer before a bystander announces sync join', () async {
-      final factory = _FakePeerServiceFactory();
-      final provider = WatchTogetherProvider(peerServiceFactory: factory.call);
-      addTearDown(provider.dispose);
-      await provider.createSession(
-        controlMode: ControlMode.anyone,
-        relayEndpoint: WatchTogetherRelayEndpoint.defaultEndpoint,
-        displayName: 'Host',
-        sessionId: 'xfer5',
-      );
-      final service = factory.services.single;
-      service.connectedGuests.add('guest-new');
-      service.emitMessage(SyncMessage.join(peerId: 'guest-new', displayName: 'New', isHost: false));
-      service.emitHostTransferEligibility(['guest-new']);
-      await _flushProviderEvents();
-      final target = provider.participants.singleWhere((p) => p.peerId == 'guest-new');
-      expect(provider.canTransferHostTo(target), isTrue);
-
-      final availability = <bool>[];
-      provider.addListener(() => availability.add(provider.canTransferHostTo(target)));
-      // Admission blocks transfer without waiting for B's sync join or even
-      // the peerJoined event to reach this client.
-      service.emitHostTransferEligibility([]);
-      await _flushProviderEvents();
-      expect(availability.last, isFalse);
-      provider.transferHost(target);
-      expect(service.transferRequests, isEmpty);
-
-      service.connectedGuests.add('guest-218');
-      service.emitMessage(
-        SyncMessage.fromJson(
-          '{"t":"join","ts":0,"pid":"guest-218","name":"Old","host":false,"v":3,"cap":["hostTransfer"]}',
-        ),
-      );
-      await _flushProviderEvents();
-      expect(provider.canTransferHostTo(target), isFalse, reason: 'sync payload cannot authorize transfer');
-      service.connectedGuests.remove('guest-218');
-      service.emitPeerDisconnected('guest-218');
-      service.emitHostTransferEligibility(['guest-new']);
-      await _flushProviderEvents();
-      expect(availability.last, isTrue);
-      provider.transferHost(target);
-      expect(service.transferRequests, ['guest-new']);
-    });
-  });
+  Future<void> stop() async {
+    _process.kill();
+    await _process.exitCode.timeout(
+      const Duration(seconds: 5),
+      onTimeout: () {
+        _process.kill(ProcessSignal.sigkill);
+        return _process.exitCode;
+      },
+    );
+  }
 }

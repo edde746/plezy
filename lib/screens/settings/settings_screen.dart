@@ -50,7 +50,7 @@ import '../../widgets/settings_section.dart';
 import '../../widgets/system_bottom_inset.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/profile.dart';
-import '../../watch_together/services/watch_together_relay_endpoint.dart';
+import '../../watch_together/services/watch_party_relays.dart';
 import 'about_screen.dart';
 import 'add_connection_screen.dart';
 import 'account_preferences_screen.dart';
@@ -965,7 +965,7 @@ class _RelayUrlDialogState extends State<_RelayUrlDialog> {
   void initState() {
     super.initState();
     _controller = TextEditingController(
-      text: widget.settingsService.read(settings.SettingsService.customRelayUrl) ?? '',
+      text: widget.settingsService.read(settings.SettingsService.watchPartyRelayUrl) ?? '',
     );
   }
 
@@ -978,24 +978,24 @@ class _RelayUrlDialogState extends State<_RelayUrlDialog> {
 
   Future<void> _reset() async {
     _controller.clear();
-    await widget.settingsService.write(settings.SettingsService.customRelayUrl, null);
+    await widget.settingsService.write(settings.SettingsService.watchPartyRelayUrl, null);
     if (mounted) Navigator.pop(context);
   }
 
   Future<void> _save() async {
     final value = _controller.text;
     if (value.trim().isEmpty) {
-      await widget.settingsService.write(settings.SettingsService.customRelayUrl, null);
+      await widget.settingsService.write(settings.SettingsService.watchPartyRelayUrl, null);
       if (mounted) Navigator.pop(context);
       return;
     }
 
-    final endpoint = WatchTogetherRelayEndpoint.tryParseCustom(value);
-    if (endpoint == null) {
+    final base = canonicalRelayBaseUrl(value);
+    if (base == null) {
       setState(() => _relayUrlInvalid = true);
       return;
     }
-    await widget.settingsService.write(settings.SettingsService.customRelayUrl, endpoint.canonicalBaseUrl);
+    await widget.settingsService.write(settings.SettingsService.watchPartyRelayUrl, base);
     if (mounted) Navigator.pop(context);
   }
 

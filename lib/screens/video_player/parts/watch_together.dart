@@ -1,300 +1,281 @@
 part of '../../video_player_screen.dart';
 
+/// The player's side of Watch Together: one [PlezyPlayerAdapter] per file the
+/// player opened, handed to the room, and the user's presses routed to the
+/// room while it drives this player.
 extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
-  /// Whether an active Watch Together session owns playback starts: media is
-  /// opened paused and the sync layer coordinates the (group) start.
-  bool _watchTogetherOwnsPlaybackStart() {
-    if (_isOfflinePlayback || widget.isLive) return false;
-    return _activeWatchTogetherSession() != null;
+  /// The room, when this user is in one and this screen can take part: Live
+  /// TV never does.
+  WatchTogetherProvider? _watchTogetherRoom() {
+    final watchTogether = _watchTogetherProvider;
+    if (widget.isLive || watchTogether == null || !watchTogether.isInSession) return null;
+    return watchTogether;
   }
 
-  /// Active room rate wins over saved item preferences after explicit selection.
-  bool _watchTogetherOwnsPlaybackRate() => !_isOfflinePlayback && _activeWatchTogetherSession() != null;
+  /// The room, while it drives this screen's player.
+  WatchTogetherProvider? _followedRoom() {
+    final watchTogether = _watchTogetherProvider;
+    final adapter = _wtAdapter;
+    if (watchTogether == null || adapter == null || !watchTogether.follows(adapter)) return null;
+    return watchTogether;
+  }
 
-  /// Bind only a committed open and retain its session/output ownership for disposal.
-  void _attachToWatchTogetherSession({required WatchPlaybackLease lease, Future<void>? startupHold}) {
-    if (_shuttingDown) return;
-    final watchTogether = _activeWatchTogetherSession();
-    final currentPlayer = player;
-    final metadata = _playbackSession?.metadata ?? _currentMetadata;
-    final serverId = metadata.serverId;
-    if (watchTogether == null ||
-        currentPlayer == null ||
-        serverId == null ||
-        !watchTogether.isPlaybackLeaseCurrent(lease)) {
-      return;
-    }
-    _watchTogetherProvider = watchTogether;
-    final generation = _transitionGate.generation;
-    final bindingLease = watchTogether.capturePlaybackLease()!;
-    _watchTogetherLease = bindingLease;
-    watchTogether.onPlayerMediaSwitched = _watchTogetherMediaSwitchHandler;
-    _watchTogetherBinding = watchTogether.bindPlayer(
-      currentPlayer,
-      ratingKey: metadata.id,
-      serverId: serverId,
-      mediaTitle: metadata.displayTitle,
-      startupHold: startupHold,
-      lease: bindingLease,
-      remoteSeek: (target) async {
-        if (!_isCurrentPlaybackGeneration(generation, currentPlayer) ||
-            !watchTogether.isPlaybackLeaseCurrent(bindingLease)) {
-          throw StateError('Watch Together seek source was superseded');
-        }
-        final commandLease = watchTogether.capturePlaybackLease(selection: true)!;
-        await _performSeekPlayback(target, isCurrent: () => watchTogether.isPlaybackLeaseCurrent(commandLease));
-      },
+  /// The room starts this open, so it opens paused: a host's file waits for
+  /// everyone once shared, and a guest's for the room.
+  bool _watchTogetherOwnsPlaybackStart() {
+    if (_isOfflinePlayback) return false;
+    final room = _watchTogetherRoom();
+    if (room == null || !room.isConnected) return false;
+    return room.isHost || _wtRoomOpen || _followedRoom() != null;
+  }
+
+  /// The room sets the rate, not the item's remembered speed.
+  bool _watchTogetherOwnsPlaybackRate() => _watchTogetherOwnsPlaybackStart();
+
+  /// Without control of a room that drives this player, presses do nothing.
+  bool _canControlPlayback() => !_shuttingDown && (_followedRoom()?.canControl ?? true);
+
+  /// Another item replaces the room's media for everyone: host only.
+  bool _canNavigateMediaItems() => !_shuttingDown && (_followedRoom()?.isHost ?? true);
+
+  /// Registers this screen as the player the room switches and closes.
+  void _registerWithWatchTogether() {
+    final watchTogether = _watchTogetherProvider;
+    if (watchTogether == null) return;
+    watchTogether.registerPlayer(
+      this,
+      WatchPlayerHooks(openInPlace: _openRoomCopyInPlace, exitPlayer: _exitPlayerForRoom),
     );
   }
 
-  void _detachFromWatchTogetherSession({required bool exiting}) {
-    final watchTogether = _watchTogetherProvider;
-    final binding = _watchTogetherBinding;
-    if (watchTogether == null) return;
-    if (binding != null) {
-      if (!watchTogether.ownsBinding(binding)) return;
-      if (exiting) {
-        watchTogether.endMedia(expectedBinding: binding);
-      } else {
-        watchTogether.unbindPlayer(expectedBinding: binding);
-      }
-    } else if (exiting &&
-        !watchTogether.hasAttachedPlayer &&
-        watchTogether.isPlaybackLeaseCurrent(_watchTogetherLease)) {
-      // The room can adopt media before this route has opened any output.
-      watchTogether.endMedia();
-    }
-    if (identical(watchTogether.onPlayerMediaSwitched, _watchTogetherMediaSwitchHandler)) {
-      watchTogether.onPlayerMediaSwitched = null;
-    }
-  }
-
-  /// Run [body] with the Watch Together binding detached, then re-attach.
-  /// [AttachedPlayer] classifies every play/pause transition it did not
-  /// command as a viewer intent, and a bound engine still services remote
-  /// play/pause/seek/rate requests against the player, so a flow that
-  /// drives the player itself — the display-matching measurement window and
-  /// the hold around an HDMI switch — must not be bound while it runs, the
-  /// same way a reload detaches around its internal pause. Re-attachment
-  /// carries [startupHold] so a room waiting on the startup gate keeps
-  /// waiting; readiness itself is the player's own rendered-frame fact, so
-  /// the rebind loses nothing. Skipped when the room lease or the binding
-  /// moved on.
-  Future<void> _withWatchTogetherDetached(Future<void> Function() body, {Future<void>? startupHold}) async {
-    final watchTogether = _watchTogetherProvider;
-    final binding = _watchTogetherBinding;
-    final lease = _watchTogetherLease;
-    final detached = watchTogether != null && binding != null && watchTogether.ownsBinding(binding);
-    if (detached) watchTogether.unbindPlayer(expectedBinding: binding);
-    try {
-      await body();
-    } finally {
-      if (detached &&
-          mounted &&
-          !_shuttingDown &&
-          lease != null &&
-          watchTogether.isPlaybackLeaseCurrent(lease) &&
-          watchTogether.ownsBinding(binding) &&
-          !watchTogether.hasAttachedPlayer) {
-        try {
-          _attachToWatchTogetherSession(lease: lease, startupHold: startupHold);
-        } catch (e, stackTrace) {
-          appLogger.w('Failed to reattach Watch Together after display negotiation', error: e, stackTrace: stackTrace);
-        }
-      }
-    }
-  }
-
-  /// The active Watch Together session, or null when not in one (or the
-  /// provider is unavailable).
-  WatchTogetherProvider? _activeWatchTogetherSession() {
-    try {
-      final watchTogether = _watchTogetherProvider ?? context.read<WatchTogetherProvider>();
-      final lease = _watchTogetherLease ?? widget.watchTogetherLease;
-      if (lease != null && !watchTogether.isSamePlaybackSession(lease)) return null;
-      return watchTogether.isInSession ? watchTogether : null;
-    } catch (_) {
-      return null;
-    }
-  }
-
-  /// Playback intent is guest-controllable only when the active room permits
-  /// it. Outside a room, the local screen remains authoritative.
-  bool _canControlPlayback() => !_shuttingDown && (_activeWatchTogetherSession()?.canControl() ?? true);
-
-  /// Choosing another queue item or episode is host-only in every room mode.
-  bool _canNavigateMediaItems() => !_shuttingDown && (_activeWatchTogetherSession()?.isHost ?? true);
-
-  void _commitWatchTogetherSelection(
-    WatchTogetherProvider? watchTogether,
-    WatchPlaybackLease? lease,
-    MediaItem metadata,
-    Duration position,
-  ) {
-    if (watchTogether == null || lease == null || !lease.canSelect || metadata.serverId == null) return;
-    // Followers open the version this open committed, not their own
-    // remembered one (#2536). Both callers commit the session first.
+  /// The file the player has open, as the room knows it. A room's copy that
+  /// names this item without a version (the server listed none when it was
+  /// found) stands for whichever version opened.
+  WatchCopy? _openedWatchCopy() {
+    if (widget.isLive) return null;
     final session = _playbackSession;
-    final versions = session?.availableVersions ?? const <MediaVersion>[];
+    final metadata = session?.metadata ?? _currentMetadata;
+    if (metadata.serverId == null) return null;
+    final versions = session?.availableVersions ?? metadata.mediaVersions ?? const <MediaVersion>[];
     final index = session?.mediaIndex ?? -1;
     final sourceId = session?.mediaSourceId;
-    final signature = index >= 0 && index < versions.length ? versions[index].signature : null;
-    watchTogether.selectMedia(
-      ratingKey: metadata.id,
-      serverId: ServerId(metadata.serverId!),
-      mediaTitle: metadata.displayTitle,
-      mediaVersion: sourceId == null && signature == null ? null : (sourceId: sourceId, signature: signature),
-      position: position,
-      rate: ScopedPlayerPrefs.resolve(ScopedPlayerPrefs.playbackSpeed, metadata),
-      lease: lease,
-    );
+    final version = index >= 0 && index < versions.length
+        ? versions[index]
+        : versions.where((v) => sourceId != null && v.id == sourceId).firstOrNull;
+    final opened = WatchCopy.of(metadata, version);
+    final roomRef = _watchTogetherProvider?.roomCopy?.ref;
+    if (roomRef != null &&
+        roomRef.serverId == opened.serverId &&
+        roomRef.itemId == opened.itemId &&
+        (roomRef.versionId.isEmpty || opened.versionId.isEmpty)) {
+      return roomRef;
+    }
+    return opened;
   }
 
-  /// Apply a user-chosen playback rate and declare it to an active Watch
-  /// Together room. Every deliberate rate change (speed sheet, keyboard,
-  /// long-press 2x, media controls) goes through here; the sync layer never
-  /// infers rate intent from the player's own rate stream.
+  /// The room's commands act on the player directly; none of them may come
+  /// back to the room as the user's press.
+  PlayerCommands _watchTogetherCommands(Player currentPlayer) => PlayerCommands(
+    play: () async {
+      if (!automotivePlaybackAllowedNow()) throw StateError('playback is restricted while driving');
+      await _playWithPlaybackIntent(currentPlayer);
+    },
+    pause: () => _pauseWithPlaybackIntent(currentPlayer),
+    seek: (position) => _performSeekPlayback(position),
+    setRate: (rate) => currentPlayer.setRate(rate),
+  );
+
+  /// Hands the file the player just committed to the room. The adapter of an
+  /// earlier open of the same file in the same player stays (a quality or
+  /// track reload); any other open gets a new one. [startupHold] keeps the
+  /// room waiting while the screen still prepares the file.
+  void _bindWatchTogether({Future<void>? startupHold}) {
+    final watchTogether = _watchTogetherProvider;
+    final currentPlayer = player;
+    final roomOpen = _wtRoomOpen;
+    _wtRoomOpen = false;
+    if (watchTogether == null || currentPlayer == null || _shuttingDown) return;
+    final copy = _openedWatchCopy();
+    final previous = _wtAdapter;
+    if (copy == null) {
+      if (previous != null) {
+        _wtAdapter = null;
+        unawaited(watchTogether.playerClosed(previous, continuing: true));
+      }
+      return;
+    }
+    if (previous != null && identical(previous.player, currentPlayer) && previous.copy == copy) {
+      if (startupHold != null) previous.hold(startupHold);
+      watchTogether.playerChanged(previous);
+      return;
+    }
+    final adapter = PlezyPlayerAdapter(
+      player: currentPlayer,
+      copy: copy,
+      commands: _watchTogetherCommands(currentPlayer),
+    );
+    if (startupHold != null) adapter.hold(startupHold);
+    _wtAdapter = adapter;
+    watchTogether.playerOpened(adapter, shareable: !_isOfflinePlayback, roomLaunch: roomOpen);
+  }
+
+  /// Keeps the room waiting until [until] completes: the player is busy with
+  /// the file (a reload, a display-mode switch), and the room's commands wait
+  /// for it.
+  void _holdWatchTogether(Future<void> until) => _wtAdapter?.hold(until);
+
+  /// Runs [body], which drives the player itself (the display measurement,
+  /// the hold around a display switch), with the room held off so it neither
+  /// counts the player ready nor commands it meanwhile.
+  Future<void> _withWatchTogetherHeld(Future<void> Function() body) {
+    final done = Completer<void>();
+    _holdWatchTogether(done.future);
+    return Future<void>.sync(body).whenComplete(done.complete);
+  }
+
+  /// The player is going away; a host's media stops for everyone unless
+  /// [continuing]. Completes once the room no longer commands the player.
+  Future<void> _releaseWatchTogether({required bool continuing}) {
+    final watchTogether = _watchTogetherProvider;
+    final adapter = _wtAdapter;
+    _wtAdapter = null;
+    _wtRoomOpen = false;
+    if (watchTogether == null) return Future<void>.value();
+    watchTogether.unregisterPlayer(this);
+    if (adapter != null) _wtReleased = watchTogether.playerClosed(adapter, continuing: continuing);
+    // A car's restriction and the background belonged to this player (its
+    // resume never comes once it closed); the next one starts fresh.
+    watchTogether.setVehicleRestricted(false);
+    watchTogether.setBackgrounded(false);
+    return _wtReleased ?? Future<void>.value();
+  }
+
+  /// The file failed to play for good. The room stops commanding this
+  /// player and counting on it: it would seek the dead file every couple of
+  /// seconds and hold everyone for it. The room keeps its media, so the user
+  /// can join again from the Watch Together screen; a retry binds anew.
+  void _detachWatchTogetherAfterFailure() {
+    final watchTogether = _watchTogetherProvider;
+    final adapter = _wtAdapter;
+    _wtAdapter = null;
+    _wtRoomOpen = false;
+    if (watchTogether == null || adapter == null) return;
+    _wtReleased = watchTogether.playerClosed(adapter, continuing: true);
+  }
+
+  /// A user's play, pause or toggle. While the room drives this player, the
+  /// press goes to the room, which then commands the player.
+  Future<void> _transportIntent(Player currentPlayer, TransportCommand command) {
+    final room = _followedRoom();
+    if (room != null) {
+      final play = switch (command) {
+        TransportCommand.play => true,
+        TransportCommand.pause => false,
+        TransportCommand.toggle => !currentPlayer.state.playing,
+      };
+      if (play ? room.play() : room.pause()) {
+        _playbackIntentShouldPlay = play;
+        return Future<void>.value();
+      }
+    }
+    return switch (command) {
+      TransportCommand.play => _playWithPlaybackIntent(currentPlayer),
+      TransportCommand.pause => _pauseWithPlaybackIntent(currentPlayer),
+      TransportCommand.toggle => _playOrPauseWithPlaybackIntent(currentPlayer),
+    };
+  }
+
+  /// Applies a user-chosen rate. While the room drives this player the room
+  /// takes it, and everyone plays at it. Every deliberate rate change (speed
+  /// sheet, keyboard, long-press 2x, media controls) goes through here.
   Future<void> _setPlaybackRate(double rate) {
     final currentPlayer = player;
     if (!mounted || currentPlayer == null) return Future<void>.value();
+    if (_followedRoom()?.setRate(rate) == true) return Future<void>.value();
     final generation = _transitionGate.generation;
     final operation = ++_userRateOperation;
-    final watchTogether = _activeWatchTogetherSession();
-    final lease = watchTogether?.capturePlaybackLease(selection: watchTogether.isHost);
-    watchTogether?.onLocalRate(rate);
     final previous = _userRateMutation;
     final mutation = () async {
       await previous.catchError((Object error) {
         appLogger.w('Previous playback rate change failed', error: error);
       });
-      if (!_isCurrentPlaybackGeneration(generation, currentPlayer) ||
-          operation != _userRateOperation ||
-          (lease != null && !lease.isCurrent)) {
-        return;
-      }
+      if (!_isCurrentPlaybackGeneration(generation, currentPlayer) || operation != _userRateOperation) return;
       await currentPlayer.setRate(rate);
     }();
     _userRateMutation = mutation;
     return mutation;
   }
 
-  /// Handle media switch from host (guest only) using the in-place reload
-  /// path. Returns whether the switch was handled; unhandled switches are
-  /// re-dispatched on the host's next state heartbeat.
-  Future<bool> _handlePlayerMediaSwitch(String ratingKey, ServerId serverId, String title) async {
-    if (!mounted) return false;
-    final watchTogether = _activeWatchTogetherSession();
-    final lease = watchTogether?.capturePlaybackLease();
-    if (watchTogether == null || lease == null) return false;
-    final switchKey = '$serverId:$ratingKey';
-
-    // Idempotent retry: already on the target with a settled player. Don't
-    // test identity mid-transition — _currentMetadata is set eagerly at
-    // reload start and can roll back on failure.
-    if (_transitionGate.transition == PlaybackTransition.idle &&
-        player != null &&
-        watchTogether.hasAttachedPlayer &&
-        _watchTogetherBinding != null &&
-        watchTogether.ownsBinding(_watchTogetherBinding!) &&
-        (_playbackSession?.metadata ?? _currentMetadata).id == ratingKey &&
-        (_playbackSession?.metadata ?? _currentMetadata).serverId == serverId) {
-      _wtSwitchToastShownForKey = null;
-      return true;
-    }
-
-    appLogger.d('WatchTogether: Guest handling media switch to $title');
-
-    // Fetch metadata for the new episode. WatchTogether's sync transport is
-    // backend-neutral (sync_message.dart carries `ratingKey` + `serverId`
-    // over WebRTC); resolving the item is just a `fetchItem` on whichever
-    // backend the guest has registered for [serverId].
-    final multiServer = context.read<MultiServerProvider>();
-    final client = multiServer.getClientForServer(serverId);
-    if (client == null) {
-      appLogger.w('WatchTogether: Server $serverId not found for media switch');
-      _showSwitchFailureToastOnce(switchKey, t.watchTogether.guestSwitchUnavailable);
-      return false;
-    }
-
-    MediaItem? metadata;
-    try {
-      metadata = await client.fetchItem(ratingKey);
-    } catch (e, stackTrace) {
-      appLogger.w('WatchTogether: Could not fetch metadata for $ratingKey', error: e, stackTrace: stackTrace);
-    }
-    if (!mounted || !watchTogether.isPlaybackLeaseCurrent(lease)) return false;
-    if (metadata == null) {
-      appLogger.w('WatchTogether: Could not fetch metadata for $ratingKey');
-      _showSwitchFailureToastOnce(switchKey, t.watchTogether.guestSwitchFailed);
-      return false;
-    }
-
-    // The fetch can outlive the dispatch that requested it (slow server,
-    // host switching again, dispatcher timeout); reloading then would swap
-    // the live screen to stale media. Unhandled: the current key rides the
-    // next heartbeat.
-    if (watchTogether.currentMediaRatingKey != ratingKey || watchTogether.currentMediaServerId != serverId) {
-      appLogger.d('WatchTogether: Skipping stale media switch to $ratingKey');
-      return false;
-    }
-
+  /// The room switches this player to [copy]: in place, or by replacing the
+  /// screen when it can't reload (Live TV, no player yet). Returns whether the
+  /// file is opening; the room binds it once it opened.
+  Future<bool> _openRoomCopyInPlace(WatchCopy copy) async {
+    if (!mounted || _shuttingDown) return false;
+    if (_wtAdapter?.copy == copy) return true;
+    final metadata = copy.item ?? await _fetchRoomItem(copy);
+    if (metadata == null || !mounted || _shuttingDown) return false;
+    if (_watchTogetherProvider?.roomCopy?.ref != copy) return false;
+    appLogger.d('WatchTogether: opening the room\'s file ${metadata.displayTitle}');
     if (player == null || widget.isLive) {
-      // Route replacement: report handled at initiation — the navigation
-      // future only completes when the pushed route pops.
-      unawaited(_replaceScreenWithPlayer(metadata, watchTogetherLease: lease));
+      unawaited(_replaceScreenWithPlayer(metadata, watchTogetherCopy: copy));
       return true;
     }
-
-    // The version the host opened (#2536); this viewer's remembered one only
-    // when the room names none on offer. fetchItem populates mediaVersions,
-    // so either resolves to a verified index/id rather than a raw index.
-    final version =
-        resolveRoomMediaVersion(
-          watchTogether.roomMediaVersionFor(ratingKey: ratingKey, serverId: serverId),
-          metadata,
-        ) ??
-        await resolveSavedMediaVersionFor(metadata);
-    if (!mounted || !watchTogether.isPlaybackLeaseCurrent(lease)) return false;
+    // An auto-advance or another reload may still hold the player.
+    await _transitionGate.waitForIdle(() => mounted && !_shuttingDown);
+    if (!mounted || _shuttingDown || _watchTogetherProvider?.roomCopy?.ref != copy) return false;
+    final version = _versionOf(metadata, copy);
+    _wtRoomOpen = true;
     final outcome = await _reloadMediaInPlace(
       metadata: metadata,
       selectedMediaIndex: version?.index ?? 0,
       selectedMediaSourceId: version?.sourceId,
-      preferredVersionSignature: version?.signature,
       qualityPreset: _selectedQualityPreset,
       preserveCurrentTrackSelection: false,
       useCurrentAudioStreamSelection: false,
-      showErrorUi: false, // the retry loop owns user feedback (once per key)
-      watchTogetherLease: lease,
+      showErrorUi: false,
       reason: 'watch together media switch',
     );
-    if (!mounted || !watchTogether.isPlaybackLeaseCurrent(lease)) return false;
-    if (outcome == MediaReloadOutcome.rejected) {
-      if (player == null) {
-        unawaited(_replaceScreenWithPlayer(metadata, watchTogetherLease: lease));
-        return true;
-      }
-      // Busy transition (e.g. auto-advance racing the host switch) — not an
-      // error; the next heartbeat re-dispatches and converges once idle.
-      return false;
+    if (!mounted) return false;
+    if (outcome == MediaReloadOutcome.rejected && player == null) {
+      _wtRoomOpen = false;
+      unawaited(_replaceScreenWithPlayer(metadata, watchTogetherCopy: copy));
+      return true;
     }
-    // failed (after rollback) and superseded land here too — trust only the
-    // committed identity.
-    final onTarget = _currentMetadata.id == ratingKey && _currentMetadata.serverId == serverId;
-    if (onTarget) {
-      // A success ends the failure episode for this key; a later failure to
-      // switch back here must toast again.
-      _wtSwitchToastShownForKey = null;
-    } else {
-      _showSwitchFailureToastOnce(switchKey, t.watchTogether.guestSwitchFailed);
-    }
-    return onTarget;
+    if (outcome != MediaReloadOutcome.opened) _wtRoomOpen = false;
+    return outcome == MediaReloadOutcome.opened;
   }
 
-  /// Toast a Watch Together switch failure at most once per media key (the
-  /// heartbeat retry loop calls the handler every few seconds).
-  void _showSwitchFailureToastOnce(String switchKey, String message) {
-    if (_wtSwitchToastShownForKey == switchKey) return;
-    _wtSwitchToastShownForKey = switchKey;
-    if (mounted) showAppSnackBar(context, message);
+  Future<MediaItem?> _fetchRoomItem(WatchCopy copy) async {
+    final client = context.read<MultiServerProvider>().getClientForServer(ServerId(copy.serverId));
+    if (client == null) return null;
+    try {
+      return await client.fetchItem(copy.itemId);
+    } catch (e, stackTrace) {
+      appLogger.w('WatchTogether: could not fetch ${copy.itemId}', error: e, stackTrace: stackTrace);
+      return null;
+    }
+  }
+
+  /// The index and source id of [copy]'s version among [metadata]'s.
+  ({int index, String? sourceId})? _versionOf(MediaItem metadata, WatchCopy copy) =>
+      watchTogetherVersionOf(metadata, copy);
+
+  /// The room stopped the media this guest followed: close the player.
+  void _exitPlayerForRoom() {
+    if (!mounted || _shuttingDown) return;
+    appLogger.d('WatchTogether: the room stopped its media; leaving the player');
+    unawaited(_exitPlayerRoute(navigateHome: false));
+  }
+
+  /// Pauses for something the environment forced on this user alone (a car
+  /// that forbids video). While the room drives this player, the room stops
+  /// waiting for this user instead of pausing for everyone, and catches the
+  /// player up once [VideoPlayerScreenState._handleCarRestrictionsChanged]
+  /// or the app's return lifts it. Returns whether the room owns the resume.
+  Future<bool> _pauseWithoutDisturbingTheRoom(Player currentPlayer) async {
+    final room = _followedRoom();
+    room?.setVehicleRestricted(true);
+    await _pauseWithPlaybackIntent(currentPlayer);
+    return room != null;
   }
 }

@@ -685,7 +685,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         final currentPlayer = player;
         if (currentPlayer == null) return;
         unawaited(_mediaControls.seekBackForRewind(currentPlayer));
-        unawaited(_playWithPlaybackIntent(currentPlayer));
+        unawaited(_transportIntent(currentPlayer, TransportCommand.play));
         _wasPlayingBeforeInactive = false;
         _announceTransportCommand(willPlay: true);
         _mediaControls.pushPlaybackState();
@@ -697,7 +697,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
           appLogger.d('Media control: Pause event suppressed (frame rate switch in progress)');
           return;
         }
-        unawaited(_pauseWithPlaybackIntent(currentPlayer));
+        unawaited(_transportIntent(currentPlayer, TransportCommand.pause));
         _announceTransportCommand(willPlay: false);
         _mediaControls.pushPlaybackState();
       },
@@ -705,11 +705,11 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         final currentPlayer = player;
         if (currentPlayer == null) return;
         if (currentPlayer.state.isActive) {
-          unawaited(_pauseWithPlaybackIntent(currentPlayer));
+          unawaited(_transportIntent(currentPlayer, TransportCommand.pause));
           _announceTransportCommand(willPlay: false);
         } else {
           unawaited(_mediaControls.seekBackForRewind(currentPlayer));
-          unawaited(_playWithPlaybackIntent(currentPlayer));
+          unawaited(_transportIntent(currentPlayer, TransportCommand.play));
           _wasPlayingBeforeInactive = false;
           _announceTransportCommand(willPlay: true);
         }
@@ -899,7 +899,8 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     // Clear any stale completion latch caused by a spurious EOF during the drop,
     // so the real end-of-file can trigger Play Next after we recover.
     _rearmCompletionLatch();
-    unawaited(_seekPlayback(pos));
+    // Not the user's seek: it never goes to a Watch Together room.
+    unawaited(_performSeekPlayback(pos));
   }
 
   /// Intercept an EOF signal that fired far from the end of the media.

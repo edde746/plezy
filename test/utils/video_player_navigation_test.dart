@@ -23,10 +23,9 @@ import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/saf_storage_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/video_player_navigation.dart';
-import 'package:plezy/watch_together/models/playback_state.dart';
-import 'package:plezy/watch_together/models/watch_session.dart';
+import 'package:openwatchparty/openwatchparty.dart' as owp;
+import 'package:plezy/watch_together/models/watch_copy.dart';
 import 'package:plezy/watch_together/providers/watch_together_provider.dart';
-import 'package:plezy/watch_together/services/watch_together_controller.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/prefs.dart';
@@ -35,7 +34,6 @@ import '../test_helpers/mock_player_channels.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 import '../test_helpers/pump.dart';
 import '../test_helpers/saf_fakes.dart';
-import '../test_helpers/watch_together_fakes.dart';
 
 void main() {
   testWidgets('replacement releases the native owner and Back never exposes an abandoned player', (tester) async {
@@ -393,7 +391,6 @@ void main() {
       MediaVersion(id: 'v0', videoResolution: '4k', videoCodec: 'hevc', container: 'mkv'),
       MediaVersion(id: 'v1', videoResolution: '1080', videoCodec: 'h264', container: 'mkv'),
     ];
-    const hostOpened = (sourceId: 'v1', signature: '1080:h264:mkv');
     final movie = testMediaItem(
       id: 'movie-1',
       backend: MediaBackend.plex,
@@ -401,27 +398,21 @@ void main() {
       serverId: 'srv',
       mediaVersions: versions,
     );
+    WatchCopy copyOf(String versionId) =>
+        WatchCopy(serverId: 'srv', itemId: 'movie-1', versionId: versionId, item: movie);
 
-    test('resolves to the source the host opened', () {
-      expect(resolveRoomMediaVersion(hostOpened, movie), (index: 1, sourceId: 'v1', signature: '1080:h264:mkv'));
+    test('opens the version the room chose', () {
+      expect(watchTogetherVersionOf(movie, copyOf('v1')), (index: 1, sourceId: 'v1'));
     });
 
-    test('falls back to the closest signature when that source is not offered', () {
-      expect(resolveRoomMediaVersion((sourceId: 'replaced', signature: '1080:h264:mp4'), movie), (
-        index: 1,
-        sourceId: 'v1',
-        signature: '1080:h264:mkv',
-      ));
+    test("yields to the viewer's own version when the copy names none or the item no longer lists it", () {
+      expect(watchTogetherVersionOf(movie, copyOf('')), isNull);
+      expect(watchTogetherVersionOf(movie, copyOf('replaced')), isNull);
     });
 
-    test('yields to the viewer when nothing on offer matches', () {
-      expect(resolveRoomMediaVersion((sourceId: 'replaced', signature: '720:h264:mkv'), movie), isNull);
-      expect(resolveRoomMediaVersion(null, movie), isNull);
-    });
-
-    test('passes the host source through when the item lists no versions', () {
+    test('passes the source through when the item lists no versions', () {
       final bare = testMediaItem(id: 'movie-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv');
-      expect(resolveRoomMediaVersion(hostOpened, bare), (index: 0, sourceId: 'v1', signature: '1080:h264:mkv'));
+      expect(watchTogetherVersionOf(bare, copyOf('v1')), (index: 0, sourceId: 'v1'));
     });
 
     group('launching the room item', () {
@@ -430,14 +421,7 @@ void main() {
       late _ExternalUrlClient client;
 
       setUp(() async {
-        // The viewer's own remembered pick is the 4K version.
-        resetSharedPreferencesForTest(
-          initialAsync: {
-            'media_version_preferences': jsonEncode({
-              'srv:movie-1': {'id': 'v0', 'sig': '4k:hevc:mkv', 'idx': 0},
-            }),
-          },
-        );
+        resetSharedPreferencesForTest();
         SettingsService.resetForTesting();
         await (await SettingsService.getInstance()).write(SettingsService.useExternalPlayer, true);
         externalLaunches = [];
@@ -459,26 +443,13 @@ void main() {
         SettingsService.resetForTesting();
       });
 
-      Future<void> launch(WidgetTester tester, {int? selectedMediaIndex, String? selectedMediaSourceId}) async {
-        final hub = FakeRelayHub();
-        final room = WatchTogetherController(
-          peerService: hub.register('host'),
-          session: const WatchSession(
-            sessionId: 'ROOM1',
-            role: SessionRole.host,
-            controlMode: ControlMode.hostOnly,
-            state: SessionState.connected,
-            hostPeerId: 'host',
-          ),
-        );
-        final watchTogether = _RoomFollowingProvider(room, hostOpened);
+      testWidgets('a launch for a file the room no longer plays opens nothing', (tester) async {
+        final watchTogether = _RoomCopyProvider(copyOf('v0'));
         final servers = testMultiServer(clients: [client]);
         final downloads = _NoDownloads();
         final offlineWatch = _OfflineWatchSync();
-        addTearDown(() async {
+        addTearDown(() {
           watchTogether.dispose();
-          room.dispose();
-          await hub.dispose();
           downloads.dispose();
           offlineWatch.dispose();
         });
@@ -493,28 +464,18 @@ void main() {
             child: const MaterialApp(home: Scaffold(body: Text('Detail'))),
           ),
         );
-        unawaited(
-          navigateToVideoPlayer(
-            tester.element(find.text('Detail')),
-            metadata: movie,
-            selectedMediaIndex: selectedMediaIndex,
-            selectedMediaSourceId: selectedMediaSourceId,
-            resolveWatchState: false,
-          ),
+
+        final opened = await navigateToVideoPlayer(
+          tester.element(find.text('Detail')),
+          metadata: movie,
+          watchTogetherCopy: copyOf('v1'),
+          resolveWatchState: false,
         );
-        await pumpUntil(tester, () => externalLaunches.isNotEmpty, describe: () => 'no external player launch');
-      }
+        await tester.pump();
 
-      testWidgets('a follower opens the version the host opened, not its own saved one', (tester) async {
-        await launch(tester);
-
-        expect(externalLaunches, ['https://server/stream/1']);
-      });
-
-      testWidgets('a version the follower picks explicitly still wins', (tester) async {
-        await launch(tester, selectedMediaIndex: 0, selectedMediaSourceId: 'v0');
-
-        expect(externalLaunches, ['https://server/stream/0']);
+        expect(opened, isNull);
+        expect(externalLaunches, isEmpty);
+        expect(client.resolvedMediaIndexes, isEmpty, reason: 'a stale room launch must not reach the server');
       });
     });
   });
@@ -628,22 +589,14 @@ class _NoDownloads extends ChangeNotifier implements DownloadProvider {
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 
-/// A Watch Together room as a launch sees it: a lease from a live controller
-/// that does not select media, and the version the room's host opened for
-/// `srv:movie-1`.
-class _RoomFollowingProvider extends WatchTogetherProvider {
-  _RoomFollowingProvider(this._room, this._version);
+/// A Watch Together room whose file to open is [copy].
+class _RoomCopyProvider extends WatchTogetherProvider {
+  _RoomCopyProvider(this.copy);
 
-  final WatchTogetherController _room;
-  final RoomMediaVersion _version;
+  final WatchCopy copy;
 
   @override
-  WatchPlaybackLease? capturePlaybackLease({bool selection = false}) =>
-      _room.capturePlaybackLease(selection: selection);
-
-  @override
-  RoomMediaVersion? roomMediaVersionFor({required String ratingKey, required ServerId serverId}) =>
-      ratingKey == 'movie-1' && serverId == 'srv' ? _version : null;
+  owp.Candidate<WatchCopy>? get roomCopy => owp.Candidate(id: 'match', ref: copy, durationMs: 7200000);
 }
 
 class _OfflineWatchSync extends ChangeNotifier implements OfflineWatchSyncService {

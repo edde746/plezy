@@ -345,7 +345,6 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get videoPlayerNavigation => 'Видео ойнатқыш навигациясы';
 	@override String get videoPlayerNavigationDescription => 'Ойнатқышты басқару үшін бағыттауыш пернелерді пайдалану';
 	@override String get watchTogetherRelay => 'Бірге көру релесі';
-	@override String get watchTogetherRelayDescription => 'Жеке реле орнату. Барлығы бір серверді пайдалануы керек.';
 	@override String get watchTogetherRelayHint => 'https://my-relay.example.com';
 	@override String get watchTogetherRelayInvalid => 'Дұрыс HTTP немесе HTTPS реле мекенжайын енгізіңіз.';
 	@override String get crashReporting => 'Қателіктер туралы есеп';
@@ -1692,79 +1691,24 @@ class _Translations$watchTogether$kk extends Translations$watchTogether$en {
 	// Translations
 	@override String get title => 'Бірге көру';
 	@override String get description => 'Достарыңызбен және отбасыңызбен синхронды түрде бірге көріңіз';
-	@override String get createSession => 'Сеанс жасау';
-	@override String get creating => 'Жасалуда...';
-	@override String get joinSession => 'Сеансқа қосылу';
-	@override String get joining => 'Қосылуда...';
-	@override String get controlMode => 'Басқару режимі';
-	@override String get controlModeQuestion => 'Ойнатуды кім басқара алады?';
-	@override String get hostOnly => 'Тек ұйымдастырушы';
-	@override String get anyone => 'Кез келген адам';
-	@override String get hostingSession => 'Сеанс ұйымдастырылуда';
-	@override String get inSession => 'Сеанста';
-	@override String get sessionCode => 'Сеанс коды';
+	@override String get recentRooms => 'Соңғы бөлмелер';
+	@override String get renameRoom => 'Бөлме атын өзгерткіңіз келе ме?';
+	@override String get removeRoom => 'Өшіру';
 	@override String get openSessionControls => 'Басқару элементтерін ашу';
-	@override String get copySessionCode => 'Сеанс кодын көшіру';
+	@override String get youAreHost => 'Сіз ұйымдастырушысыз';
 	@override String get hostControlsPlayback => 'Ойнатуды ұйымдастырушы басқарады';
 	@override String get anyoneCanControl => 'Ойнатуды кез келген адам басқара алады';
-	@override String get hostControls => 'Ұйымдастырушы басқарады';
-	@override String get anyoneControls => 'Барлығы басқарады';
+	@override String get joinCurrentPlayback => 'Ағымдағы ойнатуға қосылу';
+	@override String get joinCurrentPlaybackDescription => 'Ұйымдастырушы көріп жатқан жерге өту';
 	@override String get participants => 'Қатысушылар';
-	@override String get host => 'Ұйымдастырушы';
 	@override String get hostBadge => 'ҰЙЫМДАСТЫРУШЫ';
-	@override String get youAreHost => 'Сіз ұйымдастырушысыз';
 	@override String get makeHost => 'Ұйымдастырушы ету';
 	@override String get makeHostQuestion => 'Ұйымдастырушыны ауыстыру керек пе?';
 	@override String makeHostConfirm({required Object name}) => '${name} ойнатуды басқарып, сеансты барлығы үшін жүргізеді.';
 	@override String get transfer => 'Ауыстыру';
-	@override String hostChangedTo({required Object name}) => '${name} енді ұйымдастырушы';
-	@override String get youAreNowHost => 'Енді ұйымдастырушы сізсіз';
-	@override String hostTransferFailed({required Object name}) => '${name} ұйымдастырушы ету мүмкін болмады';
-	@override String get watchingWithOthers => 'Басқалармен бірге көрілуде';
-	@override String get endSession => 'Сеансты аяқтау';
-	@override String get leaveSession => 'Сеанстан шығу';
-	@override String get endSessionQuestion => 'Сеанс аяқталсын ба?';
-	@override String get leaveSessionQuestion => 'Сеанстан шығасыз ба?';
-	@override String get endSessionConfirm => 'Бұл барлық қатысушылар үшін сеансты аяқтайды.';
-	@override String get leaveSessionConfirm => 'Сіз сеанстан ажыратыласыз.';
-	@override String get endSessionConfirmOverlay => 'Бұл барлығы үшін көру сеансын аяқтайды.';
-	@override String get leaveSessionConfirmOverlay => 'Көру сеансынан ажыратыласыз.';
-	@override String get end => 'Аяқтау';
 	@override String get leave => 'Шығу';
-	@override String get syncing => 'Синхрондалуда...';
-	@override String get joinWatchSession => 'Көру сеансына қосылу';
-	@override String get enterCodeHint => '5 таңбалы кодты енгізіңіз';
-	@override String get pasteFromClipboard => 'Алмасу буферінен қою';
-	@override String get pleaseEnterCode => 'Сеанс кодын енгізіңіз';
-	@override String get codeMustBe5Chars => 'Сеанс коды 5 таңбадан тұруы керек';
-	@override String get joinInstructions => 'Ұйымдастырушының сеанс кодын енгізіңіз.';
-	@override String get failedToCreate => 'Сеансты жасау мүмкін болмады';
-	@override String get failedToJoin => 'Сеансқа қосылу мүмкін болмады';
-	@override String get sessionCodeCopied => 'Сеанс коды көшірілді';
-	@override String get relayUnreachable => 'Реле сервері қолжетімсіз. Провайдердің бұғаттауы Watch Together жұмысына кедергі келтіруі мүмкін.';
-	@override String get reconnectingToHost => 'Ұйымдастырушыға қайта қосылуда...';
-	@override String get currentPlayback => 'Ағымдағы ойнату';
-	@override String get joinCurrentPlayback => 'Ағымдағы ойнатуға қосылу';
-	@override String get joinCurrentPlaybackDescription => 'Ұйымдастырушы көріп жатқан жерге өту';
-	@override String get failedToOpenCurrentPlayback => 'Ағымдағы ойнатуды ашу мүмкін болмады';
-	@override String participantJoined({required Object name}) => '${name} қосылды';
-	@override String participantLeft({required Object name}) => '${name} шықты';
-	@override String participantPaused({required Object name}) => '${name} кідіртті';
-	@override String participantResumed({required Object name}) => '${name} жалғастырды';
-	@override String participantSeeked({required Object name}) => '${name} уақытты өзгертті';
-	@override String participantChangedSpeed({required Object name, required Object speed}) => '${name} жылдамдықты ${speed} етіп орнатты';
-	@override String participantBuffering({required Object name}) => '${name} буферлеуде';
-	@override String participantNeedsUpdate({required Object name}) => '${name} ескі нұсқада';
-	@override String resumingWithout({required Object name}) => '${name} ескерусіз жалғастырылуда';
-	@override String get waitingForParticipants => 'Басқалардың жүктеуін күтуде...';
-	@override String waitingForName({required Object name}) => '${name} күтілуде...';
-	@override String get recentRooms => 'Соңғы бөлмелер';
-	@override String get renameRoom => 'Бөлме атын өзгерткіңіз келе ме?';
-	@override String get removeRoom => 'Өшіру';
-	@override String get guestSwitchUnavailable => 'Ауысу мүмкін болмады — сервер синхрондау үшін қолжетімсіз';
-	@override String get guestSwitchFailed => 'Ауысу мүмкін болмады — мазмұн табылмады';
-	@override String get defaultDisplayName => 'Пайдаланушы';
-	@override late final _Translations$watchTogether$errors$kk errors = _Translations$watchTogether$errors$kk._(_root);
+	@override String get end => 'Аяқтау';
+	@override late final _Translations$watchTogether$notices$kk notices = _Translations$watchTogether$notices$kk._(_root);
 }
 
 // Path: downloads
@@ -2801,18 +2745,20 @@ class _Translations$music$discography$kk extends Translations$music$discography$
 	@override String get compilations => 'Жинақтар';
 }
 
-// Path: watchTogether.errors
-class _Translations$watchTogether$errors$kk extends Translations$watchTogether$errors$en {
-	_Translations$watchTogether$errors$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+// Path: watchTogether.notices
+class _Translations$watchTogether$notices$kk extends Translations$watchTogether$notices$en {
+	_Translations$watchTogether$notices$kk._(TranslationsKk root) : this._root = root, super.internal(root);
 
 	final TranslationsKk _root; // ignore: unused_field
 
 	// Translations
-	@override String get timedOut => 'Реле сервері уақытында жауап бермеді';
-	@override String get connectionLost => 'Сеанс дайын болмай тұрып байланыс үзілді';
-	@override String get invalidRelayResponse => 'Реле сервері күтпеген жауап жіберді';
-	@override String get sessionEnded => 'Ұйымдастырушы сеансты аяқтады';
-	@override String get sessionUnavailable => 'Бұл сеансты жалғастыру мүмкін емес. Жалғастыру үшін бөлмеге қосылыңыз немесе бөлме жасаңыз.';
+	@override String paused({required Object name}) => '${name} кідіртті';
+	@override String changedSpeed({required Object name, required Object speed}) => '${name} жылдамдықты ${speed} етіп орнатты';
+	@override String waitingFor({required Object name}) => '${name} күтілуде...';
+	@override String hostChangedTo({required Object name}) => '${name} енді ұйымдастырушы';
+	@override String get youAreNowHost => 'Енді ұйымдастырушы сізсіз';
+	@override String joined({required Object name}) => '${name} қосылды';
+	@override String left({required Object name}) => '${name} шықты';
 }
 
 // Path: downloads.backgroundWarning
@@ -3263,7 +3209,6 @@ extension on TranslationsKk {
 			'settings.videoPlayerNavigation' => 'Видео ойнатқыш навигациясы',
 			'settings.videoPlayerNavigationDescription' => 'Ойнатқышты басқару үшін бағыттауыш пернелерді пайдалану',
 			'settings.watchTogetherRelay' => 'Бірге көру релесі',
-			'settings.watchTogetherRelayDescription' => 'Жеке реле орнату. Барлығы бір серверді пайдалануы керек.',
 			'settings.watchTogetherRelayHint' => 'https://my-relay.example.com',
 			'settings.watchTogetherRelayInvalid' => 'Дұрыс HTTP немесе HTTPS реле мекенжайын енгізіңіз.',
 			'settings.crashReporting' => 'Қателіктер туралы есеп',
@@ -3551,9 +3496,9 @@ extension on TranslationsKk {
 			'fileInfo.streamIdentifier' => 'Ағын идентификаторы',
 			'fileInfo.streamIndex' => 'Ағын индексі',
 			'fileInfo.streamId' => 'Ағын ID',
+			'fileInfo.language' => 'Тіл',
 			_ => null,
 		} ?? switch (path) {
-			'fileInfo.language' => 'Тіл',
 			'fileInfo.languageCode' => 'Тіл коды',
 			'fileInfo.streamTitle' => 'Трек атауы',
 			'fileInfo.channels' => 'Арналар',
@@ -4065,9 +4010,9 @@ extension on TranslationsKk {
 			'libraries.analyze' => 'Талдау жасау',
 			'libraries.analyzeLibrary' => 'Кітапханаға талдау жасау',
 			'libraries.refreshMetadata' => 'Метадеректерді жаңарту',
+			'libraries.emptyTrash' => 'Себетті тазалау',
 			_ => null,
 		} ?? switch (path) {
-			'libraries.emptyTrash' => 'Себетті тазалау',
 			'libraries.emptyingTrash' => ({required Object title}) => '"${title}" себеті тазалануда...',
 			'libraries.trashEmptied' => ({required Object title}) => '"${title}" себеті тазаланды',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Себетті тазалау мүмкін болмады: ${error}',
@@ -4511,85 +4456,30 @@ extension on TranslationsKk {
 			'music.discography.compilations' => 'Жинақтар',
 			'watchTogether.title' => 'Бірге көру',
 			'watchTogether.description' => 'Достарыңызбен және отбасыңызбен синхронды түрде бірге көріңіз',
-			'watchTogether.createSession' => 'Сеанс жасау',
-			'watchTogether.creating' => 'Жасалуда...',
-			'watchTogether.joinSession' => 'Сеансқа қосылу',
-			'watchTogether.joining' => 'Қосылуда...',
-			'watchTogether.controlMode' => 'Басқару режимі',
-			'watchTogether.controlModeQuestion' => 'Ойнатуды кім басқара алады?',
-			'watchTogether.hostOnly' => 'Тек ұйымдастырушы',
-			'watchTogether.anyone' => 'Кез келген адам',
-			'watchTogether.hostingSession' => 'Сеанс ұйымдастырылуда',
-			'watchTogether.inSession' => 'Сеанста',
-			'watchTogether.sessionCode' => 'Сеанс коды',
+			'watchTogether.recentRooms' => 'Соңғы бөлмелер',
+			'watchTogether.renameRoom' => 'Бөлме атын өзгерткіңіз келе ме?',
+			'watchTogether.removeRoom' => 'Өшіру',
 			'watchTogether.openSessionControls' => 'Басқару элементтерін ашу',
-			'watchTogether.copySessionCode' => 'Сеанс кодын көшіру',
+			'watchTogether.youAreHost' => 'Сіз ұйымдастырушысыз',
 			'watchTogether.hostControlsPlayback' => 'Ойнатуды ұйымдастырушы басқарады',
 			'watchTogether.anyoneCanControl' => 'Ойнатуды кез келген адам басқара алады',
-			'watchTogether.hostControls' => 'Ұйымдастырушы басқарады',
-			'watchTogether.anyoneControls' => 'Барлығы басқарады',
+			'watchTogether.joinCurrentPlayback' => 'Ағымдағы ойнатуға қосылу',
+			'watchTogether.joinCurrentPlaybackDescription' => 'Ұйымдастырушы көріп жатқан жерге өту',
 			'watchTogether.participants' => 'Қатысушылар',
-			'watchTogether.host' => 'Ұйымдастырушы',
 			'watchTogether.hostBadge' => 'ҰЙЫМДАСТЫРУШЫ',
-			'watchTogether.youAreHost' => 'Сіз ұйымдастырушысыз',
 			'watchTogether.makeHost' => 'Ұйымдастырушы ету',
 			'watchTogether.makeHostQuestion' => 'Ұйымдастырушыны ауыстыру керек пе?',
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} ойнатуды басқарып, сеансты барлығы үшін жүргізеді.',
 			'watchTogether.transfer' => 'Ауыстыру',
-			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} енді ұйымдастырушы',
-			'watchTogether.youAreNowHost' => 'Енді ұйымдастырушы сізсіз',
-			'watchTogether.hostTransferFailed' => ({required Object name}) => '${name} ұйымдастырушы ету мүмкін болмады',
-			'watchTogether.watchingWithOthers' => 'Басқалармен бірге көрілуде',
-			'watchTogether.endSession' => 'Сеансты аяқтау',
-			'watchTogether.leaveSession' => 'Сеанстан шығу',
-			'watchTogether.endSessionQuestion' => 'Сеанс аяқталсын ба?',
-			'watchTogether.leaveSessionQuestion' => 'Сеанстан шығасыз ба?',
-			'watchTogether.endSessionConfirm' => 'Бұл барлық қатысушылар үшін сеансты аяқтайды.',
-			'watchTogether.leaveSessionConfirm' => 'Сіз сеанстан ажыратыласыз.',
-			'watchTogether.endSessionConfirmOverlay' => 'Бұл барлығы үшін көру сеансын аяқтайды.',
-			'watchTogether.leaveSessionConfirmOverlay' => 'Көру сеансынан ажыратыласыз.',
-			'watchTogether.end' => 'Аяқтау',
 			'watchTogether.leave' => 'Шығу',
-			'watchTogether.syncing' => 'Синхрондалуда...',
-			'watchTogether.joinWatchSession' => 'Көру сеансына қосылу',
-			'watchTogether.enterCodeHint' => '5 таңбалы кодты енгізіңіз',
-			'watchTogether.pasteFromClipboard' => 'Алмасу буферінен қою',
-			'watchTogether.pleaseEnterCode' => 'Сеанс кодын енгізіңіз',
-			'watchTogether.codeMustBe5Chars' => 'Сеанс коды 5 таңбадан тұруы керек',
-			'watchTogether.joinInstructions' => 'Ұйымдастырушының сеанс кодын енгізіңіз.',
-			'watchTogether.failedToCreate' => 'Сеансты жасау мүмкін болмады',
-			'watchTogether.failedToJoin' => 'Сеансқа қосылу мүмкін болмады',
-			'watchTogether.sessionCodeCopied' => 'Сеанс коды көшірілді',
-			'watchTogether.relayUnreachable' => 'Реле сервері қолжетімсіз. Провайдердің бұғаттауы Watch Together жұмысына кедергі келтіруі мүмкін.',
-			'watchTogether.reconnectingToHost' => 'Ұйымдастырушыға қайта қосылуда...',
-			'watchTogether.currentPlayback' => 'Ағымдағы ойнату',
-			'watchTogether.joinCurrentPlayback' => 'Ағымдағы ойнатуға қосылу',
-			'watchTogether.joinCurrentPlaybackDescription' => 'Ұйымдастырушы көріп жатқан жерге өту',
-			'watchTogether.failedToOpenCurrentPlayback' => 'Ағымдағы ойнатуды ашу мүмкін болмады',
-			'watchTogether.participantJoined' => ({required Object name}) => '${name} қосылды',
-			'watchTogether.participantLeft' => ({required Object name}) => '${name} шықты',
-			'watchTogether.participantPaused' => ({required Object name}) => '${name} кідіртті',
-			'watchTogether.participantResumed' => ({required Object name}) => '${name} жалғастырды',
-			'watchTogether.participantSeeked' => ({required Object name}) => '${name} уақытты өзгертті',
-			'watchTogether.participantChangedSpeed' => ({required Object name, required Object speed}) => '${name} жылдамдықты ${speed} етіп орнатты',
-			'watchTogether.participantBuffering' => ({required Object name}) => '${name} буферлеуде',
-			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} ескі нұсқада',
-			'watchTogether.resumingWithout' => ({required Object name}) => '${name} ескерусіз жалғастырылуда',
-			'watchTogether.waitingForParticipants' => 'Басқалардың жүктеуін күтуде...',
-			'watchTogether.waitingForName' => ({required Object name}) => '${name} күтілуде...',
-			'watchTogether.recentRooms' => 'Соңғы бөлмелер',
-			'watchTogether.renameRoom' => 'Бөлме атын өзгерткіңіз келе ме?',
-			_ => null,
-		} ?? switch (path) {
-			'watchTogether.removeRoom' => 'Өшіру',
-			'watchTogether.guestSwitchUnavailable' => 'Ауысу мүмкін болмады — сервер синхрондау үшін қолжетімсіз',
-			'watchTogether.guestSwitchFailed' => 'Ауысу мүмкін болмады — мазмұн табылмады',
-			'watchTogether.defaultDisplayName' => 'Пайдаланушы',
-			'watchTogether.errors.timedOut' => 'Реле сервері уақытында жауап бермеді',
-			'watchTogether.errors.connectionLost' => 'Сеанс дайын болмай тұрып байланыс үзілді',
-			'watchTogether.errors.invalidRelayResponse' => 'Реле сервері күтпеген жауап жіберді',
-			'watchTogether.errors.sessionEnded' => 'Ұйымдастырушы сеансты аяқтады',
-			'watchTogether.errors.sessionUnavailable' => 'Бұл сеансты жалғастыру мүмкін емес. Жалғастыру үшін бөлмеге қосылыңыз немесе бөлме жасаңыз.',
+			'watchTogether.end' => 'Аяқтау',
+			'watchTogether.notices.paused' => ({required Object name}) => '${name} кідіртті',
+			'watchTogether.notices.changedSpeed' => ({required Object name, required Object speed}) => '${name} жылдамдықты ${speed} етіп орнатты',
+			'watchTogether.notices.waitingFor' => ({required Object name}) => '${name} күтілуде...',
+			'watchTogether.notices.hostChangedTo' => ({required Object name}) => '${name} енді ұйымдастырушы',
+			'watchTogether.notices.youAreNowHost' => 'Енді ұйымдастырушы сізсіз',
+			'watchTogether.notices.joined' => ({required Object name}) => '${name} қосылды',
+			'watchTogether.notices.left' => ({required Object name}) => '${name} шықты',
 			'downloads.title' => 'Жүктеулер',
 			'downloads.manage' => 'Басқару',
 			'downloads.tvShows' => 'TV Шоулар',
@@ -4635,6 +4525,8 @@ extension on TranslationsKk {
 			'downloads.includeSpecials' => 'Арнайы бөлімдерді қосу',
 			'downloads.howManyEpisodes' => 'Қанша бөлім?',
 			'downloads.invalidEpisodeCount' => 'Дұрыс бөлім санын енгізіңіз.',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.keepSynced' => 'Синхрондалған күйде ұстау',
 			'downloads.downloadOnce' => 'Бір рет жүктеу',
 			'downloads.keepNUnwatched' => ({required Object count}) => '${count} көрілмеген бөлімді сақтау',
@@ -5093,8 +4985,6 @@ extension on TranslationsKk {
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} серверіне кіріңіз. ${name} тіркелгісіне байланыстырылады.',
 			'addServer.borrowFromAnotherProfile' => 'Басқа профильден алу',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Басқа профильдің қосылымын қайта пайдалану. PIN кодпен қорғалған профильдер PIN кодты талап етеді.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.invalidCredentials' => 'Пайдаланушы аты немесе құпия сөз қате',
 			'addServer.authResponseNotJson' => 'Аутентификация жауабы жарамды JSON болмады',
 			'addServer.authResponseIncomplete' => 'Сервердің кіру жауабы толық емес',

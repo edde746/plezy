@@ -771,6 +771,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.1.0"
+  openwatchparty:
+    dependency: "direct main"
+    description:
+      name: openwatchparty
+      sha256: e5c19699e6fdf607c5f01c6fa970bedbc824ffcd87a12d29f7c0f522706a29ef
+      url: "https://pub.dev"
+    source: hosted
+    version: "1.0.0"
   os_media_controls:
     dependency: "direct main"
     description:
@@ -1430,7 +1438,7 @@ packages:
     source: hosted
     version: "1.1.1"
   web_socket:
-    dependency: transitive
+    dependency: "direct dev"
     description:
       name: web_socket
       sha256: "34d64019aa8e36bf9842ac014bb5d2f5586ca73df5e4d9bf5c936975cae6982c"

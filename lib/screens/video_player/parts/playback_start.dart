@@ -5,14 +5,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
     final currentPlayer = player;
     if (!mounted || _shuttingDown || currentPlayer == null) return;
     final attempt = _beginPlaybackAttempt(currentPlayer);
-    final watchTogether = _activeWatchTogetherSession();
-    final watchTogetherLease = widget.watchTogetherLease;
-    _watchTogetherLease = watchTogetherLease;
-    if (watchTogether != null && watchTogetherLease != null && watchTogetherLease.isCurrent) {
-      _watchTogetherProvider = watchTogether;
-      watchTogether.onPlayerMediaSwitched = _watchTogetherMediaSwitchHandler;
-    }
-    bool isCurrentStart() => attempt.isCurrent && (watchTogetherLease == null || watchTogetherLease.isCurrent);
+    bool isCurrentStart() => attempt.isCurrent;
     _firstFrame.resetRenderedForAttempt();
     _hasFatalPlaybackError = false;
     _dismissPlaybackFailure();
@@ -290,10 +283,9 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         isLocalMedia: _isOfflinePlayback,
         isCurrent: isCurrentStart,
         outcome: attempt.outcome,
-        // When a Watch Together session is active the sync layer owns the
-        // start: open paused everywhere and let the host coordinate one
-        // simultaneous group start.
-        watchTogetherOwnsStart: () => watchTogetherLease != null && _watchTogetherOwnsPlaybackStart(),
+        // In a Watch Together room the room owns the start: open paused and
+        // let the room start everyone together.
+        watchTogetherOwnsStart: _watchTogetherOwnsPlaybackStart,
         resolveShouldAutoStart: (wtOwnsStart) => !wtOwnsStart,
         resumePosition: () => resumePosition,
         mediaClient: () => mediaClientForTracks,
@@ -320,18 +312,12 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           return mounted && player == currentPlayer;
         },
         afterMediaOpened: (shouldAutoPlay, holdPlaybackStart, wtOwnsStart) async {
-          // Attach player to Watch Together session for sync (if in session).
-          // With a frame-rate startup gate pending, sync readiness waits for
+          // Hand the opened file to the Watch Together room (a host shares
+          // it). With a frame-rate startup gate pending, the room waits for
           // its release so the group start can't fire mid display switch.
-          if (isCurrentStart() && !_isOfflinePlayback && watchTogetherLease != null) {
-            _commitWatchTogetherSelection(
-              watchTogether,
-              watchTogetherLease,
-              _currentMetadata,
-              resumePosition ?? Duration.zero,
-            );
+          if (isCurrentStart()) {
             if (wtOwnsStart && holdPlaybackStart) wtStartupHold = Completer<void>();
-            _attachToWatchTogetherSession(lease: watchTogetherLease, startupHold: wtStartupHold?.future);
+            _bindWatchTogether(startupHold: wtStartupHold?.future);
           }
           if (shouldAutoPlay && PlatformDetector.isAutomotive()) {
             await _playWithPlaybackIntent(currentPlayer);
@@ -431,6 +417,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       return;
     }
     _hasFatalPlaybackError = true;
+    _detachWatchTogetherAfterFailure();
     if (_playbackFailureMessage == null) _presentPlaybackFailure(message);
   }
 }
