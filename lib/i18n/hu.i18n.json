@@ -416,6 +416,7 @@
     "audioPassthrough": "Hangtovábbítás (passthrough)",
     "audioPassthroughDescription": "Dolby/DTS-hang továbbítása az erősítőre vagy a TV-re újrakódolás nélkül, a térhangzás megőrzésével. Kapcsold ki, ha nincs hang.",
     "audioPassthroughDescriptionApple": "Az Apple natív Dolby-dekóderének használata Dolby Digital Plushoz, az Atmost is beleértve. A DTS és a TrueHD továbbra is többcsatornás PCM-ként szól. Kapcsold ki, ha nincs hang.",
+    "audioPassthroughDescriptionAppleSpatial": "",
     "audioPassthroughOverriddenByNormalization": "Ki, amíg a hangerőnormalizálás be van kapcsolva",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",

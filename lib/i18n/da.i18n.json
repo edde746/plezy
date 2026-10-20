@@ -416,6 +416,7 @@
     "audioPassthrough": "Lyd-passthrough",
     "audioPassthroughDescription": "Send Dolby/DTS-lyd til din receiver eller dit TV uden genkodning, så surroundlyd bevares. Slå fra, hvis du ikke har lyd.",
     "audioPassthroughDescriptionApple": "Brug Apples indbyggede Dolby-dekoder til Dolby Digital Plus, inklusive Atmos. DTS og TrueHD afspilles stadig som flerkanals-PCM. Slå fra, hvis du ikke har lyd.",
+    "audioPassthroughDescriptionAppleSpatial": "",
     "audioPassthroughOverriddenByNormalization": "Fra, mens lydstyrkenormalisering er slået til",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",

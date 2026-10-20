@@ -416,6 +416,7 @@
     "audioPassthrough": "Transferencia directa de audio",
     "audioPassthroughDescription": "Envía el audio Dolby/DTS a tu receptor o TV sin recodificar, conservando el sonido envolvente. Desactívala si no tienes sonido.",
     "audioPassthroughDescriptionApple": "Usa el decodificador Dolby nativo de Apple para Dolby Digital Plus, incluido Atmos. DTS y TrueHD se siguen reproduciendo como PCM multicanal. Desactívalo si no tienes sonido.",
+    "audioPassthroughDescriptionAppleSpatial": "",
     "audioPassthroughOverriddenByNormalization": "Desactivada mientras la normalización de volumen esté activada",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",

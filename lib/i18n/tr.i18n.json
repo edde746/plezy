@@ -416,6 +416,7 @@
     "audioPassthrough": "Ses Doğrudan Geçişi (Passthrough)",
     "audioPassthroughDescription": "Dolby/DTS sesleri yeniden kodlamadan alıcınıza veya TV'nize göndererek çevreleyen sesi korur. Ses gelmiyorsa kapatın.",
     "audioPassthroughDescriptionApple": "Atmos dahil Dolby Digital Plus için Apple'ın yerel Dolby çözücüsünü kullanın. DTS ve TrueHD yine çok kanallı PCM olarak oynatılır. Ses gelmiyorsa kapatın.",
+    "audioPassthroughDescriptionAppleSpatial": "",
     "audioPassthroughOverriddenByNormalization": "Ses normalleştirme açıkken kapalıdır",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",

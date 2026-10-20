@@ -416,6 +416,7 @@
     "audioPassthrough": "オーディオパススルー",
     "audioPassthroughDescription": "Dolby/DTS音声を再エンコードせずにレシーバーやテレビに送り、サラウンドを維持します。音が出ない場合は無効にしてください。",
     "audioPassthroughDescriptionApple": "Dolby Atmosを含むDolby Digital PlusにはApple標準のDolbyデコーダーを使用します。DTSとTrueHDは引き続きマルチチャンネルPCMで再生されます。音が出ない場合は無効にしてください。",
+    "audioPassthroughDescriptionAppleSpatial": "",
     "audioPassthroughOverriddenByNormalization": "ラウドネス正規化がオンの間はオフ",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",

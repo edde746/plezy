@@ -416,6 +416,7 @@
     "audioPassthrough": "Ovozni toʻgʻridan-toʻgʻri oʻtkazish (Passthrough)",
     "audioPassthroughDescription": "Dolby/DTS ovozini qayta kodlamasdan resiver yoki televizoringizga yuboradi va atroflicha ovozni saqlaydi. Ovoz boʻlmasa, oʻchiring.",
     "audioPassthroughDescriptionApple": "Dolby Digital Plus, jumladan Atmos uchun Apple’ning oʻz Dolby dekoderidan foydalanish. DTS va TrueHD avvalgidek koʻp kanalli PCM sifatida ijro etiladi. Ovoz boʻlmasa, oʻchiring.",
+    "audioPassthroughDescriptionAppleSpatial": "",
     "audioPassthroughOverriddenByNormalization": "Ovoz balandligini meʼyorlashtirish yoqilganda oʻchirilgan",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",

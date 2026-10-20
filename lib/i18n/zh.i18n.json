@@ -416,6 +416,7 @@
     "audioPassthrough": "音频直通",
     "audioPassthroughDescription": "将 Dolby/DTS 音频不经重新编码直接发送到功放或电视，保留环绕声。如果没有声音，请关闭。",
     "audioPassthroughDescriptionApple": "对 Dolby Digital Plus（含 Atmos）使用 Apple 原生 Dolby 解码器。DTS 和 TrueHD 仍以多声道 PCM 播放。如果没有声音，请关闭。",
+    "audioPassthroughDescriptionAppleSpatial": "",
     "audioPassthroughOverriddenByNormalization": "响度标准化开启时停用",
     "audioChannelLimit": "",
     "audioChannelLimitDescription": "",
