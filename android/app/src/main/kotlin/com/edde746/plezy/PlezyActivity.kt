@@ -724,7 +724,14 @@ class PlezyActivity : FlutterActivity() {
     flutterTextureView.surfaceTextureListener =
       DeferredSurfaceTextureListener(
         delegate = original,
-        onSurfaceAvailable = ::tryReconnectFlutterSurface
+        onSurfaceAvailable = ::tryReconnectFlutterSurface,
+        // FlutterView sends the new viewport size immediately, so Flutter has already drawn
+        // it into the old-size surface by the time the deferred resize lands. Impeller's
+        // Vulkan swapchain only takes a new size from that resize and rebuilds on the next
+        // frame, which the engine's resize notification never schedules: an idle screen
+        // stayed squeezed into the old buffer after a rotation. The surface swap rebuilds
+        // the surface at the current size and schedules that frame.
+        onResize = { swapFlutterSurface(flutterTextureView) }
       ) { surface ->
         flutterTextureView.isAvailable && flutterTextureView.surfaceTexture === surface
       }
@@ -845,10 +852,19 @@ class PlezyActivity : FlutterActivity() {
       // its compositor surface during standby. Force Flutter's supported
       // surface-swap path so rendering resumes without restarting the engine.
       Log.i(TAG, "Reconnecting Flutter texture surface after Android TV standby")
-      textureView.pause()
-      textureView.resume()
+      swapFlutterSurface(textureView)
       flutterSurfaceReconnectPending = false
     }
+  }
+
+  // Flutter's supported surface-swap path: resume() after pause() hands the engine a new
+  // Surface for the same SurfaceTexture, which rebuilds the onscreen surface at the window's
+  // current size and schedules a frame. Flutter itself pauses this view only while a
+  // hybrid-composition platform view renders through an image view; Plezy has none, so
+  // resume() never revives a surface Flutter meant to keep paused.
+  private fun swapFlutterSurface(textureView: FlutterTextureView) {
+    textureView.pause()
+    textureView.resume()
   }
 
   override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
