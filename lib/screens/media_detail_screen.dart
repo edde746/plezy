@@ -1032,6 +1032,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       _suppressBackAfterPop = false;
       return;
     }
+    _popMediaDetail();
+  }
+
+  /// Leaves via the detail's own route, and only while it is the top one. A
+  /// blind `Navigator.pop` takes whatever is topmost: a back that reaches this
+  /// screen after its route began closing pops the profile shell beneath — the
+  /// next one finds the navigator empty and throws (#2937, #2370) — and one that
+  /// reaches it under a dialog closes the dialog.
+  void _popMediaDetail() {
+    final route = _route ?? ModalRoute.of(context);
+    if (route == null || !route.isCurrent) return;
     Navigator.pop(context, _watchStateChanged);
   }
 
@@ -3440,7 +3451,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       // lights; route the leading through the shared desktop padding logic.
       final backButton = AppBarBackButton(
         style: BackButtonStyle.plain,
-        onPressed: () => Navigator.pop(context, _watchStateChanged),
+        onPressed: _popMediaDetail,
         focusNode: _backButtonFocusNode,
       );
       final loading = ListenableBuilder(
@@ -3728,7 +3739,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                   child: DesktopAppBarHelper.buildAdjustedLeading(
                     AppBarBackButton(
                       style: BackButtonStyle.circular,
-                      onPressed: () => Navigator.pop(context, _watchStateChanged),
+                      onPressed: _popMediaDetail,
                       focusNode: _backButtonFocusNode,
                     ),
                     context: context,
@@ -3815,7 +3826,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           child: DesktopAppBarHelper.buildAdjustedLeading(
             AppBarBackButton(
               style: BackButtonStyle.circular,
-              onPressed: () => Navigator.pop(context, _watchStateChanged),
+              onPressed: _popMediaDetail,
               focusNode: _backButtonFocusNode,
             ),
             context: context,
