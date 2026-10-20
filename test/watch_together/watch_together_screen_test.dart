@@ -417,6 +417,26 @@ void main() {
       expect(find.text(t.watchTogether.createRoom), findsOneWidget);
     });
 
+    _screenTest('the side safe area insets the screen once; its list tiles add none of it again', (
+      tester,
+      world,
+    ) async {
+      // An iPhone in landscape: 62 logical pixels on each side.
+      final ratio = tester.view.devicePixelRatio;
+      tester.view.padding = FakeViewPadding(left: 62 * ratio, right: 62 * ratio);
+      addTearDown(tester.view.resetPadding);
+      final host = world.host();
+      final guest = world.guest();
+      await world.together(host, [guest]);
+      await _openScreen(tester, guest);
+
+      final tile = find.descendant(of: _row('Anna'), matching: find.byType(ListTile)).first;
+      final padding = MediaQuery.paddingOf(tester.element(tile));
+      expect((padding.left, padding.right), (0.0, 0.0));
+      expect(tester.getTopLeft(tile).dx, greaterThanOrEqualTo(62));
+      expect(tester.getTopRight(tile).dx, lessThanOrEqualTo(tester.view.physicalSize.width / ratio - 62));
+    });
+
     _screenTest('a guest sees who hosts, but no host settings, End Room or participant actions', (tester, world) async {
       final host = world.host();
       final guest = world.guest();
