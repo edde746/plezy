@@ -16,7 +16,7 @@
   </a>
 
   <h1>Privacy Policy</h1>
-  <p class="last-updated">Last updated: July 24, 2026</p>
+  <p class="last-updated">Last updated: October 20, 2026</p>
 
   <div class="prose">
     <section aria-labelledby="overview">
@@ -62,6 +62,18 @@
         playback details. TV home-screen features can automatically fetch artwork from your media server. A
         server or relay you configure may use HTTP instead of HTTPS.
       </p>
+      <p>
+        Watch Together rooms run on Open Watch Party relays: by default the public relays operated by
+        <a href="https://openwatch.party" target="_blank" rel="noopener noreferrer">openwatch.party</a>, or a
+        self-hosted relay you set in Settings. The relay and everyone in your room receive your display name, the
+        app and its version, playback state, and a description of the shared title: its title, year, catalogue
+        IDs, season and episode, duration, file size and name hints, and the server and item IDs that let someone
+        on the same server open the same file. Watch Together does not carry the media stream or your
+        media-server credentials; each participant plays their own copy. Anyone with the room code can join until
+        the host locks the room, and rooms expire after 24 hours at most. The public relays follow the
+        <a href="https://openwatch.party/privacy" target="_blank" rel="noopener noreferrer">Open Watch Party privacy notice</a>;
+        a self-hosted relay is controlled by its operator.
+      </p>
     </section>
 
     <section aria-labelledby="plezy-services">
@@ -84,7 +96,8 @@
       <h2 id="choices">Your choices</h2>
       <p>
         You can remove media-server and tracker connections, disable crash reporting, update checks, scrobbling,
-        Companion Remote, Discord Rich Presence, and external-player routing, or leave Watch Together. You can
+        Companion Remote, Discord Rich Presence, and external-player routing, or leave a Watch Together room,
+        which removes you and your details from it. You can
         delete downloads, clear the artwork cache, remove profiles, or delete app data. Support-log uploads are
         always explicit. Removing local data does not remove copies already held by a connected service, custom
         storage provider, external app, system home screen, or backup.
@@ -104,8 +117,9 @@
       <p>
         Plezy uses HTTPS for its hosted services and supported cloud providers, limits sensitive uploads, and
         redacts known secrets from diagnostics. No system is completely secure, and user-configured servers,
-        relays, external players, storage locations, and platform backups remain under their respective
-        operators’ control.
+        relays, the public Watch Together relays, external players, storage locations, and platform backups
+        remain under their respective operators’ control. Watch Together rooms are not end-to-end encrypted, so
+        a relay’s operator can read what a room watches.
       </p>
     </section>
 
