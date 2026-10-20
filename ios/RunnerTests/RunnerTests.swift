@@ -664,24 +664,18 @@ final class MpvPlayerContractTests: XCTestCase {
     XCTAssertEqual(results, [false])
   }
 
-  func testPipTimeoutRecreatesControllerAndRejectsRetiredCallbacks() {
+  func testPipTimeoutKeepsTheLayersControllerForTheNextStart() {
+    // A second AVKit controller on the same layer crashes once the timed-out
+    // one is freed (AVSBDLPlayerControllerKey, #2884).
     let displayLayer = AVSampleBufferDisplayLayer()
-    let retired = FakePictureInPictureController()
-    let replacement = FakePictureInPictureController()
-    retired.isPictureInPicturePossible = true
-    replacement.isPictureInPicturePossible = true
+    let fake = FakePictureInPictureController()
     var timeouts: [() -> Void] = []
-    var replacementLayers: [AVSampleBufferDisplayLayer?] = []
     let controller = MpvPipController(
-      controller: retired,
+      controller: fake,
       sampleBufferDisplayLayer: displayLayer,
       readiness: { (true, true, true) },
       retryScheduler: { $0() },
-      startTimeoutScheduler: { timeouts.append($0) },
-      replacementControllerFactory: { layer in
-        replacementLayers.append(layer)
-        return replacement
-      }
+      startTimeoutScheduler: { timeouts.append($0) }
     )
     let delegate = RecordingPipDelegate()
     controller.delegate = delegate
@@ -689,42 +683,27 @@ final class MpvPlayerContractTests: XCTestCase {
     var results: [Bool] = []
 
     controller.startPip { results.append($0) }
-    XCTAssertEqual(retired.startCount, 1)
-    XCTAssertEqual(timeouts.count, 1)
-
     timeouts[0]()
     XCTAssertEqual(results, [false])
-    XCTAssertEqual(retired.stopCount, 1)
-    XCTAssertEqual(retired.automaticStartValues, [true, false])
-    XCTAssertEqual(replacementLayers.count, 1)
-    XCTAssertTrue(replacementLayers[0] === displayLayer)
-    XCTAssertEqual(replacement.automaticStartValues, [true])
+    XCTAssertEqual(fake.stopCount, 1)
+    XCTAssertEqual(fake.automaticStartValues, [true])
+
+    controller.pictureInPictureDidStart(from: fake)
+    XCTAssertEqual(fake.stopCount, 2, "A late start from the timed-out request must be stopped")
+    XCTAssertTrue(delegate.events.isEmpty)
 
     controller.startPip { results.append($0) }
-    XCTAssertEqual(replacement.startCount, 1)
+    XCTAssertEqual(fake.startCount, 2, "The next start must reuse the layer's controller")
     XCTAssertEqual(timeouts.count, 2)
 
-    controller.pictureInPictureWillStart(from: retired)
-    controller.pictureInPictureDidStart(from: retired)
-    controller.pictureInPictureFailedToStart(
-      from: retired,
-      error: NSError(domain: "late-retired-controller", code: 1)
-    )
-    controller.pictureInPictureDidStop(from: retired)
-    XCTAssertEqual(results, [false])
-    XCTAssertTrue(delegate.events.isEmpty)
-    XCTAssertEqual(retired.stopCount, 1)
-    XCTAssertEqual(
-      replacement.startCount,
-      1,
-      "A retired controller callback must not disturb the replacement's pending start"
-    )
-
-    controller.pictureInPictureWillStart(from: replacement)
-    controller.pictureInPictureDidStart(from: replacement)
+    controller.pictureInPictureWillStart(from: fake)
+    controller.pictureInPictureDidStart(from: fake)
     XCTAssertEqual(results, [false, true])
     XCTAssertEqual(delegate.events, ["willStart", "didStart"])
-    XCTAssertEqual(replacementLayers.count, 1)
+
+    timeouts[1]()
+    XCTAssertEqual(results, [false, true])
+    XCTAssertEqual(fake.stopCount, 2)
   }
 
   func testPipTeardownCancelsRetryAndLateWork() {
