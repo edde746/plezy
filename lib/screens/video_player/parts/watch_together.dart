@@ -150,6 +150,19 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     return _wtReleased ?? Future<void>.value();
   }
 
+  /// The file failed to play for good. The room stops commanding this
+  /// player and counting on it: it would seek the dead file every couple of
+  /// seconds and hold everyone for it. The room keeps its media, so the user
+  /// can join again from the Watch Together screen; a retry binds anew.
+  void _detachWatchTogetherAfterFailure() {
+    final watchTogether = _watchTogetherProvider;
+    final adapter = _wtAdapter;
+    _wtAdapter = null;
+    _wtRoomOpen = false;
+    if (watchTogether == null || adapter == null) return;
+    _wtReleased = watchTogether.playerClosed(adapter, continuing: true);
+  }
+
   /// A user's play, pause or toggle. While the room drives this player, the
   /// press goes to the room, which then commands the player.
   Future<void> _transportIntent(Player currentPlayer, TransportCommand command) {

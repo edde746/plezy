@@ -54,6 +54,7 @@ class FakeSyncPlayer implements Player {
   final _playbackRestartController = StreamController<void>.broadcast();
   final _fileStartedController = StreamController<void>.broadcast();
   final _durationController = StreamController<Duration>.broadcast();
+  final _errorController = StreamController<PlayerError>.broadcast();
 
   @override
   PlayerState get state => _state;
@@ -75,7 +76,7 @@ class FakeSyncPlayer implements Player {
     tracks: const Stream<Tracks>.empty(),
     track: const Stream<TrackSelection>.empty(),
     log: const Stream<PlayerLog>.empty(),
-    error: const Stream<PlayerError>.empty(),
+    error: _errorController.stream,
     audioDevice: const Stream<AudioDevice>.empty(),
     audioDevices: const Stream<List<AudioDevice>>.empty(),
     bufferRanges: const Stream<List<BufferRange>>.empty(),
@@ -201,6 +202,9 @@ class FakeSyncPlayer implements Player {
     _durationController.add(value);
   }
 
+  /// The player reports [error], as a failed open or a dead stream would.
+  void emitError(PlayerError error) => _errorController.add(error);
+
   void setPosition(Duration position) {
     _state = _state.copyWith(position: position);
   }
@@ -238,6 +242,7 @@ class FakeSyncPlayer implements Player {
     await _playbackRestartController.close();
     await _fileStartedController.close();
     await _durationController.close();
+    await _errorController.close();
   }
 
   @override

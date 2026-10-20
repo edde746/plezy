@@ -615,6 +615,54 @@ void main() {
     );
   }
 
+  testWidgets('a file that fails for good leaves the room, which keeps its media and stops commanding it', (
+    tester,
+  ) async {
+    final client = _ReloadClient();
+    final (:watchTogether, :relay) = await hostRoom(tester, client);
+    final guest = WatchTogetherProvider(
+      partyFactory: relay.party,
+      clientName: () async => 'Plezy/1.0',
+      displayName: () => 'Ben',
+    );
+    final joining = guest.joinRoom(FakeOwpRelay.code);
+    await tester.pump(const Duration(milliseconds: 100));
+    await joining;
+    final fakePlayer = _ExitPlayer();
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      testBody: () async {
+        final screen = await _pushExitScreen(
+          tester,
+          db: db,
+          client: client,
+          fakePlayer: fakePlayer,
+          watchTogether: watchTogether,
+        );
+        final state = screen.key.currentState!;
+        await state.debugWirePlayerStreamsForTesting();
+        state.debugBindWatchTogetherForTesting();
+        fakePlayer.emitPlaybackRestart();
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(watchTogether.isFollowing, isTrue);
+        expect(guest.hasMedia, isTrue);
+
+        fakePlayer.emitError(const PlayerError('the stream died'));
+        await tester.pump(const Duration(milliseconds: 300));
+        expect(watchTogether.isFollowing, isFalse, reason: 'the room no longer counts on the dead file');
+        expect(watchTogether.canJoinPlayback, isTrue, reason: 'the user can join again');
+        expect(relay.sent('clearMedia'), isEmpty, reason: 'the room keeps its media');
+        expect(guest.hasMedia, isTrue);
+
+        final commands = fakePlayer.commandLog.length;
+        await tester.pump(const Duration(seconds: 3));
+        expect(fakePlayer.commandLog.skip(commands), isEmpty, reason: 'the room commands nothing on the dead file');
+        await closeRooms(tester, [watchTogether, guest]);
+      },
+    );
+  });
+
   Future<({GlobalKey<VideoPlayerScreenState> key, _ReloadPlayer player})> pumpReloadScreen(
     WidgetTester tester, {
     WatchTogetherProvider? watchTogether,

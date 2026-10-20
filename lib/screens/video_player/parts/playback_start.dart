@@ -417,6 +417,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
       return;
     }
     _hasFatalPlaybackError = true;
+    _detachWatchTogetherAfterFailure();
     if (_playbackFailureMessage == null) _presentPlaybackFailure(message);
   }
 }

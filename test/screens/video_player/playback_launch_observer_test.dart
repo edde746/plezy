@@ -301,15 +301,11 @@ class _ObservedPlayer extends FakeSyncPlayer {
 
   int openCalls = 0;
   final _completedController = StreamController<bool>.broadcast();
-  final _errorController = StreamController<PlayerError>.broadcast();
 
   void emitCompleted(bool value) {
     setCompleted(value);
     _completedController.add(value);
   }
-
-  /// The backend gave up on the file (mpv `end-file reason=error`).
-  void emitError(PlayerError error) => _errorController.add(error);
 
   @override
   PlayerStreams get streams {
@@ -327,7 +323,7 @@ class _ObservedPlayer extends FakeSyncPlayer {
       tracks: base.tracks,
       track: base.track,
       log: base.log,
-      error: _errorController.stream,
+      error: base.error,
       audioDevice: base.audioDevice,
       audioDevices: base.audioDevices,
       bufferRanges: base.bufferRanges,
@@ -383,7 +379,6 @@ class _ObservedPlayer extends FakeSyncPlayer {
     if (disposed) return;
     await super.dispose(preserveDisplayMode: preserveDisplayMode);
     await _completedController.close();
-    await _errorController.close();
   }
 }
 
