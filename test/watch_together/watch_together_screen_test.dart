@@ -16,6 +16,7 @@ import 'package:plezy/watch_together/widgets/join_session_dialog.dart';
 import 'package:plezy/watch_together/widgets/watch_room_sections.dart';
 
 import '../test_helpers/fake_owp_relay.dart';
+import '../test_helpers/library_lookup.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/watch_room_harness.dart';
 
@@ -507,6 +508,48 @@ void main() {
       await tester.pump();
       expect(opened, [watchCopyOf(guestAlien), watchCopyOf(guestAlien)]);
       expect(find.text(t.watchTogether.joinCurrentPlayback), findsNothing);
+    });
+
+    _screenTest('a search that failed on a server says so, on the room and on the copies page, until searched again', (
+      tester,
+      world,
+    ) async {
+      final guestAlien = watchMovie(id: 'g-alien', serverId: watchGuestServerId, version: 'g-hd');
+      var failing = true;
+      final host = world.host();
+      final guest = world.member(
+        'Ben',
+        findCopies: (query, {abort}) async => failing
+            ? libraryLookupResult(const [], failed: {watchGuestServerId})
+            : libraryLookupResult([guestAlien], succeeded: {watchGuestServerId}),
+      );
+      guest.navigatorOpener = (_) async => false;
+      await world.together(host, [guest]);
+      await _openScreen(tester, guest);
+
+      await world.hostPlays(host, watchMovie(id: 'alien'));
+      await world.until(() => guest.searchFailed, 'the search failed');
+      await tester.pump();
+      expect(find.text(t.watchTogether.notices.searchFailed), findsOneWidget);
+      expect(find.text(t.watchTogether.unavailableTitle), findsNothing, reason: 'not found is not the same as absent');
+
+      await _tap(tester, find.text(t.watchTogether.chooseCopy));
+      expect(find.byType(WatchCandidatesPage), findsOneWidget);
+      expect(
+        find.descendant(
+          of: find.byType(WatchCandidatesPage),
+          matching: find.text(t.watchTogether.notices.searchFailed),
+        ),
+        findsOneWidget,
+      );
+      expect(find.text(t.watchTogether.noCandidates), findsNothing);
+
+      failing = false;
+      await _tap(tester, find.text(t.watchTogether.searchAgain).last);
+      await world.until(() => guest.state.candidates.isNotEmpty, 'the copy is found');
+      await tester.pump();
+      expect(guest.searchFailed, isFalse);
+      expect(find.text(t.watchTogether.notices.searchFailed), findsNothing);
     });
   });
 

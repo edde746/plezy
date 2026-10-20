@@ -398,7 +398,8 @@ String? watchMatchSummary(WatchTogetherProvider provider) {
     null || owp.MatchState.searching => t.watchTogether.searching,
     owp.MatchState.matched => copy == null ? t.watchTogether.yourCopy : watchCopyTitle(copy.ref),
     owp.MatchState.mismatched => t.watchTogether.playingOtherLength(difference: watchLengthDifference(match!.deltaMs)),
-    owp.MatchState.unavailable => t.watchTogether.unavailableTitle,
+    owp.MatchState.unavailable =>
+      provider.searchFailed ? t.watchTogether.notices.searchFailed : t.watchTogether.unavailableTitle,
   };
 }
 
@@ -453,7 +454,10 @@ class WatchMatchSection extends StatelessWidget {
         return Column(
           crossAxisAlignment: CrossAxisAlignment.stretch,
           children: [
-            Text(t.watchTogether.unavailableTitle, style: theme.textTheme.titleSmall),
+            Text(
+              provider.searchFailed ? t.watchTogether.notices.searchFailed : t.watchTogether.unavailableTitle,
+              style: theme.textTheme.titleSmall,
+            ),
             Text(t.watchTogether.unavailableDescription, style: _muted(context, theme.textTheme.bodySmall)),
             const SizedBox(height: 8),
             WatchButtonRow(
@@ -585,7 +589,10 @@ class WatchCandidatesPage extends StatelessWidget {
             onTap: () => unawaited(_choose(context, provider, ranked.candidate)),
           ),
         if (state.candidates.isEmpty && !searching)
-          Padding(padding: watchPagePadding, child: Text(t.watchTogether.noCandidates)),
+          Padding(
+            padding: watchPagePadding,
+            child: Text(provider.searchFailed ? t.watchTogether.notices.searchFailed : t.watchTogether.noCandidates),
+          ),
         if (searching)
           Padding(
             padding: watchPagePadding,

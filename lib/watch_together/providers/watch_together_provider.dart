@@ -110,6 +110,7 @@ class WatchTogetherProvider extends ChangeNotifier {
   final Set<_Away> _away = {};
   bool get _isAway => _away.isNotEmpty;
   bool _playBlocked = false;
+  int? _searchFailedEpoch;
   bool _disposed = false;
   bool _notifyScheduled = false;
   String? _openedKey;
@@ -190,6 +191,10 @@ class WatchTogetherProvider extends ChangeNotifier {
 
   /// The player refused to start; the user has to press play on it.
   bool get playBlocked => _playBlocked;
+
+  /// The last search for the room's current media found nothing while some
+  /// server couldn't be searched: no copies listed doesn't mean there are none.
+  bool get searchFailed => _searchFailedEpoch != null && _searchFailedEpoch == room?.epoch;
 
   /// Events for snackbars and toasts.
   Stream<WatchNotice> get notices => _notices.stream;
@@ -298,7 +303,10 @@ class WatchTogetherProvider extends ChangeNotifier {
   void declineMismatch() => _guard(() => _party?.declineMismatch());
 
   /// Searches the libraries again for the room's media.
-  void searchAgain() => _guard(() => _party?.resolveAgain());
+  void searchAgain() {
+    _searchFailedEpoch = null;
+    _guard(() => _party?.resolveAgain());
+  }
 
   /// Plays [candidate] for the room's media. False when it can't (no length,
   /// the media changed meanwhile).
@@ -635,6 +643,8 @@ class WatchTogetherProvider extends ChangeNotifier {
 
   WatchNotice _resolveFailed(Object error) {
     appLogger.w('WatchTogether: library search failed: $error');
+    _searchFailedEpoch = room?.epoch;
+    notifyListeners();
     return const SearchFailedNotice();
   }
 

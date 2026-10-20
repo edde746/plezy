@@ -652,6 +652,19 @@ void main() {
       expect(g.noticesOf<RefusedNotice>(), isEmpty);
     });
 
+    _roomTest('a search again that fails keeps the file playing and says the search failed', (world) async {
+      final (host: _, guest: g, hostPlayer: _, :screen) = await world.following();
+      world.guestAnswer = (_) async => libraryLookupResult(const [], failed: {'guest-nas'});
+
+      g.provider.searchAgain();
+      await world.noticed<SearchFailedNotice>(g, 'the guest is told');
+      expect(g.provider.searchFailed, isTrue);
+      expect(g.provider.state.candidates, isEmpty);
+      expect(g.provider.isFollowing, isTrue, reason: 'the open file goes on');
+      expect(g.provider.roomCopy?.ref, _copyOf(_guestAlien));
+      expect(screen.players.single.adapter.isReleased, isFalse);
+    });
+
     _roomTest('a host that hands over keeps its own file as the room copy, not a search', (world) async {
       final (host: h, guest: g, :hostPlayer, screen: _) = await world.following();
 
@@ -748,9 +761,11 @@ void main() {
       await world.noticed<SearchFailedNotice>(g, 'the guest is told the search failed');
       await world.until(() => g.provider.state.match?.state == owp.MatchState.unavailable, 'nothing to play');
       expect(g.provider.roomCopy, isNull);
+      expect(g.provider.searchFailed, isTrue, reason: 'nothing found is not taken as absence');
 
       failing = false;
       g.provider.searchAgain();
+      expect(g.provider.searchFailed, isFalse);
       await world.until(() => g.provider.state.match?.state == owp.MatchState.matched, 'the copy is found');
       // Nothing can open the file: the guest sits out and is offered to join.
       await world.noticed<OpenFailedNotice>(g, 'the guest is told the file did not open');
