@@ -467,6 +467,10 @@ class MpvPlayerCore private constructor(
   }
 
   private val nativeFailure = AtomicReference<Exception?>()
+
+  /** What condemned this session, once something has; see [condemnSession]. */
+  internal val sessionFailure: Exception? get() = nativeFailure.get()
+
   private val nativeOwnershipLock = Any()
 
   @Volatile private var videoSurfaceGeneration = 0L

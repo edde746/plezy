@@ -13,7 +13,7 @@ import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 
-internal class MpvOperationTimeout(operation: String) : Exception("MPV $operation did not respond")
+internal class MpvOperationTimeout(val operation: String) : Exception("MPV $operation did not respond")
 
 /**
  * Serializes whole operations, including their suspensions. The waiter and deadline
