@@ -628,6 +628,50 @@ void main() {
       expect(next.adapter.isReleased, isFalse);
     });
 
+    _roomTest('the host sharing the same file again keeps the guest player, and the room still seeks it', (
+      world,
+    ) async {
+      final (host: h, guest: g, :hostPlayer, :screen) = await world.following();
+      final guestPlayer = screen.players.single;
+
+      expect(await world.settle(h.provider.shareCopy(hostPlayer.adapter)), isTrue);
+      expect(world.relay.sent('setMedia'), hasLength(2));
+      await world.until(() => world.guestQueries.length == 2, 'the guest searches for the new epoch');
+      await world.until(() => g.provider.isFollowing, 'the guest follows again');
+      expect(screen.players, hasLength(1), reason: 'the open file is the match again, so nothing reopens');
+      expect(screen.exits, 0);
+      expect(guestPlayer.adapter.isReleased, isFalse);
+
+      expect(h.provider.seek(const Duration(minutes: 20)), isTrue);
+      await world.until(
+        () => guestPlayer.player.commandLog.any(
+          (command) => command.startsWith('seek:') && int.parse(command.substring(5)) >= 1200000,
+        ),
+        'the room seeks the guest player',
+      );
+      expect(g.noticesOf<RefusedNotice>(), isEmpty);
+    });
+
+    _roomTest('a host that hands over keeps its own file as the room copy, not a search', (world) async {
+      final (host: h, guest: g, :hostPlayer, screen: _) = await world.following();
+
+      h.provider.transferHost(g.peerId);
+      await world.until(() => g.provider.isHost && !h.provider.isHost, 'the guest is host');
+      expect(h.provider.state.match?.state, owp.MatchState.matched);
+      expect(h.provider.roomCopy?.id, '', reason: 'the media is still this participant own');
+      expect(h.provider.roomCopy?.ref, hostPlayer.adapter.copy);
+      expect(h.provider.isFollowing, isTrue);
+      expect(h.provider.canJoinPlayback, isFalse);
+
+      // Out of the player, the former host is offered its own file again.
+      await world.settle(h.provider.playerClosed(hostPlayer.adapter, continuing: false));
+      expect(world.relay.sent('clearMedia'), isEmpty, reason: 'a guest leaving its player keeps the room media');
+      await world.wait(const Duration(milliseconds: 100));
+      expect(h.provider.hasMedia, isTrue);
+      expect(h.provider.roomCopy?.id, '');
+      expect(h.provider.canJoinPlayback, isTrue);
+    });
+
     _roomTest('a file the room cannot get is not shared, and stops what the room played', (world) async {
       final h = world.host(shareDurationWait: const Duration(milliseconds: 300));
       final g = world.guest();
