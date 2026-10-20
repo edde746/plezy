@@ -624,6 +624,82 @@ class SetNativeRevisionTest(unittest.TestCase):
         )
         self.assertIn("linux library mpv-linux is a packaged artifact", result.stdout)
 
+    # ---- debug symbols ride along with the libraries they describe --------
+
+    def test_published_symbols_are_copied_into_the_lock_beside_their_library(self) -> None:
+        # mpv-build publishes a symbols map on the very library entries the
+        # lock already records; the lock carries it verbatim so
+        # upload_symbols.dart can fetch and verify the zips for the pin.
+        artifacts = artifacts_fixture()
+        android_symbols = {
+            abi: {
+                "asset": f"mpv-android-{NEW_KEY_AAR}-{abi}-symbols.zip",
+                "checksum": format(index, "x") * 64,
+            }
+            for index, abi in enumerate(("arm64-v8a", "armeabi-v7a", "x86", "x86_64"), start=10)
+        }
+        linux_symbols = {
+            "x86_64": {
+                "asset": f"libmpv-linux-{NEW_KEY_LINUX}-x86_64-symbols.zip",
+                "checksum": "e" * 64,
+            }
+        }
+        artifacts["platforms"]["android"]["libraries"]["mpv-android"]["symbols"] = android_symbols
+        artifacts["platforms"]["linux"]["libraries"]["libmpv-linux"]["symbols"] = linux_symbols
+        repo, commit = self._make_mpv_build(artifacts=artifacts)
+
+        result = self._run(commit, "--repo", str(repo))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        lock = json.loads((self.root / "mpv-build.lock.json").read_text(encoding="utf-8"))
+        expected = json.loads(self._expected_lock(commit))
+        expected["artifacts"]["android"]["symbols"] = android_symbols
+        expected["artifacts"]["linux"]["symbols"] = linux_symbols
+        self.assertEqual(lock, expected)
+        self.assertNotIn("publishes no debug symbols", result.stdout)
+        # The symbols never reach Gradle's verification: only the AAR does.
+        self.assertEqual(
+            self._components(),
+            [(NEW_KEY_AAR, f"mpv-android-{NEW_KEY_AAR}.aar", "a" * 64)],
+        )
+
+    def test_a_library_published_without_symbols_is_noted_and_pins_unchanged(self) -> None:
+        # Every pin before mpv-build shipped debug files: the lock keeps its
+        # existing shape and says what it left out.
+        repo, commit = self._make_mpv_build()
+
+        result = self._run(commit, "--repo", str(repo))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            (self.root / "mpv-build.lock.json").read_text(encoding="utf-8"),
+            self._expected_lock(commit),
+        )
+        for library in ("android library mpv-android", "linux library libmpv-linux"):
+            self.assertIn(
+                f"note: {library} publishes no debug symbols at this commit; "
+                "symbols omitted from mpv-build.lock.json",
+                result.stdout,
+            )
+
+    def test_refuses_a_symbols_zip_it_could_not_verify(self) -> None:
+        artifacts = artifacts_fixture()
+        artifacts["platforms"]["linux"]["libraries"]["libmpv-linux"]["symbols"] = {
+            "x86_64": {
+                "asset": f"libmpv-linux-{NEW_KEY_LINUX}-x86_64-symbols.zip",
+                "checksum": "E" * 64,
+            }
+        }
+        repo, commit = self._make_mpv_build(artifacts=artifacts)
+        before = self._snapshot()
+
+        result = self._run(commit, "--repo", str(repo))
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("libmpv-linux.symbols.x86_64.checksum", result.stderr)
+        self.assertEqual(self._snapshot(), before)
+        self.assertFalse((self.root / "mpv-build.lock.json").exists())
+
 
 if __name__ == "__main__":
     unittest.main()

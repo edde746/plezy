@@ -515,6 +515,13 @@ jobs:
               $bundleErrors += "present $file"
             }
           }
+          # Release links emit PDBs (windows/CMakeLists.txt) that
+          # scripts/release/upload_symbols.dart uploads from the build tree;
+          # none may ship in the bundle.
+          foreach ($file in @($foundFiles | Where-Object { $_ -like '*.pdb' })) {
+            Write-Output "::error::Forbidden debug file is present in the Windows bundle: $file"
+            $bundleErrors += "present $file"
+          }
 
           # sentry.dll is the inproc-backend native SDK; crashpad_handler.exe is
           # intentionally absent (windows/CMakeLists.txt sets

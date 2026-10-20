@@ -3,6 +3,7 @@ import 'dart:io';
 import 'dart:typed_data';
 
 import 'package:archive/archive.dart';
+import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as path;
 
 import 'symbol_cli.dart';
@@ -11,6 +12,7 @@ const symbolBatchObjects = 8;
 const symbolBatchBytes = 256 * 1024 * 1024;
 
 typedef SymbolCommand = Future<ProcessResult> Function(List<String> arguments);
+typedef SymbolDownload = Future<void> Function(Uri url, File destination);
 
 class SymbolFailure implements Exception {
   SymbolFailure(this.message, [this.code = 1]);
@@ -275,12 +277,140 @@ Stream<({String name, SymbolVariant variant})> _packagedLibraries(File package, 
   }
 }
 
+Future<void> downloadSymbolArchive(Uri url, File destination) async {
+  final client = HttpClient();
+  try {
+    final response = await (await client.getUrl(url)).close();
+    if (response.statusCode != HttpStatus.ok) {
+      await response.drain<void>();
+      throw HttpException('HTTP ${response.statusCode}', uri: url);
+    }
+    await response.pipe(destination.openWrite());
+  } finally {
+    client.close(force: true);
+  }
+}
+
+// Reuses or downloads a checksummed zip, then extracts the debug files at its
+// root beside it. The lock names exact bytes, so a mismatch is fatal.
+Future<List<File>> _verifiedDebugArchive(Uri url, File archive, String checksum, SymbolDownload download) async {
+  Future<String> digest(File file) async => (await sha256.bind(file.openRead()).first).toString();
+  if (!archive.existsSync() || await digest(archive) != checksum) {
+    archive.parent.createSync(recursive: true);
+    final partial = File('${archive.path}.partial');
+    try {
+      await download(url, partial);
+      final actual = await digest(partial);
+      if (actual != checksum) throw SymbolFailure('Checksum mismatch for $url: expected $checksum, got $actual');
+      partial.renameSync(archive.path);
+    } on IOException catch (error) {
+      throw SymbolFailure('Cannot download $url: $error');
+    } finally {
+      if (partial.existsSync()) partial.deleteSync();
+    }
+  }
+  final destination = Directory(path.withoutExtension(archive.path));
+  if (destination.existsSync()) destination.deleteSync(recursive: true);
+  destination.createSync(recursive: true);
+  final files = <File>[];
+  final input = InputFileStream(archive.path);
+  try {
+    for (final entry in ZipDecoder().decodeStream(input)) {
+      final name = entry.name;
+      if (!entry.isFile ||
+          entry.isSymbolicLink ||
+          name.contains('/') ||
+          name.contains(r'\') ||
+          name == '.' ||
+          name == '..') {
+        continue;
+      }
+      final file = File(path.join(destination.path, name));
+      final output = OutputFileStream(file.path);
+      try {
+        entry.writeContent(output);
+      } finally {
+        output.closeSync();
+      }
+      if (file.lengthSync() != entry.size) throw SymbolFailure('Truncated debug file $name in $url');
+      if (isDebugObject(file)) files.add(file);
+    }
+  } finally {
+    input.closeSync();
+  }
+  return files..sort((a, b) => a.path.compareTo(b.path));
+}
+
+// mpv-build.lock.json (schema in scripts/set_native_revision.sh) names one
+// checksummed zip of debug files per variant of the library a group ships.
+// Pins published before mpv-build shipped them have no symbols map.
+Future<List<File>> _mpvBuildDebugFiles(
+  String sourceRoot,
+  String group,
+  Iterable<String> variants,
+  SymbolDownload download,
+  StringSink notes,
+) async {
+  Object? field(Object? value, String key) => value is Map ? value[key] : null;
+  final lock = File(path.join(sourceRoot, 'mpv-build.lock.json'));
+  final section = lock.existsSync() ? field(field(jsonDecode(lock.readAsStringSync()), 'artifacts'), group) : null;
+  final files = <File>[];
+  for (final variant in variants.toList()..sort()) {
+    final entry = field(field(section, 'symbols'), variant);
+    if (entry == null) {
+      notes.writeln('Note: mpv-build.lock.json has no $group symbols for $variant; skipping mpv-build debug files');
+      continue;
+    }
+    final base = field(section, 'assetBase');
+    final asset = field(entry, 'asset');
+    final checksum = field(entry, 'checksum');
+    if (base is! String ||
+        asset is! String ||
+        !RegExp(r'^[\w.-]+\.zip$').hasMatch(asset) ||
+        checksum is! String ||
+        !RegExp(r'^[0-9a-f]{64}$').hasMatch(checksum)) {
+      throw SymbolFailure('Invalid mpv-build.lock.json $group symbols entry for $variant');
+    }
+    files.addAll(
+      await _verifiedDebugArchive(
+        Uri.parse('$base/$asset'),
+        File(path.join(sourceRoot, 'build', 'symbols', 'mpv-build', asset)),
+        checksum,
+        download,
+      ),
+    );
+  }
+  return files;
+}
+
+// MSVC links `<target>.pdb` into the target's configuration directory;
+// windows/CMakeLists.txt moves the runner's out of the bundle into
+// link-artifacts/Release. The patched engine ships flutter_windows.dll.pdb.
+List<File> _windowsPdbs(String sourceRoot, String arch, Iterable<File> shipped) {
+  final names = {
+    for (final file in shipped) ...[
+      '${path.basenameWithoutExtension(file.path)}.pdb'.toLowerCase(),
+      '${path.basename(file.path)}.pdb'.toLowerCase(),
+    ],
+  };
+  final bundle = path.join(sourceRoot, 'build', 'windows', arch, 'runner', 'Release');
+  final ephemeral = Directory(path.join(sourceRoot, 'windows', 'flutter', 'ephemeral'));
+  return [
+      ..._files(
+        path.join(sourceRoot, 'build', 'windows', arch),
+      ).where((file) => path.basename(file.parent.path) == 'Release' && !path.isWithin(bundle, file.path)),
+      if (ephemeral.existsSync()) ...ephemeral.listSync(followLinks: false).whereType<File>(),
+    ].where((file) => names.contains(path.basename(file.path).toLowerCase())).toList()
+    ..sort((a, b) => a.path.compareTo(b.path));
+}
+
 Future<SymbolPlan> createSymbolPlan(
   String platform,
   String sourceRoot,
   Map<String, String> environment,
   SymbolCommand command, {
   StringSink? warnings,
+  SymbolDownload download = downloadSymbolArchive,
 }) async {
   final build = path.join(sourceRoot, 'build');
   final symbolRoot = path.join(sourceRoot, 'debug-info', platform);
@@ -288,7 +418,9 @@ Future<SymbolPlan> createSymbolPlan(
   final shipped = <String>{};
   final dartShipped = <String>{};
   final allowedArch = <String>{};
+  final abis = <String>{};
   final nativeRoots = <(String, int)>[];
+  final sink = warnings ?? stderr;
   final android = platform.startsWith('android-');
   final apple = platform == 'ios' || platform == 'macos';
   if (android) {
@@ -335,6 +467,7 @@ Future<SymbolPlan> createSymbolPlan(
           throw SymbolFailure('Conflicting release packages: $key');
         }
         libraryIds[key] = id.debugId;
+        abis.add(abi);
         final identity = '${id.debugId}/${id.arch}';
         shipped.add(identity);
         allowedArch.add(id.arch);
@@ -344,8 +477,10 @@ Future<SymbolPlan> createSymbolPlan(
     if (dartShipped.isEmpty || dartShipped.length != allowedArch.length) {
       throw SymbolFailure('Packaged release is missing Dart AOT libraries');
     }
-    // The AAR's libraries (libmpv, FFmpeg, libplayer, libc++) arrive stripped,
-    // so the merged libraries are the only Android candidates.
+    // The AAR's libraries (libmpv, FFmpeg, libplayer) arrive stripped; their
+    // debug files come from mpv-build below. The merged libraries are the
+    // build-tree candidates, libflutter.so among them unstripped as the
+    // engine's Maven artifact ships it.
     nativeRoots.add((
       path.join(build, 'app/intermediates/merged_native_libs/release/mergeReleaseNativeLibs/out/lib'),
       30,
@@ -418,12 +553,33 @@ Future<SymbolPlan> createSymbolPlan(
       native.add(artifact);
     }
   }
-  if (platform.startsWith('windows-')) {
-    final engine = File(path.join(sourceRoot, 'windows/flutter/ephemeral/flutter_windows.dll.pdb'));
-    if (engine.existsSync()) {
-      final artifact = await _inspect(engine, command, 20);
-      final bundleIds = native.expand((a) => a.variants).map((v) => v.identity).toSet();
-      if (artifact != null && artifact.variants.every((v) => bundleIds.contains(v.identity))) native.add(artifact);
+  // Debug files built or published outside the shipped tree count only for
+  // the exact binaries this release ships.
+  final shippedIds = android ? shipped : native.expand((a) => a.variants).map((v) => v.identity).toSet();
+  final companions = <File>[
+    if (platform.startsWith('windows-'))
+      ..._windowsPdbs(sourceRoot, platform.split('-').last, native.where((a) => a.type == 'pe').map((a) => a.file)),
+    if (android) ...await _mpvBuildDebugFiles(sourceRoot, 'android', abis, download, sink),
+    if (platform.startsWith('linux-') || platform.startsWith('windows-'))
+      ...await _mpvBuildDebugFiles(
+        sourceRoot,
+        platform.split('-').first,
+        [platform.endsWith('-x64') ? 'x86_64' : 'aarch64'],
+        download,
+        sink,
+      ),
+  ];
+  for (final file in companions) {
+    final artifact = await _inspect(file, command, 20);
+    if (artifact == null) {
+      sink.writeln('Skipping unusable debug file: ${file.path}');
+    } else if (!artifact.variants.every((v) => shippedIds.contains(v.identity))) {
+      sink.writeln(
+        'Skipping debug file that matches no shipped binary: ${file.path} '
+        '(${artifact.variants.map((v) => v.identity).join(', ')})',
+      );
+    } else {
+      native.add(artifact);
     }
   }
   if (!android && !apple) {
@@ -500,7 +656,6 @@ Future<SymbolPlan> createSymbolPlan(
   }
   // Coverage is asserted above against everything shipped; capacity is applied
   // after, so an oversized artifact is a reported gap rather than a hard stop.
-  final sink = warnings ?? stderr;
   final boundedNative = withinUploadCapacity(selectedNative, warnings: sink);
   final boundedDart = withinUploadCapacity(selectedDart, warnings: sink);
   if (boundedNative.isEmpty) {
@@ -520,12 +675,14 @@ Future<SymbolPlan> createSymbolPlan(
 }
 
 Future<void> executeSymbolPlan(SymbolPlan plan, SymbolCommand command, {StringSink? output}) async {
-  Future<void> checked(List<String> args) async {
+  Future<String> checked(List<String> args) async {
     final result = await command(args);
-    output?.write(result.stdout);
+    final log = result.stdout.toString();
+    output?.write(log);
     if (result.exitCode != 0) {
       throw SymbolFailure('${args.take(2).join(' ')} failed: ${result.stderr}', result.exitCode);
     }
+    return log;
   }
 
   Future<void> upload(List<SymbolArtifact> artifacts) async {
@@ -533,7 +690,7 @@ Future<void> executeSymbolPlan(SymbolPlan plan, SymbolCommand command, {StringSi
     // receipts, and incorrectly fails an entirely already-present batch.
     // The plan has already checked every explicit file and required identity.
     for (final batch in batchSymbolArtifacts(artifacts)) {
-      await checked([
+      final log = await checked([
         'debug-files',
         'upload',
         '--wait-for',
@@ -542,6 +699,24 @@ Future<void> executeSymbolPlan(SymbolPlan plan, SymbolCommand command, {StringSi
         ...batch.expand((a) => a.variants).map((v) => v.debugId).toSet().expand((id) => ['--id', id]),
         ...batch.map((a) => a.file.path),
       ]);
+      // The CLI also drops, logging only at debug level and exiting 0, every
+      // object whose format the server's chunk-upload "accept" list omits
+      // (2.58.6 valid_format: PE and PDB need "pdbs", source bundles
+      // "sources"). Run 38170180917 planned flutter_windows.dll.pdb and each
+      // Windows PE against a tracker without "pdbs"; the CLI found none of
+      // them. Its count of found objects is the only trace; assembly errors
+      // and still-missing objects already fail the command.
+      final planned = batch.fold<int>(0, (count, artifact) => count + artifact.variants.length);
+      final found = RegExp(
+        r'Found (\d+) debug information file',
+      ).firstMatch(log.replaceAll(RegExp(r'\x1B\[[0-9;]*m'), ''))?.group(1);
+      if (found == null || int.parse(found) < planned) {
+        throw SymbolFailure(
+          'sentry-cli took ${found ?? 'none'} of $planned planned debug objects and dropped the rest without an '
+          'error; check the chunk-upload accept list of the server (PE/PDB need "pdbs"): '
+          '${batch.map((a) => a.file.path).join(', ')}',
+        );
+      }
     }
   }
 
@@ -596,6 +771,7 @@ Future<int> runUploadSymbols(
   SymbolCommand? command,
   StringSink? output,
   StringSink? errors,
+  SymbolDownload download = downloadSymbolArchive,
 }) async {
   final out = output ?? stdout;
   final err = errors ?? stderr;
@@ -633,7 +809,7 @@ Future<int> runUploadSymbols(
           environment: env,
           includeParentEnvironment: false,
         );
-    final plan = await createSymbolPlan(arguments.first, sourceRoot, env, invoke, warnings: err);
+    final plan = await createSymbolPlan(arguments.first, sourceRoot, env, invoke, warnings: err, download: download);
     out.writeln(jsonEncode(plan.toJson()));
     if (!dryRun) await executeSymbolPlan(plan, invoke, output: out);
     return 0;
