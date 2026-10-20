@@ -1325,6 +1325,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   late final AppDatabase _appDatabase;
   late final DownloadManagerService _downloadManager;
   late final OfflineWatchSyncService _offlineWatchSyncService;
+  late final ConnectionRegistry _connections;
+  late final ProfileConnectionRegistry _profileConnections;
+  late final PlexHomeService _plexHomeService;
   late final AppLifecycleListener _appLifecycleListener;
   StreamSubscription<WatchStateEvent>? _watchStateSubscription;
 
@@ -1334,7 +1337,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   OfflineModeProvider? _connectivitySyncProvider;
   Timer? _syncDebounce;
   final Set<String> _pendingSyncKeys = <String>{};
-  bool _isAutoDeleteRunning = false;
+
+  /// The [_autoDeleteAndSync] pass in flight; exit teardown awaits it.
+  Completer<void>? _autoDeleteRun;
   bool _lastConnectivityWasWifi = false;
   bool _lastConnectivityHadNetwork = true;
   Future<void>? _shutdownFuture;
@@ -1381,6 +1386,19 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     );
 
     _offlineWatchSyncService = OfflineWatchSyncService(database: _appDatabase, serverManager: _serverManager);
+
+    _connections = ConnectionRegistry(_appDatabase);
+    _profileConnections = ProfileConnectionRegistry(_appDatabase);
+    // Owned here rather than by its provider: exit teardown must settle it
+    // before the database closes. Hydrate the disk cache eagerly for profile
+    // resolution; live refresh starts only after MainScreen has settled the
+    // startup offline decision.
+    _plexHomeService = PlexHomeService(
+      connections: _connections,
+      profileConnections: _profileConnections,
+      storage: widget.storage,
+    );
+    unawaited(_plexHomeService.hydrate());
 
     _appLifecycleListener = AppLifecycleListener(
       onExitRequested: () async {
@@ -1443,6 +1461,14 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
       closeArtworkHttpClientGracefully(),
     ], eagerError: false);
     await ManagedHttpClient.closeAllGracefully();
+    // Settle everything that can still query the database. A query issued
+    // after close throws from whichever timer or callback started it, and
+    // those keep firing if the process outlives this teardown (#2651, #3012).
+    await Future.wait([
+      _plexHomeService.dispose(),
+      _offlineWatchSyncService.stopBackgroundSync(),
+      ?_autoDeleteRun?.future,
+    ]);
     await _appDatabase.close();
   }
 
@@ -1457,6 +1483,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
       _libraryEventService.dispose();
       _downloadManager.dispose();
       _serverManager.dispose();
+      unawaited(_plexHomeService.dispose());
     }
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -1570,11 +1597,14 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     List<String>? targetKeys,
     bool force = false,
   }) async {
-    if (_isAutoDeleteRunning) {
+    // Exit teardown awaits the pass in flight before closing the database; a
+    // pass started after that would query a closed database (#3012).
+    if (_shutdownFuture != null) return;
+    if (_autoDeleteRun != null) {
       if (targetKeys != null) _pendingSyncKeys.addAll(targetKeys);
       return;
     }
-    _isAutoDeleteRunning = true;
+    final run = _autoDeleteRun = Completer<void>();
     try {
       await downloadProvider.refreshMetadataFromCache();
       final activeGlobalKey = VideoPlayerScreenState.activeGlobalKey;
@@ -1605,7 +1635,8 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         }
       }
     } finally {
-      _isAutoDeleteRunning = false;
+      _autoDeleteRun = null;
+      run.complete();
       if (_pendingSyncKeys.isNotEmpty) {
         final queuedKeys = _pendingSyncKeys.toList();
         _pendingSyncKeys.clear();
@@ -1685,24 +1716,10 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         Provider<SettingsService>.value(value: widget.settings),
         Provider<StorageService>.value(value: widget.storage),
         Provider<AppDatabase>.value(value: _appDatabase),
-        Provider<ConnectionRegistry>(create: (_) => ConnectionRegistry(_appDatabase)),
+        Provider<ConnectionRegistry>.value(value: _connections),
         Provider<ProfileRegistry>(create: (_) => ProfileRegistry(_appDatabase)),
-        Provider<ProfileConnectionRegistry>(create: (_) => ProfileConnectionRegistry(_appDatabase)),
-        Provider<PlexHomeService>(
-          create: (context) {
-            // Hydrate the disk cache eagerly for profile resolution. Live
-            // refresh is started only after MainScreen has settled the
-            // startup offline decision.
-            final service = PlexHomeService(
-              connections: context.read<ConnectionRegistry>(),
-              profileConnections: context.read<ProfileConnectionRegistry>(),
-              storage: context.read<StorageService>(),
-            );
-            unawaited(service.hydrate());
-            return service;
-          },
-          dispose: (_, s) => s.dispose(),
-        ),
+        Provider<ProfileConnectionRegistry>.value(value: _profileConnections),
+        Provider<PlexHomeService>.value(value: _plexHomeService),
         ChangeNotifierProvider<ActiveProfileProvider>(
           create: (context) {
             final provider = ActiveProfileProvider(

@@ -67,6 +67,32 @@ class _QueuedFetcher {
   }
 }
 
+/// Holds the next [list] call open, so a test can dispose the service while
+/// that registry query is in flight.
+class _GatedListConnectionRegistry extends ConnectionRegistry {
+  _GatedListConnectionRegistry(super.db);
+
+  Completer<void>? _entered;
+  Completer<void>? _release;
+
+  ({Future<void> entered, Completer<void> release}) gateNextList() {
+    final entered = _entered = Completer<void>();
+    final release = _release = Completer<void>();
+    return (entered: entered.future, release: release);
+  }
+
+  @override
+  Future<List<Connection>> list() async {
+    final release = _release;
+    if (release != null) {
+      _release = null;
+      _entered!.complete();
+      await release.future;
+    }
+    return super.list();
+  }
+}
+
 final class _BlockingPreferencesPlatform extends SharedPreferencesAsyncPlatform {
   _BlockingPreferencesPlatform(this.delegate);
 
@@ -822,6 +848,33 @@ void main() {
       expect(service.current[acct.id]!.single.uuid, 'preserved-user');
       expect(decodePlexHomeUsersCache(storage.getPlexHomeUsersCacheJson(acct.id)!).single.uuid, 'preserved-user');
       expect(emissions, hasLength(2));
+    });
+
+    // #2651: exit teardown closes the database right after disposing the
+    // service, so dispose must settle a refresh tick's query still in flight.
+    test('dispose settles an in-flight registry query before the database closes', () async {
+      final gated = _GatedListConnectionRegistry(db);
+      service = PlexHomeService(
+        connections: gated,
+        profileConnections: profileConnections,
+        storage: storage,
+        plexHomeUserFetcher: (_) async => const [],
+      );
+      await service.hydrate();
+      final refreshList = gated.gateNextList();
+      // start() fires the first refresh tick, whose registry query stays open.
+      await service.start();
+      await refreshList.entered;
+
+      var disposed = false;
+      final disposal = service.dispose().then((_) => disposed = true);
+      await pumpEventQueue();
+      expect(disposed, isFalse, reason: 'the refresh tick still has a database query in flight');
+
+      refreshList.release.complete();
+      await disposal;
+      await db.close();
+      await pumpEventQueue();
     });
   });
 }
