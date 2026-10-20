@@ -871,6 +871,7 @@
     "pipActive": "Spelas upp i bild-i-bild",
     "pipFailed": "Bild-i-bild kunde inte starta",
     "screenshotSaved": "Skärmbild sparad",
+    "screenshotFailed": "",
     "zoomPercent": "Zoom ${percent}%",
     "volumePercent": "Volym ${percent}%",
     "pipErrors": {

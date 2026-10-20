@@ -871,6 +871,7 @@
     "pipActive": "Reproduzindo em Picture-in-Picture",
     "pipFailed": "Falha ao iniciar picture-in-picture",
     "screenshotSaved": "Captura de tela salva",
+    "screenshotFailed": "",
     "zoomPercent": "Zoom ${percent}%",
     "volumePercent": "Volume ${percent}%",
     "pipErrors": {

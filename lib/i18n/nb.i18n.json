@@ -871,6 +871,7 @@
     "pipActive": "Spiller i bilde-i-bilde",
     "pipFailed": "Bilde-i-bilde kunne ikke starte",
     "screenshotSaved": "Skjermbilde lagret",
+    "screenshotFailed": "",
     "zoomPercent": "Zoom ${percent} %",
     "volumePercent": "Volum ${percent} %",
     "pipErrors": {

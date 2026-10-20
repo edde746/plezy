@@ -871,6 +871,7 @@
     "pipActive": "Riproduzione in Picture-in-Picture",
     "pipFailed": "Impossibile avviare la modalità Picture-in-Picture",
     "screenshotSaved": "Schermata salvata",
+    "screenshotFailed": "",
     "zoomPercent": "Zoom ${percent}%",
     "volumePercent": "Volume ${percent}%",
     "pipErrors": {

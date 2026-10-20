@@ -868,6 +868,7 @@
     "pipActive": "正在以画中画模式播放",
     "pipFailed": "画中画启动失败",
     "screenshotSaved": "截图已保存",
+    "screenshotFailed": "",
     "zoomPercent": "缩放 ${percent}%",
     "volumePercent": "音量 ${percent}%",
     "pipErrors": {

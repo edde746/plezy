@@ -868,6 +868,7 @@
     "pipActive": "화면 속 화면으로 재생 중",
     "pipFailed": "화면 속 화면 모드를 시작할 수 없습니다",
     "screenshotSaved": "스크린샷 저장됨",
+    "screenshotFailed": "",
     "zoomPercent": "확대/축소 ${percent}%",
     "volumePercent": "볼륨 ${percent}%",
     "pipErrors": {

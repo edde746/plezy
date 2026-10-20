@@ -871,6 +871,7 @@
     "pipActive": "Reproduciendo en modo de imagen en imagen",
     "pipFailed": "No se pudo iniciar el modo de imagen en imagen",
     "screenshotSaved": "Captura de pantalla guardada",
+    "screenshotFailed": "",
     "zoomPercent": "Zoom ${percent}%",
     "volumePercent": "Volumen ${percent}%",
     "pipErrors": {

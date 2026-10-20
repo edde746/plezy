@@ -871,6 +871,7 @@
     "pipActive": "Lejátszás kép a képben módban",
     "pipFailed": "Nem sikerült elindítani a kép a képben módot",
     "screenshotSaved": "Képernyőkép elmentve",
+    "screenshotFailed": "",
     "zoomPercent": "Nagyítás ${percent}%",
     "volumePercent": "Hangerő ${percent}%",
     "pipErrors": {

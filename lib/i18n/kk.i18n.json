@@ -871,6 +871,7 @@
     "pipActive": "Суреттегі сурет режимінде ойнатылуда",
     "pipFailed": "PiP режимін іске қосу қатесі",
     "screenshotSaved": "Экран суреті сақталды",
+    "screenshotFailed": "",
     "zoomPercent": "Масштаб %${percent}",
     "volumePercent": "Дыбыс ${percent}%",
     "pipErrors": {

@@ -868,6 +868,7 @@
     "pipActive": "正在以子母畫面模式播放",
     "pipFailed": "啟動子母畫面失敗",
     "screenshotSaved": "螢幕截圖已儲存",
+    "screenshotFailed": "",
     "zoomPercent": "縮放 ${percent}%",
     "volumePercent": "音量 ${percent}%",
     "pipErrors": {

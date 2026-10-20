@@ -868,6 +868,7 @@
     "pipActive": "ピクチャーインピクチャーで再生中",
     "pipFailed": "ピクチャーインピクチャーの開始に失敗しました",
     "screenshotSaved": "スクリーンショットを保存しました",
+    "screenshotFailed": "",
     "zoomPercent": "ズーム ${percent}%",
     "volumePercent": "音量 ${percent}%",
     "pipErrors": {

@@ -871,6 +871,7 @@
     "pipActive": "Afspiller i billede-i-billede",
     "pipFailed": "Billede-i-billede kunne ikke starte",
     "screenshotSaved": "Skærmbillede gemt",
+    "screenshotFailed": "",
     "zoomPercent": "Zoom ${percent}%",
     "volumePercent": "Lydstyrke ${percent}%",
     "pipErrors": {

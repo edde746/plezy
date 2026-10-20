@@ -871,6 +871,7 @@
     "pipActive": "Playing in Picture-in-Picture",
     "pipFailed": "Picture-in-picture failed to start",
     "screenshotSaved": "Screenshot saved",
+    "screenshotFailed": "Couldn't take a screenshot",
     "zoomPercent": "Zoom ${percent}%",
     "volumePercent": "Volume ${percent}%",
     "pipErrors": {

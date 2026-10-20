@@ -871,6 +871,7 @@
     "pipActive": "Lecture en mode image dans l'image",
     "pipFailed": "Échec du démarrage du mode image dans l'image",
     "screenshotSaved": "Capture d'écran enregistrée",
+    "screenshotFailed": "",
     "zoomPercent": "Zoom ${percent} %",
     "volumePercent": "Volume ${percent} %",
     "pipErrors": {

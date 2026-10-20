@@ -871,6 +871,7 @@
     "pipActive": "Възпроизвеждане в режим картина в картината",
     "pipFailed": "Режимът картина в картината не успя да стартира",
     "screenshotSaved": "Екранната снимка е запазена",
+    "screenshotFailed": "",
     "zoomPercent": "Мащаб ${percent}%",
     "volumePercent": "Звук ${percent}%",
     "pipErrors": {

@@ -871,6 +871,7 @@
     "pipActive": "Wiedergabe im Bild-in-Bild-Modus",
     "pipFailed": "Bild-in-Bild konnte nicht gestartet werden",
     "screenshotSaved": "Screenshot gespeichert",
+    "screenshotFailed": "",
     "zoomPercent": "Zoom ${percent}%",
     "volumePercent": "Lautstärke ${percent}%",
     "pipErrors": {

@@ -871,6 +871,7 @@
     "pipActive": "Rasm ichida rasm rejimida ijro etilmoqda",
     "pipFailed": "PiP rejimini ishga tushirishda xatolik",
     "screenshotSaved": "Ekran tasviri saqlandi",
+    "screenshotFailed": "",
     "zoomPercent": "Masshtab %${percent}",
     "volumePercent": "Ovoz ${percent}%",
     "pipErrors": {

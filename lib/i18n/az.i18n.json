@@ -871,6 +871,7 @@
     "pipActive": "Pəncərə daxilində pəncərə rejimində oynadılır",
     "pipFailed": "PiP rejimi başladılarkən xəta",
     "screenshotSaved": "Ekran şəkli yadda saxlanıldı",
+    "screenshotFailed": "",
     "zoomPercent": "Miqyas %${percent}",
     "volumePercent": "Səs ${percent}%",
     "pipErrors": {

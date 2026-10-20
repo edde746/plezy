@@ -877,6 +877,7 @@
     "pipActive": "Odtwarzanie w trybie obraz w obrazie",
     "pipFailed": "Nie udało się uruchomić trybu obraz w obrazie",
     "screenshotSaved": "Zrzut ekranu zapisany",
+    "screenshotFailed": "",
     "zoomPercent": "Powiększenie ${percent}%",
     "volumePercent": "Głośność ${percent}%",
     "pipErrors": {

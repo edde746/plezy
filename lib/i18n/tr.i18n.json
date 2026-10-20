@@ -871,6 +871,7 @@
     "pipActive": "Pencere İçinde Pencere modunda oynatılıyor",
     "pipFailed": "Pencere içinde pencere modu başlatılamadı",
     "screenshotSaved": "Ekran görüntüsü kaydedildi",
+    "screenshotFailed": "",
     "zoomPercent": "Yakınlaştırma %${percent}",
     "volumePercent": "Ses %${percent}",
     "pipErrors": {
