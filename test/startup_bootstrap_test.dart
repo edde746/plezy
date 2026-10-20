@@ -297,6 +297,33 @@ void main() {
     expect(find.textContaining('FormatException'), findsOneWidget);
   });
 
+  testWidgets('the failure screen lays out text in the app language', (tester) async {
+    // Every Text inherits the app's Localizations locale, which selects CJK
+    // glyph forms; Flutter's en-US default drew Chinese with Japanese glyphs on
+    // Windows (#2752).
+    await tester.runAsync(() => LocaleSettings.setLocale(AppLocale.zhHant));
+    addTearDown(() => LocaleSettings.setLocaleSync(AppLocale.en));
+
+    await tester.pumpWidget(
+      StartupBootstrap<int>(
+        initialize: () async => throw StateError('database unavailable'),
+        buildApp: (_, value) => Text('ready $value'),
+      ),
+    );
+    await tester.pump();
+
+    final failureText = find.descendant(of: find.byKey(startupBootstrapFailureKey), matching: find.byType(RichText));
+    expect(
+      tester.renderObject<RenderParagraph>(failureText.first).locale,
+      const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant', countryCode: 'TW'),
+    );
+    final context = tester.element(find.byKey(startupBootstrapRetryKey));
+    expect(
+      MaterialLocalizations.of(context).cancelButtonLabel,
+      isNot(const DefaultMaterialLocalizations().cancelButtonLabel),
+    );
+  });
+
   testWidgets('expands the full detail block on request', (tester) async {
     await tester.pumpWidget(
       StartupBootstrap<int>(

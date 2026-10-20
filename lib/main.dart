@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences_foundation/shared_preferences_foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/material.dart' as material show ThemeMode;
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
@@ -845,6 +846,9 @@ class _StartupBootstrapState<T> extends State<StartupBootstrap<T>> {
         builder: (context) => InputModeTracker(
           child: MaterialApp(
             debugShowCheckedModeBanner: false,
+            locale: TranslationProvider.of(context).locale.localizationsLocale,
+            supportedLocales: supportedLocalizationsLocales,
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
             theme: resolved?.lightTheme ?? widget.lightTheme,
             darkTheme: resolved?.darkTheme ?? widget.darkTheme,
             themeMode: resolved?.themeMode ?? widget.themeMode,
@@ -1892,6 +1896,12 @@ class _AppShell extends StatelessWidget {
                   child: MaterialApp(
                     title: t.app.title,
                     debugShowCheckedModeBanner: false,
+                    // The app language, not Flutter's en-US default: every
+                    // Text inherits it as the locale that selects CJK glyph
+                    // forms, and Material's own strings follow it.
+                    locale: TranslationProvider.of(context).locale.localizationsLocale,
+                    supportedLocales: supportedLocalizationsLocales,
+                    localizationsDelegates: GlobalMaterialLocalizations.delegates,
                     theme: themeProvider.lightTheme,
                     darkTheme: themeProvider.darkTheme,
                     themeMode: themeProvider.materialThemeMode,
