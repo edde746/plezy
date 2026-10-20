@@ -673,6 +673,22 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     );
   }
 
+  /// Starts a play/pause intent nothing awaits, on behalf of [source]. Like
+  /// [_remoteTransport] and [_handleControlsTransport], the dispatcher owns the
+  /// outcome: the backend can refuse the write - an Android mpv session that
+  /// was condemned (a native call that never answered, a failed video output)
+  /// answers every write with SET_PROPERTY_FAILED until the player is
+  /// replaced, one torn down mid-write with NOT_INITIALIZED - and left
+  /// unawaited that refusal is an uncaught error (#2662, #2657). The failure
+  /// view that reported the dead session stays the viewer's way out.
+  void _dispatchPlaybackIntent(Future<void> intent, {required String source}) {
+    unawaited(
+      intent.catchError((Object e, StackTrace st) {
+        appLogger.w('$source play/pause failed', error: e, stackTrace: st);
+      }),
+    );
+  }
+
   /// The screen's authorization + command policy for OS media-session events.
   MediaControlRouter _buildMediaControlRouter() {
     return MediaControlRouter(
@@ -685,7 +701,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         final currentPlayer = player;
         if (currentPlayer == null) return;
         unawaited(_mediaControls.seekBackForRewind(currentPlayer));
-        unawaited(_transportIntent(currentPlayer, TransportCommand.play));
+        _dispatchPlaybackIntent(_transportIntent(currentPlayer, TransportCommand.play), source: 'Media session');
         _wasPlayingBeforeInactive = false;
         _announceTransportCommand(willPlay: true);
         _mediaControls.pushPlaybackState();
@@ -697,7 +713,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
           appLogger.d('Media control: Pause event suppressed (frame rate switch in progress)');
           return;
         }
-        unawaited(_transportIntent(currentPlayer, TransportCommand.pause));
+        _dispatchPlaybackIntent(_transportIntent(currentPlayer, TransportCommand.pause), source: 'Media session');
         _announceTransportCommand(willPlay: false);
         _mediaControls.pushPlaybackState();
       },
@@ -705,11 +721,11 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
         final currentPlayer = player;
         if (currentPlayer == null) return;
         if (currentPlayer.state.isActive) {
-          unawaited(_transportIntent(currentPlayer, TransportCommand.pause));
+          _dispatchPlaybackIntent(_transportIntent(currentPlayer, TransportCommand.pause), source: 'Media session');
           _announceTransportCommand(willPlay: false);
         } else {
           unawaited(_mediaControls.seekBackForRewind(currentPlayer));
-          unawaited(_transportIntent(currentPlayer, TransportCommand.play));
+          _dispatchPlaybackIntent(_transportIntent(currentPlayer, TransportCommand.play), source: 'Media session');
           _wasPlayingBeforeInactive = false;
           _announceTransportCommand(willPlay: true);
         }
@@ -761,7 +777,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       );
       final currentPlayer = player;
       if (currentPlayer != null) {
-        unawaited(_pauseWithPlaybackIntent(currentPlayer));
+        _dispatchPlaybackIntent(_pauseWithPlaybackIntent(currentPlayer), source: 'Automotive restriction');
       }
       unawaited(_wakelockController.setEnabled(false));
       return;
@@ -774,7 +790,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
       );
       final currentPlayer = player;
       if (currentPlayer != null) {
-        unawaited(_pauseWithPlaybackIntent(currentPlayer));
+        _dispatchPlaybackIntent(_pauseWithPlaybackIntent(currentPlayer), source: 'TV background');
       }
       unawaited(_wakelockController.setEnabled(false));
       return;

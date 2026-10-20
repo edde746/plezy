@@ -891,7 +891,18 @@ class PlayerNative extends PlayerBase {
     if (updatesDvLog) value = _normalizeBoolProperty(value);
 
     await _ensureInitialized();
-    await invoke('setProperty', {'name': name, 'value': value});
+    try {
+      await invoke('setProperty', {'name': name, 'value': value});
+    } on PlatformException catch (e) {
+      // This player's dispose began while the write was in flight, and the
+      // core answered for that teardown (NOT_INITIALIZED, or a refusal from
+      // the session being released): there is nothing left to apply the
+      // value to, which is what the guard below already concludes on success.
+      // A live player still reports every refusal to its caller.
+      if (!_nativeCoreUnavailable) rethrow;
+      appLogger.d('MPV: $name write ended by player teardown (${e.code})');
+      return;
+    }
     if (_nativeCoreUnavailable) return;
     if (updatesDvMode) _dvConversionMode = value;
     if (updatesDvLog) _dvConversionLog = value;

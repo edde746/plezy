@@ -798,7 +798,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           // resumed session keeps reporting (and its eventual real stop sends).
           _progressTracker?.resumeAfterStoppedReport();
           if (!wtOwnsStart && wasPlayingBeforeReload && mounted && player == currentPlayer) {
-            unawaited(_playWithPlaybackIntent(currentPlayer));
+            _dispatchPlaybackIntent(_playWithPlaybackIntent(currentPlayer), source: 'Reload rollback');
           }
         }
         if (_progressTracker == null && player == currentPlayer) {

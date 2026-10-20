@@ -1346,7 +1346,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       onComplete: () {
         final currentPlayer = player;
         if (mounted && !_shuttingDown && currentPlayer != null) {
-          unawaited(_pauseWithPlaybackIntent(currentPlayer));
+          _dispatchPlaybackIntent(_pauseWithPlaybackIntent(currentPlayer), source: 'Sleep timer');
         }
       },
     );

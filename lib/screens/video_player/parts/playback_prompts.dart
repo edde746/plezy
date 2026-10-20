@@ -372,7 +372,9 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
   void _onStillWatchingTimeout() {
     _unfocusStillWatchingPrompt();
     final currentPlayer = player;
-    if (currentPlayer != null) unawaited(_pauseWithPlaybackIntent(currentPlayer));
+    if (currentPlayer != null) {
+      _dispatchPlaybackIntent(_pauseWithPlaybackIntent(currentPlayer), source: 'Still watching');
+    }
     _setPlayerState(() {
       _showStillWatchingPrompt = false;
     });
@@ -391,7 +393,9 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
     _stillWatchingTimer?.cancel();
     _unfocusStillWatchingPrompt();
     final currentPlayer = player;
-    if (currentPlayer != null) unawaited(_pauseWithPlaybackIntent(currentPlayer));
+    if (currentPlayer != null) {
+      _dispatchPlaybackIntent(_pauseWithPlaybackIntent(currentPlayer), source: 'Still watching');
+    }
     _setPlayerState(() {
       _showStillWatchingPrompt = false;
     });
