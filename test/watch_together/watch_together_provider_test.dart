@@ -111,9 +111,13 @@ final class _Member {
 
   Iterable<T> noticesOf<T extends WatchNotice>() => notices.whereType<T>();
 
+  bool _disposed = false;
+
   /// Not awaiting the cancel: a broadcast subscription's cancel future
   /// belongs to the root zone, which widget-test time never runs.
   void dispose() {
+    if (_disposed) return;
+    _disposed = true;
     provider.dispose();
     unawaited(_subscription.cancel());
   }
@@ -465,6 +469,18 @@ void main() {
       await world.until(() => h.provider.participantCount == 1, 'the host is alone');
       expect(h.provider.isConnected, isTrue);
       expect(h.noticesOf<EndedNotice>(), isEmpty);
+    });
+
+    _roomTest('disposing the provider, as a profile switch does, leaves the room at once', (world) async {
+      final h = world.host();
+      final g = world.guest();
+      await world.together(h, [g]);
+
+      g.dispose();
+      // Left, not dropped: a dropped guest would stay listed while the relay
+      // keeps its place for a resume.
+      await world.noticed<LeftNotice>(h, 'the host sees the guest go', (n) => n.name == 'Guest');
+      await world.until(() => h.provider.participantCount == 1, 'the host is alone');
     });
 
     _roomTest('leaving tells the others without an end notice; ending ends it for everyone', (world) async {
