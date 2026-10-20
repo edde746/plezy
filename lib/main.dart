@@ -161,6 +161,7 @@ void main() {
   // target in Flutter's tool), so register platform stores manually for
   // the plugins we use.
   _registerTvosPlatformPlugins();
+  _registerAppLicenses();
   _bootstrapApp();
 }
 
@@ -1070,10 +1071,6 @@ void _startNonessentialInitialization(SettingsService settings) {
     unawaited(AndroidExitDiagnostics.logPreviousExit());
   }
 
-  bestEffort('Shader licenses', _registerShaderLicenses);
-  // iOS covers iPhone, iPad, and Apple TV; mpv-build links SpatialAudioBridge
-  // into libmpv there and not on macOS.
-  if (Platform.isIOS) bestEffort('Spatial audio licenses', _registerSpatialAudioLicenses);
   // The startup-gate application can precede the engine's first metrics
   // report, which reads as a 1.0 display budget; re-derive it now that the
   // tree is mounted and the display is known.
@@ -1194,6 +1191,22 @@ FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
   }
 
   return event;
+}
+
+/// Registers notices for code Plezy ships outside its pub packages.
+///
+/// Runs in [main], before `SentryFlutter.init`, and must stay ahead of every
+/// [LicenseRegistry.licenses] reader. Sentry's event enricher walks the
+/// registry for the first captured event, and the registry iterates its live
+/// collector list across each collector's await: a collector added while that
+/// walk is suspended throws `ConcurrentModificationError` on the next step and
+/// the event never finishes enriching. The collectors are lazy, so registering
+/// them here loads nothing until a reader runs.
+void _registerAppLicenses() {
+  _registerShaderLicenses();
+  // iOS covers iPhone, iPad, and Apple TV; mpv-build links SpatialAudioBridge
+  // into libmpv there and not on macOS.
+  if (Platform.isIOS) _registerSpatialAudioLicenses();
 }
 
 /// Notices for the SpatialAudioBridge core compiled into libmpv, verbatim from
