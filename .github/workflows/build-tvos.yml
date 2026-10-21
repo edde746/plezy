@@ -6,6 +6,7 @@ on:
 env:
   FLUTTER_VERSION: "3.47.1"
   TRUSTED_BUILD_CACHE_VERSION: trusted-build-v1
+  TVOS_ENGINE_URL: "https://github.com/fluttertv/engine-artifacts/releases/download/engine-b118f6897f8f3427d1390c80bbefa90ee948c97e/tvos_release_arm64.zip"
 
 jobs:
   build-tvos:
@@ -43,6 +44,21 @@ jobs:
             ~/.cocoapods
           key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-tvos-pods-${{ hashFiles('tvos/Podfile.lock') }}
 
+      - name: Cache tvOS engine
+        id: tvos-engine-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: tvos-engine
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-tvos-engine-b118f6897f8f3427d1390c80bbefa90ee948c97e
+
+      - name: Download tvOS Flutter engine
+        if: steps.tvos-engine-cache.outputs.cache-hit != 'true'
+        run: |
+          curl -L ${{ env.TVOS_ENGINE_URL }} -o tvos-engine.zip
+          unzip tvos-engine.zip -d engine-extract
+          mkdir -p tvos-engine/out/tvos_release
+          cp -r engine-extract/tvos_release_arm64/* tvos-engine/out/tvos_release/
+
       - name: Install Flutter dependencies
         run: flutter pub get --enforce-lockfile --no-example
 
@@ -60,10 +76,8 @@ jobs:
           TRACK_WIDGET_CREATION=false
           TREE_SHAKE_ICONS=false
           PACKAGE_CONFIG=$PWD/.dart_tool/package_config.json
-          FLUTTER_LOCAL_ENGINE=
+          FLUTTER_LOCAL_ENGINE=$PWD/tvos-engine
           EOF
-
-
 
       - name: Install CocoaPods dependencies
         run: |
