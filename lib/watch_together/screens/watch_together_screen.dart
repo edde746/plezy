@@ -92,19 +92,13 @@ class _WatchTogetherScreenState extends State<WatchTogetherScreen> with MountedS
       child: FocusedScrollScaffold(
         title: Text(t.watchTogether.title),
         slivers: [
-          // Consumes the side insets once, so the tiles inside don't add them
-          // again.
-          SliverSafeArea(
-            top: false,
-            bottom: false,
-            sliver: SliverPadding(
-              padding: const EdgeInsets.all(16),
-              sliver: SliverToBoxAdapter(
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 640),
-                    child: KeyedSubtree(key: ValueKey(view), child: body),
-                  ),
+          SliverPadding(
+            padding: const EdgeInsets.all(16),
+            sliver: SliverToBoxAdapter(
+              child: Center(
+                child: ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 640),
+                  child: KeyedSubtree(key: ValueKey(view), child: body),
                 ),
               ),
             ),

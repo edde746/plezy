@@ -557,14 +557,21 @@ abstract class BaseLibraryTabState<T, W extends BaseLibraryTab<T>> extends State
   Widget build(BuildContext context) {
     super.build(context); // Required for AutomaticKeepAliveClientMixin
 
-    return ContentStateBuilder<T>(
-      isLoading: _isLoading,
-      errorMessage: _errorMessage,
-      items: _items,
-      emptyIcon: emptyIcon,
-      emptyMessage: emptyMessage,
-      onRetry: loadItems,
-      builder: (items) => RefreshIndicator(onRefresh: loadItems, child: buildContent(items)),
+    // Horizontal-only SafeArea at the region owner, as the browse tab does
+    // in its own build: content and loading/empty/error states clear a
+    // landscape notch or iPhone Duo's portrait sensor column.
+    return SafeArea(
+      top: false,
+      bottom: false,
+      child: ContentStateBuilder<T>(
+        isLoading: _isLoading,
+        errorMessage: _errorMessage,
+        items: _items,
+        emptyIcon: emptyIcon,
+        emptyMessage: emptyMessage,
+        onRetry: loadItems,
+        builder: (items) => RefreshIndicator(onRefresh: loadItems, child: buildContent(items)),
+      ),
     );
   }
 }

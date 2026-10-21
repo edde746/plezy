@@ -1151,15 +1151,17 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final isTv = PlatformDetector.isTV();
     final viewportHeight = MediaQuery.sizeOf(context).height;
     final isLandscape = MediaQuery.orientationOf(context) == Orientation.landscape;
-    // Mobile keeps its fixed hero, except that a landscape phone is shorter
-    // than the hero itself; fill the viewport there and let the item compact.
+    // Mobile keeps its fixed hero, except where that would swamp the screen.
+    // A landscape phone is shorter than the hero itself: fill the viewport
+    // and let the item compact. A short portrait viewport (iPhone Duo, compact
+    // phones) caps it at about two thirds so the first hub row still shows.
     final heroHeight = isTv
         ? viewportHeight * 0.82
         : useSideNav
         ? viewportHeight * 0.75
         : isLandscape
         ? math.min(500 + statusBarHeight, viewportHeight)
-        : 500 + statusBarHeight;
+        : math.min(500 + statusBarHeight, viewportHeight * 0.65);
     return SliverToBoxAdapter(
       child: Focus(
         focusNode: _heroFocusNode,
@@ -1192,87 +1194,92 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   bottom: 16,
                   left: -26,
                   right: 0,
-                  child: Row(
-                    mainAxisAlignment: .center,
-                    children: [
-                      // Pause/Play button
-                      ClickableCursor(
-                        child: GestureDetector(
-                          onTap: () {
-                            if (_isAutoScrollPaused) {
-                              _resumeAutoScroll();
-                            } else {
-                              _pauseAutoScroll();
-                            }
-                          },
-                          child: AppIcon(
-                            _isAutoScrollPaused ? Symbols.play_arrow_rounded : Symbols.pause_rounded,
-                            fill: 1,
-                            color: Theme.of(context).colorScheme.onSurface,
-                            size: 18,
-                            semanticLabel: _isAutoScrollPaused
-                                ? t.accessibility.autoScrollPlay
-                                : t.accessibility.autoScrollPause,
+                  // Centered on the same safe width as the hero item above it.
+                  child: SafeArea(
+                    top: false,
+                    bottom: false,
+                    child: Row(
+                      mainAxisAlignment: .center,
+                      children: [
+                        // Pause/Play button
+                        ClickableCursor(
+                          child: GestureDetector(
+                            onTap: () {
+                              if (_isAutoScrollPaused) {
+                                _resumeAutoScroll();
+                              } else {
+                                _pauseAutoScroll();
+                              }
+                            },
+                            child: AppIcon(
+                              _isAutoScrollPaused ? Symbols.play_arrow_rounded : Symbols.pause_rounded,
+                              fill: 1,
+                              color: Theme.of(context).colorScheme.onSurface,
+                              size: 18,
+                              semanticLabel: _isAutoScrollPaused
+                                  ? t.accessibility.autoScrollPlay
+                                  : t.accessibility.autoScrollPause,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      ValueListenableBuilder<int>(
-                        valueListenable: _heroIndex,
-                        builder: (context, heroIndex, _) {
-                          final range = _getVisibleDotRange();
-                          return Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: List.generate(range.end - range.start + 1, (i) {
-                              final index = range.start + i;
-                              final isActive = heroIndex == index;
-                              final dotSize = _getDotSize(index, range.start, range.end);
+                        const SizedBox(width: 8),
+                        ValueListenableBuilder<int>(
+                          valueListenable: _heroIndex,
+                          builder: (context, heroIndex, _) {
+                            final range = _getVisibleDotRange();
+                            return Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: List.generate(range.end - range.start + 1, (i) {
+                                final index = range.start + i;
+                                final isActive = heroIndex == index;
+                                final dotSize = _getDotSize(index, range.start, range.end);
 
-                              return isActive
-                                  ? ValueListenableBuilder<double>(
-                                      valueListenable: _indicatorProgress,
-                                      builder: (context, progress, child) {
-                                        final maxWidth = dotSize * 3;
-                                        final fillWidth = dotSize + ((maxWidth - dotSize) * progress);
-                                        final onSurface = Theme.of(context).colorScheme.onSurface;
-                                        return Container(
-                                          margin: const EdgeInsets.symmetric(horizontal: 4),
-                                          width: maxWidth,
-                                          height: dotSize,
-                                          decoration: BoxDecoration(
-                                            color: onSurface.withValues(alpha: 0.4),
-                                            borderRadius: BorderRadius.circular(dotSize / 2),
-                                          ),
-                                          child: Align(
-                                            alignment: .centerLeft,
-                                            child: Container(
-                                              width: fillWidth,
-                                              height: dotSize,
-                                              decoration: BoxDecoration(
-                                                color: onSurface,
-                                                borderRadius: BorderRadius.circular(dotSize / 2),
+                                return isActive
+                                    ? ValueListenableBuilder<double>(
+                                        valueListenable: _indicatorProgress,
+                                        builder: (context, progress, child) {
+                                          final maxWidth = dotSize * 3;
+                                          final fillWidth = dotSize + ((maxWidth - dotSize) * progress);
+                                          final onSurface = Theme.of(context).colorScheme.onSurface;
+                                          return Container(
+                                            margin: const EdgeInsets.symmetric(horizontal: 4),
+                                            width: maxWidth,
+                                            height: dotSize,
+                                            decoration: BoxDecoration(
+                                              color: onSurface.withValues(alpha: 0.4),
+                                              borderRadius: BorderRadius.circular(dotSize / 2),
+                                            ),
+                                            child: Align(
+                                              alignment: .centerLeft,
+                                              child: Container(
+                                                width: fillWidth,
+                                                height: dotSize,
+                                                decoration: BoxDecoration(
+                                                  color: onSurface,
+                                                  borderRadius: BorderRadius.circular(dotSize / 2),
+                                                ),
                                               ),
                                             ),
-                                          ),
-                                        );
-                                      },
-                                    )
-                                  : AnimatedContainer(
-                                      duration: tokens(context).slow,
-                                      curve: Curves.easeInOut,
-                                      margin: const EdgeInsets.symmetric(horizontal: 4),
-                                      width: dotSize,
-                                      height: dotSize,
-                                      decoration: BoxDecoration(
-                                        color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
-                                        borderRadius: BorderRadius.circular(dotSize / 2),
-                                      ),
-                                    );
-                            }),
-                          );
-                        },
-                      ),
-                    ],
+                                          );
+                                        },
+                                      )
+                                    : AnimatedContainer(
+                                        duration: tokens(context).slow,
+                                        curve: Curves.easeInOut,
+                                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                                        width: dotSize,
+                                        height: dotSize,
+                                        decoration: BoxDecoration(
+                                          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.4),
+                                          borderRadius: BorderRadius.circular(dotSize / 2),
+                                        ),
+                                      );
+                              }),
+                            );
+                          },
+                        ),
+                      ],
+                    ),
                   ),
                 ),
             ],
@@ -1386,8 +1393,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final alignLeft = isTv || isLargeScreen;
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    // A landscape phone hands the hero the whole ~400dp viewport; the usual
-    // logo and bottom offset would push the content up into the top bar.
+    // A landscape phone hands the hero its whole ~400dp viewport, and a short
+    // portrait one its capped height; the usual logo and bottom offset would
+    // push the content up into the top bar.
     final compact = !isTv && heroHeight < 450;
     final heroLogoWidth = isTv ? TvLayoutConstants.heroLogoWidth : 400.0;
     final heroLogoHeight = isTv
@@ -1426,12 +1434,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             fit: StackFit.expand,
             clipBehavior: Clip.none,
             children: [
-              // Content with responsive alignment
+              // Content with responsive alignment. Compact trims the offset
+              // but still clears the page indicator row (bottom 16, ~18 tall)
+              // that sits over every handheld hero.
               Positioned(
                 bottom: isTv
                     ? 88
                     : compact
-                    ? 24
+                    ? 44
                     : isLargeScreen
                     ? 80
                     : 50,

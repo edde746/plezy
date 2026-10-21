@@ -967,21 +967,28 @@ class _LibrariesScreenState extends State<LibrariesScreen>
                     child: Container(
                       color: Theme.of(context).scaffoldBackgroundColor,
                       padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 4),
-                      child: SingleChildScrollView(
-                        scrollDirection: Axis.horizontal,
-                        child: Row(
-                          children: [
-                            for (int i = 0; i < _visibleTabs.length; i++) ...[
-                              if (i > 0) const SizedBox(width: 8),
-                              buildTabChip(
-                                _getTabLabel(_visibleTabs[i]),
-                                i,
-                                onSelectWhenActive: _focusCurrentTab,
-                                onNavigateDown: _focusCurrentTabFromTabBar,
-                                onNavigateToActions: () => _actionBarKey.currentState?.requestFocusOnFirst(),
-                              ),
+                      // Horizontal-only SafeArea: the strip's background
+                      // stays full-bleed; its chips clear a landscape notch
+                      // or iPhone Duo's portrait sensor column.
+                      child: SafeArea(
+                        top: false,
+                        bottom: false,
+                        child: SingleChildScrollView(
+                          scrollDirection: Axis.horizontal,
+                          child: Row(
+                            children: [
+                              for (int i = 0; i < _visibleTabs.length; i++) ...[
+                                if (i > 0) const SizedBox(width: 8),
+                                buildTabChip(
+                                  _getTabLabel(_visibleTabs[i]),
+                                  i,
+                                  onSelectWhenActive: _focusCurrentTab,
+                                  onNavigateDown: _focusCurrentTabFromTabBar,
+                                  onNavigateToActions: () => _actionBarKey.currentState?.requestFocusOnFirst(),
+                                ),
+                              ],
                             ],
-                          ],
+                          ),
                         ),
                       ),
                     ),
