@@ -103,6 +103,15 @@ mixin _PlexPlayQueueMethods on _PlexClientInternals {
     }
   }
 
+  /// Build a show play queue. Deliberately best-effort: both callers (the
+  /// video player's episode queue and shuffled-show launch) degrade to a
+  /// local/empty queue on null rather than failing playback outright.
+  ///
+  /// Shuffled queues and [SpecialsOrdering.airDate] come from the show's
+  /// `/allLeaves`. PMS orders a queue built from that URI purely by
+  /// `originallyAvailableAt` (undated first), which interleaves Specials by
+  /// air date (#1416). Every other mode gets Plex Web's sequential order via
+  /// [_createSequentialShowPlayQueue].
   Future<PlayQueueResponse?> createShowPlayQueue({
     required String showRatingKey,
     int shuffle = 0,
@@ -111,27 +120,87 @@ mixin _PlexPlayQueueMethods on _PlexClientInternals {
     String? librarySectionTitle,
   }) async {
     try {
-      // `/allLeaves` preserves Plex's aired episode order and interleaves
-      // specials (#1416) — both what the server itself does (respectServer)
-      // and the explicit airDate mode. `/children` flattens season-by-season,
-      // keeping the Specials folder out of the regular run (#1952). Mirrors
-      // the client-side choice in [sortEpisodesByWatchOrder].
-      final leaf = effectiveSpecialsOrdering() == SpecialsOrdering.specialsLast ? 'children' : 'allLeaves';
-      final uri = '${await buildMetadataUri(showRatingKey)}/$leaf';
-      return await createPlayQueue(
-        uri: uri,
-        type: 'video',
-        shuffle: shuffle,
-        key: startingEpisodeKey == null ? null : '/library/metadata/$startingEpisodeKey',
+      if (shuffle != 0 || effectiveSpecialsOrdering() == SpecialsOrdering.airDate) {
+        return await createPlayQueue(
+          uri: '${await buildMetadataUri(showRatingKey)}/allLeaves',
+          type: 'video',
+          shuffle: shuffle,
+          key: startingEpisodeKey == null ? null : '/library/metadata/$startingEpisodeKey',
+          librarySectionID: librarySectionID,
+          librarySectionTitle: librarySectionTitle,
+        );
+      }
+      return await _createSequentialShowPlayQueue(
+        showRatingKey: showRatingKey,
+        startingEpisodeKey: startingEpisodeKey,
         librarySectionID: librarySectionID,
         librarySectionTitle: librarySectionTitle,
       );
     } catch (e) {
-      // Deliberately best-effort: both callers (the video player's episode
-      // queue and shuffled-show launch) degrade to a local/empty queue on
-      // null rather than failing playback outright.
       appLogger.e('Failed to create show play queue', error: e);
       return null;
     }
+  }
+
+  /// Sequential show queue in Plex Web's order: regular seasons by season
+  /// and episode number, then Specials. Plex Web seeds `continuous=1` with
+  /// the episode being played, and PMS ignores air dates for such a queue,
+  /// so a mis-dated episode cannot jump the run the way it does in an
+  /// `/allLeaves` queue (#2770).
+  ///
+  /// Plex Web's queue starts at its seed, leaving nothing before the playing
+  /// episode. Seeding at the show's first episode and selecting
+  /// [startingEpisodeKey] with `key` keeps that order with earlier episodes
+  /// still in the queue.
+  Future<PlayQueueResponse> _createSequentialShowPlayQueue({
+    required String showRatingKey,
+    String? startingEpisodeKey,
+    String? librarySectionID,
+    String? librarySectionTitle,
+  }) async {
+    Future<PlayQueueResponse> create(String seedKey) async => createPlayQueue(
+      uri: await buildMetadataUri(seedKey),
+      type: 'video',
+      continuous: 1,
+      key: startingEpisodeKey == null ? null : '/library/metadata/$startingEpisodeKey',
+      librarySectionID: librarySectionID,
+      librarySectionTitle: librarySectionTitle,
+    );
+
+    final seedKey = await _firstShowEpisodeKey(showRatingKey) ?? startingEpisodeKey;
+    if (seedKey == null) {
+      throw StateError('Show $showRatingKey has no episode to seed a play queue with');
+    }
+    final queue = await create(seedKey);
+    if (startingEpisodeKey == null || seedKey == startingEpisodeKey || _selectsItem(queue, startingEpisodeKey)) {
+      return queue;
+    }
+    // PMS leaves some episodes out of a continuous queue (seen: an undated
+    // one) and then silently selects the seed instead of `key`. Re-seed at
+    // the episode itself, which is Plex Web's exact request.
+    appLogger.d('Play queue seeded at $seedKey did not select $startingEpisodeKey; re-seeding at it');
+    return create(startingEpisodeKey);
+  }
+
+  /// The episode a continuous show queue starts from: the first episode of
+  /// the first regular season, or of Specials when the show has no regular
+  /// season. Null when the show lists no seasons.
+  Future<String?> _firstShowEpisodeKey(String showRatingKey) async {
+    final season = defaultPlaybackSeason(await fetchChildren(showRatingKey));
+    if (season == null) return null;
+    final page = await fetchChildrenPage(season.id, start: 0, size: 1);
+    for (final item in page.items) {
+      if (item.kind == MediaKind.episode) return item.id;
+    }
+    return null;
+  }
+
+  bool _selectsItem(PlayQueueResponse queue, String itemKey) {
+    final selectedId = queue.playQueueSelectedItemID;
+    if (selectedId == null) return false;
+    return queue.items?.any(
+          (item) => item is PlexMediaItem && item.playQueueItemId == selectedId && item.id == itemKey,
+        ) ??
+        false;
   }
 }

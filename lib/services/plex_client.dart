@@ -3530,17 +3530,12 @@ class PlexClient
   /// Full-series fallback for episode navigation when Plex `/playQueues`
   /// creation is unavailable. Grandchildren includes watched episodes; sort
   /// locally per [SettingsService.specialsOrdering]. Under `respectServer`
-  /// the faithful reproduction of the server queue this fallback replaces is
-  /// the aired interleave — Plex's own `/allLeaves` order — so that mode maps
-  /// to [SpecialsOrdering.airDate] here.
+  /// that is Specials-last, the order of the server queue this fallback
+  /// replaces (Plex Web's continuous show queue, #2770).
   @override
   Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId) async {
     final episodes = await fetchPlayableDescendants(seriesId);
-    final ordering = effectiveSpecialsOrdering();
-    sortEpisodesByWatchOrder(
-      episodes,
-      ordering: ordering == SpecialsOrdering.respectServer ? SpecialsOrdering.airDate : ordering,
-    );
+    sortEpisodesByWatchOrder(episodes);
     return episodes;
   }
 
