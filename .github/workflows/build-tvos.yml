@@ -46,11 +46,25 @@ jobs:
       - name: Install Flutter dependencies
         run: flutter pub get --enforce-lockfile --no-example
 
-      - name: Generate Generated.xcconfig
+      - name: Generate Generated.xcconfig for tvOS
         run: |
-          flutter build ios --release --no-codesign --config-only
-          # Copy the generated config to the tvOS Flutter folder
-          cp ios/Flutter/Generated.xcconfig tvos/Flutter/Generated.xcconfig
+          FLUTTER_ROOT=$(flutter sdk-path)
+          FLUTTER_VERSION=$(flutter --version --machine | python3 -c "import sys,json; print(json.load(sys.stdin)['frameworkVersion'])")
+          cat > tvos/Flutter/Generated.xcconfig << EOF
+          FLUTTER_ROOT=$FLUTTER_ROOT
+          FLUTTER_APPLICATION_PATH=$PWD
+          COCOAPODS_PARALLEL_CODE_SIGN=true
+          FLUTTER_TARGET=lib/main.dart
+          FLUTTER_BUILD_DIR=build
+          FLUTTER_BUILD_NAME=1.0.0
+          FLUTTER_BUILD_NUMBER=1
+          DART_OBFUSCATION=false
+          TRACK_WIDGET_CREATION=false
+          TREE_SHAKE_ICONS=false
+          PACKAGE_CONFIG=$PWD/.dart_tool/package_config.json
+          FLUTTER_LOCAL_ENGINE=
+          EOF
+
 
       - name: Install CocoaPods dependencies
         run: |
