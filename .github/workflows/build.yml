@@ -674,7 +674,7 @@ jobs:
       matrix:
         include:
           - arch: x64
-            runner: ubuntu-latest
+            runner: ubuntu-24.04
             flutter_channel: stable
             pkg_config_arch: x86_64-linux-gnu
           - arch: arm64

@@ -205,7 +205,7 @@ require("fail-fast: false" in linux, "Linux matrix must not cancel its other arc
 require(
     re.search(
         r"(?ms)          - arch: x64\n"
-        r"            runner: ubuntu-latest\n"
+        r"            runner: ubuntu-24.04\n"
         r"            flutter_channel: stable\n"
         r"            pkg_config_arch: x86_64-linux-gnu\n",
         linux,
