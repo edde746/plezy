@@ -1,5 +1,5 @@
 export const watchTogetherFaqAnswer =
-  "Watch Together requires every participant to have access to the same media on the same server. It uses a WebSocket relay to exchange room and participant details, server and media identifiers, an optional media title, and playback timing/control state. It does not relay the media stream or your media-server credentials. Plezy’s relay is the default; if you choose a custom relay, that relay’s operator controls its security, logging, retention, and location.";
+  "Watch Together rooms run on Open Watch Party. Share a room’s six-character code, and friends join from Plezy or another Open Watch Party app. Everyone plays their own copy of the title from their own server, which Plezy finds by catalogue IDs, so you don’t need to share a server. The relay exchanges display names, app names and versions, playback state, and a description of the title (title, year, catalogue IDs, season and episode, duration, file hints, and server and item IDs for matching on the same server). It never carries the media stream or your media-server credentials. Rooms expire after 24 hours at most. Plezy uses the public relays at openwatch.party by default, covered by the privacy notice at openwatch.party/privacy; if you set your own relay, its operator controls its security, logging, retention, and location.";
 
 export type Faq = {
   id: string;
@@ -25,7 +25,7 @@ export const faqs: Faq[] = [
     id: "free",
     question: "Is Plezy free?",
     answer:
-      "Plezy is open-source and free to download from GitHub. The App Store and Play Store versions are paid (one-time purchase, price varies by region). The charge helps cover developer account fees, test devices, and the time spent developing and maintaining the app.<br><br>There's no free trial because the app stores don't natively support trials for paid apps. The only way to offer one would be to make the app free and use in-app purchases — which means integrating StoreKit and Google Play Billing, gating features behind a paywall, and adding a layer of complexity that doesn't make sense for a simple one-time purchase. If you'd like to try before you buy, you can sideload the binaries from GitHub or try it on desktop first.",
+      "Plezy is open-source and free to download from GitHub. The App Store and Play Store versions are a paid, one-time purchase (price varies by region), which helps cover developer account fees, test devices, and the time spent developing and maintaining the app.<br><br>On the App Store and Play Store, an optional one-time Supporter purchase adds cosmetic extras: preset themes, a custom theme, and alternate app icons. It doesn't unlock any features. The Microsoft Store, Amazon Appstore, macOS, and Linux versions include the themes at no extra charge.<br><br>There's no free trial because the app stores don't natively support trials for paid apps. If you'd like to try before you buy, you can sideload the binaries from GitHub or try it on desktop first.",
   },
   {
     id: "apple-tv",

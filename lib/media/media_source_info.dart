@@ -406,12 +406,25 @@ class PlaybackExtras {
   /// long on movies.
   static const maxChapterIntroDuration = Duration(minutes: 3);
 
+  /// Earliest start, as a fraction of the runtime, for a chapter-derived
+  /// credits marker.
+  ///
+  /// Credits words also title chapters inside the film: The Shining's
+  /// "Closing Day" chapter starts 12% in, and skipping it skips three minutes
+  /// of picture (#2734). End credits, an anime ED, and credits split by a
+  /// post-credits scene all start in the final quarter. Applies only to
+  /// markers minted here from chapter titles, never to server-supplied
+  /// markers. The furthest chapter offset stands in for the runtime.
+  static const minChapterCreditsStartFraction = 0.75;
+
   /// Returns [PlaybackExtras] using real markers when available, filling any
   /// missing marker types from chapter titles matching intro/credits patterns.
   /// [forceChapterFallback] prefers chapter-derived markers for any type they
   /// provide. When real markers exist, reclassifies markers with unknown types
   /// against the patterns so non-standard type strings get recognized.
-  /// Chapter-derived intros longer than [maxChapterIntroDuration] are dropped.
+  /// Chapter-derived intros longer than [maxChapterIntroDuration] and
+  /// chapter-derived credits starting before [minChapterCreditsStartFraction]
+  /// of the runtime are dropped.
   factory PlaybackExtras.withChapterFallback({
     required List<MediaChapter> chapters,
     required List<MediaMarker> markers,
@@ -425,8 +438,14 @@ class PlaybackExtras {
     );
     final creditsPattern = _patternOrDefault(
       creditsPatternStr,
-      r'(?:^|\b)(?:outro|closing|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$',
+      r'(?:^|\b)(?:outro|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$',
     );
+
+    final runtimeMs = chapters.fold<int>(0, (furthest, ch) {
+      final offset = ch.endTimeOffset ?? ch.startTimeOffset ?? 0;
+      return offset > furthest ? offset : furthest;
+    });
+    final minCreditsStartMs = runtimeMs * minChapterCreditsStartFraction;
 
     final synthetic = <MediaMarker>[];
     for (var i = 0; i < chapters.length; i++) {
@@ -443,6 +462,7 @@ class PlaybackExtras {
       final end = ch.endTimeOffset ?? (i + 1 < chapters.length ? chapters[i + 1].startTimeOffset : null);
       if (end == null) continue;
       if (type == 'intro' && end - start > maxChapterIntroDuration.inMilliseconds) continue;
+      if (type == 'credits' && start < minCreditsStartMs) continue;
 
       synthetic.add(MediaMarker(id: ch.id, type: type, startTimeOffset: start, endTimeOffset: end));
     }

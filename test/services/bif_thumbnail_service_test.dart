@@ -6,8 +6,9 @@ import 'package:plezy/services/bif_thumbnail_service.dart';
 import '../test_helpers/bif_fixtures.dart';
 
 // BIF parser coverage feeds hand-crafted bytes through the load callback.
-// Size-limit and download-failure behavior are intentionally left to
-// integration coverage.
+// The size limit is enforced while downloading (see
+// media_server_http_client_get_bytes_test.dart); download failures are left
+// to integration coverage.
 
 void main() {
   group('initial state', () {
@@ -35,7 +36,7 @@ void main() {
 
       final svc = BifThumbnailService();
       addTearDown(svc.dispose);
-      await svc.load(() async => bytes);
+      await svc.load((_) async => bytes);
 
       expect(svc.isAvailable, isTrue);
 
@@ -62,7 +63,7 @@ void main() {
 
       final svc = BifThumbnailService();
       addTearDown(svc.dispose);
-      await svc.load(() async => bytes);
+      await svc.load((_) async => bytes);
 
       expect(svc.getThumbnail(Duration.zero), Uint8List.fromList([0xAA]));
       // 1.999s — still first entry.
@@ -79,7 +80,7 @@ void main() {
 
       final svc = BifThumbnailService();
       addTearDown(svc.dispose);
-      await svc.load(() async => bytes);
+      await svc.load((_) async => bytes);
 
       // 7s should hit the second entry (7 * 1000ms).
       expect(svc.getThumbnail(const Duration(seconds: 7)), Uint8List.fromList([0x02]));
@@ -90,7 +91,7 @@ void main() {
     test('rejects bytes shorter than the 64-byte header', () async {
       final svc = BifThumbnailService();
       addTearDown(svc.dispose);
-      await svc.load(() async => Uint8List(50));
+      await svc.load((_) async => Uint8List(50));
       expect(svc.isAvailable, isFalse);
     });
 
@@ -98,7 +99,7 @@ void main() {
       // 128-byte buffer with all-zero bytes (no magic).
       final svc = BifThumbnailService();
       addTearDown(svc.dispose);
-      await svc.load(() async => Uint8List(128));
+      await svc.load((_) async => Uint8List(128));
       expect(svc.isAvailable, isFalse);
     });
 
@@ -114,7 +115,7 @@ void main() {
 
       final svc = BifThumbnailService();
       addTearDown(svc.dispose);
-      await svc.load(() async => buf);
+      await svc.load((_) async => buf);
       expect(svc.isAvailable, isFalse);
     });
 
@@ -137,7 +138,7 @@ void main() {
 
       final svc = BifThumbnailService();
       addTearDown(svc.dispose);
-      await svc.load(() async => bytes);
+      await svc.load((_) async => bytes);
 
       // Entry 0 is skipped (next offset == its offset). Entry 1's window is
       // (firstImgOffset .. sentinel.offset), which is still valid, so it
@@ -155,7 +156,7 @@ void main() {
     test('null download keeps the service in unavailable state', () async {
       final svc = BifThumbnailService();
       addTearDown(svc.dispose);
-      await svc.load(() async => null);
+      await svc.load((_) async => null);
       expect(svc.isAvailable, isFalse);
       expect(svc.getThumbnail(Duration.zero), isNull);
     });
@@ -163,7 +164,7 @@ void main() {
     test('empty bytes keep the service in unavailable state', () async {
       final svc = BifThumbnailService();
       addTearDown(svc.dispose);
-      await svc.load(() async => Uint8List(0));
+      await svc.load((_) async => Uint8List(0));
       expect(svc.isAvailable, isFalse);
     });
 
@@ -171,7 +172,7 @@ void main() {
       final bytes = buildBif(const []); // no entries, only header + sentinel
       final svc = BifThumbnailService();
       addTearDown(svc.dispose);
-      await svc.load(() async => bytes);
+      await svc.load((_) async => bytes);
 
       // Loaded successfully but the entries list is empty — `isAvailable`
       // requires non-empty entries.
@@ -192,10 +193,10 @@ void main() {
       final svc = BifThumbnailService();
       addTearDown(svc.dispose);
 
-      await svc.load(() async => first);
+      await svc.load((_) async => first);
       expect(svc.getThumbnail(Duration.zero), Uint8List.fromList([0xAA]));
 
-      await svc.load(() async => second);
+      await svc.load((_) async => second);
       expect(svc.getThumbnail(Duration.zero), Uint8List.fromList([0xBB, 0xCC]));
     });
 
@@ -206,12 +207,12 @@ void main() {
       final svc = BifThumbnailService();
       addTearDown(svc.dispose);
 
-      await svc.load(() async => first);
+      await svc.load((_) async => first);
       expect(svc.isAvailable, isTrue);
 
       // The implementation sets `_entries = null` at the start of `load()`,
       // so a null download leaves the service unavailable.
-      await svc.load(() async => null);
+      await svc.load((_) async => null);
       expect(svc.isAvailable, isFalse);
       expect(svc.getThumbnail(Duration.zero), isNull);
     });
@@ -221,7 +222,7 @@ void main() {
         (timestamp: 0, bytes: [0xFF]),
       ]);
       final svc = BifThumbnailService();
-      await svc.load(() async => bytes);
+      await svc.load((_) async => bytes);
       expect(svc.isAvailable, isTrue);
 
       svc.dispose();

@@ -14,8 +14,10 @@ class _Harness {
   final tile = FocusNode(debugLabel: 'ContentTile');
   final content = FocusScopeNode(debugLabel: 'ContentScope');
   final cover = FocusNode(debugLabel: 'PickerTile');
+  final sheetItem = FocusNode(debugLabel: 'SheetItem');
   late BuildContext nestedContext;
   bool showTile = true;
+  bool showSheet = false;
   StateSetter? _rebuildNested;
 
   Future<void> pump({bool boundary = true}) async {
@@ -34,6 +36,11 @@ class _Harness {
                       ? Focus(focusNode: tile, autofocus: true, child: const SizedBox(height: 10, width: 10))
                       : const SizedBox(height: 10, width: 10),
                 ),
+                if (showSheet)
+                  FocusScope(
+                    debugLabel: 'SheetScope',
+                    child: Focus(focusNode: sheetItem, child: const SizedBox(height: 10, width: 10)),
+                  ),
               ],
             );
           },
@@ -66,11 +73,16 @@ class _Harness {
 
   void unmountTile() => _rebuildNested!(() => showTile = false);
 
+  void openSheet() => _rebuildNested!(() => showSheet = true);
+
+  void closeSheet() => _rebuildNested!(() => showSheet = false);
+
   void dispose() {
     hidden.dispose();
     tile.dispose();
     content.dispose();
     cover.dispose();
+    sheetItem.dispose();
   }
 }
 
@@ -129,6 +141,28 @@ void main() {
 
     expect(primaryFocus, isNot(same(FocusManager.instance.rootScope)));
     expect(h.content.hasFocus, isTrue);
+  });
+
+  testWidgets('focus returns to the opener when the focused sheet unmounts as the cover is pushed (#2699)', (
+    tester,
+  ) async {
+    final h = _Harness(tester);
+    addTearDown(h.dispose);
+    await h.pump();
+    h.openSheet();
+    await tester.pump();
+    h.sheetItem.requestFocus();
+    await tester.pump();
+    expect(h.sheetItem.hasPrimaryFocus, isTrue, reason: 'precondition: sheet item focused');
+
+    // A sheet completes its result in the setState that unmounts it, so a
+    // cover pushed from that result lands in the same frame, with focus still
+    // on the item being torn down.
+    h.closeSheet();
+    await h.pushCover();
+    await h.popCover();
+
+    expect(h.tile.hasPrimaryFocus, isTrue);
   });
 
   testWidgets('a route pushed on the nested navigator is not treated as a cover', (tester) async {

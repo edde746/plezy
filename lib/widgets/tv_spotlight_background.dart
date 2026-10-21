@@ -307,7 +307,7 @@ class TvSpotlightBackground extends StatelessWidget {
       style: Theme.of(context).textTheme.displaySmall?.copyWith(
         color: colorScheme.onSurface,
         fontSize: _titleFontSize(scale),
-        fontWeight: .w800,
+        fontWeight: .w700,
         shadows: [Shadow(color: colorScheme.surface.withValues(alpha: 0.8), blurRadius: 12)],
       ),
     );
@@ -380,7 +380,7 @@ class TvSpotlightBackground extends StatelessWidget {
   double _logoHeight(double scale) =>
       (compact ? TvLayoutConstants.compactHeroLogoHeight : TvLayoutConstants.heroLogoHeight) * scale;
 
-  double _titleFontSize(double scale) => (compact ? 44 : 54) * scale;
+  double _titleFontSize(double scale) => (compact ? 36 : 54) * scale;
 
   double _metadataFontSize(double scale) => (compact ? 16 : 18) * scale;
 

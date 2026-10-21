@@ -39,7 +39,7 @@
 	<false/>
 	<!-- Keep rendering with Skia. Flutter 3.47 made Impeller the default macOS
 	     renderer, and Plezy is unusually exposed to that switch: the Flutter view
-	     is cleared to transparent so the mpv CAMetalLayer behind it stays visible,
+	     is cleared to transparent so mpv's video layer behind it stays visible,
 	     so anything Impeller leaves in the presented drawable is composited
 	     straight onto the screen instead of being covered. On the Metal SDF text
 	     path that surfaced as glyphs filled with noise and whole glyph-atlas

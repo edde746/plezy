@@ -473,6 +473,145 @@ void main() {
     });
   });
 
+  group('reconnecting a Plex server that came back on a new address (#2616)', () {
+    late _ControlledConnectManager controlled;
+    var publishedAddress = '192.168.1.3';
+    var resourceFetches = 0;
+    var switchCalls = 0;
+    var pinPrompts = 0;
+    setUp(() {
+      publishedAddress = '192.168.1.3';
+      resourceFetches = 0;
+      switchCalls = 0;
+      pinPrompts = 0;
+    });
+
+    /// A PIN-protected Plex Home profile bound from its cached user token,
+    /// with plex.tv publishing `srv-1` at [publishedAddress]. Binding crosses
+    /// the cold-start boundary, so any later rebind would need `/switch`.
+    Future<void> bindProtectedHomeProfile() async {
+      PackageInfo.setMockInitialValues(
+        appName: 'Plezy',
+        packageName: 'com.example.plezy',
+        version: '1.0.0',
+        buildNumber: '1',
+        buildSignature: '',
+      );
+      DeviceIdentityService.debugOverride(const DeviceIdentity(platform: 'Test'));
+      addTearDown(() => DeviceIdentityService.debugOverride(null));
+      PlexApiCache.initialize(db);
+      binder.dispose();
+      multiServerProvider.dispose();
+      controlled = _ControlledConnectManager()
+        ..reachable = true
+        ..liveAddress = publishedAddress;
+      manager = controlled;
+      multiServerProvider = testMultiServerProvider(manager);
+      binder = ActiveProfileBinder(
+        activeProfile: activeProfile,
+        connections: connections,
+        profileConnections: profileConnections,
+        serverManager: manager,
+        multiServerProvider: multiServerProvider,
+        pinPrompt: (_, {String? errorMessage}) async {
+          pinPrompts++;
+          return null;
+        },
+        shouldDeferInitialBind: (_) async => false,
+        plexAuth: PlexAuthService.forTesting(
+          http: MediaServerHttpClient(
+            client: MockClient((request) async {
+              if (request.url.path.endsWith('/switch')) {
+                switchCalls++;
+                return http.Response('{}', 500);
+              }
+              if (request.headers['X-Plex-Token'] != 'home-user-token') return http.Response('{}', 401);
+              resourceFetches++;
+              return http.Response(
+                jsonEncode([_serverJson(accessToken: 'home-server-token', address: publishedAddress)]),
+                200,
+                headers: {'content-type': 'application/json'},
+              );
+            }),
+          ),
+        ),
+      );
+
+      final account = PlexAccountConnection(
+        id: 'plex.account',
+        accountToken: 'account-token',
+        clientIdentifier: 'client-id',
+        accountLabel: 'Owner',
+        servers: [_server(accessToken: 'account-server-token')],
+        createdAt: DateTime(2026, 1, 1),
+      );
+      await connections.upsert(account);
+      final homeUser = PlexHomeUser(
+        id: 1,
+        uuid: 'protected-uuid',
+        title: 'Protected',
+        thumb: '',
+        hasPassword: true,
+        restricted: false,
+        updatedAt: null,
+        admin: false,
+        guest: false,
+        protected: true,
+      );
+      fetchedHomeUsers = [homeUser];
+      await storage.savePlexHomeUsersCache(account.id, [homeUser.toJson()]);
+      final profile = Profile.virtualPlexHome(connectionId: account.id, homeUser: homeUser);
+      await profileConnections.upsert(
+        ProfileConnection(
+          profileId: profile.id,
+          connectionId: account.id,
+          userToken: 'home-user-token',
+          userIdentifier: homeUser.uuid,
+          tokenAcquiredAt: DateTime(2026, 1, 1),
+        ),
+      );
+      await activeProfile.activate(profile);
+      binder.start();
+      await pumpUntil(() async => !activeProfile.isBinding && manager.isServerOnline(ServerId('srv-1')));
+    }
+
+    test('a failed reconnect re-fetches the server list with the bound token', () async {
+      await bindProtectedHomeProfile();
+      expect(resourceFetches, 1);
+
+      // The server restarts on a new LAN address while the app keeps running.
+      manager.updateServerStatus(ServerId('srv-1'), false);
+      publishedAddress = '192.168.1.50';
+      controlled.liveAddress = publishedAddress;
+
+      await manager.reconnectOfflineServers();
+
+      expect(manager.isServerOnline(ServerId('srv-1')), isTrue);
+      expect(manager.getPlexClient(ServerId('srv-1'))!.config.baseUrl, contains('192-168-1-50'));
+      expect(resourceFetches, 2);
+      expect(switchCalls, 0);
+      expect(pinPrompts, 0);
+    });
+
+    test('a Reconnect press re-fetches even right after an automatic re-fetch', () async {
+      await bindProtectedHomeProfile();
+
+      // Back on a new address, but not yet published to plex.tv when the
+      // automatic (resume) reconnect runs.
+      manager.updateServerStatus(ServerId('srv-1'), false);
+      controlled.liveAddress = '192.168.1.50';
+      await manager.reconnectOfflineServers();
+      expect(manager.isServerOnline(ServerId('srv-1')), isFalse);
+      expect(resourceFetches, 2);
+
+      publishedAddress = '192.168.1.50';
+      await manager.reconnectOfflineServers(forceRediscovery: true);
+
+      expect(manager.isServerOnline(ServerId('srv-1')), isTrue);
+      expect(resourceFetches, 3);
+    });
+  });
+
   test('binds Plex and Jellyfin join rows in parallel', () async {
     binder.dispose();
     multiServerProvider.dispose();
@@ -1337,6 +1476,7 @@ Map<String, dynamic> _serverJson({
   String accessToken = 'server-token',
   bool owned = true,
   bool local = true,
+  String address = '192.168.1.3',
 }) => {
   'name': 'Home Server',
   'clientIdentifier': clientIdentifier,
@@ -1346,9 +1486,9 @@ Map<String, dynamic> _serverJson({
   'connections': [
     {
       'protocol': 'https',
-      'address': '192.168.1.3',
+      'address': address,
       'port': 32400,
-      'uri': 'https://192-168-1-3.machine.plex.direct:32400',
+      'uri': 'https://${address.replaceAll('.', '-')}.machine.plex.direct:32400',
       'local': local,
       'relay': false,
       'IPv6': false,
@@ -1566,6 +1706,9 @@ class _ControlledConnectManager extends MultiServerManager {
   final List<String> connectedTokens;
   bool reachable = false;
 
+  /// When set, only connections at this address answer.
+  String? liveAddress;
+
   @override
   Future<Set<String>> refreshTokensForProfile(
     PlexAccountConnection connection, {
@@ -1599,7 +1742,10 @@ class _GatedPlexServer extends PlexServer {
     void Function(bool)? onTranscoderCapability,
   }) {
     if (!_manager.reachable) return const Stream.empty();
+    final liveAddress = _manager.liveAddress;
+    final live = connections.where((c) => liveAddress == null || c.address == liveAddress);
+    if (live.isEmpty) return const Stream.empty();
     onTranscoderCapability?.call(true);
-    return Stream.value(connections.first);
+    return Stream.value(live.first);
   }
 }

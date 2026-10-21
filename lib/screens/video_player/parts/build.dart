@@ -242,12 +242,14 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                     var authority = (canControlPlayback: true, canNavigateMediaItems: true);
                     try {
                       authority = context
-                          .select<WatchTogetherProvider, ({bool canControlPlayback, bool canNavigateMediaItems})>(
-                            (wt) => (
-                              canControlPlayback: !wt.isInSession || wt.canControl(),
-                              canNavigateMediaItems: !wt.isInSession || wt.isHost,
-                            ),
-                          );
+                          .select<WatchTogetherProvider, ({bool canControlPlayback, bool canNavigateMediaItems})>((wt) {
+                            final adapter = _wtAdapter;
+                            final following = adapter != null && wt.follows(adapter);
+                            return (
+                              canControlPlayback: !following || wt.canControl,
+                              canNavigateMediaItems: !following || wt.isHost,
+                            );
+                          });
                     } catch (_) {
                       // Watch Together is optional outside the main app shell.
                     }

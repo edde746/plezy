@@ -9,6 +9,7 @@ import 'package:plezy/providers/shader_provider.dart';
 import 'package:plezy/screens/video_player/visual_effects_controller.dart';
 import 'package:plezy/services/ambient_lighting_service.dart';
 import 'package:plezy/services/settings_service.dart';
+import 'package:plezy/services/shader_service.dart';
 import 'package:plezy/services/video_filter_manager.dart';
 import 'package:plezy/widgets/video_controls/widgets/player_toast_indicator.dart';
 
@@ -30,11 +31,13 @@ void main() {
     previousPathProvider = PathProviderPlatform.instance;
     tmpRoot = Directory.systemTemp.createTempSync('plezy_visual_effects_test_');
     PathProviderPlatform.instance = FakePathProvider(tmpRoot);
+    ShaderService.debugPlatformSupported = true;
   });
 
   tearDown(() {
     SettingsService.resetForTesting();
     PathProviderPlatform.instance = previousPathProvider;
+    ShaderService.debugPlatformSupported = null;
     tmpRoot.deleteSync(recursive: true);
   });
 

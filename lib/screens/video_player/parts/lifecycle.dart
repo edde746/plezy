@@ -67,9 +67,17 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       return;
     }
 
-    // Suppress Watch Together heartbeats while backgrounded so App Nap
-    // doesn't cause stale position broadcasts that make guests loop.
-    _watchTogetherProvider?.setBackgrounded(true);
+    final isTv = PlatformDetector.isTV();
+    final isAutomotive = PlatformDetector.isAutomotive();
+    final shouldPauseForBackground = shouldPauseVideoForBackground(
+      isHandheld: PlatformDetector.isMobile(context),
+      isTv: isTv,
+      isAutomotive: isAutomotive,
+    );
+
+    // A Watch Together room stops waiting for a player the background pauses.
+    // A covered desktop window keeps playing, so its player stays in the room.
+    if (shouldPauseForBackground) _watchTogetherProvider?.setBackgrounded(true);
 
     final currentPlayer = player;
     if (currentPlayer == null || !_isPlayerInitialized) {
@@ -77,7 +85,6 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       return;
     }
 
-    final isTv = PlatformDetector.isTV();
     if (widget.isLive && shouldStopLiveSessionForTvBackground(isTv: isTv, policy: _live.session?.backgroundPolicy)) {
       _stopLiveSessionForTvBackground();
 
@@ -95,13 +102,6 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       _recordLifecycleState('hidden', action: 'live_stopped_exit_on_resume');
       return;
     }
-
-    final isAutomotive = PlatformDetector.isAutomotive();
-    final shouldPauseForBackground = shouldPauseVideoForBackground(
-      isHandheld: PlatformDetector.isMobile(context),
-      isTv: isTv,
-      isAutomotive: isAutomotive,
-    );
 
     // Pause first so Android MPV does not keep decoding against a transient
     // background surface while the app is locking or hiding.

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+<linearGradient id="bg" x1="300" y1="0" x2="724" y2="1024" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="#ffb347"/><stop offset="0.38" stop-color="#ff6a55"/><stop offset="0.72" stop-color="#d6336c"/><stop offset="1" stop-color="#5e2a8c"/></linearGradient><filter id="sh" filterUnits="userSpaceOnUse" x="-200" y="-200" width="1400" height="1400"><feGaussianBlur stdDeviation="18"/></filter>
+</defs>
+<g id="background">
+<rect width="1024" height="1024" fill="url(#bg)"/>
+</g>
+</svg>

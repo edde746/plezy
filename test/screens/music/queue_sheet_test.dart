@@ -80,7 +80,7 @@ void main() {
           ChangeNotifierProvider<MusicPlaybackService>.value(value: service),
         ],
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: const Scaffold(body: SizedBox(width: 500, height: 700, child: QueueSheet())),
         ),
       ),

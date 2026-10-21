@@ -104,6 +104,7 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
     _hasFatalPlaybackError = true;
     _progressTracker?.stopTracking();
     _abortCurrentOpen('player error: ${action.name}');
+    _detachWatchTogetherAfterFailure();
     final currentPlayer = player;
     if (currentPlayer != null) {
       unawaited(

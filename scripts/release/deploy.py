@@ -914,6 +914,7 @@ def phase_play(ctx: Context) -> None:
             f"--dart-define=GIT_COMMIT={commit}",
             "--dart-define=SENTRY_ENVIRONMENT=play-store",
             "--dart-define=SENTRY_DIST=play-store",
+            "--dart-define=SUPPORTER_MODE=iap",
             "--obfuscate",
             "--split-debug-info=debug-info/android-aab",
             "--extra-gen-snapshot-options=--save-obfuscation-map=debug-info/android-aab/obfuscation.map.json",
@@ -1085,6 +1086,7 @@ def phase_amazon(ctx: Context) -> None:
             f"--dart-define=GIT_COMMIT={commit}",
             "--dart-define=SENTRY_ENVIRONMENT=amazon",
             "--dart-define=SENTRY_DIST=amazon",
+            "--dart-define=SUPPORTER_MODE=unlocked",
             "--obfuscate",
             "--split-debug-info=debug-info/android-apk",
             "--extra-gen-snapshot-options=--save-obfuscation-map=debug-info/android-apk/obfuscation.map.json",
@@ -1235,6 +1237,7 @@ def phase_ios(ctx: Context) -> None:
         f"--dart-define=GIT_COMMIT={commit}",
         "--dart-define=SENTRY_ENVIRONMENT=app-store",
         "--dart-define=SENTRY_DIST=app-store",
+        "--dart-define=SUPPORTER_MODE=iap",
         "--split-debug-info=debug-info/ios",
     ])
     run(

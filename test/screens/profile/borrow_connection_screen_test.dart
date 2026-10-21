@@ -56,7 +56,7 @@ void main() {
           ],
           child: InputModeTracker(
             child: MaterialApp(
-              theme: monoTheme(dark: true),
+              theme: monoTheme(MonoPalette.dark),
               home: BorrowConnectionScreen(targetProfile: target),
             ),
           ),

@@ -37,7 +37,7 @@ Future<void> pumpLibraryTab(
       ],
       child: InputModeTracker(
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: MainScreenFocusScope(
             focusSidebar: focusSidebar ?? () {},
             sideNavigationWidth: 0,

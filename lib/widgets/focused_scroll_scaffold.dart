@@ -45,6 +45,10 @@ class FocusedScrollScaffold extends StatefulWidget {
   /// [handleBackKeyNavigation] (which pops the current route).
   final VoidCallback? onBackPressed;
 
+  /// Fixed bar below the scroll view, e.g. a screen's Save/Cancel row. It
+  /// stays in this scaffold's focus scope, after the content in traversal.
+  final Widget? bottomBar;
+
   const FocusedScrollScaffold({
     super.key,
     required this.title,
@@ -54,6 +58,7 @@ class FocusedScrollScaffold extends StatefulWidget {
     this.pinned = true,
     this.automaticallyImplyLeading = true,
     this.onBackPressed,
+    this.bottomBar,
   });
 
   @override
@@ -102,6 +107,7 @@ class _FocusedScrollScaffoldState extends State<FocusedScrollScaffold> {
       child: FocusScope(
         node: _scopeNode,
         child: Scaffold(
+          bottomNavigationBar: widget.bottomBar,
           body: CustomScrollView(
             slivers: [
               if (!widget.focusableAppBarActions || !_appBarFocusEnabled)

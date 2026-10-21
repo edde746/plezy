@@ -719,6 +719,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
             ],
           ),
           actions: buildFocusableAppBarActions(),
+          onBackPressed: popFromAppBar,
         ),
         ...buildStateSlivers(),
         if (items.isNotEmpty) ...[

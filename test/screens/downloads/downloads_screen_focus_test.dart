@@ -359,7 +359,7 @@ Future<void> _pumpScreen(
           ChangeNotifierProvider<MusicPlaybackService>(create: (_) => StubMusicPlaybackService()),
         ],
         child: MaterialApp(
-          theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.macOS),
+          theme: monoTheme(MonoPalette.dark).copyWith(platform: TargetPlatform.macOS),
           home: MainScreenFocusScope(
             focusSidebar: onSidebar ?? () {},
             sideNavigationWidth: 0,

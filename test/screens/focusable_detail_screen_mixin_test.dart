@@ -25,7 +25,7 @@ void main() {
   testWidgets('detail scaffold scrolls to top on the iOS status-bar tap', (tester) async {
     await tester.pumpWidget(
       MaterialApp(
-        theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.iOS),
+        theme: monoTheme(MonoPalette.dark).copyWith(platform: TargetPlatform.iOS),
         home: const MediaQuery(
           data: MediaQueryData(padding: EdgeInsets.only(top: 25)),
           child: SizedBox(width: 390, height: 844, child: _TestDetailScreen()),
@@ -51,7 +51,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.iOS),
+        theme: monoTheme(MonoPalette.dark).copyWith(platform: TargetPlatform.iOS),
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () {
@@ -142,7 +142,7 @@ void main() {
 Future<void> _pushDetailSurface(WidgetTester tester, {required String surfaceName, required bool hasActions}) async {
   await tester.pumpWidget(
     MaterialApp(
-      theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.android),
+      theme: monoTheme(MonoPalette.dark).copyWith(platform: TargetPlatform.android),
       home: Scaffold(
         body: Builder(
           builder: (context) => TextButton(

@@ -37,7 +37,7 @@ import '../../test_helpers/prefs.dart';
 Profile _profile(String id) =>
     Profile.local(id: id, displayName: id, sortOrder: 0, createdAt: DateTime.fromMillisecondsSinceEpoch(0));
 
-Widget _testApp(Widget home) => MaterialApp(theme: monoTheme(dark: true), home: home);
+Widget _testApp(Widget home) => MaterialApp(theme: monoTheme(MonoPalette.dark), home: home);
 
 JellyfinConnectionAuthService _jellyfinAuthService({bool quickConnectEnabled = false, Duration? initiateDelay}) {
   return JellyfinConnectionAuthService(
@@ -283,7 +283,7 @@ class _RouteHarness {
         Provider<ActiveProfileBinder>.value(value: binder),
       ],
       child: MaterialApp(
-        theme: monoTheme(dark: true),
+        theme: monoTheme(MonoPalette.dark),
         home: Builder(
           builder: (context) => TextButton(
             onPressed: () => onRoute(

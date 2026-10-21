@@ -136,6 +136,11 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
     }
   }
 
+  /// The app-bar arrow's action: leave directly. The detail [PopScope] only
+  /// routes a system back through the app bar first, which a tap on the arrow
+  /// has no use for.
+  void popFromAppBar() => Navigator.pop(context);
+
   /// Build focusable app bar action widgets
   List<Widget> buildFocusableAppBarActions() {
     return [

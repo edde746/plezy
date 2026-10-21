@@ -11,6 +11,7 @@ import '../utils/app_logger.dart';
 import '../utils/media_image_helper.dart';
 import '../utils/platform_detector.dart';
 import '../utils/media_server_http_client.dart';
+import 'plezy_server.dart';
 import 'settings_service.dart';
 
 const Duration _defaultPosterCacheTtl = Duration(hours: 3);
@@ -53,7 +54,7 @@ class _CachedUrl {
 /// Discord not running.
 class DiscordRPCService {
   static const String _applicationId = '1453773470306402439';
-  static const String _posterUploadUrl = 'https://ice.plezy.app/posters';
+  static const String _posterUploadUrl = '$plezyServerBaseUrl/posters';
   static const int _maxPosterUploadBytes = 5 * 1024 * 1024;
 
   /// Cache of thumbnail paths to hosted poster URLs. Keyed by

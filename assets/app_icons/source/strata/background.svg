@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+<clipPath id="tri"><path d="M335.65,192.66L68.01,38.14C37.78,20.69,0,42.5,0,77.41v309.04c0,34.91,37.78,56.72,68.01,39.27l267.64-154.52c30.23-17.45,30.23-61.08,0-78.54Z"/></clipPath>
+</defs>
+<g id="background">
+<rect width="1024" height="1024" fill="#fbf3ea"/>
+</g>
+</svg>

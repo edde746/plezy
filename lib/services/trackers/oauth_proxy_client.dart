@@ -9,18 +9,18 @@ import '../../utils/app_logger.dart';
 import '../../utils/platform_http_client_stub.dart'
     if (dart.library.io) '../../utils/platform_http_client_io.dart'
     as platform;
-import '../../watch_together/services/watch_together_relay_endpoint.dart';
+import '../plezy_server.dart';
 import 'tracker_constants.dart';
 
-/// Client for the Plezy relay's `/auth/*` OAuth proxy.
+/// Client for the Plezy server's `/auth/*` OAuth proxy.
 ///
 /// The proxy drives the full authorization-code flow server-side: device calls
 /// [start] to get a QR URL, user scans on a phone to complete auth, device
 /// long-polls [poll] until tokens arrive. No local HTTP listener or custom URL
 /// scheme is required — works identically on TVs without a browser.
 class OAuthProxyClient {
-  /// Public base URL of the Plezy relay; colocated with Watch Together.
-  static String get baseUrl => WatchTogetherRelayEndpoint.defaultEndpoint.canonicalBaseUrl;
+  /// Public base URL of the Plezy server.
+  static String get baseUrl => plezyServerBaseUrl;
 
   final http.Client _http;
 

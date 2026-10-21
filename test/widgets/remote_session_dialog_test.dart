@@ -109,7 +109,7 @@ Future<void> _pumpDialogLauncher(WidgetTester tester, CompanionRemoteProvider pr
     ChangeNotifierProvider<CompanionRemoteProvider>.value(
       value: provider,
       child: MaterialApp(
-        theme: monoTheme(dark: true),
+        theme: monoTheme(MonoPalette.dark),
         home: Builder(
           builder: (context) {
             return Scaffold(

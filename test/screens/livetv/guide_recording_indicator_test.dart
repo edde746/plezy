@@ -88,7 +88,7 @@ void main() {
           child: ChangeNotifierProvider<MultiServerProvider>.value(
             value: provider,
             child: MaterialApp(
-              theme: monoTheme(dark: true),
+              theme: monoTheme(MonoPalette.dark),
               home: Scaffold(body: GuideTab(channels: [channel])),
             ),
           ),

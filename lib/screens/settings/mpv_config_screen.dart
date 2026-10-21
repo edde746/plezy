@@ -7,6 +7,7 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../focus/focusable_text_field.dart';
+import '../../focus/input_mode_tracker.dart';
 import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
@@ -236,7 +237,12 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with ListenableBindin
             if (didPop || _isLeaving) return;
             if (BackKeyCoordinator.consumeIfHandled()) return;
             BackKeyUpSuppressor.suppressBackUntilKeyUp();
-            if (_textFieldFocusNode.hasFocus && _savePresetFocusNode.canRequestFocus) {
+            // D-pad back leaves the text field for Save first; a pointer back
+            // (the app-bar arrow) has no focus to move and saves on the way out.
+            // Live mode: a tap's pointer-down has not rebuilt the provider yet.
+            if (_textFieldFocusNode.hasFocus &&
+                _savePresetFocusNode.canRequestFocus &&
+                InputModeTracker.currentMode == InputMode.keyboard) {
               _savePresetFocusNode.requestFocus();
             } else {
               unawaited(_flushAndPop());

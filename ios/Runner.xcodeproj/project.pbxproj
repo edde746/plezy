@@ -26,6 +26,8 @@
 		B1D51A6A2F0011000000000E /* MpvAudioPlayerPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D51A6A2F0011000000000F /* MpvAudioPlayerPlugin.swift */; };
 		B1D51A6A2F00110000000008 /* ExternalDisplayManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D51A6A2F00110000000007 /* ExternalDisplayManager.swift */; };
 		B1D51A6A2F00110000000010 /* VideoDecodeCapabilitiesPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = B1D51A6A2F00110000000011 /* VideoDecodeCapabilitiesPlugin.swift */; };
+		A9C0FF1C2F00120000000001 /* AppIconPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = A9C0FF1C2F00120000000002 /* AppIconPlugin.swift */; };
+		A9C0FF1C2F00120000000003 /* AlternateAppIcons.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = A9C0FF1C2F00120000000004 /* AlternateAppIcons.xcassets */; };
 		78A318202AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage in Frameworks */ = {isa = PBXBuildFile; productRef = 78A3181F2AECB46A00862997 /* FlutterGeneratedPluginSwiftPackage */; };
 /* End PBXBuildFile section */
 
@@ -82,6 +84,8 @@
 		B1D51A6A2F0011000000000F /* MpvAudioPlayerPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = MpvAudioPlayerPlugin.swift; path = ../shared/apple/MpvPlayer/MpvAudioPlayerPlugin.swift; sourceTree = SOURCE_ROOT; };
 		B1D51A6A2F00110000000007 /* ExternalDisplayManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ExternalDisplayManager.swift; sourceTree = "<group>"; };
 		B1D51A6A2F00110000000011 /* VideoDecodeCapabilitiesPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = VideoDecodeCapabilitiesPlugin.swift; sourceTree = "<group>"; };
+		A9C0FF1C2F00120000000002 /* AppIconPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppIconPlugin.swift; path = ../shared/apple/AppIcon/AppIconPlugin.swift; sourceTree = SOURCE_ROOT; };
+		A9C0FF1C2F00120000000004 /* AlternateAppIcons.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = AlternateAppIcons.xcassets; sourceTree = "<group>"; };
 		BB346A1D0705AB171F80B11B /* Pods_Runner.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_Runner.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		DE48FF2E074644167608B23D /* Pods-Runner.profile.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.profile.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.profile.xcconfig"; sourceTree = "<group>"; };
 		F3553CDE70191F0FC81A782E /* Pods-Runner.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-Runner.release.xcconfig"; path = "Target Support Files/Pods-Runner/Pods-Runner.release.xcconfig"; sourceTree = "<group>"; };
@@ -200,6 +204,8 @@
 				1498D2331E8E89220040F4C2 /* GeneratedPluginRegistrant.m */,
 				74858FAE1ED2DC5600515810 /* AppDelegate.swift */,
 				B1D51A6A2F00110000000011 /* VideoDecodeCapabilitiesPlugin.swift */,
+				A9C0FF1C2F00120000000002 /* AppIconPlugin.swift */,
+				A9C0FF1C2F00120000000004 /* AlternateAppIcons.xcassets */,
 				74858FAD1ED2DC5600515810 /* Runner-Bridging-Header.h */,
 			);
 			path = Runner;
@@ -309,6 +315,7 @@
 			files = (
 				97C147011CF9000F007C117D /* LaunchScreen.storyboard in Resources */,
 				6A48DFB02EA70C7100C1F7CD /* plezy.icon in Resources */,
+				A9C0FF1C2F00120000000003 /* AlternateAppIcons.xcassets in Resources */,
 				3B3967161E833CAA004F5970 /* AppFrameworkInfo.plist in Resources */,
 				97C146FC1CF9000F007C117D /* Main.storyboard in Resources */,
 			);
@@ -434,6 +441,7 @@
 				92F969587D0E464D999910F5 /* MpvPipController.swift in Sources */,
 				74858FAF1ED2DC5600515810 /* AppDelegate.swift in Sources */,
 				B1D51A6A2F00110000000010 /* VideoDecodeCapabilitiesPlugin.swift in Sources */,
+				A9C0FF1C2F00120000000001 /* AppIconPlugin.swift in Sources */,
 				1498D2341E8E89220040F4C2 /* GeneratedPluginRegistrant.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -525,6 +533,7 @@
 			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = plezy;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = G88U5B5783;
@@ -712,6 +721,7 @@
 			baseConfigurationReference = 9740EEB21CF90195004384FC /* Debug.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = plezy;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = G88U5B5783;
@@ -740,6 +750,7 @@
 			baseConfigurationReference = 7AFA3C8E1D35360C0083082E /* Release.xcconfig */;
 			buildSettings = {
 				ASSETCATALOG_COMPILER_APPICON_NAME = plezy;
+				ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS = YES;
 				CLANG_ENABLE_MODULES = YES;
 				CURRENT_PROJECT_VERSION = "$(FLUTTER_BUILD_NUMBER)";
 				DEVELOPMENT_TEAM = G88U5B5783;
@@ -802,7 +813,7 @@
 			repositoryURL = "https://github.com/edde746/mpv-build";
 			requirement = {
 				kind = revision;
-				revision = 7361a5a6cdb38dd02e6a13451f6d16197e257c48;
+				revision = 582f6d6e748a87a1536bf5cdad0af97b75725ffb;
 			};
 		};
 /* End XCRemoteSwiftPackageReference section */

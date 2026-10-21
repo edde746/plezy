@@ -1,13 +1,15 @@
 package com.edde746.plezy.mpv
 
+import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
 /**
- * The surface vote and the display-mode target must agree on when a stream
- * is presented as fields; the measured cadence is the only signal for a
- * decoder that deinterlaces on its own.
+ * The surface vote and the display-mode target must agree on the presented
+ * rate: fields double it, the measured cadence is the only signal for a
+ * decoder that deinterlaces on its own, and inverse telecine presents the
+ * film frames.
  */
 class PresentedFrameRateTest {
   @Test
@@ -36,5 +38,16 @@ class PresentedFrameRateTest {
     // Nothing measured yet, or no container rate to compare against.
     assertFalse(PresentedFrameRate.presentsFields(29.97003, null, deinterlaceActive = false))
     assertFalse(PresentedFrameRate.presentsFields(0.0, 59.94, deinterlaceActive = false))
+  }
+
+  @Test
+  fun inverseTelecinePresentsFourFifthsOfTheContainerRate() {
+    // 29.97i film: the mpv deinterlacer is not active, and the cadence reads
+    // 23.976 (0.8x), which is no field pattern either.
+    assertEquals(0.8f, PresentedFrameRate.rateFactor(29.97003, 23.976, deinterlaceActive = false, ivtcActive = true), 0f)
+    // Before a cadence exists, the property alone decides.
+    assertEquals(0.8f, PresentedFrameRate.rateFactor(29.97003, null, deinterlaceActive = false, ivtcActive = true), 0f)
+    assertEquals(2f, PresentedFrameRate.rateFactor(29.97003, null, deinterlaceActive = true, ivtcActive = false), 0f)
+    assertEquals(1f, PresentedFrameRate.rateFactor(29.97003, 29.97003, deinterlaceActive = false, ivtcActive = false), 0f)
   }
 }

@@ -47,7 +47,7 @@ MediaItem _movie({String? libraryTitle}) => testMediaItem(
 Future<void> _pumpListCard(WidgetTester tester, MediaItem item, {String? libraryName, bool showServerName = false}) {
   return tester.pumpWidget(
     MaterialApp(
-      theme: monoTheme(dark: true),
+      theme: monoTheme(MonoPalette.dark),
       home: Scaffold(
         body: Center(
           child: SizedBox(

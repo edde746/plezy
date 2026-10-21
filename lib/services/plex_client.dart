@@ -1798,19 +1798,16 @@ class PlexClient
     return _http.buildUri(thumbPath).toString().withPlexToken(config.token);
   }
 
-  /// Download the full BIF (Base Index Frames) file for a given part.
-  /// Returns the raw bytes, or null on failure.
-  Future<Uint8List?> downloadBifFile(int partId) async {
-    try {
-      final bytes = await _http.getBytes(
-        '${_http.baseUrl}/library/parts/$partId/indexes/sd',
-        timeout: const Duration(seconds: 30),
-      );
-      if (bytes.isNotEmpty) return bytes;
-      return null;
-    } catch (_) {
-      return null;
-    }
+  /// Download the full BIF (Base Index Frames) file for a given part, failing
+  /// once the body exceeds [maxBytes] instead of buffering it.
+  /// Returns null when the server answers with an empty body.
+  Future<Uint8List?> downloadBifFile(int partId, {required int maxBytes}) async {
+    final bytes = await _http.getBytes(
+      '${_http.baseUrl}/library/parts/$partId/indexes/sd',
+      timeout: const Duration(seconds: 30),
+      maxBytes: maxBytes,
+    );
+    return bytes.isEmpty ? null : bytes;
   }
 
   /// Chapters and markers for [ratingKey], from the shared
@@ -4350,7 +4347,7 @@ class PlexClient
     if (partId == null) return null;
     final service = BifThumbnailService();
     try {
-      await service.load(() => downloadBifFile(partId), aspectRatio: aspectRatio);
+      await service.load((maxBytes) => downloadBifFile(partId, maxBytes: maxBytes), aspectRatio: aspectRatio);
       return service;
     } catch (e, st) {
       appLogger.w('BIF thumbnail load failed for part $partId', error: e, stackTrace: st);

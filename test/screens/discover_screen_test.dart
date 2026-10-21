@@ -150,7 +150,7 @@ void main() {
             ChangeNotifierProvider<DiscoverProvider>.value(value: discoverProvider),
           ],
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: MainScreenFocusScope(
               focusSidebar: () {},
               sideNavigationWidth: targetSidebarOffset,
@@ -187,6 +187,7 @@ void main() {
       episodePosterMode: settings.read(SettingsService.episodePosterMode),
       fullCardLayout: settings.read(SettingsService.tvFullCardLayout),
       tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
+      widePosterScale: TvBrowseRailLayout.compactEpisodeThumbnailScale,
     );
     final minimumSpotlightBottom = railHeight + (8 * scale);
     final baseSpotlightBottom = (720 * 0.48).clamp(160.0, 820.0).toDouble();
@@ -316,7 +317,7 @@ void main() {
             ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfileProvider),
           ],
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: MainScreenFocusScope(
               focusSidebar: () {},
               sideNavigationWidth: SideNavigationRailState.expandedWidth,
@@ -430,7 +431,7 @@ void main() {
             ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfileProvider),
           ],
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: MainScreenFocusScope(
               focusSidebar: () {},
               sideNavigationWidth: SideNavigationRailState.expandedWidth,
@@ -563,7 +564,7 @@ void main() {
             ChangeNotifierProvider<DiscoverProvider>.value(value: discoverProvider),
           ],
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: MainScreenFocusScope(
               focusSidebar: () {},
               sideNavigationWidth: SideNavigationRailState.expandedWidth,
@@ -673,7 +674,7 @@ void main() {
           ],
           child: InputModeTracker(
             child: MaterialApp(
-              theme: monoTheme(dark: true),
+              theme: monoTheme(MonoPalette.dark),
               home: MainScreenFocusScope(
                 focusSidebar: () {},
                 sideNavigationWidth: SideNavigationRailState.expandedWidth,
@@ -938,7 +939,7 @@ Future<_GatedDiscover> _pumpGatedDiscover(WidgetTester tester) async {
         ],
         child: InputModeTracker(
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: Row(
               children: [
                 Column(
@@ -1042,7 +1043,7 @@ Future<void> _pumpDiscoverShell(WidgetTester tester, {required bool isTv}) async
         ],
         child: InputModeTracker(
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: MainScreenFocusScope(
               focusSidebar: () {},
               sideNavigationWidth: SideNavigationRailState.expandedWidth,

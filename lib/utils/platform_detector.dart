@@ -181,6 +181,10 @@ class TvDetectionService {
   /// and siblings); these raw accessors exist for the facade and tests.
   static bool isTVSync() => _debugAppleTVOverride ?? _singleton.instance?.isTV ?? false;
 
+  /// Synchronous TV-hardware check: [isTVSync] without the user's force-TV
+  /// override (false before initialization).
+  static bool isTVDeviceSync() => _debugAppleTVOverride ?? _singleton.instance?._detected ?? false;
+
   /// Synchronous Apple TV check (returns false if not initialized or not tvOS).
   static bool isAppleTVSync() => _debugAppleTVOverride ?? (_tvosBuild || _singleton.instance?._isAppleTV == true);
 
@@ -213,6 +217,13 @@ class TvDetectionService {
 class PlatformDetector {
   static bool isTV() {
     return TvDetectionService.isTVSync();
+  }
+
+  /// Whether the device itself is a TV, ignoring the force-TV layout setting.
+  /// For what the system draws, such as the launcher; [isTV] decides the app's
+  /// own layout.
+  static bool isTVDevice() {
+    return TvDetectionService.isTVDeviceSync();
   }
 
   static bool isAppleTV() {
@@ -313,8 +324,10 @@ class PlatformDetector {
     // Apple platforms (iOS covers iPhone, iPad, and Apple TV) hand AC3/EAC3
     // access units to mpv's AVFoundation output, which feeds the system Dolby
     // decoder — the only path that renders Atmos, on HDMI receivers and on
-    // AirPods alike (#1300, #2264, #2477). Other codecs and renderer failures
-    // decode to PCM.
+    // AirPods alike (#1300, #2264, #2477). From iOS and tvOS 26, TrueHD and
+    // DTS-HD go to mpv-build's spatial output, which renders TrueHD Atmos and
+    // DTS:X as Apple spatial audio. Other codecs and renderer failures decode
+    // to PCM.
     //
     // On macOS the bitstream first reaches CoreAudio, which redirects it to
     // coreaudio_exclusive; that declines outputs without IEC 61937 substreams

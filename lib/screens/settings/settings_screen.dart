@@ -32,6 +32,7 @@ import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/background_work_diagnostics_service.dart';
 import '../../services/settings_service.dart' as settings;
 import '../../services/settings_mutation_service.dart';
+import '../../services/supporter/supporter_mode.dart';
 import '../../widgets/background_download_warning_banner.dart';
 import '../../services/update_service.dart';
 import '../../utils/dialogs.dart';
@@ -49,7 +50,7 @@ import '../../widgets/settings_section.dart';
 import '../../widgets/system_bottom_inset.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/profile.dart';
-import '../../watch_together/services/watch_together_relay_endpoint.dart';
+import '../../watch_together/services/watch_party_relays.dart';
 import 'about_screen.dart';
 import 'add_connection_screen.dart';
 import 'account_preferences_screen.dart';
@@ -61,6 +62,7 @@ import 'playback_settings_screen.dart';
 import '../profile/profile_switch_screen.dart';
 import 'services_settings_screen.dart';
 import 'settings_utils.dart';
+import 'supporter_settings_tile.dart';
 import 'tracker_service_info.dart';
 import '../../widgets/loading_indicator_box.dart';
 
@@ -95,6 +97,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
   // Focus tracking keys
   static const _kDonate = 'donate';
+  static const _kSupporter = 'supporter';
   static const _kGeneral = 'general';
   static const _kAppearance = 'appearance';
   static const _kPlayback = 'playback';
@@ -148,9 +151,17 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   @override
   void focusActiveTabIfReady() {
     if (InputModeTracker.isKeyboardMode(context, listen: false)) {
-      _focusTracker.restoreFocus(fallbackKey: DonationService.isEnabled ? _kDonate : _kGeneral);
+      _focusTracker.restoreFocus(fallbackKey: _topTileKey);
     }
   }
+
+  /// Focus key of the first tile: Supporter in purchasable builds, the
+  /// Liberapay link in donation builds (never both), else General.
+  static String get _topTileKey => supporterBuildMode == SupporterMode.iap
+      ? _kSupporter
+      : DonationService.isEnabled
+      ? _kDonate
+      : _kGeneral;
 
   void _navigateToSidebar() {
     MainScreenFocusScope.focusSidebarOf(context);
@@ -197,7 +208,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
                 const SizedBox(height: 8),
                 SettingsGroup(
                   children: [
-                    if (DonationService.isEnabled) _buildDonateTile(),
+                    if (supporterBuildMode == SupporterMode.iap)
+                      SupporterSettingsTile(focusNode: _focusTracker.get(_kSupporter))
+                    else if (DonationService.isEnabled)
+                      _buildDonateTile(),
                     _buildGeneralTile(),
                     _buildAppearanceTile(),
                     _buildPlaybackTile(),
@@ -951,7 +965,7 @@ class _RelayUrlDialogState extends State<_RelayUrlDialog> {
   void initState() {
     super.initState();
     _controller = TextEditingController(
-      text: widget.settingsService.read(settings.SettingsService.customRelayUrl) ?? '',
+      text: widget.settingsService.read(settings.SettingsService.watchPartyRelayUrl) ?? '',
     );
   }
 
@@ -964,24 +978,24 @@ class _RelayUrlDialogState extends State<_RelayUrlDialog> {
 
   Future<void> _reset() async {
     _controller.clear();
-    await widget.settingsService.write(settings.SettingsService.customRelayUrl, null);
+    await widget.settingsService.write(settings.SettingsService.watchPartyRelayUrl, null);
     if (mounted) Navigator.pop(context);
   }
 
   Future<void> _save() async {
     final value = _controller.text;
     if (value.trim().isEmpty) {
-      await widget.settingsService.write(settings.SettingsService.customRelayUrl, null);
+      await widget.settingsService.write(settings.SettingsService.watchPartyRelayUrl, null);
       if (mounted) Navigator.pop(context);
       return;
     }
 
-    final endpoint = WatchTogetherRelayEndpoint.tryParseCustom(value);
-    if (endpoint == null) {
+    final base = canonicalRelayBaseUrl(value);
+    if (base == null) {
       setState(() => _relayUrlInvalid = true);
       return;
     }
-    await widget.settingsService.write(settings.SettingsService.customRelayUrl, endpoint.canonicalBaseUrl);
+    await widget.settingsService.write(settings.SettingsService.watchPartyRelayUrl, base);
     if (mounted) Navigator.pop(context);
   }
 

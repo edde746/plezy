@@ -155,7 +155,9 @@ void main() {
               ChangeNotifierProvider<MusicPlaybackService>.value(value: service),
             ],
             child: MaterialApp(
-              theme: monoTheme(dark: true).copyWith(platform: isTv ? TargetPlatform.android : TargetPlatform.windows),
+              theme: monoTheme(
+                MonoPalette.dark,
+              ).copyWith(platform: isTv ? TargetPlatform.android : TargetPlatform.windows),
               home: const NowPlayingScreen(),
             ),
           ),
@@ -212,7 +214,7 @@ void main() {
             ],
             child: MaterialApp(
               navigatorKey: navigatorKey,
-              theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.windows),
+              theme: monoTheme(MonoPalette.dark).copyWith(platform: TargetPlatform.windows),
               home: const Scaffold(body: Text('Home')),
             ),
           ),

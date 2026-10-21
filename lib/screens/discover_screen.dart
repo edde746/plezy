@@ -1080,7 +1080,23 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       onNavigateUp: _focusTopActions,
       onNavigateToSidebar: _navigateToSidebar,
       tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
+      widePosterScale: TvBrowseRailLayout.compactEpisodeThumbnailScale,
     );
+  }
+
+  // Cached for the same reason: every provider notification (Continue
+  // Watching refreshes on return from Detail or the player) rebuilds this
+  // screen, and the toolbar was most of that rebuild. Its own content reads
+  // only the theme, translations and _switchingProfile; the providers and
+  // clock inside it rebuild themselves.
+  Widget? _tvToolbarOverlayWidget;
+  (ThemeData, Translations, bool)? _tvToolbarOverlayWidgetKey;
+
+  Widget _cachedTvToolbarOverlay() {
+    final key = (Theme.of(context), t, _switchingProfile);
+    if (_tvToolbarOverlayWidget != null && key == _tvToolbarOverlayWidgetKey) return _tvToolbarOverlayWidget!;
+    _tvToolbarOverlayWidgetKey = key;
+    return _tvToolbarOverlayWidget = TvToolbarOverlay(child: _buildOverlaidAppBar());
   }
 
   Widget _buildTvContent(BuildContext context) {
@@ -1122,7 +1138,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               bottom: 0,
               child: _cachedTvBrowseRail(browseHubs, showServerName: showServerNameOnHubs || hubsSpanMultipleServers),
             ),
-          TvToolbarOverlay(child: _buildOverlaidAppBar()),
+          _cachedTvToolbarOverlay(),
           if (_switchingProfile) const ProfileSwitchingOverlay(),
         ],
       ),

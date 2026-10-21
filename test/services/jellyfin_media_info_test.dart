@@ -543,6 +543,15 @@ void main() {
       expect(versions[0].displayLabel, contains('1080'));
     });
 
+    test("gives each version its source's own length, so a Watch Together room can share it", () {
+      final versions = jellyfinSourcesToVersions([
+        {'Id': 'theatrical', 'Name': 'Theatrical Cut', 'Container': 'mkv', 'RunTimeTicks': _ticks(7020000)},
+        {'Id': 'directors', 'Name': "Director's Cut", 'Container': 'mkv', 'RunTimeTicks': _ticks(8160000)},
+        {'Id': 'unknown', 'Name': 'Workprint', 'Container': 'mkv'},
+      ]);
+      expect([for (final v in versions) v.parts.single.durationMs], [7020000, 8160000, null]);
+    });
+
     test('drops Name when all sources share it (typical single-version case)', () {
       final versions = jellyfinSourcesToVersions([
         {

@@ -47,7 +47,7 @@ double? _subtitleFontSize(WidgetTester tester, String text) =>
 
 Widget _harness(TargetPlatform platform) {
   return MaterialApp(
-    theme: monoTheme(dark: false).copyWith(platform: platform),
+    theme: monoTheme(MonoPalette.light).copyWith(platform: platform),
     home: Scaffold(
       body: SettingsGroup(
         children: [

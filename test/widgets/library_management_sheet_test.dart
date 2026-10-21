@@ -74,7 +74,7 @@ Future<({int Function() selects, int Function() backs, LibrariesProvider librari
             ChangeNotifierProvider<MultiServerProvider>.value(value: effectiveMultiServerProvider),
           ],
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: Focus(
               onKeyEvent: (_, event) {
                 if (event is KeyDownEvent && event.logicalKey.isSelectKey) underlyingSelects++;

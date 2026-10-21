@@ -15,6 +15,7 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
   var coreBase: MpvPlayerCoreBase? { playerCore }
   func setPlayerVisible(_ visible: Bool, restoreOnWindowVisible _: Bool) { playerCore?.setVisible(visible) }
   func updatePlayerFrame() { playerCore?.updateFrame() }
+  func setPlayerVideoZoom(_ scale: Double) { playerCore?.setVideoZoom(scale) }
 
   private var pipController: MpvPipController?
   private var pipChannel: FlutterMethodChannel?
@@ -98,6 +99,8 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       handleSetLogLevel(call: call, result: result)
     case "getAudioRenderingMode":
       result(Self.audioRenderingMode())
+    case "getAudioSpdifCodecs":
+      result(MpvPlayerCoreBase.audioSpdifCodecs)
     default:
       result(FlutterMethodNotImplemented)
     }
@@ -408,17 +411,6 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     }
   }
 
-  private func handleSetVideoZoom(call: FlutterMethodCall, result: @escaping FlutterResult) {
-    guard let args = call.arguments as? [String: Any],
-      let scale = doubleValue(args["scale"])
-    else {
-      result(FlutterError(code: "INVALID_ARGS", message: "setVideoZoom requires scale", details: nil))
-      return
-    }
-    playerCore?.setVideoZoom(scale)
-    result(nil)
-  }
-
   private func int64Value(_ value: Any?) -> Int64? {
     switch value {
     case let value as Int64:
@@ -429,19 +421,6 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       return value.int64Value
     case let value as String:
       return Int64(value)
-    default:
-      return nil
-    }
-  }
-
-  private func doubleValue(_ value: Any?) -> Double? {
-    switch value {
-    case let value as Double:
-      return value
-    case let value as NSNumber:
-      return value.doubleValue
-    case let value as String:
-      return Double(value)
     default:
       return nil
     }

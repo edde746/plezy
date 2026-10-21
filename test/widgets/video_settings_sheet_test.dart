@@ -11,6 +11,7 @@ import 'package:plezy/media/media_file_info.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/audio_channel_limit.dart';
+import 'package:plezy/mpv/models.dart';
 import 'package:plezy/mpv/player/player.dart';
 import 'package:plezy/mpv/player/player_native.dart';
 import 'package:plezy/mpv/player/player_state.dart';
@@ -139,6 +140,51 @@ void main() {
     expect(SettingsService.instance.read(SettingsService.audioChannelLimit), AudioChannelLimit.surround51);
     expect(find.byType(VideoSettingsSheet), findsNothing);
   });
+
+  // #2744: the pick has to outlive this player, or every new video starts back
+  // on "Autoselect device". The Audio Output row is a desktop/TV control.
+  testWidgets('remembers a picked audio output for later players', (tester) async {
+    final applied = <String>[];
+    final player = _FakeSettingsPlayer(
+      state: const PlayerState(
+        audioDevices: [
+          AudioDevice(name: 'auto', description: 'Autoselect device'),
+          AudioDevice(name: 'alsa', description: 'Default (alsa)'),
+        ],
+      ),
+      onSetAudioDevice: (device) async => applied.add(device.name),
+    );
+    await _pumpSheetViaOverlayRoute(tester, player);
+
+    await tester.scrollUntilVisible(find.text('Audio Output'), 300, scrollable: find.byType(Scrollable).first);
+    await tester.tap(find.text('Audio Output'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Default (alsa)'));
+    await tester.pumpAndSettle();
+
+    expect(applied, ['alsa']);
+    expect(SettingsService.instance.read(SettingsService.audioOutputDevice), 'alsa');
+    expect(find.byType(VideoSettingsSheet), findsNothing);
+  }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
+
+  testWidgets('keeps the remembered audio output when the player refuses the pick', (tester) async {
+    await SettingsService.instance.write(SettingsService.audioOutputDevice, 'pipewire');
+    final player = _FakeSettingsPlayer(
+      state: const PlayerState(
+        audioDevices: [AudioDevice(name: 'alsa', description: 'Default (alsa)')],
+      ),
+      onSetAudioDevice: (_) async => throw StateError('rejected'),
+    );
+    await _pumpSheetViaOverlayRoute(tester, player);
+
+    await tester.scrollUntilVisible(find.text('Audio Output'), 300, scrollable: find.byType(Scrollable).first);
+    await tester.tap(find.text('Audio Output'));
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Default (alsa)'));
+    await tester.pumpAndSettle();
+
+    expect(SettingsService.instance.read(SettingsService.audioOutputDevice), 'pipewire');
+  }, variant: TargetPlatformVariant.only(TargetPlatform.linux));
 
   testWidgets('localizes every ASS subtitle override enum label', (tester) async {
     LocaleSettings.setLocaleSync(AppLocale.ru);
@@ -642,6 +688,8 @@ class _FakeSettingsPlayer implements Player {
     this.onSetProperty,
     this.onSetRate,
     this.onSetAudioChannelLimit,
+    this.onSetAudioDevice,
+    this.state = const PlayerState(),
     this.hdrOutputSupported = false,
   });
 
@@ -661,6 +709,7 @@ class _FakeSettingsPlayer implements Player {
   final Future<void> Function(String name, String value)? onSetProperty;
   final Future<void> Function(double rate)? onSetRate;
   final Future<void> Function(AudioChannelLimit limit, int centerBoostDb, bool normalize)? onSetAudioChannelLimit;
+  final Future<void> Function(AudioDevice device)? onSetAudioDevice;
   bool hdrOutputSupported;
   int probeCount = 0;
 
@@ -671,7 +720,7 @@ class _FakeSettingsPlayer implements Player {
   }
 
   @override
-  PlayerState get state => const PlayerState();
+  final PlayerState state;
 
   @override
   PlayerStreams get streams => _streams;
@@ -695,6 +744,11 @@ class _FakeSettingsPlayer implements Player {
   @override
   Future<void> setAudioChannelLimit(AudioChannelLimit limit, {required int centerBoostDb, required bool normalize}) {
     return onSetAudioChannelLimit?.call(limit, centerBoostDb, normalize) ?? Future<void>.value();
+  }
+
+  @override
+  Future<void> setAudioDevice(AudioDevice device) {
+    return onSetAudioDevice?.call(device) ?? Future<void>.value();
   }
 
   @override

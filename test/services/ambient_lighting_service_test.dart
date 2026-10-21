@@ -5,6 +5,7 @@ import 'package:path_provider_platform_interface/path_provider_platform_interfac
 import 'package:plezy/mpv/player/player.dart';
 import 'package:plezy/mpv/player/player_state.dart';
 import 'package:plezy/services/ambient_lighting_service.dart';
+import 'package:plezy/services/shader_service.dart';
 
 import '../test_helpers/io_fakes.dart';
 
@@ -18,10 +19,12 @@ void main() {
     originalPathProvider = PathProviderPlatform.instance;
     temporaryRoot = Directory.systemTemp.createTempSync('plezy_ambient_test_');
     PathProviderPlatform.instance = FakePathProvider(temporaryRoot);
+    ShaderService.debugPlatformSupported = true;
   });
 
   tearDown(() {
     PathProviderPlatform.instance = originalPathProvider;
+    ShaderService.debugPlatformSupported = null;
     temporaryRoot.deleteSync(recursive: true);
   });
 

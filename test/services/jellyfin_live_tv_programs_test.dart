@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:http/http.dart' as http;
+import 'package:plezy/services/jellyfin_client.dart';
 
 import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/http_fixtures.dart';
@@ -95,4 +97,41 @@ void main() {
 
     expect(programs[3].recordingRuleKey, isNull);
   });
+
+  // #2656: both dialects build program dtos from the requested field list
+  // alone, so an unrequested Overview never arrives and the details sheet
+  // has no description.
+  for (final (name, makeClient)
+      in <(String, JellyfinClient Function({Future<http.Response> Function(http.Request)? handler}))>[
+        ('Jellyfin', testJellyfinClient),
+        ('Emby', testEmbyClient),
+      ]) {
+    test('$name guide programs carry the server description as summary', () async {
+      final client = makeClient(
+        handler: (request) async {
+          final fields = request.url.queryParameters.entries
+              .where((e) => e.key.toLowerCase() == 'fields')
+              .expand((e) => e.value.split(','))
+              .map((f) => f.trim().toLowerCase());
+          return jsonResponse({
+            'Items': [
+              {
+                'Id': 'p-1',
+                'Name': 'News at Six',
+                if (fields.contains('overview')) 'Overview': 'Headlines and weather.',
+              },
+            ],
+          });
+        },
+      );
+      addTearDown(client.close);
+
+      final programs = await client.liveTv.fetchSchedule(
+        from: DateTime.utc(2026, 8, 20, 19),
+        to: DateTime.utc(2026, 8, 21, 1),
+      );
+
+      expect(programs.single.summary, 'Headlines and weather.');
+    });
+  }
 }

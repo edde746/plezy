@@ -16,7 +16,7 @@ import 'package:plezy/widgets/backend_badge.dart';
 /// missing from this list is unreachable no matter how complete its client is.
 void main() {
   Widget app(Widget home) => MaterialApp(
-    theme: monoTheme(dark: true),
+    theme: monoTheme(MonoPalette.dark),
     home: InputModeTracker(child: home),
   );
 
