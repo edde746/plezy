@@ -1,0 +1,83 @@
+name: Build tvOS
+
+on:
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: "3.47.1"
+  TRUSTED_BUILD_CACHE_VERSION: trusted-build-v1
+
+jobs:
+  build-tvos:
+    runs-on: macos-26
+    permissions:
+      id-token: write
+      attestations: write
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: "stable"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+          cache-key: "${{ env.TRUSTED_BUILD_CACHE_VERSION }}-flutter-:os:-:channel:-:version:-:arch:-:hash:"
+          pub-cache: false
+
+      - name: Cache Pub dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.pub-cache
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-${{ runner.arch }}-pub-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
+
+      - name: Cache CocoaPods
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: |
+            tvos/Pods
+            ~/Library/Caches/CocoaPods
+            ~/.cocoapods
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-tvos-pods-${{ hashFiles('tvos/Podfile.lock') }}
+
+      - name: Install Flutter dependencies
+        run: flutter pub get --enforce-lockfile --no-example
+
+      - name: Generate Generated.xcconfig
+        run: |
+          flutter build ios --release --no-codesign --config-only
+          # Copy the generated config to the tvOS Flutter folder
+          cp ios/Flutter/Generated.xcconfig tvos/Flutter/Generated.xcconfig
+
+      - name: Install CocoaPods dependencies
+        run: |
+          cd tvos
+          pod install
+
+      - name: Build tvOS (no codesign)
+        run: |
+          cd tvos
+          xcodebuild \
+            -workspace Runner.xcworkspace \
+            -scheme Runner \
+            -sdk appletvos \
+            -destination generic/platform=tvOS \
+            -archivePath $PWD/build/Runner.xcarchive \
+            archive \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Create IPA
+        run: |
+          cd tvos
+          mkdir -p Payload
+          cp -r build/Runner.xcarchive/Products/Applications/Runner.app Payload/
+          zip -r plezy-tvos.ipa Payload
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: tvos-ipa
+          path: tvos/plezy-tvos.ipa
