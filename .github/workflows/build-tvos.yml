@@ -48,8 +48,6 @@ jobs:
 
       - name: Generate Generated.xcconfig for tvOS
         run: |
-          FLUTTER_ROOT=$(flutter sdk-path)
-          FLUTTER_VERSION=$(flutter --version --machine | python3 -c "import sys,json; print(json.load(sys.stdin)['frameworkVersion'])")
           cat > tvos/Flutter/Generated.xcconfig << EOF
           FLUTTER_ROOT=$FLUTTER_ROOT
           FLUTTER_APPLICATION_PATH=$PWD
@@ -64,6 +62,7 @@ jobs:
           PACKAGE_CONFIG=$PWD/.dart_tool/package_config.json
           FLUTTER_LOCAL_ENGINE=
           EOF
+
 
 
       - name: Install CocoaPods dependencies
