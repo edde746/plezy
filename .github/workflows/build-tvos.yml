@@ -59,9 +59,13 @@ jobs:
           mkdir -p tvos-engine/out/tvos_release
           cp -r engine-extract/tvos_release_arm64/* tvos-engine/out/tvos_release/
           # Create dummy simulator dirs to satisfy Podfile checks
-          # (not needed for device builds but Podfile always checks)
           mkdir -p tvos-engine/out/tvos_debug_sim_unopt_arm64
           mkdir -p tvos-engine/out/tvos_debug_unopt
+          # Copy gen_snapshot from Flutter SDK into host_release
+          mkdir -p tvos-engine/out/host_release
+          cp $FLUTTER_ROOT/bin/cache/artifacts/engine/darwin-arm64/gen_snapshot tvos-engine/out/host_release/gen_snapshot
+          chmod +x tvos-engine/out/host_release/gen_snapshot
+
 
 
       - name: Install Flutter dependencies
