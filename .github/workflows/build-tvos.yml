@@ -61,10 +61,16 @@ jobs:
           # Create dummy simulator dirs to satisfy Podfile checks
           mkdir -p tvos-engine/out/tvos_debug_sim_unopt_arm64
           mkdir -p tvos-engine/out/tvos_debug_unopt
-          # Copy gen_snapshot from Flutter SDK into host_release
+          # Find gen_snapshot location
+          echo "Searching for gen_snapshot..."
+          find $FLUTTER_ROOT -name "gen_snapshot" 2>/dev/null
+          # Copy gen_snapshot into host_release
           mkdir -p tvos-engine/out/host_release
-          cp $FLUTTER_ROOT/bin/cache/artifacts/engine/darwin-arm64/gen_snapshot tvos-engine/out/host_release/gen_snapshot
+          GEN_SNAPSHOT=$(find $FLUTTER_ROOT -name "gen_snapshot" | head -1)
+          echo "Found gen_snapshot at: $GEN_SNAPSHOT"
+          cp "$GEN_SNAPSHOT" tvos-engine/out/host_release/gen_snapshot
           chmod +x tvos-engine/out/host_release/gen_snapshot
+
 
 
 
