@@ -37,6 +37,7 @@ import 'package:plezy/utils/active_client_scope.dart';
 import 'package:plezy/utils/external_ids.dart';
 import 'package:plezy/utils/video_player_navigation.dart';
 import 'package:plezy/widgets/video_controls/video_controls.dart';
+import 'package:plezy/watch_together/models/watch_notice.dart';
 import 'package:plezy/watch_together/providers/watch_together_provider.dart';
 import 'package:provider/provider.dart';
 
@@ -441,7 +442,7 @@ void main() {
     });
   }
 
-  for (final target in ['same room', 'offline', 'live', 'superseded before build']) {
+  for (final target in ['same room', 'download', 'live', 'superseded before build']) {
     testWidgets('replacement by $target only keeps the room media for a player in the room', (tester) async {
       final client = _ReloadClient();
       final (:watchTogether, :relay) = await hostRoom(tester, client);
@@ -462,7 +463,9 @@ void main() {
           await tester.pump(const Duration(milliseconds: 300));
           expect(watchTogether.isFollowing, isTrue);
           expect(relay.sent('setMedia'), hasLength(1));
-          final continuesRoom = target == 'same room';
+          final continuesRoom = target == 'same room' || target == 'download';
+          // Only Live TV stays out of the room.
+          final live = !continuesRoom;
           final successorKey = GlobalKey<VideoPlayerScreenState>();
           final successorPlayer = _ExitPlayer();
           if (target == 'superseded before build') {
@@ -481,9 +484,9 @@ void main() {
               builder: (_) => VideoPlayerScreen(
                 key: successorKey,
                 metadata: testMediaItem(id: 'successor', serverId: 'srv-1', backend: MediaBackend.jellyfin),
-                isOffline: !continuesRoom && target != 'live',
+                isOffline: target == 'download',
                 selectedQualityPreset: TranscodeQualityPreset.original,
-                live: target == 'live'
+                live: live
                     ? LiveTvSessionArgs(
                         channel: LiveTvChannel(key: 'channel', serverId: 'srv-1'),
                       )
@@ -667,9 +670,11 @@ void main() {
     WidgetTester tester, {
     WatchTogetherProvider? watchTogether,
     _ReloadClient? client,
+    bool isOffline = false,
+    bool serverOnline = true,
   }) async {
     client ??= _ReloadClient();
-    final multi = testMultiServer(clients: [client]);
+    final multi = testMultiServer(clients: [client], offline: [if (!serverOnline) client]);
     final offlineWatch = OfflineWatchSyncService(database: db, serverManager: multi.manager);
     final accountPreferences = AccountPreferencesController();
     final initializationHold = Completer<void>();
@@ -697,7 +702,12 @@ void main() {
           ChangeNotifierProvider(create: (_) => CompanionRemoteProvider()),
         ],
         child: MaterialApp(
-          home: VideoPlayerScreen(key: key, metadata: item, selectedQualityPreset: TranscodeQualityPreset.original),
+          home: VideoPlayerScreen(
+            key: key,
+            metadata: item,
+            selectedQualityPreset: TranscodeQualityPreset.original,
+            isOffline: isOffline,
+          ),
         ),
       ),
     );
@@ -934,6 +944,52 @@ void main() {
         },
       );
     });
+  });
+
+  group('a download in the room', () {
+    for (final serverOnline in [true, false]) {
+      testWidgets(
+        serverOnline
+            ? 'a host playing from the offline library shares the download while its server is online'
+            : "a host's download stays out of the room while its server is offline",
+        (tester) async {
+          final client = _ReloadClient();
+          final (:watchTogether, :relay) = await hostRoom(tester, client);
+          final notices = <WatchNotice>[];
+          final noticesSubscription = watchTogether.notices.listen(notices.add);
+          addTearDown(noticesSubscription.cancel);
+
+          await withMockPlayerChannels(
+            methodChannelName: 'com.plezy/mpv_player',
+            eventChannelName: 'com.plezy/mpv_player/events',
+            testBody: () async {
+              final screen = await pumpReloadScreen(
+                tester,
+                watchTogether: watchTogether,
+                client: client,
+                isOffline: true,
+                serverOnline: serverOnline,
+              );
+              screen.key.currentState!.debugBindWatchTogetherForTesting();
+              screen.player.emitPlaybackRestart();
+              await tester.pump();
+              await tester.pump(const Duration(seconds: 1));
+
+              if (serverOnline) {
+                expect(relay.sent('setMedia'), hasLength(1), reason: 'the room gets the server copy of the download');
+                expect(watchTogether.isFollowing, isTrue);
+                expect(notices.whereType<NotSharedNotice>(), isEmpty);
+              } else {
+                expect(relay.sent('setMedia'), isEmpty);
+                expect(watchTogether.isFollowing, isFalse, reason: 'the download plays on its own');
+                expect(notices.whereType<NotSharedNotice>(), hasLength(1));
+              }
+              await closeRooms(tester, [watchTogether]);
+            },
+          );
+        },
+      );
+    }
   });
 
   // The Plex part's stream selection is a persistence write, not how a source

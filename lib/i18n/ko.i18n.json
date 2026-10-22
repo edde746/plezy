@@ -1911,7 +1911,7 @@
       "searchFailed": "",
       "playBlocked": "",
       "shareFailed": "",
-      "notShared": "",
+      "downloadNotShared": "",
       "openFailed": ""
     },
     "ended": {

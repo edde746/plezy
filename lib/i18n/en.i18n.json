@@ -1923,7 +1923,7 @@
       "searchFailed": "Some servers couldn't be searched for the room's video",
       "playBlocked": "Press play to start",
       "shareFailed": "Couldn't share this video with the room",
-      "notShared": "Downloaded videos aren't shared with the room",
+      "downloadNotShared": "Downloads aren't shared with the room while their server is offline",
       "openFailed": "Couldn't open the room's video"
     },
     "ended": {

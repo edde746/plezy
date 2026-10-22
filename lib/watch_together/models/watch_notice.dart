@@ -64,7 +64,7 @@ class ShareFailedNotice extends WatchNotice {
   const ShareFailedNotice();
 }
 
-/// The host plays a file the room can't get (a download).
+/// The host plays a file the room can't get (a download of an offline server).
 class NotSharedNotice extends WatchNotice {
   const NotSharedNotice();
 }

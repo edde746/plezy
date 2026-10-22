@@ -422,8 +422,8 @@ class WatchTogetherProvider extends ChangeNotifier {
   }
 
   /// The player opened [adapter]'s file. [shareable] is false for files the
-  /// room can't get (downloads, Live TV). [roomLaunch] is true when the room
-  /// asked for this file.
+  /// room can't get (a download of an offline server). [roomLaunch] is true
+  /// when the room asked for this file.
   ///
   /// A host shares the file with the room. A guest's player follows the room
   /// when it opened the room's file, and else sits out so the room doesn't

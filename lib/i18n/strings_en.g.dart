@@ -7464,8 +7464,8 @@ class Translations$watchTogether$notices$en {
 	/// en: 'Couldn't share this video with the room'
 	String get shareFailed => 'Couldn\'t share this video with the room';
 
-	/// en: 'Downloaded videos aren't shared with the room'
-	String get notShared => 'Downloaded videos aren\'t shared with the room';
+	/// en: 'Downloads aren't shared with the room while their server is offline'
+	String get downloadNotShared => 'Downloads aren\'t shared with the room while their server is offline';
 
 	/// en: 'Couldn't open the room's video'
 	String get openFailed => 'Couldn\'t open the room\'s video';
@@ -9769,7 +9769,7 @@ extension on Translations {
 			'watchTogether.notices.searchFailed' => 'Some servers couldn\'t be searched for the room\'s video',
 			'watchTogether.notices.playBlocked' => 'Press play to start',
 			'watchTogether.notices.shareFailed' => 'Couldn\'t share this video with the room',
-			'watchTogether.notices.notShared' => 'Downloaded videos aren\'t shared with the room',
+			'watchTogether.notices.downloadNotShared' => 'Downloads aren\'t shared with the room while their server is offline',
 			'watchTogether.notices.openFailed' => 'Couldn\'t open the room\'s video',
 			'watchTogether.ended.ended' => 'The host ended the room',
 			'watchTogether.ended.kicked' => 'You were removed from the room',
