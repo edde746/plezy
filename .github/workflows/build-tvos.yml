@@ -60,6 +60,12 @@ jobs:
           cp -r engine-extract/tvos_release_arm64/* tvos-engine/out/tvos_release/
           mkdir -p tvos-engine/out/tvos_debug_sim_unopt_arm64
           mkdir -p tvos-engine/out/tvos_debug_unopt
+          
+      - name: Inspect engine zip contents
+        run: |
+          echo "Full tvos-engine structure:"
+          find tvos-engine -type f 2>/dev/null
+
 
 
       - name: Setup host_release tools
