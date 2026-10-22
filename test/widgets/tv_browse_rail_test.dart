@@ -13,6 +13,7 @@ import 'package:plezy/media/media_hub.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
+import 'package:plezy/providers/cli_debrid_account_provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/device_performance.dart';
 import 'package:plezy/services/multi_server_manager.dart';
@@ -26,6 +27,7 @@ import 'package:plezy/widgets/side_navigation_rail.dart';
 import 'package:plezy/widgets/tv_browse_rail.dart';
 import 'package:provider/provider.dart';
 
+import '../test_helpers/cli_debrid_fixtures.dart';
 import '../test_helpers/prefs.dart';
 import '../test_helpers/profile_stack.dart';
 import '../test_helpers/media_items.dart';
@@ -2820,9 +2822,11 @@ void main() {
     final stack = await ProfileStack.create(db: db, withStorage: false);
     final serverManager = MultiServerManager();
     final multiServerProvider = testMultiServerProvider(serverManager);
+    final cliDebrid = await testCliDebridAccountProvider();
     addTearDown(() async {
       await stack.dispose();
       multiServerProvider.dispose();
+      cliDebrid.dispose();
       await db.close();
     });
 
@@ -2855,6 +2859,7 @@ void main() {
           providers: [
             ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
             ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
+            ChangeNotifierProvider<CliDebridAccountProvider>.value(value: cliDebrid),
           ],
           child: MaterialApp(
             theme: monoTheme(MonoPalette.dark),

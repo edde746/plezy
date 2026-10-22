@@ -22,11 +22,13 @@ import '../services/playlist_items_loader.dart';
 import '../services/recent_tags_service.dart';
 import '../services/watch_actions.dart';
 import '../services/catalog/library_watchlist_candidates.dart';
+import '../utils/cli_debrid_rescrape_utils.dart';
 import '../utils/content_utils.dart';
 import '../utils/delete_impact.dart';
 import '../utils/download_utils.dart';
 import '../utils/focus_utils.dart';
 import '../utils/global_key_utils.dart';
+import '../providers/cli_debrid_account_provider.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/offline_mode_provider.dart';
@@ -402,6 +404,17 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       return;
     }
 
+    // The entries below read isConnected, which stays false until the provider
+    // has loaded its session once after launch or a profile switch. Only the
+    // kinds cli_debrid offers Re-request for wait on it.
+    if (menu.mediaKind case MediaKind.movie || MediaKind.episode || MediaKind.season) {
+      await context.read<CliDebridAccountProvider>().initialLoadComplete;
+      if (!mounted || !context.mounted) {
+        _isContextMenuOpen = false;
+        return;
+      }
+    }
+
     final menuActions = menu.isDownloadsFolder
         ? _buildDownloadsFolderMenuActions(menu.mediaItem!)
         : menu.isCollection || menu.isPlaylist
@@ -468,6 +481,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     final mediaItem = _mediaItem;
     final playlist = _playlist;
     final mediaKind = mediaItem?.kind;
+
+    // Backend-aware gate: a few menu items remain Plex-only because the
+    // server-side feature has no MediaBrowser equivalent (match/unmatch).
+    // No fallback: items without a backend marker show only neutral actions —
+    // dispatching a Plex-only action against an unknown-backend item could
+    // crash or hit the wrong server.
     final itemBackend = mediaItem?.backend ?? playlist?.backend;
     if (widget.isOffline && mediaItem != null && mediaKind == MediaKind.collection) {
       return _MenuContext.downloadsFolder(mediaItem);
@@ -677,6 +696,20 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       if (mediaKind == MediaKind.show || mediaKind == MediaKind.season)
         _MenuAction(value: 'shuffle_play', icon: Symbols.shuffle_rounded, label: t.mediaMenu.shufflePlay),
       ..._mediaSourceMenuActions(menu, mediaItem),
+      // Re-request (for episodes and movies) — moves the item back to
+      // cli_debrid's Wanted queue. Only offered when cli_debrid is connected;
+      // hidden otherwise rather than showing a "connect first" dead end.
+      // Kind-checked before reading the provider: every other kind (music,
+      // playlists, ...) never depended on CliDebridAccountProvider and must
+      // not start requiring it just to open this menu.
+      if ((mediaKind == MediaKind.movie || mediaKind == MediaKind.episode) &&
+          cliDebridReRequestSupported(context.read<CliDebridAccountProvider>(), mediaItem))
+        _MenuAction(value: 're_request', icon: Symbols.replay_rounded, label: t.cliDebrid.reRequest),
+      // Re-request season — bulk variant that walks every episode in the
+      // season. Episodes with more than one version are skipped (see
+      // reRequestSeasonEpisodes) rather than prompting per episode.
+      if (mediaKind == MediaKind.season && context.read<CliDebridAccountProvider>().isConnected)
+        _MenuAction(value: 're_request_season', icon: Symbols.replay_rounded, label: t.cliDebrid.reRequestSeason),
       ..._libraryMenuActions(context, menu, mediaItem),
     ];
   }
@@ -927,6 +960,12 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         break;
       case 'play_version':
         outcome.didNavigate = await promptAndPlayVersion(context, _mediaItem!);
+        break;
+      case 're_request':
+        await _handleReRequest(context);
+        break;
+      case 're_request_season':
+        await _handleReRequestSeason(context);
         break;
       case 'fileinfo':
         await _showFileInfo(context);
@@ -1356,6 +1395,68 @@ class MediaContextMenuState extends State<MediaContextMenu> {
       }
     } finally {
       await loadingDialog.dismiss();
+    }
+  }
+
+  Future<void> _handleReRequest(BuildContext context) async {
+    final item = _mediaItem!;
+    final account = context.read<CliDebridAccountProvider>();
+    final client = account.client;
+    if (client == null) return;
+
+    try {
+      final serverClient = _getMediaClientForItem();
+      final succeeded = await reRequestMediaItem(context, item: item, client: client, serverClient: serverClient);
+      if (!context.mounted || !succeeded) return;
+      showSuccessSnackBar(context, t.cliDebrid.rescrapeSucceeded);
+      _notifyRefresh(item);
+    } catch (e) {
+      if (context.mounted) {
+        showErrorSnackBar(context, t.cliDebrid.rescrapeFailed(error: e.toString()));
+      }
+    }
+  }
+
+  Future<void> _handleReRequestSeason(BuildContext context) async {
+    final season = _mediaItem!;
+    final account = context.read<CliDebridAccountProvider>();
+    final client = account.client;
+    if (client == null) return;
+
+    var loadingShown = false;
+    try {
+      final serverClient = _getMediaClientForItem();
+      if (context.mounted) {
+        showLoadingDialog(context);
+        loadingShown = true;
+      }
+
+      final episodes = await serverClient.fetchChildren(season.id);
+      final result = await reRequestSeasonEpisodes(episodes, client: client, serverClient: serverClient);
+
+      if (loadingShown && context.mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+        loadingShown = false;
+      }
+      if (!context.mounted) return;
+
+      if (result.isEmpty) {
+        showAppSnackBar(context, t.cliDebrid.rescrapeSeasonNothingToDo);
+      } else {
+        final message =
+            t.cliDebrid.rescrapeSeasonSucceeded(count: result.succeeded) +
+            (result.skippedAmbiguous > 0 ? t.cliDebrid.rescrapeSeasonSkipped(count: result.skippedAmbiguous) : '') +
+            (result.failed > 0 ? t.cliDebrid.rescrapeSeasonFailed(count: result.failed) : '');
+        showSuccessSnackBar(context, message);
+        if (result.succeeded > 0) _notifyRefresh(season);
+      }
+    } catch (e) {
+      if (loadingShown && context.mounted && Navigator.canPop(context)) {
+        Navigator.pop(context);
+      }
+      if (context.mounted) {
+        showErrorSnackBar(context, t.cliDebrid.rescrapeFailed(error: e.toString()));
+      }
     }
   }
 
