@@ -124,6 +124,17 @@ jobs:
             archive \
             CODE_SIGNING_ALLOWED=NO
 
+      - name: Search build log for Flutter errors
+        if: always()
+        run: |
+          echo "===== Flutter/Dart errors ====="
+          grep -iE "error|failed|exception|skipping|snapshot|app.framework" \
+            tvos/build/Runner.xcarchive/../../*.log 2>/dev/null || true
+          
+          # Check if flutter build produced anything
+          find tvos/build -name "*.log" -exec sh -c 'echo "=== {} ==="; cat "{}"' \;
+
+
       - name: Create IPA
         run: |
           mkdir -p tvos/Payload
@@ -135,3 +146,34 @@ jobs:
         with:
           name: tvos-ipa-${{ steps.version.outputs.build_name }}
           path: tvos/plezy-tvos-${{ steps.version.outputs.build_name }}.ipa
+
+      - name: Inspect App.framework (post-build)
+        run: |
+          echo "===== Runner.app contents ====="
+          ls -la tvos/build/Runner.xcarchive/Products/Applications/Runner.app/
+          
+          echo "===== Frameworks ====="
+          ls -la tvos/build/Runner.xcarchive/Products/Applications/Runner.app/Frameworks/
+          
+          echo "===== App.framework ====="
+          ls -laR tvos/build/Runner.xcarchive/Products/Applications/Runner.app/Frameworks/App.framework/ 2>/dev/null || \
+            echo "!!! App.framework MISSING !!!"
+          
+          echo "===== flutter_assets ====="
+          ls -la tvos/build/Runner.xcarchive/Products/Applications/Runner.app/Frameworks/App.framework/flutter_assets/ 2>/dev/null || \
+            ls -la tvos/build/Runner.xcarchive/Products/Applications/Runner.app/flutter_assets/ 2>/dev/null || \
+            echo "!!! flutter_assets MISSING !!!"
+          
+          echo "===== Binary architectures ====="
+          file tvos/build/Runner.xcarchive/Products/Applications/Runner.app/Runner
+          find tvos/build/Runner.xcarchive/Products/Applications/Runner.app/Frameworks/ \
+            -name "*.framework" -exec sh -c 'echo "--- {} ---"; file "{}"/*' \;
+
+      - name: Check AOT snapshot content
+        run: |
+          APP=$(tvos/build/Runner.xcarchive/Products/Applications/Runner.app/Frameworks/App.framework/App)
+          if [ -f "$APP" ]; then
+            echo "App binary size: $(stat -f%z "$APP") bytes"
+            nm "$APP" | head -20 || true
+          fi
+
