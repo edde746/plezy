@@ -1,0 +1,163 @@
+name: Build tvOS Probe
+
+on:
+  workflow_dispatch:
+
+env:
+  FLUTTER_VERSION: "3.47.7"
+  TRUSTED_BUILD_CACHE_VERSION: trusted-build-probe-v1
+  TVOS_ENGINE_URL: "https://github.com/fluttertv/engine-artifacts/releases/download/engine-b118f6897f8f3427d1390c80bbefa90ee948c97e/tvos_release_arm64.zip"
+
+jobs:
+  build-tvos:
+    runs-on: macos-26
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+
+      - name: Read version from pubspec.yaml
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | head -1 | sed 's/version: //' | tr -d ' ')
+          BUILD_NAME="${VERSION%%+*}"
+          BUILD_NUMBER="${VERSION#*+}"
+          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          echo "Plezy version: $BUILD_NAME ($BUILD_NUMBER)"
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
+        with:
+          channel: stable
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+          cache-key: "${{ env.TRUSTED_BUILD_CACHE_VERSION }}-flutter-:os:-:channel:-:version:-:arch:-:hash:"
+          pub-cache: false
+          cache-save-always: true
+
+      - name: Cache Pub dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: ~/.pub-cache
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-${{ runner.arch }}-pub-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
+          save-always: true
+
+      - name: Cache CocoaPods
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: |
+            tvos/Pods
+            ~/Library/Caches/CocoaPods
+            ~/.cocoapods
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-tvos-pods-${{ hashFiles('tvos/Podfile.lock') }}
+          save-always: true
+
+      - name: Cache tvOS engine
+        id: tvos-engine-cache
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
+        with:
+          path: tvos-engine
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-tvos-engine-b118f6897f8f3427d1390c80bbefa90ee948c97e
+          save-always: true
+
+      - name: Download tvOS Flutter engine
+        if: steps.tvos-engine-cache.outputs.cache-hit != 'true'
+        run: |
+          curl -L ${{ env.TVOS_ENGINE_URL }} -o tvos-engine.zip
+          unzip tvos-engine.zip -d engine-extract
+          mkdir -p tvos-engine/out/tvos_release
+          cp -r engine-extract/tvos_release_arm64/* tvos-engine/out/tvos_release/
+          mkdir -p tvos-engine/out/tvos_debug_sim_unopt_arm64
+          mkdir -p tvos-engine/out/tvos_debug_unopt
+
+      - name: Install Flutter dependencies
+        run: flutter pub get --enforce-lockfile --no-example
+
+      - name: Setup host_release tools
+        run: |
+          flutter precache --ios
+          FLUTTER_CACHE=$FLUTTER_ROOT/bin/cache
+          mkdir -p tvos-engine/out/host_release/dart-sdk/bin/snapshots
+          cp "$FLUTTER_CACHE/dart-sdk/bin/dartaotruntime" tvos-engine/out/host_release/dart-sdk/bin/dartaotruntime
+          chmod +x tvos-engine/out/host_release/dart-sdk/bin/dartaotruntime
+          cp "$FLUTTER_CACHE/dart-sdk/version" tvos-engine/out/host_release/dart-sdk/version
+          cp "$FLUTTER_CACHE/dart-sdk/bin/snapshots/frontend_server_aot.dart.snapshot" \
+             tvos-engine/out/host_release/dart-sdk/bin/snapshots/frontend_server_aot.dart.snapshot
+          cp -R "$FLUTTER_CACHE/artifacts/engine/common/flutter_patched_sdk" \
+             tvos-engine/out/host_release/flutter_patched_sdk
+          cp "$FLUTTER_CACHE/artifacts/engine/ios-release/gen_snapshot_arm64" \
+             tvos-engine/out/tvos_release/gen_snapshot_arm64
+          chmod +x tvos-engine/out/tvos_release/gen_snapshot_arm64
+
+      - name: Generate Generated.xcconfig
+        run: |
+          cat > tvos/Flutter/Generated.xcconfig << EOF
+          FLUTTER_ROOT=$FLUTTER_ROOT
+          FLUTTER_APPLICATION_PATH=$PWD
+          COCOAPODS_PARALLEL_CODE_SIGN=true
+          FLUTTER_TARGET=lib/tvos_probe.dart
+          FLUTTER_BUILD_DIR=build
+          FLUTTER_BUILD_NAME=${{ steps.version.outputs.build_name }}
+          FLUTTER_BUILD_NUMBER=${{ steps.version.outputs.build_number }}
+          DART_OBFUSCATION=false
+          TRACK_WIDGET_CREATION=false
+          TREE_SHAKE_ICONS=false
+          PACKAGE_CONFIG=$PWD/.dart_tool/package_config.json
+          FLUTTER_LOCAL_ENGINE=$PWD/tvos-engine
+          EOF
+
+      - name: Install CocoaPods dependencies
+        run: cd tvos && pod install
+
+      - name: Build tvOS (no codesign)
+        run: |
+          cd tvos
+          xcodebuild \
+            -workspace Runner.xcworkspace \
+            -scheme Runner \
+            -sdk appletvos \
+            -destination generic/platform=tvOS \
+            -archivePath $PWD/build/Runner.xcarchive \
+            archive \
+            CODE_SIGNING_ALLOWED=NO
+
+      - name: Inspect built app
+        run: |
+          APP="tvos/build/Runner.xcarchive/Products/Applications/Runner.app"
+          echo "===== App bundle top-level ====="
+          ls -la "$APP"
+          echo ""
+          echo "===== Frameworks ====="
+          ls -la "$APP/Frameworks/" 2>/dev/null || true
+          echo ""
+          echo "===== App.framework contents ====="
+          ls -la "$APP/Frameworks/App.framework/" 2>/dev/null || true
+          echo ""
+          echo "===== App.framework/App size and arch ====="
+          file "$APP/Frameworks/App.framework/App" 2>/dev/null || true
+          du -h "$APP/Frameworks/App.framework/App" 2>/dev/null || true
+          echo ""
+          echo "===== Flutter.framework ====="
+          file "$APP/Frameworks/Flutter.framework/Flutter" 2>/dev/null || true
+          du -h "$APP/Frameworks/Flutter.framework/Flutter" 2>/dev/null || true
+          echo ""
+          echo "===== Info.plist key values ====="
+          PLIST="$APP/Info.plist"
+          for key in CFBundleIdentifier CFBundleExecutable CFBundleSupportedPlatforms UIDeviceFamily MinimumOSVersion CFBundleShortVersionString CFBundleVersion; do
+            echo "$key: $(/usr/libexec/PlistBuddy -c "Print :$key" "$PLIST" 2>/dev/null || echo '(missing)')"
+          done
+
+      - name: Create IPA
+        run: |
+          mkdir -p tvos/Payload
+          cp -r tvos/build/Runner.xcarchive/Products/Applications/Runner.app tvos/Payload/
+          cd tvos && zip -r plezy-tvos-probe-${{ steps.version.outputs.build_name }}.ipa Payload
+
+      - name: Upload IPA
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
+        with:
+          name: tvos-probe-ipa-${{ steps.version.outputs.build_name }}
+          path: tvos/plezy-tvos-probe-${{ steps.version.outputs.build_name }}.ipa
