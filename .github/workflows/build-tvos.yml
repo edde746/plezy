@@ -61,14 +61,31 @@ jobs:
           mkdir -p tvos-engine/out/tvos_debug_sim_unopt_arm64
           mkdir -p tvos-engine/out/tvos_debug_unopt
 
-      - name: Setup gen_snapshot
+
+      - name: Setup host_release tools
         run: |
           flutter precache --ios
-          mkdir -p tvos-engine/out/host_release
-          GEN_SNAPSHOT=$(find $FLUTTER_ROOT -name "gen_snapshot" | head -1)
+          FLUTTER_CACHE=$FLUTTER_ROOT/bin/cache
+          mkdir -p tvos-engine/out/host_release/dart-sdk/bin/snapshots
+          mkdir -p tvos-engine/out/host_release/dart-sdk/bin
+          # Copy dartaotruntime
+          cp "$FLUTTER_CACHE/dart-sdk/bin/dartaotruntime" tvos-engine/out/host_release/dart-sdk/bin/dartaotruntime
+          chmod +x tvos-engine/out/host_release/dart-sdk/bin/dartaotruntime
+          # Copy dart-sdk version file
+          cp "$FLUTTER_CACHE/dart-sdk/version" tvos-engine/out/host_release/dart-sdk/version
+          # Copy frontend_server snapshot
+          cp "$FLUTTER_CACHE/dart-sdk/bin/snapshots/frontend_server_aot.dart.snapshot" \
+             tvos-engine/out/host_release/dart-sdk/bin/snapshots/frontend_server_aot.dart.snapshot
+          # Copy flutter_patched_sdk
+          cp -R "$FLUTTER_CACHE/artifacts/engine/common/flutter_patched_sdk" \
+             tvos-engine/out/host_release/flutter_patched_sdk
+          # Copy gen_snapshot_arm64 into tvos_release
+          GEN_SNAPSHOT=$(find $FLUTTER_ROOT -name "gen_snapshot" | grep -i "ios" | head -1)
           echo "Found gen_snapshot at: $GEN_SNAPSHOT"
-          cp "$GEN_SNAPSHOT" tvos-engine/out/host_release/gen_snapshot
-          chmod +x tvos-engine/out/host_release/gen_snapshot
+          cp "$GEN_SNAPSHOT" tvos-engine/out/tvos_release/gen_snapshot_arm64
+          chmod +x tvos-engine/out/tvos_release/gen_snapshot_arm64
+
+
 
       - name: Install Flutter dependencies
         run: flutter pub get --enforce-lockfile --no-example
