@@ -18,6 +18,16 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Read version from pubspec.yaml
+        id: version
+        run: |
+          VERSION=$(grep '^version:' pubspec.yaml | head -1 | sed 's/version: //' | tr -d ' ')
+          BUILD_NAME="${VERSION%%+*}"
+          BUILD_NUMBER="${VERSION#*+}"
+          echo "build_name=$BUILD_NAME" >> $GITHUB_OUTPUT
+          echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
+          echo "Plezy version: $BUILD_NAME ($BUILD_NUMBER)"
+
       - name: Setup Flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2
         with:
@@ -26,6 +36,7 @@ jobs:
           cache: true
           cache-key: "${{ env.TRUSTED_BUILD_CACHE_VERSION }}-flutter-:os:-:channel:-:version:-:arch:-:hash:"
           pub-cache: false
+          cache-save-always: true
 
       - name: Cache Pub dependencies
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9
@@ -89,8 +100,8 @@ jobs:
           COCOAPODS_PARALLEL_CODE_SIGN=true
           FLUTTER_TARGET=lib/main.dart
           FLUTTER_BUILD_DIR=build
-          FLUTTER_BUILD_NAME=1.0.0
-          FLUTTER_BUILD_NUMBER=1
+          FLUTTER_BUILD_NAME=${{ steps.version.outputs.build_name }}
+          FLUTTER_BUILD_NUMBER=${{ steps.version.outputs.build_number }}
           DART_OBFUSCATION=false
           TRACK_WIDGET_CREATION=false
           TREE_SHAKE_ICONS=false
@@ -117,10 +128,10 @@ jobs:
         run: |
           mkdir -p tvos/Payload
           cp -r tvos/build/Runner.xcarchive/Products/Applications/Runner.app tvos/Payload/
-          cd tvos && zip -r plezy-tvos.ipa Payload
+          cd tvos && zip -r plezy-tvos-${{ steps.version.outputs.build_name }}.ipa Payload
 
       - name: Upload IPA
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a
         with:
-          name: tvos-ipa
-          path: tvos/plezy-tvos.ipa
+          name: tvos-ipa-${{ steps.version.outputs.build_name }}
+          path: tvos/plezy-tvos-${{ steps.version.outputs.build_name }}.ipa
