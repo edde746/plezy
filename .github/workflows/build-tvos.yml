@@ -124,15 +124,41 @@ jobs:
             archive \
             CODE_SIGNING_ALLOWED=NO
 
-      - name: Search build log for Flutter errors
-        if: always()
+      - name: Inspect archive structure
         run: |
-          echo "===== Flutter/Dart errors ====="
-          grep -iE "error|failed|exception|skipping|snapshot|app.framework" \
-            tvos/build/Runner.xcarchive/../../*.log 2>/dev/null || true
+          APP="tvos/build/Runner.xcarchive/Products/Applications/Runner.app"
+          echo "===== Top-level Runner.app ====="
+          ls -la "$APP"
           
-          # Check if flutter build produced anything
-          find tvos/build -name "*.log" -exec sh -c 'echo "=== {} ==="; cat "{}"' \;
+          echo "===== Frameworks ====="
+          ls -la "$APP/Frameworks/" 2>/dev/null
+          
+          echo "===== App.framework contents ====="
+          ls -laR "$APP/Frameworks/App.framework/" 2>/dev/null
+          
+          echo "===== Flutter.framework contents ====="
+          ls -laR "$APP/Frameworks/Flutter.framework/" 2>/dev/null
+          
+          echo "===== Binary architectures ====="
+          file "$APP/Runner" || true
+          file "$APP/Frameworks/App.framework/App" || true
+          file "$APP/Frameworks/Flutter.framework/Flutter" || true
+          
+          echo "===== Binary sizes ====="
+          du -h "$APP/Runner" 2>/dev/null
+          du -h "$APP/Frameworks/App.framework/App" 2>/dev/null
+          du -h "$APP/Frameworks/Flutter.framework/Flutter" 2>/dev/null
+          
+          echo "===== Info.plist key values ====="
+          PLIST="$APP/Info.plist"
+          for key in CFBundleIdentifier CFBundleExecutable CFBundleSupportedPlatforms UIDeviceFamily MinimumOSVersion CFBundleShortVersionString CFBundleVersion; do
+            echo "$key: $(/usr/libexec/PlistBuddy -c "Print :$key" "$PLIST" 2>/dev/null || echo '(missing)')"
+          done
+          
+          echo "===== Existing signatures ====="
+          codesign -dv --verbose=4 "$APP" 2>&1 | head -20 || true
+          codesign -dv --verbose=4 "$APP/Frameworks/App.framework/App" 2>&1 | head -10 || true
+          codesign -dv --verbose=4 "$APP/Frameworks/Flutter.framework/Flutter" 2>&1 | head -10 || true
 
 
       - name: Create IPA
@@ -146,34 +172,3 @@ jobs:
         with:
           name: tvos-ipa-${{ steps.version.outputs.build_name }}
           path: tvos/plezy-tvos-${{ steps.version.outputs.build_name }}.ipa
-
-      - name: Inspect App.framework (post-build)
-        run: |
-          echo "===== Runner.app contents ====="
-          ls -la tvos/build/Runner.xcarchive/Products/Applications/Runner.app/
-          
-          echo "===== Frameworks ====="
-          ls -la tvos/build/Runner.xcarchive/Products/Applications/Runner.app/Frameworks/
-          
-          echo "===== App.framework ====="
-          ls -laR tvos/build/Runner.xcarchive/Products/Applications/Runner.app/Frameworks/App.framework/ 2>/dev/null || \
-            echo "!!! App.framework MISSING !!!"
-          
-          echo "===== flutter_assets ====="
-          ls -la tvos/build/Runner.xcarchive/Products/Applications/Runner.app/Frameworks/App.framework/flutter_assets/ 2>/dev/null || \
-            ls -la tvos/build/Runner.xcarchive/Products/Applications/Runner.app/flutter_assets/ 2>/dev/null || \
-            echo "!!! flutter_assets MISSING !!!"
-          
-          echo "===== Binary architectures ====="
-          file tvos/build/Runner.xcarchive/Products/Applications/Runner.app/Runner
-          find tvos/build/Runner.xcarchive/Products/Applications/Runner.app/Frameworks/ \
-            -name "*.framework" -exec sh -c 'echo "--- {} ---"; file "{}"/*' \;
-
-      - name: Check AOT snapshot content
-        run: |
-          APP=$(tvos/build/Runner.xcarchive/Products/Applications/Runner.app/Frameworks/App.framework/App)
-          if [ -f "$APP" ]; then
-            echo "App binary size: $(stat -f%z "$APP") bytes"
-            nm "$APP" | head -20 || true
-          fi
-
