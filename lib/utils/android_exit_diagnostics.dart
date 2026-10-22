@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'app_logger.dart';
@@ -34,7 +35,31 @@ enum AndroidUiState {
 
 /// Best-effort bridge for the newest Android 11+ historical process exit.
 abstract final class AndroidExitDiagnostics {
-  static const _allowedReasons = {'crash', 'native_crash', 'anr', 'low_memory', 'user_requested', 'other'};
+  static const _allowedReasons = {
+    'exit_self',
+    'signaled',
+    'low_memory',
+    'crash',
+    'native_crash',
+    'anr',
+    'initialization_failure',
+    'permission_change',
+    'excessive_resource_usage',
+    'user_requested',
+    'dependency_died',
+    'freezer',
+    'package_state_change',
+    'package_updated',
+    'other',
+  };
+
+  /// Exits that are failures wherever the process was. Every other reason is
+  /// reported only when the viewer could see or hear the app die.
+  static const _failureReasons = {'crash', 'native_crash', 'anr', 'initialization_failure', 'excessive_resource_usage'};
+
+  /// Android's `IMPORTANCE_PERCEPTIBLE` (picture-in-picture, background
+  /// playback). Lower values are more important; foreground is 100.
+  static const _importancePerceptible = 230;
   static const _allowedAbis = {'arm64-v8a', 'armeabi-v7a', 'x86_64', 'x86', 'unknown'};
   static const _allowedCodecContexts = {
     'audio:aac',
@@ -64,6 +89,8 @@ abstract final class AndroidExitDiagnostics {
     'main_screen',
   };
   static final _decoderNamePattern = RegExp(r'^[A-Za-z0-9_.:-]{1,96}$');
+  static final _descriptionPattern = RegExp(r'^[A-Za-z0-9 _.:,()\[\]#<>/=-]{1,120}$');
+  static const _maxMemoryKb = 64 * 1024 * 1024;
   static final _startupWatch = Stopwatch()..start();
   static final List<({String phase, int elapsedMs})> _pendingBreadcrumbs = [];
   static var _telemetryReady = false;
@@ -146,7 +173,8 @@ abstract final class AndroidExitDiagnostics {
     }
   }
 
-  /// Records a native-sanitized previous-exit report in local logs and Sentry.
+  /// Records a native-sanitized previous-exit report in local logs, and in
+  /// Sentry when [sentryMessageFor] selects it.
   ///
   /// Native persistence makes this one-shot across launches. Every failure is
   /// intentionally contained because historical diagnostics must not affect
@@ -165,6 +193,8 @@ abstract final class AndroidExitDiagnostics {
         'deviceModel=${report['deviceModel']} apiLevel=${report['apiLevel']} '
         'abi=${report['abi']} lowRam=${report['lowRam']} '
         'startupPhase=${report['startupPhase'] ?? 'omitted'} '
+        'description=${report['description'] ?? 'omitted'} '
+        'pssKb=${report['pssKb'] ?? 'omitted'} rssKb=${report['rssKb'] ?? 'omitted'} '
         'codecContext=${report['codecContext'] ?? 'omitted'} '
         'channels=${report['channelCount'] ?? 'omitted'} sampleRate=${report['sampleRate'] ?? 'omitted'} '
         'decoder=${report['selectedDecoder'] ?? 'omitted'} '
@@ -173,14 +203,31 @@ abstract final class AndroidExitDiagnostics {
         'normalization=${report['normalizationEnabled'] ?? 'omitted'} '
         'uiState=${report['uiState'] ?? 'omitted'}',
       );
+      final message = sentryMessageFor(report);
+      if (message == null) return;
       await Sentry.captureMessage(
-        'Previous Android application exit',
+        message,
         level: SentryLevel.warning,
         withScope: (scope) => scope.setContexts('android_previous_exit', report),
       );
     } catch (_) {
       // Historical diagnostics are best-effort and must never escape startup.
     }
+  }
+
+  /// The Sentry message for an exit worth an event, or null for a routine one.
+  ///
+  /// Android kills cached processes all the time - for memory, for idling, or
+  /// because the user cleared recents - so a background exit is only news when
+  /// it is a failure. The reason is part of the message so that each reason
+  /// groups into its own issue.
+  @visibleForTesting
+  static String? sentryMessageFor(Map<String, Object?> report) {
+    final reason = report['reason'];
+    final importance = report['importance'];
+    if (reason is! String || importance is! int) return null;
+    if (!_failureReasons.contains(reason) && importance > _importancePerceptible) return null;
+    return 'Previous Android application exit: $reason';
   }
 
   static Map<String, Object?>? _validate(Map<String, Object?>? raw) {
@@ -194,6 +241,9 @@ abstract final class AndroidExitDiagnostics {
     final abi = raw['abi'];
     final lowRam = raw['lowRam'];
     final startupPhase = raw['startupPhase'];
+    final description = raw['description'];
+    final pssKb = raw['pssKb'];
+    final rssKb = raw['rssKb'];
     final codecContext = raw['codecContext'];
     final channelCount = raw['channelCount'];
     final sampleRate = raw['sampleRate'];
@@ -216,6 +266,9 @@ abstract final class AndroidExitDiagnostics {
     if (startupPhase != null && (startupPhase is! String || !_allowedStartupPhases.contains(startupPhase))) {
       return null;
     }
+    if (description != null && (description is! String || !_descriptionPattern.hasMatch(description))) return null;
+    if (pssKb != null && !_isMemoryKb(pssKb)) return null;
+    if (rssKb != null && !_isMemoryKb(rssKb)) return null;
     if (codecContext != null && (codecContext is! String || !_allowedCodecContexts.contains(codecContext))) return null;
     if (channelCount != null && (channelCount is! int || channelCount < 1 || channelCount > 32)) return null;
     if (sampleRate != null && (sampleRate is! int || sampleRate < 1 || sampleRate > 768000)) return null;
@@ -236,6 +289,9 @@ abstract final class AndroidExitDiagnostics {
       'abi': abi,
       'lowRam': lowRam,
       if (startupPhase case final String safeStartupPhase) 'startupPhase': safeStartupPhase,
+      if (description case final String safeDescription) 'description': safeDescription,
+      if (pssKb case final int safePssKb) 'pssKb': safePssKb,
+      if (rssKb case final int safeRssKb) 'rssKb': safeRssKb,
       if (codecContext case final String safeCodecContext) 'codecContext': safeCodecContext,
       if (channelCount case final int safeChannelCount) 'channelCount': safeChannelCount,
       if (sampleRate case final int safeSampleRate) 'sampleRate': safeSampleRate,
@@ -247,6 +303,8 @@ abstract final class AndroidExitDiagnostics {
       if (uiState case final String safeUiState) 'uiState': safeUiState,
     };
   }
+
+  static bool _isMemoryKb(Object value) => value is int && value >= 1 && value <= _maxMemoryKb;
 
   static bool _isControlCharacter(int rune) => rune < 0x20 || rune == 0x7f;
 }
