@@ -1,0 +1,55 @@
+name: Sync Fork Excluding Workflows and keeping caches
+
+on:
+  schedule:
+    - cron: '0 0 * * 0'
+  workflow_dispatch:
+
+jobs:
+  sync:
+    runs-on: macos-latest  # Better for Flutter/iOS/tvOS caching
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+
+      - name: Restore Flutter & iOS caches
+        uses: actions/cache@v3
+        with:
+          path: |
+            ${{ env.FLUTTER_HOME }}/bin
+            ${{ env.FLUTTER_HOME }}/.dart_tool
+            ${{ env.FLUTTER_HOME }}/packages
+            ${{ env.FLUTTER_HOME }}/plugins
+            ~/.flutter
+            .dart_tool/
+            Pods/
+            ~/Library/Developer/Xcode/DerivedData
+            ~/Library/Caches/CocoaPods
+            build/ios/Release-tvos/
+            build/ios/Release-iphoneos/
+            .gradle/
+            build/android/
+            node_modules/
+            
+          key: ${{ runner.os }}-flutter-tvos-${{ github.sha }}
+          restore-keys: |
+            ${{ runner.os }}-flutter-tvos-
+
+      - name: Sync with upstream
+        run: |
+          git config user.email "action@github.com"
+          git config user.name "GitHub Action"
+          
+          git remote add upstream https://github.com/ORIGINAL_OWNER/REPO.git
+          git fetch upstream main
+          
+          git stash push .github/workflows
+          git merge upstream/main -m "Sync from upstream"
+          git stash pop || true
+
+      - name: Push changes
+        run: git push origin main
