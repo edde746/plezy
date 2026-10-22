@@ -75,10 +75,11 @@ jobs:
              tvos-engine/out/host_release/dart-sdk/bin/snapshots/frontend_server_aot.dart.snapshot
           cp -R "$FLUTTER_CACHE/artifacts/engine/common/flutter_patched_sdk" \
              tvos-engine/out/host_release/flutter_patched_sdk
-          # gen_snapshot is already in the engine zip at clang_arm64/gen_snapshot
-          cp tvos-engine/out/tvos_release/clang_arm64/gen_snapshot \
+          # Use iOS release gen_snapshot from Flutter cache (macOS hosted, targets arm64)
+          cp "$FLUTTER_CACHE/artifacts/engine/ios-release/gen_snapshot_arm64" \
              tvos-engine/out/tvos_release/gen_snapshot_arm64
           chmod +x tvos-engine/out/tvos_release/gen_snapshot_arm64
+
 
 
 
