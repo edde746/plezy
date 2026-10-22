@@ -1446,7 +1446,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                         ),
                       ),
                     ),
-                  // Skip intro/credits button (auto-dismisses after 7s, then only shows with controls)
+                  // Skip intro/credits button (auto-dismisses after 12s, then only shows with controls)
                   if (_isSkipMarkerButtonVisible)
                     AnimatedPositioned(
                       duration: const Duration(milliseconds: 200),

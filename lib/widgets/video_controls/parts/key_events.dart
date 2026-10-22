@@ -108,7 +108,7 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
     //
     // The claim is latched for the whole press rather than re-derived per
     // event. handleBackKeyAction consumes the key-down and acts on the key-up,
-    // and the button's own 7s dismiss timer — armed for every prompt while
+    // and the button's own 12s dismiss timer — armed for every prompt while
     // auto-skip is off, which is the default — can fire in between. Asking the
     // full question again on the key-up would hand that press back to the
     // screen and exit the player, which is the bug this stage exists to
