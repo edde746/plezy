@@ -23,7 +23,7 @@ services:
   bugs:
     # Update the source-revision tag, index digest, and platforms together using CONTRIBUTING.md.
     # Platforms: linux/amd64, linux/arm64
-    image: ghcr.io/edde746/bugs:sha-35ddcd6@sha256:f8ab0ea3bfd08961f2b7b6a2b6d8289e33ed8051875f264e9e56d371e60a593a
+    image: ghcr.io/edde746/bugs:sha-1ed1ad6@sha256:47156e6c0d48eb669788f07098a161857e5cad74d1ff98f96b107bc2ffc823cb
     restart: unless-stopped
     # Debug-file conversion peaked at ~500 MiB for Flutter's 265 MB Windows engine PDB
     # and its 505 MB macOS engine dSYM; the ~370 MB libmpv-2.pdb needs more.
