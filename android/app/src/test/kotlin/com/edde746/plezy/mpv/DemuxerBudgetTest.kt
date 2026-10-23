@@ -45,7 +45,7 @@ class DemuxerBudgetTest {
     // first pressure level must not touch it.
     for (heapClass in listOf(256, 512, 1024)) {
       val steady = DemuxerBudget.forHeapClassMB(heapClass)!!
-      val low = DemuxerBudget.forTrimLevel(heapClass, ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW)!!
+      val low = DemuxerBudget.forTrimLevel(steady, ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW)!!
 
       assertEquals("heap class $heapClass", steady.aheadBytes, low.aheadBytes)
       assertEquals("heap class $heapClass", 0L, low.backBytes)
@@ -57,7 +57,7 @@ class DemuxerBudgetTest {
     val tightest = DemuxerBudget.forHeapClassMB(256)!!
     for (heapClass in listOf(256, 512, 1024)) {
       val steady = DemuxerBudget.forHeapClassMB(heapClass)!!
-      val critical = DemuxerBudget.forTrimLevel(heapClass, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)!!
+      val critical = DemuxerBudget.forTrimLevel(steady, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)!!
 
       assertTrue(
         "heap class $heapClass",
@@ -71,21 +71,22 @@ class DemuxerBudgetTest {
   fun `critical pressure keeps six seconds of the stream byte rate`() {
     // A byte count decides nothing on its own: 32 MiB is 3.4 s of #2314's
     // 80 Mbps stretch and 13 s of a 20 Mbps episode.
-    val remux = DemuxerBudget.forTrimLevel(1024, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL, 10_000_000L)!!
+    val full = DemuxerBudget.forHeapClassMB(1024)!!
+    val remux = DemuxerBudget.forTrimLevel(full, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL, 10_000_000L)!!
     assertEquals(60_000_000L, remux.aheadBytes)
     assertEquals(0L, remux.backBytes)
 
     // Six seconds of a 16 Mbps episode is under the byte floor, which stands.
-    val episode = DemuxerBudget.forTrimLevel(1024, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL, 2_000_000L)!!
+    val episode = DemuxerBudget.forTrimLevel(full, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL, 2_000_000L)!!
     assertEquals(32 * mib, episode.aheadBytes)
   }
 
   @Test
-  fun `critical pressure never holds more read-ahead than the tier granted`() {
+  fun `critical pressure never holds more read-ahead than the session was granted`() {
     // The answer is what to hold, not what to ask for - there is nothing to
-    // reclaim above the tier - and the back cache goes either way.
+    // reclaim above the steady budget - and the back cache goes either way.
     val steady = DemuxerBudget.forHeapClassMB(512)!!
-    val critical = DemuxerBudget.forTrimLevel(512, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL, 100_000_000L)!!
+    val critical = DemuxerBudget.forTrimLevel(steady, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL, 100_000_000L)!!
 
     assertEquals(steady.aheadBytes, critical.aheadBytes)
     assertEquals(0L, critical.backBytes)
@@ -132,14 +133,40 @@ class DemuxerBudgetTest {
     // The constants are not ordered by severity - RUNNING_CRITICAL is 15 and
     // UI_HIDDEN is 20 - so a numeric comparison would read "your UI is
     // hidden" as harsher than "the device is critical".
-    assertNull(DemuxerBudget.forTrimLevel(512, ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN))
-    assertNull(DemuxerBudget.forTrimLevel(512, ComponentCallbacks2.TRIM_MEMORY_RUNNING_MODERATE))
+    val mid = DemuxerBudget.forHeapClassMB(512)!!
+    assertNull(DemuxerBudget.forTrimLevel(mid, ComponentCallbacks2.TRIM_MEMORY_UI_HIDDEN))
+    assertNull(DemuxerBudget.forTrimLevel(mid, ComponentCallbacks2.TRIM_MEMORY_RUNNING_MODERATE))
   }
 
   @Test
-  fun `an unknown heap class has nothing to shrink under pressure`() {
-    assertNull(DemuxerBudget.forTrimLevel(0, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL))
-    assertNull(DemuxerBudget.forTrimLevel(0, ComponentCallbacks2.TRIM_MEMORY_COMPLETE))
+  fun `a buffer size below the tier is never raised to it`() {
+    // Narrowing from the tier instead wrote its 100 MiB over a 16 MiB setting
+    // on the first trim, and the restore, which only widens, kept it there.
+    val steady = DemuxerBudget.forHeapClassMB(1024)!!.copy(aheadBytes = 16 * mib)
+    for (level in listOf(ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW, ComponentCallbacks2.TRIM_MEMORY_BACKGROUND, ComponentCallbacks2.TRIM_MEMORY_MODERATE)) {
+      assertEquals("level $level", DemuxerBudget(16 * mib, 0), DemuxerBudget.forTrimLevel(steady, level, streamByteRate = 10_000_000L))
+    }
+    // Six seconds at 10 MB/s is more than the setting; the setting stands.
+    val critical = DemuxerBudget.forTrimLevel(steady, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL, streamByteRate = 10_000_000L)!!
+    assertEquals(DemuxerBudget(16 * mib, 0), critical)
+    assertEquals(steady, generateSequence(steady.narrowedTo(critical)) { it.widenedToward(steady) }.last())
+  }
+
+  @Test
+  fun `a buffer size above the tier keeps its read-ahead until the device is critical`() {
+    // Narrowing from the tier instead cut 1000 MiB to 100 on a level that
+    // only asks for the back cache, and the 900 MiB step back needed 3.6 GB
+    // free above the killer threshold.
+    val steady = DemuxerBudget.forHeapClassMB(1024)!!.copy(aheadBytes = 1000 * mib)
+    val low = steady.narrowedTo(DemuxerBudget.forTrimLevel(steady, ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW)!!)
+    assertEquals(DemuxerBudget(1000 * mib, 0), low)
+    // The way back is the back cache alone, gated on its own size.
+    assertEquals(steady, low.widenedToward(steady))
+    assertTrue(low.canWiden(steady, availMemBytes = 256 * mib + 4 * 48 * mib, thresholdBytes = 256 * mib, lowMemory = false))
+
+    // Critical bounds read-ahead in seconds of the stream, as for the tier.
+    val critical = DemuxerBudget.forTrimLevel(steady, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL, streamByteRate = 10_000_000L)!!
+    assertEquals(DemuxerBudget(60_000_000L, 0), critical)
   }
 
   @Test
@@ -148,8 +175,8 @@ class DemuxerBudgetTest {
     // killed; a trim sequence is not ordered, so the narrowing has to be the
     // rule rather than a property of the order levels arrive in.
     val steady = DemuxerBudget.forHeapClassMB(1024)!!
-    val critical = DemuxerBudget.forTrimLevel(1024, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)!!
-    val low = DemuxerBudget.forTrimLevel(1024, ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW)!!
+    val critical = DemuxerBudget.forTrimLevel(steady, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)!!
+    val low = DemuxerBudget.forTrimLevel(steady, ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW)!!
 
     // The milder level genuinely asks for more read-ahead than the harsher
     // one applied, so this sequence is what a plain assignment would widen.
@@ -162,7 +189,7 @@ class DemuxerBudgetTest {
     // One rung per poll is the ramp: each step is a fresh headroom decision,
     // so a device that only half recovered stops half way.
     val steady = DemuxerBudget.forHeapClassMB(1024)!!
-    val critical = steady.narrowedTo(DemuxerBudget.forTrimLevel(1024, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)!!)
+    val critical = steady.narrowedTo(DemuxerBudget.forTrimLevel(steady, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)!!)
     assertEquals(DemuxerBudget(32 * mib, 0), critical)
 
     val steps = generateSequence(critical) { it.widenedToward(steady) }.toList()
@@ -208,7 +235,7 @@ class DemuxerBudgetTest {
     for (heapClass in listOf(256, 512, 1024)) {
       val steady = DemuxerBudget.forHeapClassMB(heapClass)!!
       for (level in listOf(ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW, ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL)) {
-        val narrowed = steady.narrowedTo(DemuxerBudget.forTrimLevel(heapClass, level, streamByteRate = 10_000_000L)!!)
+        val narrowed = steady.narrowedTo(DemuxerBudget.forTrimLevel(steady, level, streamByteRate = 10_000_000L)!!)
         val restored = generateSequence(narrowed) { it.widenedToward(steady) }.last()
 
         assertEquals("heap class $heapClass, level $level", steady, restored)

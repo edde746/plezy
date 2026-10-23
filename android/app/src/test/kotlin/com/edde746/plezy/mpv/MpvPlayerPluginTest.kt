@@ -1815,8 +1815,8 @@ class MpvPlayerPluginTest {
     // Android has no "pressure cleared" callback, so the way back is the
     // poll's own decision against the killer threshold: nothing inside the
     // quiet window, then one rung per poll, and nothing once steady is back.
-    // Robolectric's 16 MB heap class floors RUNNING_CRITICAL at 32/0 whatever
-    // the session holds, so the full tier stands in for a ladder to climb.
+    // With no stream rate to measure, RUNNING_CRITICAL floors read-ahead at
+    // 32 MiB, so the full tier stands in for a ladder to climb.
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
     val writes = ConcurrentLinkedQueue<Pair<String, String>>()
     val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
@@ -1932,6 +1932,37 @@ class MpvPlayerPluginTest {
     assertEquals("kept writing past the snapshot", 12, fencedWrites(core, writes).size)
   }
 
+  @Test
+  fun theBufferSizeWriteIsWhatTrimsNarrowFromAndRestoreTo() {
+    // Dart writes the Buffer Size setting as plain bytes after init, over the
+    // tier's pre-init option. Narrowing from the tier instead raised 16 MiB to
+    // 100 on the first trim and cut 1000 MiB to 100 on a level that only asks
+    // for the back cache; neither came back.
+    for (setting in listOf(16 * mib, 1000 * mib)) {
+      val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+      val writes = ConcurrentLinkedQueue<Pair<String, String>>()
+      val core = MpvPlayerCore(activity, audioOnly = false, propertyWriter = { name, value ->
+        writes.add(name to value)
+      })
+      setBoolean(core, "isInitialized", true)
+      setAppliedDemuxerBudget(core, DemuxerBudget.forHeapClassMB(1024)!!)
+      core.propertyReaderOverride = { _ -> null }
+      setMemoryInfo(activity, availMem = 2048 * mib, threshold = 256 * mib, lowMemory = false)
+
+      var written: Result<Unit>? = null
+      core.setProperty("demuxer-max-bytes", setting.toString()) { written = it }
+      awaitCondition { written != null }
+
+      core.onTrimMemory(ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW)
+      awaitCondition { writes.size == 3 }
+      assertEquals("$setting", bounds(setting, 0), writes.toList().takeLast(2))
+
+      shadowOf(Looper.getMainLooper()).idleFor(Duration.ofMillis(DemuxerBudget.RESTORE_QUIET_MS))
+      awaitCondition { writes.size == 5 }
+      assertEquals("$setting", bounds(setting, 48 * mib), writes.toList().takeLast(2))
+    }
+  }
+
   private val mib = 1024L * 1024L
 
   private fun bounds(ahead: Long, back: Long): List<Pair<String, String>> = listOf("demuxer-max-bytes" to ahead.toString(), "demuxer-max-back-bytes" to back.toString())
@@ -1951,7 +1982,7 @@ class MpvPlayerPluginTest {
   @Test
   fun criticalMemoryPressureSizesReadAheadFromTheStreamByteRate() {
     // #2314 was diagnosed by reconstructing the budget from mkv seek offsets.
-    // Robolectric reports the tight tier, whose forward bound already is the
+    // The session holds the tight tier, whose forward bound already is the
     // floor, so what this pins is the measured rate reaching the decision and
     // the log; DemuxerBudgetTest owns the floor arithmetic.
     val activity = Robolectric.buildActivity(Activity::class.java).setup().get()

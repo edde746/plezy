@@ -775,6 +775,13 @@ abstract class MediaServerClient {
   /// one and returns a fixed 0.9.
   double get watchedThreshold;
 
+  /// Seconds the server transcodes past what the client has fetched before it
+  /// throttles, or null when it doesn't throttle. Plex reads
+  /// `TranscoderThrottleBuffer`, which only the owner can read, so others get
+  /// its 60 s default; Jellyfin reads its encoding options (default: off).
+  /// Emby returns null.
+  Future<int?> transcodeThrottleSeconds();
+
   /// Whether a playback-stopped report past [watchedThreshold] already marks
   /// the item played server-side. When true, in-player auto-scrobble must NOT
   /// also call [markWatched]: the server marks it played from the stop report,

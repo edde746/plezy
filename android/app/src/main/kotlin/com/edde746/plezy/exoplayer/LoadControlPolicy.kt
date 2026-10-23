@@ -42,6 +42,12 @@ internal object LoadControlPolicy {
   const val BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS = 5_000
 
   /**
+   * Time bound while a user Buffer Size is set. An hour, so the byte target is what binds on
+   * anything above ~9 Mbps even at the 4 GiB maximum.
+   */
+  const val SIZE_GOVERNED_BUFFER_MS = 3_600_000
+
+  /**
    * Fraction of a memory budget the allocator may claim. Matches the threshold the Buffer
    * Size setting already warns at (`value > heapMB / 4`).
    */
@@ -109,17 +115,17 @@ internal object LoadControlPolicy {
    *
    * @param availableMB `ActivityManager.MemoryInfo.availMem`. Non-positive when unknown, which
    *   is treated as the low-memory tier.
+   * @param sizeGoverned The user set a Buffer Size, which replaces [tier]: both bounds become
+   *   [SIZE_GOVERNED_BUFFER_MS], so the byte target is what stops the loader, and equal bounds
+   *   keep it topping up to that target instead of draining back to a lower min.
    */
-  fun bufferDurations(tier: BufferTier, availableMB: Int): BufferDurations {
+  fun bufferDurations(tier: BufferTier, availableMB: Int, sizeGoverned: Boolean = false): BufferDurations {
     val playStartFloor = maxOf(BUFFER_FOR_PLAYBACK_MS, BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS)
-    val (rawMin, rawMax) = if (tier == BufferTier.AUTO) {
-      if (availableMB <= LOW_MEMORY_MB) {
-        AUTO_MIN_BUFFER_LOW_MEMORY_MS to AUTO_MAX_BUFFER_LOW_MEMORY_MS
-      } else {
-        AUTO_MIN_BUFFER_MS to AUTO_MAX_BUFFER_MS
-      }
-    } else {
-      tier.minBufferMs to tier.maxBufferMs
+    val (rawMin, rawMax) = when {
+      sizeGoverned -> SIZE_GOVERNED_BUFFER_MS to SIZE_GOVERNED_BUFFER_MS
+      tier != BufferTier.AUTO -> tier.minBufferMs to tier.maxBufferMs
+      availableMB <= LOW_MEMORY_MB -> AUTO_MIN_BUFFER_LOW_MEMORY_MS to AUTO_MAX_BUFFER_LOW_MEMORY_MS
+      else -> AUTO_MIN_BUFFER_MS to AUTO_MAX_BUFFER_MS
     }
     val minBufferMs = rawMin.coerceAtLeast(playStartFloor)
     return BufferDurations(minBufferMs, rawMax.coerceAtLeast(minBufferMs))
@@ -138,6 +144,16 @@ internal object LoadControlPolicy {
     if (largeHeapMB > 0) budget = minOf(budget, largeHeapMB.toLong() / BUDGET_DIVISOR * MIB)
     if (availableMB > 0) budget = minOf(budget, availableMB.toLong() / BUDGET_DIVISOR * MIB)
     return maxOf(budget, MIN_TARGET_BYTES.toLong()).toInt()
+  }
+
+  /**
+   * The Buffer Size setting as a byte budget. Unlike Auto it may exceed media3's default, but
+   * never half of [largeHeapMB]: `DefaultAllocator` hands out `byte[]` from the Java heap, so a
+   * bigger pick would be an OOM rather than a longer buffer. Never below [MIN_TARGET_BYTES].
+   */
+  fun customTargetBufferBytes(requestedMB: Int, largeHeapMB: Int): Int {
+    val mb = if (largeHeapMB > 0) minOf(requestedMB, largeHeapMB / 2) else requestedMB
+    return (mb.toLong() * MIB).coerceIn(MIN_TARGET_BYTES.toLong(), Int.MAX_VALUE.toLong()).toInt()
   }
 
   /** Seconds of media a budget covers at [bitrateBps], for logs. Null when unknown. */

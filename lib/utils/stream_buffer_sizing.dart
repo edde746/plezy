@@ -1,9 +1,18 @@
+import 'dart:ffi' show IntPtr, sizeOf;
 import 'dart:math';
 
 /// mpv's built-in `stream-buffer-size` default (128 KiB). Written back for
 /// opens that don't qualify for an enlarged ring so a reused player instance
 /// never carries one item's tuning into the next.
 const mpvDefaultStreamBufferBytes = 128 * 1024;
+
+/// mpv's built-in `cache-secs` default (1000 hours), written back the same way
+/// after a transcode was held to its server's throttle.
+const mpvDefaultCacheSecs = 3600000;
+
+/// [bytes] within mpv's `demuxer-max-bytes` ceiling (`M_MAX_MEM_BYTES`,
+/// `SIZE_MAX / 2`): just under 2 GiB on a 32-bit build, which refuses more.
+int clampToMpvDemuxerMaxBytes(int bytes) => sizeOf<IntPtr>() == 4 ? min(bytes, 0x7fffffff) : bytes;
 
 /// QuickTime/MP4 muxer family. Apple capture muxers (iPhone recordings and
 /// friends) can store audio packets seconds away from coeval video packets —

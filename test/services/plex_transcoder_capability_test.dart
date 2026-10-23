@@ -74,6 +74,45 @@ void main() {
       expect(result.transcoderVideo, isFalse);
     });
   });
+
+  group('Plex transcode throttle', () {
+    http.Response prefs(Object? throttle) => http.Response(
+      jsonEncode({
+        'MediaContainer': {
+          'Setting': [
+            {'id': 'LibraryVideoPlayedThreshold', 'value': 90},
+            if (throttle != null) {'id': 'TranscoderThrottleBuffer', 'value': throttle},
+          ],
+        },
+      }),
+      200,
+      headers: {'content-type': 'application/json'},
+    );
+
+    for (final c in [
+      (name: 'reads an int pref', response: prefs(300), expected: 300),
+      (name: 'reads a string pref', response: prefs('300'), expected: 300),
+      (name: 'falls back to 60 when the pref is missing', response: prefs(null), expected: 60),
+      (name: 'falls back to 60 when the pref is 0', response: prefs(0), expected: 60),
+      (name: 'falls back to 60 when prefs are unreadable (non-owner)', response: http.Response('', 401), expected: 60),
+    ]) {
+      test(c.name, () async {
+        final paths = <String>[];
+        final client = testPlexClient(
+          serverId: ServerId('server-id'),
+          handler: (request) async {
+            paths.add(request.url.path);
+            return c.response;
+          },
+        );
+        addTearDown(client.close);
+
+        // No connect-time fetchServerPrefs: the lookup reads /:/prefs itself.
+        expect(await client.transcodeThrottleSeconds(), c.expected);
+        expect(paths, ['/:/prefs']);
+      });
+    }
+  });
 }
 
 PlexClient _makeClient(Map<String, dynamic> rootContainer) {
