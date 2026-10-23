@@ -115,6 +115,30 @@ class _LeavesClient implements MediaServerClient {
 }
 
 void main() {
+  group('resumeEpisodeForPlayback', () {
+    test('prioritizes progress over an earlier unwatched episode', () {
+      final unwatched = _episode('unwatched');
+      final progress = _episode('progress', viewOffsetMs: 30000, durationMs: 600000);
+      expect(resumeEpisodeForPlayback([unwatched, progress]), same(progress));
+    });
+
+    test('selects first unwatched in queue order', () {
+      final watched = _episode('watched', viewCount: 1);
+      final unwatched = _episode('unwatched');
+      expect(resumeEpisodeForPlayback([watched, unwatched, _episode('later')]), same(unwatched));
+    });
+
+    test('restarts first episode when all are watched', () {
+      final first = _episode('first', viewCount: 1);
+      expect(resumeEpisodeForPlayback([_clip('clip'), first, _episode('last', viewCount: 1)]), same(first));
+    });
+
+    test('returns null without episodes', () {
+      expect(resumeEpisodeForPlayback([]), isNull);
+      expect(resumeEpisodeForPlayback([_clip('clip')]), isNull);
+    });
+  });
+
   test('collectEpisodes drops Specials when includeSpecials is false', () async {
     final client = _LeavesClient([
       _episode('s1e1', parentIndex: 1, index: 1, originallyAvailableAt: '2022-10-05'),

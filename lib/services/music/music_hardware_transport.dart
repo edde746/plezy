@@ -1,7 +1,9 @@
 import 'package:flutter/foundation.dart' show TargetPlatform, VoidCallback, defaultTargetPlatform;
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart' show KeyEventResult;
 
 import '../../focus/transport_keys.dart';
+import '../../focus/focused_media_play_action.dart';
 
 /// Routes hardware media transport keys to the live music session while the
 /// app is in the foreground on Android (TV and mobile).
@@ -68,6 +70,7 @@ class MusicHardwareTransportHandler {
 
   bool _handleKeyEvent(KeyEvent event) {
     if (!_hasActiveSession()) return false;
+    if (handleFocusedMediaPlayKey(event) == KeyEventResult.handled) return true;
     final action = _actionFor(event.logicalKey);
     if (action == null) return false;
     // Act on the initial press only; consume the whole down/repeat/up burst so

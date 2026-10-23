@@ -375,6 +375,13 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
     return item is MediaItem ? context.readFreshWatchState(item) : item;
   }
 
+  Future<void> handlePlay() async {
+    if (contextMenuKey.currentState?.isContextMenuOpen == true) return;
+    final item = _effectiveItemForAction(context);
+    if (item is! MediaItem) return;
+    await playMediaItem(context, item, isOffline: widget.isOffline, onRefresh: widget.onRefresh);
+  }
+
   void _handleTap(BuildContext context, Object item) async {
     // Ignore taps while context menu is open to avoid double-activating
     if (contextMenuKey.currentState?.isContextMenuOpen == true) {

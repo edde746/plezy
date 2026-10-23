@@ -2,9 +2,11 @@ import 'package:flutter/material.dart';
 
 import '../focus/focus_theme.dart';
 import '../focus/focusable_wrapper.dart';
+import '../focus/focused_media_play_action.dart';
 import '../media/media_item.dart';
 import '../services/settings_service.dart';
 import '../utils/platform_detector.dart';
+import '../utils/media_navigation_helper.dart';
 import 'media_card.dart';
 
 /// A focusable wrapper for MediaCard that handles D-pad navigation.
@@ -121,11 +123,20 @@ class FocusableMediaCard extends StatefulWidget {
 
 class _FocusableMediaCardState extends State<FocusableMediaCard> {
   final GlobalKey<MediaCardState> _mediaCardKey = GlobalKey();
+  late final _playAction = FocusedMediaPlayAction(
+    canPlay: () => mounted && canPlayMediaItem(widget.item),
+    onPlay: () async => _mediaCardKey.currentState?.handlePlay(),
+  );
 
   @override
   Widget build(BuildContext context) {
+    return Actions(actions: {FocusedMediaPlayIntent: _playAction}, child: _buildCard(context));
+  }
+
+  Widget _buildCard(BuildContext context) {
     return FocusableWrapper(
       focusNode: widget.focusNode,
+      onKeyEvent: (_, event) => handleFocusedMediaPlayKey(event),
       // The MediaCard already exposes the complete static button semantics.
       // Avoid invalidating a dense TV grid's semantics tree on every D-pad
       // focus change unless an accessibility service needs focused state.

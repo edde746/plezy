@@ -25,9 +25,13 @@ import '../test_helpers/prefs.dart';
 // jellyfin_sequential_launcher_test.dart.
 
 class _StubPlexClient implements PlexClient {
-  _StubPlexClient({this.response, this.gate});
+  _StubPlexClient({this.response, this.gate, this.episodes = const []});
 
   final PlayQueueResponse? response;
+  final List<MediaItem> episodes;
+
+  @override
+  Future<List<MediaItem>> fetchPlayableDescendants(String parentId) async => episodes;
 
   /// Holds [createPlayQueue] open until completed, so a test can act while the
   /// launch's loading dialog is up.
@@ -86,6 +90,33 @@ void main() {
   setUp(() async {
     resetSharedPreferencesForTest();
     await SettingsService.getInstance();
+  });
+
+  testWidgets('sequential Plex season publishes a local queue limited to that season', (tester) async {
+    final context = await _pumpContext(tester);
+    final state = PlaybackStateProvider();
+    addTearDown(state.dispose);
+    final client = _StubPlexClient(
+      episodes: [
+        testMediaItem(id: 'first', kind: MediaKind.episode, serverId: 'plex', parentId: 'season', viewCount: 1),
+        testMediaItem(id: 'next', kind: MediaKind.episode, serverId: 'plex', parentId: 'season'),
+        testMediaItem(id: 'other', kind: MediaKind.episode, serverId: 'plex', parentId: 'other-season'),
+      ],
+    );
+    MediaItem? played;
+    final result = await PlexPlayQueueLauncher(context: context, client: client).launchSequentialShow(
+      context: context,
+      metadata: testMediaItem(id: 'season', kind: MediaKind.season, serverId: 'plex'),
+      showLoadingIndicator: false,
+      clientForTesting: client,
+      playbackStateForTesting: state,
+      navigateForTesting: (item) async => played = item,
+    );
+    expect(result, isA<PlayQueueSuccess>());
+    expect(played?.id, 'next');
+    expect(state.isItemInActiveQueue(played!), isTrue);
+    expect(state.loadedItems.map((item) => item.id), ['first', 'next']);
+    expect((await state.getNextEpisode('next')).status, QueueNavigationStatus.boundary);
   });
 
   group('launchShuffledShow pre-flight guard', () {

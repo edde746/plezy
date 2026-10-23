@@ -11,6 +11,7 @@ import '../providers/multi_server_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../services/multi_server_manager.dart';
 import '../utils/app_logger.dart';
+import '../media/episode_collection.dart';
 
 /// Result of loading adjacent episodes
 class AdjacentEpisodes {
@@ -53,6 +54,25 @@ enum _EpisodeQueueAvailability { active, unavailable, failed }
 /// Jellyfin is used as a fallback. Playlist and collection queues may contain
 /// movies; once membership is verified, they use the same adjacency path.
 class EpisodeNavigationService {
+  AdjacentEpisodes? loadScopedOfflineEpisodes({
+    required PlaybackStateProvider playbackState,
+    required MediaItem metadata,
+  }) {
+    if (!playbackState.isQueueActive || playbackState.playQueueId != -1) return null;
+    final episodes = playbackState.loadedItems;
+    final currentIndex = episodes.indexWhere((item) => item.globalKey == metadata.globalKey);
+    if (currentIndex < 0) return null;
+    playbackState.setCurrentItem(episodes[currentIndex]);
+    final previous = previousEpisodeSkippingSameFile(episodes, currentIndex);
+    final next = nextEpisodeSkippingSameFile(episodes, currentIndex);
+    return AdjacentEpisodes(
+      next: next,
+      previous: previous,
+      nextStatus: next == null ? QueueNavigationStatus.boundary : QueueNavigationStatus.found,
+      previousStatus: previous == null ? QueueNavigationStatus.boundary : QueueNavigationStatus.found,
+    );
+  }
+
   /// Cached client-side episode lists, keyed by `seriesId`. Populated for
   /// Jellyfin and when Plex's server-side queue is unavailable. Fetched once
   /// per series; subsequent navigation within the show reuses the cache.

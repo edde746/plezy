@@ -140,6 +140,18 @@ MediaItem? firstUnwatchedEpisode(List<MediaItem> episodes) {
   return null;
 }
 
+MediaItem? resumeEpisodeForPlayback(List<MediaItem> episodes) {
+  for (final episode in episodes) {
+    if (episode.kind == MediaKind.episode && episode.hasActiveProgress) return episode;
+  }
+  final unwatched = firstUnwatchedEpisode(episodes);
+  if (unwatched != null) return unwatched;
+  for (final episode in episodes) {
+    if (episode.kind == MediaKind.episode) return episode;
+  }
+  return null;
+}
+
 /// Orders episodes into the **aired watch order**: primarily by air date
 /// ([MediaItem.originallyAvailableAt]), so a Special that aired between two
 /// regular episodes is played between them, as Plex orders an `/allLeaves`

@@ -104,6 +104,12 @@ extension _VideoPlayerEpisodeQueueMethods on VideoPlayerScreenState {
   AdjacentEpisodes _loadAdjacentEpisodesOffline(MediaItem metadata) {
     if (!metadata.isEpisode) return const AdjacentEpisodes.unavailable();
 
+    final scoped = _episode.navigation.loadScopedOfflineEpisodes(
+      playbackState: context.read<PlaybackStateProvider>(),
+      metadata: metadata,
+    );
+    if (scoped != null) return scoped;
+
     final showKey = metadata.seriesGlobalKey;
     if (showKey == null) return const AdjacentEpisodes.unavailable();
 

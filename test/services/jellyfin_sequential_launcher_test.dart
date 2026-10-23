@@ -10,6 +10,8 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_playlist.dart';
 import 'package:plezy/providers/playback_state_provider.dart';
+import 'package:plezy/providers/download_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:plezy/services/jellyfin_client.dart';
 import 'package:plezy/services/jellyfin_sequential_launcher.dart';
 import 'package:plezy/services/media_list_playback_launcher.dart';
@@ -22,6 +24,20 @@ import 'package:plezy/i18n/strings.g.dart';
 import '../test_helpers/paged_fakes.dart';
 import '../test_helpers/media_items.dart';
 import '../test_helpers/prefs.dart';
+import '../test_helpers/download_fixtures.dart';
+
+class _OfflineDownloads extends NoSyncRulesDownloadProvider {
+  _OfflineDownloads(this.episodes);
+
+  final List<MediaItem> episodes;
+  final requestedKeys = <String>[];
+
+  @override
+  List<MediaItem> getDownloadedEpisodesForShow(String showGlobalKey) {
+    requestedKeys.add(showGlobalKey);
+    return episodes;
+  }
+}
 
 /// Recording fake that satisfies [JellyfinClient] via `implements` +
 /// `noSuchMethod`. The launcher only needs the
@@ -158,26 +174,135 @@ void main() {
     await SettingsService.getInstance();
   });
 
-  Future<BuildContext> pumpContext(WidgetTester tester) async {
+  Future<BuildContext> pumpContext(WidgetTester tester, {DownloadProvider? downloads}) async {
     late BuildContext capturedContext;
     // Wrap in MaterialApp + Scaffold so ScaffoldMessenger is available
     // for the error-path snackbars the launcher emits.
-    await tester.pumpWidget(
-      MaterialApp(
-        home: Scaffold(
-          body: Builder(
-            builder: (context) {
-              capturedContext = context;
-              return const SizedBox.shrink();
-            },
-          ),
+    final app = MaterialApp(
+      home: Scaffold(
+        body: Builder(
+          builder: (context) {
+            capturedContext = context;
+            return const SizedBox.shrink();
+          },
         ),
       ),
+    );
+    await tester.pumpWidget(
+      downloads == null ? app : ChangeNotifierProvider<DownloadProvider>.value(value: downloads, child: app),
     );
     return capturedContext;
   }
 
   group('JellyfinSequentialLauncher', () {
+    testWidgets('offline sequential season uses only downloaded episodes without server access', (tester) async {
+      final downloads = _OfflineDownloads([
+        _ep('first').copyWith(parentId: 'season', index: 1, parentIndex: 1),
+        _ep('next-season').copyWith(parentId: 'other-season', index: 1, parentIndex: 2),
+      ]);
+      addTearDown(downloads.dispose);
+      final ctx = await pumpContext(tester, downloads: downloads);
+      final state = PlaybackStateProvider();
+      addTearDown(state.dispose);
+      final season = testMediaItem(id: 'season', kind: MediaKind.season, parentId: 'show', serverId: 'srv-jf');
+      MediaItem? played;
+      final result = await MediaListPlaybackLauncher.forItem(ctx, season, isOffline: true).launchSequentialShow(
+        context: ctx,
+        metadata: season,
+        isOffline: true,
+        showLoadingIndicator: false,
+        playbackStateForTesting: state,
+        navigateForTesting: (item) async => played = item,
+      );
+      expect(result, isA<PlayQueueSuccess>());
+      expect(played?.id, 'first');
+      expect(state.loadedItems.map((item) => item.id), ['first']);
+      expect(downloads.requestedKeys, [testMediaItem(id: 'show', serverId: 'srv-jf').globalKey]);
+      expect(state.isItemInActiveQueue(played!), isTrue);
+    });
+
+    testWidgets('cancelled sequential show does not publish its late fetch result', (tester) async {
+      final ctx = await pumpContext(tester);
+      final state = PlaybackStateProvider();
+      addTearDown(state.dispose);
+      final gate = Completer<void>();
+      final client = _RecordingJellyfinClient(seriesEpisodesResponse: [_ep('first')], seriesEpisodesGate: gate);
+      var navigated = false;
+      final future = JellyfinSequentialLauncher(context: ctx).launchSequentialShow(
+        context: ctx,
+        metadata: testMediaItem(id: 'show', kind: MediaKind.show, serverId: 'srv-jf'),
+        clientForTesting: client,
+        playbackStateForTesting: state,
+        navigateForTesting: (_) async => navigated = true,
+      );
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 300));
+      await tester.tap(find.text(t.common.cancel));
+      await tester.pumpAndSettle();
+      gate.complete();
+      await tester.pumpAndSettle();
+      expect(await future, isA<PlayQueueCancelled>());
+      expect(state.isQueueActive, isFalse);
+      expect(navigated, isFalse);
+    });
+
+    testWidgets('sequential season resumes progress and excludes other seasons', (tester) async {
+      final ctx = await pumpContext(tester);
+      final state = PlaybackStateProvider();
+      addTearDown(state.dispose);
+      final client = _RecordingJellyfinClient(
+        playableDescendantsResponse: [
+          _ep('first').copyWith(parentId: 'season', parentIndex: 1, index: 1),
+          _ep('resume').copyWith(parentId: 'season', parentIndex: 1, index: 2, viewOffsetMs: 30000, durationMs: 600000),
+          _ep('other').copyWith(parentId: 'other-season', parentIndex: 2, index: 1),
+          _ep('foreign', serverId: ServerId('other-server')).copyWith(parentId: 'season'),
+        ],
+      );
+      MediaItem? played;
+      final result = await JellyfinSequentialLauncher(context: ctx).launchSequentialShow(
+        context: ctx,
+        metadata: testMediaItem(id: 'season', kind: MediaKind.season, serverId: 'srv-jf'),
+        showLoadingIndicator: false,
+        clientForTesting: client,
+        playbackStateForTesting: state,
+        navigateForTesting: (item) async => played = item,
+      );
+      expect(result, isA<PlayQueueSuccess>());
+      expect(played?.id, 'resume');
+      expect(played?.viewOffsetMs, 30000);
+      expect(state.isItemInActiveQueue(played!), isTrue);
+      expect((await state.getNextEpisode('resume')).item, isNull);
+      expect((await state.getPreviousEpisode('resume')).item?.id, 'first');
+      expect(client.fetchPlayableDescendantsCalls, ['season']);
+    });
+
+    testWidgets('sequential show restarts its first episode if fully watched', (tester) async {
+      final ctx = await pumpContext(tester);
+      final state = PlaybackStateProvider();
+      addTearDown(state.dispose);
+      final client = _RecordingJellyfinClient(
+        seriesEpisodesResponse: [
+          _ep('first').copyWith(viewCount: 1, viewOffsetMs: 600000, durationMs: 600000),
+          _ep('last').copyWith(viewCount: 1),
+        ],
+      );
+      MediaItem? played;
+      final result = await JellyfinSequentialLauncher(context: ctx).launchSequentialShow(
+        context: ctx,
+        metadata: testMediaItem(id: 'show', kind: MediaKind.show, serverId: 'srv-jf'),
+        showLoadingIndicator: false,
+        clientForTesting: client,
+        playbackStateForTesting: state,
+        navigateForTesting: (item) async => played = item,
+      );
+      expect(result, isA<PlayQueueSuccess>());
+      expect(played?.id, 'first');
+      expect(played?.viewOffsetMs, 0);
+      expect(state.isItemInActiveQueue(played!), isTrue);
+      expect((await state.getNextEpisode('first')).item?.id, 'last');
+      expect(client.fetchSeriesEpisodesCalls, ['show']);
+    });
+
     testWidgets('input guard rejects strings (neither MediaItem nor MediaPlaylist)', (tester) async {
       final ctx = await pumpContext(tester);
       final launcher = JellyfinSequentialLauncher(context: ctx);

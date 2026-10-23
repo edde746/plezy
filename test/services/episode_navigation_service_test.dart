@@ -112,6 +112,39 @@ class _ProbeWidgetState extends State<_ProbeWidget> {
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
+  test('offline season queue ends at its own boundary and preserves cursor identity', () async {
+    final state = PlaybackStateProvider();
+    addTearDown(state.dispose);
+    final first = _jfEpisode('first', seriesId: 'show');
+    final last = _jfEpisode('last', seriesId: 'show');
+    state.setPlaybackFromLocalQueue(LocalPlayQueue(items: [first, last], currentIndex: 0), contextKey: 'season');
+    final result = EpisodeNavigationService().loadScopedOfflineEpisodes(
+      playbackState: state,
+      metadata: last.copyWith(title: 'Refreshed'),
+    );
+    expect(result?.previous, same(first));
+    expect(result?.next, isNull);
+    expect(result?.isEndConfirmed, isTrue);
+    expect(state.currentQueueItem, same(last));
+    expect(state.shuffleContextKey, 'season');
+  });
+
+  test('offline scoped lookup rejects another server and falls back without a queue', () {
+    final state = PlaybackStateProvider();
+    addTearDown(state.dispose);
+    final episode = _jfEpisode('episode', seriesId: 'show');
+    final service = EpisodeNavigationService();
+    expect(service.loadScopedOfflineEpisodes(playbackState: state, metadata: episode), isNull);
+    state.setPlaybackFromLocalQueue(LocalPlayQueue(items: [episode], currentIndex: 0), contextKey: 'season');
+    expect(
+      service.loadScopedOfflineEpisodes(
+        playbackState: state,
+        metadata: episode.copyWith(serverId: 'another-server'),
+      ),
+      isNull,
+    );
+  });
+
   group('loadAdjacentEpisodes', () {
     testWidgets('returns unavailable when no play queue is active for a standalone movie', (tester) async {
       final playback = PlaybackStateProvider();

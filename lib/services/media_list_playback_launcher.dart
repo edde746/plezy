@@ -1,18 +1,25 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
 import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
+import '../media/episode_collection.dart';
+import '../media/ids.dart';
 import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
+import '../media/media_server_client.dart';
 import '../media/play_queue.dart';
+import '../providers/download_provider.dart';
 import '../providers/playback_state_provider.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
 import '../utils/media_server_http_client.dart';
+import '../utils/global_key_utils.dart';
+import '../utils/provider_extensions.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/video_player_navigation.dart';
 import 'jellyfin_sequential_launcher.dart';
@@ -53,6 +60,76 @@ class PlayQueueError extends PlayQueueResult {
 /// descendants or playlist items. [MediaListPlaybackLauncher.forItem] picks
 /// the implementation by inspecting the item's backend.
 abstract class MediaListPlaybackLauncher {
+  Future<PlayQueueResult> launchSequentialShow({
+    required BuildContext context,
+    required MediaItem metadata,
+    bool isOffline = false,
+    bool showLoadingIndicator = true,
+    MediaServerClient? clientForTesting,
+    PlaybackStateProvider? playbackStateForTesting,
+    Future<void> Function(MediaItem item)? navigateForTesting,
+  }) async {
+    final isSeason = metadata.kind == MediaKind.season;
+    final serverId = serverIdOrNull(metadata.serverId);
+    if ((!isSeason && metadata.kind != MediaKind.show) || serverId == null) {
+      return const PlayQueueError('Expected a server-backed show or season');
+    }
+    final seriesId = isSeason ? metadata.parentId : metadata.id;
+    if (isOffline && seriesId == null) return const PlayQueueError('Season is missing its show');
+    final playbackState = playbackStateForTesting ?? context.read<PlaybackStateProvider>();
+    final client = isOffline ? null : clientForTesting ?? context.tryGetMediaClientForServer(serverId);
+    final downloads = isOffline ? context.read<DownloadProvider>() : null;
+    final route = ModalRoute.of(context);
+    final abort = AbortController();
+    return executeWithLoading(
+      context: context,
+      showLoading: showLoadingIndicator,
+      actionLabel: t.common.play,
+      abort: abort,
+      execute: (dismissLoading) async {
+        final List<MediaItem> fetched;
+        if (downloads != null) {
+          fetched = downloads.getDownloadedEpisodesForShow(buildGlobalKey(serverId, seriesId!));
+        } else {
+          if (client == null) throw StateError(t.errors.noClientAvailable);
+          fetched = isSeason
+              ? await client.fetchPlayableDescendants(metadata.id)
+              : await client.fetchClientSideEpisodeQueue(metadata.id) ?? const <MediaItem>[];
+        }
+        abort.throwIfAborted();
+        final episodes = fetched
+            .where(
+              (item) =>
+                  item.kind == MediaKind.episode &&
+                  (item.serverId == null || item.serverId == metadata.serverId) &&
+                  (!isSeason || item.parentId == metadata.id),
+            )
+            .map(
+              (item) => item.copyWith(serverId: metadata.serverId, serverName: metadata.serverName ?? item.serverName),
+            )
+            .toList();
+        if (isSeason || isOffline) sortEpisodesByWatchOrder(episodes);
+        final selected = resumeEpisodeForPlayback(episodes);
+        if (selected == null) return const PlayQueueEmpty();
+        final startIndex = episodes.indexOf(selected);
+        if (!episodes.any((item) => item.isUnwatchedOrInProgress)) {
+          episodes[startIndex] = selected.copyWith(viewOffsetMs: 0);
+        }
+        await dismissLoading();
+        abort.throwIfAborted();
+        if (!context.mounted || (route != null && !route.isCurrent)) return const PlayQueueCancelled();
+        return launchLocalQueuePlayback(
+          context: context,
+          playbackState: playbackState,
+          queue: LocalPlayQueue(items: episodes, currentIndex: startIndex),
+          contextKey: metadata.id,
+          isOffline: isOffline,
+          navigateForTesting: navigateForTesting,
+        );
+      },
+    );
+  }
+
   /// Launch playback from a collection (a [MediaItem] with
   /// `kind == MediaKind.collection`) or a [MediaPlaylist].
   ///
@@ -88,9 +165,9 @@ abstract class MediaListPlaybackLauncher {
 
   /// Pick the right implementation for [item]. Reads
   /// [MediaItem.backend] / [MediaPlaylist.backend].
-  static MediaListPlaybackLauncher forItem(BuildContext context, Object item) {
+  static MediaListPlaybackLauncher forItem(BuildContext context, Object item, {bool isOffline = false}) {
     final backend = _backendOf(item);
-    if (backend.usesMediaBrowserApi) {
+    if (isOffline || backend.usesMediaBrowserApi) {
       return JellyfinSequentialLauncher(context: context);
     }
     return PlexPlayQueueLauncher.forContext(context, item);
@@ -230,6 +307,7 @@ abstract class MediaListPlaybackLauncher {
     required PlaybackStateProvider playbackState,
     required LocalPlayQueue queue,
     required String contextKey,
+    bool isOffline = false,
     Future<void> Function(MediaItem item)? navigateForTesting,
   }) async {
     if (queue.items.isEmpty) return const PlayQueueEmpty();
@@ -271,7 +349,7 @@ abstract class MediaListPlaybackLauncher {
       // launcher-set queue on entry. The items were fetched from the server
       // in this same user action, so session watch patches are already
       // reflected.
-      await navigateToVideoPlayer(context, metadata: itemToPlay, resolveWatchState: false);
+      await navigateToVideoPlayer(context, metadata: itemToPlay, resolveWatchState: false, isOffline: isOffline);
     }
     return const PlayQueueSuccess();
   }

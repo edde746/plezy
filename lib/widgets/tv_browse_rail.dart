@@ -9,6 +9,7 @@ import '../focus/card_focus_scope.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/dpad_select_long_press_controller.dart';
 import '../focus/focus_theme.dart';
+import '../focus/focused_media_play_action.dart';
 import '../focus/key_event_utils.dart';
 import '../focus/focus_navigation_intent.dart';
 import '../focus/locked_hub_controller.dart';
@@ -444,6 +445,23 @@ class TvBrowseRail extends StatefulWidget {
 }
 
 class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixin {
+  MediaItem? get _playableFocusedItem {
+    final hub = _activeHub;
+    if (hub == null || _isPersonHub(hub)) return null;
+    final item = _itemAtSlot(hub, _itemIndex);
+    return canPlayMediaItem(item) ? item : null;
+  }
+
+  late final _playAction = FocusedMediaPlayAction(
+    canPlay: () => mounted && _playableFocusedItem != null,
+    onPlay: () async {
+      final item = _playableFocusedItem;
+      if (item == null) return;
+      _hasUserInteracted = true;
+      await playMediaItem(context, item, onRefresh: widget.onRefresh);
+    },
+  );
+
   // Per-step scroll glide; platform-specific, see
   // FocusTheme.navigationScrollDuration. Successive steps — including
   // hold-repeats — retarget the animation from the row's current offset, so a
@@ -796,6 +814,8 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
   );
 
   KeyEventResult _handleKeyEvent(FocusNode _, KeyEvent event) {
+    final playResult = handleFocusedMediaPlayKey(event);
+    if (playResult != KeyEventResult.ignored) return playResult;
     final key = event.logicalKey;
 
     if (key.isSelectKey) {
@@ -1214,6 +1234,10 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
 
   @override
   Widget build(BuildContext context) {
+    return Actions(actions: {FocusedMediaPlayIntent: _playAction}, child: _buildRail(context));
+  }
+
+  Widget _buildRail(BuildContext context) {
     if (_activeHub == null) return const SizedBox.shrink();
     return SettingsBuilder(
       prefs: const [

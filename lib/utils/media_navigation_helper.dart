@@ -12,12 +12,45 @@ import '../screens/collection_detail_screen.dart';
 import '../screens/main_screen.dart';
 import '../screens/media_detail_screen.dart';
 import '../screens/playlist/playlist_detail_screen.dart';
+import '../services/media_list_playback_launcher.dart';
 import '../services/settings_service.dart';
 import '../utils/global_key_utils.dart';
 import 'catalog_navigation_helper.dart';
 import 'music_navigation.dart';
 import 'plex_library_section_utils.dart';
+import 'snackbar_helper.dart';
 import 'video_player_navigation.dart';
+
+bool canPlayMediaItem(Object? item) {
+  if (item is! MediaItem || item.isCatalogItem || serverIdOrNull(item.serverId) == null) return false;
+  final rawKey = item.raw?['key'];
+  if (rawKey is String && rawKey.startsWith('/library/sections/')) return false;
+  return item.isMovie || item.isEpisode || item.isShow || item.isSeason;
+}
+
+Future<void> playMediaItem(
+  BuildContext context,
+  MediaItem item, {
+  bool isOffline = false,
+  void Function(MediaItem source)? onRefresh,
+}) async {
+  if (!canPlayMediaItem(item)) return;
+  if (item.isShow || item.isSeason) {
+    try {
+      final result = await MediaListPlaybackLauncher.forItem(
+        context,
+        item,
+        isOffline: isOffline,
+      ).launchSequentialShow(context: context, metadata: item, isOffline: isOffline);
+      if (result is PlayQueueSuccess && context.mounted) onRefresh?.call(item);
+    } catch (error) {
+      if (context.mounted) showErrorSnackBar(context, t.errors.noClientAvailable);
+    }
+  } else {
+    final result = await navigateToVideoPlayer(context, metadata: item, isOffline: isOffline);
+    if (result == true && context.mounted) onRefresh?.call(item);
+  }
+}
 
 /// Result of media navigation indicating what action was taken
 enum MediaNavigationResult {

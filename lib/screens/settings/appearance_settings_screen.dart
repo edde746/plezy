@@ -43,7 +43,6 @@ class AppearanceSettingsScreen extends StatelessWidget {
           title: t.settings.display,
           children: [
             _themeSelector(),
-            if (PlatformDetector.isTVDevice()) _mainListingModeSelector(),
             if (AppIconSetting.isShown(context)) const AppIconSetting(),
             if (PlatformDetector.isAutomotive()) _displayScaleSelector(),
             if (Platform.isAndroid) _visualEffectsSelector(context),
@@ -53,6 +52,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
         SettingsGroup(
           title: t.settings.libraryAndCards,
           children: [
+            if (PlatformDetector.isTV()) _mainListingModeSelector(),
             _viewModeSelector(),
             _densitySelector(),
             _gridSpacingSelector(),

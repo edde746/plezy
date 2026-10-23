@@ -50,6 +50,7 @@ import 'package:plezy/utils/library_content_notifier.dart';
 import 'package:plezy/utils/video_player_navigation.dart';
 import 'package:plezy/widgets/collapsible_text.dart';
 import 'package:plezy/widgets/cycling_media_backdrop.dart';
+import 'package:plezy/widgets/focusable_media_card.dart';
 import 'package:plezy/widgets/episode_card.dart';
 import 'package:plezy/widgets/fitted_metadata_line.dart';
 import 'package:plezy/widgets/fitting_title_text.dart';
@@ -1643,110 +1644,135 @@ void main() {
     });
   });
 
-  testWidgets('TV detail episode activation bypasses the open-details preference', (tester) async {
-    final settings = await SettingsService.getInstance();
-    await settings.write(SettingsService.episodeAction, EpisodeAction.details);
-    tester.view.physicalSize = const Size(1280, 720);
-    tester.view.devicePixelRatio = 1;
-    addTearDown(tester.view.resetPhysicalSize);
-    addTearDown(tester.view.resetDevicePixelRatio);
+  for (final (activationKey, useCard) in [
+    (LogicalKeyboardKey.enter, false),
+    (LogicalKeyboardKey.mediaPlay, false),
+    (LogicalKeyboardKey.mediaPlayPause, false),
+    (LogicalKeyboardKey.mediaPlay, true),
+    (LogicalKeyboardKey.mediaPlayPause, true),
+  ]) {
+    testWidgets('TV episode activation ${activationKey.keyLabel} card=$useCard bypasses open-details', (tester) async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.episodeAction, EpisodeAction.details);
+      await settings.write(SettingsService.continueWatchingAction, ContinueWatchingAction.details);
+      final cardFocus = FocusNode();
+      addTearDown(cardFocus.dispose);
+      tester.view.physicalSize = const Size(1280, 720);
+      tester.view.devicePixelRatio = 1;
+      addTearDown(tester.view.resetPhysicalSize);
+      addTearDown(tester.view.resetDevicePixelRatio);
 
-    final show = testMediaItem(
-      id: 'show_1',
-      backend: MediaBackend.jellyfin,
-      kind: MediaKind.show,
-      title: 'The Show',
-      serverId: 'server_1',
-      serverName: 'Server',
-    );
-    final season = testMediaItem(
-      id: 'season_1',
-      backend: MediaBackend.jellyfin,
-      kind: MediaKind.season,
-      title: 'Season 1',
-      index: 1,
-      parentId: show.id,
-      serverId: show.serverId,
-      serverName: show.serverName,
-    );
-    final episode = testMediaItem(
-      id: 'episode_1',
-      backend: MediaBackend.jellyfin,
-      kind: MediaKind.episode,
-      title: 'Episode 1',
-      index: 1,
-      parentId: season.id,
-      parentIndex: season.index,
-      grandparentId: show.id,
-      serverId: show.serverId,
-      serverName: show.serverName,
-    );
-    final client = _FakeMediaServerClient(
-      show: show,
-      childrenByParent: {
-        show.id: [season],
-        season.id: [episode],
-      },
-    );
-    final database = AppDatabase.forTesting(NativeDatabase.memory());
-    PlexApiCache.initialize(database);
-    JellyfinApiCache.initialize(database);
-    final manager = MultiServerManager()..debugRegisterClientForTesting(client);
-    final multiServerProvider = testMultiServerProvider(manager);
-    final offlineWatch = OfflineWatchSyncService(database: database, serverManager: manager);
-    final downloadManager = DownloadManagerService(
-      database: database,
-      storageService: DownloadStorageService.instance,
-      clientResolver: (serverId, {clientScopeId}) => null,
-    )..recoveryFuture = Future<void>.value();
-    final downloadProvider = DownloadProvider.forTesting(downloadManager: downloadManager, database: database);
-    await downloadProvider.ensureInitialized();
-    addTearDown(() async {
-      downloadProvider.dispose();
-      downloadManager.dispose();
-      offlineWatch.dispose();
-      multiServerProvider.dispose();
-      manager.dispose();
-      await database.close();
-    });
+      final show = testMediaItem(
+        id: 'show_1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.show,
+        title: 'The Show',
+        serverId: 'server_1',
+        serverName: 'Server',
+      );
+      final season = testMediaItem(
+        id: 'season_1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.season,
+        title: 'Season 1',
+        index: 1,
+        parentId: show.id,
+        serverId: show.serverId,
+        serverName: show.serverName,
+      );
+      final episode = testMediaItem(
+        id: 'episode_1',
+        backend: MediaBackend.jellyfin,
+        kind: MediaKind.episode,
+        title: 'Episode 1',
+        index: 1,
+        parentId: season.id,
+        parentIndex: season.index,
+        grandparentId: show.id,
+        serverId: show.serverId,
+        serverName: show.serverName,
+      );
+      final client = _FakeMediaServerClient(
+        show: show,
+        childrenByParent: {
+          show.id: [season],
+          season.id: [episode],
+        },
+      );
+      final database = AppDatabase.forTesting(NativeDatabase.memory());
+      PlexApiCache.initialize(database);
+      JellyfinApiCache.initialize(database);
+      final manager = MultiServerManager()..debugRegisterClientForTesting(client);
+      final multiServerProvider = testMultiServerProvider(manager);
+      final offlineWatch = OfflineWatchSyncService(database: database, serverManager: manager);
+      final downloadManager = DownloadManagerService(
+        database: database,
+        storageService: DownloadStorageService.instance,
+        clientResolver: (serverId, {clientScopeId}) => null,
+      )..recoveryFuture = Future<void>.value();
+      final downloadProvider = DownloadProvider.forTesting(downloadManager: downloadManager, database: database);
+      await downloadProvider.ensureInitialized();
+      addTearDown(() async {
+        downloadProvider.dispose();
+        downloadManager.dispose();
+        offlineWatch.dispose();
+        multiServerProvider.dispose();
+        manager.dispose();
+        await database.close();
+      });
 
-    final navigatorKey = GlobalKey<NavigatorState>();
-    final observer = _RecordingNavigatorObserver(popVideoPlayerImmediately: true);
-    await tester.pumpWidget(
-      TranslationProvider(
-        child: MultiProvider(
-          providers: [
-            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
-            ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
-            ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
-          ],
-          child: MaterialApp(
-            navigatorKey: navigatorKey,
-            navigatorObservers: [observer],
-            theme: monoTheme(MonoPalette.dark),
-            home: withProfileNavigationScope(
-              child: SizedBox(width: 1280, height: 720, child: MediaDetailScreen(metadata: show)),
+      final navigatorKey = GlobalKey<NavigatorState>();
+      final observer = _RecordingNavigatorObserver(popVideoPlayerImmediately: true);
+      await tester.pumpWidget(
+        TranslationProvider(
+          child: MultiProvider(
+            providers: [
+              ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+              ChangeNotifierProvider<DownloadProvider>.value(value: downloadProvider),
+              ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
+            ],
+            child: MaterialApp(
+              navigatorKey: navigatorKey,
+              navigatorObservers: [observer],
+              theme: monoTheme(MonoPalette.dark),
+              home: withProfileNavigationScope(
+                child: useCard
+                    ? Scaffold(
+                        body: Center(
+                          child: SizedBox(
+                            width: 220,
+                            height: 330,
+                            child: FocusableMediaCard(item: episode, focusNode: cardFocus),
+                          ),
+                        ),
+                      )
+                    : SizedBox(width: 1280, height: 720, child: MediaDetailScreen(metadata: show)),
+              ),
             ),
           ),
         ),
-      ),
-    );
-    await tester.pump();
-    await tester.pump();
-    await tester.pump();
-    await tester.pump(const Duration(milliseconds: 200));
+      );
+      await tester.pump();
+      await tester.pump();
+      await tester.pump();
+      await tester.pump(const Duration(milliseconds: 200));
 
-    expect(find.descendant(of: find.byType(MediaCard), matching: find.text('Episode 1')), findsOneWidget);
-    observer.pushedRouteNames.clear();
-    tester.state<TvBrowseRailState>(find.byType(TvBrowseRail)).requestFocus();
-    await tester.pump();
-    await tester.sendKeyDownEvent(LogicalKeyboardKey.enter);
-    await tester.pump();
-    await tester.sendKeyUpEvent(LogicalKeyboardKey.enter);
-    await tester.pump();
+      expect(find.descendant(of: find.byType(MediaCard), matching: find.text('Episode 1')), findsWidgets);
+      observer.pushedRouteNames.clear();
+      if (useCard) {
+        cardFocus.requestFocus();
+      } else {
+        tester.state<TvBrowseRailState>(find.byType(TvBrowseRail)).requestFocus();
+      }
+      await tester.pump();
+      await tester.sendKeyDownEvent(activationKey);
+      await tester.pump();
+      await tester.sendKeyUpEvent(activationKey);
+      await tester.pump();
 
-    expect(observer.pushedRouteNames, contains(kVideoPlayerRouteName));
-  });
+      expect(observer.pushedRouteNames, contains(kVideoPlayerRouteName));
+    });
+  }
 
   group('phone layout', () {
     MediaItem buildShow({String? summary}) => testMediaItem(

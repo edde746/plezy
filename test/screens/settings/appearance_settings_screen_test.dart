@@ -58,8 +58,11 @@ void main() {
   });
 
   testWidgets('Main Listing Mode selector updates the saved presentation', (tester) async {
-    TvDetectionService.debugSetAppleTVOverride(true);
-    addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+    TvDetectionService.debugReset();
+    addTearDown(TvDetectionService.debugReset);
+    await TvDetectionService.getInstance(forceTv: true);
+    expect(PlatformDetector.isTV(), isTrue);
+    expect(PlatformDetector.isTVDevice(), isFalse);
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1000, 3000);
     addTearDown(tester.view.resetDevicePixelRatio);
@@ -80,7 +83,11 @@ void main() {
     expect(find.text(t.settings.mainListingMode), findsOneWidget);
     expect(
       tester.getTopLeft(find.text(t.settings.mainListingMode)).dy,
-      greaterThan(tester.getTopLeft(find.text(t.settings.theme)).dy),
+      greaterThan(tester.getTopLeft(find.text(t.settings.libraryAndCards)).dy),
+    );
+    expect(
+      tester.getTopLeft(find.text(t.settings.mainListingMode)).dy,
+      lessThan(tester.getTopLeft(find.text(t.settings.viewMode)).dy),
     );
     await tester.tap(find.text(t.settings.spartan));
     await tester.pumpAndSettle();

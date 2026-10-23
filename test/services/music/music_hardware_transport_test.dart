@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
+import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/focus/focused_media_play_action.dart';
 import 'package:plezy/services/music/music_hardware_transport.dart';
+import 'package:plezy/utils/platform_detector.dart';
 
 /// Foreground hardware media keys (#1948): while a music session is live,
-/// transport keys pressed anywhere in the app must control music and be
+/// transport keys control music unless Android TV focus owns video Play, and are
 /// consumed for the whole down/repeat/up burst, so a press can neither leak
 /// to Android's fallback MediaSession dispatch (#1375) nor double as input to
 /// a focused item (#1510).
@@ -35,6 +40,85 @@ void main() {
   tearDown(() {
     handler.unregister();
     debugDefaultTargetPlatformOverride = null;
+    TvDetectionService.debugReset();
+  });
+
+  testWidgets('focused play action handles a held press once and ignores pause', (tester) async {
+    debugDefaultTargetPlatformOverride = TargetPlatform.android;
+    TvDetectionService.debugSetAppleTVOverride(true);
+    final pending = Completer<void>();
+    var launches = 0;
+    await tester.pumpWidget(
+      MaterialApp(
+        home: Actions(
+          actions: {
+            FocusedMediaPlayIntent: FocusedMediaPlayAction(
+              canPlay: () => true,
+              onPlay: () async {
+                launches++;
+                await pending.future;
+              },
+            ),
+          },
+          child: Focus(
+            autofocus: true,
+            onKeyEvent: (_, event) => handleFocusedMediaPlayKey(event),
+            child: const SizedBox(),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    handler.register();
+    expect(await tester.sendKeyDownEvent(LogicalKeyboardKey.mediaPlay), isTrue);
+    expect(await tester.sendKeyRepeatEvent(LogicalKeyboardKey.mediaPlay), isTrue);
+    expect(await tester.sendKeyUpEvent(LogicalKeyboardKey.mediaPlay), isTrue);
+    await tester.sendKeyEvent(LogicalKeyboardKey.mediaPlayPause);
+    expect(launches, 1);
+    expect(await tester.sendKeyEvent(LogicalKeyboardKey.mediaPause), isTrue);
+    expect(calls, {'pause': 1});
+    pending.complete();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.mediaPlayPause);
+    expect(launches, 2);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('focused play action is disabled outside Android TV', (tester) async {
+    var launches = 0;
+    final action = FocusedMediaPlayAction(canPlay: () => true, onPlay: () async => launches++);
+    for (final platform in [TargetPlatform.android, TargetPlatform.iOS, TargetPlatform.linux]) {
+      debugDefaultTargetPlatformOverride = platform;
+      TvDetectionService.debugSetAppleTVOverride(platform != TargetPlatform.android);
+      expect(action.isEnabled(const FocusedMediaPlayIntent()), isFalse);
+    }
+    expect(launches, 0);
+    debugDefaultTargetPlatformOverride = null;
+  });
+
+  testWidgets('new play press works when the previous release reached another route', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    var launches = 0;
+    Widget browser() => MaterialApp(
+      home: Actions(
+        actions: {FocusedMediaPlayIntent: FocusedMediaPlayAction(canPlay: () => true, onPlay: () async => launches++)},
+        child: Focus(
+          autofocus: true,
+          onKeyEvent: (_, event) => handleFocusedMediaPlayKey(event),
+          child: const SizedBox(),
+        ),
+      ),
+    );
+    await tester.pumpWidget(browser());
+    await tester.pump();
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.mediaPlay);
+    await tester.pumpWidget(const MaterialApp(home: Focus(autofocus: true, child: SizedBox())));
+    await tester.pump();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.mediaPlay);
+    await tester.pumpWidget(browser());
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.mediaPlay);
+    expect(launches, 2);
   });
 
   testWidgets('acts on key-down only and consumes down, repeat, and up per key', (tester) async {
