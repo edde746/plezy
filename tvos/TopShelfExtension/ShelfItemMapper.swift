@@ -32,6 +32,15 @@ extension ShelfFetchedItem: CustomStringConvertible, CustomDebugStringConvertibl
   var debugDescription: String { description }
 }
 
+/// Which poster fills an episode's 2:3 shelf slot, following the app's episode
+/// poster setting (#2377): the season's only when the viewer picked season
+/// posters, otherwise the series'. Each chain ends at the item's own image,
+/// mirroring MediaItem.posterThumb on the app's cached path.
+enum ShelfEpisodePoster: String {
+  case series
+  case season
+}
+
 enum ShelfItemMapper {
   static let posterWidth = 600
   static let posterHeight = 900
@@ -44,7 +53,8 @@ enum ShelfItemMapper {
     fromResponse object: Any,
     serverId: String,
     baseUrl: String,
-    token: String
+    token: String,
+    episodePoster: ShelfEpisodePoster
   ) -> [ShelfFetchedItem] {
     guard let root = object as? [String: Any],
       let container = root["MediaContainer"] as? [String: Any]
@@ -54,7 +64,7 @@ enum ShelfItemMapper {
       metadata = hubs.flatMap { $0["Metadata"] as? [[String: Any]] ?? [] }
     }
     return metadata.compactMap {
-      plexItem($0, serverId: serverId, baseUrl: baseUrl, token: token)
+      plexItem($0, serverId: serverId, baseUrl: baseUrl, token: token, episodePoster: episodePoster)
     }
   }
 
@@ -62,7 +72,8 @@ enum ShelfItemMapper {
     _ metadata: [String: Any],
     serverId: String,
     baseUrl: String,
-    token: String
+    token: String,
+    episodePoster: ShelfEpisodePoster
   ) -> ShelfFetchedItem? {
     guard let ratingKey = flexibleString(metadata["ratingKey"]), !ratingKey.isEmpty,
       let rawTitle = metadata["title"] as? String, !rawTitle.isEmpty
@@ -70,7 +81,11 @@ enum ShelfItemMapper {
     let type = (metadata["type"] as? String)?.lowercased()
     let seriesTitle = (metadata["grandparentTitle"] as? String).flatMap { $0.isEmpty ? nil : $0 }
     let isEpisode = type == "episode" && seriesTitle != nil
-    let posterPath = ["parentThumb", "grandparentThumb", "thumb"]
+    let posterKeys =
+      episodePoster == .season
+      ? ["parentThumb", "grandparentThumb", "thumb"] : ["grandparentThumb", "thumb"]
+    let posterPath =
+      posterKeys
       .compactMap { metadata[$0] as? String }
       .first { !$0.isEmpty }
     return ShelfFetchedItem(
@@ -105,13 +120,14 @@ enum ShelfItemMapper {
     fromResponse object: Any,
     serverId: String,
     baseUrl: String,
-    token: String
+    token: String,
+    episodePoster: ShelfEpisodePoster
   ) -> [ShelfFetchedItem] {
     guard let root = object as? [String: Any],
       let items = root["Items"] as? [[String: Any]]
     else { return [] }
     return items.compactMap {
-      mediaBrowserItem($0, serverId: serverId, baseUrl: baseUrl, token: token)
+      mediaBrowserItem($0, serverId: serverId, baseUrl: baseUrl, token: token, episodePoster: episodePoster)
     }
   }
 
@@ -119,7 +135,8 @@ enum ShelfItemMapper {
     _ item: [String: Any],
     serverId: String,
     baseUrl: String,
-    token: String
+    token: String,
+    episodePoster: ShelfEpisodePoster
   ) -> ShelfFetchedItem? {
     guard let id = flexibleString(item["Id"]), !id.isEmpty,
       let name = item["Name"] as? String, !name.isEmpty
@@ -128,9 +145,9 @@ enum ShelfItemMapper {
     let seriesName = (item["SeriesName"] as? String).flatMap { $0.isEmpty ? nil : $0 }
     let isEpisode = type == "episode" && seriesName != nil
     let userData = item["UserData"] as? [String: Any] ?? [:]
-    // Season poster, then series poster, then the item's own primary image.
+    let posterKeys = episodePoster == .season ? ["SeasonId", "SeriesId"] : ["SeriesId"]
     let posterItemId =
-      ["SeasonId", "SeriesId"]
+      posterKeys
       .compactMap { flexibleString(item[$0]) }
       .first { !$0.isEmpty } ?? id
     return ShelfFetchedItem(

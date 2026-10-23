@@ -375,12 +375,14 @@ import TVServices
         }
         let maxItems = (raw["maxItems"] as? NSNumber)?.intValue
         let sectionTitle = raw["sectionTitle"] as? String
+        let episodePoster = (raw["episodePoster"] as? String).flatMap(ShelfEpisodePoster.init(rawValue:))
         Self.perform(result) {
           Self.updateSources(
             envelope: envelope,
             rawServers: servers,
             maxItems: maxItems,
-            sectionTitle: sectionTitle
+            sectionTitle: sectionTitle,
+            episodePoster: episodePoster
           )
         }
       case "clear":
@@ -609,7 +611,8 @@ import TVServices
       envelope: SystemShelfMutationEnvelope,
       rawServers: [[String: Any]],
       maxItems: Int?,
-      sectionTitle: String?
+      sectionTitle: String?,
+      episodePoster: ShelfEpisodePoster?
     ) -> Bool {
       guard let defaults = sharedDefaults else { return false }
       return updateSources(
@@ -617,6 +620,7 @@ import TVServices
         rawServers: rawServers,
         maxItems: maxItems,
         sectionTitle: sectionTitle,
+        episodePoster: episodePoster,
         state: &mutationState,
         defaults: defaults,
         storeTokens: storeSourceTokens,
@@ -634,6 +638,7 @@ import TVServices
       rawServers: [[String: Any]],
       maxItems: Int?,
       sectionTitle: String?,
+      episodePoster: ShelfEpisodePoster?,
       state: inout SystemShelfMutationState,
       defaults: UserDefaults,
       storeTokens: (String, [String: String]) -> Bool,
@@ -668,6 +673,9 @@ import TVServices
       ]
       if let sectionTitle, !sectionTitle.isEmpty {
         payload["sectionTitle"] = sectionTitle
+      }
+      if let episodePoster {
+        payload["episodePoster"] = episodePoster.rawValue
       }
       guard
         state.commit(

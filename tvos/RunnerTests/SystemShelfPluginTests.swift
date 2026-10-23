@@ -181,6 +181,27 @@ private final class SystemShelfSyncHarness {
     )
   }
 
+  func updateSources(generation: Int64, episodePoster: ShelfEpisodePoster?) -> Bool {
+    SystemShelfPlugin.updateSources(
+      envelope: envelope(generation: generation),
+      rawServers: [
+        [
+          "serverId": "srv-plex", "kind": "plex", "name": "Den",
+          "baseUrl": "https://plex.example.com", "token": "tok-a",
+        ]
+      ],
+      maxItems: nil,
+      sectionTitle: nil,
+      episodePoster: episodePoster,
+      state: &state,
+      defaults: defaults,
+      storeTokens: { _, _ in true },
+      notifyChange: { [unowned self] in
+        notificationCount += 1
+      }
+    )
+  }
+
   func envelope(
     generation: Int64,
     ownerId: String = "profile-a",
@@ -299,6 +320,25 @@ final class SystemShelfPluginTests: XCTestCase {
     XCTAssertNil(harness.defaults.data(forKey: SystemShelfPlugin.cacheDataKey))
     XCTAssertFalse(FileManager.default.fileExists(atPath: harness.root.path))
     XCTAssertEqual(harness.notificationCount, 3)
+  }
+
+  func testUpdateSourcesHandsTheEpisodePosterPreferenceToTheExtension() throws {
+    let harness = try SystemShelfSyncHarness()
+    defer { harness.cleanup() }
+
+    let cases: [(Int64, ShelfEpisodePoster?, ShelfEpisodePoster)] = [
+      (1, .season, .season),
+      // An app that sends no preference leaves the extension on series posters.
+      (2, nil, .series),
+    ]
+    for (generation, sent, resolved) in cases {
+      XCTAssertTrue(harness.updateSources(generation: generation, episodePoster: sent))
+      let data = try XCTUnwrap(harness.defaults.data(forKey: SystemShelfPlugin.sourcesKey))
+      let sources = try XCTUnwrap(
+        ShelfSourceStore.resolve(payloadData: data, tokensByServerId: ["srv-plex": "tok-a"])
+      )
+      XCTAssertEqual(sources.episodePoster, resolved)
+    }
   }
 
   func testSyncPersistsLocalizedSectionTitleWithEnglishFallback() throws {
