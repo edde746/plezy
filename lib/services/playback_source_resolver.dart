@@ -17,22 +17,18 @@ class PlaybackSourceResolver {
   /// requested quality preset is original (an omitted preset keeps it on), or
   /// when [downloadOutranksQuality] says the preset carries no user intent a
   /// local copy would violate — the saved startup default rather than a
-  /// quality picked for this playback (issue #2466). [streamOnly] streams
-  /// from the server outside offline library mode: a Watch Together room
-  /// gets only files it can share.
+  /// quality picked for this playback (issue #2466).
   Future<PlaybackContext> resolve(
     PlaybackInitializationOptions options, {
     required bool offlineLibraryMode,
     bool downloadOutranksQuality = false,
-    bool streamOnly = false,
   }) async {
     final metadata = options.metadata;
     final reportingClient = _playbackClient(serverIdOrNull(metadata.serverId), offlineLibraryMode: offlineLibraryMode);
     final service = PlaybackInitializationService(client: reportingClient, database: database);
     final result = await service.getPlaybackData(
       options,
-      preferOffline:
-          offlineLibraryMode || (!streamOnly && (options.qualityPreset.isOriginal || downloadOutranksQuality)),
+      preferOffline: offlineLibraryMode || options.qualityPreset.isOriginal || downloadOutranksQuality,
       requireOffline: offlineLibraryMode,
     );
 

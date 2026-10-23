@@ -1766,6 +1766,10 @@ class GuideTabState extends State<GuideTab>
                           _RecordingDot(color: Colors.red, tooltip: t.liveTv.recordingScheduled),
                           const SizedBox(width: 5),
                         ],
+                        if (program.premiere == true) ...[
+                          StatusPill(label: t.liveTv.premiereBadge, color: titleColor, dense: true),
+                          const SizedBox(width: 5),
+                        ],
                         Expanded(
                           child: Text(
                             program.grandparentTitle ?? program.title,

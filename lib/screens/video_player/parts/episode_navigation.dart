@@ -110,7 +110,9 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
 
   /// Replace this screen when an in-place reload cannot serve the new item.
   /// The route commit owns player-to-player teardown semantics.
-  /// [watchTogetherCopy] is the room's file, when the room asked for it.
+  /// [watchTogetherCopy] is the room's file, when the room asked for it: a
+  /// server's item, so it opens outside the offline library. The player still
+  /// plays a download of the room's version.
   Future<void> _replaceScreenWithPlayer(MediaItem metadata, {WatchCopy? watchTogetherCopy}) async {
     final version = watchTogetherCopy == null ? null : watchTogetherVersionOf(metadata, watchTogetherCopy);
     try {
@@ -118,7 +120,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
         context,
         metadata: metadata,
         usePushReplacement: true,
-        isOffline: _offlineLibraryMode,
+        isOffline: _offlineLibraryMode && watchTogetherCopy == null,
         selectedMediaIndex: version?.index,
         selectedMediaSourceId: version?.sourceId,
         watchTogetherCopy: watchTogetherCopy,

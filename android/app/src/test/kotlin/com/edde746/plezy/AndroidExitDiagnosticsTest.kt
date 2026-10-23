@@ -1,5 +1,6 @@
 package com.edde746.plezy
 
+import android.app.ApplicationExitInfo
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNotEquals
@@ -12,14 +13,26 @@ class AndroidExitDiagnosticsTest {
 
   @Test
   fun mapsExitReasonsDeterministically() {
-    assertEquals("low_memory", AndroidExitReportMapper.mapReason(3))
-    assertEquals("crash", AndroidExitReportMapper.mapReason(4))
-    assertEquals("native_crash", AndroidExitReportMapper.mapReason(5))
-    assertEquals("anr", AndroidExitReportMapper.mapReason(6))
-    assertEquals("user_requested", AndroidExitReportMapper.mapReason(10))
-    assertEquals("user_requested", AndroidExitReportMapper.mapReason(11))
-    assertEquals("other", AndroidExitReportMapper.mapReason(1))
-    assertEquals("other", AndroidExitReportMapper.mapReason(999))
+    mapOf(
+      ApplicationExitInfo.REASON_EXIT_SELF to "exit_self",
+      ApplicationExitInfo.REASON_SIGNALED to "signaled",
+      ApplicationExitInfo.REASON_LOW_MEMORY to "low_memory",
+      ApplicationExitInfo.REASON_CRASH to "crash",
+      ApplicationExitInfo.REASON_CRASH_NATIVE to "native_crash",
+      ApplicationExitInfo.REASON_ANR to "anr",
+      ApplicationExitInfo.REASON_INITIALIZATION_FAILURE to "initialization_failure",
+      ApplicationExitInfo.REASON_PERMISSION_CHANGE to "permission_change",
+      ApplicationExitInfo.REASON_EXCESSIVE_RESOURCE_USAGE to "excessive_resource_usage",
+      ApplicationExitInfo.REASON_USER_REQUESTED to "user_requested",
+      ApplicationExitInfo.REASON_USER_STOPPED to "user_requested",
+      ApplicationExitInfo.REASON_DEPENDENCY_DIED to "dependency_died",
+      ApplicationExitInfo.REASON_FREEZER to "freezer",
+      ApplicationExitInfo.REASON_PACKAGE_STATE_CHANGE to "package_state_change",
+      ApplicationExitInfo.REASON_PACKAGE_UPDATED to "package_updated",
+      ApplicationExitInfo.REASON_OTHER to "other",
+      ApplicationExitInfo.REASON_UNKNOWN to "other",
+      999 to "other"
+    ).forEach { (code, reason) -> assertEquals("code $code", reason, AndroidExitReportMapper.mapReason(code)) }
   }
 
   @Test
@@ -138,8 +151,47 @@ class AndroidExitDiagnosticsTest {
       first.toMap().keys
     )
     assertFalse(first.toMap().containsKey("dedupeKey"))
-    assertFalse(first.toMap().containsKey("description"))
     assertFalse(first.toMap().containsKey("processName"))
+  }
+
+  @Test
+  fun masksExitDescriptionToFixedCharactersWithoutIdentifiers() {
+    val sanitize = AndroidExitReportMapper::sanitizeDescription
+    assertEquals(
+      "[FORCE STOP] stop <pkg> due to from pid #",
+      sanitize("[FORCE STOP] stop com.edde746.plezy due to from pid 6092")
+    )
+    assertEquals(
+      "excessive cpu # during # dur=# limit=#",
+      sanitize("excessive cpu 1234 during 300000 dur=300000 limit=2")
+    )
+    assertEquals("kill server", sanitize("kill\u0000 ü\n server"))
+    assertNull(sanitize("ü\u0000"))
+    assertNull(sanitize(null))
+    assertEquals(120, sanitize("a".repeat(500))!!.length)
+  }
+
+  @Test
+  fun reportsDescriptionAndOnlyPlausibleMemoryFigures() {
+    val mapped = AndroidExitReportMapper.map(
+      record = HistoricalExitRecord(
+        reason = 3,
+        status = 0,
+        importance = 400,
+        timestamp = 100,
+        description = "too many cached",
+        pssKb = 204_800,
+        rssKb = 0
+      ),
+      deviceModel = "NVIDIA Shield",
+      apiLevel = 35,
+      abi = "arm64-v8a",
+      lowRam = false
+    ).toMap()
+
+    assertEquals("too many cached", mapped["description"])
+    assertEquals(204_800L, mapped["pssKb"])
+    assertFalse(mapped.containsKey("rssKb"))
   }
 
   @Test

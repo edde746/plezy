@@ -764,6 +764,27 @@ void main() {
       expect(h.provider.roomCopy?.ref, opened.adapter.copy);
     });
 
+    _roomTest(
+      'a code whose room ended is refused, and joining it with create makes the room again with the open file',
+      (world) async {
+        final h = world.host();
+        await world.settle(h.provider.createRoom());
+        h.provider.endRoom();
+        await world.until(() => !h.provider.isInSession, 'the room is over');
+        final g = world.guest();
+        expect(await world.refusal(g.provider.joinRoom('k7m-q2x')), owp.ErrorCode.roomNotFound);
+
+        final opened = _openPlayer(_copyOf(_hostAlien));
+        h.provider.playerOpened(opened.adapter, shareable: true, roomLaunch: false);
+        await world.settle(h.provider.joinRoom('k7m-q2x', create: true));
+
+        expect((h.provider.roomCode, h.provider.isHost), (FakeOwpRelay.code, true));
+        expect(world.relay.sent('join').last['create'], isTrue);
+        await world.until(() => h.provider.isFollowing, 'the room plays the host file');
+        expect(h.provider.media?.title, 'Alien');
+      },
+    );
+
     _roomTest('a failed search is reported and searched again; without a player the file is offered', (world) async {
       final h = world.host();
       final g = world.guest();

@@ -108,29 +108,37 @@ class _FocusedScrollScaffoldState extends State<FocusedScrollScaffold> {
         node: _scopeNode,
         child: Scaffold(
           bottomNavigationBar: widget.bottomBar,
-          body: CustomScrollView(
-            slivers: [
-              if (!widget.focusableAppBarActions || !_appBarFocusEnabled)
-                ExcludeFocus(
-                  child: CustomAppBar(
+          // Horizontal-only SafeArea at the region owner: rows clear a
+          // landscape notch or iPhone Duo's portrait sensor column. The app
+          // bar shares the scaffold color and never tints, so insetting it
+          // too is invisible.
+          body: SafeArea(
+            top: false,
+            bottom: false,
+            child: CustomScrollView(
+              slivers: [
+                if (!widget.focusableAppBarActions || !_appBarFocusEnabled)
+                  ExcludeFocus(
+                    child: CustomAppBar(
+                      title: widget.title,
+                      pinned: widget.pinned,
+                      actions: widget.actions,
+                      automaticallyImplyLeading: widget.automaticallyImplyLeading,
+                    ),
+                  )
+                else
+                  CustomAppBar(
                     title: widget.title,
                     pinned: widget.pinned,
                     actions: widget.actions,
                     automaticallyImplyLeading: widget.automaticallyImplyLeading,
                   ),
-                )
-              else
-                CustomAppBar(
-                  title: widget.title,
-                  pinned: widget.pinned,
-                  actions: widget.actions,
-                  automaticallyImplyLeading: widget.automaticallyImplyLeading,
-                ),
-              ...widget.slivers,
-              // Keeps the last row scrollable clear of the Android
-              // navigation bar / iOS home indicator; zero-height elsewhere.
-              const SliverSystemBottomInset(),
-            ],
+                ...widget.slivers,
+                // Keeps the last row scrollable clear of the Android
+                // navigation bar / iOS home indicator; zero-height elsewhere.
+                const SliverSystemBottomInset(),
+              ],
+            ),
           ),
         ),
       ),

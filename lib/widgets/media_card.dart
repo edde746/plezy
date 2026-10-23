@@ -1083,7 +1083,14 @@ Widget _buildPosterImage(
     final hideSpoilers = SettingsService.instance.read(SettingsService.hideSpoilers);
     final shouldBlur =
         hideSpoilers && item.shouldHideSpoiler && episodePosterMode == EpisodePosterMode.episodeThumbnail;
-    final mediaClient = isOffline ? null : context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId));
+    // Catalog artwork is absolute provider URLs already sized by variant
+    // selection, and may sit on a host only this device can reach — a LAN
+    // Seerr image proxy (#2800). Load it directly: a fallback server's
+    // transcoder would have to fetch it, and PMS 1.43.5+ refuses private
+    // addresses outright.
+    final mediaClient = isOffline || catalogItem != null
+        ? null
+        : context.tryGetMediaClientWithFallback(serverIdOrNull(item.serverId));
     final fallbackIcon = _mediaPosterFallbackIcon(item);
     final imageType = switch (cardShapeOverride) {
       CardShape.square => ImageType.square,

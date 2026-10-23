@@ -448,7 +448,10 @@ class PlezyActivity : FlutterActivity() {
         reason = exitInfo.reason,
         status = exitInfo.status,
         importance = exitInfo.importance,
-        timestamp = exitInfo.timestamp
+        timestamp = exitInfo.timestamp,
+        description = exitInfo.description,
+        pssKb = exitInfo.pss,
+        rssKb = exitInfo.rss
       ),
       deviceModel = Build.MODEL,
       apiLevel = Build.VERSION.SDK_INT,

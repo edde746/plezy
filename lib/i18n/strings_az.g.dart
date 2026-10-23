@@ -40,11 +40,14 @@ class TranslationsAz extends Translations with BaseTranslations<AppLocale, Trans
 
 	// Translations
 	@override late final _Translations$app$az app = _Translations$app$az._(_root);
+	@override late final _Translations$appIcon$az appIcon = _Translations$appIcon$az._(_root);
 	@override late final _Translations$auth$az auth = _Translations$auth$az._(_root);
 	@override late final _Translations$common$az common = _Translations$common$az._(_root);
 	@override late final _Translations$screens$az screens = _Translations$screens$az._(_root);
 	@override late final _Translations$update$az update = _Translations$update$az._(_root);
+	@override late final _Translations$supporter$az supporter = _Translations$supporter$az._(_root);
 	@override late final _Translations$settings$az settings = _Translations$settings$az._(_root);
+	@override late final _Translations$themeEditor$az themeEditor = _Translations$themeEditor$az._(_root);
 	@override late final _Translations$search$az search = _Translations$search$az._(_root);
 	@override late final _Translations$hotkeys$az hotkeys = _Translations$hotkeys$az._(_root);
 	@override late final _Translations$fileInfo$az fileInfo = _Translations$fileInfo$az._(_root);
@@ -100,6 +103,24 @@ class _Translations$app$az extends Translations$app$en {
 
 	// Translations
 	@override String get title => 'Plezy';
+}
+
+// Path: appIcon
+class _Translations$appIcon$az extends Translations$appIcon$en {
+	_Translations$appIcon$az._(TranslationsAz root) : this._root = root, super.internal(root);
+
+	final TranslationsAz _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Tətbiq ikonu';
+	@override String get defaultIcon => 'Defolt';
+	@override String get current => 'Cari ikon';
+	@override String get locked => 'Supporter imtiyazı';
+	@override String get lockedHint => 'Alternativ ikonlar Supporter imtiyazıdır.';
+	@override String get changeFailed => 'Tətbiq ikonu dəyişdirilə bilmədi';
+	@override String get launcherHint => 'Plezy-dən çıxdıqdan sonra yeni ikon ana ekranınızda görünəcək.';
+	@override String get tvLauncherHint => 'Plezy-dən çıxdıqdan sonra yeni banner görünəcək. Android TV televizor yenidən başladılana qədər köhnəsini göstərə bilər.';
+	@override late final _Translations$appIcon$names$az names = _Translations$appIcon$names$az._(_root);
 }
 
 // Path: auth
@@ -182,7 +203,7 @@ class _Translations$common$az extends Translations$common$en {
 	@override String get exitFullscreen => 'Tam ekrandan çıx';
 	@override String get pressBackAgainToExit => 'Çıxmaq üçün geri düyməsinə bir daha basın';
 	@override late final _Translations$common$ratingSource$az ratingSource = _Translations$common$ratingSource$az._(_root);
-	@override String get notAvailable => 'N/A';
+	@override String get notAvailable => 'Yoxdur';
 	@override String get url => 'URL';
 	@override String get letterKeys => 'ABC';
 	@override late final _Translations$common$mediaKind$az mediaKind = _Translations$common$mediaKind$az._(_root);
@@ -218,6 +239,33 @@ class _Translations$update$az extends Translations$update$en {
 	@override String get checkFailed => 'Yenilənmələr yoxlanıla bilmədi';
 }
 
+// Path: supporter
+class _Translations$supporter$az extends Translations$supporter$en {
+	_Translations$supporter$az._(TranslationsAz root) : this._root = root, super.internal(root);
+
+	final TranslationsAz _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Plezy Supporter';
+	@override String get intro => 'Plezy-nin inkişafını dəstəkləyən və kosmetik əlavələri açan birdəfəlik alış:';
+	@override String get presetThemes => 'Hazır mövzular';
+	@override String get presetThemesDescription => 'Köz, Buzlaq, Meşə, Gavalı və Kağız';
+	@override String get customTheme => 'Xüsusi mövzu';
+	@override String get customThemeDescription => 'Bütün rəngləri özünüz seçin';
+	@override String get appIcons => 'Tətbiq ikonları';
+	@override String get appIconsDescription => 'Alternativ Plezy ikonu seçin';
+	@override String buy({required Object price}) => '${price} qiymətinə al';
+	@override String get loadingPrice => 'Qiymət yüklənir...';
+	@override String get restore => 'Alışları bərpa et';
+	@override String get pending => 'Alışınız ödəniş və ya təsdiq gözləyir. Mağaza onu tamamlayan kimi əlavələr açılacaq.';
+	@override String get thankYouTitle => 'Plezy-ni dəstəklədiyiniz üçün təşəkkür edirik';
+	@override String get thankYouBody => 'Supporter əlavələriniz açıldı.';
+	@override String get tileSubtitle => 'Mövzuları və tətbiq ikonlarını birdəfəlik alışla açın';
+	@override String get tileSubtitleThemesOnly => 'Mövzuları birdəfəlik alışla açın';
+	@override String get tileUnlocked => 'Dəstəyiniz üçün təşəkkür edirik';
+	@override late final _Translations$supporter$errors$az errors = _Translations$supporter$errors$az._(_root);
+}
+
 // Path: settings
 class _Translations$settings$az extends Translations$settings$en {
 	_Translations$settings$az._(TranslationsAz root) : this._root = root, super.internal(root);
@@ -248,6 +296,11 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get lightTheme => 'Açıq';
 	@override String get darkTheme => 'Tünd';
 	@override String get oledTheme => 'OLED';
+	@override String get emberTheme => 'Köz';
+	@override String get glacierTheme => 'Buzlaq';
+	@override String get forestTheme => 'Meşə';
+	@override String get plumTheme => 'Gavalı';
+	@override String get paperTheme => 'Kağız';
 	@override String get libraryDensity => 'Kitabxana sıxlığı';
 	@override String get displayScale => 'Ekran miqyası';
 	@override String get compact => 'Sıx';
@@ -345,6 +398,7 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get videoPlayerNavigation => 'Video oynadıcı naviqasiyası';
 	@override String get videoPlayerNavigationDescription => 'Oynadıcı idarəetmələrində hərəkət etmək üçün ox düymələrini istifadə edin';
 	@override String get watchTogetherRelay => 'Birlikdə İzlə relesi';
+	@override String get watchTogetherRelayDescription => 'Öz relenizi təyin etməsəniz, ictimai Open Watch Party releləri istifadə olunur';
 	@override String get watchTogetherRelayHint => 'https://my-relay.example.com';
 	@override String get watchTogetherRelayInvalid => 'Düzgün HTTP və ya HTTPS rele ünvanı daxil edin.';
 	@override String get crashReporting => 'Xəta hesabatı';
@@ -370,6 +424,7 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get importSettingsInvalidFile => 'Bu fayl düzgün Plezy tənzimləmələr faylı deyil';
 	@override String get importSettingsNoUser => 'Tənzimləmələri idxal etməzdən əvvəl daxil olun';
 	@override String get shortcutsReset => 'Qısayollar defolt vəziyyətə sıfırlandı';
+	@override String get resetShortcutsConfirm => 'Bu, xüsusi qısayollarınızı defolt qısayollarla əvəz edəcək. Davam edilsin?';
 	@override String get about => 'Haqqında';
 	@override String get aboutDescription => 'Tətbiq məlumatı və lisenziyalar';
 	@override String get updates => 'Yenilənmələr';
@@ -454,7 +509,16 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get audioPassthrough => 'Səsin birbaşa ötürülməsi (Passthrough)';
 	@override String get audioPassthroughDescription => 'Dolby/DTS səslərini yenidən kodlamadan TV və ya resiverə göndərir. Səs gəlmirsə söndürün.';
 	@override String get audioPassthroughDescriptionApple => 'Atmos daxil olmaqla Dolby Digital Plus üçün Apple-ın daxili dekoderini istifadə edin. DTS və TrueHD yenə də çoxkanallı PCM kimi oynadılır. Səs gəlmirsə söndürün.';
+	@override String get audioPassthroughDescriptionAppleSpatial => 'Atmos daxil olmaqla Dolby Digital Plus üçün Apple-ın daxili Dolby dekoderini istifadə edin. iOS, iPadOS və tvOS 26 və ya daha yeni versiyalarda TrueHD Atmos və DTS:X məkan səsi kimi oynadılır. Digər DTS və TrueHD trekləri çoxkanallı PCM kimi oynadılır. Səs gəlmirsə söndürün.';
 	@override String get audioPassthroughOverriddenByNormalization => 'Səsin gurluğunu normallaşdırma aktivkən söndürülüb';
+	@override String get audioChannelLimit => 'Səs kanalları';
+	@override String get audioChannelLimitDescription => 'Bütün kanalları oynada bilməyən dinamiklər, qulaqlıqlar və ya HDMI qurğuları üçün dekodlanmış səsi daha az kanala endir';
+	@override String get audioChannelLimitOriginal => 'Orijinal';
+	@override String get audioChannelLimitOriginalDescription => 'Trekdəki bütün kanalları oynat';
+	@override String get audioChannelLimitSurround51 => '5.1-ə qədər';
+	@override String get audioChannelLimitSurround51Description => 'Yalnız 5.1 PCM qəbul edən televizorlar və resiverlər üçün 7.1-i 5.1-ə endir. Birbaşa ötürməyə təsir etmir.';
+	@override String get audioChannelLimitStereo => 'Stereo';
+	@override String get audioChannelLimitStereoDescription => 'Stereo dinamiklər və ya qulaqlıqlar üçün iki kanala endir. Birbaşa ötürməni söndürür.';
 	@override String get downmixCenterBoost => 'Mərkəz kanal gücləndirilməsi';
 	@override String downmixCenterBoostValue({required Object db}) => '${db} dB';
 	@override String get downmixCenterBoostLabel => 'Gücləndirmə (dB)';
@@ -483,6 +547,12 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get hdrSdrConversionPlayerDescription => 'Çevirməni oynadıcı edir. Sabit rənglər, lakin zəif TV qutularında 4K ilişə bilər';
 	@override String get deinterlace => 'Deinterleysinq';
 	@override String get deinterlaceDescription => 'Sətirlərarası videodakı darama artefaktlarını aradan qaldır (yalnız mpv oynadıcısı)';
+	@override String get deinterlaceOff => 'Söndürülüb';
+	@override String get deinterlaceOffDescription => 'Sətirlərarası videonu dekodlandığı kimi göstər';
+	@override String get deinterlaceVideo => 'Video';
+	@override String get deinterlaceVideoDescription => 'Hər yarımkadrı tam kadra çevir. İdman, xəbər və konsert kimi TV üçün çəkilmiş videolar üçün';
+	@override String get deinterlaceFilm => 'Film';
+	@override String get deinterlaceFilmDescription => '29.97 fps-ə telesine edilmiş film və animasiyaların orijinal kadrlarını bərpa et (NTSC DVD-lərdə geniş yayılıb). TV üçün çəkilmiş video ilişir. Canlı TV Video rejimindən istifadə edir';
 	@override String get requireProfileSelectionOnOpen => 'Açılışda profil soruş';
 	@override String get requireProfileSelectionOnOpenDescription => 'Tətbiq hər dəfə açıldıqda profil seçimini göstər';
 	@override String get forceTvMode => 'TV rejimini məcburi et';
@@ -540,6 +610,42 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get exportDialogTitle => 'Plezy tənzimləmələrini ixrac et';
 }
 
+// Path: themeEditor
+class _Translations$themeEditor$az extends Translations$themeEditor$en {
+	_Translations$themeEditor$az._(TranslationsAz root) : this._root = root, super.internal(root);
+
+	final TranslationsAz _root; // ignore: unused_field
+
+	// Translations
+	@override String get builtIn => 'Daxili';
+	@override String get presets => 'Hazır mövzular';
+	@override String get custom => 'Xüsusi';
+	@override String get customEmpty => 'Hələ yaradılmayıb';
+	@override String get editCustom => 'Xüsusi mövzuya düzəliş et';
+	@override String get editCustomDescription => 'Bütün rəngləri özünüz seçin';
+	@override String get locked => 'Supporter ilə açın';
+	@override String get savedLocked => 'Yadda saxlanılıb — Supporter ilə açılır';
+	@override String get title => 'Xüsusi mövzu';
+	@override String get startFrom => 'Başlanğıc mövzu';
+	@override String get startFromDescription => 'Bütün rəngləri başqa mövzudan kopyala';
+	@override String get colors => 'Rənglər';
+	@override String get preview => 'Önizləmə';
+	@override late final _Translations$themeEditor$slots$az slots = _Translations$themeEditor$slots$az._(_root);
+	@override String get opacity => 'Şəffaflıq';
+	@override String get hexHint => '#RRGGBB və ya #AARRGGBB';
+	@override String get fromOtherThemes => 'Digər mövzulardan';
+	@override String swatchLabel({required Object theme, required Object color}) => '${theme}: ${color}';
+	@override late final _Translations$themeEditor$contrast$az contrast = _Translations$themeEditor$contrast$az._(_root);
+	@override String lowContrast({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, tövsiyə olunan ${minimum}:1-dən aşağı';
+	@override String get discardTitle => 'Dəyişikliklərdən imtina edilsin?';
+	@override String get discardMessage => 'Yadda saxlanmamış rəng dəyişiklikləriniz itəcək.';
+	@override String get discard => 'İmtina et';
+	@override String previewCardTitle({required Object number}) => 'Seriya ${number}';
+	@override String previewCardSubtitle({required Object minutes}) => '${minutes} dəq qaldı';
+	@override String get previewSwitch => 'Avtomatik oynatma';
+	@override String get previewMutedText => 'Köməkçi mətn belə görünür';
+}
+
 // Path: search
 class _Translations$search$az extends Translations$search$en {
 	_Translations$search$az._(TranslationsAz root) : this._root = root, super.internal(root);
@@ -551,6 +657,7 @@ class _Translations$search$az extends Translations$search$en {
 	@override String get tryDifferentTerm => 'Fərqli axtarış sözü cəhd edin';
 	@override String get searchYourMedia => 'Mediyanızda axtarın';
 	@override String get enterTitleActorOrKeyword => 'Ad, aktyor və ya açar söz daxil edin';
+	@override String get people => 'Şəxslər';
 }
 
 // Path: hotkeys
@@ -886,6 +993,7 @@ class _Translations$videoControls$az extends Translations$videoControls$en {
 	@override String get pipActive => 'Pəncərə daxilində pəncərə rejimində oynadılır';
 	@override String get pipFailed => 'PiP rejimi başladılarkən xəta';
 	@override String get screenshotSaved => 'Ekran şəkli yadda saxlanıldı';
+	@override String get screenshotFailed => 'Ekran şəkli çəkilə bilmədi';
 	@override String zoomPercent({required Object percent}) => 'Miqyas %${percent}';
 	@override String volumePercent({required Object percent}) => 'Səs ${percent}%';
 	@override late final _Translations$videoControls$pipErrors$az pipErrors = _Translations$videoControls$pipErrors$az._(_root);
@@ -1079,6 +1187,8 @@ class _Translations$profiles$az extends Translations$profiles$en {
 	@override String get signOut => 'Çıxış et';
 	@override String get signOutPlexTitle => 'Plex-dən çıxılsın?';
 	@override String signOutPlexMessage({required Object displayName}) => '${displayName} və bütün Plex Home istifadəçiləri silinsin? İstənilən vaxt yenidən daxil ola bilərsiniz.';
+	@override String get signOutPlexDeleteDownloads => 'Yükləmələri də sil';
+	@override String get signOutPlexDeleteDownloadsDescription => 'Əks halda onlar bu cihazda qalır və bu hesaba yenidən daxil olduqda geri qayıdır.';
 	@override String get signedOutPlex => 'Plex-dən çıxıldı.';
 	@override String get signOutFailed => 'Çıxış uğursuz oldu.';
 	@override String get sectionTitle => 'Profillər';
@@ -1232,6 +1342,7 @@ class _Translations$discover$az extends Translations$discover$en {
 		one: '${n} başlıq',
 		other: '${n} başlıq',
 	);
+	@override late final _Translations$discover$person$az person = _Translations$discover$person$az._(_root);
 }
 
 // Path: errors
@@ -1314,6 +1425,7 @@ class _Translations$libraries$az extends Translations$libraries$en {
 	@override late final _Translations$libraries$groupings$az groupings = _Translations$libraries$groupings$az._(_root);
 	@override late final _Translations$libraries$filterCategories$az filterCategories = _Translations$libraries$filterCategories$az._(_root);
 	@override late final _Translations$libraries$sortLabels$az sortLabels = _Translations$libraries$sortLabels$az._(_root);
+	@override late final _Translations$libraries$advancedFilters$az advancedFilters = _Translations$libraries$advancedFilters$az._(_root);
 }
 
 // Path: about
@@ -1691,24 +1803,113 @@ class _Translations$watchTogether$az extends Translations$watchTogether$en {
 	// Translations
 	@override String get title => 'Birlikdə İzlə';
 	@override String get description => 'Dostlarınız və ailənizlə eyni vaxtda baxın';
+	@override String get createRoom => 'Otaq yarat';
+	@override String get creatingRoom => 'Otaq yaradılır...';
+	@override String get joinRoom => 'Otağa qoşul';
+	@override String get joiningRoom => 'Otağa qoşulunur...';
+	@override String get connecting => 'Qoşulunur...';
+	@override String get relayPublic => 'Otaqlar ictimai Open Watch Party relelərindən istifadə edir.';
+	@override String relayCustom({required Object url}) => 'Otaqlar ${url} ünvanındakı relenizdən istifadə edir.';
 	@override String get recentRooms => 'Son otaqlar';
+	@override String get roomActions => 'Otaq əməliyyatları';
 	@override String get renameRoom => 'Otağın adını dəyişdir';
 	@override String get removeRoom => 'Sil';
+	@override String get enterRoomCode => 'Təşkilatçının verdiyi 6 simvollu kodu daxil edin.';
+	@override String get roomCode => 'Otaq kodu';
+	@override String get paste => 'Yapışdır';
+	@override String get noCodeInClipboard => 'Buferdə otaq kodu yoxdur';
+	@override String get copyCode => 'Kodu kopyala';
+	@override String get codeCopied => 'Otaq kodu kopyalandı';
+	@override String get shareInvite => 'Dəvəti paylaş';
+	@override String get inviteCopied => 'Dəvət kopyalandı. Onu mesaja yapışdırın.';
+	@override String inviteMessage({required Object code}) => 'Plezy-də Birlikdə İzlə otağıma qoşul: Birlikdə İzlə bölməsini aç, "Otağa qoşul" düyməsinə bas və ${code} kodunu daxil et.';
 	@override String get openSessionControls => 'Birlikdə İzlə seans idarəetmələrini aç';
+	@override String get reconnecting => 'Yenidən qoşulunur...';
+	@override String get reconnectingDescription => 'Əlaqə kəsildi. Otağa avtomatik olaraq yenidən qoşulacaqsınız.';
+	@override String get connected => 'Qoşulub';
+	@override String get disconnected => 'Əlaqə kəsilib';
 	@override String get youAreHost => 'Təşkilatçı sizsiniz';
+	@override String hostedBy({required Object name}) => 'Təşkilatçı: ${name}';
 	@override String get hostControlsPlayback => 'Oynatmanı təşkilatçı idarə edir';
 	@override String get anyoneCanControl => 'Oynatmanı hər kəs idarə edə bilər';
+	@override String get roomLocked => 'Otaq kilidlənib';
+	@override String get nowPlaying => 'İndi oynadılır';
+	@override String get nothingPlaying => 'Heç nə oynadılmır';
+	@override String get nothingPlayingHost => 'Otaqla paylaşmaq üçün istənilən kitabxanadan nəsə oynadın.';
+	@override String get nothingPlayingGuest => 'Təşkilatçı nəsə oynatdıqda, burada açılacaq.';
+	@override String get notShareable => 'Bu videonun kataloqda uyğunluğu yoxdur, ona görə də onu yalnız eyni serverə çıxışı olanlar oynada bilər.';
+	@override String get searching => 'Bu video kitabxanalarınızda axtarılır...';
+	@override String get yourCopy => 'Sizin nüsxəniz';
+	@override String get sharingYourCopy => 'Nüsxənizi paylaşırsınız';
+	@override String playingOtherLength({required Object difference}) => 'Nüsxəniz oynadılır (${difference})';
+	@override String get mismatchTitle => 'Nüsxənizin uzunluğu fərqlidir';
+	@override String mismatchDescription({required Object difference}) => 'Ən yaxın nüsxəniz otaqdakı videodan ${difference}. Bu, başqa montaj və ya versiya ola bilər.';
+	@override String get playAnyway => 'Yenə də oynat';
+	@override String get chooseAnotherCopy => 'Başqa nüsxə seç';
+	@override String get dontPlay => 'Oynatma';
+	@override String get unavailableTitle => 'Bu video sizdə yoxdur';
+	@override String get unavailableDescription => 'Plezy onu kitabxanalarınızda tapa bilmədi. Nüsxəni özünüz seçin və ya yenidən axtarın.';
+	@override String get chooseCopy => 'Nüsxə seç';
+	@override String get searchAgain => 'Yenidən axtar';
+	@override String get noCandidates => 'Kitabxanalarınızda nüsxə tapılmadı.';
+	@override String get choiceFailed => 'Bu nüsxəni otaq üçün oynatmaq mümkün olmadı';
+	@override String lengthLonger({required Object duration}) => '${duration} daha uzun';
+	@override String lengthShorter({required Object duration}) => '${duration} daha qısa';
+	@override String get lengthSame => 'Eyni uzunluq';
+	@override String get lengthUnknown => 'Uzunluq məlum deyil';
 	@override String get joinCurrentPlayback => 'Cari oynatmaya qoşul';
 	@override String get joinCurrentPlaybackDescription => 'Təşkilatçının indi baxdığı hissəyə keçin';
+	@override String get stopMedia => 'Videonu hamı üçün dayandır';
+	@override String get syncOffset => 'Sinxronizasiya ofseti';
+	@override String get syncOffsetDescription => 'Videonuz otaqdan qabaqda və ya geridə qalırsa, onu sürüşdürün.';
+	@override String offsetHint({required Object difference}) => 'Nüsxəniz otaqdakı videodan ${difference}.';
+	@override String applyDifference({required Object offset}) => '${offset} tətbiq et';
+	@override String get offsetMinusSecond => '-1 san';
+	@override String get offsetMinusTenth => '-100 ms';
+	@override String get offsetPlusTenth => '+100 ms';
+	@override String get offsetPlusSecond => '+1 san';
 	@override String get participants => 'İştirakçılar';
+	@override String participantCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('az'))(n,
+		one: '${n} iştirakçı',
+		other: '${n} iştirakçı',
+	);
 	@override String get hostBadge => 'TƏŞKİLATÇI';
+	@override String nameYou({required Object name}) => '${name} (Siz)';
+	@override String get playerIdle => 'Gözləmədə';
+	@override String get playerLoading => 'Yüklənir';
+	@override String get playerReady => 'Hazırdır';
+	@override String get playerBuffering => 'Buferlənir';
+	@override String get matchSearching => 'Axtarır';
+	@override String get matchMatched => 'Video var';
+	@override String get matchMismatched => 'Fərqli uzunluq';
+	@override String get matchUnavailable => 'Video yoxdur';
+	@override String participantOffset({required Object offset}) => 'Ofset ${offset}';
 	@override String get makeHost => 'Təşkilatçı təyin et';
 	@override String get makeHostQuestion => 'Təşkilatçı köçürülsün?';
 	@override String makeHostConfirm({required Object name}) => '${name} oynatmanı idarə edəcək və seansı hər kəs üçün aparacaq.';
 	@override String get transfer => 'Köçür';
+	@override String get removeParticipant => 'Otaqdan çıxar';
+	@override String removeParticipantQuestion({required Object name}) => '${name} çıxarılsın?';
+	@override String removeParticipantConfirm({required Object name}) => '${name} otağı tərk edəcək. Otağı kilidləməsəniz, kodla yenidən qoşula bilər.';
+	@override String get remove => 'Çıxar';
+	@override String get roomSettings => 'Otaq tənzimləmələri';
+	@override String get letEveryoneControl => 'Hamıya oynatmanı idarə etməyə icazə ver';
+	@override String get lockRoom => 'Otağı kilidlə';
+	@override String get lockRoomDescription => 'Heç kim yeni qoşula bilməz';
+	@override String get leaveRoom => 'Otağı tərk et';
+	@override String get leaveRoomQuestion => 'Otaq tərk edilsin?';
+	@override String get leaveRoomConfirm => 'Otaq kodu ilə yenidən qoşula bilərsiniz.';
 	@override String get leave => 'Çıx';
+	@override String get endRoom => 'Otağı bağla';
+	@override String get endRoomQuestion => 'Otaq bağlansın?';
+	@override String get endRoomConfirm => 'Bu, otağı hamı üçün bağlayır.';
 	@override String get end => 'Bitir';
+	@override String get playBlockedTitle => 'Oynatma başlamadı';
+	@override String get playBlockedDescription => 'Otaqla birlikdə baxmağa başlamaq üçün oynat düyməsinə basın.';
 	@override late final _Translations$watchTogether$notices$az notices = _Translations$watchTogether$notices$az._(_root);
+	@override late final _Translations$watchTogether$ended$az ended = _Translations$watchTogether$ended$az._(_root);
+	@override late final _Translations$watchTogether$errors$az errors = _Translations$watchTogether$errors$az._(_root);
+	@override String untitledEpisode({required Object number}) => 'Seriya ${number}';
 }
 
 // Path: downloads
@@ -1737,6 +1938,9 @@ class _Translations$downloads$az extends Translations$downloads$en {
 	@override String episodesQueued({required Object count}) => 'Yükləmə üçün ${count} seriya növbəyə alındı';
 	@override String get downloadDeleted => 'Yükləmə silindi';
 	@override String deleteConfirm({required Object title}) => '"${title}" bu cihazdan silinsin?';
+	@override String get deleteCollectionDownloads => 'Yükləmələri sil';
+	@override String deleteCollectionDownloadsConfirm({required Object title}) => '"${title}" daxilindəki bütün yükləmələr bu cihazdan silinsin?';
+	@override String get collectionDownloadsDeleted => 'Yükləmələr silindi';
 	@override String get cancelledDownloadTitle => 'Ləğv edilmiş yükləmə';
 	@override String get cancelledDownloadMessage => 'Bu yükləmə ləğv edildi. Nə etmək istərdiniz?';
 	@override String get allEpisodesAlreadyDownloaded => 'Bütün seriyalar artıq yüklənib';
@@ -1754,6 +1958,8 @@ class _Translations$downloads$az extends Translations$downloads$en {
 	@override String get noDownloadsTree => 'Yükləmə yoxdur';
 	@override String get pauseAll => 'Hamısını fasilə et';
 	@override String get resumeAll => 'Hamısını davam etdir';
+	@override String get retryAll => 'Hamısını təzədən cəhd et';
+	@override String get retryFailed => 'Uğursuz yükləmələri təzədən cəhd et';
 	@override String get deleteAll => 'Hamısını sil';
 	@override String get selectVersion => 'Versiya seç';
 	@override String get allEpisodes => 'Bütün seriyalar';
@@ -1909,6 +2115,13 @@ class _Translations$performanceOverlay$az extends Translations$performanceOverla
 	@override String get rotation => 'Dönmə';
 	@override String get dvSource => 'DV mənbəyi';
 	@override String get dvPath => 'DV yolu';
+	@override String get dvRouteDecoder => 'Dolby Vision çözücüsü';
+	@override String get dvRouteDecoderP81 => 'Dolby Vision çözücüsü (P7→8.1)';
+	@override String get dvRouteBaseLayer => 'Baza təbəqə';
+	@override String get dvRouteBaseLayerHdr10 => 'HDR10 baza təbəqə';
+	@override String get dvRouteBaseLayerHlg => 'HLG baza təbəqə';
+	@override String get dvRouteBaseLayerSdr => 'SDR baza təbəqə';
+	@override String get dvRouteReshaped => 'RPU ilə yenidən formalaşdırılıb (gpu-next)';
 	@override String get p7Conversion => 'P7 çevrilməsi';
 	@override String get sampleRate => 'Diskretləşdirmə tezliyi';
 	@override String get pixelFormat => 'Piksel formatı';
@@ -2182,6 +2395,7 @@ class _Translations$services$az extends Translations$services$en {
 	@override String disconnectConfirmBody({required Object service}) => 'Plezy ${service} yeniləməyi dayandıracaq. İstənilən vaxt yenidən qoşula bilərsiniz.';
 	@override String connectFailed({required Object service}) => '${service} qoşula bilmədi. Təzədən cəhd edin.';
 	@override late final _Translations$services$names$az names = _Translations$services$names$az._(_root);
+	@override late final _Translations$services$simklReconnect$az simklReconnect = _Translations$services$simklReconnect$az._(_root);
 	@override late final _Translations$services$deviceCode$az deviceCode = _Translations$services$deviceCode$az._(_root);
 	@override late final _Translations$services$oauthProxy$az oauthProxy = _Translations$services$oauthProxy$az._(_root);
 	@override late final _Translations$services$pendingAuth$az pendingAuth = _Translations$services$pendingAuth$az._(_root);
@@ -2244,6 +2458,38 @@ class _Translations$addServer$az extends Translations$addServer$en {
 	@override String redirectUnsupportedEnterFinal({required Object product}) => 'Server dəstəklənməyən URL-ə yönləndirdi. Son ${product} URL-ni birbaşa daxil edin.';
 }
 
+// Path: appIcon.names
+class _Translations$appIcon$names$az extends Translations$appIcon$names$en {
+	_Translations$appIcon$names$az._(TranslationsAz root) : this._root = root, super.internal(root);
+
+	final TranslationsAz _root; // ignore: unused_field
+
+	// Translations
+	@override String get midnight => 'Gecəyarısı';
+	@override String get ember => 'Köz';
+	@override String get paper => 'Kağız';
+	@override String get oled => 'OLED';
+	@override String get line => 'Xətt';
+	@override String get ocean => 'Okean';
+	@override String get ultraviolet => 'Ultrabənövşəyi';
+	@override String get matcha => 'Matça';
+	@override String get sunset => 'Gün batımı';
+	@override String get gold => 'Qızıl';
+	@override String get titanium => 'Titan';
+	@override String get glass => 'Şüşə';
+	@override String get crt => 'CRT';
+	@override String get vhs => 'VHS';
+	@override String get synthwave => 'Synthwave';
+	@override String get pixel => 'Piksel';
+	@override String get neon => 'Neon';
+	@override String get sticker => 'Stiker';
+	@override String get ticket => 'Bilet';
+	@override String get pop => 'Pop';
+	@override String get strata => 'Laylar';
+	@override String get facet => 'Faset';
+	@override String get tilde => 'Tilda';
+}
+
 // Path: common.ratingSource
 class _Translations$common$ratingSource$az extends Translations$common$ratingSource$en {
 	_Translations$common$ratingSource$az._(TranslationsAz root) : this._root = root, super.internal(root);
@@ -2285,6 +2531,52 @@ class _Translations$common$mediaKind$az extends Translations$common$mediaKind$en
 	@override String get clip => 'Klip';
 	@override String get photo => 'Şəkil';
 	@override String get folder => 'Qovluq';
+}
+
+// Path: supporter.errors
+class _Translations$supporter$errors$az extends Translations$supporter$errors$en {
+	_Translations$supporter$errors$az._(TranslationsAz root) : this._root = root, super.internal(root);
+
+	final TranslationsAz _root; // ignore: unused_field
+
+	// Translations
+	@override String get storeUnavailable => 'Alışlar əlçatan deyil. Mağazaya daxil olduğunuzu və bu cihazda alışlara icazə verildiyini yoxlayın.';
+	@override String get productNotFound => 'Supporter alışı hazırda mağazanızda əlçatan deyil.';
+	@override String get productQueryFailed => 'Qiymət yüklənə bilmədi. Bağlantınızı yoxlayın və yenidən cəhd edin.';
+	@override String get purchaseFailed => 'Alış baş tutmadı. Yenidən cəhd edin.';
+	@override String get restoreFailed => 'Alışınızı bərpa etmək üçün mağazaya qoşulmaq mümkün olmadı. Yenidən cəhd edin.';
+	@override String get nothingToRestore => 'Bu mağaza hesabı üçün Supporter alışı tapılmadı.';
+}
+
+// Path: themeEditor.slots
+class _Translations$themeEditor$slots$az extends Translations$themeEditor$slots$en {
+	_Translations$themeEditor$slots$az._(TranslationsAz root) : this._root = root, super.internal(root);
+
+	final TranslationsAz _root; // ignore: unused_field
+
+	// Translations
+	@override String get bg => 'Arxa fon';
+	@override String get surface => 'Səth';
+	@override String get outline => 'Kontur';
+	@override String get text => 'Mətn';
+	@override String get textMuted => 'Köməkçi mətn';
+	@override String get accent => 'Vurğu';
+}
+
+// Path: themeEditor.contrast
+class _Translations$themeEditor$contrast$az extends Translations$themeEditor$contrast$en {
+	_Translations$themeEditor$contrast$az._(TranslationsAz root) : this._root = root, super.internal(root);
+
+	final TranslationsAz _root; // ignore: unused_field
+
+	// Translations
+	@override String get textOnBg => 'Arxa fonda mətn';
+	@override String get textOnSurface => 'Səthdə mətn';
+	@override String get textMutedOnBg => 'Arxa fonda köməkçi mətn';
+	@override String get textMutedOnSurface => 'Səthdə köməkçi mətn';
+	@override String get accentOnBg => 'Arxa fonda vurğu';
+	@override String get accentOnSurface => 'Səthdə vurğu';
+	@override String get labelOnAccent => 'Vurğu üzərində düymə mətni';
 }
 
 // Path: hotkeys.actions
@@ -2421,6 +2713,20 @@ class _Translations$accountPreferences$mediaReviewsOptions$az extends Translatio
 	@override String get nobody => 'Gizlədilib';
 }
 
+// Path: discover.person
+class _Translations$discover$person$az extends Translations$discover$person$en {
+	_Translations$discover$person$az._(TranslationsAz root) : this._root = root, super.internal(root);
+
+	final TranslationsAz _root; // ignore: unused_field
+
+	// Translations
+	@override String get born => 'Doğum tarixi';
+	@override String get died => 'Vəfat tarixi';
+	@override String get birthplace => 'Doğum yeri';
+	@override String dateWithAge({required Object date, required Object age}) => '${date} (${age} yaş)';
+	@override String dateWithAgeAtDeath({required Object date, required Object age}) => '${date} (${age} yaşında)';
+}
+
 // Path: libraries.tabs
 class _Translations$libraries$tabs$az extends Translations$libraries$tabs$en {
 	_Translations$libraries$tabs$az._(TranslationsAz root) : this._root = root, super.internal(root);
@@ -2467,6 +2773,7 @@ class _Translations$libraries$filterCategories$az extends Translations$libraries
 	@override String get unwatched => 'Baxılmayıb';
 	@override String get unplayed => 'Oynadılmayıb';
 	@override String get favorites => 'Sevimlilər';
+	@override String get filePath => 'Fayl yolu';
 }
 
 // Path: libraries.sortLabels
@@ -2499,6 +2806,41 @@ class _Translations$libraries$sortLabels$az extends Translations$libraries$sortL
 	@override String get dateDownloaded => 'Yüklənmə tarixi';
 	@override String get size => 'Həcm';
 	@override String get library => 'Kitabxana';
+}
+
+// Path: libraries.advancedFilters
+class _Translations$libraries$advancedFilters$az extends Translations$libraries$advancedFilters$en {
+	_Translations$libraries$advancedFilters$az._(TranslationsAz root) : this._root = root, super.internal(root);
+
+	final TranslationsAz _root; // ignore: unused_field
+
+	// Translations
+	@override String get include => 'Daxil et';
+	@override String get exclude => 'Xaric et';
+	@override String get any => 'İstənilən';
+	@override String get yes => 'Bəli';
+	@override String get no => 'Xeyr';
+	@override String not({required Object value}) => '${value} deyil';
+	@override String valueCount({required Object count}) => '${count} seçilib';
+	@override String valueCountExcluded({required Object count}) => '${count} xaric edilib';
+	@override String get searchValues => 'Dəyərlərdə axtar';
+	@override String get noValues => 'Dəyər yoxdur';
+	@override String get matchContains => 'Ehtiva edir';
+	@override String get matchNotContains => 'Ehtiva etmir';
+	@override String get matchIs => 'Bərabərdir';
+	@override String get matchIsNot => 'Bərabər deyil';
+	@override String get matchBeginsWith => 'İlə başlayır';
+	@override String get matchEndsWith => 'İlə bitir';
+	@override String get textHint => 'Uyğunluq üçün yazın';
+	@override String get from => 'Başlanğıc';
+	@override String get to => 'Son';
+	@override String range({required Object from, required Object to}) => '${from} – ${to}';
+	@override String atLeast({required Object value}) => '${value} və yuxarı';
+	@override String atMost({required Object value}) => '${value} və aşağı';
+	@override String dateLastDays({required Object count}) => 'Son ${count} gün';
+	@override String get dateLastYear => 'Son bir il';
+	@override String dateOlderThanDays({required Object count}) => '${count} gündən köhnə';
+	@override String get dateOlderThanYear => 'Bir ildən köhnə';
 }
 
 // Path: explore.rows
@@ -2650,6 +2992,7 @@ class _Translations$explore$creditRole$az extends Translations$explore$creditRol
 	final TranslationsAz _root; // ignore: unused_field
 
 	// Translations
+	@override String get actor => 'Aktyor';
 	@override String get director => 'Rejissor';
 	@override String get writer => 'Ssenarist';
 	@override String get producer => 'Prodüser';
@@ -2752,13 +3095,68 @@ class _Translations$watchTogether$notices$az extends Translations$watchTogether$
 	final TranslationsAz _root; // ignore: unused_field
 
 	// Translations
+	@override String pressedPlay({required Object name}) => '${name} oynat düyməsinə basdı';
+	@override String get playbackStarted => 'Oynatma başladı';
 	@override String paused({required Object name}) => '${name} fasilə etdi';
+	@override String get playbackPaused => 'Oynatma fasilə edildi';
+	@override String jumpedTo({required Object name, required Object position}) => '${name} ${position} anına keçdi';
+	@override String roomJumpedTo({required Object position}) => '${position} anına keçildi';
 	@override String changedSpeed({required Object name, required Object speed}) => '${name} sürəti ${speed} olaraq təyin etdi';
+	@override String speedChanged({required Object speed}) => 'Sürət ${speed} olaraq təyin edildi';
+	@override String startedMedia({required Object name, required Object title}) => '${name} oynatmağa başladı: ${title}';
+	@override String mediaStarted({required Object title}) => 'İndi oynadılır: ${title}';
+	@override String stoppedMedia({required Object name}) => '${name} videonu dayandırdı';
+	@override String get mediaStopped => 'Video dayandı';
 	@override String waitingFor({required Object name}) => '${name} gözlənilir...';
+	@override String get waitingForSomeone => 'Kiminsə yetişməsi gözlənilir...';
+	@override String get finished => 'Bitdi';
 	@override String hostChangedTo({required Object name}) => '${name} indi təşkilatçıdır';
 	@override String get youAreNowHost => 'İndi təşkilatçı sizsiniz';
 	@override String joined({required Object name}) => '${name} qoşuldu';
 	@override String left({required Object name}) => '${name} ayrıldı';
+	@override String get controlRefused => 'Oynatmanı yalnız təşkilatçı idarə edə bilər';
+	@override String get searchFailed => 'Bəzi serverlərdə otağın videosunu axtarmaq mümkün olmadı';
+	@override String get playBlocked => 'Başlamaq üçün oynat düyməsinə basın';
+	@override String get shareFailed => 'Bu videonu otaqla paylaşmaq mümkün olmadı';
+	@override String get downloadNotShared => 'Serverləri oflayn olduğu müddətdə yükləmələr otaqla paylaşılmır';
+	@override String get openFailed => 'Otağın videosunu açmaq mümkün olmadı';
+}
+
+// Path: watchTogether.ended
+class _Translations$watchTogether$ended$az extends Translations$watchTogether$ended$en {
+	_Translations$watchTogether$ended$az._(TranslationsAz root) : this._root = root, super.internal(root);
+
+	final TranslationsAz _root; // ignore: unused_field
+
+	// Translations
+	@override String get ended => 'Təşkilatçı otağı bağladı';
+	@override String get kicked => 'Siz otaqdan çıxarıldınız';
+	@override String get expired => 'Otağın vaxtı bitdi';
+	@override String get replaced => 'Bu otağa başqa cihazda qoşuldunuz';
+	@override String get lost => 'Otaqla əlaqə kəsildi';
+}
+
+// Path: watchTogether.errors
+class _Translations$watchTogether$errors$az extends Translations$watchTogether$errors$en {
+	_Translations$watchTogether$errors$az._(TranslationsAz root) : this._root = root, super.internal(root);
+
+	final TranslationsAz _root; // ignore: unused_field
+
+	// Translations
+	@override String get invalidCode => 'Bu, otaq kodu deyil. Kodlar 0, 1, I, L və ya O olmadan 6 hərf və rəqəmdən ibarətdir.';
+	@override String get roomNotFound => 'Bu kodla otaq yoxdur. O, bağlanmış ola bilər.';
+	@override String get roomFull => 'Bu otaq doludur.';
+	@override String get roomLocked => 'Təşkilatçı bu otağı kilidləyib.';
+	@override String get relayFull => 'Birlikdə İzlə hazırda məşğuldur. Sonra yenidən cəhd edin.';
+	@override String get unreachable => 'Birlikdə İzlə relesinə qoşulmaq mümkün olmadı. Bağlantınızı yoxlayın.';
+	@override String get rateLimited => 'Həddindən çox cəhd. Bir az gözləyib yenidən cəhd edin.';
+	@override String get clientBlocked => 'Plezy-nin bu versiyası releni istifadə edə bilmir. Tətbiqi yeniləyin.';
+	@override String get forbidden => 'Bunu yalnız təşkilatçı edə bilər.';
+	@override String get notInRoom => 'Siz otaqda deyilsiniz.';
+	@override String get alreadyInRoom => 'Siz artıq otaqdasınız.';
+	@override String get resumeFailed => 'Otağa yenidən qoşulmaq mümkün olmadı.';
+	@override String get unsupported => 'Rele bunu dəstəkləmir.';
+	@override String get generic => 'Nəsə səhv getdi. Yenidən cəhd edin.';
 }
 
 // Path: downloads.backgroundWarning
@@ -2804,6 +3202,7 @@ class _Translations$downloads$groupings$az extends Translations$downloads$groupi
 
 	// Translations
 	@override String get library => 'Kitabxana';
+	@override String get collections => 'Kolleksiyalar';
 }
 
 // Path: companionRemote.session
@@ -2918,6 +3317,17 @@ class _Translations$services$names$az extends Translations$services$names$en {
 	@override String get mdblist => 'MDBList';
 }
 
+// Path: services.simklReconnect
+class _Translations$services$simklReconnect$az extends Translations$services$simklReconnect$en {
+	_Translations$services$simklReconnect$az._(TranslationsAz root) : this._root = root, super.internal(root);
+
+	final TranslationsAz _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Simkl-ə yenidən qoşul';
+	@override String get subtitle => 'Simkl bu bağlantının istifadə etdiyi daxil olma üsulunu ləğv edir. Yenidən qoşulduqda Plezy-ni təsdiqləmək üçün simkl.com açılır — Plezy parolunuzu heç vaxt görmür. Baxış tarixçəniz Simkl-də qalır.';
+}
+
 // Path: services.deviceCode
 class _Translations$services$deviceCode$az extends Translations$services$deviceCode$en {
 	_Translations$services$deviceCode$az._(TranslationsAz root) : this._root = root, super.internal(root);
@@ -2986,6 +3396,37 @@ extension on TranslationsAz {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'Plezy',
+			'appIcon.title' => 'Tətbiq ikonu',
+			'appIcon.defaultIcon' => 'Defolt',
+			'appIcon.current' => 'Cari ikon',
+			'appIcon.locked' => 'Supporter imtiyazı',
+			'appIcon.lockedHint' => 'Alternativ ikonlar Supporter imtiyazıdır.',
+			'appIcon.changeFailed' => 'Tətbiq ikonu dəyişdirilə bilmədi',
+			'appIcon.launcherHint' => 'Plezy-dən çıxdıqdan sonra yeni ikon ana ekranınızda görünəcək.',
+			'appIcon.tvLauncherHint' => 'Plezy-dən çıxdıqdan sonra yeni banner görünəcək. Android TV televizor yenidən başladılana qədər köhnəsini göstərə bilər.',
+			'appIcon.names.midnight' => 'Gecəyarısı',
+			'appIcon.names.ember' => 'Köz',
+			'appIcon.names.paper' => 'Kağız',
+			'appIcon.names.oled' => 'OLED',
+			'appIcon.names.line' => 'Xətt',
+			'appIcon.names.ocean' => 'Okean',
+			'appIcon.names.ultraviolet' => 'Ultrabənövşəyi',
+			'appIcon.names.matcha' => 'Matça',
+			'appIcon.names.sunset' => 'Gün batımı',
+			'appIcon.names.gold' => 'Qızıl',
+			'appIcon.names.titanium' => 'Titan',
+			'appIcon.names.glass' => 'Şüşə',
+			'appIcon.names.crt' => 'CRT',
+			'appIcon.names.vhs' => 'VHS',
+			'appIcon.names.synthwave' => 'Synthwave',
+			'appIcon.names.pixel' => 'Piksel',
+			'appIcon.names.neon' => 'Neon',
+			'appIcon.names.sticker' => 'Stiker',
+			'appIcon.names.ticket' => 'Bilet',
+			'appIcon.names.pop' => 'Pop',
+			'appIcon.names.strata' => 'Laylar',
+			'appIcon.names.facet' => 'Faset',
+			'appIcon.names.tilde' => 'Tilda',
 			'auth.signInWithPlex' => 'Plex ilə daxil ol',
 			'auth.showQRCode' => 'QR kodu göstər',
 			'auth.authenticate' => 'Təsdiqlə',
@@ -3062,7 +3503,7 @@ extension on TranslationsAz {
 			'common.ratingSource.rottenTomatoesAudience' => 'Rotten Tomatoes tamaşaçıları',
 			'common.ratingSource.metacritic' => 'Metacritic',
 			'common.ratingSource.letterboxd' => 'Letterboxd',
-			'common.notAvailable' => 'N/A',
+			'common.notAvailable' => 'Yoxdur',
 			'common.url' => 'URL',
 			'common.letterKeys' => 'ABC',
 			'common.mediaKind.movie' => 'Film',
@@ -3089,6 +3530,29 @@ extension on TranslationsAz {
 			'update.viewRelease' => 'Buraxılışa bax',
 			'update.latestVersion' => 'Siz ən son versiyadasınız',
 			'update.checkFailed' => 'Yenilənmələr yoxlanıla bilmədi',
+			'supporter.title' => 'Plezy Supporter',
+			'supporter.intro' => 'Plezy-nin inkişafını dəstəkləyən və kosmetik əlavələri açan birdəfəlik alış:',
+			'supporter.presetThemes' => 'Hazır mövzular',
+			'supporter.presetThemesDescription' => 'Köz, Buzlaq, Meşə, Gavalı və Kağız',
+			'supporter.customTheme' => 'Xüsusi mövzu',
+			'supporter.customThemeDescription' => 'Bütün rəngləri özünüz seçin',
+			'supporter.appIcons' => 'Tətbiq ikonları',
+			'supporter.appIconsDescription' => 'Alternativ Plezy ikonu seçin',
+			'supporter.buy' => ({required Object price}) => '${price} qiymətinə al',
+			'supporter.loadingPrice' => 'Qiymət yüklənir...',
+			'supporter.restore' => 'Alışları bərpa et',
+			'supporter.pending' => 'Alışınız ödəniş və ya təsdiq gözləyir. Mağaza onu tamamlayan kimi əlavələr açılacaq.',
+			'supporter.thankYouTitle' => 'Plezy-ni dəstəklədiyiniz üçün təşəkkür edirik',
+			'supporter.thankYouBody' => 'Supporter əlavələriniz açıldı.',
+			'supporter.tileSubtitle' => 'Mövzuları və tətbiq ikonlarını birdəfəlik alışla açın',
+			'supporter.tileSubtitleThemesOnly' => 'Mövzuları birdəfəlik alışla açın',
+			'supporter.tileUnlocked' => 'Dəstəyiniz üçün təşəkkür edirik',
+			'supporter.errors.storeUnavailable' => 'Alışlar əlçatan deyil. Mağazaya daxil olduğunuzu və bu cihazda alışlara icazə verildiyini yoxlayın.',
+			'supporter.errors.productNotFound' => 'Supporter alışı hazırda mağazanızda əlçatan deyil.',
+			'supporter.errors.productQueryFailed' => 'Qiymət yüklənə bilmədi. Bağlantınızı yoxlayın və yenidən cəhd edin.',
+			'supporter.errors.purchaseFailed' => 'Alış baş tutmadı. Yenidən cəhd edin.',
+			'supporter.errors.restoreFailed' => 'Alışınızı bərpa etmək üçün mağazaya qoşulmaq mümkün olmadı. Yenidən cəhd edin.',
+			'supporter.errors.nothingToRestore' => 'Bu mağaza hesabı üçün Supporter alışı tapılmadı.',
 			'settings.title' => 'Tənzimləmələr',
 			'settings.supportDeveloper' => 'Plezy-yə dəstək ol',
 			'settings.supportDeveloperDescription' => 'İnkişafı maliyyələşdirmək üçün Liberapay vasitəsilə iyanə edin',
@@ -3112,6 +3576,11 @@ extension on TranslationsAz {
 			'settings.lightTheme' => 'Açıq',
 			'settings.darkTheme' => 'Tünd',
 			'settings.oledTheme' => 'OLED',
+			'settings.emberTheme' => 'Köz',
+			'settings.glacierTheme' => 'Buzlaq',
+			'settings.forestTheme' => 'Meşə',
+			'settings.plumTheme' => 'Gavalı',
+			'settings.paperTheme' => 'Kağız',
 			'settings.libraryDensity' => 'Kitabxana sıxlığı',
 			'settings.displayScale' => 'Ekran miqyası',
 			'settings.compact' => 'Sıx',
@@ -3209,6 +3678,7 @@ extension on TranslationsAz {
 			'settings.videoPlayerNavigation' => 'Video oynadıcı naviqasiyası',
 			'settings.videoPlayerNavigationDescription' => 'Oynadıcı idarəetmələrində hərəkət etmək üçün ox düymələrini istifadə edin',
 			'settings.watchTogetherRelay' => 'Birlikdə İzlə relesi',
+			'settings.watchTogetherRelayDescription' => 'Öz relenizi təyin etməsəniz, ictimai Open Watch Party releləri istifadə olunur',
 			'settings.watchTogetherRelayHint' => 'https://my-relay.example.com',
 			'settings.watchTogetherRelayInvalid' => 'Düzgün HTTP və ya HTTPS rele ünvanı daxil edin.',
 			'settings.crashReporting' => 'Xəta hesabatı',
@@ -3234,6 +3704,7 @@ extension on TranslationsAz {
 			'settings.importSettingsInvalidFile' => 'Bu fayl düzgün Plezy tənzimləmələr faylı deyil',
 			'settings.importSettingsNoUser' => 'Tənzimləmələri idxal etməzdən əvvəl daxil olun',
 			'settings.shortcutsReset' => 'Qısayollar defolt vəziyyətə sıfırlandı',
+			'settings.resetShortcutsConfirm' => 'Bu, xüsusi qısayollarınızı defolt qısayollarla əvəz edəcək. Davam edilsin?',
 			'settings.about' => 'Haqqında',
 			'settings.aboutDescription' => 'Tətbiq məlumatı və lisenziyalar',
 			'settings.updates' => 'Yenilənmələr',
@@ -3318,7 +3789,16 @@ extension on TranslationsAz {
 			'settings.audioPassthrough' => 'Səsin birbaşa ötürülməsi (Passthrough)',
 			'settings.audioPassthroughDescription' => 'Dolby/DTS səslərini yenidən kodlamadan TV və ya resiverə göndərir. Səs gəlmirsə söndürün.',
 			'settings.audioPassthroughDescriptionApple' => 'Atmos daxil olmaqla Dolby Digital Plus üçün Apple-ın daxili dekoderini istifadə edin. DTS və TrueHD yenə də çoxkanallı PCM kimi oynadılır. Səs gəlmirsə söndürün.',
+			'settings.audioPassthroughDescriptionAppleSpatial' => 'Atmos daxil olmaqla Dolby Digital Plus üçün Apple-ın daxili Dolby dekoderini istifadə edin. iOS, iPadOS və tvOS 26 və ya daha yeni versiyalarda TrueHD Atmos və DTS:X məkan səsi kimi oynadılır. Digər DTS və TrueHD trekləri çoxkanallı PCM kimi oynadılır. Səs gəlmirsə söndürün.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Səsin gurluğunu normallaşdırma aktivkən söndürülüb',
+			'settings.audioChannelLimit' => 'Səs kanalları',
+			'settings.audioChannelLimitDescription' => 'Bütün kanalları oynada bilməyən dinamiklər, qulaqlıqlar və ya HDMI qurğuları üçün dekodlanmış səsi daha az kanala endir',
+			'settings.audioChannelLimitOriginal' => 'Orijinal',
+			'settings.audioChannelLimitOriginalDescription' => 'Trekdəki bütün kanalları oynat',
+			'settings.audioChannelLimitSurround51' => '5.1-ə qədər',
+			'settings.audioChannelLimitSurround51Description' => 'Yalnız 5.1 PCM qəbul edən televizorlar və resiverlər üçün 7.1-i 5.1-ə endir. Birbaşa ötürməyə təsir etmir.',
+			'settings.audioChannelLimitStereo' => 'Stereo',
+			'settings.audioChannelLimitStereoDescription' => 'Stereo dinamiklər və ya qulaqlıqlar üçün iki kanala endir. Birbaşa ötürməni söndürür.',
 			'settings.downmixCenterBoost' => 'Mərkəz kanal gücləndirilməsi',
 			'settings.downmixCenterBoostValue' => ({required Object db}) => '${db} dB',
 			'settings.downmixCenterBoostLabel' => 'Gücləndirmə (dB)',
@@ -3347,6 +3827,12 @@ extension on TranslationsAz {
 			'settings.hdrSdrConversionPlayerDescription' => 'Çevirməni oynadıcı edir. Sabit rənglər, lakin zəif TV qutularında 4K ilişə bilər',
 			'settings.deinterlace' => 'Deinterleysinq',
 			'settings.deinterlaceDescription' => 'Sətirlərarası videodakı darama artefaktlarını aradan qaldır (yalnız mpv oynadıcısı)',
+			'settings.deinterlaceOff' => 'Söndürülüb',
+			'settings.deinterlaceOffDescription' => 'Sətirlərarası videonu dekodlandığı kimi göstər',
+			'settings.deinterlaceVideo' => 'Video',
+			'settings.deinterlaceVideoDescription' => 'Hər yarımkadrı tam kadra çevir. İdman, xəbər və konsert kimi TV üçün çəkilmiş videolar üçün',
+			'settings.deinterlaceFilm' => 'Film',
+			'settings.deinterlaceFilmDescription' => '29.97 fps-ə telesine edilmiş film və animasiyaların orijinal kadrlarını bərpa et (NTSC DVD-lərdə geniş yayılıb). TV üçün çəkilmiş video ilişir. Canlı TV Video rejimindən istifadə edir',
 			'settings.requireProfileSelectionOnOpen' => 'Açılışda profil soruş',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Tətbiq hər dəfə açıldıqda profil seçimini göstər',
 			'settings.forceTvMode' => 'TV rejimini məcburi et',
@@ -3402,10 +3888,51 @@ extension on TranslationsAz {
 			'settings.playerScopeLibrary' => 'Kitabxana üzrə',
 			'settings.playerScopeTitle' => 'Serial və ya film üzrə',
 			'settings.exportDialogTitle' => 'Plezy tənzimləmələrini ixrac et',
+			'themeEditor.builtIn' => 'Daxili',
+			'themeEditor.presets' => 'Hazır mövzular',
+			'themeEditor.custom' => 'Xüsusi',
+			'themeEditor.customEmpty' => 'Hələ yaradılmayıb',
+			'themeEditor.editCustom' => 'Xüsusi mövzuya düzəliş et',
+			'themeEditor.editCustomDescription' => 'Bütün rəngləri özünüz seçin',
+			'themeEditor.locked' => 'Supporter ilə açın',
+			'themeEditor.savedLocked' => 'Yadda saxlanılıb — Supporter ilə açılır',
+			'themeEditor.title' => 'Xüsusi mövzu',
+			'themeEditor.startFrom' => 'Başlanğıc mövzu',
+			'themeEditor.startFromDescription' => 'Bütün rəngləri başqa mövzudan kopyala',
+			'themeEditor.colors' => 'Rənglər',
+			'themeEditor.preview' => 'Önizləmə',
+			'themeEditor.slots.bg' => 'Arxa fon',
+			'themeEditor.slots.surface' => 'Səth',
+			'themeEditor.slots.outline' => 'Kontur',
+			'themeEditor.slots.text' => 'Mətn',
+			'themeEditor.slots.textMuted' => 'Köməkçi mətn',
+			'themeEditor.slots.accent' => 'Vurğu',
+			_ => null,
+		} ?? switch (path) {
+			'themeEditor.opacity' => 'Şəffaflıq',
+			'themeEditor.hexHint' => '#RRGGBB və ya #AARRGGBB',
+			'themeEditor.fromOtherThemes' => 'Digər mövzulardan',
+			'themeEditor.swatchLabel' => ({required Object theme, required Object color}) => '${theme}: ${color}',
+			'themeEditor.contrast.textOnBg' => 'Arxa fonda mətn',
+			'themeEditor.contrast.textOnSurface' => 'Səthdə mətn',
+			'themeEditor.contrast.textMutedOnBg' => 'Arxa fonda köməkçi mətn',
+			'themeEditor.contrast.textMutedOnSurface' => 'Səthdə köməkçi mətn',
+			'themeEditor.contrast.accentOnBg' => 'Arxa fonda vurğu',
+			'themeEditor.contrast.accentOnSurface' => 'Səthdə vurğu',
+			'themeEditor.contrast.labelOnAccent' => 'Vurğu üzərində düymə mətni',
+			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, tövsiyə olunan ${minimum}:1-dən aşağı',
+			'themeEditor.discardTitle' => 'Dəyişikliklərdən imtina edilsin?',
+			'themeEditor.discardMessage' => 'Yadda saxlanmamış rəng dəyişiklikləriniz itəcək.',
+			'themeEditor.discard' => 'İmtina et',
+			'themeEditor.previewCardTitle' => ({required Object number}) => 'Seriya ${number}',
+			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '${minutes} dəq qaldı',
+			'themeEditor.previewSwitch' => 'Avtomatik oynatma',
+			'themeEditor.previewMutedText' => 'Köməkçi mətn belə görünür',
 			'search.hint' => 'Kino, serial, musiqi axtar...',
 			'search.tryDifferentTerm' => 'Fərqli axtarış sözü cəhd edin',
 			'search.searchYourMedia' => 'Mediyanızda axtarın',
 			'search.enterTitleActorOrKeyword' => 'Ad, aktyor və ya açar söz daxil edin',
+			'search.people' => 'Şəxslər',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => '${actionName} üçün qısayol təyin et',
 			'hotkeys.clearShortcut' => 'Qısayolu təmizlə',
 			'hotkeys.noShortcutSet' => 'Qısayol təyin edilməyib',
@@ -3497,8 +4024,6 @@ extension on TranslationsAz {
 			'fileInfo.streamIndex' => 'Axın indeksi',
 			'fileInfo.streamId' => 'Axın ID-si',
 			'fileInfo.language' => 'Dil',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.languageCode' => 'Dil kodu',
 			'fileInfo.streamTitle' => 'Trek başlığı',
 			'fileInfo.channels' => 'Kanallar',
@@ -3686,6 +4211,7 @@ extension on TranslationsAz {
 			'videoControls.pipActive' => 'Pəncərə daxilində pəncərə rejimində oynadılır',
 			'videoControls.pipFailed' => 'PiP rejimi başladılarkən xəta',
 			'videoControls.screenshotSaved' => 'Ekran şəkli yadda saxlanıldı',
+			'videoControls.screenshotFailed' => 'Ekran şəkli çəkilə bilmədi',
 			'videoControls.zoomPercent' => ({required Object percent}) => 'Miqyas %${percent}',
 			'videoControls.volumePercent' => ({required Object percent}) => 'Səs ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Android 8.0 və ya daha yenisini tələb edir',
@@ -3838,6 +4364,8 @@ extension on TranslationsAz {
 			'profiles.signOut' => 'Çıxış et',
 			'profiles.signOutPlexTitle' => 'Plex-dən çıxılsın?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => '${displayName} və bütün Plex Home istifadəçiləri silinsin? İstənilən vaxt yenidən daxil ola bilərsiniz.',
+			'profiles.signOutPlexDeleteDownloads' => 'Yükləmələri də sil',
+			'profiles.signOutPlexDeleteDownloadsDescription' => 'Əks halda onlar bu cihazda qalır və bu hesaba yenidən daxil olduqda geri qayıdır.',
 			'profiles.signedOutPlex' => 'Plex-dən çıxıldı.',
 			'profiles.signOutFailed' => 'Çıxış uğursuz oldu.',
 			'profiles.sectionTitle' => 'Profillər',
@@ -3893,6 +4421,8 @@ extension on TranslationsAz {
 			'profiles.tokenIdentityMismatch' => 'Plex profil tokeni gözlənilməyən serveri müəyyən etdi',
 			'connections.sectionTitle' => 'Qoşulmalar',
 			'connections.addConnection' => 'Qoşulma əlavə et',
+			_ => null,
+		} ?? switch (path) {
 			'connections.addConnectionSubtitleNoProfile' => 'Plex ilə daxil olun və ya Jellyfin yaxud Emby serverinə qoşulun',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} profilinə əlavə et: Plex, Jellyfin, Emby və ya başqa profil qoşulması',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} üçün seansın vaxtı bitdi',
@@ -3984,6 +4514,11 @@ extension on TranslationsAz {
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} dəq qaldı',
 			'discover.moreLikeThis' => 'Buna bənzərlər',
 			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('az'))(n, one: '${n} başlıq', other: '${n} başlıq', ), 
+			'discover.person.born' => 'Doğum tarixi',
+			'discover.person.died' => 'Vəfat tarixi',
+			'discover.person.birthplace' => 'Doğum yeri',
+			'discover.person.dateWithAge' => ({required Object date, required Object age}) => '${date} (${age} yaş)',
+			'discover.person.dateWithAgeAtDeath' => ({required Object date, required Object age}) => '${date} (${age} yaşında)',
 			'errors.searchFailed' => ({required Object error}) => 'Axtarış uğursuz oldu: ${error}',
 			'errors.searchUnavailable' => 'Axtarış heç bir media serverinə çata bilmədi.',
 			'errors.connectionTimeout' => ({required Object context}) => '${context} yüklənərkən vaxt bitdi',
@@ -4011,8 +4546,6 @@ extension on TranslationsAz {
 			'libraries.analyzeLibrary' => 'Kitabxananı analiz et',
 			'libraries.refreshMetadata' => 'Meta-məlumatları yenilə',
 			'libraries.emptyTrash' => 'Zibil qutusunu təmizlə',
-			_ => null,
-		} ?? switch (path) {
 			'libraries.emptyingTrash' => ({required Object title}) => '"${title}" üçün zibil qutusu təmizlənir...',
 			'libraries.trashEmptied' => ({required Object title}) => '"${title}" üçün zibil qutusu təmizləndi',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Zibil qutusu təmizlənə bilmədi: ${error}',
@@ -4067,6 +4600,7 @@ extension on TranslationsAz {
 			'libraries.filterCategories.unwatched' => 'Baxılmayıb',
 			'libraries.filterCategories.unplayed' => 'Oynadılmayıb',
 			'libraries.filterCategories.favorites' => 'Sevimlilər',
+			'libraries.filterCategories.filePath' => 'Fayl yolu',
 			'libraries.sortLabels.title' => 'Ad',
 			'libraries.sortLabels.dateAdded' => 'Əlavə olunma tarixi',
 			'libraries.sortLabels.releaseDate' => 'Buraxılış tarixi',
@@ -4090,6 +4624,32 @@ extension on TranslationsAz {
 			'libraries.sortLabels.dateDownloaded' => 'Yüklənmə tarixi',
 			'libraries.sortLabels.size' => 'Həcm',
 			'libraries.sortLabels.library' => 'Kitabxana',
+			'libraries.advancedFilters.include' => 'Daxil et',
+			'libraries.advancedFilters.exclude' => 'Xaric et',
+			'libraries.advancedFilters.any' => 'İstənilən',
+			'libraries.advancedFilters.yes' => 'Bəli',
+			'libraries.advancedFilters.no' => 'Xeyr',
+			'libraries.advancedFilters.not' => ({required Object value}) => '${value} deyil',
+			'libraries.advancedFilters.valueCount' => ({required Object count}) => '${count} seçilib',
+			'libraries.advancedFilters.valueCountExcluded' => ({required Object count}) => '${count} xaric edilib',
+			'libraries.advancedFilters.searchValues' => 'Dəyərlərdə axtar',
+			'libraries.advancedFilters.noValues' => 'Dəyər yoxdur',
+			'libraries.advancedFilters.matchContains' => 'Ehtiva edir',
+			'libraries.advancedFilters.matchNotContains' => 'Ehtiva etmir',
+			'libraries.advancedFilters.matchIs' => 'Bərabərdir',
+			'libraries.advancedFilters.matchIsNot' => 'Bərabər deyil',
+			'libraries.advancedFilters.matchBeginsWith' => 'İlə başlayır',
+			'libraries.advancedFilters.matchEndsWith' => 'İlə bitir',
+			'libraries.advancedFilters.textHint' => 'Uyğunluq üçün yazın',
+			'libraries.advancedFilters.from' => 'Başlanğıc',
+			'libraries.advancedFilters.to' => 'Son',
+			'libraries.advancedFilters.range' => ({required Object from, required Object to}) => '${from} – ${to}',
+			'libraries.advancedFilters.atLeast' => ({required Object value}) => '${value} və yuxarı',
+			'libraries.advancedFilters.atMost' => ({required Object value}) => '${value} və aşağı',
+			'libraries.advancedFilters.dateLastDays' => ({required Object count}) => 'Son ${count} gün',
+			'libraries.advancedFilters.dateLastYear' => 'Son bir il',
+			'libraries.advancedFilters.dateOlderThanDays' => ({required Object count}) => '${count} gündən köhnə',
+			'libraries.advancedFilters.dateOlderThanYear' => 'Bir ildən köhnə',
 			'about.title' => 'Haqqında',
 			'about.openSourceLicenses' => 'Açıq mənbə lisenziyaları',
 			'about.versionLabel' => ({required Object version}) => 'Versiya ${version}',
@@ -4241,6 +4801,7 @@ extension on TranslationsAz {
 			'explore.sourceMaterial.webComic' => 'Veb komiks',
 			'explore.sourceMaterial.musicRelease' => 'Musiqi',
 			'explore.sourceMaterial.otherMedia' => 'Digər',
+			'explore.creditRole.actor' => 'Aktyor',
 			'explore.creditRole.director' => 'Rejissor',
 			'explore.creditRole.writer' => 'Ssenarist',
 			'explore.creditRole.producer' => 'Prodüser',
@@ -4374,6 +4935,8 @@ extension on TranslationsAz {
 			'liveTv.recordSettings.keepUpToHint' => '0 bütün epizodları saxlayır',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} dəq sonra başlayır',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, saat ${time}',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} etibarsız Canlı TV oynatma məlumatı qaytardı',
 			'liveTv.failedToStartChannel' => 'Canlı kanalı başlatmaq olmadı',
 			'liveTv.failedToBuildStreamUrl' => 'Yayım URL-i yaratmaq olmadı',
@@ -4456,30 +5019,151 @@ extension on TranslationsAz {
 			'music.discography.compilations' => 'Kompilyasiyalar',
 			'watchTogether.title' => 'Birlikdə İzlə',
 			'watchTogether.description' => 'Dostlarınız və ailənizlə eyni vaxtda baxın',
+			'watchTogether.createRoom' => 'Otaq yarat',
+			'watchTogether.creatingRoom' => 'Otaq yaradılır...',
+			'watchTogether.joinRoom' => 'Otağa qoşul',
+			'watchTogether.joiningRoom' => 'Otağa qoşulunur...',
+			'watchTogether.connecting' => 'Qoşulunur...',
+			'watchTogether.relayPublic' => 'Otaqlar ictimai Open Watch Party relelərindən istifadə edir.',
+			'watchTogether.relayCustom' => ({required Object url}) => 'Otaqlar ${url} ünvanındakı relenizdən istifadə edir.',
 			'watchTogether.recentRooms' => 'Son otaqlar',
+			'watchTogether.roomActions' => 'Otaq əməliyyatları',
 			'watchTogether.renameRoom' => 'Otağın adını dəyişdir',
 			'watchTogether.removeRoom' => 'Sil',
+			'watchTogether.enterRoomCode' => 'Təşkilatçının verdiyi 6 simvollu kodu daxil edin.',
+			'watchTogether.roomCode' => 'Otaq kodu',
+			'watchTogether.paste' => 'Yapışdır',
+			'watchTogether.noCodeInClipboard' => 'Buferdə otaq kodu yoxdur',
+			'watchTogether.copyCode' => 'Kodu kopyala',
+			'watchTogether.codeCopied' => 'Otaq kodu kopyalandı',
+			'watchTogether.shareInvite' => 'Dəvəti paylaş',
+			'watchTogether.inviteCopied' => 'Dəvət kopyalandı. Onu mesaja yapışdırın.',
+			'watchTogether.inviteMessage' => ({required Object code}) => 'Plezy-də Birlikdə İzlə otağıma qoşul: Birlikdə İzlə bölməsini aç, "Otağa qoşul" düyməsinə bas və ${code} kodunu daxil et.',
 			'watchTogether.openSessionControls' => 'Birlikdə İzlə seans idarəetmələrini aç',
+			'watchTogether.reconnecting' => 'Yenidən qoşulunur...',
+			'watchTogether.reconnectingDescription' => 'Əlaqə kəsildi. Otağa avtomatik olaraq yenidən qoşulacaqsınız.',
+			'watchTogether.connected' => 'Qoşulub',
+			'watchTogether.disconnected' => 'Əlaqə kəsilib',
 			'watchTogether.youAreHost' => 'Təşkilatçı sizsiniz',
+			'watchTogether.hostedBy' => ({required Object name}) => 'Təşkilatçı: ${name}',
 			'watchTogether.hostControlsPlayback' => 'Oynatmanı təşkilatçı idarə edir',
 			'watchTogether.anyoneCanControl' => 'Oynatmanı hər kəs idarə edə bilər',
+			'watchTogether.roomLocked' => 'Otaq kilidlənib',
+			'watchTogether.nowPlaying' => 'İndi oynadılır',
+			'watchTogether.nothingPlaying' => 'Heç nə oynadılmır',
+			'watchTogether.nothingPlayingHost' => 'Otaqla paylaşmaq üçün istənilən kitabxanadan nəsə oynadın.',
+			'watchTogether.nothingPlayingGuest' => 'Təşkilatçı nəsə oynatdıqda, burada açılacaq.',
+			'watchTogether.notShareable' => 'Bu videonun kataloqda uyğunluğu yoxdur, ona görə də onu yalnız eyni serverə çıxışı olanlar oynada bilər.',
+			'watchTogether.searching' => 'Bu video kitabxanalarınızda axtarılır...',
+			'watchTogether.yourCopy' => 'Sizin nüsxəniz',
+			'watchTogether.sharingYourCopy' => 'Nüsxənizi paylaşırsınız',
+			'watchTogether.playingOtherLength' => ({required Object difference}) => 'Nüsxəniz oynadılır (${difference})',
+			'watchTogether.mismatchTitle' => 'Nüsxənizin uzunluğu fərqlidir',
+			'watchTogether.mismatchDescription' => ({required Object difference}) => 'Ən yaxın nüsxəniz otaqdakı videodan ${difference}. Bu, başqa montaj və ya versiya ola bilər.',
+			'watchTogether.playAnyway' => 'Yenə də oynat',
+			'watchTogether.chooseAnotherCopy' => 'Başqa nüsxə seç',
+			'watchTogether.dontPlay' => 'Oynatma',
+			'watchTogether.unavailableTitle' => 'Bu video sizdə yoxdur',
+			'watchTogether.unavailableDescription' => 'Plezy onu kitabxanalarınızda tapa bilmədi. Nüsxəni özünüz seçin və ya yenidən axtarın.',
+			'watchTogether.chooseCopy' => 'Nüsxə seç',
+			'watchTogether.searchAgain' => 'Yenidən axtar',
+			'watchTogether.noCandidates' => 'Kitabxanalarınızda nüsxə tapılmadı.',
+			'watchTogether.choiceFailed' => 'Bu nüsxəni otaq üçün oynatmaq mümkün olmadı',
+			'watchTogether.lengthLonger' => ({required Object duration}) => '${duration} daha uzun',
+			'watchTogether.lengthShorter' => ({required Object duration}) => '${duration} daha qısa',
+			'watchTogether.lengthSame' => 'Eyni uzunluq',
+			'watchTogether.lengthUnknown' => 'Uzunluq məlum deyil',
 			'watchTogether.joinCurrentPlayback' => 'Cari oynatmaya qoşul',
 			'watchTogether.joinCurrentPlaybackDescription' => 'Təşkilatçının indi baxdığı hissəyə keçin',
+			'watchTogether.stopMedia' => 'Videonu hamı üçün dayandır',
+			'watchTogether.syncOffset' => 'Sinxronizasiya ofseti',
+			'watchTogether.syncOffsetDescription' => 'Videonuz otaqdan qabaqda və ya geridə qalırsa, onu sürüşdürün.',
+			'watchTogether.offsetHint' => ({required Object difference}) => 'Nüsxəniz otaqdakı videodan ${difference}.',
+			'watchTogether.applyDifference' => ({required Object offset}) => '${offset} tətbiq et',
+			'watchTogether.offsetMinusSecond' => '-1 san',
+			'watchTogether.offsetMinusTenth' => '-100 ms',
+			'watchTogether.offsetPlusTenth' => '+100 ms',
+			'watchTogether.offsetPlusSecond' => '+1 san',
 			'watchTogether.participants' => 'İştirakçılar',
+			'watchTogether.participantCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('az'))(n, one: '${n} iştirakçı', other: '${n} iştirakçı', ), 
 			'watchTogether.hostBadge' => 'TƏŞKİLATÇI',
+			'watchTogether.nameYou' => ({required Object name}) => '${name} (Siz)',
+			'watchTogether.playerIdle' => 'Gözləmədə',
+			'watchTogether.playerLoading' => 'Yüklənir',
+			'watchTogether.playerReady' => 'Hazırdır',
+			'watchTogether.playerBuffering' => 'Buferlənir',
+			'watchTogether.matchSearching' => 'Axtarır',
+			'watchTogether.matchMatched' => 'Video var',
+			'watchTogether.matchMismatched' => 'Fərqli uzunluq',
+			'watchTogether.matchUnavailable' => 'Video yoxdur',
+			'watchTogether.participantOffset' => ({required Object offset}) => 'Ofset ${offset}',
 			'watchTogether.makeHost' => 'Təşkilatçı təyin et',
 			'watchTogether.makeHostQuestion' => 'Təşkilatçı köçürülsün?',
 			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} oynatmanı idarə edəcək və seansı hər kəs üçün aparacaq.',
 			'watchTogether.transfer' => 'Köçür',
+			'watchTogether.removeParticipant' => 'Otaqdan çıxar',
+			'watchTogether.removeParticipantQuestion' => ({required Object name}) => '${name} çıxarılsın?',
+			'watchTogether.removeParticipantConfirm' => ({required Object name}) => '${name} otağı tərk edəcək. Otağı kilidləməsəniz, kodla yenidən qoşula bilər.',
+			'watchTogether.remove' => 'Çıxar',
+			'watchTogether.roomSettings' => 'Otaq tənzimləmələri',
+			'watchTogether.letEveryoneControl' => 'Hamıya oynatmanı idarə etməyə icazə ver',
+			'watchTogether.lockRoom' => 'Otağı kilidlə',
+			'watchTogether.lockRoomDescription' => 'Heç kim yeni qoşula bilməz',
+			'watchTogether.leaveRoom' => 'Otağı tərk et',
+			'watchTogether.leaveRoomQuestion' => 'Otaq tərk edilsin?',
+			'watchTogether.leaveRoomConfirm' => 'Otaq kodu ilə yenidən qoşula bilərsiniz.',
 			'watchTogether.leave' => 'Çıx',
+			'watchTogether.endRoom' => 'Otağı bağla',
+			'watchTogether.endRoomQuestion' => 'Otaq bağlansın?',
+			'watchTogether.endRoomConfirm' => 'Bu, otağı hamı üçün bağlayır.',
 			'watchTogether.end' => 'Bitir',
+			'watchTogether.playBlockedTitle' => 'Oynatma başlamadı',
+			'watchTogether.playBlockedDescription' => 'Otaqla birlikdə baxmağa başlamaq üçün oynat düyməsinə basın.',
+			'watchTogether.notices.pressedPlay' => ({required Object name}) => '${name} oynat düyməsinə basdı',
+			'watchTogether.notices.playbackStarted' => 'Oynatma başladı',
 			'watchTogether.notices.paused' => ({required Object name}) => '${name} fasilə etdi',
+			'watchTogether.notices.playbackPaused' => 'Oynatma fasilə edildi',
+			'watchTogether.notices.jumpedTo' => ({required Object name, required Object position}) => '${name} ${position} anına keçdi',
+			'watchTogether.notices.roomJumpedTo' => ({required Object position}) => '${position} anına keçildi',
 			'watchTogether.notices.changedSpeed' => ({required Object name, required Object speed}) => '${name} sürəti ${speed} olaraq təyin etdi',
+			'watchTogether.notices.speedChanged' => ({required Object speed}) => 'Sürət ${speed} olaraq təyin edildi',
+			'watchTogether.notices.startedMedia' => ({required Object name, required Object title}) => '${name} oynatmağa başladı: ${title}',
+			'watchTogether.notices.mediaStarted' => ({required Object title}) => 'İndi oynadılır: ${title}',
+			'watchTogether.notices.stoppedMedia' => ({required Object name}) => '${name} videonu dayandırdı',
+			'watchTogether.notices.mediaStopped' => 'Video dayandı',
 			'watchTogether.notices.waitingFor' => ({required Object name}) => '${name} gözlənilir...',
+			'watchTogether.notices.waitingForSomeone' => 'Kiminsə yetişməsi gözlənilir...',
+			'watchTogether.notices.finished' => 'Bitdi',
 			'watchTogether.notices.hostChangedTo' => ({required Object name}) => '${name} indi təşkilatçıdır',
 			'watchTogether.notices.youAreNowHost' => 'İndi təşkilatçı sizsiniz',
 			'watchTogether.notices.joined' => ({required Object name}) => '${name} qoşuldu',
 			'watchTogether.notices.left' => ({required Object name}) => '${name} ayrıldı',
+			'watchTogether.notices.controlRefused' => 'Oynatmanı yalnız təşkilatçı idarə edə bilər',
+			'watchTogether.notices.searchFailed' => 'Bəzi serverlərdə otağın videosunu axtarmaq mümkün olmadı',
+			'watchTogether.notices.playBlocked' => 'Başlamaq üçün oynat düyməsinə basın',
+			'watchTogether.notices.shareFailed' => 'Bu videonu otaqla paylaşmaq mümkün olmadı',
+			'watchTogether.notices.downloadNotShared' => 'Serverləri oflayn olduğu müddətdə yükləmələr otaqla paylaşılmır',
+			'watchTogether.notices.openFailed' => 'Otağın videosunu açmaq mümkün olmadı',
+			'watchTogether.ended.ended' => 'Təşkilatçı otağı bağladı',
+			'watchTogether.ended.kicked' => 'Siz otaqdan çıxarıldınız',
+			'watchTogether.ended.expired' => 'Otağın vaxtı bitdi',
+			'watchTogether.ended.replaced' => 'Bu otağa başqa cihazda qoşuldunuz',
+			'watchTogether.ended.lost' => 'Otaqla əlaqə kəsildi',
+			'watchTogether.errors.invalidCode' => 'Bu, otaq kodu deyil. Kodlar 0, 1, I, L və ya O olmadan 6 hərf və rəqəmdən ibarətdir.',
+			'watchTogether.errors.roomNotFound' => 'Bu kodla otaq yoxdur. O, bağlanmış ola bilər.',
+			'watchTogether.errors.roomFull' => 'Bu otaq doludur.',
+			'watchTogether.errors.roomLocked' => 'Təşkilatçı bu otağı kilidləyib.',
+			'watchTogether.errors.relayFull' => 'Birlikdə İzlə hazırda məşğuldur. Sonra yenidən cəhd edin.',
+			'watchTogether.errors.unreachable' => 'Birlikdə İzlə relesinə qoşulmaq mümkün olmadı. Bağlantınızı yoxlayın.',
+			'watchTogether.errors.rateLimited' => 'Həddindən çox cəhd. Bir az gözləyib yenidən cəhd edin.',
+			'watchTogether.errors.clientBlocked' => 'Plezy-nin bu versiyası releni istifadə edə bilmir. Tətbiqi yeniləyin.',
+			'watchTogether.errors.forbidden' => 'Bunu yalnız təşkilatçı edə bilər.',
+			'watchTogether.errors.notInRoom' => 'Siz otaqda deyilsiniz.',
+			'watchTogether.errors.alreadyInRoom' => 'Siz artıq otaqdasınız.',
+			'watchTogether.errors.resumeFailed' => 'Otağa yenidən qoşulmaq mümkün olmadı.',
+			'watchTogether.errors.unsupported' => 'Rele bunu dəstəkləmir.',
+			'watchTogether.errors.generic' => 'Nəsə səhv getdi. Yenidən cəhd edin.',
+			'watchTogether.untitledEpisode' => ({required Object number}) => 'Seriya ${number}',
 			'downloads.title' => 'Yükləmələr',
 			'downloads.manage' => 'İdarə et',
 			'downloads.tvShows' => 'TV Şoular',
@@ -4499,6 +5183,9 @@ extension on TranslationsAz {
 			'downloads.episodesQueued' => ({required Object count}) => 'Yükləmə üçün ${count} seriya növbəyə alındı',
 			'downloads.downloadDeleted' => 'Yükləmə silindi',
 			'downloads.deleteConfirm' => ({required Object title}) => '"${title}" bu cihazdan silinsin?',
+			'downloads.deleteCollectionDownloads' => 'Yükləmələri sil',
+			'downloads.deleteCollectionDownloadsConfirm' => ({required Object title}) => '"${title}" daxilindəki bütün yükləmələr bu cihazdan silinsin?',
+			'downloads.collectionDownloadsDeleted' => 'Yükləmələr silindi',
 			'downloads.cancelledDownloadTitle' => 'Ləğv edilmiş yükləmə',
 			'downloads.cancelledDownloadMessage' => 'Bu yükləmə ləğv edildi. Nə etmək istərdiniz?',
 			'downloads.allEpisodesAlreadyDownloaded' => 'Bütün seriyalar artıq yüklənib',
@@ -4516,6 +5203,8 @@ extension on TranslationsAz {
 			'downloads.noDownloadsTree' => 'Yükləmə yoxdur',
 			'downloads.pauseAll' => 'Hamısını fasilə et',
 			'downloads.resumeAll' => 'Hamısını davam etdir',
+			'downloads.retryAll' => 'Hamısını təzədən cəhd et',
+			'downloads.retryFailed' => 'Uğursuz yükləmələri təzədən cəhd et',
 			'downloads.deleteAll' => 'Hamısını sil',
 			'downloads.selectVersion' => 'Versiya seç',
 			'downloads.allEpisodes' => 'Bütün seriyalar',
@@ -4525,8 +5214,6 @@ extension on TranslationsAz {
 			'downloads.includeSpecials' => 'Xüsusi seriyaları daxil et',
 			'downloads.howManyEpisodes' => 'Neçə seriya?',
 			'downloads.invalidEpisodeCount' => 'Düzgün seriya sayı daxil edin.',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.keepSynced' => 'Eyniləşdirilmiş saxla',
 			'downloads.downloadOnce' => 'Bir dəfə yüklə',
 			'downloads.keepNUnwatched' => ({required Object count}) => '${count} baxılmayan seriyanı saxla',
@@ -4586,6 +5273,7 @@ extension on TranslationsAz {
 			'downloads.backgroundWarning.linkUnavailable' => 'Bu cihazda dontkillmyapp.com açıla bilmədi',
 			'downloads.options' => 'Yükləmə seçimləri',
 			'downloads.groupings.library' => 'Kitabxana',
+			'downloads.groupings.collections' => 'Kolleksiyalar',
 			'downloads.unknownLibrary' => 'Məlum olmayan kitabxana',
 			'downloads.unknownShow' => 'Məlum olmayan serial',
 			'downloads.unknownSeason' => 'Məlum olmayan mövsüm',
@@ -4720,6 +5408,13 @@ extension on TranslationsAz {
 			'performanceOverlay.rotation' => 'Dönmə',
 			'performanceOverlay.dvSource' => 'DV mənbəyi',
 			'performanceOverlay.dvPath' => 'DV yolu',
+			'performanceOverlay.dvRouteDecoder' => 'Dolby Vision çözücüsü',
+			'performanceOverlay.dvRouteDecoderP81' => 'Dolby Vision çözücüsü (P7→8.1)',
+			'performanceOverlay.dvRouteBaseLayer' => 'Baza təbəqə',
+			'performanceOverlay.dvRouteBaseLayerHdr10' => 'HDR10 baza təbəqə',
+			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG baza təbəqə',
+			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR baza təbəqə',
+			'performanceOverlay.dvRouteReshaped' => 'RPU ilə yenidən formalaşdırılıb (gpu-next)',
 			'performanceOverlay.p7Conversion' => 'P7 çevrilməsi',
 			'performanceOverlay.sampleRate' => 'Diskretləşdirmə tezliyi',
 			'performanceOverlay.pixelFormat' => 'Piksel formatı',
@@ -4754,6 +5449,8 @@ extension on TranslationsAz {
 			'performanceOverlay.decoderHardware' => 'Aparat təminatı',
 			'performanceOverlay.tunnelingActive' => 'Aktiv',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} uğursuz)',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.title' => 'Xarici oynadıcı',
 			'externalPlayer.useExternalPlayer' => 'Xarici oynadıcı istifadə et',
 			'externalPlayer.useExternalPlayerDescription' => 'Videoları başqa tətbiqdə açın',
@@ -4934,6 +5631,8 @@ extension on TranslationsAz {
 			'services.names.simkl' => 'Simkl',
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
+			'services.simklReconnect.title' => 'Simkl-ə yenidən qoşul',
+			'services.simklReconnect.subtitle' => 'Simkl bu bağlantının istifadə etdiyi daxil olma üsulunu ləğv edir. Yenidən qoşulduqda Plezy-ni təsdiqləmək üçün simkl.com açılır — Plezy parolunuzu heç vaxt görmür. Baxış tarixçəniz Simkl-də qalır.',
 			'services.deviceCode.title' => ({required Object service}) => 'Plezy-ni ${service} üzərində aktivləşdirin',
 			'services.deviceCode.instructions' => 'QR kodunu skan edin və ya aşağıdakı ünvana keçib bu kodu daxil edin:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Aktivləşdirmək üçün ${service} açın',

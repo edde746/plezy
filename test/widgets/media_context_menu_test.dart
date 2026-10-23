@@ -371,6 +371,66 @@ void main() {
     });
   });
 
+  group('MediaContextMenu add to (MediaBrowser, #2356)', () {
+    Future<http.Response> playlistServer(http.Request request, List<http.Request> posts) async {
+      if (request.method == 'POST') {
+        posts.add(request);
+        return http.Response('', 204);
+      }
+      if (request.url.queryParameters['IncludeItemTypes'] == 'Playlist') {
+        return jsonResponse({
+          'Items': [
+            {'Id': 'pl-1', 'Name': 'Road trip', 'Type': 'Playlist', 'MediaType': 'Video'},
+          ],
+          'TotalRecordCount': 1,
+        });
+      }
+      return _canDeleteResponse('movie-1', false);
+    }
+
+    testWidgets('a non-admin goes straight to the playlist picker and adds the item', (tester) async {
+      final posts = <http.Request>[];
+      final menuKey = await _pumpJellyfinMovieMenu(
+        tester,
+        isAdministrator: false,
+        handler: (request) => playlistServer(request, posts),
+      );
+
+      await _openMenu(tester, menuKey);
+      await tester.tap(find.text(t.common.addTo));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(t.collections.collection),
+        findsNothing,
+        reason: 'the server refuses non-admin collection edits',
+      );
+      expect(find.text(t.playlists.selectPlaylist), findsOneWidget);
+
+      await tester.tap(find.text('Road trip'));
+      await tester.pumpAndSettle();
+
+      expect(posts, hasLength(1));
+      expect(posts.single.url.path, '/Playlists/pl-1/Items');
+      expect(posts.single.url.queryParameters['Ids'], 'movie-1');
+    });
+
+    testWidgets('an admin chooses between playlist and collection', (tester) async {
+      final menuKey = await _pumpJellyfinMovieMenu(
+        tester,
+        isAdministrator: true,
+        handler: (request) => playlistServer(request, []),
+      );
+
+      await _openMenu(tester, menuKey);
+      await tester.tap(find.text(t.common.addTo));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.playlists.playlist), findsOneWidget);
+      expect(find.text(t.collections.collection), findsOneWidget);
+    });
+  });
+
   group('MediaContextMenu delete confirmation', () {
     testWidgets('names the episode, never the show, at every step (issue #1781)', (tester) async {
       final menuKey = await _pumpJellyfinItemMenu(

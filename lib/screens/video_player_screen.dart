@@ -1062,8 +1062,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   /// Whether a downloaded copy may stand in for a capped
   /// [_selectedQualityPreset] (issue #2466). Only the saved startup default
-  /// yields; a picked quality is honored. In a Watch Together room the player
-  /// streams instead (see [PlaybackSourceResolver.resolve]'s `streamOnly`).
+  /// yields; a picked quality is honored.
   bool get _downloadOutranksQuality => !_qualityPresetExplicit;
 
   /// Atomically publish a freshly opened [PlaybackSession] and refine the
@@ -1354,12 +1353,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         }
       },
     );
-    if (!widget.isOffline && !widget.isLive) {
+    // Downloads join too: a download of a server that is online is the
+    // server's file, which the room can share and follow.
+    if (!widget.isLive) {
       try {
         _watchTogetherProvider = context.read<WatchTogetherProvider?>();
       } catch (_) {
         // Watch Together lives in the profile session; a player outside it
-        // (tests, the offline shell) plays on its own.
+        // plays on its own.
       }
       _wtRoomOpen = widget.watchTogetherCopy != null;
       _registerWithWatchTogether();
@@ -1374,6 +1375,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       chromeController: _chromeController,
       isPromptOpen: () => _episode.showPlayNextDialog || _showStillWatchingPrompt,
       dismissPrompt: _dismissPlaybackPromptForBack,
+      backLeavesPrompt: () => _episode.showPlayNextDialog,
       isChromePresented: () =>
           _isPlayerInitialized && player != null && _firstFrame.uiReady.value && _chromeController.controlsPresented,
       // On phones a Back must exit the player even with the controls up
@@ -1773,7 +1775,6 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
           ),
           offlineLibraryMode: false,
           downloadOutranksQuality: _downloadOutranksQuality,
-          streamOnly: _watchTogetherRoom() != null,
         );
         // If MPV setup below throws before `_startPlayback` awaits this,
         // tell Dart we've "handled" the future so it's not reported as an
@@ -2305,10 +2306,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   /// Handle back button press. In a Watch Together room this leaves the
   /// player, not the room: the room stops waiting for this user, and a host's
   /// media stops for everyone.
+  ///
+  /// Still Watching interrupts an item mid-play, so Back only answers it. The
+  /// Play Next prompt stands for a finished item, so Back leaves (#2686);
+  /// the exit's shutdown cancels its countdown before any await.
   Future<void> _handleBackButton({bool navigateHome = false}) async {
     final acceptedExit = _routeExitOperation;
     if (acceptedExit != null) return acceptedExit;
-    if (!navigateHome && (_episode.showPlayNextDialog || _showStillWatchingPrompt)) {
+    if (!navigateHome && _showStillWatchingPrompt) {
       _dismissPlaybackPromptForBack();
       return;
     }

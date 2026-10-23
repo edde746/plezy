@@ -23,11 +23,16 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
   /// The room starts this open, so it opens paused: a host's file waits for
   /// everyone once shared, and a guest's for the room.
   bool _watchTogetherOwnsPlaybackStart() {
-    if (_isOfflinePlayback) return false;
     final room = _watchTogetherRoom();
     if (room == null || !room.isConnected) return false;
-    return room.isHost || _wtRoomOpen || _followedRoom() != null;
+    if (room.isHost) return _roomCanGetOpenedFile();
+    return _wtRoomOpen || _followedRoom() != null;
   }
+
+  /// Whether the room can get the file the player has open: a stream, or a
+  /// download of a server that is online now. A download is the server's
+  /// file, so the room shares the server's copy of it.
+  bool _roomCanGetOpenedFile() => !_isOfflinePlayback || _getOnlineMediaServerClient(context) != null;
 
   /// The room sets the rate, not the item's remembered speed.
   bool _watchTogetherOwnsPlaybackRate() => _watchTogetherOwnsPlaybackStart();
@@ -50,13 +55,15 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
 
   /// The file the player has open, as the room knows it. A room's copy that
   /// names this item without a version (the server listed none when it was
-  /// found) stands for whichever version opened.
+  /// found) stands for whichever version opened. A download's session lists
+  /// no versions; the item's own list names the one on disk.
   WatchCopy? _openedWatchCopy() {
     if (widget.isLive) return null;
     final session = _playbackSession;
     final metadata = session?.metadata ?? _currentMetadata;
     if (metadata.serverId == null) return null;
-    final versions = session?.availableVersions ?? metadata.mediaVersions ?? const <MediaVersion>[];
+    final sessionVersions = session?.availableVersions ?? const <MediaVersion>[];
+    final versions = sessionVersions.isNotEmpty ? sessionVersions : metadata.mediaVersions ?? const <MediaVersion>[];
     final index = session?.mediaIndex ?? -1;
     final sourceId = session?.mediaSourceId;
     final version = index >= 0 && index < versions.length
@@ -116,7 +123,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     );
     if (startupHold != null) adapter.hold(startupHold);
     _wtAdapter = adapter;
-    watchTogether.playerOpened(adapter, shareable: !_isOfflinePlayback, roomLaunch: roomOpen);
+    watchTogether.playerOpened(adapter, shareable: _roomCanGetOpenedFile(), roomLaunch: roomOpen);
   }
 
   /// Keeps the room waiting until [until] completes: the player is busy with
@@ -207,8 +214,9 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
   }
 
   /// The room switches this player to [copy]: in place, or by replacing the
-  /// screen when it can't reload (Live TV, no player yet). Returns whether the
-  /// file is opening; the room binds it once it opened.
+  /// screen when it can't reload (Live TV, no player yet) or plays from the
+  /// offline library, which opens downloads only. Returns whether the file
+  /// is opening; the room binds it once it opened.
   Future<bool> _openRoomCopyInPlace(WatchCopy copy) async {
     if (!mounted || _shuttingDown) return false;
     if (_wtAdapter?.copy == copy) return true;
@@ -216,7 +224,7 @@ extension _VideoPlayerWatchTogetherMethods on VideoPlayerScreenState {
     if (metadata == null || !mounted || _shuttingDown) return false;
     if (_watchTogetherProvider?.roomCopy?.ref != copy) return false;
     appLogger.d('WatchTogether: opening the room\'s file ${metadata.displayTitle}');
-    if (player == null || widget.isLive) {
+    if (player == null || widget.isLive || _offlineLibraryMode) {
       unawaited(_replaceScreenWithPlayer(metadata, watchTogetherCopy: copy));
       return true;
     }

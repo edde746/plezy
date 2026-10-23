@@ -246,21 +246,28 @@ class WatchTogetherProvider extends ChangeNotifier {
     final party = await _newParty();
     final code = await party.create();
     await _rememberRoom(code);
+    _shareOpenPlayer();
+    return code;
+  }
+
+  /// Joins the room with [code] as typed or pasted. With [create], a code
+  /// that names no room gets a new room with that code, and this user hosts
+  /// it as after [createRoom]. Throws [owp.PartyException] with the SDK's
+  /// code when it fails.
+  Future<void> joinRoom(String code, {bool create = false}) async {
+    final normalized = normalizeRoomCode(code);
+    if (normalized == null) throw const owp.PartyException(owp.ErrorCode.invalidCode, 'not a room code');
+    final party = await _newParty();
+    await party.join(normalized, create: create);
+    await _rememberRoom(normalized);
+    if (create && party.state.isHost && party.state.media == null) _shareOpenPlayer();
+  }
+
+  void _shareOpenPlayer() {
     final player = _player;
     if (player != null && player.shareable) {
       unawaited(shareCopy(player.adapter, positionMs: player.adapter.positionMs));
     }
-    return code;
-  }
-
-  /// Joins the room with [code] as typed or pasted. Throws
-  /// [owp.PartyException] with the SDK's code when it fails.
-  Future<void> joinRoom(String code) async {
-    final normalized = normalizeRoomCode(code);
-    if (normalized == null) throw const owp.PartyException(owp.ErrorCode.invalidCode, 'not a room code');
-    final party = await _newParty();
-    await party.join(normalized);
-    await _rememberRoom(normalized);
   }
 
   Future<void> _rememberRoom(String code) async {
@@ -422,8 +429,8 @@ class WatchTogetherProvider extends ChangeNotifier {
   }
 
   /// The player opened [adapter]'s file. [shareable] is false for files the
-  /// room can't get (downloads, Live TV). [roomLaunch] is true when the room
-  /// asked for this file.
+  /// room can't get (a download of an offline server). [roomLaunch] is true
+  /// when the room asked for this file.
   ///
   /// A host shares the file with the room. A guest's player follows the room
   /// when it opened the room's file, and else sits out so the room doesn't

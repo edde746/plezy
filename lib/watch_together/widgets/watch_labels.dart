@@ -66,7 +66,7 @@ String? watchNoticeText(WatchNotice notice, {owp.Media? media, owp.Participant? 
     PlayBlockedNotice() => notices.playBlocked,
     EndedNotice(:final reason) => watchEndReasonText(reason),
     ShareFailedNotice() => notices.shareFailed,
-    NotSharedNotice() => notices.notShared,
+    NotSharedNotice() => notices.downloadNotShared,
     OpenFailedNotice() => notices.openFailed,
   };
 }

@@ -3915,6 +3915,9 @@ class Translations$liveTv$en {
 	/// en: 'LIVE'
 	String get live => 'LIVE';
 
+	/// en: 'NEW'
+	String get premiereBadge => 'NEW';
+
 	/// en: 'Reload Guide'
 	String get reloadGuide => 'Reload Guide';
 
@@ -5329,6 +5332,9 @@ class Translations$performanceOverlay$en {
 
 	/// en: 'Player'
 	String get player => 'Player';
+
+	/// en: 'Play Method'
+	String get playMethod => 'Play Method';
 
 	/// en: 'Memory'
 	String get memory => 'Memory';
@@ -7491,8 +7497,8 @@ class Translations$watchTogether$notices$en {
 	/// en: 'Couldn't share this video with the room'
 	String get shareFailed => 'Couldn\'t share this video with the room';
 
-	/// en: 'Downloaded videos aren't shared with the room'
-	String get notShared => 'Downloaded videos aren\'t shared with the room';
+	/// en: 'Downloads aren't shared with the room while their server is offline'
+	String get downloadNotShared => 'Downloads aren\'t shared with the room while their server is offline';
 
 	/// en: 'Couldn't open the room's video'
 	String get openFailed => 'Couldn\'t open the room\'s video';
@@ -9516,6 +9522,7 @@ extension on Translations {
 			'liveTv.channelNumber' => ({required Object number}) => 'Channel ${number}',
 			'liveTv.unknownChannel' => 'Unknown channel',
 			'liveTv.live' => 'LIVE',
+			'liveTv.premiereBadge' => 'NEW',
 			'liveTv.reloadGuide' => 'Reload Guide',
 			'liveTv.searchGuide' => 'Search Guide',
 			'liveTv.searchHint' => 'Search channels & programs',
@@ -9588,9 +9595,9 @@ extension on Translations {
 			'liveTv.recordSettings.keepUpTo' => 'Episodes to keep',
 			'liveTv.recordSettings.keepUpToHint' => '0 keeps every episode',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Starting in ${minutes} min',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} at ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} at ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returned invalid Live TV playback data',
 			'liveTv.failedToStartChannel' => 'Could not start the live channel',
 			'liveTv.failedToBuildStreamUrl' => 'Could not build the stream URL',
@@ -9796,7 +9803,7 @@ extension on Translations {
 			'watchTogether.notices.searchFailed' => 'Some servers couldn\'t be searched for the room\'s video',
 			'watchTogether.notices.playBlocked' => 'Press play to start',
 			'watchTogether.notices.shareFailed' => 'Couldn\'t share this video with the room',
-			'watchTogether.notices.notShared' => 'Downloaded videos aren\'t shared with the room',
+			'watchTogether.notices.downloadNotShared' => 'Downloads aren\'t shared with the room while their server is offline',
 			'watchTogether.notices.openFailed' => 'Couldn\'t open the room\'s video',
 			'watchTogether.ended.ended' => 'The host ended the room',
 			'watchTogether.ended.kicked' => 'You were removed from the room',
@@ -10096,15 +10103,16 @@ extension on Translations {
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
 			'performanceOverlay.player' => 'Player',
+			'performanceOverlay.playMethod' => 'Play Method',
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
-			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
-			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
+			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Software',
 			'performanceOverlay.decoderHardware' => 'Hardware',

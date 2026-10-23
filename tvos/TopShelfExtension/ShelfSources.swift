@@ -40,6 +40,8 @@ struct ShelfSourcesPayload: Decodable {
   let ownerId: String
   let maxItems: Int?
   let sectionTitle: String?
+  /// Absent from payloads written before #2377; those resolve to `.series`.
+  let episodePoster: ShelfEpisodePoster
   let servers: [ShelfServerDescriptor]
 
   private enum CodingKeys: String, CodingKey {
@@ -47,6 +49,7 @@ struct ShelfSourcesPayload: Decodable {
     case ownerId
     case maxItems
     case sectionTitle
+    case episodePoster
     case servers
   }
 
@@ -66,6 +69,10 @@ struct ShelfSourcesPayload: Decodable {
     ownerId = try container.decode(String.self, forKey: .ownerId)
     maxItems = try container.decodeIfPresent(Int.self, forKey: .maxItems)
     sectionTitle = try container.decodeIfPresent(String.self, forKey: .sectionTitle)
+    // A malformed value must not sink the shelf; it reads as the default.
+    episodePoster =
+      (try? container.decodeIfPresent(String.self, forKey: .episodePoster))
+      .flatMap(ShelfEpisodePoster.init(rawValue:)) ?? .series
     servers = (try container.decodeIfPresent([LossyServer].self, forKey: .servers) ?? [])
       .compactMap(\.descriptor)
   }
@@ -86,6 +93,7 @@ enum ShelfSourceStore {
     let ownerId: String
     let maxItems: Int
     let sectionTitle: String?
+    let episodePoster: ShelfEpisodePoster
     let servers: [ShelfServerSource]
   }
 
@@ -140,6 +148,7 @@ enum ShelfSourceStore {
       ownerId: payload.ownerId,
       maxItems: maxItems,
       sectionTitle: payload.sectionTitle,
+      episodePoster: payload.episodePoster,
       servers: servers
     )
   }

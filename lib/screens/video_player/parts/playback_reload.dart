@@ -494,7 +494,6 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
       final targetMediaIndex = selectedMediaIndex ?? _effectiveSelectedMediaIndex;
       final targetQualityPreset = qualityPreset ?? _selectedQualityPreset;
       final downloadOutranksQuality = _downloadOutranksQuality;
-      final streamOnly = _watchTogetherRoom() != null;
       final targetAudioStreamId = crossesPart
           ? null
           : useCurrentAudioStreamSelection
@@ -584,7 +583,6 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           ),
           offlineLibraryMode: _offlineLibraryMode,
           downloadOutranksQuality: downloadOutranksQuality,
-          streamOnly: streamOnly,
         );
         if (!isCurrentReload()) return MediaReloadOutcome.superseded;
         final result = playbackContext.result;

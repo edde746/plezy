@@ -10,17 +10,22 @@ Color airingFill(BuildContext context) {
   return Color.alphaBlend(tk.text.withValues(alpha: 0.08), tk.surface);
 }
 
-/// Tinted M3E status pill (LIVE badge, recording / error state).
+/// Tinted M3E status pill (LIVE / NEW badge, recording / error state).
+/// [dense] trims the padding to fit inside a single line of body text, as in
+/// the guide's fixed-height program blocks.
 class StatusPill extends StatelessWidget {
   final String label;
   final Color color;
+  final bool dense;
 
-  const StatusPill({super.key, required this.label, required this.color});
+  const StatusPill({super.key, required this.label, required this.color, this.dense = false});
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      padding: dense
+          ? const EdgeInsets.symmetric(horizontal: 5, vertical: 1)
+          : const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.15),
         borderRadius: const BorderRadius.all(Radius.circular(MonoTokens.radiusFull)),
