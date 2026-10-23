@@ -13,8 +13,9 @@ import '../utils/catalog_navigation_helper.dart';
 import '../utils/app_logger.dart';
 import '../utils/snackbar_helper.dart';
 import 'app_menu.dart';
+import 'seerr_request_sheet.dart';
 
-enum _CatalogMenuActionType { viewDetails, toggleWatchlist, openUrl }
+enum _CatalogMenuActionType { viewDetails, toggleWatchlist, request, openUrl }
 
 class _CatalogMenuAction {
   final _CatalogMenuActionType type;
@@ -24,13 +25,19 @@ class _CatalogMenuAction {
 
   static const viewDetails = _CatalogMenuAction(_CatalogMenuActionType.viewDetails);
   static const toggleWatchlist = _CatalogMenuAction(_CatalogMenuActionType.toggleWatchlist);
+  static const request = _CatalogMenuAction(_CatalogMenuActionType.request);
 }
 
 /// Context menu for catalog stand-in cards (Explore tab). Replaces
 /// [MediaContextMenu], whose entries are all server-backed and would break on
 /// items with no server id.
 Future<void> showCatalogItemMenu(BuildContext context, CatalogItem item, {Offset? position}) async {
-  final source = Provider.of<CatalogSourcesProvider?>(context, listen: false)?.watchlistSourceFor(item);
+  final sources = Provider.of<CatalogSourcesProvider?>(context, listen: false);
+  final source = sources?.watchlistSourceFor(item);
+  // Same gate as the detail screen's Request action.
+  final seerr = sources?.seerrSource;
+  final tmdbId = item.ids.tmdb;
+  final canRequest = seerr != null && tmdbId != null && seerr.canRequest(item.kind);
   final onWatchlist = source?.isOnWatchlist(item.kind, item.ids);
   if (source != null && onWatchlist == null) {
     // Load in the background so the row is actionable next open.
@@ -72,6 +79,8 @@ Future<void> showCatalogItemMenu(BuildContext context, CatalogItem item, {Offset
           label: onWatchlist ? t.explore.removeFromWatchlist : t.explore.addToWatchlist,
           icon: onWatchlist ? Symbols.bookmark_remove_rounded : Symbols.bookmark_add_rounded,
         ),
+      if (canRequest)
+        AppMenuItem(value: _CatalogMenuAction.request, label: t.seerr.request, icon: Symbols.download_rounded),
     ],
   );
   if (action == null || !context.mounted) return;
@@ -90,6 +99,8 @@ Future<void> showCatalogItemMenu(BuildContext context, CatalogItem item, {Offset
       } catch (_) {
         if (context.mounted) showErrorSnackBar(context, t.explore.watchlistUpdateFailed);
       }
+    case _CatalogMenuActionType.request:
+      await showSeerrRequestSheet(context, source: seerr!, kind: item.kind, tmdbId: tmdbId!, title: item.title);
     case _CatalogMenuActionType.openUrl:
       final url = action.url;
       if (url != null) await _launchCatalogUrl(url);
