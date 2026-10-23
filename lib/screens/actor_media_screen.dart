@@ -276,7 +276,12 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
   Widget build(BuildContext context) {
     return buildDetailScaffold(
       slivers: [
-        CustomAppBar(title: Text(widget.actorName), pinned: true, actions: buildFocusableAppBarActions()),
+        CustomAppBar(
+          title: Text(widget.actorName),
+          pinned: true,
+          actions: buildFocusableAppBarActions(),
+          onBackPressed: popFromAppBar,
+        ),
         _buildActorHeader(),
         ...buildStateSlivers(),
         if (hasItems)

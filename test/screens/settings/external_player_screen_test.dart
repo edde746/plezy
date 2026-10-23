@@ -45,7 +45,7 @@ void main() {
     await settings.write(SettingsService.customExternalPlayers, [customPlayer]);
     await settings.write(SettingsService.selectedExternalPlayer, customPlayer);
 
-    await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const ExternalPlayerScreen()));
+    await tester.pumpWidget(MaterialApp(theme: monoTheme(MonoPalette.dark), home: const ExternalPlayerScreen()));
     await tester.pumpAndSettle();
 
     for (final player in await KnownPlayers.getForCurrentPlatform()) {
@@ -89,7 +89,7 @@ void main() {
     await settings.write(SettingsService.useExternalPlayer, true);
     await settings.write(SettingsService.selectedExternalPlayer, selected);
 
-    await tester.pumpWidget(MaterialApp(theme: monoTheme(dark: true), home: const ExternalPlayerScreen()));
+    await tester.pumpWidget(MaterialApp(theme: monoTheme(MonoPalette.dark), home: const ExternalPlayerScreen()));
     await tester.pumpAndSettle();
 
     expect(find.widgetWithText(FocusableListTile, selected.name), findsOneWidget);

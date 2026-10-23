@@ -21,6 +21,7 @@ import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/app_logger.dart' as logging;
 import 'package:plezy/utils/grid_size_calculator.dart';
+import 'package:plezy/widgets/app_bar_back_button.dart';
 import 'package:plezy/widgets/focusable_media_card.dart';
 import 'package:plezy/widgets/media_card.dart';
 import 'package:provider/provider.dart';
@@ -266,6 +267,48 @@ void main() {
     });
   });
 
+  group('back', () {
+    final items = [_titled('z', 'Zulu'), _titled('m', 'Mike')];
+
+    /// The hub pushed over a launcher, with a D-pad session parked on Mike.
+    Future<void> pushHubFocusingMike(WidgetTester tester) async {
+      final harness = await _createHarness(items, backend: MediaBackend.plex);
+      await tester.pumpWidget(
+        harness.wrap(
+          Builder(
+            builder: (context) => TextButton(
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(
+                  builder: (_) => HubDetailScreen(
+                    hub: MediaHub(id: 'hub_1', title: 'Hub', type: 'movie', items: items, size: items.length),
+                  ),
+                ),
+              ),
+              child: const Text('open'),
+            ),
+          ),
+        ),
+      );
+      await tester.tap(find.text('open'));
+      await tester.pumpAndSettle();
+      await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+      await tester.pumpAndSettle();
+      _cardFor(tester, 'Mike').focusNode!.requestFocus();
+      await tester.pumpAndSettle();
+    }
+
+    testWidgets('a tap on the app-bar arrow leaves at once, wherever D-pad focus was', (tester) async {
+      await pushHubFocusingMike(tester);
+
+      await tester.tap(find.byType(AppBarBackButton));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(HubDetailScreen), findsNothing);
+      expect(find.text('open'), findsOneWidget);
+    });
+  });
+
   group('DOWN from the app bar', () {
     // Regression for #2618: DOWN re-focused the remembered card even after the
     // grid had unmounted it. Flutter parks a request on a detached node until it
@@ -497,7 +540,7 @@ class _HubHarness {
       value: provider,
       child: InputModeTracker(
         child: MaterialApp(
-          theme: monoTheme(dark: true).copyWith(platform: platform),
+          theme: monoTheme(MonoPalette.dark).copyWith(platform: platform),
           home: SizedBox(width: 1280, height: 720, child: child),
         ),
       ),

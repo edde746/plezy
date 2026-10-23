@@ -14,6 +14,9 @@ protocol MpvPluginShared: AnyObject, MpvPlayerDelegate {
 
   func setPlayerVisible(_ visible: Bool, restoreOnWindowVisible: Bool)
   func updatePlayerFrame()
+  /// Viewer zoom as a transform on the display layer: mpv's `video-zoom`
+  /// would push every frame through vo_avfoundation's Core Image path.
+  func setPlayerVideoZoom(_ scale: Double)
 
   /// Invoked after the `pause` property is applied via setProperty so each
   /// platform can sync its PiP/idle bookkeeping (iOS: invalidate the PiP
@@ -152,6 +155,23 @@ extension MpvPluginShared {
       self?.updatePlayerFrame()
       result(nil)
     }
+  }
+
+  func handleSetVideoZoom(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    let rawScale = (call.arguments as? [String: Any])?["scale"]
+    let scale: Double?
+    switch rawScale {
+    case let value as Double: scale = value
+    case let value as NSNumber: scale = value.doubleValue
+    case let value as String: scale = Double(value)
+    default: scale = nil
+    }
+    guard let scale else {
+      result(FlutterError(code: "INVALID_ARGS", message: "setVideoZoom requires scale", details: nil))
+      return
+    }
+    setPlayerVideoZoom(scale)
+    result(nil)
   }
 
   func handleSetLogLevel(call: FlutterMethodCall, result: @escaping FlutterResult) {

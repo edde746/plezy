@@ -25,4 +25,3 @@ plugins {
 
 include(":app")
 include(":libass")
-include(":libmpv")

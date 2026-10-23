@@ -1,7 +1,5 @@
 import 'dart:typed_data';
 
-import '../utils/isolate_helper.dart';
-
 import 'scrub_preview_source.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
@@ -20,8 +18,6 @@ typedef BifEntry = ({int timestampMs, Uint8List imageBytes});
 ///   - 64..   : index table — (imageCount + 1) entries of 8 bytes each:
 ///              [timestamp (uint32 LE), offset (uint32 LE)]
 ///              The last entry is a sentinel (timestamp = 0xFFFFFFFF).
-///
-/// Top-level function so it can be passed to [Isolate.run].
 List<BifEntry> _parseBifBytes(Uint8List bytes) {
   if (bytes.length < 64) return [];
 
@@ -69,23 +65,28 @@ class BifThumbnailService implements ScrubPreviewSource {
 
   double? _aspectRatio;
 
+  /// Largest BIF this service holds. The whole file stays in memory while the
+  /// player is open, so an item whose BIF is larger goes without previews.
+  static int get _maxFileBytes => PlatformDetector.isDesktopOS() ? 200 * 1024 * 1024 : 50 * 1024 * 1024;
+
   /// Download and parse the BIF file through [fetchBytes] (Plex's
   /// `/library/parts/{id}/indexes/sd`, Emby's `/Videos/{id}/index.bif`).
   /// Returns silently on failure (thumbnails simply won't be available).
-  Future<void> load(Future<Uint8List?> Function() fetchBytes, {double? aspectRatio}) async {
+  ///
+  /// [fetchBytes] receives the size budget and must stop reading once the body
+  /// exceeds it: checking only the finished download let an oversized BIF be
+  /// buffered whole first, which ran 32-bit Android TV boxes out of memory.
+  Future<void> load(Future<Uint8List?> Function(int maxBytes) fetchBytes, {double? aspectRatio}) async {
     _aspectRatio = aspectRatio;
     _entries = null;
     try {
-      final bytes = await fetchBytes();
+      final bytes = await fetchBytes(_maxFileBytes);
       if (bytes == null || bytes.isEmpty) return;
-      const fiftyMb = 50 * 1024 * 1024;
-      const twoHundredMb = 200 * 1024 * 1024;
-      final maxBytes = PlatformDetector.isDesktopOS() ? twoHundredMb : fiftyMb;
-      if (bytes.length > maxBytes) {
-        appLogger.w('BIF file too large (${bytes.length} bytes), skipping');
-        return;
-      }
-      _entries = await tryIsolateRun(() => _parseBifBytes(bytes));
+      // Parsed in place: the walk only reads the index table and hands out
+      // views into [bytes] (well under a millisecond for thousands of
+      // entries), where Isolate.run would first copy the whole file — tens of
+      // MB — into the worker.
+      _entries = _parseBifBytes(bytes);
     } catch (e) {
       appLogger.w('BIF download/parse failed', error: e);
     }

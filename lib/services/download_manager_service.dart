@@ -1737,7 +1737,8 @@ class DownloadManagerService {
   /// in [safDirUri] before re-enqueueing a SAF download. SAF DocumentsProviders
   /// auto-number on createDocument when a name conflict exists, which would
   /// otherwise produce "name (1).ext" / "name.ext (1)" corrupt duplicates on
-  /// every app-level retry.
+  /// every app-level retry. Builds before 2.23.0 also numbered a numbered
+  /// copy again ("name (1) (1).ext"), so any depth of numbering is swept.
   Future<void> _cleanupSafTargetFile(String safDirUri, String safFileName) async {
     final children = await _safStorage.list(safDirUri);
     if (children == null) return;
@@ -1748,8 +1749,8 @@ class DownloadManagerService {
     final base = path.basenameWithoutExtension(safFileName);
     final ext = path.extension(safFileName);
     final dup = RegExp(
-      '^${RegExp.escape(base)} \\(\\d+\\)${RegExp.escape(ext)}\$|'
-      '^${RegExp.escape(safFileName)} \\(\\d+\\)\$',
+      '^${RegExp.escape(base)}( \\(\\d+\\))+${RegExp.escape(ext)}\$|'
+      '^${RegExp.escape(safFileName)}( \\(\\d+\\))+\$',
     );
 
     await Future.wait([
@@ -2279,8 +2280,11 @@ class DownloadManagerService {
         }
         await _replaceDownloadSafRootClaim(globalKey, rootUri);
 
-        // SAF mode: use UriDownloadTask (writes directly to content:// URI,
-        // with no pause/resume support).
+        // SAF mode: UriDownloadTask writes straight to the content:// document
+        // and resumes by appending to it. It must allow pause: a WorkManager run
+        // ends after 9 minutes, and only a pausable task carries on in the next
+        // run. Otherwise each window fails and spends a native retry, so a
+        // download needing more than ~50 minutes restarts from 0% (#2556).
         final target = _storageService.safTarget(metadata, firstExt, showYear: showYear, serverId: serverId);
         final fileName = partTarget(target.fileName);
 
@@ -2299,7 +2303,7 @@ class DownloadManagerService {
           updates: Updates.statusAndProgress,
           requiresWiFi: requiresWiFi,
           retries: _nativeRetries,
-          allowPause: false,
+          allowPause: true,
           metaData: globalKey,
           displayName: displayName,
         );
@@ -2308,7 +2312,7 @@ class DownloadManagerService {
       } else {
         await _replaceDownloadSafRootClaim(globalKey, null);
 
-        // Normal mode: use DownloadTask with pause/resume support.
+        // Normal mode: DownloadTask writes to a .part file and moves it on completion.
         final String firstFilePath;
         if (metadata.isMovie) {
           firstFilePath = await _storageService.getMovieVideoPath(metadata, firstExt);
@@ -3455,14 +3459,15 @@ class DownloadManagerService {
       if (bgTaskId != null && downloadsSupported) {
         final task = await FileDownloader().taskForId(bgTaskId);
         if (task != null && task is DownloadTask) {
-          // Normal mode: native pause support. A task the downloader cannot
-          // pause (not started yet) is cancelled so it cannot keep running
-          // behind the paused row; resume then re-downloads it.
+          // App storage and SAF (UriDownloadTask) tasks both pause natively. A
+          // task the downloader cannot pause (not started yet, or a SAF task
+          // enqueued before SAF tasks allowed pause) is cancelled so it cannot
+          // keep running behind the paused row; resume then re-downloads it.
           if (!await FileDownloader().pause(task)) {
             await FileDownloader().cancelTaskWithId(bgTaskId);
           }
         } else {
-          // SAF mode (UriDownloadTask) or task not found: cancel (re-download on resume)
+          // Task not found: cancel (re-download on resume)
           await FileDownloader().cancelTaskWithId(bgTaskId);
         }
       } else if (bgTaskId != null) {
@@ -3483,10 +3488,10 @@ class DownloadManagerService {
 
     final bgTaskId = await _database.getBgTaskId(globalKey);
 
-    // Try native resume first (only works for normal-mode DownloadTask that was paused)
+    // Try native resume first (works for any DownloadTask that was paused)
     if (bgTaskId != null && await _tryResumeNativeTask(globalKey, bgTaskId)) return;
 
-    // Native resume failed or not supported (SAF mode) — re-enqueue from scratch
+    // Native resume failed or the task was cancelled on pause — re-enqueue from scratch
     await _cleanupStaleDownload(globalKey);
     await _requeueDownload(globalKey, fallbackClient: client);
   }

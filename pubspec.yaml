@@ -1,7 +1,7 @@
 name: plezy
 description: "A beautiful Plex and Jellyfin client for Flutter"
 publish_to: "none"
-version: 2.23.0+153
+version: 2.24.1+156
 
 environment:
   # Dart floor stays 3.12: freezed 3.x emits `final` constructor parameters,
@@ -11,6 +11,8 @@ environment:
 
 dependencies:
   flutter:
+    sdk: flutter
+  flutter_localizations:
     sdk: flutter
   clock: ^1.1.2
   intl: ^0.20.2
@@ -67,11 +69,13 @@ dependencies:
   # a resumed SAF download reuse its own partial document and deletes SAF
   # partials through the provider; ebdf69a resumes a download the system stops
   # (job quota, lost network) instead of reporting it canceled and deleting the
-  # partial. Keep the same-filesystem move/resume cleanup; no per-host TLS bypass.
+  # partial; 7c341be makes the rerun of a SAF download whose process died write
+  # to the document the dead run created instead of a "name (1)" copy. Keep the
+  # same-filesystem move/resume cleanup; no per-host TLS bypass.
   background_downloader:
     git:
       url: https://github.com/edde746/background_downloader
-      ref: ebdf69a7bdd03d410bfdfc700add08eed0de161d
+      ref: 7c341be73df8a6a5ddccb06124807ac250a32bc1
   sentry_flutter: ^9.30.0
   auto_updater:
     git:
@@ -84,6 +88,13 @@ dependencies:
   xml: ^7.0.1
   string_similarity: ^2.2.0
   unorm_dart: ^0.3.2
+  # Supporter purchase (App Store and Play builds only). The store packages
+  # supply the refund/revocation queries the app-facing API lacks.
+  in_app_purchase: ^3.3.1
+  in_app_purchase_android: ^0.5.4
+  in_app_purchase_platform_interface: ^1.4.1
+  in_app_purchase_storekit: ^0.4.13+3
+  openwatchparty: ^1.1.0
 
 dev_dependencies:
   archive: ^4.0.9
@@ -112,6 +123,7 @@ dev_dependencies:
   plugin_platform_interface: ^2.1.0
   freezed: ^3.2.5
   analyzer: 10.2.0
+  web_socket: ^1.0.1
 
 dependency_overrides:
   # background_downloader 9.6.2 requires hosted connectivity_plus; keep the
@@ -144,6 +156,7 @@ dependency_overrides:
 flutter:
   uses-material-design: true
   assets:
+    - assets/licenses/SpatialAudioBridge.txt
     - assets/plezy.png
     - assets/plezy_adaptive_foreground.svg
     - assets/plex_chevron.svg
@@ -162,6 +175,9 @@ flutter:
     - assets/shaders/anime4k/
     - assets/player_icons/
     - assets/rating_icons/
+    # App icon picker thumbnails; scripts/codegen/generate_app_icons.py renders them from
+    # assets/app_icons/source, which stays out of the bundle.
+    - assets/app_icons/previews/
   # Registered as UI font families so the Linux build, whose fontconfig may
   # lack CJK fonts, can fall back to the bundled subtitle fonts (mono_theme).
   fonts:

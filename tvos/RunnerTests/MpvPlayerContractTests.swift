@@ -32,6 +32,7 @@ private final class TvosRecordingMpvPlugin: MpvPluginShared {
 
   func setPlayerVisible(_ visible: Bool, restoreOnWindowVisible: Bool) {}
   func updatePlayerFrame() {}
+  func setPlayerVideoZoom(_ scale: Double) {}
   func didSetPauseProperty(value: String) {}
 }
 

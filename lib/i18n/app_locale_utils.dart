@@ -31,7 +31,23 @@ AppLocale? _resolveChineseLocale(Locale locale) {
   };
 }
 
+/// Locales offered to Flutter's `Localizations`, one per [AppLocale].
+final List<Locale> supportedLocalizationsLocales = List.unmodifiable(
+  AppLocale.values.map((locale) => locale.localizationsLocale),
+);
+
 extension AppLocaleExternalFormats on AppLocale {
+  /// Locale handed to Flutter's `Localizations`, which every `Text` inherits
+  /// as its paragraph locale, and with it the Han glyph forms platform font
+  /// fallback picks. Chinese names its script and region: Windows DirectWrite
+  /// treats a bare `zh` like an unknown language and falls back to a Japanese
+  /// font (#2752).
+  Locale get localizationsLocale => switch (this) {
+    AppLocale.zh => const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hans', countryCode: 'CN'),
+    AppLocale.zhHant => const Locale.fromSubtags(languageCode: 'zh', scriptCode: 'Hant', countryCode: 'TW'),
+    _ => flutterLocale,
+  };
+
   /// Locale name accepted by `package:intl`.
   String get intlLocaleName => this == AppLocale.zhHant ? 'zh_TW' : languageCode;
 

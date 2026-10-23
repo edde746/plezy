@@ -356,7 +356,14 @@ class _ProgramDetailsSheetContentState extends State<_ProgramDetailsSheetContent
                     Row(
                       children: [
                         Expanded(child: Text(program.displayTitle, style: theme.textTheme.titleMedium)),
-                        if (program.isCurrentlyAiring) StatusPill(label: t.liveTv.live, color: Colors.red),
+                        if (program.premiere == true) ...[
+                          const SizedBox(width: 8),
+                          StatusPill(label: t.liveTv.premiereBadge, color: theme.colorScheme.primary),
+                        ],
+                        if (program.isCurrentlyAiring) ...[
+                          const SizedBox(width: 8),
+                          StatusPill(label: t.liveTv.live, color: Colors.red),
+                        ],
                       ],
                     ),
                     const SizedBox(height: 4),

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-216.18 102.4 1456.36 819.2" width="1456.36" height="819.2">
+<!-- Wide back layer for the tvOS icon and the Android TV banner. Drawn in foreground.svg's 1024
+     canvas so it lines up with the foreground; generate_app_icons.py crops it to 5:3 and 16:9
+     around x = 512 over y = 102.4..921.6 (the foreground canvas spans 1.25x the tile height). -->
+<g id="background">
+<rect x="-260" y="0" width="1544" height="1024" fill="#141217"/><rect x="-260" y="402.0" width="602" height="44.5" fill="#ff4b4b"/><rect x="-260" y="446.0" width="602" height="44.5" fill="#ff9b1f"/><rect x="-260" y="490.0" width="602" height="44.5" fill="#ffd23f"/><rect x="-260" y="534.0" width="602" height="44.5" fill="#33c4a6"/><rect x="-260" y="578.0" width="602" height="44.5" fill="#3d7bff"/>
+</g>
+</svg>

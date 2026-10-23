@@ -1,3 +1,4 @@
+import AVFoundation
 import Cocoa
 import QuartzCore
 
@@ -14,8 +15,13 @@ protocol MpvPipDelegate: AnyObject {
 }
 
 /// Encapsulates macOS Picture-in-Picture using the private PIP.framework (PIPViewController).
-/// This approach wraps the existing Metal rendering layer in PiP — no VO switching needed.
-/// mpv continues rendering to its CAMetalLayer throughout PiP.
+///
+/// The player lends its display layer and vo_avfoundation's OSD layer to a
+/// view in the PiP window, which keeps them at the window's size; mpv keeps
+/// rendering into them throughout, so there is no VO switch and subtitles come
+/// along. AVKit's sample-buffer PiP is not an option on macOS: it mirrors the
+/// display layer into its window at the layer's size in the player, unscaled,
+/// so a window smaller than the player shows one corner of the picture.
 class MpvPipController: NSObject, PIPViewControllerDelegate {
 
   // MARK: - Properties
@@ -27,7 +33,7 @@ class MpvPipController: NSObject, PIPViewControllerDelegate {
   }()
 
   private var pipVideoVC: NSViewController?
-  private var pipVideoView: NSView?
+  private var pipVideoView: MpvPipVideoView?
 
   weak var delegate: MpvPipDelegate?
   private(set) var isActive = false
@@ -40,21 +46,13 @@ class MpvPipController: NSObject, PIPViewControllerDelegate {
 
   static var isSupported: Bool { true }
 
-  /// Enter PiP by wrapping the given Metal layer in a view and presenting it.
-  /// The layer continues receiving mpv frames — no VO switch needed.
-  func startPip(metalLayer: CAMetalLayer, window: NSWindow, aspectRatio: NSSize) {
+  /// Enter PiP by hosting the player's video layers in the PiP window.
+  func startPip(layers: [CALayer], window: NSWindow, aspectRatio: NSSize) {
     guard !isActive else { return }
 
     sourceWindow = window
 
-    let videoView = NSView(frame: NSRect(origin: .zero, size: aspectRatio))
-    videoView.wantsLayer = true
-    videoView.layer = metalLayer
-
-    // Reset drawableSize to zero so it auto-derives from the layer's bounds.
-    // Without this, the explicit main-window drawableSize persists in PiP.
-    metalLayer.drawableSize = .zero
-
+    let videoView = MpvPipVideoView(layers: layers, size: window.contentView?.bounds.size ?? aspectRatio)
     let vc = NSViewController()
     vc.view = videoView
 
@@ -74,8 +72,8 @@ class MpvPipController: NSObject, PIPViewControllerDelegate {
   }
 
   func stopPip() {
-    guard isActive else { return }
-    pip.dismiss(pipVideoVC!)
+    guard isActive, let pipVideoVC else { return }
+    pip.dismiss(pipVideoVC)
   }
 
   /// Update the play/pause button state in the PiP overlay
@@ -92,16 +90,14 @@ class MpvPipController: NSObject, PIPViewControllerDelegate {
     autoPipEnabled = enabled
   }
 
-  /// Clean up after PiP closes — detaches the Metal layer from the wrapper view
-  /// so MpvPlayerCore can re-add it to the main window.
-  /// Returns the Metal layer that was hosted in PiP.
+  /// Clean up after PiP closes: takes the lent layers out of the PiP window's
+  /// view and returns them, for the player to take back.
   @discardableResult
-  func detachLayer() -> CAMetalLayer? {
-    let metalLayer = pipVideoView?.layer as? CAMetalLayer
-    pipVideoView?.layer = CALayer()  // detach before removing
+  func detachLayers() -> [CALayer] {
+    let layers = pipVideoView?.releaseLayers() ?? []
     pipVideoView = nil
     pipVideoVC = nil
-    return metalLayer
+    return layers
   }
 
   // MARK: - PIPViewControllerDelegate
@@ -141,5 +137,71 @@ class MpvPipController: NSObject, PIPViewControllerDelegate {
     // Bring the main window forward for the restore animation
     NSApp.activate(ignoringOtherApps: true)
     window.deminiaturize(nil)
+  }
+}
+
+/// The PiP window's content: hosts the player's display and OSD layers and
+/// keeps them at the view's size, in bounds and position (the VO tracks the
+/// display layer's bounds and contentsScale to size its output and OSD).
+private final class MpvPipVideoView: NSView {
+  init(layers: [CALayer], size: NSSize) {
+    super.init(frame: NSRect(origin: .zero, size: size))
+    wantsLayer = true
+    layer?.backgroundColor = NSColor.black.cgColor
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    layers.forEach { layer?.addSublayer($0) }
+    CATransaction.commit()
+    sizeLayers()
+  }
+
+  @available(*, unavailable)
+  required init?(coder: NSCoder) { fatalError("init(coder:) is not supported") }
+
+  /// The PiP window's container shows the view at the view's own size: it
+  /// fills the container and follows it.
+  override func viewDidMoveToSuperview() {
+    super.viewDidMoveToSuperview()
+    guard let superview else { return }
+    autoresizingMask = [.width, .height]
+    frame = superview.bounds
+  }
+
+  override func setFrameSize(_ newSize: NSSize) {
+    super.setFrameSize(newSize)
+    sizeLayers()
+  }
+
+  override func layout() {
+    super.layout()
+    sizeLayers()
+  }
+
+  override func viewDidChangeBackingProperties() {
+    super.viewDidChangeBackingProperties()
+    sizeLayers()
+  }
+
+  /// Takes the hosted layers out of the view.
+  func releaseLayers() -> [CALayer] {
+    let layers = layer?.sublayers ?? []
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    layers.forEach { $0.removeFromSuperlayer() }
+    CATransaction.commit()
+    return layers
+  }
+
+  private func sizeLayers() {
+    guard let layers = layer?.sublayers, bounds.width > 0, bounds.height > 0 else { return }
+    let scale = window?.backingScaleFactor ?? NSScreen.main?.backingScaleFactor ?? 2
+    CATransaction.begin()
+    CATransaction.setDisableActions(true)
+    for sublayer in layers where sublayer is AVSampleBufferDisplayLayer {
+      sublayer.bounds = CGRect(origin: .zero, size: bounds.size)
+      sublayer.position = CGPoint(x: bounds.midX, y: bounds.midY)
+      sublayer.contentsScale = scale
+    }
+    CATransaction.commit()
   }
 }

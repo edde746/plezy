@@ -71,7 +71,6 @@ protocol MpvPipDelegate: AnyObject {
     private let readinessOverride: (() -> (possible: Bool, timebase: Bool, frame: Bool))?
     private let retryScheduler: (@escaping () -> Void) -> Void
     private let startTimeoutScheduler: (@escaping () -> Void) -> Void
-    private let replacementControllerFactory: ((AVSampleBufferDisplayLayer?) -> MpvPictureInPictureControlling)?
     private var autoStartEnabled = false
 
     // MARK: - Initialization
@@ -85,7 +84,6 @@ protocol MpvPipDelegate: AnyObject {
       self.startTimeoutScheduler = { work in
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0, execute: work)
       }
-      self.replacementControllerFactory = nil
       super.init()
       setup()
     }
@@ -97,16 +95,13 @@ protocol MpvPipDelegate: AnyObject {
       retryScheduler: @escaping (@escaping () -> Void) -> Void,
       startTimeoutScheduler: @escaping (@escaping () -> Void) -> Void = { work in
         DispatchQueue.main.asyncAfter(deadline: .now() + 3.0, execute: work)
-      },
-      replacementControllerFactory:
-        ((AVSampleBufferDisplayLayer?) -> MpvPictureInPictureControlling)? = nil
+      }
     ) {
       self.pipController = controller
       self.sampleBufferLayer = sampleBufferDisplayLayer
       self.readinessOverride = readiness
       self.retryScheduler = retryScheduler
       self.startTimeoutScheduler = startTimeoutScheduler
-      self.replacementControllerFactory = replacementControllerFactory
       super.init()
     }
 
@@ -177,26 +172,6 @@ protocol MpvPipDelegate: AnyObject {
       return ObjectIdentifier(pipController) == ObjectIdentifier(controller)
     }
 
-    private func retireCurrentPipController() {
-      if #available(iOS 15.0, *) {
-        (delegateHelper as? PipDelegateHelper)?.controller = nil
-        (pipController as? AVPictureInPictureController)?.delegate = nil
-      }
-      pipController?.setAutomaticStart(false)
-      pipController?.stopPictureInPicture()
-      pipController = nil
-      delegateHelper = nil
-    }
-
-    private func recreatePipController() {
-      if let replacementControllerFactory {
-        pipController = replacementControllerFactory(sampleBufferLayer)
-        pipController?.setAutomaticStart(autoStartEnabled)
-      } else if sampleBufferLayer != nil {
-        createPipController()
-      }
-    }
-
     private func finishStart(generation: Int, success: Bool) {
       guard generation == startGeneration, let completion = pendingStartCompletion else { return }
       pendingStartCompletion = nil
@@ -229,22 +204,21 @@ protocol MpvPipDelegate: AnyObject {
       return (possible, timebase, frame)
     }
 
-    private func scheduleStartTimeout(
-      generation: Int,
-      controllerIdentifier: ObjectIdentifier
-    ) {
+    /// A timed-out start keeps its controller rather than building a replacement
+    /// on the same layer: AVKit tracks the layer's PiP player controller through
+    /// an unretained association that any of the layer's content sources clears
+    /// on dealloc, so freeing the timed-out controller would leave AVKit reading
+    /// a freed player controller on the replacement's behalf.
+    private func scheduleStartTimeout(generation: Int) {
       startTimeoutScheduler { [weak self] in
         guard let self, !isTornDown, generation == startGeneration,
-          startRequested, let completion = pendingStartCompletion,
-          let pipController,
-          ObjectIdentifier(pipController) == controllerIdentifier
+          startRequested, let completion = pendingStartCompletion
         else { return }
         MpvLog.debug("[MpvPipController] PiP start produced no delegate outcome before the deadline")
         pendingStartCompletion = nil
         startRequested = false
         systemStartExpected = false
-        retireCurrentPipController()
-        recreatePipController()
+        pipController?.stopPictureInPicture()
         completion(false)
       }
     }
@@ -260,10 +234,7 @@ protocol MpvPipDelegate: AnyObject {
         startRequested = true
         MpvLog.debug("[MpvPipController] vo_avfoundation ready after \(attempts) retries, starting PiP")
         pipController.startPictureInPicture()
-        scheduleStartTimeout(
-          generation: generation,
-          controllerIdentifier: ObjectIdentifier(pipController)
-        )
+        scheduleStartTimeout(generation: generation)
       } else if attempts < 40 {
         retryScheduler { [weak self] in
           self?.retryStart(
@@ -383,7 +354,14 @@ protocol MpvPipDelegate: AnyObject {
       systemStartExpected = false
       hasActiveSession = false
       restoreRequested = false
-      retireCurrentPipController()
+      if #available(iOS 15.0, *) {
+        (delegateHelper as? PipDelegateHelper)?.controller = nil
+        (pipController as? AVPictureInPictureController)?.delegate = nil
+      }
+      pipController?.setAutomaticStart(false)
+      pipController?.stopPictureInPicture()
+      pipController = nil
+      delegateHelper = nil
       delegate = nil
     }
 

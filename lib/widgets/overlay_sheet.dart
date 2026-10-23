@@ -693,6 +693,12 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     final showHandle = _showDragHandle && !isTV && !isTop;
 
     final effectiveConstraints = _constraints ?? OverlaySheetController._defaultSheetConstraints(context);
+    // A sheet that spans the viewport keeps its surface (and drag handle)
+    // full-bleed and pads only its pages by the side insets, like the modal
+    // fallback; otherwise an asymmetric inset (iPhone Duo's portrait sensor
+    // column) would leave it hugging one edge. A capped or edge-padded sheet
+    // floats and clears the insets instead.
+    final spansWidth = !isDesktop && effectiveConstraints.maxWidth >= size.width;
 
     // Slide direction depends on alignment: bottom sheets slide up, top sheets slide down.
     // Use a pixel transform instead of FractionalTranslation so mouse-tracker
@@ -708,6 +714,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     Widget content = _pageStack.isNotEmpty ? _buildPageStack() : const SizedBox.shrink();
     // Keep sheet scrollables from attaching to the route's primary controller.
     content = PrimaryScrollController.none(child: content);
+    if (spansWidth) content = SafeArea(top: false, bottom: false, child: content);
 
     // Wrap content in NotificationListener for scroll-aware drag-to-dismiss
     if (showHandle) {
@@ -792,8 +799,8 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
             child: Transform.translate(
               offset: Offset(0, _dragOffset.clamp(0, double.infinity)),
               child: SafeArea(
-                left: true,
-                right: true,
+                left: !spansWidth,
+                right: !spansWidth,
                 top: false,
                 bottom: false,
                 child: Material(

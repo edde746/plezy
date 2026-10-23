@@ -45,6 +45,10 @@ class FocusedScrollScaffold extends StatefulWidget {
   /// [handleBackKeyNavigation] (which pops the current route).
   final VoidCallback? onBackPressed;
 
+  /// Fixed bar below the scroll view, e.g. a screen's Save/Cancel row. It
+  /// stays in this scaffold's focus scope, after the content in traversal.
+  final Widget? bottomBar;
+
   const FocusedScrollScaffold({
     super.key,
     required this.title,
@@ -54,6 +58,7 @@ class FocusedScrollScaffold extends StatefulWidget {
     this.pinned = true,
     this.automaticallyImplyLeading = true,
     this.onBackPressed,
+    this.bottomBar,
   });
 
   @override
@@ -102,29 +107,38 @@ class _FocusedScrollScaffoldState extends State<FocusedScrollScaffold> {
       child: FocusScope(
         node: _scopeNode,
         child: Scaffold(
-          body: CustomScrollView(
-            slivers: [
-              if (!widget.focusableAppBarActions || !_appBarFocusEnabled)
-                ExcludeFocus(
-                  child: CustomAppBar(
+          bottomNavigationBar: widget.bottomBar,
+          // Horizontal-only SafeArea at the region owner: rows clear a
+          // landscape notch or iPhone Duo's portrait sensor column. The app
+          // bar shares the scaffold color and never tints, so insetting it
+          // too is invisible.
+          body: SafeArea(
+            top: false,
+            bottom: false,
+            child: CustomScrollView(
+              slivers: [
+                if (!widget.focusableAppBarActions || !_appBarFocusEnabled)
+                  ExcludeFocus(
+                    child: CustomAppBar(
+                      title: widget.title,
+                      pinned: widget.pinned,
+                      actions: widget.actions,
+                      automaticallyImplyLeading: widget.automaticallyImplyLeading,
+                    ),
+                  )
+                else
+                  CustomAppBar(
                     title: widget.title,
                     pinned: widget.pinned,
                     actions: widget.actions,
                     automaticallyImplyLeading: widget.automaticallyImplyLeading,
                   ),
-                )
-              else
-                CustomAppBar(
-                  title: widget.title,
-                  pinned: widget.pinned,
-                  actions: widget.actions,
-                  automaticallyImplyLeading: widget.automaticallyImplyLeading,
-                ),
-              ...widget.slivers,
-              // Keeps the last row scrollable clear of the Android
-              // navigation bar / iOS home indicator; zero-height elsewhere.
-              const SliverSystemBottomInset(),
-            ],
+                ...widget.slivers,
+                // Keeps the last row scrollable clear of the Android
+                // navigation bar / iOS home indicator; zero-height elsewhere.
+                const SliverSystemBottomInset(),
+              ],
+            ),
           ),
         ),
       ),

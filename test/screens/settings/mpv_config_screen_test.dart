@@ -14,6 +14,7 @@ import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/widgets/app_bar_back_button.dart';
 import 'package:plezy/widgets/dialog_action_button.dart';
 import 'package:plezy/widgets/focusable_list_tile.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
@@ -139,6 +140,21 @@ void main() {
 
     expect(find.byType(MpvConfigScreen), findsNothing);
     expect(find.text('home'), findsOneWidget);
+    expect(backend.durableConfig, 'profile=gpu-hq');
+  });
+
+  testWidgets('the app-bar arrow while typing saves before it leaves', (tester) async {
+    final backend = await _pumpEditor(tester, holdConfigWrites: true);
+
+    await tester.enterText(find.byType(TextField), 'profile=gpu-hq');
+    await tester.tap(find.byType(AppBarBackButton));
+    await tester.pump();
+    expect(find.byType(MpvConfigScreen), findsOneWidget, reason: 'the arrow waits for the edit to persist');
+
+    backend.completeNextConfigWrite();
+    await tester.pumpAndSettle();
+
+    expect(find.byType(MpvConfigScreen), findsNothing);
     expect(backend.durableConfig, 'profile=gpu-hq');
   });
 
@@ -463,7 +479,7 @@ Future<_ControlledPreferences> _pumpEditor(
       child: TranslationProvider(
         child: MaterialApp(
           navigatorKey: navigatorKey,
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: const Scaffold(body: Text('home')),
         ),
       ),

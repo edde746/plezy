@@ -2,6 +2,7 @@ import 'dart:async';
 
 import '../media/ids.dart';
 
+import 'package:clock/clock.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 
@@ -204,6 +205,20 @@ class MultiServerManager {
   Future<void>? _activeReconnect;
   int _profileRefreshEpoch = 0;
   final Map<String, int> _profileRefreshGenerations = {};
+
+  /// Re-fetches one Plex account's server list (connection URIs and
+  /// per-server tokens) from plex.tv and applies it through
+  /// [refreshTokensForProfile]. Installed by `ActiveProfileBinder`, which
+  /// holds the token the account was bound with.
+  Future<void> Function(String plexAccountId)? plexServerListRefresher;
+
+  /// In-flight [plexServerListRefresher] calls and their start times, per
+  /// Plex account id. A reconnect sweep fails every server of an account at
+  /// once, and the resume, connectivity and endpoint-exhaustion triggers can
+  /// land close together; one plex.tv round trip serves them all.
+  final Map<String, Future<void>> _plexServerListRefreshes = {};
+  final Map<String, DateTime> _plexServerListRefreshStartedAt = {};
+  static const _plexServerListRefreshInterval = Duration(seconds: 30);
 
   /// Debounce timer for connectivity events — collapses rapid network flapping
   Timer? _connectivityDebounce;
@@ -1424,8 +1439,38 @@ class MultiServerManager {
       appLogger.i('Successfully reconnected to ${server.name}');
     } catch (e) {
       appLogger.d('Reconnection failed for ${server.name}: $e');
-      // Leave status as offline — will retry on next trigger
+      // Leave status as offline — will retry on next trigger. The endpoints
+      // just tried are from the last bind, and a server that restarted can
+      // come back on a new LAN address or remote-access port (#2616).
+      if (identical(_plexServers[serverId], server)) await _refreshPlexServerList(serverId);
     }
+  }
+
+  /// Run [plexServerListRefresher] for the account that owns [serverId],
+  /// joining a call already in flight and skipping one started less than
+  /// [_plexServerListRefreshInterval] ago. Never completes with an error.
+  Future<void> _refreshPlexServerList(ServerId serverId) {
+    final refresher = plexServerListRefresher;
+    final accountId = _plexAccountByServer[serverId]?.id;
+    if (refresher == null || accountId == null) return Future<void>.value();
+    final inFlight = _plexServerListRefreshes[accountId];
+    if (inFlight != null) return inFlight;
+    final now = clock.now();
+    final startedAt = _plexServerListRefreshStartedAt[accountId];
+    if (startedAt != null && now.difference(startedAt) < _plexServerListRefreshInterval) {
+      return Future<void>.value();
+    }
+    _plexServerListRefreshStartedAt[accountId] = now;
+    final refresh = Future<void>.sync(() => refresher(accountId))
+        .catchError((Object error, StackTrace stackTrace) {
+          appLogger.w('Plex server list refresh failed for $serverId', error: error, stackTrace: stackTrace);
+        })
+        // Must not *return* the removed entry — whenComplete would then await this very future.
+        .whenComplete(() {
+          _plexServerListRefreshes.remove(accountId);
+        });
+    _plexServerListRefreshes[accountId] = refresh;
+    return refresh;
   }
 
   /// Attempt reconnection for a single offline MediaBrowser server.
@@ -1462,9 +1507,11 @@ class MultiServerManager {
   /// Attempt reconnection for all offline servers.
   ///
   /// When [forceRediscovery] is true, the cached endpoint is cleared before
-  /// reconnecting so the fast-path is skipped and a full candidate race runs.
-  /// Used by the manual reconnect button when the cached URL may be stale
-  /// (e.g. after a network change while the app was backgrounded).
+  /// reconnecting so the fast-path is skipped and a full candidate race runs,
+  /// and a Plex server that still fails gets its server list re-fetched from
+  /// plex.tv even when an automatic re-fetch ran moments ago. Used by the
+  /// manual reconnect button when the cached URL may be stale (e.g. after a
+  /// network change while the app was backgrounded).
   Future<void> reconnectOfflineServers({bool forceRediscovery = false}) async {
     // Coalesce concurrent calls — return the in-flight future if one exists
     if (_activeReconnect != null) return _activeReconnect!;
@@ -1491,6 +1538,9 @@ class MultiServerManager {
     if (forceRediscovery) {
       final storage = await StorageService.getInstance();
       await Future.wait(offline.map((id) => storage.clearServerEndpoint(ServerId(id))));
+      // The press can come right after an automatic re-fetch that ran while
+      // the server was still booting and had not published its new address.
+      _plexServerListRefreshStartedAt.clear();
     }
 
     final futures = offline.map((serverId) {
@@ -1644,6 +1694,7 @@ class MultiServerManager {
     _clientIdByServer.clear();
     _plexAccountByServer.clear();
     _plexScopeByServer.clear();
+    _plexServerListRefreshStartedAt.clear();
     _activeOptimizations.clear();
     if (!_statusController.isClosed) {
       _statusController.add({});

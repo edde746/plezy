@@ -60,14 +60,15 @@ abstract class ScrubPreviewSource {
 }
 
 /// Whether a scrub preview built for [loaded] also serves [current]: the
-/// same file, or the same stacked version (whose preview spans every file).
+/// same file, the same stacked version (whose preview spans every file), or
+/// on a backend without part ids (Jellyfin trickplay, Emby BIF) the same
+/// media source, which is what that preview is built from.
 bool scrubPreviewServes(MediaSourceInfo loaded, MediaSourceInfo? current) {
   if (current == null) return false;
   if (loaded.partId != null && loaded.partId == current.partId) return true;
-  return loaded.partTimeline != null &&
-      current.partTimeline != null &&
-      loaded.mediaSourceId != null &&
-      loaded.mediaSourceId == current.mediaSourceId;
+  final sameSource = loaded.mediaSourceId != null && loaded.mediaSourceId == current.mediaSourceId;
+  if (loaded.partTimeline != null) return current.partTimeline != null && sameSource;
+  return loaded.partId == null && current.partId == null && sameSource;
 }
 
 /// Previews for an item stacked across several files: each file has its own

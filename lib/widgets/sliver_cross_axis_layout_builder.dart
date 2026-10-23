@@ -25,6 +25,13 @@ class SliverCrossAxisLayoutBuilder extends AbstractLayoutBuilder<double> {
   @override
   final Widget Function(BuildContext context, double crossAxisExtent) builder;
 
+  /// The [SliverConstraints] of the nearest enclosing builder's latest layout,
+  /// or null before its first one. They carry the scroll offset the builder
+  /// deliberately ignores, so content it built once can still ask where the
+  /// viewport currently is (e.g. whether a cell is on screen).
+  static SliverConstraints? latestConstraintsOf(BuildContext context) =>
+      context.findAncestorRenderObjectOfType<_RenderSliverCrossAxisLayoutBuilder>()?._latestConstraints;
+
   @override
   RenderAbstractLayoutBuilderMixin<double, RenderSliver> createRenderObject(BuildContext context) =>
       _RenderSliverCrossAxisLayoutBuilder();
@@ -37,6 +44,8 @@ class _RenderSliverCrossAxisLayoutBuilder extends RenderSliver
         RenderObjectWithChildMixin<RenderSliver>,
         RenderObjectWithLayoutCallbackMixin,
         RenderAbstractLayoutBuilderMixin<double, RenderSliver> {
+  SliverConstraints? _latestConstraints;
+
   @override
   double get layoutInfo => constraints.crossAxisExtent;
 
@@ -48,6 +57,7 @@ class _RenderSliverCrossAxisLayoutBuilder extends RenderSliver
 
   @override
   void performLayout() {
+    _latestConstraints = constraints;
     runLayoutCallback();
     child?.layout(constraints, parentUsesSize: true);
     geometry = child?.geometry ?? SliverGeometry.zero;

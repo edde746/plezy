@@ -23,6 +23,9 @@ import 'package:plezy/services/playback_initialization_types.dart';
 import 'package:plezy/services/saf_storage_service.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/video_player_navigation.dart';
+import 'package:openwatchparty/openwatchparty.dart' as owp;
+import 'package:plezy/watch_together/models/watch_copy.dart';
+import 'package:plezy/watch_together/providers/watch_together_provider.dart';
 import 'package:provider/provider.dart';
 
 import '../test_helpers/prefs.dart';
@@ -382,6 +385,100 @@ void main() {
       expect(client.resolvedMediaIndexes, [0]);
     });
   });
+
+  group('the Watch Together room version (#2536)', () {
+    const versions = [
+      MediaVersion(id: 'v0', videoResolution: '4k', videoCodec: 'hevc', container: 'mkv'),
+      MediaVersion(id: 'v1', videoResolution: '1080', videoCodec: 'h264', container: 'mkv'),
+    ];
+    final movie = testMediaItem(
+      id: 'movie-1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.movie,
+      serverId: 'srv',
+      mediaVersions: versions,
+    );
+    WatchCopy copyOf(String versionId) =>
+        WatchCopy(serverId: 'srv', itemId: 'movie-1', versionId: versionId, item: movie);
+
+    test('opens the version the room chose', () {
+      expect(watchTogetherVersionOf(movie, copyOf('v1')), (index: 1, sourceId: 'v1'));
+    });
+
+    test("yields to the viewer's own version when the copy names none or the item no longer lists it", () {
+      expect(watchTogetherVersionOf(movie, copyOf('')), isNull);
+      expect(watchTogetherVersionOf(movie, copyOf('replaced')), isNull);
+    });
+
+    test('passes the source through when the item lists no versions', () {
+      final bare = testMediaItem(id: 'movie-1', backend: MediaBackend.plex, kind: MediaKind.movie, serverId: 'srv');
+      expect(watchTogetherVersionOf(bare, copyOf('v1')), (index: 0, sourceId: 'v1'));
+    });
+
+    group('launching the room item', () {
+      const urlLauncherChannel = MethodChannel('plugins.flutter.io/url_launcher');
+      late List<String> externalLaunches;
+      late _ExternalUrlClient client;
+
+      setUp(() async {
+        resetSharedPreferencesForTest();
+        SettingsService.resetForTesting();
+        await (await SettingsService.getInstance()).write(SettingsService.useExternalPlayer, true);
+        externalLaunches = [];
+        client = _ExternalUrlClient();
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(urlLauncherChannel, (
+          call,
+        ) async {
+          if (call.method != 'launch') return null;
+          externalLaunches.add((call.arguments as Map)['url'] as String);
+          return true;
+        });
+      });
+
+      tearDown(() {
+        TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger.setMockMethodCallHandler(
+          urlLauncherChannel,
+          null,
+        );
+        SettingsService.resetForTesting();
+      });
+
+      testWidgets('a launch for a file the room no longer plays opens nothing', (tester) async {
+        final watchTogether = _RoomCopyProvider(copyOf('v0'));
+        final servers = testMultiServer(clients: [client]);
+        final downloads = _NoDownloads();
+        final offlineWatch = _OfflineWatchSync();
+        addTearDown(() {
+          watchTogether.dispose();
+          downloads.dispose();
+          offlineWatch.dispose();
+        });
+        await tester.pumpWidget(
+          MultiProvider(
+            providers: [
+              ChangeNotifierProvider<MultiServerProvider>.value(value: servers.provider),
+              ChangeNotifierProvider<DownloadProvider>.value(value: downloads),
+              ChangeNotifierProvider<OfflineWatchSyncService>.value(value: offlineWatch),
+              ChangeNotifierProvider<WatchTogetherProvider>.value(value: watchTogether),
+            ],
+            child: const MaterialApp(home: Scaffold(body: Text('Detail'))),
+          ),
+        );
+
+        final opened = await navigateToVideoPlayer(
+          tester.element(find.text('Detail')),
+          metadata: movie,
+          watchTogetherCopy: copyOf('v1'),
+          resolveWatchState: false,
+        );
+        await tester.pump();
+
+        expect(opened, isNull);
+        expect(externalLaunches, isEmpty);
+        expect(client.resolvedMediaIndexes, isEmpty, reason: 'a stale room launch must not reach the server');
+      });
+    });
+  });
 }
 
 /// A route-owned real Dart player: native calls are mocked, but ownership
@@ -479,6 +576,27 @@ class _CompletedDownloads extends ChangeNotifier implements DownloadProvider {
 
   @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+class _NoDownloads extends ChangeNotifier implements DownloadProvider {
+  @override
+  bool isDownloaded(String globalKey) => false;
+
+  @override
+  Future<DownloadedMediaItem?> getCompletedDownload(String globalKey) async => null;
+
+  @override
+  dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
+}
+
+/// A Watch Together room whose file to open is [copy].
+class _RoomCopyProvider extends WatchTogetherProvider {
+  _RoomCopyProvider(this.copy);
+
+  final WatchCopy copy;
+
+  @override
+  owp.Candidate<WatchCopy>? get roomCopy => owp.Candidate(id: 'match', ref: copy, durationMs: 7200000);
 }
 
 class _OfflineWatchSync extends ChangeNotifier implements OfflineWatchSyncService {

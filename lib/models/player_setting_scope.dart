@@ -5,7 +5,8 @@
 /// configured scope. Resolution at playback start consults only the configured
 /// scope's entry for the current item, then falls back to the global pref, so
 /// values saved under a previously configured scope become inert rather than
-/// shadowing the current regime.
+/// shadowing the current regime. Entering a keyed scope from [global] or [off]
+/// resets that global pref (see `PlayerSettingScopePref`).
 enum PlayerSettingScope {
   /// Never persist: the change applies for the session only.
   off,
@@ -17,5 +18,10 @@ enum PlayerSettingScope {
   library,
 
   /// One value per show or movie.
-  title,
+  title;
+
+  /// Whether values are stored per library or title. Keyed scopes consult the
+  /// global pref only as the fallback for an item without its own value;
+  /// [off] and [global] apply it as the value itself.
+  bool get keysEntries => this == library || this == title;
 }

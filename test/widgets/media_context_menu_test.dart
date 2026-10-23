@@ -372,6 +372,66 @@ void main() {
     });
   });
 
+  group('MediaContextMenu add to (MediaBrowser, #2356)', () {
+    Future<http.Response> playlistServer(http.Request request, List<http.Request> posts) async {
+      if (request.method == 'POST') {
+        posts.add(request);
+        return http.Response('', 204);
+      }
+      if (request.url.queryParameters['IncludeItemTypes'] == 'Playlist') {
+        return jsonResponse({
+          'Items': [
+            {'Id': 'pl-1', 'Name': 'Road trip', 'Type': 'Playlist', 'MediaType': 'Video'},
+          ],
+          'TotalRecordCount': 1,
+        });
+      }
+      return _canDeleteResponse('movie-1', false);
+    }
+
+    testWidgets('a non-admin goes straight to the playlist picker and adds the item', (tester) async {
+      final posts = <http.Request>[];
+      final menuKey = await _pumpJellyfinMovieMenu(
+        tester,
+        isAdministrator: false,
+        handler: (request) => playlistServer(request, posts),
+      );
+
+      await _openMenu(tester, menuKey);
+      await tester.tap(find.text(t.common.addTo));
+      await tester.pumpAndSettle();
+
+      expect(
+        find.text(t.collections.collection),
+        findsNothing,
+        reason: 'the server refuses non-admin collection edits',
+      );
+      expect(find.text(t.playlists.selectPlaylist), findsOneWidget);
+
+      await tester.tap(find.text('Road trip'));
+      await tester.pumpAndSettle();
+
+      expect(posts, hasLength(1));
+      expect(posts.single.url.path, '/Playlists/pl-1/Items');
+      expect(posts.single.url.queryParameters['Ids'], 'movie-1');
+    });
+
+    testWidgets('an admin chooses between playlist and collection', (tester) async {
+      final menuKey = await _pumpJellyfinMovieMenu(
+        tester,
+        isAdministrator: true,
+        handler: (request) => playlistServer(request, []),
+      );
+
+      await _openMenu(tester, menuKey);
+      await tester.tap(find.text(t.common.addTo));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.playlists.playlist), findsOneWidget);
+      expect(find.text(t.collections.collection), findsOneWidget);
+    });
+  });
+
   group('MediaContextMenu delete confirmation', () {
     testWidgets('names the episode, never the show, at every step (issue #1781)', (tester) async {
       final menuKey = await _pumpJellyfinItemMenu(
@@ -927,7 +987,7 @@ void main() {
               ChangeNotifierProvider<MusicPlaybackService>.value(value: music),
             ],
             child: MaterialApp(
-              theme: monoTheme(dark: true),
+              theme: monoTheme(MonoPalette.dark),
               home: Scaffold(
                 body: Center(
                   child: MediaContextMenu(
@@ -1029,7 +1089,7 @@ void main() {
               ChangeNotifierProvider<PlaybackStateProvider>.value(value: playback),
             ],
             child: MaterialApp(
-              theme: monoTheme(dark: true),
+              theme: monoTheme(MonoPalette.dark),
               home: Scaffold(
                 body: Center(
                   child: MediaContextMenu(
@@ -1093,7 +1153,7 @@ void main() {
               ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
             ],
             child: MaterialApp(
-              theme: monoTheme(dark: true),
+              theme: monoTheme(MonoPalette.dark),
               home: Scaffold(
                 body: Center(
                   child: MediaContextMenu(
@@ -1170,7 +1230,7 @@ void main() {
             ],
             child: MaterialApp(
               navigatorKey: navigatorKey,
-              theme: monoTheme(dark: true),
+              theme: monoTheme(MonoPalette.dark),
               home: Scaffold(
                 body: Center(
                   child: ValueListenableBuilder<bool>(
@@ -1729,7 +1789,7 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
           ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
         ],
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(body: Center(child: wrapMenu?.call(menu) ?? menu)),
         ),
       ),
@@ -1913,7 +1973,7 @@ Future<GlobalKey<MediaContextMenuState>> _pumpJellyfinItemMenu(
         ],
         child: MaterialApp(
           navigatorKey: navigatorKey,
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: onPushedRoute ? const Scaffold(body: Center(child: Text('home screen'))) : menuScreen,
         ),
       ),
@@ -2123,7 +2183,7 @@ Future<_SiblingMusicMenuHarness> _pumpSiblingMusicMenu(
     TranslationProvider(
       child: MaterialApp(
         navigatorKey: rootNavigatorKey,
-        theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.macOS),
+        theme: monoTheme(MonoPalette.dark).copyWith(platform: TargetPlatform.macOS),
         home: MultiProvider(
           providers: [
             ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
@@ -2340,7 +2400,7 @@ _pumpWatchlistMenu(WidgetTester tester, {required List<CatalogSource> sources, L
           ChangeNotifierProvider<CatalogSourcesProvider>.value(value: catalogSources),
         ],
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: Center(
               child: MediaContextMenu(

@@ -297,6 +297,46 @@ void main() {
     expect(feedbackCount, 1);
   });
 
+  testWidgets('Ctrl+S reports a screenshot mpv rejected instead of throwing', (tester) async {
+    final service = await KeyboardShortcutsService.getInstance();
+    addTearDown(service.dispose);
+    // mpv answers a screenshot it cannot capture or write with
+    // MPV_ERROR_COMMAND, which the native channel raises as this exception.
+    final player = _FakePlayer()
+      ..commandError = PlatformException(code: 'COMMAND_FAILED', message: 'MPV command failed: screenshot (error -12)');
+    var savedCount = 0;
+    var failedCount = 0;
+
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.controlLeft);
+    final result = service.handleVideoPlayerKeyEvent(
+      const KeyDownEvent(
+        physicalKey: PhysicalKeyboardKey.keyS,
+        logicalKey: LogicalKeyboardKey.keyS,
+        timeStamp: Duration.zero,
+      ),
+      player,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      canControlPlayback: true,
+      canNavigateMediaItems: true,
+      onScreenshot: () => savedCount++,
+      onScreenshotFailed: () => failedCount++,
+    );
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.controlLeft);
+    await tester.pump();
+
+    expect(result, KeyEventResult.handled);
+    expect(player.commands, [
+      ['screenshot', 'subtitles'],
+    ]);
+    expect(savedCount, 0, reason: 'a rejected screenshot must not be announced as saved');
+    expect(failedCount, 1);
+  });
+
   testWidgets('Alt+Plus triggers zoom in callback', (tester) async {
     final service = await KeyboardShortcutsService.getInstance();
     addTearDown(service.dispose);
@@ -740,9 +780,15 @@ class _FakePlayer implements Player {
   double volume;
   double rate;
 
+  /// Thrown by [command] after recording it, the way the native channel
+  /// reports a command mpv rejected.
+  Object? commandError;
+
   @override
   Future<void> command(List<String> args) async {
     commands.add(args);
+    final error = commandError;
+    if (error != null) throw error;
   }
 
   @override

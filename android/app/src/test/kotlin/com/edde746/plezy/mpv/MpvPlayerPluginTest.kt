@@ -16,10 +16,11 @@ import android.view.View
 import android.view.ViewGroup
 import android.view.ViewTreeObserver
 import android.widget.FrameLayout
-import com.edde746.plezy.libmpv.EndFileReason
-import com.edde746.plezy.libmpv.LogLevel
-import com.edde746.plezy.libmpv.MpvEvent
-import com.edde746.plezy.libmpv.MpvPlayer
+import com.edde746.mpv.EndFileReason
+import com.edde746.mpv.LogLevel
+import com.edde746.mpv.MpvEvent
+import com.edde746.mpv.MpvException
+import com.edde746.mpv.MpvPlayer
 import com.edde746.plezy.shared.AudioFocusManager
 import com.edde746.plezy.shared.FrameRateManager
 import com.edde746.plezy.shared.PlayerDelegate
@@ -150,9 +151,60 @@ class MpvPlayerPluginTest {
       assertEquals("SET_PROPERTY_FAILED", result.errorCode)
       assertEquals("MPV property write was rejected", result.errorMessage)
       assertTrue(result.errorMessage?.contains("secret-property-value") == false)
-      assertNull(result.errorDetails)
+      // The type of what failed, never its message.
+      assertEquals(
+        mapOf("property" to "volume", "sessionFailed" to false, "failure" to "exception", "exception" to "IllegalStateException"),
+        result.errorDetails
+      )
       assertNull(result.successValue)
     }
+  }
+
+  @Test
+  fun mpvRejectedSetPropertyReportsTheMpvErrorByCodeAndName() {
+    val plugin = MpvPlayerPlugin()
+    installCore(plugin, testCore { name, _ -> throw MpvException("Failed to set property '$name': error -10") })
+    val result = RecordingResult()
+
+    plugin.onMethodCall(propertyCall(), result)
+    awaitCompletion(result)
+
+    assertEquals("SET_PROPERTY_FAILED", result.errorCode)
+    assertEquals(
+      mapOf(
+        "property" to "volume",
+        "sessionFailed" to false,
+        "failure" to "mpvError",
+        "mpvError" to -10,
+        "mpvErrorName" to "property unavailable"
+      ),
+      result.errorDetails
+    )
+  }
+
+  @Test
+  fun writesToACondemnedSessionReportWhatCondemnedIt() {
+    // The session latches its failure for good, so every later write - a
+    // remote's play press on the failure screen included - is refused for it,
+    // not for its own value. Reports must tell that apart (#2662).
+    val writes = AtomicInteger()
+    val core = testCore { _, _ -> writes.incrementAndGet() }
+    val plugin = MpvPlayerPlugin()
+    installCore(plugin, core)
+    condemnNativeOperations(core)
+    val result = RecordingResult()
+
+    plugin.onMethodCall(MethodCall("setProperty", mapOf("name" to "pause", "value" to "no")), result)
+    awaitCompletion(result)
+
+    assertEquals(0, writes.get())
+    assertEquals(1, result.completionCount)
+    assertEquals("SET_PROPERTY_FAILED", result.errorCode)
+    assertEquals(
+      mapOf("property" to "pause", "sessionFailed" to true, "failure" to "unresponsive", "operation" to "property write"),
+      result.errorDetails
+    )
+    core.dispose()
   }
 
   @Test
@@ -998,9 +1050,10 @@ class MpvPlayerPluginTest {
     }
   }
 
-  // Instrumenting libmpv lets Robolectric no-op System.loadLibrary, which
-  // MpvPlayer's companion runs on class initialization; see fakeNativePlayer.
-  @Config(instrumentedPackages = ["com.edde746.plezy.libmpv"])
+  // Instrumenting the mpv-android library lets Robolectric no-op
+  // System.loadLibrary, which MpvPlayer's companion runs on class
+  // initialization; see fakeNativePlayer.
+  @Config(instrumentedPackages = ["com.edde746.mpv"])
   @Test
   fun repeatedDisposalSharesTheFirstRetirementInsteadOfReportingItDone() {
     // A second dispose must join the retirement already running: answering
@@ -1294,7 +1347,7 @@ class MpvPlayerPluginTest {
     core.dispose()
   }
 
-  @Config(instrumentedPackages = ["com.edde746.plezy.libmpv"])
+  @Config(instrumentedPackages = ["com.edde746.mpv"])
   @Test
   fun osdRetirementDuringAGpuRefreshDoesNotStrandVideoReadiness() {
     // A session that has moved to a GPU vo retires its OSD plane while a
@@ -1340,7 +1393,7 @@ class MpvPlayerPluginTest {
    * its output restoring, and the retirement must still run once the core
    * answers.
    */
-  @Config(instrumentedPackages = ["com.edde746.plezy.libmpv"])
+  @Config(instrumentedPackages = ["com.edde746.mpv"])
   @Test
   fun aSurfaceRetirementOutlivingTheHandoffBudgetKeepsTheSessionAndStillRuns() {
     val blockerStarted = CountDownLatch(1)
@@ -1394,18 +1447,26 @@ class MpvPlayerPluginTest {
 
   /**
    * An adopted native session, without libmpv: Robolectric no-ops
-   * `System.loadLibrary`, and pre-closing the wrapper makes [MpvPlayer.close]
-   * return before its JNI call, so the core's lifecycle paths that require a
-   * player can run on the JVM.
+   * `System.loadLibrary`, and a player closed before any native call makes
+   * [MpvPlayer.close] return at once, so the core's lifecycle paths that
+   * require a player can run on the JVM. Its delivery thread is stopped too,
+   * as close would have.
    */
   private fun fakeNativePlayer(): MpvPlayer {
-    val player = MpvPlayer::class.java.getDeclaredConstructor(Long::class.javaPrimitiveType).run {
+    val player = MpvPlayer::class.java.getDeclaredConstructor(
+      Long::class.javaPrimitiveType,
+      MpvPlayer.Listener::class.java,
+      Long::class.javaPrimitiveType
+    ).run {
       isAccessible = true
-      newInstance(1L)
+      newInstance(1L, object : MpvPlayer.Listener {}, 0L)
     }
     MpvPlayer::class.java.getDeclaredField("closed").apply {
       isAccessible = true
       setBoolean(player, true)
+    }
+    MpvPlayer::class.java.getDeclaredField("dispatcher").apply { isAccessible = true }.get(player).let { dispatcher ->
+      dispatcher.javaClass.getDeclaredMethod("close").invoke(dispatcher)
     }
     return player
   }

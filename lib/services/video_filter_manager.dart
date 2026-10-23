@@ -47,7 +47,7 @@ class VideoFilterManager {
   final Player player;
 
   /// Whether [Player.setVideoZoom] scales the native video layer itself, so
-  /// the mpv `video-zoom` property must stay 0. On iOS/tvOS the avfoundation
+  /// the mpv `video-zoom` property must stay 0. On iOS/tvOS/macOS the avfoundation
   /// VO re-renders zoomed frames through Core Image, which destroys HDR and
   /// Dolby Vision passthrough — zoom must stay out of mpv's pipeline there.
   final bool nativeVideoZoom;

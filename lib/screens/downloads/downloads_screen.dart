@@ -223,89 +223,95 @@ class DownloadsScreenState extends State<DownloadsScreen>
             ],
           ),
           SliverFillRemaining(
-            child: Column(
-              children: [
-                // Only while something is actually queued or transferring —
-                // an idle Downloads screen has nothing to warn about.
-                Selector<DownloadProvider, bool>(
-                  selector: (_, provider) => provider.downloads.values.any(
-                    (progress) =>
-                        progress.status == DownloadStatus.downloading || progress.status == DownloadStatus.queued,
+            // Horizontal-only SafeArea: chips and rows clear a landscape
+            // notch or iPhone Duo's portrait sensor column.
+            child: SafeArea(
+              top: false,
+              bottom: false,
+              child: Column(
+                children: [
+                  // Only while something is actually queued or transferring —
+                  // an idle Downloads screen has nothing to warn about.
+                  Selector<DownloadProvider, bool>(
+                    selector: (_, provider) => provider.downloads.values.any(
+                      (progress) =>
+                          progress.status == DownloadStatus.downloading || progress.status == DownloadStatus.queued,
+                    ),
+                    builder: (context, hasPendingDownloads, _) =>
+                        BackgroundDownloadWarningBanner(hasPendingDownloads: hasPendingDownloads),
                   ),
-                  builder: (context, hasPendingDownloads, _) =>
-                      BackgroundDownloadWarningBanner(hasPendingDownloads: hasPendingDownloads),
-                ),
-                if (!PlatformDetector.shouldUseSideNavigation(context))
-                  Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
-                    alignment: .centerLeft,
-                    child: SingleChildScrollView(
-                      scrollDirection: Axis.horizontal,
-                      child: Row(
-                        children: [
-                          _buildTabChip(t.downloads.manage, 0),
-                          const SizedBox(width: 8),
-                          _buildTabChip(t.downloads.tvShows, 1),
-                          const SizedBox(width: 8),
-                          _buildTabChip(t.downloads.movies, 2),
-                          const SizedBox(width: 8),
-                          _buildTabChip(t.downloads.music, 3),
-                        ],
+                  if (!PlatformDetector.shouldUseSideNavigation(context))
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                      alignment: .centerLeft,
+                      child: SingleChildScrollView(
+                        scrollDirection: Axis.horizontal,
+                        child: Row(
+                          children: [
+                            _buildTabChip(t.downloads.manage, 0),
+                            const SizedBox(width: 8),
+                            _buildTabChip(t.downloads.tvShows, 1),
+                            const SizedBox(width: 8),
+                            _buildTabChip(t.downloads.movies, 2),
+                            const SizedBox(width: 8),
+                            _buildTabChip(t.downloads.music, 3),
+                          ],
+                        ),
                       ),
                     ),
+                  Expanded(
+                    child: TabBarView(
+                      controller: tabController,
+                      children: [
+                        Consumer<DownloadProvider>(
+                          builder: (context, downloadProvider, _) {
+                            return DownloadTreeView(
+                              downloads: downloadProvider.downloads,
+                              metadata: downloadProvider.metadata,
+                              onPause: downloadProvider.pauseDownload,
+                              onResume: (globalKey) {
+                                final client = _clientForDownload(globalKey);
+                                if (client != null) {
+                                  downloadProvider.resumeDownload(globalKey, client);
+                                }
+                              },
+                              onRetry: (globalKey) {
+                                final client = _clientForDownload(globalKey);
+                                if (client != null) {
+                                  downloadProvider.retryDownload(globalKey, client);
+                                }
+                              },
+                              onRetryAll: _retryDownloads,
+                              onCancel: downloadProvider.cancelDownload,
+                              onDelete: downloadProvider.deleteDownload,
+                              onNavigateLeft: () => MainScreenFocusScope.focusSidebarOf(context),
+                              onBack: focusTabBar,
+                              suppressAutoFocus: suppressAutoFocus,
+                            );
+                          },
+                        ),
+                        _DownloadsGridContent(
+                          key: _tvShowsTabKey,
+                          type: DownloadType.tvShows,
+                          isActive: tabController.index == 1,
+                          onBack: focusTabBar,
+                        ),
+                        _DownloadsGridContent(
+                          key: _moviesTabKey,
+                          type: DownloadType.movies,
+                          isActive: tabController.index == 2,
+                          onBack: focusTabBar,
+                        ),
+                        _DownloadedMusicContent(
+                          key: _musicTabKey,
+                          isActive: tabController.index == 3,
+                          onBack: focusTabBar,
+                        ),
+                      ],
+                    ),
                   ),
-                Expanded(
-                  child: TabBarView(
-                    controller: tabController,
-                    children: [
-                      Consumer<DownloadProvider>(
-                        builder: (context, downloadProvider, _) {
-                          return DownloadTreeView(
-                            downloads: downloadProvider.downloads,
-                            metadata: downloadProvider.metadata,
-                            onPause: downloadProvider.pauseDownload,
-                            onResume: (globalKey) {
-                              final client = _clientForDownload(globalKey);
-                              if (client != null) {
-                                downloadProvider.resumeDownload(globalKey, client);
-                              }
-                            },
-                            onRetry: (globalKey) {
-                              final client = _clientForDownload(globalKey);
-                              if (client != null) {
-                                downloadProvider.retryDownload(globalKey, client);
-                              }
-                            },
-                            onRetryAll: _retryDownloads,
-                            onCancel: downloadProvider.cancelDownload,
-                            onDelete: downloadProvider.deleteDownload,
-                            onNavigateLeft: () => MainScreenFocusScope.focusSidebarOf(context),
-                            onBack: focusTabBar,
-                            suppressAutoFocus: suppressAutoFocus,
-                          );
-                        },
-                      ),
-                      _DownloadsGridContent(
-                        key: _tvShowsTabKey,
-                        type: DownloadType.tvShows,
-                        isActive: tabController.index == 1,
-                        onBack: focusTabBar,
-                      ),
-                      _DownloadsGridContent(
-                        key: _moviesTabKey,
-                        type: DownloadType.movies,
-                        isActive: tabController.index == 2,
-                        onBack: focusTabBar,
-                      ),
-                      _DownloadedMusicContent(
-                        key: _musicTabKey,
-                        isActive: tabController.index == 3,
-                        onBack: focusTabBar,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ],

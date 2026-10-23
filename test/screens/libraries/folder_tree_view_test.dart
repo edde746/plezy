@@ -68,7 +68,7 @@ void main() {
         value: provider,
         child: InputModeTracker(
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: Scaffold(
               body: CustomScrollView(
                 slivers: const [
@@ -122,7 +122,7 @@ void main() {
         value: provider,
         child: InputModeTracker(
           child: MaterialApp(
-            theme: monoTheme(dark: true),
+            theme: monoTheme(MonoPalette.dark),
             home: Scaffold(
               body: CustomScrollView(
                 slivers: [FolderTreeView(key: key, libraryKey: 'lib', serverId: 'srv', libraryKind: MediaKind.movie)],

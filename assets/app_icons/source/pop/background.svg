@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+<defs>
+<pattern id="half" width="36" height="36" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><circle cx="18" cy="18" r="7" fill="#ff8a1f" fill-opacity="0.55"/></pattern>
+</defs>
+<g id="background">
+<rect width="1024" height="1024" fill="#ffd23f"/><rect width="1024" height="1024" fill="url(#half)"/><path d="M967.0,512.0 L845.2,601.3 L906.0,739.5 L756.0,756.0 L739.5,906.0 L601.3,845.2 L512.0,967.0 L422.7,845.2 L284.5,906.0 L268.0,756.0 L118.0,739.5 L178.8,601.3 L57.0,512.0 L178.8,422.7 L118.0,284.5 L268.0,268.0 L284.5,118.0 L422.7,178.8 L512.0,57.0 L601.3,178.8 L739.5,118.0 L756.0,268.0 L906.0,284.5 L845.2,422.7Z" fill="#ffffff" stroke="#151515" stroke-width="14" stroke-linejoin="round"/>
+</g>
+</svg>

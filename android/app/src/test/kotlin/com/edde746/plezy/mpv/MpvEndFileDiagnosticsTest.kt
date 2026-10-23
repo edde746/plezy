@@ -1,9 +1,9 @@
 package com.edde746.plezy.mpv
 
-import com.edde746.plezy.libmpv.EndFileReason
-import com.edde746.plezy.libmpv.LogLevel
-import com.edde746.plezy.libmpv.MpvError
-import com.edde746.plezy.libmpv.MpvEvent
+import com.edde746.mpv.EndFileReason
+import com.edde746.mpv.LogLevel
+import com.edde746.mpv.MpvError
+import com.edde746.mpv.MpvEvent
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertNull
 import org.junit.Test

@@ -168,7 +168,7 @@ Future<void> _pumpCard(
       child: ChangeNotifierProvider<WatchStateStore>.value(
         value: store,
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: SizedBox(
               width: 500,

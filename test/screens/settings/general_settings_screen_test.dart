@@ -52,7 +52,7 @@ void main() {
     await tester.pumpWidget(
       ChangeNotifierProvider<ActiveProfileProvider>.value(
         value: activeProfile,
-        child: MaterialApp(theme: monoTheme(dark: true), home: const GeneralSettingsScreen()),
+        child: MaterialApp(theme: monoTheme(MonoPalette.dark), home: const GeneralSettingsScreen()),
       ),
     );
     await tester.pumpAndSettle();

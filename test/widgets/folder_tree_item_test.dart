@@ -74,7 +74,7 @@ void main() {
     final item = testMediaItem(id: 'folder-1', backend: MediaBackend.jellyfin, title: 'Videos');
     await tester.pumpWidget(
       MaterialApp(
-        theme: monoTheme(dark: true).copyWith(platform: TargetPlatform.windows),
+        theme: monoTheme(MonoPalette.dark).copyWith(platform: TargetPlatform.windows),
         home: Material(
           child: Column(
             children: [

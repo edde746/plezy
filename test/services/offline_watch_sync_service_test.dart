@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:drift/native.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:flutter/foundation.dart';
@@ -1408,6 +1410,60 @@ void main() {
       await pending;
 
       expect(notifications, 0);
+    });
+  });
+
+  group('stopBackgroundSync', () {
+    // #3012: exit teardown closes the database once this settles, so neither
+    // the pass in flight nor a later trigger may query it afterwards.
+    test('settles the pass in flight without a refresh follow-up and blocks later passes', () async {
+      final (svc: svc, db: db, mgr: mgr) = _makeService();
+      final itemRequested = Completer<void>();
+      final releaseItem = Completer<void>();
+      final client = JellyfinClient.forTesting(
+        connection: _jellyfinConnection('user-a'),
+        httpClient: MockClient((request) async {
+          if (request.method != 'GET' || request.url.path != '/Users/user-a/Items/item-1') {
+            return http.Response('not found', 404);
+          }
+          itemRequested.complete();
+          await releaseItem.future;
+          return http.Response(
+            '{"Id":"item-1","Type":"Movie","Name":"Movie","UserData":{"PlayCount":1,"Played":true}}',
+            200,
+            headers: {'content-type': 'application/json'},
+          );
+        }),
+      );
+      addTearDown(client.close);
+      await db.insertDownload(
+        serverId: ServerId('jf-machine'),
+        clientScopeId: 'jf-machine/user-a',
+        ratingKey: 'item-1',
+        globalKey: 'jf-machine:item-1',
+        type: 'movie',
+        status: 3,
+      );
+      await db.addDownloadOwner(profileId: 'profile-a', globalKey: 'jf-machine:item-1');
+      mgr.debugRegisterJellyfinClientForTesting(client);
+      var refreshes = 0;
+      svc.onWatchStatesRefreshed = () => refreshes++;
+      svc.setActiveProfileId('profile-a');
+
+      svc.onServersConnected();
+      await itemRequested.future;
+      var stopped = false;
+      final stopping = svc.stopBackgroundSync().then((_) => stopped = true);
+      await pumpEventQueue();
+      expect(stopped, isFalse, reason: 'the pass in flight may still write to the database');
+
+      releaseItem.complete();
+      await stopping;
+      expect(refreshes, 0);
+
+      await db.close();
+      svc.onAppResumed();
+      await pumpEventQueue();
     });
   });
 }

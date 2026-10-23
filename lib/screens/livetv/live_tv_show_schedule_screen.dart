@@ -256,6 +256,10 @@ class _ScheduleListTile extends StatelessWidget {
                     overflow: .ellipsis,
                   ),
                 ),
+                if (program.premiere == true) ...[
+                  const SizedBox(width: 8),
+                  StatusPill(label: t.liveTv.premiereBadge, color: theme.colorScheme.primary),
+                ],
                 if (isLive) ...[
                   const SizedBox(width: 8),
                   AppIcon(Symbols.play_circle_rounded, size: 20, color: theme.colorScheme.primary),

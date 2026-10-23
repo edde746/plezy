@@ -117,12 +117,11 @@ class MediaControlsScreenController {
     final currentPlayer = _player();
     if (!_isMounted() || manager == null || currentPlayer == null) return;
 
-    // Off live, an episode or queue item advertises both directions: previous
-    // restarts when nothing earlier is loaded, and next resolves once the
-    // adjacent item arrives.
-    final hasNavigableItems = _metadata().isEpisode || _isPlaylistActive();
-    final hasNextItem = isLive ? _hasNextLiveChannel() : hasNavigableItems;
-    final hasPreviousItem = isLive ? _hasPreviousLiveChannel() : hasNavigableItems;
+    // Off live, previous is always advertised: it restarts the current item
+    // when nothing earlier is loaded. An episode or queue item also advertises
+    // next, which resolves once the adjacent item arrives.
+    final hasNextItem = isLive ? _hasNextLiveChannel() : _metadata().isEpisode || _isPlaylistActive();
+    final hasPreviousItem = !isLive || _hasPreviousLiveChannel();
     final contentCanSeek = !isLive && currentPlayer.state.seekable;
     final canControlPlayback = _canControlPlayback();
     final canNavigateMediaItems = _canNavigateMediaItems();

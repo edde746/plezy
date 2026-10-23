@@ -117,7 +117,7 @@ void main() {
     await tester.pumpWidget(
       InputModeTracker(
         child: MaterialApp(
-          theme: monoTheme(dark: true),
+          theme: monoTheme(MonoPalette.dark),
           home: Scaffold(
             body: SingleChildScrollView(
               controller: scrollController,
@@ -318,12 +318,13 @@ void main() {
       horizontalPadding: TvLayoutConstants.shelfHorizontalInset * 2,
       itemGap: spacing.gridGap,
     );
-    expect(tester.widget<MediaCard>(find.byType(MediaCard)).width, expectedFor(GridSpacing.tight));
+    // TV defaults to normal spacing, so the gutter is there from first launch.
+    expect(tester.widget<MediaCard>(find.byType(MediaCard)).width, expectedFor(GridSpacing.normal));
 
     // The shelf fits its cards around the grid-spacing gutter too (#2226).
     await SettingsService.instance.write(SettingsService.gridSpacing, GridSpacing.spacious);
     await tester.pump();
-    expect(expectedFor(GridSpacing.spacious), lessThan(expectedFor(GridSpacing.tight)));
+    expect(expectedFor(GridSpacing.spacious), lessThan(expectedFor(GridSpacing.normal)));
     expect(tester.widget<MediaCard>(find.byType(MediaCard)).width, expectedFor(GridSpacing.spacious));
   });
 
@@ -486,7 +487,7 @@ class _TestApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      theme: monoTheme(dark: true),
+      theme: monoTheme(MonoPalette.dark),
       home: Scaffold(body: ListView(children: [child])),
     );
   }

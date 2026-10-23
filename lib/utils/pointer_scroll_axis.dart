@@ -1,6 +1,7 @@
 import 'package:flutter/gestures.dart';
 import 'package:flutter/widgets.dart';
 
+import 'memory_pressure_breadcrumbs.dart';
 import 'semantics_tree_gate.dart';
 
 /// Collapses a diagonal scroll signal onto the axis the viewer actually moved.
@@ -54,8 +55,10 @@ mixin PointerScrollAxisLock on GestureBinding {
   }
 }
 
-/// The app's binding: installs [PointerScrollAxisLock] and [SemanticsTreeGate].
-class PlezyWidgetsBinding extends WidgetsFlutterBinding with PointerScrollAxisLock, SemanticsTreeGate {
+/// The app's binding: installs [PointerScrollAxisLock], [SemanticsTreeGate] and
+/// [MemoryPressureBreadcrumbs].
+class PlezyWidgetsBinding extends WidgetsFlutterBinding
+    with PointerScrollAxisLock, SemanticsTreeGate, MemoryPressureBreadcrumbs {
   static bool _initialized = false;
 
   /// Creates the binding on first call and returns it afterwards, mirroring

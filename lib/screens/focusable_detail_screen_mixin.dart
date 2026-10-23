@@ -94,13 +94,19 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
   ///
   /// [behind] and [above] are painted in a Stack under and over the scroll
   /// view — artwork that must be taller than the header sliver, or chrome
-  /// pinned to the viewport. Both are usually [Positioned].
+  /// pinned to the viewport. Both are usually [Positioned]. They stay
+  /// full-bleed, while the scroll view sits inside the horizontal safe area
+  /// (a landscape notch, iPhone Duo's portrait sensor column).
   Widget buildDetailScaffold({
     required List<Widget> slivers,
     List<Widget> behind = const [],
     List<Widget> above = const [],
   }) {
-    Widget body = CustomScrollView(primary: true, slivers: [...slivers, const SliverSystemBottomInset()]);
+    Widget body = SafeArea(
+      top: false,
+      bottom: false,
+      child: CustomScrollView(primary: true, slivers: [...slivers, const SliverSystemBottomInset()]),
+    );
     if (behind.isNotEmpty || above.isNotEmpty) {
       body = Stack(children: [...behind, body, ...above]);
     }
@@ -135,6 +141,11 @@ mixin FocusableDetailScreenMixin<T extends StatefulWidget> on State<T>, GridFocu
       return false;
     }
   }
+
+  /// The app-bar arrow's action: leave directly. The detail [PopScope] only
+  /// routes a system back through the app bar first, which a tap on the arrow
+  /// has no use for.
+  void popFromAppBar() => Navigator.pop(context);
 
   /// Build focusable app bar action widgets
   List<Widget> buildFocusableAppBarActions() {

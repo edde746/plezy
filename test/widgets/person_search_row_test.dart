@@ -47,7 +47,7 @@ void main() {
 Future<void> _pumpRow(WidgetTester tester) {
   return tester.pumpWidget(
     MaterialApp(
-      theme: monoTheme(dark: true),
+      theme: monoTheme(MonoPalette.dark),
       home: Scaffold(
         body: ListView(
           children: [

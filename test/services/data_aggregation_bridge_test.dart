@@ -29,6 +29,7 @@ import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/external_ids.dart';
+import 'package:plezy/utils/media_hub_ordering.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 import 'package:plezy/utils/media_server_timeouts.dart';
 
@@ -1432,6 +1433,59 @@ void main() {
       );
       expect(movieLatest.queryParameters['Fields'], 'Overview,DateCreated');
       expect(movieLatest.queryParameters.containsKey('EnableUserData'), isFalse);
+    });
+
+    test('MediaBrowser per-library home rows follow the user library order across servers (#2669)', () async {
+      Future<http.Response> respond(http.Request req) async {
+        if (req.url.path == '/Users/user-1/Views') {
+          return _json({
+            'Items': [
+              {'Id': 'movies', 'Name': 'Movies', 'CollectionType': 'movies'},
+              {'Id': 'music', 'Name': 'Music', 'CollectionType': 'music'},
+            ],
+          });
+        }
+        if (req.url.path == '/Users/user-1/Items/Latest') {
+          final parentId = req.url.queryParameters['ParentId'];
+          return _json({
+            'Items': [
+              {'Id': 'latest-$parentId', 'Type': parentId == 'music' ? 'MusicAlbum' : 'Movie', 'Name': 'Latest'},
+            ],
+          });
+        }
+        return http.Response('unexpected request', 500);
+      }
+
+      final jellyfin = testJellyfinClient(
+        connection: testJellyfinConnection(machineId: 'jellyfin'),
+        handler: respond,
+      );
+      final emby = testEmbyClient(
+        connection: testEmbyConnection(machineId: 'emby'),
+        handler: respond,
+      );
+      addTearDown(jellyfin.close);
+      addTearDown(emby.close);
+      manager.debugRegisterJellyfinClientForTesting(jellyfin);
+      manager.debugRegisterJellyfinClientForTesting(emby);
+
+      final hubs = (await service.getHubsFromAllServers(useGlobalHubs: true, includePlaybackHubs: false)).hubs;
+      MediaLibrary library(String serverId, String id) =>
+          MediaLibrary(id: id, backend: MediaBackend.jellyfin, title: id, serverId: ServerId(serverId));
+      // Interleaved across servers and against each server's own view order.
+      sortMediaHubsByLibraryOrder(hubs, [
+        library('emby', 'music'),
+        library('jellyfin', 'movies'),
+        library('emby', 'movies'),
+        library('jellyfin', 'music'),
+      ]);
+
+      expect(hubs.map((hub) => '${hub.serverId} ${hub.identifier}'), [
+        'emby library.music.latestalbums',
+        'jellyfin library.movies.recent',
+        'emby library.movies.recent',
+        'jellyfin library.music.latestalbums',
+      ]);
     });
 
     test('music library recommendations retain recently and most-played rows', () async {

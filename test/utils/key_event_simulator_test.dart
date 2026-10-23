@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/material.dart';
@@ -233,6 +234,177 @@ void main() {
     await tester.pump(const Duration(seconds: 1));
     expect(events, hasLength(1));
     expect(events.single, isA<KeyDownEvent>());
+  });
+
+  group('events queued for one frame wait for focus to settle', () {
+    testWidgets('presses behind a pop reach the uncovered route instead of popping it (#2937)', (tester) async {
+      final navigatorKey = GlobalKey<NavigatorState>();
+      final homeNode = FocusNode(debugLabel: 'home');
+      final detailNode = FocusNode(debugLabel: 'detail');
+      addTearDown(homeNode.dispose);
+      addTearDown(detailNode.dispose);
+      final homeKeyDowns = <KeyEvent>[];
+      var detailPops = 0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          navigatorKey: navigatorKey,
+          home: Focus(
+            focusNode: homeNode,
+            onKeyEvent: (_, event) {
+              if (event is KeyDownEvent) homeKeyDowns.add(event);
+              return KeyEventResult.handled;
+            },
+            child: const Text('home'),
+          ),
+        ),
+      );
+      homeNode.requestFocus();
+      await tester.pump();
+      unawaited(
+        navigatorKey.currentState!.push(
+          MaterialPageRoute<void>(
+            builder: (context) => Focus(
+              focusNode: detailNode,
+              // Leaves with a blind pop, as the detail screen's back did.
+              onKeyEvent: (_, event) {
+                if (event is KeyDownEvent) {
+                  detailPops++;
+                  Navigator.pop(context);
+                }
+                return KeyEventResult.handled;
+              },
+              child: const Text('detail'),
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+      detailNode.requestFocus();
+      await tester.pump();
+
+      final simulator = KeyEventSimulatorController(deviceType: ui.KeyEventDeviceType.gamepad);
+      addTearDown(simulator.dispose);
+      // Presses that arrive while a frame is stalled all dispatch in the next
+      // frame's post-frame pass. Read unsettled, the second popped home and the
+      // third threw "Bad state: No element" on the emptied navigator.
+      for (var i = 0; i < 3; i++) {
+        simulator.simulateKeyPress(LogicalKeyboardKey.enter);
+      }
+      await tester.pumpAndSettle();
+
+      expect(detailPops, 1);
+      expect(homeKeyDowns, hasLength(2));
+      expect(find.text('home'), findsOneWidget);
+      expect(navigatorKey.currentState!.canPop(), isFalse);
+    });
+
+    testWidgets('a press behind a push reaches the pushed route, not the one it covers (#3197)', (tester) async {
+      final openerNode = FocusNode(debugLabel: 'opener');
+      addTearDown(openerNode.dispose);
+      final pushedEvents = <KeyEvent>[];
+      var opens = 0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Builder(
+            builder: (context) => Focus(
+              focusNode: openerNode,
+              onKeyEvent: (_, event) {
+                if (event is KeyDownEvent) {
+                  opens++;
+                  unawaited(
+                    Navigator.of(context).push(
+                      MaterialPageRoute<void>(
+                        builder: (_) => Focus(
+                          autofocus: true,
+                          onKeyEvent: (_, event) {
+                            pushedEvents.add(event);
+                            return KeyEventResult.handled;
+                          },
+                          child: const Text('pushed'),
+                        ),
+                      ),
+                    ),
+                  );
+                }
+                return KeyEventResult.handled;
+              },
+              child: const Text('opener'),
+            ),
+          ),
+        ),
+      );
+      openerNode.requestFocus();
+      await tester.pump();
+
+      final simulator = KeyEventSimulatorController(deviceType: ui.KeyEventDeviceType.gamepad);
+      addTearDown(simulator.dispose);
+      simulator.simulateKeyPress(LogicalKeyboardKey.enter);
+      // The pushed route takes focus only once built, a frame later; the held
+      // press and its release wait for it, in order.
+      simulator.simulateKeyDown(LogicalKeyboardKey.enter);
+      simulator.simulateKeyUp(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+
+      expect(opens, 1);
+      expect(pushedEvents.map((event) => event.runtimeType), [KeyDownEvent, KeyUpEvent]);
+      expect(find.text('pushed'), findsOneWidget);
+    });
+
+    testWidgets('a press behind an outer-navigator push skips the nested route it covers', (tester) async {
+      final openerNode = FocusNode(debugLabel: 'nested_opener');
+      addTearDown(openerNode.dispose);
+      final coverKeyDowns = <KeyEvent>[];
+      var opens = 0;
+
+      await tester.pumpWidget(
+        MaterialApp(
+          home: Navigator(
+            onGenerateRoute: (_) => MaterialPageRoute<void>(
+              builder: (context) => Focus(
+                focusNode: openerNode,
+                onKeyEvent: (_, event) {
+                  if (event is KeyDownEvent) {
+                    opens++;
+                    unawaited(
+                      Navigator.of(context, rootNavigator: true).push(
+                        MaterialPageRoute<void>(
+                          builder: (_) => Focus(
+                            autofocus: true,
+                            onKeyEvent: (_, event) {
+                              if (event is KeyDownEvent) coverKeyDowns.add(event);
+                              return KeyEventResult.handled;
+                            },
+                            child: const Text('cover'),
+                          ),
+                        ),
+                      ),
+                    );
+                  }
+                  return KeyEventResult.handled;
+                },
+                child: const Text('nested'),
+              ),
+            ),
+          ),
+        ),
+      );
+      openerNode.requestFocus();
+      await tester.pump();
+
+      final simulator = KeyEventSimulatorController(deviceType: ui.KeyEventDeviceType.gamepad);
+      addTearDown(simulator.dispose);
+      // The nested route stays current in its own navigator; only the route
+      // hosting that navigator is covered.
+      simulator.simulateKeyPress(LogicalKeyboardKey.enter);
+      simulator.simulateKeyPress(LogicalKeyboardKey.enter);
+      await tester.pumpAndSettle();
+
+      expect(opens, 1);
+      expect(coverKeyDowns, hasLength(1));
+      expect(find.text('cover'), findsOneWidget);
+    });
   });
 }
 

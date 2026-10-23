@@ -42,7 +42,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        theme: monoTheme(dark: true),
+        theme: monoTheme(MonoPalette.dark),
         home: Scaffold(
           body: CastMemberStrip(
             key: key,
@@ -75,7 +75,7 @@ void main() {
     // below retina resolution and blurs them (issue #1591).
     await tester.pumpWidget(
       MaterialApp(
-        theme: monoTheme(dark: true),
+        theme: monoTheme(MonoPalette.dark),
         home: Scaffold(body: CastMemberStrip(members: _members)),
       ),
     );
@@ -94,7 +94,7 @@ void main() {
 
     await tester.pumpWidget(
       MaterialApp(
-        theme: monoTheme(dark: true),
+        theme: monoTheme(MonoPalette.dark),
         home: Scaffold(
           body: StatefulBuilder(
             builder: (context, setState) {

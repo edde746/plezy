@@ -75,7 +75,12 @@ void main() {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
     await SettingsService.getInstance();
+    // Passthrough expectations below model a Windows/Linux device bitstream;
+    // the Apple system-decoder path opts in explicitly.
+    PlayerNative.debugUseAppleAudioOutput = false;
   });
+
+  tearDown(() => PlayerNative.debugUseAppleAudioOutput = null);
 
   test('MPV coalesces concurrent Dart initialization requests', () async {
     final initialize = Completer<bool>();
@@ -475,6 +480,65 @@ void main() {
         } finally {
           if (!releaseSpeed.isCompleted) releaseSpeed.complete();
           await disposal;
+          await player.dispose();
+        }
+      },
+    );
+  });
+
+  test("a pause the core refused for this player's own disposal completes quietly", () async {
+    // Dispose overtook a queued pause, so the core answered it for the
+    // teardown. Nothing is left to pause, and the unawaited callers of
+    // play/pause must not inherit an uncaught error from it (#2657).
+    final pauseReached = Completer<void>();
+    final refusePause = Completer<void>();
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      methodHandler: (call) async {
+        if (call.method == 'initialize') return true;
+        if (call.method == 'setProperty' && (call.arguments as Map)['name'] == 'pause') {
+          pauseReached.complete();
+          await refusePause.future;
+          throw PlatformException(code: 'NOT_INITIALIZED', message: 'Player not initialized');
+        }
+        return null;
+      },
+      testBody: () async {
+        final player = PlayerNative();
+        final pausing = player.pause();
+        await pauseReached.future;
+
+        final disposal = player.dispose();
+        refusePause.complete();
+
+        await expectLater(pausing, completes);
+        await disposal;
+      },
+    );
+  });
+
+  test('a live player still reports a pause the core refused', () async {
+    // The teardown tolerance above is not a blanket one: a session that
+    // refuses writes while the player is alive is the caller's to handle.
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      methodHandler: (call) async {
+        if (call.method == 'initialize') return true;
+        if (call.method == 'setProperty' && (call.arguments as Map)['name'] == 'pause') {
+          throw PlatformException(code: 'SET_PROPERTY_FAILED', message: 'MPV property write was rejected');
+        }
+        return null;
+      },
+      testBody: () async {
+        final player = PlayerNative();
+        try {
+          await expectLater(
+            player.pause(),
+            throwsA(isA<PlatformException>().having((e) => e.code, 'code', 'SET_PROPERTY_FAILED')),
+          );
+        } finally {
           await player.dispose();
         }
       },
@@ -1298,6 +1362,39 @@ void main() {
         try {
           await player.setAudioPassthrough(true);
           expect(player.audioPassthroughActive, isTrue);
+        } finally {
+          await player.dispose();
+        }
+      },
+    );
+  });
+
+  test('Apple passthrough hands only Dolby to the system decoder and never claims the device', () async {
+    PlayerNative.debugUseAppleAudioOutput = true;
+    final audioWrites = <(String, String)>[];
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      methodHandler: (call) async {
+        if (call.method == 'initialize') return true;
+        if (call.method == 'setProperty') {
+          final arguments = call.arguments as Map;
+          final name = arguments['name'] as String;
+          if (name == 'audio-spdif' || name == 'audio-exclusive') audioWrites.add((name, arguments['value'] as String));
+        }
+        return null;
+      },
+      testBody: () async {
+        final player = PlayerNative();
+        try {
+          await player.setAudioPassthrough(true);
+          expect(player.audioPassthroughActive, isTrue);
+          await player.setAudioPassthrough(false);
+          expect(player.audioPassthroughActive, isFalse);
+
+          // On macOS an exclusive hint would push every CoreAudio open, the
+          // PCM fallback included, into hog-mode coreaudio_exclusive.
+          expect(audioWrites, [('audio-spdif', 'ac3,eac3'), ('audio-spdif', '')]);
         } finally {
           await player.dispose();
         }

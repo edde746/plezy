@@ -5,7 +5,7 @@ import android.content.pm.PackageManager
 import android.content.res.Configuration
 
 /**
- * Native mirror of MainActivity.getAndroidTvDetection(): any TV signal counts,
+ * Native mirror of PlezyActivity.getAndroidTvDetection(): any TV signal counts,
  * except that FEATURE_AUTOMOTIVE vetoes the verdict outright. Kept in sync with
  * the Dart-facing detection so native gating matches PlatformDetector.isTV().
  */

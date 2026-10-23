@@ -17,7 +17,9 @@
 # for p in ios, macos, tvos, plus the root mpv-build.lock.json. The duplicate
 # SwiftPM locks are not redundant to us: scripts/checks/check_apple_spm_locks.py
 # fails the build when a pair drifts, and tvos/scripts/test_wire_mpv.rb asserts
-# all ten sites name one commit.
+# all ten sites name one commit. android/gradle/verification-metadata.xml moves
+# with them: it repeats the lock's mpv-android sha256 for Gradle's dependency
+# verification, which checks the AAR wherever Gradle resolves it.
 #
 # mpv-build.lock.json is how the non-Apple platforms consume the same pin.
 # JSON cannot carry comments, so its schema lives here:
@@ -27,13 +29,34 @@
 #     "repo": "edde746/mpv-build",         the GitHub repo the commit lives in
 #     "commit": "<full-40-char-sha>",       must equal the nine Apple pin sites
 #     "artifacts": {                        one entry per published non-apple group
-#       "<group>": {                        android | linux | windows
+#       "android": {                        the mpv-android library (artifacts.json's
+#                                           mpv-android entry), resolved by Gradle
+#         "assetBase": "https://...",       release download base for the asset
+#         "aar": {
+#           "key": "<12-hex>",             its content-address key: the version Gradle resolves
+#           "asset": "mpv-android-<key>.aar", downloaded as <assetBase>/<asset>
+#           "checksum": "<sha256>"          of the complete AAR
+#         },
+#         "symbols": {                      optional: the AAR's debug files, per ABI
+#           "<abi>": {                      arm64-v8a | armeabi-v7a | x86 | x86_64
+#             "asset": "<file name>",       a zip, downloaded as <assetBase>/<asset>
+#             "checksum": "<sha256>"        of the complete zip
+#           }
+#         }
+#       },
+#       "<group>": {                        linux | windows
 #         "key": "<12-hex>",               the group's content-address key
 #         "assetBase": "https://...",       release download base for the assets
 #         "assets": {                       one entry per platform variant
-#           "<variant>": {                  e.g. an Android ABI
+#           "<variant>": {                  a CPU architecture
 #             "asset": "<file name>",       downloaded as <assetBase>/<asset>
 #             "checksum": "<sha256>"        of the complete asset file
+#           }
+#         },
+#         "symbols": {                      optional: debug files for the shipped
+#           "<variant>": {                  libraries, keyed like assets
+#             "asset": "<file name>",       a zip, downloaded as <assetBase>/<asset>
+#             "checksum": "<sha256>"        of the complete zip
 #           }
 #         }
 #       }
@@ -42,9 +65,16 @@
 #
 # The artifacts map is extracted from artifacts.json at the pinned commit;
 # groups that commit has not published yet are omitted, and each omission is
-# noted on stdout. Serialization is deterministic: two-space indent, sorted
-# keys, trailing newline. Consumers must fail when their group is missing
-# rather than fall back to an unpinned source.
+# noted on stdout. Android records the mpv-android AAR alone. Every other
+# group records its one per-variant native library; a packaged artifact there
+# (a single asset with no per-variant trees) is not consumed and is likewise
+# omitted with a note. A library's `symbols` map is copied from the same
+# artifacts.json entry; a commit published before mpv-build shipped debug
+# files has none, and its omission is noted the same way.
+# scripts/release/upload_symbols.dart downloads, verifies and uploads them.
+# Serialization is deterministic: two-space indent, sorted keys, trailing
+# newline. Consumers must fail when their group is missing rather than fall
+# back to an unpinned source.
 #
 # Usage:
 #   scripts/set_native_revision.sh <full-40-char-commit-sha> [--repo <path-or-url>]
@@ -240,6 +270,11 @@ for target in "${PROJECTS[@]}" "${LOCKS[@]}"; do
     MISSING+=("$target")
   fi
 done
+# Gradle's verification metadata is written whole, into the Android build's
+# gradle/ directory.
+if [ ! -d android/gradle ]; then
+  MISSING+=("android/gradle/")
+fi
 if [ "${#MISSING[@]}" -gt 0 ]; then
   echo "error: missing native pin site(s); refusing to run:" >&2
   printf '  %s\n' "${MISSING[@]}" >&2
@@ -248,7 +283,8 @@ fi
 
 MPV_BUILD_REVISION="$REVISION" MPV_BUILD_MANIFEST_DIR="$MANIFEST_DIR" MPV_BUILD_REPO="$TARGET_REPO" \
   python3 - "${#PROJECTS[@]}" "${PROJECTS[@]}" "${LOCKS[@]}" <<'PY'
-"""Rewrite the native requirement, SwiftPM pins, and mpv-build.lock.json.
+"""Rewrite the native requirement, SwiftPM pins, mpv-build.lock.json and
+Gradle's verification metadata.
 
 Every file is parsed and rewritten in memory first; nothing is written unless
 all nine Apple edits are unambiguous and the lock can be derived completely,
@@ -273,6 +309,10 @@ projects = sys.argv[2 : 2 + project_count]
 locks = sys.argv[2 + project_count :]
 
 LOCK_PATH = "mpv-build.lock.json"
+VERIFICATION_PATH = "android/gradle/verification-metadata.xml"
+# artifacts.json's Android entry Plezy consumes; the group's per-ABI tarballs
+# are the AAR's own inputs.
+ANDROID_LIBRARY = "mpv-android"
 LOCK_REPO = os.environ["MPV_BUILD_REPO"]
 TARGET_URL = f"https://github.com/{LOCK_REPO}"
 # Xcode names the package after the URL's last path component; SwiftPM
@@ -392,8 +432,77 @@ def load_manifest(name: str, label: str) -> dict | None:
     return payload
 
 
-def build_lock() -> str | None:
-    """The lock file's content for this commit, or None with errors recorded.
+def android_aar(label: str, libraries: dict) -> dict[str, str] | None:
+    """The lock's android entry, the mpv-android AAR; None with an error or a
+    note recorded."""
+    entry = libraries.get(ANDROID_LIBRARY)
+    if entry is None:
+        notes.append(
+            f"note: android has not published {ANDROID_LIBRARY} at this commit; "
+            f"omitted from {LOCK_PATH}"
+        )
+        return None
+    label = f"{label}.libraries.{ANDROID_LIBRARY}"
+    if not isinstance(entry, dict):
+        errors.append(f"{label}: expected an object")
+        return None
+    key = entry.get("key")
+    asset = entry.get("asset")
+    checksum = entry.get("checksum")
+    if not isinstance(key, str) or not KEY_RE.fullmatch(key):
+        errors.append(f"{label}.key: {key!r} is not a 12-hex content key")
+        return None
+    # Gradle's Ivy pattern (android/app/build.gradle.kts) asks for exactly this name.
+    if asset != f"{ANDROID_LIBRARY}-{key}.aar":
+        errors.append(
+            f"{label}.asset: {asset!r} is not {ANDROID_LIBRARY}-{key}.aar, "
+            f"the file Gradle resolves"
+        )
+        return None
+    if not isinstance(checksum, str) or not CHECKSUM_RE.fullmatch(checksum):
+        errors.append(
+            f"{label}.checksum: {checksum!r} is not a full lowercase SHA-256; "
+            f"refusing an unverifiable pin"
+        )
+        return None
+    return {"asset": asset, "checksum": checksum, "key": key}
+
+
+def library_symbols(label: str, group: str, library: str, entry: dict) -> dict | None:
+    """The library's per-variant debug-file zips, copied from its artifacts.json
+    entry; None with an error or a note recorded. Libraries published before
+    mpv-build shipped debug files carry no symbols map."""
+    symbols = entry.get("symbols")
+    if not symbols:
+        notes.append(
+            f"note: {group} library {library} publishes no debug symbols at this "
+            f"commit; symbols omitted from {LOCK_PATH}"
+        )
+        return None
+    label = f"{label}.symbols"
+    if not isinstance(symbols, dict):
+        errors.append(f"{label}: expected an object")
+        return None
+    copied: dict[str, dict[str, str]] = {}
+    for variant in sorted(symbols):
+        value = symbols[variant]
+        asset = value.get("asset") if isinstance(value, dict) else None
+        checksum = value.get("checksum") if isinstance(value, dict) else None
+        if not isinstance(asset, str) or not asset:
+            errors.append(f"{label}.{variant}.asset: missing")
+            continue
+        if not isinstance(checksum, str) or not CHECKSUM_RE.fullmatch(checksum):
+            errors.append(
+                f"{label}.{variant}.checksum: {checksum!r} is not a full lowercase "
+                f"SHA-256; refusing an unverifiable pin"
+            )
+            continue
+        copied[variant] = {"asset": asset, "checksum": checksum}
+    return copied if len(copied) == len(symbols) else None
+
+
+def build_lock() -> dict | None:
+    """The lock for this commit, or None with errors recorded.
 
     Schema documented in this script's header comment. The versions.json read
     is a guard, not a data source: a commit without formatVersion 1 predates
@@ -437,6 +546,30 @@ def build_lock() -> str | None:
         if not isinstance(libraries, dict):
             errors.append(f"{label}.libraries: expected an object")
             continue
+        if group == "android":
+            aar = android_aar(label, libraries)
+            if aar is not None:
+                artifacts[group] = {"aar": aar, "assetBase": asset_base}
+                symbols = library_symbols(
+                    f"{label}.libraries.{ANDROID_LIBRARY}",
+                    group,
+                    ANDROID_LIBRARY,
+                    libraries[ANDROID_LIBRARY],
+                )
+                if symbols is not None:
+                    artifacts[group]["symbols"] = symbols
+            continue
+        packaged = sorted(
+            name
+            for name, entry in libraries.items()
+            if isinstance(entry, dict) and "prebuilt" not in entry and "asset" in entry
+        )
+        for name in packaged:
+            notes.append(
+                f"note: {group} library {name} is a packaged artifact, not "
+                f"per-variant native trees; omitted from {LOCK_PATH}"
+            )
+        libraries = {name: entry for name, entry in libraries.items() if name not in packaged}
         if not libraries:
             notes.append(
                 f"note: {group} has published no libraries at this commit; "
@@ -486,6 +619,9 @@ def build_lock() -> str | None:
         if len(assets) != len(prebuilt):
             continue
         artifacts[group] = {"assetBase": asset_base, "assets": assets, "key": key}
+        symbols = library_symbols(label, group, library, entry)
+        if symbols is not None:
+            artifacts[group]["symbols"] = symbols
 
     for group in EXPECTED_GROUPS:
         if group not in artifacts and group not in platforms:
@@ -500,7 +636,45 @@ def build_lock() -> str | None:
         "formatVersion": 1,
         "repo": LOCK_REPO,
     }
-    return json.dumps(lock, indent=2, sort_keys=True) + "\n"
+    return lock
+
+
+def verification_metadata(aar: dict[str, str] | None) -> str:
+    """Gradle's dependency verification for the AAR the lock names; every other
+    group stays trusted, as without the file."""
+    component = "" if aar is None else f"""
+      <component group="edde746" name="{ANDROID_LIBRARY}" version="{aar['key']}">
+         <artifact name="{aar['asset']}">
+            <sha256 value="{aar['checksum']}" origin="{LOCK_PATH}"/>
+         </artifact>
+      </component>"""
+    return f"""<?xml version="1.0" encoding="UTF-8"?>
+<!-- Written by scripts/set_native_revision.sh with mpv-build.lock.json: the mpv-android AAR's sha256, checked by Gradle
+     wherever it resolves the AAR. Every other group is trusted. -->
+<verification-metadata xmlns="https://schema.gradle.org/dependency-verification" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="https://schema.gradle.org/dependency-verification https://schema.gradle.org/dependency-verification/dependency-verification-1.3.xsd">
+   <configuration>
+      <verify-metadata>true</verify-metadata>
+      <verify-signatures>false</verify-signatures>
+      <trusted-artifacts>
+         <trust group="^(?!edde746$).*$" regex="true"/>
+      </trusted-artifacts>
+   </configuration>
+   <components>{component}
+   </components>
+</verification-metadata>
+"""
+
+
+def stage(path: str, content: str) -> None:
+    """Queue a whole-file write unless the file already holds content."""
+    try:
+        existing = Path(path).read_text(encoding="utf-8")
+    except OSError:
+        existing = None
+    if content == existing:
+        unchanged.append(path)
+    else:
+        writes.append((path, content))
 
 
 for path in projects:
@@ -557,16 +731,10 @@ for path in locks:
     else:
         writes.append((path, updated))
 
-lock_content = build_lock()
-if lock_content is not None:
-    try:
-        existing_lock = Path(LOCK_PATH).read_text(encoding="utf-8")
-    except OSError:
-        existing_lock = None
-    if lock_content == existing_lock:
-        unchanged.append(LOCK_PATH)
-    else:
-        writes.append((LOCK_PATH, lock_content))
+lock = build_lock()
+if lock is not None:
+    stage(LOCK_PATH, json.dumps(lock, indent=2, sort_keys=True) + "\n")
+    stage(VERIFICATION_PATH, verification_metadata(lock["artifacts"].get("android", {}).get("aar")))
 
 if errors:
     for error in errors:

@@ -8,6 +8,40 @@
 	<string>Plezy</string>
 	<key>CFBundleExecutable</key>
 	<string>$(EXECUTABLE_NAME)</string>
+	<!-- tvOS takes CFBundleAlternateIcons as an array of icon names. The asset catalog compiler
+	     only writes iOS's dictionary form, which App Store Connect rejects for tvOS (ITMS-90471),
+	     so the alternates are listed here; the compiler still adds CFBundlePrimaryIcon. -->
+	<key>CFBundleIcons</key>
+	<dict>
+		<key>CFBundleAlternateIcons</key>
+		<array>
+			<!-- BEGIN generated tvOS alternate icons (scripts/codegen/generate_app_icons.py); do not edit -->
+			<string>AppIcon-midnight</string>
+			<string>AppIcon-ember</string>
+			<string>AppIcon-paper</string>
+			<string>AppIcon-oled</string>
+			<string>AppIcon-line</string>
+			<string>AppIcon-ocean</string>
+			<string>AppIcon-ultraviolet</string>
+			<string>AppIcon-matcha</string>
+			<string>AppIcon-sunset</string>
+			<string>AppIcon-gold</string>
+			<string>AppIcon-titanium</string>
+			<string>AppIcon-glass</string>
+			<string>AppIcon-crt</string>
+			<string>AppIcon-vhs</string>
+			<string>AppIcon-synthwave</string>
+			<string>AppIcon-pixel</string>
+			<string>AppIcon-neon</string>
+			<string>AppIcon-sticker</string>
+			<string>AppIcon-ticket</string>
+			<string>AppIcon-pop</string>
+			<string>AppIcon-strata</string>
+			<string>AppIcon-facet</string>
+			<string>AppIcon-tilde</string>
+			<!-- END generated tvOS alternate icons -->
+		</array>
+	</dict>
 	<key>CFBundleIdentifier</key>
 	<string>$(PRODUCT_BUNDLE_IDENTIFIER)</string>
 	<key>CFBundleInfoDictionaryVersion</key>

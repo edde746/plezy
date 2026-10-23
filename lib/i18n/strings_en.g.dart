@@ -41,11 +41,14 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 
 	// Translations
 	late final Translations$app$en app = Translations$app$en.internal(_root);
+	late final Translations$appIcon$en appIcon = Translations$appIcon$en.internal(_root);
 	late final Translations$auth$en auth = Translations$auth$en.internal(_root);
 	late final Translations$common$en common = Translations$common$en.internal(_root);
 	late final Translations$screens$en screens = Translations$screens$en.internal(_root);
 	late final Translations$update$en update = Translations$update$en.internal(_root);
+	late final Translations$supporter$en supporter = Translations$supporter$en.internal(_root);
 	late final Translations$settings$en settings = Translations$settings$en.internal(_root);
+	late final Translations$themeEditor$en themeEditor = Translations$themeEditor$en.internal(_root);
 	late final Translations$search$en search = Translations$search$en.internal(_root);
 	late final Translations$hotkeys$en hotkeys = Translations$hotkeys$en.internal(_root);
 	late final Translations$fileInfo$en fileInfo = Translations$fileInfo$en.internal(_root);
@@ -104,6 +107,41 @@ class Translations$app$en {
 
 	/// en: 'Plezy'
 	String get title => 'Plezy';
+}
+
+// Path: appIcon
+class Translations$appIcon$en {
+	Translations$appIcon$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'App icon'
+	String get title => 'App icon';
+
+	/// en: 'Default'
+	String get defaultIcon => 'Default';
+
+	/// en: 'Current icon'
+	String get current => 'Current icon';
+
+	/// en: 'Supporter perk'
+	String get locked => 'Supporter perk';
+
+	/// en: 'Alternate icons are a Supporter perk.'
+	String get lockedHint => 'Alternate icons are a Supporter perk.';
+
+	/// en: 'Couldn't change the app icon'
+	String get changeFailed => 'Couldn\'t change the app icon';
+
+	/// en: 'The new icon appears on your home screen once you leave Plezy.'
+	String get launcherHint => 'The new icon appears on your home screen once you leave Plezy.';
+
+	/// en: 'The new banner appears once you leave Plezy. Android TV can keep showing the old one until the TV restarts.'
+	String get tvLauncherHint => 'The new banner appears once you leave Plezy. Android TV can keep showing the old one until the TV restarts.';
+
+	late final Translations$appIcon$names$en names = Translations$appIcon$names$en.internal(_root);
 }
 
 // Path: auth
@@ -380,6 +418,68 @@ class Translations$update$en {
 	String get checkFailed => 'Failed to check for updates';
 }
 
+// Path: supporter
+class Translations$supporter$en {
+	Translations$supporter$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Plezy Supporter'
+	String get title => 'Plezy Supporter';
+
+	/// en: 'A one-time purchase that supports Plezy's development and unlocks cosmetic extras:'
+	String get intro => 'A one-time purchase that supports Plezy\'s development and unlocks cosmetic extras:';
+
+	/// en: 'Preset themes'
+	String get presetThemes => 'Preset themes';
+
+	/// en: 'Ember, Glacier, Forest, Plum and Paper'
+	String get presetThemesDescription => 'Ember, Glacier, Forest, Plum and Paper';
+
+	/// en: 'Custom theme'
+	String get customTheme => 'Custom theme';
+
+	/// en: 'Pick every color yourself'
+	String get customThemeDescription => 'Pick every color yourself';
+
+	/// en: 'App icons'
+	String get appIcons => 'App icons';
+
+	/// en: 'Choose an alternate Plezy icon'
+	String get appIconsDescription => 'Choose an alternate Plezy icon';
+
+	/// en: 'Buy for ${price}'
+	String buy({required Object price}) => 'Buy for ${price}';
+
+	/// en: 'Loading price...'
+	String get loadingPrice => 'Loading price...';
+
+	/// en: 'Restore Purchases'
+	String get restore => 'Restore Purchases';
+
+	/// en: 'Your purchase is waiting for payment or approval. The extras unlock as soon as the store completes it.'
+	String get pending => 'Your purchase is waiting for payment or approval. The extras unlock as soon as the store completes it.';
+
+	/// en: 'Thank you for supporting Plezy'
+	String get thankYouTitle => 'Thank you for supporting Plezy';
+
+	/// en: 'Your Supporter extras are unlocked.'
+	String get thankYouBody => 'Your Supporter extras are unlocked.';
+
+	/// en: 'Unlock themes and app icons with a one-time purchase'
+	String get tileSubtitle => 'Unlock themes and app icons with a one-time purchase';
+
+	/// en: 'Unlock themes with a one-time purchase'
+	String get tileSubtitleThemesOnly => 'Unlock themes with a one-time purchase';
+
+	/// en: 'Thank you for your support'
+	String get tileUnlocked => 'Thank you for your support';
+
+	late final Translations$supporter$errors$en errors = Translations$supporter$errors$en.internal(_root);
+}
+
 // Path: settings
 class Translations$settings$en {
 	Translations$settings$en.internal(this._root);
@@ -456,6 +556,21 @@ class Translations$settings$en {
 
 	/// en: 'OLED'
 	String get oledTheme => 'OLED';
+
+	/// en: 'Ember'
+	String get emberTheme => 'Ember';
+
+	/// en: 'Glacier'
+	String get glacierTheme => 'Glacier';
+
+	/// en: 'Forest'
+	String get forestTheme => 'Forest';
+
+	/// en: 'Plum'
+	String get plumTheme => 'Plum';
+
+	/// en: 'Paper'
+	String get paperTheme => 'Paper';
 
 	/// en: 'Library Density'
 	String get libraryDensity => 'Library Density';
@@ -748,8 +863,8 @@ class Translations$settings$en {
 	/// en: 'Watch Together Relay'
 	String get watchTogetherRelay => 'Watch Together Relay';
 
-	/// en: 'Set a custom relay. Everyone must use the same server.'
-	String get watchTogetherRelayDescription => 'Set a custom relay. Everyone must use the same server.';
+	/// en: 'Public Open Watch Party relays unless you set your own'
+	String get watchTogetherRelayDescription => 'Public Open Watch Party relays unless you set your own';
 
 	/// en: 'https://my-relay.example.com'
 	String get watchTogetherRelayHint => 'https://my-relay.example.com';
@@ -1079,7 +1194,10 @@ class Translations$settings$en {
 	String get audioPassthroughDescription => 'Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.';
 
 	/// en: 'Use Apple's native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.'
-	String get audioPassthroughDescriptionAppleTv => 'Use Apple\'s native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.';
+	String get audioPassthroughDescriptionApple => 'Use Apple\'s native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.';
+
+	/// en: 'Use Apple's native Dolby decoder for Dolby Digital Plus, including Atmos. On iOS, iPadOS and tvOS 26 or later, TrueHD Atmos and DTS:X play as spatial audio. Other DTS and TrueHD tracks play as multichannel PCM. Turn off if you have no sound.'
+	String get audioPassthroughDescriptionAppleSpatial => 'Use Apple\'s native Dolby decoder for Dolby Digital Plus, including Atmos. On iOS, iPadOS and tvOS 26 or later, TrueHD Atmos and DTS:X play as spatial audio. Other DTS and TrueHD tracks play as multichannel PCM. Turn off if you have no sound.';
 
 	/// en: 'Off while loudness normalization is on'
 	String get audioPassthroughOverriddenByNormalization => 'Off while loudness normalization is on';
@@ -1191,6 +1309,24 @@ class Translations$settings$en {
 
 	/// en: 'Remove combing artifacts from interlaced video (mpv player only)'
 	String get deinterlaceDescription => 'Remove combing artifacts from interlaced video (mpv player only)';
+
+	/// en: 'Off'
+	String get deinterlaceOff => 'Off';
+
+	/// en: 'Show interlaced video as it is decoded'
+	String get deinterlaceOffDescription => 'Show interlaced video as it is decoded';
+
+	/// en: 'Video'
+	String get deinterlaceVideo => 'Video';
+
+	/// en: 'Turn each field into a full frame. For video shot for TV, like sports, news, and concerts'
+	String get deinterlaceVideoDescription => 'Turn each field into a full frame. For video shot for TV, like sports, news, and concerts';
+
+	/// en: 'Film'
+	String get deinterlaceFilm => 'Film';
+
+	/// en: 'Restore the original frames of film and animation telecined to 29.97 fps, common on NTSC DVDs. Video shot for TV stutters. Live TV uses Video'
+	String get deinterlaceFilmDescription => 'Restore the original frames of film and animation telecined to 29.97 fps, common on NTSC DVDs. Video shot for TV stutters. Live TV uses Video';
 
 	/// en: 'Ask for profile on app open'
 	String get requireProfileSelectionOnOpen => 'Ask for profile on app open';
@@ -1356,6 +1492,94 @@ class Translations$settings$en {
 
 	/// en: 'Export Plezy settings'
 	String get exportDialogTitle => 'Export Plezy settings';
+}
+
+// Path: themeEditor
+class Translations$themeEditor$en {
+	Translations$themeEditor$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Built-in'
+	String get builtIn => 'Built-in';
+
+	/// en: 'Presets'
+	String get presets => 'Presets';
+
+	/// en: 'Custom'
+	String get custom => 'Custom';
+
+	/// en: 'Not created yet'
+	String get customEmpty => 'Not created yet';
+
+	/// en: 'Edit custom theme'
+	String get editCustom => 'Edit custom theme';
+
+	/// en: 'Choose every color yourself'
+	String get editCustomDescription => 'Choose every color yourself';
+
+	/// en: 'Unlock with Supporter'
+	String get locked => 'Unlock with Supporter';
+
+	/// en: 'Saved — unlocks with Supporter'
+	String get savedLocked => 'Saved — unlocks with Supporter';
+
+	/// en: 'Custom Theme'
+	String get title => 'Custom Theme';
+
+	/// en: 'Start from'
+	String get startFrom => 'Start from';
+
+	/// en: 'Copy all colors from another theme'
+	String get startFromDescription => 'Copy all colors from another theme';
+
+	/// en: 'Colors'
+	String get colors => 'Colors';
+
+	/// en: 'Preview'
+	String get preview => 'Preview';
+
+	late final Translations$themeEditor$slots$en slots = Translations$themeEditor$slots$en.internal(_root);
+
+	/// en: 'Opacity'
+	String get opacity => 'Opacity';
+
+	/// en: '#RRGGBB or #AARRGGBB'
+	String get hexHint => '#RRGGBB or #AARRGGBB';
+
+	/// en: 'From other themes'
+	String get fromOtherThemes => 'From other themes';
+
+	/// en: '${theme} ${color}'
+	String swatchLabel({required Object theme, required Object color}) => '${theme} ${color}';
+
+	late final Translations$themeEditor$contrast$en contrast = Translations$themeEditor$contrast$en.internal(_root);
+
+	/// en: '${pair}: ${ratio}:1, below the recommended ${minimum}:1'
+	String lowContrast({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, below the recommended ${minimum}:1';
+
+	/// en: 'Discard changes?'
+	String get discardTitle => 'Discard changes?';
+
+	/// en: 'Your unsaved color changes will be lost.'
+	String get discardMessage => 'Your unsaved color changes will be lost.';
+
+	/// en: 'Discard'
+	String get discard => 'Discard';
+
+	/// en: 'Episode ${number}'
+	String previewCardTitle({required Object number}) => 'Episode ${number}';
+
+	/// en: '${minutes} min left'
+	String previewCardSubtitle({required Object minutes}) => '${minutes} min left';
+
+	/// en: 'Autoplay'
+	String get previewSwitch => 'Autoplay';
+
+	/// en: 'Secondary text reads like this'
+	String get previewMutedText => 'Secondary text reads like this';
 }
 
 // Path: search
@@ -2222,6 +2446,9 @@ class Translations$videoControls$en {
 
 	/// en: 'Screenshot saved'
 	String get screenshotSaved => 'Screenshot saved';
+
+	/// en: 'Couldn't take a screenshot'
+	String get screenshotFailed => 'Couldn\'t take a screenshot';
 
 	/// en: 'Zoom ${percent}%'
 	String zoomPercent({required Object percent}) => 'Zoom ${percent}%';
@@ -3689,6 +3916,9 @@ class Translations$liveTv$en {
 	/// en: 'LIVE'
 	String get live => 'LIVE';
 
+	/// en: 'NEW'
+	String get premiereBadge => 'NEW';
+
 	/// en: 'Reload Guide'
 	String get reloadGuide => 'Reload Guide';
 
@@ -4164,44 +4394,86 @@ class Translations$watchTogether$en {
 	/// en: 'Watch content in sync with friends and family'
 	String get description => 'Watch content in sync with friends and family';
 
-	/// en: 'Create Session'
-	String get createSession => 'Create Session';
+	/// en: 'Create Room'
+	String get createRoom => 'Create Room';
 
-	/// en: 'Creating...'
-	String get creating => 'Creating...';
+	/// en: 'Creating room...'
+	String get creatingRoom => 'Creating room...';
 
-	/// en: 'Join Session'
-	String get joinSession => 'Join Session';
+	/// en: 'Join Room'
+	String get joinRoom => 'Join Room';
 
-	/// en: 'Joining...'
-	String get joining => 'Joining...';
+	/// en: 'Joining room...'
+	String get joiningRoom => 'Joining room...';
 
-	/// en: 'Control Mode'
-	String get controlMode => 'Control Mode';
+	/// en: 'Connecting...'
+	String get connecting => 'Connecting...';
 
-	/// en: 'Who can control playback?'
-	String get controlModeQuestion => 'Who can control playback?';
+	/// en: 'Rooms use the public Open Watch Party relays.'
+	String get relayPublic => 'Rooms use the public Open Watch Party relays.';
 
-	/// en: 'Host Only'
-	String get hostOnly => 'Host Only';
+	/// en: 'Rooms use your relay at ${url}.'
+	String relayCustom({required Object url}) => 'Rooms use your relay at ${url}.';
 
-	/// en: 'Anyone'
-	String get anyone => 'Anyone';
+	/// en: 'Recent Rooms'
+	String get recentRooms => 'Recent Rooms';
 
-	/// en: 'Hosting Session'
-	String get hostingSession => 'Hosting Session';
+	/// en: 'Room actions'
+	String get roomActions => 'Room actions';
 
-	/// en: 'In Session'
-	String get inSession => 'In Session';
+	/// en: 'Rename Room'
+	String get renameRoom => 'Rename Room';
 
-	/// en: 'Session Code'
-	String get sessionCode => 'Session Code';
+	/// en: 'Remove'
+	String get removeRoom => 'Remove';
+
+	/// en: 'Enter the 6-character code from the host.'
+	String get enterRoomCode => 'Enter the 6-character code from the host.';
+
+	/// en: 'Room Code'
+	String get roomCode => 'Room Code';
+
+	/// en: 'Paste'
+	String get paste => 'Paste';
+
+	/// en: 'The clipboard doesn't contain a room code'
+	String get noCodeInClipboard => 'The clipboard doesn\'t contain a room code';
+
+	/// en: 'Copy Code'
+	String get copyCode => 'Copy Code';
+
+	/// en: 'Room code copied'
+	String get codeCopied => 'Room code copied';
+
+	/// en: 'Share Invite'
+	String get shareInvite => 'Share Invite';
+
+	/// en: 'Invite copied. Paste it into a message.'
+	String get inviteCopied => 'Invite copied. Paste it into a message.';
+
+	/// en: 'Join my Watch Together room in Plezy: open Watch Together, choose Join Room and enter ${code}.'
+	String inviteMessage({required Object code}) => 'Join my Watch Together room in Plezy: open Watch Together, choose Join Room and enter ${code}.';
 
 	/// en: 'Open Watch Together session controls'
 	String get openSessionControls => 'Open Watch Together session controls';
 
-	/// en: 'Copy session code'
-	String get copySessionCode => 'Copy session code';
+	/// en: 'Reconnecting...'
+	String get reconnecting => 'Reconnecting...';
+
+	/// en: 'The connection dropped. You rejoin the room automatically.'
+	String get reconnectingDescription => 'The connection dropped. You rejoin the room automatically.';
+
+	/// en: 'Connected'
+	String get connected => 'Connected';
+
+	/// en: 'Disconnected'
+	String get disconnected => 'Disconnected';
+
+	/// en: 'You are the host'
+	String get youAreHost => 'You are the host';
+
+	/// en: 'Hosted by ${name}'
+	String hostedBy({required Object name}) => 'Hosted by ${name}';
 
 	/// en: 'Host controls playback'
 	String get hostControlsPlayback => 'Host controls playback';
@@ -4209,23 +4481,155 @@ class Translations$watchTogether$en {
 	/// en: 'Anyone can control playback'
 	String get anyoneCanControl => 'Anyone can control playback';
 
-	/// en: 'Host controls'
-	String get hostControls => 'Host controls';
+	/// en: 'Room locked'
+	String get roomLocked => 'Room locked';
 
-	/// en: 'Anyone controls'
-	String get anyoneControls => 'Anyone controls';
+	/// en: 'Now Playing'
+	String get nowPlaying => 'Now Playing';
+
+	/// en: 'Nothing playing'
+	String get nothingPlaying => 'Nothing playing';
+
+	/// en: 'Play something from any library to share it with the room.'
+	String get nothingPlayingHost => 'Play something from any library to share it with the room.';
+
+	/// en: 'When the host plays something, it opens here.'
+	String get nothingPlayingGuest => 'When the host plays something, it opens here.';
+
+	/// en: 'This video has no catalogue match, so only people with access to the same server can play it.'
+	String get notShareable => 'This video has no catalogue match, so only people with access to the same server can play it.';
+
+	/// en: 'Looking for this video in your libraries...'
+	String get searching => 'Looking for this video in your libraries...';
+
+	/// en: 'Your copy'
+	String get yourCopy => 'Your copy';
+
+	/// en: 'You're sharing your copy'
+	String get sharingYourCopy => 'You\'re sharing your copy';
+
+	/// en: 'Playing your copy, ${difference}'
+	String playingOtherLength({required Object difference}) => 'Playing your copy, ${difference}';
+
+	/// en: 'Your Copy Is a Different Length'
+	String get mismatchTitle => 'Your Copy Is a Different Length';
+
+	/// en: 'Your closest copy is ${difference} than the room's video. It may be another cut or version.'
+	String mismatchDescription({required Object difference}) => 'Your closest copy is ${difference} than the room\'s video. It may be another cut or version.';
+
+	/// en: 'Play Anyway'
+	String get playAnyway => 'Play Anyway';
+
+	/// en: 'Choose Another Copy'
+	String get chooseAnotherCopy => 'Choose Another Copy';
+
+	/// en: 'Don't Play'
+	String get dontPlay => 'Don\'t Play';
+
+	/// en: 'You don't have this video'
+	String get unavailableTitle => 'You don\'t have this video';
+
+	/// en: 'Plezy couldn't find it in your libraries. Pick a copy yourself or search again.'
+	String get unavailableDescription => 'Plezy couldn\'t find it in your libraries. Pick a copy yourself or search again.';
+
+	/// en: 'Choose a Copy'
+	String get chooseCopy => 'Choose a Copy';
+
+	/// en: 'Search Again'
+	String get searchAgain => 'Search Again';
+
+	/// en: 'No copies found in your libraries.'
+	String get noCandidates => 'No copies found in your libraries.';
+
+	/// en: 'Couldn't play this copy for the room'
+	String get choiceFailed => 'Couldn\'t play this copy for the room';
+
+	/// en: '${duration} longer'
+	String lengthLonger({required Object duration}) => '${duration} longer';
+
+	/// en: '${duration} shorter'
+	String lengthShorter({required Object duration}) => '${duration} shorter';
+
+	/// en: 'Same length'
+	String get lengthSame => 'Same length';
+
+	/// en: 'Length unknown'
+	String get lengthUnknown => 'Length unknown';
+
+	/// en: 'Join Current Playback'
+	String get joinCurrentPlayback => 'Join Current Playback';
+
+	/// en: 'Jump back into what the host is currently watching'
+	String get joinCurrentPlaybackDescription => 'Jump back into what the host is currently watching';
+
+	/// en: 'Stop Video for Everyone'
+	String get stopMedia => 'Stop Video for Everyone';
+
+	/// en: 'Sync Offset'
+	String get syncOffset => 'Sync Offset';
+
+	/// en: 'Shift your video if it runs ahead of or behind the room.'
+	String get syncOffsetDescription => 'Shift your video if it runs ahead of or behind the room.';
+
+	/// en: 'Your copy is ${difference} than the room's video.'
+	String offsetHint({required Object difference}) => 'Your copy is ${difference} than the room\'s video.';
+
+	/// en: 'Use ${offset}'
+	String applyDifference({required Object offset}) => 'Use ${offset}';
+
+	/// en: '-1 s'
+	String get offsetMinusSecond => '-1 s';
+
+	/// en: '-100 ms'
+	String get offsetMinusTenth => '-100 ms';
+
+	/// en: '+100 ms'
+	String get offsetPlusTenth => '+100 ms';
+
+	/// en: '+1 s'
+	String get offsetPlusSecond => '+1 s';
 
 	/// en: 'Participants'
 	String get participants => 'Participants';
 
-	/// en: 'Host'
-	String get host => 'Host';
+	/// en: '(one) {${n} participant} (other) {${n} participants}'
+	String participantCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		one: '${n} participant',
+		other: '${n} participants',
+	);
 
 	/// en: 'HOST'
 	String get hostBadge => 'HOST';
 
-	/// en: 'You are the host'
-	String get youAreHost => 'You are the host';
+	/// en: '${name} (You)'
+	String nameYou({required Object name}) => '${name} (You)';
+
+	/// en: 'Idle'
+	String get playerIdle => 'Idle';
+
+	/// en: 'Loading'
+	String get playerLoading => 'Loading';
+
+	/// en: 'Ready'
+	String get playerReady => 'Ready';
+
+	/// en: 'Buffering'
+	String get playerBuffering => 'Buffering';
+
+	/// en: 'Searching'
+	String get matchSearching => 'Searching';
+
+	/// en: 'Has the video'
+	String get matchMatched => 'Has the video';
+
+	/// en: 'Different length'
+	String get matchMismatched => 'Different length';
+
+	/// en: 'Doesn't have the video'
+	String get matchUnavailable => 'Doesn\'t have the video';
+
+	/// en: 'Offset ${offset}'
+	String participantOffset({required Object offset}) => 'Offset ${offset}';
 
 	/// en: 'Make host'
 	String get makeHost => 'Make host';
@@ -4239,148 +4643,66 @@ class Translations$watchTogether$en {
 	/// en: 'Transfer'
 	String get transfer => 'Transfer';
 
-	/// en: '${name} is now the host'
-	String hostChangedTo({required Object name}) => '${name} is now the host';
+	/// en: 'Remove from Room'
+	String get removeParticipant => 'Remove from Room';
 
-	/// en: 'You are now the host'
-	String get youAreNowHost => 'You are now the host';
+	/// en: 'Remove ${name}?'
+	String removeParticipantQuestion({required Object name}) => 'Remove ${name}?';
 
-	/// en: 'Couldn't make ${name} the host'
-	String hostTransferFailed({required Object name}) => 'Couldn\'t make ${name} the host';
+	/// en: '${name} leaves the room. They can join again with the code unless you lock the room.'
+	String removeParticipantConfirm({required Object name}) => '${name} leaves the room. They can join again with the code unless you lock the room.';
 
-	/// en: 'Watching with others'
-	String get watchingWithOthers => 'Watching with others';
+	/// en: 'Remove'
+	String get remove => 'Remove';
 
-	/// en: 'End Session'
-	String get endSession => 'End Session';
+	/// en: 'Room Settings'
+	String get roomSettings => 'Room Settings';
 
-	/// en: 'Leave Session'
-	String get leaveSession => 'Leave Session';
+	/// en: 'Let Everyone Control Playback'
+	String get letEveryoneControl => 'Let Everyone Control Playback';
 
-	/// en: 'End Session?'
-	String get endSessionQuestion => 'End Session?';
+	/// en: 'Lock Room'
+	String get lockRoom => 'Lock Room';
 
-	/// en: 'Leave Session?'
-	String get leaveSessionQuestion => 'Leave Session?';
+	/// en: 'Nobody new can join'
+	String get lockRoomDescription => 'Nobody new can join';
 
-	/// en: 'This will end the session for all participants.'
-	String get endSessionConfirm => 'This will end the session for all participants.';
+	/// en: 'Leave Room'
+	String get leaveRoom => 'Leave Room';
 
-	/// en: 'You will be removed from the session.'
-	String get leaveSessionConfirm => 'You will be removed from the session.';
+	/// en: 'Leave Room?'
+	String get leaveRoomQuestion => 'Leave Room?';
 
-	/// en: 'This will end the watch session for all participants.'
-	String get endSessionConfirmOverlay => 'This will end the watch session for all participants.';
-
-	/// en: 'You will be disconnected from the watch session.'
-	String get leaveSessionConfirmOverlay => 'You will be disconnected from the watch session.';
-
-	/// en: 'End'
-	String get end => 'End';
+	/// en: 'You can join again with the room code.'
+	String get leaveRoomConfirm => 'You can join again with the room code.';
 
 	/// en: 'Leave'
 	String get leave => 'Leave';
 
-	/// en: 'Syncing...'
-	String get syncing => 'Syncing...';
+	/// en: 'End Room'
+	String get endRoom => 'End Room';
 
-	/// en: 'Join Watch Session'
-	String get joinWatchSession => 'Join Watch Session';
+	/// en: 'End Room?'
+	String get endRoomQuestion => 'End Room?';
 
-	/// en: 'Enter 5-character code'
-	String get enterCodeHint => 'Enter 5-character code';
+	/// en: 'This ends the room for everyone.'
+	String get endRoomConfirm => 'This ends the room for everyone.';
 
-	/// en: 'Paste from clipboard'
-	String get pasteFromClipboard => 'Paste from clipboard';
+	/// en: 'End'
+	String get end => 'End';
 
-	/// en: 'Please enter a session code'
-	String get pleaseEnterCode => 'Please enter a session code';
+	/// en: 'Playback didn't start'
+	String get playBlockedTitle => 'Playback didn\'t start';
 
-	/// en: 'Session code must be 5 characters'
-	String get codeMustBe5Chars => 'Session code must be 5 characters';
+	/// en: 'Press play to start watching with the room.'
+	String get playBlockedDescription => 'Press play to start watching with the room.';
 
-	/// en: 'Enter the host's session code to join.'
-	String get joinInstructions => 'Enter the host\'s session code to join.';
-
-	/// en: 'Failed to create session'
-	String get failedToCreate => 'Failed to create session';
-
-	/// en: 'Failed to join session'
-	String get failedToJoin => 'Failed to join session';
-
-	/// en: 'Session code copied to clipboard'
-	String get sessionCodeCopied => 'Session code copied to clipboard';
-
-	/// en: 'Relay server unreachable. ISP blocking may prevent Watch Together.'
-	String get relayUnreachable => 'Relay server unreachable. ISP blocking may prevent Watch Together.';
-
-	/// en: 'Reconnecting to host...'
-	String get reconnectingToHost => 'Reconnecting to host...';
-
-	/// en: 'Current Playback'
-	String get currentPlayback => 'Current Playback';
-
-	/// en: 'Join Current Playback'
-	String get joinCurrentPlayback => 'Join Current Playback';
-
-	/// en: 'Jump back into what the host is currently watching'
-	String get joinCurrentPlaybackDescription => 'Jump back into what the host is currently watching';
-
-	/// en: 'Failed to open current playback'
-	String get failedToOpenCurrentPlayback => 'Failed to open current playback';
-
-	/// en: '${name} joined'
-	String participantJoined({required Object name}) => '${name} joined';
-
-	/// en: '${name} left'
-	String participantLeft({required Object name}) => '${name} left';
-
-	/// en: '${name} paused'
-	String participantPaused({required Object name}) => '${name} paused';
-
-	/// en: '${name} resumed'
-	String participantResumed({required Object name}) => '${name} resumed';
-
-	/// en: '${name} changed the playback position'
-	String participantSeeked({required Object name}) => '${name} changed the playback position';
-
-	/// en: '${name} set the speed to ${speed}'
-	String participantChangedSpeed({required Object name, required Object speed}) => '${name} set the speed to ${speed}';
-
-	/// en: '${name} is buffering'
-	String participantBuffering({required Object name}) => '${name} is buffering';
-
-	/// en: '${name} is on an older app version — sync unavailable'
-	String participantNeedsUpdate({required Object name}) => '${name} is on an older app version — sync unavailable';
-
-	/// en: 'Resuming without ${name}'
-	String resumingWithout({required Object name}) => 'Resuming without ${name}';
-
-	/// en: 'Waiting for others to load...'
-	String get waitingForParticipants => 'Waiting for others to load...';
-
-	/// en: 'Waiting for ${name}...'
-	String waitingForName({required Object name}) => 'Waiting for ${name}...';
-
-	/// en: 'Recent Rooms'
-	String get recentRooms => 'Recent Rooms';
-
-	/// en: 'Rename Room'
-	String get renameRoom => 'Rename Room';
-
-	/// en: 'Remove'
-	String get removeRoom => 'Remove';
-
-	/// en: 'Couldn't switch — server unavailable for sync'
-	String get guestSwitchUnavailable => 'Couldn\'t switch — server unavailable for sync';
-
-	/// en: 'Couldn't switch — content not found on this server'
-	String get guestSwitchFailed => 'Couldn\'t switch — content not found on this server';
-
-	/// en: 'User'
-	String get defaultDisplayName => 'User';
-
+	late final Translations$watchTogether$notices$en notices = Translations$watchTogether$notices$en.internal(_root);
+	late final Translations$watchTogether$ended$en ended = Translations$watchTogether$ended$en.internal(_root);
 	late final Translations$watchTogether$errors$en errors = Translations$watchTogether$errors$en.internal(_root);
+
+	/// en: 'Episode ${number}'
+	String untitledEpisode({required Object number}) => 'Episode ${number}';
 }
 
 // Path: downloads
@@ -4984,6 +5306,9 @@ class Translations$performanceOverlay$en {
 
 	/// en: 'Player'
 	String get player => 'Player';
+
+	/// en: 'Play Method'
+	String get playMethod => 'Play Method';
 
 	/// en: 'Memory'
 	String get memory => 'Memory';
@@ -5809,6 +6134,84 @@ class Translations$watchLink$en {
 	String get copied => 'Link copied';
 }
 
+// Path: appIcon.names
+class Translations$appIcon$names$en {
+	Translations$appIcon$names$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Midnight'
+	String get midnight => 'Midnight';
+
+	/// en: 'Ember'
+	String get ember => 'Ember';
+
+	/// en: 'Paper'
+	String get paper => 'Paper';
+
+	/// en: 'OLED'
+	String get oled => 'OLED';
+
+	/// en: 'Line'
+	String get line => 'Line';
+
+	/// en: 'Ocean'
+	String get ocean => 'Ocean';
+
+	/// en: 'Ultraviolet'
+	String get ultraviolet => 'Ultraviolet';
+
+	/// en: 'Matcha'
+	String get matcha => 'Matcha';
+
+	/// en: 'Sunset'
+	String get sunset => 'Sunset';
+
+	/// en: 'Gold'
+	String get gold => 'Gold';
+
+	/// en: 'Titanium'
+	String get titanium => 'Titanium';
+
+	/// en: 'Glass'
+	String get glass => 'Glass';
+
+	/// en: 'CRT'
+	String get crt => 'CRT';
+
+	/// en: 'VHS'
+	String get vhs => 'VHS';
+
+	/// en: 'Synthwave'
+	String get synthwave => 'Synthwave';
+
+	/// en: 'Pixel'
+	String get pixel => 'Pixel';
+
+	/// en: 'Neon'
+	String get neon => 'Neon';
+
+	/// en: 'Sticker'
+	String get sticker => 'Sticker';
+
+	/// en: 'Ticket'
+	String get ticket => 'Ticket';
+
+	/// en: 'Pop'
+	String get pop => 'Pop';
+
+	/// en: 'Strata'
+	String get strata => 'Strata';
+
+	/// en: 'Facet'
+	String get facet => 'Facet';
+
+	/// en: 'Tilde'
+	String get tilde => 'Tilde';
+}
+
 // Path: common.ratingSource
 class Translations$common$ratingSource$en {
 	Translations$common$ratingSource$en.internal(this._root);
@@ -5900,6 +6303,90 @@ class Translations$common$mediaKind$en {
 
 	/// en: 'Folder'
 	String get folder => 'Folder';
+}
+
+// Path: supporter.errors
+class Translations$supporter$errors$en {
+	Translations$supporter$errors$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Purchases aren't available. Check that you're signed in to the store and purchases are allowed on this device.'
+	String get storeUnavailable => 'Purchases aren\'t available. Check that you\'re signed in to the store and purchases are allowed on this device.';
+
+	/// en: 'The Supporter purchase isn't available in your store right now.'
+	String get productNotFound => 'The Supporter purchase isn\'t available in your store right now.';
+
+	/// en: 'Couldn't load the price. Check your connection and try again.'
+	String get productQueryFailed => 'Couldn\'t load the price. Check your connection and try again.';
+
+	/// en: 'The purchase didn't go through. Try again.'
+	String get purchaseFailed => 'The purchase didn\'t go through. Try again.';
+
+	/// en: 'Couldn't reach the store to restore your purchase. Try again.'
+	String get restoreFailed => 'Couldn\'t reach the store to restore your purchase. Try again.';
+
+	/// en: 'No Supporter purchase was found for this store account.'
+	String get nothingToRestore => 'No Supporter purchase was found for this store account.';
+}
+
+// Path: themeEditor.slots
+class Translations$themeEditor$slots$en {
+	Translations$themeEditor$slots$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Background'
+	String get bg => 'Background';
+
+	/// en: 'Surface'
+	String get surface => 'Surface';
+
+	/// en: 'Outline'
+	String get outline => 'Outline';
+
+	/// en: 'Text'
+	String get text => 'Text';
+
+	/// en: 'Secondary text'
+	String get textMuted => 'Secondary text';
+
+	/// en: 'Accent'
+	String get accent => 'Accent';
+}
+
+// Path: themeEditor.contrast
+class Translations$themeEditor$contrast$en {
+	Translations$themeEditor$contrast$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Text on background'
+	String get textOnBg => 'Text on background';
+
+	/// en: 'Text on surface'
+	String get textOnSurface => 'Text on surface';
+
+	/// en: 'Secondary text on background'
+	String get textMutedOnBg => 'Secondary text on background';
+
+	/// en: 'Secondary text on surface'
+	String get textMutedOnSurface => 'Secondary text on surface';
+
+	/// en: 'Accent on background'
+	String get accentOnBg => 'Accent on background';
+
+	/// en: 'Accent on surface'
+	String get accentOnSurface => 'Accent on surface';
+
+	/// en: 'Button label on accent'
+	String get labelOnAccent => 'Button label on accent';
 }
 
 // Path: hotkeys.actions
@@ -6949,6 +7436,114 @@ class Translations$music$discography$en {
 	String get compilations => 'Compilations';
 }
 
+// Path: watchTogether.notices
+class Translations$watchTogether$notices$en {
+	Translations$watchTogether$notices$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: '${name} pressed play'
+	String pressedPlay({required Object name}) => '${name} pressed play';
+
+	/// en: 'Playback started'
+	String get playbackStarted => 'Playback started';
+
+	/// en: '${name} paused'
+	String paused({required Object name}) => '${name} paused';
+
+	/// en: 'Playback paused'
+	String get playbackPaused => 'Playback paused';
+
+	/// en: '${name} jumped to ${position}'
+	String jumpedTo({required Object name, required Object position}) => '${name} jumped to ${position}';
+
+	/// en: 'Jumped to ${position}'
+	String roomJumpedTo({required Object position}) => 'Jumped to ${position}';
+
+	/// en: '${name} set the speed to ${speed}'
+	String changedSpeed({required Object name, required Object speed}) => '${name} set the speed to ${speed}';
+
+	/// en: 'Speed set to ${speed}'
+	String speedChanged({required Object speed}) => 'Speed set to ${speed}';
+
+	/// en: '${name} started ${title}'
+	String startedMedia({required Object name, required Object title}) => '${name} started ${title}';
+
+	/// en: 'Now playing ${title}'
+	String mediaStarted({required Object title}) => 'Now playing ${title}';
+
+	/// en: '${name} stopped the video'
+	String stoppedMedia({required Object name}) => '${name} stopped the video';
+
+	/// en: 'The video stopped'
+	String get mediaStopped => 'The video stopped';
+
+	/// en: 'Waiting for ${name}...'
+	String waitingFor({required Object name}) => 'Waiting for ${name}...';
+
+	/// en: 'Waiting for someone to catch up...'
+	String get waitingForSomeone => 'Waiting for someone to catch up...';
+
+	/// en: 'Finished'
+	String get finished => 'Finished';
+
+	/// en: '${name} is now the host'
+	String hostChangedTo({required Object name}) => '${name} is now the host';
+
+	/// en: 'You are now the host'
+	String get youAreNowHost => 'You are now the host';
+
+	/// en: '${name} joined'
+	String joined({required Object name}) => '${name} joined';
+
+	/// en: '${name} left'
+	String left({required Object name}) => '${name} left';
+
+	/// en: 'Only the host can control playback'
+	String get controlRefused => 'Only the host can control playback';
+
+	/// en: 'Some servers couldn't be searched for the room's video'
+	String get searchFailed => 'Some servers couldn\'t be searched for the room\'s video';
+
+	/// en: 'Press play to start'
+	String get playBlocked => 'Press play to start';
+
+	/// en: 'Couldn't share this video with the room'
+	String get shareFailed => 'Couldn\'t share this video with the room';
+
+	/// en: 'Downloads aren't shared with the room while their server is offline'
+	String get downloadNotShared => 'Downloads aren\'t shared with the room while their server is offline';
+
+	/// en: 'Couldn't open the room's video'
+	String get openFailed => 'Couldn\'t open the room\'s video';
+}
+
+// Path: watchTogether.ended
+class Translations$watchTogether$ended$en {
+	Translations$watchTogether$ended$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'The host ended the room'
+	String get ended => 'The host ended the room';
+
+	/// en: 'You were removed from the room'
+	String get kicked => 'You were removed from the room';
+
+	/// en: 'The room expired'
+	String get expired => 'The room expired';
+
+	/// en: 'You joined this room on another device'
+	String get replaced => 'You joined this room on another device';
+
+	/// en: 'Lost the connection to the room'
+	String get lost => 'Lost the connection to the room';
+}
+
 // Path: watchTogether.errors
 class Translations$watchTogether$errors$en {
 	Translations$watchTogether$errors$en.internal(this._root);
@@ -6957,20 +7552,47 @@ class Translations$watchTogether$errors$en {
 
 	// Translations
 
-	/// en: 'The relay did not respond in time'
-	String get timedOut => 'The relay did not respond in time';
+	/// en: 'That isn't a room code. Codes have 6 letters and digits, without 0, 1, I, L or O.'
+	String get invalidCode => 'That isn\'t a room code. Codes have 6 letters and digits, without 0, 1, I, L or O.';
 
-	/// en: 'The connection closed before the session was ready'
-	String get connectionLost => 'The connection closed before the session was ready';
+	/// en: 'No room has that code. It may have ended.'
+	String get roomNotFound => 'No room has that code. It may have ended.';
 
-	/// en: 'The relay sent an unexpected response'
-	String get invalidRelayResponse => 'The relay sent an unexpected response';
+	/// en: 'That room is full.'
+	String get roomFull => 'That room is full.';
 
-	/// en: 'The host ended the session'
-	String get sessionEnded => 'The host ended the session';
+	/// en: 'The host locked that room.'
+	String get roomLocked => 'The host locked that room.';
 
-	/// en: 'Unable to resume this session. Join or create a room to continue.'
-	String get sessionUnavailable => 'Unable to resume this session. Join or create a room to continue.';
+	/// en: 'Watch Together is busy right now. Try again later.'
+	String get relayFull => 'Watch Together is busy right now. Try again later.';
+
+	/// en: 'Couldn't reach the Watch Together relay. Check your connection.'
+	String get unreachable => 'Couldn\'t reach the Watch Together relay. Check your connection.';
+
+	/// en: 'Too many attempts. Wait a moment and try again.'
+	String get rateLimited => 'Too many attempts. Wait a moment and try again.';
+
+	/// en: 'This version of Plezy can't use the relay. Update the app.'
+	String get clientBlocked => 'This version of Plezy can\'t use the relay. Update the app.';
+
+	/// en: 'Only the host can do that.'
+	String get forbidden => 'Only the host can do that.';
+
+	/// en: 'You're not in a room.'
+	String get notInRoom => 'You\'re not in a room.';
+
+	/// en: 'You're already in a room.'
+	String get alreadyInRoom => 'You\'re already in a room.';
+
+	/// en: 'Couldn't rejoin the room.'
+	String get resumeFailed => 'Couldn\'t rejoin the room.';
+
+	/// en: 'The relay doesn't support this.'
+	String get unsupported => 'The relay doesn\'t support this.';
+
+	/// en: 'Something went wrong. Try again.'
+	String get generic => 'Something went wrong. Try again.';
 }
 
 // Path: downloads.backgroundWarning
@@ -7450,6 +8072,37 @@ extension on Translations {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'Plezy',
+			'appIcon.title' => 'App icon',
+			'appIcon.defaultIcon' => 'Default',
+			'appIcon.current' => 'Current icon',
+			'appIcon.locked' => 'Supporter perk',
+			'appIcon.lockedHint' => 'Alternate icons are a Supporter perk.',
+			'appIcon.changeFailed' => 'Couldn\'t change the app icon',
+			'appIcon.launcherHint' => 'The new icon appears on your home screen once you leave Plezy.',
+			'appIcon.tvLauncherHint' => 'The new banner appears once you leave Plezy. Android TV can keep showing the old one until the TV restarts.',
+			'appIcon.names.midnight' => 'Midnight',
+			'appIcon.names.ember' => 'Ember',
+			'appIcon.names.paper' => 'Paper',
+			'appIcon.names.oled' => 'OLED',
+			'appIcon.names.line' => 'Line',
+			'appIcon.names.ocean' => 'Ocean',
+			'appIcon.names.ultraviolet' => 'Ultraviolet',
+			'appIcon.names.matcha' => 'Matcha',
+			'appIcon.names.sunset' => 'Sunset',
+			'appIcon.names.gold' => 'Gold',
+			'appIcon.names.titanium' => 'Titanium',
+			'appIcon.names.glass' => 'Glass',
+			'appIcon.names.crt' => 'CRT',
+			'appIcon.names.vhs' => 'VHS',
+			'appIcon.names.synthwave' => 'Synthwave',
+			'appIcon.names.pixel' => 'Pixel',
+			'appIcon.names.neon' => 'Neon',
+			'appIcon.names.sticker' => 'Sticker',
+			'appIcon.names.ticket' => 'Ticket',
+			'appIcon.names.pop' => 'Pop',
+			'appIcon.names.strata' => 'Strata',
+			'appIcon.names.facet' => 'Facet',
+			'appIcon.names.tilde' => 'Tilde',
 			'auth.signInWithPlex' => 'Sign in with Plex',
 			'auth.showQRCode' => 'Show QR Code',
 			'auth.authenticate' => 'Authenticate',
@@ -7553,6 +8206,29 @@ extension on Translations {
 			'update.viewRelease' => 'View Release',
 			'update.latestVersion' => 'You are on the latest version',
 			'update.checkFailed' => 'Failed to check for updates',
+			'supporter.title' => 'Plezy Supporter',
+			'supporter.intro' => 'A one-time purchase that supports Plezy\'s development and unlocks cosmetic extras:',
+			'supporter.presetThemes' => 'Preset themes',
+			'supporter.presetThemesDescription' => 'Ember, Glacier, Forest, Plum and Paper',
+			'supporter.customTheme' => 'Custom theme',
+			'supporter.customThemeDescription' => 'Pick every color yourself',
+			'supporter.appIcons' => 'App icons',
+			'supporter.appIconsDescription' => 'Choose an alternate Plezy icon',
+			'supporter.buy' => ({required Object price}) => 'Buy for ${price}',
+			'supporter.loadingPrice' => 'Loading price...',
+			'supporter.restore' => 'Restore Purchases',
+			'supporter.pending' => 'Your purchase is waiting for payment or approval. The extras unlock as soon as the store completes it.',
+			'supporter.thankYouTitle' => 'Thank you for supporting Plezy',
+			'supporter.thankYouBody' => 'Your Supporter extras are unlocked.',
+			'supporter.tileSubtitle' => 'Unlock themes and app icons with a one-time purchase',
+			'supporter.tileSubtitleThemesOnly' => 'Unlock themes with a one-time purchase',
+			'supporter.tileUnlocked' => 'Thank you for your support',
+			'supporter.errors.storeUnavailable' => 'Purchases aren\'t available. Check that you\'re signed in to the store and purchases are allowed on this device.',
+			'supporter.errors.productNotFound' => 'The Supporter purchase isn\'t available in your store right now.',
+			'supporter.errors.productQueryFailed' => 'Couldn\'t load the price. Check your connection and try again.',
+			'supporter.errors.purchaseFailed' => 'The purchase didn\'t go through. Try again.',
+			'supporter.errors.restoreFailed' => 'Couldn\'t reach the store to restore your purchase. Try again.',
+			'supporter.errors.nothingToRestore' => 'No Supporter purchase was found for this store account.',
 			'settings.title' => 'Settings',
 			'settings.supportDeveloper' => 'Support Plezy',
 			'settings.supportDeveloperDescription' => 'Donate via Liberapay to fund development',
@@ -7576,6 +8252,11 @@ extension on Translations {
 			'settings.lightTheme' => 'Light',
 			'settings.darkTheme' => 'Dark',
 			'settings.oledTheme' => 'OLED',
+			'settings.emberTheme' => 'Ember',
+			'settings.glacierTheme' => 'Glacier',
+			'settings.forestTheme' => 'Forest',
+			'settings.plumTheme' => 'Plum',
+			'settings.paperTheme' => 'Paper',
 			'settings.libraryDensity' => 'Library Density',
 			'settings.displayScale' => 'Display Scale',
 			'settings.compact' => 'Compact',
@@ -7673,7 +8354,7 @@ extension on Translations {
 			'settings.videoPlayerNavigation' => 'Video Player Navigation',
 			'settings.videoPlayerNavigationDescription' => 'Use arrow keys to navigate video player controls',
 			'settings.watchTogetherRelay' => 'Watch Together Relay',
-			'settings.watchTogetherRelayDescription' => 'Set a custom relay. Everyone must use the same server.',
+			'settings.watchTogetherRelayDescription' => 'Public Open Watch Party relays unless you set your own',
 			'settings.watchTogetherRelayHint' => 'https://my-relay.example.com',
 			'settings.watchTogetherRelayInvalid' => 'Enter a valid HTTP or HTTPS relay base URL.',
 			'settings.crashReporting' => 'Crash Reporting',
@@ -7783,7 +8464,8 @@ extension on Translations {
 			'settings.tunneledPlaybackDescription' => 'Use video tunneling. Disable if HDR playback shows black video or motion stutters.',
 			'settings.audioPassthrough' => 'Audio Passthrough',
 			'settings.audioPassthroughDescription' => 'Send Dolby/DTS audio to your receiver or TV without re-encoding, preserving surround sound. Turn off if you have no sound.',
-			'settings.audioPassthroughDescriptionAppleTv' => 'Use Apple\'s native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.',
+			'settings.audioPassthroughDescriptionApple' => 'Use Apple\'s native Dolby decoder for Dolby Digital Plus, including Atmos. DTS and TrueHD still play as multichannel PCM. Turn off if you have no sound.',
+			'settings.audioPassthroughDescriptionAppleSpatial' => 'Use Apple\'s native Dolby decoder for Dolby Digital Plus, including Atmos. On iOS, iPadOS and tvOS 26 or later, TrueHD Atmos and DTS:X play as spatial audio. Other DTS and TrueHD tracks play as multichannel PCM. Turn off if you have no sound.',
 			'settings.audioPassthroughOverriddenByNormalization' => 'Off while loudness normalization is on',
 			'settings.audioChannelLimit' => 'Audio Channels',
 			'settings.audioChannelLimitDescription' => 'Mix decoded audio down for speakers, headphones, or HDMI setups that cannot play every channel',
@@ -7821,6 +8503,12 @@ extension on Translations {
 			'settings.hdrSdrConversionPlayerDescription' => 'The player converts it. Consistent colors, but 4K may stutter on low-end TV boxes',
 			'settings.deinterlace' => 'Deinterlacing',
 			'settings.deinterlaceDescription' => 'Remove combing artifacts from interlaced video (mpv player only)',
+			'settings.deinterlaceOff' => 'Off',
+			'settings.deinterlaceOffDescription' => 'Show interlaced video as it is decoded',
+			'settings.deinterlaceVideo' => 'Video',
+			'settings.deinterlaceVideoDescription' => 'Turn each field into a full frame. For video shot for TV, like sports, news, and concerts',
+			'settings.deinterlaceFilm' => 'Film',
+			'settings.deinterlaceFilmDescription' => 'Restore the original frames of film and animation telecined to 29.97 fps, common on NTSC DVDs. Video shot for TV stutters. Live TV uses Video',
 			'settings.requireProfileSelectionOnOpen' => 'Ask for profile on app open',
 			'settings.requireProfileSelectionOnOpenDescription' => 'Show profile selection every time the app is opened',
 			'settings.forceTvMode' => 'Force TV mode',
@@ -7876,6 +8564,46 @@ extension on Translations {
 			'settings.playerScopeLibrary' => 'Per library',
 			'settings.playerScopeTitle' => 'Per show or movie',
 			'settings.exportDialogTitle' => 'Export Plezy settings',
+			'themeEditor.builtIn' => 'Built-in',
+			'themeEditor.presets' => 'Presets',
+			'themeEditor.custom' => 'Custom',
+			'themeEditor.customEmpty' => 'Not created yet',
+			'themeEditor.editCustom' => 'Edit custom theme',
+			'themeEditor.editCustomDescription' => 'Choose every color yourself',
+			'themeEditor.locked' => 'Unlock with Supporter',
+			'themeEditor.savedLocked' => 'Saved — unlocks with Supporter',
+			'themeEditor.title' => 'Custom Theme',
+			'themeEditor.startFrom' => 'Start from',
+			'themeEditor.startFromDescription' => 'Copy all colors from another theme',
+			'themeEditor.colors' => 'Colors',
+			'themeEditor.preview' => 'Preview',
+			'themeEditor.slots.bg' => 'Background',
+			'themeEditor.slots.surface' => 'Surface',
+			'themeEditor.slots.outline' => 'Outline',
+			'themeEditor.slots.text' => 'Text',
+			'themeEditor.slots.textMuted' => 'Secondary text',
+			'themeEditor.slots.accent' => 'Accent',
+			_ => null,
+		} ?? switch (path) {
+			'themeEditor.opacity' => 'Opacity',
+			'themeEditor.hexHint' => '#RRGGBB or #AARRGGBB',
+			'themeEditor.fromOtherThemes' => 'From other themes',
+			'themeEditor.swatchLabel' => ({required Object theme, required Object color}) => '${theme} ${color}',
+			'themeEditor.contrast.textOnBg' => 'Text on background',
+			'themeEditor.contrast.textOnSurface' => 'Text on surface',
+			'themeEditor.contrast.textMutedOnBg' => 'Secondary text on background',
+			'themeEditor.contrast.textMutedOnSurface' => 'Secondary text on surface',
+			'themeEditor.contrast.accentOnBg' => 'Accent on background',
+			'themeEditor.contrast.accentOnSurface' => 'Accent on surface',
+			'themeEditor.contrast.labelOnAccent' => 'Button label on accent',
+			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, below the recommended ${minimum}:1',
+			'themeEditor.discardTitle' => 'Discard changes?',
+			'themeEditor.discardMessage' => 'Your unsaved color changes will be lost.',
+			'themeEditor.discard' => 'Discard',
+			'themeEditor.previewCardTitle' => ({required Object number}) => 'Episode ${number}',
+			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '${minutes} min left',
+			'themeEditor.previewSwitch' => 'Autoplay',
+			'themeEditor.previewMutedText' => 'Secondary text reads like this',
 			'search.hint' => 'Search movies, shows, music...',
 			'search.tryDifferentTerm' => 'Try a different search term',
 			'search.searchYourMedia' => 'Search your media',
@@ -7961,8 +8689,6 @@ extension on Translations {
 			'fileInfo.referenceFrames' => 'Reference Frames',
 			'fileInfo.dynamicRange' => 'Dynamic Range',
 			'fileInfo.dolbyVision' => 'Dolby Vision',
-			_ => null,
-		} ?? switch (path) {
 			'fileInfo.dolbyVisionLevel' => 'Dolby Vision Level',
 			'fileInfo.dolbyVisionVersion' => 'Dolby Vision Version',
 			'fileInfo.dolbyVisionLayers' => 'Dolby Vision Layers',
@@ -8161,6 +8887,7 @@ extension on Translations {
 			'videoControls.pipActive' => 'Playing in Picture-in-Picture',
 			'videoControls.pipFailed' => 'Picture-in-picture failed to start',
 			'videoControls.screenshotSaved' => 'Screenshot saved',
+			'videoControls.screenshotFailed' => 'Couldn\'t take a screenshot',
 			'videoControls.zoomPercent' => ({required Object percent}) => 'Zoom ${percent}%',
 			'videoControls.volumePercent' => ({required Object percent}) => 'Volume ${percent}%',
 			'videoControls.pipErrors.androidVersion' => 'Requires Android 8.0 or newer',
@@ -8370,6 +9097,8 @@ extension on Translations {
 			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
 			'connections.sectionTitle' => 'Connections',
 			'connections.addConnection' => 'Add connection',
+			_ => null,
+		} ?? switch (path) {
 			'connections.addConnectionSubtitleNoProfile' => 'Sign in with Plex or connect a Jellyfin or Emby server',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Add to ${displayName}: Plex, Jellyfin, Emby, or another profile connection',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Session expired for ${name}',
@@ -8475,8 +9204,6 @@ extension on Translations {
 			'errors.pleaseEnterToken' => 'Please enter a token',
 			'errors.invalidToken' => 'Invalid token',
 			'errors.failedToVerifyToken' => ({required Object error}) => 'Failed to verify token: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'errors.failedToSwitchProfile' => ({required Object displayName}) => 'Failed to switch to ${displayName}',
 			'errors.failedToDeleteProfile' => ({required Object displayName}) => 'Failed to delete ${displayName}',
 			'errors.failedToRate' => 'Couldn\'t update rating',
@@ -8811,6 +9538,7 @@ extension on Translations {
 			'liveTv.channelNumber' => ({required Object number}) => 'Channel ${number}',
 			'liveTv.unknownChannel' => 'Unknown channel',
 			'liveTv.live' => 'LIVE',
+			'liveTv.premiereBadge' => 'NEW',
 			'liveTv.reloadGuide' => 'Reload Guide',
 			'liveTv.searchGuide' => 'Search Guide',
 			'liveTv.searchHint' => 'Search channels & programs',
@@ -8883,6 +9611,8 @@ extension on Translations {
 			'liveTv.recordSettings.keepUpTo' => 'Episodes to keep',
 			'liveTv.recordSettings.keepUpToHint' => '0 keeps every episode',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Starting in ${minutes} min',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} at ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returned invalid Live TV playback data',
 			'liveTv.failedToStartChannel' => 'Could not start the live channel',
@@ -8966,85 +9696,151 @@ extension on Translations {
 			'music.discography.compilations' => 'Compilations',
 			'watchTogether.title' => 'Watch Together',
 			'watchTogether.description' => 'Watch content in sync with friends and family',
-			'watchTogether.createSession' => 'Create Session',
-			'watchTogether.creating' => 'Creating...',
-			'watchTogether.joinSession' => 'Join Session',
-			'watchTogether.joining' => 'Joining...',
-			'watchTogether.controlMode' => 'Control Mode',
-			'watchTogether.controlModeQuestion' => 'Who can control playback?',
-			'watchTogether.hostOnly' => 'Host Only',
-			'watchTogether.anyone' => 'Anyone',
-			'watchTogether.hostingSession' => 'Hosting Session',
-			'watchTogether.inSession' => 'In Session',
-			'watchTogether.sessionCode' => 'Session Code',
-			'watchTogether.openSessionControls' => 'Open Watch Together session controls',
-			'watchTogether.copySessionCode' => 'Copy session code',
-			'watchTogether.hostControlsPlayback' => 'Host controls playback',
-			'watchTogether.anyoneCanControl' => 'Anyone can control playback',
-			'watchTogether.hostControls' => 'Host controls',
-			'watchTogether.anyoneControls' => 'Anyone controls',
-			'watchTogether.participants' => 'Participants',
-			'watchTogether.host' => 'Host',
-			'watchTogether.hostBadge' => 'HOST',
-			'watchTogether.youAreHost' => 'You are the host',
-			'watchTogether.makeHost' => 'Make host',
-			'watchTogether.makeHostQuestion' => 'Transfer host?',
-			_ => null,
-		} ?? switch (path) {
-			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} will control playback and drive the session for everyone.',
-			'watchTogether.transfer' => 'Transfer',
-			'watchTogether.hostChangedTo' => ({required Object name}) => '${name} is now the host',
-			'watchTogether.youAreNowHost' => 'You are now the host',
-			'watchTogether.hostTransferFailed' => ({required Object name}) => 'Couldn\'t make ${name} the host',
-			'watchTogether.watchingWithOthers' => 'Watching with others',
-			'watchTogether.endSession' => 'End Session',
-			'watchTogether.leaveSession' => 'Leave Session',
-			'watchTogether.endSessionQuestion' => 'End Session?',
-			'watchTogether.leaveSessionQuestion' => 'Leave Session?',
-			'watchTogether.endSessionConfirm' => 'This will end the session for all participants.',
-			'watchTogether.leaveSessionConfirm' => 'You will be removed from the session.',
-			'watchTogether.endSessionConfirmOverlay' => 'This will end the watch session for all participants.',
-			'watchTogether.leaveSessionConfirmOverlay' => 'You will be disconnected from the watch session.',
-			'watchTogether.end' => 'End',
-			'watchTogether.leave' => 'Leave',
-			'watchTogether.syncing' => 'Syncing...',
-			'watchTogether.joinWatchSession' => 'Join Watch Session',
-			'watchTogether.enterCodeHint' => 'Enter 5-character code',
-			'watchTogether.pasteFromClipboard' => 'Paste from clipboard',
-			'watchTogether.pleaseEnterCode' => 'Please enter a session code',
-			'watchTogether.codeMustBe5Chars' => 'Session code must be 5 characters',
-			'watchTogether.joinInstructions' => 'Enter the host\'s session code to join.',
-			'watchTogether.failedToCreate' => 'Failed to create session',
-			'watchTogether.failedToJoin' => 'Failed to join session',
-			'watchTogether.sessionCodeCopied' => 'Session code copied to clipboard',
-			'watchTogether.relayUnreachable' => 'Relay server unreachable. ISP blocking may prevent Watch Together.',
-			'watchTogether.reconnectingToHost' => 'Reconnecting to host...',
-			'watchTogether.currentPlayback' => 'Current Playback',
-			'watchTogether.joinCurrentPlayback' => 'Join Current Playback',
-			'watchTogether.joinCurrentPlaybackDescription' => 'Jump back into what the host is currently watching',
-			'watchTogether.failedToOpenCurrentPlayback' => 'Failed to open current playback',
-			'watchTogether.participantJoined' => ({required Object name}) => '${name} joined',
-			'watchTogether.participantLeft' => ({required Object name}) => '${name} left',
-			'watchTogether.participantPaused' => ({required Object name}) => '${name} paused',
-			'watchTogether.participantResumed' => ({required Object name}) => '${name} resumed',
-			'watchTogether.participantSeeked' => ({required Object name}) => '${name} changed the playback position',
-			'watchTogether.participantChangedSpeed' => ({required Object name, required Object speed}) => '${name} set the speed to ${speed}',
-			'watchTogether.participantBuffering' => ({required Object name}) => '${name} is buffering',
-			'watchTogether.participantNeedsUpdate' => ({required Object name}) => '${name} is on an older app version — sync unavailable',
-			'watchTogether.resumingWithout' => ({required Object name}) => 'Resuming without ${name}',
-			'watchTogether.waitingForParticipants' => 'Waiting for others to load...',
-			'watchTogether.waitingForName' => ({required Object name}) => 'Waiting for ${name}...',
+			'watchTogether.createRoom' => 'Create Room',
+			'watchTogether.creatingRoom' => 'Creating room...',
+			'watchTogether.joinRoom' => 'Join Room',
+			'watchTogether.joiningRoom' => 'Joining room...',
+			'watchTogether.connecting' => 'Connecting...',
+			'watchTogether.relayPublic' => 'Rooms use the public Open Watch Party relays.',
+			'watchTogether.relayCustom' => ({required Object url}) => 'Rooms use your relay at ${url}.',
 			'watchTogether.recentRooms' => 'Recent Rooms',
+			'watchTogether.roomActions' => 'Room actions',
 			'watchTogether.renameRoom' => 'Rename Room',
 			'watchTogether.removeRoom' => 'Remove',
-			'watchTogether.guestSwitchUnavailable' => 'Couldn\'t switch — server unavailable for sync',
-			'watchTogether.guestSwitchFailed' => 'Couldn\'t switch — content not found on this server',
-			'watchTogether.defaultDisplayName' => 'User',
-			'watchTogether.errors.timedOut' => 'The relay did not respond in time',
-			'watchTogether.errors.connectionLost' => 'The connection closed before the session was ready',
-			'watchTogether.errors.invalidRelayResponse' => 'The relay sent an unexpected response',
-			'watchTogether.errors.sessionEnded' => 'The host ended the session',
-			'watchTogether.errors.sessionUnavailable' => 'Unable to resume this session. Join or create a room to continue.',
+			'watchTogether.enterRoomCode' => 'Enter the 6-character code from the host.',
+			'watchTogether.roomCode' => 'Room Code',
+			'watchTogether.paste' => 'Paste',
+			'watchTogether.noCodeInClipboard' => 'The clipboard doesn\'t contain a room code',
+			'watchTogether.copyCode' => 'Copy Code',
+			'watchTogether.codeCopied' => 'Room code copied',
+			'watchTogether.shareInvite' => 'Share Invite',
+			'watchTogether.inviteCopied' => 'Invite copied. Paste it into a message.',
+			'watchTogether.inviteMessage' => ({required Object code}) => 'Join my Watch Together room in Plezy: open Watch Together, choose Join Room and enter ${code}.',
+			'watchTogether.openSessionControls' => 'Open Watch Together session controls',
+			'watchTogether.reconnecting' => 'Reconnecting...',
+			'watchTogether.reconnectingDescription' => 'The connection dropped. You rejoin the room automatically.',
+			'watchTogether.connected' => 'Connected',
+			'watchTogether.disconnected' => 'Disconnected',
+			'watchTogether.youAreHost' => 'You are the host',
+			'watchTogether.hostedBy' => ({required Object name}) => 'Hosted by ${name}',
+			'watchTogether.hostControlsPlayback' => 'Host controls playback',
+			'watchTogether.anyoneCanControl' => 'Anyone can control playback',
+			'watchTogether.roomLocked' => 'Room locked',
+			'watchTogether.nowPlaying' => 'Now Playing',
+			'watchTogether.nothingPlaying' => 'Nothing playing',
+			'watchTogether.nothingPlayingHost' => 'Play something from any library to share it with the room.',
+			'watchTogether.nothingPlayingGuest' => 'When the host plays something, it opens here.',
+			'watchTogether.notShareable' => 'This video has no catalogue match, so only people with access to the same server can play it.',
+			'watchTogether.searching' => 'Looking for this video in your libraries...',
+			'watchTogether.yourCopy' => 'Your copy',
+			'watchTogether.sharingYourCopy' => 'You\'re sharing your copy',
+			'watchTogether.playingOtherLength' => ({required Object difference}) => 'Playing your copy, ${difference}',
+			'watchTogether.mismatchTitle' => 'Your Copy Is a Different Length',
+			'watchTogether.mismatchDescription' => ({required Object difference}) => 'Your closest copy is ${difference} than the room\'s video. It may be another cut or version.',
+			'watchTogether.playAnyway' => 'Play Anyway',
+			'watchTogether.chooseAnotherCopy' => 'Choose Another Copy',
+			'watchTogether.dontPlay' => 'Don\'t Play',
+			'watchTogether.unavailableTitle' => 'You don\'t have this video',
+			'watchTogether.unavailableDescription' => 'Plezy couldn\'t find it in your libraries. Pick a copy yourself or search again.',
+			'watchTogether.chooseCopy' => 'Choose a Copy',
+			'watchTogether.searchAgain' => 'Search Again',
+			'watchTogether.noCandidates' => 'No copies found in your libraries.',
+			'watchTogether.choiceFailed' => 'Couldn\'t play this copy for the room',
+			'watchTogether.lengthLonger' => ({required Object duration}) => '${duration} longer',
+			'watchTogether.lengthShorter' => ({required Object duration}) => '${duration} shorter',
+			'watchTogether.lengthSame' => 'Same length',
+			'watchTogether.lengthUnknown' => 'Length unknown',
+			'watchTogether.joinCurrentPlayback' => 'Join Current Playback',
+			'watchTogether.joinCurrentPlaybackDescription' => 'Jump back into what the host is currently watching',
+			'watchTogether.stopMedia' => 'Stop Video for Everyone',
+			'watchTogether.syncOffset' => 'Sync Offset',
+			'watchTogether.syncOffsetDescription' => 'Shift your video if it runs ahead of or behind the room.',
+			'watchTogether.offsetHint' => ({required Object difference}) => 'Your copy is ${difference} than the room\'s video.',
+			'watchTogether.applyDifference' => ({required Object offset}) => 'Use ${offset}',
+			'watchTogether.offsetMinusSecond' => '-1 s',
+			'watchTogether.offsetMinusTenth' => '-100 ms',
+			'watchTogether.offsetPlusTenth' => '+100 ms',
+			'watchTogether.offsetPlusSecond' => '+1 s',
+			'watchTogether.participants' => 'Participants',
+			'watchTogether.participantCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} participant', other: '${n} participants', ), 
+			'watchTogether.hostBadge' => 'HOST',
+			'watchTogether.nameYou' => ({required Object name}) => '${name} (You)',
+			'watchTogether.playerIdle' => 'Idle',
+			'watchTogether.playerLoading' => 'Loading',
+			'watchTogether.playerReady' => 'Ready',
+			'watchTogether.playerBuffering' => 'Buffering',
+			'watchTogether.matchSearching' => 'Searching',
+			'watchTogether.matchMatched' => 'Has the video',
+			'watchTogether.matchMismatched' => 'Different length',
+			'watchTogether.matchUnavailable' => 'Doesn\'t have the video',
+			'watchTogether.participantOffset' => ({required Object offset}) => 'Offset ${offset}',
+			'watchTogether.makeHost' => 'Make host',
+			'watchTogether.makeHostQuestion' => 'Transfer host?',
+			'watchTogether.makeHostConfirm' => ({required Object name}) => '${name} will control playback and drive the session for everyone.',
+			'watchTogether.transfer' => 'Transfer',
+			'watchTogether.removeParticipant' => 'Remove from Room',
+			'watchTogether.removeParticipantQuestion' => ({required Object name}) => 'Remove ${name}?',
+			'watchTogether.removeParticipantConfirm' => ({required Object name}) => '${name} leaves the room. They can join again with the code unless you lock the room.',
+			'watchTogether.remove' => 'Remove',
+			'watchTogether.roomSettings' => 'Room Settings',
+			'watchTogether.letEveryoneControl' => 'Let Everyone Control Playback',
+			'watchTogether.lockRoom' => 'Lock Room',
+			'watchTogether.lockRoomDescription' => 'Nobody new can join',
+			'watchTogether.leaveRoom' => 'Leave Room',
+			'watchTogether.leaveRoomQuestion' => 'Leave Room?',
+			'watchTogether.leaveRoomConfirm' => 'You can join again with the room code.',
+			'watchTogether.leave' => 'Leave',
+			'watchTogether.endRoom' => 'End Room',
+			'watchTogether.endRoomQuestion' => 'End Room?',
+			'watchTogether.endRoomConfirm' => 'This ends the room for everyone.',
+			'watchTogether.end' => 'End',
+			'watchTogether.playBlockedTitle' => 'Playback didn\'t start',
+			'watchTogether.playBlockedDescription' => 'Press play to start watching with the room.',
+			'watchTogether.notices.pressedPlay' => ({required Object name}) => '${name} pressed play',
+			'watchTogether.notices.playbackStarted' => 'Playback started',
+			'watchTogether.notices.paused' => ({required Object name}) => '${name} paused',
+			'watchTogether.notices.playbackPaused' => 'Playback paused',
+			'watchTogether.notices.jumpedTo' => ({required Object name, required Object position}) => '${name} jumped to ${position}',
+			'watchTogether.notices.roomJumpedTo' => ({required Object position}) => 'Jumped to ${position}',
+			'watchTogether.notices.changedSpeed' => ({required Object name, required Object speed}) => '${name} set the speed to ${speed}',
+			'watchTogether.notices.speedChanged' => ({required Object speed}) => 'Speed set to ${speed}',
+			'watchTogether.notices.startedMedia' => ({required Object name, required Object title}) => '${name} started ${title}',
+			'watchTogether.notices.mediaStarted' => ({required Object title}) => 'Now playing ${title}',
+			'watchTogether.notices.stoppedMedia' => ({required Object name}) => '${name} stopped the video',
+			'watchTogether.notices.mediaStopped' => 'The video stopped',
+			'watchTogether.notices.waitingFor' => ({required Object name}) => 'Waiting for ${name}...',
+			'watchTogether.notices.waitingForSomeone' => 'Waiting for someone to catch up...',
+			'watchTogether.notices.finished' => 'Finished',
+			'watchTogether.notices.hostChangedTo' => ({required Object name}) => '${name} is now the host',
+			'watchTogether.notices.youAreNowHost' => 'You are now the host',
+			'watchTogether.notices.joined' => ({required Object name}) => '${name} joined',
+			'watchTogether.notices.left' => ({required Object name}) => '${name} left',
+			'watchTogether.notices.controlRefused' => 'Only the host can control playback',
+			'watchTogether.notices.searchFailed' => 'Some servers couldn\'t be searched for the room\'s video',
+			'watchTogether.notices.playBlocked' => 'Press play to start',
+			'watchTogether.notices.shareFailed' => 'Couldn\'t share this video with the room',
+			'watchTogether.notices.downloadNotShared' => 'Downloads aren\'t shared with the room while their server is offline',
+			'watchTogether.notices.openFailed' => 'Couldn\'t open the room\'s video',
+			'watchTogether.ended.ended' => 'The host ended the room',
+			'watchTogether.ended.kicked' => 'You were removed from the room',
+			'watchTogether.ended.expired' => 'The room expired',
+			'watchTogether.ended.replaced' => 'You joined this room on another device',
+			'watchTogether.ended.lost' => 'Lost the connection to the room',
+			'watchTogether.errors.invalidCode' => 'That isn\'t a room code. Codes have 6 letters and digits, without 0, 1, I, L or O.',
+			'watchTogether.errors.roomNotFound' => 'No room has that code. It may have ended.',
+			'watchTogether.errors.roomFull' => 'That room is full.',
+			'watchTogether.errors.roomLocked' => 'The host locked that room.',
+			'watchTogether.errors.relayFull' => 'Watch Together is busy right now. Try again later.',
+			'watchTogether.errors.unreachable' => 'Couldn\'t reach the Watch Together relay. Check your connection.',
+			'watchTogether.errors.rateLimited' => 'Too many attempts. Wait a moment and try again.',
+			'watchTogether.errors.clientBlocked' => 'This version of Plezy can\'t use the relay. Update the app.',
+			'watchTogether.errors.forbidden' => 'Only the host can do that.',
+			'watchTogether.errors.notInRoom' => 'You\'re not in a room.',
+			'watchTogether.errors.alreadyInRoom' => 'You\'re already in a room.',
+			'watchTogether.errors.resumeFailed' => 'Couldn\'t rejoin the room.',
+			'watchTogether.errors.unsupported' => 'The relay doesn\'t support this.',
+			'watchTogether.errors.generic' => 'Something went wrong. Try again.',
+			'watchTogether.untitledEpisode' => ({required Object number}) => 'Episode ${number}',
 			'downloads.title' => 'Downloads',
 			'downloads.manage' => 'Manage',
 			'downloads.tvShows' => 'TV Shows',
@@ -9318,6 +10114,7 @@ extension on Translations {
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
 			'performanceOverlay.player' => 'Player',
+			'performanceOverlay.playMethod' => 'Play Method',
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',
@@ -9328,6 +10125,8 @@ extension on Translations {
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Software',
 			'performanceOverlay.decoderHardware' => 'Hardware',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.tunnelingActive' => 'Active',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} failed)',
 			'externalPlayer.title' => 'External Player',
@@ -9503,8 +10302,6 @@ extension on Translations {
 			'services.scrobble' => 'Track progress automatically',
 			'services.scrobbleDescription' => 'Update your list when you finish an episode or movie.',
 			'services.disconnectConfirm' => ({required Object service}) => 'Disconnect ${service}?',
-			_ => null,
-		} ?? switch (path) {
 			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezy will stop updating ${service}. Reconnect any time.',
 			'services.connectFailed' => ({required Object service}) => 'Couldn\'t connect to ${service}. Try again.',
 			'services.names.mal' => 'MyAnimeList',

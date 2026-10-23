@@ -251,7 +251,7 @@ abstract class Player {
 
   /// Show or hide the video rendering layer.
   ///
-  /// On macOS, this controls the Metal layer visibility.
+  /// On macOS, this controls the video display layer visibility.
   /// On other platforms, this may have no effect.
   ///
   /// When [restoreOnWindowVisible] is true, macOS may restore the layer as soon
@@ -263,7 +263,7 @@ abstract class Player {
 
   /// Update the video frame/surface dimensions.
   ///
-  /// On iOS/macOS, this updates the Metal layer's frame to match the current
+  /// On iOS/macOS, this updates the video display layer's frame to match the current
   /// window size. Call this when the layout changes (e.g., device rotation).
   /// On other platforms, this is a no-op.
   Future<void> updateFrame();
@@ -336,7 +336,7 @@ abstract class Player {
 
   /// Apply custom zoom to the native video layer.
   ///
-  /// ExoPlayer scales its frame layout; iOS/tvOS scale the AVFoundation video
+  /// ExoPlayer scales its frame layout; iOS/tvOS/macOS scale the AVFoundation video
   /// container (mpv's `video-zoom` would force vo_avfoundation's Core Image
   /// path and destroy HDR/Dolby Vision passthrough). Other mpv backends are a
   /// no-op here and zoom via the `video-zoom` property.
@@ -385,7 +385,7 @@ abstract class Player {
   /// Creates a new player instance.
   ///
   /// Returns a platform-specific implementation:
-  /// - macOS/iOS: [PlayerNative] using MPVKit/libmpv with Metal rendering
+  /// - macOS/iOS: [PlayerNative] using MPVKit/libmpv with the AVFoundation video output
   /// - Android: [PlayerNative] using MPV (default) or [PlayerAndroid] using ExoPlayer (opt-in)
   /// - Windows: [PlayerWindows] using libmpv with native window embedding
   /// - Linux: [PlayerLinux] using libmpv on a native Wayland video plane

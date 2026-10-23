@@ -18,7 +18,13 @@ import '../../../focus/focus_theme.dart';
 /// with the colour to use. Renders nothing extra in pointer/touch mode, where
 /// no scope is present.
 class PlayerFocusDisc extends StatelessWidget {
-  const PlayerFocusDisc({super.key, required this.iconColor, this.isActive = false, required this.builder});
+  const PlayerFocusDisc({
+    super.key,
+    required this.iconColor,
+    this.isActive = false,
+    this.borderRadius,
+    required this.builder,
+  });
 
   /// Idle icon colour. Its alpha is preserved when focused so a dimmed
   /// (unavailable) control stays visibly dimmed on the disc.
@@ -26,6 +32,10 @@ class PlayerFocusDisc extends StatelessWidget {
 
   /// Whether the control represents an engaged state (amber icon when idle).
   final bool isActive;
+
+  /// Rounds a rectangular fill instead of the default disc, for a labelled
+  /// control that is wider than it is tall.
+  final BorderRadius? borderRadius;
 
   final Widget Function(BuildContext context, Color iconColor) builder;
 
@@ -39,7 +49,8 @@ class PlayerFocusDisc extends StatelessWidget {
       duration: FocusTheme.getAnimationDuration(context),
       curve: Curves.easeOutCubic,
       decoration: BoxDecoration(
-        shape: BoxShape.circle,
+        shape: borderRadius == null ? BoxShape.circle : BoxShape.rectangle,
+        borderRadius: borderRadius,
         color: showFocus ? (isActive ? _activeFill : _fill) : Colors.transparent,
         boxShadow: showFocus ? const [playerFocusShadow] : const [],
       ),

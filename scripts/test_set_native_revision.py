@@ -2,11 +2,12 @@
 """Behavior tests for scripts/set_native_revision.sh.
 
 The script moves ten pin sites at once and promises all-or-nothing: either
-every Apple requirement, every SwiftPM lock, and mpv-build.lock.json move to
-the new commit together, or nothing is written. These tests drive the real
-script end to end against a synthetic Plezy tree and a real (temporary) git
-checkout of the unified mpv-build repo, because the failure that matters --
-a half-moved pin -- can only happen across process and file boundaries.
+every Apple requirement, every SwiftPM lock, mpv-build.lock.json and the
+Android build's Gradle verification metadata move to the new commit together,
+or nothing is written. These tests drive the real script end to end against a
+synthetic Plezy tree and a real (temporary) git checkout of the unified
+mpv-build repo, because the failure that matters -- a half-moved pin -- can
+only happen across process and file boundaries.
 
 The pin-site fixtures reproduce the exact anchors the rewrites key on: the
 pbxproj carries the `/* XCRemoteSwiftPackageReference "MPVKit" */ = {` object
@@ -27,6 +28,7 @@ import tempfile
 import threading
 import unittest
 from pathlib import Path
+from xml.etree import ElementTree
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 SCRIPT = SCRIPT_DIR / "set_native_revision.sh"
@@ -36,7 +38,10 @@ OLD_URL = "https://github.com/edde746/MPVKit"
 NEW_REPO = "edde746/mpv-build"
 NEW_URL = f"https://github.com/{NEW_REPO}"
 NEW_KEY_ANDROID = "aa11bb22cc33"
+NEW_KEY_AAR = "ee77ff88aa99"
 NEW_KEY_LINUX = "dd44ee55ff66"
+VERIFICATION = Path("android") / "gradle" / "verification-metadata.xml"
+GRADLE_NS = "{https://schema.gradle.org/dependency-verification}"
 
 PBXPROJ_TEMPLATE = """\
 // !$*UTF8*$!
@@ -89,6 +94,7 @@ VERSIONS_FIXTURE = {"formatVersion": 1, "components": {"mpv": {"version": "0.40.
 
 
 def android_section() -> dict:
+    # The tarballs are the AAR's inputs; the lock records only the AAR.
     return {
         "assetBase": "https://github.com/edde746/MPVKit/releases/download/binaries-android",
         "libraries": {
@@ -103,7 +109,12 @@ def android_section() -> dict:
                         ("arm64-v8a", "armeabi-v7a", "x86", "x86_64"), start=1
                     )
                 },
-            }
+            },
+            "mpv-android": {
+                "asset": f"mpv-android-{NEW_KEY_AAR}.aar",
+                "checksum": "a" * 64,
+                "key": NEW_KEY_AAR,
+            },
         },
     }
 
@@ -179,6 +190,7 @@ class SetNativeRevisionTest(unittest.TestCase):
                 lock.write_text(
                     json.dumps(RESOLVED_TEMPLATE, indent=2) + "\n", encoding="utf-8"
                 )
+        (self.root / VERIFICATION).parent.mkdir(parents=True)
 
     def _pbxproj(self, platform: str) -> Path:
         return self.root / platform / "Runner.xcodeproj" / "project.pbxproj"
@@ -205,6 +217,7 @@ class SetNativeRevisionTest(unittest.TestCase):
         for platform in ("ios", "macos", "tvos"):
             sites.append(self._pbxproj(platform))
             sites.extend(self._resolved(platform))
+        sites.append(self.root / VERIFICATION)
         return sites
 
     def _make_mpv_build(
@@ -273,21 +286,36 @@ class SetNativeRevisionTest(unittest.TestCase):
         }
 
     def _expected_lock(self, commit: str, repo: str = NEW_REPO) -> str:
-        artifacts = {}
-        for group, section in (("android", android_section()), ("linux", linux_section())):
-            ((_, entry),) = section["libraries"].items()
-            artifacts[group] = {
-                "assetBase": section["assetBase"],
-                "assets": entry["prebuilt"],
-                "key": entry["key"],
-            }
+        android = android_section()
+        linux = linux_section()
+        ((_, linux_entry),) = linux["libraries"].items()
         lock = {
-            "artifacts": artifacts,
+            "artifacts": {
+                "android": {
+                    "aar": android["libraries"]["mpv-android"],
+                    "assetBase": android["assetBase"],
+                },
+                "linux": {
+                    "assetBase": linux["assetBase"],
+                    "assets": linux_entry["prebuilt"],
+                    "key": linux_entry["key"],
+                },
+            },
             "commit": commit,
             "formatVersion": 1,
             "repo": repo,
         }
         return json.dumps(lock, indent=2, sort_keys=True) + "\n"
+
+    def _components(self) -> list[tuple[str, str, str]]:
+        """(version, artifact, sha256) of every component Gradle verifies."""
+        root = ElementTree.parse(self.root / VERIFICATION).getroot()
+        return [
+            (component.get("version"), artifact.get("name"), sha256.get("value"))
+            for component in root.iter(f"{GRADLE_NS}component")
+            for artifact in component.iter(f"{GRADLE_NS}artifact")
+            for sha256 in artifact.iter(f"{GRADLE_NS}sha256")
+        ]
 
     # ---- the pin moves as one unit ----------------------------------------
 
@@ -342,6 +370,11 @@ class SetNativeRevisionTest(unittest.TestCase):
             "note: no windows artifacts published at this commit; "
             "omitted from mpv-build.lock.json",
             result.stdout,
+        )
+        # Gradle verifies the AAR the lock names, by the lock's sha256.
+        self.assertEqual(
+            self._components(),
+            [(NEW_KEY_AAR, f"mpv-android-{NEW_KEY_AAR}.aar", "a" * 64)],
         )
 
     def test_default_source_is_the_sibling_checkout(self) -> None:
@@ -499,8 +532,8 @@ class SetNativeRevisionTest(unittest.TestCase):
 
     def test_refuses_a_checksumless_prebuilt_asset(self) -> None:
         artifacts = artifacts_fixture()
-        android = artifacts["platforms"]["android"]["libraries"]["libmpv-android"]
-        android["prebuilt"]["arm64-v8a"] = f"libmpv-android-{NEW_KEY_ANDROID}-arm64-v8a.tar.gz"
+        linux = artifacts["platforms"]["linux"]["libraries"]["libmpv-linux"]
+        linux["prebuilt"]["x86_64"] = f"libmpv-linux-{NEW_KEY_LINUX}-x86_64.tar.gz"
         repo, commit = self._make_mpv_build(artifacts=artifacts)
         before = self._snapshot()
 
@@ -510,6 +543,53 @@ class SetNativeRevisionTest(unittest.TestCase):
         self.assertIn("carries no checksum", result.stderr)
         self.assertEqual(self._snapshot(), before)
         self.assertFalse((self.root / "mpv-build.lock.json").exists())
+
+    def test_refuses_an_aar_gradle_would_not_resolve_or_verify(self) -> None:
+        # The Ivy pattern asks for mpv-android-<key>.aar, and Gradle has nothing
+        # to verify the AAR against without a full sha256.
+        for field, value, message in (
+            ("asset", "mpv-android.aar", "the file Gradle resolves"),
+            ("checksum", "a" * 63, "not a full lowercase SHA-256"),
+        ):
+            with self.subTest(field=field):
+                artifacts = artifacts_fixture()
+                artifacts["platforms"]["android"]["libraries"]["mpv-android"][field] = value
+                repo, commit = self._make_mpv_build(name=f"mpv-build-{field}", artifacts=artifacts)
+                before = self._snapshot()
+
+                result = self._run(commit, "--repo", str(repo))
+
+                self.assertEqual(result.returncode, 1)
+                self.assertIn(message, result.stderr)
+                self.assertEqual(self._snapshot(), before)
+                self.assertFalse((self.root / "mpv-build.lock.json").exists())
+
+    def test_refuses_without_the_android_gradle_directory(self) -> None:
+        repo, commit = self._make_mpv_build()
+        (self.root / VERIFICATION).parent.rmdir()
+        before = self._snapshot()
+
+        result = self._run(commit, "--repo", str(repo))
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("android/gradle/", result.stderr)
+        self.assertEqual(self._snapshot(), before)
+        self.assertFalse((self.root / "mpv-build.lock.json").exists())
+
+    def test_android_without_the_aar_is_omitted_and_verifies_nothing(self) -> None:
+        # A commit that publishes only the tarballs gives Plezy no android
+        # entry; Gradle then fails on the missing group rather than guess.
+        artifacts = artifacts_fixture()
+        del artifacts["platforms"]["android"]["libraries"]["mpv-android"]
+        repo, commit = self._make_mpv_build(artifacts=artifacts)
+
+        result = self._run(commit, "--repo", str(repo))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        lock = json.loads((self.root / "mpv-build.lock.json").read_text(encoding="utf-8"))
+        self.assertEqual(sorted(lock["artifacts"]), ["linux"])
+        self.assertIn("android has not published mpv-android", result.stdout)
+        self.assertEqual(self._components(), [])
 
     def test_a_group_with_no_published_libraries_is_omitted_with_a_note(self) -> None:
         artifacts = artifacts_fixture()
@@ -522,6 +602,103 @@ class SetNativeRevisionTest(unittest.TestCase):
         lock = json.loads((self.root / "mpv-build.lock.json").read_text(encoding="utf-8"))
         self.assertEqual(sorted(lock["artifacts"]), ["android"])
         self.assertIn("linux has published no libraries", result.stdout)
+
+    def test_a_packaged_artifact_beside_a_groups_native_trees_is_omitted_with_a_note(self) -> None:
+        # Outside android, the lock records a group's per-variant trees alone;
+        # a packaged asset published beside them is not consumed and does not
+        # make the group refuse.
+        artifacts = artifacts_fixture()
+        artifacts["platforms"]["linux"]["libraries"]["mpv-linux"] = {
+            "asset": "mpv-linux-ab12cd34ef56.tar.gz",
+            "checksum": "7" * 64,
+            "key": "ab12cd34ef56",
+        }
+        repo, commit = self._make_mpv_build(artifacts=artifacts)
+
+        result = self._run(commit, "--repo", str(repo))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            (self.root / "mpv-build.lock.json").read_text(encoding="utf-8"),
+            self._expected_lock(commit),
+        )
+        self.assertIn("linux library mpv-linux is a packaged artifact", result.stdout)
+
+    # ---- debug symbols ride along with the libraries they describe --------
+
+    def test_published_symbols_are_copied_into_the_lock_beside_their_library(self) -> None:
+        # mpv-build publishes a symbols map on the very library entries the
+        # lock already records; the lock carries it verbatim so
+        # upload_symbols.dart can fetch and verify the zips for the pin.
+        artifacts = artifacts_fixture()
+        android_symbols = {
+            abi: {
+                "asset": f"mpv-android-{NEW_KEY_AAR}-{abi}-symbols.zip",
+                "checksum": format(index, "x") * 64,
+            }
+            for index, abi in enumerate(("arm64-v8a", "armeabi-v7a", "x86", "x86_64"), start=10)
+        }
+        linux_symbols = {
+            "x86_64": {
+                "asset": f"libmpv-linux-{NEW_KEY_LINUX}-x86_64-symbols.zip",
+                "checksum": "e" * 64,
+            }
+        }
+        artifacts["platforms"]["android"]["libraries"]["mpv-android"]["symbols"] = android_symbols
+        artifacts["platforms"]["linux"]["libraries"]["libmpv-linux"]["symbols"] = linux_symbols
+        repo, commit = self._make_mpv_build(artifacts=artifacts)
+
+        result = self._run(commit, "--repo", str(repo))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        lock = json.loads((self.root / "mpv-build.lock.json").read_text(encoding="utf-8"))
+        expected = json.loads(self._expected_lock(commit))
+        expected["artifacts"]["android"]["symbols"] = android_symbols
+        expected["artifacts"]["linux"]["symbols"] = linux_symbols
+        self.assertEqual(lock, expected)
+        self.assertNotIn("publishes no debug symbols", result.stdout)
+        # The symbols never reach Gradle's verification: only the AAR does.
+        self.assertEqual(
+            self._components(),
+            [(NEW_KEY_AAR, f"mpv-android-{NEW_KEY_AAR}.aar", "a" * 64)],
+        )
+
+    def test_a_library_published_without_symbols_is_noted_and_pins_unchanged(self) -> None:
+        # Every pin before mpv-build shipped debug files: the lock keeps its
+        # existing shape and says what it left out.
+        repo, commit = self._make_mpv_build()
+
+        result = self._run(commit, "--repo", str(repo))
+
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.assertEqual(
+            (self.root / "mpv-build.lock.json").read_text(encoding="utf-8"),
+            self._expected_lock(commit),
+        )
+        for library in ("android library mpv-android", "linux library libmpv-linux"):
+            self.assertIn(
+                f"note: {library} publishes no debug symbols at this commit; "
+                "symbols omitted from mpv-build.lock.json",
+                result.stdout,
+            )
+
+    def test_refuses_a_symbols_zip_it_could_not_verify(self) -> None:
+        artifacts = artifacts_fixture()
+        artifacts["platforms"]["linux"]["libraries"]["libmpv-linux"]["symbols"] = {
+            "x86_64": {
+                "asset": f"libmpv-linux-{NEW_KEY_LINUX}-x86_64-symbols.zip",
+                "checksum": "E" * 64,
+            }
+        }
+        repo, commit = self._make_mpv_build(artifacts=artifacts)
+        before = self._snapshot()
+
+        result = self._run(commit, "--repo", str(repo))
+
+        self.assertEqual(result.returncode, 1)
+        self.assertIn("libmpv-linux.symbols.x86_64.checksum", result.stderr)
+        self.assertEqual(self._snapshot(), before)
+        self.assertFalse((self.root / "mpv-build.lock.json").exists())
 
 
 if __name__ == "__main__":
