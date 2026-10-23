@@ -1616,6 +1616,7 @@
     "channelNumber": "頻道 ${number}",
     "unknownChannel": "未知頻道",
     "live": "直播",
+    "premiereBadge": "",
     "reloadGuide": "重新載入節目表指南",
     "searchGuide": "搜尋節目表",
     "searchHint": "搜尋頻道和節目",

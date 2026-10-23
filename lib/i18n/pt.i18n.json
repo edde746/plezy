@@ -1626,6 +1626,7 @@
     "channelNumber": "Canal ${number}",
     "unknownChannel": "Canal desconhecido",
     "live": "AO VIVO",
+    "premiereBadge": "",
     "reloadGuide": "Recarregar Guia",
     "searchGuide": "Buscar no guia",
     "searchHint": "Buscar canais e programas",

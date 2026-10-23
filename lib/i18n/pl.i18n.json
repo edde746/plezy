@@ -1646,6 +1646,7 @@
     "channelNumber": "Kanał ${number}",
     "unknownChannel": "Nieznany kanał",
     "live": "NA ŻYWO",
+    "premiereBadge": "",
     "reloadGuide": "Odśwież przewodnik",
     "searchGuide": "Szukaj w przewodniku",
     "searchHint": "Szukaj kanałów i programów",

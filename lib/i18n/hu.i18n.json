@@ -1626,6 +1626,7 @@
     "channelNumber": "${number}. csatorna",
     "unknownChannel": "Ismeretlen csatorna",
     "live": "ÉLŐ",
+    "premiereBadge": "",
     "reloadGuide": "Műsorújság újratöltése",
     "searchGuide": "Keresés a műsorújságban",
     "searchHint": "Csatornák és műsorok keresése",

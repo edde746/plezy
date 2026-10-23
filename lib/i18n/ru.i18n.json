@@ -1646,6 +1646,7 @@
     "channelNumber": "Канал ${number}",
     "unknownChannel": "Неизвестный канал",
     "live": "ЭФИР",
+    "premiereBadge": "",
     "reloadGuide": "Перезагрузить программу",
     "searchGuide": "Поиск в программе",
     "searchHint": "Поиск каналов и программ",

@@ -1626,6 +1626,7 @@
     "channelNumber": "Kanal ${number}",
     "unknownChannel": "Unbekannter Kanal",
     "live": "LIVE",
+    "premiereBadge": "",
     "reloadGuide": "TV-Programm neu laden",
     "searchGuide": "TV-Programm durchsuchen",
     "searchHint": "Kanäle & Sendungen suchen",

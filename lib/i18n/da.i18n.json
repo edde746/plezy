@@ -1626,6 +1626,7 @@
     "channelNumber": "Kanal ${number}",
     "unknownChannel": "Ukendt kanal",
     "live": "LIVE",
+    "premiereBadge": "",
     "reloadGuide": "Genindlæs guide",
     "searchGuide": "Søg i guiden",
     "searchHint": "Søg efter kanaler og programmer",

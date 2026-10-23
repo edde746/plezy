@@ -1626,6 +1626,7 @@
     "channelNumber": "Canale ${number}",
     "unknownChannel": "Canale sconosciuto",
     "live": "IN DIRETTA",
+    "premiereBadge": "",
     "reloadGuide": "Ricarica la guida",
     "searchGuide": "Cerca nella guida",
     "searchHint": "Cerca canali e programmi",

@@ -1616,6 +1616,7 @@
     "channelNumber": "チャンネル ${number}",
     "unknownChannel": "不明なチャンネル",
     "live": "ライブ",
+    "premiereBadge": "",
     "reloadGuide": "番組表を再読み込み",
     "searchGuide": "番組表を検索",
     "searchHint": "チャンネル・番組を検索",
