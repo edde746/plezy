@@ -1955,37 +1955,38 @@ void main() {
   });
 
   group('SyncOffsetControl', () {
-    testWidgets('uses 50ms slider steps across ±10s without rendering tick marks', (tester) async {
-      LocaleSettings.setLocaleSync(AppLocale.en);
+    for (final (property, step) in [('audio-delay', 10), ('sub-delay', 50)]) {
+      testWidgets('$property uses ${step}ms slider steps across ±10s without tick marks', (tester) async {
+        LocaleSettings.setLocaleSync(AppLocale.en);
 
-      await tester.pumpWidget(
-        MaterialApp(
-          theme: ThemeData(extensions: const [testMonoTokens]),
-          home: Scaffold(
-            body: SizedBox(
-              width: 700,
-              child: SyncOffsetControl(
-                player: _FakeSyncPlayer(),
-                propertyName: 'sub-delay',
-                initialOffset: 0,
-                onOffsetChanged: (_) async {},
+        await tester.pumpWidget(
+          MaterialApp(
+            theme: ThemeData(extensions: const [testMonoTokens]),
+            home: Scaffold(
+              body: SizedBox(
+                width: 700,
+                child: SyncOffsetControl(
+                  player: _FakeSyncPlayer(),
+                  propertyName: property,
+                  initialOffset: 0,
+                  onOffsetChanged: (_) async {},
+                ),
               ),
             ),
           ),
-        ),
-      );
+        );
 
-      final slider = tester.widget<Slider>(find.byType(Slider));
-      final sliderTheme = tester.widget<SliderTheme>(
-        find.ancestor(of: find.byType(Slider), matching: find.byType(SliderTheme)).first,
-      );
+        final slider = tester.widget<Slider>(find.byType(Slider));
+        final sliderTheme = tester.widget<SliderTheme>(
+          find.ancestor(of: find.byType(Slider), matching: find.byType(SliderTheme)).first,
+        );
 
-      expect(slider.min, -10000);
-      expect(slider.max, 10000);
-      expect(slider.divisions, 400);
-      expect((slider.max - slider.min) / slider.divisions!, 50);
-      expect(sliderTheme.data.tickMarkShape, same(SliderTickMarkShape.noTickMark));
-    });
+        expect(slider.min, -10000);
+        expect(slider.max, 10000);
+        expect((slider.max - slider.min) / slider.divisions!, step);
+        expect(sliderTheme.data.tickMarkShape, same(SliderTickMarkShape.noTickMark));
+      });
+    }
 
     testWidgets('reconciles a failed current write without persisting it', (tester) async {
       final propertyWrite = Completer<void>();
@@ -2163,7 +2164,7 @@ void main() {
       expect(persistedOffsets, [100]);
     });
 
-    testWidgets('step buttons move by 50ms per tap', (tester) async {
+    testWidgets('audio step buttons move by 10ms per tap', (tester) async {
       final persistedOffsets = <int>[];
 
       await tester.pumpWidget(
@@ -2185,15 +2186,15 @@ void main() {
 
       await tester.tap(find.byIcon(Symbols.add_rounded));
       await tester.pump();
-      expect(tester.widget<Slider>(find.byType(Slider)).value, 50);
+      expect(tester.widget<Slider>(find.byType(Slider)).value, 10);
 
       await tester.tap(find.byIcon(Symbols.remove_rounded));
       await tester.pump();
       await tester.tap(find.byIcon(Symbols.remove_rounded));
       await tester.pump();
 
-      expect(tester.widget<Slider>(find.byType(Slider)).value, -50);
-      expect(persistedOffsets, [50, 0, -50]);
+      expect(tester.widget<Slider>(find.byType(Slider)).value, -10);
+      expect(persistedOffsets, [10, 0, -10]);
     });
 
     testWidgets('long-press steps by 1s per tick', (tester) async {
