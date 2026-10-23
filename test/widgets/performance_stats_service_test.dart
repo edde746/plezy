@@ -236,6 +236,27 @@ void main() {
         expect(stats.cacheUsedFormatted, 'N/A', reason: blob);
       }
     });
+
+    test('ExoPlayer native stats surface allocated buffer bytes, throughput speed, and limits', () async {
+      final stats = await _firstStats(
+        _NativeStatsPlayer({
+          'playerType': 'exoplayer',
+          'totalBufferedDurationMs': 18500,
+          'bufferAllocatedBytes': 50 * 1024 * 1024,
+          'bufferSpeedBytesPerSec': 15 * 1024 * 1024,
+          'bufferTargetBytes': 64 * 1024 * 1024,
+          'bufferMaxMs': 50000,
+        }),
+      );
+
+      expect(stats.cacheDuration, 18.5);
+      expect(stats.cacheDurationFormatted, '18.5s');
+      expect(stats.cacheUsed, 50 * 1024 * 1024);
+      expect(stats.cacheUsedFormatted, '50.0 MB');
+      expect(stats.cacheSpeed, 15 * 1024 * 1024);
+      expect(stats.cacheSpeedFormatted, '15.0 MB/s');
+      expect(stats.bufferLimitsFormatted, '50s / 64MB');
+    });
   });
 
   group('PerformanceStatsService cache limit', () {
