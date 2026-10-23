@@ -37,6 +37,7 @@ import '../profiles/active_profile_binder.dart';
 import '../connection/connection_registry.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/plex_home_service.dart';
+import '../profiles/profile_activation.dart';
 import '../profiles/profile_selection_policy.dart';
 import '../providers/catalog_sources_provider.dart';
 import '../providers/account_preferences_controller.dart';
@@ -51,6 +52,7 @@ import '../widgets/tv_virtual_keyboard.dart';
 import '../services/api_cache.dart';
 import '../services/multi_server_manager.dart';
 import '../services/offline_watch_sync_service.dart';
+import '../services/playback_coordinator.dart';
 import '../services/settings_service.dart';
 import '../providers/offline_mode_provider.dart';
 import '../services/companion_remote/companion_remote_host_controller.dart';
@@ -59,6 +61,7 @@ import '../services/fullscreen_state_manager.dart';
 import '../providers/companion_remote_provider.dart';
 import '../utils/desktop_window_padding.dart';
 import '../utils/live_tv_deep_link.dart';
+import '../utils/play_deep_link.dart';
 import '../widgets/music/mini_player.dart';
 import '../widgets/navigation_label_fit.dart';
 import '../widgets/mobile_navigation_rail.dart';
@@ -898,7 +901,44 @@ class _MainScreenState extends State<MainScreen>
         appLogger.d('System shelf initial deep link: $contentId');
         unawaited(_handleShelfContentId(contentId));
       }
+      if (mounted) unawaited(_playLinkHeldForProfile());
     });
+  }
+
+  /// Play a deep link held across a profile switch once the new profile is bound.
+  Future<void> _playLinkHeldForProfile() async {
+    final activeProfile = context.read<ActiveProfileProvider>();
+    final profileId = activeProfile.activeId;
+    final link = SystemShelfService().takeLinkHeldFor(profileId);
+    if (link == null) return;
+    final bound = await activeProfile.awaitBindingSettle();
+    if (!mounted || !bound || activeProfile.activeId != profileId) return;
+    await _handleShelfContentId(link);
+  }
+
+  /// Switch to the profile a deep link names. Returns whether to play the link here.
+  Future<bool> _switchToLinkProfile(String link, String? profileRef) async {
+    if (profileRef == null) return true;
+    final activeProfile = context.read<ActiveProfileProvider>();
+    final profile = resolveDeepLinkProfile(activeProfile.profiles, profileRef);
+    if (profile == null) {
+      appLogger.w('Deep link: unknown profile "$profileRef", playing as the active profile');
+      return true;
+    }
+    if (profile.id == activeProfile.activeId) return true;
+
+    // Send the final progress report before the switch rotates the client tokens.
+    try {
+      await PlaybackCoordinator.instance.shutdownVideo().timeout(const Duration(seconds: 3));
+    } catch (e, st) {
+      appLogger.w('Video shutdown did not complete before deep link profile switch', error: e, stackTrace: st);
+    }
+    if (!mounted) return false;
+
+    final shelf = SystemShelfService();
+    shelf.holdLinkForProfile(profile.id, link);
+    if (!await switchProfileFromUi(context, profile)) shelf.dropHeldLink(link);
+    return false;
   }
 
   /// Handle a launcher shelf content ID by fetching metadata and starting playback.
@@ -916,11 +956,13 @@ class _MainScreenState extends State<MainScreen>
       return;
     }
 
-    final parsed = SystemShelfService.parseContentId(contentId);
+    final playLink = PlayDeepLink.parse(contentId);
+    final parsed = SystemShelfService.parseContentId(playLink.contentId);
     if (parsed == null) {
       appLogger.w('System shelf: invalid content ID: $contentId');
       return;
     }
+    if (!await _switchToLinkProfile(contentId, playLink.profile) || !mounted) return;
 
     final (serverId, ratingKey) = parsed;
 

@@ -77,6 +77,30 @@ void main() {
     expect(received, ['server:item']);
   });
 
+  test('a held deep link goes only to its profile, once', () {
+    final service = SystemShelfService.forTesting(channel: channel);
+    service.holdLinkForProfile('leo', 'link');
+
+    expect(service.takeLinkHeldFor('max'), isNull);
+    expect(service.takeLinkHeldFor(null), isNull);
+    expect(service.takeLinkHeldFor('leo'), 'link');
+    expect(service.takeLinkHeldFor('leo'), isNull);
+  });
+
+  test('a dropped deep link is never played', () {
+    final service = SystemShelfService.forTesting(channel: channel);
+    service.holdLinkForProfile('leo', 'first');
+    service.holdLinkForProfile('leo', 'second');
+
+    // A late drop for a superseded link keeps the newer one.
+    service.dropHeldLink('first');
+    expect(service.takeLinkHeldFor('leo'), 'second');
+
+    service.holdLinkForProfile('leo', 'third');
+    service.dropHeldLink('third');
+    expect(service.takeLinkHeldFor('leo'), isNull);
+  });
+
   test('delayed support result is dropped after synchronous owner invalidation', () async {
     final support = Completer<bool>();
     final calls = <MethodCall>[];
