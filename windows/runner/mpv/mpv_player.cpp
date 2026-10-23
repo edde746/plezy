@@ -608,6 +608,15 @@ bool MpvPlayer::Initialize(HWND view) {
     // Let mpv use display/context detection instead of forcing HDR signaling.
     mpv_set_option_string(mpv_, "target-colorspace-hint", plezy::mpv_common::TargetColorspaceHint(hdr_enabled_));
 
+    // Keep the display black point at absolute black. Under target-contrast=auto
+    // mpv's d3d11 context takes the black level Windows reports for the display
+    // (DXGI MinLuminance) as the target's, and libplacebo master (b915882d)
+    // now honors that for PQ output instead of forcing zero nits. TVs whose
+    // reported floor sits above what they render then show every video with
+    // lifted blacks (#2803). HDR10 sinks map PQ themselves, so send it absolute
+    // as released libplacebo does. A user mpv.conf line still overrides this.
+    mpv_set_option_string(mpv_, "target-contrast", "inf");
+
     // Fallback tone mapping when display doesn't support HDR. On Adreno,
     // per-frame tone-map LUT regeneration is pathological — see
     // SystemHasQualcommGpu — so both dynamic inputs to the LUT key are
