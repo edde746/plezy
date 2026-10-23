@@ -28,6 +28,7 @@ import android.view.inputmethod.InputMethodManager
 import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
 import com.edde746.plezy.car.CarRestrictionsMonitor
+import com.edde746.plezy.deeplink.DeepLinkPlugin
 import com.edde746.plezy.exoplayer.ExoPlayerPlugin
 import com.edde746.plezy.mpv.MpvAudioPlayerPlugin
 import com.edde746.plezy.mpv.MpvPlayerPlugin
@@ -111,7 +112,10 @@ class PlezyActivity : FlutterActivity() {
   private val APP_EXIT_CHANNEL = "com.plezy/app_exit"
   private val CAR_RESTRICTIONS_CHANNEL = "com.plezy/car_restrictions"
   private val ASSISTIVE_TECHNOLOGY_CHANNEL = "com.plezy/assistive_technology"
-  private var watchNextPlugin: WatchNextPlugin? = null
+
+  // Created with the activity rather than in configureFlutterEngine, so a link
+  // handled before the engine attaches still lands in the retained slot.
+  private val deepLinkPlugin = DeepLinkPlugin()
   private var carRestrictions: CarRestrictionsMonitor? = null
   private var carRestrictionsChannel: MethodChannel? = null
   private var assistiveTechnology: AssistiveTechnologyMonitor? = null
@@ -578,19 +582,18 @@ class PlezyActivity : FlutterActivity() {
 
     if (isAndroidTvDevice()) installTextEditorProxy()
 
-    // Handle Watch Next deep link from initial launch. A restored activity or a
-    // relaunch from Recents carries the original launch intent, whose tap was
-    // already handled; replaying it would start that item again.
+    // Forward a deep link from the initial launch. A restored activity or a
+    // relaunch from Recents carries the original launch intent, whose link was
+    // already handled; replaying it would act on it again.
     val launchedFromHistory = (intent?.flags ?: 0) and Intent.FLAG_ACTIVITY_LAUNCHED_FROM_HISTORY != 0
     if (savedInstanceState == null && !launchedFromHistory) {
-      handleWatchNextIntent(intent)
+      handleDeepLinkIntent(intent)
     }
   }
 
   override fun onNewIntent(intent: Intent) {
     super.onNewIntent(intent)
-    // Handle Watch Next deep link when app is already running
-    handleWatchNextIntent(intent)
+    handleDeepLinkIntent(intent)
   }
 
   override fun dispatchKeyEvent(event: KeyEvent): Boolean {
@@ -632,12 +635,8 @@ class PlezyActivity : FlutterActivity() {
     super.onDestroy()
   }
 
-  private fun handleWatchNextIntent(intent: Intent?) {
-    val contentId = WatchNextPlugin.handleIntent(intent)
-    if (contentId != null) {
-      // Notify the plugin to send event to Flutter
-      watchNextPlugin?.notifyDeepLink(contentId)
-    }
+  private fun handleDeepLinkIntent(intent: Intent?) {
+    DeepLinkPlugin.linkFrom(intent)?.let(deepLinkPlugin::notifyLink)
   }
 
   // Connects the car UX-restriction monitor on first use, retrying while the platform signal is
@@ -1004,9 +1003,8 @@ class PlezyActivity : FlutterActivity() {
       }
     }
 
-    // Register Watch Next plugin and keep reference for deep link handling
-    watchNextPlugin = WatchNextPlugin()
-    flutterEngine.plugins.add(watchNextPlugin!!)
+    flutterEngine.plugins.add(WatchNextPlugin())
+    flutterEngine.plugins.add(deepLinkPlugin)
 
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, PIP_CHANNEL).setMethodCallHandler { call, result ->
       when (call.method) {

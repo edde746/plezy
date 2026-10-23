@@ -2527,5 +2527,24 @@
     "redirectDifferentHost": "서버가 다른 호스트로 리디렉션했습니다. 최종 ${product} URL을 직접 입력하세요.",
     "redirectInsecure": "서버가 HTTPS에서 안전하지 않은 URL로 리디렉션했습니다",
     "redirectUnsupportedEnterFinal": "서버가 지원되지 않는 URL로 리디렉션했습니다. 최종 ${product} URL을 직접 입력하세요."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

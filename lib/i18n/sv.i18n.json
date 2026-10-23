@@ -2539,5 +2539,24 @@
     "redirectDifferentHost": "Servern omdirigerade till en annan värd. Ange den slutliga URL:en för ${product} direkt.",
     "redirectInsecure": "Servern omdirigerade från HTTPS till en osäker URL",
     "redirectUnsupportedEnterFinal": "Servern omdirigerade till en URL som inte stöds. Ange den slutliga URL:en för ${product} direkt."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

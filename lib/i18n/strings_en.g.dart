@@ -94,6 +94,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$seerr$en seerr = Translations$seerr$en.internal(_root);
 	late final Translations$services$en services = Translations$services$en.internal(_root);
 	late final Translations$addServer$en addServer = Translations$addServer$en.internal(_root);
+	late final Translations$deepLinks$en deepLinks = Translations$deepLinks$en.internal(_root);
 }
 
 // Path: app
@@ -6091,6 +6092,66 @@ class Translations$addServer$en {
 	String redirectUnsupportedEnterFinal({required Object product}) => 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.';
 }
 
+// Path: deepLinks
+class Translations$deepLinks$en {
+	Translations$deepLinks$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'This Plezy link isn't valid.'
+	String get invalid => 'This Plezy link isn\'t valid.';
+
+	/// en: 'No profile matches "${profile}".'
+	String profileNotFound({required Object profile}) => 'No profile matches "${profile}".';
+
+	/// en: 'Couldn't reach the server for this link.'
+	String get serverUnavailable => 'Couldn\'t reach the server for this link.';
+
+	/// en: 'Couldn't find this title in your libraries.'
+	String get notFound => 'Couldn\'t find this title in your libraries.';
+
+	/// en: 'This link can't be played.'
+	String get unsupportedItem => 'This link can\'t be played.';
+
+	/// en: 'No Live TV server is available for this link.'
+	String get noLiveTv => 'No Live TV server is available for this link.';
+
+	/// en: 'Couldn't find channel "${channel}".'
+	String channelNotFound({required Object channel}) => 'Couldn\'t find channel "${channel}".';
+
+	/// en: 'Show link'
+	String get showLink => 'Show link';
+
+	/// en: 'Show profile link'
+	String get showProfileLink => 'Show profile link';
+
+	/// en: 'Link'
+	String get dialogTitle => 'Link';
+
+	/// en: 'Opening this link plays the next episode. Add &mode=shuffle to play the show on shuffle.'
+	String get showHint => 'Opening this link plays the next episode. Add &mode=shuffle to play the show on shuffle.';
+
+	/// en: 'Opening this link plays the movie.'
+	String get movieHint => 'Opening this link plays the movie.';
+
+	/// en: 'Opening this link plays this episode.'
+	String get episodeHint => 'Opening this link plays this episode.';
+
+	/// en: 'Opening this link switches to this profile.'
+	String get profileHint => 'Opening this link switches to this profile.';
+
+	/// en: 'Open as ${name}'
+	String openAsProfile({required Object name}) => 'Open as ${name}';
+
+	/// en: 'Copy'
+	String get copy => 'Copy';
+
+	/// en: 'Link copied'
+	String get copied => 'Link copied';
+}
+
 // Path: appIcon.names
 class Translations$appIcon$names$en {
 	Translations$appIcon$names$en.internal(this._root);
@@ -10338,6 +10399,23 @@ extension on Translations {
 			'addServer.redirectDifferentHost' => ({required Object product}) => 'The server redirected to a different host. Enter the final ${product} URL directly.',
 			'addServer.redirectInsecure' => 'The server redirected from HTTPS to an insecure URL',
 			'addServer.redirectUnsupportedEnterFinal' => ({required Object product}) => 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.',
+			'deepLinks.invalid' => 'This Plezy link isn\'t valid.',
+			'deepLinks.profileNotFound' => ({required Object profile}) => 'No profile matches "${profile}".',
+			'deepLinks.serverUnavailable' => 'Couldn\'t reach the server for this link.',
+			'deepLinks.notFound' => 'Couldn\'t find this title in your libraries.',
+			'deepLinks.unsupportedItem' => 'This link can\'t be played.',
+			'deepLinks.noLiveTv' => 'No Live TV server is available for this link.',
+			'deepLinks.channelNotFound' => ({required Object channel}) => 'Couldn\'t find channel "${channel}".',
+			'deepLinks.showLink' => 'Show link',
+			'deepLinks.showProfileLink' => 'Show profile link',
+			'deepLinks.dialogTitle' => 'Link',
+			'deepLinks.showHint' => 'Opening this link plays the next episode. Add &mode=shuffle to play the show on shuffle.',
+			'deepLinks.movieHint' => 'Opening this link plays the movie.',
+			'deepLinks.episodeHint' => 'Opening this link plays this episode.',
+			'deepLinks.profileHint' => 'Opening this link switches to this profile.',
+			'deepLinks.openAsProfile' => ({required Object name}) => 'Open as ${name}',
+			'deepLinks.copy' => 'Copy',
+			'deepLinks.copied' => 'Link copied',
 			_ => null,
 		};
 	}

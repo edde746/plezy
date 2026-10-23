@@ -3,6 +3,7 @@ import 'dart:io';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/models/external_player_models.dart';
+import 'package:plezy/services/external_player_service.dart';
 
 /// The POSIX one-liner `_posixCommandExists` hands to `sh`.
 const _commandProbe = r'command -v "$1" >/dev/null 2>&1';
@@ -99,7 +100,7 @@ void main() {
       final probe = _FakeProbe(operatingSystem: 'ios');
       await _resolveWith(probe);
 
-      expect(probe.schemeLookups, unorderedEquals(['vlc://', 'infuse://']));
+      expect(probe.schemeLookups, unorderedEquals(['vlc://', 'infuse://', 'outplayer://']));
       expect(probe.runs, isEmpty);
     });
 
@@ -160,6 +161,115 @@ void main() {
       expect(await _resolveWith(_FakeProbe(commands: {'PotPlayerMini64'})), ['system_default', 'potplayer']);
     });
   }, skip: !Platform.isWindows);
+
+  group('Outplayer', () {
+    const stream = 'http://10.0.0.2:32400/library/parts/1/file name.mkv?X-Plex-Token=abc&download=1';
+
+    test('play link percent-encodes the stream and carries resume position and return links', () {
+      final uri = KnownPlayers.callbackPlayUri(
+        'outplayer',
+        stream,
+        ExternalPlayerLaunchOptions(
+          startPosition: const Duration(seconds: 90, milliseconds: 700),
+          returnLinks: ExternalPlayerService.returnLinks('s1'),
+        ),
+      )!;
+
+      expect(uri.toString(), startsWith('outplayer://x-callback-url/play?url=http%3A%2F%2F10.0.0.2'));
+      expect(uri.toString(), contains('file%20name.mkv%3FX-Plex-Token%3Dabc%26download%3D1'));
+      expect(uri.queryParameters['url'], stream);
+      expect(uri.queryParameters['position'], '90');
+      expect(uri.queryParameters['x-success'], 'plezy://external-player/success/s1');
+      expect(uri.queryParameters['x-cancel'], 'plezy://external-player/cancel/s1');
+      expect(uri.queryParameters['x-error'], 'plezy://external-player/error/s1');
+    });
+
+    test('play link without return links or a position is just the stream', () {
+      final uri = KnownPlayers.callbackPlayUri('outplayer', stream, const ExternalPlayerLaunchOptions())!;
+
+      expect(uri.queryParameters.keys, ['url']);
+    });
+  });
+
+  test('Infuse play link has no x-cancel: Infuse reports every exit through x-success', () {
+    final uri = KnownPlayers.callbackPlayUri(
+      'infuse',
+      'http://srv/v.mkv',
+      ExternalPlayerLaunchOptions(
+        startPosition: const Duration(seconds: 42),
+        returnLinks: ExternalPlayerService.returnLinks('s2'),
+        filename: 'The Office - S02E01 - The Dundies.mkv',
+      ),
+    )!;
+
+    expect(uri.toString(), startsWith('infuse://x-callback-url/play?url=http%3A%2F%2Fsrv%2Fv.mkv'));
+    expect(uri.queryParameters['position'], '42');
+    expect(uri.queryParameters['x-success'], 'plezy://external-player/success/s2');
+    expect(uri.queryParameters['x-error'], 'plezy://external-player/error/s2');
+    expect(uri.queryParameters.containsKey('x-cancel'), isFalse);
+    expect(uri.queryParameters['filename'], 'The Office - S02E01 - The Dundies.mkv');
+    expect(uri.toString(), contains('filename=The%20Office%20-%20S02E01%20-%20The%20Dundies.mkv'));
+  });
+
+  test('Outplayer links leave out the file name it does not document', () {
+    final uri = KnownPlayers.callbackPlayUri(
+      'outplayer',
+      'http://srv/v.mkv',
+      const ExternalPlayerLaunchOptions(filename: 'Inception (2010).mkv'),
+    )!;
+
+    expect(uri.queryParameters.keys, ['url']);
+  });
+
+  test('VLC streams through vlc-x-callback with only the keys it reads', () {
+    const stream = 'https://srv.plex.direct:32400/library/parts/1/2/file.mkv?X-Plex-Token=abc';
+    final uri = KnownPlayers.callbackPlayUri(
+      'vlc',
+      stream,
+      ExternalPlayerLaunchOptions(
+        startPosition: const Duration(seconds: 90),
+        returnLinks: ExternalPlayerService.returnLinks('s3'),
+        filename: 'Inception (2010).mkv',
+      ),
+    )!;
+
+    // VLC only decodes `url` when it starts fully encoded (`https%3A%2F%2F`).
+    expect(uri.toString(), startsWith('vlc-x-callback://x-callback-url/stream?url=https%3A%2F%2Fsrv.plex.direct'));
+    expect(uri.queryParameters['url'], stream);
+    expect(uri.queryParameters['x-success'], 'plezy://external-player/success/s3');
+    expect(uri.queryParameters['x-error'], 'plezy://external-player/error/s3');
+    expect(uri.queryParameters.keys, unorderedEquals(['url', 'x-success', 'x-error']));
+    // VLC 3.7.x opens return links without decoding them, so they go raw.
+    expect(uri.query, contains('x-success=plezy://external-player/success/s3'));
+    expect(uri.query, contains('x-error=plezy://external-player/error/s3'));
+  });
+
+  test("VLC 3.7.3's own query parsing recovers usable return links", () {
+    final uri = KnownPlayers.callbackPlayUri(
+      'vlc',
+      'https://srv.plex.direct:32400/library/parts/1/2/file.mkv?X-Plex-Token=abc&download=1',
+      ExternalPlayerLaunchOptions(returnLinks: ExternalPlayerService.returnLinks('s3')),
+    )!;
+
+    // URLHandler.parseURL at tag 3.7.3: split on `&`, then on `=`, keep
+    // `components[1]`, and open x-success/x-error with `URL(string: value)`.
+    final parsed = {
+      for (final entry in uri.query.split('&'))
+        if (entry.split('=').length >= 2) entry.split('=')[0]: entry.split('=')[1],
+    };
+    for (final (key, path) in [('x-success', '/success/s3'), ('x-error', '/error/s3')]) {
+      final link = Uri.parse(parsed[key]!);
+      expect(link.scheme, 'plezy');
+      expect(link.host, 'external-player');
+      expect(link.path, path);
+    }
+    // `url` must arrive fully encoded for VLC to decode it.
+    expect(parsed['url'], startsWith('https%3A%2F%2F'));
+  });
+
+  test('players without an x-callback-url play link have no callback URI', () {
+    expect(KnownPlayers.callbackPlayUri('mpv', 'http://srv/v.mkv', const ExternalPlayerLaunchOptions()), isNull);
+  });
 }
 
 Future<List<String>> _resolveWith(PlayerInstallProbe probe) async {

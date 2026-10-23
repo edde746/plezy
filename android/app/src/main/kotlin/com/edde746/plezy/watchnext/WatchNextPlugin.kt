@@ -1,7 +1,6 @@
 package com.edde746.plezy.watchnext
 
 import android.content.Context
-import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Handler
 import android.os.Looper
@@ -25,22 +24,6 @@ class WatchNextPlugin() :
     private const val TAG = "WatchNextPlugin"
     private const val METHOD_CHANNEL = "com.plezy/watch_next"
     internal const val SCHEMA_VERSION = 3
-    private var pendingDeepLink: String? = null
-
-    /**
-     * Returns the payload to forward to Dart: the `content_id` of a
-     * `plezy://play` shelf link, or the whole URI of a `plezy://live` link
-     * (parsed by `LiveTvDeepLink` on the Dart side).
-     */
-    fun handleIntent(intent: Intent?): String? {
-      val data = intent?.data ?: return null
-      if (data.scheme != "plezy") return null
-      return when (data.authority) {
-        "play" -> data.getQueryParameter("content_id")
-        "live" -> data.toString()
-        else -> null
-      }
-    }
   }
 
   private var executorFactory: () -> ExecutorService = { Executors.newSingleThreadExecutor() }
@@ -109,7 +92,6 @@ class WatchNextPlugin() :
       "sync" -> handleSync(call, result)
       "clear" -> handleClear(call, result)
       "remove" -> handleRemove(call, result)
-      "getInitialDeepLink" -> handleGetInitialDeepLink(result)
       else -> result.notImplemented()
     }
   }
@@ -197,12 +179,6 @@ class WatchNextPlugin() :
     }
   }
 
-  private fun handleGetInitialDeepLink(result: MethodChannel.Result) {
-    val contentId = pendingDeepLink
-    pendingDeepLink = null
-    result.success(contentId)
-  }
-
   private fun parseWatchNextItem(data: Map<String, Any?>): WatchNextProvider.WatchNextItem? {
     val contentId = (data["contentId"] as? String)?.takeIf(String::isNotBlank) ?: return null
     val title = data["title"] as? String ?: return null
@@ -224,29 +200,5 @@ class WatchNextPlugin() :
       seasonNumber = (data["seasonNumber"] as? Number)?.toInt(),
       episodeNumber = (data["episodeNumber"] as? Number)?.toInt()
     )
-  }
-
-  fun notifyDeepLink(contentId: String) {
-    pendingDeepLink = contentId
-    try {
-      methodChannel.invokeMethod(
-        "onWatchNextTap",
-        mapOf("contentId" to contentId),
-        object : MethodChannel.Result {
-          // Dart answers true only once a live tap handler took the link; until
-          // then it stays pending for getInitialDeepLink. Clearing it here keeps
-          // the next main screen (profile switch, sign-in) from replaying it.
-          override fun success(result: Any?) {
-            if (result == true && pendingDeepLink == contentId) pendingDeepLink = null
-          }
-
-          override fun error(errorCode: String, errorMessage: String?, errorDetails: Any?) {}
-
-          override fun notImplemented() {}
-        }
-      )
-    } catch (_: Exception) {
-      Log.d(TAG, "Method channel not ready; deep link retained")
-    }
   }
 }
