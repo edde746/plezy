@@ -549,14 +549,18 @@ class MpvPlayerCore private constructor(
   private fun largeMemoryClassMB(): Int = (context.getSystemService(Context.ACTIVITY_SERVICE) as? ActivityManager)?.largeMemoryClass ?: 0
 
   // The demuxer bounds this session is currently holding. Set at init from
-  // the steady tier, narrowed by [onTrimMemory] and walked back toward
-  // [steadyDemuxerBudget] by [scheduleDemuxerRestore]. All of it runs on the
-  // main thread, which is why none of these needs a lock.
+  // the steady tier, moved by a Buffer Size write ([adoptDemuxerReadAhead]),
+  // narrowed by [onTrimMemory] and walked back toward [steadyDemuxerBudget]
+  // by [scheduleDemuxerRestore]. All of it runs on the main thread, which is
+  // why none of these needs a lock.
   @Volatile private var appliedDemuxerBudget: DemuxerBudget? = null
 
-  // What the restore poll walks back to: the tier at init, replaced at the
-  // session's first narrowing by the bounds mpv was actually holding, so a
-  // user mpv.conf override is what comes back rather than the tier.
+  // What trims narrow from and the restore poll walks back to: the tier at
+  // init, or the Buffer Size once adopted, replaced at the session's first
+  // narrowing by the bounds mpv was actually holding. A suffixed mpv.conf
+  // value is only ever seen through that snapshot, so the first trim still
+  // narrows from the tier or Buffer Size: a larger value climbs back as
+  // memory allows, a smaller one stays raised for the session.
   @Volatile private var steadyDemuxerBudget: DemuxerBudget? = null
   private var demuxerRestoreJob: Job? = null
   private var lastDemuxerNarrowAtMs = 0L
@@ -570,6 +574,17 @@ class MpvPlayerCore private constructor(
   private inline fun demuxerBudgetWrites(budget: DemuxerBudget, write: (String, String) -> Unit) {
     write("demuxer-max-bytes", budget.aheadBytes.toString())
     write("demuxer-max-back-bytes", budget.backBytes.toString())
+  }
+
+  /**
+   * A plain-byte `demuxer-max-bytes` that mpv took - the Buffer Size setting,
+   * written after init over the tier's pre-init option - as this session's
+   * read-ahead, held and steady alike. The back cache keeps its own bound.
+   * Without it every trim narrowed from a tier mpv no longer held.
+   */
+  private fun adoptDemuxerReadAhead(bytes: Long) {
+    appliedDemuxerBudget = appliedDemuxerBudget?.copy(aheadBytes = bytes)
+    steadyDemuxerBudget = steadyDemuxerBudget?.copy(aheadBytes = bytes)
   }
 
   /**
@@ -592,19 +607,19 @@ class MpvPlayerCore private constructor(
    */
   fun onTrimMemory(level: Int) {
     if (!isInitialized || disposing) return
-    val heapClassMB = largeMemoryClassMB()
+    val steady = steadyDemuxerBudget ?: return
     // A level whose floor cannot narrow what this session holds cannot narrow
     // it once the rate is known either - the rate only ever widens the
     // critical floor - and a pressure storm must not queue a probe per trim in
     // front of the property reads playback is making.
-    val floor = DemuxerBudget.forTrimLevel(heapClassMB, level) ?: return
+    val floor = DemuxerBudget.forTrimLevel(steady, level) ?: return
     if (appliedDemuxerBudget?.narrowedTo(floor) == appliedDemuxerBudget) return
     // Only the session's first narrowing snapshots what mpv holds: a trim
     // landing mid-ramp would capture a half-restored budget as the target.
     val untrimmed = steadyDemuxerBudget == appliedDemuxerBudget
     scope.launch(start = CoroutineStart.UNDISPATCHED) {
       val probe = probeDemuxer(snapshotHeld = untrimmed)
-      val wanted = DemuxerBudget.forTrimLevel(heapClassMB, level, probe.streamByteRate) ?: return@launch
+      val wanted = DemuxerBudget.forTrimLevel(steady, level, probe.streamByteRate) ?: return@launch
       val current = appliedDemuxerBudget ?: return@launch
       val next = current.narrowedTo(wanted)
       if (next == current) return@launch
@@ -629,7 +644,7 @@ class MpvPlayerCore private constructor(
    * is nothing loaded to measure) and, when [snapshotHeld], the bounds mpv
    * holds right now - mpv prints byte-size options as plain integers. One
    * read-queue trip for both. A read that expires or is refused leaves the
-   * plain byte floor in charge and the tier as the restore target.
+   * plain byte floor in charge and the steady budget as the restore target.
    */
   private suspend fun probeDemuxer(snapshotHeld: Boolean): DemuxerProbe = try {
     readOperations.run("demuxer cache rate") {
@@ -2844,6 +2859,9 @@ class MpvPlayerCore private constructor(
         deferredResumeRequested = false
         PlayerDebugLog.d(TAG) { "Public pause state updated: paused=$paused" }
       }
+      // Only once mpv took it, and only plain bytes: a suffixed mpv.conf value
+      // is left to the first trim's snapshot.
+      if (completion.isSuccess && name == "demuxer-max-bytes") value.toLongOrNull()?.let(::adoptDemuxerReadAhead)
       onComplete?.invoke(completion)
     }) {
       if (pauseIntent == null) {

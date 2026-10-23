@@ -12,12 +12,13 @@ import android.content.ComponentCallbacks2
  * [android.app.ActivityManager.getLargeMemoryClass], the same signal
  * `stream_buffer_sizing.dart` and ExoPlayer's `LoadControlPolicy` use.
  *
- * Applied as pre-init *options* in [MpvPlayerCore], so a `demuxer-max-bytes`
- * line in the user's mpv.conf still wins; [forTrimLevel] re-derives it from
- * the same table when Android reports memory pressure, and the core writes
- * that as a property mid-session. Android never says when pressure ends, so
- * the core polls the LMK threshold and walks the budget back one rung at a
- * time ([widenedToward], gated by [canWiden]).
+ * Applied as pre-init *options* in [MpvPlayerCore], so the Buffer Size
+ * setting and a `demuxer-max-bytes` line in the user's mpv.conf still win;
+ * when Android reports memory pressure, [forTrimLevel] narrows from the
+ * session's steady budget (the tier, or a plain-byte Buffer Size the core
+ * adopted), and the core writes that as a property mid-session. Android never
+ * says when pressure ends, so the core polls the LMK threshold and walks the
+ * budget back one rung at a time ([widenedToward], gated by [canWiden]).
  */
 data class DemuxerBudget(val aheadBytes: Long, val backBytes: Long) {
   /** ahead+back: with `demuxer-donate-buffer` on, the resident ceiling. */
@@ -134,6 +135,11 @@ data class DemuxerBudget(val aheadBytes: Long, val backBytes: Long) {
      * (a `ComponentCallbacks2.TRIM_MEMORY_*` value), or null when the level
      * asks for nothing back.
      *
+     * Relative to [steady], what the session holds unpressured - not the
+     * heap-class tier: a Buffer Size below the tier was raised to it by the
+     * first trim, and one above it lost its read-ahead to a level that only
+     * asks for the back cache.
+     *
      * The back cache goes first: `demuxer-donate-buffer` defaults on, so the
      * back cache absorbs forward bytes the reader has not claimed and the
      * resident ceiling is really ahead+back. Dropping it is also the only
@@ -155,28 +161,26 @@ data class DemuxerBudget(val aheadBytes: Long, val backBytes: Long) {
      * (Fire OS 7/8) that still deliver the full set, and
      * `adb shell am send-trim-memory` delivers any level on any version.
      */
-    fun forTrimLevel(largeMemoryClassMB: Int, level: Int, streamByteRate: Long = 0L): DemuxerBudget? {
-      val steady = forHeapClassMB(largeMemoryClassMB) ?: return null
-      return when (level) {
-        ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL,
-        ComponentCallbacks2.TRIM_MEMORY_COMPLETE -> DemuxerBudget(
-          aheadBytes = criticalAheadBytes(steady.aheadBytes, streamByteRate),
-          backBytes = 0
-        )
-        ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW,
-        ComponentCallbacks2.TRIM_MEMORY_BACKGROUND,
-        ComponentCallbacks2.TRIM_MEMORY_MODERATE -> steady.copy(backBytes = 0)
-        // Nothing to give back. Null rather than the steady budget: the caller
-        // ratchets one way, so returning it could only ever be a no-op.
-        else -> null
-      }
+    fun forTrimLevel(steady: DemuxerBudget, level: Int, streamByteRate: Long = 0L): DemuxerBudget? = when (level) {
+      ComponentCallbacks2.TRIM_MEMORY_RUNNING_CRITICAL,
+      ComponentCallbacks2.TRIM_MEMORY_COMPLETE -> DemuxerBudget(
+        aheadBytes = criticalAheadBytes(steady.aheadBytes, streamByteRate),
+        backBytes = 0
+      )
+      ComponentCallbacks2.TRIM_MEMORY_RUNNING_LOW,
+      ComponentCallbacks2.TRIM_MEMORY_BACKGROUND,
+      ComponentCallbacks2.TRIM_MEMORY_MODERATE -> steady.copy(backBytes = 0)
+      // Nothing to give back. Null rather than the steady budget: the caller
+      // ratchets one way, so returning it could only ever be a no-op.
+      else -> null
     }
 
     /**
      * The forward budget a critical device is held to: [CRITICAL_AHEAD_BYTES]
      * or [CRITICAL_AHEAD_SECONDS] of [streamByteRate], whichever is larger,
      * and never more than [steadyAheadBytes] - there is nothing to reclaim
-     * above what the tier granted. A zero rate leaves the byte floor alone.
+     * above what the session was granted. A zero rate leaves the byte floor
+     * alone.
      */
     fun criticalAheadBytes(steadyAheadBytes: Long, streamByteRate: Long): Long = minOf(maxOf(CRITICAL_AHEAD_BYTES, streamByteRate * CRITICAL_AHEAD_SECONDS), steadyAheadBytes)
 

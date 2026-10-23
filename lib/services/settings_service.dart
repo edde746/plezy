@@ -998,6 +998,8 @@ class SettingsService extends BaseSharedPreferencesService {
     values: PlaybackBufferTier.values,
     defaultValue: PlaybackBufferTier.auto,
   );
+  // Read-ahead size for both backends; 0 keeps each backend's own sizing.
+  static const streamBufferMb = IntPref('stream_buffer_mb');
   static const libraryDensity = _LibraryDensityPref();
   static GridSpacing _tvAwareGridSpacingDefault() => PlatformDetector.isTV() ? GridSpacing.normal : GridSpacing.tight;
   static const gridSpacing = EnumPref<GridSpacing>(
@@ -1559,6 +1561,7 @@ class SettingsService extends BaseSharedPreferencesService {
     customThemePalette,
     videoPlayerNavigationEnabled,
     playbackBufferTier,
+    streamBufferMb,
     libraryDensity,
     gridSpacing,
     automotiveUiScale,
@@ -1661,6 +1664,7 @@ class SettingsService extends BaseSharedPreferencesService {
     'subtitle_background_opacity' || 'music_volume' => (0, 100),
     'volume' => (0, 300),
     'max_volume' => (100, 300),
+    'stream_buffer_mb' => (0, 4096),
     'downmix_center_boost' => (0, 12),
     'default_playback_speed' => (minimumPlaybackRate, maximumPlaybackRate),
     'default_box_fit_mode' => (0, 2),

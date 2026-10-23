@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:math';
 import 'dart:typed_data';
 
 import 'package:flutter/foundation.dart' show visibleForTesting;
@@ -531,6 +532,29 @@ class JellyfinClient
   /// Plex's default of 90%.
   @override
   double get watchedThreshold => 0.9;
+
+  /// Jellyfin's "Throttle transcodes" encoding option, readable by any signed-in
+  /// user; unreadable means Jellyfin's default (off). Emby isn't covered. Read
+  /// once per client, so a hung endpoint delays one open, not every one.
+  @override
+  Future<int?> transcodeThrottleSeconds() => _transcodeThrottleSeconds ??= _readTranscodeThrottleSeconds();
+  Future<int?>? _transcodeThrottleSeconds;
+
+  Future<int?> _readTranscodeThrottleSeconds() async {
+    if (backend != MediaBackend.jellyfin) return null;
+    try {
+      final response = await _http.get('/System/Configuration/encoding', timeout: MediaServerTimeouts.jellyfinProbe);
+      throwIfHttpError(response);
+      final data = response.data;
+      if (data is! Map<String, dynamic> || data['EnableThrottling'] != true) return null;
+      final seconds = data['ThrottleDelaySeconds'];
+      // 10.9+ never throttles below 60 s (TranscodingThrottler).
+      return seconds is int ? max(seconds, 60) : null;
+    } catch (e) {
+      appLogger.w('JellyfinClient: transcode throttle unreadable: $e');
+      return null;
+    }
+  }
 
   /// Both dialects mark an item played from `/Sessions/Playing/Stopped`
   /// themselves (server `MaxResumePct`, default 90%), so the in-player

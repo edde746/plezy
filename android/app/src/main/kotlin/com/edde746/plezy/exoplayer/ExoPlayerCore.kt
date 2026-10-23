@@ -299,6 +299,9 @@ class ExoPlayerCore(private val activity: Activity) :
    */
   private var observingLoadControl: ObservingLoadControl? = null
 
+  /** [ObservingLoadControl.maxBufferedDurationUs], kept for a set that arrives before [initialize]. */
+  private var transcodeBufferCapUs = 0L
+
   /**
    * The read-ahead limits this session actually resolved to, kept so [getStats] can report them.
    * Both ceilings matter and the smaller one binds: with `prioritizeTimeOverSizeThresholds`
@@ -580,7 +583,9 @@ class ExoPlayerCore(private val activity: Activity) :
     // Read-ahead depth, as the wire name Dart sends. Kept a String because `LoadControlPolicy`
     // is internal and this function is not; unrecognised names resolve to Auto, which is also
     // the default (#1816).
-    bufferTier: String = "auto"
+    bufferTier: String = "auto",
+    // Buffer Size setting; 0 keeps the auto byte budget and the tier's durations.
+    bufferMb: Int = 0
   ): Boolean {
     if (isInitialized) {
       Log.d(TAG, "Already initialized")
@@ -798,10 +803,14 @@ class ExoPlayerCore(private val activity: Activity) :
       val availableMB = (memoryInfo.availMem / (1024 * 1024)).toInt()
       val largeHeapMB = activityManager.largeMemoryClass
 
-      val targetBufferBytes = LoadControlPolicy.autoTargetBufferBytes(largeHeapMB, availableMB)
+      val targetBufferBytes = if (bufferMb > 0) {
+        LoadControlPolicy.customTargetBufferBytes(bufferMb, largeHeapMB)
+      } else {
+        LoadControlPolicy.autoTargetBufferBytes(largeHeapMB, availableMB)
+      }
 
       val resolvedTier = LoadControlPolicy.BufferTier.fromWire(bufferTier)
-      val bufferDurations = LoadControlPolicy.bufferDurations(resolvedTier, availableMB)
+      val bufferDurations = LoadControlPolicy.bufferDurations(resolvedTier, availableMB, sizeGoverned = bufferMb > 0)
       resolvedTargetBufferBytes = targetBufferBytes
       resolvedBufferDurations = bufferDurations
 
@@ -817,14 +826,19 @@ class ExoPlayerCore(private val activity: Activity) :
           LoadControlPolicy.BUFFER_FOR_PLAYBACK_MS,
           LoadControlPolicy.BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS
         )
-      }.build().let { ObservingLoadControl(it).also { observing -> observingLoadControl = observing } }
+      }.build().let {
+        ObservingLoadControl(it).also { observing ->
+          observing.maxBufferedDurationUs = transcodeBufferCapUs
+          observingLoadControl = observing
+        }
+      }
       emitLog(
         "info",
         "init",
         "Buffer: ${targetBufferBytes / 1024 / 1024}MB limit " +
           "(heap=${largeHeapMB}MB, available=${availableMB}MB), " +
           "buffer=${bufferDurations.minBufferMs / 1000}-${bufferDurations.maxBufferMs / 1000}s " +
-          "(${resolvedTier.name.lowercase()}), " +
+          "(${if (bufferMb > 0) "size-governed" else resolvedTier.name.lowercase()}), " +
           "tunneling=$tunnelingUserEnabled, dataSource=$dataSourceLabel"
       )
 
@@ -3712,6 +3726,12 @@ class ExoPlayerCore(private val activity: Activity) :
     if (clamped != previous) {
       emitLog("info", "ass-latency-cal", "applied offsetFrames=$clamped (was $previous), persisted")
     }
+  }
+
+  /** Caps read-ahead at a server transcode's throttle; 0 (or less) removes the cap. Per stream. */
+  fun setTranscodeBufferCapSeconds(seconds: Int) {
+    transcodeBufferCapUs = maxOf(seconds, 0) * 1_000_000L
+    observingLoadControl?.maxBufferedDurationUs = transcodeBufferCapUs
   }
 
   fun setDebugDvConversionMode(mode: String): Boolean {

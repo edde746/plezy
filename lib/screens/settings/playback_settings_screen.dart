@@ -74,6 +74,7 @@ class PlaybackSettingsScreen extends StatelessWidget {
                 if (!exoActive) _mpvConfigTile(),
                 _hardwareDecodingTile(),
                 if (exoActive) _playbackBufferTile(),
+                _streamBufferSizeTile(exoActive: exoActive),
                 if (exoActive) _tunneledPlaybackTile(),
                 if (PlatformDetector.supportsPictureInPicture()) _autoPipTile(),
               ],
@@ -662,6 +663,20 @@ class PlaybackSettingsScreen extends StatelessWidget {
     options: PlaybackBufferTier.values
         .map((tier) => DialogOption(value: tier, title: _playbackBufferLabel(tier)))
         .toList(),
+  );
+
+  // The explanation lives in the subtitle: the TV number dialog never shows labelText.
+  Widget _streamBufferSizeTile({required bool exoActive}) => SettingNumberTile(
+    pref: SettingsService.streamBufferMb,
+    icon: Symbols.memory_rounded,
+    title: t.settings.streamBufferSize,
+    subtitleBuilder: (v) => [
+      v == 0 ? t.settings.playbackBufferAuto : t.settings.streamBufferSizeValue(size: v),
+      t.settings.streamBufferSizeDescription,
+      if (exoActive) t.settings.streamBufferSizeExoNote,
+    ].join(' · '),
+    labelText: t.settings.streamBufferMegabytes,
+    suffixText: 'MB',
   );
 
   String _playbackBufferLabel(PlaybackBufferTier tier) => switch (tier) {
