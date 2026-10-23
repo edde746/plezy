@@ -9,6 +9,7 @@ import 'package:plezy/services/settings_service.dart' as settings show ThemeMode
 import 'package:plezy/services/supporter/supporter_mode.dart';
 import 'package:plezy/services/supporter/supporter_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
+import 'package:plezy/utils/platform_detector.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helpers/prefs.dart';
@@ -47,12 +48,43 @@ void main() {
     ]) {
       expect(find.text(group), findsOneWidget, reason: 'group $group missing');
     }
+    expect(find.text(t.settings.mainListingMode), findsNothing);
     final scrollable = find.byType(Scrollable).first;
     await tester.scrollUntilVisible(find.text(t.settings.liveTv), 500, scrollable: scrollable);
     expect(find.text(t.settings.liveTvDefaultFavorites), findsOneWidget);
     // Moved away: profile prompt and performance overlay no longer live here.
     expect(find.text(t.settings.requireProfileSelectionOnOpen), findsNothing);
     expect(find.text(t.settings.autoHidePerformanceOverlay), findsNothing);
+  });
+
+  testWidgets('Main Listing Mode selector updates the saved presentation', (tester) async {
+    TvDetectionService.debugSetAppleTVOverride(true);
+    addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1000, 3000);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final supporter = SupporterService.forTesting(availability: SupporterAvailability.hidden);
+    addTearDown(supporter.dispose);
+    final theme = ThemeProvider(supporter: supporter);
+    addTearDown(theme.dispose);
+    await tester.pumpWidget(
+      ChangeNotifierProvider<ThemeProvider>.value(
+        value: theme,
+        child: MaterialApp(theme: monoTheme(MonoPalette.dark), home: const AppearanceSettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    expect(find.text(t.settings.mainListingMode), findsOneWidget);
+    expect(
+      tester.getTopLeft(find.text(t.settings.mainListingMode)).dy,
+      greaterThan(tester.getTopLeft(find.text(t.settings.theme)).dy),
+    );
+    await tester.tap(find.text(t.settings.spartan));
+    await tester.pumpAndSettle();
+    expect(SettingsService.instance.read(SettingsService.mainListingMode), MainListingMode.spartan);
   });
 
   testWidgets('the Theme entry opens the theme picker and a pick applies live', (tester) async {

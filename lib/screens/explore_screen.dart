@@ -505,7 +505,7 @@ class ExploreScreenState extends State<ExploreScreen>
       spotlightListenable: _spotlight,
       resolveSpotlight: () => _spotlight.resolve(tvHubs),
       resolveClient: (spotlight) => context.tryGetMediaClientForServer(serverIdOrNull(spotlight?.serverId)),
-      foreground: Stack(
+      foregroundBuilder: (context, spartan) => Stack(
         fit: StackFit.expand,
         clipBehavior: Clip.none,
         children: [
@@ -530,6 +530,7 @@ class ExploreScreenState extends State<ExploreScreen>
             Positioned(
               left: 0,
               right: 0,
+              top: spartan ? TvBrowseRailLayout.spartanTopInsetForSize(MediaQuery.sizeOf(context)) : null,
               bottom: 0,
               child: TvBrowseRail(
                 key: _tvBrowseRailKey,
@@ -546,6 +547,7 @@ class ExploreScreenState extends State<ExploreScreen>
                 onBack: _navigateToSidebar,
                 tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
                 widePosterScale: TvBrowseRailLayout.compactEpisodeThumbnailScale,
+                expandViewport: spartan,
               ),
             ),
           TvToolbarOverlay(child: _buildTvToolbar(sources)),

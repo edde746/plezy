@@ -43,6 +43,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
           title: t.settings.display,
           children: [
             _themeSelector(),
+            if (PlatformDetector.isTVDevice()) _mainListingModeSelector(),
             if (AppIconSetting.isShown(context)) const AppIconSetting(),
             if (PlatformDetector.isAutomotive()) _displayScaleSelector(),
             if (Platform.isAndroid) _visualEffectsSelector(context),
@@ -285,6 +286,16 @@ class AppearanceSettingsScreen extends StatelessWidget {
     segments: [
       ButtonSegment(value: ViewMode.grid, label: Text(t.settings.gridView)),
       ButtonSegment(value: ViewMode.list, label: Text(t.settings.listView)),
+    ],
+  );
+
+  Widget _mainListingModeSelector() => SettingSegmentedTile<MainListingMode>(
+    pref: SettingsService.mainListingMode,
+    icon: Symbols.view_carousel_rounded,
+    title: t.settings.mainListingMode,
+    segments: [
+      ButtonSegment(value: MainListingMode.spotlight, label: Text(t.settings.spotlight)),
+      ButtonSegment(value: MainListingMode.spartan, label: Text(t.settings.spartan)),
     ],
   );
 

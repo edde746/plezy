@@ -100,6 +100,8 @@ extension GridSpacingMetrics on GridSpacing {
 
 enum ViewMode { grid, list }
 
+enum MainListingMode { spotlight, spartan }
+
 enum EpisodePosterMode { seriesPoster, seasonPoster, episodeThumbnail }
 
 enum ContinueWatchingAction { play, details }
@@ -650,6 +652,11 @@ class SettingsService extends BaseSharedPreferencesService {
   static const rewindOnResume = IntPref('rewind_on_resume');
   static const showHeroSection = BoolPref('show_hero_section', defaultValue: true);
   static const tvFullCardLayout = BoolPref('tv_full_card_layout', defaultValue: false);
+  static const mainListingMode = EnumPref<MainListingMode>(
+    'tv_listing_style',
+    values: MainListingMode.values,
+    defaultValue: MainListingMode.spotlight,
+  );
   static const focusGlow = BoolPref('focus_glow', defaultValue: true);
   static const useGlobalHubs = BoolPref('use_global_hubs', defaultValue: true);
   static const showServerNameOnHubs = BoolPref('show_server_name_on_hubs');
@@ -1562,6 +1569,7 @@ class SettingsService extends BaseSharedPreferencesService {
     libraryDensity,
     gridSpacing,
     automotiveUiScale,
+    mainListingMode,
     tvCornerSpotlightBackdrop,
     episodePosterMode,
     continueWatchingAction,

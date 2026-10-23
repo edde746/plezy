@@ -332,11 +332,12 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
       resolveSpotlight: () => _spotlight.resolve(tvHubs),
       resolveClient: (spotlight) =>
           context.tryGetMediaClientForServer(serverIdOrNull(spotlight?.serverId ?? widget.library.serverId)),
-      foreground: tvHubs.isEmpty
+      foregroundBuilder: (context, spartan) => tvHubs.isEmpty
           ? const SizedBox.shrink()
           : Positioned(
               left: 0,
               right: 0,
+              top: spartan ? TvBrowseRailLayout.spartanTopInsetForSize(MediaQuery.sizeOf(context)) : null,
               bottom: 0,
               child: TvBrowseRail(
                 key: _tvBrowseRailKey,
@@ -353,6 +354,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
                 onBack: widget.onBack,
                 tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
                 widePosterScale: TvBrowseRailLayout.compactEpisodeThumbnailScale,
+                expandViewport: spartan,
               ),
             ),
     );

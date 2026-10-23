@@ -1056,10 +1056,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   // geometry) hand Element.updateChild the identical widget instance and the
   // whole rail subtree is skipped. Rebuilt only when its actual inputs change.
   TvBrowseRail? _tvBrowseRailWidget;
-  (List<MediaHub>, bool)? _tvBrowseRailWidgetKey;
+  (List<MediaHub>, bool, bool)? _tvBrowseRailWidgetKey;
 
-  Widget _cachedTvBrowseRail(List<MediaHub> browseHubs, {required bool showServerName}) {
-    final key = (browseHubs, showServerName);
+  Widget _cachedTvBrowseRail(List<MediaHub> browseHubs, {required bool showServerName, required bool spartan}) {
+    final key = (browseHubs, showServerName, spartan);
     if (_tvBrowseRailWidget != null && key == _tvBrowseRailWidgetKey) return _tvBrowseRailWidget!;
     _tvBrowseRailWidgetKey = key;
     return _tvBrowseRailWidget = TvBrowseRail(
@@ -1068,6 +1068,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       initialHubId: 'continue_watching',
       focusMemory: _hubFocusMemory,
       showServerName: showServerName,
+      expandViewport: spartan,
       iconForHub: (hub, _) => hubIconFor(hub),
       onFocusedItemChanged: _setSpotlightItem,
       onRefresh: _discover.updateItem,
@@ -1112,7 +1113,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       resolveSpotlight: () => _spotlight.resolve(browseHubs),
       resolveClient: _getMediaClientForItem,
       hideSpoilers: hideSpoilers,
-      foreground: Stack(
+      foregroundBuilder: (context, spartan) => Stack(
         fit: StackFit.expand,
         clipBehavior: Clip.none,
         children: [
@@ -1135,8 +1136,13 @@ class _DiscoverScreenState extends State<DiscoverScreen>
             Positioned(
               left: 0,
               right: 0,
+              top: spartan ? TvBrowseRailLayout.spartanTopInsetForSize(MediaQuery.sizeOf(context)) : null,
               bottom: 0,
-              child: _cachedTvBrowseRail(browseHubs, showServerName: showServerNameOnHubs || hubsSpanMultipleServers),
+              child: _cachedTvBrowseRail(
+                browseHubs,
+                showServerName: showServerNameOnHubs || hubsSpanMultipleServers,
+                spartan: spartan,
+              ),
             ),
           _cachedTvToolbarOverlay(),
           if (_switchingProfile) const ProfileSwitchingOverlay(),

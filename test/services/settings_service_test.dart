@@ -128,6 +128,21 @@ void main() {
     });
   });
 
+  group('SettingsService main listing mode', () {
+    test('defaults to Spotlight, is portable, and resets to Spotlight', () async {
+      final settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.mainListingMode), MainListingMode.spotlight);
+      expect(SettingsService.portablePrefs, contains(SettingsService.mainListingMode));
+
+      await settings.write(SettingsService.mainListingMode, MainListingMode.spartan);
+      expect(settings.read(SettingsService.mainListingMode), MainListingMode.spartan);
+
+      await settings.resetAllSettings();
+      expect(settings.read(SettingsService.mainListingMode), MainListingMode.spotlight);
+    });
+  });
+
   group('SettingsService skip marker modes', () {
     test('default to showing the button, independently per marker kind', () async {
       final settings = await SettingsService.getInstance();

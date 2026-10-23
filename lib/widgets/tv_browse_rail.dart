@@ -121,6 +121,10 @@ class TvBrowseRailLayout {
 
   static double railBottomPaddingForScale(double scale) => 8 * scale;
 
+  static double spartanTopInsetForScale(double scale) => (80 * scale).clamp(72.0, 104.0).toDouble();
+
+  static double spartanTopInsetForSize(Size size) => spartanTopInsetForScale(scaleForSize(size));
+
   static double railInteractionExpansionForScale(double scale) => (12 * scale).clamp(8, 18).toDouble();
 
   static double fullCardItemGapForScale(double scale) => (12 * scale).clamp(8, 18).toDouble();
@@ -388,6 +392,7 @@ class TvBrowseRail extends StatefulWidget {
   final String? initialHubId;
   final String? initialItemId;
   final bool autofocus;
+  final bool expandViewport;
   final EpisodePosterMode Function(MediaHub hub)? episodePosterModeForHub;
   final double Function(MediaHub hub)? widePosterScaleForHub;
 
@@ -427,6 +432,7 @@ class TvBrowseRail extends StatefulWidget {
     this.initialHubId,
     this.initialItemId,
     this.autofocus = false,
+    this.expandViewport = false,
     this.episodePosterModeForHub,
     this.widePosterScaleForHub,
     this.showTitleImpliedForHub,
@@ -1268,11 +1274,18 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
           for (final height in sectionHeights) {
             if (height > viewportSectionHeight) viewportSectionHeight = height;
           }
-          final viewportHeight = TvBrowseRailLayout.viewportHeightFor(
+          final naturalViewportHeight = TvBrowseRailLayout.viewportHeightFor(
             hubCount: widget.hubs.length,
             scale: scale,
             sectionHeight: viewportSectionHeight,
           );
+          final verticalPadding =
+              TvBrowseRailLayout.railTopPaddingForScale(scale) + TvBrowseRailLayout.railBottomPaddingForScale(scale);
+          final expandedViewportHeight = constraints.maxHeight - verticalPadding;
+          final viewportHeight =
+              widget.expandViewport && constraints.maxHeight.isFinite && expandedViewportHeight > naturalViewportHeight
+              ? expandedViewportHeight
+              : naturalViewportHeight;
           final bottomPadding = (viewportHeight - sectionHeights.last).clamp(0.0, double.infinity).toDouble();
           _sectionMaxScrollExtent = (nextOffset + bottomPadding - viewportHeight)
               .clamp(0.0, double.infinity)
@@ -1285,7 +1298,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
             focusNode: _focusNode,
             onKeyEvent: _handleKeyEvent,
             child: Align(
-              alignment: .bottomCenter,
+              alignment: widget.expandViewport ? .topCenter : .bottomCenter,
               heightFactor: 1,
               child: SizedBox(
                 height: totalHeight,

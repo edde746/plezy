@@ -244,6 +244,17 @@ void main() {
     await tester.pump();
 
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'tv_browse_rail');
+
+    await settings.write(SettingsService.mainListingMode, MainListingMode.spartan);
+    await tester.pumpAndSettle();
+    expect(find.byType(TvSpotlightBackground), findsNothing);
+    final spartanRail = tester.widget<TvBrowseRail>(find.byType(TvBrowseRail));
+    expect(spartanRail.expandViewport, isTrue);
+    expect(tester.getSize(find.byType(TvBrowseRail)).height, greaterThan(railHeight));
+    expect(
+      tester.getTopLeft(find.byType(TvBrowseRail)).dy,
+      closeTo(TvBrowseRailLayout.spartanTopInsetForSize(const Size(foregroundWidth, 720)), 1),
+    );
   });
   testWidgets('startup prime does not duplicate the load DiscoverScreen started in initState', (tester) async {
     // DiscoverScreen.initState fires load(); main_screen._primeOnlineServices

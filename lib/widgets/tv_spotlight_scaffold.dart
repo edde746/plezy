@@ -12,6 +12,7 @@ import '../services/settings_service.dart';
 import '../utils/debouncer.dart';
 import '../utils/layout_constants.dart';
 import '../utils/formatters.dart';
+import 'settings_builder.dart';
 import 'tv_browse_rail.dart';
 import 'tv_spotlight_background.dart';
 
@@ -59,6 +60,7 @@ class TvSpotlightController extends ValueNotifier<MediaItem?> {
 }
 
 typedef TvSpotlightClientResolver = MediaServerClient? Function(MediaItem? item);
+typedef TvSpotlightForegroundBuilder = Widget Function(BuildContext context, bool spartan);
 
 /// Shared full-screen TV backdrop and foreground stack used by hub rails.
 class TvSpotlightScaffold extends StatelessWidget {
@@ -68,7 +70,7 @@ class TvSpotlightScaffold extends StatelessWidget {
     required this.spotlightListenable,
     required this.resolveSpotlight,
     required this.resolveClient,
-    required this.foreground,
+    required this.foregroundBuilder,
     this.hideSpoilers,
   });
 
@@ -76,74 +78,83 @@ class TvSpotlightScaffold extends StatelessWidget {
   final ValueListenable<MediaItem?> spotlightListenable;
   final MediaItem? Function() resolveSpotlight;
   final TvSpotlightClientResolver resolveClient;
-  final Widget foreground;
+  final TvSpotlightForegroundBuilder foregroundBuilder;
   final bool? hideSpoilers;
 
   @override
   Widget build(BuildContext context) {
-    final size = MediaQuery.sizeOf(context);
-    final settings = SettingsService.instance;
-    final scale = TvLayoutConstants.scaleForSize(size);
-    final railSize = MainScreenFocusScope.foregroundSizeOf(context);
-    final fullBleedWidth = MainScreenFocusScope.fullBleedWidthOf(context);
-    final railHeight = hubs.isEmpty
-        ? 0.0
-        : TvBrowseRailLayout.estimateHeight(
-            size: railSize,
-            hubs: hubs,
-            density: settings.read(SettingsService.libraryDensity),
-            episodePosterMode: settings.read(SettingsService.episodePosterMode),
-            fullCardLayout: settings.read(SettingsService.tvFullCardLayout),
-            gridSpacing: settings.read(SettingsService.gridSpacing),
-            tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
-            widePosterScale: TvBrowseRailLayout.compactEpisodeThumbnailScale,
-          );
-    final spotlightTop = (size.height * 0.075).clamp(64.0 * scale, 120.0 * scale).toDouble();
-    final minimumSpotlightBottom = railHeight + (8 * scale);
-    final baseSpotlightBottom = (size.height * 0.48).clamp(160.0, 820.0).toDouble();
-    final desiredSpotlightBottom = minimumSpotlightBottom > baseSpotlightBottom
-        ? minimumSpotlightBottom
-        : baseSpotlightBottom;
-    final maxSpotlightBottom = (size.height - spotlightTop - (96 * scale)).clamp(0.0, double.infinity).toDouble();
-    final spotlightBottom = desiredSpotlightBottom > maxSpotlightBottom ? maxSpotlightBottom : desiredSpotlightBottom;
-    final spotlightLeft = (24 * scale).clamp(18.0, 40.0).toDouble();
+    return SettingsBuilder(
+      prefs: const [SettingsService.mainListingMode],
+      builder: (context) {
+        final size = MediaQuery.sizeOf(context);
+        final settings = SettingsService.instance;
+        final spartan = settings.read(SettingsService.mainListingMode) == MainListingMode.spartan;
+        final scale = TvLayoutConstants.scaleForSize(size);
+        final railSize = MainScreenFocusScope.foregroundSizeOf(context);
+        final fullBleedWidth = MainScreenFocusScope.fullBleedWidthOf(context);
+        final railHeight = hubs.isEmpty
+            ? 0.0
+            : TvBrowseRailLayout.estimateHeight(
+                size: railSize,
+                hubs: hubs,
+                density: settings.read(SettingsService.libraryDensity),
+                episodePosterMode: settings.read(SettingsService.episodePosterMode),
+                fullCardLayout: settings.read(SettingsService.tvFullCardLayout),
+                gridSpacing: settings.read(SettingsService.gridSpacing),
+                tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
+                widePosterScale: TvBrowseRailLayout.compactEpisodeThumbnailScale,
+              );
+        final spotlightTop = (size.height * 0.075).clamp(64.0 * scale, 120.0 * scale).toDouble();
+        final minimumSpotlightBottom = railHeight + (8 * scale);
+        final baseSpotlightBottom = (size.height * 0.48).clamp(160.0, 820.0).toDouble();
+        final desiredSpotlightBottom = minimumSpotlightBottom > baseSpotlightBottom
+            ? minimumSpotlightBottom
+            : baseSpotlightBottom;
+        final maxSpotlightBottom = (size.height - spotlightTop - (96 * scale)).clamp(0.0, double.infinity).toDouble();
+        final spotlightBottom = desiredSpotlightBottom > maxSpotlightBottom
+            ? maxSpotlightBottom
+            : desiredSpotlightBottom;
+        final spotlightLeft = (24 * scale).clamp(18.0, 40.0).toDouble();
 
-    return Material(
-      color: Theme.of(context).scaffoldBackgroundColor,
-      child: SizedBox.expand(
-        child: Stack(
-          fit: StackFit.expand,
-          clipBehavior: Clip.none,
-          children: [
-            Builder(
-              builder: (context) {
-                final foregroundLeft = MainScreenFocusScope.foregroundLeftOf(context);
-                return SideNavigationBleedBuilder(
-                  targetBleed: foregroundLeft,
-                  child: ValueListenableBuilder<MediaItem?>(
-                    valueListenable: spotlightListenable,
-                    builder: (context, _, _) {
-                      final spotlight = resolveSpotlight();
-                      return _CatalogSpotlightBackground(
-                        item: spotlight,
-                        client: resolveClient(spotlight),
-                        hideSpoilers: hideSpoilers ?? settings.read(SettingsService.hideSpoilers),
-                        contentTop: spotlightTop,
-                        contentBottom: spotlightBottom,
-                        contentLeft: spotlightLeft + foregroundLeft,
-                        targetWidthPx: (size.width * MediaQuery.devicePixelRatioOf(context)).ceil(),
+        return Material(
+          color: Theme.of(context).scaffoldBackgroundColor,
+          child: SizedBox.expand(
+            child: Stack(
+              fit: StackFit.expand,
+              clipBehavior: Clip.none,
+              children: [
+                if (!spartan)
+                  Builder(
+                    builder: (context) {
+                      final foregroundLeft = MainScreenFocusScope.foregroundLeftOf(context);
+                      return SideNavigationBleedBuilder(
+                        targetBleed: foregroundLeft,
+                        child: ValueListenableBuilder<MediaItem?>(
+                          valueListenable: spotlightListenable,
+                          builder: (context, _, _) {
+                            final spotlight = resolveSpotlight();
+                            return _CatalogSpotlightBackground(
+                              item: spotlight,
+                              client: resolveClient(spotlight),
+                              hideSpoilers: hideSpoilers ?? settings.read(SettingsService.hideSpoilers),
+                              contentTop: spotlightTop,
+                              contentBottom: spotlightBottom,
+                              contentLeft: spotlightLeft + foregroundLeft,
+                              targetWidthPx: (size.width * MediaQuery.devicePixelRatioOf(context)).ceil(),
+                            );
+                          },
+                        ),
+                        builder: (context, animatedBleed, child) =>
+                            Positioned(top: 0, bottom: 0, left: -animatedBleed, width: fullBleedWidth, child: child!),
                       );
                     },
                   ),
-                  builder: (context, animatedBleed, child) =>
-                      Positioned(top: 0, bottom: 0, left: -animatedBleed, width: fullBleedWidth, child: child!),
-                );
-              },
+                foregroundBuilder(context, spartan),
+              ],
             ),
-            foreground,
-          ],
-        ),
-      ),
+          ),
+        );
+      },
     );
   }
 }
