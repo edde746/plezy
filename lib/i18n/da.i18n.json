@@ -2246,6 +2246,7 @@
     "cacheLimit": "Cachegrænse",
     "speed": "Hastighed",
     "player": "Afspiller",
+    "playMethod": "",
     "memory": "Hukommelse",
     "uiFps": "UI-FPS",
     "fps": "FPS",

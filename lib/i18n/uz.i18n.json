@@ -2246,6 +2246,7 @@
     "cacheLimit": "Kesh chegarasi",
     "speed": "Tezlik",
     "player": "Pleyer",
+    "playMethod": "",
     "memory": "Xotira",
     "uiFps": "Interfeys (UI) FPS",
     "fps": "FPS",

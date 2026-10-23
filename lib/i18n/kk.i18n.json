@@ -2246,6 +2246,7 @@
     "cacheLimit": "Кэш шегі",
     "speed": "Жылдамдық",
     "player": "Ойнатқыш",
+    "playMethod": "",
     "memory": "Жады",
     "uiFps": "Интерфейс (UI) FPS",
     "fps": "FPS",

@@ -2234,6 +2234,7 @@
     "cacheLimit": "캐시 제한",
     "speed": "속도",
     "player": "플레이어",
+    "playMethod": "",
     "memory": "메모리",
     "uiFps": "UI FPS",
     "fps": "FPS",

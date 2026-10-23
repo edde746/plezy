@@ -2246,6 +2246,7 @@
     "cacheLimit": "Límite de caché",
     "speed": "Velocidad",
     "player": "Reproductor",
+    "playMethod": "",
     "memory": "Memoria",
     "uiFps": "FPS UI",
     "fps": "FPS",

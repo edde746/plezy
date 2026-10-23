@@ -2246,6 +2246,7 @@
     "cacheLimit": "Grense for hurtigbuffer",
     "speed": "Hastighet",
     "player": "Spiller",
+    "playMethod": "",
     "memory": "Minne",
     "uiFps": "UI FPS",
     "fps": "FPS",

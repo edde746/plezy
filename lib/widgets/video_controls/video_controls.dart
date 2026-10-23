@@ -1483,7 +1483,11 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                           opacity: performanceOverlayVisible ? 1.0 : 0.0,
                           duration: const Duration(milliseconds: 200),
                           child: IgnorePointer(
-                            child: PlayerPerformanceOverlay(player: widget.player, active: performanceOverlayVisible),
+                            child: PlayerPerformanceOverlay(
+                              player: widget.player,
+                              active: performanceOverlayVisible,
+                              isTranscoding: widget.isLive || widget.isOfflinePlayback ? null : widget.isTranscoding,
+                            ),
                           ),
                         ),
                       ),

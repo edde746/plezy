@@ -2246,6 +2246,7 @@
     "cacheLimit": "Önbellek Sınırı",
     "speed": "Hız",
     "player": "Oynatıcı",
+    "playMethod": "",
     "memory": "Bellek",
     "uiFps": "Arayüz (UI) FPS",
     "fps": "FPS",

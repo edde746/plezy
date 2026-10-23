@@ -2246,6 +2246,7 @@
     "cacheLimit": "Keş limiti",
     "speed": "Sürət",
     "player": "Oynadıcı",
+    "playMethod": "",
     "memory": "Yaddaş",
     "uiFps": "Arayüz (UI) FPS-i",
     "fps": "FPS",

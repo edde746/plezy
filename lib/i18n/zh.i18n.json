@@ -2234,6 +2234,7 @@
     "cacheLimit": "缓存限制",
     "speed": "速度",
     "player": "播放器",
+    "playMethod": "",
     "memory": "内存",
     "uiFps": "UI FPS",
     "fps": "FPS",

@@ -2246,6 +2246,7 @@
     "cacheLimit": "Cache-Limit",
     "speed": "Geschwindigkeit",
     "player": "Player",
+    "playMethod": "",
     "memory": "Speicher",
     "uiFps": "UI-FPS",
     "fps": "FPS",

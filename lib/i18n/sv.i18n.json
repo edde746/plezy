@@ -2246,6 +2246,7 @@
     "cacheLimit": "Cachegräns",
     "speed": "Hastighet",
     "player": "Spelare",
+    "playMethod": "",
     "memory": "Minne",
     "uiFps": "UI FPS",
     "fps": "FPS",

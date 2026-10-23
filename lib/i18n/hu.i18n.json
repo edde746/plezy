@@ -2246,6 +2246,7 @@
     "cacheLimit": "Gyorsítótár korlátja",
     "speed": "Sebesség",
     "player": "Lejátszó",
+    "playMethod": "",
     "memory": "Memória",
     "uiFps": "Felület-FPS",
     "fps": "FPS",

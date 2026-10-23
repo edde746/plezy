@@ -2270,6 +2270,7 @@
     "cacheLimit": "Limit pamięci podręcznej",
     "speed": "Szybkość",
     "player": "Odtwarzacz",
+    "playMethod": "",
     "memory": "Pamięć",
     "uiFps": "FPS interfejsu",
     "fps": "FPS",

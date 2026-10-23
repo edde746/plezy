@@ -2246,6 +2246,7 @@
     "cacheLimit": "Лимит на кеша",
     "speed": "Скорост",
     "player": "Плеър",
+    "playMethod": "",
     "memory": "Памет",
     "uiFps": "FPS на интерфейса",
     "fps": "FPS",

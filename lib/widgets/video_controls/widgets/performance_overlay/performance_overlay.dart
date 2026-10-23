@@ -22,7 +22,11 @@ class PlayerPerformanceOverlay extends StatefulWidget {
   /// tick behind a fully transparent widget.
   final bool active;
 
-  const PlayerPerformanceOverlay({super.key, required this.player, required this.active});
+  /// Whether the server is transcoding this stream, or null when the stream
+  /// has no server play method (live TV, offline playback).
+  final bool? isTranscoding;
+
+  const PlayerPerformanceOverlay({super.key, required this.player, required this.active, this.isTranscoding});
 
   @override
   State<PlayerPerformanceOverlay> createState() => _PlayerPerformanceOverlayState();
@@ -130,6 +134,8 @@ class _PlayerPerformanceOverlayState extends State<PlayerPerformanceOverlay> {
       ]),
       _buildSection(Symbols.apps_rounded, t.performanceOverlay.app, [
         _metric(t.performanceOverlay.player, _stats.playerTypeFormatted),
+        if (widget.isTranscoding case final transcoding?)
+          _metric(t.performanceOverlay.playMethod, transcoding ? t.fileInfo.transcoding : t.fileInfo.directPlay),
         _metric(t.performanceOverlay.memory, _stats.appMemoryFormatted),
         _metric(t.performanceOverlay.uiFps, _stats.uiFpsFormatted),
       ]),
