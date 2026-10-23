@@ -711,6 +711,25 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     throwIfHttpError(response);
   }
 
+  /// Mirrors jellyfin-web's refresh dialog in "Scan for new and updated
+  /// files" mode: `Default` refresh modes walk the folder for new, changed,
+  /// and removed files and fill only missing metadata, unlike the
+  /// `FullRefresh` sent by [refreshLibraryMetadata].
+  @override
+  Future<void> scanLibrary(String libraryId) async {
+    final response = await _http.post(
+      '/Items/${_segment(libraryId)}/Refresh',
+      queryParameters: {
+        'Recursive': 'true',
+        'metadataRefreshMode': 'Default',
+        'imageRefreshMode': 'Default',
+        'replaceAllMetadata': 'false',
+        'replaceAllImages': 'false',
+      },
+    );
+    throwIfHttpError(response);
+  }
+
   /// Jellyfin has no single-round-trip equivalent of Plex's
   /// `?includeOnDeck=1`. We approximate it for shows by chaining a second
   /// request to `/Shows/NextUp` filtered by `seriesId`. NextUp's defaults

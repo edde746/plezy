@@ -375,6 +375,40 @@ void main() {
       expect(find.text(successMessage), findsOneWidget);
     });
   }
+
+  testWidgets('Jellyfin scan keeps metadata while refresh replaces it (issue #2702)', (tester) async {
+    final requests = <http.Request>[];
+    final client = testJellyfinClient(
+      connection: testJellyfinConnection(machineId: 'jf-srv', isAdministrator: true),
+      handler: (request) async {
+        requests.add(request);
+        return http.Response('', 204);
+      },
+    );
+    final manager = MultiServerManager()..debugRegisterJellyfinClientForTesting(client);
+    final provider = testMultiServerProvider(manager);
+    addTearDown(() {
+      provider.dispose();
+      manager.dispose();
+    });
+    const library = MediaLibrary(
+      id: 'jf-movies',
+      backend: MediaBackend.jellyfin,
+      title: 'Movies',
+      kind: MediaKind.movie,
+      serverId: 'jf-srv',
+    );
+
+    await _pumpLibraryManagementLauncher(tester, library: library, multiServerProvider: provider);
+    await _confirmLibraryAction(tester, t.libraries.scanLibraryFiles);
+    expect(find.text(t.messages.libraryScanStarted(title: library.title)), findsOneWidget);
+    await _confirmLibraryAction(tester, t.libraries.refreshMetadata);
+
+    final refreshes = requests.where((r) => r.method == 'POST' && r.url.path == '/Items/jf-movies/Refresh').toList();
+    expect(refreshes.map((r) => r.url.queryParameters['metadataRefreshMode']), ['Default', 'FullRefresh']);
+    expect(refreshes.first.url.queryParameters['Recursive'], 'true');
+    expect(refreshes.first.url.queryParameters['replaceAllMetadata'], 'false');
+  });
 }
 
 class _LibraryActionHarness {

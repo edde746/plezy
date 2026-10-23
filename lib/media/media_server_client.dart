@@ -209,6 +209,12 @@ abstract class MediaServerClient {
   /// children).
   Future<void> refreshLibraryMetadata(String libraryId);
 
+  /// Queue a scan of [libraryId] for new, changed, and removed files, keeping
+  /// existing metadata. Plex hits `/library/sections/{id}/refresh`; MediaBrowser
+  /// servers post `/Items/{id}/Refresh` with `metadataRefreshMode=Default`
+  /// (jellyfin-web's "Scan for new and updated files").
+  Future<void> scanLibrary(String libraryId);
+
   /// Fetch a single item by its backend-opaque id. An online HTTP 404 returns
   /// `null`; every other HTTP status remains an error. Implementations may use
   /// cached metadata while explicitly offline or after a classified transient

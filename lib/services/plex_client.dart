@@ -2733,7 +2733,7 @@ class PlexClient
     );
   }
 
-  /// Scan/refresh a library section to detect new files
+  @override
   Future<void> scanLibrary(String sectionId) async {
     await _getWithFailover('/library/sections/$sectionId/refresh');
   }

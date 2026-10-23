@@ -133,9 +133,18 @@ List<MediaLibrary> reconcileLibraryOrder(List<MediaLibrary> sheetOrder, List<Med
 }
 
 List<ContextMenuItem> _getLibraryMenuItems(MediaLibrary library) {
-  // Refresh metadata is the only admin action every backend supports — Plex
-  // hits `/library/sections/{id}/refresh?force=1`; MediaBrowser servers post
-  // to `/Items/{id}/Refresh` (the library view is itself an item).
+  // Scan and refresh metadata are the admin actions every backend supports —
+  // Plex hits `/library/sections/{id}/refresh` (with `force=1` to refresh);
+  // MediaBrowser servers post to `/Items/{id}/Refresh` (the library view is
+  // itself an item) with `Default` or `FullRefresh` modes.
+  final scan = ContextMenuItem(
+    value: 'scan',
+    icon: Symbols.refresh_rounded,
+    label: t.libraries.scanLibraryFiles,
+    requiresConfirmation: true,
+    confirmationTitle: t.libraries.scanLibrary,
+    confirmationMessage: t.libraries.scanLibraryConfirm(title: library.title),
+  );
   final refresh = ContextMenuItem(
     value: 'refresh',
     icon: Symbols.sync_rounded,
@@ -145,19 +154,12 @@ List<ContextMenuItem> _getLibraryMenuItems(MediaLibrary library) {
     confirmationMessage: t.libraries.refreshMetadataConfirm(title: library.title),
     isDestructive: true,
   );
-  // Scan / analyze / empty trash hit Plex-only endpoints, so backend
-  // capability gating keeps them out of MediaBrowser menus. The library-qualified
+  // Analyze / empty trash hit Plex-only endpoints, so backend capability
+  // gating keeps them out of MediaBrowser menus. The library-qualified
   // resolver independently requires the exact owning Plex server.
-  if (library.backend != MediaBackend.plex) return [refresh];
+  if (library.backend != MediaBackend.plex) return [scan, refresh];
   return [
-    ContextMenuItem(
-      value: 'scan',
-      icon: Symbols.refresh_rounded,
-      label: t.libraries.scanLibraryFiles,
-      requiresConfirmation: true,
-      confirmationTitle: t.libraries.scanLibrary,
-      confirmationMessage: t.libraries.scanLibraryConfirm(title: library.title),
-    ),
+    scan,
     ContextMenuItem(
       value: 'analyze',
       icon: Symbols.analytics_rounded,
@@ -216,10 +218,10 @@ Future<void> _handleLibraryMenuAction(BuildContext context, String action, Media
 /// snackbars.
 ///
 /// [resolveClient] picks the client flavour: `getPlexClientForLibrary` for the
-/// Plex-only endpoints (scan / analyze / empty trash), `getMediaClientForLibrary`
-/// for ops that exist on the backend-neutral [MediaServerClient] interface
-/// (currently just refresh metadata). Both resolvers require the library's exact
-/// owning server and throw the same error when it isn't available.
+/// Plex-only endpoints (analyze / empty trash), `getMediaClientForLibrary`
+/// for ops on the backend-neutral [MediaServerClient] interface (scan and
+/// refresh metadata). Both resolvers require the library's exact owning
+/// server and throw the same error when it isn't available.
 Future<void> _performLibraryAction<T extends MediaServerClient>(
   BuildContext context, {
   required T Function(BuildContext context) resolveClient,
@@ -251,7 +253,7 @@ Future<void> _performLibraryAction<T extends MediaServerClient>(
 Future<void> _scanLibrary(BuildContext context, MediaLibrary library) {
   return _performLibraryAction(
     context,
-    resolveClient: (ctx) => ctx.getPlexClientForLibrary(library),
+    resolveClient: (ctx) => ctx.getMediaClientForLibrary(library),
     action: (client) => client.scanLibrary(library.id),
     progressMessage: t.messages.libraryScanning(title: library.title),
     successMessage: t.messages.libraryScanStarted(title: library.title),
