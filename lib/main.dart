@@ -36,6 +36,7 @@ import 'screens/profile/profile_switch_screen.dart';
 import 'services/storage_service.dart';
 import 'services/assistive_technology_service.dart';
 import 'services/device_performance.dart';
+import 'services/external_player_service.dart';
 import 'services/video_decode_capabilities.dart';
 import 'services/macos_window_service.dart';
 import 'services/native_window_service.dart';
@@ -156,6 +157,7 @@ void main() {
   // accessibility service cannot read it (launcher hooks, key remappers).
   AssistiveTechnologyService.instance.ensureStarted();
   _installZeroOffsetPointerGuard(); // Workaround for iPadOS 26.1+ modal dismissal bug
+  ExternalPlayerService.listenForCallbacks();
 
   // On tvOS, Flutter's generated plugin registrant doesn't run (no tvOS
   // target in Flutter's tool), so register platform stores manually for
