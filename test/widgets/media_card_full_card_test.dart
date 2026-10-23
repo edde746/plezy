@@ -1,9 +1,12 @@
 import 'dart:collection';
 import 'dart:ui' as ui;
 
+import 'package:cached_network_image_ce/cached_network_image.dart';
+import 'package:drift/native.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/semantics.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/database/app_database.dart';
 import 'package:plezy/focus/focus_glow_overlay.dart';
 import 'package:plezy/focus/focus_theme.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
@@ -14,6 +17,8 @@ import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
 import 'package:plezy/models/catalog/catalog_metadata.dart';
+import 'package:plezy/providers/multi_server_provider.dart';
+import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/layout_constants.dart';
@@ -22,9 +27,12 @@ import 'package:plezy/widgets/focusable_media_card.dart';
 import 'package:plezy/widgets/media_card.dart';
 import 'package:plezy/widgets/media_grid_delegate.dart';
 import 'package:plezy/widgets/optimized_media_image.dart';
+import 'package:provider/provider.dart';
 
-import '../test_helpers/prefs.dart';
+import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/media_items.dart';
+import '../test_helpers/multi_server_fixtures.dart';
+import '../test_helpers/prefs.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
@@ -313,6 +321,35 @@ void main() {
 
     final image = tester.widget<OptimizedMediaImage>(find.byType(OptimizedMediaImage));
     expect(image.imagePath, 'https://example.com/500.jpg');
+  });
+
+  testWidgets('catalog artwork loads directly, not through an online Plex server (#2800)', (tester) async {
+    // A Seerr instance with image caching serves artwork from its LAN
+    // address; a Plex server's transcoder cannot be relied on to fetch it.
+    const proxied = 'http://192.168.1.135:5055/imageproxy/tmdb/t/p/w500/poster.jpg';
+    final item = CatalogItem(
+      source: CatalogSourceId.seerr,
+      kind: MediaKind.movie,
+      title: 'LAN Poster',
+      ids: const CatalogItemIds(tmdb: 1),
+      posterUrl: proxied,
+      posterVariants: const {500: proxied},
+    ).toMediaItem();
+    final database = AppDatabase.forTesting(NativeDatabase.memory());
+    addTearDown(database.close);
+    PlexApiCache.initialize(database);
+    final servers = testMultiServer(clients: [testPlexClient()]);
+
+    await tester.pumpWidget(
+      ChangeNotifierProvider<MultiServerProvider>.value(
+        value: servers.provider,
+        child: _catalogGridHarness(item, isOffline: false),
+      ),
+    );
+
+    final image = tester.widget<Image>(find.descendant(of: find.byType(MediaCard), matching: find.byType(Image)));
+    final fetched = (image.image as ResizeImage).imageProvider as CachedNetworkImageProvider;
+    expect(fetched.url, proxied);
   });
 
   testWidgets('recommendation badge prefers a user count and falls back to viewer percentage', (tester) async {
@@ -791,7 +828,7 @@ Widget _fullCardHarness({required FocusNode focusNode, required bool fullBleed})
   );
 }
 
-Widget _catalogGridHarness(MediaItem item, {Key? key, double width = 220}) {
+Widget _catalogGridHarness(MediaItem item, {Key? key, double width = 220, bool isOffline = true}) {
   return _TestApp(
     child: SizedBox(
       width: width,
@@ -802,7 +839,7 @@ Widget _catalogGridHarness(MediaItem item, {Key? key, double width = 220}) {
         width: width,
         height: 280,
         viewModeOverride: ViewMode.grid,
-        isOffline: true,
+        isOffline: isOffline,
         onTap: () {},
       ),
     ),
