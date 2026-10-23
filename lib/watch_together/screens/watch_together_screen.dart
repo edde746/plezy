@@ -60,7 +60,8 @@ class _WatchTogetherScreenState extends State<WatchTogetherScreen> with MountedS
 
   Future<void> _create() => _run('', (provider) => provider.createRoom());
 
-  Future<void> _joinRecent(String code) => _run(code, (provider) => provider.joinRoom(code));
+  /// A recent code joins its room, or makes the room again when it ended.
+  Future<void> _joinRecent(String code) => _run(code, (provider) => provider.joinRoom(code, create: true));
 
   Future<void> _openJoinDialog() async {
     setState(() => _error = null);

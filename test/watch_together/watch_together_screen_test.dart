@@ -157,7 +157,7 @@ void main() {
       expect(find.text(t.watchTogether.hostedBy(name: 'Anna')), findsOneWidget);
     });
 
-    _screenTest('recent rooms of this relay are listed; a tile joins its room or says why it cannot', (
+    _screenTest('recent rooms of this relay are listed; a tile joins its room, makes it again, or says why it cannot', (
       tester,
       world,
     ) async {
@@ -176,18 +176,28 @@ void main() {
       expect(find.text('ABC-234'), findsOneWidget, reason: 'a named room shows its code under the name');
       expect(find.text('XYZ-789'), findsNothing, reason: 'that room is on another relay');
 
-      await _tap(tester, find.text('Movie night'));
-      await world.until(
-        () => find.text(t.watchTogether.errors.roomNotFound).evaluate().isNotEmpty,
-        'the lobby says why',
-      );
-      expect(guest.isInSession, isFalse);
-
       await _tap(tester, find.text('K7M-Q2X'));
       await world.until(() => guest.isConnected, 'the guest is in');
       await tester.pump();
       expect(find.text(t.watchTogether.hostedBy(name: 'Anna')), findsOneWidget);
-      expect(find.text(t.watchTogether.errors.roomNotFound), findsNothing);
+      expect(guest.isHost, isFalse, reason: 'the room exists, so the tile joins it');
+
+      host.endRoom();
+      await world.until(() => !guest.isInSession, 'the room is over');
+      await settleWatchFrames(tester);
+      await _tap(tester, find.text('Movie night'));
+      await world.until(() => guest.isConnected, 'the room is made again');
+      await tester.pump();
+      expect((guest.roomCode, guest.isHost), ('ABC234', true));
+      expect(world.relay.sent('join').last['create'], isTrue);
+
+      guest.leave();
+      await world.until(() => !guest.isInSession, 'the guest left');
+      await settleWatchFrames(tester);
+      world.relay.refuseJoins = owp.ErrorCode.relayFull;
+      await _tap(tester, find.text('K7M-Q2X'));
+      await world.until(() => find.text(t.watchTogether.errors.relayFull).evaluate().isNotEmpty, 'the lobby says why');
+      expect(guest.isInSession, isFalse);
     });
 
     _screenTest('a recent room is renamed, unnamed and removed from its actions', (tester, world) async {
