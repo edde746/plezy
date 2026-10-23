@@ -99,6 +99,43 @@ void main() {
     expect(find.descendant(of: tile, matching: find.text('Play immediately')), findsOneWidget);
   });
 
+  testWidgets('buffer size explains itself and rejects out-of-range input', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1000, 1400);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(MaterialApp(theme: monoTheme(MonoPalette.dark), home: const PlaybackSettingsScreen()));
+    await tester.pumpAndSettle();
+
+    final title = find.text('Buffer Size');
+    await tester.scrollUntilVisible(title, 500, scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(title);
+    await tester.pumpAndSettle();
+
+    final tile = find.widgetWithText(ListTile, 'Buffer Size');
+    expect(
+      find.descendant(of: tile, matching: find.textContaining('Auto (Recommended) · How much video to load ahead')),
+      findsOneWidget,
+    );
+
+    await tester.tap(title);
+    await tester.pumpAndSettle();
+    await tester.enterText(find.byType(TextField), '5000');
+    await tester.pump();
+    expect(find.text('Must be between 0 and 4096 megabytes'), findsOneWidget);
+
+    await tester.enterText(find.byType(TextField), '1024');
+    await tester.tap(find.text('Save'));
+    await tester.pumpAndSettle();
+
+    expect(SettingsService.instance.read(SettingsService.streamBufferMb), 1024);
+    expect(
+      find.descendant(of: tile, matching: find.textContaining('1024 MB · How much video to load ahead')),
+      findsOneWidget,
+    );
+  });
+
   testWidgets('picks inverse telecine on the mpv path', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1000, 1400);

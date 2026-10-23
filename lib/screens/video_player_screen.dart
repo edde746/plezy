@@ -1832,6 +1832,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         final tunneledPlayback = settingsService.read(SettingsService.tunneledPlayback);
         await currentPlayer.setProperty('tunneled-playback', tunneledPlayback ? 'yes' : 'no');
         await currentPlayer.setProperty('exo-buffer-tier', playbackBufferTier.nativeValue);
+        await currentPlayer.setProperty(
+          'exo-buffer-mb',
+          settingsService.read(SettingsService.streamBufferMb).toString(),
+        );
       }
       if (Platform.isAndroid || Platform.isIOS || Platform.isMacOS) {
         final dvConversionMode = settingsService.read(SettingsService.dvConversionMode);
@@ -2099,6 +2103,23 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       // Before custom mpv.conf, so an `audio-device` line there still wins.
       if (!(Platform.isAndroid && useExoPlayer)) {
         await applyPreferredAudioDevice(currentPlayer, settingsService.read(SettingsService.audioOutputDevice));
+      }
+
+      // Also before custom mpv.conf, so a `demuxer-max-bytes` line there still
+      // wins. mpv's own time cap (`cache-secs`) is effectively unlimited, so
+      // this byte bound alone decides how far ahead it reads. Plain bytes, so
+      // Android's MpvPlayerCore can adopt it as its DemuxerBudget read-ahead.
+      // Contained like the mpv.conf writes: a refusal must not fail init.
+      final streamBufferMb = settingsService.read(SettingsService.streamBufferMb);
+      if (streamBufferMb > 0) {
+        try {
+          await currentPlayer.setProperty(
+            'demuxer-max-bytes',
+            '${clampToMpvDemuxerMaxBytes(streamBufferMb * 1024 * 1024)}',
+          );
+        } catch (e) {
+          appLogger.w('VideoPlayerScreen: Buffer Size not applied', error: e);
+        }
       }
 
       final customMpvConfig = SettingsService.parseMpvConfigText(settingsService.read(SettingsService.mpvConfigText));

@@ -760,6 +760,8 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required bool isNetworkVod,
     required bool isTranscoding,
     required MediaVersion? selectedVersion,
+    required int? transcodeCapSeconds,
+    required double? userCacheSecs,
   }) async {
     if (isNetworkVod) {
       // Covers network drops up to 10 min; applies to transcode streams too.
@@ -826,6 +828,17 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       );
     }
     await player.setProperty('stream-buffer-size', '${ringBytes ?? mpvDefaultStreamBufferBytes}');
+
+    // mpv's time bound: the transcode cap, never looser than an mpv.conf
+    // `cache-secs`; anything not capped goes back to that value or mpv's default.
+    final cap = transcodeCapSeconds;
+    final cacheSecs = cap != null && (userCacheSecs == null || cap < userCacheSecs)
+        ? cap
+        : userCacheSecs ?? mpvDefaultCacheSecs;
+    await player.setProperty('cache-secs', '$cacheSecs');
+    if (player is PlayerAndroid) {
+      await player.setProperty('exo-transcode-buffer-seconds', '${transcodeCapSeconds ?? 0}');
+    }
   }
 
   /// Open [videoUrl] on [player]: stream tuning → open → native subtitle style.
@@ -857,11 +870,30 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     void Function()? onOpened,
     void Function(bool available)? onMediaAvailabilityChanged,
   }) async {
+    final isNetworkVod = !isLocalMedia && !widget.isLive;
+    // With a Buffer Size set, a transcode is read no further ahead than its
+    // server transcodes on its own, so a weak server isn't driven to transcode
+    // the whole buffer. Auto keeps each backend's own sizing.
+    final client = _getMediaServerClient(context);
+    final transcodeCapSeconds =
+        isNetworkVod && isTranscoding && settingsService.read(SettingsService.streamBufferMb) > 0
+        ? await client?.transcodeThrottleSeconds()
+        : null;
+    if (!shouldContinue()) return const _MediaOpenResult(didOpen: false);
+    if (transcodeCapSeconds != null) {
+      appLogger.i('Transcode buffer held to the server throttle: ${transcodeCapSeconds}s');
+    }
     await _applyNetworkStreamTuning(
       player: player,
-      isNetworkVod: !isLocalMedia && !widget.isLive,
+      isNetworkVod: isNetworkVod,
       isTranscoding: isTranscoding,
       selectedVersion: selectedVersion,
+      transcodeCapSeconds: transcodeCapSeconds,
+      // Parsed, not passed through: this is written on every open, so a value
+      // mpv refuses (e.g. a trailing `# comment`) would fail every playback.
+      userCacheSecs: double.tryParse(
+        SettingsService.parseMpvConfigText(settingsService.read(SettingsService.mpvConfigText))['cache-secs'] ?? '',
+      ),
     );
     if (!shouldContinue()) return const _MediaOpenResult(didOpen: false);
 

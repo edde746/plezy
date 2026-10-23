@@ -541,8 +541,8 @@ class Translations$settings$en {
 	/// en: 'm'
 	String get minutesShort => 'm';
 
-	/// en: 'Enter duration (${min}-${max})'
-	String durationHint({required Object min, required Object max}) => 'Enter duration (${min}-${max})';
+	/// en: 'Enter a value (${min}-${max})'
+	String durationHint({required Object min, required Object max}) => 'Enter a value (${min}-${max})';
 
 	/// en: 'System'
 	String get systemTheme => 'System';
@@ -744,6 +744,21 @@ class Translations$settings$en {
 
 	/// en: 'Buffer more against unstable connections. Also limited by Buffer Size.'
 	String get playbackBufferDescription => 'Buffer more against unstable connections. Also limited by Buffer Size.';
+
+	/// en: 'Buffer Size'
+	String get streamBufferSize => 'Buffer Size';
+
+	/// en: '${size} MB'
+	String streamBufferSizeValue({required Object size}) => '${size} MB';
+
+	/// en: 'How much video to load ahead when direct playing. Transcodes stop at the server's own transcode buffer. 0 = Auto'
+	String get streamBufferSizeDescription => 'How much video to load ahead when direct playing. Transcodes stop at the server\'s own transcode buffer. 0 = Auto';
+
+	/// en: 'Replaces Playback Buffer when set, capped at half of the app's memory limit'
+	String get streamBufferSizeExoNote => 'Replaces Playback Buffer when set, capped at half of the app\'s memory limit';
+
+	/// en: 'Megabytes'
+	String get streamBufferMegabytes => 'Megabytes';
 
 	/// en: 'Default Quality'
 	String get defaultQualityTitle => 'Default Quality';
@@ -967,8 +982,8 @@ class Translations$settings$en {
 	/// en: 'Please enter a valid number'
 	String get validationErrorEnterNumber => 'Please enter a valid number';
 
-	/// en: 'Duration must be between ${min} and ${max} ${unit}'
-	String validationErrorDuration({required Object min, required Object max, required Object unit}) => 'Duration must be between ${min} and ${max} ${unit}';
+	/// en: 'Must be between ${min} and ${max} ${unit}'
+	String validationErrorDuration({required Object min, required Object max, required Object unit}) => 'Must be between ${min} and ${max} ${unit}';
 
 	/// en: 'Shortcut already assigned to ${action}'
 	String shortcutAlreadyAssigned({required Object action}) => 'Shortcut already assigned to ${action}';
@@ -8198,7 +8213,7 @@ extension on Translations {
 			'settings.minutesLabel' => 'Minutes',
 			'settings.secondsShort' => 's',
 			'settings.minutesShort' => 'm',
-			'settings.durationHint' => ({required Object min, required Object max}) => 'Enter duration (${min}-${max})',
+			'settings.durationHint' => ({required Object min, required Object max}) => 'Enter a value (${min}-${max})',
 			'settings.systemTheme' => 'System',
 			'settings.lightTheme' => 'Light',
 			'settings.darkTheme' => 'Dark',
@@ -8266,6 +8281,11 @@ extension on Translations {
 			'settings.playbackBufferLarge' => 'Large',
 			'settings.playbackBufferExtraLarge' => 'Extra Large',
 			'settings.playbackBufferDescription' => 'Buffer more against unstable connections. Also limited by Buffer Size.',
+			'settings.streamBufferSize' => 'Buffer Size',
+			'settings.streamBufferSizeValue' => ({required Object size}) => '${size} MB',
+			'settings.streamBufferSizeDescription' => 'How much video to load ahead when direct playing. Transcodes stop at the server\'s own transcode buffer. 0 = Auto',
+			'settings.streamBufferSizeExoNote' => 'Replaces Playback Buffer when set, capped at half of the app\'s memory limit',
+			'settings.streamBufferMegabytes' => 'Megabytes',
 			'settings.defaultQualityTitle' => 'Default Quality',
 			'settings.cellularQualityTitle' => 'Default Quality on Cellular',
 			'settings.cellularQualitySameAsDefault' => 'Same as Default Quality',
@@ -8340,7 +8360,7 @@ extension on Translations {
 			'settings.autoCheckUpdatesOnStartup' => 'Automatically check for updates on startup',
 			'settings.autoCheckUpdatesOnStartupDescription' => 'Notify when an update is available at launch',
 			'settings.validationErrorEnterNumber' => 'Please enter a valid number',
-			'settings.validationErrorDuration' => ({required Object min, required Object max, required Object unit}) => 'Duration must be between ${min} and ${max} ${unit}',
+			'settings.validationErrorDuration' => ({required Object min, required Object max, required Object unit}) => 'Must be between ${min} and ${max} ${unit}',
 			'settings.shortcutAlreadyAssigned' => ({required Object action}) => 'Shortcut already assigned to ${action}',
 			'settings.shortcutUpdated' => ({required Object action}) => 'Shortcut updated for ${action}',
 			'settings.saveFailed' => 'Could not save changes. Try again.',
@@ -8529,13 +8549,13 @@ extension on Translations {
 			'themeEditor.colors' => 'Colors',
 			'themeEditor.preview' => 'Preview',
 			'themeEditor.slots.bg' => 'Background',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.slots.surface' => 'Surface',
 			'themeEditor.slots.outline' => 'Outline',
 			'themeEditor.slots.text' => 'Text',
 			'themeEditor.slots.textMuted' => 'Secondary text',
 			'themeEditor.slots.accent' => 'Accent',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.opacity' => 'Opacity',
 			'themeEditor.hexHint' => '#RRGGBB or #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'From other themes',
@@ -9043,13 +9063,13 @@ extension on Translations {
 			'profiles.profileNameHint' => 'e.g. Guests, Kids, Family Room',
 			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
 			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.continueButton' => 'Continue',
 			'profiles.pinsDontMatch' => 'PINs don\'t match',
 			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
 			'connections.sectionTitle' => 'Connections',
 			'connections.addConnection' => 'Add connection',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnectionSubtitleNoProfile' => 'Sign in with Plex or connect a Jellyfin or Emby server',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Add to ${displayName}: Plex, Jellyfin, Emby, or another profile connection',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Session expired for ${name}',
@@ -9557,13 +9577,13 @@ extension on Translations {
 			'liveTv.recordSettings.newOnly' => 'Only new episodes',
 			'liveTv.recordSettings.anyChannel' => 'Record on any channel',
 			'liveTv.recordSettings.anyTime' => 'Record at any time',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.recordSettings.skipInLibrary' => 'Skip episodes already in the library',
 			'liveTv.recordSettings.keepUpTo' => 'Episodes to keep',
 			'liveTv.recordSettings.keepUpToHint' => '0 keeps every episode',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Starting in ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} at ${time}',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returned invalid Live TV playback data',
 			'liveTv.failedToStartChannel' => 'Could not start the live channel',
 			'liveTv.failedToBuildStreamUrl' => 'Could not build the stream URL',
@@ -10071,13 +10091,13 @@ extension on Translations {
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Software',
 			'performanceOverlay.decoderHardware' => 'Hardware',
 			'performanceOverlay.tunnelingActive' => 'Active',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} failed)',
-			_ => null,
-		} ?? switch (path) {
 			'externalPlayer.title' => 'External Player',
 			'externalPlayer.useExternalPlayer' => 'Use External Player',
 			'externalPlayer.useExternalPlayerDescription' => 'Open videos in another app',

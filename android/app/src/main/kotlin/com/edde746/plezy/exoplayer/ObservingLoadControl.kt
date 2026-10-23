@@ -49,6 +49,18 @@ class ObservingLoadControl(private val delegate: LoadControl) : LoadControl {
   var startPlaybackVerdict: Boolean? = null
     private set
 
+  /**
+   * Buffered media, in microseconds, past which loading stops whatever the delegate says; 0 = none.
+   *
+   * A server transcode throttles itself to a set number of seconds past what the client has
+   * fetched (Jellyfin's `TranscodingThrottler`), so a client that keeps loading keeps the server
+   * transcoding; this holds the client to that throttle. The delegate cannot express it: its
+   * durations are fixed at build time (an hour when Buffer Size governs), while this changes per
+   * stream. Media time, like the server's throttle, not playout.
+   */
+  @Volatile
+  var maxBufferedDurationUs: Long = 0L
+
   /** Forgets the recorded verdict, for a watchdog arming a fresh buffering window. */
   fun reset() {
     startPlaybackVerdict = null
@@ -62,7 +74,17 @@ class ObservingLoadControl(private val delegate: LoadControl) : LoadControl {
     return verdict
   }
 
-  override fun shouldContinueLoading(parameters: LoadControl.Parameters): Boolean = delegate.shouldContinueLoading(parameters)
+  override fun shouldContinueLoading(parameters: LoadControl.Parameters): Boolean {
+    val cap = maxBufferedDurationUs
+    if (cap > 0 && parameters.bufferedDurationUs >= maxOf(cap, minCapUs(parameters.playbackSpeed))) return false
+    return delegate.shouldContinueLoading(parameters)
+  }
+
+  /**
+   * Twice the rebuffer threshold in playout time, so media time scaled by speed: below it a small
+   * server throttle, or any cap at a high speed, stops loading before playback may start.
+   */
+  private fun minCapUs(playbackSpeed: Float): Long = (2L * LoadControlPolicy.BUFFER_FOR_PLAYBACK_AFTER_REBUFFER_MS * 1_000L * playbackSpeed).toLong()
 
   override fun shouldContinuePreloading(
     playerId: PlayerId,

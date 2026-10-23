@@ -167,6 +167,28 @@ class LoadControlPolicyTest {
   }
 
   @Test
+  fun aBufferSizeLiftsTheTimeBoundOnEveryTier() {
+    // Otherwise a 1 GB setting would still stop at the tier's 60s on a 10 Mbit/s stream.
+    for (tier in LoadControlPolicy.BufferTier.entries) {
+      val durations = LoadControlPolicy.bufferDurations(tier, availableMB = 512, sizeGoverned = true)
+      assertEquals(
+        LoadControlPolicy.BufferDurations(LoadControlPolicy.SIZE_GOVERNED_BUFFER_MS, LoadControlPolicy.SIZE_GOVERNED_BUFFER_MS),
+        durations
+      )
+      assertBuildable(durations)
+    }
+  }
+
+  @Test
+  fun aCustomSizeMayPassMedia3sDefaultButNotHalfTheHeap() {
+    assertEquals(512 * MIB, LoadControlPolicy.customTargetBufferBytes(requestedMB = 512, largeHeapMB = 2048))
+    assertEquals(256 * MIB, LoadControlPolicy.customTargetBufferBytes(requestedMB = 4096, largeHeapMB = 512))
+    assertEquals(LoadControlPolicy.MIN_TARGET_BYTES, LoadControlPolicy.customTargetBufferBytes(requestedMB = 1, largeHeapMB = 512))
+    // Unknown heap: honoured, but never past Int, which is what setTargetBufferBytes takes.
+    assertEquals(Int.MAX_VALUE, LoadControlPolicy.customTargetBufferBytes(requestedMB = 4096, largeHeapMB = 0))
+  }
+
+  @Test
   fun theWireNamesMatchTheDartNativeValues() {
     assertEquals(LoadControlPolicy.BufferTier.LARGE, LoadControlPolicy.BufferTier.fromWire("large"))
     assertEquals(
