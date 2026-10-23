@@ -7,6 +7,10 @@ final class ExternalDisplayManager {
   private var externalScene: UIWindowScene?
   private var externalWindow: UIWindow?
   private var externalRootViewController: UIViewController?
+  private weak var accessoryOwner: UIViewController?
+  // Keep the iOS 27 type out of stored properties so older deployment targets
+  // can still use the automatic external-display scene connection.
+  private var accessoryRegistration: AnyObject?
 
   private init() {}
 
@@ -67,8 +71,9 @@ final class ExternalDisplayManager {
     externalRootViewController?.view
   }
 
-  func attach(core: MpvPlayerCore) {
+  func attach(core: MpvPlayerCore, in window: UIWindow) {
     activeCore = core
+    registerSceneAccessory(in: window)
     discoverExistingExternalScene()
     activeCore?.externalDisplayDidChange()
   }
@@ -76,7 +81,38 @@ final class ExternalDisplayManager {
   func detach(core: MpvPlayerCore) {
     if activeCore === core {
       activeCore = nil
+      unregisterSceneAccessory()
     }
+  }
+
+  private func registerSceneAccessory(in window: UIWindow) {
+    #if compiler(>=6.4)
+      guard #available(iOS 27.0, *), let owner = window.rootViewController else { return }
+      if accessoryOwner === owner, accessoryRegistration != nil { return }
+      unregisterSceneAccessory()
+
+      // iOS 27 no longer connects noninteractive external scenes automatically.
+      // Register with the controller on the iPad/iPhone, never the external one.
+      let configuration = UISceneConfiguration(
+        name: "external-display", sessionRole: .windowExternalDisplayNonInteractive)
+      configuration.sceneClass = UIWindowScene.self
+      configuration.delegateClass = ExternalDisplaySceneDelegate.self
+      let registration = owner.registerSceneAccessory(
+        .externalNonInteractive(sceneConfiguration: configuration))
+      registration.isEnabled = true
+      accessoryOwner = owner
+      accessoryRegistration = registration
+    #endif
+  }
+
+  private func unregisterSceneAccessory() {
+    #if compiler(>=6.4)
+      if #available(iOS 27.0, *), let registration = accessoryRegistration as? UISceneAccessoryRegistration {
+        accessoryOwner?.unregisterSceneAccessory(registration)
+      }
+    #endif
+    accessoryRegistration = nil
+    accessoryOwner = nil
   }
 
   @discardableResult

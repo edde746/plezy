@@ -1,6 +1,8 @@
 import 'dart:async';
+
 import '../services/playback_launch_observer.dart';
 import '../media/ids.dart';
+
 import 'dart:io';
 
 import 'package:flutter/foundation.dart';
@@ -1574,18 +1576,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         _enqueueLifecycleTransition('hidden', _handleAppHidden);
         break;
       case AppLifecycleState.paused:
-        if (_shouldSkipForPip) {
-          _recordLifecycleState('paused', action: 'skipped_for_pip');
-          break;
-        }
-        // We don't support background playback
-        if (_mediaControls.shouldSuspendForTvBackground) {
-          unawaited(_mediaControls.suspendForTvBackground('paused'));
-        } else {
-          unawaited(_mediaControlsManager?.clear());
-        }
-        unawaited(_wakelockController.setEnabled(false));
-        _recordLifecycleState('paused', action: 'backgrounded');
+        // Cleanup must not wait for a slow pause or server stop in the hidden transition.
+        unawaited(_handleAppPaused());
         break;
       case AppLifecycleState.resumed:
         // Synchronously, before the queued transition: a pending suspend must
