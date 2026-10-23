@@ -297,6 +297,11 @@ class PlayerNavigationCoordinator {
   final PlayerChromeController chromeController;
   final bool Function() isPromptOpen;
   final VoidCallback dismissPrompt;
+
+  /// Whether the open prompt stands for a finished item (Play Next, which
+  /// only shows with playback parked at the end). Back then leaves the
+  /// player in one press instead of uncovering the dead last frame (#2686).
+  final bool Function() _backLeavesPrompt;
   final bool Function() isChromePresented;
   final Future<bool> Function() exitFullscreenIfActive;
   final bool Function() _physicalEscapeExitsFullscreen;
@@ -315,11 +320,13 @@ class PlayerNavigationCoordinator {
     required this.exitFullscreenIfActive,
     bool Function()? physicalEscapeExitsFullscreen,
     bool Function()? exitPlayerBeforeChrome,
+    bool Function()? backLeavesPrompt,
     required this.exitPlayer,
     required this.navigateHome,
     bool Function()? isActive,
   }) : _physicalEscapeExitsFullscreen = physicalEscapeExitsFullscreen ?? _alwaysTrue,
        _exitPlayerBeforeChrome = exitPlayerBeforeChrome ?? _alwaysFalse,
+       _backLeavesPrompt = backLeavesPrompt ?? _alwaysFalse,
        isActive = isActive ?? _alwaysActive;
 
   static bool _alwaysActive() => true;
@@ -332,7 +339,14 @@ class PlayerNavigationCoordinator {
       return;
     }
     if (isPromptOpen()) {
-      dismissPrompt();
+      // A physical Escape is Back unless it owns fullscreen, the same split
+      // [resolvePlayerBackDisposition] makes.
+      final isBack = navigationKey == PlayerNavigationKey.back || !_physicalEscapeExitsFullscreen();
+      if (isBack && _backLeavesPrompt()) {
+        exitPlayer();
+      } else {
+        dismissPrompt();
+      }
       return;
     }
     if (navigationKey == PlayerNavigationKey.back && _exitPlayerBeforeChrome()) {

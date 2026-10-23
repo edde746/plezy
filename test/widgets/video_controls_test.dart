@@ -574,6 +574,7 @@ void main() {
       bool physicalEscapeExitsFullscreen = true,
       bool Function()? physicalEscapeExitsFullscreenProvider,
       bool Function()? exitPlayerBeforeChrome,
+      bool Function()? backLeavesPrompt,
       VoidCallback? exitPlayer,
       VoidCallback? navigateHome,
       bool Function()? isActive,
@@ -586,6 +587,7 @@ void main() {
         exitFullscreenIfActive: exitFullscreenIfActive ?? () async => false,
         physicalEscapeExitsFullscreen: physicalEscapeExitsFullscreenProvider ?? () => physicalEscapeExitsFullscreen,
         exitPlayerBeforeChrome: exitPlayerBeforeChrome,
+        backLeavesPrompt: backLeavesPrompt,
         exitPlayer: exitPlayer ?? () {},
         navigateHome: navigateHome ?? () {},
         isActive: isActive,
@@ -676,6 +678,37 @@ void main() {
       expect(promptDismissals, 1, reason: 'prompts keep priority over the mobile exit policy');
       expect(exits, 0);
     });
+
+    for (final (label, key, escapeOwnsFullscreen, leaves) in [
+      ('Back', LogicalKeyboardKey.gameButtonB, true, true),
+      ('a windowed physical Escape', LogicalKeyboardKey.escape, false, true),
+      ('a fullscreen physical Escape', LogicalKeyboardKey.escape, true, false),
+    ]) {
+      testWidgets('$label on a finished-item prompt ${leaves ? 'leaves the player' : 'only dismisses it'} (#2686)', (
+        tester,
+      ) async {
+        final chromeController = PlayerChromeController();
+        addTearDown(chromeController.dispose);
+        var promptDismissals = 0;
+        var exits = 0;
+        final coordinator = coordinatorFor(
+          chromeController,
+          isPromptOpen: () => true,
+          backLeavesPrompt: () => true,
+          dismissPrompt: () => promptDismissals++,
+          physicalEscapeExitsFullscreen: escapeOwnsFullscreen,
+          exitPlayer: () => exits++,
+        );
+        await pumpNavigationFocus(tester, coordinator);
+
+        await tester.sendKeyEvent(key);
+        await tester.pump();
+
+        expect(exits, leaves ? 1 : 0, reason: 'nothing is left to watch behind Play Next');
+        expect(promptDismissals, leaves ? 0 : 1, reason: 'an Escape that owns fullscreen keeps its staged role');
+        expect(chromeController.controlsVisible, isTrue, reason: 'no staged chrome hide on the way out');
+      });
+    }
 
     testWidgets('Back exits on the first press when the route opened with no chrome', (tester) async {
       final chromeController = PlayerChromeController(initiallyVisible: false);

@@ -801,6 +801,56 @@ void main() {
     });
   });
 
+  for (final autoPlay in [false, true]) {
+    testWidgets('Back on the end-of-episode Play Next prompt leaves the player in one press '
+        '(auto-play ${autoPlay ? 'on' : 'off'}, #2686)', (tester) async {
+      final client = _ReloadClient();
+      final fakePlayer = _ExitPlayer();
+      debugDefaultTargetPlatformOverride = TargetPlatform.android;
+      await TvDetectionService.getInstance(forceTv: true);
+      addTearDown(() {
+        debugDefaultTargetPlatformOverride = null;
+        TvDetectionService.debugReset();
+      });
+      await SettingsService.instance.write(SettingsService.autoPlayNextEpisode, autoPlay);
+
+      try {
+        await withMockPlayerChannels(
+          methodChannelName: 'com.plezy/mpv_player',
+          eventChannelName: 'com.plezy/mpv_player/events',
+          testBody: () async {
+            final screen = await _pushExitScreen(tester, db: db, client: client, fakePlayer: fakePlayer);
+            final state = screen.key.currentState!;
+            state.debugCommitAdjacentEpisodesForTesting(
+              AdjacentEpisodes(
+                next: testMediaItem(id: 'exit-next', serverId: 'srv-1', backend: MediaBackend.jellyfin),
+                nextStatus: QueueNavigationStatus.found,
+                previousStatus: QueueNavigationStatus.boundary,
+              ),
+            );
+            fakePlayer.setPosition(fakePlayer.state.duration - const Duration(seconds: 2));
+            fakePlayer.emitPlaying(false);
+            fakePlayer.setCompleted(true);
+            state.debugCompleteVideoForTesting();
+            await pumpUntil(tester, () => state.debugPlayNextPromptVisibleForTesting);
+            final opens = fakePlayer.openCalls;
+
+            await tester.binding.handlePopRoute();
+            await tester.pump(const Duration(seconds: 1));
+            await tester.pump();
+
+            expect(screen.key.currentState, isNull, reason: 'the finished item has nothing left behind the prompt');
+            expect(find.text('Browse'), findsOneWidget);
+            await tester.pump(const Duration(seconds: 20));
+            expect(fakePlayer.openCalls, opens, reason: 'leaving must not start the next episode');
+          },
+        );
+      } finally {
+        debugDefaultTargetPlatformOverride = null;
+      }
+    });
+  }
+
   group('Windows display-switch hold', () {
     testWidgets('the hold does not reach the Watch Together room', (tester) async {
       final client = _ReloadClient();
