@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import '../mpv/mpv.dart';
 import '../utils/app_logger.dart';
 
 /// Stops a playing music session before the video player builds its core.
@@ -20,9 +21,15 @@ class PlaybackCoordinator {
 
   Future<void> Function()? _shutdownVideoSession;
   Future<bool> Function()? _exitVideoSession;
+  PlayerState? Function()? _videoPlayerState;
   final Set<Future<void>> _videoRetirements = {};
 
   bool get hasVideoSession => _shutdownVideoSession != null || _videoRetirements.isNotEmpty;
+
+  /// Cached state of the registered screen's player, for diagnostics that must
+  /// not cost a platform-channel round trip. Null while no screen owns video,
+  /// before its player is built, and for a session that is only retiring.
+  PlayerState? get videoPlayerState => _videoPlayerState?.call();
 
   /// Explicit user/agent stop, unlike shutdown, also leaves the player route.
   /// False means the owner requires a confirmation or cannot leave its route.
@@ -39,9 +46,14 @@ class PlaybackCoordinator {
   }
 
   /// Register the screen that owns video, before its asynchronous startup.
-  void registerVideoSession({required Future<void> Function() shutdown, Future<bool> Function()? stopAndExit}) {
+  void registerVideoSession({
+    required Future<void> Function() shutdown,
+    Future<bool> Function()? stopAndExit,
+    PlayerState? Function()? playerState,
+  }) {
     _shutdownVideoSession = shutdown;
     _exitVideoSession = stopAndExit;
+    _videoPlayerState = playerState;
   }
 
   /// A replaced screen must not release its successor's registration.
@@ -50,6 +62,7 @@ class PlaybackCoordinator {
     if (_shutdownVideoSession == shutdown) {
       _shutdownVideoSession = null;
       _exitVideoSession = null;
+      _videoPlayerState = null;
     }
     if (retirement == null || !_videoRetirements.add(retirement)) return;
     unawaited(

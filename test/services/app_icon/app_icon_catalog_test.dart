@@ -61,6 +61,15 @@ void main() {
     }
   });
 
+  test('tvOS Info.plist names exactly the alternates, as the array tvOS requires', () {
+    final plist = File('tvos/Runner/Info.plist').readAsStringSync();
+    final array = RegExp(r'<key>CFBundleAlternateIcons</key>\s*<array>(.*?)</array>', dotAll: true).firstMatch(plist);
+    expect(array, isNotNull, reason: 'tvOS Info.plist has no CFBundleAlternateIcons array');
+    final declared = RegExp(r'<string>AppIcon-([a-z0-9_]+)</string>').allMatches(array![1]!).map((m) => m[1]).toList();
+
+    expect(declared, unorderedEquals(alternates));
+  });
+
   test('every alternate has a bundled picker thumbnail', () {
     for (final option in appIconCatalog.where((option) => !option.isDefault)) {
       expect(File(option.previewAsset!).existsSync(), isTrue, reason: '${option.id} has no picker thumbnail');

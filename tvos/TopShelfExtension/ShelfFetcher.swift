@@ -24,7 +24,12 @@ enum ShelfFetcher {
     await withTaskGroup(of: (Int, [ShelfFetchedItem]?).self) { group in
       for (index, server) in sources.servers.enumerated() {
         group.addTask {
-          let items = await fetchServer(server, maxItems: sources.maxItems, session: session)
+          let items = await fetchServer(
+            server,
+            maxItems: sources.maxItems,
+            episodePoster: sources.episodePoster,
+            session: session
+          )
           return (index, items)
         }
       }
@@ -141,6 +146,7 @@ enum ShelfFetcher {
   private static func fetchServer(
     _ server: ShelfServerSource,
     maxItems: Int,
+    episodePoster: ShelfEpisodePoster,
     session: URLSession
   ) async -> [ShelfFetchedItem]? {
     let descriptor = server.descriptor
@@ -158,7 +164,8 @@ enum ShelfFetcher {
         fromResponse: object,
         serverId: descriptor.serverId,
         baseUrl: descriptor.baseUrl,
-        token: server.token
+        token: server.token,
+        episodePoster: episodePoster
       )
     case .jellyfin, .emby:
       guard let userId = descriptor.userId, !userId.isEmpty,
@@ -186,7 +193,8 @@ enum ShelfFetcher {
           fromResponse: $0,
           serverId: descriptor.serverId,
           baseUrl: descriptor.baseUrl,
-          token: server.token
+          token: server.token,
+          episodePoster: episodePoster
         )
       }
     }

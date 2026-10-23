@@ -80,7 +80,12 @@ mixin SkeletonUpgradeScheduler<T extends StatefulWidget> on State<T> {
   /// Memoized card for [index], or a budgeted [skeleton] when [memo] misses
   /// while an enclosing scrollable is moving and this frame's
   /// [CardInflationBudget] is spent (the skeleton upgrades a frame later).
-  /// Keyboard mode is exempt — skeletons aren't focus targets.
+  ///
+  /// Keyboard mode never shows a skeleton where the user can see it — focus
+  /// moves onto whatever is on screen. With [isOnScreen], cells realized off
+  /// screen (the cache extent a D-pad step scrolls a row into) still spread
+  /// their inflation over frames through [BudgetedCard]; without it keyboard
+  /// mode builds at once.
   Widget realizeBudgeted<I extends Object>(
     SliverChildMemo<I> memo,
     BuildContext context,
@@ -89,16 +94,82 @@ mixin SkeletonUpgradeScheduler<T extends StatefulWidget> on State<T> {
     required Object epoch,
     Object? salt,
     required bool keyboardMode,
+    bool Function()? isOnScreen,
     required Widget Function() build,
     Widget Function() skeleton = _plainSkeleton,
   }) {
     final cached = memo.tryGet(index, item, epoch: epoch, salt: salt);
     if (cached != null) return cached;
-    if (!keyboardMode && CardInflationBudget.isScrollingContext(context) && !CardInflationBudget.tryTake()) {
+    if (keyboardMode) {
+      if (isOnScreen == null) return memo.widgetFor(index, item, epoch: epoch, salt: salt, build: build);
+      return memo.widgetFor(
+        index,
+        item,
+        epoch: epoch,
+        salt: salt,
+        build: () => BudgetedCard(urgent: isOnScreen, placeholder: skeleton(), builder: (_) => build()),
+      );
+    }
+    if (CardInflationBudget.isScrollingContext(context) && !CardInflationBudget.tryTake()) {
       scheduleSkeletonUpgrade();
       return skeleton();
     }
     return memo.widgetFor(index, item, epoch: epoch, salt: salt, build: build);
+  }
+}
+
+/// A card realized ahead of need — in a scrollable's cache extent, where a
+/// row entering it would otherwise inflate all its cards in one frame — that
+/// inflates on the first frame with a free [CardInflationBudget] slot. Until
+/// then it shows [placeholder] and retries every frame, rebuilding only
+/// itself. [urgent] is asked on every attempt: while it returns true (the card
+/// is, or is about to be, on screen) the card builds at once regardless of the
+/// budget.
+///
+/// Hand it out as a stable widget (a [SliverChildMemo] entry): a new instance
+/// of an already-built card rebuilds immediately, which is the unbudgeted
+/// behavior.
+class BudgetedCard extends StatefulWidget {
+  const BudgetedCard({
+    super.key,
+    required this.urgent,
+    required this.builder,
+    this.placeholder = const SizedBox.shrink(),
+  });
+
+  final bool Function() urgent;
+  final WidgetBuilder builder;
+  final Widget placeholder;
+
+  @override
+  State<BudgetedCard> createState() => _BudgetedCardState();
+}
+
+class _BudgetedCardState extends State<BudgetedCard> {
+  bool _built = false;
+  bool _retryScheduled = false;
+
+  @override
+  Widget build(BuildContext context) {
+    if (!_built) {
+      // The slot is claimed even for urgent cards so deferred ones in the same
+      // frame wait for the next.
+      if (!CardInflationBudget.tryTake() && !widget.urgent()) {
+        _scheduleRetry();
+        return widget.placeholder;
+      }
+      _built = true;
+    }
+    return widget.builder(context);
+  }
+
+  void _scheduleRetry() {
+    if (_retryScheduled) return;
+    _retryScheduled = true;
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      _retryScheduled = false;
+      if (mounted && !_built) setState(() {});
+    });
   }
 }
 

@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/services/playback_coordinator.dart';
 
 void main() {
@@ -196,5 +197,29 @@ void main() {
     await Future<void>.delayed(Duration.zero);
     expect(coordinator.hasVideoSession, isFalse);
     expect(await coordinator.stopVideoAndExit(), isTrue);
+  });
+
+  test('player state follows the registered owner and ends with its registration', () async {
+    final coordinator = PlaybackCoordinator.instance;
+    final retirement = Completer<void>();
+    Future<void> oldOwner() async {}
+    Future<void> activeOwner() async {}
+    const oldState = PlayerState(position: Duration(seconds: 1));
+    const activeState = PlayerState(position: Duration(seconds: 2));
+    coordinator.registerVideoSession(shutdown: oldOwner, playerState: () => oldState);
+    coordinator.registerVideoSession(shutdown: activeOwner, playerState: () => activeState);
+    addTearDown(() async {
+      if (!retirement.isCompleted) retirement.complete();
+      coordinator.unregisterVideoSession(oldOwner);
+      coordinator.unregisterVideoSession(activeOwner);
+      await coordinator.shutdownVideo();
+    });
+
+    coordinator.unregisterVideoSession(oldOwner);
+    expect(coordinator.videoPlayerState, same(activeState));
+
+    coordinator.unregisterVideoSession(activeOwner, retirement: retirement.future);
+    expect(coordinator.hasVideoSession, isTrue);
+    expect(coordinator.videoPlayerState, isNull, reason: 'a retiring session reports no player');
   });
 }

@@ -85,6 +85,8 @@ class MpvAudioPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPl
       result(nil)
     case "setLogLevel":
       handleSetLogLevel(call: call, result: result)
+    case "getAudioSpdifCodecs":
+      result(MpvPlayerCoreBase.audioSpdifCodecs)
     default:
       result(FlutterMethodNotImplemented)
     }

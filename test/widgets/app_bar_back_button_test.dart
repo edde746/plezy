@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:ui' show SemanticsAction;
 
 import 'package:flutter/material.dart';
@@ -102,5 +103,36 @@ void main() {
     await tester.pumpAndSettle();
     expect(blocked, 1);
     expect(find.byType(AppBarBackButton), findsNothing);
+  });
+
+  testWidgets('a select reaching it under a covering route does nothing', (tester) async {
+    final focusNode = FocusNode(debugLabel: 'covered_back_button');
+    addTearDown(focusNode.dispose);
+    var activations = 0;
+
+    await pumpButton(tester, focusNode: focusNode, onPressed: () => activations++);
+    unawaited(
+      showDialog<void>(
+        context: tester.element(find.byType(AppBarBackButton)),
+        builder: (_) => const AlertDialog(content: Text('cover')),
+      ),
+    );
+    await tester.pumpAndSettle();
+    // Focus left under the dialog, where a synthesized select landed (#2937);
+    // a press there would have popped the dialog instead of this route.
+    focusNode.requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    await tester.pumpAndSettle();
+
+    expect(activations, 0);
+    expect(find.text('cover'), findsOneWidget);
+
+    Navigator.of(tester.element(find.text('cover'))).pop();
+    await tester.pumpAndSettle();
+    focusNode.requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.select);
+    expect(activations, 1);
   });
 }

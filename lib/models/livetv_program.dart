@@ -85,6 +85,12 @@ class LiveTvProgram {
       return hasOverride ? (fromMedia ?? fromJson) : (fromJson ?? fromMedia);
     }
 
+    bool? pickBool(String key) {
+      final fromMedia = flexibleBoolNullable(media?[key]);
+      final fromJson = flexibleBoolNullable(json[key]);
+      return hasOverride ? (fromMedia ?? fromJson) : (fromJson ?? fromMedia);
+    }
+
     return LiveTvProgram(
       key: json['key'] as String?,
       ratingKey: json['ratingKey'] as String?,
@@ -104,7 +110,8 @@ class LiveTvProgram {
       channelIdentifier: pickString('channelIdentifier') ?? channel?['id']?.toString(),
       channelCallSign: pickString('channelCallSign'),
       live: flexibleBool(json['live']),
-      premiere: flexibleBool(json['premiere']),
+      // Plex flags premieres per airing, on the Media entry.
+      premiere: pickBool('premiere'),
       subscriptionId: json['subscriptionID']?.toString(),
       grandparentSubscriptionId: json['grandparentSubscriptionID']?.toString(),
     );

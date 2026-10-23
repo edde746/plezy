@@ -134,6 +134,12 @@ class _MenuContext {
   /// dispatching a Plex-only action against an unknown-backend item could
   /// crash or hit the wrong server.
   bool get isPlex => itemBackend == MediaBackend.plex;
+
+  /// Jellyfin and Emby refuse collection edits unless the user is an
+  /// administrator (or holds a collection-management policy that sign-in
+  /// does not capture), so MediaBrowser non-admins only get playlists. Plex
+  /// keeps offering collections to everyone, as before.
+  bool get canManageCollections => isPlex || isAdmin;
 }
 
 /// Whether the picked entry navigated away, in which case the menu must not
@@ -661,9 +667,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         if (!isUnmatched) _MenuAction(value: 'unmatch', icon: Symbols.link_off_rounded, label: t.matchScreen.unmatch),
       ],
       // Remove from Collection (only when viewing items within a collection).
-      // Plex-only — uses `removeFromCollection` API; MediaBrowser collection
-      // membership APIs aren't wired here yet.
-      if (menu.isPlex && widget.collectionId != null)
+      // Every backend implements `removeFromCollection`.
+      if (widget.collectionId != null && menu.canManageCollections)
         _MenuAction(
           value: 'remove_from_collection',
           icon: Symbols.delete_outline_rounded,
@@ -777,11 +782,10 @@ class MediaContextMenuState extends State<MediaContextMenu> {
           icon: menu.watchlistRemoveOffered ? Symbols.bookmark_remove_rounded : Symbols.bookmark_add_rounded,
           label: menu.watchlistRemoveOffered ? t.explore.removeFromWatchlist : t.explore.addToWatchlist,
         ),
-      // Add to... (for episodes, movies, shows, and seasons). Plex-only —
-      // uses `buildMetadataUri` + `addToPlaylist` / `addToCollection`. The
-      // MediaBrowser item-add APIs are different and not wired here yet.
-      if (menu.isPlex && mediaItem.isVideoContent)
-        _MenuAction(value: 'add_to', icon: Symbols.add_rounded, label: t.common.addTo),
+      // Add to... (for episodes, movies, shows, and seasons). Every backend
+      // implements the playlist and collection create/add calls; which
+      // destinations are offered follows [_MenuContext.canManageCollections].
+      if (mediaItem.isVideoContent) _MenuAction(value: 'add_to', icon: Symbols.add_rounded, label: t.common.addTo),
       // Delete media item (for episodes, movies, shows, and seasons). Routed
       // through `MediaServerClient.deleteMediaItem`, which every backend
       // implements (DELETE /library/metadata/{id} for Plex and
@@ -958,7 +962,7 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         );
         break;
       case 'add_to':
-        await _showAddToSubmenu(context);
+        await _showAddToSubmenu(context, offerCollections: menu.canManageCollections);
         break;
       case 'delete_media':
         await _handleDeleteMediaItem(context, mediaItem.kind);
@@ -1420,8 +1424,13 @@ class MediaContextMenuState extends State<MediaContextMenu> {
     await launcher.launchShuffledShow(metadata: mediaItem, showLoadingIndicator: true);
   }
 
-  /// Show submenu for Add to... (Playlist or Collection)
-  Future<void> _showAddToSubmenu(BuildContext context) async {
+  /// Show submenu for Add to... (Playlist or Collection). Without collection
+  /// rights the only destination is a playlist, so its picker opens directly.
+  Future<void> _showAddToSubmenu(BuildContext context, {required bool offerCollections}) async {
+    if (!offerCollections) {
+      await _showAddToPlaylistDialog(context);
+      return;
+    }
     final selected = await showOptionPickerDialog<String>(
       context,
       title: t.common.addTo,

@@ -1,6 +1,6 @@
 // Regression coverage for issue #2009: the guide's recording indicator and
 // the program sheet's Record/Manage state. Fixtures mirror the reporter's
-// PMS 1.43.3 JSON captures.
+// PMS 1.43.3 JSON captures. Also covers the premiere badge (issue #2186).
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:intl/date_symbol_data_local.dart';
@@ -221,6 +221,32 @@ void main() {
     await tester.pump(const Duration(seconds: 5));
     await tester.pumpAndSettle();
     expect(recordingDot(), findsNothing);
+  });
+
+  Map<String, dynamic> premiereGrid(int beginsAt) {
+    final grid = subscribedEpisodeGrid(beginsAt);
+    final airing = (grid['Media'] as List).single as Map<String, dynamic>;
+    // PMS flags premieres per airing, on the Media entry.
+    return {
+      ...grid,
+      'Media': [
+        {...airing, 'premiere': '1'},
+      ],
+    };
+  }
+
+  testWidgets('an airing flagged as a premiere shows NEW in the guide and its sheet (issue #2186)', (tester) async {
+    await pumpGuide(tester, gridJson: premiereGrid);
+    expect(find.text(t.liveTv.premiereBadge), findsOneWidget);
+
+    await tester.longPress(find.text("Motorway Cops: Catching Britain's Speeders"));
+    await tester.pumpAndSettle();
+    expect(find.text(t.liveTv.premiereBadge), findsNWidgets(2));
+  });
+
+  testWidgets('a repeat airing shows no NEW badge', (tester) async {
+    await pumpGuide(tester, gridJson: subscribedEpisodeGrid);
+    expect(find.text(t.liveTv.premiereBadge), findsNothing);
   });
 }
 

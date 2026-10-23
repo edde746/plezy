@@ -138,10 +138,13 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     // whose extraction task has not run answers with a header-only BIF, which
     // parses to zero frames and leaves the service unavailable.
     if (dialect == MediaBrowserDialect.emby) {
-      // load() swallows download/parse failures internally; an unavailable
+      // load() swallows and logs download/parse failures; an unavailable
       // service just suppresses the tooltip.
       final service = BifThumbnailService();
-      await service.load(() => _downloadEmbyBifFile(item.id), aspectRatio: mediaSource.videoAspectRatio);
+      await service.load(
+        (maxBytes) => _downloadEmbyBifFile(item.id, maxBytes: maxBytes),
+        aspectRatio: mediaSource.videoAspectRatio,
+      );
       return service;
     }
 
@@ -155,20 +158,17 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     );
   }
 
-  /// Fetch Emby's scrub-preview BIF for [itemId]. [Width] is required by
-  /// Emby's `GET /Videos/{id}/index.bif`; 320 is the width its extraction
-  /// task generates (`<name>-320-10.bif`). Returns null on failure so
-  /// thumbnails stay silently unavailable.
-  Future<Uint8List?> _downloadEmbyBifFile(String itemId) async {
-    try {
-      final bytes = await _http.getBytes(
-        '/Videos/${Uri.encodeComponent(itemId)}/index.bif?Width=320',
-        timeout: const Duration(seconds: 30),
-      );
-      return bytes.isEmpty ? null : bytes;
-    } catch (_) {
-      return null;
-    }
+  /// Fetch Emby's scrub-preview BIF for [itemId], failing once the body exceeds
+  /// [maxBytes]. [Width] is required by Emby's `GET /Videos/{id}/index.bif`;
+  /// 320 is the width its extraction task generates (`<name>-320-10.bif`).
+  /// Returns null when the server answers with an empty body.
+  Future<Uint8List?> _downloadEmbyBifFile(String itemId, {required int maxBytes}) async {
+    final bytes = await _http.getBytes(
+      '/Videos/${Uri.encodeComponent(itemId)}/index.bif?Width=320',
+      timeout: const Duration(seconds: 30),
+      maxBytes: maxBytes,
+    );
+    return bytes.isEmpty ? null : bytes;
   }
 
   Future<List<MediaMarker>> _fetchMediaSegmentMarkers(String itemId) async {

@@ -44,6 +44,7 @@ class PlexHomeService {
   final Map<String, int> _refreshGenerations = {};
   final Map<String, Future<bool>> _activeRefreshes = {};
   final Map<String, Future<void>> _commitBarriers = {};
+  final Set<Future<void>> _registryCalls = {};
   final Map<String, String> _durablyCommittedCacheJson = {};
   final Set<String> _knownConnectionIds = {};
   int _lifecycleEpoch = 0;
@@ -120,7 +121,7 @@ class PlexHomeService {
     await _reloadStorageCacheIfNeeded(_storage!);
     if (!_isLifecycleCurrent(epoch)) return;
 
-    final current = await _connections.list();
+    final current = await _registryCall(_connections.list());
     if (!_isLifecycleCurrent(epoch)) return;
     final plexIds = current.whereType<PlexAccountConnection>().map((c) => c.id).toSet();
     var changed = false;
@@ -147,7 +148,7 @@ class PlexHomeService {
     await _reloadStorageCacheIfNeeded(_storage!);
     if (!_isLifecycleCurrent(epoch)) return;
 
-    final initial = await _connections.list();
+    final initial = await _registryCall(_connections.list());
     if (!_isLifecycleCurrent(epoch)) return;
     final plexConnections = initial.whereType<PlexAccountConnection>().toList();
     _knownConnectionIds
@@ -199,7 +200,7 @@ class PlexHomeService {
       // deleting cache state; the replacement event may have observed the
       // still-populated in-memory slot and therefore have skipped its own
       // refresh.
-      final replacement = await _connections.get(id);
+      final replacement = await _registryCall(_connections.get(id));
       if (!_isLifecycleCurrent(epoch)) return;
       if (replacement is PlexAccountConnection) {
         unawaited(_scheduleBackgroundRefresh(replacement));
@@ -213,7 +214,7 @@ class PlexHomeService {
       // their cached `/switch` user-tokens become invalid the moment
       // the parent account goes away, and the rows would otherwise
       // linger as orphans.
-      await _profileConnections.removeAllForConnection(id);
+      await _registryCall(_profileConnections.removeAllForConnection(id));
       if (!_isLifecycleCurrent(epoch)) return;
       changed = true;
     }
@@ -229,7 +230,7 @@ class PlexHomeService {
   Future<void> _refreshAll() async {
     final epoch = _lifecycleEpoch;
     if (!_isLifecycleCurrent(epoch)) return;
-    final list = await _connections.list();
+    final list = await _registryCall(_connections.list());
     if (!_isLifecycleCurrent(epoch)) return;
     for (final conn in list.whereType<PlexAccountConnection>()) {
       unawaited(_scheduleBackgroundRefresh(conn));
@@ -299,7 +300,7 @@ class PlexHomeService {
       // The account may have been removed while the fetch was in flight —
       // caching now would resurrect its home users (and virtual profiles)
       // as ghosts until the next removal event.
-      if (await _connections.get(conn.id) == null) {
+      if (await _registryCall(_connections.get(conn.id)) == null) {
         appLogger.d('PlexHomeService: dropping fetch result for removed account ${conn.accountLabel}');
         return false;
       }
@@ -335,7 +336,7 @@ class PlexHomeService {
         if (!isCurrent()) return false;
         await _saveCache(storage, conn.id, users);
         _durablyCommittedCacheJson[conn.id] = encodedJson;
-        final latestConnection = await _connections.get(conn.id);
+        final latestConnection = await _registryCall(_connections.get(conn.id));
         final connectionUnchanged =
             latestConnection is PlexAccountConnection && latestConnection.accountToken == conn.accountToken;
         if (!isCurrent() || !connectionUnchanged) {
@@ -382,6 +383,20 @@ class PlexHomeService {
   Future<void> _waitForCommit(String connectionId) async {
     final pending = _commitBarriers[connectionId];
     if (pending != null) await pending;
+  }
+
+  /// Tracks a registry (database) call for [dispose] to settle. Background
+  /// call sites re-check the lifecycle before issuing one, so none starts once
+  /// [dispose] has begun.
+  Future<T> _registryCall<T>(Future<T> call) {
+    final settled = call.then<void>((_) {}, onError: (Object _) {});
+    _registryCalls.add(settled);
+    unawaited(
+      settled.whenComplete(() {
+        _registryCalls.remove(settled);
+      }),
+    );
+    return call;
   }
 
   Future<void> _saveCache(StorageService storage, String connectionId, List<PlexHomeUser> users) async {
@@ -463,7 +478,7 @@ class PlexHomeService {
   /// in [ConnectionRegistry] (the only one most users have).
   Future<PlexHome?> materializeFirstPlexHome() async {
     await hydrate();
-    final all = await _connections.list();
+    final all = await _registryCall(_connections.list());
     final first = all.whereType<PlexAccountConnection>().firstOrNull;
     if (first == null) return null;
     return materializePlexHome(first.id);
@@ -500,6 +515,9 @@ class PlexHomeService {
     }
   }
 
+  /// Stops all background work. Once the returned future completes, no
+  /// database call is in flight and background work issues none, so the owner
+  /// may close the database (#2651).
   Future<void> dispose() async {
     if (_disposed) return;
     _disposed = true;
@@ -512,6 +530,7 @@ class PlexHomeService {
     _connSub = null;
     final pendingCommits = _commitBarriers.values.toList();
     if (pendingCommits.isNotEmpty) await Future.wait(pendingCommits);
+    if (_registryCalls.isNotEmpty) await Future.wait(_registryCalls.toList());
     _hydrateFuture = null;
     _startFuture = null;
     if (!_controller.isClosed) await _controller.close();

@@ -217,6 +217,61 @@ void main() {
     expect(saved, [r' credits\s*roll ']);
     expect(find.byType(AlertDialog), findsNothing);
   });
+
+  testWidgets('a select in a covered selection dialog leaves the dialog above it open (#3197)', (tester) async {
+    final context = await _pumpHost(tester);
+    final closed = <String>[];
+
+    unawaited(
+      showSelectionDialog<String>(
+        context: context,
+        title: 'Language',
+        options: const [
+          DialogOption(value: 'en', title: 'English'),
+          DialogOption(value: 'de', title: 'Deutsch'),
+        ],
+        currentValue: 'en',
+      ).then((option) => closed.add('language:${option?.value}')),
+    );
+    await tester.pumpAndSettle();
+    unawaited(
+      showSelectionDialog<int>(
+        context: context,
+        title: 'Tab',
+        options: const [
+          DialogOption(value: 1, title: 'Home'),
+          DialogOption(value: 2, title: 'Libraries'),
+        ],
+        currentValue: 1,
+      ).then((option) => closed.add('tab:${option?.value}')),
+    );
+    await tester.pumpAndSettle();
+
+    // Focus left on a tile of the covered dialog, where a gamepad select
+    // landed: a blind pop handed its option to the dialog above.
+    final covered = Focus.of(tester.element(find.text('Deutsch')));
+    covered.requestFocus();
+    await tester.pump();
+    expect(covered.hasPrimaryFocus, isTrue);
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+
+    expect(tester.takeException(), isNull);
+    expect(closed, isEmpty);
+    expect(find.text('Libraries'), findsOneWidget);
+    expect(find.text('Deutsch'), findsOneWidget);
+
+    await tester.tap(find.text('Libraries'));
+    await tester.pumpAndSettle();
+    expect(closed, ['tab:2']);
+
+    // Uncovered, the same select closes its own dialog.
+    covered.requestFocus();
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+    expect(closed, ['tab:2', 'language:de']);
+  });
 }
 
 Future<BuildContext> _pumpHost(WidgetTester tester) async {

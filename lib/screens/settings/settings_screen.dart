@@ -50,7 +50,7 @@ import '../../widgets/settings_section.dart';
 import '../../widgets/system_bottom_inset.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/profile.dart';
-import '../../watch_together/services/watch_together_relay_endpoint.dart';
+import '../../watch_together/services/watch_party_relays.dart';
 import 'about_screen.dart';
 import 'add_connection_screen.dart';
 import 'account_preferences_screen.dart';
@@ -199,59 +199,65 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     return Scaffold(
       body: Focus(
         onKeyEvent: _handleKeyEvent,
-        child: CustomScrollView(
-          primary: false,
-          slivers: [
-            ExcludeFocus(child: CustomAppBar(title: Text(t.settings.title), pinned: true)),
-            SliverList(
-              delegate: SliverChildListDelegate([
-                const SizedBox(height: 8),
-                SettingsGroup(
-                  children: [
-                    if (supporterBuildMode == SupporterMode.iap)
-                      SupporterSettingsTile(focusNode: _focusTracker.get(_kSupporter))
-                    else if (DonationService.isEnabled)
-                      _buildDonateTile(),
-                    _buildGeneralTile(),
-                    _buildAppearanceTile(),
-                    _buildPlaybackTile(),
-                    if (hasLibraries) _buildManageLibrariesTile(sheetContext),
-                    _buildServicesTile(),
-                  ],
-                ),
+        // Horizontal-only SafeArea: the groups clear a landscape notch or
+        // iPhone Duo's portrait sensor column.
+        child: SafeArea(
+          top: false,
+          bottom: false,
+          child: CustomScrollView(
+            primary: false,
+            slivers: [
+              ExcludeFocus(child: CustomAppBar(title: Text(t.settings.title), pinned: true)),
+              SliverList(
+                delegate: SliverChildListDelegate([
+                  const SizedBox(height: 8),
+                  SettingsGroup(
+                    children: [
+                      if (supporterBuildMode == SupporterMode.iap)
+                        SupporterSettingsTile(focusNode: _focusTracker.get(_kSupporter))
+                      else if (DonationService.isEnabled)
+                        _buildDonateTile(),
+                      _buildGeneralTile(),
+                      _buildAppearanceTile(),
+                      _buildPlaybackTile(),
+                      if (hasLibraries) _buildManageLibrariesTile(sheetContext),
+                      _buildServicesTile(),
+                    ],
+                  ),
 
-                _buildConnectionsSection(sheetContext),
+                  _buildConnectionsSection(sheetContext),
 
-                if (!PlatformDetector.isAppleTV()) _buildDownloadsSection(),
+                  if (!PlatformDetector.isAppleTV()) _buildDownloadsSection(),
 
-                if (_keyboardShortcutsSupported || PlatformDetector.shouldActAsRemoteHost(sheetContext))
-                  _buildControlsSection(sheetContext),
+                  if (_keyboardShortcutsSupported || PlatformDetector.shouldActAsRemoteHost(sheetContext))
+                    _buildControlsSection(sheetContext),
 
-                _buildAdvancedSection(),
+                  _buildAdvancedSection(),
 
-                if (UpdateService.isUpdateCheckAvailable) ...[_buildUpdateSection()],
+                  if (UpdateService.isUpdateCheckAvailable) ...[_buildUpdateSection()],
 
-                // Hidden on Android TV / tvOS (no document picker); desktop in
-                // force-TV mode keeps it — FilePickerService works there.
-                if (!PlatformDetector.isTV() || PlatformDetector.isDesktopOS()) _buildBackupSection(),
+                  // Hidden on Android TV / tvOS (no document picker); desktop in
+                  // force-TV mode keeps it — FilePickerService works there.
+                  if (!PlatformDetector.isTV() || PlatformDetector.isDesktopOS()) _buildBackupSection(),
 
-                const SizedBox(height: 24),
-                SettingsGroup(
-                  children: [
-                    SettingNavigationTile(
-                      focusNode: _focusTracker.get(_kAbout),
-                      icon: Symbols.info_rounded,
-                      title: t.settings.about,
-                      subtitle: t.settings.aboutDescription,
-                      destinationBuilder: (context) => const AboutScreen(),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 24),
-              ]),
-            ),
-            const SliverSystemBottomInset(),
-          ],
+                  const SizedBox(height: 24),
+                  SettingsGroup(
+                    children: [
+                      SettingNavigationTile(
+                        focusNode: _focusTracker.get(_kAbout),
+                        icon: Symbols.info_rounded,
+                        title: t.settings.about,
+                        subtitle: t.settings.aboutDescription,
+                        destinationBuilder: (context) => const AboutScreen(),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+                ]),
+              ),
+              const SliverSystemBottomInset(),
+            ],
+          ),
         ),
       ),
     );
@@ -965,7 +971,7 @@ class _RelayUrlDialogState extends State<_RelayUrlDialog> {
   void initState() {
     super.initState();
     _controller = TextEditingController(
-      text: widget.settingsService.read(settings.SettingsService.customRelayUrl) ?? '',
+      text: widget.settingsService.read(settings.SettingsService.watchPartyRelayUrl) ?? '',
     );
   }
 
@@ -978,24 +984,24 @@ class _RelayUrlDialogState extends State<_RelayUrlDialog> {
 
   Future<void> _reset() async {
     _controller.clear();
-    await widget.settingsService.write(settings.SettingsService.customRelayUrl, null);
+    await widget.settingsService.write(settings.SettingsService.watchPartyRelayUrl, null);
     if (mounted) Navigator.pop(context);
   }
 
   Future<void> _save() async {
     final value = _controller.text;
     if (value.trim().isEmpty) {
-      await widget.settingsService.write(settings.SettingsService.customRelayUrl, null);
+      await widget.settingsService.write(settings.SettingsService.watchPartyRelayUrl, null);
       if (mounted) Navigator.pop(context);
       return;
     }
 
-    final endpoint = WatchTogetherRelayEndpoint.tryParseCustom(value);
-    if (endpoint == null) {
+    final base = canonicalRelayBaseUrl(value);
+    if (base == null) {
       setState(() => _relayUrlInvalid = true);
       return;
     }
-    await widget.settingsService.write(settings.SettingsService.customRelayUrl, endpoint.canonicalBaseUrl);
+    await widget.settingsService.write(settings.SettingsService.watchPartyRelayUrl, base);
     if (mounted) Navigator.pop(context);
   }
 

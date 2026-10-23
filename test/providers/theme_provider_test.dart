@@ -242,8 +242,6 @@ void main() {
         expect(themeModeLabel(settings.ThemeMode.light), 'Hell');
         expect(themeModeLabel(settings.ThemeMode.dark), 'Dunkel');
         expect(themeModeLabel(settings.ThemeMode.oled), 'OLED');
-        // Preset names are untranslated and fall back to English.
-        expect(themeModeLabel(settings.ThemeMode.ember), 'Ember');
       } finally {
         LocaleSettings.setLocaleSync(AppLocale.en);
       }

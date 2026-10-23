@@ -711,6 +711,25 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
     throwIfHttpError(response);
   }
 
+  /// Mirrors jellyfin-web's refresh dialog in "Scan for new and updated
+  /// files" mode: `Default` refresh modes walk the folder for new, changed,
+  /// and removed files and fill only missing metadata, unlike the
+  /// `FullRefresh` sent by [refreshLibraryMetadata].
+  @override
+  Future<void> scanLibrary(String libraryId) async {
+    final response = await _http.post(
+      '/Items/${_segment(libraryId)}/Refresh',
+      queryParameters: {
+        'Recursive': 'true',
+        'metadataRefreshMode': 'Default',
+        'imageRefreshMode': 'Default',
+        'replaceAllMetadata': 'false',
+        'replaceAllImages': 'false',
+      },
+    );
+    throwIfHttpError(response);
+  }
+
   /// Jellyfin has no single-round-trip equivalent of Plex's
   /// `?includeOnDeck=1`. We approximate it for shows by chaining a second
   /// request to `/Shows/NextUp` filtered by `seriesId`. NextUp's defaults
@@ -1416,6 +1435,27 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
               ...jellyfinImageQueryParameters,
             }, abort: abort),
           ]
+        : library.kind == MediaKind.movie && dialect.searchesMovieLibrariesByMediaType
+        // Emby answers `IncludeItemTypes=Movie` searches in seconds on large
+        // libraries; `MediaTypes=Video` returns the same rows in milliseconds.
+        ? <Future<List<Map<String, dynamic>>>>[
+            _fetchItemsArray('/Items', {
+              'userId': connection.userId,
+              'SearchTerm': query,
+              'Recursive': 'true',
+              'Limit': limit.toString(),
+              'MediaTypes': 'Video',
+              'ParentId': library.id,
+              'Fields': _browseFields,
+              'EnableTotalRecordCount': 'false',
+              ...jellyfinImageQueryParameters,
+            }, abort: abort).then(
+              (rows) => [
+                for (final row in rows)
+                  if (row['Type'] == 'Movie') row,
+              ],
+            ),
+          ]
         : <Future<List<Map<String, dynamic>>>>[
             _fetchItemsArray('/Items', {
               'userId': connection.userId,
@@ -1496,9 +1536,14 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
       if (visible.length < titleLibraries.length) checkedLibraries = visible;
     }
 
-    final rows = await _fetchItemsArray('/Persons', {
+    // Emby's `/Persons` takes 20+ s on a large server, past the search
+    // deadline; its `/Items` index answers the same query in milliseconds
+    // (see [MediaBrowserDialect.searchesPeopleThroughItems]).
+    final viaItems = dialect.searchesPeopleThroughItems;
+    final rows = await _fetchItemsArray(viaItems ? '/Items' : '/Persons', {
       'userId': connection.userId,
       'SearchTerm': query,
+      if (viaItems) ...{'IncludeItemTypes': 'Person', 'Recursive': 'true'},
       'PersonTypes': 'Actor,Director',
       'Limit': '$_peopleSearchCandidateLimit',
       'EnableImageTypes': 'Primary',

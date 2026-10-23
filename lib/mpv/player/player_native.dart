@@ -891,7 +891,18 @@ class PlayerNative extends PlayerBase {
     if (updatesDvLog) value = _normalizeBoolProperty(value);
 
     await _ensureInitialized();
-    await invoke('setProperty', {'name': name, 'value': value});
+    try {
+      await invoke('setProperty', {'name': name, 'value': value});
+    } on PlatformException catch (e) {
+      // This player's dispose began while the write was in flight, and the
+      // core answered for that teardown (NOT_INITIALIZED, or a refusal from
+      // the session being released): there is nothing left to apply the
+      // value to, which is what the guard below already concludes on success.
+      // A live player still reports every refusal to its caller.
+      if (!_nativeCoreUnavailable) rethrow;
+      appLogger.d('MPV: $name write ended by player teardown (${e.code})');
+      return;
+    }
     if (_nativeCoreUnavailable) return;
     if (updatesDvMode) _dvConversionMode = value;
     if (updatesDvLog) _dvConversionLog = value;
@@ -1050,11 +1061,15 @@ class PlayerNative extends PlayerBase {
   @override
   bool get audioPassthroughActive => _passthroughActive;
 
-  /// Codecs the platform can take as a bitstream. On Apple platforms
-  /// compressed audio goes through the system Dolby decoder
-  /// ([usesAppleAudioOutput]), which only handles Dolby Digital (Plus); a DTS
-  /// or TrueHD entry would just cost an output probe before decoding to PCM.
-  /// Windows and Linux do real device passthrough for the full list.
+  /// Codecs the platform can take as a bitstream. On macOS compressed audio
+  /// goes through the system Dolby decoder ([usesAppleAudioOutput]), which
+  /// only handles Dolby Digital (Plus); a DTS or TrueHD entry would just cost
+  /// an output probe before decoding to PCM. Windows and Linux do real device
+  /// passthrough for the full list.
+  ///
+  /// iPhone, iPad and Apple TV ask their plugin instead: from 26 it adds
+  /// TrueHD and DTS-HD for mpv-build's spatial output, which renders TrueHD
+  /// Atmos and DTS:X as Apple spatial audio.
   ///
   /// Android does not use this list: mpv's audiotrack AO only opens stereo
   /// IEC 61937 tracks at the 48kHz mixer rate, so naming a codec the route
@@ -1063,7 +1078,7 @@ class PlayerNative extends PlayerBase {
   static String get _passthroughCodecs => usesAppleAudioOutput ? 'ac3,eac3' : 'ac3,eac3,dts,dts-hd,truehd';
 
   Future<String> _resolvePassthroughCodecs() async {
-    if (!Platform.isAndroid) return _passthroughCodecs;
+    if (!Platform.isAndroid && !Platform.isIOS) return _passthroughCodecs;
     try {
       return await invoke<String>('getAudioSpdifCodecs') ?? '';
     } catch (error, stackTrace) {

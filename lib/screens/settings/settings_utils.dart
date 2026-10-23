@@ -89,6 +89,19 @@ Future<T?> guardSettingsOperation<T, E extends Object>(
   }
 }
 
+/// Closes the dialog [dialogContext] belongs to with [result], only while that
+/// dialog is the top route.
+///
+/// `Navigator.pop` removes whatever is topmost. A select or cancel reaching a
+/// dialog that another dialog now covers, or one already closing, would close
+/// that other route — with this dialog's result (#3197: a covered language
+/// picker's choice was handed to the tab picker above it). Such input is stale
+/// and is dropped.
+void _popDialogIfCurrent<T>(BuildContext dialogContext, [T? result]) {
+  if (!(ModalRoute.isCurrentOf(dialogContext) ?? false)) return;
+  Navigator.pop<T>(dialogContext, result);
+}
+
 void _showSettingsInputDialog({
   required BuildContext context,
   required String title,
@@ -141,7 +154,7 @@ class _SettingsInputDialogState extends State<_SettingsInputDialog> {
   Future<void> _save() async {
     try {
       final shouldClose = await widget.onSave(context);
-      if (shouldClose && mounted) Navigator.pop(context);
+      if (shouldClose && mounted) _popDialogIfCurrent(context);
     } on PlatformException catch (error, stackTrace) {
       if (!mounted) return;
       showSettingsFailure(context, operation: 'Settings input save', error: error, stackTrace: stackTrace);
@@ -158,7 +171,7 @@ class _SettingsInputDialogState extends State<_SettingsInputDialog> {
       content: widget.contentBuilder(context, context, setState, _saveFocusNode),
       actions: [
         ...?widget.leadingActionsBuilder?.call(context, setState),
-        DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.cancel),
+        DialogActionButton(onPressed: () => _popDialogIfCurrent(context), label: t.common.cancel),
         DialogActionButton(focusNode: _saveFocusNode, onPressed: _save, label: t.common.save),
       ],
     );
@@ -199,7 +212,7 @@ Future<DialogOption<T>?> showSelectionDialog<T>({
                 subtitle: option.subtitle != null ? Text(option.subtitle!) : null,
                 selected: selected,
                 autofocus: focusFirstItem && selected,
-                onTap: () => Navigator.pop(dialogContext, option),
+                onTap: () => _popDialogIfCurrent(dialogContext, option),
               );
             }).toList(),
           ),
@@ -334,7 +347,7 @@ void _showNumericInputDialogTV({
               });
             },
             onConfirm: () => saveFocusNode.requestFocus(),
-            onCancel: () => Navigator.pop(dialogContext),
+            onCancel: () => _popDialogIfCurrent(dialogContext),
           ),
           const SizedBox(height: 8),
           Text(

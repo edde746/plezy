@@ -162,6 +162,7 @@ abstract class PaginatedCardGridTabState<T extends Object, W extends BaseLibrary
           item,
           epoch: position.layoutEpoch!,
           keyboardMode: InputModeTracker.isKeyboardMode(context, listen: false),
+          isOnScreen: position.isOnScreen,
           build: () => _buildCard(position, fullBleedImage: useFullCardLayout),
         );
       },

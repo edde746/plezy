@@ -50,6 +50,7 @@ class AppBarBackButton extends StatefulWidget {
   final BackButtonStyle style;
 
   /// Callback when the button is pressed. Defaults to [Navigator.maybePop].
+  /// Neither runs unless the button's route is the current one.
   final VoidCallback? onPressed;
 
   /// The color of the back arrow icon. If null, uses style-appropriate default.
@@ -66,6 +67,10 @@ class _AppBarBackButtonState extends State<AppBarBackButton> {
   bool _hovered = false;
 
   void _handlePressed() {
+    // A back button acts for the route it is drawn in. A key can still reach it
+    // after that route began closing or under a route pushed above it, where
+    // the pop would take that other route instead.
+    if (!(ModalRoute.isCurrentOf(context) ?? true)) return;
     if (widget.onPressed != null) {
       widget.onPressed!();
     } else {

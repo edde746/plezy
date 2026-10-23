@@ -268,6 +268,34 @@ void main() {
     }
   });
 
+  group('SettingsService player setting scopes', () {
+    test('a keyed scope chosen before #2722 drops its stale Everywhere value once', () async {
+      resetSharedPreferencesForTest(
+        initialAsync: {
+          SettingsService.playbackSpeedScope.key: 'library',
+          SettingsService.defaultPlaybackSpeed.key: 1.5,
+          SettingsService.shaderPresetScope.key: 'off',
+          SettingsService.globalShaderPreset.key: 'nvscaler',
+        },
+      );
+      var settings = await SettingsService.getInstance();
+
+      expect(settings.read(SettingsService.defaultPlaybackSpeed), 1.0);
+      expect(
+        settings.read(SettingsService.globalShaderPreset),
+        'nvscaler',
+        reason: "Don't save applies the Everywhere value to every playback",
+      );
+
+      // A later fallback write (an item without a library) survives restarts.
+      await settings.write(SettingsService.defaultPlaybackSpeed, 1.25);
+      BaseSharedPreferencesService.resetForTesting();
+      SettingsService.resetForTesting();
+      settings = await SettingsService.getInstance();
+      expect(settings.read(SettingsService.defaultPlaybackSpeed), 1.25);
+    });
+  });
+
   group('SettingsService music quality', () {
     test('defaults to original and persists changes by enum name', () async {
       var settings = await SettingsService.getInstance();
@@ -424,33 +452,50 @@ void main() {
     test('typed writes canonicalize valid bases and reject invalid replacement', () async {
       final settings = await SettingsService.getInstance();
 
-      await settings.write(SettingsService.customRelayUrl, '  HTTPS://Relay.Example.Test/path///  ');
-      expect(settings.read(SettingsService.customRelayUrl), 'https://relay.example.test/path');
+      await settings.write(SettingsService.watchPartyRelayUrl, '  HTTPS://Relay.Example.Test/path///  ');
+      expect(settings.read(SettingsService.watchPartyRelayUrl), 'https://relay.example.test/path');
 
       await expectLater(
-        settings.write(SettingsService.customRelayUrl, 'ws://relay.example.test'),
+        settings.write(SettingsService.watchPartyRelayUrl, 'ws://relay.example.test'),
         throwsFormatException,
       );
-      expect(settings.read(SettingsService.customRelayUrl), 'https://relay.example.test/path');
+      expect(settings.read(SettingsService.watchPartyRelayUrl), 'https://relay.example.test/path');
 
-      await settings.write(SettingsService.customRelayUrl, '   ');
-      expect(settings.read(SettingsService.customRelayUrl), isNull);
+      await settings.write(SettingsService.watchPartyRelayUrl, '   ');
+      expect(settings.read(SettingsService.watchPartyRelayUrl), isNull);
     });
 
     test('startup canonicalizes valid history and removes invalid history', () async {
       resetSharedPreferencesForTest(
-        initialAsync: {SettingsService.customRelayUrl.key: '  http://Relay.Example.Test:8080/prefix// '},
+        initialAsync: {SettingsService.watchPartyRelayUrl.key: '  http://Relay.Example.Test:8080/prefix// '},
       );
       SettingsService.resetForTesting();
       var settings = await SettingsService.getInstance();
-      expect(settings.read(SettingsService.customRelayUrl), 'http://relay.example.test:8080/prefix');
+      expect(settings.read(SettingsService.watchPartyRelayUrl), 'http://relay.example.test:8080/prefix');
 
       resetSharedPreferencesForTest(
-        initialAsync: {SettingsService.customRelayUrl.key: 'https://relay.example.test/path?wrong=route'},
+        initialAsync: {SettingsService.watchPartyRelayUrl.key: 'https://relay.example.test/path?wrong=route'},
       );
       SettingsService.resetForTesting();
       settings = await SettingsService.getInstance();
-      expect(settings.read(SettingsService.customRelayUrl), isNull);
+      expect(settings.read(SettingsService.watchPartyRelayUrl), isNull);
+    });
+
+    test('startup removes the former Watch Together relay without adopting it', () async {
+      resetSharedPreferencesForTest(initialAsync: {'custom_relay_url': 'https://relay.example.test/legacy'});
+      SettingsService.resetForTesting();
+      final settings = await SettingsService.getInstance();
+
+      expect(settings.prefs.containsKey('custom_relay_url'), isFalse);
+      expect(settings.read(SettingsService.watchPartyRelayUrl), isNull);
+    });
+
+    test('the relay setting persists under its own key', () async {
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.watchPartyRelayUrl, 'https://relay.example.test');
+
+      expect(SettingsService.watchPartyRelayUrl.key, 'watch_party_relay_url');
+      expect(settings.prefs.getString('watch_party_relay_url'), 'https://relay.example.test');
     });
   });
 

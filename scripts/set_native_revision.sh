@@ -36,6 +36,12 @@
 #           "key": "<12-hex>",             its content-address key: the version Gradle resolves
 #           "asset": "mpv-android-<key>.aar", downloaded as <assetBase>/<asset>
 #           "checksum": "<sha256>"          of the complete AAR
+#         },
+#         "symbols": {                      optional: the AAR's debug files, per ABI
+#           "<abi>": {                      arm64-v8a | armeabi-v7a | x86 | x86_64
+#             "asset": "<file name>",       a zip, downloaded as <assetBase>/<asset>
+#             "checksum": "<sha256>"        of the complete zip
+#           }
 #         }
 #       },
 #       "<group>": {                        linux | windows
@@ -45,6 +51,12 @@
 #           "<variant>": {                  a CPU architecture
 #             "asset": "<file name>",       downloaded as <assetBase>/<asset>
 #             "checksum": "<sha256>"        of the complete asset file
+#           }
+#         },
+#         "symbols": {                      optional: debug files for the shipped
+#           "<variant>": {                  libraries, keyed like assets
+#             "asset": "<file name>",       a zip, downloaded as <assetBase>/<asset>
+#             "checksum": "<sha256>"        of the complete zip
 #           }
 #         }
 #       }
@@ -56,7 +68,10 @@
 # noted on stdout. Android records the mpv-android AAR alone. Every other
 # group records its one per-variant native library; a packaged artifact there
 # (a single asset with no per-variant trees) is not consumed and is likewise
-# omitted with a note.
+# omitted with a note. A library's `symbols` map is copied from the same
+# artifacts.json entry; a commit published before mpv-build shipped debug
+# files has none, and its omission is noted the same way.
+# scripts/release/upload_symbols.dart downloads, verifies and uploads them.
 # Serialization is deterministic: two-space indent, sorted keys, trailing
 # newline. Consumers must fail when their group is missing rather than fall
 # back to an unpinned source.
@@ -453,6 +468,39 @@ def android_aar(label: str, libraries: dict) -> dict[str, str] | None:
     return {"asset": asset, "checksum": checksum, "key": key}
 
 
+def library_symbols(label: str, group: str, library: str, entry: dict) -> dict | None:
+    """The library's per-variant debug-file zips, copied from its artifacts.json
+    entry; None with an error or a note recorded. Libraries published before
+    mpv-build shipped debug files carry no symbols map."""
+    symbols = entry.get("symbols")
+    if not symbols:
+        notes.append(
+            f"note: {group} library {library} publishes no debug symbols at this "
+            f"commit; symbols omitted from {LOCK_PATH}"
+        )
+        return None
+    label = f"{label}.symbols"
+    if not isinstance(symbols, dict):
+        errors.append(f"{label}: expected an object")
+        return None
+    copied: dict[str, dict[str, str]] = {}
+    for variant in sorted(symbols):
+        value = symbols[variant]
+        asset = value.get("asset") if isinstance(value, dict) else None
+        checksum = value.get("checksum") if isinstance(value, dict) else None
+        if not isinstance(asset, str) or not asset:
+            errors.append(f"{label}.{variant}.asset: missing")
+            continue
+        if not isinstance(checksum, str) or not CHECKSUM_RE.fullmatch(checksum):
+            errors.append(
+                f"{label}.{variant}.checksum: {checksum!r} is not a full lowercase "
+                f"SHA-256; refusing an unverifiable pin"
+            )
+            continue
+        copied[variant] = {"asset": asset, "checksum": checksum}
+    return copied if len(copied) == len(symbols) else None
+
+
 def build_lock() -> dict | None:
     """The lock for this commit, or None with errors recorded.
 
@@ -502,6 +550,14 @@ def build_lock() -> dict | None:
             aar = android_aar(label, libraries)
             if aar is not None:
                 artifacts[group] = {"aar": aar, "assetBase": asset_base}
+                symbols = library_symbols(
+                    f"{label}.libraries.{ANDROID_LIBRARY}",
+                    group,
+                    ANDROID_LIBRARY,
+                    libraries[ANDROID_LIBRARY],
+                )
+                if symbols is not None:
+                    artifacts[group]["symbols"] = symbols
             continue
         packaged = sorted(
             name
@@ -563,6 +619,9 @@ def build_lock() -> dict | None:
         if len(assets) != len(prebuilt):
             continue
         artifacts[group] = {"assetBase": asset_base, "assets": assets, "key": key}
+        symbols = library_symbols(label, group, library, entry)
+        if symbols is not None:
+            artifacts[group]["symbols"] = symbols
 
     for group in EXPECTED_GROUPS:
         if group not in artifacts and group not in platforms:
