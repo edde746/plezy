@@ -77,6 +77,13 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="plezy" android:host="live"/>
             </intent-filter>
+            <!-- Deep link for playing a show or movie: plezy://watch?plex=show/<hash>&mode=next|shuffle -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="plezy" android:host="watch"/>
+            </intent-filter>
         </activity>
         <!-- The default icon. Keep this component name forever: it was the launcher activity before
              app icons became switchable, so every existing home-screen shortcut, TV favourite and
