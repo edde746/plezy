@@ -5,6 +5,7 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_rating.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/catalog/catalog_item.dart';
+import 'package:plezy/models/catalog/mdblist_explore_shelf.dart';
 import 'package:plezy/providers/catalog_sources_provider.dart';
 import 'package:plezy/providers/seerr_account_provider.dart';
 import 'package:plezy/providers/trackers_provider.dart';
@@ -25,6 +26,28 @@ void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(resetSharedPreferencesForTest);
+
+  test('shelf order, overrides and enabled state restore and stay separate across profiles', () async {
+    final first = CatalogSourcesProvider();
+    await first.onActiveProfileChanged('profile-1');
+    await first.setMdblistShelves(const [
+      MdblistExploreShelf(listId: 21, sourceName: 'TV', displayName: 'Evening shows', enabled: false),
+      MdblistExploreShelf(listId: 20, sourceName: 'Movies'),
+    ]);
+    first.dispose();
+
+    final restarted = CatalogSourcesProvider();
+    addTearDown(restarted.dispose);
+    await restarted.onActiveProfileChanged('profile-1');
+    expect(restarted.mdblistShelves.map((shelf) => shelf.listId), [21, 20]);
+    expect(restarted.mdblistShelves.first.title, 'Evening shows');
+    expect(restarted.mdblistShelves.first.enabled, isFalse);
+    await restarted.onActiveProfileChanged('profile-2');
+    expect(restarted.mdblistShelves, isEmpty);
+    await restarted.setMdblistShelves(const [MdblistExploreShelf(listId: 99, sourceName: 'Other user')]);
+    await restarted.onActiveProfileChanged('profile-1');
+    expect(restarted.mdblistShelves.map((shelf) => shelf.listId), [21, 20]);
+  });
 
   test('profile hydration exposes Plex when Discover credentials are available', () async {
     var calls = 0;

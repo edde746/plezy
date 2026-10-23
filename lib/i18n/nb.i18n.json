@@ -1431,6 +1431,25 @@
     "explore": "Utforsk"
   },
   "explore": {
+    "mdblistShelves": {
+      "manage": "",
+      "description": "",
+      "selected": "",
+      "available": "",
+      "noLists": "",
+      "displayName": "",
+      "nameHint": "",
+      "add": "",
+      "save": "",
+      "moveUp": "",
+      "moveDown": "",
+      "unavailable": "",
+      "rateLimited": "",
+      "loadFailed": "",
+      "saveFailed": "",
+      "accountChanged": "",
+      "settingsUnreadable": ""
+    },
     "title": "Utforsk",
     "selectSource": "Velg kilde",
     "rows": {

@@ -1,9 +1,12 @@
 import '../../media/media_kind.dart';
+import '../../i18n/strings.g.dart';
 import '../../media/media_rating.dart';
 import '../../models/catalog/catalog_item.dart';
+import '../../models/catalog/mdblist_explore_shelf.dart';
 import '../../utils/external_ids.dart';
 import '../../utils/json_utils.dart';
 import '../trackers/mdblist/mdblist_client.dart';
+import '../trackers/tracker_exceptions.dart';
 import 'catalog_source.dart';
 import 'catalog_watchlist_machinery.dart';
 
@@ -11,10 +14,69 @@ import 'catalog_watchlist_machinery.dart';
 typedef _WatchlistEnvelope = ({Object? movies, Object? shows, Map<Object?, Object?> pageData, int limit});
 
 /// MDBList watchlist/search adapter. The tracker owns [_client].
-class MdblistCatalogSource with CatalogWatchlistMachinery implements CatalogSource, CatalogCommunityRatings {
-  MdblistCatalogSource(this._client);
+class MdblistCatalogSource
+    with CatalogWatchlistMachinery
+    implements CatalogSource, CatalogHubSource, CatalogCommunityRatings {
+  MdblistCatalogSource(this._client, {List<MdblistExploreShelf> shelves = const []})
+    : shelves = List.unmodifiable(shelves);
 
   final MdblistClient _client;
+  final List<MdblistExploreShelf> shelves;
+
+  static String shelfError(Object error) => switch (error) {
+    TrackerApiException(statusCode: 403) => t.explore.mdblistShelves.unavailable,
+    TrackerApiException(statusCode: 404) => t.explore.mdblistShelves.unavailable,
+    TrackerRateLimitException() => t.explore.mdblistShelves.rateLimited,
+    TrackerAuthException() => t.services.notConnected,
+    _ => t.explore.mdblistShelves.loadFailed,
+  };
+
+  @override
+  Future<List<CatalogHub>> fetchHubs({int limit = 25}) async {
+    final selected = shelves.where((shelf) => shelf.enabled).toList();
+    final hubs = <CatalogHub>[];
+    // Bound request concurrency without imposing a limit on shelf count.
+    for (var start = 0; start < selected.length; start += 4) {
+      hubs.addAll(
+        await Future.wait(
+          selected.skip(start).take(4).map((shelf) async {
+            try {
+              return CatalogHub(
+                id: '${shelf.listId}',
+                title: shelf.title,
+                page: await fetchHub('${shelf.listId}', limit: limit),
+              );
+            } catch (error) {
+              return CatalogHub(
+                id: '${shelf.listId}',
+                title: shelf.title,
+                page: const CatalogPage(items: []),
+                errorMessage: shelfError(error),
+              );
+            }
+          }),
+        ),
+      );
+    }
+    return hubs;
+  }
+
+  @override
+  Future<CatalogPage> fetchHub(String id, {int page = 1, int limit = 25}) async {
+    final listId = int.tryParse(id);
+    if (listId == null || !shelves.any((shelf) => shelf.enabled && shelf.listId == listId)) {
+      throw ArgumentError('MDBList shelf is not selected');
+    }
+    final size = limit.clamp(1, 1000);
+    final result = await _client.getListItems(listId, limit: size, offset: ((page < 1 ? 1 : page) - 1) * size);
+    return CatalogPage(
+      items: [
+        for (final entry in result.items)
+          if (_kindFor(entry['mediatype']) case final kind?) ?_itemFor(entry, kind),
+      ],
+      hasMore: result.hasMore,
+    );
+  }
 
   /// MDBList `ratings[].source` → our source key and the scale MDBList reports that source's `value` on.
   static const Map<String, ({String key, int scale})> _ratingSources = {
