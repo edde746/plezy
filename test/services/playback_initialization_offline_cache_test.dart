@@ -593,6 +593,9 @@ class _FailingPlaybackClient implements MediaServerClient {
   }
 
   @override
+  void close() {}
+
+  @override
   dynamic noSuchMethod(Invocation invocation) => super.noSuchMethod(invocation);
 }
 

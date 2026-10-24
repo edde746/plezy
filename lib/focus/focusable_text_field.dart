@@ -818,10 +818,61 @@ class _NativeTextInputSession {
   bool get isActive => endReason == null;
 }
 
+/// The text-input hosts installed on one [FocusNode], so the node's
+/// `onKeyEvent` has a single owner however many hosts reach it.
+///
+/// Hosts overlap on a caller-supplied node: a field remounted within one
+/// frame builds its replacement host before the old one is disposed at the
+/// end of that frame, and a host whose `focusNode` changes can claim a node a
+/// sibling has not released yet. Hosts therefore never call each other:
+/// chaining to whatever handler the node held let a surviving host invoke a
+/// disposed one. The node runs only its newest host, and every host defers
+/// first to [_base], the handler the node carried before any host arrived.
+/// Removing the owner hands the node to the newest remaining host, and the
+/// last removal gives the node back to [_base].
+class _TextInputKeyHandlerOwners {
+  static final Expando<_TextInputKeyHandlerOwners> _byNode = Expando('FocusableTextInput key handler owners');
+
+  /// The node's own handler, e.g. one given to `FocusNode(onKeyEvent:)`.
+  FocusOnKeyEventCallback? _base;
+
+  /// Installation order; the last host owns the node's `onKeyEvent`.
+  final List<_FocusableTextInputHostState> _hosts = [];
+
+  static FocusOnKeyEventCallback? baseOf(FocusNode node) => _byNode[node]?._base;
+
+  /// Registers [host] on [node] and points the node at its newest host.
+  /// Returns whether that changed the node's handler.
+  static bool install(FocusNode node, _FocusableTextInputHostState host) {
+    final owners = _byNode[node] ??= _TextInputKeyHandlerOwners();
+    final current = node.onKeyEvent;
+    // A handler no host installed — the node's own, or one assigned to it
+    // since — is what every host defers to.
+    if (!owners._hosts.any((installed) => identical(installed._keyHandler, current))) {
+      owners._base = current;
+    }
+    if (!owners._hosts.contains(host)) owners._hosts.add(host);
+    final owner = owners._hosts.last._keyHandler;
+    if (identical(current, owner)) return false;
+    node.onKeyEvent = owner;
+    return true;
+  }
+
+  /// Unregisters [host] from [node]. If [host] owned the node, the newest
+  /// remaining host takes over, or the base handler once none is left.
+  static void uninstall(FocusNode node, _FocusableTextInputHostState host) {
+    final owners = _byNode[node];
+    if (owners == null || !owners._hosts.remove(host)) return;
+    if (identical(node.onKeyEvent, host._keyHandler)) {
+      node.onKeyEvent = owners._hosts.isEmpty ? owners._base : owners._hosts.last._keyHandler;
+    }
+    if (owners._hosts.isEmpty) _byNode[node] = null;
+  }
+}
+
 class _FocusableTextInputHostState extends State<_FocusableTextInputHost> with WidgetsBindingObserver {
   final OwnedFocusNodeBinding _focusNodeBinding = OwnedFocusNodeBinding();
   FocusNode? _installedFocusNode;
-  FocusOnKeyEventCallback? _previousOnKeyEvent;
   late final FocusOnKeyEventCallback _keyHandler = _handleKey;
   late final VoidCallback _focusListener = _handleFocusChanged;
   final Object _nativeFocusToken = Object();
@@ -1362,12 +1413,12 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> with W
   }
 
   KeyEventResult _handleKey(FocusNode node, KeyEvent event) {
-    final previous = _previousOnKeyEvent;
-    if (previous != null && !identical(previous, _keyHandler)) {
-      final result = previous(node, event);
-      _logTvTextInput(
-        'Host.previousOnKeyEvent node=${node.debugLabel} result=$result key=(${describeKeyEvent(event)})',
-      );
+    // The node's own handler only — never another host's; see
+    // _TextInputKeyHandlerOwners.
+    final base = _TextInputKeyHandlerOwners.baseOf(node);
+    if (base != null) {
+      final result = base(node, event);
+      _logTvTextInput('Host.baseOnKeyEvent node=${node.debugLabel} result=$result key=(${describeKeyEvent(event)})');
       if (result != KeyEventResult.ignored) return result;
     }
     var activateNativeTextInput = widget.input._usesNativeTvKeyboard && !_nativeTextInputActivated;
@@ -1437,18 +1488,22 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> with W
     // can't consume directions before our reusable navigation callbacks run.
     if (_installedFocusNode == node) {
       if (identical(node.onKeyEvent, _keyHandler)) return;
-      _previousOnKeyEvent = node.onKeyEvent;
-      node.onKeyEvent = _keyHandler;
-      _logTvTextInput('Host.reinstalled key handler node=${node.debugLabel} previous=${_previousOnKeyEvent != null}');
+      // Replaced outside this file (the newest host retakes it), or owned by
+      // a newer host sharing the node (left alone).
+      if (_TextInputKeyHandlerOwners.install(node, this)) {
+        _logTvTextInput('Host.reinstalled key handler node=${node.debugLabel}');
+      }
       return;
     }
 
     _restoreInstalledHandler();
     _installedFocusNode = node;
-    _previousOnKeyEvent = node.onKeyEvent;
-    node.onKeyEvent = _keyHandler;
+    _TextInputKeyHandlerOwners.install(node, this);
     node.addListener(_focusListener);
-    _logTvTextInput('Host.installed key handler node=${node.debugLabel} previous=${_previousOnKeyEvent != null}');
+    _logTvTextInput(
+      'Host.installed key handler node=${node.debugLabel} '
+      'base=${_TextInputKeyHandlerOwners.baseOf(node) != null}',
+    );
   }
 
   void _restoreInstalledHandler() {
@@ -1459,12 +1514,9 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> with W
     final node = _installedFocusNode;
     if (node != null) {
       node.removeListener(_focusListener);
-      if (identical(node.onKeyEvent, _keyHandler)) {
-        node.onKeyEvent = _previousOnKeyEvent;
-      }
+      _TextInputKeyHandlerOwners.uninstall(node, this);
     }
     _installedFocusNode = null;
-    _previousOnKeyEvent = null;
   }
 
   @override

@@ -46,10 +46,14 @@ class _Skeleton extends StatelessWidget {
 /// 600px test viewport and no cache extent exactly six items are realized
 /// per screen, so a 300px scroll lets three fresh items enter.
 class _BudgetedList extends StatefulWidget {
-  const _BudgetedList({required this.controller, required this.keyboardMode});
+  const _BudgetedList({required this.controller, required this.keyboardMode, this.probeOnScreen = false});
 
   final ScrollController controller;
   final bool keyboardMode;
+
+  /// Passes an [realizeBudgeted] `isOnScreen` probe and a 200px cache extent,
+  /// so items 6 and 7 are realized off screen below the viewport.
+  final bool probeOnScreen;
 
   @override
   State<_BudgetedList> createState() => _BudgetedListState();
@@ -67,7 +71,7 @@ class _BudgetedListState extends State<_BudgetedList> with SkeletonUpgradeSchedu
       textDirection: TextDirection.ltr,
       child: ListView.builder(
         controller: widget.controller,
-        scrollCacheExtent: const ScrollCacheExtent.pixels(0),
+        scrollCacheExtent: ScrollCacheExtent.pixels(widget.probeOnScreen ? 200 : 0),
         itemExtent: 100,
         itemCount: _items.length,
         itemBuilder: (context, index) => realizeBudgeted(
@@ -77,6 +81,9 @@ class _BudgetedListState extends State<_BudgetedList> with SkeletonUpgradeSchedu
           _items[index],
           epoch: 0,
           keyboardMode: widget.keyboardMode,
+          isOnScreen: widget.probeOnScreen
+              ? () => index * 100 < widget.controller.offset + 600 && (index + 1) * 100 > widget.controller.offset
+              : null,
           build: () {
             cardBuilds++;
             return const _Card();
@@ -136,8 +143,11 @@ void main() {
       WidgetTester tester,
       ScrollController controller, {
       bool keyboardMode = false,
+      bool probeOnScreen = false,
     }) async {
-      await tester.pumpWidget(_BudgetedList(controller: controller, keyboardMode: keyboardMode));
+      await tester.pumpWidget(
+        _BudgetedList(controller: controller, keyboardMode: keyboardMode, probeOnScreen: probeOnScreen),
+      );
       return tester.state<_BudgetedListState>(find.byType(_BudgetedList));
     }
 
@@ -182,7 +192,7 @@ void main() {
       expect(state.cardBuilds, 6);
     });
 
-    testWidgets('never budgets in keyboard mode', (tester) async {
+    testWidgets('keyboard mode without an on-screen probe never budgets', (tester) async {
       final controller = ScrollController();
       addTearDown(controller.dispose);
       final state = await pumpList(tester, controller, keyboardMode: true);
@@ -192,6 +202,44 @@ void main() {
       expect(state.skeletonBuilds, 0);
       expect(state.cardBuilds, 3);
       expect(find.byType(_Skeleton), findsNothing);
+    });
+
+    testWidgets('keyboard mode spreads off-screen cells over frames and builds on-screen ones at once', (tester) async {
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      _exhaustBudget();
+
+      final state = await pumpList(tester, controller, keyboardMode: true, probeOnScreen: true);
+
+      // The six on-screen items ignore the spent budget; the two in the cache
+      // extent wait for a slot each, one per frame.
+      expect(find.byType(_Card), findsNWidgets(6));
+      expect(find.byType(_Skeleton, skipOffstage: false), findsNWidgets(2));
+      await tester.pump();
+      expect(find.byType(_Skeleton, skipOffstage: false), findsOneWidget);
+      await tester.pump();
+      expect(find.byType(_Skeleton, skipOffstage: false), findsNothing);
+      expect(state.cardBuilds, 8);
+    });
+
+    testWidgets('a deferred keyboard-mode cell that scrolls on screen builds without waiting for a slot', (
+      tester,
+    ) async {
+      final controller = ScrollController();
+      addTearDown(controller.dispose);
+      _exhaustBudget();
+      final state = await pumpList(tester, controller, keyboardMode: true, probeOnScreen: true);
+      expect(find.byType(_Skeleton, skipOffstage: false), findsNWidgets(2));
+
+      controller.jumpTo(200);
+      _exhaustBudget();
+      await tester.pump();
+
+      // Items 6 and 7 are now on screen and built despite the spent budget;
+      // 8 and 9 entered the cache extent and wait in their place.
+      expect(find.byType(_Card), findsNWidgets(6));
+      expect(find.byType(_Skeleton, skipOffstage: false), findsNWidgets(2));
+      expect(state.cardBuilds, 8);
     });
   });
 }

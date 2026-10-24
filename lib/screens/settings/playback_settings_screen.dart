@@ -535,7 +535,9 @@ class PlaybackSettingsScreen extends StatelessWidget {
         title: t.settings.audioPassthrough,
         subtitle: normalizationOn
             ? t.settings.audioPassthroughOverriddenByNormalization
-            : Platform.isIOS || Platform.isMacOS
+            : Platform.isIOS
+            ? t.settings.audioPassthroughDescriptionAppleSpatial
+            : Platform.isMacOS
             ? t.settings.audioPassthroughDescriptionApple
             : t.settings.audioPassthroughDescription,
         enabled: !normalizationOn,

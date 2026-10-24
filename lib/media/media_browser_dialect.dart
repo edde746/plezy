@@ -241,6 +241,34 @@ enum MediaBrowserDialect {
   /// side and every playlist is returned regardless of the requested type.
   bool get playlistsFilterByMediaType => this == MediaBrowserDialect.jellyfin;
 
+  /// People search reads `/Items?IncludeItemTypes=Person&SearchTerm=` instead
+  /// of `/Persons?SearchTerm=`.
+  ///
+  /// Emby-only. Measured on Emby 4.10.1 with ~70k movies and ~480k episodes:
+  /// `/Persons` takes 20–25 s for any term under every parameter combination
+  /// tried (with or without `userId`, `PersonTypes`, image options, `Limit`
+  /// 24 or 100), which overran the per-server search deadline on every search
+  /// and kept the server busy for each abandoned query. The same search
+  /// through `/Items` answers in 40–75 ms with the same `Person` DTOs and,
+  /// apart from the cut-off at the limit, the same people — it is what the
+  /// Emby web client uses. Jellyfin keeps `/Persons`.
+  bool get searchesPeopleThroughItems => this == MediaBrowserDialect.emby;
+
+  /// A scoped title search of a movie library filters on `MediaTypes=Video`
+  /// instead of `IncludeItemTypes=Movie`.
+  ///
+  /// Emby-only. Measured on Emby 4.10.1 with ~70k movies: a user-scoped
+  /// `/Items?SearchTerm=&IncludeItemTypes=Movie&ParentId=<movie library>` takes
+  /// 1.7–9 s for an ordinary term (8.4 s for a two-word term with no hits,
+  /// 37 s for "the") and with five movie libraries the search overran its
+  /// per-server deadline. The same query filtered by `MediaTypes=Video` (or
+  /// `IsFolder=false`) returns the identical movie rows in 27–515 ms. Without
+  /// any filter Emby mixes `Person`/`Studio` rows into a library-scoped search
+  /// and ignores them in `ExcludeItemTypes`, so a media-type filter is the
+  /// cheapest one that keeps them out. Rows are still checked for `Movie`
+  /// client-side in case a library holds other video items.
+  bool get searchesMovieLibrariesByMediaType => this == MediaBrowserDialect.emby;
+
   /// True when the dialect only accepts the pre-10.9 `/Users/{userId}/…`
   /// spelling of the user-scoped item routes.
   bool get requiresUserScopedItemRoutes => this == MediaBrowserDialect.emby;

@@ -51,7 +51,10 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
   OfflineModeSource? _offlineModeSource;
   VoidCallback? _offlineModeListener;
   bool _isSyncing = false;
-  bool _isBidirectionalSyncing = false;
+  // The bidirectional pass in flight, completed when it settles.
+  Completer<void>? _bidirectionalSync;
+  // Set for good by [stopBackgroundSync].
+  bool _backgroundSyncStopped = false;
   // Profile generation the running bidirectional sync started under, and
   // whether a sync for a newer profile was requested while it ran.
   int? _bidirectionalSyncGeneration;
@@ -234,10 +237,10 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
   ///
   /// Push always happens immediately. Pull respects [minSyncInterval] unless [force] is true.
   Future<void> _performBidirectionalSync({bool force = false}) async {
-    if (isDisposed) return;
+    if (isDisposed || _backgroundSyncStopped) return;
 
     // Prevent overlapping bidirectional syncs
-    if (_isBidirectionalSyncing) {
+    if (_bidirectionalSync != null) {
       // The running pass belongs to a previous profile and stops early once
       // it notices the switch; replay for the new profile when it settles
       // rather than dropping this request.
@@ -251,12 +254,13 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
       return;
     }
 
-    _isBidirectionalSyncing = true;
+    final pass = _bidirectionalSync = Completer<void>();
     final profileGeneration = _profileGeneration;
     _bidirectionalSyncGeneration = profileGeneration;
     try {
       // Always push local changes to server (never throttle outbound sync)
       await syncPendingItems();
+      if (_backgroundSyncStopped) return;
 
       // Only throttle the pull from server
       if (!force && _lastSyncTime != null) {
@@ -273,13 +277,24 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
       await syncWatchStatesFromServer();
       if (profileGeneration == _profileGeneration) _lastSyncTime = DateTime.now();
     } finally {
-      _isBidirectionalSyncing = false;
+      _bidirectionalSync = null;
       _bidirectionalSyncGeneration = null;
+      pass.complete();
       if (_bidirectionalSyncRerunRequested) {
         _bidirectionalSyncRerunRequested = false;
         if (!isDisposed) unawaited(_performBidirectionalSync(force: true));
       }
     }
+  }
+
+  /// Stops background sync for good: no trigger starts a new pass, and the
+  /// pass in flight stops at its next step. Completes once that pass settled.
+  /// Exit teardown awaits this before closing the database, which a late pass
+  /// or its [onWatchStatesRefreshed] follow-up would otherwise query (#3012).
+  /// Disposal stays with the provider.
+  Future<void> stopBackgroundSync() async {
+    _backgroundSyncStopped = true;
+    await _bidirectionalSync?.future;
   }
 
   /// Called when app becomes active - syncs for cross-device updates.
@@ -491,6 +506,7 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
       appLogger.i('Syncing ${pendingActions.length} pending watch actions');
 
       for (final action in pendingActions) {
+        if (_backgroundSyncStopped) return;
         if (_activeProfileId != profileId) {
           // A profile switch mid-loop rebinds server clients to the NEW
           // user's tokens under the same server ids — replaying the rest
@@ -861,9 +877,13 @@ class OfflineWatchSyncService extends ChangeNotifier with DisposableChangeNotifi
       final profileGeneration = _profileGeneration;
       var stopped = false;
       bool isStale() {
-        if (!stopped && (isDisposed || profileGeneration != _profileGeneration)) {
+        if (!stopped && (isDisposed || _backgroundSyncStopped || profileGeneration != _profileGeneration)) {
           stopped = true;
-          appLogger.i('Active profile changed mid-pull — stopping watch-state pull');
+          appLogger.i(
+            profileGeneration != _profileGeneration
+                ? 'Active profile changed mid-pull — stopping watch-state pull'
+                : 'Watch-state pull stopped',
+          );
         }
         return stopped;
       }

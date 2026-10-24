@@ -20,7 +20,10 @@ Outputs, all committed:
   Runner target compiles every app icon set in it as an alternate
   (ASSETCATALOG_COMPILER_INCLUDE_ALL_APPICON_ASSETS); plezy.icon stays the primary.
 * tvos/Runner/AlternateAppIcons.xcassets: one AppIcon-<id>.imagestack per icon, a Front (foreground)
-  and Back layer at 400x240 and 800x480.
+  and Back layer at 400x240 and 800x480. tvOS wants CFBundleAlternateIcons as an array of names,
+  but the asset catalog compiler only writes iOS's dictionary form (App Store Connect rejects it
+  with ITMS-90471), so the Runner lists the names between the generated markers in
+  tvos/Runner/Info.plist instead.
 * android/app/src/main/res: an adaptive icon (background, foreground and monochrome layers), a
   legacy launcher icon for API 25 and an Android TV banner per icon, plus the matching
   <activity-alias> block in AndroidManifest.xml between the generated markers.
@@ -61,6 +64,7 @@ IOS_CATALOG = ROOT / "ios/Runner/AlternateAppIcons.xcassets"
 TVOS_CATALOG = ROOT / "tvos/Runner/AlternateAppIcons.xcassets"
 ANDROID_RES = ROOT / "android/app/src/main/res"
 ANDROID_MANIFEST = ROOT / "android/app/src/main/AndroidManifest.xml"
+TVOS_INFO_PLIST = ROOT / "tvos/Runner/Info.plist"
 # The shipping default icon's TV artwork, which the default picker thumbnails are cut from.
 TVOS_DEFAULT_STACK = ROOT / "tvos/Runner/Assets.xcassets/AppIcon.brandassets/App Icon.imagestack"
 ANDROID_DEFAULT_BANNER = ANDROID_RES / "drawable-xxxhdpi/tv_banner.png"
@@ -109,6 +113,8 @@ TVOS_SIZES = {"": (400, 240), "@2x": (800, 480)}
 WEBP_QUALITY = "90"
 MANIFEST_BEGIN = "<!-- BEGIN generated app icon aliases (scripts/codegen/generate_app_icons.py); do not edit -->"
 MANIFEST_END = "<!-- END generated app icon aliases -->"
+TVOS_PLIST_BEGIN = "<!-- BEGIN generated tvOS alternate icons (scripts/codegen/generate_app_icons.py); do not edit -->"
+TVOS_PLIST_END = "<!-- END generated tvOS alternate icons -->"
 XCASSETS_INFO = {"info": {"author": "xcode", "version": 1}}
 
 _ROOT_SVG = re.compile(r"<svg\b[^>]*>")
@@ -266,6 +272,18 @@ def _write_json(path: Path, data: object) -> None:
     path.write_text(json.dumps(data, indent=2) + "\n")
 
 
+def _replace_generated(path: Path, begin_marker: str, end_marker: str, body: str) -> None:
+    """Replaces the whole lines between the [begin_marker] line and the [end_marker] line."""
+    text = path.read_text()
+    begin = text.find(begin_marker)
+    end = text.find(end_marker)
+    if begin < 0 or end < begin:
+        sys.exit(f"error: {path} lacks the generated markers")
+    body_start = text.index("\n", begin) + 1
+    body_end = text.rindex("\n", 0, end) + 1
+    path.write_text(text[:body_start] + body + text[body_end:])
+
+
 def _reset_dir(path: Path) -> None:
     if path.exists():
         shutil.rmtree(path)
@@ -306,6 +324,8 @@ def generate_tvos(renderer: Renderer) -> None:
                 renderer.png(renderer.wide(SOURCE / icon, layer, width, height), imageset / filename, opaque=name == "Back")
                 images.append({"filename": filename, "idiom": "tv", "scale": "2x" if suffix else "1x"})
             _write_json(imageset / "Contents.json", {"images": images, **XCASSETS_INFO})
+    names = "".join(f"\t\t\t<string>AppIcon-{icon}</string>\n" for icon in ICONS)
+    _replace_generated(TVOS_INFO_PLIST, TVOS_PLIST_BEGIN, TVOS_PLIST_END, names)
 
 
 def _adaptive_icon_xml(icon: str) -> str:
@@ -344,15 +364,8 @@ def _alias_xml(icon: str) -> str:
 
 
 def _write_manifest_aliases() -> None:
-    manifest = ANDROID_MANIFEST.read_text()
-    begin = manifest.find(MANIFEST_BEGIN)
-    end = manifest.find(MANIFEST_END)
-    if begin < 0 or end < begin:
-        sys.exit(f"error: {ANDROID_MANIFEST} lacks the generated alias markers")
-    body_start = manifest.index("\n", begin) + 1
-    body_end = manifest.rindex("\n", 0, end) + 1
     aliases = "".join(_alias_xml(icon) for icon in ICONS)
-    ANDROID_MANIFEST.write_text(manifest[:body_start] + aliases + manifest[body_end:])
+    _replace_generated(ANDROID_MANIFEST, MANIFEST_BEGIN, MANIFEST_END, aliases)
 
 
 def generate_android(renderer: Renderer) -> None:

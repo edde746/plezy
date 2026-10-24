@@ -333,7 +333,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required _FrameRateStartupPlan plan,
     required bool Function() isCurrent,
     required Future<void> Function(String reason) resumeAfterStartupGate,
-    Future<void>? watchTogetherStartupHold,
   }) async {
     // Fallback refresh-rate path. The player was opened paused;
     // setVideoFrameRate awaits the real display-change event (+ settle +
@@ -377,7 +376,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
           plan: plan,
           isCurrent: isCurrent,
           resumeAfterRefresh: resumeAfterStartupGate,
-          watchTogetherStartupHold: watchTogetherStartupHold,
         );
       } finally {
         _frameRate.endDisplayNegotiation(plan.displayNegotiation);
@@ -392,7 +390,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     required _FrameRateStartupPlan plan,
     required bool Function() isCurrent,
     required Future<void> Function(String reason) resumeAfterRefresh,
-    required Future<void>? watchTogetherStartupHold,
   }) async {
     appLogger.d('Display matching: waiting for the first frame before negotiating the display');
     final startupReady = await plan._startupFrameReady;
@@ -418,10 +415,9 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     }
 
     // Everything below drives pause/play transitions the viewer did not ask
-    // for (the measurement window, the hold around the switch); a bound
-    // Watch Together room would broadcast them as intents and service remote
-    // requests against the player mid-measurement.
-    await _withWatchTogetherDetached(startupHold: watchTogetherStartupHold, () async {
+    // for (the measurement window, the hold around the switch); a Watch
+    // Together room must not command the player mid-measurement.
+    await _withWatchTogetherHeld(() async {
       try {
         if (PlatformDetector.isAppleTV()) {
           // The decoded stream's criteria already went to AVDisplayManager
@@ -1173,7 +1169,6 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
         watchTogetherOwnsStart: wtOwnsStart,
         wtStartupHold: wtStartupHold?.call(),
       ),
-      watchTogetherStartupHold: wtStartupHold?.call()?.future,
     );
 
     return true;

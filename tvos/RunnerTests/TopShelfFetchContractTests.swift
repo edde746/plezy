@@ -46,12 +46,13 @@ final class TopShelfFetchContractTests: XCTestCase {
     }
     """
 
-  func testPlexEpisodeMappingUsesSeriesTitleAndSeasonPoster() throws {
+  func testPlexEpisodeMappingUsesSeriesTitleAndSeriesPoster() throws {
     let items = ShelfItemMapper.plexItems(
       fromResponse: try fixture(Self.plexContinueWatchingFixture),
       serverId: serverId,
       baseUrl: baseUrl,
-      token: token
+      token: token,
+      episodePoster: .series
     )
     XCTAssertEqual(items.count, 2)
 
@@ -65,11 +66,11 @@ final class TopShelfFetchContractTests: XCTestCase {
     XCTAssertEqual(episode.lastPlaybackPositionMilliseconds, 900_000)
     XCTAssertEqual(try XCTUnwrap(episode.playbackProgress), 0.25, accuracy: 0.0001)
     XCTAssertEqual(episode.recency, 1_700_000_100)
-    // Season poster (parentThumb) wins the chain.
+    // Series poster (grandparentThumb) wins over the season's (#2377).
     XCTAssertEqual(
       episode.posterUrl,
       "\(baseUrl)/photo/:/transcode?width=600&height=900&minSize=1&upscale=1"
-        + "&url=%2Flibrary%2Fmetadata%2F55%2Fthumb%2F111&X-Plex-Token=\(token)"
+        + "&url=%2Flibrary%2Fmetadata%2F50%2Fthumb%2F99&X-Plex-Token=\(token)"
     )
 
     let movie = items[1]
@@ -86,24 +87,55 @@ final class TopShelfFetchContractTests: XCTestCase {
     )
   }
 
-  func testPlexPosterChainFallsBackThroughSeriesThenOwnThumb() {
-    let base: [String: Any] = ["ratingKey": "1", "type": "episode", "title": "Ep", "grandparentTitle": "Show"]
+  func testPlexEpisodePosterFollowsTheSeasonPreference() throws {
+    let items = ShelfItemMapper.plexItems(
+      fromResponse: try fixture(Self.plexContinueWatchingFixture),
+      serverId: serverId,
+      baseUrl: baseUrl,
+      token: token,
+      episodePoster: .season
+    )
+    XCTAssertEqual(items.count, 2)
+    XCTAssertEqual(
+      items[0].posterUrl,
+      "\(baseUrl)/photo/:/transcode?width=600&height=900&minSize=1&upscale=1"
+        + "&url=%2Flibrary%2Fmetadata%2F55%2Fthumb%2F111&X-Plex-Token=\(token)"
+    )
+    // A movie has no season or series; its own thumb is the poster either way.
+    XCTAssertEqual(items[1].posterUrl?.contains("url=%2Flibrary%2Fmetadata%2F202%2Fthumb%2F77"), true)
+  }
 
+  func testPlexPosterChainFallsBackToOwnThumb() {
+    let base: [String: Any] = ["ratingKey": "1", "type": "episode", "title": "Ep", "grandparentTitle": "Show"]
+    func posterUrl(_ metadata: [String: Any], _ episodePoster: ShelfEpisodePoster) -> String? {
+      ShelfItemMapper.plexItem(
+        metadata,
+        serverId: serverId,
+        baseUrl: baseUrl,
+        token: token,
+        episodePoster: episodePoster
+      )?.posterUrl
+    }
+
+    // Season preference without a season poster falls back to the series'.
     var metadata = base
     metadata["grandparentThumb"] = "/library/metadata/50/thumb/99"
     metadata["thumb"] = "/library/metadata/1/thumb/1"
-    let seriesPoster = ShelfItemMapper.plexItem(metadata, serverId: serverId, baseUrl: baseUrl, token: token)
-    XCTAssertEqual(
-      seriesPoster?.posterUrl?.contains("url=%2Flibrary%2Fmetadata%2F50%2Fthumb%2F99"),
-      true
-    )
+    XCTAssertEqual(posterUrl(metadata, .season)?.contains("url=%2Flibrary%2Fmetadata%2F50%2Fthumb%2F99"), true)
 
+    // Series preference never takes the season poster; the own thumb is next.
     metadata = base
+    metadata["parentThumb"] = "/library/metadata/55/thumb/111"
     metadata["thumb"] = "/library/metadata/1/thumb/1"
-    let ownThumb = ShelfItemMapper.plexItem(metadata, serverId: serverId, baseUrl: baseUrl, token: token)
-    XCTAssertEqual(ownThumb?.posterUrl?.contains("url=%2Flibrary%2Fmetadata%2F1%2Fthumb%2F1"), true)
+    XCTAssertEqual(posterUrl(metadata, .series)?.contains("url=%2Flibrary%2Fmetadata%2F1%2Fthumb%2F1"), true)
 
-    let bare = ShelfItemMapper.plexItem(base, serverId: serverId, baseUrl: baseUrl, token: token)
+    let bare = ShelfItemMapper.plexItem(
+      base,
+      serverId: serverId,
+      baseUrl: baseUrl,
+      token: token,
+      episodePoster: .season
+    )
     XCTAssertNotNil(bare)
     XCTAssertNil(bare?.posterUrl)
   }
@@ -123,7 +155,8 @@ final class TopShelfFetchContractTests: XCTestCase {
       fromResponse: try fixture(wrapped),
       serverId: serverId,
       baseUrl: baseUrl,
-      token: token
+      token: token,
+      episodePoster: .series
     )
     XCTAssertEqual(items.map(\.contentId), ["plezy_srv-1_7", "plezy_srv-1_8"])
   }
@@ -152,12 +185,13 @@ final class TopShelfFetchContractTests: XCTestCase {
     }
     """
 
-  func testMediaBrowserEpisodeMappingConvertsTicksAndPrefersSeasonPoster() throws {
+  func testMediaBrowserEpisodeMappingConvertsTicksAndUsesSeriesPoster() throws {
     let items = ShelfItemMapper.mediaBrowserItems(
       fromResponse: try fixture(Self.mediaBrowserFixture),
       serverId: serverId,
       baseUrl: baseUrl,
-      token: token
+      token: token,
+      episodePoster: .series
     )
     let episode = try XCTUnwrap(items.first)
     XCTAssertEqual(episode.contentId, "plezy_srv-1_ep1")
@@ -173,20 +207,43 @@ final class TopShelfFetchContractTests: XCTestCase {
     XCTAssertEqual(episode.recency, 1_700_000_000)
     XCTAssertEqual(
       episode.posterUrl,
+      "\(baseUrl)/Items/series-4/Images/Primary?maxWidth=600&maxHeight=900&api_key=\(token)"
+    )
+
+    let seasonPreferred = ShelfItemMapper.mediaBrowserItems(
+      fromResponse: try fixture(Self.mediaBrowserFixture),
+      serverId: serverId,
+      baseUrl: baseUrl,
+      token: token,
+      episodePoster: .season
+    )
+    XCTAssertEqual(
+      seasonPreferred.first?.posterUrl,
       "\(baseUrl)/Items/season-9/Images/Primary?maxWidth=600&maxHeight=900&api_key=\(token)"
     )
   }
 
   func testMediaBrowserPosterFallsBackToSeriesThenOwnImage() {
     let base: [String: Any] = ["Id": "ep1", "Type": "Episode", "Name": "Ep", "SeriesName": "Show"]
+    func posterUrl(_ item: [String: Any], _ episodePoster: ShelfEpisodePoster) -> String? {
+      ShelfItemMapper.mediaBrowserItem(
+        item,
+        serverId: serverId,
+        baseUrl: baseUrl,
+        token: token,
+        episodePoster: episodePoster
+      )?.posterUrl
+    }
 
     var item = base
     item["SeriesId"] = "series-4"
-    let seriesPoster = ShelfItemMapper.mediaBrowserItem(item, serverId: serverId, baseUrl: baseUrl, token: token)
-    XCTAssertEqual(seriesPoster?.posterUrl?.contains("/Items/series-4/Images/Primary"), true)
+    XCTAssertEqual(posterUrl(item, .season)?.contains("/Items/series-4/Images/Primary"), true)
 
-    let ownPoster = ShelfItemMapper.mediaBrowserItem(base, serverId: serverId, baseUrl: baseUrl, token: token)
-    XCTAssertEqual(ownPoster?.posterUrl?.contains("/Items/ep1/Images/Primary"), true)
+    item = base
+    item["SeasonId"] = "season-9"
+    XCTAssertEqual(posterUrl(item, .series)?.contains("/Items/ep1/Images/Primary"), true)
+
+    XCTAssertEqual(posterUrl(base, .season)?.contains("/Items/ep1/Images/Primary"), true)
   }
 
   func testMediaBrowserDateParsingToleratesSevenDigitFractions() {
@@ -408,7 +465,8 @@ final class TopShelfFetchContractTests: XCTestCase {
         ["ratingKey": "1", "title": "Heat", "thumb": "/library/metadata/1/thumb/1"],
         serverId: serverId,
         baseUrl: baseUrl,
-        token: token
+        token: token,
+        episodePoster: .series
       )
     )
     XCTAssertEqual(item.posterUrl?.contains(token), true)

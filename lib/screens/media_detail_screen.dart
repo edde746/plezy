@@ -384,6 +384,14 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   bool _suppressBackAfterPop = false;
   bool _tvDetailRevealed = false;
   bool _tvDetailRevealScheduled = false;
+  // Whether the route's push fade has finished. Until it has, and until the
+  // reveal gate opens, the hidden foreground and rail are not built: every
+  // data arrival during the fade would otherwise build and lay out invisible
+  // rows mid-animation, which drops most of the fade's frames on low-end TV
+  // boxes. After the fade, hidden content builds early again, so a slow load
+  // still warms the rows' artwork before the reveal.
+  bool _tvDetailRouteSettled = false;
+  Animation<double>? _tvDetailRouteAnimation;
   bool _hasLoadedSeasons = false;
   bool _hasLoadedEpisodes = false;
   double? _tvDetailPendingRailHeight;
@@ -956,12 +964,44 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     super.didChangeDependencies();
     final routeObserver = ProfileNavigationScope.of(context).routeObserver;
     final route = ModalRoute.of(context);
+    _trackTvDetailRouteSettled(route);
     if (route is! PageRoute<dynamic>) return;
     if (route == _route && routeObserver == _routeObserver) return;
     _routeObserver?.unsubscribe(this);
     _route = route;
     _routeObserver = routeObserver;
     routeObserver.subscribe(this, route);
+  }
+
+  void _trackTvDetailRouteSettled(ModalRoute<dynamic>? route) {
+    if (_tvDetailRouteSettled) return;
+    final animation = PlatformDetector.isTV() ? route?.animation : null;
+    if (identical(animation, _tvDetailRouteAnimation)) return;
+    _tvDetailRouteAnimation?.removeStatusListener(_onTvDetailRouteStatus);
+    _tvDetailRouteAnimation = null;
+    if (animation == null || animation.isCompleted) {
+      _tvDetailRouteSettled = true;
+      return;
+    }
+    _tvDetailRouteAnimation = animation..addStatusListener(_onTvDetailRouteStatus);
+  }
+
+  void _onTvDetailRouteStatus(AnimationStatus status) {
+    if (!status.isCompleted) return;
+    _tvDetailRouteAnimation?.removeStatusListener(_onTvDetailRouteStatus);
+    _tvDetailRouteAnimation = null;
+    if (!mounted) return;
+    // Already revealed: the content is built, so there is nothing to rebuild.
+    if (_tvDetailRevealed) {
+      _tvDetailRouteSettled = true;
+      return;
+    }
+    // The status flips inside the fade's last tick. Building the withheld
+    // content in that frame would hold the fade's final frame back by the
+    // whole build, so it builds in the next frame, when nothing moves.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted && !_tvDetailRouteSettled) setState(() => _tvDetailRouteSettled = true);
+    });
   }
 
   @override
@@ -992,6 +1032,17 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       _suppressBackAfterPop = false;
       return;
     }
+    _popMediaDetail();
+  }
+
+  /// Leaves via the detail's own route, and only while it is the top one. A
+  /// blind `Navigator.pop` takes whatever is topmost: a back that reaches this
+  /// screen after its route began closing pops the profile shell beneath — the
+  /// next one finds the navigator empty and throws (#2937, #2370) — and one that
+  /// reaches it under a dialog closes the dialog.
+  void _popMediaDetail() {
+    final route = _route ?? ModalRoute.of(context);
+    if (route == null || !route.isCurrent) return;
     Navigator.pop(context, _watchStateChanged);
   }
 
@@ -1082,6 +1133,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       source.watchlistChanges.removeListener(_onWatchlistSourceChanged);
     }
     _routeObserver?.unsubscribe(this);
+    _tvDetailRouteAnimation?.removeStatusListener(_onTvDetailRouteStatus);
     _scrollController.dispose();
     _scrollOffset.dispose();
     _tvDetailFocusedEpisode.dispose();
@@ -3399,7 +3451,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       // lights; route the leading through the shared desktop padding logic.
       final backButton = AppBarBackButton(
         style: BackButtonStyle.plain,
-        onPressed: () => Navigator.pop(context, _watchStateChanged),
+        onPressed: _popMediaDetail,
         focusNode: _backButtonFocusNode,
       );
       final loading = ListenableBuilder(
@@ -3687,7 +3739,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                   child: DesktopAppBarHelper.buildAdjustedLeading(
                     AppBarBackButton(
                       style: BackButtonStyle.circular,
-                      onPressed: () => Navigator.pop(context, _watchStateChanged),
+                      onPressed: _popMediaDetail,
                       focusNode: _backButtonFocusNode,
                     ),
                     context: context,
@@ -3725,6 +3777,9 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     final railTopPadding = 12 * detailScale;
     final foregroundBottom = (railHeight - railTopPadding) + (_tvDetailActionRailGap * detailScale);
     final spotlightLeft = (24 * detailScale).clamp(18.0, 40.0).toDouble();
+    // See _tvDetailRouteSettled. The children stay in place (only their
+    // content is withheld) so the Stack keeps its elements across the swap.
+    final buildHiddenContent = _tvDetailRevealed || _tvDetailRouteSettled;
 
     final revealContent = Stack(
       fit: StackFit.expand,
@@ -3734,11 +3789,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           right: size.width * 0.40,
           top: spotlightTop,
           bottom: foregroundBottom,
-          child: ListenableBuilder(
-            listenable: _tvDetailForegroundListenable,
-            builder: (context, _) =>
-                _buildTvDetailForeground(context, metadata, hideSpoilers: hideSpoilers, scale: detailScale),
-          ),
+          child: buildHiddenContent
+              ? ListenableBuilder(
+                  listenable: _tvDetailForegroundListenable,
+                  builder: (context, _) =>
+                      _buildTvDetailForeground(context, metadata, hideSpoilers: hideSpoilers, scale: detailScale),
+                )
+              : const SizedBox.shrink(),
         ),
         // The action row's track status sits at the screen's right edge,
         // bottom-aligned with the row and outside the hero's 60% text column,
@@ -3769,13 +3826,13 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
           child: DesktopAppBarHelper.buildAdjustedLeading(
             AppBarBackButton(
               style: BackButtonStyle.circular,
-              onPressed: () => Navigator.pop(context, _watchStateChanged),
+              onPressed: _popMediaDetail,
               focusNode: _backButtonFocusNode,
             ),
             context: context,
           )!,
         ),
-        if (detailHubs.isNotEmpty)
+        if (buildHiddenContent && detailHubs.isNotEmpty)
           Positioned(
             left: 0,
             right: 0,
@@ -4405,14 +4462,23 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return _onDeckEpisode?.id;
   }
 
-  List<MediaItem> _tvDetailActorItems(MediaItem metadata) {
-    final roles = metadata.roles;
-    if (roles == null || roles.isEmpty) return const [];
+  // Cached per metadata object: the TV rail memoizes cards by item identity,
+  // so rebuilding identical cast items on every Detail build would rebuild
+  // every cast card with them.
+  (MediaItem, List<MediaItem>)? _tvDetailActorItemsCache;
 
-    return [
-      for (var i = 0; i < roles.length; i++)
-        if (roles[i].tag.trim().isNotEmpty) _tvDetailActorItem(metadata, roles[i], i),
-    ];
+  List<MediaItem> _tvDetailActorItems(MediaItem metadata) {
+    final cached = _tvDetailActorItemsCache;
+    if (cached != null && identical(cached.$1, metadata)) return cached.$2;
+    final roles = metadata.roles;
+    final items = roles == null || roles.isEmpty
+        ? const <MediaItem>[]
+        : [
+            for (var i = 0; i < roles.length; i++)
+              if (roles[i].tag.trim().isNotEmpty) _tvDetailActorItem(metadata, roles[i], i),
+          ];
+    _tvDetailActorItemsCache = (metadata, items);
+    return items;
   }
 
   MediaItem _tvDetailActorItem(MediaItem metadata, MediaRole actor, int index) {

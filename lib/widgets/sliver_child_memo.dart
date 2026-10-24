@@ -65,6 +65,9 @@ class SliverChildMemo<T extends Object> {
 
   void clear() => _cache.clear();
 
+  /// Drops the entry for [index], so its next [widgetFor] builds afresh.
+  void remove(int index) => _cache.remove(index);
+
   /// Drops entries outside `centerIndex ± halfWindow`.
   ///
   /// Call alongside per-index resource eviction (e.g. focus-node eviction):

@@ -14,6 +14,7 @@ class MediaCardSliverPosition {
     required this.columnCount,
     required this.isGrid,
     this.layoutEpoch,
+    this.isOnScreen,
   });
 
   final int index;
@@ -22,10 +23,22 @@ class MediaCardSliverPosition {
   final bool isGrid;
   final Object? layoutEpoch;
 
+  /// Grid cells only: whether the cell intersects the grid's visible extent as
+  /// of the grid's latest layout (cells realized in the cache extent do not).
+  final bool Function()? isOnScreen;
+
   bool get isFirstRow => index < columnCount;
   bool get isFirstColumn => index % columnCount == 0;
   bool get isLastColumn => index % columnCount == columnCount - 1;
   bool get disableScale => !isGrid;
+}
+
+bool _gridCellOnScreen(BuildContext gridContext, SliverGridDelegate delegate, int index) {
+  final constraints = gridContext.mounted ? SliverCrossAxisLayoutBuilder.latestConstraintsOf(gridContext) : null;
+  if (constraints == null) return true;
+  final cell = delegate.getLayout(constraints).getGeometryForChildIndex(index);
+  return cell.scrollOffset < constraints.scrollOffset + constraints.remainingPaintExtent &&
+      cell.trailingScrollOffset > constraints.scrollOffset;
 }
 
 typedef MediaCardSliverItemBuilder = Widget Function(BuildContext context, MediaCardSliverPosition position);
@@ -57,6 +70,10 @@ class MediaCardSliverLayout extends StatelessWidget {
   final int density;
   final EdgeInsetsGeometry padding;
   final MediaCardSliverItemBuilder itemBuilder;
+
+  /// Maps a card's key to the index now holding its item, so a realized card
+  /// follows its item when indices shift. Must return an index whose item
+  /// builds a card with that key, or null.
   final ChildIndexGetter? findChildIndexCallback;
   final bool fullBleedImage;
   final bool useWideAspectRatio;
@@ -76,7 +93,7 @@ class MediaCardSliverLayout extends StatelessWidget {
           addSemanticIndexes: false,
           itemCount: itemCount,
           findChildIndexCallback: findChildIndexCallback,
-          itemBuilder: (context, index) => itemBuilder(
+          itemBuilder: (context, index) => _buildChild(
             context,
             MediaCardSliverPosition(
               index: index,
@@ -117,7 +134,7 @@ class MediaCardSliverLayout extends StatelessWidget {
               gridDelegate: geometry.delegate,
               itemCount: itemCount,
               findChildIndexCallback: findChildIndexCallback,
-              itemBuilder: (context, index) => itemBuilder(
+              itemBuilder: (context, index) => _buildChild(
                 context,
                 MediaCardSliverPosition(
                   index: index,
@@ -125,6 +142,7 @@ class MediaCardSliverLayout extends StatelessWidget {
                   columnCount: geometry.columnCount,
                   isGrid: true,
                   layoutEpoch: layoutEpoch,
+                  isOnScreen: () => _gridCellOnScreen(context, geometry.delegate, index),
                 ),
               ),
             );
@@ -132,5 +150,23 @@ class MediaCardSliverLayout extends StatelessWidget {
         ),
       ),
     );
+  }
+
+  /// Builds the card at [position], presenting its key only at the index
+  /// [findChildIndexCallback] resolves that key to.
+  ///
+  /// On every rebuild the sliver moves each realized child to the index its
+  /// key resolves to. Offset-paged data can hold one item at two indices (the
+  /// server's order moved between page fetches); if both copies kept the key,
+  /// a shift would move both into one slot and the displaced element would
+  /// never unmount — its render box stays in the sliver with no layout offset
+  /// and every later layout, paint, and hit test throws. Other copies are
+  /// built unkeyed, which the sliver leaves at their own index.
+  Widget _buildChild(BuildContext context, MediaCardSliverPosition position) {
+    final child = itemBuilder(context, position);
+    final key = child.key;
+    final findIndex = findChildIndexCallback;
+    if (key == null || findIndex == null || findIndex(key) == position.index) return child;
+    return KeyedSubtree(child: child);
   }
 }

@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'package:shared_preferences_foundation/shared_preferences_foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/material.dart' as material show ThemeMode;
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
@@ -160,6 +161,7 @@ void main() {
   // target in Flutter's tool), so register platform stores manually for
   // the plugins we use.
   _registerTvosPlatformPlugins();
+  _registerAppLicenses();
   _bootstrapApp();
 }
 
@@ -845,6 +847,9 @@ class _StartupBootstrapState<T> extends State<StartupBootstrap<T>> {
         builder: (context) => InputModeTracker(
           child: MaterialApp(
             debugShowCheckedModeBanner: false,
+            locale: TranslationProvider.of(context).locale.localizationsLocale,
+            supportedLocales: supportedLocalizationsLocales,
+            localizationsDelegates: GlobalMaterialLocalizations.delegates,
             theme: resolved?.lightTheme ?? widget.lightTheme,
             darkTheme: resolved?.darkTheme ?? widget.darkTheme,
             themeMode: resolved?.themeMode ?? widget.themeMode,
@@ -1066,7 +1071,6 @@ void _startNonessentialInitialization(SettingsService settings) {
     unawaited(AndroidExitDiagnostics.logPreviousExit());
   }
 
-  bestEffort('Shader licenses', _registerShaderLicenses);
   // The startup-gate application can precede the engine's first metrics
   // report, which reads as a 1.0 display budget; re-derive it now that the
   // tree is mounted and the display is known.
@@ -1189,6 +1193,31 @@ FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
   return event;
 }
 
+/// Registers notices for code Plezy ships outside its pub packages.
+///
+/// Runs in [main], before `SentryFlutter.init`, and must stay ahead of every
+/// [LicenseRegistry.licenses] reader. Sentry's event enricher walks the
+/// registry for the first captured event, and the registry iterates its live
+/// collector list across each collector's await: a collector added while that
+/// walk is suspended throws `ConcurrentModificationError` on the next step and
+/// the event never finishes enriching. The collectors are lazy, so registering
+/// them here loads nothing until a reader runs.
+void _registerAppLicenses() {
+  _registerShaderLicenses();
+  // iOS covers iPhone, iPad, and Apple TV; mpv-build links SpatialAudioBridge
+  // into libmpv there and not on macOS.
+  if (Platform.isIOS) _registerSpatialAudioLicenses();
+}
+
+/// Notices for the SpatialAudioBridge core compiled into libmpv, verbatim from
+/// the source commit mpv-build pins (versions.json `spatialaudiobridge`).
+void _registerSpatialAudioLicenses() {
+  LicenseRegistry.addLicense(() async* {
+    final notices = await rootBundle.loadString('assets/licenses/SpatialAudioBridge.txt');
+    yield LicenseEntryWithLineBreaks(const ['SpatialAudioBridge'], notices);
+  });
+}
+
 void _registerShaderLicenses() {
   LicenseRegistry.addLicense(() async* {
     yield const LicenseEntryWithLineBreaks(
@@ -1296,6 +1325,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   late final AppDatabase _appDatabase;
   late final DownloadManagerService _downloadManager;
   late final OfflineWatchSyncService _offlineWatchSyncService;
+  late final ConnectionRegistry _connections;
+  late final ProfileConnectionRegistry _profileConnections;
+  late final PlexHomeService _plexHomeService;
   late final AppLifecycleListener _appLifecycleListener;
   StreamSubscription<WatchStateEvent>? _watchStateSubscription;
 
@@ -1305,7 +1337,9 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
   OfflineModeProvider? _connectivitySyncProvider;
   Timer? _syncDebounce;
   final Set<String> _pendingSyncKeys = <String>{};
-  bool _isAutoDeleteRunning = false;
+
+  /// The [_autoDeleteAndSync] pass in flight; exit teardown awaits it.
+  Completer<void>? _autoDeleteRun;
   bool _lastConnectivityWasWifi = false;
   bool _lastConnectivityHadNetwork = true;
   Future<void>? _shutdownFuture;
@@ -1352,6 +1386,19 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     );
 
     _offlineWatchSyncService = OfflineWatchSyncService(database: _appDatabase, serverManager: _serverManager);
+
+    _connections = ConnectionRegistry(_appDatabase);
+    _profileConnections = ProfileConnectionRegistry(_appDatabase);
+    // Owned here rather than by its provider: exit teardown must settle it
+    // before the database closes. Hydrate the disk cache eagerly for profile
+    // resolution; live refresh starts only after MainScreen has settled the
+    // startup offline decision.
+    _plexHomeService = PlexHomeService(
+      connections: _connections,
+      profileConnections: _profileConnections,
+      storage: widget.storage,
+    );
+    unawaited(_plexHomeService.hydrate());
 
     _appLifecycleListener = AppLifecycleListener(
       onExitRequested: () async {
@@ -1414,6 +1461,14 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
       closeArtworkHttpClientGracefully(),
     ], eagerError: false);
     await ManagedHttpClient.closeAllGracefully();
+    // Settle everything that can still query the database. A query issued
+    // after close throws from whichever timer or callback started it, and
+    // those keep firing if the process outlives this teardown (#2651, #3012).
+    await Future.wait([
+      _plexHomeService.dispose(),
+      _offlineWatchSyncService.stopBackgroundSync(),
+      ?_autoDeleteRun?.future,
+    ]);
     await _appDatabase.close();
   }
 
@@ -1428,6 +1483,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
       _libraryEventService.dispose();
       _downloadManager.dispose();
       _serverManager.dispose();
+      unawaited(_plexHomeService.dispose());
     }
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
@@ -1541,11 +1597,14 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     List<String>? targetKeys,
     bool force = false,
   }) async {
-    if (_isAutoDeleteRunning) {
+    // Exit teardown awaits the pass in flight before closing the database; a
+    // pass started after that would query a closed database (#3012).
+    if (_shutdownFuture != null) return;
+    if (_autoDeleteRun != null) {
       if (targetKeys != null) _pendingSyncKeys.addAll(targetKeys);
       return;
     }
-    _isAutoDeleteRunning = true;
+    final run = _autoDeleteRun = Completer<void>();
     try {
       await downloadProvider.refreshMetadataFromCache();
       final activeGlobalKey = VideoPlayerScreenState.activeGlobalKey;
@@ -1576,7 +1635,8 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         }
       }
     } finally {
-      _isAutoDeleteRunning = false;
+      _autoDeleteRun = null;
+      run.complete();
       if (_pendingSyncKeys.isNotEmpty) {
         final queuedKeys = _pendingSyncKeys.toList();
         _pendingSyncKeys.clear();
@@ -1656,24 +1716,10 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         Provider<SettingsService>.value(value: widget.settings),
         Provider<StorageService>.value(value: widget.storage),
         Provider<AppDatabase>.value(value: _appDatabase),
-        Provider<ConnectionRegistry>(create: (_) => ConnectionRegistry(_appDatabase)),
+        Provider<ConnectionRegistry>.value(value: _connections),
         Provider<ProfileRegistry>(create: (_) => ProfileRegistry(_appDatabase)),
-        Provider<ProfileConnectionRegistry>(create: (_) => ProfileConnectionRegistry(_appDatabase)),
-        Provider<PlexHomeService>(
-          create: (context) {
-            // Hydrate the disk cache eagerly for profile resolution. Live
-            // refresh is started only after MainScreen has settled the
-            // startup offline decision.
-            final service = PlexHomeService(
-              connections: context.read<ConnectionRegistry>(),
-              profileConnections: context.read<ProfileConnectionRegistry>(),
-              storage: context.read<StorageService>(),
-            );
-            unawaited(service.hydrate());
-            return service;
-          },
-          dispose: (_, s) => s.dispose(),
-        ),
+        Provider<ProfileConnectionRegistry>.value(value: _profileConnections),
+        Provider<PlexHomeService>.value(value: _plexHomeService),
         ChangeNotifierProvider<ActiveProfileProvider>(
           create: (context) {
             final provider = ActiveProfileProvider(
@@ -1892,6 +1938,12 @@ class _AppShell extends StatelessWidget {
                   child: MaterialApp(
                     title: t.app.title,
                     debugShowCheckedModeBanner: false,
+                    // The app language, not Flutter's en-US default: every
+                    // Text inherits it as the locale that selects CJK glyph
+                    // forms, and Material's own strings follow it.
+                    locale: TranslationProvider.of(context).locale.localizationsLocale,
+                    supportedLocales: supportedLocalizationsLocales,
+                    localizationsDelegates: GlobalMaterialLocalizations.delegates,
                     theme: themeProvider.lightTheme,
                     darkTheme: themeProvider.darkTheme,
                     themeMode: themeProvider.materialThemeMode,

@@ -167,7 +167,18 @@ class MediaServerHttpClient {
   }) => _send('DELETE', path, queryParameters: queryParameters, headers: headers, timeout: timeout, abort: abort);
 
   /// Fetch raw bytes (e.g. images, BIF files, subtitles).
-  Future<Uint8List> getBytes(String url, {Map<String, String>? headers, Duration? timeout, AbortController? abort}) {
+  ///
+  /// [maxBytes] bounds what is buffered: a declared Content-Length over it
+  /// fails before any of the body is read, and a body that outgrows it fails
+  /// as soon as it crosses the limit, so an oversized response never lands in
+  /// memory. The failure is a non-transient [MediaServerHttpException].
+  Future<Uint8List> getBytes(
+    String url, {
+    Map<String, String>? headers,
+    Duration? timeout,
+    AbortController? abort,
+    int? maxBytes,
+  }) {
     return _perform<Uint8List>(
       'GET',
       url,
@@ -175,10 +186,57 @@ class MediaServerHttpClient {
       timeout: timeout,
       abort: abort,
       consume: (streamed, scope) async {
-        final bytes = await scope.receive(streamed.stream.toBytes());
+        final bytes = await scope.receive(_readBody(streamed, scope.uri, maxBytes: maxBytes));
         scope.logResponse(streamed.statusCode);
         return bytes;
       },
+    );
+  }
+
+  /// Reads [response]'s body into one buffer. `ByteStream.toBytes` grows its
+  /// buffer by doubling and then copies the result twice, so a multi-MB body
+  /// (a BIF scrub preview) allocated about five times its size - enough to
+  /// force back-to-back old-generation GCs on low-end TV boxes. A declared
+  /// length is filled in place; without one (a body decompressed on the fly),
+  /// or once the body outgrows it, the chunks are copied once at the end.
+  static Future<Uint8List> _readBody(http.StreamedResponse response, Uri uri, {int? maxBytes}) async {
+    final declared = response.contentLength;
+    if (maxBytes != null && declared != null && declared > maxBytes) {
+      // Cancelling the unread body closes its connection; an unread body would
+      // instead hold the socket (and the managed client's drain) open.
+      await response.stream.listen(null).cancel();
+      throw _bodyTooLarge(response.statusCode, uri, maxBytes, declared: declared);
+    }
+    Uint8List? sized = declared != null && declared > 0 ? Uint8List(declared) : null;
+    var length = 0;
+    var received = 0;
+    final unsized = BytesBuilder(copy: false);
+    await for (final chunk in response.stream) {
+      received += chunk.length;
+      // Leaving the loop cancels the body, which closes the connection.
+      if (maxBytes != null && received > maxBytes) throw _bodyTooLarge(response.statusCode, uri, maxBytes);
+      if (sized != null) {
+        if (length + chunk.length <= sized.length) {
+          sized.setRange(length, length + chunk.length, chunk);
+          length += chunk.length;
+          continue;
+        }
+        unsized.add(Uint8List.sublistView(sized, 0, length));
+        sized = null;
+      }
+      unsized.add(chunk);
+    }
+    if (sized == null) return unsized.takeBytes();
+    return length == sized.length ? sized : Uint8List.sublistView(sized, 0, length);
+  }
+
+  static MediaServerHttpException _bodyTooLarge(int statusCode, Uri uri, int maxBytes, {int? declared}) {
+    final size = declared == null ? '' : ' of $declared bytes';
+    return MediaServerHttpException(
+      type: MediaServerHttpErrorType.unknown,
+      statusCode: statusCode,
+      requestUri: uri,
+      message: 'Response body$size exceeds the $maxBytes-byte limit',
     );
   }
 

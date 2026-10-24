@@ -39,7 +39,7 @@ import '../utils/platform_detector.dart';
 import 'trackers/tracker_constants.dart';
 import '../profiles/profile.dart';
 import '../theme/mono_theme.dart' show MonoPalette;
-import '../watch_together/services/watch_together_relay_endpoint.dart';
+import '../watch_together/services/watch_party_relays.dart';
 
 /// The app theme. Value names are the persisted ids. [system] follows the
 /// platform between [light] and [dark]; every other value is one fixed palette,
@@ -75,8 +75,9 @@ class LibraryDensity {
   static double factor(int density) => (density.clamp(min, max) - min) / (max - min);
 }
 
-/// Gap between cards in media grids (#2083, #1597). [tight] is the
-/// pre-setting look, so nothing moves on update.
+/// Gap between cards in media grids (#2083, #1597). Touch, pointer and car
+/// default to [tight], the pre-setting look; TV defaults to [normal] because
+/// gapless cards read as one slab from across the room.
 enum GridSpacing { tight, normal, spacious }
 
 extension GridSpacingMetrics on GridSpacing {
@@ -108,20 +109,22 @@ enum EpisodeAction { play, details }
 /// How Specials (season 0) are placed in the episode watch order — the
 /// sequence auto-advance, offline next/prev, and "download next N" walk.
 enum SpecialsOrdering {
-  /// Follow the backend's own ordering: Plex builds its server-side show
-  /// queue from `/allLeaves` (aired order, Specials interleaved); Jellyfin's
-  /// `/Shows/{id}/Episodes` order is preserved as returned (Specials placed
-  /// only by explicit `AirsBefore*` metadata, per the server-wide
-  /// `DisplaySpecialsWithinSeasons` setting). Client-side selections with no
-  /// server order (offline queue, downloads, offline OnDeck) fall back to
-  /// Specials-last.
+  /// Follow the backend's own ordering: Plex builds the show queue the way
+  /// Plex Web does (a continuous queue: regular seasons in season/episode
+  /// order, then Specials); Jellyfin's `/Shows/{id}/Episodes` order is
+  /// preserved as returned (Specials placed only by explicit `AirsBefore*`
+  /// metadata, per the server-wide `DisplaySpecialsWithinSeasons` setting).
+  /// Client-side selections with no server order (offline queue, downloads,
+  /// offline OnDeck) fall back to Specials-last.
   respectServer,
 
   /// Interleave Specials between regular episodes by air date on every
-  /// surface (#1416), the way Plex's own play queue orders a show.
+  /// surface (#1416). Plex builds the show queue from `/allLeaves`, which
+  /// PMS orders purely by air date.
   airDate,
 
   /// Specials strictly after the regular seasons on every surface (#1952).
+  /// On Plex this is the same continuous queue as [respectServer].
   specialsLast,
 }
 
@@ -236,10 +239,12 @@ const String _legacyDemuxerModeKey = 'demuxer_mode';
 const String _legacyUseSeasonPosterKey = 'use_season_poster';
 const String _legacyMpvConfigEntriesKey = 'mpv_config_entries';
 const String _legacyUseExoPlayerKey = 'use_exoplayer';
+const String _legacyCustomRelayUrlKey = 'custom_relay_url';
 const String _legacyAutoSkipIntroKey = 'auto_skip_intro';
 const String _legacyAutoSkipCreditsKey = 'auto_skip_credits';
 const String _legacyAudioDownmixKey = 'audio_downmix';
 const String _legacyDeinterlaceKey = 'deinterlace';
+const String _playerScopeGlobalsResetKey = 'player_scope_globals_reset';
 
 /// Migrates from the legacy enum-string format and clamps to 1..5.
 class _LibraryDensityPref extends Pref<int> {
@@ -330,6 +335,33 @@ class _EpisodePosterModePref extends EnumPref<EpisodePosterMode> {
       return migrated;
     }
     return super.readFrom(svc);
+  }
+}
+
+/// Where one player-sheet property persists (see [PlayerSettingScope]).
+///
+/// [globals] hold the Everywhere value. A keyed scope consults them only as
+/// the fallback for a library or title the user never tuned, so entering one
+/// from Everywhere or Don't save resets them: kept, the Everywhere value would
+/// apply to every such library or title (#2722). Don't save keeps them, as it
+/// applies them as the value of every playback.
+class PlayerSettingScopePref extends EnumPref<PlayerSettingScope> {
+  final List<Pref<Object?>> globals;
+
+  const PlayerSettingScopePref(super.key, this.globals)
+    : super(values: PlayerSettingScope.values, defaultValue: PlayerSettingScope.global);
+
+  @override
+  Future<void> writeTo(BaseSharedPreferencesService svc, PlayerSettingScope value) async {
+    final entersKeyedScope = value.keysEntries && !readFrom(svc).keysEntries;
+    await super.writeTo(svc, value);
+    if (entersKeyedScope) await resetGlobals(svc);
+  }
+
+  Future<void> resetGlobals(BaseSharedPreferencesService svc) async {
+    for (final pref in globals) {
+      await svc.reset(pref);
+    }
   }
 }
 
@@ -482,11 +514,11 @@ String? _trimEmptyAsNull(String? v) {
 
 String? _normalizeRelayBaseUrl(String? value) {
   if (value == null || value.trim().isEmpty) return null;
-  final endpoint = WatchTogetherRelayEndpoint.tryParseCustom(value);
-  if (endpoint == null) {
-    throw FormatException('Invalid Watch Together relay base URL');
+  final base = canonicalRelayBaseUrl(value);
+  if (base == null) {
+    throw FormatException('Invalid Open Watch Party relay base URL');
   }
-  return endpoint.canonicalBaseUrl;
+  return base;
 }
 
 String _legacyMpvEntriesToText(List<dynamic> entries) {
@@ -595,7 +627,7 @@ class _PreferenceGroupListenable extends ChangeNotifier {
 
 class SettingsService extends BaseSharedPreferencesService {
   static const String defaultIntroPattern = r'(?:^|\b)(?:intro(?:duction)?|opening)(?:\b|$)|^op(?:\s?\d+)?$';
-  static const String defaultCreditsPattern = r'(?:^|\b)(?:outro|closing|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$';
+  static const String defaultCreditsPattern = r'(?:^|\b)(?:outro|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$';
 
   static const enableDebugLogging = BoolPref('enable_debug_logging', onWrite: setLoggerLevel);
   static const crashReporting = BoolPref('crash_reporting', defaultValue: true);
@@ -884,13 +916,22 @@ class SettingsService extends BaseSharedPreferencesService {
     legacyFalse: AudioChannelLimit.original,
   );
   static const audioDownmixNormalize = BoolPref('audio_downmix_normalize', defaultValue: true);
+
+  /// mpv `audio-device` name last picked in the player's Audio Output menu;
+  /// `auto` leaves the choice to mpv. Applied to each new mpv core only while
+  /// that core lists the device (see `applyPreferredAudioDevice`). Names are
+  /// per machine, so reset-only in the registry.
+  static const audioOutputDevice = StringPref('audio_output_device', defaultValue: 'auto');
   static const liveTvDefaultFavorites = BoolPref('live_tv_default_favorites');
   static const matchRefreshRate = BoolPref('match_refresh_rate');
   static const matchDynamicRange = BoolPref('match_dynamic_range');
   static const appLocale = _AppLocalePref();
   static const autoPip = _AutoPipPref();
   static const customDownloadPath = NullableStringPref('custom_download_path');
-  static final customRelayUrl = NullableStringPref('custom_relay_url', transform: _normalizeRelayBaseUrl);
+
+  /// A self-hosted Open Watch Party relay's base URL; null for the public
+  /// relays.
+  static final watchPartyRelayUrl = NullableStringPref('watch_party_relay_url', transform: _normalizeRelayBaseUrl);
 
   static NullableStringPref recentRoomsForProfile(String profileId) {
     if (profileId.trim().isEmpty) {
@@ -926,29 +967,13 @@ class SettingsService extends BaseSharedPreferencesService {
   // Where a change made in the player's settings sheet persists (see
   // [PlayerSettingScope]). Defaults preserve the pre-existing behavior:
   // every change updates the global default.
-  static const playbackSpeedScope = EnumPref<PlayerSettingScope>(
-    'playback_speed_scope',
-    values: PlayerSettingScope.values,
-    defaultValue: PlayerSettingScope.global,
-  );
-  static const shaderPresetScope = EnumPref<PlayerSettingScope>(
-    'shader_preset_scope',
-    values: PlayerSettingScope.values,
-    defaultValue: PlayerSettingScope.global,
-  );
-  static const boxFitScope = EnumPref<PlayerSettingScope>(
-    'box_fit_scope',
-    values: PlayerSettingScope.values,
-    defaultValue: PlayerSettingScope.global,
-  );
+  static final playbackSpeedScope = PlayerSettingScopePref('playback_speed_scope', [defaultPlaybackSpeed]);
+  static final shaderPresetScope = PlayerSettingScopePref('shader_preset_scope', [globalShaderPreset]);
+  static final boxFitScope = PlayerSettingScopePref('box_fit_scope', [defaultBoxFitMode]);
 
   /// One scope for both sync offsets: they are tuned together and a user who
   /// wants per-title subtitle offsets wants per-title audio offsets too.
-  static const syncOffsetScope = EnumPref<PlayerSettingScope>(
-    'sync_offset_scope',
-    values: PlayerSettingScope.values,
-    defaultValue: PlayerSettingScope.global,
-  );
+  static final syncOffsetScope = PlayerSettingScopePref('sync_offset_scope', [audioSyncOffset, subtitleSyncOffset]);
   static final displaySwitchDelay = IntPref('display_switch_delay', transform: (v) => v.clamp(0, 10));
 
   static ThemeMode _tvAwareThemeModeDefault() => PlatformDetector.isTV() ? ThemeMode.oled : ThemeMode.system;
@@ -984,10 +1009,11 @@ class SettingsService extends BaseSharedPreferencesService {
     defaultValue: PlaybackBufferTier.auto,
   );
   static const libraryDensity = _LibraryDensityPref();
+  static GridSpacing _tvAwareGridSpacingDefault() => PlatformDetector.isTV() ? GridSpacing.normal : GridSpacing.tight;
   static const gridSpacing = EnumPref<GridSpacing>(
     'grid_spacing',
     values: GridSpacing.values,
-    defaultValue: GridSpacing.tight,
+    defaultValueProvider: _tvAwareGridSpacingDefault,
   );
   static const automotiveUiScale = _AutomotiveUiScalePref();
   static const tvCornerSpotlightBackdrop = BoolPref('tv_corner_spotlight_backdrop');
@@ -1137,15 +1163,31 @@ class SettingsService extends BaseSharedPreferencesService {
     // One-way move to the mpv default: the pre-`android_use_exoplayer` pick is
     // dropped rather than carried over, and nothing reads the old key.
     await prefs.remove(_legacyUseExoPlayerKey);
+    await _resetGlobalsOfKeyedPlayerScopes();
 
-    final storedRelay = readNullableString(customRelayUrl.key);
+    // The custom relay of Plezy's former Watch Together protocol: no Open
+    // Watch Party relay answers there.
+    await prefs.remove(_legacyCustomRelayUrlKey);
+    final storedRelay = readNullableString(watchPartyRelayUrl.key);
     if (storedRelay == null) return;
-    final endpoint = WatchTogetherRelayEndpoint.tryParseCustom(storedRelay);
-    if (endpoint == null) {
-      await prefs.remove(customRelayUrl.key);
-    } else if (endpoint.canonicalBaseUrl != storedRelay) {
-      await prefs.setString(customRelayUrl.key, endpoint.canonicalBaseUrl);
+    final base = canonicalRelayBaseUrl(storedRelay);
+    if (base == null) {
+      await prefs.remove(watchPartyRelayUrl.key);
+    } else if (base != storedRelay) {
+      await prefs.setString(watchPartyRelayUrl.key, base);
     }
+  }
+
+  /// One-time repair for #2722: a scope switched to per-library or per-title
+  /// before [PlayerSettingScopePref] reset its globals still falls back to the
+  /// stale Everywhere value. The sentinel keeps later fallback writes (items
+  /// without a library or title identity) from being wiped on every launch.
+  Future<void> _resetGlobalsOfKeyedPlayerScopes() async {
+    if (prefs.containsKey(_playerScopeGlobalsResetKey)) return;
+    for (final scope in [playbackSpeedScope, shaderPresetScope, boxFitScope, syncOffsetScope]) {
+      if (read(scope).keysEntries) await scope.resetGlobals(this);
+    }
+    await prefs.setBool(_playerScopeGlobalsResetKey, true);
   }
 
   /// Raises [UnreadableSensitivePreferenceException] if any stored credential
@@ -1590,10 +1632,11 @@ class SettingsService extends BaseSharedPreferencesService {
     customShaderPresets,
     selectedExternalPlayer,
     customExternalPlayers,
-    customRelayUrl,
+    watchPartyRelayUrl,
     companionRemoteLastHostAddress,
     rememberedBrightnessLevel,
     refusedVideoCodecs,
+    audioOutputDevice,
   ];
 
   /// Settings that "Reset All Settings" actually resets.
@@ -1613,7 +1656,7 @@ class SettingsService extends BaseSharedPreferencesService {
         pref,
     crashReporting,
     mpvConfigText,
-    customRelayUrl,
+    watchPartyRelayUrl,
     rememberedBrightnessLevel,
   ]);
 

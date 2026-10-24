@@ -1,7 +1,7 @@
 name: plezy
 description: "A beautiful Plex and Jellyfin client for Flutter"
 publish_to: "none"
-version: 2.23.0+154
+version: 2.24.1+156
 
 environment:
   # Dart floor stays 3.12: freezed 3.x emits `final` constructor parameters,
@@ -11,6 +11,8 @@ environment:
 
 dependencies:
   flutter:
+    sdk: flutter
+  flutter_localizations:
     sdk: flutter
   clock: ^1.1.2
   intl: ^0.20.2
@@ -92,6 +94,7 @@ dependencies:
   in_app_purchase_android: ^0.5.4
   in_app_purchase_platform_interface: ^1.4.1
   in_app_purchase_storekit: ^0.4.13+3
+  openwatchparty: ^1.1.0
 
 dev_dependencies:
   archive: ^4.0.9
@@ -120,6 +123,7 @@ dev_dependencies:
   plugin_platform_interface: ^2.1.0
   freezed: ^3.2.5
   analyzer: 10.2.0
+  web_socket: ^1.0.1
 
 dependency_overrides:
   # background_downloader 9.6.2 requires hosted connectivity_plus; keep the
@@ -152,6 +156,7 @@ dependency_overrides:
 flutter:
   uses-material-design: true
   assets:
+    - assets/licenses/SpatialAudioBridge.txt
     - assets/plezy.png
     - assets/plezy_adaptive_foreground.svg
     - assets/plex_chevron.svg

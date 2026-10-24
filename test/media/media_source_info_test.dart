@@ -250,4 +250,61 @@ void main() {
       expect(extras.markers.single.id, 9);
     });
   });
+
+  group('PlaybackExtras.withChapterFallback credits position', () {
+    // The chapters around the false positive in The Shining (#2734).
+    final shiningChapters = [
+      MediaChapter(id: 6, startTimeOffset: 864280, endTimeOffset: 1057930, title: 'Family History'),
+      MediaChapter(id: 7, startTimeOffset: 1057930, endTimeOffset: 1230900, title: 'Closing Day'),
+      MediaChapter(id: 8, startTimeOffset: 1230900, endTimeOffset: 8337040, title: 'The Tour'),
+      MediaChapter(id: 39, startTimeOffset: 8337040, endTimeOffset: 8476300, title: 'The Overlook Claims Jack'),
+      MediaChapter(id: 40, startTimeOffset: 8476300, endTimeOffset: 8625760, title: 'End Credits'),
+    ];
+
+    test('a mid-film "Closing Day" chapter does not become credits', () {
+      final extras = PlaybackExtras.withChapterFallback(chapters: shiningChapters, markers: []);
+
+      expect(extras.markers.map((m) => m.id), [40]);
+      expect(extras.markers.single.type, 'credits');
+    });
+
+    test('a saved pattern that still matches "Closing Day" is gated by position', () {
+      final extras = PlaybackExtras.withChapterFallback(
+        chapters: shiningChapters,
+        markers: [],
+        creditsPatternStr: r'(?:^|\b)(?:outro|closing|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$',
+      );
+
+      expect(extras.markers.map((m) => m.id), [40]);
+    });
+
+    test('a credits chapter starting at three quarters of the runtime qualifies; one millisecond earlier does not', () {
+      final atThreshold = PlaybackExtras.withChapterFallback(
+        chapters: [
+          MediaChapter(id: 1, startTimeOffset: 0, endTimeOffset: 90000, title: 'Episode'),
+          MediaChapter(id: 2, startTimeOffset: 90000, endTimeOffset: 120000, title: 'ED'),
+        ],
+        markers: [],
+      );
+      final beforeThreshold = PlaybackExtras.withChapterFallback(
+        chapters: [
+          MediaChapter(id: 1, startTimeOffset: 0, endTimeOffset: 89999, title: 'Episode'),
+          MediaChapter(id: 2, startTimeOffset: 89999, endTimeOffset: 120000, title: 'ED'),
+        ],
+        markers: [],
+      );
+
+      expect(atThreshold.markers.map((m) => m.type), ['credits']);
+      expect(beforeThreshold.markers, isEmpty);
+    });
+
+    test('server-supplied credits markers are never gated by position', () {
+      final extras = PlaybackExtras.withChapterFallback(
+        chapters: shiningChapters,
+        markers: [MediaMarker(id: 1, type: 'credits', startTimeOffset: 1057930, endTimeOffset: 1230900)],
+      );
+
+      expect(extras.markers.map((m) => m.id), [1]);
+    });
+  });
 }

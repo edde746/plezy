@@ -1798,19 +1798,16 @@ class PlexClient
     return _http.buildUri(thumbPath).toString().withPlexToken(config.token);
   }
 
-  /// Download the full BIF (Base Index Frames) file for a given part.
-  /// Returns the raw bytes, or null on failure.
-  Future<Uint8List?> downloadBifFile(int partId) async {
-    try {
-      final bytes = await _http.getBytes(
-        '${_http.baseUrl}/library/parts/$partId/indexes/sd',
-        timeout: const Duration(seconds: 30),
-      );
-      if (bytes.isNotEmpty) return bytes;
-      return null;
-    } catch (_) {
-      return null;
-    }
+  /// Download the full BIF (Base Index Frames) file for a given part, failing
+  /// once the body exceeds [maxBytes] instead of buffering it.
+  /// Returns null when the server answers with an empty body.
+  Future<Uint8List?> downloadBifFile(int partId, {required int maxBytes}) async {
+    final bytes = await _http.getBytes(
+      '${_http.baseUrl}/library/parts/$partId/indexes/sd',
+      timeout: const Duration(seconds: 30),
+      maxBytes: maxBytes,
+    );
+    return bytes.isEmpty ? null : bytes;
   }
 
   /// Chapters and markers for [ratingKey], from the shared
@@ -2736,7 +2733,7 @@ class PlexClient
     );
   }
 
-  /// Scan/refresh a library section to detect new files
+  @override
   Future<void> scanLibrary(String sectionId) async {
     await _getWithFailover('/library/sections/$sectionId/refresh');
   }
@@ -3533,17 +3530,12 @@ class PlexClient
   /// Full-series fallback for episode navigation when Plex `/playQueues`
   /// creation is unavailable. Grandchildren includes watched episodes; sort
   /// locally per [SettingsService.specialsOrdering]. Under `respectServer`
-  /// the faithful reproduction of the server queue this fallback replaces is
-  /// the aired interleave — Plex's own `/allLeaves` order — so that mode maps
-  /// to [SpecialsOrdering.airDate] here.
+  /// that is Specials-last, the order of the server queue this fallback
+  /// replaces (Plex Web's continuous show queue, #2770).
   @override
   Future<List<MediaItem>?> fetchClientSideEpisodeQueue(String seriesId) async {
     final episodes = await fetchPlayableDescendants(seriesId);
-    final ordering = effectiveSpecialsOrdering();
-    sortEpisodesByWatchOrder(
-      episodes,
-      ordering: ordering == SpecialsOrdering.respectServer ? SpecialsOrdering.airDate : ordering,
-    );
+    sortEpisodesByWatchOrder(episodes);
     return episodes;
   }
 
@@ -4350,7 +4342,7 @@ class PlexClient
     if (partId == null) return null;
     final service = BifThumbnailService();
     try {
-      await service.load(() => downloadBifFile(partId), aspectRatio: aspectRatio);
+      await service.load((maxBytes) => downloadBifFile(partId, maxBytes: maxBytes), aspectRatio: aspectRatio);
       return service;
     } catch (e, st) {
       appLogger.w('BIF thumbnail load failed for part $partId', error: e, stackTrace: st);

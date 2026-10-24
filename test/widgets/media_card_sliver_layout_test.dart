@@ -190,4 +190,68 @@ void main() {
       expect(widths.values.map((w) => w.$2).toSet(), hasLength(3));
     });
   });
+
+  group('keyed cards', () {
+    Widget keyedHost(ValueNotifier<List<String>> ids, ViewMode viewMode) {
+      return MaterialApp(
+        home: ValueListenableBuilder<List<String>>(
+          valueListenable: ids,
+          builder: (context, current, _) => CustomScrollView(
+            slivers: [
+              MediaCardSliverLayout(
+                viewMode: viewMode,
+                itemCount: current.length,
+                density: 100,
+                padding: EdgeInsets.zero,
+                // First match, like the library grids' loaded-item lookups.
+                findChildIndexCallback: (key) {
+                  final index = current.indexOf((key as ValueKey<String>).value);
+                  return index < 0 ? null : index;
+                },
+                itemBuilder: (context, position) {
+                  final id = current[position.index];
+                  return SizedBox(key: ValueKey(id), height: 40, child: Text(id));
+                },
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    // Offset-paged data holds one item at two indices when the server's order
+    // moves between page fetches. Each shift resolves the duplicated id to an
+    // index neither realized copy occupies — the case that used to move both
+    // copies into one slot and orphan the other's render box in the sliver.
+    const shifts = {
+      'a removal above both copies': (['a', 'x', 'b', 'x', 'c', 'd'], ['x', 'b', 'x', 'c', 'd']),
+      'a refetch that keeps one copy between them': (['a', 'x', 'b', 'x', 'c', 'd'], ['a', 'b', 'x', 'c', 'd', 'e']),
+    };
+
+    for (final viewMode in ViewMode.values) {
+      for (final MapEntry(key: name, value: (before, after)) in shifts.entries) {
+        testWidgets('${viewMode.name}: $name keeps every card laid out', (tester) async {
+          tester.view.physicalSize = const Size(800, 1200);
+          tester.view.devicePixelRatio = 1.0;
+          addTearDown(tester.view.reset);
+          final ids = ValueNotifier(before);
+          addTearDown(ids.dispose);
+
+          await tester.pumpWidget(keyedHost(ids, viewMode));
+          expect(find.text('x'), findsNWidgets(2));
+          final uniqueCard = tester.element(find.text('c'));
+
+          ids.value = after;
+          await tester.pump();
+
+          expect(tester.takeException(), isNull);
+          for (final id in {...before, ...after}) {
+            expect(find.text(id), findsNWidgets(after.where((e) => e == id).length), reason: id);
+          }
+          // A card whose id is unique still follows its item to the new index.
+          expect(tester.element(find.text('c')), same(uniqueCard));
+        });
+      }
+    }
+  });
 }

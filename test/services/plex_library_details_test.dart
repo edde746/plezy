@@ -828,7 +828,7 @@ void main() {
     expect(requestUri!.queryParameters['X-Plex-Container-Size'], '10');
   });
 
-  test('client-side episode fallback retains watched rows and sorts by watch order', () async {
+  test('client-side episode fallback retains watched rows and keeps Specials last by default', () async {
     Uri? requestUri;
     final client = makeClient((request) async {
       if (request.url.path == '/library/metadata/show-1/grandchildren') {
@@ -880,7 +880,7 @@ void main() {
     final episodes = await client.fetchClientSideEpisodeQueue('show-1');
 
     expect(requestUri!.path, '/library/metadata/show-1/grandchildren');
-    expect(episodes!.map((episode) => episode.id), ['ep-1', 'special', 'ep-2']);
+    expect(episodes!.map((episode) => episode.id), ['ep-1', 'ep-2', 'special']);
     expect(episodes.every((episode) => episode.isWatched), isTrue);
   });
 

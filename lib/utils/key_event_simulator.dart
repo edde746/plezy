@@ -46,6 +46,13 @@ class KeyEventSimulatorController {
   final Map<LogicalKeyboardKey, PhysicalKeyboardKey> physicalKeyByLogicalKey;
   final void Function(String) _log;
 
+  /// Frames an event may wait for primary focus to leave a route that is no
+  /// longer current. A route pushed by the previous event takes focus in the
+  /// frame that first builds it; the second frame is slack for a nested
+  /// navigator's cover exclusion. The cap keeps a route that never takes focus
+  /// from swallowing input: past it, the event goes where a hardware key would.
+  static const _maxFocusSettleFrames = 2;
+
   final Map<LogicalKeyboardKey, FocusNode> _heldFocusNodes = {};
   Timer? _repeatTimer;
   bool _disposed = false;
@@ -90,9 +97,10 @@ class KeyEventSimulatorController {
       _log('simulateKeyUp scheduled logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
     }
     scheduleFrameIfIdle();
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      if (!_disposed) _dispatchKeyUp(logicalKey);
-    });
+    _afterFocusSettles(
+      () => _dispatchKeyUp(logicalKey),
+      targetsPrimaryFocus: () => !_heldFocusNodes.containsKey(logicalKey),
+    );
   }
 
   /// Releases [logicalKeys] together after previously scheduled key downs.
@@ -102,13 +110,12 @@ class KeyEventSimulatorController {
     if (_disposed) return;
     final keys = logicalKeys.toList(growable: false);
     scheduleFrameIfIdle();
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      if (_disposed) return;
+    _afterFocusSettles(() {
       for (final logicalKey in keys) {
         _dispatchKeyUp(logicalKey);
       }
       _heldFocusNodes.clear();
-    });
+    }, targetsPrimaryFocus: () => !keys.every(_heldFocusNodes.containsKey));
   }
 
   /// Starts with an immediate press, then repeats after [initialDelay].
@@ -142,10 +149,43 @@ class KeyEventSimulatorController {
     // Post-frame dispatch lets focus settle. Requesting a frame is essential
     // when external input arrives while Flutter is otherwise idle.
     scheduleFrameIfIdle();
-    SchedulerBinding.instance.addPostFrameCallback((_) {
-      if (_disposed) return;
+    _afterFocusSettles(() {
       final focusNode = FocusManager.instance.primaryFocus;
       if (focusNode != null) dispatch(focusNode);
+    });
+  }
+
+  /// Runs [dispatch] in a post-frame callback once focus has settled.
+  ///
+  /// Every event queued for a frame runs in that frame's post-frame pass, but
+  /// the focus moves requested by the frame's build — or by an earlier event in
+  /// the same pass — wait for a microtask that runs only after the pass. Read
+  /// then, primary focus is where it stood before those moves: a second back
+  /// after a pop lands on the closing route and pops the screen beneath it,
+  /// until the emptied navigator throws (#2937, #2370); a select after a push
+  /// acts on the route the push covered (#3197). So pending changes are applied
+  /// first, and an event that would go to a focus left in a route that is no
+  /// longer current waits for the route above to take focus. [targetsPrimaryFocus]
+  /// is false for a release whose press is held: it returns to the press's node.
+  void _afterFocusSettles(VoidCallback dispatch, {bool Function()? targetsPrimaryFocus, int waitedFrames = 0}) {
+    SchedulerBinding.instance.addPostFrameCallback((_) {
+      if (_disposed) return;
+      FocusManager.instance.applyFocusChangesIfNeeded();
+      final focusNode = FocusManager.instance.primaryFocus;
+      if (waitedFrames < _maxFocusSettleFrames &&
+          focusNode != null &&
+          (targetsPrimaryFocus?.call() ?? true) &&
+          _isInNonCurrentRoute(focusNode)) {
+        if (TextInputDiagnostics.enabled) {
+          _log('dispatch deferred: focus=${focusNode.debugLabel} is in a route that is not current');
+        }
+        // Re-queued callbacks keep their order, so a release still follows its
+        // press. A post-frame callback does not request the frame it waits for.
+        _afterFocusSettles(dispatch, targetsPrimaryFocus: targetsPrimaryFocus, waitedFrames: waitedFrames + 1);
+        SchedulerBinding.instance.scheduleFrame();
+        return;
+      }
+      dispatch();
     });
   }
 
@@ -222,6 +262,26 @@ void scheduleFrameIfIdle() {
   if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.idle) {
     SchedulerBinding.instance.scheduleFrame();
   }
+}
+
+/// Whether [node] is in a route that is not the visible one: covered by a route
+/// pushed above it, or popped and animating out.
+///
+/// Walks out through enclosing navigators, because a route pushed on an outer
+/// navigator covers a nested stack whose own top route still reports current.
+/// The lookup subscribes [node]'s element, then the navigator's own focus
+/// element (cheap to rebuild, unlike the navigator, which rebuilds every route
+/// page on a dependency change), to route status — sanctioned for event
+/// handlers that read the value once.
+bool _isInNonCurrentRoute(FocusNode node) {
+  var context = node.context;
+  while (context != null && context.mounted) {
+    final route = ModalRoute.of(context);
+    if (route == null) return false;
+    if (!route.isCurrent) return true;
+    context = route.navigator?.focusNode.context;
+  }
+  return false;
 }
 
 PhysicalKeyboardKey _getPhysicalKey(LogicalKeyboardKey logicalKey) {

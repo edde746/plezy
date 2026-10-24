@@ -187,6 +187,7 @@ void main() {
       episodePosterMode: settings.read(SettingsService.episodePosterMode),
       fullCardLayout: settings.read(SettingsService.tvFullCardLayout),
       tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
+      widePosterScale: TvBrowseRailLayout.compactEpisodeThumbnailScale,
     );
     final minimumSpotlightBottom = railHeight + (8 * scale);
     final baseSpotlightBottom = (720 * 0.48).clamp(160.0, 820.0).toDouble();

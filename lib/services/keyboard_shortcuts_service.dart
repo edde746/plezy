@@ -10,6 +10,7 @@ import '../mpv/mpv.dart';
 import 'settings_binding_owner.dart';
 import 'settings_service.dart';
 import 'shortcut_action.dart';
+import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
 import '../utils/player_utils.dart';
 
@@ -282,6 +283,10 @@ class KeyboardShortcutsService extends ChangeNotifier {
     VoidCallback? onNextEpisode,
     VoidCallback? onPreviousEpisode,
     VoidCallback? onScreenshot,
+
+    /// Called instead of [onScreenshot] when mpv could not take or save the
+    /// screenshot.
+    VoidCallback? onScreenshotFailed,
     VoidCallback? onZoomIn,
     VoidCallback? onZoomOut,
     VoidCallback? onZoomReset,
@@ -393,7 +398,7 @@ class KeyboardShortcutsService extends ChangeNotifier {
         case ShortcutAction.skipMarker:
           onSkipMarker?.call();
         case ShortcutAction.screenshot:
-          unawaited(player.command(['screenshot', 'subtitles']).then((_) => onScreenshot?.call()));
+          unawaited(_takeScreenshot(player, onSaved: onScreenshot, onFailed: onScreenshotFailed));
         case ShortcutAction.zoomIn:
           onZoomIn?.call();
         case ShortcutAction.zoomOut:
@@ -405,6 +410,22 @@ class KeyboardShortcutsService extends ChangeNotifier {
     }
 
     return KeyEventResult.ignored;
+  }
+
+  /// mpv answers a screenshot it could not capture (no frame on the video
+  /// output) or write (unwritable screenshot directory, failed encode) with
+  /// MPV_ERROR_COMMAND, which the native channel raises as a
+  /// [PlatformException]. That is an outcome of the shortcut, not a crash: log
+  /// it and let the surface tell the viewer.
+  static Future<void> _takeScreenshot(Player player, {VoidCallback? onSaved, VoidCallback? onFailed}) async {
+    try {
+      await player.command(['screenshot', 'subtitles']);
+    } on PlatformException catch (error, stackTrace) {
+      appLogger.w('Screenshot command failed', error: error, stackTrace: stackTrace);
+      onFailed?.call();
+      return;
+    }
+    onSaved?.call();
   }
 
   String getActionDisplayName(String action) {

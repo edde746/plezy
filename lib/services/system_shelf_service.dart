@@ -224,6 +224,7 @@ class SystemShelfService {
     List<MediaItem> continueWatchingItems,
     MediaServerClient Function(ServerId serverId) getClientForServerId, {
     bool hideSpoilers = false,
+    EpisodePosterMode episodePosterMode = EpisodePosterMode.seriesPoster,
   }) async {
     final channel = _channel;
     if (channel == null || _activeOwner != profileId) return false;
@@ -231,7 +232,12 @@ class SystemShelfService {
 
     final items = continueWatchingItems
         .map((item) {
-          return _convertToShelfItem(item, getClientForServerId, hideSpoilers: hideSpoilers);
+          return _convertToShelfItem(
+            item,
+            getClientForServerId,
+            hideSpoilers: hideSpoilers,
+            episodePosterMode: episodePosterMode,
+          );
         })
         .toList(growable: false);
     if (!_owns(profileId, generation)) return false;
@@ -275,7 +281,11 @@ class SystemShelfService {
   /// Publish live server connection sources to the tvOS Top Shelf extension so
   /// it can fetch Continue Watching itself. tvOS-only: Android's Watch Next
   /// row is refreshed by the app process instead, so this is a no-op there.
-  Future<bool> syncServerSources(String profileId, List<MediaServerClient> clients) async {
+  Future<bool> syncServerSources(
+    String profileId,
+    List<MediaServerClient> clients, {
+    EpisodePosterMode episodePosterMode = EpisodePosterMode.seriesPoster,
+  }) async {
     if (!_isTvosTarget) return false;
     final channel = _channel;
     if (channel == null || _activeOwner != profileId) return false;
@@ -291,6 +301,7 @@ class SystemShelfService {
               'servers': servers,
               'maxItems': 20,
               'sectionTitle': t.discover.continueWatching,
+              'episodePoster': episodePosterMode == EpisodePosterMode.seasonPoster ? 'season' : 'series',
             }),
             label: 'Failed to update system shelf sources',
             severe: true,
@@ -299,6 +310,13 @@ class SystemShelfService {
     });
     return result ?? false;
   }
+
+  /// The Top Shelf fills 2:3 poster slots, so an episode shows its season
+  /// poster only when that is the viewer's episode poster setting. Every
+  /// other setting gets the series poster, as in Plex's own client (#2377):
+  /// an episode still cannot fill a poster slot.
+  static EpisodePosterMode _topShelfPosterMode(EpisodePosterMode mode) =>
+      mode == EpisodePosterMode.seasonPoster ? EpisodePosterMode.seasonPoster : EpisodePosterMode.seriesPoster;
 
   /// Backend-specific escape hatch: the Top Shelf extension talks to servers
   /// directly, which needs the raw connection credentials the neutral
@@ -349,7 +367,8 @@ class SystemShelfService {
   Map<String, dynamic> _convertToShelfItem(
     MediaItem item,
     MediaServerClient Function(ServerId serverId) getClientForServerId, {
-    bool hideSpoilers = false,
+    required bool hideSpoilers,
+    required EpisodePosterMode episodePosterMode,
   }) {
     final contentId = _buildContentId(serverIdOrNull(item.serverId), item.id);
 
@@ -359,10 +378,10 @@ class SystemShelfService {
         final client = getClientForServerId(ServerId(item.serverId!));
         String? thumbPath;
         if (_isTvosTarget) {
-          // The Top Shelf renders 2:3 posters via the season -> series -> own
-          // thumb chain. Posters cannot spoil, so the spoiler-safe override
-          // does not apply here.
-          thumbPath = item.posterThumb(mode: EpisodePosterMode.seasonPoster);
+          // The Top Shelf renders 2:3 posters: the series (or season) poster
+          // chain, then the item's own thumb. Posters cannot spoil, so the
+          // spoiler-safe override does not apply here.
+          thumbPath = item.posterThumb(mode: _topShelfPosterMode(episodePosterMode));
           if (thumbPath != null) {
             posterSourceUri = client.thumbnailUrl(thumbPath, width: 600, height: 900);
           }

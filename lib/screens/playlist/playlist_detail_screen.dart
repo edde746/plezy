@@ -782,7 +782,9 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
       },
       child: PrimaryScrollController(
         controller: scrollController,
-        child: Scaffold(body: scrollView),
+        // Horizontal-only SafeArea: rows clear a landscape notch or iPhone
+        // Duo's portrait sensor column.
+        child: Scaffold(body: SafeArea(top: false, bottom: false, child: scrollView)),
       ),
     );
   }

@@ -44,4 +44,24 @@ void main() {
     expect(elapsed[1], greaterThanOrEqualTo(elapsed[0]));
     expect(elapsed[2], greaterThanOrEqualTo(elapsed[1]));
   });
+
+  test('only failures and exits the viewer noticed become Sentry messages, one per reason', () {
+    String? messageFor(String reason, int importance) =>
+        AndroidExitDiagnostics.sentryMessageFor({'reason': reason, 'importance': importance});
+
+    // Routine background kills (cached = 400, service = 300) stay local.
+    expect(messageFor('low_memory', 400), isNull);
+    expect(messageFor('user_requested', 400), isNull);
+    expect(messageFor('other', 300), isNull);
+
+    // Failures are reported wherever the process was.
+    expect(messageFor('anr', 400), 'Previous Android application exit: anr');
+    expect(messageFor('native_crash', 400), 'Previous Android application exit: native_crash');
+
+    // Any kill the viewer could see (foreground = 100) or hear (perceptible = 230).
+    expect(messageFor('other', 100), 'Previous Android application exit: other');
+    expect(messageFor('low_memory', 230), 'Previous Android application exit: low_memory');
+
+    expect(AndroidExitDiagnostics.sentryMessageFor({'reason': 'anr'}), isNull);
+  });
 }

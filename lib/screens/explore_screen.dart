@@ -387,7 +387,12 @@ class ExploreScreenState extends State<ExploreScreen>
     }
 
     return Scaffold(
-      body: RefreshIndicator(onRefresh: _handleRefresh, child: content),
+      // Horizontal-only SafeArea, as on Search: the field, shelves, and
+      // results clear a landscape notch or iPhone Duo's portrait sensor column.
+      body: RefreshIndicator(
+        onRefresh: _handleRefresh,
+        child: SafeArea(top: false, bottom: false, child: content),
+      ),
     );
   }
 
@@ -540,6 +545,7 @@ class ExploreScreenState extends State<ExploreScreen>
                 onNavigateToSidebar: _navigateToSidebar,
                 onBack: _navigateToSidebar,
                 tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
+                widePosterScale: TvBrowseRailLayout.compactEpisodeThumbnailScale,
               ),
             ),
           TvToolbarOverlay(child: _buildTvToolbar(sources)),
