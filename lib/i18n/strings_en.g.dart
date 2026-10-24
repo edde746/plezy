@@ -5933,6 +5933,30 @@ class Translations$services$en {
 	/// en: 'Couldn't connect to ${service}. Try again.'
 	String connectFailed({required Object service}) => 'Couldn\'t connect to ${service}. Try again.';
 
+	/// en: 'Sign in to ${service} again to restore syncing.'
+	String reconnectWarning({required Object service}) => 'Sign in to ${service} again to restore syncing.';
+
+	/// en: '${count} trackers need you to sign in again.'
+	String reconnectWarningMany({required Object count}) => '${count} trackers need you to sign in again.';
+
+	/// en: 'Dismiss tracker warnings'
+	String get dismissReconnectWarning => 'Dismiss tracker warnings';
+
+	/// en: 'Connection checks'
+	String get connectionChecks => 'Connection checks';
+
+	/// en: 'Check tracker connections periodically'
+	String get periodicChecks => 'Check tracker connections periodically';
+
+	/// en: 'Check while Plezy is active, including during playback. Startup checks still run when this is off.'
+	String get periodicChecksDescription => 'Check while Plezy is active, including during playback. Startup checks still run when this is off.';
+
+	/// en: 'Check interval'
+	String get checkInterval => 'Check interval';
+
+	/// en: 'About ${minutes} minutes between checks, with up to 20% random variation.'
+	String checkIntervalDescription({required Object minutes}) => 'About ${minutes} minutes between checks, with up to 20% random variation.';
+
 	late final Translations$services$names$en names = Translations$services$names$en.internal(_root);
 	late final Translations$services$simklReconnect$en simklReconnect = Translations$services$simklReconnect$en.internal(_root);
 	late final Translations$services$deviceCode$en deviceCode = Translations$services$deviceCode$en.internal(_root);
@@ -10261,6 +10285,14 @@ extension on Translations {
 			'services.disconnectConfirm' => ({required Object service}) => 'Disconnect ${service}?',
 			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezy will stop updating ${service}. Reconnect any time.',
 			'services.connectFailed' => ({required Object service}) => 'Couldn\'t connect to ${service}. Try again.',
+			'services.reconnectWarning' => ({required Object service}) => 'Sign in to ${service} again to restore syncing.',
+			'services.reconnectWarningMany' => ({required Object count}) => '${count} trackers need you to sign in again.',
+			'services.dismissReconnectWarning' => 'Dismiss tracker warnings',
+			'services.connectionChecks' => 'Connection checks',
+			'services.periodicChecks' => 'Check tracker connections periodically',
+			'services.periodicChecksDescription' => 'Check while Plezy is active, including during playback. Startup checks still run when this is off.',
+			'services.checkInterval' => 'Check interval',
+			'services.checkIntervalDescription' => ({required Object minutes}) => 'About ${minutes} minutes between checks, with up to 20% random variation.',
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
 			'services.names.simkl' => 'Simkl',

@@ -1,8 +1,10 @@
 import 'dart:async';
+
 import '../media/ids.dart';
 import '../media/media_server_client.dart';
 import '../navigation/main_screen_scope.dart';
 import '../navigation/page_refresh_shortcut.dart';
+
 import 'dart:io' show Platform, exit;
 
 export '../navigation/main_screen_scope.dart'
@@ -15,12 +17,14 @@ import 'package:flutter/services.dart'
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:window_manager/window_manager.dart';
+
 import '../i18n/strings.g.dart';
 import '../services/app_exit_service.dart';
 import '../services/tvos_system_navigation_service.dart';
 import '../services/update_service.dart';
 import '../utils/app_logger.dart';
 import '../widgets/auth_error_banner.dart';
+import '../widgets/tracker_session_monitor.dart';
 import '../widgets/app_icon.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
@@ -42,6 +46,7 @@ import '../providers/catalog_sources_provider.dart';
 import '../providers/account_preferences_controller.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
+import '../providers/trackers_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../providers/playback_state_provider.dart';
@@ -1162,6 +1167,9 @@ class _MainScreenState extends State<MainScreen>
     // content. A grant must recover hidden Request actions on any real resume.
     if (resumedFromBackground && mounted) {
       unawaited(context.read<SeerrAccountProvider?>()?.refreshUser());
+      if (!_isOffline) {
+        unawaited(context.read<TrackersProvider>().validateSessions());
+      }
     }
     if (shouldShowProfileSelectionOnResume(
       resumedFromBackground: resumedFromBackground,
@@ -1215,19 +1223,26 @@ class _MainScreenState extends State<MainScreen>
   /// IndexedStack that disables tickers for offscreen children to prevent
   /// animation controllers on non-visible tabs from scheduling frames.
   Widget _buildTickerAwareStack() {
-    return Column(
-      children: [
-        const AuthErrorBanner(),
-        Expanded(
-          child: IndexedStack(
-            index: _currentIndex,
-            clipBehavior: Clip.none,
-            children: [
-              for (var i = 0; i < _screens.length; i++) TickerMode(enabled: i == _currentIndex, child: _screens[i]),
-            ],
-          ),
+    return SettingsBuilder(
+      prefs: [SettingsService.enableTrackerConnectionChecks, SettingsService.trackerConnectionCheckMinutes],
+      builder: (context) => TrackerSessionMonitor(
+        enabled: !_isOffline && SettingsService.instance.read(SettingsService.enableTrackerConnectionChecks),
+        intervalMinutes: SettingsService.instance.read(SettingsService.trackerConnectionCheckMinutes),
+        child: Column(
+          children: [
+            const AuthErrorBanner(),
+            Expanded(
+              child: IndexedStack(
+                index: _currentIndex,
+                clipBehavior: Clip.none,
+                children: [
+                  for (var i = 0; i < _screens.length; i++) TickerMode(enabled: i == _currentIndex, child: _screens[i]),
+                ],
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
     );
   }
 
