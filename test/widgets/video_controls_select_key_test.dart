@@ -431,17 +431,25 @@ void main() {
       expect(screenBackDispositions, [PlayerBackDisposition.exitPlayer], reason: 'one press declines, the next leaves');
     });
 
-    // The button's own 7s auto-dismiss is armed for every prompt while
+    playerTest('the prompt remains visible until its 12-second timeout', markers: [introMarker], (tester) async {
+      await showPrompt(tester);
+
+      await tester.pump(const Duration(seconds: 11));
+      expect(find.byType(SkipMarkerButton), findsOneWidget, reason: 'the 12-second timeout has not elapsed');
+      await tester.pump(const Duration(seconds: 1));
+      expect(find.byType(SkipMarkerButton), findsNothing, reason: 'the 12-second timeout elapsed');
+    });
+
+    // The button's own 12s auto-dismiss is armed for every prompt while
     // auto-skip is off, which is the default. handleBackKeyAction acts on the
-    // key-up, so a timer landing mid-press used to flip the gate and hand the
-    // press to the screen -- exiting the player on the very press meant to
-    // keep it open.
+    // key-up, so the timeout can fire between key-down and key-up. The latched
+    // claim keeps that press from reaching the screen and exiting the player.
     playerTest('a mid-press auto-dismiss cannot turn the press into an exit', markers: [introMarker], (tester) async {
       await showPrompt(tester);
 
       await tester.sendKeyDownEvent(LogicalKeyboardKey.gameButtonB);
       await tester.pump();
-      await tester.pump(const Duration(seconds: 8));
+      await tester.pump(const Duration(seconds: 13));
       expect(find.byType(SkipMarkerButton), findsNothing, reason: 'precondition: the timer fired mid-press');
       await tester.sendKeyUpEvent(LogicalKeyboardKey.gameButtonB);
       await tester.pumpAndSettle();
@@ -632,7 +640,7 @@ void main() {
     playerTest('a drifted Enter does not skip a prompt that already went away', markers: [introMarker], (tester) async {
       player.emitPosition(const Duration(seconds: 15));
       await tester.pumpAndSettle();
-      await tester.pump(const Duration(seconds: 8));
+      await tester.pump(const Duration(seconds: 13));
       expect(find.byType(SkipMarkerButton), findsNothing, reason: 'precondition: the prompt auto-dismissed');
       screenFocusNode.requestFocus();
       await tester.pump();
