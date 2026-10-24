@@ -597,6 +597,8 @@
       "zoomReset": "Масштабты қалпына келтіру",
       "subSeekNext": "Келесі субтитрге өту",
       "subSeekPrev": "Алдыңғы субтитрге өту",
+      "subtitleDelayIncrease": "",
+      "subtitleDelayDecrease": "",
       "shaderToggle": "Шейдерлерді қосу/өшіру",
       "skipMarker": "Интро/Титрді өткізу",
       "screenshot": "Экран суретін түсіру"

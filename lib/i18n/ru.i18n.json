@@ -597,6 +597,8 @@
       "zoomReset": "Сбросить масштаб",
       "subSeekNext": "К следующему субтитру",
       "subSeekPrev": "К предыдущему субтитру",
+      "subtitleDelayIncrease": "",
+      "subtitleDelayDecrease": "",
       "shaderToggle": "Вкл./выкл. шейдеры",
       "skipMarker": "Пропустить вступление/титры",
       "screenshot": "Сделать снимок экрана"

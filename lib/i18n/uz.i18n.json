@@ -597,6 +597,8 @@
       "zoomReset": "Masshtabni qayta oʻrnatish",
       "subSeekNext": "Keyingi subtitrga oʻtish",
       "subSeekPrev": "Oldingi subtitrga oʻtish",
+      "subtitleDelayIncrease": "",
+      "subtitleDelayDecrease": "",
       "shaderToggle": "Sheyderlarni yoqish/oʻchirish",
       "skipMarker": "Intro/Titrlarni oʻtkazib yuborish",
       "screenshot": "Ekran tasvirini olish"

@@ -597,6 +597,8 @@
       "zoomReset": "Нулирай мащаба",
       "subSeekNext": "Отиди до следващ субтитър",
       "subSeekPrev": "Отиди до предишен субтитър",
+      "subtitleDelayIncrease": "",
+      "subtitleDelayDecrease": "",
       "shaderToggle": "Превключи шейдъри",
       "skipMarker": "Прескочи интро/финални надписи",
       "screenshot": "Направи екранна снимка"

@@ -597,6 +597,8 @@
       "zoomReset": "Nagyítás alaphelyzetbe állítása",
       "subSeekNext": "Ugrás a következő feliratra",
       "subSeekPrev": "Ugrás az előző feliratra",
+      "subtitleDelayIncrease": "",
+      "subtitleDelayDecrease": "",
       "shaderToggle": "Shaderek be- és kikapcsolása",
       "skipMarker": "Intró/stáblista átugrása",
       "screenshot": "Képernyőkép készítése"

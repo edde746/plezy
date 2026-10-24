@@ -6484,6 +6484,12 @@ class Translations$hotkeys$actions$en {
 	/// en: 'Seek to Previous Subtitle'
 	String get subSeekPrev => 'Seek to Previous Subtitle';
 
+	/// en: 'Delay Subtitles'
+	String get subtitleDelayIncrease => 'Delay Subtitles';
+
+	/// en: 'Advance Subtitles'
+	String get subtitleDelayDecrease => 'Advance Subtitles';
+
 	/// en: 'Toggle Shaders'
 	String get shaderToggle => 'Toggle Shaders';
 
@@ -8658,6 +8664,8 @@ extension on Translations {
 			'hotkeys.actions.zoomReset' => 'Reset Zoom',
 			'hotkeys.actions.subSeekNext' => 'Seek to Next Subtitle',
 			'hotkeys.actions.subSeekPrev' => 'Seek to Previous Subtitle',
+			'hotkeys.actions.subtitleDelayIncrease' => 'Delay Subtitles',
+			'hotkeys.actions.subtitleDelayDecrease' => 'Advance Subtitles',
 			'hotkeys.actions.shaderToggle' => 'Toggle Shaders',
 			'hotkeys.actions.skipMarker' => 'Skip Intro/Credits',
 			'hotkeys.actions.screenshot' => 'Take Screenshot',
@@ -9116,10 +9124,10 @@ extension on Translations {
 			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
 			'profiles.continueButton' => 'Continue',
 			'profiles.pinsDontMatch' => 'PINs don\'t match',
-			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
-			'connections.sectionTitle' => 'Connections',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
+			'connections.sectionTitle' => 'Connections',
 			'connections.addConnection' => 'Add connection',
 			'connections.addConnectionSubtitleNoProfile' => 'Sign in with Plex or connect a Jellyfin or Emby server',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Add to ${displayName}: Plex, Jellyfin, Emby, or another profile connection',
@@ -9630,10 +9638,10 @@ extension on Translations {
 			'liveTv.recordSettings.anyChannel' => 'Record on any channel',
 			'liveTv.recordSettings.anyTime' => 'Record at any time',
 			'liveTv.recordSettings.skipInLibrary' => 'Skip episodes already in the library',
-			'liveTv.recordSettings.keepUpTo' => 'Episodes to keep',
-			'liveTv.recordSettings.keepUpToHint' => '0 keeps every episode',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.keepUpTo' => 'Episodes to keep',
+			'liveTv.recordSettings.keepUpToHint' => '0 keeps every episode',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Starting in ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} at ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returned invalid Live TV playback data',
@@ -10144,10 +10152,10 @@ extension on Translations {
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
-			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
-			'performanceOverlay.decoderSoftware' => 'Software',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
+			'performanceOverlay.decoderSoftware' => 'Software',
 			'performanceOverlay.decoderHardware' => 'Hardware',
 			'performanceOverlay.tunnelingActive' => 'Active',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} failed)',

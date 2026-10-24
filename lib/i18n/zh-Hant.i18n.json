@@ -597,6 +597,8 @@
       "zoomReset": "重設縮放",
       "subSeekNext": "跳轉至下一句字幕",
       "subSeekPrev": "跳轉至上一句字幕",
+      "subtitleDelayIncrease": "",
+      "subtitleDelayDecrease": "",
       "shaderToggle": "切換著色器",
       "skipMarker": "跳過片頭/片尾",
       "screenshot": "螢幕截圖"

@@ -597,6 +597,8 @@
       "zoomReset": "Zoom resetten",
       "subSeekNext": "Naar volgende ondertitel",
       "subSeekPrev": "Naar vorige ondertitel",
+      "subtitleDelayIncrease": "",
+      "subtitleDelayDecrease": "",
       "shaderToggle": "Shaders aan/uit",
       "skipMarker": "Intro/aftiteling overslaan",
       "screenshot": "Schermafbeelding maken"

@@ -597,6 +597,8 @@
       "zoomReset": "Réinitialiser le zoom",
       "subSeekNext": "Rechercher le sous-titre suivant",
       "subSeekPrev": "Rechercher le sous-titre précédent",
+      "subtitleDelayIncrease": "",
+      "subtitleDelayDecrease": "",
       "shaderToggle": "Activer/désactiver les shaders",
       "skipMarker": "Passer l'intro/le générique",
       "screenshot": "Prendre une capture d'écran"
