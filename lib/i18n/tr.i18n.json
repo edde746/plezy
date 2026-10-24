@@ -597,8 +597,8 @@
       "zoomReset": "Yakınlaştırmayı Sıfırla",
       "subSeekNext": "Sonraki Altyazıya Sar",
       "subSeekPrev": "Önceki Altyazıya Sar",
-      "subtitleDelayIncrease": "",
-      "subtitleDelayDecrease": "",
+      "subtitleDelayIncrease": "Altyazıyı Geciktir",
+      "subtitleDelayDecrease": "Altyazıyı Öne Al",
       "shaderToggle": "Gölgelendiricileri Aç/Kapat",
       "skipMarker": "Jenerik/Emeği Geçenleri Atla",
       "screenshot": "Ekran Görüntüsü Al"

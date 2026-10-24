@@ -597,8 +597,8 @@
       "zoomReset": "확대/축소 초기화",
       "subSeekNext": "다음 자막으로 이동",
       "subSeekPrev": "이전 자막으로 이동",
-      "subtitleDelayIncrease": "",
-      "subtitleDelayDecrease": "",
+      "subtitleDelayIncrease": "자막 늦추기",
+      "subtitleDelayDecrease": "자막 앞당기기",
       "shaderToggle": "셰이더 전환",
       "skipMarker": "인트로/크레딧 건너뛰기",
       "screenshot": "스크린샷 찍기"
