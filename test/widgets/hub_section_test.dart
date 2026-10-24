@@ -473,6 +473,66 @@ void main() {
     await tester.pumpAndSettle();
     expect(focusedItemId, 'item_0');
   });
+
+  testWidgets('visual focus reaches the next episode when it lands a refresh after the finished one left', (
+    tester,
+  ) async {
+    final movieA = testMediaItem(id: 'movie_a', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie A');
+    final movieC = testMediaItem(id: 'movie_c', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie C');
+    final episode1 = testMediaItem(
+      id: 'episode_1',
+      backend: MediaBackend.plex,
+      kind: MediaKind.episode,
+      grandparentId: 'show_1',
+      title: 'S01E01',
+    );
+    final episode2 = testMediaItem(
+      id: 'episode_2',
+      backend: MediaBackend.plex,
+      kind: MediaKind.episode,
+      grandparentId: 'show_1',
+      title: 'S01E02',
+    );
+    final memory = HubFocusMemory();
+    final hubKey = GlobalKey<HubSectionState>();
+    String? focusedItemId;
+
+    Future<void> mount(List<MediaItem> hubItems) async {
+      await tester.pumpWidget(
+        InputModeTracker(
+          child: _TestApp(
+            child: HubSection(
+              key: hubKey,
+              hub: MediaHub(
+                id: 'continue_watching',
+                title: 'Continue Watching',
+                type: 'mixed',
+                items: hubItems,
+                size: hubItems.length,
+              ),
+              focusMemory: memory,
+              icon: Symbols.play_circle_rounded,
+              isInContinueWatching: true,
+              onFocusedItemChanged: (item) => focusedItemId = item.id,
+            ),
+          ),
+        ),
+      );
+      await tester.pumpAndSettle();
+    }
+
+    await mount([movieA, episode1, movieC]);
+    hubKey.currentState!.requestFocusAt(1);
+    await tester.pumpAndSettle();
+    expect(focusedItemId, episode1.id);
+
+    // Continue Watching evicts the finished episode at once; only the later
+    // refetch brings the next one in at the front (#2814).
+    await mount([movieA, movieC]);
+    await mount([episode2, movieA, movieC]);
+
+    expect(focusedItemId, episode2.id);
+  });
 }
 
 MediaHub _hubWith(MediaItem item) {
