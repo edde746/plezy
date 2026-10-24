@@ -2599,6 +2599,8 @@ class _Translations$hotkeys$actions$ko extends Translations$hotkeys$actions$en {
 	@override String get zoomReset => '확대/축소 초기화';
 	@override String get subSeekNext => '다음 자막으로 이동';
 	@override String get subSeekPrev => '이전 자막으로 이동';
+	@override String get subtitleDelayIncrease => '자막 늦추기';
+	@override String get subtitleDelayDecrease => '자막 앞당기기';
 	@override String get shaderToggle => '셰이더 전환';
 	@override String get skipMarker => '인트로/크레딧 건너뛰기';
 	@override String get screenshot => '스크린샷 찍기';
@@ -3953,6 +3955,8 @@ extension on TranslationsKo {
 			'hotkeys.actions.zoomReset' => '확대/축소 초기화',
 			'hotkeys.actions.subSeekNext' => '다음 자막으로 이동',
 			'hotkeys.actions.subSeekPrev' => '이전 자막으로 이동',
+			'hotkeys.actions.subtitleDelayIncrease' => '자막 늦추기',
+			'hotkeys.actions.subtitleDelayDecrease' => '자막 앞당기기',
 			'hotkeys.actions.shaderToggle' => '셰이더 전환',
 			'hotkeys.actions.skipMarker' => '인트로/크레딧 건너뛰기',
 			'hotkeys.actions.screenshot' => '스크린샷 찍기',
@@ -4410,10 +4414,10 @@ extension on TranslationsKo {
 			'profiles.pinExplain' => '프로필 전환에는 4자리 PIN이 필요합니다.',
 			'profiles.continueButton' => '계속',
 			'profiles.pinsDontMatch' => 'PIN이 일치하지 않습니다',
-			'profiles.tokenIdentityMismatch' => 'Plex 프로필 토큰이 예상과 다른 서버로 확인되었습니다',
-			'connections.sectionTitle' => '연결',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'Plex 프로필 토큰이 예상과 다른 서버로 확인되었습니다',
+			'connections.sectionTitle' => '연결',
 			'connections.addConnection' => '연결 추가',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex로 로그인하거나 Jellyfin 또는 Emby 서버에 연결',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName}에 추가: Plex, Jellyfin, Emby 또는 다른 프로필 연결',
@@ -4924,10 +4928,10 @@ extension on TranslationsKo {
 			'liveTv.recordSettings.newOnly' => '새 에피소드만',
 			'liveTv.recordSettings.anyChannel' => '모든 채널에서 녹화',
 			'liveTv.recordSettings.anyTime' => '모든 시간대에 녹화',
-			'liveTv.recordSettings.skipInLibrary' => '라이브러리에 이미 있는 에피소드 건너뛰기',
-			'liveTv.recordSettings.keepUpTo' => '보관할 에피소드 수',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.skipInLibrary' => '라이브러리에 이미 있는 에피소드 건너뛰기',
+			'liveTv.recordSettings.keepUpTo' => '보관할 에피소드 수',
 			'liveTv.recordSettings.keepUpToHint' => '0이면 모든 에피소드 보관',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes}분 후 시작',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
@@ -5438,10 +5442,10 @@ extension on TranslationsKo {
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
-			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
-			'performanceOverlay.decoderSoftware' => '소프트웨어',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
+			'performanceOverlay.decoderSoftware' => '소프트웨어',
 			'performanceOverlay.decoderHardware' => '하드웨어',
 			'performanceOverlay.tunnelingActive' => '활성',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures}개 실패)',
