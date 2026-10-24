@@ -1,5 +1,6 @@
 import 'dart:async';
 
+import 'package:clock/clock.dart';
 import 'package:http/http.dart' as http;
 
 import '../../../utils/app_logger.dart';
@@ -12,6 +13,9 @@ import '../tracker_http_client.dart';
 import '../tracker_session.dart';
 import 'mdblist_auth_service.dart';
 import 'mdblist_constants.dart';
+
+/// Batch and single-title responses use different native rating scales.
+typedef MdblistMediaInfo = ({Map<String, dynamic> data, bool isBatch});
 
 /// HTTP wrapper for the MDBList REST API.
 ///
@@ -29,6 +33,10 @@ class MdblistClient implements DisposableTrackerClient {
   final void Function(TrackerSession)? onSessionUpdated;
 
   final _refreshCoalescer = FutureCoalescer<TrackerSession>();
+  final _mediaLoads = KeyedFutureCoalescer<String, MdblistMediaInfo?>();
+  final _mediaCache = <String, ({MdblistMediaInfo info, bool related, DateTime at})>{};
+  static const _mediaTtl = Duration(hours: 1);
+  static const _mediaCapacity = 600;
 
   MdblistClient(
     TrackerSession session, {
@@ -44,6 +52,8 @@ class MdblistClient implements DisposableTrackerClient {
 
   @override
   void dispose() {
+    _mediaCache.clear();
+    _mediaLoads.clear();
     _http.dispose();
     _auth.dispose();
   }
@@ -100,16 +110,81 @@ class MdblistClient implements DisposableTrackerClient {
   Future<void> removeFromWatchlist(Map<String, dynamic> body) =>
       _request('POST', '/watchlist/items/remove', body: body);
 
-  /// Every score MDBList aggregates for a title (`GET /{provider}/{movie|show|any}/{id}`, "Get Media Info"): its
-  /// `ratings` entries, each `value` on its source's own scale; empty when MDBList does not know the title.
-  Future<List<Map<String, dynamic>>> getMediaRatings(String provider, String mediaType, String id) async {
-    try {
-      final res = await _request('GET', '/$provider/$mediaType/$id');
-      return res is Map ? flexibleMapList(res['ratings']) : const [];
-    } on TrackerApiException catch (e) {
-      if (e.statusCode == 404) return const [];
-      rethrow;
+  /// The same metadata feeds search, details and community ratings. A batch
+  /// answer never satisfies a detail request that also needs recommendations.
+  Future<MdblistMediaInfo?> getMediaInfo(
+    String provider,
+    String mediaType,
+    String id, {
+    bool includeRecommendations = false,
+  }) async {
+    final key = '$provider/$mediaType/$id';
+    final cached = _mediaCache.remove(key);
+    if (cached != null && clock.now().difference(cached.at) < _mediaTtl) {
+      _mediaCache[key] = cached;
+      if (!includeRecommendations || cached.related) return cached.info;
     }
+    return _mediaLoads.run('$key/$includeRecommendations', () async {
+      try {
+        final res = await _request(
+          'GET',
+          '/$provider/$mediaType/${Uri.encodeComponent(id)}',
+          queryParameters: includeRecommendations ? {'append_to_response': 'recommendations'} : null,
+        );
+        if (res is! Map) throw const FormatException('Invalid MDBList media response');
+        final info = (data: res.cast<String, dynamic>(), isBatch: false);
+        _rememberMedia(info, includeRecommendations, requestedKey: key);
+        return info;
+      } on TrackerApiException catch (e) {
+        if (e.statusCode == 404) return null;
+        rethrow;
+      }
+    });
+  }
+
+  /// Read-only lookup despite its POST verb. The documented ceiling is 200
+  /// IDs; missing IDs are omitted and the response is not in request order.
+  Future<List<MdblistMediaInfo>> getMediaInfoBatch(String provider, String mediaType, List<Object> ids) async {
+    if (ids.isEmpty || ids.length > 200) throw ArgumentError('Expected 1–200 MDBList lookup IDs');
+    final cached = <MdblistMediaInfo>[];
+    final missing = <Object>[];
+    for (final id in ids.toSet()) {
+      final key = '$provider/$mediaType/$id';
+      final entry = _mediaCache.remove(key);
+      if (entry != null && clock.now().difference(entry.at) < _mediaTtl) {
+        _mediaCache[key] = entry;
+        cached.add(entry.info);
+      } else {
+        missing.add(id);
+      }
+    }
+    if (missing.isEmpty) return cached;
+    final res = await _request('POST', '/$provider/$mediaType/', body: {'ids': missing});
+    if (res is! List) throw const FormatException('Invalid MDBList batch response');
+    return [...cached, for (final data in flexibleMapList(res)) _rememberMedia((data: data, isBatch: true), false)];
+  }
+
+  MdblistMediaInfo _rememberMedia(MdblistMediaInfo info, bool related, {String? requestedKey}) {
+    final type = info.data['type'];
+    final ids = info.data['ids'];
+    final keys = <String>[
+      ?requestedKey,
+      if ((type == 'movie' || type == 'show') && ids is Map)
+        for (final provider in ['imdb', 'tmdb', 'trakt', if (type == 'show') 'tvdb'])
+          if (ids[provider] != null) '$provider/$type/${ids[provider]}',
+    ];
+    for (final key in keys) {
+      final previous = _mediaCache.remove(key);
+      // A later search must not downgrade already loaded full detail data.
+      _mediaCache[key] =
+          previous != null && previous.related && !related && clock.now().difference(previous.at) < _mediaTtl
+          ? previous
+          : (info: info, related: related, at: clock.now());
+    }
+    while (_mediaCache.length > _mediaCapacity) {
+      _mediaCache.remove(_mediaCache.keys.first);
+    }
+    return info;
   }
 
   /// Best-effort server-side revoke, mirroring Trakt's disconnect. Failure is
