@@ -64,6 +64,7 @@ import '../widgets/music/mini_player.dart';
 import '../widgets/navigation_label_fit.dart';
 import '../widgets/mobile_navigation_rail.dart';
 import '../widgets/side_navigation_rail.dart';
+import '../focus/covered_route_focus_boundary.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/key_event_utils.dart';
 import 'discover_screen.dart';
@@ -621,9 +622,11 @@ class _MainScreenState extends State<MainScreen>
       _attachDeepLinks();
 
       // Focus content initially (replaces autofocus which caused focus stealing issues)
-      // Skip if profile selection is on top — it manages its own focus.
+      // Skip if profile selection is on top — it manages its own focus. A
+      // session remounted under the root picker (another profile chosen)
+      // gets this claim when the picker pops instead of losing it (#2817).
       if (!_isSidebarFocused && !_isShowingProfileSelection) {
-        _contentFocusScope.requestFocus();
+        CoveredRouteFocusBoundary.requestInitialFocus(context, _contentFocusScope);
       }
 
       _updateTvosMenuPassthrough();

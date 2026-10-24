@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../focus/card_focus_scope.dart';
+import '../focus/covered_route_focus_boundary.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/dpad_select_long_press_controller.dart';
 import '../focus/focus_theme.dart';
@@ -497,6 +498,13 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
   void requestFocus() {
     _notifyFocusedItem();
     _focusNode.requestFocus();
+  }
+
+  /// [requestFocus] as the screen's first focus: held, not dropped, while a
+  /// root route covers the session ([CoveredRouteFocusBoundary.requestInitialFocus]).
+  void requestInitialFocus() {
+    _notifyFocusedItem();
+    CoveredRouteFocusBoundary.requestInitialFocus(context, _focusNode);
   }
 
   @override

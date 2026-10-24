@@ -12,6 +12,7 @@ class _Harness {
   final rootNavigator = GlobalKey<NavigatorState>();
   final hidden = FocusNode(debugLabel: 'HiddenSidebarItem');
   final tile = FocusNode(debugLabel: 'ContentTile');
+  final secondTile = FocusNode(debugLabel: 'SecondContentTile');
   final content = FocusScopeNode(debugLabel: 'ContentScope');
   final cover = FocusNode(debugLabel: 'PickerTile');
   final sheetItem = FocusNode(debugLabel: 'SheetItem');
@@ -32,9 +33,14 @@ class _Harness {
                 Focus(focusNode: hidden, child: const SizedBox(height: 10, width: 10)),
                 FocusScope(
                   node: content,
-                  child: showTile
-                      ? Focus(focusNode: tile, autofocus: true, child: const SizedBox(height: 10, width: 10))
-                      : const SizedBox(height: 10, width: 10),
+                  child: Column(
+                    children: [
+                      showTile
+                          ? Focus(focusNode: tile, autofocus: true, child: const SizedBox(height: 10, width: 10))
+                          : const SizedBox(height: 10, width: 10),
+                      Focus(focusNode: secondTile, child: const SizedBox(height: 10, width: 10)),
+                    ],
+                  ),
                 ),
                 if (showSheet)
                   FocusScope(
@@ -80,6 +86,7 @@ class _Harness {
   void dispose() {
     hidden.dispose();
     tile.dispose();
+    secondTile.dispose();
     content.dispose();
     cover.dispose();
     sheetItem.dispose();
@@ -125,6 +132,39 @@ void main() {
     await h.popCover();
 
     expect(h.tile.hasPrimaryFocus, isTrue);
+  });
+
+  testWidgets('an initial focus request made under the cover lands once it pops (#2817)', (tester) async {
+    // A subtree remounted under the cover has no recorded path; its first
+    // focus claim is the only target it has, so it is held, not dropped.
+    final h = _Harness(tester);
+    addTearDown(h.dispose);
+    await h.pump();
+    await h.pushCover();
+
+    CoveredRouteFocusBoundary.requestInitialFocus(h.nestedContext, h.secondTile);
+    await tester.pump();
+    expect(h.cover.hasPrimaryFocus, isTrue, reason: 'a held request must not steal the cover');
+
+    await h.popCover();
+
+    expect(h.secondTile.hasPrimaryFocus, isTrue);
+  });
+
+  testWidgets('initial focus requests held under the cover replay in request order', (tester) async {
+    // Discover's rail claim then MainScreen's content-scope claim: uncovered,
+    // the scope request lands on the descendant just focused. Replaying only
+    // the last request would land on the scope's older history instead.
+    final h = _Harness(tester);
+    addTearDown(h.dispose);
+    await h.pump();
+    await h.pushCover();
+
+    CoveredRouteFocusBoundary.requestInitialFocus(h.nestedContext, h.secondTile);
+    CoveredRouteFocusBoundary.requestInitialFocus(h.nestedContext, h.content);
+    await h.popCover();
+
+    expect(h.secondTile.hasPrimaryFocus, isTrue);
   });
 
   testWidgets('a leaf unmounted while covered leaves focus on its scope, not the root scope', (tester) async {
