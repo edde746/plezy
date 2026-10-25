@@ -152,8 +152,43 @@ List<MediaSubtitleTrack> selectableSourceSubtitleTracks(
 @visibleForTesting
 MediaSubtitleTrack? findNewExternalSubtitleTrack(List<MediaSubtitleTrack> tracks, Set<int> existingSourceIds) {
   for (final track in tracks) {
-    if (track.isExternal && !existingSourceIds.contains(track.id)) return track;
+    if (track.isExternalFile && !existingSourceIds.contains(track.id)) return track;
   }
+  return null;
+}
+
+@visibleForTesting
+MediaSubtitleTrack? findDownloadedExternalSubtitleTrack(
+  List<MediaSubtitleTrack> tracks,
+  Set<int> existingSourceIds, {
+  String? preferredLanguageCode,
+  int? currentSelectedSourceId,
+}) {
+  final newTrack = findNewExternalSubtitleTrack(tracks, existingSourceIds);
+  if (newTrack != null) return newTrack;
+
+  // Plex downloaded subtitles have a `key` but aren't marked as `isExternalFile`.
+  // Include tracks with a non-empty `key` as potential downloaded subtitles.
+  final externalFileCandidates = tracks
+      .where((track) => 
+          (track.isExternalFile || (track.key != null && track.key!.isNotEmpty)) 
+          && track.id != currentSelectedSourceId)
+      .toList(growable: false);
+  if (externalFileCandidates.isEmpty) return null;
+
+  final normalizedPreferred = preferredLanguageCode?.trim().toLowerCase().split(RegExp('[-_]')).first;
+  if (normalizedPreferred == null || normalizedPreferred.isEmpty) return null;
+
+  final codeMatches = externalFileCandidates
+      .where((track) => track.languageCode?.trim().toLowerCase().split(RegExp('[-_]')).first == normalizedPreferred)
+      .toList(growable: false);
+  if (codeMatches.length == 1) return codeMatches.first;
+
+  final languageMatches = externalFileCandidates
+      .where((track) => track.language?.trim().toLowerCase() == normalizedPreferred)
+      .toList(growable: false);
+  if (languageMatches.length == 1) return languageMatches.first;
+
   return null;
 }
 

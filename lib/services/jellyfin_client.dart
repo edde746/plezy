@@ -49,6 +49,7 @@ import '../models/transcode_quality_preset.dart';
 import '../media/media_source_info.dart';
 import '../media/media_sort.dart';
 import '../media/media_version.dart';
+import '../models/subtitles/subtitle_search_result.dart';
 import '../utils/app_logger.dart';
 import '../utils/device_identity.dart';
 import '../utils/failover_http_client.dart';
@@ -65,6 +66,7 @@ import '../exceptions/media_server_exceptions.dart';
 import '../i18n/strings.g.dart';
 import '../utils/json_utils.dart';
 import '../utils/jellyfin_time.dart';
+import '../utils/language_codes.dart';
 import 'jellyfin_auth_header.dart';
 import 'jellyfin_endpoint_discovery.dart';
 import '../media/download_resolution.dart';
@@ -98,6 +100,7 @@ part 'jellyfin_client/parts/file_info.dart';
 part 'jellyfin_client/parts/live_tv.dart';
 part 'jellyfin_client/parts/live_tv_dvr.dart';
 part 'jellyfin_client/parts/images_downloads.dart';
+part 'jellyfin_client/parts/subtitle_search.dart';
 part 'jellyfin_client/parts/metadata_edit.dart';
 
 /// Canonical declarations of the [JellyfinClient] internals that the `part`
@@ -172,6 +175,9 @@ mixin _JellyfinClientInternals on MediaServerCacheMixin {
     bool burnSubtitles,
   });
   String _withApiKey(String urlOrPath);
+
+  void rememberDownloadedSubtitleStreamId(String itemId, String mediaSourceId, int streamId);
+  int? consumeDownloadedSubtitleStreamIdByKey(String itemId, String mediaSourceId);
 
   /// Positional core of the tolerant `/Items` array fetch. The browse part's
   /// implementation widens it with optional retry/abort/diagnostics knobs that
@@ -278,6 +284,7 @@ class JellyfinClient
         _JellyfinFileInfoMethods,
         _JellyfinLiveTvMethods,
         _JellyfinImageDownloadMethods,
+        _JellyfinSubtitleSearchMethods,
         _JellyfinMetadataEditMethods
     implements
         MediaServerClient,
@@ -407,6 +414,13 @@ class JellyfinClient
   final FailoverHttpClient _http;
   final FavoriteChannelsRepository _favoritesRepository;
   bool _offlineMode = false;
+  final Map<String, int> _downloadedSubtitleStreamIds = <String, int>{};
+
+  // Runtime gate for Emby subtitle download/search availability.
+  // Emby exposes this as a per-user policy flag on /Users/{id}.
+  bool _embyCanDownloadSubtitles = false;
+  DateTime? _embySubtitlePolicyCheckedAt;
+  Future<void>? _embySubtitlePolicyProbe;
 
   /// Fired when the live `connection` snapshot diverges from the cached one
   /// (currently only on admin-status change). [MultiServerManager] uses this
@@ -418,6 +432,25 @@ class JellyfinClient
     for (final baseUrl in connection.baseUrls) {
       LogRedactionManager.registerServerUrl(baseUrl);
     }
+  }
+
+  static String _subtitleDownloadStreamKey(String itemId, String mediaSourceId) =>
+      '${itemId.trim()}|${mediaSourceId.trim()}';
+
+  @override
+  void rememberDownloadedSubtitleStreamId(String itemId, String mediaSourceId, int streamId) {
+    final item = itemId.trim();
+    final source = mediaSourceId.trim();
+    if (item.isEmpty || source.isEmpty) return;
+    _downloadedSubtitleStreamIds[_subtitleDownloadStreamKey(item, source)] = streamId;
+  }
+
+  @override
+  int? consumeDownloadedSubtitleStreamIdByKey(String itemId, String mediaSourceId) {
+    final item = itemId.trim();
+    final source = mediaSourceId.trim();
+    if (item.isEmpty || source.isEmpty) return null;
+    return _downloadedSubtitleStreamIds.remove(_subtitleDownloadStreamKey(item, source));
   }
 
   Future<void> _handleEndpointSwitch(String newBaseUrl, {required bool persist}) async {
@@ -432,6 +465,66 @@ class JellyfinClient
     if (persist) {
       await onConnectionUpdated?.call(_connection);
     }
+  }
+
+  Future<void> _refreshEmbySubtitlePolicy({bool force = false}) async {
+    if (dialect != MediaBrowserDialect.emby) return;
+
+    final now = DateTime.now();
+    final lastChecked = _embySubtitlePolicyCheckedAt;
+    if (!force && lastChecked != null && now.difference(lastChecked) < const Duration(minutes: 10)) {
+      return;
+    }
+
+    final inFlight = _embySubtitlePolicyProbe;
+    if (inFlight != null) {
+      await inFlight;
+      return;
+    }
+
+    final probe = () async {
+      bool canDownloadSubtitles = false;
+      try {
+        // Emby user policy surfaces subtitle permissions directly.
+        final response = await _http.get(
+          '/Users/${_segment(connection.userId)}',
+          timeout: MediaServerTimeouts.jellyfinProbe,
+        );
+
+        final data = response.data;
+        if (response.statusCode >= 200 && response.statusCode < 300 && data is Map<String, dynamic>) {
+          final policy = data['Policy'];
+          if (policy is Map<String, dynamic>) {
+            canDownloadSubtitles = _embyPolicyAllowsSubtitleDownloading(policy);
+          }
+        }
+      } catch (_) {
+        canDownloadSubtitles = false;
+      }
+
+      _embySubtitlePolicyCheckedAt = now;
+      if (canDownloadSubtitles == _embyCanDownloadSubtitles) return;
+
+      _embyCanDownloadSubtitles = canDownloadSubtitles;
+      appLogger.i('Emby subtitle capability changed: externalSubtitleSearch=$_embyCanDownloadSubtitles');
+      final listener = onConnectionUpdated;
+      if (listener != null) {
+        await Future.sync(() => listener(_connection));
+      }
+    }();
+
+    _embySubtitlePolicyProbe = probe;
+    try {
+      await probe;
+    } finally {
+      if (identical(_embySubtitlePolicyProbe, probe)) {
+        _embySubtitlePolicyProbe = null;
+      }
+    }
+  }
+
+  static bool _embyPolicyAllowsSubtitleDownloading(Map<String, dynamic> policy) {
+    return policy['EnableSubtitleDownloading'] == true || policy['EnableSubtitleManagement'] == true;
   }
 
   /// Read-only view of the headers attached to every outgoing request.
@@ -482,8 +575,19 @@ class JellyfinClient
   @override
   ServerCapabilities get capabilities => switch (dialect) {
     MediaBrowserDialect.jellyfin => ServerCapabilities.jellyfin,
-    MediaBrowserDialect.emby => ServerCapabilities.emby,
+    MediaBrowserDialect.emby => ServerCapabilities.emby.copyWith(externalSubtitleSearch: _embySubtitleSearchAllowed),
   };
+
+  /// Emby's per-user subtitle-download policy, probed on first use rather
+  /// than at construction so a client that never opens the subtitle search
+  /// costs no request. The first read answers false; the probe then reports a
+  /// change through [onConnectionUpdated], which re-reads [capabilities].
+  bool get _embySubtitleSearchAllowed {
+    if (_embySubtitlePolicyCheckedAt == null && _embySubtitlePolicyProbe == null) {
+      unawaited(_refreshEmbySubtitlePolicy());
+    }
+    return _embyCanDownloadSubtitles;
+  }
 
   /// Realtime library-change push on the dialect's session socket. Reads the
   /// base URL live so endpoint failover lands on the channel's next
@@ -616,6 +720,14 @@ class JellyfinClient
                 appLogger.w('Failed to handle Jellyfin connection update', error: e, stackTrace: st);
               }
             }
+          }
+        }
+        if (dialect == MediaBrowserDialect.emby) {
+          try {
+            // Only once the policy has been asked for; the probe is lazy.
+            if (_embySubtitlePolicyCheckedAt != null) await _refreshEmbySubtitlePolicy();
+          } catch (e, st) {
+            appLogger.w('Failed to refresh Emby subtitle policy', error: e, stackTrace: st);
           }
         }
         return HealthStatus.online;
