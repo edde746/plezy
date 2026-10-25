@@ -2336,6 +2336,8 @@
     "audioEqualizerFlat": "",
     "audioEqualizerActive": "",
     "audioEqualizerSaveFailed": "",
+    "backgroundVideoAudio": "",
+    "backgroundVideoAudioDescription": "",
     "audioNormalization": "ラウドネス正規化",
     "audioNormalizationDisablesPassthrough": "音声をPCMにデコードします。オンの間はパススルーがオフになります"
   },

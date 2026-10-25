@@ -2353,6 +2353,8 @@
     "audioEqualizerFlat": "",
     "audioEqualizerActive": "",
     "audioEqualizerSaveFailed": "",
+    "backgroundVideoAudio": "",
+    "backgroundVideoAudioDescription": "",
     "audioNormalization": "Дыбыс деңгейін нормалау",
     "audioNormalizationDisablesPassthrough": "Дыбысты PCM-ге декодтайды; бұл қосулы кезде тікелей өткізу өшірулі"
   },

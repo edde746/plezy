@@ -994,6 +994,7 @@ class SettingsService extends BaseSharedPreferencesService {
   static const ambientLighting = BoolPref('ambient_lighting');
   static const audioPassthrough = _AudioPassthroughPref();
   static const audioNormalization = BoolPref('audio_normalization');
+  static const backgroundVideoAudio = BoolPref('background_video_audio');
   static final audioEqualizer60 = _audioEqualizerPref('audio_equalizer_60');
   static final audioEqualizer250 = _audioEqualizerPref('audio_equalizer_250');
   static final audioEqualizer1000 = _audioEqualizerPref('audio_equalizer_1000');
@@ -1758,6 +1759,7 @@ class SettingsService extends BaseSharedPreferencesService {
     ambientLighting,
     audioPassthrough,
     audioNormalization,
+    backgroundVideoAudio,
     ...audioEqualizerBandPrefs,
     audioChannelLimit,
     audioDownmixNormalize,

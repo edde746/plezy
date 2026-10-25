@@ -114,6 +114,13 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                 _streamBufferSizeTile(exoActive: exoActive),
                 if (exoActive) _tunneledPlaybackTile(),
                 if (PlatformDetector.supportsPictureInPicture()) _autoPipTile(),
+                if (isMobile && !PlatformDetector.isTV() && !PlatformDetector.isAutomotive())
+                  SettingSwitchTile(
+                    pref: SettingsService.backgroundVideoAudio,
+                    icon: Symbols.headphones_rounded,
+                    title: t.videoSettings.backgroundVideoAudio,
+                    subtitle: t.videoSettings.backgroundVideoAudioDescription,
+                  ),
               ],
             ),
 

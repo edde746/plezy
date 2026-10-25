@@ -23,6 +23,8 @@
 - Add device-local preferred-language subtitle selection and opt-in downloads through the server's subtitle provider API.
 - Add a five-band device-local audio equalizer to mpv video playback.
 - Let each profile prioritize a preferred media server in cross-server result ordering.
+- Shuffle every movie or episode in the selected library across Plex, Jellyfin, and Emby.
+- Continue video audio in the background on handheld Android and iOS when enabled.
 - Added changelog enforcement, changelog-based release notes, and Discord announcements for published PlezyNG releases.
 - Require an explicit versioned release dispatch, and move release downloads and package updates to PlezyNG.
 - Remove the inherited WinGet publisher and add the PlezyNG Discord support link to the README.

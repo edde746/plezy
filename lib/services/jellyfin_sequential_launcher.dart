@@ -7,7 +7,9 @@ import 'package:provider/provider.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
+import '../media/media_library.dart';
 import '../media/media_server_client.dart';
+import '../media/library_query.dart';
 import '../media/play_queue.dart';
 import '../providers/multi_server_provider.dart';
 import '../providers/playback_state_provider.dart';
@@ -51,6 +53,58 @@ class JellyfinSequentialLauncher extends MediaListPlaybackLauncher {
     this.playbackStateForTesting,
     this.navigateForTesting,
   });
+
+  /// Shuffle all playable movies or episodes in a library. The neutral paged
+  /// API keeps Plex, Jellyfin, and Emby on the same client-side queue path.
+  Future<PlayQueueResult> launchShuffledLibrary({
+    required MediaLibrary library,
+    bool showLoadingIndicator = true,
+  }) async {
+    final serverId = serverIdOrNull(library.serverId);
+    if (serverId == null) return PlayQueueError(Exception('Library is missing serverId'));
+    final kind = switch (library.kind) {
+      MediaKind.movie => MediaKind.movie,
+      MediaKind.show => MediaKind.episode,
+      _ => null,
+    };
+    if (kind == null) return PlayQueueError(Exception('Shuffle library requires a movie or show library'));
+
+    return _launchLocalQueue(
+      serverId: serverId,
+      contextKey: library.globalKey,
+      shuffle: true,
+      showLoadingIndicator: showLoadingIndicator,
+      fetchItems: (client, abort) async {
+        const pageSize = 200;
+        var offset = 0;
+        var total = 0;
+        final items = <MediaItem>[];
+        do {
+          final page = await client.fetchLibraryPagedContent(
+            library.id,
+            query: LibraryQuery(kind: kind, offset: offset, limit: pageSize),
+            libraryKind: library.kind,
+            abort: abort,
+          );
+          abort.throwIfAborted();
+          if (page.items.isEmpty) break;
+          items.addAll(
+            page.items.where((item) => item.kind.isVideo).map((item) {
+              return item.copyWith(
+                serverId: item.serverId ?? serverId,
+                serverName: item.serverName ?? library.serverName,
+                libraryId: item.libraryId ?? library.id,
+                libraryTitle: item.libraryTitle ?? library.title,
+              );
+            }),
+          );
+          total = page.totalCount;
+          offset += page.items.length;
+        } while (offset < total);
+        return items;
+      },
+    );
+  }
 
   @override
   Future<PlayQueueResult> launchFromCollectionOrPlaylist({

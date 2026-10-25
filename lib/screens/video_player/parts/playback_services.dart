@@ -594,6 +594,7 @@ extension _VideoPlayerPlaybackServiceMethods on VideoPlayerScreenState {
     // helper wires its metadata update).
     final mediaControlsManager = MediaControlsManager();
     _mediaControlsManager = mediaControlsManager;
+    unawaited(mediaControlsManager.setBackgroundMode(_backgroundVideoAudioAllowed));
 
     final mediaControlRouter = _buildMediaControlRouter();
 

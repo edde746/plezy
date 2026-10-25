@@ -976,6 +976,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       ((Platform.isIOS || Platform.isMacOS) && _autoPipEnabled) ||
       (Platform.isAndroid && _androidAutoPipTransitionInFlight);
 
+  /// Optional audio-only continuation for handheld video playback. It stays
+  /// outside live TV, Watch Together, and TV backgrounds, whose transports
+  /// have separate ownership and lifecycle rules.
+  bool get _backgroundVideoAudioAllowed =>
+      SettingsService.instance.read(SettingsService.backgroundVideoAudio) &&
+      (Platform.isAndroid || Platform.isIOS) &&
+      !PlatformDetector.isTV() &&
+      !PlatformDetector.isAutomotive() &&
+      !widget.isLive &&
+      !widget.isPreroll &&
+      !_wtRoomOpen;
+
   MediaControlsManager? _mediaControlsManager;
 
   /// [_initializeServices] ran while the open had already failed and left the
@@ -1609,7 +1621,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         // We don't support background playback
         if (_mediaControls.shouldSuspendForTvBackground) {
           unawaited(_mediaControls.suspendForTvBackground('paused'));
-        } else {
+        } else if (!_backgroundVideoAudioAllowed) {
           unawaited(_mediaControlsManager?.clear());
         }
         unawaited(_wakelockController.setEnabled(false));

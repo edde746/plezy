@@ -2353,6 +2353,8 @@
     "audioEqualizerFlat": "",
     "audioEqualizerActive": "",
     "audioEqualizerSaveFailed": "",
+    "backgroundVideoAudio": "",
+    "backgroundVideoAudioDescription": "",
     "audioNormalization": "Hangerő normalizálása",
     "audioNormalizationDisablesPassthrough": "PCM-mé dekódolja a hangot; a passthrough ki van kapcsolva, amíg ez be van kapcsolva"
   },

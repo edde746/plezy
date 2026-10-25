@@ -2353,6 +2353,8 @@
     "audioEqualizerFlat": "",
     "audioEqualizerActive": "",
     "audioEqualizerSaveFailed": "",
+    "backgroundVideoAudio": "",
+    "backgroundVideoAudioDescription": "",
     "audioNormalization": "Normaliser lydstyrke",
     "audioNormalizationDisablesPassthrough": "Dekoder lyd til PCM; direkte lydutgang er av mens dette er på"
   },

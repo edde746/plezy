@@ -2355,6 +2355,8 @@
     "audioEqualizerFlat": "Flat",
     "audioEqualizerActive": "Custom",
     "audioEqualizerSaveFailed": "Couldn't save audio equalizer settings.",
+    "backgroundVideoAudio": "Background Video Audio",
+    "backgroundVideoAudioDescription": "Keep video audio playing when you leave the player; the picture is hidden until you return. Android uses a media playback notification.",
     "audioNormalization": "Normalize Loudness",
     "audioNormalizationDisablesPassthrough": "Decodes audio to PCM; passthrough is off while this is on"
   },

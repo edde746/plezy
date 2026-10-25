@@ -2353,6 +2353,8 @@
     "audioEqualizerFlat": "",
     "audioEqualizerActive": "",
     "audioEqualizerSaveFailed": "",
+    "backgroundVideoAudio": "",
+    "backgroundVideoAudioDescription": "",
     "audioNormalization": "Normalisera ljudstyrka",
     "audioNormalizationDisablesPassthrough": "Avkodar ljudet till PCM; genomströmning är av medan detta är på"
   },

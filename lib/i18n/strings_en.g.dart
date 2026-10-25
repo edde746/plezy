@@ -5500,6 +5500,12 @@ class Translations$videoSettings$en {
 	/// en: 'Couldn't save audio equalizer settings.'
 	String get audioEqualizerSaveFailed => 'Couldn\'t save audio equalizer settings.';
 
+	/// en: 'Background Video Audio'
+	String get backgroundVideoAudio => 'Background Video Audio';
+
+	/// en: 'Keep video audio playing when you leave the player; the picture is hidden until you return. Android uses a media playback notification.'
+	String get backgroundVideoAudioDescription => 'Keep video audio playing when you leave the player; the picture is hidden until you return. Android uses a media playback notification.';
+
 	/// en: 'Normalize Loudness'
 	String get audioNormalization => 'Normalize Loudness';
 
@@ -10967,6 +10973,8 @@ extension on Translations {
 			'videoSettings.audioEqualizerFlat' => 'Flat',
 			'videoSettings.audioEqualizerActive' => 'Custom',
 			'videoSettings.audioEqualizerSaveFailed' => 'Couldn\'t save audio equalizer settings.',
+			'videoSettings.backgroundVideoAudio' => 'Background Video Audio',
+			'videoSettings.backgroundVideoAudioDescription' => 'Keep video audio playing when you leave the player; the picture is hidden until you return. Android uses a media playback notification.',
 			'videoSettings.audioNormalization' => 'Normalize Loudness',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Decodes audio to PCM; passthrough is off while this is on',
 			'performanceOverlay.color' => 'Color',

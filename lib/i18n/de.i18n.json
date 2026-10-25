@@ -2353,6 +2353,8 @@
     "audioEqualizerFlat": "",
     "audioEqualizerActive": "",
     "audioEqualizerSaveFailed": "",
+    "backgroundVideoAudio": "",
+    "backgroundVideoAudioDescription": "",
     "audioNormalization": "Lautstärke normalisieren",
     "audioNormalizationDisablesPassthrough": "Dekodiert Audio zu PCM; Durchleitung ist aus, solange dies aktiv ist"
   },

@@ -2353,6 +2353,8 @@
     "audioEqualizerFlat": "",
     "audioEqualizerActive": "",
     "audioEqualizerSaveFailed": "",
+    "backgroundVideoAudio": "",
+    "backgroundVideoAudioDescription": "",
     "audioNormalization": "Səsin gurluğunu normallaşdır",
     "audioNormalizationDisablesPassthrough": "Səsi PCM-ə dekodlayır; bu aktivkən birbaşa ötürmə söndürülür"
   },

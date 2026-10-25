@@ -2336,6 +2336,8 @@
     "audioEqualizerFlat": "",
     "audioEqualizerActive": "",
     "audioEqualizerSaveFailed": "",
+    "backgroundVideoAudio": "",
+    "backgroundVideoAudioDescription": "",
     "audioNormalization": "음량 정규화",
     "audioNormalizationDisablesPassthrough": "오디오를 PCM으로 디코딩합니다. 켜져 있는 동안 패스스루가 꺼집니다"
   },

@@ -19,6 +19,8 @@ import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/libraries_provider.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../services/settings_service.dart';
+import '../../services/jellyfin_sequential_launcher.dart';
+import '../../services/media_list_playback_launcher.dart';
 import '../../widgets/settings_builder.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/platform_detector.dart';
@@ -73,7 +75,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   final _playlistsTabKey = GlobalKey();
 
   String? _selectedLibraryGlobalKey;
-  bool _isPickingRandomMovie = false;
+  bool _isPreparingRandomPlay = false;
 
   /// Flag to prevent onTabChanged from focusing when we're programmatically changing tabs
   bool _isRestoringTab = false;
@@ -208,7 +210,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   Future<void> _pickRandomMovie(MediaLibrary library) async {
-    if (_isPickingRandomMovie) return;
+    if (_isPreparingRandomPlay) return;
     final serverId = serverIdOrNull(library.serverId);
     if (serverId == null) return;
     final client = context.read<MultiServerProvider>().getClientForServer(serverId);
@@ -217,7 +219,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       return;
     }
 
-    setState(() => _isPickingRandomMovie = true);
+    setState(() => _isPreparingRandomPlay = true);
     try {
       final firstPage = await client.fetchLibraryPagedContent(
         library.id,
@@ -249,7 +251,21 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       appLogger.w('Random movie selection failed', error: error, stackTrace: stackTrace);
       if (mounted) showErrorSnackBar(context, t.libraries.randomPickFailed);
     } finally {
-      if (mounted) setState(() => _isPickingRandomMovie = false);
+      if (mounted) setState(() => _isPreparingRandomPlay = false);
+    }
+  }
+
+  Future<void> _shuffleLibrary(MediaLibrary library) async {
+    if (_isPreparingRandomPlay) return;
+    setState(() => _isPreparingRandomPlay = true);
+    try {
+      final result = await JellyfinSequentialLauncher(context: context).launchShuffledLibrary(library: library);
+      if (mounted && result is PlayQueueEmpty) showAppSnackBar(context, t.hubDetail.noItemsFound);
+    } catch (error, stackTrace) {
+      appLogger.w('Library shuffle failed', error: error, stackTrace: stackTrace);
+      if (mounted) showErrorSnackBar(context, t.libraries.randomPickFailed);
+    } finally {
+      if (mounted) setState(() => _isPreparingRandomPlay = false);
     }
   }
 
@@ -864,7 +880,13 @@ class _LibrariesScreenState extends State<LibrariesScreen>
         FocusableAction(
           icon: Symbols.casino_rounded,
           tooltip: t.libraries.playRandomMovie,
-          onPressed: _isPickingRandomMovie ? null : () => _pickRandomMovie(selectedLibrary!),
+          onPressed: _isPreparingRandomPlay ? null : () => _pickRandomMovie(selectedLibrary!),
+        ),
+      if (selectedLibrary?.kind == MediaKind.movie || selectedLibrary?.kind == MediaKind.show)
+        FocusableAction(
+          icon: Symbols.shuffle_rounded,
+          tooltip: t.common.shuffle,
+          onPressed: _isPreparingRandomPlay ? null : () => _shuffleLibrary(selectedLibrary!),
         ),
       if (allLibraries.isNotEmpty)
         FocusableAction(

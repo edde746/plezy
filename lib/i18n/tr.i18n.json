@@ -2353,6 +2353,8 @@
     "audioEqualizerFlat": "",
     "audioEqualizerActive": "",
     "audioEqualizerSaveFailed": "",
+    "backgroundVideoAudio": "",
+    "backgroundVideoAudioDescription": "",
     "audioNormalization": "Ses Yüksekliğini Normalleştir",
     "audioNormalizationDisablesPassthrough": "Sesi PCM'e çözer; bu açıkken doğrudan geçiş kapalıdır"
   },

@@ -2387,6 +2387,8 @@
     "audioEqualizerFlat": "",
     "audioEqualizerActive": "",
     "audioEqualizerSaveFailed": "",
+    "backgroundVideoAudio": "",
+    "backgroundVideoAudioDescription": "",
     "audioNormalization": "Нормализация громкости",
     "audioNormalizationDisablesPassthrough": "Декодирует аудио в PCM; сквозной вывод отключён, пока эта опция включена"
   },

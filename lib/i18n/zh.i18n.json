@@ -2336,6 +2336,8 @@
     "audioEqualizerFlat": "",
     "audioEqualizerActive": "",
     "audioEqualizerSaveFailed": "",
+    "backgroundVideoAudio": "",
+    "backgroundVideoAudioDescription": "",
     "audioNormalization": "响度标准化",
     "audioNormalizationDisablesPassthrough": "将音频解码为 PCM；开启时直通关闭"
   },

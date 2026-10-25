@@ -2353,6 +2353,8 @@
     "audioEqualizerFlat": "",
     "audioEqualizerActive": "",
     "audioEqualizerSaveFailed": "",
+    "backgroundVideoAudio": "",
+    "backgroundVideoAudioDescription": "",
     "audioNormalization": "Volume normaliseren",
     "audioNormalizationDisablesPassthrough": "Decodeert audio naar PCM; doorvoer is uit zolang dit aan staat"
   },
