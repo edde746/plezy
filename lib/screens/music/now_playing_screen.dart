@@ -71,6 +71,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
 
   bool _showLyrics = false;
   bool _showVisualizer = false;
+  MusicVisualizerPreset _visualizerPreset = MusicVisualizerPreset.bloom;
   final Map<String, Future<Lyrics?>> _lyricsCache = {};
 
   /// Key for getting a context below this screen's own OverlaySheetHost —
@@ -162,6 +163,11 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
       _showVisualizer = !_showVisualizer;
       if (_showVisualizer) _showLyrics = false;
     });
+  }
+
+  void _setVisualizerPreset(MusicVisualizerPreset preset) {
+    if (_visualizerPreset == preset) return;
+    setState(() => _visualizerPreset = preset);
   }
 
   void _focusTransport() => _playPauseFocusNode.requestFocus();
@@ -731,6 +737,8 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                 service: service,
                 trackKey: track.globalKey,
                 duration: service.duration ?? Duration.zero,
+                preset: _visualizerPreset,
+                onPresetChanged: _setVisualizerPreset,
               ),
             )
           : KeyedSubtree(

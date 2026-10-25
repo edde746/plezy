@@ -4463,11 +4463,38 @@ class Translations$music$en {
 	/// en: 'Visualizer'
 	String get visualizer => 'Visualizer';
 
-	/// en: 'Loading visualizer…'
-	String get visualizerLoading => 'Loading visualizer…';
+	/// en: 'Reading track analysis…'
+	String get visualizerProfileLoading => 'Reading track analysis…';
 
-	/// en: 'Loudness data is unavailable for this track'
-	String get visualizerUnavailable => 'Loudness data is unavailable for this track';
+	/// en: 'Ambient motion'
+	String get visualizerAmbientMotion => 'Ambient motion';
+
+	/// en: 'Plex loudness'
+	String get visualizerPlexLoudness => 'Plex loudness';
+
+	/// en: 'Previous visual style'
+	String get visualizerPreviousPreset => 'Previous visual style';
+
+	/// en: 'Next visual style'
+	String get visualizerNextPreset => 'Next visual style';
+
+	/// en: 'Aurora'
+	String get visualizerPresetAurora => 'Aurora';
+
+	/// en: 'Bloom'
+	String get visualizerPresetBloom => 'Bloom';
+
+	/// en: 'Orbitals'
+	String get visualizerPresetOrbitals => 'Orbitals';
+
+	/// en: 'Prism'
+	String get visualizerPresetPrism => 'Prism';
+
+	/// en: 'Tunnel'
+	String get visualizerPresetTunnel => 'Tunnel';
+
+	/// en: 'Track map'
+	String get visualizerPresetTrackMap => 'Track map';
 
 	/// en: 'No lyrics available'
 	String get noLyrics => 'No lyrics available';
@@ -10058,8 +10085,17 @@ extension on Translations {
 			'music.clearQueue' => 'Clear queue',
 			'music.lyrics' => 'Lyrics',
 			'music.visualizer' => 'Visualizer',
-			'music.visualizerLoading' => 'Loading visualizer…',
-			'music.visualizerUnavailable' => 'Loudness data is unavailable for this track',
+			'music.visualizerProfileLoading' => 'Reading track analysis…',
+			'music.visualizerAmbientMotion' => 'Ambient motion',
+			'music.visualizerPlexLoudness' => 'Plex loudness',
+			'music.visualizerPreviousPreset' => 'Previous visual style',
+			'music.visualizerNextPreset' => 'Next visual style',
+			'music.visualizerPresetAurora' => 'Aurora',
+			'music.visualizerPresetBloom' => 'Bloom',
+			'music.visualizerPresetOrbitals' => 'Orbitals',
+			'music.visualizerPresetPrism' => 'Prism',
+			'music.visualizerPresetTunnel' => 'Tunnel',
+			'music.visualizerPresetTrackMap' => 'Track map',
 			'music.noLyrics' => 'No lyrics available',
 			'music.sleepTimer' => 'Sleep timer',
 			'music.sleepTimerEndOfTrack' => 'End of track',
@@ -10427,6 +10463,8 @@ extension on Translations {
 			'companionRemote.remote.next' => 'Next',
 			'companionRemote.remote.seekBack' => 'Seek Back',
 			'companionRemote.remote.stop' => 'Stop',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.seekForward' => 'Seek Fwd',
 			'companionRemote.remote.volume' => 'Volume',
 			'companionRemote.remote.volumeDown' => 'Down',
@@ -10436,8 +10474,6 @@ extension on Translations {
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Search on desktop...',
 			'companionRemote.errors.noNetworkInterface' => 'No network interface found',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.errors.authenticationFailed' => 'Authentication failed',
 			'companionRemote.errors.serverStartFailed' => ({required Object error}) => 'Failed to start remote server: ${error}',
 			'companionRemote.errors.commandFailed' => ({required Object error}) => 'Failed to send remote command: ${error}',
