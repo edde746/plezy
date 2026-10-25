@@ -1556,6 +1556,21 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
     return downloadProvider.syncRuleKeyForClient(client, metadata.id, serverId: ServerId(serverId));
   }
 
+  /// Directors (when the server gave us a person id to open) followed by the
+  /// cast, so both share one strip and one person page.
+  List<MediaRole> _castAndCrew(MediaItem metadata) {
+    final directors = metadata.directorRoles;
+    final roles = metadata.roles;
+    if (directors == null || directors.isEmpty) return roles ?? const [];
+    final director = t.discover.director;
+    return [
+      for (final d in directors)
+        if (d.id != null && d.tag.trim().isNotEmpty)
+          MediaRole(id: d.id, tag: d.tag, role: director, thumbPath: d.thumbPath),
+      ...?roles,
+    ];
+  }
+
   void _navigateToActorMedia(MediaRole actor) {
     final personId = actor.id;
     if (personId == null || _metadata.serverId == null) return;
@@ -2344,7 +2359,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   /// Focus the first visible section above extras: cast → season tabs → overview → play button.
   void _focusSectionAboveExtras() {
     final metadata = _metadata;
-    if (metadata.roles != null && metadata.roles!.isNotEmpty) {
+    if (_castAndCrew(metadata).isNotEmpty) {
       _castStripKey.currentState?.requestFocus();
       _scrollSectionIntoView(_castSectionKey);
     } else {
@@ -2513,7 +2528,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       return;
     }
 
-    if (metadata.roles != null && metadata.roles!.isNotEmpty) {
+    if (_castAndCrew(metadata).isNotEmpty) {
       _castStripKey.currentState?.requestFocus();
       _scrollSectionIntoView(_castSectionKey);
       return;
@@ -3591,7 +3606,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
                             ],
 
                             // Cast
-                            if (metadata.roles != null && metadata.roles!.isNotEmpty) ...[
+                            if (_castAndCrew(metadata).isNotEmpty) ...[
                               Text(key: _castSectionKey, t.discover.cast, style: sectionTitleStyle),
                               const SizedBox(height: 12),
                               _buildCastSection(metadata),
@@ -4419,8 +4434,8 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   List<MediaItem> _tvDetailActorItems(MediaItem metadata) {
     final cached = _tvDetailActorItemsCache;
     if (cached != null && identical(cached.$1, metadata)) return cached.$2;
-    final roles = metadata.roles;
-    final items = roles == null || roles.isEmpty
+    final roles = _castAndCrew(metadata);
+    final items = roles.isEmpty
         ? const <MediaItem>[]
         : [
             for (var i = 0; i < roles.length; i++)
@@ -4924,7 +4939,7 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
   }
 
   Widget _buildCastSectionContent(MediaItem metadata) {
-    final roles = metadata.roles!;
+    final roles = _castAndCrew(metadata);
     return CastMemberStrip(
       key: _castStripKey,
       members: [for (final actor in roles) (name: actor.tag, secondary: actor.role, imagePath: actor.thumbPath)],

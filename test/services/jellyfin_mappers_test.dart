@@ -28,7 +28,7 @@ void main() {
         'Genres': ['Action', 'Sci-Fi'],
         'People': [
           {'Type': 'Actor', 'Name': 'Leo', 'Id': 'p1', 'PrimaryImageTag': 'tag1', 'Role': 'Cobb'},
-          {'Type': 'Director', 'Name': 'Christopher Nolan'},
+          {'Type': 'Director', 'Name': 'Christopher Nolan', 'Id': 'd1', 'PrimaryImageTag': 'dtag'},
         ],
         'Studios': [
           {'Name': 'Warner Bros'},
@@ -72,6 +72,9 @@ void main() {
       expect(item.ratings?.map((rating) => rating.value).toList(), [8.8, 8.8]);
       expect(item.genres, ['Action', 'Sci-Fi']);
       expect(item.directors, ['Christopher Nolan']);
+      expect(item.directorRoles?.map((d) => (d.id, d.tag, d.thumbPath)).toList(), [
+        ('d1', 'Christopher Nolan', '/Items/d1/Images/Primary?tag=dtag'),
+      ]);
       expect(item.countries, ['United States']);
       expect(item.roles, isNotNull);
       expect(item.roles!.length, 1);
