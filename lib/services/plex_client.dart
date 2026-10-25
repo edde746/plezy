@@ -4433,6 +4433,9 @@ class PlexClient
   }
 
   @override
+  Future<List<MediaItem>> fetchCinemaIntros(String itemId) async => const [];
+
+  @override
   Future<PlaybackExtras> fetchPlaybackExtras(
     String itemId, {
     String? introPattern,

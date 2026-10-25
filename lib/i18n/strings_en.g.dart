@@ -1066,11 +1066,11 @@ class Translations$settings$en {
 	/// en: 'Start each episode at the beginning when shuffling instead of resuming'
 	String get shuffleStartsFromBeginningDescription => 'Start each episode at the beginning when shuffling instead of resuming';
 
-	/// en: 'Play Pre-Roll Before Movies'
-	String get plexCinemaPreRoll => 'Play Pre-Roll Before Movies';
+	/// en: 'Use server cinema intros'
+	String get plexCinemaPreRoll => 'Use server cinema intros';
 
-	/// en: 'Play the pre-roll configured on your Plex server before a movie starts. Plex servers only'
-	String get plexCinemaPreRollDescription => 'Play the pre-roll configured on your Plex server before a movie starts. Plex servers only';
+	/// en: 'Play configured Plex pre-rolls or Jellyfin and Emby intros before a movie starts.'
+	String get plexCinemaPreRollDescription => 'Play configured Plex pre-rolls or Jellyfin and Emby intros before a movie starts.';
 
 	/// en: 'Play Next Countdown'
 	String get playNextCountdown => 'Play Next Countdown';
@@ -9151,8 +9151,8 @@ extension on Translations {
 			'settings.autoPlayNextEpisodeDescription' => 'Start the next episode automatically when one ends',
 			'settings.shuffleStartsFromBeginning' => 'Shuffle Starts at Beginning',
 			'settings.shuffleStartsFromBeginningDescription' => 'Start each episode at the beginning when shuffling instead of resuming',
-			'settings.plexCinemaPreRoll' => 'Play Pre-Roll Before Movies',
-			'settings.plexCinemaPreRollDescription' => 'Play the pre-roll configured on your Plex server before a movie starts. Plex servers only',
+			'settings.plexCinemaPreRoll' => 'Use server cinema intros',
+			'settings.plexCinemaPreRollDescription' => 'Play configured Plex pre-rolls or Jellyfin and Emby intros before a movie starts.',
 			'settings.playNextCountdown' => 'Play Next Countdown',
 			'settings.playNextCountdownImmediate' => 'Play immediately',
 			'settings.skipIntroMode' => 'Skip Intro',

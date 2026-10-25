@@ -728,6 +728,11 @@ abstract class MediaServerClient {
   /// show themes. Returns null when unavailable or unsupported.
   Future<String?> getThemeSongUrl(MediaItem item) async => null;
 
+  /// Server-configured cinema intros for a movie. Plex exposes these through
+  /// its play-queue API; Jellyfin and Emby expose an item intros endpoint.
+  /// Unsupported backends and servers without configured intros return [].
+  Future<List<MediaItem>> fetchCinemaIntros(String itemId) async => const [];
+
   /// Chapters and intro/credits markers for [itemId]. Plex returns both in one
   /// round trip; Jellyfin combines item-level chapters with best-effort native
   /// media segments. Implementations may cache.

@@ -6,7 +6,7 @@ Status: 2026-10-25. PlezyNG is a fork of `edde746/plezy` intended to carry reque
 
 - Converted video download quality for Plex, Jellyfin, and Emby. Plex uses its download queue; Jellyfin and Emby use progressive H.264/AAC transcodes and restart after interrupted transfers because those streams are not resumable.
 - Per-sync-rule quality, per-download quality prompt, and automatic Continue Watching rules with cleanup when items leave the shelf.
-- Local random movie pre-rolls, following server-provided Plex pre-rolls.
+- Server-configured Plex pre-rolls and Jellyfin/Emby cinema intros, with local random movie pre-rolls as the fallback.
 - Per-show audio and subtitle memory stored locally by app profile, in addition to existing Plex/Jellyfin server memory.
 - Optional pre-play audio and subtitle selection using the same source track metadata as the player, across Plex, Jellyfin, and Emby.
 - Preferred-language subtitle selection is a device-local playback policy. Its opt-in setting selects an existing track or asks Plex, Jellyfin, or Emby to fetch one, then attaches the returned subtitle as a sidecar. Automatic selections are never written to the account; explicit server-selected tracks, account Off, and user Off choices take precedence.
@@ -28,7 +28,7 @@ Status: 2026-10-25. PlezyNG is a fork of `edde746/plezy` intended to carry reque
 | Downloads | Orphan cleanup; verify converted downloads against real Plex/Jellyfin/Emby servers |
 | Profiles | None for the listed PIN and per-profile Explore visibility requests; Plex Home PIN remains server-owned |
 | Audio/subtitles | Validate per-show memory, pre-play selection, and automatic subtitle fetching against real Plex/Jellyfin/Emby servers |
-| Playback | Jellyfin/Emby cinema-intro APIs; background video/audio-only mode; mpv equalizer; separate local/remote quality |
+| Playback | Background video/audio-only mode; mpv equalizer; separate local/remote quality |
 | Browsing | Library-wide shuffle; show finish time in TV details and remaining detail surfaces |
 | Home | Separate Next Up. Backdrop-art visibility and Continue Watching row sizing are implemented. Empty-library filtering applies when the server reports an explicit zero. The legacy hero banner already has a visibility setting; the top-bar clock is available on TV. |
 | Servers | Preferred server |

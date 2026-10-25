@@ -7,6 +7,7 @@
 - Add converted download quality for Jellyfin and Emby, and let sync rules keep their own quality preset.
 - Add per-server Continue Watching downloads that remove shelf items when they leave the shelf.
 - Add selectable random local prerolls before movies, with Plex server prerolls taking precedence.
+- Play configured Jellyfin and Emby cinema intros before movies when server extras are enabled.
 - Remember audio and subtitle choices per show locally across Plex, Jellyfin, and Emby.
 - Add in-player subtitle size/position controls and load a local subtitle file in mpv.
 - Play theme songs for the active home spotlight.

@@ -84,6 +84,11 @@ class MediaBrowserPaths {
       ? '$_user/Items/${_id(itemId)}/SpecialFeatures'
       : '/Items/${_id(itemId)}/SpecialFeatures';
 
+  /// Cinema clips configured for a movie. Emby retains the original
+  /// user-scoped spelling; Jellyfin 10.9+ serves intros from `/Items`.
+  String cinemaIntros(String itemId) =>
+      dialect.requiresUserScopedItemRoutes ? '$_user/Items/${_id(itemId)}/Intros' : '/Items/${_id(itemId)}/Intros';
+
   /// Hide an item from Continue Watching without touching its playback
   /// position (`?Hide=true` to hide, `?Hide=false` to restore). Honoured only
   /// by the dedicated [resumeItems] route, which is why every Emby playback

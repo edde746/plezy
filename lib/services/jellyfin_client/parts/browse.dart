@@ -885,6 +885,17 @@ mixin _JellyfinBrowseMethods on _JellyfinClientInternals {
   }
 
   @override
+  Future<List<MediaItem>> fetchCinemaIntros(String itemId) async {
+    if (isOfflineMode) return const [];
+    final response = await _http.get(
+      paths.cinemaIntros(itemId),
+      queryParameters: dialect == MediaBrowserDialect.jellyfin ? {'UserId': connection.userId} : null,
+    );
+    throwIfHttpError(response);
+    return _mapItems(_itemsArray(response.data));
+  }
+
+  @override
   Future<List<MediaItem>> fetchChildren(String parentId) => _fetchChildrenInternal(parentId);
 
   /// [fetchChildren] plus incremental delivery: [onPage] receives the
