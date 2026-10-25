@@ -153,13 +153,10 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
               title: t.settings.quality,
               children: [
                 _defaultQualityTile(),
+                _remoteQualityTile(),
                 // Only a phone/tablet has a cellular radio; desktop and TV
                 // never report a cellular-only connection.
                 if (isMobile) _cellularQualityTile(),
-                // TODO: "Remote streaming quality" selector (#2064) goes here,
-                // mirroring cellularQualityPreset's nullable "same as default"
-                // pattern; needs local/remote connection detection in the
-                // failover client.
                 _directPlayCoveredQualityTile(),
                 // Desktop has no hardware-decode probe, so this is where a
                 // machine too weak for a codec says so (#2443).
@@ -859,6 +856,19 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     subtitleBuilder: (p) => p == null ? t.settings.cellularQualitySameAsDefault : qualityPresetLabel(p),
     options: [
       DialogOption<TranscodeQualityPreset?>(value: null, title: t.settings.cellularQualitySameAsDefault),
+      ...TranscodeQualityPreset.displayOrder.map(
+        (p) => DialogOption<TranscodeQualityPreset?>(value: p, title: qualityPresetLabel(p)),
+      ),
+    ],
+  );
+
+  Widget _remoteQualityTile() => SettingSelectionTile<TranscodeQualityPreset?>(
+    pref: SettingsService.remoteQualityPreset,
+    icon: Symbols.public_rounded,
+    title: t.settings.remoteQualityTitle,
+    subtitleBuilder: (p) => p == null ? t.settings.remoteQualitySameAsDefault : qualityPresetLabel(p),
+    options: [
+      DialogOption<TranscodeQualityPreset?>(value: null, title: t.settings.remoteQualitySameAsDefault),
       ...TranscodeQualityPreset.displayOrder.map(
         (p) => DialogOption<TranscodeQualityPreset?>(value: p, title: qualityPresetLabel(p)),
       ),

@@ -1821,6 +1821,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
               onCellularOnly: context.read<OfflineModeProvider>().isCellularOnly,
               cellularDefault: settingsService.read(SettingsService.cellularQualityPreset),
               generalDefault: settingsService.read(SettingsService.defaultQualityPreset),
+              onRemoteConnection: context.read<MultiServerProvider>().serverManager.isRemoteConnection(
+                genericClient.serverId,
+              ),
+              remoteDefault: settingsService.read(SettingsService.remoteQualityPreset),
             );
         final playbackResolver = PlaybackSourceResolver(
           serverManager: context.read<MultiServerProvider>().serverManager,
@@ -1861,6 +1865,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         // default: on Original the backend may direct-play the channel, on a
         // capped preset it transcodes at that ceiling (#2198). Both live
         // backends can transcode, so the capability gate is moot here.
+        final liveClient = _getMediaServerClient(context);
         _selectedQualityPreset =
             widget.selectedQualityPreset ??
             TranscodeQualityPreset.resolveStartupDefault(
@@ -1868,6 +1873,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
               onCellularOnly: context.read<OfflineModeProvider>().isCellularOnly,
               cellularDefault: settingsService.read(SettingsService.cellularQualityPreset),
               generalDefault: settingsService.read(SettingsService.defaultQualityPreset),
+              onRemoteConnection:
+                  liveClient != null &&
+                  context.read<MultiServerProvider>().serverManager.isRemoteConnection(liveClient.serverId),
+              remoteDefault: settingsService.read(SettingsService.remoteQualityPreset),
             );
       }
 

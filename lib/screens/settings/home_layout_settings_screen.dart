@@ -16,7 +16,12 @@ import '../../providers/multi_server_provider.dart';
 import '../../services/settings_service.dart';
 import '../../models/plex/plex_managed_hub.dart';
 import '../../utils/home_section_builder.dart'
-    show continueWatchingHeroOverrideKey, continueWatchingRowToken, libraryContinueWatchingHeroOverrideKey;
+    show
+        continueWatchingHeroOverrideKey,
+        continueWatchingRowToken,
+        libraryContinueWatchingHeroOverrideKey,
+        nextUpHeroOverrideKey,
+        nextUpRowToken;
 import '../../services/home_layout_sync_service.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/focusable_list_tile.dart';
@@ -40,6 +45,7 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
   Map<String, ManagedHubHeroOverride> _heroOverrides = {};
   List<String> _rowOrder = [];
   bool _continueWatchingOnHome = true;
+  bool _nextUpOnHome = true;
 
   /// Reordering starts unlocked every time this screen opens, per user
   /// request 2026-09-10 (revised same day — the first cut of this defaulted
@@ -61,11 +67,42 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
     final libraries = libraryProvider.libraries
         .where((library) => !library.hidden && library.backend == MediaBackend.plex && library.serverId != null)
         .toList();
-    final order = _normalizeRowOrder(_rowOrder, libraries, _sections, _managedRows, continueWatchingOnHome: value);
+    final order = _normalizeRowOrder(
+      _rowOrder,
+      libraries,
+      _sections,
+      _managedRows,
+      continueWatchingOnHome: value,
+      nextUpOnHome: _nextUpOnHome,
+    );
     await settings.write(SettingsService.homeRowOrder, order);
     if (mounted) {
       setState(() {
         _continueWatchingOnHome = value;
+        _rowOrder = order;
+      });
+    }
+  }
+
+  Future<void> _setNextUpOnHome(bool value) async {
+    final libraryProvider = context.read<LibrariesProvider>();
+    final settings = await SettingsService.getInstance();
+    await settings.write(SettingsService.nextUpOnHome, value);
+    final libraries = libraryProvider.libraries
+        .where((library) => !library.hidden && library.backend == MediaBackend.plex && library.serverId != null)
+        .toList();
+    final order = _normalizeRowOrder(
+      _rowOrder,
+      libraries,
+      _sections,
+      _managedRows,
+      continueWatchingOnHome: _continueWatchingOnHome,
+      nextUpOnHome: value,
+    );
+    await settings.write(SettingsService.homeRowOrder, order);
+    if (mounted) {
+      setState(() {
+        _nextUpOnHome = value;
         _rowOrder = order;
       });
     }
@@ -163,6 +200,7 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
       sections,
       managedRows,
       continueWatchingOnHome: settings.read(SettingsService.continueWatchingOnHome),
+      nextUpOnHome: settings.read(SettingsService.nextUpOnHome),
     );
     // home_row_order is the only thing that decides what shows on Home
     // (see buildConfiguredHomeSections), so a newly-promoted Plex hub or a
@@ -180,6 +218,7 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
       _heroOverrides = settings.read(SettingsService.managedHubHeroOverrides);
       _rowOrder = normalizedOrder;
       _continueWatchingOnHome = settings.read(SettingsService.continueWatchingOnHome);
+      _nextUpOnHome = settings.read(SettingsService.nextUpOnHome);
       _loaded = true;
     });
   }
@@ -239,6 +278,7 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
       sections,
       _managedRows,
       continueWatchingOnHome: _continueWatchingOnHome,
+      nextUpOnHome: _nextUpOnHome,
     );
     await settings.write(SettingsService.homeRowOrder, order);
     if (mounted) {
@@ -306,12 +346,14 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
     List<HomeSectionConfig> sections,
     Map<String, List<PlexManagedHub>> managedRows, {
     required bool continueWatchingOnHome,
+    required bool nextUpOnHome,
   }) {
     final available = <String>[
       // Continue Watching defaults to the front of the list (matching its
       // old fixed-first position) so an untouched install's saved order
       // stays effectively unchanged the first time this runs after upgrade.
       if (continueWatchingOnHome) continueWatchingRowToken,
+      if (nextUpOnHome) nextUpRowToken,
       for (final library in libraries)
         for (final hub in managedRows[library.globalKey] ?? const <PlexManagedHub>[])
           if (hub.promotedToOwnHome) _hubToken(library, hub),
@@ -410,6 +452,10 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
       await _setContinueWatchingOnHome(false);
       return;
     }
+    if (token == nextUpRowToken) {
+      await _setNextUpOnHome(false);
+      return;
+    }
     final ref = _resolvePlexRowRef(token);
     if (ref == null) return;
     await _setManagedVisibility(ref.$1, ref.$2, home: false);
@@ -444,6 +490,20 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
           _OrganizerRow(
             token: token,
             label: t.homeLayout.continueWatching,
+            supportsHero: true,
+            heroStyle: override.heroStyle,
+            heroAutoSlide: override.heroAutoSlide,
+          ),
+        );
+        continue;
+      }
+      if (token == nextUpRowToken) {
+        if (!_nextUpOnHome) continue;
+        final override = _heroOverrideForKey(nextUpHeroOverrideKey);
+        rows.add(
+          _OrganizerRow(
+            token: token,
+            label: t.discover.nextUp,
             supportsHero: true,
             heroStyle: override.heroStyle,
             heroAutoSlide: override.heroAutoSlide,
@@ -756,6 +816,7 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
             subtitle: Text(t.homeLayout.managePlexRowsDescription),
             children: [
               if (!_continueWatchingOnHome) _continueWatchingTile(),
+              if (!_nextUpOnHome) _nextUpTile(),
               // TV: a single tile opening the d-pad organizer (see
               // _tvOrganizerTile). The drag list's inline checkboxes can't
               // take d-pad focus and dragging is impossible with a remote.
@@ -1182,6 +1243,32 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
           mainAxisSize: MainAxisSize.min,
           children: [
             Checkbox(value: _continueWatchingOnHome, onChanged: (v) => _setContinueWatchingOnHome(v ?? false)),
+            Text(t.homeLayout.home),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _nextUpTile() {
+    if (PlatformDetector.usesTvHomeLayout()) {
+      return FocusableListTile(
+        title: Text(t.discover.nextUp),
+        subtitle: Text(t.homeLayout.nextUpHomeDescription),
+        trailing: Switch(value: _nextUpOnHome, onChanged: _setNextUpOnHome),
+        onTap: () => _setNextUpOnHome(!_nextUpOnHome),
+      );
+    }
+    return ListTile(
+      dense: true,
+      title: Text(t.discover.nextUp),
+      subtitle: Text(t.homeLayout.nextUpHomeDescription),
+      trailing: Tooltip(
+        message: t.homeLayout.showOnHome,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Checkbox(value: _nextUpOnHome, onChanged: (v) => _setNextUpOnHome(v ?? false)),
             Text(t.homeLayout.home),
           ],
         ),

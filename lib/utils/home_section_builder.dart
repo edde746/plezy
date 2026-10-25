@@ -11,6 +11,7 @@ import '../utils/global_key_utils.dart';
 /// [PlexManagedHub] at all, so it can't use the `library::hubIdentifier`
 /// key shape every other managed-hub override uses.
 const continueWatchingHeroOverrideKey = 'builtin::continue_watching';
+const nextUpHeroOverrideKey = 'builtin::next_up';
 
 /// Same idea as [continueWatchingHeroOverrideKey], but for a specific
 /// library's own section-scoped Continue Watching hub (shown on that
@@ -27,6 +28,7 @@ String libraryContinueWatchingHeroOverrideKey(String libraryGlobalKey) =>
 /// `SettingsService.continueWatchingOnHome`) — parallels `custom:<id>` and
 /// `plex:<server>:<library>:<identifier>` for the other row kinds.
 const continueWatchingRowToken = 'builtin:continueWatching';
+const nextUpRowToken = 'builtin:nextUp';
 
 /// Builds user-defined Home rows from normalized hubs and real collection items.
 /// Item kinds a "hide watched" filter may remove. Collections, playlists and
@@ -65,6 +67,7 @@ List<MediaHub> buildConfiguredHomeSections({
   Map<String, List<MediaItem>> singleCollectionContents = const {},
   Map<String, ManagedHubHeroOverride> managedHubHeroOverrides = const {},
   MediaHub? continueWatchingHub,
+  MediaHub? nextUpHub,
 }) {
   final output = <MediaHub>[];
   for (final section in sections.where((s) => s.enabled && s.showOnHome)) {
@@ -101,7 +104,14 @@ List<MediaHub> buildConfiguredHomeSections({
           heroStyle: continueWatchingOverride?.heroStyle ?? false,
           heroAutoSlide: continueWatchingOverride?.heroAutoSlide ?? true,
         );
-  final combined = [?resolvedContinueWatchingHub, ...output, ...resolvedSourceHubs];
+  final nextUpOverride = managedHubHeroOverrides[nextUpHeroOverrideKey];
+  final resolvedNextUpHub = (nextUpHub == null || nextUpHub.items.isEmpty)
+      ? null
+      : nextUpHub.copyWith(
+          heroStyle: nextUpOverride?.heroStyle ?? false,
+          heroAutoSlide: nextUpOverride?.heroAutoSlide ?? true,
+        );
+  final combined = [?resolvedContinueWatchingHub, ?resolvedNextUpHub, ...output, ...resolvedSourceHubs];
   if (rowOrder.isEmpty) return combined;
 
   // home_row_order (the Organizer, what Settings actually shows and lets the
@@ -132,6 +142,10 @@ List<MediaHub> buildConfiguredHomeSections({
       custom[continueWatchingRowToken] = hub;
       continue;
     }
+    if (hub.id == 'next_up') {
+      custom[nextUpRowToken] = hub;
+      continue;
+    }
     final customSection = sections.where((section) => section.id == hub.id).firstOrNull;
     if (customSection != null) {
       custom['custom:${customSection.id}'] = hub;
@@ -160,7 +174,7 @@ List<MediaHub> buildConfiguredHomeSections({
   final usedHubs = <MediaHub>{};
   final ordered = <MediaHub>[];
   for (final token in rowOrder) {
-    final hub = (token.startsWith('custom:') || token == continueWatchingRowToken)
+    final hub = (token.startsWith('custom:') || token == continueWatchingRowToken || token == nextUpRowToken)
         ? custom[token]
         : resolvePlexToken(token);
     if (hub != null && usedHubs.add(hub)) ordered.add(hub);

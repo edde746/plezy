@@ -133,6 +133,8 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _homeRowOrderListenable!.addListener(_onHomeLayoutChanged);
       _continueWatchingOnHomeListenable = settings.listenable(SettingsService.continueWatchingOnHome);
       _continueWatchingOnHomeListenable!.addListener(_onHomeLayoutChanged);
+      _nextUpOnHomeListenable = settings.listenable(SettingsService.nextUpOnHome);
+      _nextUpOnHomeListenable!.addListener(_onHomeLayoutChanged);
       _managedHubHeroOverridesListenable = settings.listenable(SettingsService.managedHubHeroOverrides);
       _managedHubHeroOverridesListenable!.addListener(_onHomeLayoutChanged);
       _hideWatchedInHubsListenable = settings.listenable(SettingsService.hideWatchedInHubs);
@@ -240,6 +242,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   Listenable? _homeLayoutListenable;
   Listenable? _homeRowOrderListenable;
   Listenable? _continueWatchingOnHomeListenable;
+  Listenable? _nextUpOnHomeListenable;
   Listenable? _managedHubHeroOverridesListenable;
   Listenable? _hideWatchedInHubsListenable;
   StreamSubscription<DeletionEvent>? _deletionSubscription;
@@ -294,9 +297,24 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     title: t.discover.continueWatching,
     type: 'mixed',
     identifier: '_continue_watching_',
-    size: _onDeck.length + (_hasMoreContinueWatching ? 1 : 0),
+    size: _continueWatchingItems.length + (_hasMoreContinueWatching ? 1 : 0),
     more: _hasMoreContinueWatching,
-    items: _onDeck,
+    items: _continueWatchingItems,
+  );
+
+  List<MediaItem> get _continueWatchingItems => _onDeck.where((item) => item.hasActiveProgress).toList();
+
+  List<MediaItem> get _nextUpItems =>
+      _onDeck.where((item) => item.kind == MediaKind.episode && !item.hasActiveProgress).toList();
+
+  MediaHub get _nextUpHub => MediaHub(
+    id: 'next_up',
+    title: t.discover.nextUp,
+    type: 'episode',
+    identifier: 'home.nextup',
+    size: _nextUpItems.length + (_hasMoreContinueWatching ? 1 : 0),
+    more: _hasMoreContinueWatching,
+    items: _nextUpItems,
   );
 
   /// Raw load failure (unlocalized); the screen wraps it for display.
@@ -548,7 +566,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
           fetchedOnDeck.failedServerIds,
           fetchedOnDeck.cancelledServerIds,
         );
-        systemShelfPassToken = List<MediaItem>.unmodifiable(_onDeck);
+        systemShelfPassToken = List<MediaItem>.unmodifiable(_continueWatchingItems);
         safeNotifyListeners();
       }
 
@@ -590,6 +608,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         singleCollectionContents: singleCollectionContents,
         managedHubHeroOverrides: settings.read(SettingsService.managedHubHeroOverrides),
         continueWatchingHub: settings.read(SettingsService.continueWatchingOnHome) ? _continueWatchingHub : null,
+        nextUpHub: settings.read(SettingsService.nextUpOnHome) ? _nextUpHub : null,
       );
 
       final visibleHubs = settings.read(SettingsService.hideWatchedInHubs)
@@ -759,7 +778,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
       appLogger.d('DiscoverProvider: ${_onDeck.length} on-deck items, ${_hubs.length} hubs after merging $ids');
       safeNotifyListeners();
-      unawaited(_syncSystemShelf(_onDeck));
+      unawaited(_syncSystemShelf(_continueWatchingItems));
     } catch (e) {
       if (isDisposed) return;
       // Keep the loaded state — stale rows beat an error flash.
@@ -920,7 +939,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _applyOnDeck(fetched.items);
       _recordObservations(observation, fetched.observedItems, fetched.succeededServerIds);
       safeNotifyListeners();
-      unawaited(_syncSystemShelf(_onDeck));
+      unawaited(_syncSystemShelf(_continueWatchingItems));
     } catch (e) {
       appLogger.w('Failed to refresh Continue Watching', error: e);
     }
@@ -938,7 +957,20 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     // "View All" renders through the same overlay as the row it expands, so
     // it has to reconcile too or the stale patch simply reappears there.
     _recordObservations(observation, fetched.observedItems, fetched.succeededServerIds);
-    return fetched.items;
+    return fetched.items.where((item) => item.hasActiveProgress).toList();
+  }
+
+  /// The complete unstarted episode list for the separate Next Up row.
+  Future<List<MediaItem>> loadAllNextUp() async {
+    if (!_multiServer.hasConnectedServers) return const [];
+    await _hiddenLibraries.ensureInitialized();
+    if (isDisposed) return const [];
+    final observation = _beginObservation();
+    final fetched = await _multiServer.aggregationService.getOnDeckFromAllServers(
+      hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys,
+    );
+    _recordObservations(observation, fetched.observedItems, fetched.succeededServerIds);
+    return fetched.items.where((item) => item.kind == MediaKind.episode && !item.hasActiveProgress).toList();
   }
 
   /// Refetch a single item (post-edit refresh from a hub row) through its
@@ -1017,7 +1049,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
           hasMore: _hasMoreContinueWatching,
         );
         safeNotifyListeners();
-        unawaited(_syncSystemShelf(_onDeck));
+        unawaited(_syncSystemShelf(_continueWatchingItems));
       }
       return;
     }
@@ -1072,7 +1104,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     if (remaining.length == _onDeck.length) return;
     _replaceOnDeck(remaining, hasMore: _hasMoreContinueWatching);
     safeNotifyListeners();
-    unawaited(_syncSystemShelf(_onDeck));
+    unawaited(_syncSystemShelf(_continueWatchingItems));
   }
 
   /// Everything on screen: the Continue Watching row plus every hub row.
@@ -1240,6 +1272,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _homeLayoutListenable?.removeListener(_onHomeLayoutChanged);
     _homeRowOrderListenable?.removeListener(_onHomeLayoutChanged);
     _continueWatchingOnHomeListenable?.removeListener(_onHomeLayoutChanged);
+    _nextUpOnHomeListenable?.removeListener(_onHomeLayoutChanged);
     _managedHubHeroOverridesListenable?.removeListener(_onHomeLayoutChanged);
     _hideWatchedInHubsListenable?.removeListener(_onHomeLayoutChanged);
     _watchStateSubscription?.cancel();

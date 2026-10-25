@@ -1048,7 +1048,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           ? _discover.refreshContinueWatching
                           : null,
                       isInContinueWatching: _hubs[i].isContinueWatchingHub,
-                      loadMoreItems: _hubs[i].isContinueWatchingHub ? _discover.loadAllContinueWatching : null,
+                      loadMoreItems: _hubs[i].isContinueWatchingHub
+                          ? _discover.loadAllContinueWatching
+                          : _hubs[i].isNextUpHub
+                          ? _discover.loadAllNextUp
+                          : null,
                       onVerticalNavigation: (isUp) => _handleVerticalNavigation(i, isUp),
                       onNavigateUp: i == 0 ? _focusTopBoundary : null,
                       onNavigateToSidebar: _navigateToSidebar,
@@ -1145,7 +1149,11 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       usesContinueWatchingAction: (hub) => hub.usesContinueWatchingAction,
       // Every other hub pages from its server in View All, as on phones; handing
       // it the preview items only showed that preview again.
-      loadMoreItems: (hub) => hub.id == 'continue_watching' ? _discover.loadAllContinueWatching : null,
+      loadMoreItems: (hub) => hub.isContinueWatchingHub
+          ? _discover.loadAllContinueWatching
+          : hub.isNextUpHub
+          ? _discover.loadAllNextUp
+          : null,
       onNavigateUp: _focusTopActions,
       onNavigateToSidebar: _navigateToSidebar,
       tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,

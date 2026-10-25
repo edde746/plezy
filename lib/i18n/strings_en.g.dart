@@ -805,6 +805,12 @@ class Translations$settings$en {
 	/// en: 'Default Quality on Cellular'
 	String get cellularQualityTitle => 'Default Quality on Cellular';
 
+	/// en: 'Remote Streaming Quality'
+	String get remoteQualityTitle => 'Remote Streaming Quality';
+
+	/// en: 'Same as default quality'
+	String get remoteQualitySameAsDefault => 'Same as default quality';
+
 	/// en: 'Same as Default Quality'
 	String get cellularQualitySameAsDefault => 'Same as Default Quality';
 
@@ -6569,6 +6575,9 @@ class Translations$homeLayout$en {
 	/// en: 'The resume-progress row shown on Home'
 	String get continueWatchingHomeDescription => 'The resume-progress row shown on Home';
 
+	/// en: 'The next unwatched episode row shown separately on Home'
+	String get nextUpHomeDescription => 'The next unwatched episode row shown separately on Home';
+
 	/// en: 'Library'
 	String get library => 'Library';
 
@@ -9064,6 +9073,8 @@ extension on Translations {
 			'settings.streamBufferMegabytes' => 'Megabytes',
 			'settings.defaultQualityTitle' => 'Default Quality',
 			'settings.cellularQualityTitle' => 'Default Quality on Cellular',
+			'settings.remoteQualityTitle' => 'Remote Streaming Quality',
+			'settings.remoteQualitySameAsDefault' => 'Same as default quality',
 			'settings.cellularQualitySameAsDefault' => 'Same as Default Quality',
 			'settings.directPlayCoveredQuality' => 'Play Smaller Videos at Original Quality',
 			'settings.directPlayCoveredQualityDescription' => 'Direct play videos already within the quality limit instead of transcoding them',
@@ -9311,10 +9322,10 @@ extension on Translations {
 			'settings.libraryAndCards' => 'Library & Cards',
 			'settings.homeScreen' => 'Home Screen',
 			'settings.navigation' => 'Navigation',
-			'settings.window' => 'Window',
-			'settings.liveTv' => 'Live TV',
 			_ => null,
 		} ?? switch (path) {
+			'settings.window' => 'Window',
+			'settings.liveTv' => 'Live TV',
 			'settings.player' => 'Player',
 			'settings.videoAndDisplay' => 'Video & Display',
 			'settings.audio' => 'Audio',
@@ -9825,10 +9836,10 @@ extension on Translations {
 			'mpvConfig.lineHint' => 'option=value',
 			'mpvConfig.addLine' => 'Add line',
 			'mpvConfig.removeLine' => 'Remove line',
-			'mpvConfig.embeddedVoHint' => 'vo, gpu-context and gpu-api are ignored on Linux: embedded video always renders through vo=libmpv on the video plane, and gpu-next (which compute shaders like ArtCNN need) cannot run embedded.',
-			'dialog.confirmAction' => 'Confirm Action',
 			_ => null,
 		} ?? switch (path) {
+			'mpvConfig.embeddedVoHint' => 'vo, gpu-context and gpu-api are ignored on Linux: embedded video always renders through vo=libmpv on the video plane, and gpu-next (which compute shaders like ArtCNN need) cannot run embedded.',
+			'dialog.confirmAction' => 'Confirm Action',
 			'profiles.addPlezyProfile' => 'Add Plezy profile',
 			'profiles.switchingProfile' => 'Switching profile…',
 			'profiles.deleteThisProfileTitle' => 'Delete this profile?',
@@ -10339,10 +10350,10 @@ extension on Translations {
 			'explore.detail.yourRating' => 'Your rating',
 			'explore.detail.budget' => 'Budget',
 			'explore.detail.revenue' => 'Box office',
-			'explore.detail.contentAdvisory' => 'Age guidance',
-			'explore.detail.tags' => 'Tags',
 			_ => null,
 		} ?? switch (path) {
+			'explore.detail.contentAdvisory' => 'Age guidance',
+			'explore.detail.tags' => 'Tags',
 			'explore.detail.revealSpoilerTags' => 'Show spoiler tags',
 			'explore.detail.links' => 'Links',
 			'explore.detail.watchOn' => 'Watch on',
@@ -10853,10 +10864,10 @@ extension on Translations {
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Connecting...',
 			'companionRemote.pairing.searchingForDevices' => 'Looking for devices...',
-			'companionRemote.pairing.noDevicesFound' => 'No devices found on your network',
-			'companionRemote.pairing.noDevicesHint' => 'Open Plezy on desktop and use the same Wi-Fi',
 			_ => null,
 		} ?? switch (path) {
+			'companionRemote.pairing.noDevicesFound' => 'No devices found on your network',
+			'companionRemote.pairing.noDevicesHint' => 'Open Plezy on desktop and use the same Wi-Fi',
 			'companionRemote.pairing.availableDevices' => 'Available Devices',
 			'companionRemote.pairing.manualConnection' => 'Manual Connection',
 			'companionRemote.pairing.cryptoInitFailed' => 'Couldn\'t start secure connection. Sign in to Plex first.',
@@ -11285,6 +11296,7 @@ extension on Translations {
 			'homeLayout.continueWatching' => 'Continue Watching',
 			'homeLayout.continueWatchingLibraryDescription' => 'This library\'s own resume-progress row',
 			'homeLayout.continueWatchingHomeDescription' => 'The resume-progress row shown on Home',
+			'homeLayout.nextUpHomeDescription' => 'The next unwatched episode row shown separately on Home',
 			'homeLayout.library' => 'Library',
 			'homeLayout.showInRecommended' => 'Show in Library Recommended',
 			'homeLayout.customPlexRow' => 'Custom Plex row',

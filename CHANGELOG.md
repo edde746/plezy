@@ -8,6 +8,8 @@
 - Add per-server Continue Watching downloads that remove shelf items when they leave the shelf.
 - Add selectable random local prerolls before movies, with Plex server prerolls taking precedence.
 - Play configured Jellyfin and Emby cinema intros before movies when server extras are enabled.
+- Add a separate remote-streaming quality cap across Plex, Jellyfin, and Emby.
+- Split Home's Continue Watching and Next Up rows, with independent visibility and ordering.
 - Remember audio and subtitle choices per show locally across Plex, Jellyfin, and Emby.
 - Add in-player subtitle size/position controls and load a local subtitle file in mpv.
 - Play theme songs for the active home spotlight.

@@ -61,6 +61,10 @@ class MediaHub {
   /// True for hubs that represent the user's resumable Continue Watching row.
   bool get isContinueWatchingHub => _anySemanticKey(_isContinueWatchingKey);
 
+  /// True for hubs that contain unwatched next episodes rather than resumable
+  /// playback. Kept separate so Continue Watching actions don't apply to it.
+  bool get isNextUpHub => _anySemanticKey(_isNextUpKey);
+
   /// True when selecting an item should honor the Continue Watching action
   /// preference. This is intentionally broader than [isContinueWatchingHub]:
   /// backend "Next Up" rows should use the same activation preference without
@@ -105,6 +109,11 @@ bool _isContinueWatchingKey(String rawKey) => _continueWatchingKeys.putIfAbsent(
   final tokens = _hubKeyTokens(rawKey);
   return tokens.contains('inprogress') || _hasTailToken(tokens, 'continue');
 });
+
+bool _isNextUpKey(String rawKey) {
+  final tokens = _hubKeyTokens(rawKey);
+  return _hasTailToken(tokens, 'nextup');
+}
 
 bool _usesContinueWatchingActionKey(String rawKey) => _continueWatchingActionKeys.putIfAbsent(rawKey, () {
   final tokens = _hubKeyTokens(rawKey);

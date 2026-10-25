@@ -689,6 +689,7 @@ class SettingsService extends BaseSharedPreferencesService {
   // Organizer row (see home_layout_settings_screen.dart), instead of it
   // always being a fixed, unremovable fixture ahead of every other row.
   static const continueWatchingOnHome = BoolPref('continue_watching_on_home', defaultValue: true);
+  static const nextUpOnHome = BoolPref('next_up_on_home', defaultValue: true);
   static const tvFullCardLayout = BoolPref('tv_full_card_layout', defaultValue: false);
   static const focusGlow = BoolPref('focus_glow', defaultValue: true);
   static const useGlobalHubs = BoolPref('use_global_hubs', defaultValue: true);
@@ -842,6 +843,13 @@ class SettingsService extends BaseSharedPreferencesService {
   /// [defaultQualityPreset].
   static const cellularQualityPreset = NullableEnumPref<TranscodeQualityPreset>(
     'cellular_quality_preset',
+    values: TranscodeQualityPreset.values,
+  );
+
+  /// Startup quality cap for a server reached through a remote endpoint.
+  /// Null follows [defaultQualityPreset] (or the cellular override).
+  static const remoteQualityPreset = NullableEnumPref<TranscodeQualityPreset>(
+    'remote_quality_preset',
     values: TranscodeQualityPreset.values,
   );
 
@@ -1664,6 +1672,7 @@ class SettingsService extends BaseSharedPreferencesService {
     themeSongsEnabled,
     themeSongVolume,
     continueWatchingOnHome,
+    nextUpOnHome,
     sleepTimerDuration,
     audioSyncOffset,
     subtitleSyncOffset,
@@ -1800,6 +1809,7 @@ class SettingsService extends BaseSharedPreferencesService {
     askDownloadQualityEachTime,
     defaultQualityPreset,
     cellularQualityPreset,
+    remoteQualityPreset,
     musicQualityPreset,
     liveTvDefaultFavorites,
     matchRefreshRate,

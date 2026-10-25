@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:io';
 
 import '../media/ids.dart';
 
@@ -421,6 +422,44 @@ class MultiServerManager {
     }
     if (client is JellyfinClient) {
       return client.connection.isAdministrator;
+    }
+    return false;
+  }
+
+  /// Whether the endpoint currently selected for [serverId] is remote.
+  /// Plex uses its published connection classification; MediaBrowser servers
+  /// classify private, loopback, link-local, and `.local` endpoints as LAN.
+  /// Unknown or unavailable clients use the general quality preference.
+  bool isRemoteConnection(ServerId serverId) {
+    final client = _clients[serverId];
+    if (client is PlexClient) {
+      final server = _plexServers[serverId];
+      final networkClass = server?.networkClassForUrl(client.config.baseUrl);
+      if (networkClass == PlexNetworkClass.remote || networkClass == PlexNetworkClass.relay) return true;
+      if (networkClass == PlexNetworkClass.local) return false;
+      return !_isLocalMediaBrowserEndpoint(client.config.baseUrl);
+    }
+    if (client is JellyfinClient) return !_isLocalMediaBrowserEndpoint(client.connection.baseUrl);
+    return false;
+  }
+
+  static bool _isLocalMediaBrowserEndpoint(String baseUrl) {
+    final host = Uri.tryParse(baseUrl)?.host.toLowerCase() ?? '';
+    if (host.isEmpty) return true;
+    if (host == 'localhost' || host.endsWith('.localhost') || host.endsWith('.local')) return true;
+    if (!host.contains('.')) return true;
+    if (host.endsWith('.lan') || host.endsWith('.home') || host.endsWith('.home.arpa')) return true;
+    final address = InternetAddress.tryParse(host);
+    if (address == null) return false;
+    if (address.isLoopback || address.isLinkLocal) return true;
+    final bytes = address.rawAddress;
+    if (address.type == InternetAddressType.IPv4 && bytes.length == 4) {
+      return bytes[0] == 10 ||
+          bytes[0] == 192 && bytes[1] == 168 ||
+          bytes[0] == 172 && bytes[1] >= 16 && bytes[1] <= 31;
+    }
+    if (address.type == InternetAddressType.IPv6 && bytes.length == 16) {
+      return (bytes[0] & 0xfe) == 0xfc;
     }
     return false;
   }
