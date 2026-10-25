@@ -6,17 +6,20 @@ part of 'simkl_search_result.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-SimklSearchResult _$SimklSearchResultFromJson(Map<String, dynamic> json) => SimklSearchResult(
-  title: json['title'] as String?,
-  titleEn: json['title_en'] as String?,
-  titleRomaji: json['title_romaji'] as String?,
-  allTitles: flexibleStringList(json['all_titles']),
-  url: json['url'] as String?,
-  year: flexibleInt(json['year']),
-  type: json['type'] as String?,
-  poster: json['poster'] as String?,
-  ids: SimklIds.fromJson(json['ids'] as Map<String, dynamic>),
-  episodeCount: flexibleInt(json['ep_count']),
-  status: json['status'] as String?,
-  ratings: json['ratings'] == null ? null : SimklRatings.fromJson(json['ratings'] as Map<String, dynamic>),
-);
+SimklSearchResult _$SimklSearchResultFromJson(Map<String, dynamic> json) =>
+    SimklSearchResult(
+      title: json['title'] as String?,
+      titleEn: json['title_en'] as String?,
+      titleRomaji: json['title_romaji'] as String?,
+      allTitles: flexibleStringList(json['all_titles']),
+      url: json['url'] as String?,
+      year: flexibleInt(json['year']),
+      type: json['type'] as String?,
+      poster: json['poster'] as String?,
+      ids: SimklIds.fromJson(json['ids'] as Map<String, dynamic>),
+      episodeCount: flexibleInt(json['ep_count']),
+      status: json['status'] as String?,
+      ratings: json['ratings'] == null
+          ? null
+          : SimklRatings.fromJson(json['ratings'] as Map<String, dynamic>),
+    );
