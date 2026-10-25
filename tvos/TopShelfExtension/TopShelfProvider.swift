@@ -4,7 +4,7 @@ import TVServices
 
 private enum TopShelfShared {
   static let schemaVersion = 3
-  static let appGroupIdentifier = "group.com.edde746.plezy"
+  static let appGroupIdentifier = "group.org.snapetech.plezyng"
   static let cacheDataKey = "PlezySystemShelfCacheData"
   static let artworkDirectoryName = "SystemShelfArtwork"
   /// English fallback for sources persisted before the localized title existed.

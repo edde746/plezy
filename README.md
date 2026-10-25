@@ -63,6 +63,8 @@ When upstream covers a row above, we will prefer the maintained upstream impleme
 
 See the [release channel matrix](docs/maintainers/release-channels.md) for package-manager availability, supported architectures, and signing status.
 
+PlezyNG is preparing its own Android, Apple, Amazon, and Microsoft Store listings. Signed mobile-store packages are attached when signing is configured; Windows Store bundles are built after the PlezyNG package identity is set in Partner Center. Store submissions are manual and the listings are not live yet.
+
 The separate Go relay service is published as a multi-architecture container for Linux x64 and arm64 at `ghcr.io/snapetech-org/plezyng-relay:<version>` (with `latest` tracking stable releases). A Docker Hub mirror at `snapetech/plezyng-relay` is published when its registry credentials are configured. These images are for the relay service, not the PlezyNG client.
 
 <details>
@@ -85,7 +87,7 @@ Install Flatpak with your distribution's package manager, download the bundle fo
 flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 flatpak install --user flathub org.freedesktop.Platform//25.08
 flatpak install --user ./plezy-linux-x64.flatpak
-flatpak run com.edde746.plezy
+flatpak run org.snapetech.plezyng
 ```
 
 On arm64, install `plezy-linux-arm64.flatpak`.
@@ -95,7 +97,7 @@ On arm64, install `plezy-linux-arm64.flatpak`.
 
 - Not on Flathub — the remote supplies the Freedesktop runtime only.
 - Video playback needs a Wayland session; a pure X11 session shows the interface but cannot create the video plane.
-- No host or home filesystem access; app data lives in `~/.var/app/com.edde746.plezy/`. Add host folders through the desktop file chooser portal, and keep download folders writable.
+- No host or home filesystem access; app data lives in `~/.var/app/org.snapetech.plezyng/`. Add host folders through the desktop file chooser portal, and keep download folders writable.
 - Network, display, audio, and device access are enabled. `--device=all` (Flatpak 1.14 compatibility) exposes more than GPUs and controllers; session-bus access stays filtered.
 
 </details>
@@ -263,7 +265,7 @@ Check the installed package against the runtime (not just the SDK), then launch 
 python3 linux/packaging/check-flatpak.py
 ```
 
-The check fails on a non-executable entry point or an unresolved bundled ELF dependency. A container without a GPU can use `flatpak run --env=GALLIUM_DRIVER=softpipe com.edde746.plezy` for software-rendered verification; this is not a hardware-decoding or HDR test.
+The check fails on a non-executable entry point or an unresolved bundled ELF dependency. A container without a GPU can use `flatpak run --env=GALLIUM_DRIVER=softpipe org.snapetech.plezyng` for software-rendered verification; this is not a hardware-decoding or HDR test.
 
 </details>
 

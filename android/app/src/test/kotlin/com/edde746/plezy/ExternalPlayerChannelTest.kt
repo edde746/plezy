@@ -110,12 +110,12 @@ class ExternalPlayerChannelTest {
     val activity = Robolectric.buildActivity(Activity::class.java).get()
     val channel = ExternalPlayerChannel(activity)
     val video = ExternalPlayerChannel.Source(
-      Uri.parse("content://com.edde746.plezy.fileprovider/app_files/downloads/Movie.mkv"),
+      Uri.parse("content://org.snapetech.plezyng.fileprovider/app_files/downloads/Movie.mkv"),
       grantRead = true,
       fileName = "Movie.mkv"
     )
-    val first = Uri.parse("content://com.edde746.plezy.fileprovider/app_files/downloads/Movie_subs/401.srt")
-    val second = Uri.parse("content://com.edde746.plezy.fileprovider/app_files/downloads/Movie_subs/402.srt")
+    val first = Uri.parse("content://org.snapetech.plezyng.fileprovider/app_files/downloads/Movie_subs/401.srt")
+    val second = Uri.parse("content://org.snapetech.plezyng.fileprovider/app_files/downloads/Movie_subs/402.srt")
     val subtitles = listOf(first, second).map {
       ExternalPlayerChannel.Subtitle(
         ExternalPlayerChannel.Source(it, grantRead = true, fileName = it.lastPathSegment),

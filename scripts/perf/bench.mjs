@@ -6,7 +6,7 @@
 import { VM, durationsByName, pct, adb, sleep } from "./vmclient.mjs";
 import { appendFileSync, writeFileSync } from "node:fs";
 
-const PKG = "com.edde746.plezy";
+const PKG = "org.snapetech.plezyng";
 const [uri, label, scenario = "railRight", repeats = "3"] = process.argv.slice(2);
 
 const R = 22, L = 21, U = 19, D = 20, OK = 23, BACK = 4;

@@ -1,0 +1,235 @@
+name: Publish PlezyNG store builds
+run-name: ${{ format('Publish {0} to {1}', inputs.release_tag, inputs.channel) }}
+
+on:
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Published GitHub release tag whose signed store build should be submitted
+        required: true
+        type: string
+      channel:
+        description: Store channel to update
+        required: true
+        type: choice
+        options:
+          - google-play
+          - amazon-appstore
+          - app-store-ios
+          - app-store-tvos
+      play_track:
+        description: Google Play track (used only for google-play)
+        required: true
+        default: internal
+        type: choice
+        options:
+          - internal
+          - alpha
+          - beta
+          - production
+      play_release_status:
+        description: Play release status; draft keeps it out of distribution until reviewed in Play Console
+        required: true
+        default: draft
+        type: choice
+        options:
+          - draft
+          - completed
+          - inProgress
+
+permissions:
+  contents: read
+
+concurrency:
+  group: app-store-publish-${{ inputs.release_tag }}-${{ inputs.channel }}
+  cancel-in-progress: false
+
+jobs:
+  validate-release:
+    name: Validate published release
+    runs-on: ubuntu-24.04
+    outputs:
+      release_tag: ${{ steps.validate.outputs.release_tag }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Require the protected main branch
+        shell: bash
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "Store submissions may only run from refs/heads/main." >&2
+            exit 1
+          fi
+
+      - name: Validate release tag and required asset
+        id: validate
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          CHANNEL: ${{ inputs.channel }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release tag must use semantic versioning: $RELEASE_TAG" >&2
+            exit 1
+          fi
+          release_json=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")
+          if [[ "$(jq -r '.draft' <<< "$release_json")" != "false" || "$(jq -r '.prerelease' <<< "$release_json")" != "false" ]]; then
+            echo "Store submissions require a published stable GitHub release." >&2
+            exit 1
+          fi
+          case "$CHANNEL" in
+            google-play) required_asset=plezyng-android-play.aab ;;
+            amazon-appstore) required_asset=plezyng-amazon-firetv.apk ;;
+            app-store-ios) required_asset=plezyng-ios-appstore.ipa ;;
+            app-store-tvos) required_asset=plezyng-tvos-appstore.ipa ;;
+            *) echo "Unknown store channel: $CHANNEL" >&2; exit 1 ;;
+          esac
+          if ! jq -e --arg asset "$required_asset" '.assets | any(.name == $asset)' <<< "$release_json" >/dev/null; then
+            echo "Release $RELEASE_TAG has no $required_asset; rebuild it with the channel's signing credentials configured." >&2
+            exit 1
+          fi
+          if ! jq -e '.assets | any(.name == "SHA256SUMS.txt")' <<< "$release_json" >/dev/null; then
+            echo "Release $RELEASE_TAG is missing SHA256SUMS.txt." >&2
+            exit 1
+          fi
+          echo "release_tag=$RELEASE_TAG" >> "$GITHUB_OUTPUT"
+
+  publish-google-play:
+    name: Upload to Google Play
+    needs: validate-release
+    if: ${{ inputs.channel == 'google-play' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Download and verify the signed App Bundle
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.validate-release.outputs.release_tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/store-assets"
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --pattern plezyng-android-play.aab --pattern SHA256SUMS.txt \
+            --dir "$RUNNER_TEMP/store-assets"
+          cd "$RUNNER_TEMP/store-assets"
+          sha256sum --check --ignore-missing SHA256SUMS.txt
+
+      - uses: ruby/setup-ruby@0481980f17b760ef6bca5e8c55809102a0af1e5a # v1.263.0
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Upload to selected Play track
+        env:
+          PLAY_AAB_PATH: ${{ runner.temp }}/store-assets/plezyng-android-play.aab
+          PLAY_TRACK: ${{ inputs.play_track }}
+          PLAY_RELEASE_STATUS: ${{ inputs.play_release_status }}
+          SUPPLY_JSON_KEY_DATA: ${{ secrets.GOOGLE_PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          if [[ -z "$SUPPLY_JSON_KEY_DATA" ]]; then
+            echo "Configure GOOGLE_PLAY_SERVICE_ACCOUNT_JSON before publishing to Google Play." >&2
+            exit 1
+          fi
+          bundle exec fastlane android publish_play_store
+
+  publish-amazon-appstore:
+    name: Upload to Amazon Appstore
+    needs: validate-release
+    if: ${{ inputs.channel == 'amazon-appstore' }}
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Download and verify the signed Fire TV APK
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.validate-release.outputs.release_tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/store-assets"
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --pattern plezyng-amazon-firetv.apk --pattern SHA256SUMS.txt \
+            --dir "$RUNNER_TEMP/store-assets"
+          cd "$RUNNER_TEMP/store-assets"
+          sha256sum --check --ignore-missing SHA256SUMS.txt
+
+      - uses: ruby/setup-ruby@0481980f17b760ef6bca5e8c55809102a0af1e5a # v1.263.0
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Upload the APK without submitting it for review
+        env:
+          AMAZON_APK_PATH: ${{ runner.temp }}/store-assets/plezyng-amazon-firetv.apk
+          AMAZON_CLIENT_ID: ${{ secrets.AMAZON_APPSTORE_CLIENT_ID }}
+          AMAZON_CLIENT_SECRET: ${{ secrets.AMAZON_APPSTORE_CLIENT_SECRET }}
+        run: |
+          if [[ -z "$AMAZON_CLIENT_ID" || -z "$AMAZON_CLIENT_SECRET" ]]; then
+            echo "Configure AMAZON_APPSTORE_CLIENT_ID and AMAZON_APPSTORE_CLIENT_SECRET before publishing to Amazon Appstore." >&2
+            exit 1
+          fi
+          bundle exec fastlane android publish_amazon_appstore
+
+  publish-apple-app-store:
+    name: Upload to Apple App Store Connect
+    needs: validate-release
+    if: ${{ inputs.channel == 'app-store-ios' || inputs.channel == 'app-store-tvos' }}
+    runs-on: macos-26
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Select Apple platform asset
+        id: apple-asset
+        env:
+          CHANNEL: ${{ inputs.channel }}
+        run: |
+          if [[ "$CHANNEL" == "app-store-ios" ]]; then
+            echo "asset=plezyng-ios-appstore.ipa" >> "$GITHUB_OUTPUT"
+            echo "platform=ios" >> "$GITHUB_OUTPUT"
+          else
+            echo "asset=plezyng-tvos-appstore.ipa" >> "$GITHUB_OUTPUT"
+            echo "platform=appletvos" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download and verify signed IPA
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.validate-release.outputs.release_tag }}
+          IPA_ASSET: ${{ steps.apple-asset.outputs.asset }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/store-assets"
+          gh release download "$RELEASE_TAG" --repo "$GITHUB_REPOSITORY" \
+            --pattern "$IPA_ASSET" --pattern SHA256SUMS.txt \
+            --dir "$RUNNER_TEMP/store-assets"
+          cd "$RUNNER_TEMP/store-assets"
+          sha256sum --check --ignore-missing SHA256SUMS.txt
+
+      - uses: ruby/setup-ruby@0481980f17b760ef6bca5e8c55809102a0af1e5a # v1.263.0
+        with:
+          ruby-version: "3.3"
+          bundler-cache: true
+
+      - name: Upload binary to App Store Connect without submitting for review
+        env:
+          APPLE_IPA_PATH: ${{ runner.temp }}/store-assets/${{ steps.apple-asset.outputs.asset }}
+          APPLE_STORE_PLATFORM: ${{ steps.apple-asset.outputs.platform }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+          APPLE_API_PRIVATE_KEY: ${{ secrets.APPLE_API_PRIVATE_KEY }}
+        run: |
+          if [[ -z "$APPLE_API_KEY_ID" || -z "$APPLE_API_ISSUER_ID" || -z "$APPLE_API_PRIVATE_KEY" ]]; then
+            echo "Configure APPLE_API_KEY_ID, APPLE_API_ISSUER_ID, and APPLE_API_PRIVATE_KEY before publishing to App Store Connect." >&2
+            exit 1
+          fi
+          bundle exec fastlane ios upload_appstore_build

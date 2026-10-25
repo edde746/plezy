@@ -229,11 +229,11 @@ class BackgroundWorkDiagnosticsTest {
   @Test
   fun everyTargetFallsBackToTheAppDetailsPage() {
     for (target in BackgroundSettingsTarget.entries) {
-      val specs = BackgroundSettingsIntents.specsFor(target, "com.edde746.plezy", 35)
+      val specs = BackgroundSettingsIntents.specsFor(target, "org.snapetech.plezyng", 35)
       assertTrue(specs.isNotEmpty())
       val last = specs.last()
       assertEquals("android.settings.APPLICATION_DETAILS_SETTINGS", last.action)
-      assertEquals("package:com.edde746.plezy", last.data)
+      assertEquals("package:org.snapetech.plezyng", last.data)
     }
   }
 
@@ -241,12 +241,12 @@ class BackgroundWorkDiagnosticsTest {
   fun notificationChannelTargetAddressesTheDownloaderChannel() {
     val first = BackgroundSettingsIntents.specsFor(
       BackgroundSettingsTarget.NOTIFICATION_CHANNEL,
-      "com.edde746.plezy",
+      "org.snapetech.plezyng",
       35
     ).first()
 
     assertEquals("android.settings.CHANNEL_NOTIFICATION_SETTINGS", first.action)
-    assertEquals("com.edde746.plezy", first.stringExtras["android.provider.extra.APP_PACKAGE"])
+    assertEquals("org.snapetech.plezyng", first.stringExtras["android.provider.extra.APP_PACKAGE"])
     assertEquals(
       BackgroundWorkDiagnostics.DOWNLOAD_NOTIFICATION_CHANNEL_ID,
       first.stringExtras["android.provider.extra.CHANNEL_ID"]
@@ -257,21 +257,21 @@ class BackgroundWorkDiagnosticsTest {
   fun appNotificationTargetDoesNotRequireAnExistingChannel() {
     val first = BackgroundSettingsIntents.specsFor(
       BackgroundSettingsTarget.APP_NOTIFICATIONS,
-      "com.edde746.plezy",
+      "org.snapetech.plezyng",
       35
     ).first()
 
     assertEquals("android.settings.APP_NOTIFICATION_SETTINGS", first.action)
-    assertEquals("com.edde746.plezy", first.stringExtras["android.provider.extra.APP_PACKAGE"])
+    assertEquals("org.snapetech.plezyng", first.stringExtras["android.provider.extra.APP_PACKAGE"])
     assertEquals(null, first.stringExtras["android.provider.extra.CHANNEL_ID"])
   }
 
   @Test
   fun preOreoNotificationRemediesFallBackToAppDetails() {
     for (target in listOf(BackgroundSettingsTarget.APP_NOTIFICATIONS, BackgroundSettingsTarget.NOTIFICATION_CHANNEL)) {
-      val first = BackgroundSettingsIntents.specsFor(target, "com.edde746.plezy", 25).first()
+      val first = BackgroundSettingsIntents.specsFor(target, "org.snapetech.plezyng", 25).first()
       assertEquals("android.settings.APPLICATION_DETAILS_SETTINGS", first.action)
-      assertEquals("package:com.edde746.plezy", first.data)
+      assertEquals("package:org.snapetech.plezyng", first.data)
     }
   }
 

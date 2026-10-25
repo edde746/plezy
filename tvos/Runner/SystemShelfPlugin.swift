@@ -266,10 +266,10 @@ import TVServices
 
   final class SystemShelfPlugin: NSObject, FlutterPlugin, FlutterSceneLifeCycleDelegate {
     static let schemaVersion = 3
-    static let appGroupIdentifier = "group.com.edde746.plezy"
+    static let appGroupIdentifier = "group.org.snapetech.plezyng"
     static let cacheDataKey = "PlezySystemShelfCacheData"
     static let sourcesKey = "PlezySystemShelfSources"
-    static let tokenKeychainService = "com.edde746.plezy.systemshelf.tokens"
+    static let tokenKeychainService = "org.snapetech.plezyng.systemshelf.tokens"
     static let artworkDirectoryName = "SystemShelfArtwork"
     private static let maxItems = 20
     /// English fallback for caches written before the localized title existed.

@@ -41,5 +41,5 @@ architecture = {"x64": "x86_64", "arm64": "aarch64"}.get(args.arch)
 arch_options = [f"--arch={architecture}"] if architecture else []
 
 subprocess.run([
-    "flatpak", "run", "--user", *arch_options, "--command=bash", "com.edde746.plezy", "-c", CHECK,
+    "flatpak", "run", "--user", *arch_options, "--command=bash", "org.snapetech.plezyng", "-c", CHECK,
 ], check=True)

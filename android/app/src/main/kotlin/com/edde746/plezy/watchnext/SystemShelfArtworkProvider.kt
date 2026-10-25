@@ -1,5 +1,6 @@
 package com.edde746.plezy.watchnext
 
+import com.edde746.plezy.BuildConfig
 import android.content.ContentProvider
 import android.content.ContentValues
 import android.database.Cursor
@@ -22,7 +23,7 @@ import java.util.concurrent.TimeUnit
 
 class SystemShelfArtworkProvider : ContentProvider() {
   companion object {
-    const val AUTHORITY = "com.edde746.plezy.systemshelf.artwork"
+    const val AUTHORITY = "${BuildConfig.APPLICATION_ID}.systemshelf.artwork"
   }
 
   override fun onCreate(): Boolean = context != null

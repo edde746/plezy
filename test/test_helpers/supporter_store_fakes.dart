@@ -124,7 +124,7 @@ GooglePlayPurchaseDetails playPurchase({
 }) => GooglePlayPurchaseDetails.fromPurchase(
   PurchaseWrapper(
     orderId: 'GPA.0000-$productId',
-    packageName: 'com.edde746.plezy',
+    packageName: 'org.snapetech.plezyng',
     purchaseTime: 0,
     purchaseToken: 'token-$productId',
     signature: 'signature',

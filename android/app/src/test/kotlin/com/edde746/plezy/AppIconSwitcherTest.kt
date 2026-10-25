@@ -19,7 +19,7 @@ import org.robolectric.annotation.Config
 @RunWith(RobolectricTestRunner::class)
 class AppIconSwitcherTest {
   private companion object {
-    const val PACKAGE = "com.edde746.plezy"
+    const val PACKAGE = "org.snapetech.plezyng"
   }
 
   private lateinit var packageManager: PackageManager

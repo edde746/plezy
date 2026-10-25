@@ -159,7 +159,7 @@ class AndroidExitDiagnosticsTest {
     val sanitize = AndroidExitReportMapper::sanitizeDescription
     assertEquals(
       "[FORCE STOP] stop <pkg> due to from pid #",
-      sanitize("[FORCE STOP] stop com.edde746.plezy due to from pid 6092")
+      sanitize("[FORCE STOP] stop org.snapetech.plezyng due to from pid 6092")
     )
     assertEquals(
       "excessive cpu # during # dur=# limit=#",

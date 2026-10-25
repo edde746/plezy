@@ -22,14 +22,14 @@ cask "plezy" do
         sudo: false
   end
 
-  uninstall quit: "com.edde746.plezy"
+  uninstall quit: "org.snapetech.plezyng"
 
   zap trash: [
-    "~/Library/Application Support/com.edde746.plezy",
-    "~/Library/Caches/com.edde746.plezy",
-    "~/Library/HTTPStorages/com.edde746.plezy",
-    "~/Library/Preferences/com.edde746.plezy.plist",
-    "~/Library/Saved Application State/com.edde746.plezy.savedState",
-    "~/Library/WebKit/com.edde746.plezy",
+    "~/Library/Application Support/org.snapetech.plezyng",
+    "~/Library/Caches/org.snapetech.plezyng",
+    "~/Library/HTTPStorages/org.snapetech.plezyng",
+    "~/Library/Preferences/org.snapetech.plezyng.plist",
+    "~/Library/Saved Application State/org.snapetech.plezyng.savedState",
+    "~/Library/WebKit/org.snapetech.plezyng",
   ]
 end

@@ -7,7 +7,7 @@
 import { adb, keys, sleep } from "./vmclient.mjs";
 import { appendFileSync, writeFileSync } from "node:fs";
 
-const PKG = "com.edde746.plezy";
+const PKG = "org.snapetech.plezyng";
 const [label, scenario = "railRight", repeats = "3"] = process.argv.slice(2);
 const DPAD = { up: 19, down: 20, left: 21, right: 22, center: 23, back: 4 };
 

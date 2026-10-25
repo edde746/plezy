@@ -27,7 +27,7 @@
 	<array>
 		<dict>
 			<key>CFBundleURLName</key>
-			<string>com.edde746.plezy</string>
+			<string>org.snapetech.plezyng</string>
 			<key>CFBundleURLSchemes</key>
 			<array>
 				<string>plezy</string>

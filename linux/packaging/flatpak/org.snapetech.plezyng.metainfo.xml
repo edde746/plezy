@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <component type="desktop-application">
-  <id>com.edde746.plezy</id>
+  <id>org.snapetech.plezyng</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-only</project_license>
   <name>PlezyNG</name>
@@ -14,7 +14,7 @@
     <p>Playback uses MPV with support for subtitles, multiple audio tracks,
     playback speed controls, and hardware video decoding on supported systems.</p>
   </description>
-  <launchable type="desktop-id">com.edde746.plezy.desktop</launchable>
+  <launchable type="desktop-id">org.snapetech.plezyng.desktop</launchable>
   <url type="homepage">https://github.com/snapetech-org/PlezyNG</url>
   <url type="vcs-browser">https://github.com/snapetech-org/PlezyNG</url>
   <content_rating type="oars-1.1"/>

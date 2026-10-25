@@ -140,10 +140,6 @@ jobs:
       - name: Build APKs
         run: flutter build apk --release --split-per-abi ${{ env.RELEASE_DART_DEFINES }} --obfuscate --split-debug-info=debug-info/android-apk --extra-gen-snapshot-options=--save-obfuscation-map=debug-info/android-apk/obfuscation.map.json
 
-      - name: Clean up keystore
-        if: always()
-        run: rm -f android/app/upload-keystore.jks android/key.properties
-
       - name: Package APKs
         run: |
           tar -czf plezy-android-arm64-v8a.tar.gz -C build/app/outputs/flutter-apk app-arm64-v8a-release.apk --transform 's/app-arm64-v8a-release.apk/plezy.apk/'
@@ -153,8 +149,18 @@ jobs:
       - name: Build signed Android App Bundle
         if: steps.android-signing.outputs.configured == 'true'
         run: |
-          flutter build appbundle --release ${{ env.RELEASE_DART_DEFINES }} --obfuscate --split-debug-info=debug-info/android-aab
-          cp build/app/outputs/bundle/release/app-release.aab plezy-android-universal.aab
+          flutter build appbundle --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SUPPORTER_MODE=iap --obfuscate --split-debug-info=debug-info/android-play
+          cp build/app/outputs/bundle/release/app-release.aab plezyng-android-play.aab
+
+      - name: Build signed Amazon Appstore APK
+        if: steps.android-signing.outputs.configured == 'true'
+        run: |
+          AMAZON=1 flutter build apk --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SUPPORTER_MODE=unlocked --obfuscate --split-debug-info=debug-info/android-amazon
+          cp build/app/outputs/flutter-apk/app-release.apk plezyng-amazon-firetv.apk
+
+      - name: Clean up keystore
+        if: always()
+        run: rm -f android/app/upload-keystore.jks android/key.properties
 
       - name: Attest APKs
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
@@ -168,7 +174,9 @@ jobs:
         if: steps.android-signing.outputs.configured == 'true'
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
-          subject-path: plezy-android-universal.aab
+          subject-path: |
+            plezyng-android-play.aab
+            plezyng-amazon-firetv.apk
 
       - name: Upload APKs
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -178,7 +186,9 @@ jobs:
             plezy-android-arm64-v8a.tar.gz
             plezy-android-armeabi-v7a.tar.gz
             plezy-android-x86_64.tar.gz
-            plezy-android-universal.aab
+            plezyng-android-play.aab
+            plezyng-amazon-firetv.apk
+          if-no-files-found: warn
 
   build-ios:
     needs: validate-trusted-ref
@@ -220,6 +230,66 @@ jobs:
       - name: Install dependencies
         run: flutter pub get --enforce-lockfile --no-example
 
+      - name: Configure optional iOS App Store signing
+        id: ios-signing
+        env:
+          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_DISTRIBUTION_CERTIFICATE_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          IOS_PROVISIONING_PROFILE_BASE64: ${{ secrets.IOS_PROVISIONING_PROFILE_BASE64 }}
+          IOS_EXPORT_OPTIONS_PLIST_BASE64: ${{ secrets.IOS_EXPORT_OPTIONS_PLIST_BASE64 }}
+        run: |
+          set -euo pipefail
+          values=("$APPLE_CERTIFICATE_BASE64" "$APPLE_CERTIFICATE_PASSWORD" "$APPLE_TEAM_ID" "$IOS_PROVISIONING_PROFILE_BASE64" "$IOS_EXPORT_OPTIONS_PLIST_BASE64")
+          configured=0
+          missing=0
+          for value in "${values[@]}"; do
+            if [[ -n "$value" ]]; then configured=$((configured + 1)); else missing=$((missing + 1)); fi
+          done
+          if (( configured == 0 )); then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "iOS App Store signing is not configured; only the unsigned developer IPA will be attached."
+            exit 0
+          fi
+          if (( missing != 0 )); then
+            echo "iOS App Store signing secrets are incomplete." >&2
+            exit 1
+          fi
+
+          keychain_path="$RUNNER_TEMP/plezyng-ios.keychain-db"
+          keychain_password="$(openssl rand -hex 24)"
+          certificate_path="$RUNNER_TEMP/plezyng-ios.p12"
+          profile_path="$RUNNER_TEMP/plezyng-ios.mobileprovision"
+          export_options_path="$RUNNER_TEMP/plezyng-ios-export-options.plist"
+          profile_uuid_file="$RUNNER_TEMP/plezyng-ios-profile-uuid.txt"
+          echo "keychain_path=$keychain_path" >> "$GITHUB_OUTPUT"
+          echo "profile_uuid_file=$profile_uuid_file" >> "$GITHUB_OUTPUT"
+          echo "export_options_path=$export_options_path" >> "$GITHUB_OUTPUT"
+          printf '%s' "$APPLE_CERTIFICATE_BASE64" | base64 --decode > "$certificate_path"
+          printf '%s' "$IOS_PROVISIONING_PROFILE_BASE64" | base64 --decode > "$profile_path"
+          printf '%s' "$IOS_EXPORT_OPTIONS_PLIST_BASE64" | base64 --decode > "$export_options_path"
+
+          security create-keychain -p "$keychain_password" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$keychain_password" "$keychain_path"
+          security import "$certificate_path" -k "$keychain_path" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain_path"
+          security list-keychains -d user -s "$keychain_path" login.keychain-db
+
+          profile_dir="$HOME/Library/MobileDevice/Provisioning Profiles"
+          mkdir -p "$profile_dir"
+          security cms -D -i "$profile_path" > "$RUNNER_TEMP/plezyng-ios-profile.plist"
+          profile_uuid=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$RUNNER_TEMP/plezyng-ios-profile.plist")
+          cp "$profile_path" "$profile_dir/$profile_uuid.mobileprovision"
+          printf '%s\n' "$profile_uuid" > "$profile_uuid_file"
+          export_team=$(/usr/libexec/PlistBuddy -c 'Print :teamID' "$export_options_path")
+          if [[ "$export_team" != "$APPLE_TEAM_ID" ]]; then
+            echo "The iOS export plist teamID does not match APPLE_TEAM_ID." >&2
+            exit 1
+          fi
+          /usr/libexec/PlistBuddy -c 'Print :provisioningProfiles:org.snapetech.plezyng' "$export_options_path" >/dev/null
+          echo "configured=true" >> "$GITHUB_OUTPUT"
+
       - name: Build iOS (no codesign)
         run: flutter build ios --release --no-codesign ${{ env.RELEASE_DART_DEFINES }} --split-debug-info=debug-info/ios
 
@@ -229,16 +299,56 @@ jobs:
           cp -r build/ios/iphoneos/Plezy.app Payload/
           zip -r plezy-ios-unsigned.ipa Payload
 
-      - name: Attest IPA
+      - name: Build signed iOS App Store IPA
+        if: steps.ios-signing.outputs.configured == 'true'
+        env:
+          DEVELOPMENT_TEAM: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          flutter build ipa --release \
+            --export-options-plist="${{ steps.ios-signing.outputs.export_options_path }}" \
+            ${{ env.RELEASE_DART_DEFINES }} \
+            --dart-define=SUPPORTER_MODE=iap \
+            --obfuscate \
+            --split-debug-info=debug-info/ios-app-store
+          ipa_path=$(find build/ios/ipa -maxdepth 1 -type f -name '*.ipa' -print -quit)
+          if [[ -z "$ipa_path" ]]; then
+            echo "Flutter did not produce an iOS App Store IPA." >&2
+            exit 1
+          fi
+          cp "$ipa_path" plezyng-ios-appstore.ipa
+
+      - name: Attest unsigned developer IPA
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: plezy-ios-unsigned.ipa
+
+      - name: Attest signed iOS App Store IPA
+        if: steps.ios-signing.outputs.configured == 'true'
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
+        with:
+          subject-path: plezyng-ios-appstore.ipa
+
+      - name: Remove iOS signing material
+        if: always() && steps.ios-signing.outputs.keychain_path != ''
+        env:
+          KEYCHAIN_PATH: ${{ steps.ios-signing.outputs.keychain_path }}
+          PROFILE_UUID_FILE: ${{ steps.ios-signing.outputs.profile_uuid_file }}
+        run: |
+          security delete-keychain "$KEYCHAIN_PATH" || true
+          if [[ -f "$PROFILE_UUID_FILE" ]]; then
+            profile_uuid=$(cat "$PROFILE_UUID_FILE")
+            rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/$profile_uuid.mobileprovision"
+          fi
+          rm -f "$RUNNER_TEMP/plezyng-ios.p12" "$RUNNER_TEMP/plezyng-ios.mobileprovision" "$RUNNER_TEMP/plezyng-ios-profile.plist" "$RUNNER_TEMP/plezyng-ios-export-options.plist"
 
       - name: Upload IPA
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ios-ipa
-          path: plezy-ios-unsigned.ipa
+          path: |
+            plezy-ios-unsigned.ipa
+            plezyng-ios-appstore.ipa
+          if-no-files-found: error
 
   build-tvos:
     needs: validate-trusted-ref
@@ -283,6 +393,79 @@ jobs:
       - name: Install tvOS CocoaPods dependencies
         run: tvos/scripts/pod_install.sh
 
+      - name: Configure optional tvOS App Store signing
+        id: tvos-signing
+        env:
+          APPLE_CERTIFICATE_BASE64: ${{ secrets.APPLE_DISTRIBUTION_CERTIFICATE_BASE64 }}
+          APPLE_CERTIFICATE_PASSWORD: ${{ secrets.APPLE_CERTIFICATE_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          TVOS_PROVISIONING_PROFILES_ZIP_BASE64: ${{ secrets.TVOS_PROVISIONING_PROFILES_ZIP_BASE64 }}
+          TVOS_EXPORT_OPTIONS_PLIST_BASE64: ${{ secrets.TVOS_EXPORT_OPTIONS_PLIST_BASE64 }}
+        run: |
+          set -euo pipefail
+          values=("$APPLE_CERTIFICATE_BASE64" "$APPLE_CERTIFICATE_PASSWORD" "$APPLE_TEAM_ID" "$TVOS_PROVISIONING_PROFILES_ZIP_BASE64" "$TVOS_EXPORT_OPTIONS_PLIST_BASE64")
+          configured=0
+          missing=0
+          for value in "${values[@]}"; do
+            if [[ -n "$value" ]]; then configured=$((configured + 1)); else missing=$((missing + 1)); fi
+          done
+          if (( configured == 0 )); then
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+            echo "tvOS App Store signing is not configured; only the unsigned developer IPA will be attached."
+            exit 0
+          fi
+          if (( missing != 0 )); then
+            echo "tvOS App Store signing secrets are incomplete." >&2
+            exit 1
+          fi
+
+          keychain_path="$RUNNER_TEMP/plezyng-tvos.keychain-db"
+          keychain_password="$(openssl rand -hex 24)"
+          certificate_path="$RUNNER_TEMP/plezyng-tvos.p12"
+          profiles_zip="$RUNNER_TEMP/plezyng-tvos-profiles.zip"
+          export_options_path="$RUNNER_TEMP/plezyng-tvos-export-options.plist"
+          profile_uuid_file="$RUNNER_TEMP/plezyng-tvos-profile-uuids.txt"
+          profile_dir="$HOME/Library/MobileDevice/Provisioning Profiles"
+          decoded_profiles="$RUNNER_TEMP/plezyng-tvos-profiles"
+          echo "keychain_path=$keychain_path" >> "$GITHUB_OUTPUT"
+          echo "profile_uuid_file=$profile_uuid_file" >> "$GITHUB_OUTPUT"
+          echo "export_options_path=$export_options_path" >> "$GITHUB_OUTPUT"
+          : > "$profile_uuid_file"
+          printf '%s' "$APPLE_CERTIFICATE_BASE64" | base64 --decode > "$certificate_path"
+          printf '%s' "$TVOS_PROVISIONING_PROFILES_ZIP_BASE64" | base64 --decode > "$profiles_zip"
+          printf '%s' "$TVOS_EXPORT_OPTIONS_PLIST_BASE64" | base64 --decode > "$export_options_path"
+          mkdir -p "$profile_dir" "$decoded_profiles"
+          unzip -q "$profiles_zip" -d "$decoded_profiles"
+
+          security create-keychain -p "$keychain_password" "$keychain_path"
+          security set-keychain-settings -lut 21600 "$keychain_path"
+          security unlock-keychain -p "$keychain_password" "$keychain_path"
+          security import "$certificate_path" -k "$keychain_path" -P "$APPLE_CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security set-key-partition-list -S apple-tool:,apple:,codesign: -s -k "$keychain_password" "$keychain_path"
+          security list-keychains -d user -s "$keychain_path" login.keychain-db
+
+          shopt -s nullglob
+          profiles=("$decoded_profiles"/*.mobileprovision)
+          if (( ${#profiles[@]} < 2 )); then
+            echo "The tvOS provisioning-profile archive must contain profiles for the app and Top Shelf extension." >&2
+            exit 1
+          fi
+          for profile in "${profiles[@]}"; do
+            profile_plist="$RUNNER_TEMP/$(basename "$profile").plist"
+            security cms -D -i "$profile" > "$profile_plist"
+            profile_uuid=$(/usr/libexec/PlistBuddy -c 'Print :UUID' "$profile_plist")
+            cp "$profile" "$profile_dir/$profile_uuid.mobileprovision"
+            printf '%s\n' "$profile_uuid" >> "$profile_uuid_file"
+          done
+          export_team=$(/usr/libexec/PlistBuddy -c 'Print :teamID' "$export_options_path")
+          if [[ "$export_team" != "$APPLE_TEAM_ID" ]]; then
+            echo "The tvOS export plist teamID does not match APPLE_TEAM_ID." >&2
+            exit 1
+          fi
+          /usr/libexec/PlistBuddy -c 'Print :provisioningProfiles:org.snapetech.plezyng' "$export_options_path" >/dev/null
+          /usr/libexec/PlistBuddy -c 'Print :provisioningProfiles:org.snapetech.plezyng.TopShelfExtension' "$export_options_path" >/dev/null
+          echo "configured=true" >> "$GITHUB_OUTPUT"
+
       - name: Build tvOS app
         run: |
           xcodebuild build \
@@ -308,16 +491,74 @@ jobs:
           cp -R "$app_path" tvos-payload/Payload/
           (cd tvos-payload && zip -qr ../plezy-tvos-unsigned.ipa Payload)
 
-      - name: Attest tvOS package
+      - name: Build signed tvOS App Store IPA
+        if: steps.tvos-signing.outputs.configured == 'true'
+        env:
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+          EXPORT_OPTIONS_PATH: ${{ steps.tvos-signing.outputs.export_options_path }}
+        run: |
+          set -euo pipefail
+          archive_path="$PWD/build/tvos-store/PlezyNG.xcarchive"
+          export_path="$PWD/build/tvos-store/export"
+          mkdir -p "$(dirname "$archive_path")" "$export_path"
+          xcodebuild archive \
+            -workspace tvos/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -sdk appletvos \
+            -destination 'generic/platform=tvOS' \
+            -archivePath "$archive_path" \
+            -derivedDataPath "$PWD/build/tvos-store/derived-data" \
+            ARCHS=arm64 \
+            CODE_SIGN_STYLE=Automatic \
+            CODE_SIGN_IDENTITY='Apple Distribution' \
+            DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
+            COMPILER_INDEX_STORE_ENABLE=NO
+          xcodebuild -exportArchive \
+            -archivePath "$archive_path" \
+            -exportPath "$export_path" \
+            -exportOptionsPlist "$EXPORT_OPTIONS_PATH"
+          ipa_path=$(find "$export_path" -maxdepth 1 -type f -name '*.ipa' -print -quit)
+          if [[ -z "$ipa_path" ]]; then
+            echo "Xcode did not produce a tvOS App Store IPA." >&2
+            exit 1
+          fi
+          cp "$ipa_path" plezyng-tvos-appstore.ipa
+
+      - name: Attest unsigned tvOS developer package
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: plezy-tvos-unsigned.ipa
+
+      - name: Attest signed tvOS App Store package
+        if: steps.tvos-signing.outputs.configured == 'true'
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
+        with:
+          subject-path: plezyng-tvos-appstore.ipa
+
+      - name: Remove tvOS signing material
+        if: always() && steps.tvos-signing.outputs.keychain_path != ''
+        env:
+          KEYCHAIN_PATH: ${{ steps.tvos-signing.outputs.keychain_path }}
+          PROFILE_UUID_FILE: ${{ steps.tvos-signing.outputs.profile_uuid_file }}
+        run: |
+          security delete-keychain "$KEYCHAIN_PATH" || true
+          if [[ -f "$PROFILE_UUID_FILE" ]]; then
+            while IFS= read -r profile_uuid; do
+              [[ -n "$profile_uuid" ]] && rm -f "$HOME/Library/MobileDevice/Provisioning Profiles/$profile_uuid.mobileprovision"
+            done < "$PROFILE_UUID_FILE"
+          fi
+          rm -f "$RUNNER_TEMP/plezyng-tvos.p12" "$RUNNER_TEMP/plezyng-tvos-profiles.zip" "$RUNNER_TEMP/plezyng-tvos-export-options.plist" "$RUNNER_TEMP/plezyng-tvos-profile-uuids.txt" "$RUNNER_TEMP"/plezyng-tvos-*.mobileprovision.plist
+          rm -rf "$RUNNER_TEMP/plezyng-tvos-profiles"
 
       - name: Upload tvOS package
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: tvos-ipa
-          path: plezy-tvos-unsigned.ipa
+          path: |
+            plezy-tvos-unsigned.ipa
+            plezyng-tvos-appstore.ipa
+          if-no-files-found: error
 
   build-macos:
     needs: validate-trusted-ref
@@ -743,6 +984,58 @@ jobs:
       - name: Build installer and portables
         run: .\windows\build-installer.ps1 -X64BuildDir "build-x64" -Arm64BuildDir "build-arm64" -Version "${{ steps.version.outputs.version }}"
 
+      - name: Build Microsoft Store MSIX bundle
+        if: ${{ vars.MSSTORE_PACKAGE_NAME != '' && vars.MSSTORE_PUBLISHER != '' && vars.MSSTORE_PUBLISHER_DISPLAY_NAME != '' }}
+        env:
+          MSSTORE_PACKAGE_NAME: ${{ vars.MSSTORE_PACKAGE_NAME }}
+          MSSTORE_PUBLISHER: ${{ vars.MSSTORE_PUBLISHER }}
+          MSSTORE_PUBLISHER_DISPLAY_NAME: ${{ vars.MSSTORE_PUBLISHER_DISPLAY_NAME }}
+          RELEASE_VERSION: ${{ steps.version.outputs.version }}
+        shell: pwsh
+        run: |
+          .\windows\build-msix.ps1 `
+            -X64BuildDir "build-x64" `
+            -Arm64BuildDir "build-arm64" `
+            -Version $env:RELEASE_VERSION `
+            -IdentityName $env:MSSTORE_PACKAGE_NAME `
+            -Publisher $env:MSSTORE_PUBLISHER `
+            -PublisherDisplayName $env:MSSTORE_PUBLISHER_DISPLAY_NAME
+
+      - name: Sign installer for Microsoft Store submissions
+        env:
+          WINDOWS_SIGNING_CERTIFICATE_BASE64: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_BASE64 }}
+          WINDOWS_SIGNING_CERTIFICATE_PASSWORD: ${{ secrets.WINDOWS_SIGNING_CERTIFICATE_PASSWORD }}
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ([string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_CERTIFICATE_BASE64) -and [string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_CERTIFICATE_PASSWORD)) {
+            Write-Host 'Windows Authenticode signing is not configured; the installer will not be ready for Microsoft Store submission.'
+            exit 0
+          }
+          if ([string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_CERTIFICATE_BASE64) -or [string]::IsNullOrWhiteSpace($env:WINDOWS_SIGNING_CERTIFICATE_PASSWORD)) {
+            throw 'Configure both WINDOWS_SIGNING_CERTIFICATE_BASE64 and WINDOWS_SIGNING_CERTIFICATE_PASSWORD.'
+          }
+          $pfxPath = Join-Path $env:RUNNER_TEMP 'plezyng-authenticode.pfx'
+          try {
+            [IO.File]::WriteAllBytes($pfxPath, [Convert]::FromBase64String($env:WINDOWS_SIGNING_CERTIFICATE_BASE64))
+            $signtoolCommand = Get-Command signtool.exe -ErrorAction SilentlyContinue
+            $signtoolPath = if ($null -ne $signtoolCommand) { $signtoolCommand.Source } else { $null }
+            if ($null -eq $signtoolPath) {
+              $signtoolFile = Get-ChildItem "$env:ProgramFiles(x86)\Windows Kits\10\bin" -Filter signtool.exe -Recurse -ErrorAction Stop |
+                Where-Object { $_.FullName -match '\\x64\\signtool\.exe$' } |
+                Sort-Object FullName -Descending |
+                Select-Object -First 1
+              if ($null -ne $signtoolFile) { $signtoolPath = $signtoolFile.FullName }
+            }
+            if ($null -eq $signtoolPath) { throw 'Could not find signtool.exe on the Windows runner.' }
+            & $signtoolPath sign /fd SHA256 /f $pfxPath /p $env:WINDOWS_SIGNING_CERTIFICATE_PASSWORD /tr https://timestamp.digicert.com /td SHA256 plezy-windows-installer.exe
+            if ($LASTEXITCODE -ne 0) { throw "Authenticode signing failed with exit code $LASTEXITCODE" }
+            & $signtoolPath verify /pa /all plezy-windows-installer.exe
+            if ($LASTEXITCODE -ne 0) { throw "Authenticode signature verification failed with exit code $LASTEXITCODE" }
+          } finally {
+            Remove-Item -Path $pfxPath -Force -ErrorAction SilentlyContinue
+          }
+
       - name: Package Chocolatey release
         shell: pwsh
         env:
@@ -815,6 +1108,12 @@ jobs:
             plezy-windows-arm64-portable.7z
             plezy-windows-installer.exe
 
+      - name: Attest Microsoft Store bundle
+        if: ${{ vars.MSSTORE_PACKAGE_NAME != '' && vars.MSSTORE_PUBLISHER != '' && vars.MSSTORE_PUBLISHER_DISPLAY_NAME != '' }}
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
+        with:
+          subject-path: plezyng-windows.msixbundle
+
       - name: Attest Chocolatey package
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
@@ -840,6 +1139,13 @@ jobs:
             plezy-windows-installer.exe
             win-ed-signature.txt
             win-installer-size.txt
+
+      - name: Upload Microsoft Store bundle
+        if: ${{ vars.MSSTORE_PACKAGE_NAME != '' && vars.MSSTORE_PUBLISHER != '' && vars.MSSTORE_PUBLISHER_DISPLAY_NAME != '' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: windows-msix
+          path: plezyng-windows.msixbundle
 
       - name: Upload Chocolatey package
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -1147,6 +1453,13 @@ jobs:
           name: windows-installer
           path: artifacts/windows-installer
 
+      - name: Download Microsoft Store bundle
+        if: ${{ vars.MSSTORE_PACKAGE_NAME != '' && vars.MSSTORE_PUBLISHER != '' && vars.MSSTORE_PUBLISHER_DISPLAY_NAME != '' }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: windows-msix
+          path: artifacts/windows-msix
+
       - name: Download Chocolatey package
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
@@ -1261,17 +1574,29 @@ jobs:
             echo artifacts/android-apk/plezy-android-arm64-v8a.tar.gz
             echo artifacts/android-apk/plezy-android-armeabi-v7a.tar.gz
             echo artifacts/android-apk/plezy-android-x86_64.tar.gz
-            if [ -f artifacts/android-apk/plezy-android-universal.aab ]; then
-              echo artifacts/android-apk/plezy-android-universal.aab
-            fi
             echo artifacts/ios-ipa/plezy-ios-unsigned.ipa
+            if [ -f artifacts/ios-ipa/plezyng-ios-appstore.ipa ]; then
+              echo artifacts/ios-ipa/plezyng-ios-appstore.ipa
+            fi
             echo artifacts/tvos-ipa/plezy-tvos-unsigned.ipa
+            if [ -f artifacts/tvos-ipa/plezyng-tvos-appstore.ipa ]; then
+              echo artifacts/tvos-ipa/plezyng-tvos-appstore.ipa
+            fi
             echo artifacts/macos-dmg/plezy-macos.dmg
             echo artifacts/windows-x64-portable/plezy-windows-x64-portable.7z
             echo artifacts/windows-arm64-portable/plezy-windows-arm64-portable.7z
             echo artifacts/windows-installer/plezy-windows-installer.exe
+            if [ -f artifacts/windows-msix/plezyng-windows.msixbundle ]; then
+              echo artifacts/windows-msix/plezyng-windows.msixbundle
+            fi
             echo artifacts/windows-chocolatey/plezyng.*.nupkg
             echo artifacts/plezyng-winget-manifests-${{ inputs.release_tag }}.zip
+            if [ -f artifacts/android-apk/plezyng-android-play.aab ]; then
+              echo artifacts/android-apk/plezyng-android-play.aab
+            fi
+            if [ -f artifacts/android-apk/plezyng-amazon-firetv.apk ]; then
+              echo artifacts/android-apk/plezyng-amazon-firetv.apk
+            fi
             echo 'artifacts/linux-x64/*'
             echo 'artifacts/linux-arm64/*'
             echo appcast.xml
