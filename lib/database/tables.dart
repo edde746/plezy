@@ -77,6 +77,12 @@ class DownloadedMedia extends Table {
   /// Null for rows enqueued before v23 or when resolution was skipped/failed.
   TextColumn get libraryId => text().nullable()();
   TextColumn get libraryTitle => text().nullable()();
+
+  /// `TranscodeQualityPreset` name the server converts this download to
+  /// before the device fetches it, fixed when the download is queued so a
+  /// later change to the setting leaves it alone. Null for the original file,
+  /// and for rows from before v26.
+  TextColumn get downloadQuality => text().nullable()();
 }
 
 /// Profile ownership for shared physical downloads.

@@ -189,6 +189,7 @@ class SettingSelectionTile<T> extends StatelessWidget {
   final String Function(T) subtitleBuilder;
   final List<DialogOption<T>> options;
   final FutureOr<void> Function(T)? onAfterWrite;
+  final FocusNode? focusNode;
 
   const SettingSelectionTile({
     super.key,
@@ -198,6 +199,7 @@ class SettingSelectionTile<T> extends StatelessWidget {
     required this.subtitleBuilder,
     required this.options,
     this.onAfterWrite,
+    this.focusNode,
   });
 
   @override
@@ -205,6 +207,7 @@ class SettingSelectionTile<T> extends StatelessWidget {
     return ValueListenableBuilder<T>(
       valueListenable: SettingsService.instance.listenable(pref),
       builder: (_, value, _) => _SettingRow(
+        focusNode: focusNode,
         icon: icon,
         title: title,
         subtitle: Text(subtitleBuilder(value)),

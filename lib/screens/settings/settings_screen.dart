@@ -35,7 +35,9 @@ import '../../services/settings_mutation_service.dart';
 import '../../services/supporter/supporter_mode.dart';
 import '../../widgets/background_download_warning_banner.dart';
 import '../../services/update_service.dart';
+import '../../models/transcode_quality_preset.dart';
 import '../../utils/dialogs.dart';
+import '../../utils/quality_preset_labels.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/update_dialog.dart';
@@ -106,6 +108,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   static const _kDownloadLocation = 'download_location';
   static const _kDownloadOnWifiOnly = 'download_on_wifi_only';
   static const _kAutoRemoveWatchedDownloads = 'auto_remove_watched_downloads';
+  static const _kDownloadQuality = 'download_quality';
   static const _kBackgroundDownloads = 'background_downloads';
   static const _kVideoPlayerControls = 'video_player_controls';
   static const _kVideoPlayerNavigation = 'video_player_navigation';
@@ -446,6 +449,16 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           icon: Symbols.wifi_rounded,
           title: t.settings.downloadOnWifiOnly,
           subtitle: t.settings.downloadOnWifiOnlyDescription,
+        ),
+        SettingSelectionTile<TranscodeQualityPreset>(
+          focusNode: _focusTracker.get(_kDownloadQuality),
+          pref: settings.SettingsService.downloadQualityPreset,
+          icon: Symbols.high_quality_rounded,
+          title: t.settings.downloadQuality,
+          subtitleBuilder: (p) => '${qualityPresetLabel(p)} · ${t.settings.downloadQualityDescription}',
+          options: TranscodeQualityPreset.displayOrder
+              .map((p) => DialogOption(value: p, title: qualityPresetLabel(p)))
+              .toList(),
         ),
         SettingSwitchTile(
           focusNode: _focusTracker.get(_kAutoRemoveWatchedDownloads),

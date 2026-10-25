@@ -722,6 +722,15 @@ class SettingsService extends BaseSharedPreferencesService {
   static const downloadOnWifiOnly = BoolPref('download_on_wifi_only');
   static const autoRemoveWatchedDownloads = BoolPref('auto_remove_watched_downloads');
 
+  /// Quality new downloads are converted to on the server before this device
+  /// fetches them. Original stores the file exactly as the server has it.
+  /// Only Plex servers convert downloads; elsewhere the original is stored.
+  static const downloadQualityPreset = EnumPref<TranscodeQualityPreset>(
+    'download_quality_preset',
+    values: TranscodeQualityPreset.values,
+    defaultValue: TranscodeQualityPreset.original,
+  );
+
   /// Set once the user has seen the pre-flight "background downloads are
   /// blocked" dialog. The persistent Downloads-screen banner covers repeat
   /// offenders, so the interrupting dialog is shown exactly once.

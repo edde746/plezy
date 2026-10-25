@@ -25,6 +25,7 @@ import 'download_artwork_service.dart';
 import 'jellyfin_cache_resolver.dart';
 import 'plex_api_cache.dart';
 import 'settings_service.dart';
+import '../models/transcode_quality_preset.dart';
 import 'saf_storage_service.dart';
 import 'package:saf_util/saf_util_platform_interface.dart' show SafDocumentFile;
 import '../models/download_models.dart';
@@ -234,6 +235,11 @@ class DownloadManagerService {
   // Keyed by globalKey; each timer fires a fresh re-enqueue after a delay.
   final Map<String, Timer> _autoRetryTimers = {};
   final Duration _autoRetryDelay;
+
+  // Polls for downloads the server is still converting to their download
+  // quality. Keyed by globalKey; each timer re-runs preparation, which asks
+  // the server again and starts the fetch once the file is ready.
+  final Map<String, Timer> _serverConversionTimers = {};
 
   // Circuit breaker: consecutive instant failures in _processQueue.
   // Stops the queue when all items fail with the same error (e.g. DNS).
@@ -1654,6 +1660,7 @@ class DownloadManagerService {
   void _cancelDownloadTimers(String key) {
     _progressDebounceTimers.remove(key)?.cancel();
     _autoRetryTimers.remove(key)?.cancel();
+    _serverConversionTimers.remove(key)?.cancel();
     _storedPartBytes.remove(key);
   }
 
@@ -1780,8 +1787,11 @@ class DownloadManagerService {
     bool downloadSubtitles = true,
     bool downloadArtwork = true,
     int mediaIndex = 0,
+    TranscodeQualityPreset? downloadQuality,
   }) async {
     if (_skipDownloadsUnsupported('queue download')) return metadata;
+    final TranscodeQualityPreset quality =
+        downloadQuality ?? (await SettingsService.getInstance()).read(SettingsService.downloadQualityPreset);
     _rearmQueueForUserAction('new download');
 
     final globalKey = metadata.globalKey;
@@ -1814,6 +1824,8 @@ class DownloadManagerService {
       libraryTitle: storedMetadata.libraryTitle,
       mediaIndex: mediaIndex,
       mediaSourceId: _mediaSourceIdForIndex(metadata, mediaIndex),
+      // Music has no video to shrink; tracks always store the original.
+      downloadQuality: quality.isOriginal || metadata.kind == MediaKind.track ? null : quality.name,
       priority: priority,
       downloadSubtitles: downloadSubtitles,
       downloadArtwork: downloadArtwork,
@@ -2126,6 +2138,14 @@ class DownloadManagerService {
         await _database.updateDownloadMediaSource(globalKey, resolution.mediaSourceId);
       }
 
+      final quality = _storedDownloadQuality(existing);
+      if (quality != null) {
+        final converted = await _resolveServerConversion(globalKey, client, metadata, existing, quality, resolution);
+        // Still converting: a poll is scheduled and resumes this item.
+        if (converted == null) return true;
+        resolution = converted;
+      }
+
       if (await _isCancelledOrDeleted(globalKey)) {
         appLogger.d('Skipping enqueue for $globalKey: cancelled during preparation');
         await _database.removeFromQueue(globalKey);
@@ -2152,6 +2172,89 @@ class DownloadManagerService {
     } catch (e, st) {
       return _handleEnqueueFailure(globalKey, client, e, st);
     }
+  }
+
+  /// The quality [row] was queued to be converted to, or null for the
+  /// original file (including an unknown name from a newer build).
+  TranscodeQualityPreset? _storedDownloadQuality(DownloadedMediaItem row) {
+    final name = row.downloadQuality;
+    if (name == null) return null;
+    final preset = TranscodeQualityPreset.values.asNameMap()[name];
+    return preset == null || preset.isOriginal ? null : preset;
+  }
+
+  /// Ask the server to convert [globalKey] to [quality] and return the
+  /// resolution to fetch once the converted file is ready.
+  ///
+  /// Returns null while the server is still working: the row stays
+  /// downloading with the conversion progress on it, and a timer re-runs
+  /// preparation, whose repeat request finds the same server job. A backend
+  /// that cannot convert falls back to [original]. A refused conversion
+  /// throws, failing the download like any other preparation error.
+  Future<DownloadResolution?> _resolveServerConversion(
+    String globalKey,
+    MediaServerClient client,
+    MediaItem metadata,
+    DownloadedMediaItem row,
+    TranscodeQualityPreset quality,
+    DownloadResolution original,
+  ) async {
+    if (client is! ConvertedDownloadClient) {
+      appLogger.i('Server for $globalKey cannot convert downloads; storing the original file');
+      return original;
+    }
+    // Interfaces are not subtypes of each other, so the check does not promote.
+    final converter = client as ConvertedDownloadClient;
+    final state = await converter.requestConvertedDownload(metadata, mediaIndex: row.mediaIndex, preset: quality);
+    switch (state) {
+      case ConvertedDownloadReady(:final url, :final container):
+        appLogger.i('Server conversion of $globalKey to ${quality.name} is ready');
+        return DownloadResolution(
+          videoUrl: url,
+          mediaSourceId: original.mediaSourceId,
+          externalSubtitles: original.externalSubtitles,
+          externalSubtitlesResolved: original.externalSubtitlesResolved,
+          // The server joins a stacked version into the one converted file.
+          videoExtension: container,
+        );
+      case ConvertedDownloadPending(:final percent, :final retryAfter):
+        // Paused, cancelled, or deleted while the server answered.
+        final current = await _database.getDownloadedMedia(globalKey);
+        if (_cancellingKeys.contains(globalKey) || current?.status != DownloadStatus.downloading.index) return null;
+        appLogger.d(
+          'Server still converting $globalKey (${percent ?? '-'}%); checking again in ${retryAfter.inSeconds}s',
+        );
+        if (!_disposed) {
+          _progressController.add(
+            DownloadProgress(
+              globalKey: globalKey,
+              status: DownloadStatus.downloading,
+              serverConverting: true,
+              serverConversionPercent: percent,
+            ),
+          );
+        }
+        _serverConversionTimers.remove(globalKey)?.cancel();
+        _serverConversionTimers[globalKey] = Timer(retryAfter, () {
+          _serverConversionTimers.remove(globalKey);
+          unawaited(_pollServerConversion(globalKey, client));
+        });
+        return null;
+      case ConvertedDownloadFailed(:final reason):
+        throw StateError(reason);
+    }
+  }
+
+  /// Re-run preparation for a download that was waiting on the server's
+  /// conversion, unless it was paused, cancelled, or finished meanwhile.
+  Future<void> _pollServerConversion(String globalKey, MediaServerClient fallbackClient) async {
+    if (_disposed || _queueBlockedByStorageFailure) return;
+    final row = await _database.getDownloadedMedia(globalKey);
+    if (row == null || row.status != DownloadStatus.downloading.index || row.bgTaskId != null) return;
+    final queueItem = await _queueItemFor(globalKey);
+    if (queueItem == null) return;
+    final client = await _getClientForDownloadKey(globalKey) ?? fallbackClient;
+    await _prepareAndEnqueueDownload(globalKey, client, queueItem);
   }
 
   /// Fail — or schedule an app-level retry of — a download whose next task
@@ -2252,7 +2355,7 @@ class DownloadManagerService {
   }) async {
     final serverId = parseGlobalKey(globalKey)?.serverId;
     if (serverId == null) throw Exception('Invalid globalKey: $globalKey');
-    final firstExt = downloadExtensionFromUrl(resolution.videoUrl!) ?? 'mp4';
+    final firstExt = resolution.videoExtension ?? downloadExtensionFromUrl(resolution.videoUrl!) ?? 'mp4';
     final url = partIndex == 0 ? resolution.videoUrl! : resolution.additionalParts[partIndex - 1].url;
     final ext = partIndex == 0 ? firstExt : downloadExtensionFromUrl(url) ?? 'mp4';
     String partTarget(String firstFile) =>
@@ -2653,10 +2756,11 @@ class DownloadManagerService {
 
   Future<void> _handleStorageFullFailure(String globalKey, String taskId, {String? message}) async {
     _queueBlockedByStorageFailure = true;
-    for (final timer in _autoRetryTimers.values) {
+    for (final timer in [..._autoRetryTimers.values, ..._serverConversionTimers.values]) {
       timer.cancel();
     }
     _autoRetryTimers.clear();
+    _serverConversionTimers.clear();
 
     // Fail the rows before stopping the downloader: the reset reports every
     // task it stops as canceled, and an update that still found its row
@@ -4496,10 +4600,11 @@ class DownloadManagerService {
       timer.cancel();
     }
     _progressDebounceTimers.clear();
-    for (final timer in _autoRetryTimers.values) {
+    for (final timer in [..._autoRetryTimers.values, ..._serverConversionTimers.values]) {
       timer.cancel();
     }
     _autoRetryTimers.clear();
+    _serverConversionTimers.clear();
     _pendingDownloadContext.clear();
     _storedPartBytes.clear();
     _completingKeys.clear();

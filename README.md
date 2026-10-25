@@ -5,6 +5,10 @@
 
 A modern client for Plex, Jellyfin, and Emby on desktop, mobile, and TV. Built with Flutter for native performance and a clean interface.
 
+> **PlezyNG** is a fork of [Plezy](https://github.com/edde746/plezy) that tracks upstream and adds a few features of our own:
+>
+> - **Download quality** (Settings → Downloads): Plex servers convert downloads to a smaller size (1080p down to 240p) before the device fetches them, so a tablet can hold a whole season at 480p instead of a handful of 4K files. Uses the server's download queue, so conversion runs in the background and survives app restarts. Jellyfin and Emby still download the original.
+
 <p>
   <a href="https://plezy.app">Website</a> ·
   <a href="https://plezy.app/#screenshots">Screenshots</a> ·

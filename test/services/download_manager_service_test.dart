@@ -22,6 +22,7 @@ import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/media/media_server_client.dart';
 import 'package:plezy/models/download_models.dart';
+import 'package:plezy/models/transcode_quality_preset.dart';
 import 'package:plezy/services/download_artwork_helpers.dart';
 import 'package:plezy/services/download_artwork_service.dart';
 import 'package:plezy/services/download_manager_service.dart';
@@ -1271,6 +1272,114 @@ void main() {
       expect(stored?.status, DownloadStatus.failed.index);
       expect(stored?.errorMessage, t.downloads.errorDownloadFailedWithReason(reason: t.errors.reasonRefused));
     });
+
+    test('a converted download waits for the server, then fetches the converted file', () async {
+      final fixture = await _createSupplementaryFixture();
+      final states = <ConvertedDownloadState>[
+        const ConvertedDownloadPending(percent: 40, retryAfter: Duration.zero),
+        const ConvertedDownloadReady(url: 'https://example.test/downloadQueue/4/item/23/media', container: 'mkv'),
+      ];
+      final client = _ConvertingClient(
+        metadata: fixture.metadata,
+        resolution: () => const DownloadResolution(
+          videoUrl: 'https://example.test/original.mkv',
+          additionalParts: [DownloadPartResolution(url: 'https://example.test/original-part2.mkv')],
+        ),
+        states: states,
+      );
+      final enqueued = Completer<Task>();
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        downloadsSupportedOverride: true,
+        fileDownloaderInitializerOverride: () async {},
+        enqueueTaskOverride: (task) async {
+          if (!enqueued.isCompleted) enqueued.complete(task);
+          return true;
+        },
+      );
+      addTearDown(manager.dispose);
+      final converting = manager.progressStream.firstWhere((event) => event.serverConverting);
+
+      await manager.queueDownload(
+        metadata: fixture.metadata,
+        client: client,
+        downloadQuality: TranscodeQualityPreset.p720_2mbps,
+      );
+
+      final progress = await converting;
+      expect(progress.status, DownloadStatus.downloading);
+      expect(progress.serverConversionPercent, 40);
+
+      final task = await enqueued.future;
+      expect(task.url, 'https://example.test/downloadQueue/4/item/23/media');
+      expect(task.filename, endsWith('.mkv'));
+      expect(client.requests, [TranscodeQualityPreset.p720_2mbps, TranscodeQualityPreset.p720_2mbps]);
+      final stored = await fixture.db.getDownloadedMedia(fixture.metadata.globalKey);
+      expect(stored?.downloadQuality, TranscodeQualityPreset.p720_2mbps.name);
+      // The server joined the stacked version into the one converted file.
+      expect(stored?.additionalPartPathList, anyOf(isNull, isEmpty));
+    });
+
+    test('a refused server conversion fails the download with its reason', () async {
+      final fixture = await _createSupplementaryFixture();
+      final client = _ConvertingClient(
+        metadata: fixture.metadata,
+        resolution: () => const DownloadResolution(videoUrl: 'https://example.test/original.mkv'),
+        states: [const ConvertedDownloadFailed('Transcoder exited')],
+      );
+      final manager = DownloadManagerService(
+        database: fixture.db,
+        storageService: fixture.storage,
+        clientResolver: (serverId, {clientScopeId}) => client,
+        downloadsSupportedOverride: true,
+        fileDownloaderInitializerOverride: () async {},
+        enqueueTaskOverride: (task) async => fail('nothing should be fetched'),
+      );
+      addTearDown(manager.dispose);
+      final failed = manager.progressStream.firstWhere((event) => event.status == DownloadStatus.failed);
+
+      await manager.queueDownload(
+        metadata: fixture.metadata,
+        client: client,
+        downloadQuality: TranscodeQualityPreset.p480_1_5mbps,
+      );
+      await failed;
+
+      expect((await fixture.db.getDownloadedMedia(fixture.metadata.globalKey))?.status, DownloadStatus.failed.index);
+    });
+
+    for (final (name, quality, converting) in [
+      ('original quality', TranscodeQualityPreset.original, true),
+      ('a server that cannot convert', TranscodeQualityPreset.p720_2mbps, false),
+    ]) {
+      test('$name fetches the original file', () async {
+        final fixture = await _createSupplementaryFixture();
+        const original = DownloadResolution(videoUrl: 'https://example.test/original.mkv');
+        final client = converting
+            ? _ConvertingClient(metadata: fixture.metadata, resolution: () => original, states: [])
+            : _SupplementaryClient(metadata: fixture.metadata, resolution: () => original);
+        final enqueued = Completer<Task>();
+        final manager = DownloadManagerService(
+          database: fixture.db,
+          storageService: fixture.storage,
+          clientResolver: (serverId, {clientScopeId}) => client,
+          downloadsSupportedOverride: true,
+          fileDownloaderInitializerOverride: () async {},
+          enqueueTaskOverride: (task) async {
+            if (!enqueued.isCompleted) enqueued.complete(task);
+            return true;
+          },
+        );
+        addTearDown(manager.dispose);
+
+        await manager.queueDownload(metadata: fixture.metadata, client: client, downloadQuality: quality);
+
+        expect((await enqueued.future).url, original.videoUrl);
+        if (client is _ConvertingClient) expect(client.requests, isEmpty);
+      });
+    }
 
     test('cold recovery repairs a legacy queue gap once before native recovery', () async {
       final fixture = await _createSupplementaryFixture();
@@ -3675,6 +3784,25 @@ class _SupplementaryFixture {
     SettingsService.resetForTesting();
     PathProviderPlatform.instance = previousPathProvider;
     if (await tempDir.exists()) await tempDir.delete(recursive: true);
+  }
+}
+
+/// A [_SupplementaryClient] whose server converts downloads, answering each
+/// conversion request with the next of [states].
+class _ConvertingClient extends _SupplementaryClient implements ConvertedDownloadClient {
+  _ConvertingClient({required super.metadata, required super.resolution, required this.states});
+
+  final List<ConvertedDownloadState> states;
+  final requests = <TranscodeQualityPreset>[];
+
+  @override
+  Future<ConvertedDownloadState> requestConvertedDownload(
+    MediaItem item, {
+    required int mediaIndex,
+    required TranscodeQualityPreset preset,
+  }) async {
+    requests.add(preset);
+    return states.removeAt(0);
   }
 }
 

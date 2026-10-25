@@ -150,6 +150,23 @@ const _plexHlsSubtitleTranscodeTarget =
 const _plexHlsVodContainer = 'mp4';
 const _plexHlsVodTsContainer = 'mpegts';
 
+/// Converted-download target: one progressive MKV file with H.264 video,
+/// which every device decodes in hardware. MKV rather than MP4 so embedded
+/// text subtitles survive the conversion. Both the streaming and static
+/// contexts are named because PMS has served download-queue jobs under
+/// either.
+String _plexConvertedDownloadProfileExtra(int maxVideoBitrateKbps) => [
+  'add-limitation(scope=videoCodec&scopeName=*&type=upperBound'
+      '&name=video.bitrate&value=$maxVideoBitrateKbps&replace=true)',
+  for (final context in const ['streaming', 'static']) ...[
+    'add-transcode-target(type=videoProfile&context=$context'
+        '&protocol=http&container=mkv&videoCodec=h264'
+        '&audioCodec=aac%2Cac3%2Ceac3%2Cmp3)',
+    'add-transcode-target(type=subtitleProfile&context=$context'
+        '&protocol=http&container=mkv&subtitleCodec=srt%2Cass)',
+  ],
+].join('+');
+
 String _buildPlexHlsClientProfileExtra({required String videoTranscodeTarget, int? maxVideoBitrateKbps}) {
   final clauses = <String>['add-settings(DirectPlayStreamSelection=true)'];
   if (maxVideoBitrateKbps != null) {
@@ -395,7 +412,7 @@ class PlexClient
         _PlexCollectionMethods,
         _PlexPlayQueueMethods,
         _PlexMetadataEditMethods
-    implements MediaServerClient, ScopedMediaServerClient, GracefullyCloseable {
+    implements MediaServerClient, ScopedMediaServerClient, GracefullyCloseable, ConvertedDownloadClient {
   @override
   PlexConfig config;
 
@@ -5040,6 +5057,153 @@ class PlexClient
       externalSubtitles: _downloadSubtitleSpecs(mediaInfo),
       additionalParts: additionalParts,
     );
+  }
+
+  /// This client's download queue on the server, created on first use. PMS
+  /// keys a queue by user and client identifier, so asking again returns the
+  /// same one; the id is cached only to save the round trip.
+  int? _downloadQueueId;
+
+  /// Convert [item] on the server through PMS's download queue
+  /// (`/downloadQueue`, PMS API 0.2.0): the server transcodes the whole file
+  /// in the background, unthrottled, then serves the finished file with a
+  /// length, so the device fetches it like any other download.
+  ///
+  /// Adding the same key with the same parameters returns the existing queue
+  /// item, which is what makes re-asking after a wait or restart safe. No
+  /// `partIndex` is sent, so a version stacked across several files comes
+  /// back joined into one.
+  @override
+  Future<ConvertedDownloadState> requestConvertedDownload(
+    MediaItem item, {
+    required int mediaIndex,
+    required TranscodeQualityPreset preset,
+  }) async {
+    try {
+      return await _requestConvertedDownload(item, mediaIndex: mediaIndex, preset: preset);
+    } on MediaServerHttpException catch (e) {
+      // A server restart can drop the queue the cached id points at.
+      if (e.statusCode != 404 || _downloadQueueId == null) rethrow;
+      appLogger.i('Plex download queue $_downloadQueueId is gone; creating a new one');
+      _downloadQueueId = null;
+      return _requestConvertedDownload(item, mediaIndex: mediaIndex, preset: preset);
+    }
+  }
+
+  Future<ConvertedDownloadState> _requestConvertedDownload(
+    MediaItem item, {
+    required int mediaIndex,
+    required TranscodeQualityPreset preset,
+  }) async {
+    final queueId = _downloadQueueId ??= await _fetchDownloadQueueId();
+    final addResponse = await _postWithFailover(
+      '/downloadQueue/$queueId/add',
+      queryParameters: buildConvertedDownloadParams(ratingKey: item.id, mediaIndex: mediaIndex, preset: preset),
+    );
+    final added = _getMediaContainer(addResponse)?['AddedQueueItems'];
+    final itemId = added is List && added.isNotEmpty && added.first is Map ? (added.first as Map)['id'] : null;
+    if (itemId == null) return const ConvertedDownloadFailed('Server did not accept the download conversion');
+
+    final itemResponse = await _getWithFailover('/downloadQueue/$queueId/items/$itemId');
+    final items = _getMediaContainer(itemResponse)?['DownloadQueueItem'];
+    final queueItem = items is List && items.isNotEmpty && items.first is Map ? items.first as Map : null;
+    if (queueItem == null) return const ConvertedDownloadFailed('Server lost the download conversion');
+
+    final status = queueItem['status']?.toString();
+    switch (status) {
+      case 'available':
+        return ConvertedDownloadReady(
+          url: _authenticatedServerUrl('/downloadQueue/$queueId/item/$itemId/media'),
+          container: await _convertedDownloadContainer(queueId, itemId),
+        );
+      case 'processing':
+        final session = queueItem['TranscodeSession'];
+        final progress = session is Map ? session['progress'] : null;
+        return ConvertedDownloadPending(
+          percent: progress is num ? progress.clamp(0, 100).floor() : null,
+          retryAfter: const Duration(seconds: 15),
+        );
+      case 'deciding':
+        return const ConvertedDownloadPending(retryAfter: Duration(seconds: 3));
+      case 'waiting':
+        return const ConvertedDownloadPending(retryAfter: Duration(seconds: 30));
+      case 'expired':
+        // The finished file aged out before it was fetched; convert it again.
+        await _postWithFailover('/downloadQueue/$queueId/items/$itemId/restart');
+        return const ConvertedDownloadPending(retryAfter: Duration(seconds: 15));
+      default:
+        final decision = queueItem['DecisionResult'];
+        final reason =
+            queueItem['error']?.toString() ??
+            (decision is Map ? decision['transcodeDecisionText'] ?? decision['generalDecisionText'] : null)
+                ?.toString() ??
+            'Server could not convert the download (status ${status ?? 'unknown'})';
+        return ConvertedDownloadFailed(reason);
+    }
+  }
+
+  Future<int> _fetchDownloadQueueId() async {
+    final response = await _postWithFailover('/downloadQueue');
+    final queues = _getMediaContainer(response)?['DownloadQueue'];
+    final id = queues is List && queues.isNotEmpty && queues.first is Map ? (queues.first as Map)['id'] : null;
+    final parsed = id is int ? id : int.tryParse(id?.toString() ?? '');
+    if (parsed == null) throw StateError('Server returned no download queue');
+    return parsed;
+  }
+
+  /// Container of the converted file, from the item's decision. Best-effort:
+  /// a missing answer only costs the file its precise extension.
+  Future<String?> _convertedDownloadContainer(Object queueId, Object itemId) async {
+    try {
+      final response = await _getWithFailover('/downloadQueue/$queueId/item/$itemId/decision');
+      return _decisionSelectedContainer(response.data);
+    } catch (e) {
+      appLogger.d('No decision for converted download $queueId/$itemId', error: e);
+      return null;
+    }
+  }
+
+  /// Absolute URL for [path] that a background download task can fetch with
+  /// no headers of its own: the token and client identifier ride along.
+  String _authenticatedServerUrl(String path) {
+    final query = <String, String>{
+      'X-Plex-Client-Identifier': config.clientIdentifier,
+      if (config.token != null) 'X-Plex-Token': config.token!,
+    };
+    return '${config.baseUrl}$path?${query.entries.map((e) => '${_plexEncode(e.key)}=${_plexEncode(e.value)}').join('&')}';
+  }
+
+  @visibleForTesting
+  Map<String, String> buildConvertedDownloadParams({
+    required String ratingKey,
+    required int mediaIndex,
+    required TranscodeQualityPreset preset,
+  }) {
+    final maxKbps = preset.videoBitrateKbps;
+    if (maxKbps == null) throw ArgumentError.value(preset, 'preset', 'Original needs no conversion');
+    return <String, String>{
+      'keys': '/library/metadata/$ratingKey',
+      'mediaIndex': mediaIndex.toString(),
+      'hasMDE': '1',
+      'protocol': 'http',
+      // The point is a smaller file, so the server must not hand back the
+      // original; it may still copy a stream that already fits the cap.
+      'directPlay': '0',
+      'directStream': '1',
+      'directStreamAudio': '1',
+      'videoBitrate': maxKbps.toString(),
+      if (preset.videoResolution != null) 'videoResolution': preset.videoResolution!,
+      if (preset.videoQuality != null) 'videoQuality': preset.videoQuality!.toString(),
+      'audioBoost': '100',
+      'location': 'lan',
+      'autoAdjustQuality': '0',
+      // Keeps the selected subtitle as a track in the file rather than
+      // welding it into the picture; sidecar files are fetched separately.
+      'subtitles': 'embedded',
+      'X-Plex-Client-Profile-Name': 'Generic',
+      'X-Plex-Client-Profile-Extra': _plexConvertedDownloadProfileExtra(maxKbps),
+      ..._transcodeClientParams(),
+    };
   }
 
   List<DownloadSubtitleSpec> _downloadSubtitleSpecs(MediaSourceInfo? mediaInfo) {

@@ -30,6 +30,15 @@ sealed class DownloadProgress with _$DownloadProgress {
     String? currentFile,
     String? thumbPath,
 
+    /// Server-side conversion progress (0–100) while the server shrinks the
+    /// file to the download quality, before any bytes reach the device. Null
+    /// when nothing is being converted.
+    int? serverConversionPercent,
+
+    /// True while the server converts the file; [serverConversionPercent] is
+    /// null until the conversion itself starts.
+    @Default(false) bool serverConverting,
+
     /// Epoch milliseconds when the download completed, persisted on the row
     /// and carried through progress events so sort-by-download-date works
     /// without a database read.

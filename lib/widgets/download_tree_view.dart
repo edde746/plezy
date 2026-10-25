@@ -494,6 +494,25 @@ DownloadStatus determineDownloadAggregateStatus(List<DownloadStatus> statuses) {
   return DownloadStatus.partial;
 }
 
+/// Status line for a download the server is still converting to its download
+/// quality, or null once its bytes are flowing.
+String? _serverConversionLabel(DownloadProgress progress) {
+  if (!progress.serverConverting) return null;
+  final percent = progress.serverConversionPercent;
+  return percent == null
+      ? t.downloads.convertingOnServer
+      : t.downloads.convertingOnServerPercent(percent: percent.toString());
+}
+
+/// Progress bar value for an active row. While the server converts it tracks
+/// the conversion, indeterminate (null) until the conversion starts.
+double? _progressBarValue(DownloadTreeNode node) {
+  final progress = node.downloadProgress;
+  if (progress == null || !progress.serverConverting) return node.progress;
+  final percent = progress.serverConversionPercent;
+  return percent == null ? null : percent / 100;
+}
+
 String? _firstLeafKey(DownloadTreeNode node) {
   for (final child in node.children) {
     if (child.hasChildren) {
@@ -573,7 +592,8 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
   DownloadStatus get _effectiveStatus {
     if (widget.node.status == DownloadStatus.downloading &&
         widget.node.progress == 0 &&
-        (widget.node.downloadProgress?.speed ?? 0) == 0) {
+        (widget.node.downloadProgress?.speed ?? 0) == 0 &&
+        widget.node.downloadProgress?.serverConverting != true) {
       return DownloadStatus.queued;
     }
     return widget.node.status;
@@ -718,13 +738,14 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
               if (_effectiveStatus == DownloadStatus.downloading) ...[
                 const SizedBox(height: 8),
                 LinearProgressIndicator(
-                  value: widget.node.progress,
+                  value: _progressBarValue(widget.node),
                   backgroundColor: theme.colorScheme.surfaceContainerHighest,
                 ),
                 if (widget.node.downloadProgress != null) ...[
                   const SizedBox(height: 4),
                   Text(
-                    '${(widget.node.progress * 100).toStringAsFixed(1)}% - ${widget.node.downloadProgress!.speedFormatted}',
+                    _serverConversionLabel(widget.node.downloadProgress!) ??
+                        '${(widget.node.progress * 100).toStringAsFixed(1)}% - ${widget.node.downloadProgress!.speedFormatted}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),

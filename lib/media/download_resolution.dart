@@ -5,6 +5,9 @@
 /// Plex or Jellyfin.
 library;
 
+import '../models/transcode_quality_preset.dart';
+import 'media_item.dart';
+
 /// Spec for a single external subtitle track that should be downloaded
 /// alongside the video file.
 ///
@@ -68,11 +71,63 @@ class DownloadResolution {
   /// stacked across several files. Empty for a single-file version.
   final List<DownloadPartResolution> additionalParts;
 
+  /// File extension for [videoUrl] when its path does not carry one, as with
+  /// a server-converted file. Null lets the URL decide.
+  final String? videoExtension;
+
   const DownloadResolution({
     required this.videoUrl,
     this.mediaSourceId,
     this.externalSubtitles = const [],
     this.externalSubtitlesResolved = true,
     this.additionalParts = const [],
+    this.videoExtension,
+  });
+}
+
+/// Where a server-side conversion of a download stands.
+sealed class ConvertedDownloadState {
+  const ConvertedDownloadState();
+}
+
+/// The converted file is ready to fetch from [url]. Stacked versions come
+/// back joined into this one file.
+class ConvertedDownloadReady extends ConvertedDownloadState {
+  final String url;
+
+  /// Container the server converted to (`mkv`, `mp4`), when it said.
+  final String? container;
+
+  const ConvertedDownloadReady({required this.url, this.container});
+}
+
+/// The server is still deciding or converting. Ask again after [retryAfter].
+class ConvertedDownloadPending extends ConvertedDownloadState {
+  /// Conversion progress 0–100, or null while the item waits its turn.
+  final int? percent;
+  final Duration retryAfter;
+
+  const ConvertedDownloadPending({this.percent, required this.retryAfter});
+}
+
+/// The server could not convert the item.
+class ConvertedDownloadFailed extends ConvertedDownloadState {
+  final String reason;
+
+  const ConvertedDownloadFailed(this.reason);
+}
+
+/// A backend that can convert a download to a lower quality on the server
+/// before the device fetches it, so a small screen does not have to store
+/// the full-size original.
+///
+/// Requesting the same item at the same quality again must be idempotent:
+/// the download pipeline re-asks after every wait, app restart, and resume
+/// rather than persisting the server's job id.
+abstract interface class ConvertedDownloadClient {
+  Future<ConvertedDownloadState> requestConvertedDownload(
+    MediaItem item, {
+    required int mediaIndex,
+    required TranscodeQualityPreset preset,
   });
 }
