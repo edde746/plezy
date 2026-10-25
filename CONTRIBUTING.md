@@ -51,10 +51,12 @@ Add a concise, user-visible bullet under `CHANGELOG.md` → `## [Unreleased]` fo
 The pre-commit hook checks staged changes, and CI checks pull requests and pushes to `main`. Install the hook once with
 `scripts/setup_hooks.sh`.
 
-The release build creates draft GitHub releases with notes from `CHANGELOG.md`. It uses a matching version section when
-one exists, otherwise it uses `Unreleased`. Before later releases, move shipped bullets into a dated version section
-and keep `Unreleased` for new work. Published stable releases are announced in Discord with their changelog notes and a
-link to the GitHub release.
+The `PlezyNG Release` workflow is manual and only runs from `main`. Dispatch it with a semantic version that matches
+`pubspec.yaml`; it builds all release platforms and creates a draft GitHub release with notes from `CHANGELOG.md`.
+It uses a matching version section when one exists, otherwise it uses `Unreleased`. Before later releases, move shipped
+bullets into a dated version section and keep `Unreleased` for new work. Publish the draft when it is ready; publishing
+updates the Homebrew cask and appcast, then announces the release in Discord with its changelog notes and a link.
+Regular pushes and pull requests run CI checks but do not run the release build.
 
 ### Maestro end-to-end tests
 

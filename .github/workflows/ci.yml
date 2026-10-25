@@ -12,9 +12,8 @@ on:
     inputs:
       build_linux_packages:
         description: >
-          Smoke-build the Linux deb/rpm/pacman packages. Off by default: it needs
-          a release build plus fpm, and build.yml only packages from main, so this
-          is the only way to exercise linux/packaging from a branch.
+          Manually smoke-build Linux packages when changing linux/packaging.
+          This is separate from release assets and does not run on ordinary pushes.
         default: false
         type: boolean
 
@@ -631,15 +630,12 @@ jobs:
   # transitive libraries the bundled libmpv drags in. This can, by reading the
   # built bundle back with ldd.
   #
-  # Runs on every push to main and on request, but not on pull requests: it
-  # needs a release build plus fpm, which is minutes of runner time that most
-  # changes here have no reason to pay. That buys post-merge detection rather
-  # than pre-merge, which is the deliberate trade. Dispatch it from a branch
-  # with build_linux_packages when touching linux/packaging - which is the only
-  # way to exercise it before merging.
+  # Manual-only package smoke build for changes to linux/packaging. Release
+  # packages are built by build.yml; ordinary pushes run the lightweight CI
+  # checks above without packaging release artifacts.
   linux-packages:
     name: Linux package smoke build
-    if: ${{ inputs.build_linux_packages || github.event_name == 'push' }}
+    if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_linux_packages }}
     runs-on: ubuntu-24.04
     permissions:
       contents: read

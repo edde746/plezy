@@ -20,6 +20,8 @@ WORKFLOW = Path(sys.argv[1]).resolve() if len(sys.argv) == 2 else DEFAULT_WORKFL
 SETUP_FLUTTER_GIT = WORKFLOW.parents[1] / "actions/setup-flutter-git/action.yml"
 WINDOWS_CMAKE = WORKFLOW.parents[2] / "windows/CMakeLists.txt"
 text = WORKFLOW.read_text(encoding="utf-8")
+CI_WORKFLOW = ROOT / ".github/workflows/ci.yml"
+ci_text = CI_WORKFLOW.read_text(encoding="utf-8") if CI_WORKFLOW.is_file() else ""
 errors: list[str] = []
 
 
@@ -275,18 +277,27 @@ for artifact in (
 require(
     re.search(
         r"(?ms)^  workflow_dispatch:\n    inputs:\n      release_tag:\n"
-        r".*?        default: ''\n        type: string\n",
+        r".*?        required: true\n        type: string\n",
         text,
     )
     is not None,
-    "build workflow must expose an optional release_tag input",
+    "release workflow must require a release_tag input",
+)
+require("inputs.build_" not in text, "release workflow must build every platform together")
+require(
+    re.search(r"(?m)^  (push|pull_request):", text) is None,
+    "release builds must not run on commits or pull requests",
+)
+require(
+    "if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_linux_packages }}"
+    in job_block(ci_text, "linux-packages"),
+    "the optional Linux package smoke build must not run on pushes",
 )
 
 
 require(
-    "run-name: ${{ inputs.release_tag != '' && format('Release {0}', inputs.release_tag)"
-    in text,
-    "release workflow runs must expose their tag in the run name",
+    "run-name: ${{ format('Release {0}', inputs.release_tag) }}" in text,
+    "release workflow runs must expose their release tag in the run name",
 )
 
 release = job("create-release")
@@ -310,24 +321,16 @@ for artifact in (
 release_if = re.search(r"(?m)^    if: (.+)$", release)
 require(release_if is not None, "release job must have an explicit condition")
 release_condition = release_if.group(1) if release_if else ""
-for build_input in (
-    "build_android",
-    "build_ios",
-    "build_macos",
-    "build_windows",
-    "build_linux",
-):
-    require(
-        f"&& inputs.{build_input}" in release_condition,
-        f"release publication must require {build_input}",
-    )
 require(
-    "&& inputs.release_tag != ''" in release_condition,
-    "draft release creation must require an explicit release tag",
+    "needs.validate-trusted-ref.result == 'success'" in release_condition
+    and "contains(needs.*.result, 'failure')" in release_condition
+    and "contains(needs.*.result, 'cancelled')" in release_condition,
+    "draft release creation must require a successful complete build",
 )
 
 
 require("draft: true" in release, "build output must remain a draft release")
+require("body_path: release-notes.md" in release, "draft notes must come from the changelog renderer")
 require(
     "tag_name: ${{ inputs.release_tag }}" in release,
     "release builds must bind the requested tag",
@@ -337,20 +340,24 @@ require(
     "release tags must target the exact build commit",
 )
 require(
-    "if: ${{ inputs.release_tag != '' }}" in release
-    and '"$RELEASE_TAG" != "$VERSION"' in release,
-    "release tags must be validated against the pubspec version",
-)
-require(
-    "generate_release_notes:" not in release,
-    "draft releases must not generate notes before deploy.py attaches channel notes",
+    "python3 scripts/generate_release_notes.py \"$RELEASE_TAG\" > release-notes.md"
+    in release,
+    "draft release notes must be rendered from CHANGELOG.md",
 )
 
 trusted_ref = job("validate-trusted-ref")
-require("permissions: {}" in trusted_ref, "trusted-ref validation must have no token permissions")
+require(
+    "permissions:\n      contents: read" in trusted_ref,
+    "release request validation must have read-only repository access",
+)
 require(
     '"$GITHUB_REF" != "refs/heads/main"' in trusted_ref,
     "trusted-ref validation must reject non-main refs",
+)
+require(
+    "Validate release tag before building" in trusted_ref
+    and '"$RELEASE_TAG" != "$VERSION"' in trusted_ref,
+    "release tags must be checked against pubspec before any platform builds start",
 )
 for protected_job in (
     "build-android",

@@ -10,6 +10,10 @@ on:
         required: true
         type: string
 
+concurrency:
+  group: update-release-packages
+  cancel-in-progress: false
+
 jobs:
   resolve-release:
     runs-on: ubuntu-latest
@@ -77,7 +81,7 @@ jobs:
         id: release
         run: |
           curl --fail-with-body -L -o plezy-macos.dmg \
-            "https://github.com/edde746/plezy/releases/download/$RELEASE_TAG/plezy-macos.dmg"
+            "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG/plezy-macos.dmg"
           SHA256=$(shasum -a 256 plezy-macos.dmg | cut -d' ' -f1)
           echo "sha256=$SHA256" >> "$GITHUB_OUTPUT"
 
@@ -98,19 +102,6 @@ jobs:
           else
             echo "No cask changes to commit."
           fi
-
-  update-winget:
-    needs: resolve-release
-    runs-on: windows-latest
-    # The releaser authenticates with WINGET_TOKEN; GITHUB_TOKEN needs no scopes.
-    permissions: {}
-    steps:
-      - uses: vedantmgoyal9/winget-releaser@4ffc7888bffd451b357355dc214d43bb9f23917e # v2
-        with:
-          identifier: edde746.Plezy
-          installers-regex: 'plezy-windows-installer\.exe$'
-          release-tag: ${{ needs.resolve-release.outputs.tag }}
-          token: ${{ secrets.WINGET_TOKEN }}
 
   update-appcast-branch:
     needs: resolve-release
@@ -133,9 +124,25 @@ jobs:
 
       - name: Push to appcast branch
         run: |
+          set -euo pipefail
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"
-          BLOB=$(git hash-object -w appcast.xml)
-          TREE=$(printf "100644 blob %s\tappcast.xml\n" "$BLOB" | git mktree)
-          COMMIT=$(git commit-tree "$TREE" -m "Update appcast for $RELEASE_TAG")
-          git push origin "$COMMIT:refs/heads/appcast" --force
+          cp appcast.xml "$RUNNER_TEMP/plezy-appcast.xml"
+          git restore -- appcast.xml 2>/dev/null || rm -f appcast.xml
+
+          if git ls-remote --exit-code --heads origin appcast >/dev/null 2>&1; then
+            git fetch origin appcast
+            git checkout -B appcast FETCH_HEAD
+          else
+            git switch --orphan appcast
+            git rm -rf --ignore-unmatch .
+          fi
+
+          cp "$RUNNER_TEMP/plezy-appcast.xml" appcast.xml
+          git add appcast.xml
+          if ! git diff --cached --quiet; then
+            git commit -m "Update appcast for $RELEASE_TAG"
+            git push origin HEAD:refs/heads/appcast
+          else
+            echo "The appcast branch already has this release."
+          fi

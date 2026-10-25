@@ -402,12 +402,25 @@ class GitHubReleaseTest(unittest.TestCase):
     def test_verifies_workflow_assets_then_attaches_notes(self) -> None:
         responses = [
             self._release_info(set(deploy.RELEASE_ASSET_NAMES)),
+            SimpleNamespace(
+                returncode=0,
+                stdout="# PlezyNG 2.15.0\n\nChangelog notes\n",
+                stderr="",
+            ),
             SimpleNamespace(returncode=0, stdout=""),
         ]
         with mock.patch.object(deploy, "run", side_effect=responses) as run_command:
             deploy.phase_release(self._context())
 
-        edit = run_command.call_args_list[1].args[0]
+        notes_command = run_command.call_args_list[1].args[0]
+        self.assertTrue(notes_command[1].endswith("scripts/generate_release_notes.py"))
+        self.assertEqual(notes_command[-1], "2.15.0")
+        self.assertEqual(
+            (self._notes_dir / "github.md").read_text(encoding="utf-8"),
+            "# PlezyNG 2.15.0\n\nChangelog notes\n",
+        )
+
+        edit = run_command.call_args_list[2].args[0]
         self.assertEqual(edit[:4], ["gh", "release", "edit", "2.15.0"])
         self.assertIn(str(self._notes_dir / "github.md"), edit)
 

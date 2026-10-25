@@ -17,7 +17,8 @@ One command releases to every channel:
 
 Phases (in order):
     preflight   validate tools, credentials, git state
-    changelog   generate per-channel release notes via the claude CLI
+    changelog   generate per-store release notes via the claude CLI; GitHub
+                release notes come from CHANGELOG.md
     bump        bump pubspec version, commit, push
     farm_start  trigger .github/workflows/build.yml for a tagged draft release
     play        build AAB, upload symbols, publish to Google Play production
@@ -31,7 +32,7 @@ Phases (in order):
     msstore     submit the Store msixbundle via the Microsoft Store
                 Submission API (replaces the manual Partner Center upload)
     publish     flip the GitHub release out of draft; the release event updates
-                Homebrew, WinGet, and the appcast branch
+                Homebrew and the appcast branch
 
 State is checkpointed to build/deploy/state.json; a failed run resumes where
 it stopped (`release` again, optionally with --only/--skip). `--dry-run`
@@ -104,7 +105,7 @@ STATE_PATH = DEPLOY_DIR / "state.json"
 NOTES_DIR = DEPLOY_DIR / "notes"
 ARTIFACTS_DIR = DEPLOY_DIR / "artifacts"
 
-REPO = "edde746/plezy"
+REPO = "snapetech-org/PlezyNG"
 
 PHASES = [
     "preflight",
@@ -1484,7 +1485,7 @@ def phase_asc(ctx: Context) -> None:
 
 
 def phase_release(ctx: Context) -> None:
-    if dry_guard(ctx, "verify the build workflow's draft release and attach release notes"):
+    if dry_guard(ctx, "verify the build workflow's draft release and render changelog notes"):
         return
     result = run(
         [
@@ -1525,9 +1526,20 @@ def phase_release(ctx: Context) -> None:
             details.append("unexpected: " + ", ".join(unexpected))
         raise DeployError("release: draft asset set is invalid (" + "; ".join(details) + ")")
 
+    notes = run(
+        [sys.executable, str(SCRIPTS_DIR / "generate_release_notes.py"), ctx.version],
+        capture=True,
+        check=False,
+        echo=False,
+    )
+    if notes.returncode != 0:
+        raise DeployError(
+            "release: could not generate notes from CHANGELOG.md: "
+            + (notes.stderr or notes.stdout or "unknown error").strip()
+        )
     body = notes_path("github")
-    if not body.is_file():
-        raise DeployError(f"release: notes not found at {body}")
+    body.parent.mkdir(parents=True, exist_ok=True)
+    body.write_text(notes.stdout.rstrip() + "\n", encoding="utf-8")
     run(
         [
             "gh",
@@ -1683,7 +1695,7 @@ def phase_publish(ctx: Context) -> None:
         return
     if not ctx.confirm(
         f"Publish GitHub release {ctx.tag}? "
-        "The release event will update Homebrew, WinGet, and the appcast branch."
+        "The release event will update Homebrew and the appcast branch."
     ):
         log("publish: skipped; rerun with --only publish when ready")
         raise PhaseDeferred

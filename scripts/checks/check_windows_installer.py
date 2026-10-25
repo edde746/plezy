@@ -63,7 +63,7 @@ require(
 )
 require(
     "OutputBaseFilename=plezy-windows-installer" in iss,
-    "the release asset name is referenced by the appcast, winget and the website",
+    "the release asset name is referenced by the appcast and download documentation",
 )
 require(
     "ArchitecturesAllowed=$ArchAllowed" in iss

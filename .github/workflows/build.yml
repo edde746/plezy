@@ -1,33 +1,13 @@
-name: Build
-run-name: ${{ inputs.release_tag != '' && format('Release {0}', inputs.release_tag) || format('Build {0}', github.sha) }}
+name: PlezyNG Release
+run-name: ${{ format('Release {0}', inputs.release_tag) }}
 
 on:
   workflow_dispatch:
     inputs:
       release_tag:
-        description: Tag for a draft release; omit to build Actions artifacts only
-        default: ''
+        description: Semantic version tag for the draft GitHub release
+        required: true
         type: string
-      build_android:
-        description: Build Android
-        default: true
-        type: boolean
-      build_ios:
-        description: Build iOS
-        default: true
-        type: boolean
-      build_macos:
-        description: Build macOS
-        default: true
-        type: boolean
-      build_windows:
-        description: Build Windows
-        default: true
-        type: boolean
-      build_linux:
-        description: Build Linux
-        default: true
-        type: boolean
 
 env:
   # Only place this workflow names the SDK; .github/actions/setup-flutter-git pins the same release.
@@ -46,24 +26,41 @@ env:
 
 jobs:
   validate-trusted-ref:
-    name: Validate trusted build ref
+    name: Validate release request
     runs-on: ubuntu-latest
-    permissions: {}
+    permissions:
+      contents: read
     steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
       - name: Require the protected main branch
         shell: bash
         run: |
-          # TEMPORARY: ab/hdr-keep-alive-probe is admitted exactly (no
-          # wildcards) to build the #1874 HDR-oscillation A/B artifact. Drop
-          # this arm together with the keepalive probe commit.
-          if [[ "$GITHUB_REF" != "refs/heads/main" && "$GITHUB_REF" != "refs/heads/ab/hdr-keep-alive-probe" ]]; then
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
             echo "Release builds may only run from refs/heads/main." >&2
+            exit 1
+          fi
+
+      - name: Validate release tag before building
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          VERSION=$(python3 scripts/pubspec_version.py pubspec.yaml)
+          VERSION=${VERSION%%+*}
+          if [[ ! "$RELEASE_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release tag must use semantic versioning: $RELEASE_TAG" >&2
+            exit 1
+          fi
+          if [[ "$RELEASE_TAG" != "$VERSION" ]]; then
+            echo "Release tag $RELEASE_TAG does not match pubspec version $VERSION." >&2
             exit 1
           fi
 
   build-android:
     needs: validate-trusted-ref
-    if: ${{ inputs.build_android }}
     runs-on: ubuntu-latest
     permissions:
       id-token: write
@@ -108,12 +105,32 @@ jobs:
         run: flutter pub get --enforce-lockfile --no-example
 
       - name: Configure Android signing
+        env:
+          ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
+          ANDROID_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          ANDROID_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
         run: |
-          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 --decode > android/app/upload-keystore.jks
+          set -euo pipefail
+          values=("$ANDROID_KEYSTORE_BASE64" "$ANDROID_STORE_PASSWORD" "$ANDROID_KEY_PASSWORD" "$ANDROID_KEY_ALIAS")
+          configured=0
+          missing=0
+          for value in "${values[@]}"; do
+            if [[ -n "$value" ]]; then configured=$((configured + 1)); else missing=$((missing + 1)); fi
+          done
+          if (( configured == 0 )); then
+            echo "Android signing secrets are not configured; this release APK will use the CI debug key."
+            exit 0
+          fi
+          if (( missing != 0 )); then
+            echo "Android signing secrets are incomplete; configure all four Android signing secrets." >&2
+            exit 1
+          fi
+          printf '%s' "$ANDROID_KEYSTORE_BASE64" | base64 --decode > android/app/upload-keystore.jks
           cat > android/key.properties << EOF
-          storePassword=${{ secrets.ANDROID_STORE_PASSWORD }}
-          keyPassword=${{ secrets.ANDROID_KEY_PASSWORD }}
-          keyAlias=${{ secrets.ANDROID_KEY_ALIAS }}
+          storePassword=$ANDROID_STORE_PASSWORD
+          keyPassword=$ANDROID_KEY_PASSWORD
+          keyAlias=$ANDROID_KEY_ALIAS
           storeFile=upload-keystore.jks
           EOF
 
@@ -156,7 +173,6 @@ jobs:
 
   build-ios:
     needs: validate-trusted-ref
-    if: ${{ inputs.build_ios }}
     runs-on: macos-26
     permissions:
       id-token: write
@@ -224,7 +240,6 @@ jobs:
 
   build-macos:
     needs: validate-trusted-ref
-    if: ${{ inputs.build_macos }}
     runs-on: macos-26
     permissions:
       id-token: write
@@ -266,6 +281,48 @@ jobs:
       - name: Build macOS
         run: flutter build macos --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SENTRY_DIST=github-macos --dart-define=SUPPORTER_MODE=unlocked --split-debug-info=debug-info/macos
 
+      - name: Check macOS signing configuration
+        id: macos-signing
+        env:
+          MACOS_CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
+          MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          KEYCHAIN_PASSWORD: ${{ secrets.KEYCHAIN_PASSWORD }}
+          APPLE_ID: ${{ secrets.APPLE_ID }}
+          APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
+          APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
+        run: |
+          set -euo pipefail
+          signing_values=("$MACOS_CERTIFICATE_BASE64" "$MACOS_CERTIFICATE_PASSWORD" "$KEYCHAIN_PASSWORD")
+          signing_set=0
+          signing_missing=0
+          for value in "${signing_values[@]}"; do
+            if [[ -n "$value" ]]; then signing_set=$((signing_set + 1)); else signing_missing=$((signing_missing + 1)); fi
+          done
+          if (( signing_set == 0 )); then
+            echo "codesign=false" >> "$GITHUB_OUTPUT"
+            echo "Apple signing secrets are not configured; the macOS DMG will be unsigned."
+          elif (( signing_missing != 0 )); then
+            echo "Apple signing secrets are incomplete; configure the certificate, certificate password, and keychain password." >&2
+            exit 1
+          else
+            echo "codesign=true" >> "$GITHUB_OUTPUT"
+          fi
+
+          notary_values=("$APPLE_ID" "$APPLE_APP_SPECIFIC_PASSWORD" "$APPLE_TEAM_ID")
+          notary_set=0
+          notary_missing=0
+          for value in "${notary_values[@]}"; do
+            if [[ -n "$value" ]]; then notary_set=$((notary_set + 1)); else notary_missing=$((notary_missing + 1)); fi
+          done
+          if (( notary_set == 0 )); then
+            echo "notarize=false" >> "$GITHUB_OUTPUT"
+          elif (( notary_missing != 0 || signing_set == 0 )); then
+            echo "Apple notarization requires all three notarization secrets and a signing certificate." >&2
+            exit 1
+          else
+            echo "notarize=true" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Upload symbols to bugs.plezy.app
         if: github.repository == 'edde746/plezy'
         env:
@@ -274,6 +331,7 @@ jobs:
         run: ./scripts/upload-symbols.sh macos
 
       - name: Import Code Signing Certificate
+        if: steps.macos-signing.outputs.codesign == 'true'
         env:
           MACOS_CERTIFICATE_BASE64: ${{ secrets.MACOS_CERTIFICATE_BASE64 }}
           MACOS_CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
@@ -293,6 +351,7 @@ jobs:
           security list-keychains -d user -s $KEYCHAIN_PATH login.keychain
 
       - name: Sign Application
+        if: steps.macos-signing.outputs.codesign == 'true'
         env:
           APPLE_TEAM_ID: ${{ secrets.APPLE_TEAM_ID }}
         run: |
@@ -321,6 +380,7 @@ jobs:
           codesign --force --sign "$IDENTITY" --timestamp --options runtime --entitlements macos/Runner/Release.entitlements "$APP_PATH"
 
       - name: Verify Signature
+        if: steps.macos-signing.outputs.codesign == 'true'
         run: |
           APP_PATH="build/macos/Build/Products/Release/Plezy.app"
           echo "Verifying signature..."
@@ -333,6 +393,7 @@ jobs:
           codesign --verify --deep --strict --verbose=2 "$APP_PATH"
 
       - name: Notarize Application
+        if: steps.macos-signing.outputs.notarize == 'true'
         env:
           APPLE_ID: ${{ secrets.APPLE_ID }}
           APPLE_APP_SPECIFIC_PASSWORD: ${{ secrets.APPLE_APP_SPECIFIC_PASSWORD }}
@@ -367,8 +428,19 @@ jobs:
           ln -s /Applications dmg-staging/Applications
           hdiutil create -format ULMO -srcfolder dmg-staging -volname "Plezy" plezy-macos.dmg
 
+      - name: Check Sparkle signing key
+        id: sparkle-signing
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: |
+          if [[ -n "$SPARKLE_PRIVATE_KEY" ]]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Sign DMG for Sparkle (EdDSA)
-        if: env.SPARKLE_PRIVATE_KEY != ''
+        if: steps.sparkle-signing.outputs.available == 'true'
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         run: |
@@ -402,7 +474,6 @@ jobs:
   build-windows:
     needs: validate-trusted-ref
     name: Build Windows (${{ matrix.arch }})
-    if: ${{ inputs.build_windows }}
     runs-on: ${{ matrix.runner }}
     permissions:
       contents: read
@@ -550,7 +621,6 @@ jobs:
 
   package-windows:
     needs: build-windows
-    if: ${{ inputs.build_windows }}
     runs-on: windows-latest
     permissions:
       id-token: write
@@ -596,13 +666,25 @@ jobs:
       - name: Build installer and portables
         run: .\windows\build-installer.ps1 -X64BuildDir "build-x64" -Arm64BuildDir "build-arm64" -Version "${{ steps.version.outputs.version }}"
 
+      - name: Check Sparkle signing key
+        id: sparkle-signing
+        env:
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        shell: pwsh
+        run: |
+          if ([string]::IsNullOrWhiteSpace($env:SPARKLE_PRIVATE_KEY)) {
+            "available=false" >> $env:GITHUB_OUTPUT
+          } else {
+            "available=true" >> $env:GITHUB_OUTPUT
+          }
+
       # Unsigned on purpose: the Store re-signs the bundle during
       # certification. See windows/build-msix.ps1.
       - name: Build Store package (MSIX)
         run: .\windows\build-msix.ps1 -X64BuildDir "build-x64" -Arm64BuildDir "build-arm64" -Version "${{ steps.version.outputs.version }}"
 
       - name: Sign installer for WinSparkle (EdDSA)
-        if: env.SPARKLE_PRIVATE_KEY != ''
+        if: steps.sparkle-signing.outputs.available == 'true'
         env:
           SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
         shell: pwsh
@@ -666,7 +748,6 @@ jobs:
   build-linux:
     needs: validate-trusted-ref
     name: Build Linux (${{ matrix.arch }})
-    if: ${{ inputs.build_linux }}
     runs-on: ${{ matrix.runner }}
     permissions:
       id-token: write
@@ -897,7 +978,7 @@ jobs:
 
   create-release:
     needs: [validate-trusted-ref, build-android, build-ios, build-macos, build-windows, package-windows, build-linux]
-    if: ${{ always() && needs.validate-trusted-ref.result == 'success' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') && inputs.build_android && inputs.build_ios && inputs.build_macos && inputs.build_windows && inputs.build_linux && inputs.release_tag != '' }}
+    if: ${{ always() && needs.validate-trusted-ref.result == 'success' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -921,77 +1002,54 @@ jobs:
           echo "version=$VERSION" >> $GITHUB_OUTPUT
           echo "build_number=$BUILD_NUMBER" >> $GITHUB_OUTPUT
 
-      - name: Validate release tag
-        if: ${{ inputs.release_tag != '' }}
-        env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
-          VERSION: ${{ steps.version.outputs.version }}
-        run: |
-          if [[ ! "$RELEASE_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
-            echo "Release tag must use semantic versioning: $RELEASE_TAG" >&2
-            exit 1
-          fi
-          if [[ "$RELEASE_TAG" != "$VERSION" ]]; then
-            echo "Release tag $RELEASE_TAG does not match pubspec version $VERSION." >&2
-            exit 1
-          fi
-
       - name: Generate release notes from CHANGELOG.md
         env:
           RELEASE_TAG: ${{ inputs.release_tag }}
         run: python3 scripts/generate_release_notes.py "$RELEASE_TAG" > release-notes.md
 
       - name: Download Android artifacts
-        if: ${{ inputs.build_android }}
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: android-apk
           path: artifacts/android-apk
 
       - name: Download iOS artifact
-        if: ${{ inputs.build_ios }}
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: ios-ipa
           path: artifacts/ios-ipa
 
       - name: Download macOS artifact
-        if: ${{ inputs.build_macos }}
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: macos-dmg
           path: artifacts/macos-dmg
 
       - name: Download Windows x64 artifact
-        if: ${{ inputs.build_windows }}
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: windows-x64-portable
           path: artifacts/windows-x64-portable
 
       - name: Download Windows arm64 artifact
-        if: ${{ inputs.build_windows }}
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: windows-arm64-portable
           path: artifacts/windows-arm64-portable
 
       - name: Download Windows installer artifact
-        if: ${{ inputs.build_windows }}
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: windows-installer
           path: artifacts/windows-installer
 
       - name: Download Linux x64 artifacts
-        if: ${{ inputs.build_linux }}
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: linux-x64
           path: artifacts/linux-x64
 
       - name: Download Linux arm64 artifacts
-        if: ${{ inputs.build_linux }}
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
           name: linux-arm64
@@ -1034,13 +1092,13 @@ jobs:
                 <title>Version ${VERSION}</title>
                 <sparkle:version>${BUILD_NUMBER}</sparkle:version>
                 <sparkle:shortVersionString>${VERSION}</sparkle:shortVersionString>
-                <sparkle:releaseNotesLink>https://gh-html.edde746.dev/edde746/plezy/${VERSION}</sparkle:releaseNotesLink>
+                <sparkle:releaseNotesLink>${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/tag/${VERSION}</sparkle:releaseNotesLink>
           XMLEOF
 
           # macOS enclosure
           if [ -n "$MACOS_ED_SIG" ]; then
             cat >> appcast.xml << XMLEOF
-                <enclosure url="https://github.com/edde746/plezy/releases/download/${VERSION}/plezy-macos.dmg"
+                <enclosure url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${VERSION}/plezy-macos.dmg"
                            length="${MACOS_DMG_SIZE}" type="application/octet-stream"
                            sparkle:edSignature="${MACOS_ED_SIG}"
                            sparkle:os="macos" />
@@ -1050,7 +1108,7 @@ jobs:
           # Windows enclosure
           if [ -n "$WIN_ED_SIG" ]; then
             cat >> appcast.xml << XMLEOF
-                <enclosure url="https://github.com/edde746/plezy/releases/download/${VERSION}/plezy-windows-installer.exe"
+                <enclosure url="${GITHUB_SERVER_URL}/${GITHUB_REPOSITORY}/releases/download/${VERSION}/plezy-windows-installer.exe"
                            length="${WIN_INSTALLER_SIZE}" type="application/octet-stream"
                            sparkle:edSignature="${WIN_ED_SIG}"
                            sparkle:installerArguments="/SILENT /SP-"
@@ -1075,26 +1133,16 @@ jobs:
         run: |
           {
             echo 'files<<EOF'
-            if [ "${{ inputs.build_android }}" = "true" ]; then
-              echo artifacts/android-apk/plezy-android-arm64-v8a.tar.gz
-              echo artifacts/android-apk/plezy-android-armeabi-v7a.tar.gz
-              echo artifacts/android-apk/plezy-android-x86_64.tar.gz
-            fi
-            if [ "${{ inputs.build_ios }}" = "true" ]; then
-              echo artifacts/ios-ipa/plezy-ios.ipa
-            fi
-            if [ "${{ inputs.build_macos }}" = "true" ]; then
-              echo artifacts/macos-dmg/plezy-macos.dmg
-            fi
-            if [ "${{ inputs.build_windows }}" = "true" ]; then
-              echo artifacts/windows-x64-portable/plezy-windows-x64-portable.7z
-              echo artifacts/windows-arm64-portable/plezy-windows-arm64-portable.7z
-              echo artifacts/windows-installer/plezy-windows-installer.exe
-            fi
-            if [ "${{ inputs.build_linux }}" = "true" ]; then
-              echo 'artifacts/linux-x64/*'
-              echo 'artifacts/linux-arm64/*'
-            fi
+            echo artifacts/android-apk/plezy-android-arm64-v8a.tar.gz
+            echo artifacts/android-apk/plezy-android-armeabi-v7a.tar.gz
+            echo artifacts/android-apk/plezy-android-x86_64.tar.gz
+            echo artifacts/ios-ipa/plezy-ios.ipa
+            echo artifacts/macos-dmg/plezy-macos.dmg
+            echo artifacts/windows-x64-portable/plezy-windows-x64-portable.7z
+            echo artifacts/windows-arm64-portable/plezy-windows-arm64-portable.7z
+            echo artifacts/windows-installer/plezy-windows-installer.exe
+            echo 'artifacts/linux-x64/*'
+            echo 'artifacts/linux-arm64/*'
             echo appcast.xml
             echo EOF
           } >> "$GITHUB_OUTPUT"

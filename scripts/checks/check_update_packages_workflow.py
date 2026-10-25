@@ -48,11 +48,18 @@ require(
 )
 
 homebrew = job("update-homebrew")
-winget = job("update-winget")
 appcast = job("update-appcast-branch")
+require(
+    "update-winget:" not in text,
+    "the inherited upstream WinGet publisher must stay removed",
+)
+for stale_upstream in ("WINGET_TOKEN", "edde746.Plezy", "winget-releaser"):
+    require(
+        stale_upstream not in text,
+        f"obsolete upstream package reference remains: {stale_upstream}",
+    )
 for name, block in (
     ("update-homebrew", homebrew),
-    ("update-winget", winget),
     ("update-appcast-branch", appcast),
 ):
     require("needs: resolve-release" in block, f"{name} must depend on the resolver")
@@ -60,29 +67,38 @@ for name, block in (
 for name, block in (
     ("resolve-release", resolver),
     ("update-homebrew", homebrew),
-    ("update-winget", winget),
     ("update-appcast-branch", appcast),
 ):
     require(
         re.search(r"(?m)^    permissions:", block) is not None,
         f"{name} must declare its GITHUB_TOKEN permissions",
     )
-require(
-    re.search(r"(?m)^    permissions: \{\}$", winget) is not None,
-    "WinGet authenticates with WINGET_TOKEN and must not receive GITHUB_TOKEN scopes",
-)
-
 resolved_output = "${{ needs.resolve-release.outputs.tag }}"
 require(f"RELEASE_TAG: {resolved_output}" in homebrew, "Homebrew must use the resolved tag")
-require(f"release-tag: {resolved_output}" in winget, "WinGet must use the resolved tag")
 require(f"RELEASE_TAG: {resolved_output}" in appcast, "appcast must use the resolved tag")
+require(
+    "$GITHUB_SERVER_URL/$GITHUB_REPOSITORY/releases/download/$RELEASE_TAG" in homebrew,
+    "Homebrew must download from this repository",
+)
+require(
+    "github.com/edde746/plezy" not in text,
+    "package workflow must not target upstream releases",
+)
 require(
     'git commit -m "chore: update cask to $RELEASE_TAG"' in homebrew,
     "Homebrew commit text must include the resolved tag",
 )
 require(
-    'git commit-tree "$TREE" -m "Update appcast for $RELEASE_TAG"' in appcast,
+    'git commit -m "Update appcast for $RELEASE_TAG"' in appcast,
     "appcast commit text must include the resolved tag",
+)
+require(
+    "git push origin HEAD:refs/heads/appcast" in appcast,
+    "appcast publishing must push the branch head",
+)
+require(
+    "--force" not in appcast and "git commit-tree" not in appcast,
+    "appcast publishing must be a normal fast-forward push",
 )
 require(
     'gh release download "$RELEASE_TAG"' in appcast,
