@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:openwatchparty/openwatchparty.dart' as owp;
-import 'package:plezy/focus/key_event_utils.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/platform_detector.dart';
@@ -92,7 +91,6 @@ void main() {
   tearDown(() {
     PlatformDetector.debugSetIsDesktopOSOverride(null);
     TvDetectionService.debugSetAppleTVOverride(null);
-    BackKeyCoordinator.clear();
   });
 
   _dialogTest('a typed code shows as K7M-Q2X: upper case, separators dropped, six symbols at most', (

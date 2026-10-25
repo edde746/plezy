@@ -5,13 +5,7 @@ import 'package:flutter/scheduler.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter/widgets.dart';
 
-import '../focus/dpad_navigator.dart';
 import 'text_input_diagnostics.dart';
-
-String _describeSimulatedKey(KeyEvent event) {
-  return 'type=${event.runtimeType} logical=${event.logicalKey.keyLabel}/${event.logicalKey.keyId} '
-      'physical=${event.physicalKey.usbHidUsage} deviceType=${event.deviceType}';
-}
 
 void _logKeySimulator(String message) {
   TextInputDiagnostics.log('KeySimulator', message);
@@ -19,10 +13,12 @@ void _logKeySimulator(String message) {
 
 final KeyEventSimulatorController _defaultSimulator = KeyEventSimulatorController();
 
-/// Shared utility for simulating key press events through the focus tree.
+/// Shared utility for simulating key press events through the framework's key
+/// pipeline.
 ///
 /// Used by companion remotes, Apple TV touch input, and gamepad services to
-/// translate external input into focus-tree key events.
+/// translate external input into key events that behave exactly like hardware
+/// keys.
 void simulateKeyPress(LogicalKeyboardKey logicalKey) {
   _defaultSimulator.simulateKeyPress(logicalKey);
 }
@@ -39,21 +35,34 @@ void simulateKeyUp(LogicalKeyboardKey logicalKey) {
 
 /// Simulates key events for one external input source.
 ///
-/// Separate instances isolate held keys and repeat timers when multiple input
-/// sources are active.
+/// Every event enters the engine's own key entry point,
+/// [ui.PlatformDispatcher.onKeyData], so it runs the complete framework
+/// pipeline a hardware key does: [HardwareKeyboard] pressed-key state and every
+/// registered hardware handler (input-mode tracking, transport keys, the hotkey
+/// recorder), then the focus system's early handlers, the focus chain from the
+/// primary focus upward, and its late handlers. A synthetic press is therefore
+/// indistinguishable from a hardware press to every consumer, including a KeyUp
+/// that lands on whatever holds focus at release time.
+///
+/// Events are marked [ui.KeyData.synthesized] because that is the framework's
+/// documented shape for a key event with no native counterpart: it is
+/// dispatched at once instead of being held for the raw-key message that
+/// follows every native event. No key consumer in the framework or this app
+/// reads the flag.
+///
+/// The stream is regularized against [HardwareKeyboard]'s pressed state so two
+/// sources sharing a physical key cannot produce a double KeyDown or an
+/// unmatched KeyUp: a KeyDown for a pressed key becomes a repeat, a KeyUp for
+/// an unpressed key is dropped.
+///
+/// Separate instances isolate repeat timers when multiple input sources are
+/// active.
 class KeyEventSimulatorController {
   final ui.KeyEventDeviceType deviceType;
   final Map<LogicalKeyboardKey, PhysicalKeyboardKey> physicalKeyByLogicalKey;
   final void Function(String) _log;
 
-  /// Frames an event may wait for primary focus to leave a route that is no
-  /// longer current. A route pushed by the previous event takes focus in the
-  /// frame that first builds it; the second frame is slack for a nested
-  /// navigator's cover exclusion. The cap keeps a route that never takes focus
-  /// from swallowing input: past it, the event goes where a hardware key would.
-  static const _maxFocusSettleFrames = 2;
-
-  final Map<LogicalKeyboardKey, FocusNode> _heldFocusNodes = {};
+  final Set<LogicalKeyboardKey> _heldKeys = {};
   Timer? _repeatTimer;
   bool _disposed = false;
 
@@ -71,51 +80,50 @@ class KeyEventSimulatorController {
     if (TextInputDiagnostics.enabled) {
       _log('simulateKeyPress scheduled logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
     }
-    _schedule((focusNode) {
-      final physicalKey = _physicalKeyFor(logicalKey);
-      _dispatchKeyEvent(focusNode, _keyDownEvent(logicalKey, physicalKey));
-      _dispatchKeyEvent(focusNode, _keyUpEvent(logicalKey, physicalKey));
+    _schedule(() {
+      _dispatchKeyDown(logicalKey);
+      _dispatchKeyUp(logicalKey);
     });
   }
 
-  /// Simulates key down and remembers its focus until key up.
+  /// Simulates key down; the key stays pressed until [simulateKeyUp].
   void simulateKeyDown(LogicalKeyboardKey logicalKey) {
     if (_disposed) return;
     if (TextInputDiagnostics.enabled) {
       _log('simulateKeyDown scheduled logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
     }
-    _schedule((focusNode) {
-      _heldFocusNodes[logicalKey] = focusNode;
-      _dispatchKeyEvent(focusNode, _keyDownEvent(logicalKey, _physicalKeyFor(logicalKey)));
+    _schedule(() {
+      _heldKeys.add(logicalKey);
+      _dispatchKeyDown(logicalKey);
     });
   }
 
-  /// Simulates key up on the focus that received the matching key down.
+  /// Simulates key up, delivered to whatever holds focus at release time.
   void simulateKeyUp(LogicalKeyboardKey logicalKey) {
     if (_disposed) return;
     if (TextInputDiagnostics.enabled) {
       _log('simulateKeyUp scheduled logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
     }
-    scheduleFrameIfIdle();
-    _afterFocusSettles(
-      () => _dispatchKeyUp(logicalKey),
-      targetsPrimaryFocus: () => !_heldFocusNodes.containsKey(logicalKey),
-    );
+    _schedule(() {
+      _heldKeys.remove(logicalKey);
+      _dispatchKeyUp(logicalKey);
+    });
   }
 
   /// Releases [logicalKeys] together after previously scheduled key downs.
   ///
-  /// Any remaining held state is cleared after the release burst.
+  /// Any key this source still holds afterwards is released as well, so a
+  /// disconnecting device cannot leave the framework's pressed state stale.
   void releaseKeys(Iterable<LogicalKeyboardKey> logicalKeys) {
     if (_disposed) return;
     final keys = logicalKeys.toList(growable: false);
-    scheduleFrameIfIdle();
-    _afterFocusSettles(() {
+    _schedule(() {
       for (final logicalKey in keys) {
+        _heldKeys.remove(logicalKey);
         _dispatchKeyUp(logicalKey);
       }
-      _heldFocusNodes.clear();
-    }, targetsPrimaryFocus: () => !keys.every(_heldFocusNodes.containsKey));
+      _releaseHeldKeys();
+    });
   }
 
   /// Starts with an immediate press, then repeats after [initialDelay].
@@ -134,25 +142,33 @@ class KeyEventSimulatorController {
     _repeatTimer = null;
   }
 
+  /// Releases every key this source still holds.
   void clearHeldKeys() {
-    _heldFocusNodes.clear();
+    if (_disposed || _heldKeys.isEmpty) return;
+    _schedule(_releaseHeldKeys);
   }
 
   void dispose() {
     if (_disposed) return;
     _disposed = true;
     stopKeyRepeat();
-    _heldFocusNodes.clear();
+    // Held keys are released synchronously: a post-frame callback would be
+    // skipped by the disposed guard.
+    _releaseHeldKeys();
   }
 
-  void _schedule(void Function(FocusNode focusNode) dispatch) {
+  /// Frames an event may wait for primary focus to leave a route that is no
+  /// longer current. A route pushed by the previous event takes focus in the
+  /// frame that first builds it; the second frame is slack for a nested
+  /// navigator's cover exclusion. The cap keeps a route that never takes focus
+  /// from swallowing input: past it, the event goes where a hardware key would.
+  static const _maxFocusSettleFrames = 2;
+
+  void _schedule(VoidCallback dispatch) {
     // Post-frame dispatch lets focus settle. Requesting a frame is essential
     // when external input arrives while Flutter is otherwise idle.
     scheduleFrameIfIdle();
-    _afterFocusSettles(() {
-      final focusNode = FocusManager.instance.primaryFocus;
-      if (focusNode != null) dispatch(focusNode);
-    });
+    _afterFocusSettles(dispatch);
   }
 
   /// Runs [dispatch] in a post-frame callback once focus has settled.
@@ -165,23 +181,19 @@ class KeyEventSimulatorController {
   /// until the emptied navigator throws (#2937, #2370); a select after a push
   /// acts on the route the push covered (#3197). So pending changes are applied
   /// first, and an event that would go to a focus left in a route that is no
-  /// longer current waits for the route above to take focus. [targetsPrimaryFocus]
-  /// is false for a release whose press is held: it returns to the press's node.
-  void _afterFocusSettles(VoidCallback dispatch, {bool Function()? targetsPrimaryFocus, int waitedFrames = 0}) {
+  /// longer current waits for the route above to take focus.
+  void _afterFocusSettles(VoidCallback dispatch, {int waitedFrames = 0}) {
     SchedulerBinding.instance.addPostFrameCallback((_) {
       if (_disposed) return;
       FocusManager.instance.applyFocusChangesIfNeeded();
       final focusNode = FocusManager.instance.primaryFocus;
-      if (waitedFrames < _maxFocusSettleFrames &&
-          focusNode != null &&
-          (targetsPrimaryFocus?.call() ?? true) &&
-          _isInNonCurrentRoute(focusNode)) {
+      if (waitedFrames < _maxFocusSettleFrames && focusNode != null && _isInNonCurrentRoute(focusNode)) {
         if (TextInputDiagnostics.enabled) {
           _log('dispatch deferred: focus=${focusNode.debugLabel} is in a route that is not current');
         }
         // Re-queued callbacks keep their order, so a release still follows its
         // press. A post-frame callback does not request the frame it waits for.
-        _afterFocusSettles(dispatch, targetsPrimaryFocus: targetsPrimaryFocus, waitedFrames: waitedFrames + 1);
+        _afterFocusSettles(dispatch, waitedFrames: waitedFrames + 1);
         SchedulerBinding.instance.scheduleFrame();
         return;
       }
@@ -189,65 +201,51 @@ class KeyEventSimulatorController {
     });
   }
 
+  void _releaseHeldKeys() {
+    if (_heldKeys.isEmpty) return;
+    final held = _heldKeys.toList(growable: false);
+    _heldKeys.clear();
+    for (final logicalKey in held) {
+      _dispatchKeyUp(logicalKey);
+    }
+  }
+
+  void _dispatchKeyDown(LogicalKeyboardKey logicalKey) {
+    final physicalKey = _physicalKeyFor(logicalKey);
+    final alreadyPressed = HardwareKeyboard.instance.physicalKeysPressed.contains(physicalKey);
+    _dispatch(alreadyPressed ? ui.KeyEventType.repeat : ui.KeyEventType.down, logicalKey, physicalKey);
+  }
+
   void _dispatchKeyUp(LogicalKeyboardKey logicalKey) {
-    final heldFocusNode = _heldFocusNodes.remove(logicalKey);
-    final focusNode = heldFocusNode ?? FocusManager.instance.primaryFocus;
-    final event = _keyUpEvent(logicalKey, _physicalKeyFor(logicalKey));
-    if (focusNode == null || (heldFocusNode != null && heldFocusNode.context == null)) {
-      if (heldFocusNode != null && TextInputDiagnostics.enabled) {
-        _log('simulateKeyUp dropped detached held focus logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
+    final physicalKey = _physicalKeyFor(logicalKey);
+    if (!HardwareKeyboard.instance.physicalKeysPressed.contains(physicalKey)) {
+      if (TextInputDiagnostics.enabled) {
+        _log('simulateKeyUp dropped unpressed logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
       }
-      // Undelivered, but the release still happened.
-      observeSimulatedKeyEvent(event);
       return;
     }
-
-    _dispatchKeyEvent(focusNode, event);
+    _dispatch(ui.KeyEventType.up, logicalKey, physicalKey);
   }
 
-  KeyDownEvent _keyDownEvent(LogicalKeyboardKey logicalKey, PhysicalKeyboardKey physicalKey) {
-    return KeyDownEvent(
-      physicalKey: physicalKey,
-      logicalKey: logicalKey,
+  void _dispatch(ui.KeyEventType type, LogicalKeyboardKey logicalKey, PhysicalKeyboardKey physicalKey) {
+    final data = ui.KeyData(
       timeStamp: Duration(milliseconds: DateTime.now().millisecondsSinceEpoch),
+      type: type,
+      physical: physicalKey.usbHidUsage,
+      logical: logicalKey.keyId,
+      character: null,
+      synthesized: true,
       deviceType: deviceType,
     );
-  }
-
-  KeyUpEvent _keyUpEvent(LogicalKeyboardKey logicalKey, PhysicalKeyboardKey physicalKey) {
-    return KeyUpEvent(
-      physicalKey: physicalKey,
-      logicalKey: logicalKey,
-      timeStamp: Duration(milliseconds: DateTime.now().millisecondsSinceEpoch),
-      deviceType: deviceType,
-    );
-  }
-
-  void _dispatchKeyEvent(FocusNode focusNode, KeyEvent event) {
     if (TextInputDiagnostics.enabled) {
-      _log('dispatch start focus=${focusNode.debugLabel} key=(${_describeSimulatedKey(event)})');
+      _log(
+        'dispatch type=$type focus=${FocusManager.instance.primaryFocus?.debugLabel} '
+        'logical=${logicalKey.keyLabel}/${logicalKey.keyId} physical=${physicalKey.usbHidUsage} deviceType=$deviceType',
+      );
     }
-    // The HardwareKeyboard phase this dispatch bypasses: suppressors end an
-    // armed press on its release there.
-    observeSimulatedKeyEvent(event);
-    FocusNode? node = focusNode;
-    while (node != null) {
-      if (node.onKeyEvent != null) {
-        final result = node.onKeyEvent!(node, event);
-        if (TextInputDiagnostics.enabled) {
-          _log('dispatch node=${node.debugLabel} result=$result key=(${_describeSimulatedKey(event)})');
-        }
-        if (result != KeyEventResult.ignored) {
-          if (TextInputDiagnostics.enabled) _log('dispatch stopped node=${node.debugLabel} result=$result');
-          break;
-        }
-      }
-      node = node.parent;
-    }
-    if (node == null) {
-      if (TextInputDiagnostics.enabled) {
-        _log('dispatch reached root ignored key=(${_describeSimulatedKey(event)})');
-      }
+    final handled = ui.PlatformDispatcher.instance.onKeyData?.call(data) ?? false;
+    if (TextInputDiagnostics.enabled) {
+      _log('dispatch done type=$type handled=$handled logical=${logicalKey.keyLabel}/${logicalKey.keyId}');
     }
   }
 
@@ -256,23 +254,11 @@ class KeyEventSimulatorController {
   }
 }
 
-/// Force a frame when the engine is idle so focus visuals update immediately
-/// on external input (desktop may not wake up without mouse/keyboard activity).
-void scheduleFrameIfIdle() {
-  if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.idle) {
-    SchedulerBinding.instance.scheduleFrame();
-  }
-}
-
 /// Whether [node] is in a route that is not the visible one: covered by a route
 /// pushed above it, or popped and animating out.
 ///
 /// Walks out through enclosing navigators, because a route pushed on an outer
 /// navigator covers a nested stack whose own top route still reports current.
-/// The lookup subscribes [node]'s element, then the navigator's own focus
-/// element (cheap to rebuild, unlike the navigator, which rebuilds every route
-/// page on a dependency change), to route status — sanctioned for event
-/// handlers that read the value once.
 bool _isInNonCurrentRoute(FocusNode node) {
   var context = node.context;
   while (context != null && context.mounted) {
@@ -282,6 +268,14 @@ bool _isInNonCurrentRoute(FocusNode node) {
     context = route.navigator?.focusNode.context;
   }
   return false;
+}
+
+/// Force a frame when the engine is idle so focus visuals update immediately
+/// on external input (desktop may not wake up without mouse/keyboard activity).
+void scheduleFrameIfIdle() {
+  if (SchedulerBinding.instance.schedulerPhase == SchedulerPhase.idle) {
+    SchedulerBinding.instance.scheduleFrame();
+  }
 }
 
 PhysicalKeyboardKey _getPhysicalKey(LogicalKeyboardKey logicalKey) {

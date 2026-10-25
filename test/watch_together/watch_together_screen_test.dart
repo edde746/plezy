@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:openwatchparty/openwatchparty.dart' as owp;
-import 'package:plezy/focus/key_event_utils.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/services/settings_service.dart';
@@ -87,7 +86,6 @@ void main() {
   tearDown(() {
     PlatformDetector.debugSetIsDesktopOSOverride(null);
     TvDetectionService.debugSetAppleTVOverride(null);
-    BackKeyCoordinator.clear();
   });
 
   group('out of a room', () {

@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../focus/dpad_navigator.dart';
-import '../focus/key_event_utils.dart';
+import '../focus/back_press.dart';
 import 'bottom_sheet_header.dart';
 
 /// Shared page layout for bottom sheets with a stable header and content area.
@@ -77,17 +76,7 @@ class BottomSheetPageScaffold extends StatelessWidget {
     // the whole sheet via the overlay host.
     final back = onBack;
     if (back != null) {
-      content = Focus(
-        canRequestFocus: false,
-        skipTraversal: true,
-        onKeyEvent: (node, event) {
-          if (event.logicalKey.isBackKey) {
-            return handleBackKeyAction(event, back);
-          }
-          return KeyEventResult.ignored;
-        },
-        child: content,
-      );
+      content = BackKeyOwner(onBack: back, child: content);
     }
 
     return content;

@@ -4,13 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
-import '../../focus/dpad_navigator.dart';
 import '../../focus/focus_theme.dart';
 import '../../focus/focusable_button.dart';
 import '../../focus/focusable_slider.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../focus/input_mode_tracker.dart';
-import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
 import '../../providers/theme_provider.dart';
@@ -260,8 +258,6 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen>
       canPop: _leaving || !_dirty,
       onPopInvokedWithResult: (didPop, _) {
         if (didPop || _leaving) return;
-        if (BackKeyCoordinator.consumeIfHandled()) return;
-        BackKeyUpSuppressor.suppressBackUntilKeyUp();
         unawaited(_confirmDiscard());
       },
       child: FocusedScrollScaffold(

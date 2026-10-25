@@ -7,7 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../exceptions/media_server_exceptions.dart';
 import '../focus/focusable_button.dart';
-import '../focus/key_event_utils.dart';
+import '../focus/back_press.dart';
 import '../i18n/strings.g.dart';
 import '../theme/mono_tokens.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -42,6 +42,7 @@ class _PanelData {
 }
 
 class ServerActivitiesButtonState extends State<ServerActivitiesButton> {
+  final _backGate = BackPressGate();
   final _buttonKey = GlobalKey();
   OverlayEntry? _overlayEntry;
   final _panelNotifier = ValueNotifier<_PanelData>(_PanelData.loading);
@@ -220,7 +221,7 @@ class ServerActivitiesButtonState extends State<ServerActivitiesButton> {
           // closes a panel with nothing to cancel.
           child: FocusScope(
             node: _panelScope,
-            onKeyEvent: (_, event) => handleBackKeyAction(event, _removeOverlay),
+            onKeyEvent: (_, event) => _backGate.handle(event, _removeOverlay),
             child: ValueListenableBuilder<_PanelData>(
               valueListenable: _panelNotifier,
               builder: (context, data, _) => _buildPanel(context, data),

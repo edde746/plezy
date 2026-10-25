@@ -5,6 +5,7 @@ import 'package:provider/provider.dart';
 import '../../focus/focusable_tile_mixin.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../focus/key_event_utils.dart';
+import '../../focus/back_press.dart';
 import '../../media/media_item.dart';
 import '../../mixins/context_menu_tap_mixin.dart';
 import '../../models/download_models.dart';
@@ -119,6 +120,7 @@ class _TrackRowState extends State<TrackRow> with ContextMenuTapMixin<TrackRow>,
   /// 0 = row (SELECT plays), 1 = ⋮ button (SELECT opens the context menu).
   int _focusedColumn = 0;
   bool _hasFocus = false;
+  final _backGate = BackPressGate();
 
   @override
   FocusNode? get widgetFocusNode => widget.focusNode;
@@ -144,7 +146,7 @@ class _TrackRowState extends State<TrackRow> with ContextMenuTapMixin<TrackRow>,
 
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     if (widget.onBack != null) {
-      final backResult = handleBackKeyAction(event, widget.onBack!);
+      final backResult = _backGate.handle(event, widget.onBack!);
       if (backResult != KeyEventResult.ignored) return backResult;
     }
     return dpadKeyHandler(

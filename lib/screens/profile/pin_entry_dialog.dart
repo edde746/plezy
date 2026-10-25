@@ -5,6 +5,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../focus/focus_theme.dart';
 import '../../focus/key_event_utils.dart';
+import '../../focus/back_press.dart';
 import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
@@ -202,6 +203,7 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
   ];
 
   final List<int?> _digits = [null, null, null, null];
+  final _backGate = BackPressGate();
   int _activeIndex = 0;
   int _row = 0;
   int _column = 0;
@@ -380,7 +382,7 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
   KeyEventResult _handleKey(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
 
-    final backResult = handleBackKeyAction(event, widget.onCancel);
+    final backResult = _backGate.handle(event, widget.onCancel);
     if (backResult != KeyEventResult.ignored) return backResult;
     if (event.isTvSelectEvent || (PlatformDetector.isTV() && event.isPhysicalKeyboardEnter)) {
       return handleOneShotSelect(event, () => _activate(_rows[_row][_column]));

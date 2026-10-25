@@ -6,9 +6,7 @@ part of 'trakt_catalog_media.dart';
 // JsonSerializableGenerator
 // **************************************************************************
 
-TraktCatalogMedia _$TraktCatalogMediaFromJson(
-  Map<String, dynamic> json,
-) => TraktCatalogMedia(
+TraktCatalogMedia _$TraktCatalogMediaFromJson(Map<String, dynamic> json) => TraktCatalogMedia(
   title: json['title'] as String?,
   year: (json['year'] as num?)?.toInt(),
   ids: TraktIds.fromJson(json['ids'] as Map<String, dynamic>),
@@ -25,12 +23,8 @@ TraktCatalogMedia _$TraktCatalogMediaFromJson(
   trailer: json['trailer'] as String?,
   commentCount: (json['comment_count'] as num?)?.toInt(),
   language: json['language'] as String?,
-  languages: (json['languages'] as List<dynamic>?)
-      ?.map((e) => e as String)
-      .toList(),
-  availableTranslations: (json['available_translations'] as List<dynamic>?)
-      ?.map((e) => e as String)
-      .toList(),
+  languages: (json['languages'] as List<dynamic>?)?.map((e) => e as String).toList(),
+  availableTranslations: (json['available_translations'] as List<dynamic>?)?.map((e) => e as String).toList(),
   country: json['country'] as String?,
   favoritedBy: (json['favorited_by'] as List<dynamic>?)
       ?.map((e) => TraktRecommendationUser.fromJson(e as Map<String, dynamic>))
@@ -41,10 +35,6 @@ TraktCatalogMedia _$TraktCatalogMediaFromJson(
   status: json['status'] as String?,
   network: json['network'] as String?,
   airedEpisodes: (json['aired_episodes'] as num?)?.toInt(),
-  airs: json['airs'] == null
-      ? null
-      : TraktAirs.fromJson(json['airs'] as Map<String, dynamic>),
-  images: json['images'] == null
-      ? null
-      : TraktImages.fromJson(json['images'] as Map<String, dynamic>),
+  airs: json['airs'] == null ? null : TraktAirs.fromJson(json['airs'] as Map<String, dynamic>),
+  images: json['images'] == null ? null : TraktImages.fromJson(json['images'] as Map<String, dynamic>),
 );

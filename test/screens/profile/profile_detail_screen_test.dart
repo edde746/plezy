@@ -6,6 +6,7 @@ import 'package:plezy/connection/connection.dart';
 import 'package:plezy/connection/connection_registry.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
+import 'package:plezy/focus/navigator_back_handler.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/profiles/active_profile_provider.dart';
 import 'package:plezy/profiles/plex_home_service.dart';
@@ -67,6 +68,7 @@ void main() {
       await db.close();
     });
 
+    final navigatorKey = GlobalKey<NavigatorState>();
     await tester.pumpWidget(
       TranslationProvider(
         child: MultiProvider(
@@ -79,6 +81,8 @@ void main() {
           ],
           child: InputModeTracker(
             child: MaterialApp(
+              navigatorKey: navigatorKey,
+              builder: (_, child) => NavigatorBackHandler(navigatorKey: navigatorKey, child: child!),
               home: Builder(
                 builder: (context) => Scaffold(
                   body: Center(

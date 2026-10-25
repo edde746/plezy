@@ -4,9 +4,8 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/focus/dpad_navigator.dart';
+import 'package:plezy/focus/navigator_back_handler.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
-import 'package:plezy/focus/key_event_utils.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/models/mpv_config_models.dart';
 import 'package:plezy/screens/settings/mpv_config_screen.dart';
@@ -335,8 +334,6 @@ void main() {
 
     testWidgets('IME-consumed Back hides the keyboard; the next full Back pops with edits preserved', (tester) async {
       addTearDown(tester.view.resetViewInsets);
-      addTearDown(BackKeyCoordinator.clear);
-      addTearDown(BackKeyUpSuppressor.clearSuppression);
       final backend = await _pumpEditor(tester, initialConfig: 'hwdec=auto');
       await _openRow(tester, 0);
       tester.view.viewInsets = const FakeViewPadding(bottom: 240);
@@ -368,8 +365,6 @@ void main() {
     testWidgets('Back while editing a row closes the input without popping the screen; the next Back pops', (
       tester,
     ) async {
-      addTearDown(BackKeyCoordinator.clear);
-      addTearDown(BackKeyUpSuppressor.clearSuppression);
       await _pumpEditor(tester, initialConfig: 'a');
       await _openRow(tester, 0);
 
@@ -479,6 +474,7 @@ Future<_ControlledPreferences> _pumpEditor(
       child: TranslationProvider(
         child: MaterialApp(
           navigatorKey: navigatorKey,
+          builder: (_, child) => NavigatorBackHandler(navigatorKey: navigatorKey, child: child!),
           theme: monoTheme(MonoPalette.dark),
           home: const Scaffold(body: Text('home')),
         ),

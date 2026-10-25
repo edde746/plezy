@@ -5,9 +5,9 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
+import '../focus/back_press.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/input_mode_tracker.dart';
-import '../focus/key_event_utils.dart';
 import '../utils/platform_detector.dart';
 
 /// Entry in the sheet page stack.
@@ -209,7 +209,6 @@ class OverlaySheetController {
         showDragHandle: showDragHandle,
       );
     }
-    BackKeyCoordinator.clear();
     return showAdaptive<T>(
       context,
       builder: builder,
@@ -253,12 +252,13 @@ class OverlaySheetController {
 ///
 /// ## Back handling
 ///
-/// The host already owns the dpad/key back path (its sheet [FocusScope] closes
-/// the sheet on BACK when focus is inside it). For the system/route back path
-/// (Android gesture, iOS swipe, predictive back), opt in via [canPop]: the host
-/// then renders its own [PopScope] that closes an open sheet instead of popping
-/// the screen, so callers don't have to hand-roll it. When [canPop] is null
-/// (the default) the host adds no [PopScope] and behaves exactly as before.
+/// The host owns the key back path while focus is inside a sheet: its sheet
+/// [FocusScope] pops the sub-page or closes the sheet. For the route back path
+/// — a system gesture, or a Back key that bubbled to [NavigatorBackHandler]
+/// and became `Navigator.maybePop` — opt in via [canPop]: the host then renders
+/// its own [PopScope] that closes an open sheet instead of popping the screen,
+/// so callers don't have to hand-roll it. When [canPop] is null (the default)
+/// the host adds no [PopScope].
 class OverlaySheetHost extends StatefulWidget {
   final Widget child;
   final ValueChanged<bool>? onOpenChanged;
@@ -267,21 +267,20 @@ class OverlaySheetHost extends StatefulWidget {
   /// business rule, mirroring [PopScope.canPop]).
   ///
   /// When non-null the host installs a [PopScope]:
-  /// - a system back with a sheet open closes the sheet (never pops the screen);
+  /// - a back with a sheet open closes the sheet (never pops the screen);
   /// - otherwise, if `canPop` is true the route pops natively (preserving the
-  ///   iOS interactive swipe-back), and if false [onSystemBack] runs instead.
+  ///   iOS interactive swipe-back), and if false [onBack] runs instead.
   ///
-  /// When null (default) the host installs no [PopScope] — today's behavior.
+  /// When null (default) the host installs no [PopScope].
   final bool? canPop;
 
-  /// Called for a system/route back when no sheet is open and [canPop] is false.
-  /// Not called when a sheet is open (the sheet is closed instead) or when
-  /// [canPop] allows a native pop. Implementations that also have a dpad key
-  /// handler should start with `if (BackKeyCoordinator.consumeIfHandled()) return;`
-  /// so the system path dedups against the key path.
-  final VoidCallback? onSystemBack;
+  /// The screen's back policy: called for a back — key or system — when no
+  /// sheet is open and [canPop] is false. This is the single place a screen
+  /// decides what Back does; do not also handle Back keys in a `Focus` above
+  /// the host.
+  final VoidCallback? onBack;
 
-  const OverlaySheetHost({super.key, required this.child, this.onOpenChanged, this.canPop, this.onSystemBack});
+  const OverlaySheetHost({super.key, required this.child, this.onOpenChanged, this.canPop, this.onBack});
 
   @override
   State<OverlaySheetHost> createState() => _OverlaySheetHostState();
@@ -295,6 +294,7 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
 
   final List<_OverlaySheetEntry> _pageStack = [];
   final _sheetFocusScopeNode = FocusScopeNode(debugLabel: 'OverlaySheetScope');
+  final _backGate = BackPressGate();
 
   bool _isOpen = false;
   bool _isClosing = false;
@@ -364,7 +364,6 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
     Alignment alignment = Alignment.bottomCenter,
     bool showDragHandle = false,
   }) {
-    BackKeyCoordinator.clear();
     // If already open, close first (instant)
     final wasOpen = _isOpen;
     if (_isOpen) {
@@ -400,7 +399,6 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
       OverlaySheetController.openSheetCount.value++;
     }
 
-    BackKeyUpSuppressor.clearSuppression();
     _animationController.forward(from: 0);
     _autoFocus();
 
@@ -535,17 +533,10 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
       return KeyEventResult.handled;
     }
 
-    // Suppress stale back key-ups
-    if (BackKeyUpSuppressor.consumeIfSuppressed(event)) {
-      return KeyEventResult.handled;
-    }
-
-    // Back key: pop sub-page or close sheet
+    // Back key: pop sub-page or close sheet. The gate ignores a release whose
+    // press acted elsewhere (the sheet opened from a KeyDown-fired action).
     if (event.logicalKey.isBackKey) {
-      if (PlatformDetector.isTV() && event is KeyDownEvent) {
-        BackKeyCoordinator.markHandled();
-      }
-      return handleBackKeyAction(event, _handleBack);
+      return _backGate.handle(event, _handleBack);
     }
 
     // Let all other keys pass through. Directional keys need to reach
@@ -592,12 +583,12 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
       ),
     );
 
-    // When a screen opts in via [canPop], the host owns the system/route back
-    // path so callers don't hand-roll it: a back with a sheet open closes the
-    // sheet (sub-page aware, matching the dpad path) instead of popping the
-    // screen; otherwise the route pops natively (canPop true) or [onSystemBack]
-    // runs (canPop false). `!_isClosing` lets a press during the ~250ms close
-    // animation fall through instead of being swallowed.
+    // When a screen opts in via [canPop], the host owns the route back path so
+    // callers don't hand-roll it: a back with a sheet open closes the sheet
+    // (sub-page aware, matching the dpad path) instead of popping the screen;
+    // otherwise the route pops natively (canPop true) or [onBack] runs (canPop
+    // false). `!_isClosing` lets a press during the ~250ms close animation fall
+    // through instead of being swallowed.
     final canPop = widget.canPop;
     if (canPop != null) {
       content = PopScope(
@@ -605,18 +596,10 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
         onPopInvokedWithResult: (didPop, result) {
           if (didPop) return;
           if (_isOpen && !_isClosing) {
-            // Only TV routes one Back through both the focused key path and
-            // the platform pop, so only TV needs to dedup them. Touch
-            // platforms never deliver Back to [_handleKeyEvent], so consulting
-            // the global marker here could only ever consume some unrelated
-            // widget's mark and swallow the one signal that closes the sheet.
-            // The marker is global and one-shot, so anything left set by
-            // another handler would strand the sheet open with no way out.
-            if (PlatformDetector.isTV() && BackKeyCoordinator.consumeIfHandled()) return;
             _handleBack();
             return;
           }
-          widget.onSystemBack?.call();
+          widget.onBack?.call();
         },
         child: content,
       );

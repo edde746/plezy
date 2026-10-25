@@ -3,8 +3,7 @@ import 'dart:ui' show SemanticsAction, Tristate;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
-import 'package:plezy/focus/dpad_navigator.dart';
-import 'package:plezy/focus/key_event_utils.dart';
+import 'package:plezy/focus/back_press.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/library_first_character.dart';
 import 'package:plezy/screens/libraries/alpha_jump_bar.dart';
@@ -50,8 +49,6 @@ void main() {
 
   tearDown(() {
     TvDetectionService.debugSetAppleTVOverride(null);
-    BackKeyUpSuppressor.clearSuppression();
-    BackKeyCoordinator.clear();
   });
 
   for (final backKey in _backKeys) {
@@ -122,11 +119,11 @@ void main() {
       await tester.pump();
       expect(harness.nextFocusNode.hasFocus, isTrue);
 
-      final movingRepeatHandled = _sendKeyRepeat(tester, backKey);
-      final movingUpHandled = _sendKeyUp(tester, backKey);
+      // The rest of the press lands on the new focus chain. The ancestor's
+      // gate never saw the KeyDown, so it must not run a second back.
+      _sendKeyRepeat(tester, backKey);
+      _sendKeyUp(tester, backKey);
 
-      expect(movingRepeatHandled, isTrue);
-      expect(movingUpHandled, isTrue);
       expect(harness.jumpBarBacks, 2);
       expect(harness.ancestorEvents, 2);
       expect(harness.ancestorBacks, 0);
@@ -269,6 +266,7 @@ class _BackHarness {
   final jumpBarFocusNode = FocusNode(debugLabel: 'test_alpha_jump_bar_back');
   final nextFocusNode = FocusNode(debugLabel: 'test_alpha_jump_bar_back_destination');
   final ancestorFocusNode = FocusNode(debugLabel: 'test_alpha_jump_bar_back_ancestor');
+  final ancestorGate = BackPressGate();
 
   var jumpBarBacks = 0;
   var ancestorEvents = 0;
@@ -293,7 +291,7 @@ Future<_BackHarness> _pumpBackHarness(WidgetTester tester) async {
           focusNode: harness.ancestorFocusNode,
           onKeyEvent: (_, event) {
             harness.ancestorEvents++;
-            return handleBackKeyAction(event, () => harness.ancestorBacks++);
+            return harness.ancestorGate.handle(event, () => harness.ancestorBacks++);
           },
           child: Column(
             children: [

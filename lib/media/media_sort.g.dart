@@ -13,10 +13,9 @@ _MediaSort _$MediaSortFromJson(Map<String, dynamic> json) => _MediaSort(
   defaultDirection: json['defaultDirection'] as String?,
 );
 
-Map<String, dynamic> _$MediaSortToJson(_MediaSort instance) =>
-    <String, dynamic>{
-      'key': instance.key,
-      'descKey': instance.descKey,
-      'title': instance.title,
-      'defaultDirection': instance.defaultDirection,
-    };
+Map<String, dynamic> _$MediaSortToJson(_MediaSort instance) => <String, dynamic>{
+  'key': instance.key,
+  'descKey': instance.descKey,
+  'title': instance.title,
+  'defaultDirection': instance.defaultDirection,
+};

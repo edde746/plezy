@@ -3,6 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../widgets/app_icon.dart';
 import '../widgets/clickable_cursor.dart';
+import 'back_press.dart';
 import 'focus_theme.dart';
 import 'input_mode_tracker.dart';
 import 'key_event_utils.dart';
@@ -98,6 +99,8 @@ class FocusableActionBarState extends State<FocusableActionBar> {
   late List<FocusNode> _focusNodes;
   late List<bool> _focusStates;
   bool _hasAnyFocus = false;
+  // One gate for the row: every button shares [FocusableActionBar.onBack].
+  final _backGate = BackPressGate();
 
   FocusNode? getFocusNode(int index) => index >= 0 && index < _focusNodes.length ? _focusNodes[index] : null;
 
@@ -320,7 +323,7 @@ class FocusableActionBarState extends State<FocusableActionBar> {
       descendantsAreFocusable: false,
       onKeyEvent: (node, event) {
         if (widget.onBack != null) {
-          final backResult = handleBackKeyAction(event, widget.onBack!);
+          final backResult = _backGate.handle(event, widget.onBack!);
           if (backResult != KeyEventResult.ignored) return backResult;
         }
         final previousIndex = _previousEnabledIndex(index);

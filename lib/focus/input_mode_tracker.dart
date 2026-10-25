@@ -1,5 +1,3 @@
-import 'dart:io';
-
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
@@ -60,18 +58,10 @@ class InputModeTracker extends StatefulWidget {
   /// Keyboard/D-pad on TV, pointer everywhere else.
   static InputMode get _defaultMode => PlatformDetector.isTV() ? InputMode.keyboard : InputMode.pointer;
 
-  /// Whether system back must be blocked because the dpad key handler owns
-  /// back navigation: on Android in keyboard mode (TV/gamepad), letting the
-  /// system back through as well double-pops the route.
-  static bool shouldBlockSystemBack(BuildContext context) {
-    return Platform.isAndroid && isKeyboardMode(context);
-  }
-
-  /// Report input from a device that cannot point — gamepad, companion remote,
-  /// Siri Remote touch. Those services synthesize their key events through
-  /// [KeyEventSimulatorController], which dispatches straight down the focus
-  /// chain and never reaches [HardwareKeyboard], so they cannot be observed by
-  /// [eventRequestsFocusNavigation] and must announce themselves here.
+  /// Report input from a device that cannot point and does not produce key
+  /// events — a gamepad shoulder or a companion-remote tab command. Key-shaped
+  /// input from those devices goes through [KeyEventSimulatorController], which
+  /// runs the framework key pipeline and is observed here like any hardware key.
   ///
   /// Calls `setState`, so never call this during build. A no-op when no tracker
   /// is mounted.
@@ -88,6 +78,9 @@ class InputModeTracker extends StatefulWidget {
 
 class _InputModeTrackerState extends State<InputModeTracker> {
   InputMode _mode = InputModeTracker._defaultMode;
+
+  /// Whether the in-flight Back press found a primary focus on KeyDown.
+  bool _backDownHadFocus = false;
 
   @override
   void initState() {
@@ -109,18 +102,32 @@ class _InputModeTrackerState extends State<InputModeTracker> {
   }
 
   bool _handleKeyEvent(KeyEvent event) {
-    // Track back key press state for automatic suppression of stray KeyUp
-    // events after route pops (see BackKeySuppressorObserver).
-    BackKeyPressTracker.handleKeyEvent(event);
-
     // Only a key that asks to navigate by focus starts a keyboard session.
     // Activation and dismissal act on what is already focused, so promoting on
     // them would arm focus chrome for a viewer who never asked to navigate.
     if (eventRequestsFocusNavigation(event)) {
       _setMode(InputMode.keyboard);
     }
-    // Return false to let the event continue propagating
-    return false;
+    return _consumeBackReleaseWithoutFocus(event);
+  }
+
+  /// A Back KeyDown acted on a focus chain that has since been torn down, so
+  /// its KeyUp arrives with no primary focus at all. The focus system skips
+  /// dispatch and reports it unhandled; on Android the embedding then
+  /// redispatches it and `onBackPressed` → `popRoute` performs a second,
+  /// system-driven back. Claim it here in the hardware phase instead. A press
+  /// that already had no focus on KeyDown is left alone: neither event was
+  /// acted on, and the platform's own back is the correct outcome.
+  bool _consumeBackReleaseWithoutFocus(KeyEvent event) {
+    if (!event.logicalKey.isBackKey) return false;
+    if (event is KeyDownEvent) {
+      _backDownHadFocus = FocusManager.instance.primaryFocus != null;
+      return false;
+    }
+    if (event is! KeyUpEvent) return false;
+    final hadFocus = _backDownHadFocus;
+    _backDownHadFocus = false;
+    return hadFocus && FocusManager.instance.primaryFocus == null;
   }
 
   void _setMode(InputMode mode) {

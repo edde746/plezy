@@ -18,7 +18,7 @@ import '../../widgets/desktop_app_bar.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../focus/dpad_select_long_press_controller.dart';
 import '../../focus/input_mode_tracker.dart';
-import '../../focus/key_event_utils.dart';
+import '../../focus/back_press.dart';
 import 'package:provider/provider.dart';
 import 'playlist_item_card.dart';
 import '../../i18n/strings.g.dart';
@@ -138,6 +138,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
   // Focus management for regular (non-smart) reorderable lists
   final FocusNode _listFocusNode = FocusNode(debugLabel: 'playlist_list');
+  final _backGate = BackPressGate();
   final FocusNode _continuationRetryFocusNode = FocusNode(debugLabel: 'playlist_continuation_retry');
 
   // Navigation state for regular (non-smart) playlists
@@ -472,18 +473,13 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
   KeyEventResult _handleListKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
 
-    final backResult = handleBackKeyAction(event, () {
-      if (_movingIndex != null) {
-        // Cancel move mode and suppress route-level back handling.
-        backHandledByKeyEvent = true;
-        _cancelMoveMode();
-      } else {
-        // Navigate to the app bar and suppress route-level back handling.
-        handleBackFromContent();
-      }
-    });
-    if (backResult != KeyEventResult.ignored) {
-      return backResult;
+    if (key.isBackKey) {
+      // Owner only while this node itself is focused (rows are virtual): cancel
+      // move mode, or hand focus to the app bar. From a focused descendant (an
+      // app bar button, the retry button) or with no app bar actions the press
+      // bubbles to the route, whose PopScope runs _handleBackNavigation.
+      if (!_listFocusNode.hasPrimaryFocus) return KeyEventResult.ignored;
+      return _backGate.handle(event, _movingIndex != null ? () => _cancelMoveMode() : onBackFromContent);
     }
 
     // Navigation-mode SELECT needs the KeyUp too: the controller fires the
@@ -667,12 +663,6 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
   /// Handle route back from [OverlaySheetHost], extending the mixin with move mode support.
   bool _handleBackNavigation() {
-    // If BACK was already handled by a key event, don't pop
-    if (backHandledByKeyEvent) {
-      backHandledByKeyEvent = false;
-      return false;
-    }
-
     // If in move mode, cancel move instead of navigating
     if (_movingIndex != null) {
       _cancelMoveMode();
@@ -743,7 +733,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
               retryFocusNode: _continuationRetryFocusNode,
               errorContext: widget.playlist.title,
               onNavigateUp: _isReadOnly ? navigateToGrid : _listFocusNode.requestFocus,
-              onBack: handleBackFromContent,
+              onBack: onBackFromContent,
             ),
         ],
         const SliverSystemBottomInset(),
@@ -757,6 +747,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
         onKeyEvent: _handleListKeyEvent,
         onFocusChange: (hasFocus) {
           if (!hasFocus) {
+            _backGate.reset();
             // A hold that opened the context menu never sees its KeyUp here.
             _selectLongPress.reset();
             return;
@@ -773,8 +764,7 @@ class _PlaylistDetailScreenState extends BaseMediaListDetailScreen<PlaylistDetai
 
     return OverlaySheetHost(
       canPop: allowsNativeBackGesture && _movingIndex == null,
-      onSystemBack: () {
-        if (BackKeyCoordinator.consumeIfHandled()) return;
+      onBack: () {
         final shouldPop = _handleBackNavigation();
         if (shouldPop && mounted) {
           Navigator.pop(context);

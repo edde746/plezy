@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
 import '../utils/scroll_utils.dart';
+import 'back_press.dart';
 import 'owned_focus_node_binding.dart';
 import 'input_mode_tracker.dart';
 import 'dpad_navigator.dart';
@@ -44,6 +45,7 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
   final _focusNodeBinding = OwnedFocusNodeBinding();
   bool _isFocused = false;
   final _selectLongPress = DpadSelectLongPressController();
+  final _backGate = BackPressGate();
   FocusNode? _boundExternalNode;
 
   /// Override to return the widget's optional external focus node.
@@ -90,6 +92,7 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
       setState(() => _isFocused = hasFocus);
       if (!hasFocus) {
         _selectLongPress.reset();
+        _backGate.reset();
       }
       // Same convention as FocusableTileStateMixin: a chip inside a
       // scrollable strip (TabChipStrip, filter bars) reveals itself on
@@ -121,7 +124,7 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
     final key = event.logicalKey;
 
     if (callbacks.onBack != null) {
-      final backResult = handleBackKeyAction(event, callbacks.onBack!);
+      final backResult = _backGate.handle(event, callbacks.onBack!);
       if (backResult != KeyEventResult.ignored) {
         return backResult;
       }

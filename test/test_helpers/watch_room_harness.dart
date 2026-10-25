@@ -4,7 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
-import 'package:plezy/focus/key_event_utils.dart';
+import 'package:plezy/focus/navigator_back_handler.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/media_backend.dart';
@@ -316,32 +316,32 @@ Future<void> settleWatchFrames(WidgetTester tester) async {
 }
 
 /// The app's layers around [home]: translations, input modes, [provider], the
-/// app's remote and gamepad shortcuts (select/A activate, back/B dismiss), and
-/// a navigator that suppresses a back key's stray key-up after a pop, as the
-/// app's navigators do.
+/// app's remote and gamepad shortcuts (select/A activate), and a navigator
+/// whose Back keys reach its routes' PopScopes, as the app's navigators do.
 Widget watchTestApp(
   WatchTogetherProvider provider, {
   required Widget home,
   TransitionBuilder? builder,
   GlobalKey<NavigatorState>? navigatorKey,
 }) {
+  final key = navigatorKey ?? GlobalKey<NavigatorState>();
   return TranslationProvider(
     child: InputModeTracker(
       child: ChangeNotifierProvider<WatchTogetherProvider>.value(
         value: provider,
         child: MaterialApp(
-          navigatorKey: navigatorKey,
+          navigatorKey: key,
           theme: monoTheme(MonoPalette.dark),
-          navigatorObservers: [BackKeySuppressorObserver()],
           shortcuts: <ShortcutActivator, Intent>{
             ...WidgetsApp.defaultShortcuts,
             const SingleActivator(LogicalKeyboardKey.select): const ActivateIntent(),
             const SingleActivator(LogicalKeyboardKey.gameButtonA): const ActivateIntent(),
-            const SingleActivator(LogicalKeyboardKey.goBack): const DismissIntent(),
-            const SingleActivator(LogicalKeyboardKey.browserBack): const DismissIntent(),
-            const SingleActivator(LogicalKeyboardKey.gameButtonB): const DismissIntent(),
           },
-          builder: builder,
+          // Back keys reach the navigator the way the app's root does it.
+          builder: (context, child) => NavigatorBackHandler(
+            navigatorKey: key,
+            child: builder?.call(context, child) ?? child ?? const SizedBox.shrink(),
+          ),
           home: home,
         ),
       ),
@@ -379,22 +379,17 @@ class WatchTestPlayerPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) => Scaffold(
     backgroundColor: Colors.black,
-    body: Focus(
-      canRequestFocus: false,
-      skipTraversal: true,
-      onKeyEvent: (_, event) => handleBackKeyNavigation<void>(context, event),
-      child: const OverlaySheetHost(
-        canPop: true,
-        child: Stack(
-          fit: StackFit.expand,
-          children: [
-            Align(
-              alignment: Alignment.topRight,
-              child: Padding(padding: EdgeInsets.all(16), child: WatchTogetherSessionIndicator()),
-            ),
-            VideoPlayerWatchTogetherOverlays(),
-          ],
-        ),
+    body: const OverlaySheetHost(
+      canPop: true,
+      child: Stack(
+        fit: StackFit.expand,
+        children: [
+          Align(
+            alignment: Alignment.topRight,
+            child: Padding(padding: EdgeInsets.all(16), child: WatchTogetherSessionIndicator()),
+          ),
+          VideoPlayerWatchTogetherOverlays(),
+        ],
       ),
     ),
   );

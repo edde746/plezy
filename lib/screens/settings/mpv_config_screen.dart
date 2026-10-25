@@ -5,10 +5,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import '../../focus/back_press.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../focus/input_mode_tracker.dart';
-import '../../focus/key_event_utils.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
 import '../../models/mpv_config_models.dart';
@@ -41,6 +41,7 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with ListenableBindin
     text: _settingsService.read(SettingsService.mpvConfigText),
   );
   final _savePresetFocusNode = FocusNode();
+  final _editorBackGate = BackPressGate();
   final _textFieldFocusNode = FocusNode();
   final _saveDebouncer = Debouncer(const Duration(milliseconds: 400));
   String _persistedText = '';
@@ -235,8 +236,6 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with ListenableBindin
                   !_isLeaving),
           onPopInvokedWithResult: (didPop, _) {
             if (didPop || _isLeaving) return;
-            if (BackKeyCoordinator.consumeIfHandled()) return;
-            BackKeyUpSuppressor.suppressBackUntilKeyUp();
             // D-pad back leaves the text field for Save first; a pointer back
             // (the app-bar arrow) has no focus to move and saves on the way out.
             // Live mode: a tap's pointer-down has not rebuilt the provider yet.
@@ -300,17 +299,13 @@ class _MpvConfigScreenState extends State<MpvConfigScreen> with ListenableBindin
       canRequestFocus: false,
       onKeyEvent: (_, event) {
         // Back/Escape: move focus to the save preset button instead of exiting.
-        // Suppress the KeyUp so it doesn't reach handleBackKeyNavigation
-        // on the new focus chain after focus moves away from the text field.
+        // Acts on KeyDown; the gate swallows this press's KeyUp, so it cannot
+        // reach the route from the new focus chain.
         if (event.logicalKey.isBackKey) {
           if (!_savePresetFocusNode.canRequestFocus) {
             return KeyEventResult.ignored;
           }
-          if (event is KeyDownEvent) {
-            BackKeyUpSuppressor.suppressBackUntilKeyUp();
-            _savePresetFocusNode.requestFocus();
-          }
-          return KeyEventResult.handled;
+          return _editorBackGate.handle(event, _savePresetFocusNode.requestFocus, phase: BackPhase.keyDown);
         }
         // We must consume Enter to prevent parent handlers from unfocusing,
         // but that also blocks Flutter's text editing shortcuts (which are

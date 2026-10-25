@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 
 import '../utils/scroll_utils.dart';
 import '../widgets/overlay_sheet.dart';
+import 'back_press.dart';
 import 'dpad_navigator.dart';
 import 'key_event_utils.dart';
 
@@ -41,7 +41,7 @@ mixin DpadReorderListMixin<E, W extends StatefulWidget> on State<W> {
 
   int? _originalIndex;
   List<E>? _originalOrder;
-  bool _backKeyDownSeen = false;
+  final BackPressGate _backGate = BackPressGate();
 
   /// The list being reordered. Mutated in place while moving and replaced
   /// wholesale when a move is cancelled.
@@ -72,21 +72,9 @@ mixin DpadReorderListMixin<E, W extends StatefulWidget> on State<W> {
   KeyEventResult handleReorderKeyEvent(FocusNode _, KeyEvent event) {
     final key = event.logicalKey;
 
-    // Track back key down/up pairing. If focus was elsewhere during KeyDown
-    // (e.g., on a bottom sheet) and returns here before KeyUp, we get a stray
-    // KeyUp that would incorrectly pop the dialog. Consume it instead.
-    if (key.isBackKey) {
-      if (event is KeyDownEvent) {
-        _backKeyDownSeen = true;
-      } else if (event is KeyUpEvent && !_backKeyDownSeen) {
-        return KeyEventResult.handled;
-      }
-      if (event is KeyUpEvent) {
-        _backKeyDownSeen = false;
-      }
-    }
-
-    final backResult = handleBackKeyAction(event, () {
+    // The gate ignores a Back release whose press landed elsewhere (focus was
+    // on a sheet during KeyDown and returned here before KeyUp).
+    final backResult = _backGate.handle(event, () {
       if (movingIndex != null) {
         setState(() {
           final originalOrder = _originalOrder;

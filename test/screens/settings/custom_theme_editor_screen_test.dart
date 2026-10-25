@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:plezy/focus/navigator_back_handler.dart';
 import 'package:plezy/focus/focusable_button.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
@@ -45,6 +46,7 @@ Future<ThemeProvider> _pumpEditor(WidgetTester tester, MonoPalette initial, {Siz
   final theme = ThemeProvider(supporter: supporter);
   addTearDown(theme.dispose);
 
+  final navigatorKey = GlobalKey<NavigatorState>();
   await tester.pumpWidget(
     InputModeTracker(
       child: MultiProvider(
@@ -53,8 +55,10 @@ Future<ThemeProvider> _pumpEditor(WidgetTester tester, MonoPalette initial, {Siz
           ChangeNotifierProvider<ThemeProvider>.value(value: theme),
         ],
         child: MaterialApp(
+          navigatorKey: navigatorKey,
           theme: monoTheme(MonoPalette.dark),
-          builder: (context, child) => app.rootShell(child),
+          builder: (context, child) =>
+              app.rootShell(NavigatorBackHandler(navigatorKey: navigatorKey, child: child ?? const SizedBox.shrink())),
           home: Builder(
             builder: (context) => Scaffold(
               body: Center(

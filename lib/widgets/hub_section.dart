@@ -9,7 +9,7 @@ import '../focus/dpad_select_long_press_controller.dart';
 import '../focus/focus_theme.dart';
 import '../focus/input_mode_tracker.dart';
 import '../focus/focus_navigation_intent.dart';
-import '../focus/key_event_utils.dart';
+import '../focus/back_press.dart';
 import '../services/settings_service.dart';
 import 'settings_builder.dart';
 import '../utils/layout_constants.dart';
@@ -131,6 +131,7 @@ class HubSection extends StatefulWidget {
 class HubSectionState extends State<HubSection> with MountedSetStateMixin, SkeletonUpgradeScheduler {
   late FocusNode _hubFocusNode;
   final ScrollController _scrollController = ScrollController();
+  final _backGate = BackPressGate();
 
   /// Current visual focus index (not tied to Flutter's focus system)
   int _focusedIndex = 0;
@@ -312,7 +313,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
     if (selectResult != KeyEventResult.ignored) return selectResult;
 
     if (widget.onBack != null) {
-      final backResult = handleBackKeyAction(event, widget.onBack!);
+      final backResult = _backGate.handle(event, widget.onBack!);
       if (backResult != KeyEventResult.ignored) {
         return backResult;
       }

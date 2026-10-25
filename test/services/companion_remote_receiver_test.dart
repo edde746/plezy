@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/focus/back_press.dart';
 import 'package:plezy/models/companion_remote/remote_command.dart';
 import 'package:plezy/services/companion_remote/companion_remote_receiver.dart';
 import 'package:plezy/widgets/video_controls/player_chrome_controller.dart';
@@ -12,6 +13,7 @@ void main() {
   testWidgets('Back command dispatches semantic gamepad B events', (tester) async {
     final focusNode = FocusNode();
     addTearDown(focusNode.dispose);
+    final backGate = BackPressGate();
     final events = <KeyEvent>[];
     var actions = 0;
     var exits = 0;
@@ -37,7 +39,7 @@ void main() {
             return handlePlayerNavigationKeyAction(event, navigationKey, () {
               actions++;
               coordinator.handle(navigationKey);
-            });
+            }, backGate: backGate);
           },
           child: const SizedBox.expand(),
         ),

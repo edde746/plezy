@@ -5,7 +5,7 @@ import '../i18n/strings.g.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/focus_theme.dart';
 import '../focus/input_mode_tracker.dart';
-import '../focus/key_event_utils.dart';
+import '../focus/back_press.dart';
 import '../focus/key_repeat_helper.dart';
 import 'app_icon.dart';
 import '../theme/mono_tokens.dart';
@@ -87,6 +87,7 @@ class TvNumberSpinner extends StatefulWidget {
 class _TvNumberSpinnerState extends State<TvNumberSpinner> with KeyRepeatHelper<TvNumberSpinner> {
   late FocusNode _focusNode;
   bool _isFocused = false;
+  final _backGate = BackPressGate();
 
   @override
   void initState() {
@@ -121,7 +122,7 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> with KeyRepeatHelper<
     final vertical = widget.verticalKeysAdjustValue;
 
     if (widget.onCancel != null) {
-      final backResult = handleBackKeyAction(event, widget.onCancel!);
+      final backResult = _backGate.handle(event, widget.onCancel!);
       if (backResult != KeyEventResult.ignored) {
         return backResult;
       }

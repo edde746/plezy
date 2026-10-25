@@ -7,7 +7,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/focus/dpad_select_long_press_controller.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
-import 'package:plezy/focus/key_event_utils.dart';
+import 'package:plezy/focus/navigator_back_handler.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/ids.dart';
 import 'package:plezy/media/library_query.dart';
@@ -60,12 +60,10 @@ void main() {
     SettingsService.resetForTesting();
     LocaleSettings.setLocaleSync(AppLocale.en);
     TvDetectionService.debugSetAppleTVOverride(false);
-    BackKeyCoordinator.clear();
   });
 
   tearDown(() {
     TvDetectionService.debugSetAppleTVOverride(null);
-    BackKeyCoordinator.clear();
   });
 
   testWidgets('loads playlist continuation pages from an unmodifiable first page', (tester) async {
@@ -266,10 +264,11 @@ void main() {
     expect(sheet, findsOneWidget);
     expect(find.ancestor(of: sheet, matching: find.byType(OverlaySheetHost)), findsOneWidget);
 
-    await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
-    // A route-level Back can accompany the same TV remote press before the
-    // coordinator's one-frame marker is cleared.
-    await tester.binding.handlePopRoute();
+    // Apple TV acts on KeyDown, so the KeyUp arrives after the sheet closed;
+    // it must not become a route pop.
+    await tester.sendKeyDownEvent(LogicalKeyboardKey.gameButtonB);
+    await tester.pumpAndSettle();
+    await tester.sendKeyUpEvent(LogicalKeyboardKey.gameButtonB);
     await tester.pumpAndSettle();
 
     expect(sheet, findsNothing);
@@ -915,6 +914,7 @@ class _PlaylistHarness {
   });
 
   Widget wrap(Widget child, {TargetPlatform platform = TargetPlatform.android}) {
+    final navigatorKey = GlobalKey<NavigatorState>();
     return TranslationProvider(
       child: MultiProvider(
         providers: [
@@ -924,6 +924,8 @@ class _PlaylistHarness {
           ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
         ],
         child: MaterialApp(
+          navigatorKey: navigatorKey,
+          builder: (_, child) => NavigatorBackHandler(navigatorKey: navigatorKey, child: child!),
           theme: monoTheme(MonoPalette.dark).copyWith(platform: platform),
           home: child,
         ),

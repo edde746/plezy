@@ -9,6 +9,7 @@ import '../services/gamepad_service.dart';
 import '../utils/platform_detector.dart';
 import '../utils/text_input_diagnostics.dart';
 import '../widgets/tv_virtual_keyboard.dart';
+import 'back_press.dart';
 import 'dpad_navigator.dart';
 import 'key_event_utils.dart';
 import 'owned_focus_node_binding.dart';
@@ -168,6 +169,7 @@ KeyEventResult _handleInputKey({
   int? maxLines,
   VoidCallback? onSelect,
   VoidCallback? onBack,
+  required BackPressGate backGate,
   VoidCallback? onNavigateLeft,
   VoidCallback? onNavigateRight,
   VoidCallback? onNavigateUp,
@@ -229,38 +231,21 @@ KeyEventResult _handleInputKey({
     if (result != KeyEventResult.ignored) return finish(result, 'custom-tv-hardware-keyboard');
   }
 
-  // A TV back press this field already claimed on KeyDown (its own onBack
-  // below, or the host closing a native session) leaves the matching KeyUp
-  // in flight: swallow it here regardless of onBack, so a field without one
-  // never lets the KeyUp bubble to an ancestor that acts on KeyUp.
-  if (event.logicalKey.isBackKey && PlatformDetector.isTV() && BackKeyUpSuppressor.consumeIfSuppressed(event)) {
-    return finish(KeyEventResult.handled, 'suppressed-back');
+  // A Back press this field already claimed on KeyDown (its own onBack below,
+  // or the host closing a native session) leaves the matching KeyUp in flight:
+  // the gate swallows it regardless of onBack, so a field without one never
+  // lets that KeyUp bubble to the route.
+  if (onBack == null && event.logicalKey.isBackKey && backGate.isArmed) {
+    return finish(backGate.handle(event, () {}), 'claimed-back');
   }
 
   if (onBack != null && event.logicalKey.isBackKey) {
     // On TV the native text-input path can swallow the matching KeyUp (the
-    // closing IME session eats it), so back fires on KeyDown — the same
-    // down-only shape as [handleBackKeyAction]'s Apple TV branch, coordinator
-    // mark included so a parallel back dispatch still dedupes. Elsewhere the
-    // shared handler's KeyUp semantics apply.
-    if (PlatformDetector.isTV()) {
-      if (event is KeyDownEvent) {
-        BackKeyCoordinator.markHandled();
-        onBack();
-        // onBack may move focus (empty search field -> sidebar); the matching
-        // KeyUp is then delivered to the NEW focus chain, whose shared
-        // handlers act on KeyUp — a second back action. Arm the suppressor
-        // (after onBack, so a modal opened by it cannot clear the arming) so
-        // whichever chain receives the KeyUp swallows it. This cannot pin:
-        // the suppressor's hardware observer clears the armed state once the
-        // physical press ends, and if the IME swallows that KeyUp entirely,
-        // the next back KeyDown is treated as stale arming and passes
-        // through — see _KeyUpSuppressor.
-        BackKeyUpSuppressor.suppressBackUntilKeyUp();
-      }
-      return finish(KeyEventResult.handled, 'onBack');
-    }
-    final backResult = handleBackKeyAction(event, onBack);
+    // closing IME session eats it), so back fires on KeyDown. onBack may move
+    // focus (empty search field -> sidebar); the KeyUp is then delivered to the
+    // new focus chain, where no gate has seen its KeyDown and the navigator
+    // handler swallows it. Elsewhere the shared KeyUp phase applies.
+    final backResult = backGate.handle(event, onBack, phase: PlatformDetector.isTV() ? BackPhase.keyDown : null);
     if (backResult != KeyEventResult.ignored) return finish(backResult, 'onBack');
   }
 
@@ -744,6 +729,7 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
     VoidCallback openKeyboard, {
     required bool activateNativeTextInput,
     required VoidCallback activateNativeTextInputCallback,
+    required BackPressGate backGate,
   }) {
     return _handleInputKey(
       controller: controller,
@@ -764,6 +750,7 @@ abstract class _FocusableTextInputBase extends StatelessWidget {
       maxLines: maxLines,
       onSelect: onSelect,
       onBack: onBack,
+      backGate: backGate,
       onNavigateLeft: onNavigateLeft,
       onNavigateRight: onNavigateRight,
       onNavigateUp: onNavigateUp,
@@ -873,6 +860,7 @@ class _TextInputKeyHandlerOwners {
 class _FocusableTextInputHostState extends State<_FocusableTextInputHost> with WidgetsBindingObserver {
   final OwnedFocusNodeBinding _focusNodeBinding = OwnedFocusNodeBinding();
   FocusNode? _installedFocusNode;
+  final BackPressGate _backGate = BackPressGate();
   late final FocusOnKeyEventCallback _keyHandler = _handleKey;
   late final VoidCallback _focusListener = _handleFocusChanged;
   final Object _nativeFocusToken = Object();
@@ -1450,14 +1438,14 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> with W
         // Android: a healthy IME consumes Back to dismiss itself before the
         // app ever sees it. One arriving here means the keyboard is already
         // gone (or its key session is broken and PlezyActivity's repair budget
-        // ran out): close the session and claim the whole press — coordinator
-        // mark so a same-press platform popRoute dedupes, suppressor armed so
-        // the matching KeyUp (delivered to this node with the session closed,
-        // or to an ancestor acting on KeyUp) cannot pop the route underneath.
-        _endNativeTextInput(_NativeTextInputEndReason.dismissed);
-        BackKeyCoordinator.markHandled();
-        BackKeyUpSuppressor.suppressBackUntilKeyUp();
-        return KeyEventResult.handled;
+        // ran out): close the session and claim the whole press. The gate
+        // arms on this KeyDown, so the matching KeyUp (delivered to this node
+        // with the session closed) is swallowed instead of popping the route.
+        return _backGate.handle(
+          event,
+          () => _endNativeTextInput(_NativeTextInputEndReason.dismissed),
+          phase: BackPhase.keyDown,
+        );
       } else if (event.isTvSelectEvent) {
         // Android: Select on a field whose keyboard was dismissed re-raises
         // it (EditText parity). Toggle the connection so the engine issues a
@@ -1480,6 +1468,7 @@ class _FocusableTextInputHostState extends State<_FocusableTextInputHost> with W
       _openTvKeyboard,
       activateNativeTextInput: activateNativeTextInput,
       activateNativeTextInputCallback: _activateNativeTextInput,
+      backGate: _backGate,
     );
   }
 

@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../../focus/focus_theme.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../focus/key_event_utils.dart';
+import '../../focus/back_press.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/lyrics.dart';
 import '../../screens/libraries/state_messages.dart';
@@ -45,6 +46,7 @@ class _LyricsViewState extends State<LyricsView> {
   static const double _unsyncedScrollStep = 64;
 
   final ScrollController _scroll = ScrollController();
+  final _backGate = BackPressGate();
 
   Lyrics? _lyrics;
   bool _loading = true;
@@ -220,7 +222,7 @@ class _LyricsViewState extends State<LyricsView> {
   KeyEventResult _handleKeyEvent(FocusNode node, KeyEvent event) {
     final onExit = widget.onExit;
     if (onExit != null) {
-      final backResult = handleBackKeyAction(event, onExit);
+      final backResult = _backGate.handle(event, onExit);
       if (backResult != KeyEventResult.ignored) return backResult;
     }
     return dpadKeyHandler(

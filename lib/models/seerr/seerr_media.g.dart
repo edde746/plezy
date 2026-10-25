@@ -18,37 +18,29 @@ SeerrMedia _$SeerrMediaFromJson(Map<String, dynamic> json) => SeerrMedia(
   firstAirDate: json['firstAirDate'] as String?,
   voteAverage: (json['voteAverage'] as num?)?.toDouble(),
   voteCount: (json['voteCount'] as num?)?.toInt(),
-  mediaInfo: json['mediaInfo'] == null
-      ? null
-      : SeerrMediaInfo.fromJson(json['mediaInfo'] as Map<String, dynamic>),
+  mediaInfo: json['mediaInfo'] == null ? null : SeerrMediaInfo.fromJson(json['mediaInfo'] as Map<String, dynamic>),
   popularity: (json['popularity'] as num?)?.toDouble(),
   originalLanguage: json['originalLanguage'] as String?,
   originalTitle: json['originalTitle'] as String?,
   originalName: json['originalName'] as String?,
   adult: json['adult'] as bool?,
-  originCountry: (json['originCountry'] as List<dynamic>?)
-      ?.map((e) => e as String)
-      .toList(),
+  originCountry: (json['originCountry'] as List<dynamic>?)?.map((e) => e as String).toList(),
 );
 
-SeerrMediaInfo _$SeerrMediaInfoFromJson(Map<String, dynamic> json) =>
-    SeerrMediaInfo(
-      id: (json['id'] as num?)?.toInt(),
-      tmdbId: (json['tmdbId'] as num?)?.toInt(),
-      tvdbId: (json['tvdbId'] as num?)?.toInt(),
-      statusCode: (json['status'] as num?)?.toInt(),
-      status4kCode: (json['status4k'] as num?)?.toInt(),
-      seasons: (json['seasons'] as List<dynamic>?)
-          ?.map((e) => SeerrSeasonInfo.fromJson(e as Map<String, dynamic>))
-          .toList(),
-      requests: (json['requests'] as List<dynamic>?)
-          ?.map((e) => SeerrRequest.fromJson(e as Map<String, dynamic>))
-          .toList(),
-    );
+SeerrMediaInfo _$SeerrMediaInfoFromJson(Map<String, dynamic> json) => SeerrMediaInfo(
+  id: (json['id'] as num?)?.toInt(),
+  tmdbId: (json['tmdbId'] as num?)?.toInt(),
+  tvdbId: (json['tvdbId'] as num?)?.toInt(),
+  statusCode: (json['status'] as num?)?.toInt(),
+  status4kCode: (json['status4k'] as num?)?.toInt(),
+  seasons: (json['seasons'] as List<dynamic>?)
+      ?.map((e) => SeerrSeasonInfo.fromJson(e as Map<String, dynamic>))
+      .toList(),
+  requests: (json['requests'] as List<dynamic>?)?.map((e) => SeerrRequest.fromJson(e as Map<String, dynamic>)).toList(),
+);
 
-SeerrSeasonInfo _$SeerrSeasonInfoFromJson(Map<String, dynamic> json) =>
-    SeerrSeasonInfo(
-      seasonNumber: (json['seasonNumber'] as num).toInt(),
-      statusCode: (json['status'] as num?)?.toInt(),
-      status4kCode: (json['status4k'] as num?)?.toInt(),
-    );
+SeerrSeasonInfo _$SeerrSeasonInfoFromJson(Map<String, dynamic> json) => SeerrSeasonInfo(
+  seasonNumber: (json['seasonNumber'] as num).toInt(),
+  statusCode: (json['status'] as num?)?.toInt(),
+  status4kCode: (json['status4k'] as num?)?.toInt(),
+);

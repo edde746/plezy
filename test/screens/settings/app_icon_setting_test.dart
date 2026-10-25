@@ -7,7 +7,6 @@ import 'package:flutter/services.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
-import 'package:plezy/focus/key_event_utils.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/providers/theme_provider.dart';
 import 'package:plezy/screens/settings/app_icon_setting.dart';
@@ -187,7 +186,6 @@ void main() {
       addTearDown(() {
         TvDetectionService.debugSetAppleTVOverride(null);
         PlatformDetector.debugSetIsDesktopOSOverride(null);
-        BackKeyCoordinator.clear();
       });
       final supporter = SupporterService.forTesting(availability: SupporterAvailability.free);
       addTearDown(supporter.dispose);

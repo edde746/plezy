@@ -4,6 +4,7 @@ import 'package:flutter/rendering.dart';
 
 import '../widgets/clickable_cursor.dart';
 import '../utils/text_input_diagnostics.dart';
+import 'back_press.dart';
 import 'dpad_navigator.dart';
 import 'dpad_select_long_press_controller.dart';
 import 'focus_chrome.dart';
@@ -238,6 +239,7 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
   Animation<double>? _scaleAnimation;
 
   final _selectLongPress = DpadSelectLongPressController();
+  final _backGate = BackPressGate();
 
   @override
   void initState() {
@@ -300,9 +302,10 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
         _isFocused = hasFocus;
       });
 
-      // Reset long press state when focus is lost
+      // Reset press state when focus is lost
       if (!hasFocus) {
         _selectLongPress.reset();
+        _backGate.reset();
       }
 
       // Animate scale
@@ -441,7 +444,7 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
     }
 
     if (widget.onBack != null) {
-      final backResult = handleBackKeyAction(event, widget.onBack!);
+      final backResult = _backGate.handle(event, widget.onBack!);
       if (backResult != KeyEventResult.ignored) {
         return finish(backResult, 'onBack');
       }
