@@ -31,6 +31,12 @@ class LanguageCodes {
     return _resolve(normalized)?.code1;
   }
 
+  static String? getIso6392Code(String code) {
+    final normalized = code.toLowerCase().trim().split(RegExp('[-_]')).first;
+    if (normalized.isEmpty) return null;
+    return _resolve(normalized)?.code2;
+  }
+
   /// Get a display name for a language/locale code.
   /// Handles plain codes ("en" → "English") and locale codes ("en-US" → "English",
   /// "en-AU" → "English (Australia)").

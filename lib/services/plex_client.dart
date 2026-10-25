@@ -4153,6 +4153,21 @@ class PlexClient
     return '${config.baseUrl}${track.key}.$ext?encoding=utf-8&X-Plex-Token=$token';
   }
 
+  @override
+  PlaybackSubtitleSidecar? buildPlaybackSubtitleSidecar(
+    MediaItem item,
+    MediaSubtitleTrack track, {
+    String? mediaSourceId,
+  }) {
+    final url = buildExternalSubtitleUrl(track);
+    if (url == null) return null;
+    return PlaybackSubtitleSidecar(
+      sourceStreamId: track.id,
+      track: _subtitleTrackFromMediaTrack(track, url),
+      preload: true,
+    );
+  }
+
   /// Raw sidecar URL for real sidecar subtitle streams. Plex returns 501 for
   /// `/library/streams/{id}.{ext}` when the stream is embedded, so a Plex
   /// `Stream.key` is required here.

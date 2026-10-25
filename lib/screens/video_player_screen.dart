@@ -81,6 +81,7 @@ import '../services/sleep_timer_service.dart';
 import '../services/subtitle_preference.dart';
 import '../services/track_manager.dart';
 import '../services/track_selection_service.dart';
+import '../utils/language_codes.dart';
 import '../services/ambient_lighting_service.dart';
 import '../services/video_filter_manager.dart';
 import '../services/video_volume_controller.dart';
@@ -251,9 +252,11 @@ SubtitlePreference? subtitlePreferenceForItemChange({
   required SubtitleTrack? nativeTrack,
   SubtitlePreference? declinedPreference,
   SubtitlePreference? sessionPreference,
+  bool isDeviceLocalFallback = false,
 }) {
   final sessionIntent = SubtitlePreference.demoteToIntent(sessionPreference);
   if (sessionIntent != null) return sessionIntent;
+  if (isDeviceLocalFallback) return null;
   SubtitlePreference? normalize(SubtitleTrack? track, {required bool preserveOff}) {
     if (track == null) return null;
     if (track.id == SubtitleTrack.off.id) return preserveOff ? const SubtitlePreference.off() : null;
@@ -780,6 +783,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   // through its own path). The getters below denormalize it for the many
   // existing read sites.
   PlaybackSession? _playbackSession;
+
+  /// Prevent repeated provider searches for the same media source and language
+  /// during track-driven reloads in one player session.
+  final Set<String> _autoSubtitleFetchAttempts = <String>{};
   // Fired in parallel with MPV setup so the OS audio-focus negotiation
   // (~90ms on Android) doesn't sit on the critical path. Awaited before
   // `player.open()` so the semantics are unchanged — we just eat the cost

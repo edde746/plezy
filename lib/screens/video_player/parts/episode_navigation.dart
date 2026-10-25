@@ -176,6 +176,7 @@ extension _VideoPlayerEpisodeNavigationMethods on VideoPlayerScreenState {
               nativeTrack: currentPlayer.state.track.subtitle,
               declinedPreference: committedSubtitleSelection?.declinedPreference,
               sessionPreference: _sessionSubtitlePreference,
+              isDeviceLocalFallback: committedSubtitleSelection?.isDeviceLocalFallback ?? false,
             );
       final secondarySubtitlePreference = followServerSelections
           ? null

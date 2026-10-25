@@ -207,7 +207,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
           }
         }
       }
-      final result = playbackContext.result;
+      var result = playbackContext.result;
       if (!attempt.isCurrent) return;
       if (widget.strictMediaSelection &&
           (result.selectedMediaIndex != widget.selectedMediaIndex ||
@@ -217,7 +217,7 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         throw PlaybackException(t.messages.playbackFailed);
       }
       final streamHeaders = playbackContext.streamHeaders;
-      final subtitleSelection = await _resolveSubtitleSelectionForOpen(
+      final subtitleOpen = await _resolveSubtitleSelectionForOpen(
         metadata: _currentMetadata,
         result: result,
         preferredAudioTrack: _preferredAudioTrack,
@@ -225,6 +225,9 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
         preferredSecondarySubtitleTrack: _preferredSecondarySubtitleTrack,
       );
       if (!attempt.isCurrent) return;
+      result = subtitleOpen.result;
+      playbackContext = playbackContext.copyWith(result: result);
+      final subtitleSelection = subtitleOpen.selection;
       // Initial start has no previous session to protect, so commit as soon
       // as the resolve lands (reload-style flows commit at the open
       // boundary instead).

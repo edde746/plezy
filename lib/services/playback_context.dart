@@ -23,6 +23,15 @@ class PlaybackContext {
     this.streamHeaders,
   });
 
+  PlaybackContext copyWith({PlaybackInitializationResult? result}) => PlaybackContext(
+    metadata: metadata,
+    result: result ?? this.result,
+    sourceKind: sourceKind,
+    reportingMode: reportingMode,
+    reportingClient: reportingClient,
+    streamHeaders: streamHeaders,
+  );
+
   bool get usesLocalMedia => sourceKind == PlaybackSourceKind.localFile;
   bool get shouldQueueOnReportFailure => reportingMode == PlaybackReportingMode.onlineWithOfflineFallback;
 }

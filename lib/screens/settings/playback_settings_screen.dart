@@ -171,6 +171,18 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
             SettingsGroup(
               title: t.settings.subtitles,
               children: [
+                SettingSwitchTile(
+                  pref: SettingsService.alwaysShowSubtitlesOnDevice,
+                  icon: Symbols.subtitles_rounded,
+                  title: t.settings.alwaysShowSubtitlesOnDevice,
+                  subtitle: t.settings.alwaysShowSubtitlesOnDeviceDescription,
+                ),
+                SettingSwitchTile(
+                  pref: SettingsService.autoDownloadPreferredSubtitle,
+                  icon: Symbols.download_rounded,
+                  title: t.settings.autoDownloadPreferredSubtitle,
+                  subtitle: t.settings.autoDownloadPreferredSubtitleDescription,
+                ),
                 SettingNavigationTile(
                   icon: Symbols.subtitles_rounded,
                   title: t.settings.subtitleStyling,

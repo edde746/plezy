@@ -41,9 +41,19 @@ bool mediaSourceHasTrackRows(MediaSourceInfo source) =>
 ///
 /// Returns null when [source] has no track rows (see
 /// [mediaSourceHasTrackRows]) — the caller shows nothing rather than a guess.
-PlaybackTrackPreview? previewPlaybackTracks(MediaItem item, MediaSourceInfo source, {MediaServerUserProfile? profile}) {
+PlaybackTrackPreview? previewPlaybackTracks(
+  MediaItem item,
+  MediaSourceInfo source, {
+  MediaServerUserProfile? profile,
+  bool alwaysShowSubtitlesOnDevice = false,
+}) {
   if (!mediaSourceHasTrackRows(source)) return null;
-  final service = TrackSelectionService(profileSettings: profile, metadata: item, plexMediaInfo: source);
+  final service = TrackSelectionService(
+    profileSettings: profile,
+    metadata: item,
+    plexMediaInfo: source,
+    alwaysShowSubtitlesOnDevice: alwaysShowSubtitlesOnDevice,
+  );
 
   final audioResult = service.selectAudioTrack(PlaybackSubtitleResolver.audioTracksForSource(source), null);
   final audio = audioResult == null ? null : _sourceAudioRow(source, audioResult.track);

@@ -193,6 +193,8 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
             probed!.item,
             source,
             profile: context.watch<AccountPreferencesController?>()?.activePreferences,
+            alwaysShowSubtitlesOnDevice:
+                SettingsService.instanceOrNull?.read(SettingsService.alwaysShowSubtitlesOnDevice) ?? false,
           );
     final videoLabels = probed?.mediaIndex == null
         ? const <String>[]

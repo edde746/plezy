@@ -950,6 +950,14 @@ abstract class MediaServerClient {
     Duration? position,
   });
 
+  /// Build a client-loadable sidecar for an external subtitle row. Returns
+  /// null when the backend cannot safely expose this track as a sidecar.
+  PlaybackSubtitleSidecar? buildPlaybackSubtitleSidecar(
+    MediaItem item,
+    MediaSubtitleTrack track, {
+    String? mediaSourceId,
+  });
+
   /// The artwork files the download pipeline should persist for [item] so
   /// the offline UI can render its poster, clear logo, and background art.
   /// Each entry pairs the absolute URL with a stable `localKey` the

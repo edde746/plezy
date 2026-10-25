@@ -672,6 +672,7 @@ enum TrackSelectionPriority {
   navigation, // Priority 1: User's manual selection from previous episode
   serverSelected, // Priority 2: server's pre-selected track
   profile, // Priority 3: User profile preferences
+  deviceLocalOverride, // Device-local policy; never persisted to the server
   defaultTrack, // Priority 4: Default or first track
   off, // Priority 5: Subtitles off (subtitle only)
 }
@@ -691,8 +692,15 @@ class TrackSelectionService {
   final MediaServerUserProfile? profileSettings;
   final MediaItem metadata;
   final MediaSourceInfo? plexMediaInfo;
+  final bool alwaysShowSubtitlesOnDevice;
 
-  TrackSelectionService({this.player, this.profileSettings, required this.metadata, this.plexMediaInfo});
+  TrackSelectionService({
+    this.player,
+    this.profileSettings,
+    required this.metadata,
+    this.plexMediaInfo,
+    this.alwaysShowSubtitlesOnDevice = false,
+  });
 
   /// The profile's preferred language for one track kind, or null when unset.
   static String? _preferredLanguage(MediaServerUserProfile profile, {required bool isAudio}) {
@@ -775,6 +783,26 @@ class TrackSelectionService {
       if (track.isDefault) return track;
     }
     return null;
+  }
+
+  SubtitleTrack? _selectDeviceLocalSubtitle(List<SubtitleTrack> availableTracks) {
+    if (!alwaysShowSubtitlesOnDevice ||
+        availableTracks.isEmpty ||
+        profileSettings?.subtitleMode == SubtitlePlaybackMode.none) {
+      return null;
+    }
+    final preferredLanguage = profileSettings?.defaultSubtitleLanguage;
+    if (preferredLanguage != null && preferredLanguage.isNotEmpty) {
+      final preferred = _findTrackByPreferredLanguage(availableTracks, preferredLanguage, (track) => track.language);
+      if (preferred != null) return preferred;
+    }
+
+    final defaultTrack = _findDefaultSubtitleTrack(availableTracks);
+    if (defaultTrack != null && !defaultTrack.isForced) return defaultTrack;
+    for (final track in availableTracks) {
+      if (!track.isForced) return track;
+    }
+    return availableTracks.firstOrNull;
   }
 
   SubtitleTrack? _findForcedSubtitleTrack(List<SubtitleTrack> availableTracks) {
@@ -1045,6 +1073,7 @@ class TrackSelectionService {
     SubtitlePreference? preference,
     AudioTrack? selectedAudioTrack, {
     bool waitForPendingSource = true,
+    SubtitleTrack? deviceSubtitleOverride,
   }) {
     // Priority 1: the caller's preference — an identity reference into this
     // item, or a semantic intent carried across an item boundary.
@@ -1144,9 +1173,21 @@ class TrackSelectionService {
       } else if (metadata.backend == MediaBackend.plex && info.subtitleTracks.isNotEmpty) {
         if (availableTracks.isEmpty && waitForPendingSource) return null;
         // Native tracks exist and none maps to a server-selected stream.
+        final localTrack = deviceSubtitleOverride ?? _selectDeviceLocalSubtitle(availableTracks);
+        if (localTrack != null) {
+          return TrackSelectionResult(localTrack, TrackSelectionPriority.deviceLocalOverride);
+        }
         return TrackSelectionResult(SubtitleTrack.off, TrackSelectionPriority.serverSelected);
       }
       if (waitForPendingSource && availableTracks.isEmpty && info.subtitleTracks.isNotEmpty) return null;
+    }
+
+    final override = deviceSubtitleOverride;
+    if (override != null) {
+      final matchedOverride = findBestSubtitleMatch(availableTracks, override);
+      if (matchedOverride != null) {
+        return TrackSelectionResult(matchedOverride, TrackSelectionPriority.deviceLocalOverride);
+      }
     }
 
     // Priority 3: Apply the server profile's subtitle mode where the server
@@ -1154,6 +1195,11 @@ class TrackSelectionService {
     // a mode: PMS already folded it into `selected` above.
     final profileSelectedTrack = _selectSubtitleTrackByProfile(availableTracks, selectedAudioTrack);
     if (profileSelectedTrack != null) return profileSelectedTrack;
+
+    final localTrack = _selectDeviceLocalSubtitle(availableTracks);
+    if (localTrack != null) {
+      return TrackSelectionResult(localTrack, TrackSelectionPriority.deviceLocalOverride);
+    }
 
     // Priority 4: Check for default subtitle
     final defaultTrack = _findDefaultSubtitleTrack(availableTracks);

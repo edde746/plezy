@@ -749,6 +749,12 @@ class SettingsService extends BaseSharedPreferencesService {
   /// Ask which source audio and subtitle tracks to use before opening a video.
   static const chooseTracksBeforePlayback = BoolPref('choose_tracks_before_playback');
 
+  /// Select a subtitle on this device when the server has no selected track.
+  static const alwaysShowSubtitlesOnDevice = BoolPref('always_show_subtitles_on_device');
+
+  /// Find and attach a subtitle in the preferred language when none is available.
+  static const autoDownloadPreferredSubtitle = BoolPref('auto_download_preferred_subtitle');
+
   /// Episode advance follows the server's per-episode audio/subtitle
   /// selections instead of carrying the current choice over (#1717).
   static const followServerTrackSelections = BoolPref('follow_server_track_selections');
@@ -1671,6 +1677,8 @@ class SettingsService extends BaseSharedPreferencesService {
     subtitleBackgroundOpacity,
     rememberTrackSelections,
     chooseTracksBeforePlayback,
+    alwaysShowSubtitlesOnDevice,
+    autoDownloadPreferredSubtitle,
     followServerTrackSelections,
     downloadOnWifiOnly,
     backgroundDownloadWarningAcknowledged,

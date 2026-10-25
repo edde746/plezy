@@ -859,6 +859,18 @@ class Translations$settings$en {
 	/// en: 'Pick the source audio and subtitle tracks before each video starts.'
 	String get chooseTracksBeforePlaybackDescription => 'Pick the source audio and subtitle tracks before each video starts.';
 
+	/// en: 'Always show subtitles on this device'
+	String get alwaysShowSubtitlesOnDevice => 'Always show subtitles on this device';
+
+	/// en: 'When the server has no subtitle selected, choose a track locally. This never changes the server's preference.'
+	String get alwaysShowSubtitlesOnDeviceDescription => 'When the server has no subtitle selected, choose a track locally. This never changes the server\'s preference.';
+
+	/// en: 'Fetch missing preferred-language subtitles'
+	String get autoDownloadPreferredSubtitle => 'Fetch missing preferred-language subtitles';
+
+	/// en: 'Select an available subtitle in your preferred language locally. If none exists, ask the server to fetch one when supported. The selection stays on this device.'
+	String get autoDownloadPreferredSubtitleDescription => 'Select an available subtitle in your preferred language locally. If none exists, ask the server to fetch one when supported. The selection stays on this device.';
+
 	/// en: 'Store audio and subtitle choices by show or movie on this device'
 	String get rememberTrackSelectionsDescription => 'Store audio and subtitle choices by show or movie on this device';
 
@@ -9070,6 +9082,10 @@ extension on Translations {
 			'settings.rememberTrackSelections' => 'Remember track selections per show/movie',
 			'settings.chooseTracksBeforePlayback' => 'Choose audio and subtitles before playback',
 			'settings.chooseTracksBeforePlaybackDescription' => 'Pick the source audio and subtitle tracks before each video starts.',
+			'settings.alwaysShowSubtitlesOnDevice' => 'Always show subtitles on this device',
+			'settings.alwaysShowSubtitlesOnDeviceDescription' => 'When the server has no subtitle selected, choose a track locally. This never changes the server\'s preference.',
+			'settings.autoDownloadPreferredSubtitle' => 'Fetch missing preferred-language subtitles',
+			'settings.autoDownloadPreferredSubtitleDescription' => 'Select an available subtitle in your preferred language locally. If none exists, ask the server to fetch one when supported. The selection stays on this device.',
 			'settings.rememberTrackSelectionsDescription' => 'Store audio and subtitle choices by show or movie on this device',
 			'settings.rememberTrackSelectionsBackendRule' => 'Works locally with Plex, Jellyfin, and Emby; Plex and Jellyfin can also save selections on the server',
 			'settings.followServerTrackSelections' => 'Use server\'s per-episode track selections',
@@ -9297,12 +9313,12 @@ extension on Translations {
 			'settings.navigation' => 'Navigation',
 			'settings.window' => 'Window',
 			'settings.liveTv' => 'Live TV',
+			_ => null,
+		} ?? switch (path) {
 			'settings.player' => 'Player',
 			'settings.videoAndDisplay' => 'Video & Display',
 			'settings.audio' => 'Audio',
 			'settings.quality' => 'Quality',
-			_ => null,
-		} ?? switch (path) {
 			'settings.subtitles' => 'Subtitles',
 			'settings.seekAndTiming' => 'Seek & Timing',
 			'settings.behavior' => 'Behavior',
@@ -9811,12 +9827,12 @@ extension on Translations {
 			'mpvConfig.removeLine' => 'Remove line',
 			'mpvConfig.embeddedVoHint' => 'vo, gpu-context and gpu-api are ignored on Linux: embedded video always renders through vo=libmpv on the video plane, and gpu-next (which compute shaders like ArtCNN need) cannot run embedded.',
 			'dialog.confirmAction' => 'Confirm Action',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.addPlezyProfile' => 'Add Plezy profile',
 			'profiles.switchingProfile' => 'Switching profile…',
 			'profiles.deleteThisProfileTitle' => 'Delete this profile?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Remove ${displayName}. Connections aren\'t affected.',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.active' => 'Active',
 			'profiles.manage' => 'Manage',
 			'profiles.delete' => 'Delete',
@@ -10325,12 +10341,12 @@ extension on Translations {
 			'explore.detail.revenue' => 'Box office',
 			'explore.detail.contentAdvisory' => 'Age guidance',
 			'explore.detail.tags' => 'Tags',
+			_ => null,
+		} ?? switch (path) {
 			'explore.detail.revealSpoilerTags' => 'Show spoiler tags',
 			'explore.detail.links' => 'Links',
 			'explore.detail.watchOn' => 'Watch on',
 			'explore.detail.watchTrailer' => 'Watch trailer',
-			_ => null,
-		} ?? switch (path) {
 			'explore.detail.openOn' => ({required Object site}) => 'Open on ${site}',
 			'explore.detail.crew' => 'Crew',
 			'explore.detail.ratings' => 'Ratings',
@@ -10839,12 +10855,12 @@ extension on Translations {
 			'companionRemote.pairing.searchingForDevices' => 'Looking for devices...',
 			'companionRemote.pairing.noDevicesFound' => 'No devices found on your network',
 			'companionRemote.pairing.noDevicesHint' => 'Open Plezy on desktop and use the same Wi-Fi',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.availableDevices' => 'Available Devices',
 			'companionRemote.pairing.manualConnection' => 'Manual Connection',
 			'companionRemote.pairing.cryptoInitFailed' => 'Couldn\'t start secure connection. Sign in to Plex first.',
 			'companionRemote.pairing.validationHostRequired' => 'Please enter host address',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.validationHostFormat' => 'Format must be IP:port (e.g., 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Connection timed out. Use the same network on both devices.',
 			'companionRemote.pairing.sessionNotFound' => 'Device not found. Make sure Plezy is running on the host.',
