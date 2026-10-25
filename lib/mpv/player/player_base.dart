@@ -28,7 +28,7 @@ import 'player_streams.dart';
 /// - Property change handlers
 /// - Track parsing and selection
 /// - Common lifecycle methods
-abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
+abstract class PlayerBase with PlayerStreamControllersMixin implements Player, AudioEqualizerCapable {
   PlayerState _state = const PlayerState();
 
   @override
@@ -1381,6 +1381,10 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   /// `aformat` because the bundled Linux ffmpeg prunes lavfi filters.
   static const String _loudnormFilter = 'loudnorm=I=-14:TP=-3:LRA=4,format=srate=48000:format=floatp';
 
+  static const List<int> _audioEqualizerFrequencies = [60, 250, 1000, 4000, 12000];
+  List<double> _audioEqualizerBandGains = List<double>.filled(_audioEqualizerFrequencies.length, 0);
+  bool _audioNormalizationEnabled = false;
+
   /// Android normalizes in the platform mixer: mpv-build's
   /// `audiotrack-normalize` attaches DynamicsProcessing (LoudnessEnhancer
   /// below API 28) to the AudioTrack's session, the effect ExoPlayer uses.
@@ -1392,11 +1396,35 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player {
   /// it changes, and only processes PCM, like the filter.
   @override
   Future<void> setAudioNormalization(bool enabled) async {
+    _audioNormalizationEnabled = enabled;
     if (Platform.isAndroid) {
       await setProperty('audiotrack-normalize', enabled ? 'yes' : 'no');
-      return;
     }
-    await setProperty('af', enabled ? _loudnormFilter : '');
+    await _applyAudioFilters();
+  }
+
+  @override
+  Future<void> setAudioEqualizer(List<double> bandGains) async {
+    if (playerType != 'mpv' || bandGains.length != _audioEqualizerFrequencies.length) return;
+    _audioEqualizerBandGains = List<double>.unmodifiable(
+      bandGains.map((gain) => gain.isFinite ? gain.clamp(-12.0, 12.0).toDouble() : 0.0),
+    );
+    await _applyAudioFilters();
+  }
+
+  Future<void> _applyAudioFilters() async {
+    if (Platform.isAndroid && playerType != 'mpv') return;
+    final filters = <String>[];
+    for (var index = 0; index < _audioEqualizerFrequencies.length; index++) {
+      final gain = _audioEqualizerBandGains[index];
+      if (gain.abs() < 0.05) continue;
+      filters.add('equalizer=f=${_audioEqualizerFrequencies[index]}:t=q:w=1:g=${gain.toStringAsFixed(1)}');
+    }
+    // Android handles loudness normalization in its audio session. The EQ
+    // remains an mpv filter so it also works when Android falls back from
+    // ExoPlayer to mpv.
+    if (_audioNormalizationEnabled && !Platform.isAndroid) filters.add(_loudnormFilter);
+    await setProperty('af', filters.join(','));
   }
 
   /// mpv's `audio-channels` for each limit. The 5.1 limit is a list so stereo

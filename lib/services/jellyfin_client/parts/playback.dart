@@ -633,6 +633,30 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     return path.startsWith('/') ? path : '/$path';
   }
 
+  @override
+  PlaybackSubtitleSidecar? buildPlaybackSubtitleSidecar(
+    MediaItem item,
+    MediaSubtitleTrack track, {
+    String? mediaSourceId,
+  }) {
+    final path = track.key ?? _jellyfinSubtitleFallbackPath(item.id, mediaSourceId, track);
+    if (path == null) return null;
+    return PlaybackSubtitleSidecar(
+      sourceStreamId: track.id,
+      track: SubtitleTrack.uri(
+        _withApiKey(path),
+        title:
+            cleanSubtitleTitle(track.displayTitle ?? track.title, codec: track.codec) ??
+            cleanTrackMetadataValue(track.language),
+        language: cleanTrackMetadataValue(track.languageCode),
+        codec: track.codec,
+        isDefault: track.selected,
+        isForced: track.forced,
+      ),
+      preload: true,
+    );
+  }
+
   /// Sidecars this open should fetch.
   ///
   /// Never the row the server burned in, whatever its source: those pixels are already in the

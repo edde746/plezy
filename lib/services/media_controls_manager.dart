@@ -274,6 +274,7 @@ class MediaControlsManager {
   Future<void> clear() async {
     _metadataGeneration++;
     try {
+      await OsMediaControls.setBackgroundMode(false);
       await OsMediaControls.clear();
       _throttledUpdate.cancel();
       _lastCanPlayPause = null;

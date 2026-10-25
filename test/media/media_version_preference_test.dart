@@ -103,10 +103,7 @@ void main() {
       expect(MediaVersion.findNamedIndex(namedVersions, null), isNull);
       expect(MediaVersion.findNamedIndex(namedVersions, ''), isNull);
       expect(MediaVersion.findNamedIndex(namedVersions, '# 3 Third'), isNull);
-      const duplicated = [
-        MediaVersion(id: 'x', name: 'Cut'),
-        MediaVersion(id: 'y', name: 'cut'),
-      ];
+      const duplicated = [MediaVersion(id: 'x', name: 'Cut'), MediaVersion(id: 'y', name: 'cut')];
       expect(MediaVersion.findNamedIndex(duplicated, 'Cut'), isNull);
     });
   });

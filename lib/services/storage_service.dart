@@ -19,6 +19,9 @@ class StorageService extends BaseSharedPreferencesService {
   static const String _keyLibraryOrder = 'library_order';
   static const String _keyCurrentUserUUID = 'current_user_uuid';
   static const String _keyHiddenLibraries = 'hidden_libraries';
+  static const String _keyPrerollLibraryGlobalKey = 'preroll_library_global_key';
+  static const String _keyPrerollSelectedItemKeys = 'preroll_selected_item_keys_v2';
+  static const String _keyShowTrackPreferences = 'show_track_preferences';
   static const String _keyServersList = 'servers_list';
   static const String _keyServerOrder = 'server_order';
   static const String _keyActiveProfileId = 'active_app_profile_id';
@@ -221,6 +224,57 @@ class StorageService extends BaseSharedPreferencesService {
   String? getSelectedLibraryKey() {
     return _getScopedString(_keySelectedLibraryKey);
   }
+
+  /// Read the device-local audio/subtitle overrides for one show or movie.
+  /// The outer preference is profile-scoped; [globalKey] also includes the
+  /// server identity so equal item ids on different servers never collide.
+  Map<String, dynamic> getShowTrackPreference(String globalKey) {
+    final raw = readNullableString('$_userPrefix$_keyShowTrackPreferences');
+    if (raw == null) return const {};
+    try {
+      final all = Map<String, dynamic>.from(json.decode(raw) as Map);
+      final entry = all[globalKey];
+      return entry is Map ? Map<String, dynamic>.from(entry) : const {};
+    } catch (_) {
+      return const {};
+    }
+  }
+
+  /// Store one semantic track choice. Native stream ids are deliberately
+  /// omitted because they are item-specific and can point at the wrong track
+  /// in another episode.
+  Future<void> saveShowTrackPreference(
+    String globalKey, {
+    required String trackType,
+    required Map<String, dynamic> preference,
+  }) async {
+    final storageKey = '$_userPrefix$_keyShowTrackPreferences';
+    Map<String, dynamic> all = {};
+    final raw = readNullableString(storageKey);
+    if (raw != null) {
+      try {
+        all = Map<String, dynamic>.from(json.decode(raw) as Map);
+      } catch (_) {
+        all = {};
+      }
+    }
+    final item = all[globalKey] is Map ? Map<String, dynamic>.from(all[globalKey] as Map) : <String, dynamic>{};
+    item[trackType] = preference;
+    all[globalKey] = item;
+    await prefs.setString(storageKey, json.encode(all));
+  }
+
+  Future<void> savePrerollLibraryGlobalKey(String key) async {
+    await prefs.setString('$_userPrefix$_keyPrerollLibraryGlobalKey', key);
+  }
+
+  String? getPrerollLibraryGlobalKey() => _getScopedString(_keyPrerollLibraryGlobalKey);
+
+  Future<void> savePrerollSelectedItemKeys(Set<String> itemKeys) async {
+    await _setStringList('$_userPrefix$_keyPrerollSelectedItemKeys', itemKeys.toList());
+  }
+
+  Set<String> getPrerollSelectedItemKeys() => _decodeStringSet(_getScopedString(_keyPrerollSelectedItemKeys));
 
   Future<void> clearSelectedLibraryKey({required String profileId, void Function()? checkCurrent}) =>
       _resetScopedPreference(_keySelectedLibraryKey, profileId: profileId, checkCurrent: checkCurrent);

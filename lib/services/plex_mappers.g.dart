@@ -52,6 +52,7 @@ PlexLibraryDto _$PlexLibraryDtoFromJson(Map<String, dynamic> json) =>
       uuid: json['uuid'] as String?,
       updatedAt: flexibleInt(json['updatedAt']),
       createdAt: flexibleInt(json['createdAt']),
+      itemCount: flexibleInt(json['size']),
       hidden: flexibleInt(json['hidden']),
     );
 

@@ -22,6 +22,7 @@ import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/settings/add_jellyfin_screen.dart';
+import 'package:plezy/screens/settings/connection_persistence.dart';
 import 'package:plezy/services/jellyfin_auth_service.dart';
 import 'package:plezy/services/credential_vault.dart';
 import 'package:plezy/services/jellyfin_lan_discovery_service.dart';

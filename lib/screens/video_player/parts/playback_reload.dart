@@ -568,7 +568,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
         final playbackResolver = PlaybackSourceResolver(serverManager: serverManager, database: database);
         await stoppedProgressFuture;
         if (!isCurrentReload()) return MediaReloadOutcome.superseded;
-        final playbackContext = await playbackResolver.resolve(
+        var playbackContext = await playbackResolver.resolve(
           PlaybackInitializationOptions(
             metadata: metadata,
             selectedMediaIndex: targetMediaIndex,
@@ -587,7 +587,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           downloadOutranksQuality: downloadOutranksQuality,
         );
         if (!isCurrentReload()) return MediaReloadOutcome.superseded;
-        final result = playbackContext.result;
+        var result = playbackContext.result;
         final mediaClient = playbackContext.reportingClient;
         final streamHeaders = playbackContext.streamHeaders;
 
@@ -605,7 +605,7 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
           );
           if (!isCurrentReload()) return MediaReloadOutcome.superseded;
         }
-        final subtitleSelection = await _resolveSubtitleSelectionForOpen(
+        final subtitleOpen = await _resolveSubtitleSelectionForOpen(
           metadata: metadata,
           result: result,
           preferredAudioTrack: initializationAudioTrack,
@@ -620,6 +620,9 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
               ),
         );
         if (!isCurrentReload()) return MediaReloadOutcome.superseded;
+        result = subtitleOpen.result;
+        playbackContext = playbackContext.copyWith(result: result);
+        final subtitleSelection = subtitleOpen.selection;
 
         // Build the replacement session now, commit it only once open()
         // succeeds — until then every session-derived getter still describes

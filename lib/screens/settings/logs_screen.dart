@@ -1,7 +1,9 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:device_info_plus/device_info_plus.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show SelectedContent;
 import 'package:plezy/utils/media_server_http_client.dart';
@@ -9,6 +11,8 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:flutter/services.dart';
 import 'package:logger/logger.dart';
 import 'package:package_info_plus/package_info_plus.dart';
+import 'package:path/path.dart' as p;
+import 'package:path_provider/path_provider.dart';
 import '../../focus/focusable_action_bar.dart';
 import '../../widgets/dialog_action_button.dart';
 import '../../widgets/app_icon.dart';
@@ -20,6 +24,7 @@ import '../../main.dart' show gitCommit;
 import '../../services/background_work_diagnostics_service.dart';
 import '../../services/device_performance.dart';
 import '../../services/log_upload_service.dart';
+import '../../services/file_picker_service.dart';
 import '../../services/startup_diagnostics.dart';
 import '../../services/video_decode_capabilities.dart';
 import '../../utils/app_logger.dart';
@@ -260,6 +265,39 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
     showSuccessSnackBar(context, t.messages.logsCopied);
   }
 
+  Future<void> _saveLogs() async {
+    final now = DateTime.now();
+    final stamp =
+        '${now.year}${padNumber(now.month, 2)}${padNumber(now.day, 2)}-'
+        '${padNumber(now.hour, 2)}${padNumber(now.minute, 2)}${padNumber(now.second, 2)}';
+    final fileName = 'plezy-logs-$stamp.txt';
+    final bytes = Uint8List.fromList(utf8.encode(_formatAllLogs()));
+    try {
+      final String? path;
+      if (Platform.isAndroid && PlatformDetector.isTV()) {
+        // Android TV does not expose a document picker; keep the file in the
+        // app documents directory and report its full path.
+        final directory = await getApplicationDocumentsDirectory();
+        final file = File(p.join(directory.path, fileName));
+        await file.writeAsBytes(bytes, flush: true);
+        path = file.path;
+      } else {
+        path = await FilePickerService.instance.saveFile(
+          dialogTitle: t.logs.saveLogs,
+          fileName: fileName,
+          bytes: bytes,
+          type: FileType.custom,
+          allowedExtensions: const ['txt'],
+        );
+      }
+      if (!mounted || path == null) return;
+      showSuccessSnackBar(context, t.logs.logsSaved(path: path));
+    } catch (error, stackTrace) {
+      appLogger.e('Could not save diagnostic logs', error: error, stackTrace: stackTrace);
+      if (mounted) showErrorSnackBar(context, t.logs.saveLogsFailed);
+    }
+  }
+
   Future<void> _uploadLogs() async {
     final logText = _formatAllLogs(maxBytes: maxLogUploadBytes);
 
@@ -489,6 +527,11 @@ class _LogsScreenState extends State<LogsScreen> with MountedSetStateMixin {
                                 icon: Symbols.content_copy_rounded,
                                 tooltip: t.logs.copyLogs,
                                 onPressed: _hasDiagnostics ? _copyAllLogs : null,
+                              ),
+                              FocusableAction(
+                                icon: Symbols.save_alt_rounded,
+                                tooltip: t.logs.saveLogs,
+                                onPressed: _hasDiagnostics ? _saveLogs : null,
                               ),
                               FocusableAction(
                                 icon: Symbols.delete_outline_rounded,

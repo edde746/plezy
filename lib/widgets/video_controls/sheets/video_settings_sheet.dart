@@ -61,6 +61,7 @@ enum _SettingsView {
   dvConversion,
   hdrToneMapping,
   audioChannelLimit,
+  audioEqualizer,
 }
 
 class _SettingsMenuItem extends StatelessWidget {
@@ -379,6 +380,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
   StreamSubscription<void>? _hdrOutputChanged;
   late HdrToneMapping _hdrToneMapping;
   late AudioChannelLimit _audioChannelLimit;
+  late List<double> _audioEqualizerGains;
 
   TrackControlsState get _state => widget.trackControlsState;
 
@@ -409,6 +411,9 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     _zoomScale = VideoFilterManager.normalizeZoomScale(_state.videoZoomScale);
     _hdrToneMapping = SettingsService.instance.read(SettingsService.hdrToneMapping);
     _audioChannelLimit = SettingsService.instance.read(SettingsService.audioChannelLimit);
+    _audioEqualizerGains = SettingsService.audioEqualizerBandPrefs
+        .map((pref) => SettingsService.instance.read(pref))
+        .toList(growable: false);
     _loadDebugDvConversionMode();
     if (_probesHdrSupport) {
       _hdrSupportLifecycle = AppLifecycleListener(onResume: _refreshLinuxHdrSupport, onShow: _refreshLinuxHdrSupport);
@@ -677,6 +682,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return t.videoSettings.hdrToneMapping;
       case _SettingsView.audioChannelLimit:
         return t.settings.audioChannelLimit;
+      case _SettingsView.audioEqualizer:
+        return t.videoSettings.audioEqualizer;
     }
   }
 
@@ -702,6 +709,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         return Symbols.tonality_rounded;
       case _SettingsView.audioChannelLimit:
         return Symbols.speaker_group_rounded;
+      case _SettingsView.audioEqualizer:
+        return Symbols.graphic_eq_rounded;
     }
   }
 
@@ -957,6 +966,17 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           onTap: () => _navigateTo(_SettingsView.audioChannelLimit),
         ),
 
+        if (widget.player.playerType == 'mpv' && widget.player is AudioEqualizerCapable)
+          _SettingsMenuItem(
+            icon: Symbols.graphic_eq_rounded,
+            title: t.videoSettings.audioEqualizer,
+            valueText: _audioEqualizerGains.every((gain) => gain.abs() < 0.05)
+                ? t.videoSettings.audioEqualizerFlat
+                : t.videoSettings.audioEqualizerActive,
+            isHighlighted: _audioEqualizerGains.any((gain) => gain.abs() >= 0.05),
+            onTap: () => _navigateTo(_SettingsView.audioEqualizer),
+          ),
+
         // Shader Preset (MPV only)
         if (_state.shaderService != null && _state.shaderService!.isSupported)
           _SettingsMenuItem(
@@ -1127,6 +1147,71 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
           ),
       ],
     );
+  }
+
+  Widget _buildAudioEqualizerView() {
+    final frequencies = [60, 250, 1000, 4000, 12000];
+    final prefs = SettingsService.audioEqualizerBandPrefs;
+    return ListView(
+      children: [
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 8, 16, 0),
+          child: Text(
+            t.videoSettings.audioEqualizerDescription,
+            style: TextStyle(color: tokens(context).textMuted, fontSize: 12),
+          ),
+        ),
+        for (var index = 0; index < frequencies.length; index++)
+          ListTile(
+            title: Text('${frequencies[index]} Hz'),
+            subtitle: Slider(
+              value: _audioEqualizerGains[index].clamp(-12.0, 12.0).toDouble(),
+              min: -12,
+              max: 12,
+              divisions: 24,
+              label: '${_audioEqualizerGains[index].toStringAsFixed(0)} dB',
+              semanticFormatterCallback: (value) => '${value.toStringAsFixed(0)} dB',
+              onChanged: (gain) => _setAudioEqualizerBand(index, gain),
+              onChangeEnd: (gain) => unawaited(_persistAudioEqualizerBand(prefs[index], gain)),
+            ),
+            trailing: Text('${_audioEqualizerGains[index].toStringAsFixed(0)} dB'),
+          ),
+        FocusableListTile(
+          leading: AppIcon(Symbols.restart_alt_rounded, fill: 1, color: tokens(context).textMuted),
+          title: Text(t.videoSettings.audioEqualizerFlat),
+          onTap: () {
+            for (var index = 0; index < frequencies.length; index++) {
+              _setAudioEqualizerBand(index, 0);
+              unawaited(_persistAudioEqualizerBand(prefs[index], 0));
+            }
+          },
+        ),
+      ],
+    );
+  }
+
+  void _setAudioEqualizerBand(int index, double gain) {
+    final next = List<double>.of(_audioEqualizerGains)..[index] = gain;
+    setState(() => _audioEqualizerGains = next);
+    unawaited(_applyAudioEqualizer(next));
+  }
+
+  Future<void> _applyAudioEqualizer(List<double> gains) async {
+    try {
+      await (widget.player as AudioEqualizerCapable).setAudioEqualizer(gains);
+    } catch (error, stackTrace) {
+      appLogger.w('Failed to apply audio equalizer', error: error, stackTrace: stackTrace);
+      if (mounted) showErrorSnackBar(context, t.videoSettings.audioEqualizerSaveFailed);
+    }
+  }
+
+  Future<void> _persistAudioEqualizerBand(DoublePref pref, double gain) async {
+    try {
+      await SettingsService.instance.write(pref, gain);
+    } catch (error, stackTrace) {
+      appLogger.w('Failed to save audio equalizer setting', error: error, stackTrace: stackTrace);
+      if (mounted) showErrorSnackBar(context, t.videoSettings.audioEqualizerSaveFailed);
+    }
   }
 
   /// The rate the user chose, as opposed to what the player is momentarily
@@ -1560,6 +1645,8 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
             return _buildHdrToneMappingView();
           case _SettingsView.audioChannelLimit:
             return _buildAudioChannelLimitView();
+          case _SettingsView.audioEqualizer:
+            return _buildAudioEqualizerView();
         }
       }(),
     );

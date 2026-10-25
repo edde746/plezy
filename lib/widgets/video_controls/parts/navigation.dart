@@ -188,14 +188,9 @@ extension _VideoControlsNavigationMethods on _PlexVideoControlsState {
       for (var attempt = 0; attempt < 4; attempt++) {
         if (!targetIsCurrent()) return SubtitleDownloadApplyOutcome.superseded;
         try {
-          final tracks = await client.fetchSourceSubtitleTracks(
-            ratingKey,
-            mediaIndex: widget.selectedMediaIndex,
-          );
+          final tracks = await client.fetchSourceSubtitleTracks(ratingKey, mediaIndex: widget.selectedMediaIndex);
           if (!targetIsCurrent()) return SubtitleDownloadApplyOutcome.superseded;
-          final selectedNow = tracks.any(
-            (track) => track.id == expectedSelectedStreamId && track.selected,
-          );
+          final selectedNow = tracks.any((track) => track.id == expectedSelectedStreamId && track.selected);
           if (selectedNow) return mappedOutcome;
         } catch (e) {
           appLogger.w('Failed to verify downloaded subtitle selection state', error: e);

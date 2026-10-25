@@ -12,23 +12,20 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
     bool? forced,
     bool? hearingImpaired,
   }) async {
-    if (dialect != MediaBrowserDialect.emby) {
-      throw UnsupportedError('Remote subtitle search is not supported for ${dialect.productName}');
-    }
+    final sourceId = dialect == MediaBrowserDialect.emby
+        ? await _resolveSubtitleMediaSourceId(ratingKey, mediaIndex: mediaIndex, mediaSourceId: mediaSourceId)
+        : null;
 
-    final sourceId = await _resolveSubtitleMediaSourceId(
-      ratingKey,
-      mediaIndex: mediaIndex,
-      mediaSourceId: mediaSourceId,
-    );
-
+    final searchLanguage = dialect == MediaBrowserDialect.jellyfin
+        ? LanguageCodes.getIso6392Code(language) ?? language
+        : language;
     final response = await _http.get(
-      '/Items/${_segment(ratingKey)}/RemoteSearch/Subtitles/${_segment(language)}',
+      '/Items/${_segment(ratingKey)}/RemoteSearch/Subtitles/${_segment(searchLanguage)}',
       queryParameters: {
-        'MediaSourceId': sourceId,
-        'IsPerfectMatch': ?perfectMatch,
-        'IsForced': ?forced,
-        'IsHearingImpaired': ?hearingImpaired,
+        'MediaSourceId': ?sourceId,
+        if (dialect == MediaBrowserDialect.emby) 'IsPerfectMatch': ?perfectMatch,
+        if (dialect == MediaBrowserDialect.emby) 'IsForced': ?forced,
+        if (dialect == MediaBrowserDialect.emby) 'IsHearingImpaired': ?hearingImpaired,
       },
     );
     throwIfHttpError(response);
@@ -96,19 +93,13 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
     int mediaIndex = 0,
     String? mediaSourceId,
   }) async {
-    if (dialect != MediaBrowserDialect.emby) {
-      throw UnsupportedError('Remote subtitle download is not supported for ${dialect.productName}');
-    }
-
-    final sourceId = await _resolveSubtitleMediaSourceId(
-      ratingKey,
-      mediaIndex: mediaIndex,
-      mediaSourceId: mediaSourceId,
-    );
+    final sourceId = dialect == MediaBrowserDialect.emby
+        ? await _resolveSubtitleMediaSourceId(ratingKey, mediaIndex: mediaIndex, mediaSourceId: mediaSourceId)
+        : null;
 
     final response = await _http.post(
       '/Items/${_segment(ratingKey)}/RemoteSearch/Subtitles/${_segment(key)}',
-      queryParameters: {'MediaSourceId': sourceId},
+      queryParameters: {'MediaSourceId': ?sourceId},
     );
     throwIfHttpError(response);
 
@@ -117,7 +108,7 @@ mixin _JellyfinSubtitleSearchMethods on _JellyfinClientInternals {
     if (data is Map<String, dynamic> && data.containsKey('NewIndex')) {
       final newIndex = flexibleInt(data['NewIndex']);
       if (newIndex != null) {
-        rememberDownloadedSubtitleStreamId(ratingKey, sourceId, newIndex);
+        if (sourceId != null) rememberDownloadedSubtitleStreamId(ratingKey, sourceId, newIndex);
         return true;
       }
       return false;

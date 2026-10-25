@@ -76,10 +76,12 @@ import '../services/player_sync_offsets.dart';
 import '../services/preferred_audio_device.dart';
 import '../services/scoped_player_prefs.dart';
 import '../services/settings_service.dart';
+import '../services/storage_service.dart';
 import '../services/sleep_timer_service.dart';
 import '../services/subtitle_preference.dart';
 import '../services/track_manager.dart';
 import '../services/track_selection_service.dart';
+import '../utils/language_codes.dart';
 import '../services/ambient_lighting_service.dart';
 import '../services/video_filter_manager.dart';
 import '../services/video_volume_controller.dart';
@@ -250,9 +252,11 @@ SubtitlePreference? subtitlePreferenceForItemChange({
   required SubtitleTrack? nativeTrack,
   SubtitlePreference? declinedPreference,
   SubtitlePreference? sessionPreference,
+  bool isDeviceLocalFallback = false,
 }) {
   final sessionIntent = SubtitlePreference.demoteToIntent(sessionPreference);
   if (sessionIntent != null) return sessionIntent;
+  if (isDeviceLocalFallback) return null;
   SubtitlePreference? normalize(SubtitleTrack? track, {required bool preserveOff}) {
     if (track == null) return null;
     if (track.id == SubtitleTrack.off.id) return preserveOff ? const SubtitlePreference.off() : null;
@@ -512,6 +516,8 @@ class VideoPlayerScreen extends StatefulWidget {
 
   bool get isLive => live != null;
 
+  final bool isPreroll;
+
   const VideoPlayerScreen({
     super.key,
     required this.metadata,
@@ -526,6 +532,7 @@ class VideoPlayerScreen extends StatefulWidget {
     this.selectedQualityPreset,
     this.selectedAudioStreamId,
     this.live,
+    this.isPreroll = false,
     this.watchTogetherCopy,
     this.initialPosition,
     this.strictMediaSelection = false,
@@ -776,6 +783,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   // through its own path). The getters below denormalize it for the many
   // existing read sites.
   PlaybackSession? _playbackSession;
+
+  /// Prevent repeated provider searches for the same media source and language
+  /// during track-driven reloads in one player session.
+  final Set<String> _autoSubtitleFetchAttempts = <String>{};
   // Fired in parallel with MPV setup so the OS audio-focus negotiation
   // (~90ms on Android) doesn't sit on the critical path. Awaited before
   // `player.open()` so the semantics are unchanged — we just eat the cost
@@ -965,6 +976,18 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       ((Platform.isIOS || Platform.isMacOS) && _autoPipEnabled) ||
       (Platform.isAndroid && _androidAutoPipTransitionInFlight);
 
+  /// Optional audio-only continuation for handheld video playback. It stays
+  /// outside live TV, Watch Together, and TV backgrounds, whose transports
+  /// have separate ownership and lifecycle rules.
+  bool get _backgroundVideoAudioAllowed =>
+      SettingsService.instance.read(SettingsService.backgroundVideoAudio) &&
+      (Platform.isAndroid || Platform.isIOS) &&
+      !PlatformDetector.isTV() &&
+      !PlatformDetector.isAutomotive() &&
+      !widget.isLive &&
+      !widget.isPreroll &&
+      !_wtRoomOpen;
+
   MediaControlsManager? _mediaControlsManager;
 
   /// [_initializeServices] ran while the open had already failed and left the
@@ -1097,9 +1120,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     // Any freshly opened stream ends a dead-stream park (#1520).
     _eofRecovery.clearPark();
     // Every successful open passes through here (never live TV), making it
-    // the chokepoint for the local last-played history. Offline plays are
-    // excluded — like version prefs, the history describes online intent.
-    if (!session.isOffline) {
+    // the chokepoint for the local last-played history. Offline plays and
+    // prerolls are excluded — like version prefs, the history describes
+    // online intent for the title the viewer actually chose.
+    if (!session.isOffline && !widget.isPreroll) {
       unawaited(LocalPlaybackHistory.recordPlayback(session.metadata));
     }
   }
@@ -1597,7 +1621,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         // We don't support background playback
         if (_mediaControls.shouldSuspendForTvBackground) {
           unawaited(_mediaControls.suspendForTvBackground('paused'));
-        } else {
+        } else if (!_backgroundVideoAudioAllowed) {
           unawaited(_mediaControlsManager?.clear());
         }
         unawaited(_wakelockController.setEnabled(false));
@@ -1651,6 +1675,44 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   void _retryPlayerInitialization() {
     unawaited(_startPlayerInitialization(replaceCurrent: true));
+  }
+
+  void _restoreShowTrackPreferences(Map<String, dynamic> preferences) {
+    if (_preferredAudioTrack == null && preferences['audio'] is Map) {
+      final audio = Map<String, dynamic>.from(preferences['audio'] as Map);
+      final language = audio['language'] as String?;
+      final title = audio['title'] as String?;
+      final codec = audio['codec'] as String?;
+      final channels = audio['channels'] as int?;
+      if (language != null || title != null) {
+        _preferredAudioTrack = AudioTrack(
+          id: carriedAudioTrackId,
+          language: language,
+          title: title,
+          codec: codec,
+          channels: channels,
+        );
+      }
+    }
+    if (_preferredSubtitleTrack != null || preferences['subtitle'] is! Map) return;
+    final subtitle = Map<String, dynamic>.from(preferences['subtitle'] as Map);
+    if (subtitle['off'] == true) {
+      _preferredSubtitleTrack = const SubtitlePreference.off();
+      return;
+    }
+    final language = subtitle['language'] as String?;
+    final title = subtitle['title'] as String?;
+    final codec = subtitle['codec'] as String?;
+    if (language == null && title == null && codec == null) return;
+    _preferredSubtitleTrack = SubtitlePreference.intent(
+      SubtitleIntent(
+        language: language,
+        title: title,
+        codec: codec,
+        forced: subtitle['forced'] == true,
+        isExternal: subtitle['external'] == true,
+      ),
+    );
   }
 
   bool _isPlayerInitializationCurrent(int generation) {
@@ -1719,6 +1781,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
       initPhase = 'loading settings';
       final settingsService = await SettingsService.getInstance();
+      // A local show override takes precedence over the server's default, but
+      // an explicit preference passed by a caller remains authoritative.
+      final localTrackPreferences = await StorageService.getInstance();
+      final savedTrackPreference = localTrackPreferences.getShowTrackPreference(
+        _currentMetadata.seriesGlobalKey ?? _currentMetadata.globalKey,
+      );
+      if (!_isPlayerInitializationCurrent(generation)) return;
+      _restoreShowTrackPreferences(savedTrackPreference);
       // Literal `mounted` check: the kickoff block below reads `context`, and
       // the lint cannot see the mounted check inside the helper.
       if (!mounted || !_isPlayerInitializationCurrent(generation)) return;
@@ -1763,6 +1833,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
               onCellularOnly: context.read<OfflineModeProvider>().isCellularOnly,
               cellularDefault: settingsService.read(SettingsService.cellularQualityPreset),
               generalDefault: settingsService.read(SettingsService.defaultQualityPreset),
+              onRemoteConnection: context.read<MultiServerProvider>().serverManager.isRemoteConnection(
+                genericClient.serverId,
+              ),
+              remoteDefault: settingsService.read(SettingsService.remoteQualityPreset),
             );
         final playbackResolver = PlaybackSourceResolver(
           serverManager: context.read<MultiServerProvider>().serverManager,
@@ -1803,6 +1877,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         // default: on Original the backend may direct-play the channel, on a
         // capped preset it transcodes at that ceiling (#2198). Both live
         // backends can transcode, so the capability gate is moot here.
+        final liveClient = _getMediaServerClient(context);
         _selectedQualityPreset =
             widget.selectedQualityPreset ??
             TranscodeQualityPreset.resolveStartupDefault(
@@ -1810,6 +1885,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
               onCellularOnly: context.read<OfflineModeProvider>().isCellularOnly,
               cellularDefault: settingsService.read(SettingsService.cellularQualityPreset),
               generalDefault: settingsService.read(SettingsService.defaultQualityPreset),
+              onRemoteConnection:
+                  liveClient != null &&
+                  context.read<MultiServerProvider>().serverManager.isRemoteConnection(liveClient.serverId),
+              remoteDefault: settingsService.read(SettingsService.remoteQualityPreset),
             );
       }
 
@@ -2174,6 +2253,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         } catch (e) {
           appLogger.w('Failed to set MPV property ${entry.key}', error: e);
         }
+      }
+
+      final audioEqualizer = [for (final pref in SettingsService.audioEqualizerBandPrefs) settingsService.read(pref)];
+      if (currentPlayer.playerType == 'mpv' &&
+          currentPlayer is AudioEqualizerCapable &&
+          audioEqualizer.any((gain) => gain.abs() >= 0.05)) {
+        // Apply after custom mpv properties so an explicitly enabled app EQ
+        // remains active when the custom config also contains an `af` line.
+        await (currentPlayer as AudioEqualizerCapable).setAudioEqualizer(audioEqualizer);
       }
 
       final maxVolume = settingsService.read(SettingsService.maxVolume);

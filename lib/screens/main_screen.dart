@@ -1,5 +1,6 @@
 import 'dart:async';
 import '../media/ids.dart';
+import '../media/media_library.dart';
 import '../media/media_server_client.dart';
 import '../navigation/main_screen_scope.dart';
 import '../navigation/page_refresh_shortcut.dart';
@@ -36,6 +37,8 @@ import '../navigation/settings_shortcut.dart';
 import '../profiles/active_profile_binder.dart';
 import '../connection/connection_registry.dart';
 import '../profiles/active_profile_provider.dart';
+import '../profiles/profile.dart';
+import '../profiles/profile_activation.dart';
 import '../profiles/plex_home_service.dart';
 import '../profiles/profile_selection_policy.dart';
 import '../providers/catalog_sources_provider.dart';
@@ -413,9 +416,13 @@ class _MainScreenState extends State<MainScreen>
   MultiServerProvider? _multiServerProvider;
   CatalogSourcesProvider? _catalogSourcesProvider;
   ValueListenable<bool>? _showExploreTabListenable;
+  ValueListenable<bool>? _profileShowExploreTabListenable;
+  String? _boundExploreProfileId;
   RouteObserver<PageRoute<dynamic>>? _profileRouteObserver;
   bool _lastHasLiveTv = false;
   bool _lastHasExplore = false;
+  bool _checkingExplorePin = false;
+  String? _explorePinApprovedProfileId;
 
   /// Whether a reconnection attempt is in progress
   bool _isReconnecting = false;
@@ -587,6 +594,7 @@ class _MainScreenState extends State<MainScreen>
       // first notification of a session that started with profiles.
       _hadProfiles = activeProfile.profiles.isNotEmpty;
       activeProfile.addListener(_onActiveProfileChanged);
+      _bindProfileExploreTabPreference(activeProfile.activeId);
       _plexHomeService = context.read<PlexHomeService>();
       // `start()` is the live/network entry point: it installs the connection
       // watch, the refresh timer and an initial `_refreshAll()`. The root app
@@ -772,6 +780,7 @@ class _MainScreenState extends State<MainScreen>
     final activeProfile = _activeProfileForListener;
     if (activeProfile == null) return;
     final id = activeProfile.activeId;
+    _bindProfileExploreTabPreference(id);
     final isBindingNow = activeProfile.isBinding;
     final action = profileInvalidationAction(
       previousProfileId: _lastSeenProfileId,
@@ -781,6 +790,13 @@ class _MainScreenState extends State<MainScreen>
     );
     _lastSeenProfileId = id;
     _wasBindingPrev = isBindingNow;
+
+    if (id != _explorePinApprovedProfileId) {
+      _explorePinApprovedProfileId = null;
+      if (_currentTab == NavigationTabId.explore && mounted) {
+        _selectTab(NavigationTabId.discover);
+      }
+    }
 
     // Re-arm the initial-profile prompt when profiles arrive late (e.g. a
     // slow home-user fetch landing after the empty first snapshot) while
@@ -799,6 +815,18 @@ class _MainScreenState extends State<MainScreen>
     if (action == ProfileInvalidationAction.invalidateNow) {
       unawaited(_invalidateAllScreens());
     }
+  }
+
+  void _bindProfileExploreTabPreference(String? profileId) {
+    if (_boundExploreProfileId == profileId) return;
+    _profileShowExploreTabListenable?.removeListener(_handleCatalogSourcesChanged);
+    _boundExploreProfileId = profileId;
+    final settings = SettingsService.instanceOrNull;
+    _profileShowExploreTabListenable = profileId == null || settings == null
+        ? null
+        : settings.listenable(SettingsService.showExploreTabForProfile(profileId));
+    _profileShowExploreTabListenable?.addListener(_handleCatalogSourcesChanged);
+    _handleCatalogSourcesChanged();
   }
 
   Future<void> _promptForInitialProfileSelection() async {
@@ -1097,6 +1125,7 @@ class _MainScreenState extends State<MainScreen>
     _multiServerProvider?.removeListener(_handleLiveTvChanged);
     _catalogSourcesProvider?.removeListener(_handleCatalogSourcesChanged);
     _showExploreTabListenable?.removeListener(_handleCatalogSourcesChanged);
+    _profileShowExploreTabListenable?.removeListener(_handleCatalogSourcesChanged);
     if (_bindingSettleListener != null) {
       _activeProfileForListener?.removeListener(_bindingSettleListener!);
     }
@@ -1355,7 +1384,12 @@ class _MainScreenState extends State<MainScreen>
     }
   }
 
-  bool get _showExploreTabSetting => SettingsService.instanceOrNull?.read(SettingsService.showExploreTab) ?? true;
+  bool get _showExploreTabSetting {
+    final settings = SettingsService.instanceOrNull;
+    if (settings == null || !settings.read(SettingsService.showExploreTab)) return false;
+    final profileId = _activeProfileForListener?.activeId;
+    return profileId == null || settings.read(SettingsService.showExploreTabForProfile(profileId));
+  }
 
   void _handleCatalogSourcesChanged() {
     final hasExplore = (_catalogSourcesProvider?.hasAnySource ?? false) && _showExploreTabSetting;
@@ -1754,6 +1788,16 @@ class _MainScreenState extends State<MainScreen>
     // Guard: ignore if tab isn't available in current mode
     if (!_getVisibleTabs(_isOffline).any((t) => t.id == tab)) return;
 
+    final activeProfile = context.read<ActiveProfileProvider>().active;
+    if (tab == NavigationTabId.explore &&
+        _currentTab != tab &&
+        activeProfile is LocalProfile &&
+        activeProfile.isPinProtected &&
+        _explorePinApprovedProfileId != activeProfile.id) {
+      if (!_checkingExplorePin) unawaited(_unlockExploreAndSelect(activeProfile.id, focusSearchInput));
+      return;
+    }
+
     final previousTab = _currentTab;
     final wasMounted = _mountedTabs.contains(tab);
     setState(() {
@@ -1770,6 +1814,7 @@ class _MainScreenState extends State<MainScreen>
         // User made an explicit offline selection, so don't auto-restore later.
         _autoSwitchedToDownloads = false;
       }
+      if (tab != NavigationTabId.explore) _explorePinApprovedProfileId = null;
     });
     _updateTvosMenuPassthrough();
 
@@ -1817,6 +1862,16 @@ class _MainScreenState extends State<MainScreen>
         _onScreen<SearchInputFocusable>(NavigationTabId.search, (screen) => screen.focusSearchInput());
       });
     }
+  }
+
+  Future<void> _unlockExploreAndSelect(String profileId, bool focusSearchInput) async {
+    _checkingExplorePin = true;
+    final allowed = await requestActiveProfileActionPin(context);
+    if (!mounted) return;
+    _checkingExplorePin = false;
+    if (!allowed || context.read<ActiveProfileProvider>().activeId != profileId) return;
+    _explorePinApprovedProfileId = profileId;
+    _selectTab(NavigationTabId.explore, focusSearchInput: focusSearchInput);
   }
 
   /// Handle library selection from side navigation rail
@@ -1874,9 +1929,11 @@ class _MainScreenState extends State<MainScreen>
 
                 final allLibraries = librariesProvider.libraries;
                 final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
-                final visibleLibraries = allLibraries
-                    .where((library) => !hiddenKeys.contains(library.globalKey))
-                    .toList();
+                final visibleLibraries = visibleMediaLibraries(
+                  allLibraries,
+                  hiddenKeys: hiddenKeys,
+                  hideEmpty: SettingsService.instanceOrNull?.read(SettingsService.hideEmptyLibraries) ?? false,
+                );
                 final emptyMessage = allLibraries.isEmpty
                     ? t.libraries.noLibrariesFound
                     : t.libraries.allLibrariesHidden;

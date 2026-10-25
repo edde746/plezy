@@ -3580,6 +3580,17 @@ class $SyncRulesTable extends SyncRules
     ),
     defaultValue: const Constant(true),
   );
+  static const VerificationMeta _downloadQualityMeta = const VerificationMeta(
+    'downloadQuality',
+  );
+  @override
+  late final GeneratedColumn<String> downloadQuality = GeneratedColumn<String>(
+    'download_quality',
+    aliasedName,
+    true,
+    type: DriftSqlType.string,
+    requiredDuringInsert: false,
+  );
   static const VerificationMeta _downloadLinksInitializedMeta =
       const VerificationMeta('downloadLinksInitialized');
   @override
@@ -3611,6 +3622,7 @@ class $SyncRulesTable extends SyncRules
     downloadFilter,
     randomEpisodes,
     includeSpecials,
+    downloadQuality,
     downloadLinksInitialized,
   ];
   @override
@@ -3733,6 +3745,15 @@ class $SyncRulesTable extends SyncRules
         ),
       );
     }
+    if (data.containsKey('download_quality')) {
+      context.handle(
+        _downloadQualityMeta,
+        downloadQuality.isAcceptableOrUnknown(
+          data['download_quality']!,
+          _downloadQualityMeta,
+        ),
+      );
+    }
     if (data.containsKey('download_links_initialized')) {
       context.handle(
         _downloadLinksInitializedMeta,
@@ -3807,6 +3828,10 @@ class $SyncRulesTable extends SyncRules
         DriftSqlType.bool,
         data['${effectivePrefix}include_specials'],
       )!,
+      downloadQuality: attachedDatabase.typeMapping.read(
+        DriftSqlType.string,
+        data['${effectivePrefix}download_quality'],
+      ),
       downloadLinksInitialized: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}download_links_initialized'],
@@ -3835,6 +3860,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
   final String downloadFilter;
   final bool randomEpisodes;
   final bool includeSpecials;
+  final String? downloadQuality;
 
   /// Gates collection/playlist backfill into [SyncRuleDownloads] before
   /// destructive cleanup. Show/season coverage is re-derived from
@@ -3855,6 +3881,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     required this.downloadFilter,
     required this.randomEpisodes,
     required this.includeSpecials,
+    this.downloadQuality,
     required this.downloadLinksInitialized,
   });
   @override
@@ -3876,6 +3903,9 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     map['download_filter'] = Variable<String>(downloadFilter);
     map['random_episodes'] = Variable<bool>(randomEpisodes);
     map['include_specials'] = Variable<bool>(includeSpecials);
+    if (!nullToAbsent || downloadQuality != null) {
+      map['download_quality'] = Variable<String>(downloadQuality);
+    }
     map['download_links_initialized'] = Variable<bool>(
       downloadLinksInitialized,
     );
@@ -3900,6 +3930,9 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       downloadFilter: Value(downloadFilter),
       randomEpisodes: Value(randomEpisodes),
       includeSpecials: Value(includeSpecials),
+      downloadQuality: downloadQuality == null && nullToAbsent
+          ? const Value.absent()
+          : Value(downloadQuality),
       downloadLinksInitialized: Value(downloadLinksInitialized),
     );
   }
@@ -3924,6 +3957,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       downloadFilter: serializer.fromJson<String>(json['downloadFilter']),
       randomEpisodes: serializer.fromJson<bool>(json['randomEpisodes']),
       includeSpecials: serializer.fromJson<bool>(json['includeSpecials']),
+      downloadQuality: serializer.fromJson<String?>(json['downloadQuality']),
       downloadLinksInitialized: serializer.fromJson<bool>(
         json['downloadLinksInitialized'],
       ),
@@ -3947,6 +3981,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       'downloadFilter': serializer.toJson<String>(downloadFilter),
       'randomEpisodes': serializer.toJson<bool>(randomEpisodes),
       'includeSpecials': serializer.toJson<bool>(includeSpecials),
+      'downloadQuality': serializer.toJson<String?>(downloadQuality),
       'downloadLinksInitialized': serializer.toJson<bool>(
         downloadLinksInitialized,
       ),
@@ -3968,6 +4003,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     String? downloadFilter,
     bool? randomEpisodes,
     bool? includeSpecials,
+    Value<String?> downloadQuality = const Value.absent(),
     bool? downloadLinksInitialized,
   }) => SyncRuleItem(
     id: id ?? this.id,
@@ -3986,6 +4022,9 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     downloadFilter: downloadFilter ?? this.downloadFilter,
     randomEpisodes: randomEpisodes ?? this.randomEpisodes,
     includeSpecials: includeSpecials ?? this.includeSpecials,
+    downloadQuality: downloadQuality.present
+        ? downloadQuality.value
+        : this.downloadQuality,
     downloadLinksInitialized:
         downloadLinksInitialized ?? this.downloadLinksInitialized,
   );
@@ -4019,6 +4058,9 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       includeSpecials: data.includeSpecials.present
           ? data.includeSpecials.value
           : this.includeSpecials,
+      downloadQuality: data.downloadQuality.present
+          ? data.downloadQuality.value
+          : this.downloadQuality,
       downloadLinksInitialized: data.downloadLinksInitialized.present
           ? data.downloadLinksInitialized.value
           : this.downloadLinksInitialized,
@@ -4042,6 +4084,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
           ..write('downloadFilter: $downloadFilter, ')
           ..write('randomEpisodes: $randomEpisodes, ')
           ..write('includeSpecials: $includeSpecials, ')
+          ..write('downloadQuality: $downloadQuality, ')
           ..write('downloadLinksInitialized: $downloadLinksInitialized')
           ..write(')'))
         .toString();
@@ -4063,6 +4106,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     downloadFilter,
     randomEpisodes,
     includeSpecials,
+    downloadQuality,
     downloadLinksInitialized,
   );
   @override
@@ -4083,6 +4127,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
           other.downloadFilter == this.downloadFilter &&
           other.randomEpisodes == this.randomEpisodes &&
           other.includeSpecials == this.includeSpecials &&
+          other.downloadQuality == this.downloadQuality &&
           other.downloadLinksInitialized == this.downloadLinksInitialized);
 }
 
@@ -4101,6 +4146,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
   final Value<String> downloadFilter;
   final Value<bool> randomEpisodes;
   final Value<bool> includeSpecials;
+  final Value<String?> downloadQuality;
   final Value<bool> downloadLinksInitialized;
   const SyncRulesCompanion({
     this.id = const Value.absent(),
@@ -4117,6 +4163,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     this.downloadFilter = const Value.absent(),
     this.randomEpisodes = const Value.absent(),
     this.includeSpecials = const Value.absent(),
+    this.downloadQuality = const Value.absent(),
     this.downloadLinksInitialized = const Value.absent(),
   });
   SyncRulesCompanion.insert({
@@ -4134,6 +4181,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     this.downloadFilter = const Value.absent(),
     this.randomEpisodes = const Value.absent(),
     this.includeSpecials = const Value.absent(),
+    this.downloadQuality = const Value.absent(),
     this.downloadLinksInitialized = const Value.absent(),
   }) : serverId = Value(serverId),
        ratingKey = Value(ratingKey),
@@ -4156,6 +4204,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     Expression<String>? downloadFilter,
     Expression<bool>? randomEpisodes,
     Expression<bool>? includeSpecials,
+    Expression<String>? downloadQuality,
     Expression<bool>? downloadLinksInitialized,
   }) {
     return RawValuesInsertable({
@@ -4173,6 +4222,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
       if (downloadFilter != null) 'download_filter': downloadFilter,
       if (randomEpisodes != null) 'random_episodes': randomEpisodes,
       if (includeSpecials != null) 'include_specials': includeSpecials,
+      if (downloadQuality != null) 'download_quality': downloadQuality,
       if (downloadLinksInitialized != null)
         'download_links_initialized': downloadLinksInitialized,
     });
@@ -4193,6 +4243,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     Value<String>? downloadFilter,
     Value<bool>? randomEpisodes,
     Value<bool>? includeSpecials,
+    Value<String?>? downloadQuality,
     Value<bool>? downloadLinksInitialized,
   }) {
     return SyncRulesCompanion(
@@ -4210,6 +4261,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
       downloadFilter: downloadFilter ?? this.downloadFilter,
       randomEpisodes: randomEpisodes ?? this.randomEpisodes,
       includeSpecials: includeSpecials ?? this.includeSpecials,
+      downloadQuality: downloadQuality ?? this.downloadQuality,
       downloadLinksInitialized:
           downloadLinksInitialized ?? this.downloadLinksInitialized,
     );
@@ -4260,6 +4312,9 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     if (includeSpecials.present) {
       map['include_specials'] = Variable<bool>(includeSpecials.value);
     }
+    if (downloadQuality.present) {
+      map['download_quality'] = Variable<String>(downloadQuality.value);
+    }
     if (downloadLinksInitialized.present) {
       map['download_links_initialized'] = Variable<bool>(
         downloadLinksInitialized.value,
@@ -4285,6 +4340,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
           ..write('downloadFilter: $downloadFilter, ')
           ..write('randomEpisodes: $randomEpisodes, ')
           ..write('includeSpecials: $includeSpecials, ')
+          ..write('downloadQuality: $downloadQuality, ')
           ..write('downloadLinksInitialized: $downloadLinksInitialized')
           ..write(')'))
         .toString();
@@ -9120,6 +9176,7 @@ typedef $$SyncRulesTableCreateCompanionBuilder =
       Value<String> downloadFilter,
       Value<bool> randomEpisodes,
       Value<bool> includeSpecials,
+      Value<String?> downloadQuality,
       Value<bool> downloadLinksInitialized,
     });
 typedef $$SyncRulesTableUpdateCompanionBuilder =
@@ -9138,6 +9195,7 @@ typedef $$SyncRulesTableUpdateCompanionBuilder =
       Value<String> downloadFilter,
       Value<bool> randomEpisodes,
       Value<bool> includeSpecials,
+      Value<String?> downloadQuality,
       Value<bool> downloadLinksInitialized,
     });
 
@@ -9246,6 +9304,11 @@ class $$SyncRulesTableFilterComposer
 
   ColumnFilters<bool> get includeSpecials => $composableBuilder(
     column: $table.includeSpecials,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<String> get downloadQuality => $composableBuilder(
+    column: $table.downloadQuality,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9359,6 +9422,11 @@ class $$SyncRulesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<String> get downloadQuality => $composableBuilder(
+    column: $table.downloadQuality,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get downloadLinksInitialized => $composableBuilder(
     column: $table.downloadLinksInitialized,
     builder: (column) => ColumnOrderings(column),
@@ -9427,6 +9495,11 @@ class $$SyncRulesTableAnnotationComposer
 
   GeneratedColumn<bool> get includeSpecials => $composableBuilder(
     column: $table.includeSpecials,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<String> get downloadQuality => $composableBuilder(
+    column: $table.downloadQuality,
     builder: (column) => column,
   );
 
@@ -9504,6 +9577,7 @@ class $$SyncRulesTableTableManager
                 Value<String> downloadFilter = const Value.absent(),
                 Value<bool> randomEpisodes = const Value.absent(),
                 Value<bool> includeSpecials = const Value.absent(),
+                Value<String?> downloadQuality = const Value.absent(),
                 Value<bool> downloadLinksInitialized = const Value.absent(),
               }) => SyncRulesCompanion(
                 id: id,
@@ -9520,6 +9594,7 @@ class $$SyncRulesTableTableManager
                 downloadFilter: downloadFilter,
                 randomEpisodes: randomEpisodes,
                 includeSpecials: includeSpecials,
+                downloadQuality: downloadQuality,
                 downloadLinksInitialized: downloadLinksInitialized,
               ),
           createCompanionCallback:
@@ -9538,6 +9613,7 @@ class $$SyncRulesTableTableManager
                 Value<String> downloadFilter = const Value.absent(),
                 Value<bool> randomEpisodes = const Value.absent(),
                 Value<bool> includeSpecials = const Value.absent(),
+                Value<String?> downloadQuality = const Value.absent(),
                 Value<bool> downloadLinksInitialized = const Value.absent(),
               }) => SyncRulesCompanion.insert(
                 id: id,
@@ -9554,6 +9630,7 @@ class $$SyncRulesTableTableManager
                 downloadFilter: downloadFilter,
                 randomEpisodes: randomEpisodes,
                 includeSpecials: includeSpecials,
+                downloadQuality: downloadQuality,
                 downloadLinksInitialized: downloadLinksInitialized,
               ),
           withReferenceMapper: (p0) => p0

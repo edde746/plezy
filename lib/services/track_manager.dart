@@ -36,6 +36,15 @@ typedef TrackPreferencePersister =
 /// account refused the change.
 typedef TrackSelectionMemoryEnabler = Future<bool> Function(String trackType);
 
+/// Persists a semantic track selection in the app for later episodes of the
+/// same show, independent of server-side account preferences.
+typedef LocalTrackPreferencePersister =
+    Future<void> Function({
+      required String globalKey,
+      required String trackType,
+      required Map<String, dynamic> preference,
+    });
+
 /// Manages track (audio + subtitle) lifecycle: automatic track selection,
 /// server preference sync, and cycling.
 ///
@@ -55,6 +64,10 @@ class TrackManager {
   /// Makes a MediaBrowser server keep the picks its progress reports carry.
   /// `null` for Plex and for playback with no server.
   final TrackSelectionMemoryEnabler? enableTrackSelectionMemory;
+
+  /// Writes semantic preferences to this app profile so Emby and accounts that
+  /// do not persist selections server-side can still remember show choices.
+  final LocalTrackPreferencePersister? persistLocalTrackPreference;
 
   /// Resolves the user's profile settings (may be null during loading).
   final MediaServerUserProfile? Function() getProfileSettings;
@@ -127,6 +140,7 @@ class TrackManager {
     required this.isActive,
     this.persistTrackPreference,
     this.enableTrackSelectionMemory,
+    this.persistLocalTrackPreference,
     required this.getProfileSettings,
     required this.waitForProfileSettings,
     required this.metadata,
@@ -233,7 +247,12 @@ class TrackManager {
     final realSubtitleTracks = tracks.subtitle
         .where((track) => track.id != SubtitleTrack.auto.id && track.id != SubtitleTrack.off.id)
         .toList(growable: false);
-    final service = TrackSelectionService(metadata: metadata, plexMediaInfo: mediaInfo);
+    final service = TrackSelectionService(
+      metadata: metadata,
+      plexMediaInfo: mediaInfo,
+      alwaysShowSubtitlesOnDevice:
+          SettingsService.instanceOrNull?.read(SettingsService.alwaysShowSubtitlesOnDevice) ?? false,
+    );
 
     // A burned-in primary is already in the picture, so no native track is ever coming for it.
     // Waiting for one holds up audio and rate setup for the five-second fallback and then logs a
@@ -333,6 +352,7 @@ class TrackManager {
         profileSettings: profileSettings,
         metadata: metadata,
         plexMediaInfo: mediaInfo,
+        alwaysShowSubtitlesOnDevice: SettingsService.instance.read(SettingsService.alwaysShowSubtitlesOnDevice),
       );
 
       return await trackService.selectAndApplyTracks(
@@ -475,6 +495,14 @@ class TrackManager {
 
   /// Handle audio track changes — save stream selection and language preference.
   Future<void> onAudioTrackChanged(AudioTrack track) async {
+    if (track.id != AudioTrack.auto.id && track.id != AudioTrack.off.id) {
+      await _persistLocalTrackPreference('audio', <String, dynamic>{
+        if (track.language?.isNotEmpty ?? false) 'language': track.language,
+        if (track.title?.isNotEmpty ?? false) 'title': track.title,
+        if (track.codec?.isNotEmpty ?? false) 'codec': track.codec,
+        if (track.channels != null) 'channels': track.channels,
+      });
+    }
     final info = mediaInfo;
     final partId = await _guardTrackChange(info, 'audio');
     if (partId == null || info == null) return;
@@ -492,6 +520,21 @@ class TrackManager {
 
   /// Handle subtitle track changes — save stream selection and language preference.
   Future<void> onSubtitleTrackChanged(SubtitleTrack track, {int? sourceStreamId}) async {
+    final intent = SubtitleIntent.fromTrack(track);
+    if (track.id != SubtitleTrack.auto.id) {
+      await _persistLocalTrackPreference(
+        'subtitle',
+        track.id == SubtitleTrack.off.id
+            ? const <String, dynamic>{'off': true}
+            : <String, dynamic>{
+                if (intent?.language?.isNotEmpty ?? false) 'language': intent!.language,
+                if (intent?.title?.isNotEmpty ?? false) 'title': intent!.title,
+                if (intent?.codec?.isNotEmpty ?? false) 'codec': intent!.codec,
+                if (intent != null) 'forced': intent.forced,
+                if (intent != null) 'external': intent.isExternal,
+              },
+      );
+    }
     final info = mediaInfo;
     final partId = await _guardTrackChange(info, 'subtitle');
     if (partId == null) return;
@@ -525,6 +568,21 @@ class TrackManager {
   void onSecondarySubtitleTrackChanged(SubtitleTrack track) {
     // Secondary subtitle preference is carried via player.state.track.secondarySubtitle
     // which is automatically read during episode navigation. No additional state needed.
+  }
+
+  Future<void> _persistLocalTrackPreference(String trackType, Map<String, dynamic> preference) async {
+    final persist = persistLocalTrackPreference;
+    if (persist == null || preference.isEmpty || !isActive()) return;
+    if (!await shouldPersistTrackSelections() || !isActive()) return;
+    try {
+      await persist(
+        globalKey: metadata.seriesGlobalKey ?? metadata.globalKey,
+        trackType: trackType,
+        preference: preference,
+      );
+    } catch (e, st) {
+      appLogger.w('Could not save the local $trackType preference', error: e, stackTrace: st);
+    }
   }
 
   /// Whether a user track pick may be written to the server at all.

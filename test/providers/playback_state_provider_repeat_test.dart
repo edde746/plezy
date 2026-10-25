@@ -55,10 +55,7 @@ void main() {
       const playlistId = 'playlist-200546';
       provider.setRepeatForContext(playlistId, true);
       provider.setPlaybackFromLocalQueue(
-        LocalPlayQueue(
-          items: items,
-          currentIndex: items.length - 1,
-        ),
+        LocalPlayQueue(items: items, currentIndex: items.length - 1),
         contextKey: playlistId,
       );
 
@@ -76,13 +73,7 @@ void main() {
 
       const playlistId = 'one-item-playlist';
       provider.setRepeatForContext(playlistId, true);
-      provider.setPlaybackFromLocalQueue(
-        LocalPlayQueue(
-          items: [item],
-          currentIndex: 0,
-        ),
-        contextKey: playlistId,
-      );
+      provider.setPlaybackFromLocalQueue(LocalPlayQueue(items: [item], currentIndex: 0), contextKey: playlistId);
 
       final result = await provider.getNextEpisode(item.id, loopQueue: provider.isRepeatActive);
 
@@ -109,10 +100,7 @@ void main() {
       addTearDown(provider.dispose);
 
       provider.setPlaybackFromLocalQueue(
-        LocalPlayQueue(
-          items: [first, second],
-          currentIndex: 1,
-        ),
+        LocalPlayQueue(items: [first, second], currentIndex: 1),
         contextKey: 'server-1:stale-id-test',
       );
 
@@ -156,13 +144,7 @@ void main() {
       final provider = PlaybackStateProvider();
       addTearDown(provider.dispose);
 
-      provider.setPlaybackFromLocalQueue(
-        LocalPlayQueue(
-          items: items,
-          currentIndex: 1,
-        ),
-        contextKey: 'no-repeat',
-      );
+      provider.setPlaybackFromLocalQueue(LocalPlayQueue(items: items, currentIndex: 1), contextKey: 'no-repeat');
 
       final result = await provider.getNextEpisode(items.last.id, loopQueue: false);
 
@@ -179,13 +161,7 @@ void main() {
       provider.setRepeatForContext(playlistId, true);
       expect(provider.isRepeatActive, isFalse);
 
-      provider.setPlaybackFromLocalQueue(
-        LocalPlayQueue(
-          items: items,
-          currentIndex: 0,
-        ),
-        contextKey: playlistId,
-      );
+      provider.setPlaybackFromLocalQueue(LocalPlayQueue(items: items, currentIndex: 0), contextKey: playlistId);
       expect(provider.isRepeatActive, isTrue);
 
       provider.clearShuffle();

@@ -16,6 +16,18 @@ import '../../services/storage_service.dart';
 import '../../utils/app_logger.dart';
 import '../profile/profile_switch_screen.dart';
 
+bool shouldCreateLocalJellyfinProfile({
+  required Profile? targetProfile,
+  required Profile? activeProfile,
+  required bool hasProfiles,
+}) => targetProfile == null && activeProfile == null && !hasProfiles;
+
+bool shouldPromptForJellyfinProfileSelection({
+  required Profile? targetProfile,
+  required Profile? activeProfile,
+  required bool hasProfiles,
+}) => targetProfile == null && activeProfile == null && hasProfiles;
+
 /// Durably provision a freshly-authenticated [connection] and its optional
 /// [bindToProfile] ownership row.
 ///
@@ -157,7 +169,11 @@ Future<void> persistDirectServerConnectionAndExit({
   if (!context.mounted) return;
 
   var boundProfile = targetProfile ?? activeProvider.active;
-  if (targetProfile == null && boundProfile == null && activeProvider.profiles.isNotEmpty) {
+  if (shouldPromptForJellyfinProfileSelection(
+    targetProfile: targetProfile,
+    activeProfile: activeProvider.active,
+    hasProfiles: activeProvider.profiles.isNotEmpty,
+  )) {
     await Navigator.of(
       context,
       rootNavigator: true,
@@ -171,7 +187,11 @@ Future<void> persistDirectServerConnectionAndExit({
   }
 
   Profile? firstRunProfile;
-  if (targetProfile == null && boundProfile == null && activeProvider.profiles.isEmpty) {
+  if (shouldCreateLocalJellyfinProfile(
+    targetProfile: targetProfile,
+    activeProfile: boundProfile,
+    hasProfiles: activeProvider.profiles.isNotEmpty,
+  )) {
     final now = DateTime.now();
     firstRunProfile = Profile.local(
       id: 'local-${const Uuid().v4()}',

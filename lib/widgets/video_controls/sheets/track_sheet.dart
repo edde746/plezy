@@ -1,12 +1,16 @@
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../../media/media_source_info.dart';
 import '../../../mpv/mpv.dart';
+import '../../../services/file_picker_service.dart';
 import '../../../services/playback_subtitle_resolver.dart';
 import '../../../services/track_selection_service.dart';
 import '../../../i18n/strings.g.dart';
 import '../../../utils/track_label_builder.dart';
+import '../../../utils/app_logger.dart';
+import '../../../utils/snackbar_helper.dart';
 import '../../../widgets/app_icon.dart';
 import '../../../widgets/focusable_list_tile.dart';
 import '../../../widgets/overlay_sheet.dart';
@@ -14,6 +18,7 @@ import 'base_video_control_sheet.dart';
 import 'sheet_selection_column.dart';
 import 'sheet_split_columns.dart';
 import 'subtitle_search_sheet.dart';
+import 'subtitle_style_sheet.dart';
 import '../models/track_controls_state.dart';
 import '../helpers/track_filter_helper.dart';
 import '../helpers/track_selection_helper.dart';
@@ -99,6 +104,7 @@ class TrackSheet extends StatelessWidget {
                     tracks: state.sourceSubtitleTracks,
                     trackControlsState: state,
                     selection: sel,
+                    player: player,
                     showHeader: showHeader,
                   );
                 }
@@ -209,12 +215,14 @@ class _SourceSubtitleColumn extends StatelessWidget {
   /// Engine truth (`player.streams.track`), so the tick can be cross-checked
   /// against what mpv is actually playing rather than only what was requested.
   final TrackSelection selection;
+  final Player player;
   final bool showHeader;
 
   const _SourceSubtitleColumn({
     required this.tracks,
     required this.trackControlsState,
     required this.selection,
+    required this.player,
     required this.showHeader,
   });
 
@@ -228,7 +236,7 @@ class _SourceSubtitleColumn extends StatelessWidget {
       headerLabel: showHeader ? t.videoControls.subtitlesLabel : null,
       itemCount: tracks.length + 1,
       initialIndex: selectedIndex,
-      footer: _buildSubtitleSearchFooter(context, trackControlsState),
+      footer: _buildSubtitleFooter(context, trackControlsState, player),
       itemBuilder: (context, index, scope) {
         if (index == 0) {
           return TrackSelectionHelper.buildOffTile(
@@ -379,7 +387,7 @@ class _SubtitleColumn extends StatelessWidget {
       headerLabel: showHeader ? t.videoControls.subtitlesLabel : null,
       itemCount: itemCount,
       initialIndex: selectedIndex,
-      footer: _buildSubtitleSearchFooter(context, trackControlsState),
+      footer: _buildSubtitleFooter(context, trackControlsState, player),
       itemBuilder: (context, index, scope) {
         if (index == 0) {
           return TrackSelectionHelper.buildOffTile(
@@ -490,25 +498,67 @@ class _SubtitleColumn extends StatelessWidget {
   }
 }
 
-List<Widget> _buildSubtitleSearchFooter(BuildContext context, TrackControlsState state) {
-  if (!state.canSearchSubtitles) return const [];
+List<Widget> _buildSubtitleFooter(BuildContext context, TrackControlsState state, Player player) {
+  final footer = <Widget>[];
+  if (state.canSearchSubtitles) {
+    footer.addAll([
+      Divider(height: 1, color: Theme.of(context).dividerColor),
+      FocusableListTile(
+        leading: const AppIcon(Symbols.search_rounded),
+        title: Text(t.videoControls.searchSubtitles),
+        onTap: () {
+          OverlaySheetController.of(context).push(
+            builder: (_) => SubtitleSearchSheet(
+              ratingKey: state.ratingKey,
+              serverId: state.serverId!,
+              mediaIndex: state.selectedMediaIndex,
+              mediaTitle: state.mediaTitle,
+              onSubtitleDownloaded: state.onSubtitleDownloaded,
+            ),
+          );
+        },
+      ),
+    ]);
+  }
 
-  return [
+  if (player.playerType != 'exoplayer') {
+    footer.addAll([
+      Divider(height: 1, color: Theme.of(context).dividerColor),
+      FocusableListTile(
+        leading: const AppIcon(Symbols.file_open_rounded),
+        title: Text(t.videoControls.loadSubtitleFile),
+        onTap: () => _loadSubtitleFile(context, player),
+      ),
+    ]);
+  }
+
+  footer.addAll([
     Divider(height: 1, color: Theme.of(context).dividerColor),
     FocusableListTile(
-      leading: const AppIcon(Symbols.search_rounded),
-      title: Text(t.videoControls.searchSubtitles),
-      onTap: () {
-        OverlaySheetController.of(context).push(
-          builder: (_) => SubtitleSearchSheet(
-            ratingKey: state.ratingKey,
-            serverId: state.serverId!,
-            mediaIndex: state.selectedMediaIndex,
-            mediaTitle: state.mediaTitle,
-            onSubtitleDownloaded: state.onSubtitleDownloaded,
-          ),
-        );
-      },
+      leading: const AppIcon(Symbols.format_size_rounded),
+      title: Text(t.screens.subtitleStyling),
+      onTap: () => OverlaySheetController.of(context).push(builder: (_) => InPlayerSubtitleStyleSheet(player: player)),
     ),
-  ];
+  ]);
+  return footer;
+}
+
+Future<void> _loadSubtitleFile(BuildContext context, Player player) async {
+  final result = await FilePickerService.instance.pickFiles(
+    type: FileType.custom,
+    allowedExtensions: ['srt', 'ass', 'ssa', 'vtt', 'sub', 'idx', 'sup'],
+  );
+  if (result == null || result.files.isEmpty || !context.mounted) return;
+  final path = result.files.first.path;
+  if (path == null) {
+    showErrorSnackBar(context, t.videoControls.subtitleLoadFailed);
+    return;
+  }
+  try {
+    await player.command(['sub-add', path, 'select']);
+    if (context.mounted) OverlaySheetController.of(context).close();
+  } catch (error, stackTrace) {
+    appLogger.w('Could not load local subtitle file', error: error, stackTrace: stackTrace);
+    if (context.mounted) showErrorSnackBar(context, t.videoControls.subtitleLoadFailed);
+  }
 }

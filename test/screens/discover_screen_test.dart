@@ -61,11 +61,15 @@ void main() {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
     TvDetectionService.debugSetAppleTVOverride(true);
+    // Simulate a real TV: the test host is a desktop OS, and desktop keeps
+    // the PC home layout even when TV mode is on (usesTvHomeLayout).
+    PlatformDetector.debugSetIsDesktopOSOverride(false);
     LocaleSettings.setLocaleSync(AppLocale.en);
   });
 
   tearDown(() {
     TvDetectionService.debugSetAppleTVOverride(null);
+    PlatformDetector.debugSetIsDesktopOSOverride(null);
   });
 
   testWidgets('TV tab focus returns to discover browse rail instead of reload action', (tester) async {

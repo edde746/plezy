@@ -232,7 +232,19 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
     if (!_hubFocusNode.hasFocus) {
       _selectLongPress.reset();
     } else {
-      _notifyFocusedItemChanged();
+      // Focus can be granted synchronously while this row is still mounting
+      // as part of the very first frame's build/layout pass (e.g. initial
+      // TV auto-focus landing here) — calling straight through to
+      // onFocusedItemChanged in that case marks a *different* widget dirty
+      // mid-build (2026-09-11: reproducibly black-screened the whole TV
+      // page, no exception, no ErrorWidget, the instant anything actually
+      // listened to onFocusedItemChanged — release mode's silent-undefined-
+      // behavior version of the debug-only "setState during build" assert).
+      // Same hazard, same fix _followFocusedItem already uses a few lines up.
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted || !_hubFocusNode.hasFocus) return;
+        _notifyFocusedItemChanged();
+      });
     }
     // ignore: no-empty-block - setState triggers rebuild to update focus styling
     setStateIfMounted(() {});
@@ -246,7 +258,13 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
     _focusedIndex = clamped;
     // Remember this position for this specific hub
     widget.focusMemory.setForHub(_focusMemoryKey, clamped);
-    _notifyFocusedItemChanged();
+    // Deferred for the same reason _onFocusChange's own call is (see there):
+    // requestFocus() below can synchronously re-enter focus-changed handling
+    // while this row is still mounting as part of the initial frame.
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted || _focusedIndex != clamped) return;
+      _notifyFocusedItemChanged();
+    });
     _scrollToIndex(clamped);
     _hubFocusNode.requestFocus();
     // ignore: no-empty-block - setState triggers rebuild to update focus styling
@@ -571,6 +589,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                   SettingsService.libraryDensity,
                   SettingsService.episodePosterMode,
                   SettingsService.gridSpacing,
+                  SettingsService.continueWatchingRowSize,
                 ],
                 builder: (context) => LayoutBuilder(
                   builder: (context, constraints) {
@@ -602,7 +621,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                     // same gutter the grid uses, so a row and the "see all"
                     // grid behind it render the same card at equal width.
                     final gridGap = svc.read(SettingsService.gridSpacing).gridGap;
-                    final cardWidth = isTv && widget.cardSizing == HubCardSizing.shelf
+                    final baseCardWidth = isTv && widget.cardSizing == HubCardSizing.shelf
                         ? _getTvCardWidth(
                             context,
                             constraints.maxWidth,
@@ -617,6 +636,9 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                             density: density,
                             useWideAspectRatio: useWideLayout,
                           );
+                    final cardWidth =
+                        baseCardWidth *
+                        (widget.isInContinueWatching ? svc.read(SettingsService.continueWatchingRowSize).scale : 1.0);
                     final posterWidth = cardWidth - 6; // 3px padding on each side
                     final posterHeight = useWideLayout
                         ? posterWidth *

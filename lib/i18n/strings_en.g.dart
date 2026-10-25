@@ -72,6 +72,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$serverSelection$en serverSelection = Translations$serverSelection$en.internal(_root);
 	late final Translations$hubDetail$en hubDetail = Translations$hubDetail$en.internal(_root);
 	late final Translations$logs$en logs = Translations$logs$en.internal(_root);
+	late final Translations$detail$en detail = Translations$detail$en.internal(_root);
 	late final Translations$startup$en startup = Translations$startup$en.internal(_root);
 	late final Translations$licenses$en licenses = Translations$licenses$en.internal(_root);
 	late final Translations$navigation$en navigation = Translations$navigation$en.internal(_root);
@@ -95,6 +96,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$services$en services = Translations$services$en.internal(_root);
 	late final Translations$addServer$en addServer = Translations$addServer$en.internal(_root);
 	late final Translations$watchLink$en watchLink = Translations$watchLink$en.internal(_root);
+	late final Translations$homeLayout$en homeLayout = Translations$homeLayout$en.internal(_root);
 }
 
 // Path: app
@@ -629,6 +631,27 @@ class Translations$settings$en {
 	/// en: 'Show Hero Section'
 	String get showHeroSection => 'Show Hero Section';
 
+	/// en: 'Show home backdrop artwork'
+	String get showHomeBackdrop => 'Show home backdrop artwork';
+
+	/// en: 'Show large artwork behind featured Home rows'
+	String get showHomeBackdropDescription => 'Show large artwork behind featured Home rows';
+
+	/// en: 'Continue Watching row size'
+	String get continueWatchingRowSize => 'Continue Watching row size';
+
+	/// en: '${label} cards'
+	String continueWatchingRowSizeValue({required Object label}) => '${label} cards';
+
+	/// en: 'Compact'
+	String get rowSizeCompact => 'Compact';
+
+	/// en: 'Standard'
+	String get rowSizeStandard => 'Standard';
+
+	/// en: 'Large'
+	String get rowSizeLarge => 'Large';
+
 	/// en: 'Continue Watching Action'
 	String get continueWatchingAction => 'Continue Watching Action';
 
@@ -782,6 +805,12 @@ class Translations$settings$en {
 	/// en: 'Default Quality on Cellular'
 	String get cellularQualityTitle => 'Default Quality on Cellular';
 
+	/// en: 'Remote Streaming Quality'
+	String get remoteQualityTitle => 'Remote Streaming Quality';
+
+	/// en: 'Same as default quality'
+	String get remoteQualitySameAsDefault => 'Same as default quality';
+
 	/// en: 'Same as Default Quality'
 	String get cellularQualitySameAsDefault => 'Same as Default Quality';
 
@@ -830,11 +859,29 @@ class Translations$settings$en {
 	/// en: 'Remember track selections per show/movie'
 	String get rememberTrackSelections => 'Remember track selections per show/movie';
 
-	/// en: 'Remember audio and subtitle choices per title'
-	String get rememberTrackSelectionsDescription => 'Remember audio and subtitle choices per title';
+	/// en: 'Choose audio and subtitles before playback'
+	String get chooseTracksBeforePlayback => 'Choose audio and subtitles before playback';
 
-	/// en: 'Plex saves each choice on the server per file; Jellyfin also turns on the account's Remember selections; Emby is not supported'
-	String get rememberTrackSelectionsBackendRule => 'Plex saves each choice on the server per file; Jellyfin also turns on the account\'s Remember selections; Emby is not supported';
+	/// en: 'Pick the source audio and subtitle tracks before each video starts.'
+	String get chooseTracksBeforePlaybackDescription => 'Pick the source audio and subtitle tracks before each video starts.';
+
+	/// en: 'Always show subtitles on this device'
+	String get alwaysShowSubtitlesOnDevice => 'Always show subtitles on this device';
+
+	/// en: 'When the server has no subtitle selected, choose a track locally. This never changes the server's preference.'
+	String get alwaysShowSubtitlesOnDeviceDescription => 'When the server has no subtitle selected, choose a track locally. This never changes the server\'s preference.';
+
+	/// en: 'Fetch missing preferred-language subtitles'
+	String get autoDownloadPreferredSubtitle => 'Fetch missing preferred-language subtitles';
+
+	/// en: 'Select an available subtitle in your preferred language locally. If none exists, ask the server to fetch one when supported. The selection stays on this device.'
+	String get autoDownloadPreferredSubtitleDescription => 'Select an available subtitle in your preferred language locally. If none exists, ask the server to fetch one when supported. The selection stays on this device.';
+
+	/// en: 'Store audio and subtitle choices by show or movie on this device'
+	String get rememberTrackSelectionsDescription => 'Store audio and subtitle choices by show or movie on this device';
+
+	/// en: 'Works locally with Plex, Jellyfin, and Emby; Plex and Jellyfin can also save selections on the server'
+	String get rememberTrackSelectionsBackendRule => 'Works locally with Plex, Jellyfin, and Emby; Plex and Jellyfin can also save selections on the server';
 
 	/// en: 'Use server's per-episode track selections'
 	String get followServerTrackSelections => 'Use server\'s per-episode track selections';
@@ -968,6 +1015,39 @@ class Translations$settings$en {
 	/// en: 'Sign in before importing settings'
 	String get importSettingsNoUser => 'Sign in before importing settings';
 
+	/// en: 'Cloud Backup'
+	String get cloudBackup => 'Cloud Backup';
+
+	/// en: 'Back up portable settings to a WebDAV endpoint over HTTPS. Server connections and credentials stay on this device.'
+	String get cloudBackupDescription => 'Back up portable settings to a WebDAV endpoint over HTTPS. Server connections and credentials stay on this device.';
+
+	/// en: 'WebDAV JSON file URL'
+	String get cloudBackupUrl => 'WebDAV JSON file URL';
+
+	/// en: 'Username'
+	String get cloudBackupUsername => 'Username';
+
+	/// en: 'Password'
+	String get cloudBackupPassword => 'Password';
+
+	/// en: 'Cloud backup destination saved'
+	String get cloudBackupSaved => 'Cloud backup destination saved';
+
+	/// en: 'Back Up Now'
+	String get cloudBackupNow => 'Back Up Now';
+
+	/// en: 'Settings backup uploaded'
+	String get cloudBackupComplete => 'Settings backup uploaded';
+
+	/// en: 'Restore Backup'
+	String get cloudBackupRestore => 'Restore Backup';
+
+	/// en: 'This will replace matching portable settings on this device. Continue?'
+	String get cloudBackupRestoreConfirm => 'This will replace matching portable settings on this device. Continue?';
+
+	/// en: 'Settings restored from cloud backup'
+	String get cloudBackupRestored => 'Settings restored from cloud backup';
+
 	/// en: 'Shortcuts reset to defaults'
 	String get shortcutsReset => 'Shortcuts reset to defaults';
 
@@ -1025,11 +1105,11 @@ class Translations$settings$en {
 	/// en: 'Start each episode at the beginning when shuffling instead of resuming'
 	String get shuffleStartsFromBeginningDescription => 'Start each episode at the beginning when shuffling instead of resuming';
 
-	/// en: 'Play Pre-Roll Before Movies'
-	String get plexCinemaPreRoll => 'Play Pre-Roll Before Movies';
+	/// en: 'Use server cinema intros'
+	String get plexCinemaPreRoll => 'Use server cinema intros';
 
-	/// en: 'Play the pre-roll configured on your Plex server before a movie starts. Plex servers only'
-	String get plexCinemaPreRollDescription => 'Play the pre-roll configured on your Plex server before a movie starts. Plex servers only';
+	/// en: 'Play configured Plex pre-rolls or Jellyfin and Emby intros before a movie starts.'
+	String get plexCinemaPreRollDescription => 'Play configured Plex pre-rolls or Jellyfin and Emby intros before a movie starts.';
 
 	/// en: 'Play Next Countdown'
 	String get playNextCountdown => 'Play Next Countdown';
@@ -1097,6 +1177,12 @@ class Translations$settings$en {
 	/// en: 'Use chapter title patterns even when Plex has markers'
 	String get forceSkipMarkerFallbackDescription => 'Use chapter title patterns even when Plex has markers';
 
+	/// en: 'Use TheIntroDB as an intro fallback'
+	String get theIntroDbFallback => 'Use TheIntroDB as an intro fallback';
+
+	/// en: 'Use community timings only when the server has no intro marker. Matches can vary by release.'
+	String get theIntroDbFallbackDescription => 'Use community timings only when the server has no intro marker. Matches can vary by release.';
+
 	/// en: 'Auto Skip Delay'
 	String get autoSkipDelay => 'Auto Skip Delay';
 
@@ -1114,6 +1200,42 @@ class Translations$settings$en {
 
 	/// en: 'Regex pattern to match credits markers in chapter titles'
 	String get creditsPatternDescription => 'Regex pattern to match credits markers in chapter titles';
+
+	/// en: 'Prerolls'
+	String get prerolls => 'Prerolls';
+
+	/// en: 'Play prerolls before movies'
+	String get playPrerollsBeforeMovies => 'Play prerolls before movies';
+
+	/// en: 'Plays a random clip from your selection below before each movie. Press back to skip.'
+	String get playPrerollsBeforeMoviesDescription => 'Plays a random clip from your selection below before each movie. Press back to skip.';
+
+	/// en: 'Preroll library'
+	String get prerollLibrary => 'Preroll library';
+
+	/// en: 'Not set'
+	String get prerollLibraryNotSet => 'Not set';
+
+	/// en: 'No libraries found on your servers.'
+	String get prerollLibraryNoneFound => 'No libraries found on your servers.';
+
+	/// en: 'Selected prerolls'
+	String get prerollSelection => 'Selected prerolls';
+
+	/// en: 'Pick a library first'
+	String get prerollSelectionPickLibraryFirst => 'Pick a library first';
+
+	/// en: 'No prerolls selected'
+	String get prerollSelectionNoneSelected => 'No prerolls selected';
+
+	/// en: '${count} selected'
+	String prerollSelectionCount({required Object count}) => '${count} selected';
+
+	/// en: 'Select prerolls'
+	String get prerollItemPicker => 'Select prerolls';
+
+	/// en: 'Couldn't load items from this library.'
+	String get prerollItemPickerLoadFailed => 'Couldn\'t load items from this library.';
 
 	/// en: 'Invalid regular expression'
 	String get invalidRegex => 'Invalid regular expression';
@@ -1166,11 +1288,23 @@ class Translations$settings$en {
 	/// en: 'Delete watched downloads automatically'
 	String get autoRemoveWatchedDownloadsDescription => 'Delete watched downloads automatically';
 
+	/// en: 'Auto-download Continue Watching'
+	String get autoDownloadContinueWatching => 'Auto-download Continue Watching';
+
+	/// en: 'Keep items on your Continue Watching shelf downloaded, and remove them once they leave the shelf'
+	String get autoDownloadContinueWatchingDescription => 'Keep items on your Continue Watching shelf downloaded, and remove them once they leave the shelf';
+
 	/// en: 'Download quality'
 	String get downloadQuality => 'Download quality';
 
-	/// en: 'Plex servers shrink new downloads to this size first. Other servers send the original.'
-	String get downloadQualityDescription => 'Plex servers shrink new downloads to this size first. Other servers send the original.';
+	/// en: 'Plex prepares a converted copy in its download queue. Jellyfin and Emby transcode while the file downloads; interrupted transfers may need to restart.'
+	String get downloadQualityDescription => 'Plex prepares a converted copy in its download queue. Jellyfin and Emby transcode while the file downloads; interrupted transfers may need to restart.';
+
+	/// en: 'Choose quality for each download'
+	String get askDownloadQualityEachTime => 'Choose quality for each download';
+
+	/// en: 'Show the quality picker before queueing each video download'
+	String get askDownloadQualityEachTimeDescription => 'Show the quality picker before queueing each video download';
 
 	/// en: 'Downloads are blocked on cellular. Use Wi-Fi or change the setting.'
 	String get cellularDownloadBlocked => 'Downloads are blocked on cellular. Use Wi-Fi or change the setting.';
@@ -1430,11 +1564,26 @@ class Translations$settings$en {
 	/// en: 'Startup Section'
 	String get startupSection => 'Startup Section';
 
+	/// en: 'Preferred Server'
+	String get preferredServer => 'Preferred Server';
+
+	/// en: 'Prioritize this server's results while keeping every connected server available.'
+	String get preferredServerDescription => 'Prioritize this server\'s results while keeping every connected server available.';
+
+	/// en: 'Automatic'
+	String get preferredServerAutomatic => 'Automatic';
+
 	/// en: 'Show Explore Tab'
 	String get showExploreTab => 'Show Explore Tab';
 
 	/// en: 'Display the Explore tab with content from Plex Discover and connected trackers'
 	String get showExploreTabDescription => 'Display the Explore tab with content from Plex Discover and connected trackers';
+
+	/// en: 'Hide empty libraries'
+	String get hideEmptyLibraries => 'Hide empty libraries';
+
+	/// en: 'Remove libraries with a server-reported item count of zero from navigation.'
+	String get hideEmptyLibrariesDescription => 'Remove libraries with a server-reported item count of zero from navigation.';
 
 	/// en: 'Default to Favorite Channels'
 	String get liveTvDefaultFavorites => 'Default to Favorite Channels';
@@ -2474,6 +2623,12 @@ class Translations$videoControls$en {
 	/// en: 'Audio & Subtitles'
 	String get tracksButton => 'Audio & Subtitles';
 
+	/// en: 'Choose tracks before playback'
+	String get trackSelectionTitle => 'Choose tracks before playback';
+
+	/// en: 'Automatic selection'
+	String get trackSelectionAuto => 'Automatic selection';
+
 	/// en: 'Chapters'
 	String get chaptersButton => 'Chapters';
 
@@ -2574,6 +2729,12 @@ class Translations$videoControls$en {
 
 	/// en: 'Search Subtitles'
 	String get searchSubtitles => 'Search Subtitles';
+
+	/// en: 'Load subtitle file…'
+	String get loadSubtitleFile => 'Load subtitle file…';
+
+	/// en: 'Failed to load subtitle file'
+	String get subtitleLoadFailed => 'Failed to load subtitle file';
 
 	/// en: 'Language'
 	String get language => 'Language';
@@ -3201,6 +3362,18 @@ class Translations$profiles$en {
 
 	/// en: 'The Plex profile token resolved to an unexpected server'
 	String get tokenIdentityMismatch => 'The Plex profile token resolved to an unexpected server';
+
+	/// en: 'Settings are locked for this profile.'
+	String get settingsLocked => 'Settings are locked for this profile.';
+
+	/// en: 'Unlock settings'
+	String get unlockSettings => 'Unlock settings';
+
+	/// en: 'Show Explore for this profile'
+	String get showExploreForProfile => 'Show Explore for this profile';
+
+	/// en: 'Turn off to remove Explore from this profile’s navigation.'
+	String get showExploreForProfileDescription => 'Turn off to remove Explore from this profile’s navigation.';
 }
 
 // Path: connections
@@ -3513,6 +3686,12 @@ class Translations$libraries$en {
 
 	// Translations
 
+	/// en: 'Play a random movie'
+	String get playRandomMovie => 'Play a random movie';
+
+	/// en: 'Could not choose a random movie from this library.'
+	String get randomPickFailed => 'Could not choose a random movie from this library.';
+
 	/// en: 'Libraries'
 	String get title => 'Libraries';
 
@@ -3726,6 +3905,27 @@ class Translations$logs$en {
 
 	/// en: 'Upload Logs'
 	String get uploadLogs => 'Upload Logs';
+
+	/// en: 'Save Logs to File'
+	String get saveLogs => 'Save Logs to File';
+
+	/// en: 'Logs saved to ${path}'
+	String logsSaved({required Object path}) => 'Logs saved to ${path}';
+
+	/// en: 'Could not save the log file.'
+	String get saveLogsFailed => 'Could not save the log file.';
+}
+
+// Path: detail
+class Translations$detail$en {
+	Translations$detail$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Ends at ${time}'
+	String endsAt({required Object time}) => 'Ends at ${time}';
 }
 
 // Path: startup
@@ -5378,6 +5578,27 @@ class Translations$videoSettings$en {
 	/// en: 'Stereo'
 	String get audioOutputStereo => 'Stereo';
 
+	/// en: 'Audio Equalizer'
+	String get audioEqualizer => 'Audio Equalizer';
+
+	/// en: 'Adjust five frequency bands for this device. Available on mpv; an active EQ decodes audio and disables passthrough.'
+	String get audioEqualizerDescription => 'Adjust five frequency bands for this device. Available on mpv; an active EQ decodes audio and disables passthrough.';
+
+	/// en: 'Flat'
+	String get audioEqualizerFlat => 'Flat';
+
+	/// en: 'Custom'
+	String get audioEqualizerActive => 'Custom';
+
+	/// en: 'Couldn't save audio equalizer settings.'
+	String get audioEqualizerSaveFailed => 'Couldn\'t save audio equalizer settings.';
+
+	/// en: 'Background Video Audio'
+	String get backgroundVideoAudio => 'Background Video Audio';
+
+	/// en: 'Keep video audio playing when you leave the player; the picture is hidden until you return. Android uses a media playback notification.'
+	String get backgroundVideoAudioDescription => 'Keep video audio playing when you leave the player; the picture is hidden until you return. Android uses a media playback notification.';
+
 	/// en: 'Normalize Loudness'
 	String get audioNormalization => 'Normalize Loudness';
 
@@ -6306,6 +6527,9 @@ class Translations$addServer$en {
 	/// en: 'Enter the local IP and port of your Plex Media Server.'
 	String get directPlexServerUrlHelper => 'Enter the local IP and port of your Plex Media Server.';
 
+	/// en: 'http://192.168.1.100:32400'
+	String get directPlexServerUrlHint => 'http://192.168.1.100:32400';
+
 	/// en: 'Plex Token (optional)'
 	String get plexToken => 'Plex Token (optional)';
 
@@ -6365,6 +6589,303 @@ class Translations$watchLink$en {
 
 	/// en: 'Link copied'
 	String get copied => 'Link copied';
+}
+
+// Path: homeLayout
+class Translations$homeLayout$en {
+	Translations$homeLayout$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Home layout'
+	String get title => 'Home layout';
+
+	/// en: 'Home reset to the original Plezy hero layout'
+	String get resetToast => 'Home reset to the original Plezy hero layout';
+
+	/// en: 'Reset hero layout to stock Plezy?'
+	String get resetHeroTitle => 'Reset hero layout to stock Plezy?';
+
+	/// en: 'Turns off every row's hero setting and brings back the single rotating banner at the top of Home, like before hero rows existed. Row order and which rows are shown are not affected.'
+	String get resetHeroBody => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top of Home, like before hero rows existed. Row order and which rows are shown are not affected.';
+
+	/// en: 'Remove Home row?'
+	String get removeRowTitle => 'Remove Home row?';
+
+	/// en: '${title} will be deleted. This can't be undone.'
+	String removeRowBody({required Object title}) => '${title} will be deleted. This can\'t be undone.';
+
+	/// en: 'Sync'
+	String get sync => 'Sync';
+
+	/// en: 'Sync layout with your Plex account'
+	String get syncAccountTitle => 'Sync layout with your Plex account';
+
+	/// en: 'On: this device shares row order, rows, Hero and Auto-slide with your other devices.'
+	String get syncAccountOn => 'On: this device shares row order, rows, Hero and Auto-slide with your other devices.';
+
+	/// en: 'Off: this device keeps its own layout.'
+	String get syncAccountOff => 'Off: this device keeps its own layout.';
+
+	/// en: 'Sync now'
+	String get syncNow => 'Sync now';
+
+	/// en: 'Plex Home manager'
+	String get plexHomeManager => 'Plex Home manager';
+
+	/// en: 'Manage Plex rows in Plezy'
+	String get managePlexRows => 'Manage Plex rows in Plezy';
+
+	/// en: 'Open to organize the Home-selected rows'
+	String get managePlexRowsDescription => 'Open to organize the Home-selected rows';
+
+	/// en: 'Organize Home rows'
+	String get organizeHomeRows => 'Organize Home rows';
+
+	/// en: '${n} rows: move, Hero, Auto-slide, remove'
+	String organizeHomeRowsDescription({required Object n}) => '${n} rows: move, Hero, Auto-slide, remove';
+
+	/// en: 'Organize ${library} rows'
+	String organizeLibraryRows({required Object library}) => 'Organize ${library} rows';
+
+	/// en: 'Continue Watching + ${n} rows: move, Library, Home, Hero, Auto-slide'
+	String organizeLibraryRowsDescription({required Object n}) => 'Continue Watching + ${n} rows: move, Library, Home, Hero, Auto-slide';
+
+	/// en: 'Render as a hero card'
+	String get renderAsHero => 'Render as a hero card';
+
+	/// en: 'Only available when this row resolves to a single collection's actual titles'
+	String get heroOnlySingleCollection => 'Only available when this row resolves to a single collection\'s actual titles';
+
+	/// en: 'Hero'
+	String get hero => 'Hero';
+
+	/// en: 'Auto-slide'
+	String get autoSlide => 'Auto-slide';
+
+	/// en: 'Also slides on its own every few seconds. Arrows (PC) and d-pad (TV) always work and restart the timer.'
+	String get autoSlideDescription => 'Also slides on its own every few seconds. Arrows (PC) and d-pad (TV) always work and restart the timer.';
+
+	/// en: 'Also slides on its own every few seconds. Off: only moves when you click an arrow (PC) or press left/right on the remote (TV). Arrows and d-pad always work either way.'
+	String get autoSlideEditDescription => 'Also slides on its own every few seconds. Off: only moves when you click an arrow (PC) or press left/right on the remote (TV). Arrows and d-pad always work either way.';
+
+	/// en: 'Enable Hero first'
+	String get enableHeroFirst => 'Enable Hero first';
+
+	/// en: 'Show on Home screen'
+	String get showOnHome => 'Show on Home screen';
+
+	/// en: 'Home'
+	String get home => 'Home';
+
+	/// en: 'Remove from Home'
+	String get removeFromHome => 'Remove from Home';
+
+	/// en: 'Select Home rows below first.'
+	String get selectRowsFirst => 'Select Home rows below first.';
+
+	/// en: '${n} Plex-managed rows'
+	String plexManagedRows({required Object n}) => '${n} Plex-managed rows';
+
+	/// en: 'Continue Watching'
+	String get continueWatching => 'Continue Watching';
+
+	/// en: 'This library's own resume-progress row'
+	String get continueWatchingLibraryDescription => 'This library\'s own resume-progress row';
+
+	/// en: 'The resume-progress row shown on Home'
+	String get continueWatchingHomeDescription => 'The resume-progress row shown on Home';
+
+	/// en: 'The next unwatched episode row shown separately on Home'
+	String get nextUpHomeDescription => 'The next unwatched episode row shown separately on Home';
+
+	/// en: 'Library'
+	String get library => 'Library';
+
+	/// en: 'Show in Library Recommended'
+	String get showInRecommended => 'Show in Library Recommended';
+
+	/// en: 'Custom Plex row'
+	String get customPlexRow => 'Custom Plex row';
+
+	/// en: 'Check Library first — Hero needs somewhere to show'
+	String get heroNeedsLibrary => 'Check Library first — Hero needs somewhere to show';
+
+	/// en: 'Check Library or Home first — Hero needs somewhere to show'
+	String get heroNeedsSurface => 'Check Library or Home first — Hero needs somewhere to show';
+
+	/// en: 'Remove Hub'
+	String get removeHub => 'Remove Hub';
+
+	/// en: 'No Plex-managed rows returned for this library.'
+	String get noPlexRows => 'No Plex-managed rows returned for this library.';
+
+	/// en: 'Open details'
+	String get openDetails => 'Open details';
+
+	/// en: 'Hero cards'
+	String get heroCards => 'Hero cards';
+
+	/// en: 'Tapping a hero card'
+	String get tapHeroCard => 'Tapping a hero card';
+
+	/// en: 'TV remote: highlight Play button'
+	String get tvPlayFocus => 'TV remote: highlight Play button';
+
+	/// en: 'D-pad down stops on the Play button before moving to the next row. Off skips straight to the next row.'
+	String get tvPlayFocusDescription => 'D-pad down stops on the Play button before moving to the next row. Off skips straight to the next row.';
+
+	/// en: 'TV remote: loop hero cards'
+	String get tvWrap => 'TV remote: loop hero cards';
+
+	/// en: 'Right on the last card goes back to the first. Off stops at the last card. Left on the first card always goes to the sidebar.'
+	String get tvWrapDescription => 'Right on the last card goes back to the first. Off stops at the last card. Left on the first card always goes to the sidebar.';
+
+	/// en: 'Cast on hero banners'
+	String get castOnHero => 'Cast on hero banners';
+
+	/// en: 'Shows the cast along the bottom of a hero banner. Off keeps just the title and summary.'
+	String get castOnHeroDescription => 'Shows the cast along the bottom of a hero banner. Off keeps just the title and summary.';
+
+	/// en: 'Custom rows'
+	String get customRows => 'Custom rows';
+
+	/// en: 'Loading home layout…'
+	String get loading => 'Loading home layout…';
+
+	/// en: 'No custom rows yet'
+	String get noCustomRows => 'No custom rows yet';
+
+	/// en: 'Use Add Home row to create one.'
+	String get addRowHint => 'Use Add Home row to create one.';
+
+	/// en: 'Add Home row'
+	String get addHomeRow => 'Add Home row';
+
+	/// en: 'Choose a category; the new row is added to Organizer automatically'
+	String get addHomeRowDescription => 'Choose a category; the new row is added to Organizer automatically';
+
+	/// en: 'Remove row'
+	String get removeRow => 'Remove row';
+
+	/// en: 'Recently Added'
+	String get recentlyAdded => 'Recently Added';
+
+	/// en: 'Recently Released'
+	String get recentlyReleased => 'Recently Released';
+
+	/// en: 'Movie Collections'
+	String get movieCollections => 'Movie Collections';
+
+	/// en: 'Show Collections'
+	String get showCollections => 'Show Collections';
+
+	/// en: 'Row title'
+	String get rowTitle => 'Row title';
+
+	/// en: 'Content'
+	String get content => 'Content';
+
+	/// en: 'Show this row in:'
+	String get showThisRowIn => 'Show this row in:';
+
+	/// en: 'Library Recommended'
+	String get libraryRecommended => 'Library Recommended';
+
+	/// en: 'Hero card'
+	String get heroCard => 'Hero card';
+
+	/// en: 'Shows as one full-width rotating card instead of a poster shelf.'
+	String get heroCardDescription => 'Shows as one full-width rotating card instead of a poster shelf.';
+
+	/// en: 'Only available when this row resolves to a single collection's actual titles — with more than one collection selected there is no single title to rotate through.'
+	String get heroUnavailableDescription => 'Only available when this row resolves to a single collection\'s actual titles — with more than one collection selected there is no single title to rotate through.';
+
+	/// en: 'Libraries (leave all unchecked to include every library)'
+	String get librariesSelection => 'Libraries (leave all unchecked to include every library)';
+
+	/// en: 'Every library checked here is merged into this one row.'
+	String get librariesMergedDescription => 'Every library checked here is merged into this one row.';
+
+	/// en: 'Movie collections (leave all unchecked for every selected library)'
+	String get movieCollectionsSelection => 'Movie collections (leave all unchecked for every selected library)';
+
+	/// en: 'Show collections (leave all unchecked for every selected library)'
+	String get showCollectionsSelection => 'Show collections (leave all unchecked for every selected library)';
+
+	/// en: 'If exactly one collection matches, its titles show directly in the row. If more than one matches, each collection shows as a single poster — tap it to open that collection.'
+	String get collectionRowsDescription => 'If exactly one collection matches, its titles show directly in the row. If more than one matches, each collection shows as a single poster — tap it to open that collection.';
+
+	/// en: 'All collections'
+	String get allCollections => 'All collections';
+
+	/// en: 'No rows here yet.'
+	String get noRowsHere => 'No rows here yet.';
+
+	/// en: 'Hide watched items in rows'
+	String get hideWatchedRows => 'Hide watched items in rows';
+
+	/// en: 'Fully watched titles leave Home and library Recommended rows. In-progress ones stay.'
+	String get hideWatchedRowsDescription => 'Fully watched titles leave Home and library Recommended rows. In-progress ones stay.';
+
+	/// en: 'Untitled collection'
+	String get untitledCollection => 'Untitled collection';
+
+	/// en: 'Up/Down: move row · Select: drop it here · Back: cancel'
+	String get moveRowHint => 'Up/Down: move row · Select: drop it here · Back: cancel';
+
+	/// en: 'Select on a row (or hold Select): move it · Left/Right: row options · Back: done'
+	String get organizeRowsHint => 'Select on a row (or hold Select): move it · Left/Right: row options · Back: done';
+
+	/// en: 'Choose rows, libraries, and collection categories'
+	String get layoutNavDescription => 'Choose rows, libraries, and collection categories';
+
+	/// en: 'Edit Home row'
+	String get editHomeRow => 'Edit Home row';
+
+	/// en: 'Reset hero layout to stock Plezy'
+	String get resetHeroButton => 'Reset hero layout to stock Plezy';
+
+	/// en: 'Reordering unlocked'
+	String get reorderingUnlocked => 'Reordering unlocked';
+
+	/// en: 'Reordering locked'
+	String get reorderingLocked => 'Reordering locked';
+
+	/// en: 'Rows can be dragged — tap the lock to prevent that'
+	String get rowsCanBeDragged => 'Rows can be dragged — tap the lock to prevent that';
+
+	/// en: 'Tap the lock to drag rows'
+	String get tapLockToDrag => 'Tap the lock to drag rows';
+
+	/// en: 'Custom: ${title}'
+	String customRowLabel({required Object title}) => 'Custom: ${title}';
+
+	/// en: '${library}: ${hub}'
+	String libraryHubLabel({required Object library, required Object hub}) => '${library}: ${hub}';
+
+	/// en: 'Hide'
+	String get hide => 'Hide';
+
+	/// en: 'Remove'
+	String get remove => 'Remove';
+
+	/// en: 'This library's resume row'
+	String get libraryResumeRow => 'This library\'s resume row';
+
+	/// en: 'Press again to delete'
+	String get pressAgainToDelete => 'Press again to delete';
+
+	/// en: '${action}: ${state}'
+	String actionState({required Object action, required Object state}) => '${action}: ${state}';
+
+	/// en: 'On'
+	String get on => 'On';
+
+	/// en: 'Turns off every row's hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept.'
+	String get resetHeroButtonDescription => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept.';
 }
 
 // Path: appIcon.names
@@ -7217,6 +7738,9 @@ class Translations$explore$mdblistShelves$en {
 
 	/// en: 'Manage Explore shelves'
 	String get manage => 'Manage Explore shelves';
+
+	/// en: 'Choose and arrange lists from your MDBList account'
+	String get manageDescription => 'Choose and arrange lists from your MDBList account';
 
 	/// en: 'Choose public movie and TV lists from your MDBList account. Create or copy lists on MDBList, then refresh.'
 	String get description => 'Choose public movie and TV lists from your MDBList account. Create or copy lists on MDBList, then refresh.';
@@ -8614,6 +9138,13 @@ extension on Translations {
 			'settings.gridView' => 'Grid',
 			'settings.listView' => 'List',
 			'settings.showHeroSection' => 'Show Hero Section',
+			'settings.showHomeBackdrop' => 'Show home backdrop artwork',
+			'settings.showHomeBackdropDescription' => 'Show large artwork behind featured Home rows',
+			'settings.continueWatchingRowSize' => 'Continue Watching row size',
+			'settings.continueWatchingRowSizeValue' => ({required Object label}) => '${label} cards',
+			'settings.rowSizeCompact' => 'Compact',
+			'settings.rowSizeStandard' => 'Standard',
+			'settings.rowSizeLarge' => 'Large',
 			'settings.continueWatchingAction' => 'Continue Watching Action',
 			'settings.continueWatchingPlay' => 'Play',
 			'settings.continueWatchingDetails' => 'Open Details',
@@ -8665,6 +9196,8 @@ extension on Translations {
 			'settings.streamBufferMegabytes' => 'Megabytes',
 			'settings.defaultQualityTitle' => 'Default Quality',
 			'settings.cellularQualityTitle' => 'Default Quality on Cellular',
+			'settings.remoteQualityTitle' => 'Remote Streaming Quality',
+			'settings.remoteQualitySameAsDefault' => 'Same as default quality',
 			'settings.cellularQualitySameAsDefault' => 'Same as Default Quality',
 			'settings.directPlayCoveredQuality' => 'Play Smaller Videos at Original Quality',
 			'settings.directPlayCoveredQualityDescription' => 'Direct play videos already within the quality limit instead of transcoding them',
@@ -8681,8 +9214,14 @@ extension on Translations {
 			'settings.defaultSleepTimer' => 'Default Sleep Timer',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutes',
 			'settings.rememberTrackSelections' => 'Remember track selections per show/movie',
-			'settings.rememberTrackSelectionsDescription' => 'Remember audio and subtitle choices per title',
-			'settings.rememberTrackSelectionsBackendRule' => 'Plex saves each choice on the server per file; Jellyfin also turns on the account\'s Remember selections; Emby is not supported',
+			'settings.chooseTracksBeforePlayback' => 'Choose audio and subtitles before playback',
+			'settings.chooseTracksBeforePlaybackDescription' => 'Pick the source audio and subtitle tracks before each video starts.',
+			'settings.alwaysShowSubtitlesOnDevice' => 'Always show subtitles on this device',
+			'settings.alwaysShowSubtitlesOnDeviceDescription' => 'When the server has no subtitle selected, choose a track locally. This never changes the server\'s preference.',
+			'settings.autoDownloadPreferredSubtitle' => 'Fetch missing preferred-language subtitles',
+			'settings.autoDownloadPreferredSubtitleDescription' => 'Select an available subtitle in your preferred language locally. If none exists, ask the server to fetch one when supported. The selection stays on this device.',
+			'settings.rememberTrackSelectionsDescription' => 'Store audio and subtitle choices by show or movie on this device',
+			'settings.rememberTrackSelectionsBackendRule' => 'Works locally with Plex, Jellyfin, and Emby; Plex and Jellyfin can also save selections on the server',
 			'settings.followServerTrackSelections' => 'Use server\'s per-episode track selections',
 			'settings.followServerTrackSelectionsDescription' => 'On episode change, apply the audio and subtitles selected on the server instead of carrying over the current choice',
 			'settings.resumeMusicOnLaunch' => 'Remember music session',
@@ -8727,6 +9266,17 @@ extension on Translations {
 			'settings.importSettingsSuccess' => 'Settings imported',
 			'settings.importSettingsInvalidFile' => 'This file isn\'t a valid PlezyNG settings export',
 			'settings.importSettingsNoUser' => 'Sign in before importing settings',
+			'settings.cloudBackup' => 'Cloud Backup',
+			'settings.cloudBackupDescription' => 'Back up portable settings to a WebDAV endpoint over HTTPS. Server connections and credentials stay on this device.',
+			'settings.cloudBackupUrl' => 'WebDAV JSON file URL',
+			'settings.cloudBackupUsername' => 'Username',
+			'settings.cloudBackupPassword' => 'Password',
+			'settings.cloudBackupSaved' => 'Cloud backup destination saved',
+			'settings.cloudBackupNow' => 'Back Up Now',
+			'settings.cloudBackupComplete' => 'Settings backup uploaded',
+			'settings.cloudBackupRestore' => 'Restore Backup',
+			'settings.cloudBackupRestoreConfirm' => 'This will replace matching portable settings on this device. Continue?',
+			'settings.cloudBackupRestored' => 'Settings restored from cloud backup',
 			'settings.shortcutsReset' => 'Shortcuts reset to defaults',
 			'settings.resetShortcutsConfirm' => 'This will replace your custom shortcuts with the defaults. Continue?',
 			'settings.about' => 'About',
@@ -8746,8 +9296,8 @@ extension on Translations {
 			'settings.autoPlayNextEpisodeDescription' => 'Start the next episode automatically when one ends',
 			'settings.shuffleStartsFromBeginning' => 'Shuffle Starts at Beginning',
 			'settings.shuffleStartsFromBeginningDescription' => 'Start each episode at the beginning when shuffling instead of resuming',
-			'settings.plexCinemaPreRoll' => 'Play Pre-Roll Before Movies',
-			'settings.plexCinemaPreRollDescription' => 'Play the pre-roll configured on your Plex server before a movie starts. Plex servers only',
+			'settings.plexCinemaPreRoll' => 'Use server cinema intros',
+			'settings.plexCinemaPreRollDescription' => 'Play configured Plex pre-rolls or Jellyfin and Emby intros before a movie starts.',
 			'settings.playNextCountdown' => 'Play Next Countdown',
 			'settings.playNextCountdownImmediate' => 'Play immediately',
 			'settings.skipIntroMode' => 'Skip Intro',
@@ -8770,12 +9320,26 @@ extension on Translations {
 			'settings.skipMarkerModeAuto' => 'Automatic',
 			'settings.forceSkipMarkerFallback' => 'Force Fallback Markers',
 			'settings.forceSkipMarkerFallbackDescription' => 'Use chapter title patterns even when Plex has markers',
+			'settings.theIntroDbFallback' => 'Use TheIntroDB as an intro fallback',
+			'settings.theIntroDbFallbackDescription' => 'Use community timings only when the server has no intro marker. Matches can vary by release.',
 			'settings.autoSkipDelay' => 'Auto Skip Delay',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Wait ${seconds} seconds before auto-skipping',
 			'settings.introPattern' => 'Intro Marker Pattern',
 			'settings.introPatternDescription' => 'Regex pattern to match intro markers in chapter titles',
 			'settings.creditsPattern' => 'Credits Marker Pattern',
 			'settings.creditsPatternDescription' => 'Regex pattern to match credits markers in chapter titles',
+			'settings.prerolls' => 'Prerolls',
+			'settings.playPrerollsBeforeMovies' => 'Play prerolls before movies',
+			'settings.playPrerollsBeforeMoviesDescription' => 'Plays a random clip from your selection below before each movie. Press back to skip.',
+			'settings.prerollLibrary' => 'Preroll library',
+			'settings.prerollLibraryNotSet' => 'Not set',
+			'settings.prerollLibraryNoneFound' => 'No libraries found on your servers.',
+			'settings.prerollSelection' => 'Selected prerolls',
+			'settings.prerollSelectionPickLibraryFirst' => 'Pick a library first',
+			'settings.prerollSelectionNoneSelected' => 'No prerolls selected',
+			'settings.prerollSelectionCount' => ({required Object count}) => '${count} selected',
+			'settings.prerollItemPicker' => 'Select prerolls',
+			'settings.prerollItemPickerLoadFailed' => 'Couldn\'t load items from this library.',
 			'settings.invalidRegex' => 'Invalid regular expression',
 			'settings.regex' => 'Regular expression',
 			'settings.downloads' => 'Downloads',
@@ -8793,8 +9357,12 @@ extension on Translations {
 			'settings.downloadOnWifiOnlyDescription' => 'Prevent downloads when on cellular data',
 			'settings.autoRemoveWatchedDownloads' => 'Auto-remove watched downloads',
 			'settings.autoRemoveWatchedDownloadsDescription' => 'Delete watched downloads automatically',
+			'settings.autoDownloadContinueWatching' => 'Auto-download Continue Watching',
+			'settings.autoDownloadContinueWatchingDescription' => 'Keep items on your Continue Watching shelf downloaded, and remove them once they leave the shelf',
 			'settings.downloadQuality' => 'Download quality',
-			'settings.downloadQualityDescription' => 'Plex servers shrink new downloads to this size first. Other servers send the original.',
+			'settings.downloadQualityDescription' => 'Plex prepares a converted copy in its download queue. Jellyfin and Emby transcode while the file downloads; interrupted transfers may need to restart.',
+			'settings.askDownloadQualityEachTime' => 'Choose quality for each download',
+			'settings.askDownloadQualityEachTimeDescription' => 'Show the quality picker before queueing each video download',
 			'settings.cellularDownloadBlocked' => 'Downloads are blocked on cellular. Use Wi-Fi or change the setting.',
 			'settings.maxVolume' => 'Maximum Volume',
 			'settings.maxVolumeDescription' => 'Allow volume boost above 100% for quiet media',
@@ -8877,12 +9445,19 @@ extension on Translations {
 			'settings.exitFullscreenOnPlayerClose' => 'Exit fullscreen on player close',
 			'settings.exitFullscreenOnPlayerCloseDescription' => 'Automatically exit fullscreen when closing the video player',
 			'settings.autoHidePerformanceOverlay' => 'Auto-Hide Performance Overlay',
+			_ => null,
+		} ?? switch (path) {
 			'settings.autoHidePerformanceOverlayDescription' => 'Fade the performance overlay with the playback controls',
 			'settings.showNavBarLabels' => 'Show Navigation Bar Labels',
 			'settings.showNavBarLabelsDescription' => 'Display text labels under navigation bar icons',
 			'settings.startupSection' => 'Startup Section',
+			'settings.preferredServer' => 'Preferred Server',
+			'settings.preferredServerDescription' => 'Prioritize this server\'s results while keeping every connected server available.',
+			'settings.preferredServerAutomatic' => 'Automatic',
 			'settings.showExploreTab' => 'Show Explore Tab',
 			'settings.showExploreTabDescription' => 'Display the Explore tab with content from Plex Discover and connected trackers',
+			'settings.hideEmptyLibraries' => 'Hide empty libraries',
+			'settings.hideEmptyLibrariesDescription' => 'Remove libraries with a server-reported item count of zero from navigation.',
 			'settings.liveTvDefaultFavorites' => 'Default to Favorite Channels',
 			'settings.liveTvDefaultFavoritesDescription' => 'Show only favorite channels when opening Live TV',
 			'settings.general' => 'General',
@@ -8921,8 +9496,6 @@ extension on Translations {
 			'settings.scopeAspectRatio' => 'Aspect Ratio',
 			'settings.scopeSyncOffsets' => 'Audio & Subtitle Sync',
 			'settings.playerScopeOff' => 'Don\'t save',
-			_ => null,
-		} ?? switch (path) {
 			'settings.playerScopeGlobal' => 'Everywhere',
 			'settings.playerScopeLibrary' => 'Per library',
 			'settings.playerScopeTitle' => 'Per show or movie',
@@ -9237,6 +9810,8 @@ extension on Translations {
 			'videoControls.unmuteButton' => 'Unmute',
 			'videoControls.settingsButton' => 'Playback Settings',
 			'videoControls.tracksButton' => 'Audio & Subtitles',
+			'videoControls.trackSelectionTitle' => 'Choose tracks before playback',
+			'videoControls.trackSelectionAuto' => 'Automatic selection',
 			'videoControls.chaptersButton' => 'Chapters',
 			'videoControls.versionQualityButton' => 'Version & Quality',
 			'videoControls.versionColumnHeader' => 'Version',
@@ -9278,6 +9853,8 @@ extension on Translations {
 			'videoControls.noQueueItems' => 'No items in queue',
 			'videoControls.noAudioDevicesAvailable' => 'No audio devices available',
 			'videoControls.searchSubtitles' => 'Search Subtitles',
+			'videoControls.loadSubtitleFile' => 'Load subtitle file…',
+			'videoControls.subtitleLoadFailed' => 'Failed to load subtitle file',
 			'videoControls.language' => 'Language',
 			'videoControls.noSubtitlesFound' => 'No subtitles found',
 			'videoControls.subtitleDownloaded' => 'Subtitle downloaded',
@@ -9382,6 +9959,8 @@ extension on Translations {
 			'subtitlingStyling.useMarginsDescription' => 'Allow text subtitles in the space outside the video. Styled subtitles may keep their original placement.',
 			'subtitlingStyling.anchorToScreen' => 'Anchor to Screen',
 			'subtitlingStyling.anchorToScreenDescription' => 'Show text subtitles in the black bars below widescreen video',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.bold' => 'Bold',
 			'subtitlingStyling.italic' => 'Italic',
 			'subtitlingStyling.renderResolution' => 'Render Resolution',
@@ -9435,8 +10014,6 @@ extension on Translations {
 			'profiles.setPin' => 'Set PIN',
 			'profiles.setPinTitle' => 'Set PIN',
 			'profiles.confirmPinTitle' => 'Confirm PIN',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.pinSet' => 'PIN set',
 			'profiles.changePin' => 'Change',
 			'profiles.removePin' => 'Remove',
@@ -9473,6 +10050,10 @@ extension on Translations {
 			'profiles.continueButton' => 'Continue',
 			'profiles.pinsDontMatch' => 'PINs don\'t match',
 			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
+			'profiles.settingsLocked' => 'Settings are locked for this profile.',
+			'profiles.unlockSettings' => 'Unlock settings',
+			'profiles.showExploreForProfile' => 'Show Explore for this profile',
+			'profiles.showExploreForProfileDescription' => 'Turn off to remove Explore from this profile’s navigation.',
 			'connections.sectionTitle' => 'Connections',
 			'connections.addConnection' => 'Add connection',
 			'connections.addConnectionSubtitleNoProfile' => 'Sign in with Plex or connect a Jellyfin or Emby server',
@@ -9590,6 +10171,8 @@ extension on Translations {
 			'errors.reasonServerError' => 'the server reported an error',
 			'errors.reasonCancelled' => 'the request was cancelled',
 			'errors.reasonUnexpected' => 'an unexpected error occurred',
+			'libraries.playRandomMovie' => 'Play a random movie',
+			'libraries.randomPickFailed' => 'Could not choose a random movie from this library.',
 			'libraries.title' => 'Libraries',
 			'libraries.fallbackTitle' => 'Library',
 			'libraries.scanLibraryFiles' => 'Scan Library Files',
@@ -9726,6 +10309,10 @@ extension on Translations {
 			'logs.clearLogs' => 'Clear Logs',
 			'logs.copyLogs' => 'Copy Logs',
 			'logs.uploadLogs' => 'Upload Logs',
+			'logs.saveLogs' => 'Save Logs to File',
+			'logs.logsSaved' => ({required Object path}) => 'Logs saved to ${path}',
+			'logs.saveLogsFailed' => 'Could not save the log file.',
+			'detail.endsAt' => ({required Object time}) => 'Ends at ${time}',
 			'startup.failedTitle' => 'PlezyNG could not start',
 			'startup.failedBody' => 'Something went wrong during startup. The details below identify what failed.',
 			'startup.failedBodyRepairable' => 'PlezyNG\'s saved settings file is damaged and has to be rebuilt before PlezyNG can start. Retrying will not help — choose Repair storage.',
@@ -9765,6 +10352,7 @@ extension on Translations {
 			'navigation.liveTv' => 'Live TV',
 			'navigation.explore' => 'Explore',
 			'explore.mdblistShelves.manage' => 'Manage Explore shelves',
+			'explore.mdblistShelves.manageDescription' => 'Choose and arrange lists from your MDBList account',
 			'explore.mdblistShelves.description' => 'Choose public movie and TV lists from your MDBList account. Create or copy lists on MDBList, then refresh.',
 			'explore.mdblistShelves.selected' => 'Selected shelves',
 			'explore.mdblistShelves.available' => 'Available account lists',
@@ -9885,6 +10473,8 @@ extension on Translations {
 			'explore.creditRole.creator' => 'Creator',
 			'explore.creditRole.composer' => 'Composer',
 			'explore.relation.prequel' => 'Prequel',
+			_ => null,
+		} ?? switch (path) {
 			'explore.relation.sequel' => 'Sequel',
 			'explore.relation.sideStory' => 'Side story',
 			'explore.relation.spinOff' => 'Spin-off',
@@ -9949,8 +10539,6 @@ extension on Translations {
 			'liveTv.reloadGuide' => 'Reload Guide',
 			'liveTv.searchGuide' => 'Search Guide',
 			'liveTv.searchHint' => 'Search channels & programs',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.searchNoResults' => ({required Object query}) => 'No matches for "${query}"',
 			'liveTv.channelsSection' => 'Channels',
 			'liveTv.programsSection' => 'Programs',
@@ -10399,6 +10987,8 @@ extension on Translations {
 			'downloads.notificationDownloading' => 'Downloading...',
 			'downloads.notificationComplete' => 'Download complete',
 			'downloads.notificationPaused' => 'Download paused',
+			_ => null,
+		} ?? switch (path) {
 			'shaders.title' => 'Shaders',
 			'shaders.noShaderDescription' => 'No video enhancement',
 			'shaders.nvscalerDescription' => 'NVIDIA image scaling for sharper video',
@@ -10463,8 +11053,6 @@ extension on Translations {
 			'companionRemote.remote.next' => 'Next',
 			'companionRemote.remote.seekBack' => 'Seek Back',
 			'companionRemote.remote.stop' => 'Stop',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.seekForward' => 'Seek Fwd',
 			'companionRemote.remote.volume' => 'Volume',
 			'companionRemote.remote.volumeDown' => 'Down',
@@ -10504,6 +11092,13 @@ extension on Translations {
 			'videoSettings.audioOutputSurround' => 'Surround',
 			'videoSettings.audioOutputSpatial' => 'Spatial Audio',
 			'videoSettings.audioOutputStereo' => 'Stereo',
+			'videoSettings.audioEqualizer' => 'Audio Equalizer',
+			'videoSettings.audioEqualizerDescription' => 'Adjust five frequency bands for this device. Available on mpv; an active EQ decodes audio and disables passthrough.',
+			'videoSettings.audioEqualizerFlat' => 'Flat',
+			'videoSettings.audioEqualizerActive' => 'Custom',
+			'videoSettings.audioEqualizerSaveFailed' => 'Couldn\'t save audio equalizer settings.',
+			'videoSettings.backgroundVideoAudio' => 'Background Video Audio',
+			'videoSettings.backgroundVideoAudioDescription' => 'Keep video audio playing when you leave the player; the picture is hidden until you return. Android uses a media playback notification.',
 			'videoSettings.audioNormalization' => 'Normalize Loudness',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Decodes audio to PCM; passthrough is off while this is on',
 			'performanceOverlay.color' => 'Color',
@@ -10814,6 +11409,7 @@ extension on Translations {
 			'addServer.redirectUnsupportedEnterFinal' => ({required Object product}) => 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.',
 			'addServer.directPlexServerUrl' => 'Plex server URL',
 			'addServer.directPlexServerUrlHelper' => 'Enter the local IP and port of your Plex Media Server.',
+			'addServer.directPlexServerUrlHint' => 'http://192.168.1.100:32400',
 			'addServer.plexToken' => 'Plex Token (optional)',
 			'addServer.plexTokenHelper' => 'Leave blank if access without auth is allowed on this server.',
 			'addServer.plexTokenRequired' => 'Authentication required. Please enter your Plex token (X-Plex-Token).',
@@ -10831,6 +11427,104 @@ extension on Translations {
 			'watchLink.dialogMovieHint' => 'Opening this link plays the movie.',
 			'watchLink.copy' => 'Copy',
 			'watchLink.copied' => 'Link copied',
+			'homeLayout.title' => 'Home layout',
+			'homeLayout.resetToast' => 'Home reset to the original Plezy hero layout',
+			'homeLayout.resetHeroTitle' => 'Reset hero layout to stock Plezy?',
+			'homeLayout.resetHeroBody' => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top of Home, like before hero rows existed. Row order and which rows are shown are not affected.',
+			'homeLayout.removeRowTitle' => 'Remove Home row?',
+			'homeLayout.removeRowBody' => ({required Object title}) => '${title} will be deleted. This can\'t be undone.',
+			'homeLayout.sync' => 'Sync',
+			'homeLayout.syncAccountTitle' => 'Sync layout with your Plex account',
+			'homeLayout.syncAccountOn' => 'On: this device shares row order, rows, Hero and Auto-slide with your other devices.',
+			'homeLayout.syncAccountOff' => 'Off: this device keeps its own layout.',
+			'homeLayout.syncNow' => 'Sync now',
+			'homeLayout.plexHomeManager' => 'Plex Home manager',
+			'homeLayout.managePlexRows' => 'Manage Plex rows in Plezy',
+			'homeLayout.managePlexRowsDescription' => 'Open to organize the Home-selected rows',
+			'homeLayout.organizeHomeRows' => 'Organize Home rows',
+			'homeLayout.organizeHomeRowsDescription' => ({required Object n}) => '${n} rows: move, Hero, Auto-slide, remove',
+			'homeLayout.organizeLibraryRows' => ({required Object library}) => 'Organize ${library} rows',
+			'homeLayout.organizeLibraryRowsDescription' => ({required Object n}) => 'Continue Watching + ${n} rows: move, Library, Home, Hero, Auto-slide',
+			'homeLayout.renderAsHero' => 'Render as a hero card',
+			'homeLayout.heroOnlySingleCollection' => 'Only available when this row resolves to a single collection\'s actual titles',
+			'homeLayout.hero' => 'Hero',
+			'homeLayout.autoSlide' => 'Auto-slide',
+			'homeLayout.autoSlideDescription' => 'Also slides on its own every few seconds. Arrows (PC) and d-pad (TV) always work and restart the timer.',
+			'homeLayout.autoSlideEditDescription' => 'Also slides on its own every few seconds. Off: only moves when you click an arrow (PC) or press left/right on the remote (TV). Arrows and d-pad always work either way.',
+			'homeLayout.enableHeroFirst' => 'Enable Hero first',
+			'homeLayout.showOnHome' => 'Show on Home screen',
+			'homeLayout.home' => 'Home',
+			'homeLayout.removeFromHome' => 'Remove from Home',
+			'homeLayout.selectRowsFirst' => 'Select Home rows below first.',
+			'homeLayout.plexManagedRows' => ({required Object n}) => '${n} Plex-managed rows',
+			'homeLayout.continueWatching' => 'Continue Watching',
+			'homeLayout.continueWatchingLibraryDescription' => 'This library\'s own resume-progress row',
+			'homeLayout.continueWatchingHomeDescription' => 'The resume-progress row shown on Home',
+			'homeLayout.nextUpHomeDescription' => 'The next unwatched episode row shown separately on Home',
+			'homeLayout.library' => 'Library',
+			'homeLayout.showInRecommended' => 'Show in Library Recommended',
+			'homeLayout.customPlexRow' => 'Custom Plex row',
+			'homeLayout.heroNeedsLibrary' => 'Check Library first — Hero needs somewhere to show',
+			'homeLayout.heroNeedsSurface' => 'Check Library or Home first — Hero needs somewhere to show',
+			'homeLayout.removeHub' => 'Remove Hub',
+			'homeLayout.noPlexRows' => 'No Plex-managed rows returned for this library.',
+			'homeLayout.openDetails' => 'Open details',
+			'homeLayout.heroCards' => 'Hero cards',
+			'homeLayout.tapHeroCard' => 'Tapping a hero card',
+			'homeLayout.tvPlayFocus' => 'TV remote: highlight Play button',
+			'homeLayout.tvPlayFocusDescription' => 'D-pad down stops on the Play button before moving to the next row. Off skips straight to the next row.',
+			'homeLayout.tvWrap' => 'TV remote: loop hero cards',
+			'homeLayout.tvWrapDescription' => 'Right on the last card goes back to the first. Off stops at the last card. Left on the first card always goes to the sidebar.',
+			'homeLayout.castOnHero' => 'Cast on hero banners',
+			'homeLayout.castOnHeroDescription' => 'Shows the cast along the bottom of a hero banner. Off keeps just the title and summary.',
+			'homeLayout.customRows' => 'Custom rows',
+			'homeLayout.loading' => 'Loading home layout…',
+			'homeLayout.noCustomRows' => 'No custom rows yet',
+			'homeLayout.addRowHint' => 'Use Add Home row to create one.',
+			'homeLayout.addHomeRow' => 'Add Home row',
+			'homeLayout.addHomeRowDescription' => 'Choose a category; the new row is added to Organizer automatically',
+			'homeLayout.removeRow' => 'Remove row',
+			'homeLayout.recentlyAdded' => 'Recently Added',
+			'homeLayout.recentlyReleased' => 'Recently Released',
+			'homeLayout.movieCollections' => 'Movie Collections',
+			'homeLayout.showCollections' => 'Show Collections',
+			'homeLayout.rowTitle' => 'Row title',
+			'homeLayout.content' => 'Content',
+			'homeLayout.showThisRowIn' => 'Show this row in:',
+			'homeLayout.libraryRecommended' => 'Library Recommended',
+			'homeLayout.heroCard' => 'Hero card',
+			'homeLayout.heroCardDescription' => 'Shows as one full-width rotating card instead of a poster shelf.',
+			'homeLayout.heroUnavailableDescription' => 'Only available when this row resolves to a single collection\'s actual titles — with more than one collection selected there is no single title to rotate through.',
+			'homeLayout.librariesSelection' => 'Libraries (leave all unchecked to include every library)',
+			'homeLayout.librariesMergedDescription' => 'Every library checked here is merged into this one row.',
+			'homeLayout.movieCollectionsSelection' => 'Movie collections (leave all unchecked for every selected library)',
+			'homeLayout.showCollectionsSelection' => 'Show collections (leave all unchecked for every selected library)',
+			'homeLayout.collectionRowsDescription' => 'If exactly one collection matches, its titles show directly in the row. If more than one matches, each collection shows as a single poster — tap it to open that collection.',
+			'homeLayout.allCollections' => 'All collections',
+			_ => null,
+		} ?? switch (path) {
+			'homeLayout.noRowsHere' => 'No rows here yet.',
+			'homeLayout.hideWatchedRows' => 'Hide watched items in rows',
+			'homeLayout.hideWatchedRowsDescription' => 'Fully watched titles leave Home and library Recommended rows. In-progress ones stay.',
+			'homeLayout.untitledCollection' => 'Untitled collection',
+			'homeLayout.moveRowHint' => 'Up/Down: move row · Select: drop it here · Back: cancel',
+			'homeLayout.organizeRowsHint' => 'Select on a row (or hold Select): move it · Left/Right: row options · Back: done',
+			'homeLayout.layoutNavDescription' => 'Choose rows, libraries, and collection categories',
+			'homeLayout.editHomeRow' => 'Edit Home row',
+			'homeLayout.resetHeroButton' => 'Reset hero layout to stock Plezy',
+			'homeLayout.reorderingUnlocked' => 'Reordering unlocked',
+			'homeLayout.reorderingLocked' => 'Reordering locked',
+			'homeLayout.rowsCanBeDragged' => 'Rows can be dragged — tap the lock to prevent that',
+			'homeLayout.tapLockToDrag' => 'Tap the lock to drag rows',
+			'homeLayout.customRowLabel' => ({required Object title}) => 'Custom: ${title}',
+			'homeLayout.libraryHubLabel' => ({required Object library, required Object hub}) => '${library}: ${hub}',
+			'homeLayout.hide' => 'Hide',
+			'homeLayout.remove' => 'Remove',
+			'homeLayout.libraryResumeRow' => 'This library\'s resume row',
+			'homeLayout.pressAgainToDelete' => 'Press again to delete',
+			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
+			'homeLayout.on' => 'On',
+			'homeLayout.resetHeroButtonDescription' => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept.',
 			_ => null,
 		};
 	}

@@ -2116,7 +2116,10 @@ void main() {
 
       // The card reads "Director" under the name, ahead of the actor's card.
       expect(find.text('Director'), findsWidgets);
-      expect(tester.getTopLeft(find.text('Jane Director').first).dx, lessThan(tester.getTopLeft(find.text('Leo Actor')).dx));
+      expect(
+        tester.getTopLeft(find.text('Jane Director').first).dx,
+        lessThan(tester.getTopLeft(find.text('Leo Actor')).dx),
+      );
     });
 
     testWidgets('shows a cast strip for directors alone and skips directors without an id', (tester) async {
@@ -2125,7 +2128,10 @@ void main() {
         backend: MediaBackend.plex,
         kind: MediaKind.movie,
         title: 'Directors only',
-        directorRoles: const [MediaRole(id: '7', tag: 'Jane Director'), MediaRole(tag: 'No Id Director')],
+        directorRoles: const [
+          MediaRole(id: '7', tag: 'Jane Director'),
+          MediaRole(tag: 'No Id Director'),
+        ],
         serverId: 'server_1',
         serverName: 'Server',
       );

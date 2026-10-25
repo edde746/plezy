@@ -1,7 +1,11 @@
 part of '../../video_player_screen.dart';
 
-bool shouldPauseVideoForBackground({required bool isHandheld, required bool isTv, required bool isAutomotive}) =>
-    isHandheld || isTv || isAutomotive;
+bool shouldPauseVideoForBackground({
+  required bool isHandheld,
+  required bool isTv,
+  required bool isAutomotive,
+  bool continueAudioInBackground = false,
+}) => !continueAudioInBackground && (isHandheld || isTv || isAutomotive);
 
 extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
   void _enqueueLifecycleTransition(String label, Future<void> Function() transition) {
@@ -73,6 +77,7 @@ extension _VideoPlayerLifecycleMethods on VideoPlayerScreenState {
       isHandheld: PlatformDetector.isMobile(context),
       isTv: isTv,
       isAutomotive: isAutomotive,
+      continueAudioInBackground: _backgroundVideoAudioAllowed,
     );
 
     // A Watch Together room stops waiting for a player the background pauses.

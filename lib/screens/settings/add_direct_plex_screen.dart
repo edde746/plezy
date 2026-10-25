@@ -255,7 +255,7 @@ class _AddDirectPlexScreenState extends State<AddDirectPlexScreen>
         enabled: !busy,
         decoration: InputDecoration(
           labelText: t.addServer.directPlexServerUrl,
-          hintText: 'http://192.168.1.100:32400',
+          hintText: t.addServer.directPlexServerUrlHint,
           helperText: info == null ? t.addServer.directPlexServerUrlHelper : null,
           prefixIcon: const BackendBadge(backend: MediaBackend.plex, size: 20),
         ),

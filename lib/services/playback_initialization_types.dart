@@ -198,6 +198,23 @@ class PlaybackInitializationResult {
     this.selectedMediaIndex = 0,
     this.selectedMediaSourceId,
   });
+
+  PlaybackInitializationResult copyWith({MediaSourceInfo? mediaInfo, List<PlaybackSubtitleSidecar>? subtitleSidecars}) {
+    return PlaybackInitializationResult(
+      availableVersions: availableVersions,
+      videoUrl: videoUrl,
+      mediaInfo: mediaInfo ?? this.mediaInfo,
+      subtitleSidecars: subtitleSidecars ?? this.subtitleSidecars,
+      isOffline: isOffline,
+      isTranscoding: isTranscoding,
+      fallbackReason: fallbackReason,
+      activeAudioStreamId: activeAudioStreamId,
+      playSessionId: playSessionId,
+      playMethod: playMethod,
+      selectedMediaIndex: selectedMediaIndex,
+      selectedMediaSourceId: selectedMediaSourceId,
+    );
+  }
 }
 
 /// Stable, payload-free reason for a playback initialization failure.

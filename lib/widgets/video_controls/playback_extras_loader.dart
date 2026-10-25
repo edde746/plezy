@@ -4,6 +4,7 @@ import '../../media/media_item.dart';
 import '../../media/media_server_client.dart';
 import '../../media/media_source_info.dart';
 import '../../services/cached_playback_metadata_service.dart';
+import '../../services/the_intro_db_fallback_service.dart';
 import '../../services/settings_service.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/global_key_utils.dart';
@@ -30,8 +31,9 @@ class VideoControlsPlaybackExtrasLoader {
         forceChapterFallback: settings.read(SettingsService.forceSkipMarkerFallback),
         forceRefresh: forceRefresh,
       );
-      appLogger.d('_loadPlaybackExtras: got ${_describe(extras)}');
-      return extras;
+      final resolved = await _addTheIntroDbFallback(extras, client!);
+      appLogger.d('_loadPlaybackExtras: got ${_describe(resolved)}');
+      return resolved;
     } catch (e, stack) {
       appLogger.d('_loadPlaybackExtras: network path failed, trying cache fallback');
       try {
@@ -43,14 +45,31 @@ class VideoControlsPlaybackExtrasLoader {
           forceChapterFallback: settings.read(SettingsService.forceSkipMarkerFallback),
         );
         if (extras != null) {
-          appLogger.d('_loadPlaybackExtras: loaded ${_describe(extras)} from cache');
-          return extras;
+          final resolved = await _addTheIntroDbFallback(extras, client!);
+          appLogger.d('_loadPlaybackExtras: loaded ${_describe(resolved)} from cache');
+          return resolved;
         }
       } catch (cacheError) {
         appLogger.d('_loadPlaybackExtras: cache fallback failed', error: cacheError);
       }
       appLogger.e('_loadPlaybackExtras failed', error: e, stackTrace: stack);
       return null;
+    }
+  }
+
+  Future<PlaybackExtras> _addTheIntroDbFallback(PlaybackExtras extras, MediaServerClient client) async {
+    final settings = await SettingsService.getInstance();
+    if (!settings.read(SettingsService.theIntroDbFallback) || extras.markers.any((marker) => marker.type == 'intro')) {
+      return extras;
+    }
+    try {
+      final markers = await TheIntroDbFallbackService().fetchIntroMarkers(metadata, client);
+      if (markers.isEmpty) return extras;
+      final combined = [...extras.markers, ...markers]..sort((a, b) => a.startTimeOffset.compareTo(b.startTimeOffset));
+      return PlaybackExtras(chapters: extras.chapters, markers: combined);
+    } catch (error) {
+      appLogger.d('TheIntroDB fallback unavailable', error: error);
+      return extras;
     }
   }
 

@@ -377,6 +377,8 @@ class PlexLibraryDto {
   final int? updatedAt;
   @JsonKey(fromJson: flexibleInt)
   final int? createdAt;
+  @JsonKey(name: 'size', fromJson: flexibleInt)
+  final int? itemCount;
   @JsonKey(fromJson: flexibleInt)
   final int? hidden;
   @JsonKey(includeFromJson: false)
@@ -397,6 +399,7 @@ class PlexLibraryDto {
     this.uuid,
     this.updatedAt,
     this.createdAt,
+    this.itemCount,
     this.hidden,
     this.serverId,
     this.serverName,
@@ -417,6 +420,7 @@ class PlexLibraryDto {
       uuid: uuid,
       updatedAt: updatedAt,
       createdAt: createdAt,
+      itemCount: itemCount,
       hidden: hidden,
       serverId: serverId ?? this.serverId,
       serverName: serverName ?? this.serverName,
@@ -1327,6 +1331,7 @@ class PlexMappers {
       language: dto.language,
       updatedAt: dto.updatedAt,
       createdAt: dto.createdAt,
+      itemCount: dto.itemCount,
       hidden: dto.hidden == 1,
       isShared: dto.isShared,
       serverId: dto.serverId,
