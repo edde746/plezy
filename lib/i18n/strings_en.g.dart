@@ -5407,6 +5407,33 @@ class Translations$downloads$en {
 	/// en: 'Sync rules'
 	String get activeSyncRules => 'Sync rules';
 
+	/// en: 'Review orphaned downloads'
+	String get reviewOrphanFiles => 'Review orphaned downloads';
+
+	/// en: 'Review orphaned downloads'
+	String get orphanReviewTitle => 'Review orphaned downloads';
+
+	/// en: 'These tagged files are in PlezyNG's default app-managed download folders and have no matching download record or active task. Check the list before deleting them.'
+	String get orphanReviewDescription => 'These tagged files are in PlezyNG\'s default app-managed download folders and have no matching download record or active task. Check the list before deleting them.';
+
+	/// en: '${count} files · ${size}'
+	String orphanReviewCount({required Object count, required Object size}) => '${count} files · ${size}';
+
+	/// en: 'Delete ${count} files'
+	String orphanDeleteFiles({required Object count}) => 'Delete ${count} files';
+
+	/// en: 'No orphaned download files found'
+	String get orphanCleanupNone => 'No orphaned download files found';
+
+	/// en: 'PlezyNG could not safely scan the managed downloads folder. No files were deleted.'
+	String get orphanCleanupFailed => 'PlezyNG could not safely scan the managed downloads folder. No files were deleted.';
+
+	/// en: 'The download list changed during review. Review the files again before cleaning.'
+	String get orphanCleanupChanged => 'The download list changed during review. Review the files again before cleaning.';
+
+	/// en: 'Deleted ${count} orphaned files · ${size} freed'
+	String orphanCleanupComplete({required Object count, required Object size}) => 'Deleted ${count} orphaned files · ${size} freed';
+
 	/// en: 'No sync rules'
 	String get noSyncRules => 'No sync rules';
 
@@ -11066,6 +11093,15 @@ extension on Translations {
 			'downloads.downloadsUpToDate' => 'Downloads are up to date',
 			'downloads.syncComplete' => ({required Object queued, required Object removed}) => 'Sync complete · ${queued} queued, ${removed} removed',
 			'downloads.activeSyncRules' => 'Sync rules',
+			'downloads.reviewOrphanFiles' => 'Review orphaned downloads',
+			'downloads.orphanReviewTitle' => 'Review orphaned downloads',
+			'downloads.orphanReviewDescription' => 'These tagged files are in PlezyNG\'s default app-managed download folders and have no matching download record or active task. Check the list before deleting them.',
+			'downloads.orphanReviewCount' => ({required Object count, required Object size}) => '${count} files · ${size}',
+			'downloads.orphanDeleteFiles' => ({required Object count}) => 'Delete ${count} files',
+			'downloads.orphanCleanupNone' => 'No orphaned download files found',
+			'downloads.orphanCleanupFailed' => 'PlezyNG could not safely scan the managed downloads folder. No files were deleted.',
+			'downloads.orphanCleanupChanged' => 'The download list changed during review. Review the files again before cleaning.',
+			'downloads.orphanCleanupComplete' => ({required Object count, required Object size}) => 'Deleted ${count} orphaned files · ${size} freed',
 			'downloads.noSyncRules' => 'No sync rules',
 			'downloads.manageSyncRule' => 'Manage sync',
 			'downloads.editEpisodeCount' => 'Episode count',
@@ -11095,6 +11131,8 @@ extension on Translations {
 			'downloads.backgroundWarning.reasonOemUnknown' => 'Downloads repeatedly stopped while PlezyNG was in the background. Check PlezyNG\'s battery or background usage settings.',
 			'downloads.backgroundWarning.openSettings' => 'Open settings',
 			'downloads.backgroundWarning.stillNotWorking' => 'Device-specific help',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.backgroundWarning.stillNotWorkingDescription' => 'See steps for your device, or send a log from Settings › View Logs if the issue continues.',
 			'downloads.backgroundWarning.dialogTitle' => 'Downloads may not finish',
 			'downloads.backgroundWarning.dialogDownloadAnyway' => 'Download anyway',
@@ -11104,8 +11142,6 @@ extension on Translations {
 			'downloads.backgroundWarning.statusBlocked' => 'Blocked by system settings',
 			'downloads.backgroundWarning.statusDegraded' => 'Limited by system settings',
 			'downloads.backgroundWarning.statusUnknown' => 'Not checked yet',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.backgroundWarning.settingsUnavailable' => 'Couldn\'t open system settings on this device',
 			'downloads.backgroundWarning.linkUnavailable' => 'Couldn\'t open dontkillmyapp.com on this device',
 			'downloads.options' => 'Downloads options',
@@ -11609,6 +11645,8 @@ extension on Translations {
 			'homeLayout.nextUpHomeDescription' => 'The next unwatched episode row shown separately on Home',
 			'homeLayout.library' => 'Library',
 			'homeLayout.showInRecommended' => 'Show in Library Recommended',
+			_ => null,
+		} ?? switch (path) {
 			'homeLayout.customPlexRow' => 'Custom Plex row',
 			'homeLayout.heroNeedsLibrary' => 'Check Library first — Hero needs somewhere to show',
 			'homeLayout.heroNeedsSurface' => 'Check Library or Home first — Hero needs somewhere to show',
@@ -11618,8 +11656,6 @@ extension on Translations {
 			'homeLayout.heroCards' => 'Hero cards',
 			'homeLayout.tapHeroCard' => 'Tapping a hero card',
 			'homeLayout.tvPlayFocus' => 'TV remote: highlight Play button',
-			_ => null,
-		} ?? switch (path) {
 			'homeLayout.tvPlayFocusDescription' => 'D-pad down stops on the Play button before moving to the next row. Off skips straight to the next row.',
 			'homeLayout.tvWrap' => 'TV remote: loop hero cards',
 			'homeLayout.tvWrapDescription' => 'Right on the last card goes back to the first. Off stops at the last card. Left on the first card always goes to the sidebar.',

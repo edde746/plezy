@@ -286,7 +286,7 @@ val downloadLibdovi = tasks.register("downloadLibdovi") {
 
 android {
   namespace = "com.edde746.plezy"
-  compileSdk = flutter.compileSdkVersion
+  compileSdk = 37
   buildToolsVersion = "36.1.0"
   ndkVersion = "29.0.14206865"
 
@@ -294,6 +294,10 @@ android {
   // stub, not a shipped dependency: the classes exist only on AAOS images, so every use is guarded
   // by FEATURE_AUTOMOTIVE and the manifest declares `uses-library android.car required=false`.
   useLibrary("android.car")
+
+  buildFeatures {
+    buildConfig = true
+  }
 
   compileOptions {
     isCoreLibraryDesugaringEnabled = true
