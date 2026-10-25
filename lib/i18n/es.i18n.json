@@ -227,6 +227,13 @@
     "gridView": "Cuadrícula",
     "listView": "Lista",
     "showHeroSection": "Mostrar sección destacada",
+    "showHomeBackdrop": "",
+    "showHomeBackdropDescription": "",
+    "continueWatchingRowSize": "",
+    "continueWatchingRowSizeValue": "",
+    "rowSizeCompact": "",
+    "rowSizeStandard": "",
+    "rowSizeLarge": "",
     "continueWatchingAction": "Acción de «Seguir viendo»",
     "continueWatchingPlay": "Reproducir",
     "continueWatchingDetails": "Abrir detalles",
@@ -376,6 +383,8 @@
     "skipMarkerModeAuto": "Automático",
     "forceSkipMarkerFallback": "Forzar marcadores alternativos",
     "forceSkipMarkerFallbackDescription": "Usar patrones de títulos de capítulos aunque Plex tenga marcadores",
+    "theIntroDbFallback": "",
+    "theIntroDbFallbackDescription": "",
     "autoSkipDelay": "Retraso del salto automático",
     "autoSkipDelayDescription": "Esperar ${seconds} segundos antes de saltar automáticamente",
     "introPattern": "Patrón de marcador de introducción",
@@ -505,6 +514,8 @@
     "startupSection": "Sección de inicio",
     "showExploreTab": "Mostrar pestaña Explorar",
     "showExploreTabDescription": "Muestra la pestaña Explorar con contenido de Plex Discover y servicios de seguimiento conectados",
+    "hideEmptyLibraries": "",
+    "hideEmptyLibrariesDescription": "",
     "liveTvDefaultFavorites": "Canales favoritos por defecto",
     "liveTvDefaultFavoritesDescription": "Mostrar solo canales favoritos al abrir TV en vivo",
     "general": "General",
@@ -1145,7 +1156,11 @@
     "pinExplain": "Se requiere PIN de 4 dígitos para cambiar de perfil.",
     "continueButton": "Continuar",
     "pinsDontMatch": "Los PIN no coinciden",
-    "tokenIdentityMismatch": "El token del perfil de Plex correspondía a un servidor inesperado"
+    "tokenIdentityMismatch": "El token del perfil de Plex correspondía a un servidor inesperado",
+    "settingsLocked": "",
+    "unlockSettings": "",
+    "showExploreForProfile": "",
+    "showExploreForProfileDescription": ""
   },
   "connections": {
     "sectionTitle": "Conexiones",
@@ -1290,6 +1305,8 @@
     "reasonUnexpected": "se produjo un error inesperado"
   },
   "libraries": {
+    "playRandomMovie": "",
+    "randomPickFailed": "",
     "title": "Bibliotecas",
     "fallbackTitle": "Biblioteca",
     "scanLibraryFiles": "Escanear archivos de la biblioteca",
@@ -1445,7 +1462,13 @@
   "logs": {
     "clearLogs": "Borrar registros",
     "copyLogs": "Copiar registros",
-    "uploadLogs": "Subir registros"
+    "uploadLogs": "Subir registros",
+    "saveLogs": "",
+    "logsSaved": "",
+    "saveLogsFailed": ""
+  },
+  "detail": {
+    "endsAt": ""
   },
   "startup": {
     "failedTitle": "Plezy no pudo iniciarse",

@@ -227,6 +227,13 @@
     "gridView": "Gitter",
     "listView": "Liste",
     "showHeroSection": "Vis udvalgt indhold",
+    "showHomeBackdrop": "",
+    "showHomeBackdropDescription": "",
+    "continueWatchingRowSize": "",
+    "continueWatchingRowSizeValue": "",
+    "rowSizeCompact": "",
+    "rowSizeStandard": "",
+    "rowSizeLarge": "",
     "continueWatchingAction": "Handling for \"Fortsæt med at se\"",
     "continueWatchingPlay": "Afspil",
     "continueWatchingDetails": "Åbn detaljer",
@@ -376,6 +383,8 @@
     "skipMarkerModeAuto": "Automatisk",
     "forceSkipMarkerFallback": "Tving reservemarkører",
     "forceSkipMarkerFallbackDescription": "Brug mønstre i kapiteltitler, selv når Plex har markører",
+    "theIntroDbFallback": "",
+    "theIntroDbFallbackDescription": "",
     "autoSkipDelay": "Forsinkelse ved automatisk spring",
     "autoSkipDelayDescription": "Vent ${seconds} sekunder, før der springes automatisk",
     "introPattern": "Intromarkørmønster",
@@ -505,6 +514,8 @@
     "startupSection": "Startsektion",
     "showExploreTab": "Vis fanen Opdag",
     "showExploreTabDescription": "Vis fanen Opdag med indhold fra Plex Discover og tilknyttede trackere",
+    "hideEmptyLibraries": "",
+    "hideEmptyLibrariesDescription": "",
     "liveTvDefaultFavorites": "Vis favoritkanaler som standard",
     "liveTvDefaultFavoritesDescription": "Vis kun favoritkanaler ved åbning af Live TV",
     "general": "Generelt",
@@ -1145,7 +1156,11 @@
     "pinExplain": "Der kræves en 4-cifret PIN-kode for at skifte profil.",
     "continueButton": "Fortsæt",
     "pinsDontMatch": "PIN-koderne matcher ikke",
-    "tokenIdentityMismatch": "Plex-profiltokenet blev knyttet til en uventet server"
+    "tokenIdentityMismatch": "Plex-profiltokenet blev knyttet til en uventet server",
+    "settingsLocked": "",
+    "unlockSettings": "",
+    "showExploreForProfile": "",
+    "showExploreForProfileDescription": ""
   },
   "connections": {
     "sectionTitle": "Forbindelser",
@@ -1290,6 +1305,8 @@
     "reasonUnexpected": "der opstod en uventet fejl"
   },
   "libraries": {
+    "playRandomMovie": "",
+    "randomPickFailed": "",
     "title": "Biblioteker",
     "fallbackTitle": "Bibliotek",
     "scanLibraryFiles": "Scan biblioteksfiler",
@@ -1445,7 +1462,13 @@
   "logs": {
     "clearLogs": "Ryd logfiler",
     "copyLogs": "Kopiér logfiler",
-    "uploadLogs": "Upload logfiler"
+    "uploadLogs": "Upload logfiler",
+    "saveLogs": "",
+    "logsSaved": "",
+    "saveLogsFailed": ""
+  },
+  "detail": {
+    "endsAt": ""
   },
   "startup": {
     "failedTitle": "Plezy kunne ikke starte",

@@ -227,6 +227,13 @@
     "gridView": "网格视图",
     "listView": "列表视图",
     "showHeroSection": "显示精选内容区",
+    "showHomeBackdrop": "",
+    "showHomeBackdropDescription": "",
+    "continueWatchingRowSize": "",
+    "continueWatchingRowSizeValue": "",
+    "rowSizeCompact": "",
+    "rowSizeStandard": "",
+    "rowSizeLarge": "",
     "continueWatchingAction": "继续观看操作",
     "continueWatchingPlay": "播放",
     "continueWatchingDetails": "打开详情",
@@ -376,6 +383,8 @@
     "skipMarkerModeAuto": "自动",
     "forceSkipMarkerFallback": "强制使用备用标记",
     "forceSkipMarkerFallbackDescription": "即使 Plex 有标记，也使用章节标题模式",
+    "theIntroDbFallback": "",
+    "theIntroDbFallbackDescription": "",
     "autoSkipDelay": "自动跳过延迟",
     "autoSkipDelayDescription": "自动跳过前等待 ${seconds} 秒",
     "introPattern": "片头标记模式",
@@ -505,6 +514,8 @@
     "startupSection": "启动页面",
     "showExploreTab": "显示“探索”标签页",
     "showExploreTabDescription": "显示“探索”标签页，其中包含来自 Plex Discover 和已连接追踪服务的内容",
+    "hideEmptyLibraries": "",
+    "hideEmptyLibrariesDescription": "",
     "liveTvDefaultFavorites": "默认显示收藏频道",
     "liveTvDefaultFavoritesDescription": "打开直播电视时仅显示收藏频道",
     "general": "通用",
@@ -1140,7 +1151,11 @@
     "pinExplain": "切换用户资料时需要输入 4 位 PIN。",
     "continueButton": "继续",
     "pinsDontMatch": "PIN 不匹配",
-    "tokenIdentityMismatch": "Plex 用户资料令牌解析到了非预期服务器"
+    "tokenIdentityMismatch": "Plex 用户资料令牌解析到了非预期服务器",
+    "settingsLocked": "",
+    "unlockSettings": "",
+    "showExploreForProfile": "",
+    "showExploreForProfileDescription": ""
   },
   "connections": {
     "sectionTitle": "连接",
@@ -1284,6 +1299,8 @@
     "reasonUnexpected": "发生了意外错误"
   },
   "libraries": {
+    "playRandomMovie": "",
+    "randomPickFailed": "",
     "title": "媒体库",
     "fallbackTitle": "媒体库",
     "scanLibraryFiles": "扫描媒体库文件",
@@ -1439,7 +1456,13 @@
   "logs": {
     "clearLogs": "清除日志",
     "copyLogs": "复制日志",
-    "uploadLogs": "上传日志"
+    "uploadLogs": "上传日志",
+    "saveLogs": "",
+    "logsSaved": "",
+    "saveLogsFailed": ""
+  },
+  "detail": {
+    "endsAt": ""
   },
   "startup": {
     "failedTitle": "Plezy 无法启动",

@@ -227,6 +227,13 @@
     "gridView": "Grid",
     "listView": "List",
     "showHeroSection": "Show Hero Section",
+    "showHomeBackdrop": "Show home backdrop artwork",
+    "showHomeBackdropDescription": "Show large artwork behind featured Home rows",
+    "continueWatchingRowSize": "Continue Watching row size",
+    "continueWatchingRowSizeValue": "${label} cards",
+    "rowSizeCompact": "Compact",
+    "rowSizeStandard": "Standard",
+    "rowSizeLarge": "Large",
     "continueWatchingAction": "Continue Watching Action",
     "continueWatchingPlay": "Play",
     "continueWatchingDetails": "Open Details",
@@ -376,6 +383,8 @@
     "skipMarkerModeAuto": "Automatic",
     "forceSkipMarkerFallback": "Force Fallback Markers",
     "forceSkipMarkerFallbackDescription": "Use chapter title patterns even when Plex has markers",
+    "theIntroDbFallback": "Use TheIntroDB as an intro fallback",
+    "theIntroDbFallbackDescription": "Use community timings only when the server has no intro marker. Matches can vary by release.",
     "autoSkipDelay": "Auto Skip Delay",
     "autoSkipDelayDescription": "Wait ${seconds} seconds before auto-skipping",
     "introPattern": "Intro Marker Pattern",
@@ -505,6 +514,10 @@
     "startupSection": "Startup Section",
     "showExploreTab": "Show Explore Tab",
     "showExploreTabDescription": "Display the Explore tab with content from Plex Discover and connected trackers",
+    "hideEmptyLibraries": "Hide empty libraries",
+    "hideEmptyLibrariesDescription": "Remove libraries with a server-reported item count of zero from navigation.",
+    "hideEmptyLibraries": "Hide empty libraries",
+    "hideEmptyLibrariesDescription": "Remove libraries with a server-reported item count of zero from navigation.",
     "liveTvDefaultFavorites": "Default to Favorite Channels",
     "liveTvDefaultFavoritesDescription": "Show only favorite channels when opening Live TV",
     "general": "General",
@@ -1145,7 +1158,11 @@
     "pinExplain": "4-digit PIN required to switch profiles.",
     "continueButton": "Continue",
     "pinsDontMatch": "PINs don't match",
-    "tokenIdentityMismatch": "The Plex profile token resolved to an unexpected server"
+    "tokenIdentityMismatch": "The Plex profile token resolved to an unexpected server",
+    "settingsLocked": "Settings are locked for this profile.",
+    "unlockSettings": "Unlock settings",
+    "showExploreForProfile": "Show Explore for this profile",
+    "showExploreForProfileDescription": "Turn off to remove Explore from this profile’s navigation."
   },
   "connections": {
     "sectionTitle": "Connections",
@@ -1290,6 +1307,8 @@
     "reasonUnexpected": "an unexpected error occurred"
   },
   "libraries": {
+    "playRandomMovie": "Play a random movie",
+    "randomPickFailed": "Could not choose a random movie from this library.",
     "title": "Libraries",
     "fallbackTitle": "Library",
     "scanLibraryFiles": "Scan Library Files",
@@ -1445,7 +1464,13 @@
   "logs": {
     "clearLogs": "Clear Logs",
     "copyLogs": "Copy Logs",
-    "uploadLogs": "Upload Logs"
+    "uploadLogs": "Upload Logs",
+    "saveLogs": "Save Logs to File",
+    "logsSaved": "Logs saved to ${path}",
+    "saveLogsFailed": "Could not save the log file."
+  },
+  "detail": {
+    "endsAt": "Ends at ${time}"
   },
   "startup": {
     "failedTitle": "Plezy could not start",

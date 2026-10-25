@@ -1395,6 +1395,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       if (metadata case PlexMediaItem(:final editionTitle?)) addTextChip(editionTitle, 3);
       if (metadata.contentRating != null) addTextChip(formatContentRating(metadata.contentRating!), 2);
       if (metadata.durationMs != null) addTextChip(formatDurationTextual(metadata.durationMs!), 1);
+      if (metadata.durationMs != null) {
+        final remainingMs = (metadata.durationMs! - (metadata.viewOffsetMs ?? 0))
+            .clamp(0, metadata.durationMs!)
+            .toInt();
+        final endTime = DateTime.now().add(Duration(milliseconds: remainingMs));
+        addTextChip(
+          t.detail.endsAt(time: formatClockTime(endTime, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context))),
+          2,
+        );
+      }
       for (final label in buildMediaQualityLabels(metadata)) {
         addTextChip(label, 4);
       }

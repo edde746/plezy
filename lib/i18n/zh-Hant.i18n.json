@@ -227,6 +227,13 @@
     "gridView": "網格檢視",
     "listView": "清單檢視",
     "showHeroSection": "顯示精選內容區",
+    "showHomeBackdrop": "",
+    "showHomeBackdropDescription": "",
+    "continueWatchingRowSize": "",
+    "continueWatchingRowSizeValue": "",
+    "rowSizeCompact": "",
+    "rowSizeStandard": "",
+    "rowSizeLarge": "",
     "continueWatchingAction": "繼續觀看操作",
     "continueWatchingPlay": "播放影片",
     "continueWatchingDetails": "開啟詳情頁",
@@ -376,6 +383,8 @@
     "skipMarkerModeAuto": "自動",
     "forceSkipMarkerFallback": "強制使用備用標記",
     "forceSkipMarkerFallbackDescription": "即使 Plex 有標記，也強制使用章節標題模式",
+    "theIntroDbFallback": "",
+    "theIntroDbFallbackDescription": "",
     "autoSkipDelay": "自動跳過延遲",
     "autoSkipDelayDescription": "自動跳過前等待 ${seconds} 秒",
     "introPattern": "片頭標記模式",
@@ -505,6 +514,8 @@
     "startupSection": "啟動頁面",
     "showExploreTab": "顯示探索分頁",
     "showExploreTabDescription": "顯示探索分頁，其中包含來自 Plex Discover 和已連結追蹤服務的內容",
+    "hideEmptyLibraries": "",
+    "hideEmptyLibrariesDescription": "",
     "liveTvDefaultFavorites": "預設顯示最愛頻道",
     "liveTvDefaultFavoritesDescription": "開啟直播電視時僅顯示最愛頻道",
     "general": "一般",
@@ -1140,7 +1151,11 @@
     "pinExplain": "切換至此使用者設定檔時需要 4 位數 PIN 碼。",
     "continueButton": "繼續",
     "pinsDontMatch": "PIN 碼不符合",
-    "tokenIdentityMismatch": "Plex 使用者設定檔權杖解析到非預期的伺服器"
+    "tokenIdentityMismatch": "Plex 使用者設定檔權杖解析到非預期的伺服器",
+    "settingsLocked": "",
+    "unlockSettings": "",
+    "showExploreForProfile": "",
+    "showExploreForProfileDescription": ""
   },
   "connections": {
     "sectionTitle": "連線",
@@ -1284,6 +1299,8 @@
     "reasonUnexpected": "發生未預期的錯誤"
   },
   "libraries": {
+    "playRandomMovie": "",
+    "randomPickFailed": "",
     "title": "媒體庫",
     "fallbackTitle": "媒體庫",
     "scanLibraryFiles": "掃描媒體庫檔案",
@@ -1439,7 +1456,13 @@
   "logs": {
     "clearLogs": "清除日誌",
     "copyLogs": "複製日誌",
-    "uploadLogs": "上傳日誌"
+    "uploadLogs": "上傳日誌",
+    "saveLogs": "",
+    "logsSaved": "",
+    "saveLogsFailed": ""
+  },
+  "detail": {
+    "endsAt": ""
   },
   "startup": {
     "failedTitle": "Plezy 無法啟動",

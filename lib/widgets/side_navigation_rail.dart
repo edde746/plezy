@@ -17,6 +17,7 @@ import '../media/media_library.dart';
 import '../mixins/mounted_set_state_mixin.dart';
 import '../navigation/navigation_tabs.dart';
 import '../providers/catalog_sources_provider.dart';
+import '../profiles/active_profile_provider.dart';
 import '../providers/hidden_libraries_provider.dart';
 import '../providers/libraries_provider.dart';
 import '../services/device_performance.dart';
@@ -863,18 +864,15 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     final librariesProvider = context.watch<LibrariesProvider>();
     final hiddenLibrariesProvider = context.watch<HiddenLibrariesProvider>();
     final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
+    final activeProfileId = context.watch<ActiveProfileProvider?>()?.activeId;
+    final profileExploreListenable = activeProfileId == null
+        ? null
+        : SettingsService.instance.listenable(SettingsService.showExploreTabForProfile(activeProfileId));
 
     final allLibraries = librariesProvider.libraries;
-    final visibleLibraries = <MediaLibrary>[];
-    final hiddenLibraries = <MediaLibrary>[];
     final serverIds = <String>{};
     for (final lib in allLibraries) {
       if (lib.serverId != null) serverIds.add(lib.serverId!);
-      if (hiddenKeys.contains(lib.globalKey)) {
-        hiddenLibraries.add(lib);
-      } else {
-        visibleLibraries.add(lib);
-      }
     }
 
     final isCollapsed = !_shouldExpand;
@@ -894,15 +892,32 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     // Listen to fullscreen + the groupLibrariesByServer / showExploreTab
     // settings so the rail rebuilds when they are toggled in Appearance, and to
     // librariesSectionExpanded so the Libraries header toggle repaints.
+    final settingsListenables = <Listenable>[
+      FullscreenStateManager(),
+      SettingsService.instance.listenable(SettingsService.groupLibrariesByServer),
+      SettingsService.instance.listenable(SettingsService.showExploreTab),
+      SettingsService.instance.listenable(SettingsService.hideEmptyLibraries),
+      SettingsService.instance.listenable(SettingsService.librariesSectionExpanded),
+      ?profileExploreListenable,
+    ];
     return ListenableBuilder(
-      listenable: Listenable.merge([
-        FullscreenStateManager(),
-        SettingsService.instance.listenable(SettingsService.groupLibrariesByServer),
-        SettingsService.instance.listenable(SettingsService.showExploreTab),
-        SettingsService.instance.listenable(SettingsService.librariesSectionExpanded),
-      ]),
+      listenable: Listenable.merge(settingsListenables),
       builder: (context, _) {
-        final hasExplore = hasExploreSource && SettingsService.instance.read(SettingsService.showExploreTab);
+        final visibleLibraries = <MediaLibrary>[];
+        final hiddenLibraries = <MediaLibrary>[];
+        final hideEmptyLibraries = SettingsService.instance.read(SettingsService.hideEmptyLibraries);
+        for (final lib in allLibraries) {
+          if (hiddenKeys.contains(lib.globalKey)) {
+            hiddenLibraries.add(lib);
+          } else if (!(hideEmptyLibraries && lib.itemCount == 0)) {
+            visibleLibraries.add(lib);
+          }
+        }
+        final profileAllowsExplore =
+            activeProfileId == null ||
+            SettingsService.instance.read(SettingsService.showExploreTabForProfile(activeProfileId));
+        final hasExplore =
+            hasExploreSource && SettingsService.instance.read(SettingsService.showExploreTab) && profileAllowsExplore;
         // Server grouping: only when multi-server AND the user-facing toggle is on.
         final groupByServerSetting = SettingsService.instance.read(SettingsService.groupLibrariesByServer);
         final showServerHeaders = serverIds.length > 1 && groupByServerSetting;

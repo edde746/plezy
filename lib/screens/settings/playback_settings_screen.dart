@@ -387,6 +387,12 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         title: t.settings.forceSkipMarkerFallback,
         subtitle: t.settings.forceSkipMarkerFallbackDescription,
       ),
+      SettingSwitchTile(
+        pref: SettingsService.theIntroDbFallback,
+        icon: Symbols.public_rounded,
+        title: t.settings.theIntroDbFallback,
+        subtitle: t.settings.theIntroDbFallbackDescription,
+      ),
       SettingNumberTile(
         pref: SettingsService.autoSkipDelay,
         icon: Symbols.timer_rounded,

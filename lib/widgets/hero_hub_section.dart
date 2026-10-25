@@ -44,6 +44,7 @@ class HeroHubSection extends StatefulWidget {
   const HeroHubSection({
     super.key,
     required this.hub,
+    this.showBackdrop = true,
     required this.onVerticalNavigation,
     this.onNavigateUp,
     this.onNavigateToSidebar,
@@ -51,6 +52,7 @@ class HeroHubSection extends StatefulWidget {
   });
 
   final MediaHub hub;
+  final bool showBackdrop;
 
   /// TV only — same contract as HubSection's own onFocusedItemChanged.
   /// Reported on every page change and whenever this row gains focus, so a
@@ -703,7 +705,7 @@ class HeroHubSectionState extends State<HeroHubSection> {
             clipBehavior: Clip.none,
             children: [
               // Backdrop art.
-              if (heroArtPaths.isNotEmpty)
+              if (widget.showBackdrop && heroArtPaths.isNotEmpty)
                 Positioned(
                   top: 0,
                   left: 0,

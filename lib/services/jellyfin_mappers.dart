@@ -329,6 +329,7 @@ class JellyfinMappers {
       defaultBrowseKinds: _defaultBrowseKindsFromCollectionType(collectionType, type),
       updatedAt: jellyfinIsoToEpochSeconds(view['DateLastSaved'] as String? ?? view['DateModified'] as String?),
       createdAt: jellyfinIsoToEpochSeconds(view['DateCreated'] as String?),
+      itemCount: flexibleInt(view['ChildCount']),
       hidden: false,
       isShared: false,
       serverId: serverId,

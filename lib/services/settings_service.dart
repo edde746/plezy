@@ -106,6 +106,16 @@ enum EpisodePosterMode { seriesPoster, seasonPoster, episodeThumbnail }
 
 enum ContinueWatchingAction { play, details }
 
+enum ContinueWatchingRowSize { compact, standard, large }
+
+extension ContinueWatchingRowSizeScale on ContinueWatchingRowSize {
+  double get scale => switch (this) {
+    ContinueWatchingRowSize.compact => 0.82,
+    ContinueWatchingRowSize.standard => 1.0,
+    ContinueWatchingRowSize.large => 1.18,
+  };
+}
+
 enum EpisodeAction { play, details }
 
 /// What tapping a hero row's card (backdrop/video area, not the Play
@@ -664,6 +674,17 @@ class SettingsService extends BaseSharedPreferencesService {
     transform: (value) => value.isFinite ? value.clamp(0.0, 100.0).toDouble() : 30.0,
   );
   static const showHeroSection = BoolPref('show_hero_section', defaultValue: true);
+  static const showHomeBackdrop = BoolPref('show_home_backdrop', defaultValue: true);
+  static const continueWatchingRowSize = EnumPref<ContinueWatchingRowSize>(
+    'continue_watching_row_size',
+    values: ContinueWatchingRowSize.values,
+    defaultValue: ContinueWatchingRowSize.standard,
+  );
+
+  /// Per-profile opt-out; the existing device-wide switch remains the master
+  /// Explore visibility setting.
+  static BoolPref showExploreTabForProfile(String profileId) =>
+      BoolPref(profileScopedPrefsKey(profileId, 'show_explore_tab'), defaultValue: true);
   // Lets Continue Watching be added/removed from Home like any other
   // Organizer row (see home_layout_settings_screen.dart), instead of it
   // always being a fixed, unremovable fixture ahead of every other row.
@@ -682,6 +703,7 @@ class SettingsService extends BaseSharedPreferencesService {
   /// its own layout and neither sends nor receives changes.
   static const homeLayoutSyncEnabled = BoolPref('home_layout_sync_enabled', defaultValue: false);
   static const groupLibrariesByServer = BoolPref('group_libraries_by_server', defaultValue: true);
+  static const hideEmptyLibraries = BoolPref('hide_empty_libraries', defaultValue: false);
   static const sleepTimerDuration = IntPref('sleep_timer_duration', defaultValue: 30);
   static const audioSyncOffset = IntPref('audio_sync_offset');
   static const subtitleSyncOffset = IntPref('subtitle_sync_offset');
@@ -743,6 +765,11 @@ class SettingsService extends BaseSharedPreferencesService {
   };
 
   static const forceSkipMarkerFallback = BoolPref('force_skip_marker_fallback');
+
+  /// Use TheIntroDB's community intro timings only when a media server has no
+  /// intro marker for this item. Off by default because timings can vary by
+  /// release and file duration is only an imperfect match signal.
+  static const theIntroDbFallback = BoolPref('theintrodb_fallback');
   static const autoSkipDelay = IntPref('auto_skip_delay', defaultValue: 5);
   static const introPattern = StringPref('intro_pattern', defaultValue: defaultIntroPattern);
   static const creditsPattern = StringPref('credits_pattern', defaultValue: defaultCreditsPattern);
@@ -1623,6 +1650,8 @@ class SettingsService extends BaseSharedPreferencesService {
     seekTimeSmall,
     seekTimeLarge,
     showHeroSection,
+    showHomeBackdrop,
+    continueWatchingRowSize,
     themeSongsEnabled,
     themeSongVolume,
     continueWatchingOnHome,
@@ -1674,6 +1703,7 @@ class SettingsService extends BaseSharedPreferencesService {
     useExoPlayer,
     startupSection,
     showExploreTab,
+    hideEmptyLibraries,
     alwaysKeepSidebarOpen,
     librariesSectionExpanded,
     showUnwatchedCount,
@@ -1749,6 +1779,7 @@ class SettingsService extends BaseSharedPreferencesService {
     skipIntroMode,
     skipCreditsMode,
     forceSkipMarkerFallback,
+    theIntroDbFallback,
     autoSkipDelay,
     introPattern,
     creditsPattern,

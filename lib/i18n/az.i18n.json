@@ -227,6 +227,13 @@
     "gridView": "Tor",
     "listView": "Siyahı",
     "showHeroSection": "Xüsusi bölməni göstər",
+    "showHomeBackdrop": "",
+    "showHomeBackdropDescription": "",
+    "continueWatchingRowSize": "",
+    "continueWatchingRowSizeValue": "",
+    "rowSizeCompact": "",
+    "rowSizeStandard": "",
+    "rowSizeLarge": "",
     "continueWatchingAction": "İzləməyə davam et əməliyyatı",
     "continueWatchingPlay": "Oynat",
     "continueWatchingDetails": "Ətraflı aç",
@@ -376,6 +383,8 @@
     "skipMarkerModeAuto": "Avtomatik",
     "forceSkipMarkerFallback": "Ehtiyat işarələri məcburi et",
     "forceSkipMarkerFallbackDescription": "Plex işarələri olsa belə hissə başlığı şablonlarını istifadə et",
+    "theIntroDbFallback": "",
+    "theIntroDbFallbackDescription": "",
     "autoSkipDelay": "Avtomatik ötürmə ləngiməsi",
     "autoSkipDelayDescription": "Avtomatik ötürməzdən əvvəl ${seconds} saniyə gözlə",
     "introPattern": "Giriş işarəsi şablonu",
@@ -505,6 +514,8 @@
     "startupSection": "Başlanğıc bölməsi",
     "showExploreTab": "Kəşf et nişanını göstər",
     "showExploreTabDescription": "Plex Discover və qoşulmuş izləmə xidmətlərindəki məzmunla Kəşf et nişanını göstər",
+    "hideEmptyLibraries": "",
+    "hideEmptyLibrariesDescription": "",
     "liveTvDefaultFavorites": "Canlı TV-də sevimli kanalları defolt et",
     "liveTvDefaultFavoritesDescription": "Canlı TV açıldıqda yalnız sevimli kanalları göstər",
     "general": "Ümumi",
@@ -1145,7 +1156,11 @@
     "pinExplain": "Profillər arası keçid üçün 4 rəqəmli PIN tələb olunur.",
     "continueButton": "Davam et",
     "pinsDontMatch": "PIN-lər uyğun gəlmir",
-    "tokenIdentityMismatch": "Plex profil tokeni gözlənilməyən serveri müəyyən etdi"
+    "tokenIdentityMismatch": "Plex profil tokeni gözlənilməyən serveri müəyyən etdi",
+    "settingsLocked": "",
+    "unlockSettings": "",
+    "showExploreForProfile": "",
+    "showExploreForProfileDescription": ""
   },
   "connections": {
     "sectionTitle": "Qoşulmalar",
@@ -1290,6 +1305,8 @@
     "reasonUnexpected": "gözlənilməz xəta baş verdi"
   },
   "libraries": {
+    "playRandomMovie": "",
+    "randomPickFailed": "",
     "title": "Kitabxanalar",
     "fallbackTitle": "Kitabxana",
     "scanLibraryFiles": "Kitabxana fayllarını skan et",
@@ -1445,7 +1462,13 @@
   "logs": {
     "clearLogs": "Jurnalları təmizlə",
     "copyLogs": "Jurnalları kopyala",
-    "uploadLogs": "Jurnalları yüklə"
+    "uploadLogs": "Jurnalları yüklə",
+    "saveLogs": "",
+    "logsSaved": "",
+    "saveLogsFailed": ""
+  },
+  "detail": {
+    "endsAt": ""
   },
   "startup": {
     "failedTitle": "Plezy başlaya bilmədi",

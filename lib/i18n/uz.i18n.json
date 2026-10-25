@@ -227,6 +227,13 @@
     "gridView": "Toʻrsimon",
     "listView": "Roʻyxat",
     "showHeroSection": "Asosiy boʻlimni koʻrsatish",
+    "showHomeBackdrop": "",
+    "showHomeBackdropDescription": "",
+    "continueWatchingRowSize": "",
+    "continueWatchingRowSizeValue": "",
+    "rowSizeCompact": "",
+    "rowSizeStandard": "",
+    "rowSizeLarge": "",
     "continueWatchingAction": "\"Tomoshani davom ettirish\" harakati",
     "continueWatchingPlay": "Ijro etish",
     "continueWatchingDetails": "Tafsilotlarni ochish",
@@ -376,6 +383,8 @@
     "skipMarkerModeAuto": "Avtomatik",
     "forceSkipMarkerFallback": "Zahira belgilarini majburlash",
     "forceSkipMarkerFallbackDescription": "Plex belgilari boʻlsa ham boʻlim sarlavhasi shablonlaridan foydalanish",
+    "theIntroDbFallback": "",
+    "theIntroDbFallbackDescription": "",
     "autoSkipDelay": "Avtomatik oʻtkazish kechikishi",
     "autoSkipDelayDescription": "Avtomatik oʻtkazishdan oldin ${seconds} soniya kutilsin",
     "introPattern": "Kirish qismi belgisi shabloni",
@@ -505,6 +514,8 @@
     "startupSection": "Boshlangʻich boʻlim",
     "showExploreTab": "Kashf qilish varagʻini koʻrsatish",
     "showExploreTabDescription": "Plex Discover va ulangan kuzatuvchilardagi kontent bilan Kashf qilish varagʻini koʻrsatish",
+    "hideEmptyLibraries": "",
+    "hideEmptyLibrariesDescription": "",
     "liveTvDefaultFavorites": "Jonli TV-da tanlangan kanallarni standart qilish",
     "liveTvDefaultFavoritesDescription": "Jonli TV ochilganda faqat tanlangan kanallarni koʻrsatish",
     "general": "Umumiy",
@@ -1145,7 +1156,11 @@
     "pinExplain": "Profillar orasida oʻtish uchun 4 xonali PIN kod talab qilinadi.",
     "continueButton": "Davom ettirish",
     "pinsDontMatch": "PIN kodlar mos kelmadi",
-    "tokenIdentityMismatch": "Plex profil tokeni kutilmagan serverga tegishli boʻlib chiqdi"
+    "tokenIdentityMismatch": "Plex profil tokeni kutilmagan serverga tegishli boʻlib chiqdi",
+    "settingsLocked": "",
+    "unlockSettings": "",
+    "showExploreForProfile": "",
+    "showExploreForProfileDescription": ""
   },
   "connections": {
     "sectionTitle": "Ulanishlar",
@@ -1290,6 +1305,8 @@
     "reasonUnexpected": "kutilmagan xatolik yuz berdi"
   },
   "libraries": {
+    "playRandomMovie": "",
+    "randomPickFailed": "",
     "title": "Kutubxonalar",
     "fallbackTitle": "Kutubxona",
     "scanLibraryFiles": "Fayllarni skanerlash",
@@ -1445,7 +1462,13 @@
   "logs": {
     "clearLogs": "Jurnallarni tozalash",
     "copyLogs": "Jurnallarni nusxalash",
-    "uploadLogs": "Jurnallarni yuklash"
+    "uploadLogs": "Jurnallarni yuklash",
+    "saveLogs": "",
+    "logsSaved": "",
+    "saveLogsFailed": ""
+  },
+  "detail": {
+    "endsAt": ""
   },
   "startup": {
     "failedTitle": "Plezy ishga tusha olmadi",

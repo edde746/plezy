@@ -227,6 +227,13 @@
     "gridView": "グリッド",
     "listView": "リスト",
     "showHeroSection": "注目コンテンツを表示",
+    "showHomeBackdrop": "",
+    "showHomeBackdropDescription": "",
+    "continueWatchingRowSize": "",
+    "continueWatchingRowSizeValue": "",
+    "rowSizeCompact": "",
+    "rowSizeStandard": "",
+    "rowSizeLarge": "",
     "continueWatchingAction": "視聴中の操作",
     "continueWatchingPlay": "再生",
     "continueWatchingDetails": "詳細を開く",
@@ -376,6 +383,8 @@
     "skipMarkerModeAuto": "自動",
     "forceSkipMarkerFallback": "フォールバックマーカーを強制",
     "forceSkipMarkerFallbackDescription": "Plexにマーカーがある場合でもチャプタータイトルのパターンを使用します",
+    "theIntroDbFallback": "",
+    "theIntroDbFallbackDescription": "",
     "autoSkipDelay": "自動スキップの遅延",
     "autoSkipDelayDescription": "自動スキップまで${seconds}秒待機",
     "introPattern": "イントロマーカーパターン",
@@ -505,6 +514,8 @@
     "startupSection": "起動時のセクション",
     "showExploreTab": "「探す」タブを表示",
     "showExploreTabDescription": "Plex Discoverと接続済みのトラッカーのコンテンツを「探す」タブに表示します",
+    "hideEmptyLibraries": "",
+    "hideEmptyLibrariesDescription": "",
     "liveTvDefaultFavorites": "お気に入りチャンネルをデフォルトに",
     "liveTvDefaultFavoritesDescription": "ライブTVを開いたときにお気に入りチャンネルのみ表示",
     "general": "一般",
@@ -1140,7 +1151,11 @@
     "pinExplain": "プロフィール切り替えには4桁のPINが必要です。",
     "continueButton": "続ける",
     "pinsDontMatch": "PINが一致しません",
-    "tokenIdentityMismatch": "Plexプロフィールのトークンから予期しないサーバーが特定されました"
+    "tokenIdentityMismatch": "Plexプロフィールのトークンから予期しないサーバーが特定されました",
+    "settingsLocked": "",
+    "unlockSettings": "",
+    "showExploreForProfile": "",
+    "showExploreForProfileDescription": ""
   },
   "connections": {
     "sectionTitle": "接続",
@@ -1284,6 +1299,8 @@
     "reasonUnexpected": "予期しないエラーが発生しました"
   },
   "libraries": {
+    "playRandomMovie": "",
+    "randomPickFailed": "",
     "title": "ライブラリ",
     "fallbackTitle": "ライブラリ",
     "scanLibraryFiles": "ライブラリファイルをスキャン",
@@ -1439,7 +1456,13 @@
   "logs": {
     "clearLogs": "ログをクリア",
     "copyLogs": "ログをコピー",
-    "uploadLogs": "ログをアップロード"
+    "uploadLogs": "ログをアップロード",
+    "saveLogs": "",
+    "logsSaved": "",
+    "saveLogsFailed": ""
+  },
+  "detail": {
+    "endsAt": ""
   },
   "startup": {
     "failedTitle": "Plezyを起動できませんでした",

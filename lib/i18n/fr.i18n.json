@@ -227,6 +227,13 @@
     "gridView": "Grille",
     "listView": "Liste",
     "showHeroSection": "Afficher la section à la une",
+    "showHomeBackdrop": "",
+    "showHomeBackdropDescription": "",
+    "continueWatchingRowSize": "",
+    "continueWatchingRowSizeValue": "",
+    "rowSizeCompact": "",
+    "rowSizeStandard": "",
+    "rowSizeLarge": "",
     "continueWatchingAction": "Action de « Continuer à regarder »",
     "continueWatchingPlay": "Lire",
     "continueWatchingDetails": "Ouvrir les détails",
@@ -376,6 +383,8 @@
     "skipMarkerModeAuto": "Automatique",
     "forceSkipMarkerFallback": "Forcer les marqueurs de secours",
     "forceSkipMarkerFallbackDescription": "Utiliser les motifs des titres de chapitre même lorsque Plex fournit des marqueurs",
+    "theIntroDbFallback": "",
+    "theIntroDbFallbackDescription": "",
     "autoSkipDelay": "Délai avant le saut automatique",
     "autoSkipDelayDescription": "Attendre ${seconds} secondes avant le saut automatique",
     "introPattern": "Motif du marqueur d’introduction",
@@ -505,6 +514,8 @@
     "startupSection": "Section de démarrage",
     "showExploreTab": "Afficher l’onglet Explorer",
     "showExploreTabDescription": "Afficher l’onglet Explorer avec le contenu de Plex Discover et des services de suivi connectés",
+    "hideEmptyLibraries": "",
+    "hideEmptyLibrariesDescription": "",
     "liveTvDefaultFavorites": "Chaînes favorites par défaut",
     "liveTvDefaultFavoritesDescription": "Afficher uniquement les chaînes favorites à l'ouverture de la TV en direct",
     "general": "Général",
@@ -1145,7 +1156,11 @@
     "pinExplain": "PIN à 4 chiffres requis pour changer de profil.",
     "continueButton": "Continuer",
     "pinsDontMatch": "Les PIN ne correspondent pas",
-    "tokenIdentityMismatch": "Le jeton du profil Plex correspond à un serveur inattendu"
+    "tokenIdentityMismatch": "Le jeton du profil Plex correspond à un serveur inattendu",
+    "settingsLocked": "",
+    "unlockSettings": "",
+    "showExploreForProfile": "",
+    "showExploreForProfileDescription": ""
   },
   "connections": {
     "sectionTitle": "Connexions",
@@ -1290,6 +1305,8 @@
     "reasonUnexpected": "une erreur inattendue s'est produite"
   },
   "libraries": {
+    "playRandomMovie": "",
+    "randomPickFailed": "",
     "title": "Bibliothèques",
     "fallbackTitle": "Bibliothèque",
     "scanLibraryFiles": "Scanner les fichiers de la bibliothèque",
@@ -1445,7 +1462,13 @@
   "logs": {
     "clearLogs": "Effacer les journaux",
     "copyLogs": "Copier les journaux",
-    "uploadLogs": "Envoyer les journaux"
+    "uploadLogs": "Envoyer les journaux",
+    "saveLogs": "",
+    "logsSaved": "",
+    "saveLogsFailed": ""
+  },
+  "detail": {
+    "endsAt": ""
   },
   "startup": {
     "failedTitle": "Plezy n'a pas pu démarrer",

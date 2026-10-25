@@ -227,6 +227,13 @@
     "gridView": "Rács",
     "listView": "Lista",
     "showHeroSection": "Kiemelt sáv megjelenítése",
+    "showHomeBackdrop": "",
+    "showHomeBackdropDescription": "",
+    "continueWatchingRowSize": "",
+    "continueWatchingRowSizeValue": "",
+    "rowSizeCompact": "",
+    "rowSizeStandard": "",
+    "rowSizeLarge": "",
     "continueWatchingAction": "A „Folytatás” művelete",
     "continueWatchingPlay": "Lejátszás",
     "continueWatchingDetails": "Részletek megnyitása",
@@ -376,6 +383,8 @@
     "skipMarkerModeAuto": "Automatikus",
     "forceSkipMarkerFallback": "Tartalék jelölők kényszerítése",
     "forceSkipMarkerFallbackDescription": "Fejezetcím-minták használata akkor is, ha a Plex rendelkezik jelölőkkel",
+    "theIntroDbFallback": "",
+    "theIntroDbFallbackDescription": "",
     "autoSkipDelay": "Automatikus átugrás késleltetése",
     "autoSkipDelayDescription": "Várakozás ${seconds} másodpercig az automatikus átugrás előtt",
     "introPattern": "Intrójelölő mintája",
@@ -505,6 +514,8 @@
     "startupSection": "Indítási oldal",
     "showExploreTab": "Felfedezés lap megjelenítése",
     "showExploreTabDescription": "A Plex Discover és a csatlakoztatott követők tartalmait megjelenítő Felfedezés lap megjelenítése",
+    "hideEmptyLibraries": "",
+    "hideEmptyLibrariesDescription": "",
     "liveTvDefaultFavorites": "Kedvenc csatornák alapértelmezés szerint",
     "liveTvDefaultFavoritesDescription": "Csak a kedvenc csatornák megjelenítése az Élő TV megnyitásakor",
     "general": "Általános",
@@ -1145,7 +1156,11 @@
     "pinExplain": "4 jegyű PIN-kód szükséges a profilváltáshoz.",
     "continueButton": "Folytatás",
     "pinsDontMatch": "A PIN-kódok nem egyeznek",
-    "tokenIdentityMismatch": "A Plex-profil tokenje nem a várt szerverhez tartozik"
+    "tokenIdentityMismatch": "A Plex-profil tokenje nem a várt szerverhez tartozik",
+    "settingsLocked": "",
+    "unlockSettings": "",
+    "showExploreForProfile": "",
+    "showExploreForProfileDescription": ""
   },
   "connections": {
     "sectionTitle": "Kapcsolatok",
@@ -1290,6 +1305,8 @@
     "reasonUnexpected": "váratlan hiba történt"
   },
   "libraries": {
+    "playRandomMovie": "",
+    "randomPickFailed": "",
     "title": "Könyvtárak",
     "fallbackTitle": "Könyvtár",
     "scanLibraryFiles": "Könyvtárfájlok beolvasása",
@@ -1445,7 +1462,13 @@
   "logs": {
     "clearLogs": "Naplók törlése",
     "copyLogs": "Naplók másolása",
-    "uploadLogs": "Naplók feltöltése"
+    "uploadLogs": "Naplók feltöltése",
+    "saveLogs": "",
+    "logsSaved": "",
+    "saveLogsFailed": ""
+  },
+  "detail": {
+    "endsAt": ""
   },
   "startup": {
     "failedTitle": "A Plezy nem tudott elindulni",

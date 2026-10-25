@@ -227,6 +227,13 @@
     "gridView": "Сетка",
     "listView": "Список",
     "showHeroSection": "Показать раздел избранного",
+    "showHomeBackdrop": "",
+    "showHomeBackdropDescription": "",
+    "continueWatchingRowSize": "",
+    "continueWatchingRowSizeValue": "",
+    "rowSizeCompact": "",
+    "rowSizeStandard": "",
+    "rowSizeLarge": "",
     "continueWatchingAction": "Действие для «Продолжить просмотр»",
     "continueWatchingPlay": "Воспроизвести",
     "continueWatchingDetails": "Открыть сведения",
@@ -376,6 +383,8 @@
     "skipMarkerModeAuto": "Автоматически",
     "forceSkipMarkerFallback": "Всегда использовать резервные маркеры",
     "forceSkipMarkerFallbackDescription": "Использовать шаблоны названий глав, даже если в Plex есть собственные маркеры",
+    "theIntroDbFallback": "",
+    "theIntroDbFallbackDescription": "",
     "autoSkipDelay": "Задержка автопропуска",
     "autoSkipDelayDescription": "Подождать ${seconds} секунд перед автопропуском",
     "introPattern": "Шаблон маркера вступления",
@@ -505,6 +514,8 @@
     "startupSection": "Начальный раздел",
     "showExploreTab": "Показывать вкладку «Обзор»",
     "showExploreTabDescription": "Показывать вкладку «Обзор» с контентом из Plex Discover и подключённых трекеров",
+    "hideEmptyLibraries": "",
+    "hideEmptyLibrariesDescription": "",
     "liveTvDefaultFavorites": "Избранные каналы по умолчанию",
     "liveTvDefaultFavoritesDescription": "Показывать только избранные каналы при открытии ТВ",
     "general": "Основные",
@@ -1155,7 +1166,11 @@
     "pinExplain": "Для переключения профилей нужен 4-значный PIN.",
     "continueButton": "Продолжить",
     "pinsDontMatch": "PIN-коды не совпадают",
-    "tokenIdentityMismatch": "Токен профиля Plex указал на неожиданный сервер"
+    "tokenIdentityMismatch": "Токен профиля Plex указал на неожиданный сервер",
+    "settingsLocked": "",
+    "unlockSettings": "",
+    "showExploreForProfile": "",
+    "showExploreForProfileDescription": ""
   },
   "connections": {
     "sectionTitle": "Подключения",
@@ -1302,6 +1317,8 @@
     "reasonUnexpected": "произошла непредвиденная ошибка"
   },
   "libraries": {
+    "playRandomMovie": "",
+    "randomPickFailed": "",
     "title": "Библиотеки",
     "fallbackTitle": "Библиотека",
     "scanLibraryFiles": "Сканировать файлы библиотеки",
@@ -1457,7 +1474,13 @@
   "logs": {
     "clearLogs": "Очистить логи",
     "copyLogs": "Скопировать логи",
-    "uploadLogs": "Загрузить логи"
+    "uploadLogs": "Загрузить логи",
+    "saveLogs": "",
+    "logsSaved": "",
+    "saveLogsFailed": ""
+  },
+  "detail": {
+    "endsAt": ""
   },
   "startup": {
     "failedTitle": "Plezy не удалось запустить",

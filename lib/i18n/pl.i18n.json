@@ -227,6 +227,13 @@
     "gridView": "Siatka",
     "listView": "Lista",
     "showHeroSection": "Pokaż sekcję wyróżnioną",
+    "showHomeBackdrop": "",
+    "showHomeBackdropDescription": "",
+    "continueWatchingRowSize": "",
+    "continueWatchingRowSizeValue": "",
+    "rowSizeCompact": "",
+    "rowSizeStandard": "",
+    "rowSizeLarge": "",
     "continueWatchingAction": "Działanie w sekcji „Kontynuuj oglądanie”",
     "continueWatchingPlay": "Odtwórz",
     "continueWatchingDetails": "Otwórz szczegóły",
@@ -376,6 +383,8 @@
     "skipMarkerModeAuto": "Automatycznie",
     "forceSkipMarkerFallback": "Wymuś znaczniki awaryjne",
     "forceSkipMarkerFallbackDescription": "Używaj wzorców tytułów rozdziałów, nawet gdy Plex ma znaczniki",
+    "theIntroDbFallback": "",
+    "theIntroDbFallbackDescription": "",
     "autoSkipDelay": "Opóźnienie automatycznego pomijania",
     "autoSkipDelayDescription": "Czekaj ${seconds} sekund przed automatycznym pominięciem",
     "introPattern": "Wzorzec znacznika intro",
@@ -505,6 +514,8 @@
     "startupSection": "Sekcja startowa",
     "showExploreTab": "Pokaż kartę Odkryj",
     "showExploreTabDescription": "Wyświetlaj kartę Odkryj z treściami z Plex Discover i połączonych serwisów śledzących",
+    "hideEmptyLibraries": "",
+    "hideEmptyLibrariesDescription": "",
     "liveTvDefaultFavorites": "Domyślnie ulubione kanały",
     "liveTvDefaultFavoritesDescription": "Pokaż tylko ulubione kanały po otwarciu telewizji na żywo",
     "general": "Ogólne",
@@ -1155,7 +1166,11 @@
     "pinExplain": "Do przełączania profili wymagany jest 4-cyfrowy PIN.",
     "continueButton": "Kontynuuj",
     "pinsDontMatch": "PIN-y nie pasują",
-    "tokenIdentityMismatch": "Token profilu Plex został powiązany z nieoczekiwanym serwerem"
+    "tokenIdentityMismatch": "Token profilu Plex został powiązany z nieoczekiwanym serwerem",
+    "settingsLocked": "",
+    "unlockSettings": "",
+    "showExploreForProfile": "",
+    "showExploreForProfileDescription": ""
   },
   "connections": {
     "sectionTitle": "Połączenia",
@@ -1302,6 +1317,8 @@
     "reasonUnexpected": "wystąpił nieoczekiwany błąd"
   },
   "libraries": {
+    "playRandomMovie": "",
+    "randomPickFailed": "",
     "title": "Biblioteki",
     "fallbackTitle": "Biblioteka",
     "scanLibraryFiles": "Skanuj pliki biblioteki",
@@ -1457,7 +1474,13 @@
   "logs": {
     "clearLogs": "Wyczyść logi",
     "copyLogs": "Kopiuj logi",
-    "uploadLogs": "Prześlij logi"
+    "uploadLogs": "Prześlij logi",
+    "saveLogs": "",
+    "logsSaved": "",
+    "saveLogsFailed": ""
+  },
+  "detail": {
+    "endsAt": ""
   },
   "startup": {
     "failedTitle": "Nie udało się uruchomić Plezy",

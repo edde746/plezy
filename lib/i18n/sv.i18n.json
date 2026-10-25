@@ -227,6 +227,13 @@
     "gridView": "Rutnät",
     "listView": "Lista",
     "showHeroSection": "Visa utvalt innehåll",
+    "showHomeBackdrop": "",
+    "showHomeBackdropDescription": "",
+    "continueWatchingRowSize": "",
+    "continueWatchingRowSizeValue": "",
+    "rowSizeCompact": "",
+    "rowSizeStandard": "",
+    "rowSizeLarge": "",
     "continueWatchingAction": "Åtgärd för Fortsätt titta",
     "continueWatchingPlay": "Spela",
     "continueWatchingDetails": "Öppna detaljer",
@@ -376,6 +383,8 @@
     "skipMarkerModeAuto": "Automatiskt",
     "forceSkipMarkerFallback": "Tvinga reservmarkörer",
     "forceSkipMarkerFallbackDescription": "Använd mönster i kapiteltitlar även när Plex har markörer",
+    "theIntroDbFallback": "",
+    "theIntroDbFallbackDescription": "",
     "autoSkipDelay": "Fördröjning före automatiskt hopp",
     "autoSkipDelayDescription": "Vänta ${seconds} sekunder innan innehållet hoppas över automatiskt",
     "introPattern": "Intromarkörsmönster",
@@ -505,6 +514,8 @@
     "startupSection": "Startsida",
     "showExploreTab": "Visa fliken Utforska",
     "showExploreTabDescription": "Visa fliken Utforska med innehåll från Plex Discover och anslutna spårningstjänster",
+    "hideEmptyLibraries": "",
+    "hideEmptyLibrariesDescription": "",
     "liveTvDefaultFavorites": "Öppna med favoriter",
     "liveTvDefaultFavoritesDescription": "Visa endast favoritkanaler när Live-TV öppnas",
     "general": "Allmänt",
@@ -1145,7 +1156,11 @@
     "pinExplain": "En fyrsiffrig PIN-kod krävs för att byta profil.",
     "continueButton": "Fortsätt",
     "pinsDontMatch": "PIN-koderna stämmer inte överens",
-    "tokenIdentityMismatch": "Plex-profiltoken kopplades till en oväntad server"
+    "tokenIdentityMismatch": "Plex-profiltoken kopplades till en oväntad server",
+    "settingsLocked": "",
+    "unlockSettings": "",
+    "showExploreForProfile": "",
+    "showExploreForProfileDescription": ""
   },
   "connections": {
     "sectionTitle": "Anslutningar",
@@ -1290,6 +1305,8 @@
     "reasonUnexpected": "ett oväntat fel uppstod"
   },
   "libraries": {
+    "playRandomMovie": "",
+    "randomPickFailed": "",
     "title": "Bibliotek",
     "fallbackTitle": "Bibliotek",
     "scanLibraryFiles": "Skanna biblioteksfiler",
@@ -1445,7 +1462,13 @@
   "logs": {
     "clearLogs": "Rensa loggar",
     "copyLogs": "Kopiera loggar",
-    "uploadLogs": "Ladda upp loggar"
+    "uploadLogs": "Ladda upp loggar",
+    "saveLogs": "",
+    "logsSaved": "",
+    "saveLogsFailed": ""
+  },
+  "detail": {
+    "endsAt": ""
   },
   "startup": {
     "failedTitle": "Plezy kunde inte starta",

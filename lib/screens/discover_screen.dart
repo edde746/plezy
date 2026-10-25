@@ -924,6 +924,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       prefs: const [
         SettingsService.showServerNameOnHubs,
         SettingsService.showHeroSection,
+        SettingsService.showHomeBackdrop,
         SettingsService.continueWatchingOnHome,
         SettingsService.hideSpoilers,
         SettingsService.libraryDensity,
@@ -1031,6 +1032,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                   ? HeroHubSection(
                       key: i < _orderedHeroHubKeys.length ? _orderedHeroHubKeys[i] : null,
                       hub: _hubs[i],
+                      showBackdrop: SettingsService.instance.read(SettingsService.showHomeBackdrop),
                       onVerticalNavigation: (isUp) => _handleVerticalNavigation(i, isUp),
                       onNavigateUp: i == 0 ? _focusTopBoundary : null,
                       onNavigateToSidebar: _navigateToSidebar,
@@ -1379,6 +1381,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   /// per-page artwork, so a swipe crossfades between backdrops rather than
   /// sliding two images past each other with a hard seam (#2660).
   Widget _buildHeroBackdrop(double heroHeight) {
+    if (!SettingsService.instance.read(SettingsService.showHomeBackdrop)) {
+      return ColoredBox(color: Theme.of(context).scaffoldBackgroundColor);
+    }
     final isTv = PlatformDetector.isTV();
     return IgnorePointer(
       child: Stack(

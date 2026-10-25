@@ -227,6 +227,13 @@
     "gridView": "Тор",
     "listView": "Тізім",
     "showHeroSection": "Басты бөлімді көрсету",
+    "showHomeBackdrop": "",
+    "showHomeBackdropDescription": "",
+    "continueWatchingRowSize": "",
+    "continueWatchingRowSizeValue": "",
+    "rowSizeCompact": "",
+    "rowSizeStandard": "",
+    "rowSizeLarge": "",
     "continueWatchingAction": "\"Көруді жалғастыру\" әрекеті",
     "continueWatchingPlay": "Ойнату",
     "continueWatchingDetails": "Толығырақ ашу",
@@ -376,6 +383,8 @@
     "skipMarkerModeAuto": "Автоматты",
     "forceSkipMarkerFallback": "Қосалқы белгілерді мәжбүрлеу",
     "forceSkipMarkerFallbackDescription": "Plex белгілері болса да бөлім тақырыбы үлгілерін пайдалану",
+    "theIntroDbFallback": "",
+    "theIntroDbFallbackDescription": "",
     "autoSkipDelay": "Автоматты өткізу кідірісі",
     "autoSkipDelayDescription": "Автоматты өткізгенге дейін ${seconds} секунд күту",
     "introPattern": "Киріс бөлім белгісінің үлгісі",
@@ -505,6 +514,8 @@
     "startupSection": "Бастапқы бөлім",
     "showExploreTab": "«Шолу» қойындысын көрсету",
     "showExploreTabDescription": "Plex шолуынан және қосылған трекерлерден алынған контенті бар «Шолу» қойындысын көрсету",
+    "hideEmptyLibraries": "",
+    "hideEmptyLibrariesDescription": "",
     "liveTvDefaultFavorites": "Тікелей TV-де таңдаулы арналарды әдепкі ету",
     "liveTvDefaultFavoritesDescription": "Тікелей TV ашылғанда тек таңдаулы арналарды көрсету",
     "general": "Жалпы",
@@ -1145,7 +1156,11 @@
     "pinExplain": "Профильдер арасында ауысу үшін 4 таңбалы PIN код қажет.",
     "continueButton": "Жалғастыру",
     "pinsDontMatch": "PIN кодтар сәйкес келмейді",
-    "tokenIdentityMismatch": "Plex профилінің токені күтілмеген серверді анықтады"
+    "tokenIdentityMismatch": "Plex профилінің токені күтілмеген серверді анықтады",
+    "settingsLocked": "",
+    "unlockSettings": "",
+    "showExploreForProfile": "",
+    "showExploreForProfileDescription": ""
   },
   "connections": {
     "sectionTitle": "Қосылымдар",
@@ -1290,6 +1305,8 @@
     "reasonUnexpected": "күтпеген қате орын алды"
   },
   "libraries": {
+    "playRandomMovie": "",
+    "randomPickFailed": "",
     "title": "Кітапханалар",
     "fallbackTitle": "Кітапхана",
     "scanLibraryFiles": "Файлдарды сканерлеу",
@@ -1445,7 +1462,13 @@
   "logs": {
     "clearLogs": "Журналдарды тазалау",
     "copyLogs": "Журналдарды көшіру",
-    "uploadLogs": "Журналдарды жүктеу"
+    "uploadLogs": "Журналдарды жүктеу",
+    "saveLogs": "",
+    "logsSaved": "",
+    "saveLogsFailed": ""
+  },
+  "detail": {
+    "endsAt": ""
   },
   "startup": {
     "failedTitle": "Plezy іске қосылмады",

@@ -589,6 +589,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                   SettingsService.libraryDensity,
                   SettingsService.episodePosterMode,
                   SettingsService.gridSpacing,
+                  SettingsService.continueWatchingRowSize,
                 ],
                 builder: (context) => LayoutBuilder(
                   builder: (context, constraints) {
@@ -620,7 +621,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                     // same gutter the grid uses, so a row and the "see all"
                     // grid behind it render the same card at equal width.
                     final gridGap = svc.read(SettingsService.gridSpacing).gridGap;
-                    final cardWidth = isTv && widget.cardSizing == HubCardSizing.shelf
+                    final baseCardWidth = isTv && widget.cardSizing == HubCardSizing.shelf
                         ? _getTvCardWidth(
                             context,
                             constraints.maxWidth,
@@ -635,6 +636,9 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                             density: density,
                             useWideAspectRatio: useWideLayout,
                           );
+                    final cardWidth =
+                        baseCardWidth *
+                        (widget.isInContinueWatching ? svc.read(SettingsService.continueWatchingRowSize).scale : 1.0);
                     final posterWidth = cardWidth - 6; // 3px padding on each side
                     final posterHeight = useWideLayout
                         ? posterWidth *

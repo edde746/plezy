@@ -227,6 +227,13 @@
     "gridView": "Мрежа",
     "listView": "Списък",
     "showHeroSection": "Показвай водеща секция",
+    "showHomeBackdrop": "",
+    "showHomeBackdropDescription": "",
+    "continueWatchingRowSize": "",
+    "continueWatchingRowSizeValue": "",
+    "rowSizeCompact": "",
+    "rowSizeStandard": "",
+    "rowSizeLarge": "",
     "continueWatchingAction": "Действие за продължаване на гледането",
     "continueWatchingPlay": "Пусни",
     "continueWatchingDetails": "Отвори подробности",
@@ -376,6 +383,8 @@
     "skipMarkerModeAuto": "Автоматично",
     "forceSkipMarkerFallback": "Принуди резервни маркери",
     "forceSkipMarkerFallbackDescription": "Използвай шаблони в заглавията на главите дори когато Plex има маркери",
+    "theIntroDbFallback": "",
+    "theIntroDbFallbackDescription": "",
     "autoSkipDelay": "Забавяне за автоматично прескачане",
     "autoSkipDelayDescription": "Изчакай ${seconds} секунди преди автоматично прескачане",
     "introPattern": "Шаблон за интро маркер",
@@ -505,6 +514,8 @@
     "startupSection": "Начален раздел",
     "showExploreTab": "Показване на раздела „Открий“",
     "showExploreTabDescription": "Показва раздела „Открий“ със съдържание от Plex Discover и свързаните тракери",
+    "hideEmptyLibraries": "",
+    "hideEmptyLibrariesDescription": "",
     "liveTvDefaultFavorites": "По подразбиране към любими канали",
     "liveTvDefaultFavoritesDescription": "Показвай само любими канали при отваряне на телевизия на живо",
     "general": "Общи",
@@ -1145,7 +1156,11 @@
     "pinExplain": "Изисква се 4-цифрен PIN за смяна на профили.",
     "continueButton": "Продължи",
     "pinsDontMatch": "PIN кодовете не съвпадат",
-    "tokenIdentityMismatch": "Токенът на профила в Plex съответства на неочакван сървър"
+    "tokenIdentityMismatch": "Токенът на профила в Plex съответства на неочакван сървър",
+    "settingsLocked": "",
+    "unlockSettings": "",
+    "showExploreForProfile": "",
+    "showExploreForProfileDescription": ""
   },
   "connections": {
     "sectionTitle": "Връзки",
@@ -1290,6 +1305,8 @@
     "reasonUnexpected": "възникна неочаквана грешка"
   },
   "libraries": {
+    "playRandomMovie": "",
+    "randomPickFailed": "",
     "title": "Библиотеки",
     "fallbackTitle": "Библиотека",
     "scanLibraryFiles": "Сканирай файловете на библиотеката",
@@ -1445,7 +1462,13 @@
   "logs": {
     "clearLogs": "Изчисти логовете",
     "copyLogs": "Копирай логовете",
-    "uploadLogs": "Качи логовете"
+    "uploadLogs": "Качи логовете",
+    "saveLogs": "",
+    "logsSaved": "",
+    "saveLogsFailed": ""
+  },
+  "detail": {
+    "endsAt": ""
   },
   "startup": {
     "failedTitle": "Plezy не можа да стартира",

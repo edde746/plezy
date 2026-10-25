@@ -12,6 +12,10 @@ Status: 2026-10-25. PlezyNG is a fork of `edde746/plezy` intended to carry reque
 - Theme-song playback on the active TV home spotlight, using the existing cross-server theme-song controller.
 - Resolve watch links for Jellyfin and Emby by IMDb/TMDB/TVDB ID, falling back to a server-specific link when metadata is incomplete.
 - Configurable Home rows, merged library and collection rows, organizer controls, and Plex account layout sync from upstream #2203. Custom rows can include selected Plex, Jellyfin, and Emby libraries; native Plex Home rows and account sync remain Plex-specific.
+- A local profile PIN can gate Settings, download deletion, and entry to Explore. Explore visibility is configurable per profile; the app does not replace Plex Home's server-owned PIN.
+- Hide libraries only when a backend explicitly reports zero items, choose a random movie from a library, estimate a detail page's finish time, and export diagnostic logs to a file.
+- Hide Home hero/spotlight artwork or choose a compact, standard, or large Continue Watching row.
+- Optional TheIntroDB community intro timings are queried only when no server or chapter-derived intro exists. The setting is off by default and requires a catalog ID and internet access.
 - People search and offline playlist downloads were already present in the merged code. Existing watched-download cleanup and per-item sync offsets were also present.
 - The earlier 23 upstream PR integrations remain on `main`, including local Plex connections, download storage reporting, deep links, external-player return sync, repeat playlists, swipe/frame controls, subtitle preview and delay hotkeys, bulk selection, prerolls, live-TV timeshift, theme songs, and download sync actions.
 
@@ -20,15 +24,15 @@ Status: 2026-10-25. PlezyNG is a fork of `edde746/plezy` intended to carry reque
 | Area | Remaining work |
 | --- | --- |
 | Downloads | Orphan cleanup; verify converted downloads against real Plex/Jellyfin/Emby servers |
-| Profiles | PIN-gate delete/settings/Explore actions; hide Explore per profile |
+| Profiles | None for the listed PIN and per-profile Explore visibility requests; Plex Home PIN remains server-owned |
 | Audio/subtitles | Choose tracks before playback; always-on subtitles and preferred-language auto-fetch; validate per-show memory on every backend |
-| Playback | Jellyfin/Emby cinema-intro APIs; background video/audio-only mode; mpv equalizer; separate local/remote quality; opt-in TheIntroDB fallback |
-| Browsing | Random movie and library shuffle; show finish time on detail pages |
-| Home | Separate Next Up; hide empty libraries or backdrop art; Continue Watching row sizing. The legacy hero banner already has a visibility setting; the top-bar clock is available on TV. |
+| Playback | Jellyfin/Emby cinema-intro APIs; background video/audio-only mode; mpv equalizer; separate local/remote quality |
+| Browsing | Library-wide shuffle; show finish time in TV details and remaining detail surfaces |
+| Home | Separate Next Up. Backdrop-art visibility and Continue Watching row sizing are implemented. Empty-library filtering applies when the server reports an explicit zero. The legacy hero banner already has a visibility setting; the top-bar clock is available on TV. |
 | Servers | Preferred server |
 | Live TV | Jellyfin/Emby DVR timeshift timeline |
 | Integrations | Google Cast; new-episode notifications; content screensaver; Home Assistant and Android automation intents |
-| Settings | Save logs to a file; cloud settings backup |
+| Settings | Cloud settings backup |
 
 ## Validation and cautions
 

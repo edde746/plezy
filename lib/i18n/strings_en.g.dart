@@ -72,6 +72,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$serverSelection$en serverSelection = Translations$serverSelection$en.internal(_root);
 	late final Translations$hubDetail$en hubDetail = Translations$hubDetail$en.internal(_root);
 	late final Translations$logs$en logs = Translations$logs$en.internal(_root);
+	late final Translations$detail$en detail = Translations$detail$en.internal(_root);
 	late final Translations$startup$en startup = Translations$startup$en.internal(_root);
 	late final Translations$licenses$en licenses = Translations$licenses$en.internal(_root);
 	late final Translations$navigation$en navigation = Translations$navigation$en.internal(_root);
@@ -630,6 +631,27 @@ class Translations$settings$en {
 	/// en: 'Show Hero Section'
 	String get showHeroSection => 'Show Hero Section';
 
+	/// en: 'Show home backdrop artwork'
+	String get showHomeBackdrop => 'Show home backdrop artwork';
+
+	/// en: 'Show large artwork behind featured Home rows'
+	String get showHomeBackdropDescription => 'Show large artwork behind featured Home rows';
+
+	/// en: 'Continue Watching row size'
+	String get continueWatchingRowSize => 'Continue Watching row size';
+
+	/// en: '${label} cards'
+	String continueWatchingRowSizeValue({required Object label}) => '${label} cards';
+
+	/// en: 'Compact'
+	String get rowSizeCompact => 'Compact';
+
+	/// en: 'Standard'
+	String get rowSizeStandard => 'Standard';
+
+	/// en: 'Large'
+	String get rowSizeLarge => 'Large';
+
 	/// en: 'Continue Watching Action'
 	String get continueWatchingAction => 'Continue Watching Action';
 
@@ -1077,6 +1099,12 @@ class Translations$settings$en {
 	/// en: 'Use chapter title patterns even when Plex has markers'
 	String get forceSkipMarkerFallbackDescription => 'Use chapter title patterns even when Plex has markers';
 
+	/// en: 'Use TheIntroDB as an intro fallback'
+	String get theIntroDbFallback => 'Use TheIntroDB as an intro fallback';
+
+	/// en: 'Use community timings only when the server has no intro marker. Matches can vary by release.'
+	String get theIntroDbFallbackDescription => 'Use community timings only when the server has no intro marker. Matches can vary by release.';
+
 	/// en: 'Auto Skip Delay'
 	String get autoSkipDelay => 'Auto Skip Delay';
 
@@ -1463,6 +1491,12 @@ class Translations$settings$en {
 
 	/// en: 'Display the Explore tab with content from Plex Discover and connected trackers'
 	String get showExploreTabDescription => 'Display the Explore tab with content from Plex Discover and connected trackers';
+
+	/// en: 'Hide empty libraries'
+	String get hideEmptyLibraries => 'Hide empty libraries';
+
+	/// en: 'Remove libraries with a server-reported item count of zero from navigation.'
+	String get hideEmptyLibrariesDescription => 'Remove libraries with a server-reported item count of zero from navigation.';
 
 	/// en: 'Default to Favorite Channels'
 	String get liveTvDefaultFavorites => 'Default to Favorite Channels';
@@ -3232,6 +3266,18 @@ class Translations$profiles$en {
 
 	/// en: 'The Plex profile token resolved to an unexpected server'
 	String get tokenIdentityMismatch => 'The Plex profile token resolved to an unexpected server';
+
+	/// en: 'Settings are locked for this profile.'
+	String get settingsLocked => 'Settings are locked for this profile.';
+
+	/// en: 'Unlock settings'
+	String get unlockSettings => 'Unlock settings';
+
+	/// en: 'Show Explore for this profile'
+	String get showExploreForProfile => 'Show Explore for this profile';
+
+	/// en: 'Turn off to remove Explore from this profile’s navigation.'
+	String get showExploreForProfileDescription => 'Turn off to remove Explore from this profile’s navigation.';
 }
 
 // Path: connections
@@ -3544,6 +3590,12 @@ class Translations$libraries$en {
 
 	// Translations
 
+	/// en: 'Play a random movie'
+	String get playRandomMovie => 'Play a random movie';
+
+	/// en: 'Could not choose a random movie from this library.'
+	String get randomPickFailed => 'Could not choose a random movie from this library.';
+
 	/// en: 'Libraries'
 	String get title => 'Libraries';
 
@@ -3757,6 +3809,27 @@ class Translations$logs$en {
 
 	/// en: 'Upload Logs'
 	String get uploadLogs => 'Upload Logs';
+
+	/// en: 'Save Logs to File'
+	String get saveLogs => 'Save Logs to File';
+
+	/// en: 'Logs saved to ${path}'
+	String logsSaved({required Object path}) => 'Logs saved to ${path}';
+
+	/// en: 'Could not save the log file.'
+	String get saveLogsFailed => 'Could not save the log file.';
+}
+
+// Path: detail
+class Translations$detail$en {
+	Translations$detail$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Ends at ${time}'
+	String endsAt({required Object time}) => 'Ends at ${time}';
 }
 
 // Path: startup
@@ -8909,6 +8982,13 @@ extension on Translations {
 			'settings.gridView' => 'Grid',
 			'settings.listView' => 'List',
 			'settings.showHeroSection' => 'Show Hero Section',
+			'settings.showHomeBackdrop' => 'Show home backdrop artwork',
+			'settings.showHomeBackdropDescription' => 'Show large artwork behind featured Home rows',
+			'settings.continueWatchingRowSize' => 'Continue Watching row size',
+			'settings.continueWatchingRowSizeValue' => ({required Object label}) => '${label} cards',
+			'settings.rowSizeCompact' => 'Compact',
+			'settings.rowSizeStandard' => 'Standard',
+			'settings.rowSizeLarge' => 'Large',
 			'settings.continueWatchingAction' => 'Continue Watching Action',
 			'settings.continueWatchingPlay' => 'Play',
 			'settings.continueWatchingDetails' => 'Open Details',
@@ -9058,6 +9138,8 @@ extension on Translations {
 			'settings.skipMarkerModeAuto' => 'Automatic',
 			'settings.forceSkipMarkerFallback' => 'Force Fallback Markers',
 			'settings.forceSkipMarkerFallbackDescription' => 'Use chapter title patterns even when Plex has markers',
+			'settings.theIntroDbFallback' => 'Use TheIntroDB as an intro fallback',
+			'settings.theIntroDbFallbackDescription' => 'Use community timings only when the server has no intro marker. Matches can vary by release.',
 			'settings.autoSkipDelay' => 'Auto Skip Delay',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => 'Wait ${seconds} seconds before auto-skipping',
 			'settings.introPattern' => 'Intro Marker Pattern',
@@ -9187,6 +9269,8 @@ extension on Translations {
 			'settings.startupSection' => 'Startup Section',
 			'settings.showExploreTab' => 'Show Explore Tab',
 			'settings.showExploreTabDescription' => 'Display the Explore tab with content from Plex Discover and connected trackers',
+			'settings.hideEmptyLibraries' => 'Hide empty libraries',
+			'settings.hideEmptyLibrariesDescription' => 'Remove libraries with a server-reported item count of zero from navigation.',
 			'settings.liveTvDefaultFavorites' => 'Default to Favorite Channels',
 			'settings.liveTvDefaultFavoritesDescription' => 'Show only favorite channels when opening Live TV',
 			'settings.general' => 'General',
@@ -9205,6 +9289,8 @@ extension on Translations {
 			'settings.quality' => 'Quality',
 			'settings.subtitles' => 'Subtitles',
 			'settings.seekAndTiming' => 'Seek & Timing',
+			_ => null,
+		} ?? switch (path) {
 			'settings.behavior' => 'Behavior',
 			'settings.gestures' => 'Gestures',
 			'settings.gestureBrightnessSwipe' => 'Brightness Swipe',
@@ -9216,8 +9302,6 @@ extension on Translations {
 			'settings.gestureSeekSwipe' => 'Seek Swipe',
 			'settings.gestureSeekSwipeDescription' => 'Swipe left or right anywhere on the video to seek; release to jump',
 			'settings.rememberBrightnessLevel' => 'Remember Brightness Level',
-			_ => null,
-		} ?? switch (path) {
 			'settings.rememberBrightnessLevelDescription' => 'Start playback at the brightness set by the last swipe',
 			'settings.controls' => 'Controls',
 			'settings.rememberPlayerChanges' => 'Remember Player Changes',
@@ -9719,6 +9803,8 @@ extension on Translations {
 			'profiles.manage' => 'Manage',
 			'profiles.delete' => 'Delete',
 			'profiles.signOut' => 'Sign out',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.signOutPlexTitle' => 'Sign out of Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Remove ${displayName} and all Plex Home users? Sign back in anytime.',
 			'profiles.signOutPlexDeleteDownloads' => 'Also delete downloads',
@@ -9730,8 +9816,6 @@ extension on Translations {
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} profiles · active: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} profiles',
 			'profiles.removeConnectionTitle' => 'Remove connection?',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Remove ${displayName}\'s access to ${connectionLabel}. Other profiles keep it.',
 			'profiles.deleteProfileTitle' => 'Delete profile?',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Remove ${displayName} and its connections. Servers stay available.',
@@ -9778,6 +9862,10 @@ extension on Translations {
 			'profiles.continueButton' => 'Continue',
 			'profiles.pinsDontMatch' => 'PINs don\'t match',
 			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
+			'profiles.settingsLocked' => 'Settings are locked for this profile.',
+			'profiles.unlockSettings' => 'Unlock settings',
+			'profiles.showExploreForProfile' => 'Show Explore for this profile',
+			'profiles.showExploreForProfileDescription' => 'Turn off to remove Explore from this profile’s navigation.',
 			'connections.sectionTitle' => 'Connections',
 			'connections.addConnection' => 'Add connection',
 			'connections.addConnectionSubtitleNoProfile' => 'Sign in with Plex or connect a Jellyfin or Emby server',
@@ -9895,6 +9983,8 @@ extension on Translations {
 			'errors.reasonServerError' => 'the server reported an error',
 			'errors.reasonCancelled' => 'the request was cancelled',
 			'errors.reasonUnexpected' => 'an unexpected error occurred',
+			'libraries.playRandomMovie' => 'Play a random movie',
+			'libraries.randomPickFailed' => 'Could not choose a random movie from this library.',
 			'libraries.title' => 'Libraries',
 			'libraries.fallbackTitle' => 'Library',
 			'libraries.scanLibraryFiles' => 'Scan Library Files',
@@ -10031,6 +10121,10 @@ extension on Translations {
 			'logs.clearLogs' => 'Clear Logs',
 			'logs.copyLogs' => 'Copy Logs',
 			'logs.uploadLogs' => 'Upload Logs',
+			'logs.saveLogs' => 'Save Logs to File',
+			'logs.logsSaved' => ({required Object path}) => 'Logs saved to ${path}',
+			'logs.saveLogsFailed' => 'Could not save the log file.',
+			'detail.endsAt' => ({required Object time}) => 'Ends at ${time}',
 			'startup.failedTitle' => 'Plezy could not start',
 			'startup.failedBody' => 'Something went wrong during startup. The details below identify what failed.',
 			'startup.failedBodyRepairable' => 'Plezy\'s saved settings file is damaged and has to be rebuilt before Plezy can start. Retrying will not help — choose Repair storage.',
@@ -10223,6 +10317,8 @@ extension on Translations {
 			'explore.detail.crew' => 'Crew',
 			'explore.detail.ratings' => 'Ratings',
 			'explore.detail.schedule' => 'Schedule',
+			_ => null,
+		} ?? switch (path) {
 			'explore.detail.recommendedByUsers' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Recommended by ${n} user', other: 'Recommended by ${n} users', ), 
 			'explore.detail.recommendedBy' => ({required Object who}) => 'Recommended by ${who}',
 			'explore.detail.favoritedBy' => ({required Object who}) => 'Favorited by ${who}',
@@ -10244,8 +10340,6 @@ extension on Translations {
 			'liveTv.timelineBuffer' => 'Buffer timeline',
 			'liveTv.timelineUnavailable' => 'Timeline unavailable',
 			'liveTv.timelineEstimated' => 'Estimated playback',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.timelinePending' => 'Pending seek',
 			'liveTv.timelineStale' => 'Schedule may be outdated',
 			'liveTv.unknownHub' => 'Unknown',
@@ -10737,6 +10831,8 @@ extension on Translations {
 			'companionRemote.pairing.connectionTimedOut' => 'Connection timed out. Use the same network on both devices.',
 			'companionRemote.pairing.sessionNotFound' => 'Device not found. Make sure Plezy is running on the host.',
 			'companionRemote.pairing.authFailed' => 'Authentication failed. Both devices need the same Plex account.',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Failed to connect: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Do you want to disconnect from the remote session?',
 			'companionRemote.remote.reconnecting' => 'Reconnecting...',
@@ -10758,8 +10854,6 @@ extension on Translations {
 			'companionRemote.remote.seekBack' => 'Seek Back',
 			'companionRemote.remote.stop' => 'Stop',
 			'companionRemote.remote.seekForward' => 'Seek Fwd',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.remote.volume' => 'Volume',
 			'companionRemote.remote.volumeDown' => 'Down',
 			'companionRemote.remote.volumeUp' => 'Up',

@@ -227,6 +227,13 @@
     "gridView": "Raster",
     "listView": "Lijst",
     "showHeroSection": "Toon hoofdsectie",
+    "showHomeBackdrop": "",
+    "showHomeBackdropDescription": "",
+    "continueWatchingRowSize": "",
+    "continueWatchingRowSizeValue": "",
+    "rowSizeCompact": "",
+    "rowSizeStandard": "",
+    "rowSizeLarge": "",
     "continueWatchingAction": "Actie voor 'Doorgaan met kijken'",
     "continueWatchingPlay": "Afspelen",
     "continueWatchingDetails": "Details openen",
@@ -376,6 +383,8 @@
     "skipMarkerModeAuto": "Automatisch",
     "forceSkipMarkerFallback": "Reservemarkeringen afdwingen",
     "forceSkipMarkerFallbackDescription": "Gebruik patronen in hoofdstuktitels, zelfs wanneer Plex markeringen heeft",
+    "theIntroDbFallback": "",
+    "theIntroDbFallbackDescription": "",
     "autoSkipDelay": "Vertraging voor automatisch overslaan",
     "autoSkipDelayDescription": "${seconds} seconden wachten voor automatisch overslaan",
     "introPattern": "Intromarkeringspatroon",
@@ -505,6 +514,8 @@
     "startupSection": "Opstartsectie",
     "showExploreTab": "Tabblad Ontdekken tonen",
     "showExploreTabDescription": "Toon het tabblad Ontdekken met content uit Plex Discover en gekoppelde trackers",
+    "hideEmptyLibraries": "",
+    "hideEmptyLibrariesDescription": "",
     "liveTvDefaultFavorites": "Standaard favoriete zenders",
     "liveTvDefaultFavoritesDescription": "Toon alleen favoriete zenders bij het openen van Live TV",
     "general": "Algemeen",
@@ -1145,7 +1156,11 @@
     "pinExplain": "Een viercijferige pincode is vereist om van profiel te wisselen.",
     "continueButton": "Doorgaan",
     "pinsDontMatch": "De pincodes komen niet overeen",
-    "tokenIdentityMismatch": "Het token van het Plex-profiel bleek bij een onverwachte server te horen"
+    "tokenIdentityMismatch": "Het token van het Plex-profiel bleek bij een onverwachte server te horen",
+    "settingsLocked": "",
+    "unlockSettings": "",
+    "showExploreForProfile": "",
+    "showExploreForProfileDescription": ""
   },
   "connections": {
     "sectionTitle": "Verbindingen",
@@ -1290,6 +1305,8 @@
     "reasonUnexpected": "er is een onverwachte fout opgetreden"
   },
   "libraries": {
+    "playRandomMovie": "",
+    "randomPickFailed": "",
     "title": "Bibliotheken",
     "fallbackTitle": "Bibliotheek",
     "scanLibraryFiles": "Bibliotheekbestanden scannen",
@@ -1445,7 +1462,13 @@
   "logs": {
     "clearLogs": "Logbestanden wissen",
     "copyLogs": "Logbestanden kopiëren",
-    "uploadLogs": "Logbestanden uploaden"
+    "uploadLogs": "Logbestanden uploaden",
+    "saveLogs": "",
+    "logsSaved": "",
+    "saveLogsFailed": ""
+  },
+  "detail": {
+    "endsAt": ""
   },
   "startup": {
     "failedTitle": "Plezy kon niet starten",

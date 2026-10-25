@@ -227,6 +227,13 @@
     "gridView": "Izgara",
     "listView": "Liste",
     "showHeroSection": "Öne Çıkan Bölümünü Göster",
+    "showHomeBackdrop": "",
+    "showHomeBackdropDescription": "",
+    "continueWatchingRowSize": "",
+    "continueWatchingRowSizeValue": "",
+    "rowSizeCompact": "",
+    "rowSizeStandard": "",
+    "rowSizeLarge": "",
     "continueWatchingAction": "İzlemeye Devam Et Eylemi",
     "continueWatchingPlay": "Oynat",
     "continueWatchingDetails": "Detayları Aç",
@@ -376,6 +383,8 @@
     "skipMarkerModeAuto": "Otomatik",
     "forceSkipMarkerFallback": "Yedek İşaretçileri Zorla",
     "forceSkipMarkerFallbackDescription": "Plex işaretçileri olsa bile kısım başlığı kalıplarını kullan",
+    "theIntroDbFallback": "",
+    "theIntroDbFallbackDescription": "",
     "autoSkipDelay": "Otomatik Atlama Gecikmesi",
     "autoSkipDelayDescription": "Otomatik atlamadan önce ${seconds} saniye bekle",
     "introPattern": "Jenerik İşaretçi Kalıbı",
@@ -505,6 +514,8 @@
     "startupSection": "Başlangıç Bölümü",
     "showExploreTab": "Keşfet sekmesini göster",
     "showExploreTabDescription": "Plex Keşfet ve bağlı takip hizmetlerinden gelen içeriklerle Keşfet sekmesini göster",
+    "hideEmptyLibraries": "",
+    "hideEmptyLibrariesDescription": "",
     "liveTvDefaultFavorites": "Canlı TV'de Favorileri Varsayılan Yap",
     "liveTvDefaultFavoritesDescription": "Canlı TV açıldığında yalnızca favori kanalları göster",
     "general": "Genel",
@@ -1145,7 +1156,11 @@
     "pinExplain": "Profiller arasında geçiş yapmak için 4 haneli PIN gereklidir.",
     "continueButton": "Devam Et",
     "pinsDontMatch": "PIN'ler eşleşmiyor",
-    "tokenIdentityMismatch": "Plex profil belirtecinin beklenmeyen bir sunucuya ait olduğu belirlendi"
+    "tokenIdentityMismatch": "Plex profil belirtecinin beklenmeyen bir sunucuya ait olduğu belirlendi",
+    "settingsLocked": "",
+    "unlockSettings": "",
+    "showExploreForProfile": "",
+    "showExploreForProfileDescription": ""
   },
   "connections": {
     "sectionTitle": "Bağlantılar",
@@ -1290,6 +1305,8 @@
     "reasonUnexpected": "beklenmeyen bir hata oluştu"
   },
   "libraries": {
+    "playRandomMovie": "",
+    "randomPickFailed": "",
     "title": "Kitaplıklar",
     "fallbackTitle": "Kitaplık",
     "scanLibraryFiles": "Kitaplık Dosyalarını Tarayınız",
@@ -1445,7 +1462,13 @@
   "logs": {
     "clearLogs": "Günlükleri Temizle",
     "copyLogs": "Günlükleri Kopyala",
-    "uploadLogs": "Günlükleri Yükle"
+    "uploadLogs": "Günlükleri Yükle",
+    "saveLogs": "",
+    "logsSaved": "",
+    "saveLogsFailed": ""
+  },
+  "detail": {
+    "endsAt": ""
   },
   "startup": {
     "failedTitle": "Plezy başlatılamadı",

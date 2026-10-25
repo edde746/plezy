@@ -16,20 +16,20 @@ The fork is a maintenance vehicle for these deltas, not a permanent product spli
 | Downloads | Converted download quality; per-rule quality; auto-download Continue Watching items and remove them when they leave the shelf (#1145, #1413, #1847, #1978, #2181, #2206) | Implemented for Plex, Jellyfin, and Emby |
 | Downloads | Local Plex connections (#1447/#2248); download size and storage usage (#2376); manual sync and random episode selection (#1197, #1199) | Implemented in the fork; upstream convergence pending |
 | Downloads | Playlist downloads and watched-item cleanup (#1721, #2600, #1413, #2181); orphan cleanup | Playlist downloads and watched-item cleanup are implemented; orphan cleanup remains planned |
-| Profiles and privacy | PIN-gate download deletion, settings, and Explore; hide Explore per profile (#1924, #2514) | Planned |
+| Profiles and privacy | PIN-gate download deletion, settings, and Explore; hide Explore per profile (#1924, #2514) | Local profile PIN gates Settings, download deletion, and entry to Explore; Explore can also be hidden per profile. Plex Home PINs remain server-owned. |
 | Audio and subtitles | Remember choices per show; choose tracks before playback; always-on subtitles and preferred-language fetching; per-item sync offsets (#84, #1758, #1956, #2116, #2182, #2346, #2382, #2792) | Per-show memory and scoped sync offsets are implemented locally for all servers; pre-play selection and automatic subtitle fetching remain planned |
 | Subtitle controls | Live styling preview (#2347); in-player size and position controls (#95, #689, #2174); load a local subtitle file (#1431) | Live preview, in-player size/position, and local subtitle loading are implemented; other style controls remain in Settings |
 | Playback | Swipe-to-seek (#2601), frame stepping (#1584), subtitle-delay hotkeys (#2824), remembered version across episodes (#2563), video playlist repeat (#1757/#1985) | Implemented in the fork; upstream convergence pending |
 | Playback | Plex cinema pre-rolls (#970/#2483); random local pre-rolls (#2271); theme music (#791/#2170/#2596) | Plex and local pre-rolls, detail-page theme songs, and home spotlight music are implemented; Jellyfin/Emby cinema intros remain planned |
-| Playback | Background video/audio-only mode (#367), mpv equalizer (#2292), local/remote quality presets (#2064), opt-in TheIntroDB fallback (#389, #1110, #1886) | Planned |
+| Playback | Background video/audio-only mode (#367), mpv equalizer (#2292), local/remote quality presets (#2064), opt-in TheIntroDB fallback (#389, #1110, #1886) | Opt-in intro fallback is implemented across servers when no intro marker is available; background video, equalizer, and local/remote quality remain planned. |
 | Browsing | Director links (#2762), library item counts (#1516), Watchlist filters (#2725), MDBList Explore lists (#2740), Seerr search results (#2811) | Implemented in the fork; upstream convergence pending |
-| Browsing | Search by actor or director (#1517, #2368); random movie or library shuffle (#1561, #2741, #2757); show end time on detail pages (#2671) | People search is implemented across connected servers; random selection and detail-page end time are planned |
+| Browsing | Search by actor or director (#1517, #2368); random movie or library shuffle (#1561, #2741, #2757); show end time on detail pages (#2671) | People search and random movie selection are implemented across connected servers; detail-page finish time is implemented |
 | Home screen | Configurable rows, merged library and collection rows, organizer controls, and Plex account layout sync (#1652/#2203) | Implemented; Plex account sync applies to Plex profiles. Custom rows can combine selected libraries across connected servers |
-| Home screen | Separate Next Up; hide empty libraries or backdrop art; Continue Watching row sizing (#2498, #2690, #2701, #2723, #2784) | Planned; the legacy hero banner already has a visibility setting, and the top-bar clock is implemented on TV |
+| Home screen | Separate Next Up; hide empty libraries or backdrop art; Continue Watching row sizing (#2498, #2690, #2701, #2723, #2784) | Empty-library filtering, Home backdrop visibility, and Continue Watching row sizing are implemented; the legacy hero banner visibility setting and TV clock already exist. Separating Next Up remains planned. |
 | Servers and links | Preferred server (#591, #1529, #2720); `plezy://watch` links (#2681); return from external players with synced progress (#2738) | Plex links, Jellyfin/Emby catalog-ID matching, and external-player return sync are implemented; preferred-server selection remains planned |
 | Live TV | Timeshift timeline (#2300) | Plex implementation is in the fork; Jellyfin/Emby DVR-window support is planned |
 | Search and integrations | Google Cast (#126); new-episode notifications (#1146); content screensaver (#401); Home Assistant and Android automation intents (#823, #1996) | Planned |
-| Settings and diagnostics | Save logs to a file (#2496); cloud settings backup (#1795) | Planned |
+| Settings and diagnostics | Save logs to a file (#2496); cloud settings backup (#1795) | Log export is implemented; cloud settings backup remains planned |
 
 The list records the fork's active scope. “Implemented in the fork” means PlezyNG carries the behavior while upstream convergence remains pending; platform and server limitations are called out in the feature documentation.
 
@@ -122,6 +122,7 @@ sudo moss it plezy
 - Libraries, collections, and playlists — video and audio
 - Discover hub — Continue Watching, Next Up, trending, and recommendations
 - Configurable Home rows: merge Recently Added / Recently Released across whichever libraries you pick, or a collections row scoped to specific libraries or collections
+- Hide Home backdrop artwork and choose compact, standard, or large Continue Watching cards
 - Cross-server search across connected Plex, Jellyfin, and Emby libraries, including actors and directors
 - Filtering, sorting, and alphabetical jump navigation
 - Folder browsing and folder playback — home-video libraries open in folder view
@@ -142,6 +143,7 @@ sudo moss it plezy
 - Direct play, or transcode presets from 240p/320 kbps to 1080p/20 Mbps
 - Multi-version switching with per-version file details
 - Full ASS/SSA subtitles with customizable styling
+- Optional TheIntroDB intro timings when Plex, Jellyfin, or Emby has no intro marker; disabled by default
 - Online subtitle search & download[^plex]
 - Audio and subtitle track selection with server-provided defaults
 - Progress sync and resume
@@ -177,7 +179,10 @@ sudo moss it plezy
 - Sync rules for automatic downloads, with per-show "Include Specials"
 - Per-rule download quality, plus automatic Continue Watching downloads with cleanup when an item leaves the shelf
 - Converted video downloads for Plex, Jellyfin, and Emby; progressive server transcodes may restart after an interrupted transfer
+- Optional download-quality prompt per item, quality per sync rule, and Continue Watching download rules with shelf cleanup
 - Offline browsing with watch state sync-back on reconnect
+- Local profile PIN gates for Settings and download deletion; per-profile Explore visibility
+- Random movie picker, end-time estimate on detail pages, hide-empty-library preference, and diagnostic log export
 
 ### <img src="assets/readme_icons/watch-together.svg" height="20" alt="" align="center" /> Watch Together
 - Rooms on [Open Watch Party](https://openwatch.party) — share a six-character code; friends join from Plezy or another Open Watch Party app

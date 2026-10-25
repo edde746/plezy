@@ -116,6 +116,29 @@ class AppearanceSettingsScreen extends StatelessWidget {
                 title: t.settings.showHeroSection,
                 subtitle: t.settings.showHeroSectionDescription,
               ),
+            SettingSwitchTile(
+              pref: SettingsService.showHomeBackdrop,
+              icon: Symbols.wallpaper_rounded,
+              title: t.settings.showHomeBackdrop,
+              subtitle: t.settings.showHomeBackdropDescription,
+            ),
+            SettingSelectionTile<ContinueWatchingRowSize>(
+              pref: SettingsService.continueWatchingRowSize,
+              icon: Symbols.photo_size_select_large_rounded,
+              title: t.settings.continueWatchingRowSize,
+              subtitleBuilder: (size) => t.settings.continueWatchingRowSizeValue(
+                label: switch (size) {
+                  ContinueWatchingRowSize.compact => t.settings.rowSizeCompact,
+                  ContinueWatchingRowSize.standard => t.settings.rowSizeStandard,
+                  ContinueWatchingRowSize.large => t.settings.rowSizeLarge,
+                },
+              ),
+              options: [
+                DialogOption(value: ContinueWatchingRowSize.compact, title: t.settings.rowSizeCompact),
+                DialogOption(value: ContinueWatchingRowSize.standard, title: t.settings.rowSizeStandard),
+                DialogOption(value: ContinueWatchingRowSize.large, title: t.settings.rowSizeLarge),
+              ],
+            ),
             _continueWatchingActionSelector(),
             _episodeActionSelector(),
             SettingNavigationTile(
@@ -173,6 +196,12 @@ class AppearanceSettingsScreen extends StatelessWidget {
                 title: t.settings.showExploreTab,
                 subtitle: t.settings.showExploreTabDescription,
               ),
+            SettingSwitchTile(
+              pref: SettingsService.hideEmptyLibraries,
+              icon: Symbols.hide_source_rounded,
+              title: t.settings.hideEmptyLibraries,
+              subtitle: t.settings.hideEmptyLibrariesDescription,
+            ),
             if (PlatformDetector.shouldUseSideNavigation(context))
               SettingSwitchTile(
                 pref: SettingsService.alwaysKeepSidebarOpen,

@@ -53,6 +53,7 @@ import '../../widgets/settings_section.dart';
 import '../../widgets/system_bottom_inset.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/profile.dart';
+import '../../profiles/profile_activation.dart';
 import '../../watch_together/services/watch_party_relays.dart';
 import 'about_screen.dart';
 import 'add_connection_screen.dart';
@@ -136,6 +137,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   // Update checking state
   bool _isCheckingForUpdate = false;
   Map<String, dynamic>? _updateInfo;
+  String? _lastSettingsProfileId;
+  String? _unlockedSettingsProfileId;
+  String? _cancelledSettingsProfileId;
+  bool _checkingSettingsPin = false;
 
   @override
   void initState() {
@@ -183,8 +188,59 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
   settings.SettingsService get _settingsService => settings.SettingsService.instance;
 
+  Future<void> _requestSettingsUnlock(String profileId) async {
+    if (_checkingSettingsPin) return;
+    _checkingSettingsPin = true;
+    final allowed = await requestActiveProfileActionPin(context);
+    if (!mounted) return;
+    final activeId = context.read<ActiveProfileProvider>().activeId;
+    setState(() {
+      _checkingSettingsPin = false;
+      if (allowed && activeId == profileId) {
+        _unlockedSettingsProfileId = profileId;
+        _cancelledSettingsProfileId = null;
+      } else {
+        _cancelledSettingsProfileId = profileId;
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final activeProfile = context.watch<ActiveProfileProvider>().active;
+    final profileId = activeProfile?.id;
+    if (_lastSettingsProfileId != profileId) {
+      _lastSettingsProfileId = profileId;
+      _unlockedSettingsProfileId = null;
+      _cancelledSettingsProfileId = null;
+    }
+    if (activeProfile is LocalProfile &&
+        activeProfile.isPinProtected &&
+        _unlockedSettingsProfileId != activeProfile.id) {
+      final id = activeProfile.id;
+      if (_cancelledSettingsProfileId != id && !_checkingSettingsPin) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && context.read<ActiveProfileProvider>().activeId == id) {
+            unawaited(_requestSettingsUnlock(id));
+          }
+        });
+      }
+      return Scaffold(
+        body: Center(
+          child: _checkingSettingsPin
+              ? const CircularProgressIndicator()
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(t.profiles.settingsLocked),
+                    const SizedBox(height: 12),
+                    FilledButton(onPressed: () => _requestSettingsUnlock(id), child: Text(t.profiles.unlockSettings)),
+                  ],
+                ),
+        ),
+      );
+    }
+
     final hasLibraries = context.select<LibrariesProvider, bool>((p) => p.libraries.isNotEmpty);
 
     if (OverlaySheetController.maybeOf(context) != null) {

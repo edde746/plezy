@@ -309,3 +309,21 @@ bool verifyProfilePin(Profile profile, String pin) {
   if (hash == null || hash.isEmpty) return true;
   return verifyPin(pin, hash);
 }
+
+/// Re-check the active local profile's PIN before exposing sensitive actions
+/// such as Settings or deleting offline media. Plex Home PINs remain owned by
+/// Plex and are validated only through Plex's profile-switch endpoint.
+Future<bool> requestActiveProfileActionPin(BuildContext context) async {
+  final active = context.read<ActiveProfileProvider>().active;
+  if (active is! LocalProfile || !active.isPinProtected) return true;
+
+  String? errorMessage;
+  while (context.mounted) {
+    final pin = await showPinEntryDialog(context, active.displayName, errorMessage: errorMessage);
+    if (!context.mounted || pin == null) return false;
+    if (context.read<ActiveProfileProvider>().activeId != active.id) return false;
+    if (verifyProfilePin(active, pin)) return true;
+    errorMessage = t.profiles.incorrectPinTryAgain;
+  }
+  return false;
+}
