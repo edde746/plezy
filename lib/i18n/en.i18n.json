@@ -2,6 +2,27 @@
   "app": {
     "title": "PlezyNG"
   },
+  "cast": {
+    "chooseDevice": "Cast to a device",
+    "searching": "Searching for Cast devices…",
+    "connectedTo": "Connected to ${device}",
+    "device": "Cast device",
+    "readyToCast": "Ready to cast",
+    "subtitle": "Subtitles",
+    "serverNotAvailable": "The media server is not available.",
+    "stopCasting": "Stop casting",
+    "castToDevice": "Cast to device",
+    "noEpisodeAvailable": "There is no episode available to cast.",
+    "startFailed": "Could not start casting. Check the server and try again."
+  },
+  "automation": {
+    "noActivePlayback": "There is no active video session to control.",
+    "profileNotFound": "That Plezy profile could not be found."
+  },
+  "notifications": {
+    "newEpisodeTitle": "New episode",
+    "newEpisodeBody": "${show} · ${episode}"
+  },
   "appIcon": {
     "title": "App icon",
     "defaultIcon": "Default",
@@ -229,6 +250,17 @@
     "showHeroSection": "Show Hero Section",
     "showHomeBackdrop": "Show home backdrop artwork",
     "showHomeBackdropDescription": "Show large artwork behind featured Home rows",
+    "contentScreensaverEnabled": "Content screensaver",
+    "contentScreensaverEnabledDescription": "Show full-screen artwork after the app has been idle",
+    "contentScreensaverDelay": "Start screensaver after",
+    "contentScreensaverLibraries": "Screensaver libraries",
+    "contentScreensaverLibrariesDescription": "Choose which libraries supply artwork. No selection includes every library.",
+    "contentScreensaverAllLibraries": "All libraries",
+    "contentScreensaverSelectedLibraries": "${count} libraries selected",
+    "contentScreensaverNoLibraries": "No connected media libraries are available.",
+    "contentScreensaverDismissHint": "Press any button or tap to dismiss",
+    "newEpisodeNotifications": "New episode notifications",
+    "newEpisodeNotificationsDescription": "Alert when a new episode is added to a show you are caught up on. Checks while Plezy is open.",
     "continueWatchingRowSize": "Continue Watching row size",
     "continueWatchingRowSizeValue": "${label} cards",
     "rowSizeCompact": "Compact",
@@ -1150,6 +1182,9 @@
     "deleteProfileMessage": "Remove ${displayName} and its connections. Servers stay available.",
     "profileNameLabel": "Profile name",
     "pinProtectionLabel": "PIN protection",
+    "copyAutomationLink": "Copy Android automation link",
+    "copyAutomationLinkDescription": "Select this profile from an Android intent or automation. Profile PIN checks still apply.",
+    "automationLinkCopied": "Profile automation link copied.",
     "pinManagedByPlex": "PIN managed by Plex. Edit on plex.tv.",
     "noPinSetEditOnPlex": "No PIN set. To require one, edit the home user on plex.tv.",
     "setPin": "Set PIN",

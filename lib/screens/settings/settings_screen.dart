@@ -31,6 +31,7 @@ import '../../providers/seerr_account_provider.dart';
 import '../../services/account_preferences_accounts.dart';
 import '../../services/keyboard_shortcuts_service.dart';
 import '../../services/background_work_diagnostics_service.dart';
+import '../../services/new_episode_notification_service.dart';
 import '../../services/settings_service.dart' as settings;
 import '../../services/settings_mutation_service.dart';
 import '../../services/supporter/supporter_mode.dart';
@@ -128,6 +129,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   static const _kAutoCheckUpdatesOnStartup = 'auto_check_updates_on_startup';
   static const _kAbout = 'about';
   static const _kWatchTogetherRelay = 'watch_together_relay';
+  static const _kNewEpisodeNotifications = 'new_episode_notifications';
   static const _kExportSettings = 'export_settings';
   static const _kImportSettings = 'import_settings';
   static const _kAccountPreferences = 'account_preferences';
@@ -245,7 +247,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     final hasLibraries = context.select<LibrariesProvider, bool>((p) => p.libraries.isNotEmpty);
 
     if (OverlaySheetController.maybeOf(context) != null) {
-      return _buildContent(context, hasLibraries: hasLibraries);
+      return _buildContent(context, hasLibraries: hasLibraries, profileId: profileId);
     }
 
     // Settings is hosted by MainScreen on side-navigation layouts, but it is a
@@ -254,11 +256,13 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     // not fall back to modal routes with a competing Android back path.
     return OverlaySheetHost(
       canPop: true,
-      child: Builder(builder: (hostContext) => _buildContent(hostContext, hasLibraries: hasLibraries)),
+      child: Builder(
+        builder: (hostContext) => _buildContent(hostContext, hasLibraries: hasLibraries, profileId: profileId),
+      ),
     );
   }
 
-  Widget _buildContent(BuildContext sheetContext, {required bool hasLibraries}) {
+  Widget _buildContent(BuildContext sheetContext, {required bool hasLibraries, required String? profileId}) {
     return Scaffold(
       body: Focus(
         onKeyEvent: _handleKeyEvent,
@@ -285,6 +289,15 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
                       _buildPlaybackTile(),
                       if (hasLibraries) _buildManageLibrariesTile(sheetContext),
                       _buildServicesTile(),
+                      if (profileId != null && !PlatformDetector.isDesktopOS() && !PlatformDetector.isAppleTV())
+                        SettingSwitchTile(
+                          focusNode: _focusTracker.get(_kNewEpisodeNotifications),
+                          pref: settings.SettingsService.notifyNewEpisodesForProfile(profileId),
+                          icon: Symbols.notifications_active_rounded,
+                          title: t.settings.newEpisodeNotifications,
+                          subtitle: t.settings.newEpisodeNotificationsDescription,
+                          onAfterWrite: (_) => NewEpisodeNotificationService.instance.preferencesChanged(),
+                        ),
                     ],
                   ),
 

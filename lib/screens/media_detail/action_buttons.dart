@@ -287,6 +287,54 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
             ),
           );
 
+    Future<void> onCastPressed() async {
+      if (!_canUseDetail || !context.mounted) return;
+      final MediaItem? playbackItem = metadata.isShow
+          ? _showPlayEpisode()
+          : metadata.isSeason
+          ? (_episodes.isEmpty ? null : _episodes.first)
+          : metadata.isMovie || metadata.isEpisode
+          ? metadata
+          : null;
+      if (playbackItem == null) {
+        showErrorSnackBar(context, t.cast.noEpisodeAvailable);
+        return;
+      }
+      final client = _getMediaClientForMetadata(context);
+      if (client == null) {
+        showErrorSnackBar(context, t.cast.serverNotAvailable);
+        return;
+      }
+      try {
+        await CastMediaService.instance.handleCastPressed(context, client: client, item: playbackItem);
+      } on CastPlaybackException catch (error) {
+        if (context.mounted) showErrorSnackBar(context, error.message);
+      } catch (_) {
+        if (context.mounted) showErrorSnackBar(context, t.cast.startFailed);
+      }
+    }
+
+    final castAction =
+        CastMediaService.isSupportedPlatform &&
+            !widget.isOffline &&
+            (metadata.isMovie || metadata.isEpisode || metadata.isShow || metadata.isSeason)
+        ? FocusableAction(
+            debugLabel: 'detail_cast',
+            onPressed: onCastPressed,
+            builder: (context, state) => AnimatedBuilder(
+              animation: CastMediaService.instance,
+              builder: (context, _) => iconActionButton(
+                state,
+                onPressed: onCastPressed,
+                icon: Icon(CastMediaService.instance.isConnected ? Icons.cast_connected : Icons.cast),
+                tooltip: CastMediaService.instance.isConnected
+                    ? t.cast.connectedTo(device: CastMediaService.instance.deviceName ?? t.cast.device)
+                    : t.cast.castToDevice,
+              ),
+            ),
+          )
+        : null;
+
     final shuffleAction = (metadata.isShow || metadata.isSeason)
         ? FocusableAction(
             debugLabel: 'detail_shuffle',
@@ -373,6 +421,7 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       playAction,
       ?versionAction,
       ?trailerAction,
+      ?castAction,
       ?shuffleAction,
       ?downloadAction,
       watchedAction,
@@ -412,13 +461,20 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         return compact;
       }
 
-      final medium = <FocusableAction>[playAction, ?versionAction, ?downloadAction, watchedAction, ?moreActionsAction];
+      final medium = <FocusableAction>[
+        playAction,
+        ?versionAction,
+        ?castAction,
+        ?downloadAction,
+        watchedAction,
+        ?moreActionsAction,
+      ];
       if (!maxWidth.isFinite || estimatedRowWidth(medium) <= maxWidth) return medium;
 
-      final compact = <FocusableAction>[playAction, ?versionAction, watchedAction, ?moreActionsAction];
+      final compact = <FocusableAction>[playAction, ?versionAction, ?castAction, watchedAction, ?moreActionsAction];
       if (estimatedRowWidth(compact) <= maxWidth) return compact;
 
-      return [playAction, ?versionAction, ?moreActionsAction];
+      return [playAction, ?versionAction, ?castAction, ?moreActionsAction];
     }
 
     Widget actionBar(List<FocusableAction> actions) {

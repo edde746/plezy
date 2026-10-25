@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
@@ -29,6 +30,8 @@ import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/settings_section.dart';
 import '../../widgets/setting_tile.dart';
 import '../../utils/dialogs.dart';
+import '../../utils/platform_detector.dart';
+import '../../utils/profile_deep_link.dart';
 import '../settings/add_connection_screen.dart';
 import '../settings/edit_jellyfin_connection_screen.dart';
 import 'pin_entry_dialog.dart';
@@ -57,6 +60,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
   final _saveNameFocusNode = FocusNode(debugLabel: 'ProfileDetail:SaveName');
   final _setPinFocusNode = FocusNode(debugLabel: 'ProfileDetail:SetPin');
   final _changePinFocusNode = FocusNode(debugLabel: 'ProfileDetail:ChangePin');
+  final _automationLinkFocusNode = FocusNode(debugLabel: 'ProfileDetail:AutomationLink');
   final _addConnectionFocusNode = FocusNode(debugLabel: 'ProfileDetail:AddConnection');
   final _deleteProfileFocusNode = FocusNode(debugLabel: 'ProfileDetail:DeleteProfile');
   late Profile _profile;
@@ -95,6 +99,7 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
     _saveNameFocusNode.dispose();
     _setPinFocusNode.dispose();
     _changePinFocusNode.dispose();
+    _automationLinkFocusNode.dispose();
     _addConnectionFocusNode.dispose();
     _deleteProfileFocusNode.dispose();
     super.dispose();
@@ -144,6 +149,12 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _setPinFocusNode.requestFocus();
     });
+  }
+
+  Future<void> _copyAutomationLink() async {
+    await Clipboard.setData(ClipboardData(text: ProfileDeepLink.forProfileId(_profile.id)));
+    if (!mounted) return;
+    showAppSnackBar(context, t.profiles.automationLinkCopied);
   }
 
   Future<void> _addConnection() async {
@@ -328,6 +339,24 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
                 )
               else
                 PinStatusRow(onChange: _setPin, onRemove: _clearPin, changeFocusNode: _changePinFocusNode),
+              if (!PlatformDetector.isAppleTV()) ...[
+                const SizedBox(height: 12),
+                FocusableButton(
+                  focusNode: _automationLinkFocusNode,
+                  useBackgroundFocus: true,
+                  onPressed: _copyAutomationLink,
+                  child: OutlinedButton.icon(
+                    onPressed: _copyAutomationLink,
+                    icon: const AppIcon(Symbols.link_rounded, fill: 1),
+                    label: Text(t.profiles.copyAutomationLink),
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  t.profiles.copyAutomationLinkDescription,
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+              ],
               const SizedBox(height: 12),
               SettingSwitchTile(
                 pref: SettingsService.showExploreTabForProfile(_profile.id),

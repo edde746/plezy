@@ -675,6 +675,9 @@ class SettingsService extends BaseSharedPreferencesService {
   );
   static const showHeroSection = BoolPref('show_hero_section', defaultValue: true);
   static const showHomeBackdrop = BoolPref('show_home_backdrop', defaultValue: true);
+  static const contentScreensaverEnabled = BoolPref('content_screensaver_enabled');
+  static const contentScreensaverDelayMinutes = IntPref('content_screensaver_delay_minutes', defaultValue: 5);
+  static const contentScreensaverLibraryKeys = StringListPref('content_screensaver_library_keys');
   static const continueWatchingRowSize = EnumPref<ContinueWatchingRowSize>(
     'continue_watching_row_size',
     values: ContinueWatchingRowSize.values,
@@ -687,6 +690,14 @@ class SettingsService extends BaseSharedPreferencesService {
       BoolPref(profileScopedPrefsKey(profileId, 'show_explore_tab'), defaultValue: true);
   static StringPref preferredServerForProfile(String profileId) =>
       StringPref(profileScopedPrefsKey(profileId, 'preferred_server_id'));
+  static BoolPref notifyNewEpisodesForProfile(String profileId) =>
+      BoolPref(profileScopedPrefsKey(profileId, 'notify_new_episodes'), defaultValue: false);
+  static StringPref newEpisodeSnapshotForProfile(String profileId, String serverId, String libraryId) => StringPref(
+    profileScopedPrefsKey(
+      profileId,
+      'new_episode_snapshot_${Uri.encodeComponent(serverId)}_${Uri.encodeComponent(libraryId)}',
+    ),
+  );
   // Lets Continue Watching be added/removed from Home like any other
   // Organizer row (see home_layout_settings_screen.dart), instead of it
   // always being a fixed, unremovable fixture ahead of every other row.
@@ -1692,6 +1703,9 @@ class SettingsService extends BaseSharedPreferencesService {
     seekTimeLarge,
     showHeroSection,
     showHomeBackdrop,
+    contentScreensaverEnabled,
+    contentScreensaverDelayMinutes,
+    contentScreensaverLibraryKeys,
     continueWatchingRowSize,
     themeSongsEnabled,
     themeSongVolume,

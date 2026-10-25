@@ -1257,6 +1257,21 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     return currentPlayer.playOrPause();
   }
 
+  Future<bool> _handleAutomationTransport(VideoAutomationCommand command) async {
+    if (!_ownsLaunchPlayback()) return false;
+    final currentPlayer = player;
+    if (currentPlayer == null) return false;
+    switch (command) {
+      case VideoAutomationCommand.play:
+        await _playWithPlaybackIntent(currentPlayer);
+      case VideoAutomationCommand.pause:
+        await _pauseWithPlaybackIntent(currentPlayer);
+      case VideoAutomationCommand.toggle:
+        await _playOrPauseWithPlaybackIntent(currentPlayer);
+    }
+    return true;
+  }
+
   final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(false);
   final FirstFrameGate _firstFrame = FirstFrameGate();
   bool _hasFatalPlaybackError = false;
@@ -1382,6 +1397,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     PlaybackCoordinator.instance.registerVideoSession(
       shutdown: _shutdownVideo,
       stopAndExit: _stopVideoAndExit,
+      control: _handleAutomationTransport,
       playerState: () => player?.state,
     );
     SleepTimerService().bindPlayback(

@@ -1,71 +1,62 @@
 <h1>
-  <img src="assets/plezy.png" alt="PlezyNG logo" height="24" style="vertical-align: middle;" />
+  <img src="assets/plezy.png" alt="PlezyNG Logo" height="24" style="vertical-align: middle;" />
   PlezyNG
 </h1>
 
-A modern Flutter client for Plex, Jellyfin, and Emby on desktop, mobile, and TV. PlezyNG is a community-maintained fork of [Plezy](https://github.com/edde746/plezy).
+A cross-platform media client for Plex, Jellyfin, and Emby, maintained as a fork of [Plezy](https://github.com/edde746/plezy).
 
-PlezyNG keeps upstream Plezy as its foundation and implements user-requested features that upstream has not accepted or delivered. We aim to support Plex, Jellyfin, and Emby wherever their server APIs allow the same capability.
+## Fork scope and convergence
 
-> **Convergence policy:** PlezyNG is a delivery vehicle for these feature gaps, not a commitment to permanent divergence. When upstream releases equivalent capabilities, we intend to adopt its maintained implementation and remove duplicate fork-specific code. Until then, this fork maintains the missing work and documents the differences here.
+PlezyNG is a maintenance fork for requested features that Plezy upstream has declined or has not shipped. The implementation targets upstream compatibility and supports Plex, Jellyfin, and Emby wherever their APIs allow.
+
+Each row below is an upstream convergence target. When Plezy upstream provides equivalent behavior, PlezyNG should adopt that implementation and remove its duplicate. If the listed capabilities converge upstream, the fork-specific maintenance burden ends and PlezyNG should be retired in favor of upstream Plezy.
+
+| Area | Feature requests and upstream work | PlezyNG status |
+| --- | --- | --- |
+| Downloads | Converted download quality; per-rule quality; auto-download Continue Watching items and remove them when they leave the shelf (#1145, #1413, #1847, #1978, #2181, #2206) | Implemented for Plex, Jellyfin, and Emby |
+| Downloads | Local Plex connections (#1447/#2248); download size and storage usage (#2376); manual sync and random episode selection (#1197, #1199) | Implemented in the fork; upstream convergence pending |
+| Downloads | Playlist downloads and watched-item cleanup (#1721, #2600, #1413, #2181); orphan cleanup | Playlist downloads and watched-item cleanup are implemented; orphan cleanup remains planned |
+| Profiles and privacy | PIN-gate download deletion, settings, and Explore; hide Explore per profile (#1924, #2514) | Local profile PIN gates Settings, download deletion, and entry to Explore; Explore can also be hidden per profile. Plex Home PINs remain server-owned. |
+| Audio and subtitles | Remember choices per show; choose tracks before playback; always-on subtitles and preferred-language fetching; per-item sync offsets (#84, #1758, #1956, #2116, #2182, #2346, #2382, #2792) | Per-show memory, optional pre-play selection, device-local preferred-language selection and opt-in provider downloads, and scoped sync offsets are implemented across Plex, Jellyfin, and Emby; explicit server-selected tracks, account Off, and local picks remain authoritative |
+| Subtitle controls | Live styling preview (#2347); in-player size and position controls (#95, #689, #2174); load a local subtitle file (#1431) | Live preview, in-player size/position, and local subtitle loading are implemented; other style controls remain in Settings |
+| Playback | Swipe-to-seek (#2601), frame stepping (#1584), subtitle-delay hotkeys (#2824), remembered version across episodes (#2563), video playlist repeat (#1757/#1985) | Implemented in the fork; upstream convergence pending |
+| Playback | Plex cinema pre-rolls (#970/#2483); random local pre-rolls (#2271); theme music (#791/#2170/#2596) | Configured cinema intros work on Plex, Jellyfin, and Emby; local pre-rolls, detail-page theme songs, and home spotlight music are implemented |
+| Playback | Background video/audio-only mode (#367), mpv equalizer (#2292), local/remote quality presets (#2064), opt-in TheIntroDB fallback (#389, #1110, #1886) | Optional audio-only background playback is implemented on handheld Android and iOS; Android uses the OS media playback service. A five-band device-local equalizer is available in mpv, and opt-in intro fallback is implemented. |
+| Browsing | Director links (#2762), library item counts (#1516), Watchlist filters (#2725), MDBList Explore lists (#2740), Seerr search results (#2811) | Implemented in the fork; upstream convergence pending |
+| Browsing | Search by actor or director (#1517, #2368); random movie or library shuffle (#1561, #2741, #2757); show end time on detail pages (#2671) | People search, random movie selection, and shuffled playback of movie and TV libraries are implemented across connected servers; detail-page finish time is shown on media details |
+| Home screen | Configurable rows, merged library and collection rows, organizer controls, and Plex account layout sync (#1652/#2203) | Implemented; Plex account sync applies to Plex profiles. Custom rows can combine selected libraries across connected servers |
+| Home screen | Separate Next Up; hide empty libraries or backdrop art; Continue Watching row sizing (#2498, #2690, #2701, #2723, #2784) | Continue Watching and Next Up now have separate Home rows and independent visibility/order; empty-library filtering, backdrop visibility, and row sizing are implemented. The legacy hero banner visibility setting and TV clock already exist. |
+| Servers and links | Preferred server (#591, #1529, #2720); `plezy://watch` links (#2681); return from external players with synced progress (#2738) | Preferred server is stored per profile and moves first in aggregate queries across Plex, Jellyfin, and Emby; watch links and external-player return sync are implemented |
+| Live TV | Timeshift timeline (#2300) | Plex implementation is in the fork; Jellyfin/Emby DVR-window support remains under investigation because their public playback APIs do not expose the tuner's seekable capture window |
+| Integrations | Google Cast (#126); new-episode notifications (#1146); content screensaver (#401) | Google Cast handoff is implemented on Android and iOS through the default media receiver, subject to receiver codec/container support and server reachability. Profile-scoped episode alerts poll connected Plex, Jellyfin, and Emby libraries while the app is foregrounded on Android/iOS; the screensaver rotates artwork from selected connected libraries after an idle timeout. |
+| Automation | Home Assistant control and Android automation intents (#823, #1996) | Android `ACTION_VIEW` links can open cross-server `plezy://watch` media, select an existing profile with `plezy://profile?id=…`, and control the active video session with `plezy://control?command=play|pause|toggle|stop`. Home Assistant can invoke these through an Android intent bridge; this does not expose Plezy as a native Plex Companion player in Home Assistant. See the [Android automation guide](docs/plezyng/android-automation.md). |
+| Settings and diagnostics | Save logs to a file (#2496); cloud settings backup (#1795) | Log export is implemented; cloud settings backup uploads and restores the portable settings export through an HTTPS WebDAV file endpoint |
+
+The list records the fork's active scope. “Implemented in the fork” means PlezyNG carries the behavior while upstream convergence remains pending; platform and server limitations are called out in the feature documentation.
+
+> PlezyNG exists to maintain these upstream gaps. As Plezy adopts each capability, the corresponding fork delta should be removed. When the table has converged, PlezyNG should be retired and upstream Plezy should be the sole maintained implementation.
 
 <p>
+  <a href="https://github.com/edde746/plezy">Upstream Plezy</a> ·
+  <a href="https://github.com/snapetech-org/PlezyNG/issues">PlezyNG issues</a> ·
   <a href="#download">Download</a> ·
-  <a href="https://discord.gg/jz5rv5EUvr">Discord support</a> ·
   <a href="CONTRIBUTING.md">Contributing</a> ·
   <a href="LICENSE">License</a>
 </p>
 
 <p align="center">
-  <img src="assets/readme-showcase.webp" alt="PlezyNG mobile screenshots" width="900" />
+  <img src="assets/readme-showcase.webp" alt="Plezy mobile screenshots" width="900" />
 </p>
-
-## Why this fork exists
-
-The table tracks the feature work that currently distinguishes PlezyNG. “In fork” means the capability is present here; “Planned” means implementation remains. References point to the upstream requests or pull requests that motivated the work.
-
-| Feature | Upstream reference | Status in PlezyNG |
-| --- | --- | --- |
-| Server-converted download quality | [#1145](https://github.com/edde746/plezy/issues/1145), [#1847](https://github.com/edde746/plezy/issues/1847), [#1418](https://github.com/edde746/plezy/issues/1418) | In fork for Plex; Jellyfin/Emby and per-sync-rule quality planned |
-| Local-only Plex connections | [#1447](https://github.com/edde746/plezy/issues/1447), PR [#2248](https://github.com/edde746/plezy/pull/2248) | In fork |
-| Download sizes and storage usage | PR [#2376](https://github.com/edde746/plezy/pull/2376) | In fork |
-| `plezy://watch` links and iOS external-player progress return | PRs [#2681](https://github.com/edde746/plezy/pull/2681), [#2738](https://github.com/edde746/plezy/pull/2738) | In fork; Jellyfin/Emby link resolution planned |
-| Buffer controls and subtitle-delay hotkeys | PRs [#2797](https://github.com/edde746/plezy/pull/2797), [#2824](https://github.com/edde746/plezy/pull/2824) | In fork |
-| Directors, library item counts, watchlist filters, MDBList, and Seerr search | PRs [#2762](https://github.com/edde746/plezy/pull/2762), [#1516](https://github.com/edde746/plezy/pull/1516), [#2725](https://github.com/edde746/plezy/pull/2725), [#2740](https://github.com/edde746/plezy/pull/2740), [#2811](https://github.com/edde746/plezy/pull/2811) | In fork |
-| Playlist repeat, swipe seeking, frame stepping, and bulk watched-state updates | PRs [#1757](https://github.com/edde746/plezy/pull/1757), [#2601](https://github.com/edde746/plezy/pull/2601), [#1584](https://github.com/edde746/plezy/pull/1584), [#2597](https://github.com/edde746/plezy/pull/2597) | In fork |
-| Subtitle preview, Plex prerolls, theme songs, remembered versions, and Live TV timeshift | PRs [#2347](https://github.com/edde746/plezy/pull/2347), [#2483](https://github.com/edde746/plezy/pull/2483), [#2596](https://github.com/edde746/plezy/pull/2596), [#2563](https://github.com/edde746/plezy/pull/2563), [#2300](https://github.com/edde746/plezy/pull/2300) | In fork; Jellyfin/Emby parity for prerolls, links, and timeshift planned |
-| Emby subtitle search and sync-rule controls | PRs [#2091](https://github.com/edde746/plezy/pull/2091), [#1197](https://github.com/edde746/plezy/pull/1197), [#1199](https://github.com/edde746/plezy/pull/1199) | In fork |
-| Automatic Continue Watching downloads, quality rules, and cleanup after watching | [#1978](https://github.com/edde746/plezy/issues/1978), [#2181](https://github.com/edde746/plezy/issues/2181), [#1413](https://github.com/edde746/plezy/issues/1413), PR [#2117](https://github.com/edde746/plezy/pull/2117), [#2206](https://github.com/edde746/plezy/issues/2206) | Planned |
-| Per-profile PIN protection and hiding Explore | [#1924](https://github.com/edde746/plezy/issues/1924), [#2514](https://github.com/edde746/plezy/issues/2514) | Planned |
-| Per-show audio/subtitle choices, pre-play selection, language fallback, and per-item sync offsets | [#2382](https://github.com/edde746/plezy/issues/2382), [#84](https://github.com/edde746/plezy/issues/84), [#2346](https://github.com/edde746/plezy/pull/2346), [#1758](https://github.com/edde746/plezy/issues/1758), [#1956](https://github.com/edde746/plezy/pull/1956) | Planned |
-| In-player subtitle styling and loading local subtitle files | [#2174](https://github.com/edde746/plezy/issues/2174), [#689](https://github.com/edde746/plezy/issues/689), [#95](https://github.com/edde746/plezy/issues/95), [#1431](https://github.com/edde746/plezy/issues/1431) | Planned |
-| Background video audio, mpv equalizer, and local/remote quality policies | [#367](https://github.com/edde746/plezy/issues/367), [#2292](https://github.com/edde746/plezy/issues/2292), [#2064](https://github.com/edde746/plezy/issues/2064) | Planned |
-| Intro database fallback and local preroll clips | [#389](https://github.com/edde746/plezy/issues/389), [#1110](https://github.com/edde746/plezy/issues/1110), PRs [#1886](https://github.com/edde746/plezy/pull/1886), [#2271](https://github.com/edde746/plezy/pull/2271) | Planned; intro database remains opt-in |
-| Search by actor/director, random picks, library shuffle, and estimated finish time | [#1517](https://github.com/edde746/plezy/issues/1517), [#2368](https://github.com/edde746/plezy/issues/2368), [#1561](https://github.com/edde746/plezy/issues/1561), [#2741](https://github.com/edde746/plezy/issues/2741), [#2757](https://github.com/edde746/plezy/issues/2757), [#2671](https://github.com/edde746/plezy/issues/2671) | Planned |
-| Home-row configuration, merged libraries, and spotlight theme music | [#1652](https://github.com/edde746/plezy/issues/1652), PRs [#2203](https://github.com/edde746/plezy/pull/2203), [#2170](https://github.com/edde746/plezy/pull/2170) | Planned |
-| Display controls for the clock, artwork, home rows, libraries, Next Up, server choice, and file logs | [#1764](https://github.com/edde746/plezy/issues/1764), [#2784](https://github.com/edde746/plezy/issues/2784), [#2701](https://github.com/edde746/plezy/issues/2701), [#2723](https://github.com/edde746/plezy/issues/2723), [#2498](https://github.com/edde746/plezy/issues/2498), [#2690](https://github.com/edde746/plezy/issues/2690), [#591](https://github.com/edde746/plezy/issues/591), [#2720](https://github.com/edde746/plezy/issues/2720), [#1529](https://github.com/edde746/plezy/issues/1529), [#2496](https://github.com/edde746/plezy/issues/2496) | Planned |
-| Content screensaver and new-episode notifications | [#401](https://github.com/edde746/plezy/issues/401), [#1146](https://github.com/edde746/plezy/issues/1146) | Planned |
-| Settings backup, offline playlist downloads, Google Cast, and automation controls | [#1795](https://github.com/edde746/plezy/issues/1795), [#1721](https://github.com/edde746/plezy/issues/1721), [#2600](https://github.com/edde746/plezy/issues/2600), [#126](https://github.com/edde746/plezy/issues/126), [#823](https://github.com/edde746/plezy/issues/823), [#1996](https://github.com/edde746/plezy/issues/1996) | Planned |
-
-When upstream covers a row above, we will prefer the maintained upstream implementation and update this table. The aim is to reduce the fork-specific delta over time; the fork remains useful only while these user-facing gaps remain.
 
 ## Download
 
+PlezyNG builds are published on the [GitHub Releases page](https://github.com/snapetech-org/PlezyNG/releases). The packages below are the current desktop artifacts; mobile and TV builds are distributed separately when available.
+
 | Platform | Download |
 | --- | --- |
-| Windows x64 / arm64 | [Installer](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-windows-installer.exe) · [x64 portable](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-windows-x64-portable.7z) · [arm64 portable](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-windows-arm64-portable.7z) |
 | macOS | [DMG (x64, arm64)](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-macos.dmg) |
-| Android arm64 | [APK](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-android-arm64-v8a.tar.gz) |
-| Android ARM 32-bit | [APK](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-android-armeabi-v7a.tar.gz) |
-| Android x86_64 | [APK](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-android-x86_64.tar.gz) |
 | Linux x64 | [.deb](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.deb) · [.rpm](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.rpm) · [.pkg.tar.zst](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.pkg.tar.zst) · [.flatpak](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.flatpak) · [portable tar.gz](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.tar.gz) |
 | Linux arm64 | [.deb](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.deb) · [.rpm](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.rpm) · [.pkg.tar.zst](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.pkg.tar.zst) · [.flatpak](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.flatpak) · [portable tar.gz](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.tar.gz) |
-
-See the [release channel matrix](docs/maintainers/release-channels.md) for package-manager availability, supported architectures, and signing status.
-
-PlezyNG is preparing its own Android, Apple, Amazon, and Microsoft Store listings. Signed mobile-store packages are attached when signing is configured; Windows Store bundles are built after the PlezyNG package identity is set in Partner Center. Store submissions are manual and the listings are not live yet.
-
-The separate Go relay service is published as a multi-architecture container for Linux x64 and arm64 at `ghcr.io/snapetech-org/plezyng-relay:<version>` (with `latest` tracking stable releases). A Docker Hub mirror at `snapetech/plezyng-relay` is published when its registry credentials are configured. These images are for the relay service, not the PlezyNG client.
 
 <details>
 <summary>Install with a package manager</summary>
@@ -77,8 +68,6 @@ brew tap snapetech-org/PlezyNG https://github.com/snapetech-org/PlezyNG
 brew install --cask plezy
 ```
 
-Windows Chocolatey packages and WinGet manifests are attached to each GitHub release. External listings become available after their respective repositories approve the fork-specific package IDs.
-
 ### Linux — Flatpak
 
 Install Flatpak with your distribution's package manager, download the bundle for your architecture above, then run:
@@ -87,7 +76,7 @@ Install Flatpak with your distribution's package manager, download the bundle fo
 flatpak remote-add --user --if-not-exists flathub https://flathub.org/repo/flathub.flatpakrepo
 flatpak install --user flathub org.freedesktop.Platform//25.08
 flatpak install --user ./plezy-linux-x64.flatpak
-flatpak run org.snapetech.plezyng
+flatpak run com.edde746.plezy
 ```
 
 On arm64, install `plezy-linux-arm64.flatpak`.
@@ -97,10 +86,34 @@ On arm64, install `plezy-linux-arm64.flatpak`.
 
 - Not on Flathub — the remote supplies the Freedesktop runtime only.
 - Video playback needs a Wayland session; a pure X11 session shows the interface but cannot create the video plane.
-- No host or home filesystem access; app data lives in `~/.var/app/org.snapetech.plezyng/`. Add host folders through the desktop file chooser portal, and keep download folders writable.
+- No host or home filesystem access; app data lives in `~/.var/app/com.edde746.plezy/`. Add host folders through the desktop file chooser portal, and keep download folders writable.
 - Network, display, audio, and device access are enabled. `--device=all` (Flatpak 1.14 compatibility) exposes more than GPUs and controllers; session-bus access stays filtered.
 
 </details>
+
+### Arch Linux — Pacman
+
+[Distribution package](https://archlinux.org/packages/extra/x86_64/plezy/).
+
+```bash
+sudo pacman -S plezy
+```
+
+### Fedora / Red Hat — DNF
+
+[Installation instructions](https://github.com/aldobarr/plezy-rpm) · Community repository by [@aldobarr](https://github.com/aldobarr).
+
+### Nix
+
+[Community package](https://search.nixos.org/packages?channel=unstable&query=plezy) maintained by [@mio-19](https://github.com/mio-19) and [@MiniHarinn](https://github.com/MiniHarinn).
+
+### aerynOS — Moss
+
+[Distribution package](https://github.com/aerynOS/recipes/tree/main/p/plezy).
+
+```bash
+sudo moss it plezy
+```
 
 </details>
 
@@ -109,7 +122,9 @@ On arm64, install `plezy-linux-arm64.flatpak`.
 ### <img src="assets/readme_icons/browse.svg" height="20" alt="" align="center" /> Browse & Discover
 - Libraries, collections, and playlists — video and audio
 - Discover hub — Continue Watching, Next Up, trending, and recommendations
-- Cross-server search across every connected Plex, Jellyfin, and Emby server, including actors and directors
+- Configurable Home rows: merge Recently Added / Recently Released across whichever libraries you pick, or a collections row scoped to specific libraries or collections
+- Hide Home backdrop artwork and choose compact, standard, or large Continue Watching cards
+- Cross-server search across connected Plex, Jellyfin, and Emby libraries, including actors and directors
 - Filtering, sorting, and alphabetical jump navigation
 - Folder browsing and folder playback — home-video libraries open in folder view
 - Resolution, HDR/Dolby Vision, and audio-format badges on cards and detail pages
@@ -129,14 +144,17 @@ On arm64, install `plezy-linux-arm64.flatpak`.
 - Direct play, or transcode presets from 240p/320 kbps to 1080p/20 Mbps
 - Multi-version switching with per-version file details
 - Full ASS/SSA subtitles with customizable styling
+- Optional TheIntroDB intro timings when Plex, Jellyfin, or Emby has no intro marker; disabled by default
 - Online subtitle search & download[^plex]
-- Audio & subtitle choices remembered per title, or follow the server's per-episode selections
+- Audio and subtitle track selection with server-provided defaults
 - Progress sync and resume
-- Auto-play next episode, with configurable skipping for intros, credits, and Plex-detected commercial markers
+- Auto-play next episode with skip intro / skip credits
+- Optional audio-only continuation when the app backgrounds on Android and iOS
 - Chapter navigation with thumbnail scrub previews
 - Playback speed from 0.25x to 8x, audio sync offset, sleep timer (fixed durations or end of video)
 - Video zoom 50-200% with pinch, presets, and hotkeys
 - Audio passthrough[^pass], output channel limit (5.1 or stereo, with center-channel boost), and loudness normalization
+- Five-band device-local audio equalizer for mpv playback
 - File Info sheet — every version, file, and stream the server reports
 - Ambient lighting and GLSL shader presets[^mpv]
 - Picture-in-Picture[^pip]
@@ -147,8 +165,7 @@ On arm64, install `plezy-linux-arm64.flatpak`.
 - Music libraries — artist, album, and track browsing with square artwork
 - Album and artist screens with play, shuffle, and Instant Mix
 - Gapless playback with a full play queue — reorder, remove, play next, add to queue
-- Now Playing with synced lyrics[^lyrics], a loudness visualizer, persistent mini-player, and sleep timer
-- Opt-in loudness-aware fades between non-album tracks when Plex provides analysis
+- Now Playing with synced lyrics[^lyrics], persistent mini-player, and sleep timer
 - Background playback with lock-screen, media-key, and notification controls[^bgaudio]
 - Offline playback of downloaded albums and tracks
 - Streaming quality presets — Original, 320, 192, or 128 kbps
@@ -163,20 +180,26 @@ On arm64, install `plezy-linux-arm64.flatpak`.
 - Download movies, shows, and music for offline playback[^dl]
 - Background queue with pause / resume
 - Sync rules for automatic downloads, with per-show "Include Specials"
+- Per-rule download quality, plus automatic Continue Watching downloads with cleanup when an item leaves the shelf
+- Converted video downloads for Plex, Jellyfin, and Emby; progressive server transcodes may restart after an interrupted transfer
+- Optional download-quality prompt per item, quality per sync rule, and Continue Watching download rules with shelf cleanup
 - Offline browsing with watch state sync-back on reconnect
+- Local profile PIN gates for Settings and download deletion; per-profile Explore visibility
+- Random movie picker, end-time estimate on detail pages, hide-empty-library preference, and diagnostic log export
 
 ### <img src="assets/readme_icons/watch-together.svg" height="20" alt="" align="center" /> Watch Together
-- Rooms on [Open Watch Party](https://openwatch.party) — share a six-character code; friends join from PlezyNG or another Open Watch Party app
+- Rooms on [Open Watch Party](https://openwatch.party) — share a six-character code; friends join from Plezy or another Open Watch Party app
 - Everyone plays their own copy from their own server — Plex, Jellyfin, or Emby — matched by catalogue IDs, with a picker when several copies fit
 - Synchronized play / pause / seek, host or shared control, room lock, and host handoff
-- Public relays by default, or point PlezyNG at your own self-hosted relay
+- Public relays by default, or point Plezy at your own self-hosted relay
 
 ### <img src="assets/readme_icons/integrations.svg" height="20" alt="" align="center" /> Integrations
 - Discord Rich Presence[^desktop]
 - Trakt, MyAnimeList, AniList, and Simkl — ratings, watched sync, and real-time scrobbling[^rt]
 - Scores from connected trackers on detail pages — Trakt, Simkl, MyAnimeList, and AniList, plus Rotten Tomatoes, Metacritic, Letterboxd, IMDb, and TMDB through MDBList
-- PlezyNG Remote — control desktop and TV from mobile
+- Plezy Remote — control desktop and TV from mobile
 - Watch Next row and tvOS Top Shelf[^shelf]
+- Android automation links for media launch, active-video controls, and profile selection
 
 ### <img src="assets/readme_icons/customization.svg" height="20" alt="" align="center" /> Platform & Customization
 - Desktop, mobile, and TV — full D-pad, keyboard, and gamepad support
@@ -266,7 +289,7 @@ Check the installed package against the runtime (not just the SDK), then launch 
 python3 linux/packaging/check-flatpak.py
 ```
 
-The check fails on a non-executable entry point or an unresolved bundled ELF dependency. A container without a GPU can use `flatpak run --env=GALLIUM_DRIVER=softpipe org.snapetech.plezyng` for software-rendered verification; this is not a hardware-decoding or HDR test.
+The check fails on a non-executable entry point or an unresolved bundled ELF dependency. A container without a GPU can use `flatpak run --env=GALLIUM_DRIVER=softpipe com.edde746.plezy` for software-rendered verification; this is not a hardware-decoding or HDR test.
 
 </details>
 
@@ -297,12 +320,10 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for development workflow, formatting, tes
 
 ## License
 
-PlezyNG is a modified fork of [Plezy](https://github.com/edde746/plezy) and remains licensed under [GPL-3.0](LICENSE). Original source notices are retained, and bundled third-party license notices are in `assets/licenses/` and the relevant package directories.
+Plezy is licensed under [GPL-3.0](LICENSE).
 
 ## Acknowledgments
 
 - Built with [Flutter](https://flutter.dev)
 - Supports [Plex Media Server](https://www.plex.tv), [Jellyfin](https://jellyfin.org), and [Emby](https://emby.media)
-- Playback uses [mpv](https://mpv.io) built from the [Plezy upstream mpv-build project](https://github.com/edde746/mpv-build), which started as a fork of [MPVKit](https://github.com/mpvkit/MPVKit). Android uses its mpv-android library, whose Kotlin/JNI glue descends from [libmpv-android](https://github.com/jarnedemeulemeester/libmpv-android), as well as [ExoPlayer](https://developer.android.com/media/media3/exoplayer) and [libass-android](https://github.com/peerless2012/libass-android).
-- Windows uses the [flutter-plezy patched Flutter engine](https://github.com/edde746/flutter-plezy) for DirectComposition video rendering and a Flutter window-resize fix.
-- PlezyNG still uses Plezy upstream's hosted service at `ice.plezy.app` for tracker OAuth, optional diagnostic log uploads, and artwork used by Discord Rich Presence.
+- Playback powered by [mpv](https://mpv.io) via our [mpv-build](https://github.com/edde746/mpv-build) pipeline (started as a fork of [MPVKit](https://github.com/mpvkit/MPVKit); on Android through its mpv-android library, whose Kotlin/JNI glue descends from [libmpv-android](https://github.com/jarnedemeulemeester/libmpv-android)), Android [ExoPlayer](https://developer.android.com/media/media3/exoplayer), and [libass-android](https://github.com/peerless2012/libass-android)
