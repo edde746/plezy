@@ -105,6 +105,7 @@ jobs:
         run: flutter pub get --enforce-lockfile --no-example
 
       - name: Configure Android signing
+        id: android-signing
         env:
           ANDROID_KEYSTORE_BASE64: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
           ANDROID_STORE_PASSWORD: ${{ secrets.ANDROID_STORE_PASSWORD }}
@@ -120,6 +121,7 @@ jobs:
           done
           if (( configured == 0 )); then
             echo "Android signing secrets are not configured; this release APK will use the CI debug key."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
             exit 0
           fi
           if (( missing != 0 )); then
@@ -133,6 +135,7 @@ jobs:
           keyAlias=$ANDROID_KEY_ALIAS
           storeFile=upload-keystore.jks
           EOF
+          echo "configured=true" >> "$GITHUB_OUTPUT"
 
       - name: Build APKs
         run: flutter build apk --release --split-per-abi ${{ env.RELEASE_DART_DEFINES }} --obfuscate --split-debug-info=debug-info/android-apk --extra-gen-snapshot-options=--save-obfuscation-map=debug-info/android-apk/obfuscation.map.json
@@ -147,6 +150,12 @@ jobs:
           tar -czf plezy-android-armeabi-v7a.tar.gz -C build/app/outputs/flutter-apk app-armeabi-v7a-release.apk --transform 's/app-armeabi-v7a-release.apk/plezy.apk/'
           tar -czf plezy-android-x86_64.tar.gz -C build/app/outputs/flutter-apk app-x86_64-release.apk --transform 's/app-x86_64-release.apk/plezy.apk/'
 
+      - name: Build signed Android App Bundle
+        if: steps.android-signing.outputs.configured == 'true'
+        run: |
+          flutter build appbundle --release ${{ env.RELEASE_DART_DEFINES }} --obfuscate --split-debug-info=debug-info/android-aab
+          cp build/app/outputs/bundle/release/app-release.aab plezy-android-universal.aab
+
       - name: Attest APKs
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
@@ -154,6 +163,12 @@ jobs:
             plezy-android-arm64-v8a.tar.gz
             plezy-android-armeabi-v7a.tar.gz
             plezy-android-x86_64.tar.gz
+
+      - name: Attest Android App Bundle
+        if: steps.android-signing.outputs.configured == 'true'
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
+        with:
+          subject-path: plezy-android-universal.aab
 
       - name: Upload APKs
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -163,6 +178,7 @@ jobs:
             plezy-android-arm64-v8a.tar.gz
             plezy-android-armeabi-v7a.tar.gz
             plezy-android-x86_64.tar.gz
+            plezy-android-universal.aab
 
   build-ios:
     needs: validate-trusted-ref
@@ -207,22 +223,101 @@ jobs:
       - name: Build iOS (no codesign)
         run: flutter build ios --release --no-codesign ${{ env.RELEASE_DART_DEFINES }} --split-debug-info=debug-info/ios
 
-      - name: Create IPA
+      - name: Create unsigned developer IPA
         run: |
           mkdir -p Payload
           cp -r build/ios/iphoneos/Plezy.app Payload/
-          zip -r plezy-ios.ipa Payload
+          zip -r plezy-ios-unsigned.ipa Payload
 
       - name: Attest IPA
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
-          subject-path: plezy-ios.ipa
+          subject-path: plezy-ios-unsigned.ipa
 
       - name: Upload IPA
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
           name: ios-ipa
-          path: plezy-ios.ipa
+          path: plezy-ios-unsigned.ipa
+
+  build-tvos:
+    needs: validate-trusted-ref
+    name: Build tvOS developer package (arm64)
+    runs-on: macos-26
+    permissions:
+      id-token: write
+      attestations: write
+      contents: read
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Setup Flutter
+        uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
+        with:
+          channel: "stable"
+          flutter-version: ${{ env.FLUTTER_VERSION }}
+          cache: true
+          cache-key: "${{ env.TRUSTED_BUILD_CACHE_VERSION }}-flutter-:os:-:channel:-:version:-:arch:-:hash:"
+          pub-cache: false
+
+      - name: Cache Pub dependencies
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.pub-cache
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-${{ runner.os }}-${{ runner.arch }}-pub-${{ hashFiles('pubspec.yaml', 'pubspec.lock') }}
+
+      - name: Cache pinned tvOS Flutter engine
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
+        with:
+          path: ~/.cache/flutter-tvos-engine
+          key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-tvos-engine-${{ hashFiles('tvos/engine.version', 'tvos/engine.sha256') }}
+
+      - name: Install locked Dart dependencies
+        run: flutter pub get --enforce-lockfile --no-example
+
+      - name: Fetch the checksum-pinned tvOS Flutter engine
+        run: tvos/scripts/fetch_engine.sh
+
+      - name: Install tvOS CocoaPods dependencies
+        run: tvos/scripts/pod_install.sh
+
+      - name: Build tvOS app
+        run: |
+          xcodebuild build \
+            -workspace tvos/Runner.xcworkspace \
+            -scheme Runner \
+            -configuration Release \
+            -sdk appletvos \
+            -destination 'generic/platform=tvOS' \
+            -derivedDataPath build/tvos \
+            ARCHS=arm64 \
+            CODE_SIGNING_ALLOWED=NO \
+            COMPILER_INDEX_STORE_ENABLE=NO
+
+      - name: Package unsigned tvOS developer IPA
+        run: |
+          set -euo pipefail
+          app_path=$(find build/tvos/Build/Products -type d -name Runner.app -print -quit)
+          if [[ -z "$app_path" ]]; then
+            echo 'Xcode did not produce Runner.app.' >&2
+            exit 1
+          fi
+          mkdir -p tvos-payload/Payload
+          cp -R "$app_path" tvos-payload/Payload/
+          (cd tvos-payload && zip -qr ../plezy-tvos-unsigned.ipa Payload)
+
+      - name: Attest tvOS package
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
+        with:
+          subject-path: plezy-tvos-unsigned.ipa
+
+      - name: Upload tvOS package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: tvos-ipa
+          path: plezy-tvos-unsigned.ipa
 
   build-macos:
     needs: validate-trusted-ref
@@ -266,6 +361,19 @@ jobs:
 
       - name: Build macOS
         run: flutter build macos --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SUPPORTER_MODE=unlocked --split-debug-info=debug-info/macos
+
+      - name: Verify universal macOS executable
+        run: |
+          set -euo pipefail
+          APP_PATH="build/macos/Build/Products/Release/Plezy.app"
+          EXECUTABLE=$(/usr/libexec/PlistBuddy -c 'Print :CFBundleExecutable' "$APP_PATH/Contents/Info.plist")
+          ARCHITECTURES=$(lipo -archs "$APP_PATH/Contents/MacOS/$EXECUTABLE")
+          for architecture in arm64 x86_64; do
+            if [[ " $ARCHITECTURES " != *" $architecture "* ]]; then
+              echo "macOS release binary is missing the $architecture slice: $ARCHITECTURES" >&2
+              exit 1
+            fi
+          done
 
       - name: Check macOS signing configuration
         id: macos-signing
@@ -635,6 +743,35 @@ jobs:
       - name: Build installer and portables
         run: .\windows\build-installer.ps1 -X64BuildDir "build-x64" -Arm64BuildDir "build-arm64" -Version "${{ steps.version.outputs.version }}"
 
+      - name: Package Chocolatey release
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+          PACKAGE_VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:RELEASE_TAG -ne $env:PACKAGE_VERSION) {
+            throw "Chocolatey package version $env:PACKAGE_VERSION does not match release tag $env:RELEASE_TAG"
+          }
+          $installer = Get-Item 'plezy-windows-installer.exe'
+          $checksum = (Get-FileHash $installer.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+          $url = "https://github.com/$env:GITHUB_REPOSITORY/releases/download/$env:RELEASE_TAG/$($installer.Name)"
+          $installPath = 'packaging\chocolatey\tools\chocolateyinstall.ps1'
+          $installScript = Get-Content $installPath -Raw
+          $installScript = $installScript.Replace('__PLEZYNG_RELEASE_URL__', $url)
+          $installScript = $installScript.Replace('__PLEZYNG_SHA256__', $checksum)
+          if ($installScript.Contains('__PLEZYNG_')) { throw 'Chocolatey package template still contains a placeholder.' }
+          Set-Content -Path $installPath -Value $installScript -Encoding utf8
+          $nuspecPath = 'packaging\chocolatey\plezyng.nuspec'
+          $nuspec = Get-Content $nuspecPath -Raw
+          $nuspec = $nuspec -replace '<version>[^<]+</version>', "<version>$env:PACKAGE_VERSION</version>"
+          Set-Content -Path $nuspecPath -Value $nuspec -Encoding utf8
+          New-Item -ItemType Directory -Force 'release-packages' | Out-Null
+          choco pack $nuspecPath --outputdirectory release-packages
+          if ($LASTEXITCODE -ne 0) { throw "Chocolatey pack failed with exit code $LASTEXITCODE" }
+          $package = Get-Item "release-packages\plezyng.$env:PACKAGE_VERSION.nupkg"
+          if ($null -eq $package) { throw 'Chocolatey package was not created.' }
+
       - name: Check Sparkle signing key
         id: sparkle-signing
         env:
@@ -678,6 +815,11 @@ jobs:
             plezy-windows-arm64-portable.7z
             plezy-windows-installer.exe
 
+      - name: Attest Chocolatey package
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
+        with:
+          subject-path: release-packages/plezyng.${{ steps.version.outputs.version }}.nupkg
+
       - name: Upload x64 portable
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
         with:
@@ -698,6 +840,12 @@ jobs:
             plezy-windows-installer.exe
             win-ed-signature.txt
             win-installer-size.txt
+
+      - name: Upload Chocolatey package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: windows-chocolatey
+          path: release-packages/plezyng.*.nupkg
 
   build-linux:
     needs: validate-trusted-ref
@@ -923,11 +1071,13 @@ jobs:
             plezy-linux-${{ matrix.arch }}.flatpak
 
   create-release:
-    needs: [validate-trusted-ref, build-android, build-ios, build-macos, build-windows, package-windows, build-linux]
+    needs: [validate-trusted-ref, build-android, build-ios, build-tvos, build-macos, build-windows, package-windows, build-linux]
     if: ${{ always() && needs.validate-trusted-ref.result == 'success' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -935,6 +1085,8 @@ jobs:
             CHANGELOG.md
             pubspec.yaml
             scripts/generate_release_notes.py
+            scripts/create_release_checksums.py
+            scripts/generate_winget_manifests.py
             scripts/pubspec_version.py
           sparse-checkout-cone-mode: false
           persist-credentials: false
@@ -965,6 +1117,12 @@ jobs:
           name: ios-ipa
           path: artifacts/ios-ipa
 
+      - name: Download tvOS artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: tvos-ipa
+          path: artifacts/tvos-ipa
+
       - name: Download macOS artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
@@ -989,6 +1147,12 @@ jobs:
           name: windows-installer
           path: artifacts/windows-installer
 
+      - name: Download Chocolatey package
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: windows-chocolatey
+          path: artifacts/windows-chocolatey
+
       - name: Download Linux x64 artifacts
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
         with:
@@ -1003,6 +1167,21 @@ jobs:
 
       - name: Display structure of downloaded files
         run: ls -R artifacts
+
+      - name: Generate WinGet manifest bundle
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: python3 scripts/generate_winget_manifests.py "$RELEASE_TAG" artifacts/windows-installer/plezy-windows-installer.exe artifacts
+
+      - name: Generate release SHA-256 checksums
+        run: python3 scripts/create_release_checksums.py artifacts
+
+      - name: Attest release manifests and checksums
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
+        with:
+          subject-path: |
+            artifacts/SHA256SUMS.txt
+            artifacts/plezyng-winget-manifests-${{ inputs.release_tag }}.zip
 
       - name: Generate appcast.xml
         run: |
@@ -1082,14 +1261,21 @@ jobs:
             echo artifacts/android-apk/plezy-android-arm64-v8a.tar.gz
             echo artifacts/android-apk/plezy-android-armeabi-v7a.tar.gz
             echo artifacts/android-apk/plezy-android-x86_64.tar.gz
-            echo artifacts/ios-ipa/plezy-ios.ipa
+            if [ -f artifacts/android-apk/plezy-android-universal.aab ]; then
+              echo artifacts/android-apk/plezy-android-universal.aab
+            fi
+            echo artifacts/ios-ipa/plezy-ios-unsigned.ipa
+            echo artifacts/tvos-ipa/plezy-tvos-unsigned.ipa
             echo artifacts/macos-dmg/plezy-macos.dmg
             echo artifacts/windows-x64-portable/plezy-windows-x64-portable.7z
             echo artifacts/windows-arm64-portable/plezy-windows-arm64-portable.7z
             echo artifacts/windows-installer/plezy-windows-installer.exe
+            echo artifacts/windows-chocolatey/plezyng.*.nupkg
+            echo artifacts/plezyng-winget-manifests-${{ inputs.release_tag }}.zip
             echo 'artifacts/linux-x64/*'
             echo 'artifacts/linux-arm64/*'
             echo appcast.xml
+            echo artifacts/SHA256SUMS.txt
             echo EOF
           } >> "$GITHUB_OUTPUT"
 

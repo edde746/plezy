@@ -53,9 +53,17 @@ When upstream covers a row above, we will prefer the maintained upstream impleme
 
 | Platform | Download |
 | --- | --- |
+| Windows x64 / arm64 | [Installer](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-windows-installer.exe) · [x64 portable](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-windows-x64-portable.7z) · [arm64 portable](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-windows-arm64-portable.7z) |
 | macOS | [DMG (x64, arm64)](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-macos.dmg) |
+| Android arm64 | [APK](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-android-arm64-v8a.tar.gz) |
+| Android ARM 32-bit | [APK](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-android-armeabi-v7a.tar.gz) |
+| Android x86_64 | [APK](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-android-x86_64.tar.gz) |
 | Linux x64 | [.deb](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.deb) · [.rpm](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.rpm) · [.pkg.tar.zst](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.pkg.tar.zst) · [.flatpak](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.flatpak) · [portable tar.gz](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.tar.gz) |
 | Linux arm64 | [.deb](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.deb) · [.rpm](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.rpm) · [.pkg.tar.zst](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.pkg.tar.zst) · [.flatpak](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.flatpak) · [portable tar.gz](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.tar.gz) |
+
+See the [release channel matrix](docs/maintainers/release-channels.md) for package-manager availability, supported architectures, and signing status.
+
+The separate Go relay service is published as a multi-architecture container for Linux x64 and arm64 at `ghcr.io/snapetech-org/plezyng-relay:<version>` (with `latest` tracking stable releases). A Docker Hub mirror at `snapetech/plezyng-relay` is published when its registry credentials are configured. These images are for the relay service, not the PlezyNG client.
 
 <details>
 <summary>Install with a package manager</summary>
@@ -66,6 +74,8 @@ When upstream covers a row above, we will prefer the maintained upstream impleme
 brew tap snapetech-org/PlezyNG https://github.com/snapetech-org/PlezyNG
 brew install --cask plezy
 ```
+
+Windows Chocolatey packages and WinGet manifests are attached to each GitHub release. External listings become available after their respective repositories approve the fork-specific package IDs.
 
 ### Linux — Flatpak
 

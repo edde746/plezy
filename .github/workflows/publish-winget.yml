@@ -1,0 +1,136 @@
+name: Submit WinGet Manifest
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Published release tag to process
+        required: true
+        type: string
+      submit:
+        description: Submit the manifest bundle to the WinGet community repository
+        default: false
+        required: true
+        type: boolean
+
+permissions:
+  contents: read
+
+jobs:
+  submit:
+    if: github.event_name != 'release' || github.event.release.prerelease == false
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - name: Resolve and validate published release
+        id: release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+          INPUT_TAG: ${{ inputs.release_tag }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch' -and $env:GITHUB_REF -ne 'refs/heads/main') {
+            throw 'Manual WinGet submissions must run from main.'
+          }
+          $tag = if ($env:GITHUB_EVENT_NAME -eq 'release') { $env:EVENT_TAG } else { $env:INPUT_TAG }
+          if ($tag -notmatch '^\d+\.\d+\.\d+$') { throw "Release tag must be semantic versioning: $tag" }
+          $release = gh release view $tag --repo $env:GITHUB_REPOSITORY --json tagName,isDraft,publishedAt
+          if ($LASTEXITCODE -ne 0) { throw "Unable to inspect release $tag" }
+          $metadata = $release | ConvertFrom-Json
+          if ($metadata.tagName -ne $tag -or $metadata.isDraft -or -not $metadata.publishedAt) {
+            throw "Tag $tag is not an exact published release."
+          }
+          $tagRef = gh api "repos/$env:GITHUB_REPOSITORY/git/ref/tags/$tag" | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0) { throw "Unable to resolve release tag $tag." }
+          $commit = $tagRef.object.sha
+          if ($tagRef.object.type -eq 'tag') {
+            $tagObject = gh api "repos/$env:GITHUB_REPOSITORY/git/tags/$commit" | ConvertFrom-Json
+            if ($LASTEXITCODE -ne 0) { throw "Unable to dereference annotated tag $tag." }
+            $commit = $tagObject.object.sha
+          }
+          $mainCommit = gh api "repos/$env:GITHUB_REPOSITORY/branches/main" --jq '.commit.sha'
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to resolve the main branch head.' }
+          $comparison = gh api "repos/$env:GITHUB_REPOSITORY/compare/$commit...$mainCommit" --jq '.status'
+          if ($LASTEXITCODE -ne 0 -or $comparison -notin @('ahead', 'identical')) {
+            throw "Release $tag is not on main or an ancestor of main."
+          }
+          "tag=$tag" >> $env:GITHUB_OUTPUT
+
+      - name: Download the release manifest bundle and installer evidence
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          gh release download $env:RELEASE_TAG --repo $env:GITHUB_REPOSITORY `
+            --pattern "plezyng-winget-manifests-$env:RELEASE_TAG.zip" `
+            --pattern 'plezy-windows-installer.exe' `
+            --pattern 'SHA256SUMS.txt' --dir release-assets
+          if ($LASTEXITCODE -ne 0) { throw 'Unable to download WinGet release assets.' }
+
+      - name: Validate checksums and manifest installer hashes
+        shell: pwsh
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $manifestZip = Get-Item "release-assets\plezyng-winget-manifests-$env:RELEASE_TAG.zip"
+          $installer = Get-Item 'release-assets\plezy-windows-installer.exe'
+          $checksums = 'release-assets\SHA256SUMS.txt'
+          foreach ($asset in @($manifestZip, $installer)) {
+            $line = @(Select-String -Path $checksums -Pattern ("^([0-9a-f]{64})\s+" + [regex]::Escape($asset.Name) + '$'))
+            if ($line.Count -ne 1) { throw "SHA256SUMS.txt has no unique entry for $($asset.Name)" }
+            $expected = $line[0].Matches[0].Groups[1].Value.ToLowerInvariant()
+            $actual = (Get-FileHash $asset.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+            if ($actual -ne $expected) { throw "Checksum mismatch for $($asset.Name)" }
+          }
+          $extractDir = Join-Path $PWD 'winget-submit'
+          Expand-Archive -Path $manifestZip.FullName -DestinationPath $extractDir -Force
+          $installerHash = (Get-FileHash $installer.FullName -Algorithm SHA256).Hash.ToUpperInvariant()
+          $manifest = Get-ChildItem $extractDir -Filter '*.installer.yaml' -Recurse | Select-Object -First 1
+          if ($null -eq $manifest) { throw 'WinGet installer manifest is missing.' }
+          $contents = Get-Content $manifest.FullName -Raw
+          if ($contents -notmatch [regex]::Escape($installerHash)) { throw 'WinGet manifest installer hash does not match the release asset.' }
+          if ($contents -notmatch [regex]::Escape("/download/$env:RELEASE_TAG/plezy-windows-installer.exe")) {
+            throw 'WinGet manifest points to a different release asset.'
+          }
+
+      - name: Submit the versioned manifests
+        shell: pwsh
+        env:
+          WINGET_CREATE_GITHUB_TOKEN: ${{ secrets.WINGET_CREATE_GITHUB_TOKEN }}
+          SUBMIT_REQUESTED: ${{ github.event_name == 'release' || inputs.submit }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          $ErrorActionPreference = 'Stop'
+          if ($env:SUBMIT_REQUESTED -ne 'true') {
+            Write-Host 'Manifest verified. Set submit=true on a manual run to open the WinGet review PR.'
+            exit 0
+          }
+          if ([string]::IsNullOrWhiteSpace($env:WINGET_CREATE_GITHUB_TOKEN)) {
+            if ($env:GITHUB_EVENT_NAME -eq 'release') {
+              Write-Host 'WINGET_CREATE_GITHUB_TOKEN is not configured; manifest was verified but not submitted.'
+              exit 0
+            }
+            throw 'WINGET_CREATE_GITHUB_TOKEN is required when submit=true.'
+          }
+          Invoke-WebRequest https://aka.ms/wingetcreate/latest -OutFile wingetcreate.exe
+          $dotnetInstall = Join-Path $env:RUNNER_TEMP 'dotnet-install.ps1'
+          Invoke-WebRequest https://dot.net/v1/dotnet-install.ps1 -OutFile $dotnetInstall
+          $dotnetRoot = Join-Path $env:RUNNER_TEMP 'dotnet'
+          & $dotnetInstall -Runtime dotnet -Architecture x64 -Version 6.0.36 -InstallDir $dotnetRoot
+          $runtimeList = & (Join-Path $dotnetRoot 'dotnet.exe') --list-runtimes
+          if (($runtimeList -join "`n") -notmatch '(?m)^Microsoft\.NETCore\.App 6\.0\.') {
+            throw 'The .NET 6 runtime required by WinGetCreate was not installed.'
+          }
+          $env:PATH = "$dotnetRoot;$env:PATH"
+          $manifestRoot = Join-Path $PWD "winget-submit\manifests\s\SnapeTech\PlezyNG\$env:RELEASE_TAG"
+          $manifestPath = Join-Path $manifestRoot 'SnapeTech.PlezyNG.yaml'
+          if (-not (Test-Path $manifestPath)) { throw "Version manifest is missing: $manifestPath" }
+          & .\wingetcreate.exe submit --prtitle "SnapeTech.PlezyNG $env:RELEASE_TAG" --no-open $manifestPath
+          if ($LASTEXITCODE -ne 0) { throw "wingetcreate submit failed with exit code $LASTEXITCODE" }

@@ -300,17 +300,19 @@ require(
 
 release = job("create-release")
 require(
-    "needs: [validate-trusted-ref, build-android, build-ios, build-macos, build-windows, package-windows, build-linux]"
+    "needs: [validate-trusted-ref, build-android, build-ios, build-tvos, build-macos, build-windows, package-windows, build-linux]"
     in release,
-    "release dependencies must include the trust gate, both architecture matrices, and Windows packaging",
+    "release dependencies must include the trust gate, all platform builds, and Windows packaging",
 )
 for artifact in (
     "android-apk",
     "ios-ipa",
+    "tvos-ipa",
     "macos-dmg",
     "windows-x64-portable",
     "windows-arm64-portable",
     "windows-installer",
+    "windows-chocolatey",
     "linux-x64",
     "linux-arm64",
 ):
@@ -360,6 +362,7 @@ require(
 for protected_job in (
     "build-android",
     "build-ios",
+    "build-tvos",
     "build-macos",
     "build-windows",
     "build-linux",

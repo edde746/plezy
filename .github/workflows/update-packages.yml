@@ -62,6 +62,22 @@ jobs:
             exit 1
           fi
 
+          if [[ ! "$RESOLVED_TAG" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Release tag '$RESOLVED_TAG' is not a stable semantic version." >&2
+            exit 1
+          fi
+          TAG_SHA=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RESOLVED_TAG" --jq '.object.sha')
+          TAG_TYPE=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$RESOLVED_TAG" --jq '.object.type')
+          if [ "$TAG_TYPE" = "tag" ]; then
+            TAG_SHA=$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$TAG_SHA" --jq '.object.sha')
+          fi
+          MAIN_SHA=$(gh api "repos/$GITHUB_REPOSITORY/branches/main" --jq '.commit.sha')
+          COMPARE_STATUS=$(gh api "repos/$GITHUB_REPOSITORY/compare/$TAG_SHA...$MAIN_SHA" --jq '.status')
+          if [[ "$COMPARE_STATUS" != "ahead" && "$COMPARE_STATUS" != "identical" ]]; then
+            echo "Release '$RESOLVED_TAG' is not on main or an ancestor of main." >&2
+            exit 1
+          fi
+
           echo "tag=$RESOLVED_TAG" >> "$GITHUB_OUTPUT"
 
   update-homebrew:

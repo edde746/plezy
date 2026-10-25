@@ -1,0 +1,21 @@
+<?xml version="1.0"?>
+<package xmlns="http://schemas.microsoft.com/packaging/2015/06/nuspec.xsd">
+  <metadata>
+    <id>plezyng</id>
+    <version>0.0.0</version>
+    <title>PlezyNG</title>
+    <authors>SnapeTech</authors>
+    <owners>SnapeTech</owners>
+    <licenseUrl>https://github.com/snapetech-org/PlezyNG/blob/main/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/snapetech-org/PlezyNG</projectUrl>
+    <packageSourceUrl>https://github.com/snapetech-org/PlezyNG/tree/main/packaging/chocolatey</packageSourceUrl>
+    <bugTrackerUrl>https://github.com/snapetech-org/PlezyNG/issues</bugTrackerUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Cross-platform media client for Plex, Jellyfin, and Emby.</description>
+    <summary>Install PlezyNG for Windows.</summary>
+    <tags>plezyng media plex jellyfin emby</tags>
+  </metadata>
+  <files>
+    <file src="tools\**" target="tools" />
+  </files>
+</package>

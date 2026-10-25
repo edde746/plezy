@@ -22,13 +22,26 @@ RELEASE_WORTHY_ROOTS = {
     "linux",
     "macos",
     "packages",
+    "packaging",
+    "server",
     "web",
     "windows",
 }
-RELEASE_WORTHY_FILES = {"pubspec.yaml", "pubspec.lock"}
+RELEASE_WORTHY_FILES = {
+    "pubspec.yaml",
+    "pubspec.lock",
+    "scripts/announce_discord.py",
+    "scripts/create_release_checksums.py",
+    "scripts/generate_release_notes.py",
+    "scripts/generate_winget_manifests.py",
+}
 RELEASE_WORTHY_WORKFLOWS = {
     ".github/workflows/build.yml",
+    ".github/workflows/discord-release.yml",
     ".github/workflows/update-packages.yml",
+    ".github/workflows/publish-chocolatey.yml",
+    ".github/workflows/publish-winget.yml",
+    ".github/workflows/release-containers.yml",
 }
 NON_RELEASE_DIRECTORY_NAMES = {"test", "tests", "__tests__"}
 PLACEHOLDER_PATTERN = re.compile(

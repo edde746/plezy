@@ -1,0 +1,162 @@
+name: Publish Relay Containers
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Published release tag to publish
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  publish:
+    if: github.event_name != 'release' || github.event.release.prerelease == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Require the default branch for manual retries
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo 'Manual container publications must run from main.' >&2
+            exit 1
+          fi
+
+      - name: Resolve and validate published release
+        id: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+          INPUT_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          tag="${EVENT_TAG:-$INPUT_TAG}"
+          [[ "$tag" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid release tag: $tag" >&2; exit 1; }
+          metadata=$(gh release view "$tag" --repo "$GITHUB_REPOSITORY" --json tagName,isDraft,publishedAt)
+          [[ "$(jq -r .tagName <<<"$metadata")" == "$tag" ]] || { echo 'Release tag mismatch.' >&2; exit 1; }
+          [[ "$(jq -r .isDraft <<<"$metadata")" == false ]] || { echo "Release $tag is still a draft." >&2; exit 1; }
+          [[ -n "$(jq -r '.publishedAt // empty' <<<"$metadata")" ]] || { echo "Release $tag is not published." >&2; exit 1; }
+          commit=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq '.object.sha')
+          tag_type=$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq '.object.type')
+          if [[ "$tag_type" == tag ]]; then
+            commit=$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$commit" --jq '.object.sha')
+          fi
+          branch=$(gh api "repos/$GITHUB_REPOSITORY/branches/main" --jq .commit.sha)
+          if ! gh api "repos/$GITHUB_REPOSITORY/compare/$commit...$branch" --jq '.status' | grep -Eq '^(ahead|identical)$'; then
+            echo "Release $tag does not point to main or an ancestor of main." >&2
+            exit 1
+          fi
+          {
+            echo "tag=$tag"
+            echo "commit=$commit"
+          } >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ steps.release.outputs.tag }}
+          persist-credentials: false
+
+      - uses: docker/setup-qemu-action@99012661954931238ded8c8b007157a8430204e1 # v4.4.0
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+
+      - name: Set OCI build date
+        id: build-metadata
+        run: echo "build_date=$(date -u +%Y-%m-%dT%H:%M:%SZ)" >> "$GITHUB_OUTPUT"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ github.token }}
+
+      - name: Build and publish GHCR image
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: server
+          file: server/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            VERSION=${{ steps.release.outputs.tag }}
+            REVISION=${{ steps.release.outputs.commit }}
+            BUILD_DATE=${{ steps.build-metadata.outputs.build_date }}
+          tags: |
+            ghcr.io/snapetech-org/plezyng-relay:${{ steps.release.outputs.tag }}
+            ghcr.io/snapetech-org/plezyng-relay:latest
+          labels: |
+            org.opencontainers.image.title=PlezyNG Relay
+            org.opencontainers.image.description=PlezyNG authentication and artifact relay service
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ steps.release.outputs.tag }}
+            org.opencontainers.image.revision=${{ steps.release.outputs.commit }}
+          cache-from: type=gha,scope=plezyng-relay
+          cache-to: type=gha,scope=plezyng-relay,mode=max
+
+      - name: Verify GHCR architecture manifest
+        env:
+          IMAGE: ghcr.io/snapetech-org/plezyng-relay:${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          docker buildx imagetools inspect "$IMAGE" --raw | jq -e '
+            [.manifests[].platform | select(.os == "linux") | .architecture] | sort == ["amd64", "arm64"]
+          '
+
+      - name: Check Docker Hub credentials
+        id: dockerhub
+        env:
+          DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+          DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+        run: |
+          if [[ -n "$DOCKERHUB_USERNAME" && -n "$DOCKERHUB_TOKEN" ]]; then
+            echo 'available=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'available=false' >> "$GITHUB_OUTPUT"
+            echo 'Docker Hub credentials are not configured; GHCR remains the release registry.'
+          fi
+
+      - name: Log in to Docker Hub
+        if: steps.dockerhub.outputs.available == 'true'
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Build and publish Docker Hub mirror
+        if: steps.dockerhub.outputs.available == 'true'
+        uses: docker/build-push-action@c3c9e263c25d99ce0380d002d59b67737d91b0dc # v7
+        with:
+          context: server
+          file: server/Dockerfile
+          platforms: linux/amd64,linux/arm64
+          push: true
+          build-args: |
+            VERSION=${{ steps.release.outputs.tag }}
+            REVISION=${{ steps.release.outputs.commit }}
+            BUILD_DATE=${{ steps.build-metadata.outputs.build_date }}
+          tags: |
+            snapetech/plezyng-relay:${{ steps.release.outputs.tag }}
+            snapetech/plezyng-relay:latest
+          labels: |
+            org.opencontainers.image.title=PlezyNG Relay
+            org.opencontainers.image.description=PlezyNG authentication and artifact relay service
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.version=${{ steps.release.outputs.tag }}
+            org.opencontainers.image.revision=${{ steps.release.outputs.commit }}
+          cache-from: type=gha,scope=plezyng-relay
+
+      - name: Verify Docker Hub architecture manifest
+        if: steps.dockerhub.outputs.available == 'true'
+        env:
+          IMAGE: snapetech/plezyng-relay:${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          docker buildx imagetools inspect "$IMAGE" --raw | jq -e '
+            [.manifests[].platform | select(.os == "linux") | .architecture] | sort == ["amd64", "arm64"]
+          '
