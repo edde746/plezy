@@ -11,27 +11,32 @@ import 'package:provider/provider.dart';
 import '../focus/focusable_action_bar.dart';
 import '../focus/hub_vertical_navigation.dart';
 import '../focus/locked_hub_controller.dart';
-import '../focus/input_mode_tracker.dart';
 import '../focus/key_event_utils.dart';
 import '../focus/back_press.dart';
+import '../focus/input_mode_tracker.dart';
 
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
 import '../media/media_hub.dart';
-import '../utils/media_image_helper.dart';
+import '../providers/watch_state_store.dart';
 import '../utils/content_utils.dart';
 import '../widgets/cycling_media_backdrop.dart';
 import '../widgets/hero_carousel_backdrop.dart';
+import '../utils/formatters.dart';
+import '../utils/layout_constants.dart';
+import '../utils/media_image_helper.dart';
+import '../utils/video_player_navigation.dart';
+import '../widgets/clickable_cursor.dart';
+import '../widgets/fitting_title_text.dart';
 import '../widgets/optimized_media_image.dart' show ClearLogoImage, blurArtwork;
 import '../widgets/toolbar_scrim.dart';
 import '../widgets/system_clock.dart';
 import '../providers/discover_provider.dart';
 import '../providers/multi_server_provider.dart';
-import '../providers/watch_state_store.dart';
 import '../widgets/hub_section.dart';
+import '../widgets/hero_hub_section.dart';
 import '../widgets/app_menu.dart';
-import '../widgets/clickable_cursor.dart';
 import '../widgets/loading_indicator_box.dart';
 import '../widgets/profile_switching_overlay.dart';
 import 'profile/profile_switch_screen.dart';
@@ -42,7 +47,6 @@ import '../profiles/profile_activation.dart';
 import '../profiles/profile_avatar.dart';
 import '../services/settings_service.dart';
 import '../widgets/settings_builder.dart';
-import '../widgets/fitting_title_text.dart';
 import '../widgets/tv_browse_rail.dart';
 import '../widgets/tv_spotlight_scaffold.dart';
 import '../mixins/refreshable.dart';
@@ -50,13 +54,10 @@ import '../mixins/tab_visibility_aware.dart';
 import '../i18n/strings.g.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
-import '../utils/formatters.dart';
 import '../utils/hub_icons.dart';
 import '../utils/media_navigation_helper.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/snackbar_helper.dart';
-import '../utils/video_player_navigation.dart';
-import '../utils/layout_constants.dart';
 import '../utils/platform_detector.dart';
 import '../utils/tone_mapped_logo_image.dart';
 import '../theme/mono_tokens.dart';
@@ -113,9 +114,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   /// Primary focus when the rail claim was armed; see [_railClaimAbandoned].
   FocusNode? _railClaimFocusOrigin;
 
-  GlobalKey<HubSectionState>? _continueWatchingHubKey;
   final Map<String, GlobalKey<HubSectionState>> _hubKeysByIdentity = {};
   List<GlobalKey<HubSectionState>> _orderedHubKeys = const [];
+  // Index-aligned with _hubs/_orderedHubKeys, null for a non-hero row at
+  // that position — HeroHubSection needs its own key type
+  // (GlobalKey<HeroHubSectionState>, not HubSectionState), so it can't
+  // share _orderedHubKeys directly the way the render loop's HubSection
+  // branch does.
+  final Map<String, GlobalKey<HeroHubSectionState>> _heroHubKeysByIdentity = {};
+  List<GlobalKey<HeroHubSectionState>?> _orderedHeroHubKeys = const [];
   final _tvBrowseRailKey = GlobalKey<TvBrowseRailState>();
   final _hubFocusMemory = HubFocusMemory();
 
@@ -147,62 +154,60 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     final occurrences = <String, int>{};
     final liveIdentities = <String>{};
     final ordered = <GlobalKey<HubSectionState>>[];
+    final orderedHero = <GlobalKey<HeroHubSectionState>?>[];
     for (final hub in _hubs) {
       var identity = _hubIdentity(hub);
       final occurrence = occurrences.update(identity, (n) => n + 1, ifAbsent: () => 0);
       if (occurrence > 0) identity = '$identity#$occurrence';
       liveIdentities.add(identity);
       ordered.add(_hubKeysByIdentity.putIfAbsent(identity, GlobalKey<HubSectionState>.new));
+      orderedHero.add(
+        hub.heroStyle && hub.items.isNotEmpty
+            ? _heroHubKeysByIdentity.putIfAbsent(identity, GlobalKey<HeroHubSectionState>.new)
+            : null,
+      );
     }
     _hubKeysByIdentity.removeWhere((identity, _) => !liveIdentities.contains(identity));
+    _heroHubKeysByIdentity.removeWhere((identity, _) => !liveIdentities.contains(identity));
     _orderedHubKeys = ordered;
-    _continueWatchingHubKey ??= GlobalKey<HubSectionState>();
+    _orderedHeroHubKeys = orderedHero;
   }
 
-  List<GlobalKey<HubSectionState>> get _allHubKeys {
-    final keys = <GlobalKey<HubSectionState>>[];
-    if (_continueWatchingHubKey != null && _onDeck.isNotEmpty) {
-      keys.add(_continueWatchingHubKey!);
+  /// Unified focus target for hub index [index] — routes to whichever key
+  /// type is actually attached there (HeroHubSectionState for a hero row,
+  /// HubSectionState otherwise). Replaces the old screen-level
+  /// _heroFocusNode, which pointed at nothing once hero rendering moved
+  /// per-row (see _isHeroSectionVisible's own comment).
+  void _requestFocusForHubIndex(int index) {
+    if (index < 0 || index >= _hubs.length) return;
+    final heroKey = index < _orderedHeroHubKeys.length ? _orderedHeroHubKeys[index] : null;
+    if (heroKey != null) {
+      heroKey.currentState?.requestFocusFromMemory();
+      return;
     }
-    keys.addAll(_orderedHubKeys);
-    return keys;
+    if (index < _orderedHubKeys.length) {
+      _orderedHubKeys[index].currentState?.requestFocusFromMemory();
+    }
   }
-
-  bool get _isHeroSectionVisible => _onDeck.isNotEmpty && context.settingsRead(SettingsService.showHeroSection);
 
   // Memoized on provider list identity (the provider always replaces _onDeck/
   // _hubs with fresh instances on change, never mutates in place) so unrelated
   // rebuilds hand TvBrowseRail the same hubs list and its didUpdateWidget
-  // fast path — and the cached rail widget below — kick in.
+  // fast path — and the cached rail widget below — kick in. Continue
+  // Watching arrives already folded into `_hubs` (see DiscoverProvider), so
+  // this no longer needs to prepend it separately.
   List<MediaHub>? _tvBrowseHubsCache;
-  (List<MediaItem>, List<MediaHub>, bool, String)? _tvBrowseHubsCacheKey;
+  List<MediaHub>? _tvBrowseHubsCacheKey;
 
   List<MediaHub> get _tvBrowseHubs {
-    final key = (_onDeck, _hubs, _hasMoreContinueWatching, t.discover.continueWatching);
-    if (_tvBrowseHubsCache != null && key == _tvBrowseHubsCacheKey) return _tvBrowseHubsCache!;
-    final hubs = <MediaHub>[];
-    if (_onDeck.isNotEmpty) {
-      hubs.add(_continueWatchingHub);
-    }
-    hubs.addAll(_hubs.where((hub) => hub.items.isNotEmpty));
+    if (_tvBrowseHubsCache != null && _hubs == _tvBrowseHubsCacheKey) return _tvBrowseHubsCache!;
+    final hubs = _hubs.where((hub) => hub.items.isNotEmpty).toList();
     _tvBrowseHubsCache = hubs;
-    _tvBrowseHubsCacheKey = key;
+    _tvBrowseHubsCacheKey = _hubs;
     return hubs;
   }
 
-  /// The synthesized Continue Watching row, rendered ahead of the backend hubs
-  /// on both the mobile list and the TV rail.
-  MediaHub get _continueWatchingHub => MediaHub(
-    id: 'continue_watching',
-    title: t.discover.continueWatching,
-    type: 'mixed',
-    identifier: '_continue_watching_',
-    size: _onDeck.length + (_hasMoreContinueWatching ? 1 : 0),
-    more: _hasMoreContinueWatching,
-    items: _onDeck,
-  );
-
-  void _setSpotlightItem(MediaItem item) => _spotlight.select(item);
+  void _setSpotlightItem(MediaHub hub, MediaItem item) => _spotlight.select(item, hub: hub);
 
   void _scrollToTop() {
     if (!_scrollController.hasClients) return;
@@ -225,30 +230,23 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   void _focusTopBoundary() {
     if (!(ModalRoute.of(context)?.isCurrent ?? false)) return;
-    if (PlatformDetector.isTV()) {
-      _focusTopActions();
-    } else if (_isHeroSectionVisible) {
-      _heroFocusNode.requestFocus();
-    } else {
-      _focusTopActions();
-    }
+    // Always the toolbar/action bar — regardless of platform or whether
+    // row 0 happens to be a hero row. The old branch here checked
+    // _isHeroSectionVisible and tried to focus _heroFocusNode, a FocusNode
+    // never actually attached to anything once hero rendering moved
+    // per-row (see _isHeroSectionVisible's own comment) — a silent no-op
+    // that just left "up" from row 0 doing nothing.
+    _focusTopActions();
     _scrollToTop();
   }
 
   void _focusContentFromAppBar() {
-    if (PlatformDetector.isTV()) {
+    if (PlatformDetector.usesTvHomeLayout()) {
       _focusTvBrowseRailWhenReady(immediate: true);
       return;
     }
-
-    if (_isHeroSectionVisible) {
-      _heroFocusNode.requestFocus();
-      return;
-    }
-
-    final keys = _allHubKeys;
-    if (keys.isNotEmpty) {
-      keys.first.currentState?.requestFocusFromMemory();
+    if (_hubs.isNotEmpty) {
+      _requestFocusForHubIndex(0);
     }
   }
 
@@ -315,15 +313,17 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   /// Handle vertical navigation between hubs
   /// Returns true if the navigation was handled
   bool _handleVerticalNavigation(int hubIndex, bool isUp) {
-    final keys = _allHubKeys;
+    // Not keys[targetIndex].currentState?.requestFocusFromMemory() directly
+    // — keys (_allHubKeys) is typed GlobalKey<HubSectionState>, which is
+    // never actually attached at a hero row's position (HeroHubSection
+    // needs its own GlobalKey<HeroHubSectionState>; see
+    // _requestFocusForHubIndex), so that silently no-op'd landing on one.
     return navigateVerticalHubRows(
-      hubCount: keys.length,
+      hubCount: _hubs.length,
       hubIndex: hubIndex,
       isUp: isUp,
       onTopBoundary: _focusTopBoundary,
-      requestFocus: (targetIndex) {
-        keys[targetIndex].currentState?.requestFocusFromMemory();
-      },
+      requestFocus: _requestFocusForHubIndex,
     );
   }
 
@@ -389,7 +389,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (!_initialLoadComplete) {
       if (PlatformDetector.isTV() && (_onDeck.isNotEmpty || _hubs.isNotEmpty)) {
         _initialLoadComplete = true;
-        _focusTvBrowseRailWhenReady();
+        if (PlatformDetector.usesTvHomeLayout()) {
+          _focusTvBrowseRailWhenReady();
+        } else {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted || !(ModalRoute.of(context)?.isCurrent ?? false)) return;
+            _requestFocusForHubIndex(0);
+          });
+        }
       } else if (!PlatformDetector.isTV() && _onDeck.isNotEmpty) {
         _initialLoadComplete = true;
         WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -424,10 +431,8 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     if (backResult != KeyEventResult.ignored) return backResult;
 
     return dpadKeyHandler(
-      onDown: () {
-        final keys = _allHubKeys;
-        if (keys.isNotEmpty) keys.first.currentState?.requestFocusFromMemory();
-      },
+      // Routes into a hero row too (its own key type), see _requestFocusForHubIndex.
+      onDown: () => _requestFocusForHubIndex(0),
       onUp: _focusTopActions,
       onLeft: () {
         if (_heroIndex.value > 0) {
@@ -463,6 +468,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _scrollController.dispose();
     _heroFocusNode.removeListener(_onHeroFocusChanged);
     _heroFocusNode.dispose();
+    // Not disposed here — app-wide singleton, see its field doc comment.
     super.dispose();
   }
 
@@ -533,6 +539,9 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   void _stopIndicatorProgress() {
     _indicatorTimer?.cancel();
   }
+
+  // --- Legacy single-hero-carousel (restored 2026-09-12 for "reset to
+  // default" — see showLegacyHero in _buildContent) ---
 
   void _resetAutoScrollTimer() {
     _autoScrollTimer?.cancel();
@@ -915,6 +924,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       prefs: const [
         SettingsService.showServerNameOnHubs,
         SettingsService.showHeroSection,
+        SettingsService.continueWatchingOnHome,
         SettingsService.hideSpoilers,
         SettingsService.libraryDensity,
         SettingsService.episodePosterMode,
@@ -924,126 +934,181 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   Widget _buildContent(BuildContext context) {
-    final svc = SettingsService.instance;
-    final showHeroSection = svc.read(SettingsService.showHeroSection);
+    // TV uses stock Plezy's spotlight layout again (2026-10-11 user request:
+    // match the native app — the highlighted card's art fills the background
+    // behind plain rows). Hero rows live inside that same layout: the rail
+    // collapses them to their header and TvSpotlightScaffold renders the
+    // focused hero row as a banner (title, chevrons, d-pad paging).
+    if (PlatformDetector.usesTvHomeLayout()) return _buildTvContent(context);
 
-    if (PlatformDetector.isTV()) {
-      return _buildTvContent(context);
-    }
+    final svc = SettingsService.instance;
+
+    // TV used to build a completely separate screen here (TvBrowseRail +
+    // TvSpotlightScaffold) — per user request 2026-09-10 ("make it look
+    // like the browser version, just with a remote instead of a mouse"),
+    // it now runs through the exact same per-row loop PC does. HubSection
+    // and HeroHubSection both already branch on PlatformDetector.isTV()
+    // internally for their own sizing/styling, and HubSection's TV
+    // key-handling is already proven elsewhere (media_detail_screen.dart,
+    // catalog_item_detail_screen.dart use it on TV today) — HeroHubSection
+    // just gained the same real d-pad handling this same session. The old
+    // TV-only path (_buildTvContent and everything it alone used) is left
+    // in place below, unused, rather than torn out in the same pass as
+    // this switch.
 
     final showServerNameOnHubs = svc.read(SettingsService.showServerNameOnHubs);
     final hubsSpanMultipleServers = _hubsSpanMultipleServers();
 
     final bottomPadding = MediaQuery.paddingOf(context).bottom;
     final theme = Theme.of(context);
-    final continueWatchingHub = _onDeck.isEmpty ? null : _continueWatchingHub;
-    return Material(
-      color: theme.scaffoldBackgroundColor,
-      child: Stack(
-        children: [
-          CustomScrollView(
-            controller: _scrollController,
-            slivers: [
-              // Hero Section (Continue Watching) - at top of screen
-              Builder(
-                builder: (context) {
-                  if (_onDeck.isNotEmpty && showHeroSection) {
-                    return _buildHeroSection();
-                  }
-                  // Add top padding when hero is not shown
-                  return SliverToBoxAdapter(
-                    child: SizedBox(height: kToolbarHeight + MediaQuery.paddingOf(context).top + 16),
-                  );
-                },
-              ),
-              if (_isLoading) LoadingIndicatorBox.sliver,
-              if (_errorMessage != null) SliverErrorState(message: _errorMessage!, onRetry: _discover.load),
-              if (!_isLoading && _errorMessage == null) ...[
-                if (continueWatchingHub != null)
-                  SliverToBoxAdapter(
-                    child: HubSection(
-                      key: _continueWatchingHubKey,
-                      hub: continueWatchingHub,
-                      focusMemory: _hubFocusMemory,
-                      icon: hubIconFor(continueWatchingHub),
-                      onRefresh: _discover.updateItem,
-                      onRemoveFromContinueWatching: _discover.refreshContinueWatching,
-                      isInContinueWatching: true,
-                      loadMoreItems: _discover.loadAllContinueWatching,
-                      onVerticalNavigation: (isUp) => _handleVerticalNavigation(0, isUp),
-                      onNavigateUp: _focusTopBoundary,
+    // Same base value PC always used (kToolbarHeight + status bar + 16px),
+    // plus real extra headroom on TV specifically. That base was cutting it
+    // close enough already that a hero row could render with its own top
+    // edge nearly flush against the toolbar — on TV, where the toolbar also
+    // carries the clock, invisible by a few px is enough to clip baked-in
+    // title text right at a row's own top edge (2026-09-11 bug report:
+    // "Future Man" only ever showing "Man", unmoved by two separate fixes
+    // to how the backdrop image itself was cropped — the image was never
+    // the problem, the row's on-screen position was).
+    final isTv = PlatformDetector.isTV();
+    // The +56 TV bonus here used to compensate for a since-fixed bug (the
+    // hero row's own Scrollable.ensureVisible was double-reserving toolbar
+    // clearance on top of this boundary — see HeroHubSection._scrollIntoView).
+    // With that fixed, the extra 56 is just excess gap between the toolbar
+    // and the row (2026-09-11 report: "sits too low, about an inch, needs to
+    // touch the header without overlapping") — back to the same small margin
+    // PC uses.
+    final topSpacerHeight = kToolbarHeight + MediaQuery.paddingOf(context).top + 16.0;
+    // TV: a real Positioned constraint on the scroll viewport itself, not a
+    // scrollable spacer sliver inside it. A spacer sliver can be scrolled
+    // past — Scrollable.ensureVisible's alignment (0.3, see
+    // HeroHubSection._scrollIntoView) has no room to honor for a card this
+    // tall (heroHeight is 0.6 of screen height), so it just pins the card's
+    // leading edge to the very top of the viewport regardless of how big
+    // the spacer sliver is (confirmed 2026-09-11: doubling the spacer did
+    // nothing — the scroll position bypassed it entirely). A viewport whose
+    // own bounds start below the toolbar can't have this problem no matter
+    // where anything scrolls to. PC is untouched — its translucent toolbar
+    // is meant to have content scroll under it.
+    // "Reset to default" (home_layout_settings_screen.dart) restores this
+    // legacy screen-level slot instead of any row's own heroStyle — the
+    // original stock single-hero-carousel this add-on's per-row rendering
+    // replaced, brought back verbatim from origin/main (2026-09-12, user
+    // request: "reset it to original plezy like if my pr wasnt there except
+    // the order part"). Enabled on TV too (2026-09-12 follow-up) — the
+    // restored code is upstream's own, unmodified, and already has full TV
+    // handling built in (see the isTv branches throughout _buildHeroSection/
+    // _buildHeroItem/_buildSmartPlayButton); it just wasn't being reached
+    // before. Every row's own heroStyle still resets to off regardless of
+    // platform (home_layout_settings_screen.dart's _resetHeroToStock), so
+    // this never coexists with a per-row HeroHubSection for the same reason
+    // it doesn't on PC.
+    //
+    // Suppressed whenever any row is its own hero: the legacy slot is stock
+    // Plezy's fixed Continue Watching carousel (always auto-rotates, no
+    // arrows, ignores per-row Auto-slide), and showHeroSection defaults to
+    // true, so leaving it on alongside per-row heroes stacked a second
+    // Continue Watching banner on top of Home (2026-10-11 bug report).
+    final anyRowIsHero = _hubs.any((hub) => hub.heroStyle && hub.items.isNotEmpty);
+    final showLegacyHero =
+        !anyRowIsHero && SettingsService.instance.read(SettingsService.showHeroSection) && _onDeck.isNotEmpty;
+    final scrollView = CustomScrollView(
+      controller: _scrollController,
+      slivers: [
+        if (!isTv) SliverToBoxAdapter(child: SizedBox(height: topSpacerHeight)),
+        if (showLegacyHero) _buildHeroSection(),
+        if (_isLoading) LoadingIndicatorBox.sliver,
+        if (_errorMessage != null) SliverErrorState(message: _errorMessage!, onRetry: _discover.load),
+        if (!_isLoading && _errorMessage == null) ...[
+          // Home rows — Continue Watching, Plex-managed rows, and custom
+          // rows all arrive here pre-ordered by DiscoverProvider (see
+          // buildConfiguredHomeSections), so this loop treats every row
+          // uniformly rather than special-casing Continue Watching's
+          // position or navigation index.
+          for (int i = 0; i < _hubs.length; i++)
+            SliverToBoxAdapter(
+              child: _hubs[i].heroStyle && _hubs[i].items.isNotEmpty
+                  ? HeroHubSection(
+                      key: i < _orderedHeroHubKeys.length ? _orderedHeroHubKeys[i] : null,
+                      hub: _hubs[i],
+                      onVerticalNavigation: (isUp) => _handleVerticalNavigation(i, isUp),
+                      onNavigateUp: i == 0 ? _focusTopBoundary : null,
                       onNavigateToSidebar: _navigateToSidebar,
-                    ),
-                  ),
-
-                // Recommendation Hubs (Trending, Top in Genre, etc.)
-                for (int i = 0; i < _hubs.length; i++)
-                  SliverToBoxAdapter(
-                    child: HubSection(
+                    )
+                  : HubSection(
                       key: i < _orderedHubKeys.length ? _orderedHubKeys[i] : null,
                       hub: _hubs[i],
                       focusMemory: _hubFocusMemory,
                       icon: hubIconFor(_hubs[i]),
                       showServerName: showServerNameOnHubs || hubsSpanMultipleServers,
                       onRefresh: _discover.updateItem,
-                      // Hub index is i + 1 if continue watching exists, otherwise i
-                      onVerticalNavigation: (isUp) => _handleVerticalNavigation(_onDeck.isNotEmpty ? i + 1 : i, isUp),
-                      onNavigateUp: (i == 0 && _onDeck.isEmpty) ? _focusTopBoundary : null,
+                      onRemoveFromContinueWatching: _hubs[i].isContinueWatchingHub
+                          ? _discover.refreshContinueWatching
+                          : null,
+                      isInContinueWatching: _hubs[i].isContinueWatchingHub,
+                      loadMoreItems: _hubs[i].isContinueWatchingHub ? _discover.loadAllContinueWatching : null,
+                      onVerticalNavigation: (isUp) => _handleVerticalNavigation(i, isUp),
+                      onNavigateUp: i == 0 ? _focusTopBoundary : null,
                       onNavigateToSidebar: _navigateToSidebar,
                     ),
-                  ),
+            ),
 
-                // Show loading skeleton for hubs while they're loading
-                if (_areHubsLoading && _hubs.isEmpty)
-                  for (int i = 0; i < 3; i++)
-                    SliverToBoxAdapter(
-                      child: Container(
-                        padding: const EdgeInsets.all(16),
-                        child: Column(
-                          crossAxisAlignment: .start,
-                          children: [
-                            Container(
-                              width: 200,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                color: theme.colorScheme.surfaceContainerHighest,
-                                borderRadius: const BorderRadius.all(Radius.circular(4)),
-                              ),
-                            ),
-                            const SizedBox(height: 16),
-                            SizedBox(
-                              height: 200,
-                              child: ListView.builder(
-                                scrollDirection: Axis.horizontal,
-                                itemCount: 5,
-                                itemBuilder: (context, index) {
-                                  return Container(
-                                    margin: const EdgeInsets.only(right: 12),
-                                    width: 140,
-                                    decoration: BoxDecoration(
-                                      color: Theme.of(context).colorScheme.surfaceContainerHighest,
-                                      borderRadius: BorderRadius.circular(tokens(context).radiusSm),
-                                    ),
-                                  );
-                                },
-                              ),
-                            ),
-                          ],
+          // Show loading skeleton for hubs while they're loading
+          if (_areHubsLoading && _hubs.isEmpty)
+            for (int i = 0; i < 3; i++)
+              SliverToBoxAdapter(
+                child: Container(
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    crossAxisAlignment: .start,
+                    children: [
+                      Container(
+                        width: 200,
+                        height: 24,
+                        decoration: BoxDecoration(
+                          color: theme.colorScheme.surfaceContainerHighest,
+                          borderRadius: const BorderRadius.all(Radius.circular(4)),
                         ),
                       ),
-                    ),
-
-                if (_onDeck.isEmpty && _hubs.isEmpty && !_areHubsLoading)
-                  SliverEmptyState(
-                    message: t.discover.noContentAvailable,
-                    subtitle: t.discover.addMediaToLibraries,
-                    icon: Symbols.movie_rounded,
+                      const SizedBox(height: 16),
+                      SizedBox(
+                        height: 200,
+                        child: ListView.builder(
+                          scrollDirection: Axis.horizontal,
+                          itemCount: 5,
+                          itemBuilder: (context, index) {
+                            return Container(
+                              margin: const EdgeInsets.only(right: 12),
+                              width: 140,
+                              decoration: BoxDecoration(
+                                color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                                borderRadius: BorderRadius.circular(tokens(context).radiusSm),
+                              ),
+                            );
+                          },
+                        ),
+                      ),
+                    ],
                   ),
+                ),
+              ),
 
-                SliverToBoxAdapter(child: SizedBox(height: 24 + bottomPadding)),
-              ],
-            ],
-          ),
+          if (_onDeck.isEmpty && _hubs.isEmpty && !_areHubsLoading)
+            SliverEmptyState(
+              message: t.discover.noContentAvailable,
+              subtitle: t.discover.addMediaToLibraries,
+              icon: Symbols.movie_rounded,
+            ),
+
+          SliverToBoxAdapter(child: SizedBox(height: 24 + bottomPadding)),
+        ],
+      ],
+    );
+    return Material(
+      color: theme.scaffoldBackgroundColor,
+      child: Stack(
+        children: [
+          if (isTv) Positioned(top: topSpacerHeight, left: 0, right: 0, bottom: 0, child: scrollView) else scrollView,
           // Overlaid app bar — excluded from default focus traversal so that
           // initial/tab-switch focus lands on content (hero/hubs), not the toolbar.
           // Toolbar buttons are still reachable via explicit UP from hero section.
@@ -1071,7 +1136,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       focusMemory: _hubFocusMemory,
       showServerName: showServerName,
       iconForHub: (hub, _) => hubIconFor(hub),
-      onFocusedItemChanged: _setSpotlightItem,
+      onFocusedHubItemChanged: _setSpotlightItem,
       onRefresh: _discover.updateItem,
       onRemoveFromContinueWatching: _discover.refreshContinueWatching,
       isContinueWatchingHub: (hub) => hub.isContinueWatchingHub,
@@ -1083,6 +1148,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       onNavigateToSidebar: _navigateToSidebar,
       tallPosterScale: TvBrowseRailLayout.compactTallPosterScale,
       widePosterScale: TvBrowseRailLayout.compactEpisodeThumbnailScale,
+      onActivateItem: _handleTvHeroActivate,
     );
   }
 
@@ -1101,13 +1167,31 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     return _tvToolbarOverlayWidget = TvToolbarOverlay(child: _buildOverlaidAppBar());
   }
 
+  /// Selecting a Hero row's item on TV — "clicking the banner" — mirrors PC's
+  /// hero card tap exactly (same Organizer-configured
+  /// heroCardTapAction setting). Plain rows
+  /// return false so TvBrowseRail's own default activation (open details, or
+  /// play directly for Continue Watching) still applies unchanged.
+  Future<bool> _handleTvHeroActivate(MediaHub hub, MediaItem item) async {
+    if (!hub.heroStyle) return false;
+    final tapAction = SettingsService.instance.read(SettingsService.heroCardTapAction);
+    unawaited(
+      navigateToMediaItem(
+        context,
+        item,
+        onRefresh: _discover.updateItem,
+        playDirectly: tapAction == HeroCardTapAction.play,
+      ),
+    );
+    return true;
+  }
+
   Widget _buildTvContent(BuildContext context) {
     final svc = SettingsService.instance;
     final hideSpoilers = svc.read(SettingsService.hideSpoilers);
     final showServerNameOnHubs = svc.read(SettingsService.showServerNameOnHubs);
     final hubsSpanMultipleServers = _hubsSpanMultipleServers();
     final browseHubs = _tvBrowseHubs;
-
     return TvSpotlightScaffold(
       hubs: browseHubs,
       spotlightListenable: _spotlight,

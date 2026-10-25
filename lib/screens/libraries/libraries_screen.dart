@@ -783,7 +783,12 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     final showMobileTabsRow = selectedLibrary != null && !useSideNavigation;
     final currentTabIndex = _visibleTabs.isEmpty ? 0 : tabController.index.clamp(0, _visibleTabs.length - 1).toInt();
     final currentTabType = _visibleTabs.isEmpty ? null : _visibleTabs[currentTabIndex];
-    final useTvRecommendedBackdrop = PlatformDetector.isTV() && currentTabType == LibraryTabType.recommended;
+    // TV Recommended renders the stock TvSpotlightScaffold (see
+    // library_recommended_tab.dart), which needs the transparent host body.
+    // Must use the same check as the tab: the PC tab content needs the
+    // NestedScrollView host below.
+    final useTvRecommendedBackdrop =
+        PlatformDetector.usesTvHomeLayout() && currentTabType == LibraryTabType.recommended;
     final showBrowseOptionsAction =
         selectedLibrary != null && PlatformDetector.isMobile(context) && currentTabType == LibraryTabType.browse;
     final canSelectedLibraryGroupByFolders = context.select<MultiServerProvider, bool>((provider) {

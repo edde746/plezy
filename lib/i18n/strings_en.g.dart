@@ -95,6 +95,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$services$en services = Translations$services$en.internal(_root);
 	late final Translations$addServer$en addServer = Translations$addServer$en.internal(_root);
 	late final Translations$watchLink$en watchLink = Translations$watchLink$en.internal(_root);
+	late final Translations$homeLayout$en homeLayout = Translations$homeLayout$en.internal(_root);
 }
 
 // Path: app
@@ -6364,6 +6365,300 @@ class Translations$watchLink$en {
 	String get copied => 'Link copied';
 }
 
+// Path: homeLayout
+class Translations$homeLayout$en {
+	Translations$homeLayout$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Home layout'
+	String get title => 'Home layout';
+
+	/// en: 'Home reset to the original Plezy hero layout'
+	String get resetToast => 'Home reset to the original Plezy hero layout';
+
+	/// en: 'Reset hero layout to stock Plezy?'
+	String get resetHeroTitle => 'Reset hero layout to stock Plezy?';
+
+	/// en: 'Turns off every row's hero setting and brings back the single rotating banner at the top of Home, like before hero rows existed. Row order and which rows are shown are not affected.'
+	String get resetHeroBody => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top of Home, like before hero rows existed. Row order and which rows are shown are not affected.';
+
+	/// en: 'Remove Home row?'
+	String get removeRowTitle => 'Remove Home row?';
+
+	/// en: '${title} will be deleted. This can't be undone.'
+	String removeRowBody({required Object title}) => '${title} will be deleted. This can\'t be undone.';
+
+	/// en: 'Sync'
+	String get sync => 'Sync';
+
+	/// en: 'Sync layout with your Plex account'
+	String get syncAccountTitle => 'Sync layout with your Plex account';
+
+	/// en: 'On: this device shares row order, rows, Hero and Auto-slide with your other devices.'
+	String get syncAccountOn => 'On: this device shares row order, rows, Hero and Auto-slide with your other devices.';
+
+	/// en: 'Off: this device keeps its own layout.'
+	String get syncAccountOff => 'Off: this device keeps its own layout.';
+
+	/// en: 'Sync now'
+	String get syncNow => 'Sync now';
+
+	/// en: 'Plex Home manager'
+	String get plexHomeManager => 'Plex Home manager';
+
+	/// en: 'Manage Plex rows in Plezy'
+	String get managePlexRows => 'Manage Plex rows in Plezy';
+
+	/// en: 'Open to organize the Home-selected rows'
+	String get managePlexRowsDescription => 'Open to organize the Home-selected rows';
+
+	/// en: 'Organize Home rows'
+	String get organizeHomeRows => 'Organize Home rows';
+
+	/// en: '${n} rows: move, Hero, Auto-slide, remove'
+	String organizeHomeRowsDescription({required Object n}) => '${n} rows: move, Hero, Auto-slide, remove';
+
+	/// en: 'Organize ${library} rows'
+	String organizeLibraryRows({required Object library}) => 'Organize ${library} rows';
+
+	/// en: 'Continue Watching + ${n} rows: move, Library, Home, Hero, Auto-slide'
+	String organizeLibraryRowsDescription({required Object n}) => 'Continue Watching + ${n} rows: move, Library, Home, Hero, Auto-slide';
+
+	/// en: 'Render as a hero card'
+	String get renderAsHero => 'Render as a hero card';
+
+	/// en: 'Only available when this row resolves to a single collection's actual titles'
+	String get heroOnlySingleCollection => 'Only available when this row resolves to a single collection\'s actual titles';
+
+	/// en: 'Hero'
+	String get hero => 'Hero';
+
+	/// en: 'Auto-slide'
+	String get autoSlide => 'Auto-slide';
+
+	/// en: 'Also slides on its own every few seconds. Arrows (PC) and d-pad (TV) always work and restart the timer.'
+	String get autoSlideDescription => 'Also slides on its own every few seconds. Arrows (PC) and d-pad (TV) always work and restart the timer.';
+
+	/// en: 'Also slides on its own every few seconds. Off: only moves when you click an arrow (PC) or press left/right on the remote (TV). Arrows and d-pad always work either way.'
+	String get autoSlideEditDescription => 'Also slides on its own every few seconds. Off: only moves when you click an arrow (PC) or press left/right on the remote (TV). Arrows and d-pad always work either way.';
+
+	/// en: 'Enable Hero first'
+	String get enableHeroFirst => 'Enable Hero first';
+
+	/// en: 'Show on Home screen'
+	String get showOnHome => 'Show on Home screen';
+
+	/// en: 'Home'
+	String get home => 'Home';
+
+	/// en: 'Remove from Home'
+	String get removeFromHome => 'Remove from Home';
+
+	/// en: 'Select Home rows below first.'
+	String get selectRowsFirst => 'Select Home rows below first.';
+
+	/// en: '${n} Plex-managed rows'
+	String plexManagedRows({required Object n}) => '${n} Plex-managed rows';
+
+	/// en: 'Continue Watching'
+	String get continueWatching => 'Continue Watching';
+
+	/// en: 'This library's own resume-progress row'
+	String get continueWatchingLibraryDescription => 'This library\'s own resume-progress row';
+
+	/// en: 'The resume-progress row shown on Home'
+	String get continueWatchingHomeDescription => 'The resume-progress row shown on Home';
+
+	/// en: 'Library'
+	String get library => 'Library';
+
+	/// en: 'Show in Library Recommended'
+	String get showInRecommended => 'Show in Library Recommended';
+
+	/// en: 'Custom Plex row'
+	String get customPlexRow => 'Custom Plex row';
+
+	/// en: 'Check Library first — Hero needs somewhere to show'
+	String get heroNeedsLibrary => 'Check Library first — Hero needs somewhere to show';
+
+	/// en: 'Check Library or Home first — Hero needs somewhere to show'
+	String get heroNeedsSurface => 'Check Library or Home first — Hero needs somewhere to show';
+
+	/// en: 'Remove Hub'
+	String get removeHub => 'Remove Hub';
+
+	/// en: 'No Plex-managed rows returned for this library.'
+	String get noPlexRows => 'No Plex-managed rows returned for this library.';
+
+	/// en: 'Open details'
+	String get openDetails => 'Open details';
+
+	/// en: 'Hero cards'
+	String get heroCards => 'Hero cards';
+
+	/// en: 'Tapping a hero card'
+	String get tapHeroCard => 'Tapping a hero card';
+
+	/// en: 'TV remote: highlight Play button'
+	String get tvPlayFocus => 'TV remote: highlight Play button';
+
+	/// en: 'D-pad down stops on the Play button before moving to the next row. Off skips straight to the next row.'
+	String get tvPlayFocusDescription => 'D-pad down stops on the Play button before moving to the next row. Off skips straight to the next row.';
+
+	/// en: 'TV remote: loop hero cards'
+	String get tvWrap => 'TV remote: loop hero cards';
+
+	/// en: 'Right on the last card goes back to the first. Off stops at the last card. Left on the first card always goes to the sidebar.'
+	String get tvWrapDescription => 'Right on the last card goes back to the first. Off stops at the last card. Left on the first card always goes to the sidebar.';
+
+	/// en: 'Cast on hero banners'
+	String get castOnHero => 'Cast on hero banners';
+
+	/// en: 'Shows the cast along the bottom of a hero banner. Off keeps just the title and summary.'
+	String get castOnHeroDescription => 'Shows the cast along the bottom of a hero banner. Off keeps just the title and summary.';
+
+	/// en: 'Custom rows'
+	String get customRows => 'Custom rows';
+
+	/// en: 'Loading home layout…'
+	String get loading => 'Loading home layout…';
+
+	/// en: 'No custom rows yet'
+	String get noCustomRows => 'No custom rows yet';
+
+	/// en: 'Use Add Home row to create one.'
+	String get addRowHint => 'Use Add Home row to create one.';
+
+	/// en: 'Add Home row'
+	String get addHomeRow => 'Add Home row';
+
+	/// en: 'Choose a category; the new row is added to Organizer automatically'
+	String get addHomeRowDescription => 'Choose a category; the new row is added to Organizer automatically';
+
+	/// en: 'Remove row'
+	String get removeRow => 'Remove row';
+
+	/// en: 'Recently Added'
+	String get recentlyAdded => 'Recently Added';
+
+	/// en: 'Recently Released'
+	String get recentlyReleased => 'Recently Released';
+
+	/// en: 'Movie Collections'
+	String get movieCollections => 'Movie Collections';
+
+	/// en: 'Show Collections'
+	String get showCollections => 'Show Collections';
+
+	/// en: 'Row title'
+	String get rowTitle => 'Row title';
+
+	/// en: 'Content'
+	String get content => 'Content';
+
+	/// en: 'Show this row in:'
+	String get showThisRowIn => 'Show this row in:';
+
+	/// en: 'Library Recommended'
+	String get libraryRecommended => 'Library Recommended';
+
+	/// en: 'Hero card'
+	String get heroCard => 'Hero card';
+
+	/// en: 'Shows as one full-width rotating card instead of a poster shelf.'
+	String get heroCardDescription => 'Shows as one full-width rotating card instead of a poster shelf.';
+
+	/// en: 'Only available when this row resolves to a single collection's actual titles — with more than one collection selected there is no single title to rotate through.'
+	String get heroUnavailableDescription => 'Only available when this row resolves to a single collection\'s actual titles — with more than one collection selected there is no single title to rotate through.';
+
+	/// en: 'Libraries (leave all unchecked to include every library)'
+	String get librariesSelection => 'Libraries (leave all unchecked to include every library)';
+
+	/// en: 'Every library checked here is merged into this one row.'
+	String get librariesMergedDescription => 'Every library checked here is merged into this one row.';
+
+	/// en: 'Movie collections (leave all unchecked for every selected library)'
+	String get movieCollectionsSelection => 'Movie collections (leave all unchecked for every selected library)';
+
+	/// en: 'Show collections (leave all unchecked for every selected library)'
+	String get showCollectionsSelection => 'Show collections (leave all unchecked for every selected library)';
+
+	/// en: 'If exactly one collection matches, its titles show directly in the row. If more than one matches, each collection shows as a single poster — tap it to open that collection.'
+	String get collectionRowsDescription => 'If exactly one collection matches, its titles show directly in the row. If more than one matches, each collection shows as a single poster — tap it to open that collection.';
+
+	/// en: 'All collections'
+	String get allCollections => 'All collections';
+
+	/// en: 'No rows here yet.'
+	String get noRowsHere => 'No rows here yet.';
+
+	/// en: 'Hide watched items in rows'
+	String get hideWatchedRows => 'Hide watched items in rows';
+
+	/// en: 'Fully watched titles leave Home and library Recommended rows. In-progress ones stay.'
+	String get hideWatchedRowsDescription => 'Fully watched titles leave Home and library Recommended rows. In-progress ones stay.';
+
+	/// en: 'Untitled collection'
+	String get untitledCollection => 'Untitled collection';
+
+	/// en: 'Up/Down: move row · Select: drop it here · Back: cancel'
+	String get moveRowHint => 'Up/Down: move row · Select: drop it here · Back: cancel';
+
+	/// en: 'Select on a row (or hold Select): move it · Left/Right: row options · Back: done'
+	String get organizeRowsHint => 'Select on a row (or hold Select): move it · Left/Right: row options · Back: done';
+
+	/// en: 'Choose rows, libraries, and collection categories'
+	String get layoutNavDescription => 'Choose rows, libraries, and collection categories';
+
+	/// en: 'Edit Home row'
+	String get editHomeRow => 'Edit Home row';
+
+	/// en: 'Reset hero layout to stock Plezy'
+	String get resetHeroButton => 'Reset hero layout to stock Plezy';
+
+	/// en: 'Reordering unlocked'
+	String get reorderingUnlocked => 'Reordering unlocked';
+
+	/// en: 'Reordering locked'
+	String get reorderingLocked => 'Reordering locked';
+
+	/// en: 'Rows can be dragged — tap the lock to prevent that'
+	String get rowsCanBeDragged => 'Rows can be dragged — tap the lock to prevent that';
+
+	/// en: 'Tap the lock to drag rows'
+	String get tapLockToDrag => 'Tap the lock to drag rows';
+
+	/// en: 'Custom: ${title}'
+	String customRowLabel({required Object title}) => 'Custom: ${title}';
+
+	/// en: '${library}: ${hub}'
+	String libraryHubLabel({required Object library, required Object hub}) => '${library}: ${hub}';
+
+	/// en: 'Hide'
+	String get hide => 'Hide';
+
+	/// en: 'Remove'
+	String get remove => 'Remove';
+
+	/// en: 'This library's resume row'
+	String get libraryResumeRow => 'This library\'s resume row';
+
+	/// en: 'Press again to delete'
+	String get pressAgainToDelete => 'Press again to delete';
+
+	/// en: '${action}: ${state}'
+	String actionState({required Object action, required Object state}) => '${action}: ${state}';
+
+	/// en: 'On'
+	String get on => 'On';
+
+	/// en: 'Turns off every row's hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept.'
+	String get resetHeroButtonDescription => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept.';
+}
+
 // Path: appIcon.names
 class Translations$appIcon$names$en {
 	Translations$appIcon$names$en.internal(this._root);
@@ -10831,6 +11126,101 @@ extension on Translations {
 			'watchLink.dialogMovieHint' => 'Opening this link plays the movie.',
 			'watchLink.copy' => 'Copy',
 			'watchLink.copied' => 'Link copied',
+			'homeLayout.title' => 'Home layout',
+			'homeLayout.resetToast' => 'Home reset to the original Plezy hero layout',
+			'homeLayout.resetHeroTitle' => 'Reset hero layout to stock Plezy?',
+			'homeLayout.resetHeroBody' => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top of Home, like before hero rows existed. Row order and which rows are shown are not affected.',
+			'homeLayout.removeRowTitle' => 'Remove Home row?',
+			'homeLayout.removeRowBody' => ({required Object title}) => '${title} will be deleted. This can\'t be undone.',
+			'homeLayout.sync' => 'Sync',
+			'homeLayout.syncAccountTitle' => 'Sync layout with your Plex account',
+			'homeLayout.syncAccountOn' => 'On: this device shares row order, rows, Hero and Auto-slide with your other devices.',
+			'homeLayout.syncAccountOff' => 'Off: this device keeps its own layout.',
+			'homeLayout.syncNow' => 'Sync now',
+			'homeLayout.plexHomeManager' => 'Plex Home manager',
+			'homeLayout.managePlexRows' => 'Manage Plex rows in Plezy',
+			'homeLayout.managePlexRowsDescription' => 'Open to organize the Home-selected rows',
+			'homeLayout.organizeHomeRows' => 'Organize Home rows',
+			'homeLayout.organizeHomeRowsDescription' => ({required Object n}) => '${n} rows: move, Hero, Auto-slide, remove',
+			'homeLayout.organizeLibraryRows' => ({required Object library}) => 'Organize ${library} rows',
+			'homeLayout.organizeLibraryRowsDescription' => ({required Object n}) => 'Continue Watching + ${n} rows: move, Library, Home, Hero, Auto-slide',
+			'homeLayout.renderAsHero' => 'Render as a hero card',
+			'homeLayout.heroOnlySingleCollection' => 'Only available when this row resolves to a single collection\'s actual titles',
+			'homeLayout.hero' => 'Hero',
+			'homeLayout.autoSlide' => 'Auto-slide',
+			'homeLayout.autoSlideDescription' => 'Also slides on its own every few seconds. Arrows (PC) and d-pad (TV) always work and restart the timer.',
+			'homeLayout.autoSlideEditDescription' => 'Also slides on its own every few seconds. Off: only moves when you click an arrow (PC) or press left/right on the remote (TV). Arrows and d-pad always work either way.',
+			'homeLayout.enableHeroFirst' => 'Enable Hero first',
+			'homeLayout.showOnHome' => 'Show on Home screen',
+			'homeLayout.home' => 'Home',
+			'homeLayout.removeFromHome' => 'Remove from Home',
+			'homeLayout.selectRowsFirst' => 'Select Home rows below first.',
+			'homeLayout.plexManagedRows' => ({required Object n}) => '${n} Plex-managed rows',
+			'homeLayout.continueWatching' => 'Continue Watching',
+			'homeLayout.continueWatchingLibraryDescription' => 'This library\'s own resume-progress row',
+			'homeLayout.continueWatchingHomeDescription' => 'The resume-progress row shown on Home',
+			'homeLayout.library' => 'Library',
+			'homeLayout.showInRecommended' => 'Show in Library Recommended',
+			'homeLayout.customPlexRow' => 'Custom Plex row',
+			'homeLayout.heroNeedsLibrary' => 'Check Library first — Hero needs somewhere to show',
+			'homeLayout.heroNeedsSurface' => 'Check Library or Home first — Hero needs somewhere to show',
+			'homeLayout.removeHub' => 'Remove Hub',
+			'homeLayout.noPlexRows' => 'No Plex-managed rows returned for this library.',
+			'homeLayout.openDetails' => 'Open details',
+			'homeLayout.heroCards' => 'Hero cards',
+			'homeLayout.tapHeroCard' => 'Tapping a hero card',
+			'homeLayout.tvPlayFocus' => 'TV remote: highlight Play button',
+			'homeLayout.tvPlayFocusDescription' => 'D-pad down stops on the Play button before moving to the next row. Off skips straight to the next row.',
+			'homeLayout.tvWrap' => 'TV remote: loop hero cards',
+			'homeLayout.tvWrapDescription' => 'Right on the last card goes back to the first. Off stops at the last card. Left on the first card always goes to the sidebar.',
+			'homeLayout.castOnHero' => 'Cast on hero banners',
+			'homeLayout.castOnHeroDescription' => 'Shows the cast along the bottom of a hero banner. Off keeps just the title and summary.',
+			'homeLayout.customRows' => 'Custom rows',
+			'homeLayout.loading' => 'Loading home layout…',
+			'homeLayout.noCustomRows' => 'No custom rows yet',
+			'homeLayout.addRowHint' => 'Use Add Home row to create one.',
+			'homeLayout.addHomeRow' => 'Add Home row',
+			'homeLayout.addHomeRowDescription' => 'Choose a category; the new row is added to Organizer automatically',
+			'homeLayout.removeRow' => 'Remove row',
+			'homeLayout.recentlyAdded' => 'Recently Added',
+			'homeLayout.recentlyReleased' => 'Recently Released',
+			'homeLayout.movieCollections' => 'Movie Collections',
+			'homeLayout.showCollections' => 'Show Collections',
+			'homeLayout.rowTitle' => 'Row title',
+			'homeLayout.content' => 'Content',
+			'homeLayout.showThisRowIn' => 'Show this row in:',
+			'homeLayout.libraryRecommended' => 'Library Recommended',
+			'homeLayout.heroCard' => 'Hero card',
+			'homeLayout.heroCardDescription' => 'Shows as one full-width rotating card instead of a poster shelf.',
+			'homeLayout.heroUnavailableDescription' => 'Only available when this row resolves to a single collection\'s actual titles — with more than one collection selected there is no single title to rotate through.',
+			'homeLayout.librariesSelection' => 'Libraries (leave all unchecked to include every library)',
+			'homeLayout.librariesMergedDescription' => 'Every library checked here is merged into this one row.',
+			'homeLayout.movieCollectionsSelection' => 'Movie collections (leave all unchecked for every selected library)',
+			'homeLayout.showCollectionsSelection' => 'Show collections (leave all unchecked for every selected library)',
+			'homeLayout.collectionRowsDescription' => 'If exactly one collection matches, its titles show directly in the row. If more than one matches, each collection shows as a single poster — tap it to open that collection.',
+			'homeLayout.allCollections' => 'All collections',
+			'homeLayout.noRowsHere' => 'No rows here yet.',
+			'homeLayout.hideWatchedRows' => 'Hide watched items in rows',
+			'homeLayout.hideWatchedRowsDescription' => 'Fully watched titles leave Home and library Recommended rows. In-progress ones stay.',
+			'homeLayout.untitledCollection' => 'Untitled collection',
+			'homeLayout.moveRowHint' => 'Up/Down: move row · Select: drop it here · Back: cancel',
+			'homeLayout.organizeRowsHint' => 'Select on a row (or hold Select): move it · Left/Right: row options · Back: done',
+			'homeLayout.layoutNavDescription' => 'Choose rows, libraries, and collection categories',
+			'homeLayout.editHomeRow' => 'Edit Home row',
+			'homeLayout.resetHeroButton' => 'Reset hero layout to stock Plezy',
+			'homeLayout.reorderingUnlocked' => 'Reordering unlocked',
+			'homeLayout.reorderingLocked' => 'Reordering locked',
+			'homeLayout.rowsCanBeDragged' => 'Rows can be dragged — tap the lock to prevent that',
+			'homeLayout.tapLockToDrag' => 'Tap the lock to drag rows',
+			'homeLayout.customRowLabel' => ({required Object title}) => 'Custom: ${title}',
+			'homeLayout.libraryHubLabel' => ({required Object library, required Object hub}) => '${library}: ${hub}',
+			'homeLayout.hide' => 'Hide',
+			'homeLayout.remove' => 'Remove',
+			'homeLayout.libraryResumeRow' => 'This library\'s resume row',
+			'homeLayout.pressAgainToDelete' => 'Press again to delete',
+			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
+			'homeLayout.on' => 'On',
+			'homeLayout.resetHeroButtonDescription' => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept.',
 			_ => null,
 		};
 	}

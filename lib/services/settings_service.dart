@@ -34,6 +34,8 @@ export 'base_shared_preferences_service.dart'
 import '../models/audio_channel_limit.dart';
 import '../models/audio_quality_preset.dart';
 import '../models/transcode_quality_preset.dart';
+import '../models/home_section_config.dart';
+import '../models/plex/plex_managed_hub.dart';
 import '../navigation/navigation_tabs.dart';
 import '../utils/platform_detector.dart';
 import 'trackers/tracker_constants.dart';
@@ -105,6 +107,13 @@ enum EpisodePosterMode { seriesPoster, seasonPoster, episodeThumbnail }
 enum ContinueWatchingAction { play, details }
 
 enum EpisodeAction { play, details }
+
+/// What tapping a hero row's card (backdrop/video area, not the Play
+/// button itself, which always plays) does — user-configurable per
+/// user request 2026-09-10: some people want a poster tap to behave like a
+/// remote control (play immediately), others want it to behave like
+/// browsing (open details first, decide from there).
+enum HeroCardTapAction { play, details }
 
 /// How Specials (season 0) are placed in the episode watch order — the
 /// sequence auto-advance, offline next/prev, and "download next N" walk.
@@ -655,10 +664,23 @@ class SettingsService extends BaseSharedPreferencesService {
     transform: (value) => value.isFinite ? value.clamp(0.0, 100.0).toDouble() : 30.0,
   );
   static const showHeroSection = BoolPref('show_hero_section', defaultValue: true);
+  // Lets Continue Watching be added/removed from Home like any other
+  // Organizer row (see home_layout_settings_screen.dart), instead of it
+  // always being a fixed, unremovable fixture ahead of every other row.
+  static const continueWatchingOnHome = BoolPref('continue_watching_on_home', defaultValue: true);
   static const tvFullCardLayout = BoolPref('tv_full_card_layout', defaultValue: false);
   static const focusGlow = BoolPref('focus_glow', defaultValue: true);
   static const useGlobalHubs = BoolPref('use_global_hubs', defaultValue: true);
   static const showServerNameOnHubs = BoolPref('show_server_name_on_hubs');
+
+  /// Drop fully watched titles from Home rows and library Recommended rows
+  /// (#2159). In-progress items stay; Continue Watching is never filtered.
+  static const hideWatchedInHubs = BoolPref('hide_watched_in_hubs', defaultValue: false);
+
+  /// Per device: share this device's Home layout through the Plex account
+  /// (see HomeLayoutSyncService). Off by default; a device left off keeps
+  /// its own layout and neither sends nor receives changes.
+  static const homeLayoutSyncEnabled = BoolPref('home_layout_sync_enabled', defaultValue: false);
   static const groupLibrariesByServer = BoolPref('group_libraries_by_server', defaultValue: true);
   static const sleepTimerDuration = IntPref('sleep_timer_duration', defaultValue: 30);
   static const audioSyncOffset = IntPref('audio_sync_offset');
@@ -1052,7 +1074,96 @@ class SettingsService extends BaseSharedPreferencesService {
     values: EpisodeAction.values,
     defaultValue: EpisodeAction.play,
   );
+  static const heroCardTapAction = EnumPref<HeroCardTapAction>(
+    'hero_card_tap_action',
+    values: HeroCardTapAction.values,
+    // Defaults to details, not play: tapping a hero card's static poster
+    // should land on the metadata page — cast, description, etc. — unless
+    // the user has explicitly opted into "Play" in Home layout settings.
+    // The Play button in the overlay always plays directly regardless.
+    defaultValue: HeroCardTapAction.details,
+  );
+
+  /// TV only — whether d-pad Down from a hero card stops on the Play button
+  /// as its own focusable, highlighted target (Select then always plays
+  /// directly, matching the button's own tap behavior) before continuing
+  /// down to the next row, vs. skipping straight past it. Off by default:
+  /// per user request 2026-09-11, some people don't want the extra d-pad
+  /// press to reach the next row.
+  static const tvHeroPlayButtonFocus = BoolPref('tv_hero_play_button_focus', defaultValue: false);
+
+  /// TV d-pad: whether Right on a hero row's last card loops back to the
+  /// first. Left never loops on TV (the first card hands Left to the
+  /// sidebar), so this only covers the forward direction. On by default.
+  static const tvHeroWrapAround = BoolPref('tv_hero_wrap_around', defaultValue: true);
+
+  /// TV hero banners: a row of cast bubbles along the bottom of the banner
+  /// (the title, facts and summary sit at the top). On by default.
+  static const tvHeroCastBubbles = BoolPref('tv_hero_cast_bubbles', defaultValue: true);
   static const mpvConfigText = _MpvConfigTextPref();
+
+  /// Configurable Home rows that merge selected libraries into one row
+  /// instead of one row per library (#1652).
+  static final homeSections = JsonPref<List<HomeSectionConfig>>(
+    'home_sections',
+    defaultValue: const [],
+    encode: (v) => json.encode(v.map((section) => section.toJson()).toList()),
+    decode: (raw) => (raw as List).map((e) => HomeSectionConfig.fromJson(Map<String, dynamic>.from(e as Map))).toList(),
+  );
+
+  /// Hero-card preference for native Plex-managed hubs
+  /// (e.g. Continue Watching, a promoted Recently Added), keyed by
+  /// `'${library.globalKey}::${hub.identifier}'`. Plex has no such concept
+  /// itself — see [ManagedHubHeroOverride] — so this is Plezy-local only,
+  /// the counterpart to [HomeSectionConfig.heroStyle] for custom rows.
+  static final managedHubHeroOverrides = JsonPref<Map<String, ManagedHubHeroOverride>>(
+    'managed_hub_hero_overrides',
+    defaultValue: const {},
+    encode: (v) => json.encode(v.map((key, value) => MapEntry(key, value.toJson()))),
+    decode: (raw) => (raw as Map).map(
+      (key, value) => MapEntry(key as String, ManagedHubHeroOverride.fromJson(Map<String, dynamic>.from(value as Map))),
+    ),
+  );
+
+  /// Libraries (by `library.globalKey`) whose own Continue Watching row is
+  /// hidden from that library's Recommended tab. That hub isn't a
+  /// [PlexManagedHub] Plex lets you promote/demote itself, unlike every
+  /// other row on a library's Recommended tab — this is the toggle for it,
+  /// the per-library counterpart to [continueWatchingOnHome]. Absent from
+  /// this set means shown, matching the behavior before this setting
+  /// existed (every fetched hub, Continue Watching included, always
+  /// rendered unconditionally).
+  static final libraryContinueWatchingHidden = JsonPref<Set<String>>(
+    'library_continue_watching_hidden',
+    defaultValue: const {},
+    encode: (v) => json.encode(v.toList()),
+    decode: (raw) => (raw as List).whereType<String>().toSet(),
+  );
+
+  /// Per-library custom row order for a library's own Recommended tab —
+  /// keyed by `library.globalKey`, each value an ordered list of that
+  /// library's managed-hub identifiers (see `hubIdentifierMatches` in
+  /// home_section_builder.dart for why a saved identifier here isn't
+  /// compared for exact equality against a fetched hub's own). The
+  /// per-library counterpart to [homeRowOrder]. A library absent from this
+  /// map, or an identifier not present in its saved list, falls back to
+  /// whatever order the server itself returned.
+  static final libraryManagedRowOrder = JsonPref<Map<String, List<String>>>(
+    'library_managed_row_order',
+    defaultValue: const {},
+    encode: (v) => json.encode(v),
+    decode: (raw) =>
+        (raw as Map).map((key, value) => MapEntry(key as String, (value as List).whereType<String>().toList())),
+  );
+
+  /// Saved display order for Home rows (both configured sections and
+  /// Plex-promoted managed hubs) — see `home_layout_settings_screen.dart`.
+  static final homeRowOrder = JsonPref<List<String>>(
+    'home_row_order',
+    defaultValue: const [],
+    encode: (v) => json.encode(v),
+    decode: (raw) => (raw as List).whereType<String>().toList(),
+  );
 
   static final keyboardHotkeys = JsonPref<Map<String, HotKey?>>(
     'keyboard_hotkeys',
@@ -1514,6 +1625,7 @@ class SettingsService extends BaseSharedPreferencesService {
     showHeroSection,
     themeSongsEnabled,
     themeSongVolume,
+    continueWatchingOnHome,
     sleepTimerDuration,
     audioSyncOffset,
     subtitleSyncOffset,
@@ -1606,6 +1718,11 @@ class SettingsService extends BaseSharedPreferencesService {
     episodePosterMode,
     continueWatchingAction,
     episodeAction,
+    heroCardTapAction,
+    tvHeroPlayButtonFocus,
+    tvHeroWrapAround,
+    tvHeroCastBubbles,
+    homeSections,
     keyboardHotkeys,
     // Library filters, one pair per tracker service.
     for (final s in TrackerService.values) ...[trackerFilterModePref(s), trackerFilterIdsPref(s)],
@@ -1620,6 +1737,7 @@ class SettingsService extends BaseSharedPreferencesService {
     focusGlow,
     useGlobalHubs,
     showServerNameOnHubs,
+    hideWatchedInHubs,
     groupLibrariesByServer,
     rotationLocked,
     subAssOverride,

@@ -18,6 +18,7 @@ import '../../widgets/settings_page.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_section.dart';
 import 'app_icon_setting.dart';
+import 'home_layout_settings_screen.dart';
 import 'settings_utils.dart';
 import 'theme_settings_screen.dart';
 
@@ -117,6 +118,18 @@ class AppearanceSettingsScreen extends StatelessWidget {
               ),
             _continueWatchingActionSelector(),
             _episodeActionSelector(),
+            SettingNavigationTile(
+              icon: Symbols.view_quilt_rounded,
+              title: t.homeLayout.title,
+              subtitle: t.homeLayout.layoutNavDescription,
+              destinationBuilder: (_) => const HomeLayoutSettingsScreen(),
+            ),
+            SettingSwitchTile(
+              pref: SettingsService.hideWatchedInHubs,
+              icon: Symbols.visibility_off_rounded,
+              title: t.homeLayout.hideWatchedRows,
+              subtitle: t.homeLayout.hideWatchedRowsDescription,
+            ),
             SettingSwitchTile(
               pref: SettingsService.useGlobalHubs,
               icon: Symbols.home_rounded,

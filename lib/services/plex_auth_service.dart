@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert' show jsonEncode;
 import 'dart:io' show InternetAddress, InternetAddressType, Platform;
 import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
@@ -133,13 +134,18 @@ class PlexAuthService {
 
   void _checkStatus(MediaServerResponse response) => throwIfHttpError(response);
 
-  Future<MediaServerResponse> _getClientsApi(String path, {Map<String, String>? headers, Duration? timeout}) async {
+  Future<MediaServerResponse> _getClientsApi(
+    String path, {
+    Map<String, String>? headers,
+    Map<String, dynamic>? queryParameters,
+    Duration? timeout,
+  }) async {
     try {
-      return await _http.get('$_clientsApi$path', headers: headers, timeout: timeout);
+      return await _http.get('$_clientsApi$path', queryParameters: queryParameters, headers: headers, timeout: timeout);
     } on MediaServerHttpException catch (e) {
       if (!e.isTransient) rethrow;
       appLogger.w('Plex clients API request failed; retrying via plex.tv', error: {'path': path, 'type': e.type.name});
-      return _http.get('$_plexApiBase$path', headers: headers, timeout: timeout);
+      return _http.get('$_plexApiBase$path', queryParameters: queryParameters, headers: headers, timeout: timeout);
     }
   }
 
@@ -266,6 +272,47 @@ class PlexAuthService {
     final response = await _getUser(authToken);
     _checkStatus(response);
     return response.data as Map<String, dynamic>;
+  }
+
+  /// The account's shared synced settings (`/user/settings?sharedSettings=1`),
+  /// visible to every device signed in to the account. Plex Web keeps its
+  /// experience settings in the same store. Each entry is
+  /// `{id, type, value, hidden, updatedAt}`.
+  Future<List<Map<String, dynamic>>> getUserSettings(String authToken) async {
+    final response = await _getClientsApi(
+      '/user/settings',
+      // sharedSettings=1 is the account-wide store every device sees;
+      // sharedSettings=0 is scoped to this one client identifier.
+      queryParameters: const {'sharedSettings': '1'},
+      headers: _getCommonHeaders(authToken: authToken),
+      timeout: MediaServerTimeouts.plexTvReceive,
+    );
+    // plex.tv answers 404 until the account has at least one synced setting.
+    if (response.statusCode == 404) return const [];
+    _checkStatus(response);
+    final data = response.data;
+    if (data is! List) return const [];
+    return [
+      for (final entry in data)
+        if (entry is Map) Map<String, dynamic>.from(entry),
+    ];
+  }
+
+  /// Create or replace one hidden synced setting on the account. plex.tv
+  /// takes a JSON body whose `value` is itself a JSON-encoded list of entries.
+  Future<void> putUserSetting(String authToken, String id, String value) async {
+    final response = await _http.post(
+      '$_clientsApi/user/settings',
+      queryParameters: const {'sharedSettings': '1'},
+      headers: _getCommonHeaders(authToken: authToken),
+      body: {
+        'value': jsonEncode([
+          {'id': id, 'type': 'json', 'value': value, 'hidden': true},
+        ]),
+      },
+      timeout: MediaServerTimeouts.plexTvReceive,
+    );
+    _checkStatus(response);
   }
 
   /// Fetch the account preferences stored by plex.tv.

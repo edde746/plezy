@@ -11,6 +11,7 @@
 - Add in-player subtitle size/position controls and load a local subtitle file in mpv.
 - Play theme songs for the active home spotlight.
 - Resolve watch links across Jellyfin and Emby by catalog IDs, with server-specific fallback links.
+- Add configurable Home rows, merged library and collection rows, and Plex Home layout synchronization.
 - Added changelog enforcement, changelog-based release notes, and Discord announcements for published PlezyNG releases.
 - Require an explicit versioned release dispatch, and move release downloads and package updates to PlezyNG.
 - Remove the inherited WinGet publisher and add the PlezyNG Discord support link to the README.

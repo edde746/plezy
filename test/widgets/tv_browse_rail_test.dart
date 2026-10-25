@@ -2919,6 +2919,66 @@ void main() {
     expect(sidebarRequests, 1);
   });
 
+  testWidgets('menu key on a hero row opens the banner item context menu', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1280, 720);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    LocaleSettings.setLocaleSync(AppLocale.en);
+    TvDetectionService.debugSetAppleTVOverride(true);
+    addTearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+
+    final db = AppDatabase.forTesting(NativeDatabase.memory());
+    final stack = await ProfileStack.create(db: db, withStorage: false);
+    final serverManager = MultiServerManager();
+    final multiServerProvider = testMultiServerProvider(serverManager);
+    addTearDown(() async {
+      await stack.dispose();
+      multiServerProvider.dispose();
+      await db.close();
+    });
+
+    final movies = [
+      for (var i = 1; i <= 2; i++)
+        testMediaItem(id: 'movie_$i', backend: MediaBackend.plex, kind: MediaKind.movie, title: 'Movie $i'),
+    ];
+    // A Hero hub draws no cards (the spotlight banner represents it), so the
+    // menu has to come from the header's own host.
+    final hub = MediaHub(id: 'hero', title: 'Hero', type: 'movie', items: movies, size: 2, heroStyle: true);
+
+    await tester.pumpWidget(
+      TranslationProvider(
+        child: MultiProvider(
+          providers: [
+            ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
+            ChangeNotifierProvider<ActiveProfileProvider>.value(value: stack.active),
+          ],
+          child: MaterialApp(
+            theme: monoTheme(MonoPalette.dark),
+            home: Scaffold(
+              body: SizedBox(
+                width: 1280,
+                height: 720,
+                child: TvBrowseRail(
+                  focusMemory: focusMemory,
+                  hubs: [hub],
+                  autofocus: true,
+                  iconForHub: (_, _) => Icons.movie_rounded,
+                ),
+              ),
+            ),
+          ),
+        ),
+      ),
+    );
+    await tester.pump();
+    expect(find.byType(MediaCard), findsNothing);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.contextMenu);
+    await tester.pumpAndSettle();
+    expect(find.text(t.mediaMenu.markAsWatched), findsOneWidget);
+  });
+
   testWidgets('initial item id resolves past the leading slot', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1280, 720);

@@ -24,7 +24,8 @@ The fork is a maintenance vehicle for these deltas, not a permanent product spli
 | Playback | Background video/audio-only mode (#367), mpv equalizer (#2292), local/remote quality presets (#2064), opt-in TheIntroDB fallback (#389, #1110, #1886) | Planned |
 | Browsing | Director links (#2762), library item counts (#1516), Watchlist filters (#2725), MDBList Explore lists (#2740), Seerr search results (#2811) | Implemented in the fork; upstream convergence pending |
 | Browsing | Search by actor or director (#1517, #2368); random movie or library shuffle (#1561, #2741, #2757); show end time on detail pages (#2671) | People search is implemented across connected servers; random selection and detail-page end time are planned |
-| Home screen | Configurable home rows and merged libraries (#1652/#2203); separate Next Up; hide empty libraries, hero art, or backdrops; row sizing and clock controls (#1764, #2498, #2690, #2701, #2723, #2784) | Spotlight theme music is implemented; other listed home controls remain planned |
+| Home screen | Configurable rows, merged library and collection rows, organizer controls, and Plex account layout sync (#1652/#2203) | Implemented; Plex account sync applies to Plex profiles. Custom rows can combine selected libraries across connected servers |
+| Home screen | Separate Next Up; hide empty libraries or backdrop art; Continue Watching row sizing (#2498, #2690, #2701, #2723, #2784) | Planned; the legacy hero banner already has a visibility setting, and the top-bar clock is implemented on TV |
 | Servers and links | Preferred server (#591, #1529, #2720); `plezy://watch` links (#2681); return from external players with synced progress (#2738) | Plex links, Jellyfin/Emby catalog-ID matching, and external-player return sync are implemented; preferred-server selection remains planned |
 | Live TV | Timeshift timeline (#2300) | Plex implementation is in the fork; Jellyfin/Emby DVR-window support is planned |
 | Search and integrations | Google Cast (#126); new-episode notifications (#1146); content screensaver (#401); Home Assistant and Android automation intents (#823, #1996) | Planned |
@@ -120,7 +121,8 @@ sudo moss it plezy
 ### <img src="assets/readme_icons/browse.svg" height="20" alt="" align="center" /> Browse & Discover
 - Libraries, collections, and playlists — video and audio
 - Discover hub — Continue Watching, Next Up, trending, and recommendations
-- Cross-server search across connected Plex, Jellyfin, and Emby libraries
+- Configurable Home rows: merge Recently Added / Recently Released across whichever libraries you pick, or a collections row scoped to specific libraries or collections
+- Cross-server search across connected Plex, Jellyfin, and Emby libraries, including actors and directors
 - Filtering, sorting, and alphabetical jump navigation
 - Folder browsing and folder playback — home-video libraries open in folder view
 - Resolution, HDR/Dolby Vision, and audio-format badges on cards and detail pages
