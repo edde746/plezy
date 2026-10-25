@@ -1,19 +1,43 @@
 <h1>
-  <img src="assets/plezy.png" alt="Plezy Logo" height="24" style="vertical-align: middle;" />
-  Plezy
+  <img src="assets/plezy.png" alt="PlezyNG Logo" height="24" style="vertical-align: middle;" />
+  PlezyNG
 </h1>
 
-A modern client for Plex, Jellyfin, and Emby on desktop, mobile, and TV. Built with Flutter for native performance and a clean interface.
+A cross-platform media client for Plex, Jellyfin, and Emby, maintained as a fork of [Plezy](https://github.com/edde746/plezy).
 
-> **PlezyNG** is a fork of [Plezy](https://github.com/edde746/plezy) that tracks upstream and adds a few features of our own:
->
-> - **Download quality** (Settings → Downloads): Plex servers convert downloads to a smaller size (1080p down to 240p) before the device fetches them, so a tablet can hold a whole season at 480p instead of a handful of 4K files. Uses the server's download queue, so conversion runs in the background and survives app restarts. Jellyfin and Emby still download the original.
+## Fork scope and convergence
+
+PlezyNG carries requested features that upstream has declined or has not shipped yet. We aim to keep those changes compatible with upstream and support Plex, Jellyfin, and Emby wherever their APIs allow.
+
+The fork is a maintenance vehicle for these deltas, not a permanent product split. When an equivalent feature is available in Plezy upstream and can be adopted without losing behavior, we will prefer the upstream implementation and retire our duplicate. If the feature set below converges upstream, there will be no remaining PlezyNG-specific capability to maintain.
+
+| Area | Feature requests and upstream work | PlezyNG status |
+| --- | --- | --- |
+| Downloads | Converted download quality; per-rule quality; auto-download Continue Watching items and remove them when they leave the shelf (#1145, #1413, #1847, #1978, #2181, #2206) | Implemented for Plex, Jellyfin, and Emby |
+| Downloads | Local Plex connections (#1447/#2248); download size and storage usage (#2376); manual sync and random episode selection (#1197, #1199) | Implemented in the fork; upstream convergence pending |
+| Downloads | Playlist downloads and watched-item cleanup (#1721, #2600, #1413, #2181); orphan cleanup | Playlist downloads and watched-item cleanup are implemented; orphan cleanup remains planned |
+| Profiles and privacy | PIN-gate download deletion, settings, and Explore; hide Explore per profile (#1924, #2514) | Planned |
+| Audio and subtitles | Remember choices per show; choose tracks before playback; always-on subtitles and preferred-language fetching; per-item sync offsets (#84, #1758, #1956, #2116, #2182, #2346, #2382, #2792) | Per-show memory and scoped sync offsets are implemented locally for all servers; pre-play selection and automatic subtitle fetching remain planned |
+| Subtitle controls | Live styling preview (#2347); in-player size and position controls (#95, #689, #2174); load a local subtitle file (#1431) | Live preview, in-player size/position, and local subtitle loading are implemented; other style controls remain in Settings |
+| Playback | Swipe-to-seek (#2601), frame stepping (#1584), subtitle-delay hotkeys (#2824), remembered version across episodes (#2563), video playlist repeat (#1757/#1985) | Implemented in the fork; upstream convergence pending |
+| Playback | Plex cinema pre-rolls (#970/#2483); random local pre-rolls (#2271); theme music (#791/#2170/#2596) | Plex and local pre-rolls, detail-page theme songs, and home spotlight music are implemented; Jellyfin/Emby cinema intros remain planned |
+| Playback | Background video/audio-only mode (#367), mpv equalizer (#2292), local/remote quality presets (#2064), opt-in TheIntroDB fallback (#389, #1110, #1886) | Planned |
+| Browsing | Director links (#2762), library item counts (#1516), Watchlist filters (#2725), MDBList Explore lists (#2740), Seerr search results (#2811) | Implemented in the fork; upstream convergence pending |
+| Browsing | Search by actor or director (#1517, #2368); random movie or library shuffle (#1561, #2741, #2757); show end time on detail pages (#2671) | People search is implemented across connected servers; random selection and detail-page end time are planned |
+| Home screen | Configurable home rows and merged libraries (#1652/#2203); separate Next Up; hide empty libraries, hero art, or backdrops; row sizing and clock controls (#1764, #2498, #2690, #2701, #2723, #2784) | Spotlight theme music is implemented; other listed home controls remain planned |
+| Servers and links | Preferred server (#591, #1529, #2720); `plezy://watch` links (#2681); return from external players with synced progress (#2738) | Plex links, Jellyfin/Emby catalog-ID matching, and external-player return sync are implemented; preferred-server selection remains planned |
+| Live TV | Timeshift timeline (#2300) | Plex implementation is in the fork; Jellyfin/Emby DVR-window support is planned |
+| Search and integrations | Google Cast (#126); new-episode notifications (#1146); content screensaver (#401); Home Assistant and Android automation intents (#823, #1996) | Planned |
+| Settings and diagnostics | Save logs to a file (#2496); cloud settings backup (#1795) | Planned |
+
+The list records the fork's active scope. “Implemented in the fork” means PlezyNG carries the behavior while upstream convergence remains pending; platform and server limitations are called out in the feature documentation.
+
+> PlezyNG exists while these requested capabilities are missing from upstream. As upstream adopts them, the corresponding fork delta should disappear. Once the list is fully upstream, the fork should be retired.
 
 <p>
-  <a href="https://plezy.app">Website</a> ·
-  <a href="https://plezy.app/#screenshots">Screenshots</a> ·
+  <a href="https://github.com/edde746/plezy">Upstream Plezy</a> ·
+  <a href="https://github.com/snapetech-org/PlezyNG/issues">PlezyNG issues</a> ·
   <a href="#download">Download</a> ·
-  <a href="https://discord.gg/jz5rv5EUvr">Discord support</a> ·
   <a href="CONTRIBUTING.md">Contributing</a> ·
   <a href="LICENSE">License</a>
 </p>
@@ -24,10 +48,7 @@ A modern client for Plex, Jellyfin, and Emby on desktop, mobile, and TV. Built w
 
 ## Download
 
-<a href='https://apps.apple.com/app/apple-store/id6754315964?pt=128238902&ct=GitHub&mt=8'><img height='60' alt='Download on the App Store' src='./assets/app-store-badge.png'/></a>
-<a href='https://play.google.com/store/apps/details?id=com.edde746.plezy&referrer=utm_source%3Dgithub%26utm_campaign%3Dreadme_badge'><img height='60' alt='Get it on Google Play' src='./assets/play-store-badge.png'/></a>
-<a href='https://www.amazon.com/gp/product/B0GK65CVS1'><img height='60' alt='Available at the Amazon App Store' src='./assets/amazon-badge.png'/></a>
-<a href='https://get.microsoft.com/installer/download/9n5r1s1t68h7?referrer=appbadge&cid=github'><img height='60' alt='Get it from Microsoft' src='./assets/microsoft-badge.png'/></a>
+PlezyNG builds are published on the [GitHub Releases page](https://github.com/snapetech-org/PlezyNG/releases). The packages below are the current desktop artifacts; mobile and TV builds are distributed separately when available.
 
 | Platform | Download |
 | --- | --- |
@@ -99,7 +120,7 @@ sudo moss it plezy
 ### <img src="assets/readme_icons/browse.svg" height="20" alt="" align="center" /> Browse & Discover
 - Libraries, collections, and playlists — video and audio
 - Discover hub — Continue Watching, Next Up, trending, and recommendations
-- Cross-server search across every connected Plex, Jellyfin, and Emby server, including actors and directors
+- Cross-server search across connected Plex, Jellyfin, and Emby libraries
 - Filtering, sorting, and alphabetical jump navigation
 - Folder browsing and folder playback — home-video libraries open in folder view
 - Resolution, HDR/Dolby Vision, and audio-format badges on cards and detail pages
@@ -120,7 +141,7 @@ sudo moss it plezy
 - Multi-version switching with per-version file details
 - Full ASS/SSA subtitles with customizable styling
 - Online subtitle search & download[^plex]
-- Audio & subtitle choices remembered per title, or follow the server's per-episode selections
+- Audio and subtitle track selection with server-provided defaults
 - Progress sync and resume
 - Auto-play next episode with skip intro / skip credits
 - Chapter navigation with thumbnail scrub previews
@@ -152,6 +173,8 @@ sudo moss it plezy
 - Download movies, shows, and music for offline playback[^dl]
 - Background queue with pause / resume
 - Sync rules for automatic downloads, with per-show "Include Specials"
+- Per-rule download quality, plus automatic Continue Watching downloads with cleanup when an item leaves the shelf
+- Converted video downloads for Plex, Jellyfin, and Emby; progressive server transcodes may restart after an interrupted transfer
 - Offline browsing with watch state sync-back on reconnect
 
 ### <img src="assets/readme_icons/watch-together.svg" height="20" alt="" align="center" /> Watch Together

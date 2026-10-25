@@ -107,7 +107,9 @@ class DownloadOwners extends Table {
 /// Persistent sync rules for auto-downloading unwatched episodes.
 ///
 /// Each rule keeps a rolling window of N unwatched episodes for a show/season,
-/// or mirrors the current contents of a collection/playlist.
+/// mirrors the current contents of a collection/playlist, or (for the
+/// system-managed 'continueWatching' targetType) mirrors one server's
+/// current Continue Watching shelf.
 /// Rules are owned by the active top-level profile. Downloads remain app-wide
 /// and shared by public serverId:ratingKey identity, but rule ownership must not
 /// cross users because Jellyfin permissions and watch state are user-scoped.
@@ -119,7 +121,7 @@ class SyncRules extends Table {
   TextColumn get serverId => text()();
   TextColumn get ratingKey => text()();
   TextColumn get globalKey => text().unique()();
-  TextColumn get targetType => text()(); // 'show', 'season', 'collection', 'playlist'
+  TextColumn get targetType => text()(); // 'show', 'season', 'collection', 'playlist', 'continueWatching'
   IntColumn get episodeCount => integer()();
   BoolColumn get enabled => boolean().withDefault(const Constant(true))();
   IntColumn get createdAt => integer()();
@@ -130,6 +132,7 @@ class SyncRules extends Table {
   // instead of release order. Only meaningful for show/season rules.
   BoolColumn get randomEpisodes => boolean().withDefault(const Constant(false))();
   BoolColumn get includeSpecials => boolean().withDefault(const Constant(true))();
+  TextColumn get downloadQuality => text().nullable()();
 
   /// Gates collection/playlist backfill into [SyncRuleDownloads] before
   /// destructive cleanup. Show/season coverage is re-derived from

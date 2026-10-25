@@ -54,7 +54,8 @@
     "quickConnectCancel": "İptal",
     "quickConnectExpired": "Hızlı Bağlantı süresi doldu. Tekrar deneyin.",
     "localDataRecoveryRequired": "Plezy yerel giriş ve bekleyen oynatma verilerini güvenli bir şekilde kurtaramadı. Lütfen tekrar giriş yapın.",
-    "pinCheckRejected": "Plex PIN denetimi reddedildi"
+    "pinCheckRejected": "Plex PIN denetimi reddedildi",
+    "connectToDirectPlex": ""
   },
   "common": {
     "cancel": "İptal",
@@ -358,6 +359,8 @@
     "autoPlayNextEpisodeDescription": "Bir bölüm bittiğinde sonraki bölümü otomatik başlat",
     "shuffleStartsFromBeginning": "Karışık Oynatma Baştan Başlar",
     "shuffleStartsFromBeginningDescription": "Karışık oynatmada her bölümü devam ettirmek yerine baştan başlat",
+    "plexCinemaPreRoll": "",
+    "plexCinemaPreRollDescription": "",
     "playNextCountdown": "Sonraki Bölüm Geri Sayımı",
     "playNextCountdownImmediate": "Hemen oynat",
     "skipIntroMode": "Jeneriği Atla",
@@ -379,6 +382,18 @@
     "introPatternDescription": "Kısım başlıklarındaki jenerik işaretçilerini eşleştirmek için Regex kalıbı",
     "creditsPattern": "Emeği Geçenler İşaretçi Kalıbı",
     "creditsPatternDescription": "Kısım başlıklarındaki emeği geçenler işaretçilerini eşleştirmek için Regex kalıbı",
+    "prerolls": "",
+    "playPrerollsBeforeMovies": "",
+    "playPrerollsBeforeMoviesDescription": "",
+    "prerollLibrary": "",
+    "prerollLibraryNotSet": "",
+    "prerollLibraryNoneFound": "",
+    "prerollSelection": "",
+    "prerollSelectionPickLibraryFirst": "",
+    "prerollSelectionNoneSelected": "",
+    "prerollSelectionCount": "",
+    "prerollItemPicker": "",
+    "prerollItemPickerLoadFailed": "",
     "invalidRegex": "Geçersiz düzenli ifade (Regex)",
     "regex": "Düzenli ifade (Regex)",
     "downloads": "İndirmeler",
@@ -396,6 +411,12 @@
     "downloadOnWifiOnlyDescription": "Hücresel verideyken indirmeleri engelle",
     "autoRemoveWatchedDownloads": "İzlenen indirmeleri otomatik kaldır",
     "autoRemoveWatchedDownloadsDescription": "İzlenen indirmeleri otomatik olarak sil",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
+    "downloadQuality": "",
+    "downloadQualityDescription": "",
+    "askDownloadQualityEachTime": "",
+    "askDownloadQualityEachTimeDescription": "",
     "cellularDownloadBlocked": "Hücresel veride indirmeler engellendi. Wi-Fi kullanın veya ayarı değiştirin.",
     "maxVolume": "Maksimum Ses",
     "maxVolumeDescription": "Kısık sesli medyalar için %100'ün üzerinde ses yükseltmeye izin ver",
@@ -510,6 +531,8 @@
     "gestureVolumeSwipeDescription": "Sesi ayarlamak için sağ kenarda yukarı veya aşağı kaydırın",
     "gesturePinchToZoom": "Kıstırarak Yakınlaştır",
     "gesturePinchToZoomDescription": "Yakınlaştırmak veya uzaklaştırmak için videoyu kıstırın",
+    "gestureSeekSwipe": "",
+    "gestureSeekSwipeDescription": "",
     "rememberBrightnessLevel": "Parlaklık Seviyesini Hatırla",
     "rememberBrightnessLevelDescription": "Oynatmayı son kaydırmayla ayarlanan parlaklıkta başlat",
     "controls": "Kontroller",
@@ -610,7 +633,9 @@
       "subtitleDelayDecrease": "Altyazıyı Öne Al",
       "shaderToggle": "Gölgelendiricileri Aç/Kapat",
       "skipMarker": "Jenerik/Emeği Geçenleri Atla",
-      "screenshot": "Ekran Görüntüsü Al"
+      "screenshot": "Ekran Görüntüsü Al",
+      "framePrevious": "",
+      "frameNext": ""
     }
   },
   "fileInfo": {
@@ -830,6 +855,10 @@
     "track": "Ses Parçası ${n}"
   },
   "videoControls": {
+    "frameCount": {
+      "one": "",
+      "other": ""
+    },
     "audioLabel": "Ses",
     "subtitlesLabel": "Altyazı",
     "addTime": "+${amount}${unit}",
@@ -909,6 +938,8 @@
     "noQueueItems": "Kuyrukta öge yok",
     "noAudioDevicesAvailable": "Kullanılabilir ses cihazı yok",
     "searchSubtitles": "Altyazı Ara",
+    "loadSubtitleFile": "",
+    "subtitleLoadFailed": "",
     "language": "Dil",
     "noSubtitlesFound": "Altyazı bulunamadı",
     "subtitleDownloaded": "Altyazı indirildi",
@@ -1463,6 +1494,7 @@
   "explore": {
     "mdblistShelves": {
       "manage": "",
+      "manageDescription": "",
       "description": "",
       "selected": "",
       "available": "",
@@ -2055,6 +2087,8 @@
     "unwatchedOnly": "Yalnızca izlenmeyenler",
     "nextNUnwatched": "Sonraki ${count} izlenmeyen",
     "customAmount": "Özel miktar...",
+    "customAmountAny": "",
+    "randomEpisodes": "",
     "includeSpecials": "Özel Bölümleri Dahil Et",
     "howManyEpisodes": "Kaç bölüm?",
     "invalidEpisodeCount": "Geçerli bir bölüm sayısı girin.",
@@ -2074,6 +2108,9 @@
     "syncRuleCleanupBusy": "Eşitleme kuralları şu anda güncelleniyor. Birazdan tekrar deneyin.",
     "syncRuleCleanupUnavailable": "İlişkili indirmeler güvenli biçimde belirlenemedi. Sunucuya yeniden bağlanıp tekrar deneyin veya kuralı indirmeleri silmeden kaldırın.",
     "syncedNewEpisodes": "${title} için ${count} yeni bölüm eşitlendi",
+    "syncNow": "",
+    "downloadsUpToDate": "",
+    "syncComplete": "",
     "activeSyncRules": "Eşitleme kuralları",
     "noSyncRules": "Eşitleme kuralı yok",
     "manageSyncRule": "Eşitlemeyi yönet",
@@ -2148,6 +2185,8 @@
     "errorDownloadNotAllowed": "Sunucu indirmeye izin vermiyor (403)",
     "errorDownloadFailed": "İndirme başarısız oldu",
     "errorDownloadFailedWithReason": "İndirme başarısız oldu: ${reason}",
+    "convertingOnServer": "",
+    "convertingOnServerPercent": "",
     "errorHttpStatus": "İndirme başarısız oldu (HTTP ${status})",
     "errorPostProcessing": "Son işleme başarısız oldu: ${reason}",
     "reasonFileNotSaved": "dosya bu cihaza kaydedilemedi",
@@ -2610,6 +2649,28 @@
     "redirectUnsupported": "Sunucu desteklenmeyen bir URL'ye yönlendirdi",
     "redirectDifferentHost": "Sunucu farklı bir ana makineye yönlendirdi. Nihai ${product} URL'sini doğrudan girin.",
     "redirectInsecure": "Sunucu HTTPS'den güvenli olmayan bir URL'ye yönlendirdi",
-    "redirectUnsupportedEnterFinal": "Sunucu desteklenmeyen bir URL'ye yönlendirdi. Nihai ${product} URL'sini doğrudan girin."
+    "redirectUnsupportedEnterFinal": "Sunucu desteklenmeyen bir URL'ye yönlendirdi. Nihai ${product} URL'sini doğrudan girin.",
+    "directPlexServerUrl": "",
+    "directPlexServerUrlHelper": "",
+    "directPlexServerUrlHint": "",
+    "plexToken": "",
+    "plexTokenHelper": "",
+    "plexTokenRequired": "",
+    "connectDirectPlexCard": "",
+    "connectDirectPlexCardSubtitle": "",
+    "connectDirectPlexCardSubtitleScoped": ""
+  },
+  "watchLink": {
+    "serverUnavailable": "",
+    "notFound": "",
+    "ambiguous": "",
+    "plexOnly": "",
+    "unsupportedItem": "",
+    "menuItem": "",
+    "dialogTitle": "",
+    "dialogShowHint": "",
+    "dialogMovieHint": "",
+    "copy": "",
+    "copied": ""
   }
 }

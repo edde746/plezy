@@ -54,7 +54,8 @@
     "quickConnectCancel": "Annuler",
     "quickConnectExpired": "Quick Connect a expiré. Réessayez.",
     "localDataRecoveryRequired": "Plezy n’a pas pu récupérer en toute sécurité les données locales de connexion et de lecture en attente. Veuillez vous reconnecter.",
-    "pinCheckRejected": "La vérification du code PIN Plex a été refusée"
+    "pinCheckRejected": "La vérification du code PIN Plex a été refusée",
+    "connectToDirectPlex": ""
   },
   "common": {
     "cancel": "Annuler",
@@ -358,6 +359,8 @@
     "autoPlayNextEpisodeDescription": "Lancer automatiquement l'épisode suivant lorsqu'un épisode se termine",
     "shuffleStartsFromBeginning": "La lecture aléatoire commence au début",
     "shuffleStartsFromBeginningDescription": "Lire chaque épisode depuis le début en lecture aléatoire au lieu de le reprendre",
+    "plexCinemaPreRoll": "",
+    "plexCinemaPreRollDescription": "",
     "playNextCountdown": "Compte à rebours avant l'épisode suivant",
     "playNextCountdownImmediate": "Lire immédiatement",
     "skipIntroMode": "Passer l’intro",
@@ -379,6 +382,18 @@
     "introPatternDescription": "Expression régulière permettant de reconnaître les marqueurs d’introduction dans les titres de chapitre",
     "creditsPattern": "Motif du marqueur de générique",
     "creditsPatternDescription": "Expression régulière permettant de reconnaître les marqueurs de générique dans les titres de chapitre",
+    "prerolls": "",
+    "playPrerollsBeforeMovies": "",
+    "playPrerollsBeforeMoviesDescription": "",
+    "prerollLibrary": "",
+    "prerollLibraryNotSet": "",
+    "prerollLibraryNoneFound": "",
+    "prerollSelection": "",
+    "prerollSelectionPickLibraryFirst": "",
+    "prerollSelectionNoneSelected": "",
+    "prerollSelectionCount": "",
+    "prerollItemPicker": "",
+    "prerollItemPickerLoadFailed": "",
     "invalidRegex": "Expression régulière invalide",
     "regex": "Expression régulière",
     "downloads": "Téléchargements",
@@ -396,6 +411,12 @@
     "downloadOnWifiOnlyDescription": "Empêcher les téléchargements via les données mobiles",
     "autoRemoveWatchedDownloads": "Supprimer automatiquement les téléchargements vus",
     "autoRemoveWatchedDownloadsDescription": "Supprimer automatiquement les téléchargements vus",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
+    "downloadQuality": "",
+    "downloadQualityDescription": "",
+    "askDownloadQualityEachTime": "",
+    "askDownloadQualityEachTimeDescription": "",
     "cellularDownloadBlocked": "Les téléchargements sont bloqués sur le réseau mobile. Utilisez le Wi-Fi ou modifiez ce paramètre.",
     "maxVolume": "Volume maximal",
     "maxVolumeDescription": "Autoriser l'augmentation du volume au-delà de 100 % pour les médias silencieux",
@@ -510,6 +531,8 @@
     "gestureVolumeSwipeDescription": "Balayez vers le haut ou le bas sur le bord droit pour régler le volume",
     "gesturePinchToZoom": "Pincer pour zoomer",
     "gesturePinchToZoomDescription": "Pincez la vidéo pour zoomer ou dézoomer",
+    "gestureSeekSwipe": "",
+    "gestureSeekSwipeDescription": "",
     "rememberBrightnessLevel": "Mémoriser le niveau de luminosité",
     "rememberBrightnessLevelDescription": "Démarrer la lecture à la luminosité définie par le dernier balayage",
     "controls": "Commandes",
@@ -610,7 +633,9 @@
       "subtitleDelayDecrease": "Avancer les sous-titres",
       "shaderToggle": "Activer/désactiver les shaders",
       "skipMarker": "Passer l'intro/le générique",
-      "screenshot": "Prendre une capture d'écran"
+      "screenshot": "Prendre une capture d'écran",
+      "framePrevious": "",
+      "frameNext": ""
     }
   },
   "fileInfo": {
@@ -830,6 +855,10 @@
     "track": "Piste audio ${n}"
   },
   "videoControls": {
+    "frameCount": {
+      "one": "",
+      "other": ""
+    },
     "audioLabel": "Audio",
     "subtitlesLabel": "Sous-titres",
     "addTime": "+${amount}${unit}",
@@ -909,6 +938,8 @@
     "noQueueItems": "Aucun élément dans la file d'attente",
     "noAudioDevicesAvailable": "Aucun appareil audio disponible",
     "searchSubtitles": "Rechercher des sous-titres",
+    "loadSubtitleFile": "",
+    "subtitleLoadFailed": "",
     "language": "Langue",
     "noSubtitlesFound": "Aucun sous-titre trouvé",
     "subtitleDownloaded": "Sous-titre téléchargé",
@@ -1463,6 +1494,7 @@
   "explore": {
     "mdblistShelves": {
       "manage": "",
+      "manageDescription": "",
       "description": "",
       "selected": "",
       "available": "",
@@ -2055,6 +2087,8 @@
     "unwatchedOnly": "Non vus uniquement",
     "nextNUnwatched": "${count} prochains non vus",
     "customAmount": "Quantité personnalisée...",
+    "customAmountAny": "",
+    "randomEpisodes": "",
     "includeSpecials": "Inclure les spéciaux",
     "howManyEpisodes": "Combien d'épisodes ?",
     "invalidEpisodeCount": "Saisissez un nombre d'épisodes valide.",
@@ -2074,6 +2108,9 @@
     "syncRuleCleanupBusy": "Les règles de synchronisation sont en cours de mise à jour. Réessayez dans un instant.",
     "syncRuleCleanupUnavailable": "Les téléchargements associés n'ont pas pu être identifiés en toute sécurité. Reconnectez le serveur et réessayez, ou retirez la règle sans supprimer les téléchargements.",
     "syncedNewEpisodes": "${count} nouveaux épisodes synchronisés pour ${title}",
+    "syncNow": "",
+    "downloadsUpToDate": "",
+    "syncComplete": "",
     "activeSyncRules": "Règles de synchronisation",
     "noSyncRules": "Aucune règle de synchronisation",
     "manageSyncRule": "Gérer la synchronisation",
@@ -2148,6 +2185,8 @@
     "errorDownloadNotAllowed": "Téléchargement non autorisé par le serveur (403)",
     "errorDownloadFailed": "Échec du téléchargement",
     "errorDownloadFailedWithReason": "Échec du téléchargement : ${reason}",
+    "convertingOnServer": "",
+    "convertingOnServerPercent": "",
     "errorHttpStatus": "Échec du téléchargement (HTTP ${status})",
     "errorPostProcessing": "Échec du post-traitement : ${reason}",
     "reasonFileNotSaved": "le fichier n'a pas pu être enregistré sur cet appareil",
@@ -2610,6 +2649,28 @@
     "redirectUnsupported": "Le serveur a redirigé vers une URL non prise en charge",
     "redirectDifferentHost": "Le serveur a redirigé vers un hôte différent. Saisissez directement l’URL finale du serveur ${product}.",
     "redirectInsecure": "Le serveur a redirigé de HTTPS vers une URL non sécurisée",
-    "redirectUnsupportedEnterFinal": "Le serveur a redirigé vers une URL non prise en charge. Saisissez directement l’URL finale du serveur ${product}."
+    "redirectUnsupportedEnterFinal": "Le serveur a redirigé vers une URL non prise en charge. Saisissez directement l’URL finale du serveur ${product}.",
+    "directPlexServerUrl": "",
+    "directPlexServerUrlHelper": "",
+    "directPlexServerUrlHint": "",
+    "plexToken": "",
+    "plexTokenHelper": "",
+    "plexTokenRequired": "",
+    "connectDirectPlexCard": "",
+    "connectDirectPlexCardSubtitle": "",
+    "connectDirectPlexCardSubtitleScoped": ""
+  },
+  "watchLink": {
+    "serverUnavailable": "",
+    "notFound": "",
+    "ambiguous": "",
+    "plexOnly": "",
+    "unsupportedItem": "",
+    "menuItem": "",
+    "dialogTitle": "",
+    "dialogShowHint": "",
+    "dialogMovieHint": "",
+    "copy": "",
+    "copied": ""
   }
 }

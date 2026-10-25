@@ -54,7 +54,8 @@
     "quickConnectCancel": "Бас тарту",
     "quickConnectExpired": "Жылдам қосылу мерзімі өтті. Қайтадан байқап көріңіз.",
     "localDataRecoveryRequired": "Plezy жергілікті кіру мәліметтерін қалпына келтіре алмады. Қайтадан кіріңіз.",
-    "pinCheckRejected": "Plex PIN кодын тексеру қабылданбады"
+    "pinCheckRejected": "Plex PIN кодын тексеру қабылданбады",
+    "connectToDirectPlex": ""
   },
   "common": {
     "cancel": "Бас тарту",
@@ -358,6 +359,8 @@
     "autoPlayNextEpisodeDescription": "Бір бөлім аяқталғанда келесі бөлімді автоматты түрде бастау",
     "shuffleStartsFromBeginning": "Араластыру басынан басталады",
     "shuffleStartsFromBeginningDescription": "Араластырғанда әр бөлімді жалғастырудың орнына басынан бастау",
+    "plexCinemaPreRoll": "",
+    "plexCinemaPreRollDescription": "",
     "playNextCountdown": "Келесіні ойнату санағы",
     "playNextCountdownImmediate": "Дереу ойнату",
     "skipIntroMode": "Кіріспені өткізу",
@@ -379,6 +382,18 @@
     "introPatternDescription": "Бөлім тақырыптарында интроны табуға арналған Regex үлгісі",
     "creditsPattern": "Титр белгісінің үлгісі",
     "creditsPatternDescription": "Бөлім тақырыптарында титрлерді табуға арналған Regex үлгісі",
+    "prerolls": "",
+    "playPrerollsBeforeMovies": "",
+    "playPrerollsBeforeMoviesDescription": "",
+    "prerollLibrary": "",
+    "prerollLibraryNotSet": "",
+    "prerollLibraryNoneFound": "",
+    "prerollSelection": "",
+    "prerollSelectionPickLibraryFirst": "",
+    "prerollSelectionNoneSelected": "",
+    "prerollSelectionCount": "",
+    "prerollItemPicker": "",
+    "prerollItemPickerLoadFailed": "",
     "invalidRegex": "Қате тұрақты өрнек (Regex)",
     "regex": "Тұрақты өрнек (Regex)",
     "downloads": "Жүктеулер",
@@ -396,6 +411,12 @@
     "downloadOnWifiOnlyDescription": "Мобильді деректер пайдаланылғанда жүктеулерді кідірту",
     "autoRemoveWatchedDownloads": "Көрілген жүктеулерді автоматты өшіру",
     "autoRemoveWatchedDownloadsDescription": "Көрілген жүктеулерді автоматты түрде өшіру",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
+    "downloadQuality": "",
+    "downloadQualityDescription": "",
+    "askDownloadQualityEachTime": "",
+    "askDownloadQualityEachTimeDescription": "",
     "cellularDownloadBlocked": "Мобильді желіде жүктеу бұғатталған. Wi-Fi пайдаланыңыз немесе параметрді өзгертіңіз.",
     "maxVolume": "Максималды дыбыс",
     "maxVolumeDescription": "Ақырын видеолар үшін дыбысты 100%-дан асыруға рұқсат беру",
@@ -510,6 +531,8 @@
     "gestureVolumeSwipeDescription": "Оң жақ шетінде жоғары немесе төмен сырғытып, дыбыс деңгейін реттеу",
     "gesturePinchToZoom": "Шымшу арқылы масштабтау",
     "gesturePinchToZoomDescription": "Видеода шымшып, жақындату немесе алыстату",
+    "gestureSeekSwipe": "",
+    "gestureSeekSwipeDescription": "",
     "rememberBrightnessLevel": "Жарықтық деңгейін есте сақтау",
     "rememberBrightnessLevelDescription": "Ойнатуды соңғы сырғытумен орнатылған жарықтықта бастау",
     "controls": "Басқару элементтері",
@@ -610,7 +633,9 @@
       "subtitleDelayDecrease": "Субтитрді ертерек жылжыту",
       "shaderToggle": "Шейдерлерді қосу/өшіру",
       "skipMarker": "Интро/Титрді өткізу",
-      "screenshot": "Экран суретін түсіру"
+      "screenshot": "Экран суретін түсіру",
+      "framePrevious": "",
+      "frameNext": ""
     }
   },
   "fileInfo": {
@@ -830,6 +855,10 @@
     "track": "Аудиожол ${n}"
   },
   "videoControls": {
+    "frameCount": {
+      "one": "",
+      "other": ""
+    },
     "audioLabel": "Дыбыс",
     "subtitlesLabel": "Субтитр",
     "addTime": "+${amount}${unit}",
@@ -909,6 +938,8 @@
     "noQueueItems": "Кезекте элементтер жоқ",
     "noAudioDevicesAvailable": "Қолжетімді аудио құрылғылар жоқ",
     "searchSubtitles": "Субтитр іздеу",
+    "loadSubtitleFile": "",
+    "subtitleLoadFailed": "",
     "language": "Тіл",
     "noSubtitlesFound": "Субтитр табылмады",
     "subtitleDownloaded": "Субтитр жүктелді",
@@ -1463,6 +1494,7 @@
   "explore": {
     "mdblistShelves": {
       "manage": "",
+      "manageDescription": "",
       "description": "",
       "selected": "",
       "available": "",
@@ -2055,6 +2087,8 @@
     "unwatchedOnly": "Тек көрілмегендер",
     "nextNUnwatched": "Келесі ${count} көрілмеген",
     "customAmount": "Арнайы мөлшер...",
+    "customAmountAny": "",
+    "randomEpisodes": "",
     "includeSpecials": "Арнайы бөлімдерді қосу",
     "howManyEpisodes": "Қанша бөлім?",
     "invalidEpisodeCount": "Дұрыс бөлім санын енгізіңіз.",
@@ -2074,6 +2108,9 @@
     "syncRuleCleanupBusy": "Синхрондау ережелері қазір жаңартылуда. Сәлден соң қайталап көріңіз.",
     "syncRuleCleanupUnavailable": "Байланысты жүктеулерді қауіпсіз анықтау мүмкін болмады. Серверге қайта қосылып көріңіз немесе ережені жүктеулерді жоймай өшіріңіз.",
     "syncedNewEpisodes": "${title} үшін ${count} жаңа бөлім синхрондалды",
+    "syncNow": "",
+    "downloadsUpToDate": "",
+    "syncComplete": "",
     "activeSyncRules": "Белсенді синхрондау ережелері",
     "noSyncRules": "Синхрондау ережелері жоқ",
     "manageSyncRule": "Синхрондауды басқару",
@@ -2148,6 +2185,8 @@
     "errorDownloadNotAllowed": "Сервер жүктеп алуға рұқсат бермейді (403)",
     "errorDownloadFailed": "Жүктеу сәтсіз аяқталды",
     "errorDownloadFailedWithReason": "Жүктеу сәтсіз аяқталды: ${reason}",
+    "convertingOnServer": "",
+    "convertingOnServerPercent": "",
     "errorHttpStatus": "Жүктеу сәтсіз аяқталды (HTTP ${status})",
     "errorPostProcessing": "Кейінгі өңдеу сәтсіз аяқталды: ${reason}",
     "reasonFileNotSaved": "файлды осы құрылғыда сақтау мүмкін болмады",
@@ -2610,6 +2649,28 @@
     "redirectUnsupported": "Сервер қолдау көрсетілмейтін URL-ге қайта бағыттады",
     "redirectDifferentHost": "Сервер басқа хостқа қайта бағыттады. Соңғы ${product} URL-ін тікелей енгізіңіз.",
     "redirectInsecure": "Сервер HTTPS мекенжайынан қауіпсіз емес URL-ге қайта бағыттады",
-    "redirectUnsupportedEnterFinal": "Сервер қолдау көрсетілмейтін URL-ге қайта бағыттады. Соңғы ${product} URL-ін тікелей енгізіңіз."
+    "redirectUnsupportedEnterFinal": "Сервер қолдау көрсетілмейтін URL-ге қайта бағыттады. Соңғы ${product} URL-ін тікелей енгізіңіз.",
+    "directPlexServerUrl": "",
+    "directPlexServerUrlHelper": "",
+    "directPlexServerUrlHint": "",
+    "plexToken": "",
+    "plexTokenHelper": "",
+    "plexTokenRequired": "",
+    "connectDirectPlexCard": "",
+    "connectDirectPlexCardSubtitle": "",
+    "connectDirectPlexCardSubtitleScoped": ""
+  },
+  "watchLink": {
+    "serverUnavailable": "",
+    "notFound": "",
+    "ambiguous": "",
+    "plexOnly": "",
+    "unsupportedItem": "",
+    "menuItem": "",
+    "dialogTitle": "",
+    "dialogShowHint": "",
+    "dialogMovieHint": "",
+    "copy": "",
+    "copied": ""
   }
 }

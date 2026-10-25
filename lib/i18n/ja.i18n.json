@@ -54,7 +54,8 @@
     "quickConnectCancel": "キャンセル",
     "quickConnectExpired": "Quick Connectの有効期限が切れました。もう一度お試しください。",
     "localDataRecoveryRequired": "ローカルのサインイン情報と保留中の再生データを安全に復元できませんでした。もう一度サインインしてください。",
-    "pinCheckRejected": "Plex PINの確認が拒否されました"
+    "pinCheckRejected": "Plex PINの確認が拒否されました",
+    "connectToDirectPlex": ""
   },
   "common": {
     "cancel": "キャンセル",
@@ -358,6 +359,8 @@
     "autoPlayNextEpisodeDescription": "エピソードが終了すると、次のエピソードを自動的に再生します",
     "shuffleStartsFromBeginning": "シャッフルは最初から再生",
     "shuffleStartsFromBeginningDescription": "シャッフル時に各エピソードを再開位置ではなく最初から再生します",
+    "plexCinemaPreRoll": "",
+    "plexCinemaPreRollDescription": "",
     "playNextCountdown": "次回再生のカウントダウン",
     "playNextCountdownImmediate": "すぐに再生",
     "skipIntroMode": "イントロをスキップ",
@@ -379,6 +382,18 @@
     "introPatternDescription": "チャプタータイトルのイントロマーカーに一致する正規表現パターン",
     "creditsPattern": "クレジットマーカーパターン",
     "creditsPatternDescription": "チャプタータイトルのクレジットマーカーに一致する正規表現パターン",
+    "prerolls": "",
+    "playPrerollsBeforeMovies": "",
+    "playPrerollsBeforeMoviesDescription": "",
+    "prerollLibrary": "",
+    "prerollLibraryNotSet": "",
+    "prerollLibraryNoneFound": "",
+    "prerollSelection": "",
+    "prerollSelectionPickLibraryFirst": "",
+    "prerollSelectionNoneSelected": "",
+    "prerollSelectionCount": "",
+    "prerollItemPicker": "",
+    "prerollItemPickerLoadFailed": "",
     "invalidRegex": "無効な正規表現",
     "regex": "正規表現",
     "downloads": "ダウンロード",
@@ -396,6 +411,12 @@
     "downloadOnWifiOnlyDescription": "モバイルデータ通信中のダウンロードを防ぎます",
     "autoRemoveWatchedDownloads": "視聴済みダウンロードの自動削除",
     "autoRemoveWatchedDownloadsDescription": "視聴済みのダウンロードを自動削除します",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
+    "downloadQuality": "",
+    "downloadQualityDescription": "",
+    "askDownloadQualityEachTime": "",
+    "askDownloadQualityEachTimeDescription": "",
     "cellularDownloadBlocked": "モバイルデータ通信中はダウンロードできません。Wi-Fiを使用するか、設定を変更してください。",
     "maxVolume": "最大音量",
     "maxVolumeDescription": "静かなメディアに対して100%以上の音量ブーストを許可",
@@ -510,6 +531,8 @@
     "gestureVolumeSwipeDescription": "右端を上下にスワイプして音量を調整します",
     "gesturePinchToZoom": "ピンチでズーム",
     "gesturePinchToZoomDescription": "動画をピンチしてズームイン・アウト",
+    "gestureSeekSwipe": "",
+    "gestureSeekSwipeDescription": "",
     "rememberBrightnessLevel": "明るさを記憶",
     "rememberBrightnessLevelDescription": "前回スワイプで設定した明るさで再生を開始します",
     "controls": "コントロール",
@@ -610,7 +633,9 @@
       "subtitleDelayDecrease": "字幕を早める",
       "shaderToggle": "シェーダー切替",
       "skipMarker": "イントロ/クレジットをスキップ",
-      "screenshot": "スクリーンショットを撮る"
+      "screenshot": "スクリーンショットを撮る",
+      "framePrevious": "",
+      "frameNext": ""
     }
   },
   "fileInfo": {
@@ -827,6 +852,9 @@
     "track": "音声トラック${n}"
   },
   "videoControls": {
+    "frameCount": {
+      "other": ""
+    },
     "audioLabel": "音声",
     "subtitlesLabel": "字幕",
     "addTime": "+${amount}${unit}",
@@ -906,6 +934,8 @@
     "noQueueItems": "キューにアイテムがありません",
     "noAudioDevicesAvailable": "オーディオデバイスがありません",
     "searchSubtitles": "字幕を検索",
+    "loadSubtitleFile": "",
+    "subtitleLoadFailed": "",
     "language": "言語",
     "noSubtitlesFound": "字幕が見つかりません",
     "subtitleDownloaded": "字幕をダウンロードしました",
@@ -1458,6 +1488,7 @@
   "explore": {
     "mdblistShelves": {
       "manage": "",
+      "manageDescription": "",
       "description": "",
       "selected": "",
       "available": "",
@@ -2043,6 +2074,8 @@
     "unwatchedOnly": "未視聴のみ",
     "nextNUnwatched": "次の${count}件の未視聴",
     "customAmount": "数を指定…",
+    "customAmountAny": "",
+    "randomEpisodes": "",
     "includeSpecials": "スペシャルを含める",
     "howManyEpisodes": "エピソード数",
     "invalidEpisodeCount": "有効なエピソード数を入力してください。",
@@ -2062,6 +2095,9 @@
     "syncRuleCleanupBusy": "同期ルールが更新中です。しばらくしてからもう一度お試しください。",
     "syncRuleCleanupUnavailable": "関連するダウンロードを安全に特定できませんでした。サーバーに再接続して再試行するか、ダウンロードを削除せずにルールを削除してください。",
     "syncedNewEpisodes": "${title}の新しいエピソードを${count}件同期しました",
+    "syncNow": "",
+    "downloadsUpToDate": "",
+    "syncComplete": "",
     "activeSyncRules": "同期ルール",
     "noSyncRules": "同期ルールなし",
     "manageSyncRule": "同期を管理",
@@ -2132,6 +2168,8 @@
     "errorDownloadNotAllowed": "サーバーがダウンロードを許可していません（403）",
     "errorDownloadFailed": "ダウンロードに失敗しました",
     "errorDownloadFailedWithReason": "ダウンロードに失敗しました: ${reason}",
+    "convertingOnServer": "",
+    "convertingOnServerPercent": "",
     "errorHttpStatus": "ダウンロードに失敗しました（HTTP ${status}）",
     "errorPostProcessing": "後処理に失敗しました: ${reason}",
     "reasonFileNotSaved": "このデバイスにファイルを保存できませんでした",
@@ -2594,6 +2632,28 @@
     "redirectUnsupported": "サーバーからサポートされていないURLにリダイレクトされました",
     "redirectDifferentHost": "サーバーから別のホストにリダイレクトされました。最終的な${product}のURLを直接入力してください。",
     "redirectInsecure": "サーバーからHTTPSではない安全でないURLにリダイレクトされました",
-    "redirectUnsupportedEnterFinal": "サーバーからサポートされていないURLにリダイレクトされました。最終的な${product}のURLを直接入力してください。"
+    "redirectUnsupportedEnterFinal": "サーバーからサポートされていないURLにリダイレクトされました。最終的な${product}のURLを直接入力してください。",
+    "directPlexServerUrl": "",
+    "directPlexServerUrlHelper": "",
+    "directPlexServerUrlHint": "",
+    "plexToken": "",
+    "plexTokenHelper": "",
+    "plexTokenRequired": "",
+    "connectDirectPlexCard": "",
+    "connectDirectPlexCardSubtitle": "",
+    "connectDirectPlexCardSubtitleScoped": ""
+  },
+  "watchLink": {
+    "serverUnavailable": "",
+    "notFound": "",
+    "ambiguous": "",
+    "plexOnly": "",
+    "unsupportedItem": "",
+    "menuItem": "",
+    "dialogTitle": "",
+    "dialogShowHint": "",
+    "dialogMovieHint": "",
+    "copy": "",
+    "copied": ""
   }
 }

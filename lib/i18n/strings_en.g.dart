@@ -830,11 +830,11 @@ class Translations$settings$en {
 	/// en: 'Remember track selections per show/movie'
 	String get rememberTrackSelections => 'Remember track selections per show/movie';
 
-	/// en: 'Remember audio and subtitle choices per title'
-	String get rememberTrackSelectionsDescription => 'Remember audio and subtitle choices per title';
+	/// en: 'Store audio and subtitle choices by show or movie on this device'
+	String get rememberTrackSelectionsDescription => 'Store audio and subtitle choices by show or movie on this device';
 
-	/// en: 'Plex saves each choice on the server per file; Jellyfin also turns on the account's Remember selections; Emby is not supported'
-	String get rememberTrackSelectionsBackendRule => 'Plex saves each choice on the server per file; Jellyfin also turns on the account\'s Remember selections; Emby is not supported';
+	/// en: 'Works locally with Plex, Jellyfin, and Emby; Plex and Jellyfin can also save selections on the server'
+	String get rememberTrackSelectionsBackendRule => 'Works locally with Plex, Jellyfin, and Emby; Plex and Jellyfin can also save selections on the server';
 
 	/// en: 'Use server's per-episode track selections'
 	String get followServerTrackSelections => 'Use server\'s per-episode track selections';
@@ -1094,6 +1094,42 @@ class Translations$settings$en {
 	/// en: 'Regex pattern to match credits markers in chapter titles'
 	String get creditsPatternDescription => 'Regex pattern to match credits markers in chapter titles';
 
+	/// en: 'Prerolls'
+	String get prerolls => 'Prerolls';
+
+	/// en: 'Play prerolls before movies'
+	String get playPrerollsBeforeMovies => 'Play prerolls before movies';
+
+	/// en: 'Plays a random clip from your selection below before each movie. Press back to skip.'
+	String get playPrerollsBeforeMoviesDescription => 'Plays a random clip from your selection below before each movie. Press back to skip.';
+
+	/// en: 'Preroll library'
+	String get prerollLibrary => 'Preroll library';
+
+	/// en: 'Not set'
+	String get prerollLibraryNotSet => 'Not set';
+
+	/// en: 'No libraries found on your servers.'
+	String get prerollLibraryNoneFound => 'No libraries found on your servers.';
+
+	/// en: 'Selected prerolls'
+	String get prerollSelection => 'Selected prerolls';
+
+	/// en: 'Pick a library first'
+	String get prerollSelectionPickLibraryFirst => 'Pick a library first';
+
+	/// en: 'No prerolls selected'
+	String get prerollSelectionNoneSelected => 'No prerolls selected';
+
+	/// en: '${count} selected'
+	String prerollSelectionCount({required Object count}) => '${count} selected';
+
+	/// en: 'Select prerolls'
+	String get prerollItemPicker => 'Select prerolls';
+
+	/// en: 'Couldn't load items from this library.'
+	String get prerollItemPickerLoadFailed => 'Couldn\'t load items from this library.';
+
 	/// en: 'Invalid regular expression'
 	String get invalidRegex => 'Invalid regular expression';
 
@@ -1145,11 +1181,23 @@ class Translations$settings$en {
 	/// en: 'Delete watched downloads automatically'
 	String get autoRemoveWatchedDownloadsDescription => 'Delete watched downloads automatically';
 
+	/// en: 'Auto-download Continue Watching'
+	String get autoDownloadContinueWatching => 'Auto-download Continue Watching';
+
+	/// en: 'Keep items on your Continue Watching shelf downloaded, and remove them once they leave the shelf'
+	String get autoDownloadContinueWatchingDescription => 'Keep items on your Continue Watching shelf downloaded, and remove them once they leave the shelf';
+
 	/// en: 'Download quality'
 	String get downloadQuality => 'Download quality';
 
-	/// en: 'Plex servers shrink new downloads to this size first. Other servers send the original.'
-	String get downloadQualityDescription => 'Plex servers shrink new downloads to this size first. Other servers send the original.';
+	/// en: 'Plex prepares a converted copy in its download queue. Jellyfin and Emby transcode while the file downloads; interrupted transfers may need to restart.'
+	String get downloadQualityDescription => 'Plex prepares a converted copy in its download queue. Jellyfin and Emby transcode while the file downloads; interrupted transfers may need to restart.';
+
+	/// en: 'Choose quality for each download'
+	String get askDownloadQualityEachTime => 'Choose quality for each download';
+
+	/// en: 'Show the quality picker before queueing each video download'
+	String get askDownloadQualityEachTimeDescription => 'Show the quality picker before queueing each video download';
 
 	/// en: 'Downloads are blocked on cellular. Use Wi-Fi or change the setting.'
 	String get cellularDownloadBlocked => 'Downloads are blocked on cellular. Use Wi-Fi or change the setting.';
@@ -2553,6 +2601,12 @@ class Translations$videoControls$en {
 
 	/// en: 'Search Subtitles'
 	String get searchSubtitles => 'Search Subtitles';
+
+	/// en: 'Load subtitle file…'
+	String get loadSubtitleFile => 'Load subtitle file…';
+
+	/// en: 'Failed to load subtitle file'
+	String get subtitleLoadFailed => 'Failed to load subtitle file';
 
 	/// en: 'Language'
 	String get language => 'Language';
@@ -6246,6 +6300,9 @@ class Translations$addServer$en {
 	/// en: 'Enter the local IP and port of your Plex Media Server.'
 	String get directPlexServerUrlHelper => 'Enter the local IP and port of your Plex Media Server.';
 
+	/// en: 'http://192.168.1.100:32400'
+	String get directPlexServerUrlHint => 'http://192.168.1.100:32400';
+
 	/// en: 'Plex Token (optional)'
 	String get plexToken => 'Plex Token (optional)';
 
@@ -7157,6 +7214,9 @@ class Translations$explore$mdblistShelves$en {
 
 	/// en: 'Manage Explore shelves'
 	String get manage => 'Manage Explore shelves';
+
+	/// en: 'Choose and arrange lists from your MDBList account'
+	String get manageDescription => 'Choose and arrange lists from your MDBList account';
 
 	/// en: 'Choose public movie and TV lists from your MDBList account. Create or copy lists on MDBList, then refresh.'
 	String get description => 'Choose public movie and TV lists from your MDBList account. Create or copy lists on MDBList, then refresh.';
@@ -8621,8 +8681,8 @@ extension on Translations {
 			'settings.defaultSleepTimer' => 'Default Sleep Timer',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutes',
 			'settings.rememberTrackSelections' => 'Remember track selections per show/movie',
-			'settings.rememberTrackSelectionsDescription' => 'Remember audio and subtitle choices per title',
-			'settings.rememberTrackSelectionsBackendRule' => 'Plex saves each choice on the server per file; Jellyfin also turns on the account\'s Remember selections; Emby is not supported',
+			'settings.rememberTrackSelectionsDescription' => 'Store audio and subtitle choices by show or movie on this device',
+			'settings.rememberTrackSelectionsBackendRule' => 'Works locally with Plex, Jellyfin, and Emby; Plex and Jellyfin can also save selections on the server',
 			'settings.followServerTrackSelections' => 'Use server\'s per-episode track selections',
 			'settings.followServerTrackSelectionsDescription' => 'On episode change, apply the audio and subtitles selected on the server instead of carrying over the current choice',
 			'settings.resumeMusicOnLaunch' => 'Remember music session',
@@ -8709,6 +8769,18 @@ extension on Translations {
 			'settings.introPatternDescription' => 'Regex pattern to match intro markers in chapter titles',
 			'settings.creditsPattern' => 'Credits Marker Pattern',
 			'settings.creditsPatternDescription' => 'Regex pattern to match credits markers in chapter titles',
+			'settings.prerolls' => 'Prerolls',
+			'settings.playPrerollsBeforeMovies' => 'Play prerolls before movies',
+			'settings.playPrerollsBeforeMoviesDescription' => 'Plays a random clip from your selection below before each movie. Press back to skip.',
+			'settings.prerollLibrary' => 'Preroll library',
+			'settings.prerollLibraryNotSet' => 'Not set',
+			'settings.prerollLibraryNoneFound' => 'No libraries found on your servers.',
+			'settings.prerollSelection' => 'Selected prerolls',
+			'settings.prerollSelectionPickLibraryFirst' => 'Pick a library first',
+			'settings.prerollSelectionNoneSelected' => 'No prerolls selected',
+			'settings.prerollSelectionCount' => ({required Object count}) => '${count} selected',
+			'settings.prerollItemPicker' => 'Select prerolls',
+			'settings.prerollItemPickerLoadFailed' => 'Couldn\'t load items from this library.',
 			'settings.invalidRegex' => 'Invalid regular expression',
 			'settings.regex' => 'Regular expression',
 			'settings.downloads' => 'Downloads',
@@ -8726,8 +8798,12 @@ extension on Translations {
 			'settings.downloadOnWifiOnlyDescription' => 'Prevent downloads when on cellular data',
 			'settings.autoRemoveWatchedDownloads' => 'Auto-remove watched downloads',
 			'settings.autoRemoveWatchedDownloadsDescription' => 'Delete watched downloads automatically',
+			'settings.autoDownloadContinueWatching' => 'Auto-download Continue Watching',
+			'settings.autoDownloadContinueWatchingDescription' => 'Keep items on your Continue Watching shelf downloaded, and remove them once they leave the shelf',
 			'settings.downloadQuality' => 'Download quality',
-			'settings.downloadQualityDescription' => 'Plex servers shrink new downloads to this size first. Other servers send the original.',
+			'settings.downloadQualityDescription' => 'Plex prepares a converted copy in its download queue. Jellyfin and Emby transcode while the file downloads; interrupted transfers may need to restart.',
+			'settings.askDownloadQualityEachTime' => 'Choose quality for each download',
+			'settings.askDownloadQualityEachTimeDescription' => 'Show the quality picker before queueing each video download',
 			'settings.cellularDownloadBlocked' => 'Downloads are blocked on cellular. Use Wi-Fi or change the setting.',
 			'settings.maxVolume' => 'Maximum Volume',
 			'settings.maxVolumeDescription' => 'Allow volume boost above 100% for quiet media',
@@ -8845,6 +8921,8 @@ extension on Translations {
 			'settings.gestureSeekSwipe' => 'Seek Swipe',
 			'settings.gestureSeekSwipeDescription' => 'Swipe left or right anywhere on the video to seek; release to jump',
 			'settings.rememberBrightnessLevel' => 'Remember Brightness Level',
+			_ => null,
+		} ?? switch (path) {
 			'settings.rememberBrightnessLevelDescription' => 'Start playback at the brightness set by the last swipe',
 			'settings.controls' => 'Controls',
 			'settings.rememberPlayerChanges' => 'Remember Player Changes',
@@ -8861,8 +8939,6 @@ extension on Translations {
 			'themeEditor.builtIn' => 'Built-in',
 			'themeEditor.presets' => 'Presets',
 			'themeEditor.custom' => 'Custom',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.customEmpty' => 'Not created yet',
 			'themeEditor.editCustom' => 'Edit custom theme',
 			'themeEditor.editCustomDescription' => 'Choose every color yourself',
@@ -9211,6 +9287,8 @@ extension on Translations {
 			'videoControls.noQueueItems' => 'No items in queue',
 			'videoControls.noAudioDevicesAvailable' => 'No audio devices available',
 			'videoControls.searchSubtitles' => 'Search Subtitles',
+			'videoControls.loadSubtitleFile' => 'Load subtitle file…',
+			'videoControls.subtitleLoadFailed' => 'Failed to load subtitle file',
 			'videoControls.language' => 'Language',
 			'videoControls.noSubtitlesFound' => 'No subtitles found',
 			'videoControls.subtitleDownloaded' => 'Subtitle downloaded',
@@ -9357,6 +9435,8 @@ extension on Translations {
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} profiles · active: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} profiles',
 			'profiles.removeConnectionTitle' => 'Remove connection?',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => 'Remove ${displayName}\'s access to ${connectionLabel}. Other profiles keep it.',
 			'profiles.deleteProfileTitle' => 'Delete profile?',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Remove ${displayName} and its connections. Servers stay available.',
@@ -9375,8 +9455,6 @@ extension on Translations {
 			'profiles.deleteProfileButton' => 'Delete profile',
 			'profiles.noConnectionsHint' => 'No connections — add one to use this profile.',
 			'profiles.noConnections' => 'No connections',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.plexHomeAccount' => 'Plex Home account',
 			'profiles.plexAccountChip' => ({required Object account}) => 'Plex account: ${account}',
 			'profiles.plexAccountUserChip' => ({required Object user, required Object account}) => '${user} via ${account}',
@@ -9697,6 +9775,7 @@ extension on Translations {
 			'navigation.liveTv' => 'Live TV',
 			'navigation.explore' => 'Explore',
 			'explore.mdblistShelves.manage' => 'Manage Explore shelves',
+			'explore.mdblistShelves.manageDescription' => 'Choose and arrange lists from your MDBList account',
 			'explore.mdblistShelves.description' => 'Choose public movie and TV lists from your MDBList account. Create or copy lists on MDBList, then refresh.',
 			'explore.mdblistShelves.selected' => 'Selected shelves',
 			'explore.mdblistShelves.available' => 'Available account lists',
@@ -9870,6 +9949,8 @@ extension on Translations {
 			'liveTv.timelineBuffer' => 'Buffer timeline',
 			'liveTv.timelineUnavailable' => 'Timeline unavailable',
 			'liveTv.timelineEstimated' => 'Estimated playback',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.timelinePending' => 'Pending seek',
 			'liveTv.timelineStale' => 'Schedule may be outdated',
 			'liveTv.unknownHub' => 'Unknown',
@@ -9889,8 +9970,6 @@ extension on Translations {
 			'liveTv.tomorrow' => 'Tomorrow',
 			'liveTv.midnight' => 'Midnight',
 			'liveTv.overnight' => 'Overnight',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.morning' => 'Morning',
 			'liveTv.daytime' => 'Daytime',
 			'liveTv.evening' => 'Evening',
@@ -10384,6 +10463,8 @@ extension on Translations {
 			'companionRemote.remote.seekBack' => 'Seek Back',
 			'companionRemote.remote.stop' => 'Stop',
 			'companionRemote.remote.seekForward' => 'Seek Fwd',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.remote.volume' => 'Volume',
 			'companionRemote.remote.volumeDown' => 'Down',
 			'companionRemote.remote.volumeUp' => 'Up',
@@ -10403,8 +10484,6 @@ extension on Translations {
 			'videoSettings.playbackSpeed' => 'Playback Speed',
 			'videoSettings.normalSpeed' => 'Normal',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Active (${duration})',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Sleep Timer',
 			'videoSettings.audioSync' => 'Audio Sync',
@@ -10734,6 +10813,7 @@ extension on Translations {
 			'addServer.redirectUnsupportedEnterFinal' => ({required Object product}) => 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.',
 			'addServer.directPlexServerUrl' => 'Plex server URL',
 			'addServer.directPlexServerUrlHelper' => 'Enter the local IP and port of your Plex Media Server.',
+			'addServer.directPlexServerUrlHint' => 'http://192.168.1.100:32400',
 			'addServer.plexToken' => 'Plex Token (optional)',
 			'addServer.plexTokenHelper' => 'Leave blank if access without auth is allowed on this server.',
 			'addServer.plexTokenRequired' => 'Authentication required. Please enter your Plex token (X-Plex-Token).',

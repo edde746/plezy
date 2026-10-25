@@ -5178,6 +5178,7 @@ class PlexClient
   Future<ConvertedDownloadState> requestConvertedDownload(
     MediaItem item, {
     required int mediaIndex,
+    String? mediaSourceId,
     required TranscodeQualityPreset preset,
   }) async {
     try {

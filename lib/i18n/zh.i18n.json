@@ -54,7 +54,8 @@
     "quickConnectCancel": "取消",
     "quickConnectExpired": "Quick Connect 已过期。请重试。",
     "localDataRecoveryRequired": "Plezy 无法安全恢复本地登录状态和待处理的播放数据。请重新登录。",
-    "pinCheckRejected": "Plex PIN 检查被拒绝"
+    "pinCheckRejected": "Plex PIN 检查被拒绝",
+    "connectToDirectPlex": ""
   },
   "common": {
     "cancel": "取消",
@@ -358,6 +359,8 @@
     "autoPlayNextEpisodeDescription": "当前剧集结束时自动播放下一集",
     "shuffleStartsFromBeginning": "随机播放从头开始",
     "shuffleStartsFromBeginningDescription": "随机播放时每集从头开始播放，而非续播",
+    "plexCinemaPreRoll": "",
+    "plexCinemaPreRollDescription": "",
     "playNextCountdown": "播放下一集倒计时",
     "playNextCountdownImmediate": "立即播放",
     "skipIntroMode": "跳过片头",
@@ -379,6 +382,18 @@
     "introPatternDescription": "用于匹配章节标题中片头标记的正则表达式",
     "creditsPattern": "片尾标记模式",
     "creditsPatternDescription": "用于匹配章节标题中片尾标记的正则表达式",
+    "prerolls": "",
+    "playPrerollsBeforeMovies": "",
+    "playPrerollsBeforeMoviesDescription": "",
+    "prerollLibrary": "",
+    "prerollLibraryNotSet": "",
+    "prerollLibraryNoneFound": "",
+    "prerollSelection": "",
+    "prerollSelectionPickLibraryFirst": "",
+    "prerollSelectionNoneSelected": "",
+    "prerollSelectionCount": "",
+    "prerollItemPicker": "",
+    "prerollItemPickerLoadFailed": "",
     "invalidRegex": "无效的正则表达式",
     "regex": "正则表达式",
     "downloads": "下载",
@@ -396,6 +411,12 @@
     "downloadOnWifiOnlyDescription": "使用移动数据时不允许下载",
     "autoRemoveWatchedDownloads": "自动移除已观看的下载",
     "autoRemoveWatchedDownloadsDescription": "自动删除已观看的下载",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
+    "downloadQuality": "",
+    "downloadQualityDescription": "",
+    "askDownloadQualityEachTime": "",
+    "askDownloadQualityEachTimeDescription": "",
     "cellularDownloadBlocked": "已阻止通过移动网络下载。请连接 Wi-Fi 或更改设置。",
     "maxVolume": "最大音量",
     "maxVolumeDescription": "允许音量超过 100%，以便播放音量较低的内容",
@@ -510,6 +531,8 @@
     "gestureVolumeSwipeDescription": "在屏幕右边缘上下滑动以调节音量",
     "gesturePinchToZoom": "双指缩放",
     "gesturePinchToZoomDescription": "在视频上双指捏合以放大或缩小",
+    "gestureSeekSwipe": "",
+    "gestureSeekSwipeDescription": "",
     "rememberBrightnessLevel": "记住亮度",
     "rememberBrightnessLevelDescription": "以上次滑动设置的亮度开始播放",
     "controls": "控制",
@@ -610,7 +633,9 @@
       "subtitleDelayDecrease": "提前字幕",
       "shaderToggle": "切换着色器",
       "skipMarker": "跳过片头/片尾",
-      "screenshot": "截图"
+      "screenshot": "截图",
+      "framePrevious": "",
+      "frameNext": ""
     }
   },
   "fileInfo": {
@@ -827,6 +852,9 @@
     "track": "音轨 ${n}"
   },
   "videoControls": {
+    "frameCount": {
+      "other": ""
+    },
     "audioLabel": "音频",
     "subtitlesLabel": "字幕",
     "addTime": "+${amount}${unit}",
@@ -906,6 +934,8 @@
     "noQueueItems": "队列中没有项目",
     "noAudioDevicesAvailable": "没有可用的音频设备",
     "searchSubtitles": "搜索字幕",
+    "loadSubtitleFile": "",
+    "subtitleLoadFailed": "",
     "language": "语言",
     "noSubtitlesFound": "未找到字幕",
     "subtitleDownloaded": "字幕已下载",
@@ -1458,6 +1488,7 @@
   "explore": {
     "mdblistShelves": {
       "manage": "",
+      "manageDescription": "",
       "description": "",
       "selected": "",
       "available": "",
@@ -2043,6 +2074,8 @@
     "unwatchedOnly": "仅未观看",
     "nextNUnwatched": "接下来 ${count} 集未观看",
     "customAmount": "自定义数量…",
+    "customAmountAny": "",
+    "randomEpisodes": "",
     "includeSpecials": "包含特别篇",
     "howManyEpisodes": "下载几集？",
     "invalidEpisodeCount": "请输入有效的集数。",
@@ -2062,6 +2095,9 @@
     "syncRuleCleanupBusy": "同步规则正在更新中，请稍后再试。",
     "syncRuleCleanupUnavailable": "无法安全识别相关下载。请重新连接服务器后再试，或在不删除下载的情况下移除规则。",
     "syncedNewEpisodes": "已为 ${title} 同步 ${count} 个新剧集",
+    "syncNow": "",
+    "downloadsUpToDate": "",
+    "syncComplete": "",
     "activeSyncRules": "同步规则",
     "noSyncRules": "没有同步规则",
     "manageSyncRule": "管理同步",
@@ -2132,6 +2168,8 @@
     "errorDownloadNotAllowed": "服务器不允许下载（403）",
     "errorDownloadFailed": "下载失败",
     "errorDownloadFailedWithReason": "下载失败：${reason}",
+    "convertingOnServer": "",
+    "convertingOnServerPercent": "",
     "errorHttpStatus": "下载失败（HTTP ${status}）",
     "errorPostProcessing": "后处理失败：${reason}",
     "reasonFileNotSaved": "无法将文件保存到此设备",
@@ -2594,6 +2632,28 @@
     "redirectUnsupported": "服务器重定向到了不受支持的 URL",
     "redirectDifferentHost": "服务器重定向到了其他主机。请直接输入最终的 ${product} URL。",
     "redirectInsecure": "服务器从 HTTPS 重定向到了不安全的 URL",
-    "redirectUnsupportedEnterFinal": "服务器重定向到了不受支持的 URL。请直接输入最终的 ${product} URL。"
+    "redirectUnsupportedEnterFinal": "服务器重定向到了不受支持的 URL。请直接输入最终的 ${product} URL。",
+    "directPlexServerUrl": "",
+    "directPlexServerUrlHelper": "",
+    "directPlexServerUrlHint": "",
+    "plexToken": "",
+    "plexTokenHelper": "",
+    "plexTokenRequired": "",
+    "connectDirectPlexCard": "",
+    "connectDirectPlexCardSubtitle": "",
+    "connectDirectPlexCardSubtitleScoped": ""
+  },
+  "watchLink": {
+    "serverUnavailable": "",
+    "notFound": "",
+    "ambiguous": "",
+    "plexOnly": "",
+    "unsupportedItem": "",
+    "menuItem": "",
+    "dialogTitle": "",
+    "dialogShowHint": "",
+    "dialogMovieHint": "",
+    "copy": "",
+    "copied": ""
   }
 }

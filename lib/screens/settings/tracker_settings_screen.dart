@@ -158,7 +158,7 @@ class TrackerConfig {
       FocusableListTile(
         leading: const AppIcon(Symbols.view_list_rounded, fill: 1),
         title: Text(t.explore.mdblistShelves.manage),
-        subtitle: const Text('Choose and arrange lists from your MDBList account'),
+        subtitle: Text(t.explore.mdblistShelves.manageDescription),
         trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
         onTap: () =>
             Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const MdblistExploreShelvesScreen())),

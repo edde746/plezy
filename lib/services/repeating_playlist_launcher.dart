@@ -49,11 +49,7 @@ LocalPlayQueue buildRepeatingVideoPlaylistQueue({
     throw StateError('A repeating playlist cannot mix media servers');
   }
 
-  return LocalPlayQueue(
-    items: queueItems,
-    currentIndex: selectedIndex,
-    shuffled: shuffle,
-  );
+  return LocalPlayQueue(items: queueItems, currentIndex: selectedIndex, shuffled: shuffle);
 }
 
 /// Launches a repeat-enabled video playlist through a fully resident queue.

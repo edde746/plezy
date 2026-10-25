@@ -52,24 +52,6 @@ Future<String> resolveJellyfinClientVersion({Future<PackageInfo> Function()? pac
   return fallbackVersion;
 }
 
-@visibleForTesting
-bool shouldCreateLocalJellyfinProfile({
-  required Profile? targetProfile,
-  required Profile? activeProfile,
-  required bool hasProfiles,
-}) {
-  return targetProfile == null && activeProfile == null && !hasProfiles;
-}
-
-@visibleForTesting
-bool shouldPromptForJellyfinProfileSelection({
-  required Profile? targetProfile,
-  required Profile? activeProfile,
-  required bool hasProfiles,
-}) {
-  return targetProfile == null && activeProfile == null && hasProfiles;
-}
-
 /// Three-step form to add a Jellyfin or Emby server:
 ///   1. Probe URL candidates (`/System/Info/Public`).
 ///   2. Username + password (`/Users/AuthenticateByName`) or Quick Connect

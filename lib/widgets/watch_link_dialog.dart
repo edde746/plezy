@@ -1,21 +1,41 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:provider/provider.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 
 import '../i18n/strings.g.dart';
+import '../media/ids.dart';
+import '../media/media_backend.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
+import '../providers/multi_server_provider.dart';
 import '../utils/dialogs.dart';
+import '../utils/external_ids.dart';
 import '../utils/platform_detector.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/watch_link.dart';
 import 'dialog_action_button.dart';
 
-/// Shows the watch link for [item], a Plex show or movie.
-Future<void> showWatchLinkDialog(BuildContext context, MediaItem item) {
+/// Shows a portable watch link for [item], falling back to a server link when
+/// the server has no catalog ids.
+Future<void> showWatchLinkDialog(BuildContext context, MediaItem item) async {
+  ExternalIds? externalIds;
+  if (item.backend != MediaBackend.plex) {
+    final serverId = serverIdOrNull(item.serverId);
+    final client = serverId == null ? null : context.read<MultiServerProvider>().getClientForServer(serverId);
+    if (client != null) {
+      try {
+        externalIds = await client.fetchExternalIds(item.id);
+      } catch (_) {
+        // A server-specific link remains useful when the external-id lookup
+        // is unavailable.
+      }
+    }
+  }
+  if (!context.mounted) return;
   return showScopedDialog<void>(
     context: context,
-    builder: (_) => WatchLinkDialog(item: item),
+    builder: (_) => WatchLinkDialog(item: item, externalIds: externalIds),
   );
 }
 
@@ -24,8 +44,9 @@ Future<void> showWatchLinkDialog(BuildContext context, MediaItem item) {
 /// wherever there is a clipboard; tvOS has none.
 class WatchLinkDialog extends StatelessWidget {
   final MediaItem item;
+  final ExternalIds? externalIds;
 
-  const WatchLinkDialog({super.key, required this.item});
+  const WatchLinkDialog({super.key, required this.item, this.externalIds});
 
   Future<void> _copy(BuildContext context, String link) async {
     await Clipboard.setData(ClipboardData(text: link));
@@ -36,7 +57,10 @@ class WatchLinkDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final link = WatchLink.forItem(item)!.toLink();
+    final watchLink =
+        WatchLink.forItem(item, externalIds: externalIds) ??
+        ServerWatchLink(ratingKey: item.id, serverId: serverIdOrNull(item.serverId));
+    final link = watchLink.toLink();
     final canCopy = !PlatformDetector.isAppleTV();
     final screen = MediaQuery.sizeOf(context);
     // QR on top, link and hint under it. Wide screens (TV, desktop) get a

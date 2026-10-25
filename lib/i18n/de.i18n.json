@@ -54,7 +54,8 @@
     "quickConnectCancel": "Abbrechen",
     "quickConnectExpired": "Quick Connect ist abgelaufen. Versuche es erneut.",
     "localDataRecoveryRequired": "Plezy konnte lokale Anmeldedaten und ausstehende Wiedergabedaten nicht sicher wiederherstellen. Bitte melde dich erneut an.",
-    "pinCheckRejected": "Die Plex-PIN-Prüfung wurde abgelehnt"
+    "pinCheckRejected": "Die Plex-PIN-Prüfung wurde abgelehnt",
+    "connectToDirectPlex": ""
   },
   "common": {
     "cancel": "Abbrechen",
@@ -358,6 +359,8 @@
     "autoPlayNextEpisodeDescription": "Die nächste Episode automatisch starten, wenn die aktuelle endet",
     "shuffleStartsFromBeginning": "Zufallswiedergabe beginnt am Anfang",
     "shuffleStartsFromBeginningDescription": "Bei Zufallswiedergabe jede Episode von Anfang an abspielen, statt sie fortzusetzen",
+    "plexCinemaPreRoll": "",
+    "plexCinemaPreRollDescription": "",
     "playNextCountdown": "Countdown bis zur nächsten Episode",
     "playNextCountdownImmediate": "Sofort abspielen",
     "skipIntroMode": "Intro überspringen",
@@ -379,6 +382,18 @@
     "introPatternDescription": "Regulärer Ausdruck zum Erkennen von Intro-Markierungen in Kapiteltiteln",
     "creditsPattern": "Abspann-Markierungsmuster",
     "creditsPatternDescription": "Regulärer Ausdruck zum Erkennen von Abspann-Markierungen in Kapiteltiteln",
+    "prerolls": "",
+    "playPrerollsBeforeMovies": "",
+    "playPrerollsBeforeMoviesDescription": "",
+    "prerollLibrary": "",
+    "prerollLibraryNotSet": "",
+    "prerollLibraryNoneFound": "",
+    "prerollSelection": "",
+    "prerollSelectionPickLibraryFirst": "",
+    "prerollSelectionNoneSelected": "",
+    "prerollSelectionCount": "",
+    "prerollItemPicker": "",
+    "prerollItemPickerLoadFailed": "",
     "invalidRegex": "Ungültiger regulärer Ausdruck",
     "regex": "Regulärer Ausdruck",
     "downloads": "Downloads",
@@ -396,6 +411,12 @@
     "downloadOnWifiOnlyDescription": "Downloads über mobile Daten verhindern",
     "autoRemoveWatchedDownloads": "Gesehene Downloads automatisch entfernen",
     "autoRemoveWatchedDownloadsDescription": "Angesehene Downloads automatisch löschen",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
+    "downloadQuality": "",
+    "downloadQualityDescription": "",
+    "askDownloadQualityEachTime": "",
+    "askDownloadQualityEachTimeDescription": "",
     "cellularDownloadBlocked": "Downloads über das Mobilfunknetz sind blockiert. Nutze WLAN oder ändere die Einstellung.",
     "maxVolume": "Maximale Lautstärke",
     "maxVolumeDescription": "Lautstärkeanhebung über 100 % für leise Medien erlauben",
@@ -510,6 +531,8 @@
     "gestureVolumeSwipeDescription": "Wische am rechten Rand nach oben oder unten, um die Lautstärke anzupassen",
     "gesturePinchToZoom": "Zum Zoomen kneifen",
     "gesturePinchToZoomDescription": "Kneife auf dem Video, um hinein- oder herauszuzoomen",
+    "gestureSeekSwipe": "",
+    "gestureSeekSwipeDescription": "",
     "rememberBrightnessLevel": "Helligkeitsstufe merken",
     "rememberBrightnessLevelDescription": "Wiedergabe mit der zuletzt per Wischgeste eingestellten Helligkeit starten",
     "controls": "Steuerung",
@@ -610,7 +633,9 @@
       "subtitleDelayDecrease": "Untertitel vorziehen",
       "shaderToggle": "Shader umschalten",
       "skipMarker": "Intro/Abspann überspringen",
-      "screenshot": "Screenshot aufnehmen"
+      "screenshot": "Screenshot aufnehmen",
+      "framePrevious": "",
+      "frameNext": ""
     }
   },
   "fileInfo": {
@@ -830,6 +855,10 @@
     "track": "Audiospur ${n}"
   },
   "videoControls": {
+    "frameCount": {
+      "one": "",
+      "other": ""
+    },
     "audioLabel": "Audio",
     "subtitlesLabel": "Untertitel",
     "addTime": "+${amount}${unit}",
@@ -909,6 +938,8 @@
     "noQueueItems": "Keine Elemente in der Warteschlange",
     "noAudioDevicesAvailable": "Keine Audiogeräte verfügbar",
     "searchSubtitles": "Untertitel suchen",
+    "loadSubtitleFile": "",
+    "subtitleLoadFailed": "",
     "language": "Sprache",
     "noSubtitlesFound": "Keine Untertitel gefunden",
     "subtitleDownloaded": "Untertitel heruntergeladen",
@@ -1463,6 +1494,7 @@
   "explore": {
     "mdblistShelves": {
       "manage": "",
+      "manageDescription": "",
       "description": "",
       "selected": "",
       "available": "",
@@ -2055,6 +2087,8 @@
     "unwatchedOnly": "Nur ungesehene",
     "nextNUnwatched": "Nächste ${count} ungesehene",
     "customAmount": "Eigene Anzahl...",
+    "customAmountAny": "",
+    "randomEpisodes": "",
     "includeSpecials": "Sonderfolgen einschließen",
     "howManyEpisodes": "Wie viele Episoden?",
     "invalidEpisodeCount": "Gib eine gültige Episodenanzahl ein.",
@@ -2074,6 +2108,9 @@
     "syncRuleCleanupBusy": "Synchronisierungsregeln werden gerade aktualisiert. Versuche es gleich noch einmal.",
     "syncRuleCleanupUnavailable": "Zugehörige Downloads konnten nicht sicher ermittelt werden. Verbinde den Server erneut und versuche es noch einmal, oder entferne die Regel, ohne die Downloads zu löschen.",
     "syncedNewEpisodes": "${count} neue Episoden für ${title} synchronisiert",
+    "syncNow": "",
+    "downloadsUpToDate": "",
+    "syncComplete": "",
     "activeSyncRules": "Synchronisierungsregeln",
     "noSyncRules": "Keine Synchronisierungsregeln",
     "manageSyncRule": "Synchronisierung verwalten",
@@ -2148,6 +2185,8 @@
     "errorDownloadNotAllowed": "Download vom Server nicht erlaubt (403)",
     "errorDownloadFailed": "Download fehlgeschlagen",
     "errorDownloadFailedWithReason": "Download fehlgeschlagen: ${reason}",
+    "convertingOnServer": "",
+    "convertingOnServerPercent": "",
     "errorHttpStatus": "Download fehlgeschlagen (HTTP ${status})",
     "errorPostProcessing": "Nachbearbeitung fehlgeschlagen: ${reason}",
     "reasonFileNotSaved": "die Datei konnte auf diesem Gerät nicht gespeichert werden",
@@ -2610,6 +2649,28 @@
     "redirectUnsupported": "Der Server hat zu einer nicht unterstützten URL weitergeleitet",
     "redirectDifferentHost": "Der Server hat zu einem anderen Host weitergeleitet. Gib die endgültige ${product}-URL direkt ein.",
     "redirectInsecure": "Der Server hat von HTTPS zu einer unsicheren URL weitergeleitet",
-    "redirectUnsupportedEnterFinal": "Der Server hat zu einer nicht unterstützten URL weitergeleitet. Gib die endgültige ${product}-URL direkt ein."
+    "redirectUnsupportedEnterFinal": "Der Server hat zu einer nicht unterstützten URL weitergeleitet. Gib die endgültige ${product}-URL direkt ein.",
+    "directPlexServerUrl": "",
+    "directPlexServerUrlHelper": "",
+    "directPlexServerUrlHint": "",
+    "plexToken": "",
+    "plexTokenHelper": "",
+    "plexTokenRequired": "",
+    "connectDirectPlexCard": "",
+    "connectDirectPlexCardSubtitle": "",
+    "connectDirectPlexCardSubtitleScoped": ""
+  },
+  "watchLink": {
+    "serverUnavailable": "",
+    "notFound": "",
+    "ambiguous": "",
+    "plexOnly": "",
+    "unsupportedItem": "",
+    "menuItem": "",
+    "dialogTitle": "",
+    "dialogShowHint": "",
+    "dialogMovieHint": "",
+    "copy": "",
+    "copied": ""
   }
 }

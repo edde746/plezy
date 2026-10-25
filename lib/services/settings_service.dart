@@ -728,14 +728,17 @@ class SettingsService extends BaseSharedPreferencesService {
   static const downloadOnWifiOnly = BoolPref('download_on_wifi_only');
   static const autoRemoveWatchedDownloads = BoolPref('auto_remove_watched_downloads');
 
-  /// Quality new downloads are converted to on the server before this device
-  /// fetches them. Original stores the file exactly as the server has it.
-  /// Only Plex servers convert downloads; elsewhere the original is stored.
+  /// Mirrors each connected server's Continue Watching shelf to downloads.
+  static const autoDownloadContinueWatching = BoolPref('auto_download_continue_watching');
+
+  /// Quality new video downloads are converted to on the server before this
+  /// device stores them. Original keeps the source file unchanged.
   static const downloadQualityPreset = EnumPref<TranscodeQualityPreset>(
     'download_quality_preset',
     values: TranscodeQualityPreset.values,
     defaultValue: TranscodeQualityPreset.original,
   );
+  static const askDownloadQualityEachTime = BoolPref('ask_download_quality_each_time');
 
   /// Set once the user has seen the pre-flight "background downloads are
   /// blocked" dialog. The persistent Downloads-screen banner covers repeat
@@ -1020,6 +1023,7 @@ class SettingsService extends BaseSharedPreferencesService {
   );
   static const startInFullscreen = BoolPref('start_in_fullscreen');
   static const exitFullscreenOnPlayerClose = BoolPref('exit_fullscreen_on_player_close');
+  static const playPrerollsBeforeMovies = BoolPref('play_prerolls_before_movies');
 
   static const playbackBufferTier = EnumPref<PlaybackBufferTier>(
     'playback_buffer_tier',
@@ -1545,6 +1549,7 @@ class SettingsService extends BaseSharedPreferencesService {
     playNextCountdown,
     shuffleStartsFromBeginning,
     plexCinemaPreRoll,
+    playPrerollsBeforeMovies,
     gestureBrightnessSwipe,
     gestureVolumeSwipe,
     gesturePinchToZoom,
@@ -1630,6 +1635,8 @@ class SettingsService extends BaseSharedPreferencesService {
     introPattern,
     creditsPattern,
     autoRemoveWatchedDownloads,
+    autoDownloadContinueWatching,
+    askDownloadQualityEachTime,
     defaultQualityPreset,
     cellularQualityPreset,
     musicQualityPreset,

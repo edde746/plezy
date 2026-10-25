@@ -4,6 +4,8 @@ analyzer:
   exclude:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
+    - "packages/**/test/**"
+    - "packages/**/pigeons/**"
     - build/**
     - android/**
     - ios/**

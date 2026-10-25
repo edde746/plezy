@@ -54,7 +54,8 @@
     "quickConnectCancel": "Отказ",
     "quickConnectExpired": "Quick Connect изтече. Опитайте отново.",
     "localDataRecoveryRequired": "Plezy не успя безопасно да възстанови локалните данни за вход и несинхронизираните данни за възпроизвеждане. Моля, влезте отново.",
-    "pinCheckRejected": "Проверката на PIN кода на Plex беше отхвърлена"
+    "pinCheckRejected": "Проверката на PIN кода на Plex беше отхвърлена",
+    "connectToDirectPlex": ""
   },
   "common": {
     "cancel": "Отказ",
@@ -358,6 +359,8 @@
     "autoPlayNextEpisodeDescription": "Пускай следващия епизод автоматично, когато текущият свърши",
     "shuffleStartsFromBeginning": "Разбъркано възпроизвеждане отначало",
     "shuffleStartsFromBeginningDescription": "При разбъркано възпроизвеждане започвай всеки епизод отначало, вместо да продължаваш",
+    "plexCinemaPreRoll": "",
+    "plexCinemaPreRollDescription": "",
     "playNextCountdown": "Отброяване до следващия епизод",
     "playNextCountdownImmediate": "Пусни веднага",
     "skipIntroMode": "Прескачане на интрото",
@@ -379,6 +382,18 @@
     "introPatternDescription": "Шаблон с регулярен израз за намиране на интро маркери в заглавия на глави",
     "creditsPattern": "Шаблон за маркер на финални надписи",
     "creditsPatternDescription": "Шаблон с регулярен израз за намиране на маркери за финални надписи в заглавия на глави",
+    "prerolls": "",
+    "playPrerollsBeforeMovies": "",
+    "playPrerollsBeforeMoviesDescription": "",
+    "prerollLibrary": "",
+    "prerollLibraryNotSet": "",
+    "prerollLibraryNoneFound": "",
+    "prerollSelection": "",
+    "prerollSelectionPickLibraryFirst": "",
+    "prerollSelectionNoneSelected": "",
+    "prerollSelectionCount": "",
+    "prerollItemPicker": "",
+    "prerollItemPickerLoadFailed": "",
     "invalidRegex": "Невалиден регулярен израз",
     "regex": "Регулярен израз",
     "downloads": "Изтегляния",
@@ -396,6 +411,12 @@
     "downloadOnWifiOnlyDescription": "Предотвратявай изтегляния през мобилни данни",
     "autoRemoveWatchedDownloads": "Автоматично премахвай изгледаните изтегляния",
     "autoRemoveWatchedDownloadsDescription": "Изтривай изгледаните изтегляния автоматично",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
+    "downloadQuality": "",
+    "downloadQualityDescription": "",
+    "askDownloadQualityEachTime": "",
+    "askDownloadQualityEachTimeDescription": "",
     "cellularDownloadBlocked": "Изтеглянията през мобилни данни са блокирани. Използвайте Wi-Fi или променете настройката.",
     "maxVolume": "Максимална сила на звука",
     "maxVolumeDescription": "Позволи усилване на звука над 100% за тихи медии",
@@ -510,6 +531,8 @@
     "gestureVolumeSwipeDescription": "Плъзни нагоре или надолу по десния ръб, за да регулираш силата на звука",
     "gesturePinchToZoom": "Стискане за мащабиране",
     "gesturePinchToZoomDescription": "Стисни видеото, за да увеличиш или намалиш мащаба",
+    "gestureSeekSwipe": "",
+    "gestureSeekSwipeDescription": "",
     "rememberBrightnessLevel": "Запомняй нивото на яркостта",
     "rememberBrightnessLevelDescription": "Започвай възпроизвеждането с яркостта, зададена от последното плъзгане",
     "controls": "Контроли",
@@ -610,7 +633,9 @@
       "subtitleDelayDecrease": "Измести субтитрите по-рано",
       "shaderToggle": "Превключи шейдъри",
       "skipMarker": "Прескочи интро/финални надписи",
-      "screenshot": "Направи екранна снимка"
+      "screenshot": "Направи екранна снимка",
+      "framePrevious": "",
+      "frameNext": ""
     }
   },
   "fileInfo": {
@@ -830,6 +855,10 @@
     "track": "Аудиопътечка ${n}"
   },
   "videoControls": {
+    "frameCount": {
+      "one": "",
+      "other": ""
+    },
     "audioLabel": "Аудио",
     "subtitlesLabel": "Субтитри",
     "addTime": "+${amount}${unit}",
@@ -909,6 +938,8 @@
     "noQueueItems": "Няма елементи в опашката",
     "noAudioDevicesAvailable": "Няма налични аудио устройства",
     "searchSubtitles": "Търсене на субтитри",
+    "loadSubtitleFile": "",
+    "subtitleLoadFailed": "",
     "language": "Език",
     "noSubtitlesFound": "Не са намерени субтитри",
     "subtitleDownloaded": "Субтитърът е изтеглен",
@@ -1463,6 +1494,7 @@
   "explore": {
     "mdblistShelves": {
       "manage": "",
+      "manageDescription": "",
       "description": "",
       "selected": "",
       "available": "",
@@ -2055,6 +2087,8 @@
     "unwatchedOnly": "Само негледани",
     "nextNUnwatched": "Следващите ${count} негледани",
     "customAmount": "Друг брой...",
+    "customAmountAny": "",
+    "randomEpisodes": "",
     "includeSpecials": "Включи специалните",
     "howManyEpisodes": "Колко епизода?",
     "invalidEpisodeCount": "Въведете валиден брой епизоди.",
@@ -2074,6 +2108,9 @@
     "syncRuleCleanupBusy": "Правилата за синхронизация в момента се обновяват. Опитайте отново след малко.",
     "syncRuleCleanupUnavailable": "Свързаните изтегляния не можаха да бъдат идентифицирани безопасно. Свържете се отново със сървъра и опитайте отново, или премахнете правилото, без да изтривате изтеглянията.",
     "syncedNewEpisodes": "Синхронизирани са ${count} нови епизода за ${title}",
+    "syncNow": "",
+    "downloadsUpToDate": "",
+    "syncComplete": "",
     "activeSyncRules": "Правила за синхронизация",
     "noSyncRules": "Няма правила за синхронизация",
     "manageSyncRule": "Управление на синхронизацията",
@@ -2148,6 +2185,8 @@
     "errorDownloadNotAllowed": "Сървърът не разрешава изтеглянето (403)",
     "errorDownloadFailed": "Изтеглянето е неуспешно",
     "errorDownloadFailedWithReason": "Изтеглянето е неуспешно: ${reason}",
+    "convertingOnServer": "",
+    "convertingOnServerPercent": "",
     "errorHttpStatus": "Изтеглянето е неуспешно (HTTP ${status})",
     "errorPostProcessing": "Последващата обработка е неуспешна: ${reason}",
     "reasonFileNotSaved": "файлът не можа да бъде запазен на това устройство",
@@ -2610,6 +2649,28 @@
     "redirectUnsupported": "Сървърът пренасочи към неподдържан URL",
     "redirectDifferentHost": "Сървърът пренасочи към друг хост. Въведете директно крайния URL на ${product}.",
     "redirectInsecure": "Сървърът пренасочи от HTTPS към незащитен URL",
-    "redirectUnsupportedEnterFinal": "Сървърът пренасочи към неподдържан URL. Въведете директно крайния URL на ${product}."
+    "redirectUnsupportedEnterFinal": "Сървърът пренасочи към неподдържан URL. Въведете директно крайния URL на ${product}.",
+    "directPlexServerUrl": "",
+    "directPlexServerUrlHelper": "",
+    "directPlexServerUrlHint": "",
+    "plexToken": "",
+    "plexTokenHelper": "",
+    "plexTokenRequired": "",
+    "connectDirectPlexCard": "",
+    "connectDirectPlexCardSubtitle": "",
+    "connectDirectPlexCardSubtitleScoped": ""
+  },
+  "watchLink": {
+    "serverUnavailable": "",
+    "notFound": "",
+    "ambiguous": "",
+    "plexOnly": "",
+    "unsupportedItem": "",
+    "menuItem": "",
+    "dialogTitle": "",
+    "dialogShowHint": "",
+    "dialogMovieHint": "",
+    "copy": "",
+    "copied": ""
   }
 }

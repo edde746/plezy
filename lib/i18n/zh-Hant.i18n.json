@@ -54,7 +54,8 @@
     "quickConnectCancel": "取消",
     "quickConnectExpired": "快速連線代碼已過期。請重試。",
     "localDataRecoveryRequired": "Plezy 無法安全地復原本機登入資料與待處理的播放資料。請重新登入。",
-    "pinCheckRejected": "Plex PIN 檢查遭到拒絕"
+    "pinCheckRejected": "Plex PIN 檢查遭到拒絕",
+    "connectToDirectPlex": ""
   },
   "common": {
     "cancel": "取消",
@@ -358,6 +359,8 @@
     "autoPlayNextEpisodeDescription": "目前單集結束時自動播放下一集",
     "shuffleStartsFromBeginning": "隨機播放從頭開始",
     "shuffleStartsFromBeginningDescription": "隨機播放時每集從頭開始播放，而非繼續播放",
+    "plexCinemaPreRoll": "",
+    "plexCinemaPreRollDescription": "",
     "playNextCountdown": "下一集倒數計時",
     "playNextCountdownImmediate": "立即播放",
     "skipIntroMode": "跳過片頭",
@@ -379,6 +382,18 @@
     "introPatternDescription": "用於比對章節標題中片頭標記的正規表示式",
     "creditsPattern": "片尾標記模式",
     "creditsPatternDescription": "用於比對章節標題中片尾標記的正規表示式",
+    "prerolls": "",
+    "playPrerollsBeforeMovies": "",
+    "playPrerollsBeforeMoviesDescription": "",
+    "prerollLibrary": "",
+    "prerollLibraryNotSet": "",
+    "prerollLibraryNoneFound": "",
+    "prerollSelection": "",
+    "prerollSelectionPickLibraryFirst": "",
+    "prerollSelectionNoneSelected": "",
+    "prerollSelectionCount": "",
+    "prerollItemPicker": "",
+    "prerollItemPickerLoadFailed": "",
     "invalidRegex": "無效的正規表示式",
     "regex": "正規表示式",
     "downloads": "下載",
@@ -396,6 +411,12 @@
     "downloadOnWifiOnlyDescription": "使用行動網路時不會下載",
     "autoRemoveWatchedDownloads": "自動移除已觀看的下載內容",
     "autoRemoveWatchedDownloadsDescription": "自動刪除已觀看的下載影片",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
+    "downloadQuality": "",
+    "downloadQualityDescription": "",
+    "askDownloadQualityEachTime": "",
+    "askDownloadQualityEachTimeDescription": "",
     "cellularDownloadBlocked": "使用行動網路時無法下載。請改用 Wi-Fi 或變更設定。",
     "maxVolume": "最大音量",
     "maxVolumeDescription": "允許音量調大至 100% 以上，以適應聲音過小的媒體",
@@ -510,6 +531,8 @@
     "gestureVolumeSwipeDescription": "在螢幕右側邊緣上下滑動以調整音量",
     "gesturePinchToZoom": "雙指縮放",
     "gesturePinchToZoomDescription": "在影片上雙指捏合以放大或縮小",
+    "gestureSeekSwipe": "",
+    "gestureSeekSwipeDescription": "",
     "rememberBrightnessLevel": "記住亮度",
     "rememberBrightnessLevelDescription": "以上次滑動設定的亮度開始播放",
     "controls": "控制",
@@ -610,7 +633,9 @@
       "subtitleDelayDecrease": "提前字幕",
       "shaderToggle": "切換著色器",
       "skipMarker": "跳過片頭/片尾",
-      "screenshot": "螢幕截圖"
+      "screenshot": "螢幕截圖",
+      "framePrevious": "",
+      "frameNext": ""
     }
   },
   "fileInfo": {
@@ -827,6 +852,9 @@
     "track": "音軌 ${n}"
   },
   "videoControls": {
+    "frameCount": {
+      "other": ""
+    },
     "audioLabel": "音訊",
     "subtitlesLabel": "字幕",
     "addTime": "+${amount} ${unit}",
@@ -906,6 +934,8 @@
     "noQueueItems": "佇列中沒有項目",
     "noAudioDevicesAvailable": "沒有可用的音訊裝置",
     "searchSubtitles": "搜尋字幕",
+    "loadSubtitleFile": "",
+    "subtitleLoadFailed": "",
     "language": "語言",
     "noSubtitlesFound": "找不到字幕",
     "subtitleDownloaded": "字幕下載成功",
@@ -1458,6 +1488,7 @@
   "explore": {
     "mdblistShelves": {
       "manage": "",
+      "manageDescription": "",
       "description": "",
       "selected": "",
       "available": "",
@@ -2043,6 +2074,8 @@
     "unwatchedOnly": "僅未觀看",
     "nextNUnwatched": "接下來 ${count} 集未觀看",
     "customAmount": "自訂數量…",
+    "customAmountAny": "",
+    "randomEpisodes": "",
     "includeSpecials": "包含特別篇",
     "howManyEpisodes": "要下載多少集？",
     "invalidEpisodeCount": "請輸入有效的集數。",
@@ -2062,6 +2095,9 @@
     "syncRuleCleanupBusy": "同步規則正在更新中。請稍後再試。",
     "syncRuleCleanupUnavailable": "無法安全地識別相關的下載內容。請重新連線伺服器後再試，或在不刪除下載內容的情況下移除規則。",
     "syncedNewEpisodes": "已為 ${title} 同步 ${count} 個新單集",
+    "syncNow": "",
+    "downloadsUpToDate": "",
+    "syncComplete": "",
     "activeSyncRules": "同步規則",
     "noSyncRules": "沒有同步規則",
     "manageSyncRule": "管理同步",
@@ -2132,6 +2168,8 @@
     "errorDownloadNotAllowed": "伺服器不允許下載（403）",
     "errorDownloadFailed": "下載失敗",
     "errorDownloadFailedWithReason": "下載失敗：${reason}",
+    "convertingOnServer": "",
+    "convertingOnServerPercent": "",
     "errorHttpStatus": "下載失敗（HTTP ${status}）",
     "errorPostProcessing": "後續處理失敗：${reason}",
     "reasonFileNotSaved": "無法將檔案儲存到此裝置",
@@ -2594,6 +2632,28 @@
     "redirectUnsupported": "伺服器重新導向至不支援的 URL",
     "redirectDifferentHost": "伺服器重新導向至不同的主機。請直接輸入最終的 ${product} URL。",
     "redirectInsecure": "伺服器從 HTTPS 重新導向至不安全的 URL",
-    "redirectUnsupportedEnterFinal": "伺服器重新導向至不支援的 URL。請直接輸入最終的 ${product} URL。"
+    "redirectUnsupportedEnterFinal": "伺服器重新導向至不支援的 URL。請直接輸入最終的 ${product} URL。",
+    "directPlexServerUrl": "",
+    "directPlexServerUrlHelper": "",
+    "directPlexServerUrlHint": "",
+    "plexToken": "",
+    "plexTokenHelper": "",
+    "plexTokenRequired": "",
+    "connectDirectPlexCard": "",
+    "connectDirectPlexCardSubtitle": "",
+    "connectDirectPlexCardSubtitleScoped": ""
+  },
+  "watchLink": {
+    "serverUnavailable": "",
+    "notFound": "",
+    "ambiguous": "",
+    "plexOnly": "",
+    "unsupportedItem": "",
+    "menuItem": "",
+    "dialogTitle": "",
+    "dialogShowHint": "",
+    "dialogMovieHint": "",
+    "copy": "",
+    "copied": ""
   }
 }

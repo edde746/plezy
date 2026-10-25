@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
@@ -5,12 +7,18 @@ import '../i18n/strings.g.dart';
 import '../media/catalog_item_ref.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
+import '../media/media_item_types.dart';
 import '../media/media_server_client.dart';
 import '../models/catalog/catalog_item.dart';
 import '../navigation/main_screen_scope.dart';
+import '../navigation/profile_navigation_scope.dart';
+import '../services/music/music_playback_service.dart';
+import '../services/playback_coordinator.dart';
 import '../services/settings_service.dart';
+import '../services/theme_song_controller.dart';
 import '../utils/debouncer.dart';
 import '../utils/layout_constants.dart';
+import 'package:provider/provider.dart';
 import '../utils/formatters.dart';
 import 'tv_browse_rail.dart';
 import 'tv_spotlight_background.dart';
@@ -141,6 +149,11 @@ class TvSpotlightScaffold extends StatelessWidget {
               },
             ),
             foreground,
+            _TvSpotlightThemeSongListener(
+              spotlightListenable: spotlightListenable,
+              resolveSpotlight: resolveSpotlight,
+              resolveClient: resolveClient,
+            ),
           ],
         ),
       ),
@@ -293,4 +306,173 @@ class TvToolbarOverlay extends StatelessWidget {
           Positioned(top: 0, left: -animatedBleed, width: fullBleedWidth, child: child!),
     );
   }
+}
+
+/// Plays the focused item's theme while its spotlight is actually visible.
+/// TickerMode covers tab changes; RouteAware covers detail/settings routes.
+class _TvSpotlightThemeSongListener extends StatefulWidget {
+  const _TvSpotlightThemeSongListener({
+    required this.spotlightListenable,
+    required this.resolveSpotlight,
+    required this.resolveClient,
+  });
+
+  final ValueListenable<MediaItem?> spotlightListenable;
+  final MediaItem? Function() resolveSpotlight;
+  final TvSpotlightClientResolver resolveClient;
+
+  @override
+  State<_TvSpotlightThemeSongListener> createState() => _TvSpotlightThemeSongListenerState();
+}
+
+class _TvSpotlightThemeSongListenerState extends State<_TvSpotlightThemeSongListener>
+    with WidgetsBindingObserver, RouteAware {
+  static const _themeRequestDelay = Duration(milliseconds: 350);
+
+  PageRoute<dynamic>? _route;
+  RouteObserver<PageRoute<dynamic>>? _routeObserver;
+  MusicPlaybackService? _music;
+  SettingsService? _settings;
+  ValueListenable<bool>? _themeEnabled;
+  ValueListenable<double>? _themeVolume;
+  bool _routeVisible = false;
+  bool _tabVisible = true;
+  String? _requestedGlobalKey;
+  Timer? _requestTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addObserver(this);
+    widget.spotlightListenable.addListener(_onSpotlightChanged);
+    PlaybackCoordinator.instance.videoSessionActive.addListener(_updateThemeSong);
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _tabVisible = TickerMode.valuesOf(context).enabled;
+    final route = ModalRoute.of(context);
+    final observer = ProfileNavigationScope.maybeOf(context)?.routeObserver;
+    if (route != _route || observer != _routeObserver) {
+      _routeObserver?.unsubscribe(this);
+      _route = route is PageRoute<dynamic> ? route : null;
+      _routeObserver = observer;
+      _routeVisible = _route?.isCurrent ?? false;
+      if (_route != null && observer != null) observer.subscribe(this, _route!);
+    }
+    final music = context.read<MusicPlaybackService?>();
+    if (_music != music) {
+      _music?.removeListener(_updateThemeSong);
+      _music = music;
+      _music?.addListener(_updateThemeSong);
+    }
+    final settings = SettingsService.instanceOrNull;
+    if (_settings != settings) {
+      _themeEnabled?.removeListener(_updateThemeSong);
+      _themeVolume?.removeListener(_onThemeVolumeChanged);
+      _settings = settings;
+      _themeEnabled = settings?.listenable(SettingsService.themeSongsEnabled);
+      _themeVolume = settings?.listenable(SettingsService.themeSongVolume);
+      _themeEnabled?.addListener(_updateThemeSong);
+      _themeVolume?.addListener(_onThemeVolumeChanged);
+    }
+    _updateThemeSong();
+  }
+
+  @override
+  void didChangeAppLifecycleState(AppLifecycleState state) => _updateThemeSong();
+
+  @override
+  void didPush() {
+    _routeVisible = true;
+    _updateThemeSong();
+  }
+
+  @override
+  void didPopNext() {
+    _routeVisible = true;
+    _updateThemeSong();
+  }
+
+  @override
+  void didPushNext() {
+    _routeVisible = false;
+    _updateThemeSong();
+  }
+
+  @override
+  void didPop() {
+    _routeVisible = false;
+    _updateThemeSong();
+  }
+
+  void _onSpotlightChanged() {
+    _requestedGlobalKey = null;
+    _updateThemeSong();
+  }
+
+  void _onThemeVolumeChanged() {
+    final settings = _settings;
+    if (settings != null && _requestedGlobalKey != null) {
+      unawaited(ThemeSongController.instance.setVolume(settings.read(SettingsService.themeSongVolume)));
+    }
+  }
+
+  void _updateThemeSong() {
+    _requestTimer?.cancel();
+    final settings = _settings ?? SettingsService.instanceOrNull;
+    final lifecycle = WidgetsBinding.instance.lifecycleState;
+    final visible =
+        mounted &&
+        _routeVisible &&
+        _tabVisible &&
+        (lifecycle == null || lifecycle == AppLifecycleState.resumed || lifecycle == AppLifecycleState.inactive);
+    final item = visible ? widget.resolveSpotlight() : null;
+    final allowed =
+        visible &&
+        item != null &&
+        item.isVideoContent &&
+        (settings?.read(SettingsService.themeSongsEnabled) ?? false) &&
+        _music?.currentTrack == null &&
+        !PlaybackCoordinator.instance.hasVideoSession;
+    if (!allowed) {
+      _requestedGlobalKey = null;
+      ThemeSongController.instance.release(this, immediate: true);
+      return;
+    }
+
+    final spotlight = item;
+    if (_requestedGlobalKey == spotlight.globalKey) return;
+    _requestedGlobalKey = spotlight.globalKey;
+    _requestTimer = Timer(_themeRequestDelay, () {
+      if (!mounted || !_routeVisible || !_tabVisible || _requestedGlobalKey != spotlight.globalKey) return;
+      final client = widget.resolveClient(widget.resolveSpotlight());
+      if (client == null) {
+        ThemeSongController.instance.release(this, immediate: true);
+        return;
+      }
+      final volume = _settings?.read(SettingsService.themeSongVolume) ?? SettingsService.themeSongVolume.defaultValue;
+      unawaited(
+        ThemeSongController.instance.request(this, resolveUrl: () => client.getThemeSongUrl(spotlight), volume: volume),
+      );
+    });
+  }
+
+  @override
+  void dispose() {
+    _requestTimer?.cancel();
+    widget.spotlightListenable.removeListener(_onSpotlightChanged);
+    _music?.removeListener(_updateThemeSong);
+    _themeEnabled?.removeListener(_updateThemeSong);
+    _themeVolume?.removeListener(_onThemeVolumeChanged);
+    PlaybackCoordinator.instance.videoSessionActive.removeListener(_updateThemeSong);
+    WidgetsBinding.instance.removeObserver(this);
+    _routeObserver?.unsubscribe(this);
+    ThemeSongController.instance.release(this, immediate: true);
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) => const SizedBox.shrink();
 }

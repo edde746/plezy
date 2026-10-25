@@ -54,7 +54,8 @@
     "quickConnectCancel": "Mégse",
     "quickConnectExpired": "A Quick Connect kód lejárt. Próbáld újra.",
     "localDataRecoveryRequired": "A Plezy nem tudta biztonságosan helyreállítani a helyi bejelentkezés és a függőben lévő lejátszás adatait. Jelentkezz be újra.",
-    "pinCheckRejected": "A Plex PIN ellenőrzését elutasították"
+    "pinCheckRejected": "A Plex PIN ellenőrzését elutasították",
+    "connectToDirectPlex": ""
   },
   "common": {
     "cancel": "Mégse",
@@ -358,6 +359,8 @@
     "autoPlayNextEpisodeDescription": "A következő epizód automatikus elindítása, amikor az aktuális véget ér",
     "shuffleStartsFromBeginning": "Véletlenszerű lejátszás az elejétől",
     "shuffleStartsFromBeginningDescription": "Minden epizód az elejétől indul véletlenszerű lejátszáskor a folytatás helyett",
+    "plexCinemaPreRoll": "",
+    "plexCinemaPreRollDescription": "",
     "playNextCountdown": "Visszaszámlálás a következő epizódig",
     "playNextCountdownImmediate": "Azonnali lejátszás",
     "skipIntroMode": "Intró átugrása",
@@ -379,6 +382,18 @@
     "introPatternDescription": "Reguláris kifejezés az intrójelölők illesztéséhez a fejezetcímekben",
     "creditsPattern": "Stáblistajelölő mintája",
     "creditsPatternDescription": "Reguláris kifejezés a stáblistajelölők illesztéséhez a fejezetcímekben",
+    "prerolls": "",
+    "playPrerollsBeforeMovies": "",
+    "playPrerollsBeforeMoviesDescription": "",
+    "prerollLibrary": "",
+    "prerollLibraryNotSet": "",
+    "prerollLibraryNoneFound": "",
+    "prerollSelection": "",
+    "prerollSelectionPickLibraryFirst": "",
+    "prerollSelectionNoneSelected": "",
+    "prerollSelectionCount": "",
+    "prerollItemPicker": "",
+    "prerollItemPickerLoadFailed": "",
     "invalidRegex": "Érvénytelen reguláris kifejezés",
     "regex": "Reguláris kifejezés",
     "downloads": "Letöltések",
@@ -396,6 +411,12 @@
     "downloadOnWifiOnlyDescription": "Letöltések megakadályozása mobiladat-használat esetén",
     "autoRemoveWatchedDownloads": "Megnézett letöltések automatikus eltávolítása",
     "autoRemoveWatchedDownloadsDescription": "A megnézett letöltések automatikus törlése",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
+    "downloadQuality": "",
+    "downloadQualityDescription": "",
+    "askDownloadQualityEachTime": "",
+    "askDownloadQualityEachTimeDescription": "",
     "cellularDownloadBlocked": "A letöltések mobilhálózaton le vannak tiltva. Használj Wi-Fi-t, vagy módosítsd a beállítást.",
     "maxVolume": "Maximális hangerő",
     "maxVolumeDescription": "A hangerő 100% fölé emelésének engedélyezése halk tartalmak esetén",
@@ -510,6 +531,8 @@
     "gestureVolumeSwipeDescription": "Húzd felfelé vagy lefelé a jobb szélén a hangerő beállításához",
     "gesturePinchToZoom": "Csípés a nagyításhoz",
     "gesturePinchToZoomDescription": "Csípj a videóra a nagyításhoz vagy kicsinyítéshez",
+    "gestureSeekSwipe": "",
+    "gestureSeekSwipeDescription": "",
     "rememberBrightnessLevel": "Fényerőszint megjegyzése",
     "rememberBrightnessLevelDescription": "A lejátszás az utolsó húzással beállított fényerővel indul",
     "controls": "Vezérlők",
@@ -610,7 +633,9 @@
       "subtitleDelayDecrease": "Feliratok előrehozása",
       "shaderToggle": "Shaderek be- és kikapcsolása",
       "skipMarker": "Intró/stáblista átugrása",
-      "screenshot": "Képernyőkép készítése"
+      "screenshot": "Képernyőkép készítése",
+      "framePrevious": "",
+      "frameNext": ""
     }
   },
   "fileInfo": {
@@ -830,6 +855,10 @@
     "track": "${n}. hangsáv"
   },
   "videoControls": {
+    "frameCount": {
+      "one": "",
+      "other": ""
+    },
     "audioLabel": "Hang",
     "subtitlesLabel": "Feliratok",
     "addTime": "+${amount}${unit}",
@@ -909,6 +938,8 @@
     "noQueueItems": "Nincsenek elemek a sorban",
     "noAudioDevicesAvailable": "Nincsenek elérhető audioeszközök",
     "searchSubtitles": "Feliratok keresése",
+    "loadSubtitleFile": "",
+    "subtitleLoadFailed": "",
     "language": "Nyelv",
     "noSubtitlesFound": "Nem találhatók feliratok",
     "subtitleDownloaded": "Felirat letöltve",
@@ -1463,6 +1494,7 @@
   "explore": {
     "mdblistShelves": {
       "manage": "",
+      "manageDescription": "",
       "description": "",
       "selected": "",
       "available": "",
@@ -2055,6 +2087,8 @@
     "unwatchedOnly": "Csak a nem látottak",
     "nextNUnwatched": "A következő ${count} nem látott epizód",
     "customAmount": "Egyéni mennyiség...",
+    "customAmountAny": "",
+    "randomEpisodes": "",
     "includeSpecials": "Különkiadások is",
     "howManyEpisodes": "Hány epizód?",
     "invalidEpisodeCount": "Adj meg egy érvényes epizódszámot.",
@@ -2074,6 +2108,9 @@
     "syncRuleCleanupBusy": "A szinkronszabályok éppen frissülnek. Próbálja újra egy pillanat múlva.",
     "syncRuleCleanupUnavailable": "A kapcsolódó letöltések nem azonosíthatók biztonságosan. Csatlakoztassa újra a szervert, és próbálja újra, vagy távolítsa el a szabályt a letöltések törlése nélkül.",
     "syncedNewEpisodes": "${count} új epizód szinkronizálva a következőhöz: ${title}",
+    "syncNow": "",
+    "downloadsUpToDate": "",
+    "syncComplete": "",
     "activeSyncRules": "Szinkronizálási szabályok",
     "noSyncRules": "Nincsenek szinkronizálási szabályok",
     "manageSyncRule": "Szinkronizálás kezelése",
@@ -2148,6 +2185,8 @@
     "errorDownloadNotAllowed": "A szerver nem engedélyezi a letöltést (403)",
     "errorDownloadFailed": "A letöltés nem sikerült",
     "errorDownloadFailedWithReason": "A letöltés nem sikerült: ${reason}",
+    "convertingOnServer": "",
+    "convertingOnServerPercent": "",
     "errorHttpStatus": "A letöltés nem sikerült (HTTP ${status})",
     "errorPostProcessing": "Az utófeldolgozás nem sikerült: ${reason}",
     "reasonFileNotSaved": "a fájlt nem sikerült menteni erre az eszközre",
@@ -2610,6 +2649,28 @@
     "redirectUnsupported": "A szerver nem támogatott URL-re irányított át",
     "redirectDifferentHost": "A szerver egy másik gazdagépre irányított át. Add meg közvetlenül a végleges ${product} URL-t.",
     "redirectInsecure": "A szerver HTTPS-ről nem biztonságos URL-re irányított át",
-    "redirectUnsupportedEnterFinal": "A szerver nem támogatott URL-re irányított át. Add meg közvetlenül a végleges ${product} URL-t."
+    "redirectUnsupportedEnterFinal": "A szerver nem támogatott URL-re irányított át. Add meg közvetlenül a végleges ${product} URL-t.",
+    "directPlexServerUrl": "",
+    "directPlexServerUrlHelper": "",
+    "directPlexServerUrlHint": "",
+    "plexToken": "",
+    "plexTokenHelper": "",
+    "plexTokenRequired": "",
+    "connectDirectPlexCard": "",
+    "connectDirectPlexCardSubtitle": "",
+    "connectDirectPlexCardSubtitleScoped": ""
+  },
+  "watchLink": {
+    "serverUnavailable": "",
+    "notFound": "",
+    "ambiguous": "",
+    "plexOnly": "",
+    "unsupportedItem": "",
+    "menuItem": "",
+    "dialogTitle": "",
+    "dialogShowHint": "",
+    "dialogMovieHint": "",
+    "copy": "",
+    "copied": ""
   }
 }

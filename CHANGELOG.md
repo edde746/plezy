@@ -4,6 +4,13 @@
 
 ### Added
 
+- Add converted download quality for Jellyfin and Emby, and let sync rules keep their own quality preset.
+- Add per-server Continue Watching downloads that remove shelf items when they leave the shelf.
+- Add selectable random local prerolls before movies, with Plex server prerolls taking precedence.
+- Remember audio and subtitle choices per show locally across Plex, Jellyfin, and Emby.
+- Add in-player subtitle size/position controls and load a local subtitle file in mpv.
+- Play theme songs for the active home spotlight.
+- Resolve watch links across Jellyfin and Emby by catalog IDs, with server-specific fallback links.
 - Added changelog enforcement, changelog-based release notes, and Discord announcements for published PlezyNG releases.
 - Require an explicit versioned release dispatch, and move release downloads and package updates to PlezyNG.
 - Remove the inherited WinGet publisher and add the PlezyNG Discord support link to the README.

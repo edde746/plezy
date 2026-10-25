@@ -54,7 +54,8 @@
     "quickConnectCancel": "Bekor qilish",
     "quickConnectExpired": "Tezkor ulanish vaqti tugadi. Qaytadan urinib koʻring.",
     "localDataRecoveryRequired": "Plezy mahalliy kirish maʼlumotlarini tiklay olmadi. Iltimos, qaytadan kiring.",
-    "pinCheckRejected": "Plex PIN tekshiruvi rad etildi"
+    "pinCheckRejected": "Plex PIN tekshiruvi rad etildi",
+    "connectToDirectPlex": ""
   },
   "common": {
     "cancel": "Bekor qilish",
@@ -358,6 +359,8 @@
     "autoPlayNextEpisodeDescription": "Qism tugagach, keyingisini avtomatik ijro etish",
     "shuffleStartsFromBeginning": "Aralashtirish boshidan boshlanadi",
     "shuffleStartsFromBeginningDescription": "Aralashtirganda har bir qismni davom ettirish oʻrniga boshidan boshlash",
+    "plexCinemaPreRoll": "",
+    "plexCinemaPreRollDescription": "",
     "playNextCountdown": "Keyingi qism sanogʻi",
     "playNextCountdownImmediate": "Darhol ijro etish",
     "skipIntroMode": "Kirishni oʻtkazish",
@@ -379,6 +382,18 @@
     "introPatternDescription": "Boʻlim sarlavhalarida introni topish uchun Regex shabloni",
     "creditsPattern": "Titr belgisi shabloni",
     "creditsPatternDescription": "Boʻlim sarlavhalarida titrlarni topish uchun Regex shabloni",
+    "prerolls": "",
+    "playPrerollsBeforeMovies": "",
+    "playPrerollsBeforeMoviesDescription": "",
+    "prerollLibrary": "",
+    "prerollLibraryNotSet": "",
+    "prerollLibraryNoneFound": "",
+    "prerollSelection": "",
+    "prerollSelectionPickLibraryFirst": "",
+    "prerollSelectionNoneSelected": "",
+    "prerollSelectionCount": "",
+    "prerollItemPicker": "",
+    "prerollItemPickerLoadFailed": "",
     "invalidRegex": "Notoʻgʻri muntazam ifoda (Regex)",
     "regex": "Muntazam ifoda (Regex)",
     "downloads": "Yuklamalar",
@@ -396,6 +411,12 @@
     "downloadOnWifiOnlyDescription": "Mobil tarmoqdan foydalanilganda yuklashni toʻxtatib turish",
     "autoRemoveWatchedDownloads": "Koʻrilgan yuklamalarni avtomatik oʻchirish",
     "autoRemoveWatchedDownloadsDescription": "Koʻrib boʻlingan yuklamalarni avtomatik oʻchirish",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
+    "downloadQuality": "",
+    "downloadQualityDescription": "",
+    "askDownloadQualityEachTime": "",
+    "askDownloadQualityEachTimeDescription": "",
     "cellularDownloadBlocked": "Mobil tarmoqda yuklash taqiqlangan. Wi-Fi-dan foydalaning yoki sozlamani oʻzgartiring.",
     "maxVolume": "Maksimal ovoz",
     "maxVolumeDescription": "Pastroq ovozli videolar uchun ovozni 100%-dan oshirishga ruxsat berish",
@@ -510,6 +531,8 @@
     "gestureVolumeSwipeDescription": "Ovozni sozlash uchun oʻng chekkada yuqoriga yoki pastga suring",
     "gesturePinchToZoom": "Chimchilab masshtablash",
     "gesturePinchToZoomDescription": "Videoni yaqinlashtirish yoki uzoqlashtirish uchun chimchilang",
+    "gestureSeekSwipe": "",
+    "gestureSeekSwipeDescription": "",
     "rememberBrightnessLevel": "Yorqinlik darajasini eslab qolish",
     "rememberBrightnessLevelDescription": "Ijroni oxirgi surish bilan oʻrnatilgan yorqinlikda boshlash",
     "controls": "Boshqaruv elementlari",
@@ -610,7 +633,9 @@
       "subtitleDelayDecrease": "Subtitrni oldinga surish",
       "shaderToggle": "Sheyderlarni yoqish/oʻchirish",
       "skipMarker": "Intro/Titrlarni oʻtkazib yuborish",
-      "screenshot": "Ekran tasvirini olish"
+      "screenshot": "Ekran tasvirini olish",
+      "framePrevious": "",
+      "frameNext": ""
     }
   },
   "fileInfo": {
@@ -830,6 +855,10 @@
     "track": "Audio yoʻlak ${n}"
   },
   "videoControls": {
+    "frameCount": {
+      "one": "",
+      "other": ""
+    },
     "audioLabel": "Ovoz",
     "subtitlesLabel": "Subtitr",
     "addTime": "+${amount}${unit}",
@@ -909,6 +938,8 @@
     "noQueueItems": "Navbatda elementlar yoʻq",
     "noAudioDevicesAvailable": "Mavjud audio qurilmalar yoʻq",
     "searchSubtitles": "Subtitr qidirish",
+    "loadSubtitleFile": "",
+    "subtitleLoadFailed": "",
     "language": "Til",
     "noSubtitlesFound": "Subtitr topilmadi",
     "subtitleDownloaded": "Subtitr yuklab olindi",
@@ -1463,6 +1494,7 @@
   "explore": {
     "mdblistShelves": {
       "manage": "",
+      "manageDescription": "",
       "description": "",
       "selected": "",
       "available": "",
@@ -2055,6 +2087,8 @@
     "unwatchedOnly": "Faqat koʻrilmaganlar",
     "nextNUnwatched": "Keyingi ${count} koʻrilmagan",
     "customAmount": "Boshqa miqdor...",
+    "customAmountAny": "",
+    "randomEpisodes": "",
     "includeSpecials": "Maxsus qismlarni qoʻshish",
     "howManyEpisodes": "Nechta qism?",
     "invalidEpisodeCount": "Toʻgʻri qismlar sonini kiriting.",
@@ -2074,6 +2108,9 @@
     "syncRuleCleanupBusy": "Sinxronlash qoidalari hozir yangilanmoqda. Bir ozdan soʻng qayta urinib koʻring.",
     "syncRuleCleanupUnavailable": "Bogʻliq yuklamalarni xavfsiz aniqlab boʻlmadi. Serverga qayta ulanib koʻring yoki yuklamalarni oʻchirmasdan qoidani olib tashlang.",
     "syncedNewEpisodes": "${title} uchun ${count} yangi qism sinxronlandi",
+    "syncNow": "",
+    "downloadsUpToDate": "",
+    "syncComplete": "",
     "activeSyncRules": "Faol sinxronlash qoidalari",
     "noSyncRules": "Sinxronlash qoidalari yoʻq",
     "manageSyncRule": "Sinxronlashni boshqarish",
@@ -2148,6 +2185,8 @@
     "errorDownloadNotAllowed": "Server yuklab olishga ruxsat bermaydi (403)",
     "errorDownloadFailed": "Yuklab boʻlmadi",
     "errorDownloadFailedWithReason": "Yuklab boʻlmadi: ${reason}",
+    "convertingOnServer": "",
+    "convertingOnServerPercent": "",
     "errorHttpStatus": "Yuklab boʻlmadi (HTTP ${status})",
     "errorPostProcessing": "Keyingi ishlov berishda xatolik: ${reason}",
     "reasonFileNotSaved": "faylni ushbu qurilmada saqlab boʻlmadi",
@@ -2610,6 +2649,28 @@
     "redirectUnsupported": "Server qoʻllab-quvvatlanmaydigan URL-ga yoʻnaltirdi",
     "redirectDifferentHost": "Server boshqa xostga yoʻnaltirdi. Yakuniy ${product} URL-ini bevosita kiriting.",
     "redirectInsecure": "Server HTTPS manzilidan xavfsiz boʻlmagan URL-ga yoʻnaltirdi",
-    "redirectUnsupportedEnterFinal": "Server qoʻllab-quvvatlanmaydigan URL-ga yoʻnaltirdi. Yakuniy ${product} URL-ini bevosita kiriting."
+    "redirectUnsupportedEnterFinal": "Server qoʻllab-quvvatlanmaydigan URL-ga yoʻnaltirdi. Yakuniy ${product} URL-ini bevosita kiriting.",
+    "directPlexServerUrl": "",
+    "directPlexServerUrlHelper": "",
+    "directPlexServerUrlHint": "",
+    "plexToken": "",
+    "plexTokenHelper": "",
+    "plexTokenRequired": "",
+    "connectDirectPlexCard": "",
+    "connectDirectPlexCardSubtitle": "",
+    "connectDirectPlexCardSubtitleScoped": ""
+  },
+  "watchLink": {
+    "serverUnavailable": "",
+    "notFound": "",
+    "ambiguous": "",
+    "plexOnly": "",
+    "unsupportedItem": "",
+    "menuItem": "",
+    "dialogTitle": "",
+    "dialogShowHint": "",
+    "dialogMovieHint": "",
+    "copy": "",
+    "copied": ""
   }
 }

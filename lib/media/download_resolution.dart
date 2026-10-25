@@ -75,6 +75,12 @@ class DownloadResolution {
   /// a server-converted file. Null lets the URL decide.
   final String? videoExtension;
 
+  /// Whether an interrupted transfer can safely continue with an HTTP Range
+  /// request. Server-side MediaBrowser transcodes are progressive streams and
+  /// must restart after interruption; direct files and Plex's completed
+  /// download-queue outputs are range-resumable.
+  final bool supportsRangeResume;
+
   const DownloadResolution({
     required this.videoUrl,
     this.mediaSourceId,
@@ -82,6 +88,7 @@ class DownloadResolution {
     this.externalSubtitlesResolved = true,
     this.additionalParts = const [],
     this.videoExtension,
+    this.supportsRangeResume = true,
   });
 }
 
@@ -98,7 +105,10 @@ class ConvertedDownloadReady extends ConvertedDownloadState {
   /// Container the server converted to (`mkv`, `mp4`), when it said.
   final String? container;
 
-  const ConvertedDownloadReady({required this.url, this.container});
+  /// False for progressive transcodes that cannot safely resume by byte range.
+  final bool supportsRangeResume;
+
+  const ConvertedDownloadReady({required this.url, this.container, this.supportsRangeResume = true});
 }
 
 /// The server is still deciding or converting. Ask again after [retryAfter].
@@ -128,6 +138,7 @@ abstract interface class ConvertedDownloadClient {
   Future<ConvertedDownloadState> requestConvertedDownload(
     MediaItem item, {
     required int mediaIndex,
+    String? mediaSourceId,
     required TranscodeQualityPreset preset,
   });
 }

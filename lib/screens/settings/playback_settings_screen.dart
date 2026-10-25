@@ -1,19 +1,33 @@
+import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../media/library_query.dart';
+import '../../media/media_item.dart';
+import '../../media/media_kind.dart';
+import '../../media/media_library.dart';
 import '../../models/audio_channel_limit.dart';
 import '../../models/audio_quality_preset.dart';
 import '../../models/transcode_quality_preset.dart';
 import '../../models/player_setting_scope.dart';
+import '../../providers/libraries_provider.dart';
+import '../../services/storage_service.dart';
+import '../../utils/app_logger.dart';
 import '../../utils/audio_channel_limit_labels.dart';
+import '../../utils/dialogs.dart';
+import '../../utils/provider_extensions.dart';
 import '../../utils/quality_preset_labels.dart';
 import '../../services/settings_service.dart';
 import '../../services/video_decode_capabilities.dart';
 import '../../utils/codec_utils.dart';
 import '../../utils/platform_detector.dart';
+import '../../utils/snackbar_helper.dart';
+import '../../widgets/dialog_action_button.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_page.dart';
@@ -23,8 +37,31 @@ import 'mpv_config_screen.dart';
 import 'settings_utils.dart';
 import 'subtitle_styling_screen.dart';
 
-class PlaybackSettingsScreen extends StatelessWidget {
+class PlaybackSettingsScreen extends StatefulWidget {
   const PlaybackSettingsScreen({super.key});
+
+  @override
+  State<PlaybackSettingsScreen> createState() => _PlaybackSettingsScreenState();
+}
+
+class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
+  String? _prerollLibraryGlobalKey;
+  Set<String> _prerollSelectedItemKeys = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _loadPrerollStorage();
+  }
+
+  Future<void> _loadPrerollStorage() async {
+    final storage = await StorageService.getInstance();
+    if (!mounted) return;
+    setState(() {
+      _prerollLibraryGlobalKey = storage.getPrerollLibraryGlobalKey();
+      _prerollSelectedItemKeys = storage.getPrerollSelectedItemKeys();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -148,6 +185,7 @@ class PlaybackSettingsScreen extends StatelessWidget {
             _behaviorGroup(context, isMobile),
             if (isMobile) _gesturesGroup(),
             _rememberPlayerChangesGroup(),
+            _prerollGroup(context),
             const SizedBox(height: 24),
           ],
         );
@@ -391,6 +429,89 @@ class PlaybackSettingsScreen extends StatelessWidget {
     SkipMarkerMode.button => t.settings.skipCreditsModeButtonDescription,
     SkipMarkerMode.auto => t.settings.skipCreditsModeAutoDescription,
   };
+
+  bool _isPrerollCapable(MediaLibrary library) => library.kind == MediaKind.movie || library.kind == MediaKind.clip;
+
+  Widget _prerollGroup(BuildContext context) {
+    final libraries = context.watch<LibrariesProvider>().libraries.where(_isPrerollCapable).toList();
+    return SettingsBuilder(
+      prefs: const [SettingsService.playPrerollsBeforeMovies],
+      builder: (_) {
+        final enabled = SettingsService.instance.read(SettingsService.playPrerollsBeforeMovies);
+        MediaLibrary? library;
+        for (final candidate in libraries) {
+          if (candidate.globalKey == _prerollLibraryGlobalKey) {
+            library = candidate;
+            break;
+          }
+        }
+        final selectedCount = _prerollSelectedItemKeys.length;
+        final selectionSubtitle = library == null
+            ? t.settings.prerollSelectionPickLibraryFirst
+            : selectedCount == 0
+            ? t.settings.prerollSelectionNoneSelected
+            : t.settings.prerollSelectionCount(count: selectedCount.toString());
+
+        return SettingsGroup(
+          title: t.settings.prerolls,
+          children: [
+            SettingSwitchTile(
+              pref: SettingsService.playPrerollsBeforeMovies,
+              icon: Symbols.movie_rounded,
+              title: t.settings.playPrerollsBeforeMovies,
+              subtitle: t.settings.playPrerollsBeforeMoviesDescription,
+            ),
+            if (enabled)
+              SettingNavigationTile(
+                icon: Symbols.video_library_rounded,
+                title: t.settings.prerollLibrary,
+                subtitle: library?.title ?? t.settings.prerollLibraryNotSet,
+                onTap: () => _showPrerollLibraryPicker(context, libraries),
+              ),
+            if (enabled && library != null)
+              SettingNavigationTile(
+                icon: Symbols.checklist_rounded,
+                title: t.settings.prerollSelection,
+                subtitle: selectionSubtitle,
+                onTap: () => _showPrerollItemPicker(context, library!),
+              ),
+          ],
+        );
+      },
+    );
+  }
+
+  Future<void> _showPrerollLibraryPicker(BuildContext context, List<MediaLibrary> libraries) async {
+    if (libraries.isEmpty) {
+      showAppSnackBar(context, t.settings.prerollLibraryNoneFound);
+      return;
+    }
+    final picked = await showOptionPickerDialog<MediaLibrary>(
+      context,
+      title: t.settings.prerollLibrary,
+      options: [for (final library in libraries) (icon: null, label: library.title, value: library)],
+    );
+    if (picked == null) return;
+    final storage = await StorageService.getInstance();
+    await storage.savePrerollLibraryGlobalKey(picked.globalKey);
+    await storage.savePrerollSelectedItemKeys(const {});
+    if (!mounted) return;
+    setState(() {
+      _prerollLibraryGlobalKey = picked.globalKey;
+      _prerollSelectedItemKeys = {};
+    });
+  }
+
+  Future<void> _showPrerollItemPicker(BuildContext context, MediaLibrary library) async {
+    await showScopedDialog<void>(
+      context: context,
+      builder: (_) => _PrerollItemPickerDialog(library: library),
+    );
+    if (!mounted) return;
+    final storage = await StorageService.getInstance();
+    if (!mounted) return;
+    setState(() => _prerollSelectedItemKeys = storage.getPrerollSelectedItemKeys());
+  }
 
   /// Optional touch gestures on the player surface (#1810); the group only
   /// renders on mobile, matching where the gestures exist.
@@ -765,4 +886,86 @@ class PlaybackSettingsScreen extends StatelessWidget {
     subtitle: t.mpvConfig.description,
     destinationBuilder: (_) => const MpvConfigScreen(),
   );
+}
+
+class _PrerollItemPickerDialog extends StatefulWidget {
+  final MediaLibrary library;
+
+  const _PrerollItemPickerDialog({required this.library});
+
+  @override
+  State<_PrerollItemPickerDialog> createState() => _PrerollItemPickerDialogState();
+}
+
+class _PrerollItemPickerDialogState extends State<_PrerollItemPickerDialog> {
+  List<MediaItem>? _items;
+  String? _error;
+  Set<String> _selected = {};
+
+  @override
+  void initState() {
+    super.initState();
+    _load();
+  }
+
+  Future<void> _load() async {
+    try {
+      final client = context.getMediaClientForLibrary(widget.library);
+      final storage = await StorageService.getInstance();
+      final items = await drainPages<MediaItem>(
+        (start, size) => client.fetchLibraryPagedContent(
+          widget.library.id,
+          query: LibraryQuery(offset: start, limit: size),
+        ),
+        pageSize: 200,
+        stopOnShortPage: true,
+      );
+      if (mounted) {
+        setState(() {
+          _items = items;
+          _selected = storage.getPrerollSelectedItemKeys();
+        });
+      }
+    } catch (e, st) {
+      appLogger.w('Preroll item picker load failed', error: e, stackTrace: st);
+      if (mounted) setState(() => _error = t.settings.prerollItemPickerLoadFailed);
+    }
+  }
+
+  Future<void> _toggle(String globalKey, bool checked) async {
+    final updated = _selected.toSet();
+    if (checked) {
+      updated.add(globalKey);
+    } else {
+      updated.remove(globalKey);
+    }
+    setState(() => _selected = updated);
+    final storage = await StorageService.getInstance();
+    await storage.savePrerollSelectedItemKeys(updated);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return AlertDialog(
+      title: Text(t.settings.prerollItemPicker),
+      content: SizedBox(
+        width: double.maxFinite,
+        height: 400,
+        child: _items == null
+            ? Center(child: _error != null ? Text(_error!) : const CircularProgressIndicator())
+            : ListView.builder(
+                itemCount: _items!.length,
+                itemBuilder: (_, index) {
+                  final item = _items![index];
+                  return FocusableCheckboxListTile(
+                    title: Text(item.title ?? item.id),
+                    value: _selected.contains(item.globalKey),
+                    onChanged: (checked) => unawaited(_toggle(item.globalKey, checked ?? false)),
+                  );
+                },
+              ),
+      ),
+      actions: [DialogActionButton(autofocus: true, onPressed: () => Navigator.pop(context), label: t.common.close)],
+    );
+  }
 }

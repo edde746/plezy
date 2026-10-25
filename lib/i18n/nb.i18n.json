@@ -54,7 +54,8 @@
     "quickConnectCancel": "Avbryt",
     "quickConnectExpired": "Quick Connect er utløpt. Prøv igjen.",
     "localDataRecoveryRequired": "Plezy kunne ikke gjenopprette lokale innloggingsdata og ventende avspillingsdata på en sikker måte. Logg inn på nytt.",
-    "pinCheckRejected": "Kontrollen av Plex-PIN-koden ble avvist"
+    "pinCheckRejected": "Kontrollen av Plex-PIN-koden ble avvist",
+    "connectToDirectPlex": ""
   },
   "common": {
     "cancel": "Avbryt",
@@ -358,6 +359,8 @@
     "autoPlayNextEpisodeDescription": "Start neste episode automatisk når en episode er ferdig",
     "shuffleStartsFromBeginning": "Tilfeldig avspilling starter fra begynnelsen",
     "shuffleStartsFromBeginningDescription": "Start hver episode fra begynnelsen ved tilfeldig avspilling i stedet for å fortsette",
+    "plexCinemaPreRoll": "",
+    "plexCinemaPreRollDescription": "",
     "playNextCountdown": "Nedtelling for neste episode",
     "playNextCountdownImmediate": "Spill umiddelbart",
     "skipIntroMode": "Hopp over intro",
@@ -379,6 +382,18 @@
     "introPatternDescription": "Regulært uttrykk for å gjenkjenne intromarkører i kapitteltitler",
     "creditsPattern": "Rulletekstmarkørmønster",
     "creditsPatternDescription": "Regulært uttrykk for å gjenkjenne rulletekstmarkører i kapitteltitler",
+    "prerolls": "",
+    "playPrerollsBeforeMovies": "",
+    "playPrerollsBeforeMoviesDescription": "",
+    "prerollLibrary": "",
+    "prerollLibraryNotSet": "",
+    "prerollLibraryNoneFound": "",
+    "prerollSelection": "",
+    "prerollSelectionPickLibraryFirst": "",
+    "prerollSelectionNoneSelected": "",
+    "prerollSelectionCount": "",
+    "prerollItemPicker": "",
+    "prerollItemPickerLoadFailed": "",
     "invalidRegex": "Ugyldig regulært uttrykk",
     "regex": "Regulært uttrykk",
     "downloads": "Nedlastinger",
@@ -396,6 +411,12 @@
     "downloadOnWifiOnlyDescription": "Forhindre nedlasting via mobildata",
     "autoRemoveWatchedDownloads": "Fjern avspilte nedlastinger automatisk",
     "autoRemoveWatchedDownloadsDescription": "Slett avspilte nedlastinger automatisk",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
+    "downloadQuality": "",
+    "downloadQualityDescription": "",
+    "askDownloadQualityEachTime": "",
+    "askDownloadQualityEachTimeDescription": "",
     "cellularDownloadBlocked": "Nedlastinger er blokkert på mobilnett. Bruk Wi-Fi eller endre innstillingen.",
     "maxVolume": "Maksvolum",
     "maxVolumeDescription": "Tillat volumforsterkning over 100 % for medier med lavt lydnivå",
@@ -510,6 +531,8 @@
     "gestureVolumeSwipeDescription": "Sveip opp eller ned på høyre kant for å justere volumet",
     "gesturePinchToZoom": "Klyp for å zoome",
     "gesturePinchToZoomDescription": "Klyp på videoen for å zoome inn eller ut",
+    "gestureSeekSwipe": "",
+    "gestureSeekSwipeDescription": "",
     "rememberBrightnessLevel": "Husk lysstyrkenivå",
     "rememberBrightnessLevelDescription": "Start avspilling med lysstyrken som ble satt med det siste sveipet",
     "controls": "Kontroller",
@@ -610,7 +633,9 @@
       "subtitleDelayDecrease": "Fremskynd undertekster",
       "shaderToggle": "Slå shadere av/på",
       "skipMarker": "Hopp over intro/rulletekst",
-      "screenshot": "Ta skjermbilde"
+      "screenshot": "Ta skjermbilde",
+      "framePrevious": "",
+      "frameNext": ""
     }
   },
   "fileInfo": {
@@ -830,6 +855,10 @@
     "track": "Lydspor ${n}"
   },
   "videoControls": {
+    "frameCount": {
+      "one": "",
+      "other": ""
+    },
     "audioLabel": "Lyd",
     "subtitlesLabel": "Undertekster",
     "addTime": "+${amount}${unit}",
@@ -909,6 +938,8 @@
     "noQueueItems": "Ingen elementer i kø",
     "noAudioDevicesAvailable": "Ingen lydenheter tilgjengelig",
     "searchSubtitles": "Søk etter undertekster",
+    "loadSubtitleFile": "",
+    "subtitleLoadFailed": "",
     "language": "Språk",
     "noSubtitlesFound": "Ingen undertekster funnet",
     "subtitleDownloaded": "Undertekst lastet ned",
@@ -1463,6 +1494,7 @@
   "explore": {
     "mdblistShelves": {
       "manage": "",
+      "manageDescription": "",
       "description": "",
       "selected": "",
       "available": "",
@@ -2055,6 +2087,8 @@
     "unwatchedOnly": "Kun usette",
     "nextNUnwatched": "Neste ${count} usette",
     "customAmount": "Egendefinert antall...",
+    "customAmountAny": "",
+    "randomEpisodes": "",
     "includeSpecials": "Inkluder spesialepisoder",
     "howManyEpisodes": "Hvor mange episoder?",
     "invalidEpisodeCount": "Angi et gyldig antall episoder.",
@@ -2074,6 +2108,9 @@
     "syncRuleCleanupBusy": "Synkroniseringsreglene oppdateres for øyeblikket. Prøv igjen om et øyeblikk.",
     "syncRuleCleanupUnavailable": "Tilknyttede nedlastinger kunne ikke identifiseres på en trygg måte. Koble til serveren på nytt og prøv igjen, eller fjern regelen uten å slette nedlastingene.",
     "syncedNewEpisodes": "Synkroniserte ${count} nye episoder for ${title}",
+    "syncNow": "",
+    "downloadsUpToDate": "",
+    "syncComplete": "",
     "activeSyncRules": "Synkroniseringsregler",
     "noSyncRules": "Ingen synkroniseringsregler",
     "manageSyncRule": "Administrer synkronisering",
@@ -2148,6 +2185,8 @@
     "errorDownloadNotAllowed": "Serveren tillater ikke nedlasting (403)",
     "errorDownloadFailed": "Nedlastingen mislyktes",
     "errorDownloadFailedWithReason": "Nedlastingen mislyktes: ${reason}",
+    "convertingOnServer": "",
+    "convertingOnServerPercent": "",
     "errorHttpStatus": "Nedlastingen mislyktes (HTTP ${status})",
     "errorPostProcessing": "Etterbehandlingen mislyktes: ${reason}",
     "reasonFileNotSaved": "filen kunne ikke lagres på denne enheten",
@@ -2610,6 +2649,28 @@
     "redirectUnsupported": "Serveren omdirigerte til en URL som ikke støttes",
     "redirectDifferentHost": "Serveren omdirigerte til en annen vert. Angi den endelige ${product}-URL-en direkte.",
     "redirectInsecure": "Serveren omdirigerte fra HTTPS til en usikker URL",
-    "redirectUnsupportedEnterFinal": "Serveren omdirigerte til en URL som ikke støttes. Angi den endelige ${product}-URL-en direkte."
+    "redirectUnsupportedEnterFinal": "Serveren omdirigerte til en URL som ikke støttes. Angi den endelige ${product}-URL-en direkte.",
+    "directPlexServerUrl": "",
+    "directPlexServerUrlHelper": "",
+    "directPlexServerUrlHint": "",
+    "plexToken": "",
+    "plexTokenHelper": "",
+    "plexTokenRequired": "",
+    "connectDirectPlexCard": "",
+    "connectDirectPlexCardSubtitle": "",
+    "connectDirectPlexCardSubtitleScoped": ""
+  },
+  "watchLink": {
+    "serverUnavailable": "",
+    "notFound": "",
+    "ambiguous": "",
+    "plexOnly": "",
+    "unsupportedItem": "",
+    "menuItem": "",
+    "dialogTitle": "",
+    "dialogShowHint": "",
+    "dialogMovieHint": "",
+    "copy": "",
+    "copied": ""
   }
 }

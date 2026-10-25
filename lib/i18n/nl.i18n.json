@@ -54,7 +54,8 @@
     "quickConnectCancel": "Annuleren",
     "quickConnectExpired": "Quick Connect is verlopen. Probeer opnieuw.",
     "localDataRecoveryRequired": "Plezy kon lokale aanmeldings- en openstaande afspeelgegevens niet veilig herstellen. Meld je opnieuw aan.",
-    "pinCheckRejected": "De controle van de Plex-pincode is geweigerd"
+    "pinCheckRejected": "De controle van de Plex-pincode is geweigerd",
+    "connectToDirectPlex": ""
   },
   "common": {
     "cancel": "Annuleren",
@@ -358,6 +359,8 @@
     "autoPlayNextEpisodeDescription": "Start de volgende aflevering automatisch wanneer een aflevering eindigt",
     "shuffleStartsFromBeginning": "Willekeurig afspelen begint vooraan",
     "shuffleStartsFromBeginningDescription": "Start elke aflevering bij willekeurig afspelen vanaf het begin in plaats van te hervatten",
+    "plexCinemaPreRoll": "",
+    "plexCinemaPreRollDescription": "",
     "playNextCountdown": "Aftellen voor volgende aflevering",
     "playNextCountdownImmediate": "Direct afspelen",
     "skipIntroMode": "Intro overslaan",
@@ -379,6 +382,18 @@
     "introPatternDescription": "Reguliere expressie om intromarkeringen in hoofdstuktitels te herkennen",
     "creditsPattern": "Aftitelingmarkeringspatroon",
     "creditsPatternDescription": "Reguliere expressie om aftitelingmarkeringen in hoofdstuktitels te herkennen",
+    "prerolls": "",
+    "playPrerollsBeforeMovies": "",
+    "playPrerollsBeforeMoviesDescription": "",
+    "prerollLibrary": "",
+    "prerollLibraryNotSet": "",
+    "prerollLibraryNoneFound": "",
+    "prerollSelection": "",
+    "prerollSelectionPickLibraryFirst": "",
+    "prerollSelectionNoneSelected": "",
+    "prerollSelectionCount": "",
+    "prerollItemPicker": "",
+    "prerollItemPickerLoadFailed": "",
     "invalidRegex": "Ongeldige reguliere expressie",
     "regex": "Reguliere expressie",
     "downloads": "Downloads",
@@ -396,6 +411,12 @@
     "downloadOnWifiOnlyDescription": "Voorkom downloads bij gebruik van mobiele data",
     "autoRemoveWatchedDownloads": "Bekeken downloads automatisch verwijderen",
     "autoRemoveWatchedDownloadsDescription": "Bekeken downloads automatisch verwijderen",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
+    "downloadQuality": "",
+    "downloadQualityDescription": "",
+    "askDownloadQualityEachTime": "",
+    "askDownloadQualityEachTimeDescription": "",
     "cellularDownloadBlocked": "Downloads via een mobiel netwerk zijn geblokkeerd. Gebruik wifi of wijzig de instelling.",
     "maxVolume": "Maximaal volume",
     "maxVolumeDescription": "Volume boven 100% toestaan voor stille media",
@@ -510,6 +531,8 @@
     "gestureVolumeSwipeDescription": "Veeg op de rechterrand omhoog of omlaag om het volume aan te passen",
     "gesturePinchToZoom": "Knijpen om te zoomen",
     "gesturePinchToZoomDescription": "Knijp op de video om in of uit te zoomen",
+    "gestureSeekSwipe": "",
+    "gestureSeekSwipeDescription": "",
     "rememberBrightnessLevel": "Helderheidsniveau onthouden",
     "rememberBrightnessLevelDescription": "Start het afspelen met de helderheid die met de laatste veeg is ingesteld",
     "controls": "Bediening",
@@ -610,7 +633,9 @@
       "subtitleDelayDecrease": "Ondertiteling vervroegen",
       "shaderToggle": "Shaders aan/uit",
       "skipMarker": "Intro/aftiteling overslaan",
-      "screenshot": "Schermafbeelding maken"
+      "screenshot": "Schermafbeelding maken",
+      "framePrevious": "",
+      "frameNext": ""
     }
   },
   "fileInfo": {
@@ -830,6 +855,10 @@
     "track": "Audiospoor ${n}"
   },
   "videoControls": {
+    "frameCount": {
+      "one": "",
+      "other": ""
+    },
     "audioLabel": "Audio",
     "subtitlesLabel": "Ondertitels",
     "addTime": "+${amount}${unit}",
@@ -909,6 +938,8 @@
     "noQueueItems": "Geen items in de wachtrij",
     "noAudioDevicesAvailable": "Geen audioapparaten beschikbaar",
     "searchSubtitles": "Ondertitels zoeken",
+    "loadSubtitleFile": "",
+    "subtitleLoadFailed": "",
     "language": "Taal",
     "noSubtitlesFound": "Geen ondertitels gevonden",
     "subtitleDownloaded": "Ondertitel gedownload",
@@ -1463,6 +1494,7 @@
   "explore": {
     "mdblistShelves": {
       "manage": "",
+      "manageDescription": "",
       "description": "",
       "selected": "",
       "available": "",
@@ -2055,6 +2087,8 @@
     "unwatchedOnly": "Alleen ongekeken afleveringen",
     "nextNUnwatched": "Volgende ${count} ongekeken afleveringen",
     "customAmount": "Aangepast aantal...",
+    "customAmountAny": "",
+    "randomEpisodes": "",
     "includeSpecials": "Specials meenemen",
     "howManyEpisodes": "Hoeveel afleveringen?",
     "invalidEpisodeCount": "Voer een geldig aantal afleveringen in.",
@@ -2074,6 +2108,9 @@
     "syncRuleCleanupBusy": "Synchronisatieregels worden momenteel bijgewerkt. Probeer het over een moment opnieuw.",
     "syncRuleCleanupUnavailable": "Gekoppelde downloads konden niet veilig worden geïdentificeerd. Maak opnieuw verbinding met de server en probeer het opnieuw, of verwijder de regel zonder de downloads te verwijderen.",
     "syncedNewEpisodes": "${count} nieuwe afleveringen gesynchroniseerd voor ${title}",
+    "syncNow": "",
+    "downloadsUpToDate": "",
+    "syncComplete": "",
     "activeSyncRules": "Synchronisatieregels",
     "noSyncRules": "Geen synchronisatieregels",
     "manageSyncRule": "Synchronisatie beheren",
@@ -2148,6 +2185,8 @@
     "errorDownloadNotAllowed": "Downloaden niet toegestaan door de server (403)",
     "errorDownloadFailed": "Download mislukt",
     "errorDownloadFailedWithReason": "Download mislukt: ${reason}",
+    "convertingOnServer": "",
+    "convertingOnServerPercent": "",
     "errorHttpStatus": "Download mislukt (HTTP ${status})",
     "errorPostProcessing": "Nabewerking mislukt: ${reason}",
     "reasonFileNotSaved": "het bestand kon niet op dit apparaat worden opgeslagen",
@@ -2610,6 +2649,28 @@
     "redirectUnsupported": "De server heeft doorgestuurd naar een niet-ondersteunde URL",
     "redirectDifferentHost": "De server heeft doorgestuurd naar een andere host. Voer de uiteindelijke ${product}-URL rechtstreeks in.",
     "redirectInsecure": "De server heeft van HTTPS doorgestuurd naar een onbeveiligde URL",
-    "redirectUnsupportedEnterFinal": "De server heeft doorgestuurd naar een niet-ondersteunde URL. Voer de uiteindelijke ${product}-URL rechtstreeks in."
+    "redirectUnsupportedEnterFinal": "De server heeft doorgestuurd naar een niet-ondersteunde URL. Voer de uiteindelijke ${product}-URL rechtstreeks in.",
+    "directPlexServerUrl": "",
+    "directPlexServerUrlHelper": "",
+    "directPlexServerUrlHint": "",
+    "plexToken": "",
+    "plexTokenHelper": "",
+    "plexTokenRequired": "",
+    "connectDirectPlexCard": "",
+    "connectDirectPlexCardSubtitle": "",
+    "connectDirectPlexCardSubtitleScoped": ""
+  },
+  "watchLink": {
+    "serverUnavailable": "",
+    "notFound": "",
+    "ambiguous": "",
+    "plexOnly": "",
+    "unsupportedItem": "",
+    "menuItem": "",
+    "dialogTitle": "",
+    "dialogShowHint": "",
+    "dialogMovieHint": "",
+    "copy": "",
+    "copied": ""
   }
 }

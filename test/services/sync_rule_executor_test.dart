@@ -108,10 +108,11 @@ void main() {
       downloads: const {},
       metadata: const {},
       associateDownload: (_, _) async {},
-      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
+      queueSingleDownload: (item, client, {int mediaIndex = 0, Object? downloadQuality}) async {
         queued.add((item: item, client: client));
         return true;
       },
+      deleteSyncRuleDownload: (_) async {},
       isOffline: false,
       force: true,
     );
@@ -180,10 +181,11 @@ void main() {
       downloads: const {},
       metadata: const {},
       associateDownload: (_, _) async {},
-      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
+      queueSingleDownload: (item, client, {int mediaIndex = 0, Object? downloadQuality}) async {
         queued.add(item);
         return true;
       },
+      deleteSyncRuleDownload: (_) async {},
       isOffline: false,
       force: true,
     );
@@ -229,7 +231,8 @@ void main() {
       downloads: const {},
       metadata: const {},
       associateDownload: (_, _) async {},
-      queueSingleDownload: (item, client, {int mediaIndex = 0}) async => true,
+      queueSingleDownload: (item, client, {int mediaIndex = 0, Object? downloadQuality}) async => true,
+      deleteSyncRuleDownload: (_) async {},
       isOffline: false,
       force: true,
     );
@@ -292,10 +295,11 @@ void main() {
       },
       metadata: const {},
       associateDownload: (_, globalKey) async => associated.add(globalKey),
-      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
+      queueSingleDownload: (item, client, {int mediaIndex = 0, Object? downloadQuality}) async {
         queued.add(item);
         return true;
       },
+      deleteSyncRuleDownload: (_) async {},
       isOffline: false,
       force: true,
     );
@@ -342,10 +346,11 @@ void main() {
       downloads: const {},
       metadata: {ruleKey: show},
       associateDownload: (_, _) async {},
-      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
+      queueSingleDownload: (item, client, {int mediaIndex = 0, Object? downloadQuality}) async {
         queued.add(item);
         return true;
       },
+      deleteSyncRuleDownload: (_) async {},
       isOffline: false,
       force: true,
     );
@@ -385,9 +390,10 @@ void main() {
       },
       metadata: const {},
       associateDownload: (_, globalKey) async => associated.add(globalKey),
-      queueSingleDownload: (_, _, {int mediaIndex = 0}) async {
+      queueSingleDownload: (_, _, {int mediaIndex = 0, Object? downloadQuality}) async {
         fail('an already-downloaded playlist member must not be queued');
       },
+      deleteSyncRuleDownload: (_) async {},
       isOffline: false,
       force: true,
     );
@@ -437,10 +443,11 @@ void main() {
       downloads: const {},
       metadata: {ruleKey: collection},
       associateDownload: (_, globalKey) async => associated.add(globalKey),
-      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
+      queueSingleDownload: (item, client, {int mediaIndex = 0, Object? downloadQuality}) async {
         queued.add(item);
         return true;
       },
+      deleteSyncRuleDownload: (_) async {},
       isOffline: false,
       force: true,
     );
@@ -495,10 +502,11 @@ void main() {
       },
       metadata: {ruleKey: collection},
       associateDownload: (_, globalKey) async => associated.add(globalKey),
-      queueSingleDownload: (item, client, {int mediaIndex = 0}) async {
+      queueSingleDownload: (item, client, {int mediaIndex = 0, Object? downloadQuality}) async {
         queued.add(item);
         return true;
       },
+      deleteSyncRuleDownload: (_) async {},
       isOffline: false,
       force: true,
     );

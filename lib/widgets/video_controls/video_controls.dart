@@ -170,9 +170,11 @@ MediaSubtitleTrack? findDownloadedExternalSubtitleTrack(
   // Plex downloaded subtitles have a `key` but aren't marked as `isExternalFile`.
   // Include tracks with a non-empty `key` as potential downloaded subtitles.
   final externalFileCandidates = tracks
-      .where((track) => 
-          (track.isExternalFile || (track.key != null && track.key!.isNotEmpty)) 
-          && track.id != currentSelectedSourceId)
+      .where(
+        (track) =>
+            (track.isExternalFile || (track.key != null && track.key!.isNotEmpty)) &&
+            track.id != currentSelectedSourceId,
+      )
       .toList(growable: false);
   if (externalFileCandidates.isEmpty) return null;
 

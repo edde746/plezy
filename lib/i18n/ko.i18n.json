@@ -54,7 +54,8 @@
     "quickConnectCancel": "취소",
     "quickConnectExpired": "Quick Connect가 만료되었습니다. 다시 시도하세요.",
     "localDataRecoveryRequired": "Plezy에서 로컬 로그인 정보와 대기 중인 재생 데이터를 안전하게 복구하지 못했습니다. 다시 로그인해 주세요.",
-    "pinCheckRejected": "Plex PIN 확인이 거부되었습니다"
+    "pinCheckRejected": "Plex PIN 확인이 거부되었습니다",
+    "connectToDirectPlex": ""
   },
   "common": {
     "cancel": "취소",
@@ -358,6 +359,8 @@
     "autoPlayNextEpisodeDescription": "에피소드가 끝나면 다음 에피소드를 자동으로 재생",
     "shuffleStartsFromBeginning": "무작위 재생 시 처음부터 시작",
     "shuffleStartsFromBeginningDescription": "무작위 재생 시 이어보기 대신 각 에피소드를 처음부터 재생합니다",
+    "plexCinemaPreRoll": "",
+    "plexCinemaPreRollDescription": "",
     "playNextCountdown": "다음 재생 카운트다운",
     "playNextCountdownImmediate": "즉시 재생",
     "skipIntroMode": "인트로 건너뛰기",
@@ -379,6 +382,18 @@
     "introPatternDescription": "챕터 제목에서 인트로 마커를 인식하는 정규식 패턴",
     "creditsPattern": "크레딧 마커 패턴",
     "creditsPatternDescription": "챕터 제목에서 크레딧 마커를 인식하는 정규식 패턴",
+    "prerolls": "",
+    "playPrerollsBeforeMovies": "",
+    "playPrerollsBeforeMoviesDescription": "",
+    "prerollLibrary": "",
+    "prerollLibraryNotSet": "",
+    "prerollLibraryNoneFound": "",
+    "prerollSelection": "",
+    "prerollSelectionPickLibraryFirst": "",
+    "prerollSelectionNoneSelected": "",
+    "prerollSelectionCount": "",
+    "prerollItemPicker": "",
+    "prerollItemPickerLoadFailed": "",
     "invalidRegex": "잘못된 정규식",
     "regex": "정규식",
     "downloads": "다운로드",
@@ -396,6 +411,12 @@
     "downloadOnWifiOnlyDescription": "셀룰러 데이터 사용 중에는 다운로드하지 않습니다",
     "autoRemoveWatchedDownloads": "시청한 다운로드 항목 자동 삭제",
     "autoRemoveWatchedDownloadsDescription": "시청한 다운로드 항목을 자동으로 삭제합니다",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
+    "downloadQuality": "",
+    "downloadQualityDescription": "",
+    "askDownloadQualityEachTime": "",
+    "askDownloadQualityEachTimeDescription": "",
     "cellularDownloadBlocked": "셀룰러에서는 다운로드가 차단됩니다. Wi-Fi를 사용하거나 설정을 변경하세요.",
     "maxVolume": "최대 볼륨",
     "maxVolumeDescription": "음량이 작은 콘텐츠를 위해 100% 이상의 볼륨을 허용합니다",
@@ -510,6 +531,8 @@
     "gestureVolumeSwipeDescription": "오른쪽 가장자리에서 위아래로 스와이프하여 볼륨을 조절합니다",
     "gesturePinchToZoom": "핀치 줌",
     "gesturePinchToZoomDescription": "비디오에서 핀치하여 확대하거나 축소합니다",
+    "gestureSeekSwipe": "",
+    "gestureSeekSwipeDescription": "",
     "rememberBrightnessLevel": "밝기 수준 기억",
     "rememberBrightnessLevelDescription": "마지막으로 스와이프하여 설정한 밝기로 재생을 시작합니다",
     "controls": "컨트롤",
@@ -610,7 +633,9 @@
       "subtitleDelayDecrease": "자막 앞당기기",
       "shaderToggle": "셰이더 전환",
       "skipMarker": "인트로/크레딧 건너뛰기",
-      "screenshot": "스크린샷 찍기"
+      "screenshot": "스크린샷 찍기",
+      "framePrevious": "",
+      "frameNext": ""
     }
   },
   "fileInfo": {
@@ -827,6 +852,9 @@
     "track": "오디오 트랙 ${n}"
   },
   "videoControls": {
+    "frameCount": {
+      "other": ""
+    },
     "audioLabel": "오디오",
     "subtitlesLabel": "자막",
     "addTime": "+${amount}${unit}",
@@ -906,6 +934,8 @@
     "noQueueItems": "대기열에 항목이 없습니다",
     "noAudioDevicesAvailable": "사용 가능한 오디오 기기가 없습니다",
     "searchSubtitles": "자막 검색",
+    "loadSubtitleFile": "",
+    "subtitleLoadFailed": "",
     "language": "언어",
     "noSubtitlesFound": "자막을 찾을 수 없습니다",
     "subtitleDownloaded": "자막이 다운로드되었습니다",
@@ -1458,6 +1488,7 @@
   "explore": {
     "mdblistShelves": {
       "manage": "",
+      "manageDescription": "",
       "description": "",
       "selected": "",
       "available": "",
@@ -2043,6 +2074,8 @@
     "unwatchedOnly": "시청하지 않은 것만",
     "nextNUnwatched": "다음 ${count}개 미시청",
     "customAmount": "직접 입력...",
+    "customAmountAny": "",
+    "randomEpisodes": "",
     "includeSpecials": "스페셜 포함",
     "howManyEpisodes": "몇 개의 에피소드?",
     "invalidEpisodeCount": "올바른 에피소드 수를 입력하세요.",
@@ -2062,6 +2095,9 @@
     "syncRuleCleanupBusy": "동기화 규칙이 현재 업데이트 중입니다. 잠시 후 다시 시도하세요.",
     "syncRuleCleanupUnavailable": "연결된 다운로드를 안전하게 확인할 수 없습니다. 서버에 다시 연결한 후 시도하거나, 다운로드를 삭제하지 않고 규칙만 제거하세요.",
     "syncedNewEpisodes": "${title}의 새 에피소드 ${count}개 동기화됨",
+    "syncNow": "",
+    "downloadsUpToDate": "",
+    "syncComplete": "",
     "activeSyncRules": "동기화 규칙",
     "noSyncRules": "동기화 규칙 없음",
     "manageSyncRule": "동기화 관리",
@@ -2132,6 +2168,8 @@
     "errorDownloadNotAllowed": "서버에서 다운로드를 허용하지 않음(403)",
     "errorDownloadFailed": "다운로드 실패",
     "errorDownloadFailedWithReason": "다운로드 실패: ${reason}",
+    "convertingOnServer": "",
+    "convertingOnServerPercent": "",
     "errorHttpStatus": "다운로드 실패(HTTP ${status})",
     "errorPostProcessing": "후처리 실패: ${reason}",
     "reasonFileNotSaved": "이 기기에 파일을 저장할 수 없습니다",
@@ -2594,6 +2632,28 @@
     "redirectUnsupported": "서버가 지원되지 않는 URL로 리디렉션했습니다",
     "redirectDifferentHost": "서버가 다른 호스트로 리디렉션했습니다. 최종 ${product} URL을 직접 입력하세요.",
     "redirectInsecure": "서버가 HTTPS에서 안전하지 않은 URL로 리디렉션했습니다",
-    "redirectUnsupportedEnterFinal": "서버가 지원되지 않는 URL로 리디렉션했습니다. 최종 ${product} URL을 직접 입력하세요."
+    "redirectUnsupportedEnterFinal": "서버가 지원되지 않는 URL로 리디렉션했습니다. 최종 ${product} URL을 직접 입력하세요.",
+    "directPlexServerUrl": "",
+    "directPlexServerUrlHelper": "",
+    "directPlexServerUrlHint": "",
+    "plexToken": "",
+    "plexTokenHelper": "",
+    "plexTokenRequired": "",
+    "connectDirectPlexCard": "",
+    "connectDirectPlexCardSubtitle": "",
+    "connectDirectPlexCardSubtitleScoped": ""
+  },
+  "watchLink": {
+    "serverUnavailable": "",
+    "notFound": "",
+    "ambiguous": "",
+    "plexOnly": "",
+    "unsupportedItem": "",
+    "menuItem": "",
+    "dialogTitle": "",
+    "dialogShowHint": "",
+    "dialogMovieHint": "",
+    "copy": "",
+    "copied": ""
   }
 }

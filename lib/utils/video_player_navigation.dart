@@ -33,6 +33,7 @@ import 'global_key_utils.dart';
 import 'platform_detector.dart';
 import 'download_version_utils.dart';
 import 'media_version_resolver.dart';
+import 'preroll_service.dart';
 import 'provider_extensions.dart';
 import 'quality_preset_labels.dart';
 import '../i18n/strings.g.dart';
@@ -337,6 +338,8 @@ Future<bool?> navigateToVideoPlayer(
   bool explicitStartPolicy = false,
   PlaybackLaunchObserver? launchObserver,
   bool skipCinemaExtras = false,
+  bool skipPreroll = false,
+  bool isPreroll = false,
 }) async {
   final watchTogether = isOffline || watchTogetherCopy == null ? null : context.read<WatchTogetherProvider?>();
   // A launch for the Watch Together room is stale once the room moved on.
@@ -362,6 +365,28 @@ Future<bool?> navigateToVideoPlayer(
         metadata,
       ).launchMovieWithCinemaExtras(movie: metadata);
       if (extras is PlayQueueSuccess) return true;
+    }
+  }
+
+  final wantsLocalPreroll = prerollShouldPlayFor(
+    metadata,
+    skipPreroll: skipPreroll || skipCinemaExtras || watchTogetherCopy != null,
+    isOffline: isOffline,
+    usePushReplacement: usePushReplacement,
+  );
+  if (wantsLocalPreroll) {
+    if (!context.mounted || !launchCurrent()) return null;
+    final preroll = await pickRandomPreroll(context);
+    if (!context.mounted || !launchCurrent()) return null;
+    if (preroll != null) {
+      await navigateToVideoPlayer(
+        context,
+        metadata: preroll,
+        resolveWatchState: false,
+        skipPreroll: true,
+        isPreroll: true,
+      );
+      if (!context.mounted || !launchCurrent()) return null;
     }
   }
 
@@ -492,7 +517,9 @@ Future<bool?> navigateToVideoPlayer(
             launchObserver?.mark('externalLaunched');
             // External playback never reaches the in-player session commit, so
             // record the local last-played history here.
-            if (!isOffline && launchCurrent()) unawaited(LocalPlaybackHistory.recordPlayback(metadata));
+            if (!isOffline && !isPreroll && launchCurrent()) {
+              unawaited(LocalPlaybackHistory.recordPlayback(metadata));
+            }
             return null;
           }
         }
@@ -537,6 +564,7 @@ Future<bool?> navigateToVideoPlayer(
         preferredVersionSignature: preferredVersion?.signature,
         selectedQualityPreset: selectedQualityPreset,
         isOffline: isOffline,
+        isPreroll: isPreroll,
         watchTogetherCopy: watchTogetherCopy,
         initialPosition: initialPosition,
         strictMediaSelection: strictMediaSelection,

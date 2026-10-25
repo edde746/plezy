@@ -719,6 +719,12 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       enableTrackSelectionMemory: mediaClient is JellyfinClient
           ? _mediaBrowserTrackMemoryEnabler(mediaClient, context.read<AccountPreferencesController>())
           : null,
+      persistLocalTrackPreference: ({required globalKey, required trackType, required preference}) async {
+        if (!mounted || !identical(player, forPlayer)) return;
+        final storage = await StorageService.getInstance();
+        if (!mounted || !identical(player, forPlayer)) return;
+        await storage.saveShowTrackPreference(globalKey, trackType: trackType, preference: preference);
+      },
       getProfileSettings: getProfileSettings,
       waitForProfileSettings: _waitForProfileSettingsIfNeeded,
       metadata: metadata,

@@ -368,7 +368,7 @@ class AppDatabase extends _$AppDatabase {
   static const FormatException _invalidRecoveryImage = FormatException('Invalid tvOS database recovery image');
 
   @override
-  int get schemaVersion => 27;
+  int get schemaVersion => 28;
 
   @override
   MigrationStrategy get migration {
@@ -777,6 +777,13 @@ class AppDatabase extends _$AppDatabase {
           await _ignoreAlreadyExists(
             'SyncRules.randomEpisodes column',
             () => m.addColumn(syncRules, syncRules.randomEpisodes),
+          );
+        }
+        if (from < 28) {
+          appLogger.i('Adding downloadQuality column to SyncRules (v28 migration)');
+          await _ignoreAlreadyExists(
+            'SyncRules.downloadQuality column',
+            () => m.addColumn(syncRules, syncRules.downloadQuality),
           );
         }
       },
@@ -1210,6 +1217,12 @@ class AppDatabase extends _$AppDatabase {
     return (select(syncRuleDownloads)..where((t) => t.syncRuleId.equals(syncRuleId))).get();
   }
 
+  Future<void> removeSyncRuleDownloadLink(int syncRuleId, String downloadGlobalKey) {
+    return (delete(
+      syncRuleDownloads,
+    )..where((t) => t.syncRuleId.equals(syncRuleId) & t.downloadGlobalKey.equals(downloadGlobalKey))).go();
+  }
+
   Future<List<String>> getOwnedDownloadKeysForAncestorRule({
     required String profileId,
     required ServerId serverId,
@@ -1266,6 +1279,8 @@ class AppDatabase extends _$AppDatabase {
     String downloadFilter = 'unwatched',
     bool randomEpisodes = false,
     bool includeSpecials = true,
+    String? downloadQuality,
+    bool downloadLinksInitialized = false,
   }) async {
     // [insertOnConflictUpdate] defaults the conflict target to the primary
     // key (`id`), which is auto-incremented — the conflict never triggers
@@ -1285,6 +1300,8 @@ class AppDatabase extends _$AppDatabase {
         downloadFilter: Value(downloadFilter),
         randomEpisodes: Value(randomEpisodes),
         includeSpecials: Value(includeSpecials),
+        downloadQuality: Value(downloadQuality),
+        downloadLinksInitialized: Value(downloadLinksInitialized),
       ),
       onConflict: DoUpdate(
         (_) => SyncRulesCompanion(
@@ -1297,6 +1314,7 @@ class AppDatabase extends _$AppDatabase {
           downloadFilter: Value(downloadFilter),
           randomEpisodes: Value(randomEpisodes),
           includeSpecials: Value(includeSpecials),
+          downloadQuality: Value(downloadQuality),
         ),
         target: [syncRules.globalKey],
       ),
@@ -1340,6 +1358,7 @@ class AppDatabase extends _$AppDatabase {
     bool? enabled,
     bool? includeSpecials,
     int? mediaIndex,
+    String? downloadQuality,
     required void Function() checkCurrent,
   }) => transaction(() async {
     checkCurrent();
@@ -1355,6 +1374,7 @@ class AppDatabase extends _$AppDatabase {
         enabled: enabled == null ? const Value.absent() : Value(enabled),
         includeSpecials: includeSpecials == null ? const Value.absent() : Value(includeSpecials),
         mediaIndex: mediaIndex == null ? const Value.absent() : Value(mediaIndex),
+        downloadQuality: downloadQuality == null ? const Value.absent() : Value(downloadQuality),
       ),
     );
     checkCurrent();

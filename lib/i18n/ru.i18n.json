@@ -54,7 +54,8 @@
     "quickConnectCancel": "Отмена",
     "quickConnectExpired": "Срок действия Quick Connect истёк. Попробуйте снова.",
     "localDataRecoveryRequired": "Plezy не удалось безопасно восстановить данные локального входа и несинхронизированные данные о воспроизведении. Войдите снова.",
-    "pinCheckRejected": "Проверка PIN-кода Plex была отклонена"
+    "pinCheckRejected": "Проверка PIN-кода Plex была отклонена",
+    "connectToDirectPlex": ""
   },
   "common": {
     "cancel": "Отмена",
@@ -358,6 +359,8 @@
     "autoPlayNextEpisodeDescription": "Автоматически запускать следующий эпизод, когда заканчивается текущий",
     "shuffleStartsFromBeginning": "Случайный порядок начинает с начала",
     "shuffleStartsFromBeginningDescription": "Начинать каждый эпизод с начала при случайном воспроизведении вместо продолжения",
+    "plexCinemaPreRoll": "",
+    "plexCinemaPreRollDescription": "",
     "playNextCountdown": "Обратный отсчёт перед следующим",
     "playNextCountdownImmediate": "Воспроизводить сразу",
     "skipIntroMode": "Пропуск вступления",
@@ -379,6 +382,18 @@
     "introPatternDescription": "Регулярное выражение для распознавания маркеров вступления в заголовках глав",
     "creditsPattern": "Шаблон маркера титров",
     "creditsPatternDescription": "Регулярное выражение для распознавания маркеров титров в заголовках глав",
+    "prerolls": "",
+    "playPrerollsBeforeMovies": "",
+    "playPrerollsBeforeMoviesDescription": "",
+    "prerollLibrary": "",
+    "prerollLibraryNotSet": "",
+    "prerollLibraryNoneFound": "",
+    "prerollSelection": "",
+    "prerollSelectionPickLibraryFirst": "",
+    "prerollSelectionNoneSelected": "",
+    "prerollSelectionCount": "",
+    "prerollItemPicker": "",
+    "prerollItemPickerLoadFailed": "",
     "invalidRegex": "Недопустимое регулярное выражение",
     "regex": "Регулярное выражение",
     "downloads": "Загрузки",
@@ -396,6 +411,12 @@
     "downloadOnWifiOnlyDescription": "Запретить загрузку по мобильным данным",
     "autoRemoveWatchedDownloads": "Автоудаление просмотренных загрузок",
     "autoRemoveWatchedDownloadsDescription": "Автоматически удалять просмотренные загрузки",
+    "autoDownloadContinueWatching": "",
+    "autoDownloadContinueWatchingDescription": "",
+    "downloadQuality": "",
+    "downloadQualityDescription": "",
+    "askDownloadQualityEachTime": "",
+    "askDownloadQualityEachTimeDescription": "",
     "cellularDownloadBlocked": "Загрузки через мобильную сеть заблокированы. Используйте Wi-Fi или измените настройку.",
     "maxVolume": "Максимальная громкость",
     "maxVolumeDescription": "Разрешить усиление громкости выше 100% для тихих медиа",
@@ -510,6 +531,8 @@
     "gestureVolumeSwipeDescription": "Проведите вверх или вниз по правому краю, чтобы изменить громкость",
     "gesturePinchToZoom": "Щипок для масштабирования",
     "gesturePinchToZoomDescription": "Сведите или разведите пальцы на видео, чтобы изменить масштаб",
+    "gestureSeekSwipe": "",
+    "gestureSeekSwipeDescription": "",
     "rememberBrightnessLevel": "Запоминать уровень яркости",
     "rememberBrightnessLevelDescription": "Начинать воспроизведение с яркостью, установленной последним свайпом",
     "controls": "Элементы управления",
@@ -610,7 +633,9 @@
       "subtitleDelayDecrease": "Сдвинуть субтитры раньше",
       "shaderToggle": "Вкл./выкл. шейдеры",
       "skipMarker": "Пропустить вступление/титры",
-      "screenshot": "Сделать снимок экрана"
+      "screenshot": "Сделать снимок экрана",
+      "framePrevious": "",
+      "frameNext": ""
     }
   },
   "fileInfo": {
@@ -836,6 +861,12 @@
     "track": "Аудиодорожка ${n}"
   },
   "videoControls": {
+    "frameCount": {
+      "one": "",
+      "few": "",
+      "many": "",
+      "other": ""
+    },
     "audioLabel": "Аудио",
     "subtitlesLabel": "Субтитры",
     "addTime": "+${amount}${unit}",
@@ -915,6 +946,8 @@
     "noQueueItems": "В очереди нет элементов",
     "noAudioDevicesAvailable": "Нет доступных аудиоустройств",
     "searchSubtitles": "Поиск субтитров",
+    "loadSubtitleFile": "",
+    "subtitleLoadFailed": "",
     "language": "Язык",
     "noSubtitlesFound": "Субтитры не найдены",
     "subtitleDownloaded": "Субтитры загружены",
@@ -1473,6 +1506,7 @@
   "explore": {
     "mdblistShelves": {
       "manage": "",
+      "manageDescription": "",
       "description": "",
       "selected": "",
       "available": "",
@@ -2079,6 +2113,8 @@
     "unwatchedOnly": "Только непросмотренные",
     "nextNUnwatched": "Следующие ${count} непросмотренных",
     "customAmount": "Указать количество...",
+    "customAmountAny": "",
+    "randomEpisodes": "",
     "includeSpecials": "Включить спецвыпуски",
     "howManyEpisodes": "Сколько эпизодов?",
     "invalidEpisodeCount": "Введите допустимое количество эпизодов.",
@@ -2098,6 +2134,9 @@
     "syncRuleCleanupBusy": "Правила синхронизации сейчас обновляются. Попробуйте снова чуть позже.",
     "syncRuleCleanupUnavailable": "Не удалось надёжно определить связанные загрузки. Переподключите сервер и повторите попытку либо удалите правило без удаления загрузок.",
     "syncedNewEpisodes": "Синхронизировано ${count} новых эпизодов для ${title}",
+    "syncNow": "",
+    "downloadsUpToDate": "",
+    "syncComplete": "",
     "activeSyncRules": "Правила синхронизации",
     "noSyncRules": "Нет правил синхронизации",
     "manageSyncRule": "Управление синхронизацией",
@@ -2180,6 +2219,8 @@
     "errorDownloadNotAllowed": "Сервер не разрешает загрузку (403)",
     "errorDownloadFailed": "Не удалось выполнить загрузку",
     "errorDownloadFailedWithReason": "Не удалось выполнить загрузку: ${reason}",
+    "convertingOnServer": "",
+    "convertingOnServerPercent": "",
     "errorHttpStatus": "Не удалось выполнить загрузку (HTTP ${status})",
     "errorPostProcessing": "Не удалось выполнить постобработку: ${reason}",
     "reasonFileNotSaved": "не удалось сохранить файл на этом устройстве",
@@ -2642,6 +2683,28 @@
     "redirectUnsupported": "Сервер перенаправил на неподдерживаемый URL",
     "redirectDifferentHost": "Сервер перенаправил на другой хост. Введите конечный URL ${product} напрямую.",
     "redirectInsecure": "Сервер перенаправил с HTTPS на небезопасный URL",
-    "redirectUnsupportedEnterFinal": "Сервер перенаправил на неподдерживаемый URL. Введите конечный URL ${product} напрямую."
+    "redirectUnsupportedEnterFinal": "Сервер перенаправил на неподдерживаемый URL. Введите конечный URL ${product} напрямую.",
+    "directPlexServerUrl": "",
+    "directPlexServerUrlHelper": "",
+    "directPlexServerUrlHint": "",
+    "plexToken": "",
+    "plexTokenHelper": "",
+    "plexTokenRequired": "",
+    "connectDirectPlexCard": "",
+    "connectDirectPlexCardSubtitle": "",
+    "connectDirectPlexCardSubtitleScoped": ""
+  },
+  "watchLink": {
+    "serverUnavailable": "",
+    "notFound": "",
+    "ambiguous": "",
+    "plexOnly": "",
+    "unsupportedItem": "",
+    "menuItem": "",
+    "dialogTitle": "",
+    "dialogShowHint": "",
+    "dialogMovieHint": "",
+    "copy": "",
+    "copied": ""
   }
 }

@@ -19,6 +19,7 @@ import '../../mixins/refreshable.dart';
 import '../../providers/account_preferences_controller.dart';
 import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/download_provider.dart';
+import '../../providers/multi_server_provider.dart';
 import '../../providers/libraries_provider.dart';
 import '../../services/donation_service.dart';
 import '../../services/download_storage_service.dart';
@@ -108,7 +109,9 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   static const _kDownloadLocation = 'download_location';
   static const _kDownloadOnWifiOnly = 'download_on_wifi_only';
   static const _kAutoRemoveWatchedDownloads = 'auto_remove_watched_downloads';
+  static const _kAutoDownloadContinueWatching = 'auto_download_continue_watching';
   static const _kDownloadQuality = 'download_quality';
+  static const _kAskDownloadQualityEachTime = 'ask_download_quality_each_time';
   static const _kBackgroundDownloads = 'background_downloads';
   static const _kVideoPlayerControls = 'video_player_controls';
   static const _kVideoPlayerNavigation = 'video_player_navigation';
@@ -461,11 +464,32 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
               .toList(),
         ),
         SettingSwitchTile(
+          focusNode: _focusTracker.get(_kAskDownloadQualityEachTime),
+          pref: settings.SettingsService.askDownloadQualityEachTime,
+          icon: Symbols.tune_rounded,
+          title: t.settings.askDownloadQualityEachTime,
+          subtitle: t.settings.askDownloadQualityEachTimeDescription,
+        ),
+        SettingSwitchTile(
           focusNode: _focusTracker.get(_kAutoRemoveWatchedDownloads),
           pref: settings.SettingsService.autoRemoveWatchedDownloads,
           icon: Symbols.delete_sweep_rounded,
           title: t.settings.autoRemoveWatchedDownloads,
           subtitle: t.settings.autoRemoveWatchedDownloadsDescription,
+        ),
+        SettingSwitchTile(
+          focusNode: _focusTracker.get(_kAutoDownloadContinueWatching),
+          pref: settings.SettingsService.autoDownloadContinueWatching,
+          icon: Symbols.sync_rounded,
+          title: t.settings.autoDownloadContinueWatching,
+          subtitle: t.settings.autoDownloadContinueWatchingDescription,
+          onAfterWrite: (_) async {
+            if (!context.mounted) return;
+            final downloadProvider = context.read<DownloadProvider>();
+            final serverManager = context.read<MultiServerProvider>().serverManager;
+            await downloadProvider.syncContinueWatchingRulesWithSetting(serverManager);
+            await downloadProvider.reconcileNow(serverManager);
+          },
         ),
         if (_backgroundWorkDiagnostics.isSupported) _buildBackgroundDownloadsTile(),
         // TODO: "Remove orphaned downloads" toggle (#1413) goes here, next to

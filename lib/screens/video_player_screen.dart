@@ -76,6 +76,7 @@ import '../services/player_sync_offsets.dart';
 import '../services/preferred_audio_device.dart';
 import '../services/scoped_player_prefs.dart';
 import '../services/settings_service.dart';
+import '../services/storage_service.dart';
 import '../services/sleep_timer_service.dart';
 import '../services/subtitle_preference.dart';
 import '../services/track_manager.dart';
@@ -512,6 +513,8 @@ class VideoPlayerScreen extends StatefulWidget {
 
   bool get isLive => live != null;
 
+  final bool isPreroll;
+
   const VideoPlayerScreen({
     super.key,
     required this.metadata,
@@ -526,6 +529,7 @@ class VideoPlayerScreen extends StatefulWidget {
     this.selectedQualityPreset,
     this.selectedAudioStreamId,
     this.live,
+    this.isPreroll = false,
     this.watchTogetherCopy,
     this.initialPosition,
     this.strictMediaSelection = false,
@@ -1097,9 +1101,10 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     // Any freshly opened stream ends a dead-stream park (#1520).
     _eofRecovery.clearPark();
     // Every successful open passes through here (never live TV), making it
-    // the chokepoint for the local last-played history. Offline plays are
-    // excluded — like version prefs, the history describes online intent.
-    if (!session.isOffline) {
+    // the chokepoint for the local last-played history. Offline plays and
+    // prerolls are excluded — like version prefs, the history describes
+    // online intent for the title the viewer actually chose.
+    if (!session.isOffline && !widget.isPreroll) {
       unawaited(LocalPlaybackHistory.recordPlayback(session.metadata));
     }
   }
@@ -1653,6 +1658,44 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     unawaited(_startPlayerInitialization(replaceCurrent: true));
   }
 
+  void _restoreShowTrackPreferences(Map<String, dynamic> preferences) {
+    if (_preferredAudioTrack == null && preferences['audio'] is Map) {
+      final audio = Map<String, dynamic>.from(preferences['audio'] as Map);
+      final language = audio['language'] as String?;
+      final title = audio['title'] as String?;
+      final codec = audio['codec'] as String?;
+      final channels = audio['channels'] as int?;
+      if (language != null || title != null) {
+        _preferredAudioTrack = AudioTrack(
+          id: carriedAudioTrackId,
+          language: language,
+          title: title,
+          codec: codec,
+          channels: channels,
+        );
+      }
+    }
+    if (_preferredSubtitleTrack != null || preferences['subtitle'] is! Map) return;
+    final subtitle = Map<String, dynamic>.from(preferences['subtitle'] as Map);
+    if (subtitle['off'] == true) {
+      _preferredSubtitleTrack = const SubtitlePreference.off();
+      return;
+    }
+    final language = subtitle['language'] as String?;
+    final title = subtitle['title'] as String?;
+    final codec = subtitle['codec'] as String?;
+    if (language == null && title == null && codec == null) return;
+    _preferredSubtitleTrack = SubtitlePreference.intent(
+      SubtitleIntent(
+        language: language,
+        title: title,
+        codec: codec,
+        forced: subtitle['forced'] == true,
+        isExternal: subtitle['external'] == true,
+      ),
+    );
+  }
+
   bool _isPlayerInitializationCurrent(int generation) {
     return mounted && !_shuttingDown && _launchCurrent && generation == _playerInitializationGeneration;
   }
@@ -1719,6 +1762,14 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
       initPhase = 'loading settings';
       final settingsService = await SettingsService.getInstance();
+      // A local show override takes precedence over the server's default, but
+      // an explicit preference passed by a caller remains authoritative.
+      final localTrackPreferences = await StorageService.getInstance();
+      final savedTrackPreference = localTrackPreferences.getShowTrackPreference(
+        _currentMetadata.seriesGlobalKey ?? _currentMetadata.globalKey,
+      );
+      if (!_isPlayerInitializationCurrent(generation)) return;
+      _restoreShowTrackPreferences(savedTrackPreference);
       // Literal `mounted` check: the kickoff block below reads `context`, and
       // the lint cannot see the mounted check inside the helper.
       if (!mounted || !_isPlayerInitializationCurrent(generation)) return;
