@@ -201,6 +201,9 @@ class Translations$auth$en {
 
 	/// en: 'The Plex PIN check was rejected'
 	String get pinCheckRejected => 'The Plex PIN check was rejected';
+
+	/// en: 'Connect to local Plex server'
+	String get connectToDirectPlex => 'Connect to local Plex server';
 }
 
 // Path: common
@@ -6101,6 +6104,30 @@ class Translations$addServer$en {
 
 	/// en: 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.'
 	String redirectUnsupportedEnterFinal({required Object product}) => 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.';
+
+	/// en: 'Plex server URL'
+	String get directPlexServerUrl => 'Plex server URL';
+
+	/// en: 'Enter the local IP and port of your Plex Media Server.'
+	String get directPlexServerUrlHelper => 'Enter the local IP and port of your Plex Media Server.';
+
+	/// en: 'Plex Token (optional)'
+	String get plexToken => 'Plex Token (optional)';
+
+	/// en: 'Leave blank if access without auth is allowed on this server.'
+	String get plexTokenHelper => 'Leave blank if access without auth is allowed on this server.';
+
+	/// en: 'Authentication required. Please enter your Plex token (X-Plex-Token).'
+	String get plexTokenRequired => 'Authentication required. Please enter your Plex token (X-Plex-Token).';
+
+	/// en: 'Plex Media Server (Direct / Local)'
+	String get connectDirectPlexCard => 'Plex Media Server (Direct / Local)';
+
+	/// en: 'Connect directly using local IP or URL without plex.tv account.'
+	String get connectDirectPlexCardSubtitle => 'Connect directly using local IP or URL without plex.tv account.';
+
+	/// en: 'Connect directly using local IP or URL. Binds to ${name}.'
+	String connectDirectPlexCardSubtitleScoped({required Object name}) => 'Connect directly using local IP or URL. Binds to ${name}.';
 }
 
 // Path: appIcon.names
@@ -8089,6 +8116,7 @@ extension on Translations {
 			'auth.quickConnectExpired' => 'Quick Connect expired. Try again.',
 			'auth.localDataRecoveryRequired' => 'Plezy could not safely recover local sign-in and pending playback data. Please sign in again.',
 			'auth.pinCheckRejected' => 'The Plex PIN check was rejected',
+			'auth.connectToDirectPlex' => 'Connect to local Plex server',
 			'common.cancel' => 'Cancel',
 			'common.save' => 'Save',
 			'common.close' => 'Close',
@@ -8551,9 +8579,9 @@ extension on Translations {
 			'themeEditor.slots.bg' => 'Background',
 			'themeEditor.slots.surface' => 'Surface',
 			'themeEditor.slots.outline' => 'Outline',
-			'themeEditor.slots.text' => 'Text',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.text' => 'Text',
 			'themeEditor.slots.textMuted' => 'Secondary text',
 			'themeEditor.slots.accent' => 'Accent',
 			'themeEditor.opacity' => 'Opacity',
@@ -9065,9 +9093,9 @@ extension on Translations {
 			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
 			'profiles.continueButton' => 'Continue',
 			'profiles.pinsDontMatch' => 'PINs don\'t match',
-			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
 			'connections.sectionTitle' => 'Connections',
 			'connections.addConnection' => 'Add connection',
 			'connections.addConnectionSubtitleNoProfile' => 'Sign in with Plex or connect a Jellyfin or Emby server',
@@ -9579,9 +9607,9 @@ extension on Translations {
 			'liveTv.recordSettings.anyChannel' => 'Record on any channel',
 			'liveTv.recordSettings.anyTime' => 'Record at any time',
 			'liveTv.recordSettings.skipInLibrary' => 'Skip episodes already in the library',
-			'liveTv.recordSettings.keepUpTo' => 'Episodes to keep',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordSettings.keepUpTo' => 'Episodes to keep',
 			'liveTv.recordSettings.keepUpToHint' => '0 keeps every episode',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Starting in ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} at ${time}',
@@ -10093,9 +10121,9 @@ extension on Translations {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
-			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
 			'performanceOverlay.decoderMediatekHw' => 'MediaTek HW',
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Software',
@@ -10354,6 +10382,14 @@ extension on Translations {
 			'addServer.redirectDifferentHost' => ({required Object product}) => 'The server redirected to a different host. Enter the final ${product} URL directly.',
 			'addServer.redirectInsecure' => 'The server redirected from HTTPS to an insecure URL',
 			'addServer.redirectUnsupportedEnterFinal' => ({required Object product}) => 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.',
+			'addServer.directPlexServerUrl' => 'Plex server URL',
+			'addServer.directPlexServerUrlHelper' => 'Enter the local IP and port of your Plex Media Server.',
+			'addServer.plexToken' => 'Plex Token (optional)',
+			'addServer.plexTokenHelper' => 'Leave blank if access without auth is allowed on this server.',
+			'addServer.plexTokenRequired' => 'Authentication required. Please enter your Plex token (X-Plex-Token).',
+			'addServer.connectDirectPlexCard' => 'Plex Media Server (Direct / Local)',
+			'addServer.connectDirectPlexCardSubtitle' => 'Connect directly using local IP or URL without plex.tv account.',
+			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => 'Connect directly using local IP or URL. Binds to ${name}.',
 			_ => null,
 		};
 	}
