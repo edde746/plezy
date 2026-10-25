@@ -13,6 +13,8 @@ class PlayerAndroid extends PlayerBase {
   static const _eventChannel = EventChannel('com.plezy/exo_player/events');
 
   String _bufferTier = 'auto';
+  int _bufferMb = 0;
+  int _transcodeBufferSeconds = 0;
   bool _tunnelingEnabled = false;
   String _dvConversionMode = 'auto';
   bool _audioNormalizationEnabled = false;
@@ -114,6 +116,8 @@ class PlayerAndroid extends PlayerBase {
       final result = await invoke<bool>('initialize', {
         'instanceId': nativeInstanceId,
         'bufferTier': _bufferTier,
+        'bufferMb': _bufferMb,
+        'transcodeBufferSeconds': _transcodeBufferSeconds,
         'tunnelingEnabled': _tunnelingEnabled,
         'dvConversionMode': _dvConversionMode,
         'audioPassthroughEnabled': _audioPassthroughEnabled,
@@ -314,11 +318,26 @@ class PlayerAndroid extends PlayerBase {
       case 'speed':
         await setRate(double.tryParse(value) ?? 1.0);
         break;
-      // Not an mpv property. mpv read-ahead is owned by the mpv.conf editor; this tier is
+      // Not an mpv property. mpv takes the Buffer Size setting as demuxer-max-bytes, which the
+      // fallback replay carries; this tier is
       // a named ExoPlayer read-ahead depth rather than a duration because the byte cap can
       // bind first (#1816).
       case 'exo-buffer-tier':
         _bufferTier = value;
+        break;
+      // Buffer Size setting, 0 = Auto. Like the tier, only read at initialize.
+      case 'exo-buffer-mb':
+        _bufferMb = int.tryParse(value) ?? 0;
+        break;
+      // Server transcode throttle in seconds, 0 = no cap. Unlike the two above it changes per
+      // stream, so it is applied live as well as at initialize.
+      case 'exo-transcode-buffer-seconds':
+        final seconds = int.tryParse(value) ?? 0;
+        _transcodeBufferSeconds = seconds;
+        await _applyWhenInitialized(
+          () => invoke('setTranscodeBufferCap', {'seconds': seconds}),
+          () => _transcodeBufferSeconds == seconds,
+        );
         break;
       case 'tunneled-playback':
         _tunnelingEnabled = value != 'no';

@@ -267,6 +267,7 @@ class ExoPlayerPlugin :
       "setBoxFitMode" -> handleSetBoxFitMode(call, result)
       "setVideoZoom" -> handleSetVideoZoom(call, result)
       "setDvConversionMode" -> handleSetDvConversionMode(call, result)
+      "setTranscodeBufferCap" -> handleSetTranscodeBufferCap(call, result)
       "setAudioNormalization" -> handleSetAudioNormalization(call, result)
       "setAudioPassthrough" -> handleSetAudioPassthrough(call, result)
       "setAudioDownmix" -> handleSetAudioDownmix(call, result)
@@ -307,9 +308,13 @@ class ExoPlayerPlugin :
     val audioPassthroughEnabled = call.argument<Boolean>("audioPassthroughEnabled") ?: false
     val assVideoLatencyFrames = call.argument<Int>("assVideoLatencyFrames") ?: 0
     val subtitleRenderScale = call.argument<Double>("subtitleRenderScale")?.toFloat() ?: 1.0f
-    // ExoPlayer-only: mpv's read-ahead is owned by the mpv.conf editor, so there is no
-    // fallback replay for this one. Resolved in the core; unrecognised means Auto (#1816).
+    // ExoPlayer-only: mpv gets its read-ahead as a demuxer-max-bytes write, so there is no
+    // fallback replay for these. Resolved in the core; unrecognised means Auto (#1816).
     val bufferTier = call.argument<String>("bufferTier") ?: "auto"
+    // Buffer Size setting, 0 = Auto.
+    val bufferMb = call.argument<Int>("bufferMb") ?: 0
+    // Per-stream transcode throttle set before initialize, 0 = no cap.
+    val transcodeBufferSeconds = call.argument<Int>("transcodeBufferSeconds") ?: 0
     // Seed the request here rather than waiting for Dart's separate setAudioPassthrough
     // call, so a fallback raised before that arrives still derives audio-spdif correctly.
     audioPassthroughRequested = audioPassthroughEnabled
@@ -349,10 +354,12 @@ class ExoPlayerPlugin :
         }
         playerCore = core
         coreInstanceId = call.argument<Number>("instanceId")?.toLong()
+        core.setTranscodeBufferCapSeconds(transcodeBufferSeconds)
         val success = core.initialize(
           tunnelingEnabled = tunnelingEnabled,
           audioPassthroughEnabled = audioPassthroughEnabled,
-          bufferTier = bufferTier
+          bufferTier = bufferTier,
+          bufferMb = bufferMb
         )
         if (!success) {
           if (playerCore === core) playerCore = null
@@ -1161,6 +1168,23 @@ class ExoPlayerPlugin :
       } else {
         result.error("INVALID_ARGS", "Invalid DV conversion mode: $mode", null)
       }
+    } ?: result.error("NO_ACTIVITY", "Activity not available", null)
+  }
+
+  private fun handleSetTranscodeBufferCap(call: MethodCall, result: MethodChannel.Result) {
+    val seconds = call.argument<Number>("seconds")?.toInt()
+    if (seconds == null) {
+      result.error("INVALID_ARGS", "Missing 'seconds'", null)
+      return
+    }
+    if (usingMpvFallback) {
+      // An ExoPlayer load-control cap; Dart writes the same cap to the fallback as cache-secs.
+      result.success(true)
+      return
+    }
+    activity?.runOnUiThread {
+      playerCore?.setTranscodeBufferCapSeconds(seconds)
+      result.success(true)
     } ?: result.error("NO_ACTIVITY", "Activity not available", null)
   }
 

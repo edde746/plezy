@@ -94,6 +94,9 @@ const _plexVideoTranscodeBaseEndpoint = '/video/:/transcode/universal';
 const _plexVideoHlsStartEndpoint = '$_plexVideoTranscodeBaseEndpoint/start.m3u8';
 const _plexVideoHlsProtocol = 'hls';
 
+/// PMS "Transcoder default throttle buffer" default.
+const _plexDefaultTranscodeThrottleSeconds = 60;
+
 /// VOD transcode target: HLS with fragmented-MP4 segments, offering
 /// [VideoDecodeCapabilities.transcodeVideoCodecs] in their ranked order — the
 /// same list the MediaBrowser device profile sends.
@@ -4688,6 +4691,25 @@ class PlexClient
 
   @override
   double get watchedThreshold => watchedThresholdPercent / 100.0;
+
+  /// Read once per client from `/:/prefs` (nothing fetches it on connect), so
+  /// a hung endpoint delays one open, not every one. Only the server owner can
+  /// read it, so anyone else gets Plex's default.
+  @override
+  Future<int?> transcodeThrottleSeconds() => _transcodeThrottleSeconds ??= _readTranscodeThrottleSeconds();
+  Future<int?>? _transcodeThrottleSeconds;
+
+  Future<int?> _readTranscodeThrottleSeconds() async {
+    Object? value;
+    try {
+      final response = await _getWithFailover('/:/prefs', timeout: MediaServerTimeouts.plexProbe);
+      value = _parseSettingsMap(response)['TranscoderThrottleBuffer'];
+    } catch (e) {
+      appLogger.d('Plex prefs unreadable, assuming the default transcode throttle: $e');
+    }
+    final seconds = value is int ? value : int.tryParse('$value');
+    return seconds != null && seconds > 0 ? seconds : _plexDefaultTranscodeThrottleSeconds;
+  }
 
   /// A single `/:/timeline?state=stopped` does not mark watched: PMS only acts
   /// on a threshold crossing it observes inside one session — a report below

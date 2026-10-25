@@ -1659,6 +1659,49 @@ void main() {
     });
   });
 
+  group('MediaBrowser transcode throttle', () {
+    for (final c in [
+      (
+        name: 'Jellyfin returns the throttle delay when throttling is on',
+        response: jsonResponse({'EnableThrottling': true, 'ThrottleDelaySeconds': 180}),
+        expected: 180,
+      ),
+      (
+        name: 'Jellyfin raises a sub-60 s delay to the server floor of 60',
+        response: jsonResponse({'EnableThrottling': true, 'ThrottleDelaySeconds': 30}),
+        expected: 60,
+      ),
+      (
+        name: 'Jellyfin returns null when throttling is off',
+        response: jsonResponse({'EnableThrottling': false, 'ThrottleDelaySeconds': 180}),
+        expected: null,
+      ),
+      (
+        name: 'Jellyfin returns null when the encoding config is forbidden',
+        response: http.Response('Forbidden', 403),
+        expected: null,
+      ),
+    ]) {
+      test(c.name, () async {
+        final requests = _RequestCapture((_) => c.response);
+        final client = testJellyfinClient(handler: requests.handle);
+        addTearDown(client.close);
+
+        expect(await client.transcodeThrottleSeconds(), c.expected);
+        expect(requests.log, ['GET /System/Configuration/encoding?']);
+      });
+    }
+
+    test('Emby returns null without a request', () async {
+      final requests = _RequestCapture((_) => http.Response('harmful request', 500));
+      final client = testEmbyClient(handler: requests.handle);
+      addTearDown(client.close);
+
+      expect(await client.transcodeThrottleSeconds(), isNull);
+      expect(requests.log, isEmpty);
+    });
+  });
+
   group('MediaBrowser artwork upload', () {
     // Both dialects reject a raw binary body with HTTP 500 — Emby 4.9.5 says
     // `The input is not a valid Base-64 string`, Jellyfin 10.11 answers a bare
