@@ -1,5 +1,7 @@
 import 'dart:async';
 import '../media/ids.dart';
+import '../media/media_item.dart';
+import '../media/media_kind.dart';
 import '../media/media_library.dart';
 import '../media/media_server_client.dart';
 import '../navigation/main_screen_scope.dart';
@@ -9,7 +11,7 @@ import 'dart:io' show Platform, exit;
 export '../navigation/main_screen_scope.dart'
     show MainScreenFocusScope, MainScreenScopeAspect, SideNavigationBleedBuilder;
 
-import 'package:flutter/foundation.dart' show ValueListenable;
+import 'package:flutter/foundation.dart' show Listenable, ValueListenable;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart'
     show HardwareKeyboard, KeyDownEvent, KeyRepeatEvent, KeyUpEvent, LogicalKeyboardKey;
@@ -54,6 +56,7 @@ import '../widgets/tv_virtual_keyboard.dart';
 import '../services/api_cache.dart';
 import '../services/multi_server_manager.dart';
 import '../services/offline_watch_sync_service.dart';
+import '../services/new_episode_notification_service.dart';
 import '../services/settings_service.dart';
 import '../providers/offline_mode_provider.dart';
 import '../services/companion_remote/companion_remote_host_controller.dart';
@@ -63,9 +66,12 @@ import '../providers/companion_remote_provider.dart';
 import '../utils/desktop_window_padding.dart';
 import '../utils/live_tv_deep_link.dart';
 import '../utils/playback_control_link.dart';
+import '../utils/profile_deep_link.dart';
 import '../utils/watch_link.dart';
 import '../widgets/music/mini_player.dart';
 import '../widgets/navigation_label_fit.dart';
+import '../widgets/optimized_media_image.dart';
+import '../utils/media_image_helper.dart';
 import '../widgets/mobile_navigation_rail.dart';
 import '../widgets/side_navigation_rail.dart';
 import '../focus/dpad_navigator.dart';
@@ -176,6 +182,20 @@ class ProfileSelectionResumeGate {
         return false;
     }
   }
+}
+
+class _ScreensaverMedia {
+  const _ScreensaverMedia({
+    required this.client,
+    required this.item,
+    required this.libraryTitle,
+    required this.imagePath,
+  });
+
+  final MediaServerClient client;
+  final MediaItem item;
+  final String libraryTitle;
+  final String imagePath;
 }
 
 /// Latches when the app leaves the foreground and, on the next `resumed`,
@@ -474,6 +494,14 @@ class _MainScreenState extends State<MainScreen>
   // content instead and reports no floating panel.
   bool _isSidebarFloatingPanel = false;
   bool _isOverlaySheetOpen = false;
+  bool _mainRouteIsCurrent = true;
+  Timer? _screensaverIdleTimer;
+  Timer? _screensaverCycleTimer;
+  List<_ScreensaverMedia> _screensaverItems = const [];
+  int _screensaverIndex = 0;
+  bool _showContentScreensaver = false;
+  bool _loadingScreensaverItems = false;
+  Listenable? _screensaverSettingsListenable;
 
   /// The binder is now owned by a top-level [Provider] (see main.dart) so
   /// the splash can await its first settle before navigating here. We just
@@ -530,6 +558,7 @@ class _MainScreenState extends State<MainScreen>
     _offlineUntilConnected = widget.isOfflineMode;
 
     WidgetsBinding.instance.addObserver(this);
+    HardwareKeyboard.instance.addHandler(_handleScreensaverHardwareKey);
     _contentFocusScope.addListener(_syncSidebarFocusWithContent);
 
     if (PlatformDetector.isDesktopOS()) {
@@ -596,6 +625,10 @@ class _MainScreenState extends State<MainScreen>
       _hadProfiles = activeProfile.profiles.isNotEmpty;
       activeProfile.addListener(_onActiveProfileChanged);
       _bindProfileExploreTabPreference(activeProfile.activeId);
+      NewEpisodeNotificationService.instance.bind(
+        profileId: activeProfile.activeId,
+        servers: context.read<MultiServerProvider>(),
+      );
       _plexHomeService = context.read<PlexHomeService>();
       // `start()` is the live/network entry point: it installs the connection
       // watch, the refresh timer and an initial `_refreshAll()`. The root app
@@ -781,6 +814,9 @@ class _MainScreenState extends State<MainScreen>
     final activeProfile = _activeProfileForListener;
     if (activeProfile == null) return;
     final id = activeProfile.activeId;
+    _dismissContentScreensaver();
+    final servers = _multiServerProvider;
+    if (servers != null) NewEpisodeNotificationService.instance.bind(profileId: id, servers: servers);
     _bindProfileExploreTabPreference(id);
     final isBindingNow = activeProfile.isBinding;
     final action = profileInvalidationAction(
@@ -955,6 +991,15 @@ class _MainScreenState extends State<MainScreen>
       return;
     }
 
+    // Android automation may select a profile before sending watch/control
+    // commands. The normal profile activation flow still enforces any local
+    // PIN or Plex Home authentication requirement.
+    final profileLink = ProfileDeepLink.tryParse(contentId);
+    if (profileLink != null) {
+      await _activateProfileFromLink(profileLink.profileId);
+      return;
+    }
+
     // `plezy://watch?...` links (see [WatchLink]) arrive the same way.
     final watchLink = WatchLink.tryParse(contentId);
     if (watchLink != null) {
@@ -991,6 +1036,19 @@ class _MainScreenState extends State<MainScreen>
     } catch (e) {
       appLogger.e('System shelf: failed to navigate to media', error: e);
     }
+  }
+
+  Future<void> _activateProfileFromLink(String profileId) async {
+    final profiles = context.read<ActiveProfileProvider>();
+    await profiles.initialize();
+    if (!mounted) return;
+    final profile = profiles.profiles.where((candidate) => candidate.id == profileId).firstOrNull;
+    if (profile == null) {
+      showAppSnackBar(context, t.automation.profileNotFound);
+      return;
+    }
+    if (profile.id == profiles.activeId) return;
+    await switchProfileFromUi(context, profile);
   }
 
   /// Opens the Watch Together room's file in a new player. Returns whether
@@ -1034,6 +1092,23 @@ class _MainScreenState extends State<MainScreen>
       _multiServerProvider?.removeListener(_handleLiveTvChanged);
       _multiServerProvider = multiServer;
       _multiServerProvider!.addListener(_handleLiveTvChanged);
+    }
+
+    final settings = SettingsService.instanceOrNull;
+    if (settings != null) {
+      final listenable = settings.listenableOfAll([
+        SettingsService.contentScreensaverEnabled,
+        SettingsService.contentScreensaverDelayMinutes,
+        SettingsService.contentScreensaverLibraryKeys,
+      ]);
+      if (listenable != _screensaverSettingsListenable) {
+        _screensaverSettingsListenable?.removeListener(_handleScreensaverSettingsChanged);
+        _screensaverSettingsListenable = listenable;
+        listenable.addListener(_handleScreensaverSettingsChanged);
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted) _scheduleScreensaver();
+        });
+      }
     }
 
     // Listen for catalog sources (Explore tab) appearing/disappearing when a
@@ -1126,6 +1201,10 @@ class _MainScreenState extends State<MainScreen>
   void dispose() {
     if (_watchTogether?.navigatorOpener == _navigateToWatchTogetherMedia) _watchTogether?.navigatorOpener = null;
     WidgetsBinding.instance.removeObserver(this);
+    HardwareKeyboard.instance.removeHandler(_handleScreensaverHardwareKey);
+    _screensaverIdleTimer?.cancel();
+    _screensaverCycleTimer?.cancel();
+    _screensaverSettingsListenable?.removeListener(_handleScreensaverSettingsChanged);
     _profileRouteObserver?.unsubscribe(this);
     if (PlatformDetector.isDesktopOS()) {
       windowManager.removeListener(this);
@@ -1140,6 +1219,7 @@ class _MainScreenState extends State<MainScreen>
       _activeProfileForListener?.removeListener(_bindingSettleListener!);
     }
     _activeProfileForListener?.removeListener(_onActiveProfileChanged);
+    NewEpisodeNotificationService.instance.unbind();
     _serverStatusSub?.cancel();
     _startupSettleTimeout?.cancel();
     _startupSettleTimeout = null;
@@ -1206,6 +1286,13 @@ class _MainScreenState extends State<MainScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
+    NewEpisodeNotificationService.instance.setForeground(state == AppLifecycleState.resumed && _mainRouteIsCurrent);
+    if (state == AppLifecycleState.resumed) {
+      _scheduleScreensaver();
+    } else {
+      _screensaverIdleTimer?.cancel();
+      _dismissContentScreensaver();
+    }
     // Always consume: the gates latch backgrounding on every lifecycle event.
     final resumedFromBackground = _profileSelectionResumeGate.consumePromptOn(state);
     final refreshStaleContent = _contentRefreshResumeGate.consumeRefreshOn(state);
@@ -1493,6 +1580,7 @@ class _MainScreenState extends State<MainScreen>
         await _primeOnlineServices(mp.serverManager);
       }());
     }
+    _scheduleScreensaver();
   }
 
   void _focusSidebar() {
@@ -1535,7 +1623,229 @@ class _MainScreenState extends State<MainScreen>
   void _handleOverlaySheetOpenChanged(bool open) {
     if (_isOverlaySheetOpen == open) return;
     _isOverlaySheetOpen = open;
+    if (open) {
+      _dismissContentScreensaver();
+      _screensaverIdleTimer?.cancel();
+    } else {
+      _scheduleScreensaver();
+    }
     _updateTvosMenuPassthrough();
+  }
+
+  void _handleScreensaverSettingsChanged() {
+    final settings = SettingsService.instanceOrNull;
+    if (settings == null || !settings.read(SettingsService.contentScreensaverEnabled)) {
+      _screensaverIdleTimer?.cancel();
+      _screensaverIdleTimer = null;
+      _dismissContentScreensaver();
+      return;
+    }
+    _scheduleScreensaver();
+  }
+
+  void _scheduleScreensaver() {
+    _screensaverIdleTimer?.cancel();
+    _screensaverIdleTimer = null;
+    if (!mounted || !_mainRouteIsCurrent || _isOffline || _isOverlaySheetOpen) return;
+    final lifecycleState = WidgetsBinding.instance.lifecycleState;
+    if (lifecycleState != null && lifecycleState != AppLifecycleState.resumed) return;
+    if (VideoPlayerScreenState.activeGlobalKey != null) return;
+    final settings = SettingsService.instanceOrNull;
+    if (settings == null || !settings.read(SettingsService.contentScreensaverEnabled)) return;
+    final delay = settings.read(SettingsService.contentScreensaverDelayMinutes).clamp(1, 60);
+    _screensaverIdleTimer = Timer(Duration(minutes: delay), () => unawaited(_activateContentScreensaver()));
+  }
+
+  void _recordScreensaverActivity() {
+    if (_showContentScreensaver) _dismissContentScreensaver();
+    _scheduleScreensaver();
+  }
+
+  bool _handleScreensaverHardwareKey(KeyEvent event) {
+    if (event is! KeyDownEvent && event is! KeyRepeatEvent) return false;
+    if (_showContentScreensaver) {
+      _dismissContentScreensaver();
+      return true;
+    }
+    if (_mainRouteIsCurrent) _recordScreensaverActivity();
+    return false;
+  }
+
+  void _dismissContentScreensaver() {
+    _screensaverCycleTimer?.cancel();
+    _screensaverCycleTimer = null;
+    if (!_showContentScreensaver || !mounted) return;
+    setState(() => _showContentScreensaver = false);
+    _scheduleScreensaver();
+  }
+
+  Future<void> _activateContentScreensaver() async {
+    if (_loadingScreensaverItems || !mounted || !_mainRouteIsCurrent || _isOffline || _isOverlaySheetOpen) return;
+    if (VideoPlayerScreenState.activeGlobalKey != null) return;
+    _loadingScreensaverItems = true;
+    try {
+      final items = await _loadScreensaverItems();
+      if (!mounted || !_mainRouteIsCurrent || _isOffline || _isOverlaySheetOpen) return;
+      final settings = SettingsService.instanceOrNull;
+      if (settings == null || !settings.read(SettingsService.contentScreensaverEnabled)) return;
+      if (items.isEmpty) {
+        _scheduleScreensaver();
+        return;
+      }
+      setState(() {
+        _screensaverItems = items;
+        _screensaverIndex = 0;
+        _showContentScreensaver = true;
+      });
+      _screensaverCycleTimer?.cancel();
+      _screensaverCycleTimer = Timer.periodic(const Duration(seconds: 30), (_) {
+        if (!mounted || !_showContentScreensaver || _screensaverItems.isEmpty) return;
+        setState(() => _screensaverIndex = (_screensaverIndex + 1) % _screensaverItems.length);
+      });
+    } catch (error, stackTrace) {
+      appLogger.w('Could not load content screensaver artwork', error: error, stackTrace: stackTrace);
+      _scheduleScreensaver();
+    } finally {
+      _loadingScreensaverItems = false;
+    }
+  }
+
+  Future<List<_ScreensaverMedia>> _loadScreensaverItems() async {
+    final settings = SettingsService.instanceOrNull;
+    if (settings == null) return const [];
+    final selectedKeys = settings.read(SettingsService.contentScreensaverLibraryKeys).toSet();
+    if (selectedKeys.contains('__none__')) return const [];
+    final servers = context.read<MultiServerProvider>();
+    final results = <_ScreensaverMedia>[];
+    final seen = <String>{};
+    for (final serverId in servers.onlineServerIds) {
+      final client = servers.getClientForServer(ServerId(serverId));
+      if (client == null) continue;
+      List<MediaLibrary> libraries;
+      try {
+        libraries = await client.fetchLibraries();
+      } catch (error, stackTrace) {
+        appLogger.w('Could not list screensaver libraries for $serverId', error: error, stackTrace: stackTrace);
+        continue;
+      }
+      for (final library in libraries) {
+        if (selectedKeys.isNotEmpty && !selectedKeys.contains(library.globalKey)) continue;
+        try {
+          final hubs = await client.fetchLibraryHubs(
+            library.id,
+            libraryName: library.title,
+            limit: 40,
+            includePlaybackHubs: false,
+            libraryKind: library.kind,
+          );
+          for (final item in hubs.expand((hub) => hub.items)) {
+            final artwork = item.heroBackdropPaths;
+            final imagePath = artwork.isNotEmpty ? artwork.first : (item.thumbPath ?? item.artPath);
+            if (imagePath == null || imagePath.isEmpty || !seen.add(item.globalKey)) continue;
+            results.add(
+              _ScreensaverMedia(client: client, item: item, libraryTitle: library.title, imagePath: imagePath),
+            );
+          }
+        } catch (error, stackTrace) {
+          appLogger.w(
+            'Could not load screensaver artwork from ${library.title} on $serverId',
+            error: error,
+            stackTrace: stackTrace,
+          );
+        }
+      }
+    }
+    return results;
+  }
+
+  Widget _buildContentScreensaver() {
+    if (_screensaverItems.isEmpty) return const SizedBox.shrink();
+    final entry = _screensaverItems[_screensaverIndex.clamp(0, _screensaverItems.length - 1)];
+    final itemTitle = entry.item.kind == MediaKind.episode && entry.item.grandparentTitle != null
+        ? '${entry.item.grandparentTitle} · ${entry.item.title ?? ''}'
+        : entry.item.title ?? entry.item.displayTitle;
+    return Positioned.fill(
+      child: Focus(
+        autofocus: true,
+        onKeyEvent: (node, event) {
+          if (event is KeyDownEvent || event is KeyRepeatEvent) {
+            _dismissContentScreensaver();
+            return KeyEventResult.handled;
+          }
+          return KeyEventResult.ignored;
+        },
+        child: GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onTap: _dismissContentScreensaver,
+          child: Semantics(
+            button: true,
+            label: t.settings.contentScreensaverDismissHint,
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                AnimatedSwitcher(
+                  duration: const Duration(milliseconds: 900),
+                  child: OptimizedMediaImage(
+                    key: ValueKey('${entry.item.globalKey}:${entry.imagePath}'),
+                    client: entry.client,
+                    imagePath: entry.imagePath,
+                    width: double.infinity,
+                    height: double.infinity,
+                    fit: BoxFit.cover,
+                    imageType: ImageType.art,
+                    fallbackIcon: Symbols.movie_rounded,
+                  ),
+                ),
+                const DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topCenter,
+                      end: Alignment.bottomCenter,
+                      colors: [Color(0x00000000), Color(0x11000000), Color(0xCC000000)],
+                      stops: [0, 0.45, 1],
+                    ),
+                  ),
+                ),
+                Positioned(
+                  left: 40,
+                  right: 40,
+                  bottom: 32,
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        itemTitle,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(
+                          color: Colors.white,
+                          fontWeight: FontWeight.w600,
+                          shadows: const [Shadow(color: Colors.black87, blurRadius: 18)],
+                        ),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        '${entry.libraryTitle} · ${entry.item.serverName ?? entry.client.serverName ?? t.common.unknown}',
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                          color: Colors.white70,
+                          shadows: const [Shadow(color: Colors.black87, blurRadius: 12)],
+                        ),
+                      ),
+                      const SizedBox(height: 18),
+                      Text(
+                        t.settings.contentScreensaverDismissHint,
+                        style: Theme.of(context).textTheme.labelLarge?.copyWith(color: Colors.white70),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      ),
+    );
   }
 
   double _sideNavigationWidth(BuildContext context, {required bool alwaysExpanded}) {
@@ -1714,6 +2024,8 @@ class _MainScreenState extends State<MainScreen>
 
   @override
   void didPush() {
+    _mainRouteIsCurrent = true;
+    NewEpisodeNotificationService.instance.setForeground(true);
     // Called when this route has been pushed (initial navigation)
     if (_currentTab == NavigationTabId.discover) {
       _onDiscoverBecameVisible();
@@ -1722,6 +2034,10 @@ class _MainScreenState extends State<MainScreen>
 
   @override
   void didPushNext() {
+    _mainRouteIsCurrent = false;
+    NewEpisodeNotificationService.instance.setForeground(false);
+    _screensaverIdleTimer?.cancel();
+    _dismissContentScreensaver();
     _setTvosMenuPassthrough(false);
     // A pushed detail route covers the bottom bar — drop the mini-player to
     // the true (safe-area) bottom while it's hidden.
@@ -1734,6 +2050,11 @@ class _MainScreenState extends State<MainScreen>
 
   @override
   void didPopNext() {
+    _mainRouteIsCurrent = true;
+    NewEpisodeNotificationService.instance.setForeground(
+      WidgetsBinding.instance.lifecycleState == AppLifecycleState.resumed,
+    );
+    _scheduleScreensaver();
     // Called when returning to this route from a child route (e.g., from video player)
     _updateTvosMenuPassthrough();
     _miniPlayerInsets?.setNavBarSuspended(false);
@@ -2090,8 +2411,23 @@ class _MainScreenState extends State<MainScreen>
   @override
   Widget build(BuildContext context) {
     final useSideNav = PlatformDetector.shouldUseSideNavigation(context);
-
-    return _buildContent(context, useSideNav);
+    return Focus(
+      onKeyEvent: (node, event) {
+        if (event is KeyDownEvent || event is KeyRepeatEvent) _recordScreensaverActivity();
+        return KeyEventResult.ignored;
+      },
+      child: Listener(
+        behavior: HitTestBehavior.translucent,
+        onPointerDown: (_) => _recordScreensaverActivity(),
+        onPointerMove: (_) => _recordScreensaverActivity(),
+        onPointerHover: (_) => _recordScreensaverActivity(),
+        onPointerSignal: (_) => _recordScreensaverActivity(),
+        child: Stack(
+          fit: StackFit.expand,
+          children: [_buildContent(context, useSideNav), if (_showContentScreensaver) _buildContentScreensaver()],
+        ),
+      ),
+    );
   }
 
   Widget _buildContent(BuildContext context, bool useSideNav) {

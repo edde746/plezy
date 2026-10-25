@@ -7,9 +7,9 @@ A cross-platform media client for Plex, Jellyfin, and Emby, maintained as a fork
 
 ## Fork scope and convergence
 
-PlezyNG carries requested features that upstream has declined or has not shipped yet. We aim to keep those changes compatible with upstream and support Plex, Jellyfin, and Emby wherever their APIs allow.
+PlezyNG is a maintenance fork for requested features that Plezy upstream has declined or has not shipped. The implementation targets upstream compatibility and supports Plex, Jellyfin, and Emby wherever their APIs allow.
 
-The fork is a maintenance vehicle for these deltas, not a permanent product split. When an equivalent feature is available in Plezy upstream and can be adopted without losing behavior, we will prefer the upstream implementation and retire our duplicate. If the feature set below converges upstream, there will be no remaining PlezyNG-specific capability to maintain.
+Each row below is an upstream convergence target. When Plezy upstream provides equivalent behavior, PlezyNG should adopt that implementation and remove its duplicate. If the listed capabilities converge upstream, the fork-specific maintenance burden ends and PlezyNG should be retired in favor of upstream Plezy.
 
 | Area | Feature requests and upstream work | PlezyNG status |
 | --- | --- | --- |
@@ -28,13 +28,13 @@ The fork is a maintenance vehicle for these deltas, not a permanent product spli
 | Home screen | Separate Next Up; hide empty libraries or backdrop art; Continue Watching row sizing (#2498, #2690, #2701, #2723, #2784) | Continue Watching and Next Up now have separate Home rows and independent visibility/order; empty-library filtering, backdrop visibility, and row sizing are implemented. The legacy hero banner visibility setting and TV clock already exist. |
 | Servers and links | Preferred server (#591, #1529, #2720); `plezy://watch` links (#2681); return from external players with synced progress (#2738) | Preferred server is stored per profile and moves first in aggregate queries across Plex, Jellyfin, and Emby; watch links and external-player return sync are implemented |
 | Live TV | Timeshift timeline (#2300) | Plex implementation is in the fork; Jellyfin/Emby DVR-window support remains under investigation because their public playback APIs do not expose the tuner's seekable capture window |
-| Integrations | Google Cast (#126); new-episode notifications (#1146); content screensaver (#401) | Google Cast handoff is implemented on Android and iOS for Plex, Jellyfin, and Emby through the default media receiver; playback depends on receiver codec/container support and server reachability. New-episode notifications and the content screensaver remain planned. |
-| Automation | Home Assistant control and Android automation intents (#823, #1996) | Cross-server `plezy://watch` links launch movies or the next/shuffled episode; Android `ACTION_VIEW` links at `plezy://control?command=play|pause|toggle|stop` control the active video session |
+| Integrations | Google Cast (#126); new-episode notifications (#1146); content screensaver (#401) | Google Cast handoff is implemented on Android and iOS through the default media receiver, subject to receiver codec/container support and server reachability. Profile-scoped episode alerts poll connected Plex, Jellyfin, and Emby libraries while the app is foregrounded on Android/iOS; the screensaver rotates artwork from selected connected libraries after an idle timeout. |
+| Automation | Home Assistant control and Android automation intents (#823, #1996) | Android `ACTION_VIEW` links can open cross-server `plezy://watch` media, select an existing profile with `plezy://profile?id=…`, and control the active video session with `plezy://control?command=play|pause|toggle|stop`. Home Assistant can invoke these through an Android intent bridge; this does not expose Plezy as a native Plex Companion player in Home Assistant. See the [Android automation guide](docs/plezyng/android-automation.md). |
 | Settings and diagnostics | Save logs to a file (#2496); cloud settings backup (#1795) | Log export is implemented; cloud settings backup uploads and restores the portable settings export through an HTTPS WebDAV file endpoint |
 
 The list records the fork's active scope. “Implemented in the fork” means PlezyNG carries the behavior while upstream convergence remains pending; platform and server limitations are called out in the feature documentation.
 
-> PlezyNG exists while these requested capabilities are missing from upstream. As upstream adopts them, the corresponding fork delta should disappear. Once the list is fully upstream, the fork should be retired.
+> PlezyNG exists to maintain these upstream gaps. As Plezy adopts each capability, the corresponding fork delta should be removed. When the table has converged, PlezyNG should be retired and upstream Plezy should be the sole maintained implementation.
 
 <p>
   <a href="https://github.com/edde746/plezy">Upstream Plezy</a> ·
@@ -199,6 +199,7 @@ sudo moss it plezy
 - Scores from connected trackers on detail pages — Trakt, Simkl, MyAnimeList, and AniList, plus Rotten Tomatoes, Metacritic, Letterboxd, IMDb, and TMDB through MDBList
 - Plezy Remote — control desktop and TV from mobile
 - Watch Next row and tvOS Top Shelf[^shelf]
+- Android automation links for media launch, active-video controls, and profile selection
 
 ### <img src="assets/readme_icons/customization.svg" height="20" alt="" align="center" /> Platform & Customization
 - Desktop, mobile, and TV — full D-pad, keyboard, and gamepad support

@@ -296,6 +296,7 @@ android {
   useLibrary("android.car")
 
   compileOptions {
+    isCoreLibraryDesugaringEnabled = true
     sourceCompatibility = JavaVersion.VERSION_17
     targetCompatibility = JavaVersion.VERSION_17
   }
@@ -479,6 +480,8 @@ tasks.matching { it.name.startsWith("merge") && it.name.endsWith("JniLibFolders"
 }
 
 dependencies {
+  coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+
   // mpv-build's mpv-android library: libmpv, FFmpeg and the JNI glue with
   // its Kotlin API (com.edde746.mpv).
   implementation(mpvAarDependency)

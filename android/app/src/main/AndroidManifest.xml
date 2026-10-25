@@ -102,6 +102,13 @@
                 <category android:name="android.intent.category.BROWSABLE"/>
                 <data android:scheme="plezy" android:host="control"/>
             </intent-filter>
+            <!-- Android automation can select an existing profile before opening a watch link. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW"/>
+                <category android:name="android.intent.category.DEFAULT"/>
+                <category android:name="android.intent.category.BROWSABLE"/>
+                <data android:scheme="plezy" android:host="profile"/>
+            </intent-filter>
         </activity>
         <!-- The default icon. Keep this component name forever: it was the launcher activity before
              app icons became switchable, so every existing home-screen shortcut, TV favourite and

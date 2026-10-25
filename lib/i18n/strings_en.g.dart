@@ -43,6 +43,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$app$en app = Translations$app$en.internal(_root);
 	late final Translations$cast$en cast = Translations$cast$en.internal(_root);
 	late final Translations$automation$en automation = Translations$automation$en.internal(_root);
+	late final Translations$notifications$en notifications = Translations$notifications$en.internal(_root);
 	late final Translations$appIcon$en appIcon = Translations$appIcon$en.internal(_root);
 	late final Translations$auth$en auth = Translations$auth$en.internal(_root);
 	late final Translations$common$en common = Translations$common$en.internal(_root);
@@ -165,6 +166,24 @@ class Translations$automation$en {
 
 	/// en: 'There is no active video session to control.'
 	String get noActivePlayback => 'There is no active video session to control.';
+
+	/// en: 'That Plezy profile could not be found.'
+	String get profileNotFound => 'That Plezy profile could not be found.';
+}
+
+// Path: notifications
+class Translations$notifications$en {
+	Translations$notifications$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'New episode'
+	String get newEpisodeTitle => 'New episode';
+
+	/// en: '${show} · ${episode}'
+	String newEpisodeBody({required Object show, required Object episode}) => '${show} · ${episode}';
 }
 
 // Path: appIcon
@@ -692,6 +711,39 @@ class Translations$settings$en {
 
 	/// en: 'Show large artwork behind featured Home rows'
 	String get showHomeBackdropDescription => 'Show large artwork behind featured Home rows';
+
+	/// en: 'Content screensaver'
+	String get contentScreensaverEnabled => 'Content screensaver';
+
+	/// en: 'Show full-screen artwork after the app has been idle'
+	String get contentScreensaverEnabledDescription => 'Show full-screen artwork after the app has been idle';
+
+	/// en: 'Start screensaver after'
+	String get contentScreensaverDelay => 'Start screensaver after';
+
+	/// en: 'Screensaver libraries'
+	String get contentScreensaverLibraries => 'Screensaver libraries';
+
+	/// en: 'Choose which libraries supply artwork. No selection includes every library.'
+	String get contentScreensaverLibrariesDescription => 'Choose which libraries supply artwork. No selection includes every library.';
+
+	/// en: 'All libraries'
+	String get contentScreensaverAllLibraries => 'All libraries';
+
+	/// en: '${count} libraries selected'
+	String contentScreensaverSelectedLibraries({required Object count}) => '${count} libraries selected';
+
+	/// en: 'No connected media libraries are available.'
+	String get contentScreensaverNoLibraries => 'No connected media libraries are available.';
+
+	/// en: 'Press any button or tap to dismiss'
+	String get contentScreensaverDismissHint => 'Press any button or tap to dismiss';
+
+	/// en: 'New episode notifications'
+	String get newEpisodeNotifications => 'New episode notifications';
+
+	/// en: 'Alert when a new episode is added to a show you are caught up on. Checks while Plezy is open.'
+	String get newEpisodeNotificationsDescription => 'Alert when a new episode is added to a show you are caught up on. Checks while Plezy is open.';
 
 	/// en: 'Continue Watching row size'
 	String get continueWatchingRowSize => 'Continue Watching row size';
@@ -3271,6 +3323,15 @@ class Translations$profiles$en {
 
 	/// en: 'PIN protection'
 	String get pinProtectionLabel => 'PIN protection';
+
+	/// en: 'Copy Android automation link'
+	String get copyAutomationLink => 'Copy Android automation link';
+
+	/// en: 'Select this profile from an Android intent or automation. Profile PIN checks still apply.'
+	String get copyAutomationLinkDescription => 'Select this profile from an Android intent or automation. Profile PIN checks still apply.';
+
+	/// en: 'Profile automation link copied.'
+	String get automationLinkCopied => 'Profile automation link copied.';
 
 	/// en: 'PIN managed by Plex. Edit on plex.tv.'
 	String get pinManagedByPlex => 'PIN managed by Plex. Edit on plex.tv.';
@@ -8942,6 +9003,9 @@ extension on Translations {
 			'cast.noEpisodeAvailable' => 'There is no episode available to cast.',
 			'cast.startFailed' => 'Could not start casting. Check the server and try again.',
 			'automation.noActivePlayback' => 'There is no active video session to control.',
+			'automation.profileNotFound' => 'That Plezy profile could not be found.',
+			'notifications.newEpisodeTitle' => 'New episode',
+			'notifications.newEpisodeBody' => ({required Object show, required Object episode}) => '${show} · ${episode}',
 			'appIcon.title' => 'App icon',
 			'appIcon.defaultIcon' => 'Default',
 			'appIcon.current' => 'Current icon',
@@ -9148,6 +9212,17 @@ extension on Translations {
 			'settings.showHeroSection' => 'Show Hero Section',
 			'settings.showHomeBackdrop' => 'Show home backdrop artwork',
 			'settings.showHomeBackdropDescription' => 'Show large artwork behind featured Home rows',
+			'settings.contentScreensaverEnabled' => 'Content screensaver',
+			'settings.contentScreensaverEnabledDescription' => 'Show full-screen artwork after the app has been idle',
+			'settings.contentScreensaverDelay' => 'Start screensaver after',
+			'settings.contentScreensaverLibraries' => 'Screensaver libraries',
+			'settings.contentScreensaverLibrariesDescription' => 'Choose which libraries supply artwork. No selection includes every library.',
+			'settings.contentScreensaverAllLibraries' => 'All libraries',
+			'settings.contentScreensaverSelectedLibraries' => ({required Object count}) => '${count} libraries selected',
+			'settings.contentScreensaverNoLibraries' => 'No connected media libraries are available.',
+			'settings.contentScreensaverDismissHint' => 'Press any button or tap to dismiss',
+			'settings.newEpisodeNotifications' => 'New episode notifications',
+			'settings.newEpisodeNotificationsDescription' => 'Alert when a new episode is added to a show you are caught up on. Checks while Plezy is open.',
 			'settings.continueWatchingRowSize' => 'Continue Watching row size',
 			'settings.continueWatchingRowSizeValue' => ({required Object label}) => '${label} cards',
 			'settings.rowSizeCompact' => 'Compact',
@@ -9427,6 +9502,8 @@ extension on Translations {
 			'settings.hdrSdrConversionAutoDescription' => 'Device on Android 9 and later, player on older versions',
 			'settings.hdrSdrConversionDevice' => 'Device',
 			'settings.hdrSdrConversionDeviceDescription' => 'Your device\'s video hardware converts it. Fastest, but colors depend on the device',
+			_ => null,
+		} ?? switch (path) {
 			'settings.hdrSdrConversionPlayer' => 'Player',
 			'settings.hdrSdrConversionPlayerDescription' => 'The player converts it. Consistent colors, but 4K may stutter on low-end TV boxes',
 			'settings.deinterlace' => 'Deinterlacing',
@@ -9441,8 +9518,6 @@ extension on Translations {
 			'settings.requireProfileSelectionOnOpenDescription' => 'Show profile selection every time the app is opened',
 			'settings.forceTvMode' => 'Force TV mode',
 			'settings.forceTvModeDescription' => 'Force TV layout. For devices that don\'t auto-detect. Requires restart.',
-			_ => null,
-		} ?? switch (path) {
 			'settings.startInFullscreen' => 'Start in fullscreen',
 			'settings.startInFullscreenDescription' => 'Open Plezy in fullscreen mode at launch',
 			'settings.exitFullscreenOnPlayerClose' => 'Exit fullscreen on player close',
@@ -9941,6 +10016,8 @@ extension on Translations {
 			'subtitlingStyling.previewSample' => 'The quick brown fox jumps over the lazy dog',
 			'subtitlingStyling.text' => 'Text',
 			'subtitlingStyling.border' => 'Border',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.background' => 'Background',
 			'subtitlingStyling.fontSize' => 'Font Size',
 			'subtitlingStyling.textColor' => 'Text Color',
@@ -9955,8 +10032,6 @@ extension on Translations {
 			'subtitlingStyling.overrideStrip' => 'Remove styling',
 			'subtitlingStyling.positionTop' => 'Top',
 			'subtitlingStyling.positionBottom' => 'Bottom',
-			_ => null,
-		} ?? switch (path) {
 			'subtitlingStyling.useMargins' => 'Use margins',
 			'subtitlingStyling.useMarginsDescription' => 'Allow text subtitles in the space outside the video. Styled subtitles may keep their original placement.',
 			'subtitlingStyling.anchorToScreen' => 'Anchor to Screen',
@@ -10009,6 +10084,9 @@ extension on Translations {
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => 'Remove ${displayName} and its connections. Servers stay available.',
 			'profiles.profileNameLabel' => 'Profile name',
 			'profiles.pinProtectionLabel' => 'PIN protection',
+			'profiles.copyAutomationLink' => 'Copy Android automation link',
+			'profiles.copyAutomationLinkDescription' => 'Select this profile from an Android intent or automation. Profile PIN checks still apply.',
+			'profiles.automationLinkCopied' => 'Profile automation link copied.',
 			'profiles.pinManagedByPlex' => 'PIN managed by Plex. Edit on plex.tv.',
 			'profiles.noPinSetEditOnPlex' => 'No PIN set. To require one, edit the home user on plex.tv.',
 			'profiles.setPin' => 'Set PIN',
@@ -10452,6 +10530,8 @@ extension on Translations {
 			'explore.format.tv' => 'TV',
 			'explore.format.tvShort' => 'TV Short',
 			'explore.format.movie' => 'Movie',
+			_ => null,
+		} ?? switch (path) {
 			'explore.format.special' => 'Special',
 			'explore.format.ova' => 'OVA',
 			'explore.format.ona' => 'ONA',
@@ -10469,8 +10549,6 @@ extension on Translations {
 			'explore.creditRole.actor' => 'Actor',
 			'explore.creditRole.director' => 'Director',
 			'explore.creditRole.writer' => 'Writer',
-			_ => null,
-		} ?? switch (path) {
 			'explore.creditRole.producer' => 'Producer',
 			'explore.creditRole.creator' => 'Creator',
 			'explore.creditRole.composer' => 'Composer',
@@ -10966,6 +11044,8 @@ extension on Translations {
 			'downloads.errorDownloadFailed' => 'Download failed',
 			'downloads.errorDownloadFailedWithReason' => ({required Object reason}) => 'Download failed: ${reason}',
 			'downloads.convertingOnServer' => 'Converting on server…',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.convertingOnServerPercent' => ({required Object percent}) => 'Converting on server · ${percent}%',
 			'downloads.errorHttpStatus' => ({required Object status}) => 'Download failed (HTTP ${status})',
 			'downloads.errorPostProcessing' => ({required Object reason}) => 'Post-processing failed: ${reason}',
@@ -10983,8 +11063,6 @@ extension on Translations {
 			'shaders.artcnnVariantDenoiseSharpen' => 'Denoise + Sharpen',
 			'shaders.qualityFast' => 'Fast',
 			'shaders.qualityHQ' => 'High Quality',
-			_ => null,
-		} ?? switch (path) {
 			'shaders.mode' => 'Mode',
 			'shaders.importShader' => 'Import Shader',
 			'shaders.customShaderDescription' => 'Custom GLSL shader',
@@ -11480,6 +11558,8 @@ extension on Translations {
 			'homeLayout.content' => 'Content',
 			'homeLayout.showThisRowIn' => 'Show this row in:',
 			'homeLayout.libraryRecommended' => 'Library Recommended',
+			_ => null,
+		} ?? switch (path) {
 			'homeLayout.heroCard' => 'Hero card',
 			'homeLayout.heroCardDescription' => 'Shows as one full-width rotating card instead of a poster shelf.',
 			'homeLayout.heroUnavailableDescription' => 'Only available when this row resolves to a single collection\'s actual titles — with more than one collection selected there is no single title to rotate through.',
@@ -11497,8 +11577,6 @@ extension on Translations {
 			'homeLayout.organizeRowsHint' => 'Select on a row (or hold Select): move it · Left/Right: row options · Back: done',
 			'homeLayout.layoutNavDescription' => 'Choose rows, libraries, and collection categories',
 			'homeLayout.editHomeRow' => 'Edit Home row',
-			_ => null,
-		} ?? switch (path) {
 			'homeLayout.resetHeroButton' => 'Reset hero layout to stock Plezy',
 			'homeLayout.reorderingUnlocked' => 'Reordering unlocked',
 			'homeLayout.reorderingLocked' => 'Reordering locked',

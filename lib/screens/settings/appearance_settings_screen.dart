@@ -19,6 +19,7 @@ import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_section.dart';
 import 'app_icon_setting.dart';
 import 'home_layout_settings_screen.dart';
+import 'content_screensaver_libraries_screen.dart';
 import 'settings_utils.dart';
 import 'theme_settings_screen.dart';
 
@@ -121,6 +122,35 @@ class AppearanceSettingsScreen extends StatelessWidget {
               icon: Symbols.wallpaper_rounded,
               title: t.settings.showHomeBackdrop,
               subtitle: t.settings.showHomeBackdropDescription,
+            ),
+            SettingSwitchTile(
+              pref: SettingsService.contentScreensaverEnabled,
+              icon: Symbols.photo_library_rounded,
+              title: t.settings.contentScreensaverEnabled,
+              subtitle: t.settings.contentScreensaverEnabledDescription,
+            ),
+            SettingSelectionTile<int>(
+              pref: SettingsService.contentScreensaverDelayMinutes,
+              icon: Symbols.timer_rounded,
+              title: t.settings.contentScreensaverDelay,
+              subtitleBuilder: (minutes) => '$minutes ${t.settings.minutesShort}',
+              options: [
+                for (final minutes in [1, 5, 10, 15, 30, 60])
+                  DialogOption(value: minutes, title: '$minutes ${t.settings.minutesShort}'),
+              ],
+            ),
+            SettingValueBuilder<List<String>>(
+              pref: SettingsService.contentScreensaverLibraryKeys,
+              builder: (context, selectedLibraries, _) => SettingNavigationTile(
+                icon: Symbols.video_library_rounded,
+                title: t.settings.contentScreensaverLibraries,
+                subtitle: selectedLibraries.isEmpty
+                    ? t.settings.contentScreensaverAllLibraries
+                    : selectedLibraries.contains('__none__')
+                    ? t.settings.contentScreensaverNoLibraries
+                    : t.settings.contentScreensaverSelectedLibraries(count: selectedLibraries.length),
+                destinationBuilder: (_) => const ContentScreensaverLibrariesScreen(),
+              ),
             ),
             SettingSelectionTile<ContinueWatchingRowSize>(
               pref: SettingsService.continueWatchingRowSize,
