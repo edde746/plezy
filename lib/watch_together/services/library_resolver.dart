@@ -166,7 +166,7 @@ final _imdbId = RegExp(r'^tt\d{1,12}$');
 final _numericId = RegExp(r'^\d{1,12}$');
 final _plexGuidPattern = RegExp(r'^plex://(movie|show|season|episode)/[A-Za-z0-9]{1,64}$');
 
-/// The descriptor's [ids] that Plezy can search by. Untrusted (SDK.md §9.7):
+/// The descriptor's [ids] that PlezyNG can search by. Untrusted (SDK.md §9.7):
 /// only well-formed IDs pass, and they are only ever search terms.
 ExternalIds externalIdsOf(Map<String, String> ids) {
   int? number(String? value) => value != null && _numericId.hasMatch(value) ? int.parse(value) : null;

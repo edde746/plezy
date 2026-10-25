@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "PlezyNG"
   },
   "appIcon": {
     "title": "Alkalmazásikon",
@@ -53,7 +53,7 @@
     "quickConnectWaiting": "Várakozás a jóváhagyásra…",
     "quickConnectCancel": "Mégse",
     "quickConnectExpired": "A Quick Connect kód lejárt. Próbáld újra.",
-    "localDataRecoveryRequired": "A Plezy nem tudta biztonságosan helyreállítani a helyi bejelentkezés és a függőben lévő lejátszás adatait. Jelentkezz be újra.",
+    "localDataRecoveryRequired": "A PlezyNG nem tudta biztonságosan helyreállítani a helyi bejelentkezés és a függőben lévő lejátszás adatait. Jelentkezz be újra.",
     "pinCheckRejected": "A Plex PIN ellenőrzését elutasították"
   },
   "common": {
@@ -153,14 +153,14 @@
     "checkFailed": "Nem sikerült az újabb frissítések ellenőrzése"
   },
   "supporter": {
-    "title": "Plezy Supporter",
-    "intro": "Egyszeri vásárlás, amely a Plezy fejlesztését támogatja, és kozmetikai extrákat old fel:",
+    "title": "PlezyNG Supporter",
+    "intro": "Egyszeri vásárlás, amely a PlezyNG fejlesztését támogatja, és kozmetikai extrákat old fel:",
     "presetThemes": "Előre beállított témák",
     "presetThemesDescription": "Parázs, Gleccser, Erdő, Szilva és Papír",
     "customTheme": "Egyéni téma",
     "customThemeDescription": "Minden színt te választasz ki",
     "appIcons": "Alkalmazásikonok",
-    "appIconsDescription": "Válassz egy alternatív Plezy-ikont",
+    "appIconsDescription": "Válassz egy alternatív PlezyNG-ikont",
     "buy": "Megvásárlás: ${price}",
     "loadingPrice": "Ár betöltése...",
     "restore": "Vásárlások visszaállítása",
@@ -181,8 +181,8 @@
   },
   "settings": {
     "title": "Beállítások",
-    "supportDeveloper": "Plezy támogatása",
-    "supportDeveloperDescription": "A fejlesztés támogatása Liberapay-en keresztül",
+    "supportDeveloper": "PlezyNG támogatása",
+    "supportDeveloperDescription": "Adománnyal támogassa a fejlesztést",
     "language": "Nyelv",
     "theme": "Téma",
     "appearance": "Megjelenés",
@@ -337,7 +337,7 @@
     "importSettingsDescription": "Beállítások visszaállítása fájlból",
     "importSettingsConfirm": "Ez felülírja a jelenlegi beállításaidat. Folytatod?",
     "importSettingsSuccess": "Beállítások importálva",
-    "importSettingsInvalidFile": "Ez a fájl nem érvényes Plezy-beállításexport",
+    "importSettingsInvalidFile": "Ez a fájl nem érvényes PlezyNG-beállításexport",
     "importSettingsNoUser": "Jelentkezz be a beállítások importálása előtt",
     "shortcutsReset": "A billentyűparancsok visszaálltak az alapértelmezettekre",
     "resetShortcutsConfirm": "Ezzel az egyéni billentyűparancsaid helyére az alapértelmezettek kerülnek. Folytatod?",
@@ -474,7 +474,7 @@
     "forceTvMode": "TV-mód kényszerítése",
     "forceTvModeDescription": "TV-elrendezés kényszerítése az automatikus felismeréssel nem rendelkező eszközökön. Újraindítást igényel.",
     "startInFullscreen": "Indítás teljes képernyőn",
-    "startInFullscreenDescription": "A Plezy megnyitása teljes képernyős módban indításkor",
+    "startInFullscreenDescription": "A PlezyNG megnyitása teljes képernyős módban indításkor",
     "exitFullscreenOnPlayerClose": "Kilépés a teljes képernyőből a lejátszó bezárásakor",
     "exitFullscreenOnPlayerCloseDescription": "Automatikus kilépés a teljes képernyőből a videólejátszó bezárásakor",
     "autoHidePerformanceOverlay": "Teljesítményadatok automatikus elrejtése",
@@ -523,7 +523,7 @@
     "playerScopeGlobal": "Mindenhol",
     "playerScopeLibrary": "Könyvtáronként",
     "playerScopeTitle": "Sorozatonként vagy filmenként",
-    "exportDialogTitle": "Plezy-beállítások exportálása"
+    "exportDialogTitle": "PlezyNG-beállítások exportálása"
   },
   "themeEditor": {
     "builtIn": "Beépített",
@@ -766,8 +766,8 @@
       "one": "További ${n} epizód is ugyanabban a fájlban van, és szintén törlésre kerül:",
       "other": "További ${n} epizód is ugyanabban a fájlban van, és szintén törlésre kerül:"
     },
-    "deleteScopeUnverifiedProbeFailed": "A Plezy nem tudta ellenőrizni, mely fájlokat távolítja el ez, ezért a fent nevezett elemnél többet is törölhet. Szakítsa meg és próbálja újra, vagy töröljön mindenképp.",
-    "deleteScopeUnverifiedNoFileInfo": "A szerver nem szolgáltatott fájladatokat ehhez az elemhez, ezért a Plezy nem tudja ellenőrizni, mely fájlokat távolít el. A fent nevezett elemnél többet is törölhet.",
+    "deleteScopeUnverifiedProbeFailed": "A PlezyNG nem tudta ellenőrizni, mely fájlokat távolítja el ez, ezért a fent nevezett elemnél többet is törölhet. Szakítsa meg és próbálja újra, vagy töröljön mindenképp.",
+    "deleteScopeUnverifiedNoFileInfo": "A szerver nem szolgáltatott fájladatokat ehhez az elemhez, ezért a PlezyNG nem tudja ellenőrizni, mely fájlokat távolít el. A fent nevezett elemnél többet is törölhet.",
     "mediaDeletedSuccessfully": "Médiaelem sikeresen törölve",
     "mediaFailedToDelete": "Nem sikerült a médiaelem törlése",
     "rate": "Értékelés",
@@ -1050,7 +1050,7 @@
     "confirmAction": "Művelet megerősítése"
   },
   "profiles": {
-    "addPlezyProfile": "Plezy profil hozzáadása",
+    "addPlezyProfile": "PlezyNG profil hozzáadása",
     "switchingProfile": "Profilváltás…",
     "deleteThisProfileTitle": "Törlöd ezt a profilt?",
     "deleteThisProfileMessage": "${displayName} eltávolítása. A kapcsolatokat nem érinti.",
@@ -1127,7 +1127,7 @@
     "accessDeniedMany": "${count} szerver megtagadta a hozzáférést ettől a fióktól",
     "signInAgain": "Bejelentkezés újra",
     "editMediaBrowserTitle": "A(z) ${product} kapcsolat szerkesztése",
-    "editMediaBrowserIntro": "Adjon hozzá vagy távolítson el URL-eket a(z) ${serverName} esetén. A Plezy a legkisebb késleltetésű, elérhető URL-t fogja használni."
+    "editMediaBrowserIntro": "Adjon hozzá vagy távolítson el URL-eket a(z) ${serverName} esetén. A PlezyNG a legkisebb késleltetésű, elérhető URL-t fogja használni."
   },
   "accountPreferences": {
     "sectionTitle": "Fiókbeállítások",
@@ -1417,9 +1417,9 @@
     "uploadLogs": "Naplók feltöltése"
   },
   "startup": {
-    "failedTitle": "A Plezy nem tudott elindulni",
+    "failedTitle": "A PlezyNG nem tudott elindulni",
     "failedBody": "Valami hiba történt az indítás során. Az alábbi részletek mutatják, mi hibázott.",
-    "failedBodyRepairable": "A Plezy mentett beállításfájlja sérült, és újra kell építeni, mielőtt a Plezy elindulhatna. Az újrapróbálkozás nem segít – válassza a Tárhely javítása lehetőséget.",
+    "failedBodyRepairable": "A PlezyNG mentett beállításfájlja sérült, és újra kell építeni, mielőtt a PlezyNG elindulhatna. Az újrapróbálkozás nem segít – válassza a Tárhely javítása lehetőséget.",
     "phaseLabel": "Lépés",
     "showDetails": "Részletek megjelenítése",
     "hideDetails": "Részletek elrejtése",
@@ -1428,16 +1428,16 @@
     "uploadDetails": "Részletek feltöltése",
     "repairStorage": "Tárhely javítása",
     "repairTitle": "Javítsuk a tárolt adatokat?",
-    "repairBodyCommon": "A Plezy beállításfájlja sérült, és nem olvasható. A javítás minden beállítást visszaállít az alapértelmezettre.",
+    "repairBodyCommon": "A PlezyNG beállításfájlja sérült, és nem olvasható. A javítás minden beállítást visszaállít az alapértelmezettre.",
     "repairBodyOneCredential": "Egy mentett bejelentkezés sérült, és nem olvasható. A javítás csak azt távolítja el; a többi beállítása érintetlen marad.",
     "repairBodySignInsKept": "A szervereinek és profiljainak bejelentkezve kell maradniuk.",
     "repairBodySignInsLost": "A mentett bejelentkezéseket védő kulcs nem nyerhető vissza ebből a fájlból, ezért minden szerverre és profilba újra be kell jelentkeznie. A médiaszerveren semmi nem érintett.",
-    "repairBodySessionsUncertain": "A nyomkövetők (MAL, AniList, Simkl, Trakt) és a Seerr külön vannak tárolva, és megmaradhatnak vagy nem. A Plezy pontosan megmondja, mit őrzött meg.",
+    "repairBodySessionsUncertain": "A nyomkövetők (MAL, AniList, Simkl, Trakt) és a Seerr külön vannak tárolva, és megmaradhatnak vagy nem. A PlezyNG pontosan megmondja, mit őrzött meg.",
     "repairConfirm": "Javítás",
     "repairSucceeded": "A tárhely javítva",
     "repairNeedsRestart": "A tárhely javítva – újraindítás szükséges",
-    "restartRequiredBody": "Az adatait kijavítottuk, de a Plezy-nek frissen kell elindulnia, mielőtt használhatná. Zárja be a Plezy-t, és nyissa meg újra.",
-    "quitPlezy": "Kilépés a Plezy-ből",
+    "restartRequiredBody": "Az adatait kijavítottuk, de a PlezyNG-nek frissen kell elindulnia, mielőtt használhatná. Zárja be a PlezyNG-t, és nyissa meg újra.",
+    "quitPlezy": "Kilépés a PlezyNG-ből",
     "repairFailed": "A javítás nem sikerült",
     "repairKeptSignIns": "A szerverei és profiljai továbbra is be vannak jelentkezve.",
     "repairLostSignIns": "A mentett bejelentkezéseket védő kulcs nem volt visszanyerhető. Minden szerverre és profilba újra be kell jelentkeznie.",
@@ -1446,7 +1446,7 @@
     "backupWarning": "Bejelentkezési adatait tartalmazza. Ne töltse fel és ne ossza meg.",
     "deleteBackup": "Másolat törlése",
     "backupDeleted": "A másolat törölve.",
-    "previousFailureTitle": "A Plezy legutóbb nem tudott elindulni"
+    "previousFailureTitle": "A PlezyNG legutóbb nem tudott elindulni"
   },
   "licenses": {
     "relatedPackages": "Kapcsolódó csomagok",
@@ -1897,7 +1897,7 @@
     "chooseAnotherCopy": "Másik példány választása",
     "dontPlay": "Ne játszd le",
     "unavailableTitle": "Ez a videó nincs meg neked",
-    "unavailableDescription": "A Plezy nem találta meg a könyvtáraidban. Válassz ki magad egy példányt, vagy keress újra.",
+    "unavailableDescription": "A PlezyNG nem találta meg a könyvtáraidban. Válassz ki magad egy példányt, vagy keress újra.",
     "chooseCopy": "Példány választása",
     "searchAgain": "Keresés újra",
     "noCandidates": "Nem található példány a könyvtáraidban.",
@@ -1997,7 +1997,7 @@
       "relayFull": "A Watch Together jelenleg túlterhelt. Próbáld újra később.",
       "unreachable": "Nem sikerült elérni a Watch Together-relét. Ellenőrizd a kapcsolatot.",
       "rateLimited": "Túl sok próbálkozás. Várj egy kicsit, majd próbáld újra.",
-      "clientBlocked": "A Plezy ezen verziója nem tudja használni a relét. Frissítsd az alkalmazást.",
+      "clientBlocked": "A PlezyNG ezen verziója nem tudja használni a relét. Frissítsd az alkalmazást.",
       "forbidden": "Ezt csak a házigazda teheti meg.",
       "notInRoom": "Nem vagy szobában.",
       "alreadyInRoom": "Már egy szobában vagy.",
@@ -2095,14 +2095,14 @@
       "bannerAction": "Részletek",
       "sheetTitle": "A háttérbeli letöltések le vannak tiltva",
       "sheetTitleDegraded": "A háttérbeli letöltések korlátozottak lehetnek",
-      "sheetIntro": "Az Android megakadályozza, hogy a Plezy megbízhatóan töltsön le a háttérben.",
-      "sheetIntroDegraded": "Az eszközöd korlátozza, hogy a Plezy mikor tölthet le a háttérben.",
-      "reasonBackgroundRestricted": "A Plezy háttérbeli használata korlátozva van. Állítsd az akkumulátor- vagy háttérhasználatát „Korlátlan” értékre.",
+      "sheetIntro": "Az Android megakadályozza, hogy a PlezyNG megbízhatóan töltsön le a háttérben.",
+      "sheetIntroDegraded": "Az eszközöd korlátozza, hogy a PlezyNG mikor tölthet le a háttérben.",
+      "reasonBackgroundRestricted": "A PlezyNG háttérbeli használata korlátozva van. Állítsd az akkumulátor- vagy háttérhasználatát „Korlátlan” értékre.",
       "reasonStandbyRestricted": "Az Android korlátozott készenléti állapotba helyezte a Plezyt. Állítsd az akkumulátorhasználatát „Korlátlan” értékre.",
       "reasonDownloadChannelBlocked": "A letöltési értesítések ki vannak kapcsolva, ezért előfordulhat, hogy a folyamatjelzés és a vezérlők nem érhetők el.",
       "reasonNotificationsDisabled": "Az értesítések ki vannak kapcsolva. Android 13 vagy újabb rendszeren szükségesek a hosszú háttérbeli letöltésekhez.",
       "reasonDataSaver": "Az Adatforgalom-csökkentő be van kapcsolva, ezért mobiladat-kapcsolaton nem működnek a háttérbeli letöltések. Wi-Fi-n továbbra is működniük kell.",
-      "reasonOemUnknown": "A letöltések többször leálltak, miközben a Plezy a háttérben futott. Ellenőrizd a Plezy akkumulátor- vagy háttérhasználati beállításait.",
+      "reasonOemUnknown": "A letöltések többször leálltak, miközben a PlezyNG a háttérben futott. Ellenőrizd a PlezyNG akkumulátor- vagy háttérhasználati beállításait.",
       "openSettings": "Beállítások megnyitása",
       "stillNotWorking": "Eszközspecifikus segítség",
       "stillNotWorkingDescription": "Nézd meg az eszközödhöz tartozó lépéseket, vagy ha a probléma továbbra is fennáll, küldj naplót a Beállítások › Naplók megtekintése menüből.",
@@ -2193,7 +2193,7 @@
       "manualAddressHint": "Kézi kapcsolódási cím:"
     },
     "pairing": {
-      "discoveryDescription": "Az azonos Plex-fiókot használó Plezy-eszközök itt jelennek meg",
+      "discoveryDescription": "Az azonos Plex-fiókot használó PlezyNG-eszközök itt jelennek meg",
       "hostAddressHint": "192.168.1.100:48632",
       "connecting": "Csatlakozás...",
       "searchingForDevices": "Eszközök keresése...",
@@ -2205,7 +2205,7 @@
       "validationHostRequired": "Add meg a gazdagép címét",
       "validationHostFormat": "A formátumnak IP:port kell lennie (pl. 192.168.1.100:48632)",
       "connectionTimedOut": "A csatlakozás túllépte az időkorlátot. Használd ugyanazt a hálózatot mindkét eszközön.",
-      "sessionNotFound": "Az eszköz nem található. Győződj meg arról, hogy a Plezy fut a gazdagépen.",
+      "sessionNotFound": "Az eszköz nem található. Győződj meg arról, hogy a PlezyNG fut a gazdagépen.",
       "authFailed": "A hitelesítés nem sikerült. Mindkét eszközön ugyanazt a Plex-fiókot kell használni.",
       "failedToConnect": "Nem sikerült a csatlakozás: ${error}"
     },
@@ -2451,7 +2451,7 @@
     "connected": "Csatlakoztatva",
     "connectedAs": "@${username} néven csatlakoztatva",
     "disconnectConfirm": "Leválasztod a Trakt-fiókot?",
-    "disconnectConfirmBody": "A Plezy nem küld több eseményt a Traktnak. Bármikor újracsatlakozhatsz.",
+    "disconnectConfirmBody": "A PlezyNG nem küld több eseményt a Traktnak. Bármikor újracsatlakozhatsz.",
     "scrobble": "Valós idejű scrobbling",
     "scrobbleDescription": "Lejátszási, szüneteltetési és leállítási események küldése a Traktnak lejátszás közben.",
     "watchedSync": "Megtekintési állapot szinkronizálása",
@@ -2467,10 +2467,10 @@
     "signInWithEmby": "Bejelentkezés Emby-vel",
     "signInWithLocal": "Helyi fiók használata",
     "email": "E-mail",
-    "noSignInMethods": "Ez a Seerr példány nem kínál olyan bejelentkezési módot, amit a Plezy támogat.",
+    "noSignInMethods": "Ez a Seerr példány nem kínál olyan bejelentkezési módot, amit a PlezyNG támogat.",
     "instance": "Példány",
     "disconnectConfirm": "Leválasztod a Seerr-kapcsolatot?",
-    "disconnectConfirmBody": "A Plezy elfelejti ezt a Seerr példányt. Bármikor újracsatlakozhatsz.",
+    "disconnectConfirmBody": "A PlezyNG elfelejti ezt a Seerr példányt. Bármikor újracsatlakozhatsz.",
     "request": "Igénylés",
     "request4k": "Igénylés 4K-ban",
     "seasons": "Évadok",
@@ -2495,7 +2495,7 @@
     "statusBlocklisted": "Tiltólistán",
     "couldNotReach": "Nem sikerült elérni ezt: ${url}: ${error}",
     "noInstanceAtUrl": "Nem található Seerr-példány ezen a címen: ${url} (HTTP ${status})",
-    "behindAuthProxy": "A Seerr helyett egy hitelesítő fordított proxy (SSO vagy HTTP-hitelesítés) válaszolt. A Plezy nem tud rajta bejelentkezni: engedd, hogy a Seerr /api/v1 útvonala megkerülje a proxyt ennél az alkalmazásnál, vagy használj olyan címet, amely közvetlenül eléri a Seerr-t.",
+    "behindAuthProxy": "A Seerr helyett egy hitelesítő fordított proxy (SSO vagy HTTP-hitelesítés) válaszolt. A PlezyNG nem tud rajta bejelentkezni: engedd, hogy a Seerr /api/v1 útvonala megkerülje a proxyt ennél az alkalmazásnál, vagy használj olyan címet, amely közvetlenül eléri a Seerr-t.",
     "invalidUrl": "Adj meg egy szervercímet, például: https://seerr.example.com",
     "quickConnectUnsupported": "Ez a Seerr-példány nem támogatja a Quick Connectet. Seerr 3.4 vagy újabb verzió szükséges.",
     "notInitialized": "Ennek a Seerr-példánynak a kezdeti beállítása még nem fejeződött be",
@@ -2518,7 +2518,7 @@
     "scrobble": "Haladás automatikus követése",
     "scrobbleDescription": "Lista frissítése, amikor befejezel egy epizódot vagy filmet.",
     "disconnectConfirm": "Leválasztod a(z) ${service} szolgáltatást?",
-    "disconnectConfirmBody": "A Plezy nem frissíti többé a(z) ${service} adatait. Bármikor újracsatlakozhatsz.",
+    "disconnectConfirmBody": "A PlezyNG nem frissíti többé a(z) ${service} adatait. Bármikor újracsatlakozhatsz.",
     "connectFailed": "Nem sikerült csatlakozni a következőhöz: ${service}. Próbáld újra.",
     "names": {
       "mal": "MyAnimeList",
@@ -2529,10 +2529,10 @@
     },
     "simklReconnect": {
       "title": "Simkl újracsatlakoztatása",
-      "subtitle": "A Simkl kivezeti a kapcsolat által használt bejelentkezési módot. Az újracsatlakozás megnyitja a simkl.com oldalt, ahol jóváhagyhatod a Plezyt — a Plezy sosem látja a jelszavadat. A megtekintési előzményeid a Simklen maradnak."
+      "subtitle": "A Simkl kivezeti a kapcsolat által használt bejelentkezési módot. Az újracsatlakozás megnyitja a simkl.com oldalt, ahol jóváhagyhatod a Plezyt — a PlezyNG sosem látja a jelszavadat. A megtekintési előzményeid a Simklen maradnak."
     },
     "deviceCode": {
-      "title": "Plezy aktiválása a következőn: ${service}",
+      "title": "PlezyNG aktiválása a következőn: ${service}",
       "instructions": "Olvasd be a QR-kódot, vagy nyisd meg az alábbi címet, és írd be ezt a kódot:",
       "openToActivate": "Nyisd meg a(z) ${service} oldalt az aktiváláshoz",
       "copyCode": "Aktiválási kód másolása",

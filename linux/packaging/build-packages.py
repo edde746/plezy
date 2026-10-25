@@ -15,10 +15,10 @@ ARCH_SUFFIX = os.environ.get("ARCH_SUFFIX", "x64")
 METADATA = {
     "name": "plezy",
     "license": "GPL-3.0",
-    "vendor": "edde746",
-    "maintainer": "edde746 <noreply@github.com>",
-    "url": "https://github.com/edde746/plezy",
-    "description": "A modern Plex and Jellyfin client for desktop and mobile",
+    "vendor": "SnapeTech",
+    "maintainer": "SnapeTech <noreply@github.com>",
+    "url": "https://github.com/snapetech-org/PlezyNG",
+    "description": "A modern PlezyNG client for Plex, Jellyfin, and Emby",
 }
 
 ICON_SIZES = [16, 32, 48, 64, 128, 256, 512]

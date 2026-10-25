@@ -109,7 +109,7 @@ services:
             compose_path = root / "docker-compose.yml"
             docker_path.write_text("FROM golang:1.22-alpine AS build\n", encoding="utf-8")
             compose_path.write_text(
-                "services:\n  bugs:\n    image: ghcr.io/owner/bugs:latest\n",
+                "services:\n  service:\n    image: ghcr.io/owner/service:latest\n",
                 encoding="utf-8",
             )
             violations = check_paths([docker_path], [compose_path])
@@ -123,7 +123,7 @@ services:
         self.assertIn("Dockerfile:1", output)
         self.assertIn("docker-compose.yml:3", output)
         self.assertIn("golang:1.22-alpine", output)
-        self.assertIn("ghcr.io/owner/bugs:latest", output)
+        self.assertIn("ghcr.io/owner/service:latest", output)
 
     def test_repository_production_references_pass(self) -> None:
         self.assertEqual(main([]), 0)

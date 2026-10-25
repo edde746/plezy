@@ -1169,7 +1169,7 @@ void main() {
       expect(page.totalResults, 37);
     });
 
-    test('adds the current Plezy locale to the catalog GETs Seerr localizes', () async {
+    test('adds the current PlezyNG locale to the catalog GETs Seerr localizes', () async {
       final urls = <Uri>[];
       final client = clientWith(
         MockClient((request) async {

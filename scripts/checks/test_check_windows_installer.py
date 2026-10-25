@@ -62,7 +62,7 @@ class WindowsInstallerGuardTest(unittest.TestCase):
         result = self._run(script)
 
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("winget installs that way", result.stderr)
+        self.assertIn("silent install with no previous copy prompt", result.stderr)
 
     def test_admin_default_is_rejected(self) -> None:
         script = self._mutate("PrivilegesRequired=lowest", "PrivilegesRequired=admin")
@@ -115,15 +115,6 @@ class WindowsInstallerGuardTest(unittest.TestCase):
 
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("a second copy of the template will drift", result.stderr)
-
-    def test_losing_the_winget_marker_is_rejected(self) -> None:
-        script = self._mutate("{param:WINGET|0}", "{param:NOTWINGET|0}")
-
-        result = self._run(script)
-
-        self.assertNotEqual(result.returncode, 0)
-        self.assertIn("winget marker file", result.stderr)
-
 
 if __name__ == "__main__":
     unittest.main()

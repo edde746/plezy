@@ -30,7 +30,7 @@ void main() {
         baseUrl: 'http://$serverId:32400',
         token: 'old-token',
         clientIdentifier: 'client-id',
-        product: 'Plezy',
+        product: 'PlezyNG',
         version: 'test',
       ),
       serverId: ServerId(serverId),

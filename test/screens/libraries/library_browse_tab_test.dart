@@ -605,7 +605,7 @@ class _PlexBrowseHarness {
         baseUrl: 'https://plex.example.com',
         token: 'token',
         clientIdentifier: 'client-id',
-        product: 'Plezy',
+        product: 'PlezyNG',
         version: 'test',
       ),
       serverId: _serverId,

@@ -159,7 +159,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   }
 
   /// Focus key of the first tile: Supporter in purchasable builds, the
-  /// Liberapay link in donation builds (never both), else General.
+  /// Configured donation URL in donation builds (never both), else General.
   static String get _topTileKey => supporterBuildMode == SupporterMode.iap
       ? _kSupporter
       : DonationService.isEnabled

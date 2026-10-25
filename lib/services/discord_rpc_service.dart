@@ -388,7 +388,7 @@ class DiscordRPCService {
         return hostedUrl;
       }
     } catch (e) {
-      appLogger.d('Failed to upload thumbnail to Plezy poster host', error: e);
+      appLogger.d('Failed to upload thumbnail to the poster host', error: e);
     }
     return null;
   }

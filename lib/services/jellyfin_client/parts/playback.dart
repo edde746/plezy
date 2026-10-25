@@ -919,7 +919,7 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
         'UserId': connection.userId,
         ...negotiation,
         'DeviceProfile': <String, Object?>{
-          'Name': 'Plezy',
+          'Name': 'PlezyNG',
           'MaxStreamingBitrate': ?maxStreamingBitrate,
           'CodecProfiles': const <Map<String, Object?>>[],
           // fMP4 segments instead of MPEG-TS (#2131): ts cannot carry AV1,

@@ -57,14 +57,14 @@ def git(*args: str, check: bool = True) -> str:
 
 def changed_paths(mode: str, base: str | None, head: str) -> list[str]:
     if mode == "staged":
-        output = git("diff", "--cached", "--name-only", "--diff-filter=ACMR", "-z")
+        output = git("diff", "--cached", "--name-only", "--diff-filter=ACMRD", "-z")
     else:
         if not base:
             raise ChangelogError("range mode requires --base <ref> and --head <ref>")
         output = git(
             "diff",
             "--name-only",
-            "--diff-filter=ACMR",
+            "--diff-filter=ACMRD",
             "-z",
             f"{base}...{head}",
         )

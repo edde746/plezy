@@ -277,7 +277,7 @@ void main() {
       final anna = _row(t.watchTogether.nameYou(name: 'Anna'));
       expect(find.descendant(of: anna, matching: find.byType(WatchHostBadge)), findsOneWidget);
       expect(find.descendant(of: _row('Ben'), matching: find.byType(WatchHostBadge)), findsNothing);
-      expect(find.descendant(of: _row('Ben'), matching: find.text('Plezy · Connected · Idle')), findsOneWidget);
+      expect(find.descendant(of: _row('Ben'), matching: find.text('PlezyNG · Connected · Idle')), findsOneWidget);
 
       await world.hostPlays(host, alien);
       await world.until(() => guest.isFollowing, 'the guest follows');
@@ -489,7 +489,7 @@ void main() {
       world.relay.drop(guest.myPeerId!);
       await world.until(() => !_seenBy(host, guest).connected, 'the host sees the drop');
       await tester.pump();
-      expect(find.descendant(of: _row('Ben'), matching: find.text('Plezy · Disconnected')), findsOneWidget);
+      expect(find.descendant(of: _row('Ben'), matching: find.text('PlezyNG · Disconnected')), findsOneWidget);
     });
 
     _screenTest('a video without catalogue identity is marked as not shareable; a movie is not', (tester, world) async {

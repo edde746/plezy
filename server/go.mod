@@ -1,4 +1,4 @@
-module github.com/edde746/plezy-relay
+module github.com/snapetech-org/PlezyNG/server
 
 go 1.27.2
 

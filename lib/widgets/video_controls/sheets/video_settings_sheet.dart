@@ -338,7 +338,7 @@ class _AudioRenderingModeItemState extends State<_AudioRenderingModeItem> {
 class VideoSettingsSheet extends StatefulWidget {
   final Player player;
 
-  /// Whether this player surface supports Plezy's HDR control.
+  /// Whether this player surface supports PlezyNG's HDR control.
   ///
   /// Defaults to the native platform capability, but can be supplied by
   /// embedders whose capability is known independently of the host platform.

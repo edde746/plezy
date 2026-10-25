@@ -304,7 +304,7 @@ void main() {
     await pumpEventQueue();
     expect(harness.player.state.playing, isFalse);
 
-    // The user opens Plezy again while the vehicle still cannot answer. Focus is
+    // The user opens PlezyNG again while the vehicle still cannot answer. Focus is
     // not a verdict, so nothing auto-starts here...
     binding.handleAppLifecycleStateChanged(AppLifecycleState.resumed);
     await pumpEventQueue();

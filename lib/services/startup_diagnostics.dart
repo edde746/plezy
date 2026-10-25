@@ -214,7 +214,7 @@ class StartupFailureRecord {
   /// and not taken" — the ambiguity that stalled #1732 for two days.
   String describe() {
     final buffer = StringBuffer()
-      ..writeln('Plezy startup failure')
+      ..writeln('PlezyNG startup failure')
       ..writeln('Version: $appVersion')
       ..writeln('Platform: $platform')
       ..writeln('When: ${timestamp.toUtc().toIso8601String()}')

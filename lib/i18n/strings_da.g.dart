@@ -102,7 +102,7 @@ class _Translations$app$da extends Translations$app$en {
 	final TranslationsDa _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy';
+	@override String get title => 'PlezyNG';
 }
 
 // Path: appIcon
@@ -118,8 +118,8 @@ class _Translations$appIcon$da extends Translations$appIcon$en {
 	@override String get locked => 'Supporter-fordel';
 	@override String get lockedHint => 'Alternative ikoner er en Supporter-fordel.';
 	@override String get changeFailed => 'Kunne ikke ændre appikonet';
-	@override String get launcherHint => 'Det nye ikon vises på din startskærm, når du forlader Plezy.';
-	@override String get tvLauncherHint => 'Det nye banner vises, når du forlader Plezy. Android TV kan blive ved med at vise det gamle, indtil tv\'et genstartes.';
+	@override String get launcherHint => 'Det nye ikon vises på din startskærm, når du forlader PlezyNG.';
+	@override String get tvLauncherHint => 'Det nye banner vises, når du forlader PlezyNG. Android TV kan blive ved med at vise det gamle, indtil tv\'et genstartes.';
 	@override late final _Translations$appIcon$names$da names = _Translations$appIcon$names$da._(_root);
 }
 
@@ -145,7 +145,7 @@ class _Translations$auth$da extends Translations$auth$en {
 	@override String get quickConnectWaiting => 'Venter på godkendelse…';
 	@override String get quickConnectCancel => 'Annuller';
 	@override String get quickConnectExpired => 'Quick Connect er udløbet. Prøv igen.';
-	@override String get localDataRecoveryRequired => 'Plezy kunne ikke gendanne lokale loginoplysninger og ventende afspilningsdata på en sikker måde. Log ind igen.';
+	@override String get localDataRecoveryRequired => 'PlezyNG kunne ikke gendanne lokale loginoplysninger og ventende afspilningsdata på en sikker måde. Log ind igen.';
 	@override String get pinCheckRejected => 'Plex PIN-kontrollen blev afvist';
 }
 
@@ -246,19 +246,19 @@ class _Translations$supporter$da extends Translations$supporter$en {
 	final TranslationsDa _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy Supporter';
-	@override String get intro => 'Et engangskøb, der støtter udviklingen af Plezy og låser op for kosmetiske tilføjelser:';
+	@override String get title => 'PlezyNG Supporter';
+	@override String get intro => 'Et engangskøb, der støtter udviklingen af PlezyNG og låser op for kosmetiske tilføjelser:';
 	@override String get presetThemes => 'Forudindstillede temaer';
 	@override String get presetThemesDescription => 'Glød, Gletsjer, Skov, Blomme og Papir';
 	@override String get customTheme => 'Brugerdefineret tema';
 	@override String get customThemeDescription => 'Vælg selv alle farver';
 	@override String get appIcons => 'Appikoner';
-	@override String get appIconsDescription => 'Vælg et alternativt Plezy-ikon';
+	@override String get appIconsDescription => 'Vælg et alternativt PlezyNG-ikon';
 	@override String buy({required Object price}) => 'Køb for ${price}';
 	@override String get loadingPrice => 'Indlæser pris...';
 	@override String get restore => 'Gendan køb';
 	@override String get pending => 'Dit køb afventer betaling eller godkendelse. Tilføjelserne låses op, så snart butikken har gennemført det.';
-	@override String get thankYouTitle => 'Tak for din støtte til Plezy';
+	@override String get thankYouTitle => 'Tak for din støtte til PlezyNG';
 	@override String get thankYouBody => 'Dine Supporter-tilføjelser er låst op.';
 	@override String get tileSubtitle => 'Lås temaer og appikoner op med et engangskøb';
 	@override String get tileSubtitleThemesOnly => 'Lås temaer op med et engangskøb';
@@ -274,8 +274,8 @@ class _Translations$settings$da extends Translations$settings$en {
 
 	// Translations
 	@override String get title => 'Indstillinger';
-	@override String get supportDeveloper => 'Støt Plezy';
-	@override String get supportDeveloperDescription => 'Doner via Liberapay for at finansiere udviklingen';
+	@override String get supportDeveloper => 'Støt PlezyNG';
+	@override String get supportDeveloperDescription => 'Donér for at støtte udviklingen';
 	@override String get language => 'Sprog';
 	@override String get theme => 'Tema';
 	@override String get appearance => 'Udseende';
@@ -421,7 +421,7 @@ class _Translations$settings$da extends Translations$settings$en {
 	@override String get importSettingsDescription => 'Gendan præferencer fra en fil';
 	@override String get importSettingsConfirm => 'Dette vil erstatte dine nuværende indstillinger. Fortsæt?';
 	@override String get importSettingsSuccess => 'Indstillinger importeret';
-	@override String get importSettingsInvalidFile => 'Denne fil er ikke en gyldig eksport af Plezy-indstillinger';
+	@override String get importSettingsInvalidFile => 'Denne fil er ikke en gyldig eksport af PlezyNG-indstillinger';
 	@override String get importSettingsNoUser => 'Log ind før import af indstillinger';
 	@override String get shortcutsReset => 'Genveje nulstillet til standard';
 	@override String get resetShortcutsConfirm => 'Dette vil erstatte dine tilpassede genveje med standardgenvejene. Fortsæt?';
@@ -558,7 +558,7 @@ class _Translations$settings$da extends Translations$settings$en {
 	@override String get forceTvMode => 'Gennemtving TV-tilstand';
 	@override String get forceTvModeDescription => 'Tving TV-layout. Til enheder, der ikke registreres automatisk. Kræver genstart.';
 	@override String get startInFullscreen => 'Start i fuldskærm';
-	@override String get startInFullscreenDescription => 'Åbn Plezy i fuldskærmstilstand ved opstart';
+	@override String get startInFullscreenDescription => 'Åbn PlezyNG i fuldskærmstilstand ved opstart';
 	@override String get exitFullscreenOnPlayerClose => 'Forlad fuldskærm ved lukning af afspiller';
 	@override String get exitFullscreenOnPlayerCloseDescription => 'Afslut automatisk fuldskærm, når videoafspilleren lukkes';
 	@override String get autoHidePerformanceOverlay => 'Skjul ydelsesoverlay automatisk';
@@ -607,7 +607,7 @@ class _Translations$settings$da extends Translations$settings$en {
 	@override String get playerScopeGlobal => 'Overalt';
 	@override String get playerScopeLibrary => 'Pr. bibliotek';
 	@override String get playerScopeTitle => 'Pr. serie eller film';
-	@override String get exportDialogTitle => 'Eksportér Plezy-indstillinger';
+	@override String get exportDialogTitle => 'Eksportér PlezyNG-indstillinger';
 }
 
 // Path: themeEditor
@@ -842,8 +842,8 @@ class _Translations$mediaMenu$da extends Translations$mediaMenu$en {
 		one: '${n} anden episode er gemt i samme fil og vil også blive slettet:',
 		other: '${n} andre episoder er gemt i samme fil og vil også blive slettet:',
 	);
-	@override String get deleteScopeUnverifiedProbeFailed => 'Plezy kunne ikke kontrollere, hvilke filer dette vil fjerne, så det kan slette mere end det ovennævnte emne. Annuller og prøv igen, eller slet alligevel.';
-	@override String get deleteScopeUnverifiedNoFileInfo => 'Din server leverede ikke filoplysninger for dette emne, så Plezy kan ikke kontrollere, hvilke filer dette vil fjerne. Det kan slette mere end det ovennævnte emne.';
+	@override String get deleteScopeUnverifiedProbeFailed => 'PlezyNG kunne ikke kontrollere, hvilke filer dette vil fjerne, så det kan slette mere end det ovennævnte emne. Annuller og prøv igen, eller slet alligevel.';
+	@override String get deleteScopeUnverifiedNoFileInfo => 'Din server leverede ikke filoplysninger for dette emne, så PlezyNG kan ikke kontrollere, hvilke filer dette vil fjerne. Det kan slette mere end det ovennævnte emne.';
 	@override String get mediaDeletedSuccessfully => 'Mediet blev slettet';
 	@override String get mediaFailedToDelete => 'Mediet kunne ikke slettes';
 	@override String get rate => 'Bedøm';
@@ -1177,7 +1177,7 @@ class _Translations$profiles$da extends Translations$profiles$en {
 	final TranslationsDa _root; // ignore: unused_field
 
 	// Translations
-	@override String get addPlezyProfile => 'Tilføj Plezy-profil';
+	@override String get addPlezyProfile => 'Tilføj PlezyNG-profil';
 	@override String get switchingProfile => 'Skifter profil…';
 	@override String get deleteThisProfileTitle => 'Slet denne profil?';
 	@override String deleteThisProfileMessage({required Object displayName}) => 'Fjern ${displayName}. Forbindelser påvirkes ikke.';
@@ -1261,7 +1261,7 @@ class _Translations$connections$da extends Translations$connections$en {
 	@override String accessDeniedMany({required Object count}) => '${count} servere nægtede adgang for denne konto';
 	@override String get signInAgain => 'Log ind igen';
 	@override String editMediaBrowserTitle({required Object product}) => 'Rediger ${product}-forbindelse';
-	@override String editMediaBrowserIntro({required Object serverName}) => 'Tilføj eller fjern URL\'er for ${serverName}. Plezy bruger den tilgængelige URL med laveste latenstid.';
+	@override String editMediaBrowserIntro({required Object serverName}) => 'Tilføj eller fjern URL\'er for ${serverName}. PlezyNG bruger den tilgængelige URL med laveste latenstid.';
 }
 
 // Path: accountPreferences
@@ -1275,7 +1275,7 @@ class _Translations$accountPreferences$da extends Translations$accountPreference
 	@override String hubSubtitleSingle({required Object account}) => 'Lyd-, undertekst- og biblioteksindstillinger gemt på ${account}';
 	@override String hubSubtitleMultiple({required Object count}) => 'Lyd-, undertekst- og biblioteksindstillinger gemt på ${count} konti';
 	@override String get pickAccount => 'Hver konto gemmer sine egne præferencer. Vælg den, du vil redigere.';
-	@override String get storedOnAccount => 'Disse indstillinger gemmes på selve kontoen, så alle apps, der er logget ind på den, bruger dem — inklusive Plezy på dine andre enheder.';
+	@override String get storedOnAccount => 'Disse indstillinger gemmes på selve kontoen, så alle apps, der er logget ind på den, bruger dem — inklusive PlezyNG på dine andre enheder.';
 	@override String get noAccounts => 'Ingen konti at konfigurere';
 	@override String get noAccountsHint => 'Log ind på Plex, eller forbind en Jellyfin- eller Emby-server, så vises de præferencer, der er gemt på kontoen, her.';
 	@override String get unavailable => 'Kan ikke nå denne konto';
@@ -1488,9 +1488,9 @@ class _Translations$startup$da extends Translations$startup$en {
 	final TranslationsDa _root; // ignore: unused_field
 
 	// Translations
-	@override String get failedTitle => 'Plezy kunne ikke starte';
+	@override String get failedTitle => 'PlezyNG kunne ikke starte';
 	@override String get failedBody => 'Der gik noget galt under opstart. Oplysningerne nedenfor viser, hvad der gik galt.';
-	@override String get failedBodyRepairable => 'Plezy\'s gemte indstillingsfil er beskadiget og skal genopbygges, før Plezy kan starte. Det hjælper ikke at prøve igen — vælg Reparer lager.';
+	@override String get failedBodyRepairable => 'PlezyNG\'s gemte indstillingsfil er beskadiget og skal genopbygges, før PlezyNG kan starte. Det hjælper ikke at prøve igen — vælg Reparer lager.';
 	@override String get phaseLabel => 'Trin';
 	@override String get showDetails => 'Vis detaljer';
 	@override String get hideDetails => 'Skjul detaljer';
@@ -1499,16 +1499,16 @@ class _Translations$startup$da extends Translations$startup$en {
 	@override String get uploadDetails => 'Upload detaljer';
 	@override String get repairStorage => 'Reparer lager';
 	@override String get repairTitle => 'Reparer gemte data?';
-	@override String get repairBodyCommon => 'Plezy\'s indstillingsfil er beskadiget og kan ikke læses. Reparation nulstiller alle indstillinger til deres standardværdier.';
+	@override String get repairBodyCommon => 'PlezyNG\'s indstillingsfil er beskadiget og kan ikke læses. Reparation nulstiller alle indstillinger til deres standardværdier.';
 	@override String get repairBodyOneCredential => 'Én gemt loginoplysning er beskadiget og kan ikke læses. Reparation fjerner kun den; dine andre indstillinger forbliver urørt.';
 	@override String get repairBodySignInsKept => 'Dine servere og profiler bør forblive logget ind.';
 	@override String get repairBodySignInsLost => 'Nøglen, der beskytter dine gemte loginoplysninger, kan ikke gendannes fra denne fil, så du skal logge ind på alle servere og profiler igen. Intet på din medieserver er påvirket.';
-	@override String get repairBodySessionsUncertain => 'Trackere (MAL, AniList, Simkl, Trakt) og Seerr gemmes separat, og det er uvist, om de overlever. Plezy fortæller dig præcis, hvad det beholdt.';
+	@override String get repairBodySessionsUncertain => 'Trackere (MAL, AniList, Simkl, Trakt) og Seerr gemmes separat, og det er uvist, om de overlever. PlezyNG fortæller dig præcis, hvad det beholdt.';
 	@override String get repairConfirm => 'Reparer';
 	@override String get repairSucceeded => 'Lager repareret';
 	@override String get repairNeedsRestart => 'Lager repareret — genstart påkrævet';
-	@override String get restartRequiredBody => 'Dine data er blevet repareret, men Plezy skal starte på ny, før det kan bruge dem. Luk Plezy, og åbn det igen.';
-	@override String get quitPlezy => 'Afslut Plezy';
+	@override String get restartRequiredBody => 'Dine data er blevet repareret, men PlezyNG skal starte på ny, før det kan bruge dem. Luk PlezyNG, og åbn det igen.';
+	@override String get quitPlezy => 'Afslut PlezyNG';
 	@override String get repairFailed => 'Reparation mislykkedes';
 	@override String get repairKeptSignIns => 'Dine servere og profiler er stadig logget ind.';
 	@override String get repairLostSignIns => 'Nøglen, der beskytter dine gemte loginoplysninger, kunne ikke gendannes. Du skal logge ind på alle servere og profiler igen.';
@@ -1517,7 +1517,7 @@ class _Translations$startup$da extends Translations$startup$en {
 	@override String get backupWarning => 'Den indeholder dine loginoplysninger. Upload eller del den ikke.';
 	@override String get deleteBackup => 'Slet kopi';
 	@override String get backupDeleted => 'Kopi slettet.';
-	@override String get previousFailureTitle => 'Plezy kunne ikke starte sidste gang';
+	@override String get previousFailureTitle => 'PlezyNG kunne ikke starte sidste gang';
 }
 
 // Path: licenses
@@ -1823,7 +1823,7 @@ class _Translations$watchTogether$da extends Translations$watchTogether$en {
 	@override String get codeCopied => 'Rumkode kopieret';
 	@override String get shareInvite => 'Del invitation';
 	@override String get inviteCopied => 'Invitation kopieret. Indsæt den i en besked.';
-	@override String inviteMessage({required Object code}) => 'Deltag i mit Se sammen-rum i Plezy: Åbn "Se sammen", vælg "Deltag i rum", og indtast ${code}.';
+	@override String inviteMessage({required Object code}) => 'Deltag i mit Se sammen-rum i PlezyNG: Åbn "Se sammen", vælg "Deltag i rum", og indtast ${code}.';
 	@override String get openSessionControls => 'Åbn sessionsstyring for Se sammen';
 	@override String get reconnecting => 'Genopretter forbindelse...';
 	@override String get reconnectingDescription => 'Forbindelsen blev afbrudt. Du kommer automatisk ind i rummet igen.';
@@ -1849,7 +1849,7 @@ class _Translations$watchTogether$da extends Translations$watchTogether$en {
 	@override String get chooseAnotherCopy => 'Vælg en anden kopi';
 	@override String get dontPlay => 'Afspil ikke';
 	@override String get unavailableTitle => 'Du har ikke denne video';
-	@override String get unavailableDescription => 'Plezy kunne ikke finde den i dine biblioteker. Vælg selv en kopi, eller søg igen.';
+	@override String get unavailableDescription => 'PlezyNG kunne ikke finde den i dine biblioteker. Vælg selv en kopi, eller søg igen.';
 	@override String get chooseCopy => 'Vælg en kopi';
 	@override String get searchAgain => 'Søg igen';
 	@override String get noCandidates => 'Ingen kopier fundet i dine biblioteker.';
@@ -2312,11 +2312,11 @@ class _Translations$trakt$da extends Translations$trakt$en {
 	@override String get connected => 'Forbundet';
 	@override String connectedAs({required Object username}) => 'Forbundet som @${username}';
 	@override String get disconnectConfirm => 'Frakobl Trakt-konto?';
-	@override String get disconnectConfirmBody => 'Plezy stopper med at sende hændelser til Trakt. Du kan tilslutte igen når som helst.';
+	@override String get disconnectConfirmBody => 'PlezyNG stopper med at sende hændelser til Trakt. Du kan tilslutte igen når som helst.';
 	@override String get scrobble => 'Realtids-scrobbling';
 	@override String get scrobbleDescription => 'Send afspil-, pause- og stop-begivenheder til Trakt under afspilning.';
 	@override String get watchedSync => 'Synkroniser set-status';
-	@override String get watchedSyncDescription => 'Når du markerer elementer som set i Plezy, markeres de også på Trakt.';
+	@override String get watchedSyncDescription => 'Når du markerer elementer som set i PlezyNG, markeres de også på Trakt.';
 }
 
 // Path: seerr
@@ -2335,10 +2335,10 @@ class _Translations$seerr$da extends Translations$seerr$en {
 	@override String get signInWithEmby => 'Log ind med Emby';
 	@override String get signInWithLocal => 'Brug en lokal konto';
 	@override String get email => 'E-mail';
-	@override String get noSignInMethods => 'Denne Seerr-instans tilbyder ingen loginmetode, som Plezy understøtter.';
+	@override String get noSignInMethods => 'Denne Seerr-instans tilbyder ingen loginmetode, som PlezyNG understøtter.';
 	@override String get instance => 'Instans';
 	@override String get disconnectConfirm => 'Afbryd forbindelsen til Seerr?';
-	@override String get disconnectConfirmBody => 'Plezy glemmer denne Seerr-instans. Du kan altid oprette forbindelse igen.';
+	@override String get disconnectConfirmBody => 'PlezyNG glemmer denne Seerr-instans. Du kan altid oprette forbindelse igen.';
 	@override String get request => 'Anmod';
 	@override String get request4k => 'Anmod i 4K';
 	@override String get seasons => 'Sæsoner';
@@ -2363,7 +2363,7 @@ class _Translations$seerr$da extends Translations$seerr$en {
 	@override String get statusBlocklisted => 'På blokeringslisten';
 	@override String couldNotReach({required Object url, required Object error}) => 'Kunne ikke nå ${url}: ${error}';
 	@override String noInstanceAtUrl({required Object url, required Object status}) => 'Ingen Seerr-instans på ${url} (HTTP ${status})';
-	@override String get behindAuthProxy => 'En godkendende reverse proxy (SSO eller HTTP-auth) svarede i stedet for Seerr. Plezy kan ikke logge ind gennem den: Lad Seerrs /api/v1-sti omgå proxyen for denne app, eller brug en adresse, der når Seerr direkte.';
+	@override String get behindAuthProxy => 'En godkendende reverse proxy (SSO eller HTTP-auth) svarede i stedet for Seerr. PlezyNG kan ikke logge ind gennem den: Lad Seerrs /api/v1-sti omgå proxyen for denne app, eller brug en adresse, der når Seerr direkte.';
 	@override String get invalidUrl => 'Indtast en serveradresse som https://seerr.example.com';
 	@override String get quickConnectUnsupported => 'Denne Seerr-instans understøtter ikke Quick Connect. Den kræver Seerr 3.4 eller nyere.';
 	@override String get notInitialized => 'Denne Seerr-instans har ikke fuldført førstegangsopsætningen';
@@ -2393,7 +2393,7 @@ class _Translations$services$da extends Translations$services$en {
 	@override String get scrobble => 'Registrer fremgang automatisk';
 	@override String get scrobbleDescription => 'Opdater din liste, når du er færdig med et afsnit eller en film.';
 	@override String disconnectConfirm({required Object service}) => 'Afbryd forbindelsen til ${service}?';
-	@override String disconnectConfirmBody({required Object service}) => 'Plezy stopper med at opdatere ${service}. Du kan altid oprette forbindelse igen.';
+	@override String disconnectConfirmBody({required Object service}) => 'PlezyNG stopper med at opdatere ${service}. Du kan altid oprette forbindelse igen.';
 	@override String connectFailed({required Object service}) => 'Kunne ikke forbinde til ${service}. Prøv igen.';
 	@override late final _Translations$services$names$da names = _Translations$services$names$da._(_root);
 	@override late final _Translations$services$simklReconnect$da simklReconnect = _Translations$services$simklReconnect$da._(_root);
@@ -3170,7 +3170,7 @@ class _Translations$watchTogether$errors$da extends Translations$watchTogether$e
 	@override String get relayFull => 'Der er travlt på Se sammen lige nu. Prøv igen senere.';
 	@override String get unreachable => 'Kunne ikke nå relayserveren til Se sammen. Tjek din forbindelse.';
 	@override String get rateLimited => 'For mange forsøg. Vent et øjeblik, og prøv igen.';
-	@override String get clientBlocked => 'Denne version af Plezy kan ikke bruge relayserveren. Opdater appen.';
+	@override String get clientBlocked => 'Denne version af PlezyNG kan ikke bruge relayserveren. Opdater appen.';
 	@override String get forbidden => 'Kun værten kan gøre det.';
 	@override String get notInRoom => 'Du er ikke i et rum.';
 	@override String get alreadyInRoom => 'Du er allerede i et rum.';
@@ -3191,14 +3191,14 @@ class _Translations$downloads$backgroundWarning$da extends Translations$download
 	@override String get bannerAction => 'Detaljer';
 	@override String get sheetTitle => 'Downloads i baggrunden er blokeret';
 	@override String get sheetTitleDegraded => 'Downloads i baggrunden kan være begrænsede';
-	@override String get sheetIntro => 'Android forhindrer Plezy i at downloade stabilt i baggrunden.';
-	@override String get sheetIntroDegraded => 'Din enhed begrænser, hvornår Plezy kan downloade i baggrunden.';
+	@override String get sheetIntro => 'Android forhindrer PlezyNG i at downloade stabilt i baggrunden.';
+	@override String get sheetIntroDegraded => 'Din enhed begrænser, hvornår PlezyNG kan downloade i baggrunden.';
 	@override String get reasonBackgroundRestricted => 'Plezys baggrundsaktivitet er begrænset. Indstil batteriforbruget eller baggrundsaktiviteten til "Ubegrænset".';
-	@override String get reasonStandbyRestricted => 'Android har sat Plezy i begrænset standbytilstand. Indstil batteriforbruget til "Ubegrænset".';
+	@override String get reasonStandbyRestricted => 'Android har sat PlezyNG i begrænset standbytilstand. Indstil batteriforbruget til "Ubegrænset".';
 	@override String get reasonDownloadChannelBlocked => 'Notifikationer om downloads er slået fra, så status og betjeningsknapper muligvis ikke er tilgængelige.';
 	@override String get reasonNotificationsDisabled => 'Notifikationer er slået fra. På Android 13 eller nyere er de nødvendige ved lange downloads i baggrunden.';
 	@override String get reasonDataSaver => 'Datasparefunktionen er slået til, hvilket blokerer downloads i baggrunden via mobildata. Downloads bør stadig køre på Wi-Fi.';
-	@override String get reasonOemUnknown => 'Downloads stoppede gentagne gange, mens Plezy var i baggrunden. Tjek Plezys indstillinger for batteriforbrug eller baggrundsaktivitet.';
+	@override String get reasonOemUnknown => 'Downloads stoppede gentagne gange, mens PlezyNG var i baggrunden. Tjek Plezys indstillinger for batteriforbrug eller baggrundsaktivitet.';
 	@override String get openSettings => 'Åbn indstillinger';
 	@override String get stillNotWorking => 'Enhedsspecifik hjælp';
 	@override String get stillNotWorkingDescription => 'Se vejledningen til din enhed, eller send en logfil fra Indstillinger › Vis logfiler, hvis problemet fortsætter.';
@@ -3253,19 +3253,19 @@ class _Translations$companionRemote$pairing$da extends Translations$companionRem
 	final TranslationsDa _root; // ignore: unused_field
 
 	// Translations
-	@override String get discoveryDescription => 'Plezy-enheder med samme Plex-konto vises her';
+	@override String get discoveryDescription => 'PlezyNG-enheder med samme Plex-konto vises her';
 	@override String get hostAddressHint => '192.168.1.100:48632';
 	@override String get connecting => 'Opretter forbindelse...';
 	@override String get searchingForDevices => 'Søger efter enheder...';
 	@override String get noDevicesFound => 'Ingen enheder fundet på dit netværk';
-	@override String get noDevicesHint => 'Åbn Plezy på din computer, og brug det samme Wi-Fi-netværk';
+	@override String get noDevicesHint => 'Åbn PlezyNG på din computer, og brug det samme Wi-Fi-netværk';
 	@override String get availableDevices => 'Tilgængelige enheder';
 	@override String get manualConnection => 'Manuel forbindelse';
 	@override String get cryptoInitFailed => 'Kunne ikke starte sikker forbindelse. Log ind på Plex først.';
 	@override String get validationHostRequired => 'Angiv en værtsadresse';
 	@override String get validationHostFormat => 'Format skal være IP:port (f.eks. 192.168.1.100:48632)';
 	@override String get connectionTimedOut => 'Forbindelsen fik timeout. Brug samme netværk på begge enheder.';
-	@override String get sessionNotFound => 'Enhed ikke fundet. Sørg for, at Plezy kører på værten.';
+	@override String get sessionNotFound => 'Enhed ikke fundet. Sørg for, at PlezyNG kører på værten.';
 	@override String get authFailed => 'Godkendelse mislykkedes. Begge enheder skal bruge samme Plex-konto.';
 	@override String failedToConnect({required Object error}) => 'Kunne ikke oprette forbindelse: ${error}';
 }
@@ -3345,7 +3345,7 @@ class _Translations$services$simklReconnect$da extends Translations$services$sim
 
 	// Translations
 	@override String get title => 'Genopret forbindelse til Simkl';
-	@override String get subtitle => 'Simkl udfaser den loginmetode, som denne forbindelse bruger. Når du genopretter forbindelsen, åbnes simkl.com, hvor du godkender Plezy — Plezy ser aldrig din adgangskode. Din visningshistorik forbliver på Simkl.';
+	@override String get subtitle => 'Simkl udfaser den loginmetode, som denne forbindelse bruger. Når du genopretter forbindelsen, åbnes simkl.com, hvor du godkender PlezyNG — PlezyNG ser aldrig din adgangskode. Din visningshistorik forbliver på Simkl.';
 }
 
 // Path: services.deviceCode
@@ -3355,7 +3355,7 @@ class _Translations$services$deviceCode$da extends Translations$services$deviceC
 	final TranslationsDa _root; // ignore: unused_field
 
 	// Translations
-	@override String title({required Object service}) => 'Aktiver Plezy på ${service}';
+	@override String title({required Object service}) => 'Aktiver PlezyNG på ${service}';
 	@override String get instructions => 'Scan QR-koden, eller gå til adressen nedenfor, og indtast denne kode:';
 	@override String openToActivate({required Object service}) => 'Åbn ${service} for at aktivere';
 	@override String get copyCode => 'Kopiér aktiveringskode';
@@ -3415,15 +3415,15 @@ class _Translations$services$libraryFilter$da extends Translations$services$libr
 extension on TranslationsDa {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
-			'app.title' => 'Plezy',
+			'app.title' => 'PlezyNG',
 			'appIcon.title' => 'Appikon',
 			'appIcon.defaultIcon' => 'Standard',
 			'appIcon.current' => 'Nuværende ikon',
 			'appIcon.locked' => 'Supporter-fordel',
 			'appIcon.lockedHint' => 'Alternative ikoner er en Supporter-fordel.',
 			'appIcon.changeFailed' => 'Kunne ikke ændre appikonet',
-			'appIcon.launcherHint' => 'Det nye ikon vises på din startskærm, når du forlader Plezy.',
-			'appIcon.tvLauncherHint' => 'Det nye banner vises, når du forlader Plezy. Android TV kan blive ved med at vise det gamle, indtil tv\'et genstartes.',
+			'appIcon.launcherHint' => 'Det nye ikon vises på din startskærm, når du forlader PlezyNG.',
+			'appIcon.tvLauncherHint' => 'Det nye banner vises, når du forlader PlezyNG. Android TV kan blive ved med at vise det gamle, indtil tv\'et genstartes.',
 			'appIcon.names.midnight' => 'Midnat',
 			'appIcon.names.ember' => 'Glød',
 			'appIcon.names.paper' => 'Papir',
@@ -3462,7 +3462,7 @@ extension on TranslationsDa {
 			'auth.quickConnectWaiting' => 'Venter på godkendelse…',
 			'auth.quickConnectCancel' => 'Annuller',
 			'auth.quickConnectExpired' => 'Quick Connect er udløbet. Prøv igen.',
-			'auth.localDataRecoveryRequired' => 'Plezy kunne ikke gendanne lokale loginoplysninger og ventende afspilningsdata på en sikker måde. Log ind igen.',
+			'auth.localDataRecoveryRequired' => 'PlezyNG kunne ikke gendanne lokale loginoplysninger og ventende afspilningsdata på en sikker måde. Log ind igen.',
 			'auth.pinCheckRejected' => 'Plex PIN-kontrollen blev afvist',
 			'common.cancel' => 'Annuller',
 			'common.save' => 'Gem',
@@ -3550,19 +3550,19 @@ extension on TranslationsDa {
 			'update.viewRelease' => 'Vis udgivelse',
 			'update.latestVersion' => 'Du har den nyeste version',
 			'update.checkFailed' => 'Kunne ikke søge efter opdateringer',
-			'supporter.title' => 'Plezy Supporter',
-			'supporter.intro' => 'Et engangskøb, der støtter udviklingen af Plezy og låser op for kosmetiske tilføjelser:',
+			'supporter.title' => 'PlezyNG Supporter',
+			'supporter.intro' => 'Et engangskøb, der støtter udviklingen af PlezyNG og låser op for kosmetiske tilføjelser:',
 			'supporter.presetThemes' => 'Forudindstillede temaer',
 			'supporter.presetThemesDescription' => 'Glød, Gletsjer, Skov, Blomme og Papir',
 			'supporter.customTheme' => 'Brugerdefineret tema',
 			'supporter.customThemeDescription' => 'Vælg selv alle farver',
 			'supporter.appIcons' => 'Appikoner',
-			'supporter.appIconsDescription' => 'Vælg et alternativt Plezy-ikon',
+			'supporter.appIconsDescription' => 'Vælg et alternativt PlezyNG-ikon',
 			'supporter.buy' => ({required Object price}) => 'Køb for ${price}',
 			'supporter.loadingPrice' => 'Indlæser pris...',
 			'supporter.restore' => 'Gendan køb',
 			'supporter.pending' => 'Dit køb afventer betaling eller godkendelse. Tilføjelserne låses op, så snart butikken har gennemført det.',
-			'supporter.thankYouTitle' => 'Tak for din støtte til Plezy',
+			'supporter.thankYouTitle' => 'Tak for din støtte til PlezyNG',
 			'supporter.thankYouBody' => 'Dine Supporter-tilføjelser er låst op.',
 			'supporter.tileSubtitle' => 'Lås temaer og appikoner op med et engangskøb',
 			'supporter.tileSubtitleThemesOnly' => 'Lås temaer op med et engangskøb',
@@ -3574,8 +3574,8 @@ extension on TranslationsDa {
 			'supporter.errors.restoreFailed' => 'Kunne ikke kontakte butikken for at gendanne dit køb. Prøv igen.',
 			'supporter.errors.nothingToRestore' => 'Der blev ikke fundet noget Supporter-køb for denne butikskonto.',
 			'settings.title' => 'Indstillinger',
-			'settings.supportDeveloper' => 'Støt Plezy',
-			'settings.supportDeveloperDescription' => 'Doner via Liberapay for at finansiere udviklingen',
+			'settings.supportDeveloper' => 'Støt PlezyNG',
+			'settings.supportDeveloperDescription' => 'Donér for at støtte udviklingen',
 			'settings.language' => 'Sprog',
 			'settings.theme' => 'Tema',
 			'settings.appearance' => 'Udseende',
@@ -3721,7 +3721,7 @@ extension on TranslationsDa {
 			'settings.importSettingsDescription' => 'Gendan præferencer fra en fil',
 			'settings.importSettingsConfirm' => 'Dette vil erstatte dine nuværende indstillinger. Fortsæt?',
 			'settings.importSettingsSuccess' => 'Indstillinger importeret',
-			'settings.importSettingsInvalidFile' => 'Denne fil er ikke en gyldig eksport af Plezy-indstillinger',
+			'settings.importSettingsInvalidFile' => 'Denne fil er ikke en gyldig eksport af PlezyNG-indstillinger',
 			'settings.importSettingsNoUser' => 'Log ind før import af indstillinger',
 			'settings.shortcutsReset' => 'Genveje nulstillet til standard',
 			'settings.resetShortcutsConfirm' => 'Dette vil erstatte dine tilpassede genveje med standardgenvejene. Fortsæt?',
@@ -3858,7 +3858,7 @@ extension on TranslationsDa {
 			'settings.forceTvMode' => 'Gennemtving TV-tilstand',
 			'settings.forceTvModeDescription' => 'Tving TV-layout. Til enheder, der ikke registreres automatisk. Kræver genstart.',
 			'settings.startInFullscreen' => 'Start i fuldskærm',
-			'settings.startInFullscreenDescription' => 'Åbn Plezy i fuldskærmstilstand ved opstart',
+			'settings.startInFullscreenDescription' => 'Åbn PlezyNG i fuldskærmstilstand ved opstart',
 			'settings.exitFullscreenOnPlayerClose' => 'Forlad fuldskærm ved lukning af afspiller',
 			'settings.exitFullscreenOnPlayerCloseDescription' => 'Afslut automatisk fuldskærm, når videoafspilleren lukkes',
 			'settings.autoHidePerformanceOverlay' => 'Skjul ydelsesoverlay automatisk',
@@ -3907,7 +3907,7 @@ extension on TranslationsDa {
 			'settings.playerScopeGlobal' => 'Overalt',
 			'settings.playerScopeLibrary' => 'Pr. bibliotek',
 			'settings.playerScopeTitle' => 'Pr. serie eller film',
-			'settings.exportDialogTitle' => 'Eksportér Plezy-indstillinger',
+			'settings.exportDialogTitle' => 'Eksportér PlezyNG-indstillinger',
 			'themeEditor.builtIn' => 'Indbygget',
 			'themeEditor.presets' => 'Forudindstillinger',
 			'themeEditor.custom' => 'Brugerdefineret',
@@ -4127,8 +4127,8 @@ extension on TranslationsDa {
 			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n, one: 'Dette sletter alle ${n} episode i den og dens fil.', other: 'Dette sletter alle ${n} episoder i den og deres filer.', ), 
 			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n, one: 'Dette emne er gemt som ${n} fil, som vil blive slettet.', other: 'Dette emne er gemt på tværs af ${n} filer, og alle vil blive slettet.', ), 
 			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('da'))(n, one: '${n} anden episode er gemt i samme fil og vil også blive slettet:', other: '${n} andre episoder er gemt i samme fil og vil også blive slettet:', ), 
-			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezy kunne ikke kontrollere, hvilke filer dette vil fjerne, så det kan slette mere end det ovennævnte emne. Annuller og prøv igen, eller slet alligevel.',
-			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Din server leverede ikke filoplysninger for dette emne, så Plezy kan ikke kontrollere, hvilke filer dette vil fjerne. Det kan slette mere end det ovennævnte emne.',
+			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG kunne ikke kontrollere, hvilke filer dette vil fjerne, så det kan slette mere end det ovennævnte emne. Annuller og prøv igen, eller slet alligevel.',
+			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Din server leverede ikke filoplysninger for dette emne, så PlezyNG kan ikke kontrollere, hvilke filer dette vil fjerne. Det kan slette mere end det ovennævnte emne.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Mediet blev slettet',
 			'mediaMenu.mediaFailedToDelete' => 'Mediet kunne ikke slettes',
 			'mediaMenu.rate' => 'Bedøm',
@@ -4376,7 +4376,7 @@ extension on TranslationsDa {
 			'mpvConfig.removeLine' => 'Fjern linje',
 			'mpvConfig.embeddedVoHint' => 'vo, gpu-context og gpu-api ignoreres på Linux: indlejret video renderes altid via vo=libmpv på videoplanen, og gpu-next (som compute-shaders som ArtCNN kræver) kan ikke køre indlejret.',
 			'dialog.confirmAction' => 'Bekræft handling',
-			'profiles.addPlezyProfile' => 'Tilføj Plezy-profil',
+			'profiles.addPlezyProfile' => 'Tilføj PlezyNG-profil',
 			'profiles.switchingProfile' => 'Skifter profil…',
 			'profiles.deleteThisProfileTitle' => 'Slet denne profil?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Fjern ${displayName}. Forbindelser påvirkes ikke.',
@@ -4453,12 +4453,12 @@ extension on TranslationsDa {
 			'connections.accessDeniedMany' => ({required Object count}) => '${count} servere nægtede adgang for denne konto',
 			'connections.signInAgain' => 'Log ind igen',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => 'Rediger ${product}-forbindelse',
-			'connections.editMediaBrowserIntro' => ({required Object serverName}) => 'Tilføj eller fjern URL\'er for ${serverName}. Plezy bruger den tilgængelige URL med laveste latenstid.',
+			'connections.editMediaBrowserIntro' => ({required Object serverName}) => 'Tilføj eller fjern URL\'er for ${serverName}. PlezyNG bruger den tilgængelige URL med laveste latenstid.',
 			'accountPreferences.sectionTitle' => 'Kontopræferencer',
 			'accountPreferences.hubSubtitleSingle' => ({required Object account}) => 'Lyd-, undertekst- og biblioteksindstillinger gemt på ${account}',
 			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => 'Lyd-, undertekst- og biblioteksindstillinger gemt på ${count} konti',
 			'accountPreferences.pickAccount' => 'Hver konto gemmer sine egne præferencer. Vælg den, du vil redigere.',
-			'accountPreferences.storedOnAccount' => 'Disse indstillinger gemmes på selve kontoen, så alle apps, der er logget ind på den, bruger dem — inklusive Plezy på dine andre enheder.',
+			'accountPreferences.storedOnAccount' => 'Disse indstillinger gemmes på selve kontoen, så alle apps, der er logget ind på den, bruger dem — inklusive PlezyNG på dine andre enheder.',
 			'accountPreferences.noAccounts' => 'Ingen konti at konfigurere',
 			'accountPreferences.noAccountsHint' => 'Log ind på Plex, eller forbind en Jellyfin- eller Emby-server, så vises de præferencer, der er gemt på kontoen, her.',
 			'accountPreferences.unavailable' => 'Kan ikke nå denne konto',
@@ -4696,9 +4696,9 @@ extension on TranslationsDa {
 			'logs.clearLogs' => 'Ryd logfiler',
 			'logs.copyLogs' => 'Kopiér logfiler',
 			'logs.uploadLogs' => 'Upload logfiler',
-			'startup.failedTitle' => 'Plezy kunne ikke starte',
+			'startup.failedTitle' => 'PlezyNG kunne ikke starte',
 			'startup.failedBody' => 'Der gik noget galt under opstart. Oplysningerne nedenfor viser, hvad der gik galt.',
-			'startup.failedBodyRepairable' => 'Plezy\'s gemte indstillingsfil er beskadiget og skal genopbygges, før Plezy kan starte. Det hjælper ikke at prøve igen — vælg Reparer lager.',
+			'startup.failedBodyRepairable' => 'PlezyNG\'s gemte indstillingsfil er beskadiget og skal genopbygges, før PlezyNG kan starte. Det hjælper ikke at prøve igen — vælg Reparer lager.',
 			'startup.phaseLabel' => 'Trin',
 			'startup.showDetails' => 'Vis detaljer',
 			'startup.hideDetails' => 'Skjul detaljer',
@@ -4707,16 +4707,16 @@ extension on TranslationsDa {
 			'startup.uploadDetails' => 'Upload detaljer',
 			'startup.repairStorage' => 'Reparer lager',
 			'startup.repairTitle' => 'Reparer gemte data?',
-			'startup.repairBodyCommon' => 'Plezy\'s indstillingsfil er beskadiget og kan ikke læses. Reparation nulstiller alle indstillinger til deres standardværdier.',
+			'startup.repairBodyCommon' => 'PlezyNG\'s indstillingsfil er beskadiget og kan ikke læses. Reparation nulstiller alle indstillinger til deres standardværdier.',
 			'startup.repairBodyOneCredential' => 'Én gemt loginoplysning er beskadiget og kan ikke læses. Reparation fjerner kun den; dine andre indstillinger forbliver urørt.',
 			'startup.repairBodySignInsKept' => 'Dine servere og profiler bør forblive logget ind.',
 			'startup.repairBodySignInsLost' => 'Nøglen, der beskytter dine gemte loginoplysninger, kan ikke gendannes fra denne fil, så du skal logge ind på alle servere og profiler igen. Intet på din medieserver er påvirket.',
-			'startup.repairBodySessionsUncertain' => 'Trackere (MAL, AniList, Simkl, Trakt) og Seerr gemmes separat, og det er uvist, om de overlever. Plezy fortæller dig præcis, hvad det beholdt.',
+			'startup.repairBodySessionsUncertain' => 'Trackere (MAL, AniList, Simkl, Trakt) og Seerr gemmes separat, og det er uvist, om de overlever. PlezyNG fortæller dig præcis, hvad det beholdt.',
 			'startup.repairConfirm' => 'Reparer',
 			'startup.repairSucceeded' => 'Lager repareret',
 			'startup.repairNeedsRestart' => 'Lager repareret — genstart påkrævet',
-			'startup.restartRequiredBody' => 'Dine data er blevet repareret, men Plezy skal starte på ny, før det kan bruge dem. Luk Plezy, og åbn det igen.',
-			'startup.quitPlezy' => 'Afslut Plezy',
+			'startup.restartRequiredBody' => 'Dine data er blevet repareret, men PlezyNG skal starte på ny, før det kan bruge dem. Luk PlezyNG, og åbn det igen.',
+			'startup.quitPlezy' => 'Afslut PlezyNG',
 			'startup.repairFailed' => 'Reparation mislykkedes',
 			'startup.repairKeptSignIns' => 'Dine servere og profiler er stadig logget ind.',
 			'startup.repairLostSignIns' => 'Nøglen, der beskytter dine gemte loginoplysninger, kunne ikke gendannes. Du skal logge ind på alle servere og profiler igen.',
@@ -4725,7 +4725,7 @@ extension on TranslationsDa {
 			'startup.backupWarning' => 'Den indeholder dine loginoplysninger. Upload eller del den ikke.',
 			'startup.deleteBackup' => 'Slet kopi',
 			'startup.backupDeleted' => 'Kopi slettet.',
-			'startup.previousFailureTitle' => 'Plezy kunne ikke starte sidste gang',
+			'startup.previousFailureTitle' => 'PlezyNG kunne ikke starte sidste gang',
 			'licenses.relatedPackages' => 'Relaterede pakker',
 			'licenses.license' => 'Licens',
 			'licenses.licenseNumber' => ({required Object number}) => 'Licens ${number}',
@@ -5068,7 +5068,7 @@ extension on TranslationsDa {
 			'watchTogether.codeCopied' => 'Rumkode kopieret',
 			'watchTogether.shareInvite' => 'Del invitation',
 			'watchTogether.inviteCopied' => 'Invitation kopieret. Indsæt den i en besked.',
-			'watchTogether.inviteMessage' => ({required Object code}) => 'Deltag i mit Se sammen-rum i Plezy: Åbn "Se sammen", vælg "Deltag i rum", og indtast ${code}.',
+			'watchTogether.inviteMessage' => ({required Object code}) => 'Deltag i mit Se sammen-rum i PlezyNG: Åbn "Se sammen", vælg "Deltag i rum", og indtast ${code}.',
 			'watchTogether.openSessionControls' => 'Åbn sessionsstyring for Se sammen',
 			'watchTogether.reconnecting' => 'Genopretter forbindelse...',
 			'watchTogether.reconnectingDescription' => 'Forbindelsen blev afbrudt. Du kommer automatisk ind i rummet igen.',
@@ -5094,7 +5094,7 @@ extension on TranslationsDa {
 			'watchTogether.chooseAnotherCopy' => 'Vælg en anden kopi',
 			'watchTogether.dontPlay' => 'Afspil ikke',
 			'watchTogether.unavailableTitle' => 'Du har ikke denne video',
-			'watchTogether.unavailableDescription' => 'Plezy kunne ikke finde den i dine biblioteker. Vælg selv en kopi, eller søg igen.',
+			'watchTogether.unavailableDescription' => 'PlezyNG kunne ikke finde den i dine biblioteker. Vælg selv en kopi, eller søg igen.',
 			'watchTogether.chooseCopy' => 'Vælg en kopi',
 			'watchTogether.searchAgain' => 'Søg igen',
 			'watchTogether.noCandidates' => 'Ingen kopier fundet i dine biblioteker.',
@@ -5186,7 +5186,7 @@ extension on TranslationsDa {
 			'watchTogether.errors.relayFull' => 'Der er travlt på Se sammen lige nu. Prøv igen senere.',
 			'watchTogether.errors.unreachable' => 'Kunne ikke nå relayserveren til Se sammen. Tjek din forbindelse.',
 			'watchTogether.errors.rateLimited' => 'For mange forsøg. Vent et øjeblik, og prøv igen.',
-			'watchTogether.errors.clientBlocked' => 'Denne version af Plezy kan ikke bruge relayserveren. Opdater appen.',
+			'watchTogether.errors.clientBlocked' => 'Denne version af PlezyNG kan ikke bruge relayserveren. Opdater appen.',
 			'watchTogether.errors.forbidden' => 'Kun værten kan gøre det.',
 			'watchTogether.errors.notInRoom' => 'Du er ikke i et rum.',
 			'watchTogether.errors.alreadyInRoom' => 'Du er allerede i et rum.',
@@ -5280,14 +5280,14 @@ extension on TranslationsDa {
 			'downloads.backgroundWarning.bannerAction' => 'Detaljer',
 			'downloads.backgroundWarning.sheetTitle' => 'Downloads i baggrunden er blokeret',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'Downloads i baggrunden kan være begrænsede',
-			'downloads.backgroundWarning.sheetIntro' => 'Android forhindrer Plezy i at downloade stabilt i baggrunden.',
-			'downloads.backgroundWarning.sheetIntroDegraded' => 'Din enhed begrænser, hvornår Plezy kan downloade i baggrunden.',
+			'downloads.backgroundWarning.sheetIntro' => 'Android forhindrer PlezyNG i at downloade stabilt i baggrunden.',
+			'downloads.backgroundWarning.sheetIntroDegraded' => 'Din enhed begrænser, hvornår PlezyNG kan downloade i baggrunden.',
 			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Plezys baggrundsaktivitet er begrænset. Indstil batteriforbruget eller baggrundsaktiviteten til "Ubegrænset".',
-			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android har sat Plezy i begrænset standbytilstand. Indstil batteriforbruget til "Ubegrænset".',
+			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android har sat PlezyNG i begrænset standbytilstand. Indstil batteriforbruget til "Ubegrænset".',
 			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => 'Notifikationer om downloads er slået fra, så status og betjeningsknapper muligvis ikke er tilgængelige.',
 			'downloads.backgroundWarning.reasonNotificationsDisabled' => 'Notifikationer er slået fra. På Android 13 eller nyere er de nødvendige ved lange downloads i baggrunden.',
 			'downloads.backgroundWarning.reasonDataSaver' => 'Datasparefunktionen er slået til, hvilket blokerer downloads i baggrunden via mobildata. Downloads bør stadig køre på Wi-Fi.',
-			'downloads.backgroundWarning.reasonOemUnknown' => 'Downloads stoppede gentagne gange, mens Plezy var i baggrunden. Tjek Plezys indstillinger for batteriforbrug eller baggrundsaktivitet.',
+			'downloads.backgroundWarning.reasonOemUnknown' => 'Downloads stoppede gentagne gange, mens PlezyNG var i baggrunden. Tjek Plezys indstillinger for batteriforbrug eller baggrundsaktivitet.',
 			'downloads.backgroundWarning.openSettings' => 'Åbn indstillinger',
 			'downloads.backgroundWarning.stillNotWorking' => 'Enhedsspecifik hjælp',
 			'downloads.backgroundWarning.stillNotWorkingDescription' => 'Se vejledningen til din enhed, eller send en logfil fra Indstillinger › Vis logfiler, hvis problemet fortsætter.',
@@ -5351,19 +5351,19 @@ extension on TranslationsDa {
 			'companionRemote.session.stopServer' => 'Stop serveren',
 			'companionRemote.session.minimize' => 'Minimér',
 			'companionRemote.session.manualAddressHint' => 'Manuel forbindelsesadresse:',
-			'companionRemote.pairing.discoveryDescription' => 'Plezy-enheder med samme Plex-konto vises her',
+			'companionRemote.pairing.discoveryDescription' => 'PlezyNG-enheder med samme Plex-konto vises her',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Opretter forbindelse...',
 			'companionRemote.pairing.searchingForDevices' => 'Søger efter enheder...',
 			'companionRemote.pairing.noDevicesFound' => 'Ingen enheder fundet på dit netværk',
-			'companionRemote.pairing.noDevicesHint' => 'Åbn Plezy på din computer, og brug det samme Wi-Fi-netværk',
+			'companionRemote.pairing.noDevicesHint' => 'Åbn PlezyNG på din computer, og brug det samme Wi-Fi-netværk',
 			'companionRemote.pairing.availableDevices' => 'Tilgængelige enheder',
 			'companionRemote.pairing.manualConnection' => 'Manuel forbindelse',
 			'companionRemote.pairing.cryptoInitFailed' => 'Kunne ikke starte sikker forbindelse. Log ind på Plex først.',
 			'companionRemote.pairing.validationHostRequired' => 'Angiv en værtsadresse',
 			'companionRemote.pairing.validationHostFormat' => 'Format skal være IP:port (f.eks. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Forbindelsen fik timeout. Brug samme netværk på begge enheder.',
-			'companionRemote.pairing.sessionNotFound' => 'Enhed ikke fundet. Sørg for, at Plezy kører på værten.',
+			'companionRemote.pairing.sessionNotFound' => 'Enhed ikke fundet. Sørg for, at PlezyNG kører på værten.',
 			'companionRemote.pairing.authFailed' => 'Godkendelse mislykkedes. Begge enheder skal bruge samme Plex-konto.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Kunne ikke oprette forbindelse: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Vil du afbryde forbindelsen til fjernsessionen?',
@@ -5591,11 +5591,11 @@ extension on TranslationsDa {
 			'trakt.connected' => 'Forbundet',
 			'trakt.connectedAs' => ({required Object username}) => 'Forbundet som @${username}',
 			'trakt.disconnectConfirm' => 'Frakobl Trakt-konto?',
-			'trakt.disconnectConfirmBody' => 'Plezy stopper med at sende hændelser til Trakt. Du kan tilslutte igen når som helst.',
+			'trakt.disconnectConfirmBody' => 'PlezyNG stopper med at sende hændelser til Trakt. Du kan tilslutte igen når som helst.',
 			'trakt.scrobble' => 'Realtids-scrobbling',
 			'trakt.scrobbleDescription' => 'Send afspil-, pause- og stop-begivenheder til Trakt under afspilning.',
 			'trakt.watchedSync' => 'Synkroniser set-status',
-			'trakt.watchedSyncDescription' => 'Når du markerer elementer som set i Plezy, markeres de også på Trakt.',
+			'trakt.watchedSyncDescription' => 'Når du markerer elementer som set i PlezyNG, markeres de også på Trakt.',
 			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => 'Forbind Seerr',
 			'seerr.serverUrl' => 'Server-URL',
@@ -5605,10 +5605,10 @@ extension on TranslationsDa {
 			'seerr.signInWithEmby' => 'Log ind med Emby',
 			'seerr.signInWithLocal' => 'Brug en lokal konto',
 			'seerr.email' => 'E-mail',
-			'seerr.noSignInMethods' => 'Denne Seerr-instans tilbyder ingen loginmetode, som Plezy understøtter.',
+			'seerr.noSignInMethods' => 'Denne Seerr-instans tilbyder ingen loginmetode, som PlezyNG understøtter.',
 			'seerr.instance' => 'Instans',
 			'seerr.disconnectConfirm' => 'Afbryd forbindelsen til Seerr?',
-			'seerr.disconnectConfirmBody' => 'Plezy glemmer denne Seerr-instans. Du kan altid oprette forbindelse igen.',
+			'seerr.disconnectConfirmBody' => 'PlezyNG glemmer denne Seerr-instans. Du kan altid oprette forbindelse igen.',
 			'seerr.request' => 'Anmod',
 			'seerr.request4k' => 'Anmod i 4K',
 			'seerr.seasons' => 'Sæsoner',
@@ -5633,7 +5633,7 @@ extension on TranslationsDa {
 			'seerr.statusBlocklisted' => 'På blokeringslisten',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => 'Kunne ikke nå ${url}: ${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => 'Ingen Seerr-instans på ${url} (HTTP ${status})',
-			'seerr.behindAuthProxy' => 'En godkendende reverse proxy (SSO eller HTTP-auth) svarede i stedet for Seerr. Plezy kan ikke logge ind gennem den: Lad Seerrs /api/v1-sti omgå proxyen for denne app, eller brug en adresse, der når Seerr direkte.',
+			'seerr.behindAuthProxy' => 'En godkendende reverse proxy (SSO eller HTTP-auth) svarede i stedet for Seerr. PlezyNG kan ikke logge ind gennem den: Lad Seerrs /api/v1-sti omgå proxyen for denne app, eller brug en adresse, der når Seerr direkte.',
 			'seerr.invalidUrl' => 'Indtast en serveradresse som https://seerr.example.com',
 			'seerr.quickConnectUnsupported' => 'Denne Seerr-instans understøtter ikke Quick Connect. Den kræver Seerr 3.4 eller nyere.',
 			'seerr.notInitialized' => 'Denne Seerr-instans har ikke fuldført førstegangsopsætningen',
@@ -5654,7 +5654,7 @@ extension on TranslationsDa {
 			'services.scrobble' => 'Registrer fremgang automatisk',
 			'services.scrobbleDescription' => 'Opdater din liste, når du er færdig med et afsnit eller en film.',
 			'services.disconnectConfirm' => ({required Object service}) => 'Afbryd forbindelsen til ${service}?',
-			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezy stopper med at opdatere ${service}. Du kan altid oprette forbindelse igen.',
+			'services.disconnectConfirmBody' => ({required Object service}) => 'PlezyNG stopper med at opdatere ${service}. Du kan altid oprette forbindelse igen.',
 			'services.connectFailed' => ({required Object service}) => 'Kunne ikke forbinde til ${service}. Prøv igen.',
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
@@ -5662,8 +5662,8 @@ extension on TranslationsDa {
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.simklReconnect.title' => 'Genopret forbindelse til Simkl',
-			'services.simklReconnect.subtitle' => 'Simkl udfaser den loginmetode, som denne forbindelse bruger. Når du genopretter forbindelsen, åbnes simkl.com, hvor du godkender Plezy — Plezy ser aldrig din adgangskode. Din visningshistorik forbliver på Simkl.',
-			'services.deviceCode.title' => ({required Object service}) => 'Aktiver Plezy på ${service}',
+			'services.simklReconnect.subtitle' => 'Simkl udfaser den loginmetode, som denne forbindelse bruger. Når du genopretter forbindelsen, åbnes simkl.com, hvor du godkender PlezyNG — PlezyNG ser aldrig din adgangskode. Din visningshistorik forbliver på Simkl.',
+			'services.deviceCode.title' => ({required Object service}) => 'Aktiver PlezyNG på ${service}',
 			'services.deviceCode.instructions' => 'Scan QR-koden, eller gå til adressen nedenfor, og indtast denne kode:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Åbn ${service} for at aktivere',
 			'services.deviceCode.copyCode' => 'Kopiér aktiveringskode',

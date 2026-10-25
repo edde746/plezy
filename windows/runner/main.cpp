@@ -8,7 +8,7 @@
 
 int APIENTRY
 wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev, _In_ wchar_t* command_line, _In_ int show_command) {
-  // Plezy requires the bundled flutter-plezy engine, which presents the Flutter
+  // PlezyNG requires the bundled flutter-plezy engine, which presents the Flutter
   // UI on a topmost DirectComposition visual when FLUTTER_WINDOWS_DCOMP is set.
   // The mpv video window is then a plain child composed beneath the UI in the
   // same HWND: window capture (Discord/OBS) works, there is no transparency
@@ -18,7 +18,10 @@ wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev, _In_ wchar_t* command
 
   HANDLE mutex = CreateMutex(nullptr, TRUE, L"com.edde746.Plezy.SingleInstance");
   if (GetLastError() == ERROR_ALREADY_EXISTS) {
-    HWND existing = FindWindow(L"FLUTTER_RUNNER_WIN32_WINDOW", L"Plezy");
+    HWND existing = FindWindow(L"FLUTTER_RUNNER_WIN32_WINDOW", L"PlezyNG");
+    if (existing == nullptr) {
+      existing = FindWindow(L"FLUTTER_RUNNER_WIN32_WINDOW", L"Plezy");
+    }
     if (existing && IsWindowVisible(existing)) {
       ShowWindow(existing, SW_RESTORE);
       SetForegroundWindow(existing);
@@ -67,7 +70,7 @@ wWinMain(_In_ HINSTANCE instance, _In_opt_ HINSTANCE prev, _In_ wchar_t* command
   FlutterWindow window(project);
   Win32Window::Point origin(10, 10);
   Win32Window::Size size(1280, 720);
-  if (!window.Create(L"Plezy", origin, size)) {
+  if (!window.Create(L"PlezyNG", origin, size)) {
     return EXIT_FAILURE;
   }
   window.SetQuitOnClose(true);

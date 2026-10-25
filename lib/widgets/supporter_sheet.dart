@@ -18,7 +18,7 @@ import 'overlay_sheet.dart';
 /// Opens the Supporter purchase sheet: perks, price, Buy and Restore Purchases.
 ///
 /// Callers use this from every locked perk (a preset or custom theme, an app
-/// icon) and from the Settings "Support Plezy" tile in purchasable builds.
+/// icon) and from the Settings "Support PlezyNG" tile in purchasable builds.
 /// Completes when the sheet closes; read `SupporterService.isUnlocked` after
 /// it to see whether the user unlocked. Shows nothing unless the perks are
 /// purchasable in this build.

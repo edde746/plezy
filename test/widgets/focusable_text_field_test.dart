@@ -1664,7 +1664,7 @@ void main() {
   testWidgets('tvOS synthesized Select opens an explicit Flutter overlay', (tester) async {
     // The custom Flutter tvOS engine emits Siri Remote center-dpad presses
     // as `LogicalKeyboardKey.select` with `deviceType=keyboard` (via the
-    // legacy `flutter/keyevent` path). Fields that explicitly retain Plezy's
+    // legacy `flutter/keyevent` path). Fields that explicitly retain PlezyNG's
     // Flutter overlay must open it rather than submit the form.
     // `isPhysicalKeyboardEnter` matched select+keyboard and routed through
     // `_submitTextInput`, which silently triggered form submit on every

@@ -14,12 +14,14 @@ class JellyfinDisplayPreferences {
   /// Same id jellyfin-web and jellyfin-androidtv use for user-level settings.
   static const displayPreferencesId = 'usersettings';
 
-  /// Plezy's own client namespace. Deliberately **not** `emby`, the row
+  /// Retain upstream Plezy's client namespace for server-side preference
+  /// continuity. Deliberately **not** `emby`, the row
   /// jellyfin-web writes and jellyfin-androidtv reads: `POST` replaces that
   /// row's whole custom set and resets any known scalar the body omits
   /// (measured — `skipForwardLength` 15000 reverted to 30000), so writing
   /// there would trash the first-party clients' skip lengths and home-section
   /// order on every save.
+  // Keep the existing server-side preferences namespace for installs migrating from Plezy.
   static const client = 'Plezy';
 
   /// jellyfin-web's own key name for the same switch, so the value is

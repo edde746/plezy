@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "PlezyNG"
   },
   "appIcon": {
     "title": "Ilova belgisi",
@@ -9,8 +9,8 @@
     "locked": "Supporter imtiyozi",
     "lockedHint": "Muqobil belgilar — Supporter imtiyozi.",
     "changeFailed": "Ilova belgisini oʻzgartirib boʻlmadi",
-    "launcherHint": "Yangi belgi Plezy-dan chiqqaningizdan soʻng bosh ekranda paydo boʻladi.",
-    "tvLauncherHint": "Yangi banner Plezy-dan chiqqaningizdan soʻng paydo boʻladi. Android TV televizor qayta ishga tushirilmaguncha eskisini koʻrsatishda davom etishi mumkin.",
+    "launcherHint": "Yangi belgi PlezyNG-dan chiqqaningizdan soʻng bosh ekranda paydo boʻladi.",
+    "tvLauncherHint": "Yangi banner PlezyNG-dan chiqqaningizdan soʻng paydo boʻladi. Android TV televizor qayta ishga tushirilmaguncha eskisini koʻrsatishda davom etishi mumkin.",
     "names": {
       "midnight": "Yarim tun",
       "ember": "Choʻgʻ",
@@ -53,7 +53,7 @@
     "quickConnectWaiting": "Tasdiq kutilmoqda…",
     "quickConnectCancel": "Bekor qilish",
     "quickConnectExpired": "Tezkor ulanish vaqti tugadi. Qaytadan urinib koʻring.",
-    "localDataRecoveryRequired": "Plezy mahalliy kirish maʼlumotlarini tiklay olmadi. Iltimos, qaytadan kiring.",
+    "localDataRecoveryRequired": "PlezyNG mahalliy kirish maʼlumotlarini tiklay olmadi. Iltimos, qaytadan kiring.",
     "pinCheckRejected": "Plex PIN tekshiruvi rad etildi"
   },
   "common": {
@@ -153,19 +153,19 @@
     "checkFailed": "Yangilanishlarni tekshirish imkoni boʻlmadi"
   },
   "supporter": {
-    "title": "Plezy Supporter",
-    "intro": "Plezy rivojini qoʻllab-quvvatlaydigan va tashqi koʻrinish uchun qoʻshimcha imkoniyatlarni ochadigan bir martalik xarid:",
+    "title": "PlezyNG Supporter",
+    "intro": "PlezyNG rivojini qoʻllab-quvvatlaydigan va tashqi koʻrinish uchun qoʻshimcha imkoniyatlarni ochadigan bir martalik xarid:",
     "presetThemes": "Tayyor mavzular",
     "presetThemesDescription": "Choʻgʻ, Muzlik, Oʻrmon, Olxoʻri va Qogʻoz",
     "customTheme": "Shaxsiy mavzu",
     "customThemeDescription": "Har bir rangni oʻzingiz tanlang",
     "appIcons": "Ilova belgilari",
-    "appIconsDescription": "Muqobil Plezy belgisini tanlang",
+    "appIconsDescription": "Muqobil PlezyNG belgisini tanlang",
     "buy": "${price} evaziga sotib olish",
     "loadingPrice": "Narx yuklanmoqda...",
     "restore": "Xaridlarni tiklash",
     "pending": "Xaridingiz toʻlov yoki tasdiqlashni kutmoqda. Doʻkon uni yakunlashi bilanoq qoʻshimchalar ochiladi.",
-    "thankYouTitle": "Plezy-ni qoʻllab-quvvatlaganingiz uchun rahmat",
+    "thankYouTitle": "PlezyNG-ni qoʻllab-quvvatlaganingiz uchun rahmat",
     "thankYouBody": "Supporter qoʻshimchalaringiz ochildi.",
     "tileSubtitle": "Bir martalik xarid bilan mavzular va ilova belgilarini oching",
     "tileSubtitleThemesOnly": "Bir martalik xarid bilan mavzularni oching",
@@ -181,8 +181,8 @@
   },
   "settings": {
     "title": "Sozlamalar",
-    "supportDeveloper": "Plezy-ni qoʻllab-quvvatlash",
-    "supportDeveloperDescription": "Dasturchini Liberapay orqali qoʻllab-quvvatlang",
+    "supportDeveloper": "PlezyNG-ni qoʻllab-quvvatlash",
+    "supportDeveloperDescription": "Rivojlanishni qoʻllab-quvvatlash uchun xayriya qiling",
     "language": "Til",
     "theme": "Mavzu",
     "appearance": "Tashqi koʻrinish",
@@ -337,7 +337,7 @@
     "importSettingsDescription": "Parametrlarni fayldan tiklang",
     "importSettingsConfirm": "Bu joriy sozlamalaringiz ustidan yoziladi. Davom etasizmi?",
     "importSettingsSuccess": "Sozlamalar import qilindi",
-    "importSettingsInvalidFile": "Ushbu fayl toʻgʻri Plezy sozlamalar fayli emas",
+    "importSettingsInvalidFile": "Ushbu fayl toʻgʻri PlezyNG sozlamalar fayli emas",
     "importSettingsNoUser": "Sozlamalarni import qilishdan oldin tizimga kiring",
     "shortcutsReset": "Tugmalar birlashmasi standart holatga qaytarildi",
     "resetShortcutsConfirm": "Bu oʻzingiz sozlagan tugmalar birlashmalarini standart holatga qaytaradi. Davom etasizmi?",
@@ -474,7 +474,7 @@
     "forceTvMode": "TV rejimini majburlash",
     "forceTvModeDescription": "TV interfeysini majburiy yoqish. Avtomatik aniqlanmaydigan qurilmalar uchun. Qayta ishga tushirish talab qilinadi.",
     "startInFullscreen": "Toʻliq ekranda boshlash",
-    "startInFullscreenDescription": "Plezy-ni ochganda toʻliq ekran rejimida ochish",
+    "startInFullscreenDescription": "PlezyNG-ni ochganda toʻliq ekran rejimida ochish",
     "exitFullscreenOnPlayerClose": "Pleyer yopilganda toʻliq ekrandan chiqish",
     "exitFullscreenOnPlayerCloseDescription": "Video pleyerni yopganda avtomatik ravishda toʻliq ekrandan chiqish",
     "autoHidePerformanceOverlay": "Unumdorlik panelini avto-yashirish",
@@ -523,7 +523,7 @@
     "playerScopeGlobal": "Hamma joyda",
     "playerScopeLibrary": "Kutubxona boʻyicha",
     "playerScopeTitle": "Serial yoki film boʻyicha",
-    "exportDialogTitle": "Plezy sozlamalarini eksport qilish"
+    "exportDialogTitle": "PlezyNG sozlamalarini eksport qilish"
   },
   "themeEditor": {
     "builtIn": "Oʻrnatilgan",
@@ -766,8 +766,8 @@
       "one": "Xuddi shu faylda yana ${n} qism saqlanadi va u ham oʻchiriladi:",
       "other": "Xuddi shu faylda yana ${n} qism saqlanadi va ular ham oʻchiriladi:"
     },
-    "deleteScopeUnverifiedProbeFailed": "Plezy qaysi fayllar olib tashlanishini tekshira olmadi, shuning uchun u yuqorida koʻrsatilgan elementdan koʻproq narsani oʻchirishi mumkin. Bekor qilib qaytadan urining yoki baribir oʻchiring.",
-    "deleteScopeUnverifiedNoFileInfo": "Serveringiz ushbu element uchun fayl tafsilotlarini taqdim etmadi, shuning uchun Plezy qaysi fayllar olib tashlanishini tekshira olmaydi. U yuqorida koʻrsatilgan elementdan koʻproq narsani oʻchirishi mumkin.",
+    "deleteScopeUnverifiedProbeFailed": "PlezyNG qaysi fayllar olib tashlanishini tekshira olmadi, shuning uchun u yuqorida koʻrsatilgan elementdan koʻproq narsani oʻchirishi mumkin. Bekor qilib qaytadan urining yoki baribir oʻchiring.",
+    "deleteScopeUnverifiedNoFileInfo": "Serveringiz ushbu element uchun fayl tafsilotlarini taqdim etmadi, shuning uchun PlezyNG qaysi fayllar olib tashlanishini tekshira olmaydi. U yuqorida koʻrsatilgan elementdan koʻproq narsani oʻchirishi mumkin.",
     "mediaDeletedSuccessfully": "Media elementi muvaffaqiyatli oʻchirildi",
     "mediaFailedToDelete": "Media elementini oʻchirib boʻlmadi",
     "rate": "Baho berish",
@@ -1050,7 +1050,7 @@
     "confirmAction": "Harakatni tasdiqlash"
   },
   "profiles": {
-    "addPlezyProfile": "Plezy profilini qoʻshish",
+    "addPlezyProfile": "PlezyNG profilini qoʻshish",
     "switchingProfile": "Profil almashtirilmoqda…",
     "deleteThisProfileTitle": "Ushbu profil oʻchirilsinmi?",
     "deleteThisProfileMessage": "${displayName} oʻchiriladi. Ulanishlarga taʼsir qilmaydi.",
@@ -1127,14 +1127,14 @@
     "accessDeniedMany": "${count} ta server ushbu hisobga kirishni rad etdi",
     "signInAgain": "Qaytadan kirish",
     "editMediaBrowserTitle": "${product} ulanishini tahrirlash",
-    "editMediaBrowserIntro": "${serverName} uchun URL-larni qoʻshing yoki olib tashlang. Plezy eng kam kechikishga ega boʻlgan mavjud URL-dan foydalanadi."
+    "editMediaBrowserIntro": "${serverName} uchun URL-larni qoʻshing yoki olib tashlang. PlezyNG eng kam kechikishga ega boʻlgan mavjud URL-dan foydalanadi."
   },
   "accountPreferences": {
     "sectionTitle": "Hisob sozlamalari",
     "hubSubtitleSingle": "${account} hisobida saqlangan audio, subtitr va kutubxona parametrlari",
     "hubSubtitleMultiple": "${count} ta hisobda saqlangan audio, subtitr va kutubxona parametrlari",
     "pickAccount": "Har bir hisob oʻz sozlamalarini saqlaydi. Tahrirlash uchun birini tanlang.",
-    "storedOnAccount": "Bu parametrlar hisobning oʻzida saqlanadi — unga kirilgan har bir ilova ulardan foydalanadi, jumladan boshqa qurilmalaringizdagi Plezy ham.",
+    "storedOnAccount": "Bu parametrlar hisobning oʻzida saqlanadi — unga kirilgan har bir ilova ulardan foydalanadi, jumladan boshqa qurilmalaringizdagi PlezyNG ham.",
     "noAccounts": "Sozlanadigan hisoblar yoʻq",
     "noAccountsHint": "Plex-ga kiring yoki Jellyfin yoki Emby serverini ulang — shunda oʻsha hisobda saqlangan sozlamalar shu yerda koʻrinadi.",
     "unavailable": "Bu hisobga ulanib boʻlmadi",
@@ -1417,9 +1417,9 @@
     "uploadLogs": "Jurnallarni yuklash"
   },
   "startup": {
-    "failedTitle": "Plezy ishga tusha olmadi",
+    "failedTitle": "PlezyNG ishga tusha olmadi",
     "failedBody": "Ishga tushirish paytida nimadir xato ketdi. Quyidagi tafsilotlar aynan nima muvaffaqiyatsiz boʻlganini koʻrsatadi.",
-    "failedBodyRepairable": "Plezyning saqlangan sozlamalar fayli shikastlangan va Plezy ishga tushishidan oldin uni qayta tiklash kerak. Qayta urinish yordam bermaydi — Saqlashni tiklashni tanlang.",
+    "failedBodyRepairable": "Plezyning saqlangan sozlamalar fayli shikastlangan va PlezyNG ishga tushishidan oldin uni qayta tiklash kerak. Qayta urinish yordam bermaydi — Saqlashni tiklashni tanlang.",
     "phaseLabel": "Qadam",
     "showDetails": "Tafsilotlarni koʻrsatish",
     "hideDetails": "Tafsilotlarni yashirish",
@@ -1432,12 +1432,12 @@
     "repairBodyOneCredential": "Bitta saqlangan kirish maʼlumoti shikastlangan va uni oʻqib boʻlmaydi. Tiklash faqat uni olib tashlaydi; boshqa sozlamalaringizga tegilmaydi.",
     "repairBodySignInsKept": "Serverlaringiz va profillaringiz tizimga kirgan holda qoladi.",
     "repairBodySignInsLost": "Saqlangan kirish maʼlumotlaringizni himoya qiluvchi kalitni ushbu fayldan tiklab boʻlmaydi, shuning uchun har bir server va profilga qaytadan kirishingiz kerak boʻladi. Media serveringizdagi hech narsaga taʼsir qilmaydi.",
-    "repairBodySessionsUncertain": "Trekerlar (MAL, AniList, Simkl, Trakt) va Seerr alohida saqlanadi va ular saqlanib qolishi ham, yoʻqolishi ham mumkin. Plezy aynan nimani saqlaganini sizga xabar qiladi.",
+    "repairBodySessionsUncertain": "Trekerlar (MAL, AniList, Simkl, Trakt) va Seerr alohida saqlanadi va ular saqlanib qolishi ham, yoʻqolishi ham mumkin. PlezyNG aynan nimani saqlaganini sizga xabar qiladi.",
     "repairConfirm": "Tiklash",
     "repairSucceeded": "Saqlash tiklandi",
     "repairNeedsRestart": "Saqlash tiklandi — qayta ishga tushirish kerak",
-    "restartRequiredBody": "Maʼlumotlaringiz tiklandi, lekin Plezy ulardan foydalanishi uchun yangidan ishga tushishi kerak. Plezy-ni yoping va qayta oching.",
-    "quitPlezy": "Plezy-dan chiqish",
+    "restartRequiredBody": "Maʼlumotlaringiz tiklandi, lekin PlezyNG ulardan foydalanishi uchun yangidan ishga tushishi kerak. PlezyNG-ni yoping va qayta oching.",
+    "quitPlezy": "PlezyNG-dan chiqish",
     "repairFailed": "Tiklash amalga oshmadi",
     "repairKeptSignIns": "Serverlaringiz va profillaringiz hali ham tizimga kirgan.",
     "repairLostSignIns": "Saqlangan kirish maʼlumotlaringizni himoya qiluvchi kalitni tiklab boʻlmadi. Har bir server va profilga qaytadan kirishingiz kerak boʻladi.",
@@ -1446,7 +1446,7 @@
     "backupWarning": "Unda kirish hisob maʼlumotlaringiz bor. Uni yuklamang yoki baham koʻrmang.",
     "deleteBackup": "Nusxani oʻchirish",
     "backupDeleted": "Nusxa oʻchirildi.",
-    "previousFailureTitle": "Plezy oxirgi marta ishga tushmadi"
+    "previousFailureTitle": "PlezyNG oxirgi marta ishga tushmadi"
   },
   "licenses": {
     "relatedPackages": "Bogʻliq paketlar",
@@ -1871,7 +1871,7 @@
     "codeCopied": "Xona kodi nusxalandi",
     "shareInvite": "Taklifni ulashish",
     "inviteCopied": "Taklif nusxalandi. Uni xabarga joylashtiring.",
-    "inviteMessage": "Plezy-dagi \"Birgalikda tomosha qilish\" xonamga qoʻshiling: \"Birgalikda tomosha qilish\" boʻlimini oching, \"Xonaga qoʻshilish\" tugmasini tanlang va ${code} kodini kiriting.",
+    "inviteMessage": "PlezyNG-dagi \"Birgalikda tomosha qilish\" xonamga qoʻshiling: \"Birgalikda tomosha qilish\" boʻlimini oching, \"Xonaga qoʻshilish\" tugmasini tanlang va ${code} kodini kiriting.",
     "openSessionControls": "Boshqaruv elementlarini ochish",
     "reconnecting": "Qayta ulanmoqda...",
     "reconnectingDescription": "Ulanish uzildi. Xonaga avtomatik ravishda qayta qoʻshilasiz.",
@@ -1897,7 +1897,7 @@
     "chooseAnotherCopy": "Boshqa nusxani tanlash",
     "dontPlay": "Ijro etmaslik",
     "unavailableTitle": "Sizda bu video yoʻq",
-    "unavailableDescription": "Plezy uni kutubxonalaringizdan topa olmadi. Nusxani oʻzingiz tanlang yoki qaytadan qidiring.",
+    "unavailableDescription": "PlezyNG uni kutubxonalaringizdan topa olmadi. Nusxani oʻzingiz tanlang yoki qaytadan qidiring.",
     "chooseCopy": "Nusxani tanlash",
     "searchAgain": "Qaytadan qidirish",
     "noCandidates": "Kutubxonalaringizda nusxalar topilmadi.",
@@ -1997,7 +1997,7 @@
       "relayFull": "Birgalikda tomosha qilish xizmati hozir band. Keyinroq qaytadan urinib koʻring.",
       "unreachable": "Birgalikda tomosha relesiga ulanib boʻlmadi. Ulanishni tekshiring.",
       "rateLimited": "Urinishlar juda koʻp. Biroz kuting va qaytadan urinib koʻring.",
-      "clientBlocked": "Plezy-ning bu versiyasi reledan foydalana olmaydi. Ilovani yangilang.",
+      "clientBlocked": "PlezyNG-ning bu versiyasi reledan foydalana olmaydi. Ilovani yangilang.",
       "forbidden": "Buni faqat tashkilotchi qila oladi.",
       "notInRoom": "Siz xonada emassiz.",
       "alreadyInRoom": "Siz allaqachon xonadasiz.",
@@ -2095,14 +2095,14 @@
       "bannerAction": "Batafsil",
       "sheetTitle": "Fondagi yuklamalar bloklangan",
       "sheetTitleDegraded": "Fondagi yuklamalar cheklangan boʻlishi mumkin",
-      "sheetIntro": "Android Plezy-ning fonda ishonchli yuklab olishiga toʻsqinlik qilmoqda.",
-      "sheetIntroDegraded": "Qurilmangiz Plezy fonda qachon yuklay olishini cheklamoqda.",
-      "reasonBackgroundRestricted": "Plezy-ning fondagi faoliyati cheklangan. Batareya yoki fondagi foydalanishni \"Cheklanmagan\" qilib belgilang.",
-      "reasonStandbyRestricted": "Android Plezy-ni cheklangan kutish holatiga oʻtkazdi. Batareya foydalanishini \"Cheklanmagan\" qilib belgilang.",
+      "sheetIntro": "Android PlezyNG-ning fonda ishonchli yuklab olishiga toʻsqinlik qilmoqda.",
+      "sheetIntroDegraded": "Qurilmangiz PlezyNG fonda qachon yuklay olishini cheklamoqda.",
+      "reasonBackgroundRestricted": "PlezyNG-ning fondagi faoliyati cheklangan. Batareya yoki fondagi foydalanishni \"Cheklanmagan\" qilib belgilang.",
+      "reasonStandbyRestricted": "Android PlezyNG-ni cheklangan kutish holatiga oʻtkazdi. Batareya foydalanishini \"Cheklanmagan\" qilib belgilang.",
       "reasonDownloadChannelBlocked": "Yuklash bildirishnomalari oʻchirilgan, shuning uchun jarayon koʻrsatkichi va boshqaruv elementlari mavjud boʻlmasligi mumkin.",
       "reasonNotificationsDisabled": "Bildirishnomalar oʻchirilgan. Android 13 va undan yangi versiyalarda uzoq davom etadigan fondagi yuklamalar uchun ular talab qilinadi.",
       "reasonDataSaver": "Trafik tejash yoqilgan, bu mobil internetda fondagi yuklamalarni bloklaydi. Wi-Fi orqali yuklamalar ishlashi kerak.",
-      "reasonOemUnknown": "Plezy fonda boʻlganida yuklamalar bir necha marta toʻxtadi. Plezy-ning batareya yoki fondagi foydalanish sozlamalarini tekshiring.",
+      "reasonOemUnknown": "PlezyNG fonda boʻlganida yuklamalar bir necha marta toʻxtadi. PlezyNG-ning batareya yoki fondagi foydalanish sozlamalarini tekshiring.",
       "openSettings": "Sozlamalarni ochish",
       "stillNotWorking": "Qurilmaga oid yordam",
       "stillNotWorkingDescription": "Qurilmangiz uchun qadamlarni koʻring yoki muammo davom etsa Sozlamalar › Jurnallarni koʻrish boʻlimidan jurnal yuboring.",
@@ -2193,19 +2193,19 @@
       "manualAddressHint": "Qoʻlda ulanish manzili:"
     },
     "pairing": {
-      "discoveryDescription": "Bir xil Plex hisobidagi Plezy qurilmalari bu yerda koʻrinadi",
+      "discoveryDescription": "Bir xil Plex hisobidagi PlezyNG qurilmalari bu yerda koʻrinadi",
       "hostAddressHint": "192.168.1.100:48632",
       "connecting": "Ulanilmoqda...",
       "searchingForDevices": "Qurilmalar qidirilmoqda...",
       "noDevicesFound": "Tarmoqda qurilmalar topilmadi",
-      "noDevicesHint": "Kompyuterda Plezy-ni oching va bir xil Wi-Fi-ga ulaning",
+      "noDevicesHint": "Kompyuterda PlezyNG-ni oching va bir xil Wi-Fi-ga ulaning",
       "availableDevices": "Mavjud qurilmalar",
       "manualConnection": "Qoʻlda ulanish",
       "cryptoInitFailed": "Xavfsiz ulanish xatoligi. Avval Plex-ga kiring.",
       "validationHostRequired": "Xost manzilini kiriting",
       "validationHostFormat": "Format IP:port koʻrinishida boʻlishi kerak",
       "connectionTimedOut": "Ulanish vaqti tugadi. Ikkala qurilmada ham bir xil tarmoqdan foydalaning.",
-      "sessionNotFound": "Qurilma topilmadi. Plezy xost qurilmada ishga tushirilganiga ishonch hosil qiling.",
+      "sessionNotFound": "Qurilma topilmadi. PlezyNG xost qurilmada ishga tushirilganiga ishonch hosil qiling.",
       "authFailed": "Autentifikatsiya xatoligi.",
       "failedToConnect": "Ulanib boʻlmadi: ${error}"
     },
@@ -2451,11 +2451,11 @@
     "connected": "Ulandi",
     "connectedAs": "@${username} sifatida ulandi",
     "disconnectConfirm": "Trakt uzilsinmi?",
-    "disconnectConfirmBody": "Plezy Trakt-ga maʼlumot yuborishni toʻxtatadi.",
+    "disconnectConfirmBody": "PlezyNG Trakt-ga maʼlumot yuborishni toʻxtatadi.",
     "scrobble": "Real vaqt rejimida kuzatish",
     "scrobbleDescription": "Ijro paytida Trakt-ga maʼlumot yuborish.",
     "watchedSync": "Koʻrish holatini sinxronlash",
-    "watchedSyncDescription": "Plezy-da belgilanganda Trakt-da ham belgilanadi."
+    "watchedSyncDescription": "PlezyNG-da belgilanganda Trakt-da ham belgilanadi."
   },
   "seerr": {
     "title": "Seerr",
@@ -2470,7 +2470,7 @@
     "noSignInMethods": "Ushbu Seerr qoʻllab-quvvatlanadigan kirish usulini taklif qilmaydi.",
     "instance": "Instansiya",
     "disconnectConfirm": "Seerr uzilsinmi?",
-    "disconnectConfirmBody": "Plezy ushbu Seerr nusxasini unutadi. Istalgan vaqtda qayta ulanishingiz mumkin.",
+    "disconnectConfirmBody": "PlezyNG ushbu Seerr nusxasini unutadi. Istalgan vaqtda qayta ulanishingiz mumkin.",
     "request": "Soʻrov yuborish",
     "request4k": "4K soʻrov yuborish",
     "seasons": "Mavsumlar",
@@ -2495,7 +2495,7 @@
     "statusBlocklisted": "Bloklangan roʻyxatda",
     "couldNotReach": "${url} manziliga ulanib boʻlmadi: ${error}",
     "noInstanceAtUrl": "${url} manzilida Seerr nusxasi yoʻq (HTTP ${status})",
-    "behindAuthProxy": "Seerr oʻrniga autentifikatsiya qiluvchi teskari proksi (SSO yoki HTTP auth) javob berdi. Plezy uning orqali kira olmaydi: ushbu ilova uchun Seerrning /api/v1 yoʻli proksini aylanib oʻtishiga ruxsat bering yoki Seerrga toʻgʻridan-toʻgʻri yetadigan manzildan foydalaning.",
+    "behindAuthProxy": "Seerr oʻrniga autentifikatsiya qiluvchi teskari proksi (SSO yoki HTTP auth) javob berdi. PlezyNG uning orqali kira olmaydi: ushbu ilova uchun Seerrning /api/v1 yoʻli proksini aylanib oʻtishiga ruxsat bering yoki Seerrga toʻgʻridan-toʻgʻri yetadigan manzildan foydalaning.",
     "invalidUrl": "Server manzilini kiriting, masalan: https://seerr.example.com",
     "quickConnectUnsupported": "Bu Seerr nusxasi Tezkor ulanishni qoʻllab-quvvatlamaydi. Buning uchun Seerr 3.4 yoki undan yangi versiya kerak.",
     "notInitialized": "Bu Seerr nusxasining dastlabki sozlamasi yakunlanmagan",
@@ -2518,7 +2518,7 @@
     "scrobble": "Jarayonni avtomatik kuzatish",
     "scrobbleDescription": "Epizod yoki filmni tugatganingizda roʻyxatingizni yangilash.",
     "disconnectConfirm": "${service} uzilsinmi?",
-    "disconnectConfirmBody": "Plezy ${service} yangilashni toʻxtatadi. Istalgan vaqtda qayta ulanishingiz mumkin.",
+    "disconnectConfirmBody": "PlezyNG ${service} yangilashni toʻxtatadi. Istalgan vaqtda qayta ulanishingiz mumkin.",
     "connectFailed": "${service} ulana olmadi. Qaytadan urinib koʻring.",
     "names": {
       "mal": "MyAnimeList",
@@ -2529,10 +2529,10 @@
     },
     "simklReconnect": {
       "title": "Simkl-ni qayta ulash",
-      "subtitle": "Simkl bu ulanishda ishlatiladigan kirish usulini toʻxtatmoqda. Qayta ulanganda Plezy-ni tasdiqlash uchun simkl.com ochiladi — Plezy parolingizni hech qachon koʻrmaydi. Tomosha tarixingiz Simkl-da saqlanib qoladi."
+      "subtitle": "Simkl bu ulanishda ishlatiladigan kirish usulini toʻxtatmoqda. Qayta ulanganda PlezyNG-ni tasdiqlash uchun simkl.com ochiladi — PlezyNG parolingizni hech qachon koʻrmaydi. Tomosha tarixingiz Simkl-da saqlanib qoladi."
     },
     "deviceCode": {
-      "title": "Plezy-ni ${service} xizmatida faollashtiring",
+      "title": "PlezyNG-ni ${service} xizmatida faollashtiring",
       "instructions": "QR-kodni skanerlang yoki quyidagi manzilga oʻtib, bu kodni kiriting:",
       "openToActivate": "Faollashtirish uchun ${service} xizmatini oching",
       "copyCode": "Faollashtirish kodini nusxalash",

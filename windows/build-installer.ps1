@@ -39,9 +39,9 @@ Source: "staging\arm64\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs
     }
 
     return @"
-#define Name "Plezy"
+#define Name "PlezyNG"
 #define Version "$Version"
-#define Publisher "edde746"
+#define Publisher "SnapeTech"
 #define ExeName "plezy.exe"
 
 [Setup]
@@ -49,6 +49,9 @@ AppId={{$AppGuid}
 AppName={#Name}
 AppVersion={#Version}
 AppPublisher={#Publisher}
+AppPublisherURL=https://github.com/snapetech-org/PlezyNG
+AppSupportURL=https://github.com/snapetech-org/PlezyNG
+AppUpdatesURL=https://github.com/snapetech-org/PlezyNG/releases/latest
 DefaultDirName={autopf}\{#Name}
 DefaultGroupName={#Name}
 AllowNoIcons=yes
@@ -68,7 +71,7 @@ ArchitecturesInstallIn64BitMode=$ArchAllowed
 Name: "english"; MessagesFile: "compiler:Default.isl"
 
 [CustomMessages]
-ElevationRequired=Plezy is installed in %1, which requires administrator privileges to update.%n%nRe-run this installer using "Run as administrator", or download the latest installer from https://github.com/snapetech-org/PlezyNG/releases/latest
+ElevationRequired=PlezyNG is installed in %1, which requires administrator privileges to update.%n%nRe-run this installer using "Run as administrator", or download the latest installer from https://github.com/snapetech-org/PlezyNG/releases/latest
 
 [Tasks]
 Name: "desktopicon"; Description: "{cm:CreateDesktopIcon}"; GroupDescription: "{cm:AdditionalIcons}"; Flags: unchecked
@@ -82,17 +85,12 @@ Name: "{group}\{cm:UninstallProgram,{#Name}}"; Filename: "{uninstallexe}"
 Name: "{autodesktop}\{#Name}"; Filename: "{app}\{#ExeName}"; Tasks: desktopicon
 
 [Run]
-Filename: "{app}\{#ExeName}"; Description: "{cm:LaunchProgram,{#Name}}"; Flags: nowait postinstall; Check: not IsNoRun
+Filename: "{app}\{#ExeName}"; Description: "{cm:LaunchProgram,{#Name}}"; Flags: nowait postinstall
 
 [Code]
 const
   UninstallSubkey = 'Software\Microsoft\Windows\CurrentVersion\Uninstall\{$AppGuid}_is1';
   WriteProbeName = 'plezy-write-probe.tmp';
-
-function IsNoRun: Boolean;
-begin
-  Result := ExpandConstant('{param:NORUN|0}') = '1';
-end;
 
 function IsX64: Boolean;
 begin
@@ -195,19 +193,13 @@ end;
 
 procedure CurStepChanged(CurStep: TSetupStep);
 var
-  MarkerPath, PreviousDir, PreviousGroup: String;
+  PreviousDir, PreviousGroup: String;
 begin
   if CurStep = ssPostInstall then
   begin
-    MarkerPath := ExpandConstant('{app}\.winget');
-    if ExpandConstant('{param:WINGET|0}') = '1' then
-      SaveStringToFile(MarkerPath, '', False)
-    else
-      DeleteFile(MarkerPath);
-
     { A machine-wide install that took over a directory registered per-user
       leaves that user's uninstall entry and Start Menu group pointing at files
-      this install now owns, listing Plezy twice in Apps & Features. }
+      this install now owns, listing PlezyNG twice in Apps & Features. }
     if IsAdminInstallMode then
     begin
       if RegQueryStringValue(HKCU, UninstallSubkey, 'Inno Setup: App Path', PreviousDir) and

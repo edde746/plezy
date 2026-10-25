@@ -1024,7 +1024,7 @@ void main() {
     test('backend that marks watched on stop skips the explicit server mark (#1287)', () async {
       // Jellyfin: /Sessions/Playing/Stopped marks the item played server-side,
       // so an explicit markWatched here would double-scrobble via the Trakt
-      // plugin. The local watch event must still fire (UI + Plezy's own Trakt
+      // plugin. The local watch event must still fire (UI + PlezyNG's own Trakt
       // sync, which key on `watched` events, not progress).
       final client = _StopMarksWatchedClient();
       final player = _FakePlayer(position: const Duration(seconds: 95), duration: const Duration(seconds: 100));

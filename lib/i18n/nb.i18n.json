@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "PlezyNG"
   },
   "appIcon": {
     "title": "Appikon",
@@ -9,8 +9,8 @@
     "locked": "Supporter-fordel",
     "lockedHint": "Alternative ikoner er en Supporter-fordel.",
     "changeFailed": "Kunne ikke endre appikonet",
-    "launcherHint": "Det nye ikonet vises på startskjermen når du forlater Plezy.",
-    "tvLauncherHint": "Det nye banneret vises når du forlater Plezy. Android TV kan fortsette å vise det gamle til TV-en startes på nytt.",
+    "launcherHint": "Det nye ikonet vises på startskjermen når du forlater PlezyNG.",
+    "tvLauncherHint": "Det nye banneret vises når du forlater PlezyNG. Android TV kan fortsette å vise det gamle til TV-en startes på nytt.",
     "names": {
       "midnight": "Midnatt",
       "ember": "Glød",
@@ -53,7 +53,7 @@
     "quickConnectWaiting": "Venter på godkjenning…",
     "quickConnectCancel": "Avbryt",
     "quickConnectExpired": "Quick Connect er utløpt. Prøv igjen.",
-    "localDataRecoveryRequired": "Plezy kunne ikke gjenopprette lokale innloggingsdata og ventende avspillingsdata på en sikker måte. Logg inn på nytt.",
+    "localDataRecoveryRequired": "PlezyNG kunne ikke gjenopprette lokale innloggingsdata og ventende avspillingsdata på en sikker måte. Logg inn på nytt.",
     "pinCheckRejected": "Kontrollen av Plex-PIN-koden ble avvist"
   },
   "common": {
@@ -153,19 +153,19 @@
     "checkFailed": "Kunne ikke se etter oppdateringer"
   },
   "supporter": {
-    "title": "Plezy Supporter",
-    "intro": "Et engangskjøp som støtter utviklingen av Plezy og låser opp kosmetiske tillegg:",
+    "title": "PlezyNG Supporter",
+    "intro": "Et engangskjøp som støtter utviklingen av PlezyNG og låser opp kosmetiske tillegg:",
     "presetThemes": "Forhåndsinnstilte temaer",
     "presetThemesDescription": "Glød, Isbre, Skog, Plomme og Papir",
     "customTheme": "Egendefinert tema",
     "customThemeDescription": "Velg alle fargene selv",
     "appIcons": "Appikoner",
-    "appIconsDescription": "Velg et alternativt Plezy-ikon",
+    "appIconsDescription": "Velg et alternativt PlezyNG-ikon",
     "buy": "Kjøp for ${price}",
     "loadingPrice": "Laster pris...",
     "restore": "Gjenopprett kjøp",
     "pending": "Kjøpet ditt venter på betaling eller godkjenning. Tilleggene låses opp så snart butikken har fullført kjøpet.",
-    "thankYouTitle": "Takk for at du støtter Plezy",
+    "thankYouTitle": "Takk for at du støtter PlezyNG",
     "thankYouBody": "Supporter-tilleggene dine er låst opp.",
     "tileSubtitle": "Lås opp temaer og appikoner med et engangskjøp",
     "tileSubtitleThemesOnly": "Lås opp temaer med et engangskjøp",
@@ -181,8 +181,8 @@
   },
   "settings": {
     "title": "Innstillinger",
-    "supportDeveloper": "Støtt Plezy",
-    "supportDeveloperDescription": "Doner via Liberapay for å finansiere utviklingen",
+    "supportDeveloper": "Støtt PlezyNG",
+    "supportDeveloperDescription": "Doner for å støtte utviklingen",
     "language": "Språk",
     "theme": "Tema",
     "appearance": "Utseende",
@@ -337,7 +337,7 @@
     "importSettingsDescription": "Gjenopprett innstillinger fra en fil",
     "importSettingsConfirm": "Dette vil erstatte nåværende innstillinger. Fortsette?",
     "importSettingsSuccess": "Innstillinger importert",
-    "importSettingsInvalidFile": "Denne filen er ikke en gyldig Plezy-innstillingseksport",
+    "importSettingsInvalidFile": "Denne filen er ikke en gyldig PlezyNG-innstillingseksport",
     "importSettingsNoUser": "Logg inn før import av innstillinger",
     "shortcutsReset": "Snarveier tilbakestilt til standard",
     "resetShortcutsConfirm": "Dette vil erstatte de egendefinerte snarveiene dine med standardsnarveiene. Fortsette?",
@@ -474,7 +474,7 @@
     "forceTvMode": "Tving TV-modus",
     "forceTvModeDescription": "Tving TV-oppsett. For enheter som ikke oppdages automatisk. Krever omstart.",
     "startInFullscreen": "Start i fullskjerm",
-    "startInFullscreenDescription": "Åpne Plezy i fullskjermmodus ved oppstart",
+    "startInFullscreenDescription": "Åpne PlezyNG i fullskjermmodus ved oppstart",
     "exitFullscreenOnPlayerClose": "Avslutt fullskjerm ved lukking av avspiller",
     "exitFullscreenOnPlayerCloseDescription": "Avslutt fullskjerm automatisk når videospilleren lukkes",
     "autoHidePerformanceOverlay": "Skjul ytelsesoverlegg automatisk",
@@ -523,7 +523,7 @@
     "playerScopeGlobal": "Overalt",
     "playerScopeLibrary": "Per bibliotek",
     "playerScopeTitle": "Per serie eller film",
-    "exportDialogTitle": "Eksporter Plezy-innstillinger"
+    "exportDialogTitle": "Eksporter PlezyNG-innstillinger"
   },
   "themeEditor": {
     "builtIn": "Innebygde",
@@ -766,8 +766,8 @@
       "one": "${n} annen episode er lagret i samme fil og vil også bli slettet:",
       "other": "${n} andre episoder er lagret i samme fil og vil også bli slettet:"
     },
-    "deleteScopeUnverifiedProbeFailed": "Plezy kunne ikke sjekke hvilke filer dette vil fjerne, så det kan slette mer enn elementet som er nevnt ovenfor. Avbryt og prøv igjen, eller slett likevel.",
-    "deleteScopeUnverifiedNoFileInfo": "Serveren din ga ikke fildetaljer for dette elementet, så Plezy kan ikke sjekke hvilke filer dette vil fjerne. Det kan slette mer enn elementet som er nevnt ovenfor.",
+    "deleteScopeUnverifiedProbeFailed": "PlezyNG kunne ikke sjekke hvilke filer dette vil fjerne, så det kan slette mer enn elementet som er nevnt ovenfor. Avbryt og prøv igjen, eller slett likevel.",
+    "deleteScopeUnverifiedNoFileInfo": "Serveren din ga ikke fildetaljer for dette elementet, så PlezyNG kan ikke sjekke hvilke filer dette vil fjerne. Det kan slette mer enn elementet som er nevnt ovenfor.",
     "mediaDeletedSuccessfully": "Medieelement slettet",
     "mediaFailedToDelete": "Kunne ikke slette medieelement",
     "rate": "Vurder",
@@ -1050,7 +1050,7 @@
     "confirmAction": "Bekreft handling"
   },
   "profiles": {
-    "addPlezyProfile": "Legg til Plezy-profil",
+    "addPlezyProfile": "Legg til PlezyNG-profil",
     "switchingProfile": "Bytter profil…",
     "deleteThisProfileTitle": "Slett denne profilen?",
     "deleteThisProfileMessage": "Fjern ${displayName}. Tilkoblinger påvirkes ikke.",
@@ -1127,14 +1127,14 @@
     "accessDeniedMany": "${count} servere nektet tilgang for denne kontoen",
     "signInAgain": "Logg inn igjen",
     "editMediaBrowserTitle": "Rediger ${product}-tilkobling",
-    "editMediaBrowserIntro": "Legg til eller fjern URL-er for ${serverName}. Plezy vil bruke den nåbare URL-en med lavest ventetid."
+    "editMediaBrowserIntro": "Legg til eller fjern URL-er for ${serverName}. PlezyNG vil bruke den nåbare URL-en med lavest ventetid."
   },
   "accountPreferences": {
     "sectionTitle": "Kontoinnstillinger",
     "hubSubtitleSingle": "Lyd-, undertekst- og bibliotekalternativer lagret på ${account}",
     "hubSubtitleMultiple": "Lyd-, undertekst- og bibliotekalternativer lagret på ${count} kontoer",
     "pickAccount": "Hver konto lagrer sine egne innstillinger. Velg hvilken du vil redigere.",
-    "storedOnAccount": "Disse alternativene lagres på selve kontoen, så alle apper som er logget på den, bruker dem — inkludert Plezy på de andre enhetene dine.",
+    "storedOnAccount": "Disse alternativene lagres på selve kontoen, så alle apper som er logget på den, bruker dem — inkludert PlezyNG på de andre enhetene dine.",
     "noAccounts": "Ingen kontoer å konfigurere",
     "noAccountsHint": "Logg inn på Plex, eller koble til en Jellyfin- eller Emby-server, så vises innstillingene som er lagret på den kontoen, her.",
     "unavailable": "Kan ikke nå denne kontoen",
@@ -1417,9 +1417,9 @@
     "uploadLogs": "Last opp logger"
   },
   "startup": {
-    "failedTitle": "Plezy kunne ikke starte",
+    "failedTitle": "PlezyNG kunne ikke starte",
     "failedBody": "Noe gikk galt under oppstart. Detaljene nedenfor viser hva som feilet.",
-    "failedBodyRepairable": "Plezy's lagrede innstillingsfil er skadet og må bygges på nytt før Plezy kan starte. Å prøve igjen hjelper ikke – velg Reparer lagring.",
+    "failedBodyRepairable": "PlezyNG's lagrede innstillingsfil er skadet og må bygges på nytt før PlezyNG kan starte. Å prøve igjen hjelper ikke – velg Reparer lagring.",
     "phaseLabel": "Trinn",
     "showDetails": "Vis detaljer",
     "hideDetails": "Skjul detaljer",
@@ -1428,16 +1428,16 @@
     "uploadDetails": "Last opp detaljer",
     "repairStorage": "Reparer lagring",
     "repairTitle": "Reparere lagrede data?",
-    "repairBodyCommon": "Plezy's innstillingsfil er skadet og kan ikke leses. Reparasjon tilbakestiller alle innstillinger til standard.",
+    "repairBodyCommon": "PlezyNG's innstillingsfil er skadet og kan ikke leses. Reparasjon tilbakestiller alle innstillinger til standard.",
     "repairBodyOneCredential": "Én lagret pålogging er skadet og kan ikke leses. Reparasjon fjerner bare den; de andre innstillingene dine blir urørt.",
     "repairBodySignInsKept": "Serverne og profilene dine skal forbli pålogget.",
     "repairBodySignInsLost": "Nøkkelen som beskytter de lagrede påloggingene dine kan ikke gjenvinnes fra denne filen, så du må logge på alle servere og profiler på nytt. Ingenting på medieserveren din påvirkes.",
-    "repairBodySessionsUncertain": "Trackere (MAL, AniList, Simkl, Trakt) og Seerr lagres separat og kan overleve eller ikke. Plezy vil fortelle deg nøyaktig hva det beholdt.",
+    "repairBodySessionsUncertain": "Trackere (MAL, AniList, Simkl, Trakt) og Seerr lagres separat og kan overleve eller ikke. PlezyNG vil fortelle deg nøyaktig hva det beholdt.",
     "repairConfirm": "Reparer",
     "repairSucceeded": "Lagring reparert",
     "repairNeedsRestart": "Lagring reparert – omstart kreves",
-    "restartRequiredBody": "Dataene dine ble reparert, men Plezy må starte på nytt før det kan bruke dem. Lukk Plezy og åpne det igjen.",
-    "quitPlezy": "Avslutt Plezy",
+    "restartRequiredBody": "Dataene dine ble reparert, men PlezyNG må starte på nytt før det kan bruke dem. Lukk PlezyNG og åpne det igjen.",
+    "quitPlezy": "Avslutt PlezyNG",
     "repairFailed": "Reparasjon mislyktes",
     "repairKeptSignIns": "Serverne og profilene dine er fortsatt pålogget.",
     "repairLostSignIns": "Nøkkelen som beskytter de lagrede påloggingene dine kunne ikke gjenvinnes. Du må logge på alle servere og profiler på nytt.",
@@ -1446,7 +1446,7 @@
     "backupWarning": "Den inneholder påloggingsinformasjonen din. Ikke last den opp eller del den.",
     "deleteBackup": "Slett kopi",
     "backupDeleted": "Kopi slettet.",
-    "previousFailureTitle": "Plezy mislyktes i å starte forrige gang"
+    "previousFailureTitle": "PlezyNG mislyktes i å starte forrige gang"
   },
   "licenses": {
     "relatedPackages": "Relaterte pakker",
@@ -1871,7 +1871,7 @@
     "codeCopied": "Romkode kopiert",
     "shareInvite": "Del invitasjon",
     "inviteCopied": "Invitasjon kopiert. Lim den inn i en melding.",
-    "inviteMessage": "Bli med i Se sammen-rommet mitt i Plezy: åpne Se sammen, velg «Bli med i rom» og skriv inn ${code}.",
+    "inviteMessage": "Bli med i Se sammen-rommet mitt i PlezyNG: åpne Se sammen, velg «Bli med i rom» og skriv inn ${code}.",
     "openSessionControls": "Åpne øktkontroller for Se sammen",
     "reconnecting": "Kobler til på nytt...",
     "reconnectingDescription": "Tilkoblingen ble brutt. Du blir automatisk med i rommet igjen.",
@@ -1897,7 +1897,7 @@
     "chooseAnotherCopy": "Velg en annen kopi",
     "dontPlay": "Ikke spill av",
     "unavailableTitle": "Du har ikke denne videoen",
-    "unavailableDescription": "Plezy fant den ikke i bibliotekene dine. Velg en kopi selv eller søk på nytt.",
+    "unavailableDescription": "PlezyNG fant den ikke i bibliotekene dine. Velg en kopi selv eller søk på nytt.",
     "chooseCopy": "Velg en kopi",
     "searchAgain": "Søk på nytt",
     "noCandidates": "Fant ingen kopier i bibliotekene dine.",
@@ -1997,7 +1997,7 @@
       "relayFull": "Se sammen er opptatt akkurat nå. Prøv igjen senere.",
       "unreachable": "Kunne ikke nå reléserveren for Se sammen. Sjekk tilkoblingen.",
       "rateLimited": "For mange forsøk. Vent litt og prøv igjen.",
-      "clientBlocked": "Denne versjonen av Plezy kan ikke bruke reléserveren. Oppdater appen.",
+      "clientBlocked": "Denne versjonen av PlezyNG kan ikke bruke reléserveren. Oppdater appen.",
       "forbidden": "Bare verten kan gjøre det.",
       "notInRoom": "Du er ikke i et rom.",
       "alreadyInRoom": "Du er allerede i et rom.",
@@ -2095,14 +2095,14 @@
       "bannerAction": "Detaljer",
       "sheetTitle": "Bakgrunnsnedlastinger er blokkert",
       "sheetTitleDegraded": "Bakgrunnsnedlastinger kan være begrenset",
-      "sheetIntro": "Android hindrer Plezy i å laste ned pålitelig i bakgrunnen.",
-      "sheetIntroDegraded": "Enheten din begrenser når Plezy kan laste ned i bakgrunnen.",
-      "reasonBackgroundRestricted": "Bakgrunnsbruken til Plezy er begrenset. Sett batteribruk eller bakgrunnsbruk til «Ubegrenset».",
-      "reasonStandbyRestricted": "Android har satt Plezy i begrenset hvilemodus. Sett batteribruken til «Ubegrenset».",
+      "sheetIntro": "Android hindrer PlezyNG i å laste ned pålitelig i bakgrunnen.",
+      "sheetIntroDegraded": "Enheten din begrenser når PlezyNG kan laste ned i bakgrunnen.",
+      "reasonBackgroundRestricted": "Bakgrunnsbruken til PlezyNG er begrenset. Sett batteribruk eller bakgrunnsbruk til «Ubegrenset».",
+      "reasonStandbyRestricted": "Android har satt PlezyNG i begrenset hvilemodus. Sett batteribruken til «Ubegrenset».",
       "reasonDownloadChannelBlocked": "Varsler om nedlastinger er slått av, så fremdrift og kontroller kan være utilgjengelige.",
       "reasonNotificationsDisabled": "Varsler er slått av. På Android 13 eller nyere kreves de for lange bakgrunnsnedlastinger.",
       "reasonDataSaver": "Datasparing er slått på og blokkerer bakgrunnsnedlastinger via mobildata. Nedlastinger skal fortsatt fungere på Wi-Fi.",
-      "reasonOemUnknown": "Nedlastinger har stoppet gjentatte ganger mens Plezy var i bakgrunnen. Sjekk innstillingene for batteribruk eller bakgrunnsbruk for Plezy.",
+      "reasonOemUnknown": "Nedlastinger har stoppet gjentatte ganger mens PlezyNG var i bakgrunnen. Sjekk innstillingene for batteribruk eller bakgrunnsbruk for PlezyNG.",
       "openSettings": "Åpne innstillinger",
       "stillNotWorking": "Enhetsspesifikk hjelp",
       "stillNotWorkingDescription": "Se fremgangsmåten for enheten din, eller send en logg fra Innstillinger › Vis logger hvis problemet vedvarer.",
@@ -2193,19 +2193,19 @@
       "manualAddressHint": "Manuell tilkoblingsadresse:"
     },
     "pairing": {
-      "discoveryDescription": "Plezy-enheter med samme Plex-konto vises her",
+      "discoveryDescription": "PlezyNG-enheter med samme Plex-konto vises her",
       "hostAddressHint": "192.168.1.100:48632",
       "connecting": "Kobler til...",
       "searchingForDevices": "Søker etter enheter...",
       "noDevicesFound": "Ingen enheter funnet på nettverket ditt",
-      "noDevicesHint": "Åpne Plezy på datamaskinen, og bruk samme Wi-Fi",
+      "noDevicesHint": "Åpne PlezyNG på datamaskinen, og bruk samme Wi-Fi",
       "availableDevices": "Tilgjengelige enheter",
       "manualConnection": "Manuell tilkobling",
       "cryptoInitFailed": "Kunne ikke starte sikker tilkobling. Logg inn på Plex først.",
       "validationHostRequired": "Vennligst oppgi vertsadresse",
       "validationHostFormat": "Format må være IP:port (f.eks. 192.168.1.100:48632)",
       "connectionTimedOut": "Tilkoblingen fikk tidsavbrudd. Bruk samme nettverk på begge enheter.",
-      "sessionNotFound": "Enhet ikke funnet. Sørg for at Plezy kjører på verten.",
+      "sessionNotFound": "Enhet ikke funnet. Sørg for at PlezyNG kjører på verten.",
       "authFailed": "Autentisering mislyktes. Begge enheter må bruke samme Plex-konto.",
       "failedToConnect": "Kunne ikke koble til: ${error}"
     },
@@ -2451,11 +2451,11 @@
     "connected": "Tilkoblet",
     "connectedAs": "Tilkoblet som @${username}",
     "disconnectConfirm": "Koble fra Trakt-konto?",
-    "disconnectConfirmBody": "Plezy slutter å sende hendelser til Trakt. Du kan koble til igjen når som helst.",
+    "disconnectConfirmBody": "PlezyNG slutter å sende hendelser til Trakt. Du kan koble til igjen når som helst.",
     "scrobble": "Sanntids-scrobbling",
     "scrobbleDescription": "Send avspillings-, pause- og stopphendelser til Trakt under avspilling.",
     "watchedSync": "Synkroniser settstatus",
-    "watchedSyncDescription": "Når du markerer elementer som sett i Plezy, markeres de også som sett på Trakt."
+    "watchedSyncDescription": "Når du markerer elementer som sett i PlezyNG, markeres de også som sett på Trakt."
   },
   "seerr": {
     "title": "Seerr",
@@ -2467,10 +2467,10 @@
     "signInWithEmby": "Logg inn med Emby",
     "signInWithLocal": "Bruk en lokal konto",
     "email": "E-post",
-    "noSignInMethods": "Denne Seerr-instansen tilbyr ingen innloggingsmetode som Plezy støtter.",
+    "noSignInMethods": "Denne Seerr-instansen tilbyr ingen innloggingsmetode som PlezyNG støtter.",
     "instance": "Instans",
     "disconnectConfirm": "Koble fra Seerr?",
-    "disconnectConfirmBody": "Plezy glemmer denne Seerr-instansen. Koble til igjen når som helst.",
+    "disconnectConfirmBody": "PlezyNG glemmer denne Seerr-instansen. Koble til igjen når som helst.",
     "request": "Be om",
     "request4k": "Be om i 4K",
     "seasons": "Sesonger",
@@ -2495,7 +2495,7 @@
     "statusBlocklisted": "På blokkeringslisten",
     "couldNotReach": "Kunne ikke nå ${url}: ${error}",
     "noInstanceAtUrl": "Ingen Seerr-instans på ${url} (HTTP ${status})",
-    "behindAuthProxy": "En autentiserende omvendt proxy (SSO eller HTTP-autentisering) svarte i stedet for Seerr. Plezy kan ikke logge inn gjennom den: La Seerrs /api/v1-sti omgå proxyen for denne appen, eller bruk en adresse som når Seerr direkte.",
+    "behindAuthProxy": "En autentiserende omvendt proxy (SSO eller HTTP-autentisering) svarte i stedet for Seerr. PlezyNG kan ikke logge inn gjennom den: La Seerrs /api/v1-sti omgå proxyen for denne appen, eller bruk en adresse som når Seerr direkte.",
     "invalidUrl": "Skriv inn en serveradresse som https://seerr.example.com",
     "quickConnectUnsupported": "Denne Seerr-instansen støtter ikke Quick Connect. Den krever Seerr 3.4 eller nyere.",
     "notInitialized": "Denne Seerr-instansen har ikke fullført førstegangsoppsettet",
@@ -2518,7 +2518,7 @@
     "scrobble": "Registrer fremdrift automatisk",
     "scrobbleDescription": "Oppdater listen din når du er ferdig med en episode eller film.",
     "disconnectConfirm": "Koble fra ${service}?",
-    "disconnectConfirmBody": "Plezy slutter å oppdatere ${service}. Koble til igjen når som helst.",
+    "disconnectConfirmBody": "PlezyNG slutter å oppdatere ${service}. Koble til igjen når som helst.",
     "connectFailed": "Kunne ikke koble til ${service}. Prøv igjen.",
     "names": {
       "mal": "MyAnimeList",
@@ -2529,10 +2529,10 @@
     },
     "simklReconnect": {
       "title": "Koble til Simkl på nytt",
-      "subtitle": "Simkl avvikler påloggingsmetoden som denne tilkoblingen bruker. Når du kobler til på nytt, åpnes simkl.com slik at du kan godkjenne Plezy – Plezy ser aldri passordet ditt. Visningshistorikken din blir liggende på Simkl."
+      "subtitle": "Simkl avvikler påloggingsmetoden som denne tilkoblingen bruker. Når du kobler til på nytt, åpnes simkl.com slik at du kan godkjenne PlezyNG – PlezyNG ser aldri passordet ditt. Visningshistorikken din blir liggende på Simkl."
     },
     "deviceCode": {
-      "title": "Aktiver Plezy på ${service}",
+      "title": "Aktiver PlezyNG på ${service}",
       "instructions": "Skann QR-koden, eller gå til adressen nedenfor og skriv inn denne koden:",
       "openToActivate": "Åpne ${service} for å aktivere",
       "copyCode": "Kopier aktiveringskode",

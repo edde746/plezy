@@ -63,23 +63,10 @@ void main() {
   setUp(resetSharedPreferencesForTest);
 
   group('supporterAvailabilityFor', () {
-    test('a Microsoft Store install gets the perks free; the same compile outside the Store hides them', () {
-      expect(supporterAvailabilityFor(SupporterMode.msstore, isPackagedInstall: true), SupporterAvailability.free);
-      expect(supporterAvailabilityFor(SupporterMode.msstore, isPackagedInstall: false), SupporterAvailability.hidden);
-    });
-
-    test('store and free builds ignore the packaged-install check', () {
-      for (final packaged in [true, false]) {
-        expect(
-          supporterAvailabilityFor(SupporterMode.iap, isPackagedInstall: packaged),
-          SupporterAvailability.purchasable,
-        );
-        expect(
-          supporterAvailabilityFor(SupporterMode.unlocked, isPackagedInstall: packaged),
-          SupporterAvailability.free,
-        );
-        expect(supporterAvailabilityFor(SupporterMode.off, isPackagedInstall: packaged), SupporterAvailability.hidden);
-      }
+    test('IAP, free, and off builds expose the expected perks', () {
+      expect(supporterAvailabilityFor(SupporterMode.iap), SupporterAvailability.purchasable);
+      expect(supporterAvailabilityFor(SupporterMode.unlocked), SupporterAvailability.free);
+      expect(supporterAvailabilityFor(SupporterMode.off), SupporterAvailability.hidden);
     });
   });
 

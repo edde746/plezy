@@ -102,7 +102,7 @@ class _Translations$app$ja extends Translations$app$en {
 	final TranslationsJa _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy';
+	@override String get title => 'PlezyNG';
 }
 
 // Path: appIcon
@@ -246,7 +246,7 @@ class _Translations$supporter$ja extends Translations$supporter$en {
 	final TranslationsJa _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy Supporter';
+	@override String get title => 'PlezyNG Supporter';
 	@override String get intro => '1回限りの購入でPlezyの開発を支援し、次の見た目の特典をご利用いただけます：';
 	@override String get presetThemes => 'プリセットテーマ';
 	@override String get presetThemesDescription => '残り火、氷河、森、プラム、ペーパー';
@@ -275,7 +275,7 @@ class _Translations$settings$ja extends Translations$settings$en {
 	// Translations
 	@override String get title => '設定';
 	@override String get supportDeveloper => 'Plezyを支援';
-	@override String get supportDeveloperDescription => 'Liberapayで寄付して開発を支援';
+	@override String get supportDeveloperDescription => '寄付で開発を支援';
 	@override String get language => '言語';
 	@override String get theme => 'テーマ';
 	@override String get appearance => '外観';
@@ -2325,10 +2325,10 @@ class _Translations$seerr$ja extends Translations$seerr$en {
 	@override String get signInWithEmby => 'Embyでサインイン';
 	@override String get signInWithLocal => 'ローカルアカウントを使う';
 	@override String get email => 'メールアドレス';
-	@override String get noSignInMethods => 'この Seerr インスタンスには Plezy が対応しているサインイン方法がありません。';
+	@override String get noSignInMethods => 'この Seerr インスタンスには PlezyNG が対応しているサインイン方法がありません。';
 	@override String get instance => 'インスタンス';
 	@override String get disconnectConfirm => 'Seerr の接続を解除しますか？';
-	@override String get disconnectConfirmBody => 'Plezy はこの Seerr インスタンスの情報を削除します。いつでも再接続できます。';
+	@override String get disconnectConfirmBody => 'PlezyNG はこの Seerr インスタンスの情報を削除します。いつでも再接続できます。';
 	@override String get request => 'リクエスト';
 	@override String get request4k => '4K でリクエスト';
 	@override String get seasons => 'シーズン';
@@ -3343,7 +3343,7 @@ class _Translations$services$deviceCode$ja extends Translations$services$deviceC
 	final TranslationsJa _root; // ignore: unused_field
 
 	// Translations
-	@override String title({required Object service}) => '${service} で Plezy を有効化';
+	@override String title({required Object service}) => '${service} で PlezyNG を有効化';
 	@override String get instructions => 'QRコードをスキャンするか、以下のアドレスにアクセスしてこのコードを入力してください:';
 	@override String openToActivate({required Object service}) => '${service} を開いて有効化';
 	@override String get copyCode => 'アクティベーションコードをコピー';
@@ -3403,7 +3403,7 @@ class _Translations$services$libraryFilter$ja extends Translations$services$libr
 extension on TranslationsJa {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
-			'app.title' => 'Plezy',
+			'app.title' => 'PlezyNG',
 			'appIcon.title' => 'アプリアイコン',
 			'appIcon.defaultIcon' => 'デフォルト',
 			'appIcon.current' => '現在のアイコン',
@@ -3538,7 +3538,7 @@ extension on TranslationsJa {
 			'update.viewRelease' => 'リリースを表示',
 			'update.latestVersion' => '最新バージョンです',
 			'update.checkFailed' => 'アップデートの確認に失敗しました',
-			'supporter.title' => 'Plezy Supporter',
+			'supporter.title' => 'PlezyNG Supporter',
 			'supporter.intro' => '1回限りの購入でPlezyの開発を支援し、次の見た目の特典をご利用いただけます：',
 			'supporter.presetThemes' => 'プリセットテーマ',
 			'supporter.presetThemesDescription' => '残り火、氷河、森、プラム、ペーパー',
@@ -3563,7 +3563,7 @@ extension on TranslationsJa {
 			'supporter.errors.nothingToRestore' => 'このストアアカウントではSupporterの購入が見つかりませんでした。',
 			'settings.title' => '設定',
 			'settings.supportDeveloper' => 'Plezyを支援',
-			'settings.supportDeveloperDescription' => 'Liberapayで寄付して開発を支援',
+			'settings.supportDeveloperDescription' => '寄付で開発を支援',
 			'settings.language' => '言語',
 			'settings.theme' => 'テーマ',
 			'settings.appearance' => '外観',
@@ -5593,10 +5593,10 @@ extension on TranslationsJa {
 			'seerr.signInWithEmby' => 'Embyでサインイン',
 			'seerr.signInWithLocal' => 'ローカルアカウントを使う',
 			'seerr.email' => 'メールアドレス',
-			'seerr.noSignInMethods' => 'この Seerr インスタンスには Plezy が対応しているサインイン方法がありません。',
+			'seerr.noSignInMethods' => 'この Seerr インスタンスには PlezyNG が対応しているサインイン方法がありません。',
 			'seerr.instance' => 'インスタンス',
 			'seerr.disconnectConfirm' => 'Seerr の接続を解除しますか？',
-			'seerr.disconnectConfirmBody' => 'Plezy はこの Seerr インスタンスの情報を削除します。いつでも再接続できます。',
+			'seerr.disconnectConfirmBody' => 'PlezyNG はこの Seerr インスタンスの情報を削除します。いつでも再接続できます。',
 			'seerr.request' => 'リクエスト',
 			'seerr.request4k' => '4K でリクエスト',
 			'seerr.seasons' => 'シーズン',
@@ -5651,7 +5651,7 @@ extension on TranslationsJa {
 			'services.names.mdblist' => 'MDBList',
 			'services.simklReconnect.title' => 'Simklに再接続',
 			'services.simklReconnect.subtitle' => 'Simklはこの接続で使用しているサインイン方法を廃止します。再接続するとsimkl.comが開き、Plezyを承認できます。Plezyがパスワードを知ることはありません。視聴履歴はSimklに残ります。',
-			'services.deviceCode.title' => ({required Object service}) => '${service} で Plezy を有効化',
+			'services.deviceCode.title' => ({required Object service}) => '${service} で PlezyNG を有効化',
 			'services.deviceCode.instructions' => 'QRコードをスキャンするか、以下のアドレスにアクセスしてこのコードを入力してください:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => '${service} を開いて有効化',
 			'services.deviceCode.copyCode' => 'アクティベーションコードをコピー',

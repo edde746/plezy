@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "PlezyNG"
   },
   "appIcon": {
     "title": "App-icoon",
@@ -9,8 +9,8 @@
     "locked": "Supporter-voordeel",
     "lockedHint": "Alternatieve iconen zijn een Supporter-voordeel.",
     "changeFailed": "Het app-icoon kon niet worden gewijzigd",
-    "launcherHint": "Het nieuwe icoon verschijnt op je beginscherm zodra je Plezy verlaat.",
-    "tvLauncherHint": "De nieuwe banner verschijnt zodra je Plezy verlaat. Android TV kan de oude blijven tonen totdat de tv opnieuw is opgestart.",
+    "launcherHint": "Het nieuwe icoon verschijnt op je beginscherm zodra je PlezyNG verlaat.",
+    "tvLauncherHint": "De nieuwe banner verschijnt zodra je PlezyNG verlaat. Android TV kan de oude blijven tonen totdat de tv opnieuw is opgestart.",
     "names": {
       "midnight": "Middernacht",
       "ember": "Sintel",
@@ -53,7 +53,7 @@
     "quickConnectWaiting": "Wachten op goedkeuring…",
     "quickConnectCancel": "Annuleren",
     "quickConnectExpired": "Quick Connect is verlopen. Probeer opnieuw.",
-    "localDataRecoveryRequired": "Plezy kon lokale aanmeldings- en openstaande afspeelgegevens niet veilig herstellen. Meld je opnieuw aan.",
+    "localDataRecoveryRequired": "PlezyNG kon lokale aanmeldings- en openstaande afspeelgegevens niet veilig herstellen. Meld je opnieuw aan.",
     "pinCheckRejected": "De controle van de Plex-pincode is geweigerd"
   },
   "common": {
@@ -153,19 +153,19 @@
     "checkFailed": "Kon niet controleren op updates"
   },
   "supporter": {
-    "title": "Plezy Supporter",
-    "intro": "Een eenmalige aankoop die de ontwikkeling van Plezy steunt en cosmetische extra's ontgrendelt:",
+    "title": "PlezyNG Supporter",
+    "intro": "Een eenmalige aankoop die de ontwikkeling van PlezyNG steunt en cosmetische extra's ontgrendelt:",
     "presetThemes": "Kant-en-klare thema's",
     "presetThemesDescription": "Sintel, Gletsjer, Woud, Pruim en Papier",
     "customTheme": "Aangepast thema",
     "customThemeDescription": "Kies elke kleur zelf",
     "appIcons": "App-iconen",
-    "appIconsDescription": "Kies een alternatief Plezy-icoon",
+    "appIconsDescription": "Kies een alternatief PlezyNG-icoon",
     "buy": "Kopen voor ${price}",
     "loadingPrice": "Prijs laden...",
     "restore": "Aankopen herstellen",
     "pending": "Je aankoop wacht op betaling of goedkeuring. De extra's worden ontgrendeld zodra de store de aankoop afrondt.",
-    "thankYouTitle": "Bedankt dat je Plezy steunt",
+    "thankYouTitle": "Bedankt dat je PlezyNG steunt",
     "thankYouBody": "Je Supporter-extra's zijn ontgrendeld.",
     "tileSubtitle": "Ontgrendel thema's en app-iconen met een eenmalige aankoop",
     "tileSubtitleThemesOnly": "Ontgrendel thema's met een eenmalige aankoop",
@@ -181,8 +181,8 @@
   },
   "settings": {
     "title": "Instellingen",
-    "supportDeveloper": "Steun Plezy",
-    "supportDeveloperDescription": "Doneer via Liberapay om de ontwikkeling te steunen",
+    "supportDeveloper": "Steun PlezyNG",
+    "supportDeveloperDescription": "Doneer om de ontwikkeling te steunen",
     "language": "Taal",
     "theme": "Thema",
     "appearance": "Uiterlijk",
@@ -337,7 +337,7 @@
     "importSettingsDescription": "Voorkeuren herstellen vanuit een bestand",
     "importSettingsConfirm": "Hiermee worden je huidige instellingen vervangen. Doorgaan?",
     "importSettingsSuccess": "Instellingen geïmporteerd",
-    "importSettingsInvalidFile": "Dit bestand is geen geldige Plezy-export",
+    "importSettingsInvalidFile": "Dit bestand is geen geldige PlezyNG-export",
     "importSettingsNoUser": "Meld je aan voordat je instellingen importeert",
     "shortcutsReset": "Sneltoetsen gereset naar standaard",
     "resetShortcutsConfirm": "Hiermee worden je aangepaste sneltoetsen vervangen door de standaardinstellingen. Doorgaan?",
@@ -474,7 +474,7 @@
     "forceTvMode": "Tv-modus afdwingen",
     "forceTvModeDescription": "Dwing de tv-indeling af op apparaten zonder automatische detectie. Herstart vereist.",
     "startInFullscreen": "Starten in volledig scherm",
-    "startInFullscreenDescription": "Open Plezy bij het starten in volledig scherm",
+    "startInFullscreenDescription": "Open PlezyNG bij het starten in volledig scherm",
     "exitFullscreenOnPlayerClose": "Volledig scherm verlaten bij sluiten van speler",
     "exitFullscreenOnPlayerCloseDescription": "Verlaat automatisch de volledigschermmodus wanneer de videospeler wordt gesloten",
     "autoHidePerformanceOverlay": "Prestatie-overlay automatisch verbergen",
@@ -523,7 +523,7 @@
     "playerScopeGlobal": "Overal",
     "playerScopeLibrary": "Per bibliotheek",
     "playerScopeTitle": "Per serie of film",
-    "exportDialogTitle": "Plezy-instellingen exporteren"
+    "exportDialogTitle": "PlezyNG-instellingen exporteren"
   },
   "themeEditor": {
     "builtIn": "Ingebouwd",
@@ -766,8 +766,8 @@
       "one": "${n} andere aflevering staat in hetzelfde bestand en wordt ook verwijderd:",
       "other": "${n} andere afleveringen staan in hetzelfde bestand en worden ook verwijderd:"
     },
-    "deleteScopeUnverifiedProbeFailed": "Plezy kon niet controleren welke bestanden hiermee worden verwijderd, dus het kan meer verwijderen dan het hierboven genoemde item. Annuleer en probeer het opnieuw, of verwijder toch.",
-    "deleteScopeUnverifiedNoFileInfo": "Je server heeft geen bestandsgegevens voor dit item verstrekt, dus Plezy kan niet controleren welke bestanden hiermee worden verwijderd. Het kan meer verwijderen dan het hierboven genoemde item.",
+    "deleteScopeUnverifiedProbeFailed": "PlezyNG kon niet controleren welke bestanden hiermee worden verwijderd, dus het kan meer verwijderen dan het hierboven genoemde item. Annuleer en probeer het opnieuw, of verwijder toch.",
+    "deleteScopeUnverifiedNoFileInfo": "Je server heeft geen bestandsgegevens voor dit item verstrekt, dus PlezyNG kan niet controleren welke bestanden hiermee worden verwijderd. Het kan meer verwijderen dan het hierboven genoemde item.",
     "mediaDeletedSuccessfully": "Media-item succesvol verwijderd",
     "mediaFailedToDelete": "Verwijderen van media-item mislukt",
     "rate": "Beoordelen",
@@ -1050,7 +1050,7 @@
     "confirmAction": "Bevestig actie"
   },
   "profiles": {
-    "addPlezyProfile": "Plezy-profiel toevoegen",
+    "addPlezyProfile": "PlezyNG-profiel toevoegen",
     "switchingProfile": "Profiel wisselen…",
     "deleteThisProfileTitle": "Dit profiel verwijderen?",
     "deleteThisProfileMessage": "Verwijder ${displayName}. Verbindingen blijven ongewijzigd.",
@@ -1127,14 +1127,14 @@
     "accessDeniedMany": "${count} servers weigerden toegang voor dit account",
     "signInAgain": "Opnieuw aanmelden",
     "editMediaBrowserTitle": "${product}-verbinding bewerken",
-    "editMediaBrowserIntro": "Voeg URL's toe aan ${serverName} of verwijder ze. Plezy gebruikt de bereikbare URL met de laagste latentie."
+    "editMediaBrowserIntro": "Voeg URL's toe aan ${serverName} of verwijder ze. PlezyNG gebruikt de bereikbare URL met de laagste latentie."
   },
   "accountPreferences": {
     "sectionTitle": "Accountvoorkeuren",
     "hubSubtitleSingle": "Audio-, ondertitel- en bibliotheekopties opgeslagen op ${account}",
     "hubSubtitleMultiple": "Audio-, ondertitel- en bibliotheekopties opgeslagen op ${count} accounts",
     "pickAccount": "Elk account slaat zijn eigen voorkeuren op. Kies het account dat je wilt bewerken.",
-    "storedOnAccount": "Deze opties worden op het account zelf opgeslagen, zodat elke app die ermee is aangemeld ze gebruikt — ook Plezy op je andere apparaten.",
+    "storedOnAccount": "Deze opties worden op het account zelf opgeslagen, zodat elke app die ermee is aangemeld ze gebruikt — ook PlezyNG op je andere apparaten.",
     "noAccounts": "Geen accounts om te configureren",
     "noAccountsHint": "Log in bij Plex of verbind een Jellyfin- of Emby-server en de voorkeuren die op dat account zijn opgeslagen, verschijnen hier.",
     "unavailable": "Dit account is niet bereikbaar",
@@ -1417,9 +1417,9 @@
     "uploadLogs": "Logbestanden uploaden"
   },
   "startup": {
-    "failedTitle": "Plezy kon niet starten",
+    "failedTitle": "PlezyNG kon niet starten",
     "failedBody": "Er is iets misgegaan tijdens het opstarten. De onderstaande details laten zien wat er misging.",
-    "failedBodyRepairable": "Het opgeslagen instellingenbestand van Plezy is beschadigd en moet opnieuw worden opgebouwd voordat Plezy kan starten. Opnieuw proberen helpt niet — kies 'Opslag repareren'.",
+    "failedBodyRepairable": "Het opgeslagen instellingenbestand van PlezyNG is beschadigd en moet opnieuw worden opgebouwd voordat PlezyNG kan starten. Opnieuw proberen helpt niet — kies 'Opslag repareren'.",
     "phaseLabel": "Stap",
     "showDetails": "Details tonen",
     "hideDetails": "Details verbergen",
@@ -1428,16 +1428,16 @@
     "uploadDetails": "Details uploaden",
     "repairStorage": "Opslag repareren",
     "repairTitle": "Opgeslagen gegevens repareren?",
-    "repairBodyCommon": "Het instellingenbestand van Plezy is beschadigd en kan niet worden gelezen. Door te repareren worden alle instellingen teruggezet naar hun standaardwaarde.",
+    "repairBodyCommon": "Het instellingenbestand van PlezyNG is beschadigd en kan niet worden gelezen. Door te repareren worden alle instellingen teruggezet naar hun standaardwaarde.",
     "repairBodyOneCredential": "Eén opgeslagen aanmelding is beschadigd en kan niet worden gelezen. Door te repareren wordt alleen die ene verwijderd; je andere instellingen blijven onaangetast.",
     "repairBodySignInsKept": "Je servers en profielen blijven naar verwachting aangemeld.",
     "repairBodySignInsLost": "De sleutel die je opgeslagen aanmeldingen beschermt, kan niet uit dit bestand worden hersteld. Je moet je daarom opnieuw aanmelden bij elke server en elk profiel. Er wordt niets op je mediaserver gewijzigd.",
-    "repairBodySessionsUncertain": "Trackers (MAL, AniList, Simkl, Trakt) en Seerr worden apart opgeslagen en blijven mogelijk wel of niet bewaard. Plezy vertelt je precies wat het heeft bewaard.",
+    "repairBodySessionsUncertain": "Trackers (MAL, AniList, Simkl, Trakt) en Seerr worden apart opgeslagen en blijven mogelijk wel of niet bewaard. PlezyNG vertelt je precies wat het heeft bewaard.",
     "repairConfirm": "Repareren",
     "repairSucceeded": "Opslag gerepareerd",
     "repairNeedsRestart": "Opslag gerepareerd — herstart vereist",
-    "restartRequiredBody": "Je gegevens zijn gerepareerd, maar Plezy moet opnieuw starten voordat het ze kan gebruiken. Sluit Plezy en open het opnieuw.",
-    "quitPlezy": "Plezy afsluiten",
+    "restartRequiredBody": "Je gegevens zijn gerepareerd, maar PlezyNG moet opnieuw starten voordat het ze kan gebruiken. Sluit PlezyNG en open het opnieuw.",
+    "quitPlezy": "PlezyNG afsluiten",
     "repairFailed": "Repareren mislukt",
     "repairKeptSignIns": "Je servers en profielen zijn nog steeds aangemeld.",
     "repairLostSignIns": "De sleutel die je opgeslagen aanmeldingen beschermt, kon niet worden hersteld. Je moet je opnieuw aanmelden bij elke server en elk profiel.",
@@ -1446,7 +1446,7 @@
     "backupWarning": "Het bevat je aanmeldgegevens. Upload of deel het niet.",
     "deleteBackup": "Kopie verwijderen",
     "backupDeleted": "Kopie verwijderd.",
-    "previousFailureTitle": "Plezy kon de vorige keer niet starten"
+    "previousFailureTitle": "PlezyNG kon de vorige keer niet starten"
   },
   "licenses": {
     "relatedPackages": "Gerelateerde pakketten",
@@ -1871,7 +1871,7 @@
     "codeCopied": "Kamercode gekopieerd",
     "shareInvite": "Uitnodiging delen",
     "inviteCopied": "Uitnodiging gekopieerd. Plak deze in een bericht.",
-    "inviteMessage": "Neem deel aan mijn Samen kijken-kamer in Plezy: open Samen kijken, kies \"Deelnemen aan kamer\" en voer ${code} in.",
+    "inviteMessage": "Neem deel aan mijn Samen kijken-kamer in PlezyNG: open Samen kijken, kies \"Deelnemen aan kamer\" en voer ${code} in.",
     "openSessionControls": "Bediening voor Samen kijken openen",
     "reconnecting": "Opnieuw verbinden...",
     "reconnectingDescription": "De verbinding is verbroken. Je neemt automatisch weer deel aan de kamer.",
@@ -1897,7 +1897,7 @@
     "chooseAnotherCopy": "Andere kopie kiezen",
     "dontPlay": "Niet afspelen",
     "unavailableTitle": "Je hebt deze video niet",
-    "unavailableDescription": "Plezy kon hem niet vinden in je bibliotheken. Kies zelf een kopie of zoek opnieuw.",
+    "unavailableDescription": "PlezyNG kon hem niet vinden in je bibliotheken. Kies zelf een kopie of zoek opnieuw.",
     "chooseCopy": "Kopie kiezen",
     "searchAgain": "Opnieuw zoeken",
     "noCandidates": "Geen kopieën gevonden in je bibliotheken.",
@@ -1997,7 +1997,7 @@
       "relayFull": "Samen kijken is momenteel druk. Probeer het later opnieuw.",
       "unreachable": "Kan de relay voor Samen kijken niet bereiken. Controleer je verbinding.",
       "rateLimited": "Te veel pogingen. Wacht even en probeer het opnieuw.",
-      "clientBlocked": "Deze versie van Plezy kan de relay niet gebruiken. Werk de app bij.",
+      "clientBlocked": "Deze versie van PlezyNG kan de relay niet gebruiken. Werk de app bij.",
       "forbidden": "Alleen de host kan dat doen.",
       "notInRoom": "Je zit niet in een kamer.",
       "alreadyInRoom": "Je zit al in een kamer.",
@@ -2095,14 +2095,14 @@
       "bannerAction": "Details",
       "sheetTitle": "Downloads op de achtergrond zijn geblokkeerd",
       "sheetTitleDegraded": "Downloads op de achtergrond kunnen beperkt zijn",
-      "sheetIntro": "Android verhindert dat Plezy betrouwbaar op de achtergrond downloadt.",
-      "sheetIntroDegraded": "Je apparaat beperkt wanneer Plezy op de achtergrond kan downloaden.",
-      "reasonBackgroundRestricted": "Het achtergrondgebruik van Plezy is beperkt. Stel het batterij- of achtergrondgebruik in op \"Onbeperkt\".",
-      "reasonStandbyRestricted": "Android heeft Plezy in een beperkte stand-bymodus geplaatst. Stel het batterijgebruik in op \"Onbeperkt\".",
+      "sheetIntro": "Android verhindert dat PlezyNG betrouwbaar op de achtergrond downloadt.",
+      "sheetIntroDegraded": "Je apparaat beperkt wanneer PlezyNG op de achtergrond kan downloaden.",
+      "reasonBackgroundRestricted": "Het achtergrondgebruik van PlezyNG is beperkt. Stel het batterij- of achtergrondgebruik in op \"Onbeperkt\".",
+      "reasonStandbyRestricted": "Android heeft PlezyNG in een beperkte stand-bymodus geplaatst. Stel het batterijgebruik in op \"Onbeperkt\".",
       "reasonDownloadChannelBlocked": "Downloadmeldingen zijn uitgeschakeld, waardoor voortgang en bediening mogelijk niet beschikbaar zijn.",
       "reasonNotificationsDisabled": "Meldingen zijn uitgeschakeld. Op Android 13 of nieuwer zijn ze vereist voor langdurige downloads op de achtergrond.",
       "reasonDataSaver": "Databesparing is ingeschakeld en blokkeert downloads op de achtergrond via mobiele data. Via Wi-Fi zouden downloads nog wel moeten werken.",
-      "reasonOemUnknown": "Downloads zijn herhaaldelijk gestopt terwijl Plezy op de achtergrond draaide. Controleer de instellingen voor het batterij- of achtergrondgebruik van Plezy.",
+      "reasonOemUnknown": "Downloads zijn herhaaldelijk gestopt terwijl PlezyNG op de achtergrond draaide. Controleer de instellingen voor het batterij- of achtergrondgebruik van PlezyNG.",
       "openSettings": "Instellingen openen",
       "stillNotWorking": "Apparaatspecifieke hulp",
       "stillNotWorkingDescription": "Bekijk de stappen voor je apparaat of stuur een logbestand vanuit Instellingen › Logbestanden bekijken als het probleem aanhoudt.",
@@ -2193,19 +2193,19 @@
       "manualAddressHint": "Handmatig verbindingsadres:"
     },
     "pairing": {
-      "discoveryDescription": "Plezy-apparaten met hetzelfde Plex-account verschijnen hier",
+      "discoveryDescription": "PlezyNG-apparaten met hetzelfde Plex-account verschijnen hier",
       "hostAddressHint": "192.168.1.100:48632",
       "connecting": "Verbinden...",
       "searchingForDevices": "Apparaten zoeken...",
       "noDevicesFound": "Geen apparaten gevonden op je netwerk",
-      "noDevicesHint": "Open Plezy op je desktop en gebruik op beide apparaten dezelfde wifi",
+      "noDevicesHint": "Open PlezyNG op je desktop en gebruik op beide apparaten dezelfde wifi",
       "availableDevices": "Beschikbare apparaten",
       "manualConnection": "Handmatige verbinding",
       "cryptoInitFailed": "Kon beveiligde verbinding niet starten. Log eerst in bij Plex.",
       "validationHostRequired": "Voer het hostadres in",
       "validationHostFormat": "Formaat moet IP:poort zijn (bijv. 192.168.1.100:48632)",
       "connectionTimedOut": "Er is een time-out opgetreden. Gebruik op beide apparaten hetzelfde netwerk.",
-      "sessionNotFound": "Apparaat niet gevonden. Zorg dat Plezy op de host draait.",
+      "sessionNotFound": "Apparaat niet gevonden. Zorg dat PlezyNG op de host draait.",
       "authFailed": "Authenticatie mislukt. Beide apparaten hebben hetzelfde Plex-account nodig.",
       "failedToConnect": "Kan niet verbinden: ${error}"
     },
@@ -2451,11 +2451,11 @@
     "connected": "Verbonden",
     "connectedAs": "Verbonden als @${username}",
     "disconnectConfirm": "Trakt-account loskoppelen?",
-    "disconnectConfirmBody": "Plezy stuurt geen gebeurtenissen meer naar Trakt. Je kunt op elk moment opnieuw verbinding maken.",
+    "disconnectConfirmBody": "PlezyNG stuurt geen gebeurtenissen meer naar Trakt. Je kunt op elk moment opnieuw verbinding maken.",
     "scrobble": "Realtime scrobblen",
     "scrobbleDescription": "Stuur tijdens het afspelen gebeurtenissen voor afspelen, pauzeren en stoppen naar Trakt.",
     "watchedSync": "Kijkstatus synchroniseren",
-    "watchedSyncDescription": "Wanneer je items in Plezy als bekeken markeert, worden ze op Trakt ook als bekeken gemarkeerd."
+    "watchedSyncDescription": "Wanneer je items in PlezyNG als bekeken markeert, worden ze op Trakt ook als bekeken gemarkeerd."
   },
   "seerr": {
     "title": "Seerr",
@@ -2467,10 +2467,10 @@
     "signInWithEmby": "Inloggen met Emby",
     "signInWithLocal": "Een lokaal account gebruiken",
     "email": "E-mail",
-    "noSignInMethods": "Deze Seerr-instantie biedt geen inlogmethode die Plezy ondersteunt.",
+    "noSignInMethods": "Deze Seerr-instantie biedt geen inlogmethode die PlezyNG ondersteunt.",
     "instance": "Instantie",
     "disconnectConfirm": "Seerr loskoppelen?",
-    "disconnectConfirmBody": "Plezy vergeet deze Seerr-instantie. Je kunt altijd opnieuw verbinden.",
+    "disconnectConfirmBody": "PlezyNG vergeet deze Seerr-instantie. Je kunt altijd opnieuw verbinden.",
     "request": "Aanvragen",
     "request4k": "Aanvragen in 4K",
     "seasons": "Seizoenen",
@@ -2495,7 +2495,7 @@
     "statusBlocklisted": "Op de blokkeerlijst",
     "couldNotReach": "Kon ${url} niet bereiken: ${error}",
     "noInstanceAtUrl": "Geen Seerr-instantie op ${url} (HTTP ${status})",
-    "behindAuthProxy": "Een authenticerende reverse proxy (SSO of HTTP-auth) heeft geantwoord in plaats van Seerr. Plezy kan hierdoor niet inloggen: laat het /api/v1-pad van Seerr de proxy omzeilen voor deze app, of gebruik een adres dat Seerr direct bereikt.",
+    "behindAuthProxy": "Een authenticerende reverse proxy (SSO of HTTP-auth) heeft geantwoord in plaats van Seerr. PlezyNG kan hierdoor niet inloggen: laat het /api/v1-pad van Seerr de proxy omzeilen voor deze app, of gebruik een adres dat Seerr direct bereikt.",
     "invalidUrl": "Voer een serveradres in, zoals https://seerr.example.com",
     "quickConnectUnsupported": "Deze Seerr-instantie ondersteunt Quick Connect niet. Hiervoor is Seerr 3.4 of nieuwer nodig.",
     "notInitialized": "De eerste configuratie van deze Seerr-instantie is niet voltooid",
@@ -2518,7 +2518,7 @@
     "scrobble": "Voortgang automatisch volgen",
     "scrobbleDescription": "Werk je lijst bij wanneer je een aflevering of film afrondt.",
     "disconnectConfirm": "${service} loskoppelen?",
-    "disconnectConfirmBody": "Plezy werkt ${service} niet meer bij. Je kunt op elk moment opnieuw verbinding maken.",
+    "disconnectConfirmBody": "PlezyNG werkt ${service} niet meer bij. Je kunt op elk moment opnieuw verbinding maken.",
     "connectFailed": "Verbinding maken met ${service} is mislukt. Probeer het opnieuw.",
     "names": {
       "mal": "MyAnimeList",
@@ -2529,10 +2529,10 @@
     },
     "simklReconnect": {
       "title": "Simkl opnieuw verbinden",
-      "subtitle": "Simkl stopt met de aanmeldmethode die deze verbinding gebruikt. Bij opnieuw verbinden wordt simkl.com geopend om Plezy goed te keuren — Plezy ziet je wachtwoord nooit. Je kijkgeschiedenis blijft op Simkl."
+      "subtitle": "Simkl stopt met de aanmeldmethode die deze verbinding gebruikt. Bij opnieuw verbinden wordt simkl.com geopend om PlezyNG goed te keuren — PlezyNG ziet je wachtwoord nooit. Je kijkgeschiedenis blijft op Simkl."
     },
     "deviceCode": {
-      "title": "Plezy activeren op ${service}",
+      "title": "PlezyNG activeren op ${service}",
       "instructions": "Scan de QR-code of ga naar het onderstaande adres en voer deze code in:",
       "openToActivate": "Open ${service} om te activeren",
       "copyCode": "Activeringscode kopiëren",

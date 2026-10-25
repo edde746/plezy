@@ -78,7 +78,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
-    // VLC is supported on every platform Plezy ships, so with detection
+    // VLC is supported on every platform PlezyNG ships, so with detection
     // reporting nothing installed it is always one of the filtered-out ids.
     KnownPlayers.resetForTesting();
     KnownPlayers.probe = const _NoPlayersInstalled();

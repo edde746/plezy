@@ -435,7 +435,7 @@ void main() {
       expect(firstCached.url, secondCached.url);
       expect(firstCached.url, url);
       expect(firstCached.headers, secondCached.headers);
-      expect(firstCached.headers, const {'User-Agent': 'Plezy'});
+      expect(firstCached.headers, const {'User-Agent': 'PlezyNG'});
       expect(firstCached.cacheKey, secondCached.cacheKey);
       expect(firstCached.cacheKey, isNotNull);
       expect(firstCached.maxWidth, secondCached.maxWidth);

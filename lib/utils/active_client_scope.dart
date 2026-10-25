@@ -4,7 +4,7 @@ const _plexProfileScopeMarker = '/~plex-profile/';
 
 const _plexTransferScopeSuffix = '/~plex-transfer';
 
-/// Typed private cache namespace for one Plezy profile on a public Plex
+/// Typed private cache namespace for one PlezyNG profile on a public Plex
 /// server. The value is never a public media identity.
 extension type const PlexProfileScopeId._(String value) implements String {
   factory PlexProfileScopeId({required ServerId serverId, required String profileId}) {

@@ -13,7 +13,9 @@
 	<key>CFBundleInfoDictionaryVersion</key>
 	<string>6.0</string>
 	<key>CFBundleName</key>
-	<string>$(PRODUCT_NAME)</string>
+	<string>PlezyNG</string>
+	<key>CFBundleDisplayName</key>
+	<string>PlezyNG</string>
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
@@ -38,7 +40,7 @@
 	<key>FLTEnableMergedPlatformUIThread</key>
 	<false/>
 	<!-- Keep rendering with Skia. Flutter 3.47 made Impeller the default macOS
-	     renderer, and Plezy is unusually exposed to that switch: the Flutter view
+	     renderer, and PlezyNG is unusually exposed to that switch: the Flutter view
 	     is cleared to transparent so mpv's video layer behind it stays visible,
 	     so anything Impeller leaves in the presented drawable is composited
 	     straight onto the screen instead of being covered. On the Metal SDF text

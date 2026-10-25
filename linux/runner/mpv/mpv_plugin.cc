@@ -1368,7 +1368,7 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
         // line, and it names why.
         response = FL_METHOD_RESPONSE(fl_method_error_response_new(
             plezy::mpv_common::kSetPropertyFailedCode,
-            "vo is owned by Plezy: embedded video renders through vo=libmpv and a windowed VO "
+            "vo is owned by PlezyNG: embedded video renders through vo=libmpv and a windowed VO "
             "(gpu-next) cannot be used inside the app",
             nullptr));
       } else {

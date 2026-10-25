@@ -1008,7 +1008,7 @@ extension MediaServerClientScope on MediaServerClient {
   /// Backends that mark played from the stop report
   /// ([marksWatchedOnPlaybackStopped]) skip the server call — issuing
   /// [markWatched] too would double-scrobble via the Jellyfin Trakt plugin
-  /// (#1287). The single local event emitted here keeps the UI and Plezy's
+  /// (#1287). The single local event emitted here keeps the UI and PlezyNG's
   /// own Trakt sync (which key on `watched` events, not progress) in sync;
   /// the stop report syncs the server.
   ///

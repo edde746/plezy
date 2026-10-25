@@ -1728,7 +1728,7 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
       baseUrl: 'https://plex.example.com',
       token: 'token',
       clientIdentifier: 'client-id',
-      product: 'Plezy',
+      product: 'PlezyNG',
       version: '1',
     ),
     serverId: ServerId('plex-1'),

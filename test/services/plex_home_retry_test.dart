@@ -39,7 +39,7 @@ void main() {
         baseUrl: 'http://server:32400',
         token: 'token',
         clientIdentifier: 'client-id',
-        product: 'Plezy',
+        product: 'PlezyNG',
         version: 'test',
         languageCode: 'fr',
       );
@@ -53,7 +53,7 @@ void main() {
         baseUrl: 'http://server:32400',
         token: 'old-token',
         clientIdentifier: 'client-id',
-        product: 'Plezy',
+        product: 'PlezyNG',
         version: 'test',
         languageCode: 'es',
       ).copyWith(token: 'new-token');

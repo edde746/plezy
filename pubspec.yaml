@@ -1,5 +1,5 @@
 name: plezy
-description: "A beautiful Plex and Jellyfin client for Flutter"
+description: "A cross-platform PlezyNG client for Plex, Jellyfin, and Emby"
 publish_to: "none"
 version: 2.24.1+156
 

@@ -1,6 +1,6 @@
 <!-- android:installLocation="auto" is what makes the app eligible to be moved to adoptable
      storage (a USB drive adopted by an Android TV, an adopted SD card), which relocates the
-     private data directory — and therefore downloads — along with the APK. Plezy declares none
+     private data directory — and therefore downloads — along with the APK. PlezyNG declares none
      of the components this is unsafe for: no app widget, IME, live wallpaper, device admin,
      accessibility service, sync adapter or account authenticator. -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
@@ -32,7 +32,7 @@
     <uses-feature android:name="android.hardware.type.automotive" android:required="false" />
 
     <application
-        android:label="Plezy"
+        android:label="PlezyNG"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher"
         android:banner="@drawable/tv_banner"

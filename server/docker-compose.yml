@@ -9,7 +9,7 @@ services:
     ports:
       - "127.0.0.1:8080:8080"
     environment:
-      OAUTH_BASE_URL: https://ice.plezy.app
+      OAUTH_BASE_URL: ${PLEZY_SERVER_PUBLIC_URL:?Set PLEZY_SERVER_PUBLIC_URL to this relay's public HTTPS URL}
       TRUSTED_PROXY_CIDRS: ${TRUSTED_PROXY_CIDRS:?Set TRUSTED_PROXY_CIDRS to the reverse proxy network CIDR}
       MAL_CLIENT_ID: ${MAL_CLIENT_ID:-}
       ANILIST_CLIENT_ID: ${ANILIST_CLIENT_ID:-}
@@ -20,33 +20,5 @@ services:
         max-size: "10m"
         max-file: "3"
 
-  bugs:
-    # Update the source-revision tag, index digest, and platforms together using CONTRIBUTING.md.
-    # Platforms: linux/amd64, linux/arm64
-    image: ghcr.io/edde746/bugs:sha-1ed1ad6@sha256:47156e6c0d48eb669788f07098a161857e5cad74d1ff98f96b107bc2ffc823cb
-    restart: unless-stopped
-    # Debug-file conversion peaked at ~500 MiB for Flutter's 265 MB Windows engine PDB
-    # and its 505 MB macOS engine dSYM; the ~370 MB libmpv-2.pdb needs more.
-    mem_limit: 1536m
-    volumes:
-      - bugs_data:/data
-    environment:
-      BUGS_AUTH__ADMIN_TOKEN: ${BUGS_AUTH__ADMIN_TOKEN}
-      BUGS_PUBLIC_URL: https://bugs.plezy.app
-      BUGS_RETENTION_DAYS: 90
-      BUGS_SYMBOLICATION__NATIVE_SYMCACHE_CACHE_BYTES_MB: 128
-      BUGS_INGEST__MAX_RAW_REQUEST_BYTES: 536870912
-      BUGS_SQLITE__READER_CONNECTIONS: 4
-      BUGS_SQLITE__CACHE_SIZE_MB: 16
-      BUGS_SQLITE__MMAP_SIZE_MB: 64
-    ports:
-      - "127.0.0.1:9000:9000"
-    logging:
-      driver: "json-file"
-      options:
-        max-size: "10m"
-        max-file: "3"
-
 volumes:
   logs:
-  bugs_data:

@@ -46,7 +46,7 @@ void main() {
   });
 
   test('a filter mpv bypassed is not a failure', () {
-    // f_output_chain.c drops the filter and the chain keeps running; Plezy
+    // f_output_chain.c drops the filter and the chain keeps running; PlezyNG
     // inserts loudnorm, so this line is reachable on a working open.
     expect(classify('Disabling filter loudnorm because it has failed.', prefix: 'af'), isNull);
   });

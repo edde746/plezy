@@ -24,7 +24,7 @@ import '../test_helpers/media_items.dart';
 
 /// Plex is the backend that actually produces multi-episode files, and #1781
 /// was reported against it. These drive the real [PlexClient] and Plex mappers
-/// over a [MockClient], so the wire shape Plezy depends on — `Media` → `Part` →
+/// over a [MockClient], so the wire shape PlezyNG depends on — `Media` → `Part` →
 /// `file` on both `/library/metadata/{id}` and `/library/metadata/{id}/children`
 /// — is asserted rather than assumed.
 ///
@@ -96,7 +96,7 @@ void main() {
         baseUrl: 'https://plex.example.com',
         token: 'token',
         clientIdentifier: 'client-id',
-        product: 'Plezy',
+        product: 'PlezyNG',
         version: '1',
       ),
       serverId: ServerId('plex-1'),
@@ -116,7 +116,7 @@ void main() {
     return (client: client, paths: paths, deleted: deleted);
   }
 
-  /// The reported shape: an episode row Plezy holds with no media at all.
+  /// The reported shape: an episode row PlezyNG holds with no media at all.
   final thinEpisode = testMediaItem(
     id: 'ep-2',
     backend: MediaBackend.plex,

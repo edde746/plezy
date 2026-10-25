@@ -14,7 +14,7 @@ import '../test_helpers/http_fixtures.dart';
 
 /// Plex strips detected credits markers from its responses when the admin
 /// disables credits detection for a show or movie
-/// (`enableCreditsMarkerGeneration == 0`), but Plezy's chapter-title fallback
+/// (`enableCreditsMarkerGeneration == 0`), but PlezyNG's chapter-title fallback
 /// would resurrect a credits skip action from a "Credits"/"Ending" chapter,
 /// showing "Next Episode" during credits the admin asked to leave alone
 /// (#2137). These tests pin the suppression rule: explicit `0` on the owning

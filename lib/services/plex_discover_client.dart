@@ -370,7 +370,7 @@ class PlexDiscoverClient {
       'Content-Type': 'application/json',
       'X-Plex-Token': session.accessToken,
       'X-Plex-Client-Identifier': session.clientIdentifier,
-      'X-Plex-Product': 'Plezy',
+      'X-Plex-Product': 'PlezyNG',
       'X-Plex-Version': '2',
       // Read per request so a language switch applies on the next fetch.
       // Discover localizes titles, summaries and shelf names from this.

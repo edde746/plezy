@@ -16,7 +16,7 @@ import 'pin_entry_dialog.dart';
 import 'pin_status_row.dart';
 import 'profile_name_field.dart';
 
-/// Create a local "Plezy" profile — name + optional 4-digit PIN.
+/// Create a local "PlezyNG" profile — name + optional 4-digit PIN.
 ///
 /// On save, routes into [AddConnectionScreen] so the user can either add
 /// a brand-new Plex/Jellyfin connection to this profile or borrow one from

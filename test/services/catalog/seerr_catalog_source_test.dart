@@ -237,7 +237,7 @@ void main() {
         await posterWith({'cacheImages': true}),
         'https://seerr.example.com/imageproxy/t/p/w600_and_h900_bestv2/matrix.jpg',
       );
-      // Caching off: the web UI loads from TMDB, and so does Plezy.
+      // Caching off: the web UI loads from TMDB, and so does PlezyNG.
       expect(
         await posterWith({'cacheImages': false, 'mediaServerType': 2, 'youtubeUrl': ''}),
         'https://image.tmdb.org/t/p/w600_and_h900_bestv2/matrix.jpg',

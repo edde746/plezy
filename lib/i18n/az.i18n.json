@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "PlezyNG"
   },
   "appIcon": {
     "title": "Tətbiq ikonu",
@@ -9,8 +9,8 @@
     "locked": "Supporter imtiyazı",
     "lockedHint": "Alternativ ikonlar Supporter imtiyazıdır.",
     "changeFailed": "Tətbiq ikonu dəyişdirilə bilmədi",
-    "launcherHint": "Plezy-dən çıxdıqdan sonra yeni ikon ana ekranınızda görünəcək.",
-    "tvLauncherHint": "Plezy-dən çıxdıqdan sonra yeni banner görünəcək. Android TV televizor yenidən başladılana qədər köhnəsini göstərə bilər.",
+    "launcherHint": "PlezyNG-dən çıxdıqdan sonra yeni ikon ana ekranınızda görünəcək.",
+    "tvLauncherHint": "PlezyNG-dən çıxdıqdan sonra yeni banner görünəcək. Android TV televizor yenidən başladılana qədər köhnəsini göstərə bilər.",
     "names": {
       "midnight": "Gecəyarısı",
       "ember": "Köz",
@@ -53,7 +53,7 @@
     "quickConnectWaiting": "Təsdiq gözlənilir…",
     "quickConnectCancel": "Ləğv et",
     "quickConnectExpired": "Sürətli Qoşulmanın vaxtı bitdi. Təzədən cəhd edin.",
-    "localDataRecoveryRequired": "Plezy yerli daxil olma və gözləyən oxutma məlumatlarını təhlükəsiz bərpa edə bilmədi. Lütfən təzədən daxil olun.",
+    "localDataRecoveryRequired": "PlezyNG yerli daxil olma və gözləyən oxutma məlumatlarını təhlükəsiz bərpa edə bilmədi. Lütfən təzədən daxil olun.",
     "pinCheckRejected": "Plex PIN yoxlaması rədd edildi"
   },
   "common": {
@@ -153,19 +153,19 @@
     "checkFailed": "Yenilənmələr yoxlanıla bilmədi"
   },
   "supporter": {
-    "title": "Plezy Supporter",
-    "intro": "Plezy-nin inkişafını dəstəkləyən və kosmetik əlavələri açan birdəfəlik alış:",
+    "title": "PlezyNG Supporter",
+    "intro": "PlezyNG-nin inkişafını dəstəkləyən və kosmetik əlavələri açan birdəfəlik alış:",
     "presetThemes": "Hazır mövzular",
     "presetThemesDescription": "Köz, Buzlaq, Meşə, Gavalı və Kağız",
     "customTheme": "Xüsusi mövzu",
     "customThemeDescription": "Bütün rəngləri özünüz seçin",
     "appIcons": "Tətbiq ikonları",
-    "appIconsDescription": "Alternativ Plezy ikonu seçin",
+    "appIconsDescription": "Alternativ PlezyNG ikonu seçin",
     "buy": "${price} qiymətinə al",
     "loadingPrice": "Qiymət yüklənir...",
     "restore": "Alışları bərpa et",
     "pending": "Alışınız ödəniş və ya təsdiq gözləyir. Mağaza onu tamamlayan kimi əlavələr açılacaq.",
-    "thankYouTitle": "Plezy-ni dəstəklədiyiniz üçün təşəkkür edirik",
+    "thankYouTitle": "PlezyNG-ni dəstəklədiyiniz üçün təşəkkür edirik",
     "thankYouBody": "Supporter əlavələriniz açıldı.",
     "tileSubtitle": "Mövzuları və tətbiq ikonlarını birdəfəlik alışla açın",
     "tileSubtitleThemesOnly": "Mövzuları birdəfəlik alışla açın",
@@ -181,8 +181,8 @@
   },
   "settings": {
     "title": "Tənzimləmələr",
-    "supportDeveloper": "Plezy-yə dəstək ol",
-    "supportDeveloperDescription": "İnkişafı maliyyələşdirmək üçün Liberapay vasitəsilə iyanə edin",
+    "supportDeveloper": "PlezyNG-yə dəstək ol",
+    "supportDeveloperDescription": "İnkişafı dəstəkləmək üçün ianə edin",
     "language": "Dil",
     "theme": "Mövzu",
     "appearance": "Görünüş",
@@ -337,7 +337,7 @@
     "importSettingsDescription": "Seçimləri fayldan bərpa edin",
     "importSettingsConfirm": "Bu cari tənzimləmələrinizin üzərinə yazacaq. Davam edilsin?",
     "importSettingsSuccess": "Tənzimləmələr idxal edildi",
-    "importSettingsInvalidFile": "Bu fayl düzgün Plezy tənzimləmələr faylı deyil",
+    "importSettingsInvalidFile": "Bu fayl düzgün PlezyNG tənzimləmələr faylı deyil",
     "importSettingsNoUser": "Tənzimləmələri idxal etməzdən əvvəl daxil olun",
     "shortcutsReset": "Qısayollar defolt vəziyyətə sıfırlandı",
     "resetShortcutsConfirm": "Bu, xüsusi qısayollarınızı defolt qısayollarla əvəz edəcək. Davam edilsin?",
@@ -474,7 +474,7 @@
     "forceTvMode": "TV rejimini məcburi et",
     "forceTvModeDescription": "TV interfeysini məcburi et. Avtomatik təyin etməyən cihazlar üçündür. Yenidən başlatma tələb olunur.",
     "startInFullscreen": "Tam ekranda başlat",
-    "startInFullscreenDescription": "Plezy-ni açılışda tam ekran rejimində aç",
+    "startInFullscreenDescription": "PlezyNG-ni açılışda tam ekran rejimində aç",
     "exitFullscreenOnPlayerClose": "Oynadıcı bağlandıqda tam ekrandan çıx",
     "exitFullscreenOnPlayerCloseDescription": "Video oynadıcını bağlayarkən avtomatik tam ekrandan çıx",
     "autoHidePerformanceOverlay": "Məhsuldarlıq paneli avtomatik gizlənsin",
@@ -523,7 +523,7 @@
     "playerScopeGlobal": "Hər yerdə",
     "playerScopeLibrary": "Kitabxana üzrə",
     "playerScopeTitle": "Serial və ya film üzrə",
-    "exportDialogTitle": "Plezy tənzimləmələrini ixrac et"
+    "exportDialogTitle": "PlezyNG tənzimləmələrini ixrac et"
   },
   "themeEditor": {
     "builtIn": "Daxili",
@@ -766,8 +766,8 @@
       "one": "Eyni faylda saxlanılan ${n} başqa seriya da silinəcək:",
       "other": "Eyni faylda saxlanılan ${n} başqa seriya da silinəcək:"
     },
-    "deleteScopeUnverifiedProbeFailed": "Plezy bunun hansı faylları siləcəyini yoxlaya bilmədi, ona görə də yuxarıda adı çəkilən elementdən daha çoxunu silə bilər. Ləğv edib təzədən cəhd edin və ya yenə də silin.",
-    "deleteScopeUnverifiedNoFileInfo": "Serveriniz bu element üçün fayl təfərrüatlarını təqdim etmədi, ona görə Plezy bunun hansı faylları siləcəyini yoxlaya bilmir. Yuxarıda adı çəkilən elementdən daha çoxunu silə bilər.",
+    "deleteScopeUnverifiedProbeFailed": "PlezyNG bunun hansı faylları siləcəyini yoxlaya bilmədi, ona görə də yuxarıda adı çəkilən elementdən daha çoxunu silə bilər. Ləğv edib təzədən cəhd edin və ya yenə də silin.",
+    "deleteScopeUnverifiedNoFileInfo": "Serveriniz bu element üçün fayl təfərrüatlarını təqdim etmədi, ona görə PlezyNG bunun hansı faylları siləcəyini yoxlaya bilmir. Yuxarıda adı çəkilən elementdən daha çoxunu silə bilər.",
     "mediaDeletedSuccessfully": "Media elementi uğurla silindi",
     "mediaFailedToDelete": "Media elementi silinə bilmədi",
     "rate": "Qiymətləndir",
@@ -1050,7 +1050,7 @@
     "confirmAction": "Əməliyyatı təsdiqlə"
   },
   "profiles": {
-    "addPlezyProfile": "Plezy profili əlavə et",
+    "addPlezyProfile": "PlezyNG profili əlavə et",
     "switchingProfile": "Profil dəyişdirilir…",
     "deleteThisProfileTitle": "Bu profil silinsin?",
     "deleteThisProfileMessage": "${displayName} silinəcək. Qoşulmalar təsirlənmir.",
@@ -1127,14 +1127,14 @@
     "accessDeniedMany": "${count} server bu hesaba girişi rədd etdi",
     "signInAgain": "Yenidən daxil ol",
     "editMediaBrowserTitle": "${product} qoşulmasını düzəliş et",
-    "editMediaBrowserIntro": "${serverName} üçün URL-lər əlavə edin və ya silin. Plezy əlçatan olan ən aşağı gecikməli URL-i istifadə edəcək."
+    "editMediaBrowserIntro": "${serverName} üçün URL-lər əlavə edin və ya silin. PlezyNG əlçatan olan ən aşağı gecikməli URL-i istifadə edəcək."
   },
   "accountPreferences": {
     "sectionTitle": "Hesab tərcihləri",
     "hubSubtitleSingle": "${account} hesabında saxlanılan səs, altyazı və kitabxana seçimləri",
     "hubSubtitleMultiple": "${count} hesabda saxlanılan səs, altyazı və kitabxana seçimləri",
     "pickAccount": "Hər hesab öz tərcihlərini saxlayır. Düzəliş etmək üçün birini seçin.",
-    "storedOnAccount": "Bu seçimlər hesabın özündə saxlanılır, ona görə də ona daxil olan hər tətbiq onlardan istifadə edir — digər cihazlarınızdakı Plezy də daxil olmaqla.",
+    "storedOnAccount": "Bu seçimlər hesabın özündə saxlanılır, ona görə də ona daxil olan hər tətbiq onlardan istifadə edir — digər cihazlarınızdakı PlezyNG də daxil olmaqla.",
     "noAccounts": "Konfiqurasiya ediləcək hesab yoxdur",
     "noAccountsHint": "Plex-ə daxil olun və ya Jellyfin və ya Emby serverinə qoşulun; o hesabda saxlanılan tərcihlər burada görünəcək.",
     "unavailable": "Bu hesaba çatmaq olmur",
@@ -1417,9 +1417,9 @@
     "uploadLogs": "Jurnalları yüklə"
   },
   "startup": {
-    "failedTitle": "Plezy başlaya bilmədi",
+    "failedTitle": "PlezyNG başlaya bilmədi",
     "failedBody": "Başlatma zamanı nəsə səhv getdi. Aşağıdakı təfərrüatlar nəyin uğursuz olduğunu göstərir.",
-    "failedBodyRepairable": "Plezy-nin saxlanmış tənzimləmə faylı zədələnib və Plezy başlamazdan əvvəl yenidən qurulmalıdır. Təzədən cəhd etmək kömək etməyəcək — Yaddaşı təmir et seçin.",
+    "failedBodyRepairable": "PlezyNG-nin saxlanmış tənzimləmə faylı zədələnib və PlezyNG başlamazdan əvvəl yenidən qurulmalıdır. Təzədən cəhd etmək kömək etməyəcək — Yaddaşı təmir et seçin.",
     "phaseLabel": "Addım",
     "showDetails": "Təfərrüatları göstər",
     "hideDetails": "Təfərrüatları gizlət",
@@ -1428,16 +1428,16 @@
     "uploadDetails": "Təfərrüatları yüklə",
     "repairStorage": "Yaddaşı təmir et",
     "repairTitle": "Saxlanmış məlumatlar təmir edilsin?",
-    "repairBodyCommon": "Plezy-nin tənzimləmə faylı zədələnib və oxuna bilmir. Təmir bütün tənzimləmələri defolt vəziyyətinə sıfırlayır.",
+    "repairBodyCommon": "PlezyNG-nin tənzimləmə faylı zədələnib və oxuna bilmir. Təmir bütün tənzimləmələri defolt vəziyyətinə sıfırlayır.",
     "repairBodyOneCredential": "Bir saxlanmış daxil olma məlumatı zədələnib və oxuna bilmir. Təmir yalnız onu silir; digər tənzimləmələrinizə toxunulmur.",
     "repairBodySignInsKept": "Serverləriniz və profilləriniz daxil olmuş vəziyyətdə qalmalıdır.",
     "repairBodySignInsLost": "Saxlanmış daxil olmalarınızı qoruyan açar bu fayldan bərpa edilə bilmir, ona görə də hər serverə və profilə yenidən daxil olmalı olacaqsınız. Media serverinizdə heç nəyə təsir olunmur.",
-    "repairBodySessionsUncertain": "İzləyicilər (MAL, AniList, Simkl, Trakt) və Seerr ayrıca saxlanılır və qalıb-qalmayacaqları bəlli deyil. Plezy sizə nəyi saxladığını dəqiq bildirəcək.",
+    "repairBodySessionsUncertain": "İzləyicilər (MAL, AniList, Simkl, Trakt) və Seerr ayrıca saxlanılır və qalıb-qalmayacaqları bəlli deyil. PlezyNG sizə nəyi saxladığını dəqiq bildirəcək.",
     "repairConfirm": "Təmir et",
     "repairSucceeded": "Yaddaş təmir edildi",
     "repairNeedsRestart": "Yaddaş təmir edildi — yenidən başlatma tələb olunur",
-    "restartRequiredBody": "Məlumatlarınız təmir edildi, lakin Plezy ondan istifadə etmək üçün yenidən başlamalıdır. Plezy-ni bağlayın və yenidən açın.",
-    "quitPlezy": "Plezy-dən çıx",
+    "restartRequiredBody": "Məlumatlarınız təmir edildi, lakin PlezyNG ondan istifadə etmək üçün yenidən başlamalıdır. PlezyNG-ni bağlayın və yenidən açın.",
+    "quitPlezy": "PlezyNG-dən çıx",
     "repairFailed": "Təmir uğursuz oldu",
     "repairKeptSignIns": "Serverləriniz və profilləriniz hələ də daxil olub.",
     "repairLostSignIns": "Saxlanmış daxil olmalarınızı qoruyan açar bərpa edilə bilmədi. Hər serverə və profilə yenidən daxil olmalı olacaqsınız.",
@@ -1446,7 +1446,7 @@
     "backupWarning": "O, daxil olma məlumatlarınızı ehtiva edir. Onu yükləməyin və ya paylaşmayın.",
     "deleteBackup": "Nüsxəni sil",
     "backupDeleted": "Nüsxə silindi.",
-    "previousFailureTitle": "Plezy son dəfə başlaya bilmədi"
+    "previousFailureTitle": "PlezyNG son dəfə başlaya bilmədi"
   },
   "licenses": {
     "relatedPackages": "Əlaqəli paketlər",
@@ -1871,7 +1871,7 @@
     "codeCopied": "Otaq kodu kopyalandı",
     "shareInvite": "Dəvəti paylaş",
     "inviteCopied": "Dəvət kopyalandı. Onu mesaja yapışdırın.",
-    "inviteMessage": "Plezy-də Birlikdə İzlə otağıma qoşul: Birlikdə İzlə bölməsini aç, \"Otağa qoşul\" düyməsinə bas və ${code} kodunu daxil et.",
+    "inviteMessage": "PlezyNG-də Birlikdə İzlə otağıma qoşul: Birlikdə İzlə bölməsini aç, \"Otağa qoşul\" düyməsinə bas və ${code} kodunu daxil et.",
     "openSessionControls": "Birlikdə İzlə seans idarəetmələrini aç",
     "reconnecting": "Yenidən qoşulunur...",
     "reconnectingDescription": "Əlaqə kəsildi. Otağa avtomatik olaraq yenidən qoşulacaqsınız.",
@@ -1897,7 +1897,7 @@
     "chooseAnotherCopy": "Başqa nüsxə seç",
     "dontPlay": "Oynatma",
     "unavailableTitle": "Bu video sizdə yoxdur",
-    "unavailableDescription": "Plezy onu kitabxanalarınızda tapa bilmədi. Nüsxəni özünüz seçin və ya yenidən axtarın.",
+    "unavailableDescription": "PlezyNG onu kitabxanalarınızda tapa bilmədi. Nüsxəni özünüz seçin və ya yenidən axtarın.",
     "chooseCopy": "Nüsxə seç",
     "searchAgain": "Yenidən axtar",
     "noCandidates": "Kitabxanalarınızda nüsxə tapılmadı.",
@@ -1997,7 +1997,7 @@
       "relayFull": "Birlikdə İzlə hazırda məşğuldur. Sonra yenidən cəhd edin.",
       "unreachable": "Birlikdə İzlə relesinə qoşulmaq mümkün olmadı. Bağlantınızı yoxlayın.",
       "rateLimited": "Həddindən çox cəhd. Bir az gözləyib yenidən cəhd edin.",
-      "clientBlocked": "Plezy-nin bu versiyası releni istifadə edə bilmir. Tətbiqi yeniləyin.",
+      "clientBlocked": "PlezyNG-nin bu versiyası releni istifadə edə bilmir. Tətbiqi yeniləyin.",
       "forbidden": "Bunu yalnız təşkilatçı edə bilər.",
       "notInRoom": "Siz otaqda deyilsiniz.",
       "alreadyInRoom": "Siz artıq otaqdasınız.",
@@ -2095,14 +2095,14 @@
       "bannerAction": "Ətraflı",
       "sheetTitle": "Arxa fonda yükləmələr bloklanıb",
       "sheetTitleDegraded": "Arxa fonda yükləmələr məhdudlaşdırıla bilər",
-      "sheetIntro": "Android Plezy-nin arxa fonda etibarlı şəkildə yükləməsinə mane olur.",
-      "sheetIntroDegraded": "Cihazınız Plezy-nin arxa fonda nə vaxt yükləyə biləcəyini məhdudlaşdırır.",
-      "reasonBackgroundRestricted": "Plezy-nin arxa fon istifadəsi məhdudlaşdırılıb. Batareya və ya arxa fon istifadəsini \"Məhdudiyyətsiz\" edin.",
-      "reasonStandbyRestricted": "Android Plezy-ni məhdud gözləmə rejiminə salıb. Batareya istifadəsini \"Məhdudiyyətsiz\" edin.",
+      "sheetIntro": "Android PlezyNG-nin arxa fonda etibarlı şəkildə yükləməsinə mane olur.",
+      "sheetIntroDegraded": "Cihazınız PlezyNG-nin arxa fonda nə vaxt yükləyə biləcəyini məhdudlaşdırır.",
+      "reasonBackgroundRestricted": "PlezyNG-nin arxa fon istifadəsi məhdudlaşdırılıb. Batareya və ya arxa fon istifadəsini \"Məhdudiyyətsiz\" edin.",
+      "reasonStandbyRestricted": "Android PlezyNG-ni məhdud gözləmə rejiminə salıb. Batareya istifadəsini \"Məhdudiyyətsiz\" edin.",
       "reasonDownloadChannelBlocked": "Yükləmə bildirişləri söndürülüb, ona görə gedişat və idarəetmələr əlçatan olmaya bilər.",
       "reasonNotificationsDisabled": "Bildirişlər söndürülüb. Android 13 və daha yeni versiyalarda uzun arxa fon yükləmələri üçün onlar tələb olunur.",
       "reasonDataSaver": "Data Saver aktivdir və bu, mobil internetdə arxa fon yükləmələrini bloklayır. Wi-Fi ilə yükləmələr işləməlidir.",
-      "reasonOemUnknown": "Plezy arxa fonda olarkən yükləmələr dəfələrlə dayandı. Plezy-nin batareya və ya arxa fon istifadəsi tənzimləmələrini yoxlayın.",
+      "reasonOemUnknown": "PlezyNG arxa fonda olarkən yükləmələr dəfələrlə dayandı. PlezyNG-nin batareya və ya arxa fon istifadəsi tənzimləmələrini yoxlayın.",
       "openSettings": "Tənzimləmələri aç",
       "stillNotWorking": "Cihaza özəl kömək",
       "stillNotWorkingDescription": "Cihazınız üçün addımlara baxın və ya problem davam edərsə Tənzimləmələr › Jurnallara bax bölməsindən jurnal göndərin.",
@@ -2193,12 +2193,12 @@
       "manualAddressHint": "Əl ilə bağlantı ünvanı:"
     },
     "pairing": {
-      "discoveryDescription": "Eyni Plex hesabına sahib Plezy cihazları burada görünür",
+      "discoveryDescription": "Eyni Plex hesabına sahib PlezyNG cihazları burada görünür",
       "hostAddressHint": "192.168.1.100:48632",
       "connecting": "Qoşulunur...",
       "searchingForDevices": "Cihazlar axtarılır...",
       "noDevicesFound": "Şəbəkənizdə cihaz tapılmadı",
-      "noDevicesHint": "Masaüstündə Plezy-ni açın və eyni Wi-Fi-dan istifadə edin",
+      "noDevicesHint": "Masaüstündə PlezyNG-ni açın və eyni Wi-Fi-dan istifadə edin",
       "availableDevices": "Əlçatan cihazlar",
       "manualConnection": "Əl ilə qoşulma",
       "cryptoInitFailed": "Təhlükəsiz qoşulma başladılarkən xəta. Əvvəlcə Plex-ə daxil olun.",
@@ -2451,11 +2451,11 @@
     "connected": "Qoşuldu",
     "connectedAs": "@${username} olaraq qoşuldu",
     "disconnectConfirm": "Trakt hesabı ayırılsın?",
-    "disconnectConfirmBody": "Plezy Trakt-a məlumat göndərməyi dayandıracaq.",
+    "disconnectConfirmBody": "PlezyNG Trakt-a məlumat göndərməyi dayandıracaq.",
     "scrobble": "Real vaxt rejimində izləmə",
     "scrobbleDescription": "Oynatma zamanı Trakt-a məlumat göndər.",
     "watchedSync": "Baxış statusunu eyniləşdir",
-    "watchedSyncDescription": "Plezy-də baxıldı işarələdikdə Trakt-da da işarələnsin."
+    "watchedSyncDescription": "PlezyNG-də baxıldı işarələdikdə Trakt-da da işarələnsin."
   },
   "seerr": {
     "title": "Seerr",
@@ -2470,7 +2470,7 @@
     "noSignInMethods": "Bu Seerr dəstəklənən daxil olma üsulu təklif etmir.",
     "instance": "Nüsxə",
     "disconnectConfirm": "Seerr ayırılsın?",
-    "disconnectConfirmBody": "Plezy bu Seerr serverini unudacaq. İstənilən vaxt yenidən qoşula bilərsiniz.",
+    "disconnectConfirmBody": "PlezyNG bu Seerr serverini unudacaq. İstənilən vaxt yenidən qoşula bilərsiniz.",
     "request": "Sorğu göndər",
     "request4k": "4K sorğu göndər",
     "seasons": "Mövsümlər",
@@ -2495,7 +2495,7 @@
     "statusBlocklisted": "Bloklanmış",
     "couldNotReach": "${url} ünvanına çatmaq olmadı: ${error}",
     "noInstanceAtUrl": "${url} ünvanında Seerr instansiyası yoxdur (HTTP ${status})",
-    "behindAuthProxy": "Seerr əvəzinə autentifikasiya edən tərs proksi (SSO və ya HTTP auth) cavab verdi. Plezy onun vasitəsilə daxil ola bilmir: bu tətbiq üçün Seerr-in /api/v1 yolunun proksini yan keçməsinə icazə verin və ya Seerr-ə birbaşa çatan ünvan istifadə edin.",
+    "behindAuthProxy": "Seerr əvəzinə autentifikasiya edən tərs proksi (SSO və ya HTTP auth) cavab verdi. PlezyNG onun vasitəsilə daxil ola bilmir: bu tətbiq üçün Seerr-in /api/v1 yolunun proksini yan keçməsinə icazə verin və ya Seerr-ə birbaşa çatan ünvan istifadə edin.",
     "invalidUrl": "https://seerr.example.com kimi server ünvanı daxil edin",
     "quickConnectUnsupported": "Bu Seerr nüsxəsi Sürətli Qoşulmanı dəstəkləmir. Seerr 3.4 və ya daha yeni versiya tələb olunur.",
     "notInitialized": "Bu Seerr instansiyasının ilkin quraşdırılması tamamlanmayıb",
@@ -2518,7 +2518,7 @@
     "scrobble": "Tərəqqini avtomatik izlə",
     "scrobbleDescription": "Bir epizodu və ya filmi bitirdikdə siyahınızı yeniləyin.",
     "disconnectConfirm": "${service} ayırılsın?",
-    "disconnectConfirmBody": "Plezy ${service} yeniləməyi dayandıracaq. İstənilən vaxt yenidən qoşula bilərsiniz.",
+    "disconnectConfirmBody": "PlezyNG ${service} yeniləməyi dayandıracaq. İstənilən vaxt yenidən qoşula bilərsiniz.",
     "connectFailed": "${service} qoşula bilmədi. Təzədən cəhd edin.",
     "names": {
       "mal": "MyAnimeList",
@@ -2529,10 +2529,10 @@
     },
     "simklReconnect": {
       "title": "Simkl-ə yenidən qoşul",
-      "subtitle": "Simkl bu bağlantının istifadə etdiyi daxil olma üsulunu ləğv edir. Yenidən qoşulduqda Plezy-ni təsdiqləmək üçün simkl.com açılır — Plezy parolunuzu heç vaxt görmür. Baxış tarixçəniz Simkl-də qalır."
+      "subtitle": "Simkl bu bağlantının istifadə etdiyi daxil olma üsulunu ləğv edir. Yenidən qoşulduqda PlezyNG-ni təsdiqləmək üçün simkl.com açılır — PlezyNG parolunuzu heç vaxt görmür. Baxış tarixçəniz Simkl-də qalır."
     },
     "deviceCode": {
-      "title": "Plezy-ni ${service} üzərində aktivləşdirin",
+      "title": "PlezyNG-ni ${service} üzərində aktivləşdirin",
       "instructions": "QR kodunu skan edin və ya aşağıdakı ünvana keçib bu kodu daxil edin:",
       "openToActivate": "Aktivləşdirmək üçün ${service} açın",
       "copyCode": "Aktivləşdirmə kodunu kopyala",

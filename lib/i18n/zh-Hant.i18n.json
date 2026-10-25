@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "PlezyNG"
   },
   "appIcon": {
     "title": "應用程式圖示",
@@ -9,8 +9,8 @@
     "locked": "Supporter 專屬",
     "lockedHint": "其他圖示為 Supporter 專屬福利。",
     "changeFailed": "無法變更應用程式圖示",
-    "launcherHint": "離開 Plezy 後，新圖示就會出現在主畫面上。",
-    "tvLauncherHint": "離開 Plezy 後就會顯示新橫幅。在電視重新啟動前，Android TV 可能仍會顯示舊橫幅。",
+    "launcherHint": "離開 PlezyNG 後，新圖示就會出現在主畫面上。",
+    "tvLauncherHint": "離開 PlezyNG 後就會顯示新橫幅。在電視重新啟動前，Android TV 可能仍會顯示舊橫幅。",
     "names": {
       "midnight": "午夜",
       "ember": "餘燼",
@@ -53,7 +53,7 @@
     "quickConnectWaiting": "等待核准…",
     "quickConnectCancel": "取消",
     "quickConnectExpired": "快速連線代碼已過期。請重試。",
-    "localDataRecoveryRequired": "Plezy 無法安全地復原本機登入資料與待處理的播放資料。請重新登入。",
+    "localDataRecoveryRequired": "PlezyNG 無法安全地復原本機登入資料與待處理的播放資料。請重新登入。",
     "pinCheckRejected": "Plex PIN 檢查遭到拒絕"
   },
   "common": {
@@ -153,19 +153,19 @@
     "checkFailed": "無法檢查更新"
   },
   "supporter": {
-    "title": "Plezy Supporter",
-    "intro": "一次性購買，支持 Plezy 的開發並解鎖外觀加值項目：",
+    "title": "PlezyNG Supporter",
+    "intro": "一次性購買，支持 PlezyNG 的開發並解鎖外觀加值項目：",
     "presetThemes": "精選主題",
     "presetThemesDescription": "餘燼、冰河、森林、李子與紙張",
     "customTheme": "自訂主題",
     "customThemeDescription": "自行挑選每一種顏色",
     "appIcons": "應用程式圖示",
-    "appIconsDescription": "選擇其他 Plezy 圖示",
+    "appIconsDescription": "選擇其他 PlezyNG 圖示",
     "buy": "以 ${price} 購買",
     "loadingPrice": "正在載入價格…",
     "restore": "恢復購買",
     "pending": "您的購買正在等待付款或核准。商店完成交易後，加值項目就會立即解鎖。",
-    "thankYouTitle": "感謝您支持 Plezy",
+    "thankYouTitle": "感謝您支持 PlezyNG",
     "thankYouBody": "您的 Supporter 加值項目已解鎖。",
     "tileSubtitle": "一次性購買即可解鎖主題與應用程式圖示",
     "tileSubtitleThemesOnly": "一次性購買即可解鎖主題",
@@ -181,8 +181,8 @@
   },
   "settings": {
     "title": "設定",
-    "supportDeveloper": "贊助 Plezy",
-    "supportDeveloperDescription": "透過 Liberapay 捐款支持開發者",
+    "supportDeveloper": "贊助 PlezyNG",
+    "supportDeveloperDescription": "捐款支持開發",
     "language": "語言",
     "theme": "主題",
     "appearance": "外觀",
@@ -337,7 +337,7 @@
     "importSettingsDescription": "從檔案還原偏好設定",
     "importSettingsConfirm": "這將覆蓋您目前的設定。要繼續嗎？",
     "importSettingsSuccess": "設定已匯入",
-    "importSettingsInvalidFile": "此檔案不是有效的 Plezy 設定匯出檔",
+    "importSettingsInvalidFile": "此檔案不是有效的 PlezyNG 設定匯出檔",
     "importSettingsNoUser": "匯入設定前請先登入",
     "shortcutsReset": "快速鍵已重設為預設值",
     "resetShortcutsConfirm": "這會將您的自訂快速鍵替換為預設值。要繼續嗎？",
@@ -474,7 +474,7 @@
     "forceTvMode": "強制 TV 模式",
     "forceTvModeDescription": "強制使用 TV 介面版面。適用於無法自動辨識 TV 的裝置。需要重新啟動。",
     "startInFullscreen": "以全螢幕模式啟動",
-    "startInFullscreenDescription": "啟動時直接以全螢幕開啟 Plezy",
+    "startInFullscreenDescription": "啟動時直接以全螢幕開啟 PlezyNG",
     "exitFullscreenOnPlayerClose": "關閉播放器時退出全螢幕",
     "exitFullscreenOnPlayerCloseDescription": "關閉影片播放器時自動退出全螢幕模式",
     "autoHidePerformanceOverlay": "自動隱藏效能疊加層",
@@ -523,7 +523,7 @@
     "playerScopeGlobal": "全部",
     "playerScopeLibrary": "依媒體庫",
     "playerScopeTitle": "依影集或電影",
-    "exportDialogTitle": "匯出 Plezy 設定"
+    "exportDialogTitle": "匯出 PlezyNG 設定"
   },
   "themeEditor": {
     "builtIn": "內建",
@@ -763,8 +763,8 @@
     "deleteSharedFileHeading": {
       "other": "另有 ${n} 集儲存在同一檔案中，也會一併被刪除："
     },
-    "deleteScopeUnverifiedProbeFailed": "Plezy 無法確認此操作會刪除哪些檔案，因此刪除範圍可能超出上方所列的項目。請取消後重試，或仍要刪除。",
-    "deleteScopeUnverifiedNoFileInfo": "您的伺服器未提供此項目的檔案資訊，因此 Plezy 無法確認此操作會刪除哪些檔案。刪除範圍可能超出上方所列的項目。",
+    "deleteScopeUnverifiedProbeFailed": "PlezyNG 無法確認此操作會刪除哪些檔案，因此刪除範圍可能超出上方所列的項目。請取消後重試，或仍要刪除。",
+    "deleteScopeUnverifiedNoFileInfo": "您的伺服器未提供此項目的檔案資訊，因此 PlezyNG 無法確認此操作會刪除哪些檔案。刪除範圍可能超出上方所列的項目。",
     "mediaDeletedSuccessfully": "媒體已成功刪除",
     "mediaFailedToDelete": "刪除媒體失敗",
     "rate": "評分",
@@ -1046,7 +1046,7 @@
     "confirmAction": "確認操作"
   },
   "profiles": {
-    "addPlezyProfile": "新增 Plezy 使用者設定檔",
+    "addPlezyProfile": "新增 PlezyNG 使用者設定檔",
     "switchingProfile": "正在切換使用者設定檔…",
     "deleteThisProfileTitle": "刪除此使用者設定檔？",
     "deleteThisProfileMessage": "將移除 ${displayName}。連線資訊將不受影響。",
@@ -1123,14 +1123,14 @@
     "accessDeniedMany": "${count} 台伺服器拒絕此帳戶存取",
     "signInAgain": "重新登入",
     "editMediaBrowserTitle": "編輯 ${product} 連線",
-    "editMediaBrowserIntro": "為 ${serverName} 新增或移除 URL。Plezy 將使用延遲最低且可連線的 URL。"
+    "editMediaBrowserIntro": "為 ${serverName} 新增或移除 URL。PlezyNG 將使用延遲最低且可連線的 URL。"
   },
   "accountPreferences": {
     "sectionTitle": "帳戶偏好設定",
     "hubSubtitleSingle": "已在 ${account} 上儲存音訊、字幕與媒體庫選項",
     "hubSubtitleMultiple": "已在 ${count} 個帳戶上儲存音訊、字幕與媒體庫選項",
     "pickAccount": "每個帳戶都會儲存各自的偏好設定。請選擇要編輯的帳戶。",
-    "storedOnAccount": "這些選項會儲存在帳戶本身，因此登入該帳戶的所有應用程式都會使用它們，包括您其他裝置上的 Plezy。",
+    "storedOnAccount": "這些選項會儲存在帳戶本身，因此登入該帳戶的所有應用程式都會使用它們，包括您其他裝置上的 PlezyNG。",
     "noAccounts": "沒有可設定的帳戶",
     "noAccountsHint": "登入 Plex，或連線至 Jellyfin 或 Emby 伺服器，儲存在該帳戶上的偏好設定便會顯示在此處。",
     "unavailable": "無法連線至此帳戶",
@@ -1412,9 +1412,9 @@
     "uploadLogs": "上傳日誌"
   },
   "startup": {
-    "failedTitle": "Plezy 無法啟動",
+    "failedTitle": "PlezyNG 無法啟動",
     "failedBody": "啟動期間發生問題。下方詳細資料可識別失敗的原因。",
-    "failedBodyRepairable": "Plezy 儲存的設定檔已損壞，必須先重建才能啟動。重試無法解決問題 — 請選擇「修復儲存空間」。",
+    "failedBodyRepairable": "PlezyNG 儲存的設定檔已損壞，必須先重建才能啟動。重試無法解決問題 — 請選擇「修復儲存空間」。",
     "phaseLabel": "步驟",
     "showDetails": "顯示詳細資料",
     "hideDetails": "隱藏詳細資料",
@@ -1423,16 +1423,16 @@
     "uploadDetails": "上傳詳細資料",
     "repairStorage": "修復儲存空間",
     "repairTitle": "修復已儲存的資料？",
-    "repairBodyCommon": "Plezy 的設定檔已損壞且無法讀取。修復會將所有設定重設為預設值。",
+    "repairBodyCommon": "PlezyNG 的設定檔已損壞且無法讀取。修復會將所有設定重設為預設值。",
     "repairBodyOneCredential": "有一筆已儲存的登入資訊損壞且無法讀取。修復僅會移除該筆資訊，其他設定將保持不變。",
     "repairBodySignInsKept": "您的伺服器與使用者設定檔應可保持登入狀態。",
     "repairBodySignInsLost": "保護已儲存登入資訊的金鑰無法從此檔案中復原，因此您必須重新登入每個伺服器與使用者設定檔。您媒體伺服器上的內容不受影響。",
-    "repairBodySessionsUncertain": "追蹤服務（MAL、AniList、Simkl、Trakt）與 Seerr 分別儲存，可能保留也可能遺失。Plezy 會明確告知保留了哪些項目。",
+    "repairBodySessionsUncertain": "追蹤服務（MAL、AniList、Simkl、Trakt）與 Seerr 分別儲存，可能保留也可能遺失。PlezyNG 會明確告知保留了哪些項目。",
     "repairConfirm": "修復",
     "repairSucceeded": "儲存空間已修復",
     "repairNeedsRestart": "儲存空間已修復 — 需要重新啟動",
-    "restartRequiredBody": "您的資料已修復，但 Plezy 必須重新啟動才能使用。請關閉 Plezy 後重新開啟。",
-    "quitPlezy": "退出 Plezy",
+    "restartRequiredBody": "您的資料已修復，但 PlezyNG 必須重新啟動才能使用。請關閉 PlezyNG 後重新開啟。",
+    "quitPlezy": "退出 PlezyNG",
     "repairFailed": "修復失敗",
     "repairKeptSignIns": "您的伺服器與使用者設定檔仍保持登入狀態。",
     "repairLostSignIns": "保護已儲存登入資訊的金鑰無法復原。您必須重新登入每個伺服器與使用者設定檔。",
@@ -1441,7 +1441,7 @@
     "backupWarning": "其中包含您的登入憑證。請勿上傳或分享。",
     "deleteBackup": "刪除副本",
     "backupDeleted": "副本已刪除。",
-    "previousFailureTitle": "Plezy 上次啟動失敗"
+    "previousFailureTitle": "PlezyNG 上次啟動失敗"
   },
   "licenses": {
     "relatedPackages": "相關套件",
@@ -1860,7 +1860,7 @@
     "codeCopied": "房間代碼已複製",
     "shareInvite": "分享邀請",
     "inviteCopied": "已複製邀請。請將其貼到訊息中。",
-    "inviteMessage": "來 Plezy 加入我的「一起看」房間：開啟「一起看」，選擇「加入房間」，然後輸入 ${code}。",
+    "inviteMessage": "來 PlezyNG 加入我的「一起看」房間：開啟「一起看」，選擇「加入房間」，然後輸入 ${code}。",
     "openSessionControls": "開啟「一起看」工作階段控制面板",
     "reconnecting": "正在重新連線…",
     "reconnectingDescription": "連線已中斷。您將自動重新加入房間。",
@@ -1886,7 +1886,7 @@
     "chooseAnotherCopy": "選擇其他副本",
     "dontPlay": "不要播放",
     "unavailableTitle": "您沒有這部影片",
-    "unavailableDescription": "Plezy 無法在您的媒體庫中找到這部影片。請自行選擇副本，或重新搜尋。",
+    "unavailableDescription": "PlezyNG 無法在您的媒體庫中找到這部影片。請自行選擇副本，或重新搜尋。",
     "chooseCopy": "選擇副本",
     "searchAgain": "重新搜尋",
     "noCandidates": "在您的媒體庫中找不到任何副本。",
@@ -1985,7 +1985,7 @@
       "relayFull": "「一起看」目前忙碌中。請稍後再試。",
       "unreachable": "無法連線至「一起看」中繼伺服器。請檢查網路連線。",
       "rateLimited": "嘗試次數過多。請稍候再試。",
-      "clientBlocked": "此版本的 Plezy 無法使用中繼伺服器。請更新應用程式。",
+      "clientBlocked": "此版本的 PlezyNG 無法使用中繼伺服器。請更新應用程式。",
       "forbidden": "只有主持人可以執行此操作。",
       "notInRoom": "您不在房間中。",
       "alreadyInRoom": "您已在房間中。",
@@ -2083,14 +2083,14 @@
       "bannerAction": "詳細資料",
       "sheetTitle": "背景下載遭到封鎖",
       "sheetTitleDegraded": "背景下載可能受限",
-      "sheetIntro": "Android 正在阻止 Plezy 在背景穩定下載。",
-      "sheetIntroDegraded": "你的裝置限制了 Plezy 可在背景下載的時機。",
-      "reasonBackgroundRestricted": "Plezy 的背景使用受限。請將其電池用量或背景使用設定為「無限制」。",
-      "reasonStandbyRestricted": "Android 已將 Plezy 設為受限待命狀態。請將電池用量設為「無限制」。",
+      "sheetIntro": "Android 正在阻止 PlezyNG 在背景穩定下載。",
+      "sheetIntroDegraded": "你的裝置限制了 PlezyNG 可在背景下載的時機。",
+      "reasonBackgroundRestricted": "PlezyNG 的背景使用受限。請將其電池用量或背景使用設定為「無限制」。",
+      "reasonStandbyRestricted": "Android 已將 PlezyNG 設為受限待命狀態。請將電池用量設為「無限制」。",
       "reasonDownloadChannelBlocked": "下載通知已關閉，因此可能無法查看進度或使用控制項。",
       "reasonNotificationsDisabled": "通知已關閉。在 Android 13 或更新版本中，長時間背景下載需要啟用通知。",
       "reasonDataSaver": "已開啟數據節省模式，因此系統會封鎖使用行動數據的背景下載。透過 Wi-Fi 下載應仍可正常執行。",
-      "reasonOemUnknown": "Plezy 在背景執行時，下載屢次停止。請檢查 Plezy 的電池用量或背景使用設定。",
+      "reasonOemUnknown": "PlezyNG 在背景執行時，下載屢次停止。請檢查 PlezyNG 的電池用量或背景使用設定。",
       "openSettings": "開啟設定",
       "stillNotWorking": "裝置專屬說明",
       "stillNotWorkingDescription": "查看適用於你裝置的步驟；若問題持續發生，也可從設定 › 查看日誌傳送日誌。",
@@ -2177,19 +2177,19 @@
       "manualAddressHint": "手動連線位址："
     },
     "pairing": {
-      "discoveryDescription": "使用相同 Plex 帳戶的 Plezy 裝置會顯示在此處",
+      "discoveryDescription": "使用相同 Plex 帳戶的 PlezyNG 裝置會顯示在此處",
       "hostAddressHint": "192.168.1.100:48632",
       "connecting": "正在連線…",
       "searchingForDevices": "正在搜尋裝置…",
       "noDevicesFound": "在區域網路上找不到裝置",
-      "noDevicesHint": "請在電腦上開啟 Plezy，並確認兩台裝置使用相同的 Wi-Fi 網路",
+      "noDevicesHint": "請在電腦上開啟 PlezyNG，並確認兩台裝置使用相同的 Wi-Fi 網路",
       "availableDevices": "可用裝置",
       "manualConnection": "手動連線",
       "cryptoInitFailed": "無法啟動安全連線。請先登入 Plex。",
       "validationHostRequired": "請輸入主機位址",
       "validationHostFormat": "格式必須為 IP 位址:連接埠（例如 192.168.1.100:48632）",
       "connectionTimedOut": "連線逾時。請確認兩台裝置都使用相同網路。",
-      "sessionNotFound": "找不到裝置。請確認主機上已啟動 Plezy。",
+      "sessionNotFound": "找不到裝置。請確認主機上已啟動 PlezyNG。",
       "authFailed": "驗證失敗。兩台裝置需要登入相同的 Plex 帳戶。",
       "failedToConnect": "連線失敗：${error}"
     },
@@ -2435,11 +2435,11 @@
     "connected": "已連線",
     "connectedAs": "已以 @${username} 身分連線",
     "disconnectConfirm": "中斷與 Trakt 帳戶的連結？",
-    "disconnectConfirmBody": "Plezy 將停止向 Trakt 傳送事件。您可以隨時重新連線。",
+    "disconnectConfirmBody": "PlezyNG 將停止向 Trakt 傳送事件。您可以隨時重新連線。",
     "scrobble": "即時同步記錄（Scrobble）",
     "scrobbleDescription": "在播放時向 Trakt 傳送播放、暫停和停止等狀態。",
     "watchedSync": "同步已觀看狀態",
-    "watchedSyncDescription": "在 Plezy 中將項目標記為已觀看時，也會在 Trakt 上標記為已觀看。"
+    "watchedSyncDescription": "在 PlezyNG 中將項目標記為已觀看時，也會在 Trakt 上標記為已觀看。"
   },
   "seerr": {
     "title": "Seerr",
@@ -2451,10 +2451,10 @@
     "signInWithEmby": "使用 Emby 登入",
     "signInWithLocal": "使用本地帳戶",
     "email": "電子郵件",
-    "noSignInMethods": "此 Seerr 執行個體未提供 Plezy 支援的登入方式。",
+    "noSignInMethods": "此 Seerr 執行個體未提供 PlezyNG 支援的登入方式。",
     "instance": "執行個體",
     "disconnectConfirm": "中斷與 Seerr 的連線？",
-    "disconnectConfirmBody": "Plezy 將忘記此 Seerr 連線資訊。您可以隨時重新連線。",
+    "disconnectConfirmBody": "PlezyNG 將忘記此 Seerr 連線資訊。您可以隨時重新連線。",
     "request": "請求",
     "request4k": "請求 4K 版本",
     "seasons": "季",
@@ -2479,7 +2479,7 @@
     "statusBlocklisted": "已加入封鎖清單",
     "couldNotReach": "無法連線至 ${url}：${error}",
     "noInstanceAtUrl": "在 ${url} 找不到 Seerr 執行個體（HTTP ${status}）",
-    "behindAuthProxy": "回應來自需要驗證的反向代理（SSO 或 HTTP 驗證），而非 Seerr。Plezy 無法透過它登入：請讓 Seerr 的 /api/v1 路徑為此應用程式繞過代理，或使用可直接連線至 Seerr 的位址。",
+    "behindAuthProxy": "回應來自需要驗證的反向代理（SSO 或 HTTP 驗證），而非 Seerr。PlezyNG 無法透過它登入：請讓 Seerr 的 /api/v1 路徑為此應用程式繞過代理，或使用可直接連線至 Seerr 的位址。",
     "invalidUrl": "請輸入伺服器位址，例如 https://seerr.example.com",
     "quickConnectUnsupported": "此 Seerr 執行個體不支援 Quick Connect。需要 Seerr 3.4 或更新版本。",
     "notInitialized": "此 Seerr 執行個體尚未完成首次執行設定",
@@ -2502,7 +2502,7 @@
     "scrobble": "自動同步播放進度",
     "scrobbleDescription": "觀賞完一集或一部電影後自動更新您的外部列表。",
     "disconnectConfirm": "中斷與 ${service} 的連線？",
-    "disconnectConfirmBody": "Plezy 將停止更新 ${service}。您可以隨時重新連線。",
+    "disconnectConfirmBody": "PlezyNG 將停止更新 ${service}。您可以隨時重新連線。",
     "connectFailed": "無法連線至 ${service}。請重試。",
     "names": {
       "mal": "MyAnimeList",
@@ -2513,10 +2513,10 @@
     },
     "simklReconnect": {
       "title": "重新連線 Simkl",
-      "subtitle": "Simkl 即將停用此連線所使用的登入方式。重新連線會開啟 simkl.com 以核准 Plezy — Plezy 絕不會看到您的密碼。您的觀看紀錄仍會保留在 Simkl 上。"
+      "subtitle": "Simkl 即將停用此連線所使用的登入方式。重新連線會開啟 simkl.com 以核准 PlezyNG — PlezyNG 絕不會看到您的密碼。您的觀看紀錄仍會保留在 Simkl 上。"
     },
     "deviceCode": {
-      "title": "在 ${service} 啟用 Plezy",
+      "title": "在 ${service} 啟用 PlezyNG",
       "instructions": "掃描 QR 碼，或前往下方網址並輸入此代碼：",
       "openToActivate": "開啟 ${service} 進行啟用",
       "copyCode": "複製啟用代碼",

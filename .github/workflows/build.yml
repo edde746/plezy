@@ -12,8 +12,8 @@ on:
 env:
   # Only place this workflow names the SDK; .github/actions/setup-flutter-git pins the same release.
   FLUTTER_VERSION: "3.47.1"
-  # Shared by every release build command; SENTRY_DIST stays per-platform.
-  RELEASE_DART_DEFINES: --dart-define=ENABLE_UPDATE_CHECK=true ${{ github.repository == 'edde746/plezy' && '--dart-define=ENABLE_SENTRY=true' || '' }} --dart-define=GIT_COMMIT=${{ github.sha }} --dart-define=SENTRY_ENVIRONMENT=github --dart-define=ENABLE_DONATIONS=true
+  # Shared by every release build command.
+  RELEASE_DART_DEFINES: --dart-define=ENABLE_UPDATE_CHECK=true --dart-define=GIT_COMMIT=${{ github.sha }}
   TRUSTED_BUILD_CACHE_VERSION: trusted-build-v1
   LINUX_APT_PACKAGES: >
     clang cmake meson ninja-build pkg-config nasm libgtk-3-dev libevdev-dev liblzma-dev
@@ -135,14 +135,7 @@ jobs:
           EOF
 
       - name: Build APKs
-        run: flutter build apk --release --split-per-abi ${{ env.RELEASE_DART_DEFINES }} --dart-define=SENTRY_DIST=github-android-apk --obfuscate --split-debug-info=debug-info/android-apk --extra-gen-snapshot-options=--save-obfuscation-map=debug-info/android-apk/obfuscation.map.json
-
-      - name: Upload symbols to bugs.plezy.app
-        if: github.repository == 'edde746/plezy'
-        env:
-          BUGS_ADMIN_TOKEN: ${{ secrets.BUGS_ADMIN_TOKEN }}
-          SENTRY_DIST: github-android-apk
-        run: ./scripts/upload-symbols.sh android-apk
+        run: flutter build apk --release --split-per-abi ${{ env.RELEASE_DART_DEFINES }} --obfuscate --split-debug-info=debug-info/android-apk --extra-gen-snapshot-options=--save-obfuscation-map=debug-info/android-apk/obfuscation.map.json
 
       - name: Clean up keystore
         if: always()
@@ -212,14 +205,7 @@ jobs:
         run: flutter pub get --enforce-lockfile --no-example
 
       - name: Build iOS (no codesign)
-        run: flutter build ios --release --no-codesign ${{ env.RELEASE_DART_DEFINES }} --dart-define=SENTRY_DIST=github-ios --split-debug-info=debug-info/ios
-
-      - name: Upload symbols to bugs.plezy.app
-        if: github.repository == 'edde746/plezy'
-        env:
-          BUGS_ADMIN_TOKEN: ${{ secrets.BUGS_ADMIN_TOKEN }}
-          SENTRY_DIST: github-ios
-        run: ./scripts/upload-symbols.sh ios
+        run: flutter build ios --release --no-codesign ${{ env.RELEASE_DART_DEFINES }} --split-debug-info=debug-info/ios
 
       - name: Create IPA
         run: |
@@ -279,7 +265,7 @@ jobs:
         run: flutter pub get --enforce-lockfile --no-example
 
       - name: Build macOS
-        run: flutter build macos --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SENTRY_DIST=github-macos --dart-define=SUPPORTER_MODE=unlocked --split-debug-info=debug-info/macos
+        run: flutter build macos --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SUPPORTER_MODE=unlocked --split-debug-info=debug-info/macos
 
       - name: Check macOS signing configuration
         id: macos-signing
@@ -322,13 +308,6 @@ jobs:
           else
             echo "notarize=true" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Upload symbols to bugs.plezy.app
-        if: github.repository == 'edde746/plezy'
-        env:
-          BUGS_ADMIN_TOKEN: ${{ secrets.BUGS_ADMIN_TOKEN }}
-          SENTRY_DIST: github-macos
-        run: ./scripts/upload-symbols.sh macos
 
       - name: Import Code Signing Certificate
         if: steps.macos-signing.outputs.codesign == 'true'
@@ -534,7 +513,7 @@ jobs:
 
       - name: Build Windows ${{ matrix.arch }}
         shell: pwsh
-        run: flutter build windows --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SENTRY_DIST=github-windows-${{ matrix.arch }} --dart-define=SUPPORTER_MODE=msstore --split-debug-info=debug-info/windows-${{ matrix.arch }}
+        run: flutter build windows --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SUPPORTER_MODE=unlocked --split-debug-info=debug-info/windows-${{ matrix.arch }}
 
       - name: Verify Windows bundle contents
         shell: pwsh
@@ -589,9 +568,7 @@ jobs:
               $bundleErrors += "present $file"
             }
           }
-          # Release links emit PDBs (windows/CMakeLists.txt) that
-          # scripts/release/upload_symbols.dart uploads from the build tree;
-          # none may ship in the bundle.
+          # Release links emit PDBs for diagnostics; none may ship in the bundle.
           foreach ($file in @($foundFiles | Where-Object { $_ -like '*.pdb' })) {
             Write-Output "::error::Forbidden debug file is present in the Windows bundle: $file"
             $bundleErrors += "present $file"
@@ -604,14 +581,6 @@ jobs:
           if ($bundleErrors.Count -gt 0) {
             throw "Windows bundle verification failed: $($bundleErrors -join '; ')"
           }
-
-      - name: Upload symbols to bugs.plezy.app
-        if: github.repository == 'edde746/plezy'
-        shell: pwsh
-        env:
-          BUGS_ADMIN_TOKEN: ${{ secrets.BUGS_ADMIN_TOKEN }}
-          SENTRY_DIST: github-windows-${{ matrix.arch }}
-        run: .\scripts\upload-symbols.ps1 windows-${{ matrix.arch }}
 
       - name: Upload ${{ matrix.arch }} build
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -678,11 +647,6 @@ jobs:
             "available=true" >> $env:GITHUB_OUTPUT
           }
 
-      # Unsigned on purpose: the Store re-signs the bundle during
-      # certification. See windows/build-msix.ps1.
-      - name: Build Store package (MSIX)
-        run: .\windows\build-msix.ps1 -X64BuildDir "build-x64" -Arm64BuildDir "build-arm64" -Version "${{ steps.version.outputs.version }}"
-
       - name: Sign installer for WinSparkle (EdDSA)
         if: steps.sparkle-signing.outputs.available == 'true'
         env:
@@ -713,7 +677,6 @@ jobs:
             plezy-windows-x64-portable.7z
             plezy-windows-arm64-portable.7z
             plezy-windows-installer.exe
-            plezy-windows.msixbundle
 
       - name: Upload x64 portable
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -735,15 +698,6 @@ jobs:
             plezy-windows-installer.exe
             win-ed-signature.txt
             win-installer-size.txt
-
-      # Deliberately not attached to the GitHub release in create-release: a
-      # Store-identity package cannot be installed without the Store's
-      # certificate, so it is only useful as a Partner Center upload.
-      - name: Upload Store package
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
-        with:
-          name: windows-msix
-          path: plezy-windows.msixbundle
 
   build-linux:
     needs: validate-trusted-ref
@@ -840,17 +794,9 @@ jobs:
 
       - name: Build Linux ${{ matrix.arch }}
         shell: bash
-        run: flutter build linux --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SENTRY_DIST=github-linux-${{ matrix.arch }} --dart-define=SUPPORTER_MODE=unlocked --split-debug-info=debug-info/linux-${{ matrix.arch }}
+        run: flutter build linux --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SUPPORTER_MODE=unlocked --split-debug-info=debug-info/linux-${{ matrix.arch }}
         env:
           PKG_CONFIG_PATH: ${{ github.workspace }}/libmpv-prefix/lib/pkgconfig:${{ github.workspace }}/libmpv-prefix/lib/${{ matrix.pkg_config_arch }}/pkgconfig
-
-      - name: Upload symbols to bugs.plezy.app
-        if: github.repository == 'edde746/plezy'
-        shell: bash
-        env:
-          BUGS_ADMIN_TOKEN: ${{ secrets.BUGS_ADMIN_TOKEN }}
-          SENTRY_DIST: github-linux-${{ matrix.arch }}
-        run: ./scripts/upload-symbols.sh linux-${{ matrix.arch }}
 
       - name: Resolve bundle directory
         shell: bash

@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "PlezyNG"
   },
   "appIcon": {
     "title": "アプリアイコン",
@@ -153,7 +153,7 @@
     "checkFailed": "アップデートの確認に失敗しました"
   },
   "supporter": {
-    "title": "Plezy Supporter",
+    "title": "PlezyNG Supporter",
     "intro": "1回限りの購入でPlezyの開発を支援し、次の見た目の特典をご利用いただけます：",
     "presetThemes": "プリセットテーマ",
     "presetThemesDescription": "残り火、氷河、森、プラム、ペーパー",
@@ -182,7 +182,7 @@
   "settings": {
     "title": "設定",
     "supportDeveloper": "Plezyを支援",
-    "supportDeveloperDescription": "Liberapayで寄付して開発を支援",
+    "supportDeveloperDescription": "寄付で開発を支援",
     "language": "言語",
     "theme": "テーマ",
     "appearance": "外観",
@@ -2451,10 +2451,10 @@
     "signInWithEmby": "Embyでサインイン",
     "signInWithLocal": "ローカルアカウントを使う",
     "email": "メールアドレス",
-    "noSignInMethods": "この Seerr インスタンスには Plezy が対応しているサインイン方法がありません。",
+    "noSignInMethods": "この Seerr インスタンスには PlezyNG が対応しているサインイン方法がありません。",
     "instance": "インスタンス",
     "disconnectConfirm": "Seerr の接続を解除しますか？",
-    "disconnectConfirmBody": "Plezy はこの Seerr インスタンスの情報を削除します。いつでも再接続できます。",
+    "disconnectConfirmBody": "PlezyNG はこの Seerr インスタンスの情報を削除します。いつでも再接続できます。",
     "request": "リクエスト",
     "request4k": "4K でリクエスト",
     "seasons": "シーズン",
@@ -2516,7 +2516,7 @@
       "subtitle": "Simklはこの接続で使用しているサインイン方法を廃止します。再接続するとsimkl.comが開き、Plezyを承認できます。Plezyがパスワードを知ることはありません。視聴履歴はSimklに残ります。"
     },
     "deviceCode": {
-      "title": "${service} で Plezy を有効化",
+      "title": "${service} で PlezyNG を有効化",
       "instructions": "QRコードをスキャンするか、以下のアドレスにアクセスしてこのコードを入力してください:",
       "openToActivate": "${service} を開いて有効化",
       "copyCode": "アクティベーションコードをコピー",

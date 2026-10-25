@@ -38,7 +38,7 @@ class NoUserSignedInException extends SettingsExportException {
   const NoUserSignedInException() : super('No user is signed in');
 }
 
-/// Thrown when the chosen file isn't a valid Plezy settings export.
+/// Thrown when the chosen file isn't a valid PlezyNG settings export.
 class InvalidExportFileException extends SettingsExportException {
   const InvalidExportFileException(super.message);
 }

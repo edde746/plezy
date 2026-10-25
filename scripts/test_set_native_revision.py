@@ -628,8 +628,8 @@ class SetNativeRevisionTest(unittest.TestCase):
 
     def test_published_symbols_are_copied_into_the_lock_beside_their_library(self) -> None:
         # mpv-build publishes a symbols map on the very library entries the
-        # lock already records; the lock carries it verbatim so
-        # upload_symbols.dart can fetch and verify the zips for the pin.
+        # lock already records; the lock carries it verbatim so developers can
+        # use the pinned symbol archives for local diagnosis.
         artifacts = artifacts_fixture()
         android_symbols = {
             abi: {

@@ -1917,7 +1917,7 @@ void main() {
 
     test('single-source direct play still pins MediaSourceId when the source id equals the item id', () async {
       // The real-world shape for an ordinary Jellyfin episode: exactly one
-      // MediaSource whose Id is the item's own GUID. Plezy used to drop
+      // MediaSource whose Id is the item's own GUID. PlezyNG used to drop
       // MediaSourceId here, leaving Jellyfin to resolve its own first sorted
       // source — a different file as soon as the item gains an alternate
       // version. Every official client sends it unconditionally.
@@ -3347,7 +3347,7 @@ void main() {
       final auth = headers['Authorization'];
       expect(auth, isNotNull);
       expect(auth, startsWith('MediaBrowser '));
-      expect(auth, contains('Client="Plezy%20Test"'));
+      expect(auth, contains('Client="PlezyNG%20Test"'));
       expect(auth, contains('Device="Test"'));
       expect(auth, contains('DeviceId="dev-xyz"'));
       expect(auth, contains(RegExp(r'Version="[^"]+"')));
@@ -3371,7 +3371,7 @@ void main() {
       addTearDown(scoped.close);
 
       final auth = scoped.defaultHeadersForTesting['Authorization'];
-      expect(auth, contains('Client="Plezy%20Android%20TV"'));
+      expect(auth, contains('Client="PlezyNG%20Android%20TV"'));
       expect(auth, contains('Device="Living%20Room%20Shield"'));
     });
 
@@ -3382,7 +3382,7 @@ void main() {
       addTearDown(scoped.close);
 
       final auth = scoped.defaultHeadersForTesting['Authorization'];
-      expect(auth, contains('Client="Plezy%20tvOS"'));
+      expect(auth, contains('Client="PlezyNG%20tvOS"'));
       expect(auth, contains('Device="Apple%20TV"'));
     });
 

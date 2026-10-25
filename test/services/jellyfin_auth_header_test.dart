@@ -19,7 +19,7 @@ void main() {
   group('buildJellyfinAuthHeader', () {
     test('formats the SDK-style MediaBrowser header', () {
       final header = buildJellyfinAuthHeader(
-        clientName: 'Plezy',
+        clientName: 'PlezyNG',
         clientVersion: '1.2.3',
         deviceName: 'Living Room TV',
         deviceId: 'dev-1',
@@ -27,16 +27,16 @@ void main() {
       );
       expect(
         header,
-        'MediaBrowser Client="Plezy", Device="Living%20Room%20TV", DeviceId="dev-1", Version="1.2.3", Token="tok"',
+        'MediaBrowser Client="PlezyNG", Device="Living%20Room%20TV", DeviceId="dev-1", Version="1.2.3", Token="tok"',
       );
     });
 
     test('omits Token when access token is null or empty', () {
       for (final token in [null, '']) {
         final header = buildJellyfinAuthHeader(
-          clientName: 'Plezy',
+          clientName: 'PlezyNG',
           clientVersion: '1.2.3',
-          deviceName: 'Plezy',
+          deviceName: 'PlezyNG',
           deviceId: 'dev-1',
           accessToken: token,
         );
@@ -51,7 +51,7 @@ void main() {
     test('keeps a non-ASCII device name on the wire as ASCII the server decodes back', () {
       const deviceName = 'Bjørn stue-TV 客厅 📺';
       final header = buildJellyfinAuthHeader(
-        clientName: 'Plezy',
+        clientName: 'PlezyNG',
         clientVersion: '2.10.0',
         deviceName: deviceName,
         deviceId: 'dev-1',
@@ -66,7 +66,7 @@ void main() {
     test('keeps a device name that would corrupt the header grammar intact', () {
       const deviceName = 'My "cool", TV = 1+2 100%';
       final header = buildJellyfinAuthHeader(
-        clientName: 'Plezy',
+        clientName: 'PlezyNG',
         clientVersion: '1.2.3',
         deviceName: deviceName,
         deviceId: 'dev-1',
@@ -75,7 +75,7 @@ void main() {
 
       final parsed = parseAsJellyfinWould(header);
       expect(parsed['Device'], deviceName);
-      expect(parsed['Client'], 'Plezy');
+      expect(parsed['Client'], 'PlezyNG');
       expect(parsed['DeviceId'], 'dev-1');
       expect(parsed['Version'], '1.2.3');
       expect(parsed['Token'], 'tok');
@@ -89,12 +89,12 @@ void main() {
         deviceId: 'dev-1',
       );
 
-      expect(header, 'MediaBrowser Client="Plezy", Device="Plezy", DeviceId="dev-1", Version="1.0"');
+      expect(header, 'MediaBrowser Client="PlezyNG", Device="PlezyNG", DeviceId="dev-1", Version="1.0"');
     });
 
     test('omits an empty device ID instead of emitting a malformed field', () {
       final header = buildJellyfinAuthHeader(
-        clientName: 'Plezy',
+        clientName: 'PlezyNG',
         clientVersion: '1.2.3',
         deviceName: 'Living Room',
         deviceId: '',
@@ -120,28 +120,28 @@ void main() {
   group('jellyfinClientName', () {
     test('appends the platform the way the first-party apps do', () {
       for (final platform in ['iOS', 'Android', 'macOS', 'Windows', 'Linux']) {
-        expect(jellyfinClientName(DeviceIdentity(platform: platform)), 'Plezy $platform');
+        expect(jellyfinClientName(DeviceIdentity(platform: platform)), 'PlezyNG $platform');
       }
     });
 
     test('names the Android TV variant without repeating TV for tvOS', () {
-      expect(jellyfinClientName(const DeviceIdentity(platform: 'Android', isTv: true)), 'Plezy Android TV');
-      expect(jellyfinClientName(const DeviceIdentity(platform: 'tvOS', isTv: true)), 'Plezy tvOS');
+      expect(jellyfinClientName(const DeviceIdentity(platform: 'Android', isTv: true)), 'PlezyNG Android TV');
+      expect(jellyfinClientName(const DeviceIdentity(platform: 'tvOS', isTv: true)), 'PlezyNG tvOS');
     });
 
     test('keeps the TV suffix on the degraded lowercase OS name', () {
       // DeviceIdentityService falls back to Platform.operatingSystem when the
       // platform plugin fails, and that is lowercase.
-      expect(jellyfinClientName(const DeviceIdentity(platform: 'android', isTv: true)), 'Plezy Android TV');
+      expect(jellyfinClientName(const DeviceIdentity(platform: 'android', isTv: true)), 'PlezyNG Android TV');
     });
 
     test('only Android gets a TV suffix', () {
-      expect(jellyfinClientName(const DeviceIdentity(platform: 'Linux', isTv: true)), 'Plezy Linux');
+      expect(jellyfinClientName(const DeviceIdentity(platform: 'Linux', isTv: true)), 'PlezyNG Linux');
     });
 
     test('falls back to the bare app name without a platform', () {
-      expect(jellyfinClientName(const DeviceIdentity(platform: '')), 'Plezy');
-      expect(jellyfinClientName(const DeviceIdentity(platform: ' \u0000 ')), 'Plezy');
+      expect(jellyfinClientName(const DeviceIdentity(platform: '')), 'PlezyNG');
+      expect(jellyfinClientName(const DeviceIdentity(platform: ' \u0000 ')), 'PlezyNG');
     });
 
     test('survives the header round trip', () {
@@ -151,7 +151,7 @@ void main() {
         deviceName: 'Living Room Shield',
         deviceId: 'dev-1',
       );
-      expect(parseAsJellyfinWould(header)['Client'], 'Plezy Android TV');
+      expect(parseAsJellyfinWould(header)['Client'], 'PlezyNG Android TV');
     });
   });
 
@@ -163,7 +163,7 @@ void main() {
 
     test('falls back to the hardware model when the name lookup failed', () {
       // An Apple TV without a resolvable name should be listed as `Apple TV`,
-      // not as a second `Plezy` next to the client name.
+      // not as a second `PlezyNG` next to the client name.
       const identity = DeviceIdentity(platform: 'tvOS', deviceModel: 'Apple TV', isTv: true);
       expect(jellyfinDeviceName(identity), 'Apple TV');
       expect(
@@ -178,7 +178,7 @@ void main() {
     });
 
     test('falls back to the app name when nothing about the device is known', () {
-      expect(jellyfinDeviceName(const DeviceIdentity(platform: '')), 'Plezy');
+      expect(jellyfinDeviceName(const DeviceIdentity(platform: '')), 'PlezyNG');
     });
   });
 
@@ -189,7 +189,7 @@ void main() {
       DeviceIdentityService.debugOverride(const DeviceIdentity(platform: 'Android', deviceModel: 'AFTKM', isTv: true));
       addTearDown(() => DeviceIdentityService.debugOverride(null));
       final identity = await DeviceIdentityService.resolve();
-      expect(jellyfinClientName(identity), 'Plezy Android TV');
+      expect(jellyfinClientName(identity), 'PlezyNG Android TV');
       expect(jellyfinDeviceName(identity), 'AFTKM');
     });
   });

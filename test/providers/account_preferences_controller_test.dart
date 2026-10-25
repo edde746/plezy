@@ -140,9 +140,9 @@ void main() {
     });
 
     test('a Jellyfin account with the remember flag off gets it turned on, once, with its other fields kept', () async {
-      // The flag gates whether the server keeps the stream indexes Plezy
+      // The flag gates whether the server keeps the stream indexes PlezyNG
       // reports at all. Jellyfin replaces the whole UserConfiguration on write,
-      // so the sibling flag and the fields Plezy does not model must survive.
+      // so the sibling flag and the fields PlezyNG does not model must survive.
       final fixture = await _Fixture.local();
       addTearDown(fixture.dispose);
       await fixture.controller.ensureActiveLoaded();

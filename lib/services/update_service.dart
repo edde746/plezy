@@ -5,7 +5,6 @@ import 'package:auto_updater/auto_updater.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:plezy/utils/app_logger.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
-import 'package:plezy/utils/platform_detector.dart';
 import 'base_shared_preferences_service.dart';
 
 /// Service to check for new versions on GitHub
@@ -32,18 +31,14 @@ class UpdateService {
   }
 
   /// Whether any in-app update path applies to this install.
-  /// False inside a packaged (MSIX/Store) install: the Store owns updates and
-  /// the package directory is read-only, so neither WinSparkle nor the GitHub
-  /// fallback dialog has anything it can do. Gates the settings entry too, so
-  /// no dead affordance ships.
-  static bool get isUpdateCheckAvailable => isUpdateCheckEnabled && !PlatformDetector.isPackagedInstall();
+  static bool get isUpdateCheckAvailable => isUpdateCheckEnabled;
 
   /// Whether the native auto_updater (Sparkle/WinSparkle) should be used.
   /// True on macOS (non-Homebrew) and installed Windows (has uninstaller).
   static bool get useNativeUpdater {
     if (!isUpdateCheckAvailable) return false;
     if (Platform.isMacOS) return !_isHomebrewInstall();
-    if (Platform.isWindows) return _isInstalledApp() && !_isWingetInstall();
+    if (Platform.isWindows) return _isInstalledApp();
     return false;
   }
 
@@ -79,13 +74,6 @@ class UpdateService {
   static bool _isHomebrewInstall() {
     final execPath = Platform.resolvedExecutable;
     return execPath.contains('/Caskroom/') || execPath.contains('/homebrew/');
-  }
-
-  /// Check if the Windows app was installed via winget.
-  /// The Inno Setup installer writes a .winget marker file when invoked with /WINGET=1.
-  static bool _isWingetInstall() {
-    final exeDir = File(Platform.resolvedExecutable).parent.path;
-    return File('$exeDir\\.winget').existsSync();
   }
 
   /// Check if the Windows app is an installed copy (not portable).

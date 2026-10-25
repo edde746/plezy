@@ -361,7 +361,7 @@ void main() {
     /// so B still expects `srv-1` but cannot bind it.
     Future<({Profile a, Profile b})> setUpSharedAccount() async {
       PackageInfo.setMockInitialValues(
-        appName: 'Plezy',
+        appName: 'PlezyNG',
         packageName: 'com.example.plezy',
         version: '1.0.0',
         buildNumber: '1',
@@ -491,7 +491,7 @@ void main() {
     /// the cold-start boundary, so any later rebind would need `/switch`.
     Future<void> bindProtectedHomeProfile() async {
       PackageInfo.setMockInitialValues(
-        appName: 'Plezy',
+        appName: 'PlezyNG',
         packageName: 'com.example.plezy',
         version: '1.0.0',
         buildNumber: '1',

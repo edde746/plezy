@@ -177,7 +177,7 @@ void main() {
     // What each stream request carries is replayed through _MpvHeaderModel,
     // so these assert the headers a server receives, not a command string.
     const plexHeaders = {
-      'X-Plex-Product': 'Plezy',
+      'X-Plex-Product': 'PlezyNG',
       'X-Plex-Device': 'Mac17,9',
       'X-Plex-Device-Name': r"Eddé's Mac, work\",
       'X-Plex-Token': 'secret',

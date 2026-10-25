@@ -36,7 +36,7 @@ void main() {
 
   group('TvBrowseRailLayout', () {
     test('every density step changes card width on the 960x540 TV canvas', () {
-      // Every mainstream TV lays Plezy out at 960x540 logical, so the rail
+      // Every mainstream TV lays PlezyNG out at 960x540 logical, so the rail
       // gets the 0.85 scale floor and the width left beside the collapsed
       // sidebar. A card-width floor above the fitted width collapses several
       // densities onto one size, which made densities 1-3 look identical.

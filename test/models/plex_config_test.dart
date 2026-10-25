@@ -7,7 +7,7 @@ void main() {
       final config = PlexConfig(
         baseUrl: 'https://plex.example.com',
         clientIdentifier: 'client-1',
-        product: 'Plezy',
+        product: 'PlezyNG',
         version: '1.0',
         platform: 'Windows',
         device: 'Windows',
@@ -22,7 +22,7 @@ void main() {
       final config = PlexConfig(
         baseUrl: 'https://plex.example.com',
         clientIdentifier: 'client-1',
-        product: 'Plezy',
+        product: 'PlezyNG',
         version: '1.0',
       );
       expect(config.headers.containsKey('X-Plex-Device-Name'), isFalse);
@@ -35,7 +35,7 @@ void main() {
       final config = PlexConfig(
         baseUrl: 'https://plex.example.com',
         clientIdentifier: 'client-1',
-        product: 'Plezy',
+        product: 'PlezyNG',
         version: '1.0',
       );
       expect(config.headers['Accept'], 'application/json');
@@ -47,7 +47,7 @@ void main() {
           baseUrl: 'https://plex.example.com',
           token: emptyToken,
           clientIdentifier: 'client-1',
-          product: 'Plezy',
+          product: 'PlezyNG',
           version: '1.0',
         );
         expect(config.token, isNull, reason: 'token: "$emptyToken"');
@@ -60,7 +60,7 @@ void main() {
         baseUrl: 'https://plex.example.com',
         token: 'valid-token-123',
         clientIdentifier: 'client-1',
-        product: 'Plezy',
+        product: 'PlezyNG',
         version: '1.0',
       );
       expect(config.token, 'valid-token-123');

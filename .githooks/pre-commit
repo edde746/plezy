@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-set -uo pipefail
+set -euo pipefail
 
 if [ "${SKIP_HOOKS:-}" = "1" ]; then
   echo "[pre-commit] skipped (SKIP_HOOKS=1)"

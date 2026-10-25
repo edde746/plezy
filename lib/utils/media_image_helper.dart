@@ -425,7 +425,7 @@ class MediaImageHelper {
       imageUrl,
       cacheKey: _serverArtworkCacheKey(imageUrl),
       cacheManager: PlexImageCacheManager.instance,
-      headers: const {'User-Agent': 'Plezy'},
+      headers: const {'User-Agent': 'PlezyNG'},
     );
     final bounded = boundedDecode(provider, memWidth: memWidth, memHeight: memHeight);
     if (logoToneTarget == null) return bounded;

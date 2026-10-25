@@ -110,7 +110,7 @@ import 'widgets/dialog_action_button.dart';
 import 'widgets/startup_failure_view.dart';
 
 const bool _enableSentry = bool.fromEnvironment('ENABLE_SENTRY', defaultValue: false);
-const String _sentryDsn = 'https://6a1a6ef8c72140099b2798973c1bfb2f@bugs.plezy.app/1';
+const String _sentryDsn = String.fromEnvironment('SENTRY_DSN');
 const String gitCommit = String.fromEnvironment('GIT_COMMIT');
 const String _sentryEnvironment = String.fromEnvironment('SENTRY_ENVIRONMENT');
 const String _sentryDist = String.fromEnvironment('SENTRY_DIST');
@@ -277,7 +277,7 @@ Future<_StartupDependencies> _initializeApplication() async {
   final settings = await _gatePhase(StartupPhase.preferences, SettingsService.getInstance);
   setLoggerLevel(settings.read(SettingsService.enableDebugLogging));
 
-  if (_enableSentry) {
+  if (_enableSentry && _sentryDsn.isNotEmpty) {
     // Crash reporting is observability: it must never veto the launch it
     // exists to report on. `Sentry.init` runs its integrations eagerly, so an
     // integration throwing used to fail the gate before any Plezy code ran.
@@ -332,9 +332,9 @@ Future<_StartupDependencies> _initializeApplication() async {
 /// `GIT_COMMIT`, so resolve that first and only pay the platform read — inside
 /// a guard — when there is no commit to use.
 String _sentryRelease() {
-  if (gitCommit.length >= 7) return 'plezy@${gitCommit.substring(0, 7)}';
-  if (gitCommit.isNotEmpty) return 'plezy@$gitCommit';
-  return 'plezy@unknown';
+  if (gitCommit.length >= 7) return 'plezyng@${gitCommit.substring(0, 7)}';
+  if (gitCommit.isNotEmpty) return 'plezyng@$gitCommit';
+  return 'plezyng@unknown';
 }
 
 Future<String?> _sentryNativeDatabasePath() async {
@@ -1090,7 +1090,7 @@ Future<void> _logEnvironmentDiagnostics() async {
     await Future.sync(() => Sentry.configureScope((scope) => scope.setTag('renderer', rendererName ?? 'unknown')));
   }
   appLogger.i(
-    'Plezy v${packageInfo.version}+${packageInfo.buildNumber}$commitSuffix$renderer'
+    'PlezyNG v${packageInfo.version}+${packageInfo.buildNumber}$commitSuffix$renderer'
     ' [effects: ${DevicePerformance.describeSync()}]',
   );
   appLogger.i('Display: ${DevicePerformance.describeDisplay()}');

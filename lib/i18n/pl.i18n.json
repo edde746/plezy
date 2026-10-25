@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "PlezyNG"
   },
   "appIcon": {
     "title": "Ikona aplikacji",
@@ -9,8 +9,8 @@
     "locked": "W pakiecie Supporter",
     "lockedHint": "Alternatywne ikony są dostępne w pakiecie Supporter.",
     "changeFailed": "Nie udało się zmienić ikony aplikacji",
-    "launcherHint": "Nowa ikona pojawi się na ekranie głównym po opuszczeniu Plezy.",
-    "tvLauncherHint": "Nowy baner pojawi się po opuszczeniu Plezy. Android TV może wyświetlać stary baner, dopóki telewizor nie zostanie uruchomiony ponownie.",
+    "launcherHint": "Nowa ikona pojawi się na ekranie głównym po opuszczeniu PlezyNG.",
+    "tvLauncherHint": "Nowy baner pojawi się po opuszczeniu PlezyNG. Android TV może wyświetlać stary baner, dopóki telewizor nie zostanie uruchomiony ponownie.",
     "names": {
       "midnight": "Północ",
       "ember": "Żar",
@@ -53,7 +53,7 @@
     "quickConnectWaiting": "Oczekiwanie na zatwierdzenie…",
     "quickConnectCancel": "Anuluj",
     "quickConnectExpired": "Quick Connect wygasł. Spróbuj ponownie.",
-    "localDataRecoveryRequired": "Plezy nie mogło bezpiecznie odzyskać lokalnych danych logowania ani oczekujących danych odtwarzania. Zaloguj się ponownie.",
+    "localDataRecoveryRequired": "PlezyNG nie mogło bezpiecznie odzyskać lokalnych danych logowania ani oczekujących danych odtwarzania. Zaloguj się ponownie.",
     "pinCheckRejected": "Sprawdzenie kodu PIN Plex zostało odrzucone"
   },
   "common": {
@@ -153,19 +153,19 @@
     "checkFailed": "Nie udało się sprawdzić aktualizacji"
   },
   "supporter": {
-    "title": "Plezy Supporter",
-    "intro": "Jednorazowy zakup, który wspiera rozwój Plezy i odblokowuje dodatki wizualne:",
+    "title": "PlezyNG Supporter",
+    "intro": "Jednorazowy zakup, który wspiera rozwój PlezyNG i odblokowuje dodatki wizualne:",
     "presetThemes": "Gotowe motywy",
     "presetThemesDescription": "Żar, Lodowiec, Las, Śliwka i Papier",
     "customTheme": "Własny motyw",
     "customThemeDescription": "Wybierz każdy kolor samodzielnie",
     "appIcons": "Ikony aplikacji",
-    "appIconsDescription": "Wybierz alternatywną ikonę Plezy",
+    "appIconsDescription": "Wybierz alternatywną ikonę PlezyNG",
     "buy": "Kup za ${price}",
     "loadingPrice": "Ładowanie ceny...",
     "restore": "Przywróć zakupy",
     "pending": "Twój zakup oczekuje na płatność lub zatwierdzenie. Dodatki zostaną odblokowane, gdy tylko sklep go sfinalizuje.",
-    "thankYouTitle": "Dziękujemy za wspieranie Plezy",
+    "thankYouTitle": "Dziękujemy za wspieranie PlezyNG",
     "thankYouBody": "Dodatki z pakietu Supporter zostały odblokowane.",
     "tileSubtitle": "Odblokuj motywy i ikony aplikacji jednorazowym zakupem",
     "tileSubtitleThemesOnly": "Odblokuj motywy jednorazowym zakupem",
@@ -181,8 +181,8 @@
   },
   "settings": {
     "title": "Ustawienia",
-    "supportDeveloper": "Wesprzyj Plezy",
-    "supportDeveloperDescription": "Wspomóż rozwój darowizną na Liberapay",
+    "supportDeveloper": "Wesprzyj PlezyNG",
+    "supportDeveloperDescription": "Wspomóż rozwój darowizną",
     "language": "Język",
     "theme": "Motyw",
     "appearance": "Wygląd",
@@ -337,7 +337,7 @@
     "importSettingsDescription": "Przywróć preferencje z pliku",
     "importSettingsConfirm": "Bieżące ustawienia zostaną zastąpione. Kontynuować?",
     "importSettingsSuccess": "Ustawienia zaimportowane",
-    "importSettingsInvalidFile": "Ten plik nie jest prawidłowym eksportem Plezy",
+    "importSettingsInvalidFile": "Ten plik nie jest prawidłowym eksportem PlezyNG",
     "importSettingsNoUser": "Zaloguj się przed importem ustawień",
     "shortcutsReset": "Skróty przywrócone do domyślnych",
     "resetShortcutsConfirm": "Twoje własne skróty zostaną zastąpione domyślnymi. Kontynuować?",
@@ -474,7 +474,7 @@
     "forceTvMode": "Wymuś tryb TV",
     "forceTvModeDescription": "Wymuś układ telewizyjny na urządzeniach, które nie wykrywają go automatycznie. Wymaga ponownego uruchomienia.",
     "startInFullscreen": "Uruchom na pełnym ekranie",
-    "startInFullscreenDescription": "Otwiera Plezy w trybie pełnoekranowym przy uruchomieniu",
+    "startInFullscreenDescription": "Otwiera PlezyNG w trybie pełnoekranowym przy uruchomieniu",
     "exitFullscreenOnPlayerClose": "Wyjdź z pełnego ekranu przy zamykaniu odtwarzacza",
     "exitFullscreenOnPlayerCloseDescription": "Automatycznie wychodzi z trybu pełnoekranowego po zamknięciu odtwarzacza wideo",
     "autoHidePerformanceOverlay": "Automatycznie ukrywaj nakładkę wydajności",
@@ -523,7 +523,7 @@
     "playerScopeGlobal": "Wszędzie",
     "playerScopeLibrary": "Na bibliotekę",
     "playerScopeTitle": "Na serial lub film",
-    "exportDialogTitle": "Eksport ustawień Plezy"
+    "exportDialogTitle": "Eksport ustawień PlezyNG"
   },
   "themeEditor": {
     "builtIn": "Wbudowane",
@@ -772,8 +772,8 @@
       "many": "W tym samym pliku przechowywanych jest jeszcze ${n} innych odcinków, które również zostaną usunięte:",
       "other": "W tym samym pliku przechowywany jest jeszcze ${n} innego odcinka, który również zostanie usunięty:"
     },
-    "deleteScopeUnverifiedProbeFailed": "Plezy nie mogło sprawdzić, które pliki zostaną usunięte, więc może usunąć więcej niż element wymieniony powyżej. Anuluj i spróbuj ponownie albo usuń mimo to.",
-    "deleteScopeUnverifiedNoFileInfo": "Twój serwer nie podał informacji o plikach tego elementu, więc Plezy nie może sprawdzić, które pliki zostaną usunięte. Może usunąć więcej niż element wymieniony powyżej.",
+    "deleteScopeUnverifiedProbeFailed": "PlezyNG nie mogło sprawdzić, które pliki zostaną usunięte, więc może usunąć więcej niż element wymieniony powyżej. Anuluj i spróbuj ponownie albo usuń mimo to.",
+    "deleteScopeUnverifiedNoFileInfo": "Twój serwer nie podał informacji o plikach tego elementu, więc PlezyNG nie może sprawdzić, które pliki zostaną usunięte. Może usunąć więcej niż element wymieniony powyżej.",
     "mediaDeletedSuccessfully": "Usunięto element multimedialny",
     "mediaFailedToDelete": "Nie udało się usunąć elementu multimedialnego",
     "rate": "Oceń",
@@ -1058,7 +1058,7 @@
     "confirmAction": "Potwierdź działanie"
   },
   "profiles": {
-    "addPlezyProfile": "Dodaj profil Plezy",
+    "addPlezyProfile": "Dodaj profil PlezyNG",
     "switchingProfile": "Przełączanie profilu…",
     "deleteThisProfileTitle": "Usunąć ten profil?",
     "deleteThisProfileMessage": "Usuń ${displayName}. Połączenia nie zostaną zmienione.",
@@ -1135,14 +1135,14 @@
     "accessDeniedMany": "Odmowa dostępu dla tego konta na ${count} serwerach",
     "signInAgain": "Zaloguj się ponownie",
     "editMediaBrowserTitle": "Edytuj połączenie z ${product}",
-    "editMediaBrowserIntro": "Dodaj lub usuń adresy URL dla ${serverName}. Plezy będzie używać osiągalnego adresu URL o najniższym opóźnieniu."
+    "editMediaBrowserIntro": "Dodaj lub usuń adresy URL dla ${serverName}. PlezyNG będzie używać osiągalnego adresu URL o najniższym opóźnieniu."
   },
   "accountPreferences": {
     "sectionTitle": "Preferencje konta",
     "hubSubtitleSingle": "Opcje audio, napisów i biblioteki zapisane na koncie ${account}",
     "hubSubtitleMultiple": "Opcje audio, napisów i biblioteki zapisane na ${count} kontach",
     "pickAccount": "Każde konto przechowuje własne preferencje. Wybierz to, które chcesz edytować.",
-    "storedOnAccount": "Te opcje są zapisywane na samym koncie, więc używa ich każda aplikacja zalogowana na to konto — w tym Plezy na Twoich innych urządzeniach.",
+    "storedOnAccount": "Te opcje są zapisywane na samym koncie, więc używa ich każda aplikacja zalogowana na to konto — w tym PlezyNG na Twoich innych urządzeniach.",
     "noAccounts": "Brak kont do skonfigurowania",
     "noAccountsHint": "Zaloguj się do Plex albo połącz serwer Jellyfin lub Emby, a preferencje zapisane na tym koncie pojawią się tutaj.",
     "unavailable": "Nie można połączyć się z tym kontem",
@@ -1427,9 +1427,9 @@
     "uploadLogs": "Prześlij logi"
   },
   "startup": {
-    "failedTitle": "Nie udało się uruchomić Plezy",
+    "failedTitle": "Nie udało się uruchomić PlezyNG",
     "failedBody": "Coś poszło nie tak podczas uruchamiania. Poniższe szczegóły wskazują, co zawiodło.",
-    "failedBodyRepairable": "Zapisany plik ustawień Plezy jest uszkodzony i musi zostać odbudowany, zanim Plezy będzie mogło się uruchomić. Ponawianie nie pomoże — wybierz Napraw pamięć.",
+    "failedBodyRepairable": "Zapisany plik ustawień PlezyNG jest uszkodzony i musi zostać odbudowany, zanim PlezyNG będzie mogło się uruchomić. Ponawianie nie pomoże — wybierz Napraw pamięć.",
     "phaseLabel": "Krok",
     "showDetails": "Pokaż szczegóły",
     "hideDetails": "Ukryj szczegóły",
@@ -1438,16 +1438,16 @@
     "uploadDetails": "Prześlij szczegóły",
     "repairStorage": "Napraw pamięć",
     "repairTitle": "Naprawić zapisane dane?",
-    "repairBodyCommon": "Plik ustawień Plezy jest uszkodzony i nie można go odczytać. Naprawa przywraca wszystkie ustawienia do wartości domyślnych.",
+    "repairBodyCommon": "Plik ustawień PlezyNG jest uszkodzony i nie można go odczytać. Naprawa przywraca wszystkie ustawienia do wartości domyślnych.",
     "repairBodyOneCredential": "Jedno zapisane logowanie jest uszkodzone i nie można go odczytać. Naprawa usunie tylko je; pozostałe ustawienia pozostaną nietknięte.",
     "repairBodySignInsKept": "Twoje serwery i profile powinny pozostać zalogowane.",
     "repairBodySignInsLost": "Klucza chroniącego zapisane logowania nie można odzyskać z tego pliku, więc będziesz musiał zalogować się ponownie na każdym serwerze i profilu. Nic na Twoim serwerze multimediów nie zostanie zmienione.",
-    "repairBodySessionsUncertain": "Usługi śledzenia (MAL, AniList, Simkl, Trakt) i Seerr są przechowywane osobno i mogą, ale nie muszą przetrwać. Plezy dokładnie poinformuje Cię, co zachowało.",
+    "repairBodySessionsUncertain": "Usługi śledzenia (MAL, AniList, Simkl, Trakt) i Seerr są przechowywane osobno i mogą, ale nie muszą przetrwać. PlezyNG dokładnie poinformuje Cię, co zachowało.",
     "repairConfirm": "Napraw",
     "repairSucceeded": "Naprawiono pamięć",
     "repairNeedsRestart": "Naprawiono pamięć — wymagany restart",
-    "restartRequiredBody": "Twoje dane zostały naprawione, ale Plezy musi uruchomić się od nowa, zanim będzie mogło z nich korzystać. Zamknij Plezy i otwórz je ponownie.",
-    "quitPlezy": "Zamknij Plezy",
+    "restartRequiredBody": "Twoje dane zostały naprawione, ale PlezyNG musi uruchomić się od nowa, zanim będzie mogło z nich korzystać. Zamknij PlezyNG i otwórz je ponownie.",
+    "quitPlezy": "Zamknij PlezyNG",
     "repairFailed": "Naprawa nie powiodła się",
     "repairKeptSignIns": "Twoje serwery i profile są nadal zalogowane.",
     "repairLostSignIns": "Nie udało się odzyskać klucza chroniącego zapisane logowania. Musisz zalogować się ponownie na każdym serwerze i profilu.",
@@ -1456,7 +1456,7 @@
     "backupWarning": "Zawiera Twoje dane logowania. Nie przesyłaj ani nie udostępniaj jej.",
     "deleteBackup": "Usuń kopię",
     "backupDeleted": "Usunięto kopię.",
-    "previousFailureTitle": "Ostatnim razem nie udało się uruchomić Plezy"
+    "previousFailureTitle": "Ostatnim razem nie udało się uruchomić PlezyNG"
   },
   "licenses": {
     "relatedPackages": "Powiązane pakiety",
@@ -1893,7 +1893,7 @@
     "codeCopied": "Skopiowano kod pokoju",
     "shareInvite": "Udostępnij zaproszenie",
     "inviteCopied": "Skopiowano zaproszenie. Wklej je do wiadomości.",
-    "inviteMessage": "Dołącz do mojego pokoju „Oglądaj razem” w Plezy: otwórz „Oglądaj razem”, wybierz „Dołącz do pokoju” i wpisz kod ${code}.",
+    "inviteMessage": "Dołącz do mojego pokoju „Oglądaj razem” w PlezyNG: otwórz „Oglądaj razem”, wybierz „Dołącz do pokoju” i wpisz kod ${code}.",
     "openSessionControls": "Otwórz sterowanie sesją „Oglądaj razem”",
     "reconnecting": "Ponowne łączenie...",
     "reconnectingDescription": "Połączenie zostało przerwane. Ponowne dołączenie do pokoju nastąpi automatycznie.",
@@ -1919,7 +1919,7 @@
     "chooseAnotherCopy": "Wybierz inną kopię",
     "dontPlay": "Nie odtwarzaj",
     "unavailableTitle": "Nie masz tego wideo",
-    "unavailableDescription": "Plezy nie znalazło go w Twoich bibliotekach. Wybierz kopię samodzielnie lub wyszukaj ponownie.",
+    "unavailableDescription": "PlezyNG nie znalazło go w Twoich bibliotekach. Wybierz kopię samodzielnie lub wyszukaj ponownie.",
     "chooseCopy": "Wybierz kopię",
     "searchAgain": "Szukaj ponownie",
     "noCandidates": "Nie znaleziono żadnych kopii w Twoich bibliotekach.",
@@ -2021,7 +2021,7 @@
       "relayFull": "Funkcja „Oglądaj razem” jest teraz przeciążona. Spróbuj ponownie później.",
       "unreachable": "Nie udało się połączyć z serwerem pośredniczącym funkcji „Oglądaj razem”. Sprawdź połączenie.",
       "rateLimited": "Zbyt wiele prób. Poczekaj chwilę i spróbuj ponownie.",
-      "clientBlocked": "Ta wersja Plezy nie może korzystać z serwera pośredniczącego. Zaktualizuj aplikację.",
+      "clientBlocked": "Ta wersja PlezyNG nie może korzystać z serwera pośredniczącego. Zaktualizuj aplikację.",
       "forbidden": "Tylko gospodarz może to zrobić.",
       "notInRoom": "Nie jesteś w pokoju.",
       "alreadyInRoom": "Jesteś już w pokoju.",
@@ -2119,14 +2119,14 @@
       "bannerAction": "Szczegóły",
       "sheetTitle": "Pobieranie w tle jest zablokowane",
       "sheetTitleDegraded": "Pobieranie w tle może być ograniczone",
-      "sheetIntro": "Android uniemożliwia Plezy niezawodne pobieranie plików w tle.",
-      "sheetIntroDegraded": "Twoje urządzenie ogranicza możliwość pobierania w tle przez Plezy.",
-      "reasonBackgroundRestricted": "Działanie Plezy w tle jest ograniczone. Ustaw użycie baterii lub działanie w tle na „Bez ograniczeń”.",
-      "reasonStandbyRestricted": "Android umieścił Plezy w ograniczonym trybie gotowości. Ustaw użycie baterii na „Bez ograniczeń”.",
+      "sheetIntro": "Android uniemożliwia PlezyNG niezawodne pobieranie plików w tle.",
+      "sheetIntroDegraded": "Twoje urządzenie ogranicza możliwość pobierania w tle przez PlezyNG.",
+      "reasonBackgroundRestricted": "Działanie PlezyNG w tle jest ograniczone. Ustaw użycie baterii lub działanie w tle na „Bez ograniczeń”.",
+      "reasonStandbyRestricted": "Android umieścił PlezyNG w ograniczonym trybie gotowości. Ustaw użycie baterii na „Bez ograniczeń”.",
       "reasonDownloadChannelBlocked": "Powiadomienia o pobieraniu są wyłączone, więc postęp i opcje sterowania mogą być niedostępne.",
       "reasonNotificationsDisabled": "Powiadomienia są wyłączone. W Android 13 lub nowszym są wymagane przy długim pobieraniu w tle.",
       "reasonDataSaver": "Oszczędzanie danych jest włączone, co blokuje pobieranie w tle przez mobilną transmisję danych. Pobieranie powinno nadal działać przez Wi-Fi.",
-      "reasonOemUnknown": "Pobieranie wielokrotnie przerywało się, gdy Plezy działało w tle. Sprawdź ustawienia baterii lub działania w tle dla Plezy.",
+      "reasonOemUnknown": "Pobieranie wielokrotnie przerywało się, gdy PlezyNG działało w tle. Sprawdź ustawienia baterii lub działania w tle dla PlezyNG.",
       "openSettings": "Otwórz ustawienia",
       "stillNotWorking": "Pomoc dla Twojego urządzenia",
       "stillNotWorkingDescription": "Zobacz instrukcje dla swojego urządzenia lub, jeśli problem nadal występuje, wyślij log przez Ustawienia › Pokaż logi.",
@@ -2225,19 +2225,19 @@
       "manualAddressHint": "Ręczny adres połączenia:"
     },
     "pairing": {
-      "discoveryDescription": "Urządzenia Plezy z tym samym kontem Plex pojawią się tutaj",
+      "discoveryDescription": "Urządzenia PlezyNG z tym samym kontem Plex pojawią się tutaj",
       "hostAddressHint": "192.168.1.100:48632",
       "connecting": "Łączenie...",
       "searchingForDevices": "Szukanie urządzeń...",
       "noDevicesFound": "Nie znaleziono urządzeń w sieci",
-      "noDevicesHint": "Otwórz Plezy na komputerze i połącz oba urządzenia z tą samą siecią Wi-Fi",
+      "noDevicesHint": "Otwórz PlezyNG na komputerze i połącz oba urządzenia z tą samą siecią Wi-Fi",
       "availableDevices": "Dostępne urządzenia",
       "manualConnection": "Połączenie ręczne",
       "cryptoInitFailed": "Nie udało się uruchomić bezpiecznego połączenia. Najpierw zaloguj się do Plex.",
       "validationHostRequired": "Wprowadź adres hosta",
       "validationHostFormat": "Format musi być IP:port (np. 192.168.1.100:48632)",
       "connectionTimedOut": "Limit czasu połączenia. Użyj tej samej sieci na obu urządzeniach.",
-      "sessionNotFound": "Nie znaleziono urządzenia. Upewnij się, że Plezy działa na hoście.",
+      "sessionNotFound": "Nie znaleziono urządzenia. Upewnij się, że PlezyNG działa na hoście.",
       "authFailed": "Uwierzytelnianie nie powiodło się. Oba urządzenia muszą używać tego samego konta Plex.",
       "failedToConnect": "Nie udało się połączyć: ${error}"
     },
@@ -2483,11 +2483,11 @@
     "connected": "Połączono",
     "connectedAs": "Połączono jako @${username}",
     "disconnectConfirm": "Rozłączyć konto Trakt?",
-    "disconnectConfirmBody": "Plezy przestanie wysyłać zdarzenia do serwisu Trakt. Połączenie można przywrócić w dowolnym momencie.",
+    "disconnectConfirmBody": "PlezyNG przestanie wysyłać zdarzenia do serwisu Trakt. Połączenie można przywrócić w dowolnym momencie.",
     "scrobble": "Śledzenie odtwarzania w czasie rzeczywistym",
     "scrobbleDescription": "Wysyłaj do serwisu Trakt zdarzenia odtwarzania, wstrzymania i zatrzymania.",
     "watchedSync": "Synchronizuj stan obejrzenia",
-    "watchedSyncDescription": "Gdy oznaczysz element jako obejrzany w Plezy, zostanie on również oznaczony jako obejrzany w serwisie Trakt."
+    "watchedSyncDescription": "Gdy oznaczysz element jako obejrzany w PlezyNG, zostanie on również oznaczony jako obejrzany w serwisie Trakt."
   },
   "seerr": {
     "title": "Seerr",
@@ -2499,10 +2499,10 @@
     "signInWithEmby": "Zaloguj się przez Emby",
     "signInWithLocal": "Użyj konta lokalnego",
     "email": "E-mail",
-    "noSignInMethods": "Ta instancja Seerr nie oferuje metody logowania obsługiwanej przez Plezy.",
+    "noSignInMethods": "Ta instancja Seerr nie oferuje metody logowania obsługiwanej przez PlezyNG.",
     "instance": "Instancja",
     "disconnectConfirm": "Odłączyć Seerr?",
-    "disconnectConfirmBody": "Plezy zapomni tę instancję Seerr. Połącz ponownie w dowolnym momencie.",
+    "disconnectConfirmBody": "PlezyNG zapomni tę instancję Seerr. Połącz ponownie w dowolnym momencie.",
     "request": "Zamów",
     "request4k": "Zamów w 4K",
     "seasons": "Sezony",
@@ -2527,7 +2527,7 @@
     "statusBlocklisted": "Na liście blokowanych",
     "couldNotReach": "Nie udało się połączyć z ${url}: ${error}",
     "noInstanceAtUrl": "Pod adresem ${url} nie ma instancji Seerr (HTTP ${status})",
-    "behindAuthProxy": "Zamiast Seerr odpowiedział uwierzytelniający reverse proxy (SSO lub uwierzytelnianie HTTP). Plezy nie może się przez niego zalogować: pozwól, aby ścieżka /api/v1 Seerr omijała proxy dla tej aplikacji, albo użyj adresu, który dociera do Seerr bezpośrednio.",
+    "behindAuthProxy": "Zamiast Seerr odpowiedział uwierzytelniający reverse proxy (SSO lub uwierzytelnianie HTTP). PlezyNG nie może się przez niego zalogować: pozwól, aby ścieżka /api/v1 Seerr omijała proxy dla tej aplikacji, albo użyj adresu, który dociera do Seerr bezpośrednio.",
     "invalidUrl": "Wprowadź adres serwera, np. https://seerr.example.com",
     "quickConnectUnsupported": "Ta instancja Seerr nie obsługuje Quick Connect. Wymagany jest Seerr 3.4 lub nowszy.",
     "notInitialized": "Ta instancja Seerr nie ukończyła konfiguracji początkowej",
@@ -2550,7 +2550,7 @@
     "scrobble": "Automatycznie śledź postęp",
     "scrobbleDescription": "Aktualizuj swoją listę po ukończeniu odcinka lub filmu.",
     "disconnectConfirm": "Odłączyć ${service}?",
-    "disconnectConfirmBody": "Plezy przestanie aktualizować ${service}. Połącz ponownie w dowolnym momencie.",
+    "disconnectConfirmBody": "PlezyNG przestanie aktualizować ${service}. Połącz ponownie w dowolnym momencie.",
     "connectFailed": "Nie udało się połączyć z ${service}. Spróbuj ponownie.",
     "names": {
       "mal": "MyAnimeList",
@@ -2561,10 +2561,10 @@
     },
     "simklReconnect": {
       "title": "Połącz ponownie Simkl",
-      "subtitle": "Simkl wycofuje metodę logowania, z której korzysta to połączenie. Ponowne połączenie otworzy simkl.com, aby zatwierdzić Plezy — Plezy nigdy nie widzi Twojego hasła. Historia oglądania pozostanie w Simkl."
+      "subtitle": "Simkl wycofuje metodę logowania, z której korzysta to połączenie. Ponowne połączenie otworzy simkl.com, aby zatwierdzić PlezyNG — PlezyNG nigdy nie widzi Twojego hasła. Historia oglądania pozostanie w Simkl."
     },
     "deviceCode": {
-      "title": "Aktywuj Plezy w ${service}",
+      "title": "Aktywuj PlezyNG w ${service}",
       "instructions": "Zeskanuj kod QR albo przejdź pod poniższy adres i wprowadź ten kod:",
       "openToActivate": "Otwórz ${service}, aby aktywować",
       "copyCode": "Skopiuj kod aktywacyjny",

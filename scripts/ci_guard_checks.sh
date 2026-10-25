@@ -20,8 +20,7 @@ for checker in \
   scripts/checks/check_container_image_pins.py \
   scripts/checks/check_update_packages_workflow.py \
   scripts/checks/check_linux_package_deps.py \
-  scripts/checks/check_windows_installer.py \
-  scripts/checks/check_windows_msix.py; do
+  scripts/checks/check_windows_installer.py; do
   python3 "$checker"
 done
 

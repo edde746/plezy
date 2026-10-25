@@ -1,7 +1,7 @@
 # Download the published flutter-plezy patched Windows engine (DirectComposition
 # + resize-wedge fix) and install it into the active Flutter SDK's artifact cache.
 #
-# Plezy requires this engine on Windows: it honors the FLUTTER_WINDOWS_DCOMP
+# PlezyNG requires this engine on Windows: it honors the FLUTTER_WINDOWS_DCOMP
 # environment variable (set in windows/runner/main.cpp) and presents the Flutter
 # UI on a topmost DirectComposition visual, so the mpv video window composites
 # *beneath* the UI in a single HWND (window capture works, no transparency

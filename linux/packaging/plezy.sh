@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Wrapper script for Plezy. Works for both:
+# Wrapper script for PlezyNG. Works for both:
 #   - Portable tarball (run from extracted directory)
 #   - System packages (/usr/bin/plezy -> /opt/plezy/)
 

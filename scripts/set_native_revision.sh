@@ -71,7 +71,6 @@
 # omitted with a note. A library's `symbols` map is copied from the same
 # artifacts.json entry; a commit published before mpv-build shipped debug
 # files has none, and its omission is noted the same way.
-# scripts/release/upload_symbols.dart downloads, verifies and uploads them.
 # Serialization is deterministic: two-space indent, sorted keys, trailing
 # newline. Consumers must fail when their group is missing rather than fall
 # back to an unpinned source.

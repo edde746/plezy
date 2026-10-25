@@ -9,9 +9,10 @@ import '../../utils/app_logger.dart';
 import '../../utils/external_ids.dart';
 import '../models/watch_copy.dart';
 
-/// Plezy's `ext` member (SPEC.md §10): reverse-DNS, owned by Plezy. It names
-/// the server, item and version the host shared, so a guest who reaches the
-/// same server opens that exact file. Other apps ignore it.
+/// The upstream-compatible `app.plezy` extension member (SPEC.md §10) uses a
+/// reverse-DNS identifier. It names the server, item and version the host
+/// shared, so a guest who reaches the same server opens that exact file. Other
+/// apps ignore it.
 const String plezyExtName = 'app.plezy';
 
 /// How a Plezy item is described to a room. Movies and episodes carry their

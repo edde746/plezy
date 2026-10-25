@@ -48,7 +48,7 @@ void main() {
     expect(widgetCached.cacheKey, sharedCached.cacheKey);
     expect(widgetCached.cacheKey, isNotNull);
     expect(widgetCached.headers, sharedCached.headers);
-    expect(widgetCached.headers, const {'User-Agent': 'Plezy'});
+    expect(widgetCached.headers, const {'User-Agent': 'PlezyNG'});
     expect(widgetCached.maxWidth, sharedCached.maxWidth);
     expect(widgetCached.maxWidth, isNull);
     expect(widgetCached.maxHeight, sharedCached.maxHeight);

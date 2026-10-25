@@ -102,7 +102,7 @@ class _Translations$app$pl extends Translations$app$en {
 	final TranslationsPl _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy';
+	@override String get title => 'PlezyNG';
 }
 
 // Path: appIcon
@@ -118,8 +118,8 @@ class _Translations$appIcon$pl extends Translations$appIcon$en {
 	@override String get locked => 'W pakiecie Supporter';
 	@override String get lockedHint => 'Alternatywne ikony są dostępne w pakiecie Supporter.';
 	@override String get changeFailed => 'Nie udało się zmienić ikony aplikacji';
-	@override String get launcherHint => 'Nowa ikona pojawi się na ekranie głównym po opuszczeniu Plezy.';
-	@override String get tvLauncherHint => 'Nowy baner pojawi się po opuszczeniu Plezy. Android TV może wyświetlać stary baner, dopóki telewizor nie zostanie uruchomiony ponownie.';
+	@override String get launcherHint => 'Nowa ikona pojawi się na ekranie głównym po opuszczeniu PlezyNG.';
+	@override String get tvLauncherHint => 'Nowy baner pojawi się po opuszczeniu PlezyNG. Android TV może wyświetlać stary baner, dopóki telewizor nie zostanie uruchomiony ponownie.';
 	@override late final _Translations$appIcon$names$pl names = _Translations$appIcon$names$pl._(_root);
 }
 
@@ -145,7 +145,7 @@ class _Translations$auth$pl extends Translations$auth$en {
 	@override String get quickConnectWaiting => 'Oczekiwanie na zatwierdzenie…';
 	@override String get quickConnectCancel => 'Anuluj';
 	@override String get quickConnectExpired => 'Quick Connect wygasł. Spróbuj ponownie.';
-	@override String get localDataRecoveryRequired => 'Plezy nie mogło bezpiecznie odzyskać lokalnych danych logowania ani oczekujących danych odtwarzania. Zaloguj się ponownie.';
+	@override String get localDataRecoveryRequired => 'PlezyNG nie mogło bezpiecznie odzyskać lokalnych danych logowania ani oczekujących danych odtwarzania. Zaloguj się ponownie.';
 	@override String get pinCheckRejected => 'Sprawdzenie kodu PIN Plex zostało odrzucone';
 }
 
@@ -246,19 +246,19 @@ class _Translations$supporter$pl extends Translations$supporter$en {
 	final TranslationsPl _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Plezy Supporter';
-	@override String get intro => 'Jednorazowy zakup, który wspiera rozwój Plezy i odblokowuje dodatki wizualne:';
+	@override String get title => 'PlezyNG Supporter';
+	@override String get intro => 'Jednorazowy zakup, który wspiera rozwój PlezyNG i odblokowuje dodatki wizualne:';
 	@override String get presetThemes => 'Gotowe motywy';
 	@override String get presetThemesDescription => 'Żar, Lodowiec, Las, Śliwka i Papier';
 	@override String get customTheme => 'Własny motyw';
 	@override String get customThemeDescription => 'Wybierz każdy kolor samodzielnie';
 	@override String get appIcons => 'Ikony aplikacji';
-	@override String get appIconsDescription => 'Wybierz alternatywną ikonę Plezy';
+	@override String get appIconsDescription => 'Wybierz alternatywną ikonę PlezyNG';
 	@override String buy({required Object price}) => 'Kup za ${price}';
 	@override String get loadingPrice => 'Ładowanie ceny...';
 	@override String get restore => 'Przywróć zakupy';
 	@override String get pending => 'Twój zakup oczekuje na płatność lub zatwierdzenie. Dodatki zostaną odblokowane, gdy tylko sklep go sfinalizuje.';
-	@override String get thankYouTitle => 'Dziękujemy za wspieranie Plezy';
+	@override String get thankYouTitle => 'Dziękujemy za wspieranie PlezyNG';
 	@override String get thankYouBody => 'Dodatki z pakietu Supporter zostały odblokowane.';
 	@override String get tileSubtitle => 'Odblokuj motywy i ikony aplikacji jednorazowym zakupem';
 	@override String get tileSubtitleThemesOnly => 'Odblokuj motywy jednorazowym zakupem';
@@ -274,8 +274,8 @@ class _Translations$settings$pl extends Translations$settings$en {
 
 	// Translations
 	@override String get title => 'Ustawienia';
-	@override String get supportDeveloper => 'Wesprzyj Plezy';
-	@override String get supportDeveloperDescription => 'Wspomóż rozwój darowizną na Liberapay';
+	@override String get supportDeveloper => 'Wesprzyj PlezyNG';
+	@override String get supportDeveloperDescription => 'Wspomóż rozwój darowizną';
 	@override String get language => 'Język';
 	@override String get theme => 'Motyw';
 	@override String get appearance => 'Wygląd';
@@ -421,7 +421,7 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get importSettingsDescription => 'Przywróć preferencje z pliku';
 	@override String get importSettingsConfirm => 'Bieżące ustawienia zostaną zastąpione. Kontynuować?';
 	@override String get importSettingsSuccess => 'Ustawienia zaimportowane';
-	@override String get importSettingsInvalidFile => 'Ten plik nie jest prawidłowym eksportem Plezy';
+	@override String get importSettingsInvalidFile => 'Ten plik nie jest prawidłowym eksportem PlezyNG';
 	@override String get importSettingsNoUser => 'Zaloguj się przed importem ustawień';
 	@override String get shortcutsReset => 'Skróty przywrócone do domyślnych';
 	@override String get resetShortcutsConfirm => 'Twoje własne skróty zostaną zastąpione domyślnymi. Kontynuować?';
@@ -558,7 +558,7 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get forceTvMode => 'Wymuś tryb TV';
 	@override String get forceTvModeDescription => 'Wymuś układ telewizyjny na urządzeniach, które nie wykrywają go automatycznie. Wymaga ponownego uruchomienia.';
 	@override String get startInFullscreen => 'Uruchom na pełnym ekranie';
-	@override String get startInFullscreenDescription => 'Otwiera Plezy w trybie pełnoekranowym przy uruchomieniu';
+	@override String get startInFullscreenDescription => 'Otwiera PlezyNG w trybie pełnoekranowym przy uruchomieniu';
 	@override String get exitFullscreenOnPlayerClose => 'Wyjdź z pełnego ekranu przy zamykaniu odtwarzacza';
 	@override String get exitFullscreenOnPlayerCloseDescription => 'Automatycznie wychodzi z trybu pełnoekranowego po zamknięciu odtwarzacza wideo';
 	@override String get autoHidePerformanceOverlay => 'Automatycznie ukrywaj nakładkę wydajności';
@@ -607,7 +607,7 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get playerScopeGlobal => 'Wszędzie';
 	@override String get playerScopeLibrary => 'Na bibliotekę';
 	@override String get playerScopeTitle => 'Na serial lub film';
-	@override String get exportDialogTitle => 'Eksport ustawień Plezy';
+	@override String get exportDialogTitle => 'Eksport ustawień PlezyNG';
 }
 
 // Path: themeEditor
@@ -848,8 +848,8 @@ class _Translations$mediaMenu$pl extends Translations$mediaMenu$en {
 		many: 'W tym samym pliku przechowywanych jest jeszcze ${n} innych odcinków, które również zostaną usunięte:',
 		other: 'W tym samym pliku przechowywany jest jeszcze ${n} innego odcinka, który również zostanie usunięty:',
 	);
-	@override String get deleteScopeUnverifiedProbeFailed => 'Plezy nie mogło sprawdzić, które pliki zostaną usunięte, więc może usunąć więcej niż element wymieniony powyżej. Anuluj i spróbuj ponownie albo usuń mimo to.';
-	@override String get deleteScopeUnverifiedNoFileInfo => 'Twój serwer nie podał informacji o plikach tego elementu, więc Plezy nie może sprawdzić, które pliki zostaną usunięte. Może usunąć więcej niż element wymieniony powyżej.';
+	@override String get deleteScopeUnverifiedProbeFailed => 'PlezyNG nie mogło sprawdzić, które pliki zostaną usunięte, więc może usunąć więcej niż element wymieniony powyżej. Anuluj i spróbuj ponownie albo usuń mimo to.';
+	@override String get deleteScopeUnverifiedNoFileInfo => 'Twój serwer nie podał informacji o plikach tego elementu, więc PlezyNG nie może sprawdzić, które pliki zostaną usunięte. Może usunąć więcej niż element wymieniony powyżej.';
 	@override String get mediaDeletedSuccessfully => 'Usunięto element multimedialny';
 	@override String get mediaFailedToDelete => 'Nie udało się usunąć elementu multimedialnego';
 	@override String get rate => 'Oceń';
@@ -1185,7 +1185,7 @@ class _Translations$profiles$pl extends Translations$profiles$en {
 	final TranslationsPl _root; // ignore: unused_field
 
 	// Translations
-	@override String get addPlezyProfile => 'Dodaj profil Plezy';
+	@override String get addPlezyProfile => 'Dodaj profil PlezyNG';
 	@override String get switchingProfile => 'Przełączanie profilu…';
 	@override String get deleteThisProfileTitle => 'Usunąć ten profil?';
 	@override String deleteThisProfileMessage({required Object displayName}) => 'Usuń ${displayName}. Połączenia nie zostaną zmienione.';
@@ -1269,7 +1269,7 @@ class _Translations$connections$pl extends Translations$connections$en {
 	@override String accessDeniedMany({required Object count}) => 'Odmowa dostępu dla tego konta na ${count} serwerach';
 	@override String get signInAgain => 'Zaloguj się ponownie';
 	@override String editMediaBrowserTitle({required Object product}) => 'Edytuj połączenie z ${product}';
-	@override String editMediaBrowserIntro({required Object serverName}) => 'Dodaj lub usuń adresy URL dla ${serverName}. Plezy będzie używać osiągalnego adresu URL o najniższym opóźnieniu.';
+	@override String editMediaBrowserIntro({required Object serverName}) => 'Dodaj lub usuń adresy URL dla ${serverName}. PlezyNG będzie używać osiągalnego adresu URL o najniższym opóźnieniu.';
 }
 
 // Path: accountPreferences
@@ -1283,7 +1283,7 @@ class _Translations$accountPreferences$pl extends Translations$accountPreference
 	@override String hubSubtitleSingle({required Object account}) => 'Opcje audio, napisów i biblioteki zapisane na koncie ${account}';
 	@override String hubSubtitleMultiple({required Object count}) => 'Opcje audio, napisów i biblioteki zapisane na ${count} kontach';
 	@override String get pickAccount => 'Każde konto przechowuje własne preferencje. Wybierz to, które chcesz edytować.';
-	@override String get storedOnAccount => 'Te opcje są zapisywane na samym koncie, więc używa ich każda aplikacja zalogowana na to konto — w tym Plezy na Twoich innych urządzeniach.';
+	@override String get storedOnAccount => 'Te opcje są zapisywane na samym koncie, więc używa ich każda aplikacja zalogowana na to konto — w tym PlezyNG na Twoich innych urządzeniach.';
 	@override String get noAccounts => 'Brak kont do skonfigurowania';
 	@override String get noAccountsHint => 'Zaloguj się do Plex albo połącz serwer Jellyfin lub Emby, a preferencje zapisane na tym koncie pojawią się tutaj.';
 	@override String get unavailable => 'Nie można połączyć się z tym kontem';
@@ -1498,9 +1498,9 @@ class _Translations$startup$pl extends Translations$startup$en {
 	final TranslationsPl _root; // ignore: unused_field
 
 	// Translations
-	@override String get failedTitle => 'Nie udało się uruchomić Plezy';
+	@override String get failedTitle => 'Nie udało się uruchomić PlezyNG';
 	@override String get failedBody => 'Coś poszło nie tak podczas uruchamiania. Poniższe szczegóły wskazują, co zawiodło.';
-	@override String get failedBodyRepairable => 'Zapisany plik ustawień Plezy jest uszkodzony i musi zostać odbudowany, zanim Plezy będzie mogło się uruchomić. Ponawianie nie pomoże — wybierz Napraw pamięć.';
+	@override String get failedBodyRepairable => 'Zapisany plik ustawień PlezyNG jest uszkodzony i musi zostać odbudowany, zanim PlezyNG będzie mogło się uruchomić. Ponawianie nie pomoże — wybierz Napraw pamięć.';
 	@override String get phaseLabel => 'Krok';
 	@override String get showDetails => 'Pokaż szczegóły';
 	@override String get hideDetails => 'Ukryj szczegóły';
@@ -1509,16 +1509,16 @@ class _Translations$startup$pl extends Translations$startup$en {
 	@override String get uploadDetails => 'Prześlij szczegóły';
 	@override String get repairStorage => 'Napraw pamięć';
 	@override String get repairTitle => 'Naprawić zapisane dane?';
-	@override String get repairBodyCommon => 'Plik ustawień Plezy jest uszkodzony i nie można go odczytać. Naprawa przywraca wszystkie ustawienia do wartości domyślnych.';
+	@override String get repairBodyCommon => 'Plik ustawień PlezyNG jest uszkodzony i nie można go odczytać. Naprawa przywraca wszystkie ustawienia do wartości domyślnych.';
 	@override String get repairBodyOneCredential => 'Jedno zapisane logowanie jest uszkodzone i nie można go odczytać. Naprawa usunie tylko je; pozostałe ustawienia pozostaną nietknięte.';
 	@override String get repairBodySignInsKept => 'Twoje serwery i profile powinny pozostać zalogowane.';
 	@override String get repairBodySignInsLost => 'Klucza chroniącego zapisane logowania nie można odzyskać z tego pliku, więc będziesz musiał zalogować się ponownie na każdym serwerze i profilu. Nic na Twoim serwerze multimediów nie zostanie zmienione.';
-	@override String get repairBodySessionsUncertain => 'Usługi śledzenia (MAL, AniList, Simkl, Trakt) i Seerr są przechowywane osobno i mogą, ale nie muszą przetrwać. Plezy dokładnie poinformuje Cię, co zachowało.';
+	@override String get repairBodySessionsUncertain => 'Usługi śledzenia (MAL, AniList, Simkl, Trakt) i Seerr są przechowywane osobno i mogą, ale nie muszą przetrwać. PlezyNG dokładnie poinformuje Cię, co zachowało.';
 	@override String get repairConfirm => 'Napraw';
 	@override String get repairSucceeded => 'Naprawiono pamięć';
 	@override String get repairNeedsRestart => 'Naprawiono pamięć — wymagany restart';
-	@override String get restartRequiredBody => 'Twoje dane zostały naprawione, ale Plezy musi uruchomić się od nowa, zanim będzie mogło z nich korzystać. Zamknij Plezy i otwórz je ponownie.';
-	@override String get quitPlezy => 'Zamknij Plezy';
+	@override String get restartRequiredBody => 'Twoje dane zostały naprawione, ale PlezyNG musi uruchomić się od nowa, zanim będzie mogło z nich korzystać. Zamknij PlezyNG i otwórz je ponownie.';
+	@override String get quitPlezy => 'Zamknij PlezyNG';
 	@override String get repairFailed => 'Naprawa nie powiodła się';
 	@override String get repairKeptSignIns => 'Twoje serwery i profile są nadal zalogowane.';
 	@override String get repairLostSignIns => 'Nie udało się odzyskać klucza chroniącego zapisane logowania. Musisz zalogować się ponownie na każdym serwerze i profilu.';
@@ -1527,7 +1527,7 @@ class _Translations$startup$pl extends Translations$startup$en {
 	@override String get backupWarning => 'Zawiera Twoje dane logowania. Nie przesyłaj ani nie udostępniaj jej.';
 	@override String get deleteBackup => 'Usuń kopię';
 	@override String get backupDeleted => 'Usunięto kopię.';
-	@override String get previousFailureTitle => 'Ostatnim razem nie udało się uruchomić Plezy';
+	@override String get previousFailureTitle => 'Ostatnim razem nie udało się uruchomić PlezyNG';
 }
 
 // Path: licenses
@@ -1841,7 +1841,7 @@ class _Translations$watchTogether$pl extends Translations$watchTogether$en {
 	@override String get codeCopied => 'Skopiowano kod pokoju';
 	@override String get shareInvite => 'Udostępnij zaproszenie';
 	@override String get inviteCopied => 'Skopiowano zaproszenie. Wklej je do wiadomości.';
-	@override String inviteMessage({required Object code}) => 'Dołącz do mojego pokoju „Oglądaj razem” w Plezy: otwórz „Oglądaj razem”, wybierz „Dołącz do pokoju” i wpisz kod ${code}.';
+	@override String inviteMessage({required Object code}) => 'Dołącz do mojego pokoju „Oglądaj razem” w PlezyNG: otwórz „Oglądaj razem”, wybierz „Dołącz do pokoju” i wpisz kod ${code}.';
 	@override String get openSessionControls => 'Otwórz sterowanie sesją „Oglądaj razem”';
 	@override String get reconnecting => 'Ponowne łączenie...';
 	@override String get reconnectingDescription => 'Połączenie zostało przerwane. Ponowne dołączenie do pokoju nastąpi automatycznie.';
@@ -1867,7 +1867,7 @@ class _Translations$watchTogether$pl extends Translations$watchTogether$en {
 	@override String get chooseAnotherCopy => 'Wybierz inną kopię';
 	@override String get dontPlay => 'Nie odtwarzaj';
 	@override String get unavailableTitle => 'Nie masz tego wideo';
-	@override String get unavailableDescription => 'Plezy nie znalazło go w Twoich bibliotekach. Wybierz kopię samodzielnie lub wyszukaj ponownie.';
+	@override String get unavailableDescription => 'PlezyNG nie znalazło go w Twoich bibliotekach. Wybierz kopię samodzielnie lub wyszukaj ponownie.';
 	@override String get chooseCopy => 'Wybierz kopię';
 	@override String get searchAgain => 'Szukaj ponownie';
 	@override String get noCandidates => 'Nie znaleziono żadnych kopii w Twoich bibliotekach.';
@@ -2332,11 +2332,11 @@ class _Translations$trakt$pl extends Translations$trakt$en {
 	@override String get connected => 'Połączono';
 	@override String connectedAs({required Object username}) => 'Połączono jako @${username}';
 	@override String get disconnectConfirm => 'Rozłączyć konto Trakt?';
-	@override String get disconnectConfirmBody => 'Plezy przestanie wysyłać zdarzenia do serwisu Trakt. Połączenie można przywrócić w dowolnym momencie.';
+	@override String get disconnectConfirmBody => 'PlezyNG przestanie wysyłać zdarzenia do serwisu Trakt. Połączenie można przywrócić w dowolnym momencie.';
 	@override String get scrobble => 'Śledzenie odtwarzania w czasie rzeczywistym';
 	@override String get scrobbleDescription => 'Wysyłaj do serwisu Trakt zdarzenia odtwarzania, wstrzymania i zatrzymania.';
 	@override String get watchedSync => 'Synchronizuj stan obejrzenia';
-	@override String get watchedSyncDescription => 'Gdy oznaczysz element jako obejrzany w Plezy, zostanie on również oznaczony jako obejrzany w serwisie Trakt.';
+	@override String get watchedSyncDescription => 'Gdy oznaczysz element jako obejrzany w PlezyNG, zostanie on również oznaczony jako obejrzany w serwisie Trakt.';
 }
 
 // Path: seerr
@@ -2355,10 +2355,10 @@ class _Translations$seerr$pl extends Translations$seerr$en {
 	@override String get signInWithEmby => 'Zaloguj się przez Emby';
 	@override String get signInWithLocal => 'Użyj konta lokalnego';
 	@override String get email => 'E-mail';
-	@override String get noSignInMethods => 'Ta instancja Seerr nie oferuje metody logowania obsługiwanej przez Plezy.';
+	@override String get noSignInMethods => 'Ta instancja Seerr nie oferuje metody logowania obsługiwanej przez PlezyNG.';
 	@override String get instance => 'Instancja';
 	@override String get disconnectConfirm => 'Odłączyć Seerr?';
-	@override String get disconnectConfirmBody => 'Plezy zapomni tę instancję Seerr. Połącz ponownie w dowolnym momencie.';
+	@override String get disconnectConfirmBody => 'PlezyNG zapomni tę instancję Seerr. Połącz ponownie w dowolnym momencie.';
 	@override String get request => 'Zamów';
 	@override String get request4k => 'Zamów w 4K';
 	@override String get seasons => 'Sezony';
@@ -2383,7 +2383,7 @@ class _Translations$seerr$pl extends Translations$seerr$en {
 	@override String get statusBlocklisted => 'Na liście blokowanych';
 	@override String couldNotReach({required Object url, required Object error}) => 'Nie udało się połączyć z ${url}: ${error}';
 	@override String noInstanceAtUrl({required Object url, required Object status}) => 'Pod adresem ${url} nie ma instancji Seerr (HTTP ${status})';
-	@override String get behindAuthProxy => 'Zamiast Seerr odpowiedział uwierzytelniający reverse proxy (SSO lub uwierzytelnianie HTTP). Plezy nie może się przez niego zalogować: pozwól, aby ścieżka /api/v1 Seerr omijała proxy dla tej aplikacji, albo użyj adresu, który dociera do Seerr bezpośrednio.';
+	@override String get behindAuthProxy => 'Zamiast Seerr odpowiedział uwierzytelniający reverse proxy (SSO lub uwierzytelnianie HTTP). PlezyNG nie może się przez niego zalogować: pozwól, aby ścieżka /api/v1 Seerr omijała proxy dla tej aplikacji, albo użyj adresu, który dociera do Seerr bezpośrednio.';
 	@override String get invalidUrl => 'Wprowadź adres serwera, np. https://seerr.example.com';
 	@override String get quickConnectUnsupported => 'Ta instancja Seerr nie obsługuje Quick Connect. Wymagany jest Seerr 3.4 lub nowszy.';
 	@override String get notInitialized => 'Ta instancja Seerr nie ukończyła konfiguracji początkowej';
@@ -2413,7 +2413,7 @@ class _Translations$services$pl extends Translations$services$en {
 	@override String get scrobble => 'Automatycznie śledź postęp';
 	@override String get scrobbleDescription => 'Aktualizuj swoją listę po ukończeniu odcinka lub filmu.';
 	@override String disconnectConfirm({required Object service}) => 'Odłączyć ${service}?';
-	@override String disconnectConfirmBody({required Object service}) => 'Plezy przestanie aktualizować ${service}. Połącz ponownie w dowolnym momencie.';
+	@override String disconnectConfirmBody({required Object service}) => 'PlezyNG przestanie aktualizować ${service}. Połącz ponownie w dowolnym momencie.';
 	@override String connectFailed({required Object service}) => 'Nie udało się połączyć z ${service}. Spróbuj ponownie.';
 	@override late final _Translations$services$names$pl names = _Translations$services$names$pl._(_root);
 	@override late final _Translations$services$simklReconnect$pl simklReconnect = _Translations$services$simklReconnect$pl._(_root);
@@ -3194,7 +3194,7 @@ class _Translations$watchTogether$errors$pl extends Translations$watchTogether$e
 	@override String get relayFull => 'Funkcja „Oglądaj razem” jest teraz przeciążona. Spróbuj ponownie później.';
 	@override String get unreachable => 'Nie udało się połączyć z serwerem pośredniczącym funkcji „Oglądaj razem”. Sprawdź połączenie.';
 	@override String get rateLimited => 'Zbyt wiele prób. Poczekaj chwilę i spróbuj ponownie.';
-	@override String get clientBlocked => 'Ta wersja Plezy nie może korzystać z serwera pośredniczącego. Zaktualizuj aplikację.';
+	@override String get clientBlocked => 'Ta wersja PlezyNG nie może korzystać z serwera pośredniczącego. Zaktualizuj aplikację.';
 	@override String get forbidden => 'Tylko gospodarz może to zrobić.';
 	@override String get notInRoom => 'Nie jesteś w pokoju.';
 	@override String get alreadyInRoom => 'Jesteś już w pokoju.';
@@ -3215,14 +3215,14 @@ class _Translations$downloads$backgroundWarning$pl extends Translations$download
 	@override String get bannerAction => 'Szczegóły';
 	@override String get sheetTitle => 'Pobieranie w tle jest zablokowane';
 	@override String get sheetTitleDegraded => 'Pobieranie w tle może być ograniczone';
-	@override String get sheetIntro => 'Android uniemożliwia Plezy niezawodne pobieranie plików w tle.';
-	@override String get sheetIntroDegraded => 'Twoje urządzenie ogranicza możliwość pobierania w tle przez Plezy.';
-	@override String get reasonBackgroundRestricted => 'Działanie Plezy w tle jest ograniczone. Ustaw użycie baterii lub działanie w tle na „Bez ograniczeń”.';
-	@override String get reasonStandbyRestricted => 'Android umieścił Plezy w ograniczonym trybie gotowości. Ustaw użycie baterii na „Bez ograniczeń”.';
+	@override String get sheetIntro => 'Android uniemożliwia PlezyNG niezawodne pobieranie plików w tle.';
+	@override String get sheetIntroDegraded => 'Twoje urządzenie ogranicza możliwość pobierania w tle przez PlezyNG.';
+	@override String get reasonBackgroundRestricted => 'Działanie PlezyNG w tle jest ograniczone. Ustaw użycie baterii lub działanie w tle na „Bez ograniczeń”.';
+	@override String get reasonStandbyRestricted => 'Android umieścił PlezyNG w ograniczonym trybie gotowości. Ustaw użycie baterii na „Bez ograniczeń”.';
 	@override String get reasonDownloadChannelBlocked => 'Powiadomienia o pobieraniu są wyłączone, więc postęp i opcje sterowania mogą być niedostępne.';
 	@override String get reasonNotificationsDisabled => 'Powiadomienia są wyłączone. W Android 13 lub nowszym są wymagane przy długim pobieraniu w tle.';
 	@override String get reasonDataSaver => 'Oszczędzanie danych jest włączone, co blokuje pobieranie w tle przez mobilną transmisję danych. Pobieranie powinno nadal działać przez Wi-Fi.';
-	@override String get reasonOemUnknown => 'Pobieranie wielokrotnie przerywało się, gdy Plezy działało w tle. Sprawdź ustawienia baterii lub działania w tle dla Plezy.';
+	@override String get reasonOemUnknown => 'Pobieranie wielokrotnie przerywało się, gdy PlezyNG działało w tle. Sprawdź ustawienia baterii lub działania w tle dla PlezyNG.';
 	@override String get openSettings => 'Otwórz ustawienia';
 	@override String get stillNotWorking => 'Pomoc dla Twojego urządzenia';
 	@override String get stillNotWorkingDescription => 'Zobacz instrukcje dla swojego urządzenia lub, jeśli problem nadal występuje, wyślij log przez Ustawienia › Pokaż logi.';
@@ -3277,19 +3277,19 @@ class _Translations$companionRemote$pairing$pl extends Translations$companionRem
 	final TranslationsPl _root; // ignore: unused_field
 
 	// Translations
-	@override String get discoveryDescription => 'Urządzenia Plezy z tym samym kontem Plex pojawią się tutaj';
+	@override String get discoveryDescription => 'Urządzenia PlezyNG z tym samym kontem Plex pojawią się tutaj';
 	@override String get hostAddressHint => '192.168.1.100:48632';
 	@override String get connecting => 'Łączenie...';
 	@override String get searchingForDevices => 'Szukanie urządzeń...';
 	@override String get noDevicesFound => 'Nie znaleziono urządzeń w sieci';
-	@override String get noDevicesHint => 'Otwórz Plezy na komputerze i połącz oba urządzenia z tą samą siecią Wi-Fi';
+	@override String get noDevicesHint => 'Otwórz PlezyNG na komputerze i połącz oba urządzenia z tą samą siecią Wi-Fi';
 	@override String get availableDevices => 'Dostępne urządzenia';
 	@override String get manualConnection => 'Połączenie ręczne';
 	@override String get cryptoInitFailed => 'Nie udało się uruchomić bezpiecznego połączenia. Najpierw zaloguj się do Plex.';
 	@override String get validationHostRequired => 'Wprowadź adres hosta';
 	@override String get validationHostFormat => 'Format musi być IP:port (np. 192.168.1.100:48632)';
 	@override String get connectionTimedOut => 'Limit czasu połączenia. Użyj tej samej sieci na obu urządzeniach.';
-	@override String get sessionNotFound => 'Nie znaleziono urządzenia. Upewnij się, że Plezy działa na hoście.';
+	@override String get sessionNotFound => 'Nie znaleziono urządzenia. Upewnij się, że PlezyNG działa na hoście.';
 	@override String get authFailed => 'Uwierzytelnianie nie powiodło się. Oba urządzenia muszą używać tego samego konta Plex.';
 	@override String failedToConnect({required Object error}) => 'Nie udało się połączyć: ${error}';
 }
@@ -3369,7 +3369,7 @@ class _Translations$services$simklReconnect$pl extends Translations$services$sim
 
 	// Translations
 	@override String get title => 'Połącz ponownie Simkl';
-	@override String get subtitle => 'Simkl wycofuje metodę logowania, z której korzysta to połączenie. Ponowne połączenie otworzy simkl.com, aby zatwierdzić Plezy — Plezy nigdy nie widzi Twojego hasła. Historia oglądania pozostanie w Simkl.';
+	@override String get subtitle => 'Simkl wycofuje metodę logowania, z której korzysta to połączenie. Ponowne połączenie otworzy simkl.com, aby zatwierdzić PlezyNG — PlezyNG nigdy nie widzi Twojego hasła. Historia oglądania pozostanie w Simkl.';
 }
 
 // Path: services.deviceCode
@@ -3379,7 +3379,7 @@ class _Translations$services$deviceCode$pl extends Translations$services$deviceC
 	final TranslationsPl _root; // ignore: unused_field
 
 	// Translations
-	@override String title({required Object service}) => 'Aktywuj Plezy w ${service}';
+	@override String title({required Object service}) => 'Aktywuj PlezyNG w ${service}';
 	@override String get instructions => 'Zeskanuj kod QR albo przejdź pod poniższy adres i wprowadź ten kod:';
 	@override String openToActivate({required Object service}) => 'Otwórz ${service}, aby aktywować';
 	@override String get copyCode => 'Skopiuj kod aktywacyjny';
@@ -3439,15 +3439,15 @@ class _Translations$services$libraryFilter$pl extends Translations$services$libr
 extension on TranslationsPl {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
-			'app.title' => 'Plezy',
+			'app.title' => 'PlezyNG',
 			'appIcon.title' => 'Ikona aplikacji',
 			'appIcon.defaultIcon' => 'Domyślna',
 			'appIcon.current' => 'Bieżąca ikona',
 			'appIcon.locked' => 'W pakiecie Supporter',
 			'appIcon.lockedHint' => 'Alternatywne ikony są dostępne w pakiecie Supporter.',
 			'appIcon.changeFailed' => 'Nie udało się zmienić ikony aplikacji',
-			'appIcon.launcherHint' => 'Nowa ikona pojawi się na ekranie głównym po opuszczeniu Plezy.',
-			'appIcon.tvLauncherHint' => 'Nowy baner pojawi się po opuszczeniu Plezy. Android TV może wyświetlać stary baner, dopóki telewizor nie zostanie uruchomiony ponownie.',
+			'appIcon.launcherHint' => 'Nowa ikona pojawi się na ekranie głównym po opuszczeniu PlezyNG.',
+			'appIcon.tvLauncherHint' => 'Nowy baner pojawi się po opuszczeniu PlezyNG. Android TV może wyświetlać stary baner, dopóki telewizor nie zostanie uruchomiony ponownie.',
 			'appIcon.names.midnight' => 'Północ',
 			'appIcon.names.ember' => 'Żar',
 			'appIcon.names.paper' => 'Papier',
@@ -3486,7 +3486,7 @@ extension on TranslationsPl {
 			'auth.quickConnectWaiting' => 'Oczekiwanie na zatwierdzenie…',
 			'auth.quickConnectCancel' => 'Anuluj',
 			'auth.quickConnectExpired' => 'Quick Connect wygasł. Spróbuj ponownie.',
-			'auth.localDataRecoveryRequired' => 'Plezy nie mogło bezpiecznie odzyskać lokalnych danych logowania ani oczekujących danych odtwarzania. Zaloguj się ponownie.',
+			'auth.localDataRecoveryRequired' => 'PlezyNG nie mogło bezpiecznie odzyskać lokalnych danych logowania ani oczekujących danych odtwarzania. Zaloguj się ponownie.',
 			'auth.pinCheckRejected' => 'Sprawdzenie kodu PIN Plex zostało odrzucone',
 			'common.cancel' => 'Anuluj',
 			'common.save' => 'Zapisz',
@@ -3574,19 +3574,19 @@ extension on TranslationsPl {
 			'update.viewRelease' => 'Zobacz wydanie',
 			'update.latestVersion' => 'Masz najnowszą wersję',
 			'update.checkFailed' => 'Nie udało się sprawdzić aktualizacji',
-			'supporter.title' => 'Plezy Supporter',
-			'supporter.intro' => 'Jednorazowy zakup, który wspiera rozwój Plezy i odblokowuje dodatki wizualne:',
+			'supporter.title' => 'PlezyNG Supporter',
+			'supporter.intro' => 'Jednorazowy zakup, który wspiera rozwój PlezyNG i odblokowuje dodatki wizualne:',
 			'supporter.presetThemes' => 'Gotowe motywy',
 			'supporter.presetThemesDescription' => 'Żar, Lodowiec, Las, Śliwka i Papier',
 			'supporter.customTheme' => 'Własny motyw',
 			'supporter.customThemeDescription' => 'Wybierz każdy kolor samodzielnie',
 			'supporter.appIcons' => 'Ikony aplikacji',
-			'supporter.appIconsDescription' => 'Wybierz alternatywną ikonę Plezy',
+			'supporter.appIconsDescription' => 'Wybierz alternatywną ikonę PlezyNG',
 			'supporter.buy' => ({required Object price}) => 'Kup za ${price}',
 			'supporter.loadingPrice' => 'Ładowanie ceny...',
 			'supporter.restore' => 'Przywróć zakupy',
 			'supporter.pending' => 'Twój zakup oczekuje na płatność lub zatwierdzenie. Dodatki zostaną odblokowane, gdy tylko sklep go sfinalizuje.',
-			'supporter.thankYouTitle' => 'Dziękujemy za wspieranie Plezy',
+			'supporter.thankYouTitle' => 'Dziękujemy za wspieranie PlezyNG',
 			'supporter.thankYouBody' => 'Dodatki z pakietu Supporter zostały odblokowane.',
 			'supporter.tileSubtitle' => 'Odblokuj motywy i ikony aplikacji jednorazowym zakupem',
 			'supporter.tileSubtitleThemesOnly' => 'Odblokuj motywy jednorazowym zakupem',
@@ -3598,8 +3598,8 @@ extension on TranslationsPl {
 			'supporter.errors.restoreFailed' => 'Nie udało się połączyć ze sklepem, aby przywrócić zakup. Spróbuj ponownie.',
 			'supporter.errors.nothingToRestore' => 'Nie znaleziono zakupu pakietu Supporter dla tego konta sklepu.',
 			'settings.title' => 'Ustawienia',
-			'settings.supportDeveloper' => 'Wesprzyj Plezy',
-			'settings.supportDeveloperDescription' => 'Wspomóż rozwój darowizną na Liberapay',
+			'settings.supportDeveloper' => 'Wesprzyj PlezyNG',
+			'settings.supportDeveloperDescription' => 'Wspomóż rozwój darowizną',
 			'settings.language' => 'Język',
 			'settings.theme' => 'Motyw',
 			'settings.appearance' => 'Wygląd',
@@ -3745,7 +3745,7 @@ extension on TranslationsPl {
 			'settings.importSettingsDescription' => 'Przywróć preferencje z pliku',
 			'settings.importSettingsConfirm' => 'Bieżące ustawienia zostaną zastąpione. Kontynuować?',
 			'settings.importSettingsSuccess' => 'Ustawienia zaimportowane',
-			'settings.importSettingsInvalidFile' => 'Ten plik nie jest prawidłowym eksportem Plezy',
+			'settings.importSettingsInvalidFile' => 'Ten plik nie jest prawidłowym eksportem PlezyNG',
 			'settings.importSettingsNoUser' => 'Zaloguj się przed importem ustawień',
 			'settings.shortcutsReset' => 'Skróty przywrócone do domyślnych',
 			'settings.resetShortcutsConfirm' => 'Twoje własne skróty zostaną zastąpione domyślnymi. Kontynuować?',
@@ -3882,7 +3882,7 @@ extension on TranslationsPl {
 			'settings.forceTvMode' => 'Wymuś tryb TV',
 			'settings.forceTvModeDescription' => 'Wymuś układ telewizyjny na urządzeniach, które nie wykrywają go automatycznie. Wymaga ponownego uruchomienia.',
 			'settings.startInFullscreen' => 'Uruchom na pełnym ekranie',
-			'settings.startInFullscreenDescription' => 'Otwiera Plezy w trybie pełnoekranowym przy uruchomieniu',
+			'settings.startInFullscreenDescription' => 'Otwiera PlezyNG w trybie pełnoekranowym przy uruchomieniu',
 			'settings.exitFullscreenOnPlayerClose' => 'Wyjdź z pełnego ekranu przy zamykaniu odtwarzacza',
 			'settings.exitFullscreenOnPlayerCloseDescription' => 'Automatycznie wychodzi z trybu pełnoekranowego po zamknięciu odtwarzacza wideo',
 			'settings.autoHidePerformanceOverlay' => 'Automatycznie ukrywaj nakładkę wydajności',
@@ -3931,7 +3931,7 @@ extension on TranslationsPl {
 			'settings.playerScopeGlobal' => 'Wszędzie',
 			'settings.playerScopeLibrary' => 'Na bibliotekę',
 			'settings.playerScopeTitle' => 'Na serial lub film',
-			'settings.exportDialogTitle' => 'Eksport ustawień Plezy',
+			'settings.exportDialogTitle' => 'Eksport ustawień PlezyNG',
 			'themeEditor.builtIn' => 'Wbudowane',
 			'themeEditor.presets' => 'Gotowe motywy',
 			'themeEditor.custom' => 'Własny',
@@ -4151,8 +4151,8 @@ extension on TranslationsPl {
 			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('pl'))(n, one: 'Usunięty zostanie ${n} odcinek w nim oraz jego plik.', few: 'Usunięte zostaną ${n} odcinki w nim oraz ich pliki.', many: 'Usuniętych zostanie ${n} odcinków w nim oraz ich pliki.', other: 'Usuniętych zostanie ${n} odcinka w nim oraz ich pliki.', ), 
 			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('pl'))(n, one: 'Ten element jest przechowywany jako ${n} plik, który zostanie usunięty.', few: 'Ten element jest przechowywany w ${n} plikach, które wszystkie zostaną usunięte.', many: 'Ten element jest przechowywany w ${n} plikach, które wszystkie zostaną usunięte.', other: 'Ten element jest przechowywany w ${n} pliku, który zostanie usunięty.', ), 
 			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('pl'))(n, one: 'W tym samym pliku przechowywany jest jeszcze ${n} inny odcinek, który również zostanie usunięty:', few: 'W tym samym pliku przechowywane są jeszcze ${n} inne odcinki, które również zostaną usunięte:', many: 'W tym samym pliku przechowywanych jest jeszcze ${n} innych odcinków, które również zostaną usunięte:', other: 'W tym samym pliku przechowywany jest jeszcze ${n} innego odcinka, który również zostanie usunięty:', ), 
-			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezy nie mogło sprawdzić, które pliki zostaną usunięte, więc może usunąć więcej niż element wymieniony powyżej. Anuluj i spróbuj ponownie albo usuń mimo to.',
-			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Twój serwer nie podał informacji o plikach tego elementu, więc Plezy nie może sprawdzić, które pliki zostaną usunięte. Może usunąć więcej niż element wymieniony powyżej.',
+			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG nie mogło sprawdzić, które pliki zostaną usunięte, więc może usunąć więcej niż element wymieniony powyżej. Anuluj i spróbuj ponownie albo usuń mimo to.',
+			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Twój serwer nie podał informacji o plikach tego elementu, więc PlezyNG nie może sprawdzić, które pliki zostaną usunięte. Może usunąć więcej niż element wymieniony powyżej.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Usunięto element multimedialny',
 			'mediaMenu.mediaFailedToDelete' => 'Nie udało się usunąć elementu multimedialnego',
 			'mediaMenu.rate' => 'Oceń',
@@ -4400,7 +4400,7 @@ extension on TranslationsPl {
 			'mpvConfig.removeLine' => 'Usuń wiersz',
 			'mpvConfig.embeddedVoHint' => 'vo, gpu-context i gpu-api są ignorowane w systemie Linux: wbudowane wideo jest zawsze renderowane przez vo=libmpv na płaszczyźnie wideo, a gpu-next (wymagany przez shadery obliczeniowe takie jak ArtCNN) nie może działać w trybie wbudowanym.',
 			'dialog.confirmAction' => 'Potwierdź działanie',
-			'profiles.addPlezyProfile' => 'Dodaj profil Plezy',
+			'profiles.addPlezyProfile' => 'Dodaj profil PlezyNG',
 			'profiles.switchingProfile' => 'Przełączanie profilu…',
 			'profiles.deleteThisProfileTitle' => 'Usunąć ten profil?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Usuń ${displayName}. Połączenia nie zostaną zmienione.',
@@ -4477,12 +4477,12 @@ extension on TranslationsPl {
 			'connections.accessDeniedMany' => ({required Object count}) => 'Odmowa dostępu dla tego konta na ${count} serwerach',
 			'connections.signInAgain' => 'Zaloguj się ponownie',
 			'connections.editMediaBrowserTitle' => ({required Object product}) => 'Edytuj połączenie z ${product}',
-			'connections.editMediaBrowserIntro' => ({required Object serverName}) => 'Dodaj lub usuń adresy URL dla ${serverName}. Plezy będzie używać osiągalnego adresu URL o najniższym opóźnieniu.',
+			'connections.editMediaBrowserIntro' => ({required Object serverName}) => 'Dodaj lub usuń adresy URL dla ${serverName}. PlezyNG będzie używać osiągalnego adresu URL o najniższym opóźnieniu.',
 			'accountPreferences.sectionTitle' => 'Preferencje konta',
 			'accountPreferences.hubSubtitleSingle' => ({required Object account}) => 'Opcje audio, napisów i biblioteki zapisane na koncie ${account}',
 			'accountPreferences.hubSubtitleMultiple' => ({required Object count}) => 'Opcje audio, napisów i biblioteki zapisane na ${count} kontach',
 			'accountPreferences.pickAccount' => 'Każde konto przechowuje własne preferencje. Wybierz to, które chcesz edytować.',
-			'accountPreferences.storedOnAccount' => 'Te opcje są zapisywane na samym koncie, więc używa ich każda aplikacja zalogowana na to konto — w tym Plezy na Twoich innych urządzeniach.',
+			'accountPreferences.storedOnAccount' => 'Te opcje są zapisywane na samym koncie, więc używa ich każda aplikacja zalogowana na to konto — w tym PlezyNG na Twoich innych urządzeniach.',
 			'accountPreferences.noAccounts' => 'Brak kont do skonfigurowania',
 			'accountPreferences.noAccountsHint' => 'Zaloguj się do Plex albo połącz serwer Jellyfin lub Emby, a preferencje zapisane na tym koncie pojawią się tutaj.',
 			'accountPreferences.unavailable' => 'Nie można połączyć się z tym kontem',
@@ -4720,9 +4720,9 @@ extension on TranslationsPl {
 			'logs.clearLogs' => 'Wyczyść logi',
 			'logs.copyLogs' => 'Kopiuj logi',
 			'logs.uploadLogs' => 'Prześlij logi',
-			'startup.failedTitle' => 'Nie udało się uruchomić Plezy',
+			'startup.failedTitle' => 'Nie udało się uruchomić PlezyNG',
 			'startup.failedBody' => 'Coś poszło nie tak podczas uruchamiania. Poniższe szczegóły wskazują, co zawiodło.',
-			'startup.failedBodyRepairable' => 'Zapisany plik ustawień Plezy jest uszkodzony i musi zostać odbudowany, zanim Plezy będzie mogło się uruchomić. Ponawianie nie pomoże — wybierz Napraw pamięć.',
+			'startup.failedBodyRepairable' => 'Zapisany plik ustawień PlezyNG jest uszkodzony i musi zostać odbudowany, zanim PlezyNG będzie mogło się uruchomić. Ponawianie nie pomoże — wybierz Napraw pamięć.',
 			'startup.phaseLabel' => 'Krok',
 			'startup.showDetails' => 'Pokaż szczegóły',
 			'startup.hideDetails' => 'Ukryj szczegóły',
@@ -4731,16 +4731,16 @@ extension on TranslationsPl {
 			'startup.uploadDetails' => 'Prześlij szczegóły',
 			'startup.repairStorage' => 'Napraw pamięć',
 			'startup.repairTitle' => 'Naprawić zapisane dane?',
-			'startup.repairBodyCommon' => 'Plik ustawień Plezy jest uszkodzony i nie można go odczytać. Naprawa przywraca wszystkie ustawienia do wartości domyślnych.',
+			'startup.repairBodyCommon' => 'Plik ustawień PlezyNG jest uszkodzony i nie można go odczytać. Naprawa przywraca wszystkie ustawienia do wartości domyślnych.',
 			'startup.repairBodyOneCredential' => 'Jedno zapisane logowanie jest uszkodzone i nie można go odczytać. Naprawa usunie tylko je; pozostałe ustawienia pozostaną nietknięte.',
 			'startup.repairBodySignInsKept' => 'Twoje serwery i profile powinny pozostać zalogowane.',
 			'startup.repairBodySignInsLost' => 'Klucza chroniącego zapisane logowania nie można odzyskać z tego pliku, więc będziesz musiał zalogować się ponownie na każdym serwerze i profilu. Nic na Twoim serwerze multimediów nie zostanie zmienione.',
-			'startup.repairBodySessionsUncertain' => 'Usługi śledzenia (MAL, AniList, Simkl, Trakt) i Seerr są przechowywane osobno i mogą, ale nie muszą przetrwać. Plezy dokładnie poinformuje Cię, co zachowało.',
+			'startup.repairBodySessionsUncertain' => 'Usługi śledzenia (MAL, AniList, Simkl, Trakt) i Seerr są przechowywane osobno i mogą, ale nie muszą przetrwać. PlezyNG dokładnie poinformuje Cię, co zachowało.',
 			'startup.repairConfirm' => 'Napraw',
 			'startup.repairSucceeded' => 'Naprawiono pamięć',
 			'startup.repairNeedsRestart' => 'Naprawiono pamięć — wymagany restart',
-			'startup.restartRequiredBody' => 'Twoje dane zostały naprawione, ale Plezy musi uruchomić się od nowa, zanim będzie mogło z nich korzystać. Zamknij Plezy i otwórz je ponownie.',
-			'startup.quitPlezy' => 'Zamknij Plezy',
+			'startup.restartRequiredBody' => 'Twoje dane zostały naprawione, ale PlezyNG musi uruchomić się od nowa, zanim będzie mogło z nich korzystać. Zamknij PlezyNG i otwórz je ponownie.',
+			'startup.quitPlezy' => 'Zamknij PlezyNG',
 			'startup.repairFailed' => 'Naprawa nie powiodła się',
 			'startup.repairKeptSignIns' => 'Twoje serwery i profile są nadal zalogowane.',
 			'startup.repairLostSignIns' => 'Nie udało się odzyskać klucza chroniącego zapisane logowania. Musisz zalogować się ponownie na każdym serwerze i profilu.',
@@ -4749,7 +4749,7 @@ extension on TranslationsPl {
 			'startup.backupWarning' => 'Zawiera Twoje dane logowania. Nie przesyłaj ani nie udostępniaj jej.',
 			'startup.deleteBackup' => 'Usuń kopię',
 			'startup.backupDeleted' => 'Usunięto kopię.',
-			'startup.previousFailureTitle' => 'Ostatnim razem nie udało się uruchomić Plezy',
+			'startup.previousFailureTitle' => 'Ostatnim razem nie udało się uruchomić PlezyNG',
 			'licenses.relatedPackages' => 'Powiązane pakiety',
 			'licenses.license' => 'Licencja',
 			'licenses.licenseNumber' => ({required Object number}) => 'Licencja ${number}',
@@ -5092,7 +5092,7 @@ extension on TranslationsPl {
 			'watchTogether.codeCopied' => 'Skopiowano kod pokoju',
 			'watchTogether.shareInvite' => 'Udostępnij zaproszenie',
 			'watchTogether.inviteCopied' => 'Skopiowano zaproszenie. Wklej je do wiadomości.',
-			'watchTogether.inviteMessage' => ({required Object code}) => 'Dołącz do mojego pokoju „Oglądaj razem” w Plezy: otwórz „Oglądaj razem”, wybierz „Dołącz do pokoju” i wpisz kod ${code}.',
+			'watchTogether.inviteMessage' => ({required Object code}) => 'Dołącz do mojego pokoju „Oglądaj razem” w PlezyNG: otwórz „Oglądaj razem”, wybierz „Dołącz do pokoju” i wpisz kod ${code}.',
 			'watchTogether.openSessionControls' => 'Otwórz sterowanie sesją „Oglądaj razem”',
 			'watchTogether.reconnecting' => 'Ponowne łączenie...',
 			'watchTogether.reconnectingDescription' => 'Połączenie zostało przerwane. Ponowne dołączenie do pokoju nastąpi automatycznie.',
@@ -5118,7 +5118,7 @@ extension on TranslationsPl {
 			'watchTogether.chooseAnotherCopy' => 'Wybierz inną kopię',
 			'watchTogether.dontPlay' => 'Nie odtwarzaj',
 			'watchTogether.unavailableTitle' => 'Nie masz tego wideo',
-			'watchTogether.unavailableDescription' => 'Plezy nie znalazło go w Twoich bibliotekach. Wybierz kopię samodzielnie lub wyszukaj ponownie.',
+			'watchTogether.unavailableDescription' => 'PlezyNG nie znalazło go w Twoich bibliotekach. Wybierz kopię samodzielnie lub wyszukaj ponownie.',
 			'watchTogether.chooseCopy' => 'Wybierz kopię',
 			'watchTogether.searchAgain' => 'Szukaj ponownie',
 			'watchTogether.noCandidates' => 'Nie znaleziono żadnych kopii w Twoich bibliotekach.',
@@ -5210,7 +5210,7 @@ extension on TranslationsPl {
 			'watchTogether.errors.relayFull' => 'Funkcja „Oglądaj razem” jest teraz przeciążona. Spróbuj ponownie później.',
 			'watchTogether.errors.unreachable' => 'Nie udało się połączyć z serwerem pośredniczącym funkcji „Oglądaj razem”. Sprawdź połączenie.',
 			'watchTogether.errors.rateLimited' => 'Zbyt wiele prób. Poczekaj chwilę i spróbuj ponownie.',
-			'watchTogether.errors.clientBlocked' => 'Ta wersja Plezy nie może korzystać z serwera pośredniczącego. Zaktualizuj aplikację.',
+			'watchTogether.errors.clientBlocked' => 'Ta wersja PlezyNG nie może korzystać z serwera pośredniczącego. Zaktualizuj aplikację.',
 			'watchTogether.errors.forbidden' => 'Tylko gospodarz może to zrobić.',
 			'watchTogether.errors.notInRoom' => 'Nie jesteś w pokoju.',
 			'watchTogether.errors.alreadyInRoom' => 'Jesteś już w pokoju.',
@@ -5304,14 +5304,14 @@ extension on TranslationsPl {
 			'downloads.backgroundWarning.bannerAction' => 'Szczegóły',
 			'downloads.backgroundWarning.sheetTitle' => 'Pobieranie w tle jest zablokowane',
 			'downloads.backgroundWarning.sheetTitleDegraded' => 'Pobieranie w tle może być ograniczone',
-			'downloads.backgroundWarning.sheetIntro' => 'Android uniemożliwia Plezy niezawodne pobieranie plików w tle.',
-			'downloads.backgroundWarning.sheetIntroDegraded' => 'Twoje urządzenie ogranicza możliwość pobierania w tle przez Plezy.',
-			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Działanie Plezy w tle jest ograniczone. Ustaw użycie baterii lub działanie w tle na „Bez ograniczeń”.',
-			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android umieścił Plezy w ograniczonym trybie gotowości. Ustaw użycie baterii na „Bez ograniczeń”.',
+			'downloads.backgroundWarning.sheetIntro' => 'Android uniemożliwia PlezyNG niezawodne pobieranie plików w tle.',
+			'downloads.backgroundWarning.sheetIntroDegraded' => 'Twoje urządzenie ogranicza możliwość pobierania w tle przez PlezyNG.',
+			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'Działanie PlezyNG w tle jest ograniczone. Ustaw użycie baterii lub działanie w tle na „Bez ograniczeń”.',
+			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android umieścił PlezyNG w ograniczonym trybie gotowości. Ustaw użycie baterii na „Bez ograniczeń”.',
 			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => 'Powiadomienia o pobieraniu są wyłączone, więc postęp i opcje sterowania mogą być niedostępne.',
 			'downloads.backgroundWarning.reasonNotificationsDisabled' => 'Powiadomienia są wyłączone. W Android 13 lub nowszym są wymagane przy długim pobieraniu w tle.',
 			'downloads.backgroundWarning.reasonDataSaver' => 'Oszczędzanie danych jest włączone, co blokuje pobieranie w tle przez mobilną transmisję danych. Pobieranie powinno nadal działać przez Wi-Fi.',
-			'downloads.backgroundWarning.reasonOemUnknown' => 'Pobieranie wielokrotnie przerywało się, gdy Plezy działało w tle. Sprawdź ustawienia baterii lub działania w tle dla Plezy.',
+			'downloads.backgroundWarning.reasonOemUnknown' => 'Pobieranie wielokrotnie przerywało się, gdy PlezyNG działało w tle. Sprawdź ustawienia baterii lub działania w tle dla PlezyNG.',
 			'downloads.backgroundWarning.openSettings' => 'Otwórz ustawienia',
 			'downloads.backgroundWarning.stillNotWorking' => 'Pomoc dla Twojego urządzenia',
 			'downloads.backgroundWarning.stillNotWorkingDescription' => 'Zobacz instrukcje dla swojego urządzenia lub, jeśli problem nadal występuje, wyślij log przez Ustawienia › Pokaż logi.',
@@ -5375,19 +5375,19 @@ extension on TranslationsPl {
 			'companionRemote.session.stopServer' => 'Zatrzymaj serwer',
 			'companionRemote.session.minimize' => 'Minimalizuj',
 			'companionRemote.session.manualAddressHint' => 'Ręczny adres połączenia:',
-			'companionRemote.pairing.discoveryDescription' => 'Urządzenia Plezy z tym samym kontem Plex pojawią się tutaj',
+			'companionRemote.pairing.discoveryDescription' => 'Urządzenia PlezyNG z tym samym kontem Plex pojawią się tutaj',
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Łączenie...',
 			'companionRemote.pairing.searchingForDevices' => 'Szukanie urządzeń...',
 			'companionRemote.pairing.noDevicesFound' => 'Nie znaleziono urządzeń w sieci',
-			'companionRemote.pairing.noDevicesHint' => 'Otwórz Plezy na komputerze i połącz oba urządzenia z tą samą siecią Wi-Fi',
+			'companionRemote.pairing.noDevicesHint' => 'Otwórz PlezyNG na komputerze i połącz oba urządzenia z tą samą siecią Wi-Fi',
 			'companionRemote.pairing.availableDevices' => 'Dostępne urządzenia',
 			'companionRemote.pairing.manualConnection' => 'Połączenie ręczne',
 			'companionRemote.pairing.cryptoInitFailed' => 'Nie udało się uruchomić bezpiecznego połączenia. Najpierw zaloguj się do Plex.',
 			'companionRemote.pairing.validationHostRequired' => 'Wprowadź adres hosta',
 			'companionRemote.pairing.validationHostFormat' => 'Format musi być IP:port (np. 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Limit czasu połączenia. Użyj tej samej sieci na obu urządzeniach.',
-			'companionRemote.pairing.sessionNotFound' => 'Nie znaleziono urządzenia. Upewnij się, że Plezy działa na hoście.',
+			'companionRemote.pairing.sessionNotFound' => 'Nie znaleziono urządzenia. Upewnij się, że PlezyNG działa na hoście.',
 			'companionRemote.pairing.authFailed' => 'Uwierzytelnianie nie powiodło się. Oba urządzenia muszą używać tego samego konta Plex.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Nie udało się połączyć: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Czy chcesz się rozłączyć od sesji zdalnej?',
@@ -5615,11 +5615,11 @@ extension on TranslationsPl {
 			'trakt.connected' => 'Połączono',
 			'trakt.connectedAs' => ({required Object username}) => 'Połączono jako @${username}',
 			'trakt.disconnectConfirm' => 'Rozłączyć konto Trakt?',
-			'trakt.disconnectConfirmBody' => 'Plezy przestanie wysyłać zdarzenia do serwisu Trakt. Połączenie można przywrócić w dowolnym momencie.',
+			'trakt.disconnectConfirmBody' => 'PlezyNG przestanie wysyłać zdarzenia do serwisu Trakt. Połączenie można przywrócić w dowolnym momencie.',
 			'trakt.scrobble' => 'Śledzenie odtwarzania w czasie rzeczywistym',
 			'trakt.scrobbleDescription' => 'Wysyłaj do serwisu Trakt zdarzenia odtwarzania, wstrzymania i zatrzymania.',
 			'trakt.watchedSync' => 'Synchronizuj stan obejrzenia',
-			'trakt.watchedSyncDescription' => 'Gdy oznaczysz element jako obejrzany w Plezy, zostanie on również oznaczony jako obejrzany w serwisie Trakt.',
+			'trakt.watchedSyncDescription' => 'Gdy oznaczysz element jako obejrzany w PlezyNG, zostanie on również oznaczony jako obejrzany w serwisie Trakt.',
 			'seerr.title' => 'Seerr',
 			'seerr.connectTitle' => 'Połącz Seerr',
 			'seerr.serverUrl' => 'Adres URL serwera',
@@ -5629,10 +5629,10 @@ extension on TranslationsPl {
 			'seerr.signInWithEmby' => 'Zaloguj się przez Emby',
 			'seerr.signInWithLocal' => 'Użyj konta lokalnego',
 			'seerr.email' => 'E-mail',
-			'seerr.noSignInMethods' => 'Ta instancja Seerr nie oferuje metody logowania obsługiwanej przez Plezy.',
+			'seerr.noSignInMethods' => 'Ta instancja Seerr nie oferuje metody logowania obsługiwanej przez PlezyNG.',
 			'seerr.instance' => 'Instancja',
 			'seerr.disconnectConfirm' => 'Odłączyć Seerr?',
-			'seerr.disconnectConfirmBody' => 'Plezy zapomni tę instancję Seerr. Połącz ponownie w dowolnym momencie.',
+			'seerr.disconnectConfirmBody' => 'PlezyNG zapomni tę instancję Seerr. Połącz ponownie w dowolnym momencie.',
 			'seerr.request' => 'Zamów',
 			'seerr.request4k' => 'Zamów w 4K',
 			'seerr.seasons' => 'Sezony',
@@ -5657,7 +5657,7 @@ extension on TranslationsPl {
 			'seerr.statusBlocklisted' => 'Na liście blokowanych',
 			'seerr.couldNotReach' => ({required Object url, required Object error}) => 'Nie udało się połączyć z ${url}: ${error}',
 			'seerr.noInstanceAtUrl' => ({required Object url, required Object status}) => 'Pod adresem ${url} nie ma instancji Seerr (HTTP ${status})',
-			'seerr.behindAuthProxy' => 'Zamiast Seerr odpowiedział uwierzytelniający reverse proxy (SSO lub uwierzytelnianie HTTP). Plezy nie może się przez niego zalogować: pozwól, aby ścieżka /api/v1 Seerr omijała proxy dla tej aplikacji, albo użyj adresu, który dociera do Seerr bezpośrednio.',
+			'seerr.behindAuthProxy' => 'Zamiast Seerr odpowiedział uwierzytelniający reverse proxy (SSO lub uwierzytelnianie HTTP). PlezyNG nie może się przez niego zalogować: pozwól, aby ścieżka /api/v1 Seerr omijała proxy dla tej aplikacji, albo użyj adresu, który dociera do Seerr bezpośrednio.',
 			'seerr.invalidUrl' => 'Wprowadź adres serwera, np. https://seerr.example.com',
 			'seerr.quickConnectUnsupported' => 'Ta instancja Seerr nie obsługuje Quick Connect. Wymagany jest Seerr 3.4 lub nowszy.',
 			'seerr.notInitialized' => 'Ta instancja Seerr nie ukończyła konfiguracji początkowej',
@@ -5678,7 +5678,7 @@ extension on TranslationsPl {
 			'services.scrobble' => 'Automatycznie śledź postęp',
 			'services.scrobbleDescription' => 'Aktualizuj swoją listę po ukończeniu odcinka lub filmu.',
 			'services.disconnectConfirm' => ({required Object service}) => 'Odłączyć ${service}?',
-			'services.disconnectConfirmBody' => ({required Object service}) => 'Plezy przestanie aktualizować ${service}. Połącz ponownie w dowolnym momencie.',
+			'services.disconnectConfirmBody' => ({required Object service}) => 'PlezyNG przestanie aktualizować ${service}. Połącz ponownie w dowolnym momencie.',
 			'services.connectFailed' => ({required Object service}) => 'Nie udało się połączyć z ${service}. Spróbuj ponownie.',
 			'services.names.mal' => 'MyAnimeList',
 			'services.names.anilist' => 'AniList',
@@ -5686,8 +5686,8 @@ extension on TranslationsPl {
 			'services.names.seerr' => 'Seerr',
 			'services.names.mdblist' => 'MDBList',
 			'services.simklReconnect.title' => 'Połącz ponownie Simkl',
-			'services.simklReconnect.subtitle' => 'Simkl wycofuje metodę logowania, z której korzysta to połączenie. Ponowne połączenie otworzy simkl.com, aby zatwierdzić Plezy — Plezy nigdy nie widzi Twojego hasła. Historia oglądania pozostanie w Simkl.',
-			'services.deviceCode.title' => ({required Object service}) => 'Aktywuj Plezy w ${service}',
+			'services.simklReconnect.subtitle' => 'Simkl wycofuje metodę logowania, z której korzysta to połączenie. Ponowne połączenie otworzy simkl.com, aby zatwierdzić PlezyNG — PlezyNG nigdy nie widzi Twojego hasła. Historia oglądania pozostanie w Simkl.',
+			'services.deviceCode.title' => ({required Object service}) => 'Aktywuj PlezyNG w ${service}',
 			'services.deviceCode.instructions' => 'Zeskanuj kod QR albo przejdź pod poniższy adres i wprowadź ten kod:',
 			'services.deviceCode.openToActivate' => ({required Object service}) => 'Otwórz ${service}, aby aktywować',
 			'services.deviceCode.copyCode' => 'Skopiuj kod aktywacyjny',

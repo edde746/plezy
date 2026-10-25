@@ -135,14 +135,10 @@ function(APPLY_STANDARD_SETTINGS TARGET)
   target_compile_options(${TARGET} PRIVATE /EHsc)
   target_compile_definitions(${TARGET} PRIVATE "_HAS_EXCEPTIONS=0")
   target_compile_definitions(${TARGET} PRIVATE "$<$<CONFIG:Debug>:_DEBUG>")
-  # Release and Profile link a full PDB, so the CodeView record in plezy.exe
-  # and the plugin DLLs gives crash reports a debug_id to symbolicate
-  # against. /Z7 keeps compile-time debug info in the objects, so no shared
-  # compiler PDB is involved. /DEBUG turns the linker's REF and ICF off by
-  # default; they are restored so the shipped binaries stay the size they
-  # were. PDBs never reach the bundle: plugin PDBs stay next to their DLL in
-  # the build tree, the runner's goes to link-artifacts (below), and
-  # scripts/release/upload_symbols.dart uploads them from there.
+  # Keep full PDBs in the build tree for local debugging without shipping them
+  # in the app bundle. /Z7 keeps compile-time debug info in the objects, so no
+  # shared compiler PDB is involved. /DEBUG turns the linker's REF and ICF off
+  # by default; restore them so shipped binaries stay the expected size.
   target_compile_options(${TARGET} PRIVATE "$<$<CONFIG:Profile,Release>:/Z7>")
   target_link_options(${TARGET} PRIVATE
     "$<$<CONFIG:Profile,Release>:/DEBUG:FULL>"
@@ -176,7 +172,7 @@ set_target_properties(
 
 # Sentry native crash capture: use the in-process handler instead of
 # crashpad. Crashpad uploads minidumps straight to the DSN's /minidump
-# endpoint, which our self-hosted tracker does not implement — every native
+# endpoint, which some Sentry-compatible servers do not implement — every native
 # Windows crash (e.g. faults inside libmpv threads) was silently dropped.
 # The inproc handler stackwalks at crash time and reports through the
 # regular envelope endpoint on next launch. sentry-native.cmake gives this

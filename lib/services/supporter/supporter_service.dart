@@ -6,7 +6,6 @@ import 'package:in_app_purchase_platform_interface/in_app_purchase_platform_inte
 
 import '../../mixins/disposable_change_notifier_mixin.dart';
 import '../../utils/app_logger.dart';
-import '../../utils/platform_detector.dart';
 import '../settings_service.dart';
 import 'supporter_mode.dart';
 import 'supporter_store.dart';
@@ -119,7 +118,7 @@ class SupporterService extends ChangeNotifier with DisposableChangeNotifierMixin
   /// providers already renders unlocked perks. Billing starts in [init].
   SupporterService()
     : this._(
-        supporterAvailabilityFor(supporterBuildMode, isPackagedInstall: PlatformDetector.isPackagedInstall()),
+        supporterAvailabilityFor(supporterBuildMode),
         // Const guard: builds other than `iap` never reach the billing plugin.
         createStore: supporterBuildMode == SupporterMode.iap ? SupporterStore.forThisDevice : null,
       );
@@ -192,7 +191,7 @@ class SupporterService extends ChangeNotifier with DisposableChangeNotifierMixin
   /// [isUnlocked] for the pre-provider startup frame, from the same build
   /// policy and entitlement cache this service starts from.
   static bool startupUnlocked(SettingsService settings) =>
-      switch (supporterAvailabilityFor(supporterBuildMode, isPackagedInstall: PlatformDetector.isPackagedInstall())) {
+      switch (supporterAvailabilityFor(supporterBuildMode)) {
         SupporterAvailability.hidden => false,
         SupporterAvailability.free => true,
         SupporterAvailability.purchasable => settings.read(SettingsService.supporterEntitlementCached),
@@ -348,7 +347,7 @@ class SupporterService extends ChangeNotifier with DisposableChangeNotifierMixin
           _failPurchase(store);
         }
       }
-      // Any other product is not Plezy's; leave it to the store.
+      // Any other product is not PlezyNG's; leave it to the store.
     }
   }
 

@@ -147,7 +147,7 @@ final class WatchRoomHarness {
   }) {
     final provider = WatchTogetherProvider(
       partyFactory: relay.party,
-      clientName: () async => 'Plezy/1.0',
+      clientName: () async => 'PlezyNG/1.0',
       displayName: () => name,
       profileId: () => profileId,
       customRelayBaseUrl: () => relayBaseUrl,

@@ -1,6 +1,6 @@
 {
   "app": {
-    "title": "Plezy"
+    "title": "PlezyNG"
   },
   "appIcon": {
     "title": "Ícone do app",
@@ -9,8 +9,8 @@
     "locked": "Benefício do Supporter",
     "lockedHint": "Os ícones alternativos são um benefício do Supporter.",
     "changeFailed": "Não foi possível alterar o ícone do app",
-    "launcherHint": "O novo ícone aparece na tela inicial assim que você sair do Plezy.",
-    "tvLauncherHint": "O novo banner aparece assim que você sair do Plezy. O Android TV pode continuar mostrando o antigo até a TV ser reiniciada.",
+    "launcherHint": "O novo ícone aparece na tela inicial assim que você sair do PlezyNG.",
+    "tvLauncherHint": "O novo banner aparece assim que você sair do PlezyNG. O Android TV pode continuar mostrando o antigo até a TV ser reiniciada.",
     "names": {
       "midnight": "Meia-noite",
       "ember": "Brasa",
@@ -53,7 +53,7 @@
     "quickConnectWaiting": "Aguardando aprovação…",
     "quickConnectCancel": "Cancelar",
     "quickConnectExpired": "Quick Connect expirou. Tente novamente.",
-    "localDataRecoveryRequired": "O Plezy não conseguiu recuperar com segurança os dados locais de acesso e de reproduções pendentes. Entre novamente.",
+    "localDataRecoveryRequired": "O PlezyNG não conseguiu recuperar com segurança os dados locais de acesso e de reproduções pendentes. Entre novamente.",
     "pinCheckRejected": "A verificação do PIN do Plex foi rejeitada"
   },
   "common": {
@@ -153,19 +153,19 @@
     "checkFailed": "Falha ao verificar atualizações"
   },
   "supporter": {
-    "title": "Plezy Supporter",
-    "intro": "Uma compra única que apoia o desenvolvimento do Plezy e desbloqueia extras visuais:",
+    "title": "PlezyNG Supporter",
+    "intro": "Uma compra única que apoia o desenvolvimento do PlezyNG e desbloqueia extras visuais:",
     "presetThemes": "Temas predefinidos",
     "presetThemesDescription": "Brasa, Geleira, Floresta, Ameixa e Papel",
     "customTheme": "Tema personalizado",
     "customThemeDescription": "Escolha você mesmo cada cor",
     "appIcons": "Ícones do app",
-    "appIconsDescription": "Escolha um ícone alternativo do Plezy",
+    "appIconsDescription": "Escolha um ícone alternativo do PlezyNG",
     "buy": "Comprar por ${price}",
     "loadingPrice": "Carregando preço...",
     "restore": "Restaurar compras",
     "pending": "Sua compra está aguardando pagamento ou aprovação. Os extras serão desbloqueados assim que a loja concluí-la.",
-    "thankYouTitle": "Obrigado por apoiar o Plezy",
+    "thankYouTitle": "Obrigado por apoiar o PlezyNG",
     "thankYouBody": "Seus extras do Supporter estão desbloqueados.",
     "tileSubtitle": "Desbloqueie temas e ícones do app com uma compra única",
     "tileSubtitleThemesOnly": "Desbloqueie temas com uma compra única",
@@ -181,8 +181,8 @@
   },
   "settings": {
     "title": "Configurações",
-    "supportDeveloper": "Apoie o Plezy",
-    "supportDeveloperDescription": "Doe via Liberapay para financiar o desenvolvimento",
+    "supportDeveloper": "Apoie o PlezyNG",
+    "supportDeveloperDescription": "Doe para apoiar o desenvolvimento",
     "language": "Idioma",
     "theme": "Tema",
     "appearance": "Aparência",
@@ -337,7 +337,7 @@
     "importSettingsDescription": "Restaurar preferências a partir de um arquivo",
     "importSettingsConfirm": "Isso substituirá suas configurações atuais. Continuar?",
     "importSettingsSuccess": "Configurações importadas",
-    "importSettingsInvalidFile": "Este arquivo não é uma exportação válida do Plezy",
+    "importSettingsInvalidFile": "Este arquivo não é uma exportação válida do PlezyNG",
     "importSettingsNoUser": "Entre na conta antes de importar as configurações",
     "shortcutsReset": "Atalhos redefinidos para o padrão",
     "resetShortcutsConfirm": "Isso substituirá seus atalhos personalizados pelos padrões. Continuar?",
@@ -474,7 +474,7 @@
     "forceTvMode": "Forçar modo TV",
     "forceTvModeDescription": "Forçar o layout de TV em dispositivos sem detecção automática. Requer reiniciar o app.",
     "startInFullscreen": "Iniciar em tela cheia",
-    "startInFullscreenDescription": "Abrir o Plezy em modo de tela cheia ao iniciar",
+    "startInFullscreenDescription": "Abrir o PlezyNG em modo de tela cheia ao iniciar",
     "exitFullscreenOnPlayerClose": "Sair da tela cheia ao fechar o reprodutor",
     "exitFullscreenOnPlayerCloseDescription": "Sair automaticamente da tela cheia ao fechar o reprodutor de vídeo",
     "autoHidePerformanceOverlay": "Ocultar automaticamente o painel de desempenho",
@@ -523,7 +523,7 @@
     "playerScopeGlobal": "Em todos os lugares",
     "playerScopeLibrary": "Por biblioteca",
     "playerScopeTitle": "Por série ou filme",
-    "exportDialogTitle": "Exportar configurações do Plezy"
+    "exportDialogTitle": "Exportar configurações do PlezyNG"
   },
   "themeEditor": {
     "builtIn": "Integrados",
@@ -766,8 +766,8 @@
       "one": "Mais ${n} episódio está armazenado no mesmo arquivo e também será excluído:",
       "other": "Mais ${n} episódios estão armazenados no mesmo arquivo e também serão excluídos:"
     },
-    "deleteScopeUnverifiedProbeFailed": "O Plezy não conseguiu verificar quais arquivos serão removidos, então pode excluir mais do que o item acima. Cancele e tente novamente, ou exclua mesmo assim.",
-    "deleteScopeUnverifiedNoFileInfo": "Seu servidor não forneceu detalhes do arquivo para este item, então o Plezy não pode verificar quais arquivos serão removidos. Pode excluir mais do que o item acima.",
+    "deleteScopeUnverifiedProbeFailed": "O PlezyNG não conseguiu verificar quais arquivos serão removidos, então pode excluir mais do que o item acima. Cancele e tente novamente, ou exclua mesmo assim.",
+    "deleteScopeUnverifiedNoFileInfo": "Seu servidor não forneceu detalhes do arquivo para este item, então o PlezyNG não pode verificar quais arquivos serão removidos. Pode excluir mais do que o item acima.",
     "mediaDeletedSuccessfully": "Item de mídia excluído com sucesso",
     "mediaFailedToDelete": "Falha ao excluir item de mídia",
     "rate": "Avaliar",
@@ -1050,7 +1050,7 @@
     "confirmAction": "Confirmar Ação"
   },
   "profiles": {
-    "addPlezyProfile": "Adicionar perfil Plezy",
+    "addPlezyProfile": "Adicionar perfil PlezyNG",
     "switchingProfile": "Mudando perfil…",
     "deleteThisProfileTitle": "Excluir este perfil?",
     "deleteThisProfileMessage": "Remover ${displayName}. As conexões não serão afetadas.",
@@ -1127,14 +1127,14 @@
     "accessDeniedMany": "${count} servidores negaram acesso a esta conta",
     "signInAgain": "Entrar novamente",
     "editMediaBrowserTitle": "Editar conexão do ${product}",
-    "editMediaBrowserIntro": "Adicione ou remova URLs para ${serverName}. O Plezy usará a URL acessível com menor latência."
+    "editMediaBrowserIntro": "Adicione ou remova URLs para ${serverName}. O PlezyNG usará a URL acessível com menor latência."
   },
   "accountPreferences": {
     "sectionTitle": "Preferências da conta",
     "hubSubtitleSingle": "Opções de áudio, legendas e biblioteca salvas em ${account}",
     "hubSubtitleMultiple": "Opções de áudio, legendas e biblioteca salvas em ${count} contas",
     "pickAccount": "Cada conta armazena suas próprias preferências. Escolha a que deseja editar.",
-    "storedOnAccount": "Estas opções são salvas na própria conta, então todos os apps conectados a ela as utilizam — inclusive o Plezy nos seus outros dispositivos.",
+    "storedOnAccount": "Estas opções são salvas na própria conta, então todos os apps conectados a ela as utilizam — inclusive o PlezyNG nos seus outros dispositivos.",
     "noAccounts": "Nenhuma conta para configurar",
     "noAccountsHint": "Entre no Plex ou conecte um servidor Jellyfin ou Emby, e as preferências armazenadas nessa conta aparecerão aqui.",
     "unavailable": "Não foi possível acessar esta conta",
@@ -1417,9 +1417,9 @@
     "uploadLogs": "Enviar Logs"
   },
   "startup": {
-    "failedTitle": "O Plezy não conseguiu iniciar",
+    "failedTitle": "O PlezyNG não conseguiu iniciar",
     "failedBody": "Algo deu errado durante a inicialização. Os detalhes abaixo identificam o que falhou.",
-    "failedBodyRepairable": "O arquivo de configurações salvo do Plezy está danificado e precisa ser reconstruído antes que o Plezy possa iniciar. Tentar novamente não vai ajudar — escolha Reparar armazenamento.",
+    "failedBodyRepairable": "O arquivo de configurações salvo do PlezyNG está danificado e precisa ser reconstruído antes que o PlezyNG possa iniciar. Tentar novamente não vai ajudar — escolha Reparar armazenamento.",
     "phaseLabel": "Etapa",
     "showDetails": "Mostrar detalhes",
     "hideDetails": "Ocultar detalhes",
@@ -1428,16 +1428,16 @@
     "uploadDetails": "Enviar detalhes",
     "repairStorage": "Reparar armazenamento",
     "repairTitle": "Reparar dados armazenados?",
-    "repairBodyCommon": "O arquivo de configurações do Plezy está danificado e não pode ser lido. Reparar redefine todas as configurações para o padrão.",
+    "repairBodyCommon": "O arquivo de configurações do PlezyNG está danificado e não pode ser lido. Reparar redefine todas as configurações para o padrão.",
     "repairBodyOneCredential": "Um login salvo está danificado e não pode ser lido. Reparar remove apenas ele; suas outras configurações permanecem intactas.",
     "repairBodySignInsKept": "Seus servidores e perfis devem permanecer conectados.",
     "repairBodySignInsLost": "A chave que protege seus logins salvos não pode ser recuperada deste arquivo, então você terá que entrar novamente em todos os servidores e perfis. Nada no seu servidor de mídia é afetado.",
-    "repairBodySessionsUncertain": "Os rastreadores (MAL, AniList, Simkl, Trakt) e o Seerr são armazenados separadamente e podem ou não ser preservados. O Plezy informará exatamente o que foi mantido.",
+    "repairBodySessionsUncertain": "Os rastreadores (MAL, AniList, Simkl, Trakt) e o Seerr são armazenados separadamente e podem ou não ser preservados. O PlezyNG informará exatamente o que foi mantido.",
     "repairConfirm": "Reparar",
     "repairSucceeded": "Armazenamento reparado",
     "repairNeedsRestart": "Armazenamento reparado — reinício necessário",
-    "restartRequiredBody": "Seus dados foram reparados, mas o Plezy precisa iniciar do zero antes de usá-los. Feche o Plezy e abra-o novamente.",
-    "quitPlezy": "Sair do Plezy",
+    "restartRequiredBody": "Seus dados foram reparados, mas o PlezyNG precisa iniciar do zero antes de usá-los. Feche o PlezyNG e abra-o novamente.",
+    "quitPlezy": "Sair do PlezyNG",
     "repairFailed": "Falha no reparo",
     "repairKeptSignIns": "Seus servidores e perfis ainda estão conectados.",
     "repairLostSignIns": "A chave que protege seus logins salvos não pôde ser recuperada. Você terá que entrar novamente em todos os servidores e perfis.",
@@ -1446,7 +1446,7 @@
     "backupWarning": "Ele contém suas credenciais de login. Não envie nem compartilhe.",
     "deleteBackup": "Excluir cópia",
     "backupDeleted": "Cópia excluída.",
-    "previousFailureTitle": "O Plezy falhou ao iniciar da última vez"
+    "previousFailureTitle": "O PlezyNG falhou ao iniciar da última vez"
   },
   "licenses": {
     "relatedPackages": "Pacotes Relacionados",
@@ -1871,7 +1871,7 @@
     "codeCopied": "Código da sala copiado",
     "shareInvite": "Compartilhar convite",
     "inviteCopied": "Convite copiado. Cole-o em uma mensagem.",
-    "inviteMessage": "Entre na minha sala do Assistir Juntos no Plezy: abra \"Assistir Juntos\", escolha \"Entrar na sala\" e insira ${code}.",
+    "inviteMessage": "Entre na minha sala do Assistir Juntos no PlezyNG: abra \"Assistir Juntos\", escolha \"Entrar na sala\" e insira ${code}.",
     "openSessionControls": "Abrir os controles da sessão Assistir Juntos",
     "reconnecting": "Reconectando...",
     "reconnectingDescription": "A conexão caiu. Você voltará à sala automaticamente.",
@@ -1897,7 +1897,7 @@
     "chooseAnotherCopy": "Escolher outra cópia",
     "dontPlay": "Não reproduzir",
     "unavailableTitle": "Você não tem este vídeo",
-    "unavailableDescription": "O Plezy não o encontrou nas suas bibliotecas. Escolha uma cópia manualmente ou busque novamente.",
+    "unavailableDescription": "O PlezyNG não o encontrou nas suas bibliotecas. Escolha uma cópia manualmente ou busque novamente.",
     "chooseCopy": "Escolher uma cópia",
     "searchAgain": "Buscar novamente",
     "noCandidates": "Nenhuma cópia encontrada nas suas bibliotecas.",
@@ -1997,7 +1997,7 @@
       "relayFull": "O Assistir Juntos está sobrecarregado no momento. Tente novamente mais tarde.",
       "unreachable": "Não foi possível acessar o servidor de retransmissão do Assistir Juntos. Verifique sua conexão.",
       "rateLimited": "Muitas tentativas. Aguarde um momento e tente novamente.",
-      "clientBlocked": "Esta versão do Plezy não pode usar o servidor de retransmissão. Atualize o app.",
+      "clientBlocked": "Esta versão do PlezyNG não pode usar o servidor de retransmissão. Atualize o app.",
       "forbidden": "Apenas o anfitrião pode fazer isso.",
       "notInRoom": "Você não está em uma sala.",
       "alreadyInRoom": "Você já está em uma sala.",
@@ -2095,14 +2095,14 @@
       "bannerAction": "Detalhes",
       "sheetTitle": "Os downloads em segundo plano estão bloqueados",
       "sheetTitleDegraded": "Os downloads em segundo plano podem ser limitados",
-      "sheetIntro": "O Android está impedindo que o Plezy faça downloads de forma confiável em segundo plano.",
-      "sheetIntroDegraded": "Seu dispositivo está limitando quando o Plezy pode fazer downloads em segundo plano.",
-      "reasonBackgroundRestricted": "O uso em segundo plano do Plezy está restrito. Defina o uso da bateria ou o uso em segundo plano como \"Sem restrições\".",
-      "reasonStandbyRestricted": "O Android colocou o Plezy em um modo de espera restrito. Defina o uso da bateria como \"Sem restrições\".",
+      "sheetIntro": "O Android está impedindo que o PlezyNG faça downloads de forma confiável em segundo plano.",
+      "sheetIntroDegraded": "Seu dispositivo está limitando quando o PlezyNG pode fazer downloads em segundo plano.",
+      "reasonBackgroundRestricted": "O uso em segundo plano do PlezyNG está restrito. Defina o uso da bateria ou o uso em segundo plano como \"Sem restrições\".",
+      "reasonStandbyRestricted": "O Android colocou o PlezyNG em um modo de espera restrito. Defina o uso da bateria como \"Sem restrições\".",
       "reasonDownloadChannelBlocked": "As notificações de download estão desativadas; por isso, o progresso e os controles podem ficar indisponíveis.",
       "reasonNotificationsDisabled": "As notificações estão desativadas. No Android 13 ou mais recente, elas são necessárias para downloads longos em segundo plano.",
       "reasonDataSaver": "A Economia de dados está ativada e bloqueia downloads em segundo plano usando dados móveis. Os downloads ainda devem funcionar no Wi-Fi.",
-      "reasonOemUnknown": "Os downloads foram interrompidos várias vezes enquanto o Plezy estava em segundo plano. Verifique as configurações de bateria ou uso em segundo plano do Plezy.",
+      "reasonOemUnknown": "Os downloads foram interrompidos várias vezes enquanto o PlezyNG estava em segundo plano. Verifique as configurações de bateria ou uso em segundo plano do PlezyNG.",
       "openSettings": "Abrir configurações",
       "stillNotWorking": "Ajuda específica para o dispositivo",
       "stillNotWorkingDescription": "Veja as instruções para seu dispositivo ou, se o problema persistir, envie um log em Configurações › Ver Logs.",
@@ -2193,19 +2193,19 @@
       "manualAddressHint": "Endereço de conexão manual:"
     },
     "pairing": {
-      "discoveryDescription": "Dispositivos Plezy com a mesma conta Plex aparecem aqui",
+      "discoveryDescription": "Dispositivos PlezyNG com a mesma conta Plex aparecem aqui",
       "hostAddressHint": "192.168.1.100:48632",
       "connecting": "Conectando...",
       "searchingForDevices": "Procurando dispositivos...",
       "noDevicesFound": "Nenhum dispositivo encontrado na sua rede",
-      "noDevicesHint": "Abra o Plezy no desktop e use a mesma rede Wi-Fi",
+      "noDevicesHint": "Abra o PlezyNG no desktop e use a mesma rede Wi-Fi",
       "availableDevices": "Dispositivos disponíveis",
       "manualConnection": "Conexão manual",
       "cryptoInitFailed": "Não foi possível iniciar a conexão segura. Entre no Plex primeiro.",
       "validationHostRequired": "Insira o endereço do host",
       "validationHostFormat": "O formato deve ser IP:porta (ex.: 192.168.1.100:48632)",
       "connectionTimedOut": "A conexão atingiu o tempo limite. Use a mesma rede nos dois dispositivos.",
-      "sessionNotFound": "Dispositivo não encontrado. Verifique se o Plezy está em execução no host.",
+      "sessionNotFound": "Dispositivo não encontrado. Verifique se o PlezyNG está em execução no host.",
       "authFailed": "Falha na autenticação. Ambos os dispositivos precisam da mesma conta Plex.",
       "failedToConnect": "Falha ao conectar: ${error}"
     },
@@ -2451,11 +2451,11 @@
     "connected": "Conectado",
     "connectedAs": "Conectado como @${username}",
     "disconnectConfirm": "Desconectar a conta do Trakt?",
-    "disconnectConfirmBody": "O Plezy deixará de enviar eventos ao Trakt. Você pode reconectar quando quiser.",
+    "disconnectConfirmBody": "O PlezyNG deixará de enviar eventos ao Trakt. Você pode reconectar quando quiser.",
     "scrobble": "Scrobbling em tempo real",
     "scrobbleDescription": "Envia eventos de reprodução, pausa e parada ao Trakt durante a exibição.",
     "watchedSync": "Sincronizar status de assistido",
-    "watchedSyncDescription": "Ao marcar itens como assistidos no Plezy, eles também serão marcados no Trakt."
+    "watchedSyncDescription": "Ao marcar itens como assistidos no PlezyNG, eles também serão marcados no Trakt."
   },
   "seerr": {
     "title": "Seerr",
@@ -2467,10 +2467,10 @@
     "signInWithEmby": "Entrar com Emby",
     "signInWithLocal": "Usar uma conta local",
     "email": "E-mail",
-    "noSignInMethods": "Esta instância do Seerr não oferece nenhum método de acesso compatível com o Plezy.",
+    "noSignInMethods": "Esta instância do Seerr não oferece nenhum método de acesso compatível com o PlezyNG.",
     "instance": "Instância",
     "disconnectConfirm": "Desconectar Seerr?",
-    "disconnectConfirmBody": "O Plezy esquecerá esta instância do Seerr. Reconecte quando quiser.",
+    "disconnectConfirmBody": "O PlezyNG esquecerá esta instância do Seerr. Reconecte quando quiser.",
     "request": "Solicitar",
     "request4k": "Solicitar em 4K",
     "seasons": "Temporadas",
@@ -2495,7 +2495,7 @@
     "statusBlocklisted": "Na lista de bloqueio",
     "couldNotReach": "Não foi possível acessar ${url}: ${error}",
     "noInstanceAtUrl": "Nenhuma instância do Seerr em ${url} (HTTP ${status})",
-    "behindAuthProxy": "Um proxy reverso com autenticação (SSO ou autenticação HTTP) respondeu no lugar do Seerr. O Plezy não consegue entrar através dele: permita que o caminho /api/v1 do Seerr ignore o proxy para este aplicativo, ou use um endereço que alcance o Seerr diretamente.",
+    "behindAuthProxy": "Um proxy reverso com autenticação (SSO ou autenticação HTTP) respondeu no lugar do Seerr. O PlezyNG não consegue entrar através dele: permita que o caminho /api/v1 do Seerr ignore o proxy para este aplicativo, ou use um endereço que alcance o Seerr diretamente.",
     "invalidUrl": "Insira um endereço de servidor como https://seerr.example.com",
     "quickConnectUnsupported": "Esta instância do Seerr não oferece suporte a Quick Connect. Ela precisa do Seerr 3.4 ou mais recente.",
     "notInitialized": "Esta instância do Seerr não concluiu a configuração inicial",
@@ -2518,7 +2518,7 @@
     "scrobble": "Registrar progresso automaticamente",
     "scrobbleDescription": "Atualiza sua lista quando você termina um episódio ou filme.",
     "disconnectConfirm": "Desconectar ${service}?",
-    "disconnectConfirmBody": "O Plezy deixará de atualizar ${service}. Reconecte quando quiser.",
+    "disconnectConfirmBody": "O PlezyNG deixará de atualizar ${service}. Reconecte quando quiser.",
     "connectFailed": "Não foi possível conectar ao ${service}. Tente novamente.",
     "names": {
       "mal": "MyAnimeList",
@@ -2529,10 +2529,10 @@
     },
     "simklReconnect": {
       "title": "Reconectar o Simkl",
-      "subtitle": "O Simkl está desativando o método de acesso usado por esta conexão. Ao reconectar, o simkl.com será aberto para aprovar o Plezy — o Plezy nunca vê sua senha. Seu histórico de exibição continua no Simkl."
+      "subtitle": "O Simkl está desativando o método de acesso usado por esta conexão. Ao reconectar, o simkl.com será aberto para aprovar o PlezyNG — o PlezyNG nunca vê sua senha. Seu histórico de exibição continua no Simkl."
     },
     "deviceCode": {
-      "title": "Ativar o Plezy no ${service}",
+      "title": "Ativar o PlezyNG no ${service}",
       "instructions": "Leia o código QR ou acesse o endereço abaixo e insira este código:",
       "openToActivate": "Abrir ${service} para ativar",
       "copyCode": "Copiar código de ativação",

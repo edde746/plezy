@@ -105,7 +105,7 @@ void main() {
         baseUrl: 'https://plex.example.com',
         token: 'tok',
         clientIdentifier: 'client',
-        product: 'Plezy',
+        product: 'PlezyNG',
         version: '1',
         machineIdentifier: 'machine-1',
       ),
@@ -215,7 +215,7 @@ void main() {
             baseUrl: 'https://plex.example.com',
             token: 'tok',
             clientIdentifier: 'client',
-            product: 'Plezy',
+            product: 'PlezyNG',
             version: '1',
             machineIdentifier: 'machine-1',
           ),
@@ -1033,7 +1033,7 @@ void main() {
       final deviceProfile = body['DeviceProfile'] as Map<String, dynamic>;
       expect(body['EnableDirectPlay'], isTrue);
       expect(body['EnableDirectStream'], isTrue);
-      // Original uses Plezy's normal high negotiation ceiling. 100 Mbps is
+      // Original uses PlezyNG's normal high negotiation ceiling. 100 Mbps is
       // above MediaBrowser's 40 Mbps unknown-live estimate and prevents an
       // omitted DeviceProfile value from falling back to 8 Mbps server-side.
       expect(request.url.queryParameters['MaxStreamingBitrate'], '100000000');

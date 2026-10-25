@@ -292,7 +292,7 @@ final class _FakeWorld extends _World {
     required Duration shareDurationWait,
   }) => WatchTogetherProvider(
     partyFactory: relay.party,
-    clientName: () async => 'Plezy/9.9.9',
+    clientName: () async => 'PlezyNG/9.9.9',
     displayName: () => name,
     profileId: () => profileId,
     clientFor: clientFor,
@@ -397,7 +397,7 @@ void main() {
           {for (final p in view.provider.participants) p.peerId: p.name},
           {h.peerId: 'Host', g.peerId: 'Guest One'},
         );
-        expect(view.provider.participants.map((p) => p.client).toSet(), {'Plezy/9.9.9'});
+        expect(view.provider.participants.map((p) => p.client).toSet(), {'PlezyNG/9.9.9'});
       }
       expect(world.relay.sent('join').single['name'], 'Guest One');
       await world.noticed<JoinedNotice>(h, 'the host is told', (n) => n.name == 'Guest One');
@@ -413,14 +413,14 @@ void main() {
       }
     });
 
-    _roomTest('a code without a room is refused, and a display name without text is Plezy', (world) async {
+    _roomTest('a code without a room is refused, and a display name without text is PlezyNG', (world) async {
       final h = world.member('\u202E\n');
       await world.settle(h.provider.createRoom());
       final g = world.guest();
 
       expect(await world.refusal(g.provider.joinRoom('K7M-Q2Y')), owp.ErrorCode.roomNotFound);
       expect(g.provider.isInSession, isFalse);
-      expect(h.provider.participants.single.name, 'Plezy');
+      expect(h.provider.participants.single.name, 'PlezyNG');
     });
 
     _roomTest('host transfer, control mode and lock; a guest is refused host commands', (world) async {
@@ -890,7 +890,7 @@ final class _RealWorld extends _World {
     required TitleCopyFinder? findCopies,
     required Duration shareDurationWait,
   }) => WatchTogetherProvider(
-    clientName: () async => 'Plezy/9.9.9',
+    clientName: () async => 'PlezyNG/9.9.9',
     displayName: () => name,
     customRelayBaseUrl: () => baseUrl,
     profileId: () => profileId,

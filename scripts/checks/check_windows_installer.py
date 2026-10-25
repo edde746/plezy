@@ -87,7 +87,7 @@ require(
 )
 require(
     overrides is None or "dialog" not in overrides.group(1),
-    "allowing dialog makes a silent install with no previous copy prompt; winget installs that way",
+    "allowing dialog makes a silent install with no previous copy prompt",
 )
 
 # Verify the elevation path.
@@ -120,16 +120,6 @@ require(
     "CustomMessage('ElevationRequired')" in iss
     and re.search(r"(?m)^ElevationRequired=\S", iss) is not None,
     "a refused elevation must explain itself instead of failing silently",
-)
-
-# Preserve behavior required by release tooling.
-require(
-    "{param:WINGET|0}" in iss and "{app}\\.winget" in iss,
-    "the winget marker file gates UpdateService.useNativeUpdater",
-)
-require(
-    "{param:NORUN|0}" in iss and "Check: not IsNoRun" in iss,
-    "the winget manifest passes /NORUN=1 and expects the launch entry to honor it",
 )
 
 if errors:
