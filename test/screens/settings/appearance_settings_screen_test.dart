@@ -43,6 +43,7 @@ void main() {
       t.settings.display,
       t.settings.libraryAndCards,
       t.settings.homeScreen,
+      t.settings.detailPage,
       t.settings.navigation,
     ]) {
       expect(find.text(group), findsOneWidget, reason: 'group $group missing');
@@ -103,5 +104,37 @@ void main() {
       find.descendant(of: find.byType(AppearanceSettingsScreen), matching: find.text(t.settings.plumTheme)),
       findsOneWidget,
     );
+  });
+
+  testWidgets('theme song volume only shows once theme songs are enabled', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1000, 3000);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    final supporter = SupporterService.forTesting(availability: SupporterAvailability.free);
+    addTearDown(supporter.dispose);
+    final theme = ThemeProvider(supporter: supporter);
+    addTearDown(theme.dispose);
+    await tester.pumpWidget(
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<SupporterService>.value(value: supporter),
+          ChangeNotifierProvider<ThemeProvider>.value(value: theme),
+        ],
+        child: MaterialApp(theme: monoTheme(MonoPalette.dark), home: const AppearanceSettingsScreen()),
+      ),
+    );
+    await tester.pumpAndSettle();
+
+    final scrollable = find.byType(Scrollable).first;
+    await tester.scrollUntilVisible(find.text(t.settings.themeSongsEnabled), 500, scrollable: scrollable);
+    expect(find.text(t.settings.themeSongVolume), findsNothing);
+
+    await tester.tap(find.text(t.settings.themeSongsEnabled));
+    await tester.pumpAndSettle();
+    expect(SettingsService.instance.read(SettingsService.themeSongsEnabled), isTrue);
+    expect(find.text(t.settings.themeSongVolume), findsOneWidget);
+    expect(find.text('30%'), findsOneWidget);
   });
 }

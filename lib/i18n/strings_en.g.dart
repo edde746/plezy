@@ -509,6 +509,18 @@ class Translations$settings$en {
 	/// en: 'Appearance'
 	String get appearance => 'Appearance';
 
+	/// en: 'Detail Page'
+	String get detailPage => 'Detail Page';
+
+	/// en: 'Play Theme Songs'
+	String get themeSongsEnabled => 'Play Theme Songs';
+
+	/// en: 'Play available theme songs while viewing media details.'
+	String get themeSongsEnabledDescription => 'Play available theme songs while viewing media details.';
+
+	/// en: 'Theme Song Volume'
+	String get themeSongVolume => 'Theme Song Volume';
+
 	/// en: 'Video Playback'
 	String get videoPlayback => 'Video Playback';
 
@@ -8453,6 +8465,10 @@ extension on Translations {
 			'settings.language' => 'Language',
 			'settings.theme' => 'Theme',
 			'settings.appearance' => 'Appearance',
+			'settings.detailPage' => 'Detail Page',
+			'settings.themeSongsEnabled' => 'Play Theme Songs',
+			'settings.themeSongsEnabledDescription' => 'Play available theme songs while viewing media details.',
+			'settings.themeSongVolume' => 'Theme Song Volume',
 			'settings.videoPlayback' => 'Video Playback',
 			'settings.videoPlaybackDescription' => 'Configure playback behavior',
 			'settings.advanced' => 'Advanced',
@@ -8796,12 +8812,12 @@ extension on Translations {
 			'themeEditor.builtIn' => 'Built-in',
 			'themeEditor.presets' => 'Presets',
 			'themeEditor.custom' => 'Custom',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.customEmpty' => 'Not created yet',
 			'themeEditor.editCustom' => 'Edit custom theme',
 			'themeEditor.editCustomDescription' => 'Choose every color yourself',
 			'themeEditor.locked' => 'Unlock with Supporter',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.savedLocked' => 'Saved — unlocks with Supporter',
 			'themeEditor.title' => 'Custom Theme',
 			'themeEditor.startFrom' => 'Start from',
@@ -9310,12 +9326,12 @@ extension on Translations {
 			'profiles.deleteProfileButton' => 'Delete profile',
 			'profiles.noConnectionsHint' => 'No connections — add one to use this profile.',
 			'profiles.noConnections' => 'No connections',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.plexHomeAccount' => 'Plex Home account',
 			'profiles.plexAccountChip' => ({required Object account}) => 'Plex account: ${account}',
 			'profiles.plexAccountUserChip' => ({required Object user, required Object account}) => '${user} via ${account}',
 			'profiles.connectionDefault' => 'Default',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.connectionAs' => ({required Object displayName}) => 'as ${displayName}',
 			'profiles.makeDefault' => 'Make default',
 			'profiles.removeConnection' => 'Remove',
@@ -9824,12 +9840,12 @@ extension on Translations {
 			'liveTv.watchChannel' => 'Watch Channel',
 			'liveTv.favorites' => 'Favorites',
 			'liveTv.reorderFavorites' => 'Reorder Favorites',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.noFavoriteChannels' => 'No favorite channels',
 			'liveTv.noFavoriteChannelsHint' => 'Show all channels, then long-press a channel to add it to your favorites.',
 			'liveTv.showAllChannels' => 'Show All Channels',
 			'liveTv.favoritesLoadFailed' => 'Could not load favorites. Check your connection and try again.',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.favoritesUpdateFailed' => 'Could not update favorites. Check your connection and try again.',
 			'liveTv.joinSession' => 'Join Session in Progress',
 			'liveTv.watchFromStart' => ({required Object minutes}) => 'Watch from start (${minutes} min ago)',
@@ -10338,12 +10354,12 @@ extension on Translations {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Map to the display\'s peak brightness in the player, then tell the compositor the result.',
 			'videoSettings.hdrToneMappingFailed' => 'Couldn\'t change HDR tone mapping — the previous mode is still active.',
 			'videoSettings.audioOutput' => 'Audio Output',
+			_ => null,
+		} ?? switch (path) {
 			'videoSettings.performanceOverlay' => 'Performance Overlay',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
 			'videoSettings.audioOutputSurround' => 'Surround',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.audioOutputSpatial' => 'Spatial Audio',
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioNormalization' => 'Normalize Loudness',
