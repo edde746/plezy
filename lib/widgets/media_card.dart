@@ -207,6 +207,9 @@ class MediaCard extends StatefulWidget {
 
   /// Optional collection position announced with the card.
   final String? semanticValue;
+
+  /// Null for normal browsing; otherwise announces and paints selection.
+  final bool? selected;
   final double? width;
   final double? height;
   final void Function(MediaItem source)? onRefresh;
@@ -252,6 +255,7 @@ class MediaCard extends StatefulWidget {
     super.key,
     required this.item,
     this.semanticValue,
+    this.selected,
     this.width,
     this.height,
     this.onRefresh,
@@ -470,12 +474,36 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
             enableDetailLinks: enableDetailLinks,
           );
 
+    if (widget.selected case final selected?) {
+      cardWidget = Stack(
+        children: [
+          cardWidget,
+          PositionedDirectional(
+            top: 8,
+            start: 8,
+            child: IgnorePointer(
+              child: ExcludeSemantics(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(color: Theme.of(context).colorScheme.surface, shape: BoxShape.circle),
+                  child: Padding(
+                    padding: const EdgeInsets.all(4),
+                    child: AppIcon(selected ? Symbols.check_circle_rounded : Symbols.radio_button_unchecked_rounded),
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
+
     cardWidget = Semantics(
       container: preserveDetailSemantics,
       explicitChildNodes: preserveDetailSemantics,
       label: semanticLabel,
       value: widget.semanticValue,
-      button: true,
+      button: widget.selected == null,
+      checked: widget.selected,
       onTap: handleTap,
       onLongPress: showContextMenu,
       excludeSemantics: !preserveDetailSemantics,

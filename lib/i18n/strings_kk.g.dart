@@ -1426,6 +1426,7 @@ class _Translations$libraries$kk extends Translations$libraries$en {
 	@override late final _Translations$libraries$filterCategories$kk filterCategories = _Translations$libraries$filterCategories$kk._(_root);
 	@override late final _Translations$libraries$sortLabels$kk sortLabels = _Translations$libraries$sortLabels$kk._(_root);
 	@override late final _Translations$libraries$advancedFilters$kk advancedFilters = _Translations$libraries$advancedFilters$kk._(_root);
+	@override late final _Translations$libraries$selection$kk selection = _Translations$libraries$selection$kk._(_root);
 }
 
 // Path: about
@@ -2843,6 +2844,23 @@ class _Translations$libraries$advancedFilters$kk extends Translations$libraries$
 	@override String get dateLastYear => 'Соңғы бір жыл';
 	@override String dateOlderThanDays({required Object count}) => '${count} күннен бұрынғы';
 	@override String get dateOlderThanYear => 'Бір жылдан бұрынғы';
+}
+
+// Path: libraries.selection
+class _Translations$libraries$selection$kk extends Translations$libraries$selection$en {
+	_Translations$libraries$selection$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get selectItems => 'Select items';
+	@override String selectedCount({required Object count}) => '${count} selected';
+	@override String get actions => 'Selection actions';
+	@override String get confirmDescendants => 'This changes all episodes in the selected shows and seasons.';
+	@override String get confirmUnwatched => 'This also clears playback progress for the selected items.';
+	@override String confirmCount({required Object count}) => 'Selected items: ${count}.';
+	@override String completed({required Object count}) => 'Items updated: ${count}.';
+	@override String partialFailure({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.';
 }
 
 // Path: explore.rows
@@ -4654,6 +4672,14 @@ extension on TranslationsKk {
 			'libraries.advancedFilters.dateLastYear' => 'Соңғы бір жыл',
 			'libraries.advancedFilters.dateOlderThanDays' => ({required Object count}) => '${count} күннен бұрынғы',
 			'libraries.advancedFilters.dateOlderThanYear' => 'Бір жылдан бұрынғы',
+			'libraries.selection.selectItems' => 'Select items',
+			'libraries.selection.selectedCount' => ({required Object count}) => '${count} selected',
+			'libraries.selection.actions' => 'Selection actions',
+			'libraries.selection.confirmDescendants' => 'This changes all episodes in the selected shows and seasons.',
+			'libraries.selection.confirmUnwatched' => 'This also clears playback progress for the selected items.',
+			'libraries.selection.confirmCount' => ({required Object count}) => 'Selected items: ${count}.',
+			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
+			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => 'Қолданба туралы',
 			'about.openSourceLicenses' => 'Ашық бастапқы код лицензиялары',
 			'about.versionLabel' => ({required Object version}) => 'Нұсқа ${version}',
@@ -4929,6 +4955,8 @@ extension on TranslationsKk {
 			'liveTv.rulesProcessRequested' => 'Ережелерді қайта бағалау сұралды',
 			'liveTv.rulesProcessFailed' => 'Жазу ережелерін қайта тексеру мүмкін болмады',
 			'liveTv.recordShow' => 'Шоуды жазу',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.recordSettings.startEarly' => 'Ертерек бастау (секунд)',
 			'liveTv.recordSettings.endLate' => 'Кешірек аяқтау (секунд)',
 			'liveTv.recordSettings.newOnly' => 'Тек жаңа эпизодтар',
@@ -4937,8 +4965,6 @@ extension on TranslationsKk {
 			'liveTv.recordSettings.skipInLibrary' => 'Кітапханада бар эпизодтарды өткізіп жіберу',
 			'liveTv.recordSettings.keepUpTo' => 'Сақталатын эпизодтар',
 			'liveTv.recordSettings.keepUpToHint' => '0 барлық эпизодты сақтайды',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} мин кейін басталады',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} жарамсыз тікелей TV ойнату деректерін қайтарды',
@@ -5443,6 +5469,8 @@ extension on TranslationsKk {
 			'performanceOverlay.player' => 'Ойнатқыш',
 			'performanceOverlay.memory' => 'Жады',
 			'performanceOverlay.uiFps' => 'Интерфейс (UI) FPS',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
@@ -5451,8 +5479,6 @@ extension on TranslationsKk {
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Бағдарламалық',
 			'performanceOverlay.decoderHardware' => 'Аппараттық',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.tunnelingActive' => 'Белсенді',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} сәтсіз аяқталды)',
 			'externalPlayer.title' => 'Сыртқы ойнатқыш',

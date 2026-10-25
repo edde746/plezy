@@ -1426,6 +1426,7 @@ class _Translations$libraries$fr extends Translations$libraries$en {
 	@override late final _Translations$libraries$filterCategories$fr filterCategories = _Translations$libraries$filterCategories$fr._(_root);
 	@override late final _Translations$libraries$sortLabels$fr sortLabels = _Translations$libraries$sortLabels$fr._(_root);
 	@override late final _Translations$libraries$advancedFilters$fr advancedFilters = _Translations$libraries$advancedFilters$fr._(_root);
+	@override late final _Translations$libraries$selection$fr selection = _Translations$libraries$selection$fr._(_root);
 }
 
 // Path: about
@@ -2843,6 +2844,23 @@ class _Translations$libraries$advancedFilters$fr extends Translations$libraries$
 	@override String get dateLastYear => '12 derniers mois';
 	@override String dateOlderThanDays({required Object count}) => 'Il y a plus de ${count} jours';
 	@override String get dateOlderThanYear => 'Il y a plus d’un an';
+}
+
+// Path: libraries.selection
+class _Translations$libraries$selection$fr extends Translations$libraries$selection$en {
+	_Translations$libraries$selection$fr._(TranslationsFr root) : this._root = root, super.internal(root);
+
+	final TranslationsFr _root; // ignore: unused_field
+
+	// Translations
+	@override String get selectItems => 'Select items';
+	@override String selectedCount({required Object count}) => '${count} selected';
+	@override String get actions => 'Selection actions';
+	@override String get confirmDescendants => 'This changes all episodes in the selected shows and seasons.';
+	@override String get confirmUnwatched => 'This also clears playback progress for the selected items.';
+	@override String confirmCount({required Object count}) => 'Selected items: ${count}.';
+	@override String completed({required Object count}) => 'Items updated: ${count}.';
+	@override String partialFailure({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.';
 }
 
 // Path: explore.rows
@@ -4654,6 +4672,14 @@ extension on TranslationsFr {
 			'libraries.advancedFilters.dateLastYear' => '12 derniers mois',
 			'libraries.advancedFilters.dateOlderThanDays' => ({required Object count}) => 'Il y a plus de ${count} jours',
 			'libraries.advancedFilters.dateOlderThanYear' => 'Il y a plus d’un an',
+			'libraries.selection.selectItems' => 'Select items',
+			'libraries.selection.selectedCount' => ({required Object count}) => '${count} selected',
+			'libraries.selection.actions' => 'Selection actions',
+			'libraries.selection.confirmDescendants' => 'This changes all episodes in the selected shows and seasons.',
+			'libraries.selection.confirmUnwatched' => 'This also clears playback progress for the selected items.',
+			'libraries.selection.confirmCount' => ({required Object count}) => 'Selected items: ${count}.',
+			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
+			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => 'À propos',
 			'about.openSourceLicenses' => 'Licences libres',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
@@ -4929,6 +4955,8 @@ extension on TranslationsFr {
 			'liveTv.rulesProcessRequested' => 'Réévaluation des règles demandée',
 			'liveTv.rulesProcessFailed' => 'Impossible de réévaluer les règles d’enregistrement',
 			'liveTv.recordShow' => 'Enregistrer l\'émission',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.recordSettings.startEarly' => 'Démarrer en avance (secondes)',
 			'liveTv.recordSettings.endLate' => 'Terminer en retard (secondes)',
 			'liveTv.recordSettings.newOnly' => 'Uniquement les nouveaux épisodes',
@@ -4937,8 +4965,6 @@ extension on TranslationsFr {
 			'liveTv.recordSettings.skipInLibrary' => 'Ignorer les épisodes déjà présents dans la bibliothèque',
 			'liveTv.recordSettings.keepUpTo' => 'Épisodes à conserver',
 			'liveTv.recordSettings.keepUpToHint' => '0 conserve tous les épisodes',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Commence dans ${minutes} min',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} à ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} a renvoyé des données de lecture de TV en direct non valides',
@@ -5443,6 +5469,8 @@ extension on TranslationsFr {
 			'performanceOverlay.player' => 'Lecteur',
 			'performanceOverlay.memory' => 'Mémoire',
 			'performanceOverlay.uiFps' => 'FPS UI',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Matériel Android',
 			'performanceOverlay.decoderNvidiaHw' => 'Matériel NVIDIA',
@@ -5451,8 +5479,6 @@ extension on TranslationsFr {
 			'performanceOverlay.decoderExynosHw' => 'Matériel Exynos',
 			'performanceOverlay.decoderSoftware' => 'Logiciel',
 			'performanceOverlay.decoderHardware' => 'Matériel',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.tunnelingActive' => 'Actif',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} échecs)',
 			'externalPlayer.title' => 'Lecteur externe',

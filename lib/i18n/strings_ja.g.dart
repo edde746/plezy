@@ -1421,6 +1421,7 @@ class _Translations$libraries$ja extends Translations$libraries$en {
 	@override late final _Translations$libraries$filterCategories$ja filterCategories = _Translations$libraries$filterCategories$ja._(_root);
 	@override late final _Translations$libraries$sortLabels$ja sortLabels = _Translations$libraries$sortLabels$ja._(_root);
 	@override late final _Translations$libraries$advancedFilters$ja advancedFilters = _Translations$libraries$advancedFilters$ja._(_root);
+	@override late final _Translations$libraries$selection$ja selection = _Translations$libraries$selection$ja._(_root);
 }
 
 // Path: about
@@ -2833,6 +2834,23 @@ class _Translations$libraries$advancedFilters$ja extends Translations$libraries$
 	@override String get dateLastYear => '過去1年間';
 	@override String dateOlderThanDays({required Object count}) => '${count}日以上前';
 	@override String get dateOlderThanYear => '1年以上前';
+}
+
+// Path: libraries.selection
+class _Translations$libraries$selection$ja extends Translations$libraries$selection$en {
+	_Translations$libraries$selection$ja._(TranslationsJa root) : this._root = root, super.internal(root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String get selectItems => 'Select items';
+	@override String selectedCount({required Object count}) => '${count} selected';
+	@override String get actions => 'Selection actions';
+	@override String get confirmDescendants => 'This changes all episodes in the selected shows and seasons.';
+	@override String get confirmUnwatched => 'This also clears playback progress for the selected items.';
+	@override String confirmCount({required Object count}) => 'Selected items: ${count}.';
+	@override String completed({required Object count}) => 'Items updated: ${count}.';
+	@override String partialFailure({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.';
 }
 
 // Path: explore.rows
@@ -4642,6 +4660,14 @@ extension on TranslationsJa {
 			'libraries.advancedFilters.dateLastYear' => '過去1年間',
 			'libraries.advancedFilters.dateOlderThanDays' => ({required Object count}) => '${count}日以上前',
 			'libraries.advancedFilters.dateOlderThanYear' => '1年以上前',
+			'libraries.selection.selectItems' => 'Select items',
+			'libraries.selection.selectedCount' => ({required Object count}) => '${count} selected',
+			'libraries.selection.actions' => 'Selection actions',
+			'libraries.selection.confirmDescendants' => 'This changes all episodes in the selected shows and seasons.',
+			'libraries.selection.confirmUnwatched' => 'This also clears playback progress for the selected items.',
+			'libraries.selection.confirmCount' => ({required Object count}) => 'Selected items: ${count}.',
+			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
+			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => 'アプリについて',
 			'about.openSourceLicenses' => 'オープンソースライセンス',
 			'about.versionLabel' => ({required Object version}) => 'バージョン ${version}',
@@ -4917,6 +4943,8 @@ extension on TranslationsJa {
 			'liveTv.rulesProcessRequested' => '録画ルールの再評価をリクエストしました',
 			'liveTv.rulesProcessFailed' => '録画ルールを再適用できませんでした',
 			'liveTv.recordShow' => '番組を録画',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.recordSettings.startEarly' => '早めに開始（秒）',
 			'liveTv.recordSettings.endLate' => '遅めに終了（秒）',
 			'liveTv.recordSettings.newOnly' => '新しいエピソードのみ',
@@ -4925,8 +4953,6 @@ extension on TranslationsJa {
 			'liveTv.recordSettings.skipInLibrary' => 'ライブラリにあるエピソードをスキップ',
 			'liveTv.recordSettings.keepUpTo' => '保持するエピソード数',
 			'liveTv.recordSettings.keepUpToHint' => '0 ですべてのエピソードを保持',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes}分後に開始',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product}から無効なライブTV再生データが返されました',
@@ -5431,6 +5457,8 @@ extension on TranslationsJa {
 			'performanceOverlay.player' => 'プレーヤー',
 			'performanceOverlay.memory' => 'メモリ',
 			'performanceOverlay.uiFps' => 'UI FPS',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
@@ -5439,8 +5467,6 @@ extension on TranslationsJa {
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'ソフトウェア',
 			'performanceOverlay.decoderHardware' => 'ハードウェア',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.tunnelingActive' => '有効',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures}件失敗）',
 			'externalPlayer.title' => '外部プレーヤー',

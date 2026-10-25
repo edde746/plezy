@@ -1380,6 +1380,16 @@
       "dateLastYear": "12 derniers mois",
       "dateOlderThanDays": "Il y a plus de ${count} jours",
       "dateOlderThanYear": "Il y a plus d’un an"
+    },
+    "selection": {
+      "selectItems": "Select items",
+      "selectedCount": "${count} selected",
+      "actions": "Selection actions",
+      "confirmDescendants": "This changes all episodes in the selected shows and seasons.",
+      "confirmUnwatched": "This also clears playback progress for the selected items.",
+      "confirmCount": "Selected items: ${count}.",
+      "completed": "Items updated: ${count}.",
+      "partialFailure": "Updated ${succeeded}; failed ${failed}. Failed items remain selected."
     }
   },
   "about": {

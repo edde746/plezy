@@ -3617,6 +3617,7 @@ class Translations$libraries$en {
 	late final Translations$libraries$filterCategories$en filterCategories = Translations$libraries$filterCategories$en.internal(_root);
 	late final Translations$libraries$sortLabels$en sortLabels = Translations$libraries$sortLabels$en.internal(_root);
 	late final Translations$libraries$advancedFilters$en advancedFilters = Translations$libraries$advancedFilters$en.internal(_root);
+	late final Translations$libraries$selection$en selection = Translations$libraries$selection$en.internal(_root);
 }
 
 // Path: about
@@ -7098,6 +7099,39 @@ class Translations$libraries$advancedFilters$en {
 	String get dateOlderThanYear => 'Older than a year';
 }
 
+// Path: libraries.selection
+class Translations$libraries$selection$en {
+	Translations$libraries$selection$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Select items'
+	String get selectItems => 'Select items';
+
+	/// en: '${count} selected'
+	String selectedCount({required Object count}) => '${count} selected';
+
+	/// en: 'Selection actions'
+	String get actions => 'Selection actions';
+
+	/// en: 'This changes all episodes in the selected shows and seasons.'
+	String get confirmDescendants => 'This changes all episodes in the selected shows and seasons.';
+
+	/// en: 'This also clears playback progress for the selected items.'
+	String get confirmUnwatched => 'This also clears playback progress for the selected items.';
+
+	/// en: 'Selected items: ${count}.'
+	String confirmCount({required Object count}) => 'Selected items: ${count}.';
+
+	/// en: 'Items updated: ${count}.'
+	String completed({required Object count}) => 'Items updated: ${count}.';
+
+	/// en: 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.'
+	String partialFailure({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.';
+}
+
 // Path: explore.mdblistShelves
 class Translations$explore$mdblistShelves$en {
 	Translations$explore$mdblistShelves$en.internal(this._root);
@@ -9585,6 +9619,14 @@ extension on Translations {
 			'libraries.advancedFilters.dateLastYear' => 'Past year',
 			'libraries.advancedFilters.dateOlderThanDays' => ({required Object count}) => 'Older than ${count} days',
 			'libraries.advancedFilters.dateOlderThanYear' => 'Older than a year',
+			'libraries.selection.selectItems' => 'Select items',
+			'libraries.selection.selectedCount' => ({required Object count}) => '${count} selected',
+			'libraries.selection.actions' => 'Selection actions',
+			'libraries.selection.confirmDescendants' => 'This changes all episodes in the selected shows and seasons.',
+			'libraries.selection.confirmUnwatched' => 'This also clears playback progress for the selected items.',
+			'libraries.selection.confirmCount' => ({required Object count}) => 'Selected items: ${count}.',
+			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
+			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => 'About',
 			'about.openSourceLicenses' => 'Open Source Licenses',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
@@ -9832,6 +9874,8 @@ extension on Translations {
 			'liveTv.tomorrow' => 'Tomorrow',
 			'liveTv.midnight' => 'Midnight',
 			'liveTv.overnight' => 'Overnight',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.morning' => 'Morning',
 			'liveTv.daytime' => 'Daytime',
 			'liveTv.evening' => 'Evening',
@@ -9840,8 +9884,6 @@ extension on Translations {
 			'liveTv.watchChannel' => 'Watch Channel',
 			'liveTv.favorites' => 'Favorites',
 			'liveTv.reorderFavorites' => 'Reorder Favorites',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.noFavoriteChannels' => 'No favorite channels',
 			'liveTv.noFavoriteChannelsHint' => 'Show all channels, then long-press a channel to add it to your favorites.',
 			'liveTv.showAllChannels' => 'Show All Channels',
@@ -10346,6 +10388,8 @@ extension on Translations {
 			'videoSettings.audioSync' => 'Audio Sync',
 			'videoSettings.subtitleSync' => 'Subtitle Sync',
 			'videoSettings.hdr' => 'HDR',
+			_ => null,
+		} ?? switch (path) {
 			'videoSettings.hdrUnsupported' => 'HDR isn\'t available here — this desktop compositor or video output can\'t carry it.',
 			'videoSettings.hdrToneMapping' => 'HDR Tone Mapping',
 			'videoSettings.hdrToneMappingCompositor' => 'Compositor',
@@ -10354,8 +10398,6 @@ extension on Translations {
 			'videoSettings.hdrToneMappingPlayerDescription' => 'Map to the display\'s peak brightness in the player, then tell the compositor the result.',
 			'videoSettings.hdrToneMappingFailed' => 'Couldn\'t change HDR tone mapping — the previous mode is still active.',
 			'videoSettings.audioOutput' => 'Audio Output',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.performanceOverlay' => 'Performance Overlay',
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',

@@ -1426,6 +1426,7 @@ class _Translations$libraries$tr extends Translations$libraries$en {
 	@override late final _Translations$libraries$filterCategories$tr filterCategories = _Translations$libraries$filterCategories$tr._(_root);
 	@override late final _Translations$libraries$sortLabels$tr sortLabels = _Translations$libraries$sortLabels$tr._(_root);
 	@override late final _Translations$libraries$advancedFilters$tr advancedFilters = _Translations$libraries$advancedFilters$tr._(_root);
+	@override late final _Translations$libraries$selection$tr selection = _Translations$libraries$selection$tr._(_root);
 }
 
 // Path: about
@@ -2843,6 +2844,23 @@ class _Translations$libraries$advancedFilters$tr extends Translations$libraries$
 	@override String get dateLastYear => 'Son bir yıl';
 	@override String dateOlderThanDays({required Object count}) => '${count} günden eski';
 	@override String get dateOlderThanYear => 'Bir yıldan eski';
+}
+
+// Path: libraries.selection
+class _Translations$libraries$selection$tr extends Translations$libraries$selection$en {
+	_Translations$libraries$selection$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get selectItems => 'Select items';
+	@override String selectedCount({required Object count}) => '${count} selected';
+	@override String get actions => 'Selection actions';
+	@override String get confirmDescendants => 'This changes all episodes in the selected shows and seasons.';
+	@override String get confirmUnwatched => 'This also clears playback progress for the selected items.';
+	@override String confirmCount({required Object count}) => 'Selected items: ${count}.';
+	@override String completed({required Object count}) => 'Items updated: ${count}.';
+	@override String partialFailure({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.';
 }
 
 // Path: explore.rows
@@ -4654,6 +4672,14 @@ extension on TranslationsTr {
 			'libraries.advancedFilters.dateLastYear' => 'Son bir yıl',
 			'libraries.advancedFilters.dateOlderThanDays' => ({required Object count}) => '${count} günden eski',
 			'libraries.advancedFilters.dateOlderThanYear' => 'Bir yıldan eski',
+			'libraries.selection.selectItems' => 'Select items',
+			'libraries.selection.selectedCount' => ({required Object count}) => '${count} selected',
+			'libraries.selection.actions' => 'Selection actions',
+			'libraries.selection.confirmDescendants' => 'This changes all episodes in the selected shows and seasons.',
+			'libraries.selection.confirmUnwatched' => 'This also clears playback progress for the selected items.',
+			'libraries.selection.confirmCount' => ({required Object count}) => 'Selected items: ${count}.',
+			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
+			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => 'Hakkında',
 			'about.openSourceLicenses' => 'Açık Kaynak Lisansları',
 			'about.versionLabel' => ({required Object version}) => 'Sürüm ${version}',
@@ -4929,6 +4955,8 @@ extension on TranslationsTr {
 			'liveTv.rulesProcessRequested' => 'Kuralın yeniden değerlendirilmesi istendi',
 			'liveTv.rulesProcessFailed' => 'Kayıt kuralları yeniden değerlendirilemedi',
 			'liveTv.recordShow' => 'Programı kaydet',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.recordSettings.startEarly' => 'Erken başlat (saniye)',
 			'liveTv.recordSettings.endLate' => 'Geç bitir (saniye)',
 			'liveTv.recordSettings.newOnly' => 'Yalnızca yeni bölümler',
@@ -4937,8 +4965,6 @@ extension on TranslationsTr {
 			'liveTv.recordSettings.skipInLibrary' => 'Kitaplıkta zaten bulunan bölümleri atla',
 			'liveTv.recordSettings.keepUpTo' => 'Saklanacak bölüm sayısı',
 			'liveTv.recordSettings.keepUpToHint' => '0 tüm bölümleri saklar',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} dk içinde başlıyor',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} saat ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} geçersiz Canlı TV oynatma verileri döndürdü',
@@ -5443,6 +5469,8 @@ extension on TranslationsTr {
 			'performanceOverlay.player' => 'Oynatıcı',
 			'performanceOverlay.memory' => 'Bellek',
 			'performanceOverlay.uiFps' => 'Arayüz (UI) FPS',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android Donanım',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA Donanım',
@@ -5451,8 +5479,6 @@ extension on TranslationsTr {
 			'performanceOverlay.decoderExynosHw' => 'Exynos Donanım',
 			'performanceOverlay.decoderSoftware' => 'Yazılım',
 			'performanceOverlay.decoderHardware' => 'Donanım',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.tunnelingActive' => 'Etkin',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} başarısız)',
 			'externalPlayer.title' => 'Harici Oynatıcı',

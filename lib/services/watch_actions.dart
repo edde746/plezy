@@ -19,7 +19,7 @@ enum WatchMarkOutcome {
   /// Marked on the server; event emitted, trackers fired.
   marked,
 
-  /// Nothing to do (no server id / no bound client).
+  /// No eligible client, or the UI/authentication session was retired.
   skipped,
 }
 
@@ -58,10 +58,16 @@ class WatchActions {
     final client = context.tryGetMediaClientForServer(ServerId(serverId));
     if (client == null) return WatchMarkOutcome.skipped;
 
+    final authentication = client.authenticationSessionId;
     if (watched) {
       await client.markWatched(item);
     } else {
       await client.markUnwatched(item);
+    }
+    if (!context.mounted ||
+        !identical(client.authenticationSessionId, authentication) ||
+        !identical(context.tryGetMediaClientForServer(ServerId(serverId)), client)) {
+      return WatchMarkOutcome.skipped;
     }
     WatchStateNotifier().notifyWatched(
       item: item,

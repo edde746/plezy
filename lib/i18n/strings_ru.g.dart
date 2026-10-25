@@ -1436,6 +1436,7 @@ class _Translations$libraries$ru extends Translations$libraries$en {
 	@override late final _Translations$libraries$filterCategories$ru filterCategories = _Translations$libraries$filterCategories$ru._(_root);
 	@override late final _Translations$libraries$sortLabels$ru sortLabels = _Translations$libraries$sortLabels$ru._(_root);
 	@override late final _Translations$libraries$advancedFilters$ru advancedFilters = _Translations$libraries$advancedFilters$ru._(_root);
+	@override late final _Translations$libraries$selection$ru selection = _Translations$libraries$selection$ru._(_root);
 }
 
 // Path: about
@@ -2863,6 +2864,23 @@ class _Translations$libraries$advancedFilters$ru extends Translations$libraries$
 	@override String get dateLastYear => 'Последний год';
 	@override String dateOlderThanDays({required Object count}) => 'Старше ${count} дн.';
 	@override String get dateOlderThanYear => 'Старше года';
+}
+
+// Path: libraries.selection
+class _Translations$libraries$selection$ru extends Translations$libraries$selection$en {
+	_Translations$libraries$selection$ru._(TranslationsRu root) : this._root = root, super.internal(root);
+
+	final TranslationsRu _root; // ignore: unused_field
+
+	// Translations
+	@override String get selectItems => 'Select items';
+	@override String selectedCount({required Object count}) => '${count} selected';
+	@override String get actions => 'Selection actions';
+	@override String get confirmDescendants => 'This changes all episodes in the selected shows and seasons.';
+	@override String get confirmUnwatched => 'This also clears playback progress for the selected items.';
+	@override String confirmCount({required Object count}) => 'Selected items: ${count}.';
+	@override String completed({required Object count}) => 'Items updated: ${count}.';
+	@override String partialFailure({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.';
 }
 
 // Path: explore.rows
@@ -4678,6 +4696,14 @@ extension on TranslationsRu {
 			'libraries.advancedFilters.dateLastYear' => 'Последний год',
 			'libraries.advancedFilters.dateOlderThanDays' => ({required Object count}) => 'Старше ${count} дн.',
 			'libraries.advancedFilters.dateOlderThanYear' => 'Старше года',
+			'libraries.selection.selectItems' => 'Select items',
+			'libraries.selection.selectedCount' => ({required Object count}) => '${count} selected',
+			'libraries.selection.actions' => 'Selection actions',
+			'libraries.selection.confirmDescendants' => 'This changes all episodes in the selected shows and seasons.',
+			'libraries.selection.confirmUnwatched' => 'This also clears playback progress for the selected items.',
+			'libraries.selection.confirmCount' => ({required Object count}) => 'Selected items: ${count}.',
+			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
+			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => 'О приложении',
 			'about.openSourceLicenses' => 'Лицензии открытого ПО',
 			'about.versionLabel' => ({required Object version}) => 'Версия ${version}',
@@ -4953,6 +4979,8 @@ extension on TranslationsRu {
 			'liveTv.rulesProcessRequested' => 'Запрошен пересчёт правил',
 			'liveTv.rulesProcessFailed' => 'Не удалось повторно применить правила записи',
 			'liveTv.recordShow' => 'Записать передачу',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.recordSettings.startEarly' => 'Начинать раньше (секунды)',
 			'liveTv.recordSettings.endLate' => 'Заканчивать позже (секунды)',
 			'liveTv.recordSettings.newOnly' => 'Только новые эпизоды',
@@ -4961,8 +4989,6 @@ extension on TranslationsRu {
 			'liveTv.recordSettings.skipInLibrary' => 'Пропускать эпизоды, уже имеющиеся в библиотеке',
 			'liveTv.recordSettings.keepUpTo' => 'Сколько эпизодов хранить',
 			'liveTv.recordSettings.keepUpToHint' => '0 — хранить все эпизоды',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Начало через ${minutes} мин',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} в ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} вернул некорректные данные для воспроизведения ТВ в прямом эфире',
@@ -5467,6 +5493,8 @@ extension on TranslationsRu {
 			'performanceOverlay.player' => 'Плеер',
 			'performanceOverlay.memory' => 'Память',
 			'performanceOverlay.uiFps' => 'FPS интерфейса',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android, аппаратный',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA, аппаратный',
@@ -5475,8 +5503,6 @@ extension on TranslationsRu {
 			'performanceOverlay.decoderExynosHw' => 'Exynos, аппаратный',
 			'performanceOverlay.decoderSoftware' => 'Программный',
 			'performanceOverlay.decoderHardware' => 'Аппаратный',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.tunnelingActive' => 'Активно',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (ошибок: ${failures})',
 			'externalPlayer.title' => 'Внешний плеер',

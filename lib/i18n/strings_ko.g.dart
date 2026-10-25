@@ -1421,6 +1421,7 @@ class _Translations$libraries$ko extends Translations$libraries$en {
 	@override late final _Translations$libraries$filterCategories$ko filterCategories = _Translations$libraries$filterCategories$ko._(_root);
 	@override late final _Translations$libraries$sortLabels$ko sortLabels = _Translations$libraries$sortLabels$ko._(_root);
 	@override late final _Translations$libraries$advancedFilters$ko advancedFilters = _Translations$libraries$advancedFilters$ko._(_root);
+	@override late final _Translations$libraries$selection$ko selection = _Translations$libraries$selection$ko._(_root);
 }
 
 // Path: about
@@ -2833,6 +2834,23 @@ class _Translations$libraries$advancedFilters$ko extends Translations$libraries$
 	@override String get dateLastYear => '최근 1년';
 	@override String dateOlderThanDays({required Object count}) => '${count}일 이상 지남';
 	@override String get dateOlderThanYear => '1년 이상 지남';
+}
+
+// Path: libraries.selection
+class _Translations$libraries$selection$ko extends Translations$libraries$selection$en {
+	_Translations$libraries$selection$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+
+	final TranslationsKo _root; // ignore: unused_field
+
+	// Translations
+	@override String get selectItems => 'Select items';
+	@override String selectedCount({required Object count}) => '${count} selected';
+	@override String get actions => 'Selection actions';
+	@override String get confirmDescendants => 'This changes all episodes in the selected shows and seasons.';
+	@override String get confirmUnwatched => 'This also clears playback progress for the selected items.';
+	@override String confirmCount({required Object count}) => 'Selected items: ${count}.';
+	@override String completed({required Object count}) => 'Items updated: ${count}.';
+	@override String partialFailure({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.';
 }
 
 // Path: explore.rows
@@ -4642,6 +4660,14 @@ extension on TranslationsKo {
 			'libraries.advancedFilters.dateLastYear' => '최근 1년',
 			'libraries.advancedFilters.dateOlderThanDays' => ({required Object count}) => '${count}일 이상 지남',
 			'libraries.advancedFilters.dateOlderThanYear' => '1년 이상 지남',
+			'libraries.selection.selectItems' => 'Select items',
+			'libraries.selection.selectedCount' => ({required Object count}) => '${count} selected',
+			'libraries.selection.actions' => 'Selection actions',
+			'libraries.selection.confirmDescendants' => 'This changes all episodes in the selected shows and seasons.',
+			'libraries.selection.confirmUnwatched' => 'This also clears playback progress for the selected items.',
+			'libraries.selection.confirmCount' => ({required Object count}) => 'Selected items: ${count}.',
+			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
+			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => '소개',
 			'about.openSourceLicenses' => '오픈소스 라이선스',
 			'about.versionLabel' => ({required Object version}) => '버전 ${version}',
@@ -4917,6 +4943,8 @@ extension on TranslationsKo {
 			'liveTv.rulesProcessRequested' => '규칙 재평가 요청됨',
 			'liveTv.rulesProcessFailed' => '녹화 규칙을 다시 적용할 수 없습니다',
 			'liveTv.recordShow' => '프로그램 녹화',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.recordSettings.startEarly' => '일찍 시작 (초)',
 			'liveTv.recordSettings.endLate' => '늦게 종료 (초)',
 			'liveTv.recordSettings.newOnly' => '새 에피소드만',
@@ -4925,8 +4953,6 @@ extension on TranslationsKo {
 			'liveTv.recordSettings.skipInLibrary' => '라이브러리에 이미 있는 에피소드 건너뛰기',
 			'liveTv.recordSettings.keepUpTo' => '보관할 에피소드 수',
 			'liveTv.recordSettings.keepUpToHint' => '0이면 모든 에피소드 보관',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes}분 후 시작',
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product}에서 잘못된 실시간 TV 재생 데이터를 반환했습니다',
@@ -5431,6 +5457,8 @@ extension on TranslationsKo {
 			'performanceOverlay.player' => '플레이어',
 			'performanceOverlay.memory' => '메모리',
 			'performanceOverlay.uiFps' => 'UI FPS',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
@@ -5439,8 +5467,6 @@ extension on TranslationsKo {
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => '소프트웨어',
 			'performanceOverlay.decoderHardware' => '하드웨어',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.tunnelingActive' => '활성',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures}개 실패)',
 			'externalPlayer.title' => '외부 플레이어',

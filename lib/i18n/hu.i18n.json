@@ -1380,6 +1380,16 @@
       "dateLastYear": "Az elmúlt év",
       "dateOlderThanDays": "${count} napnál régebbi",
       "dateOlderThanYear": "Egy évnél régebbi"
+    },
+    "selection": {
+      "selectItems": "Select items",
+      "selectedCount": "${count} selected",
+      "actions": "Selection actions",
+      "confirmDescendants": "This changes all episodes in the selected shows and seasons.",
+      "confirmUnwatched": "This also clears playback progress for the selected items.",
+      "confirmCount": "Selected items: ${count}.",
+      "completed": "Items updated: ${count}.",
+      "partialFailure": "Updated ${succeeded}; failed ${failed}. Failed items remain selected."
     }
   },
   "about": {
