@@ -905,7 +905,9 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           sparse-checkout: |
+            CHANGELOG.md
             pubspec.yaml
+            scripts/generate_release_notes.py
             scripts/pubspec_version.py
           sparse-checkout-cone-mode: false
           persist-credentials: false
@@ -933,6 +935,11 @@ jobs:
             echo "Release tag $RELEASE_TAG does not match pubspec version $VERSION." >&2
             exit 1
           fi
+
+      - name: Generate release notes from CHANGELOG.md
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: python3 scripts/generate_release_notes.py "$RELEASE_TAG" > release-notes.md
 
       - name: Download Android artifacts
         if: ${{ inputs.build_android }}
@@ -1096,6 +1103,7 @@ jobs:
         uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3
         with:
           files: ${{ steps.release-files.outputs.files }}
+          body_path: release-notes.md
           draft: true
           prerelease: false
           name: ${{ inputs.release_tag }}

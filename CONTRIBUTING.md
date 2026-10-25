@@ -45,6 +45,17 @@ The project includes automated CI checks that run on all pull requests:
 
 All these checks must pass before your changes can be merged.
 
+### Changelog and release notes
+
+Add a concise, user-visible bullet under `CHANGELOG.md` → `## [Unreleased]` for app, platform, or release-build changes.
+The pre-commit hook checks staged changes, and CI checks pull requests and pushes to `main`. Install the hook once with
+`scripts/setup_hooks.sh`.
+
+The release build creates draft GitHub releases with notes from `CHANGELOG.md`. It uses a matching version section when
+one exists, otherwise it uses `Unreleased`. Before later releases, move shipped bullets into a dated version section
+and keep `Unreleased` for new work. Published stable releases are announced in Discord with their changelog notes and a
+link to the GitHub release.
+
 ### Maestro end-to-end tests
 
 Android E2E tests use [Maestro](https://maestro.mobile.dev/) against a disposable, pre-seeded Jellyfin container.

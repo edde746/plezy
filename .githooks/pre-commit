@@ -18,4 +18,5 @@ if git diff --cached --quiet; then
 fi
 
 ROOT="$(git rev-parse --show-toplevel)"
+python3 "$ROOT/scripts/changelog.py" validate --mode staged
 exec "$ROOT/scripts/ci_checks.sh"

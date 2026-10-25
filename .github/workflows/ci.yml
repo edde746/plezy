@@ -32,7 +32,20 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          fetch-depth: 0
           persist-credentials: false
+
+      - name: Validate changelog entry
+        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        env:
+          CHANGELOG_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
+          CHANGELOG_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+        run: |
+          if [[ -z "$CHANGELOG_BASE" || "$CHANGELOG_BASE" =~ ^0+$ ]]; then
+            echo "No previous commit is available for changelog range validation."
+            exit 0
+          fi
+          python3 scripts/changelog.py validate --mode range --base "$CHANGELOG_BASE" --head "$CHANGELOG_HEAD"
 
       - name: Setup Flutter
         uses: subosito/flutter-action@1a449444c387b1966244ae4d4f8c696479add0b2 # v2
