@@ -59,6 +59,7 @@ import 'about_screen.dart';
 import 'add_connection_screen.dart';
 import 'account_preferences_screen.dart';
 import 'appearance_settings_screen.dart';
+import 'cloud_settings_backup_dialog.dart';
 import 'general_settings_screen.dart';
 import 'keyboard_shortcuts_screen.dart';
 import 'logs_screen.dart';
@@ -734,9 +735,35 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           subtitle: t.settings.importSettingsDescription,
           onTap: _showImportSettingsDialog,
         ),
-        // TODO: Cloud settings sync/backup (#1795, #1979) goes here once a
-        // sync backend exists (iCloud on Apple platforms, or the relay).
+        SettingNavigationTile(
+          icon: Symbols.cloud_sync_rounded,
+          title: t.settings.cloudBackup,
+          subtitle: t.settings.cloudBackupDescription,
+          onTap: _showCloudSettingsBackup,
+        ),
       ],
+    );
+  }
+
+  void _showCloudSettingsBackup() {
+    List<Object?>? previousRootConfiguration;
+    showDialog<void>(
+      context: context,
+      builder: (_) => CloudSettingsBackupDialog(
+        beforeRestore: () => previousRootConfiguration = SettingsMutationService.captureRootConfiguration(),
+        afterRestore: () async {
+          if (!mounted) return;
+          _settingsService.refreshListenables();
+          await context.read<HiddenLibrariesProvider>().refresh();
+          if (!mounted) return;
+          unawaited(context.read<LibrariesProvider>().refresh());
+          final failures = await const SettingsMutationService().applyStoredEffects(
+            context,
+            previousRootConfiguration: previousRootConfiguration ?? const [],
+          );
+          if (mounted && failures.isNotEmpty) showErrorSnackBar(context, failures.first.display);
+        },
+      ),
     );
   }
 

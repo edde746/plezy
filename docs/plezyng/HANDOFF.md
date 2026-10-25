@@ -29,14 +29,15 @@ Status: 2026-10-25. PlezyNG is a fork of `edde746/plezy` intended to carry reque
 
 | Area | Remaining work |
 | --- | --- |
-| Downloads | Orphan cleanup; verify converted downloads against real Plex/Jellyfin/Emby servers |
-| Profiles | None for the listed PIN and per-profile Explore visibility requests; Plex Home PIN remains server-owned |
+| Downloads | Verify converted downloads against real Plex/Jellyfin/Emby servers; review orphan-file cleanup semantics |
+| Profiles | Implementation is complete: the app-local PIN gates Settings, download deletion, and Explore; Explore visibility is per profile. Plex Home PINs remain server-owned. |
 | Audio/subtitles | Validate per-show memory, pre-play selection, and automatic subtitle fetching against real Plex/Jellyfin/Emby servers |
-| Browsing | Show finish time on TV details and remaining detail surfaces |
+| Browsing | Finish-time estimate is shown on media details; check platform layouts during release validation |
 | Home | Backdrop-art visibility and Continue Watching row sizing are implemented. Empty-library filtering applies when the server reports an explicit zero. The legacy hero banner already has a visibility setting; the top-bar clock is available on TV. |
-| Live TV | Jellyfin/Emby DVR timeshift timeline |
-| Integrations | Google Cast; new-episode notifications; content screensaver; Home Assistant and Android automation intents |
-| Settings | Cloud settings backup |
+| Live TV | Jellyfin/Emby do not expose a seekable capture-window snapshot in their public playback responses, so the app cannot safely map their live buffer to the absolute-time timeline used by Plex |
+| Integrations | Google Cast; new-episode notifications; content screensaver |
+| Automation | Cross-server `plezy://watch` links are available for Home Assistant and Android `ACTION_VIEW` automation; direct player-control intents remain unimplemented |
+| Settings | HTTPS WebDAV backup of the portable settings export is implemented. Configure a file URL ending in `.json`, optionally with WebDAV credentials; local server connections, tokens, download locations, and history are excluded. |
 
 ## Validation and cautions
 

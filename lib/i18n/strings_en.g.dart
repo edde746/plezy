@@ -1015,6 +1015,39 @@ class Translations$settings$en {
 	/// en: 'Sign in before importing settings'
 	String get importSettingsNoUser => 'Sign in before importing settings';
 
+	/// en: 'Cloud Backup'
+	String get cloudBackup => 'Cloud Backup';
+
+	/// en: 'Back up portable settings to a WebDAV endpoint over HTTPS. Server connections and credentials stay on this device.'
+	String get cloudBackupDescription => 'Back up portable settings to a WebDAV endpoint over HTTPS. Server connections and credentials stay on this device.';
+
+	/// en: 'WebDAV JSON file URL'
+	String get cloudBackupUrl => 'WebDAV JSON file URL';
+
+	/// en: 'Username'
+	String get cloudBackupUsername => 'Username';
+
+	/// en: 'Password'
+	String get cloudBackupPassword => 'Password';
+
+	/// en: 'Cloud backup destination saved'
+	String get cloudBackupSaved => 'Cloud backup destination saved';
+
+	/// en: 'Back Up Now'
+	String get cloudBackupNow => 'Back Up Now';
+
+	/// en: 'Settings backup uploaded'
+	String get cloudBackupComplete => 'Settings backup uploaded';
+
+	/// en: 'Restore Backup'
+	String get cloudBackupRestore => 'Restore Backup';
+
+	/// en: 'This will replace matching portable settings on this device. Continue?'
+	String get cloudBackupRestoreConfirm => 'This will replace matching portable settings on this device. Continue?';
+
+	/// en: 'Settings restored from cloud backup'
+	String get cloudBackupRestored => 'Settings restored from cloud backup';
+
 	/// en: 'Shortcuts reset to defaults'
 	String get shortcutsReset => 'Shortcuts reset to defaults';
 
@@ -9173,6 +9206,17 @@ extension on Translations {
 			'settings.importSettingsSuccess' => 'Settings imported',
 			'settings.importSettingsInvalidFile' => 'This file isn\'t a valid Plezy settings export',
 			'settings.importSettingsNoUser' => 'Sign in before importing settings',
+			'settings.cloudBackup' => 'Cloud Backup',
+			'settings.cloudBackupDescription' => 'Back up portable settings to a WebDAV endpoint over HTTPS. Server connections and credentials stay on this device.',
+			'settings.cloudBackupUrl' => 'WebDAV JSON file URL',
+			'settings.cloudBackupUsername' => 'Username',
+			'settings.cloudBackupPassword' => 'Password',
+			'settings.cloudBackupSaved' => 'Cloud backup destination saved',
+			'settings.cloudBackupNow' => 'Back Up Now',
+			'settings.cloudBackupComplete' => 'Settings backup uploaded',
+			'settings.cloudBackupRestore' => 'Restore Backup',
+			'settings.cloudBackupRestoreConfirm' => 'This will replace matching portable settings on this device. Continue?',
+			'settings.cloudBackupRestored' => 'Settings restored from cloud backup',
 			'settings.shortcutsReset' => 'Shortcuts reset to defaults',
 			'settings.resetShortcutsConfirm' => 'This will replace your custom shortcuts with the defaults. Continue?',
 			'settings.about' => 'About',
@@ -9341,6 +9385,8 @@ extension on Translations {
 			'settings.preferredServer' => 'Preferred Server',
 			'settings.preferredServerDescription' => 'Prioritize this server\'s results while keeping every connected server available.',
 			'settings.preferredServerAutomatic' => 'Automatic',
+			_ => null,
+		} ?? switch (path) {
 			'settings.showExploreTab' => 'Show Explore Tab',
 			'settings.showExploreTabDescription' => 'Display the Explore tab with content from Plex Discover and connected trackers',
 			'settings.hideEmptyLibraries' => 'Hide empty libraries',
@@ -9352,8 +9398,6 @@ extension on Translations {
 			'settings.languageAndRegion' => 'Language & Region',
 			'settings.startup' => 'Startup',
 			'settings.display' => 'Display',
-			_ => null,
-		} ?? switch (path) {
 			'settings.libraryAndCards' => 'Library & Cards',
 			'settings.homeScreen' => 'Home Screen',
 			'settings.navigation' => 'Navigation',
@@ -9855,6 +9899,8 @@ extension on Translations {
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Advanced video player settings',
 			'mpvConfig.presets' => 'Presets',
+			_ => null,
+		} ?? switch (path) {
 			'mpvConfig.noPresets' => 'No saved presets',
 			'mpvConfig.saveAsPreset' => 'Save as Preset...',
 			'mpvConfig.presetName' => 'Preset Name',
@@ -9866,8 +9912,6 @@ extension on Translations {
 			'mpvConfig.presetDeleted' => 'Preset deleted',
 			'mpvConfig.confirmDeletePreset' => 'Are you sure you want to delete this preset?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
-			_ => null,
-		} ?? switch (path) {
 			'mpvConfig.lineHint' => 'option=value',
 			'mpvConfig.addLine' => 'Add line',
 			'mpvConfig.removeLine' => 'Remove line',
@@ -10369,6 +10413,8 @@ extension on Translations {
 			'explore.relation.parentStory' => 'Parent story',
 			'explore.relation.adaptation' => 'Adaptation',
 			'explore.relation.other' => 'Related',
+			_ => null,
+		} ?? switch (path) {
 			'explore.broadcast' => ({required Object day, required Object time}) => 'Airs ${day} at ${time}',
 			'explore.broadcastWithZone' => ({required Object day, required Object time, required Object timezone}) => 'Airs ${day} at ${time} ${timezone}',
 			'explore.detail.originalTitle' => 'Original title',
@@ -10380,8 +10426,6 @@ extension on Translations {
 			'explore.detail.physicalRelease' => 'On disc',
 			'explore.detail.ended' => 'Ended',
 			'explore.detail.addedOn' => ({required Object date}) => 'Added ${date}',
-			_ => null,
-		} ?? switch (path) {
 			'explore.detail.yourRating' => 'Your rating',
 			'explore.detail.budget' => 'Budget',
 			'explore.detail.revenue' => 'Box office',
@@ -10883,6 +10927,8 @@ extension on Translations {
 			'companionRemote.unknownDevice' => 'Unknown Device',
 			'companionRemote.session.startingServer' => 'Starting remote server...',
 			'companionRemote.session.hostAddress' => 'Host Address',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.session.connected' => 'Connected',
 			'companionRemote.session.serverRunning' => 'Remote server active',
 			'companionRemote.session.serverStopped' => 'Remote server stopped',
@@ -10894,8 +10940,6 @@ extension on Translations {
 			'companionRemote.session.minimize' => 'Minimize',
 			'companionRemote.session.manualAddressHint' => 'Manual connection address:',
 			'companionRemote.pairing.discoveryDescription' => 'Plezy devices with the same Plex account appear here',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Connecting...',
 			'companionRemote.pairing.searchingForDevices' => 'Looking for devices...',
@@ -11397,6 +11441,8 @@ extension on Translations {
 			'homeLayout.libraryResumeRow' => 'This library\'s resume row',
 			'homeLayout.pressAgainToDelete' => 'Press again to delete',
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
+			_ => null,
+		} ?? switch (path) {
 			'homeLayout.on' => 'On',
 			'homeLayout.resetHeroButtonDescription' => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept.',
 			_ => null,
