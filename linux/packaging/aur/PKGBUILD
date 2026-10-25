@@ -1,0 +1,33 @@
+pkgname=plezyng-bin
+pkgver=2.24.1
+pkgrel=1
+pkgdesc='Native media client for Plex, Jellyfin, and Emby'
+arch=('x86_64' 'aarch64')
+url='https://github.com/snapetech-org/PlezyNG'
+license=('GPL-3.0-only')
+depends=('alsa-lib' 'glib2' 'gtk3' 'libdrm' 'libepoxy' 'libevdev' 'libglvnd' 'libva' 'libx11' 'libxcb' 'libxext' 'mesa' 'wayland')
+provides=('plezyng')
+source=('plezyng.desktop' 'LICENSE')
+source_x86_64=("$pkgname-$pkgver-linux-x64.tar.gz::https://github.com/snapetech-org/PlezyNG/releases/download/$pkgver/plezy-linux-x64.tar.gz")
+source_aarch64=("$pkgname-$pkgver-linux-arm64.tar.gz::https://github.com/snapetech-org/PlezyNG/releases/download/$pkgver/plezy-linux-arm64.tar.gz")
+sha256sums=('SKIP' 'SKIP')
+sha256sums_x86_64=('SKIP')
+sha256sums_aarch64=('SKIP')
+noextract=("$pkgname-$pkgver-linux-x64.tar.gz" "$pkgname-$pkgver-linux-arm64.tar.gz")
+
+package() {
+  local archive
+  case "$CARCH" in
+    x86_64) archive="$srcdir/$pkgname-$pkgver-linux-x64.tar.gz" ;;
+    aarch64) archive="$srcdir/$pkgname-$pkgver-linux-arm64.tar.gz" ;;
+    *) printf 'Unsupported architecture: %s\n' "$CARCH" >&2; return 1 ;;
+  esac
+
+  install -d "$pkgdir/opt/plezyng"
+  tar -xzf "$archive" -C "$pkgdir/opt/plezyng"
+  install -Dm755 "$pkgdir/opt/plezyng/plezy.sh" "$pkgdir/usr/bin/plezyng"
+  sed -i 's|INSTALL_DIR="/opt/plezy"|INSTALL_DIR="/opt/plezyng"|' "$pkgdir/usr/bin/plezyng"
+  install -Dm644 "$srcdir/plezyng.desktop" "$pkgdir/usr/share/applications/org.snapetech.plezyng.desktop"
+  install -Dm644 "$pkgdir/opt/plezyng/plezyng.png" "$pkgdir/usr/share/icons/hicolor/512x512/apps/plezyng.png"
+  install -Dm644 "$srcdir/LICENSE" "$pkgdir/usr/share/licenses/$pkgname/LICENSE"
+}

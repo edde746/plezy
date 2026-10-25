@@ -1,0 +1,10 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: PlezyNG
+Source: https://github.com/snapetech-org/PlezyNG
+
+Files: *
+Copyright: SnapeTech
+License: GPL-3.0-only
+ This package is distributed under the GNU General Public License, version 3.
+ On Debian systems, the complete license text is available in
+ /usr/share/common-licenses/GPL-3.

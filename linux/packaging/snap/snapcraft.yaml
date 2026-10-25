@@ -1,0 +1,80 @@
+name: plezyng
+title: PlezyNG
+version: '0.0.0'
+summary: Plex, Jellyfin, and Emby media client
+description: |
+  PlezyNG is a native media client for Plex, Jellyfin, and Emby servers. Browse
+  libraries, stream video and music, and download media for offline playback.
+license: GPL-3.0-only
+contact: https://github.com/snapetech-org/PlezyNG/issues
+website: https://github.com/snapetech-org/PlezyNG
+source-code: https://github.com/snapetech-org/PlezyNG
+issues: https://github.com/snapetech-org/PlezyNG/issues
+icon: gui/plezyng.png
+base: core24
+grade: stable
+confinement: strict
+
+platforms:
+  amd64:
+    build-on: amd64
+    build-for: amd64
+  arm64:
+    build-on: arm64
+    build-for: arm64
+
+apps:
+  plezyng:
+    command: opt/plezy/plezy.sh
+    desktop: usr/share/applications/org.snapetech.plezyng.desktop
+    plugs:
+      - audio-playback
+      - desktop
+      - desktop-legacy
+      - home
+      - network
+      - opengl
+      - removable-media
+      - wayland
+      - x11
+
+slots:
+  mpris:
+    interface: mpris
+    name: org_snapetech_plezyng
+
+parts:
+  plezyng:
+    plugin: nil
+    source: src
+    override-build: |
+      set -eu
+      install -d "$CRAFT_PART_INSTALL/opt/plezy"
+      cp -a "$CRAFT_PART_SRC"/. "$CRAFT_PART_INSTALL/opt/plezy/"
+      install -Dm755 "$CRAFT_PROJECT_DIR/plezy.sh" "$CRAFT_PART_INSTALL/opt/plezy/plezy.sh"
+      install -Dm644 "$CRAFT_PROJECT_DIR/plezyng.desktop" "$CRAFT_PART_INSTALL/usr/share/applications/org.snapetech.plezyng.desktop"
+      install -Dm644 "$CRAFT_PROJECT_DIR/gui/plezyng.png" "$CRAFT_PART_INSTALL/usr/share/icons/hicolor/512x512/apps/plezyng.png"
+    stage-packages:
+      - libasound2t64
+      - libdrm2
+      - libegl1
+      - libepoxy0
+      - libevdev2
+      - libgbm1
+      - libglvnd0
+      - libgtk-3-0t64
+      - libglib2.0-0t64
+      - libva2
+      - libva-drm2
+      - libva-wayland2
+      - libva-x11-2
+      - libwayland-client0
+      - libwayland-cursor0
+      - libwayland-egl1
+      - libx11-6
+      - libx11-xcb1
+      - libxcb-dri3-0
+      - libxcb-render0
+      - libxcb-shm0
+      - libxcb1
+      - libxext6

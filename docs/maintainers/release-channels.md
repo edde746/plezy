@@ -6,7 +6,7 @@ This is the release support boundary for the PlezyNG client and its separate rel
 
 `.github/workflows/build.yml` runs only by manual dispatch from `main`. The requested semantic version must match `pubspec.yaml`. It builds the configured targets, generates release notes from `CHANGELOG.md`, checksums and attests the packages, and creates a draft GitHub Release. Review the draft, then publish it.
 
-Push and pull-request CI runs checks; it does not build release packages or publish images. The only package build dispatch is **PlezyNG Release**. Publishing the draft triggers Discord, Homebrew/appcast, Chocolatey, WinGet, and relay-container workflows. The app-store workflow is separate and must be run manually for a published stable release.
+Push and pull-request CI runs checks; it does not build release packages or publish images. The only package build dispatch is **PlezyNG Release**. Publishing the draft triggers Discord, Homebrew/appcast, Chocolatey, WinGet, Snap Store, AUR, COPR, PPA, and relay-container workflows. The app-store workflow is separate and must be run manually for a published stable release.
 
 ## Client packages on GitHub Releases
 
@@ -14,7 +14,7 @@ Push and pull-request CI runs checks; it does not build release packages or publ
 | --- | --- | --- |
 | Windows | x64, arm64 | Combined Inno Setup installer, per-architecture portable `.7z`, Chocolatey `.nupkg`, and versioned WinGet manifest bundle. A dual-architecture Microsoft Store `.msixbundle` is added when the Partner Center package identity is configured. |
 | macOS | x64, arm64 | Universal DMG and Sparkle appcast; the Homebrew cask is updated after publication. Developer ID signing and notarization are optional. |
-| Linux | x64, arm64 | Portable `.tar.gz`, Debian `.deb`, RPM `.rpm`, Arch `.pkg.tar.zst`, and Flatpak bundle for each architecture. |
+| Linux | x64, arm64 | Portable `.tar.gz`, Debian `.deb`, RPM `.rpm`, Arch `.pkg.tar.zst`, Flatpak bundle, and Snap package for each architecture; an x64 AppImage is also attached. |
 | Android | arm64-v8a, armeabi-v7a, x86_64 | Split APK archives. A Play `.aab` and Amazon Fire TV APK are attached when the Android release key is configured. |
 | iOS | arm64 | Unsigned developer `.ipa` for inspection; a signed App Store `.ipa` is also attached when Apple distribution signing and provisioning are configured. |
 | tvOS | arm64 | Unsigned developer `.ipa` for inspection; a signed App Store `.ipa` is also attached when Apple distribution signing and provisioning are configured. |
@@ -45,11 +45,15 @@ Changing the install IDs means an install signed under upstream's identity canno
 | Apple App Store (iOS) | Wired, credential-gated | The manual workflow uploads the signed IPA to App Store Connect without submitting it to App Review. |
 | Apple App Store (tvOS) | Wired, credential-gated | The manual workflow uploads the signed tvOS IPA to App Store Connect without submitting it to App Review. |
 | Mac App Store | Not a Plezy upstream channel | Plezy distributes macOS through a direct DMG and Homebrew. |
-| Flathub, Snap Store, AUR, COPR, Launchpad PPA | Not wired | Each needs its own listing/repository, identity, credentials, and review or maintainer process. |
+| Snap Store | Wired, credential-gated | `publish-snap.yml` uploads the matching architecture package to `stable` after a published release. The Snap name must be registered, and `SNAPCRAFT_STORE_CREDENTIALS` must be scoped to that name. Manual dispatch can publish an existing release to `edge`, `beta`, `candidate`, or `stable`. |
+| AUR | Wired, package and credential-gated | `publish-aur.yml` updates the binary package recipe after a published release. Register the selected package name first, then set `AUR_PACKAGE_NAME` and `AUR_SSH_KEY`. |
+| Fedora COPR | Wired, project and credential-gated | `publish-copr.yml` builds an SRPM from the checked release bundles and submits it to `COPR_PROJECT`. The COPR project must include x86_64 and aarch64 chroots. |
+| Launchpad PPA | Wired, archive and credential-gated | `publish-ppa.yml` signs and uploads source packages for Jammy and Noble after a published release. Set `LAUNCHPAD_PPA` and a Launchpad-registered `GPG_PRIVATE_KEY`. |
+| Flathub | Not submitted | The attached Flatpak bundles use the prebuilt Linux bundle. Flathub requires its own source-built manifest submission and reviewer approval; it is not an automatic upload channel. |
 
 The app-store workflow only accepts an already-published stable GitHub Release and does not build packages. Run it from `main`, select the release tag, then choose a target channel. Create PlezyNG's own app records/listings and reserve the fork bundle IDs before enabling these uploads; the workflow sends binaries only, with no listing metadata, screenshots, or review submission. There are no PlezyNG store listings yet; store packages appear only after the required signing credentials are configured.
 
-The upstream [Plezy download guide](https://github.com/edde746/plezy#download) also lists Arch, Fedora/RHEL, Nix, and aerynOS channels. This fork includes the Arch `.pkg.tar.zst` and RPM artifacts for downstream package maintainers, but does not publish to those community repositories itself. Flatpak remains a GitHub bundle, not Flathub.
+The upstream [Plezy download guide](https://github.com/edde746/plezy#download) also lists Arch, Fedora/RHEL, Nix, and aerynOS channels. PlezyNG now publishes to AUR, COPR, and Launchpad PPA when their accounts are configured. Nix and aerynOS remain community-maintained package channels; Flatpak remains a GitHub bundle until a source-built Flathub submission is accepted.
 
 ## Required configuration
 
@@ -71,9 +75,13 @@ For iOS, the base64 export-options plist must declare `method` as `app-store-con
 | Sparkle / WinSparkle update signatures | `SPARKLE_PRIVATE_KEY` |
 | Chocolatey | `CHOCO_API_KEY` |
 | WinGet | `WINGET_CREATE_GITHUB_TOKEN` (classic GitHub PAT with `public_repo` scope) |
+| Snap Store | `SNAPCRAFT_STORE_CREDENTIALS` (exported Snapcraft credentials scoped to the registered PlezyNG snap and required channels) |
+| AUR | `AUR_SSH_KEY` |
+| Fedora COPR | `COPR_LOGIN`, `COPR_USERNAME`, `COPR_TOKEN`; repository variable `COPR_PROJECT` |
+| Launchpad PPA | `GPG_PRIVATE_KEY`; repository variable `LAUNCHPAD_PPA` in `ppa:<owner>/<archive>` format |
 | Relay Docker Hub mirror | `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN` |
 
-GHCR uses the workflow's `GITHUB_TOKEN`; make the first package public in GitHub Packages settings if anonymous pulls are intended. The Discord publisher uses `DISCORD_RELEASE_WEBHOOK`. At this wiring pass, that was the only configured release secret; all store signing and publisher credentials remain to be added.
+GHCR uses the workflow's `GITHUB_TOKEN`; make the first package public in GitHub Packages settings if anonymous pulls are intended. The Discord publisher uses `DISCORD_RELEASE_WEBHOOK`. At the 2026-10-25 settings check, that was the only configured Actions secret and there were no repository variables; add the channel-specific values above before expecting publisher workflows to submit packages.
 
 ## Relay containers
 

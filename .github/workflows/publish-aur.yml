@@ -1,0 +1,161 @@
+name: Update AUR package
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Published PlezyNG release tag
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  update-aur:
+    name: Update plezyng-bin on AUR
+    runs-on: ubuntu-latest
+    if: github.event_name != 'release' || github.event.release.prerelease == false
+    steps:
+      - name: Require main for manual updates
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "AUR updates may only be dispatched from main." >&2
+            exit 1
+          fi
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      - name: Validate published release
+        id: release
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+          INPUT_TAG: ${{ inputs.release_tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${EVENT_TAG:-$INPUT_TAG}"
+          if [[ ! "$tag" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Expected a stable semantic-version tag, got: $tag" >&2
+            exit 1
+          fi
+          metadata="$(gh release view "$tag" --json isDraft,isPrerelease)"
+          if [[ "$(jq -r '.isDraft' <<<"$metadata")" != "false" || "$(jq -r '.isPrerelease' <<<"$metadata")" != "false" ]]; then
+            echo "AUR updates require a published stable GitHub Release." >&2
+            exit 1
+          fi
+          tag_ref="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq '.object.sha')"
+          tag_type="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq '.object.type')"
+          if [[ "$tag_type" == "tag" ]]; then
+            tag_ref="$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_ref" --jq '.object.sha')"
+          fi
+          main_ref="$(gh api "repos/$GITHUB_REPOSITORY/branches/main" --jq '.commit.sha')"
+          comparison="$(gh api "repos/$GITHUB_REPOSITORY/compare/$tag_ref...$main_ref" --jq '.status')"
+          if [[ "$comparison" != "ahead" && "$comparison" != "identical" ]]; then
+            echo "Release $tag is not on main or an ancestor of main." >&2
+            exit 1
+          fi
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - name: Check AUR publisher settings
+        id: settings
+        env:
+          AUR_PACKAGE_NAME: ${{ vars.AUR_PACKAGE_NAME }}
+          AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
+        run: |
+          if [[ -n "$AUR_PACKAGE_NAME" && -n "$AUR_SSH_KEY" ]]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "AUR_PACKAGE_NAME or AUR_SSH_KEY is not configured; skipping AUR update."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download release checksums
+        if: steps.settings.outputs.configured == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: gh release download "$RELEASE_TAG" --pattern SHA256SUMS.txt --dir "$RUNNER_TEMP/plezyng-aur"
+
+      - name: Update and push AUR package recipe
+        if: steps.settings.outputs.configured == 'true'
+        env:
+          AUR_PACKAGE_NAME: ${{ vars.AUR_PACKAGE_NAME }}
+          AUR_SSH_KEY: ${{ secrets.AUR_SSH_KEY }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          [[ "$AUR_PACKAGE_NAME" =~ ^[a-z0-9][a-z0-9@._+-]*$ ]] || { echo "Invalid AUR package name." >&2; exit 1; }
+          checksums="$RUNNER_TEMP/plezyng-aur/SHA256SUMS.txt"
+          checksum_for() {
+            local name="$1"
+            awk -v name="$name" '$2 == name { print $1; count++ } END { if (count != 1) exit 1 }' "$checksums"
+          }
+          x64_sha="$(checksum_for plezy-linux-x64.tar.gz)"
+          arm64_sha="$(checksum_for plezy-linux-arm64.tar.gz)"
+          [[ "$x64_sha" =~ ^[0-9a-f]{64}$ && "$arm64_sha" =~ ^[0-9a-f]{64}$ ]]
+
+          ssh_dir="$RUNNER_TEMP/aur-ssh"
+          key_file="$ssh_dir/id_ed25519"
+          known_hosts="$ssh_dir/known_hosts"
+          install -d -m 700 "$ssh_dir"
+          printf '%s\n' "$AUR_SSH_KEY" > "$key_file"
+          chmod 600 "$key_file"
+          ssh-keyscan -H aur.archlinux.org > "$known_hosts" 2>/dev/null
+          export GIT_SSH_COMMAND="ssh -i $key_file -o IdentitiesOnly=yes -o UserKnownHostsFile=$known_hosts -o StrictHostKeyChecking=yes"
+
+          remote="ssh://aur@aur.archlinux.org/${AUR_PACKAGE_NAME}.git"
+          aur_repo="$RUNNER_TEMP/aur-repo"
+          if ! git ls-remote "$remote" >/dev/null 2>&1; then
+            echo "AUR package repository '$AUR_PACKAGE_NAME' is not registered or not accessible." >&2
+            exit 1
+          fi
+          git clone "$remote" "$aur_repo"
+          cp linux/packaging/aur/PKGBUILD "$aur_repo/PKGBUILD"
+          cp linux/packaging/aur/plezyng.desktop "$aur_repo/plezyng.desktop"
+          cp LICENSE "$aur_repo/LICENSE"
+          sed -i "s/^pkgver=.*/pkgver=${RELEASE_TAG}/" "$aur_repo/PKGBUILD"
+          sed -i "s/^sha256sums_x86_64=.*/sha256sums_x86_64=('${x64_sha}')/" "$aur_repo/PKGBUILD"
+          sed -i "s/^sha256sums_aarch64=.*/sha256sums_aarch64=('${arm64_sha}')/" "$aur_repo/PKGBUILD"
+
+          (
+            cd "$aur_repo"
+            source PKGBUILD
+            {
+              printf 'pkgbase = %s\n' "$pkgname"
+              printf '\tpkgdesc = %s\n' "$pkgdesc"
+              printf '\tpkgver = %s\n' "$pkgver"
+              printf '\tpkgrel = %s\n' "$pkgrel"
+              printf '\turl = %s\n' "$url"
+              for value in "${arch[@]}"; do printf '\tarch = %s\n' "$value"; done
+              for value in "${license[@]}"; do printf '\tlicense = %s\n' "$value"; done
+              for value in "${depends[@]}"; do printf '\tdepends = %s\n' "$value"; done
+              for value in "${provides[@]}"; do printf '\tprovides = %s\n' "$value"; done
+              for value in "${noextract[@]}"; do printf '\tnoextract = %s\n' "$value"; done
+              for value in "${source[@]}"; do printf '\tsource = %s\n' "$value"; done
+              for value in "${sha256sums[@]}"; do printf '\tsha256sums = %s\n' "$value"; done
+              for arch_name in x86_64 aarch64; do
+                declare -n arch_sources="source_${arch_name}"
+                declare -n arch_sums="sha256sums_${arch_name}"
+                for value in "${arch_sources[@]}"; do printf '\tsource_%s = %s\n' "$arch_name" "$value"; done
+                for value in "${arch_sums[@]}"; do printf '\tsha256sums_%s = %s\n' "$arch_name" "$value"; done
+              done
+              printf '\n\tpkgname = %s\n' "$pkgname"
+            } > .SRCINFO
+            git config user.name "PlezyNG Release Bot"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add PKGBUILD .SRCINFO plezyng.desktop LICENSE
+            if git diff --cached --quiet; then
+              echo "AUR package is already current."
+              exit 0
+            fi
+            git commit -m "Update to ${RELEASE_TAG}"
+            git push origin HEAD:master
+          )

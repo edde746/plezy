@@ -8,6 +8,7 @@
 - Added changelog enforcement, changelog-based release notes, and Discord announcements for published PlezyNG releases.
 - Require an explicit versioned release dispatch, and move release downloads and package updates to PlezyNG.
 - Add credential-gated signed Android Play/Amazon and Apple App Store assets, manual mobile-store submissions, an identity-gated Windows Store MSIX bundle, release checksums, Windows package-manager submissions, and multi-architecture relay container publishing.
+- Prepare credential-gated Snap Store, AppImage, AUR, Fedora COPR, and Launchpad PPA release channels.
 - Use PlezyNG-specific Android, Apple, tvOS, and Flatpak application identities for store and package submissions.
 - Remove the inherited WinGet publisher and add the PlezyNG Discord support link to the README.
 

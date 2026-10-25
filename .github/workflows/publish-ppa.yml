@@ -1,0 +1,171 @@
+name: Publish Launchpad PPA package
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Published PlezyNG release tag
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    if: github.event_name != 'release' || github.event.release.prerelease == false
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        ubuntu_series: [jammy, noble]
+    steps:
+      - name: Require main for manual publication
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "PPA publication may only be dispatched from main." >&2
+            exit 1
+          fi
+
+      - name: Resolve and validate published release
+        id: release
+        env:
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ inputs.release_tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${EVENT_TAG:-$INPUT_TAG}"
+          [[ "$tag" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid stable release tag: $tag" >&2; exit 1; }
+          metadata="$(gh release view "$tag" --json isDraft,isPrerelease)"
+          [[ "$(jq -r '.isDraft' <<<"$metadata")" == "false" && "$(jq -r '.isPrerelease' <<<"$metadata")" == "false" ]] || {
+            echo "PPA publication requires a published stable GitHub Release." >&2
+            exit 1
+          }
+          tag_ref="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq '.object.sha')"
+          tag_type="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq '.object.type')"
+          if [[ "$tag_type" == "tag" ]]; then
+            tag_ref="$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_ref" --jq '.object.sha')"
+          fi
+          main_ref="$(gh api "repos/$GITHUB_REPOSITORY/branches/main" --jq '.commit.sha')"
+          comparison="$(gh api "repos/$GITHUB_REPOSITORY/compare/$tag_ref...$main_ref" --jq '.status')"
+          [[ "$comparison" == "ahead" || "$comparison" == "identical" ]] || {
+            echo "Release $tag is not on main or an ancestor of main." >&2
+            exit 1
+          }
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ steps.release.outputs.tag }}
+          persist-credentials: false
+
+      - name: Check Launchpad publisher settings
+        id: settings
+        env:
+          LAUNCHPAD_PPA: ${{ vars.LAUNCHPAD_PPA }}
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          if [[ -n "$LAUNCHPAD_PPA" && -n "$GPG_PRIVATE_KEY" ]]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "LAUNCHPAD_PPA or GPG_PRIVATE_KEY is not configured; skipping publication."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download Linux release assets
+        if: steps.settings.outputs.configured == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/plezyng-ppa/assets"
+          gh release download "$RELEASE_TAG" \
+            --pattern plezy-linux-x64.tar.gz \
+            --pattern plezy-linux-arm64.tar.gz \
+            --pattern SHA256SUMS.txt \
+            --dir "$RUNNER_TEMP/plezyng-ppa/assets"
+          cd "$RUNNER_TEMP/plezyng-ppa/assets"
+          for asset in plezy-linux-x64.tar.gz plezy-linux-arm64.tar.gz; do
+            expected="$(awk -v name="$asset" '$2 == name { print $1; count++ } END { if (count != 1) exit 1 }' SHA256SUMS.txt)"
+            actual="$(sha256sum "$asset" | cut -d ' ' -f 1)"
+            [[ "$expected" == "$actual" ]] || { echo "Checksum mismatch for $asset" >&2; exit 1; }
+          done
+
+      - name: Install package tools and import signing key
+        if: steps.settings.outputs.configured == 'true'
+        id: signing
+        env:
+          GPG_PRIVATE_KEY: ${{ secrets.GPG_PRIVATE_KEY }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends build-essential debhelper devscripts dpkg-dev dput gnupg
+          printf '%s\n' "$GPG_PRIVATE_KEY" | gpg --batch --import
+          fingerprint="$(gpg --batch --list-secret-keys --with-colons | awk -F: '$1 == "fpr" { print $10; exit }')"
+          test -n "$fingerprint"
+          echo "fingerprint=$fingerprint" >> "$GITHUB_OUTPUT"
+
+      - name: Validate PPA and prepare dput
+        if: steps.settings.outputs.configured == 'true'
+        id: ppa
+        env:
+          LAUNCHPAD_PPA: ${{ vars.LAUNCHPAD_PPA }}
+        run: |
+          set -euo pipefail
+          [[ "$LAUNCHPAD_PPA" =~ ^ppa:([A-Za-z0-9][A-Za-z0-9+.-]*)/([A-Za-z0-9][A-Za-z0-9+.-]*)$ ]] || {
+            echo "LAUNCHPAD_PPA must use ppa:<owner>/<archive> format." >&2
+            exit 1
+          }
+          owner="${BASH_REMATCH[1]}"
+          archive="${BASH_REMATCH[2]}"
+          archive_api="https://api.launchpad.net/1.0/~${owner}/+archive/ubuntu/${archive}"
+          curl --fail --silent --show-error "$archive_api" >/dev/null || {
+            echo "Launchpad PPA does not exist or is not public: $LAUNCHPAD_PPA" >&2
+            exit 1
+          }
+          {
+            printf '[plezyng-ppa]\n'
+            printf 'fqdn = ppa.launchpad.net\n'
+            printf 'method = ftp\n'
+            printf 'incoming = ~%s/ubuntu/%s\n' "$owner" "$archive"
+            printf 'login = anonymous\n'
+            printf 'allow_unsigned_uploads = 0\n'
+          } > "$HOME/.dput.cf"
+
+      - name: Build and upload signed source package
+        if: steps.settings.outputs.configured == 'true'
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+          UBUNTU_SERIES: ${{ matrix.ubuntu_series }}
+          GPG_FINGERPRINT: ${{ steps.signing.outputs.fingerprint }}
+        run: |
+          set -euo pipefail
+          version="$RELEASE_TAG"
+          source_name="plezyng-${version}"
+          work="$RUNNER_TEMP/plezyng-ppa/build"
+          source_dir="$work/$source_name"
+          mkdir -p "$source_dir/debian"
+          cp "$RUNNER_TEMP/plezyng-ppa/assets/plezy-linux-x64.tar.gz" "$source_dir/"
+          cp "$RUNNER_TEMP/plezyng-ppa/assets/plezy-linux-arm64.tar.gz" "$source_dir/"
+          cp linux/packaging/plezy.sh linux/packaging/org.snapetech.plezyng.desktop assets/plezy.png LICENSE "$source_dir/"
+          cp -a linux/packaging/ppa/debian/. "$source_dir/debian/"
+          ppa_version="${version}-1ppa1~${UBUNTU_SERIES}1"
+          cat > "$source_dir/debian/changelog" <<EOF
+          plezyng (${ppa_version}) ${UBUNTU_SERIES}; urgency=medium
+
+            * Publish PlezyNG ${RELEASE_TAG}.
+
+           -- SnapeTech <noreply@github.com>  $(date -R)
+          EOF
+          tar -czf "$work/plezyng_${version}.orig.tar.gz" --exclude="$source_name/debian" -C "$work" "$source_name"
+          cd "$source_dir"
+          dpkg-buildpackage -S -sa -d -k"$GPG_FINGERPRINT"
+          changes="$(find "$work" -maxdepth 1 -type f -name "plezyng_${ppa_version}_source.changes" -print -quit)"
+          test -n "$changes" && test -s "$changes"
+          dput -f plezyng-ppa "$changes"

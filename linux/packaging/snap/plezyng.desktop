@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=PlezyNG
+Comment=A media client for Plex, Jellyfin, and Emby
+Exec=plezyng
+Icon=plezyng
+Terminal=false
+Categories=AudioVideo;Video;Player;
+Keywords=plex;jellyfin;emby;media;streaming;video;
+StartupWMClass=plezy

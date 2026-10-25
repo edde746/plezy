@@ -1,0 +1,139 @@
+name: Publish Fedora COPR package
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Published PlezyNG release tag
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+jobs:
+  publish:
+    if: github.event_name != 'release' || github.event.release.prerelease == false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Require main for manual publication
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "COPR publication may only be dispatched from main." >&2
+            exit 1
+          fi
+
+      - name: Resolve and validate published release
+        id: release
+        env:
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ inputs.release_tag }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${EVENT_TAG:-$INPUT_TAG}"
+          [[ "$tag" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]] || { echo "Invalid stable release tag: $tag" >&2; exit 1; }
+          metadata="$(gh release view "$tag" --json isDraft,isPrerelease)"
+          [[ "$(jq -r '.isDraft' <<<"$metadata")" == "false" && "$(jq -r '.isPrerelease' <<<"$metadata")" == "false" ]] || {
+            echo "COPR requires a published stable GitHub Release." >&2
+            exit 1
+          }
+          tag_ref="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq '.object.sha')"
+          tag_type="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq '.object.type')"
+          if [[ "$tag_type" == "tag" ]]; then
+            tag_ref="$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_ref" --jq '.object.sha')"
+          fi
+          main_ref="$(gh api "repos/$GITHUB_REPOSITORY/branches/main" --jq '.commit.sha')"
+          comparison="$(gh api "repos/$GITHUB_REPOSITORY/compare/$tag_ref...$main_ref" --jq '.status')"
+          [[ "$comparison" == "ahead" || "$comparison" == "identical" ]] || {
+            echo "Release $tag is not on main or an ancestor of main." >&2
+            exit 1
+          }
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ steps.release.outputs.tag }}
+          persist-credentials: false
+
+      - name: Check COPR publisher settings
+        id: settings
+        env:
+          COPR_LOGIN: ${{ secrets.COPR_LOGIN }}
+          COPR_USERNAME: ${{ secrets.COPR_USERNAME }}
+          COPR_TOKEN: ${{ secrets.COPR_TOKEN }}
+          COPR_PROJECT: ${{ vars.COPR_PROJECT }}
+        run: |
+          if [[ -n "$COPR_LOGIN" && -n "$COPR_USERNAME" && -n "$COPR_TOKEN" && -n "$COPR_PROJECT" ]]; then
+            echo "configured=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "COPR credentials or COPR_PROJECT are not configured; skipping publication."
+            echo "configured=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download Linux release assets
+        if: steps.settings.outputs.configured == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/plezyng-copr/assets"
+          gh release download "$RELEASE_TAG" \
+            --pattern plezy-linux-x64.tar.gz \
+            --pattern plezy-linux-arm64.tar.gz \
+            --pattern SHA256SUMS.txt \
+            --dir "$RUNNER_TEMP/plezyng-copr/assets"
+          cd "$RUNNER_TEMP/plezyng-copr/assets"
+          for asset in plezy-linux-x64.tar.gz plezy-linux-arm64.tar.gz; do
+            expected="$(awk -v name="$asset" '$2 == name { print $1; count++ } END { if (count != 1) exit 1 }' SHA256SUMS.txt)"
+            actual="$(sha256sum "$asset" | cut -d ' ' -f 1)"
+            [[ "$expected" == "$actual" ]] || { echo "Checksum mismatch for $asset" >&2; exit 1; }
+          done
+
+      - name: Build source RPM
+        if: steps.settings.outputs.configured == 'true'
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        run: |
+          set -euo pipefail
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends python3-venv rpm
+          top="$RUNNER_TEMP/plezyng-rpmbuild"
+          install -d "$top/SOURCES" "$top/SPECS" "$top/BUILD" "$top/BUILDROOT" "$top/RPMS" "$top/SRPMS"
+          cp "$RUNNER_TEMP/plezyng-copr/assets/plezy-linux-x64.tar.gz" "$top/SOURCES/"
+          cp "$RUNNER_TEMP/plezyng-copr/assets/plezy-linux-arm64.tar.gz" "$top/SOURCES/"
+          cp linux/packaging/plezy.sh "$top/SOURCES/plezy.sh"
+          cp linux/packaging/org.snapetech.plezyng.desktop "$top/SOURCES/org.snapetech.plezyng.desktop"
+          cp assets/plezy.png "$top/SOURCES/plezy.png"
+          cp LICENSE "$top/SOURCES/LICENSE"
+          sed "s/^Version:.*/Version:        $RELEASE_TAG/" linux/packaging/copr/plezyng.spec > "$top/SPECS/plezyng.spec"
+          rpmbuild --define "_topdir $top" -bs "$top/SPECS/plezyng.spec"
+
+      - name: Submit source RPM to COPR
+        if: steps.settings.outputs.configured == 'true'
+        env:
+          COPR_LOGIN: ${{ secrets.COPR_LOGIN }}
+          COPR_USERNAME: ${{ secrets.COPR_USERNAME }}
+          COPR_TOKEN: ${{ secrets.COPR_TOKEN }}
+          COPR_PROJECT: ${{ vars.COPR_PROJECT }}
+        run: |
+          set -euo pipefail
+          python3 -m venv "$RUNNER_TEMP/copr-cli"
+          "$RUNNER_TEMP/copr-cli/bin/pip" install --disable-pip-version-check copr-cli
+          install -d -m 700 "$HOME/.config"
+          umask 077
+          cat > "$HOME/.config/copr" <<EOF
+          [copr-cli]
+          login = ${COPR_LOGIN}
+          username = ${COPR_USERNAME}
+          token = ${COPR_TOKEN}
+          copr_url = https://copr.fedorainfracloud.org
+          EOF
+          srpm="$(find "$RUNNER_TEMP/plezyng-rpmbuild/SRPMS" -maxdepth 1 -type f -name '*.src.rpm' -print -quit)"
+          test -n "$srpm" && test -s "$srpm"
+          "$RUNNER_TEMP/copr-cli/bin/copr-cli" build --nowait "$COPR_PROJECT" "$srpm"

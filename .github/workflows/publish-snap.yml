@@ -1,0 +1,132 @@
+name: Publish Snap Store packages
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Published PlezyNG release tag
+        required: true
+        type: string
+      channel:
+        description: Snap Store channel for this revision
+        required: true
+        default: edge
+        type: choice
+        options:
+          - edge
+          - beta
+          - candidate
+          - stable
+
+permissions:
+  contents: read
+
+jobs:
+  resolve-release:
+    name: Resolve published release
+    runs-on: ubuntu-latest
+    if: github.event_name != 'release' || github.event.release.prerelease == false
+    permissions:
+      contents: read
+    outputs:
+      tag: ${{ steps.release.outputs.tag }}
+      channel: ${{ steps.release.outputs.channel }}
+    steps:
+      - name: Require main for manual publication
+        if: github.event_name == 'workflow_dispatch'
+        run: |
+          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
+            echo "Snap publication may only be dispatched from main." >&2
+            exit 1
+          fi
+
+      - name: Validate the published release
+        id: release
+        env:
+          EVENT_TAG: ${{ github.event.release.tag_name }}
+          EVENT_NAME: ${{ github.event_name }}
+          INPUT_TAG: ${{ inputs.release_tag }}
+          INPUT_CHANNEL: ${{ inputs.channel }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          tag="${EVENT_TAG:-$INPUT_TAG}"
+          if [[ ! "$tag" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "Expected a stable semantic-version tag, got: $tag" >&2
+            exit 1
+          fi
+          metadata="$(gh release view "$tag" --json isDraft,isPrerelease)"
+          if [[ "$(jq -r '.isDraft' <<<"$metadata")" != "false" || "$(jq -r '.isPrerelease' <<<"$metadata")" != "false" ]]; then
+            echo "Snap publication requires a published stable GitHub Release." >&2
+            exit 1
+          fi
+          tag_ref="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq '.object.sha')"
+          tag_type="$(gh api "repos/$GITHUB_REPOSITORY/git/ref/tags/$tag" --jq '.object.type')"
+          if [[ "$tag_type" == "tag" ]]; then
+            tag_ref="$(gh api "repos/$GITHUB_REPOSITORY/git/tags/$tag_ref" --jq '.object.sha')"
+          fi
+          main_ref="$(gh api "repos/$GITHUB_REPOSITORY/branches/main" --jq '.commit.sha')"
+          comparison="$(gh api "repos/$GITHUB_REPOSITORY/compare/$tag_ref...$main_ref" --jq '.status')"
+          if [[ "$comparison" != "ahead" && "$comparison" != "identical" ]]; then
+            echo "Release $tag is not on main or an ancestor of main." >&2
+            exit 1
+          fi
+          channel=stable
+          if [[ "$EVENT_NAME" == "workflow_dispatch" ]]; then
+            channel="$INPUT_CHANNEL"
+          fi
+          case "$channel" in
+            edge|beta|candidate|stable) ;;
+            *) echo "Unsupported Snap Store channel: $channel" >&2; exit 1 ;;
+          esac
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "channel=$channel" >> "$GITHUB_OUTPUT"
+
+  publish:
+    name: Publish ${{ matrix.arch }} package
+    needs: resolve-release
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [x64, arm64]
+    steps:
+      - name: Check Snap Store credentials
+        id: credentials
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        run: |
+          if [[ -n "$SNAPCRAFT_STORE_CREDENTIALS" ]]; then
+            echo "available=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "Snap Store credentials are not configured; skipping publication."
+            echo "available=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Download release Snap
+        if: steps.credentials.outputs.available == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          RELEASE_TAG: ${{ needs.resolve-release.outputs.tag }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          set -euo pipefail
+          mkdir -p "$RUNNER_TEMP/plezyng-snap"
+          gh release download "$RELEASE_TAG" \
+            --pattern "plezyng-linux-${ARCH}.snap" \
+            --pattern SHA256SUMS.txt \
+            --dir "$RUNNER_TEMP/plezyng-snap"
+          test -s "$RUNNER_TEMP/plezyng-snap/plezyng-linux-${ARCH}.snap"
+          cd "$RUNNER_TEMP/plezyng-snap"
+          sha256sum --check --status --ignore-missing SHA256SUMS.txt
+
+      - name: Publish to Snap Store
+        if: steps.credentials.outputs.available == 'true'
+        uses: snapcore/action-publish@214b86e5ca036ead1668c79afb81e550e6c54d40 # v1
+        env:
+          SNAPCRAFT_STORE_CREDENTIALS: ${{ secrets.SNAPCRAFT_STORE_CREDENTIALS }}
+        with:
+          snap: ${{ runner.temp }}/plezyng-snap/plezyng-linux-${{ matrix.arch }}.snap
+          release: ${{ needs.resolve-release.outputs.channel }}

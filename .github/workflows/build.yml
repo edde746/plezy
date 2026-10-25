@@ -1169,10 +1169,12 @@ jobs:
             runner: ubuntu-24.04
             flutter_channel: stable
             pkg_config_arch: x86_64-linux-gnu
+            snap_arch: amd64
           - arch: arm64
             runner: ubuntu-24.04-arm
             flutter_channel: master
             pkg_config_arch: aarch64-linux-gnu
+            snap_arch: arm64
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
@@ -1343,11 +1345,74 @@ jobs:
         shell: bash
         run: python3 linux/packaging/build-flatpak.py --bundle "$BUNDLE_DIR" --arch ${{ matrix.arch }} --output "$GITHUB_WORKSPACE"
 
+      - name: Prepare Snap package inputs
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          snap_dir=linux/packaging/snap
+          rm -rf "$snap_dir/src"
+          mkdir -p "$snap_dir/src" "$snap_dir/gui"
+          cp -a "$BUNDLE_DIR"/. "$snap_dir/src/"
+          cp linux/packaging/plezy.sh "$snap_dir/plezy.sh"
+          cp linux/packaging/snap/plezyng.desktop "$snap_dir/gui/plezyng.desktop"
+          cp assets/plezy.png "$snap_dir/gui/plezyng.png"
+          sed -i "s/^version: .*/version: '$RELEASE_TAG'/" "$snap_dir/snapcraft.yaml"
+
+      - name: Build Snap package
+        id: snap
+        uses: snapcore/action-build@3bdaa03e1ba6bf59a65f84a751d943d549a54e79 # v1
+        with:
+          path: linux/packaging/snap
+          snapcraft-args: --build-for=${{ matrix.snap_arch }}
+
+      - name: Name Snap artifact
+        env:
+          SNAP_PATH: ${{ steps.snap.outputs.snap }}
+          ARCH: ${{ matrix.arch }}
+        run: cp "$SNAP_PATH" "plezyng-linux-${ARCH}.snap"
+
+      - name: Build x64 AppImage
+        if: matrix.arch == 'x64'
+        shell: bash
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          set -euo pipefail
+          app_dir="$RUNNER_TEMP/plezyng.AppDir"
+          appimagetool="$RUNNER_TEMP/appimagetool-x86_64.AppImage"
+          rm -rf "$app_dir"
+          install -d "$app_dir/opt/plezyng" "$app_dir/usr/share/applications" "$app_dir/usr/share/icons/hicolor/512x512/apps"
+          cp -a "$BUNDLE_DIR"/. "$app_dir/opt/plezyng/"
+          install -Dm755 linux/packaging/appimage/AppRun "$app_dir/AppRun"
+          install -Dm644 linux/packaging/appimage/plezyng.desktop "$app_dir/plezyng.desktop"
+          install -Dm644 linux/packaging/appimage/plezyng.desktop "$app_dir/usr/share/applications/plezyng.desktop"
+          install -Dm644 assets/plezy.png "$app_dir/plezyng.png"
+          install -Dm644 assets/plezy.png "$app_dir/usr/share/icons/hicolor/512x512/apps/plezyng.png"
+          curl -fsSL --retry 5 \
+            https://github.com/AppImage/appimagetool/releases/download/1.9.1/appimagetool-x86_64.AppImage \
+            -o "$appimagetool"
+          echo 'ed4ce84f0d9caff66f50bcca6ff6f35aae54ce8135408b3fa33abfc3cb384eb0  '"$appimagetool" | sha256sum --check --status
+          chmod +x "$appimagetool"
+          APPIMAGE_EXTRACT_AND_RUN=1 ARCH=x86_64 VERSION="$RELEASE_TAG" \
+            "$appimagetool" "$app_dir" "$GITHUB_WORKSPACE/plezyng-linux-x86_64.AppImage"
+
+      - name: Attest x64 AppImage
+        if: matrix.arch == 'x64'
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
+        with:
+          subject-path: plezyng-linux-x86_64.AppImage
+
       - name: Verify installed Flatpak runtime dependencies
         shell: bash
         run: |
           flatpak install --user --noninteractive "plezy-linux-${{ matrix.arch }}.flatpak"
           dbus-run-session -- python3 linux/packaging/check-flatpak.py --arch ${{ matrix.arch }}
+
+      - name: Include standalone app icon in portable bundle
+        shell: bash
+        run: cp assets/plezy.png "$BUNDLE_DIR/plezyng.png"
 
       - name: Create tarball
         shell: bash
@@ -1364,6 +1429,7 @@ jobs:
             plezy-linux-${{ matrix.arch }}.rpm
             plezy-linux-${{ matrix.arch }}.pkg.tar.zst
             plezy-linux-${{ matrix.arch }}.flatpak
+            plezyng-linux-${{ matrix.arch }}.snap
 
       - name: Upload Linux ${{ matrix.arch }} artifacts
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
@@ -1375,6 +1441,14 @@ jobs:
             plezy-linux-${{ matrix.arch }}.rpm
             plezy-linux-${{ matrix.arch }}.pkg.tar.zst
             plezy-linux-${{ matrix.arch }}.flatpak
+            plezyng-linux-${{ matrix.arch }}.snap
+
+      - name: Upload x64 AppImage artifact
+        if: matrix.arch == 'x64'
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7
+        with:
+          name: linux-x64-appimage
+          path: plezyng-linux-x86_64.AppImage
 
   create-release:
     needs: [validate-trusted-ref, build-android, build-ios, build-tvos, build-macos, build-windows, package-windows, build-linux]
@@ -1477,6 +1551,12 @@ jobs:
         with:
           name: linux-arm64
           path: artifacts/linux-arm64
+
+      - name: Download x64 AppImage artifact
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8
+        with:
+          name: linux-x64-appimage
+          path: artifacts/linux-x64
 
       - name: Display structure of downloaded files
         run: ls -R artifacts

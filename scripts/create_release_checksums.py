@@ -11,6 +11,7 @@ from pathlib import Path
 ASSET_SUFFIXES = (
     ".aab",
     ".apk",
+    ".appimage",
     ".deb",
     ".dmg",
     ".exe",
@@ -19,6 +20,7 @@ ASSET_SUFFIXES = (
     ".msixbundle",
     ".nupkg",
     ".rpm",
+    ".snap",
     ".tar.gz",
     ".7z",
     ".zip",

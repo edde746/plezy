@@ -1,0 +1,38 @@
+Source: plezyng
+Section: video
+Priority: optional
+Maintainer: SnapeTech <noreply@github.com>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.2
+Rules-Requires-Root: no
+Homepage: https://github.com/snapetech-org/PlezyNG
+
+Package: plezyng
+Architecture: amd64 arm64
+Depends: ${misc:Depends},
+ libgtk-3-0 | libgtk-3-0t64,
+ libepoxy0,
+ libasound2 | libasound2t64,
+ libevdev2,
+ libglib2.0-0 | libglib2.0-0t64,
+ libwayland-client0,
+ libwayland-cursor0,
+ libwayland-egl1,
+ libegl1,
+ libglvnd0,
+ libva2,
+ libva-drm2,
+ libva-wayland2,
+ libva-x11-2,
+ libdrm2,
+ libgbm1,
+ libx11-6,
+ libx11-xcb1,
+ libxext6,
+ libxcb1,
+ libxcb-dri3-0,
+ libxcb-render0,
+ libxcb-shm0
+Description: Native media client for Plex, Jellyfin, and Emby
+ PlezyNG is a desktop media client for browsing libraries and playing media
+ from Plex, Jellyfin, and Emby servers.
