@@ -255,7 +255,10 @@ void main() {
       final webSocket = await attempt.socket;
       addTearDown(webSocket.close);
 
-      expect(await authorization.future.timeout(const Duration(seconds: 5)), 'MediaBrowser Client="PlezyNG Android TV"');
+      expect(
+        await authorization.future.timeout(const Duration(seconds: 5)),
+        'MediaBrowser Client="PlezyNG Android TV"',
+      );
     });
 
     test('redirected upgrade transfers ownership of the delivered transport', () async {

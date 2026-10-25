@@ -190,12 +190,11 @@ class SupporterService extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// [isUnlocked] for the pre-provider startup frame, from the same build
   /// policy and entitlement cache this service starts from.
-  static bool startupUnlocked(SettingsService settings) =>
-      switch (supporterAvailabilityFor(supporterBuildMode)) {
-        SupporterAvailability.hidden => false,
-        SupporterAvailability.free => true,
-        SupporterAvailability.purchasable => settings.read(SettingsService.supporterEntitlementCached),
-      };
+  static bool startupUnlocked(SettingsService settings) => switch (supporterAvailabilityFor(supporterBuildMode)) {
+    SupporterAvailability.hidden => false,
+    SupporterAvailability.free => true,
+    SupporterAvailability.purchasable => settings.read(SettingsService.supporterEntitlementCached),
+  };
 
   /// Loads the Supporter product and its localized price, once per process.
   Future<void> loadProduct() async {

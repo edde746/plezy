@@ -421,8 +421,10 @@ void main() {
 
       // Status filtering happens client-side because Emby's GET /LiveTv/Timers
       // has no isActive/isScheduled query params.
-      expect(captured.single.path, '/LiveTv/Timers');
-      expect(captured.single.queryParameters, isEmpty);
+      // The Emby client also checks the current user's DVR permissions.
+      expect(captured.map((uri) => uri.path), unorderedEquals(['/Users/user-1', '/LiveTv/Timers']));
+      final timersRequest = captured.singleWhere((uri) => uri.path == '/LiveTv/Timers');
+      expect(timersRequest.queryParameters, isEmpty);
       expect(grabs.single.operationKey, 'timer:t-1');
     });
   });

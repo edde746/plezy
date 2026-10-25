@@ -1,3 +1,4 @@
+import '../../utils/insecure_connection_consent.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -253,6 +254,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen>
       await _probe();
       return;
     }
+    if (!await confirmInsecureConnection(context, endpoint.activeBaseUrl) || !mounted) return;
     await runAsync<void>(
       () async {
         final auth = await _buildAuthService();
@@ -261,6 +263,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen>
 
         final connection = await auth.authenticateByName(
           baseUrl: endpoint.activeBaseUrl,
+          allowInsecureHttp: true,
           baseUrls: endpoint.baseUrls,
           username: _usernameController.text,
           password: _passwordController.text,
@@ -284,6 +287,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen>
     final endpoint = _serverEndpoint;
     if (info == null || endpoint == null) return;
     if (!widget.dialect.supportsQuickConnect || !(info.dialect ?? widget.dialect).supportsQuickConnect) return;
+    if (!await confirmInsecureConnection(context, endpoint.activeBaseUrl) || !mounted) return;
     final attemptId = beginQuickConnectAttempt();
     await runAsync<void>(
       () async {
@@ -291,7 +295,11 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen>
         final storage = await StorageService.getInstance();
         final deviceId = await storage.getOrCreateClientIdentifier();
 
-        final initiation = await auth.initiateQuickConnect(baseUrl: endpoint.activeBaseUrl, deviceId: deviceId);
+        final initiation = await auth.initiateQuickConnect(
+          baseUrl: endpoint.activeBaseUrl,
+          deviceId: deviceId,
+          allowInsecureHttp: true,
+        );
         if (!isCurrentQuickConnectAttempt(attemptId)) return;
         // Show the waiting panel without a spinner — opt-out of busy mid-flow
         // so the user-visible state matches "we're polling, nothing for you to do".
@@ -301,6 +309,7 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen>
 
         final connection = await auth.authenticateByQuickConnect(
           baseUrl: endpoint.activeBaseUrl,
+          allowInsecureHttp: true,
           baseUrls: endpoint.baseUrls,
           secret: initiation.secret,
           deviceId: deviceId,

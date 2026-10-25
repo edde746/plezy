@@ -17,6 +17,7 @@ import '../services/companion_remote/companion_remote_peer_service.dart';
 import '../services/companion_remote/lan_discovery_service.dart';
 import '../services/companion_remote/remote_auth_context.dart';
 import '../services/companion_remote/remote_auth_service.dart';
+import '../services/companion_remote/remote_pairing_store.dart';
 import '../utils/app_logger.dart';
 import '../utils/device_identity.dart';
 import '../utils/serial_future_queue.dart';
@@ -87,6 +88,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   List<String>? _lastHostAddresses;
   String? _lastHostClientId;
   String? _lastAuthContextId;
+  String? _lastPairingCode;
+  String? _hostPairingCode;
 
   // Crypto context (derived in memory, never persisted)
   List<RemoteAuthContext> _authContexts = const [];
@@ -127,6 +130,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   bool get isPlayerActive => _isPlayerActive;
   bool get isHostServerRunning => _peerService?.isServerRunning ?? false;
   List<String> get hostServerAddresses => _hostServerAddresses;
+  String? get hostPairingCode => _hostPairingCode;
 
   Future<void> _initializeDeviceInfo() async {
     final identity = await DeviceIdentityService.resolve();
@@ -461,7 +465,31 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   void _clearCryptoContext() {
     _authContexts = const [];
     _cryptoProfileId = null;
+    _hostPairingCode = null;
+    _lastPairingCode = null;
   }
+
+  Future<List<RemoteAuthContext>> _pairedContexts(String code) =>
+      Future.wait(_authContexts.map((identity) => RemoteAuthService.instance.bindPairingCode(identity, code)));
+
+  Future<String> _remotePairingCode(String profileId, String peer, String? supplied) async {
+    final code = supplied == null
+        ? await RemotePairingStore.remoteCode(profileId, peer)
+        : RemotePairingStore.normalizeCode(supplied);
+    if (code == null) throw const RemotePairingRequired();
+    return code;
+  }
+
+  /// Rotating the capability revokes all remembered remotes for this profile.
+  Future<void> resetHostPairing() => _serializeLifecycle(() async {
+    final profileId = _cryptoProfileId;
+    if (profileId == null) return;
+    final wasRunning = isHostServerRunning;
+    await _stopHostServerLocked();
+    _hostPairingCode = await RemotePairingStore.hostCode(profileId, rotate: true);
+    if (wasRunning && !isDisposed) await _startHostServerLocked();
+    safeNotifyListeners();
+  });
 
   void _markIntentionalDisconnect(CompanionRemotePeerService? peer, int generation) {
     if (peer != null) {
@@ -561,6 +589,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     _lastHostAddresses = null;
     _lastHostClientId = null;
     _lastAuthContextId = null;
+    _lastPairingCode = null;
 
     return _serializeLifecycle(() async {
       await _disposeDetachedPeers(detachedPeers);
@@ -607,7 +636,12 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     _setupPeerServiceListeners(peer, _remoteGeneration);
 
     try {
-      final contexts = List<RemoteAuthContext>.unmodifiable(_authContexts);
+      final profileId = _cryptoProfileId;
+      if (profileId == null) throw StateError('No active remote profile');
+      _hostPairingCode = await RemotePairingStore.hostCode(profileId);
+      final contexts = await _pairedContexts(_hostPairingCode!);
+      checkCurrent?.call();
+      if (isDisposed || profileId != _cryptoProfileId) return;
       final result = await _peerService!.createSessionForContexts(_deviceName, _platform, contexts);
       try {
         checkCurrent?.call();
@@ -710,7 +744,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   }
 
   /// Connect to a discovered host as a remote client.
-  Future<void> connectToDiscoveredHost(DiscoveredHost host) async {
+  Future<void> connectToDiscoveredHost(DiscoveredHost host, {String? pairingCode}) async {
     if (!isCryptoReady) {
       throw RemotePeerError(type: RemotePeerErrorType.authFailed, message: t.companionRemote.pairing.cryptoInitFailed);
     }
@@ -723,6 +757,12 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     if (!await _prepareRemoteConnect(request)) return;
 
     final generation = request.generation;
+    final profileId = _cryptoProfileId!;
+    final pairingPeer = '${authContext.id}:${host.clientId}';
+    final code = await _remotePairingCode(profileId, pairingPeer, pairingCode);
+    final pairedContexts = await _pairedContexts(code);
+    if (generation != _remoteGeneration || isDisposed || profileId != _cryptoProfileId) return;
+    _lastPairingCode = code;
     _lastHostAddresses = host.addresses;
     _lastHostClientId = host.clientId;
     _lastAuthContextId = authContext.id;
@@ -739,10 +779,13 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
           _deviceName,
           _platform,
           host.addresses,
-          _authContexts,
+          pairedContexts,
           authContextId: authContext.id,
           expectedHostClientId: host.clientId,
         );
+        if (pairingCode != null && generation == _remoteGeneration && profileId == _cryptoProfileId) {
+          await RemotePairingStore.rememberRemote(profileId, pairingPeer, code);
+        }
       },
       onConnected: (peer) {
         _lastHostAddresses = [winner!];
@@ -759,7 +802,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   }
 
   /// Connect to a host by manual IP:port entry.
-  Future<void> connectToManualHost(String hostAddress) async {
+  Future<void> connectToManualHost(String hostAddress, {String? pairingCode}) async {
     if (!isCryptoReady) {
       throw RemotePeerError(type: RemotePeerErrorType.authFailed, message: t.companionRemote.pairing.cryptoInitFailed);
     }
@@ -768,6 +811,12 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
     if (!await _prepareRemoteConnect(request)) return;
 
     final generation = request.generation;
+    final profileId = _cryptoProfileId!;
+    final pairingPeer = 'address:${hostAddress.trim().toLowerCase()}';
+    final code = await _remotePairingCode(profileId, pairingPeer, pairingCode);
+    final pairedContexts = await _pairedContexts(code);
+    if (generation != _remoteGeneration || isDisposed || profileId != _cryptoProfileId) return;
+    _lastPairingCode = code;
     _lastHostAddresses = [hostAddress];
     _lastHostClientId = '';
     _lastAuthContextId = null;
@@ -778,7 +827,17 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
       generation: generation,
       seedConnectingSession: true,
       rethrowOnFailure: true,
-      join: (peer) => peer.joinSessionWithContexts(_deviceName, _platform, hostAddress, _authContexts),
+      join: (peer) async {
+        await peer.joinSessionWithContexts(_deviceName, _platform, hostAddress, pairedContexts);
+        if (pairingCode != null && generation == _remoteGeneration && profileId == _cryptoProfileId) {
+          await RemotePairingStore.rememberRemote(profileId, pairingPeer, code);
+          final contextId = peer.selectedAuthContextId;
+          final clientId = peer.selectedHostClientId;
+          if (contextId != null && clientId != null) {
+            await RemotePairingStore.rememberRemote(profileId, '$contextId:$clientId', code);
+          }
+        }
+      },
       onConnected: (peer) {
         _lastAuthContextId = peer.selectedAuthContextId;
         _lastHostClientId = peer.selectedHostClientId ?? '';
@@ -1110,7 +1169,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
   Future<void> _runReconnectAttempt(int generation) async {
     if (generation != _remoteGeneration || isDisposed) return;
     final hostAddresses = _lastHostAddresses;
-    if (hostAddresses == null || !isCryptoReady) {
+    final code = _lastPairingCode;
+    if (hostAddresses == null || !isCryptoReady || code == null) {
       appLogger.w('CompanionRemote: No stored context for reconnect');
       _session = _session?.copyWith(
         status: RemoteSessionStatus.error,
@@ -1131,6 +1191,8 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
 
     final authContextId = _authContextForId(_lastAuthContextId)?.id;
     final expectedHostClientId = _lastHostClientId ?? '';
+    final pairedContexts = await _pairedContexts(code);
+    if (generation != _remoteGeneration || isDisposed) return;
 
     final reconnected = await _runRemoteConnect(
       generation: generation,
@@ -1138,7 +1200,7 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
         _deviceName,
         _platform,
         hostAddresses.first,
-        _authContexts,
+        pairedContexts,
         authContextId: authContextId,
         expectedHostClientId: expectedHostClientId,
       ),

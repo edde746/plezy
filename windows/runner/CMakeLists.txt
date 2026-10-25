@@ -32,7 +32,7 @@ target_compile_features(simdutf PUBLIC cxx_std_17)
 target_compile_options(simdutf PRIVATE /W0)
 
 target_link_libraries(${BINARY_NAME} PRIVATE flutter flutter_wrapper_app flutter_wrapper_plugin)
-target_link_libraries(${BINARY_NAME} PRIVATE "dwmapi.lib" "comctl32.lib" "dxgi.lib")
+target_link_libraries(${BINARY_NAME} PRIVATE "dwmapi.lib" "comctl32.lib" "dxgi.lib" "advapi32.lib")
 target_link_libraries(${BINARY_NAME} PRIVATE "${MPV_LIB_DIR}/libmpv.dll.a")
 target_link_libraries(${BINARY_NAME} PRIVATE simdutf)
 target_include_directories(${BINARY_NAME} PRIVATE "${CMAKE_SOURCE_DIR}")

@@ -16,7 +16,7 @@ env:
   RELEASE_DART_DEFINES: --dart-define=ENABLE_UPDATE_CHECK=true --dart-define=GIT_COMMIT=${{ github.sha }}
   TRUSTED_BUILD_CACHE_VERSION: trusted-build-v1
   LINUX_APT_PACKAGES: >
-    clang cmake meson ninja-build pkg-config nasm libgtk-3-dev libevdev-dev liblzma-dev
+    clang cmake meson ninja-build pkg-config nasm libgtk-3-dev libsecret-1-dev libevdev-dev liblzma-dev
     libstdc++-12-dev libasound2-dev libass-dev libfreetype-dev libfontconfig-dev libfribidi-dev
     libharfbuzz-dev libepoxy-dev libegl-dev libgl-dev libgnutls28-dev libpipewire-0.3-dev
     libva-dev libvdpau-dev libx11-dev libxext-dev libxrandr-dev libxcursor-dev libxi-dev
@@ -600,8 +600,15 @@ jobs:
       - name: Install dependencies
         run: flutter pub get --enforce-lockfile --no-example
 
+      - name: Configure repository updater trust root
+        shell: bash
+        env:
+          SPARKLE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_KEY }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: dart run scripts/configure_updater.dart
+
       - name: Build macOS
-        run: flutter build macos --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SUPPORTER_MODE=unlocked --split-debug-info=debug-info/macos
+        run: flutter build macos --release ${{ env.RELEASE_DART_DEFINES }} ${{ env.NATIVE_UPDATER_DEFINE }} --dart-define=SUPPORTER_MODE=unlocked --split-debug-info=debug-info/macos
 
       - name: Verify universal macOS executable
         run: |
@@ -860,9 +867,16 @@ jobs:
           flutter precache --windows
           .\windows\tool\install-patched-engine.ps1
 
+      - name: Configure repository updater trust root
+        shell: pwsh
+        env:
+          SPARKLE_PUBLIC_KEY: ${{ vars.SPARKLE_PUBLIC_KEY }}
+          SPARKLE_PRIVATE_KEY: ${{ secrets.SPARKLE_PRIVATE_KEY }}
+        run: dart run scripts/configure_updater.dart
+
       - name: Build Windows ${{ matrix.arch }}
         shell: pwsh
-        run: flutter build windows --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SUPPORTER_MODE=unlocked --split-debug-info=debug-info/windows-${{ matrix.arch }}
+        run: flutter build windows --release ${{ env.RELEASE_DART_DEFINES }} ${{ env.NATIVE_UPDATER_DEFINE }} --dart-define=SUPPORTER_MODE=unlocked --split-debug-info=debug-info/windows-${{ matrix.arch }}
 
       - name: Verify Windows bundle contents
         shell: pwsh

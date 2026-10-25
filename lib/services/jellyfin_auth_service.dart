@@ -111,6 +111,7 @@ class JellyfinConnectionAuthService {
   /// 401/403 responses; other transport errors propagate.
   Future<JellyfinConnection> authenticateByName({
     required String baseUrl,
+    bool allowInsecureHttp = false,
     List<String>? baseUrls,
     required String username,
     required String password,
@@ -119,6 +120,12 @@ class JellyfinConnectionAuthService {
   }) async {
     final validDeviceId = requireJellyfinDeviceId(deviceId);
     final normalised = _normaliseBaseUrl(baseUrl);
+    if (Uri.parse(normalised).scheme != 'https' && !allowInsecureHttp) {
+      throw MediaServerAuthException(
+        'HTTP authentication requires explicit consent',
+        display: t.addServer.httpsRequired,
+      );
+    }
     final info = serverInfo ?? await probe(normalised);
 
     final authHeader = buildJellyfinAuthHeader(
@@ -188,11 +195,18 @@ class JellyfinConnectionAuthService {
   /// only — there's no token until the secret is exchanged after approval.
   Future<JellyfinQuickConnectInitiation> initiateQuickConnect({
     required String baseUrl,
+    bool allowInsecureHttp = false,
     required String deviceId,
   }) async {
     _requireQuickConnectSupport();
     final validDeviceId = requireJellyfinDeviceId(deviceId);
     final normalised = _normaliseBaseUrl(baseUrl);
+    if (Uri.parse(normalised).scheme != 'https' && !allowInsecureHttp) {
+      throw MediaServerAuthException(
+        'HTTP authentication requires explicit consent',
+        display: t.addServer.httpsRequired,
+      );
+    }
     final authHeader = buildJellyfinAuthHeader(
       clientName: clientName,
       clientVersion: clientVersion,
@@ -249,6 +263,7 @@ class JellyfinConnectionAuthService {
   /// [MediaServerAuthException] on auth failures or an unsupported dialect.
   Future<JellyfinConnection?> authenticateByQuickConnect({
     required String baseUrl,
+    bool allowInsecureHttp = false,
     List<String>? baseUrls,
     required String secret,
     required String deviceId,
@@ -259,6 +274,12 @@ class JellyfinConnectionAuthService {
     _requireQuickConnectSupport();
     final validDeviceId = requireJellyfinDeviceId(deviceId);
     final normalised = _normaliseBaseUrl(baseUrl);
+    if (Uri.parse(normalised).scheme != 'https' && !allowInsecureHttp) {
+      throw MediaServerAuthException(
+        'HTTP authentication requires explicit consent',
+        display: t.addServer.httpsRequired,
+      );
+    }
     final info = serverInfo ?? await probe(normalised);
     LogRedactionManager.registerCustomValue(secret);
 

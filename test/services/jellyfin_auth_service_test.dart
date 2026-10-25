@@ -49,6 +49,7 @@ Future<JellyfinConnection> _authenticateByNameWithUser(Map<String, Object?> user
   );
 
   return svc.authenticateByName(
+    allowInsecureHttp: true,
     baseUrl: 'https://jf.example.com',
     username: 'edde',
     password: 'pw',
@@ -68,6 +69,34 @@ Future<Object> _captureError(Future<dynamic> future) async {
 const _serverInfo = JellyfinServerInfo(serverName: 'Home', machineId: 'srv-1', version: '10.9.0');
 
 void main() {
+  test('HTTP credentials and Quick Connect secrets require explicit consent before any request', () async {
+    var calls = 0;
+    final service = _service(
+      handler: (_) {
+        calls++;
+        return _status(500);
+      },
+    );
+    await expectLater(
+      service.authenticateByName(
+        baseUrl: 'http://server:8096',
+        username: 'name',
+        password: 'secret',
+        deviceId: 'device',
+      ),
+      throwsA(isA<MediaServerAuthException>()),
+    );
+    await expectLater(
+      service.initiateQuickConnect(baseUrl: 'http://server:8096', deviceId: 'device'),
+      throwsA(isA<MediaServerAuthException>()),
+    );
+    await expectLater(
+      service.authenticateByQuickConnect(baseUrl: 'http://server:8096', secret: 'poll-secret', deviceId: 'device'),
+      throwsA(isA<MediaServerAuthException>()),
+    );
+    expect(calls, 0);
+  });
+
   setUp(LogRedactionManager.clearTrackedValues);
   tearDown(LogRedactionManager.clearTrackedValues);
 
@@ -159,6 +188,7 @@ void main() {
       );
 
       final conn = await svc.authenticateByName(
+        allowInsecureHttp: true,
         baseUrl: 'https://jf.example.com',
         baseUrls: const ['https://jf.example.com', 'https://jf.lan:8096'],
         username: 'edde',
@@ -228,6 +258,7 @@ void main() {
 
       await expectLater(
         svc.authenticateByName(
+          allowInsecureHttp: true,
           baseUrl: 'https://jf.example.com',
           username: 'edde',
           password: 'wrong',
@@ -249,6 +280,7 @@ void main() {
 
       await expectLater(
         svc.authenticateByName(
+          allowInsecureHttp: true,
           baseUrl: 'https://jf.example.com',
           username: 'edde',
           password: 'wrong',
@@ -272,6 +304,7 @@ void main() {
 
       await expectLater(
         svc.authenticateByName(
+          allowInsecureHttp: true,
           baseUrl: 'https://jf.example.com',
           username: 'edde',
           password: 'pw',
@@ -392,6 +425,7 @@ void main() {
       );
 
       final conn = await svc.authenticateByQuickConnect(
+        allowInsecureHttp: true,
         baseUrl: 'https://jf.example.com',
         secret: 'sec',
         deviceId: 'dev-xyz',
@@ -422,6 +456,7 @@ void main() {
       );
 
       final conn = await svc.authenticateByQuickConnect(
+        allowInsecureHttp: true,
         baseUrl: 'https://jf.example.com',
         secret: 'sec',
         deviceId: 'dev-xyz',
@@ -442,6 +477,7 @@ void main() {
       );
 
       final conn = await svc.authenticateByQuickConnect(
+        allowInsecureHttp: true,
         baseUrl: 'https://jf.example.com',
         secret: 'sec',
         deviceId: 'dev-xyz',
@@ -462,6 +498,7 @@ void main() {
       );
 
       final conn = await svc.authenticateByQuickConnect(
+        allowInsecureHttp: true,
         baseUrl: 'https://jf.example.com',
         secret: 'sec',
         deviceId: 'dev-xyz',
@@ -479,6 +516,7 @@ void main() {
       );
 
       final conn = await svc.authenticateByQuickConnect(
+        allowInsecureHttp: true,
         baseUrl: 'https://jf.example.com',
         secret: 'sec',
         deviceId: 'dev-xyz',
@@ -498,6 +536,7 @@ void main() {
 
       await expectLater(
         svc.authenticateByQuickConnect(
+          allowInsecureHttp: true,
           baseUrl: 'https://jf.example.com',
           secret: 'sec',
           deviceId: 'dev-xyz',
@@ -517,6 +556,7 @@ void main() {
 
       await expectLater(
         svc.authenticateByQuickConnect(
+          allowInsecureHttp: true,
           baseUrl: 'https://jf.example.com',
           secret: 'sec',
           deviceId: 'dev-xyz',
@@ -538,6 +578,7 @@ void main() {
 
       await expectLater(
         svc.authenticateByQuickConnect(
+          allowInsecureHttp: true,
           baseUrl: 'https://jf.example.com',
           secret: 'sec',
           deviceId: 'dev-xyz',
@@ -561,6 +602,7 @@ void main() {
 
       await expectLater(
         svc.authenticateByQuickConnect(
+          allowInsecureHttp: true,
           baseUrl: 'https://jf.example.com',
           secret: 'sec',
           deviceId: 'dev-xyz',
@@ -589,6 +631,7 @@ void main() {
         unawaited(
           _captureError(
             passwordService.authenticateByName(
+              allowInsecureHttp: true,
               baseUrl: 'https://jf.example.com',
               username: 'edde',
               password: 'pw',
@@ -600,6 +643,7 @@ void main() {
         unawaited(
           _captureError(
             quickConnectService.authenticateByQuickConnect(
+              allowInsecureHttp: true,
               baseUrl: 'https://jf.example.com',
               secret: 'sec',
               deviceId: 'dev-xyz',
@@ -637,6 +681,7 @@ void main() {
       final errors = [
         await _captureError(
           passwordService.authenticateByName(
+            allowInsecureHttp: true,
             baseUrl: 'https://jf.example.com',
             username: 'edde',
             password: 'pw',
@@ -646,6 +691,7 @@ void main() {
         ),
         await _captureError(
           quickConnectService.authenticateByQuickConnect(
+            allowInsecureHttp: true,
             baseUrl: 'https://jf.example.com',
             secret: 'sec',
             deviceId: 'dev-xyz',
@@ -713,6 +759,7 @@ void main() {
 
       final error = await _captureError(
         svc.authenticateByQuickConnect(
+          allowInsecureHttp: true,
           baseUrl: 'https://emby.example.com',
           secret: 'quick-secret',
           deviceId: 'dev-xyz',
@@ -741,6 +788,7 @@ void main() {
       );
 
       final connection = await svc.authenticateByName(
+        allowInsecureHttp: true,
         baseUrl: 'https://emby.example.com',
         username: 'edde',
         password: 'pw',
@@ -768,6 +816,7 @@ void main() {
           },
         );
         return svc.authenticateByName(
+          allowInsecureHttp: true,
           baseUrl: 'https://server.example.com',
           username: 'edde',
           password: 'pw',
@@ -808,6 +857,7 @@ void main() {
           },
         );
         await svc.authenticateByName(
+          allowInsecureHttp: true,
           baseUrl: 'https://server.example.com',
           username: 'edde',
           password: 'pw',
@@ -843,6 +893,7 @@ void main() {
       );
 
       await svc.authenticateByName(
+        allowInsecureHttp: true,
         baseUrl: 'https://jf.example.com',
         username: 'edde',
         password: 'pw',
@@ -887,6 +938,7 @@ void main() {
 
       await expectLater(
         svc.authenticateByName(
+          allowInsecureHttp: true,
           baseUrl: 'https://jf.example.com',
           username: 'edde',
           password: 'pw',

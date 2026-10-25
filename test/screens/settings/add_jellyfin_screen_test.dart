@@ -725,6 +725,13 @@ void main() {
     await tester.pump();
     await tester.pump();
 
+    // An HTTP discovery result needs explicit consent before issuing a
+    // Quick Connect capability. Cancelling would send no authentication.
+    expect(find.text('Unencrypted connection'), findsOneWidget);
+    await tester.tap(find.text('Allow HTTP'));
+    await tester.pump();
+    await tester.pump();
+
     // Pre-swap frames: probe done, initiate in flight — no keyboard.
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
 
@@ -836,8 +843,11 @@ void main() {
   testWidgets('password sign-in commits one complete bundle and binds once', (tester) async {
     resetSharedPreferencesForTest();
     CredentialVault.resetKeyForTesting();
-    final harness = await _RouteHarness.create();
-    await tester.runAsync(() => CredentialVault.protect('opaque-vault-warmup'));
+    final harness = (await tester.runAsync(() async {
+      final harness = await _RouteHarness.create();
+      await CredentialVault.protect('opaque-vault-warmup');
+      return harness;
+    }))!;
     late Future<bool?> routeResult;
     await tester.pumpWidget(harness.app(quickConnect: false, onRoute: (result) => routeResult = result));
     await tester.tap(find.text('Open route'));
@@ -881,8 +891,11 @@ void main() {
   testWidgets('Quick Connect commits one complete bundle and binds once', (tester) async {
     resetSharedPreferencesForTest();
     CredentialVault.resetKeyForTesting();
-    final harness = await _RouteHarness.create();
-    await tester.runAsync(() => CredentialVault.protect('opaque-vault-warmup'));
+    final harness = (await tester.runAsync(() async {
+      final harness = await _RouteHarness.create();
+      await CredentialVault.protect('opaque-vault-warmup');
+      return harness;
+    }))!;
     late Future<bool?> routeResult;
     await tester.pumpWidget(harness.app(quickConnect: true, onRoute: (result) => routeResult = result));
     await tester.tap(find.text('Open route'));

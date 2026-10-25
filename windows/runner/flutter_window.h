@@ -27,6 +27,8 @@ class FlutterWindow : public Win32Window {
 
   std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> window_channel_;
 
+  std::unique_ptr<flutter::MethodChannel<flutter::EncodableValue>> credential_channel_;
+
   // Fullscreen state tracking for monitor-aware native fullscreen.
   // Maximize state lives inside `placement_before_fullscreen_.showCmd`.
   bool is_fullscreen_ = false;
@@ -35,6 +37,7 @@ class FlutterWindow : public Win32Window {
   LONG_PTR ex_style_before_fullscreen_ = 0;
 
   void RegisterWindowChannel();
+  void RegisterCredentialKeyStore();
   void SetNativeFullScreen(bool fullscreen);
   void NotifyFullScreenChanged();
 };

@@ -234,10 +234,10 @@ class ProfileConnectionRegistry {
   }
 
   Future<ProfileConnection> _rowToModel(ProfileConnectionRow row) async {
-    final hasPlaintextToken = row.userToken.isNotEmpty && !CredentialVault.isProtected(row.userToken);
+    final needsMigration = row.userToken.isNotEmpty && CredentialVault.needsMigration(row.userToken);
     final userToken = row.userToken.isEmpty ? null : await CredentialVault.reveal(row.userToken);
-    if (hasPlaintextToken) {
-      unawaited(recordToken(row.profileId, row.connectionId, userToken!));
+    if (needsMigration && userToken != null) {
+      await recordToken(row.profileId, row.connectionId, userToken);
     } else if (userToken == null && row.userToken.isNotEmpty) {
       // Vault couldn't decrypt the stored token (key/ciphertext divergence).
       // Clear it to the empty-string lazy-fetch sentinel so the binder

@@ -1,5 +1,7 @@
 import '../../profiles/profile.dart';
+import '../../utils/serial_future_queue.dart';
 import '../base_shared_preferences_service.dart';
+import '../credential_vault.dart';
 import 'tracker_constants.dart';
 import 'tracker_session.dart';
 
@@ -12,6 +14,7 @@ import 'tracker_session.dart';
 /// Pass an empty `userUuid` to fall back to a single global slot (used
 /// before a profile has been selected).
 class TrackerAccountStore {
+  static final _persistence = SerialFutureQueue();
   static final Map<TrackerService, TrackerAccountStore> _stores = {
     TrackerService.mal: TrackerAccountStore._(TrackerService.mal, 'mal_session'),
     TrackerService.anilist: TrackerAccountStore._(TrackerService.anilist, 'anilist_session'),
@@ -29,26 +32,33 @@ class TrackerAccountStore {
 
   String _scopedKey(String userUuid) => profileScopedPrefsKey(userUuid, _baseKey);
 
-  Future<TrackerSession?> load(String userUuid) async {
+  Future<TrackerSession?> load(String userUuid) => _persistence.run(() async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
     final raw = readTolerantString(prefs, _scopedKey(userUuid));
     if (raw == null) return null;
+    final clear = await CredentialVault.reveal(raw);
+    if (clear == null) return null;
+    final TrackerSession session;
     try {
-      return TrackerSession.decode(raw, service: service);
+      session = TrackerSession.decode(clear, service: service);
     } catch (_) {
       return null;
     }
-  }
+    if (CredentialVault.needsMigration(raw)) {
+      await prefs.setString(_scopedKey(userUuid), await CredentialVault.protect(session.encode()));
+    }
+    return session;
+  });
 
-  Future<void> save(String userUuid, TrackerSession session) async {
+  Future<void> save(String userUuid, TrackerSession session) => _persistence.run(() async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
-    await prefs.setString(_scopedKey(userUuid), session.encode());
-  }
+    await prefs.setString(_scopedKey(userUuid), await CredentialVault.protect(session.encode()));
+  });
 
-  Future<void> clear(String userUuid) async {
+  Future<void> clear(String userUuid) => _persistence.run(() async {
     final prefs = await BaseSharedPreferencesService.sharedCache();
     await prefs.remove(_scopedKey(userUuid));
-  }
+  });
 }
 
 TrackerAccountStore trackerAccountStore(TrackerService service) => TrackerAccountStore.forService(service);

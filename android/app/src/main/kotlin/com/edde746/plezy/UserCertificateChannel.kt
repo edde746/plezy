@@ -33,10 +33,12 @@ internal class UserCertificateChannel {
      * Empty when the owner installed none. A single unreadable entry is skipped rather than
      * failing the whole store: one bad certificate must not cost the others their trust.
      */
-    fun userAuthoritiesPem(keyStore: KeyStore): String {
+    fun userAuthoritiesPem(keyStore: KeyStore): String = authoritiesPem(keyStore, userOnly = true)
+
+    fun authoritiesPem(keyStore: KeyStore, userOnly: Boolean): String {
       val pem = StringBuilder()
       for (alias in keyStore.aliases()) {
-        if (!alias.startsWith(USER_ALIAS_PREFIX)) continue
+        if (userOnly && !alias.startsWith(USER_ALIAS_PREFIX)) continue
         val certificate = try {
           keyStore.getCertificate(alias) as? X509Certificate
         } catch (e: Exception) {
@@ -61,19 +63,20 @@ internal class UserCertificateChannel {
 
   private fun onMethodCall(call: MethodCall, result: MethodChannel.Result) {
     when (call.method) {
-      "getUserAuthoritiesPem" -> loadUserAuthorities(result)
+      "getUserAuthoritiesPem" -> loadUserAuthorities(result, userOnly = true)
+      "getAllAuthoritiesPem" -> loadUserAuthorities(result, userOnly = false)
       else -> result.notImplemented()
     }
   }
 
   // The KeyStore walks the certificate directories on disk; keep that off the platform thread
   // the Flutter engine is starting on.
-  private fun loadUserAuthorities(result: MethodChannel.Result) {
+  private fun loadUserAuthorities(result: MethodChannel.Result, userOnly: Boolean) {
     val worker = Thread({
       val pem = try {
         val keyStore = KeyStore.getInstance("AndroidCAStore")
         keyStore.load(null)
-        userAuthoritiesPem(keyStore)
+        authoritiesPem(keyStore, userOnly)
       } catch (e: Exception) {
         Log.w(TAG, "User certificate authorities unavailable", e)
         null
