@@ -299,7 +299,8 @@ void main() {
       expect(posts, hasLength(1));
       final post = posts.single;
       expect(post.url.path, '/DisplayPreferences/usersettings');
-      expect(post.url.queryParameters['client'], 'PlezyNG');
+      // Keep the existing server-side preferences namespace across the fork.
+      expect(post.url.queryParameters['client'], 'Plezy');
       expect(post.url.queryParameters['userId'], 'user-1');
       final body = jsonDecode(post.body) as Map<String, dynamic>;
       final customPrefs = body['CustomPrefs'] as Map<String, dynamic>;

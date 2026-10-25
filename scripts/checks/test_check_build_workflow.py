@@ -53,6 +53,12 @@ class BuildWorkflowGuardTest(unittest.TestCase):
     def _cmake(self) -> str:
         return WINDOWS_CMAKE.read_text(encoding="utf-8")
 
+    def _mutate_signer(self, old: str, new: str) -> str:
+        prefix, signing = self._workflow().split("      - name: Sign installer for WinSparkle (EdDSA)\n", 1)
+        changed = signing.replace(old, new, 1)
+        self.assertNotEqual(changed, signing, "signer mutation must match")
+        return prefix + "      - name: Sign installer for WinSparkle (EdDSA)\n" + changed
+
     def test_locked_root_signer_passes(self) -> None:
         result = self._run(self._workflow())
 
@@ -73,11 +79,10 @@ class BuildWorkflowGuardTest(unittest.TestCase):
         self.assertIn("refs/tags/${version}", result.stderr)
 
     def test_mutable_download_in_signing_step_is_rejected(self) -> None:
-        workflow = self._workflow().replace(
+        workflow = self._mutate_signer(
             "          try {\n",
             "          Invoke-WebRequest -Uri https://raw.githubusercontent.com/example/main/sign.dart -OutFile sign.dart\n"
             "          try {\n",
-            1,
         )
 
         result = self._run(workflow)
@@ -87,12 +92,11 @@ class BuildWorkflowGuardTest(unittest.TestCase):
         self.assertIn("mutable or ad-hoc input: invoke-webrequest", result.stderr)
 
     def test_inline_dependency_resolution_in_signing_step_is_rejected(self) -> None:
-        workflow = self._workflow().replace(
+        workflow = self._mutate_signer(
             "          try {\n",
             "          Set-Content -Path pubspec.yaml -Value 'dependencies: {}'\n"
             "          dart pub get\n"
             "          try {\n",
-            1,
         )
 
         result = self._run(workflow)
@@ -127,7 +131,7 @@ class BuildWorkflowGuardTest(unittest.TestCase):
         self.assertIn("enforced root dependency lock", result.stderr)
 
     def test_missing_finally_cleanup_is_rejected(self) -> None:
-        workflow = self._workflow().replace("          } finally {\n", "          }\n", 1)
+        workflow = self._mutate_signer("          } finally {\n", "          }\n")
 
         result = self._run(workflow)
 
@@ -185,8 +189,8 @@ class BuildWorkflowGuardTest(unittest.TestCase):
 
     def test_draft_release_without_explicit_tag_is_rejected(self) -> None:
         workflow = self._workflow().replace(
-            " && inputs.release_tag != '' }}",
-            " }}",
+            "        required: true\n        type: string",
+            "        required: false\n        type: string",
             1,
         )
         self.assertNotEqual(workflow, self._workflow(), "fixture mutation no longer matches workflow")
@@ -194,12 +198,11 @@ class BuildWorkflowGuardTest(unittest.TestCase):
         result = self._run(workflow)
 
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("must require an explicit release tag", result.stderr)
+        self.assertIn("must require a release_tag input", result.stderr)
 
     def test_release_run_without_tagged_name_is_rejected(self) -> None:
         workflow = self._workflow().replace(
-            "run-name: ${{ inputs.release_tag != '' && format('Release {0}', inputs.release_tag) "
-            "|| format('Build {0}', github.sha) }}\n",
+            "run-name: ${{ format('Release {0}', inputs.release_tag) }}\n",
             "",
             1,
         )
@@ -208,7 +211,7 @@ class BuildWorkflowGuardTest(unittest.TestCase):
         result = self._run(workflow)
 
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("must expose their tag in the run name", result.stderr)
+        self.assertIn("must expose their release tag in the run name", result.stderr)
 
     def test_release_tag_without_exact_target_is_rejected(self) -> None:
         workflow = self._workflow().replace(

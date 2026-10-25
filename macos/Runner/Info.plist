@@ -55,6 +55,6 @@
 	<key>SUFeedURL</key>
 	<string>https://cdn.jsdelivr.net/gh/snapetech-org/PlezyNG@appcast/appcast.xml</string>
 	<key>SUPublicEDKey</key>
-	<string>q7t6eu1txRrqv1PeWDCRV95rFxnmD/D3GZWbUPMwUyU=</string>
+	<string></string>
 </dict>
 </plist>

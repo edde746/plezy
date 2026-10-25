@@ -1,3 +1,4 @@
+import '../../utils/insecure_connection_consent.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -46,6 +47,7 @@ class _EditJellyfinConnectionScreenState extends State<EditJellyfinConnectionScr
         final registry = context.read<ConnectionRegistry>();
         final updated = await registry.prepareMediaBrowserEndpoints(widget.connection, _enteredUrls());
         if (!mounted) return;
+        if (!await confirmInsecureConnection(context, updated.baseUrl) || !mounted) return;
         await registry.upsert(updated, expected: widget.connection);
         if (!mounted) return;
         Navigator.of(context).pop(true);

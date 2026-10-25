@@ -12,7 +12,6 @@ enum SupporterMode {
 
   /// Perks are free in builds configured for free unlocks.
   unlocked,
-
 }
 
 const String _supporterModeDefine = String.fromEnvironment('SUPPORTER_MODE');

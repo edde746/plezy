@@ -3,7 +3,7 @@ import 'dart:convert';
 import '../utils/media_server_http_client.dart';
 import 'plezy_server.dart';
 
-/// Plezy server endpoint that returns a short, quotable Log ID.
+/// Plezy server endpoint that returns an unguessable, copyable Log ID.
 const String logUploadEndpoint = '$plezyServerBaseUrl/logs';
 
 /// The server's `/logs` accepts 1 MiB. The in-memory buffer intentionally remains
@@ -40,7 +40,7 @@ String constrainLogUploadPayload({required String header, required String logs, 
   return header + utf8.decode(logBytes.sublist(start));
 }
 
-/// Posts [payload] to the log relay and returns the short Log ID.
+/// Posts [payload] to the log relay and returns its opaque read capability.
 ///
 /// Shared by Settings › Logs and by the startup failure screen, which cannot
 /// reach Settings because the gate it needs has not completed (#1732).

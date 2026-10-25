@@ -724,9 +724,6 @@ class Translations$settings$en {
 	/// en: 'Screensaver libraries'
 	String get contentScreensaverLibraries => 'Screensaver libraries';
 
-	/// en: 'Choose which libraries supply artwork. No selection includes every library.'
-	String get contentScreensaverLibrariesDescription => 'Choose which libraries supply artwork. No selection includes every library.';
-
 	/// en: 'All libraries'
 	String get contentScreensaverAllLibraries => 'All libraries';
 
@@ -6664,6 +6661,18 @@ class Translations$addServer$en {
 
 	/// en: 'Connect directly using local IP or URL. Binds to ${name}.'
 	String connectDirectPlexCardSubtitleScoped({required Object name}) => 'Connect directly using local IP or URL. Binds to ${name}.';
+
+	/// en: 'Unencrypted connection'
+	String get insecureTitle => 'Unencrypted connection';
+
+	/// en: '$url uses HTTP. People on the network may read or change your password, tokens and media. Use HTTPS when available. Only continue if you trust this network and accept the risk.'
+	String insecureDescription({required Object url}) => '${url} uses HTTP. People on the network may read or change your password, tokens and media. Use HTTPS when available. Only continue if you trust this network and accept the risk.';
+
+	/// en: 'Allow HTTP'
+	String get allowHttp => 'Allow HTTP';
+
+	/// en: 'Use HTTPS or explicitly allow an unencrypted connection.'
+	String get httpsRequired => 'Use HTTPS or explicitly allow an unencrypted connection.';
 }
 
 // Path: watchLink
@@ -8773,6 +8782,27 @@ class Translations$companionRemote$pairing$en {
 
 	/// en: 'Failed to connect: ${error}'
 	String failedToConnect({required Object error}) => 'Failed to connect: ${error}';
+
+	/// en: 'Pairing code'
+	String get codeTitle => 'Pairing code';
+
+	/// en: 'Enter the code shown in Companion Remote on the host device. Both devices must use a version that supports secure pairing.'
+	String get codeDescription => 'Enter the code shown in Companion Remote on the host device. Both devices must use a version that supports secure pairing.';
+
+	/// en: 'Enter all 32 letters and numbers from the host code.'
+	String get codeInvalid => 'Enter all 32 letters and numbers from the host code.';
+
+	/// en: 'Update both devices to a version that supports secure pairing.'
+	String get updateRequired => 'Update both devices to a version that supports secure pairing.';
+
+	/// en: 'Enter this code once on each remote. Keep it private: it grants control of this profile.'
+	String get hostDescription => 'Enter this code once on each remote. Keep it private: it grants control of this profile.';
+
+	/// en: 'Reset pairing code'
+	String get resetCode => 'Reset pairing code';
+
+	/// en: 'Disconnect all remotes and create a new code. Every remote will need to pair again.'
+	String get resetDescription => 'Disconnect all remotes and create a new code. Every remote will need to pair again.';
 }
 
 // Path: companionRemote.remote
@@ -9276,7 +9306,6 @@ extension on Translations {
 			'settings.contentScreensaverEnabledDescription' => 'Show full-screen artwork after the app has been idle',
 			'settings.contentScreensaverDelay' => 'Start screensaver after',
 			'settings.contentScreensaverLibraries' => 'Screensaver libraries',
-			'settings.contentScreensaverLibrariesDescription' => 'Choose which libraries supply artwork. No selection includes every library.',
 			'settings.contentScreensaverAllLibraries' => 'All libraries',
 			'settings.contentScreensaverSelectedLibraries' => ({required Object count}) => '${count} libraries selected',
 			'settings.contentScreensaverNoLibraries' => 'No connected media libraries are available.',
@@ -9562,9 +9591,9 @@ extension on Translations {
 			'settings.dvConversionDv81Description' => 'Force inline RPU conversion to Dolby Vision profile 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Strip Dolby Vision RPU/EL layers and present plain HEVC',
 			'settings.disableDolbyVision' => 'Disable Dolby Vision',
+			'settings.disableDolbyVisionDescription' => 'Play the file\'s HDR10 or HLG layer instead of Dolby Vision, when it has one',
 			_ => null,
 		} ?? switch (path) {
-			'settings.disableDolbyVisionDescription' => 'Play the file\'s HDR10 or HLG layer instead of Dolby Vision, when it has one',
 			'settings.hdrSdrConversion' => 'HDR to SDR Conversion',
 			'settings.hdrSdrConversionDescription' => 'Choose what converts HDR video when the display can\'t show HDR.',
 			'settings.hdrSdrConversionAuto' => 'Auto',
@@ -10076,9 +10105,9 @@ extension on Translations {
 			'messages.burnedSubtitlesUseMenu' => 'Subtitles are burned into this stream. Change them from the subtitle menu.',
 			'messages.noVideoUrl' => 'No video URL available',
 			'messages.playbackNoMediaSources' => 'The server returned no playable media sources',
+			'messages.playbackDataNotPrepared' => 'Playback was started before its data was ready',
 			_ => null,
 		} ?? switch (path) {
-			'messages.playbackDataNotPrepared' => 'Playback was started before its data was ready',
 			'messages.streamSelectionUnavailable' => 'Stream selection is not available for this source',
 			'messages.streamSelectionFailed' => 'Could not apply the selected streams',
 			'messages.trackSelectionNotRemembered' => 'This track choice applies to the current playback only.',
@@ -10590,9 +10619,9 @@ extension on Translations {
 			'explore.stats.completed' => ({required Object n}) => '${n} completed',
 			'explore.stats.onHold' => ({required Object n}) => '${n} on hold',
 			'explore.stats.dropped' => ({required Object n}) => '${n} dropped',
+			'explore.season.winter' => 'Winter',
 			_ => null,
 		} ?? switch (path) {
-			'explore.season.winter' => 'Winter',
 			'explore.season.spring' => 'Spring',
 			'explore.season.summer' => 'Summer',
 			'explore.season.fall' => 'Fall',
@@ -11104,9 +11133,9 @@ extension on Translations {
 			'downloads.backgroundWarning.statusBlocked' => 'Blocked by system settings',
 			'downloads.backgroundWarning.statusDegraded' => 'Limited by system settings',
 			'downloads.backgroundWarning.statusUnknown' => 'Not checked yet',
+			'downloads.backgroundWarning.settingsUnavailable' => 'Couldn\'t open system settings on this device',
 			_ => null,
 		} ?? switch (path) {
-			'downloads.backgroundWarning.settingsUnavailable' => 'Couldn\'t open system settings on this device',
 			'downloads.backgroundWarning.linkUnavailable' => 'Couldn\'t open dontkillmyapp.com on this device',
 			'downloads.options' => 'Downloads options',
 			'downloads.groupings.library' => 'Library',
@@ -11180,6 +11209,13 @@ extension on Translations {
 			'companionRemote.pairing.sessionNotFound' => 'Device not found. Make sure PlezyNG is running on the host.',
 			'companionRemote.pairing.authFailed' => 'Authentication failed. Both devices need the same Plex account.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Failed to connect: ${error}',
+			'companionRemote.pairing.codeTitle' => 'Pairing code',
+			'companionRemote.pairing.codeDescription' => 'Enter the code shown in Companion Remote on the host device. Both devices must use a version that supports secure pairing.',
+			'companionRemote.pairing.codeInvalid' => 'Enter all 32 letters and numbers from the host code.',
+			'companionRemote.pairing.updateRequired' => 'Update both devices to a version that supports secure pairing.',
+			'companionRemote.pairing.hostDescription' => 'Enter this code once on each remote. Keep it private: it grants control of this profile.',
+			'companionRemote.pairing.resetCode' => 'Reset pairing code',
+			'companionRemote.pairing.resetDescription' => 'Disconnect all remotes and create a new code. Every remote will need to pair again.',
 			'companionRemote.remote.disconnectConfirm' => 'Do you want to disconnect from the remote session?',
 			'companionRemote.remote.reconnecting' => 'Reconnecting...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Attempt ${current} of 5',
@@ -11562,6 +11598,10 @@ extension on Translations {
 			'addServer.connectDirectPlexCard' => 'Plex Media Server (Direct / Local)',
 			'addServer.connectDirectPlexCardSubtitle' => 'Connect directly using local IP or URL without plex.tv account.',
 			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => 'Connect directly using local IP or URL. Binds to ${name}.',
+			'addServer.insecureTitle' => 'Unencrypted connection',
+			'addServer.insecureDescription' => ({required Object url}) => '${url} uses HTTP. People on the network may read or change your password, tokens and media. Use HTTPS when available. Only continue if you trust this network and accept the risk.',
+			'addServer.allowHttp' => 'Allow HTTP',
+			'addServer.httpsRequired' => 'Use HTTPS or explicitly allow an unencrypted connection.',
 			'watchLink.serverUnavailable' => 'Couldn\'t reach a Plex server for this link.',
 			'watchLink.notFound' => 'Couldn\'t find this show or movie on your Plex servers.',
 			'watchLink.ambiguous' => 'This link matches items on more than one server. Add a server to the link.',
@@ -11608,6 +11648,8 @@ extension on Translations {
 			'homeLayout.continueWatchingHomeDescription' => 'The resume-progress row shown on Home',
 			'homeLayout.nextUpHomeDescription' => 'The next unwatched episode row shown separately on Home',
 			'homeLayout.library' => 'Library',
+			_ => null,
+		} ?? switch (path) {
 			'homeLayout.showInRecommended' => 'Show in Library Recommended',
 			'homeLayout.customPlexRow' => 'Custom Plex row',
 			'homeLayout.heroNeedsLibrary' => 'Check Library first — Hero needs somewhere to show',
@@ -11618,8 +11660,6 @@ extension on Translations {
 			'homeLayout.heroCards' => 'Hero cards',
 			'homeLayout.tapHeroCard' => 'Tapping a hero card',
 			'homeLayout.tvPlayFocus' => 'TV remote: highlight Play button',
-			_ => null,
-		} ?? switch (path) {
 			'homeLayout.tvPlayFocusDescription' => 'D-pad down stops on the Play button before moving to the next row. Off skips straight to the next row.',
 			'homeLayout.tvWrap' => 'TV remote: loop hero cards',
 			'homeLayout.tvWrapDescription' => 'Right on the last card goes back to the first. Off stops at the last card. Left on the first card always goes to the sidebar.',

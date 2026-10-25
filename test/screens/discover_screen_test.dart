@@ -498,6 +498,8 @@ void main() {
       backend: MediaBackend.plex,
       kind: MediaKind.movie,
       title: 'Continue Watching',
+      viewOffsetMs: 1000,
+      durationMs: 10000,
       serverId: 'server_1',
       serverName: 'Server',
     );

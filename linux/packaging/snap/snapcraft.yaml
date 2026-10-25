@@ -33,6 +33,7 @@ apps:
       - desktop-legacy
       - home
       - network
+      - password-manager-service
       - opengl
       - removable-media
       - wayland
@@ -64,6 +65,7 @@ parts:
       - libglvnd0
       - libgtk-3-0t64
       - libglib2.0-0t64
+      - libsecret-1-0
       - libva2
       - libva-drm2
       - libva-wayland2

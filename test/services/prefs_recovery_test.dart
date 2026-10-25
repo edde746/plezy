@@ -47,6 +47,14 @@ void main() {
   });
 
   group('salvage', () {
+    test('preserves encrypted sessions and pairing capabilities without opening the keychain', () {
+      final encrypted =
+          'enc:v2:${jsonEncode({'k': 'v2-${'a' * 32}', 'n': base64Encode(List.filled(12, 1)), 'c': 'AQ==', 'm': base64Encode(List.filled(16, 2))})}';
+      final keys = ['trakt_session', 'user_a_seerr_session', 'companion_remote_pairing_example'];
+      final result = PrefsRecovery.salvage(jsonEncode({for (final key in keys) key: encrypted}));
+      expect(result.losses, 0);
+      expect(result.sessions.keys, containsAll(keys));
+    });
     test('recovers a vault key from a truncated document', () {
       // Exactly the #1732 shape: a non-atomic write cut short, so the object
       // never closes and `json.decode` cannot help.

@@ -28,6 +28,9 @@ abstract final class CertificateTrust {
   @visibleForTesting
   static const MethodChannel channel = MethodChannel('com.plezy/user_certificates');
 
+  /// OpenSSL playback on Android needs both the platform and owner roots.
+  static Future<String?> allAndroidAuthoritiesPem() => channel.invokeMethod<String>('getAllAuthoritiesPem');
+
   /// Parent domains of every hard-coded HTTPS endpoint, matched together with
   /// their subdomains. Kept equal to the `<domain-config>` in
   /// `android/app/src/main/res/xml/network_security_config.xml`;

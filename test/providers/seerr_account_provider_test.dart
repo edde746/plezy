@@ -9,8 +9,8 @@ import 'package:plezy/providers/seerr_account_provider.dart';
 import 'package:plezy/services/seerr/seerr_auth_service.dart';
 import 'package:plezy/services/seerr/seerr_constants.dart';
 import 'package:plezy/services/seerr/seerr_session_store.dart';
-import 'package:plezy/services/credential_vault.dart';
 import 'package:plezy/services/sensitive_prefs.dart';
+import 'package:plezy/services/credential_vault.dart';
 import 'package:shared_preferences_platform_interface/in_memory_shared_preferences_async.dart';
 import 'package:shared_preferences_platform_interface/shared_preferences_async_platform_interface.dart';
 import 'package:shared_preferences_platform_interface/types.dart';
@@ -22,7 +22,7 @@ const _userUuid = 'profile-1';
 
 /// A session as builds before #2213's fix persisted it for a local login:
 /// the partial `/auth/local` body's `permissions: 0` and email display name.
-/// No secret, so the store round-trips it without the credential vault.
+/// Its cookie is still protected even when no password is stored.
 SeerrSession _staleSession() => const SeerrSession(
   baseUrl: 'https://seerr.example.com',
   method: SeerrAuthMethod.local,
@@ -46,7 +46,7 @@ final class _DeferredVaultPreferences extends InMemorySharedPreferencesAsync {
 
   @override
   Future<bool> setString(String key, String value, SharedPreferencesOptions options) async {
-    if (key == credentialVaultKeyPref && !started.isCompleted) {
+    if (key == 'credential_vault_active_key_id_v2' && !started.isCompleted) {
       started.complete();
       await release.future;
     }

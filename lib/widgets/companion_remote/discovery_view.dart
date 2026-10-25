@@ -13,12 +13,14 @@ import '../../mixins/mounted_set_state_mixin.dart';
 import '../../providers/companion_remote_provider.dart';
 import '../../services/base_peer_service.dart';
 import '../../services/companion_remote/companion_remote_host_controller.dart';
+import '../../services/companion_remote/remote_pairing_store.dart';
 import '../../services/settings_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/app_logger.dart';
 
 import '../loading_indicator_box.dart';
 import '../app_icon.dart';
+import 'remote_pairing_dialog.dart';
 
 @visibleForTesting
 String companionRemotePairingErrorMessage(Object error) {
@@ -144,7 +146,7 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
     super.dispose();
   }
 
-  Future<void> _connect(Future<void> Function() action) async {
+  Future<void> _connect(Future<void> Function(String? pairingCode) action) async {
     setState(() {
       _isConnecting = true;
       _errorMessage = null;
@@ -152,7 +154,21 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
 
     try {
       _provider.stopDiscovery();
-      await action();
+      try {
+        await action(null);
+      } catch (error) {
+        if (error is! RemotePairingRequired && !(error is PeerError && error.type == PeerErrorType.authFailed)) {
+          rethrow;
+        }
+        if (!mounted) return;
+        final code = await RemotePairingDialog.show(context);
+        if (!mounted) return;
+        if (code == null) {
+          _restartDiscovery();
+          return;
+        }
+        await action(code);
+      }
     } catch (e) {
       appLogger.e('Failed to connect', error: e);
       if (!mounted) return;
@@ -188,8 +204,8 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
     if (!_formKey.currentState!.validate()) return;
     final hostAddress = _hostAddressController.text.trim();
     unawaited(
-      _connect(() async {
-        await _provider.connectToManualHost(hostAddress);
+      _connect((code) async {
+        await _provider.connectToManualHost(hostAddress, pairingCode: code);
         await _saveManualHostAddress(hostAddress);
       }),
     );
@@ -341,7 +357,9 @@ class _DiscoveryViewState extends State<DiscoveryView> with ControllerDisposerMi
               trailing: _isConnecting
                   ? const LoadingIndicatorBox(size: 24)
                   : const AppIcon(Symbols.arrow_forward_rounded),
-              onTap: _isConnecting ? null : () => _connect(() => _provider.connectToDiscoveredHost(host)),
+              onTap: _isConnecting
+                  ? null
+                  : () => _connect((code) => _provider.connectToDiscoveredHost(host, pairingCode: code)),
             ),
           ),
         ),

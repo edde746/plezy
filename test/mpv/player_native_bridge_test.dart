@@ -69,6 +69,38 @@ Future<void> _sendPlatformEvent(Object? event) async {
 }
 
 void main() {
+  for (final audioOnly in [false, true]) {
+    test('TLS verification precedes every ${audioOnly ? 'audio' : 'video'} load', () async {
+      final methods = <String>[];
+      final method = audioOnly ? 'com.plezy/mpv_audio_player' : 'com.plezy/mpv_player';
+      await withMockPlayerChannels(
+        methodChannelName: method,
+        eventChannelName: '$method/events',
+        methodHandler: (call) async {
+          if (call.method == 'initialize') return true;
+          if (call.method == 'setProperty' && (call.arguments as Map)['name'] == 'tls-verify') {
+            expect((call.arguments as Map)['value'], 'yes');
+            methods.add('tls');
+          }
+          if (call.method == 'command' && ((call.arguments as Map)['args'] as List).first == 'loadfile') {
+            expect(methods, contains('tls'));
+            methods.add('load');
+          }
+          return null;
+        },
+        testBody: () async {
+          final player = audioOnly ? PlayerNative.audio() : PlayerNative();
+          try {
+            await player.open(Media('https://example.test/media.mp4'));
+            expect(methods, ['tls', 'load']);
+          } finally {
+            await player.dispose();
+          }
+        },
+      );
+    });
+  }
+
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() async {

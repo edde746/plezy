@@ -7382,7 +7382,7 @@ func TestLogLookupsAreThrottledPerSourceBeforeResolvingIDs(t *testing.T) {
 func TestLogStoreKeepsServingLegacyLengthIDsUntilExpiry(t *testing.T) {
 	dir := t.TempDir()
 	// Legacy IDs predate logIDChars and may hold i, l, o, and u.
-	legacyIDs := []string{"legacyloiu", "qloiu"}
+	legacyIDs := []string{"legacyloiu", "qloiu", "01abcd"}
 	for _, legacyID := range legacyIDs {
 		if err := os.WriteFile(filepath.Join(dir, legacyID+logFileExt), []byte("legacy link"), 0o644); err != nil {
 			t.Fatalf("seed legacy log %q: %v", legacyID, err)
@@ -7414,15 +7414,17 @@ func TestLogStoreKeepsServingLegacyLengthIDsUntilExpiry(t *testing.T) {
 // Crockford's alphabet leaves out must still reach the stored log.
 func TestLogsGetResolvesLookAlikeSpellings(t *testing.T) {
 	h := newRelayHarness(t)
+	suffix := strings.Repeat("2", logIDLength-6)
 	h.srv.logs.mu.Lock()
-	h.srv.logs.generateID = func() string { return "01abcd" }
+	h.srv.logs.generateID = func() string { return "01abcd" + suffix }
 	h.srv.logs.mu.Unlock()
 	id := postLogAndGetID(t, h.baseURL, "7.3.0.9", []byte("look-alike body"))
-	if id != "01abcd" {
-		t.Fatalf("stored id=%q, want 01abcd", id)
+	if id != "01abcd"+suffix {
+		t.Fatalf("stored id=%q, want the full-length capability", id)
 	}
 
 	for _, typed := range []string{"01abcd", "01ABCD", "o1abcd", "OIabcd", "0labcd", "0Labcd"} {
+		typed += suffix
 		resp := getLog(t, h.baseURL, "", typed)
 		body, err := io.ReadAll(resp.Body)
 		resp.Body.Close()
@@ -7433,7 +7435,7 @@ func TestLogsGetResolvesLookAlikeSpellings(t *testing.T) {
 			t.Fatalf("typed %q: status=%d body=%q, want the stored log", typed, resp.StatusCode, body)
 		}
 	}
-	miss := getLog(t, h.baseURL, "", "u1abcd")
+	miss := getLog(t, h.baseURL, "", "u1abcd"+suffix)
 	miss.Body.Close()
 	if miss.StatusCode != http.StatusNotFound {
 		t.Fatalf("u is outside the alphabet: status=%d, want 404", miss.StatusCode)

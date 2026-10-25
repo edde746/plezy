@@ -38,6 +38,8 @@ MediaItem _item(
   title: id,
   serverId: serverId,
   serverName: 'Server',
+  viewOffsetMs: 1000,
+  durationMs: 10000,
   parentId: parentId,
   grandparentId: grandparentId,
 );

@@ -1,3 +1,4 @@
+import '../../utils/insecure_connection_consent.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -118,7 +119,7 @@ class _AddDirectPlexScreenState extends State<AddDirectPlexScreen>
     var url = raw.trim();
     if (url.isEmpty) return '';
     if (!url.startsWith('http://') && !url.startsWith('https://')) {
-      url = 'http://$url';
+      url = 'https://$url';
     }
     return canonicalizeBaseUrl(url);
   }
@@ -130,6 +131,7 @@ class _AddDirectPlexScreenState extends State<AddDirectPlexScreen>
       return;
     }
     final url = _cleanUrl(rawUrl);
+    if (!await confirmInsecureConnection(context, url) || !mounted) return;
 
     await runAsync<void>(
       () async {

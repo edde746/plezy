@@ -543,6 +543,7 @@ class MpvPlayerCoreBase: NSObject {
       let defaultLogLevel = "warn"
     #endif
     checkError(mpv_request_log_messages(mpv, defaultLogLevel))
+    checkError(mpv_set_option_string(mpv, "tls-verify", "yes"))
 
     #if os(macOS)
       // Every URL Plezy opens is a media-server stream or a local file, never
