@@ -72,7 +72,9 @@ enum ShortcutAction {
   subtitleDelayDecrease('subtitle_delay_decrease', HotKey(key: PhysicalKeyboardKey.keyZ), repeatable: true),
   shaderToggle('shader_toggle', HotKey(key: PhysicalKeyboardKey.keyG), requiresShaderSupport: true),
   skipMarker('skip_marker', HotKey(key: PhysicalKeyboardKey.enter), requiresPlayback: true),
-  screenshot('screenshot', HotKey(key: PhysicalKeyboardKey.keyS, modifiers: [HotKeyModifier.control]));
+  screenshot('screenshot', HotKey(key: PhysicalKeyboardKey.keyS, modifiers: [HotKeyModifier.control])),
+  framePrevious('frame_previous', HotKey(key: PhysicalKeyboardKey.comma), repeatable: true, requiresPlayback: true),
+  frameNext('frame_next', HotKey(key: PhysicalKeyboardKey.period), repeatable: true, requiresPlayback: true);
 
   const ShortcutAction(
     this.id,
@@ -140,5 +142,7 @@ enum ShortcutAction {
     ShortcutAction.shaderToggle => t.hotkeys.actions.shaderToggle,
     ShortcutAction.skipMarker => t.hotkeys.actions.skipMarker,
     ShortcutAction.screenshot => t.hotkeys.actions.screenshot,
+    ShortcutAction.framePrevious => t.hotkeys.actions.framePrevious,
+    ShortcutAction.frameNext => t.hotkeys.actions.frameNext,
   };
 }
