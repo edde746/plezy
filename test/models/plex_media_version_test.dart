@@ -22,6 +22,107 @@ Map<String, dynamic> _media({
 }
 
 void main() {
+  group('Plex media version name', () {
+    test('a single version stays unnamed so its label is technical', () {
+      final single = PlexMappers.labelVersions([
+        PlexMappers.mediaVersionFromJson(_media(partExtras: {'file': '/Movies/Dune (2021)/Dune (2021).mkv'})),
+      ]).single;
+      expect(single.name, isNull);
+      expect(single.displayLabel, startsWith('1080p H.264 MKV'));
+    });
+
+    test('names versions by file name when there is no label, Windows paths included', () {
+      final versions = PlexMappers.labelVersions([
+        PlexMappers.mediaVersionFromJson(_media(id: 1, partExtras: {'file': r'D:\Movies\Movie (2010)\Movie.mkv'})),
+        PlexMappers.mediaVersionFromJson(_media(id: 2, partExtras: {'file': r'D:\Movies\Movie (2010)\Movie 2.mkv'})),
+      ]);
+      expect(versions.map((v) => v.name), ['Movie.mkv', 'Movie 2.mkv']);
+      expect(versions.first.displayLabel, startsWith('Movie.mkv · '));
+    });
+
+    test('names versions by their label when the files follow the convention', () {
+      final versions = PlexMappers.labelVersions([
+        PlexMappers.mediaVersionFromJson(
+          _media(id: 1, partExtras: {'file': '/data/TV/Show/Season 1/Show - S01E01 - # 1 Primary.mkv'}),
+        ),
+        PlexMappers.mediaVersionFromJson(
+          _media(id: 2, partExtras: {'file': '/data/TV/Show/Season 1/Show - S01E01 - # 2 Secondary.mkv'}),
+        ),
+      ]);
+      expect(versions.map((v) => v.name), ['# 1 Primary', '# 2 Secondary']);
+      expect(versions.first.displayLabel, startsWith('# 1 Primary · '));
+      expect(versions.first.id, '1');
+      expect(versions.first.parts.single.id, '101');
+    });
+
+    test('labels edition files by the part after the edition', () {
+      final versions = PlexMappers.labelVersions([
+        PlexMappers.mediaVersionFromJson(
+          _media(id: 1, partExtras: {'file': '/Movies/Blade Runner (1982) {edition-Directors Cut} - 1080p.mkv'}),
+        ),
+        PlexMappers.mediaVersionFromJson(
+          _media(id: 2, partExtras: {'file': '/Movies/Blade Runner (1982) {edition-Directors Cut} - 4K.mkv'}),
+        ),
+      ]);
+      expect(versions.map((v) => v.name), ['1080p', '4K']);
+    });
+
+    test('falls back to whole file names when labels are missing or collide', () {
+      final unlabelled = PlexMappers.labelVersions([
+        PlexMappers.mediaVersionFromJson(_media(id: 1, partExtras: {'file': '/Movies/Movie - 1080p.mkv'})),
+        PlexMappers.mediaVersionFromJson(_media(id: 2, partExtras: {'file': '/Movies/Movie.mkv'})),
+      ]);
+      expect(unlabelled.map((v) => v.name), ['Movie - 1080p.mkv', 'Movie.mkv']);
+
+      final colliding = PlexMappers.labelVersions([
+        PlexMappers.mediaVersionFromJson(_media(id: 1, partExtras: {'file': '/a/Movie A - 1080p.mkv'})),
+        PlexMappers.mediaVersionFromJson(_media(id: 2, partExtras: {'file': '/b/Movie B - 1080P.mkv'})),
+      ]);
+      expect(colliding.map((v) => v.name), ['Movie A - 1080p.mkv', 'Movie B - 1080P.mkv']);
+    });
+
+    test('leaves versions unnamed when file names do not tell them apart', () {
+      final sameFile = PlexMappers.labelVersions([
+        PlexMappers.mediaVersionFromJson(_media(id: 1, partExtras: {'file': '/TV/Show/Show - S01E01 - Pilot.mkv'})),
+        PlexMappers.mediaVersionFromJson(_media(id: 2, partExtras: {'file': '/TV-4K/Show/Show - S01E01 - Pilot.mkv'})),
+      ]);
+      expect(sameFile.map((v) => v.name), [isNull, isNull]);
+
+      final withheld = PlexMappers.labelVersions([
+        PlexMappers.mediaVersionFromJson(_media(id: 1, partExtras: {'file': '/Movies/Movie - 1080p.mkv'})),
+        PlexMappers.mediaVersionFromJson(_media(id: 2)),
+      ]);
+      expect(withheld.map((v) => v.name), [isNull, isNull]);
+    });
+
+    test('playback selection picks the saved version label over the signature', () {
+      Map<String, dynamic> media(int id, String label) =>
+          _media(id: id, partExtras: {'file': '/TV/Show/Season 01/Show - S01E02 - $label.mkv'});
+      final metadata = <String, dynamic>{
+        'Media': [media(1, '# 2 Secondary'), media(2, '# 3 Third'), media(3, '# 1 Primary')],
+      };
+      final selection = resolvePlexPlaybackSelection(
+        metadata,
+        preferredVersionSignature: '1080:h264:mkv',
+        preferredVersionName: '# 1 Primary',
+      )!;
+      expect(selection.mediaIndex, 2);
+      expect(selection.versions[selection.mediaIndex].name, '# 1 Primary');
+
+      // A stable id still wins over the name.
+      final pinned = resolvePlexPlaybackSelection(metadata, mediaSourceId: '2', preferredVersionName: '# 1 Primary')!;
+      expect(pinned.mediaIndex, 1);
+    });
+
+    test('has no name when Plex withholds the path', () {
+      final versions = PlexMappers.labelVersions([
+        PlexMappers.mediaVersionFromJson(_media(id: 1)),
+        PlexMappers.mediaVersionFromJson(_media(id: 2, partExtras: {'file': '  '})),
+      ]);
+      expect(versions.map((v) => v.name), [isNull, isNull]);
+    });
+  });
+
   group('Plex media version accessibility parsing', () {
     test('accessible/exists are null when Plex did not include them', () {
       final v = PlexMappers.mediaVersionFromJson(_media());

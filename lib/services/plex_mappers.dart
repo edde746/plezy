@@ -23,6 +23,7 @@ import '../media/media_hub.dart';
 import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_library.dart';
+import '../media/media_file_info.dart' show fileNameFromPath;
 import '../media/media_part.dart';
 import '../media/media_part_timeline.dart';
 import '../media/media_person.dart';
@@ -1133,7 +1134,7 @@ class PlexMappers {
       styles: dto.style,
       moods: dto.mood,
       roles: dto.role?.map(role).toList(),
-      mediaVersions: dto.mediaVersions?.map(mediaVersion).toList(),
+      mediaVersions: dto.mediaVersions == null ? null : labelVersions(dto.mediaVersions!.map(mediaVersion).toList()),
       libraryId: dto.librarySectionID?.toString(),
       libraryTitle: dto.librarySectionTitle,
       trailerKey: dto.primaryExtraKey,
@@ -1220,6 +1221,62 @@ class PlexMappers {
       container: dto.container,
       parts: parts,
     );
+  }
+
+  /// The file a version plays, as the file-info sheet shows it. The file name
+  /// is the only data Plex gives that tells same-quality versions apart. Null
+  /// when Plex withheld the path (it does for some restricted users).
+  static String? _versionFileName(List<MediaPart> parts) {
+    for (final part in parts) {
+      final name = fileNameFromPath(part.file?.trim());
+      if (name != null) return name;
+    }
+    return null;
+  }
+
+  /// Name an item's versions so the picker and the saved version preference
+  /// can tell them apart, as Jellyfin names versions only when the names
+  /// differ (`jellyfinSourcesToVersions`).
+  ///
+  /// When every file follows the multiple-versions convention
+  /// `<name> - <label>.<ext>` and the labels differ, each version is named by
+  /// its label: `Show - S01E01 - # 1 Primary.mkv` / `… - # 2 Secondary.mkv`
+  /// read as `# 1 Primary` / `# 2 Secondary`. The label is the same on every
+  /// episode, so a saved preference matches it across a series. Editions
+  /// (`{edition-…}`) are split into their own items by the server, so they
+  /// never need to appear here. Otherwise the versions are named by their
+  /// whole file names when those differ.
+  ///
+  /// A single version, a withheld path, or file names that don't tell the
+  /// versions apart (the same file name in two folders) leave every version
+  /// unnamed, so its label stays technical.
+  static List<MediaVersion> labelVersions(List<MediaVersion> versions) {
+    if (versions.length < 2) return versions;
+    final fileNames = [for (final version in versions) _versionFileName(version.parts)];
+    final labels = [for (final fileName in fileNames) _versionLabel(fileName)];
+    final names = _distinctNames(labels) ?? _distinctNames(fileNames);
+    if (names == null) return versions;
+    return [for (var i = 0; i < versions.length; i++) versions[i].copyWith(name: names[i])];
+  }
+
+  /// [names] when every entry is set and no two are equal ignoring case.
+  static List<String>? _distinctNames(List<String?> names) {
+    if (names.any((name) => name == null)) return null;
+    if (names.map((name) => name!.toLowerCase()).toSet().length != names.length) return null;
+    return names.cast<String>();
+  }
+
+  /// `# 1 Primary` from `Show - S01E01 - # 1 Primary.mkv`: the text after the
+  /// last ` - ` of the file name, without its extension. Null when there is
+  /// no separator or nothing follows it.
+  static String? _versionLabel(String? fileName) {
+    if (fileName == null) return null;
+    final dot = fileName.lastIndexOf('.');
+    final stem = dot > 0 ? fileName.substring(0, dot) : fileName;
+    final separator = stem.lastIndexOf(' - ');
+    if (separator < 0) return null;
+    final label = stem.substring(separator + 3).trim();
+    return label.isEmpty ? null : label;
   }
 
   /// Map a Plex Media JSON entry directly into a [MediaVersion].
@@ -1317,7 +1374,8 @@ class PlexMappers {
 }
 
 /// Authoritative version and playable-part selection shared by cache previews
-/// and playback. A stable id wins over a sibling-version signature and index.
+/// and playback. A stable id wins over a sibling-version name, then its
+/// signature, then the index.
 ///
 /// A version stacked across several files opens the file holding [position]
 /// (item time); see [MediaPartTimeline].
@@ -1328,6 +1386,7 @@ PlexPlaybackSelection? resolvePlexPlaybackSelection(
   int mediaIndex = 0,
   String? mediaSourceId,
   String? preferredVersionSignature,
+  String? preferredVersionName,
   void Function(int requestedIndex, int fallbackIndex)? onVersionFallback,
   bool preferPlayable = true,
   Duration? position,
@@ -1337,11 +1396,18 @@ PlexPlaybackSelection? resolvePlexPlaybackSelection(
       if (value is Map) value,
   ];
   if (media.isEmpty) return null;
-  final versions = [for (final value in media) PlexMappers.mediaVersionFromJson(Map<String, dynamic>.from(value))];
+  final versions = PlexMappers.labelVersions([
+    for (final value in media) PlexMappers.mediaVersionFromJson(Map<String, dynamic>.from(value)),
+  ]);
   final requestedId = mediaSourceId?.trim();
   final byId = requestedId == null || requestedId.isEmpty ? -1 : versions.indexWhere((v) => v.id == requestedId);
+  // Same-quality versions share a signature, so the version label
+  // ([PlexMappers.labelVersions]) is what tells them apart on a sibling.
+  final byName = byId >= 0 ? null : MediaVersion.findNamedIndex(versions, preferredVersionName);
   if (byId >= 0) {
     mediaIndex = byId;
+  } else if (byName != null) {
+    mediaIndex = byName;
   } else if (preferredVersionSignature != null && preferredVersionSignature.isNotEmpty) {
     mediaIndex = MediaVersion.findMatchingIndex(versions, {preferredVersionSignature}) ?? mediaIndex;
   }
@@ -1418,12 +1484,14 @@ MediaSourceInfo? plexMediaSourceInfoFromCacheJson(
   int mediaIndex = 0,
   String? mediaSourceId,
   String? preferredVersionSignature,
+  String? preferredVersionName,
 }) {
   final selection = resolvePlexPlaybackSelection(
     metadata,
     mediaIndex: mediaIndex,
     mediaSourceId: mediaSourceId,
     preferredVersionSignature: preferredVersionSignature,
+    preferredVersionName: preferredVersionName,
   );
   return selection == null ? null : plexMediaSourceInfoForSelection(metadata, selection);
 }

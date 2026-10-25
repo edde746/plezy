@@ -9,7 +9,6 @@ import '../media/media_item_merge.dart';
 import '../media/media_item_sort.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
-import '../media/media_version.dart';
 import '../models/download_models.dart';
 import '../utils/download_version_utils.dart';
 import '../database/app_database.dart';
@@ -1807,7 +1806,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     if (versionConfig != null && versionConfig.acceptedSignatures.isNotEmpty) {
       final versions = metadataToStore.mediaVersions;
       if (versions != null && versions.isNotEmpty) {
-        final matchedIndex = MediaVersion.findMatchingIndex(versions, versionConfig.acceptedSignatures);
+        final matchedIndex = versionConfig.findAcceptedIndex(versions);
         if (matchedIndex != null) {
           resolvedIndex = matchedIndex;
         } else if (versionConfig.onVersionMismatch != null) {
@@ -1816,7 +1815,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
           if (pickedIndex == null) return false;
           resolvedIndex = pickedIndex;
           if (!_isQueueOwnershipCurrent(ownership)) return false;
-          versionConfig.acceptedSignatures.add(versions[pickedIndex].signature);
+          versionConfig.accept(versions[pickedIndex]);
         }
       }
     }

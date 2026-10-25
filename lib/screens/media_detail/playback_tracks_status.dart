@@ -101,6 +101,7 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
           item.id,
           mediaIndex: selection?.index ?? 0,
           mediaSourceId: selection?.sourceId,
+          preferredVersionName: selection?.name,
           preferredVersionSignature: selection?.signature,
         );
         if (!current() || source == null) return;

@@ -483,6 +483,10 @@ class VideoPlayerScreen extends StatefulWidget {
   /// [PlaybackInitializationOptions.preferredVersionSignature]). Null for
   /// explicit user selections.
   final String? preferredVersionSignature;
+
+  /// Version name of the same saved preference (see
+  /// [PlaybackInitializationOptions.preferredVersionName]).
+  final String? preferredVersionName;
   final bool isOffline;
 
   /// The Watch Together room's file this launch opens, when the room asked
@@ -517,6 +521,7 @@ class VideoPlayerScreen extends StatefulWidget {
     this.selectedMediaIndex = 0,
     this.selectedMediaSourceId,
     this.preferredVersionSignature,
+    this.preferredVersionName,
     this.isOffline = false,
     this.selectedQualityPreset,
     this.selectedAudioStreamId,
@@ -1768,6 +1773,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
             metadata: _currentMetadata,
             selectedMediaIndex: _effectiveSelectedMediaIndex,
             selectedMediaSourceId: _requestedMediaSourceId,
+            preferredVersionName: widget.preferredVersionName,
             preferredVersionSignature: widget.preferredVersionSignature,
             qualityPreset: _selectedQualityPreset,
             selectedAudioStreamId: _selectedAudioStreamId,

@@ -136,6 +136,7 @@ mixin _JellyfinClientInternals on MediaServerCacheMixin {
     int sourceIndex = 0,
     String? sourceId,
     String? preferredSignature,
+    String? preferredName,
   });
   String buildDirectStreamUrl(
     String itemId, {

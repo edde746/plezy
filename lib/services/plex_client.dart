@@ -1984,6 +1984,7 @@ class PlexClient
     String? selectedMediaSourceId,
     String? preferredVersionSignature,
     Duration? position,
+    String? preferredVersionName,
   }) {
     return parsePlexVideoPlaybackDataFromJson(
       metadataJson,
@@ -1993,6 +1994,7 @@ class PlexClient
       selectedMediaSourceId: selectedMediaSourceId,
       preferredVersionSignature: preferredVersionSignature,
       position: position,
+      preferredVersionName: preferredVersionName,
       onVersionFallback: (requested, fallback) {
         appLogger.w('Version $requested inaccessible/missing — falling back to version $fallback');
       },
@@ -2047,6 +2049,7 @@ class PlexClient
     String? selectedMediaSourceId,
     String? preferredVersionSignature,
     Duration? position,
+    String? preferredVersionName,
     bool forceRefresh = false,
   }) async {
     // Fresh-cache-first: the detail screen writes a strict superset of this
@@ -2073,6 +2076,7 @@ class PlexClient
               selectedMediaSourceId: selectedMediaSourceId,
               preferredVersionSignature: preferredVersionSignature,
               position: position,
+              preferredVersionName: preferredVersionName,
             );
           }
         } on FormatException {
@@ -2098,6 +2102,7 @@ class PlexClient
       selectedMediaSourceId: selectedMediaSourceId,
       preferredVersionSignature: preferredVersionSignature,
       position: position,
+      preferredVersionName: preferredVersionName,
     );
   }
 
@@ -3783,6 +3788,7 @@ class PlexClient
         selectedMediaSourceId: options.selectedMediaSourceId,
         preferredVersionSignature: options.preferredVersionSignature,
         position: options.startPosition,
+        preferredVersionName: options.preferredVersionName,
       );
 
       if (!data.hasValidVideoUrl) {
@@ -4366,6 +4372,7 @@ class PlexClient
     int mediaIndex = 0,
     String? mediaSourceId,
     String? preferredVersionSignature,
+    String? preferredVersionName,
   }) async {
     final cached = await cache.get(profileScopeId.cacheServerId, '/library/metadata/$itemId');
     if (cached == null) return null;
@@ -4376,6 +4383,7 @@ class PlexClient
       mediaIndex: mediaIndex,
       mediaSourceId: mediaSourceId,
       preferredVersionSignature: preferredVersionSignature,
+      preferredVersionName: preferredVersionName,
     );
   }
 
