@@ -57,6 +57,7 @@ import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/file_info_bottom_sheet.dart';
 import 'package:plezy/widgets/media_context_menu.dart';
 import 'package:plezy/widgets/tag_edit_dialog.dart';
+import 'package:plezy/widgets/watch_link_dialog.dart';
 import 'package:provider/provider.dart';
 import '../test_helpers/backend_client_fixtures.dart';
 import '../test_helpers/media_items.dart';
@@ -809,6 +810,55 @@ void main() {
       expect(supportsMetadataEdit(client, MediaKind.movie), isTrue);
       expect(supportsMetadataEdit(client, MediaKind.show), isTrue);
       expect(supportsMetadataEdit(client, MediaKind.track), isFalse);
+    });
+  });
+
+  group('MediaContextMenu watch link', () {
+    testWidgets('shows the watch link for a Plex movie', (tester) async {
+      final menuKey = await _pumpPlexMovieMenu(
+        tester,
+        const [],
+        item: testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          guid: 'plex://movie/5d776825880197001ec967c2',
+          serverId: 'plex-1',
+        ),
+      );
+
+      menuKey.currentState!.showContextMenu(tester.element(find.text('picker target')));
+      await tester.pumpAndSettle();
+      await tester.tap(find.text(t.watchLink.menuItem));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(WatchLinkDialog), findsOneWidget);
+      expect(find.text('plezy://watch?plex=movie%2F5d776825880197001ec967c2'), findsOneWidget);
+    });
+
+    testWidgets('offers no watch link on an episode', (tester) async {
+      final menuKey = await _pumpPlexMovieMenu(
+        tester,
+        const [],
+        item: testMediaItem(id: 'ep-1', backend: MediaBackend.plex, kind: MediaKind.episode, serverId: 'plex-1'),
+      );
+
+      menuKey.currentState!.showContextMenu(tester.element(find.text('picker target')));
+      await tester.pumpAndSettle();
+
+      expect(find.text(t.watchLink.menuItem), findsNothing);
+    });
+
+    testWidgets('offers no watch link on a Jellyfin movie', (tester) async {
+      final menuKey = await _pumpJellyfinMovieMenu(
+        tester,
+        isAdministrator: false,
+        handler: (_) async => _canDeleteResponse('movie-1', true),
+      );
+
+      await _openMenu(tester, menuKey);
+
+      expect(find.text(t.watchLink.menuItem), findsNothing);
     });
   });
 
@@ -1665,6 +1715,7 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
   WidgetTester tester,
   List<({String id, String title})> playlists, {
   Widget Function(Widget menu)? wrapMenu,
+  MediaItem? item,
 }) async {
   LocaleSettings.setLocaleSync(AppLocale.en);
   TvDetectionService.debugSetAppleTVOverride(true);
@@ -1717,16 +1768,17 @@ Future<GlobalKey<MediaContextMenuState>> _pumpPlexMovieMenu(
   });
 
   final menuKey = GlobalKey<MediaContextMenuState>();
-  final item = testMediaItem(
-    id: 'movie-1',
-    backend: MediaBackend.plex,
-    kind: MediaKind.movie,
-    title: 'Movie',
-    serverId: 'plex-1',
-  );
   final menu = MediaContextMenu(
     key: menuKey,
-    item: item,
+    item:
+        item ??
+        testMediaItem(
+          id: 'movie-1',
+          backend: MediaBackend.plex,
+          kind: MediaKind.movie,
+          title: 'Movie',
+          serverId: 'plex-1',
+        ),
     child: const SizedBox(width: 120, height: 80, child: Text('picker target')),
   );
   await tester.pumpWidget(

@@ -2578,5 +2578,18 @@
     "connectDirectPlexCard": "Plex Media Server (Direct / Local)",
     "connectDirectPlexCardSubtitle": "Connect directly using local IP or URL without plex.tv account.",
     "connectDirectPlexCardSubtitleScoped": "Connect directly using local IP or URL. Binds to ${name}."
+  },
+  "watchLink": {
+    "serverUnavailable": "Couldn't reach a Plex server for this link.",
+    "notFound": "Couldn't find this show or movie on your Plex servers.",
+    "ambiguous": "This link matches items on more than one server. Add a server to the link.",
+    "plexOnly": "Watch links currently support Plex servers only.",
+    "unsupportedItem": "Watch links can only open a show or a movie.",
+    "menuItem": "Show watch link",
+    "dialogTitle": "Watch link",
+    "dialogShowHint": "Opening this link plays the next episode. Add &mode=shuffle to the end to play the show on shuffle.",
+    "dialogMovieHint": "Opening this link plays the movie.",
+    "copy": "Copy",
+    "copied": "Link copied"
   }
 }

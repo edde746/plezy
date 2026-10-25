@@ -94,6 +94,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$seerr$en seerr = Translations$seerr$en.internal(_root);
 	late final Translations$services$en services = Translations$services$en.internal(_root);
 	late final Translations$addServer$en addServer = Translations$addServer$en.internal(_root);
+	late final Translations$watchLink$en watchLink = Translations$watchLink$en.internal(_root);
 }
 
 // Path: app
@@ -6146,6 +6147,48 @@ class Translations$addServer$en {
 	String connectDirectPlexCardSubtitleScoped({required Object name}) => 'Connect directly using local IP or URL. Binds to ${name}.';
 }
 
+// Path: watchLink
+class Translations$watchLink$en {
+	Translations$watchLink$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Couldn't reach a Plex server for this link.'
+	String get serverUnavailable => 'Couldn\'t reach a Plex server for this link.';
+
+	/// en: 'Couldn't find this show or movie on your Plex servers.'
+	String get notFound => 'Couldn\'t find this show or movie on your Plex servers.';
+
+	/// en: 'This link matches items on more than one server. Add a server to the link.'
+	String get ambiguous => 'This link matches items on more than one server. Add a server to the link.';
+
+	/// en: 'Watch links currently support Plex servers only.'
+	String get plexOnly => 'Watch links currently support Plex servers only.';
+
+	/// en: 'Watch links can only open a show or a movie.'
+	String get unsupportedItem => 'Watch links can only open a show or a movie.';
+
+	/// en: 'Show watch link'
+	String get menuItem => 'Show watch link';
+
+	/// en: 'Watch link'
+	String get dialogTitle => 'Watch link';
+
+	/// en: 'Opening this link plays the next episode. Add &mode=shuffle to the end to play the show on shuffle.'
+	String get dialogShowHint => 'Opening this link plays the next episode. Add &mode=shuffle to the end to play the show on shuffle.';
+
+	/// en: 'Opening this link plays the movie.'
+	String get dialogMovieHint => 'Opening this link plays the movie.';
+
+	/// en: 'Copy'
+	String get copy => 'Copy';
+
+	/// en: 'Link copied'
+	String get copied => 'Link copied';
+}
+
 // Path: appIcon.names
 class Translations$appIcon$names$en {
 	Translations$appIcon$names$en.internal(this._root);
@@ -10496,6 +10539,17 @@ extension on Translations {
 			'addServer.connectDirectPlexCard' => 'Plex Media Server (Direct / Local)',
 			'addServer.connectDirectPlexCardSubtitle' => 'Connect directly using local IP or URL without plex.tv account.',
 			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => 'Connect directly using local IP or URL. Binds to ${name}.',
+			'watchLink.serverUnavailable' => 'Couldn\'t reach a Plex server for this link.',
+			'watchLink.notFound' => 'Couldn\'t find this show or movie on your Plex servers.',
+			'watchLink.ambiguous' => 'This link matches items on more than one server. Add a server to the link.',
+			'watchLink.plexOnly' => 'Watch links currently support Plex servers only.',
+			'watchLink.unsupportedItem' => 'Watch links can only open a show or a movie.',
+			'watchLink.menuItem' => 'Show watch link',
+			'watchLink.dialogTitle' => 'Watch link',
+			'watchLink.dialogShowHint' => 'Opening this link plays the next episode. Add &mode=shuffle to the end to play the show on shuffle.',
+			'watchLink.dialogMovieHint' => 'Opening this link plays the movie.',
+			'watchLink.copy' => 'Copy',
+			'watchLink.copied' => 'Link copied',
 			_ => null,
 		};
 	}
