@@ -18,6 +18,7 @@ import '../../profiles/profile_connection.dart';
 import '../../profiles/profile_connection_registry.dart';
 import '../../profiles/profile_merge.dart';
 import '../../profiles/profile_registry.dart';
+import '../../services/settings_service.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../focus/focusable_button.dart';
 import '../../widgets/app_icon.dart';
@@ -26,6 +27,7 @@ import '../../widgets/backend_badge.dart';
 import '../../widgets/focusable_popup_menu_button.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/settings_section.dart';
+import '../../widgets/setting_tile.dart';
 import '../../utils/dialogs.dart';
 import '../settings/add_connection_screen.dart';
 import '../settings/edit_jellyfin_connection_screen.dart';
@@ -326,6 +328,13 @@ class _ProfileDetailScreenState extends State<ProfileDetailScreen> with Controll
                 )
               else
                 PinStatusRow(onChange: _setPin, onRemove: _clearPin, changeFocusNode: _changePinFocusNode),
+              const SizedBox(height: 12),
+              SettingSwitchTile(
+                pref: SettingsService.showExploreTabForProfile(_profile.id),
+                icon: Symbols.explore_rounded,
+                title: t.profiles.showExploreForProfile,
+                subtitle: t.profiles.showExploreForProfileDescription,
+              ),
               const SizedBox(height: 32),
               Row(
                 children: [

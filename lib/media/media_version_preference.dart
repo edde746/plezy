@@ -29,13 +29,7 @@ class MediaVersionPreference {
   /// preference map is pruned. Null on legacy entries (evicted first).
   final int? updatedAt;
 
-  const MediaVersionPreference({
-    this.versionId,
-    this.versionName,
-    this.signature,
-    required this.index,
-    this.updatedAt,
-  });
+  const MediaVersionPreference({this.versionId, this.versionName, this.signature, required this.index, this.updatedAt});
 
   /// Capture [version] (at [index] in its Media list) as a preference.
   factory MediaVersionPreference.forVersion(MediaVersion version, int index) => MediaVersionPreference(

@@ -29,6 +29,7 @@ import '../screens/video_player_screen.dart';
 import '../services/api_cache.dart';
 import '../services/agent_control_service.dart';
 import '../services/catalog/catalog_library_matcher.dart';
+import '../services/home_layout_sync_binder.dart';
 import '../services/music/music_playback_service.dart';
 import '../services/music/music_playback_service_impl.dart';
 import '../services/music/music_session_store.dart';
@@ -156,6 +157,17 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
                   });
                   return provider;
                 },
+              ),
+              // Home layout sync follows the active profile's own Plex
+              // account (see HomeLayoutSyncBinder).
+              Provider<HomeLayoutSyncBinder>(
+                lazy: false,
+                create: (context) => HomeLayoutSyncBinder(
+                  activeProfile: context.read<ActiveProfileProvider>(),
+                  connections: context.read<ConnectionRegistry>(),
+                  profileConnections: context.read<ProfileConnectionRegistry>(),
+                ),
+                dispose: (_, binder) => binder.dispose(),
               ),
               ChangeNotifierProvider(
                 create: (context) {

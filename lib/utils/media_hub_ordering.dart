@@ -13,7 +13,14 @@ bool sortMediaHubsByLibraryOrder(List<MediaHub> hubs, List<MediaLibrary> library
     orderByGlobalKey.putIfAbsent(libraryOrder[i].globalKey, () => i);
   }
 
-  final indexedHubs = [for (var i = 0; i < hubs.length; i++) (index: i, hub: hubs[i])];
+  // Configured rows can contain items from several libraries. Their position
+  // is controlled by home_row_order, so keep them out of the library sorter.
+  final sortableIndexes = [
+    for (var i = 0; i < hubs.length; i++)
+      if (!_isConfiguredHomeRow(hubs[i])) i,
+  ];
+  if (sortableIndexes.length < 2) return false;
+  final indexedHubs = [for (final i in sortableIndexes) (index: i, hub: hubs[i])];
   indexedHubs.sort((a, b) {
     final aIndex = _hubLibraryOrderIndex(a.hub, orderByGlobalKey);
     final bIndex = _hubLibraryOrderIndex(b.hub, orderByGlobalKey);
@@ -27,13 +34,16 @@ bool sortMediaHubsByLibraryOrder(List<MediaHub> hubs, List<MediaLibrary> library
   });
 
   var changed = false;
-  for (var i = 0; i < hubs.length; i++) {
+  for (var i = 0; i < indexedHubs.length; i++) {
+    final targetIndex = sortableIndexes[i];
     final hub = indexedHubs[i].hub;
-    if (!identical(hubs[i], hub)) changed = true;
-    hubs[i] = hub;
+    if (!identical(hubs[targetIndex], hub)) changed = true;
+    hubs[targetIndex] = hub;
   }
   return changed;
 }
+
+bool _isConfiguredHomeRow(MediaHub hub) => hub.identifier?.startsWith('configured.') ?? false;
 
 int? _hubLibraryOrderIndex(MediaHub hub, Map<String, int> orderByGlobalKey) {
   final hubLibraryKey = _globalKey(serverIdOrNull(hub.serverId), hub.libraryId);

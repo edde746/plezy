@@ -60,6 +60,10 @@ class PlaybackSubtitleSelection {
   /// back to the server (#2323).
   final bool primaryHonorsPreference;
 
+  /// The subtitle was selected by a device-only automatic policy. Carrying it
+  /// as an account preference would turn the local setting into a server write.
+  final bool isDeviceLocalFallback;
+
   const PlaybackSubtitleSelection({
     required this.primaryTrack,
     this.primarySourceStreamId,
@@ -70,12 +74,14 @@ class PlaybackSubtitleSelection {
     this.preloadedSidecars = const [],
     this.declinedPreference,
     this.primaryHonorsPreference = false,
+    this.isDeviceLocalFallback = false,
   });
 
   const PlaybackSubtitleSelection.off({
     this.preloadedSidecars = const [],
     this.declinedPreference,
     this.primaryHonorsPreference = false,
+    this.isDeviceLocalFallback = false,
   }) : primaryTrack = SubtitleTrack.off,
        primarySourceStreamId = null,
        primarySidecar = null,
@@ -172,6 +178,8 @@ class PlaybackSubtitleResolver {
     SubtitlePreference? preferredSecondarySubtitleTrack,
     bool preserveSourceIdentity = true,
     bool isTranscoding = false,
+    bool alwaysShowSubtitlesOnDevice = false,
+    int? deviceSubtitleOverrideStreamId,
   }) {
     final candidates = <_SubtitleCandidate>[];
     final matchedSidecars = <PlaybackSubtitleSidecar>{};
@@ -203,6 +211,7 @@ class PlaybackSubtitleResolver {
       profileSettings: profileSettings,
       metadata: metadata,
       plexMediaInfo: mediaInfo,
+      alwaysShowSubtitlesOnDevice: alwaysShowSubtitlesOnDevice,
     );
     final selectedAudio = service.selectAudioTrack(audioTracksForSource(mediaInfo), preferredAudioTrack)?.track;
     final primaryPreference = _sourceBackedPreference(
@@ -211,7 +220,18 @@ class PlaybackSubtitleResolver {
       candidates,
       preserveSourceIdentity: preserveSourceIdentity,
     );
-    final primaryResult = service.selectSubtitleTrack(availableTracks, primaryPreference, selectedAudio);
+    final deviceSubtitleOverride = deviceSubtitleOverrideStreamId == null
+        ? null
+        : candidates
+              .where((candidate) => candidate.sourceStreamId == deviceSubtitleOverrideStreamId)
+              .firstOrNull
+              ?.track;
+    final primaryResult = service.selectSubtitleTrack(
+      availableTracks,
+      primaryPreference,
+      selectedAudio,
+      deviceSubtitleOverride: deviceSubtitleOverride,
+    );
     final primary = primaryResult?.track;
     // `navigation` is the ladder's only preference-driven priority.
     final primaryHonorsPreference = primaryResult?.priority == TrackSelectionPriority.navigation;
@@ -226,6 +246,7 @@ class PlaybackSubtitleResolver {
         preloadedSidecars: preloadedSidecars,
         declinedPreference: declinedPreference,
         primaryHonorsPreference: primaryHonorsPreference,
+        isDeviceLocalFallback: primaryResult?.priority == TrackSelectionPriority.deviceLocalOverride,
       );
     }
 
@@ -270,6 +291,7 @@ class PlaybackSubtitleResolver {
       secondarySidecar: secondaryCandidate?.sidecar,
       preloadedSidecars: preloadedSidecars,
       primaryHonorsPreference: primaryHonorsPreference,
+      isDeviceLocalFallback: primaryResult?.priority == TrackSelectionPriority.deviceLocalOverride,
     );
   }
 

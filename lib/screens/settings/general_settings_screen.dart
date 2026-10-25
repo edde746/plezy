@@ -5,8 +5,10 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../media/ids.dart';
 import '../../navigation/navigation_tabs.dart';
 import '../../profiles/active_profile_provider.dart';
+import '../../providers/multi_server_provider.dart';
 import '../../services/settings_service.dart';
 import '../../services/settings_mutation_service.dart';
 import '../../utils/platform_detector.dart';
@@ -27,6 +29,9 @@ class GeneralSettingsScreen extends StatelessWidget {
     // Watched at build level so the tiles can be excluded with a plain `if` —
     // a child that renders SizedBox.shrink() would corrupt the group corners.
     final hasMultipleProfiles = context.watch<ActiveProfileProvider>().hasMultipleProfiles;
+    final activeProfileId = context.watch<ActiveProfileProvider>().active?.id;
+    final serverProvider = context.watch<MultiServerProvider>();
+    final visibleServerIds = serverProvider.serverIds;
     return SettingsPage(
       title: Text(t.settings.general),
       children: [
@@ -52,6 +57,12 @@ class GeneralSettingsScreen extends StatelessWidget {
               ),
           ],
         ),
+
+        if (activeProfileId != null && visibleServerIds.isNotEmpty)
+          SettingsGroup(
+            title: t.connections.sectionTitle,
+            children: [_PreferredServerTile(profileId: activeProfileId)],
+          ),
 
         if (PlatformDetector.isDesktopOS())
           SettingsGroup(
@@ -161,5 +172,51 @@ class GeneralSettingsScreen extends StatelessWidget {
       case AppLocale.uz:
         return 'Oʻzbekcha';
     }
+  }
+}
+
+class _PreferredServerTile extends StatelessWidget {
+  final String profileId;
+
+  const _PreferredServerTile({required this.profileId});
+
+  @override
+  Widget build(BuildContext context) {
+    final serverProvider = context.watch<MultiServerProvider>();
+    final manager = serverProvider.serverManager;
+    final pref = SettingsService.preferredServerForProfile(profileId);
+    final currentId = SettingsService.instance.read(pref);
+    final currentLabel = currentId.isEmpty
+        ? t.settings.preferredServerAutomatic
+        : manager.serverDisplayName(ServerId(currentId));
+
+    return FocusableListTile(
+      leading: const AppIcon(Symbols.dns_rounded, fill: 1),
+      title: Text(t.settings.preferredServer),
+      subtitle: Text(t.settings.preferredServerDescription),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(currentLabel, overflow: TextOverflow.ellipsis),
+          const SizedBox(width: 8),
+          const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+        ],
+      ),
+      onTap: () async {
+        final ids = serverProvider.serverIds;
+        final picked = await showSelectionDialog<String>(
+          context: context,
+          title: t.settings.preferredServer,
+          options: [
+            DialogOption(value: '', title: t.settings.preferredServerAutomatic),
+            for (final id in ids) DialogOption(value: id, title: manager.serverDisplayName(ServerId(id))),
+          ],
+          currentValue: currentId,
+        );
+        if (picked == null || !context.mounted) return;
+        await SettingsService.instance.write(pref, picked.value);
+        if (context.mounted) manager.setPreferredServerId(picked.value);
+      },
+    );
   }
 }

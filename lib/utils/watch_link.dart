@@ -22,16 +22,18 @@ enum WatchMode { next, shuffle }
 /// * Portable: `plezy://watch?plex=<show|movie>/<hash>[&mode=next|shuffle]`,
 ///   the item's Plex GUID without its `plex://` prefix. Resolves on every
 ///   Plex server that has the title.
-/// * Server: `plezy://watch?id=<ratingKey>[&server=<machineIdentifier>][&mode=...]`.
-///   Rating keys are per-server, so without `server` the key must match on
-///   exactly one server.
+/// * External: `plezy://watch?external=<show|movie>&tmdb=...&title=...`, with
+///   any available IMDb/TMDB/TVDB ids. This resolves across Plex, Jellyfin,
+///   and Emby servers.
+/// * Server: `plezy://watch?id=<itemId>&server=<serverId>[&mode=...]`.
+///   Used when the item has no portable external ids.
 ///
 /// For shows, `next` (the default) plays the On Deck episode, or the first
 /// episode when nothing is On Deck; `shuffle` plays every episode in random
 /// order. Movies ignore the mode.
 ///
 /// Intended for automation (e.g. Home Assistant launching the URL when an
-/// RFID tag is scanned). Plex servers only for now.
+/// RFID tag is scanned). External-id links work across supported backends.
 sealed class WatchLink {
   const WatchLink({this.mode = WatchMode.next});
 
@@ -54,12 +56,14 @@ sealed class WatchLink {
 
     final plex = params['plex']?.trim();
     final id = params['id']?.trim();
-    final hasPlex = plex != null && plex.isNotEmpty;
-    final hasId = id != null && id.isNotEmpty;
-    if (hasPlex == hasId) return null;
+    final externalKind = params['external']?.trim().toLowerCase();
+    final hasPlex = plex?.isNotEmpty ?? false;
+    final hasId = id?.isNotEmpty ?? false;
+    final hasExternal = externalKind?.isNotEmpty ?? false;
+    if ([hasPlex, hasId, hasExternal].where((value) => value).length != 1) return null;
 
     if (hasPlex) {
-      final slash = plex.indexOf('/');
+      final slash = plex!.indexOf('/');
       if (slash <= 0 || slash == plex.length - 1) return null;
       final kind = switch (plex.substring(0, slash).toLowerCase()) {
         'show' => MediaKind.show,
@@ -69,6 +73,29 @@ sealed class WatchLink {
       if (kind == null) return null;
       return PortableWatchLink(kind: kind, hash: plex.substring(slash + 1), mode: mode);
     }
+
+    if (hasExternal) {
+      final kind = switch (externalKind) {
+        'show' => MediaKind.show,
+        'movie' => MediaKind.movie,
+        _ => null,
+      };
+      final ids = ExternalIds(
+        imdb: _nonEmpty(params['imdb']),
+        tmdb: int.tryParse(params['tmdb'] ?? ''),
+        tvdb: int.tryParse(params['tvdb'] ?? ''),
+      );
+      final title = params['title']?.trim() ?? '';
+      if (kind == null || !ids.hasCatalogIds || title.isEmpty) return null;
+      return ExternalWatchLink(
+        kind: kind,
+        ids: ids,
+        title: title,
+        year: int.tryParse(params['year'] ?? ''),
+        mode: mode,
+      );
+    }
+
     final server = params['server']?.trim();
     return ServerWatchLink(
       ratingKey: id!,
@@ -77,15 +104,26 @@ sealed class WatchLink {
     );
   }
 
-  /// The portable link for [item] when it has a Plex GUID, otherwise the
-  /// server link. Null for anything other than a Plex show or movie.
-  static WatchLink? forItem(MediaItem item) {
-    if (item.backend != MediaBackend.plex) return null;
+  /// The portable link for [item] when it has a Plex GUID or provider ids,
+  /// otherwise a server-specific link. Null for other item kinds.
+  static WatchLink? forItem(MediaItem item, {ExternalIds? externalIds}) {
     if (item.kind != MediaKind.show && item.kind != MediaKind.movie) return null;
-    final guid = item.guid;
-    final prefix = _plexGuidPrefix(item.kind);
-    if (guid != null && guid.startsWith(prefix) && guid.length > prefix.length) {
-      return PortableWatchLink(kind: item.kind, hash: guid.substring(prefix.length));
+    final title = _nonEmpty(item.title);
+    if (item.backend != MediaBackend.plex) {
+      if (externalIds?.hasCatalogIds == true && title != null) {
+        return ExternalWatchLink(kind: item.kind, ids: externalIds!, title: title, year: item.year);
+      }
+      return null;
+    }
+    if (item.backend == MediaBackend.plex) {
+      final guid = item.guid;
+      final prefix = _plexGuidPrefix(item.kind);
+      if (guid != null && guid.startsWith(prefix) && guid.length > prefix.length) {
+        return PortableWatchLink(kind: item.kind, hash: guid.substring(prefix.length));
+      }
+      if (externalIds?.hasCatalogIds == true && title != null) {
+        return ExternalWatchLink(kind: item.kind, ids: externalIds!, title: title, year: item.year);
+      }
     }
     final serverId = serverIdOrNull(item.serverId);
     return ServerWatchLink(ratingKey: item.id, serverId: serverId);
@@ -252,6 +290,62 @@ final class PortableWatchLink extends WatchLink {
   }
 }
 
+/// A portable watch link resolved by provider ids and a verified title.
+final class ExternalWatchLink extends WatchLink {
+  const ExternalWatchLink({required this.kind, required this.ids, required this.title, this.year, super.mode});
+
+  final MediaKind kind;
+  final ExternalIds ids;
+  final String title;
+  final int? year;
+
+  @override
+  Map<String, String> get _identityParams => {
+    'external': kind.name,
+    if (ids.imdb != null) 'imdb': ids.imdb!,
+    if (ids.tmdb != null) 'tmdb': ids.tmdb.toString(),
+    if (ids.tvdb != null) 'tvdb': ids.tvdb.toString(),
+    'title': title,
+    if (year != null) 'year': year.toString(),
+  };
+
+  @override
+  Future<WatchLinkResolution> resolve(List<WatchLinkServer> servers) async {
+    if (servers.isEmpty) return const WatchLinkFailure(WatchLinkFailureReason.noServer);
+    var unreachable = false;
+    final lookups = await Future.wait([
+      for (final server in servers)
+        server.client
+            .findByExternalIds(ids, kind: kind, titles: [title], year: year)
+            .then((items) => items ?? const <MediaItem>[])
+            .catchError((Object error) {
+              appLogger.w('Watch link: external-id lookup failed on ${server.id}', error: error);
+              unreachable = true;
+              return const <MediaItem>[];
+            }),
+    ]);
+    final copies = [
+      for (var index = 0; index < servers.length; index++)
+        for (final item in lookups[index]) (server: servers[index], item: item),
+    ];
+    if (copies.isEmpty) return _notFound(unreachable: unreachable);
+    if (kind == MediaKind.movie) {
+      final full = await Future.wait([
+        for (final copy in copies)
+          copy.server.client
+              .fetchItem(copy.item.id)
+              .then((item) => (server: copy.server, item: item ?? copy.item))
+              .catchError((Object error) {
+                appLogger.w('Watch link: item fetch failed on ${copy.server.id}', error: error);
+                return copy;
+              }),
+      ]);
+      return _targetFor([_watchedLast(full, (copy) => copy.item)], mode);
+    }
+    return _targetFor(copies, mode);
+  }
+}
+
 /// A Watch link naming its title by rating key on one server.
 final class ServerWatchLink extends WatchLink {
   const ServerWatchLink({required this.ratingKey, this.serverId, super.mode});
@@ -270,12 +364,11 @@ final class ServerWatchLink extends WatchLink {
       for (final s in servers)
         if (serverId == null || s.id == serverId) s,
     ];
-    final plexServers = _plexOnly(candidates);
-    if (plexServers.isEmpty) return _noPlexServer(candidates);
+    if (candidates.isEmpty) return const WatchLinkFailure(WatchLinkFailureReason.noServer);
 
     var unreachable = false;
     final items = await Future.wait([
-      for (final server in plexServers)
+      for (final server in candidates)
         server.client.fetchItem(ratingKey).catchError((Object e) {
           appLogger.w('Watch link: item lookup failed on ${server.id}', error: e);
           unreachable = true;
@@ -283,8 +376,8 @@ final class ServerWatchLink extends WatchLink {
         }),
     ]);
     final copies = [
-      for (var i = 0; i < plexServers.length; i++)
-        if (items[i] case final item?) (server: plexServers[i], item: item),
+      for (var i = 0; i < candidates.length; i++)
+        if (items[i] case final item?) (server: candidates[i], item: item),
     ];
     if (copies.isEmpty) return _notFound(unreachable: unreachable);
     // Rating keys are per-server database numbers: the same key on two
@@ -426,4 +519,9 @@ MediaItem? firstEpisodeOf(List<MediaItem> episodes) {
     }
   }
   return best;
+}
+
+String? _nonEmpty(String? value) {
+  final trimmed = value?.trim();
+  return trimmed == null || trimmed.isEmpty ? null : trimmed;
 }

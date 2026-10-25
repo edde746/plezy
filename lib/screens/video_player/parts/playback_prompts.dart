@@ -212,6 +212,7 @@ extension _VideoPlayerPlaybackPromptMethods on VideoPlayerScreenState {
           isHandheld: PlatformDetector.isMobile(context),
           isTv: PlatformDetector.isTV(),
           isAutomotive: isAutomotive,
+          continueAudioInBackground: _backgroundVideoAudioAllowed,
         );
   }
 

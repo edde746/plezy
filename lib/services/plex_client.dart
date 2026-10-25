@@ -53,6 +53,7 @@ import '../media/media_filter.dart';
 import '../media/media_source_info.dart';
 import '../media/media_version.dart';
 import '../models/subtitles/subtitle_search_result.dart';
+import '../models/plex/plex_managed_hub.dart';
 import '../models/plex/plex_match_result.dart';
 import '../utils/codec_utils.dart';
 import '../utils/content_utils.dart';
@@ -723,6 +724,59 @@ class PlexClient
     final response = await _http.post(path, queryParameters: queryParameters, allowEndpointFailover: true);
     throwIfHttpError(response);
     return response;
+  }
+
+  /// Read the rows and visibility flags shown by Plex's Home manager.
+  Future<List<PlexManagedHub>> fetchManagedHubs(String sectionId) async {
+    final response = await _getWithFailover('/hubs/sections/$sectionId/manage');
+    final container = _getMediaContainer(response);
+    final rawHubs = container?['Hub'];
+    final hubs = rawHubs is List
+        ? rawHubs
+        : rawHubs is Map
+        ? [rawHubs]
+        : const [];
+    return hubs
+        .whereType<Map>()
+        .map((hub) => PlexManagedHub.fromJson(Map<String, dynamic>.from(hub)))
+        .where((hub) => hub.identifier.isNotEmpty)
+        .toList();
+  }
+
+  Future<void> updateManagedHubVisibility(
+    String sectionId,
+    String identifier, {
+    required bool promotedToRecommended,
+    required bool promotedToOwnHome,
+    required bool promotedToSharedHome,
+  }) async {
+    final response = await _http.put(
+      '/hubs/sections/$sectionId/manage/${Uri.encodeComponent(identifier)}',
+      queryParameters: {
+        'promotedToRecommended': promotedToRecommended ? 1 : 0,
+        'promotedToOwnHome': promotedToOwnHome ? 1 : 0,
+        'promotedToSharedHome': promotedToSharedHome ? 1 : 0,
+      },
+    );
+    throwIfHttpError(response);
+  }
+
+  Future<void> moveManagedHub(String sectionId, String identifier, {String? after}) async {
+    final response = await _http.put(
+      '/hubs/sections/$sectionId/manage/${Uri.encodeComponent(identifier)}/move',
+      queryParameters: {'after': after ?? ''},
+    );
+    throwIfHttpError(response);
+  }
+
+  Future<void> removeManagedHub(String sectionId, String identifier) async {
+    final response = await _http.delete('/hubs/sections/$sectionId/manage/${Uri.encodeComponent(identifier)}');
+    throwIfHttpError(response);
+  }
+
+  Future<void> resetManagedHubs(String sectionId) async {
+    final response = await _http.delete('/hubs/sections/$sectionId/manage');
+    throwIfHttpError(response);
   }
 
   /// Fetch /media/providers and parse libraries + EPG providers from the response.
@@ -4145,6 +4199,21 @@ class PlexClient
     return '${config.baseUrl}${track.key}.$ext?encoding=utf-8&X-Plex-Token=$token';
   }
 
+  @override
+  PlaybackSubtitleSidecar? buildPlaybackSubtitleSidecar(
+    MediaItem item,
+    MediaSubtitleTrack track, {
+    String? mediaSourceId,
+  }) {
+    final url = buildExternalSubtitleUrl(track);
+    if (url == null) return null;
+    return PlaybackSubtitleSidecar(
+      sourceStreamId: track.id,
+      track: _subtitleTrackFromMediaTrack(track, url),
+      preload: true,
+    );
+  }
+
   /// Raw sidecar URL for real sidecar subtitle streams. Plex returns 501 for
   /// `/library/streams/{id}.{ext}` when the stream is embedded, so a Plex
   /// `Stream.key` is required here.
@@ -4408,6 +4477,9 @@ class PlexClient
     final suffix = typeId == null ? '' : '?type=$typeId';
     return '/library/sections/$libraryId/$bareField$suffix';
   }
+
+  @override
+  Future<List<MediaItem>> fetchCinemaIntros(String itemId) async => const [];
 
   @override
   Future<PlaybackExtras> fetchPlaybackExtras(
@@ -5224,6 +5296,7 @@ class PlexClient
   Future<ConvertedDownloadState> requestConvertedDownload(
     MediaItem item, {
     required int mediaIndex,
+    String? mediaSourceId,
     required TranscodeQualityPreset preset,
   }) async {
     try {

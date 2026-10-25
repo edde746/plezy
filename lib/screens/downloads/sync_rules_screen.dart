@@ -8,11 +8,13 @@ import '../../database/app_database.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../media/media_item.dart';
+import '../../models/transcode_quality_preset.dart';
 import '../../providers/download_provider.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../services/sync_rule_executor.dart';
 import '../../utils/content_utils.dart';
 import '../../utils/download_utils.dart';
+import '../../utils/quality_preset_labels.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/app_icon.dart';
 import '../libraries/state_messages.dart';
@@ -38,7 +40,13 @@ class _SyncRulesScreenState extends State<SyncRulesScreen> {
   Widget build(BuildContext context) {
     return Consumer<DownloadProvider>(
       builder: (context, downloadProvider, _) {
-        final syncRules = downloadProvider.syncRules;
+        // System-managed continueWatching rules are created/removed entirely by
+        // the "Auto-download Continue Watching" setting — they have no
+        // per-show configuration to show here and shouldn't be individually
+        // deletable, so this screen only lists user-authored rules.
+        final syncRules = Map<String, SyncRuleItem>.fromEntries(
+          downloadProvider.syncRules.entries.where((e) => e.value.targetType != ContentTypes.continueWatching),
+        );
         final multiServerProvider = context.watch<MultiServerProvider>();
 
         return StreamBuilder<List<Connection>>(
@@ -108,6 +116,7 @@ class _SyncRuleTile extends StatefulWidget {
 
 class _SyncRuleTileState extends State<_SyncRuleTile> {
   final _rowFocusNode = FocusNode(debugLabel: 'sync_rule_row');
+  final _qualityFocusNode = FocusNode(debugLabel: 'sync_rule_quality');
   final _switchFocusNode = FocusNode(debugLabel: 'sync_rule_switch');
   final _removeFocusNode = FocusNode(debugLabel: 'sync_rule_remove');
 
@@ -120,6 +129,7 @@ class _SyncRuleTileState extends State<_SyncRuleTile> {
   @override
   void dispose() {
     _rowFocusNode.dispose();
+    _qualityFocusNode.dispose();
     _switchFocusNode.dispose();
     _removeFocusNode.dispose();
     super.dispose();
@@ -140,13 +150,22 @@ class _SyncRuleTileState extends State<_SyncRuleTile> {
   }
 
   String _subtitle() {
+    final quality = rule.downloadQuality == null
+        ? null
+        : TranscodeQualityPreset.values.asNameMap()[rule.downloadQuality];
+    final qualityLabel = quality == null ? null : qualityPresetLabel(quality);
+    final qualitySuffix = qualityLabel == null ? '' : ' · $qualityLabel';
     switch (rule.targetType) {
       case ContentTypes.collection:
       case ContentTypes.playlist:
-        return rule.downloadFilter == SyncRuleFilter.all ? t.downloads.syncAllItems : t.downloads.syncUnwatchedItems;
+        return '${rule.downloadFilter == SyncRuleFilter.all ? t.downloads.syncAllItems : t.downloads.syncUnwatchedItems}$qualitySuffix';
       default:
-        return t.downloads.keepNUnwatched(count: rule.episodeCount.toString());
+        return '${t.downloads.keepNUnwatched(count: rule.episodeCount.toString())}$qualitySuffix';
     }
+  }
+
+  Future<void> _editQuality(BuildContext context) async {
+    await editSyncRuleQuality(context, downloadProvider: downloadProvider, globalKey: rule.globalKey);
   }
 
   _RuleServerInfo _serverLabelForRule() {
@@ -248,7 +267,7 @@ class _SyncRuleTileState extends State<_SyncRuleTile> {
           useBackgroundFocus: true,
           borderRadius: 12,
           onSelect: () => _onTap(context),
-          onNavigateRight: () => _switchFocusNode.requestFocus(),
+          onNavigateRight: () => _qualityFocusNode.requestFocus(),
           child: Material(
             type: MaterialType.transparency,
             child: ListTile(
@@ -269,13 +288,29 @@ class _SyncRuleTileState extends State<_SyncRuleTile> {
                 mainAxisSize: .min,
                 children: [
                   FocusableWrapper(
+                    focusNode: _qualityFocusNode,
+                    disableScale: true,
+                    useBackgroundFocus: true,
+                    descendantsAreFocusable: false,
+                    borderRadius: 20,
+                    semanticLabel: t.settings.downloadQuality,
+                    onSelect: () => _editQuality(context),
+                    onNavigateLeft: () => _rowFocusNode.requestFocus(),
+                    onNavigateRight: () => _switchFocusNode.requestFocus(),
+                    child: IconButton(
+                      tooltip: t.settings.downloadQuality,
+                      icon: const AppIcon(Symbols.high_quality_rounded, fill: 1, size: 20),
+                      onPressed: () => _editQuality(context),
+                    ),
+                  ),
+                  FocusableWrapper(
                     focusNode: _switchFocusNode,
                     disableScale: true,
                     useBackgroundFocus: true,
                     descendantsAreFocusable: false,
                     borderRadius: 20,
                     onSelect: () => downloadProvider.updateSyncRuleOptions(rule.globalKey, enabled: !rule.enabled),
-                    onNavigateLeft: () => _rowFocusNode.requestFocus(),
+                    onNavigateLeft: () => _qualityFocusNode.requestFocus(),
                     onNavigateRight: () => _removeFocusNode.requestFocus(),
                     child: Switch(
                       value: rule.enabled,

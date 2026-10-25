@@ -90,6 +90,7 @@ import 'utils/media_server_http_client.dart';
 import 'utils/media_server_timeouts.dart';
 import 'utils/orientation_helper.dart';
 import 'utils/watch_state_notifier.dart';
+import 'utils/content_utils.dart';
 import 'i18n/app_locale_utils.dart';
 import 'i18n/strings.g.dart';
 import 'widgets/app_icon.dart';
@@ -1611,6 +1612,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     final run = _autoDeleteRun = Completer<void>();
     try {
       final activeGlobalKey = VideoPlayerScreenState.activeGlobalKey;
+      await downloadProvider.syncContinueWatchingRulesWithSetting(_serverManager);
 
       if (targetKeys != null) {
         // Targeted per-watch-event path: refresh, delete watched (if enabled),
@@ -1631,7 +1633,8 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
           if (!downloadProvider.hasSyncRule(key)) continue;
           final result = await downloadProvider.executeSyncRuleFor(key, _serverManager);
           if (result != null && result.queuedCount > 0) {
-            final title = result.title ?? t.common.unknown;
+            final isContinueWatching = downloadProvider.getSyncRule(key)?.targetType == ContentTypes.continueWatching;
+            final title = result.title ?? (isContinueWatching ? t.discover.continueWatching : t.common.unknown);
             showMainSnackBar(t.downloads.syncedNewEpisodes(count: '1', title: '$title (${result.queuedCount})'));
           }
         }
@@ -1650,7 +1653,10 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         }
         if (summary.syncedTitles.isNotEmpty) {
           showMainSnackBar(
-            t.downloads.syncedNewEpisodes(count: summary.syncedTitles.length.toString(), title: summary.syncedTitles.first),
+            t.downloads.syncedNewEpisodes(
+              count: summary.syncedTitles.length.toString(),
+              title: summary.syncedTitles.first,
+            ),
           );
         }
       }
@@ -1836,8 +1842,17 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
             // only re-evaluate rules that actually cover the watched item —
             // leaves unrelated collection/playlist rules alone. Debounced so
             // binge-watching coalesces into one pass.
+            //
+            // Limited to `watched` and `removedFromContinueWatching` — the two
+            // change types that can shrink a rule's target set (an episode
+            // rule's deficit, or the continueWatching rule's shelf membership).
+            // `progressUpdate` is excluded deliberately: it fires on every
+            // playback tick, which would turn this into a per-second poll.
             _watchStateSubscription = WatchStateNotifier().stream.listen((event) {
-              if (event.changeType != WatchStateChangeType.watched) return;
+              final relevant =
+                  event.changeType == WatchStateChangeType.watched ||
+                  event.changeType == WatchStateChangeType.removedFromContinueWatching;
+              if (!relevant) return;
               if (VideoPlayerScreenState.activeGlobalKey == event.globalKey) return;
 
               _pendingSyncKeys.addAll(downloadProvider.syncRuleKeysForWatchEvent(event));

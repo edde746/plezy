@@ -226,6 +226,11 @@ class PlatformDetector {
     return TvDetectionService.isTVDeviceSync();
   }
 
+  /// TV-only home layout (spotlight rail, hero banner, Organizer action
+  /// menus): real TV hardware only. Force TV mode on a desktop keeps the
+  /// desktop pages, which need a mouse (hover, click arrows, scroll wheel).
+  static bool usesTvHomeLayout() => isTV() && !isDesktopOS();
+
   static bool isAppleTV() {
     return TvDetectionService.isAppleTVSync();
   }

@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:math';
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart' as crypto;
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:http/http.dart' as http;
 import 'package:package_info_plus/package_info_plus.dart';
@@ -288,6 +289,7 @@ class JellyfinClient
         _JellyfinMetadataEditMethods
     implements
         MediaServerClient,
+        ConvertedDownloadClient,
         SeasonEpisodePagingClient,
         MediaDeletionPermissionClient,
         ScopedMediaServerClient,

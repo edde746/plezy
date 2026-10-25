@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
@@ -12,14 +13,20 @@ import '../../mixins/tab_navigation_mixin.dart';
 import '../../mixins/tab_visibility_aware.dart';
 import '../../media/ids.dart';
 import '../../media/media_library.dart';
+import '../../media/library_query.dart';
+import '../../media/media_kind.dart';
 import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/libraries_provider.dart';
 import '../../providers/multi_server_provider.dart';
 import '../../services/settings_service.dart';
+import '../../services/jellyfin_sequential_launcher.dart';
+import '../../services/media_list_playback_launcher.dart';
 import '../../widgets/settings_builder.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/content_utils.dart';
+import '../../utils/media_navigation_helper.dart';
+import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/focusable_tab_chip.dart';
@@ -68,6 +75,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   final _playlistsTabKey = GlobalKey();
 
   String? _selectedLibraryGlobalKey;
+  bool _isPreparingRandomPlay = false;
 
   /// Flag to prevent onTabChanged from focusing when we're programmatically changing tabs
   bool _isRestoringTab = false;
@@ -174,7 +182,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     }
 
     final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
-    final visibleLibraries = allLibraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
+    final visibleLibraries = visibleMediaLibraries(
+      allLibraries,
+      hiddenKeys: hiddenKeys,
+      hideEmpty: SettingsService.instance.read(SettingsService.hideEmptyLibraries),
+    );
 
     final storage = await StorageService.getInstance();
     if (!mounted || _selectedLibraryGlobalKey != null) return;
@@ -194,6 +206,66 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
     if (libraryGlobalKeyToLoad != null) {
       unawaited(_loadLibraryContent(libraryGlobalKeyToLoad));
+    }
+  }
+
+  Future<void> _pickRandomMovie(MediaLibrary library) async {
+    if (_isPreparingRandomPlay) return;
+    final serverId = serverIdOrNull(library.serverId);
+    if (serverId == null) return;
+    final client = context.read<MultiServerProvider>().getClientForServer(serverId);
+    if (client == null) {
+      showErrorSnackBar(context, t.errors.noClientAvailable);
+      return;
+    }
+
+    setState(() => _isPreparingRandomPlay = true);
+    try {
+      final firstPage = await client.fetchLibraryPagedContent(
+        library.id,
+        query: const LibraryQuery(kind: MediaKind.movie, limit: 1),
+        libraryKind: library.kind,
+      );
+      if (!mounted) return;
+      if (firstPage.totalCount <= 0 || firstPage.items.isEmpty) {
+        showAppSnackBar(context, t.hubDetail.noItemsFound);
+        return;
+      }
+
+      final offset = math.Random().nextInt(firstPage.totalCount);
+      final page = offset == 0
+          ? firstPage
+          : await client.fetchLibraryPagedContent(
+              library.id,
+              query: LibraryQuery(kind: MediaKind.movie, offset: offset, limit: 1),
+              libraryKind: library.kind,
+            );
+      if (!mounted) return;
+      final movie = page.items.firstOrNull;
+      if (movie == null) {
+        showAppSnackBar(context, t.hubDetail.noItemsFound);
+        return;
+      }
+      await navigateToMediaItem(context, movie, playDirectly: true);
+    } catch (error, stackTrace) {
+      appLogger.w('Random movie selection failed', error: error, stackTrace: stackTrace);
+      if (mounted) showErrorSnackBar(context, t.libraries.randomPickFailed);
+    } finally {
+      if (mounted) setState(() => _isPreparingRandomPlay = false);
+    }
+  }
+
+  Future<void> _shuffleLibrary(MediaLibrary library) async {
+    if (_isPreparingRandomPlay) return;
+    setState(() => _isPreparingRandomPlay = true);
+    try {
+      final result = await JellyfinSequentialLauncher(context: context).launchShuffledLibrary(library: library);
+      if (mounted && result is PlayQueueEmpty) showAppSnackBar(context, t.hubDetail.noItemsFound);
+    } catch (error, stackTrace) {
+      appLogger.w('Library shuffle failed', error: error, stackTrace: stackTrace);
+      if (mounted) showErrorSnackBar(context, t.libraries.randomPickFailed);
+    } finally {
+      if (mounted) setState(() => _isPreparingRandomPlay = false);
     }
   }
 
@@ -608,9 +680,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
       if (isCurrentlySelected) {
         // Compute visible libraries after hiding
         final allLibraries = librariesProvider.libraries;
-        final visibleLibraries = allLibraries
-            .where((lib) => !hiddenLibrariesProvider.hiddenLibraryKeys.contains(lib.globalKey))
-            .toList();
+        final visibleLibraries = visibleMediaLibraries(
+          allLibraries,
+          hiddenKeys: hiddenLibrariesProvider.hiddenLibraryKeys,
+          hideEmpty: SettingsService.instance.read(SettingsService.hideEmptyLibraries),
+        );
 
         if (visibleLibraries.isNotEmpty) {
           unawaited(_loadLibraryContent(visibleLibraries.first.globalKey));
@@ -757,11 +831,14 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   Widget build(BuildContext context) {
     return SettingValueBuilder<bool>(
       pref: SettingsService.groupLibrariesByServer,
-      builder: (context, groupByServerSetting, _) => _buildContent(context, groupByServerSetting),
+      builder: (context, groupByServerSetting, _) => SettingValueBuilder<bool>(
+        pref: SettingsService.hideEmptyLibraries,
+        builder: (context, hideEmpty, _) => _buildContent(context, groupByServerSetting, hideEmpty),
+      ),
     );
   }
 
-  Widget _buildContent(BuildContext context, bool groupByServerSetting) {
+  Widget _buildContent(BuildContext context, bool groupByServerSetting, bool hideEmptyLibraries) {
     final librariesProvider = context.watch<LibrariesProvider>();
     final allLibraries = librariesProvider.libraries;
     final isLoadingLibraries = librariesProvider.isLoading;
@@ -772,18 +849,23 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     final hiddenKeys = hiddenLibrariesProvider.hiddenLibraryKeys;
 
     // Compute visible libraries (filtered from all libraries)
-    final visibleLibraries = allLibraries.where((lib) => !hiddenKeys.contains(lib.globalKey)).toList();
+    final visibleLibraries = visibleMediaLibraries(allLibraries, hiddenKeys: hiddenKeys, hideEmpty: hideEmptyLibraries);
 
     // Resolve selected library defensively — may be null if server temporarily dropped during refresh
     final selectedLibrary = _selectedLibraryGlobalKey != null
-        ? allLibraries.where((lib) => lib.globalKey == _selectedLibraryGlobalKey).firstOrNull
+        ? visibleLibraries.where((lib) => lib.globalKey == _selectedLibraryGlobalKey).firstOrNull
         : null;
 
     final useSideNavigation = PlatformDetector.shouldUseSideNavigation(context);
     final showMobileTabsRow = selectedLibrary != null && !useSideNavigation;
     final currentTabIndex = _visibleTabs.isEmpty ? 0 : tabController.index.clamp(0, _visibleTabs.length - 1).toInt();
     final currentTabType = _visibleTabs.isEmpty ? null : _visibleTabs[currentTabIndex];
-    final useTvRecommendedBackdrop = PlatformDetector.isTV() && currentTabType == LibraryTabType.recommended;
+    // TV Recommended renders the stock TvSpotlightScaffold (see
+    // library_recommended_tab.dart), which needs the transparent host body.
+    // Must use the same check as the tab: the PC tab content needs the
+    // NestedScrollView host below.
+    final useTvRecommendedBackdrop =
+        PlatformDetector.usesTvHomeLayout() && currentTabType == LibraryTabType.recommended;
     final showBrowseOptionsAction =
         selectedLibrary != null && PlatformDetector.isMobile(context) && currentTabType == LibraryTabType.browse;
     final canSelectedLibraryGroupByFolders = context.select<MultiServerProvider, bool>((provider) {
@@ -794,6 +876,18 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     });
 
     List<FocusableAction> appBarActions() => [
+      if (selectedLibrary?.kind == MediaKind.movie)
+        FocusableAction(
+          icon: Symbols.casino_rounded,
+          tooltip: t.libraries.playRandomMovie,
+          onPressed: _isPreparingRandomPlay ? null : () => _pickRandomMovie(selectedLibrary!),
+        ),
+      if (selectedLibrary?.kind == MediaKind.movie || selectedLibrary?.kind == MediaKind.show)
+        FocusableAction(
+          icon: Symbols.shuffle_rounded,
+          tooltip: t.common.shuffle,
+          onPressed: _isPreparingRandomPlay ? null : () => _shuffleLibrary(selectedLibrary!),
+        ),
       if (allLibraries.isNotEmpty)
         FocusableAction(
           icon: Symbols.edit_rounded,

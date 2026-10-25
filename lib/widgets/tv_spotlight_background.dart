@@ -67,9 +67,11 @@ class TvSpotlightBackground extends StatelessWidget {
     final fallbackPaths = media == null
         ? const <String>[]
         : <String>[...media.heroArtCandidates(containerAspectRatio: containerAspect), ?media.thumbPath];
-    return SettingValueBuilder<bool>(
-      pref: SettingsService.tvCornerSpotlightBackdrop,
-      builder: (context, cornerBackdrop, _) {
+    return SettingsBuilder(
+      prefs: const [SettingsService.tvCornerSpotlightBackdrop, SettingsService.showHomeBackdrop],
+      builder: (context) {
+        final cornerBackdrop = SettingsService.instance.read(SettingsService.tvCornerSpotlightBackdrop);
+        final showHomeBackdrop = SettingsService.instance.read(SettingsService.showHomeBackdrop);
         final backdropSize = cornerBackdrop ? Size(size.width * 0.68, size.height * 0.72) : size;
         final backdrop = CyclingMediaBackdrop(
           mediaKey: media?.globalKey,
@@ -88,9 +90,12 @@ class TvSpotlightBackground extends StatelessWidget {
         return Stack(
           fit: StackFit.expand,
           children: [
-            RepaintBoundary(
-              child: cornerBackdrop ? _buildCornerBackdrop(backdropSize, backdrop) : blurArtwork(backdrop),
-            ),
+            if (showHomeBackdrop)
+              RepaintBoundary(
+                child: cornerBackdrop ? _buildCornerBackdrop(backdropSize, backdrop) : blurArtwork(backdrop),
+              )
+            else
+              ColoredBox(color: bgColor),
             _buildHorizontalScrim(bgColor),
             RasterizedGradient(
               gradient: LinearGradient(

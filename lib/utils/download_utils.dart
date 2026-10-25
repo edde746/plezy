@@ -9,6 +9,7 @@ import '../media/media_item.dart';
 import '../media/media_kind.dart';
 import '../media/media_playlist.dart';
 import '../media/media_server_client.dart';
+import '../models/transcode_quality_preset.dart';
 import '../database/app_database.dart';
 import '../providers/download_provider.dart';
 import '../providers/multi_server_provider.dart';
@@ -20,6 +21,7 @@ import 'app_logger.dart';
 import 'content_utils.dart';
 import 'dialogs.dart';
 import 'download_version_utils.dart';
+import 'quality_preset_labels.dart';
 import 'platform_detector.dart';
 import 'snackbar_helper.dart';
 import '../utils/error_message_utils.dart';
@@ -188,6 +190,20 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
   final versionConfig = await resolveDownloadVersion(context, metadata, client);
   if (versionConfig == null || !context.mounted) return null;
 
+  TranscodeQualityPreset? oneTimeQuality;
+  final asksEachTime = settings?.read(SettingsService.askDownloadQualityEachTime) ?? false;
+  final isVideoDownload = kind.isVideo || kind == MediaKind.show || kind == MediaKind.season;
+  if (asksEachTime && isVideoDownload) {
+    oneTimeQuality = await showQualityPickerDialog(context, title: t.settings.downloadQuality);
+    if (oneTimeQuality == null || !context.mounted) return null;
+  }
+
+  TranscodeQualityPreset? syncQuality;
+  if (keepSynced) {
+    syncQuality = oneTimeQuality ?? await showQualityPickerDialog(context, title: t.settings.downloadQuality);
+    if (syncQuality == null || !context.mounted) return null;
+  }
+
   // Create or update sync rule before queueing (so the rule exists even if queue fails)
   bool syncRuleUpdated = false;
   if (keepSynced) {
@@ -206,6 +222,7 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
       randomEpisodes: randomEpisodes,
       includeSpecials: includeSpecials,
       targetMetadata: metadata,
+      downloadQuality: syncQuality?.name,
     );
   }
 
@@ -222,6 +239,7 @@ Future<DownloadResult?> showDownloadOptionsAndQueue(
     maxCount: maxCount,
     random: randomEpisodes,
     includeSpecials: includeSpecials,
+    downloadQuality: syncQuality ?? oneTimeQuality,
   );
 
   return DownloadResult(
@@ -485,6 +503,17 @@ Future<bool> editSyncRuleFilter(
   if (selected == null || selected == currentFilter || !context.mounted) return false;
 
   await downloadProvider.updateSyncRuleOptions(globalKey, downloadFilter: selected);
+  return true;
+}
+
+Future<bool> editSyncRuleQuality(
+  BuildContext context, {
+  required DownloadProvider downloadProvider,
+  required String globalKey,
+}) async {
+  final selected = await showQualityPickerDialog(context, title: t.settings.downloadQuality);
+  if (selected == null || !context.mounted) return false;
+  await downloadProvider.updateSyncRuleOptions(globalKey, downloadQuality: selected.name);
   return true;
 }
 

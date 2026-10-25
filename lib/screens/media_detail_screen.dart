@@ -38,6 +38,7 @@ import '../media/episode_collection.dart';
 import '../media/media_item_types.dart';
 import '../media/media_kind.dart';
 import '../media/media_source_info.dart';
+import '../media/media_server_user_profile.dart';
 import '../media/media_rating.dart';
 import '../media/media_role.dart';
 import '../media/paged_media_list_state.dart';
@@ -105,6 +106,8 @@ import '../widgets/tv_browse_rail.dart';
 import '../widgets/tv_spotlight_background.dart';
 import '../providers/account_preferences_controller.dart';
 import '../services/playback_track_preview.dart';
+import '../services/playback_subtitle_resolver.dart';
+import '../mpv/mpv.dart';
 import '../utils/error_message_utils.dart';
 
 part 'media_detail/action_buttons.dart';
@@ -1395,6 +1398,16 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
       if (metadata case PlexMediaItem(:final editionTitle?)) addTextChip(editionTitle, 3);
       if (metadata.contentRating != null) addTextChip(formatContentRating(metadata.contentRating!), 2);
       if (metadata.durationMs != null) addTextChip(formatDurationTextual(metadata.durationMs!), 1);
+      if (metadata.durationMs != null) {
+        final remainingMs = (metadata.durationMs! - (metadata.viewOffsetMs ?? 0))
+            .clamp(0, metadata.durationMs!)
+            .toInt();
+        final endTime = DateTime.now().add(Duration(milliseconds: remainingMs));
+        addTextChip(
+          t.detail.endsAt(time: formatClockTime(endTime, is24Hour: MediaQuery.alwaysUse24HourFormatOf(context))),
+          2,
+        );
+      }
       for (final label in buildMediaQualityLabels(metadata)) {
         addTextChip(label, 4);
       }
@@ -3475,12 +3488,22 @@ class _MediaDetailScreenState extends State<MediaDetailScreen>
         libraryTitle: firstEpisode.libraryTitle ?? _metadata.libraryTitle,
       );
       if (mounted && _canUseDetail) {
+        if (!widget.isOffline &&
+            SettingsService.instanceOrNull?.read(SettingsService.chooseTracksBeforePlayback) == true) {
+          final client = getServerBoundMediaClient(context);
+          if (client != null) await _probeTarget(client, null, episodeWithServerId, _playbackProbeGeneration);
+          if (!mounted || !_canUseDetail) return;
+        }
+        final trackChoice = await _chooseTracksBeforePlayback(context, episodeWithServerId);
+        if (trackChoice.cancelled || !mounted || !_canUseDetail) return;
         appLogger.d('Playing first episode: ${episodeWithServerId.title}');
         await navigateToVideoPlayerWithRefresh(
           context,
           metadata: episodeWithServerId,
           isOffline: widget.isOffline,
           onRefresh: _refreshWatchState,
+          preferredAudioTrack: trackChoice.audio,
+          preferredSubtitleTrack: trackChoice.subtitle,
           isLaunchCurrent: () => _canUseDetail,
         );
       }

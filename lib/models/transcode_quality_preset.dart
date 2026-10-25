@@ -66,9 +66,12 @@ enum TranscodeQualityPreset {
     required bool onCellularOnly,
     required TranscodeQualityPreset? cellularDefault,
     required TranscodeQualityPreset generalDefault,
+    bool onRemoteConnection = false,
+    TranscodeQualityPreset? remoteDefault,
   }) {
     if (!serverSupportsTranscoding) return original;
     if (onCellularOnly && cellularDefault != null) return cellularDefault;
+    if (onRemoteConnection && remoteDefault != null) return remoteDefault;
     return generalDefault;
   }
 }

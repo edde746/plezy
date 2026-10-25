@@ -67,6 +67,8 @@ class _MediaOpenResult {
   final bool sidecarFallbackUsed;
 }
 
+typedef _ResolvedSubtitleOpen = ({PlaybackInitializationResult result, PlaybackSubtitleSelection selection});
+
 /// Start position for a fresh open, in precedence order: an explicit
 /// caller request (version switch, stream recovery, Watch Together), the
 /// shuffle-starts-from-beginning override (#2303), locally tracked offline
@@ -99,7 +101,7 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     return _updatePlaybackSessionSubtitleSelection(session, const PlaybackSubtitleSelection.off());
   }
 
-  Future<PlaybackSubtitleSelection> _resolveSubtitleSelectionForOpen({
+  Future<_ResolvedSubtitleOpen> _resolveSubtitleSelectionForOpen({
     required MediaItem metadata,
     required PlaybackInitializationResult result,
     AudioTrack? preferredAudioTrack,
@@ -108,19 +110,193 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
     bool preserveSubtitleSourceIdentity = true,
   }) async {
     await _waitForProfileSettingsIfNeeded();
-    if (!mounted) return const PlaybackSubtitleSelection.off();
+    if (!mounted) {
+      return (result: result, selection: const PlaybackSubtitleSelection.off());
+    }
+    final profileSettings = context.read<AccountPreferencesController>().activePreferences;
+    final settings = await SettingsService.getInstance();
+    if (!mounted) {
+      return (result: result, selection: const PlaybackSubtitleSelection.off());
+    }
 
-    return PlaybackSubtitleResolver.resolve(
+    final autoSubtitle = await _fetchPreferredSubtitleIfNeeded(
       metadata: metadata,
-      mediaInfo: result.mediaInfo,
-      sidecars: result.subtitleSidecars,
-      profileSettings: context.read<AccountPreferencesController>().activePreferences,
+      result: result,
+      settings: settings,
+      profileSettings: profileSettings,
+      preferredSubtitleTrack: preferredSubtitleTrack,
+    );
+    if (!mounted) {
+      return (result: autoSubtitle.result, selection: const PlaybackSubtitleSelection.off());
+    }
+
+    final selection = PlaybackSubtitleResolver.resolve(
+      metadata: metadata,
+      mediaInfo: autoSubtitle.result.mediaInfo,
+      sidecars: autoSubtitle.result.subtitleSidecars,
+      profileSettings: profileSettings,
       preferredAudioTrack: preferredAudioTrack,
       preferredSubtitleTrack: preferredSubtitleTrack,
       preferredSecondarySubtitleTrack: preferredSecondarySubtitleTrack,
       preserveSourceIdentity: preserveSubtitleSourceIdentity,
-      isTranscoding: result.isTranscoding,
+      isTranscoding: autoSubtitle.result.isTranscoding,
+      alwaysShowSubtitlesOnDevice: settings.read(SettingsService.alwaysShowSubtitlesOnDevice),
+      deviceSubtitleOverrideStreamId: autoSubtitle.streamId,
     );
+    return (result: autoSubtitle.result, selection: selection);
+  }
+
+  Future<({PlaybackInitializationResult result, int? streamId})> _fetchPreferredSubtitleIfNeeded({
+    required MediaItem metadata,
+    required PlaybackInitializationResult result,
+    required SettingsService settings,
+    required MediaServerUserProfile? profileSettings,
+    required SubtitlePreference? preferredSubtitleTrack,
+  }) async {
+    final source = result.mediaInfo;
+    if (!settings.read(SettingsService.autoDownloadPreferredSubtitle) ||
+        result.isOffline ||
+        widget.isLive ||
+        source == null ||
+        metadata.serverId == null ||
+        preferredSubtitleTrack != null ||
+        source.defaultSubtitleStreamIndex == -1 ||
+        profileSettings?.subtitleMode == SubtitlePlaybackMode.none ||
+        source.subtitleTracks.any((track) => track.selected)) {
+      return (result: result, streamId: null);
+    }
+
+    final localLanguage = settings.read(SettingsService.subtitleSearchLanguage);
+    final appLanguage = settings.read(SettingsService.appLocale).languageCode;
+    final language =
+        LanguageCodes.getIso6391Code(profileSettings?.defaultSubtitleLanguage ?? '') ??
+        LanguageCodes.getIso6391Code(localLanguage ?? '') ??
+        LanguageCodes.getIso6391Code(appLanguage);
+    if (language == null) return (result: result, streamId: null);
+
+    bool matchesLanguage(String? code, String? name) {
+      return LanguageCodes.getIso6391Code(code ?? name ?? '') == language ||
+          LanguageCodes.getIso6391Code(name ?? '') == language;
+    }
+
+    final existingPreferredTrack = source.subtitleTracks
+        .where((track) => matchesLanguage(track.languageCode, track.language))
+        .firstOrNull;
+    if (existingPreferredTrack != null) {
+      return (result: result, streamId: existingPreferredTrack.id);
+    }
+
+    final client = context.tryGetMediaClientForServer(serverIdOrNull(metadata.serverId));
+    if (client == null) return (result: result, streamId: null);
+    final attemptKey = '${metadata.globalKey}:${source.mediaSourceId ?? result.selectedMediaIndex}:$language';
+    if (!_autoSubtitleFetchAttempts.add(attemptKey)) return (result: result, streamId: null);
+
+    final activePlayer = player;
+    final generation = _transitionGate.generation;
+    bool isCurrent() => mounted && !_shuttingDown && player == activePlayer && _transitionGate.generation == generation;
+
+    try {
+      final results = await client
+          .searchSubtitles(
+            metadata.id,
+            language: language,
+            title: metadata.title,
+            mediaIndex: result.selectedMediaIndex,
+            mediaSourceId: source.mediaSourceId ?? result.selectedMediaSourceId,
+          )
+          .timeout(const Duration(seconds: 8));
+      if (!isCurrent()) return (result: result, streamId: null);
+
+      final candidates = results
+          .where((candidate) => candidate.key.isNotEmpty && matchesLanguage(candidate.languageCode, candidate.language))
+          .toList();
+      candidates.sort((a, b) {
+        final perfect = (b.perfectMatch ? 1 : 0).compareTo(a.perfectMatch ? 1 : 0);
+        if (perfect != 0) return perfect;
+        final forced = (a.forced ? 1 : 0).compareTo(b.forced ? 1 : 0);
+        if (forced != 0) return forced;
+        final hearingImpaired = (a.hearingImpaired ? 1 : 0).compareTo(b.hearingImpaired ? 1 : 0);
+        if (hearingImpaired != 0) return hearingImpaired;
+        return (b.score ?? -1).compareTo(a.score ?? -1);
+      });
+      final candidate = candidates.firstOrNull;
+      if (candidate == null) return (result: result, streamId: null);
+
+      final downloaded = await client
+          .downloadSubtitle(
+            metadata.id,
+            key: candidate.key,
+            codec: candidate.codec,
+            language: candidate.languageCode ?? language,
+            hearingImpaired: candidate.hearingImpaired,
+            forced: candidate.forced,
+            providerTitle: candidate.providerTitle,
+            mediaIndex: result.selectedMediaIndex,
+            mediaSourceId: source.mediaSourceId ?? result.selectedMediaSourceId,
+          )
+          .timeout(const Duration(seconds: 8));
+      if (!downloaded || !isCurrent()) return (result: result, streamId: null);
+
+      final expectedStreamId = await client.consumeDownloadedSubtitleStreamId(
+        metadata.id,
+        mediaIndex: result.selectedMediaIndex,
+        mediaSourceId: source.mediaSourceId ?? result.selectedMediaSourceId,
+      );
+      final originalIds = source.subtitleTracks.map((track) => track.id).toSet();
+      MediaSubtitleTrack? newTrack;
+      final trackDeadline = DateTime.now().add(const Duration(seconds: 8));
+      for (var attempt = 0; attempt < 8 && DateTime.now().isBefore(trackDeadline) && isCurrent(); attempt++) {
+        if (attempt > 0) await Future<void>.delayed(const Duration(seconds: 1));
+        final refreshed = await client
+            .fetchSourceSubtitleTracks(
+              metadata.id,
+              mediaIndex: result.selectedMediaIndex,
+              mediaSourceId: source.mediaSourceId ?? result.selectedMediaSourceId,
+            )
+            .timeout(const Duration(seconds: 3));
+        if (!isCurrent()) return (result: result, streamId: null);
+        if (expectedStreamId != null) {
+          newTrack = refreshed.where((track) => track.id == expectedStreamId).firstOrNull;
+        }
+        newTrack ??= refreshed
+            .where(
+              (track) =>
+                  !originalIds.contains(track.id) &&
+                  matchesLanguage(track.languageCode, track.language) &&
+                  track.isExternal,
+            )
+            .firstOrNull;
+        if (newTrack != null) break;
+      }
+      if (!isCurrent() || newTrack == null) return (result: result, streamId: null);
+
+      final sidecar = client.buildPlaybackSubtitleSidecar(
+        metadata,
+        newTrack,
+        mediaSourceId: source.mediaSourceId ?? result.selectedMediaSourceId,
+      );
+      if (sidecar == null) return (result: result, streamId: null);
+
+      final mergedTracks = <MediaSubtitleTrack>[
+        ...source.subtitleTracks,
+        if (!originalIds.contains(newTrack.id)) newTrack,
+      ];
+      final mergedSidecars = <PlaybackSubtitleSidecar>[
+        ...result.subtitleSidecars.where((existing) => existing.sourceStreamId != newTrack!.id),
+        sidecar,
+      ];
+      appLogger.i('Downloaded a preferred-language subtitle for local playback (${metadata.id})');
+      return (
+        result: result.copyWith(
+          mediaInfo: source.copyWith(subtitleTracks: mergedTracks),
+          subtitleSidecars: mergedSidecars,
+        ),
+        streamId: newTrack.id,
+      );
+    } catch (error) {
+      appLogger.d('Automatic subtitle fetch was unavailable for ${metadata.id}', error: error);
+      return (result: result, streamId: null);
+    }
   }
 
   /// On Android mpv, announce the stream's transfer (`content-color-transfer`)
@@ -719,6 +895,12 @@ extension _VideoPlayerOpenMethods on VideoPlayerScreenState {
       enableTrackSelectionMemory: mediaClient is JellyfinClient
           ? _mediaBrowserTrackMemoryEnabler(mediaClient, context.read<AccountPreferencesController>())
           : null,
+      persistLocalTrackPreference: ({required globalKey, required trackType, required preference}) async {
+        if (!mounted || !identical(player, forPlayer)) return;
+        final storage = await StorageService.getInstance();
+        if (!mounted || !identical(player, forPlayer)) return;
+        await storage.saveShowTrackPreference(globalKey, trackType: trackType, preference: preference);
+      },
       getProfileSettings: getProfileSettings,
       waitForProfileSettings: _waitForProfileSettingsIfNeeded,
       metadata: metadata,

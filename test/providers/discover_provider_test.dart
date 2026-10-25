@@ -112,6 +112,7 @@ class _FakeAggregationService extends DataAggregationService {
     bool useGlobalHubs = true,
     bool includePlaybackHubs = true,
     Set<String>? serverIds,
+    Set<MediaKind> additionalLibraryHubKinds = const {},
   }) async {
     hubCalls++;
     lastHubsServerIds = serverIds;
@@ -250,7 +251,7 @@ void main() {
     await Future.wait([provider.load(), provider.load(), provider.load()]);
 
     expect(provider.onDeck.map((i) => i.id), ['a']);
-    expect(provider.hubs.map((h) => h.id), ['hub-1']);
+    expect(provider.hubs.map((h) => h.id), ['continue_watching', 'hub-1']);
     expect(provider.isLoading, isFalse);
     expect(provider.areHubsLoading, isFalse);
     expect(provider.errorMessage, isNull);
@@ -576,7 +577,7 @@ void main() {
 
     expect(sawImmediateRemoval, isTrue);
     expect(provider.onDeck.map((i) => i.id), ['ep-2']);
-    expect(provider.hubs.single.items.map((i) => i.id), ['other']);
+    expect(provider.hubs.firstWhere((h) => h.id == 'hub-1').items.map((i) => i.id), ['other']);
     expect(aggregation.onDeckCalls, onDeckCallsBefore + 1);
     expect(aggregation.hubCalls, hubCallsBefore);
   });
@@ -607,7 +608,7 @@ void main() {
     );
     await tester.pump();
     expect(provider.onDeck.map((item) => item.globalKey), ['server_2:episode', 'server_1:survivor']);
-    expect(provider.hubs.single.items.map((item) => item.id), ['survivor']);
+    expect(provider.hubs.where((h) => !h.isContinueWatchingHub).single.items.map((item) => item.id), ['survivor']);
     expect(aggregation.onDeckCalls, 1, reason: 'the deletion fan-out must not bypass the coarse cooldown');
     expect(aggregation.hubCalls, 1);
     await tester.pump(const Duration(seconds: 4));
@@ -625,7 +626,7 @@ void main() {
     expect(aggregation.onDeckCalls, 2);
     expect(aggregation.hubCalls, 2);
     expect(provider.onDeck.single.id, 'replacement');
-    expect(provider.hubs.single.id, 'reconciled');
+    expect(provider.hubs.where((h) => !h.isContinueWatchingHub).single.id, 'reconciled');
     await tester.pump(const Duration(minutes: 3));
     expect(aggregation.onDeckCalls, 2, reason: 'one coalesced reconciliation, not a second deletion follow-up');
   });
@@ -682,7 +683,7 @@ void main() {
     await pumpEventQueue();
 
     expect(provider.onDeck.map((i) => i.id), ['ep-1']);
-    expect(provider.hubs.single.items.map((i) => i.id), ['ep-1']);
+    expect(provider.hubs.firstWhere((h) => h.id == 'hub-1').items.map((i) => i.id), ['ep-1']);
     expect(aggregation.onDeckCalls, onDeckCallsBefore);
     expect(aggregation.hubCalls, hubCallsBefore);
   });
@@ -710,7 +711,7 @@ void main() {
     await pumpEventQueue();
 
     expect(provider.onDeck.map((i) => i.serverId), ['server_1']);
-    expect(provider.hubs.single.items.map((i) => i.serverId), ['server_1']);
+    expect(provider.hubs.where((h) => !h.isContinueWatchingHub).single.items.map((i) => i.serverId), ['server_1']);
   });
 
   test('a watched event evicts only the emitting server\'s copy of a colliding id', () async {
@@ -825,7 +826,7 @@ void main() {
     await provider.load();
 
     expect(provider.onDeck.map((i) => i.id), ['rebound']);
-    expect(provider.hubs.map((h) => h.id), ['rebound-hub']);
+    expect(provider.hubs.where((h) => !h.isContinueWatchingHub).map((h) => h.id), ['rebound-hub']);
   });
 
   test('a rebind of the active profile keeps loaded content on screen', () async {
@@ -842,7 +843,7 @@ void main() {
     expect(provider.isLoading, isFalse);
     expect(provider.areHubsLoading, isFalse);
     expect(provider.onDeck.map((i) => i.id), ['a']);
-    expect(provider.hubs.map((h) => h.id), ['hub-1']);
+    expect(provider.hubs.where((h) => !h.isContinueWatchingHub).map((h) => h.id), ['hub-1']);
   });
 
   // A pass in which zero servers succeeded is never authoritative: it must
@@ -875,7 +876,7 @@ void main() {
     await provider.load();
 
     expect(provider.onDeck.map((i) => i.id), ['a']);
-    expect(provider.hubs.map((h) => h.id), ['hub-1']);
+    expect(provider.hubs.map((h) => h.id), ['continue_watching', 'hub-1']);
     expect(provider.isLoading, isFalse);
     expect(provider.areHubsLoading, isFalse);
   });
@@ -929,7 +930,7 @@ void main() {
     await provider.load();
 
     expect(provider.onDeck.map((i) => i.id), ['a']);
-    expect(provider.hubs.map((h) => h.id), ['hub-1']);
+    expect(provider.hubs.map((h) => h.id), ['continue_watching', 'hub-1']);
     expect(provider.isLoading, isFalse);
     expect(provider.areHubsLoading, isFalse);
     // No new data: a failed pass must not reset the hero carousel.
@@ -962,7 +963,7 @@ void main() {
       // Retained content still renders: the error is surfaced by the caller as
       // a snackbar, never by blanking the screen.
       expect(provider.onDeck.map((i) => i.id), ['a']);
-      expect(provider.hubs.map((h) => h.id), ['hub-1']);
+      expect(provider.hubs.map((h) => h.id), ['continue_watching', 'hub-1']);
       expect(provider.errorMessage, isNull);
     });
 
@@ -1048,6 +1049,7 @@ void main() {
     final onDeckCallsBefore = aggregation.onDeckCalls;
     final hubCallsBefore = aggregation.hubCalls;
     final source = provider.hubs
+        .where((hub) => hub.id != 'continue_watching')
         .expand((hub) => hub.items)
         .singleWhere((item) => item.globalKey == serverTwoItem.globalKey);
     final updated = serverTwoItem.copyWith(title: 'Server Two Refreshed');
@@ -1159,7 +1161,7 @@ void main() {
     expect(aggregation.onDeckCalls, onDeckCallsBefore);
     expect(aggregation.hubCalls, hubCallsBefore + 1);
     expect(aggregation.lastHubsServerIds, {'server_1'});
-    expect(provider.hubs.map((h) => h.id), ['hub-1']);
+    expect(provider.hubs.map((h) => h.id), ['continue_watching', 'hub-1']);
   });
 
   test('delta partial hub failure retries only the missing surface', () async {
@@ -1325,7 +1327,9 @@ void main() {
       expect(provider.refreshIfStale(), isTrue);
       await pumpEventQueue();
       expect(aggregation.hubCalls, 2);
-      expect(provider.hubs.map((h) => h.id), ['hub-1'], reason: 'an all-failed hub pass keeps the previous hubs');
+      expect(provider.hubs.where((h) => !h.isContinueWatchingHub).map((h) => h.id), [
+        'hub-1',
+      ], reason: 'an all-failed hub pass keeps the previous hubs');
 
       // The kept-previous pass did not stamp freshness, so the next check retries.
       aggregation.hubSucceededServerIds = null;

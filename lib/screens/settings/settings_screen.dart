@@ -19,6 +19,7 @@ import '../../mixins/refreshable.dart';
 import '../../providers/account_preferences_controller.dart';
 import '../../providers/hidden_libraries_provider.dart';
 import '../../providers/download_provider.dart';
+import '../../providers/multi_server_provider.dart';
 import '../../providers/libraries_provider.dart';
 import '../../services/donation_service.dart';
 import '../../services/download_storage_service.dart';
@@ -52,11 +53,13 @@ import '../../widgets/settings_section.dart';
 import '../../widgets/system_bottom_inset.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../profiles/profile.dart';
+import '../../profiles/profile_activation.dart';
 import '../../watch_together/services/watch_party_relays.dart';
 import 'about_screen.dart';
 import 'add_connection_screen.dart';
 import 'account_preferences_screen.dart';
 import 'appearance_settings_screen.dart';
+import 'cloud_settings_backup_dialog.dart';
 import 'general_settings_screen.dart';
 import 'keyboard_shortcuts_screen.dart';
 import 'logs_screen.dart';
@@ -108,7 +111,9 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   static const _kDownloadLocation = 'download_location';
   static const _kDownloadOnWifiOnly = 'download_on_wifi_only';
   static const _kAutoRemoveWatchedDownloads = 'auto_remove_watched_downloads';
+  static const _kAutoDownloadContinueWatching = 'auto_download_continue_watching';
   static const _kDownloadQuality = 'download_quality';
+  static const _kAskDownloadQualityEachTime = 'ask_download_quality_each_time';
   static const _kBackgroundDownloads = 'background_downloads';
   static const _kVideoPlayerControls = 'video_player_controls';
   static const _kVideoPlayerNavigation = 'video_player_navigation';
@@ -133,6 +138,10 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
   // Update checking state
   bool _isCheckingForUpdate = false;
   Map<String, dynamic>? _updateInfo;
+  String? _lastSettingsProfileId;
+  String? _unlockedSettingsProfileId;
+  String? _cancelledSettingsProfileId;
+  bool _checkingSettingsPin = false;
 
   @override
   void initState() {
@@ -180,8 +189,59 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
 
   settings.SettingsService get _settingsService => settings.SettingsService.instance;
 
+  Future<void> _requestSettingsUnlock(String profileId) async {
+    if (_checkingSettingsPin) return;
+    _checkingSettingsPin = true;
+    final allowed = await requestActiveProfileActionPin(context);
+    if (!mounted) return;
+    final activeId = context.read<ActiveProfileProvider>().activeId;
+    setState(() {
+      _checkingSettingsPin = false;
+      if (allowed && activeId == profileId) {
+        _unlockedSettingsProfileId = profileId;
+        _cancelledSettingsProfileId = null;
+      } else {
+        _cancelledSettingsProfileId = profileId;
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
+    final activeProfile = context.watch<ActiveProfileProvider>().active;
+    final profileId = activeProfile?.id;
+    if (_lastSettingsProfileId != profileId) {
+      _lastSettingsProfileId = profileId;
+      _unlockedSettingsProfileId = null;
+      _cancelledSettingsProfileId = null;
+    }
+    if (activeProfile is LocalProfile &&
+        activeProfile.isPinProtected &&
+        _unlockedSettingsProfileId != activeProfile.id) {
+      final id = activeProfile.id;
+      if (_cancelledSettingsProfileId != id && !_checkingSettingsPin) {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (mounted && context.read<ActiveProfileProvider>().activeId == id) {
+            unawaited(_requestSettingsUnlock(id));
+          }
+        });
+      }
+      return Scaffold(
+        body: Center(
+          child: _checkingSettingsPin
+              ? const CircularProgressIndicator()
+              : Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(t.profiles.settingsLocked),
+                    const SizedBox(height: 12),
+                    FilledButton(onPressed: () => _requestSettingsUnlock(id), child: Text(t.profiles.unlockSettings)),
+                  ],
+                ),
+        ),
+      );
+    }
+
     final hasLibraries = context.select<LibrariesProvider, bool>((p) => p.libraries.isNotEmpty);
 
     if (OverlaySheetController.maybeOf(context) != null) {
@@ -461,11 +521,32 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
               .toList(),
         ),
         SettingSwitchTile(
+          focusNode: _focusTracker.get(_kAskDownloadQualityEachTime),
+          pref: settings.SettingsService.askDownloadQualityEachTime,
+          icon: Symbols.tune_rounded,
+          title: t.settings.askDownloadQualityEachTime,
+          subtitle: t.settings.askDownloadQualityEachTimeDescription,
+        ),
+        SettingSwitchTile(
           focusNode: _focusTracker.get(_kAutoRemoveWatchedDownloads),
           pref: settings.SettingsService.autoRemoveWatchedDownloads,
           icon: Symbols.delete_sweep_rounded,
           title: t.settings.autoRemoveWatchedDownloads,
           subtitle: t.settings.autoRemoveWatchedDownloadsDescription,
+        ),
+        SettingSwitchTile(
+          focusNode: _focusTracker.get(_kAutoDownloadContinueWatching),
+          pref: settings.SettingsService.autoDownloadContinueWatching,
+          icon: Symbols.sync_rounded,
+          title: t.settings.autoDownloadContinueWatching,
+          subtitle: t.settings.autoDownloadContinueWatchingDescription,
+          onAfterWrite: (_) async {
+            if (!context.mounted) return;
+            final downloadProvider = context.read<DownloadProvider>();
+            final serverManager = context.read<MultiServerProvider>().serverManager;
+            await downloadProvider.syncContinueWatchingRulesWithSetting(serverManager);
+            await downloadProvider.reconcileNow(serverManager);
+          },
         ),
         if (_backgroundWorkDiagnostics.isSupported) _buildBackgroundDownloadsTile(),
         // TODO: "Remove orphaned downloads" toggle (#1413) goes here, next to
@@ -654,9 +735,35 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           subtitle: t.settings.importSettingsDescription,
           onTap: _showImportSettingsDialog,
         ),
-        // TODO: Cloud settings sync/backup (#1795, #1979) goes here once a
-        // sync backend exists (iCloud on Apple platforms, or the relay).
+        SettingNavigationTile(
+          icon: Symbols.cloud_sync_rounded,
+          title: t.settings.cloudBackup,
+          subtitle: t.settings.cloudBackupDescription,
+          onTap: _showCloudSettingsBackup,
+        ),
       ],
+    );
+  }
+
+  void _showCloudSettingsBackup() {
+    List<Object?>? previousRootConfiguration;
+    showDialog<void>(
+      context: context,
+      builder: (_) => CloudSettingsBackupDialog(
+        beforeRestore: () => previousRootConfiguration = SettingsMutationService.captureRootConfiguration(),
+        afterRestore: () async {
+          if (!mounted) return;
+          _settingsService.refreshListenables();
+          await context.read<HiddenLibrariesProvider>().refresh();
+          if (!mounted) return;
+          unawaited(context.read<LibrariesProvider>().refresh());
+          final failures = await const SettingsMutationService().applyStoredEffects(
+            context,
+            previousRootConfiguration: previousRootConfiguration ?? const [],
+          );
+          if (mounted && failures.isNotEmpty) showErrorSnackBar(context, failures.first.display);
+        },
+      ),
     );
   }
 

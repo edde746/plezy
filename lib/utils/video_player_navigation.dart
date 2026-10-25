@@ -7,6 +7,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 import '../media/media_item.dart';
+import '../media/media_backend.dart';
 import '../media/media_kind.dart';
 import '../media/media_version.dart';
 import '../media/media_version_preference.dart';
@@ -33,6 +34,7 @@ import 'global_key_utils.dart';
 import 'platform_detector.dart';
 import 'download_version_utils.dart';
 import 'media_version_resolver.dart';
+import 'preroll_service.dart';
 import 'provider_extensions.dart';
 import 'quality_preset_labels.dart';
 import '../i18n/strings.g.dart';
@@ -337,6 +339,8 @@ Future<bool?> navigateToVideoPlayer(
   bool explicitStartPolicy = false,
   PlaybackLaunchObserver? launchObserver,
   bool skipCinemaExtras = false,
+  bool skipPreroll = false,
+  bool isPreroll = false,
 }) async {
   final watchTogether = isOffline || watchTogetherCopy == null ? null : context.read<WatchTogetherProvider?>();
   // A launch for the Watch Together room is stale once the room moved on.
@@ -349,12 +353,13 @@ Future<bool?> navigateToVideoPlayer(
     metadata = context.readFreshWatchState(metadata);
   }
 
-  // Plex pre-roll (#970): a movie the user plays directly has no queue, so
-  // build one and let the server prefix its configured pre-roll. Declining
-  // returns null and playback continues below, unchanged. Skipped for
-  // downloads and Watch Together, where a server-side queue has no meaning.
+  // Server-configured cinema extras: Plex prefixes its configured clips to a
+  // play queue, while Jellyfin and Emby return intro items from their item
+  // intros endpoint. Skipped for downloads and Watch Together.
+  var serverCinemaIntrosPlayed = false;
   if (!skipCinemaExtras && !isOffline && watchTogetherCopy == null && metadata.kind == MediaKind.movie) {
     final settings = await SettingsService.getInstance();
+    if (!context.mounted || !launchCurrent()) return null;
     if (settings.read(SettingsService.plexCinemaPreRoll) && metadata is PlexMediaItem) {
       if (!context.mounted || !launchCurrent()) return null;
       final extras = await PlexPlayQueueLauncher.forContext(
@@ -362,6 +367,53 @@ Future<bool?> navigateToVideoPlayer(
         metadata,
       ).launchMovieWithCinemaExtras(movie: metadata);
       if (extras is PlayQueueSuccess) return true;
+    } else if (settings.read(SettingsService.plexCinemaPreRoll)) {
+      final serverId = serverIdOrNull(metadata.serverId);
+      final serverManager = context.read<MultiServerProvider>().serverManager;
+      final mediaClient = serverId == null ? null : serverManager.getClient(serverId);
+      if (mediaClient != null &&
+          !mediaClient.isOfflineMode &&
+          (mediaClient.backend == MediaBackend.jellyfin || mediaClient.backend == MediaBackend.emby)) {
+        try {
+          final intros = await mediaClient.fetchCinemaIntros(metadata.id);
+          for (final intro in intros) {
+            if (!context.mounted || !launchCurrent()) return null;
+            await navigateToVideoPlayer(
+              context,
+              metadata: intro,
+              resolveWatchState: false,
+              skipCinemaExtras: true,
+              isPreroll: true,
+            );
+            if (!context.mounted || !launchCurrent()) return null;
+          }
+          serverCinemaIntrosPlayed = intros.isNotEmpty;
+        } catch (e) {
+          appLogger.w('Server cinema intro lookup failed; continuing to the movie', error: e);
+        }
+      }
+    }
+  }
+
+  final wantsLocalPreroll = prerollShouldPlayFor(
+    metadata,
+    skipPreroll: skipPreroll || skipCinemaExtras || watchTogetherCopy != null || serverCinemaIntrosPlayed,
+    isOffline: isOffline,
+    usePushReplacement: usePushReplacement,
+  );
+  if (wantsLocalPreroll) {
+    if (!context.mounted || !launchCurrent()) return null;
+    final preroll = await pickRandomPreroll(context);
+    if (!context.mounted || !launchCurrent()) return null;
+    if (preroll != null) {
+      await navigateToVideoPlayer(
+        context,
+        metadata: preroll,
+        resolveWatchState: false,
+        skipPreroll: true,
+        isPreroll: true,
+      );
+      if (!context.mounted || !launchCurrent()) return null;
     }
   }
 
@@ -492,7 +544,9 @@ Future<bool?> navigateToVideoPlayer(
             launchObserver?.mark('externalLaunched');
             // External playback never reaches the in-player session commit, so
             // record the local last-played history here.
-            if (!isOffline && launchCurrent()) unawaited(LocalPlaybackHistory.recordPlayback(metadata));
+            if (!isOffline && !isPreroll && launchCurrent()) {
+              unawaited(LocalPlaybackHistory.recordPlayback(metadata));
+            }
             return null;
           }
         }
@@ -537,6 +591,7 @@ Future<bool?> navigateToVideoPlayer(
         preferredVersionSignature: preferredVersion?.signature,
         selectedQualityPreset: selectedQualityPreset,
         isOffline: isOffline,
+        isPreroll: isPreroll,
         watchTogetherCopy: watchTogetherCopy,
         initialPosition: initialPosition,
         strictMediaSelection: strictMediaSelection,

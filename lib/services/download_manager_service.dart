@@ -2188,6 +2188,16 @@ class DownloadManagerService {
     return preset == null || preset.isOriginal ? null : preset;
   }
 
+  /// Plex's completed conversion jobs are static files and can resume by byte
+  /// range. Jellyfin/Emby quality downloads are live transcode streams, so a
+  /// manual pause or retry must start a fresh stream instead of appending to a
+  /// partial file.
+  bool _supportsRangeResume(DownloadedMediaItem? row, MediaServerClient? client) {
+    if (row == null) return false;
+    if (_storedDownloadQuality(row) == null) return true;
+    return client?.backend == MediaBackend.plex;
+  }
+
   /// Ask the server to convert [globalKey] to [quality] and return the
   /// resolution to fetch once the converted file is ready.
   ///
@@ -2210,9 +2220,14 @@ class DownloadManagerService {
     }
     // Interfaces are not subtypes of each other, so the check does not promote.
     final converter = client as ConvertedDownloadClient;
-    final state = await converter.requestConvertedDownload(metadata, mediaIndex: row.mediaIndex, preset: quality);
+    final state = await converter.requestConvertedDownload(
+      metadata,
+      mediaIndex: row.mediaIndex,
+      mediaSourceId: row.mediaSourceId,
+      preset: quality,
+    );
     switch (state) {
-      case ConvertedDownloadReady(:final url, :final container):
+      case ConvertedDownloadReady(:final url, :final container, :final supportsRangeResume):
         appLogger.i('Server conversion of $globalKey to ${quality.name} is ready');
         return DownloadResolution(
           videoUrl: url,
@@ -2221,6 +2236,7 @@ class DownloadManagerService {
           externalSubtitlesResolved: original.externalSubtitlesResolved,
           // The server joins a stacked version into the one converted file.
           videoExtension: container,
+          supportsRangeResume: supportsRangeResume,
         );
       case ConvertedDownloadPending(:final percent, :final retryAfter):
         // Paused, cancelled, or deleted while the server answered.
@@ -2414,7 +2430,7 @@ class DownloadManagerService {
           group: _downloadGroup,
           updates: Updates.statusAndProgress,
           requiresWiFi: requiresWiFi,
-          retries: _nativeRetries,
+          retries: resolution.supportsRangeResume ? _nativeRetries : 0,
           allowPause: true,
           metaData: globalKey,
           displayName: displayName,
@@ -2459,7 +2475,7 @@ class DownloadManagerService {
           group: _downloadGroup,
           updates: Updates.statusAndProgress,
           requiresWiFi: requiresWiFi,
-          retries: _nativeRetries,
+          retries: resolution.supportsRangeResume ? _nativeRetries : 0,
           allowPause: true,
           metaData: globalKey,
           displayName: displayName,
@@ -3575,8 +3591,13 @@ class DownloadManagerService {
     try {
       _cancelDownloadTimers(globalKey);
       final bgTaskId = await _database.getBgTaskId(globalKey);
+      final row = await _database.getDownloadedMedia(globalKey);
+      final client = await _getClientForDownloadKey(globalKey);
+      final supportsRangeResume = _supportsRangeResume(row, client);
       await _cancelNativeTasksForGlobalKey(globalKey, exceptTaskId: bgTaskId, reason: 'duplicate task before pause');
-      if (bgTaskId != null && downloadsSupported) {
+      if (!supportsRangeResume) {
+        await _cleanupStaleDownload(globalKey);
+      } else if (bgTaskId != null && downloadsSupported) {
         final task = await FileDownloader().taskForId(bgTaskId);
         if (task != null && task is DownloadTask) {
           // App storage and SAF (UriDownloadTask) tasks both pause natively. A
@@ -3607,9 +3628,12 @@ class DownloadManagerService {
     _rearmQueueForUserAction('manual resume');
 
     final bgTaskId = await _database.getBgTaskId(globalKey);
+    final row = await _database.getDownloadedMedia(globalKey);
 
     // Try native resume first (works for any DownloadTask that was paused)
-    if (bgTaskId != null && await _tryResumeNativeTask(globalKey, bgTaskId)) return;
+    if (_supportsRangeResume(row, client) && bgTaskId != null && await _tryResumeNativeTask(globalKey, bgTaskId)) {
+      return;
+    }
 
     // Native resume failed or the task was cancelled on pause — re-enqueue from scratch
     await _cleanupStaleDownload(globalKey);

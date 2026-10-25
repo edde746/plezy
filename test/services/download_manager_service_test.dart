@@ -3799,6 +3799,7 @@ class _ConvertingClient extends _SupplementaryClient implements ConvertedDownloa
   Future<ConvertedDownloadState> requestConvertedDownload(
     MediaItem item, {
     required int mediaIndex,
+    String? mediaSourceId,
     required TranscodeQualityPreset preset,
   }) async {
     requests.add(preset);

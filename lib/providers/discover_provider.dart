@@ -2,10 +2,13 @@ import 'dart:async';
 
 import 'package:flutter/foundation.dart';
 
+import '../i18n/strings.g.dart';
 import '../media/ids.dart';
 import '../media/media_hub.dart';
 import '../media/library_change_event.dart';
 import '../media/media_item.dart';
+import '../media/media_kind.dart';
+import '../models/home_section_config.dart';
 import '../media/media_server_client.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../mixins/event_aware.dart';
@@ -18,6 +21,7 @@ import '../utils/deletion_notifier.dart';
 import '../utils/media_event_keys.dart';
 import '../utils/global_key_utils.dart';
 import '../utils/media_hub_ordering.dart';
+import '../utils/home_section_builder.dart';
 import '../utils/watch_state_notifier.dart';
 import '../utils/library_content_notifier.dart';
 import '../utils/refresh_pacer.dart';
@@ -121,6 +125,21 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _hiddenLibraries.addListener(_onHiddenLibrariesChanged);
     _lastSeenLibraryOrderKeys = _libraryOrderKeys();
     _libraries.addListener(_onLibrariesChanged);
+    final settings = SettingsService.instanceOrNull;
+    if (settings != null) {
+      _homeLayoutListenable = settings.listenable(SettingsService.homeSections);
+      _homeLayoutListenable!.addListener(_onHomeLayoutChanged);
+      _homeRowOrderListenable = settings.listenable(SettingsService.homeRowOrder);
+      _homeRowOrderListenable!.addListener(_onHomeLayoutChanged);
+      _continueWatchingOnHomeListenable = settings.listenable(SettingsService.continueWatchingOnHome);
+      _continueWatchingOnHomeListenable!.addListener(_onHomeLayoutChanged);
+      _nextUpOnHomeListenable = settings.listenable(SettingsService.nextUpOnHome);
+      _nextUpOnHomeListenable!.addListener(_onHomeLayoutChanged);
+      _managedHubHeroOverridesListenable = settings.listenable(SettingsService.managedHubHeroOverrides);
+      _managedHubHeroOverridesListenable!.addListener(_onHomeLayoutChanged);
+      _hideWatchedInHubsListenable = settings.listenable(SettingsService.hideWatchedInHubs);
+      _hideWatchedInHubsListenable!.addListener(_onHomeLayoutChanged);
+    }
     _watchStateSubscription = subscribeToHierarchicalEvents<WatchStateEvent>(
       notifier: WatchStateNotifier(),
       mounted: () => !isDisposed,
@@ -220,6 +239,12 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   final Future<void> Function(String profileId, List<MediaServerClient> clients)? _syncServerSourcesOverride;
 
   StreamSubscription<WatchStateEvent>? _watchStateSubscription;
+  Listenable? _homeLayoutListenable;
+  Listenable? _homeRowOrderListenable;
+  Listenable? _continueWatchingOnHomeListenable;
+  Listenable? _nextUpOnHomeListenable;
+  Listenable? _managedHubHeroOverridesListenable;
+  Listenable? _hideWatchedInHubsListenable;
   StreamSubscription<DeletionEvent>? _deletionSubscription;
 
   List<MediaItem> _onDeck = [];
@@ -262,6 +287,35 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   List<MediaItem> get onDeck => _onDeck;
   List<MediaHub> get hubs => _hubs;
   bool get hasMoreContinueWatching => _hasMoreContinueWatching;
+
+  /// The synthesized Continue Watching row. Folded into [hubs] by
+  /// [buildConfiguredHomeSections] (as a normal, reorderable/removable
+  /// Organizer row) rather than rendered as a screen-level fixture — see
+  /// `SettingsService.continueWatchingOnHome`.
+  MediaHub get _continueWatchingHub => MediaHub(
+    id: 'continue_watching',
+    title: t.discover.continueWatching,
+    type: 'mixed',
+    identifier: '_continue_watching_',
+    size: _continueWatchingItems.length + (_hasMoreContinueWatching ? 1 : 0),
+    more: _hasMoreContinueWatching,
+    items: _continueWatchingItems,
+  );
+
+  List<MediaItem> get _continueWatchingItems => _onDeck.where((item) => item.hasActiveProgress).toList();
+
+  List<MediaItem> get _nextUpItems =>
+      _onDeck.where((item) => item.kind == MediaKind.episode && !item.hasActiveProgress).toList();
+
+  MediaHub get _nextUpHub => MediaHub(
+    id: 'next_up',
+    title: t.discover.nextUp,
+    type: 'episode',
+    identifier: 'home.nextup',
+    size: _nextUpItems.length + (_hasMoreContinueWatching ? 1 : 0),
+    more: _hasMoreContinueWatching,
+    items: _nextUpItems,
+  );
 
   /// Raw load failure (unlocalized); the screen wraps it for display.
   String? get errorMessage => _errorMessage;
@@ -436,6 +490,22 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       // The watermark is captured immediately before the requests, after
       // every preparatory await: a patch recorded later has a higher sequence
       // and must survive this pass's observations.
+      final homeSections = settings.read(SettingsService.homeSections);
+      // A configured "Recently Added"/"Recently Released" row (#1652) needs a
+      // matching hub in sourceHubs for every library it merges, but Plex's
+      // global/promoted hub endpoint only surfaces "promoted" libraries' rows
+      // — a library never promoted on the Plex server itself is silently
+      // absent from that endpoint, which reads to the user as the custom row
+      // "just disappearing". Force an explicit per-library fetch for
+      // movie/show libraries in that case, the same way music libraries
+      // already get appended below for the same structural reason.
+      final needsRecentHubsPerLibrary = homeSections.any(
+        (s) =>
+            s.enabled &&
+            s.showOnHome &&
+            !s.isCollectionRow &&
+            (s.kind == HomeSectionKind.recentlyAdded || s.kind == HomeSectionKind.recentlyReleased),
+      );
       observation = _beginObservation();
       final onDeckFuture = aggregation.getOnDeckFromAllServers(
         limit: _continueWatchingProbeLimit,
@@ -445,7 +515,15 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys,
         useGlobalHubs: useGlobalHubs,
         includePlaybackHubs: false,
+        additionalLibraryHubKinds: needsRecentHubsPerLibrary ? const {MediaKind.movie, MediaKind.show} : const {},
       );
+      final collectionsFuture = homeSections.any((s) => s.isCollectionRow)
+          ? aggregation.getCollectionsFromAllServers(hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys)
+          : null;
+      // A collection row scoped to exactly one collection is more useful as
+      // that collection's actual contents than as a single folder tile —
+      // fetch those contents up front so the builder can inline them.
+      final singleCollectionFuture = _fetchSingleCollectionContents(homeSections);
 
       // A pass in which zero servers succeeded is never authoritative: it
       // must not wipe existing content, and it may only commit "loaded,
@@ -488,7 +566,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
           fetchedOnDeck.failedServerIds,
           fetchedOnDeck.cancelledServerIds,
         );
-        systemShelfPassToken = List<MediaItem>.unmodifiable(_onDeck);
+        systemShelfPassToken = List<MediaItem>.unmodifiable(_continueWatchingItems);
         safeNotifyListeners();
       }
 
@@ -519,11 +597,25 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
         return;
       }
 
-      final filteredHubs = _filterDiscoverHubs(fetchedHubs.hubs);
-      sortMediaHubsByLibraryOrder(filteredHubs, _libraries.libraries);
+      final fetchedCollections = collectionsFuture == null ? null : await collectionsFuture;
+      final singleCollectionContents = await singleCollectionFuture;
+      final filteredHubs = buildConfiguredHomeSections(
+        sourceHubs: _filterDiscoverHubs(fetchedHubs.hubs),
+        collections: fetchedCollections?.collections ?? const [],
+        sections: homeSections,
+        rowOrder: settings.read(SettingsService.homeRowOrder),
+        collectionLibraryKinds: {for (final library in _libraries.libraries) library.globalKey: library.kind},
+        singleCollectionContents: singleCollectionContents,
+        managedHubHeroOverrides: settings.read(SettingsService.managedHubHeroOverrides),
+        continueWatchingHub: settings.read(SettingsService.continueWatchingOnHome) ? _continueWatchingHub : null,
+        nextUpHub: settings.read(SettingsService.nextUpOnHome) ? _nextUpHub : null,
+      );
 
-      appLogger.d('DiscoverProvider: ${_onDeck.length} on-deck items, ${filteredHubs.length} hubs');
-      _replaceHubs(filteredHubs);
+      final visibleHubs = settings.read(SettingsService.hideWatchedInHubs)
+          ? withoutWatchedItems(filteredHubs)
+          : filteredHubs;
+      appLogger.d('DiscoverProvider: ${_onDeck.length} on-deck items, ${visibleHubs.length} hubs');
+      _replaceHubs(visibleHubs);
       ++expectedCommitRevision;
       _hubsState = DiscoverLoadState.loaded;
       _loadedHubServerIds = _authoritativeSucceededServerIds(
@@ -668,7 +760,6 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
           ..._hubs.where((hub) => hub.serverId == null || !succeededHubIds.contains(hub.serverId)),
           ..._filterDiscoverHubs(freshHubs.hubs),
         ];
-        sortMediaHubsByLibraryOrder(mergedHubs, _libraries.libraries);
         _replaceHubs(mergedHubs);
         _loadedHubServerIds = {..._loadedHubServerIds, ...succeededHubIds}
           ..removeAll(freshHubs.failedServerIds)
@@ -687,7 +778,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
       appLogger.d('DiscoverProvider: ${_onDeck.length} on-deck items, ${_hubs.length} hubs after merging $ids');
       safeNotifyListeners();
-      unawaited(_syncSystemShelf(_onDeck));
+      unawaited(_syncSystemShelf(_continueWatchingItems));
     } catch (e) {
       if (isDisposed) return;
       // Keep the loaded state — stale rows beat an error flash.
@@ -696,6 +787,27 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
   }
 
   /// Playback-progress hubs duplicate the top Continue Watching row.
+  Future<Map<String, List<MediaItem>>> _fetchSingleCollectionContents(List<HomeSectionConfig> sections) async {
+    final singleCollectionSections = sections.where((s) => s.isCollectionRow && s.collectionKeys.length == 1);
+    if (singleCollectionSections.isEmpty) return const {};
+    final result = <String, List<MediaItem>>{};
+    await Future.wait(
+      singleCollectionSections.map((section) async {
+        final parsed = parseGlobalKey(section.collectionKeys.single);
+        if (parsed == null) return;
+        final client = _multiServer.getClientForServer(parsed.serverId);
+        if (client == null) return;
+        try {
+          final page = await client.fetchCollectionPage(parsed.ratingKey, start: 0, size: 50);
+          result[section.id] = page.items;
+        } catch (e) {
+          appLogger.w('Failed to fetch contents for single-collection row "${section.title}"', error: e);
+        }
+      }),
+    );
+    return result;
+  }
+
   List<MediaHub> _filterDiscoverHubs(List<MediaHub> hubs) {
     return hubs.where((hub) {
       final hubId = hub.identifier?.toLowerCase() ?? '';
@@ -827,7 +939,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       _applyOnDeck(fetched.items);
       _recordObservations(observation, fetched.observedItems, fetched.succeededServerIds);
       safeNotifyListeners();
-      unawaited(_syncSystemShelf(_onDeck));
+      unawaited(_syncSystemShelf(_continueWatchingItems));
     } catch (e) {
       appLogger.w('Failed to refresh Continue Watching', error: e);
     }
@@ -845,7 +957,20 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     // "View All" renders through the same overlay as the row it expands, so
     // it has to reconcile too or the stale patch simply reappears there.
     _recordObservations(observation, fetched.observedItems, fetched.succeededServerIds);
-    return fetched.items;
+    return fetched.items.where((item) => item.hasActiveProgress).toList();
+  }
+
+  /// The complete unstarted episode list for the separate Next Up row.
+  Future<List<MediaItem>> loadAllNextUp() async {
+    if (!_multiServer.hasConnectedServers) return const [];
+    await _hiddenLibraries.ensureInitialized();
+    if (isDisposed) return const [];
+    final observation = _beginObservation();
+    final fetched = await _multiServer.aggregationService.getOnDeckFromAllServers(
+      hiddenLibraryKeys: _hiddenLibraries.hiddenLibraryKeys,
+    );
+    _recordObservations(observation, fetched.observedItems, fetched.succeededServerIds);
+    return fetched.items.where((item) => item.kind == MediaKind.episode && !item.hasActiveProgress).toList();
   }
 
   /// Refetch a single item (post-edit refresh from a hub row) through its
@@ -904,9 +1029,15 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Watch on-deck items and their parent shows/seasons (an episode's watch
   /// flip changes what Continue Watching should show for its series).
-  Set<String>? get _watchedIds => hierarchicalEventIds(_onDeck);
+  /// With "hide watched items in rows" on, hub items are watched too so a
+  /// title marked watched leaves its row right away (#2159).
+  Iterable<MediaItem> get _watchStateItems => _hideWatchedInHubs ? _visibleItems : _onDeck;
 
-  Set<String>? get _watchedGlobalKeys => hierarchicalEventGlobalKeys(_onDeck);
+  bool get _hideWatchedInHubs => SettingsService.instanceOrNull?.read(SettingsService.hideWatchedInHubs) ?? false;
+
+  Set<String>? get _watchedIds => hierarchicalEventIds(_watchStateItems);
+
+  Set<String>? get _watchedGlobalKeys => hierarchicalEventGlobalKeys(_watchStateItems);
 
   void _onWatchStateChanged(WatchStateEvent event) {
     if (event.changeType == WatchStateChangeType.progressUpdate && event.isNowWatched != true) {
@@ -918,7 +1049,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
           hasMore: _hasMoreContinueWatching,
         );
         safeNotifyListeners();
-        unawaited(_syncSystemShelf(_onDeck));
+        unawaited(_syncSystemShelf(_continueWatchingItems));
       }
       return;
     }
@@ -938,8 +1069,34 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
             item.serverId == serverId &&
             (item.id == event.itemId || item.parentId == event.itemId || item.grandparentId == event.itemId),
       );
+      if (_hideWatchedInHubs) {
+        _evictWatchedFromHubs(
+          (item) => item.id == event.itemId || item.parentId == event.itemId || item.grandparentId == event.itemId,
+        );
+      }
     }
     unawaited(refreshContinueWatching());
+  }
+
+  void _evictWatchedFromHubs(bool Function(MediaItem item) matches) {
+    var changed = false;
+    final remaining = <MediaHub>[];
+    for (final hub in _hubs) {
+      if (hub.isContinueWatchingHub) {
+        remaining.add(hub);
+        continue;
+      }
+      final kept = hub.items.where((item) => !matches(item)).toList();
+      if (kept.length == hub.items.length) {
+        remaining.add(hub);
+        continue;
+      }
+      changed = true;
+      if (kept.isNotEmpty) remaining.add(hub.copyWith(items: kept));
+    }
+    if (!changed) return;
+    _replaceHubs(remaining);
+    safeNotifyListeners();
   }
 
   void _evictFromOnDeck(bool Function(MediaItem item) matches) {
@@ -947,7 +1104,7 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     if (remaining.length == _onDeck.length) return;
     _replaceOnDeck(remaining, hasMore: _hasMoreContinueWatching);
     safeNotifyListeners();
-    unawaited(_syncSystemShelf(_onDeck));
+    unawaited(_syncSystemShelf(_continueWatchingItems));
   }
 
   /// Everything on screen: the Continue Watching row plus every hub row.
@@ -994,6 +1151,11 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     if (event.origin == DeletionOrigin.local) {
       unawaited(refreshContinueWatching());
     }
+  }
+
+  void _onHomeLayoutChanged() {
+    if (isDisposed) return;
+    unawaited(load());
   }
 
   void _onHiddenLibrariesChanged() {
@@ -1107,6 +1269,12 @@ class DiscoverProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     _multiServer.removeOnlineServersListener(syncToOnlineServers);
     _hiddenLibraries.removeListener(_onHiddenLibrariesChanged);
     _libraries.removeListener(_onLibrariesChanged);
+    _homeLayoutListenable?.removeListener(_onHomeLayoutChanged);
+    _homeRowOrderListenable?.removeListener(_onHomeLayoutChanged);
+    _continueWatchingOnHomeListenable?.removeListener(_onHomeLayoutChanged);
+    _nextUpOnHomeListenable?.removeListener(_onHomeLayoutChanged);
+    _managedHubHeroOverridesListenable?.removeListener(_onHomeLayoutChanged);
+    _hideWatchedInHubsListenable?.removeListener(_onHomeLayoutChanged);
     _watchStateSubscription?.cancel();
     _watchStateSubscription = null;
     _deletionSubscription?.cancel();

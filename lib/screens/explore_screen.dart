@@ -172,7 +172,7 @@ class ExploreScreenState extends State<ExploreScreen>
     _orderedHubKeys.firstOrNull?.currentState?.requestFocusFromMemory();
   }
 
-  void _setSpotlightItem(MediaItem item) => _spotlight.select(item);
+  void _setSpotlightItem(MediaHub hub, MediaItem item) => _spotlight.select(item, hub: hub);
 
   void _updateHubKeys(List<ExploreRowHub> rowHubs) {
     final liveIds = <String>{for (final rowHub in rowHubs) rowHub.hub.id};
@@ -612,7 +612,7 @@ class ExploreScreenState extends State<ExploreScreen>
                 hubs: tvHubs,
                 focusMemory: _hubFocusMemory,
                 iconForHub: (hub, _) => _rowIcon(_rowForHub(hub)?.row),
-                onFocusedItemChanged: _setSpotlightItem,
+                onFocusedHubItemChanged: _setSpotlightItem,
                 loadMoreItems: (hub) {
                   final rowHub = _rowForHub(hub);
                   return rowHub == null ? () => Future.value(hub.items) : () => _explore.loadAllForHub(rowHub);

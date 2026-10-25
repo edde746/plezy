@@ -26,6 +26,10 @@ class MediaLibrary {
   final int? updatedAt;
   final int? createdAt;
 
+  /// Server-reported root item count when available. `null` means the backend
+  /// did not include a count; it must not be treated as empty.
+  final int? itemCount;
+
   /// Whether the user has hidden this library from the home browser.
   final bool hidden;
 
@@ -45,6 +49,7 @@ class MediaLibrary {
     this.language,
     this.updatedAt,
     this.createdAt,
+    this.itemCount,
     this.hidden = false,
     this.isShared = false,
     this.serverId,
@@ -53,3 +58,15 @@ class MediaLibrary {
 
   String get globalKey => serverId != null ? buildGlobalKey(ServerId(serverId!), id) : id;
 }
+
+/// Shared library visibility rule used by the sidebar, picker, and library
+/// browser. Unknown counts remain visible because they are not proof of an
+/// empty library.
+List<MediaLibrary> visibleMediaLibraries(
+  Iterable<MediaLibrary> libraries, {
+  required Set<String> hiddenKeys,
+  required bool hideEmpty,
+}) => [
+  for (final library in libraries)
+    if (!hiddenKeys.contains(library.globalKey) && !(hideEmpty && library.itemCount == 0)) library,
+];

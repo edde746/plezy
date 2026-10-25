@@ -9,6 +9,7 @@ import '../exceptions/media_server_exceptions.dart';
 import '../providers/multi_server_provider.dart';
 import '../services/multi_server_manager.dart';
 import '../services/plex_auth_service.dart';
+import '../services/settings_service.dart';
 import '../utils/app_logger.dart';
 import 'active_profile_provider.dart';
 import 'plex_home_switch.dart';
@@ -317,11 +318,15 @@ class ActiveProfileBinder {
         // waiting, doesn't surface a spurious "switch failed" error. Also
         // clear the runtime filter so stale clients from the previous
         // profile cannot leak into the no-selection state.
+        serverManager.setPreferredServerId(null);
         _clearBoundServers();
         success = true;
         return success;
       }
       attemptedProfileId = profile.id;
+      serverManager.setPreferredServerId(
+        SettingsService.instance.read(SettingsService.preferredServerForProfile(profile.id)),
+      );
 
       final userInitiated = consumeUserInitiatedActivation(profile.id);
       if (!userInitiated && !_hasBoundOnce && await _shouldDeferInitialBind(profile)) {
