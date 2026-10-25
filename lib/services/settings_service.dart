@@ -746,6 +746,9 @@ class SettingsService extends BaseSharedPreferencesService {
   static const supporterEntitlementCached = BoolPref('supporter_entitlement_cached');
   static const rememberTrackSelections = BoolPref('remember_track_selections', defaultValue: true);
 
+  /// Ask which source audio and subtitle tracks to use before opening a video.
+  static const chooseTracksBeforePlayback = BoolPref('choose_tracks_before_playback');
+
   /// Episode advance follows the server's per-episode audio/subtitle
   /// selections instead of carrying the current choice over (#1717).
   static const followServerTrackSelections = BoolPref('follow_server_track_selections');
@@ -1667,6 +1670,7 @@ class SettingsService extends BaseSharedPreferencesService {
     subtitleBackgroundColor,
     subtitleBackgroundOpacity,
     rememberTrackSelections,
+    chooseTracksBeforePlayback,
     followServerTrackSelections,
     downloadOnWifiOnly,
     backgroundDownloadWarningAcknowledged,

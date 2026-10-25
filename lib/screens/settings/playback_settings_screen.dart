@@ -286,6 +286,12 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         subtitle: '${t.settings.rememberTrackSelectionsDescription} · ${t.settings.rememberTrackSelectionsBackendRule}',
       ),
       SettingSwitchTile(
+        pref: SettingsService.chooseTracksBeforePlayback,
+        icon: Symbols.subtitles_rounded,
+        title: t.settings.chooseTracksBeforePlayback,
+        subtitle: t.settings.chooseTracksBeforePlaybackDescription,
+      ),
+      SettingSwitchTile(
         pref: SettingsService.followServerTrackSelections,
         icon: Symbols.dns_rounded,
         title: t.settings.followServerTrackSelections,

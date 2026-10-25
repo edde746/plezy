@@ -853,6 +853,12 @@ class Translations$settings$en {
 	/// en: 'Remember track selections per show/movie'
 	String get rememberTrackSelections => 'Remember track selections per show/movie';
 
+	/// en: 'Choose audio and subtitles before playback'
+	String get chooseTracksBeforePlayback => 'Choose audio and subtitles before playback';
+
+	/// en: 'Pick the source audio and subtitle tracks before each video starts.'
+	String get chooseTracksBeforePlaybackDescription => 'Pick the source audio and subtitle tracks before each video starts.';
+
 	/// en: 'Store audio and subtitle choices by show or movie on this device'
 	String get rememberTrackSelectionsDescription => 'Store audio and subtitle choices by show or movie on this device';
 
@@ -2535,6 +2541,12 @@ class Translations$videoControls$en {
 
 	/// en: 'Audio & Subtitles'
 	String get tracksButton => 'Audio & Subtitles';
+
+	/// en: 'Choose tracks before playback'
+	String get trackSelectionTitle => 'Choose tracks before playback';
+
+	/// en: 'Automatic selection'
+	String get trackSelectionAuto => 'Automatic selection';
 
 	/// en: 'Chapters'
 	String get chaptersButton => 'Chapters';
@@ -9056,6 +9068,8 @@ extension on Translations {
 			'settings.defaultSleepTimer' => 'Default Sleep Timer',
 			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutes',
 			'settings.rememberTrackSelections' => 'Remember track selections per show/movie',
+			'settings.chooseTracksBeforePlayback' => 'Choose audio and subtitles before playback',
+			'settings.chooseTracksBeforePlaybackDescription' => 'Pick the source audio and subtitle tracks before each video starts.',
 			'settings.rememberTrackSelectionsDescription' => 'Store audio and subtitle choices by show or movie on this device',
 			'settings.rememberTrackSelectionsBackendRule' => 'Works locally with Plex, Jellyfin, and Emby; Plex and Jellyfin can also save selections on the server',
 			'settings.followServerTrackSelections' => 'Use server\'s per-episode track selections',
@@ -9287,10 +9301,10 @@ extension on Translations {
 			'settings.videoAndDisplay' => 'Video & Display',
 			'settings.audio' => 'Audio',
 			'settings.quality' => 'Quality',
-			'settings.subtitles' => 'Subtitles',
-			'settings.seekAndTiming' => 'Seek & Timing',
 			_ => null,
 		} ?? switch (path) {
+			'settings.subtitles' => 'Subtitles',
+			'settings.seekAndTiming' => 'Seek & Timing',
 			'settings.behavior' => 'Behavior',
 			'settings.gestures' => 'Gestures',
 			'settings.gestureBrightnessSwipe' => 'Brightness Swipe',
@@ -9625,6 +9639,8 @@ extension on Translations {
 			'videoControls.unmuteButton' => 'Unmute',
 			'videoControls.settingsButton' => 'Playback Settings',
 			'videoControls.tracksButton' => 'Audio & Subtitles',
+			'videoControls.trackSelectionTitle' => 'Choose tracks before playback',
+			'videoControls.trackSelectionAuto' => 'Automatic selection',
 			'videoControls.chaptersButton' => 'Chapters',
 			'videoControls.versionQualityButton' => 'Version & Quality',
 			'videoControls.versionColumnHeader' => 'Version',
@@ -9799,12 +9815,12 @@ extension on Translations {
 			'profiles.switchingProfile' => 'Switching profile…',
 			'profiles.deleteThisProfileTitle' => 'Delete this profile?',
 			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Remove ${displayName}. Connections aren\'t affected.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.active' => 'Active',
 			'profiles.manage' => 'Manage',
 			'profiles.delete' => 'Delete',
 			'profiles.signOut' => 'Sign out',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.signOutPlexTitle' => 'Sign out of Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Remove ${displayName} and all Plex Home users? Sign back in anytime.',
 			'profiles.signOutPlexDeleteDownloads' => 'Also delete downloads',
@@ -10313,12 +10329,12 @@ extension on Translations {
 			'explore.detail.links' => 'Links',
 			'explore.detail.watchOn' => 'Watch on',
 			'explore.detail.watchTrailer' => 'Watch trailer',
+			_ => null,
+		} ?? switch (path) {
 			'explore.detail.openOn' => ({required Object site}) => 'Open on ${site}',
 			'explore.detail.crew' => 'Crew',
 			'explore.detail.ratings' => 'Ratings',
 			'explore.detail.schedule' => 'Schedule',
-			_ => null,
-		} ?? switch (path) {
 			'explore.detail.recommendedByUsers' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Recommended by ${n} user', other: 'Recommended by ${n} users', ), 
 			'explore.detail.recommendedBy' => ({required Object who}) => 'Recommended by ${who}',
 			'explore.detail.favoritedBy' => ({required Object who}) => 'Favorited by ${who}',
@@ -10827,12 +10843,12 @@ extension on Translations {
 			'companionRemote.pairing.manualConnection' => 'Manual Connection',
 			'companionRemote.pairing.cryptoInitFailed' => 'Couldn\'t start secure connection. Sign in to Plex first.',
 			'companionRemote.pairing.validationHostRequired' => 'Please enter host address',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.validationHostFormat' => 'Format must be IP:port (e.g., 192.168.1.100:48632)',
 			'companionRemote.pairing.connectionTimedOut' => 'Connection timed out. Use the same network on both devices.',
 			'companionRemote.pairing.sessionNotFound' => 'Device not found. Make sure Plezy is running on the host.',
 			'companionRemote.pairing.authFailed' => 'Authentication failed. Both devices need the same Plex account.',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Failed to connect: ${error}',
 			'companionRemote.remote.disconnectConfirm' => 'Do you want to disconnect from the remote session?',
 			'companionRemote.remote.reconnecting' => 'Reconnecting...',

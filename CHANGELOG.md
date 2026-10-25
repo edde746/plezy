@@ -16,6 +16,7 @@
 - Add a random movie picker, detail-page finish-time estimate, optional empty-library hiding, and log-file export.
 - Add an opt-in TheIntroDB intro fallback when the media server has no matching intro marker.
 - Add Home backdrop visibility and Continue Watching row-size controls.
+- Add an optional audio and subtitle picker before starting video playback.
 - Added changelog enforcement, changelog-based release notes, and Discord announcements for published PlezyNG releases.
 - Require an explicit versioned release dispatch, and move release downloads and package updates to PlezyNG.
 - Remove the inherited WinGet publisher and add the PlezyNG Discord support link to the README.

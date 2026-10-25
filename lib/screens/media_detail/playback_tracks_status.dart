@@ -1,11 +1,32 @@
 part of '../media_detail_screen.dart';
 
+typedef _PrePlaybackTrackChoice = ({bool cancelled, AudioTrack? audio, SubtitleTrack? subtitle});
+
 /// The action row's trailing status: what Play will do with this item's
 /// picture, audio, and subtitles, computed by the player's own selection
 /// ladder ([previewPlaybackTracks]). Read-only — it describes the episode the
 /// hero shows, and on TV that changes with rail focus, so there is no per-
 /// episode target for a control here to act on.
 extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
+  Future<_PrePlaybackTrackChoice> _chooseTracksBeforePlayback(BuildContext context, MediaItem target) async {
+    final settings = await SettingsService.getInstance();
+    if (!settings.read(SettingsService.chooseTracksBeforePlayback) || widget.isOffline || !context.mounted) {
+      return (cancelled: false, audio: null, subtitle: null);
+    }
+    final probe = _playbackSources[target.globalKey];
+    final source = probe?.source;
+    if (source == null || !mediaSourceHasTrackRows(source)) {
+      return (cancelled: false, audio: null, subtitle: null);
+    }
+    final profile = context.read<AccountPreferencesController?>()?.activePreferences;
+    final result = await showDialog<({AudioTrack? audio, SubtitleTrack subtitle})>(
+      context: context,
+      builder: (context) => _PrePlaybackTrackDialog(item: probe!.item, source: source, profile: profile),
+    );
+    if (result == null) return (cancelled: true, audio: null, subtitle: null);
+    return (cancelled: false, audio: result.audio, subtitle: result.subtitle);
+  }
+
   /// The item Play would start: the hero's episode for a show, the first
   /// episode for a season, the item itself otherwise. Null while a show has
   /// not resolved any episode yet.
@@ -231,4 +252,107 @@ extension _MediaDetailPlaybackTracksStatus on _MediaDetailScreenState {
       ),
     );
   }
+}
+
+class _PrePlaybackTrackDialog extends StatefulWidget {
+  final MediaItem item;
+  final MediaSourceInfo source;
+  final MediaServerUserProfile? profile;
+
+  const _PrePlaybackTrackDialog({required this.item, required this.source, required this.profile});
+
+  @override
+  State<_PrePlaybackTrackDialog> createState() => _PrePlaybackTrackDialogState();
+}
+
+class _PrePlaybackTrackDialogState extends State<_PrePlaybackTrackDialog> {
+  late final List<AudioTrack> _audioOptions = [
+    AudioTrack.auto,
+    ...PlaybackSubtitleResolver.audioTracksForSource(widget.source),
+  ];
+  late final List<SubtitleTrack> _subtitleOptions = [
+    SubtitleTrack.off,
+    for (final track in widget.source.subtitleTracks) PlaybackSubtitleResolver.subtitleTrackForSource(track),
+  ];
+  late AudioTrack _audio;
+  late SubtitleTrack _subtitle;
+
+  @override
+  void initState() {
+    super.initState();
+    final preview = previewPlaybackTracks(widget.item, widget.source, profile: widget.profile);
+    _audio = preview?.audio == null
+        ? AudioTrack.auto
+        : _audioOptions.firstWhere(
+            (track) => track.id == 'source:${preview!.audio!.id}',
+            orElse: () => AudioTrack.auto,
+          );
+    _subtitle = preview?.subtitle == null
+        ? SubtitleTrack.off
+        : _subtitleOptions.firstWhere(
+            (track) => track.id == 'source:${preview!.subtitle!.id}',
+            orElse: () => SubtitleTrack.off,
+          );
+  }
+
+  String _audioLabel(AudioTrack track) {
+    if (track.id == AudioTrack.auto.id) return t.videoControls.trackSelectionAuto;
+    final sourceId = int.tryParse(track.id.replaceFirst('source:', ''));
+    final sourceTrack = widget.source.audioTracks.where((entry) => entry.id == sourceId).firstOrNull;
+    return sourceTrack?.label.joined ?? track.title ?? t.videoControls.audioLabel;
+  }
+
+  String _subtitleLabel(SubtitleTrack track) {
+    if (track.id == SubtitleTrack.off.id) return t.common.off;
+    final sourceId = int.tryParse(track.id.replaceFirst('source:', ''));
+    final sourceTrack = widget.source.subtitleTracks.where((entry) => entry.id == sourceId).firstOrNull;
+    return sourceTrack?.label.joined ?? track.title ?? t.videoControls.subtitlesLabel;
+  }
+
+  @override
+  Widget build(BuildContext context) => AlertDialog(
+    title: Text(t.videoControls.trackSelectionTitle),
+    content: ConstrainedBox(
+      constraints: const BoxConstraints(maxWidth: 520),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          DropdownButtonFormField<AudioTrack>(
+            initialValue: _audio,
+            decoration: InputDecoration(labelText: t.videoControls.audioLabel),
+            items: [
+              for (final track in _audioOptions)
+                DropdownMenuItem(
+                  value: track,
+                  child: Text(_audioLabel(track), maxLines: 2, overflow: TextOverflow.ellipsis),
+                ),
+            ],
+            onChanged: (value) => setState(() => _audio = value ?? AudioTrack.auto),
+          ),
+          const SizedBox(height: 16),
+          DropdownButtonFormField<SubtitleTrack>(
+            initialValue: _subtitle,
+            decoration: InputDecoration(labelText: t.videoControls.subtitlesLabel),
+            items: [
+              for (final track in _subtitleOptions)
+                DropdownMenuItem(
+                  value: track,
+                  child: Text(_subtitleLabel(track), maxLines: 2, overflow: TextOverflow.ellipsis),
+                ),
+            ],
+            onChanged: (value) => setState(() => _subtitle = value ?? SubtitleTrack.off),
+          ),
+        ],
+      ),
+    ),
+    actions: [
+      TextButton(onPressed: () => Navigator.of(context).pop(), child: Text(t.common.cancel)),
+      FilledButton(
+        onPressed: () =>
+            Navigator.of(context).pop((audio: _audio.id == AudioTrack.auto.id ? null : _audio, subtitle: _subtitle)),
+        child: Text(t.common.play),
+      ),
+    ],
+  );
 }

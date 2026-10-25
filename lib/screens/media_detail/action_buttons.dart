@@ -68,11 +68,15 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
         final episode = _showPlayEpisode();
         if (episode != null) {
           appLogger.d('Playing episode: ${episode.title}');
+          final trackChoice = await _chooseTracksBeforePlayback(context, episode);
+          if (trackChoice.cancelled || !context.mounted || !_canUseDetail) return;
           await navigateToVideoPlayerWithRefresh(
             context,
             metadata: episode,
             isOffline: widget.isOffline,
             onRefresh: _refreshWatchState,
+            preferredAudioTrack: trackChoice.audio,
+            preferredSubtitleTrack: trackChoice.subtitle,
             isLaunchCurrent: () => _canUseDetail,
           );
         } else {
@@ -81,11 +85,15 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       } else if (metadata.isSeason) {
         // For seasons, play the first episode
         if (_episodes.isNotEmpty) {
+          final trackChoice = await _chooseTracksBeforePlayback(context, _episodes.first);
+          if (trackChoice.cancelled || !context.mounted || !_canUseDetail) return;
           await navigateToVideoPlayerWithRefresh(
             context,
             metadata: _episodes.first,
             isOffline: widget.isOffline,
             onRefresh: _refreshWatchState,
+            preferredAudioTrack: trackChoice.audio,
+            preferredSubtitleTrack: trackChoice.subtitle,
             isLaunchCurrent: () => _canUseDetail,
           );
         } else {
@@ -94,11 +102,15 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
       } else {
         appLogger.d('Playing: ${metadata.title}');
         // For movies or episodes, play directly
+        final trackChoice = await _chooseTracksBeforePlayback(context, metadata);
+        if (trackChoice.cancelled || !context.mounted || !_canUseDetail) return;
         await navigateToVideoPlayerWithRefresh(
           context,
           metadata: metadata,
           isOffline: widget.isOffline,
           onRefresh: _refreshWatchState,
+          preferredAudioTrack: trackChoice.audio,
+          preferredSubtitleTrack: trackChoice.subtitle,
           isLaunchCurrent: () => _canUseDetail,
         );
       }
