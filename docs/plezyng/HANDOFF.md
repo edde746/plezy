@@ -22,6 +22,7 @@ Status: 2026-10-25. PlezyNG is a fork of `edde746/plezy` intended to carry reque
 - Five-band, device-local audio equalizer for mpv video playback; gains compose with loudness normalization and are stored in portable settings.
 - Optional audio-only video continuation when a handheld Android or iOS app backgrounds; Android uses the existing OS media playback foreground service.
 - Google Cast discovery, playback handoff, subtitle sidecars, remote pause/resume/stop controls, and server progress reporting on Android and iOS. Plex, Jellyfin, and Emby streams use their existing external-playback resolvers and the default Cast media receiver.
+- Android automation links control an active video session with play, pause, toggle, or stop; existing `plezy://watch` links continue to launch movies or the next/shuffled episode across supported servers.
 - Optional TheIntroDB community intro timings are queried only when no server or chapter-derived intro exists. The setting is off by default and requires a catalog ID and internet access.
 - People search and offline playlist downloads were already present in the merged code. Existing watched-download cleanup and per-item sync offsets were also present.
 - The earlier 23 upstream PR integrations remain on `main`, including local Plex connections, download storage reporting, deep links, external-player return sync, repeat playlists, swipe/frame controls, subtitle preview and delay hotkeys, bulk selection, prerolls, live-TV timeshift, theme songs, and download sync actions.
@@ -37,7 +38,6 @@ Status: 2026-10-25. PlezyNG is a fork of `edde746/plezy` intended to carry reque
 | Home | Backdrop-art visibility and Continue Watching row sizing are implemented. Empty-library filtering applies when the server reports an explicit zero. The legacy hero banner already has a visibility setting; the top-bar clock is available on TV. |
 | Live TV | Jellyfin/Emby do not expose a seekable capture-window snapshot in their public playback responses, so the app cannot safely map their live buffer to the absolute-time timeline used by Plex |
 | Integrations | New-episode notifications; content screensaver. Google Cast is implemented on Android/iOS with the default Cast media receiver; the receiver must support the selected stream's format and be able to reach the server. |
-| Automation | Cross-server `plezy://watch` links are available for Home Assistant and Android `ACTION_VIEW` automation; direct player-control intents remain unimplemented |
 | Settings | HTTPS WebDAV backup of the portable settings export is implemented. Configure a file URL ending in `.json`, optionally with WebDAV credentials; local server connections, tokens, download locations, and history are excluded. |
 
 ## Validation and cautions

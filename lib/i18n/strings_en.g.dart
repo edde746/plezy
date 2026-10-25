@@ -42,6 +42,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	// Translations
 	late final Translations$app$en app = Translations$app$en.internal(_root);
 	late final Translations$cast$en cast = Translations$cast$en.internal(_root);
+	late final Translations$automation$en automation = Translations$automation$en.internal(_root);
 	late final Translations$appIcon$en appIcon = Translations$appIcon$en.internal(_root);
 	late final Translations$auth$en auth = Translations$auth$en.internal(_root);
 	late final Translations$common$en common = Translations$common$en.internal(_root);
@@ -152,6 +153,18 @@ class Translations$cast$en {
 
 	/// en: 'Could not start casting. Check the server and try again.'
 	String get startFailed => 'Could not start casting. Check the server and try again.';
+}
+
+// Path: automation
+class Translations$automation$en {
+	Translations$automation$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'There is no active video session to control.'
+	String get noActivePlayback => 'There is no active video session to control.';
 }
 
 // Path: appIcon
@@ -8928,6 +8941,7 @@ extension on Translations {
 			'cast.castToDevice' => 'Cast to device',
 			'cast.noEpisodeAvailable' => 'There is no episode available to cast.',
 			'cast.startFailed' => 'Could not start casting. Check the server and try again.',
+			'automation.noActivePlayback' => 'There is no active video session to control.',
 			'appIcon.title' => 'App icon',
 			'appIcon.defaultIcon' => 'Default',
 			'appIcon.current' => 'Current icon',
@@ -9427,9 +9441,9 @@ extension on Translations {
 			'settings.requireProfileSelectionOnOpenDescription' => 'Show profile selection every time the app is opened',
 			'settings.forceTvMode' => 'Force TV mode',
 			'settings.forceTvModeDescription' => 'Force TV layout. For devices that don\'t auto-detect. Requires restart.',
-			'settings.startInFullscreen' => 'Start in fullscreen',
 			_ => null,
 		} ?? switch (path) {
+			'settings.startInFullscreen' => 'Start in fullscreen',
 			'settings.startInFullscreenDescription' => 'Open Plezy in fullscreen mode at launch',
 			'settings.exitFullscreenOnPlayerClose' => 'Exit fullscreen on player close',
 			'settings.exitFullscreenOnPlayerCloseDescription' => 'Automatically exit fullscreen when closing the video player',
@@ -9941,9 +9955,9 @@ extension on Translations {
 			'subtitlingStyling.overrideStrip' => 'Remove styling',
 			'subtitlingStyling.positionTop' => 'Top',
 			'subtitlingStyling.positionBottom' => 'Bottom',
-			'subtitlingStyling.useMargins' => 'Use margins',
 			_ => null,
 		} ?? switch (path) {
+			'subtitlingStyling.useMargins' => 'Use margins',
 			'subtitlingStyling.useMarginsDescription' => 'Allow text subtitles in the space outside the video. Styled subtitles may keep their original placement.',
 			'subtitlingStyling.anchorToScreen' => 'Anchor to Screen',
 			'subtitlingStyling.anchorToScreenDescription' => 'Show text subtitles in the black bars below widescreen video',
@@ -10455,9 +10469,9 @@ extension on Translations {
 			'explore.creditRole.actor' => 'Actor',
 			'explore.creditRole.director' => 'Director',
 			'explore.creditRole.writer' => 'Writer',
-			'explore.creditRole.producer' => 'Producer',
 			_ => null,
 		} ?? switch (path) {
+			'explore.creditRole.producer' => 'Producer',
 			'explore.creditRole.creator' => 'Creator',
 			'explore.creditRole.composer' => 'Composer',
 			'explore.relation.prequel' => 'Prequel',
@@ -10969,9 +10983,9 @@ extension on Translations {
 			'shaders.artcnnVariantDenoiseSharpen' => 'Denoise + Sharpen',
 			'shaders.qualityFast' => 'Fast',
 			'shaders.qualityHQ' => 'High Quality',
-			'shaders.mode' => 'Mode',
 			_ => null,
 		} ?? switch (path) {
+			'shaders.mode' => 'Mode',
 			'shaders.importShader' => 'Import Shader',
 			'shaders.customShaderDescription' => 'Custom GLSL shader',
 			'shaders.shaderImported' => 'Shader imported',
@@ -11483,9 +11497,9 @@ extension on Translations {
 			'homeLayout.organizeRowsHint' => 'Select on a row (or hold Select): move it · Left/Right: row options · Back: done',
 			'homeLayout.layoutNavDescription' => 'Choose rows, libraries, and collection categories',
 			'homeLayout.editHomeRow' => 'Edit Home row',
-			'homeLayout.resetHeroButton' => 'Reset hero layout to stock Plezy',
 			_ => null,
 		} ?? switch (path) {
+			'homeLayout.resetHeroButton' => 'Reset hero layout to stock Plezy',
 			'homeLayout.reorderingUnlocked' => 'Reordering unlocked',
 			'homeLayout.reorderingLocked' => 'Reordering locked',
 			'homeLayout.rowsCanBeDragged' => 'Rows can be dragged — tap the lock to prevent that',

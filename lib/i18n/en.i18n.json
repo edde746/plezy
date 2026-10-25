@@ -15,6 +15,9 @@
     "noEpisodeAvailable": "There is no episode available to cast.",
     "startFailed": "Could not start casting. Check the server and try again."
   },
+  "automation": {
+    "noActivePlayback": "There is no active video session to control."
+  },
   "appIcon": {
     "title": "App icon",
     "defaultIcon": "Default",

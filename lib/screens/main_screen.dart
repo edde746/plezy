@@ -62,6 +62,7 @@ import '../services/fullscreen_state_manager.dart';
 import '../providers/companion_remote_provider.dart';
 import '../utils/desktop_window_padding.dart';
 import '../utils/live_tv_deep_link.dart';
+import '../utils/playback_control_link.dart';
 import '../utils/watch_link.dart';
 import '../widgets/music/mini_player.dart';
 import '../widgets/navigation_label_fit.dart';
@@ -942,6 +943,15 @@ class _MainScreenState extends State<MainScreen>
       } catch (e) {
         appLogger.e('Live TV deep link failed', error: e);
       }
+      return;
+    }
+
+    // `plezy://control?command=play|pause|toggle|stop` links are used by
+    // Android intents and Home Assistant. They only target an active player.
+    final controlLink = PlaybackControlLink.tryParse(contentId);
+    if (controlLink != null) {
+      final handled = await controlLink.launch();
+      if (!handled && mounted) showAppSnackBar(context, t.automation.noActivePlayback);
       return;
     }
 

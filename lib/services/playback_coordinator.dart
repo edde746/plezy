@@ -5,6 +5,8 @@ import 'package:flutter/foundation.dart';
 import '../mpv/mpv.dart';
 import '../utils/app_logger.dart';
 
+enum VideoAutomationCommand { play, pause, toggle }
+
 /// Stops a playing music session before the video player builds its core.
 ///
 /// The music service's audio `Player` lives across screens; the video core is
@@ -35,6 +37,7 @@ class PlaybackCoordinator {
 
   Future<void> Function()? _shutdownVideoSession;
   Future<bool> Function()? _exitVideoSession;
+  Future<bool> Function(VideoAutomationCommand command)? _controlVideoSession;
   PlayerState? Function()? _videoPlayerState;
   final Set<Future<void>> _videoRetirements = {};
 
@@ -70,10 +73,12 @@ class PlaybackCoordinator {
   void registerVideoSession({
     required Future<void> Function() shutdown,
     Future<bool> Function()? stopAndExit,
+    Future<bool> Function(VideoAutomationCommand command)? control,
     PlayerState? Function()? playerState,
   }) {
     _shutdownVideoSession = shutdown;
     _exitVideoSession = stopAndExit;
+    _controlVideoSession = control;
     _videoPlayerState = playerState;
     _publishVideoSession();
   }
@@ -84,6 +89,7 @@ class PlaybackCoordinator {
     if (_shutdownVideoSession == shutdown) {
       _shutdownVideoSession = null;
       _exitVideoSession = null;
+      _controlVideoSession = null;
       _videoPlayerState = null;
     }
     if (retirement != null && _videoRetirements.add(retirement)) {
@@ -111,6 +117,15 @@ class PlaybackCoordinator {
       ..._videoRetirements,
       if (_shutdownVideoSession case final shutdown?) Future<void>.sync(shutdown),
     ]);
+  }
+
+  /// Dispatches a scoped automation transport command to the screen that owns
+  /// the current video session. Returns false when no controllable player is
+  /// active, such as when a cold-start control link opens the app.
+  Future<bool> controlVideo(VideoAutomationCommand command) async {
+    final control = _controlVideoSession;
+    if (control == null) return false;
+    return control(command);
   }
 
   /// Register the active music session's teardown. [stopAndDispose] must

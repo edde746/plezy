@@ -27,6 +27,7 @@
 - Continue video audio in the background on handheld Android and iOS when enabled.
 - Back up and restore portable settings through an HTTPS WebDAV file endpoint.
 - Cast Plex, Jellyfin, and Emby video to Google Cast receivers on Android and iOS, with remote controls, subtitle sidecars, and server progress reporting.
+- Add Android `plezy://control` intents for play, pause, toggle, and stop during active video playback.
 - Added changelog enforcement, changelog-based release notes, and Discord announcements for published PlezyNG releases.
 - Require an explicit versioned release dispatch, and move release downloads and package updates to PlezyNG.
 - Remove the inherited WinGet publisher and add the PlezyNG Discord support link to the README.
