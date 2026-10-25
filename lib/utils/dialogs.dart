@@ -552,7 +552,7 @@ Future<T?> showOptionPickerDialog<T>(
   required String title,
   required List<({IconData? icon, String label, T value})> options,
   Future<T?> Function(T value)? onBeforeClose,
-  OptionPickerToggle? toggle,
+  List<OptionPickerToggle> toggles = const [],
 }) {
   final focusFirstItem = InputModeTracker.isKeyboardMode(context, listen: false);
   return showScopedDialog<T>(
@@ -562,7 +562,7 @@ Future<T?> showOptionPickerDialog<T>(
       options: options,
       focusFirstItem: focusFirstItem,
       onBeforeClose: onBeforeClose,
-      toggle: toggle,
+      toggles: toggles,
     ),
   );
 }
@@ -572,14 +572,14 @@ class _OptionPickerDialog<T> extends StatefulWidget {
   final List<({IconData? icon, String label, T value})> options;
   final bool focusFirstItem;
   final Future<T?> Function(T value)? onBeforeClose;
-  final OptionPickerToggle? toggle;
+  final List<OptionPickerToggle> toggles;
 
   const _OptionPickerDialog({
     required this.title,
     required this.options,
     this.focusFirstItem = false,
     this.onBeforeClose,
-    this.toggle,
+    this.toggles = const [],
   });
 
   @override
@@ -588,13 +588,13 @@ class _OptionPickerDialog<T> extends StatefulWidget {
 
 class _OptionPickerDialogState<T> extends State<_OptionPickerDialog<T>> {
   late final FocusNode _initialFocusNode;
-  late bool _toggleValue;
+  late List<bool> _toggleValues;
 
   @override
   void initState() {
     super.initState();
     _initialFocusNode = FocusNode(debugLabel: 'OptionPickerInitialFocus');
-    _toggleValue = widget.toggle?.value ?? false;
+    _toggleValues = [for (final toggle in widget.toggles) toggle.value];
     if (widget.focusFirstItem) {
       FocusUtils.requestFocusAfterBuild(this, _initialFocusNode);
     }
@@ -611,10 +611,9 @@ class _OptionPickerDialogState<T> extends State<_OptionPickerDialog<T>> {
     const rowPadding = EdgeInsets.symmetric(horizontal: 12, vertical: 4);
     const rowHorizontalTitleGap = 8.0;
     const rowMinLeadingWidth = 24.0;
-    final toggle = widget.toggle;
-    void updateToggle(bool value) {
-      setState(() => _toggleValue = value);
-      toggle?.onChanged(value);
+    void updateToggle(int index, bool value) {
+      setState(() => _toggleValues[index] = value);
+      widget.toggles[index].onChanged(value);
     }
 
     return SimpleDialog(
@@ -629,8 +628,9 @@ class _OptionPickerDialogState<T> extends State<_OptionPickerDialog<T>> {
             mainAxisSize: .min,
             crossAxisAlignment: .stretch,
             children: [
-              if (toggle != null)
-                MergeSemantics(
+              ...List.generate(widget.toggles.length, (toggleIndex) {
+                final toggle = widget.toggles[toggleIndex];
+                return MergeSemantics(
                   child: FocusableListTile(
                     title: Row(
                       children: [
@@ -648,14 +648,18 @@ class _OptionPickerDialogState<T> extends State<_OptionPickerDialog<T>> {
                         ),
                         const SizedBox(width: rowHorizontalTitleGap),
                         ExcludeFocus(
-                          child: Switch(value: _toggleValue, onChanged: updateToggle),
+                          child: Switch(
+                            value: _toggleValues[toggleIndex],
+                            onChanged: (v) => updateToggle(toggleIndex, v),
+                          ),
                         ),
                       ],
                     ),
                     contentPadding: rowPadding,
-                    onTap: () => updateToggle(!_toggleValue),
+                    onTap: () => updateToggle(toggleIndex, !_toggleValues[toggleIndex]),
                   ),
-                ),
+                );
+              }),
               ...List.generate(widget.options.length, (index) {
                 final option = widget.options[index];
                 final icon = option.icon;

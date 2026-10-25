@@ -3550,6 +3550,21 @@ class $SyncRulesTable extends SyncRules
     requiredDuringInsert: false,
     defaultValue: const Constant('unwatched'),
   );
+  static const VerificationMeta _randomEpisodesMeta = const VerificationMeta(
+    'randomEpisodes',
+  );
+  @override
+  late final GeneratedColumn<bool> randomEpisodes = GeneratedColumn<bool>(
+    'random_episodes',
+    aliasedName,
+    false,
+    type: DriftSqlType.bool,
+    requiredDuringInsert: false,
+    defaultConstraints: GeneratedColumn.constraintIsAlways(
+      'CHECK ("random_episodes" IN (0, 1))',
+    ),
+    defaultValue: const Constant(false),
+  );
   static const VerificationMeta _includeSpecialsMeta = const VerificationMeta(
     'includeSpecials',
   );
@@ -3594,6 +3609,7 @@ class $SyncRulesTable extends SyncRules
     lastExecutedAt,
     mediaIndex,
     downloadFilter,
+    randomEpisodes,
     includeSpecials,
     downloadLinksInitialized,
   ];
@@ -3699,6 +3715,15 @@ class $SyncRulesTable extends SyncRules
         ),
       );
     }
+    if (data.containsKey('random_episodes')) {
+      context.handle(
+        _randomEpisodesMeta,
+        randomEpisodes.isAcceptableOrUnknown(
+          data['random_episodes']!,
+          _randomEpisodesMeta,
+        ),
+      );
+    }
     if (data.containsKey('include_specials')) {
       context.handle(
         _includeSpecialsMeta,
@@ -3774,6 +3799,10 @@ class $SyncRulesTable extends SyncRules
         DriftSqlType.string,
         data['${effectivePrefix}download_filter'],
       )!,
+      randomEpisodes: attachedDatabase.typeMapping.read(
+        DriftSqlType.bool,
+        data['${effectivePrefix}random_episodes'],
+      )!,
       includeSpecials: attachedDatabase.typeMapping.read(
         DriftSqlType.bool,
         data['${effectivePrefix}include_specials'],
@@ -3804,6 +3833,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
   final int? lastExecutedAt;
   final int mediaIndex;
   final String downloadFilter;
+  final bool randomEpisodes;
   final bool includeSpecials;
 
   /// Gates collection/playlist backfill into [SyncRuleDownloads] before
@@ -3823,6 +3853,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     this.lastExecutedAt,
     required this.mediaIndex,
     required this.downloadFilter,
+    required this.randomEpisodes,
     required this.includeSpecials,
     required this.downloadLinksInitialized,
   });
@@ -3843,6 +3874,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     }
     map['media_index'] = Variable<int>(mediaIndex);
     map['download_filter'] = Variable<String>(downloadFilter);
+    map['random_episodes'] = Variable<bool>(randomEpisodes);
     map['include_specials'] = Variable<bool>(includeSpecials);
     map['download_links_initialized'] = Variable<bool>(
       downloadLinksInitialized,
@@ -3866,6 +3898,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
           : Value(lastExecutedAt),
       mediaIndex: Value(mediaIndex),
       downloadFilter: Value(downloadFilter),
+      randomEpisodes: Value(randomEpisodes),
       includeSpecials: Value(includeSpecials),
       downloadLinksInitialized: Value(downloadLinksInitialized),
     );
@@ -3889,6 +3922,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       lastExecutedAt: serializer.fromJson<int?>(json['lastExecutedAt']),
       mediaIndex: serializer.fromJson<int>(json['mediaIndex']),
       downloadFilter: serializer.fromJson<String>(json['downloadFilter']),
+      randomEpisodes: serializer.fromJson<bool>(json['randomEpisodes']),
       includeSpecials: serializer.fromJson<bool>(json['includeSpecials']),
       downloadLinksInitialized: serializer.fromJson<bool>(
         json['downloadLinksInitialized'],
@@ -3911,6 +3945,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       'lastExecutedAt': serializer.toJson<int?>(lastExecutedAt),
       'mediaIndex': serializer.toJson<int>(mediaIndex),
       'downloadFilter': serializer.toJson<String>(downloadFilter),
+      'randomEpisodes': serializer.toJson<bool>(randomEpisodes),
       'includeSpecials': serializer.toJson<bool>(includeSpecials),
       'downloadLinksInitialized': serializer.toJson<bool>(
         downloadLinksInitialized,
@@ -3931,6 +3966,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     Value<int?> lastExecutedAt = const Value.absent(),
     int? mediaIndex,
     String? downloadFilter,
+    bool? randomEpisodes,
     bool? includeSpecials,
     bool? downloadLinksInitialized,
   }) => SyncRuleItem(
@@ -3948,6 +3984,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
         : this.lastExecutedAt,
     mediaIndex: mediaIndex ?? this.mediaIndex,
     downloadFilter: downloadFilter ?? this.downloadFilter,
+    randomEpisodes: randomEpisodes ?? this.randomEpisodes,
     includeSpecials: includeSpecials ?? this.includeSpecials,
     downloadLinksInitialized:
         downloadLinksInitialized ?? this.downloadLinksInitialized,
@@ -3976,6 +4013,9 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
       downloadFilter: data.downloadFilter.present
           ? data.downloadFilter.value
           : this.downloadFilter,
+      randomEpisodes: data.randomEpisodes.present
+          ? data.randomEpisodes.value
+          : this.randomEpisodes,
       includeSpecials: data.includeSpecials.present
           ? data.includeSpecials.value
           : this.includeSpecials,
@@ -4000,6 +4040,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
           ..write('lastExecutedAt: $lastExecutedAt, ')
           ..write('mediaIndex: $mediaIndex, ')
           ..write('downloadFilter: $downloadFilter, ')
+          ..write('randomEpisodes: $randomEpisodes, ')
           ..write('includeSpecials: $includeSpecials, ')
           ..write('downloadLinksInitialized: $downloadLinksInitialized')
           ..write(')'))
@@ -4020,6 +4061,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
     lastExecutedAt,
     mediaIndex,
     downloadFilter,
+    randomEpisodes,
     includeSpecials,
     downloadLinksInitialized,
   );
@@ -4039,6 +4081,7 @@ class SyncRuleItem extends DataClass implements Insertable<SyncRuleItem> {
           other.lastExecutedAt == this.lastExecutedAt &&
           other.mediaIndex == this.mediaIndex &&
           other.downloadFilter == this.downloadFilter &&
+          other.randomEpisodes == this.randomEpisodes &&
           other.includeSpecials == this.includeSpecials &&
           other.downloadLinksInitialized == this.downloadLinksInitialized);
 }
@@ -4056,6 +4099,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
   final Value<int?> lastExecutedAt;
   final Value<int> mediaIndex;
   final Value<String> downloadFilter;
+  final Value<bool> randomEpisodes;
   final Value<bool> includeSpecials;
   final Value<bool> downloadLinksInitialized;
   const SyncRulesCompanion({
@@ -4071,6 +4115,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     this.lastExecutedAt = const Value.absent(),
     this.mediaIndex = const Value.absent(),
     this.downloadFilter = const Value.absent(),
+    this.randomEpisodes = const Value.absent(),
     this.includeSpecials = const Value.absent(),
     this.downloadLinksInitialized = const Value.absent(),
   });
@@ -4087,6 +4132,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     this.lastExecutedAt = const Value.absent(),
     this.mediaIndex = const Value.absent(),
     this.downloadFilter = const Value.absent(),
+    this.randomEpisodes = const Value.absent(),
     this.includeSpecials = const Value.absent(),
     this.downloadLinksInitialized = const Value.absent(),
   }) : serverId = Value(serverId),
@@ -4108,6 +4154,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     Expression<int>? lastExecutedAt,
     Expression<int>? mediaIndex,
     Expression<String>? downloadFilter,
+    Expression<bool>? randomEpisodes,
     Expression<bool>? includeSpecials,
     Expression<bool>? downloadLinksInitialized,
   }) {
@@ -4124,6 +4171,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
       if (lastExecutedAt != null) 'last_executed_at': lastExecutedAt,
       if (mediaIndex != null) 'media_index': mediaIndex,
       if (downloadFilter != null) 'download_filter': downloadFilter,
+      if (randomEpisodes != null) 'random_episodes': randomEpisodes,
       if (includeSpecials != null) 'include_specials': includeSpecials,
       if (downloadLinksInitialized != null)
         'download_links_initialized': downloadLinksInitialized,
@@ -4143,6 +4191,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     Value<int?>? lastExecutedAt,
     Value<int>? mediaIndex,
     Value<String>? downloadFilter,
+    Value<bool>? randomEpisodes,
     Value<bool>? includeSpecials,
     Value<bool>? downloadLinksInitialized,
   }) {
@@ -4159,6 +4208,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
       lastExecutedAt: lastExecutedAt ?? this.lastExecutedAt,
       mediaIndex: mediaIndex ?? this.mediaIndex,
       downloadFilter: downloadFilter ?? this.downloadFilter,
+      randomEpisodes: randomEpisodes ?? this.randomEpisodes,
       includeSpecials: includeSpecials ?? this.includeSpecials,
       downloadLinksInitialized:
           downloadLinksInitialized ?? this.downloadLinksInitialized,
@@ -4204,6 +4254,9 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
     if (downloadFilter.present) {
       map['download_filter'] = Variable<String>(downloadFilter.value);
     }
+    if (randomEpisodes.present) {
+      map['random_episodes'] = Variable<bool>(randomEpisodes.value);
+    }
     if (includeSpecials.present) {
       map['include_specials'] = Variable<bool>(includeSpecials.value);
     }
@@ -4230,6 +4283,7 @@ class SyncRulesCompanion extends UpdateCompanion<SyncRuleItem> {
           ..write('lastExecutedAt: $lastExecutedAt, ')
           ..write('mediaIndex: $mediaIndex, ')
           ..write('downloadFilter: $downloadFilter, ')
+          ..write('randomEpisodes: $randomEpisodes, ')
           ..write('includeSpecials: $includeSpecials, ')
           ..write('downloadLinksInitialized: $downloadLinksInitialized')
           ..write(')'))
@@ -9064,6 +9118,7 @@ typedef $$SyncRulesTableCreateCompanionBuilder =
       Value<int?> lastExecutedAt,
       Value<int> mediaIndex,
       Value<String> downloadFilter,
+      Value<bool> randomEpisodes,
       Value<bool> includeSpecials,
       Value<bool> downloadLinksInitialized,
     });
@@ -9081,6 +9136,7 @@ typedef $$SyncRulesTableUpdateCompanionBuilder =
       Value<int?> lastExecutedAt,
       Value<int> mediaIndex,
       Value<String> downloadFilter,
+      Value<bool> randomEpisodes,
       Value<bool> includeSpecials,
       Value<bool> downloadLinksInitialized,
     });
@@ -9180,6 +9236,11 @@ class $$SyncRulesTableFilterComposer
 
   ColumnFilters<String> get downloadFilter => $composableBuilder(
     column: $table.downloadFilter,
+    builder: (column) => ColumnFilters(column),
+  );
+
+  ColumnFilters<bool> get randomEpisodes => $composableBuilder(
+    column: $table.randomEpisodes,
     builder: (column) => ColumnFilters(column),
   );
 
@@ -9288,6 +9349,11 @@ class $$SyncRulesTableOrderingComposer
     builder: (column) => ColumnOrderings(column),
   );
 
+  ColumnOrderings<bool> get randomEpisodes => $composableBuilder(
+    column: $table.randomEpisodes,
+    builder: (column) => ColumnOrderings(column),
+  );
+
   ColumnOrderings<bool> get includeSpecials => $composableBuilder(
     column: $table.includeSpecials,
     builder: (column) => ColumnOrderings(column),
@@ -9351,6 +9417,11 @@ class $$SyncRulesTableAnnotationComposer
 
   GeneratedColumn<String> get downloadFilter => $composableBuilder(
     column: $table.downloadFilter,
+    builder: (column) => column,
+  );
+
+  GeneratedColumn<bool> get randomEpisodes => $composableBuilder(
+    column: $table.randomEpisodes,
     builder: (column) => column,
   );
 
@@ -9431,6 +9502,7 @@ class $$SyncRulesTableTableManager
                 Value<int?> lastExecutedAt = const Value.absent(),
                 Value<int> mediaIndex = const Value.absent(),
                 Value<String> downloadFilter = const Value.absent(),
+                Value<bool> randomEpisodes = const Value.absent(),
                 Value<bool> includeSpecials = const Value.absent(),
                 Value<bool> downloadLinksInitialized = const Value.absent(),
               }) => SyncRulesCompanion(
@@ -9446,6 +9518,7 @@ class $$SyncRulesTableTableManager
                 lastExecutedAt: lastExecutedAt,
                 mediaIndex: mediaIndex,
                 downloadFilter: downloadFilter,
+                randomEpisodes: randomEpisodes,
                 includeSpecials: includeSpecials,
                 downloadLinksInitialized: downloadLinksInitialized,
               ),
@@ -9463,6 +9536,7 @@ class $$SyncRulesTableTableManager
                 Value<int?> lastExecutedAt = const Value.absent(),
                 Value<int> mediaIndex = const Value.absent(),
                 Value<String> downloadFilter = const Value.absent(),
+                Value<bool> randomEpisodes = const Value.absent(),
                 Value<bool> includeSpecials = const Value.absent(),
                 Value<bool> downloadLinksInitialized = const Value.absent(),
               }) => SyncRulesCompanion.insert(
@@ -9478,6 +9552,7 @@ class $$SyncRulesTableTableManager
                 lastExecutedAt: lastExecutedAt,
                 mediaIndex: mediaIndex,
                 downloadFilter: downloadFilter,
+                randomEpisodes: randomEpisodes,
                 includeSpecials: includeSpecials,
                 downloadLinksInitialized: downloadLinksInitialized,
               ),

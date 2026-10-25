@@ -4955,6 +4955,12 @@ class Translations$downloads$en {
 	/// en: 'Custom amount...'
 	String get customAmount => 'Custom amount...';
 
+	/// en: 'Custom amount (any)...'
+	String get customAmountAny => 'Custom amount (any)...';
+
+	/// en: 'Random episodes'
+	String get randomEpisodes => 'Random episodes';
+
 	/// en: 'Include Specials'
 	String get includeSpecials => 'Include Specials';
 
@@ -10221,6 +10227,8 @@ extension on Translations {
 			'downloads.unwatchedOnly' => 'Unwatched only',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Next ${count} unwatched',
 			'downloads.customAmount' => 'Custom amount...',
+			'downloads.customAmountAny' => 'Custom amount (any)...',
+			'downloads.randomEpisodes' => 'Random episodes',
 			'downloads.includeSpecials' => 'Include Specials',
 			'downloads.howManyEpisodes' => 'How many episodes?',
 			'downloads.invalidEpisodeCount' => 'Enter a valid episode count.',
@@ -10395,10 +10403,10 @@ extension on Translations {
 			'videoSettings.playbackSpeed' => 'Playback Speed',
 			'videoSettings.normalSpeed' => 'Normal',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Active (${duration})',
-			'videoSettings.zoom' => 'Zoom',
-			'videoSettings.sleepTimer' => 'Sleep Timer',
 			_ => null,
 		} ?? switch (path) {
+			'videoSettings.zoom' => 'Zoom',
+			'videoSettings.sleepTimer' => 'Sleep Timer',
 			'videoSettings.audioSync' => 'Audio Sync',
 			'videoSettings.subtitleSync' => 'Subtitle Sync',
 			'videoSettings.hdr' => 'HDR',

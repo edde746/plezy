@@ -24,12 +24,14 @@ void main() {
                   selected = await showOptionPickerDialog<String>(
                     context,
                     title: 'Download',
-                    toggle: (
-                      label: 'Include Specials',
-                      icon: Symbols.star_rounded,
-                      value: includeSpecials,
-                      onChanged: (value) => includeSpecials = value,
-                    ),
+                    toggles: [
+                      (
+                        label: 'Include Specials',
+                        icon: Symbols.star_rounded,
+                        value: includeSpecials,
+                        onChanged: (value) => includeSpecials = value,
+                      ),
+                    ],
                     options: [
                       (icon: Symbols.download_rounded, label: 'All Episodes', value: 'all'),
                       (icon: Symbols.visibility_off_rounded, label: 'Unwatched Only', value: 'unwatched'),

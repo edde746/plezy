@@ -1,5 +1,6 @@
 import 'dart:async';
 import '../media/ids.dart';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_backend.dart';
@@ -75,11 +76,7 @@ class SyncReconcileSummary {
   /// Total episodes queued across all rules.
   final int queuedCount;
 
-  const SyncReconcileSummary({
-    this.deletedTitles = const [],
-    this.syncedTitles = const [],
-    this.queuedCount = 0,
-  });
+  const SyncReconcileSummary({this.deletedTitles = const [], this.syncedTitles = const [], this.queuedCount = 0});
 
   int get deletedCount => deletedTitles.length;
 
@@ -1593,6 +1590,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     DownloadVersionConfig? versionConfig,
     DownloadFilter filter = DownloadFilter.all,
     int? maxCount,
+    bool random = false,
     bool includeSpecials = true,
   }) async {
     if (!_downloadManager.downloadsSupported) return 0;
@@ -1642,6 +1640,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
             filter: filter,
             maxCount: maxCount,
             skipExisting: false,
+            random: random,
             includeSpecials: includeSpecials,
           ),
         );
@@ -2056,6 +2055,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     required DownloadFilter filter,
     required int? maxCount,
     required bool skipExisting,
+    bool random = false,
     bool includeSpecials = true,
   }) async {
     final unwatchedOnly = filter == DownloadFilter.unwatched;
@@ -2074,6 +2074,13 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       includeSpecials: effectiveIncludeSpecials,
     );
     if (!_isQueueOwnershipCurrent(ownership)) return 0;
+
+    // Random selection: shuffle the candidate pool so the [maxCount] slice
+    // below picks a random subset instead of release order. Only meaningful
+    // when a count caps the selection.
+    if (random && maxCount != null) {
+      episodes.shuffle(Random());
+    }
 
     int count = 0;
     for (final episode in episodes) {
@@ -2475,6 +2482,11 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       // Don't delete the episode that's currently playing
       if (activeGlobalKey != null && meta.globalKey == activeGlobalKey) continue;
 
+      // Episodes owned by a "download any" sync rule are intentionally kept
+      // regardless of watched state, so the watched-cleanup must skip them —
+      // otherwise the rule would re-download what we just deleted.
+      if (_isKeptByAnyFilterRule(meta)) continue;
+
       try {
         final title = await deleteWatchedDownloadCandidate(globalKey, logContext: 'watched');
         if (title != null) deletedTitles.add(title);
@@ -2484,6 +2496,22 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     }
 
     return deletedTitles;
+  }
+
+  /// Whether [episode]'s parent show or season has an enabled sync rule that
+  /// downloads ALL episodes (watched included). Such rules deliberately retain
+  /// watched downloads, so the watched-cleanup must leave them alone.
+  bool _isKeptByAnyFilterRule(MediaItem episode) {
+    final serverId = episode.serverId;
+    if (serverId == null) return false;
+    for (final ratingKey in [episode.parentId, episode.grandparentId]) {
+      if (ratingKey == null || ratingKey.isEmpty) continue;
+      final rule = _syncRules[syncRuleKeyFor(ServerId(serverId), ratingKey)];
+      if (rule != null && rule.enabled && rule.downloadFilter == SyncRuleFilter.all) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /// All sync rules for the active profile (profile-scoped globalKey -> SyncRuleItem).
@@ -2584,6 +2612,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
     required int episodeCount,
     int mediaIndex = 0,
     String downloadFilter = SyncRuleFilter.unwatched,
+    bool randomEpisodes = false,
     bool includeSpecials = true,
     MediaItem? targetMetadata,
   }) async {
@@ -2599,6 +2628,7 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
       episodeCount: episodeCount,
       mediaIndex: mediaIndex,
       downloadFilter: downloadFilter,
+      randomEpisodes: randomEpisodes,
       includeSpecials: includeSpecials,
     );
 
