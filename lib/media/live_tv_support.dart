@@ -1,4 +1,5 @@
 import 'media_source_info.dart';
+import 'live_tv_timeline.dart';
 import '../models/livetv_capture_buffer.dart';
 import '../models/livetv_channel.dart';
 import '../models/livetv_dvr.dart';
@@ -29,10 +30,10 @@ class LiveProgramInfo {
 ///
 /// - [captureBuffer]: the tuner's seekable history — the coordinate system
 ///   for time-shift offsets and the timeline's range.
-/// - [playbackStream]: the transcode currently feeding the player. Its
-///   `startedAt` is the epoch of stream position zero, i.e. the exact clock
-///   anchor for `epoch = startedAt + player position`. Plex's own client
-///   derives the playhead from this object, not from wall clock (#2100).
+/// - [playbackStream]: server timing for the playback transcode. Its origin
+///   supplies an estimate only: the available evidence does not establish its
+///   equivalence to MPV position zero or the rendered frame's broadcast time.
+///   Source/generation checks are required before adopting it (#2100).
 ///
 /// Either may be null when the backend does not report it.
 class LiveTimelineUpdate {
@@ -42,6 +43,27 @@ class LiveTimelineUpdate {
   const LiveTimelineUpdate({this.captureBuffer, this.playbackStream});
 
   bool get isEmpty => captureBuffer == null && playbackStream == null;
+}
+
+/// Optional absolute-time capability, currently supplied by Plex. Existing
+/// backends retain their playback-session contract and need no stub adapter.
+/// Capture snapshots remain at the session boundary, never in timeline UI.
+abstract interface class LiveTvTimeshiftSession {
+  LiveTvSeekWindow? seekWindow(CaptureBuffer buffer);
+
+  /// Resolve on the backend's playable grid. A null target requests its
+  /// supported live operation. The result is intent, not observed landing.
+  Future<LiveTvSeekRequest?> resolveSeek({
+    required double? targetEpoch,
+    required CaptureBuffer buffer,
+    MediaSubtitleTrack? subtitleTrack,
+  });
+}
+
+class LiveTvSeekRequest {
+  final String url;
+  final double? effectiveTargetEpoch;
+  const LiveTvSeekRequest({required this.url, this.effectiveTargetEpoch});
 }
 
 /// One live-TV playback session, produced by [LiveTvSupport.startPlayback].

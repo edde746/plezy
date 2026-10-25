@@ -3971,6 +3971,24 @@ class Translations$liveTv$en {
 	/// en: 'Unknown Program'
 	String get unknownProgram => 'Unknown Program';
 
+	/// en: 'Live program (playback may be outside this program)'
+	String get timelineLiveProgram => 'Live program (playback may be outside this program)';
+
+	/// en: 'Buffer timeline'
+	String get timelineBuffer => 'Buffer timeline';
+
+	/// en: 'Timeline unavailable'
+	String get timelineUnavailable => 'Timeline unavailable';
+
+	/// en: 'Estimated playback'
+	String get timelineEstimated => 'Estimated playback';
+
+	/// en: 'Pending seek'
+	String get timelinePending => 'Pending seek';
+
+	/// en: 'Schedule may be outdated'
+	String get timelineStale => 'Schedule may be outdated';
+
 	/// en: 'Unknown'
 	String get unknownHub => 'Unknown';
 
@@ -9775,6 +9793,12 @@ extension on Translations {
 			'liveTv.noPrograms' => 'No program data available',
 			'liveTv.liveStreamFailed' => 'Live stream failed',
 			'liveTv.unknownProgram' => 'Unknown Program',
+			'liveTv.timelineLiveProgram' => 'Live program (playback may be outside this program)',
+			'liveTv.timelineBuffer' => 'Buffer timeline',
+			'liveTv.timelineUnavailable' => 'Timeline unavailable',
+			'liveTv.timelineEstimated' => 'Estimated playback',
+			'liveTv.timelinePending' => 'Pending seek',
+			'liveTv.timelineStale' => 'Schedule may be outdated',
 			'liveTv.unknownHub' => 'Unknown',
 			'liveTv.unknownError' => 'Unknown error',
 			'liveTv.channelNumber' => ({required Object number}) => 'Channel ${number}',
@@ -9804,14 +9828,14 @@ extension on Translations {
 			'liveTv.noFavoriteChannelsHint' => 'Show all channels, then long-press a channel to add it to your favorites.',
 			'liveTv.showAllChannels' => 'Show All Channels',
 			'liveTv.favoritesLoadFailed' => 'Could not load favorites. Check your connection and try again.',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.favoritesUpdateFailed' => 'Could not update favorites. Check your connection and try again.',
 			'liveTv.joinSession' => 'Join Session in Progress',
 			'liveTv.watchFromStart' => ({required Object minutes}) => 'Watch from start (${minutes} min ago)',
 			'liveTv.watchLive' => 'Watch Live',
 			'liveTv.goToLive' => 'Go to Live',
 			'liveTv.record' => 'Record',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordEpisode' => 'Record Episode',
 			'liveTv.recordSeries' => 'Record Series',
 			'liveTv.recordOptions' => 'Record Options',
@@ -10318,14 +10342,14 @@ extension on Translations {
 			'videoSettings.audioOutputDolbyAtmos' => 'Dolby Atmos',
 			'videoSettings.audioOutputDolbyAudio' => 'Dolby Audio',
 			'videoSettings.audioOutputSurround' => 'Surround',
+			_ => null,
+		} ?? switch (path) {
 			'videoSettings.audioOutputSpatial' => 'Spatial Audio',
 			'videoSettings.audioOutputStereo' => 'Stereo',
 			'videoSettings.audioNormalization' => 'Normalize Loudness',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Decodes audio to PCM; passthrough is off while this is on',
 			'performanceOverlay.color' => 'Color',
 			'performanceOverlay.performance' => 'Performance',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.buffer' => 'Buffer',
 			'performanceOverlay.app' => 'App',
 			'performanceOverlay.decoder' => 'Decoder',

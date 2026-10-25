@@ -1,8 +1,9 @@
 import 'dart:async';
+import '../media/live_tv_timeline.dart';
 
 /// Inclusive epoch-second window a live seek may target (the capture buffer's
 /// seekable range). `start` ≈ earliest seekable point, `end` ≈ the live edge.
-typedef LiveSeekBounds = ({int start, int end});
+typedef LiveSeekBounds = LiveTvSeekWindow;
 
 /// Relative live skip entry point: accumulates [deltaSeconds] and returns the
 /// seconds actually applied in the direction of the press, or zero — which is
@@ -18,27 +19,27 @@ typedef LiveSeekBy = int Function(int deltaSeconds);
 /// in flight, then debounces the actual re-open so a whole burst collapses
 /// into one [seek] (#1253).
 ///
-/// [seek] completes only after the replacement source's player clock has been
-/// calibrated. The pending target therefore remains authoritative until raw
-/// player position can be mapped back to epoch time without assuming that a
-/// newly opened HLS source starts at position zero (#2100).
+/// [seek] waits for source readiness. Pending targets describe intent only;
+/// the session separately reports playback timing and its accuracy (#2100).
 class LiveSeekAccumulator {
   LiveSeekAccumulator({
     required this.seek,
     required this.currentEpoch,
     required this.bounds,
     this.onChanged,
+    this.seekLive,
     this.debounce = const Duration(milliseconds: 300),
   });
 
   /// Re-open and calibrate the live stream at the target epoch.
   ///
   /// Returns false when URL resolution, open, or clock calibration fails.
-  final Future<bool> Function(int targetEpoch) seek;
+  final Future<bool> Function(double targetEpoch) seek;
+  final Future<bool> Function()? seekLive;
 
   /// The calibrated live playback position as an absolute epoch second, used
   /// as the base for a fresh burst.
-  final int Function() currentEpoch;
+  final double? Function() currentEpoch;
 
   /// Current seekable window, or null when there is no live capture buffer.
   final LiveSeekBounds? Function() bounds;
@@ -50,71 +51,109 @@ class LiveSeekAccumulator {
   /// How long after the last press to wait before executing the seek.
   final Duration debounce;
 
-  int? _pendingEpoch;
+  double? _pendingEpoch;
+  bool _pendingLive = false;
+  bool _previewProgram = false;
+  int _intentGeneration = 0;
+  int get intentGeneration => _intentGeneration;
   Timer? _debounceTimer;
   bool _flushing = false;
   bool _disposed = false;
   int _operationGeneration = 0;
 
   /// The accumulated target while a skip is pending or settling, else null.
-  /// Callers mask their "current position" with this so accumulation and the
-  /// live-edge heartbeat stay correct across the re-open's position lag.
-  int? get pendingEpoch => _pendingEpoch;
+  /// Presentation must render this separately from observed playback.
+  double? get pendingEpoch => _pendingEpoch;
 
-  /// Accumulate a relative skip of [deltaSeconds] and (re)arm the debounce.
-  ///
-  /// Returns the seconds actually applied in the direction of the press: the
-  /// distance from the current base to the target the window let through.
-  /// Zero when there is no seekable window, when the target is already pinned
-  /// at an edge — the common fast-forward-at-live-edge press — or when a window
-  /// that moved under a pending burst drags the target against the press, so a
-  /// readout announcing this never promises travel that is not going to happen
-  /// and never counts a rewind that actually went forward (#2425).
-  ///
-  /// The base is the raw epoch and it caps the target, not the window's `end`:
-  /// unlike a VOD duration, the window is only as fresh as the 10s heartbeat,
-  /// so at the live edge the playhead routinely runs a few seconds past `end`
-  /// while genuinely sitting inside the buffer. A rewind from there really does
-  /// travel the full step, and one shorter than the overshoot must not clamp
-  /// back onto the origin and vanish; the flush re-clamps against whatever
-  /// window is current by then. Compare `DebouncedSeekAccumulator.seekBy`,
-  /// which measures from the clamped origin for the opposite reason.
-  int seekBy(int deltaSeconds) {
+  /// Remote/keyboard destination used only for program presentation. Remains
+  /// available through debounce and source readiness, then clears on any outcome.
+  double? get programPreviewEpoch => _previewProgram ? _pendingEpoch : null;
+
+  /// Accumulate a relative skip, returning seconds applied in its direction.
+  /// A fresh press at an edge does nothing. A pending burst still follows a
+  /// moving window, but reports zero if that moves it against the press.
+  /// Playback may run past a stale heartbeat's end; preserve a rewind's step
+  /// from that raw position and revalidate against fresh bounds at dispatch.
+  int seekBy(int deltaSeconds, {bool previewProgram = false}) {
     if (_disposed) return 0;
     final window = bounds();
-    if (window == null) return 0;
-
+    if (window == null || !window.isValid) return 0;
     final base = _pendingEpoch ?? currentEpoch();
-    final ceiling = base > window.end ? base : window.end;
-    final target = (base + deltaSeconds).clamp(window.start, ceiling);
+    if (base == null) return 0;
+    final ceiling = base > window.endEpoch ? base : window.endEpoch;
+    final target = (base + deltaSeconds).clamp(window.startEpoch, ceiling).toDouble();
     final travelled = target - base;
-    final applied = travelled.sign == deltaSeconds.sign ? travelled : 0;
-    // Do not rebuild the stream when a fresh press applies nothing (most
-    // commonly fast-forward at live edge). Once a burst has a pending target,
-    // keep its normal debounce semantics: the pin follows the clamp so it lands
-    // where the flush would anyway.
-    if (_pendingEpoch == null && applied == 0) return 0;
-    if (target != _pendingEpoch) {
-      _pendingEpoch = target;
-      onChanged?.call();
+    final applied = travelled.sign == deltaSeconds.sign ? travelled.truncate() : 0;
+    if (_pendingEpoch == null && (travelled == 0 || travelled.sign != deltaSeconds.sign)) return 0;
+    if (_pendingEpoch == target && !_pendingLive) {
+      if (_previewProgram != previewProgram) {
+        _previewProgram = previewProgram;
+        onChanged?.call();
+      }
+      return 0;
     }
-
+    _intentGeneration++;
+    _pendingLive = false;
+    _previewProgram = previewProgram;
+    _pendingEpoch = target;
+    onChanged?.call();
     _debounceTimer?.cancel();
     _debounceTimer = Timer(debounce, () => unawaited(_flush()));
     return applied;
   }
 
+  /// Absolute scrubs share pending ownership with skips and return-to-live.
+  void seekTo(double targetEpoch) {
+    final window = bounds();
+    if (_disposed || window == null || !window.isValid || !targetEpoch.isFinite) return;
+    _intentGeneration++;
+    _pendingEpoch = window.target(targetEpoch);
+    _pendingLive = false;
+    _previewProgram = false;
+    onChanged?.call();
+    unawaited(_flush());
+  }
+
+  /// Live is a backend operation, allowed even if old seek bounds are stale.
+  /// Its preview is explicitly pending; it is never confirmed playback.
+  void jumpToLive({double? previewEpoch}) {
+    final target = bounds()?.endEpoch ?? previewEpoch;
+    if (_disposed || seekLive == null || target == null || !target.isFinite) return;
+    _intentGeneration++;
+    _pendingEpoch = target;
+    _pendingLive = true;
+    _previewProgram = false;
+    onChanged?.call();
+    unawaited(_flush());
+  }
+
   Future<void> _flush() async {
     if (_flushing || _disposed) return;
-    final target = _pendingEpoch;
-    if (target == null) return;
+    final requested = _pendingEpoch;
+    final window = bounds();
+    if (requested == null) return;
+    if (!_pendingLive && (window == null || !window.isValid)) {
+      cancel();
+      return;
+    }
+    final target = _pendingLive ? requested : window!.target(requested)!;
+    if (_pendingEpoch != target) {
+      _pendingEpoch = target;
+      onChanged?.call();
+    }
+    final live = _pendingLive;
+    final intentGeneration = _intentGeneration;
     // We're committing to this seek; don't let a stale debounce double-fire it.
     _debounceTimer?.cancel();
 
     _flushing = true;
     final operationGeneration = _operationGeneration;
     try {
-      await seek(target);
+      if (live && seekLive != null) {
+        await seekLive!();
+      } else {
+        await seek(target);
+      }
     } catch (_) {
       // The source owns any remaining clock uncertainty. A failed re-open
       // must still hand off to newer input or release this burst's target.
@@ -128,7 +167,7 @@ class LiveSeekAccumulator {
     // A press landed during the network round-trip + calibration. Its
     // debounce may already have fired while we were flushing, so dispatch
     // it after every terminal outcome, not only a successful calibration.
-    if (_pendingEpoch != target) {
+    if (_intentGeneration != intentGeneration) {
       unawaited(_flush());
       return;
     }
@@ -136,6 +175,7 @@ class LiveSeekAccumulator {
     // Success calibrated the source; failure leaves uncertainty with the
     // source clock. Neither outcome should keep this completed burst pinned.
     _pendingEpoch = null;
+    _previewProgram = false;
     onChanged?.call();
   }
 
@@ -143,10 +183,12 @@ class LiveSeekAccumulator {
   /// replaced (channel switch, retry) or superseded by an absolute seek, so a
   /// stale debounced seek can't fire against the new stream.
   void cancel() {
+    _intentGeneration++;
     _operationGeneration++;
     _debounceTimer?.cancel();
     _debounceTimer = null;
     _flushing = false;
+    _previewProgram = false;
     if (_pendingEpoch != null) {
       _pendingEpoch = null;
       onChanged?.call();
