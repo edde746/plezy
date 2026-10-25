@@ -43,6 +43,8 @@ class SkipMarkerButton extends StatelessWidget {
     String baseButtonText;
     if (showNextEpisode) {
       baseButtonText = t.videoControls.nextEpisode;
+    } else if (marker.isCommercial) {
+      baseButtonText = t.videoControls.skipAds;
     } else if (isCredits) {
       baseButtonText = t.videoControls.skipCredits;
     } else {

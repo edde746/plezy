@@ -132,7 +132,7 @@ On arm64, install `plezy-linux-arm64.flatpak`.
 - Online subtitle search & download[^plex]
 - Audio & subtitle choices remembered per title, or follow the server's per-episode selections
 - Progress sync and resume
-- Auto-play next episode with skip intro / skip credits
+- Auto-play next episode, with configurable skipping for intros, credits, and Plex-detected commercial markers
 - Chapter navigation with thumbnail scrub previews
 - Playback speed from 0.25x to 8x, audio sync offset, sleep timer (fixed durations or end of video)
 - Video zoom 50-200% with pinch, presets, and hotkeys
@@ -147,7 +147,8 @@ On arm64, install `plezy-linux-arm64.flatpak`.
 - Music libraries — artist, album, and track browsing with square artwork
 - Album and artist screens with play, shuffle, and Instant Mix
 - Gapless playback with a full play queue — reorder, remove, play next, add to queue
-- Now Playing with synced lyrics[^lyrics], persistent mini-player, and sleep timer
+- Now Playing with synced lyrics[^lyrics], a loudness visualizer, persistent mini-player, and sleep timer
+- Opt-in loudness-aware fades between non-album tracks when Plex provides analysis
 - Background playback with lock-screen, media-key, and notification controls[^bgaudio]
 - Offline playback of downloaded albums and tracks
 - Streaming quality presets — Original, 320, 192, or 128 kbps

@@ -174,6 +174,34 @@ class MediaAudioTrack with _TrackLabelMixin {
   }
 }
 
+/// Loudness samples returned by Plex Media Server, where each entry represents
+/// a point along the audio stream. The server may downsample the profile, so
+/// consumers map playback position across [levelsDb] rather than assuming a
+/// fixed number of samples per second.
+class AudioLoudnessProfile {
+  AudioLoudnessProfile({required List<double> levelsDb, required this.totalSamples})
+    : levelsDb = List<double>.unmodifiable(levelsDb);
+
+  final List<double> levelsDb;
+
+  /// Number of samples in the original server analysis, before subsampling.
+  final int totalSamples;
+
+  bool get isEmpty => levelsDb.isEmpty;
+
+  /// Interpolated dB level at [position], or null when the track duration or
+  /// profile is unavailable.
+  double? levelAt(Duration position, Duration duration) {
+    if (levelsDb.isEmpty || duration <= Duration.zero) return null;
+    final progress = (position.inMicroseconds / duration.inMicroseconds).clamp(0.0, 1.0).toDouble();
+    final samplePosition = progress * (levelsDb.length - 1);
+    final lower = samplePosition.floor();
+    final upper = (lower + 1).clamp(0, levelsDb.length - 1).toInt();
+    final fraction = samplePosition - lower;
+    return levelsDb[lower] + (levelsDb[upper] - levelsDb[lower]) * fraction;
+  }
+}
+
 class MediaSubtitleTrack with _TrackLabelMixin {
   @override
   final int id;
@@ -358,7 +386,14 @@ class MediaMarker {
   Duration get startTime => Duration(milliseconds: startTimeOffset);
   Duration get endTime => Duration(milliseconds: endTimeOffset);
 
-  bool get isCredits => type == 'credits';
+  String get _normalizedType => type.trim().toLowerCase();
+
+  bool get isCredits => _normalizedType == 'credits';
+  bool get isIntro => _normalizedType == 'intro';
+
+  /// Commercial markers are server-detected. Chapter-title fallback never
+  /// synthesizes this marker type.
+  bool get isCommercial => const {'commercial', 'ad', 'advertisement'}.contains(_normalizedType);
 
   bool containsPosition(Duration position) {
     final posMs = position.inMilliseconds;
@@ -470,7 +505,7 @@ class PlaybackExtras {
     if (markers.isNotEmpty) {
       // Reclassify markers with non-standard types against the patterns.
       final reclassified = markers.map((m) {
-        if (m.type == 'intro' || m.type == 'credits') return m;
+        if (m.isIntro || m.isCredits || m.isCommercial) return m;
         final newType = _classifyChapterTitle(m.type, introPattern, creditsPattern);
         if (newType != null) {
           return MediaMarker(

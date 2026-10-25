@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 
 import '../../media/lyrics.dart';
 import '../../media/media_item.dart';
+import '../../media/media_source_info.dart';
 import '../playback_launch_observer.dart';
 
 /// Repeat behavior of the music queue.
@@ -14,6 +15,13 @@ enum MusicPlaybackStatus { idle, loading, playing, paused, error }
 /// artist/playlist/mix provenance stable, while album and ad-hoc queues use
 /// the active track's album for the "Playing from …" line.
 enum MusicPlayContextKind { album, artist, playlist, mix, tracks }
+
+/// Optional playback-service capability for the Now Playing visualizer.
+/// Backends without analyzed loudness data can keep implementing only
+/// [MusicPlaybackService].
+abstract interface class MusicLoudnessProfileService {
+  Future<AudioLoudnessProfile?> loadCurrentTrackLoudnessProfile();
+}
 
 /// Outcome of [MusicPlaybackService.playInstantMix]. Fetch failures throw
 /// instead of surfacing here; [superseded] means a newer play request claimed

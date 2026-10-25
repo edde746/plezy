@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io' show Platform;
 import 'dart:math';
 
-import 'package:flutter/foundation.dart' show ValueListenable, visibleForTesting;
+import 'package:flutter/foundation.dart' show Listenable, ValueListenable, visibleForTesting;
 import 'package:flutter/widgets.dart';
 import 'package:os_media_controls/os_media_controls.dart';
 
@@ -12,6 +12,7 @@ import '../../media/ids.dart';
 import '../../media/lyrics.dart';
 import '../../media/media_item.dart';
 import '../../media/media_server_client.dart';
+import '../../media/media_source_info.dart';
 import '../../models/companion_remote/remote_command.dart';
 import '../../mpv/models.dart';
 import '../../mpv/player/player.dart';
@@ -81,7 +82,9 @@ class _PendingResume {
 /// Player/resolver failures surface on [errors] (for a snackbar) and
 /// auto-skip to the next track; three consecutive failures without playback
 /// progress stop the session with [MusicPlaybackStatus.error].
-class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingObserver {
+class MusicPlaybackServiceImpl extends MusicPlaybackService
+    with WidgetsBindingObserver
+    implements MusicLoudnessProfileService {
   MusicPlaybackServiceImpl({
     required MultiServerManager serverManager,
     AppDatabase? database,
@@ -118,6 +121,11 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       CarUxRestrictionsService.instance.listenable.addListener(_onCarRestrictionsChanged);
       _observesCarRestrictions = true;
     }
+    final settings = SettingsService.instanceOrNull;
+    if (settings != null) {
+      _sweetFadesSettingsListenable = settings.listenable(SettingsService.musicSweetFades)
+        ..addListener(_onSweetFadesPreferenceChanged);
+    }
     if (_sessionStore != null) unawaited(_maybeRestoreSession());
   }
 
@@ -146,6 +154,16 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   final Duration _positionPersistInterval;
 
   final MusicQueueController _queue;
+
+  /// Bounded per-service cache. The endpoint is optional and profiles are
+  /// small (at most 512 samples), so keeping a few recent queue items avoids
+  /// repeat requests without persisting server-derived data across sessions.
+  final Map<String, Future<AudioLoudnessProfile?>> _loudnessProfileRequests = {};
+  final Map<String, AudioLoudnessProfile?> _loadedLoudnessProfiles = {};
+  AudioLoudnessProfile? _currentLoudnessProfile;
+  bool _fadeCurrentTrackIn = false;
+  double _musicGain = 1;
+  Listenable? _sweetFadesSettingsListenable;
 
   /// Persisted music volume (0–100), applied to every audio player instance
   /// (the core is recreated after video claims playback). Falls back to full
@@ -650,6 +668,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     if (!_isCurrentArmRequest(player, generation, armRequest)) return;
     final armed = _ArmedTrack(track: target, source: source);
     _armed = armed;
+    if (_sweetFadesEnabled) unawaited(_loadLoudnessProfile(source));
     appLogger.d('Music: arming cursor $targetCursor "${target.title}"');
     final ok = await _trySetNext(player, Media(source.url, headers: source.headers));
     if (!ok && identical(_armed, armed)) {
@@ -751,7 +770,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       await player.setLogLevel(debugLogging ? 'v' : 'warn');
     }
     if (isNew && _player == player && !player.disposed && _volume != 100.0) {
-      unawaited(player.setVolume(_volume));
+      unawaited(player.setVolume(_volume * _musicGain));
     }
     if (isNew && _player == player && !player.disposed) await _applyAudioPassthrough(player);
     if (isNew && _player == player && !player.disposed) await _applyAudioOutputDevice(player);
@@ -831,6 +850,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
 
   void _onPosition(Duration position) {
     _positionController.add(position);
+    _updateSweetFade(position);
     // Real playback progress proves the pipeline recovered — reset the
     // consecutive-failure strike counter.
     if (_consecutiveFailures != 0 && position > Duration.zero && _status == MusicPlaybackStatus.playing) {
@@ -940,7 +960,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       unawaited(_player?.pause());
       _setStatus(MusicPlaybackStatus.paused, forceNotify: true);
     }
-    _bindTrackServices(_currentTrack!, adopted.source);
+    _bindTrackServices(_currentTrack!, adopted.source, fadeIn: true);
     _requestArmNext();
   }
 
@@ -1044,11 +1064,34 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
   /// Discord presence — the music mirror of the video screen's
   /// `_wirePerItemPlaybackServices`. The previous track must already be
   /// finalized.
-  void _bindTrackServices(MediaItem track, MusicSource source) {
+  void _bindTrackServices(MediaItem track, MusicSource source, {bool fadeIn = false}) {
     _tracker?.dispose();
     _tracker = null;
     final player = _player;
     if (player == null) return;
+
+    final profileKey = _loudnessProfileCacheKey(source);
+    _currentLoudnessProfile = profileKey == null ? null : _loadedLoudnessProfiles[profileKey];
+    final trackDuration = duration ?? Duration.zero;
+    final trackHeadLevel = _currentLoudnessProfile?.levelAt(const Duration(milliseconds: 300), trackDuration);
+    _fadeCurrentTrackIn =
+        fadeIn &&
+        _sweetFadesEnabled &&
+        _playContext?.kind != MusicPlayContextKind.album &&
+        !source.isOffline &&
+        trackDuration >= const Duration(seconds: 6) &&
+        trackHeadLevel != null &&
+        trackHeadLevel > -48;
+    _setMusicGain(_fadeCurrentTrackIn ? 0 : 1, force: true);
+    if (_sweetFadesEnabled) {
+      unawaited(
+        _loadLoudnessProfile(source).then((profile) {
+          if (_disposed || !identical(_currentSource, source)) return;
+          _currentLoudnessProfile = profile;
+          _updateSweetFade(player.currentPosition);
+        }),
+      );
+    }
 
     // Every music bind starts its track at the top, but on a gapless advance
     // the player's state still carries the *finished* track's position and
@@ -1137,6 +1180,156 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       onSkipBackward: () => unawaited(_seekRelative(-_defaultSkipInterval)),
     )..register();
     CompanionRemoteReceiver.instance.musicTransport = _remoteTransport;
+  }
+
+  @override
+  Future<AudioLoudnessProfile?> loadCurrentTrackLoudnessProfile() {
+    final source = _currentSource;
+    return source == null ? Future.value(null) : _loadLoudnessProfile(source);
+  }
+
+  String? _loudnessProfileCacheKey(MusicSource source) {
+    if (source.isOffline) return null;
+    final client = source.reportingClient;
+    if (client == null || client is! PlexLoudnessProfileClient) return null;
+    if (client.isOfflineMode) return null;
+    final tracks = source.mediaInfo?.audioTracks;
+    if (tracks == null) return null;
+    for (final track in tracks) {
+      if (track.selected) return '${client.serverId}:${track.id}';
+    }
+    return null;
+  }
+
+  Future<AudioLoudnessProfile?> _loadLoudnessProfile(MusicSource source) {
+    final client = source.reportingClient;
+    if (source.isOffline || client == null || client is! PlexLoudnessProfileClient) return Future.value(null);
+    final profileClient = client as PlexLoudnessProfileClient;
+    if (client.isOfflineMode) return Future.value(null);
+    final tracks = source.mediaInfo?.audioTracks;
+    if (tracks == null) return Future.value(null);
+    MediaAudioTrack? selectedTrack;
+    for (final track in tracks) {
+      if (track.selected) {
+        selectedTrack = track;
+        break;
+      }
+    }
+    if (selectedTrack == null) return Future.value(null);
+
+    final key = '${client.serverId}:${selectedTrack.id}';
+    final cached = _loudnessProfileRequests[key];
+    if (cached != null) return cached;
+    if (_loudnessProfileRequests.length >= 24) {
+      final oldestKey = _loudnessProfileRequests.keys.first;
+      _loudnessProfileRequests.remove(oldestKey);
+      _loadedLoudnessProfiles.remove(oldestKey);
+    }
+
+    final request = profileClient
+        .fetchAudioLoudnessProfile(selectedTrack.id)
+        .then<AudioLoudnessProfile?>(
+          (profile) {
+            if (!_disposed) _loadedLoudnessProfiles[key] = profile;
+            return profile;
+          },
+          onError: (Object _, StackTrace _) {
+            if (!_disposed) _loadedLoudnessProfiles[key] = null;
+            appLogger.d('Music loudness profile unavailable');
+            return null;
+          },
+        );
+    _loudnessProfileRequests[key] = request;
+    return request;
+  }
+
+  bool get _sweetFadesEnabled => SettingsService.instanceOrNull?.read(SettingsService.musicSweetFades) ?? false;
+
+  void _onSweetFadesPreferenceChanged() {
+    if (_disposed) return;
+    if (!_sweetFadesEnabled) {
+      _fadeCurrentTrackIn = false;
+      _setMusicGain(1, force: true);
+    } else {
+      final source = _currentSource;
+      if (source != null) {
+        unawaited(
+          _loadLoudnessProfile(source).then((profile) {
+            if (_disposed || !identical(_currentSource, source)) return;
+            _currentLoudnessProfile = profile;
+            _updateSweetFade(_player?.currentPosition ?? Duration.zero);
+          }),
+        );
+      }
+      final armedSource = _armed?.source;
+      if (armedSource != null) unawaited(_loadLoudnessProfile(armedSource));
+      _updateSweetFade(_player?.currentPosition ?? Duration.zero);
+    }
+  }
+
+  /// Applies a short, loudness-aware envelope at the edges of non-album
+  /// tracks. The profile avoids fading a naturally quiet opening or ending;
+  /// this leaves the existing gapless player and playback reporting intact.
+  void _updateSweetFade(Duration position) {
+    final source = _currentSource;
+    final profile = _currentLoudnessProfile;
+    if (!_sweetFadesEnabled ||
+        _playContext?.kind == MusicPlayContextKind.album ||
+        source == null ||
+        source.isOffline ||
+        profile == null) {
+      _fadeCurrentTrackIn = false;
+      _setMusicGain(1);
+      return;
+    }
+
+    final trackDuration = duration ?? Duration.zero;
+    const fadeDuration = Duration(milliseconds: 1800);
+    if (trackDuration < const Duration(seconds: 6)) {
+      _fadeCurrentTrackIn = false;
+      _setMusicGain(1);
+      return;
+    }
+
+    final headLevel = profile.levelAt(const Duration(milliseconds: 300), trackDuration);
+    final tailPosition = trackDuration - const Duration(milliseconds: 300);
+    final tailLevel = profile.levelAt(tailPosition, trackDuration);
+    var gain = 1.0;
+
+    if (_fadeCurrentTrackIn) {
+      if (headLevel == null || headLevel <= -48) {
+        _fadeCurrentTrackIn = false;
+      } else if (position < fadeDuration) {
+        final progress = (position.inMicroseconds / fadeDuration.inMicroseconds).clamp(0.0, 1.0).toDouble();
+        gain = sin(progress * pi / 2);
+      } else {
+        _fadeCurrentTrackIn = false;
+      }
+    }
+
+    final hasNextTrack = !_sleepTimerEndOfTrack && _queue.nextIndex() != null;
+    if (hasNextTrack && tailLevel != null && tailLevel > -48) {
+      final remaining = trackDuration - position;
+      if (remaining < fadeDuration) {
+        final progress = (remaining.inMicroseconds / fadeDuration.inMicroseconds).clamp(0.0, 1.0).toDouble();
+        gain = min(gain, sin(progress * pi / 2));
+      }
+    }
+    _setMusicGain(gain);
+  }
+
+  void _setMusicGain(double gain, {bool force = false}) {
+    final normalized = gain.clamp(0.0, 1.0).toDouble();
+    if (!force && (normalized - _musicGain).abs() < 0.01) return;
+    _musicGain = normalized;
+    final player = _player;
+    if (player == null || player.disposed) return;
+    final effectiveVolume = (_volume * normalized).clamp(0.0, 100.0).toDouble();
+    unawaited(
+      player.setVolume(effectiveVolume).catchError((Object _) {
+        appLogger.d('Music fade volume update failed');
+      }),
+    );
   }
 
   bool _handleRemoteTransport(RemoteCommandType type) {
@@ -1554,7 +1747,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     if (clamped != _volume) {
       _volume = clamped;
       _volumeNotifier.value = clamped;
-      playerUpdate = _player?.setVolume(clamped);
+      playerUpdate = _player?.setVolume(clamped * _musicGain);
     }
 
     final persistence = persist ? _persistVolume(clamped) : null;
@@ -1767,6 +1960,9 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     _queue.clear();
     _currentTrack = null;
     _currentSource = null;
+    _currentLoudnessProfile = null;
+    _fadeCurrentTrackIn = false;
+    _musicGain = 1;
     _armed = null;
     _staleArm = null;
     _playContext = null;
@@ -2009,6 +2205,8 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
       CarUxRestrictionsService.instance.listenable.removeListener(_onCarRestrictionsChanged);
       _observesCarRestrictions = false;
     }
+    _sweetFadesSettingsListenable?.removeListener(_onSweetFadesPreferenceChanged);
+    _sweetFadesSettingsListenable = null;
     _coordinator.unregisterMusicSession(_stopForVideoClaim);
     _cancelTimersAndFinalizeTrack();
     // Runs to completion synchronously — see the awaitStop: false contract.
@@ -2016,6 +2214,8 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService with WidgetsBindingO
     unawaited(_positionController.close());
     unawaited(_playheadJumpController.close());
     unawaited(_errorsController.close());
+    _loudnessProfileRequests.clear();
+    _loadedLoudnessProfiles.clear();
     _volumeNotifier.dispose();
     super.dispose();
   }

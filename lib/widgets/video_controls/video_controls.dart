@@ -170,9 +170,11 @@ MediaSubtitleTrack? findDownloadedExternalSubtitleTrack(
   // Plex downloaded subtitles have a `key` but aren't marked as `isExternalFile`.
   // Include tracks with a non-empty `key` as potential downloaded subtitles.
   final externalFileCandidates = tracks
-      .where((track) => 
-          (track.isExternalFile || (track.key != null && track.key!.isNotEmpty)) 
-          && track.id != currentSelectedSourceId)
+      .where(
+        (track) =>
+            (track.isExternalFile || (track.key != null && track.key!.isNotEmpty)) &&
+            track.id != currentSelectedSourceId,
+      )
       .toList(growable: false);
   if (externalFileCandidates.isEmpty) return null;
 
@@ -925,8 +927,13 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   // Position subscription for marker tracking
   StreamSubscription<Duration>? _positionSubscription;
   // Skip-marker state
-  SkipMarkerMode _skipModeFor(MediaMarker marker) =>
-      _settings.read(marker.isCredits ? SettingsService.skipCreditsMode : SettingsService.skipIntroMode);
+  SkipMarkerMode _skipModeFor(MediaMarker marker) => _settings.read(
+    marker.isCommercial
+        ? SettingsService.skipAdsMode
+        : marker.isCredits
+        ? SettingsService.skipCreditsMode
+        : SettingsService.skipIntroMode,
+  );
   int get _autoSkipDelay => _settings.read(SettingsService.autoSkipDelay);
   Timer? _autoSkipTimer;
   final ValueNotifier<double> _autoSkipProgress = ValueNotifier<double>(0.0);
@@ -1018,6 +1025,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
       SettingsService.rotationLocked,
       SettingsService.skipIntroMode,
       SettingsService.skipCreditsMode,
+      SettingsService.skipAdsMode,
       SettingsService.autoSkipDelay,
       SettingsService.videoPlayerNavigationEnabled,
       SettingsService.showPerformanceOverlay,
@@ -1029,6 +1037,7 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
     // prompt now, not on the next position tick (paused playback never ticks).
     bindEffect(SettingsService.skipIntroMode, (_) => _syncCurrentMarkerForCurrentPosition(), fireImmediately: false);
     bindEffect(SettingsService.skipCreditsMode, (_) => _syncCurrentMarkerForCurrentPosition(), fireImmediately: false);
+    bindEffect(SettingsService.skipAdsMode, (_) => _syncCurrentMarkerForCurrentPosition(), fireImmediately: false);
     _releaseChromeListener = bindListenable(widget.chromeController, _onChromeChanged);
     _releaseSyncOffsetsListener = bindListenable(PlayerSyncOffsets.of(widget.player), _onSyncOffsetsChanged);
     _configureChromeController();

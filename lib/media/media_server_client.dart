@@ -83,6 +83,12 @@ abstract interface class GracefullyCloseable {
   Future<void> closeGracefully({Duration drainTimeout});
 }
 
+/// Optional Plex-only capability for client features that can use server
+/// loudness analysis without widening the backend-neutral media API.
+abstract interface class PlexLoudnessProfileClient {
+  Future<AudioLoudnessProfile?> fetchAudioLoudnessProfile(int streamId);
+}
+
 /// Per-leg outcome sink for hub fetches.
 ///
 /// Home rows are best-effort by design: a hub leg that fails degrades to an

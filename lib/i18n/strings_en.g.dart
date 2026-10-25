@@ -1061,6 +1061,27 @@ class Translations$settings$en {
 	/// en: 'Skip credits automatically and play the next episode'
 	String get skipCreditsModeAutoDescription => 'Skip credits automatically and play the next episode';
 
+	/// en: 'Skip Ads'
+	String get skipAdsMode => 'Skip Ads';
+
+	/// en: 'Play detected ads normally without a skip button'
+	String get skipAdsModeOffDescription => 'Play detected ads normally without a skip button';
+
+	/// en: 'Show a skip button when Plex detects an ad'
+	String get skipAdsModeButtonDescription => 'Show a skip button when Plex detects an ad';
+
+	/// en: 'Skip detected ads automatically after the delay below'
+	String get skipAdsModeAutoDescription => 'Skip detected ads automatically after the delay below';
+
+	/// en: 'Music Playback'
+	String get musicPlayback => 'Music Playback';
+
+	/// en: 'Sweet Fades'
+	String get musicSweetFades => 'Sweet Fades';
+
+	/// en: 'Fade music at track edges when Plex has loudness data. Album playback stays unchanged.'
+	String get musicSweetFadesDescription => 'Fade music at track edges when Plex has loudness data. Album playback stays unchanged.';
+
 	/// en: 'Off'
 	String get skipMarkerModeOff => 'Off';
 
@@ -2577,6 +2598,9 @@ class Translations$videoControls$en {
 
 	/// en: 'Skip Credits'
 	String get skipCredits => 'Skip Credits';
+
+	/// en: 'Skip Ads'
+	String get skipAds => 'Skip Ads';
 
 	/// en: 'Next Episode'
 	String get nextEpisode => 'Next Episode';
@@ -4435,6 +4459,15 @@ class Translations$music$en {
 
 	/// en: 'Lyrics'
 	String get lyrics => 'Lyrics';
+
+	/// en: 'Visualizer'
+	String get visualizer => 'Visualizer';
+
+	/// en: 'Loading visualizer…'
+	String get visualizerLoading => 'Loading visualizer…';
+
+	/// en: 'Loudness data is unavailable for this track'
+	String get visualizerUnavailable => 'Loudness data is unavailable for this track';
 
 	/// en: 'No lyrics available'
 	String get noLyrics => 'No lyrics available';
@@ -8698,6 +8731,13 @@ extension on Translations {
 			'settings.skipCreditsModeOffDescription' => 'Play credits normally without a skip button',
 			'settings.skipCreditsModeButtonDescription' => 'Show a skip button when credits start',
 			'settings.skipCreditsModeAutoDescription' => 'Skip credits automatically and play the next episode',
+			'settings.skipAdsMode' => 'Skip Ads',
+			'settings.skipAdsModeOffDescription' => 'Play detected ads normally without a skip button',
+			'settings.skipAdsModeButtonDescription' => 'Show a skip button when Plex detects an ad',
+			'settings.skipAdsModeAutoDescription' => 'Skip detected ads automatically after the delay below',
+			'settings.musicPlayback' => 'Music Playback',
+			'settings.musicSweetFades' => 'Sweet Fades',
+			'settings.musicSweetFadesDescription' => 'Fade music at track edges when Plex has loudness data. Album playback stays unchanged.',
 			'settings.skipMarkerModeOff' => 'Off',
 			'settings.skipMarkerModeButton' => 'Show button',
 			'settings.skipMarkerModeAuto' => 'Automatic',
@@ -8854,6 +8894,8 @@ extension on Translations {
 			'settings.scopeAspectRatio' => 'Aspect Ratio',
 			'settings.scopeSyncOffsets' => 'Audio & Subtitle Sync',
 			'settings.playerScopeOff' => 'Don\'t save',
+			_ => null,
+		} ?? switch (path) {
 			'settings.playerScopeGlobal' => 'Everywhere',
 			'settings.playerScopeLibrary' => 'Per library',
 			'settings.playerScopeTitle' => 'Per show or movie',
@@ -8861,8 +8903,6 @@ extension on Translations {
 			'themeEditor.builtIn' => 'Built-in',
 			'themeEditor.presets' => 'Presets',
 			'themeEditor.custom' => 'Custom',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.customEmpty' => 'Not created yet',
 			'themeEditor.editCustom' => 'Edit custom theme',
 			'themeEditor.editCustomDescription' => 'Choose every color yourself',
@@ -9219,6 +9259,7 @@ extension on Translations {
 			'videoControls.searchLanguages' => 'Search languages...',
 			'videoControls.skipIntro' => 'Skip Intro',
 			'videoControls.skipCredits' => 'Skip Credits',
+			'videoControls.skipAds' => 'Skip Ads',
 			'videoControls.nextEpisode' => 'Next Episode',
 			'videoControls.subtitleTrack' => ({required Object n}) => 'Track ${n}',
 			'videoControls.subtitleFile' => ({required Object name}) => 'Subtitle ${name}',
@@ -9367,6 +9408,8 @@ extension on Translations {
 			'profiles.setPin' => 'Set PIN',
 			'profiles.setPinTitle' => 'Set PIN',
 			'profiles.confirmPinTitle' => 'Confirm PIN',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.pinSet' => 'PIN set',
 			'profiles.changePin' => 'Change',
 			'profiles.removePin' => 'Remove',
@@ -9375,8 +9418,6 @@ extension on Translations {
 			'profiles.deleteProfileButton' => 'Delete profile',
 			'profiles.noConnectionsHint' => 'No connections — add one to use this profile.',
 			'profiles.noConnections' => 'No connections',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.plexHomeAccount' => 'Plex Home account',
 			'profiles.plexAccountChip' => ({required Object account}) => 'Plex account: ${account}',
 			'profiles.plexAccountUserChip' => ({required Object user, required Object account}) => '${user} via ${account}',
@@ -9881,6 +9922,8 @@ extension on Translations {
 			'liveTv.reloadGuide' => 'Reload Guide',
 			'liveTv.searchGuide' => 'Search Guide',
 			'liveTv.searchHint' => 'Search channels & programs',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.searchNoResults' => ({required Object query}) => 'No matches for "${query}"',
 			'liveTv.channelsSection' => 'Channels',
 			'liveTv.programsSection' => 'Programs',
@@ -9889,8 +9932,6 @@ extension on Translations {
 			'liveTv.tomorrow' => 'Tomorrow',
 			'liveTv.midnight' => 'Midnight',
 			'liveTv.overnight' => 'Overnight',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.morning' => 'Morning',
 			'liveTv.daytime' => 'Daytime',
 			'liveTv.evening' => 'Evening',
@@ -10016,6 +10057,9 @@ extension on Translations {
 			'music.queue' => 'Queue',
 			'music.clearQueue' => 'Clear queue',
 			'music.lyrics' => 'Lyrics',
+			'music.visualizer' => 'Visualizer',
+			'music.visualizerLoading' => 'Loading visualizer…',
+			'music.visualizerUnavailable' => 'Loudness data is unavailable for this track',
 			'music.noLyrics' => 'No lyrics available',
 			'music.sleepTimer' => 'Sleep timer',
 			'music.sleepTimerEndOfTrack' => 'End of track',
@@ -10392,6 +10436,8 @@ extension on Translations {
 			'companionRemote.remote.audio' => 'Audio',
 			'companionRemote.remote.searchHint' => 'Search on desktop...',
 			'companionRemote.errors.noNetworkInterface' => 'No network interface found',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.errors.authenticationFailed' => 'Authentication failed',
 			'companionRemote.errors.serverStartFailed' => ({required Object error}) => 'Failed to start remote server: ${error}',
 			'companionRemote.errors.commandFailed' => ({required Object error}) => 'Failed to send remote command: ${error}',
@@ -10403,8 +10449,6 @@ extension on Translations {
 			'videoSettings.playbackSpeed' => 'Playback Speed',
 			'videoSettings.normalSpeed' => 'Normal',
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Active (${duration})',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Sleep Timer',
 			'videoSettings.audioSync' => 'Audio Sync',

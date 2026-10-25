@@ -38,6 +38,7 @@ import '../../widgets/app_menu.dart';
 import '../../widgets/media_context_menu.dart';
 import '../../widgets/music/lyrics_view.dart';
 import '../../widgets/music/repeat_mode.dart';
+import '../../widgets/music/music_visualizer.dart';
 import '../../widgets/optimized_media_image.dart';
 import '../../widgets/overlay_sheet.dart';
 import 'queue_sheet.dart';
@@ -69,6 +70,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
   StreamSubscription<Object>? _errorsSub;
 
   bool _showLyrics = false;
+  bool _showVisualizer = false;
   final Map<String, Future<Lyrics?>> _lyricsCache = {};
 
   /// Key for getting a context below this screen's own OverlaySheetHost —
@@ -144,12 +146,22 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
       _lyricsCache.putIfAbsent(track.globalKey, () => context.read<MusicPlaybackService>().fetchLyrics(track));
 
   void _toggleLyrics() {
-    setState(() => _showLyrics = !_showLyrics);
+    setState(() {
+      _showLyrics = !_showLyrics;
+      if (_showLyrics) _showVisualizer = false;
+    });
     if (_showLyrics && InputModeTracker.isKeyboardMode(context)) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && _showLyrics) _lyricsPaneFocusNode.requestFocus();
       });
     }
+  }
+
+  void _toggleVisualizer() {
+    setState(() {
+      _showVisualizer = !_showVisualizer;
+      if (_showVisualizer) _showLyrics = false;
+    });
   }
 
   void _focusTransport() => _playPauseFocusNode.requestFocus();
@@ -556,6 +568,19 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
             onPressed: _toggleLyrics,
           ),
         ),
+        FocusableButton(
+          onPressed: _toggleVisualizer,
+          child: IconButton(
+            icon: AppIcon(
+              Symbols.graphic_eq_rounded,
+              fill: 1,
+              size: 22,
+              color: _showVisualizer ? colorScheme.primary : tk.textMuted,
+            ),
+            tooltip: t.music.visualizer,
+            onPressed: _toggleVisualizer,
+          ),
+        ),
         if (PlatformDetector.isDesktop(context)) ...[const SizedBox(width: 4), _buildVolumeCluster(service)],
       ],
     );
@@ -699,6 +724,15 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                 onExit: _focusTransport,
               ),
             )
+          : _showVisualizer
+          ? KeyedSubtree(
+              key: const ValueKey('now_playing_visualizer'),
+              child: MusicVisualizer(
+                service: service,
+                trackKey: track.globalKey,
+                duration: service.duration ?? Duration.zero,
+              ),
+            )
           : KeyedSubtree(
               key: const ValueKey('now_playing_art'),
               child: _Artwork(track: track, client: client, tvSized: tvArt),
@@ -834,6 +868,18 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
               active: _showLyrics,
               tooltip: t.music.lyrics,
               onPressed: _toggleLyrics,
+              size: 22,
+            ),
+          ),
+          FocusableAction(
+            debugLabel: 'np_visualizer',
+            onPressed: _toggleVisualizer,
+            builder: (context, state) => _transportIcon(
+              state,
+              icon: Symbols.graphic_eq_rounded,
+              active: _showVisualizer,
+              tooltip: t.music.visualizer,
+              onPressed: _toggleVisualizer,
               size: 22,
             ),
           ),

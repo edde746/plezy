@@ -4,6 +4,7 @@
 
 ### Added
 
+- Add configurable skipping for Plex-detected commercial markers, plus a native loudness visualizer and opt-in loudness-aware music fades.
 - Added changelog enforcement, changelog-based release notes, and Discord announcements for published PlezyNG releases.
 - Require an explicit versioned release dispatch, and move release downloads and package updates to PlezyNG.
 - Add credential-gated signed Android Play/Amazon and Apple App Store assets, manual mobile-store submissions, an identity-gated Windows Store MSIX bundle, release checksums, Windows package-manager submissions, and multi-architecture relay container publishing.

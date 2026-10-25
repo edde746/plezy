@@ -145,6 +145,7 @@ class PlaybackSettingsScreen extends StatelessWidget {
 
             _seekAndTimingGroup(),
             _autoPlayAndSkipGroup(),
+            _musicPlaybackGroup(),
             _behaviorGroup(context, isMobile),
             if (isMobile) _gesturesGroup(),
             _rememberPlayerChangesGroup(),
@@ -343,6 +344,13 @@ class PlaybackSettingsScreen extends StatelessWidget {
         subtitleBuilder: (mode) => '${_skipMarkerModeLabel(mode)} · ${_skipCreditsModeDescription(mode)}',
         options: SkipMarkerMode.values.map((m) => DialogOption(value: m, title: _skipMarkerModeLabel(m))).toList(),
       ),
+      SettingSelectionTile<SkipMarkerMode>(
+        pref: SettingsService.skipAdsMode,
+        icon: Symbols.fast_forward_rounded,
+        title: t.settings.skipAdsMode,
+        subtitleBuilder: (mode) => '${_skipMarkerModeLabel(mode)} · ${_skipAdsModeDescription(mode)}',
+        options: SkipMarkerMode.values.map((m) => DialogOption(value: m, title: _skipMarkerModeLabel(m))).toList(),
+      ),
       SettingSwitchTile(
         pref: SettingsService.forceSkipMarkerFallback,
         icon: Symbols.tune_rounded,
@@ -391,6 +399,24 @@ class PlaybackSettingsScreen extends StatelessWidget {
     SkipMarkerMode.button => t.settings.skipCreditsModeButtonDescription,
     SkipMarkerMode.auto => t.settings.skipCreditsModeAutoDescription,
   };
+
+  String _skipAdsModeDescription(SkipMarkerMode mode) => switch (mode) {
+    SkipMarkerMode.off => t.settings.skipAdsModeOffDescription,
+    SkipMarkerMode.button => t.settings.skipAdsModeButtonDescription,
+    SkipMarkerMode.auto => t.settings.skipAdsModeAutoDescription,
+  };
+
+  Widget _musicPlaybackGroup() => SettingsGroup(
+    title: t.settings.musicPlayback,
+    children: [
+      SettingSwitchTile(
+        pref: SettingsService.musicSweetFades,
+        icon: Symbols.graphic_eq_rounded,
+        title: t.settings.musicSweetFades,
+        subtitle: t.settings.musicSweetFadesDescription,
+      ),
+    ],
+  );
 
   /// Optional touch gestures on the player surface (#1810); the group only
   /// renders on mobile, matching where the gestures exist.

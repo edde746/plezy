@@ -709,6 +709,11 @@ class SettingsService extends BaseSharedPreferencesService {
   static const clickVideoTogglesPlayback = BoolPref('click_video_toggles_playback');
   static const skipIntroMode = _SkipMarkerModePref('skip_intro_mode', legacyKey: _legacyAutoSkipIntroKey);
   static const skipCreditsMode = _SkipMarkerModePref('skip_credits_mode', legacyKey: _legacyAutoSkipCreditsKey);
+  static const skipAdsMode = EnumPref<SkipMarkerMode>(
+    'skip_ads_mode',
+    values: SkipMarkerMode.values,
+    defaultValue: SkipMarkerMode.button,
+  );
 
   /// Previous format-v1 boolean representations of enum preferences, keyed by
   /// the old key. Shared by the typed migration, reset, and the portable
@@ -722,6 +727,7 @@ class SettingsService extends BaseSharedPreferencesService {
 
   static const forceSkipMarkerFallback = BoolPref('force_skip_marker_fallback');
   static const autoSkipDelay = IntPref('auto_skip_delay', defaultValue: 5);
+  static const musicSweetFades = BoolPref('music_sweet_fades');
   static const introPattern = StringPref('intro_pattern', defaultValue: defaultIntroPattern);
   static const creditsPattern = StringPref('credits_pattern', defaultValue: defaultCreditsPattern);
   static const customDownloadPathType = NullableStringPref('custom_download_path_type');
@@ -1625,8 +1631,10 @@ class SettingsService extends BaseSharedPreferencesService {
     clickVideoTogglesPlayback,
     skipIntroMode,
     skipCreditsMode,
+    skipAdsMode,
     forceSkipMarkerFallback,
     autoSkipDelay,
+    musicSweetFades,
     introPattern,
     creditsPattern,
     autoRemoveWatchedDownloads,
