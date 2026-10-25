@@ -724,9 +724,6 @@ class Translations$settings$en {
 	/// en: 'Screensaver libraries'
 	String get contentScreensaverLibraries => 'Screensaver libraries';
 
-	/// en: 'Choose which libraries supply artwork. No selection includes every library.'
-	String get contentScreensaverLibrariesDescription => 'Choose which libraries supply artwork. No selection includes every library.';
-
 	/// en: 'All libraries'
 	String get contentScreensaverAllLibraries => 'All libraries';
 
@@ -9309,7 +9306,6 @@ extension on Translations {
 			'settings.contentScreensaverEnabledDescription' => 'Show full-screen artwork after the app has been idle',
 			'settings.contentScreensaverDelay' => 'Start screensaver after',
 			'settings.contentScreensaverLibraries' => 'Screensaver libraries',
-			'settings.contentScreensaverLibrariesDescription' => 'Choose which libraries supply artwork. No selection includes every library.',
 			'settings.contentScreensaverAllLibraries' => 'All libraries',
 			'settings.contentScreensaverSelectedLibraries' => ({required Object count}) => '${count} libraries selected',
 			'settings.contentScreensaverNoLibraries' => 'No connected media libraries are available.',
@@ -9595,9 +9591,9 @@ extension on Translations {
 			'settings.dvConversionDv81Description' => 'Force inline RPU conversion to Dolby Vision profile 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Strip Dolby Vision RPU/EL layers and present plain HEVC',
 			'settings.disableDolbyVision' => 'Disable Dolby Vision',
+			'settings.disableDolbyVisionDescription' => 'Play the file\'s HDR10 or HLG layer instead of Dolby Vision, when it has one',
 			_ => null,
 		} ?? switch (path) {
-			'settings.disableDolbyVisionDescription' => 'Play the file\'s HDR10 or HLG layer instead of Dolby Vision, when it has one',
 			'settings.hdrSdrConversion' => 'HDR to SDR Conversion',
 			'settings.hdrSdrConversionDescription' => 'Choose what converts HDR video when the display can\'t show HDR.',
 			'settings.hdrSdrConversionAuto' => 'Auto',
@@ -10109,9 +10105,9 @@ extension on Translations {
 			'messages.burnedSubtitlesUseMenu' => 'Subtitles are burned into this stream. Change them from the subtitle menu.',
 			'messages.noVideoUrl' => 'No video URL available',
 			'messages.playbackNoMediaSources' => 'The server returned no playable media sources',
+			'messages.playbackDataNotPrepared' => 'Playback was started before its data was ready',
 			_ => null,
 		} ?? switch (path) {
-			'messages.playbackDataNotPrepared' => 'Playback was started before its data was ready',
 			'messages.streamSelectionUnavailable' => 'Stream selection is not available for this source',
 			'messages.streamSelectionFailed' => 'Could not apply the selected streams',
 			'messages.trackSelectionNotRemembered' => 'This track choice applies to the current playback only.',
@@ -10623,9 +10619,9 @@ extension on Translations {
 			'explore.stats.completed' => ({required Object n}) => '${n} completed',
 			'explore.stats.onHold' => ({required Object n}) => '${n} on hold',
 			'explore.stats.dropped' => ({required Object n}) => '${n} dropped',
+			'explore.season.winter' => 'Winter',
 			_ => null,
 		} ?? switch (path) {
-			'explore.season.winter' => 'Winter',
 			'explore.season.spring' => 'Spring',
 			'explore.season.summer' => 'Summer',
 			'explore.season.fall' => 'Fall',
@@ -11137,9 +11133,9 @@ extension on Translations {
 			'downloads.backgroundWarning.statusBlocked' => 'Blocked by system settings',
 			'downloads.backgroundWarning.statusDegraded' => 'Limited by system settings',
 			'downloads.backgroundWarning.statusUnknown' => 'Not checked yet',
+			'downloads.backgroundWarning.settingsUnavailable' => 'Couldn\'t open system settings on this device',
 			_ => null,
 		} ?? switch (path) {
-			'downloads.backgroundWarning.settingsUnavailable' => 'Couldn\'t open system settings on this device',
 			'downloads.backgroundWarning.linkUnavailable' => 'Couldn\'t open dontkillmyapp.com on this device',
 			'downloads.options' => 'Downloads options',
 			'downloads.groupings.library' => 'Library',
@@ -11651,9 +11647,9 @@ extension on Translations {
 			'homeLayout.continueWatchingLibraryDescription' => 'This library\'s own resume-progress row',
 			'homeLayout.continueWatchingHomeDescription' => 'The resume-progress row shown on Home',
 			'homeLayout.nextUpHomeDescription' => 'The next unwatched episode row shown separately on Home',
+			'homeLayout.library' => 'Library',
 			_ => null,
 		} ?? switch (path) {
-			'homeLayout.library' => 'Library',
 			'homeLayout.showInRecommended' => 'Show in Library Recommended',
 			'homeLayout.customPlexRow' => 'Custom Plex row',
 			'homeLayout.heroNeedsLibrary' => 'Check Library first — Hero needs somewhere to show',

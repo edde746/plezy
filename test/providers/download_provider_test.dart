@@ -919,9 +919,10 @@ void main() {
           'test-profile|jf-machine:episode-1',
           'test-profile|jf-machine:season-1',
           'test-profile|jf-machine:show-1',
+          'test-profile|jf-machine:__continue_watching__',
         }),
       );
-      expect(keys, hasLength(3));
+      expect(keys, hasLength(4));
 
       p.dispose();
     });

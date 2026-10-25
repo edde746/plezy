@@ -26,11 +26,10 @@ CI also identified [GO-2026-6809](https://pkg.go.dev/vuln/GO-2026-6809) in the p
 
 The inherited Sparkle/WinSparkle public key has been removed. Release builds enable native updating only when `SPARKLE_PUBLIC_KEY` is configured. If a private signing seed is supplied, the build verifies it matches the public key; the inherited upstream key and malformed/mismatched keys fail the build. Without fork-owned key configuration, GitHub release checks/manual downloads remain available and native updating stays disabled. The existing appcast generator already omitted unsigned enclosures; this audit does **not** claim it published unsigned updates.
 
-Repository administration is outside the connected GitHub application's permission set. The inspected main branch had no protection/rulesets. An administrator still needs to:
+Branch protection remains disabled at the repository owner's explicit request. The following release tasks still require the appropriate credentials:
 
-1. Protect `main`: require pull requests and the relevant CI checks, block deletion/force pushes, and restrict bypasses and release environments to trusted maintainers.
-2. Generate a fork-owned Ed25519 updater key using the updater's supported tooling. Configure the public key as repository variable `SPARKLE_PUBLIC_KEY` and the matching private seed as secret `SPARKLE_PRIVATE_KEY`. Never commit the private material. The public-key transition requires a trusted installer/manual update for existing installations.
-3. Deploy the updated support relay to retire issuance of short log identifiers; committing app code does not deploy that service.
+1. Generate a fork-owned Ed25519 updater key using the updater's supported tooling. Configure the public key as repository variable `SPARKLE_PUBLIC_KEY` and the matching private seed as secret `SPARKLE_PRIVATE_KEY`. Never commit the private material. The public-key transition requires a trusted installer/manual update for existing installations.
+2. Deploy the updated support relay to retire issuance of short log identifiers; committing app code does not deploy that service.
 
 ## Upstream submission decision
 

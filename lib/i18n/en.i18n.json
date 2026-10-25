@@ -254,7 +254,6 @@
     "contentScreensaverEnabledDescription": "Show full-screen artwork after the app has been idle",
     "contentScreensaverDelay": "Start screensaver after",
     "contentScreensaverLibraries": "Screensaver libraries",
-    "contentScreensaverLibrariesDescription": "Choose which libraries supply artwork. No selection includes every library.",
     "contentScreensaverAllLibraries": "All libraries",
     "contentScreensaverSelectedLibraries": "${count} libraries selected",
     "contentScreensaverNoLibraries": "No connected media libraries are available.",

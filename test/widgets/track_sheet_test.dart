@@ -773,6 +773,9 @@ class _FakeTrackSheetPlayer implements Player {
   final bool supportsSecondarySubtitles;
 
   @override
+  String get playerType => 'mpv';
+
+  @override
   PlayerState get state => _state;
 
   @override
