@@ -150,10 +150,14 @@ void main() {
 
       expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.button);
       expect(settings.read(SettingsService.skipCreditsMode), SkipMarkerMode.button);
+      expect(settings.read(SettingsService.skipAdsMode), SkipMarkerMode.button);
 
       await settings.write(SettingsService.skipIntroMode, SkipMarkerMode.off);
       expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.off);
       expect(settings.read(SettingsService.skipCreditsMode), SkipMarkerMode.button);
+      await settings.write(SettingsService.skipAdsMode, SkipMarkerMode.auto);
+      expect(settings.read(SettingsService.skipAdsMode), SkipMarkerMode.auto);
+      expect(settings.read(SettingsService.skipIntroMode), SkipMarkerMode.off);
     });
 
     test('migrate the legacy auto-skip booleans: on → auto, off → button (#2138)', () async {

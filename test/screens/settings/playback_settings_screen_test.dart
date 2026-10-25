@@ -45,6 +45,34 @@ void main() {
     expect(find.descendant(of: tile, matching: find.text('128 kbps')), findsOneWidget);
   });
 
+  testWidgets('configures detected ad skipping and sweet fades', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1000, 1400);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+
+    await tester.pumpWidget(MaterialApp(theme: monoTheme(MonoPalette.dark), home: const PlaybackSettingsScreen()));
+    await tester.pumpAndSettle();
+
+    final adsTitle = find.text('Skip Ads');
+    await tester.scrollUntilVisible(adsTitle, 500, scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(adsTitle);
+    await tester.pumpAndSettle();
+    await tester.tap(adsTitle);
+    await tester.pumpAndSettle();
+    await tester.tap(find.text('Automatic'));
+    await tester.pumpAndSettle();
+    expect(SettingsService.instance.read(SettingsService.skipAdsMode), SkipMarkerMode.auto);
+
+    final sweetFadesTitle = find.text('Sweet Fades');
+    await tester.scrollUntilVisible(sweetFadesTitle, 500, scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(sweetFadesTitle);
+    await tester.pumpAndSettle();
+    await tester.tap(sweetFadesTitle);
+    await tester.pumpAndSettle();
+    expect(SettingsService.instance.read(SettingsService.musicSweetFades), isTrue);
+  });
+
   testWidgets('changes a player-change persistence scope', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1000, 1400);

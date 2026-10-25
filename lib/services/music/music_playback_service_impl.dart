@@ -1082,13 +1082,22 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService
         trackDuration >= const Duration(seconds: 6) &&
         trackHeadLevel != null &&
         trackHeadLevel > -48;
-    _setMusicGain(_fadeCurrentTrackIn ? 0 : 1, force: true);
-    if (_sweetFadesEnabled) {
+    // Only write when the gain actually changes. `_ensurePlayer` already
+    // applies the persisted volume to a newly-created player; forcing a 1.0
+    // gain here emits a redundant volume write on every ordinary track bind.
+    _setMusicGain(_fadeCurrentTrackIn ? 0 : 1);
+    // An armed track's profile may already be cached. Avoid scheduling a
+    // redundant completed-Future callback in that case: on a gapless
+    // transition the native player's playhead can still describe the outgoing
+    // track. A profile that was still in flight at the boundary also needs a
+    // zero-based update below so that stale playhead cannot trigger an
+    // end-of-track fade on the newly adopted source.
+    if (_sweetFadesEnabled && _currentLoudnessProfile == null) {
       unawaited(
         _loadLoudnessProfile(source).then((profile) {
           if (_disposed || !identical(_currentSource, source)) return;
           _currentLoudnessProfile = profile;
-          _updateSweetFade(player.currentPosition);
+          _updateSweetFade(fadeIn ? Duration.zero : player.currentPosition);
         }),
       );
     }

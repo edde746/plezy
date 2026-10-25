@@ -3,6 +3,73 @@ import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/utils/track_label_builder.dart';
 
 void main() {
+  group('AudioLoudnessProfile', () {
+    test('interpolates by playback progress and clamps to track bounds', () {
+      final profile = AudioLoudnessProfile(levelsDb: [-60, -30, -12], totalSamples: 1000);
+
+      expect(profile.levelAt(const Duration(seconds: 5), const Duration(seconds: 10)), -30);
+      expect(profile.levelAt(Duration.zero, const Duration(seconds: 10)), -60);
+      expect(profile.levelAt(const Duration(seconds: 10), const Duration(seconds: 10)), -12);
+      expect(profile.levelAt(const Duration(seconds: 20), const Duration(seconds: 10)), -12);
+      expect(profile.levelAt(const Duration(seconds: -2), const Duration(seconds: 10)), -60);
+    });
+
+    test('returns null when the profile or duration is unavailable', () {
+      expect(
+        AudioLoudnessProfile(levelsDb: [], totalSamples: 0).levelAt(Duration.zero, const Duration(seconds: 1)),
+        isNull,
+      );
+      expect(AudioLoudnessProfile(levelsDb: [-20], totalSamples: 1).levelAt(Duration.zero, Duration.zero), isNull);
+    });
+
+    test('keeps its samples immutable', () {
+      final levels = [-30.0, -20.0];
+      final profile = AudioLoudnessProfile(levelsDb: levels, totalSamples: 2);
+      levels[0] = 0;
+
+      expect(profile.levelsDb, [-30, -20]);
+      expect(() => profile.levelsDb.add(-10), throwsUnsupportedError);
+    });
+  });
+
+  group('MediaMarker commercial classification', () {
+    for (final type in ['commercial', 'ad', 'advertisement', ' Commercial ']) {
+      test('recognizes "$type" without conflating intro or credits', () {
+        final marker = MediaMarker(id: 1, type: type, startTimeOffset: 1000, endTimeOffset: 5000);
+        expect(marker.isCommercial, isTrue);
+        expect(marker.isIntro, isFalse);
+        expect(marker.isCredits, isFalse);
+      });
+    }
+
+    test('chapter fallback never invents a commercial marker', () {
+      final extras = PlaybackExtras.withChapterFallback(
+        chapters: [
+          MediaChapter(id: 1, startTimeOffset: 0, endTimeOffset: 30000, title: 'Advertisement'),
+          MediaChapter(id: 2, startTimeOffset: 30000, endTimeOffset: 120000, title: 'Episode'),
+        ],
+        markers: [],
+      );
+
+      expect(extras.markers.where((marker) => marker.isCommercial), isEmpty);
+    });
+
+    test('server commercial markers survive chapter reclassification and fallback', () {
+      final commercial = MediaMarker(id: 99, type: 'advertisement', startTimeOffset: 1000, endTimeOffset: 5000);
+      final extras = PlaybackExtras.withChapterFallback(
+        chapters: [
+          MediaChapter(id: 1, startTimeOffset: 0, endTimeOffset: 30000, title: 'Intro'),
+          MediaChapter(id: 2, startTimeOffset: 30000, endTimeOffset: 120000, title: 'Episode'),
+        ],
+        markers: [commercial],
+        forceChapterFallback: true,
+      );
+
+      expect(extras.markers.where((marker) => marker.isCommercial).single.id, 99);
+      expect(extras.markers.any((marker) => marker.isIntro), isTrue);
+    });
+  });
+
   group('MediaChapter traversal', () {
     final chapters = [
       MediaChapter(id: 1, startTimeOffset: 0, title: 'One'),

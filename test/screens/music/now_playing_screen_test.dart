@@ -8,6 +8,7 @@ import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
+import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/screens/music/now_playing_screen.dart';
@@ -36,16 +37,18 @@ MediaItem _track({required String id, required String title, required String alb
   );
 }
 
-class _FakeMusicService extends StubMusicPlaybackService {
+class _FakeMusicService extends StubMusicPlaybackService implements MusicLoudnessProfileService {
   MediaItem track;
   final MusicPlayContext context;
   final StreamController<Duration> _positionController = StreamController<Duration>.broadcast(sync: true);
   final StreamController<Duration?> _playheadJumpController = StreamController<Duration?>.broadcast(sync: true);
   final StreamController<Object> _errorsController = StreamController<Object>.broadcast(sync: true);
   final List<Duration> seeks = [];
+  final AudioLoudnessProfile? loudnessProfile;
+  int loudnessProfileLoads = 0;
   Duration _position = Duration.zero;
 
-  _FakeMusicService({required this.track, required this.context});
+  _FakeMusicService({required this.track, required this.context, this.loudnessProfile});
 
   bool _ended = false;
 
@@ -109,6 +112,12 @@ class _FakeMusicService extends StubMusicPlaybackService {
   Future<void> seek(Duration position) async {
     seeks.add(position);
     _position = position;
+  }
+
+  @override
+  Future<AudioLoudnessProfile?> loadCurrentTrackLoudnessProfile() async {
+    loudnessProfileLoads++;
+    return loudnessProfile;
   }
 
   @override
@@ -253,6 +262,25 @@ void main() {
 
     expect(find.text(t.music.playingFrom(title: 'Road Trip')), findsOneWidget);
     expect(find.text(t.music.playingFrom(title: 'First Album · 1973')), findsNothing);
+  });
+
+  testWidgets('opens the visualizer on demand and reads the active track profile', (tester) async {
+    final service = _FakeMusicService(
+      track: _track(id: 'visualizer', title: 'Visualized Track', album: 'Album', year: 2024),
+      context: const MusicPlayContext(title: 'Album', kind: MusicPlayContextKind.album),
+      loudnessProfile: AudioLoudnessProfile(levelsDb: List.filled(128, -24), totalSamples: 12000),
+    );
+
+    await pumpNowPlaying(tester, service, isTv: false);
+    expect(service.loudnessProfileLoads, 0, reason: 'the profile stays unloaded while artwork is shown');
+
+    await tester.tap(find.byTooltip(t.music.visualizer));
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 300));
+
+    expect(find.byKey(const ValueKey('now_playing_visualizer')), findsOneWidget);
+    expect(service.loudnessProfileLoads, 1);
+    expect(find.byWidgetPredicate((widget) => widget is CustomPaint && widget.child is SizedBox), findsOneWidget);
   });
 
   testWidgets('pending d-pad seek is discarded when the track changes', (tester) async {

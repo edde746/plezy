@@ -1170,6 +1170,22 @@ void main() {
       expect(find.text('Pular abertura'), findsOneWidget);
       expect(find.text('Skip Intro'), findsNothing);
     });
+
+    testWidgets('commercial markers use the localized ad-skip label', (tester) async {
+      final focusNode = FocusNode();
+      addTearDown(focusNode.dispose);
+
+      await _pumpSkipMarkerButton(
+        tester,
+        focusNode: focusNode,
+        isAutoSkipActive: false,
+        onActivate: () {},
+        marker: MediaMarker(id: 7, type: 'commercial', startTimeOffset: 10000, endTimeOffset: 45000),
+      );
+
+      expect(find.text(t.videoControls.skipAds), findsOneWidget);
+      expect(find.text(t.videoControls.skipIntro), findsNothing);
+    });
   });
 
   group('mobileSkipZoneForTap', () {
@@ -2410,6 +2426,7 @@ Future<void> _pumpSkipMarkerButton(
   required bool isAutoSkipActive,
   required VoidCallback onActivate,
   VoidCallback? onFocusDown,
+  MediaMarker? marker,
 }) {
   return tester.pumpWidget(
     MaterialApp(
@@ -2417,7 +2434,7 @@ Future<void> _pumpSkipMarkerButton(
       home: Scaffold(
         body: Center(
           child: SkipMarkerButton(
-            marker: MediaMarker(id: 1, type: 'intro', startTimeOffset: 10000, endTimeOffset: 45000),
+            marker: marker ?? MediaMarker(id: 1, type: 'intro', startTimeOffset: 10000, endTimeOffset: 45000),
             playerDuration: const Duration(minutes: 20),
             hasNextEpisode: false,
             isAutoSkipActive: isAutoSkipActive,

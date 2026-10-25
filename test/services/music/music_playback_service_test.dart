@@ -13,6 +13,7 @@ import 'package:plezy/media/media_backend.dart';
 import 'package:plezy/media/media_item.dart';
 import 'package:plezy/media/media_kind.dart';
 import 'package:plezy/media/media_server_client.dart';
+import 'package:plezy/media/media_source_info.dart';
 import 'package:plezy/mpv/models.dart';
 import 'package:plezy/models/audio_channel_limit.dart';
 import 'package:plezy/models/companion_remote/remote_command.dart';
@@ -461,9 +462,14 @@ class RecordedReport {
 
 /// Records the progress-report surface; everything else is unimplemented
 /// (the engine and tracker never touch it in these tests).
-class FakeMediaServerClient extends Fake with PlaybackReportRecorder implements MediaServerClient {
+class FakeMediaServerClient extends Fake
+    with PlaybackReportRecorder
+    implements MediaServerClient, PlexLoudnessProfileClient {
   final List<RecordedReport> reports = [];
   final List<String> markedWatched = [];
+  final Map<int, AudioLoudnessProfile?> loudnessProfiles = {};
+  final Map<int, int> loudnessProfileFetchCounts = {};
+  final Map<int, Completer<AudioLoudnessProfile?>> pendingLoudnessProfiles = {};
   Completer<List<MediaItem>>? instantMixGate;
 
   Iterable<RecordedReport> reportsFor(String state) => reports.where((r) => r.state == state);
@@ -473,6 +479,9 @@ class FakeMediaServerClient extends Fake with PlaybackReportRecorder implements 
 
   @override
   double get watchedThreshold => 0.9;
+
+  @override
+  bool get isOfflineMode => false;
 
   @override
   bool get marksWatchedOnPlaybackStopped => false;
@@ -488,6 +497,14 @@ class FakeMediaServerClient extends Fake with PlaybackReportRecorder implements 
   @override
   Future<void> markWatched(MediaItem item) async {
     markedWatched.add(item.id);
+  }
+
+  @override
+  Future<AudioLoudnessProfile?> fetchAudioLoudnessProfile(int streamId) async {
+    loudnessProfileFetchCounts.update(streamId, (count) => count + 1, ifAbsent: () => 1);
+    final pending = pendingLoudnessProfiles[streamId];
+    if (pending != null) return pending.future;
+    return loudnessProfiles[streamId];
   }
 
   @override
@@ -511,6 +528,7 @@ class FakeMusicSourceResolver implements MusicSourceResolver {
 
   /// Per-track URL overrides (e.g. content:// shapes for offline tracks).
   final Map<String, String> urlOverrides = {};
+  final Map<String, MusicSource> sourceOverrides = {};
 
   _CallGate _gateNextResolve(String trackId) {
     final gate = _CallGate();
@@ -528,6 +546,8 @@ class FakeMusicSourceResolver implements MusicSourceResolver {
     if (failingIds.contains(track.id)) {
       throw StateError('resolve failed for ${track.id}');
     }
+    final override = sourceOverrides[track.id];
+    if (override != null) return override;
     return MusicSource(
       url: urlOverrides[track.id] ?? _urlFor(track),
       playSessionId: 'ps-${track.id}',
@@ -697,11 +717,16 @@ class _Harness {
     return harness;
   }
 
-  Future<void> playTracks(List<MediaItem> tracks, {MediaItem? startTrack, bool shuffle = false}) async {
+  Future<void> playTracks(
+    List<MediaItem> tracks, {
+    MediaItem? startTrack,
+    bool shuffle = false,
+    MusicPlayContextKind kind = MusicPlayContextKind.album,
+  }) async {
     await service.playFromList(
       tracks: tracks,
       startTrack: startTrack,
-      playContext: const MusicPlayContext(title: 'Test', kind: MusicPlayContextKind.album),
+      playContext: MusicPlayContext(title: 'Test', kind: kind),
       shuffle: shuffle,
     );
     await pumpEventQueue();
@@ -2088,6 +2113,140 @@ void main() {
 
       expect(harness.service.status, MusicPlaybackStatus.idle);
       expect(harness.service.currentTrack, isNull);
+    });
+  });
+
+  group('Sweet Fades', () {
+    test('applies loudness-aware ramps at non-album gapless track edges', () async {
+      resetSharedPreferencesForTest();
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.musicSweetFades, true);
+
+      // Recreate after settings bootstrap so the service observes preference
+      // changes just as the app-owned instance does.
+      h.dispose();
+      h = _Harness.create(volumePersistenceWriter: (volume) => persistenceWriter(volume));
+
+      const firstStream = 501;
+      const secondStream = 502;
+      final loudProfile = AudioLoudnessProfile(levelsDb: [-24, -24, -24], totalSamples: 3000);
+      h.client.loudnessProfiles[firstStream] = loudProfile;
+      h.client.loudnessProfiles[secondStream] = loudProfile;
+      void useProfile(MediaItem track, int streamId) {
+        h.resolver.sourceOverrides[track.id] = MusicSource(
+          url: _urlFor(track),
+          reportingClient: h.client,
+          mediaInfo: MediaSourceInfo(
+            videoUrl: _urlFor(track),
+            audioTracks: [MediaAudioTrack(id: streamId, selected: true)],
+            subtitleTracks: const [],
+            chapters: const [],
+          ),
+        );
+      }
+
+      useProfile(t1, firstStream);
+      useProfile(t2, secondStream);
+      await h.playTracks([t1, t2], kind: MusicPlayContextKind.tracks);
+      await pumpEventQueue();
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+
+      expect(h.client.loudnessProfileFetchCounts, {firstStream: 1, secondStream: 1});
+      expect(await h.service.loadCurrentTrackLoudnessProfile(), same(loudProfile));
+      expect(await h.service.loadCurrentTrackLoudnessProfile(), same(loudProfile));
+      expect(h.client.loudnessProfileFetchCounts[firstStream], 1, reason: 'repeat requests share the cached profile');
+      h.player.setPosition(const Duration(minutes: 2, seconds: 59, milliseconds: 100));
+      expect(h.player.volumes.last, closeTo(70.71, 0.1), reason: 'the final 900 ms ramps down smoothly');
+      h.player.setPosition(const Duration(minutes: 2, seconds: 59, milliseconds: 999));
+      expect(h.player.volumes.last, lessThan(0.1));
+
+      h.player.emitTransition(_urlFor(t2));
+      await pumpEventQueue();
+      expect(h.service.currentTrack?.id, t2.id);
+      expect((await h.service.loadCurrentTrackLoudnessProfile())?.levelsDb, [-24, -24, -24]);
+      expect(
+        h.client.loudnessProfileFetchCounts[secondStream],
+        1,
+        reason: 'the armed profile is cached for the transition',
+      );
+      h.player.setPosition(Duration.zero);
+      h.player.setPosition(const Duration(milliseconds: 900));
+      expect(h.player.volumes.last, closeTo(70.71, 0.1), reason: 'the next track ramps up over its first 1.8 seconds');
+
+      await h.playTracks([t1, t2], kind: MusicPlayContextKind.album);
+      await pumpEventQueue();
+      h.player.setPosition(const Duration(minutes: 2, seconds: 59, milliseconds: 100));
+      expect(h.player.volumes.last, 100, reason: 'album playback keeps its original edge behavior');
+
+      const quietFirstStream = 503;
+      const quietSecondStream = 504;
+      final quietProfile = AudioLoudnessProfile(levelsDb: [-60, -60, -60], totalSamples: 3000);
+      h.client.loudnessProfiles[quietFirstStream] = quietProfile;
+      h.client.loudnessProfiles[quietSecondStream] = quietProfile;
+      useProfile(t1, quietFirstStream);
+      useProfile(t2, quietSecondStream);
+      await h.playTracks([t1, t2], kind: MusicPlayContextKind.tracks);
+      await pumpEventQueue();
+      await Future<void>.delayed(const Duration(milliseconds: 10));
+      h.player.setPosition(const Duration(minutes: 2, seconds: 59, milliseconds: 100));
+      expect(h.player.volumes.last, 100, reason: 'a naturally quiet ending is left at the configured level');
+      h.player.emitTransition(_urlFor(t2));
+      await pumpEventQueue();
+      h.player.setPosition(Duration.zero);
+      h.player.setPosition(const Duration(milliseconds: 900));
+      expect(h.player.volumes.last, 100, reason: 'a naturally quiet opening does not get a fade-in');
+
+      await settings.write(SettingsService.musicSweetFades, false);
+      await pumpEventQueue();
+      expect(h.player.volumes.last, 100, reason: 'turning the option off restores the configured music volume');
+    });
+
+    test('a late armed profile never applies the outgoing track playhead to the new source', () async {
+      resetSharedPreferencesForTest();
+      final settings = await SettingsService.getInstance();
+      await settings.write(SettingsService.musicSweetFades, true);
+      h.dispose();
+      h = _Harness.create(volumePersistenceWriter: (volume) => persistenceWriter(volume));
+
+      const firstStream = 601;
+      const pendingStream = 602;
+      const thirdStream = 603;
+      final loudProfile = AudioLoudnessProfile(levelsDb: [-24, -24, -24], totalSamples: 3000);
+      final pendingProfile = Completer<AudioLoudnessProfile?>();
+      h.client
+        ..loudnessProfiles[firstStream] = loudProfile
+        ..loudnessProfiles[thirdStream] = loudProfile
+        ..pendingLoudnessProfiles[pendingStream] = pendingProfile;
+      void useProfile(MediaItem track, int streamId) {
+        h.resolver.sourceOverrides[track.id] = MusicSource(
+          url: _urlFor(track),
+          reportingClient: h.client,
+          mediaInfo: MediaSourceInfo(
+            videoUrl: _urlFor(track),
+            audioTracks: [MediaAudioTrack(id: streamId, selected: true)],
+            subtitleTracks: const [],
+            chapters: const [],
+          ),
+        );
+      }
+
+      useProfile(t1, firstStream);
+      useProfile(t2, pendingStream);
+      useProfile(t3, thirdStream);
+      await h.playTracks([t1, t2, t3], kind: MusicPlayContextKind.tracks);
+      await pumpEventQueue();
+      h.player.setPosition(const Duration(minutes: 2, seconds: 59, milliseconds: 999));
+      expect(h.player.volumes.last, lessThan(0.1), reason: 'the outgoing song is at its real end fade');
+
+      h.player.emitTransition(_urlFor(t2));
+      await pumpEventQueue();
+      expect(h.service.currentTrack?.id, t2.id);
+      expect(h.player.currentPosition, const Duration(minutes: 2, seconds: 59, milliseconds: 999));
+
+      pendingProfile.complete(loudProfile);
+      await pumpEventQueue();
+
+      expect(h.player.volumes.last, 100, reason: 'late loudness data must not fade the next source out at its start');
     });
   });
 

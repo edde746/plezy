@@ -404,6 +404,7 @@ void main() {
   // down-consume/up-act path is where the claim has to hold.
   group('declining a skip prompt', () {
     final introMarker = MediaMarker(id: 1, type: 'intro', startTimeOffset: 10000, endTimeOffset: 45000);
+    final commercialMarker = MediaMarker(id: 3, type: 'commercial', startTimeOffset: 10000, endTimeOffset: 45000);
 
     Future<void> showPrompt(WidgetTester tester) async {
       player.emitPosition(const Duration(seconds: 15));
@@ -504,6 +505,32 @@ void main() {
 
       expect(player.state.position, const Duration(seconds: 15), reason: 'a declined countdown must not fire');
       expect(screenBackDispositions, isEmpty);
+    });
+
+    playerTest('commercial markers use their independent auto-skip preference', markers: [commercialMarker], (
+      tester,
+    ) async {
+      await settings.write(SettingsService.skipIntroMode, SkipMarkerMode.off);
+      await settings.write(SettingsService.skipAdsMode, SkipMarkerMode.auto);
+      player.emitPosition(const Duration(seconds: 15));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SkipMarkerButton), findsOneWidget);
+      expect(find.textContaining(t.videoControls.skipAds), findsOneWidget);
+      await tester.pump(const Duration(seconds: 5));
+      await tester.pumpAndSettle();
+
+      expect(player.state.position, const Duration(seconds: 45));
+    });
+
+    playerTest('commercial markers play through when ad skipping is Off', markers: [commercialMarker], (tester) async {
+      await settings.write(SettingsService.skipIntroMode, SkipMarkerMode.button);
+      await settings.write(SettingsService.skipAdsMode, SkipMarkerMode.off);
+      player.emitPosition(const Duration(seconds: 15));
+      await tester.pumpAndSettle();
+
+      expect(find.byType(SkipMarkerButton), findsNothing);
+      expect(player.state.position, const Duration(seconds: 15));
     });
 
     // #2138: Off means the marker is invisible — no prompt, no countdown, and

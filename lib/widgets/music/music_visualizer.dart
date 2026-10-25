@@ -31,8 +31,8 @@ class _MusicVisualizerState extends State<MusicVisualizer> {
   void initState() {
     super.initState();
     widget.service.addListener(_onServiceChanged);
-    _readyProfileLoadStarted = widget.service.status == MusicPlaybackStatus.playing;
-    _profileFuture = _loadProfile();
+    _readyProfileLoadStarted = _sourceReady;
+    _profileFuture = _readyProfileLoadStarted ? _loadProfile() : Future<AudioLoudnessProfile?>.value();
   }
 
   @override
@@ -44,8 +44,8 @@ class _MusicVisualizerState extends State<MusicVisualizer> {
       widget.service.addListener(_onServiceChanged);
     }
     if (sourceChanged) {
-      _readyProfileLoadStarted = widget.service.status == MusicPlaybackStatus.playing;
-      _profileFuture = _loadProfile();
+      _readyProfileLoadStarted = _sourceReady;
+      _profileFuture = _readyProfileLoadStarted ? _loadProfile() : Future<AudioLoudnessProfile?>.value();
     }
   }
 
@@ -58,7 +58,9 @@ class _MusicVisualizerState extends State<MusicVisualizer> {
   void _onServiceChanged() {
     if (_readyProfileLoadStarted || !_sourceReady || !mounted) return;
     _readyProfileLoadStarted = true;
-    setState(() => _profileFuture = _loadProfile());
+    setState(() {
+      _profileFuture = _loadProfile();
+    });
   }
 
   @override
