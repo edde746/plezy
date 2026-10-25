@@ -37,6 +37,7 @@ import 'services/storage_service.dart';
 import 'services/assistive_technology_service.dart';
 import 'services/device_performance.dart';
 import 'services/external_player_service.dart';
+import 'services/cast_media_service.dart';
 import 'services/video_decode_capabilities.dart';
 import 'services/macos_window_service.dart';
 import 'services/native_window_service.dart';
@@ -1034,6 +1035,7 @@ void _startNonessentialInitialization(SettingsService settings) {
   );
   bestEffort('Download storage', () => DownloadStorageService.instance.initialize(settings));
   bestEffort('Trackers', TrackerCoordinator.instance.initialize);
+  bestEffort('Google Cast', CastMediaService.instance.initialize);
 
   bestEffort('Legacy image cache cleanup', () async {
     if (settings.read(SettingsService.cleanedOldImageCache)) return;

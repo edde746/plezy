@@ -41,6 +41,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 
 	// Translations
 	late final Translations$app$en app = Translations$app$en.internal(_root);
+	late final Translations$cast$en cast = Translations$cast$en.internal(_root);
 	late final Translations$appIcon$en appIcon = Translations$appIcon$en.internal(_root);
 	late final Translations$auth$en auth = Translations$auth$en.internal(_root);
 	late final Translations$common$en common = Translations$common$en.internal(_root);
@@ -109,6 +110,48 @@ class Translations$app$en {
 
 	/// en: 'Plezy'
 	String get title => 'Plezy';
+}
+
+// Path: cast
+class Translations$cast$en {
+	Translations$cast$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Cast to a device'
+	String get chooseDevice => 'Cast to a device';
+
+	/// en: 'Searching for Cast devices…'
+	String get searching => 'Searching for Cast devices…';
+
+	/// en: 'Connected to ${device}'
+	String connectedTo({required Object device}) => 'Connected to ${device}';
+
+	/// en: 'Cast device'
+	String get device => 'Cast device';
+
+	/// en: 'Ready to cast'
+	String get readyToCast => 'Ready to cast';
+
+	/// en: 'Subtitles'
+	String get subtitle => 'Subtitles';
+
+	/// en: 'The media server is not available.'
+	String get serverNotAvailable => 'The media server is not available.';
+
+	/// en: 'Stop casting'
+	String get stopCasting => 'Stop casting';
+
+	/// en: 'Cast to device'
+	String get castToDevice => 'Cast to device';
+
+	/// en: 'There is no episode available to cast.'
+	String get noEpisodeAvailable => 'There is no episode available to cast.';
+
+	/// en: 'Could not start casting. Check the server and try again.'
+	String get startFailed => 'Could not start casting. Check the server and try again.';
 }
 
 // Path: appIcon
@@ -8874,6 +8917,17 @@ extension on Translations {
 	dynamic _flatMapFunction(String path) {
 		return switch (path) {
 			'app.title' => 'Plezy',
+			'cast.chooseDevice' => 'Cast to a device',
+			'cast.searching' => 'Searching for Cast devices…',
+			'cast.connectedTo' => ({required Object device}) => 'Connected to ${device}',
+			'cast.device' => 'Cast device',
+			'cast.readyToCast' => 'Ready to cast',
+			'cast.subtitle' => 'Subtitles',
+			'cast.serverNotAvailable' => 'The media server is not available.',
+			'cast.stopCasting' => 'Stop casting',
+			'cast.castToDevice' => 'Cast to device',
+			'cast.noEpisodeAvailable' => 'There is no episode available to cast.',
+			'cast.startFailed' => 'Could not start casting. Check the server and try again.',
 			'appIcon.title' => 'App icon',
 			'appIcon.defaultIcon' => 'Default',
 			'appIcon.current' => 'Current icon',
@@ -9374,6 +9428,8 @@ extension on Translations {
 			'settings.forceTvMode' => 'Force TV mode',
 			'settings.forceTvModeDescription' => 'Force TV layout. For devices that don\'t auto-detect. Requires restart.',
 			'settings.startInFullscreen' => 'Start in fullscreen',
+			_ => null,
+		} ?? switch (path) {
 			'settings.startInFullscreenDescription' => 'Open Plezy in fullscreen mode at launch',
 			'settings.exitFullscreenOnPlayerClose' => 'Exit fullscreen on player close',
 			'settings.exitFullscreenOnPlayerCloseDescription' => 'Automatically exit fullscreen when closing the video player',
@@ -9385,8 +9441,6 @@ extension on Translations {
 			'settings.preferredServer' => 'Preferred Server',
 			'settings.preferredServerDescription' => 'Prioritize this server\'s results while keeping every connected server available.',
 			'settings.preferredServerAutomatic' => 'Automatic',
-			_ => null,
-		} ?? switch (path) {
 			'settings.showExploreTab' => 'Show Explore Tab',
 			'settings.showExploreTabDescription' => 'Display the Explore tab with content from Plex Discover and connected trackers',
 			'settings.hideEmptyLibraries' => 'Hide empty libraries',
@@ -9888,6 +9942,8 @@ extension on Translations {
 			'subtitlingStyling.positionTop' => 'Top',
 			'subtitlingStyling.positionBottom' => 'Bottom',
 			'subtitlingStyling.useMargins' => 'Use margins',
+			_ => null,
+		} ?? switch (path) {
 			'subtitlingStyling.useMarginsDescription' => 'Allow text subtitles in the space outside the video. Styled subtitles may keep their original placement.',
 			'subtitlingStyling.anchorToScreen' => 'Anchor to Screen',
 			'subtitlingStyling.anchorToScreenDescription' => 'Show text subtitles in the black bars below widescreen video',
@@ -9899,8 +9955,6 @@ extension on Translations {
 			'mpvConfig.title' => 'mpv.conf',
 			'mpvConfig.description' => 'Advanced video player settings',
 			'mpvConfig.presets' => 'Presets',
-			_ => null,
-		} ?? switch (path) {
 			'mpvConfig.noPresets' => 'No saved presets',
 			'mpvConfig.saveAsPreset' => 'Save as Preset...',
 			'mpvConfig.presetName' => 'Preset Name',
@@ -10402,6 +10456,8 @@ extension on Translations {
 			'explore.creditRole.director' => 'Director',
 			'explore.creditRole.writer' => 'Writer',
 			'explore.creditRole.producer' => 'Producer',
+			_ => null,
+		} ?? switch (path) {
 			'explore.creditRole.creator' => 'Creator',
 			'explore.creditRole.composer' => 'Composer',
 			'explore.relation.prequel' => 'Prequel',
@@ -10413,8 +10469,6 @@ extension on Translations {
 			'explore.relation.parentStory' => 'Parent story',
 			'explore.relation.adaptation' => 'Adaptation',
 			'explore.relation.other' => 'Related',
-			_ => null,
-		} ?? switch (path) {
 			'explore.broadcast' => ({required Object day, required Object time}) => 'Airs ${day} at ${time}',
 			'explore.broadcastWithZone' => ({required Object day, required Object time, required Object timezone}) => 'Airs ${day} at ${time} ${timezone}',
 			'explore.detail.originalTitle' => 'Original title',
@@ -10916,6 +10970,8 @@ extension on Translations {
 			'shaders.qualityFast' => 'Fast',
 			'shaders.qualityHQ' => 'High Quality',
 			'shaders.mode' => 'Mode',
+			_ => null,
+		} ?? switch (path) {
 			'shaders.importShader' => 'Import Shader',
 			'shaders.customShaderDescription' => 'Custom GLSL shader',
 			'shaders.shaderImported' => 'Shader imported',
@@ -10927,8 +10983,6 @@ extension on Translations {
 			'companionRemote.unknownDevice' => 'Unknown Device',
 			'companionRemote.session.startingServer' => 'Starting remote server...',
 			'companionRemote.session.hostAddress' => 'Host Address',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.session.connected' => 'Connected',
 			'companionRemote.session.serverRunning' => 'Remote server active',
 			'companionRemote.session.serverStopped' => 'Remote server stopped',
@@ -11430,6 +11484,8 @@ extension on Translations {
 			'homeLayout.layoutNavDescription' => 'Choose rows, libraries, and collection categories',
 			'homeLayout.editHomeRow' => 'Edit Home row',
 			'homeLayout.resetHeroButton' => 'Reset hero layout to stock Plezy',
+			_ => null,
+		} ?? switch (path) {
 			'homeLayout.reorderingUnlocked' => 'Reordering unlocked',
 			'homeLayout.reorderingLocked' => 'Reordering locked',
 			'homeLayout.rowsCanBeDragged' => 'Rows can be dragged — tap the lock to prevent that',
@@ -11441,8 +11497,6 @@ extension on Translations {
 			'homeLayout.libraryResumeRow' => 'This library\'s resume row',
 			'homeLayout.pressAgainToDelete' => 'Press again to delete',
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
-			_ => null,
-		} ?? switch (path) {
 			'homeLayout.on' => 'On',
 			'homeLayout.resetHeroButtonDescription' => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept.',
 			_ => null,

@@ -57,6 +57,11 @@
 	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
 	<string>This app needs to connect to your media servers on your local network.</string>
+	<key>NSBonjourServices</key>
+	<array>
+		<string>_CC1AD845._googlecast._tcp</string>
+		<string>_googlecast._tcp</string>
+	</array>
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>Plezy uses location access when iOS requires it to detect your local network and connect to your media servers.</string>
 	<key>NSPhotoLibraryUsageDescription</key>

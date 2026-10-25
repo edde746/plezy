@@ -95,6 +95,7 @@ dependencies:
   in_app_purchase_platform_interface: ^1.4.1
   in_app_purchase_storekit: ^0.4.13+3
   openwatchparty: ^1.1.0
+  flutter_chrome_cast: ^2.0.0
 
 dev_dependencies:
   archive: ^4.0.9
