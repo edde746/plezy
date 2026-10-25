@@ -5012,6 +5012,15 @@ class Translations$downloads$en {
 	/// en: 'Synced ${count} new episodes for ${title}'
 	String syncedNewEpisodes({required Object count, required Object title}) => 'Synced ${count} new episodes for ${title}';
 
+	/// en: 'Sync now'
+	String get syncNow => 'Sync now';
+
+	/// en: 'Downloads are up to date'
+	String get downloadsUpToDate => 'Downloads are up to date';
+
+	/// en: 'Sync complete · ${queued} queued, ${removed} removed'
+	String syncComplete({required Object queued, required Object removed}) => 'Sync complete · ${queued} queued, ${removed} removed';
+
 	/// en: 'Sync rules'
 	String get activeSyncRules => 'Sync rules';
 
@@ -10231,6 +10240,9 @@ extension on Translations {
 			'downloads.syncRuleCleanupBusy' => 'Sync rules are currently updating. Try again in a moment.',
 			'downloads.syncRuleCleanupUnavailable' => 'Associated downloads could not be identified safely. Reconnect the server and try again, or remove the rule without deleting downloads.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Synced ${count} new episodes for ${title}',
+			'downloads.syncNow' => 'Sync now',
+			'downloads.downloadsUpToDate' => 'Downloads are up to date',
+			'downloads.syncComplete' => ({required Object queued, required Object removed}) => 'Sync complete · ${queued} queued, ${removed} removed',
 			'downloads.activeSyncRules' => 'Sync rules',
 			'downloads.noSyncRules' => 'No sync rules',
 			'downloads.manageSyncRule' => 'Manage sync',
@@ -10385,11 +10397,11 @@ extension on Translations {
 			'videoSettings.sleepTimerActive' => ({required Object duration}) => 'Active (${duration})',
 			'videoSettings.zoom' => 'Zoom',
 			'videoSettings.sleepTimer' => 'Sleep Timer',
+			_ => null,
+		} ?? switch (path) {
 			'videoSettings.audioSync' => 'Audio Sync',
 			'videoSettings.subtitleSync' => 'Subtitle Sync',
 			'videoSettings.hdr' => 'HDR',
-			_ => null,
-		} ?? switch (path) {
 			'videoSettings.hdrUnsupported' => 'HDR isn\'t available here — this desktop compositor or video output can\'t carry it.',
 			'videoSettings.hdrToneMapping' => 'HDR Tone Mapping',
 			'videoSettings.hdrToneMappingCompositor' => 'Compositor',

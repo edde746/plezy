@@ -12,6 +12,7 @@ import '../../media/media_kind.dart';
 import '../../media/media_server_client.dart';
 import '../../providers/download_provider.dart';
 import '../../providers/multi_server_provider.dart';
+import '../../providers/offline_mode_provider.dart';
 import '../../services/music/music_playback_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/formatters.dart';
@@ -23,6 +24,8 @@ import '../../widgets/focusable_tab_chip.dart';
 import '../../widgets/music/mini_player.dart';
 import '../../widgets/music/track_row.dart';
 import '../../services/settings_service.dart';
+import '../../utils/snackbar_helper.dart';
+import '../video_player_screen.dart';
 import '../../widgets/settings_builder.dart';
 import '../../utils/global_key_utils.dart';
 import '../../mixins/tab_navigation_mixin.dart';
@@ -165,6 +168,27 @@ class DownloadsScreenState extends State<DownloadsScreen>
     return Text(t.downloads.title);
   }
 
+  /// Force an immediate sync-rule reconcile (delete watched if enabled + queue
+  /// missing episodes) and report the outcome. Guarded by the provider, so a
+  /// no-op if a reconcile is already running.
+  Future<void> _handleManualSync(BuildContext context) async {
+    final downloadProvider = context.read<DownloadProvider>();
+    final serverManager = context.read<MultiServerProvider>().serverManager;
+    final summary = await downloadProvider.reconcileNow(
+      serverManager,
+      activeGlobalKey: VideoPlayerScreenState.activeGlobalKey,
+    );
+    if (!context.mounted || summary == null) return;
+    if (summary.changed) {
+      showSuccessSnackBar(
+        context,
+        t.downloads.syncComplete(queued: summary.queuedCount, removed: summary.deletedCount),
+      );
+    } else {
+      showAppSnackBar(context, t.downloads.downloadsUpToDate);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -180,9 +204,9 @@ class DownloadsScreenState extends State<DownloadsScreen>
             shadowColor: Colors.transparent,
             scrolledUnderElevation: 0,
             actions: [
-              Selector<DownloadProvider, bool>(
-                selector: (_, provider) => provider.hasFailedDownloads,
-                builder: (context, hasFailedDownloads, _) {
+              Consumer2<DownloadProvider, OfflineModeProvider>(
+                builder: (context, downloadProvider, offlineProvider, _) {
+                  final hasFailedDownloads = downloadProvider.hasFailedDownloads;
                   // Retrying the last failure removes the focused action;
                   // hand D-pad focus to its neighbour instead of dropping it.
                   if (!hasFailedDownloads && _retryFailedFocusNode.hasFocus) {
@@ -190,6 +214,12 @@ class DownloadsScreenState extends State<DownloadsScreen>
                       if (mounted) _actionBarKey.currentState?.requestFocusOnFirst();
                     });
                   }
+                  // Manual sync is only meaningful online and when there's an
+                  // enabled rule to evaluate. The spinner shows while any
+                  // reconcile (manual or automatic) is in flight.
+                  final hasEnabledRule = downloadProvider.syncRules.values.any((r) => r.enabled);
+                  final showSync = !offlineProvider.isOffline && hasEnabledRule;
+                  final reconciling = downloadProvider.isReconciling;
                   return FocusableActionBar(
                     key: _actionBarKey,
                     onNavigateLeft: () => getTabChipFocusNode(tabCount - 1).requestFocus(),
@@ -202,6 +232,26 @@ class DownloadsScreenState extends State<DownloadsScreen>
                           debugLabel: 'downloads_retry_failed',
                           focusNode: _retryFailedFocusNode,
                           onPressed: () => _retryDownloads(context.read<DownloadProvider>().failedDownloadKeys),
+                        ),
+                      if (showSync)
+                        FocusableAction(
+                          debugLabel: 'downloads_sync_now',
+                          icon: Symbols.sync_rounded,
+                          tooltip: t.downloads.syncNow,
+                          onPressed: reconciling ? null : () => _handleManualSync(context),
+                          child: reconciling
+                              ? const SizedBox(
+                                  width: 48,
+                                  height: 48,
+                                  child: Center(
+                                    child: SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    ),
+                                  ),
+                                )
+                              : null,
                         ),
                       FocusableAction(
                         icon: Symbols.rule_settings_rounded,
