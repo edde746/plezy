@@ -286,7 +286,8 @@ val downloadLibdovi = tasks.register("downloadLibdovi") {
 
 android {
   namespace = "com.edde746.plezy"
-  compileSdk = flutter.compileSdkVersion
+  // permission_handler_android uses Android 17 API constants.
+  compileSdk = 37
   buildToolsVersion = "36.1.0"
   ndkVersion = "29.0.14206865"
 

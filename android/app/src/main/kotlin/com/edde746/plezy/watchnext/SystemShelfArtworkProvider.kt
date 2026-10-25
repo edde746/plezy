@@ -1,6 +1,5 @@
 package com.edde746.plezy.watchnext
 
-import com.edde746.plezy.BuildConfig
 import android.content.ContentProvider
 import android.content.ContentValues
 import android.database.Cursor
@@ -10,6 +9,7 @@ import android.os.Build
 import android.os.ParcelFileDescriptor
 import android.system.Os
 import android.system.OsConstants
+import com.edde746.plezy.BuildConfig
 import java.io.ByteArrayOutputStream
 import java.io.File
 import java.io.FileNotFoundException

@@ -1778,6 +1778,8 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
       widget.onRemoveFromContinueWatching != null,
     );
     const centerSliverKey = ValueKey('tv_browse_rail_row_center');
+    // The rail height reserves 10 * scale outside the card. Keep vertical
+    // sliver padding within that budget so captions cannot overflow.
     return HorizontalScrollWithArrows(
       controller: scrollController,
       builder: (scrollController) => CustomScrollView(
@@ -1792,7 +1794,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
         slivers: [
           if (leadingCount > 0)
             SliverPadding(
-              padding: .fromLTRB(metrics.railEdgePadding, 2 * scale, 0, 18 * scale),
+              padding: .fromLTRB(metrics.railEdgePadding, 2 * scale, 0, 6 * scale),
               sliver: SliverToBoxAdapter(
                 child: Align(
                   alignment: .topLeft,
@@ -1807,7 +1809,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
             ),
           SliverPadding(
             key: centerSliverKey,
-            padding: .fromLTRB(metrics.railEdgePadding, 2 * scale, metrics.railEdgePadding, 18 * scale),
+            padding: .fromLTRB(metrics.railEdgePadding, 2 * scale, metrics.railEdgePadding, 6 * scale),
             sliver: SliverFixedExtentList(
               // A fixed extent keeps all sliver offset and child-index math O(1).
               itemExtent: TvBrowseRailLayout.itemExtentForIndex(index: 0, metrics: metrics),

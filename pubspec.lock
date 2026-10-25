@@ -1036,12 +1036,11 @@ packages:
     source: hosted
     version: "4.4.1"
   permission_handler_windows:
-    dependency: transitive
+    dependency: "direct overridden"
     description:
-      name: permission_handler_windows
-      sha256: caeae01858a0a7d2df67a445ac98e1ad95e55a0e77c73044f4e9b1c8c2289cbd
-      url: "https://pub.dev"
-    source: hosted
+      path: "packages/permission_handler_windows"
+      relative: true
+    source: path
     version: "0.2.2"
   petitparser:
     dependency: transitive

@@ -33,7 +33,7 @@ subprojects {
             finalizeDsl { extension ->
                 // Plugin modules can lag the app's Android tools even when
                 // their dependencies already require current APIs.
-                extension.compileSdk = 36
+                extension.compileSdk = 37
                 extension.buildToolsVersion = "36.1.0"
                 // The Flutter plugin copies the app's build types into every plugin
                 // module, so `minified` arrives here carrying the app's shrinker flags.

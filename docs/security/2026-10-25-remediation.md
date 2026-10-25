@@ -11,6 +11,8 @@ Scope: the six source findings reproduced in PlezyNG and upstream Plezy. The ups
 | Fragmented unauthenticated WebSocket messages bypassed the delivered-message size limit | Enforce a transport byte budget before WebSocket reassembly, including control/continuation frames, while retaining peer-count and authentication time limits. | Present in the companion peer listener. Submit upstream. |
 | Short support-log identifiers were guessable bearer capabilities | New identifiers use 130 random bits. Old identifiers remain readable only for their existing three-day lifetime. | Present in `server/main.go`. Submit upstream; deployment of the relay is separately required. |
 
+CI also identified [GO-2026-6809](https://pkg.go.dev/vuln/GO-2026-6809) in the pinned Go 1.27.2 standard library. Both relay patches move to Go 1.27.3 and its verified multi-architecture container digest. This additional upstream dependency fix is relevant.
+
 ## Compatibility and migration
 
 - Companion remote devices must update together and pair once using the host's displayed code. Keeping the old identifier-only protocol would preserve the vulnerability. Pairing codes are secrets; share them only with intended controllers.
@@ -36,6 +38,6 @@ Recommend upstream fixes for all six confirmed core findings, preferably as focu
 
 ## Validation
 
-Validation results are recorded with the remediation PR. Regression coverage includes rejected legacy/wrong-code remote authentication, fragmented-frame byte limits, credential migration and OS-store failure recovery, full-session encryption, HTTP consent guards, and playback TLS initialization ordering. A loopback libmpv test uses only generated certificates and dummy credentials to check untrusted certificates, explicitly trusted certificates, and hostname mismatch. Release-key configuration is checked with public test vectors.
+Validation results are recorded with the remediation PR. The upstream-specific patch passed 255 targeted tests and static analysis. Regression coverage includes rejected legacy/wrong-code remote authentication, fragmented-frame byte limits, credential migration and OS-store failure recovery, full-session encryption, HTTP consent guards, and playback TLS initialization ordering. A loopback libmpv test uses only generated certificates and dummy credentials to check untrusted certificates, explicitly trusted certificates, and hostname mismatch. Release-key configuration is checked with public test vectors.
 
 Unit tests and source checks cannot prove absence of bugs. Native CI compilation/tests and subsequent device smoke testing remain necessary, especially locked keychains, first-launch migration, Snap/Flatpak portal behavior, and private-CA playback on each supported platform.

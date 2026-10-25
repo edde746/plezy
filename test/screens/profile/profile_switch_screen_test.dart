@@ -22,6 +22,7 @@ import 'package:plezy/screens/profile/pin_entry_dialog.dart';
 import 'package:plezy/screens/profile/profile_detail_screen.dart';
 import 'package:plezy/screens/profile/profile_switch_screen.dart';
 import 'package:plezy/services/storage_service.dart';
+import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:provider/provider.dart';
@@ -31,8 +32,10 @@ import '../../test_helpers/prefs.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUp(() {
+  setUp(() async {
     resetSharedPreferencesForTest();
+    await SettingsService.getInstance();
+    await StorageService.getInstance();
     LocaleSettings.setLocaleSync(AppLocale.en);
   });
 

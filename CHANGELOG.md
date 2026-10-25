@@ -40,6 +40,8 @@
 
 ### Security
 
+- Update the relay to Go 1.27.3 for GO-2026-6809 and refresh its immutable container pin.
+
 - Require a random, revocable pairing code for companion remotes and bound unauthenticated WebSocket traffic before fragmented messages can accumulate. Update both devices and pair once.
 - Verify playback TLS certificates, provide trust roots for OpenSSL players, prefer HTTPS server discovery, and require explicit consent for HTTP sign-in. HTTPS connections no longer downgrade through HTTP fallbacks.
 - Move credential keys to OS secure storage and migrate tracker tokens and Seerr cookies without signing users out. Preserve old credentials when the keychain is temporarily unavailable.

@@ -937,8 +937,11 @@ void main() {
   testWidgets('join failure leaves route open, state unchanged, and never binds', (tester) async {
     resetSharedPreferencesForTest();
     CredentialVault.resetKeyForTesting();
-    final harness = await _RouteHarness.create(failJoin: true);
-    await tester.runAsync(() => CredentialVault.protect('opaque-vault-warmup'));
+    final harness = (await tester.runAsync(() async {
+      final harness = await _RouteHarness.create(failJoin: true);
+      await CredentialVault.protect('opaque-vault-warmup');
+      return harness;
+    }))!;
     var routeCompleted = false;
     late Future<bool?> routeResult;
     await tester.pumpWidget(

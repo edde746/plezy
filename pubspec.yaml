@@ -131,6 +131,8 @@ dev_dependencies:
   web_socket: ^1.0.1
 
 dependency_overrides:
+  permission_handler_windows:
+    path: packages/permission_handler_windows
   flutter_secure_storage_linux:
     path: packages/flutter_secure_storage_linux
   # background_downloader 9.6.2 requires hosted connectivity_plus; keep the
