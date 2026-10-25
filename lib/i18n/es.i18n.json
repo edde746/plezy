@@ -806,7 +806,15 @@
     "autoScrollPause": "Pausar desplazamiento automático",
     "hueShort": "H",
     "saturationShort": "S",
-    "valueShort": "V"
+    "valueShort": "V",
+    "red": "",
+    "green": "",
+    "blue": "",
+    "redShort": "",
+    "greenShort": "",
+    "blueShort": "",
+    "colorModeHsv": "",
+    "colorModeRgb": ""
   },
   "tooltips": {
     "shufflePlay": "Reproducción aleatoria",
@@ -987,6 +995,7 @@
     "serverUnavailableForProfile": "No hay ningún servidor disponible para el perfil activo"
   },
   "subtitlingStyling": {
+    "previewSample": "",
     "text": "Texto",
     "border": "Borde",
     "background": "Fondo",

@@ -812,7 +812,15 @@
     "autoScrollPause": "Wstrzymaj automatyczne przewijanie",
     "hueShort": "H",
     "saturationShort": "S",
-    "valueShort": "V"
+    "valueShort": "V",
+    "red": "",
+    "green": "",
+    "blue": "",
+    "redShort": "",
+    "greenShort": "",
+    "blueShort": "",
+    "colorModeHsv": "",
+    "colorModeRgb": ""
   },
   "tooltips": {
     "shufflePlay": "Odtwarzanie losowe",
@@ -995,6 +1003,7 @@
     "serverUnavailableForProfile": "Brak dostępnego serwera dla aktywnego profilu"
   },
   "subtitlingStyling": {
+    "previewSample": "",
     "text": "Tekst",
     "border": "Obramowanie",
     "background": "Tło",

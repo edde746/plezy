@@ -2254,6 +2254,30 @@ class Translations$accessibility$en {
 
 	/// en: 'V'
 	String get valueShort => 'V';
+
+	/// en: 'Red'
+	String get red => 'Red';
+
+	/// en: 'Green'
+	String get green => 'Green';
+
+	/// en: 'Blue'
+	String get blue => 'Blue';
+
+	/// en: 'R'
+	String get redShort => 'R';
+
+	/// en: 'G'
+	String get greenShort => 'G';
+
+	/// en: 'B'
+	String get blueShort => 'B';
+
+	/// en: 'HSV'
+	String get colorModeHsv => 'HSV';
+
+	/// en: 'RGB'
+	String get colorModeRgb => 'RGB';
 }
 
 // Path: tooltips
@@ -2772,6 +2796,9 @@ class Translations$subtitlingStyling$en {
 	final Translations _root; // ignore: unused_field
 
 	// Translations
+
+	/// en: 'The quick brown fox jumps over the lazy dog'
+	String get previewSample => 'The quick brown fox jumps over the lazy dog';
 
 	/// en: 'Text'
 	String get text => 'Text';
@@ -8988,6 +9015,14 @@ extension on Translations {
 			'accessibility.hueShort' => 'H',
 			'accessibility.saturationShort' => 'S',
 			'accessibility.valueShort' => 'V',
+			'accessibility.red' => 'Red',
+			'accessibility.green' => 'Green',
+			'accessibility.blue' => 'Blue',
+			'accessibility.redShort' => 'R',
+			'accessibility.greenShort' => 'G',
+			'accessibility.blueShort' => 'B',
+			'accessibility.colorModeHsv' => 'HSV',
+			'accessibility.colorModeRgb' => 'RGB',
 			'tooltips.shufflePlay' => 'Shuffle play',
 			'tooltips.playTrailer' => 'Play trailer',
 			'tooltips.markAsWatched' => 'Mark as watched',
@@ -9152,6 +9187,7 @@ extension on Translations {
 			'messages.streamSelectionFailed' => 'Could not apply the selected streams',
 			'messages.trackSelectionNotRemembered' => 'This track choice applies to the current playback only.',
 			'messages.serverUnavailableForProfile' => 'No server is available for the active profile',
+			'subtitlingStyling.previewSample' => 'The quick brown fox jumps over the lazy dog',
 			'subtitlingStyling.text' => 'Text',
 			'subtitlingStyling.border' => 'Border',
 			'subtitlingStyling.background' => 'Background',
@@ -9242,6 +9278,8 @@ extension on Translations {
 			'profiles.removeConnection' => 'Remove',
 			'profiles.profileRenamed' => 'Profile renamed.',
 			'profiles.borrowAddTo' => ({required Object displayName}) => 'Add to ${displayName}',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.borrowExplain' => 'Borrow another profile\'s connection. PIN-protected profiles require a PIN.',
 			'profiles.borrowEmpty' => 'Nothing to borrow yet.',
 			'profiles.borrowEmptySubtitle' => 'Connect Plex, Jellyfin, or Emby to another profile first.',
@@ -9251,8 +9289,6 @@ extension on Translations {
 			'profiles.borrowFailed' => 'Failed to borrow connection.',
 			'profiles.incorrectPin' => 'Incorrect PIN.',
 			'profiles.incorrectPinTryAgain' => 'Incorrect PIN. Please try again.',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.sourceProfileMissingParentAccount' => 'Source profile is missing its parent account.',
 			'profiles.failedToLoadHomeUsers' => 'Could not load your Plex Home users. Check your connection and try again.',
 			'profiles.failedToVerifyPin' => 'Failed to verify PIN.',
@@ -9756,6 +9792,8 @@ extension on Translations {
 			'liveTv.recordOptions' => 'Record Options',
 			'liveTv.saveTo' => 'Save to',
 			'liveTv.recordings' => 'Recordings',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.scheduledRecordings' => 'Scheduled',
 			'liveTv.recordingRules' => 'Recording Rules',
 			'liveTv.noScheduledRecordings' => 'Nothing scheduled to record',
@@ -9765,8 +9803,6 @@ extension on Translations {
 			'liveTv.cancelRecordingMessage' => ({required Object title}) => '${title} will no longer be recorded.',
 			'liveTv.deleteRule' => 'Delete rule',
 			'liveTv.deleteRuleTitle' => 'Delete recording rule?',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.deleteRuleMessage' => ({required Object title}) => 'Future episodes of ${title} will not be recorded.',
 			'liveTv.recordingScheduled' => 'Recording scheduled',
 			'liveTv.alreadyScheduled' => 'This program is already scheduled',
@@ -10270,6 +10306,8 @@ extension on Translations {
 			'performanceOverlay.decoder' => 'Decoder',
 			'performanceOverlay.rawDecoder' => 'Raw Decoder',
 			'performanceOverlay.tunneling' => 'Tunneling',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.passthrough' => 'Passthrough',
 			'performanceOverlay.aspect' => 'Aspect',
 			'performanceOverlay.rotation' => 'Rotation',
@@ -10279,8 +10317,6 @@ extension on Translations {
 			'performanceOverlay.dvRouteDecoderP81' => 'Dolby Vision decoder (P7→8.1)',
 			'performanceOverlay.dvRouteBaseLayer' => 'Base layer',
 			'performanceOverlay.dvRouteBaseLayerHdr10' => 'HDR10 base layer',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG base layer',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR base layer',
 			'performanceOverlay.dvRouteReshaped' => 'RPU reshaped (gpu-next)',
