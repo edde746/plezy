@@ -1371,6 +1371,7 @@ jobs:
         env:
           SNAP_PATH: ${{ steps.snap.outputs.snap }}
           ARCH: ${{ matrix.arch }}
+        shell: bash
         run: cp "$SNAP_PATH" "plezyng-linux-${ARCH}.snap"
 
       - name: Build x64 AppImage

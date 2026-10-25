@@ -40,6 +40,7 @@
 
 ### Changed
 
+- Declare Bash explicitly when naming the Snap release artifact.
 - Update remaining app and OAuth messages to PlezyNG and make donation copy provider-neutral.
 - Keep Android signing material until all signed store builds finish, and clean it up afterward.
 - Fix music fade gain handling across track transitions and avoid visualizer profile requests before the active track is ready.
