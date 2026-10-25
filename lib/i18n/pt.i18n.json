@@ -602,6 +602,8 @@
       "zoomReset": "Redefinir zoom",
       "subSeekNext": "Ir para Próxima Legenda",
       "subSeekPrev": "Ir para Legenda Anterior",
+      "subtitleDelayIncrease": "Atrasar Legendas",
+      "subtitleDelayDecrease": "Adiantar Legendas",
       "shaderToggle": "Alternar Shaders",
       "skipMarker": "Pular introdução/créditos",
       "screenshot": "Capturar tela"

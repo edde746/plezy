@@ -605,6 +605,8 @@
       "zoomReset": "Reset Zoom",
       "subSeekNext": "Seek to Next Subtitle",
       "subSeekPrev": "Seek to Previous Subtitle",
+      "subtitleDelayIncrease": "Delay Subtitles",
+      "subtitleDelayDecrease": "Advance Subtitles",
       "shaderToggle": "Toggle Shaders",
       "skipMarker": "Skip Intro/Credits",
       "screenshot": "Take Screenshot"

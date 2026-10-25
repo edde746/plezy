@@ -602,6 +602,8 @@
       "zoomReset": "Zoom zurücksetzen",
       "subSeekNext": "Zum nächsten Untertitel springen",
       "subSeekPrev": "Zum vorherigen Untertitel springen",
+      "subtitleDelayIncrease": "Untertitel verzögern",
+      "subtitleDelayDecrease": "Untertitel vorziehen",
       "shaderToggle": "Shader umschalten",
       "skipMarker": "Intro/Abspann überspringen",
       "screenshot": "Screenshot aufnehmen"

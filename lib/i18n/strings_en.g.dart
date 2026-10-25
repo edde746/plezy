@@ -6474,6 +6474,12 @@ class Translations$hotkeys$actions$en {
 	/// en: 'Seek to Previous Subtitle'
 	String get subSeekPrev => 'Seek to Previous Subtitle';
 
+	/// en: 'Delay Subtitles'
+	String get subtitleDelayIncrease => 'Delay Subtitles';
+
+	/// en: 'Advance Subtitles'
+	String get subtitleDelayDecrease => 'Advance Subtitles';
+
 	/// en: 'Toggle Shaders'
 	String get shaderToggle => 'Toggle Shaders';
 
@@ -8656,6 +8662,8 @@ extension on Translations {
 			'hotkeys.actions.zoomReset' => 'Reset Zoom',
 			'hotkeys.actions.subSeekNext' => 'Seek to Next Subtitle',
 			'hotkeys.actions.subSeekPrev' => 'Seek to Previous Subtitle',
+			'hotkeys.actions.subtitleDelayIncrease' => 'Delay Subtitles',
+			'hotkeys.actions.subtitleDelayDecrease' => 'Advance Subtitles',
 			'hotkeys.actions.shaderToggle' => 'Toggle Shaders',
 			'hotkeys.actions.skipMarker' => 'Skip Intro/Credits',
 			'hotkeys.actions.screenshot' => 'Take Screenshot',
@@ -9106,10 +9114,10 @@ extension on Translations {
 			'profiles.incorrectPinTryAgain' => 'Incorrect PIN. Please try again.',
 			'profiles.sourceProfileMissingParentAccount' => 'Source profile is missing its parent account.',
 			'profiles.failedToLoadHomeUsers' => 'Could not load your Plex Home users. Check your connection and try again.',
-			'profiles.failedToVerifyPin' => 'Failed to verify PIN.',
-			'profiles.newProfile' => 'New profile',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.failedToVerifyPin' => 'Failed to verify PIN.',
+			'profiles.newProfile' => 'New profile',
 			'profiles.profileNameHint' => 'e.g. Guests, Kids, Family Room',
 			'profiles.pinProtectionOptional' => 'PIN protection (optional)',
 			'profiles.pinExplain' => '4-digit PIN required to switch profiles.',
@@ -9620,10 +9628,10 @@ extension on Translations {
 			'liveTv.guideReloadFailed' => 'Couldn\'t refresh the guide',
 			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
 			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
-			'liveTv.recordShow' => 'Record show',
-			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordShow' => 'Record show',
+			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
 			'liveTv.recordSettings.endLate' => 'End late (seconds)',
 			'liveTv.recordSettings.newOnly' => 'Only new episodes',
 			'liveTv.recordSettings.anyChannel' => 'Record on any channel',
@@ -10134,10 +10142,10 @@ extension on Translations {
 			'performanceOverlay.cacheUsed' => 'Cache Used',
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
-			'performanceOverlay.player' => 'Player',
-			'performanceOverlay.playMethod' => 'Play Method',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.player' => 'Player',
+			'performanceOverlay.playMethod' => 'Play Method',
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',

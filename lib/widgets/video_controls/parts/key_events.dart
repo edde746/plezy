@@ -169,6 +169,15 @@ extension _PlexVideoControlsKeyEventMethods on _PlexVideoControlsState {
       onSeekRequested: widget.onSeekRequested,
       onRateRequested: widget.onRateRequested,
       onSeekBy: _keyboardSeekBy,
+      onSubtitleSyncOffsetChanged: _onSubtitleSyncOffsetShortcut,
+    );
+  }
+
+  void _onSubtitleSyncOffsetShortcut(int offsetMs) {
+    unawaited(ScopedPlayerPrefs.write(ScopedPlayerPrefs.subtitleSyncOffset, widget.metadata, offsetMs));
+    widget.toastController.show(
+      Symbols.subtitles_rounded,
+      '${t.videoSettings.subtitleSync} ${formatSyncOffset(offsetMs.toDouble())}',
     );
   }
 

@@ -2608,6 +2608,8 @@ class _Translations$hotkeys$actions$nl extends Translations$hotkeys$actions$en {
 	@override String get zoomReset => 'Zoom resetten';
 	@override String get subSeekNext => 'Naar volgende ondertitel';
 	@override String get subSeekPrev => 'Naar vorige ondertitel';
+	@override String get subtitleDelayIncrease => 'Ondertiteling vertragen';
+	@override String get subtitleDelayDecrease => 'Ondertiteling vervroegen';
 	@override String get shaderToggle => 'Shaders aan/uit';
 	@override String get skipMarker => 'Intro/aftiteling overslaan';
 	@override String get screenshot => 'Schermafbeelding maken';
@@ -3961,6 +3963,8 @@ extension on TranslationsNl {
 			'hotkeys.actions.zoomReset' => 'Zoom resetten',
 			'hotkeys.actions.subSeekNext' => 'Naar volgende ondertitel',
 			'hotkeys.actions.subSeekPrev' => 'Naar vorige ondertitel',
+			'hotkeys.actions.subtitleDelayIncrease' => 'Ondertiteling vertragen',
+			'hotkeys.actions.subtitleDelayDecrease' => 'Ondertiteling vervroegen',
 			'hotkeys.actions.shaderToggle' => 'Shaders aan/uit',
 			'hotkeys.actions.skipMarker' => 'Intro/aftiteling overslaan',
 			'hotkeys.actions.screenshot' => 'Schermafbeelding maken',
@@ -4419,10 +4423,10 @@ extension on TranslationsNl {
 			'profiles.continueButton' => 'Doorgaan',
 			'profiles.pinsDontMatch' => 'De pincodes komen niet overeen',
 			'profiles.tokenIdentityMismatch' => 'Het token van het Plex-profiel bleek bij een onverwachte server te horen',
-			'connections.sectionTitle' => 'Verbindingen',
-			'connections.addConnection' => 'Verbinding toevoegen',
 			_ => null,
 		} ?? switch (path) {
+			'connections.sectionTitle' => 'Verbindingen',
+			'connections.addConnection' => 'Verbinding toevoegen',
 			'connections.addConnectionSubtitleNoProfile' => 'Meld je aan met Plex of verbind een Jellyfin- of Emby-server',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Toevoegen aan ${displayName}: Plex, Jellyfin, Emby of een andere profielverbinding',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sessie verlopen voor ${name}',
@@ -4933,10 +4937,10 @@ extension on TranslationsNl {
 			'liveTv.recordSettings.skipInLibrary' => 'Afleveringen overslaan die al in de bibliotheek staan',
 			'liveTv.recordSettings.keepUpTo' => 'Te bewaren afleveringen',
 			'liveTv.recordSettings.keepUpToHint' => '0 bewaart alle afleveringen',
-			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Begint over ${minutes} min',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} om ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Begint over ${minutes} min',
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} om ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} heeft ongeldige afspeelgegevens voor Live-tv geretourneerd',
 			'liveTv.failedToStartChannel' => 'Kon de livezender niet starten',
 			'liveTv.failedToBuildStreamUrl' => 'Kon de stream-URL niet samenstellen',
@@ -5447,10 +5451,10 @@ extension on TranslationsNl {
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Software',
 			'performanceOverlay.decoderHardware' => 'Hardware',
-			'performanceOverlay.tunnelingActive' => 'Actief',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} mislukt)',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.tunnelingActive' => 'Actief',
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} mislukt)',
 			'externalPlayer.title' => 'Externe speler',
 			'externalPlayer.useExternalPlayer' => 'Externe speler gebruiken',
 			'externalPlayer.useExternalPlayerDescription' => 'Open video\'s in een andere app',

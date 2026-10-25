@@ -2598,6 +2598,8 @@ class _Translations$hotkeys$actions$ja extends Translations$hotkeys$actions$en {
 	@override String get zoomReset => 'ズームをリセット';
 	@override String get subSeekNext => '次の字幕にシーク';
 	@override String get subSeekPrev => '前の字幕にシーク';
+	@override String get subtitleDelayIncrease => '字幕を遅らせる';
+	@override String get subtitleDelayDecrease => '字幕を早める';
 	@override String get shaderToggle => 'シェーダー切替';
 	@override String get skipMarker => 'イントロ/クレジットをスキップ';
 	@override String get screenshot => 'スクリーンショットを撮る';
@@ -3949,6 +3951,8 @@ extension on TranslationsJa {
 			'hotkeys.actions.zoomReset' => 'ズームをリセット',
 			'hotkeys.actions.subSeekNext' => '次の字幕にシーク',
 			'hotkeys.actions.subSeekPrev' => '前の字幕にシーク',
+			'hotkeys.actions.subtitleDelayIncrease' => '字幕を遅らせる',
+			'hotkeys.actions.subtitleDelayDecrease' => '字幕を早める',
 			'hotkeys.actions.shaderToggle' => 'シェーダー切替',
 			'hotkeys.actions.skipMarker' => 'イントロ/クレジットをスキップ',
 			'hotkeys.actions.screenshot' => 'スクリーンショットを撮る',
@@ -4407,10 +4411,10 @@ extension on TranslationsJa {
 			'profiles.continueButton' => '続ける',
 			'profiles.pinsDontMatch' => 'PINが一致しません',
 			'profiles.tokenIdentityMismatch' => 'Plexプロフィールのトークンから予期しないサーバーが特定されました',
-			'connections.sectionTitle' => '接続',
-			'connections.addConnection' => '接続を追加',
 			_ => null,
 		} ?? switch (path) {
+			'connections.sectionTitle' => '接続',
+			'connections.addConnection' => '接続を追加',
 			'connections.addConnectionSubtitleNoProfile' => 'Plexでサインインするか、JellyfinまたはEmbyサーバーに接続',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName}に追加：Plex、Jellyfin、Emby、または別のプロフィールの接続',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} のセッションの有効期限が切れました',
@@ -4921,10 +4925,10 @@ extension on TranslationsJa {
 			'liveTv.recordSettings.skipInLibrary' => 'ライブラリにあるエピソードをスキップ',
 			'liveTv.recordSettings.keepUpTo' => '保持するエピソード数',
 			'liveTv.recordSettings.keepUpToHint' => '0 ですべてのエピソードを保持',
-			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes}分後に開始',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes}分後に開始',
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product}から無効なライブTV再生データが返されました',
 			'liveTv.failedToStartChannel' => 'ライブチャンネルを開始できませんでした',
 			'liveTv.failedToBuildStreamUrl' => 'ストリームURLを生成できませんでした',
@@ -5435,10 +5439,10 @@ extension on TranslationsJa {
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'ソフトウェア',
 			'performanceOverlay.decoderHardware' => 'ハードウェア',
-			'performanceOverlay.tunnelingActive' => '有効',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures}件失敗）',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.tunnelingActive' => '有効',
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted}（${failures}件失敗）',
 			'externalPlayer.title' => '外部プレーヤー',
 			'externalPlayer.useExternalPlayer' => '外部プレーヤーを使用',
 			'externalPlayer.useExternalPlayerDescription' => '動画を別のアプリで開きます',

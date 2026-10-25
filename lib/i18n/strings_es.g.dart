@@ -2608,6 +2608,8 @@ class _Translations$hotkeys$actions$es extends Translations$hotkeys$actions$en {
 	@override String get zoomReset => 'Restablecer zoom';
 	@override String get subSeekNext => 'Ir al subtítulo siguiente';
 	@override String get subSeekPrev => 'Ir al subtítulo anterior';
+	@override String get subtitleDelayIncrease => 'Retrasar subtítulos';
+	@override String get subtitleDelayDecrease => 'Adelantar subtítulos';
 	@override String get shaderToggle => 'Activar/desactivar shaders';
 	@override String get skipMarker => 'Saltar introducción/créditos';
 	@override String get screenshot => 'Tomar captura de pantalla';
@@ -3961,6 +3963,8 @@ extension on TranslationsEs {
 			'hotkeys.actions.zoomReset' => 'Restablecer zoom',
 			'hotkeys.actions.subSeekNext' => 'Ir al subtítulo siguiente',
 			'hotkeys.actions.subSeekPrev' => 'Ir al subtítulo anterior',
+			'hotkeys.actions.subtitleDelayIncrease' => 'Retrasar subtítulos',
+			'hotkeys.actions.subtitleDelayDecrease' => 'Adelantar subtítulos',
 			'hotkeys.actions.shaderToggle' => 'Activar/desactivar shaders',
 			'hotkeys.actions.skipMarker' => 'Saltar introducción/créditos',
 			'hotkeys.actions.screenshot' => 'Tomar captura de pantalla',
@@ -4419,10 +4423,10 @@ extension on TranslationsEs {
 			'profiles.continueButton' => 'Continuar',
 			'profiles.pinsDontMatch' => 'Los PIN no coinciden',
 			'profiles.tokenIdentityMismatch' => 'El token del perfil de Plex correspondía a un servidor inesperado',
-			'connections.sectionTitle' => 'Conexiones',
-			'connections.addConnection' => 'Añadir conexión',
 			_ => null,
 		} ?? switch (path) {
+			'connections.sectionTitle' => 'Conexiones',
+			'connections.addConnection' => 'Añadir conexión',
 			'connections.addConnectionSubtitleNoProfile' => 'Inicia sesión con Plex o conecta un servidor de Jellyfin o Emby',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Añadir a ${displayName}: Plex, Jellyfin, Emby u otra conexión de perfil',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Sesión caducada para ${name}',
@@ -4933,10 +4937,10 @@ extension on TranslationsEs {
 			'liveTv.recordSettings.skipInLibrary' => 'Omitir episodios que ya están en la biblioteca',
 			'liveTv.recordSettings.keepUpTo' => 'Episodios que conservar',
 			'liveTv.recordSettings.keepUpToHint' => '0 conserva todos los episodios',
-			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Empieza en ${minutes} min',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} a las ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Empieza en ${minutes} min',
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} a las ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} devolvió datos de reproducción de TV en vivo no válidos',
 			'liveTv.failedToStartChannel' => 'No se pudo iniciar el canal en vivo',
 			'liveTv.failedToBuildStreamUrl' => 'No se pudo generar la URL de transmisión',
@@ -5447,10 +5451,10 @@ extension on TranslationsEs {
 			'performanceOverlay.decoderExynosHw' => 'HW de Exynos',
 			'performanceOverlay.decoderSoftware' => 'Software',
 			'performanceOverlay.decoderHardware' => 'Hardware',
-			'performanceOverlay.tunnelingActive' => 'Activo',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} con error)',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.tunnelingActive' => 'Activo',
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} con error)',
 			'externalPlayer.title' => 'Reproductor externo',
 			'externalPlayer.useExternalPlayer' => 'Usar reproductor externo',
 			'externalPlayer.useExternalPlayerDescription' => 'Abrir videos en otra aplicación',

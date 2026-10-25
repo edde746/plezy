@@ -602,6 +602,8 @@
       "zoomReset": "Nulstil zoom",
       "subSeekNext": "Søg til næste undertekst",
       "subSeekPrev": "Søg til forrige undertekst",
+      "subtitleDelayIncrease": "Forsink undertekster",
+      "subtitleDelayDecrease": "Fremskynd undertekster",
       "shaderToggle": "Slå shadere til/fra",
       "skipMarker": "Spring intro/rulletekster over",
       "screenshot": "Tag skærmbillede"

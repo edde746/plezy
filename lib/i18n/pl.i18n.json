@@ -602,6 +602,8 @@
       "zoomReset": "Zresetuj zoom",
       "subSeekNext": "Przewiń do następnego napisu",
       "subSeekPrev": "Przewiń do poprzedniego napisu",
+      "subtitleDelayIncrease": "Opóźnij napisy",
+      "subtitleDelayDecrease": "Przyspiesz napisy",
       "shaderToggle": "Przełącz shadery",
       "skipMarker": "Pomiń intro/napisy końcowe",
       "screenshot": "Zrób zrzut ekranu"

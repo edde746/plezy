@@ -2608,6 +2608,8 @@ class _Translations$hotkeys$actions$kk extends Translations$hotkeys$actions$en {
 	@override String get zoomReset => 'Масштабты қалпына келтіру';
 	@override String get subSeekNext => 'Келесі субтитрге өту';
 	@override String get subSeekPrev => 'Алдыңғы субтитрге өту';
+	@override String get subtitleDelayIncrease => 'Субтитрді кейінге жылжыту';
+	@override String get subtitleDelayDecrease => 'Субтитрді ертерек жылжыту';
 	@override String get shaderToggle => 'Шейдерлерді қосу/өшіру';
 	@override String get skipMarker => 'Интро/Титрді өткізу';
 	@override String get screenshot => 'Экран суретін түсіру';
@@ -3961,6 +3963,8 @@ extension on TranslationsKk {
 			'hotkeys.actions.zoomReset' => 'Масштабты қалпына келтіру',
 			'hotkeys.actions.subSeekNext' => 'Келесі субтитрге өту',
 			'hotkeys.actions.subSeekPrev' => 'Алдыңғы субтитрге өту',
+			'hotkeys.actions.subtitleDelayIncrease' => 'Субтитрді кейінге жылжыту',
+			'hotkeys.actions.subtitleDelayDecrease' => 'Субтитрді ертерек жылжыту',
 			'hotkeys.actions.shaderToggle' => 'Шейдерлерді қосу/өшіру',
 			'hotkeys.actions.skipMarker' => 'Интро/Титрді өткізу',
 			'hotkeys.actions.screenshot' => 'Экран суретін түсіру',
@@ -4419,10 +4423,10 @@ extension on TranslationsKk {
 			'profiles.continueButton' => 'Жалғастыру',
 			'profiles.pinsDontMatch' => 'PIN кодтар сәйкес келмейді',
 			'profiles.tokenIdentityMismatch' => 'Plex профилінің токені күтілмеген серверді анықтады',
-			'connections.sectionTitle' => 'Қосылымдар',
-			'connections.addConnection' => 'Қосылым қосу',
 			_ => null,
 		} ?? switch (path) {
+			'connections.sectionTitle' => 'Қосылымдар',
+			'connections.addConnection' => 'Қосылым қосу',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex арқылы кіріңіз немесе Jellyfin не Emby серверіне қосылыңыз',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => '${displayName} профиліне қосу: Plex, Jellyfin, Emby немесе басқа қосылым',
 			'connections.sessionExpiredOne' => ({required Object name}) => '${name} үшін сеанс мерзімі өтті',
@@ -4933,10 +4937,10 @@ extension on TranslationsKk {
 			'liveTv.recordSettings.skipInLibrary' => 'Кітапханада бар эпизодтарды өткізіп жіберу',
 			'liveTv.recordSettings.keepUpTo' => 'Сақталатын эпизодтар',
 			'liveTv.recordSettings.keepUpToHint' => '0 барлық эпизодты сақтайды',
-			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} мин кейін басталады',
-			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, ${time}',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.startingInMinutes' => ({required Object minutes}) => '${minutes} мин кейін басталады',
+			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day}, ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} жарамсыз тікелей TV ойнату деректерін қайтарды',
 			'liveTv.failedToStartChannel' => 'Тікелей эфир арнасын іске қосу мүмкін болмады',
 			'liveTv.failedToBuildStreamUrl' => 'Ағын URL-ін құру мүмкін болмады',
@@ -5447,10 +5451,10 @@ extension on TranslationsKk {
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Бағдарламалық',
 			'performanceOverlay.decoderHardware' => 'Аппараттық',
-			'performanceOverlay.tunnelingActive' => 'Белсенді',
-			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} сәтсіз аяқталды)',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.tunnelingActive' => 'Белсенді',
+			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} сәтсіз аяқталды)',
 			'externalPlayer.title' => 'Сыртқы ойнатқыш',
 			'externalPlayer.useExternalPlayer' => 'Сыртқы ойнатқышты пайдалану',
 			'externalPlayer.useExternalPlayerDescription' => 'Видеоларды басқа қолданбада ашу',
