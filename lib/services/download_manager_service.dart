@@ -1790,8 +1790,13 @@ class DownloadManagerService {
     TranscodeQualityPreset? downloadQuality,
   }) async {
     if (_skipDownloadsUnsupported('queue download')) return metadata;
+    // The setting is read from the already-loaded instance: queueing must not
+    // be the call that first opens preferences, and a caller without settings
+    // gets the original file.
     final TranscodeQualityPreset quality =
-        downloadQuality ?? (await SettingsService.getInstance()).read(SettingsService.downloadQualityPreset);
+        downloadQuality ??
+        SettingsService.instanceOrNull?.read(SettingsService.downloadQualityPreset) ??
+        TranscodeQualityPreset.original;
     _rearmQueueForUserAction('new download');
 
     final globalKey = metadata.globalKey;

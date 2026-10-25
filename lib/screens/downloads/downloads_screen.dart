@@ -204,8 +204,9 @@ class DownloadsScreenState extends State<DownloadsScreen>
             shadowColor: Colors.transparent,
             scrolledUnderElevation: 0,
             actions: [
-              Consumer2<DownloadProvider, OfflineModeProvider>(
-                builder: (context, downloadProvider, offlineProvider, _) {
+              Consumer<DownloadProvider>(
+                builder: (context, downloadProvider, _) {
+                  final isOffline = context.select<OfflineModeProvider?, bool>((p) => p?.isOffline ?? false);
                   final hasFailedDownloads = downloadProvider.hasFailedDownloads;
                   // Retrying the last failure removes the focused action;
                   // hand D-pad focus to its neighbour instead of dropping it.
@@ -218,7 +219,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
                   // enabled rule to evaluate. The spinner shows while any
                   // reconcile (manual or automatic) is in flight.
                   final hasEnabledRule = downloadProvider.syncRules.values.any((r) => r.enabled);
-                  final showSync = !offlineProvider.isOffline && hasEnabledRule;
+                  final showSync = !isOffline && hasEnabledRule;
                   final reconciling = downloadProvider.isReconciling;
                   return FocusableActionBar(
                     key: _actionBarKey,
