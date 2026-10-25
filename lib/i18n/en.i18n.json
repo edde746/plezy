@@ -1441,6 +1441,25 @@
     "explore": "Explore"
   },
   "explore": {
+    "mdblistShelves": {
+      "manage": "Manage Explore shelves",
+      "description": "Choose public movie and TV lists from your MDBList account. Create or copy lists on MDBList, then refresh.",
+      "selected": "Selected shelves",
+      "available": "Available account lists",
+      "noLists": "No public movie or TV lists returned. Create or copy a list on MDBList, then refresh.",
+      "displayName": "Shelf display name",
+      "nameHint": "Leave blank to use the source list name.",
+      "add": "Add shelf",
+      "save": "Save shelves",
+      "moveUp": "Move ${title} up",
+      "moveDown": "Move ${title} down",
+      "unavailable": "This list is unavailable. Retry or remove its shelf in settings.",
+      "rateLimited": "MDBList request limit reached. Please retry later.",
+      "loadFailed": "Could not load shelves. Check your connection and retry.",
+      "saveFailed": "Could not save shelves. Please retry.",
+      "accountChanged": "The account or profile changed. Reopen these settings.",
+      "settingsUnreadable": "Saved shelves could not be read. Select your lists again to replace these settings."
+    },
     "title": "Explore",
     "selectSource": "Select source",
     "rows": {

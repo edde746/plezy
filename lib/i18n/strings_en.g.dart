@@ -3793,6 +3793,7 @@ class Translations$explore$en {
 	final Translations _root; // ignore: unused_field
 
 	// Translations
+	late final Translations$explore$mdblistShelves$en mdblistShelves = Translations$explore$mdblistShelves$en.internal(_root);
 
 	/// en: 'Explore'
 	String get title => 'Explore';
@@ -6946,6 +6947,66 @@ class Translations$libraries$advancedFilters$en {
 	String get dateOlderThanYear => 'Older than a year';
 }
 
+// Path: explore.mdblistShelves
+class Translations$explore$mdblistShelves$en {
+	Translations$explore$mdblistShelves$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Manage Explore shelves'
+	String get manage => 'Manage Explore shelves';
+
+	/// en: 'Choose public movie and TV lists from your MDBList account. Create or copy lists on MDBList, then refresh.'
+	String get description => 'Choose public movie and TV lists from your MDBList account. Create or copy lists on MDBList, then refresh.';
+
+	/// en: 'Selected shelves'
+	String get selected => 'Selected shelves';
+
+	/// en: 'Available account lists'
+	String get available => 'Available account lists';
+
+	/// en: 'No public movie or TV lists returned. Create or copy a list on MDBList, then refresh.'
+	String get noLists => 'No public movie or TV lists returned. Create or copy a list on MDBList, then refresh.';
+
+	/// en: 'Shelf display name'
+	String get displayName => 'Shelf display name';
+
+	/// en: 'Leave blank to use the source list name.'
+	String get nameHint => 'Leave blank to use the source list name.';
+
+	/// en: 'Add shelf'
+	String get add => 'Add shelf';
+
+	/// en: 'Save shelves'
+	String get save => 'Save shelves';
+
+	/// en: 'Move ${title} up'
+	String moveUp({required Object title}) => 'Move ${title} up';
+
+	/// en: 'Move ${title} down'
+	String moveDown({required Object title}) => 'Move ${title} down';
+
+	/// en: 'This list is unavailable. Retry or remove its shelf in settings.'
+	String get unavailable => 'This list is unavailable. Retry or remove its shelf in settings.';
+
+	/// en: 'MDBList request limit reached. Please retry later.'
+	String get rateLimited => 'MDBList request limit reached. Please retry later.';
+
+	/// en: 'Could not load shelves. Check your connection and retry.'
+	String get loadFailed => 'Could not load shelves. Check your connection and retry.';
+
+	/// en: 'Could not save shelves. Please retry.'
+	String get saveFailed => 'Could not save shelves. Please retry.';
+
+	/// en: 'The account or profile changed. Reopen these settings.'
+	String get accountChanged => 'The account or profile changed. Reopen these settings.';
+
+	/// en: 'Saved shelves could not be read. Select your lists again to replace these settings.'
+	String get settingsUnreadable => 'Saved shelves could not be read. Select your lists again to replace these settings.';
+}
+
 // Path: explore.rows
 class Translations$explore$rows$en {
 	Translations$explore$rows$en.internal(this._root);
@@ -9407,6 +9468,23 @@ extension on Translations {
 			'navigation.downloads' => 'Downloads',
 			'navigation.liveTv' => 'Live TV',
 			'navigation.explore' => 'Explore',
+			'explore.mdblistShelves.manage' => 'Manage Explore shelves',
+			'explore.mdblistShelves.description' => 'Choose public movie and TV lists from your MDBList account. Create or copy lists on MDBList, then refresh.',
+			'explore.mdblistShelves.selected' => 'Selected shelves',
+			'explore.mdblistShelves.available' => 'Available account lists',
+			'explore.mdblistShelves.noLists' => 'No public movie or TV lists returned. Create or copy a list on MDBList, then refresh.',
+			'explore.mdblistShelves.displayName' => 'Shelf display name',
+			'explore.mdblistShelves.nameHint' => 'Leave blank to use the source list name.',
+			'explore.mdblistShelves.add' => 'Add shelf',
+			'explore.mdblistShelves.save' => 'Save shelves',
+			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Move ${title} up',
+			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Move ${title} down',
+			'explore.mdblistShelves.unavailable' => 'This list is unavailable. Retry or remove its shelf in settings.',
+			'explore.mdblistShelves.rateLimited' => 'MDBList request limit reached. Please retry later.',
+			'explore.mdblistShelves.loadFailed' => 'Could not load shelves. Check your connection and retry.',
+			'explore.mdblistShelves.saveFailed' => 'Could not save shelves. Please retry.',
+			'explore.mdblistShelves.accountChanged' => 'The account or profile changed. Reopen these settings.',
+			'explore.mdblistShelves.settingsUnreadable' => 'Saved shelves could not be read. Select your lists again to replace these settings.',
 			'explore.title' => 'Explore',
 			'explore.selectSource' => 'Select source',
 			'explore.rows.watchlist' => 'Watchlist',
@@ -9611,6 +9689,8 @@ extension on Translations {
 			'liveTv.deleteRuleTitle' => 'Delete recording rule?',
 			'liveTv.deleteRuleMessage' => ({required Object title}) => 'Future episodes of ${title} will not be recorded.',
 			'liveTv.recordingScheduled' => 'Recording scheduled',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.alreadyScheduled' => 'This program is already scheduled',
 			'liveTv.dvrAdminRequired' => 'DVR settings require an admin account',
 			'liveTv.recordingFailed' => 'Couldn\'t schedule recording',
@@ -9628,8 +9708,6 @@ extension on Translations {
 			'liveTv.guideReloadFailed' => 'Couldn\'t refresh the guide',
 			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
 			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordShow' => 'Record show',
 			'liveTv.recordSettings.startEarly' => 'Start early (seconds)',
 			'liveTv.recordSettings.endLate' => 'End late (seconds)',
@@ -10125,6 +10203,8 @@ extension on Translations {
 			'performanceOverlay.sampleRate' => 'Sample Rate',
 			'performanceOverlay.pixelFormat' => 'Pixel Fmt',
 			'performanceOverlay.hwFormat' => 'HW Fmt',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.matrix' => 'Matrix',
 			'performanceOverlay.primaries' => 'Primaries',
 			'performanceOverlay.transfer' => 'Transfer',
@@ -10142,8 +10222,6 @@ extension on Translations {
 			'performanceOverlay.cacheUsed' => 'Cache Used',
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.playMethod' => 'Play Method',
 			'performanceOverlay.memory' => 'Memory',

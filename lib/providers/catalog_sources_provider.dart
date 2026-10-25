@@ -4,17 +4,20 @@ import 'package:collection/collection.dart';
 import 'package:flutter/foundation.dart';
 
 import '../media/media_item.dart';
+import '../i18n/strings.g.dart';
 import '../media/media_kind.dart';
 import '../media/media_rating.dart';
 import '../media/media_server_client.dart';
 import '../connection/connection_registry.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 import '../models/catalog/catalog_item.dart';
+import '../models/catalog/mdblist_explore_shelf.dart';
 import '../profiles/active_plex_token.dart';
 import '../profiles/active_profile_provider.dart';
 import '../profiles/profile_connection_registry.dart';
 import '../profiles/profile.dart';
 import '../services/base_shared_preferences_service.dart';
+import '../services/mdblist_shelf_store.dart';
 import '../services/catalog/library_watchlist_candidates.dart';
 import '../services/catalog/catalog_source.dart';
 import '../services/catalog/community_ratings.dart';
@@ -87,6 +90,12 @@ class _CatalogSourceBinding<Client extends Object, Source extends CatalogSource>
     source = null;
     _client = null;
   }
+
+  void rebuild() {
+    final client = _client;
+    source?.dispose();
+    source = client == null ? null : _create(client);
+  }
 }
 
 /// Enumerates the connected [CatalogSource]s for the active profile and owns
@@ -114,9 +123,30 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
     AnilistCatalogSource.new,
   );
   final _CatalogSourceBinding<SimklClient, SimklCatalogSource> _simkl = _CatalogSourceBinding(SimklCatalogSource.new);
-  final _CatalogSourceBinding<MdblistClient, MdblistCatalogSource> _mdblist = _CatalogSourceBinding(
-    MdblistCatalogSource.new,
+  late final _CatalogSourceBinding<MdblistClient, MdblistCatalogSource> _mdblist = _CatalogSourceBinding(
+    (client) => MdblistCatalogSource(client, shelves: _mdblistShelves),
   );
+  List<MdblistExploreShelf> _mdblistShelves = const [];
+  String? _mdblistShelvesError;
+
+  List<MdblistExploreShelf> get mdblistShelves => _mdblistShelves;
+  String get mdblistShelfScope => _activeUserUuid;
+  String? get mdblistShelvesError => _mdblistShelvesError;
+
+  Future<void> setMdblistShelves(List<MdblistExploreShelf> shelves) async {
+    final scope = _activeUserUuid;
+    final generation = _profileBindingGeneration;
+    final prefs = await BaseSharedPreferencesService.sharedCache();
+    if (isDisposed || generation != _profileBindingGeneration) throw StateError('Profile changed');
+    final normalized = MdblistShelfStore.decode(MdblistShelfStore.encode(shelves));
+    await prefs.setString(MdblistShelfStore.keyFor(scope), MdblistShelfStore.encode(normalized));
+    if (isDisposed || generation != _profileBindingGeneration) return;
+    _mdblistShelves = normalized;
+    _mdblistShelvesError = null;
+    _mdblist.rebuild();
+    safeNotifyListeners();
+  }
+
   final _CatalogSourceBinding<SeerrClient, SeerrCatalogSource> _seerr = _CatalogSourceBinding(SeerrCatalogSource.new);
   int _profileBindingGeneration = 0;
   int _plexSessionGeneration = 0;
@@ -275,9 +305,19 @@ class CatalogSourcesProvider extends ChangeNotifier with DisposableChangeNotifie
   Future<void> onActiveProfileChanged(String? userUuid) async {
     final generation = ++_profileBindingGeneration;
     _activeUserUuid = userUuid ?? '';
+    _mdblistShelves = const [];
+    _mdblistShelvesError = null;
+    _mdblist.rebuild();
     final prefs = await BaseSharedPreferencesService.sharedCache();
     final raw = prefs.getString(profileScopedPrefsKey(_activeUserUuid, _activeSourceBaseKey));
     if (isDisposed || generation != _profileBindingGeneration) return;
+
+    try {
+      _mdblistShelves = MdblistShelfStore.decode(prefs.getString(MdblistShelfStore.keyFor(_activeUserUuid)));
+    } catch (_) {
+      _mdblistShelvesError = t.explore.mdblistShelves.settingsUnreadable;
+    }
+    _mdblist.rebuild();
 
     _preferredSourceId = CatalogSourceId.values.asNameMap()[raw];
     safeNotifyListeners();

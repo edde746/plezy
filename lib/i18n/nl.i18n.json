@@ -1438,6 +1438,25 @@
     "explore": "Verkennen"
   },
   "explore": {
+    "mdblistShelves": {
+      "manage": "",
+      "description": "",
+      "selected": "",
+      "available": "",
+      "noLists": "",
+      "displayName": "",
+      "nameHint": "",
+      "add": "",
+      "save": "",
+      "moveUp": "",
+      "moveDown": "",
+      "unavailable": "",
+      "rateLimited": "",
+      "loadFailed": "",
+      "saveFailed": "",
+      "accountChanged": "",
+      "settingsUnreadable": ""
+    },
     "title": "Verkennen",
     "selectSource": "Bron kiezen",
     "rows": {

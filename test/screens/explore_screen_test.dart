@@ -33,6 +33,7 @@ class _FakeCatalogSource implements CatalogSource, CatalogHubSource {
     this.providerHubStyle,
     this.rowItem,
     this.rowTotalResults,
+    this.hubError,
   });
 
   @override
@@ -46,6 +47,7 @@ class _FakeCatalogSource implements CatalogSource, CatalogHubSource {
   final CatalogHubStyle? providerHubStyle;
   final CatalogItem? rowItem;
   final int? rowTotalResults;
+  final String? hubError;
   final WatchlistChangeNotifier _watchlistChanges = WatchlistChangeNotifier();
 
   /// Search bookkeeping: [searchTitles] overrides the single default hit so a
@@ -106,14 +108,16 @@ class _FakeCatalogSource implements CatalogSource, CatalogHubSource {
         id: 'plex-recommendation',
         title: title,
         style: providerHubStyle,
+        errorMessage: hubError,
         page: CatalogPage(
           items: [
-            CatalogItem(
-              source: id,
-              kind: MediaKind.show,
-              title: 'Plex Recommendation',
-              ids: const CatalogItemIds(plex: 'plex-recommendation'),
-            ),
+            if (hubError == null)
+              CatalogItem(
+                source: id,
+                kind: MediaKind.show,
+                title: 'Plex Recommendation',
+                ids: const CatalogItemIds(plex: 'plex-recommendation'),
+              ),
           ],
         ),
       ),
@@ -164,6 +168,7 @@ Future<_FakeCatalogSourcesProvider> _pumpExplore(
   CatalogItem? traktItem,
   int? traktTotalResults,
   CatalogHubStyle? plexHubStyle,
+  bool mdblistHubFails = false,
 }) async {
   if (tv != null) TvDetectionService.debugSetAppleTVOverride(tv);
   tester.view.devicePixelRatio = 1;
@@ -181,7 +186,13 @@ Future<_FakeCatalogSourcesProvider> _pumpExplore(
   final mal = _FakeCatalogSource(CatalogSourceId.mal, 'MyAnimeList', malItemId);
   final anilist = _FakeCatalogSource(CatalogSourceId.anilist, 'AniList', 3);
   final simkl = _FakeCatalogSource(CatalogSourceId.simkl, 'Simkl', 4);
-  final mdblist = _FakeCatalogSource(CatalogSourceId.mdblist, 'MDBList', 5);
+  final mdblist = _FakeCatalogSource(
+    CatalogSourceId.mdblist,
+    'MDBList',
+    5,
+    providerHubTitle: mdblistHubFails ? 'Broken list' : null,
+    hubError: mdblistHubFails ? 'List unavailable' : null,
+  );
   final plex = _FakeCatalogSource(
     CatalogSourceId.plex,
     'Plex',
@@ -239,6 +250,23 @@ void main() {
   tearDown(() {
     TvDetectionService.debugSetAppleTVOverride(null);
   });
+
+  for (final tv in [true, false]) {
+    testWidgets('MDBList shelf management is available in the ${tv ? 'TV' : 'desktop'} toolbar', (tester) async {
+      final sources = await _pumpExplore(tester, tv: tv, mdblistHubFails: true);
+      await sources.setActiveSource(CatalogSourceId.mdblist);
+      await tester.pumpAndSettle();
+      expect(find.byTooltip(t.explore.mdblistShelves.manage), findsOneWidget);
+      expect(find.textContaining('Broken list'), findsOneWidget);
+      if (tv) {
+        tester.state<ExploreScreenState>(find.byType(ExploreScreen)).focusActiveTabIfReady();
+        await tester.pump();
+        await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
+        await tester.pump();
+        expect(FocusManager.instance.primaryFocus?.debugLabel, 'ManageMdblistShelves');
+      }
+    });
+  }
 
   testWidgets('TV source switcher is reachable from the browse rail and changes source', (tester) async {
     final sources = await _pumpExplore(tester);

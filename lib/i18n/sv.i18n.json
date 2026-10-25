@@ -1438,6 +1438,25 @@
     "explore": "Utforska"
   },
   "explore": {
+    "mdblistShelves": {
+      "manage": "",
+      "description": "",
+      "selected": "",
+      "available": "",
+      "noLists": "",
+      "displayName": "",
+      "nameHint": "",
+      "add": "",
+      "save": "",
+      "moveUp": "",
+      "moveDown": "",
+      "unavailable": "",
+      "rateLimited": "",
+      "loadFailed": "",
+      "saveFailed": "",
+      "accountChanged": "",
+      "settingsUnreadable": ""
+    },
     "title": "Utforska",
     "selectSource": "Välj källa",
     "rows": {

@@ -38,6 +38,7 @@ import '../widgets/tv_spotlight_scaffold.dart';
 import 'catalog_search_screen.dart';
 import 'hub_detail_screen.dart';
 import 'libraries/state_messages.dart';
+import 'settings/mdblist_explore_shelves_screen.dart';
 
 /// The Explore tab: watchlist + discover rows from the active external
 /// catalog source (Trakt). Only mounted when a source is connected (the tab
@@ -315,6 +316,7 @@ class ExploreScreenState extends State<ExploreScreen>
           key: _actionBarKey,
           onNavigateDown: searchFocusNode.requestFocus,
           actions: [
+            if (sources.activeSource?.id == CatalogSourceId.mdblist) _manageShelvesAction(),
             FocusableAction(icon: Symbols.refresh_rounded, tooltip: t.common.refresh, onPressed: manualRefresh),
           ],
         ),
@@ -340,7 +342,12 @@ class ExploreScreenState extends State<ExploreScreen>
       // content, killing pull-to-refresh in the loading/empty/error
       // states without this.
       physics: const AlwaysScrollableScrollPhysics(),
-      slivers: [appBar(), searchField(), ...body],
+      slivers: [
+        appBar(),
+        searchField(),
+        if (!searchIsActive) ...[for (final hub in explore.failedHubs) SliverToBoxAdapter(child: _failedShelf(hub))],
+        ...body,
+      ],
     );
 
     Widget content;
@@ -397,6 +404,49 @@ class ExploreScreenState extends State<ExploreScreen>
       ),
     );
   }
+
+  void _manageMdblistShelves() => unawaited(
+    Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const MdblistExploreShelvesScreen())),
+  );
+
+  FocusableAction _manageShelvesAction() => FocusableAction(
+    debugLabel: 'ManageMdblistShelves',
+    icon: Symbols.view_list_rounded,
+    tooltip: t.explore.mdblistShelves.manage,
+    onPressed: _manageMdblistShelves,
+  );
+
+  Widget _failedShelf(CatalogHub hub) => Padding(
+    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+    child: Card(
+      child: Padding(
+        padding: const EdgeInsets.all(16),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(hub.title, style: Theme.of(context).textTheme.titleMedium),
+            Text(hub.errorMessage ?? t.explore.mdblistShelves.loadFailed),
+            Wrap(
+              spacing: 12,
+              children: [
+                TextButton(
+                  onPressed: _explore.isRetryingHub(hub.id) ? null : () => unawaited(_explore.retryHub(hub.id)),
+                  child: Text(_explore.isRetryingHub(hub.id) ? t.common.loading : t.common.retry),
+                ),
+                if (_explore.activeSource?.id == CatalogSourceId.mdblist)
+                  TextButton(
+                    onPressed: () => Navigator.of(
+                      context,
+                    ).push(MaterialPageRoute<void>(builder: (_) => const MdblistExploreShelvesScreen())),
+                    child: Text(t.explore.mdblistShelves.manage),
+                  ),
+              ],
+            ),
+          ],
+        ),
+      ),
+    ),
+  );
 
   /// DOWN out of the field: the first result when there is one to land on,
   /// otherwise the first shelf behind the (empty) query.
@@ -467,7 +517,19 @@ class ExploreScreenState extends State<ExploreScreen>
     return ToolbarScrim(
       child: Row(
         children: [
-          const Spacer(),
+          if (_explore.failedHubs.isNotEmpty)
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16),
+                child: Text(
+                  '${t.explore.mdblistShelves.loadFailed} ${_explore.failedHubs.map((hub) => hub.title).join(', ')}',
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                ),
+              ),
+            )
+          else
+            const Spacer(),
           FocusableActionBar(
             key: _actionBarKey,
             onNavigateLeft: _navigateToSidebar,
@@ -475,6 +537,7 @@ class ExploreScreenState extends State<ExploreScreen>
             onBack: _navigateToSidebar,
             spacing: 4,
             actions: [
+              if (active?.id == CatalogSourceId.mdblist) _manageShelvesAction(),
               if (active != null && sources.connectedSources.length > 1)
                 FocusableAction(
                   debugLabel: 'ExploreSourceSwitcher',

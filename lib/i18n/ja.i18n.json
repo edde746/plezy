@@ -1433,6 +1433,25 @@
     "explore": "見つける"
   },
   "explore": {
+    "mdblistShelves": {
+      "manage": "",
+      "description": "",
+      "selected": "",
+      "available": "",
+      "noLists": "",
+      "displayName": "",
+      "nameHint": "",
+      "add": "",
+      "save": "",
+      "moveUp": "",
+      "moveDown": "",
+      "unavailable": "",
+      "rateLimited": "",
+      "loadFailed": "",
+      "saveFailed": "",
+      "accountChanged": "",
+      "settingsUnreadable": ""
+    },
     "title": "見つける",
     "selectSource": "ソースを選択",
     "rows": {

@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:http/http.dart' as http;
 
+import '../../../models/catalog/mdblist_explore_shelf.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/json_utils.dart';
 import '../future_coalescer.dart';
@@ -52,6 +53,55 @@ class MdblistClient implements DisposableTrackerClient {
   Future<Map<String, dynamic>?> getUser() async {
     final res = await _request('GET', '/user');
     return res is Map ? res.cast<String, dynamic>() : null;
+  }
+
+  /// Public movie/show lists owned, copied or shared with this OAuth account.
+  Future<List<MdblistAccountList>> getAccountLists() async {
+    final data = await _request('GET', '/lists/user', queryParameters: {'include_shared': 'true'});
+    if (data is! List) throw const FormatException('Invalid MDBList account list response');
+    final lists = <int, MdblistAccountList>{};
+    for (final entry in data.whereType<Map>()) {
+      final list = MdblistAccountList.fromJson(entry.cast<String, dynamic>());
+      if (list != null && !list.isPrivate && (list.mediaType == 'movie' || list.mediaType == 'show')) {
+        lists[list.id] = list;
+      }
+    }
+    return lists.values.toList(growable: false);
+  }
+
+  /// `unified=true` returns an ordered array, not a movies/shows envelope.
+  /// Leave sort/order unset to retain the list owner's configured source order.
+  /// Offset is documented (though deprecated) and fits CatalogHubSource's
+  /// page-based interface. Keep X-Has-More: filtered/invalid rows must not make
+  /// pagination stop early, or a full last page spuriously appear to continue.
+  Future<({List<Map<String, dynamic>> items, bool hasMore})> getListItems(
+    int listId, {
+    int limit = 25,
+    int offset = 0,
+  }) async {
+    if (listId <= 0 || limit < 1 || limit > 1000 || offset < 0) {
+      throw ArgumentError('Invalid MDBList list page');
+    }
+    final response = await _requestResponse(
+      'GET',
+      '/lists/$listId/items',
+      queryParameters: {
+        'limit': '$limit',
+        'offset': '$offset',
+        'unified': 'true',
+        'append_to_response': 'genres,poster,description',
+      },
+    );
+    final data = TrackerHttpClient.decodeJson(response.body);
+    if (data is! List) throw const FormatException('Invalid MDBList unified list response');
+    return (
+      items: [for (final entry in data.whereType<Map>()) entry.cast<String, dynamic>()],
+      hasMore: switch (response.headers['x-has-more']?.toLowerCase()) {
+        'true' => true,
+        'false' => false,
+        _ => data.length >= limit,
+      },
+    );
   }
 
   /// Mark items watched. Body shape:
@@ -154,6 +204,22 @@ class MdblistClient implements DisposableTrackerClient {
     Map<String, dynamic>? body,
     Map<String, String>? queryParameters,
     Set<int> allowStatuses = _defaultAllowedStatuses,
+  }) async => TrackerHttpClient.decodeJson(
+    (await _requestResponse(
+      method,
+      path,
+      body: body,
+      queryParameters: queryParameters,
+      allowStatuses: allowStatuses,
+    )).body,
+  );
+
+  Future<http.Response> _requestResponse(
+    String method,
+    String path, {
+    Map<String, dynamic>? body,
+    Map<String, String>? queryParameters,
+    Set<int> allowStatuses = _defaultAllowedStatuses,
   }) async {
     if (_session.needsRefresh) {
       try {
@@ -171,7 +237,7 @@ class MdblistClient implements DisposableTrackerClient {
       res = await _send(method, path, body: body, queryParameters: queryParameters);
     }
 
-    if (allowStatuses.contains(res.statusCode)) return TrackerHttpClient.decodeJson(res.body);
+    if (allowStatuses.contains(res.statusCode)) return res;
 
     if (res.statusCode == 429) {
       throw TrackerRateLimitException(
