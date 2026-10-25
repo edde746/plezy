@@ -1111,6 +1111,7 @@ class _PlexQueuePlaylistClient extends _PagedPlaylistClient implements PlexClien
     int shuffle = 0,
     int repeat = 0,
     int continuous = 0,
+    int? extrasPrefixCount,
     String? librarySectionID,
     String? librarySectionTitle,
   }) {

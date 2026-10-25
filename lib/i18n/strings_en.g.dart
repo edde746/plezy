@@ -1013,6 +1013,12 @@ class Translations$settings$en {
 	/// en: 'Start each episode at the beginning when shuffling instead of resuming'
 	String get shuffleStartsFromBeginningDescription => 'Start each episode at the beginning when shuffling instead of resuming';
 
+	/// en: 'Play Pre-Roll Before Movies'
+	String get plexCinemaPreRoll => 'Play Pre-Roll Before Movies';
+
+	/// en: 'Play the pre-roll configured on your Plex server before a movie starts. Plex servers only'
+	String get plexCinemaPreRollDescription => 'Play the pre-roll configured on your Plex server before a movie starts. Plex servers only';
+
 	/// en: 'Play Next Countdown'
 	String get playNextCountdown => 'Play Next Countdown';
 
@@ -8585,6 +8591,8 @@ extension on Translations {
 			'settings.autoPlayNextEpisodeDescription' => 'Start the next episode automatically when one ends',
 			'settings.shuffleStartsFromBeginning' => 'Shuffle Starts at Beginning',
 			'settings.shuffleStartsFromBeginningDescription' => 'Start each episode at the beginning when shuffling instead of resuming',
+			'settings.plexCinemaPreRoll' => 'Play Pre-Roll Before Movies',
+			'settings.plexCinemaPreRollDescription' => 'Play the pre-roll configured on your Plex server before a movie starts. Plex servers only',
 			'settings.playNextCountdown' => 'Play Next Countdown',
 			'settings.playNextCountdownImmediate' => 'Play immediately',
 			'settings.skipIntroMode' => 'Skip Intro',
@@ -8762,10 +8770,10 @@ extension on Translations {
 			'themeEditor.editCustom' => 'Edit custom theme',
 			'themeEditor.editCustomDescription' => 'Choose every color yourself',
 			'themeEditor.locked' => 'Unlock with Supporter',
-			'themeEditor.savedLocked' => 'Saved — unlocks with Supporter',
-			'themeEditor.title' => 'Custom Theme',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.savedLocked' => 'Saved — unlocks with Supporter',
+			'themeEditor.title' => 'Custom Theme',
 			'themeEditor.startFrom' => 'Start from',
 			'themeEditor.startFromDescription' => 'Copy all colors from another theme',
 			'themeEditor.colors' => 'Colors',
@@ -9276,10 +9284,10 @@ extension on Translations {
 			'profiles.connectionAs' => ({required Object displayName}) => 'as ${displayName}',
 			'profiles.makeDefault' => 'Make default',
 			'profiles.removeConnection' => 'Remove',
-			'profiles.profileRenamed' => 'Profile renamed.',
-			'profiles.borrowAddTo' => ({required Object displayName}) => 'Add to ${displayName}',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.profileRenamed' => 'Profile renamed.',
+			'profiles.borrowAddTo' => ({required Object displayName}) => 'Add to ${displayName}',
 			'profiles.borrowExplain' => 'Borrow another profile\'s connection. PIN-protected profiles require a PIN.',
 			'profiles.borrowEmpty' => 'Nothing to borrow yet.',
 			'profiles.borrowEmptySubtitle' => 'Connect Plex, Jellyfin, or Emby to another profile first.',
@@ -9790,10 +9798,10 @@ extension on Translations {
 			'liveTv.recordEpisode' => 'Record Episode',
 			'liveTv.recordSeries' => 'Record Series',
 			'liveTv.recordOptions' => 'Record Options',
-			'liveTv.saveTo' => 'Save to',
-			'liveTv.recordings' => 'Recordings',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.saveTo' => 'Save to',
+			'liveTv.recordings' => 'Recordings',
 			'liveTv.scheduledRecordings' => 'Scheduled',
 			'liveTv.recordingRules' => 'Recording Rules',
 			'liveTv.noScheduledRecordings' => 'Nothing scheduled to record',
@@ -10304,10 +10312,10 @@ extension on Translations {
 			'performanceOverlay.buffer' => 'Buffer',
 			'performanceOverlay.app' => 'App',
 			'performanceOverlay.decoder' => 'Decoder',
-			'performanceOverlay.rawDecoder' => 'Raw Decoder',
-			'performanceOverlay.tunneling' => 'Tunneling',
 			_ => null,
 		} ?? switch (path) {
+			'performanceOverlay.rawDecoder' => 'Raw Decoder',
+			'performanceOverlay.tunneling' => 'Tunneling',
 			'performanceOverlay.passthrough' => 'Passthrough',
 			'performanceOverlay.aspect' => 'Aspect',
 			'performanceOverlay.rotation' => 'Rotation',
