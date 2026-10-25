@@ -685,6 +685,8 @@ class SettingsService extends BaseSharedPreferencesService {
   /// Explore visibility setting.
   static BoolPref showExploreTabForProfile(String profileId) =>
       BoolPref(profileScopedPrefsKey(profileId, 'show_explore_tab'), defaultValue: true);
+  static StringPref preferredServerForProfile(String profileId) =>
+      StringPref(profileScopedPrefsKey(profileId, 'preferred_server_id'));
   // Lets Continue Watching be added/removed from Home like any other
   // Organizer row (see home_layout_settings_screen.dart), instead of it
   // always being a fixed, unremovable fixture ahead of every other row.
@@ -992,6 +994,21 @@ class SettingsService extends BaseSharedPreferencesService {
   static const ambientLighting = BoolPref('ambient_lighting');
   static const audioPassthrough = _AudioPassthroughPref();
   static const audioNormalization = BoolPref('audio_normalization');
+  static final audioEqualizer60 = _audioEqualizerPref('audio_equalizer_60');
+  static final audioEqualizer250 = _audioEqualizerPref('audio_equalizer_250');
+  static final audioEqualizer1000 = _audioEqualizerPref('audio_equalizer_1000');
+  static final audioEqualizer4000 = _audioEqualizerPref('audio_equalizer_4000');
+  static final audioEqualizer12000 = _audioEqualizerPref('audio_equalizer_12000');
+  static List<DoublePref> get audioEqualizerBandPrefs => [
+    audioEqualizer60,
+    audioEqualizer250,
+    audioEqualizer1000,
+    audioEqualizer4000,
+    audioEqualizer12000,
+  ];
+
+  static DoublePref _audioEqualizerPref(String key) =>
+      DoublePref(key, transform: (value) => value.isFinite ? value.clamp(-12.0, 12.0).toDouble() : 0.0);
 
   /// Replaced the `audio_downmix` stereo toggle: on → [AudioChannelLimit.stereo].
   static const audioChannelLimit = LegacyBoolEnumPref<AudioChannelLimit>(
@@ -1741,6 +1758,7 @@ class SettingsService extends BaseSharedPreferencesService {
     ambientLighting,
     audioPassthrough,
     audioNormalization,
+    ...audioEqualizerBandPrefs,
     audioChannelLimit,
     audioDownmixNormalize,
     appLocale,

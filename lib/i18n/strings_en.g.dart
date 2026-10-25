@@ -1510,6 +1510,15 @@ class Translations$settings$en {
 	/// en: 'Startup Section'
 	String get startupSection => 'Startup Section';
 
+	/// en: 'Preferred Server'
+	String get preferredServer => 'Preferred Server';
+
+	/// en: 'Prioritize this server's results while keeping every connected server available.'
+	String get preferredServerDescription => 'Prioritize this server\'s results while keeping every connected server available.';
+
+	/// en: 'Automatic'
+	String get preferredServerAutomatic => 'Automatic';
+
 	/// en: 'Show Explore Tab'
 	String get showExploreTab => 'Show Explore Tab';
 
@@ -5476,6 +5485,21 @@ class Translations$videoSettings$en {
 	/// en: 'Stereo'
 	String get audioOutputStereo => 'Stereo';
 
+	/// en: 'Audio Equalizer'
+	String get audioEqualizer => 'Audio Equalizer';
+
+	/// en: 'Adjust five frequency bands for this device. Available on mpv; an active EQ decodes audio and disables passthrough.'
+	String get audioEqualizerDescription => 'Adjust five frequency bands for this device. Available on mpv; an active EQ decodes audio and disables passthrough.';
+
+	/// en: 'Flat'
+	String get audioEqualizerFlat => 'Flat';
+
+	/// en: 'Custom'
+	String get audioEqualizerActive => 'Custom';
+
+	/// en: 'Couldn't save audio equalizer settings.'
+	String get audioEqualizerSaveFailed => 'Couldn\'t save audio equalizer settings.';
+
 	/// en: 'Normalize Loudness'
 	String get audioNormalization => 'Normalize Loudness';
 
@@ -9308,6 +9332,9 @@ extension on Translations {
 			'settings.showNavBarLabels' => 'Show Navigation Bar Labels',
 			'settings.showNavBarLabelsDescription' => 'Display text labels under navigation bar icons',
 			'settings.startupSection' => 'Startup Section',
+			'settings.preferredServer' => 'Preferred Server',
+			'settings.preferredServerDescription' => 'Prioritize this server\'s results while keeping every connected server available.',
+			'settings.preferredServerAutomatic' => 'Automatic',
 			'settings.showExploreTab' => 'Show Explore Tab',
 			'settings.showExploreTabDescription' => 'Display the Explore tab with content from Plex Discover and connected trackers',
 			'settings.hideEmptyLibraries' => 'Hide empty libraries',
@@ -9319,11 +9346,11 @@ extension on Translations {
 			'settings.languageAndRegion' => 'Language & Region',
 			'settings.startup' => 'Startup',
 			'settings.display' => 'Display',
+			_ => null,
+		} ?? switch (path) {
 			'settings.libraryAndCards' => 'Library & Cards',
 			'settings.homeScreen' => 'Home Screen',
 			'settings.navigation' => 'Navigation',
-			_ => null,
-		} ?? switch (path) {
 			'settings.window' => 'Window',
 			'settings.liveTv' => 'Live TV',
 			'settings.player' => 'Player',
@@ -9833,11 +9860,11 @@ extension on Translations {
 			'mpvConfig.presetDeleted' => 'Preset deleted',
 			'mpvConfig.confirmDeletePreset' => 'Are you sure you want to delete this preset?',
 			'mpvConfig.configPlaceholder' => 'gpu-api=vulkan\nhwdec=auto\n# comment',
+			_ => null,
+		} ?? switch (path) {
 			'mpvConfig.lineHint' => 'option=value',
 			'mpvConfig.addLine' => 'Add line',
 			'mpvConfig.removeLine' => 'Remove line',
-			_ => null,
-		} ?? switch (path) {
 			'mpvConfig.embeddedVoHint' => 'vo, gpu-context and gpu-api are ignored on Linux: embedded video always renders through vo=libmpv on the video plane, and gpu-next (which compute shaders like ArtCNN need) cannot run embedded.',
 			'dialog.confirmAction' => 'Confirm Action',
 			'profiles.addPlezyProfile' => 'Add Plezy profile',
@@ -10347,11 +10374,11 @@ extension on Translations {
 			'explore.detail.physicalRelease' => 'On disc',
 			'explore.detail.ended' => 'Ended',
 			'explore.detail.addedOn' => ({required Object date}) => 'Added ${date}',
+			_ => null,
+		} ?? switch (path) {
 			'explore.detail.yourRating' => 'Your rating',
 			'explore.detail.budget' => 'Budget',
 			'explore.detail.revenue' => 'Box office',
-			_ => null,
-		} ?? switch (path) {
 			'explore.detail.contentAdvisory' => 'Age guidance',
 			'explore.detail.tags' => 'Tags',
 			'explore.detail.revealSpoilerTags' => 'Show spoiler tags',
@@ -10861,11 +10888,11 @@ extension on Translations {
 			'companionRemote.session.minimize' => 'Minimize',
 			'companionRemote.session.manualAddressHint' => 'Manual connection address:',
 			'companionRemote.pairing.discoveryDescription' => 'Plezy devices with the same Plex account appear here',
+			_ => null,
+		} ?? switch (path) {
 			'companionRemote.pairing.hostAddressHint' => '192.168.1.100:48632',
 			'companionRemote.pairing.connecting' => 'Connecting...',
 			'companionRemote.pairing.searchingForDevices' => 'Looking for devices...',
-			_ => null,
-		} ?? switch (path) {
 			'companionRemote.pairing.noDevicesFound' => 'No devices found on your network',
 			'companionRemote.pairing.noDevicesHint' => 'Open Plezy on desktop and use the same Wi-Fi',
 			'companionRemote.pairing.availableDevices' => 'Available Devices',
@@ -10935,6 +10962,11 @@ extension on Translations {
 			'videoSettings.audioOutputSurround' => 'Surround',
 			'videoSettings.audioOutputSpatial' => 'Spatial Audio',
 			'videoSettings.audioOutputStereo' => 'Stereo',
+			'videoSettings.audioEqualizer' => 'Audio Equalizer',
+			'videoSettings.audioEqualizerDescription' => 'Adjust five frequency bands for this device. Available on mpv; an active EQ decodes audio and disables passthrough.',
+			'videoSettings.audioEqualizerFlat' => 'Flat',
+			'videoSettings.audioEqualizerActive' => 'Custom',
+			'videoSettings.audioEqualizerSaveFailed' => 'Couldn\'t save audio equalizer settings.',
 			'videoSettings.audioNormalization' => 'Normalize Loudness',
 			'videoSettings.audioNormalizationDisablesPassthrough' => 'Decodes audio to PCM; passthrough is off while this is on',
 			'performanceOverlay.color' => 'Color',

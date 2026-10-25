@@ -21,6 +21,8 @@
 - Add Home backdrop visibility and Continue Watching row-size controls.
 - Add an optional audio and subtitle picker before starting video playback.
 - Add device-local preferred-language subtitle selection and opt-in downloads through the server's subtitle provider API.
+- Add a five-band device-local audio equalizer to mpv video playback.
+- Let each profile prioritize a preferred media server in cross-server result ordering.
 - Added changelog enforcement, changelog-based release notes, and Discord announcements for published PlezyNG releases.
 - Require an explicit versioned release dispatch, and move release downloads and package updates to PlezyNG.
 - Remove the inherited WinGet publisher and add the PlezyNG Discord support link to the README.

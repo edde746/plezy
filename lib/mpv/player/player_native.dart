@@ -2,7 +2,7 @@ import 'dart:async' show unawaited;
 import 'dart:convert';
 import 'dart:io' show Platform;
 
-import 'package:flutter/foundation.dart' show mapEquals, visibleForTesting;
+import 'package:flutter/foundation.dart' show listEquals, mapEquals, visibleForTesting;
 import 'package:flutter/services.dart';
 
 import '../../models/audio_channel_limit.dart';
@@ -18,10 +18,11 @@ typedef _AudioStateRequest = ({
   AudioChannelLimit channelLimit,
   int downmixCenterBoostDb,
   bool downmixNormalize,
+  List<double> equalizerGains,
   double rate,
 });
 
-typedef _AudioStateGenerations = ({int passthrough, int normalization, int downmix, int rate});
+typedef _AudioStateGenerations = ({int passthrough, int normalization, int downmix, int equalizer, int rate});
 
 /// MPV-backed player for platforms where AetherEngine is not the native route.
 class PlayerNative extends PlayerBase {
@@ -922,6 +923,7 @@ class PlayerNative extends PlayerBase {
           channelLimit: accepted.channelLimit,
           downmixCenterBoostDb: accepted.downmixCenterBoostDb,
           downmixNormalize: accepted.downmixNormalize,
+          equalizerGains: accepted.equalizerGains,
           rate: rate,
         );
       } else {
@@ -1037,6 +1039,7 @@ class PlayerNative extends PlayerBase {
   static const int _normalizationAudioField = 1 << 1;
   static const int _downmixAudioField = 1 << 2;
   static const int _rateAudioField = 1 << 3;
+  static const int _equalizerAudioField = 1 << 4;
 
   bool _passthroughRequested = false;
   bool _passthroughActive = false;
@@ -1048,10 +1051,13 @@ class PlayerNative extends PlayerBase {
   int _activeDownmixCenterBoostDb = 0;
   bool _downmixNormalize = false;
   bool _activeDownmixNormalize = false;
+  List<double> _equalizerGainsRequested = const [0, 0, 0, 0, 0];
+  List<double> _activeEqualizerGains = const [0, 0, 0, 0, 0];
   double _currentRate = 1.0;
   int _passthroughGeneration = 0;
   int _normalizationGeneration = 0;
   int _downmixGeneration = 0;
+  int _equalizerGeneration = 0;
   int _rateGeneration = 0;
   _AudioStateRequest _acceptedAudioState = const (
     passthrough: false,
@@ -1059,6 +1065,7 @@ class PlayerNative extends PlayerBase {
     channelLimit: AudioChannelLimit.original,
     downmixCenterBoostDb: 0,
     downmixNormalize: false,
+    equalizerGains: [0, 0, 0, 0, 0],
     rate: 1.0,
   );
 
@@ -1097,6 +1104,7 @@ class PlayerNative extends PlayerBase {
     channelLimit: _channelLimitRequested,
     downmixCenterBoostDb: _downmixCenterBoostDb,
     downmixNormalize: _downmixNormalize,
+    equalizerGains: _equalizerGainsRequested,
     rate: _requestedRate,
   );
 
@@ -1108,6 +1116,7 @@ class PlayerNative extends PlayerBase {
         ? requested.downmixCenterBoostDb
         : accepted.downmixCenterBoostDb,
     downmixNormalize: fields & _downmixAudioField != 0 ? requested.downmixNormalize : accepted.downmixNormalize,
+    equalizerGains: fields & _equalizerAudioField != 0 ? requested.equalizerGains : accepted.equalizerGains,
     rate: fields & _rateAudioField != 0 ? requested.rate : accepted.rate,
   );
 
@@ -1123,6 +1132,9 @@ class PlayerNative extends PlayerBase {
       _downmixCenterBoostDb = previous.downmixCenterBoostDb;
       _downmixNormalize = previous.downmixNormalize;
     }
+    if (fields & _equalizerAudioField != 0 && generations.equalizer == _equalizerGeneration) {
+      _equalizerGainsRequested = previous.equalizerGains;
+    }
     if (fields & _rateAudioField != 0 && generations.rate == _rateGeneration) {
       _requestedRate = previous.rate;
     }
@@ -1133,11 +1145,13 @@ class PlayerNative extends PlayerBase {
     if (fields & _passthroughAudioField != 0) ++_passthroughGeneration;
     if (fields & _normalizationAudioField != 0) ++_normalizationGeneration;
     if (fields & _downmixAudioField != 0) ++_downmixGeneration;
+    if (fields & _equalizerAudioField != 0) ++_equalizerGeneration;
     if (fields & _rateAudioField != 0) ++_rateGeneration;
     final generations = (
       passthrough: _passthroughGeneration,
       normalization: _normalizationGeneration,
       downmix: _downmixGeneration,
+      equalizer: _equalizerGeneration,
       rate: _rateGeneration,
     );
     final operation = _audioStateTail.then((_) => _reconcileAudioState(requested, fields, generations));
@@ -1163,6 +1177,7 @@ class PlayerNative extends PlayerBase {
           previous,
           forceDownmix: fields & _downmixAudioField != 0,
           forceNormalization: fields & _downmixAudioField != 0,
+          forceEqualizer: fields & _equalizerAudioField != 0,
         );
       } catch (rollbackError, rollbackStackTrace) {
         appLogger.e(
@@ -1180,6 +1195,7 @@ class PlayerNative extends PlayerBase {
     _AudioStateRequest target, {
     bool forceDownmix = false,
     bool forceNormalization = false,
+    bool forceEqualizer = false,
   }) async {
     if (_nativeCoreUnavailable) return;
     // Normalization wins over passthrough: loudnorm is a filter and filters
@@ -1193,7 +1209,8 @@ class PlayerNative extends PlayerBase {
         target.passthrough &&
         target.rate == 1.0 &&
         target.channelLimit != AudioChannelLimit.stereo &&
-        !target.normalization;
+        !target.normalization &&
+        !target.equalizerGains.any((gain) => gain.abs() >= 0.05);
     final normalizationShouldBeActive = target.normalization;
 
     // Ordering keeps loudnorm off a bitstream in both directions: leave
@@ -1224,6 +1241,10 @@ class PlayerNative extends PlayerBase {
     if (forceNormalization || _normalizationActive != normalizationShouldBeActive) {
       await super.setAudioNormalization(normalizationShouldBeActive);
       _normalizationActive = normalizationShouldBeActive;
+    }
+    if (forceEqualizer || !listEquals(_activeEqualizerGains, target.equalizerGains)) {
+      await super.setAudioEqualizer(target.equalizerGains);
+      _activeEqualizerGains = List<double>.unmodifiable(target.equalizerGains);
     }
     if (passthroughShouldBeActive && !_passthroughActive) {
       await _applyPassthrough(true);
@@ -1274,6 +1295,15 @@ class PlayerNative extends PlayerBase {
     _downmixCenterBoostDb = centerBoostDb;
     _downmixNormalize = normalize;
     return _enqueueAudioStateReconciliation(_downmixAudioField);
+  }
+
+  @override
+  Future<void> setAudioEqualizer(List<double> bandGains) {
+    if (_nativeCoreUnavailable || bandGains.length != 5) return Future<void>.value();
+    _equalizerGainsRequested = List<double>.unmodifiable(
+      bandGains.map((gain) => gain.isFinite ? gain.clamp(-12.0, 12.0).toDouble() : 0.0),
+    );
+    return _enqueueAudioStateReconciliation(_equalizerAudioField);
   }
 
   @override

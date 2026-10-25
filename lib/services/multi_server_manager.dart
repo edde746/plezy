@@ -74,6 +74,7 @@ class MultiServerManager {
   FutureOr<void> Function(JellyfinConnection connection)? onJellyfinConnectionUpdated;
 
   final Map<String, MediaServerClient> _clients = {};
+  String? _preferredServerId;
 
   final Map<String, PlexServer> _plexServers = {};
 
@@ -239,7 +240,22 @@ class MultiServerManager {
   /// silently exclude them and callers (the active-profile binder, library
   /// refresh gates) would behave as if the manager were empty for
   /// MediaBrowser-only profiles.
-  List<String> get serverIds => _clients.keys.toList();
+  List<String> get serverIds => _preferredFirst(_clients.keys.toList());
+
+  /// Prefer this server for aggregate result ordering without excluding any
+  /// other backend. The active profile owns the selection.
+  void setPreferredServerId(String? serverId) {
+    final normalized = serverId == null || serverId.isEmpty ? null : serverId;
+    if (_preferredServerId == normalized) return;
+    _preferredServerId = normalized;
+    _emitStatus();
+  }
+
+  List<String> _preferredFirst(List<String> serverIds) {
+    final preferred = _preferredServerId;
+    if (preferred == null || !serverIds.contains(preferred)) return serverIds;
+    return [preferred, ...serverIds.where((id) => id != preferred)];
+  }
 
   /// Every server id the manager holds state for: live clients plus
   /// client-less registrations (a Plex server whose connect failed, or one
@@ -267,7 +283,8 @@ class MultiServerManager {
     return scope != null && scope.profileId != profileId;
   }
 
-  List<String> get onlineServerIds => _serverStatus.entries.where((e) => e.value).map((e) => e.key).toList();
+  List<String> get onlineServerIds =>
+      _preferredFirst(_serverStatus.entries.where((e) => e.value).map((e) => e.key).toList());
 
   List<String> get offlineServerIds => _serverStatus.entries.where((e) => !e.value).map((e) => e.key).toList();
 

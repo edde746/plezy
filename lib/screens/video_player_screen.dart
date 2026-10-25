@@ -2243,6 +2243,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         }
       }
 
+      final audioEqualizer = [for (final pref in SettingsService.audioEqualizerBandPrefs) settingsService.read(pref)];
+      if (currentPlayer.playerType == 'mpv' &&
+          currentPlayer is AudioEqualizerCapable &&
+          audioEqualizer.any((gain) => gain.abs() >= 0.05)) {
+        // Apply after custom mpv properties so an explicitly enabled app EQ
+        // remains active when the custom config also contains an `af` line.
+        await (currentPlayer as AudioEqualizerCapable).setAudioEqualizer(audioEqualizer);
+      }
+
       final maxVolume = settingsService.read(SettingsService.maxVolume);
       try {
         await currentPlayer.setProperty('volume-max', maxVolume.toString());
