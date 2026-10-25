@@ -37,6 +37,11 @@ class _LinuxKeepAliveState extends State<LinuxKeepAlive> {
   void initState() {
     super.initState();
     if (!LinuxKeepAlive.ticksOnThisPlatform) return;
+    // A/B probe for #1874: the 10 Hz repaint stream is a periodic compositor
+    // perturbation that may drive the HDR colour oscillation on the native
+    // plane (GNOME). Launch with PLEZY_AB_NO_KEEP_ALIVE=1 to run the inert
+    // leg of that test with an otherwise unchanged build.
+    if (Platform.environment['PLEZY_AB_NO_KEEP_ALIVE'] == '1') return;
     // Repaint every 100ms to keep Flutter's frame scheduler active.
     _timer = Timer.periodic(const Duration(milliseconds: 100), (_) {
       if (mounted) {
