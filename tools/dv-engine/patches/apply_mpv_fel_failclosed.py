@@ -37,7 +37,7 @@ def apply(root: Path) -> None:
     replace_once(
         root, "filters/f_enhancement_pair.c",
         "    bool bl_eof;\n    bool el_eof;\n    bool el_seen;\n",
-        "    bool bl_eof;\n    bool el_eof;\n    bool failed;\n    bool failure_eof_sent;\n    bool warned_unmatched;\n    bool warned_invalid_pair;\n",
+        "    bool bl_eof;\n    bool el_eof;\n    bool failed;\n    bool setup_failed;\n    bool failure_eof_sent;\n    bool warned_unmatched;\n",
     )
     replace_once(
         root, "filters/f_enhancement_pair.c",
@@ -176,7 +176,23 @@ def apply(root: Path) -> None:
     }
 }
 """,
-        """static void pair_process(struct mp_filter *f)
+        """static void pair_fail(struct mp_filter *f, const char *reason)
+{
+    struct priv *p = f->priv;
+    if (!p->failed)
+        MP_ERR(f, "%s\\n", reason);
+    p->failed = true;
+    while (p->num_bl_pending)
+        pop_head(&p->bl_pending, &p->num_bl_pending);
+    while (p->num_el_pending)
+        pop_head(&p->el_pending, &p->num_el_pending);
+    if (!p->failure_eof_sent && mp_pin_in_needs_data(f->ppins[1])) {
+        mp_pin_in_write(f->ppins[1], MP_EOF_FRAME);
+        p->failure_eof_sent = true;
+    }
+}
+
+static void pair_process(struct mp_filter *f)
 {
     struct priv *p = f->priv;
     struct mp_pin *in = f->ppins[0];
@@ -215,43 +231,47 @@ def apply(root: Path) -> None:
             continue;
         }
 
+        // Unknown/non-finite timestamps cannot establish a safe pair.
+        if (have_el && cmp == 2) {
+            pair_fail(f, "Cannot pair Dolby Vision layers: unknown or non-finite PTS.");
+            return;
+        }
+
         if (have_el && cmp == 0) {
             struct mp_image *el = take_head(&p->el_pending, &p->num_el_pending);
             take_head(&p->bl_pending, &p->num_bl_pending);
             if (bl->params.no_enhancement_layer || !inherit_dovi_from_el(bl, el)) {
-                if (!p->warned_invalid_pair) {
-                    MP_ERR(f, "Matched BL/EL frames lack usable Dolby Vision metadata; "
-                              "dropping the frame instead of claiming FEL.\\n");
-                    p->warned_invalid_pair = true;
-                }
                 talloc_free(el);
                 talloc_free(bl);
-                continue;
+                pair_fail(f, "Matched BL/EL frames lack usable Dolby Vision metadata.");
+                return;
             }
             bl->enhancement_layer = el;
             mp_pin_in_write(out, MAKE_FRAME(MP_FRAME_VIDEO, bl));
             continue;
         }
 
-        // Unknown PTS never means equal. Keep the queues bounded, then drop
-        // unmatched BL frames instead of pairing by packet order or rendering
-        // them without their required enhancement data.
-        bool give_up = p->el_eof || (have_el && cmp > 0) ||
-                       p->num_bl_pending >= QUEUE_MAX;
-        if (!give_up)
+        if (p->el_eof) {
+            pair_fail(f, "Enhancement stream ended before all base frames could be paired.");
             return;
-
-        const char *reason = p->el_eof ? "EL EOF" :
-                             (have_el && cmp > 0) ? "newer EL PTS" :
-                             (have_el && cmp == 2) ? "unknown PTS" :
-                             "bounded pairing queue";
-        if (!p->warned_unmatched) {
-            MP_WARN(f, "Dropping unmatched BL frame (%.6f; %s); "
-                       "base-layer-only output is disabled for this FEL experiment.\\n",
-                    bl->pts, reason);
-            p->warned_unmatched = true;
         }
-        pop_head(&p->bl_pending, &p->num_bl_pending);
+
+        // A newer EL proves the oldest BL has no partner. Drop that BL and
+        // keep looking for a timestamp match; never render it by itself.
+        if (have_el && cmp > 0) {
+            if (!p->warned_unmatched) {
+                MP_WARN(f, "Dropping unmatched BL frame (%.6f; newer EL PTS); "
+                           "base-layer-only output is disabled for this FEL experiment.\\n",
+                        bl->pts);
+                p->warned_unmatched = true;
+            }
+            pop_head(&p->bl_pending, &p->num_bl_pending);
+            continue;
+        }
+
+        // No EL frame is ready yet. The bounded BL queue applies back-pressure
+        // until the decoder produces an EL frame or signals EOF.
+        return;
     }
 }
 """,
@@ -264,9 +284,9 @@ def apply(root: Path) -> None:
 """,
         """    p->bl_eof = false;
     p->el_eof = false;
+    p->failed = p->setup_failed;
     p->failure_eof_sent = false;
     p->warned_unmatched = false;
-    p->warned_invalid_pair = false;
 """,
     )
     replace_once(
@@ -315,6 +335,7 @@ def apply(root: Path) -> None:
     struct priv *p = f->priv;
     if (!el_sh) {
         p->failed = true;
+        p->setup_failed = true;
         MP_ERR(f, "Dolby Vision declares an enhancement layer but no EL stream "
                   "is available; refusing base-layer-only playback.\\n");
         return f;
@@ -327,6 +348,7 @@ def apply(root: Path) -> None:
         MP_ERR(f, "Failed to set up enhancement-layer decoder; "
                   "refusing base-layer-only playback.\\n");
         p->failed = true;
+        p->setup_failed = true;
         return f;
     }
     p->el_in = p->el_dec->f->pins[0];
