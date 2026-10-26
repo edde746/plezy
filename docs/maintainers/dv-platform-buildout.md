@@ -13,7 +13,7 @@ driver, EDID, kernel module or TV firmware is replaced automatically.
 | macOS, iOS, tvOS | Separate SwiftUI research host and pinned AetherEngine `DualLayerDolbyVision` trait; opt-in load, surface, play/pause, seek, stop and engine-route readout. | Not integrated into production `MpvPlayerCore`. This evidence set has no Mac build or Apple-device result; a route label does not qualify pixels or output. |
 | Offline companion | Pinned FelBaker builder patches its VapourSynth output key and builds a tested RGB48 pipeline. A 48-frame generated P7 sample changed all 2,073,600 designed residual-patch pixels; both HDR10/PQ HEVC and SDR/BT.709 H.264 outputs encoded and passed `ffprobe` frame/color-tag checks. | These lossy files are derived compatibility versions, not native DV. FelBaker is a comparison implementation, not an independent Dolby reference; real-clip and playback-device checks remain open. |
 | Android | Existing native DV, P7→8.1 and base-layer routes remain available; diagnostics label known EL-discarding routes. An arm64 debug APK built and 46 Dolby-related unit tests passed. | No experimental P7 FEL graph is packaged and no Android device render was run. Generic DV codec advertisement does not prove FEL. CoreELEC S5 remains a separate vendor/kernel project. |
-| webOS | Existing native and compatibility playback; use an ordinary companion-derived version where native fidelity is insufficient. | No BL/EL GPU composer is exposed by the current webOS app path. No root patch is installed. |
+| webOS | When the selected source reports a Dolby Vision profile, playback asks Plex, Jellyfin, or Emby for a full server video encode, even at Original quality. A server response that offers only the original direct stream is rejected. | The request makes a non-DV-compatible encode reachable; it does not qualify the server's color conversion or visible pixels. Server tone-mapping and encoder support vary. No BL/EL GPU composer is exposed by the current webOS app path. |
 | Windows | Existing mpv compatibility playback; portable route-policy and companion orchestration code. The approved private Windows build route remains Packer. | No Packer canary, D3D11/Vulkan FEL adapter build or device result is claimed here. Preserve Packer and qualify output separately. |
 
 `tools/dv-engine/route_policy.py` is a tested adapter contract and standalone
@@ -187,7 +187,10 @@ BT.2020/PQ 10-bit HEVC, without preserved DV metadata or fabricated mastering
 metadata; the SDR target is BT.709 AVC. Both are lossy. Publish only a personally
 validated output as an ordinary optimized/alternate version in Plex/Jellyfin/Emby
 or a file source, using the app's existing version-selection flow. There is no
-automatic server upload or on-demand companion service in this change.
+automatic server upload or on-demand companion-file service in this change. The
+webOS adapter separately uses each media server's existing playback transcoder
+when the selected source is identified as Dolby Vision; that route still needs
+color-range and visible-pixel qualification on each server family.
 
 ## Validation and Luna's next tasks
 

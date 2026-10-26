@@ -1873,6 +1873,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
             preferredSubtitleTrack: _preferredSubtitleTrack,
             sessionIdentifier: _playbackSessionIdentifier,
             transcodeSessionId: _playbackTranscodeSessionId,
+            requestCompatibleDolbyVisionRendition: PlatformDetector.isWebOSBuild(),
             // The same resume the open will land on (see
             // _resolveOpenResumePosition): a stacked item opens the file
             // holding it.

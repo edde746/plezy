@@ -118,6 +118,10 @@ class MediaDisplayCriteria {
   bool get hasDisplayMetadata =>
       (doviProfile ?? 0) > 0 || _hasValue(transfer) || _hasValue(primaries) || _hasValue(matrix);
 
+  /// True only when the server identified a Dolby Vision profile. Color tags
+  /// alone cannot distinguish a DV base layer from ordinary HDR10/HLG.
+  bool get hasDolbyVision => (doviProfile ?? 0) > 0;
+
   /// Whether the server said enough to describe a stream: a rate, or
   /// dimensions plus color/DoVi tags.
   bool get isUsable => hasFrameRate || (hasDimensions && hasDisplayMetadata);

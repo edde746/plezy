@@ -3,6 +3,7 @@ import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../media/media_part_timeline.dart';
 import '../media/media_source_info.dart';
+import '../media/dolby_vision_compatibility.dart';
 import '../media/media_version.dart';
 import '../models/audio_quality_preset.dart';
 import '../models/transcode_quality_preset.dart';
@@ -72,6 +73,17 @@ class PlaybackInitializationOptions {
   /// [MediaSourceInfo.partTimeline]. Null starts from the first file.
   final Duration? startPosition;
 
+  /// Ask the server for a video encode when the selected source is identified
+  /// as Dolby Vision. Used by platforms whose playback path cannot compose DV
+  /// layers. This is a request for a compatible rendition, not proof that the
+  /// server's output color conversion is correct.
+  final bool requestCompatibleDolbyVisionRendition;
+
+  bool requestsCompatibleDolbyVisionRendition(MediaSourceInfo? source) => shouldRequestCompatibleDolbyVisionRendition(
+    requested: requestCompatibleDolbyVisionRendition,
+    source: source?.displayCriteria,
+  );
+
   const PlaybackInitializationOptions({
     required this.metadata,
     required this.selectedMediaIndex,
@@ -86,6 +98,7 @@ class PlaybackInitializationOptions {
     this.sessionIdentifier,
     this.transcodeSessionId,
     this.startPosition,
+    this.requestCompatibleDolbyVisionRendition = false,
   });
 }
 

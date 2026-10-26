@@ -3057,6 +3057,7 @@ class PlexClient
     MediaSubtitleTrack? selectedSubtitleTrack,
     int? partId,
     bool sourceCodecRefused = false,
+    bool forceVideoEncode = false,
   }) async {
     try {
       await selectSubtitleStreamForBurn(partId: partId, track: selectedSubtitleTrack);
@@ -3071,6 +3072,7 @@ class PlexClient
         selectedSubtitleTrack: selectedSubtitleTrack,
         useTsFallbackTarget: useTsFallbackTarget,
         sourceCodecRefused: sourceCodecRefused,
+        forceVideoEncode: forceVideoEncode,
       );
 
       final primary = await _runTranscodeDecision(
@@ -3269,6 +3271,7 @@ class PlexClient
     MediaSubtitleTrack? selectedSubtitleTrack,
     bool useTsFallbackTarget = false,
     bool sourceCodecRefused = false,
+    bool forceVideoEncode = false,
   }) {
     final isOriginal = preset.isOriginal;
     final selectedInternalSubtitle = _selectedInternalSubtitleForHls(selectedSubtitleTrack);
@@ -3297,8 +3300,14 @@ class PlexClient
       // `directStream=1` it copies the audio and encodes the video to the
       // first target codec it can produce, at source resolution and 20 Mbps
       // when no preset caps it.
-      'directPlay': selectedInternalSubtitle == null && isOriginal && !sourceCodecRefused ? '1' : '0',
-      'directStream': isOriginal ? '1' : '0',
+      'directPlay': selectedInternalSubtitle == null && isOriginal && !sourceCodecRefused && !forceVideoEncode
+          ? '1'
+          : '0',
+      'directStream': forceVideoEncode
+          ? '0'
+          : isOriginal
+          ? '1'
+          : '0',
       'subtitleSize': '100',
       'audioBoost': '100',
       'location': 'lan',
@@ -3346,6 +3355,7 @@ class PlexClient
     int? audioStreamId,
     MediaSubtitleTrack? selectedSubtitleTrack,
     bool useTsFallbackTarget = false,
+    bool forceVideoEncode = false,
   }) {
     return _buildTranscodeParams(
       ratingKey: ratingKey,
@@ -3357,6 +3367,7 @@ class PlexClient
       audioStreamId: audioStreamId,
       selectedSubtitleTrack: selectedSubtitleTrack,
       useTsFallbackTarget: useTsFallbackTarget,
+      forceVideoEncode: forceVideoEncode,
     );
   }
 
@@ -3935,9 +3946,19 @@ class PlexClient
       final isTrack = options.metadata.kind == MediaKind.track;
       final audioPreset = options.audioQualityPreset ?? AudioQualityPreset.original;
       final sourceCodecRefused = !isTrack && _sourceCodecRefused(data);
+      final forceCompatibleDolbyVisionTranscode = options.requestsCompatibleDolbyVisionRendition(data.mediaInfo);
       final wantTranscode = isTrack
           ? !audioPreset.isOriginal
-          : sourceCodecRefused || _presetNeedsTranscode(options.qualityPreset, data);
+          : sourceCodecRefused ||
+                forceCompatibleDolbyVisionTranscode ||
+                _presetNeedsTranscode(options.qualityPreset, data);
+      if (forceCompatibleDolbyVisionTranscode) {
+        appLogger.i('Dolby Vision profile detected; requesting a server-generated compatibility rendition');
+      }
+      if (forceCompatibleDolbyVisionTranscode &&
+          (options.sessionIdentifier == null || options.transcodeSessionId == null)) {
+        throw PlaybackException(t.messages.playbackFailed, reason: PlaybackFailureReason.noPlayableSource);
+      }
       if (wantTranscode && options.sessionIdentifier != null && options.transcodeSessionId != null) {
         if (isTrack) {
           final result = await buildMusicTranscodeStartPath(
@@ -3981,6 +4002,7 @@ class PlexClient
           selectedSubtitleTrack: requestedSubtitleTrack,
           partId: data.mediaInfo?.partId,
           sourceCodecRefused: sourceCodecRefused,
+          forceVideoEncode: forceCompatibleDolbyVisionTranscode,
         );
 
         // A transcode that cannot carry the requested caption is not the outcome we asked for. The
@@ -4080,6 +4102,9 @@ class PlexClient
     PlaybackInitializationOptions options, {
     int? activeAudioStreamId,
   }) {
+    if (options.requestsCompatibleDolbyVisionRendition(data.mediaInfo)) {
+      throw PlaybackException(t.messages.playbackFailed, reason: PlaybackFailureReason.noPlayableSource);
+    }
     final fallbackReason = outcome == TranscodeDecisionOutcome.directPlayOnly
         ? TranscodeFallbackReason.directPlayOnly
         : TranscodeFallbackReason.decisionFailed;
