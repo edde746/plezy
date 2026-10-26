@@ -19,6 +19,9 @@ WORKFLOW = Path(sys.argv[1]).resolve() if len(sys.argv) == 2 else DEFAULT_WORKFL
 # so fixture checks use their local copies rather than the checkout's real ones.
 SETUP_FLUTTER_GIT = WORKFLOW.parents[1] / "actions/setup-flutter-git/action.yml"
 WINDOWS_CMAKE = WORKFLOW.parents[2] / "windows/CMakeLists.txt"
+WEBOS_CANDIDATE_BUILDER = ROOT / "tools/webos/build_release_candidate.sh"
+WEBOS_IPK_BUILDER = ROOT / "tools/webos/build_ipk.sh"
+WEBOS_RELEASE_GATE = ROOT / "tools/webos/check_release_eligibility.py"
 text = WORKFLOW.read_text(encoding="utf-8")
 CI_WORKFLOW = ROOT / ".github/workflows/ci.yml"
 ci_text = CI_WORKFLOW.read_text(encoding="utf-8") if CI_WORKFLOW.is_file() else ""
@@ -295,16 +298,87 @@ require(
     "manual workflow must expose required release and webOS validation modes",
 )
 require(
+    re.search(
+        r"(?ms)^      include_webos_release:\n.*?        type: boolean\n"
+        r"        default: false\n",
+        text,
+    )
+    is not None,
+    "public WebOS release inclusion must be an explicit opt-in",
+)
+require(
     "Validate release tag before building" in job("validate-trusted-ref")
     and "inputs.mode == 'release'" in job("validate-trusted-ref")
     and "RELEASE_TAG: ${{ inputs.release_tag }}" in job("validate-trusted-ref"),
     "release mode must validate its optional release_tag input before building",
 )
+build_webos = job("build-webos")
 require(
-    "build-webos:" in text
-    and "inputs.mode == 'webos-validation'" in job("build-webos")
-    and "bash tools/webos/build_release_candidate.sh" in job("build-webos"),
-    "manual webOS validation mode must build the WebOS artifact",
+    "inputs.mode == 'webos-validation'" in build_webos
+    and "inputs.mode == 'release' && inputs.include_webos_release" in build_webos
+    and "bash tools/webos/build_release_candidate.sh" in build_webos,
+    "webOS builds must be validation-only or explicitly included in a full release",
+)
+require(
+    "python3 -m unittest discover -s tools/webos/tests -v"
+    in named_step(build_webos, "Test WebOS packaging and release gates"),
+    "private webOS builds must run the headless packaging and release-gate tests",
+)
+require(
+    "python3 tools/webos/check_release_eligibility.py" in named_step(
+        job("validate-trusted-ref"), "Require approval for the exact webOS release artifact"
+    )
+    and "--preflight" in named_step(
+        job("validate-trusted-ref"), "Require approval for the exact webOS release artifact"
+    ),
+    "webOS public-release approval must fail before platform builds start",
+)
+candidate_builder = (
+    WEBOS_CANDIDATE_BUILDER.read_text(encoding="utf-8")
+    if WEBOS_CANDIDATE_BUILDER.is_file()
+    else ""
+)
+ipk_builder = (
+    WEBOS_IPK_BUILDER.read_text(encoding="utf-8")
+    if WEBOS_IPK_BUILDER.is_file()
+    else ""
+)
+release_gate = (
+    WEBOS_RELEASE_GATE.read_text(encoding="utf-8")
+    if WEBOS_RELEASE_GATE.is_file()
+    else ""
+)
+require(
+    'read_lock releaseEligibility validatedSourceCommit' in candidate_builder
+    and "export PLEZY_WEBOS_GIT_COMMIT" in candidate_builder
+    and '"${PLEZY_WEBOS_GIT_COMMIT:-$(git -C "$ROOT" rev-parse HEAD)}"' in ipk_builder,
+    "approved WebOS releases must embed the exact C6-qualified app-source commit",
+)
+require(
+    '"validatedArtifactSha256"' in release_gate
+    and 'actual_hash != expected_hash' in release_gate
+    and "REQUIRED_GATES" in release_gate,
+    "the WebOS public-release guard must check all gates and the exact IPK hash",
+)
+require(
+    "--artifact" in named_step(build_webos, "Verify the exact approved WebOS IPK")
+    and "--version \"$RELEASE_TAG\"" in named_step(
+        build_webos, "Verify the exact approved WebOS IPK"
+    ),
+    "the public release must verify the exact qualified IPK hash, source, and version",
+)
+require(
+    "if: ${{ inputs.mode == 'release' && inputs.include_webos_release }}"
+    in named_step(build_webos, "Upload approved WebOS IPK for public release assembly"),
+    "the WebOS IPK must not be uploaded as a public workflow artifact before release approval",
+)
+validation_evidence = named_step(
+    build_webos, "Upload WebOS validation evidence without vendor runtime binaries"
+)
+require(
+    "webos-validation-evidence" in validation_evidence
+    and "*.ipk" not in validation_evidence,
+    "webOS validation artifacts must contain metadata, not vendor runtime binaries",
 )
 require("inputs.build_" not in text, "release workflow must build every platform together")
 require(
@@ -331,7 +405,6 @@ require(
 )
 for artifact in (
     "android-apk",
-    "webos-ipk",
     "ios-ipa",
     "tvos-ipa",
     "macos-dmg",
@@ -344,11 +417,26 @@ for artifact in (
 ):
     require(f"name: {artifact}" in release, f"release download lost {artifact}")
 
+webos_download = named_step(release, "Download WebOS artifact")
+require(
+    "if: ${{ inputs.include_webos_release }}" in webos_download
+    and "name: webos-ipk" in webos_download,
+    "the WebOS release artifact must be downloaded only after explicit opt-in",
+)
+collect_release_files = named_step(release, "Collect release files")
+require(
+    'if [[ "$INCLUDE_WEBOS_RELEASE" == "true" ]]' in collect_release_files
+    and "artifacts/webos/*.ipk" in collect_release_files,
+    "the WebOS IPK must enter the public release asset list only after approval",
+)
+
 release_if = re.search(r"(?m)^    if: (.+)$", release)
 require(release_if is not None, "release job must have an explicit condition")
 release_condition = release_if.group(1) if release_if else ""
 require(
     "needs.validate-trusted-ref.result == 'success'" in release_condition
+    and "needs.build-webos.result == 'success'" in release_condition
+    and "needs.build-webos.result == 'skipped'" in release_condition
     and "contains(needs.*.result, 'failure')" in release_condition
     and "contains(needs.*.result, 'cancelled')" in release_condition,
     "draft release creation must require a successful complete build",

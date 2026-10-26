@@ -82,7 +82,11 @@ if [[ "$LOCK_BEFORE" != "$LOCK_AFTER" ]]; then
   exit 1
 fi
 
-GIT_COMMIT="$(git -C "$ROOT" rev-parse HEAD)"
+GIT_COMMIT="${PLEZY_WEBOS_GIT_COMMIT:-$(git -C "$ROOT" rev-parse HEAD)}"
+if [[ ! "$GIT_COMMIT" =~ ^[0-9a-f]{40,64}$ ]]; then
+  echo "The WebOS package source commit must be a full hexadecimal Git object ID." >&2
+  exit 1
+fi
 flutter-webos build webos \
   --release \
   --target-arch arm \

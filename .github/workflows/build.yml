@@ -5,7 +5,7 @@ on:
   workflow_dispatch:
     inputs:
       mode:
-        description: Build the webOS candidate only, or prepare the full draft release
+        description: Build a webOS validation candidate, or prepare the full draft release
         required: true
         type: choice
         options:
@@ -16,6 +16,13 @@ on:
         description: Semantic version tag for the draft release (required in release mode)
         required: false
         type: string
+      include_webos_release:
+        description: >-
+          Include the LG webOS IPK in a public release after its exact artifact
+          and redistribution gates are approved.
+        required: true
+        type: boolean
+        default: false
 
 env:
   # Only place this workflow names the SDK; .github/actions/setup-flutter-git pins the same release.
@@ -75,6 +82,15 @@ jobs:
             echo "Release tag $RELEASE_TAG does not match pubspec version $VERSION." >&2
             exit 1
           fi
+
+      - name: Require approval for the exact webOS release artifact
+        if: ${{ inputs.mode == 'release' && inputs.include_webos_release }}
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        run: >-
+          python3 tools/webos/check_release_eligibility.py
+          --preflight
+          --version "$RELEASE_TAG"
 
       - name: Validate webOS-only mode input
         if: ${{ inputs.mode == 'webos-validation' }}
@@ -234,7 +250,7 @@ jobs:
           if-no-files-found: warn
 
   build-webos:
-    if: ${{ inputs.mode == 'release' || inputs.mode == 'webos-validation' }}
+    if: ${{ inputs.mode == 'webos-validation' || (inputs.mode == 'release' && inputs.include_webos_release) }}
     needs: validate-trusted-ref
     name: Build WebOS TV package (ARMv7)
     timeout-minutes: 360
@@ -256,11 +272,32 @@ jobs:
         with:
           persist-credentials: false
 
+      - name: Test WebOS packaging and release gates
+        run: python3 -m unittest discover -s tools/webos/tests -v
+
       - name: Build and verify the WebOS ARM package
         id: webos-build
         run: bash tools/webos/build_release_candidate.sh
         env:
           PLEZYNG_WEBOS_TASK_ROOT: ${{ runner.temp }}/plezyng-webos-${{ github.run_id }}
+          PLEZY_WEBOS_RELEASE_BUILD: ${{ inputs.mode == 'release' && inputs.include_webos_release }}
+
+      - name: Verify the exact approved WebOS IPK
+        if: ${{ inputs.mode == 'release' && inputs.include_webos_release }}
+        env:
+          OUTPUT_DIR: ${{ steps.webos-build.outputs.output_dir }}
+          RELEASE_TAG: ${{ inputs.release_tag }}
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -t ipks < <(find "$OUTPUT_DIR" -maxdepth 1 -type f -name '*.ipk' -print)
+          if [[ "${#ipks[@]}" -ne 1 ]]; then
+            echo "Expected exactly one WebOS IPK in the verified output." >&2
+            exit 1
+          fi
+          python3 tools/webos/check_release_eligibility.py \
+            --version "$RELEASE_TAG" \
+            --artifact "${ipks[0]}"
 
       - name: Attest the WebOS package and provenance
         uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
@@ -271,11 +308,24 @@ jobs:
             ${{ steps.webos-build.outputs.output_dir }}/webos-compatibility.json
             ${{ steps.webos-build.outputs.output_dir }}/SHA256SUMS.txt
 
-      - name: Upload WebOS IPK and provenance
+      - name: Upload approved WebOS IPK for public release assembly
+        if: ${{ inputs.mode == 'release' && inputs.include_webos_release }}
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
         with:
           name: webos-ipk
           path: ${{ steps.webos-build.outputs.output_dir }}/*
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload WebOS validation evidence without vendor runtime binaries
+        if: ${{ inputs.mode == 'webos-validation' }}
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: webos-validation-evidence
+          path: |
+            ${{ steps.webos-build.outputs.output_dir }}/webos-engine-provenance.json
+            ${{ steps.webos-build.outputs.output_dir }}/webos-compatibility.json
+            ${{ steps.webos-build.outputs.output_dir }}/SHA256SUMS.txt
           if-no-files-found: error
           retention-days: 14
 
@@ -1605,7 +1655,7 @@ jobs:
 
   create-release:
     needs: [validate-trusted-ref, build-android, build-webos, build-ios, build-tvos, build-macos, build-windows, package-windows, build-linux]
-    if: ${{ inputs.mode == 'release' && always() && needs.validate-trusted-ref.result == 'success' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
+    if: ${{ inputs.mode == 'release' && always() && needs.validate-trusted-ref.result == 'success' && (needs.build-webos.result == 'success' || (!inputs.include_webos_release && needs.build-webos.result == 'skipped')) && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
     runs-on:
       group: ng-shared-main-jit
       labels:
@@ -1653,6 +1703,7 @@ jobs:
           path: artifacts/android-apk
 
       - name: Download WebOS artifact
+        if: ${{ inputs.include_webos_release }}
         uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8
         with:
           name: webos-ipk
@@ -1817,16 +1868,19 @@ jobs:
         id: release-files
         env:
           RELEASE_TAG: ${{ inputs.release_tag }}
+          INCLUDE_WEBOS_RELEASE: ${{ inputs.include_webos_release }}
         run: |
           {
             echo 'files<<EOF'
             echo artifacts/android-apk/plezy-android-arm64-v8a.tar.gz
             echo artifacts/android-apk/plezy-android-armeabi-v7a.tar.gz
             echo artifacts/android-apk/plezy-android-x86_64.tar.gz
-            echo artifacts/webos/*.ipk
-            echo artifacts/webos/webos-engine-provenance.json
-            echo artifacts/webos/webos-compatibility.json
-            echo artifacts/webos/SHA256SUMS.txt
+            if [[ "$INCLUDE_WEBOS_RELEASE" == "true" ]]; then
+              echo artifacts/webos/*.ipk
+              echo artifacts/webos/webos-engine-provenance.json
+              echo artifacts/webos/webos-compatibility.json
+              echo artifacts/webos/SHA256SUMS.txt
+            fi
             echo artifacts/ios-ipa/plezy-ios-unsigned.ipa
             if [ -f artifacts/ios-ipa/plezyng-ios-appstore.ipa ]; then
               echo artifacts/ios-ipa/plezyng-ios-appstore.ipa

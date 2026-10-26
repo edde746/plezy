@@ -1,6 +1,19 @@
 {
   "schemaVersion": 1,
   "status": "local-validation-only",
+  "releaseEligibility": {
+    "status": "blocked",
+    "validatedSourceCommit": null,
+    "validatedVersion": null,
+    "validatedArtifactSha256": null,
+    "gates": {
+      "vendorRuntimeRedistributionPermission": false,
+      "approvedPrivateJitReproduction": false,
+      "testedDeviceReNewStatusConfirmed": false,
+      "exactCandidateFirstFrameOnC6": false,
+      "exactCandidateSignInArtworkPlaybackOnC6": false
+    }
+  },
   "officialMinimum": "webOS TV 26 Re:New",
   "target": "armv7-a softfp NEON",
   "sdk": {

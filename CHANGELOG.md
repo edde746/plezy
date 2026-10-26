@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Add a pinned experimental LG webOS ARMv7 engine/IPK build, manual JIT-only validation and release packaging, an LG-supported Ubuntu/toolchain preflight, an evidence-based webOS Re:New compatibility matrix, and the upstream runtime redistribution gate.
+- Add a pinned experimental LG webOS ARMv7 engine/IPK build, manual JIT-only validation, an LG-supported Ubuntu/toolchain preflight, and an evidence-based Re:New matrix. Keep the IPK out of public workflow artifacts and ordinary releases until runtime redistribution and exact-device qualification pass; release opt-in checks the approved source, version, and package hash.
 - Record the exact 2026 C6H model/firmware evidence and list additional 2026 LG firmware cohorts as unqualified test candidates.
 - Reconcile C6 install/launch logs with the distinct IPK hashes; keep visible-frame qualification tied to the exact candidate.
 - Route Windows x64 release builds and package-manager submissions through private JIT runners.
