@@ -3698,7 +3698,7 @@ class _Translations$discover$findNext$bg extends Translations$discover$findNext$
 	@override String get savedFeedback => 'Добавено към запазените предложения';
 	@override String get skippedFeedback => 'Пропуснато засега';
 	@override String get releaseToConfirm => 'Пуснете, за да потвърдите';
-	@override String get remoteHint => 'Избрана корица: ← / → избор · Избор: подробности · ↑ / ↓ премества фокуса';
+	@override String get remoteHint => 'Когато корицата е на фокус: ← / → избор · Избор: подробности · ↑ / ↓ премества фокуса';
 }
 
 // Path: discover.person
@@ -5748,7 +5748,7 @@ extension on TranslationsBg {
 			'discover.findNext.savedFeedback' => 'Добавено към запазените предложения',
 			'discover.findNext.skippedFeedback' => 'Пропуснато засега',
 			'discover.findNext.releaseToConfirm' => 'Пуснете, за да потвърдите',
-			'discover.findNext.remoteHint' => 'Избрана корица: ← / → избор · Избор: подробности · ↑ / ↓ премества фокуса',
+			'discover.findNext.remoteHint' => 'Когато корицата е на фокус: ← / → избор · Избор: подробности · ↑ / ↓ премества фокуса',
 			'discover.extras' => 'Трейлъри и екстри',
 			'discover.studio' => 'Студио',
 			'discover.rating' => 'Рейтинг',

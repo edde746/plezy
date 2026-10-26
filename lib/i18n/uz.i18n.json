@@ -1415,7 +1415,7 @@
       "savedFeedback": "Saqlangan tanlovlarga qo‘shildi",
       "skippedFeedback": "Hozircha o‘tkazib yuborildi",
       "releaseToConfirm": "Tasdiqlash uchun qo‘yib yuboring",
-      "remoteHint": "Muqova tanlanganda: ← / → tanlash · Tanlash tugmasi: tafsilotlar · ↑ / ↓ fokusni ko‘chirish"
+      "remoteHint": "Muqova fokusda bo‘lganda: ← / → tanlash · Tanlash tugmasi: tafsilotlar · ↑ / ↓ fokusni ko‘chirish"
     },
     "extras": "Treylerlar va qoʻshimchalar",
     "studio": "Studiya",

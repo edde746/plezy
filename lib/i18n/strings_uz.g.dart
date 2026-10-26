@@ -3698,7 +3698,7 @@ class _Translations$discover$findNext$uz extends Translations$discover$findNext$
 	@override String get savedFeedback => 'Saqlangan tanlovlarga qo‘shildi';
 	@override String get skippedFeedback => 'Hozircha o‘tkazib yuborildi';
 	@override String get releaseToConfirm => 'Tasdiqlash uchun qo‘yib yuboring';
-	@override String get remoteHint => 'Muqova tanlanganda: ← / → tanlash · Tanlash tugmasi: tafsilotlar · ↑ / ↓ fokusni ko‘chirish';
+	@override String get remoteHint => 'Muqova fokusda bo‘lganda: ← / → tanlash · Tanlash tugmasi: tafsilotlar · ↑ / ↓ fokusni ko‘chirish';
 }
 
 // Path: discover.person
@@ -5748,7 +5748,7 @@ extension on TranslationsUz {
 			'discover.findNext.savedFeedback' => 'Saqlangan tanlovlarga qo‘shildi',
 			'discover.findNext.skippedFeedback' => 'Hozircha o‘tkazib yuborildi',
 			'discover.findNext.releaseToConfirm' => 'Tasdiqlash uchun qo‘yib yuboring',
-			'discover.findNext.remoteHint' => 'Muqova tanlanganda: ← / → tanlash · Tanlash tugmasi: tafsilotlar · ↑ / ↓ fokusni ko‘chirish',
+			'discover.findNext.remoteHint' => 'Muqova fokusda bo‘lganda: ← / → tanlash · Tanlash tugmasi: tafsilotlar · ↑ / ↓ fokusni ko‘chirish',
 			'discover.extras' => 'Treylerlar va qoʻshimchalar',
 			'discover.studio' => 'Studiya',
 			'discover.rating' => 'Reyting',
