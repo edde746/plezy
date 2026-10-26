@@ -84,6 +84,7 @@ class TranslationsPtPt extends TranslationsPt with BaseTranslations<AppLocale, T
 	@override late final Translations$homeLayout$pt_PT homeLayout = Translations$homeLayout$pt_PT.internal(_root);
 	@override late final Translations$fileSources$pt_PT fileSources = Translations$fileSources$pt_PT.internal(_root);
 	@override late final Translations$lending$pt_PT lending = Translations$lending$pt_PT.internal(_root);
+	@override late final Translations$sourceSetup$pt_PT sourceSetup = Translations$sourceSetup$pt_PT.internal(_root);
 }
 
 // Path: cast
@@ -1086,6 +1087,18 @@ class Translations$services$libraryFilter$pt_PT extends Translations$services$li
 	@override String get libraries => 'Bibliotecas';
 }
 
+// Path: sourceSetup
+class Translations$sourceSetup$pt_PT extends Translations$sourceSetup$pt {
+	Translations$sourceSetup$pt_PT.internal(TranslationsPtPt root) : this._root = root, super.internal(root);
+
+	final TranslationsPtPt _root; // ignore: unused_field
+
+	// Translations
+	@override String get subtitleApplyFailed => 'Não foi possível descarregar ou aplicar esta legenda. Verifique a ligação e tente outro resultado.';
+	@override String get subtitleSearching => 'A pesquisar no OpenSubtitles';
+	@override String subtitleDownloading({required Object title}) => 'A descarregar a legenda: ${title}';
+}
+
 /// The flat map containing all translations for locale <pt-PT>.
 /// Only for edge cases! For simple maps, use the map function of this library.
 ///
@@ -1491,6 +1504,9 @@ extension on TranslationsPtPt {
 			'fileSources.minutes' => ({required num count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('pt'))(count, other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} minutos', one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} minuto', many: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} minutos', ), 
 			'fileSources.googleDrive' => 'Google Drive',
 			'lending.cancel' => 'Cancelar',
+			'sourceSetup.subtitleApplyFailed' => 'Não foi possível descarregar ou aplicar esta legenda. Verifique a ligação e tente outro resultado.',
+			'sourceSetup.subtitleSearching' => 'A pesquisar no OpenSubtitles',
+			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'A descarregar a legenda: ${title}',
 			_ => null,
 		};
 	}

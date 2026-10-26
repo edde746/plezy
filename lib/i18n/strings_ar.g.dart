@@ -3679,7 +3679,7 @@ class _Translations$discover$findNext$ar extends Translations$discover$findNext$
 	@override String get savedFeedback => 'أُضيف إلى الاختيارات المحفوظة';
 	@override String get skippedFeedback => 'تم التخطي حاليًا';
 	@override String get releaseToConfirm => 'أفلت للتأكيد';
-	@override String get remoteHint => 'عند تحديد الغلاف: ← / → للاختيار · زر التحديد للتفاصيل · ↑ / ↓ لنقل التركيز';
+	@override String get remoteHint => 'عندما يكون التركيز على الغلاف: ← / → للاختيار · زر التحديد للتفاصيل · ↑ / ↓ لنقل التركيز';
 }
 
 // Path: discover.person
@@ -5737,7 +5737,7 @@ extension on TranslationsAr {
 			'discover.findNext.savedFeedback' => 'أُضيف إلى الاختيارات المحفوظة',
 			'discover.findNext.skippedFeedback' => 'تم التخطي حاليًا',
 			'discover.findNext.releaseToConfirm' => 'أفلت للتأكيد',
-			'discover.findNext.remoteHint' => 'عند تحديد الغلاف: ← / → للاختيار · زر التحديد للتفاصيل · ↑ / ↓ لنقل التركيز',
+			'discover.findNext.remoteHint' => 'عندما يكون التركيز على الغلاف: ← / → للاختيار · زر التحديد للتفاصيل · ↑ / ↓ لنقل التركيز',
 			'discover.extras' => 'تريلر و إضافات',
 			'discover.studio' => 'الاستوديو',
 			'discover.rating' => 'تصنيف',

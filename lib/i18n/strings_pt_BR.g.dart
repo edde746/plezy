@@ -863,16 +863,16 @@ class Translations$discover$findNext$pt_BR extends Translations$discover$findNex
 	final TranslationsPtBr _root; // ignore: unused_field
 
 	// Translations
-	@override String get chooseHint => 'Abra um título, guarde-o para mais tarde ou passe ao seguinte.';
+	@override String get chooseHint => 'Abra um título, salve-o para mais tarde ou passe para o próximo.';
 	@override String get howItWorks => 'Como funciona';
 	@override String get swipeHint => 'Deslize a capa na direção de uma seta ou use os botões abaixo.';
 	@override String get notNowHelp => 'Ignore este título por agora. Ele continua na sua biblioteca.';
-	@override String get saveHelp => 'Guarde-o nas escolhas guardadas deste perfil neste dispositivo. Guardar não inicia uma transferência.';
+	@override String get saveHelp => 'Salve-o nas escolhas salvas deste perfil neste dispositivo. Salvar não baixa o título.';
 	@override String get openHelp => 'Selecione a capa para ver os detalhes. Use a ação principal para reproduzir, ler ou abrir o título.';
-	@override String get controlsHelp => 'Teclado ou comando: selecione um botão e prima Enter ou Selecionar. Anular restaura a sua última escolha.';
-	@override String get artworkLoading => 'A carregar a imagem…';
+	@override String get controlsHelp => 'Teclado ou controle remoto: selecione um botão e pressione Enter ou Selecionar. Desfazer restaura sua última escolha.';
+	@override String get artworkLoading => 'Carregando imagem…';
 	@override String get artworkUnavailable => 'Imagem indisponível';
-	@override String get savedFeedback => 'Adicionado às escolhas guardadas';
+	@override String get savedFeedback => 'Adicionado às escolhas salvas';
 	@override String get skippedFeedback => 'Ignorado por agora';
 	@override String get releaseToConfirm => 'Solte para confirmar';
 	@override String get remoteHint => 'Capa em foco: ← / → escolher · Selecionar: detalhes · ↑ / ↓ mover o foco';
@@ -1264,16 +1264,16 @@ extension on TranslationsPtBr {
 			'discover.directors' => 'Diretores',
 			'discover.movie' => 'Filme',
 			'discover.moreLikeThis' => 'Mais Disso',
-			'discover.findNext.chooseHint' => 'Abra um título, guarde-o para mais tarde ou passe ao seguinte.',
+			'discover.findNext.chooseHint' => 'Abra um título, salve-o para mais tarde ou passe para o próximo.',
 			'discover.findNext.howItWorks' => 'Como funciona',
 			'discover.findNext.swipeHint' => 'Deslize a capa na direção de uma seta ou use os botões abaixo.',
 			'discover.findNext.notNowHelp' => 'Ignore este título por agora. Ele continua na sua biblioteca.',
-			'discover.findNext.saveHelp' => 'Guarde-o nas escolhas guardadas deste perfil neste dispositivo. Guardar não inicia uma transferência.',
+			'discover.findNext.saveHelp' => 'Salve-o nas escolhas salvas deste perfil neste dispositivo. Salvar não baixa o título.',
 			'discover.findNext.openHelp' => 'Selecione a capa para ver os detalhes. Use a ação principal para reproduzir, ler ou abrir o título.',
-			'discover.findNext.controlsHelp' => 'Teclado ou comando: selecione um botão e prima Enter ou Selecionar. Anular restaura a sua última escolha.',
-			'discover.findNext.artworkLoading' => 'A carregar a imagem…',
+			'discover.findNext.controlsHelp' => 'Teclado ou controle remoto: selecione um botão e pressione Enter ou Selecionar. Desfazer restaura sua última escolha.',
+			'discover.findNext.artworkLoading' => 'Carregando imagem…',
 			'discover.findNext.artworkUnavailable' => 'Imagem indisponível',
-			'discover.findNext.savedFeedback' => 'Adicionado às escolhas guardadas',
+			'discover.findNext.savedFeedback' => 'Adicionado às escolhas salvas',
 			'discover.findNext.skippedFeedback' => 'Ignorado por agora',
 			'discover.findNext.releaseToConfirm' => 'Solte para confirmar',
 			'discover.findNext.remoteHint' => 'Capa em foco: ← / → escolher · Selecionar: detalhes · ↑ / ↓ mover o foco',

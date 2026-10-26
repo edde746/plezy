@@ -862,7 +862,7 @@ class _Translations$discover$findNext$es_419 extends Translations$discover$findN
 	@override String get notNowHelp => 'Omite este título por ahora. Seguirá en tu biblioteca.';
 	@override String get saveHelp => 'Guárdalo en las selecciones guardadas de este perfil en este dispositivo. Guardarlo no lo descarga.';
 	@override String get openHelp => 'Selecciona la portada para ver los detalles. Usa la acción principal para reproducir, leer o abrir el título.';
-	@override String get controlsHelp => 'Teclado o mando: enfoca un botón y pulsa Intro o Seleccionar. Deshacer restaura tu última elección.';
+	@override String get controlsHelp => 'Teclado o control remoto: enfoca un botón y presiona Intro o Seleccionar. Deshacer restaura tu última elección.';
 	@override String get artworkLoading => 'Cargando imagen…';
 	@override String get artworkUnavailable => 'Imagen no disponible';
 	@override String get savedFeedback => 'Añadido a las selecciones guardadas';
@@ -1254,7 +1254,7 @@ extension on TranslationsEs419 {
 			'discover.findNext.notNowHelp' => 'Omite este título por ahora. Seguirá en tu biblioteca.',
 			'discover.findNext.saveHelp' => 'Guárdalo en las selecciones guardadas de este perfil en este dispositivo. Guardarlo no lo descarga.',
 			'discover.findNext.openHelp' => 'Selecciona la portada para ver los detalles. Usa la acción principal para reproducir, leer o abrir el título.',
-			'discover.findNext.controlsHelp' => 'Teclado o mando: enfoca un botón y pulsa Intro o Seleccionar. Deshacer restaura tu última elección.',
+			'discover.findNext.controlsHelp' => 'Teclado o control remoto: enfoca un botón y presiona Intro o Seleccionar. Deshacer restaura tu última elección.',
 			'discover.findNext.artworkLoading' => 'Cargando imagen…',
 			'discover.findNext.artworkUnavailable' => 'Imagen no disponible',
 			'discover.findNext.savedFeedback' => 'Añadido a las selecciones guardadas',
