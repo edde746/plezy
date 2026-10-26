@@ -5,6 +5,8 @@
 
 A cross-platform media client for Plex, Jellyfin, and Emby, maintained as a fork of [Plezy](https://github.com/edde746/plezy).
 
+PlezyNG is a downstream fork for feature requests that Plezy upstream has declined, left open, or not yet shipped. The table below maps those upstream gaps to the corresponding downstream implementation. If upstream provides equivalent behavior with comparable Plex, Jellyfin, and Emby coverage, PlezyNG can retire the duplicate implementation and converge on upstream. Until then, the fork maintains and validates the capabilities listed here.
+
 See [Files, books and listening](docs/FILES_AND_BOOKS.md) for standard/cloud sources, readers and offline behavior, and [Public-library setup](docs/LENDING_SETUP.md) for the staged OverDrive integration.
 
 ## Dolby Vision experiments
@@ -55,7 +57,7 @@ PlezyNG builds on upstream Plezy with a broad set of features for Plex, Jellyfin
 | Automation | Home Assistant control and Android automation intents (#823, #1996) | Android `ACTION_VIEW` links can open cross-server `plezy://watch` media, select an existing profile with `plezy://profile?id=…`, and control the active video session with `plezy://control?command=play|pause|toggle|stop`. Home Assistant can invoke these through an Android intent bridge; this does not expose Plezy as a native Plex Companion player in Home Assistant. See the [Android automation guide](docs/plezyng/android-automation.md). |
 | Settings and diagnostics | Save logs to a file (#2496); cloud settings backup (#1795) | Log export is implemented; cloud settings backup uploads and restores the portable settings export through an HTTPS WebDAV file endpoint |
 
-This table is a snapshot of what PlezyNG has delivered and the limits that still apply. The upstream links give context for related work. As Plezy evolves, equivalent features can be reviewed and adopted where they fit.
+This table is a snapshot of downstream work and its current limits. The linked upstream requests provide context for the gap PlezyNG addresses; equivalent upstream implementations can replace the corresponding downstream code when their behavior and server coverage match.
 
 <p>
   <a href="https://github.com/edde746/plezy">Upstream Plezy</a> ·
