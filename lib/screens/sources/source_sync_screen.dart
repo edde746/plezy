@@ -10,6 +10,7 @@ import '../../sources/sync/publication_sync.dart';
 import '../../sources/sync/sync_document.dart';
 import '../../sources/sync/sync_store.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import 'add_source_screen.dart';
 import 'source_widgets.dart';
@@ -93,11 +94,20 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
+        scrollable: true,
         title: Text(t.audiobook.syncTitle),
         content: Text(t.audiobook.syncPrivacy),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(t.audiobook.saveSync)),
+          DialogActionButton(
+            onPressed: () => Navigator.pop(context, false),
+            label: t.common.cancel,
+            autofocus: true,
+          ),
+          DialogActionButton(
+            onPressed: () => Navigator.pop(context, true),
+            label: t.audiobook.saveSync,
+            isPrimary: true,
+          ),
         ],
       ),
     );
