@@ -3561,7 +3561,7 @@ class _Translations$discover$findNext$pl extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} łącznie';
 	@override String get timingVaries => 'Czas różni się';
 	@override String get notNow => 'Nie teraz';
-	@override String get swipeHint => 'Przełącz lub użyj poniższych przycisków';
+	@override String get swipeHint => 'Przesuń okładkę w stronę strzałki lub użyj przycisków poniżej.';
 	@override String get saved => 'Oszczędne picks';
 	@override String savedCount({required Object count}) => 'Zastrzeżone punkty · ${count}';
 	@override String get undo => 'i w';
@@ -3589,6 +3589,18 @@ class _Translations$discover$findNext$pl extends Translations$discover$findNext$
 	@override String get openFailed => 'Ta opcja nie jest już dostępna. odśwież, aby sprawdzić ponownie.';
 	@override String get changeFailed => 'Nie da się tego zmienić, spróbuj jeszcze raz.';
 	@override String get savedLimit => 'Zbawione punkty są pełne. usunąć jeden wybór, aby zaoszczędzić drugi.';
+	@override String get chooseHint => 'Otwórz tytuł, zapisz go na później lub pomiń.';
+	@override String get howItWorks => 'Jak to działa';
+	@override String get notNowHelp => 'Pomiń ten tytuł na razie. Pozostanie w Twojej bibliotece.';
+	@override String get saveHelp => 'Zachowaj go w zapisanych propozycjach tego profilu na tym urządzeniu. Zapisanie nie pobiera tytułu.';
+	@override String get openHelp => 'Wybierz okładkę, aby zobaczyć szczegóły. Główna akcja pozwala odtworzyć, przeczytać lub otworzyć tytuł.';
+	@override String get controlsHelp => 'Klawiatura lub pilot: wybierz przycisk i naciśnij Enter lub Wybierz. Cofnij przywraca ostatni wybór.';
+	@override String get artworkLoading => 'Ładowanie grafiki…';
+	@override String get artworkUnavailable => 'Grafika niedostępna';
+	@override String get savedFeedback => 'Dodano do zapisanych propozycji';
+	@override String get skippedFeedback => 'Na razie pominięto';
+	@override String get releaseToConfirm => 'Puść, aby potwierdzić';
+	@override String get remoteHint => 'Okładka zaznaczona: ← / → wybór · Wybierz: szczegóły · ↑ / ↓ zmiana fokusu';
 }
 
 // Path: discover.person
@@ -5603,7 +5615,7 @@ extension on TranslationsPl {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} łącznie',
 			'discover.findNext.timingVaries' => 'Czas różni się',
 			'discover.findNext.notNow' => 'Nie teraz',
-			'discover.findNext.swipeHint' => 'Przełącz lub użyj poniższych przycisków',
+			'discover.findNext.swipeHint' => 'Przesuń okładkę w stronę strzałki lub użyj przycisków poniżej.',
 			'discover.findNext.saved' => 'Oszczędne picks',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Zastrzeżone punkty · ${count}',
 			'discover.findNext.undo' => 'i w',
@@ -5631,6 +5643,18 @@ extension on TranslationsPl {
 			'discover.findNext.openFailed' => 'Ta opcja nie jest już dostępna. odśwież, aby sprawdzić ponownie.',
 			'discover.findNext.changeFailed' => 'Nie da się tego zmienić, spróbuj jeszcze raz.',
 			'discover.findNext.savedLimit' => 'Zbawione punkty są pełne. usunąć jeden wybór, aby zaoszczędzić drugi.',
+			'discover.findNext.chooseHint' => 'Otwórz tytuł, zapisz go na później lub pomiń.',
+			'discover.findNext.howItWorks' => 'Jak to działa',
+			'discover.findNext.notNowHelp' => 'Pomiń ten tytuł na razie. Pozostanie w Twojej bibliotece.',
+			'discover.findNext.saveHelp' => 'Zachowaj go w zapisanych propozycjach tego profilu na tym urządzeniu. Zapisanie nie pobiera tytułu.',
+			'discover.findNext.openHelp' => 'Wybierz okładkę, aby zobaczyć szczegóły. Główna akcja pozwala odtworzyć, przeczytać lub otworzyć tytuł.',
+			'discover.findNext.controlsHelp' => 'Klawiatura lub pilot: wybierz przycisk i naciśnij Enter lub Wybierz. Cofnij przywraca ostatni wybór.',
+			'discover.findNext.artworkLoading' => 'Ładowanie grafiki…',
+			'discover.findNext.artworkUnavailable' => 'Grafika niedostępna',
+			'discover.findNext.savedFeedback' => 'Dodano do zapisanych propozycji',
+			'discover.findNext.skippedFeedback' => 'Na razie pominięto',
+			'discover.findNext.releaseToConfirm' => 'Puść, aby potwierdzić',
+			'discover.findNext.remoteHint' => 'Okładka zaznaczona: ← / → wybór · Wybierz: szczegóły · ↑ / ↓ zmiana fokusu',
 			'discover.extras' => 'Zwiastuny i dodatki',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Ocena',
@@ -5856,6 +5880,8 @@ extension on TranslationsPl {
 			'explore.mdblistShelves.nameHint' => 'Pozostaw biały, aby użyć nazwy listy źródłowej.',
 			'explore.mdblistShelves.add' => 'Dodaj Shelf',
 			'explore.mdblistShelves.save' => 'Zbawienie łóżek',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Przeprowadź ${title} w górę',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Przeprowadź ${title} w dół',
 			'explore.mdblistShelves.unavailable' => 'Ta lista nie jest dostępna. wycofać lub usunąć jej pudełko w ustawieniach.',
@@ -5868,8 +5894,6 @@ extension on TranslationsPl {
 			'explore.selectSource' => 'Wybierz źródło',
 			'explore.rows.watchlist' => 'Lista do obejrzenia',
 			'explore.rows.recommendedMovies' => 'Rekomendowane filmy',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Rekomendowane seriale',
 			'explore.rows.trendingMovies' => 'Filmy na czasie',
 			'explore.rows.trendingShows' => 'Seriale na czasie',
@@ -6370,6 +6394,8 @@ extension on TranslationsPl {
 			'downloads.resumeDownload' => 'Wznów pobieranie',
 			'downloads.cancelledDownload' => 'Anulowane pobieranie',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (synchronizowanie ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Pobrano ${file} — kliknij, aby dokończyć',
 			'downloads.partialDownloadClickToComplete' => 'Pobrano częściowo — kliknij, aby dokończyć',
 			'downloads.deleting' => 'Usuwanie...',
@@ -6382,8 +6408,6 @@ extension on TranslationsPl {
 			'downloads.pauseAll' => 'Wstrzymaj wszystko',
 			'downloads.resumeAll' => 'Wznów wszystko',
 			'downloads.retryAll' => 'Ponów wszystkie',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'Ponów nieudane pobrania',
 			'downloads.deleteAll' => 'Usuń wszystko',
 			'downloads.selectVersion' => 'Wybierz wersję',
@@ -6884,6 +6908,8 @@ extension on TranslationsPl {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Nie udało się połączyć z serwerem: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Logowanie nie powiodło się: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect nie powiodło się: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Zaloguj się przez Plex',
 			'addServer.pinExpired' => 'PIN wygasł przed zalogowaniem. Spróbuj ponownie.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Nie udało się zarejestrować konta: ${error}',
@@ -6896,8 +6922,6 @@ extension on TranslationsPl {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Połącz z ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Podaj adres URL serwera, nazwę użytkownika i hasło.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Zaloguj się do serwera ${product}. Powiązane z ${name}.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Pożycz z innego profilu',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Użyj połączenia innego profilu. Profile chronione PIN-em wymagają podania PIN-u.',
 			'addServer.invalidCredentials' => 'Nieprawidłowa nazwa użytkownika lub hasło',

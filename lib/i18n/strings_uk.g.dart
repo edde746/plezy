@@ -3557,7 +3557,7 @@ class _Translations$discover$findNext$uk extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} Всього';
 	@override String get timingVaries => 'Час різноманітний';
 	@override String get notNow => 'Не зараз';
-	@override String get swipeHint => 'Перемішайте або використовуйте кнопки нижче';
+	@override String get swipeHint => 'Змахніть обкладинку в бік стрілки або скористайтеся кнопками нижче.';
 	@override String get saved => 'Збережений пік';
 	@override String savedCount({required Object count}) => 'Створення ${count}';
 	@override String get undo => 'ІН';
@@ -3585,6 +3585,18 @@ class _Translations$discover$findNext$uk extends Translations$discover$findNext$
 	@override String get openFailed => 'Цей варіант більше не доступний. відновлюйте, щоб перевірити знову.';
 	@override String get changeFailed => 'Я не можу врятувати цю зміну, спробуйте знову.';
 	@override String get savedLimit => 'Збережений пік повний. видалити один вибір, щоб зберегти інший.';
+	@override String get chooseHint => 'Відкрийте твір, збережіть на потім або пропустіть.';
+	@override String get howItWorks => 'Як це працює';
+	@override String get notNowHelp => 'Пропустіть цей твір наразі. Він залишиться у вашій бібліотеці.';
+	@override String get saveHelp => 'Додайте його до збережених добірок цього профілю на цьому пристрої. Збереження не завантажує твір.';
+	@override String get openHelp => 'Виберіть обкладинку для перегляду подробиць. Основна кнопка дає змогу відтворити, читати або відкрити твір.';
+	@override String get controlsHelp => 'Клавіатура або пульт: виберіть кнопку й натисніть Enter або кнопку вибору. Скасування відновлює останній вибір.';
+	@override String get artworkLoading => 'Завантаження обкладинки…';
+	@override String get artworkUnavailable => 'Обкладинка недоступна';
+	@override String get savedFeedback => 'Додано до збережених добірок';
+	@override String get skippedFeedback => 'Наразі пропущено';
+	@override String get releaseToConfirm => 'Відпустіть для підтвердження';
+	@override String get remoteHint => 'Фокус на обкладинці: ← / → вибір · Кнопка вибору: подробиці · ↑ / ↓ переміщення фокусу';
 }
 
 // Path: discover.person
@@ -5597,7 +5609,7 @@ extension on TranslationsUk {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} Всього',
 			'discover.findNext.timingVaries' => 'Час різноманітний',
 			'discover.findNext.notNow' => 'Не зараз',
-			'discover.findNext.swipeHint' => 'Перемішайте або використовуйте кнопки нижче',
+			'discover.findNext.swipeHint' => 'Змахніть обкладинку в бік стрілки або скористайтеся кнопками нижче.',
 			'discover.findNext.saved' => 'Збережений пік',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Створення ${count}',
 			'discover.findNext.undo' => 'ІН',
@@ -5625,6 +5637,18 @@ extension on TranslationsUk {
 			'discover.findNext.openFailed' => 'Цей варіант більше не доступний. відновлюйте, щоб перевірити знову.',
 			'discover.findNext.changeFailed' => 'Я не можу врятувати цю зміну, спробуйте знову.',
 			'discover.findNext.savedLimit' => 'Збережений пік повний. видалити один вибір, щоб зберегти інший.',
+			'discover.findNext.chooseHint' => 'Відкрийте твір, збережіть на потім або пропустіть.',
+			'discover.findNext.howItWorks' => 'Як це працює',
+			'discover.findNext.notNowHelp' => 'Пропустіть цей твір наразі. Він залишиться у вашій бібліотеці.',
+			'discover.findNext.saveHelp' => 'Додайте його до збережених добірок цього профілю на цьому пристрої. Збереження не завантажує твір.',
+			'discover.findNext.openHelp' => 'Виберіть обкладинку для перегляду подробиць. Основна кнопка дає змогу відтворити, читати або відкрити твір.',
+			'discover.findNext.controlsHelp' => 'Клавіатура або пульт: виберіть кнопку й натисніть Enter або кнопку вибору. Скасування відновлює останній вибір.',
+			'discover.findNext.artworkLoading' => 'Завантаження обкладинки…',
+			'discover.findNext.artworkUnavailable' => 'Обкладинка недоступна',
+			'discover.findNext.savedFeedback' => 'Додано до збережених добірок',
+			'discover.findNext.skippedFeedback' => 'Наразі пропущено',
+			'discover.findNext.releaseToConfirm' => 'Відпустіть для підтвердження',
+			'discover.findNext.remoteHint' => 'Фокус на обкладинці: ← / → вибір · Кнопка вибору: подробиці · ↑ / ↓ переміщення фокусу',
 			'discover.extras' => 'Трейлери та екстраси',
 			'discover.studio' => 'Студія',
 			'discover.rating' => 'Рейтинг',
@@ -5850,6 +5874,8 @@ extension on TranslationsUk {
 			'explore.mdblistShelves.nameHint' => 'Залишити білий, щоб використовувати назву джерело списку.',
 			'explore.mdblistShelves.add' => 'Додайте шаф',
 			'explore.mdblistShelves.save' => 'Зберегти шахи',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Повернутись ${title}',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Повернутись ${title} вниз',
 			'explore.mdblistShelves.unavailable' => 'Цей список недоступний. Витягніть або видаліть його шаф в налаштуваннях.',
@@ -5862,8 +5888,6 @@ extension on TranslationsUk {
 			'explore.selectSource' => 'Вибір джерела',
 			'explore.rows.watchlist' => 'Застереження',
 			'explore.rows.recommendedMovies' => 'Рекомендовані фільми',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Рекомендовані покази',
 			'explore.rows.trendingMovies' => 'Трендовий фільм',
 			'explore.rows.trendingShows' => 'Трендовий показ',
@@ -6364,6 +6388,8 @@ extension on TranslationsUk {
 			'downloads.resumeDownload' => 'Резюме завантаження',
 			'downloads.cancelledDownload' => 'скасовано Download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (синціонує ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Завантажено ${file} - Клікніть, щоб завершити',
 			'downloads.partialDownloadClickToComplete' => 'Частково завантажено - Клікніть, щоб завершити',
 			'downloads.deleting' => 'Зняти...',
@@ -6376,8 +6402,6 @@ extension on TranslationsUk {
 			'downloads.pauseAll' => 'Відпочинок усі',
 			'downloads.resumeAll' => 'Резюме Все',
 			'downloads.retryAll' => 'Відкликати всі',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'Завантажити недійсні завантаження',
 			'downloads.deleteAll' => 'Видалити все',
 			'downloads.selectVersion' => 'Вибір версії',
@@ -6878,6 +6902,8 @@ extension on TranslationsUk {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Не можна доступу до сервера: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Зареєструватися не вдалося: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect не вдалося: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Зареєструйтесь за адресою Plex',
 			'addServer.pinExpired' => 'PIN закінчився перед тим, як зареєструватися, будь ласка, спробуйте знову.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Зареєструватися не вдалося: ${error}',
@@ -6890,8 +6916,6 @@ extension on TranslationsUk {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Підключення до ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Введіть URL сервера, ім\'я користувача та пароль.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Зареєструйтесь на сервер ${product}. підключіться до ${name}.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Кредит з іншого профілю',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Повторне використання підключення іншого профілю. PIN-захищені профілі потребують PIN.',
 			'addServer.invalidCredentials' => 'Недійсне ім\'я користувача або пароль',

@@ -3601,7 +3601,7 @@ class _Translations$discover$findNext$ar extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} كاملة';
 	@override String get timingVaries => 'التوقيت يختلف';
 	@override String get notNow => 'لا الآن';
-	@override String get swipeHint => 'تحريك أو استخدام الأزرار أدناه';
+	@override String get swipeHint => 'اسحب الغلاف باتجاه أحد السهمين أو استخدم الأزرار أدناه.';
 	@override String get saved => 'النقابات المحفوظة';
 	@override String savedCount({required Object count}) => 'كلمات متعلقة ${count}';
 	@override String get undo => 'وواو';
@@ -3629,6 +3629,18 @@ class _Translations$discover$findNext$ar extends Translations$discover$findNext$
 	@override String get openFailed => 'هذا الخيار لم يعد متاحا.تجديد للتحقق مرة أخرى.';
 	@override String get changeFailed => 'لا أستطيع أن أحفظ هذا التغيير، حاول مرة أخرى.';
 	@override String get savedLimit => 'النقاط التي تم حفظها كاملة.إزالة اختيار واحد لإنقاذ آخر.';
+	@override String get chooseHint => 'افتح عنوانًا أو احفظه لوقت لاحق أو تخطّه.';
+	@override String get howItWorks => 'طريقة الاستخدام';
+	@override String get notNowHelp => 'تخطَّ هذا العنوان حاليًا. سيبقى في مكتبتك.';
+	@override String get saveHelp => 'احتفظ به ضمن الاختيارات المحفوظة لهذا الملف الشخصي على هذا الجهاز. الحفظ لا ينزّل المحتوى.';
+	@override String get openHelp => 'اختر الغلاف لعرض التفاصيل. استخدم الإجراء الرئيسي لتشغيل العنوان أو قراءته أو فتحه.';
+	@override String get controlsHelp => 'بلوحة المفاتيح أو جهاز التحكم: انتقل إلى زر ثم اضغط Enter أو زر التحديد. التراجع يعيد اختيارك الأخير.';
+	@override String get artworkLoading => 'جارٍ تحميل الصورة…';
+	@override String get artworkUnavailable => 'الصورة غير متاحة';
+	@override String get savedFeedback => 'أُضيف إلى الاختيارات المحفوظة';
+	@override String get skippedFeedback => 'تم التخطي حاليًا';
+	@override String get releaseToConfirm => 'أفلت للتأكيد';
+	@override String get remoteHint => 'عند تحديد الغلاف: ← / → للاختيار · زر التحديد للتفاصيل · ↑ / ↓ لنقل التركيز';
 }
 
 // Path: discover.person
@@ -5647,7 +5659,7 @@ extension on TranslationsAr {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} كاملة',
 			'discover.findNext.timingVaries' => 'التوقيت يختلف',
 			'discover.findNext.notNow' => 'لا الآن',
-			'discover.findNext.swipeHint' => 'تحريك أو استخدام الأزرار أدناه',
+			'discover.findNext.swipeHint' => 'اسحب الغلاف باتجاه أحد السهمين أو استخدم الأزرار أدناه.',
 			'discover.findNext.saved' => 'النقابات المحفوظة',
 			'discover.findNext.savedCount' => ({required Object count}) => 'كلمات متعلقة ${count}',
 			'discover.findNext.undo' => 'وواو',
@@ -5675,6 +5687,18 @@ extension on TranslationsAr {
 			'discover.findNext.openFailed' => 'هذا الخيار لم يعد متاحا.تجديد للتحقق مرة أخرى.',
 			'discover.findNext.changeFailed' => 'لا أستطيع أن أحفظ هذا التغيير، حاول مرة أخرى.',
 			'discover.findNext.savedLimit' => 'النقاط التي تم حفظها كاملة.إزالة اختيار واحد لإنقاذ آخر.',
+			'discover.findNext.chooseHint' => 'افتح عنوانًا أو احفظه لوقت لاحق أو تخطّه.',
+			'discover.findNext.howItWorks' => 'طريقة الاستخدام',
+			'discover.findNext.notNowHelp' => 'تخطَّ هذا العنوان حاليًا. سيبقى في مكتبتك.',
+			'discover.findNext.saveHelp' => 'احتفظ به ضمن الاختيارات المحفوظة لهذا الملف الشخصي على هذا الجهاز. الحفظ لا ينزّل المحتوى.',
+			'discover.findNext.openHelp' => 'اختر الغلاف لعرض التفاصيل. استخدم الإجراء الرئيسي لتشغيل العنوان أو قراءته أو فتحه.',
+			'discover.findNext.controlsHelp' => 'بلوحة المفاتيح أو جهاز التحكم: انتقل إلى زر ثم اضغط Enter أو زر التحديد. التراجع يعيد اختيارك الأخير.',
+			'discover.findNext.artworkLoading' => 'جارٍ تحميل الصورة…',
+			'discover.findNext.artworkUnavailable' => 'الصورة غير متاحة',
+			'discover.findNext.savedFeedback' => 'أُضيف إلى الاختيارات المحفوظة',
+			'discover.findNext.skippedFeedback' => 'تم التخطي حاليًا',
+			'discover.findNext.releaseToConfirm' => 'أفلت للتأكيد',
+			'discover.findNext.remoteHint' => 'عند تحديد الغلاف: ← / → للاختيار · زر التحديد للتفاصيل · ↑ / ↓ لنقل التركيز',
 			'discover.extras' => 'تريلر و إضافات',
 			'discover.studio' => 'الاستوديو',
 			'discover.rating' => 'تصنيف',
@@ -5900,6 +5924,8 @@ extension on TranslationsAr {
 			'explore.mdblistShelves.nameHint' => 'اترك فارغا لاستخدام اسم قائمة المصدر.',
 			'explore.mdblistShelves.add' => 'إضافة شيلف',
 			'explore.mdblistShelves.save' => 'احفظ السترات',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'تحريك ${title} إلى الأعلى',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'تحريك ${title} إلى أسفل',
 			'explore.mdblistShelves.unavailable' => 'هذه القائمة غير متوفرة.إزالة أو إزالة الستار في الإعدادات.',
@@ -5912,8 +5938,6 @@ extension on TranslationsAr {
 			'explore.selectSource' => 'اختيار المصدر',
 			'explore.rows.watchlist' => 'قائمة مراقبة',
 			'explore.rows.recommendedMovies' => 'الأفلام الموصى بها',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'العروض الموصى بها',
 			'explore.rows.trendingMovies' => 'أفلام متطورة',
 			'explore.rows.trendingShows' => 'عرض الاتجاهات',
@@ -6414,6 +6438,8 @@ extension on TranslationsAr {
 			'downloads.resumeDownload' => 'إعادة التدوير download',
 			'downloads.cancelledDownload' => 'إلغاء تحميل',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (مزامنة ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'تحميل ${file} - انقر للانتهاء',
 			'downloads.partialDownloadClickToComplete' => 'تحميل جزئي - Click to complete',
 			'downloads.deleting' => 'إلغاء...',
@@ -6426,8 +6452,6 @@ extension on TranslationsAr {
 			'downloads.pauseAll' => 'استراحة كل',
 			'downloads.resumeAll' => 'قراءة كلها',
 			'downloads.retryAll' => 'استرداد كل',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'إعادة التدوير الفشل تحميل',
 			'downloads.deleteAll' => 'حذف الكل',
 			'downloads.selectVersion' => 'اختيار النسخة',
@@ -6928,6 +6952,8 @@ extension on TranslationsAr {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'لا يمكن الوصول إلى الخادم: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'تسجيل الدخول فاشلة: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect فشل: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'تسجيل الدخول مع Plex',
 			'addServer.pinExpired' => 'انتهاء صلاحية PIN قبل تسجيل الدخول، يرجى المحاولة مرة أخرى.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'فشل في تسجيل الحساب: ${error}',
@@ -6940,8 +6966,6 @@ extension on TranslationsAr {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'الاتصال بـ ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'أدخل عنوان URL، اسم المستخدم، وكلمة المرور.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'تسجيل الدخول إلى خادم ${product}.ربط إلى ${name}.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'القروض من ملف تعريف آخر',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'إعادة استخدام اتصال ملف تعريف آخر.البروفيسور المحمية بـ PIN تتطلب PIN.',
 			'addServer.invalidCredentials' => 'اسم المستخدم أو كلمة المرور غير صالحة',

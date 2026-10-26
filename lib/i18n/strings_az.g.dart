@@ -3521,7 +3521,7 @@ class _Translations$discover$findNext$az extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} Total';
 	@override String get timingVaries => 'Tarih dəyişir';
 	@override String get notNow => 'Şimdilik deyil';
-	@override String get swipeHint => 'Düşük düğənlər və ya aşağıdaki düğənlər';
+	@override String get swipeHint => 'Üz qabığını ox istiqamətində sürüşdürün və ya aşağıdakı düymələrdən istifadə edin.';
 	@override String get saved => 'Gələcək PIKS';
 	@override String savedCount({required Object count}) => 'Gəlimlər - Picks ${count}';
 	@override String get undo => 'Yəni';
@@ -3549,6 +3549,18 @@ class _Translations$discover$findNext$az extends Translations$discover$findNext$
 	@override String get openFailed => 'Bu seçenek artık mevcut deyil. Yeniden kontrol etmək üçün refresh.';
 	@override String get changeFailed => 'Bu dəyişməyi dəyişmək mümkün deyil, bir daha baxın.';
 	@override String get savedLimit => 'Bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin.';
+	@override String get chooseHint => 'Bir başlığı açın, sonraya saxlayın və ya keçin.';
+	@override String get howItWorks => 'İstifadə qaydası';
+	@override String get notNowHelp => 'Bu başlığı hələlik keçin. O, kitabxananızda qalacaq.';
+	@override String get saveHelp => 'Bu cihazda bu profilin saxlanmış seçimlərinə əlavə edin. Saxlamaq məzmunu endirmir.';
+	@override String get openHelp => 'Təfərrüatlar üçün üz qabığını seçin. Başlığı oynatmaq, oxumaq və ya açmaq üçün əsas düymədən istifadə edin.';
+	@override String get controlsHelp => 'Klaviatura və ya pult: düyməni seçin, sonra Enter və ya seçim düyməsini basın. Geri al son seçiminizi bərpa edir.';
+	@override String get artworkLoading => 'Şəkil yüklənir…';
+	@override String get artworkUnavailable => 'Şəkil mövcud deyil';
+	@override String get savedFeedback => 'Saxlanmış seçimlərə əlavə edildi';
+	@override String get skippedFeedback => 'Hələlik keçildi';
+	@override String get releaseToConfirm => 'Təsdiqləmək üçün buraxın';
+	@override String get remoteHint => 'Üz qabığı fokusda: ← / → seçin · Seçim düyməsi: təfərrüatlar · ↑ / ↓ fokusu dəyişin';
 }
 
 // Path: discover.person
@@ -5559,7 +5571,7 @@ extension on TranslationsAz {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} Total',
 			'discover.findNext.timingVaries' => 'Tarih dəyişir',
 			'discover.findNext.notNow' => 'Şimdilik deyil',
-			'discover.findNext.swipeHint' => 'Düşük düğənlər və ya aşağıdaki düğənlər',
+			'discover.findNext.swipeHint' => 'Üz qabığını ox istiqamətində sürüşdürün və ya aşağıdakı düymələrdən istifadə edin.',
 			'discover.findNext.saved' => 'Gələcək PIKS',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Gəlimlər - Picks ${count}',
 			'discover.findNext.undo' => 'Yəni',
@@ -5587,6 +5599,18 @@ extension on TranslationsAz {
 			'discover.findNext.openFailed' => 'Bu seçenek artık mevcut deyil. Yeniden kontrol etmək üçün refresh.',
 			'discover.findNext.changeFailed' => 'Bu dəyişməyi dəyişmək mümkün deyil, bir daha baxın.',
 			'discover.findNext.savedLimit' => 'Bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin bir seçkinin.',
+			'discover.findNext.chooseHint' => 'Bir başlığı açın, sonraya saxlayın və ya keçin.',
+			'discover.findNext.howItWorks' => 'İstifadə qaydası',
+			'discover.findNext.notNowHelp' => 'Bu başlığı hələlik keçin. O, kitabxananızda qalacaq.',
+			'discover.findNext.saveHelp' => 'Bu cihazda bu profilin saxlanmış seçimlərinə əlavə edin. Saxlamaq məzmunu endirmir.',
+			'discover.findNext.openHelp' => 'Təfərrüatlar üçün üz qabığını seçin. Başlığı oynatmaq, oxumaq və ya açmaq üçün əsas düymədən istifadə edin.',
+			'discover.findNext.controlsHelp' => 'Klaviatura və ya pult: düyməni seçin, sonra Enter və ya seçim düyməsini basın. Geri al son seçiminizi bərpa edir.',
+			'discover.findNext.artworkLoading' => 'Şəkil yüklənir…',
+			'discover.findNext.artworkUnavailable' => 'Şəkil mövcud deyil',
+			'discover.findNext.savedFeedback' => 'Saxlanmış seçimlərə əlavə edildi',
+			'discover.findNext.skippedFeedback' => 'Hələlik keçildi',
+			'discover.findNext.releaseToConfirm' => 'Təsdiqləmək üçün buraxın',
+			'discover.findNext.remoteHint' => 'Üz qabığı fokusda: ← / → seçin · Seçim düyməsi: təfərrüatlar · ↑ / ↓ fokusu dəyişin',
 			'discover.extras' => 'Treylerlər və Əlavələr',
 			'discover.studio' => 'Studiya',
 			'discover.rating' => 'Reytinq',
@@ -5812,6 +5836,8 @@ extension on TranslationsAz {
 			'explore.mdblistShelves.nameHint' => 'Bu barədə “Müslər” adlı kitabın adı yazılır.',
 			'explore.mdblistShelves.add' => 'Şelətlər',
 			'explore.mdblistShelves.save' => 'Şahətlər',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Qəzaqə ${title}',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Qəzaqə ${title}',
 			'explore.mdblistShelves.unavailable' => 'Bu listə baxılmır. ayarlarda şelalini geri qaytarır və ya kaldırır.',
@@ -5824,8 +5850,6 @@ extension on TranslationsAz {
 			'explore.selectSource' => 'Mənbə seçin',
 			'explore.rows.watchlist' => 'İzləmə siyahısı',
 			'explore.rows.recommendedMovies' => 'Tövsiyə olunan kinolar',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Tövsiyə olunan seriallar',
 			'explore.rows.trendingMovies' => 'Trend kinolar',
 			'explore.rows.trendingShows' => 'Trend seriallar',
@@ -6326,6 +6350,8 @@ extension on TranslationsAz {
 			'downloads.resumeDownload' => 'Yükləməni davam etdir',
 			'downloads.cancelledDownload' => 'Ləğv edilmiş yükləmə',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} eyniləşdirilir)',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Yükləndi ${file} - Tamamlamaq üçün toxunun',
 			'downloads.partialDownloadClickToComplete' => 'Hissəvi yükləndi - Tamamlamaq üçün toxunun',
 			'downloads.deleting' => 'Silinir...',
@@ -6338,8 +6364,6 @@ extension on TranslationsAz {
 			'downloads.pauseAll' => 'Hamısını fasilə et',
 			'downloads.resumeAll' => 'Hamısını davam etdir',
 			'downloads.retryAll' => 'Hamısını təzədən cəhd et',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'Uğursuz yükləmələri təzədən cəhd et',
 			'downloads.deleteAll' => 'Hamısını sil',
 			'downloads.selectVersion' => 'Versiya seç',
@@ -6840,6 +6864,8 @@ extension on TranslationsAz {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Serverə çatmaq olmadı: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Daxil olma uğursuz oldu: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Sürətli Qoşulma uğursuz oldu: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Plex ilə daxil ol',
 			'addServer.pinExpired' => 'PIN-in vaxtı bitdi. Lütfən təzədən cəhd edin.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Hesab qeydiyyatı uğursuz oldu: ${error}',
@@ -6852,8 +6878,6 @@ extension on TranslationsAz {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '${product}-a qoşul',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Server URL-inizi, istifadəçi adınızı və şifrənizi daxil edin.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} serverinizə daxil olun. ${name} ilə əlaqələndirilir.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Başqa profildən götür',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Başqa profilin qoşulmasını yenidən istifadə edin. PIN ilə qorunan profillər PIN tələb edir.',
 			'addServer.invalidCredentials' => 'İstifadəçi adı və ya şifrə yanlışdır',

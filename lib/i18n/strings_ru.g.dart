@@ -3561,7 +3561,7 @@ class _Translations$discover$findNext$ru extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} Общее';
 	@override String get timingVaries => 'Время варьируется';
 	@override String get notNow => 'Не сейчас';
-	@override String get swipeHint => 'Переключайте или используйте кнопки ниже';
+	@override String get swipeHint => 'Смахните обложку в сторону стрелки или используйте кнопки ниже.';
 	@override String get saved => 'Спасенные пики';
 	@override String savedCount({required Object count}) => 'Заброшенные пики · ${count}';
 	@override String get undo => 'Инде';
@@ -3589,6 +3589,18 @@ class _Translations$discover$findNext$ru extends Translations$discover$findNext$
 	@override String get openFailed => 'Этот вариант больше не доступен. обновляйте, чтобы снова проверить.';
 	@override String get changeFailed => 'Я не могу спасти эти изменения, попробуйте еще раз.';
 	@override String get savedLimit => 'Спасенные пики полны. удалить один выбор, чтобы сохранить другой.';
+	@override String get chooseHint => 'Откройте произведение, сохраните на потом или пропустите.';
+	@override String get howItWorks => 'Как это работает';
+	@override String get notNowHelp => 'Пропустите это произведение пока. Оно останется в вашей библиотеке.';
+	@override String get saveHelp => 'Добавьте его в сохранённые подборки этого профиля на этом устройстве. Сохранение не скачивает произведение.';
+	@override String get openHelp => 'Выберите обложку для просмотра подробностей. Основная кнопка позволяет воспроизвести, читать или открыть произведение.';
+	@override String get controlsHelp => 'Клавиатура или пульт: выберите кнопку и нажмите Enter или кнопку выбора. Отмена восстанавливает последний выбор.';
+	@override String get artworkLoading => 'Загрузка обложки…';
+	@override String get artworkUnavailable => 'Обложка недоступна';
+	@override String get savedFeedback => 'Добавлено в сохранённые подборки';
+	@override String get skippedFeedback => 'Пока пропущено';
+	@override String get releaseToConfirm => 'Отпустите для подтверждения';
+	@override String get remoteHint => 'Фокус на обложке: ← / → выбор · Кнопка выбора: подробности · ↑ / ↓ перемещение фокуса';
 }
 
 // Path: discover.person
@@ -5603,7 +5615,7 @@ extension on TranslationsRu {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} Общее',
 			'discover.findNext.timingVaries' => 'Время варьируется',
 			'discover.findNext.notNow' => 'Не сейчас',
-			'discover.findNext.swipeHint' => 'Переключайте или используйте кнопки ниже',
+			'discover.findNext.swipeHint' => 'Смахните обложку в сторону стрелки или используйте кнопки ниже.',
 			'discover.findNext.saved' => 'Спасенные пики',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Заброшенные пики · ${count}',
 			'discover.findNext.undo' => 'Инде',
@@ -5631,6 +5643,18 @@ extension on TranslationsRu {
 			'discover.findNext.openFailed' => 'Этот вариант больше не доступен. обновляйте, чтобы снова проверить.',
 			'discover.findNext.changeFailed' => 'Я не могу спасти эти изменения, попробуйте еще раз.',
 			'discover.findNext.savedLimit' => 'Спасенные пики полны. удалить один выбор, чтобы сохранить другой.',
+			'discover.findNext.chooseHint' => 'Откройте произведение, сохраните на потом или пропустите.',
+			'discover.findNext.howItWorks' => 'Как это работает',
+			'discover.findNext.notNowHelp' => 'Пропустите это произведение пока. Оно останется в вашей библиотеке.',
+			'discover.findNext.saveHelp' => 'Добавьте его в сохранённые подборки этого профиля на этом устройстве. Сохранение не скачивает произведение.',
+			'discover.findNext.openHelp' => 'Выберите обложку для просмотра подробностей. Основная кнопка позволяет воспроизвести, читать или открыть произведение.',
+			'discover.findNext.controlsHelp' => 'Клавиатура или пульт: выберите кнопку и нажмите Enter или кнопку выбора. Отмена восстанавливает последний выбор.',
+			'discover.findNext.artworkLoading' => 'Загрузка обложки…',
+			'discover.findNext.artworkUnavailable' => 'Обложка недоступна',
+			'discover.findNext.savedFeedback' => 'Добавлено в сохранённые подборки',
+			'discover.findNext.skippedFeedback' => 'Пока пропущено',
+			'discover.findNext.releaseToConfirm' => 'Отпустите для подтверждения',
+			'discover.findNext.remoteHint' => 'Фокус на обложке: ← / → выбор · Кнопка выбора: подробности · ↑ / ↓ перемещение фокуса',
 			'discover.extras' => 'Трейлеры и доп. материалы',
 			'discover.studio' => 'Студия',
 			'discover.rating' => 'Рейтинг',
@@ -5856,6 +5880,8 @@ extension on TranslationsRu {
 			'explore.mdblistShelves.nameHint' => 'Оставьте белый, чтобы использовать название источника.',
 			'explore.mdblistShelves.add' => 'Добавить шейх',
 			'explore.mdblistShelves.save' => 'Спасти шары',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Погрузка ${title} вверх',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Погрузка ${title}',
 			'explore.mdblistShelves.unavailable' => 'Этот список недоступен. Отменить или удалить его шлюх в настройках.',
@@ -5868,8 +5894,6 @@ extension on TranslationsRu {
 			'explore.selectSource' => 'Выбрать источник',
 			'explore.rows.watchlist' => 'Список для просмотра',
 			'explore.rows.recommendedMovies' => 'Рекомендуемые фильмы',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Рекомендуемые сериалы',
 			'explore.rows.trendingMovies' => 'Фильмы в тренде',
 			'explore.rows.trendingShows' => 'Сериалы в тренде',
@@ -6370,6 +6394,8 @@ extension on TranslationsRu {
 			'downloads.resumeDownload' => 'Возобновить загрузку',
 			'downloads.cancelledDownload' => 'Загрузка отменена',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (синхронизация ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} загружен — нажмите, чтобы завершить',
 			'downloads.partialDownloadClickToComplete' => 'Частично загружено — нажмите, чтобы завершить',
 			'downloads.deleting' => 'Удаление...',
@@ -6382,8 +6408,6 @@ extension on TranslationsRu {
 			'downloads.pauseAll' => 'Приостановить все',
 			'downloads.resumeAll' => 'Возобновить все',
 			'downloads.retryAll' => 'Повторить все',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'Повторить неудачные загрузки',
 			'downloads.deleteAll' => 'Удалить все',
 			'downloads.selectVersion' => 'Выбрать версию',
@@ -6884,6 +6908,8 @@ extension on TranslationsRu {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Не удалось связаться с сервером: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Не удалось войти: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect не удался: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Войти через Plex',
 			'addServer.pinExpired' => 'Срок действия PIN истёк до входа. Попробуйте снова.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Не удалось зарегистрировать учётную запись: ${error}',
@@ -6896,8 +6922,6 @@ extension on TranslationsRu {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Подключиться к ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Введите URL сервера, имя пользователя и пароль.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Войдите на свой сервер ${product}. Будет привязано к ${name}.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Использовать подключение другого профиля',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Повторно используйте подключение другого профиля. Для защищённых профилей потребуется PIN.',
 			'addServer.invalidCredentials' => 'Неверное имя пользователя или пароль',

@@ -3521,7 +3521,7 @@ class _Translations$discover$findNext$da extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} samlede';
 	@override String get timingVaries => 'Timing varierer';
 	@override String get notNow => 'Ikke nu';
-	@override String get swipeHint => 'Skift, eller brug knapperne nedenfor';
+	@override String get swipeHint => 'Stryg omslaget mod en pil, eller brug knapperne nedenfor.';
 	@override String get saved => 'Sparet picks';
 	@override String savedCount({required Object count}) => 'Beskyttede picks · ${count}';
 	@override String get undo => 'Undo';
@@ -3549,6 +3549,18 @@ class _Translations$discover$findNext$da extends Translations$discover$findNext$
 	@override String get openFailed => 'Denne mulighed er ikke længere tilgængelig. refresh for at tjekke igen.';
 	@override String get changeFailed => 'Jeg kan ikke redde den ændring. prøv igen.';
 	@override String get savedLimit => 'Sparet picks er fyldt. fjerne en pick for at spare en anden.';
+	@override String get chooseHint => 'Åbn en titel, gem den til senere, eller spring den over.';
+	@override String get howItWorks => 'Sådan fungerer det';
+	@override String get notNowHelp => 'Spring denne titel over for nu. Den bliver i dit bibliotek.';
+	@override String get saveHelp => 'Gem den under gemte valg for denne profil på denne enhed. At gemme er ikke det samme som at downloade.';
+	@override String get openHelp => 'Vælg omslaget for at se detaljer. Brug hovedhandlingen til at afspille, læse eller åbne titlen.';
+	@override String get controlsHelp => 'Tastatur eller fjernbetjening: vælg en knap, og tryk Enter eller Vælg. Fortryd gendanner dit sidste valg.';
+	@override String get artworkLoading => 'Indlæser billede…';
+	@override String get artworkUnavailable => 'Billede ikke tilgængeligt';
+	@override String get savedFeedback => 'Føjet til gemte valg';
+	@override String get skippedFeedback => 'Sprunget over for nu';
+	@override String get releaseToConfirm => 'Slip for at bekræfte';
+	@override String get remoteHint => 'Omslag i fokus: ← / → vælg · Vælg: detaljer · ↑ / ↓ flyt fokus';
 }
 
 // Path: discover.person
@@ -5559,7 +5571,7 @@ extension on TranslationsDa {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} samlede',
 			'discover.findNext.timingVaries' => 'Timing varierer',
 			'discover.findNext.notNow' => 'Ikke nu',
-			'discover.findNext.swipeHint' => 'Skift, eller brug knapperne nedenfor',
+			'discover.findNext.swipeHint' => 'Stryg omslaget mod en pil, eller brug knapperne nedenfor.',
 			'discover.findNext.saved' => 'Sparet picks',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Beskyttede picks · ${count}',
 			'discover.findNext.undo' => 'Undo',
@@ -5587,6 +5599,18 @@ extension on TranslationsDa {
 			'discover.findNext.openFailed' => 'Denne mulighed er ikke længere tilgængelig. refresh for at tjekke igen.',
 			'discover.findNext.changeFailed' => 'Jeg kan ikke redde den ændring. prøv igen.',
 			'discover.findNext.savedLimit' => 'Sparet picks er fyldt. fjerne en pick for at spare en anden.',
+			'discover.findNext.chooseHint' => 'Åbn en titel, gem den til senere, eller spring den over.',
+			'discover.findNext.howItWorks' => 'Sådan fungerer det',
+			'discover.findNext.notNowHelp' => 'Spring denne titel over for nu. Den bliver i dit bibliotek.',
+			'discover.findNext.saveHelp' => 'Gem den under gemte valg for denne profil på denne enhed. At gemme er ikke det samme som at downloade.',
+			'discover.findNext.openHelp' => 'Vælg omslaget for at se detaljer. Brug hovedhandlingen til at afspille, læse eller åbne titlen.',
+			'discover.findNext.controlsHelp' => 'Tastatur eller fjernbetjening: vælg en knap, og tryk Enter eller Vælg. Fortryd gendanner dit sidste valg.',
+			'discover.findNext.artworkLoading' => 'Indlæser billede…',
+			'discover.findNext.artworkUnavailable' => 'Billede ikke tilgængeligt',
+			'discover.findNext.savedFeedback' => 'Føjet til gemte valg',
+			'discover.findNext.skippedFeedback' => 'Sprunget over for nu',
+			'discover.findNext.releaseToConfirm' => 'Slip for at bekræfte',
+			'discover.findNext.remoteHint' => 'Omslag i fokus: ← / → vælg · Vælg: detaljer · ↑ / ↓ flyt fokus',
 			'discover.extras' => 'Trailere og ekstramateriale',
 			'discover.studio' => 'Studie',
 			'discover.rating' => 'Bedømmelse',
@@ -5812,6 +5836,8 @@ extension on TranslationsDa {
 			'explore.mdblistShelves.nameHint' => 'Lad den være hvid for at bruge kildelisten.',
 			'explore.mdblistShelves.add' => 'Tilføj Shelf',
 			'explore.mdblistShelves.save' => 'Beskytt skålen',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Flyt ${title} op',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Flyt ${title} ned',
 			'explore.mdblistShelves.unavailable' => 'Denne liste er ikke tilgængelig. Retur eller fjerne skallen i indstillinger.',
@@ -5824,8 +5850,6 @@ extension on TranslationsDa {
 			'explore.selectSource' => 'Vælg kilde',
 			'explore.rows.watchlist' => 'Ønskeliste',
 			'explore.rows.recommendedMovies' => 'Anbefalede film',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Anbefalede serier',
 			'explore.rows.trendingMovies' => 'Populære film lige nu',
 			'explore.rows.trendingShows' => 'Populære serier lige nu',
@@ -6326,6 +6350,8 @@ extension on TranslationsDa {
 			'downloads.resumeDownload' => 'Genoptag download',
 			'downloads.cancelledDownload' => 'Annulleret download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (synkroniserer ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} downloadet — klik for at fuldføre',
 			'downloads.partialDownloadClickToComplete' => 'Delvist downloadet — klik for at fuldføre',
 			'downloads.deleting' => 'Sletter...',
@@ -6338,8 +6364,6 @@ extension on TranslationsDa {
 			'downloads.pauseAll' => 'Sæt alle på pause',
 			'downloads.resumeAll' => 'Genoptag alle',
 			'downloads.retryAll' => 'Prøv alle igen',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'Prøv mislykkede downloads igen',
 			'downloads.deleteAll' => 'Slet alle',
 			'downloads.selectVersion' => 'Vælg version',
@@ -6840,6 +6864,8 @@ extension on TranslationsDa {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Kunne ikke nå serveren: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Kunne ikke logge ind: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect mislykkedes: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Log ind med Plex',
 			'addServer.pinExpired' => 'PIN-koden udløb før login. Prøv igen.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Kunne ikke registrere kontoen: ${error}',
@@ -6852,8 +6878,6 @@ extension on TranslationsDa {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Opret forbindelse til ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Indtast din server-URL, brugernavn og adgangskode.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Log ind på din ${product}-server. Tilknyttes til ${name}.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Lån fra en anden profil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Genbrug en anden profils forbindelse. PIN-beskyttede profiler kræver en PIN.',
 			'addServer.invalidCredentials' => 'Ugyldigt brugernavn eller ugyldig adgangskode',

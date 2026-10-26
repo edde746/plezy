@@ -1,0 +1,149 @@
+<svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="1440" height="1320" viewBox="0 0 1440 1320" role="img" aria-labelledby="title desc">
+<title id="title">PlezyNG Multiview proposed layouts</title>
+<desc id="desc">A desktop film beside a reader, a phone reader with floating video, and a TV game with a media companion. Layout, audio ownership and game input are separate controls. Schematic only.</desc>
+<defs>
+<style>text{font-family:Arial,Helvetica,sans-serif;fill:#EDEDED}.muted{fill:#A0A2AA}.small{font-size:14px}.body{font-size:18px}.label{font-size:16px}.heading{font-size:24px;font-weight:600}.title{font-size:40px;font-weight:600}</style>
+<symbol id="play" viewBox="0 0 24 24"><path d="M7 4L20 12 7 20Z" fill="none" stroke="#EDEDED" stroke-width="2"/></symbol>
+<symbol id="pause" viewBox="0 0 24 24"><path d="M8 5V19M16 5V19" fill="none" stroke="#EDEDED" stroke-width="3"/></symbol>
+<symbol id="swap" viewBox="0 0 24 24"><path d="M3 7H20L16 3M21 17H4L8 21" fill="none" stroke="#EDEDED" stroke-width="1.8" stroke-linejoin="round"/></symbol>
+<symbol id="speaker" viewBox="0 0 24 24"><path d="M3 9H7L12 5V19L7 15H3ZM16 8Q22 12 16 16" fill="none" stroke="#EDEDED" stroke-width="1.8"/></symbol>
+<symbol id="more" viewBox="0 0 24 24"><circle cx="4" cy="12" r="2" fill="#EDEDED"/><circle cx="12" cy="12" r="2" fill="#EDEDED"/><circle cx="20" cy="12" r="2" fill="#EDEDED"/></symbol>
+<symbol id="split" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3" fill="none" stroke="#EDEDED" stroke-width="1.8"/><path d="M12 4V20" stroke="#EDEDED" stroke-width="1.8"/></symbol>
+<symbol id="close" viewBox="0 0 24 24"><path d="M6 6L18 18M18 6L6 18" stroke="#EDEDED" stroke-width="1.8"/></symbol>
+</defs>
+<rect width="1440" height="1320" fill="#0E0F12"/>
+
+<text x="40" y="65" class="title">PlezyNG Multiview</text>
+<text x="40" y="99" class="body muted">App-owned PiP everywhere. The same actions, with native rendering underneath.</text>
+<text x="40" y="143" class="heading">01  Film + reader</text>
+<text x="1024" y="143" class="heading">02  Float on a phone</text>
+<rect x="40" y="164" width="940" height="540" rx="20" fill="#15171C" stroke="#35373D" stroke-width="1"/>
+<path d="M40 222L980 222" fill="none" stroke="#35373D" stroke-width="1"/>
+<text x="64" y="201" class="label">PLEZYNG</text>
+<rect x="701" y="173" width="136" height="40" rx="12" fill="#21232A" stroke="#35373D" stroke-width="1"/>
+<use xlink:href="#split" x="713" y="181" width="24" height="24"/>
+<text x="745" y="199" class="label">Layout</text>
+<rect x="849" y="173" width="111" height="40" rx="12" fill="#21232A" stroke="#35373D" stroke-width="1"/>
+<text x="863" y="199" class="label">Add another</text>
+<path d="M206 222L206 704" fill="none" stroke="#35373D" stroke-width="1"/>
+<text x="68" y="260" class="label">Home</text>
+<text x="68" y="302" class="label">Libraries</text>
+<text x="68" y="344" class="label">Music</text>
+<rect x="52" y="370" width="142" height="42" rx="12" fill="#2B2D34" stroke="#35373D" stroke-width="1"/>
+<text x="68" y="386" class="label">Books</text>
+<text x="68" y="428" class="label">Games</text>
+<text x="68" y="670" class="label muted">Settings</text>
+<rect x="222" y="238" width="406" height="396" rx="12" fill="#0E0F12" stroke="#35373D" stroke-width="1"/>
+<text x="238" y="268" class="label">Northern passage</text>
+<use xlink:href="#speaker" x="566" y="246" width="24" height="24"/>
+<use xlink:href="#more" x="598" y="246" width="24" height="24"/>
+<rect x="223" y="282" width="404" height="248" rx="0" fill="#20242B" stroke="#20242B" stroke-width="1"/>
+<path d="M223 468.0L319.96 361.36L433.08000000000004 455.6L513.88 341.52L627 470.48V530H223Z" fill="#343B43"/>
+<path d="M223 492.79999999999995L364.4 430.79999999999995L489.64 495.28L627 443.20000000000005V530H223Z" fill="#14191F"/>
+<text x="282" y="504" class="label">[Wind over the ridge]</text>
+<path d="M240 561L621 561" fill="none" stroke="#41454E" stroke-width="4"/>
+<path d="M240 561L420 561" fill="none" stroke="#EDEDED" stroke-width="4"/>
+<use xlink:href="#pause" x="239" y="579" width="28" height="28"/>
+<text x="280" y="599" class="small muted">42:18 / 1:37:04</text>
+<rect x="480" y="578" width="143" height="40" rx="12" fill="#21232A" stroke="#35373D" stroke-width="1"/>
+<use xlink:href="#swap" x="492" y="586" width="24" height="24"/>
+<text x="524" y="604" class="label">Swap</text>
+<rect x="640" y="238" width="324" height="396" rx="12" fill="#101216" stroke="#35373D" stroke-width="1"/>
+<text x="668" y="268" class="label">The Night Garden</text>
+<use xlink:href="#more" x="924" y="246" width="24" height="24"/>
+<text x="674" y="313" class="body">Chapter four</text>
+<path d="M674 341L939 341" fill="none" stroke="#72757E" stroke-width="2"/>
+<path d="M674 361L939 361" fill="none" stroke="#72757E" stroke-width="2"/>
+<path d="M674 381L939 381" fill="none" stroke="#72757E" stroke-width="2"/>
+<path d="M674 401L939 401" fill="none" stroke="#72757E" stroke-width="2"/>
+<path d="M674 421L864.8 421" fill="none" stroke="#72757E" stroke-width="2"/>
+<path d="M674 441L939 441" fill="none" stroke="#72757E" stroke-width="2"/>
+<path d="M674 461L939 461" fill="none" stroke="#72757E" stroke-width="2"/>
+<path d="M674 481L939 481" fill="none" stroke="#72757E" stroke-width="2"/>
+<path d="M674 501L939 501" fill="none" stroke="#72757E" stroke-width="2"/>
+<path d="M674 521L864.8 521" fill="none" stroke="#72757E" stroke-width="2"/>
+<text x="674" y="597" class="small muted">Page 84 of 216</text>
+<text x="892" y="597" class="body">Aa</text>
+<rect x="222" y="649" width="742" height="40" rx="12" fill="#202228" stroke="#35373D" stroke-width="1"/>
+<use xlink:href="#speaker" x="236" y="657" width="24" height="24"/>
+<text x="271" y="675" class="label">Northern passage</text>
+<path d="M448 660L448 678" fill="none" stroke="#35373D" stroke-width="1"/>
+<text x="467" y="675" class="label">The Night Garden</text>
+<text x="805" y="675" class="small muted">2 open</text>
+<text x="40" y="735" class="body muted">Swap changes placement. Audio stays with the selected source.</text>
+<rect x="1024" y="164" width="376" height="686" rx="28" fill="#15171C" stroke="#4A4D55" stroke-width="2"/>
+<text x="1044" y="203" class="body">The Night Garden</text>
+<use xlink:href="#split" x="1332" y="182" width="24" height="24"/>
+<use xlink:href="#more" x="1368" y="182" width="24" height="24"/>
+<path d="M1024 220L1400 220" fill="none" stroke="#35373D" stroke-width="1"/>
+<text x="1050" y="260" class="heading">Chapter four</text>
+<path d="M1050 290L1372 290" fill="none" stroke="#72757E" stroke-width="2"/>
+<path d="M1050 314L1372 314" fill="none" stroke="#72757E" stroke-width="2"/>
+<path d="M1050 338L1372 338" fill="none" stroke="#72757E" stroke-width="2"/>
+<path d="M1050 362L1372 362" fill="none" stroke="#72757E" stroke-width="2"/>
+<path d="M1050 386L1281.84 386" fill="none" stroke="#72757E" stroke-width="2"/>
+<path d="M1050 410L1372 410" fill="none" stroke="#72757E" stroke-width="2"/>
+<path d="M1050 434L1372 434" fill="none" stroke="#72757E" stroke-width="2"/>
+<path d="M1050 458L1372 458" fill="none" stroke="#72757E" stroke-width="2"/>
+<rect x="1050" y="489" width="324" height="246" rx="12" fill="#111318" stroke="#8F939D" stroke-width="1"/>
+<text x="1064" y="516" class="label">Northern passage</text>
+<use xlink:href="#speaker" x="1335" y="496" width="24" height="24"/>
+<rect x="1051" y="529" width="322" height="153" rx="0" fill="#20242B" stroke="#20242B" stroke-width="1"/>
+<path d="M1051 643.75L1128.28 577.96L1218.44 636.1L1282.84 565.72L1373 645.28V682H1051Z" fill="#343B43"/>
+<path d="M1051 659.05L1163.7 620.8L1263.52 660.5799999999999L1373 628.45V682H1051Z" fill="#14191F"/>
+<use xlink:href="#pause" x="1064" y="696" width="24" height="24"/>
+<rect x="1160" y="688" width="110" height="40" rx="12" fill="#21232A" stroke="#35373D" stroke-width="1"/>
+<use xlink:href="#swap" x="1172" y="696" width="24" height="24"/>
+<text x="1204" y="714" class="label">Swap</text>
+<use xlink:href="#more" x="1334" y="696" width="24" height="24"/>
+<path d="M1360 730L1369 721" fill="none" stroke="#A0A2AA" stroke-width="1"/>
+<path d="M1365 730L1369 726" fill="none" stroke="#A0A2AA" stroke-width="1"/>
+<text x="1050" y="775" class="label muted">84 / 216</text>
+<rect x="1260" y="748" width="114" height="40" rx="12" fill="#21232A" stroke="#35373D" stroke-width="1"/>
+<use xlink:href="#split" x="1272" y="756" width="24" height="24"/>
+<text x="1304" y="774" class="label">Layout</text>
+<text x="1043" y="823" class="small muted">Drag the header. Resize from the corner.</text>
+<text x="40" y="800" class="heading">03  Game + media on a TV</text>
+<rect x="40" y="823" width="940" height="418" rx="20" fill="#15171C" stroke="#35373D" stroke-width="1"/>
+<text x="64" y="859" class="body">Game session</text>
+<rect x="235" y="836" width="170" height="32" rx="12" fill="#2B2D34" stroke="#898D96" stroke-width="1"/>
+<text x="248" y="857" class="label">Controls here</text>
+<use xlink:href="#more" x="927" y="838" width="24" height="24"/>
+<rect x="52" y="878" width="916" height="288" rx="0" fill="#20242B" stroke="#20242B" stroke-width="1"/>
+<path d="M52 1094.0L271.84000000000003 970.16L528.3199999999999 1079.6L711.52 947.12L968 1096.88V1166H52Z" fill="#343B43"/>
+<path d="M52 1122.8L372.59999999999997 1050.8L656.5600000000001 1125.68L968 1065.2V1166H52Z" fill="#14191F"/>
+<path d="M400 1166L490 1024L600 1166" fill="#474D52"/>
+<path d="M490 992L490 1012" fill="none" stroke="#EDEDED" stroke-width="1"/>
+<path d="M480 1002L500 1002" fill="none" stroke="#EDEDED" stroke-width="1"/>
+<text x="76" y="1144" class="label muted">Game viewport · schematic</text>
+<rect x="646" y="897" width="300" height="237" rx="12" fill="#111318" stroke="#A0A2AA" stroke-width="1"/>
+<text x="660" y="924" class="label">Northern passage</text>
+<use xlink:href="#speaker" x="908" y="903" width="24" height="24"/>
+<rect x="647" y="938" width="298" height="140" rx="0" fill="#20242B" stroke="#20242B" stroke-width="1"/>
+<path d="M647 1043.0L718.52 982.8L801.96 1036.0L861.56 971.6L945 1044.4V1078H647Z" fill="#343B43"/>
+<path d="M647 1057.0L751.3 1022.0L843.6800000000001 1058.4L945 1029.0V1078H647Z" fill="#14191F"/>
+<use xlink:href="#pause" x="661" y="1091" width="24" height="24"/>
+<rect x="730" y="1085" width="110" height="40" rx="12" fill="#21232A" stroke="#35373D" stroke-width="1"/>
+<use xlink:href="#swap" x="742" y="1093" width="24" height="24"/>
+<text x="774" y="1111" class="label">Swap</text>
+<use xlink:href="#more" x="907" y="1093" width="24" height="24"/>
+<path d="M52 1178L968 1178" fill="none" stroke="#35373D" stroke-width="1"/>
+<rect x="64" y="1190" width="157" height="40" rx="12" fill="#21232A" stroke="#35373D" stroke-width="1"/>
+<use xlink:href="#split" x="76" y="1198" width="24" height="24"/>
+<text x="108" y="1216" class="label">Change pane</text>
+<rect x="233" y="1190" width="126" height="40" rx="12" fill="#21232A" stroke="#35373D" stroke-width="1"/>
+<use xlink:href="#split" x="245" y="1198" width="24" height="24"/>
+<text x="277" y="1216" class="label">Layout</text>
+<use xlink:href="#speaker" x="583" y="1198" width="24" height="24"/>
+<text x="618" y="1215" class="label">Audio: Northern passage</text>
+<text x="1024" y="905" class="heading">Three separate choices</text>
+<text x="1024" y="947" class="body">Main view</text>
+<text x="1024" y="973" class="label muted">Which content gets more space.</text>
+<text x="1024" y="1019" class="body">Audio</text>
+<text x="1024" y="1045" class="label muted">Which session you hear.</text>
+<text x="1024" y="1091" class="body">Controls</text>
+<text x="1024" y="1117" class="label muted">Which pane receives input.</text>
+<text x="1024" y="1170" class="label">Every gesture has a visible action.</text>
+<text x="1024" y="1200" class="label muted">Native OS PiP remains optional.</text>
+<text x="40" y="1287" class="small muted">PROPOSED WIREFRAMES · Audited MonoTokens geometry/palette · No runtime or device-support claim</text>
+</svg>

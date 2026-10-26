@@ -3521,7 +3521,7 @@ class _Translations$discover$findNext$kk extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} Үздік';
 	@override String get timingVaries => 'Өнімдер мен';
 	@override String get notNow => 'Қазіргі уақытта';
-	@override String get swipeHint => 'Ауыз іші шырышты қабығы мен шырышты қабығы';
+	@override String get swipeHint => 'Мұқабаны көрсеткі бағытына сырғытыңыз немесе төмендегі түймелерді қолданыңыз.';
 	@override String get saved => 'Пікірлер мен';
 	@override String savedCount({required Object count}) => 'Жүзілік қанағаттанды · ${count}';
 	@override String get undo => 'Өткен';
@@ -3549,6 +3549,18 @@ class _Translations$discover$findNext$kk extends Translations$discover$findNext$
 	@override String get openFailed => 'Қазіргі таңда бүкіл әлем қаржылық дағдарыста.';
 	@override String get changeFailed => 'Қанша біріктір мен біріктір мен біріктір мен біріктір мен біріктір.';
 	@override String get savedLimit => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды.';
+	@override String get chooseHint => 'Туындыны ашыңыз, кейінге сақтаңыз немесе өткізіп жіберіңіз.';
+	@override String get howItWorks => 'Қолдану жолы';
+	@override String get notNowHelp => 'Бұл туындыны әзірге өткізіп жіберіңіз. Ол кітапханаңызда қалады.';
+	@override String get saveHelp => 'Оны осы құрылғыдағы осы профильдің сақталған таңдауларына қосыңыз. Сақтау мазмұнды жүктеп алмайды.';
+	@override String get openHelp => 'Мәліметтер үшін мұқабаны таңдаңыз. Туындыны ойнату, оқу немесе ашу үшін негізгі түймені қолданыңыз.';
+	@override String get controlsHelp => 'Пернетақта не пульт: түймені таңдап, Enter немесе таңдау түймесін басыңыз. Болдырмау соңғы таңдауыңызды қайтарады.';
+	@override String get artworkLoading => 'Сурет жүктелуде…';
+	@override String get artworkUnavailable => 'Сурет қолжетімсіз';
+	@override String get savedFeedback => 'Сақталған таңдауларға қосылды';
+	@override String get skippedFeedback => 'Әзірге өткізіліп жіберілді';
+	@override String get releaseToConfirm => 'Растау үшін жіберіңіз';
+	@override String get remoteHint => 'Мұқаба таңдалғанда: ← / → таңдау · Таңдау түймесі: мәліметтер · ↑ / ↓ фокусты жылжыту';
 }
 
 // Path: discover.person
@@ -5559,7 +5571,7 @@ extension on TranslationsKk {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} Үздік',
 			'discover.findNext.timingVaries' => 'Өнімдер мен',
 			'discover.findNext.notNow' => 'Қазіргі уақытта',
-			'discover.findNext.swipeHint' => 'Ауыз іші шырышты қабығы мен шырышты қабығы',
+			'discover.findNext.swipeHint' => 'Мұқабаны көрсеткі бағытына сырғытыңыз немесе төмендегі түймелерді қолданыңыз.',
 			'discover.findNext.saved' => 'Пікірлер мен',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Жүзілік қанағаттанды · ${count}',
 			'discover.findNext.undo' => 'Өткен',
@@ -5587,6 +5599,18 @@ extension on TranslationsKk {
 			'discover.findNext.openFailed' => 'Қазіргі таңда бүкіл әлем қаржылық дағдарыста.',
 			'discover.findNext.changeFailed' => 'Қанша біріктір мен біріктір мен біріктір мен біріктір мен біріктір.',
 			'discover.findNext.savedLimit' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды.',
+			'discover.findNext.chooseHint' => 'Туындыны ашыңыз, кейінге сақтаңыз немесе өткізіп жіберіңіз.',
+			'discover.findNext.howItWorks' => 'Қолдану жолы',
+			'discover.findNext.notNowHelp' => 'Бұл туындыны әзірге өткізіп жіберіңіз. Ол кітапханаңызда қалады.',
+			'discover.findNext.saveHelp' => 'Оны осы құрылғыдағы осы профильдің сақталған таңдауларына қосыңыз. Сақтау мазмұнды жүктеп алмайды.',
+			'discover.findNext.openHelp' => 'Мәліметтер үшін мұқабаны таңдаңыз. Туындыны ойнату, оқу немесе ашу үшін негізгі түймені қолданыңыз.',
+			'discover.findNext.controlsHelp' => 'Пернетақта не пульт: түймені таңдап, Enter немесе таңдау түймесін басыңыз. Болдырмау соңғы таңдауыңызды қайтарады.',
+			'discover.findNext.artworkLoading' => 'Сурет жүктелуде…',
+			'discover.findNext.artworkUnavailable' => 'Сурет қолжетімсіз',
+			'discover.findNext.savedFeedback' => 'Сақталған таңдауларға қосылды',
+			'discover.findNext.skippedFeedback' => 'Әзірге өткізіліп жіберілді',
+			'discover.findNext.releaseToConfirm' => 'Растау үшін жіберіңіз',
+			'discover.findNext.remoteHint' => 'Мұқаба таңдалғанда: ← / → таңдау · Таңдау түймесі: мәліметтер · ↑ / ↓ фокусты жылжыту',
 			'discover.extras' => 'Трейлерлер мен қосымшалар',
 			'discover.studio' => 'Студия',
 			'discover.rating' => 'Рейтинг',
@@ -5812,6 +5836,8 @@ extension on TranslationsKk {
 			'explore.mdblistShelves.nameHint' => 'Бұл үшін бір-бірімен бір-бірін бір-бірин бір-біректің бір-біремен бір-биректің бір.',
 			'explore.mdblistShelves.add' => 'Шелгі',
 			'explore.mdblistShelves.save' => 'Қайталылық',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Қазіргі таңда ${title}',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Қазіргі таңда ${title}',
 			'explore.mdblistShelves.unavailable' => 'Бұл спиртқа не қосқан.Серіктің шағын немесе жүктеу.',
@@ -5824,8 +5850,6 @@ extension on TranslationsKk {
 			'explore.selectSource' => 'Дереккөзді таңдаңыз',
 			'explore.rows.watchlist' => 'Көру тізімі',
 			'explore.rows.recommendedMovies' => 'Ұсынылатын фильмдер',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Ұсынылатын сериалдар',
 			'explore.rows.trendingMovies' => 'Трендтегі фильмдер',
 			'explore.rows.trendingShows' => 'Трендтегі сериалдар',
@@ -6326,6 +6350,8 @@ extension on TranslationsKk {
 			'downloads.resumeDownload' => 'Жүктеуді жалғастыру',
 			'downloads.cancelledDownload' => 'Тоқтатылған жүктеу',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} синхрондалуда)',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Жүктелді ${file} - Аяқтау үшін түртіңіз',
 			'downloads.partialDownloadClickToComplete' => 'Жартылай жүктелді - Аяқтау үшін түртіңіз',
 			'downloads.deleting' => 'Өшірілуде...',
@@ -6338,8 +6364,6 @@ extension on TranslationsKk {
 			'downloads.pauseAll' => 'Барлығын кідірту',
 			'downloads.resumeAll' => 'Барлығын жалғастыру',
 			'downloads.retryAll' => 'Барлығын қайталау',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'Сәтсіз жүктеулерді қайталау',
 			'downloads.deleteAll' => 'Барлығын өшіру',
 			'downloads.selectVersion' => 'Нұсқаны таңдау',
@@ -6840,6 +6864,8 @@ extension on TranslationsKk {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Серверге қосылу мүмкін болмады: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Кіру қатесі: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Жылдам қосылу қатесі: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Plex арқылы кіру',
 			'addServer.pinExpired' => 'PIN код мерзімі өтті.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Тіркелгіні тіркеу қатесі: ${error}',
@@ -6852,8 +6878,6 @@ extension on TranslationsKk {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '${product} қосылу',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Сервер URL мекенжайын, пайдаланушы атын және құпия сөзді енгізіңіз.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} серверіне кіріңіз. ${name} тіркелгісіне байланыстырылады.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Басқа профильден алу',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Басқа профильдің қосылымын қайта пайдалану. PIN кодпен қорғалған профильдер PIN кодты талап етеді.',
 			'addServer.invalidCredentials' => 'Пайдаланушы аты немесе құпия сөз қате',

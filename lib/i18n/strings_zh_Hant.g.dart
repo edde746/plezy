@@ -3517,7 +3517,7 @@ class _Translations$discover$findNext$zh_Hant extends Translations$discover$find
 	@override String totalDuration({required Object duration}) => '${duration} 總';
 	@override String get timingVaries => '時間差異';
 	@override String get notNow => '不是現在';
-	@override String get swipeHint => '轉動,或者使用下面的按鈕';
+	@override String get swipeHint => '朝箭頭方向滑動封面，或使用下方按鈕。';
 	@override String get saved => '拯救的皮克';
 	@override String savedCount({required Object count}) => '獲取評分 · ${count}';
 	@override String get undo => '和';
@@ -3545,6 +3545,18 @@ class _Translations$discover$findNext$zh_Hant extends Translations$discover$find
 	@override String get openFailed => '此選項不再可用. 更新再檢查。';
 	@override String get changeFailed => '沒辦法改變,再試一次。';
 	@override String get savedLimit => '儲存的點數是滿的. 刪除一個點數來儲存另一個點數。';
+	@override String get chooseHint => '開啟作品、儲存以便稍後查看，或略過。';
+	@override String get howItWorks => '使用方式';
+	@override String get notNowHelp => '暫時略過這部作品。它仍會保留在媒體庫中。';
+	@override String get saveHelp => '儲存至此裝置上目前個人檔案的已儲存推薦中。儲存不會下載作品。';
+	@override String get openHelp => '選取封面查看詳細資訊。使用主要按鈕播放、閱讀或開啟作品。';
+	@override String get controlsHelp => '鍵盤或遙控器：將焦點移到按鈕，然後按 Enter 或選取鍵。復原可恢復上一次選擇。';
+	@override String get artworkLoading => '正在載入圖片…';
+	@override String get artworkUnavailable => '圖片無法使用';
+	@override String get savedFeedback => '已加入儲存的推薦';
+	@override String get skippedFeedback => '已暫時略過';
+	@override String get releaseToConfirm => '放開以確認';
+	@override String get remoteHint => '封面取得焦點時：← / → 選擇 · 選取鍵查看詳細資訊 · ↑ / ↓ 移動焦點';
 }
 
 // Path: discover.person
@@ -5555,7 +5567,7 @@ extension on TranslationsZhHant {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} 總',
 			'discover.findNext.timingVaries' => '時間差異',
 			'discover.findNext.notNow' => '不是現在',
-			'discover.findNext.swipeHint' => '轉動,或者使用下面的按鈕',
+			'discover.findNext.swipeHint' => '朝箭頭方向滑動封面，或使用下方按鈕。',
 			'discover.findNext.saved' => '拯救的皮克',
 			'discover.findNext.savedCount' => ({required Object count}) => '獲取評分 · ${count}',
 			'discover.findNext.undo' => '和',
@@ -5583,6 +5595,18 @@ extension on TranslationsZhHant {
 			'discover.findNext.openFailed' => '此選項不再可用. 更新再檢查。',
 			'discover.findNext.changeFailed' => '沒辦法改變,再試一次。',
 			'discover.findNext.savedLimit' => '儲存的點數是滿的. 刪除一個點數來儲存另一個點數。',
+			'discover.findNext.chooseHint' => '開啟作品、儲存以便稍後查看，或略過。',
+			'discover.findNext.howItWorks' => '使用方式',
+			'discover.findNext.notNowHelp' => '暫時略過這部作品。它仍會保留在媒體庫中。',
+			'discover.findNext.saveHelp' => '儲存至此裝置上目前個人檔案的已儲存推薦中。儲存不會下載作品。',
+			'discover.findNext.openHelp' => '選取封面查看詳細資訊。使用主要按鈕播放、閱讀或開啟作品。',
+			'discover.findNext.controlsHelp' => '鍵盤或遙控器：將焦點移到按鈕，然後按 Enter 或選取鍵。復原可恢復上一次選擇。',
+			'discover.findNext.artworkLoading' => '正在載入圖片…',
+			'discover.findNext.artworkUnavailable' => '圖片無法使用',
+			'discover.findNext.savedFeedback' => '已加入儲存的推薦',
+			'discover.findNext.skippedFeedback' => '已暫時略過',
+			'discover.findNext.releaseToConfirm' => '放開以確認',
+			'discover.findNext.remoteHint' => '封面取得焦點時：← / → 選擇 · 選取鍵查看詳細資訊 · ↑ / ↓ 移動焦點',
 			'discover.extras' => '預告片與花絮',
 			'discover.studio' => '製作商',
 			'discover.rating' => '分級',
@@ -5808,6 +5832,8 @@ extension on TranslationsZhHant {
 			'explore.mdblistShelves.nameHint' => '請點選使用源名單名稱。',
 			'explore.mdblistShelves.add' => '新增Shelf',
 			'explore.mdblistShelves.save' => '儲存沙地',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => '移動 ${title} 升',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => '移動 ${title} 下載',
 			'explore.mdblistShelves.unavailable' => '此列表不可用 退出或在設定中刪除其架子。',
@@ -5820,8 +5846,6 @@ extension on TranslationsZhHant {
 			'explore.selectSource' => '選擇來源',
 			'explore.rows.watchlist' => '待看清單',
 			'explore.rows.recommendedMovies' => '推薦電影',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => '推薦影集',
 			'explore.rows.trendingMovies' => '近期熱門電影',
 			'explore.rows.trendingShows' => '近期熱門影集',
@@ -6322,6 +6346,8 @@ extension on TranslationsZhHant {
 			'downloads.resumeDownload' => '繼續下載',
 			'downloads.cancelledDownload' => '已取消的下載',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file}（正在同步 ${status}）',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '已下載 ${file} — 點選以完成',
 			'downloads.partialDownloadClickToComplete' => '已部分下載 — 點選以完成',
 			'downloads.deleting' => '正在刪除…',
@@ -6334,8 +6360,6 @@ extension on TranslationsZhHant {
 			'downloads.pauseAll' => '全部暫停',
 			'downloads.resumeAll' => '全部繼續',
 			'downloads.retryAll' => '全部重試',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => '重試失敗的下載',
 			'downloads.deleteAll' => '全部刪除',
 			'downloads.selectVersion' => '選擇版本',
@@ -6836,6 +6860,8 @@ extension on TranslationsZhHant {
 			'addServer.couldNotReachServer' => ({required Object error}) => '無法連線至伺服器：${error}',
 			'addServer.signInFailed' => ({required Object error}) => '登入失敗：${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => '快速連線失敗：${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => '使用 Plex 登入',
 			'addServer.pinExpired' => 'PIN 碼在登入前已過期。請重試。',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => '註冊帳戶失敗：${error}',
@@ -6848,8 +6874,6 @@ extension on TranslationsZhHant {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '連線至 ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => '輸入您的伺服器 URL、使用者名稱與密碼。',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '登入您的 ${product} 伺服器。將綁定至 ${name}。',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => '從另一個使用者設定檔共用',
 			'addServer.borrowFromAnotherProfileSubtitle' => '重複使用另一個使用者設定檔的連線資訊。受 PIN 碼保護的使用者設定檔需輸入 PIN 碼。',
 			'addServer.invalidCredentials' => '使用者名稱或密碼無效',

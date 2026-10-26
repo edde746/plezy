@@ -3521,7 +3521,7 @@ class _Translations$discover$findNext$de extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} Gesamt';
 	@override String get timingVaries => 'Timing variiert';
 	@override String get notNow => 'nicht jetzt';
-	@override String get swipeHint => 'Schalten Sie oder benutzen Sie die unteren Buttonen';
+	@override String get swipeHint => 'Wische das Cover in Pfeilrichtung oder nutze die Schaltflächen darunter.';
 	@override String get saved => 'Rettung Picks';
 	@override String savedCount({required Object count}) => 'Ersparter Pick · ${count}';
 	@override String get undo => 'Undo';
@@ -3549,6 +3549,18 @@ class _Translations$discover$findNext$de extends Translations$discover$findNext$
 	@override String get openFailed => 'Diese Option ist nicht mehr verfügbar. Erneut, um erneut zu überprüfen.';
 	@override String get changeFailed => 'Ich kann diese Veränderung nicht speichern. versuchen Sie noch einmal.';
 	@override String get savedLimit => 'Speicherte Picks sind voll. Entfernen Sie eine Auswahl, um eine andere zu speichern.';
+	@override String get chooseHint => 'Öffne einen Vorschlag, speichere ihn für später oder überspringe ihn.';
+	@override String get howItWorks => 'So funktioniert’s';
+	@override String get notNowHelp => 'Überspringe diesen Vorschlag vorerst. Er bleibt in deiner Mediathek.';
+	@override String get saveHelp => 'Speichere ihn unter „Gespeicherte Vorschläge“ für dieses Profil auf diesem Gerät. Dabei wird nichts heruntergeladen.';
+	@override String get openHelp => 'Wähle das Cover für Details. Mit der Hauptaktion kannst du den Titel abspielen, lesen oder öffnen.';
+	@override String get controlsHelp => 'Tastatur oder Fernbedienung: Wähle eine Schaltfläche und drücke Enter oder die Auswahltaste. Rückgängig stellt deine letzte Auswahl wieder her.';
+	@override String get artworkLoading => 'Cover wird geladen…';
+	@override String get artworkUnavailable => 'Cover nicht verfügbar';
+	@override String get savedFeedback => 'Zu den gespeicherten Vorschlägen hinzugefügt';
+	@override String get skippedFeedback => 'Vorerst übersprungen';
+	@override String get releaseToConfirm => 'Zum Bestätigen loslassen';
+	@override String get remoteHint => 'Cover im Fokus: ← / → wählen · Auswahltaste: Details · ↑ / ↓: Fokus bewegen';
 }
 
 // Path: discover.person
@@ -5559,7 +5571,7 @@ extension on TranslationsDe {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} Gesamt',
 			'discover.findNext.timingVaries' => 'Timing variiert',
 			'discover.findNext.notNow' => 'nicht jetzt',
-			'discover.findNext.swipeHint' => 'Schalten Sie oder benutzen Sie die unteren Buttonen',
+			'discover.findNext.swipeHint' => 'Wische das Cover in Pfeilrichtung oder nutze die Schaltflächen darunter.',
 			'discover.findNext.saved' => 'Rettung Picks',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Ersparter Pick · ${count}',
 			'discover.findNext.undo' => 'Undo',
@@ -5587,6 +5599,18 @@ extension on TranslationsDe {
 			'discover.findNext.openFailed' => 'Diese Option ist nicht mehr verfügbar. Erneut, um erneut zu überprüfen.',
 			'discover.findNext.changeFailed' => 'Ich kann diese Veränderung nicht speichern. versuchen Sie noch einmal.',
 			'discover.findNext.savedLimit' => 'Speicherte Picks sind voll. Entfernen Sie eine Auswahl, um eine andere zu speichern.',
+			'discover.findNext.chooseHint' => 'Öffne einen Vorschlag, speichere ihn für später oder überspringe ihn.',
+			'discover.findNext.howItWorks' => 'So funktioniert’s',
+			'discover.findNext.notNowHelp' => 'Überspringe diesen Vorschlag vorerst. Er bleibt in deiner Mediathek.',
+			'discover.findNext.saveHelp' => 'Speichere ihn unter „Gespeicherte Vorschläge“ für dieses Profil auf diesem Gerät. Dabei wird nichts heruntergeladen.',
+			'discover.findNext.openHelp' => 'Wähle das Cover für Details. Mit der Hauptaktion kannst du den Titel abspielen, lesen oder öffnen.',
+			'discover.findNext.controlsHelp' => 'Tastatur oder Fernbedienung: Wähle eine Schaltfläche und drücke Enter oder die Auswahltaste. Rückgängig stellt deine letzte Auswahl wieder her.',
+			'discover.findNext.artworkLoading' => 'Cover wird geladen…',
+			'discover.findNext.artworkUnavailable' => 'Cover nicht verfügbar',
+			'discover.findNext.savedFeedback' => 'Zu den gespeicherten Vorschlägen hinzugefügt',
+			'discover.findNext.skippedFeedback' => 'Vorerst übersprungen',
+			'discover.findNext.releaseToConfirm' => 'Zum Bestätigen loslassen',
+			'discover.findNext.remoteHint' => 'Cover im Fokus: ← / → wählen · Auswahltaste: Details · ↑ / ↓: Fokus bewegen',
 			'discover.extras' => 'Trailer & Extras',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Altersfreigabe',
@@ -5812,6 +5836,8 @@ extension on TranslationsDe {
 			'explore.mdblistShelves.nameHint' => 'Lassen Sie das Schalt, um den Quelllistenamen zu verwenden.',
 			'explore.mdblistShelves.add' => 'Schalke hinzufügen',
 			'explore.mdblistShelves.save' => 'Sparen Sie Schiffe',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => '${title} nach oben verschieben',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => '${title} nach unten',
 			'explore.mdblistShelves.unavailable' => 'Diese Liste ist nicht verfügbar. Rückkehr oder Entfernen der Schale in Einstellungen.',
@@ -5824,8 +5850,6 @@ extension on TranslationsDe {
 			'explore.selectSource' => 'Quelle auswählen',
 			'explore.rows.watchlist' => 'Merkliste',
 			'explore.rows.recommendedMovies' => 'Empfohlene Filme',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Empfohlene Serien',
 			'explore.rows.trendingMovies' => 'Angesagte Filme',
 			'explore.rows.trendingShows' => 'Angesagte Serien',
@@ -6326,6 +6350,8 @@ extension on TranslationsDe {
 			'downloads.resumeDownload' => 'Download fortsetzen',
 			'downloads.cancelledDownload' => 'Abgebrochener Download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} wird synchronisiert)',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} heruntergeladen — zum Abschließen klicken',
 			'downloads.partialDownloadClickToComplete' => 'Teilweise heruntergeladen — zum Abschließen klicken',
 			'downloads.deleting' => 'Wird gelöscht …',
@@ -6338,8 +6364,6 @@ extension on TranslationsDe {
 			'downloads.pauseAll' => 'Alle pausieren',
 			'downloads.resumeAll' => 'Alle fortsetzen',
 			'downloads.retryAll' => 'Alle wiederholen',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'Fehlgeschlagene Downloads wiederholen',
 			'downloads.deleteAll' => 'Alle löschen',
 			'downloads.selectVersion' => 'Version auswählen',
@@ -6840,6 +6864,8 @@ extension on TranslationsDe {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Server nicht erreichbar: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Anmeldung fehlgeschlagen: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect fehlgeschlagen: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Mit Plex anmelden',
 			'addServer.pinExpired' => 'PIN ist vor der Anmeldung abgelaufen. Bitte erneut versuchen.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Konto konnte nicht registriert werden: ${error}',
@@ -6852,8 +6878,6 @@ extension on TranslationsDe {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Mit ${product} verbinden',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Gib Server-URL, Benutzername und Passwort ein.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Melde dich bei deinem ${product}-Server an. Wird mit ${name} verknüpft.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Von einem anderen Profil ausleihen',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Verbindung eines anderen Profils wiederverwenden. PIN-geschützte Profile erfordern eine PIN.',
 			'addServer.invalidCredentials' => 'Ungültiger Benutzername oder ungültiges Passwort',

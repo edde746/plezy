@@ -3521,7 +3521,7 @@ class _Translations$discover$findNext$sv extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} Totalt';
 	@override String get timingVaries => 'Timing varierar';
 	@override String get notNow => 'inte nu';
-	@override String get swipeHint => 'Swipe, eller använd knapparna nedanför';
+	@override String get swipeHint => 'Svep omslaget mot en pil eller använd knapparna nedan.';
 	@override String get saved => 'Rädda picks';
 	@override String savedCount({required Object count}) => 'Spara uppsättningar · ${count}';
 	@override String get undo => 'och';
@@ -3549,6 +3549,18 @@ class _Translations$discover$findNext$sv extends Translations$discover$findNext$
 	@override String get openFailed => 'Det här alternativet är inte längre tillgängligt. förnyar för att kolla igen.';
 	@override String get changeFailed => 'Kan inte spara den förändringen. försök igen.';
 	@override String get savedLimit => 'Spara picks är fulla. ta bort en pick för att spara en annan.';
+	@override String get chooseHint => 'Öppna en titel, spara den till senare eller hoppa över den.';
+	@override String get howItWorks => 'Så fungerar det';
+	@override String get notNowHelp => 'Hoppa över den här titeln för tillfället. Den finns kvar i ditt bibliotek.';
+	@override String get saveHelp => 'Spara den bland sparade val för den här profilen på den här enheten. Att spara laddar inte ned titeln.';
+	@override String get openHelp => 'Välj omslaget för detaljer. Använd huvudåtgärden för att spela upp, läsa eller öppna titeln.';
+	@override String get controlsHelp => 'Tangentbord eller fjärrkontroll: välj en knapp och tryck på Enter eller Välj. Ångra återställer ditt senaste val.';
+	@override String get artworkLoading => 'Läser in bild…';
+	@override String get artworkUnavailable => 'Bild saknas';
+	@override String get savedFeedback => 'Tillagd bland sparade val';
+	@override String get skippedFeedback => 'Överhoppad för tillfället';
+	@override String get releaseToConfirm => 'Släpp för att bekräfta';
+	@override String get remoteHint => 'Omslag i fokus: ← / → välj · Välj: detaljer · ↑ / ↓ flytta fokus';
 }
 
 // Path: discover.person
@@ -5559,7 +5571,7 @@ extension on TranslationsSv {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} Totalt',
 			'discover.findNext.timingVaries' => 'Timing varierar',
 			'discover.findNext.notNow' => 'inte nu',
-			'discover.findNext.swipeHint' => 'Swipe, eller använd knapparna nedanför',
+			'discover.findNext.swipeHint' => 'Svep omslaget mot en pil eller använd knapparna nedan.',
 			'discover.findNext.saved' => 'Rädda picks',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Spara uppsättningar · ${count}',
 			'discover.findNext.undo' => 'och',
@@ -5587,6 +5599,18 @@ extension on TranslationsSv {
 			'discover.findNext.openFailed' => 'Det här alternativet är inte längre tillgängligt. förnyar för att kolla igen.',
 			'discover.findNext.changeFailed' => 'Kan inte spara den förändringen. försök igen.',
 			'discover.findNext.savedLimit' => 'Spara picks är fulla. ta bort en pick för att spara en annan.',
+			'discover.findNext.chooseHint' => 'Öppna en titel, spara den till senare eller hoppa över den.',
+			'discover.findNext.howItWorks' => 'Så fungerar det',
+			'discover.findNext.notNowHelp' => 'Hoppa över den här titeln för tillfället. Den finns kvar i ditt bibliotek.',
+			'discover.findNext.saveHelp' => 'Spara den bland sparade val för den här profilen på den här enheten. Att spara laddar inte ned titeln.',
+			'discover.findNext.openHelp' => 'Välj omslaget för detaljer. Använd huvudåtgärden för att spela upp, läsa eller öppna titeln.',
+			'discover.findNext.controlsHelp' => 'Tangentbord eller fjärrkontroll: välj en knapp och tryck på Enter eller Välj. Ångra återställer ditt senaste val.',
+			'discover.findNext.artworkLoading' => 'Läser in bild…',
+			'discover.findNext.artworkUnavailable' => 'Bild saknas',
+			'discover.findNext.savedFeedback' => 'Tillagd bland sparade val',
+			'discover.findNext.skippedFeedback' => 'Överhoppad för tillfället',
+			'discover.findNext.releaseToConfirm' => 'Släpp för att bekräfta',
+			'discover.findNext.remoteHint' => 'Omslag i fokus: ← / → välj · Välj: detaljer · ↑ / ↓ flytta fokus',
 			'discover.extras' => 'Trailrar och extramaterial',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Betyg',
@@ -5812,6 +5836,8 @@ extension on TranslationsSv {
 			'explore.mdblistShelves.nameHint' => 'Låt blank använda källlista namn.',
 			'explore.mdblistShelves.add' => 'Lägg till shelf',
 			'explore.mdblistShelves.save' => 'Rädda shelter',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Flytta ${title} upp',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Flytta ${title} ner',
 			'explore.mdblistShelves.unavailable' => 'Denna lista är inte tillgänglig. ta bort eller ta bort dess sköld i inställningar.',
@@ -5824,8 +5850,6 @@ extension on TranslationsSv {
 			'explore.selectSource' => 'Välj källa',
 			'explore.rows.watchlist' => 'Bevakningslista',
 			'explore.rows.recommendedMovies' => 'Rekommenderade filmer',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Rekommenderade serier',
 			'explore.rows.trendingMovies' => 'Populära filmer just nu',
 			'explore.rows.trendingShows' => 'Populära serier just nu',
@@ -6326,6 +6350,8 @@ extension on TranslationsSv {
 			'downloads.resumeDownload' => 'Återuppta nedladdning',
 			'downloads.cancelledDownload' => 'Avbruten nedladdning',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (synkroniserar ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} nedladdad – klicka för att slutföra',
 			'downloads.partialDownloadClickToComplete' => 'Delvis nedladdad – klicka för att slutföra',
 			'downloads.deleting' => 'Tar bort...',
@@ -6338,8 +6364,6 @@ extension on TranslationsSv {
 			'downloads.pauseAll' => 'Pausa alla',
 			'downloads.resumeAll' => 'Återuppta alla',
 			'downloads.retryAll' => 'Försök igen med alla',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'Försök igen med misslyckade nedladdningar',
 			'downloads.deleteAll' => 'Ta bort alla',
 			'downloads.selectVersion' => 'Välj version',
@@ -6840,6 +6864,8 @@ extension on TranslationsSv {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Kunde inte nå servern: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Det gick inte att logga in: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect misslyckades: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Logga in med Plex',
 			'addServer.pinExpired' => 'PIN-koden gick ut innan inloggning. Försök igen.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Kunde inte registrera kontot: ${error}',
@@ -6852,8 +6878,6 @@ extension on TranslationsSv {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Anslut till ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Ange din server-URL, användarnamn och lösenord.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Logga in på din ${product}-server. Knyts till ${name}.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Låna från en annan profil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Återanvänd en annan profils anslutning. PIN-skyddade profiler kräver en PIN.',
 			'addServer.invalidCredentials' => 'Ogiltigt användarnamn eller lösenord',

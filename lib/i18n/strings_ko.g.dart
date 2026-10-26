@@ -3516,7 +3516,7 @@ class _Translations$discover$findNext$ko extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} 전체';
 	@override String get timingVaries => '타이밍이 다양하다';
 	@override String get notNow => '지금은 아니고';
-	@override String get swipeHint => '스위프트, 또는 아래 버튼을 사용 하 여';
+	@override String get swipeHint => '표지를 화살표 방향으로 밀거나 아래 버튼을 사용하세요.';
 	@override String get saved => '저장된 피크';
 	@override String savedCount({required Object count}) => '저장된 피크 · ${count}';
 	@override String get undo => '안오';
@@ -3544,6 +3544,18 @@ class _Translations$discover$findNext$ko extends Translations$discover$findNext$
 	@override String get openFailed => '이 선택은 더 이상 사용할 수 없습니다. 다시 확인하기 위해 새롭게 확인하십시오.';
 	@override String get changeFailed => '이 변화를 저장할 수 없습니다.다시 시도해 보세요.';
 	@override String get savedLimit => '저장된 픽스가 가득합니다. 하나의 픽스를 제거하여 다른 하나를 저장합니다.';
+	@override String get chooseHint => '작품을 열거나, 나중을 위해 저장하거나, 건너뛰세요.';
+	@override String get howItWorks => '사용 방법';
+	@override String get notNowHelp => '이 작품을 지금은 건너뜁니다. 라이브러리에는 그대로 남습니다.';
+	@override String get saveHelp => '이 기기의 현재 프로필에 저장된 추천으로 보관합니다. 저장해도 다운로드되지는 않습니다.';
+	@override String get openHelp => '표지를 선택하면 상세 정보를 볼 수 있습니다. 기본 버튼으로 재생하거나 읽거나 작품을 여세요.';
+	@override String get controlsHelp => '키보드나 리모컨: 버튼에 초점을 맞추고 Enter 또는 선택을 누르세요. 실행 취소는 마지막 선택을 되돌립니다.';
+	@override String get artworkLoading => '이미지 불러오는 중…';
+	@override String get artworkUnavailable => '이미지를 표시할 수 없음';
+	@override String get savedFeedback => '저장된 추천에 추가됨';
+	@override String get skippedFeedback => '지금은 건너뜀';
+	@override String get releaseToConfirm => '놓아서 확인';
+	@override String get remoteHint => '표지에 초점: ← / → 선택 · 선택 버튼: 상세 정보 · ↑ / ↓ 초점 이동';
 }
 
 // Path: discover.person
@@ -5554,7 +5566,7 @@ extension on TranslationsKo {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} 전체',
 			'discover.findNext.timingVaries' => '타이밍이 다양하다',
 			'discover.findNext.notNow' => '지금은 아니고',
-			'discover.findNext.swipeHint' => '스위프트, 또는 아래 버튼을 사용 하 여',
+			'discover.findNext.swipeHint' => '표지를 화살표 방향으로 밀거나 아래 버튼을 사용하세요.',
 			'discover.findNext.saved' => '저장된 피크',
 			'discover.findNext.savedCount' => ({required Object count}) => '저장된 피크 · ${count}',
 			'discover.findNext.undo' => '안오',
@@ -5582,6 +5594,18 @@ extension on TranslationsKo {
 			'discover.findNext.openFailed' => '이 선택은 더 이상 사용할 수 없습니다. 다시 확인하기 위해 새롭게 확인하십시오.',
 			'discover.findNext.changeFailed' => '이 변화를 저장할 수 없습니다.다시 시도해 보세요.',
 			'discover.findNext.savedLimit' => '저장된 픽스가 가득합니다. 하나의 픽스를 제거하여 다른 하나를 저장합니다.',
+			'discover.findNext.chooseHint' => '작품을 열거나, 나중을 위해 저장하거나, 건너뛰세요.',
+			'discover.findNext.howItWorks' => '사용 방법',
+			'discover.findNext.notNowHelp' => '이 작품을 지금은 건너뜁니다. 라이브러리에는 그대로 남습니다.',
+			'discover.findNext.saveHelp' => '이 기기의 현재 프로필에 저장된 추천으로 보관합니다. 저장해도 다운로드되지는 않습니다.',
+			'discover.findNext.openHelp' => '표지를 선택하면 상세 정보를 볼 수 있습니다. 기본 버튼으로 재생하거나 읽거나 작품을 여세요.',
+			'discover.findNext.controlsHelp' => '키보드나 리모컨: 버튼에 초점을 맞추고 Enter 또는 선택을 누르세요. 실행 취소는 마지막 선택을 되돌립니다.',
+			'discover.findNext.artworkLoading' => '이미지 불러오는 중…',
+			'discover.findNext.artworkUnavailable' => '이미지를 표시할 수 없음',
+			'discover.findNext.savedFeedback' => '저장된 추천에 추가됨',
+			'discover.findNext.skippedFeedback' => '지금은 건너뜀',
+			'discover.findNext.releaseToConfirm' => '놓아서 확인',
+			'discover.findNext.remoteHint' => '표지에 초점: ← / → 선택 · 선택 버튼: 상세 정보 · ↑ / ↓ 초점 이동',
 			'discover.extras' => '예고편 및 부가영상',
 			'discover.studio' => '제작사',
 			'discover.rating' => '연령 등급',
@@ -5807,6 +5831,8 @@ extension on TranslationsKo {
 			'explore.mdblistShelves.nameHint' => '출처 목록 이름을 사용하기 위해 빈을 남겨 두십시오.',
 			'explore.mdblistShelves.add' => '셰일프 추가',
 			'explore.mdblistShelves.save' => '좌석을 구하라',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => '이동 ${title} 위로',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => '이동 ${title} 아래로',
 			'explore.mdblistShelves.unavailable' => '이 목록은 사용할 수 없습니다. 설정에서 셰일을 제거하거나 제거합니다.',
@@ -5819,8 +5845,6 @@ extension on TranslationsKo {
 			'explore.selectSource' => '소스 선택',
 			'explore.rows.watchlist' => '관심 목록',
 			'explore.rows.recommendedMovies' => '추천 영화',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => '추천 TV 프로그램',
 			'explore.rows.trendingMovies' => '지금 뜨는 영화',
 			'explore.rows.trendingShows' => '지금 뜨는 TV 프로그램',
@@ -6321,6 +6345,8 @@ extension on TranslationsKo {
 			'downloads.resumeDownload' => '다운로드 재개',
 			'downloads.cancelledDownload' => '취소된 다운로드',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} 동기화 중)',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} 다운로드됨 — 클릭하여 완료',
 			'downloads.partialDownloadClickToComplete' => '부분 다운로드됨 — 클릭하여 완료',
 			'downloads.deleting' => '삭제 중...',
@@ -6333,8 +6359,6 @@ extension on TranslationsKo {
 			'downloads.pauseAll' => '모두 일시정지',
 			'downloads.resumeAll' => '모두 재개',
 			'downloads.retryAll' => '모두 재시도',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => '실패한 다운로드 재시도',
 			'downloads.deleteAll' => '모두 삭제',
 			'downloads.selectVersion' => '버전 선택',
@@ -6835,6 +6859,8 @@ extension on TranslationsKo {
 			'addServer.couldNotReachServer' => ({required Object error}) => '서버에 연결할 수 없습니다: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => '로그인 실패: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect 실패: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Plex로 로그인',
 			'addServer.pinExpired' => '로그인 전에 PIN이 만료되었습니다. 다시 시도하세요.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => '계정 등록 실패: ${error}',
@@ -6847,8 +6873,6 @@ extension on TranslationsKo {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '${product}에 연결',
 			'addServer.connectToMediaBrowserCardSubtitle' => '서버 URL, 사용자 이름, 비밀번호를 입력하세요.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} 서버에 로그인하세요. ${name}에 연결됩니다.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => '다른 프로필에서 빌리기',
 			'addServer.borrowFromAnotherProfileSubtitle' => '다른 프로필의 연결을 재사용합니다. PIN으로 보호된 프로필에는 PIN이 필요합니다.',
 			'addServer.invalidCredentials' => '사용자 이름 또는 비밀번호가 올바르지 않습니다',

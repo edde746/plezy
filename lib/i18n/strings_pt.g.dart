@@ -3525,7 +3525,7 @@ class Translations$discover$findNext$pt extends Translations$discover$findNext$e
 	@override String totalDuration({required Object duration}) => '${duration} total';
 	@override String get timingVaries => 'Tempo variado';
 	@override String get notNow => 'Não agora';
-	@override String get swipeHint => 'Desligue ou use os botões abaixo.';
+	@override String get swipeHint => 'Deslize a capa na direção de uma seta ou use os botões abaixo.';
 	@override String get saved => 'Peixes salvos';
 	@override String savedCount({required Object count}) => 'Página inicial · ${count}';
 	@override String get undo => 'e o';
@@ -3553,6 +3553,18 @@ class Translations$discover$findNext$pt extends Translations$discover$findNext$e
 	@override String get openFailed => 'Esta opção não está mais disponível. refrescar para verificar novamente.';
 	@override String get changeFailed => 'Você não pode salvar essa mudança, tente novamente.';
 	@override String get savedLimit => 'Os picos salvos estão cheios. remova um pico para salvar outro.';
+	@override String get chooseHint => 'Abra um título, guarde-o para mais tarde ou passe ao seguinte.';
+	@override String get howItWorks => 'Como funciona';
+	@override String get notNowHelp => 'Ignore este título por agora. Ele continua na sua biblioteca.';
+	@override String get saveHelp => 'Guarde-o nas escolhas guardadas deste perfil neste dispositivo. Guardar não inicia uma transferência.';
+	@override String get openHelp => 'Selecione a capa para ver os detalhes. Use a ação principal para reproduzir, ler ou abrir o título.';
+	@override String get controlsHelp => 'Teclado ou comando: selecione um botão e prima Enter ou Selecionar. Anular restaura a sua última escolha.';
+	@override String get artworkLoading => 'A carregar a imagem…';
+	@override String get artworkUnavailable => 'Imagem indisponível';
+	@override String get savedFeedback => 'Adicionado às escolhas guardadas';
+	@override String get skippedFeedback => 'Ignorado por agora';
+	@override String get releaseToConfirm => 'Solte para confirmar';
+	@override String get remoteHint => 'Capa em foco: ← / → escolher · Selecionar: detalhes · ↑ / ↓ mover o foco';
 }
 
 // Path: discover.person
@@ -5563,7 +5575,7 @@ extension on TranslationsPt {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} total',
 			'discover.findNext.timingVaries' => 'Tempo variado',
 			'discover.findNext.notNow' => 'Não agora',
-			'discover.findNext.swipeHint' => 'Desligue ou use os botões abaixo.',
+			'discover.findNext.swipeHint' => 'Deslize a capa na direção de uma seta ou use os botões abaixo.',
 			'discover.findNext.saved' => 'Peixes salvos',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Página inicial · ${count}',
 			'discover.findNext.undo' => 'e o',
@@ -5591,6 +5603,18 @@ extension on TranslationsPt {
 			'discover.findNext.openFailed' => 'Esta opção não está mais disponível. refrescar para verificar novamente.',
 			'discover.findNext.changeFailed' => 'Você não pode salvar essa mudança, tente novamente.',
 			'discover.findNext.savedLimit' => 'Os picos salvos estão cheios. remova um pico para salvar outro.',
+			'discover.findNext.chooseHint' => 'Abra um título, guarde-o para mais tarde ou passe ao seguinte.',
+			'discover.findNext.howItWorks' => 'Como funciona',
+			'discover.findNext.notNowHelp' => 'Ignore este título por agora. Ele continua na sua biblioteca.',
+			'discover.findNext.saveHelp' => 'Guarde-o nas escolhas guardadas deste perfil neste dispositivo. Guardar não inicia uma transferência.',
+			'discover.findNext.openHelp' => 'Selecione a capa para ver os detalhes. Use a ação principal para reproduzir, ler ou abrir o título.',
+			'discover.findNext.controlsHelp' => 'Teclado ou comando: selecione um botão e prima Enter ou Selecionar. Anular restaura a sua última escolha.',
+			'discover.findNext.artworkLoading' => 'A carregar a imagem…',
+			'discover.findNext.artworkUnavailable' => 'Imagem indisponível',
+			'discover.findNext.savedFeedback' => 'Adicionado às escolhas guardadas',
+			'discover.findNext.skippedFeedback' => 'Ignorado por agora',
+			'discover.findNext.releaseToConfirm' => 'Solte para confirmar',
+			'discover.findNext.remoteHint' => 'Capa em foco: ← / → escolher · Selecionar: detalhes · ↑ / ↓ mover o foco',
 			'discover.extras' => 'Trailers e extras',
 			'discover.studio' => 'Estúdio',
 			'discover.rating' => 'Avaliação',
@@ -5816,6 +5840,8 @@ extension on TranslationsPt {
 			'explore.mdblistShelves.nameHint' => 'Deixe o nome branco para usar o nome da lista de fontes.',
 			'explore.mdblistShelves.add' => 'Adicionar Shelf',
 			'explore.mdblistShelves.save' => 'Salva as cadeiras',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Move ${title} para cima',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Move ${title} para baixo',
 			'explore.mdblistShelves.unavailable' => 'Esta lista não está disponível. retire ou remova a sua armadilha em configurações.',
@@ -5828,8 +5854,6 @@ extension on TranslationsPt {
 			'explore.selectSource' => 'Selecionar fonte',
 			'explore.rows.watchlist' => 'Lista para assistir',
 			'explore.rows.recommendedMovies' => 'Filmes recomendados',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Séries recomendadas',
 			'explore.rows.trendingMovies' => 'Filmes em alta',
 			'explore.rows.trendingShows' => 'Séries em alta',
@@ -6330,6 +6354,8 @@ extension on TranslationsPt {
 			'downloads.resumeDownload' => 'Retomar download',
 			'downloads.cancelledDownload' => 'Download cancelado',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (sincronizando ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} baixado — clique para concluir',
 			'downloads.partialDownloadClickToComplete' => 'Parcialmente baixado — clique para concluir',
 			'downloads.deleting' => 'Excluindo...',
@@ -6342,8 +6368,6 @@ extension on TranslationsPt {
 			'downloads.pauseAll' => 'Pausar todos',
 			'downloads.resumeAll' => 'Retomar todos',
 			'downloads.retryAll' => 'Tentar todos novamente',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'Tentar novamente os downloads com falha',
 			'downloads.deleteAll' => 'Excluir todos',
 			'downloads.selectVersion' => 'Selecionar versão',
@@ -6844,6 +6868,8 @@ extension on TranslationsPt {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Não foi possível conectar ao servidor: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Falha ao entrar: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect falhou: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Entrar com Plex',
 			'addServer.pinExpired' => 'O PIN expirou antes de entrar. Tente novamente.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Falha ao registrar a conta: ${error}',
@@ -6856,8 +6882,6 @@ extension on TranslationsPt {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Conectar ao ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Digite a URL do servidor, o nome de usuário e a senha.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Entre no seu servidor ${product}. Vinculado a ${name}.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Pegar emprestado de outro perfil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Reutilize a conexão de outro perfil. Perfis protegidos por PIN exigem PIN.',
 			'addServer.invalidCredentials' => 'Usuário ou senha inválidos',

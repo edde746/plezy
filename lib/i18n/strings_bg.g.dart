@@ -3521,7 +3521,7 @@ class _Translations$discover$findNext$bg extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} Общо';
 	@override String get timingVaries => 'Времето варира';
 	@override String get notNow => 'Не сега';
-	@override String get swipeHint => 'Свържете или използвайте бутоните по-долу';
+	@override String get swipeHint => 'Плъзнете корицата към стрелка или използвайте бутоните по-долу.';
 	@override String get saved => 'Спасени пикове';
 	@override String savedCount({required Object count}) => 'Спасени пикове · ${count}';
 	@override String get undo => 'идо';
@@ -3549,6 +3549,18 @@ class _Translations$discover$findNext$bg extends Translations$discover$findNext$
 	@override String get openFailed => 'Тази опция вече не е на разположение. пренасочете, за да проверите отново.';
 	@override String get changeFailed => 'Не мога да спасявам тази промяна. опитайте отново.';
 	@override String get savedLimit => 'Спасените пикове са пълни. Премахнете един избор, за да спестите друг.';
+	@override String get chooseHint => 'Отворете заглавие, запазете го за по-късно или го пропуснете.';
+	@override String get howItWorks => 'Как работи';
+	@override String get notNowHelp => 'Пропуснете това заглавие засега. То остава в библиотеката ви.';
+	@override String get saveHelp => 'Запазете го сред запазените предложения за този профил на това устройство. Запазването не го изтегля.';
+	@override String get openHelp => 'Изберете корицата за подробности. Използвайте основното действие, за да пуснете, прочетете или отворите заглавието.';
+	@override String get controlsHelp => 'Клавиатура или дистанционно: изберете бутон и натиснете Enter или Избор. Отмяна възстановява последния ви избор.';
+	@override String get artworkLoading => 'Зареждане на изображение…';
+	@override String get artworkUnavailable => 'Изображението не е налично';
+	@override String get savedFeedback => 'Добавено към запазените предложения';
+	@override String get skippedFeedback => 'Пропуснато засега';
+	@override String get releaseToConfirm => 'Пуснете, за да потвърдите';
+	@override String get remoteHint => 'Избрана корица: ← / → избор · Избор: подробности · ↑ / ↓ премества фокуса';
 }
 
 // Path: discover.person
@@ -5559,7 +5571,7 @@ extension on TranslationsBg {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} Общо',
 			'discover.findNext.timingVaries' => 'Времето варира',
 			'discover.findNext.notNow' => 'Не сега',
-			'discover.findNext.swipeHint' => 'Свържете или използвайте бутоните по-долу',
+			'discover.findNext.swipeHint' => 'Плъзнете корицата към стрелка или използвайте бутоните по-долу.',
 			'discover.findNext.saved' => 'Спасени пикове',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Спасени пикове · ${count}',
 			'discover.findNext.undo' => 'идо',
@@ -5587,6 +5599,18 @@ extension on TranslationsBg {
 			'discover.findNext.openFailed' => 'Тази опция вече не е на разположение. пренасочете, за да проверите отново.',
 			'discover.findNext.changeFailed' => 'Не мога да спасявам тази промяна. опитайте отново.',
 			'discover.findNext.savedLimit' => 'Спасените пикове са пълни. Премахнете един избор, за да спестите друг.',
+			'discover.findNext.chooseHint' => 'Отворете заглавие, запазете го за по-късно или го пропуснете.',
+			'discover.findNext.howItWorks' => 'Как работи',
+			'discover.findNext.notNowHelp' => 'Пропуснете това заглавие засега. То остава в библиотеката ви.',
+			'discover.findNext.saveHelp' => 'Запазете го сред запазените предложения за този профил на това устройство. Запазването не го изтегля.',
+			'discover.findNext.openHelp' => 'Изберете корицата за подробности. Използвайте основното действие, за да пуснете, прочетете или отворите заглавието.',
+			'discover.findNext.controlsHelp' => 'Клавиатура или дистанционно: изберете бутон и натиснете Enter или Избор. Отмяна възстановява последния ви избор.',
+			'discover.findNext.artworkLoading' => 'Зареждане на изображение…',
+			'discover.findNext.artworkUnavailable' => 'Изображението не е налично',
+			'discover.findNext.savedFeedback' => 'Добавено към запазените предложения',
+			'discover.findNext.skippedFeedback' => 'Пропуснато засега',
+			'discover.findNext.releaseToConfirm' => 'Пуснете, за да потвърдите',
+			'discover.findNext.remoteHint' => 'Избрана корица: ← / → избор · Избор: подробности · ↑ / ↓ премества фокуса',
 			'discover.extras' => 'Трейлъри и екстри',
 			'discover.studio' => 'Студио',
 			'discover.rating' => 'Рейтинг',
@@ -5812,6 +5836,8 @@ extension on TranslationsBg {
 			'explore.mdblistShelves.nameHint' => 'Оставете бял, за да използвате името на източника.',
 			'explore.mdblistShelves.add' => 'Добавете шаф',
 			'explore.mdblistShelves.save' => 'Спасяване на леглата',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Изтегляне ${title} нагоре',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Изтегляне ${title} надолу',
 			'explore.mdblistShelves.unavailable' => 'Този списък не е наличен. Изтегляне или премахване на шейла в настройките.',
@@ -5824,8 +5850,6 @@ extension on TranslationsBg {
 			'explore.selectSource' => 'Избери източник',
 			'explore.rows.watchlist' => 'Списък за гледане',
 			'explore.rows.recommendedMovies' => 'Препоръчани филми',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Препоръчани сериали',
 			'explore.rows.trendingMovies' => 'Набиращи популярност филми',
 			'explore.rows.trendingShows' => 'Набиращи популярност сериали',
@@ -6326,6 +6350,8 @@ extension on TranslationsBg {
 			'downloads.resumeDownload' => 'Възобнови изтеглянето',
 			'downloads.cancelledDownload' => 'Отменено изтегляне',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (синхронизира се ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} е изтеглен — щракнете, за да завършите',
 			'downloads.partialDownloadClickToComplete' => 'Частично изтеглено — щракнете, за да завършите',
 			'downloads.deleting' => 'Изтриване...',
@@ -6338,8 +6364,6 @@ extension on TranslationsBg {
 			'downloads.pauseAll' => 'Пауза на всички',
 			'downloads.resumeAll' => 'Продължи всички',
 			'downloads.retryAll' => 'Опитай всички отново',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'Опитай отново неуспешните изтегляния',
 			'downloads.deleteAll' => 'Изтрий всички',
 			'downloads.selectVersion' => 'Избери версия',
@@ -6840,6 +6864,8 @@ extension on TranslationsBg {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Сървърът не може да бъде достигнат: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Входът е неуспешен: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect не бе успешно: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Вход с Plex',
 			'addServer.pinExpired' => 'PIN-ът изтече преди вход. Моля, опитайте отново.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Неуспешна регистрация на акаунт: ${error}',
@@ -6852,8 +6878,6 @@ extension on TranslationsBg {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Свържи се с ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Въведете URL адреса на сървъра, потребителското име и паролата.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Впишете се в своя ${product} сървър. Обвързва се с ${name}.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Използвай от друг профил',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Използвай връзка от друг профил. PIN-защитените профили изискват PIN.',
 			'addServer.invalidCredentials' => 'Невалидно потребителско име или парола',

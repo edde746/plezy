@@ -57,3 +57,7 @@ Status: 2026-10-25. PlezyNG is a fork of `edde746/plezy` intended to carry reque
 ## Planned cross-media swipe discovery
 
 The [Find your next handoff](swipe/README.md) specifies an artwork-led discovery route for all supported media, with moment-based choices, reversible saves/skips, isolated samples, exact editions, a useful shortlist and native touch/desktop/TV interaction. It includes 16 ordered implementation packages and 38 acceptance scenarios. This is a plan for Luna, not a completed feature. Follow its current dependency audit, existing DESIGN/UX contracts and capability-specific release gates.
+
+## Planned cross-media Multiview and app-owned PiP
+
+The [Multiview implementation handoff](multiview/README.md) makes Plezy-owned floating PiP and split views the primary cross-platform experience, with native OS PiP as an optional outside-app extension. It specifies persistent video/music/reader/game sessions, quick swaps, audio and input ownership, native/GPU/software rendering paths, portable TV readers, desktop pop-outs, accessibility and recovery. The handoff includes 22 ordered implementation packages, 64 verification scenarios, a pinned source audit and theme-based layout wireframes. This is a documentation-only plan for Luna; application implementation and device qualification remain outstanding.

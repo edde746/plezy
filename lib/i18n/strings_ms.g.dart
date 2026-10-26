@@ -3501,7 +3501,7 @@ class _Translations$discover$findNext$ms extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} jumlah';
 	@override String get timingVaries => 'Jadual berbeza';
 	@override String get notNow => 'Bukan sekarang';
-	@override String get swipeHint => 'Tukar, atau gunakan butang di bawah';
+	@override String get swipeHint => 'Leret kulit ke arah anak panah atau gunakan butang di bawah.';
 	@override String get saved => 'Penyimpanan picks';
 	@override String savedCount({required Object count}) => 'Perbezaan antara ${count}';
 	@override String get undo => 'dan';
@@ -3529,6 +3529,18 @@ class _Translations$discover$findNext$ms extends Translations$discover$findNext$
 	@override String get openFailed => 'Pilihan ini tidak lagi boleh didapati.Refresh untuk memeriksa lagi.';
 	@override String get changeFailed => 'Saya tak boleh buat perubahan. cuba lagi.';
 	@override String get savedLimit => 'Pika disimpan penuh. menghapuskan satu pilihan untuk menyelamatkan yang lain.';
+	@override String get chooseHint => 'Buka tajuk, simpan untuk kemudian atau langkau.';
+	@override String get howItWorks => 'Cara penggunaan';
+	@override String get notNowHelp => 'Langkau tajuk ini buat masa ini. Ia kekal dalam pustaka anda.';
+	@override String get saveHelp => 'Simpan dalam pilihan tersimpan profil ini pada peranti ini. Menyimpan tidak memuat turun tajuk.';
+	@override String get openHelp => 'Pilih kulit untuk melihat butiran. Gunakan tindakan utama untuk memainkan, membaca atau membuka tajuk.';
+	@override String get controlsHelp => 'Papan kekunci atau alat kawalan jauh: fokus pada butang, kemudian tekan Enter atau Pilih. Buat asal memulihkan pilihan terakhir anda.';
+	@override String get artworkLoading => 'Memuatkan imej…';
+	@override String get artworkUnavailable => 'Imej tidak tersedia';
+	@override String get savedFeedback => 'Ditambah ke pilihan tersimpan';
+	@override String get skippedFeedback => 'Dilangkau buat masa ini';
+	@override String get releaseToConfirm => 'Lepaskan untuk mengesahkan';
+	@override String get remoteHint => 'Kulit dalam fokus: ← / → pilih · Pilih: butiran · ↑ / ↓ alih fokus';
 }
 
 // Path: discover.person
@@ -5537,7 +5549,7 @@ extension on TranslationsMs {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} jumlah',
 			'discover.findNext.timingVaries' => 'Jadual berbeza',
 			'discover.findNext.notNow' => 'Bukan sekarang',
-			'discover.findNext.swipeHint' => 'Tukar, atau gunakan butang di bawah',
+			'discover.findNext.swipeHint' => 'Leret kulit ke arah anak panah atau gunakan butang di bawah.',
 			'discover.findNext.saved' => 'Penyimpanan picks',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Perbezaan antara ${count}',
 			'discover.findNext.undo' => 'dan',
@@ -5565,6 +5577,18 @@ extension on TranslationsMs {
 			'discover.findNext.openFailed' => 'Pilihan ini tidak lagi boleh didapati.Refresh untuk memeriksa lagi.',
 			'discover.findNext.changeFailed' => 'Saya tak boleh buat perubahan. cuba lagi.',
 			'discover.findNext.savedLimit' => 'Pika disimpan penuh. menghapuskan satu pilihan untuk menyelamatkan yang lain.',
+			'discover.findNext.chooseHint' => 'Buka tajuk, simpan untuk kemudian atau langkau.',
+			'discover.findNext.howItWorks' => 'Cara penggunaan',
+			'discover.findNext.notNowHelp' => 'Langkau tajuk ini buat masa ini. Ia kekal dalam pustaka anda.',
+			'discover.findNext.saveHelp' => 'Simpan dalam pilihan tersimpan profil ini pada peranti ini. Menyimpan tidak memuat turun tajuk.',
+			'discover.findNext.openHelp' => 'Pilih kulit untuk melihat butiran. Gunakan tindakan utama untuk memainkan, membaca atau membuka tajuk.',
+			'discover.findNext.controlsHelp' => 'Papan kekunci atau alat kawalan jauh: fokus pada butang, kemudian tekan Enter atau Pilih. Buat asal memulihkan pilihan terakhir anda.',
+			'discover.findNext.artworkLoading' => 'Memuatkan imej…',
+			'discover.findNext.artworkUnavailable' => 'Imej tidak tersedia',
+			'discover.findNext.savedFeedback' => 'Ditambah ke pilihan tersimpan',
+			'discover.findNext.skippedFeedback' => 'Dilangkau buat masa ini',
+			'discover.findNext.releaseToConfirm' => 'Lepaskan untuk mengesahkan',
+			'discover.findNext.remoteHint' => 'Kulit dalam fokus: ← / → pilih · Pilih: butiran · ↑ / ↓ alih fokus',
 			'discover.extras' => 'Pelancaran & Extra',
 			'discover.studio' => 'Pengajian',
 			'discover.rating' => 'Penilaian',
@@ -5790,6 +5814,8 @@ extension on TranslationsMs {
 			'explore.mdblistShelves.nameHint' => 'Tinggalkan kosong untuk menggunakan nama senarai sumber.',
 			'explore.mdblistShelves.add' => 'Tambah shelf',
 			'explore.mdblistShelves.save' => 'Menyelamatkan kerusi',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Pergerakan ${title} ke atas',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Pergerakan ${title} ke bawah',
 			'explore.mdblistShelves.unavailable' => 'Senarai ini tidak boleh didapati.Tarik balik atau keluarkan shell dalam tetapan.',
@@ -5802,8 +5828,6 @@ extension on TranslationsMs {
 			'explore.selectSource' => 'Pilih sumber',
 			'explore.rows.watchlist' => 'Pengawasan',
 			'explore.rows.recommendedMovies' => 'Filem yang disyorkan',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Persembahan yang disyorkan',
 			'explore.rows.trendingMovies' => 'filem trending',
 			'explore.rows.trendingShows' => 'Rujukan Trend',
@@ -6304,6 +6328,8 @@ extension on TranslationsMs {
 			'downloads.resumeDownload' => 'Rujukan Download',
 			'downloads.cancelledDownload' => 'Pembatalan download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (sinkronkan ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Dimuat turun ${file} - Klik untuk menyelesaikan',
 			'downloads.partialDownloadClickToComplete' => 'Bahagian muat turun - klik untuk menyelesaikan',
 			'downloads.deleting' => 'Menghapuskan ...',
@@ -6316,8 +6342,6 @@ extension on TranslationsMs {
 			'downloads.pauseAll' => 'Beristirahat semua',
 			'downloads.resumeAll' => 'Menggambar semua',
 			'downloads.retryAll' => 'Kembalikan semua',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'Retry kegagalan download',
 			'downloads.deleteAll' => 'Padam semua',
 			'downloads.selectVersion' => 'Pilih versi',
@@ -6818,6 +6842,8 @@ extension on TranslationsMs {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Tidak boleh mencapai pelayan: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Pendaftaran yang gagal: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect kegagalan: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Mendaftar dengan Plex',
 			'addServer.pinExpired' => 'PIN telah tamat sebelum log masuk.Sila cuba lagi.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Akaun yang gagal didaftarkan: ${error}',
@@ -6830,8 +6856,6 @@ extension on TranslationsMs {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Hubungi ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Masukkan URL, nama pengguna dan kata laluan pelayan anda.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Mendaftar masuk ke pelayan ${product} anda. menghubungkan ke ${name}.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Pinjaman daripada profil lain',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Menggunakan semula sambungan profil lain. profil yang dilindungi PIN memerlukan PIN.',
 			'addServer.invalidCredentials' => 'Nama pengguna atau kata laluan yang tidak sah',

@@ -3521,7 +3521,7 @@ class _Translations$discover$findNext$uz extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} total';
 	@override String get timingVaries => 'Tarifimiz variadi';
 	@override String get notNow => 'Şimdi ko‘z';
-	@override String get swipeHint => 'U‘z, o‘z bu‘z bu‘z bu‘z bu‘z bu‘z bu‘z';
+	@override String get swipeHint => 'Muqovani strelka tomon suring yoki quyidagi tugmalardan foydalaning.';
 	@override String get saved => 'Pikaqlar bilan';
 	@override String savedCount({required Object count}) => '${count}';
 	@override String get undo => 'O‘z';
@@ -3549,6 +3549,18 @@ class _Translations$discover$findNext$uz extends Translations$discover$findNext$
 	@override String get openFailed => 'Bu seçenek artık kullanılmadi. refresh ko\'t check again.';
 	@override String get changeFailed => 'Bu cambiadi ko‘yadi. qaytarga ko‘yadi.';
 	@override String get savedLimit => 'U\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo.';
+	@override String get chooseHint => 'Asarni oching, keyinga saqlang yoki o‘tkazib yuboring.';
+	@override String get howItWorks => 'Foydalanish tartibi';
+	@override String get notNowHelp => 'Bu asarni hozircha o‘tkazib yuboring. U kutubxonangizda qoladi.';
+	@override String get saveHelp => 'Uni shu qurilmadagi shu profilning saqlangan tanlovlariga qo‘shing. Saqlash kontentni yuklab olmaydi.';
+	@override String get openHelp => 'Tafsilotlar uchun muqovani tanlang. Asarni ijro etish, o‘qish yoki ochish uchun asosiy tugmadan foydalaning.';
+	@override String get controlsHelp => 'Klaviatura yoki pult: tugmani tanlang, so‘ng Enter yoki tanlash tugmasini bosing. Bekor qilish oxirgi tanlovingizni qaytaradi.';
+	@override String get artworkLoading => 'Rasm yuklanmoqda…';
+	@override String get artworkUnavailable => 'Rasm mavjud emas';
+	@override String get savedFeedback => 'Saqlangan tanlovlarga qo‘shildi';
+	@override String get skippedFeedback => 'Hozircha o‘tkazib yuborildi';
+	@override String get releaseToConfirm => 'Tasdiqlash uchun qo‘yib yuboring';
+	@override String get remoteHint => 'Muqova tanlanganda: ← / → tanlash · Tanlash tugmasi: tafsilotlar · ↑ / ↓ fokusni ko‘chirish';
 }
 
 // Path: discover.person
@@ -5559,7 +5571,7 @@ extension on TranslationsUz {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} total',
 			'discover.findNext.timingVaries' => 'Tarifimiz variadi',
 			'discover.findNext.notNow' => 'Şimdi ko‘z',
-			'discover.findNext.swipeHint' => 'U‘z, o‘z bu‘z bu‘z bu‘z bu‘z bu‘z bu‘z',
+			'discover.findNext.swipeHint' => 'Muqovani strelka tomon suring yoki quyidagi tugmalardan foydalaning.',
 			'discover.findNext.saved' => 'Pikaqlar bilan',
 			'discover.findNext.savedCount' => ({required Object count}) => '${count}',
 			'discover.findNext.undo' => 'O‘z',
@@ -5587,6 +5599,18 @@ extension on TranslationsUz {
 			'discover.findNext.openFailed' => 'Bu seçenek artık kullanılmadi. refresh ko\'t check again.',
 			'discover.findNext.changeFailed' => 'Bu cambiadi ko‘yadi. qaytarga ko‘yadi.',
 			'discover.findNext.savedLimit' => 'U\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo.',
+			'discover.findNext.chooseHint' => 'Asarni oching, keyinga saqlang yoki o‘tkazib yuboring.',
+			'discover.findNext.howItWorks' => 'Foydalanish tartibi',
+			'discover.findNext.notNowHelp' => 'Bu asarni hozircha o‘tkazib yuboring. U kutubxonangizda qoladi.',
+			'discover.findNext.saveHelp' => 'Uni shu qurilmadagi shu profilning saqlangan tanlovlariga qo‘shing. Saqlash kontentni yuklab olmaydi.',
+			'discover.findNext.openHelp' => 'Tafsilotlar uchun muqovani tanlang. Asarni ijro etish, o‘qish yoki ochish uchun asosiy tugmadan foydalaning.',
+			'discover.findNext.controlsHelp' => 'Klaviatura yoki pult: tugmani tanlang, so‘ng Enter yoki tanlash tugmasini bosing. Bekor qilish oxirgi tanlovingizni qaytaradi.',
+			'discover.findNext.artworkLoading' => 'Rasm yuklanmoqda…',
+			'discover.findNext.artworkUnavailable' => 'Rasm mavjud emas',
+			'discover.findNext.savedFeedback' => 'Saqlangan tanlovlarga qo‘shildi',
+			'discover.findNext.skippedFeedback' => 'Hozircha o‘tkazib yuborildi',
+			'discover.findNext.releaseToConfirm' => 'Tasdiqlash uchun qo‘yib yuboring',
+			'discover.findNext.remoteHint' => 'Muqova tanlanganda: ← / → tanlash · Tanlash tugmasi: tafsilotlar · ↑ / ↓ fokusni ko‘chirish',
 			'discover.extras' => 'Treylerlar va qoʻshimchalar',
 			'discover.studio' => 'Studiya',
 			'discover.rating' => 'Reyting',
@@ -5812,6 +5836,8 @@ extension on TranslationsUz {
 			'explore.mdblistShelves.nameHint' => 'U\'zayda kaynlar listni ismi kullanmaqdan qurt.',
 			'explore.mdblistShelves.add' => 'Shell ko‘z',
 			'explore.mdblistShelves.save' => 'Tadiqlarga saladi',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => '${title}ni yuqoriga ko‘chirish',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => '${title} qaytadi',
 			'explore.mdblistShelves.unavailable' => 'Bu list ishat. Bu listini qaytadi o\'zingiz.',
@@ -5824,8 +5850,6 @@ extension on TranslationsUz {
 			'explore.selectSource' => 'Manbani tanlang',
 			'explore.rows.watchlist' => 'Tomosha roʻyxati',
 			'explore.rows.recommendedMovies' => 'Tavsiya etilgan filmlar',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Tavsiya etilgan seriallar',
 			'explore.rows.trendingMovies' => 'Ommabop filmlar',
 			'explore.rows.trendingShows' => 'Ommabop seriallar',
@@ -6326,6 +6350,8 @@ extension on TranslationsUz {
 			'downloads.resumeDownload' => 'Yuklashni davom ettirish',
 			'downloads.cancelledDownload' => 'Toʻxtatilgan yuklama',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} sinxronlanmoqda)',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Yuklab olindi ${file} - Yakunlash uchun bosing',
 			'downloads.partialDownloadClickToComplete' => 'Qisman yuklandi - Yakunlash uchun bosing',
 			'downloads.deleting' => 'Oʻchirilmoqda...',
@@ -6338,8 +6364,6 @@ extension on TranslationsUz {
 			'downloads.pauseAll' => 'Barchasini toʻxtatib turish',
 			'downloads.resumeAll' => 'Barchasini davom ettirish',
 			'downloads.retryAll' => 'Barchasini qaytadan yuklash',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'Muvaffaqiyatsiz yuklamalarni qaytadan yuklash',
 			'downloads.deleteAll' => 'Barchasini oʻchirish',
 			'downloads.selectVersion' => 'Versiyani tanlash',
@@ -6840,6 +6864,8 @@ extension on TranslationsUz {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Serverga ulanib boʻlmadi: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Kirish xatoligi: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Tezkor ulanish xatoligi: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Plex orqali kirish',
 			'addServer.pinExpired' => 'PIN kod vaqti tugadi.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Hisobni roʻyxatdan oʻtkazishda xatolik: ${error}',
@@ -6852,8 +6878,6 @@ extension on TranslationsUz {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '${product}ga ulanish',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Server URL-ini, foydalanuvchi nomini va parolni kiriting.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} serveringizga kiring. ${name} profiliga bogʻlanadi.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Boshqa profildan olish',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Boshqa profilning ulanishidan qayta foydalaning.',
 			'addServer.invalidCredentials' => 'Foydalanuvchi nomi yoki parol notoʻgʻri',

@@ -3557,7 +3557,7 @@ class _Translations$discover$findNext$cs extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} Celkově';
 	@override String get timingVaries => 'Časový rozsah se liší';
 	@override String get notNow => 'Nyní ne';
-	@override String get swipeHint => 'Přejděte, nebo použijte tlačítko níže';
+	@override String get swipeHint => 'Posuňte obal směrem k šipce nebo použijte tlačítka níže.';
 	@override String get saved => 'Zachráněné piky';
 	@override String savedCount({required Object count}) => 'Shromažďování · ${count}';
 	@override String get undo => 'Nebo';
@@ -3585,6 +3585,18 @@ class _Translations$discover$findNext$cs extends Translations$discover$findNext$
 	@override String get openFailed => 'Tato volba již není k dispozici. refresh to check again.';
 	@override String get changeFailed => 'Tuto změnu se nedá zachránit, zkuste to znovu.';
 	@override String get savedLimit => 'Ušetřené piky jsou plné. odstranit jeden výběr zachránit další.';
+	@override String get chooseHint => 'Otevřete titul, uložte si ho na později nebo ho přeskočte.';
+	@override String get howItWorks => 'Jak to funguje';
+	@override String get notNowHelp => 'Tento titul zatím přeskočíte. Zůstane ve vaší knihovně.';
+	@override String get saveHelp => 'Uložte ho mezi uložené tipy tohoto profilu na tomto zařízení. Uložení titul nestáhne.';
+	@override String get openHelp => 'Výběrem obalu zobrazíte podrobnosti. Hlavní akcí můžete titul přehrát, číst nebo otevřít.';
+	@override String get controlsHelp => 'Klávesnice nebo ovladač: vyberte tlačítko a stiskněte Enter nebo Vybrat. Zpět obnoví poslední volbu.';
+	@override String get artworkLoading => 'Načítání obrázku…';
+	@override String get artworkUnavailable => 'Obrázek není k dispozici';
+	@override String get savedFeedback => 'Přidáno mezi uložené tipy';
+	@override String get skippedFeedback => 'Zatím přeskočeno';
+	@override String get releaseToConfirm => 'Uvolněním potvrďte';
+	@override String get remoteHint => 'Vybraný obal: ← / → volba · Vybrat: podrobnosti · ↑ / ↓ přesun výběru';
 }
 
 // Path: discover.person
@@ -5597,7 +5609,7 @@ extension on TranslationsCs {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} Celkově',
 			'discover.findNext.timingVaries' => 'Časový rozsah se liší',
 			'discover.findNext.notNow' => 'Nyní ne',
-			'discover.findNext.swipeHint' => 'Přejděte, nebo použijte tlačítko níže',
+			'discover.findNext.swipeHint' => 'Posuňte obal směrem k šipce nebo použijte tlačítka níže.',
 			'discover.findNext.saved' => 'Zachráněné piky',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Shromažďování · ${count}',
 			'discover.findNext.undo' => 'Nebo',
@@ -5625,6 +5637,18 @@ extension on TranslationsCs {
 			'discover.findNext.openFailed' => 'Tato volba již není k dispozici. refresh to check again.',
 			'discover.findNext.changeFailed' => 'Tuto změnu se nedá zachránit, zkuste to znovu.',
 			'discover.findNext.savedLimit' => 'Ušetřené piky jsou plné. odstranit jeden výběr zachránit další.',
+			'discover.findNext.chooseHint' => 'Otevřete titul, uložte si ho na později nebo ho přeskočte.',
+			'discover.findNext.howItWorks' => 'Jak to funguje',
+			'discover.findNext.notNowHelp' => 'Tento titul zatím přeskočíte. Zůstane ve vaší knihovně.',
+			'discover.findNext.saveHelp' => 'Uložte ho mezi uložené tipy tohoto profilu na tomto zařízení. Uložení titul nestáhne.',
+			'discover.findNext.openHelp' => 'Výběrem obalu zobrazíte podrobnosti. Hlavní akcí můžete titul přehrát, číst nebo otevřít.',
+			'discover.findNext.controlsHelp' => 'Klávesnice nebo ovladač: vyberte tlačítko a stiskněte Enter nebo Vybrat. Zpět obnoví poslední volbu.',
+			'discover.findNext.artworkLoading' => 'Načítání obrázku…',
+			'discover.findNext.artworkUnavailable' => 'Obrázek není k dispozici',
+			'discover.findNext.savedFeedback' => 'Přidáno mezi uložené tipy',
+			'discover.findNext.skippedFeedback' => 'Zatím přeskočeno',
+			'discover.findNext.releaseToConfirm' => 'Uvolněním potvrďte',
+			'discover.findNext.remoteHint' => 'Vybraný obal: ← / → volba · Vybrat: podrobnosti · ↑ / ↓ přesun výběru',
 			'discover.extras' => 'Trailery a extras',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Hodnocení',
@@ -5850,6 +5874,8 @@ extension on TranslationsCs {
 			'explore.mdblistShelves.nameHint' => 'Zanechte pryč, abyste použili název zdrojového seznamu.',
 			'explore.mdblistShelves.add' => 'Přidejte shelf',
 			'explore.mdblistShelves.save' => 'Záchranářská schůzka',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Přesun ${title} nahoru',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Stáhnout ${title} dolů',
 			'explore.mdblistShelves.unavailable' => 'Tento seznam není k dispozici. Odstranit nebo odstranit jeho šálek v nastavení.',
@@ -5862,8 +5888,6 @@ extension on TranslationsCs {
 			'explore.selectSource' => 'Vyberte zdroj',
 			'explore.rows.watchlist' => 'sledovací seznam',
 			'explore.rows.recommendedMovies' => 'Doporučené filmy',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Doporučené show',
 			'explore.rows.trendingMovies' => 'Trendy filmů',
 			'explore.rows.trendingShows' => 'Trendové show',
@@ -6364,6 +6388,8 @@ extension on TranslationsCs {
 			'downloads.resumeDownload' => 'Recenze download',
 			'downloads.cancelledDownload' => 'Zrušený download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (syncování ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Stáhnout ${file} - Klikněte pro dokončení',
 			'downloads.partialDownloadClickToComplete' => 'Částečně stáhnout - klikněte na dokončit',
 			'downloads.deleting' => 'Odstranění...',
@@ -6376,8 +6402,6 @@ extension on TranslationsCs {
 			'downloads.pauseAll' => 'Odpočinek vše',
 			'downloads.resumeAll' => 'Recenze vše',
 			'downloads.retryAll' => 'Vraťte všechny',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'Neúspěšné stahování',
 			'downloads.deleteAll' => 'Odstranit vše',
 			'downloads.selectVersion' => 'Vyberte verzi',
@@ -6878,6 +6902,8 @@ extension on TranslationsCs {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Nemohla se dostat na server: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Přihláška neúspěšná: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect selhalo: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Přihlaste se na číslo Plex',
 			'addServer.pinExpired' => 'PIN skončil před přihlášením, zkuste to znovu.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Účet se nezregistroval: ${error}',
@@ -6890,8 +6916,6 @@ extension on TranslationsCs {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Připojte se k číslu ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Zadejte URL, uživatelské jméno a heslo.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Přihlaste se k serveru ${product}. připojte se k serveru ${name}.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Půjčka z jiného profilu',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Další připojení profilu znovu použijte. PIN-ochráněné profily vyžadují PIN.',
 			'addServer.invalidCredentials' => 'Invalidní uživatelské jméno nebo heslo',

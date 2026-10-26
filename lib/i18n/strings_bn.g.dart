@@ -3521,7 +3521,7 @@ class _Translations$discover$findNext$bn extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} মোট';
 	@override String get timingVaries => 'সময়মাত্রা ভিন্ন';
 	@override String get notNow => 'এখন না';
-	@override String get swipeHint => 'অথবা নিচের বোতল ব্যবহার করুন';
+	@override String get swipeHint => 'প্রচ্ছদটি কোনো তিরের দিকে সোয়াইপ করুন বা নিচের বোতাম ব্যবহার করুন।';
 	@override String get saved => 'বাঁচানো পিক্স';
 	@override String savedCount({required Object count}) => 'সুরক্ষিত পিক্স · ${count}';
 	@override String get undo => 'অ্যান্ডো';
@@ -3549,6 +3549,18 @@ class _Translations$discover$findNext$bn extends Translations$discover$findNext$
 	@override String get openFailed => 'এই পছন্দ এখন আর পাওয়া যায় না. আবার চেক করার জন্য ফ্রিজ করুন।';
 	@override String get changeFailed => 'এই পরিবর্তনটা করতে পারবেন না, আবারও চেষ্টা করুন।';
 	@override String get savedLimit => 'সুরক্ষিত পিক্স সম্পূর্ণ. একটি পিক্সটি মুছে ফেলুন আরেকটি সুরক্ষা করতে।';
+	@override String get chooseHint => 'কোনো শিরোনাম খুলুন, পরের জন্য সংরক্ষণ করুন বা এড়িয়ে যান।';
+	@override String get howItWorks => 'ব্যবহারের নিয়ম';
+	@override String get notNowHelp => 'এই শিরোনামটি আপাতত এড়িয়ে যান। এটি আপনার লাইব্রেরিতে থাকবে।';
+	@override String get saveHelp => 'এই ডিভাইসে এই প্রোফাইলের সংরক্ষিত পছন্দে রাখুন। সংরক্ষণ করলে ডাউনলোড হয় না।';
+	@override String get openHelp => 'বিস্তারিত দেখতে প্রচ্ছদ নির্বাচন করুন। চালানো, পড়া বা খোলার জন্য প্রধান বোতাম ব্যবহার করুন।';
+	@override String get controlsHelp => 'কীবোর্ড বা রিমোট: একটি বোতামে যান, তারপর Enter বা নির্বাচন বোতাম চাপুন। পূর্বাবস্থায় ফেরালে শেষ পছন্দটি ফিরে আসে।';
+	@override String get artworkLoading => 'ছবি লোড হচ্ছে…';
+	@override String get artworkUnavailable => 'ছবি উপলব্ধ নয়';
+	@override String get savedFeedback => 'সংরক্ষিত পছন্দে যোগ করা হয়েছে';
+	@override String get skippedFeedback => 'আপাতত এড়িয়ে যাওয়া হয়েছে';
+	@override String get releaseToConfirm => 'নিশ্চিত করতে ছেড়ে দিন';
+	@override String get remoteHint => 'প্রচ্ছদে ফোকাস: ← / → বেছে নিন · নির্বাচন বোতাম: বিস্তারিত · ↑ / ↓ ফোকাস বদলান';
 }
 
 // Path: discover.person
@@ -5559,7 +5571,7 @@ extension on TranslationsBn {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} মোট',
 			'discover.findNext.timingVaries' => 'সময়মাত্রা ভিন্ন',
 			'discover.findNext.notNow' => 'এখন না',
-			'discover.findNext.swipeHint' => 'অথবা নিচের বোতল ব্যবহার করুন',
+			'discover.findNext.swipeHint' => 'প্রচ্ছদটি কোনো তিরের দিকে সোয়াইপ করুন বা নিচের বোতাম ব্যবহার করুন।',
 			'discover.findNext.saved' => 'বাঁচানো পিক্স',
 			'discover.findNext.savedCount' => ({required Object count}) => 'সুরক্ষিত পিক্স · ${count}',
 			'discover.findNext.undo' => 'অ্যান্ডো',
@@ -5587,6 +5599,18 @@ extension on TranslationsBn {
 			'discover.findNext.openFailed' => 'এই পছন্দ এখন আর পাওয়া যায় না. আবার চেক করার জন্য ফ্রিজ করুন।',
 			'discover.findNext.changeFailed' => 'এই পরিবর্তনটা করতে পারবেন না, আবারও চেষ্টা করুন।',
 			'discover.findNext.savedLimit' => 'সুরক্ষিত পিক্স সম্পূর্ণ. একটি পিক্সটি মুছে ফেলুন আরেকটি সুরক্ষা করতে।',
+			'discover.findNext.chooseHint' => 'কোনো শিরোনাম খুলুন, পরের জন্য সংরক্ষণ করুন বা এড়িয়ে যান।',
+			'discover.findNext.howItWorks' => 'ব্যবহারের নিয়ম',
+			'discover.findNext.notNowHelp' => 'এই শিরোনামটি আপাতত এড়িয়ে যান। এটি আপনার লাইব্রেরিতে থাকবে।',
+			'discover.findNext.saveHelp' => 'এই ডিভাইসে এই প্রোফাইলের সংরক্ষিত পছন্দে রাখুন। সংরক্ষণ করলে ডাউনলোড হয় না।',
+			'discover.findNext.openHelp' => 'বিস্তারিত দেখতে প্রচ্ছদ নির্বাচন করুন। চালানো, পড়া বা খোলার জন্য প্রধান বোতাম ব্যবহার করুন।',
+			'discover.findNext.controlsHelp' => 'কীবোর্ড বা রিমোট: একটি বোতামে যান, তারপর Enter বা নির্বাচন বোতাম চাপুন। পূর্বাবস্থায় ফেরালে শেষ পছন্দটি ফিরে আসে।',
+			'discover.findNext.artworkLoading' => 'ছবি লোড হচ্ছে…',
+			'discover.findNext.artworkUnavailable' => 'ছবি উপলব্ধ নয়',
+			'discover.findNext.savedFeedback' => 'সংরক্ষিত পছন্দে যোগ করা হয়েছে',
+			'discover.findNext.skippedFeedback' => 'আপাতত এড়িয়ে যাওয়া হয়েছে',
+			'discover.findNext.releaseToConfirm' => 'নিশ্চিত করতে ছেড়ে দিন',
+			'discover.findNext.remoteHint' => 'প্রচ্ছদে ফোকাস: ← / → বেছে নিন · নির্বাচন বোতাম: বিস্তারিত · ↑ / ↓ ফোকাস বদলান',
 			'discover.extras' => 'ট্রাইলিং & অতিরিক্ত',
 			'discover.studio' => 'স্টুডিও',
 			'discover.rating' => 'রেটিং',
@@ -5812,6 +5836,8 @@ extension on TranslationsBn {
 			'explore.mdblistShelves.nameHint' => 'সূত্র তালিকা নাম ব্যবহার করার জন্য বাদ রাখুন।',
 			'explore.mdblistShelves.add' => 'শেলি যোগ করুন',
 			'explore.mdblistShelves.save' => 'শিগগির সংরক্ষণ',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'মোট ${title} আপ',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'ফাঁস করুন ${title}',
 			'explore.mdblistShelves.unavailable' => 'এই তালিকা পাওয়া যায় না. সেটিংসগুলিতে তার স্কেল ফেরত বা মুছে ফেলুন.',
@@ -5824,8 +5850,6 @@ extension on TranslationsBn {
 			'explore.selectSource' => 'সূত্র নির্বাচন',
 			'explore.rows.watchlist' => 'চোখের তালিকা',
 			'explore.rows.recommendedMovies' => 'প্রস্তাবিত চলচ্চিত্র',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'প্রস্তাবিত প্রদর্শন',
 			'explore.rows.trendingMovies' => 'ট্রেনিং সিনেমা',
 			'explore.rows.trendingShows' => 'ট্রেন্ডিং প্রদর্শনী',
@@ -6326,6 +6350,8 @@ extension on TranslationsBn {
 			'downloads.resumeDownload' => 'ডাউনলোড করুন',
 			'downloads.cancelledDownload' => 'বাতিল ডাউনলোড',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (সিন্সিং ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'ডাউনলোড করা হয়েছে ${file} - সম্পূর্ণ করতে ক্লিক করুন',
 			'downloads.partialDownloadClickToComplete' => 'সম্পূর্ণভাবে ডাউনলোড - ক্লিক করুন',
 			'downloads.deleting' => 'মুছে ফেলা...',
@@ -6338,8 +6364,6 @@ extension on TranslationsBn {
 			'downloads.pauseAll' => 'সবার paus',
 			'downloads.resumeAll' => 'সমস্ত সমাধান',
 			'downloads.retryAll' => 'সবাই ফিরে',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'ফেরত ফেরত ফেরত ফেরত ফেরত',
 			'downloads.deleteAll' => 'সব মুছুন',
 			'downloads.selectVersion' => 'নির্বাচন Version',
@@ -6840,6 +6864,8 @@ extension on TranslationsBn {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'সার্ভার পৌঁছাতে পারবেন না: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'অ্যাকাউন্ট ভুল: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect অসম্ভব: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'সাইন আপ করুন Plex',
 			'addServer.pinExpired' => 'PIN-টি অন্তর্ভুক্ত হওয়ার আগে শেষ হয়ে গেছে, আবারও চেষ্টা করুন।',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'অ্যাকাউন্ট নিবন্ধন করতে পারিনি: ${error}',
@@ -6852,8 +6878,6 @@ extension on TranslationsBn {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'সংযোগ ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'আপনার সার্ভার URL, ব্যবহারকারীর নাম এবং পাসওয়ার্ড লিখুন।',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'আপনার সার্ভার ${product} সার্ভারে প্রবেশ করুন. ${name} সার্ভারে সংযোগ করুন.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'অন্য প্রোফাইল থেকে ডাউনলোড',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'পিন সুরক্ষিত প্রোফাইলগুলি একটি পিন প্রয়োজন।',
 			'addServer.invalidCredentials' => 'ভুল ব্যবহারকারীর নাম বা পাসওয়ার্ড',

@@ -3526,7 +3526,7 @@ class _Translations$discover$findNext$he extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} סך הכל';
 	@override String get timingVaries => 'הזמן משתנה';
 	@override String get notNow => 'לא עכשיו';
-	@override String get swipeHint => 'סובב, או להשתמש בכפתורים למטה';
+	@override String get swipeHint => 'החליקו את העטיפה לכיוון אחד החצים או השתמשו בכפתורים למטה.';
 	@override String get saved => 'הצלחה פיקס';
 	@override String savedCount({required Object count}) => 'תגיות קשורות ${count}';
 	@override String get undo => 'ונו';
@@ -3554,6 +3554,18 @@ class _Translations$discover$findNext$he extends Translations$discover$findNext$
 	@override String get openFailed => 'הבחירה הזאת כבר לא זמינה; לחדש כדי לבדוק שוב.';
 	@override String get changeFailed => 'לא הצלחתי לשמור את השינוי הזה, ניסיתי שוב.';
 	@override String get savedLimit => 'הפקודות שנשמרו מלאות.סיר את הפקודה אחת כדי לחסוך אחרת.';
+	@override String get chooseHint => 'פתחו כותר, שמרו אותו להמשך או דלגו עליו.';
+	@override String get howItWorks => 'איך זה עובד';
+	@override String get notNowHelp => 'דלגו על הכותר הזה כרגע. הוא יישאר בספרייה שלכם.';
+	@override String get saveHelp => 'שמרו אותו בבחירות השמורות של הפרופיל הזה במכשיר הזה. השמירה אינה מורידה את התוכן.';
+	@override String get openHelp => 'בחרו בעטיפה להצגת פרטים. השתמשו בפעולה הראשית כדי לנגן, לקרוא או לפתוח את הכותר.';
+	@override String get controlsHelp => 'מקלדת או שלט: עברו לכפתור ולחצו על Enter או על בחירה. ביטול מחזיר את הבחירה האחרונה.';
+	@override String get artworkLoading => 'טוען תמונה…';
+	@override String get artworkUnavailable => 'התמונה אינה זמינה';
+	@override String get savedFeedback => 'נוסף לבחירות השמורות';
+	@override String get skippedFeedback => 'דולג לעת עתה';
+	@override String get releaseToConfirm => 'שחררו לאישור';
+	@override String get remoteHint => 'כשהעטיפה במיקוד: ← / → בחירה · לחצן בחירה: פרטים · ↑ / ↓ העברת מיקוד';
 }
 
 // Path: discover.person
@@ -5564,7 +5576,7 @@ extension on TranslationsHe {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} סך הכל',
 			'discover.findNext.timingVaries' => 'הזמן משתנה',
 			'discover.findNext.notNow' => 'לא עכשיו',
-			'discover.findNext.swipeHint' => 'סובב, או להשתמש בכפתורים למטה',
+			'discover.findNext.swipeHint' => 'החליקו את העטיפה לכיוון אחד החצים או השתמשו בכפתורים למטה.',
 			'discover.findNext.saved' => 'הצלחה פיקס',
 			'discover.findNext.savedCount' => ({required Object count}) => 'תגיות קשורות ${count}',
 			'discover.findNext.undo' => 'ונו',
@@ -5592,6 +5604,18 @@ extension on TranslationsHe {
 			'discover.findNext.openFailed' => 'הבחירה הזאת כבר לא זמינה; לחדש כדי לבדוק שוב.',
 			'discover.findNext.changeFailed' => 'לא הצלחתי לשמור את השינוי הזה, ניסיתי שוב.',
 			'discover.findNext.savedLimit' => 'הפקודות שנשמרו מלאות.סיר את הפקודה אחת כדי לחסוך אחרת.',
+			'discover.findNext.chooseHint' => 'פתחו כותר, שמרו אותו להמשך או דלגו עליו.',
+			'discover.findNext.howItWorks' => 'איך זה עובד',
+			'discover.findNext.notNowHelp' => 'דלגו על הכותר הזה כרגע. הוא יישאר בספרייה שלכם.',
+			'discover.findNext.saveHelp' => 'שמרו אותו בבחירות השמורות של הפרופיל הזה במכשיר הזה. השמירה אינה מורידה את התוכן.',
+			'discover.findNext.openHelp' => 'בחרו בעטיפה להצגת פרטים. השתמשו בפעולה הראשית כדי לנגן, לקרוא או לפתוח את הכותר.',
+			'discover.findNext.controlsHelp' => 'מקלדת או שלט: עברו לכפתור ולחצו על Enter או על בחירה. ביטול מחזיר את הבחירה האחרונה.',
+			'discover.findNext.artworkLoading' => 'טוען תמונה…',
+			'discover.findNext.artworkUnavailable' => 'התמונה אינה זמינה',
+			'discover.findNext.savedFeedback' => 'נוסף לבחירות השמורות',
+			'discover.findNext.skippedFeedback' => 'דולג לעת עתה',
+			'discover.findNext.releaseToConfirm' => 'שחררו לאישור',
+			'discover.findNext.remoteHint' => 'כשהעטיפה במיקוד: ← / → בחירה · לחצן בחירה: פרטים · ↑ / ↓ העברת מיקוד',
 			'discover.extras' => 'טריילר & Extras',
 			'discover.studio' => 'סטודיו',
 			'discover.rating' => 'דירוג',
@@ -5817,6 +5841,8 @@ extension on TranslationsHe {
 			'explore.mdblistShelves.nameHint' => 'השאירו את השם ללימודי המקור.',
 			'explore.mdblistShelves.add' => 'להוסיף Shelf',
 			'explore.mdblistShelves.save' => 'הציל את המדרגות',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'זורק ${title} למעלה',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'מוריד ${title} למטה',
 			'explore.mdblistShelves.unavailable' => 'רשימה זו אינה זמינה.חזיר או להסיר את המאגר שלה בהגדרות.',
@@ -5829,8 +5855,6 @@ extension on TranslationsHe {
 			'explore.selectSource' => 'בחר מקור',
 			'explore.rows.watchlist' => 'שומרים',
 			'explore.rows.recommendedMovies' => 'סרטים מומלצים',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'הצגות מומלצות',
 			'explore.rows.trendingMovies' => 'סרטים טרנדים',
 			'explore.rows.trendingShows' => 'תצוגות טרנד',
@@ -6331,6 +6355,8 @@ extension on TranslationsHe {
 			'downloads.resumeDownload' => 'תגית: download',
 			'downloads.cancelledDownload' => 'ביטול הורדות',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (סנצ\'ינג ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'הורד ${file} - לחצו כדי להשלים',
 			'downloads.partialDownloadClickToComplete' => 'הורדה חלקית - לחצו כדי להשלים',
 			'downloads.deleting' => 'הסרת...',
@@ -6343,8 +6369,6 @@ extension on TranslationsHe {
 			'downloads.pauseAll' => 'הפסקה הכול',
 			'downloads.resumeAll' => 'סיכום הכול',
 			'downloads.retryAll' => 'להחזיר את כולם',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'הורדות נכשלות',
 			'downloads.deleteAll' => 'מחק הכל',
 			'downloads.selectVersion' => 'בחר גרסה',
@@ -6845,6 +6869,8 @@ extension on TranslationsHe {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'לא יכול להגיע לשרת: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'הצטרפות לא מוצלחת: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect נכשל: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'הצטרפו ל- Plex',
 			'addServer.pinExpired' => 'ה-PIN נגמר לפני ההרשמה, אנא נסה שוב.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'חשבונית לא נרשמה: ${error}',
@@ -6857,8 +6883,6 @@ extension on TranslationsHe {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'חיבור ל- ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'הקלד את כתובת ה-URL, שם המשתמש ואת הסיסמה שלך.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'הצטרפו לשרת ${product}.חברים ל- ${name}.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'הלוואה מפרט אחר',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'השתמש מחדש בקשר של פרופיל אחר.פרופילים מוגנים ב-PIN דורשים PIN.',
 			'addServer.invalidCredentials' => 'שם משתמש או סיסמה בלתי חוקיים',
