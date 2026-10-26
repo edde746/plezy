@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:collection';
+import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -31,9 +32,21 @@ class PublicationDownloads {
   final Directory directory;
   final Map<String, Future<File>> _pending = {};
   final Map<String, TransferCancellation> _cancellations = {};
+  final Map<String, _DownloadTask> _tasks = {};
   final Queue<_DownloadTask> _queue = Queue();
   int _activeTransfers = 0;
   String key(String sourceId, PublicationFile file) => sourceKey(sourceId, file.id);
+  File _target(String profile, String sourceId, PublicationFile file) {
+    final extension = p.extension(file.name).toLowerCase();
+    return File(
+      p.join(
+        directory.path,
+        sourceDigest(profile),
+        '${sourceDigest(key(sourceId, file))}-${file.fingerprint}${RegExp(r'^\.[a-z0-9]{1,8}$').hasMatch(extension) ? extension : ''}',
+      ),
+    );
+  }
+
   Future<File?> local(String profile, String sourceId, PublicationFile file) async {
     final record = await repository.download(profile, key(sourceId, file));
     if (record == null || record['complete'] != 1 || record['fingerprint'] != file.fingerprint) return null;
@@ -44,42 +57,130 @@ class PublicationDownloads {
     return value;
   }
 
+  Future<void> reconcileProfile(String profile) async {
+    final expected = p.join(directory.path, sourceDigest(profile));
+    for (final row in await repository.downloads(profile)) {
+      final path = row['path'] as String? ?? '';
+      if (path.isEmpty || !p.isWithin(expected, path)) {
+        if (row['state'] != 'queued' && row['state'] != 'running') {
+          await repository.forgetDownload(profile, row['key'] as String);
+        }
+        continue;
+      }
+      final file = File(path);
+      if (await file.exists()) continue;
+      if (row['state'] != 'queued' && row['state'] != 'running') {
+        await repository.forgetDownload(profile, row['key'] as String);
+      }
+    }
+  }
+
   Future<File> download(
     String profile,
     SourceAdapter adapter,
     PublicationFile file, {
+    String label = '',
     void Function(int, int?)? onProgress,
-  }) {
+  }) async {
     final transferKey = sourceKey(profile, key(adapter.source.id, file));
-    return _pending.putIfAbsent(
-      transferKey,
-      () {
-        final cancellation = TransferCancellation();
-        final completer = Completer<File>();
-        final task = _DownloadTask(
-          profile: profile,
-          adapter: adapter,
-          file: file,
-          transferKey: transferKey,
-          onProgress: onProgress,
-          cancellation: cancellation,
-          completer: completer,
-        );
-        _cancellations[transferKey] = cancellation;
-        _queue.addLast(task);
-        _drainQueue();
-        return completer.future.whenComplete(() {
-          _pending.remove(transferKey);
-          _cancellations.remove(transferKey);
-        });
-      },
+    final existing = _pending[transferKey];
+    if (existing != null) return existing;
+    final cancellation = TransferCancellation();
+    final completer = Completer<File>();
+    final task = _DownloadTask(
+      profile: profile,
+      adapter: adapter,
+      file: file,
+      transferKey: transferKey,
+      label: label,
+      onProgress: onProgress,
+      cancellation: cancellation,
+      completer: completer,
     );
+    _tasks[transferKey] = task;
+    final pending = completer.future.whenComplete(() {
+      _pending.remove(transferKey);
+      _cancellations.remove(transferKey);
+      _tasks.remove(transferKey);
+    });
+    _pending[transferKey] = pending;
+    _cancellations[transferKey] = cancellation;
+    final partial = File('${_target(profile, adapter.source.id, file).path}.partial');
+    try {
+      await reconcileProfile(profile);
+      final bytes = await partial.exists() ? await partial.length() : 0;
+      final estimate = file.size ?? await adapter.contentSize(file);
+      await repository.reserveDownload(
+        profile: profile,
+        key: key(adapter.source.id, file),
+        sourceId: adapter.source.id,
+        file: file,
+        path: partial.path,
+        reservedBytes: estimate ?? bytes,
+        bytes: bytes,
+        state: 'queued',
+        label: label,
+      );
+      _queue.addLast(task);
+      _drainQueue();
+    } on Object catch (error, stackTrace) {
+      if (!completer.isCompleted) completer.completeError(error, stackTrace);
+    }
+    return pending;
   }
+
+  /// Requeues transfers interrupted by process death. Explicitly paused and
+  /// failed jobs stay available for an intentional retry.
+  Future<void> restoreProfile(String profile, SourceAdapter? Function(String) resolveAdapter) async {
+    for (final row in await repository.downloads(profile)) {
+      if (row['state'] != 'queued' && row['state'] != 'running') continue;
+      try {
+        final sourceId = row['source_id'] as String;
+        final file = PublicationFile.fromJson(sourceMap(jsonDecode(row['file_payload'] as String)));
+        if (sourceId.isEmpty || file.fingerprint != row['fingerprint'] || row['key'] != key(sourceId, file)) {
+          throw const SourceException(SourceFailure.invalidData);
+        }
+        final adapter = resolveAdapter(sourceId);
+        if (adapter == null) {
+          await repository.setDownloadState(profile, row['key'] as String, 'paused');
+          continue;
+        }
+        unawaited(download(profile, adapter, file, label: row['label'] as String? ?? '').then<void>(
+          (_) {},
+          onError: (Object _) {},
+        ));
+      } on Object {
+        await repository.setDownloadState(profile, row['key'] as String, 'failed');
+      }
+    }
+  }
+
+  Future<void> _persistChunk({
+    required String profile,
+    required String key,
+    required SourceAdapter adapter,
+    required PublicationFile file,
+    required String path,
+    required String label,
+    required int bytes,
+    required int? expected,
+  }) => repository.reserveDownload(
+    profile: profile,
+    key: key,
+    sourceId: adapter.source.id,
+    file: file,
+    path: path,
+    reservedBytes: expected ?? bytes,
+    bytes: bytes,
+    state: 'running',
+    label: label,
+  );
 
   void _drainQueue() {
     while (_activeTransfers < maxConcurrentTransfers && _queue.isNotEmpty) {
       final task = _queue.removeFirst();
       if (task.cancellation.cancelled) {
+        unawaited(repository.setDownloadState(task.profile, key(task.adapter.source.id, task.file), 'paused').catchError((_) {}));
         if (!task.completer.isCompleted) {
           task.completer.completeError(const SourceException(SourceFailure.cancelled));
         }
@@ -93,12 +194,19 @@ class PublicationDownloads {
           task.file,
           task.transferKey,
           task.cancellation,
+          task.label,
           task.onProgress,
         ).then<void>(
           (file) {
+            unawaited(repository.setDownloadState(task.profile, key(task.adapter.source.id, task.file), 'completed').catchError((_) {}));
             if (!task.completer.isCompleted) task.completer.complete(file);
           },
           onError: (Object error, StackTrace stackTrace) {
+            unawaited(repository.setDownloadState(
+              task.profile,
+              key(task.adapter.source.id, task.file),
+              error is SourceException && error.reason == SourceFailure.cancelled ? 'paused' : 'failed',
+            ).catchError((_) {}));
             if (!task.completer.isCompleted) task.completer.completeError(error, stackTrace);
           },
         ).whenComplete(() {
@@ -115,37 +223,37 @@ class PublicationDownloads {
     PublicationFile file,
     String transferKey,
     TransferCancellation cancel,
+    String label,
     void Function(int, int?)? onProgress,
   ) async {
+    final recordKey = key(adapter.source.id, file);
+    await repository.setDownloadState(profile, recordKey, 'running');
     final cached = await local(profile, adapter.source.id, file);
     cancel.check();
     if (cached != null) return cached;
     final folder = Directory(p.join(directory.path, sourceDigest(profile)));
     await folder.create(recursive: true);
     cancel.check();
-    final extension = p.extension(file.name).toLowerCase();
-    final target = File(
-      p.join(
-        folder.path,
-        '${sourceDigest(key(adapter.source.id, file))}-${file.fingerprint}${RegExp(r'^\.[a-z0-9]{1,8}$').hasMatch(extension) ? extension : ''}',
-      ),
-    );
+    final target = _target(profile, adapter.source.id, file);
     final partial = File('${target.path}.partial');
     final validatorFile = File('${target.path}.validator');
     var offset = await partial.exists() ? await partial.length() : 0;
     final validator = await validatorFile.exists() ? await validatorFile.readAsString() : null;
     // A durable incomplete row lets startup and the download surface
     // distinguish a recoverable transfer from a completed offline edition.
-    await repository.recordDownload(
-      profile,
-      key(adapter.source.id, file),
-      partial.path,
-      file.fingerprint,
-      offset,
-      complete: false,
+    var expectedSize = file.size ?? await adapter.contentSize(file);
+    await repository.reserveDownload(
+      profile: profile,
+      key: recordKey,
+      sourceId: adapter.source.id,
+      file: file,
+      path: partial.path,
+      reservedBytes: expectedSize ?? offset,
+      bytes: offset,
+      state: 'running',
+      label: label,
     );
     cancel.check();
-    var expectedSize = file.size ?? await adapter.contentSize(file);
     // Provider streams can resume against the immutable file fingerprint
     // encoded in the partial path. HTTP URLs need a representation validator.
     final directOffset = offset > 0 &&
@@ -165,6 +273,16 @@ class PublicationDownloads {
         throw const SourceException(SourceFailure.invalidData);
       }
       expectedSize = directStream.size;
+      await _persistChunk(
+        profile: profile,
+        key: recordKey,
+        adapter: adapter,
+        file: file,
+        path: partial.path,
+        label: label,
+        bytes: offset,
+        expected: expectedSize,
+      );
       if (directStream.offset != directOffset || directStream.length != directStream.size - directOffset) {
         throw const SourceException(SourceFailure.invalidData);
       }
@@ -172,10 +290,20 @@ class PublicationDownloads {
       final sink = partial.openWrite(mode: directOffset > 0 ? FileMode.append : FileMode.write);
       try {
         await sink.addStream(
-          directStream.stream.timeout(const Duration(seconds: 45)).map((bytes) {
+          directStream.stream.timeout(const Duration(seconds: 45)).asyncMap((bytes) async {
             cancel.check();
             received += bytes.length;
             if (received > directStream.size) throw const SourceException(SourceFailure.invalidData);
+            await _persistChunk(
+              profile: profile,
+              key: recordKey,
+              adapter: adapter,
+              file: file,
+              path: partial.path,
+              label: label,
+              bytes: received,
+              expected: directStream.size,
+            );
             onProgress?.call(received, directStream.size);
             return bytes;
           }),
@@ -194,6 +322,17 @@ class PublicationDownloads {
       cancel.check();
       if (lease.uri.scheme == 'file') {
         final input = File.fromUri(lease.uri);
+        expectedSize ??= await input.length();
+        await _persistChunk(
+          profile: profile,
+          key: recordKey,
+          adapter: adapter,
+          file: file,
+          path: partial.path,
+          label: label,
+          bytes: 0,
+          expected: expectedSize,
+        );
         await input.copy(partial.path);
         cancel.check();
       } else {
@@ -232,6 +371,20 @@ class PublicationDownloads {
         }
         SourceTransport.check(response.statusCode);
         if (offset > 0 && response.statusCode != 206) offset = 0;
+        if (expectedSize == null) {
+          final contentRange = RegExp(r'^bytes \d+-\d+/(\d+)$').firstMatch(response.headers['content-range'] ?? '');
+          expectedSize = contentRange == null ? int.tryParse(response.headers['content-length'] ?? '') : int.tryParse(contentRange[1]!);
+        }
+        await _persistChunk(
+          profile: profile,
+          key: recordKey,
+          adapter: adapter,
+          file: file,
+          path: partial.path,
+          label: label,
+          bytes: offset,
+          expected: expectedSize,
+        );
         final etag = response.headers['etag'];
         final freshValidator = etag != null && !etag.startsWith('W/') ? etag : response.headers['last-modified'];
         if (offset > 0 && freshValidator != null && validator != freshValidator) {
@@ -254,12 +407,22 @@ class PublicationDownloads {
         final sink = partial.openWrite(mode: offset > 0 ? FileMode.append : FileMode.write);
         try {
           await sink.addStream(
-            response.stream.timeout(const Duration(seconds: 45)).map((bytes) {
+            response.stream.timeout(const Duration(seconds: 45)).asyncMap((bytes) async {
               cancel.check();
               offset += bytes.length;
               if (expectedSize != null && offset > expectedSize) {
                 throw const SourceException(SourceFailure.invalidData);
               }
+              await _persistChunk(
+                profile: profile,
+                key: recordKey,
+                adapter: adapter,
+                file: file,
+                path: partial.path,
+                label: label,
+                bytes: offset,
+                expected: expectedSize,
+              );
               onProgress?.call(offset, expectedSize);
               return bytes;
             }),
@@ -282,7 +445,14 @@ class PublicationDownloads {
     try {
       if (await validatorFile.exists()) await validatorFile.delete();
       cancel.check();
-      await repository.recordDownload(profile, key(adapter.source.id, file), target.path, file.fingerprint, size);
+      await repository.recordDownload(
+        profile,
+        recordKey,
+        target.path,
+        file.fingerprint,
+        size,
+        reservedBytes: expectedSize ?? size,
+      );
       cancel.check();
     } catch (_) {
       if (await target.exists()) await target.delete();
@@ -297,10 +467,41 @@ class PublicationDownloads {
     }
     while (_queue.isNotEmpty) {
       final task = _queue.removeFirst();
+      unawaited(repository.setDownloadState(task.profile, key(task.adapter.source.id, task.file), 'paused').catchError((_) {}));
       if (!task.completer.isCompleted) {
         task.completer.completeError(const SourceException(SourceFailure.cancelled));
       }
     }
+  }
+
+  void cancel(String profile, String sourceId, PublicationFile file) {
+    final transferKey = sourceKey(profile, key(sourceId, file));
+    final task = _tasks[transferKey];
+    task?.cancellation.cancel();
+    if (task != null && _queue.remove(task)) {
+      unawaited(repository.setDownloadState(profile, key(sourceId, file), 'paused').catchError((_) {}));
+      if (!task.completer.isCompleted) task.completer.completeError(const SourceException(SourceFailure.cancelled));
+      _drainQueue();
+    }
+  }
+
+  Future<void> cancelAndWait(String profile, String sourceId, PublicationFile file) async {
+    final transferKey = sourceKey(profile, key(sourceId, file));
+    cancel(profile, sourceId, file);
+    final pending = _pending[transferKey];
+    if (pending != null) await pending.then<void>((_) {}, onError: (Object _) {});
+    await repository.setDownloadState(profile, key(sourceId, file), 'paused');
+  }
+
+  void cancelSource(String profile, String sourceId) {
+    for (final task in _tasks.values.where((task) => task.profile == profile && task.adapter.source.id == sourceId).toList()) {
+      task.cancellation.cancel();
+      if (_queue.remove(task)) {
+        unawaited(repository.setDownloadState(profile, key(sourceId, task.file), 'paused').catchError((_) {}));
+        if (!task.completer.isCompleted) task.completer.completeError(const SourceException(SourceFailure.cancelled));
+      }
+    }
+    _drainQueue();
   }
 
   /// Profile deletion waits for file writers to retire before removing their
@@ -330,6 +531,7 @@ class _DownloadTask {
     required this.adapter,
     required this.file,
     required this.transferKey,
+    required this.label,
     required this.onProgress,
     required this.cancellation,
     required this.completer,
@@ -339,6 +541,7 @@ class _DownloadTask {
   final SourceAdapter adapter;
   final PublicationFile file;
   final String transferKey;
+  final String label;
   final void Function(int, int?)? onProgress;
   final TransferCancellation cancellation;
   final Completer<File> completer;
