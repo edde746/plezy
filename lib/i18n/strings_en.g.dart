@@ -7698,8 +7698,8 @@ class Translations$fileSources$en {
 	/// en: 'Offline download limit'
 	String get offlineQuota => 'Offline download limit';
 
-	/// en: 'Set the maximum space used by offline copies and queued downloads. Lowering the limit does not remove existing copies.'
-	String get offlineQuotaHelp => 'Set the maximum space used by offline copies and queued downloads. Lowering the limit does not remove existing copies.';
+	/// en: 'Set the maximum space used by offline copies, imported files, and queued downloads. Lowering the limit does not remove existing copies.'
+	String get offlineQuotaHelp => 'Set the maximum space used by offline copies, imported files, and queued downloads. Lowering the limit does not remove existing copies.';
 
 	/// en: 'Offline storage'
 	String get offlineStorageUsage => 'Offline storage';
@@ -7721,6 +7721,12 @@ class Translations$fileSources$en {
 
 	/// en: 'Needs retry'
 	String get downloadFailed => 'Needs retry';
+
+	/// en: 'Importing'
+	String get importing => 'Importing';
+
+	/// en: 'Import interrupted · remove to clear'
+	String get importInterrupted => 'Import interrupted · remove to clear';
 
 	/// en: 'The offline storage limit was reached. Raise the limit or remove a downloaded copy.'
 	String get errorQuotaExceeded => 'The offline storage limit was reached. Raise the limit or remove a downloaded copy.';
