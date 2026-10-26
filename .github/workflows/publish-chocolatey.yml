@@ -1,3 +1,4 @@
+# ng-runner-policy: private-jit-only-v1
 name: Publish Chocolatey Package
 
 on:
@@ -21,9 +22,7 @@ permissions:
 jobs:
   publish:
     if: github.event_name != 'release' || github.event.release.prerelease == false
-    runs-on:
-      group: packer-windows
-      labels: [self-hosted, Windows, X64, on-demand, packer-windows, PlezyNG]
+    runs-on: ${{ fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-publish"]}}', github.run_id)) }}
     timeout-minutes: 20
     steps:
       - name: Resolve and validate published release

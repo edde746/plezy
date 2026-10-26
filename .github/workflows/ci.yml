@@ -1,3 +1,4 @@
+# ng-runner-policy: private-jit-only-v1
 name: CI - Sanity Checks
 
 on:
@@ -24,7 +25,7 @@ env:
 jobs:
   analyze:
     name: Code Analysis
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-analyze"]}}', github.run_id)) }}
     permissions:
       contents: read
     steps:
@@ -123,7 +124,7 @@ jobs:
 
   test:
     name: Unit Tests
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-test"]}}', github.run_id)) }}
     permissions:
       contents: read
     steps:
@@ -201,7 +202,7 @@ jobs:
 
   android-test:
     name: Android JVM and Native Tests
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-android-test"]}}', github.run_id)) }}
     permissions:
       contents: read
     steps:
@@ -270,7 +271,7 @@ jobs:
 
   native-format:
     name: Native Formatting
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-native-format"]}}', github.run_id)) }}
     permissions:
       contents: read
     steps:
@@ -290,7 +291,7 @@ jobs:
 
   linux-native-test:
     name: Linux native reliability (${{ matrix.sanitizer }})
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-linux-native-test"]}}', github.run_id, strategy.job-index)) }}
     permissions:
       contents: read
     strategy:
@@ -361,7 +362,7 @@ jobs:
 
   apple-native-test:
     name: Apple native reliability (${{ matrix.platform }})
-    runs-on: macos-26
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-apple-native-test"]}}', github.run_id, strategy.job-index)) }}
     permissions:
       contents: read
     strategy:
@@ -506,7 +507,7 @@ jobs:
 
   windows-native-test:
     name: Windows native reliability (${{ matrix.arch }})
-    runs-on: ${{ matrix.runner }}
+    runs-on: ${{ matrix.arch == 'x64' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) }}
     permissions:
       contents: read
     strategy:
@@ -514,10 +515,8 @@ jobs:
       matrix:
         include:
           - arch: x64
-            runner: windows-latest
             flutter_setup: action
           - arch: arm64
-            runner: windows-11-arm
             flutter_setup: git
     steps:
       - name: Checkout code
@@ -592,7 +591,7 @@ jobs:
 
   dependency-check:
     name: Dependency Validation
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-dependency-check"]}}', github.run_id)) }}
     permissions:
       contents: read
     steps:
@@ -624,7 +623,7 @@ jobs:
 
   server:
     name: Server checks
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-server"]}}', github.run_id)) }}
     permissions:
       contents: read
     steps:
@@ -656,7 +655,7 @@ jobs:
   linux-packages:
     name: Linux package smoke build
     if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_linux_packages }}
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-linux-packages"]}}', github.run_id)) }}
     permissions:
       contents: read
     steps:
