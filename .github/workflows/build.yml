@@ -1,4 +1,5 @@
 # ng-runner-policy: private-jit-only-v1
+# packer-windows-jit-v1
 name: PlezyNG Release
 run-name: ${{ format('Release {0}', inputs.release_tag) }}
 
@@ -814,7 +815,7 @@ jobs:
   build-windows:
     needs: validate-trusted-ref
     name: Build Windows (${{ matrix.arch }})
-    runs-on: ${{ matrix.runner == 'windows-latest' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) }}
+    runs-on: ${{ matrix.runner == 'windows-latest' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","on-demand","packer-windows","PlezyNG","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) }}
     permissions:
       contents: read
     strategy:
@@ -958,7 +959,7 @@ jobs:
 
   package-windows:
     needs: build-windows
-    runs-on: ${{ fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-package-windows"]}}', github.run_id)) }}
+    runs-on: ${{ fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","on-demand","packer-windows","PlezyNG","gha-{0}-package-windows"]}}', github.run_id)) }}
     permissions:
       id-token: write
       attestations: write
