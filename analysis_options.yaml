@@ -8,6 +8,9 @@ analyzer:
     - "packages/flutter_inappwebview/**"
     - "packages/**/test/**"
     - "packages/**/pigeons/**"
+    # Vendored LG platform plugins are upstream-owned source; app integration
+    # is analyzed through the imports in lib/ and the focused webOS tests.
+    - "packages/webos_plugins/**"
     - build/**
     - android/**
     - ios/**

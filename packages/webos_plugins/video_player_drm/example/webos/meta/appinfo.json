@@ -1,0 +1,21 @@
+{
+    "id": "com.flutter.app.video-player-drm-example",
+    "version": "1.0.0",
+    "vendor": "LG Electronics",
+    "type": "native",
+    "main": "video_player_drm_example",
+    "title": "Flutter video_player_drm app",
+    "icon": "icon.png",
+    "iconColor": "#ffffff",
+    "largeIcon": "icon.png",
+    "handlesRelaunch": true,
+    "visible": true,
+    "defaultWindowType": "card",
+    "trustLevel": "default",
+    "locationHint": "none",
+    "noSplashOnLaunch": true,
+    "spinnerOnLaunch": false,
+    "transparent": true,
+    "uiRevision": 2,
+    "requiredACG": []
+}

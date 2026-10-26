@@ -308,6 +308,8 @@ class _AuthScreenState extends State<AuthScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (PlatformDetector.isTV()) return _buildTvLayout(context);
+
     // Use two-column layout on desktop, single column on mobile
     final isDesktop = MediaQuery.sizeOf(context).width > 700;
 
@@ -362,6 +364,54 @@ class _AuthScreenState extends State<AuthScreen> {
                     ],
                   ),
                 ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTvLayout(BuildContext context) {
+    final theme = Theme.of(context);
+    return Scaffold(
+      body: SafeArea(
+        child: Center(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 1280),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 64, vertical: 36),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Image.asset('assets/plezy.png', width: 176, height: 176),
+                        const SizedBox(height: 28),
+                        Text(
+                          t.app.title,
+                          style: theme.textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold),
+                          textAlign: TextAlign.center,
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(width: 56),
+                  Expanded(
+                    child: Center(
+                      child: ConstrainedBox(
+                        constraints: const BoxConstraints(maxWidth: 560),
+                        child: Card(
+                          child: Padding(
+                            padding: const EdgeInsets.all(32),
+                            child: SingleChildScrollView(child: _buildAuthBody()),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
         ),
       ),
     );

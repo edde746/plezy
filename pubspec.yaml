@@ -45,6 +45,40 @@ dependencies:
   wakelock_plus:
     path: packages/wakelock_plus
   path_provider: ^2.1.0
+  # LG's official webOS federated implementations. Keep these pinned with the
+  # webOS target so the main platform versions remain resolved as before.
+  shared_preferences_webos:
+    git:
+      url: https://github.com/lg-flutter-webos/plugins.git
+      ref: 3a742bb86b04e261044f0864f9b1f71acf0bbad3
+      path: packages/shared_preferences
+  path_provider_webos:
+    git:
+      url: https://github.com/lg-flutter-webos/plugins.git
+      ref: 3a742bb86b04e261044f0864f9b1f71acf0bbad3
+      path: packages/path_provider
+  package_info_plus_webos:
+    path: packages/webos_plugins/package_info_plus_webos
+  device_info_plus_webos:
+    git:
+      url: https://github.com/lg-flutter-webos/plugins.git
+      ref: 3a742bb86b04e261044f0864f9b1f71acf0bbad3
+      path: packages/device_info_plus
+  connectivity_plus_webos:
+    git:
+      url: https://github.com/lg-flutter-webos/plugins.git
+      ref: 3a742bb86b04e261044f0864f9b1f71acf0bbad3
+      path: packages/connectivity_plus
+  url_launcher_webos:
+    git:
+      url: https://github.com/lg-flutter-webos/plugins.git
+      ref: 3a742bb86b04e261044f0864f9b1f71acf0bbad3
+      path: packages/url_launcher
+  # LG's webOS native media plane is the supported playback backend on TV.
+  # Vendor the pinned upstream plugin so sensitive stream URLs stay redacted
+  # from the native device log.
+  video_player_drm:
+    path: packages/webos_plugins/video_player_drm
   path: ^1.9.0
   universal_gamepad: ^1.5.7
   drift: ^2.31.0
@@ -52,6 +86,8 @@ dependencies:
   cryptography: ^2.9.0
   # 10.x retains the win32 5.x API used by the vendored wakelock plugin.
   flutter_secure_storage: ^10.3.4
+  flutter_secure_storage_webos:
+    path: packages/webos_plugins/flutter_secure_storage_webos
   file_picker: ^11.0.2
   saf_util:
     # Vendored 3.1.0: fixes upstream's duplicate MethodChannel result.

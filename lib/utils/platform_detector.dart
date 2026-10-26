@@ -14,6 +14,8 @@ const _androidFeatureFireTv = 'amazon.hardware.fire_tv';
 const _androidFeatureTouchscreen = 'android.hardware.touchscreen';
 const _androidFeatureAutomotive = 'android.hardware.type.automotive';
 
+const bool _webOSBuild = bool.fromEnvironment('PLEZY_WEBOS');
+
 class AndroidTvFeatureDetection {
   final bool isTv;
 
@@ -67,7 +69,7 @@ bool pictureInPictureAllowed({
   required bool isAutomotive,
 }) => hostSupportsPictureInPicture && !isAppleTv && !isTv && !isAutomotive;
 
-/// Service for detecting if the app is running on Android TV or Apple TV.
+/// Service for detecting if the app is running on Android TV, Apple TV, or webOS TV.
 class TvDetectionService {
   static final AsyncSingleton<TvDetectionService> _singleton = AsyncSingleton();
   @visibleForTesting
@@ -94,7 +96,10 @@ class TvDetectionService {
     if (_initialized) return;
 
     final deviceInfo = DeviceInfoPlugin();
-    if (Platform.isAndroid) {
+    if (_webOSBuild) {
+      _detected = true;
+      _detectionReasons = const ['webos_build'];
+    } else if (Platform.isAndroid) {
       final nativeDetection = await _getNativeAndroidTvDetection();
       final detection =
           nativeDetection ?? detectAndroidTvFromSystemFeatures((await deviceInfo.androidInfo).systemFeatures);
@@ -178,11 +183,11 @@ class TvDetectionService {
   ///
   /// App code goes through the [PlatformDetector] facade ([PlatformDetector.isTV]
   /// and siblings); these raw accessors exist for the facade and tests.
-  static bool isTVSync() => _debugAppleTVOverride ?? _singleton.instance?.isTV ?? false;
+  static bool isTVSync() => _debugAppleTVOverride ?? (_webOSBuild || (_singleton.instance?.isTV ?? false));
 
   /// Synchronous TV-hardware check: [isTVSync] without the user's force-TV
   /// override (false before initialization).
-  static bool isTVDeviceSync() => _debugAppleTVOverride ?? _singleton.instance?._detected ?? false;
+  static bool isTVDeviceSync() => _debugAppleTVOverride ?? (_webOSBuild || (_singleton.instance?._detected ?? false));
 
   /// Synchronous Apple TV check (returns false if not initialized or not tvOS).
   static bool isAppleTVSync() => _debugAppleTVOverride ?? (_tvosBuild || _singleton.instance?._isAppleTV == true);
@@ -214,6 +219,10 @@ class TvDetectionService {
 }
 
 class PlatformDetector {
+  /// Flutter webOS uses Linux engine artifacts, so its package build sets this
+  /// compile-time flag to preserve TV behavior despite `dart:io` reporting Linux.
+  static bool isWebOSBuild() => _webOSBuild;
+
   static bool isTV() {
     return TvDetectionService.isTVSync();
   }
@@ -284,9 +293,8 @@ class PlatformDetector {
   /// True on the desktop OS (Windows / macOS / Linux), without needing a
   /// BuildContext. Use for OS-level capability checks (window state, native
   /// keyboard, etc.); use [isDesktop] for layout decisions.
-  static bool isDesktopOS() {
-    return _debugIsDesktopOSOverride ?? (Platform.isWindows || Platform.isMacOS || Platform.isLinux);
-  }
+  static bool isDesktopOS() =>
+      _debugIsDesktopOSOverride ?? (!_webOSBuild && (Platform.isWindows || Platform.isMacOS || Platform.isLinux));
 
   static bool? _debugIsDesktopOSOverride;
 

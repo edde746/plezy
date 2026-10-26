@@ -7,7 +7,9 @@ import 'package:plezy/utils/platform_detector.dart';
 void main() {
   setUp(() {
     TvDetectionService.debugReset();
+    PlatformDetector.debugSetIsDesktopOSOverride(null);
     addTearDown(TvDetectionService.debugReset);
+    addTearDown(() => PlatformDetector.debugSetIsDesktopOSOverride(null));
   });
 
   test('concurrent callers wait for TV detection', () async {
@@ -26,6 +28,18 @@ void main() {
     final instances = await Future.wait([first, second]);
     expect(identical(instances.first, instances.last), isTrue);
     expect(instances.first.isTV, isTrue);
+  });
+
+  test('webOS build is treated as a TV even though its engine uses Linux', () async {
+    if (!PlatformDetector.isWebOSBuild()) return;
+
+    final service = await TvDetectionService.getInstance();
+
+    expect(service.isTV, isTrue);
+    expect(PlatformDetector.isTV(), isTrue);
+    expect(PlatformDetector.isTVDevice(), isTrue);
+    expect(PlatformDetector.isDesktopOS(), isFalse);
+    expect(PlatformDetector.usesTvHomeLayout(), isTrue);
   });
 
   group('detectAndroidTvFromSystemFeatures', () {

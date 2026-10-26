@@ -8,6 +8,7 @@ import 'package:path_provider/path_provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../models/shader_preset.dart';
+import '../utils/app_cache_directory.dart';
 import '../utils/app_logger.dart';
 
 /// Utility class for loading GLSL shader assets for MPV video enhancement.
@@ -49,7 +50,7 @@ class ShaderAssetLoader {
   static Future<String> _getShaderDirectory() async {
     if (_cachedShaderDir != null) return _cachedShaderDir!;
 
-    final cacheDir = await getApplicationCacheDirectory();
+    final cacheDir = await getPlezyAppCacheDirectory();
     final shaderDir = Directory(path.join(cacheDir.path, 'shaders'));
     if (!await shaderDir.exists()) {
       await shaderDir.create(recursive: true);
