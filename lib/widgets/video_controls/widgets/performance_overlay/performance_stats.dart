@@ -1,5 +1,6 @@
 import 'package:plezy/i18n/presentation_formats.dart';
 import '../../../../i18n/strings.g.dart';
+import '../../../../media/dolby_vision_playback.dart';
 import '../../../../utils/codec_utils.dart';
 
 /// What decodes a Dolby Vision file on Android mpv. Wire ids match the
@@ -313,20 +314,29 @@ class PerformanceStats {
 
   /// Format Dolby Vision playback path. mpv's base layer is named by the
   /// transfer it decodes to, so a P8.1 fallback reads as HDR10 (#2534).
-  String get dvPlaybackPathFormatted => switch (dvRoute) {
-    DvRoute.dvDecoder => t.performanceOverlay.dvRouteDecoder,
-    DvRoute.dvDecoderP81 => t.performanceOverlay.dvRouteDecoderP81,
-    DvRoute.reshaped => t.performanceOverlay.dvRouteReshaped,
-    DvRoute.baseLayer => switch (gamma) {
-      'pq' => t.performanceOverlay.dvRouteBaseLayerHdr10,
-      'hlg' => t.performanceOverlay.dvRouteBaseLayerHlg,
-      null || '' || 'auto' => t.performanceOverlay.dvRouteBaseLayer,
-      _ => t.performanceOverlay.dvRouteBaseLayerSdr,
-    },
-    null => dvPlaybackPath ?? t.common.notAvailable,
-  };
+  String get dvPlaybackPathFormatted {
+    final path = switch (dvRoute) {
+      DvRoute.dvDecoder => t.performanceOverlay.dvRouteDecoder,
+      DvRoute.dvDecoderP81 => t.performanceOverlay.dvRouteDecoderP81,
+      DvRoute.reshaped => t.performanceOverlay.dvRouteReshaped,
+      DvRoute.baseLayer => switch (gamma) {
+        'pq' => t.performanceOverlay.dvRouteBaseLayerHdr10,
+        'hlg' => t.performanceOverlay.dvRouteBaseLayerHlg,
+        null || '' || 'auto' => t.performanceOverlay.dvRouteBaseLayer,
+        _ => t.performanceOverlay.dvRouteBaseLayerSdr,
+      },
+      null => dvPlaybackPath ?? t.common.notAvailable,
+    };
+    final layers = DolbyVisionPlayback.fromStats({
+      'dvSourceProfile': dvSourceProfile,
+      'dvRoute': dvRoute?.id,
+      'dvConversionActive': dvConversionActive,
+      'dvConversionMode': dvConversionMode,
+    }).layerNotation;
+    return layers.isEmpty ? path : '$path · $layers';
+  }
 
-  bool get hasDvPlaybackPath => dvRoute != null || dvPlaybackPath != null;
+  bool get hasDvPlaybackPath => dvRoute != null || dvPlaybackPath != null || dvSourceProfile == 7;
 
   String get dvRpuCountFormatted {
     final converted = dvConvertedRpus ?? 0;

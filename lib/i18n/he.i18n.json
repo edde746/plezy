@@ -630,7 +630,14 @@
     "regionFormat": "תבניות אזוריות",
     "regionFormatDescription": "בחירת אופן ההצגה של תאריכים, מספרים ויחידות מידה.",
     "metadataLanguage": "שפת פרטי המדיה",
-    "metadataLanguageDescription": "השפה המועדפת לשמות ולתיאורים, כשהשרת תומך בה. העדפות השמע והכתוביות מוגדרות בנפרד."
+    "metadataLanguageDescription": "השפה המועדפת לשמות ולתיאורים, כשהשרת תומך בה. העדפות השמע והכתוביות מוגדרות בנפרד.",
+    "experimentalDolbyVision": "Dolby Vision ניסיוני",
+    "experimentalDolbyVisionDescription": "שימוש במנוע הרינדור הניסיוני של FEL בהפעלה הבאה. נדרשת בנייה נפרדת של המנוע.",
+    "dvExperimentUnavailableDescription": "הניסוי הזה זמין כרגע רק ב-Linux.",
+    "dvCompatibilityFallback": "חלופת תאימות",
+    "dvCompatibilityFallbackDescription": "שימוש במנוע הרינדור הרגיל אם הניסוי לא מצליח להתחיל. נתוני FEL עלולים ללכת לאיבוד.",
+    "dvExperimentDiagnostics": "רישום יומן לניסוי הווידאו",
+    "dvExperimentDiagnosticsDescription": "הפעלת יומנים מפורטים של הנגן בהפעלה הבאה."
   },
   "themeEditor": {
     "builtIn": "בנוי",

@@ -628,7 +628,14 @@
     "regionFormat": "Területi formátumok",
     "regionFormatDescription": "Válassza ki a dátumok, számok és mértékegységek megjelenítési módját.",
     "metadataLanguage": "Metaadatok nyelve",
-    "metadataLanguageDescription": "A címek és leírások előnyben részesített nyelve, ha a kiszolgáló támogatja. A hang és a felirat nyelve külön állítható be."
+    "metadataLanguageDescription": "A címek és leírások előnyben részesített nyelve, ha a kiszolgáló támogatja. A hang és a felirat nyelve külön állítható be.",
+    "experimentalDolbyVision": "Kísérleti Dolby Vision",
+    "experimentalDolbyVisionDescription": "A következő lejátszáskor a kísérleti FEL-megjelenítő használata. Külön motorbuild szükséges.",
+    "dvExperimentUnavailableDescription": "Ez a kísérlet jelenleg csak Linuxon érhető el.",
+    "dvCompatibilityFallback": "Kompatibilitási tartalék mód",
+    "dvCompatibilityFallbackDescription": "Ha a kísérlet nem indul, a normál megjelenítő használata. A FEL-adatok elveszhetnek.",
+    "dvExperimentDiagnostics": "Videókísérlet naplózása",
+    "dvExperimentDiagnosticsDescription": "Részletes lejátszónaplók engedélyezése a következő lejátszáskor."
   },
   "themeEditor": {
     "builtIn": "Beépített",

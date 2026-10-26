@@ -761,6 +761,13 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Күндердің, сандардың және өлшем бірліктерінің көрсетілу пішімін таңдаңыз.';
 	@override String get metadataLanguage => 'Метадеректер тілі';
 	@override String get metadataLanguageDescription => 'Сервер қолдаса, атаулар мен сипаттамалар үшін қолданылатын тіл. Дыбыс пен субтитр тілі бөлек реттеледі.';
+	@override String get experimentalDolbyVision => 'Тәжірибелік Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Келесі ойнатуда тәжірибелік FEL рендерерін пайдалану. Қозғалтқыштың бөлек құрастырылымы қажет.';
+	@override String get dvExperimentUnavailableDescription => 'Бұл тәжірибе әзірге тек Linux жүйесінде қолжетімді.';
+	@override String get dvCompatibilityFallback => 'Үйлесімді қосалқы режим';
+	@override String get dvCompatibilityFallbackDescription => 'Тәжірибе басталмаса, стандартты рендерерді пайдалану. FEL деректері жоғалуы мүмкін.';
+	@override String get dvExperimentDiagnostics => 'Бейне тәжірибесін журналға жазу';
+	@override String get dvExperimentDiagnosticsDescription => 'Келесі ойнатуда ойнатқыштың егжей-тегжейлі журналдарын қосу.';
 }
 
 // Path: themeEditor
@@ -4805,6 +4812,13 @@ extension on TranslationsKk {
 			'settings.regionFormatDescription' => 'Күндердің, сандардың және өлшем бірліктерінің көрсетілу пішімін таңдаңыз.',
 			'settings.metadataLanguage' => 'Метадеректер тілі',
 			'settings.metadataLanguageDescription' => 'Сервер қолдаса, атаулар мен сипаттамалар үшін қолданылатын тіл. Дыбыс пен субтитр тілі бөлек реттеледі.',
+			'settings.experimentalDolbyVision' => 'Тәжірибелік Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Келесі ойнатуда тәжірибелік FEL рендерерін пайдалану. Қозғалтқыштың бөлек құрастырылымы қажет.',
+			'settings.dvExperimentUnavailableDescription' => 'Бұл тәжірибе әзірге тек Linux жүйесінде қолжетімді.',
+			'settings.dvCompatibilityFallback' => 'Үйлесімді қосалқы режим',
+			'settings.dvCompatibilityFallbackDescription' => 'Тәжірибе басталмаса, стандартты рендерерді пайдалану. FEL деректері жоғалуы мүмкін.',
+			'settings.dvExperimentDiagnostics' => 'Бейне тәжірибесін журналға жазу',
+			'settings.dvExperimentDiagnosticsDescription' => 'Келесі ойнатуда ойнатқыштың егжей-тегжейлі журналдарын қосу.',
 			'themeEditor.builtIn' => 'Кірістірілген',
 			'themeEditor.presets' => 'Дайын тақырыптар',
 			'themeEditor.custom' => 'Жеке',
@@ -5225,6 +5239,8 @@ extension on TranslationsKk {
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}" үшін сканерлеу басталды',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Кітапхананы сканерлеу мүмкін болмады: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '"${title}" үшін метадеректер жаңартылуда...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}" үшін метадеректерді жаңарту басталды',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Метадеректерді жаңарту мүмкін болмады: ${error}',
 			'messages.logoutConfirm' => 'Шынымен шыққыңыз келе ме?',
@@ -5232,8 +5248,6 @@ extension on TranslationsKk {
 			'messages.seasonsLoadFailed' => 'Маусымдарды жүктеу мүмкін болмады',
 			'messages.noEpisodesFound' => 'Бірінші маусымда бөлімдер табылмады',
 			'messages.noEpisodesFoundGeneral' => 'Бөлімдер табылмады',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Бөлімдерді жүктеу мүмкін болмады',
 			'messages.noResultsFound' => 'Нәтижелер табылмады',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Ұйқы таймері ${label} уақытына орнатылды',
@@ -5739,6 +5753,8 @@ extension on TranslationsKk {
 			'explore.selectSource' => 'Дереккөзді таңдаңыз',
 			'explore.rows.watchlist' => 'Көру тізімі',
 			'explore.rows.recommendedMovies' => 'Ұсынылатын фильмдер',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Ұсынылатын сериалдар',
 			'explore.rows.trendingMovies' => 'Трендтегі фильмдер',
 			'explore.rows.trendingShows' => 'Трендтегі сериалдар',
@@ -5746,8 +5762,6 @@ extension on TranslationsKk {
 			'explore.rows.popularShows' => 'Танымал сериалдар',
 			'explore.rows.trendingAnime' => 'Трендтегі аниме',
 			'explore.rows.suggestedAnime' => 'Ұсынылатын аниме',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Эфирдегі үздік аниме',
 			'explore.rows.popularAnime' => 'Ең танымал аниме',
 			'explore.rows.trending' => 'Трендтер',
@@ -6253,6 +6267,8 @@ extension on TranslationsKk {
 			'downloads.pauseAll' => 'Барлығын кідірту',
 			'downloads.resumeAll' => 'Барлығын жалғастыру',
 			'downloads.retryAll' => 'Барлығын қайталау',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => 'Сәтсіз жүктеулерді қайталау',
 			'downloads.deleteAll' => 'Барлығын өшіру',
 			'downloads.selectVersion' => 'Нұсқаны таңдау',
@@ -6260,8 +6276,6 @@ extension on TranslationsKk {
 			'downloads.unwatchedOnly' => 'Тек көрілмегендер',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Келесі ${count} көрілмеген',
 			'downloads.customAmount' => 'Арнайы мөлшер...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Өнімдер (ақықтық) және басқа да',
 			'downloads.randomEpisodes' => 'Ауызды',
 			'downloads.includeSpecials' => 'Арнайы бөлімдерді қосу',
@@ -6767,6 +6781,8 @@ extension on TranslationsKk {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '${product} қосылу',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Сервер URL мекенжайын, пайдаланушы атын және құпия сөзді енгізіңіз.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} серверіне кіріңіз. ${name} тіркелгісіне байланыстырылады.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Басқа профильден алу',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Басқа профильдің қосылымын қайта пайдалану. PIN кодпен қорғалған профильдер PIN кодты талап етеді.',
 			'addServer.invalidCredentials' => 'Пайдаланушы аты немесе құпия сөз қате',
@@ -6774,8 +6790,6 @@ extension on TranslationsKk {
 			'addServer.authResponseIncomplete' => 'Сервердің кіру жауабы толық емес',
 			'addServer.quickConnectRejected' => 'Сервер Quick Connect сұрауын қабылдамады',
 			'addServer.quickConnectNotJson' => 'Quick Connect жауабы жарамды JSON болмады',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect жауабында код немесе құпия кілт жоқ',
 			'addServer.quickConnectPollRejected' => 'Сервер Quick Connect сұрауын тексеруді қабылдамады',
 			'addServer.serverTimedOut' => 'Сервер уақытында жауап бермеді',

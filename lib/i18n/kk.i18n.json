@@ -628,7 +628,14 @@
     "regionFormat": "Аймақтық пішімдер",
     "regionFormatDescription": "Күндердің, сандардың және өлшем бірліктерінің көрсетілу пішімін таңдаңыз.",
     "metadataLanguage": "Метадеректер тілі",
-    "metadataLanguageDescription": "Сервер қолдаса, атаулар мен сипаттамалар үшін қолданылатын тіл. Дыбыс пен субтитр тілі бөлек реттеледі."
+    "metadataLanguageDescription": "Сервер қолдаса, атаулар мен сипаттамалар үшін қолданылатын тіл. Дыбыс пен субтитр тілі бөлек реттеледі.",
+    "experimentalDolbyVision": "Тәжірибелік Dolby Vision",
+    "experimentalDolbyVisionDescription": "Келесі ойнатуда тәжірибелік FEL рендерерін пайдалану. Қозғалтқыштың бөлек құрастырылымы қажет.",
+    "dvExperimentUnavailableDescription": "Бұл тәжірибе әзірге тек Linux жүйесінде қолжетімді.",
+    "dvCompatibilityFallback": "Үйлесімді қосалқы режим",
+    "dvCompatibilityFallbackDescription": "Тәжірибе басталмаса, стандартты рендерерді пайдалану. FEL деректері жоғалуы мүмкін.",
+    "dvExperimentDiagnostics": "Бейне тәжірибесін журналға жазу",
+    "dvExperimentDiagnosticsDescription": "Келесі ойнатуда ойнатқыштың егжей-тегжейлі журналдарын қосу."
   },
   "themeEditor": {
     "builtIn": "Кірістірілген",

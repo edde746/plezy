@@ -626,7 +626,14 @@
     "regionFormat": "区域格式",
     "regionFormatDescription": "选择日期、数字和计量单位的显示方式。",
     "metadataLanguage": "元数据语言",
-    "metadataLanguageDescription": "服务器支持时，优先使用此语言显示标题和简介。音频和字幕偏好单独设置。"
+    "metadataLanguageDescription": "服务器支持时，优先使用此语言显示标题和简介。音频和字幕偏好单独设置。",
+    "experimentalDolbyVision": "实验性 Dolby Vision",
+    "experimentalDolbyVisionDescription": "下次播放时使用实验性 FEL 渲染器。需要单独构建的播放引擎。",
+    "dvExperimentUnavailableDescription": "此实验目前仅支持 Linux。",
+    "dvCompatibilityFallback": "兼容性回退",
+    "dvCompatibilityFallbackDescription": "如果实验无法启动，则使用标准渲染器。FEL 数据可能会丢失。",
+    "dvExperimentDiagnostics": "视频实验日志",
+    "dvExperimentDiagnosticsDescription": "在下次播放时启用详细的播放器日志。"
   },
   "themeEditor": {
     "builtIn": "内置",

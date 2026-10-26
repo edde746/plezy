@@ -626,7 +626,14 @@
     "regionFormat": "Format regional",
     "regionFormatDescription": "Pilih cara menampilkan tanggal, angka, dan satuan ukuran.",
     "metadataLanguage": "Bahasa metadata",
-    "metadataLanguageDescription": "Bahasa judul dan deskripsi yang diutamakan jika didukung server. Preferensi audio dan subtitel diatur secara terpisah."
+    "metadataLanguageDescription": "Bahasa judul dan deskripsi yang diutamakan jika didukung server. Preferensi audio dan subtitel diatur secara terpisah.",
+    "experimentalDolbyVision": "Dolby Vision eksperimental",
+    "experimentalDolbyVisionDescription": "Gunakan perender FEL eksperimental pada pemutaran berikutnya. Memerlukan build mesin terpisah.",
+    "dvExperimentUnavailableDescription": "Eksperimen ini saat ini hanya tersedia di Linux.",
+    "dvCompatibilityFallback": "Cadangan kompatibilitas",
+    "dvCompatibilityFallbackDescription": "Gunakan perender standar jika eksperimen tidak dapat dimulai. Data FEL mungkin hilang.",
+    "dvExperimentDiagnostics": "Pencatatan eksperimen video",
+    "dvExperimentDiagnosticsDescription": "Aktifkan log pemutar terperinci pada pemutaran berikutnya."
   },
   "themeEditor": {
     "builtIn": "dibangun",

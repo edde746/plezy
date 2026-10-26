@@ -759,6 +759,13 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get regionFormatDescription => '日付、数値、単位の表示形式を選択します。';
 	@override String get metadataLanguage => 'メタデータの言語';
 	@override String get metadataLanguageDescription => 'サーバーが対応している場合に、タイトルと説明に使用する言語です。音声と字幕の言語は別に設定します。';
+	@override String get experimentalDolbyVision => '実験的なDolby Vision';
+	@override String get experimentalDolbyVisionDescription => '次の再生で実験的なFELレンダラーを使用します。別途ビルドしたエンジンが必要です。';
+	@override String get dvExperimentUnavailableDescription => 'この実験は現在Linuxでのみ利用できます。';
+	@override String get dvCompatibilityFallback => '互換性フォールバック';
+	@override String get dvCompatibilityFallbackDescription => '実験を開始できない場合は標準レンダラーを使用します。FELデータが失われる可能性があります。';
+	@override String get dvExperimentDiagnostics => '動画実験のログ記録';
+	@override String get dvExperimentDiagnosticsDescription => '次の再生でプレーヤーの詳細ログを有効にします。';
 }
 
 // Path: themeEditor
@@ -4800,6 +4807,13 @@ extension on TranslationsJa {
 			'settings.regionFormatDescription' => '日付、数値、単位の表示形式を選択します。',
 			'settings.metadataLanguage' => 'メタデータの言語',
 			'settings.metadataLanguageDescription' => 'サーバーが対応している場合に、タイトルと説明に使用する言語です。音声と字幕の言語は別に設定します。',
+			'settings.experimentalDolbyVision' => '実験的なDolby Vision',
+			'settings.experimentalDolbyVisionDescription' => '次の再生で実験的なFELレンダラーを使用します。別途ビルドしたエンジンが必要です。',
+			'settings.dvExperimentUnavailableDescription' => 'この実験は現在Linuxでのみ利用できます。',
+			'settings.dvCompatibilityFallback' => '互換性フォールバック',
+			'settings.dvCompatibilityFallbackDescription' => '実験を開始できない場合は標準レンダラーを使用します。FELデータが失われる可能性があります。',
+			'settings.dvExperimentDiagnostics' => '動画実験のログ記録',
+			'settings.dvExperimentDiagnosticsDescription' => '次の再生でプレーヤーの詳細ログを有効にします。',
 			'themeEditor.builtIn' => '標準',
 			'themeEditor.presets' => 'プリセット',
 			'themeEditor.custom' => 'カスタム',
@@ -5220,6 +5234,8 @@ extension on TranslationsJa {
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}"のライブラリスキャンを開始しました',
 			'messages.libraryScanFailed' => ({required Object error}) => 'ライブラリのスキャンに失敗しました: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '「${title}」のメタデータを更新中…',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}"のメタデータ更新を開始しました',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'メタデータの更新に失敗しました: ${error}',
 			'messages.logoutConfirm' => 'ログアウトしてもよろしいですか？',
@@ -5227,8 +5243,6 @@ extension on TranslationsJa {
 			'messages.seasonsLoadFailed' => 'シーズンを読み込めませんでした',
 			'messages.noEpisodesFound' => '最初のシーズンにエピソードが見つかりません',
 			'messages.noEpisodesFoundGeneral' => 'エピソードが見つかりません',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'エピソードを読み込めませんでした',
 			'messages.noResultsFound' => '結果が見つかりません',
 			'messages.sleepTimerSet' => ({required Object label}) => 'スリープタイマーを${label}に設定しました',
@@ -5734,6 +5748,8 @@ extension on TranslationsJa {
 			'explore.selectSource' => 'ソースを選択',
 			'explore.rows.watchlist' => 'ウォッチリスト',
 			'explore.rows.recommendedMovies' => 'おすすめの映画',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'おすすめのテレビ番組',
 			'explore.rows.trendingMovies' => 'トレンドの映画',
 			'explore.rows.trendingShows' => 'トレンドのテレビ番組',
@@ -5741,8 +5757,6 @@ extension on TranslationsJa {
 			'explore.rows.popularShows' => '人気のテレビ番組',
 			'explore.rows.trendingAnime' => 'トレンドのアニメ',
 			'explore.rows.suggestedAnime' => 'おすすめのアニメ',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => '放送中の注目アニメ',
 			'explore.rows.popularAnime' => '人気のアニメ',
 			'explore.rows.trending' => 'トレンド',
@@ -6248,6 +6262,8 @@ extension on TranslationsJa {
 			'downloads.pauseAll' => 'すべて一時停止',
 			'downloads.resumeAll' => 'すべて再開',
 			'downloads.retryAll' => 'すべて再試行',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => '失敗したダウンロードを再試行',
 			'downloads.deleteAll' => 'すべて削除',
 			'downloads.selectVersion' => 'バージョンを選択',
@@ -6255,8 +6271,6 @@ extension on TranslationsJa {
 			'downloads.unwatchedOnly' => '未視聴のみ',
 			'downloads.nextNUnwatched' => ({required Object count}) => '次の${count}件の未視聴',
 			'downloads.customAmount' => '数を指定…',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => '定量(毎回)',
 			'downloads.randomEpisodes' => 'ランダムエピソード',
 			'downloads.includeSpecials' => 'スペシャルを含める',
@@ -6762,6 +6776,8 @@ extension on TranslationsJa {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '${product}に接続',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'サーバーのURL、ユーザー名、パスワードを入力してください。',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product}サーバーにサインインします。「${name}」に紐付けられます。',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => '別のプロフィールの接続を利用',
 			'addServer.borrowFromAnotherProfileSubtitle' => '別のプロフィールの接続を再利用します。PINで保護されたプロフィールにはPINが必要です。',
 			'addServer.invalidCredentials' => 'ユーザー名またはパスワードが正しくありません',
@@ -6769,8 +6785,6 @@ extension on TranslationsJa {
 			'addServer.authResponseIncomplete' => 'サーバーからのサインイン応答が不完全です',
 			'addServer.quickConnectRejected' => 'Quick Connectがサーバーに拒否されました',
 			'addServer.quickConnectNotJson' => 'Quick Connectのレスポンスが有効なJSONではありません',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connectのレスポンスにコードまたはシークレットがありません',
 			'addServer.quickConnectPollRejected' => 'Quick Connectのポーリングがサーバーに拒否されました',
 			'addServer.serverTimedOut' => 'サーバーが時間内に応答しませんでした',

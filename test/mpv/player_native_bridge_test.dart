@@ -69,6 +69,42 @@ Future<void> _sendPlatformEvent(Object? event) async {
 }
 
 void main() {
+  test('Linux experiment preferences reach native initialization and stay device-local', () async {
+    resetSharedPreferencesForTest();
+    final settings = await SettingsService.getInstance();
+    await settings.write(SettingsService.experimentalDolbyVision, true);
+    await settings.write(SettingsService.dvCompatibilityFallback, false);
+    PlayerNative.debugUseLinuxVideoPlane = true;
+    addTearDown(() => PlayerNative.debugUseLinuxVideoPlane = null);
+    expect(SettingsService.portablePrefs, isNot(contains(SettingsService.experimentalDolbyVision)));
+    expect(SettingsService.portablePrefs, isNot(contains(SettingsService.dvCompatibilityFallback)));
+    Map? initArgs;
+    await withMockPlayerChannels(
+      methodChannelName: 'com.plezy/mpv_player',
+      eventChannelName: 'com.plezy/mpv_player/events',
+      methodHandler: (call) async {
+        if (call.method == 'initialize') {
+          initArgs = call.arguments as Map;
+          return true;
+        }
+        return null;
+      },
+      testBody: () async {
+        final player = PlayerNative();
+        try {
+          await player.open(Media('https://example.test/media.mkv'));
+          expect(initArgs?['experimentalDolbyVision'], isTrue);
+          expect(initArgs?['dvCompatibilityFallback'], isFalse);
+        } finally {
+          await player.dispose();
+        }
+      },
+    );
+    await settings.resetAllSettings();
+    expect(settings.read(SettingsService.experimentalDolbyVision), isFalse);
+    expect(settings.read(SettingsService.dvCompatibilityFallback), isTrue);
+  });
+
   for (final audioOnly in [false, true]) {
     test('TLS verification precedes every ${audioOnly ? 'audio' : 'video'} load', () async {
       final methods = <String>[];
@@ -165,7 +201,14 @@ void main() {
           try {
             await player.setLogLevel('warn');
             final init = calls.singleWhere((call) => call.method == 'initialize');
-            expect(init.arguments, {'hardwareDecoding': hardwareDecoding, 'instanceId': player.nativeInstanceId});
+            expect(init.arguments, {
+              'hardwareDecoding': hardwareDecoding,
+              if (PlayerNative.usesLinuxVideoPlane) ...{
+                'experimentalDolbyVision': false,
+                'dvCompatibilityFallback': true,
+              },
+              'instanceId': player.nativeInstanceId,
+            });
           } finally {
             await player.dispose();
           }

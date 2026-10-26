@@ -632,7 +632,14 @@
     "regionFormat": "Регіональні формати",
     "regionFormatDescription": "Виберіть формат відображення дат, чисел і одиниць вимірювання.",
     "metadataLanguage": "Мова метаданих",
-    "metadataLanguageDescription": "Бажана мова назв та описів, якщо сервер її підтримує. Налаштування звуку й субтитрів залишаються окремими."
+    "metadataLanguageDescription": "Бажана мова назв та описів, якщо сервер її підтримує. Налаштування звуку й субтитрів залишаються окремими.",
+    "experimentalDolbyVision": "Експериментальний Dolby Vision",
+    "experimentalDolbyVisionDescription": "Під час наступного відтворення використовувати експериментальний рендерер FEL. Потрібна окрема збірка рушія.",
+    "dvExperimentUnavailableDescription": "Цей експеримент наразі доступний лише в Linux.",
+    "dvCompatibilityFallback": "Резервний режим сумісності",
+    "dvCompatibilityFallbackDescription": "Використовувати стандартний рендерер, якщо експеримент не запускається. Дані FEL можуть бути втрачені.",
+    "dvExperimentDiagnostics": "Журнал відеоексперименту",
+    "dvExperimentDiagnosticsDescription": "Увімкнути докладні журнали програвача під час наступного відтворення."
   },
   "themeEditor": {
     "builtIn": "Будівництво",

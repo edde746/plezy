@@ -761,6 +761,13 @@ class _Translations$settings$hi extends Translations$settings$en {
 	@override String get regionFormatDescription => 'तारीखें, संख्याएँ और माप दिखाने का तरीका चुनें।';
 	@override String get metadataLanguage => 'मीडिया विवरण की भाषा';
 	@override String get metadataLanguageDescription => 'सर्वर के समर्थन के अनुसार शीर्षकों और विवरणों की पसंदीदा भाषा। ऑडियो और उपशीर्षक की प्राथमिकताएँ अलग रहती हैं।';
+	@override String get experimentalDolbyVision => 'प्रायोगिक Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'अगले प्लेबैक में प्रायोगिक FEL रेंडरर का उपयोग करें। इसके लिए इंजन का अलग बिल्ड चाहिए।';
+	@override String get dvExperimentUnavailableDescription => 'यह प्रयोग फ़िलहाल केवल Linux पर उपलब्ध है।';
+	@override String get dvCompatibilityFallback => 'अनुकूलता विकल्प';
+	@override String get dvCompatibilityFallbackDescription => 'प्रयोग शुरू न हो पाए तो मानक रेंडरर का उपयोग करें। FEL डेटा खो सकता है।';
+	@override String get dvExperimentDiagnostics => 'वीडियो प्रयोग की लॉगिंग';
+	@override String get dvExperimentDiagnosticsDescription => 'अगले प्लेबैक में प्लेयर के विस्तृत लॉग सक्षम करें।';
 }
 
 // Path: themeEditor
@@ -4805,6 +4812,13 @@ extension on TranslationsHi {
 			'settings.regionFormatDescription' => 'तारीखें, संख्याएँ और माप दिखाने का तरीका चुनें।',
 			'settings.metadataLanguage' => 'मीडिया विवरण की भाषा',
 			'settings.metadataLanguageDescription' => 'सर्वर के समर्थन के अनुसार शीर्षकों और विवरणों की पसंदीदा भाषा। ऑडियो और उपशीर्षक की प्राथमिकताएँ अलग रहती हैं।',
+			'settings.experimentalDolbyVision' => 'प्रायोगिक Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'अगले प्लेबैक में प्रायोगिक FEL रेंडरर का उपयोग करें। इसके लिए इंजन का अलग बिल्ड चाहिए।',
+			'settings.dvExperimentUnavailableDescription' => 'यह प्रयोग फ़िलहाल केवल Linux पर उपलब्ध है।',
+			'settings.dvCompatibilityFallback' => 'अनुकूलता विकल्प',
+			'settings.dvCompatibilityFallbackDescription' => 'प्रयोग शुरू न हो पाए तो मानक रेंडरर का उपयोग करें। FEL डेटा खो सकता है।',
+			'settings.dvExperimentDiagnostics' => 'वीडियो प्रयोग की लॉगिंग',
+			'settings.dvExperimentDiagnosticsDescription' => 'अगले प्लेबैक में प्लेयर के विस्तृत लॉग सक्षम करें।',
 			'themeEditor.builtIn' => 'इमारत में',
 			'themeEditor.presets' => 'उपन्यास',
 			'themeEditor.custom' => 'कस्टम',
@@ -5225,6 +5239,8 @@ extension on TranslationsHi {
 			'messages.libraryScanStarted' => ({required Object title}) => 'पुस्तकालय स्कैन "${title}" के लिए शुरू हुआ',
 			'messages.libraryScanFailed' => ({required Object error}) => 'पुस्तकालय स्कैन करने में विफलता: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '"${title}" के लिए ताज़ा मेटाडेटा ...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}" के लिए मेटाडेटा रिफ्रेश शुरू हुआ',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'मेटाडेटा को पुनर्जीवित करने में विफलता: ${error}',
 			'messages.logoutConfirm' => 'क्या आप निश्चित हैं कि आप लॉग इन करना चाहते हैं?',
@@ -5232,8 +5248,6 @@ extension on TranslationsHi {
 			'messages.seasonsLoadFailed' => 'मौसम नहीं ले सकते',
 			'messages.noEpisodesFound' => 'पहली सीजन में कोई घटना नहीं मिली',
 			'messages.noEpisodesFoundGeneral' => 'कोई घटना नहीं मिली',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'घटनाओं को लोड नहीं किया जा सकता',
 			'messages.noResultsFound' => 'कोई परिणाम नहीं मिला',
 			'messages.sleepTimerSet' => ({required Object label}) => 'नींद टाइमर सेट ${label} के लिए',
@@ -5739,6 +5753,8 @@ extension on TranslationsHi {
 			'explore.selectSource' => 'स्रोत चुनें',
 			'explore.rows.watchlist' => 'चेकलिस्ट',
 			'explore.rows.recommendedMovies' => 'अनुशंसित फिल्में',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'अनुशंसित शो',
 			'explore.rows.trendingMovies' => 'ट्रेंड फिल्में',
 			'explore.rows.trendingShows' => 'ट्रेंड शो',
@@ -5746,8 +5762,6 @@ extension on TranslationsHi {
 			'explore.rows.popularShows' => 'लोकप्रिय शो',
 			'explore.rows.trendingAnime' => 'एनिमेटेड ट्रेंड',
 			'explore.rows.suggestedAnime' => 'अनुशंसित एनीम',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'शीर्ष एनीमिया',
 			'explore.rows.popularAnime' => 'सबसे लोकप्रिय एनीमिया',
 			'explore.rows.trending' => 'रुझान',
@@ -6253,6 +6267,8 @@ extension on TranslationsHi {
 			'downloads.pauseAll' => 'सबको आराम',
 			'downloads.resumeAll' => 'सभी को संक्षेप में',
 			'downloads.retryAll' => 'सबको वापस',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => 'असफल डाउनलोड करें',
 			'downloads.deleteAll' => 'डिलीट सभी',
 			'downloads.selectVersion' => 'चुनें संस्करण',
@@ -6260,8 +6276,6 @@ extension on TranslationsHi {
 			'downloads.unwatchedOnly' => 'अनदेखा केवल',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'अगला ${count} अनदेखा किया गया',
 			'downloads.customAmount' => 'कस्टम राशि...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'प्रत्येक व्यक्ति की मात्रा (प्रत्येक व्यक्ति)',
 			'downloads.randomEpisodes' => 'यादृच्छिक घटनाएं',
 			'downloads.includeSpecials' => 'विशेषताएं शामिल हैं',
@@ -6767,6 +6781,8 @@ extension on TranslationsHi {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'कनेक्ट करें ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'अपने सर्वर URL, उपयोगकर्ता नाम और पासवर्ड दर्ज करें।',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'अपने सर्वर ${product} पर साइन इन करें. ${name} पर लिंक करें.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'एक और प्रोफ़ाइल से ऋण',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'एक और प्रोफ़ाइल कनेक्शन का पुन: उपयोग करें. PIN-सुरक्षित प्रोफ़ाइलों को एक PIN की आवश्यकता होती है.',
 			'addServer.invalidCredentials' => 'अक्षम उपयोगकर्ता नाम या पासवर्ड',
@@ -6774,8 +6790,6 @@ extension on TranslationsHi {
 			'addServer.authResponseIncomplete' => 'सर्वर से साइन-इन प्रतिक्रिया अपूर्ण थी',
 			'addServer.quickConnectRejected' => 'Quick Connect सर्वर द्वारा अस्वीकार कर दिया गया था',
 			'addServer.quickConnectNotJson' => 'Quick Connect जवाब JSON वैध नहीं था',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect का जवाब एक कोड या रहस्य की कमी है',
 			'addServer.quickConnectPollRejected' => 'Quick Connect पूछताछ सर्वर द्वारा अस्वीकार कर दिया गया था',
 			'addServer.serverTimedOut' => 'सर्वर ने समय पर जवाब नहीं दिया',

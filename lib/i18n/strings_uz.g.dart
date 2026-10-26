@@ -103,6 +103,7 @@ class TranslationsUz extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$platform$uz platform = _Translations$platform$uz._(_root);
 	@override late final _Translations$fileSources$uz fileSources = _Translations$fileSources$uz._(_root);
 	@override late final _Translations$lending$uz lending = _Translations$lending$uz._(_root);
+	@override late final _Translations$audiobook$uz audiobook = _Translations$audiobook$uz._(_root);
 }
 
 // Path: app
@@ -760,6 +761,13 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Sana, sonlar va oʻlchov birliklari qanday koʻrsatilishini tanlang.';
 	@override String get metadataLanguage => 'Metamaʼlumotlar tili';
 	@override String get metadataLanguageDescription => 'Server qoʻllab-quvvatlasa, sarlavha va tavsiflar uchun afzal til. Audio va subtitr tili alohida sozlanadi.';
+	@override String get experimentalDolbyVision => 'Tajribaviy Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Keyingi ijroda tajribaviy FEL renderidan foydalaning. Dvigatelning alohida yig‘ilmasi talab qilinadi.';
+	@override String get dvExperimentUnavailableDescription => 'Bu tajriba hozircha faqat Linux tizimida mavjud.';
+	@override String get dvCompatibilityFallback => 'Moslik uchun zaxira rejim';
+	@override String get dvCompatibilityFallbackDescription => 'Tajriba boshlanmasa, standart renderdan foydalaning. FEL ma’lumotlari yo‘qolishi mumkin.';
+	@override String get dvExperimentDiagnostics => 'Video tajribasi jurnali';
+	@override String get dvExperimentDiagnosticsDescription => 'Keyingi ijroda pleyerning batafsil jurnallarini yoqing.';
 }
 
 // Path: themeEditor
@@ -1521,6 +1529,7 @@ class _Translations$discover$uz extends Translations$discover$en {
 	@override String playEpisode({required Object season, required Object episode}) => 'M${season}Q${episode}';
 	@override String get overview => 'Tavsif';
 	@override String get cast => 'Aktyorlar';
+	@override late final _Translations$discover$findNext$uz findNext = _Translations$discover$findNext$uz._(_root);
 	@override String get extras => 'Treylerlar va qoʻshimchalar';
 	@override String get studio => 'Studiya';
 	@override String get rating => 'Reyting';
@@ -3116,6 +3125,66 @@ class _Translations$lending$uz extends Translations$lending$en {
 	@override String get editEmail => 'Email Notifikacion';
 }
 
+// Path: audiobook
+class _Translations$audiobook$uz extends Translations$audiobook$en {
+	_Translations$audiobook$uz._(TranslationsUz root) : this._root = root, super.internal(root);
+
+	final TranslationsUz _root; // ignore: unused_field
+
+	// Translations
+	@override String get syncTitle => 'Okum & dining sync';
+	@override String get syncHelp => 'Okuma pozsiya, okuma pozisyonlar, completion status, bookmarks, notlar siz cihazlarınızda. Added stockage account seçin ve hər cihazda aynı sinq kod kullanın. Okuma və dinim ayaladi.';
+	@override String get addSyncSource => 'Google Drive, OneDrive, Dropbox, WebDAV o S3\'i fillar və kitablar qoladi.';
+	@override String get syncDestination => 'Sync bilan bilan bilan';
+	@override String get syncFolder => 'Filmi ya prefix.';
+	@override String get syncFolderHelp => 'WebDAV kaynağınızda, ya da dedikadi S3 prefix\'i bir separat bilan folder kullan. Book files is never changed.';
+	@override String get syncCode => 'Sink kodlar';
+	@override String get syncCodeHelp => 'Bir kod o‘ziz, sonra o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘z.';
+	@override String get showCode => 'Sink-kodni koʻyadi koʻyadi.';
+	@override String get newSyncCode => 'Yeni bir sinq-kodi yaratlar.';
+	@override String get saveSync => 'Save and synq.';
+	@override String get disableSync => 'Bu cihazda synchroniziziziziziz.';
+	@override String get syncSourceDisconnect => 'Bu kayndan qaytdan o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi.';
+	@override String get syncReconnect => 'Hesab bilan bilan bilan bilan bilan bilan';
+	@override String lastSynced({required Object time}) => '${time}\'da sonda sinqizdi';
+	@override String get syncPrivacy => 'Biz xifriyo bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan.';
+	@override String get syncConflicts => 'Onda qaytarga qaytarga.';
+	@override String get conflictHelp => 'Bu modifikasyonlar bağımsızdan ko‘zadi. ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi';
+	@override String syncDevice({required Object device}) => '${device}';
+	@override String get syncUnknownDevice => 'U‘zari';
+	@override String get deletedBookmark => 'Bookmark bilan bilan bilan';
+	@override String get finished => 'Konni';
+	@override String readingPosition({required Object percent}) => '${percent} %';
+	@override String get chapterTimeline => 'Kapital bilan bilan';
+	@override String get bookTimeline => 'Kitab bilan progresi';
+	@override String bookRemaining({required Object time}) => '${time} bu kitabda qaytadi.';
+	@override String chapterRemaining({required Object time}) => 'Bu kapitalda kalan zaman: ${time}';
+	@override String get unknownRemaining => 'Total time available as parts is playing. — Tull time available as parts are playing. — Tull time available as parts are playing. — Tull time available as parts are playing.';
+	@override String get undoSeek => 'Songa ko‘zadi.';
+	@override String get customSpeed => 'Custom playback ritmi.';
+	@override String get speedHelp => 'Siz 0.25 x 4 x o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z';
+	@override String get apply => 'Diggadi';
+	@override String get customSleep => 'Custom uyumalar';
+	@override String get sleepMinutes => '1 – 440 min)';
+	@override String sleepChapters({required Object count}) => '${count} kapitallardan sonra durga';
+	@override String get extendSleep => '5 dakikadi';
+	@override String sleepRemaining({required Object time}) => 'U\'qiziziz: ${time}';
+	@override String get useDefaults => 'Yeni kitaplar için bu dining kontrollar kullanın.';
+	@override String get librarySort => 'Kitajlar';
+	@override String get sortTitle => 'Tadiya';
+	@override String get sortAuthor => 'Avtor';
+	@override String get sortNarrator => 'Hikmatlar';
+	@override String get sortSeries => 'Seriyadi';
+	@override String get sortRecent => 'U‘zʻzʻzʻzʻzʻzʻzʻ';
+	@override String get statusFilter => 'Okumaya status';
+	@override String get statusAll => 'Bütün kitablar';
+	@override String get statusNew => 'Başlamad';
+	@override String get statusProgress => 'Tadiqadi';
+	@override String get statusFinished => 'Konni';
+	@override String get goToTime => 'O‘zadi.';
+	@override String get timeHelp => 'Hours:minuts:seconds, o minutlar:seconds';
+}
+
 // Path: appIcon.names
 class _Translations$appIcon$names$uz extends Translations$appIcon$names$en {
 	_Translations$appIcon$names$uz._(TranslationsUz root) : this._root = root, super.internal(root);
@@ -3358,6 +3427,57 @@ class _Translations$accountPreferences$mediaReviewsOptions$uz extends Translatio
 	@override String get usersOnly => 'Faqat foydalanuvchilar';
 	@override String get criticsOnly => 'Faqat tanqidchilar';
 	@override String get nobody => 'Yashirilgan';
+}
+
+// Path: discover.findNext
+class _Translations$discover$findNext$uz extends Translations$discover$findNext$en {
+	_Translations$discover$findNext$uz._(TranslationsUz root) : this._root = root, super.internal(root);
+
+	final TranslationsUz _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => 'Next sizga bulga';
+	@override String get open => 'Next sizga bulga';
+	@override String get anyTime => 'Her zaman';
+	@override String get timeAvailable => 'Siz o‘zʻzʻzʻzʻzʻzʻ?';
+	@override String get filters => 'O’qimni seçdi';
+	@override String get watch => 'Tadiq';
+	@override String get listen => 'Ulu';
+	@override String get read => 'Okuma';
+	@override String finishable({required Object duration}) => '${duration}\'da qaytadi';
+	@override String aboutDuration({required Object duration}) => '${duration} qxzq qxzq';
+	@override String nextUnit({required Object duration}) => 'Next post · ${duration}';
+	@override String totalDuration({required Object duration}) => '${duration} total';
+	@override String get timingVaries => 'Tarifimiz variadi';
+	@override String get notNow => 'Şimdi ko‘z';
+	@override String get swipeHint => 'U‘z, o‘z bu‘z bu‘z bu‘z bu‘z bu‘z bu‘z';
+	@override String get saved => 'Pikaqlar bilan';
+	@override String savedCount({required Object count}) => '${count}';
+	@override String get undo => 'O‘z';
+	@override String get details => 'Detaylar';
+	@override String get noPicks => 'U‘zari ko‘zari ko‘zari.';
+	@override String get noPicksHint => 'Bir kütüphan bağlayın ya da başlatmak için bir medya kaynaq qoşun.';
+	@override String get noMatches => 'Bir şey bu momni ko‘yadi.';
+	@override String get noMatchesHint => 'Bir formati ko‘di o‘di o‘di o‘di o‘di o‘di o‘di.';
+	@override String get allDone => 'Sizga hepsi yakadi.';
+	@override String get allDoneHint => 'Bu seçimler qaytarga qaytarga qaytarga qaytarga.';
+	@override String get refresh => 'Bir mix ko‘yadi.';
+	@override String sourceReason({required Object source}) => '${source} qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq';
+	@override String libraryReason({required Object library}) => '${library} qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq';
+	@override String get ownedReason => 'Bu librariyizdan';
+	@override String get liveNow => 'Onda';
+	@override String get watchLive => 'Live o‘zadi';
+	@override String get filterAnything => 'O‘yadi';
+	@override String get filterWatch => 'Tadiq';
+	@override String get filterListen => 'Ulu';
+	@override String get filterRead => 'Okuma';
+	@override String get twentyMinutes => '20 min';
+	@override String get fortyFiveMinutes => '45 min';
+	@override String get ninetyMinutes => '90 min';
+	@override String get apply => 'Diggadi';
+	@override String get openFailed => 'Bu seçenek artık kullanılmadi. refresh ko\'t check again.';
+	@override String get changeFailed => 'Bu cambiadi ko‘yadi. qaytarga ko‘yadi.';
+	@override String get savedLimit => 'U\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo.';
 }
 
 // Path: discover.person
@@ -4692,6 +4812,13 @@ extension on TranslationsUz {
 			'settings.regionFormatDescription' => 'Sana, sonlar va oʻlchov birliklari qanday koʻrsatilishini tanlang.',
 			'settings.metadataLanguage' => 'Metamaʼlumotlar tili',
 			'settings.metadataLanguageDescription' => 'Server qoʻllab-quvvatlasa, sarlavha va tavsiflar uchun afzal til. Audio va subtitr tili alohida sozlanadi.',
+			'settings.experimentalDolbyVision' => 'Tajribaviy Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Keyingi ijroda tajribaviy FEL renderidan foydalaning. Dvigatelning alohida yig‘ilmasi talab qilinadi.',
+			'settings.dvExperimentUnavailableDescription' => 'Bu tajriba hozircha faqat Linux tizimida mavjud.',
+			'settings.dvCompatibilityFallback' => 'Moslik uchun zaxira rejim',
+			'settings.dvCompatibilityFallbackDescription' => 'Tajriba boshlanmasa, standart renderdan foydalaning. FEL ma’lumotlari yo‘qolishi mumkin.',
+			'settings.dvExperimentDiagnostics' => 'Video tajribasi jurnali',
+			'settings.dvExperimentDiagnosticsDescription' => 'Keyingi ijroda pleyerning batafsil jurnallarini yoqing.',
 			'themeEditor.builtIn' => 'Oʻrnatilgan',
 			'themeEditor.presets' => 'Tayyor mavzular',
 			'themeEditor.custom' => 'Shaxsiy',
@@ -5112,6 +5239,8 @@ extension on TranslationsUz {
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}" uchun skanerlash boshlandi',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Kutubxonani skanerlab boʻlmadi: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '"${title}" uchun metamaʼlumotlar yangilanmoqda...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}" uchun metamaʼlumotlarni yangilash boshlandi',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Metamaʼlumotlarni yangilab boʻlmadi: ${error}',
 			'messages.logoutConfirm' => 'Haqiqatan ham chiqmoqchimisiz?',
@@ -5119,8 +5248,6 @@ extension on TranslationsUz {
 			'messages.seasonsLoadFailed' => 'Mavsumlarni yuklab boʻlmadi',
 			'messages.noEpisodesFound' => 'Birinchi mavsumda qismlar topilmadi',
 			'messages.noEpisodesFoundGeneral' => 'Qismlar topilmadi',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Qismlarni yuklab boʻlmadi',
 			'messages.noResultsFound' => 'Natijalar topilmadi',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Uyqu taymeri ${label} vaqtiga oʻrnatildi',
@@ -5347,6 +5474,48 @@ extension on TranslationsUz {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'M${season}Q${episode}',
 			'discover.overview' => 'Tavsif',
 			'discover.cast' => 'Aktyorlar',
+			'discover.findNext.title' => 'Next sizga bulga',
+			'discover.findNext.open' => 'Next sizga bulga',
+			'discover.findNext.anyTime' => 'Her zaman',
+			'discover.findNext.timeAvailable' => 'Siz o‘zʻzʻzʻzʻzʻzʻ?',
+			'discover.findNext.filters' => 'O’qimni seçdi',
+			'discover.findNext.watch' => 'Tadiq',
+			'discover.findNext.listen' => 'Ulu',
+			'discover.findNext.read' => 'Okuma',
+			'discover.findNext.finishable' => ({required Object duration}) => '${duration}\'da qaytadi',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => '${duration} qxzq qxzq',
+			'discover.findNext.nextUnit' => ({required Object duration}) => 'Next post · ${duration}',
+			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} total',
+			'discover.findNext.timingVaries' => 'Tarifimiz variadi',
+			'discover.findNext.notNow' => 'Şimdi ko‘z',
+			'discover.findNext.swipeHint' => 'U‘z, o‘z bu‘z bu‘z bu‘z bu‘z bu‘z bu‘z',
+			'discover.findNext.saved' => 'Pikaqlar bilan',
+			'discover.findNext.savedCount' => ({required Object count}) => '${count}',
+			'discover.findNext.undo' => 'O‘z',
+			'discover.findNext.details' => 'Detaylar',
+			'discover.findNext.noPicks' => 'U‘zari ko‘zari ko‘zari.',
+			'discover.findNext.noPicksHint' => 'Bir kütüphan bağlayın ya da başlatmak için bir medya kaynaq qoşun.',
+			'discover.findNext.noMatches' => 'Bir şey bu momni ko‘yadi.',
+			'discover.findNext.noMatchesHint' => 'Bir formati ko‘di o‘di o‘di o‘di o‘di o‘di o‘di.',
+			'discover.findNext.allDone' => 'Sizga hepsi yakadi.',
+			'discover.findNext.allDoneHint' => 'Bu seçimler qaytarga qaytarga qaytarga qaytarga.',
+			'discover.findNext.refresh' => 'Bir mix ko‘yadi.',
+			'discover.findNext.sourceReason' => ({required Object source}) => '${source} qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq',
+			'discover.findNext.libraryReason' => ({required Object library}) => '${library} qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq',
+			'discover.findNext.ownedReason' => 'Bu librariyizdan',
+			'discover.findNext.liveNow' => 'Onda',
+			'discover.findNext.watchLive' => 'Live o‘zadi',
+			'discover.findNext.filterAnything' => 'O‘yadi',
+			'discover.findNext.filterWatch' => 'Tadiq',
+			'discover.findNext.filterListen' => 'Ulu',
+			'discover.findNext.filterRead' => 'Okuma',
+			'discover.findNext.twentyMinutes' => '20 min',
+			'discover.findNext.fortyFiveMinutes' => '45 min',
+			'discover.findNext.ninetyMinutes' => '90 min',
+			'discover.findNext.apply' => 'Diggadi',
+			'discover.findNext.openFailed' => 'Bu seçenek artık kullanılmadi. refresh ko\'t check again.',
+			'discover.findNext.changeFailed' => 'Bu cambiadi ko‘yadi. qaytarga ko‘yadi.',
+			'discover.findNext.savedLimit' => 'U\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo.',
 			'discover.extras' => 'Treylerlar va qoʻshimchalar',
 			'discover.studio' => 'Studiya',
 			'discover.rating' => 'Reyting',
@@ -5584,6 +5753,8 @@ extension on TranslationsUz {
 			'explore.selectSource' => 'Manbani tanlang',
 			'explore.rows.watchlist' => 'Tomosha roʻyxati',
 			'explore.rows.recommendedMovies' => 'Tavsiya etilgan filmlar',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Tavsiya etilgan seriallar',
 			'explore.rows.trendingMovies' => 'Ommabop filmlar',
 			'explore.rows.trendingShows' => 'Ommabop seriallar',
@@ -5633,8 +5804,6 @@ extension on TranslationsUz {
 			'explore.badge.processing' => 'Ishlanmoqda',
 			'explore.badge.declined' => 'Rad etilgan',
 			'explore.badge.requestFailed' => 'Soʻrov amalga oshmadi',
-			_ => null,
-		} ?? switch (path) {
 			'explore.badge.requested4k' => '4K soʻralgan',
 			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => '${available}/${total} mavsum',
 			'explore.badge.nextEpisodeIn' => ({required Object episode, required Object duration}) => '${episode}-qism ${duration} ichida',
@@ -6098,6 +6267,8 @@ extension on TranslationsUz {
 			'downloads.pauseAll' => 'Barchasini toʻxtatib turish',
 			'downloads.resumeAll' => 'Barchasini davom ettirish',
 			'downloads.retryAll' => 'Barchasini qaytadan yuklash',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => 'Muvaffaqiyatsiz yuklamalarni qaytadan yuklash',
 			'downloads.deleteAll' => 'Barchasini oʻchirish',
 			'downloads.selectVersion' => 'Versiyani tanlash',
@@ -6147,8 +6318,6 @@ extension on TranslationsUz {
 			'downloads.syncUnwatchedItems' => 'Koʻrilmagan elementlar sinxronlanadi',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
 			'downloads.syncRuleAvailable' => 'Mavjud',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.syncRuleOffline' => 'Oflayn',
 			'downloads.syncRuleSignInRequired' => 'Kirish talab etiladi',
 			'downloads.syncRuleAccessDenied' => 'Kirish rad etildi',
@@ -6612,6 +6781,8 @@ extension on TranslationsUz {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '${product}ga ulanish',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Server URL-ini, foydalanuvchi nomini va parolni kiriting.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} serveringizga kiring. ${name} profiliga bogʻlanadi.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Boshqa profildan olish',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Boshqa profilning ulanishidan qayta foydalaning.',
 			'addServer.invalidCredentials' => 'Foydalanuvchi nomi yoki parol notoʻgʻri',
@@ -6661,8 +6832,6 @@ extension on TranslationsUz {
 			'homeLayout.resetToast' => 'Bosh sahifa asl Plezy joylashuviga qaytarildi',
 			'homeLayout.resetHeroTitle' => 'Asosiy ko‘rinish asl Plezy holatiga qaytarilsinmi?',
 			'homeLayout.resetHeroBody' => 'Herradi\'nin kahraman ayatlar bo\'yadi, bir-rondaylar bo\'ya qaytarga, Home\'nin topta, o\'yadi\'nin önizdan bo\'yadlar.',
-			_ => null,
-		} ?? switch (path) {
 			'homeLayout.removeRowTitle' => 'Home Riyadh bilan bilan bilan?',
 			'homeLayout.removeRowBody' => ({required Object title}) => '${title} o‘chiriladi. Bu amalni ortga qaytarib bo‘lmaydi.',
 			'homeLayout.sync' => 'Sinq',
@@ -6970,6 +7139,57 @@ extension on TranslationsUz {
 			'lending.suspendMessage' => 'Navbatdagi o‘rningizni saqlab, keyingi o‘quvchiga bu nusxani olishga ruxsat berasizmi? Band qilishni keyin davom ettirishingiz mumkin.',
 			'lending.resumeMessage' => 'Kutubxona keyingi bo‘sh nusxani sizga taklif qilishi uchun bu band qilishni davom ettirasizmi?',
 			'lending.editEmail' => 'Email Notifikacion',
+			'audiobook.syncTitle' => 'Okum & dining sync',
+			'audiobook.syncHelp' => 'Okuma pozsiya, okuma pozisyonlar, completion status, bookmarks, notlar siz cihazlarınızda. Added stockage account seçin ve hər cihazda aynı sinq kod kullanın. Okuma və dinim ayaladi.',
+			'audiobook.addSyncSource' => 'Google Drive, OneDrive, Dropbox, WebDAV o S3\'i fillar və kitablar qoladi.',
+			'audiobook.syncDestination' => 'Sync bilan bilan bilan',
+			'audiobook.syncFolder' => 'Filmi ya prefix.',
+			'audiobook.syncFolderHelp' => 'WebDAV kaynağınızda, ya da dedikadi S3 prefix\'i bir separat bilan folder kullan. Book files is never changed.',
+			'audiobook.syncCode' => 'Sink kodlar',
+			'audiobook.syncCodeHelp' => 'Bir kod o‘ziz, sonra o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘z.',
+			'audiobook.showCode' => 'Sink-kodni koʻyadi koʻyadi.',
+			'audiobook.newSyncCode' => 'Yeni bir sinq-kodi yaratlar.',
+			'audiobook.saveSync' => 'Save and synq.',
+			'audiobook.disableSync' => 'Bu cihazda synchroniziziziziziz.',
+			'audiobook.syncSourceDisconnect' => 'Bu kayndan qaytdan o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi.',
+			'audiobook.syncReconnect' => 'Hesab bilan bilan bilan bilan bilan bilan',
+			'audiobook.lastSynced' => ({required Object time}) => '${time}\'da sonda sinqizdi',
+			'audiobook.syncPrivacy' => 'Biz xifriyo bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan.',
+			'audiobook.syncConflicts' => 'Onda qaytarga qaytarga.',
+			'audiobook.conflictHelp' => 'Bu modifikasyonlar bağımsızdan ko‘zadi. ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi',
+			'audiobook.syncDevice' => ({required Object device}) => '${device}',
+			'audiobook.syncUnknownDevice' => 'U‘zari',
+			'audiobook.deletedBookmark' => 'Bookmark bilan bilan bilan',
+			'audiobook.finished' => 'Konni',
+			'audiobook.readingPosition' => ({required Object percent}) => '${percent} %',
+			'audiobook.chapterTimeline' => 'Kapital bilan bilan',
+			'audiobook.bookTimeline' => 'Kitab bilan progresi',
+			'audiobook.bookRemaining' => ({required Object time}) => '${time} bu kitabda qaytadi.',
+			'audiobook.chapterRemaining' => ({required Object time}) => 'Bu kapitalda kalan zaman: ${time}',
+			'audiobook.unknownRemaining' => 'Total time available as parts is playing. — Tull time available as parts are playing. — Tull time available as parts are playing. — Tull time available as parts are playing.',
+			'audiobook.undoSeek' => 'Songa ko‘zadi.',
+			'audiobook.customSpeed' => 'Custom playback ritmi.',
+			'audiobook.speedHelp' => 'Siz 0.25 x 4 x o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z',
+			'audiobook.apply' => 'Diggadi',
+			'audiobook.customSleep' => 'Custom uyumalar',
+			'audiobook.sleepMinutes' => '1 – 440 min)',
+			'audiobook.sleepChapters' => ({required Object count}) => '${count} kapitallardan sonra durga',
+			'audiobook.extendSleep' => '5 dakikadi',
+			'audiobook.sleepRemaining' => ({required Object time}) => 'U\'qiziziz: ${time}',
+			'audiobook.useDefaults' => 'Yeni kitaplar için bu dining kontrollar kullanın.',
+			'audiobook.librarySort' => 'Kitajlar',
+			'audiobook.sortTitle' => 'Tadiya',
+			'audiobook.sortAuthor' => 'Avtor',
+			'audiobook.sortNarrator' => 'Hikmatlar',
+			'audiobook.sortSeries' => 'Seriyadi',
+			'audiobook.sortRecent' => 'U‘zʻzʻzʻzʻzʻzʻzʻ',
+			'audiobook.statusFilter' => 'Okumaya status',
+			'audiobook.statusAll' => 'Bütün kitablar',
+			'audiobook.statusNew' => 'Başlamad',
+			'audiobook.statusProgress' => 'Tadiqadi',
+			'audiobook.statusFinished' => 'Konni',
+			'audiobook.goToTime' => 'O‘zadi.',
+			'audiobook.timeHelp' => 'Hours:minuts:seconds, o minutlar:seconds',
 			_ => null,
 		};
 	}

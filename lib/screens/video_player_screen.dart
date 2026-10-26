@@ -1813,7 +1813,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       _rewindOnResume = settingsService.read(SettingsService.rewindOnResume);
       final playbackBufferTier = settingsService.read(SettingsService.playbackBufferTier);
       final enableHardwareDecoding = settingsService.read(SettingsService.enableHardwareDecoding);
-      final debugLoggingEnabled = settingsService.read(SettingsService.enableDebugLogging);
+      final debugLoggingEnabled =
+          settingsService.read(SettingsService.enableDebugLogging) ||
+          settingsService.read(SettingsService.dvExperimentDiagnostics);
       final useExoPlayer = settingsService.read(SettingsService.useExoPlayer);
 
       // Kick off getPlaybackData() before the Windows display-mode sync, the

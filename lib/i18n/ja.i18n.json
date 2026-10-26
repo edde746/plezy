@@ -626,7 +626,14 @@
     "regionFormat": "地域別の書式",
     "regionFormatDescription": "日付、数値、単位の表示形式を選択します。",
     "metadataLanguage": "メタデータの言語",
-    "metadataLanguageDescription": "サーバーが対応している場合に、タイトルと説明に使用する言語です。音声と字幕の言語は別に設定します。"
+    "metadataLanguageDescription": "サーバーが対応している場合に、タイトルと説明に使用する言語です。音声と字幕の言語は別に設定します。",
+    "experimentalDolbyVision": "実験的なDolby Vision",
+    "experimentalDolbyVisionDescription": "次の再生で実験的なFELレンダラーを使用します。別途ビルドしたエンジンが必要です。",
+    "dvExperimentUnavailableDescription": "この実験は現在Linuxでのみ利用できます。",
+    "dvCompatibilityFallback": "互換性フォールバック",
+    "dvCompatibilityFallbackDescription": "実験を開始できない場合は標準レンダラーを使用します。FELデータが失われる可能性があります。",
+    "dvExperimentDiagnostics": "動画実験のログ記録",
+    "dvExperimentDiagnosticsDescription": "次の再生でプレーヤーの詳細ログを有効にします。"
   },
   "themeEditor": {
     "builtIn": "標準",

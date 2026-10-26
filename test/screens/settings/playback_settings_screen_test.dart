@@ -1,3 +1,5 @@
+import 'dart:io';
+
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/i18n/strings.g.dart';
@@ -30,6 +32,34 @@ void main() {
     LocaleSettings.setLocaleSync(AppLocale.en);
   });
 
+  testWidgets('DV experiments use persisted opt-in switches with a conditional fallback', (tester) async {
+    tester.view.devicePixelRatio = 1;
+    tester.view.physicalSize = const Size(1000, 1400);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    addTearDown(tester.view.resetPhysicalSize);
+    await _pumpPlaybackSettings(tester);
+    await tester.pumpAndSettle();
+    final settings = SettingsService.instance;
+    expect(settings.read(SettingsService.experimentalDolbyVision), isFalse);
+    expect(settings.read(SettingsService.dvExperimentDiagnostics), isFalse);
+    final toggle = find.text(t.settings.experimentalDolbyVision);
+    await tester.scrollUntilVisible(toggle, 300, scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(toggle);
+    await tester.tap(toggle);
+    await tester.pumpAndSettle();
+    expect(settings.read(SettingsService.experimentalDolbyVision), isTrue);
+    final fallback = find.text(t.settings.dvCompatibilityFallback);
+    await tester.ensureVisible(fallback);
+    await tester.tap(fallback);
+    await tester.pumpAndSettle();
+    expect(settings.read(SettingsService.dvCompatibilityFallback), isFalse);
+    final diagnostics = find.text(t.settings.dvExperimentDiagnostics);
+    await tester.ensureVisible(diagnostics);
+    await tester.tap(diagnostics);
+    await tester.pumpAndSettle();
+    expect(settings.read(SettingsService.dvExperimentDiagnostics), isTrue);
+  }, skip: !Platform.isLinux);
+
   testWidgets('shows and changes the persisted music quality', (tester) async {
     tester.view.devicePixelRatio = 1;
     tester.view.physicalSize = const Size(1000, 1400);
@@ -41,6 +71,8 @@ void main() {
 
     final title = find.text('Music Quality');
     await tester.scrollUntilVisible(title, 500, scrollable: find.byType(Scrollable).first);
+    await tester.ensureVisible(title);
+    await tester.pumpAndSettle();
 
     final tile = find.widgetWithText(ListTile, 'Music Quality');
     expect(find.descendant(of: tile, matching: find.text('192 kbps')), findsOneWidget);
