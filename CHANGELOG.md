@@ -4,6 +4,7 @@
 
 - Add a pinned experimental LG webOS ARMv7 engine/IPK build, manual JIT-only validation and release packaging, an LG-supported Ubuntu/toolchain preflight, an evidence-based webOS Re:New compatibility matrix, and the upstream runtime redistribution gate.
 - Record the exact 2026 C6H model/firmware evidence and list additional 2026 LG firmware cohorts as unqualified test candidates.
+- Reconcile C6 install/launch logs with the distinct IPK hashes; keep visible-frame qualification tied to the exact candidate.
 - Route Windows x64 release builds and package-manager submissions through private JIT runners.
 - Fit Find your next to the screen with persistent action buttons, mirrored swipe/TV direction cues, contextual help, and artwork that follows the current pick. Restore downloaded and alternate covers, distinguish artwork loading from missing images, and allow failed source covers to be retried.
 
