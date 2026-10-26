@@ -582,6 +582,12 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
             onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
             icon: const AppIcon(Symbols.search_rounded),
           ),
+        if (source?.options['syncLibrary']?.trim().isNotEmpty == true && !_entry.isFolder && !_entry.id.startsWith('group:'))
+          IconButton(
+            tooltip: t.sourceSetup.sharedEntryPair,
+            onPressed: _busy ? null : () => sourceAction(context, _editSharedEntryMapping),
+            icon: const AppIcon(Symbols.link_rounded),
+          ),
         IconButton(
           tooltip: t.audiobook.syncTitle,
           icon: const AppIcon(Symbols.cloud_sync_rounded),
