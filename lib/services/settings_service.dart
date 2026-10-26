@@ -738,6 +738,12 @@ class SettingsService extends BaseSharedPreferencesService {
   /// Explore visibility setting.
   static BoolPref showExploreTabForProfile(String profileId) =>
       BoolPref(profileScopedPrefsKey(profileId, 'show_explore_tab'), defaultValue: true);
+
+  /// Games is explicitly enabled per profile; streaming credentials belong to the client.
+  static BoolPref showGamesTabForProfile(String profileId) =>
+      BoolPref(profileScopedPrefsKey(profileId, 'show_games_tab'), defaultValue: false);
+  static BoolPref gameTouchControlsForProfile(String profileId) =>
+      BoolPref(profileScopedPrefsKey(profileId, 'game_touch_controls'), defaultValue: true);
   static StringPref preferredServerForProfile(String profileId) =>
       StringPref(profileScopedPrefsKey(profileId, 'preferred_server_id'));
   static BoolPref notifyNewEpisodesForProfile(String profileId) =>

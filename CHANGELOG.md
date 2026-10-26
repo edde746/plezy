@@ -7,6 +7,8 @@
 
 ### Added
 
+- Add an opt-in Games category with LAN discovery, artwork card grids, profile libraries, PIN/QR pairing, and an embedded Android Moonlight engine with touch controls. Steam and Pyrowave playback remain in development; Games never hands a stream to another app.
+
 - Add SMB2/3 read-only NAS sources on Android, iOS, macOS, Windows, Linux, and Apple TV, with a Videos library shelf and resumable video watch progress.
 - Add passive FTP/FTPES/FTPS, pinned-host-key SFTP, and read-only NFSv3 sources with byte-range playback; NFS can require TLS 1.3 RPC-with-TLS, custom trust certificates, or a PKCS#12 client identity. Add best-effort SSDP discovery for DLNA ContentDirectory servers with manual URL fallback.
 - Automatically match standalone video filenames against Trakt with confidence and ambiguity checks; add online posters, cast, ratings, IDs, and validated trailer links. Manual matching remains available.

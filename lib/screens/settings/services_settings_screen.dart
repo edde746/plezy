@@ -1,3 +1,5 @@
+import '../../profiles/active_profile_provider.dart';
+import '../../utils/platform_detector.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -25,6 +27,7 @@ class ServicesSettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final profileId = context.watch<ActiveProfileProvider?>()?.activeId;
     return FocusedScrollScaffold(
       title: Text(t.services.title),
       slivers: [
@@ -40,6 +43,18 @@ class ServicesSettingsScreen extends StatelessWidget {
               ),
             ),
             SettingsGroup(children: [for (final info in TrackerServiceInfo.all) _TrackerHubRow(info), _seerr()]),
+            if (profileId != null && !PlatformDetector.isAutomotive())
+              SettingsGroup(
+                title: t.games.title,
+                children: [
+                  SettingSwitchTile(
+                    pref: SettingsService.showGamesTabForProfile(profileId),
+                    icon: Symbols.sports_esports_rounded,
+                    title: t.games.enable,
+                    subtitle: t.games.enableDescription,
+                  ),
+                ],
+              ),
             if (DiscordRPCService.isAvailable)
               SettingsGroup(
                 title: t.services.integrations,

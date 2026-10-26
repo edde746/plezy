@@ -60,6 +60,23 @@ void main() {
   });
 
   group('NavigationTab.getVisibleTabs', () {
+    test('Games is opt-in and works without a media-server connection', () {
+      expect(NavigationTab.getVisibleTabs(isOffline: false).map((t) => t.id), isNot(contains(NavigationTabId.games)));
+      expect(
+        NavigationTab.getVisibleTabs(isOffline: true, hasGames: true).map((t) => t.id),
+        contains(NavigationTabId.games),
+      );
+      expect(
+        NavigationTab.resolveDefaultTab(
+          isOffline: false,
+          hasLiveTv: false,
+          hasGames: false,
+          preferredStartup: NavigationTabId.games,
+        ),
+        NavigationTabId.discover,
+      );
+    });
+
     test('hides Explore until a catalog source is connected', () {
       final without = NavigationTab.getVisibleTabs(isOffline: false);
       expect(without.map((tab) => tab.id), isNot(contains(NavigationTabId.explore)));
