@@ -3033,7 +3033,7 @@ class _Translations$fileSources$nb extends Translations$fileSources$en {
 	@override String get syncLocation => 'Progress synkronisering mappe (valgfritt)';
 	@override String get syncLocationHint => 'En dedikert WebDAV mappe for PlezyNG stat. Bruk betingelsesbrev; media forblir uendret.';
 	@override String get audiobooks => 'Audiobøker';
-	@override String get comics => 'Komikere';
+	@override String get comics => 'Tegneserier';
 	@override String get scan => 'Skankering av bøker og media';
 	@override String get browserReader => 'Åpne lesere';
 	@override String get browserReaderHelp => 'Leseren er åpen i nettleseren. Hold PlezyNG åpen for å lagre leseposisjonen og notatene dine.';
@@ -3058,7 +3058,7 @@ class _Translations$fileSources$nb extends Translations$fileSources$en {
 	@override String get letterSpacing => 'Brev om spati';
 	@override String get wordSpacing => 'Ord spati';
 	@override String get readerControlsHelp => 'Spre to fingre, eller bruk zoomkontrollene for å forstørre sider. Dra for å flytte siden. Ctrl/⌘ med + eller − justerer zoom; Ctrl/⌘ med 0 nullstiller den. Page Up og Page Down blar mellom sidene.';
-	@override String get imagePage => 'Komiktside';
+	@override String get imagePage => 'Tegneserieside';
 	@override String get resetReader => 'Åpne lesingsfortrinnene';
 	@override String get zoom => 'Zoom';
 	@override String get useFiles => 'Bruk filer og bøker';
@@ -7078,7 +7078,7 @@ extension on TranslationsNb {
 			'fileSources.syncLocation' => 'Progress synkronisering mappe (valgfritt)',
 			'fileSources.syncLocationHint' => 'En dedikert WebDAV mappe for PlezyNG stat. Bruk betingelsesbrev; media forblir uendret.',
 			'fileSources.audiobooks' => 'Audiobøker',
-			'fileSources.comics' => 'Komikere',
+			'fileSources.comics' => 'Tegneserier',
 			'fileSources.scan' => 'Skankering av bøker og media',
 			'fileSources.browserReader' => 'Åpne lesere',
 			'fileSources.browserReaderHelp' => 'Leseren er åpen i nettleseren. Hold PlezyNG åpen for å lagre leseposisjonen og notatene dine.',
@@ -7103,7 +7103,7 @@ extension on TranslationsNb {
 			'fileSources.letterSpacing' => 'Brev om spati',
 			'fileSources.wordSpacing' => 'Ord spati',
 			'fileSources.readerControlsHelp' => 'Spre to fingre, eller bruk zoomkontrollene for å forstørre sider. Dra for å flytte siden. Ctrl/⌘ med + eller − justerer zoom; Ctrl/⌘ med 0 nullstiller den. Page Up og Page Down blar mellom sidene.',
-			'fileSources.imagePage' => 'Komiktside',
+			'fileSources.imagePage' => 'Tegneserieside',
 			'fileSources.resetReader' => 'Åpne lesingsfortrinnene',
 			'fileSources.zoom' => 'Zoom',
 			'fileSources.useFiles' => 'Bruk filer og bøker',

@@ -3033,7 +3033,7 @@ class _Translations$fileSources$tr extends Translations$fileSources$en {
 	@override String get syncLocation => 'Progress Sync Dosyası (Seçmeli)';
 	@override String get syncLocationHint => 'PlezyNG durumu için ayrılmış bir WebDAV klasörü. Koşullu yazma kullanılır; medya dosyaları değiştirilmez.';
 	@override String get audiobooks => 'Sesli kitaplar';
-	@override String get comics => 'Komikler';
+	@override String get comics => 'Çizgi romanlar';
 	@override String get scan => 'Kitap ve medya için tarama';
 	@override String get browserReader => 'Açık okuyucu';
 	@override String get browserReaderHelp => 'Okuma alanı tarayıcınızda açık kalır. PlezyNG yerinizi ve notlarınızı kaydetmek için açık tutun.';
@@ -3058,7 +3058,7 @@ class _Translations$fileSources$tr extends Translations$fileSources$en {
 	@override String get letterSpacing => 'Mektuplar uzay';
 	@override String get wordSpacing => 'Sözcükler uzay';
 	@override String get readerControlsHelp => 'Sayfaları büyütmek için iki parmağınızı birbirinden uzaklaştırın veya yakınlaştırma kontrollerini kullanın. Sayfayı kaydırmak için sürükleyin. Ctrl/⌘ ile + veya − yakınlaştırmayı ayarlar; Ctrl/⌘ ile 0 sıfırlar. Page Up ve Page Down sayfaları çevirir.';
-	@override String get imagePage => 'Komik Sayfa';
+	@override String get imagePage => 'Çizgi roman sayfası';
 	@override String get resetReader => 'Okuma tercihlerini yeniden düzenleyin';
 	@override String get zoom => 'Yakınlaştırma';
 	@override String get useFiles => 'Dosyaları ve kitapları kullanın';
@@ -7078,7 +7078,7 @@ extension on TranslationsTr {
 			'fileSources.syncLocation' => 'Progress Sync Dosyası (Seçmeli)',
 			'fileSources.syncLocationHint' => 'PlezyNG durumu için ayrılmış bir WebDAV klasörü. Koşullu yazma kullanılır; medya dosyaları değiştirilmez.',
 			'fileSources.audiobooks' => 'Sesli kitaplar',
-			'fileSources.comics' => 'Komikler',
+			'fileSources.comics' => 'Çizgi romanlar',
 			'fileSources.scan' => 'Kitap ve medya için tarama',
 			'fileSources.browserReader' => 'Açık okuyucu',
 			'fileSources.browserReaderHelp' => 'Okuma alanı tarayıcınızda açık kalır. PlezyNG yerinizi ve notlarınızı kaydetmek için açık tutun.',
@@ -7103,7 +7103,7 @@ extension on TranslationsTr {
 			'fileSources.letterSpacing' => 'Mektuplar uzay',
 			'fileSources.wordSpacing' => 'Sözcükler uzay',
 			'fileSources.readerControlsHelp' => 'Sayfaları büyütmek için iki parmağınızı birbirinden uzaklaştırın veya yakınlaştırma kontrollerini kullanın. Sayfayı kaydırmak için sürükleyin. Ctrl/⌘ ile + veya − yakınlaştırmayı ayarlar; Ctrl/⌘ ile 0 sıfırlar. Page Up ve Page Down sayfaları çevirir.',
-			'fileSources.imagePage' => 'Komik Sayfa',
+			'fileSources.imagePage' => 'Çizgi roman sayfası',
 			'fileSources.resetReader' => 'Okuma tercihlerini yeniden düzenleyin',
 			'fileSources.zoom' => 'Yakınlaştırma',
 			'fileSources.useFiles' => 'Dosyaları ve kitapları kullanın',

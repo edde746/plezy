@@ -3013,7 +3013,7 @@ class _Translations$fileSources$th extends Translations$fileSources$en {
 	@override String get syncLocation => 'โฟลเดอร์ Sync Progress (ตัวเลือก)';
 	@override String get syncLocationHint => 'โฟลเดอร์ WebDAV เฉพาะสำหรับสถานะของ PlezyNG ใช้การเขียนข้อมูลแบบมีเงื่อนไข โดยไฟล์สื่อจะไม่เปลี่ยนแปลง';
 	@override String get audiobooks => 'ออดิโอ';
-	@override String get comics => 'คอมเมติก';
+	@override String get comics => 'หนังสือการ์ตูน';
 	@override String get scan => 'สแกนสําหรับหนังสือและสื่อ';
 	@override String get browserReader => 'เปิดตัว';
 	@override String get browserReaderHelp => 'อ่านเปิดในเบราว์เซอร์ของคุณ ปล่อยให้ PlezyNG เปิดเพื่อบันทึกสถานที่และบันทึกของคุณ';
@@ -3038,7 +3038,7 @@ class _Translations$fileSources$th extends Translations$fileSources$en {
 	@override String get letterSpacing => 'สเปคจดหมาย';
 	@override String get wordSpacing => 'คําอธิบาย';
 	@override String get readerControlsHelp => 'กางสองนิ้วหรือใช้ปุ่มซูมเพื่อขยายหน้า ลากเพื่อเลื่อนหน้า Ctrl/⌘ ร่วมกับ + หรือ − ใช้ปรับซูม และ Ctrl/⌘ ร่วมกับ 0 ใช้รีเซ็ตซูม Page Up และ Page Down ใช้เปลี่ยนหน้า';
-	@override String get imagePage => 'หน้าการ์ตูน';
+	@override String get imagePage => 'หน้าหนังสือการ์ตูน';
 	@override String get resetReader => 'การตั้งค่าการอ่านใหม่';
 	@override String get zoom => 'โซม';
 	@override String get useFiles => 'ใช้ไฟล์และหนังสือ';
@@ -7056,7 +7056,7 @@ extension on TranslationsTh {
 			'fileSources.syncLocation' => 'โฟลเดอร์ Sync Progress (ตัวเลือก)',
 			'fileSources.syncLocationHint' => 'โฟลเดอร์ WebDAV เฉพาะสำหรับสถานะของ PlezyNG ใช้การเขียนข้อมูลแบบมีเงื่อนไข โดยไฟล์สื่อจะไม่เปลี่ยนแปลง',
 			'fileSources.audiobooks' => 'ออดิโอ',
-			'fileSources.comics' => 'คอมเมติก',
+			'fileSources.comics' => 'หนังสือการ์ตูน',
 			'fileSources.scan' => 'สแกนสําหรับหนังสือและสื่อ',
 			'fileSources.browserReader' => 'เปิดตัว',
 			'fileSources.browserReaderHelp' => 'อ่านเปิดในเบราว์เซอร์ของคุณ ปล่อยให้ PlezyNG เปิดเพื่อบันทึกสถานที่และบันทึกของคุณ',
@@ -7081,7 +7081,7 @@ extension on TranslationsTh {
 			'fileSources.letterSpacing' => 'สเปคจดหมาย',
 			'fileSources.wordSpacing' => 'คําอธิบาย',
 			'fileSources.readerControlsHelp' => 'กางสองนิ้วหรือใช้ปุ่มซูมเพื่อขยายหน้า ลากเพื่อเลื่อนหน้า Ctrl/⌘ ร่วมกับ + หรือ − ใช้ปรับซูม และ Ctrl/⌘ ร่วมกับ 0 ใช้รีเซ็ตซูม Page Up และ Page Down ใช้เปลี่ยนหน้า',
-			'fileSources.imagePage' => 'หน้าการ์ตูน',
+			'fileSources.imagePage' => 'หน้าหนังสือการ์ตูน',
 			'fileSources.resetReader' => 'การตั้งค่าการอ่านใหม่',
 			'fileSources.zoom' => 'โซม',
 			'fileSources.useFiles' => 'ใช้ไฟล์และหนังสือ',

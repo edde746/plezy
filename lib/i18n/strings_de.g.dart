@@ -3033,7 +3033,7 @@ class _Translations$fileSources$de extends Translations$fileSources$en {
 	@override String get syncLocation => 'Progress Sync Folder (optional)';
 	@override String get syncLocationHint => 'Eine dedizierte WebDAV Folder für PlezyNG Status. verwendet bedingte Schreiben; Medien bleiben unverändert.';
 	@override String get audiobooks => 'Audiobücher';
-	@override String get comics => 'Komik';
+	@override String get comics => 'Comics';
 	@override String get scan => 'Scan für Bücher und Medien';
 	@override String get browserReader => 'Öffnen Leser';
 	@override String get browserReaderHelp => 'Der Leser ist in Ihrem Browser geöffnet.Halten Sie PlezyNG offen, um Ihre Platz und Notizen zu speichern.';
@@ -3058,7 +3058,7 @@ class _Translations$fileSources$de extends Translations$fileSources$en {
 	@override String get letterSpacing => 'Brief Spazier';
 	@override String get wordSpacing => 'Spazierend Wort';
 	@override String get readerControlsHelp => 'Ziehe zwei Finger auseinander oder nutze die Zoom-Steuerung, um Seiten zu vergrößern. Ziehe die Seite, um sie zu verschieben. Ctrl/⌘ mit + oder − ändert den Zoom; Ctrl/⌘ mit 0 setzt ihn zurück. Page Up und Page Down blättern um.';
-	@override String get imagePage => 'Komikseite';
+	@override String get imagePage => 'Comicseite';
 	@override String get resetReader => 'Lesen Preferenzen wiederherstellen';
 	@override String get zoom => 'Zoom';
 	@override String get useFiles => 'Dateien und Bücher verwenden';
@@ -7078,7 +7078,7 @@ extension on TranslationsDe {
 			'fileSources.syncLocation' => 'Progress Sync Folder (optional)',
 			'fileSources.syncLocationHint' => 'Eine dedizierte WebDAV Folder für PlezyNG Status. verwendet bedingte Schreiben; Medien bleiben unverändert.',
 			'fileSources.audiobooks' => 'Audiobücher',
-			'fileSources.comics' => 'Komik',
+			'fileSources.comics' => 'Comics',
 			'fileSources.scan' => 'Scan für Bücher und Medien',
 			'fileSources.browserReader' => 'Öffnen Leser',
 			'fileSources.browserReaderHelp' => 'Der Leser ist in Ihrem Browser geöffnet.Halten Sie PlezyNG offen, um Ihre Platz und Notizen zu speichern.',
@@ -7103,7 +7103,7 @@ extension on TranslationsDe {
 			'fileSources.letterSpacing' => 'Brief Spazier',
 			'fileSources.wordSpacing' => 'Spazierend Wort',
 			'fileSources.readerControlsHelp' => 'Ziehe zwei Finger auseinander oder nutze die Zoom-Steuerung, um Seiten zu vergrößern. Ziehe die Seite, um sie zu verschieben. Ctrl/⌘ mit + oder − ändert den Zoom; Ctrl/⌘ mit 0 setzt ihn zurück. Page Up und Page Down blättern um.',
-			'fileSources.imagePage' => 'Komikseite',
+			'fileSources.imagePage' => 'Comicseite',
 			'fileSources.resetReader' => 'Lesen Preferenzen wiederherstellen',
 			'fileSources.zoom' => 'Zoom',
 			'fileSources.useFiles' => 'Dateien und Bücher verwenden',

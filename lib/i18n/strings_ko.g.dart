@@ -3028,7 +3028,7 @@ class _Translations$fileSources$ko extends Translations$fileSources$en {
 	@override String get syncLocation => 'Progress sync 폴더 (선택)';
 	@override String get syncLocationHint => 'PlezyNG 상태를 위한 전용 WebDAV 폴더.조건적인 글쓰기를 사용; 미디어는 변함없이 남아 있습니다.';
 	@override String get audiobooks => '오디오 책';
-	@override String get comics => '코미디';
+	@override String get comics => '만화';
 	@override String get scan => '책과 미디어를 위한 스캔';
 	@override String get browserReader => '오픈 리더';
 	@override String get browserReaderHelp => '브라우저에서 리더가 열려 있습니다. 읽던 위치와 메모를 저장하려면 PlezyNG를 열어 두세요.';
@@ -3053,7 +3053,7 @@ class _Translations$fileSources$ko extends Translations$fileSources$en {
 	@override String get letterSpacing => '우주 편지';
 	@override String get wordSpacing => '단어 스페셜';
 	@override String get readerControlsHelp => '두 손가락을 벌리거나 확대/축소 컨트롤을 사용하여 페이지를 확대하세요. 드래그하여 페이지를 이동하세요. Ctrl/⌘와 + 또는 −로 배율을 조절하고, Ctrl/⌘와 0으로 초기화합니다. Page Up과 Page Down으로 페이지를 넘깁니다.';
-	@override String get imagePage => '코미디 페이지';
+	@override String get imagePage => '만화 페이지';
 	@override String get resetReader => '읽기 선호도를 다시 설정';
 	@override String get zoom => '확대/축소';
 	@override String get useFiles => '파일과 책을 사용하십시오';
@@ -7073,7 +7073,7 @@ extension on TranslationsKo {
 			'fileSources.syncLocation' => 'Progress sync 폴더 (선택)',
 			'fileSources.syncLocationHint' => 'PlezyNG 상태를 위한 전용 WebDAV 폴더.조건적인 글쓰기를 사용; 미디어는 변함없이 남아 있습니다.',
 			'fileSources.audiobooks' => '오디오 책',
-			'fileSources.comics' => '코미디',
+			'fileSources.comics' => '만화',
 			'fileSources.scan' => '책과 미디어를 위한 스캔',
 			'fileSources.browserReader' => '오픈 리더',
 			'fileSources.browserReaderHelp' => '브라우저에서 리더가 열려 있습니다. 읽던 위치와 메모를 저장하려면 PlezyNG를 열어 두세요.',
@@ -7098,7 +7098,7 @@ extension on TranslationsKo {
 			'fileSources.letterSpacing' => '우주 편지',
 			'fileSources.wordSpacing' => '단어 스페셜',
 			'fileSources.readerControlsHelp' => '두 손가락을 벌리거나 확대/축소 컨트롤을 사용하여 페이지를 확대하세요. 드래그하여 페이지를 이동하세요. Ctrl/⌘와 + 또는 −로 배율을 조절하고, Ctrl/⌘와 0으로 초기화합니다. Page Up과 Page Down으로 페이지를 넘깁니다.',
-			'fileSources.imagePage' => '코미디 페이지',
+			'fileSources.imagePage' => '만화 페이지',
 			'fileSources.resetReader' => '읽기 선호도를 다시 설정',
 			'fileSources.zoom' => '확대/축소',
 			'fileSources.useFiles' => '파일과 책을 사용하십시오',

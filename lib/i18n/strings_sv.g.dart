@@ -3033,7 +3033,7 @@ class _Translations$fileSources$sv extends Translations$fileSources$en {
 	@override String get syncLocation => 'Progress synkronisering mappen (alternativ)';
 	@override String get syncLocationHint => 'En dedikerad WebDAV mapp för PlezyNG stat. Använd villkorlig skrivelse; media förblir oförändrad.';
 	@override String get audiobooks => 'Audioböcker';
-	@override String get comics => 'Komik';
+	@override String get comics => 'Serietidningar';
 	@override String get scan => 'Skannar för böcker och media';
 	@override String get browserReader => 'Öppen läsare';
 	@override String get browserReaderHelp => 'Läsaren är öppen i din webbläsare.Håll PlezyNG öppen för att spara din plats och anteckningar.';
@@ -3058,7 +3058,7 @@ class _Translations$fileSources$sv extends Translations$fileSources$en {
 	@override String get letterSpacing => 'brev spacing';
 	@override String get wordSpacing => 'Ord spacing';
 	@override String get readerControlsHelp => 'Dra isär två fingrar eller använd zoomkontrollerna för att förstora sidor. Dra för att flytta sidan. Ctrl/⌘ med + eller − justerar zoom; Ctrl/⌘ med 0 återställer den. Page Up och Page Down bläddrar mellan sidorna.';
-	@override String get imagePage => 'Komik sida';
+	@override String get imagePage => 'Serietidningssida';
 	@override String get resetReader => 'Återställ läsförmåner';
 	@override String get zoom => 'Zoom';
 	@override String get useFiles => 'Använd filer och böcker';
@@ -7078,7 +7078,7 @@ extension on TranslationsSv {
 			'fileSources.syncLocation' => 'Progress synkronisering mappen (alternativ)',
 			'fileSources.syncLocationHint' => 'En dedikerad WebDAV mapp för PlezyNG stat. Använd villkorlig skrivelse; media förblir oförändrad.',
 			'fileSources.audiobooks' => 'Audioböcker',
-			'fileSources.comics' => 'Komik',
+			'fileSources.comics' => 'Serietidningar',
 			'fileSources.scan' => 'Skannar för böcker och media',
 			'fileSources.browserReader' => 'Öppen läsare',
 			'fileSources.browserReaderHelp' => 'Läsaren är öppen i din webbläsare.Håll PlezyNG öppen för att spara din plats och anteckningar.',
@@ -7103,7 +7103,7 @@ extension on TranslationsSv {
 			'fileSources.letterSpacing' => 'brev spacing',
 			'fileSources.wordSpacing' => 'Ord spacing',
 			'fileSources.readerControlsHelp' => 'Dra isär två fingrar eller använd zoomkontrollerna för att förstora sidor. Dra för att flytta sidan. Ctrl/⌘ med + eller − justerar zoom; Ctrl/⌘ med 0 återställer den. Page Up och Page Down bläddrar mellan sidorna.',
-			'fileSources.imagePage' => 'Komik sida',
+			'fileSources.imagePage' => 'Serietidningssida',
 			'fileSources.resetReader' => 'Återställ läsförmåner',
 			'fileSources.zoom' => 'Zoom',
 			'fileSources.useFiles' => 'Använd filer och böcker',

@@ -3033,7 +3033,7 @@ class _Translations$fileSources$bn extends Translations$fileSources$en {
 	@override String get syncLocation => 'প্রসেস সিন্ক ফোলার (অন্যাশনাল)';
 	@override String get syncLocationHint => 'একটি নির্দিষ্ট WebDAV ফোডার PlezyNG অবস্থা. শর্তাবলী লিখুন ব্যবহার; মিডিয়া পরিবর্তন না থাকবে.';
 	@override String get audiobooks => 'অডিও বই';
-	@override String get comics => 'কোমিটার';
+	@override String get comics => 'কমিকস';
 	@override String get scan => 'বই ও মিডিয়া জন্য স্ক্যানিং';
 	@override String get browserReader => 'খোলা পাঠক';
 	@override String get browserReaderHelp => 'আপনার ব্রাউজারে পাঠক খোলা থাকে. আপনার স্থান এবং নোট সংরক্ষণ করার জন্য PlezyNG খোলা রাখুন.';
@@ -3058,7 +3058,7 @@ class _Translations$fileSources$bn extends Translations$fileSources$en {
 	@override String get letterSpacing => 'স্পেসিং চিঠি';
 	@override String get wordSpacing => 'শব্দ স্পেসিং';
 	@override String get readerControlsHelp => 'পৃষ্ঠা বড় করতে দুই আঙুল ছড়িয়ে দিন বা জুম নিয়ন্ত্রণ ব্যবহার করুন। সরাতে টেনে আনুন। Ctrl/⌘ + বা − দিয়ে জুম বদলান; Ctrl/⌘ 0 দিয়ে আগের মাপে ফিরুন। Page Up ও Page Down দিয়ে পৃষ্ঠা বদলান।';
-	@override String get imagePage => 'কোমিটার পাতা';
+	@override String get imagePage => 'কমিকসের পৃষ্ঠা';
 	@override String get resetReader => 'Read Preferences পুনরায়';
 	@override String get zoom => 'জুম';
 	@override String get useFiles => 'ফাইল এবং বই ব্যবহার করুন';
@@ -7078,7 +7078,7 @@ extension on TranslationsBn {
 			'fileSources.syncLocation' => 'প্রসেস সিন্ক ফোলার (অন্যাশনাল)',
 			'fileSources.syncLocationHint' => 'একটি নির্দিষ্ট WebDAV ফোডার PlezyNG অবস্থা. শর্তাবলী লিখুন ব্যবহার; মিডিয়া পরিবর্তন না থাকবে.',
 			'fileSources.audiobooks' => 'অডিও বই',
-			'fileSources.comics' => 'কোমিটার',
+			'fileSources.comics' => 'কমিকস',
 			'fileSources.scan' => 'বই ও মিডিয়া জন্য স্ক্যানিং',
 			'fileSources.browserReader' => 'খোলা পাঠক',
 			'fileSources.browserReaderHelp' => 'আপনার ব্রাউজারে পাঠক খোলা থাকে. আপনার স্থান এবং নোট সংরক্ষণ করার জন্য PlezyNG খোলা রাখুন.',
@@ -7103,7 +7103,7 @@ extension on TranslationsBn {
 			'fileSources.letterSpacing' => 'স্পেসিং চিঠি',
 			'fileSources.wordSpacing' => 'শব্দ স্পেসিং',
 			'fileSources.readerControlsHelp' => 'পৃষ্ঠা বড় করতে দুই আঙুল ছড়িয়ে দিন বা জুম নিয়ন্ত্রণ ব্যবহার করুন। সরাতে টেনে আনুন। Ctrl/⌘ + বা − দিয়ে জুম বদলান; Ctrl/⌘ 0 দিয়ে আগের মাপে ফিরুন। Page Up ও Page Down দিয়ে পৃষ্ঠা বদলান।',
-			'fileSources.imagePage' => 'কোমিটার পাতা',
+			'fileSources.imagePage' => 'কমিকসের পৃষ্ঠা',
 			'fileSources.resetReader' => 'Read Preferences পুনরায়',
 			'fileSources.zoom' => 'জুম',
 			'fileSources.useFiles' => 'ফাইল এবং বই ব্যবহার করুন',

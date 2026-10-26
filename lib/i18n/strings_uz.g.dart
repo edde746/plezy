@@ -3033,7 +3033,7 @@ class _Translations$fileSources$uz extends Translations$fileSources$en {
 	@override String get syncLocation => 'Progress sync folder (iziziz)';
 	@override String get syncLocationHint => 'PlezyNG holati uchun alohida WebDAV jildi. Shartli yozishdan foydalaniladi; mediafayllar o‘zgarmaydi.';
 	@override String get audiobooks => 'Audiobotlar';
-	@override String get comics => 'Komik';
+	@override String get comics => 'Komikslar';
 	@override String get scan => 'Scanlar kitablar və mediyalar';
 	@override String get browserReader => 'Open lugadi';
 	@override String get browserReaderHelp => 'O‘qish oynasi brauzeringizda ochiq. O‘qish joyi va qaydlaringiz saqlanishi uchun PlezyNG’ni ochiq qoldiring.';
@@ -3058,7 +3058,7 @@ class _Translations$fileSources$uz extends Translations$fileSources$en {
 	@override String get letterSpacing => 'Tadiqadiqadi';
 	@override String get wordSpacing => 'U‘zizga';
 	@override String get readerControlsHelp => 'Sahifani kattalashtirish uchun ikki barmog‘ingizni bir-biridan uzoqlashtiring yoki masshtab tugmalaridan foydalaning. Sahifani siljitish uchun sudrang. Ctrl/⌘ va + yoki − masshtabni o‘zgartiradi; Ctrl/⌘ va 0 uni tiklaydi. Page Up va Page Down sahifalarni almashtiradi.';
-	@override String get imagePage => 'Komik sayadi';
+	@override String get imagePage => 'Komiks sahifasi';
 	@override String get resetReader => 'Okumadi preferanslar';
 	@override String get zoom => 'Masshtab';
 	@override String get useFiles => 'Fillar və kitablar kullanır.';
@@ -7078,7 +7078,7 @@ extension on TranslationsUz {
 			'fileSources.syncLocation' => 'Progress sync folder (iziziz)',
 			'fileSources.syncLocationHint' => 'PlezyNG holati uchun alohida WebDAV jildi. Shartli yozishdan foydalaniladi; mediafayllar o‘zgarmaydi.',
 			'fileSources.audiobooks' => 'Audiobotlar',
-			'fileSources.comics' => 'Komik',
+			'fileSources.comics' => 'Komikslar',
 			'fileSources.scan' => 'Scanlar kitablar və mediyalar',
 			'fileSources.browserReader' => 'Open lugadi',
 			'fileSources.browserReaderHelp' => 'O‘qish oynasi brauzeringizda ochiq. O‘qish joyi va qaydlaringiz saqlanishi uchun PlezyNG’ni ochiq qoldiring.',
@@ -7103,7 +7103,7 @@ extension on TranslationsUz {
 			'fileSources.letterSpacing' => 'Tadiqadiqadi',
 			'fileSources.wordSpacing' => 'U‘zizga',
 			'fileSources.readerControlsHelp' => 'Sahifani kattalashtirish uchun ikki barmog‘ingizni bir-biridan uzoqlashtiring yoki masshtab tugmalaridan foydalaning. Sahifani siljitish uchun sudrang. Ctrl/⌘ va + yoki − masshtabni o‘zgartiradi; Ctrl/⌘ va 0 uni tiklaydi. Page Up va Page Down sahifalarni almashtiradi.',
-			'fileSources.imagePage' => 'Komik sayadi',
+			'fileSources.imagePage' => 'Komiks sahifasi',
 			'fileSources.resetReader' => 'Okumadi preferanslar',
 			'fileSources.zoom' => 'Masshtab',
 			'fileSources.useFiles' => 'Fillar və kitablar kullanır.',

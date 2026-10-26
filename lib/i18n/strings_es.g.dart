@@ -3037,7 +3037,7 @@ class Translations$fileSources$es extends Translations$fileSources$en {
 	@override String get syncLocation => 'Ficheiro de sincronización de progreso (opcional)';
 	@override String get syncLocationHint => 'Una cartera dedicada WebDAV para PlezyNG estado. utiliza escritos condicionales; los medios permanecen inalterados.';
 	@override String get audiobooks => 'Audioboques';
-	@override String get comics => 'Comics';
+	@override String get comics => 'Cómics';
 	@override String get scan => 'Escanear libros y medios';
 	@override String get browserReader => 'El lector abierto';
 	@override String get browserReaderHelp => 'El lector está abierto en su navegador.Mantense abierto PlezyNG para salvar su lugar y notas.';
@@ -3062,7 +3062,7 @@ class Translations$fileSources$es extends Translations$fileSources$en {
 	@override String get letterSpacing => 'La carta espacial';
 	@override String get wordSpacing => 'Palabras espaciales';
 	@override String get readerControlsHelp => 'Separa dos dedos o usa los controles de zoom para ampliar las páginas. Arrastra para desplazarte por la página. Ctrl/⌘ con + o − ajusta el zoom; Ctrl/⌘ con 0 lo restablece. Page Up y Page Down cambian de página.';
-	@override String get imagePage => 'Página Comic';
+	@override String get imagePage => 'Página de cómic';
 	@override String get resetReader => 'Recuperar las preferencias de lectura';
 	@override String get zoom => 'Zoom';
 	@override String get useFiles => 'Utilice archivos y libros';
@@ -7082,7 +7082,7 @@ extension on TranslationsEs {
 			'fileSources.syncLocation' => 'Ficheiro de sincronización de progreso (opcional)',
 			'fileSources.syncLocationHint' => 'Una cartera dedicada WebDAV para PlezyNG estado. utiliza escritos condicionales; los medios permanecen inalterados.',
 			'fileSources.audiobooks' => 'Audioboques',
-			'fileSources.comics' => 'Comics',
+			'fileSources.comics' => 'Cómics',
 			'fileSources.scan' => 'Escanear libros y medios',
 			'fileSources.browserReader' => 'El lector abierto',
 			'fileSources.browserReaderHelp' => 'El lector está abierto en su navegador.Mantense abierto PlezyNG para salvar su lugar y notas.',
@@ -7107,7 +7107,7 @@ extension on TranslationsEs {
 			'fileSources.letterSpacing' => 'La carta espacial',
 			'fileSources.wordSpacing' => 'Palabras espaciales',
 			'fileSources.readerControlsHelp' => 'Separa dos dedos o usa los controles de zoom para ampliar las páginas. Arrastra para desplazarte por la página. Ctrl/⌘ con + o − ajusta el zoom; Ctrl/⌘ con 0 lo restablece. Page Up y Page Down cambian de página.',
-			'fileSources.imagePage' => 'Página Comic',
+			'fileSources.imagePage' => 'Página de cómic',
 			'fileSources.resetReader' => 'Recuperar las preferencias de lectura',
 			'fileSources.zoom' => 'Zoom',
 			'fileSources.useFiles' => 'Utilice archivos y libros',

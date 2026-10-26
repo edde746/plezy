@@ -3063,7 +3063,7 @@ class _Translations$fileSources$he extends Translations$fileSources$en {
 	@override String get letterSpacing => 'ספר חלל';
 	@override String get wordSpacing => 'מילה חלל';
 	@override String get readerControlsHelp => 'כדי להגדיל עמודים, אפשר להרחיק שתי אצבעות זו מזו או להשתמש בפקדי הזום. יש לגרור כדי להזיז את העמוד. Ctrl/⌘ יחד עם + או − משנה את הזום; Ctrl/⌘ יחד עם 0 מאפס אותו. Page Up ו-Page Down מדפדפים בין העמודים.';
-	@override String get imagePage => 'דף קומדיה';
+	@override String get imagePage => 'עמוד קומיקס';
 	@override String get resetReader => 'איפוס העדפות הקריאה';
 	@override String get zoom => 'זום';
 	@override String get useFiles => 'שימוש בקבצים ובספרים';
@@ -7108,7 +7108,7 @@ extension on TranslationsHe {
 			'fileSources.letterSpacing' => 'ספר חלל',
 			'fileSources.wordSpacing' => 'מילה חלל',
 			'fileSources.readerControlsHelp' => 'כדי להגדיל עמודים, אפשר להרחיק שתי אצבעות זו מזו או להשתמש בפקדי הזום. יש לגרור כדי להזיז את העמוד. Ctrl/⌘ יחד עם + או − משנה את הזום; Ctrl/⌘ יחד עם 0 מאפס אותו. Page Up ו-Page Down מדפדפים בין העמודים.',
-			'fileSources.imagePage' => 'דף קומדיה',
+			'fileSources.imagePage' => 'עמוד קומיקס',
 			'fileSources.resetReader' => 'איפוס העדפות הקריאה',
 			'fileSources.zoom' => 'זום',
 			'fileSources.useFiles' => 'שימוש בקבצים ובספרים',

@@ -3033,7 +3033,7 @@ class _Translations$fileSources$az extends Translations$fileSources$en {
 	@override String get syncLocation => 'Movqeynlik filosu (optional)';
 	@override String get syncLocationHint => 'PlezyNG statusu üçün dedikodul bir WebDAV klasör. şartlı yazılar istifadə edir; medya dəyişməzdir.';
 	@override String get audiobooks => 'Avidiyalı';
-	@override String get comics => 'Komiklər';
+	@override String get comics => 'Komikslər';
 	@override String get scan => 'Kitaplar və medyanın skanları';
 	@override String get browserReader => 'Open Əsət';
 	@override String get browserReaderHelp => 'Oxuyucu brauzerinizdə açıqdır. Oxuduğunuz yeri və qeydlərinizi saxlamaq üçün PlezyNG tətbiqini açıq saxlayın.';
@@ -3058,7 +3058,7 @@ class _Translations$fileSources$az extends Translations$fileSources$en {
 	@override String get letterSpacing => 'İtraflar';
 	@override String get wordSpacing => 'Sözlər';
 	@override String get readerControlsHelp => 'Səhifəni böyütmək üçün iki barmağınızı aralayın və ya böyütmə düymələrindən istifadə edin. Səhifəni hərəkət etdirmək üçün sürükləyin. Ctrl/⌘ ilə + və ya − miqyası dəyişir; Ctrl/⌘ ilə 0 onu sıfırlayır. Page Up və Page Down səhifələri dəyişir.';
-	@override String get imagePage => 'Komik sayfa';
+	@override String get imagePage => 'Komiks səhifəsi';
 	@override String get resetReader => 'Read Preferences - Qəzaqlama';
 	@override String get zoom => 'Miqyas';
 	@override String get useFiles => 'Fillər və kitablar';
@@ -7078,7 +7078,7 @@ extension on TranslationsAz {
 			'fileSources.syncLocation' => 'Movqeynlik filosu (optional)',
 			'fileSources.syncLocationHint' => 'PlezyNG statusu üçün dedikodul bir WebDAV klasör. şartlı yazılar istifadə edir; medya dəyişməzdir.',
 			'fileSources.audiobooks' => 'Avidiyalı',
-			'fileSources.comics' => 'Komiklər',
+			'fileSources.comics' => 'Komikslər',
 			'fileSources.scan' => 'Kitaplar və medyanın skanları',
 			'fileSources.browserReader' => 'Open Əsət',
 			'fileSources.browserReaderHelp' => 'Oxuyucu brauzerinizdə açıqdır. Oxuduğunuz yeri və qeydlərinizi saxlamaq üçün PlezyNG tətbiqini açıq saxlayın.',
@@ -7103,7 +7103,7 @@ extension on TranslationsAz {
 			'fileSources.letterSpacing' => 'İtraflar',
 			'fileSources.wordSpacing' => 'Sözlər',
 			'fileSources.readerControlsHelp' => 'Səhifəni böyütmək üçün iki barmağınızı aralayın və ya böyütmə düymələrindən istifadə edin. Səhifəni hərəkət etdirmək üçün sürükləyin. Ctrl/⌘ ilə + və ya − miqyası dəyişir; Ctrl/⌘ ilə 0 onu sıfırlayır. Page Up və Page Down səhifələri dəyişir.',
-			'fileSources.imagePage' => 'Komik sayfa',
+			'fileSources.imagePage' => 'Komiks səhifəsi',
 			'fileSources.resetReader' => 'Read Preferences - Qəzaqlama',
 			'fileSources.zoom' => 'Miqyas',
 			'fileSources.useFiles' => 'Fillər və kitablar',
