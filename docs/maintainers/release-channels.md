@@ -41,7 +41,7 @@ Changing the install IDs means an install signed under upstream's identity canno
 | Chocolatey | Wired, credential-gated | `publish-chocolatey.yml` publishes the fork-specific package after a release. Chocolatey moderation may be required. |
 | Microsoft Store | Package prepared, listing identity required | Set the repository variables below to build `plezyng-windows.msixbundle`; submit it through PlezyNG's Partner Center listing. The optional signed Inno Setup installer is also retained for manual EXE/MSI listing workflows. No automated Partner Center submission is configured. |
 | Google Play | Closed testing - Alpha configured; build 156 is a draft and the track is inactive | Data safety, the default listing, category/contact details, 178 regions, and the five-member `PlezyNG Alpha testers` email list are saved. A refreshed 2.24.1 build with build code 157 is queued in [release run 40272007783](https://github.com/snapetech-org/PlezyNG/actions/runs/40272007783); replace the existing draft with its signed AAB, preview it, and send it for review. `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` is missing, so automated Play uploads are not configured; manual Console upload is available. The README opt-in URL is inactive until rollout. At least 12 testers must remain opted in continuously for 14 days before production access. |
-| Amazon Appstore / Fire TV | App record and lifetime IAP created; Test submission incomplete | `plezyng_lifetime_unlock` is saved at a USD $2.99 base price; Amazon calculates local-market equivalents. The Amazon public key is in the Android assets. A new Amazon security profile is mapped to App Submission API and its credentials are configured in GitHub Actions. Amazon still returns a generic error when the IAP is submitted to Test; app release metadata is incomplete. |
+| Amazon Appstore / Fire TV | App record, listing, and privacy disclosures prepared; binary and IAP test remain blocked | `plezyng_lifetime_unlock` is saved at a USD $2.99 base price; Amazon calculates local-market equivalents. The Amazon public key is in the Android assets. A new Amazon security profile is mapped to App Submission API and its credentials are configured in GitHub Actions. Targeting, content rating, privacy labels, account-deletion instructions, description, icons, feature art, and screenshots are saved. The privacy questionnaire is saved for review. Amazon still returns a generic error when the IAP is submitted to Test, and no Fire TV APK has been uploaded. |
 | Apple App Store (iOS) | App record and lifetime IAP created; cloud-signing build configured, not yet validated; TestFlight setup incomplete | `plezyng_lifetime_unlock` is a non-consumable with a USD $2.99 base price and a price schedule for 175 regions. English (Canada) copy is present. It remains Prepare for Submission. The previous 2.24.1 workflow failed while importing the manual PKCS#12. Apple has three active Apple Distribution certificates and disables creating another one, so the release workflow uses Xcode cloud signing through the existing App Store Connect API key and managed certificate. The next release build must verify signing before this channel is considered ready. |
 | Apple App Store (tvOS) | App record created; cloud-signing build configured, not yet validated | The app's iOS and tvOS platforms can share the lifetime IAP. The previous 2.24.1 workflow failed while importing the manual PKCS#12. The updated workflow uses Xcode cloud signing for both the app and Top Shelf extension. The next release build must verify signing before this channel is considered ready. |
 | Mac App Store | Not a Plezy upstream channel | Plezy distributes macOS through a direct DMG and Homebrew. |
@@ -79,7 +79,7 @@ For iOS and tvOS signing, Xcode automatic signing uses the App Store Connect tea
 | Microsoft Store EXE installer signing | `WINDOWS_SIGNING_CERTIFICATE_BASE64`, `WINDOWS_SIGNING_CERTIFICATE_PASSWORD` |
 | Microsoft Store MSIX bundle identity | Repository variables `MSSTORE_PACKAGE_NAME`, `MSSTORE_PUBLISHER`, and `MSSTORE_PUBLISHER_DISPLAY_NAME`, copied exactly from PlezyNG's Partner Center app identity |
 | macOS Developer ID signing/notarization | `MACOS_CERTIFICATE_BASE64`, `MACOS_CERTIFICATE_PASSWORD`, `KEYCHAIN_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID` |
-| Sparkle / WinSparkle update signatures | `SPARKLE_PRIVATE_KEY` |
+| Sparkle / WinSparkle update signatures | Secret `SPARKLE_PRIVATE_KEY`; repository variable `SPARKLE_PUBLIC_KEY` |
 | Chocolatey | `CHOCO_API_KEY` |
 | WinGet | `WINGET_CREATE_GITHUB_TOKEN` (classic GitHub PAT with `public_repo` scope) |
 | Snap Store | `SNAPCRAFT_STORE_CREDENTIALS` (exported Snapcraft credentials scoped to the registered PlezyNG snap and required channels) |
@@ -92,9 +92,10 @@ GHCR uses the workflow's `GITHUB_TOKEN`; make the first package public in GitHub
 
 At the 2026-10-26 readiness check, repository secrets are configured for Android signing, Amazon
 Appstore, AUR, Apple App Store Connect API, iOS/tvOS App Store signing, Chocolatey, COPR, Discord,
-Docker Hub, Launchpad signing, Snap, and WinGet. The `AUR_PACKAGE_NAME`, `COPR_PROJECT`, and
-`LAUNCHPAD_PPA` variables are also configured. `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` is missing, so
-automated Play uploads are not configured. Data safety and the default Play listing are complete;
+Docker Hub, Launchpad signing, Snap, Sparkle, and WinGet. The `AUR_PACKAGE_NAME`, `COPR_PROJECT`,
+`LAUNCHPAD_PPA`, and `SPARKLE_PUBLIC_KEY` variables are also configured.
+`GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` is missing, so automated Play uploads are not configured. Data
+safety and the default Play listing are complete;
 the Alpha track has 178 regions and a five-member tester list but remains inactive with draft build
 156. Release run 40272007783 is queued to build 2.24.1+157 with the refreshed branding; upload that
 AAB to replace the draft, then submit the closed test for review. The README opt-in URL is not live
@@ -104,9 +105,9 @@ The old iOS/tvOS build failed during manual PKCS#12 import. The Apple portal dis
 another Apple Distribution certificate because the team has reached its certificate limit; no
 existing certificate or secret was revoked. The current release workflow uses Xcode cloud signing
 through the existing App Store Connect API key. Run 40272007783 will validate access to Apple's
-managed certificate and profiles. `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, macOS Developer ID
-signing secrets, and `SPARKLE_PRIVATE_KEY` are missing; `APPLE_TEAM_ID` is shared with mobile jobs
-and is not sufficient for macOS notarization. Windows installer-signing secrets and Microsoft
+managed certificate and profiles. `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, and macOS Developer ID
+signing secrets are missing; `APPLE_TEAM_ID` is shared with mobile jobs and is not sufficient for
+macOS notarization. Windows installer-signing secrets and Microsoft
 Store identity variables are also missing. Keep existing credentials intact when adding
 replacements; do not reuse signing keys or store identities from another project.
 
