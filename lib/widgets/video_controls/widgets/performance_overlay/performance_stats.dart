@@ -316,7 +316,7 @@ class PerformanceStats {
     final profile = dvSourceProfile;
     if (profile == null) return t.common.notAvailable;
     final layers = dvSourceLayers;
-    return layers == null ? 'P$profile' : 'P$profile · source $layers';
+    return layers == null ? 'P$profile' : 'P$profile · $layers';
   }
 
   /// Format Dolby Vision playback path. mpv's base layer is named by the
