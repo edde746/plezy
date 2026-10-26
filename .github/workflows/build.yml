@@ -73,10 +73,10 @@ jobs:
             -H "Authorization: Bearer $GH_TOKEN" \
             -H "Accept: application/vnd.github+json" \
             -H "X-GitHub-Api-Version: 2022-11-28" \
-            "https://api.github.com/repos/$REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$COMMIT_SHA&event=push&per_page=20")
-          result=$(python3 -c 'import json,sys; sha=sys.argv[1]; data=json.load(sys.stdin); runs=[r for r in data.get("workflow_runs",[]) if r.get("head_sha")==sha and r.get("head_branch")=="main" and r.get("event")=="push"]; runs.sort(key=lambda r:(r.get("run_number",0),r.get("run_attempt",0)),reverse=True); r=runs[0] if runs else {}; print((r.get("status") or "missing")+" "+(r.get("conclusion") or "missing"))' "$COMMIT_SHA" <<< "$response")
+            "https://api.github.com/repos/$REPOSITORY/actions/workflows/ci.yml/runs?head_sha=$COMMIT_SHA&event=workflow_dispatch&per_page=20")
+          result=$(python3 -c 'import json,sys; sha=sys.argv[1]; data=json.load(sys.stdin); runs=[r for r in data.get("workflow_runs",[]) if r.get("head_sha")==sha and r.get("head_branch")=="main" and r.get("event")=="workflow_dispatch"]; runs.sort(key=lambda r:(r.get("run_number",0),r.get("run_attempt",0)),reverse=True); r=runs[0] if runs else {}; print((r.get("status") or "missing")+" "+(r.get("conclusion") or "missing"))' "$COMMIT_SHA" <<< "$response")
           if [[ "$result" != "completed success" ]]; then
-            echo "The exact release commit must have a completed successful CI - Sanity Checks push run on main. Found: $result" >&2
+            echo "The exact release commit must have a completed successful manually dispatched CI - Sanity Checks run on main. Found: $result" >&2
             exit 1
           fi
 
