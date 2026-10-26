@@ -433,6 +433,15 @@ packages:
       url: "https://github.com/lg-flutter-webos/plugins.git"
     source: git
     version: "1.0.0"
+  disk_usage:
+    dependency: "direct main"
+    description:
+      path: "."
+      ref: "a2d6244e45db6f48760bd79c18445d32ecf2e77e"
+      resolved-ref: "a2d6244e45db6f48760bd79c18445d32ecf2e77e"
+      url: "https://github.com/yj-labs/disk_usage"
+    source: git
+    version: "1.0.0"
   drift:
     dependency: "direct main"
     description:

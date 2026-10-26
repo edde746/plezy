@@ -97,6 +97,7 @@ import '../utils/live_tv_player_navigation.dart';
 import '../utils/player_utils.dart';
 import '../utils/orientation_helper.dart';
 import '../utils/platform_detector.dart';
+import '../utils/device_channel.dart';
 import '../utils/provider_extensions.dart';
 import '../utils/snackbar_helper.dart';
 import '../utils/stream_buffer_sizing.dart';
@@ -947,6 +948,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   DateTime? _lastPlaybackPauseAt;
   bool _autoPipEnabled = false;
   bool _exitFullscreenOnPlayerClose = false;
+  bool _autoFullscreenEnteredForPlaybackStart = false;
   bool _androidAutoPipTransitionInFlight = false;
   bool _pipFiltersPrepared = false;
   VoidCallback? _autoPipEnteringCallback;
@@ -2517,6 +2519,28 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   /// caller — dispose after an accepted exit — from re-issuing the platform
   /// requests, and the route guard is what refuses to start at all once
   /// another player owns the screen.
+  Future<void> _applyPlaybackStartWindowSettings(SettingsService settingsService) async {
+    if (PlatformDetector.isDesktopOS() &&
+        settingsService.read(SettingsService.enterFullscreenOnPlaybackStart) &&
+        !_autoFullscreenEnteredForPlaybackStart) {
+      _autoFullscreenEnteredForPlaybackStart = true;
+      try {
+        await FullscreenStateManager().enterFullscreen();
+      } catch (error, stackTrace) {
+        _autoFullscreenEnteredForPlaybackStart = false;
+        appLogger.w('Failed to enter fullscreen when playback starts', error: error, stackTrace: stackTrace);
+      }
+    }
+    if (Platform.isAndroid && !PlatformDetector.isTV()) {
+      final extendIntoCutout = settingsService.read(SettingsService.extendVideoIntoDisplayCutout);
+      try {
+        await deviceChannel.invokeMethod<bool>('setVideoCutoutMode', extendIntoCutout);
+      } catch (error, stackTrace) {
+        appLogger.w('Failed to apply display cutout layout preference', error: error, stackTrace: stackTrace);
+      }
+    }
+  }
+
   Future<void> _restoreSystemUiAndOrientation() {
     // Before the overlays are shown below: the re-show callback that follows
     // must find no owner, or it would hide them again.
@@ -2526,6 +2550,11 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     if (_activeRouteGuard.identityFor(this) == null) return Future<void>.value();
     if (PlatformDetector.isDesktopOS() && _exitFullscreenOnPlayerClose) {
       unawaited(FullscreenStateManager().exitFullscreen());
+    }
+    if (Platform.isAndroid && !_isReplacingWithVideo) {
+      unawaited(deviceChannel.invokeMethod<void>('setVideoCutoutMode', false).catchError((Object error) {
+        appLogger.w('Failed to restore display cutout layout', error: error);
+      }));
     }
 
     // Independent requests: a missing system-UI reply must not prevent the

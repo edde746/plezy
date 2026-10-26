@@ -26,6 +26,10 @@ dependencies:
   logger: ^2.7.0
   package_info_plus: ^9.0.0
   device_info_plus: ^12.3.0
+  disk_usage:
+    git:
+      url: https://github.com/yj-labs/disk_usage
+      ref: a2d6244e45db6f48760bd79c18445d32ecf2e77e
   provider: ^6.1.2
   flex_color_picker: ^3.8.0
   qr_flutter: ^4.1.0

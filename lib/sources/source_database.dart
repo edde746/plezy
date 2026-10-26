@@ -1001,6 +1001,18 @@ class SourceRepository {
       (await database.customSelect('SELECT * FROM downloads WHERE profile=?', variables: [Variable(profile)]).get())
           .map((r) => r.data)
           .toList();
+
+  /// Remaining bytes reserved by active writers across every profile. The OS
+  /// free-space guard is volume-wide even while a profile switch is settling.
+  Future<int> activeDownloadReservationBytes() async {
+    final row = await database
+        .customSelect(
+          "SELECT COALESCE(SUM(MAX(reserved_bytes,bytes)-bytes),0) AS remaining "
+          "FROM downloads WHERE state IN ('running','importing')",
+        )
+        .getSingle();
+    return sourceInt(row.data['remaining']) ?? 0;
+  }
   Future<void> forgetDownload(String profile, String key) =>
       database.customStatement('DELETE FROM downloads WHERE profile=? AND key=?', [profile, key]);
   Future<List<Map<String, dynamic>>> history(String profile, String key) async =>

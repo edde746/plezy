@@ -1202,6 +1202,8 @@ class SettingsService extends BaseSharedPreferencesService {
   );
   static const startInFullscreen = BoolPref('start_in_fullscreen');
   static const exitFullscreenOnPlayerClose = BoolPref('exit_fullscreen_on_player_close');
+  static const enterFullscreenOnPlaybackStart = BoolPref('enter_fullscreen_on_playback_start');
+  static const extendVideoIntoDisplayCutout = BoolPref('extend_video_into_display_cutout');
   static const playPrerollsBeforeMovies = BoolPref('play_prerolls_before_movies');
 
   static const playbackBufferTier = EnumPref<PlaybackBufferTier>(

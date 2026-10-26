@@ -1705,6 +1705,18 @@ class Translations$settings$en {
 	/// en: 'Automatically exit fullscreen when closing the video player'
 	String get exitFullscreenOnPlayerCloseDescription => 'Automatically exit fullscreen when closing the video player';
 
+	/// en: 'Enter fullscreen when playback starts'
+	String get enterFullscreenOnPlaybackStart => 'Enter fullscreen when playback starts';
+
+	/// en: 'Open desktop video in fullscreen when playback starts'
+	String get enterFullscreenOnPlaybackStartDescription => 'Open desktop video in fullscreen when playback starts';
+
+	/// en: 'Extend video into display cutout'
+	String get extendVideoIntoDisplayCutout => 'Extend video into display cutout';
+
+	/// en: 'Let fullscreen video use the camera cutout on Android phones'
+	String get extendVideoIntoDisplayCutoutDescription => 'Let fullscreen video use the camera cutout on Android phones';
+
 	/// en: 'Auto-Hide Performance Overlay'
 	String get autoHidePerformanceOverlay => 'Auto-Hide Performance Overlay';
 
@@ -7730,6 +7742,12 @@ class Translations$fileSources$en {
 
 	/// en: 'The offline storage limit was reached. Raise the limit or remove a downloaded copy.'
 	String get errorQuotaExceeded => 'The offline storage limit was reached. Raise the limit or remove a downloaded copy.';
+
+	/// en: 'There is not enough free device storage to keep the protected reserve.'
+	String get errorStorageLow => 'There is not enough free device storage to keep the protected reserve.';
+
+	/// en: 'PlezyNG could not check free device storage, so the write was stopped.'
+	String get errorStorageUnavailable => 'PlezyNG could not check free device storage, so the write was stopped.';
 
 }
 

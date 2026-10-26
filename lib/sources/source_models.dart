@@ -9,7 +9,7 @@ enum SourceItemKind { folder, ebook, audiobook, comic, music, video, unknown }
 
 enum PublicationMode { reading, listening, watching }
 
-enum SourceFailure { authentication, permission, unavailable, unsupported, invalidData, cancelled, conflict, quotaExceeded }
+enum SourceFailure { authentication, permission, unavailable, unsupported, invalidData, cancelled, conflict, quotaExceeded, storageLow, storageUnavailable }
 
 /// Deliberately carries no URL, token or provider response into UI/logging.
 class SourceException implements Exception {

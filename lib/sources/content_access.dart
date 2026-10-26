@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:disk_usage/disk_usage.dart';
 import 'package:path/path.dart' as p;
 
 import 'source_database.dart';
@@ -34,7 +35,16 @@ class PublicationDownloads {
   final Map<String, TransferCancellation> _cancellations = {};
   final Map<String, _DownloadTask> _tasks = {};
   final Queue<_DownloadTask> _queue = Queue();
+  final Map<String, int> _pendingStorageWrites = {};
+  Future<void> _storageCheckQueue = Future<void>.value();
   int _activeTransfers = 0;
+
+  static const int minimumFreeStorageReserveBytes = 512 * 1024 * 1024;
+  static const bool _webOsBuild = bool.fromEnvironment('PLEZY_WEBOS');
+  static const bool _tvOsBuild = bool.fromEnvironment('TVOS_BUILD');
+
+  bool get _supportsFreeSpaceProbe =>
+      !_webOsBuild && !_tvOsBuild && const {'android', 'ios', 'linux', 'macos', 'windows'}.contains(Platform.operatingSystem);
   String key(String sourceId, PublicationFile file) => sourceKey(sourceId, file.id);
   File _target(String profile, String sourceId, PublicationFile file) {
     final extension = p.extension(file.name).toLowerCase();
@@ -125,6 +135,53 @@ class PublicationDownloads {
         label: name,
       );
     }
+  }
+
+  /// Reserves OS storage for a single chunk before any bytes are written.
+  /// Known-size jobs are counted from their durable reservation; unknown-size
+  /// jobs reserve the incoming chunk until the ledger has observed it.
+  Future<void Function()> reserveStorageWrite({
+    required String profile,
+    required String transferKey,
+    required int chunkBytes,
+    required bool unknownSize,
+  }) {
+    if (chunkBytes <= 0 || !_supportsFreeSpaceProbe) return Future.value(() {});
+    final previous = _storageCheckQueue;
+    final gate = Completer<void>();
+    _storageCheckQueue = gate.future;
+    return previous.then((_) async {
+      try {
+        int? available;
+        try {
+          available = await DiskUsage.freeSpace(directory.path);
+        } on Object {
+          throw const SourceException(SourceFailure.storageUnavailable);
+        }
+        if (available == null) throw const SourceException(SourceFailure.storageUnavailable);
+        final remainingReservations = await repository.activeDownloadReservationBytes();
+        final pendingWrites = _pendingStorageWrites.values.fold<int>(0, (sum, bytes) => sum + bytes);
+        final incomingUnknownBytes = unknownSize ? chunkBytes : 0;
+        final required =
+            minimumFreeStorageReserveBytes + remainingReservations + pendingWrites + incomingUnknownBytes;
+        if (available < required) throw const SourceException(SourceFailure.storageLow);
+        final pendingKey = sourceKey(profile, transferKey);
+        _pendingStorageWrites[pendingKey] = (_pendingStorageWrites[pendingKey] ?? 0) + chunkBytes;
+        var released = false;
+        return () {
+          if (released) return;
+          released = true;
+          final remaining = (_pendingStorageWrites[pendingKey] ?? 0) - chunkBytes;
+          if (remaining <= 0) {
+            _pendingStorageWrites.remove(pendingKey);
+          } else {
+            _pendingStorageWrites[pendingKey] = remaining;
+          }
+        };
+      } finally {
+        gate.complete();
+      }
+    });
   }
 
   Future<File> download(
@@ -393,13 +450,20 @@ class PublicationDownloads {
         throw const SourceException(SourceFailure.invalidData);
       }
       var received = directOffset;
-      final sink = partial.openWrite(mode: directOffset > 0 ? FileMode.append : FileMode.write);
+      final output = await partial.open(mode: directOffset > 0 ? FileMode.append : FileMode.write);
       try {
-        await sink.addStream(
-          directStream.stream.timeout(const Duration(seconds: 45)).asyncMap((bytes) async {
+        await for (final bytes in directStream.stream.timeout(const Duration(seconds: 45))) {
+          cancel.check();
+          final nextReceived = received + bytes.length;
+          if (nextReceived > directStream.size) throw const SourceException(SourceFailure.invalidData);
+          final releaseStorage = await reserveStorageWrite(
+            profile: profile,
+            transferKey: transferKey,
+            chunkBytes: bytes.length,
+            unknownSize: false,
+          );
+          try {
             cancel.check();
-            received += bytes.length;
-            if (received > directStream.size) throw const SourceException(SourceFailure.invalidData);
             await _persistChunk(
               profile: profile,
               key: recordKey,
@@ -407,16 +471,19 @@ class PublicationDownloads {
               file: file,
               path: partial.path,
               label: label,
-              bytes: received,
+              bytes: nextReceived,
               expected: directStream.size,
             );
+            await output.writeFrom(bytes);
+            received = nextReceived;
             onProgress?.call(received, directStream.size);
-            return bytes;
-          }),
-        );
-        await sink.flush();
+          } finally {
+            releaseStorage();
+          }
+        }
+        await output.flush();
       } finally {
-        await sink.close();
+        await output.close();
       }
       if (received != directStream.size) throw const SourceException(SourceFailure.invalidData);
     } else {
@@ -439,8 +506,55 @@ class PublicationDownloads {
           bytes: 0,
           expected: expectedSize,
         );
-        await input.copy(partial.path);
-        cancel.check();
+        final inputSize = expectedSize ?? await input.length();
+        expectedSize = inputSize;
+        await _persistChunk(
+          profile: profile,
+          key: recordKey,
+          adapter: adapter,
+          file: file,
+          path: partial.path,
+          label: label,
+          bytes: 0,
+          expected: expectedSize,
+        );
+        final output = await partial.open(mode: FileMode.write);
+        var copiedBytes = 0;
+        try {
+          await for (final bytes in input.openRead()) {
+            cancel.check();
+            final nextBytes = copiedBytes + bytes.length;
+            if (nextBytes > inputSize) throw const SourceException(SourceFailure.invalidData);
+            final releaseStorage = await reserveStorageWrite(
+              profile: profile,
+              transferKey: transferKey,
+              chunkBytes: bytes.length,
+              unknownSize: false,
+            );
+            try {
+              cancel.check();
+              await _persistChunk(
+                profile: profile,
+                key: recordKey,
+                adapter: adapter,
+                file: file,
+                path: partial.path,
+                label: label,
+                bytes: nextBytes,
+                expected: inputSize,
+              );
+              await output.writeFrom(bytes);
+              copiedBytes = nextBytes;
+              onProgress?.call(copiedBytes, inputSize);
+            } finally {
+              releaseStorage();
+            }
+          }
+          await output.flush();
+        } finally {
+          await output.close();
+        }
+        if (copiedBytes != inputSize) throw const SourceException(SourceFailure.invalidData);
       } else {
         var response = await adapter.transport.send(
           'GET',
@@ -523,15 +637,22 @@ class PublicationDownloads {
         } else if (await validatorFile.exists()) {
           await validatorFile.delete();
         }
-        final sink = partial.openWrite(mode: offset > 0 ? FileMode.append : FileMode.write);
+        final output = await partial.open(mode: offset > 0 ? FileMode.append : FileMode.write);
         try {
-          await sink.addStream(
-            response.stream.timeout(const Duration(seconds: 45)).asyncMap((bytes) async {
+          await for (final bytes in response.stream.timeout(const Duration(seconds: 45))) {
+            cancel.check();
+            final nextOffset = offset + bytes.length;
+            if (expectedSize != null && nextOffset > expectedSize) {
+              throw const SourceException(SourceFailure.invalidData);
+            }
+            final releaseStorage = await reserveStorageWrite(
+              profile: profile,
+              transferKey: transferKey,
+              chunkBytes: bytes.length,
+              unknownSize: expectedSize == null,
+            );
+            try {
               cancel.check();
-              offset += bytes.length;
-              if (expectedSize != null && offset > expectedSize) {
-                throw const SourceException(SourceFailure.invalidData);
-              }
               await _persistChunk(
                 profile: profile,
                 key: recordKey,
@@ -539,16 +660,19 @@ class PublicationDownloads {
                 file: file,
                 path: partial.path,
                 label: label,
-                bytes: offset,
+                bytes: nextOffset,
                 expected: expectedSize,
               );
+              await output.writeFrom(bytes);
+              offset = nextOffset;
               onProgress?.call(offset, expectedSize);
-              return bytes;
-            }),
-          );
-          await sink.flush();
+            } finally {
+              releaseStorage();
+            }
+          }
+          await output.flush();
         } finally {
-          await sink.close();
+          await output.close();
         }
       }
     }

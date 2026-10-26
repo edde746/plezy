@@ -635,7 +635,11 @@
     "regionFormat": "Regional formats",
     "regionFormatDescription": "Choose how dates, numbers and measurements appear.",
     "metadataLanguage": "Metadata language",
-    "metadataLanguageDescription": "Preferred titles and descriptions where the server supports it. Audio and subtitle preferences stay separate."
+    "metadataLanguageDescription": "Preferred titles and descriptions where the server supports it. Audio and subtitle preferences stay separate.",
+    "enterFullscreenOnPlaybackStart": "Enter fullscreen when playback starts",
+    "enterFullscreenOnPlaybackStartDescription": "Open desktop video in fullscreen when playback starts",
+    "extendVideoIntoDisplayCutout": "Extend video into display cutout",
+    "extendVideoIntoDisplayCutoutDescription": "Let fullscreen video use the camera cutout on Android phones"
   },
   "themeEditor": {
     "builtIn": "Built-in",
@@ -3182,7 +3186,9 @@
     "downloadFailed": "Needs retry",
     "importing": "Importing",
     "importInterrupted": "Import interrupted · remove to clear",
-    "errorQuotaExceeded": "The offline storage limit was reached. Raise the limit or remove a downloaded copy."
+    "errorQuotaExceeded": "The offline storage limit was reached. Raise the limit or remove a downloaded copy.",
+    "errorStorageLow": "There is not enough free device storage to keep the protected reserve.",
+    "errorStorageUnavailable": "PlezyNG could not check free device storage, so the write was stopped."
   },
   "lending": {
     "title": "Public libraries",
@@ -3391,10 +3397,10 @@
     "subtitleRating": "Rating ${rating}",
     "subtitleDownloading": "Downloading subtitle: ${title}",
     "sharedEntryPair": "Pair this item",
-  "sharedEntryPairHelp": "Enter the same ID for this item on each device. Use a stable shared identifier or generate one and copy it to the matching item. Progress pairs only when the edition file types, sizes, and order match. Blank removes this mapping.",
-  "sharedEntryId": "Shared item ID",
-  "generateSharedEntryId": "Generate shared item ID",
-  "sharedLibraryId": "Shared library ID (optional)",
+    "sharedEntryPairHelp": "Enter the same ID for this item on each device. Use a stable shared identifier or generate one and copy it to the matching item. Progress pairs only when the edition file types, sizes, and order match. Blank removes this mapping.",
+    "sharedEntryId": "Shared item ID",
+    "generateSharedEntryId": "Generate shared item ID",
+    "sharedLibraryId": "Shared library ID (optional)",
     "sharedLibraryHelp": "Use the same ID on devices that open the same library. This public ID helps carry reading progress and notes across different source connections; it is not a password. When providers use different item IDs, pair those items from their detail screens.",
     "sharedLibraryInvalid": "Use 8–100 letters, numbers, dots, underscores or hyphens.",
     "generateSharedLibraryId": "Generate a shared library ID",

@@ -165,8 +165,13 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                 // mpv-only (#2149): ExoPlayer has no filter chain, so the
                 // tile disappears while the ExoPlayer backend is active.
                 if (!exoActive) _deinterlaceTile(),
-                // TODO: "Extend video into display cutout" toggle (#1769)
-                // goes here, Android-only.
+                if (Platform.isAndroid && !PlatformDetector.isTV())
+                  SettingSwitchTile(
+                    pref: SettingsService.extendVideoIntoDisplayCutout,
+                    icon: Symbols.fullscreen_rounded,
+                    title: t.settings.extendVideoIntoDisplayCutout,
+                    subtitle: t.settings.extendVideoIntoDisplayCutoutDescription,
+                  ),
               ],
             ),
 
@@ -366,15 +371,20 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
           title: t.settings.clickVideoTogglesPlayback,
           subtitle: t.settings.clickVideoTogglesPlaybackDescription,
         ),
-      if (PlatformDetector.isDesktopOS())
+      if (PlatformDetector.isDesktopOS()) ...[
+        SettingSwitchTile(
+          pref: SettingsService.enterFullscreenOnPlaybackStart,
+          icon: Symbols.fullscreen_rounded,
+          title: t.settings.enterFullscreenOnPlaybackStart,
+          subtitle: t.settings.enterFullscreenOnPlaybackStartDescription,
+        ),
         SettingSwitchTile(
           pref: SettingsService.exitFullscreenOnPlayerClose,
           icon: Symbols.fullscreen_exit_rounded,
           title: t.settings.exitFullscreenOnPlayerClose,
           subtitle: t.settings.exitFullscreenOnPlayerCloseDescription,
         ),
-      // TODO: "Enter fullscreen when playback starts" toggle (#1641) goes
-      // here, desktop-only, paired with exitFullscreenOnPlayerClose.
+      ],
     ],
   );
 

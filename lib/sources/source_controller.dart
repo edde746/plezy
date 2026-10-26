@@ -1044,21 +1044,33 @@ class SourceController extends ChangeNotifier {
             if (expectedSize != null && nextBytes > expectedSize) {
               throw const SourceException(SourceFailure.invalidData);
             }
-            await repository.reserveDownload(
+            final releaseStorage = await downloads.reserveStorageWrite(
               profile: profile,
-              key: downloadKey,
-              sourceId: source.id,
-              file: descriptor,
-              path: partial.path,
-              reservedBytes: expectedSize ?? nextBytes,
-              bytes: nextBytes,
-              state: 'importing',
-              label: filename,
+              transferKey: sourceKey(profile, downloadKey),
+              chunkBytes: chunk.length,
+              unknownSize: expectedSize == null,
             );
-            requireSession(epoch);
-            transfer.cancellation.check();
-            await output.writeFrom(chunk);
-            copiedBytes = nextBytes;
+            try {
+              requireSession(epoch);
+              transfer.cancellation.check();
+              await repository.reserveDownload(
+                profile: profile,
+                key: downloadKey,
+                sourceId: source.id,
+                file: descriptor,
+                path: partial.path,
+                reservedBytes: expectedSize ?? nextBytes,
+                bytes: nextBytes,
+                state: 'importing',
+                label: filename,
+              );
+              requireSession(epoch);
+              transfer.cancellation.check();
+              await output.writeFrom(chunk);
+              copiedBytes = nextBytes;
+            } finally {
+              releaseStorage();
+            }
           }
           await output.flush();
         } finally {
