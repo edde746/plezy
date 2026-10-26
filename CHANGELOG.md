@@ -86,6 +86,7 @@
 
 ### Fixed
 
+- Use Plezy's TV-aware text fields for standalone source setup and search, and show feedback when Trakt finds no metadata matches.
 - Keep entitlement-controlled themes and icons locked when store access is disabled in the build.
 - Remove stale SVG imports after switching the setup and app-icon previews back to raster artwork.
 - Localize the About screen privacy-policy link.

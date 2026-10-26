@@ -2,6 +2,7 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import '../../focus/focusable_text_field.dart';
 import '../../models/subtitles/subtitle_search_result.dart';
 import '../../services/open_subtitles_client.dart';
 
@@ -139,7 +140,7 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
               Row(
                 children: [
                   Expanded(
-                    child: TextField(
+                    child: FocusableTextField(
                       controller: _query,
                       autofocus: true,
                       textInputAction: TextInputAction.search,
