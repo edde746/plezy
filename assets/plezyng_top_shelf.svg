@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <radialGradient id="background" cx="50%" cy="43%" r="78%">
+      <stop offset="0" stop-color="#171717"/>
+      <stop offset="1" stop-color="#050505"/>
+    </radialGradient>
+    <linearGradient id="wordmark" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#ff805a"/>
+      <stop offset="1" stop-color="#a94b33"/>
+    </linearGradient>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#background)"/>
+  <image href="plezy.png" x="332" y="232" width="256" height="256"/>
+  <text x="630" y="430" fill="url(#wordmark)" font-family="DejaVu Sans, Arial, sans-serif" font-size="238" font-weight="700">PlezyNG</text>
+</svg>
