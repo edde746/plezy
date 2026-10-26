@@ -75,6 +75,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
   List<SourceEntry> _entries = [];
   List<PublicationProgress> _progress = [];
   final Set<String> _offline = {};
+  List<Map<String, dynamic>> _downloadJobs = const [];
   bool _loading = true;
   bool _usingIndexFallback = false;
   Object? _error;
@@ -173,6 +174,9 @@ class _SourcesScreenState extends State<SourcesScreen> {
       _offline
         ..clear()
         ..addAll(downloads.where((d) => d['complete'] == 1).map((d) => d['key'] as String));
+      _downloadJobs = downloads
+          .where((d) => d['complete'] != 1 && d['state'] != 'completed' && d['state'] != 'legacy')
+          .toList(growable: false);
       setState(() {
         _entries = uniqueItems;
         _progress = progress;
@@ -221,6 +225,65 @@ class _SourcesScreenState extends State<SourcesScreen> {
     await sourceAction(context, () async {
       await context.read<SourceController>().importFiles(files.files, name: t.fileSources.localFiles);
     });
+    if (mounted) await _load();
+  }
+
+  String _formatBytes(int bytes) {
+    const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB'];
+    var value = bytes.toDouble();
+    var unit = 0;
+    while (value >= 1024 && unit < units.length - 1) {
+      value /= 1024;
+      unit++;
+    }
+    return '${value.toStringAsFixed(unit == 0 ? 0 : 1)} ${units[unit]}';
+  }
+
+  Future<void> _editOfflineQuota(SourceController controller) async {
+    await controller.ready;
+    controller.requireSession();
+    final profile = controller.profileId!;
+    await controller.downloads.reconcileProfile(profile);
+    final current = await controller.repository.downloadQuota(profile);
+    final usage = await controller.repository.downloadStorageUsage(profile);
+    if (!mounted) return;
+    final choices = [1, 2, 5, 10, 20, 50, 100, 250, 500, 1024].map((gb) => gb * 1024 * 1024 * 1024).toList();
+    var selected = choices.reduce((a, b) => (a - current).abs() <= (b - current).abs() ? a : b);
+    final result = await showDialog<int>(
+      context: context,
+      builder: (dialogContext) => StatefulBuilder(
+        builder: (context, setDialogState) => AlertDialog(
+          title: Text(t.fileSources.offlineQuota),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(t.fileSources.offlineQuotaHelp),
+              const SizedBox(height: 16),
+              Text('${t.fileSources.offlineStorageUsage}: ${_formatBytes(usage.usedBytes)} / ${_formatBytes(selected)}'),
+              if (usage.reservedBytes > usage.usedBytes)
+                Padding(
+                  padding: const EdgeInsets.only(top: 4),
+                  child: Text('${_formatBytes(usage.reservedBytes)} ${t.fileSources.reservedStorage}'),
+                ),
+              const SizedBox(height: 12),
+              DropdownButtonFormField<int>(
+                initialValue: selected,
+                decoration: InputDecoration(labelText: t.fileSources.offlineQuota),
+                items: [for (final value in choices) DropdownMenuItem(value: value, child: Text(_formatBytes(value)))],
+                onChanged: (value) => setDialogState(() => selected = value ?? selected),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
+            FilledButton(onPressed: () => Navigator.pop(dialogContext, selected), child: Text(t.common.save)),
+          ],
+        ),
+      ),
+    );
+    if (result == null || !mounted) return;
+    await sourceAction(context, () => controller.repository.setDownloadQuota(profile, result));
     if (mounted) await _load();
   }
 
@@ -339,6 +402,11 @@ class _SourcesScreenState extends State<SourcesScreen> {
                 label: t.audiobook.syncTitle,
                 icon: Symbols.cloud_sync_rounded,
               ),
+              AppMenuItem(
+                value: 'offline-quota',
+                label: t.fileSources.offlineQuota,
+                icon: Symbols.storage_rounded,
+              ),
             ],
             const AppMenuDivider(),
             AppMenuItem(
@@ -360,6 +428,8 @@ class _SourcesScreenState extends State<SourcesScreen> {
             } else if (action == 'reading-listening-sync') {
               await Navigator.push(context, MaterialPageRoute(builder: (_) => const SourceSyncScreen()));
               if (mounted) await _load();
+            } else if (action == 'offline-quota') {
+              await _editOfflineQuota(sources);
             } else if (action == 'refresh') {
               await _load();
             }
@@ -409,6 +479,40 @@ class _SourcesScreenState extends State<SourcesScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                if (widget.offlineOnly && _downloadJobs.isNotEmpty) ...[
+                  Text(t.fileSources.downloadQueue, style: Theme.of(context).textTheme.titleLarge),
+                  const SizedBox(height: 8),
+                  for (final job in _downloadJobs)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const AppIcon(Symbols.downloading_rounded),
+                      title: Text((job['label'] as String?)?.isNotEmpty == true ? job['label'] as String : t.fileSources.offline),
+                      subtitle: Text(switch (job['state']) {
+                        'running' => t.fileSources.downloadRunning,
+                        'queued' => t.fileSources.downloadQueued,
+                        'paused' => t.fileSources.downloadPaused,
+                        'failed' => t.fileSources.downloadFailed,
+                        _ => t.fileSources.downloadQueued,
+                      }),
+                      trailing: IconButton(
+                        tooltip: job['state'] == 'failed' || job['state'] == 'paused' ? t.common.retry : t.common.cancel,
+                        icon: AppIcon(job['state'] == 'failed' || job['state'] == 'paused'
+                            ? Symbols.refresh_rounded
+                            : Symbols.close_rounded),
+                        onPressed: _loading
+                            ? null
+                            : () => sourceAction(context, () async {
+                                if (job['state'] == 'failed' || job['state'] == 'paused') {
+                                  await sources.retryDownload(job['key'] as String);
+                                } else {
+                                  await sources.cancelDownload(job['key'] as String);
+                                }
+                                if (mounted) await _load();
+                              }),
+                      ),
+                    ),
+                  const SizedBox(height: 12),
+                ],
                 if (root) ...[
                   Text(t.fileSources.subtitle, style: Theme.of(context).textTheme.bodyLarge),
                   const SizedBox(height: 24),
