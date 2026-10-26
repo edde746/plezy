@@ -29,10 +29,38 @@ def apply(root: Path) -> None:
     if head != EXPECTED_COMMIT:
         raise SystemExit(f"Refusing to patch unexpected mpv source: {head}")
 
+    repo_root = Path(__file__).resolve().parents[3]
+    generated_files = (
+        (repo_root / "tools/dv-engine/fel_pair_state.h", root / "filters/fel_pair_state.h"),
+        (repo_root / "tools/dv-engine/fel_pair_state_test.c", root / "test/fel_pair_state.c"),
+    )
+    for source, target in generated_files:
+        if target.exists():
+            raise SystemExit(f"Refusing to overwrite existing pinned source file: {target}")
+        target.write_text(source.read_text())
+
     replace_once(
         root, "filters/f_enhancement_pair.c",
         "#include <libavutil/buffer.h>\n",
         "#include <libavutil/buffer.h>\n\n#include <math.h>\n\n#include <libplacebo/colorspace.h>\n",
+    )
+    replace_once(
+        root, "filters/f_enhancement_pair.c",
+        "#include \"f_enhancement_pair.h\"\n",
+        "#include \"f_enhancement_pair.h\"\n#include \"fel_pair_state.h\"\n",
+    )
+    replace_once(
+        root, "filters/f_enhancement_pair.c",
+        """static int pts_cmp(double a, double b)
+{
+    if (a == MP_NOPTS_VALUE || b == MP_NOPTS_VALUE)
+        return 0;
+    if (a < b - PTS_MATCH_TOLERANCE) return -1;
+    if (a > b + PTS_MATCH_TOLERANCE) return  1;
+    return 0;
+}
+""",
+        "",
     )
     replace_once(
         root, "filters/f_enhancement_pair.c",
@@ -221,23 +249,25 @@ static void pair_process(struct mp_filter *f)
 
         struct mp_image *bl = p->bl_pending[0];
         bool have_el = p->num_el_pending > 0;
-        int cmp = have_el ? pts_cmp(p->el_pending[0]->pts, bl->pts) : 2;
+        struct mp_fel_pair_input pair_input = {
+            .have_el = have_el,
+            .el_eof = p->el_eof,
+            .bl_pts = bl->pts,
+            .el_pts = have_el ? p->el_pending[0]->pts : MP_NOPTS_VALUE,
+            .no_pts = MP_NOPTS_VALUE,
+            .bl_pending = p->num_bl_pending,
+            .queue_max = QUEUE_MAX,
+        };
+        struct mp_fel_pair_decision decision = mp_fel_pair_decide(pair_input);
 
-        // EL older than BL: its BL partner already left or never arrived.
-        if (have_el && cmp < 0) {
+        if (decision.action == MP_FEL_PAIR_DROP_EL) {
             MP_VERBOSE(f, "dropping stale EL %.6f (oldest BL %.6f)\\n",
                        p->el_pending[0]->pts, bl->pts);
             pop_head(&p->el_pending, &p->num_el_pending);
             continue;
         }
 
-        // Unknown/non-finite timestamps cannot establish a safe pair.
-        if (have_el && cmp == 2) {
-            pair_fail(f, "Cannot pair Dolby Vision layers: unknown or non-finite PTS.");
-            return;
-        }
-
-        if (have_el && cmp == 0) {
+        if (decision.action == MP_FEL_PAIR_MATCH) {
             struct mp_image *el = take_head(&p->el_pending, &p->num_el_pending);
             take_head(&p->bl_pending, &p->num_bl_pending);
             if (bl->params.no_enhancement_layer || !inherit_dovi_from_el(bl, el)) {
@@ -251,27 +281,27 @@ static void pair_process(struct mp_filter *f)
             continue;
         }
 
-        if (p->el_eof) {
-            pair_fail(f, "Enhancement stream ended before all base frames could be paired.");
+        if (decision.action == MP_FEL_PAIR_FAIL) {
+            pair_fail(f, decision.reason == MP_FEL_PAIR_REASON_EL_EOF
+                         ? "Enhancement stream ended before all base frames could be paired."
+                         : "Cannot pair Dolby Vision layers: unknown or non-finite PTS.");
             return;
         }
 
-        // A newer EL proves the oldest BL has no partner. Drop that BL and
-        // keep looking for a timestamp match; never render it by itself.
-        if (have_el && cmp > 0) {
-            if (!p->warned_unmatched) {
-                MP_WARN(f, "Dropping unmatched BL frame (%.6f; newer EL PTS); "
-                           "base-layer-only output is disabled for this FEL experiment.\\n",
-                        bl->pts);
-                p->warned_unmatched = true;
-            }
-            pop_head(&p->bl_pending, &p->num_bl_pending);
-            continue;
-        }
+        if (decision.action == MP_FEL_PAIR_WAIT)
+            return;
 
-        // No EL frame is ready yet. The bounded BL queue applies back-pressure
-        // until the decoder produces an EL frame or signals EOF.
-        return;
+        // Both remaining actions drop this BL without ever rendering it alone.
+        const char *reason = decision.reason == MP_FEL_PAIR_REASON_NEWER_EL_PTS
+                           ? "newer EL PTS" : "bounded pairing queue";
+        if (!p->warned_unmatched) {
+            MP_WARN(f, "Dropping unmatched BL frame (%.6f; %s); "
+                       "base-layer-only output is disabled for this FEL experiment.\\n",
+                    bl->pts, reason);
+            p->warned_unmatched = true;
+        }
+        pop_head(&p->bl_pending, &p->num_bl_pending);
+        continue;
     }
 }
 """,
@@ -594,6 +624,17 @@ def main() -> None:
     parser.add_argument("mpv_source", type=Path)
     args = parser.parse_args()
     apply(args.mpv_source)
+
+    replace_once(
+        root, "test/meson.build",
+        "# Supported libavutil versions that work with these tests.\n",
+        """fel_pair_state = executable('fel-pair-state', 'fel_pair_state.c',
+                             include_directories: incdir)
+test('fel-pair-state', fel_pair_state)
+
+# Supported libavutil versions that work with these tests.
+""",
+    )
 
 
 if __name__ == "__main__":

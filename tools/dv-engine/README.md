@@ -34,19 +34,22 @@ runtime feature checks accompany the output. The `.sha256` identifies the built
 artifact; it is not an independent trust attestation.
 
 Before packaging, the build checks `dovi_split`, Dolby Vision stream groups,
-libplacebo enhancement-frame/NLQ interfaces, the `gpu-next` VO, and the new render
-API. It decodes a red PPM through libmpv and reads its pixels back through a
-surfaceless OpenGL ES gpu-next framebuffer on Mesa software rendering. It runs
-the upstream mpv and libplacebo tests. Six synthetic composer vectors also compare
-positive/negative/zero/clamped residuals against precomposed values. An injected
-missing EL must fail rendering. The previous engine run passed the GL readback,
-all six vectors, and invalid-EL-texture rejection. It failed 2 of 16 mpv tests
-because PNG support was disabled when zlib was missing; the build now enables
-zlib and must rerun. New tests reject active FEL metadata without an EL frame
-pointer. The new mpv pairing patcher also needs to compile and pass this rerun.
-These checks do not prove complete FEL pixel fidelity or a hardware display's
-output. No media samples or credentials are uploaded.
+libplacebo enhancement-frame/NLQ interfaces, the `gpu-next` VO and the new
+render API. It decodes a red PPM through libmpv and reads pixels back through a
+surfaceless OpenGL ES framebuffer on Mesa software rendering. It runs the upstream
+mpv and libplacebo tests and a dedicated `fel-pair-state` Meson test that exercises
+the exact PTS/queue decision helper used by the patched mpv filter (match, stale
+EL, newer EL, unknown/non-finite PTS, EOF and bounded-queue cases). This unit test
+does not instantiate mpv's filter graph.
 
+Six synthetic composer vectors compare zero/sign/threshold/clamped residuals
+against precomposed pixels. An injected missing EL pointer and invalid EL surface
+must fail rendering. The successful engine run
+[40273432959](https://github.com/snapetech-org/PlezyNG/actions/runs/40273432959)
+passed its 16 mpv tests and 16 libplacebo tests; one surfaceless test skipped.
+The new pair-state unit test is being added in the next build. These checks do not
+prove real P7 FEL decoding, full pixel fidelity or hardware display output. No
+media samples or credentials are uploaded.
 ## Run the extracted bundle
 
 Python 3.11+ is needed to build; Python 3.10+ can run the launcher. The bundle
@@ -69,9 +72,9 @@ instance; otherwise the desktop single-instance handler may route to that proces
 
 - Reference P7 FEL clips with BL-only and reconstructed pixel comparisons, including
   a residual that visibly changes the image. A DV badge is insufficient.
-- Compile and review the fail-closed mpv patcher on its exact pinned source before
-  treating the pairing logic as working.
-- Both single-track and separately tracked layers, PTS reorder/seek/flush handling,
+- Run the exact pinned mpv patcher and pair-state unit test. Then add a separate
+  test that drives the actual mpv filter graph through paired decoded frames.
+- Both single-track and separately tracked layers, end-to-end PTS reorder/seek/flush handling,
   broken metadata, CM2.9/CM4 cases and frame-specific active areas.
 - Actual Linux GPU/Wayland FBO precision, color tags, tone-map ownership, resize,
   subtitles, audio sync, suspend and output changes; full Flutter/native checks.
