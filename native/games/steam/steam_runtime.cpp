@@ -81,11 +81,13 @@ int Runtime::pair(const Host& host, Credentials& credentials, const std::string&
 }
 
 int Runtime::run(
-    const Host& host, const Credentials& credentials, uint64_t game, bool hevc, std::shared_ptr<Sink> sink) {
+    const Host& host, const Credentials& credentials, uint64_t game, bool hevc, bool pyrowave,
+    std::shared_ptr<Sink> sink) {
   if (!sink || !credentials.device || !credentials.user || cancelled_) return -1;
   IHS_HostInfo target{};
   if (!hostInfo(host, target)) return -1;
   sink_ = std::move(sink);
+  pyrowaveEnabled_ = pyrowave;
   IHS_ClientConfig config{credentials.device, credentials.key.data(), "PlezyNG"};
   IHS_Client* client = IHS_ClientCreate(&config);
   if (!client) return -1;
@@ -129,7 +131,8 @@ int Runtime::run(
   struct SessionContext {
     Runtime* owner;
     bool hevc;
-  } context{this, hevc};
+    bool pyrowave;
+  } context{this, hevc, pyrowave};
   static const IHS_StreamSessionCallbacks sessionCallbacks{
       nullptr,
       nullptr,
@@ -137,6 +140,7 @@ int Runtime::run(
         auto* state = static_cast<SessionContext*>(ctx);
         c->enableAudio = true;
         c->enableHevc = state->hevc;
+        c->enablePyrowave = state->pyrowave;
         c->maxBitrateKbps = 30000;
         c->quality = IHS_StreamQualityBalanced;
         c->maxWidth = 1920;
@@ -210,9 +214,19 @@ int Runtime::videoStart(IHS_Session*, const IHS_StreamVideoConfig* c, void* ctx)
   auto* self = static_cast<Runtime*>(ctx);
   if (!c || c->width == 0 || c->height == 0 || c->width > 4096 || c->height > 2160 || c->codecDataLen > 65536)
     return -1;
-  if (c->codec != IHS_StreamVideoCodecH264 && c->codec != IHS_StreamVideoCodecHEVC) return -1;
+  if (c->codec != IHS_StreamVideoCodecH264 && c->codec != IHS_StreamVideoCodecHEVC &&
+      (c->codec != IHS_StreamVideoCodecPyrowave || !self->pyrowaveEnabled_))
+    return -1;
   return self->sink_->video(c->codec, c->width, c->height, c->codecData, c->codecDataLen) ? 0 : -1;
 }
+bool Runtime::startPyrowave(int width, int height, const uint8_t* initial, size_t initialLength) {
+  return pyrowave_.start(width, height, initial, initialLength);
+}
+PyrowaveDecodeStatus Runtime::decodePyrowave(
+    const uint8_t* bytes, size_t length, std::vector<uint8_t>& argb) {
+  return pyrowave_.decode(bytes, length, argb);
+}
+void Runtime::stopPyrowave() { pyrowave_.reset(); }
 IHS_StreamVideoSubmitResult Runtime::videoSubmit(
     IHS_Session*, const IHS_VideoEpochInfo*, uint16_t, IHS_FrameTicket* ticket, IHS_Buffer* b,
     IHS_StreamVideoFrameFlag flags, bool* taken, void* ctx) {

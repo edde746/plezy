@@ -31,7 +31,7 @@ public final class SteamStreamActivity extends Activity implements SurfaceHolder
   private short[] touch = new short[6];
   private int physicalButtons, touchButtons;
   private final Set<Integer> heldKeys = new HashSet<>();
-  private long handle;
+  private volatile long handle;
   private SurfaceView surface;
   private FrameLayout root;
   private TextView status;
@@ -89,8 +89,8 @@ public final class SteamStreamActivity extends Activity implements SurfaceHolder
       return;
     started = true;
     handle = NativeSteam.create();
-    final long session = handle;
     new Thread(() -> {
+      long session = handle;
       byte[] record = null, key = null;
       try {
         String address = EmbeddedSteam.resolve(getIntent().getStringExtra("address"));
@@ -100,15 +100,37 @@ public final class SteamStreamActivity extends Activity implements SurfaceHolder
         record = trust.load(getIntent().getStringExtra("host"));
         long user = ByteBuffer.wrap(record).order(ByteOrder.LITTLE_ENDIAN).getLong();
         key = Arrays.copyOfRange(record, 8, 40);
-        SteamDecoder sink = new SteamDecoder(session, holder.getSurface(), this);
+        SteamDecoder sink = new SteamDecoder(session, holder, this);
         decoder = sink;
         if (stopping) {
           sink.close();
           return;
         }
+        boolean pyrowave = NativeSteam.pyrowaveSupported();
         NativeSteam.run(
             session, address, getIntent().getIntExtra("port", 27036), getIntent().getLongExtra("hostId", 0),
-            trust.device(), user, key, getIntent().getLongExtra("game", 0), SteamDecoder.supportsHevc(), sink);
+            trust.device(), user, key, getIntent().getLongExtra("game", 0), SteamDecoder.supportsHevc(), pyrowave, sink);
+        if (pyrowave && sink.consumePyrowaveFallback() && !stopping) {
+          sink.close();
+          NativeSteam.destroy(session);
+          session = NativeSteam.create();
+          handle = session;
+          if (session == 0)
+            throw new IllegalStateException("Steam compatibility reconnect failed");
+          if (stopping)
+            return;
+          SteamDecoder fallback = new SteamDecoder(session, holder, this);
+          decoder = fallback;
+          main.post(() -> {
+            if (!stopping) {
+              status.setText(label("connecting", "Connecting…"));
+              status.setVisibility(View.VISIBLE);
+            }
+          });
+          NativeSteam.run(
+              session, address, getIntent().getIntExtra("port", 27036), getIntent().getLongExtra("hostId", 0),
+              trust.device(), user, key, getIntent().getLongExtra("game", 0), SteamDecoder.supportsHevc(), false, fallback);
+        }
       } catch (Exception e) {
         failed();
       } finally {
@@ -126,6 +148,13 @@ public final class SteamStreamActivity extends Activity implements SurfaceHolder
         });
       }
     }, "PlezySteamSession").start();
+    main.postDelayed(() -> {
+      if (stopping || shown)
+        return;
+      SteamDecoder current = decoder;
+      if (current != null)
+        current.requestPyrowaveFallback();
+    }, 12000);
     main.postDelayed(() -> {
       if (!shown && !stopping)
         failed();
@@ -167,6 +196,17 @@ public final class SteamStreamActivity extends Activity implements SurfaceHolder
           .setPositiveButton(android.R.string.ok, (d, w) -> finish())
           .setOnCancelListener(d -> finish())
           .show();
+    });
+  }
+  @Override
+  public void pyrowaveFailed() {
+    main.post(() -> {
+      if (stopping)
+        return;
+      status.setText(label("connecting", "Connecting…"));
+      status.setVisibility(View.VISIBLE);
+      if (handle != 0)
+        NativeSteam.cancel(handle);
     });
   }
   private void stop() {

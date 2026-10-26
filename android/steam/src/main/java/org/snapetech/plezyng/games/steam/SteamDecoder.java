@@ -9,7 +9,11 @@ import android.media.MediaCodecList;
 import android.media.MediaFormat;
 import android.os.Build;
 import android.os.SystemClock;
+import android.graphics.Bitmap;
+import android.graphics.Canvas;
+import android.graphics.Paint;
 import android.view.Surface;
+import android.view.SurfaceHolder;
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,6 +26,7 @@ final class SteamDecoder implements AutoCloseable {
   interface Events {
     void size(int width, int height);
     void failed();
+    void pyrowaveFailed();
     void firstFrame();
   }
   private static final class Video {
@@ -31,18 +36,24 @@ final class SteamDecoder implements AutoCloseable {
   }
   private final long handle;
   private final Surface surface;
+  private final SurfaceHolder surfaceHolder;
   private final Events events;
   private final ArrayBlockingQueue<Video> video = new ArrayBlockingQueue<>(4);
   private final ArrayBlockingQueue<short[]> audio = new ArrayBlockingQueue<>(8);
   private final AtomicBoolean lost = new AtomicBoolean();
+  private final AtomicBoolean pyrowaveFallback = new AtomicBoolean();
   private volatile boolean closed;
   private final Thread videoThread, audioThread;
   private final Object audioLock = new Object();
   private AudioTrack track;
   private boolean shown;
-  SteamDecoder(long handle, Surface surface, Events events) {
+  private volatile boolean pyrowaveActive;
+  private Bitmap pyrowaveBitmap;
+  private final Paint pyrowavePaint = new Paint(Paint.FILTER_BITMAP_FLAG);
+  SteamDecoder(long handle, SurfaceHolder surfaceHolder, Events events) {
     this.handle = handle;
-    this.surface = surface;
+    this.surfaceHolder = surfaceHolder;
+    this.surface = surfaceHolder.getSurface();
     this.events = events;
     videoThread = new Thread(this::videoLoop, "PlezySteamVideo");
     audioThread = new Thread(this::audioLoop, "PlezySteamAudio");
@@ -54,9 +65,14 @@ final class SteamDecoder implements AutoCloseable {
     return new MediaCodecList(MediaCodecList.REGULAR_CODECS).findDecoderForFormat(format) != null;
   }
   public boolean onVideo(int codec, int width, int height, byte[] extra) {
-    if (closed || (codec != 4 && codec != 5) || width < 1 || height < 1 || width > 4096 || height > 2160
-        || extra.length > 65536)
+    if (closed)
       return false;
+    if ((codec != 4 && codec != 5 && codec != 9) || width < 1 || height < 1 || width > 1920 || height > 1080 ||
+        extra == null || extra.length > 65536) {
+      if (codec == 9)
+        rejectPyrowave();
+      return false;
+    }
     Video config = new Video();
     config.codec = codec;
     config.width = width;
@@ -64,7 +80,10 @@ final class SteamDecoder implements AutoCloseable {
     config.bytes = extra;
     discardQueuedVideo();
     lost.set(false);
-    return video.offer(config);
+    boolean accepted = video.offer(config);
+    if (!accepted && codec == 9)
+      rejectPyrowave();
+    return accepted;
   }
   public boolean onFrame(byte[] bytes, int id, boolean key) {
     if (closed || bytes.length > 2 * 1024 * 1024 || lost.getAndSet(false))
@@ -184,6 +203,22 @@ final class SteamDecoder implements AutoCloseable {
           }
           for (int id : pending.values()) NativeSteam.frameComplete(handle, id, false);
           pending.clear();
+          if (pyrowaveActive) {
+            NativeSteam.pyrowaveStop(handle);
+            pyrowaveActive = false;
+          }
+          if (pyrowaveBitmap != null) {
+            pyrowaveBitmap.recycle();
+            pyrowaveBitmap = null;
+          }
+          if (item.codec == 9) {
+            pyrowaveActive = true;
+            if (!NativeSteam.pyrowaveStart(handle, item.width, item.height, item.bytes))
+              throw new IllegalStateException("Pyrowave decoder initialization failed");
+            pyrowaveBitmap = Bitmap.createBitmap(item.width, item.height, Bitmap.Config.ARGB_8888);
+            events.size(item.width, item.height);
+            continue;
+          }
           String mime = item.codec == 5 ? MediaFormat.MIMETYPE_VIDEO_HEVC : MediaFormat.MIMETYPE_VIDEO_AVC;
           MediaFormat format = MediaFormat.createVideoFormat(mime, item.width, item.height);
           format.setInteger(MediaFormat.KEY_MAX_INPUT_SIZE, 2 * 1024 * 1024);
@@ -195,6 +230,30 @@ final class SteamDecoder implements AutoCloseable {
           decoder.configure(format, surface, null, 0);
           decoder.start();
           events.size(item.width, item.height);
+        } else if (item != null && pyrowaveActive) {
+          byte[] argb = NativeSteam.pyrowaveDecode(handle, item.bytes);
+          if (argb == null)
+            throw new IllegalStateException("Pyrowave frame decode failed");
+          if (argb.length == 0) {
+            NativeSteam.frameComplete(handle, item.id, false);
+            continue;
+          }
+          if (pyrowaveBitmap == null || argb.length != pyrowaveBitmap.getByteCount())
+            throw new IllegalStateException("Pyrowave output size changed");
+          pyrowaveBitmap.copyPixelsFromBuffer(ByteBuffer.wrap(argb));
+          Canvas canvas = surfaceHolder.lockCanvas();
+          if (canvas == null)
+            throw new IllegalStateException("Video surface is unavailable");
+          try {
+            canvas.drawBitmap(pyrowaveBitmap, null, canvas.getClipBounds(), pyrowavePaint);
+          } finally {
+            surfaceHolder.unlockCanvasAndPost(canvas);
+          }
+          NativeSteam.frameComplete(handle, item.id, true);
+          if (!shown) {
+            shown = true;
+            events.firstFrame();
+          }
         } else if (item != null) {
           int input = decoder == null ? -1 : decoder.dequeueInputBuffer(2000);
           if (input < 0) {
@@ -231,8 +290,10 @@ final class SteamDecoder implements AutoCloseable {
       }
     } catch (InterruptedException ignored) {
       Thread.currentThread().interrupt();
+    } catch (OutOfMemoryError e) {
+      videoFailure();
     } catch (Exception e) {
-      failure();
+      videoFailure();
     } finally {
       if (decoder != null) {
         try {
@@ -242,6 +303,14 @@ final class SteamDecoder implements AutoCloseable {
         decoder.release();
       }
       for (int id : pending.values()) NativeSteam.frameComplete(handle, id, false);
+      if (pyrowaveActive) {
+        NativeSteam.pyrowaveStop(handle);
+        pyrowaveActive = false;
+      }
+      if (pyrowaveBitmap != null) {
+        pyrowaveBitmap.recycle();
+        pyrowaveBitmap = null;
+      }
       discardQueuedVideo();
     }
   }
@@ -257,10 +326,37 @@ final class SteamDecoder implements AutoCloseable {
       NativeSteam.cancel(handle);
     }
   }
+  private void videoFailure() {
+    if (closed)
+      return;
+    if (pyrowaveActive) {
+      rejectPyrowave();
+      return;
+    } else {
+      events.failed();
+    }
+    NativeSteam.cancel(handle);
+  }
+  private void rejectPyrowave() {
+    if (pyrowaveFallback.compareAndSet(false, true))
+      events.pyrowaveFailed();
+  }
+  boolean consumePyrowaveFallback() { return pyrowaveFallback.getAndSet(false); }
+  void requestPyrowaveFallback() {
+    if (closed || !pyrowaveActive || !pyrowaveFallback.compareAndSet(false, true))
+      return;
+    events.pyrowaveFailed();
+  }
   @Override
   public void close() {
     closed = true;
     videoThread.interrupt();
     audioThread.interrupt();
+    try {
+      videoThread.join(500);
+      audioThread.join(500);
+    } catch (InterruptedException ignored) {
+      Thread.currentThread().interrupt();
+    }
   }
 }

@@ -8,6 +8,8 @@
 #include <mutex>
 #include <string>
 #include <unordered_map>
+#include <vector>
+#include "steam_pyrowave.h"
 extern "C" {
 #include <ihslib.h>
 #include <ihslib/frame_ticket.h>
@@ -52,7 +54,10 @@ class Runtime {
   // One operation per Runtime. pair/run execute on a worker; cancel is immediate.
   // Return 0 on success, -2 on cancellation, -3 on timeout, positive host error.
   int pair(const Host&, Credentials&, const std::string& pin);
-  int run(const Host&, const Credentials&, uint64_t game, bool hevc, std::shared_ptr<Sink>);
+  int run(const Host&, const Credentials&, uint64_t game, bool hevc, bool pyrowave, std::shared_ptr<Sink>);
+  bool startPyrowave(int width, int height, const uint8_t* initial, size_t initialLength);
+  PyrowaveDecodeStatus decodePyrowave(const uint8_t* bytes, size_t length, std::vector<uint8_t>& argb);
+  void stopPyrowave();
   void cancel();
   void pad(const std::array<int16_t, 6>& axes, uint32_t buttons);
   void key(uint32_t usage, bool down);
@@ -86,6 +91,8 @@ class Runtime {
   std::shared_ptr<PadState> pad_ = std::make_shared<PadState>();
   OpusDecoder* opus_ = nullptr;
   int channels_ = 0;
+  bool pyrowaveEnabled_ = false;
+  PyrowaveDecoder pyrowave_;
   std::mutex frameMutex_;
   uint32_t nextFrame_ = 1;
   std::unordered_map<uint32_t, IHS_FrameTicket*> frames_;

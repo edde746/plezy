@@ -17,13 +17,17 @@ permissions:
 jobs:
   steam-transport:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
       - name: Prepare pinned native sources
         run: python3 scripts/games/prepare_steam.py
+      - name: Install Vulkan loader, headers and software driver
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libvulkan-dev mesa-vulkan-drivers
       - name: Configure transport and lifecycle tests with sanitizers
         run: >-
           cmake -S native/games/steam -B build/games-steam-tests
@@ -41,7 +45,7 @@ jobs:
 
   android-engine:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:

@@ -10,7 +10,7 @@ The library stores selected computers, host application IDs, favorites and recen
 
 Android builds include a **source-built Moonlight engine in PlezyNG's APK**. The adapter calls its actual pairing implementation, pins the resulting host certificate, retrieves the authorized application list, and starts its native streaming activity inside PlezyNG. Flutter owns the connection UI; the embedded engine owns low-latency video, audio, controller input and touch controls. Back returns to PlezyNG. It does not install an APK, open a package, launch Steam, invoke a URL scheme, or run a streaming subprocess.
 
-Android also includes an experimental **source-built Steam engine** using pinned ihslib, Mbed TLS, protobuf-C and Opus. It implements local PIN pairing, encrypted host-specific device trust, direct game-ID or Big Picture launch, H.264/HEVC video, stereo Opus, one physical/virtual controller and bounded decoder queues. The player is a private activity inside PlezyNG. Steam's automatic account catalog and Pyrowave are not implemented.
+Android also includes an experimental **source-built Steam engine** using pinned ihslib, Mbed TLS, protobuf-C and Opus. It implements local PIN pairing, encrypted host-specific device trust, direct game-ID or Big Picture launch, H.264/HEVC video, stereo Opus, one physical/virtual controller and bounded decoder queues. A pinned Pyrowave decoder path is also wired into negotiation when its Vulkan probe succeeds; it decodes SDR 4:2:0 up to 1080p through synchronous CPU readback and Android Canvas output, and reconnects using a conventional codec if decoding fails. This path is experimental and its latency, power use and compatibility have not been device-qualified. The player is a private activity inside PlezyNG. Steam's automatic account catalog remains separate and is not implemented.
 
 The native source pin and preparation recipe are committed. Android hardware behavior is not certified by Dart tests. See [VALIDATION.md](VALIDATION.md) for the release gates.
 
@@ -55,8 +55,8 @@ Retiring a profile, disabling the category or disposing its controller cancels u
 
 | Platform | Games/library | In-app GameStream in this change | Steam / Pyrowave in this change | Next native integration |
 |---|---|---|---|---|
-| Android phones/tablets | Implemented | Source module, pairing, listing, native activity, touch controls | Experimental PIN, in-app H.264/HEVC/Opus; Pyrowave unavailable | Run native/device matrix; refine theme integration |
-| Android TV / Fire TV | Implemented | Same source engine; physical input; touch overlay off by default on TV | Same experimental Steam adapter; Pyrowave unavailable | D-pad, back, 4K/refresh-rate and controller qualification |
+| Android phones/tablets | Implemented | Source module, pairing, listing, native activity, touch controls | Experimental PIN, H.264/HEVC/Opus and Vulkan-probed Pyrowave SDR 4:2:0; CPU readback output | Run native/device matrix; measure beta codec latency, thermals and power |
+| Android TV / Fire TV | Implemented | Same source engine; physical input; touch overlay off by default on TV | Same experimental Steam adapter; Pyrowave depends on Vulkan decoder support | D-pad, back, beta codec performance, 4K/refresh-rate and controller qualification |
 | Windows | Implemented | Unavailable | Discovery only | Moonlight common + native decode/presentation/input adapter |
 | Linux / SteamOS | Implemented | Unavailable | Discovery only | Moonlight common; VA-API/Vulkan/DRM paths and SDL input, then Steam engine |
 | macOS | Implemented | Unavailable | Discovery only | VideoToolbox/Metal/CoreAudio/GameController adapter |
@@ -99,9 +99,9 @@ The current observed protocol definitions contain:
 
 The pinned decoder accepts concatenated codec packets in a single `push_packet` call. The v1 bitstream document is frozen at 2026-10-03; source remains authoritative. Aurora/Solarflare provide a separate GameStream integration, which does not establish compatibility with Steam's framing or codec fork.
 
-These definitions establish identifiers, not complete packet reassembly, FEC or decoder interoperability. Do not advertise codec 9 until the native decoder has passed a local capability probe and the stream adapter can handle the received framing. Do not show “Pyrowave active” until the negotiated session and decoder agree.
+These definitions establish identifiers, not Steam interoperability. The Android adapter now advertises codec 9 only after a local Vulkan decoder probe, prefers it when the host offers it, appends bounded codec blocks without H.264/HEVC start-code rewriting, and validates bitstream lengths, dimensions and SDR 4:2:0 color metadata before decode. Negotiation has a protocol regression fixture. If initialization, frame validation, decode or Canvas presentation fails after negotiation, the client cancels that session and reconnects with H.264/HEVC.
 
-Proposed policy: **Automatic**, **Compatibility**, **Prefer Pyrowave**. Automatic stays on validated conventional codecs by default. Prefer Pyrowave is an opt-in after host support, a successful Vulkan/Metal decoder probe, a local-network bandwidth test and compatible color/output capabilities. Fallback requires a clean reconnect with an explanation; it must not silently change the host's global Steam settings. HDR and 4:4:4 are separate negotiated capabilities. Hardware Steam Link and older clients must retain conventional codecs rather than receiving codec 9 unconditionally.
+This first Android path is limited to BT.709 SDR 4:2:0, even dimensions, and 1920x1080. It uses Pyrowave's synchronous CPU readback path (documented upstream as a bring-up path), converts to an Android bitmap, and submits it through a `SurfaceView` Canvas. This keeps presentation in PlezyNG but may cost substantial latency, CPU, memory bandwidth and battery at high resolutions; the Vulkan probe proves decoder creation only, not sustained performance. HDR, BT.2020, 4:4:4, Vulkan-to-surface zero-copy, Metal, other platforms and real Steam-host compatibility are not implemented or claimed. Conventional codecs remain in the advertised list for compatibility. Do not treat Pyrowave as release-qualified until it passes actual Steam stable/beta hosts and phone/TV hardware measurements.
 
 ## Mobile controls and session quality
 
@@ -119,7 +119,7 @@ Session statistics should report actual codec, hardware/software decode, resolut
 2. Extract reusable native session interfaces and bring up desktop GameStream adapters, preserving the existing UI and state model.
 3. Bring up Apple GameStream and webOS native adapters with platform-specific decoder/input tests.
 4. Qualify and harden the implemented ihslib adapter against legacy/current local Steam pairing and conventional-codec sessions.
-5. Add Pyrowave Vulkan and Metal wrappers, framing/FEC support, device probes and explicit fallback policy.
+5. Optimize and qualify Pyrowave output (prefer a GPU-to-surface path), measure Android power/latency, and validate Steam framing against beta hosts before widening the currently bounded Android experiment; add Metal and other platforms only with their own adapters.
 6. Implement remote account-backed Steam connectivity only after its authentication and rendezvous requirements are demonstrated. Extend host artwork and integrated session diagnostics across engines.
 
 No platform is marked ready simply because its library compiles. There is no external-app fallback hidden behind these stages.

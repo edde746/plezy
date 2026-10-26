@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 #include <jni.h>
 
+#include <algorithm>
 #include <cstring>
 #include <stdexcept>
 #include <unordered_map>
@@ -139,6 +140,9 @@ extern "C" JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM* machine, void*) {
   vm = machine;
   return JNI_VERSION_1_6;
 }
+extern "C" JNIEXPORT jboolean JNICALL JNI(pyrowaveSupported)(JNIEnv*, jclass) {
+  return PyrowaveDecoder::probe() ? JNI_TRUE : JNI_FALSE;
+}
 extern "C" JNIEXPORT jlong JNICALL JNI(create)(JNIEnv*, jclass) {
   std::lock_guard<std::mutex> lock(registryMutex);
   jlong id = nextHandle++;
@@ -185,7 +189,7 @@ extern "C" JNIEXPORT jbyteArray JNICALL JNI(pair)(
 }
 extern "C" JNIEXPORT void JNICALL JNI(run)(
     JNIEnv* env, jclass, jlong id, jstring address, jint port, jlong hostId, jlong deviceId, jlong userId,
-    jbyteArray key, jlong game, jboolean hevc, jobject target) {
+    jbyteArray key, jlong game, jboolean hevc, jboolean pyrowave, jobject target) {
   auto runtime = get(id);
   Credentials c{};
   if (!runtime || !target || port < 1 || port > 65535 || !credentials(env, deviceId, userId, key, c)) {
@@ -196,9 +200,57 @@ extern "C" JNIEXPORT void JNICALL JNI(run)(
   if (env->ExceptionCheck() || !sink->valid()) return;
   int result = runtime->run(
       {string(env, address), static_cast<uint16_t>(port), static_cast<uint64_t>(hostId)}, c,
-      static_cast<uint64_t>(game), hevc, sink);
+      static_cast<uint64_t>(game), hevc, pyrowave, sink);
   std::fill(c.key.begin(), c.key.end(), 0);
   if (result != 0 && result != -2) fail(env, result);
+}
+extern "C" JNIEXPORT jboolean JNICALL
+JNI(pyrowaveStart)(JNIEnv* env, jclass, jlong id, jint width, jint height, jbyteArray initial) {
+  auto r = get(id);
+  if (!r || width < 2 || height < 2 || width > 1920 || height > 1080 || !initial ||
+      env->GetArrayLength(initial) > 65536)
+    return JNI_FALSE;
+  try {
+    std::vector<uint8_t> bytes(static_cast<size_t>(env->GetArrayLength(initial)));
+    if (!bytes.empty())
+      env->GetByteArrayRegion(initial, 0, static_cast<jsize>(bytes.size()), reinterpret_cast<jbyte*>(bytes.data()));
+    if (env->ExceptionCheck()) return JNI_FALSE;
+    const bool result = r->startPyrowave(width, height, bytes.data(), bytes.size());
+    std::fill(bytes.begin(), bytes.end(), 0);
+    return result ? JNI_TRUE : JNI_FALSE;
+  } catch (...) {
+    return JNI_FALSE;
+  }
+}
+extern "C" JNIEXPORT jbyteArray JNICALL JNI(pyrowaveDecode)(JNIEnv* env, jclass, jlong id, jbyteArray input) {
+  auto r = get(id);
+  if (!r || !input || env->GetArrayLength(input) <= 0 || env->GetArrayLength(input) > 2 * 1024 * 1024) {
+    fail(env, -1);
+    return nullptr;
+  }
+  try {
+    std::vector<uint8_t> bytes(static_cast<size_t>(env->GetArrayLength(input)));
+    env->GetByteArrayRegion(input, 0, static_cast<jsize>(bytes.size()), reinterpret_cast<jbyte*>(bytes.data()));
+    if (env->ExceptionCheck()) return nullptr;
+    std::vector<uint8_t> argb;
+    const auto result = r->decodePyrowave(bytes.data(), bytes.size(), argb);
+    std::fill(bytes.begin(), bytes.end(), 0);
+    if (result == PyrowaveDecodeStatus::invalid) {
+      fail(env, -1);
+      return nullptr;
+    }
+    auto output = env->NewByteArray(static_cast<jsize>(argb.size()));
+    if (output && !argb.empty())
+      env->SetByteArrayRegion(output, 0, static_cast<jsize>(argb.size()), reinterpret_cast<const jbyte*>(argb.data()));
+    std::fill(argb.begin(), argb.end(), 0);
+    return output;
+  } catch (...) {
+    fail(env, -1);
+    return nullptr;
+  }
+}
+extern "C" JNIEXPORT void JNICALL JNI(pyrowaveStop)(JNIEnv*, jclass, jlong id) {
+  if (auto r = get(id)) r->stopPyrowave();
 }
 extern "C" JNIEXPORT void JNICALL JNI(pad)(JNIEnv* env, jclass, jlong id, jshortArray axes, jint buttons) {
   auto r = get(id);

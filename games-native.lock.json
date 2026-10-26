@@ -8,11 +8,14 @@
     "license": "GPL-3.0-or-later"
   },
   "steamResearch": {
-    "pyrowave": {
-      "repository": "https://github.com/Themaister/pyrowave.git",
-      "revision": "79a3232a2199281f33f7a2e2659fc4fac62b022a",
+    "granite": {
+      "repository": "https://github.com/Themaister/Granite.git",
+      "revision": "53090429539bf3404250d18fe58db971f0907c04",
       "license": "MIT",
-      "status": "research; unstable C API and minimally maintained Metal port"
+      "submodules": {
+        "third_party/khronos/vulkan-headers": "6802bb4733b63ed5efd3adb308a6c885ef180ea1",
+        "third_party/volk": "47cddf7ed97b94118a08aacb548a411188e016cc"
+      }
     },
     "protocols": {
       "repository": "https://github.com/SteamTracking/Protobufs",
@@ -29,6 +32,12 @@
       "repository": "https://github.com/scaronni/ihslib.git",
       "revision": "04688d19951c68bedc4370234cc1752043632cb3",
       "license": "LGPL-3.0-or-later"
+    },
+    "pyrowave": {
+      "repository": "https://github.com/Themaister/pyrowave.git",
+      "revision": "79a3232a2199281f33f7a2e2659fc4fac62b022a",
+      "license": "MIT",
+      "status": "pinned decoder implementation; unstable C API, CPU readback output, not host-qualified"
     },
     "mbedtls": {
       "repository": "https://github.com/Mbed-TLS/mbedtls.git",
