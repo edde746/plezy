@@ -15,10 +15,13 @@ untested hardware combinations and complete proprietary display-mapper equivalen
 
 - `tools/dv-engine/` builds an isolated pinned-source FFmpeg/libplacebo/mpv
   engine, including the dual-layer decoder and FEL composer, and packages
-  corresponding source and provenance. Its workflow, embedding smoke test,
-  synthetic residual vectors and strict EL sampling-failure patch still need
-  completed build/runtime qualification. See the current
-  [Luna handoff](../maintainers/dv-engine-luna-handoff.md) before continuing.
+  corresponding source and provenance. The last engine run compiled the three
+  components and passed GLES rendering, six synthetic residual vectors, and an
+  invalid-EL-surface rejection check. It failed two mpv tests because zlib was
+  omitted. The zlib fix, a missing-frame-pointer test, and an exact-pin mpv
+  fail-closed pairing patch have since been added but still need a fresh build.
+  No real FEL clip or physical output chain has been verified. See the current
+  [Luna handoff](../maintainers/dv-engine-luna-handoff.md) for the run IDs and next gate.
 - `scripts/dv_lab.py` inspects local files with ffprobe or saved probe JSON,
   distinguishes profile-specific base-layer compatibility, preserves uncertainty
   about MEL/FEL and inventories an explicitly selected standalone mpv binary.

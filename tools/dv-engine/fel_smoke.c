@@ -69,17 +69,25 @@ int test_fel_residual(void) {
   float baseline[VALUES], actual[VALUES], reference[VALUES];
   if (!render(renderer, gpu, &input, &output, baseline)) goto cleanup;
 
-  // A declared FEL stream with a missing EL must fail the render and retain
-  // libplacebo's sampling error. It must not silently report a successful BL.
-  struct pl_frame missing = frame(NULL);
-  input.enhancement_layer = &missing;
+  // Active FEL metadata without an attached frame must not be mistaken for MEL.
   metadata.nlq_active = true;
-  const bool missing_el_rendered = pl_render_image(renderer, &input, &output, &pl_render_default_params);
-  if (missing_el_rendered || !(pl_renderer_get_errors(renderer).errors & PL_RENDER_ERR_SAMPLING)) {
-    fputs("Missing FEL layer was not rejected\n", stderr);
+  const bool missing_el_frame_rendered = pl_render_image(renderer, &input, &output, &pl_render_default_params);
+  if (missing_el_frame_rendered || !(pl_renderer_get_errors(renderer).errors & PL_RENDER_ERR_SAMPLING)) {
+    fputs("Missing FEL frame pointer was not rejected\n", stderr);
     goto cleanup;
   }
-  puts("Missing FEL layer was rejected");
+  puts("Missing FEL frame pointer was rejected");
+  pl_renderer_reset_errors(renderer, NULL);
+
+  // A declared FEL stream with an invalid EL surface must also fail.
+  struct pl_frame missing = frame(NULL);
+  input.enhancement_layer = &missing;
+  const bool missing_el_rendered = pl_render_image(renderer, &input, &output, &pl_render_default_params);
+  if (missing_el_rendered || !(pl_renderer_get_errors(renderer).errors & PL_RENDER_ERR_SAMPLING)) {
+    fputs("Invalid FEL surface was not rejected\n", stderr);
+    goto cleanup;
+  }
+  puts("Invalid FEL surface was rejected");
   pl_renderer_reset_errors(renderer, NULL);
   input.enhancement_layer = NULL;
   metadata.nlq_active = false;

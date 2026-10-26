@@ -73,10 +73,16 @@ def build(work: Path, jobs: int):
             raise SystemExit(f"Unpinned or unresolved submodule for {name}")
         provenance["sources"][name] = {"commit": actual, "submodules": submodules}
 
+    mpv_patcher = HERE / "patches/apply_mpv_fel_failclosed.py"
+    execute(["python3", mpv_patcher, source_root / "mpv"])
+
     patch = HERE / "patches/libplacebo-reject-failed-fel.patch"
     execute(["git", "apply", "--check", patch], cwd=source_root / "libplacebo")
     execute(["git", "apply", patch], cwd=source_root / "libplacebo")
-    provenance["patches"] = {patch.name: hashlib.sha256(patch.read_bytes()).hexdigest()}
+    provenance["patches"] = {
+        patch.name: hashlib.sha256(patch.read_bytes()).hexdigest(),
+        mpv_patcher.name: hashlib.sha256(mpv_patcher.read_bytes()).hexdigest(),
+    }
 
     ffmpeg = source_root / "ffmpeg"
     ffmpeg_build = work / "ffmpeg-build"
@@ -84,7 +90,7 @@ def build(work: Path, jobs: int):
     execute([
         ffmpeg / "configure", f"--prefix={prefix}", f"--libdir={prefix / 'lib'}",
         "--enable-shared", "--disable-static", "--enable-pic", "--enable-gpl",
-        "--enable-version3", "--disable-autodetect", "--enable-gnutls",
+        "--enable-version3", "--disable-autodetect", "--enable-gnutls", "--enable-zlib",
         "--enable-libdav1d", "--enable-vaapi", "--enable-libdrm",
         "--enable-decoder=png",
         "--enable-bsf=dovi_split", "--disable-doc", "--disable-debug",
@@ -166,6 +172,7 @@ def build(work: Path, jobs: int):
     integration_source.mkdir()
     for name in ("Dockerfile", "build_linux.py", "engine_features.c", "fel_smoke.c", "render_smoke.c"):
         shutil.copy2(HERE / name, integration_source / name)
+    shutil.copy2(mpv_patcher, integration_source / mpv_patcher.name)
     (prefix / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
     artifact = work / f"plezyng-dv-experimental-{platform.machine()}.tar.xz"
     with tarfile.open(artifact, "w:xz") as archive:

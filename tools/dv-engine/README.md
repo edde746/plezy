@@ -3,8 +3,10 @@
 This is an isolated Linux engine build, not a replacement for the release engine.
 It builds FFmpeg's dual-layer demux/decode support, libplacebo's FEL composer and
 mpv's paired-frame integration, plus the unmerged `opengl-next` embedding API.
-It does not convert P7 to P8.1 or deliberately discard the enhancement layer.
-Native DV HDMI transport and proprietary display-mapper equivalence are separate.
+The current experiment adds fail-closed pairing and output handling for missing,
+unmatched, invalid, or unimportable enhancement frames. It does not convert P7 to
+P8.1 or deliberately discard the enhancement layer. Native DV HDMI transport and
+proprietary display-mapper equivalence are separate.
 
 The first recipe targets native Linux x86_64/aarch64 with OpenGL. The workflow
 builds x86_64. Vulkan/D3D11, Windows, Apple, Android and webOS packages still need
@@ -37,9 +39,13 @@ API. It decodes a red PPM through libmpv and reads its pixels back through a
 surfaceless OpenGL ES gpu-next framebuffer on Mesa software rendering. It runs
 the upstream mpv and libplacebo tests. Six synthetic composer vectors also compare
 positive/negative/zero/clamped residuals against precomposed values. An injected
-missing EL must fail rendering. A local patch rejects failed EL sampling instead
-of continuing BL-only. These checks do not prove complete FEL pixel fidelity or a
-hardware display's output. No media samples or credentials are uploaded.
+missing EL must fail rendering. The previous engine run passed the GL readback,
+all six vectors, and invalid-EL-texture rejection. It failed 2 of 16 mpv tests
+because PNG support was disabled when zlib was missing; the build now enables
+zlib and must rerun. New tests reject active FEL metadata without an EL frame
+pointer. The new mpv pairing patcher also needs to compile and pass this rerun.
+These checks do not prove complete FEL pixel fidelity or a hardware display's
+output. No media samples or credentials are uploaded.
 
 ## Run the extracted bundle
 
@@ -63,6 +69,8 @@ instance; otherwise the desktop single-instance handler may route to that proces
 
 - Reference P7 FEL clips with BL-only and reconstructed pixel comparisons, including
   a residual that visibly changes the image. A DV badge is insufficient.
+- Compile and review the fail-closed mpv patcher on its exact pinned source before
+  treating the pairing logic as working.
 - Both single-track and separately tracked layers, PTS reorder/seek/flush handling,
   broken metadata, CM2.9/CM4 cases and frame-specific active areas.
 - Actual Linux GPU/Wayland FBO precision, color tags, tone-map ownership, resize,

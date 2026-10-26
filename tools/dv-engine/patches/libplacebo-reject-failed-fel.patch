@@ -1,6 +1,23 @@
 --- a/src/renderer.c
 +++ b/src/renderer.c
-@@ -2132,8 +2132,9 @@
+@@ -2125,16 +2125,22 @@
+         pl_shader el_sh = NULL;
+ #ifdef PL_HAVE_DOVI
+-        bool compose_el = image->enhancement_layer &&
+-                          pass->img.repr.sys == PL_COLOR_SYSTEM_DOLBYVISION &&
+-                          pass->img.repr.dovi &&
+-                          pass->img.repr.dovi->nlq_active;
+-        if (compose_el) {
++        bool fel_required = pass->img.repr.sys == PL_COLOR_SYSTEM_DOLBYVISION &&
++                            pass->img.repr.dovi &&
++                            pass->img.repr.dovi->nlq_active;
++        if (fel_required) {
++            if (!image->enhancement_layer) {
++                PL_ERR(rr, "Dolby Vision FEL metadata is active without an "
++                           "enhancement frame; refusing base-layer-only rendering");
++                rr->errors |= PL_RENDER_ERR_SAMPLING;
++                return false;
++            }
              el_sh = sample_el(pass, image->enhancement_layer);
              if (!el_sh) {
                  PL_ERR(rr, "Failed sampling enhancement layer; "
@@ -11,3 +28,4 @@
              }
          }
  #endif
+         pl_shader_decode_color_ex(sh, pl_color_decode_args(
