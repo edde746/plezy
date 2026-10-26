@@ -19,6 +19,7 @@ import '../../theme/mono_tokens.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/formatters.dart';
 import '../../utils/platform_detector.dart';
+import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
@@ -162,7 +163,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
               controller: controller,
               autofocus: true,
               textInputAction: TextInputAction.search,
-              decoration: InputDecoration(labelText: 'Title', hintText: t.search.hint),
+              decoration: InputDecoration(hintText: t.search.hint),
               onSubmitted: (_) => Navigator.pop(dialogContext, controller.text.trim()),
             ),
           ],
@@ -258,9 +259,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
           .take(25)
           .toList(growable: false);
       if (candidates.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('No online title matches were found. Try a different title.')),
-        );
+        showAppSnackBar(context, t.messages.noResultsFound);
         return;
       }
       final selected = await _chooseMetadataMatch(candidates);

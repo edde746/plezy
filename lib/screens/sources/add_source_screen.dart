@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../sources/dlna_discovery.dart';
 import '../../sources/source_controller.dart';
@@ -103,7 +104,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
     FormFieldValidator<String>? validator,
   }) => Padding(
     padding: const EdgeInsets.only(bottom: 16),
-    child: TextFormField(
+    child: FocusableTextFormField(
       controller: field(key),
       obscureText: secret,
       maxLines: maxLines,
