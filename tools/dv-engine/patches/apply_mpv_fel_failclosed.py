@@ -69,28 +69,6 @@ def apply(root: Path) -> None:
     )
     replace_once(
         root, "filters/f_enhancement_pair.c",
-        """static int pts_cmp(double a, double b)
-{
-    if (a == MP_NOPTS_VALUE || b == MP_NOPTS_VALUE)
-        return 0;
-    if (a < b - PTS_MATCH_TOLERANCE) return -1;
-    if (a > b + PTS_MATCH_TOLERANCE) return  1;
-    return 0;
-}
-""",
-        """static int pts_cmp(double a, double b)
-{
-    if (!isfinite(a) || !isfinite(b) ||
-        a == MP_NOPTS_VALUE || b == MP_NOPTS_VALUE)
-        return 2; // Unknown PTS can never certify a frame pair.
-    if (a < b - PTS_MATCH_TOLERANCE) return -1;
-    if (a > b + PTS_MATCH_TOLERANCE) return  1;
-    return 0;
-}
-""",
-    )
-    replace_once(
-        root, "filters/f_enhancement_pair.c",
         """static void inherit_dovi_from_el(struct mp_image *bl, struct mp_image *el)
 {
     if (bl->params.no_dovi || bl->dovi || !el->dovi)
