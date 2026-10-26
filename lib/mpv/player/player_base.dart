@@ -52,6 +52,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player, A
 
   StreamSubscription? _eventSubscription;
   StreamSubscription? _logSubscription;
+  final bool _listenToNativeEvents;
   bool _disposed = false;
   late final Future<void>? _nativeOwnershipReady;
   final Completer<void> _nativeRelease = Completer<void>();
@@ -257,10 +258,10 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player, A
 
   String get logPrefix;
 
-  PlayerBase() {
-    _nativeOwnershipReady = _eventChannelOwners[eventChannel.name]?._nativeRelease.future;
+  PlayerBase({bool listenToNativeEvents = true}) : _listenToNativeEvents = listenToNativeEvents {
+    _nativeOwnershipReady = listenToNativeEvents ? _eventChannelOwners[eventChannel.name]?._nativeRelease.future : null;
     _streams = createStreams();
-    _setupEventListener();
+    if (listenToNativeEvents) _setupEventListener();
     _logSubscription = logController.stream.listen(_forwardToAppLogger);
   }
 
@@ -1215,6 +1216,13 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player, A
     trackController.add(snapshot.track);
   }
 
+  /// Replace the backend-discovered track list and notify controls.
+  @protected
+  void updateTracks(Tracks tracks) {
+    _state = _state.copyWith(tracks: tracks);
+    tracksController.add(tracks);
+  }
+
   /// Put back the state a failed open tore down.
   ///
   /// [resetPlaybackProgress] already announced the start position the open was
@@ -1691,7 +1699,9 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player, A
     _disposed = true;
 
     final channelName = eventChannel.name;
-    if (identical(_eventChannelOwners[channelName], this)) {
+    if (!_listenToNativeEvents) {
+      await _eventSubscription?.cancel();
+    } else if (identical(_eventChannelOwners[channelName], this)) {
       // Keep this owner registered while its native release is pending so a
       // player created during disposal inherits the complete release chain.
       // The newer listen cannot interleave before cancel() is invoked on this
@@ -1711,7 +1721,7 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player, A
     }
     _eventSubscription = null;
     await _logSubscription?.cancel();
-    final sendNativeDispose = await _waitForNativeOwnershipForDispose();
+    final sendNativeDispose = _listenToNativeEvents && await _waitForNativeOwnershipForDispose();
     try {
       if (sendNativeDispose) {
         // Sent even when the ownership wait timed out on a guarded backend:

@@ -43,7 +43,7 @@ Status: 2026-10-25. PlezyNG is a fork of `edde746/plezy` intended to carry reque
 | Integrations | Notifications are foreground-polled only; they pause when the OS suspends Plezy. There is no background push source. Google Cast uses the default Cast media receiver and needs validation with physical receivers; the receiver must support the stream format and reach the server. |
 | Automation | Android intent links provide direct media launch, profile selection, and active-video controls. Plezy does not yet advertise itself as a native Plex Companion player to Home Assistant's Plex integration. |
 | Settings | HTTPS WebDAV backup of the portable settings export is implemented. Configure a file URL ending in `.json`, optionally with WebDAV credentials; local server connections, tokens, download locations, and history are excluded. |
-| webOS TV | The rooted LG C6 is available as the physical test target and its SSH transport is confirmed. PlezyNG has no webOS application target or IPK yet: LG's published Flutter/Dart SDK is below this app's toolchain floor, the player has no webOS backend, and storage/plugin integrations need an explicit port; see [webOS port status](../maintainers/webos-tv.md). LGPrivacyShield documents the existing manual install path. |
+| webOS TV | An experimental ARM IPK builds and runs on the rooted LG C6. Plex sign-in, artwork/cards, and video playback are confirmed; secure-store write/read/delete also passed. Token persistence, Jellyfin/Emby, broader playback and lifecycle coverage, and release packaging remain; see [webOS port status](../maintainers/webos-tv.md). |
 
 ## Validation and cautions
 

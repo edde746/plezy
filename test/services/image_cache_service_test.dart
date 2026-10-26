@@ -6,7 +6,13 @@ import 'package:cached_network_image_ce/cached_network_image.dart' show FileInfo
 import 'package:flutter_test/flutter_test.dart';
 import 'package:http/http.dart' as http;
 import 'package:http/testing.dart';
+import 'package:path/path.dart' as path;
+import 'package:path_provider/path_provider.dart';
+import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
+import 'package:path_provider_webos/path_provider_webos.dart';
 import 'package:plezy/services/image_cache_service.dart';
+import 'package:plezy/utils/app_cache_directory.dart';
+import 'package:plezy/utils/platform_detector.dart';
 
 /// Pins the artwork request limiter's permit lifecycle. CE's cache manager
 /// abandons non-200/202 responses without listening to the body, so the
@@ -14,6 +20,27 @@ import 'package:plezy/services/image_cache_service.dart';
 /// handful of stale-thumb 404s (#1473).
 void main() {
   const timeout = Duration(seconds: 5);
+
+  test('webOS uses its supported app-scoped temporary cache directory', () async {
+    if (!PlatformDetector.isWebOSBuild()) return;
+
+    final root = await Directory.systemTemp.createTemp('plezy-webos-cache-test-');
+    final previousProvider = PathProviderPlatform.instance;
+    addTearDown(() async {
+      PathProviderPlatform.instance = previousProvider;
+      if (await root.exists()) await root.delete(recursive: true);
+    });
+
+    PathProviderPlatform.instance = PathProviderWebOS.private(
+      environment: {'FLUTTER_HOME': root.path, 'FLUTTER_APP_ID': 'org.snapetech.plezyng'},
+    );
+
+    final directory = await getPlezyAppCacheDirectory();
+
+    expect(directory.path, path.join(root.path, '.cache', 'org.snapetech.plezyng'));
+    expect(await directory.exists(), isTrue);
+    await expectLater(getApplicationCacheDirectory(), throwsA(isA<UnimplementedError>()));
+  });
 
   http.Request get(String path) => http.Request('GET', Uri.parse('https://example.invalid$path'));
 

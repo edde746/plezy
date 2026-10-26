@@ -9,7 +9,9 @@ import 'player_native.dart';
 import 'player_state.dart';
 import 'player_streams.dart';
 import 'platform/player_linux.dart';
+import 'platform/player_webos.dart';
 import 'platform/player_windows.dart';
+import '../../utils/platform_detector.dart';
 
 export 'player_base.dart';
 
@@ -406,6 +408,9 @@ abstract class Player {
   /// software ones, where DV reshaping can actually happen (see
   /// MpvPlayerCore.initialVideoOutput; #2010).
   factory Player({bool? useExoPlayer, bool hardwareDecoding = true}) {
+    if (PlatformDetector.isWebOSBuild()) {
+      return PlayerWebOS();
+    }
     if (Platform.isAndroid) {
       // Default to MPV on Android, with ExoPlayer as the opt-in alternative.
       // The caller should pass useExoPlayer based on SettingsService.useExoPlayer.
@@ -439,6 +444,9 @@ abstract class Player {
   /// `PlaybackCoordinator`), and the video core only exists while the video
   /// player screen is open.
   factory Player.audio({bool exclusiveAudio = true}) {
+    if (PlatformDetector.isWebOSBuild()) {
+      return PlayerWebOS(audioOnly: true);
+    }
     if (Platform.isAndroid || Platform.isMacOS || Platform.isIOS || Platform.isWindows || Platform.isLinux) {
       return PlayerNative.audio(exclusiveAudio: exclusiveAudio);
     }

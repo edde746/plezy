@@ -59,7 +59,7 @@ PlezyNG builds are published on the [GitHub Releases page](https://github.com/sn
 | macOS | [DMG (x64, arm64)](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-macos.dmg) |
 | Linux x64 | [.deb](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.deb) · [.rpm](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.rpm) · [.pkg.tar.zst](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.pkg.tar.zst) · [.flatpak](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.flatpak) · [portable tar.gz](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.tar.gz) |
 | Linux arm64 | [.deb](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.deb) · [.rpm](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.rpm) · [.pkg.tar.zst](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.pkg.tar.zst) · [.flatpak](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.flatpak) · [portable tar.gz](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.tar.gz) |
-| webOS TV | The LG C6 test TV is available; PlezyNG has no webOS app package yet. See the [port status and blockers](docs/maintainers/webos-tv.md) |
+| webOS TV | Experimental ARM IPK runs on the LG C6. Plex sign-in, library artwork, and video playback are verified; broader playback validation and release packaging remain. See the [port status](docs/maintainers/webos-tv.md) |
 
 <details>
 <summary>Install with a package manager</summary>

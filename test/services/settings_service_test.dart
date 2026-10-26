@@ -16,11 +16,21 @@ void main() {
   setUp(() {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
+    TvDetectionService.debugReset();
   });
 
   tearDown(() {
     TvDetectionService.debugSetAppleTVOverride(null);
     TvDetectionService.debugSetAutomotiveOverride(null);
+  });
+
+  test('a fresh webOS install defaults to the OLED theme', () async {
+    if (!PlatformDetector.isWebOSBuild()) return;
+    await TvDetectionService.getInstance();
+
+    final settings = await SettingsService.getInstance();
+
+    expect(settings.read(SettingsService.themeMode), ThemeMode.oled);
   });
 
   group('SettingsService theme songs', () {

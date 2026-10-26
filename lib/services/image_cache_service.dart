@@ -9,8 +9,8 @@ import 'package:cached_network_image_ce/cached_network_image.dart'
 import 'package:cached_network_image_ce/src/cache/default_cache_manager.dart' as ce_cache;
 import 'package:flutter/foundation.dart' show visibleForTesting;
 import 'package:http/http.dart' as http;
-import 'package:path_provider/path_provider.dart';
 
+import '../utils/app_cache_directory.dart';
 import '../utils/media_server_http_client.dart';
 import 'device_performance.dart';
 
@@ -40,7 +40,7 @@ class PlexImageCacheManager extends ce_cache.DefaultCacheManager {
   PlexImageCacheManager._()
     : this.forTesting(
         httpClientFactory: () => _SharedHttpClient(_artworkHttpClient.inner, _artworkRequestLimiter),
-        cacheDirectoryProvider: getApplicationCacheDirectory,
+        cacheDirectoryProvider: getPlezyAppCacheDirectory,
       );
 
   @visibleForTesting
