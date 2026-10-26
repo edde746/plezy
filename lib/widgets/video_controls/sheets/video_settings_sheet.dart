@@ -12,6 +12,8 @@ import 'package:path/path.dart' as path;
 
 import 'package:provider/provider.dart';
 
+import '../../../focus/focusable_slider.dart';
+import '../../../focus/focusable_wrapper.dart';
 import '../../../models/shader_preset.dart';
 import '../../../media/ids.dart';
 import '../../../media/media_file_info.dart';
@@ -26,7 +28,6 @@ import '../../../services/scoped_player_prefs.dart';
 import '../../../services/settings_service.dart';
 import '../../../services/sleep_timer_service.dart';
 import '../../../services/video_filter_manager.dart';
-import '../../../focus/focusable_wrapper.dart';
 import '../../../utils/dialogs.dart';
 import '../../../utils/app_logger.dart';
 import '../../../utils/error_message_utils.dart';
@@ -1165,12 +1166,12 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
         for (var index = 0; index < frequencies.length; index++)
           ListTile(
             title: Text('${frequencies[index]} Hz'),
-            subtitle: Slider(
+            subtitle: FocusableSlider(
               value: _audioEqualizerGains[index].clamp(-12.0, 12.0).toDouble(),
               min: -12,
               max: 12,
               divisions: 24,
-              label: '${formatDecimal(_audioEqualizerGains[index], minimumDecimals: 0, maximumDecimals: 0)} dB',
+              semanticLabel: '${frequencies[index]} Hz',
               semanticFormatterCallback: (value) =>
                   '${formatDecimal(value, minimumDecimals: 0, maximumDecimals: 0)} dB',
               onChanged: (gain) => _setAudioEqualizerBand(index, gain),
