@@ -91,7 +91,7 @@ This release gathers PlezyNG’s feature work since the fork, platform expansion
 - Refresh sign-in with bundled plezyng.app product artwork, including high-resolution offline assets, responsive login choices and QR sizing for phone, desktop, TV and 4K screens.
 - Keep SMB setup copy localized and show the Videos shelf by default only for local and SMB sources.
 - Polish catalog, source, TV and cross-media discovery surfaces with Plezy's Mono focus and icon styles, RTL-aware navigation, accessible controls, responsive layouts, and localized error handling.
-- Complete localization coverage across settings, playback, downloads and accessibility labels; improve right-to-left focus navigation, numeric input, localized units and native permission prompts.
+- Complete localization coverage across settings, playback, downloads and accessibility labels; improve right-to-left focus navigation, numeric input, localized units and native permission prompts, and correct regional wording in source setup and Find your next controls.
 - Mirror navigation affordances and tree controls for right-to-left reading order.
 - Keep Steam touch-control hit areas at least 48dp, resolve overlapping targets by nearest control, and expose the localized controller label to Android accessibility.
 - Route reader, source-setup, audiobook-sync and player text entry and dialog actions through Plezy's shared focus controls for keyboard and TV navigation.
