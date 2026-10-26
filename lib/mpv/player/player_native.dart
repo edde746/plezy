@@ -271,12 +271,12 @@ class PlayerNative extends PlayerBase {
       // ignore them.
       final result = await invoke<Object>('initialize', {
         if (!audioOnly) 'hardwareDecoding': _hardwareDecoding,
-        if (!audioOnly && usesLinuxVideoPlane) ...{
+        if (!audioOnly && (usesLinuxVideoPlane || Platform.isAndroid))
           'experimentalDolbyVision':
               SettingsService.instanceOrNull?.read(SettingsService.experimentalDolbyVision) ?? false,
+        if (!audioOnly && usesLinuxVideoPlane)
           'dvCompatibilityFallback':
               SettingsService.instanceOrNull?.read(SettingsService.dvCompatibilityFallback) ?? true,
-        },
         if (!audioOnly && Platform.isAndroid)
           'subtitleRenderScale': SettingsService.instance
               .read(SettingsService.subtitleRenderResolution)

@@ -27,12 +27,13 @@ class GpuVoPolicyTest {
   }
 
   @Test
-  fun `P7 requests FEL graph when software output is required`() {
-    assertTrue(GpuVoPolicy.wantsP7FelReconstruction(7L, "auto", false, true, true))
-    assertTrue(GpuVoPolicy.wantsP7FelReconstruction(7L, "auto", true, false, true))
-    assertTrue(GpuVoPolicy.wantsP7FelReconstruction(7L, "auto", true, true, false))
-    assertFalse(GpuVoPolicy.wantsP7FelReconstruction(7L, "dv81", false, true, false))
-    assertFalse(GpuVoPolicy.wantsP7FelReconstruction(8L, "auto", false, true, false))
+  fun `P7 requests FEL graph only after experimental opt-in`() {
+    assertFalse(GpuVoPolicy.wantsP7FelReconstruction(7L, "auto", false, true, true))
+    assertTrue(GpuVoPolicy.wantsP7FelReconstruction(7L, "auto", false, true, true, experimentalEnabled = true))
+    assertTrue(GpuVoPolicy.wantsP7FelReconstruction(7L, "auto", true, false, true, experimentalEnabled = true))
+    assertTrue(GpuVoPolicy.wantsP7FelReconstruction(7L, "auto", true, true, false, experimentalEnabled = true))
+    assertFalse(GpuVoPolicy.wantsP7FelReconstruction(7L, "dv81", false, true, false, experimentalEnabled = true))
+    assertFalse(GpuVoPolicy.wantsP7FelReconstruction(8L, "auto", false, true, false, experimentalEnabled = true))
   }
 
   @Test
@@ -44,7 +45,8 @@ class GpuVoPolicyTest {
         displaySupportsDv = true,
         dvOutputAllowed = true,
         canPlayP7Natively = true,
-        softwareDecodeFallback = true
+        softwareDecodeFallback = true,
+        experimentalEnabled = true
       )
     )
     assertFalse(
@@ -54,7 +56,8 @@ class GpuVoPolicyTest {
         displaySupportsDv = true,
         dvOutputAllowed = true,
         canPlayP7Natively = true,
-        softwareDecodeFallback = true
+        softwareDecodeFallback = true,
+        experimentalEnabled = true
       )
     )
   }

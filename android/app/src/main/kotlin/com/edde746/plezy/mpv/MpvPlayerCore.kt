@@ -53,6 +53,7 @@ class MpvPlayerCore private constructor(
   /** Subtitle "Render Resolution" as a fraction of the OSD plane's view size; see [OsdPlanePolicy]. */
   private val osdRenderScale: Float,
   private val initialLogLevel: String,
+  private val experimentalDolbyVision: Boolean,
   private val propertyWriterOverride: (suspend (String, String) -> Unit)?,
   /**
    * Test seam standing in for the native player's command path: returns what
@@ -69,21 +70,22 @@ class MpvPlayerCore private constructor(
     audioOnly: Boolean = false,
     hardwareDecoding: Boolean = true,
     osdRenderScale: Float = 1f,
-    initialLogLevel: String = "warn"
-  ) : this(context, audioOnly, hardwareDecoding, osdRenderScale, initialLogLevel, null, null, false)
+    initialLogLevel: String = "warn",
+    experimentalDolbyVision: Boolean = false
+  ) : this(context, audioOnly, hardwareDecoding, osdRenderScale, initialLogLevel, experimentalDolbyVision, null, null, false)
 
   internal constructor(
     context: Context,
     audioOnly: Boolean,
     propertyWriter: (suspend (String, String) -> Unit)?
-  ) : this(context, audioOnly, true, 1f, "warn", propertyWriter, null, true)
+  ) : this(context, audioOnly, true, 1f, "warn", false, propertyWriter, null, true)
 
   internal constructor(
     context: Context,
     audioOnly: Boolean,
     propertyWriter: (suspend (String, String) -> Unit)?,
     commandRunner: suspend (Array<String>) -> Long?
-  ) : this(context, audioOnly, true, 1f, "warn", propertyWriter, commandRunner, true)
+  ) : this(context, audioOnly, true, 1f, "warn", false, propertyWriter, commandRunner, true)
 
   companion object {
     private const val TAG = "MpvPlayerCore"
@@ -1614,7 +1616,8 @@ class MpvPlayerCore private constructor(
       displaySupportsDv = routing.displaySupportsDv,
       dvOutputAllowed = dvOutputAllowed,
       canPlayP7Natively = p7Decoder != null,
-      softwareDecodeFallback = softwareDecodeFallback
+      softwareDecodeFallback = softwareDecodeFallback,
+      experimentalEnabled = experimentalDolbyVision
     )
     val felActive = configureP7FelFilter(p, wantsP7Fel)
     val needsP7Fel = wantsP7Fel && felActive
@@ -1708,7 +1711,8 @@ class MpvPlayerCore private constructor(
       conversionMode = mode,
       displaySupportsDv = routing.displaySupportsDv,
       dvOutputAllowed = dvOutputAllowed,
-      canPlayP7Natively = false
+      canPlayP7Natively = false,
+      experimentalEnabled = experimentalDolbyVision
     )
     val felActive = configureP7FelFilter(p, wantsP7Fel)
     val needsP7Fel = wantsP7Fel && felActive

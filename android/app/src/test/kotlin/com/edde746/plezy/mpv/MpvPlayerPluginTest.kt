@@ -900,19 +900,22 @@ class MpvPlayerPluginTest {
     val core = MpvPlayerCore(activity)
     var created = 0
     var initialized: ((Boolean) -> Unit)? = null
-    plugin.createCore = { _, _, _, _ ->
+    var experimentalDolbyVision = false
+    plugin.createCore = { _, _, _, _, experimental ->
       created++
+      experimentalDolbyVision = experimental
       core
     }
     plugin.initializeCore = { _, onInitialized -> initialized = onInitialized }
     val first = RecordingResult()
     val second = RecordingResult()
 
-    plugin.onMethodCall(MethodCall("initialize", mapOf("instanceId" to 1)), first)
-    plugin.onMethodCall(MethodCall("initialize", mapOf("instanceId" to 1)), second)
+    plugin.onMethodCall(MethodCall("initialize", mapOf("instanceId" to 1, "experimentalDolbyVision" to true)), first)
+    plugin.onMethodCall(MethodCall("initialize", mapOf("instanceId" to 1, "experimentalDolbyVision" to true)), second)
     shadowOf(Looper.getMainLooper()).idle()
 
     assertEquals(1, created)
+    assertTrue(experimentalDolbyVision)
     assertEquals(0, first.completionCount)
     assertEquals(0, second.completionCount)
 
@@ -941,7 +944,7 @@ class MpvPlayerPluginTest {
     setPluginField(plugin, "activity", activity)
     val core = MpvPlayerCore(activity)
     var initialized: ((Boolean) -> Unit)? = null
-    plugin.createCore = { _, _, _, _ -> core }
+    plugin.createCore = { _, _, _, _, _ -> core }
     plugin.initializeCore = { _, onInitialized -> initialized = onInitialized }
     val result = RecordingResult()
 
@@ -973,7 +976,7 @@ class MpvPlayerPluginTest {
     val core = MpvPlayerCore(activity)
     var created = 0
     var initialized: ((Boolean) -> Unit)? = null
-    plugin.createCore = { _, _, _, _ ->
+    plugin.createCore = { _, _, _, _, _ ->
       created++
       core
     }
@@ -1012,7 +1015,7 @@ class MpvPlayerPluginTest {
     setPluginField(plugin, "activity", activity)
     val successor = MpvPlayerCore(activity)
     var initialized: ((Boolean) -> Unit)? = null
-    plugin.createCore = { _, _, _, _ -> successor }
+    plugin.createCore = { _, _, _, _, _ -> successor }
     plugin.initializeCore = { _, onInitialized -> initialized = onInitialized }
     val result = RecordingResult()
 

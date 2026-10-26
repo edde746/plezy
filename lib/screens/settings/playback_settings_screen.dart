@@ -100,6 +100,8 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         // With Dolby Vision disabled mpv strips every Profile 7 file, so the
         // conversion choices would change nothing.
         final showDvConversionMode = Platform.isAndroid && (exoActive || !svc.read(SettingsService.disableDolbyVision));
+        final showExperimentalDolbyVision =
+            (Platform.isLinux && !PlatformDetector.isWebOSBuild()) || (Platform.isAndroid && !exoActive);
 
         return SettingsPage(
           title: Text(t.settings.videoPlayback),
@@ -135,15 +137,13 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                 if (showDisplaySwitchDelay) _displaySwitchDelayTile(),
                 if (showDisableDolbyVision) _disableDolbyVisionTile(),
                 if (showDvConversionMode) _dvConversionModeTile(),
-                SettingSwitchTile(
-                  pref: SettingsService.experimentalDolbyVision,
-                  icon: Symbols.hdr_on_rounded,
-                  title: t.settings.experimentalDolbyVision,
-                  subtitle: Platform.isLinux && !PlatformDetector.isWebOSBuild()
-                      ? t.settings.experimentalDolbyVisionDescription
-                      : t.settings.dvExperimentUnavailableDescription,
-                  enabled: Platform.isLinux && !PlatformDetector.isWebOSBuild(),
-                ),
+                if (showExperimentalDolbyVision)
+                  SettingSwitchTile(
+                    pref: SettingsService.experimentalDolbyVision,
+                    icon: Symbols.hdr_on_rounded,
+                    title: t.settings.experimentalDolbyVision,
+                    subtitle: t.settings.experimentalDolbyVisionDescription,
+                  ),
                 if (Platform.isLinux &&
                     !PlatformDetector.isWebOSBuild() &&
                     svc.read(SettingsService.experimentalDolbyVision))

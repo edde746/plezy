@@ -19,10 +19,10 @@ internal object GpuVoPolicy {
   fun needsDvReshaping(dvProfile: Long?, conversionMode: String, canPlayP5Natively: Boolean): Boolean = dvProfile == 5L && conversionMode == "auto" && !canPlayP5Natively
 
   /**
-   * Whether the app should try the P7 FEL graph on software output. The caller
-   * must still confirm that mpv accepts the filter before routing frames to
-   * gpu-next; a recognized decoder can also be overridden when it fell back
-   * for the current file.
+   * Whether the user opted into trying the P7 FEL graph on software output.
+   * The caller must still confirm that mpv accepts the filter before routing
+   * frames to gpu-next; a recognized decoder can also be overridden when it
+   * fell back for the current file.
    */
   fun wantsP7FelReconstruction(
     dvProfile: Long?,
@@ -30,8 +30,9 @@ internal object GpuVoPolicy {
     displaySupportsDv: Boolean,
     dvOutputAllowed: Boolean,
     canPlayP7Natively: Boolean,
-    softwareDecodeFallback: Boolean = false
-  ): Boolean = dvProfile == 7L &&
+    softwareDecodeFallback: Boolean = false,
+    experimentalEnabled: Boolean = false
+  ): Boolean = experimentalEnabled && dvProfile == 7L &&
     conversionMode == "auto" &&
     (softwareDecodeFallback || !displaySupportsDv || !dvOutputAllowed || !canPlayP7Natively)
 
