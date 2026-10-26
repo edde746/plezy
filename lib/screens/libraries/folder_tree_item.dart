@@ -221,7 +221,7 @@ class _FolderTreeItemState extends State<FolderTreeItem> with ContextMenuTapMixi
             : Symbols.keyboard_arrow_right_rounded;
 
     return Container(
-      padding: .only(start: 16.0 + indentation, end: 8.0, top: 8.0, bottom: 8.0),
+      padding: EdgeInsetsDirectional.only(start: 16.0 + indentation, end: 8.0, top: 8.0, bottom: 8.0),
       child: Row(
         children: [
           SizedBox(
@@ -264,7 +264,7 @@ class _FolderTreeItemState extends State<FolderTreeItem> with ContextMenuTapMixi
     final metadataLine = _buildMetadataLine();
 
     return Container(
-      padding: .only(start: 16.0 + indentation, end: 16.0, top: 6.0, bottom: 6.0),
+      padding: EdgeInsetsDirectional.only(start: 16.0 + indentation, end: 16.0, top: 6.0, bottom: 6.0),
       child: Row(
         crossAxisAlignment: .center,
         children: [

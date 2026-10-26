@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
+import 'dart:typed_data';
 
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
@@ -369,7 +370,7 @@ class _FtpSession {
   }
 
   StreamIterator<String> _lineReader(Socket socket) =>
-      StreamIterator<String>(socket.transform(utf8.decoder).transform(const LineSplitter()));
+      StreamIterator<String>(socket.cast<List<int>>().transform(utf8.decoder).transform(const LineSplitter()));
 
   Future<String> _nextLine() async {
     final lines = _lines;

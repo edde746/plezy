@@ -146,7 +146,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
 
   Future<void> _pickNfsServerCertificate() async {
     try {
-      final selection = await FilePicker.platform.pickFiles(
+      final selection = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: const ['pem', 'crt', 'cer'],
         withData: true,
@@ -174,7 +174,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
 
   Future<void> _pickNfsClientIdentity() async {
     try {
-      final selection = await FilePicker.platform.pickFiles(
+      final selection = await FilePicker.pickFiles(
         type: FileType.custom,
         allowedExtensions: const ['p12', 'pfx'],
         withData: true,
@@ -760,7 +760,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                     FilledButton(
                       onPressed: _busy ? null : connect,
                       child: _busy
-                          ? const Semantics(
+                          ? Semantics(
                               label: 'Connecting to source',
                               liveRegion: true,
                               child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),

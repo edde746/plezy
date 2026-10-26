@@ -145,7 +145,7 @@ class DlnaSourceAdapter extends SourceAdapter {
               .firstOrNull ??
           '',
     );
-    return _DlnaBrowseResult(rows, returned ?? rows.length, total);
+    return _DlnaBrowseResult(rows, returned ?? rows.length, total ?? returned ?? rows.length);
   }
 
   _DlnaObject? _parseObject(XmlElement element, _DlnaService service) {

@@ -10,6 +10,35 @@ import 'package:plezy/sources/source_models.dart';
 import 'package:plezy/sources/source_transport.dart';
 
 void main() {
+  test('source transport decodes top-level JSON arrays', () async {
+    final transport = SourceTransport(
+      client: MockClient((_) async => http.Response('[{"type":"movie"}]', 200)),
+    );
+    expect(await transport.jsonValue('GET', Uri.parse('https://catalog.example/search')), [
+      {'type': 'movie'},
+    ]);
+    transport.close();
+  });
+
+  test('stream-only publication files round-trip and affect their fingerprint', () {
+    const streamed = PublicationFile(
+      id: 'book',
+      name: 'book.cbz',
+      mimeType: 'application/vnd.comicbook+zip',
+      streamOnly: true,
+    );
+    const archived = PublicationFile(
+      id: 'book',
+      name: 'book.cbz',
+      mimeType: 'application/vnd.comicbook+zip',
+    );
+
+    final restored = PublicationFile.fromJson(streamed.toJson());
+    expect(restored.streamOnly, isTrue);
+    expect(restored.fingerprint, isNot(archived.fingerprint));
+    expect(PublicationFile.fromJson(archived.toJson()).streamOnly, isFalse);
+  });
+
   test('cross-origin redirects strip authentication', () async {
     final requests = <http.Request>[];
     final transport = SourceTransport(

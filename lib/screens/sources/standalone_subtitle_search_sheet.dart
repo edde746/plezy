@@ -187,7 +187,7 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
                 },
               ),
               if (_searching)
-                const Semantics(
+                Semantics(
                   label: 'Searching OpenSubtitles',
                   liveRegion: true,
                   child: LinearProgressIndicator(),
@@ -203,7 +203,7 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
               const SizedBox(height: 8),
               Expanded(
                 child: _hasSearched && _results.isEmpty && !_searching && _error == null
-                    ? const Semantics(
+                    ? Semantics(
                         liveRegion: true,
                         child: Center(child: Text('No matching subtitles found. Try a different title or language.')),
                       )
