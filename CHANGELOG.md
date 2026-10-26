@@ -60,6 +60,7 @@
 
 ### Changed
 
+- Route reader, source-setup, audiobook-sync and player text entry and dialog actions through Plezy's shared focus controls for keyboard and TV navigation.
 - Route the Google Drive source label through localization.
 - Keep both iOS SwiftPM lockfiles pinned to the same Google Cast SDK revision.
 - Explain the default behavior on the screensaver library selection page.

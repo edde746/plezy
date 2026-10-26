@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
@@ -113,7 +114,7 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                       ),
                     if (selected?.kind == FileSourceKind.webdav || selected?.kind == FileSourceKind.s3) ...[
                       const SizedBox(height: 16),
-                      TextField(
+                      FocusableTextField(
                         controller: _folder,
                         enabled: !_busy,
                         autocorrect: false,
@@ -125,7 +126,7 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                       ),
                     ],
                     const SizedBox(height: 16),
-                    TextField(
+                    FocusableTextField(
                       controller: _code,
                       enabled: !_busy,
                       obscureText: !_reveal,

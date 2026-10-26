@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
@@ -61,7 +62,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
 
   Widget input(String key, String label, {bool secret = false, bool required = false, String? hint}) => Padding(
     padding: const EdgeInsets.only(bottom: 16),
-    child: TextFormField(
+    child: FocusableTextFormField(
       controller: field(key),
       obscureText: secret,
       autocorrect: false,

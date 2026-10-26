@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_text_field.dart';
 import '../../focus/focusable_slider.dart';
 import '../../i18n/strings.g.dart';
 import '../../mpv/mpv.dart';
@@ -12,11 +13,13 @@ import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
 import '../../sources/listening_tools.dart';
 import '../../theme/mono_tokens.dart';
+import '../../utils/dialogs.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../../services/fullscreen_state_manager.dart';
 import '../../widgets/app_menu.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/music/mini_player.dart';
 import 'source_notes_screen.dart';
@@ -297,13 +300,13 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
     final input = TextEditingController(text: initial);
     final form = GlobalKey<FormState>();
     try {
-      return await showDialog<String>(
+      return await showScopedDialog<String>(
         context: context,
         builder: (dialogContext) => AlertDialog(
           title: Text(title),
           content: Form(
             key: form,
-            child: TextFormField(
+            child: FocusableTextFormField(
               controller: input,
               autofocus: true,
               autocorrect: false,
@@ -315,12 +318,13 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
-            FilledButton(
+            DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
+            DialogActionButton(
               onPressed: () {
                 if (form.currentState!.validate()) Navigator.pop(dialogContext, input.text.trim());
               },
-              child: Text(t.audiobook.apply),
+              label: t.audiobook.apply,
+              isPrimary: true,
             ),
           ],
         ),
