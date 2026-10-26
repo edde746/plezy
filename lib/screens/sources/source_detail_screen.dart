@@ -23,6 +23,7 @@ import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/app_menu.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../settings/services_settings_screen.dart';
@@ -152,7 +153,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
 
   Future<String?> _metadataSearchQuery() async {
     final controller = TextEditingController(text: _entry.displayTitle);
-    final query = await showDialog<String>(
+    final query = await showScopedDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(t.common.search),
@@ -174,13 +175,11 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
           ),
         ),
         actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(dialogContext),
-            child: Text(MaterialLocalizations.of(dialogContext).cancelButtonLabel),
-          ),
-          FilledButton(
+          DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
+          DialogActionButton(
             onPressed: () => Navigator.pop(dialogContext, controller.text.trim()),
-            child: Text(t.common.search),
+            label: t.common.search,
+            isPrimary: true,
           ),
         ],
       ),
@@ -743,7 +742,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                     if (_error != null)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: Semantics(liveRegion: true, child: Text(sourceFailureText(_error!))),
+                        child: SourceErrorMessage(message: sourceFailureText(_error!)),
                       ),
                     if (_entry.description.isNotEmpty)
                       Padding(

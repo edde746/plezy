@@ -231,7 +231,7 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                     if (_error != null || sync.failure != null)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: Text(sourceFailureText(_error ?? SourceException(sync.failure!))),
+                        child: SourceErrorMessage(message: sourceFailureText(_error ?? SourceException(sync.failure!))),
                       ),
                     if (sync.lastSuccess != null)
                       Padding(

@@ -732,13 +732,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                     if (_error != null)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: Semantics(
-                          liveRegion: true,
-                          child: Text(
-                            sourceFailureText(_error!),
-                            style: TextStyle(color: Theme.of(context).colorScheme.error),
-                          ),
-                        ),
+                        child: SourceErrorMessage(message: sourceFailureText(_error!)),
                       ),
                     if (_error != null && _kind == FileSourceKind.nfs && _nfsRpcTls)
                       Padding(padding: EdgeInsets.only(bottom: 12), child: Text(t.sourceSetup.nfsEncryptionFailure)),

@@ -44,8 +44,9 @@ class SyncRuleResult {
   final String globalKey;
   final String? title;
   final int queuedCount;
+  final bool failed;
 
-  const SyncRuleResult({required this.globalKey, this.title, required this.queuedCount});
+  const SyncRuleResult({required this.globalKey, this.title, this.queuedCount = 0, this.failed = false});
 }
 
 /// Evaluates sync rules and queues downloads so the device matches the rule's target.
@@ -153,11 +154,12 @@ class SyncRuleExecutor {
             associateDownload: associateDownload,
             deleteSyncRuleDownload: deleteSyncRuleDownload,
           );
-          if (result != null && result.queuedCount > 0) {
+          if (result != null && (result.queuedCount > 0 || result.failed)) {
             results.add(result);
           }
-        } catch (e) {
-          appLogger.w('Failed to execute sync rule ${rule.globalKey}: $e');
+        } catch (error, stackTrace) {
+          appLogger.w('Failed to execute sync rule ${rule.globalKey}', error: error, stackTrace: stackTrace);
+          results.add(SyncRuleResult(globalKey: rule.globalKey, failed: true));
         }
       }
 
@@ -269,7 +271,7 @@ class SyncRuleExecutor {
     final client = serverManager.getClient(ServerId(rule.serverId));
     if (client == null || !serverManager.isServerOnline(ServerId(rule.serverId))) {
       appLogger.d('Skipping sync rule ${rule.globalKey} — server offline or unavailable');
-      return null;
+      return SyncRuleResult(globalKey: rule.globalKey, failed: true);
     }
 
     if (rule.targetType == ContentTypes.continueWatching) {

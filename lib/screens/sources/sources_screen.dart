@@ -474,7 +474,10 @@ class _SourcesScreenState extends State<SourcesScreen> {
                   ],
                 ),
                 if (_error != null)
-                  Padding(padding: const EdgeInsets.symmetric(vertical: 16), child: Text(sourceFailureText(_error!))),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: SourceErrorMessage(message: sourceFailureText(_error!)),
+                  ),
                 if (_loading)
                   const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: LinearProgressIndicator()),
                 if (entries.isEmpty && !_loading)

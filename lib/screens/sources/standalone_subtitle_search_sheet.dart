@@ -11,6 +11,7 @@ import '../../i18n/strings.g.dart';
 import '../../models/subtitles/subtitle_search_result.dart';
 import '../../services/open_subtitles_client.dart';
 import '../../utils/language_codes.dart';
+import 'source_widgets.dart';
 
 class StandaloneSubtitleSearchSheet extends StatefulWidget {
   const StandaloneSubtitleSearchSheet({
@@ -225,10 +226,7 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
                 if (_error != null)
                   Padding(
                     padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Semantics(
-                      liveRegion: true,
-                      child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                    ),
+                    child: SourceErrorMessage(message: _error!),
                   ),
                 const SizedBox(height: 8),
                 Builder(

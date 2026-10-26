@@ -85,6 +85,8 @@
 
 ### Changed
 
+- Show source, audiobook sync and lending search errors with the same live, theme-colored feedback.
+- Report failed sync rules and unavailable-server retries, and give orphan review one safe initial focus target.
 - Use Plezy's shared Material Symbols icons for file-source, source-detail, player and standalone subtitle-search actions.
 - Keep library/publication-reader search, page entry and bookmark notes on shared focus-aware fields and scoped dialog actions.
 - Route public-library forms and email dialogs through shared focus-aware fields and dialog actions for keyboard and TV navigation.

@@ -22,6 +22,27 @@ String sourceFailureText(Object error) => switch (error is SourceException ? err
   SourceFailure.cancelled => t.fileSources.errorCancelled,
   SourceFailure.conflict => t.fileSources.errorConflict,
 };
+
+class SourceErrorMessage extends StatelessWidget {
+  const SourceErrorMessage({super.key, required this.message, this.textAlign});
+
+  final String message;
+  final TextAlign? textAlign;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return Semantics(
+      liveRegion: true,
+      child: Text(
+        message,
+        textAlign: textAlign,
+        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.error),
+      ),
+    );
+  }
+}
+
 Future<void> sourceAction(BuildContext context, Future<void> Function() action) async {
   try {
     await action();

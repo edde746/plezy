@@ -146,12 +146,13 @@ class _PublicLibrariesScreenState extends State<PublicLibrariesScreen> {
                       ),
                     )
                   else if (_error != null)
-                    SizedBox(
-                      height: 240,
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(minHeight: 240),
                       child: ErrorStateWidget(
                         message: sourceFailureText(_error!),
                         icon: Symbols.error_outline_rounded,
                         onRetry: () => unawaited(_load()),
+                        actionAutofocus: true,
                         actionUseBackgroundFocus: true,
                       ),
                     ),
@@ -591,9 +592,23 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
                   ),
                 ),
               if (_busy) const Padding(padding: EdgeInsets.only(top: 20), child: LinearProgressIndicator()),
-              if (_error != null)
-                Padding(padding: const EdgeInsets.only(top: 20), child: Text(sourceFailureText(_error!))),
-              if (!_busy && _books.isEmpty)
+              if (_error != null && _books.isEmpty)
+                ConstrainedBox(
+                  constraints: const BoxConstraints(minHeight: 240),
+                  child: ErrorStateWidget(
+                    message: sourceFailureText(_error!),
+                    icon: Symbols.error_outline_rounded,
+                    onRetry: () => unawaited(_load()),
+                    actionAutofocus: true,
+                    actionUseBackgroundFocus: true,
+                  ),
+                )
+              else if (_error != null)
+                Padding(
+                  padding: const EdgeInsets.only(top: 20),
+                  child: SourceErrorMessage(message: sourceFailureText(_error!)),
+                ),
+              if (!_busy && _books.isEmpty && _error == null)
                 Padding(
                   padding: const EdgeInsets.only(top: 32),
                   child: Text(widget.library == null ? t.lending.openLibraryNote : t.lending.empty),

@@ -769,7 +769,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Text(sourceFailureText(_error!), textAlign: TextAlign.center),
+                  SourceErrorMessage(message: sourceFailureText(_error!), textAlign: TextAlign.center),
                   if (_cloudConflict) ...[
                     const SizedBox(height: 12),
                     TextButton.icon(

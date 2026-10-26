@@ -373,7 +373,10 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
         ],
       ),
       if (s.failure != null)
-        Padding(padding: const EdgeInsets.all(16), child: Text(sourceFailureText(SourceException(s.failure!)))),
+        Padding(
+          padding: const EdgeInsets.all(16),
+          child: SourceErrorMessage(message: sourceFailureText(SourceException(s.failure!))),
+        ),
     ],
   );
   Future<String?> _entryDialog({
