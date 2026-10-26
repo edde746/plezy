@@ -1507,6 +1507,7 @@
   },
   "about": {
     "title": "Dastur haqida",
+    "privacyPolicy": "Maxfiylik siyosati",
     "openSourceLicenses": "Ochiq kodli litsenziyalar",
     "versionLabel": "Versiya ${version}",
     "appDescription": "Flutter asosidagi qulay Plex, Jellyfin va Emby mijozi",
