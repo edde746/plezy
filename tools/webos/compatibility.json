@@ -124,8 +124,14 @@
   "lgArtifacts": {
     "releaseTag": "c6f67dede3-webos26-2",
     "ndkVersion": "11.2.0",
+    "ndkInstaller": {
+      "url": "https://github.com/lg-flutter-webos/ndk/releases/download/11.2.0/webos-ndk-flutter-starfish-x86_64-ca9v1-11.2.0.sh",
+      "sha256": "3c93af87505a8771d5662cc4a15b596d46791e3c7d8a0cb9113fa8e846e15a42"
+    },
+    "baseEngineArchiveUrl": "https://github.com/lg-flutter-webos/artifacts/releases/download/c6f67dede3-webos26-2/webos-arm-release.zip",
     "baseEngineArchiveSha256": "28fd011b3334323c1e28343f600c40f7ebabaee51fe0cafe6e9463340b5c7fb9",
     "engineArchiveSha256": "5c6e6840a33079baa176cc11c553d44708f31ecf46e1fb2f371b6a270aaa1360",
+    "commonArchiveUrl": "https://github.com/lg-flutter-webos/artifacts/releases/download/c6f67dede3-webos26-2/webos-common.zip",
     "commonArchiveSha256": "b0706807140c4792525879de30ecd0d219111f521252965cb75c01fef5a20a2e",
     "genSnapshotSha256": "78ab5c5423adaabe59ca150def5922568eddb1e820b282e273acca19d62c8e01",
     "runtimeLibraries": {

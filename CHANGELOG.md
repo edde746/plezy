@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Add a pinned experimental LG webOS ARMv7 engine/IPK build and verification path, with a webOS 26 Re:New+ compatibility matrix.
+- Add a pinned experimental LG webOS ARMv7 engine/IPK build, a manual JIT-only validation mode and release-asset packaging, with a webOS 26 Re:New+ compatibility matrix.
 - Route Windows x64 release builds and package-manager submissions through private JIT runners.
 - Fit Find your next to the screen with persistent action buttons, mirrored swipe/TV direction cues, contextual help, and artwork that follows the current pick. Restore downloaded and alternate covers, distinguish artwork loading from missing images, and allow failed source covers to be retried.
 

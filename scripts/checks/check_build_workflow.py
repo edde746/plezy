@@ -112,12 +112,22 @@ for legacy_job in (
     require(f"  {legacy_job}:\n" not in text, f"legacy job {legacy_job} must stay removed")
 
 windows = job("build-windows")
-require("runs-on: ${{ matrix.runner }}" in windows, "Windows must use its matrix runner")
+require(
+    '"group":"packer-windows"' in windows
+    and '"Windows","X64"' in windows
+    and '"PlezyNG"' in windows,
+    "Windows x64 must use the private Packer JIT route",
+)
+require(
+    '"group":"windows-arm64-jit"' in windows
+    and '"Windows","ARM64"' in windows
+    and '"PlezyNG"' in windows,
+    "Windows ARM64 must use its private JIT route",
+)
 require("fail-fast: false" in windows, "Windows matrix must not cancel its other architecture")
 require(
     re.search(
         r"(?ms)          - arch: x64\n"
-        r"            runner: windows-latest\n"
         r"            flutter_setup: action\n"
         r"            native_cache_path: build/windows/x64/_deps\n",
         windows,
@@ -128,7 +138,6 @@ require(
 require(
     re.search(
         r"(?ms)          - arch: arm64\n"
-        r"            runner: windows-11-arm\n"
         r"            flutter_setup: git\n"
         r"            native_cache_path: build/windows/arm64/_deps\n",
         windows,
@@ -201,12 +210,16 @@ for expected in (
     )
 
 linux = job("build-linux")
-require("runs-on: ${{ matrix.runner }}" in linux, "Linux must use its matrix runner")
+require(
+    "group: ng-shared-main-jit" in linux
+    and "ng-shared-main-plezyng" in linux
+    and "format('gha-{0}-build-linux-{1}', github.run_id, matrix.arch)" in linux,
+    "Linux architectures must use the private JIT route",
+)
 require("fail-fast: false" in linux, "Linux matrix must not cancel its other architecture")
 require(
     re.search(
         r"(?ms)          - arch: x64\n"
-        r"            runner: ubuntu-24.04\n"
         r"            flutter_channel: stable\n"
         r"            pkg_config_arch: x86_64-linux-gnu\n",
         linux,
@@ -217,7 +230,6 @@ require(
 require(
     re.search(
         r"(?ms)          - arch: arm64\n"
-        r"            runner: ubuntu-24.04-arm\n"
         r"            flutter_channel: master\n"
         r"            pkg_config_arch: aarch64-linux-gnu\n",
         linux,
@@ -274,12 +286,25 @@ for artifact in (
 
 require(
     re.search(
-        r"(?ms)^  workflow_dispatch:\n    inputs:\n      release_tag:\n"
-        r".*?        required: true\n        type: string\n",
+        r"(?ms)^      mode:\n.*?        required: true\n"
+        r"        type: choice\n.*?          - release\n"
+        r"          - webos-validation\n",
         text,
     )
     is not None,
-    "release workflow must require a release_tag input",
+    "manual workflow must expose required release and webOS validation modes",
+)
+require(
+    "Validate release tag before building" in job("validate-trusted-ref")
+    and "inputs.mode == 'release'" in job("validate-trusted-ref")
+    and "RELEASE_TAG: ${{ inputs.release_tag }}" in job("validate-trusted-ref"),
+    "release mode must validate its optional release_tag input before building",
+)
+require(
+    "build-webos:" in text
+    and "inputs.mode == 'webos-validation'" in job("build-webos")
+    and "bash tools/webos/build_release_candidate.sh" in job("build-webos"),
+    "manual webOS validation mode must build the WebOS artifact",
 )
 require("inputs.build_" not in text, "release workflow must build every platform together")
 require(
@@ -294,18 +319,19 @@ require(
 
 
 require(
-    "run-name: ${{ format('Release {0}', inputs.release_tag) }}" in text,
-    "release workflow runs must expose their release tag in the run name",
+    "inputs.release_tag" in text and "Validate webOS on main" in text,
+    "manual workflow run names must identify the release or webOS validation",
 )
 
 release = job("create-release")
 require(
-    "needs: [validate-trusted-ref, build-android, build-ios, build-tvos, build-macos, build-windows, package-windows, build-linux]"
+    "needs: [validate-trusted-ref, build-android, build-webos, build-ios, build-tvos, build-macos, build-windows, package-windows, build-linux]"
     in release,
     "release dependencies must include the trust gate, all platform builds, and Windows packaging",
 )
 for artifact in (
     "android-apk",
+    "webos-ipk",
     "ios-ipa",
     "tvos-ipa",
     "macos-dmg",
