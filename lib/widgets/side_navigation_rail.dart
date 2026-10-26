@@ -936,7 +936,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         }
         final hasGames =
             activeProfileId != null &&
-            !PlatformDetector.isAutomotive() &&
+            PlatformDetector.supportsEmbeddedGameStreaming() &&
             SettingsService.instance.read(SettingsService.showGamesTabForProfile(activeProfileId));
         final profileAllowsExplore =
             activeProfileId == null ||

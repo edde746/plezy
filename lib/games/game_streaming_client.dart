@@ -114,6 +114,7 @@ class NativeGameStreamingClient implements GameStreamingClient {
       'disconnect': t.games.disconnect,
       'menu': t.games.streamControls,
       'touchLabel': t.games.touchControls,
+      'touchDescription': t.games.touchDescription,
     }, const Duration(seconds: 10));
     if (ok != true) throw const GameClientException(GameClientFailure.unavailable);
   }
