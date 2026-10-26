@@ -8,10 +8,52 @@ import 'package:background_downloader/background_downloader.dart';
 import 'package:disk_usage/disk_usage.dart';
 import 'package:path/path.dart' as p;
 
+import '../services/credential_vault.dart';
 import 'source_database.dart';
 import 'source_models.dart';
 import 'source_oauth.dart';
 import 'source_transport.dart';
+
+const _encryptedLeaseTaskUrl = 'https://plezyng.invalid/native-download';
+
+/// Native task rows contain only this encrypted lease in [Task.metaData].
+/// Decryption and installation of request headers happen in the iOS
+/// background callback immediately before the request starts. The callback
+/// returns a secret-bearing task only in memory and strips its own Auth object
+/// so the downloader does not expand or serialize credential fields again.
+@pragma('vm:entry-point')
+Future<Task?> resolveEncryptedBackgroundLease(Task original) async {
+  if (!Platform.isIOS ||
+      original.url != _encryptedLeaseTaskUrl ||
+      original.headers.isNotEmpty ||
+      original.metaData.isEmpty ||
+      original.metaData.length > 16384 ||
+      !CredentialVault.isProtected(original.metaData)) {
+    return null;
+  }
+  try {
+    final clear = await CredentialVault.reveal(original.metaData);
+    if (clear == null || clear.length > 12288) return null;
+    final decoded = jsonDecode(clear);
+    if (decoded is! Map) return null;
+    if (decoded['taskId'] != original.taskId) return null;
+    final uri = Uri.tryParse(decoded['uri'] as String? ?? '');
+    final rawHeaders = decoded['headers'];
+    if (uri == null || rawHeaders is! Map) return null;
+    final headers = <String, String>{};
+    for (final entry in rawHeaders.entries) {
+      if (entry.key is! String || entry.value is! String) return null;
+      headers[entry.key as String] = entry.value as String;
+    }
+    final lease = ContentLease(uri, headers: headers, backgroundTransferSafe: true);
+    if (!lease.canPersistEncryptedAuthForBackgroundTransfer) return null;
+    return original.copyWith(url: uri.toString(), headers: headers, options: TaskOptions());
+  } on Object {
+    // Missing/locked vault keys or a corrupt descriptor fail closed. The
+    // downloader sees only the inert placeholder URL and empty headers.
+    return null;
+  }
+}
 
 class TransferCancellation {
   bool cancelled = false;
@@ -143,6 +185,15 @@ class PublicationDownloads {
     required File validatorFile,
   }) async {
     final taskId = _nativeTaskId(task.profile, task.adapter.source.id, task.file);
+    final encryptedLease = Platform.isIOS && lease.canPersistEncryptedAuthForBackgroundTransfer;
+    final payloadHeaders = Map<String, String>.fromEntries(
+      lease.headers.entries.toList()..sort((a, b) => a.key.toLowerCase().compareTo(b.key.toLowerCase())),
+    );
+    final leasePayload = encryptedLease
+        ? jsonEncode({'taskId': taskId, 'uri': lease.uri.toString(), 'headers': payloadHeaders})
+        : null;
+    var protectedLease = leasePayload == null ? '' : await CredentialVault.protect(leasePayload);
+    final taskUrl = encryptedLease ? _encryptedLeaseTaskUrl : lease.uri.toString();
     await _ensureNativeDownloader();
     task.cancellation.check();
 
@@ -156,9 +207,23 @@ class PublicationDownloads {
           (record.task.group != _nativeDownloadGroup || record.task is! DownloadTask)) {
         throw const SourceException(SourceFailure.invalidData);
       }
-      if (record != null && record.task.url != lease.uri.toString()) {
+      var sameRequest = record == null ||
+          (record.task.url == taskUrl && record.task.headers.isEmpty);
+      if (record != null && encryptedLease) {
+        final savedLease = record.task.metaData;
+        final savedPayload = CredentialVault.isProtected(savedLease)
+            ? await CredentialVault.reveal(savedLease)
+            : null;
+        sameRequest = sameRequest && savedPayload == leasePayload;
+        if (sameRequest) protectedLease = savedLease;
+      } else if (record != null) {
+        sameRequest = sameRequest &&
+            record.task.metaData.isEmpty &&
+            record.task.options?.auth == null;
+      }
+      if (record != null && !sameRequest) {
         // Source configuration can change while a job is suspended. Never
-        // resume the old endpoint under the new source identity.
+        // resume a stale endpoint or credential lease under the new identity.
         context.acceptingProgress = false;
         _nativeContexts.remove(taskId);
         await _removeNativeTask(taskId);
@@ -193,15 +258,24 @@ class PublicationDownloads {
       task.cancellation.check();
       final nativeTask = UriDownloadTask(
         taskId: taskId,
-        url: lease.uri.toString(),
+        url: taskUrl,
         filename: p.basename(partial.path),
         directoryUri: partial.parent.uri,
         headers: const {},
+        metaData: protectedLease,
         group: _nativeDownloadGroup,
         updates: Updates.statusAndProgress,
         allowPause: true,
         retries: 3,
         displayName: 'Publication download',
+        options: encryptedLease
+            ? TaskOptions(
+                auth: Auth(
+                  accessTokenExpiryTime: DateTime.fromMillisecondsSinceEpoch(0),
+                  onAuth: resolveEncryptedBackgroundLease,
+                ),
+              )
+            : null,
       );
       final enqueued = await FileDownloader().enqueue(nativeTask);
       if (!enqueued) {
@@ -756,8 +830,10 @@ class PublicationDownloads {
       var lease = await adapter.resolve(file);
       expectedSize ??= lease.size;
       cancel.check();
+      final canUseNativeBackgroundTransfer = lease.canPersistForBackgroundTransfer ||
+          (Platform.isIOS && lease.canPersistEncryptedAuthForBackgroundTransfer);
       if (_supportsNativeBackgroundDownloads &&
-          lease.canPersistForBackgroundTransfer &&
+          canUseNativeBackgroundTransfer &&
           expectedSize != null &&
           expectedSize > 0 &&
           lease.size == expectedSize) {

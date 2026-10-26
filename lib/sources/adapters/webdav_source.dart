@@ -105,6 +105,7 @@ class WebDavSourceAdapter extends SourceAdapter {
     contained(file.id),
     headers: {...await headers(), if (file.revision?.startsWith('"') == true) 'If-Match': file.revision!},
     size: file.size,
+    backgroundTransferSafe: true,
   );
 
   Uri _stateUri(SourceEntry entry, PublicationProgress progress) {

@@ -402,9 +402,8 @@ class SourcePage {
 }
 
 /// Transient by default; never cached in catalogue records or sent to OS
-/// media metadata. Only an adapter-attested, credential-free direct URL may be
-/// persisted as a native background task. Headers, expiring leases, and URLs
-/// containing user info, query parameters, or fragments are never handed off.
+/// media metadata. Native background tasks may only persist an adapter-attested
+/// direct URL or an OS-vault-encrypted descriptor for a stable HTTPS request.
 class ContentLease {
   const ContentLease(
     this.uri, {
@@ -418,9 +417,9 @@ class ContentLease {
   final DateTime? expiresAt;
   final int? size;
 
-  /// Only adapters that know a URL is a direct, credential-free resource may
-  /// opt it into a persistent native task. Never infer this from empty headers
-  /// alone: signed URLs can carry credentials in their query string.
+  /// Only adapters that know a URL is a direct resource may opt it into a
+  /// persistent native task. Never infer this from empty headers alone:
+  /// signed URLs can carry credentials in their query string.
   final bool backgroundTransferSafe;
 
   bool get canPersistForBackgroundTransfer =>
@@ -432,6 +431,42 @@ class ContentLease {
       !uri.hasQuery &&
       !uri.hasFragment &&
       const {'http', 'https'}.contains(uri.scheme);
+
+  /// Stable HTTPS requests may put authentication headers in a native task
+  /// only after encrypting the entire descriptor with the OS credential vault.
+  /// Signed URLs remain excluded because their query credentials and expiry
+  /// require provider-specific renewal before they can resume safely.
+  bool get canPersistEncryptedAuthForBackgroundTransfer {
+    if (!backgroundTransferSafe ||
+        expiresAt != null ||
+        uri.scheme != 'https' ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasQuery ||
+        uri.hasFragment ||
+        uri.toString().length > 4096 ||
+        headers.isEmpty ||
+        headers.length > 4) {
+      return false;
+    }
+    var hasAuthorization = false;
+    final seenHeaders = <String>{};
+    for (final entry in headers.entries) {
+      final name = entry.key.toLowerCase();
+      if (!seenHeaders.add(name)) return false;
+      if (name == 'authorization') {
+        final value = entry.value;
+        if (!(value.startsWith('Basic ') || value.startsWith('Bearer '))) return false;
+        hasAuthorization = true;
+      } else if (name != 'if-match') {
+        return false;
+      }
+      if (entry.value.length > 8192 || RegExp(r'[\x00-\x1f\x7f]').hasMatch(entry.key + entry.value)) {
+        return false;
+      }
+    }
+    return hasAuthorization;
+  }
 }
 
 /// Provider-native byte stream for sources without an HTTP media URL.
