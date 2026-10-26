@@ -120,6 +120,10 @@ class PlaybackInitializationService {
     final metadata = options.metadata;
     final serverId = metadata.serverId ?? client?.serverId;
 
+    if (options.forceServerPlayback && client == null) {
+      throw PlaybackException(t.messages.noVideoUrl, reason: PlaybackFailureReason.serverUnavailable);
+    }
+
     DownloadedVideoSource? offlineSource;
     // With no client, or when playback must stay offline, there is nothing
     // to stream from, so any downloaded version beats failing. Otherwise the

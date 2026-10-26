@@ -28,7 +28,9 @@ class PlaybackSourceResolver {
     final service = PlaybackInitializationService(client: reportingClient, database: database);
     final result = await service.getPlaybackData(
       options,
-      preferOffline: offlineLibraryMode || options.qualityPreset.isOriginal || downloadOutranksQuality,
+      preferOffline:
+          !options.forceServerPlayback &&
+          (offlineLibraryMode || options.qualityPreset.isOriginal || downloadOutranksQuality),
       requireOffline: offlineLibraryMode,
     );
 

@@ -5805,4 +5805,139 @@ void main() {
       expect(requestCount, 0);
     });
   });
+
+  for (final emby in [false, true]) {
+    test('${emby ? 'Emby' : 'Jellyfin'} requests a full server encode for an identified DV source', () async {
+      late Uri playbackInfoUri;
+      late Map<String, dynamic> playbackInfoBody;
+      final connection = emby
+          ? testEmbyConnection(accessToken: 'tok-abc', baseUrl: 'https://emby.example.com')
+          : _conn();
+      final client = JellyfinClient.forTesting(
+        connection: connection,
+        httpClient: MockClient((request) async {
+          if (request.url.path == '/Users/user-1/Items/item-1') {
+            return jsonResponse({
+              'Id': 'item-1',
+              'Type': 'Movie',
+              'Name': 'DV movie',
+              'MediaSources': [
+                {
+                  'Id': 'src-1',
+                  'Container': 'mkv',
+                  'Width': 3840,
+                  'Height': 2160,
+                  'MediaStreams': [
+                    {
+                      'Index': 0,
+                      'Type': 'Video',
+                      'Codec': 'hevc',
+                      'DvProfile': 7,
+                      'DvLevel': 9,
+                      'DvBlSignalCompatibilityId': 6,
+                      'VideoRangeType': 'DOVIWithHDR10',
+                      'VideoRange': 'HDR',
+                    },
+                  ],
+                },
+              ],
+            });
+          }
+          if (request.url.path == '/Items/item-1/PlaybackInfo') {
+            playbackInfoUri = request.url;
+            playbackInfoBody = jsonDecode(request.body) as Map<String, dynamic>;
+            return jsonResponse({
+              'PlaySessionId': 'ps-compatible',
+              'MediaSources': [
+                {
+                  'Id': 'src-1',
+                  'Container': 'mp4',
+                  'TranscodingUrl': '/Videos/item-1/master.m3u8?MediaSourceId=src-1&PlaySessionId=ps-compatible',
+                  'MediaStreams': [
+                    {'Index': 0, 'Type': 'Video', 'Codec': 'h264', 'VideoRange': 'SDR', 'VideoRangeType': 'SDR'},
+                  ],
+                },
+              ],
+            });
+          }
+          return http.Response('{}', 404);
+        }),
+      );
+      addTearDown(client.close);
+
+      final result = await client.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: emby ? MediaBackend.emby : MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
+          selectedMediaIndex: 0,
+          requestCompatibleDolbyVisionRendition: true,
+        ),
+      );
+
+      expect(playbackInfoUri.queryParameters['EnableDirectPlay'], 'false');
+      expect(playbackInfoUri.queryParameters['EnableDirectStream'], 'false');
+      expect(playbackInfoUri.queryParameters['EnableTranscoding'], 'true');
+      expect(playbackInfoUri.queryParameters['AllowVideoStreamCopy'], 'false');
+      expect(playbackInfoUri.queryParameters['AllowAudioStreamCopy'], 'true');
+      expect(playbackInfoBody['EnableDirectPlay'], isFalse);
+      expect(playbackInfoBody['EnableDirectStream'], isFalse);
+      expect(playbackInfoBody['EnableTranscoding'], isTrue);
+      expect(playbackInfoBody['AllowVideoStreamCopy'], isFalse);
+      expect(playbackInfoBody['AllowAudioStreamCopy'], isTrue);
+      expect(result.isTranscoding, isTrue);
+      expect(result.playMethod, 'Transcode');
+      expect(result.videoUrl, contains('/master.m3u8'));
+    });
+  }
+
+  test('a requested Dolby Vision compatibility route fails closed when PlaybackInfo returns no encode', () async {
+    final client = _clientWithPlaybackInfo(
+      (_) async => jsonResponse({
+        'MediaSources': [
+          {'Id': 'src-1', 'SupportsDirectPlay': true},
+        ],
+      }),
+      itemSources: [
+        {
+          'Id': 'src-1',
+          'Container': 'mkv',
+          'Width': 3840,
+          'Height': 2160,
+          'MediaStreams': [
+            {
+              'Index': 0,
+              'Type': 'Video',
+              'Codec': 'hevc',
+              'DvProfile': 7,
+              'DvBlSignalCompatibilityId': 6,
+              'VideoRangeType': 'DOVIWithHDR10',
+            },
+          ],
+        },
+      ],
+    );
+    addTearDown(client.close);
+
+    await expectLater(
+      client.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(
+            id: 'item-1',
+            backend: MediaBackend.jellyfin,
+            kind: MediaKind.movie,
+            serverId: 'srv-1',
+          ),
+          selectedMediaIndex: 0,
+          requestCompatibleDolbyVisionRendition: true,
+        ),
+      ),
+      throwsA(
+        isA<PlaybackException>().having((error) => error.reason, 'reason', PlaybackFailureReason.noPlayableSource),
+      ),
+    );
+  });
 }

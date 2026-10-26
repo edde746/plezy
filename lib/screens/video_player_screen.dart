@@ -18,6 +18,7 @@ import '../mpv/player/player_native.dart';
 
 import '../services/scrub_preview_source.dart';
 import '../media/media_backend.dart';
+import '../media/dolby_vision_compatibility.dart';
 import '../media/media_display_criteria.dart';
 import '../media/media_server_user_profile.dart';
 import '../media/media_item.dart';
@@ -1275,6 +1276,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   final ValueNotifier<bool> _isBuffering = ValueNotifier<bool>(false);
   final FirstFrameGate _firstFrame = FirstFrameGate();
   bool _hasFatalPlaybackError = false;
+  _PlaybackOpenRequest? _dolbyVisionFallbackAttemptedFor;
+  bool _dolbyVisionCompatibilityFallbackInFlight = false;
 
   final ValueNotifier<bool> _isExiting = ValueNotifier<bool>(false);
   final PlayerChromeController _chromeController = PlayerChromeController(
@@ -1873,6 +1876,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
             preferredSubtitleTrack: _preferredSubtitleTrack,
             sessionIdentifier: _playbackSessionIdentifier,
             transcodeSessionId: _playbackTranscodeSessionId,
+            requestCompatibleDolbyVisionRendition: PlatformDetector.isWebOSBuild(),
             // The same resume the open will land on (see
             // _resolveOpenResumePosition): a stacked item opens the file
             // holding it.

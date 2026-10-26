@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Ask Plex, Jellyfin, and Emby for a full server video transcode when webOS opens an identified Dolby Vision source.
+- On Android, Windows, Linux, and Apple platforms, retry an identified Dolby Vision source through the server video transcoder after a native or local open fails to initialize.
 - Fit Find your next to the screen with persistent action buttons, mirrored swipe/TV direction cues, contextual help, and artwork that follows the current pick. Restore downloaded and alternate covers, distinguish artwork loading from missing images, and allow failed source covers to be retried.
 
 - With explicit opt-in, force Android mpv P7 playback through the experimental software FEL graph even when native DV is advertised; switch only after mpv accepts the filter, and keep the existing fallback on unsupported engines.

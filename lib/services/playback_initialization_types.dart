@@ -3,6 +3,7 @@ import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../media/media_part_timeline.dart';
 import '../media/media_source_info.dart';
+import '../media/dolby_vision_compatibility.dart';
 import '../media/media_version.dart';
 import '../models/audio_quality_preset.dart';
 import '../models/transcode_quality_preset.dart';
@@ -72,6 +73,23 @@ class PlaybackInitializationOptions {
   /// [MediaSourceInfo.partTimeline]. Null starts from the first file.
   final Duration? startPosition;
 
+  /// Ask the server for a video encode when the selected source is identified
+  /// as Dolby Vision. Used by webOS, which lacks a local DV layer compositor,
+  /// and by the shared playback fallback after a native/local open fails. This
+  /// requests a compatible rendition; it does not qualify the server's color
+  /// conversion.
+  final bool requestCompatibleDolbyVisionRendition;
+
+  /// Keep a downloaded copy from intercepting an automatic server-rendition
+  /// retry after the device-local DV route failed. Offline library mode still
+  /// takes precedence and never sets this flag.
+  final bool forceServerPlayback;
+
+  bool requestsCompatibleDolbyVisionRendition(MediaSourceInfo? source) => shouldRequestCompatibleDolbyVisionRendition(
+    requested: requestCompatibleDolbyVisionRendition,
+    source: source?.displayCriteria,
+  );
+
   const PlaybackInitializationOptions({
     required this.metadata,
     required this.selectedMediaIndex,
@@ -86,6 +104,8 @@ class PlaybackInitializationOptions {
     this.sessionIdentifier,
     this.transcodeSessionId,
     this.startPosition,
+    this.requestCompatibleDolbyVisionRendition = false,
+    this.forceServerPlayback = false,
   });
 }
 

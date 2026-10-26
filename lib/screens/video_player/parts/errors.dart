@@ -23,6 +23,10 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
     // reporting again, and re-running the policy per event is what turned a
     // failed HLS open into an ANR. A new open resets the latch.
     if (_hasFatalPlaybackError) return;
+    // The local open has failed and its one compatibility retry owns the
+    // player now. Ignore duplicate events from that same failed open.
+    if (_dolbyVisionCompatibilityFallbackInFlight) return;
+    if (_tryAutomaticDolbyVisionCompatibilityFallback(err)) return;
 
     // A sidecar subtitle fetch can also log a status, but it never raises the
     // end-file error this handler is wired to, so a latched status belongs to
@@ -83,6 +87,68 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
           return;
         }
         _presentPlaybackFailure(message);
+    }
+  }
+
+  bool _tryAutomaticDolbyVisionCompatibilityFallback(PlayerError error) {
+    final session = _playbackSession;
+    final request = _currentOpenRequest;
+    final client = session?.reportingClient;
+    if (session == null || request == null || client == null || _firstFrame.rendered) return false;
+    if (_transitionGate.transition != PlaybackTransition.idle) return false;
+
+    final alreadyAttempted = _dolbyVisionFallbackAttemptedFor?.sameSourceAs(request) == true;
+    if (!shouldAttemptAutomaticDolbyVisionCompatibilityFallback(
+      source: session.mediaInfo?.displayCriteria,
+      isOnline: !session.isOffline && !_offlineLibraryMode,
+      isLive: widget.isLive,
+      serverSupportsTranscoding: client.capabilities.videoTranscoding,
+      alreadyTranscoding: session.isTranscoding,
+      alreadyAttempted: alreadyAttempted,
+      fatalHttpStatuses: _fatalHttpStatuses,
+      failureCause: error.cause,
+    )) {
+      return false;
+    }
+
+    _dolbyVisionFallbackAttemptedFor = request;
+    _dolbyVisionCompatibilityFallbackInFlight = true;
+    appLogger.i(
+      'Local Dolby Vision profile ${session.mediaInfo?.displayCriteria?.doviProfile} '
+      'could not initialize; retrying with a server-compatible rendition',
+    );
+    unawaited(_openDolbyVisionCompatibilityFallback(request, error));
+    return true;
+  }
+
+  Future<void> _openDolbyVisionCompatibilityFallback(_PlaybackOpenRequest request, PlayerError originalError) async {
+    MediaReloadOutcome outcome;
+    try {
+      outcome = await _reloadMediaInPlace(
+        metadata: request.metadata,
+        selectedMediaIndex: request.mediaIndex,
+        selectedMediaSourceId: request.mediaSourceId,
+        qualityPreset: request.qualityPreset,
+        selectedAudioStreamId: request.audioStreamId,
+        useCurrentAudioStreamSelection: false,
+        resumePosition: request.resumePosition,
+        preferredSubtitleTrackOverride: SubtitlePreference.trackOrNull(
+          _playbackSession?.subtitleSelection.primaryTrack,
+        ),
+        requestCompatibleDolbyVisionRendition: true,
+        forceServerPlayback: true,
+        showErrorUi: false,
+        reason: 'automatic Dolby Vision compatibility fallback',
+      );
+    } catch (error, stackTrace) {
+      appLogger.w('Automatic Dolby Vision compatibility fallback failed', error: error, stackTrace: stackTrace);
+      outcome = MediaReloadOutcome.failed;
+    } finally {
+      _dolbyVisionCompatibilityFallbackInFlight = false;
+    }
+
+    if (outcome == MediaReloadOutcome.failed || outcome == MediaReloadOutcome.rejected) {
+      _onPlayerError(originalError);
     }
   }
 

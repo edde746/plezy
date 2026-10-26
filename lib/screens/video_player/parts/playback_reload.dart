@@ -378,6 +378,8 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
     SubtitlePreference? preferredSubtitleTrackOverride,
     bool startPaused = false,
     bool useCurrentAudioStreamSelection = true,
+    bool requestCompatibleDolbyVisionRendition = false,
+    bool forceServerPlayback = false,
     bool showErrorUi = true,
     PlaybackTransitionLease? transitionLease,
     String reason = 'media reload',
@@ -582,6 +584,9 @@ extension _VideoPlayerReloadMethods on VideoPlayerScreenState {
             sessionIdentifier: _playbackSessionIdentifier,
             transcodeSessionId: _playbackTranscodeSessionId,
             startPosition: openResumePosition,
+            requestCompatibleDolbyVisionRendition:
+                !_offlineLibraryMode && (requestCompatibleDolbyVisionRendition || PlatformDetector.isWebOSBuild()),
+            forceServerPlayback: !_offlineLibraryMode && forceServerPlayback,
           ),
           offlineLibraryMode: _offlineLibraryMode,
           downloadOutranksQuality: downloadOutranksQuality,
