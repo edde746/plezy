@@ -259,7 +259,7 @@ class PlexAuthService {
     // If we have no valid servers but some invalid ones, throw with debug info
     if (servers.isEmpty && invalidServers.isNotEmpty) {
       throw ServerParsingException(
-        'No valid servers found. All ${invalidServers.length} server(s) have malformed data.',
+        'No usable servers found. All ${invalidServers.length} server(s) had invalid data or no HTTPS connections.',
         invalidServers,
         display: t.serverSelection.noValidServers,
       );
@@ -403,6 +403,7 @@ class PlexServer {
   final String? product;
   final String? platform;
   final DateTime? lastSeenAt;
+  final String? _consentedHttpEndpoint;
 
   PlexServer({
     required this.name,
@@ -413,7 +414,11 @@ class PlexServer {
     this.product,
     this.platform,
     this.lastSeenAt,
-  });
+    /// Only Direct Plex passes this after the user approves an HTTP URL.
+    String? consentedHttpEndpoint,
+  }) : _consentedHttpEndpoint = consentedHttpEndpoint == null
+           ? null
+           : canonicalizeBaseUrl(consentedHttpEndpoint);
 
   factory PlexServer.fromJson(Map<String, dynamic> json) {
     // Validate required fields first
@@ -434,39 +439,23 @@ class PlexServer {
       }
     }
 
-    // [toJson] persists the expanded list, so a stored server comes back with
-    // its synthetic fallbacks already in `connections`. Older builds also
-    // synthesized them for remote and relay endpoints, which sent the token
-    // in cleartext across the internet; drop those rather than reload them.
-    // plex.tv never publishes an http:// twin of an https:// endpoint, so an
-    // exact [PlexConnection.toHttpFallback] of a sibling is always synthetic.
-    final staleFallbacks = {
-      for (final connection in parsed)
-        if (connection.protocol == 'https' && !_isLanConnection(connection))
-          connection.toHttpFallback()._endpointIdentity,
-    };
-
+    // Plex-account tokens must only reach HTTPS endpoints. Cleartext HTTP is
+    // allowed only for the exact active URL approved in the Direct Plex flow,
+    // which is passed in-memory by addDirectPlexConnection.
     final connections = <PlexConnection>[];
-    // Keeping the first of each equivalent endpoint makes re-expansion
-    // idempotent.
     final seen = <String>{};
-    void addConnection(PlexConnection connection) {
-      if (seen.add(connection._endpointIdentity)) connections.add(connection);
-    }
-
-    // Generate HTTP fallbacks for HTTPS connections that stay on the LAN
     for (final connection in parsed) {
-      if (staleFallbacks.contains(connection._endpointIdentity)) continue;
-      addConnection(connection);
-
-      if (_allowsHttpFallback(connection)) {
-        addConnection(connection.toHttpFallback());
+      final uriScheme = Uri.tryParse(connection.uri)?.scheme.toLowerCase();
+      if (connection.protocol.toLowerCase() != 'https' ||
+          uriScheme != 'https') {
+        continue;
       }
+      if (seen.add(connection._endpointIdentity)) connections.add(connection);
     }
 
     // If no valid connections were parsed, this server is unusable
     if (connections.isEmpty) {
-      throw const FormatException('Server has no valid connections');
+      throw const FormatException('Server has no usable HTTPS connections');
     }
 
     final lastSeenAt = DateTime.tryParse(json['lastSeenAt']?.toString() ?? '');
@@ -528,7 +517,8 @@ class PlexServer {
   /// 2. Second emission (optional): The best connection after latency testing
   /// Priority: local > remote > relay, then IPv4 > IPv6, then HTTPS > HTTP, then lowest latency
   /// Tests both plex.direct URI and direct IP for each connection
-  /// HTTPS connections are tested first, with HTTP as fallback
+  /// Plex-account discovery uses HTTPS only. Direct Plex can use its exact
+  /// consented active HTTP URL when no HTTPS endpoint is available.
   Stream<PlexConnection> findBestWorkingConnection({
     String? preferredUri,
     String? clientIdentifier,
@@ -660,36 +650,34 @@ class PlexServer {
     );
   }
 
-  /// Mirrors [_buildPrioritizedCandidates]: a cached cleartext URL left by an
-  /// older build (e.g. `http://<public ip>:32400`) maps to no candidate, so it
-  /// is never probed with the token again.
+  /// Mirrors [_buildPrioritizedCandidates]: a cached HTTP URL maps to a
+  /// candidate only when it is the exact active Direct Plex URL the user
+  /// approved; stale account-server HTTP URLs are never probed with its token.
   _ConnectionCandidate? _candidateForUrl(String url) {
     for (final connection in connections) {
       final uri = connection.uri;
-      if (uri == url) {
-        final isHttps = uri.startsWith('https://');
+      if (uri == url && _isHttpEndpointAllowed(uri)) {
+        final isHttps = Uri.tryParse(uri)?.scheme.toLowerCase() == 'https';
         final parsedHost = Uri.tryParse(uri)?.host ?? '';
         final isPlexDirect = parsedHost.toLowerCase().contains('plex.direct');
         return _ConnectionCandidate(connection, uri, isPlexDirect, isHttps);
       }
-
-      if (_allowsHttpFallback(connection) && _httpFallbackUrl(connection) == url) {
-        return _ConnectionCandidate(connection, url, false, false);
-      }
     }
     return null;
+  }
+
+  bool _isHttpEndpointAllowed(String url) {
+    final uri = Uri.tryParse(url);
+    final scheme = uri?.scheme.toLowerCase();
+    if (scheme == 'https') return true;
+    if (scheme != 'http') return false;
+    return _consentedHttpEndpoint == canonicalizeBaseUrl(url);
   }
 
   /// Classify [url] against the server's published connections. Custom public
   /// HTTPS hostnames are treated as remote so failover avoids LAN-only URLs.
   PlexNetworkClass networkClassForUrl(String url) {
     return _candidateForUrl(url)?.connection.networkClass ?? _classifyCustomPreferredUrl(url);
-  }
-
-  bool _isUnpublishedPublicCleartextUrl(String url) {
-    final uri = Uri.tryParse(url);
-    if (uri == null || uri.scheme.toLowerCase() != 'http') return false;
-    return _candidateForUrl(url) == null && !_isLocalOrPrivateHost(_normalizedHost(uri.host));
   }
 
   PlexNetworkClass _classifyCustomPreferredUrl(String url) {
@@ -747,14 +735,12 @@ class PlexServer {
         continue;
       }
 
+      if (!_isHttpEndpointAllowed(connection.uri)) continue;
+
       // First, try the actual connection URI (may be HTTPS plex.direct)
       final isPlexDirect = _isPlexDirectUri(connection.uri);
       final isHttps = connection.protocol == 'https';
       addCandidate(connection, connection.uri, isPlexDirect, isHttps);
-
-      if (_allowsHttpFallback(connection)) {
-        addCandidate(connection, _httpFallbackUrl(connection), false, false);
-      }
     }
 
     // IPv4 leads each bucket so sequential failover reaches an endpoint every
@@ -785,12 +771,18 @@ class PlexServer {
     final exclude = <String>{};
     PlexNetworkClass? restrictTo;
 
-    // A cleartext URL the server doesn't publish may only lead the list when
-    // it stays on the LAN; failover would otherwise send the token over it.
-    if (preferredFirst != null && preferredFirst.isNotEmpty && !_isUnpublishedPublicCleartextUrl(preferredFirst)) {
+    // HTTP can lead only when it is the exact Direct Plex URL the user
+    // approved. In particular, a cached local HTTP URL from an older account
+    // server record is not consent for sending the account token over it.
+    final preferredCandidate = preferredFirst == null ? null : _candidateForUrl(preferredFirst);
+    final preferredIsHttp = Uri.tryParse(preferredFirst ?? '')?.scheme.toLowerCase() == 'http';
+    if (preferredFirst != null &&
+        preferredFirst.isNotEmpty &&
+        (!preferredIsHttp || preferredCandidate != null)) {
       urls.add(preferredFirst);
       exclude.add(preferredFirst);
-      restrictTo = networkClassForUrl(preferredFirst);
+      restrictTo = preferredCandidate?.connection.networkClass ??
+          networkClassForUrl(preferredFirst);
     }
 
     final candidates = _buildPrioritizedCandidates(excludeUrls: exclude, restrictTo: restrictTo);
@@ -941,33 +933,11 @@ class PlexServer {
     return connection.isIPv6 ? 1 : 0;
   }
 
-  /// True when the address is a raw IP (no hostname → no reverse proxy → HTTP
-  /// fallback on an HTTPS port is safe to try).
+  /// True when the address is a raw IP, which cannot be used as the host for a
+  /// native Plex HTTPS certificate upgrade.
   static bool _isIpLiteral(String address) {
     final bare = address.startsWith('[') && address.endsWith(']') ? address.substring(1, address.length - 1) : address;
     return InternetAddress.tryParse(bare) != null;
-  }
-
-  /// Every probe and request carries X-Plex-Token from the first byte, so a
-  /// cleartext fallback is only synthesized where the path stays on the LAN:
-  /// a non-relay connection plex.tv flags local whose address is private. A
-  /// public address flagged local (a server with a public interface) is
-  /// reachable across the internet, and remote/relay endpoints always are.
-  static bool _isLanConnection(PlexConnection connection) =>
-      connection.local && !connection.relay && _isLocalOrPrivateHost(_normalizedHost(connection.address));
-
-  static bool _allowsHttpFallback(PlexConnection connection) {
-    if (connection.protocol != 'https' || !_isLanConnection(connection)) return false;
-    return _isPlexDirectUri(connection.uri) ||
-        _isIpLiteral(connection.address) ||
-        _isNativePlexHostnameHttps(connection);
-  }
-
-  static String _httpFallbackUrl(PlexConnection connection) {
-    if (_isNativePlexHostnameHttps(connection)) {
-      return connection.uri.replaceFirst('https://', 'http://');
-    }
-    return connection.httpDirectUrl;
   }
 
   static bool _isPlexDirectUri(String uri) {
@@ -1169,8 +1139,8 @@ class PlexConnection {
     return PlexNetworkClass.remote;
   }
 
-  /// Create an HTTP fallback version of this HTTPS connection
-  /// This allows testing HTTP when HTTPS is unavailable (e.g., certificate issues)
+  /// Create an HTTP URL variant. This does not grant consent to send
+  /// credentials; callers must have approval for this exact endpoint.
   PlexConnection toHttpFallback() {
     assert(protocol == 'https', 'Can only create HTTP fallback for HTTPS connections');
 
