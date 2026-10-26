@@ -3390,6 +3390,7 @@
     "subtitleDownloading": "Downloading subtitle: ${title}",
     "sharedEntryPair": "Pair this item",
     "sharedEntryPairHelp": "Enter the same ID for this item on each device. Use a stable shared identifier or generate one and copy it to the matching item. Blank removes this mapping.",
+    "sharedEntryConflict": "This shared item ID is already paired with another item in this library. Choose a different ID.",
     "sharedEntryId": "Shared item ID",
     "generateSharedEntryId": "Generate shared item ID",
     "sharedLibraryId": "Shared library ID (optional)",
