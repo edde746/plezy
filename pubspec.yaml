@@ -115,10 +115,10 @@ dependencies:
   # partial; 7c341be makes the rerun of a SAF download whose process died write
   # to the document the dead run created instead of a "name (1)" copy. Keep the
   # same-filesystem move/resume cleanup; no per-host TLS bypass.
+  # Exact upstream source is vendored with headless secure-storage registration and
+  # credentialed-task persistence and redirect protections.
   background_downloader:
-    git:
-      url: https://github.com/edde746/background_downloader
-      ref: 7c341be73df8a6a5ddccb06124807ac250a32bc1
+    path: packages/background_downloader
   sentry_flutter: ^9.30.0
   auto_updater:
     git:

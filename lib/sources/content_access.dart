@@ -23,7 +23,7 @@ const _encryptedLeaseTaskUrl = 'https://plezyng.invalid/native-download';
 /// so the downloader does not expand or serialize credential fields again.
 @pragma('vm:entry-point')
 Future<Task?> resolveEncryptedBackgroundLease(Task original) async {
-  if (!Platform.isIOS ||
+  if ((!Platform.isIOS && !Platform.isAndroid) ||
       original.url != _encryptedLeaseTaskUrl ||
       original.headers.isNotEmpty ||
       original.metaData.isEmpty ||
@@ -47,7 +47,19 @@ Future<Task?> resolveEncryptedBackgroundLease(Task original) async {
     }
     final lease = ContentLease(uri, headers: headers, backgroundTransferSafe: true);
     if (!lease.canPersistEncryptedAuthForBackgroundTransfer) return null;
-    return original.copyWith(url: uri.toString(), headers: headers, options: TaskOptions());
+    final originalOptions = original.options;
+    final safeOptions = originalOptions == null
+        ? null
+        : TaskOptions(
+            beforeTaskStart: originalOptions.beforeTaskStartCallBack,
+            onTaskStart: originalOptions.onTaskStartCallBack,
+            onTaskFinished: originalOptions.onTaskFinishedCallBack,
+          );
+    return original.copyWith(
+      url: uri.toString(),
+      headers: headers,
+      options: safeOptions,
+    );
   } on Object {
     // Missing/locked vault keys or a corrupt descriptor fail closed. The
     // downloader sees only the inert placeholder URL and empty headers.
@@ -185,7 +197,8 @@ class PublicationDownloads {
     required File validatorFile,
   }) async {
     final taskId = _nativeTaskId(task.profile, task.adapter.source.id, task.file);
-    final encryptedLease = Platform.isIOS && lease.canPersistEncryptedAuthForBackgroundTransfer;
+    final encryptedLease =
+        (Platform.isIOS || Platform.isAndroid) && lease.canPersistEncryptedAuthForBackgroundTransfer;
     final payloadHeaders = Map<String, String>.fromEntries(
       lease.headers.entries.toList()..sort((a, b) => a.key.toLowerCase().compareTo(b.key.toLowerCase())),
     );
