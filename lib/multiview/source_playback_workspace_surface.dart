@@ -118,6 +118,7 @@ class _SourcePlaybackWorkspaceSurfaceState extends State<SourcePlaybackWorkspace
         }
         final tk = tokens(context);
         final core = playback.player;
+        final displayTitle = entry.displayTitle.trim().isEmpty ? t.common.unknown : entry.displayTitle;
         if (playback.video && core != null) {
           return Material(
             color: tk.bg,
@@ -148,7 +149,7 @@ class _SourcePlaybackWorkspaceSurfaceState extends State<SourcePlaybackWorkspace
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        isolateDisplayText(entry.displayTitle),
+                        isolateDisplayText(displayTitle),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(
@@ -211,6 +212,7 @@ class _SourcePlaybackWorkspaceSurfaceState extends State<SourcePlaybackWorkspace
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            textDirection: TextDirection.ltr,
             children: [
               FocusableButton(
                 autoScroll: false,
@@ -267,6 +269,7 @@ class _SourcePlaybackWorkspaceSurfaceState extends State<SourcePlaybackWorkspace
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            textDirection: TextDirection.ltr,
             children: [
               Text(
                 formatDurationTimestamp(Duration(milliseconds: playback.positionMs)),

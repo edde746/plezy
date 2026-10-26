@@ -169,6 +169,7 @@ class _MusicWorkspaceTrack extends StatelessWidget {
                   SizedBox(height: tk.space * 0.45),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
+                    textDirection: TextDirection.ltr,
                     children: [
                       FocusableButton(
                         autoScroll: false,
@@ -241,6 +242,7 @@ class _MusicProgress extends StatelessWidget {
             const SizedBox(height: 4),
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              textDirection: TextDirection.ltr,
               children: [
                 Text(
                   formatDurationTimestamp(position),
