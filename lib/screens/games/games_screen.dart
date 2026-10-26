@@ -205,6 +205,21 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     }
   });
 
+  Future<void> _unlinkSteamAccount() async {
+    final c = _controller;
+    if (c == null || !c.current || c.busy) return;
+    final confirmed = await showConfirmDialog(
+      context,
+      title: 'Unlink Steam account',
+      message: 'Remove this account and its imported catalog from this profile? Your paired computers and shortcuts stay available.',
+      confirmText: 'Unlink',
+      isDestructive: true,
+    );
+    if (confirmed && mounted && c == _controller) {
+      await _run((active) => active.unlinkSteamAccount());
+    }
+  }
+
   Future<void> _scan() async {
     final c = _controller;
     if (c == null || !c.current) return;
@@ -484,6 +499,12 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
                         icon: const AppIcon(Symbols.link_rounded),
                         label: Text(state.steamAccountId == null ? 'Link Steam account' : 'Refresh Steam account'),
                       ),
+                      if (state.steamAccountId != null)
+                        TextButton.icon(
+                          onPressed: enabled ? _unlinkSteamAccount : null,
+                          icon: const AppIcon(Symbols.link_off_rounded),
+                          label: const Text('Unlink Steam account'),
+                        ),
                     ],
                   ),
                   if (state.games.isEmpty && state.steamAccountId == null) ...[
