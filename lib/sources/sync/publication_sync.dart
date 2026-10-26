@@ -68,6 +68,7 @@ class PublicationSync {
   SourceFailure? failure;
   DateTime? lastSuccess;
   static const configKey = 'publication-sync-config-v1';
+  static const entryMappingsKey = 'publication-sync-entry-mappings-v1';
   static String _cacheKey(String namespace) => 'publication-sync-cache-v1:$namespace';
   void resetStatus() {
     conflicts.clear();
@@ -100,7 +101,8 @@ class PublicationSync {
     if (config == null) throw const SourceException(SourceFailure.unsupported);
     final cipher = SyncCipher(config.code);
     final cache = _SyncCache(await repository.preference(profile, _cacheKey(cipher.namespace)));
-    cache.document.compactSafe();
+    final device = (await repository.preference(profile, 'publication-sync-device-v1'))['id'] as String?;
+    cache.document.compactSafe(actor: device);
     final name = recoveryName(cipher.namespace);
     final encrypted = await cipher.seal(cache.document, name);
     return canonicalSyncJson({'format': 'plezyng-encrypted-recovery-v1', 'name': name, 'encrypted': encrypted});
@@ -127,13 +129,15 @@ class PublicationSync {
       }
       final incoming = await cipher.open(envelope['encrypted'] as String, name as String);
       final entries = await repository.entries(profile);
+      final device = (await repository.preference(profile, 'publication-sync-device-v1'))['id'] as String?;
+      final entryMappings = await sharedEntryMappings(profile);
       final cacheKey = _cacheKey(cipher.namespace);
       await repository.database.transaction(() async {
         final cache = _SyncCache(await repository.preference(profile, cacheKey));
         cache.document.merge(incoming);
-        cache.document.compactSafe();
+        cache.document.compactSafe(actor: device);
         cache.published = '';
-        await _apply(profile, cache, _identities(sources, entries), activeKeys);
+        await _apply(profile, cache, _identities(sources, entries, entryMappings), activeKeys);
         await repository.savePreference(profile, cacheKey, cache.toJson());
       });
     } on SourceException {
@@ -152,19 +156,88 @@ class PublicationSync {
     required FileSource newSource,
     required List<SourceEntry> entries,
   }) async {
-    if (oldSource.options['syncLibrary'] == newSource.options['syncLibrary']) return;
-    final config = await this.config(profile);
-    if (config == null) return;
-    final cacheKey = _cacheKey(SyncCipher(config.code).namespace);
     await repository.database.transaction(() async {
-      final cache = _SyncCache(await repository.preference(profile, cacheKey));
-      final additions = SyncDocument();
+      final entryMappings = await sharedEntryMappings(profile);
       final identityMigrations = <String, String>{};
       for (final entry in entries) {
-        final oldIdentity = entryIdentity(oldSource, entry);
-        final newIdentity = entryIdentity(newSource, entry);
+        final sharedEntryId = entryMappings[entry.key];
+        final oldIdentity = entryIdentity(oldSource, entry, sharedEntryId: sharedEntryId);
+        final newIdentity = entryIdentity(newSource, entry, sharedEntryId: sharedEntryId);
         if (oldIdentity != newIdentity) identityMigrations[oldIdentity] = newIdentity;
       }
+      await _migrateCachedIdentities(profile, identityMigrations);
+    });
+  }
+
+  Future<String?> sharedEntryMapping(String profile, SourceEntry entry) async =>
+      (await sharedEntryMappings(profile))[entry.key];
+
+  Future<Map<String, String>> sharedEntryMappings(String profile) async {
+    final raw = sourceMap((await repository.preference(profile, entryMappingsKey))['entries']);
+    return {
+      for (final item in raw.entries)
+        if (item.value is String && RegExp(r'^[a-zA-Z0-9._-]{8,100}$').hasMatch(item.value as String))
+          item.key: (item.value as String).trim().toLowerCase(),
+    };
+  }
+
+  Future<void> setSharedEntryMapping({
+    required String profile,
+    required FileSource source,
+    required SourceEntry entry,
+    required String? sharedEntryId,
+  }) async {
+    final normalized = sharedEntryId?.trim().toLowerCase();
+    if (source.options['syncLibrary']?.trim().isNotEmpty != true ||
+        normalized != null && !RegExp(r'^[a-zA-Z0-9._-]{8,100}$').hasMatch(normalized)) {
+      throw const SourceException(SourceFailure.invalidData);
+    }
+    await repository.database.transaction(() async {
+      final current = await sharedEntryMappings(profile);
+      final mappingKey = entry.key;
+      final oldSharedEntryId = current[mappingKey];
+      if (oldSharedEntryId == normalized) return;
+      if (normalized != null) {
+        final library = source.options['syncLibrary']!.trim().toLowerCase();
+        final configuredSources = {for (final item in await repository.sources(profile)) item.id: item};
+        for (final item in current.entries.where((item) => item.key != mappingKey && item.value == normalized)) {
+          try {
+            final localSourceId = (jsonDecode(item.key) as List).first as String;
+            final otherLibrary = configuredSources[localSourceId]?.options['syncLibrary']?.trim().toLowerCase();
+            if (otherLibrary == library) throw const SourceException(SourceFailure.conflict);
+          } on SourceException {
+            rethrow;
+          } on Object {
+            // Ignore malformed old aliases; only reject a verified collision.
+          }
+        }
+      }
+      final oldIdentity = entryIdentity(source, entry, sharedEntryId: oldSharedEntryId);
+      final newIdentity = entryIdentity(source, entry, sharedEntryId: normalized);
+      if (oldIdentity != newIdentity) await _migrateCachedIdentities(profile, {oldIdentity: newIdentity});
+      if (normalized == null) {
+        current.remove(mappingKey);
+      } else {
+        current[mappingKey] = normalized;
+      }
+      await repository.savePreference(profile, entryMappingsKey, {'entries': current});
+    });
+  }
+
+  Future<void> _migrateCachedIdentities(String profile, Map<String, String> identityMigrations) async {
+    if (identityMigrations.isEmpty) return;
+    final cacheRows = await repository.database
+        .customSelect(
+          "SELECT key,payload FROM preferences WHERE profile=? AND key LIKE 'publication-sync-cache-v1:%'",
+          variables: [Variable(profile)],
+        )
+        .get();
+    if (cacheRows.isEmpty) return;
+    final device = (await repository.preference(profile, 'publication-sync-device-v1'))['id'] as String?;
+    for (final cacheRow in cacheRows) {
+      final cacheKey = cacheRow.read<String>('key');
+      final cache = _SyncCache(sourceMap(jsonDecode(cacheRow.read<String>('payload'))));
+      final additions = SyncDocument();
       for (final record in cache.document.records.entries) {
         for (final version in record.value) {
           final value = version.value;
@@ -191,24 +264,27 @@ class PublicationSync {
           }
         }
       }
+      if (additions.records.isEmpty) continue;
       cache.document.merge(additions);
-      cache.document.compactSafe();
+      cache.document.compactSafe(actor: device);
       for (final key in additions.records.keys) {
         final versions = cache.document.records[key];
         if (versions != null) cache.basis[key] = joinedClock(versions);
       }
       cache.published = '';
       await repository.savePreference(profile, cacheKey, cache.toJson());
-    });
+    }
   }
 
-  static String entryIdentity(FileSource source, SourceEntry entry) {
+  static String entryIdentity(FileSource source, SourceEntry entry, {String? sharedEntryId}) {
     // Connection UUIDs and local profile IDs differ across installations.
     // Provider IDs plus origin identify the publication. Roots are browsing
     // preferences and do not change an existing provider object's identity.
     final library = source.options['syncLibrary'];
     if (library?.trim().isNotEmpty == true) {
-      return sourceDigest(canonicalSyncJson(['paired-library-v1', library!.trim().toLowerCase(), entry.id]));
+      return sourceDigest(
+        canonicalSyncJson(['paired-library-v1', library!.trim().toLowerCase(), sharedEntryId?.trim().toLowerCase() ?? entry.id]),
+      );
     }
     return sourceDigest(
       canonicalSyncJson([
@@ -245,11 +321,16 @@ class PublicationSync {
   };
   static String _hash(Map<String, dynamic> value) => sourceDigest(canonicalSyncJson(value));
 
-  Future<Map<String, _LocalValue>> _locals(String profile, List<FileSource> sources, List<SourceEntry> entries) async {
+  Future<Map<String, _LocalValue>> _locals(
+    String profile,
+    List<FileSource> sources,
+    List<SourceEntry> entries,
+    Map<String, String> entryMappings,
+  ) async {
     final identities = <String, String>{};
     for (final entry in entries) {
       final source = sources.where((s) => s.id == entry.sourceId).firstOrNull;
-      if (source != null) identities[entry.key] = entryIdentity(source, entry);
+      if (source != null) identities[entry.key] = entryIdentity(source, entry, sharedEntryId: entryMappings[entry.key]);
     }
     final byKey = {for (final e in entries) e.key: e};
     final values = <String, _LocalValue>{};
@@ -292,9 +373,14 @@ class PublicationSync {
     }
   }
 
-  Map<String, SourceEntry> _identities(List<FileSource> sources, List<SourceEntry> entries) => {
+  Map<String, SourceEntry> _identities(
+    List<FileSource> sources,
+    List<SourceEntry> entries,
+    Map<String, String> entryMappings,
+  ) => {
     for (final e in entries)
-      if (sources.any((s) => s.id == e.sourceId)) entryIdentity(sources.firstWhere((s) => s.id == e.sourceId), e): e,
+      if (sources.any((s) => s.id == e.sourceId))
+        entryIdentity(sources.firstWhere((s) => s.id == e.sourceId), e, sharedEntryId: entryMappings[e.key]): e,
   };
 
   bool _compatible(SourceEntry entry, Map<String, dynamic> data) {
@@ -431,12 +517,13 @@ class PublicationSync {
       check();
       await repository.savePreference(profile, 'publication-sync-device-v1', {'id': device});
       final entries = await repository.entries(profile);
+      final entryMappings = await sharedEntryMappings(profile);
       // Persist new local edits BEFORE any network access. Retry retains the
       // same causal context even if a pull, upload or application crashes.
       await repository.database.transaction(() async {
         check();
-        _capture(cache, device, await _locals(profile, sources, entries));
-        cache.document.compactSafe();
+        _capture(cache, device, await _locals(profile, sources, entries, entryMappings));
+        cache.document.compactSafe(actor: device);
         await repository.savePreference(profile, cacheKey, cache.toJson());
       });
       final listed = await store.list(cipher.namespace);
@@ -458,11 +545,11 @@ class PublicationSync {
       late Map<String, _LocalValue> publishedLocals;
       await repository.database.transaction(() async {
         check();
-        publishedLocals = await _locals(profile, sources, entries);
+        publishedLocals = await _locals(profile, sources, entries, entryMappings);
         _capture(cache, device, publishedLocals);
         cache.document.merge(remote);
-        cache.document.compactSafe();
-        await _apply(profile, cache, _identities(sources, entries), activeKeys);
+        cache.document.compactSafe(actor: device);
+        await _apply(profile, cache, _identities(sources, entries, entryMappings), activeKeys);
         check();
         await repository.savePreference(profile, cacheKey, cache.toJson());
       });
@@ -538,7 +625,8 @@ class PublicationSync {
       final device = (await repository.preference(profile, 'publication-sync-device-v1'))['id'] as String;
       cache.document.edit(key, device, selected.value, joinedClock(current));
       cache.observed.remove(key);
-      await _apply(profile, cache, _identities(sources, await repository.entries(profile)), activeKeys);
+      final entryMappings = await sharedEntryMappings(profile);
+      await _apply(profile, cache, _identities(sources, await repository.entries(profile), entryMappings), activeKeys);
       check();
       await repository.savePreference(profile, cacheKey, cache.toJson());
     });
