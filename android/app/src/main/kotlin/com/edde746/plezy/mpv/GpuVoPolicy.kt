@@ -19,6 +19,23 @@ internal object GpuVoPolicy {
   fun needsDvReshaping(dvProfile: Long?, conversionMode: String, canPlayP5Natively: Boolean): Boolean = dvProfile == 5L && conversionMode == "auto" && !canPlayP5Natively
 
   /**
+   * Whether the app should try the P7 FEL graph on software output. The caller
+   * must still confirm that mpv accepts the filter before routing frames to
+   * gpu-next; a recognized decoder can also be overridden when it fell back
+   * for the current file.
+   */
+  fun wantsP7FelReconstruction(
+    dvProfile: Long?,
+    conversionMode: String,
+    displaySupportsDv: Boolean,
+    dvOutputAllowed: Boolean,
+    canPlayP7Natively: Boolean,
+    softwareDecodeFallback: Boolean = false
+  ): Boolean = dvProfile == 7L &&
+    conversionMode == "auto" &&
+    (softwareDecodeFallback || !displaySupportsDv || !dvOutputAllowed || !canPlayP7Natively)
+
+  /**
    * A MediaCodec decoder as [nativeDvDecoder] sees it: the component name,
    * one MIME type it serves, the profiles it advertises for that type
    * (`MediaCodecInfo.CodecProfileLevel` values) and the API 29+
@@ -62,6 +79,9 @@ internal object GpuVoPolicy {
     return dvDecoderFor(candidates, profileBit)
   }
 
+  /** The hardware decoder the Android FFmpeg fork probes for dual-layer P7. */
+  fun nativeP7Decoder(candidates: List<DvDecoderCandidate>): String? = dvDecoderFor(candidates, DV_PROFILE_DVHE_DTB)
+
   /** FFmpeg's `dv_probe_profile`: the first hardware [DV_MIME] decoder advertising exactly [profileBit]. */
   private fun dvDecoderFor(candidates: List<DvDecoderCandidate>, profileBit: Int): String? = candidates.firstOrNull { candidate ->
     !candidate.isSoftwareOnly &&
@@ -82,7 +102,10 @@ internal object GpuVoPolicy {
     BASE_LAYER("base-layer"),
 
     /** Software decode on gpu-next, which applies the RPU itself (#1902). */
-    RESHAPED("reshaped")
+    RESHAPED("reshaped"),
+
+    /** The P7 FEL filter is active on gpu-next; pixel reconstruction is not independently qualified. */
+    FEL_GRAPH_ACTIVE("fel-graph-active")
   }
 
   /**
@@ -108,10 +131,14 @@ internal object GpuVoPolicy {
     decoderOptions: String?,
     candidates: List<DvDecoderCandidate>,
     hwdecCurrent: String?,
-    currentVo: String?
+    currentVo: String?,
+    felFilterActive: Boolean = false
   ): DvRoute? {
     if (dvProfile == null || hwdecCurrent.isNullOrBlank()) return null
     if (!hwdecCurrent.startsWith("mediacodec")) {
+      if (dvProfile == 7L && felFilterActive && currentVo == "gpu-next") {
+        return DvRoute.FEL_GRAPH_ACTIVE
+      }
       return if (currentVo == "gpu-next") DvRoute.RESHAPED else DvRoute.BASE_LAYER
     }
     // FFmpeg's option defaults: dolby_vision=1, dv_p7_mode=auto.

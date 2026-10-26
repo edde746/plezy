@@ -2554,6 +2554,7 @@
     "dvRouteBaseLayerHlg": "HLG base layer",
     "dvRouteBaseLayerSdr": "SDR base layer",
     "dvRouteReshaped": "RPU reshaped (gpu-next)",
+    "dvRouteFelGraphActive": "P7 FEL graph active (unqualified)",
     "p7Conversion": "P7 Conv",
     "sampleRate": "Sample Rate",
     "pixelFormat": "Pixel Fmt",

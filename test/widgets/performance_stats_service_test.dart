@@ -330,6 +330,12 @@ void main() {
       expect(stats.dvPlaybackPathFormatted, t.performanceOverlay.dvRouteDecoder);
     });
 
+    test('an active FEL graph remains explicitly unqualified', () async {
+      final stats = await mpvStats({'dvSourceProfile': 7, 'dvRoute': 'fel-graph-active', 'video-params/gamma': 'pq'});
+
+      expect(stats.dvPlaybackPathFormatted, '${t.performanceOverlay.dvRouteFelGraphActive} · BL / EL?');
+    });
+
     test('a file without a DOVI record shows no DV rows', () async {
       final stats = await mpvStats({'video-params/gamma': 'pq'});
 

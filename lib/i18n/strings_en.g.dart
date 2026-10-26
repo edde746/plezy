@@ -5934,6 +5934,9 @@ class Translations$performanceOverlay$en {
 	/// en: 'RPU reshaped (gpu-next)'
 	String get dvRouteReshaped => 'RPU reshaped (gpu-next)';
 
+	/// en: 'P7 FEL graph active (unqualified)'
+	String get dvRouteFelGraphActive => 'P7 FEL graph active (unqualified)';
+
 	/// en: 'P7 Conv'
 	String get p7Conversion => 'P7 Conv';
 
@@ -12833,6 +12836,7 @@ extension on Translations {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG base layer',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR base layer',
 			'performanceOverlay.dvRouteReshaped' => 'RPU reshaped (gpu-next)',
+			'performanceOverlay.dvRouteFelGraphActive' => 'P7 FEL graph active (unqualified)',
 			'performanceOverlay.p7Conversion' => 'P7 Conv',
 			'performanceOverlay.sampleRate' => 'Sample Rate',
 			'performanceOverlay.pixelFormat' => 'Pixel Fmt',
@@ -13086,9 +13090,9 @@ extension on Translations {
 			'addServer.required' => 'Required',
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Could not reach the server: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Sign-in failed: ${error}',
-			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect failed: ${error}',
 			_ => null,
 		} ?? switch (path) {
+			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect failed: ${error}',
 			'addServer.addPlexTitle' => 'Sign in with Plex',
 			'addServer.pinExpired' => 'PIN expired before sign-in. Please try again.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Failed to register account: ${error}',
@@ -13600,9 +13604,9 @@ extension on Translations {
 			'sourceSetup.sshPinned' => 'SSH encrypted · host key pinned',
 			'sourceSetup.smbEncrypted' => 'SMB3 encryption on',
 			'sourceSetup.smbUnencrypted' => 'SMB3 encryption off',
-			'sourceSetup.httpUnencrypted' => 'HTTP without transport encryption',
 			_ => null,
 		} ?? switch (path) {
+			'sourceSetup.httpUnencrypted' => 'HTTP without transport encryption',
 			'sourceSetup.checkEndpointSecurity' => 'Check endpoint security',
 			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} is required.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Enter ${label} from ${min} to ${max}.',

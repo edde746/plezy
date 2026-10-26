@@ -27,6 +27,39 @@ class GpuVoPolicyTest {
   }
 
   @Test
+  fun `P7 requests FEL graph when software output is required`() {
+    assertTrue(GpuVoPolicy.wantsP7FelReconstruction(7L, "auto", false, true, true))
+    assertTrue(GpuVoPolicy.wantsP7FelReconstruction(7L, "auto", true, false, true))
+    assertTrue(GpuVoPolicy.wantsP7FelReconstruction(7L, "auto", true, true, false))
+    assertFalse(GpuVoPolicy.wantsP7FelReconstruction(7L, "dv81", false, true, false))
+    assertFalse(GpuVoPolicy.wantsP7FelReconstruction(8L, "auto", false, true, false))
+  }
+
+  @Test
+  fun `P7 decoder fallback requests FEL even when a native decoder was advertised`() {
+    assertTrue(
+      GpuVoPolicy.wantsP7FelReconstruction(
+        dvProfile = 7L,
+        conversionMode = "auto",
+        displaySupportsDv = true,
+        dvOutputAllowed = true,
+        canPlayP7Natively = true,
+        softwareDecodeFallback = true
+      )
+    )
+    assertFalse(
+      GpuVoPolicy.wantsP7FelReconstruction(
+        dvProfile = 7L,
+        conversionMode = "native",
+        displaySupportsDv = true,
+        dvOutputAllowed = true,
+        canPlayP7Natively = true,
+        softwareDecodeFallback = true
+      )
+    )
+  }
+
+  @Test
   fun `base-layer-compatible profiles are never routed`() {
     // P7/P8 strip to an HDR10/HLG base layer; non-DV content has no profile.
     assertFalse(GpuVoPolicy.needsDvReshaping(7L, "auto", canPlayP5Natively = false))
@@ -218,6 +251,11 @@ class GpuVoPolicyTest {
     val both = listOf(candidate("c2.vendor.dv.decoder", profiles = listOf(0x20, 0x40, 0x100)))
     assertNull(GpuVoPolicy.nativeDvDecoder(both, 7L))
     assertNull(GpuVoPolicy.nativeDvDecoder(both, null))
+    assertEquals(
+      "c2.vendor.dv.p7",
+      GpuVoPolicy.nativeP7Decoder(listOf(candidate("c2.vendor.dv.p7", profiles = listOf(GpuVoPolicy.DV_PROFILE_DVHE_DTB))))
+    )
+    assertNull(GpuVoPolicy.nativeP7Decoder(listOf(candidate("c2.vendor.dv.p8", profiles = listOf(GpuVoPolicy.DV_PROFILE_DVHE_ST)))))
   }
 
   @Test
@@ -268,6 +306,22 @@ class GpuVoPolicyTest {
     hwdec: String? = "mediacodec",
     vo: String? = "mediacodec"
   ) = GpuVoPolicy.dvRoute(profile, options, candidates, hwdec, vo)
+
+  @Test
+  fun `P7 FEL graph is reported only after filter and output route are active`() {
+    assertEquals(
+      DvRoute.FEL_GRAPH_ACTIVE,
+      GpuVoPolicy.dvRoute(7L, null, emptyList(), "no", "gpu-next", felFilterActive = true)
+    )
+    assertEquals(
+      DvRoute.RESHAPED,
+      GpuVoPolicy.dvRoute(7L, null, emptyList(), "no", "gpu-next", felFilterActive = false)
+    )
+    assertEquals(
+      DvRoute.BASE_LAYER,
+      GpuVoPolicy.dvRoute(7L, null, emptyList(), "no", "gpu", felFilterActive = true)
+    )
+  }
 
   @Test
   fun `P8 with the DV decoder off is its base layer, not the DV decoder`() {
