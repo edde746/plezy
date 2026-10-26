@@ -27,7 +27,15 @@ env:
 jobs:
   validate-trusted-ref:
     name: Validate release request
-    runs-on: ubuntu-latest
+    runs-on:
+      group: ng-shared-main-jit
+      labels:
+        - self-hosted
+        - linux
+        - x64
+        - ng-shared-main-plezyng
+        - ${{ format('ng-main-run-{0}', github.run_id) }}
+        - ${{ format('gha-{0}-validate-trusted-ref', github.run_id) }}
     permissions:
       contents: read
     steps:
@@ -61,7 +69,15 @@ jobs:
 
   build-android:
     needs: validate-trusted-ref
-    runs-on: ubuntu-latest
+    runs-on:
+      group: ng-shared-main-jit
+      labels:
+        - self-hosted
+        - linux
+        - x64
+        - ng-shared-main-plezyng
+        - ${{ format('ng-main-run-{0}', github.run_id) }}
+        - ${{ format('gha-{0}-build-android', github.run_id) }}
     permissions:
       id-token: write
       attestations: write
@@ -1472,7 +1488,15 @@ jobs:
   create-release:
     needs: [validate-trusted-ref, build-android, build-ios, build-tvos, build-macos, build-windows, package-windows, build-linux]
     if: ${{ always() && needs.validate-trusted-ref.result == 'success' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
-    runs-on: ubuntu-latest
+    runs-on:
+      group: ng-shared-main-jit
+      labels:
+        - self-hosted
+        - linux
+        - x64
+        - ng-shared-main-plezyng
+        - ${{ format('ng-main-run-{0}', github.run_id) }}
+        - ${{ format('gha-{0}-create-release', github.run_id) }}
     permissions:
       contents: write
       id-token: write
