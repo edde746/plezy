@@ -119,6 +119,9 @@ visual styling through the renderer changes.
 2. **Embedded gpu-next remains separate work.** [PR #18607](https://github.com/mpv-player/mpv/pull/18607)
    is an open RFC exposing `opengl-next` using the shared native renderer. Its
    author reports macOS tests; Linux and Windows runtime testing is outstanding.
+   As of 2026-10-26 it has no reviews. An mpv maintainer calls the single API
+   addition a stopgap and says the render API needs a broader design. Keep this
+   fork-specific selector experimental; do not ship it as a stable embedding ABI.
    [PR #16818](https://github.com/mpv-player/mpv/pull/16818) is still a draft.
    Do not treat either as a stable upstream ABI. The
    [caller-owned Vulkan proposal](https://github.com/mpv-player/mpv/issues/18343)

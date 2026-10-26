@@ -51,6 +51,13 @@ A public P7 FEL test clip was found through the [Kodi sample index](https://kodi
 
 The sample's “THIS DEVICE CAN DECODE FEL” mark appears in both the standalone and embedded full renders and is absent from the same-source BL-only control. Combined with the splitter, paired-frame filter and composer-shader logs, this is qualitative evidence that the real P7 graph uses EL information. The whole-frame full/BL delta also includes Dolby Vision mapping versus HDR10 base-layer mapping, so it is not residual-only or an independent numerical oracle. The software and VA-API-copy embedded renders agree within one 8-bit code value at the same capture time (mean channel delta 0.000259 codes; maximum 1; no pixel exceeds 2). This does not certify the reconstruction against Dolby reference pixels. The reusable local capture helper is `tools/dv-engine/real_clip_smoke.c`; it accepts an external sample path and does not bundle media. Screenshots, logs and media stayed in task scratch and are not committed.
 
+The embedded capture uses the fork-specific `opengl-next` render API from
+[mpv RFC #18607](https://github.com/mpv-player/mpv/pull/18607). That RFC remains
+open and unreviewed; an mpv maintainer says the single API addition is a stopgap
+and the render API needs a broader design. Treat this capture as research-engine
+evidence only. The stable embedding API and Linux/Windows app integration remain
+open gates; see the [research plan](../plezyng/dolby-vision-research.md).
+
 ## Generated synthetic graph trial (2026-10-26)
 
 `tools/dv-engine/generate_synthetic_p7.py` authors both HEVC layers from fixed
