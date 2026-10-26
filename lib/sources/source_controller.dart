@@ -204,6 +204,10 @@ class SourceController extends ChangeNotifier {
                 }
               });
               if (!current(epoch)) return;
+              for (final imported in sources.where((source) => source.options['imported'] == 'true')) {
+                await downloads.reconcileImportedFiles(id, imported);
+                if (!current(epoch)) return;
+              }
               await _shelves(id, epoch);
               scheduleSync();
             }
