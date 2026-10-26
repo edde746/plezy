@@ -653,6 +653,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         return _showDownloads ? _kDownloads : null;
       case NavigationTabId.settings:
         return _kSettings;
+      case NavigationTabId.games:
+        return 'games';
       case NavigationTabId.liveTv:
         return 'liveTv';
     }
@@ -687,6 +689,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     required bool hasLiveTv,
     required bool hasNowPlaying,
     required bool hasExplore,
+    required bool hasGames,
   }) {
     return {
       _kHome,
@@ -694,6 +697,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       _kLibraries,
       if (hasExplore) _kExplore,
       _kSearch,
+      if (hasGames) 'games',
       if (_showDownloads) _kDownloads,
       _kSettings,
       _kReconnect,
@@ -768,6 +772,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     required bool hasLiveTv,
     required bool hasNowPlaying,
     required bool hasExplore,
+    required bool hasGames,
     required bool isCollapsed,
   }) {
     return [
@@ -792,6 +797,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         if (hasExplore) _kExplore,
         _kSearch,
       ],
+      if (hasGames) 'games',
       if (_showDownloads) _kDownloads,
       _kSettings,
       if (_showFullscreenToggle) _kFullscreen,
@@ -880,6 +886,9 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         ? null
         : SettingsService.instance.listenable(SettingsService.showExploreTabForProfile(activeProfileId));
 
+    final profileGamesListenable = activeProfileId == null
+        ? null
+        : SettingsService.instance.listenable(SettingsService.showGamesTabForProfile(activeProfileId));
     final allLibraries = librariesProvider.libraries;
     final serverIds = <String>{};
     for (final lib in allLibraries) {
@@ -910,6 +919,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       SettingsService.instance.listenable(SettingsService.hideEmptyLibraries),
       SettingsService.instance.listenable(SettingsService.librariesSectionExpanded),
       ?profileExploreListenable,
+      ?profileGamesListenable,
     ];
     return ListenableBuilder(
       listenable: Listenable.merge(settingsListenables),
@@ -924,6 +934,10 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
             visibleLibraries.add(lib);
           }
         }
+        final hasGames =
+            activeProfileId != null &&
+            !PlatformDetector.isAutomotive() &&
+            SettingsService.instance.read(SettingsService.showGamesTabForProfile(activeProfileId));
         final profileAllowsExplore =
             activeProfileId == null ||
             SettingsService.instance.read(SettingsService.showExploreTabForProfile(activeProfileId));
@@ -953,6 +967,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
             hasLiveTv: hasLiveTv,
             hasNowPlaying: nowPlayingTrack != null,
             hasExplore: hasExplore,
+            hasGames: hasGames,
           ),
         );
         final focusOrder = _buildFocusOrder(
@@ -962,6 +977,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
           hasLiveTv: hasLiveTv,
           hasNowPlaying: nowPlayingTrack != null,
           hasExplore: hasExplore,
+          hasGames: hasGames,
           isCollapsed: isCollapsed,
         );
         _debugAssertUniqueFocusOrder(focusOrder);
@@ -1098,6 +1114,18 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                                         isSelected: widget.selectedTab == NavigationTabId.search,
                                         onTap: () => widget.onDestinationSelected(NavigationTabId.search),
                                         focusNode: _focusTracker.get(_kSearch),
+                                        isCollapsed: isCollapsed,
+                                      ),
+                                      const SizedBox(height: _itemGap),
+                                    ],
+                                    if (hasGames) ...[
+                                      _buildNavItem(
+                                        icon: Symbols.sports_esports_rounded,
+                                        selectedIcon: Symbols.sports_esports_rounded,
+                                        label: Translations.of(context).games.title,
+                                        isSelected: widget.selectedTab == NavigationTabId.games,
+                                        onTap: () => widget.onDestinationSelected(NavigationTabId.games),
+                                        focusNode: _focusTracker.get('games'),
                                         isCollapsed: isCollapsed,
                                       ),
                                       const SizedBox(height: _itemGap),

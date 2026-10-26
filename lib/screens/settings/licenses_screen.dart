@@ -35,6 +35,13 @@ class LicensesScreen extends StatelessWidget {
       }
     }
 
+    final moonlightNotice = await rootBundle.loadString('assets/licenses/Moonlight_NOTICE.txt');
+    final moonlightLicense = await rootBundle.loadString('assets/licenses/Moonlight_GPL_3.txt');
+    licenseMap['Moonlight'] = [
+      LicenseEntryWithLineBreaks(['Moonlight'], '$moonlightNotice\n$moonlightLicense'),
+    ];
+    allPackageNames['Moonlight'] = {'Moonlight'};
+
     final amsmb2Notice = await rootBundle.loadString('assets/licenses/AMSMB2_NOTICE.txt');
     final amsmb2MitLicense = await rootBundle.loadString('assets/licenses/AMSMB2_MIT_LICENSE.txt');
     final amsmb2License = await rootBundle.loadString('assets/licenses/libsmb2-LGPL-2.1.txt');

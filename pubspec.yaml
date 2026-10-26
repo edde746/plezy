@@ -124,6 +124,7 @@ dependencies:
   win_http: ^0.2.3
   collection: ^1.18.0
   freezed_annotation: ^3.1.0
+  multicast_dns: ^0.3.3+1
   xml: ^7.0.1
   string_similarity: ^2.2.0
   unorm_dart: ^0.3.2
@@ -219,6 +220,8 @@ flutter:
     - assets/provider_marks/
     - assets/reader/foliate/
     - assets/certificates/cacert.pem
+    - assets/licenses/Moonlight_GPL_3.txt
+    - assets/licenses/Moonlight_NOTICE.txt
     - assets/licenses/SpatialAudioBridge.txt
     - assets/licenses/dart_smb2_NOTICE.txt
     - assets/licenses/AMSMB2_NOTICE.txt

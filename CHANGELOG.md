@@ -12,6 +12,8 @@
 
 ### Added
 
+- Add an opt-in Games category with LAN discovery, artwork card grids, profile libraries, PIN/QR pairing, and an embedded Android Moonlight engine with touch controls. Steam and Pyrowave playback remain in development; Games never hands a stream to another app.
+
 - Add device-local Dolby Vision experiment and compatibility switches, enhancement-layer diagnostics, pinned Apple/FelBaker experiments, and an offline HDR/SDR companion encoder; preserve Luna’s real P7 FEL graph evidence and remaining device qualification work.
 
 - Add SMB2/3 read-only NAS sources on Android, iOS, macOS, Windows, Linux, and Apple TV, with a Videos library shelf and resumable video watch progress.
