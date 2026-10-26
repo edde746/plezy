@@ -1507,6 +1507,7 @@
   },
   "about": {
     "title": "Over",
+    "privacyPolicy": "Privacyverklaring",
     "openSourceLicenses": "Opensourcelicenties",
     "versionLabel": "Versie ${version}",
     "appDescription": "Een mooie Plex-, Jellyfin- en Emby-client voor Flutter",

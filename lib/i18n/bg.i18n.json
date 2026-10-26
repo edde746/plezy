@@ -1507,6 +1507,7 @@
   },
   "about": {
     "title": "Относно",
+    "privacyPolicy": "Политика за поверителност",
     "openSourceLicenses": "Лицензи с отворен код",
     "versionLabel": "Версия ${version}",
     "appDescription": "Красив клиент за Plex, Jellyfin и Emby, създаден с Flutter",

@@ -1507,6 +1507,7 @@
   },
   "about": {
     "title": "Hakkında",
+    "privacyPolicy": "Gizlilik Politikası",
     "openSourceLicenses": "Açık Kaynak Lisansları",
     "versionLabel": "Sürüm ${version}",
     "appDescription": "Flutter için şık bir Plex, Jellyfin ve Emby istemcisi",

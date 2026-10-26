@@ -3967,6 +3967,9 @@ class Translations$about$en {
 	/// en: 'About'
 	String get title => 'About';
 
+	/// en: 'Privacy Policy'
+	String get privacyPolicy => 'Privacy Policy';
+
 	/// en: 'Open Source Licenses'
 	String get openSourceLicenses => 'Open Source Licenses';
 
@@ -10489,6 +10492,7 @@ extension on Translations {
 			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => 'About',
+			'about.privacyPolicy' => 'Privacy Policy',
 			'about.openSourceLicenses' => 'Open Source Licenses',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
 			'about.appDescription' => 'A beautiful Plex, Jellyfin, and Emby client for Flutter',
@@ -10638,9 +10642,9 @@ extension on Translations {
 			'explore.stats.watching' => ({required Object n}) => '${n} watching it',
 			'explore.stats.completed' => ({required Object n}) => '${n} completed',
 			'explore.stats.onHold' => ({required Object n}) => '${n} on hold',
-			'explore.stats.dropped' => ({required Object n}) => '${n} dropped',
 			_ => null,
 		} ?? switch (path) {
+			'explore.stats.dropped' => ({required Object n}) => '${n} dropped',
 			'explore.season.winter' => 'Winter',
 			'explore.season.spring' => 'Spring',
 			'explore.season.summer' => 'Summer',
@@ -11152,9 +11156,9 @@ extension on Translations {
 			'downloads.backgroundWarning.reasonDataSaver' => 'Data Saver is on, which blocks background downloads on mobile data. Downloads should still run on Wi-Fi.',
 			'downloads.backgroundWarning.reasonOemUnknown' => 'Downloads repeatedly stopped while PlezyNG was in the background. Check PlezyNG\'s battery or background usage settings.',
 			'downloads.backgroundWarning.openSettings' => 'Open settings',
-			'downloads.backgroundWarning.stillNotWorking' => 'Device-specific help',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.backgroundWarning.stillNotWorking' => 'Device-specific help',
 			'downloads.backgroundWarning.stillNotWorkingDescription' => 'See steps for your device, or send a log from Settings › View Logs if the issue continues.',
 			'downloads.backgroundWarning.dialogTitle' => 'Downloads may not finish',
 			'downloads.backgroundWarning.dialogDownloadAnyway' => 'Download anyway',
@@ -11666,9 +11670,9 @@ extension on Translations {
 			'homeLayout.autoSlide' => 'Auto-slide',
 			'homeLayout.autoSlideDescription' => 'Also slides on its own every few seconds. Arrows (PC) and d-pad (TV) always work and restart the timer.',
 			'homeLayout.autoSlideEditDescription' => 'Also slides on its own every few seconds. Off: only moves when you click an arrow (PC) or press left/right on the remote (TV). Arrows and d-pad always work either way.',
-			'homeLayout.enableHeroFirst' => 'Enable Hero first',
 			_ => null,
 		} ?? switch (path) {
+			'homeLayout.enableHeroFirst' => 'Enable Hero first',
 			'homeLayout.showOnHome' => 'Show on Home screen',
 			'homeLayout.home' => 'Home',
 			'homeLayout.removeFromHome' => 'Remove from Home',

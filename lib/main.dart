@@ -12,7 +12,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'connection/connection.dart';
 import 'connection/connection_bootstrap.dart';

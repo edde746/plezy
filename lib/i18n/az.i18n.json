@@ -1507,6 +1507,7 @@
   },
   "about": {
     "title": "Haqqında",
+    "privacyPolicy": "Məxfilik Siyasəti",
     "openSourceLicenses": "Açıq mənbə lisenziyaları",
     "versionLabel": "Versiya ${version}",
     "appDescription": "Flutter üçün gözəl bir Plex, Jellyfin və Emby klienti",

@@ -71,6 +71,9 @@
 ### Fixed
 
 - Keep entitlement-controlled themes and icons locked when store access is disabled in the build.
+- Remove stale SVG imports after switching the setup and app-icon previews back to raster artwork.
+- Localize the About screen privacy-policy link.
+- Cover AVFoundation speed flush ordering deterministically when simulator audio is unavailable.
 
 ### Removed
 

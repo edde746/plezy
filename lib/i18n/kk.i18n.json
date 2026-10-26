@@ -1507,6 +1507,7 @@
   },
   "about": {
     "title": "Қолданба туралы",
+    "privacyPolicy": "Құпиялылық саясаты",
     "openSourceLicenses": "Ашық бастапқы код лицензиялары",
     "versionLabel": "Нұсқа ${version}",
     "appDescription": "Flutter негізіндегі ыңғайлы Plex, Jellyfin және Emby клиенті",

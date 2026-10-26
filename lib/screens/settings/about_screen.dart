@@ -68,7 +68,7 @@ class AboutScreen extends StatelessWidget {
                       ),
                       FocusableListTile(
                         leading: const AppIcon(Symbols.lock_rounded, fill: 1),
-                        title: const Text('Privacy Policy'),
+                        title: Text(t.about.privacyPolicy),
                         trailing: const AppIcon(Symbols.open_in_new_rounded, fill: 1),
                         onTap: () => launchUrl(
                           Uri.parse('https://github.com/snapetech-org/PlezyNG/blob/main/PRIVACY.md'),
