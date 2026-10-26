@@ -109,14 +109,13 @@ class PublicationDownloads {
     try {
       await reconcileProfile(profile);
       final bytes = await partial.exists() ? await partial.length() : 0;
-      final estimate = file.size ?? await adapter.contentSize(file);
       await repository.reserveDownload(
         profile: profile,
         key: key(adapter.source.id, file),
         sourceId: adapter.source.id,
         file: file,
         path: partial.path,
-        reservedBytes: estimate ?? bytes,
+        reservedBytes: file.size ?? bytes,
         bytes: bytes,
         state: 'queued',
         label: label,
@@ -371,9 +370,11 @@ class PublicationDownloads {
         }
         SourceTransport.check(response.statusCode);
         if (offset > 0 && response.statusCode != 206) offset = 0;
+        final rangeHeader = RegExp(r'^bytes (\d+)-(\d+)/(\d+|\*)$').firstMatch(response.headers['content-range'] ?? '');
         if (expectedSize == null) {
-          final contentRange = RegExp(r'^bytes \d+-\d+/(\d+)$').firstMatch(response.headers['content-range'] ?? '');
-          expectedSize = contentRange == null ? int.tryParse(response.headers['content-length'] ?? '') : int.tryParse(contentRange[1]!);
+          final contentLength = int.tryParse(response.headers['content-length'] ?? '');
+          final rangeTotal = rangeHeader == null || rangeHeader[3] == '*' ? null : int.tryParse(rangeHeader[3]!);
+          expectedSize = rangeTotal ?? (response.statusCode == 206 && contentLength != null ? offset + contentLength : contentLength);
         }
         await _persistChunk(
           profile: profile,
@@ -393,8 +394,9 @@ class PublicationDownloads {
           throw const SourceException(SourceFailure.conflict);
         }
         if (response.statusCode == 206) {
-          final match = RegExp(r'^bytes (\d+)-(\d+)/(\d+|\*)$').firstMatch(response.headers['content-range'] ?? '');
-          if (match == null || int.parse(match[1]!) != offset || expectedSize != null && match[3] != '$expectedSize') {
+          if (rangeHeader == null ||
+              int.parse(rangeHeader[1]!) != offset ||
+              expectedSize != null && rangeHeader[3] != '*' && rangeHeader[3] != '$expectedSize') {
             await response.stream.listen(null).cancel();
             throw const SourceException(SourceFailure.invalidData);
           }
