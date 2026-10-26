@@ -464,6 +464,10 @@ class SourceRepository {
         if (fts) {
           pagePredicates.add('rowid IN (SELECT rowid FROM entries_search_fts WHERE search MATCH ?)');
           pageVariables.add(Variable('"${normalizedQuery.replaceAll('"', '""')}"'));
+          // Preserve the original substring predicate even if a tokenizer
+          // version returns a broader candidate set.
+          pagePredicates.add('instr(search,?)>0');
+          pageVariables.add(Variable(normalizedQuery));
         } else {
           pagePredicates.add('instr(search,?)>0');
           pageVariables.add(Variable(normalizedQuery));
