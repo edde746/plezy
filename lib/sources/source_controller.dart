@@ -429,14 +429,19 @@ class SourceController extends ChangeNotifier {
 
   Future<void> remove(FileSource source) async {
     requireSession();
-    if (source.profileId != profileId) throw const SourceException(SourceFailure.permission);
+    final epoch = generation, profile = profileId!;
+    if (source.profileId != profile) throw const SourceException(SourceFailure.permission);
     if (syncConfig?.sourceId == source.id) await configureCloudSync(null);
+    requireSession(epoch);
     cancelScan(source.id);
     await stopPlayback?.call();
-    await downloads.cancelSource(profileId!, source.id);
+    requireSession(epoch);
+    await downloads.cancelSource(profile, source.id);
+    requireSession(epoch);
     _adapters.remove(source.id)?.close();
     _sourceSyncSucceeded(source.id);
-    await repository.removeSource(profileId!, source.id);
+    await repository.removeSource(profile, source.id);
+    requireSession(epoch);
     await reload();
   }
 
@@ -698,10 +703,13 @@ class SourceController extends ChangeNotifier {
     }
     final operation = _syncQueue.then((_) async {
       requireSession(epoch);
+      final localEntry = await repository.entryById(profile, source.id, entry.id);
+      requireSession(epoch);
+      if (localEntry == null) throw const SourceException(SourceFailure.permission);
       await cloudSync.setSharedEntryMapping(
         profile: profile,
         source: source,
-        entry: entry,
+        entry: localEntry,
         sharedEntryId: sharedEntryId,
       );
       requireSession(epoch);
