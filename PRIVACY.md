@@ -24,6 +24,12 @@ PlezyNG maintainers do not receive your media library, server credentials, or pl
 
 You can remove local app data by deleting it in the app where supported, clearing the app's storage, or uninstalling the app. Media saved to a user-selected folder may remain there. To remove information held by a media or third-party service, use that service's account controls.
 
+## Disconnecting accounts and deleting data
+
+PlezyNG does not create or operate a PlezyNG user account. You can connect accounts that you already have for services such as Plex, Jellyfin, and Emby. Removing a server or service connection in PlezyNG removes that connection from the app, but does not delete the account or server data held by that service.
+
+To delete an account held by a connected service, use that service's account controls. For a self-hosted Jellyfin or Emby server, contact the server administrator. PlezyNG cannot delete accounts, media, or playback data held by those services. To remove data stored locally by PlezyNG, remove the connection in the app, clear the app's storage, or uninstall it. Downloads saved to a folder you selected may need to be deleted separately.
+
 ## Contact
 
 For privacy questions, use the [PlezyNG GitHub project page](https://github.com/snapetech-org/PlezyNG/issues). GitHub issues are public; do not include passwords, access tokens, server addresses, or other sensitive information in an issue.
