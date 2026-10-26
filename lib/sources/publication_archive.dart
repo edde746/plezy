@@ -191,8 +191,14 @@ class PublicationServer {
     'tts.js',
     'comic-book.js',
   };
-  String get policy =>
-      "default-src 'none'; script-src 'nonce-$_nonce' 'strict-dynamic'; style-src 'self' blob: 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self' blob: data:; media-src 'self' blob:; connect-src 'self' blob: ws://${origin.authority}; frame-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'";
+  String get policy {
+    // The reader bridge uses plaintext WebSocket transport, confined to this
+    // process's loopback server and protected by a per-session random path.
+    final bridgeOrigin =
+        'ws://${origin.authority}'; // nosemgrep: javascript.lang.security.detect-insecure-websocket.detect-insecure-websocket -- loopback-only reader bridge with a per-session capability path
+    return "default-src 'none'; script-src 'nonce-$_nonce' 'strict-dynamic'; style-src 'self' blob: 'unsafe-inline'; img-src 'self' blob: data:; font-src 'self' blob: data:; media-src 'self' blob:; connect-src 'self' blob: $bridgeOrigin; frame-src blob:; object-src 'none'; base-uri 'none'; form-action 'none'";
+  }
+
   Future<Uri> start() async {
     final random = Random.secure();
     _secret = base64Url.encode(List.generate(32, (_) => random.nextInt(256))).replaceAll('=', '');

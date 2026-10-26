@@ -2920,6 +2920,7 @@
     "add": "Add source",
     "importFiles": "Import files",
     "localFiles": "On this device",
+    "googleDrive": "Google Drive",
     "source": "Source",
     "name": "Name",
     "endpoint": "Server URL",

@@ -47,6 +47,7 @@
 
 ### Security
 
+- Clarify that the publication reader's local WebSocket bridge is restricted to loopback and a per-session capability.
 - Restrict OAuth authorization redirects to configured provider hosts, preserve relay error status for log downloads, and remove the bundled Trakt client secret.
 - Update the relay to Go 1.27.3 for GO-2026-6809 and refresh its immutable container pin.
 
@@ -58,6 +59,7 @@
 
 ### Changed
 
+- Route the Google Drive source label through localization.
 - Keep both iOS SwiftPM lockfiles pinned to the same Google Cast SDK revision.
 - Explain the default behavior on the screensaver library selection page.
 - Format the download and screensaver library views with Flutter's configured Dart formatter.

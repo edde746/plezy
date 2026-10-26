@@ -7133,6 +7133,9 @@ class Translations$fileSources$en {
 	/// en: 'On this device'
 	String get localFiles => 'On this device';
 
+	/// en: 'Google Drive'
+	String get googleDrive => 'Google Drive';
+
 	/// en: 'Source'
 	String get source => 'Source';
 
@@ -12459,6 +12462,7 @@ extension on Translations {
 			'fileSources.add' => 'Add source',
 			'fileSources.importFiles' => 'Import files',
 			'fileSources.localFiles' => 'On this device',
+			'fileSources.googleDrive' => 'Google Drive',
 			'fileSources.source' => 'Source',
 			'fileSources.name' => 'Name',
 			'fileSources.endpoint' => 'Server URL',
