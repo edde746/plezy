@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:archive/archive_io.dart';
 import 'package:flutter/services.dart';
@@ -67,6 +68,10 @@ class PublicationArchive {
   static Future<PublicationArchive> stream(ComicPageSource pages, Directory temporary) async {
     final count = pages.document.pages.length;
     if (count < 1 || count > 10000) throw const SourceException(SourceFailure.invalidData);
+    final names = <String>{};
+    for (final page in pages.document.pages) {
+      if (!names.add(safePath(page.name))) throw const SourceException(SourceFailure.invalidData);
+    }
     final folder = await temporary.createTemp('comic-stream-');
     return PublicationArchive._(folder, {for (final page in pages.document.pages) page.name: 0}, true)
       ..comicDocument = pages.document
@@ -290,6 +295,8 @@ class PublicationServer {
       if (route == 'index.html' ||
           route == 'reader.js' ||
           route == 'browser.js' ||
+          route == 'comic-reader.js' ||
+          route == 'comic-layout.js' ||
           route.startsWith('foliate/') && assets.contains(route.substring(8))) {
         var value = await rootBundle.loadString('assets/reader/$route');
         if (route == 'index.html') value = value.replaceAll('READER_NONCE', _nonce);
@@ -310,7 +317,7 @@ class PublicationServer {
         if (request.method != 'HEAD') response.add(font.buffer.asUint8List(font.offsetInBytes, font.lengthInBytes));
       } else if (route == 'manifest.json') {
         response.headers.contentType = ContentType.json;
-        if (request.method != 'HEAD')
+        if (request.method != 'HEAD') {
           response.write(
             jsonEncode({
               'files': archive.files,
@@ -318,6 +325,7 @@ class PublicationServer {
               'comicDocument': archive.comicDocument?.toJson(),
             }),
           );
+        }
       } else if (route.startsWith('book/')) {
         final name = PublicationArchive.safePath(Uri.decodeComponent(route.substring(5)));
         final size = archive.files[name];
@@ -362,21 +370,55 @@ class PublicationServer {
   }
 
   int _pageRequests = 0;
-  Future<void> _serveComicPage(String name, HttpResponse response, {required bool head}) async {
-    if (_pageRequests >= 6) {
-      response.statusCode = 429;
-      return;
+  bool _closed = false;
+  final _pageWaiters = <Completer<bool>>[];
+  final _pageAborts = <Completer<void>>{};
+
+  Future<bool> _acquirePage() async {
+    if (_closed || !valid()) return false;
+    if (_pageRequests < 3) {
+      _pageRequests++;
+      return true;
     }
+    if (_pageWaiters.length >= 32) return false;
+    final waiter = Completer<bool>();
+    _pageWaiters.add(waiter);
+    return waiter.future;
+  }
+
+  void _releasePage() {
+    if (_pageWaiters.isNotEmpty && !_closed) {
+      _pageWaiters.removeAt(0).complete(true);
+    } else {
+      _pageRequests--;
+    }
+  }
+
+  Future<void> _serveComicPage(String name, HttpResponse response, {required bool head}) async {
     final source = archive.pageSource!;
     final index = source.document.pages.indexWhere((page) => page.name == name);
-    if (index < 0 || !valid()) {
+    if (index < 0 || !valid() || _closed) {
       response.statusCode = 403;
       return;
     }
-    _pageRequests++;
+    // Thumbnails and prefetch share a bounded queue instead of failing a
+    // normal eight-thumbnail batch as soon as the active transfer cap is hit.
+    if (!await _acquirePage()) {
+      response.statusCode = _closed || !valid() ? 403 : 429;
+      return;
+    }
+    final abort = Completer<void>();
+    void cancel() {
+      if (!abort.isCompleted) abort.complete();
+    }
+
+    _pageAborts.add(abort);
+    final deadline = Timer(const Duration(seconds: 60), cancel);
+    unawaited(response.done.then((_) => cancel(), onError: (Object _) => cancel()));
     try {
+      if (_closed || !valid()) throw const SourceException(SourceFailure.cancelled);
       final lease = await source.resolve(index);
-      if (!valid()) {
+      if (!valid() || _closed || abort.isCompleted) {
         response.statusCode = 403;
         return;
       }
@@ -385,21 +427,26 @@ class PublicationServer {
         lease.uri,
         headers: {...lease.headers, 'Accept': 'image/jpeg,image/png,image/webp,image/gif'},
         redirects: true,
+        abort: abort.future,
       );
-      SourceTransport.check(upstream.statusCode);
       const limit = 32 * 1024 * 1024;
       final type = upstream.headers['content-type']?.split(';').first.trim().toLowerCase();
-      if (!const {'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'}.contains(type) ||
+      if (upstream.statusCode < 200 ||
+          upstream.statusCode >= 300 ||
+          !const {'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'}.contains(type) ||
           (upstream.contentLength ?? 0) > limit) {
+        await upstream.stream.listen(null).cancel();
+        SourceTransport.check(upstream.statusCode);
         throw const SourceException(SourceFailure.invalidData);
       }
       // Buffer at most one bounded compressed page; never forward HTML error bodies.
       final bytes = BytesBuilder(copy: false);
       await for (final chunk in upstream.stream.timeout(const Duration(seconds: 30))) {
-        if (!valid() || bytes.length + chunk.length > limit) throw const SourceException(SourceFailure.cancelled);
+        if (!valid() || _closed || abort.isCompleted) throw const SourceException(SourceFailure.cancelled);
+        if (bytes.length + chunk.length > limit) throw const SourceException(SourceFailure.invalidData);
         bytes.add(chunk);
       }
-      if (!valid()) {
+      if (!valid() || _closed) {
         response.statusCode = 403;
         return;
       }
@@ -407,11 +454,22 @@ class PublicationServer {
       response.contentLength = bytes.length;
       if (!head) response.add(bytes.takeBytes());
     } finally {
-      _pageRequests--;
+      deadline.cancel();
+      cancel();
+      _pageAborts.remove(abort);
+      _releasePage();
     }
   }
 
   Future<void> close() async {
+    _closed = true;
+    for (final waiter in _pageWaiters) {
+      waiter.complete(false);
+    }
+    _pageWaiters.clear();
+    for (final abort in _pageAborts) {
+      if (!abort.isCompleted) abort.complete();
+    }
     await _browser?.close();
     _browser = null;
     await _server?.close(force: true);

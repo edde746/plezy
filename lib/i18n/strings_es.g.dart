@@ -104,6 +104,7 @@ class TranslationsEs extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final Translations$fileSources$es fileSources = Translations$fileSources$es.internal(_root);
 	@override late final Translations$lending$es lending = Translations$lending$es.internal(_root);
 	@override late final Translations$audiobook$es audiobook = Translations$audiobook$es.internal(_root);
+	@override late final Translations$comics$es comics = Translations$comics$es.internal(_root);
 }
 
 // Path: app
@@ -2904,8 +2905,12 @@ class Translations$fileSources$es extends Translations$fileSources$en {
 	@override String get source => 'Fuente';
 	@override String get name => 'Nombre';
 	@override String get endpoint => 'URL del servidor';
+	@override String get smbEndpointHint => 'Ejemplo: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Introduce un servidor SMB y un recurso compartido.';
 	@override String get root => 'Prefixo o prefixo';
+	@override String get smbFolderHelp => 'Déjalo vacío para usar todo el recurso compartido, o introduce una carpeta dentro de él.';
 	@override String get username => 'Usuario';
+	@override String get smbDomain => 'Dominio (opcional)';
 	@override String get password => 'Contraseña';
 	@override String get token => 'API Título';
 	@override String get accessKey => 'Acceso clave ID';
@@ -2915,6 +2920,8 @@ class Translations$fileSources$es extends Translations$fileSources$en {
 	@override String get clientId => 'ID de cliente de OAuth';
 	@override String get clientSecret => 'OAuth client secreto (sólo Google de escritorio)';
 	@override String get allowHttp => 'Permitir HTTP sin cifrar en una red de confianza';
+	@override String get smbEncryption => 'Cifrar la conexión SMB3';
+	@override String get smbEncryptionHint => 'Usa el cifrado SMB3 si el NAS lo admite.';
 	@override String get connect => 'Conectar';
 	@override String get cancel => 'Cancelar';
 	@override String get save => 'Guardar';
@@ -3180,6 +3187,27 @@ class Translations$audiobook$es extends Translations$audiobook$en {
 	@override String get statusFinished => 'Finalizado';
 	@override String get goToTime => 'Vuelve al tiempo';
 	@override String get timeHelp => 'Horas: minutos: segundos o minutos: segundos';
+}
+
+// Path: comics
+class Translations$comics$es extends Translations$comics$en {
+	Translations$comics$es.internal(TranslationsEs root) : this._root = root, super.internal(root);
+
+	final TranslationsEs _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'Ajustar a la altura';
+	@override String get readingMode => 'Modo de lectura';
+	@override String get paged => 'Páginas';
+	@override String get webtoon => 'Desplazamiento continuo';
+	@override String get coverAlone => 'Mostrar la portada sola';
+	@override String get splitWide => 'Dividir páginas anchas';
+	@override String get splitWideHelp => 'Muestra cada mitad por separado, en orden de lectura. Mientras esté activado, se pausa la vista de dos páginas juntas.';
+	@override String get thumbnails => 'Miniaturas de páginas';
+	@override String get controlsHelp => 'Desliza para pasar de página. Toca dos veces para cambiar el ajuste. En desplazamiento continuo, desliza verticalmente o usa Re Pág y Av Pág.';
+	@override String get savedForComic => 'Los ajustes de visualización se guardan para este cómic en este perfil.';
+	@override String get readLists => 'Listas de lectura';
+	@override String get collections => 'Colecciones';
 }
 
 // Path: appIcon.names
@@ -6926,8 +6954,12 @@ extension on TranslationsEs {
 			'fileSources.source' => 'Fuente',
 			'fileSources.name' => 'Nombre',
 			'fileSources.endpoint' => 'URL del servidor',
+			'fileSources.smbEndpointHint' => 'Ejemplo: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Introduce un servidor SMB y un recurso compartido.',
 			'fileSources.root' => 'Prefixo o prefixo',
+			'fileSources.smbFolderHelp' => 'Déjalo vacío para usar todo el recurso compartido, o introduce una carpeta dentro de él.',
 			'fileSources.username' => 'Usuario',
+			'fileSources.smbDomain' => 'Dominio (opcional)',
 			'fileSources.password' => 'Contraseña',
 			'fileSources.token' => 'API Título',
 			'fileSources.accessKey' => 'Acceso clave ID',
@@ -6937,6 +6969,8 @@ extension on TranslationsEs {
 			'fileSources.clientId' => 'ID de cliente de OAuth',
 			'fileSources.clientSecret' => 'OAuth client secreto (sólo Google de escritorio)',
 			'fileSources.allowHttp' => 'Permitir HTTP sin cifrar en una red de confianza',
+			'fileSources.smbEncryption' => 'Cifrar la conexión SMB3',
+			'fileSources.smbEncryptionHint' => 'Usa el cifrado SMB3 si el NAS lo admite.',
 			'fileSources.connect' => 'Conectar',
 			'fileSources.cancel' => 'Cancelar',
 			'fileSources.save' => 'Guardar',
@@ -7180,6 +7214,18 @@ extension on TranslationsEs {
 			'audiobook.statusFinished' => 'Finalizado',
 			'audiobook.goToTime' => 'Vuelve al tiempo',
 			'audiobook.timeHelp' => 'Horas: minutos: segundos o minutos: segundos',
+			'comics.fitHeight' => 'Ajustar a la altura',
+			'comics.readingMode' => 'Modo de lectura',
+			'comics.paged' => 'Páginas',
+			'comics.webtoon' => 'Desplazamiento continuo',
+			'comics.coverAlone' => 'Mostrar la portada sola',
+			'comics.splitWide' => 'Dividir páginas anchas',
+			'comics.splitWideHelp' => 'Muestra cada mitad por separado, en orden de lectura. Mientras esté activado, se pausa la vista de dos páginas juntas.',
+			'comics.thumbnails' => 'Miniaturas de páginas',
+			'comics.controlsHelp' => 'Desliza para pasar de página. Toca dos veces para cambiar el ajuste. En desplazamiento continuo, desliza verticalmente o usa Re Pág y Av Pág.',
+			'comics.savedForComic' => 'Los ajustes de visualización se guardan para este cómic en este perfil.',
+			'comics.readLists' => 'Listas de lectura',
+			'comics.collections' => 'Colecciones',
 			_ => null,
 		};
 	}

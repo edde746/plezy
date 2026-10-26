@@ -104,6 +104,7 @@ class TranslationsKk extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$kk fileSources = _Translations$fileSources$kk._(_root);
 	@override late final _Translations$lending$kk lending = _Translations$lending$kk._(_root);
 	@override late final _Translations$audiobook$kk audiobook = _Translations$audiobook$kk._(_root);
+	@override late final _Translations$comics$kk comics = _Translations$comics$kk._(_root);
 }
 
 // Path: app
@@ -2901,8 +2902,12 @@ class _Translations$fileSources$kk extends Translations$fileSources$en {
 	@override String get source => 'Қайтаны';
 	@override String get name => 'Әйтсе де';
 	@override String get endpoint => 'Сервер URL-і';
+	@override String get smbEndpointHint => 'Мысал: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'SMB серверін және бір ортақ ресурсты енгізіңіз.';
 	@override String get root => 'Олардың дағдырысы және';
+	@override String get smbFolderHelp => 'Бүкіл ортақ ресурсты пайдалану үшін бос қалдырыңыз немесе оның ішіндегі қалтаны енгізіңіз.';
 	@override String get username => 'Пайдаланушы аты';
+	@override String get smbDomain => 'Домен (міндетті емес)';
 	@override String get password => 'Құпия сөз';
 	@override String get token => 'API қақтар';
 	@override String get accessKey => 'Керіктің қабығы';
@@ -2912,6 +2917,8 @@ class _Translations$fileSources$kk extends Translations$fileSources$en {
 	@override String get clientId => 'ОАО «Клиент ID»';
 	@override String get clientSecret => 'ОАУТ клиенттік тайна (десктоп Google үшін)';
 	@override String get allowHttp => 'Сенімді желіде шифрланбаған HTTP қосылымына рұқсат беру';
+	@override String get smbEncryption => 'SMB3 қосылымын шифрлау';
+	@override String get smbEncryptionHint => 'NAS қолдаса, SMB3 шифрлауын пайдаланыңыз.';
 	@override String get connect => 'Қосылу';
 	@override String get cancel => 'Бас тарту';
 	@override String get save => 'Сақтау';
@@ -3176,6 +3183,27 @@ class _Translations$audiobook$kk extends Translations$audiobook$en {
 	@override String get statusFinished => 'Өткен';
 	@override String get goToTime => 'Қазіргі уақытта';
 	@override String get timeHelp => 'Өнімдер: 1 минут, 1 минут, 1 секунды';
+}
+
+// Path: comics
+class _Translations$comics$kk extends Translations$comics$en {
+	_Translations$comics$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'Биіктікке сәйкестендіру';
+	@override String get readingMode => 'Оқу режимі';
+	@override String get paged => 'Беттер';
+	@override String get webtoon => 'Үздіксіз айналдыру';
+	@override String get coverAlone => 'Мұқабаны бөлек көрсету';
+	@override String get splitWide => 'Кең беттерді бөлу';
+	@override String get splitWideHelp => 'Әр жартысын оқу ретімен бөлек көрсетеді. Бұл қосулы кезде екі бетті қатар көрсету тоқтатылады.';
+	@override String get thumbnails => 'Бет нобайлары';
+	@override String get controlsHelp => 'Бетті ауыстыру үшін сырғытыңыз. Сәйкестендіруді өзгерту үшін екі рет түртіңіз. Үздіксіз айналдыруда тігінен сырғытыңыз немесе Page Up және Page Down қолданыңыз.';
+	@override String get savedForComic => 'Бұл профильде осы комикстің көрсету параметрлері сақталады.';
+	@override String get readLists => 'Оқу тізімдері';
+	@override String get collections => 'Жинақтар';
 }
 
 // Path: appIcon.names
@@ -6922,8 +6950,12 @@ extension on TranslationsKk {
 			'fileSources.source' => 'Қайтаны',
 			'fileSources.name' => 'Әйтсе де',
 			'fileSources.endpoint' => 'Сервер URL-і',
+			'fileSources.smbEndpointHint' => 'Мысал: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'SMB серверін және бір ортақ ресурсты енгізіңіз.',
 			'fileSources.root' => 'Олардың дағдырысы және',
+			'fileSources.smbFolderHelp' => 'Бүкіл ортақ ресурсты пайдалану үшін бос қалдырыңыз немесе оның ішіндегі қалтаны енгізіңіз.',
 			'fileSources.username' => 'Пайдаланушы аты',
+			'fileSources.smbDomain' => 'Домен (міндетті емес)',
 			'fileSources.password' => 'Құпия сөз',
 			'fileSources.token' => 'API қақтар',
 			'fileSources.accessKey' => 'Керіктің қабығы',
@@ -6933,6 +6965,8 @@ extension on TranslationsKk {
 			'fileSources.clientId' => 'ОАО «Клиент ID»',
 			'fileSources.clientSecret' => 'ОАУТ клиенттік тайна (десктоп Google үшін)',
 			'fileSources.allowHttp' => 'Сенімді желіде шифрланбаған HTTP қосылымына рұқсат беру',
+			'fileSources.smbEncryption' => 'SMB3 қосылымын шифрлау',
+			'fileSources.smbEncryptionHint' => 'NAS қолдаса, SMB3 шифрлауын пайдаланыңыз.',
 			'fileSources.connect' => 'Қосылу',
 			'fileSources.cancel' => 'Бас тарту',
 			'fileSources.save' => 'Сақтау',
@@ -7176,6 +7210,18 @@ extension on TranslationsKk {
 			'audiobook.statusFinished' => 'Өткен',
 			'audiobook.goToTime' => 'Қазіргі уақытта',
 			'audiobook.timeHelp' => 'Өнімдер: 1 минут, 1 минут, 1 секунды',
+			'comics.fitHeight' => 'Биіктікке сәйкестендіру',
+			'comics.readingMode' => 'Оқу режимі',
+			'comics.paged' => 'Беттер',
+			'comics.webtoon' => 'Үздіксіз айналдыру',
+			'comics.coverAlone' => 'Мұқабаны бөлек көрсету',
+			'comics.splitWide' => 'Кең беттерді бөлу',
+			'comics.splitWideHelp' => 'Әр жартысын оқу ретімен бөлек көрсетеді. Бұл қосулы кезде екі бетті қатар көрсету тоқтатылады.',
+			'comics.thumbnails' => 'Бет нобайлары',
+			'comics.controlsHelp' => 'Бетті ауыстыру үшін сырғытыңыз. Сәйкестендіруді өзгерту үшін екі рет түртіңіз. Үздіксіз айналдыруда тігінен сырғытыңыз немесе Page Up және Page Down қолданыңыз.',
+			'comics.savedForComic' => 'Бұл профильде осы комикстің көрсету параметрлері сақталады.',
+			'comics.readLists' => 'Оқу тізімдері',
+			'comics.collections' => 'Жинақтар',
 			_ => null,
 		};
 	}

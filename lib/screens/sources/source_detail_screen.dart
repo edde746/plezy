@@ -159,7 +159,9 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            const Text('This title search goes to Trakt. It sends the title you enter, not the video or source credentials.'),
+            const Text(
+              'This title search goes to Trakt. It sends the title you enter, not the video or source credentials.',
+            ),
             const SizedBox(height: 12),
             FocusableTextField(
               controller: controller,
@@ -186,63 +188,64 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     return query;
   }
 
-  Future<TraktCatalogEntry?> _chooseMetadataMatch(List<TraktCatalogEntry> candidates) =>
-      showModalBottomSheet<TraktCatalogEntry>(
-        context: context,
-        isScrollControlled: true,
-        builder: (sheetContext) => SafeArea(
-          child: SizedBox(
-            height: MediaQuery.sizeOf(sheetContext).height * .72,
-            child: Column(
-              children: [
-                Padding(
-                  padding: const EdgeInsets.all(20),
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Semantics(
-                        header: true,
-                        child: Text('Choose a match', style: Theme.of(sheetContext).textTheme.titleLarge),
-                      ),
-                      const SizedBox(height: 4),
-                      const Text('Review the title and year before choosing. Trakt receives the search title; the video stays on its source.'),
-                    ],
+  Future<TraktCatalogEntry?> _chooseMetadataMatch(
+    List<TraktCatalogEntry> candidates,
+  ) => showModalBottomSheet<TraktCatalogEntry>(
+    context: context,
+    isScrollControlled: true,
+    builder: (sheetContext) => SafeArea(
+      child: SizedBox(
+        height: MediaQuery.sizeOf(sheetContext).height * .72,
+        child: Column(
+          children: [
+            Padding(
+              padding: const EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Semantics(
+                    header: true,
+                    child: Text('Choose a match', style: Theme.of(sheetContext).textTheme.titleLarge),
                   ),
-                ),
-                Expanded(
-                  child: ListView.builder(
-                    itemCount: candidates.length,
-                    itemBuilder: (context, index) {
-                      final candidate = candidates[index];
-                      final media = candidate.media!;
-                      final title = media.title?.trim() ?? '';
-                      return FocusableListTile(
-                        title: Text(
-                          media.year == null ? title : '$title (${media.year})',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                        subtitle: media.overview?.trim().isNotEmpty == true
-                            ? Text(media.overview!, maxLines: 2, overflow: TextOverflow.ellipsis)
-                            : null,
-                        trailing: media.rating == null
-                            ? null
-                            : Semantics(
-                                label: 'Rating ${media.rating!.toStringAsFixed(1)} out of 10',
-                                child: ExcludeSemantics(
-                                  child: Text('★ ${media.rating!.toStringAsFixed(1)}'),
-                                ),
-                              ),
-                        onTap: () => Navigator.pop(sheetContext, candidate),
-                      );
-                    },
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Review the title and year before choosing. Trakt receives the search title; the video stays on its source.',
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
-          ),
+            Expanded(
+              child: ListView.builder(
+                itemCount: candidates.length,
+                itemBuilder: (context, index) {
+                  final candidate = candidates[index];
+                  final media = candidate.media!;
+                  final title = media.title?.trim() ?? '';
+                  return FocusableListTile(
+                    title: Text(
+                      media.year == null ? title : '$title (${media.year})',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    subtitle: media.overview?.trim().isNotEmpty == true
+                        ? Text(media.overview!, maxLines: 2, overflow: TextOverflow.ellipsis)
+                        : null,
+                    trailing: media.rating == null
+                        ? null
+                        : Semantics(
+                            label: 'Rating ${media.rating!.toStringAsFixed(1)} out of 10',
+                            child: ExcludeSemantics(child: Text('★ ${media.rating!.toStringAsFixed(1)}')),
+                          ),
+                    onTap: () => Navigator.pop(sheetContext, candidate),
+                  );
+                },
+              ),
+            ),
+          ],
         ),
-      );
+      ),
+    ),
+  );
 
   Future<void> _searchOnlineMetadata() async {
     final client = context.read<TrackersProvider>().traktCatalogClient;
@@ -480,11 +483,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context), tk = tokens(context), audio = _entry.audio;
     final hasTrakt = context.watch<TrackersProvider>().traktCatalogClient != null;
-    final source = context
-        .watch<SourceController>()
-        .sources
-        .where((item) => item.id == _entry.sourceId)
-        .firstOrNull;
+    final source = context.watch<SourceController>().sources.where((item) => item.id == _entry.sourceId).firstOrNull;
     final automaticMetadataEnabled = source?.options['onlineMetadata'] != 'false';
     return FocusedScrollScaffold(
       title: Text(_entry.displayTitle),
@@ -625,7 +624,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                       },
                     ),
                     if (_busy)
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.symmetric(vertical: 24),
                         child: Semantics(
                           label: 'Loading video details',
@@ -634,7 +633,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                         ),
                       ),
                     if (_metadataLookupPending)
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.only(top: 4, bottom: 12),
                         child: Semantics(
                           label: 'Looking up online movie and TV details',
@@ -649,7 +648,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                         ),
                       ),
                     if (_entry.onlineMetadataProvider == 'trakt')
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.only(bottom: 12),
                         child: Semantics(
                           label: 'Online metadata from Trakt',
@@ -668,9 +667,11 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Semantics(
+                            Semantics(
                               liveRegion: true,
-                              child: Text('No automatic title match was found. Search for the title to choose a match.'),
+                              child: Text(
+                                'No automatic title match was found. Search for the title to choose a match.',
+                              ),
                             ),
                             TextButton.icon(
                               onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
@@ -686,9 +687,11 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Semantics(
+                            Semantics(
                               liveRegion: true,
-                              child: Text('Online metadata could not be loaded. Playback and local details are still available.'),
+                              child: Text(
+                                'Online metadata could not be loaded. Playback and local details are still available.',
+                              ),
                             ),
                             TextButton.icon(
                               onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
@@ -740,10 +743,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                     if (_error != null)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: Semantics(
-                          liveRegion: true,
-                          child: Text(sourceFailureText(_error!)),
-                        ),
+                        child: Semantics(liveRegion: true, child: Text(sourceFailureText(_error!))),
                       ),
                     if (_entry.description.isNotEmpty)
                       Padding(

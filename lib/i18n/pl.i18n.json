@@ -3032,8 +3032,12 @@
     "source": "Źródło",
     "name": "Nazwa",
     "endpoint": "Adres URL serwera",
+    "smbEndpointHint": "Przykład: smb://nas/Movies",
+    "smbEndpointInvalid": "Podaj serwer SMB i jeden udział.",
     "root": "folder lub prefix",
+    "smbFolderHelp": "Pozostaw puste, aby użyć całego udziału, lub podaj folder w jego obrębie.",
     "username": "Nazwa użytkownika",
+    "smbDomain": "Domena (opcjonalnie)",
     "password": "Hasło",
     "token": "API token",
     "accessKey": "Kluczowe identyfikator",
@@ -3043,6 +3047,8 @@
     "clientId": "OAuth ID klienta",
     "clientSecret": "OAuth klient sekret (tylko Google desktop)",
     "allowHttp": "Zezwalaj na nieszyfrowane HTTP w zaufanej sieci",
+    "smbEncryption": "Szyfruj połączenie SMB3",
+    "smbEncryptionHint": "Używaj szyfrowania SMB3, jeśli NAS je obsługuje.",
     "connect": "Połącz",
     "cancel": "Anuluj",
     "save": "Zapisz",
@@ -3295,5 +3301,19 @@
     "statusFinished": "zakończone",
     "goToTime": "Idź do czasu",
     "timeHelp": "godziny: minuty: sekundy lub minuty: sekundy"
+  },
+  "comics": {
+    "fitHeight": "Dopasuj do wysokości",
+    "readingMode": "Tryb czytania",
+    "paged": "Strony",
+    "webtoon": "Ciągłe przewijanie",
+    "coverAlone": "Pokaż okładkę osobno",
+    "splitWide": "Podziel szerokie strony",
+    "splitWideHelp": "Pokaż każdą połowę osobno, w kolejności czytania. Gdy opcja jest włączona, strony nie są wyświetlane parami.",
+    "thumbnails": "Miniatury stron",
+    "controlsHelp": "Przesuń palcem, aby zmienić stronę. Dotknij dwukrotnie, aby zmienić dopasowanie. Przy ciągłym przewijaniu przesuwaj pionowo lub używaj Page Up i Page Down.",
+    "savedForComic": "Ustawienia wyświetlania są zapamiętywane dla tego komiksu w tym profilu.",
+    "readLists": "Listy czytelnicze",
+    "collections": "Kolekcje"
   }
 }

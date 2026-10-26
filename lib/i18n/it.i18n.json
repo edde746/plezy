@@ -2993,8 +2993,12 @@
     "source": "Fonte",
     "name": "Nome",
     "endpoint": "URL del server",
+    "smbEndpointHint": "Esempio: smb://nas/Movies",
+    "smbEndpointInvalid": "Inserisci un server SMB e una condivisione.",
     "root": "Foldere o prefix",
+    "smbFolderHelp": "Lascia vuoto per usare l’intera condivisione, oppure inserisci una cartella al suo interno.",
     "username": "Nome utente",
+    "smbDomain": "Dominio (facoltativo)",
     "password": "Password",
     "token": "API Toccano",
     "accessKey": "ID chiave di accesso",
@@ -3004,6 +3008,8 @@
     "clientId": "ID client di OAuth",
     "clientSecret": "OAuth client secret (solo Google desktop)",
     "allowHttp": "Consenti HTTP non crittografato su una rete attendibile",
+    "smbEncryption": "Crittografa la connessione SMB3",
+    "smbEncryptionHint": "Usa la crittografia SMB3 se il NAS la supporta.",
     "connect": "Connetti",
     "cancel": "Annulla",
     "save": "Salva",
@@ -3255,5 +3261,19 @@
     "statusFinished": "finito",
     "goToTime": "Vai al tempo",
     "timeHelp": "ore: minuti: secondi o minuti: secondi"
+  },
+  "comics": {
+    "fitHeight": "Adatta all’altezza",
+    "readingMode": "Modalità di lettura",
+    "paged": "Pagine",
+    "webtoon": "Scorrimento continuo",
+    "coverAlone": "Mostra la copertina da sola",
+    "splitWide": "Dividi le pagine larghe",
+    "splitWideHelp": "Mostra ogni metà separatamente, nell’ordine di lettura. La visualizzazione di due pagine affiancate viene sospesa quando questa opzione è attiva.",
+    "thumbnails": "Miniature delle pagine",
+    "controlsHelp": "Scorri con il dito per voltare pagina. Tocca due volte per cambiare l’adattamento. Nello scorrimento continuo, scorri verticalmente o usa Pagina su e Pagina giù.",
+    "savedForComic": "Le impostazioni di visualizzazione vengono memorizzate per questo fumetto in questo profilo.",
+    "readLists": "Liste di lettura",
+    "collections": "Raccolte"
   }
 }

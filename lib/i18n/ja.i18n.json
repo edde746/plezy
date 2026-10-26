@@ -2986,8 +2986,12 @@
     "source": "源泉",
     "name": "名称",
     "endpoint": "サーバー URL",
+    "smbEndpointHint": "例: smb://nas/Movies",
+    "smbEndpointInvalid": "SMBサーバーと共有を1つ入力してください。",
     "root": "フォルダーまたはプレフィックス",
+    "smbFolderHelp": "共有全体を使う場合は空欄にします。特定のフォルダーを使う場合は共有内のフォルダーを入力します。",
     "username": "ユーザー名",
+    "smbDomain": "ドメイン（任意）",
     "password": "パスワード",
     "token": "API トークン",
     "accessKey": "アクセスキーID",
@@ -2997,6 +3001,8 @@
     "clientId": "クライアントID",
     "clientSecret": "OAuth クライアント セキュリティ (Google デスクトップのみ)",
     "allowHttp": "信頼できるネットワークで暗号化されていないHTTP接続を許可する",
+    "smbEncryption": "SMB3接続を暗号化",
+    "smbEncryptionHint": "NASが対応している場合はSMB3暗号化を使います。",
     "connect": "接続",
     "cancel": "キャンセル",
     "save": "保存",
@@ -3246,5 +3252,19 @@
     "statusFinished": "終了",
     "goToTime": "時間へ行く",
     "timeHelp": "時間:分:秒、または分:秒"
+  },
+  "comics": {
+    "fitHeight": "高さに合わせる",
+    "readingMode": "読書モード",
+    "paged": "ページ表示",
+    "webtoon": "連続スクロール",
+    "coverAlone": "表紙を単独で表示",
+    "splitWide": "横長のページを分割",
+    "splitWideHelp": "各半分を読む順序で個別に表示します。有効な間は見開き表示を一時停止します。",
+    "thumbnails": "ページのサムネイル",
+    "controlsHelp": "スワイプでページをめくります。ダブルタップで表示サイズを切り替えます。連続スクロールでは縦にスワイプするか、Page UpとPage Downを使います。",
+    "savedForComic": "このプロフィールで、このコミックの表示設定を保存します。",
+    "readLists": "読書リスト",
+    "collections": "コレクション"
   }
 }

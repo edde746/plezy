@@ -104,6 +104,7 @@ class TranslationsFa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$fa fileSources = _Translations$fileSources$fa._(_root);
 	@override late final _Translations$lending$fa lending = _Translations$lending$fa._(_root);
 	@override late final _Translations$audiobook$fa audiobook = _Translations$audiobook$fa._(_root);
+	@override late final _Translations$comics$fa comics = _Translations$comics$fa._(_root);
 }
 
 // Path: app
@@ -2901,8 +2902,12 @@ class _Translations$fileSources$fa extends Translations$fileSources$en {
 	@override String get source => 'منبع';
 	@override String get name => 'نام';
 	@override String get endpoint => 'سرور URL';
+	@override String get smbEndpointHint => 'مثال: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'یک سرور SMB و یک پوشهٔ اشتراکی وارد کنید.';
 	@override String get root => 'پوشه یا پیشوند';
+	@override String get smbFolderHelp => 'برای استفاده از کل پوشهٔ اشتراکی خالی بگذارید، یا پوشه‌ای درون آن وارد کنید.';
 	@override String get username => 'نام کاربری';
+	@override String get smbDomain => 'دامنه (اختیاری)';
 	@override String get password => 'گذرواژه';
 	@override String get token => 'API توکن';
 	@override String get accessKey => 'دسترسی کلید ID';
@@ -2912,6 +2917,8 @@ class _Translations$fileSources$fa extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth مشتری ID';
 	@override String get clientSecret => 'OAuth Client Secret (فقط Google Desktop)';
 	@override String get allowHttp => 'اجازهٔ اتصال HTTP بدون رمزگذاری در یک شبکهٔ مورد اعتماد';
+	@override String get smbEncryption => 'رمزگذاری اتصال SMB3';
+	@override String get smbEncryptionHint => 'اگر NAS پشتیبانی می‌کند، از رمزگذاری SMB3 استفاده کنید.';
 	@override String get connect => 'اتصال';
 	@override String get cancel => 'لغو کردن';
 	@override String get save => 'ذخیره';
@@ -3176,6 +3183,27 @@ class _Translations$audiobook$fa extends Translations$audiobook$en {
 	@override String get statusFinished => 'به پایان رسید';
 	@override String get goToTime => 'به زمان برو';
 	@override String get timeHelp => 'ساعت: دقیقه ها: ثانیه ها یا دقیقه ها: ثانیه ها';
+}
+
+// Path: comics
+class _Translations$comics$fa extends Translations$comics$en {
+	_Translations$comics$fa._(TranslationsFa root) : this._root = root, super.internal(root);
+
+	final TranslationsFa _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'اندازه بر اساس ارتفاع';
+	@override String get readingMode => 'حالت مطالعه';
+	@override String get paged => 'صفحه‌ها';
+	@override String get webtoon => 'پیمایش پیوسته';
+	@override String get coverAlone => 'نمایش جلد به‌تنهایی';
+	@override String get splitWide => 'تقسیم صفحه‌های عریض';
+	@override String get splitWideHelp => 'هر نیمه را جداگانه و به ترتیب مطالعه نشان می‌دهد. با فعال بودن این گزینه، نمایش دو صفحه کنار هم متوقف می‌شود.';
+	@override String get thumbnails => 'تصاویر بندانگشتی صفحه‌ها';
+	@override String get controlsHelp => 'برای ورق زدن بکشید. برای تغییر اندازهٔ نمایش دو بار ضربه بزنید. در پیمایش پیوسته، عمودی بکشید یا از Page Up و Page Down استفاده کنید.';
+	@override String get savedForComic => 'تنظیمات نمایش این کمیک در این نمایه ذخیره می‌شود.';
+	@override String get readLists => 'فهرست‌های مطالعه';
+	@override String get collections => 'مجموعه‌ها';
 }
 
 // Path: appIcon.names
@@ -6922,8 +6950,12 @@ extension on TranslationsFa {
 			'fileSources.source' => 'منبع',
 			'fileSources.name' => 'نام',
 			'fileSources.endpoint' => 'سرور URL',
+			'fileSources.smbEndpointHint' => 'مثال: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'یک سرور SMB و یک پوشهٔ اشتراکی وارد کنید.',
 			'fileSources.root' => 'پوشه یا پیشوند',
+			'fileSources.smbFolderHelp' => 'برای استفاده از کل پوشهٔ اشتراکی خالی بگذارید، یا پوشه‌ای درون آن وارد کنید.',
 			'fileSources.username' => 'نام کاربری',
+			'fileSources.smbDomain' => 'دامنه (اختیاری)',
 			'fileSources.password' => 'گذرواژه',
 			'fileSources.token' => 'API توکن',
 			'fileSources.accessKey' => 'دسترسی کلید ID',
@@ -6933,6 +6965,8 @@ extension on TranslationsFa {
 			'fileSources.clientId' => 'OAuth مشتری ID',
 			'fileSources.clientSecret' => 'OAuth Client Secret (فقط Google Desktop)',
 			'fileSources.allowHttp' => 'اجازهٔ اتصال HTTP بدون رمزگذاری در یک شبکهٔ مورد اعتماد',
+			'fileSources.smbEncryption' => 'رمزگذاری اتصال SMB3',
+			'fileSources.smbEncryptionHint' => 'اگر NAS پشتیبانی می‌کند، از رمزگذاری SMB3 استفاده کنید.',
 			'fileSources.connect' => 'اتصال',
 			'fileSources.cancel' => 'لغو کردن',
 			'fileSources.save' => 'ذخیره',
@@ -7176,6 +7210,18 @@ extension on TranslationsFa {
 			'audiobook.statusFinished' => 'به پایان رسید',
 			'audiobook.goToTime' => 'به زمان برو',
 			'audiobook.timeHelp' => 'ساعت: دقیقه ها: ثانیه ها یا دقیقه ها: ثانیه ها',
+			'comics.fitHeight' => 'اندازه بر اساس ارتفاع',
+			'comics.readingMode' => 'حالت مطالعه',
+			'comics.paged' => 'صفحه‌ها',
+			'comics.webtoon' => 'پیمایش پیوسته',
+			'comics.coverAlone' => 'نمایش جلد به‌تنهایی',
+			'comics.splitWide' => 'تقسیم صفحه‌های عریض',
+			'comics.splitWideHelp' => 'هر نیمه را جداگانه و به ترتیب مطالعه نشان می‌دهد. با فعال بودن این گزینه، نمایش دو صفحه کنار هم متوقف می‌شود.',
+			'comics.thumbnails' => 'تصاویر بندانگشتی صفحه‌ها',
+			'comics.controlsHelp' => 'برای ورق زدن بکشید. برای تغییر اندازهٔ نمایش دو بار ضربه بزنید. در پیمایش پیوسته، عمودی بکشید یا از Page Up و Page Down استفاده کنید.',
+			'comics.savedForComic' => 'تنظیمات نمایش این کمیک در این نمایه ذخیره می‌شود.',
+			'comics.readLists' => 'فهرست‌های مطالعه',
+			'comics.collections' => 'مجموعه‌ها',
 			_ => null,
 		};
 	}

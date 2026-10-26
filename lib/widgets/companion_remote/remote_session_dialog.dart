@@ -12,7 +12,6 @@ import '../../theme/mono_tokens.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/error_message_utils.dart';
 import '../../focus/focusable_button.dart';
-import '../../focus/key_event_utils.dart';
 import '../dialog_action_button.dart';
 import '../app_icon.dart';
 
@@ -125,145 +124,144 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
   Widget build(BuildContext context) {
     return Focus(
       canRequestFocus: false,
-      onKeyEvent: (node, event) => handleBackKeyNavigation(context, event),
       child: Consumer<CompanionRemoteProvider>(
         builder: (context, provider, child) {
-        if (_isStarting) {
+          if (_isStarting) {
+            return Dialog(
+              child: Padding(
+                padding: const EdgeInsets.all(32.0),
+                child: Column(
+                  mainAxisSize: .min,
+                  children: [
+                    const CircularProgressIndicator(),
+                    const SizedBox(height: 16),
+                    Text(t.companionRemote.session.startingServer, style: Theme.of(context).textTheme.titleMedium),
+                  ],
+                ),
+              ),
+            );
+          }
+
+          if (_errorMessage != null) {
+            return AlertDialog(
+              title: Text(t.common.error),
+              content: Text(_errorMessage!),
+              actions: [
+                DialogActionButton(
+                  autofocus: true,
+                  focusNode: _errorCloseFocusNode,
+                  onPressed: _close,
+                  onBack: _close,
+                  onNavigateRight: () => _errorRetryFocusNode.requestFocus(),
+                  useBackgroundFocus: true,
+                  label: t.common.close,
+                ),
+                DialogActionButton(
+                  focusNode: _errorRetryFocusNode,
+                  onPressed: _startServer,
+                  onBack: _close,
+                  onNavigateLeft: () => _errorCloseFocusNode.requestFocus(),
+                  useBackgroundFocus: true,
+                  label: t.common.retry,
+                ),
+              ],
+            );
+          }
+
           return Dialog(
-            child: Padding(
-              padding: const EdgeInsets.all(32.0),
-              child: Column(
-                mainAxisSize: .min,
-                children: [
-                  const CircularProgressIndicator(),
-                  const SizedBox(height: 16),
-                  Text(t.companionRemote.session.startingServer, style: Theme.of(context).textTheme.titleMedium),
-                ],
-              ),
-            ),
-          );
-        }
-
-        if (_errorMessage != null) {
-          return AlertDialog(
-            title: Text(t.common.error),
-            content: Text(_errorMessage!),
-            actions: [
-              DialogActionButton(
-                autofocus: true,
-                focusNode: _errorCloseFocusNode,
-                onPressed: _close,
-                onBack: _close,
-                onNavigateRight: () => _errorRetryFocusNode.requestFocus(),
-                useBackgroundFocus: true,
-                label: t.common.close,
-              ),
-              DialogActionButton(
-                focusNode: _errorRetryFocusNode,
-                onPressed: _startServer,
-                onBack: _close,
-                onNavigateLeft: () => _errorCloseFocusNode.requestFocus(),
-                useBackgroundFocus: true,
-                label: t.common.retry,
-              ),
-            ],
-          );
-        }
-
-        return Dialog(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 500),
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24.0),
-              child: Column(
-                mainAxisSize: .min,
-                crossAxisAlignment: .stretch,
-                children: [
-                  Row(
-                    children: [
-                      const AppIcon(Symbols.phone_android_rounded, size: 32),
-                      const SizedBox(width: 16),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: .start,
-                          children: [
-                            Text(t.companionRemote.title, style: Theme.of(context).textTheme.headlineSmall),
-                            const SizedBox(height: 4),
-                            _buildStatusLine(context, provider),
-                          ],
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 500),
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.all(24.0),
+                child: Column(
+                  mainAxisSize: .min,
+                  crossAxisAlignment: .stretch,
+                  children: [
+                    Row(
+                      children: [
+                        const AppIcon(Symbols.phone_android_rounded, size: 32),
+                        const SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: .start,
+                            children: [
+                              Text(t.companionRemote.title, style: Theme.of(context).textTheme.headlineSmall),
+                              const SizedBox(height: 4),
+                              _buildStatusLine(context, provider),
+                            ],
+                          ),
                         ),
-                      ),
-                      FocusableButton(
-                        focusNode: _closeFocusNode,
-                        onPressed: _close,
-                        onBack: _close,
-                        onNavigateDown: () => _toggleFocusNode.requestFocus(),
-                        useBackgroundFocus: true,
-                        child: IconButton(icon: const AppIcon(Symbols.close_rounded), onPressed: _close),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 24),
-
-                  _buildServerStatus(context, provider),
-
-                  if (provider.isHostServerRunning && provider.hostPairingCode != null) ...[
-                    const SizedBox(height: 16),
-                    Text(t.companionRemote.pairing.codeTitle, style: Theme.of(context).textTheme.titleMedium),
-                    SelectableText(
-                      RemotePairingStore.displayCode(provider.hostPairingCode!),
-                      style: const TextStyle(fontFamily: 'monospace'),
+                        FocusableButton(
+                          focusNode: _closeFocusNode,
+                          onPressed: _close,
+                          onBack: _close,
+                          onNavigateDown: () => _toggleFocusNode.requestFocus(),
+                          useBackgroundFocus: true,
+                          child: IconButton(icon: const AppIcon(Symbols.close_rounded), onPressed: _close),
+                        ),
+                      ],
                     ),
-                    Text(t.companionRemote.pairing.hostDescription),
-                    DialogActionButton(onPressed: _resetPairing, label: t.companionRemote.pairing.resetCode),
-                  ],
+                    const SizedBox(height: 24),
 
-                  if (provider.connectedDevice != null) ...[
-                    const SizedBox(height: 16),
-                    _buildConnectedDevice(context, provider),
-                  ],
+                    _buildServerStatus(context, provider),
 
-                  const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: .end,
-                    children: [
-                      FocusableButton(
-                        autofocus: true,
-                        focusNode: _toggleFocusNode,
-                        onPressed: _toggleServer,
-                        onBack: _close,
-                        onNavigateUp: () => _closeFocusNode.requestFocus(),
-                        onNavigateRight: () => _minimizeFocusNode.requestFocus(),
-                        useBackgroundFocus: true,
-                        child: TextButton.icon(
+                    if (provider.isHostServerRunning && provider.hostPairingCode != null) ...[
+                      const SizedBox(height: 16),
+                      Text(t.companionRemote.pairing.codeTitle, style: Theme.of(context).textTheme.titleMedium),
+                      SelectableText(
+                        RemotePairingStore.displayCode(provider.hostPairingCode!),
+                        style: const TextStyle(fontFamily: 'monospace'),
+                      ),
+                      Text(t.companionRemote.pairing.hostDescription),
+                      DialogActionButton(onPressed: _resetPairing, label: t.companionRemote.pairing.resetCode),
+                    ],
+
+                    if (provider.connectedDevice != null) ...[
+                      const SizedBox(height: 16),
+                      _buildConnectedDevice(context, provider),
+                    ],
+
+                    const SizedBox(height: 24),
+                    Row(
+                      mainAxisAlignment: .end,
+                      children: [
+                        FocusableButton(
+                          autofocus: true,
+                          focusNode: _toggleFocusNode,
                           onPressed: _toggleServer,
-                          icon: AppIcon(
-                            provider.isHostServerRunning ? Symbols.stop_rounded : Symbols.play_arrow_rounded,
-                          ),
-                          label: Text(
-                            provider.isHostServerRunning
-                                ? t.companionRemote.session.stopServer
-                                : t.companionRemote.session.startServer,
+                          onBack: _close,
+                          onNavigateUp: () => _closeFocusNode.requestFocus(),
+                          onNavigateRight: () => _minimizeFocusNode.requestFocus(),
+                          useBackgroundFocus: true,
+                          child: TextButton.icon(
+                            onPressed: _toggleServer,
+                            icon: AppIcon(
+                              provider.isHostServerRunning ? Symbols.stop_rounded : Symbols.play_arrow_rounded,
+                            ),
+                            label: Text(
+                              provider.isHostServerRunning
+                                  ? t.companionRemote.session.stopServer
+                                  : t.companionRemote.session.startServer,
+                            ),
                           ),
                         ),
-                      ),
-                      const SizedBox(width: 8),
-                      FocusableButton(
-                        focusNode: _minimizeFocusNode,
-                        onPressed: _close,
-                        onBack: _close,
-                        onNavigateUp: () => _closeFocusNode.requestFocus(),
-                        onNavigateLeft: () => _toggleFocusNode.requestFocus(),
-                        useBackgroundFocus: true,
-                        child: FilledButton(onPressed: _close, child: Text(t.companionRemote.session.minimize)),
-                      ),
-                    ],
-                  ),
-                ],
+                        const SizedBox(width: 8),
+                        FocusableButton(
+                          focusNode: _minimizeFocusNode,
+                          onPressed: _close,
+                          onBack: _close,
+                          onNavigateUp: () => _closeFocusNode.requestFocus(),
+                          onNavigateLeft: () => _toggleFocusNode.requestFocus(),
+                          useBackgroundFocus: true,
+                          child: FilledButton(onPressed: _close, child: Text(t.companionRemote.session.minimize)),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
               ),
             ),
-          ),
-        );
+          );
         },
       ),
     );

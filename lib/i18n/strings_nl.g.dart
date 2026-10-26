@@ -104,6 +104,7 @@ class TranslationsNl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$nl fileSources = _Translations$fileSources$nl._(_root);
 	@override late final _Translations$lending$nl lending = _Translations$lending$nl._(_root);
 	@override late final _Translations$audiobook$nl audiobook = _Translations$audiobook$nl._(_root);
+	@override late final _Translations$comics$nl comics = _Translations$comics$nl._(_root);
 }
 
 // Path: app
@@ -2901,8 +2902,12 @@ class _Translations$fileSources$nl extends Translations$fileSources$en {
 	@override String get source => 'Bron';
 	@override String get name => 'naam';
 	@override String get endpoint => 'Server-URL';
+	@override String get smbEndpointHint => 'Voorbeeld: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Voer een SMB-server en één gedeelde map in.';
 	@override String get root => 'Folders of prefix';
+	@override String get smbFolderHelp => 'Laat leeg om de hele gedeelde map te gebruiken, of voer een map daarin in.';
 	@override String get username => 'Gebruikersnaam';
+	@override String get smbDomain => 'Domein (optioneel)';
 	@override String get password => 'Wachtwoord';
 	@override String get token => 'API Token';
 	@override String get accessKey => 'Toegang tot de sleutel ID';
@@ -2912,6 +2917,8 @@ class _Translations$fileSources$nl extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth klant ID';
 	@override String get clientSecret => 'OAuth client secret (de desktop Google alleen)';
 	@override String get allowHttp => 'Onversleutelde HTTP toestaan op een vertrouwd netwerk';
+	@override String get smbEncryption => 'SMB3-verbinding versleutelen';
+	@override String get smbEncryptionHint => 'Gebruik SMB3-versleuteling als de NAS dit ondersteunt.';
 	@override String get connect => 'Verbinden';
 	@override String get cancel => 'Annuleren';
 	@override String get save => 'Opslaan';
@@ -3176,6 +3183,27 @@ class _Translations$audiobook$nl extends Translations$audiobook$en {
 	@override String get statusFinished => 'Afgerond';
 	@override String get goToTime => 'Ga naar de tijd';
 	@override String get timeHelp => 'uur: minuten: seconden of minuten: seconden';
+}
+
+// Path: comics
+class _Translations$comics$nl extends Translations$comics$en {
+	_Translations$comics$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'Aan hoogte aanpassen';
+	@override String get readingMode => 'Leesmodus';
+	@override String get paged => 'Pagina’s';
+	@override String get webtoon => 'Doorlopend scrollen';
+	@override String get coverAlone => 'Omslag afzonderlijk tonen';
+	@override String get splitWide => 'Brede pagina’s splitsen';
+	@override String get splitWideHelp => 'Toon elke helft afzonderlijk in leesvolgorde. Zolang dit aanstaat, worden pagina’s niet naast elkaar weergegeven.';
+	@override String get thumbnails => 'Paginaminiaturen';
+	@override String get controlsHelp => 'Veeg om te bladeren. Tik dubbel om de aanpassing te wijzigen. Veeg bij doorlopend scrollen verticaal of gebruik Page Up en Page Down.';
+	@override String get savedForComic => 'De weergave-instellingen worden voor deze strip in dit profiel onthouden.';
+	@override String get readLists => 'Leeslijsten';
+	@override String get collections => 'Verzamelingen';
 }
 
 // Path: appIcon.names
@@ -6922,8 +6950,12 @@ extension on TranslationsNl {
 			'fileSources.source' => 'Bron',
 			'fileSources.name' => 'naam',
 			'fileSources.endpoint' => 'Server-URL',
+			'fileSources.smbEndpointHint' => 'Voorbeeld: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Voer een SMB-server en één gedeelde map in.',
 			'fileSources.root' => 'Folders of prefix',
+			'fileSources.smbFolderHelp' => 'Laat leeg om de hele gedeelde map te gebruiken, of voer een map daarin in.',
 			'fileSources.username' => 'Gebruikersnaam',
+			'fileSources.smbDomain' => 'Domein (optioneel)',
 			'fileSources.password' => 'Wachtwoord',
 			'fileSources.token' => 'API Token',
 			'fileSources.accessKey' => 'Toegang tot de sleutel ID',
@@ -6933,6 +6965,8 @@ extension on TranslationsNl {
 			'fileSources.clientId' => 'OAuth klant ID',
 			'fileSources.clientSecret' => 'OAuth client secret (de desktop Google alleen)',
 			'fileSources.allowHttp' => 'Onversleutelde HTTP toestaan op een vertrouwd netwerk',
+			'fileSources.smbEncryption' => 'SMB3-verbinding versleutelen',
+			'fileSources.smbEncryptionHint' => 'Gebruik SMB3-versleuteling als de NAS dit ondersteunt.',
 			'fileSources.connect' => 'Verbinden',
 			'fileSources.cancel' => 'Annuleren',
 			'fileSources.save' => 'Opslaan',
@@ -7176,6 +7210,18 @@ extension on TranslationsNl {
 			'audiobook.statusFinished' => 'Afgerond',
 			'audiobook.goToTime' => 'Ga naar de tijd',
 			'audiobook.timeHelp' => 'uur: minuten: seconden of minuten: seconden',
+			'comics.fitHeight' => 'Aan hoogte aanpassen',
+			'comics.readingMode' => 'Leesmodus',
+			'comics.paged' => 'Pagina’s',
+			'comics.webtoon' => 'Doorlopend scrollen',
+			'comics.coverAlone' => 'Omslag afzonderlijk tonen',
+			'comics.splitWide' => 'Brede pagina’s splitsen',
+			'comics.splitWideHelp' => 'Toon elke helft afzonderlijk in leesvolgorde. Zolang dit aanstaat, worden pagina’s niet naast elkaar weergegeven.',
+			'comics.thumbnails' => 'Paginaminiaturen',
+			'comics.controlsHelp' => 'Veeg om te bladeren. Tik dubbel om de aanpassing te wijzigen. Veeg bij doorlopend scrollen verticaal of gebruik Page Up en Page Down.',
+			'comics.savedForComic' => 'De weergave-instellingen worden voor deze strip in dit profiel onthouden.',
+			'comics.readLists' => 'Leeslijsten',
+			'comics.collections' => 'Verzamelingen',
 			_ => null,
 		};
 	}

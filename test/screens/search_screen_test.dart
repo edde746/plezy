@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import '../utils/display_text_finder.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -118,14 +120,14 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pump();
     expect(client.queries, ['movie']);
-    expect(find.text('Movie 1'), findsOneWidget);
+    expect(findDisplayText('Movie 1'), findsOneWidget);
 
     await tester.showKeyboard(find.byType(TextField));
     await tester.testTextInput.receiveAction(TextInputAction.search);
     await tester.pumpAndSettle();
 
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
-    expect(find.text('Movie 1'), findsOneWidget);
+    expect(findDisplayText('Movie 1'), findsOneWidget);
     expect(client.queries, ['movie']);
   });
 
@@ -155,7 +157,7 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(client.queries, ['movie']);
-    expect(find.text('Movie 1'), findsOneWidget);
+    expect(findDisplayText('Movie 1'), findsOneWidget);
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'SearchFirstResult');
 
@@ -243,8 +245,8 @@ void main() {
 
     expect(client.queries, ['movie']);
     expect(failedClient.queries, ['movie']);
-    expect(find.text('Movie 1'), findsOneWidget);
-    expect(find.text(t.messages.searchPartialResults), findsOneWidget);
+    expect(findDisplayText('Movie 1'), findsOneWidget);
+    expect(findDisplayText(t.messages.searchPartialResults), findsOneWidget);
   });
 
   testWidgets('results from a hidden library never reach the list', (tester) async {
@@ -266,8 +268,8 @@ void main() {
     // One request per user action: hydrating the hidden keys must not race the
     // first query into running twice.
     expect(client.queries, ['movie']);
-    expect(find.text('Movie 1'), findsOneWidget);
-    expect(find.text('Movie 2'), findsNothing);
+    expect(findDisplayText('Movie 1'), findsOneWidget);
+    expect(findDisplayText('Movie 2'), findsNothing);
   });
 
   testWidgets('hiding a library while results are shown re-runs the query', (tester) async {
@@ -284,14 +286,14 @@ void main() {
     (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
     await tester.pumpAndSettle();
     expect(client.queries, ['movie']);
-    expect(find.text('Movie 2'), findsOneWidget);
+    expect(findDisplayText('Movie 2'), findsOneWidget);
 
     await hiddenLibraries.hideLibrary('server_1:2');
     await tester.pumpAndSettle();
 
     expect(client.queries, ['movie', 'movie']);
-    expect(find.text('Movie 1'), findsOneWidget);
-    expect(find.text('Movie 2'), findsNothing);
+    expect(findDisplayText('Movie 1'), findsOneWidget);
+    expect(findDisplayText('Movie 2'), findsNothing);
   });
 
   testWidgets('all server failures render the failed state instead of empty results', (tester) async {
@@ -305,9 +307,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(client.queries, ['movie']);
-    expect(find.text(t.explore.searchFailed), findsOneWidget);
-    expect(find.text(t.errors.searchUnavailable), findsOneWidget);
-    expect(find.text(t.messages.noResultsFound), findsNothing);
+    expect(findDisplayText(t.explore.searchFailed), findsOneWidget);
+    expect(findDisplayText(t.errors.searchUnavailable), findsOneWidget);
+    expect(findDisplayText(t.messages.noResultsFound), findsNothing);
   });
 
   testWidgets('editing cancels the stale server request before the next debounce', (tester) async {
@@ -334,7 +336,7 @@ void main() {
     await tester.pump(const Duration(milliseconds: 500));
     await tester.pumpAndSettle();
     expect(client.queries, ['first', 'second']);
-    expect(find.text(t.explore.searchFailed), findsNothing);
+    expect(findDisplayText(t.explore.searchFailed), findsNothing);
   });
 
   testWidgets('all-server cancellation preserves prior results without an error', (tester) async {
@@ -343,7 +345,7 @@ void main() {
 
     (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
     await tester.pumpAndSettle();
-    expect(find.text('Movie 1'), findsOneWidget);
+    expect(findDisplayText('Movie 1'), findsOneWidget);
 
     client.searchError = MediaServerHttpException(
       type: MediaServerHttpErrorType.cancelled,
@@ -353,9 +355,9 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(client.queries, ['movie', 'second']);
-    expect(find.text('Movie 1'), findsOneWidget);
-    expect(find.text(t.explore.searchFailed), findsNothing);
-    expect(find.text(t.errors.searchUnavailable), findsNothing);
+    expect(findDisplayText('Movie 1'), findsOneWidget);
+    expect(findDisplayText(t.explore.searchFailed), findsNothing);
+    expect(findDisplayText(t.errors.searchUnavailable), findsNothing);
   });
 
   testWidgets('card refresh stays server-qualified without restarting search', (tester) async {
@@ -478,8 +480,8 @@ void main() {
     expect(client.queries, ['movie']);
     // The source line always carries the full provenance: backend icon,
     // server name, then library name.
-    expect(find.text('Server • Movies'), findsOneWidget);
-    expect(find.text('Server • Anime'), findsOneWidget);
+    expect(findDisplayText('Server • Movies'), findsOneWidget);
+    expect(findDisplayText('Server • Anime'), findsOneWidget);
     expect(find.byType(BackendBadge), findsNWidgets(2));
   });
 
@@ -496,8 +498,8 @@ void main() {
     (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
     await tester.pumpAndSettle();
 
-    expect(find.text('Server • Movies'), findsOneWidget);
-    expect(find.text('Server • Anime'), findsOneWidget);
+    expect(findDisplayText('Server • Movies'), findsOneWidget);
+    expect(findDisplayText('Server • Anime'), findsOneWidget);
   });
 
   testWidgets('no library label on a single-library server', (tester) async {
@@ -522,8 +524,8 @@ void main() {
     (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
     await tester.pumpAndSettle();
 
-    expect(find.text('Movie 1'), findsOneWidget);
-    expect(find.text('Server • Movies'), findsNothing);
+    expect(findDisplayText('Movie 1'), findsOneWidget);
+    expect(findDisplayText('Server • Movies'), findsNothing);
     expect(find.byType(BackendBadge), findsNothing);
   });
 
@@ -547,7 +549,7 @@ void main() {
 
     (key.currentState! as SearchInputFocusable).submitSearchQuery('movie');
     await tester.pumpAndSettle();
-    expect(find.text('Server • Movies'), findsOneWidget);
+    expect(findDisplayText('Server • Movies'), findsOneWidget);
 
     // A fresh fetchItem carries no library context (a Jellyfin /Items/{id}
     // response has none); the merge must keep the stamp search applied.
@@ -564,8 +566,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(client.fetchedItemIds, ['movie_1']);
-    expect(find.text('Movie 1 (Refreshed)'), findsOneWidget);
-    expect(find.text('Server • Movies'), findsOneWidget);
+    expect(findDisplayText('Movie 1 (Refreshed)'), findsOneWidget);
+    expect(findDisplayText('Server • Movies'), findsOneWidget);
     final refreshed = tester.widget<FocusableMediaCard>(cardFinder).item as MediaItem;
     expect(refreshed.libraryId, '1');
     expect(refreshed.libraryTitle, 'Movies');
@@ -587,10 +589,10 @@ void main() {
     (key.currentState! as SearchInputFocusable).submitSearchQuery('paw');
     await tester.pumpAndSettle();
 
-    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.all), findsOneWidget);
-    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.movies), findsOneWidget);
-    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.episodes), findsOneWidget);
-    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.tracks), findsOneWidget);
+    expect(findWidgetWithDisplayText(FocusableTabChip, t.libraries.groupings.all), findsOneWidget);
+    expect(findWidgetWithDisplayText(FocusableTabChip, t.libraries.groupings.movies), findsOneWidget);
+    expect(findWidgetWithDisplayText(FocusableTabChip, t.libraries.groupings.episodes), findsOneWidget);
+    expect(findWidgetWithDisplayText(FocusableTabChip, t.libraries.groupings.tracks), findsOneWidget);
   });
 
   testWidgets('selecting a kind chip filters the list and All restores it', (tester) async {
@@ -599,17 +601,17 @@ void main() {
 
     (key.currentState! as SearchInputFocusable).submitSearchQuery('paw');
     await tester.pumpAndSettle();
-    expect(find.text('Paw Patrol: The Movie'), findsOneWidget);
-    expect(find.text('Paw Patrol Rescue'), findsOneWidget);
+    expect(findDisplayText('Paw Patrol: The Movie'), findsOneWidget);
+    expect(findDisplayText('Paw Patrol Rescue'), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(FocusableTabChip, t.libraries.groupings.movies));
+    await tester.tap(findWidgetWithDisplayText(FocusableTabChip, t.libraries.groupings.movies));
     await tester.pumpAndSettle();
-    expect(find.text('Paw Patrol: The Movie'), findsOneWidget);
-    expect(find.text('Paw Patrol Rescue'), findsNothing);
-    expect(find.text('Paw Patrol Theme'), findsNothing);
+    expect(findDisplayText('Paw Patrol: The Movie'), findsOneWidget);
+    expect(findDisplayText('Paw Patrol Rescue'), findsNothing);
+    expect(findDisplayText('Paw Patrol Theme'), findsNothing);
     expect(find.byType(FocusableMediaCard), findsOneWidget);
 
-    await tester.tap(find.widgetWithText(FocusableTabChip, t.libraries.groupings.all));
+    await tester.tap(findWidgetWithDisplayText(FocusableTabChip, t.libraries.groupings.all));
     await tester.pumpAndSettle();
     expect(find.byType(FocusableMediaCard), findsNWidgets(3));
   });
@@ -644,13 +646,13 @@ void main() {
 
     // The track lost the ranked top-100, but its chip derives from the
     // pre-rank pool, so it must still be offered and show its rows.
-    final tracksChip = find.widgetWithText(FocusableTabChip, t.libraries.groupings.tracks);
+    final tracksChip = findWidgetWithDisplayText(FocusableTabChip, t.libraries.groupings.tracks);
     expect(tracksChip, findsOneWidget);
 
     await tester.tap(tracksChip);
     await tester.pumpAndSettle();
     expect(find.byType(FocusableMediaCard), findsOneWidget);
-    expect(find.text('Underwater Instrumental Extended Version (paw remix)'), findsOneWidget);
+    expect(findDisplayText('Underwater Instrumental Extended Version (paw remix)'), findsOneWidget);
   });
 
   testWidgets('the filter falls back to All when its kind vanishes from a refined query', (tester) async {
@@ -659,7 +661,7 @@ void main() {
 
     (key.currentState! as SearchInputFocusable).submitSearchQuery('paw');
     await tester.pumpAndSettle();
-    await tester.tap(find.widgetWithText(FocusableTabChip, t.libraries.groupings.episodes));
+    await tester.tap(findWidgetWithDisplayText(FocusableTabChip, t.libraries.groupings.episodes));
     await tester.pumpAndSettle();
     expect(find.byType(FocusableMediaCard), findsOneWidget);
 
@@ -668,7 +670,7 @@ void main() {
     await tester.pumpAndSettle();
 
     // Episodes are gone: the chip disappears and every remaining row shows.
-    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.episodes), findsNothing);
+    expect(findWidgetWithDisplayText(FocusableTabChip, t.libraries.groupings.episodes), findsNothing);
     expect(find.byType(FocusableMediaCard), findsNWidgets(2));
   });
 
@@ -692,7 +694,7 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.select);
     await tester.pumpAndSettle();
     expect(find.byType(FocusableMediaCard), findsOneWidget);
-    expect(find.text('Paw Patrol Rescue'), findsNothing);
+    expect(findDisplayText('Paw Patrol Rescue'), findsNothing);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
     await tester.pumpAndSettle();
@@ -712,8 +714,8 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(client.queries, ['waltz']);
-    expect(find.widgetWithText(PersonSearchRow, 'Christoph Waltz'), findsOneWidget);
-    expect(find.text(t.messages.noResultsFound), findsNothing);
+    expect(findWidgetWithDisplayText(PersonSearchRow, 'Christoph Waltz'), findsOneWidget);
+    expect(findDisplayText(t.messages.noResultsFound), findsNothing);
   });
 
   testWidgets('tapping a person opens their filmography on their server', (tester) async {
@@ -780,9 +782,9 @@ void main() {
     );
     searchInput.submitSearchQuery('waltz with');
     await tester.pumpAndSettle();
-    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.all), findsOneWidget);
-    expect(find.widgetWithText(FocusableTabChip, t.libraries.groupings.movies), findsOneWidget);
-    expect(find.widgetWithText(FocusableTabChip, t.search.people), findsOneWidget);
+    expect(findWidgetWithDisplayText(FocusableTabChip, t.libraries.groupings.all), findsOneWidget);
+    expect(findWidgetWithDisplayText(FocusableTabChip, t.libraries.groupings.movies), findsOneWidget);
+    expect(findWidgetWithDisplayText(FocusableTabChip, t.search.people), findsOneWidget);
     expect(find.byType(FocusableMediaCard), findsOneWidget);
     expect(find.byType(PersonSearchRow), findsOneWidget);
 
@@ -800,7 +802,7 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.select);
     await tester.pumpAndSettle();
     expect(find.byType(FocusableMediaCard), findsNothing);
-    expect(find.widgetWithText(PersonSearchRow, 'Christoph Waltz'), findsOneWidget);
+    expect(findWidgetWithDisplayText(PersonSearchRow, 'Christoph Waltz'), findsOneWidget);
 
     // Down lands on the person, now the first row.
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
@@ -812,7 +814,10 @@ void main() {
     // The filter holds across a refined query while people remain...
     searchInput.submitSearchQuery('waltz with b');
     await tester.pumpAndSettle();
-    expect(tester.widget<FocusableTabChip>(find.widgetWithText(FocusableTabChip, t.search.people)).isSelected, isTrue);
+    expect(
+      tester.widget<FocusableTabChip>(findWidgetWithDisplayText(FocusableTabChip, t.search.people)).isSelected,
+      isTrue,
+    );
     expect(find.byType(FocusableMediaCard), findsNothing);
     expect(find.byType(PersonSearchRow), findsOneWidget);
 
@@ -822,7 +827,7 @@ void main() {
     await tester.pumpAndSettle();
     expect(find.byType(FocusableTabChip), findsNothing);
     expect(find.byType(PersonSearchRow), findsNothing);
-    expect(find.widgetWithText(FocusableMediaCard, 'Waltz with Bashir'), findsOneWidget);
+    expect(findWidgetWithDisplayText(FocusableMediaCard, 'Waltz with Bashir'), findsOneWidget);
   });
 
   group('Seerr', () {
@@ -842,13 +847,13 @@ void main() {
       expect(seerr.queries, ['movie']);
       // The title Seerr reports as available is the library row, not a
       // second, requestable copy.
-      expect(find.widgetWithText(FocusableMediaCard, 'Movie 1'), findsOneWidget);
-      expect(find.widgetWithText(FocusableMediaCard, 'Movie 1 Sequel'), findsOneWidget);
-      expect(find.text(t.seerr.title), findsOneWidget);
+      expect(findWidgetWithDisplayText(FocusableMediaCard, 'Movie 1'), findsOneWidget);
+      expect(findWidgetWithDisplayText(FocusableMediaCard, 'Movie 1 Sequel'), findsOneWidget);
+      expect(findDisplayText(t.seerr.title), findsOneWidget);
       expect(find.byTooltip(t.seerr.request), findsOneWidget);
       expect(
-        tester.getTopLeft(find.text('Movie 1 Sequel')).dy,
-        greaterThan(tester.getTopLeft(find.text('Movie 1')).dy),
+        tester.getTopLeft(findDisplayText('Movie 1 Sequel')).dy,
+        greaterThan(tester.getTopLeft(findDisplayText('Movie 1')).dy),
       );
     });
 
@@ -860,8 +865,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pumpAndSettle();
 
-      expect(find.text(t.messages.noResultsFound), findsNothing);
-      expect(find.widgetWithText(FocusableMediaCard, 'Movie 1 Sequel'), findsOneWidget);
+      expect(findDisplayText(t.messages.noResultsFound), findsNothing);
+      expect(findWidgetWithDisplayText(FocusableMediaCard, 'Movie 1 Sequel'), findsOneWidget);
       expect(find.byTooltip(t.seerr.request), findsOneWidget);
     });
 
@@ -873,8 +878,8 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(FocusableMediaCard, 'Movie 1 Sequel'), findsOneWidget);
-      expect(find.text(t.explore.badge.pendingApproval), findsOneWidget);
+      expect(findWidgetWithDisplayText(FocusableMediaCard, 'Movie 1 Sequel'), findsOneWidget);
+      expect(findDisplayText(t.explore.badge.pendingApproval), findsOneWidget);
       expect(find.byTooltip(t.seerr.request), findsNothing);
     });
 
@@ -886,7 +891,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(FocusableMediaCard, 'Movie 1 Sequel'), findsOneWidget);
+      expect(findWidgetWithDisplayText(FocusableMediaCard, 'Movie 1 Sequel'), findsOneWidget);
       expect(find.byTooltip(t.seerr.request), findsNothing);
     });
 
@@ -898,7 +903,7 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pumpAndSettle();
 
-      expect(find.widgetWithText(FocusableMediaCard, 'Movie 1 Sequel'), findsOneWidget);
+      expect(findWidgetWithDisplayText(FocusableMediaCard, 'Movie 1 Sequel'), findsOneWidget);
       expect(find.byTooltip(t.seerr.request), findsNothing);
     });
 
@@ -911,8 +916,8 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(seerr.queries, ['movie']);
-      expect(find.widgetWithText(FocusableMediaCard, 'Movie 1'), findsOneWidget);
-      expect(find.text(t.seerr.title), findsNothing);
+      expect(findWidgetWithDisplayText(FocusableMediaCard, 'Movie 1'), findsOneWidget);
+      expect(findDisplayText(t.seerr.title), findsNothing);
       expect(find.byType(SnackBar), findsNothing);
     });
 
@@ -924,14 +929,14 @@ void main() {
       await tester.pump(const Duration(milliseconds: 500));
       await tester.pumpAndSettle();
 
-      await tester.tap(find.widgetWithText(FocusableTabChip, t.libraries.groupings.episodes));
+      await tester.tap(findWidgetWithDisplayText(FocusableTabChip, t.libraries.groupings.episodes));
       await tester.pumpAndSettle();
-      expect(find.widgetWithText(FocusableMediaCard, 'Paw Patrol: The Mighty Movie'), findsNothing);
+      expect(findWidgetWithDisplayText(FocusableMediaCard, 'Paw Patrol: The Mighty Movie'), findsNothing);
 
-      await tester.tap(find.widgetWithText(FocusableTabChip, t.libraries.groupings.movies));
+      await tester.tap(findWidgetWithDisplayText(FocusableTabChip, t.libraries.groupings.movies));
       await tester.pumpAndSettle();
-      expect(find.widgetWithText(FocusableMediaCard, 'Paw Patrol: The Movie'), findsOneWidget);
-      expect(find.widgetWithText(FocusableMediaCard, 'Paw Patrol: The Mighty Movie'), findsOneWidget);
+      expect(findWidgetWithDisplayText(FocusableMediaCard, 'Paw Patrol: The Movie'), findsOneWidget);
+      expect(findWidgetWithDisplayText(FocusableMediaCard, 'Paw Patrol: The Mighty Movie'), findsOneWidget);
     });
   });
 }

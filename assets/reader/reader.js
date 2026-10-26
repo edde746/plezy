@@ -1,17 +1,20 @@
 import './foliate/view.js';
 import { EPUB } from './foliate/epub.js';
-import { makeComicBook } from './foliate/comic-book.js';
+import { ComicReader } from './comic-reader.js';
 import { Overlayer } from './foliate/overlayer.js';
 
 const send = (type, data = {}) => { window.dispatchEvent(new CustomEvent('publication-event', {detail:{type,...data}})); return window.flutter_inappwebview?.callHandler('publication', {type, ...data}); };
 const view = document.createElement('foliate-view');
 document.body.append(view);
+let comic;
 let annotations = [], queryGeneration = 0, book, readerSettings = {}, originalDirection, originalSpread;
 const fixedScale=()=>{const doc=view.renderer?.getContents?.()[0]?.doc;return doc?.defaultView?.frameElement?.getBoundingClientRect().width/(doc?.documentElement?.clientWidth||1)||1;};
 const canPan=()=>view.isFixedLayout&&(typeof readerSettings.zoom==='number'||readerSettings.zoom==='fit-width');
 const reportView=()=>send('viewState',{fixed:view.isFixedLayout,zoom:readerSettings.zoom??'fit-page',pages:book?.sections.length??0});
 const commitSetting=async(key,value)=>{readerSettings[key]=value;await window.publication.settings(readerSettings);send('readerSetting',{key,value});};
 const readerKey=e=>{
+ if(document.querySelector('dialog[open]'))return;
+ if(comic){if(!/^(INPUT|TEXTAREA|SELECT|BUTTON)$/.test(e.target?.tagName))comic.key(e);return;}
  if(/^(INPUT|TEXTAREA|SELECT)$/.test(e.target?.tagName))return;
  if((e.ctrlKey||e.metaKey)&&['+','=','-','0'].includes(e.key)){e.preventDefault();window.publication.zoom(e.key==='0'?'fit-page':e.key==='-'?'out':'in');}
  else if(e.key==='PageDown'){e.preventDefault();view.next();}
@@ -104,28 +107,18 @@ window.publication = {
         const loadText=async name=>(await loadBlob(name))?.text() ?? null;
         const loader={loadBlob,loadText,getSize:name=>manifest.files[name]??0,
             entries:Object.keys(manifest.files).map(filename=>({filename}))};
-        // Foliate's comic extension filter is case-sensitive. Use unique virtual
-        // names while resolving bytes against the exact archive paths; changing
-        // case in the archive itself could collide on case-sensitive editions.
-        const comicFiles=Object.keys(manifest.files)
-            .filter(name=>!name.split('/').some(part=>part.startsWith('.')||part==='__MACOSX') && /\.(?:jpe?g|png|gif|bmp|webp|svg|jxl|avif)$/i.test(name))
-            .sort(new Intl.Collator([], {numeric:true}).compare);
-        const aliases=new Map(comicFiles.map((name,index)=>[
-            `${String(index+1).padStart(8,'0')}-${name.replace(/\.[^.]+$/,x=>x.toLowerCase())}`,name]));
-        const comicLoader={
-            entries:[...aliases.keys()].map(filename=>({filename})),
-            loadBlob:name=>loadBlob(aliases.get(name)),getSize:name=>loader.getSize(aliases.get(name)),
-        };
-        book=manifest.comic ? makeComicBook(comicLoader,{name:options.title}) : await new EPUB(loader).init();
         if(manifest.comic){
-            book.toc.forEach(item=>{item.label=aliases.get(item.href);});
-            const metadata=manifest.comicDocument;
-            if(metadata){
-                book.dir=metadata.direction;
-                book.metadata={...book.metadata,title:metadata.metadata?.Title||options.title,language:metadata.metadata?.LanguageISO||''};
-                book.toc.forEach((item,index)=>{if(metadata.pages[index]?.bookmark)item.label=metadata.pages[index].bookmark;});
-            }
+            const document=manifest.comicDocument;
+            if(!document?.pages?.length)throw new Error('Missing comic manifest');
+            comic=new ComicReader();view.style.display='none';view.after(comic);
+            annotations=options.annotations??[];
+            await comic.open(document,options,send,resourceURL);
+            await this.settings(options.settings);
+            const toc=document.pages.map((p,i)=>({title:p.bookmark||comic.pageLabel(i),href:p.name,depth:0}));
+            send('ready',{toc,fixed:true,comic:true,pages:document.pages.length,language:document.metadata?.LanguageISO??'',overlays:[]});
+            return;
         }
+        book=await new EPUB(loader).init();
         book.transformTarget?.addEventListener('data',e=>{e.detail.data=clean(e.detail.data,e.detail.type);});
         originalDirection=book.dir; originalSpread=book.rendition?.spread;
         await view.open(book);
@@ -144,6 +137,7 @@ window.publication = {
         document.documentElement.style.setProperty('--reader-text', s.foreground??'#eeeeee');
         document.body.style.backgroundColor=s.background??'#171717';
         document.body.style.color=s.foreground??'#eeeeee';
+        if(comic){comic.configure(s);return;}
         if(!view.renderer)return;
         if(view.isFixedLayout){
             const dir=s.direction==='rtl'?'rtl':s.direction==='ltr'?'ltr':originalDirection;
@@ -180,17 +174,20 @@ window.publication = {
           img,svg{max-width:100%}
         `);
     },
-    next:()=>view.next(), prev:()=>view.prev(), goTo:target=>view.goTo(target),
+    next:()=>comic?comic.next():view.next(), prev:()=>comic?comic.prev():view.prev(), goTo:target=>comic?comic.goTo(target):view.goTo(target),
+    thumbnail:index=>comic&&comic.pages[index]?resourceURL(comic.pages[index].name):null,
     async zoom(value){
+        if(comic){comic.zoom(value);return;}
         if(view.isFixedLayout){const next=value==='actual'?1:value==='in'?Math.min(6,fixedScale()*1.25):value==='out'?Math.max(.25,fixedScale()/1.25):value;await commitSetting('zoom',next);}
         else {const current=readerSettings.fontSize??20;await commitSetting('fontSize',value==='in'?Math.min(72,current+2):value==='out'?Math.max(12,current-2):20);}
         reportView();
     },
-    async page(number){const index=Math.min(book.sections.length-1,Math.max(0,Math.round(number)-1));await view.goTo(index);},
-    pan:({x=0,y=0})=>view.renderer?.scrollBy(x,y),
-    async annotate(a){annotations=annotations.filter(x=>x.value!==a.value);annotations.push(a);await view.addAnnotation(a);send('notes',{annotations});},
-    async remove(cfi){annotations=annotations.filter(x=>x.value!==cfi);await view.deleteAnnotation({value:cfi});send('notes',{annotations});},
+    async page(number){if(comic){comic.page(number);return;}const index=Math.min(book.sections.length-1,Math.max(0,Math.round(number)-1));await view.goTo(index);},
+    pan:({x=0,y=0})=>comic?comic.pan({x,y}):view.renderer?.scrollBy(x,y),
+    async annotate(a){annotations=annotations.filter(x=>x.value!==a.value);annotations.push(a);if(!comic)await view.addAnnotation(a);send('notes',{annotations});},
+    async remove(cfi){annotations=annotations.filter(x=>x.value!==cfi);if(!comic)await view.deleteAnnotation({value:cfi});send('notes',{annotations});},
     async search(query){
+        if(comic)return [];
         const generation=++queryGeneration;
         if(!query.trim()){view.clearSearch();return [];}
         const results=[];
@@ -201,7 +198,7 @@ window.publication = {
         }
         return results.slice(0,100);
     },
-    visibleText(){return view.lastLocation?.range?.toString()??'';},
+    visibleText(){if(comic)return '';return view.lastLocation?.range?.toString()??'';},
     toggleSpeech(){
         if(speechSynthesis.speaking){speechSynthesis.cancel();return;}
         const speech=new SpeechSynthesisUtterance(this.visibleText());
@@ -209,7 +206,7 @@ window.publication = {
     },
     stopSpeech(){globalThis.speechSynthesis?.cancel();},
     async highlightHref(href){await view.goTo(href);},
-    close(){queryGeneration++;view.close();}
+    close(){queryGeneration++;comic?.close();view.close();}
 };
 const ready=()=>send('engineReady');
 if(new URL(location.href).searchParams.has('external')) { await import('./browser.js'); ready(); }

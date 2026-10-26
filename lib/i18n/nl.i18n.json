@@ -2990,8 +2990,12 @@
     "source": "Bron",
     "name": "naam",
     "endpoint": "Server-URL",
+    "smbEndpointHint": "Voorbeeld: smb://nas/Movies",
+    "smbEndpointInvalid": "Voer een SMB-server en één gedeelde map in.",
     "root": "Folders of prefix",
+    "smbFolderHelp": "Laat leeg om de hele gedeelde map te gebruiken, of voer een map daarin in.",
     "username": "Gebruikersnaam",
+    "smbDomain": "Domein (optioneel)",
     "password": "Wachtwoord",
     "token": "API Token",
     "accessKey": "Toegang tot de sleutel ID",
@@ -3001,6 +3005,8 @@
     "clientId": "OAuth klant ID",
     "clientSecret": "OAuth client secret (de desktop Google alleen)",
     "allowHttp": "Onversleutelde HTTP toestaan op een vertrouwd netwerk",
+    "smbEncryption": "SMB3-verbinding versleutelen",
+    "smbEncryptionHint": "Gebruik SMB3-versleuteling als de NAS dit ondersteunt.",
     "connect": "Verbinden",
     "cancel": "Annuleren",
     "save": "Opslaan",
@@ -3251,5 +3257,19 @@
     "statusFinished": "Afgerond",
     "goToTime": "Ga naar de tijd",
     "timeHelp": "uur: minuten: seconden of minuten: seconden"
+  },
+  "comics": {
+    "fitHeight": "Aan hoogte aanpassen",
+    "readingMode": "Leesmodus",
+    "paged": "Pagina’s",
+    "webtoon": "Doorlopend scrollen",
+    "coverAlone": "Omslag afzonderlijk tonen",
+    "splitWide": "Brede pagina’s splitsen",
+    "splitWideHelp": "Toon elke helft afzonderlijk in leesvolgorde. Zolang dit aanstaat, worden pagina’s niet naast elkaar weergegeven.",
+    "thumbnails": "Paginaminiaturen",
+    "controlsHelp": "Veeg om te bladeren. Tik dubbel om de aanpassing te wijzigen. Veeg bij doorlopend scrollen verticaal of gebruik Page Up en Page Down.",
+    "savedForComic": "De weergave-instellingen worden voor deze strip in dit profiel onthouden.",
+    "readLists": "Leeslijsten",
+    "collections": "Verzamelingen"
   }
 }

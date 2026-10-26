@@ -104,6 +104,7 @@ class TranslationsBn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$bn fileSources = _Translations$fileSources$bn._(_root);
 	@override late final _Translations$lending$bn lending = _Translations$lending$bn._(_root);
 	@override late final _Translations$audiobook$bn audiobook = _Translations$audiobook$bn._(_root);
+	@override late final _Translations$comics$bn comics = _Translations$comics$bn._(_root);
 }
 
 // Path: app
@@ -2901,8 +2902,12 @@ class _Translations$fileSources$bn extends Translations$fileSources$en {
 	@override String get source => 'উৎস';
 	@override String get name => 'নাম';
 	@override String get endpoint => 'URL সার্ভার';
+	@override String get smbEndpointHint => 'উদাহরণ: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'একটি SMB সার্ভার ও একটি শেয়ার লিখুন।';
 	@override String get root => 'ফোল্ডার বা উপসর্গ';
+	@override String get smbFolderHelp => 'পুরো শেয়ার ব্যবহার করতে ফাঁকা রাখুন, অথবা তার ভেতরের একটি ফোল্ডার লিখুন।';
 	@override String get username => 'ব্যবহারকারী নাম';
+	@override String get smbDomain => 'ডোমেন (ঐচ্ছিক)';
 	@override String get password => 'পাসওয়ার্ড';
 	@override String get token => 'API টকেন';
 	@override String get accessKey => 'অ্যাক্সেস ক্লাই ID';
@@ -2912,6 +2917,8 @@ class _Translations$fileSources$bn extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth ক্লায়েন্ট ID';
 	@override String get clientSecret => 'OAuth ক্লায়েন্ট সার্ভিস (সুধুমাত্র Google ডেস্টো)';
 	@override String get allowHttp => 'বিশ্বস্ত নেটওয়ার্কে এনক্রিপশনবিহীন HTTP সংযোগের অনুমতি দিন';
+	@override String get smbEncryption => 'SMB3 সংযোগ এনক্রিপ্ট করুন';
+	@override String get smbEncryptionHint => 'NAS সমর্থন করলে SMB3 এনক্রিপশন ব্যবহার করুন।';
 	@override String get connect => 'কানেক্ট';
 	@override String get cancel => 'বাতিল';
 	@override String get save => 'সুরক্ষা';
@@ -3176,6 +3183,27 @@ class _Translations$audiobook$bn extends Translations$audiobook$en {
 	@override String get statusFinished => 'শেষ';
 	@override String get goToTime => 'সময় নিয়ে যান';
 	@override String get timeHelp => 'ঘণ্টা : মিনিট : সেকেন্ড বা মিনিট : সেকেন্ড';
+}
+
+// Path: comics
+class _Translations$comics$bn extends Translations$comics$en {
+	_Translations$comics$bn._(TranslationsBn root) : this._root = root, super.internal(root);
+
+	final TranslationsBn _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'উচ্চতা অনুযায়ী মানানসই';
+	@override String get readingMode => 'পড়ার ধরন';
+	@override String get paged => 'পৃষ্ঠা';
+	@override String get webtoon => 'একটানা স্ক্রল';
+	@override String get coverAlone => 'প্রচ্ছদ আলাদা করে দেখান';
+	@override String get splitWide => 'চওড়া পৃষ্ঠা ভাগ করুন';
+	@override String get splitWideHelp => 'পড়ার ক্রম অনুযায়ী প্রতিটি অর্ধেক আলাদা করে দেখান। এটি চালু থাকলে পাশাপাশি দুটি পৃষ্ঠা দেখানো বন্ধ থাকে।';
+	@override String get thumbnails => 'পৃষ্ঠার থাম্বনেইল';
+	@override String get controlsHelp => 'পৃষ্ঠা ওল্টাতে সোয়াইপ করুন। মানানসই আকার বদলাতে দুবার ট্যাপ করুন। একটানা স্ক্রলে উল্লম্বভাবে সোয়াইপ করুন বা Page Up ও Page Down ব্যবহার করুন।';
+	@override String get savedForComic => 'এই প্রোফাইলে এই কমিকের প্রদর্শন সেটিংস মনে রাখা হয়।';
+	@override String get readLists => 'পড়ার তালিকা';
+	@override String get collections => 'সংগ্রহ';
 }
 
 // Path: appIcon.names
@@ -6922,8 +6950,12 @@ extension on TranslationsBn {
 			'fileSources.source' => 'উৎস',
 			'fileSources.name' => 'নাম',
 			'fileSources.endpoint' => 'URL সার্ভার',
+			'fileSources.smbEndpointHint' => 'উদাহরণ: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'একটি SMB সার্ভার ও একটি শেয়ার লিখুন।',
 			'fileSources.root' => 'ফোল্ডার বা উপসর্গ',
+			'fileSources.smbFolderHelp' => 'পুরো শেয়ার ব্যবহার করতে ফাঁকা রাখুন, অথবা তার ভেতরের একটি ফোল্ডার লিখুন।',
 			'fileSources.username' => 'ব্যবহারকারী নাম',
+			'fileSources.smbDomain' => 'ডোমেন (ঐচ্ছিক)',
 			'fileSources.password' => 'পাসওয়ার্ড',
 			'fileSources.token' => 'API টকেন',
 			'fileSources.accessKey' => 'অ্যাক্সেস ক্লাই ID',
@@ -6933,6 +6965,8 @@ extension on TranslationsBn {
 			'fileSources.clientId' => 'OAuth ক্লায়েন্ট ID',
 			'fileSources.clientSecret' => 'OAuth ক্লায়েন্ট সার্ভিস (সুধুমাত্র Google ডেস্টো)',
 			'fileSources.allowHttp' => 'বিশ্বস্ত নেটওয়ার্কে এনক্রিপশনবিহীন HTTP সংযোগের অনুমতি দিন',
+			'fileSources.smbEncryption' => 'SMB3 সংযোগ এনক্রিপ্ট করুন',
+			'fileSources.smbEncryptionHint' => 'NAS সমর্থন করলে SMB3 এনক্রিপশন ব্যবহার করুন।',
 			'fileSources.connect' => 'কানেক্ট',
 			'fileSources.cancel' => 'বাতিল',
 			'fileSources.save' => 'সুরক্ষা',
@@ -7176,6 +7210,18 @@ extension on TranslationsBn {
 			'audiobook.statusFinished' => 'শেষ',
 			'audiobook.goToTime' => 'সময় নিয়ে যান',
 			'audiobook.timeHelp' => 'ঘণ্টা : মিনিট : সেকেন্ড বা মিনিট : সেকেন্ড',
+			'comics.fitHeight' => 'উচ্চতা অনুযায়ী মানানসই',
+			'comics.readingMode' => 'পড়ার ধরন',
+			'comics.paged' => 'পৃষ্ঠা',
+			'comics.webtoon' => 'একটানা স্ক্রল',
+			'comics.coverAlone' => 'প্রচ্ছদ আলাদা করে দেখান',
+			'comics.splitWide' => 'চওড়া পৃষ্ঠা ভাগ করুন',
+			'comics.splitWideHelp' => 'পড়ার ক্রম অনুযায়ী প্রতিটি অর্ধেক আলাদা করে দেখান। এটি চালু থাকলে পাশাপাশি দুটি পৃষ্ঠা দেখানো বন্ধ থাকে।',
+			'comics.thumbnails' => 'পৃষ্ঠার থাম্বনেইল',
+			'comics.controlsHelp' => 'পৃষ্ঠা ওল্টাতে সোয়াইপ করুন। মানানসই আকার বদলাতে দুবার ট্যাপ করুন। একটানা স্ক্রলে উল্লম্বভাবে সোয়াইপ করুন বা Page Up ও Page Down ব্যবহার করুন।',
+			'comics.savedForComic' => 'এই প্রোফাইলে এই কমিকের প্রদর্শন সেটিংস মনে রাখা হয়।',
+			'comics.readLists' => 'পড়ার তালিকা',
+			'comics.collections' => 'সংগ্রহ',
 			_ => null,
 		};
 	}

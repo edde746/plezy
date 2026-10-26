@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -491,7 +490,7 @@ class SourceController extends ChangeNotifier {
     try {
       return await task;
     } finally {
-      if (identical(_onlineLookups[key], task)) _onlineLookups.remove(key);
+      _onlineLookups.removeWhere((key, value) => identical(value, task));
     }
   }
 
@@ -504,18 +503,21 @@ class SourceController extends ChangeNotifier {
   ) async {
     final cached = await repository.entryById(profile, source.id, entry.id);
     final current = _applyCachedOnlineMetadata(entry, cached);
-    if (!force && (current.onlineMetadataProvider != null ||
-        current.onlineMetadataCheckedAt != null &&
-            DateTime.now().millisecondsSinceEpoch - current.onlineMetadataCheckedAt! < const Duration(days: 30).inMilliseconds)) {
+    if (!force &&
+        (current.onlineMetadataProvider != null ||
+            current.onlineMetadataCheckedAt != null &&
+                DateTime.now().millisecondsSinceEpoch - current.onlineMetadataCheckedAt! <
+                    const Duration(days: 30).inMilliseconds)) {
       return current;
     }
     try {
       final metadata = await _videoMetadata.identify(current);
       requireSession(epoch);
       if (metadata == null) {
-        final checked = _withSyncIdentity(source, current.copyWith(
-          onlineMetadataCheckedAt: DateTime.now().millisecondsSinceEpoch,
-        ));
+        final checked = _withSyncIdentity(
+          source,
+          current.copyWith(onlineMetadataCheckedAt: DateTime.now().millisecondsSinceEpoch),
+        );
         await repository.cacheEntries(profile, [checked]);
         return checked;
       }

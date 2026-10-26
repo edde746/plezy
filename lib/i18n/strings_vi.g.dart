@@ -104,6 +104,7 @@ class TranslationsVi extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$vi fileSources = _Translations$fileSources$vi._(_root);
 	@override late final _Translations$lending$vi lending = _Translations$lending$vi._(_root);
 	@override late final _Translations$audiobook$vi audiobook = _Translations$audiobook$vi._(_root);
+	@override late final _Translations$comics$vi comics = _Translations$comics$vi._(_root);
 }
 
 // Path: app
@@ -2882,8 +2883,12 @@ class _Translations$fileSources$vi extends Translations$fileSources$en {
 	@override String get source => 'Nguồn';
 	@override String get name => 'Tên';
 	@override String get endpoint => 'URL máy chủ';
+	@override String get smbEndpointHint => 'Ví dụ: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Nhập máy chủ SMB và một thư mục chia sẻ.';
 	@override String get root => 'Folder hoặc Prefix';
+	@override String get smbFolderHelp => 'Để trống để dùng toàn bộ thư mục chia sẻ, hoặc nhập một thư mục bên trong.';
 	@override String get username => 'Tên đăng nhập';
+	@override String get smbDomain => 'Miền (không bắt buộc)';
 	@override String get password => 'Mật Khẩu';
 	@override String get token => 'API Đánh giá';
 	@override String get accessKey => 'Access Key ID';
@@ -2893,6 +2898,8 @@ class _Translations$fileSources$vi extends Translations$fileSources$en {
 	@override String get clientId => 'ID khách hàng OAuth';
 	@override String get clientSecret => 'OAuth Client Secret (chỉ Google Desktop)';
 	@override String get allowHttp => 'Cho phép HTTP không mã hóa trên mạng đáng tin cậy';
+	@override String get smbEncryption => 'Mã hóa kết nối SMB3';
+	@override String get smbEncryptionHint => 'Dùng mã hóa SMB3 nếu NAS hỗ trợ.';
 	@override String get connect => 'Kết nối';
 	@override String get cancel => 'Hủy bỏ';
 	@override String get save => 'Lưu';
@@ -3156,6 +3163,27 @@ class _Translations$audiobook$vi extends Translations$audiobook$en {
 	@override String get statusFinished => 'Kết thúc';
 	@override String get goToTime => 'Đi đến thời gian';
 	@override String get timeHelp => 'Thời gian: phút: giây, hoặc phút: giây';
+}
+
+// Path: comics
+class _Translations$comics$vi extends Translations$comics$en {
+	_Translations$comics$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'Vừa chiều cao';
+	@override String get readingMode => 'Chế độ đọc';
+	@override String get paged => 'Trang';
+	@override String get webtoon => 'Cuộn liên tục';
+	@override String get coverAlone => 'Hiển thị bìa riêng';
+	@override String get splitWide => 'Chia trang rộng';
+	@override String get splitWideHelp => 'Hiển thị riêng từng nửa theo thứ tự đọc. Tạm dừng hiển thị hai trang cạnh nhau khi bật tùy chọn này.';
+	@override String get thumbnails => 'Hình thu nhỏ của trang';
+	@override String get controlsHelp => 'Vuốt để lật trang. Chạm hai lần để đổi cách vừa trang. Khi cuộn liên tục, vuốt dọc hoặc dùng Page Up và Page Down.';
+	@override String get savedForComic => 'Cài đặt hiển thị được ghi nhớ cho truyện tranh này trong hồ sơ này.';
+	@override String get readLists => 'Danh sách đọc';
+	@override String get collections => 'Bộ sưu tập';
 }
 
 // Path: appIcon.names
@@ -6900,8 +6928,12 @@ extension on TranslationsVi {
 			'fileSources.source' => 'Nguồn',
 			'fileSources.name' => 'Tên',
 			'fileSources.endpoint' => 'URL máy chủ',
+			'fileSources.smbEndpointHint' => 'Ví dụ: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Nhập máy chủ SMB và một thư mục chia sẻ.',
 			'fileSources.root' => 'Folder hoặc Prefix',
+			'fileSources.smbFolderHelp' => 'Để trống để dùng toàn bộ thư mục chia sẻ, hoặc nhập một thư mục bên trong.',
 			'fileSources.username' => 'Tên đăng nhập',
+			'fileSources.smbDomain' => 'Miền (không bắt buộc)',
 			'fileSources.password' => 'Mật Khẩu',
 			'fileSources.token' => 'API Đánh giá',
 			'fileSources.accessKey' => 'Access Key ID',
@@ -6911,6 +6943,8 @@ extension on TranslationsVi {
 			'fileSources.clientId' => 'ID khách hàng OAuth',
 			'fileSources.clientSecret' => 'OAuth Client Secret (chỉ Google Desktop)',
 			'fileSources.allowHttp' => 'Cho phép HTTP không mã hóa trên mạng đáng tin cậy',
+			'fileSources.smbEncryption' => 'Mã hóa kết nối SMB3',
+			'fileSources.smbEncryptionHint' => 'Dùng mã hóa SMB3 nếu NAS hỗ trợ.',
 			'fileSources.connect' => 'Kết nối',
 			'fileSources.cancel' => 'Hủy bỏ',
 			'fileSources.save' => 'Lưu',
@@ -7154,6 +7188,18 @@ extension on TranslationsVi {
 			'audiobook.statusFinished' => 'Kết thúc',
 			'audiobook.goToTime' => 'Đi đến thời gian',
 			'audiobook.timeHelp' => 'Thời gian: phút: giây, hoặc phút: giây',
+			'comics.fitHeight' => 'Vừa chiều cao',
+			'comics.readingMode' => 'Chế độ đọc',
+			'comics.paged' => 'Trang',
+			'comics.webtoon' => 'Cuộn liên tục',
+			'comics.coverAlone' => 'Hiển thị bìa riêng',
+			'comics.splitWide' => 'Chia trang rộng',
+			'comics.splitWideHelp' => 'Hiển thị riêng từng nửa theo thứ tự đọc. Tạm dừng hiển thị hai trang cạnh nhau khi bật tùy chọn này.',
+			'comics.thumbnails' => 'Hình thu nhỏ của trang',
+			'comics.controlsHelp' => 'Vuốt để lật trang. Chạm hai lần để đổi cách vừa trang. Khi cuộn liên tục, vuốt dọc hoặc dùng Page Up và Page Down.',
+			'comics.savedForComic' => 'Cài đặt hiển thị được ghi nhớ cho truyện tranh này trong hồ sơ này.',
+			'comics.readLists' => 'Danh sách đọc',
+			'comics.collections' => 'Bộ sưu tập',
 			_ => null,
 		};
 	}

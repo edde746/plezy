@@ -104,6 +104,7 @@ class TranslationsRu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$ru fileSources = _Translations$fileSources$ru._(_root);
 	@override late final _Translations$lending$ru lending = _Translations$lending$ru._(_root);
 	@override late final _Translations$audiobook$ru audiobook = _Translations$audiobook$ru._(_root);
+	@override late final _Translations$comics$ru comics = _Translations$comics$ru._(_root);
 }
 
 // Path: app
@@ -2939,8 +2940,12 @@ class _Translations$fileSources$ru extends Translations$fileSources$en {
 	@override String get source => 'Источник';
 	@override String get name => 'Имя';
 	@override String get endpoint => 'URL сервера';
+	@override String get smbEndpointHint => 'Пример: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Укажите сервер SMB и одну общую папку.';
 	@override String get root => 'Фолдер или префикс';
+	@override String get smbFolderHelp => 'Оставьте пустым для всей общей папки или укажите папку внутри неё.';
 	@override String get username => 'Имя пользователя';
+	@override String get smbDomain => 'Домен (необязательно)';
 	@override String get password => 'Пароль';
 	@override String get token => 'API Токен';
 	@override String get accessKey => 'Доступный ключ ID';
@@ -2950,6 +2955,8 @@ class _Translations$fileSources$ru extends Translations$fileSources$en {
 	@override String get clientId => 'ID клиента OAuth';
 	@override String get clientSecret => 'OAuth Client Secret (на рабочем месте Google)';
 	@override String get allowHttp => 'Разрешить незашифрованное HTTP-соединение в доверенной сети';
+	@override String get smbEncryption => 'Шифровать соединение SMB3';
+	@override String get smbEncryptionHint => 'Использовать шифрование SMB3, если NAS его поддерживает.';
 	@override String get connect => 'Подключить';
 	@override String get cancel => 'Отмена';
 	@override String get save => 'Сохранить';
@@ -3216,6 +3223,27 @@ class _Translations$audiobook$ru extends Translations$audiobook$en {
 	@override String get statusFinished => 'Завершился';
 	@override String get goToTime => 'Идите в Время';
 	@override String get timeHelp => 'Часы: минуты: секунды или минуты: секунды';
+}
+
+// Path: comics
+class _Translations$comics$ru extends Translations$comics$en {
+	_Translations$comics$ru._(TranslationsRu root) : this._root = root, super.internal(root);
+
+	final TranslationsRu _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'По высоте';
+	@override String get readingMode => 'Режим чтения';
+	@override String get paged => 'Страницы';
+	@override String get webtoon => 'Непрерывная прокрутка';
+	@override String get coverAlone => 'Показывать обложку отдельно';
+	@override String get splitWide => 'Разделять широкие страницы';
+	@override String get splitWideHelp => 'Показывать каждую половину отдельно в порядке чтения. Пока опция включена, страницы не объединяются в развороты.';
+	@override String get thumbnails => 'Миниатюры страниц';
+	@override String get controlsHelp => 'Смахните, чтобы перелистнуть страницу. Двойное касание меняет подгонку размера. При непрерывной прокрутке смахивайте вертикально или используйте Page Up и Page Down.';
+	@override String get savedForComic => 'Настройки отображения сохраняются для этого комикса в этом профиле.';
+	@override String get readLists => 'Списки чтения';
+	@override String get collections => 'Коллекции';
 }
 
 // Path: appIcon.names
@@ -6966,8 +6994,12 @@ extension on TranslationsRu {
 			'fileSources.source' => 'Источник',
 			'fileSources.name' => 'Имя',
 			'fileSources.endpoint' => 'URL сервера',
+			'fileSources.smbEndpointHint' => 'Пример: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Укажите сервер SMB и одну общую папку.',
 			'fileSources.root' => 'Фолдер или префикс',
+			'fileSources.smbFolderHelp' => 'Оставьте пустым для всей общей папки или укажите папку внутри неё.',
 			'fileSources.username' => 'Имя пользователя',
+			'fileSources.smbDomain' => 'Домен (необязательно)',
 			'fileSources.password' => 'Пароль',
 			'fileSources.token' => 'API Токен',
 			'fileSources.accessKey' => 'Доступный ключ ID',
@@ -6977,6 +7009,8 @@ extension on TranslationsRu {
 			'fileSources.clientId' => 'ID клиента OAuth',
 			'fileSources.clientSecret' => 'OAuth Client Secret (на рабочем месте Google)',
 			'fileSources.allowHttp' => 'Разрешить незашифрованное HTTP-соединение в доверенной сети',
+			'fileSources.smbEncryption' => 'Шифровать соединение SMB3',
+			'fileSources.smbEncryptionHint' => 'Использовать шифрование SMB3, если NAS его поддерживает.',
 			'fileSources.connect' => 'Подключить',
 			'fileSources.cancel' => 'Отмена',
 			'fileSources.save' => 'Сохранить',
@@ -7220,6 +7254,18 @@ extension on TranslationsRu {
 			'audiobook.statusFinished' => 'Завершился',
 			'audiobook.goToTime' => 'Идите в Время',
 			'audiobook.timeHelp' => 'Часы: минуты: секунды или минуты: секунды',
+			'comics.fitHeight' => 'По высоте',
+			'comics.readingMode' => 'Режим чтения',
+			'comics.paged' => 'Страницы',
+			'comics.webtoon' => 'Непрерывная прокрутка',
+			'comics.coverAlone' => 'Показывать обложку отдельно',
+			'comics.splitWide' => 'Разделять широкие страницы',
+			'comics.splitWideHelp' => 'Показывать каждую половину отдельно в порядке чтения. Пока опция включена, страницы не объединяются в развороты.',
+			'comics.thumbnails' => 'Миниатюры страниц',
+			'comics.controlsHelp' => 'Смахните, чтобы перелистнуть страницу. Двойное касание меняет подгонку размера. При непрерывной прокрутке смахивайте вертикально или используйте Page Up и Page Down.',
+			'comics.savedForComic' => 'Настройки отображения сохраняются для этого комикса в этом профиле.',
+			'comics.readLists' => 'Списки чтения',
+			'comics.collections' => 'Коллекции',
 			_ => null,
 		};
 	}

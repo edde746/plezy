@@ -104,6 +104,7 @@ class TranslationsBg extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$bg fileSources = _Translations$fileSources$bg._(_root);
 	@override late final _Translations$lending$bg lending = _Translations$lending$bg._(_root);
 	@override late final _Translations$audiobook$bg audiobook = _Translations$audiobook$bg._(_root);
+	@override late final _Translations$comics$bg comics = _Translations$comics$bg._(_root);
 }
 
 // Path: app
@@ -2901,8 +2902,12 @@ class _Translations$fileSources$bg extends Translations$fileSources$en {
 	@override String get source => 'източник';
 	@override String get name => 'Име';
 	@override String get endpoint => 'URL на сървъра';
+	@override String get smbEndpointHint => 'Пример: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Въведете SMB сървър и един споделен ресурс.';
 	@override String get root => 'Снимка или префикс';
+	@override String get smbFolderHelp => 'Оставете празно за целия споделен ресурс или въведете папка в него.';
 	@override String get username => 'Потребителско име';
+	@override String get smbDomain => 'Домейн (незадължително)';
 	@override String get password => 'Парола';
 	@override String get token => 'API Токен';
 	@override String get accessKey => 'Идентифициране на ключови';
@@ -2912,6 +2917,8 @@ class _Translations$fileSources$bg extends Translations$fileSources$en {
 	@override String get clientId => 'Идентифициране на клиента';
 	@override String get clientSecret => 'OAuth клиент тайната (само на работното място на Google)';
 	@override String get allowHttp => 'Разрешаване на нешифрован HTTP в доверена мрежа';
+	@override String get smbEncryption => 'Шифроване на SMB3 връзката';
+	@override String get smbEncryptionHint => 'Използвайте SMB3 шифроване, ако NAS устройството го поддържа.';
 	@override String get connect => 'Свържи';
 	@override String get cancel => 'Отказ';
 	@override String get save => 'Запази';
@@ -3176,6 +3183,27 @@ class _Translations$audiobook$bg extends Translations$audiobook$en {
 	@override String get statusFinished => 'Завършен';
 	@override String get goToTime => 'Отидете в времето';
 	@override String get timeHelp => 'Време: минути: секунди или минути: секунди';
+}
+
+// Path: comics
+class _Translations$comics$bg extends Translations$comics$en {
+	_Translations$comics$bg._(TranslationsBg root) : this._root = root, super.internal(root);
+
+	final TranslationsBg _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'Побиране по височина';
+	@override String get readingMode => 'Режим на четене';
+	@override String get paged => 'Страници';
+	@override String get webtoon => 'Непрекъснато превъртане';
+	@override String get coverAlone => 'Показване на корицата отделно';
+	@override String get splitWide => 'Разделяне на широки страници';
+	@override String get splitWideHelp => 'Показва всяка половина отделно в реда на четене. Докато е включено, страниците не се показват по двойки.';
+	@override String get thumbnails => 'Миниатюри на страниците';
+	@override String get controlsHelp => 'Плъзнете, за да смените страницата. Докоснете два пъти, за да промените побирането. При непрекъснато превъртане плъзгайте вертикално или използвайте Page Up и Page Down.';
+	@override String get savedForComic => 'Настройките на изгледа се запомнят за този комикс в този профил.';
+	@override String get readLists => 'Списъци за четене';
+	@override String get collections => 'Колекции';
 }
 
 // Path: appIcon.names
@@ -6922,8 +6950,12 @@ extension on TranslationsBg {
 			'fileSources.source' => 'източник',
 			'fileSources.name' => 'Име',
 			'fileSources.endpoint' => 'URL на сървъра',
+			'fileSources.smbEndpointHint' => 'Пример: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Въведете SMB сървър и един споделен ресурс.',
 			'fileSources.root' => 'Снимка или префикс',
+			'fileSources.smbFolderHelp' => 'Оставете празно за целия споделен ресурс или въведете папка в него.',
 			'fileSources.username' => 'Потребителско име',
+			'fileSources.smbDomain' => 'Домейн (незадължително)',
 			'fileSources.password' => 'Парола',
 			'fileSources.token' => 'API Токен',
 			'fileSources.accessKey' => 'Идентифициране на ключови',
@@ -6933,6 +6965,8 @@ extension on TranslationsBg {
 			'fileSources.clientId' => 'Идентифициране на клиента',
 			'fileSources.clientSecret' => 'OAuth клиент тайната (само на работното място на Google)',
 			'fileSources.allowHttp' => 'Разрешаване на нешифрован HTTP в доверена мрежа',
+			'fileSources.smbEncryption' => 'Шифроване на SMB3 връзката',
+			'fileSources.smbEncryptionHint' => 'Използвайте SMB3 шифроване, ако NAS устройството го поддържа.',
 			'fileSources.connect' => 'Свържи',
 			'fileSources.cancel' => 'Отказ',
 			'fileSources.save' => 'Запази',
@@ -7176,6 +7210,18 @@ extension on TranslationsBg {
 			'audiobook.statusFinished' => 'Завършен',
 			'audiobook.goToTime' => 'Отидете в времето',
 			'audiobook.timeHelp' => 'Време: минути: секунди или минути: секунди',
+			'comics.fitHeight' => 'Побиране по височина',
+			'comics.readingMode' => 'Режим на четене',
+			'comics.paged' => 'Страници',
+			'comics.webtoon' => 'Непрекъснато превъртане',
+			'comics.coverAlone' => 'Показване на корицата отделно',
+			'comics.splitWide' => 'Разделяне на широки страници',
+			'comics.splitWideHelp' => 'Показва всяка половина отделно в реда на четене. Докато е включено, страниците не се показват по двойки.',
+			'comics.thumbnails' => 'Миниатюри на страниците',
+			'comics.controlsHelp' => 'Плъзнете, за да смените страницата. Докоснете два пъти, за да промените побирането. При непрекъснато превъртане плъзгайте вертикално или използвайте Page Up и Page Down.',
+			'comics.savedForComic' => 'Настройките на изгледа се запомнят за този комикс в този профил.',
+			'comics.readLists' => 'Списъци за четене',
+			'comics.collections' => 'Колекции',
 			_ => null,
 		};
 	}

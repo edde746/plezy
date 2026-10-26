@@ -147,6 +147,7 @@ dependencies:
   dart_smb2: ^0.2.3
   flutter_tts: ^4.2.5
 
+  shared_preferences_foundation: ^2.5.6
 dev_dependencies:
   flutter_secure_storage_platform_interface: ^2.1.1
   flutter_test:

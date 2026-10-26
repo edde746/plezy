@@ -19,11 +19,14 @@ Map<String, dynamic> normalizeReaderPreferences(Map<String, dynamic> input) {
     'columns': number('columns', 2, 1, 2).round(),
     'scrolled': input['scrolled'] == true,
     'justify': input['justify'] == true,
+    'comicMode': choice('comicMode', ['paged', 'webtoon']),
+    'coverAlone': input['coverAlone'] != false,
+    'splitWide': input['splitWide'] == true,
     'spread': choice('spread', ['auto', 'single', 'double']),
     'direction': choice('direction', ['auto', 'ltr', 'rtl']),
     'zoom': zoom is num && zoom.isFinite
         ? zoom.toDouble().clamp(.25, 6)
-        : const ['fit-page', 'fit-width'].contains(zoom)
+        : const ['fit-page', 'fit-width', 'fit-height'].contains(zoom)
         ? zoom
         : 'fit-page',
   };

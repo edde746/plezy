@@ -2990,8 +2990,12 @@
     "source": "Kaynak",
     "name": "Adı :",
     "endpoint": "Sunucu URL'si",
+    "smbEndpointHint": "Örnek: smb://nas/Movies",
+    "smbEndpointInvalid": "Bir SMB sunucusu ve bir paylaşım girin.",
     "root": "Folders veya Prefix",
+    "smbFolderHelp": "Paylaşımın tamamını kullanmak için boş bırakın veya içindeki bir klasörü girin.",
     "username": "Kullanıcı adı",
+    "smbDomain": "Etki alanı (isteğe bağlı)",
     "password": "Şifre",
     "token": "API token",
     "accessKey": "Anahtar Giriş ID",
@@ -3001,6 +3005,8 @@
     "clientId": "OAuth müşteri kimliği",
     "clientSecret": "OAuth müşteri gizliliği (yalnızca Google masaüstü)",
     "allowHttp": "Güvenilir bir ağda şifrelenmemiş HTTP bağlantısına izin ver",
+    "smbEncryption": "SMB3 bağlantısını şifrele",
+    "smbEncryptionHint": "NAS destekliyorsa SMB3 şifrelemesini kullanın.",
     "connect": "Bağlan",
     "cancel": "İptal",
     "save": "Kaydet",
@@ -3251,5 +3257,19 @@
     "statusFinished": "bitmiş",
     "goToTime": "Zamanına gidin",
     "timeHelp": "Saatler: dakikalar: saniye veya dakikalar: saniye"
+  },
+  "comics": {
+    "fitHeight": "Yüksekliğe sığdır",
+    "readingMode": "Okuma modu",
+    "paged": "Sayfalar",
+    "webtoon": "Sürekli kaydırma",
+    "coverAlone": "Kapağı tek başına göster",
+    "splitWide": "Geniş sayfaları böl",
+    "splitWideHelp": "Her yarıyı okuma sırasıyla ayrı gösterir. Bu seçenek açıkken iki sayfanın yan yana gösterimi duraklatılır.",
+    "thumbnails": "Sayfa küçük resimleri",
+    "controlsHelp": "Sayfa çevirmek için kaydırın. Sığdırmayı değiştirmek için çift dokunun. Sürekli kaydırmada dikey kaydırın veya Page Up ve Page Down kullanın.",
+    "savedForComic": "Görüntü ayarları bu profilde bu çizgi roman için hatırlanır.",
+    "readLists": "Okuma listeleri",
+    "collections": "Koleksiyonlar"
   }
 }

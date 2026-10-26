@@ -2969,8 +2969,12 @@
     "source": "Sumber",
     "name": "Nama",
     "endpoint": "Pelayan URL",
+    "smbEndpointHint": "Contoh: smb://nas/Movies",
+    "smbEndpointInvalid": "Masukkan pelayan SMB dan satu perkongsian.",
     "root": "Folder atau awalan",
+    "smbFolderHelp": "Biarkan kosong untuk menggunakan seluruh perkongsian, atau masukkan folder di dalamnya.",
     "username": "Nama Pengguna",
+    "smbDomain": "Domain (pilihan)",
     "password": "kata laluan",
     "token": "API token",
     "accessKey": "Akses ke kunci ID",
@@ -2980,6 +2984,8 @@
     "clientId": "Pengenalan kepada OAuth Client ID",
     "clientSecret": "OAuth Client Secret (hanya desktop Google)",
     "allowHttp": "Benarkan HTTP tanpa penyulitan pada rangkaian yang dipercayai",
+    "smbEncryption": "Sulitkan sambungan SMB3",
+    "smbEncryptionHint": "Gunakan penyulitan SMB3 jika NAS menyokongnya.",
     "connect": "Sambung",
     "cancel": "Batalkan",
     "save": "menyelamatkan",
@@ -3229,5 +3235,19 @@
     "statusFinished": "selesai",
     "goToTime": "Pergi ke masa",
     "timeHelp": "Jam : minit : detik atau minit : detik"
+  },
+  "comics": {
+    "fitHeight": "Muatkan mengikut tinggi",
+    "readingMode": "Mod bacaan",
+    "paged": "Halaman",
+    "webtoon": "Tatal berterusan",
+    "coverAlone": "Paparkan kulit buku secara berasingan",
+    "splitWide": "Bahagikan halaman lebar",
+    "splitWideHelp": "Paparkan setiap separuh secara berasingan mengikut urutan bacaan. Paparan dua halaman bersebelahan dijeda semasa pilihan ini aktif.",
+    "thumbnails": "Lakaran kecil halaman",
+    "controlsHelp": "Leret untuk menyelak halaman. Ketik dua kali untuk menukar padanan. Dalam tatal berterusan, leret menegak atau gunakan Page Up dan Page Down.",
+    "savedForComic": "Tetapan paparan diingati untuk komik ini dalam profil ini.",
+    "readLists": "Senarai bacaan",
+    "collections": "Koleksi"
   }
 }

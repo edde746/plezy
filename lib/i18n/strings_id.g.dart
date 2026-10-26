@@ -104,6 +104,7 @@ class TranslationsId extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$id fileSources = _Translations$fileSources$id._(_root);
 	@override late final _Translations$lending$id lending = _Translations$lending$id._(_root);
 	@override late final _Translations$audiobook$id audiobook = _Translations$audiobook$id._(_root);
+	@override late final _Translations$comics$id comics = _Translations$comics$id._(_root);
 }
 
 // Path: app
@@ -2882,8 +2883,12 @@ class _Translations$fileSources$id extends Translations$fileSources$en {
 	@override String get source => 'Sumber';
 	@override String get name => 'Nama';
 	@override String get endpoint => 'URL server';
+	@override String get smbEndpointHint => 'Contoh: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Masukkan server SMB dan satu folder berbagi.';
 	@override String get root => 'Folder atau prefiks';
+	@override String get smbFolderHelp => 'Biarkan kosong untuk memakai seluruh folder berbagi, atau masukkan folder di dalamnya.';
 	@override String get username => 'Nama Pengguna';
+	@override String get smbDomain => 'Domain (opsional)';
 	@override String get password => 'Kata sandi';
 	@override String get token => 'API Token';
 	@override String get accessKey => 'Akses ke kunci ID';
@@ -2893,6 +2898,8 @@ class _Translations$fileSources$id extends Translations$fileSources$en {
 	@override String get clientId => 'ID pelanggan OAuth';
 	@override String get clientSecret => 'OAuth Client Secret (hanya desktop Google)';
 	@override String get allowHttp => 'Izinkan HTTP tanpa enkripsi di jaringan tepercaya';
+	@override String get smbEncryption => 'Enkripsi koneksi SMB3';
+	@override String get smbEncryptionHint => 'Gunakan enkripsi SMB3 jika NAS mendukungnya.';
 	@override String get connect => 'Sambung';
 	@override String get cancel => 'Batal';
 	@override String get save => 'Simpan';
@@ -3156,6 +3163,27 @@ class _Translations$audiobook$id extends Translations$audiobook$en {
 	@override String get statusFinished => 'selesai';
 	@override String get goToTime => 'Pergi ke Waktu';
 	@override String get timeHelp => 'Waktu: menit: detik, atau menit: detik';
+}
+
+// Path: comics
+class _Translations$comics$id extends Translations$comics$en {
+	_Translations$comics$id._(TranslationsId root) : this._root = root, super.internal(root);
+
+	final TranslationsId _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'Sesuaikan tinggi';
+	@override String get readingMode => 'Mode baca';
+	@override String get paged => 'Halaman';
+	@override String get webtoon => 'Gulir berkelanjutan';
+	@override String get coverAlone => 'Tampilkan sampul sendiri';
+	@override String get splitWide => 'Bagi halaman lebar';
+	@override String get splitWideHelp => 'Tampilkan setiap bagian secara terpisah sesuai urutan baca. Tampilan dua halaman berdampingan dijeda saat opsi ini aktif.';
+	@override String get thumbnails => 'Thumbnail halaman';
+	@override String get controlsHelp => 'Geser untuk membalik halaman. Ketuk dua kali untuk mengubah penyesuaian. Dalam gulir berkelanjutan, geser vertikal atau gunakan Page Up dan Page Down.';
+	@override String get savedForComic => 'Pengaturan tampilan diingat untuk komik ini dalam profil ini.';
+	@override String get readLists => 'Daftar bacaan';
+	@override String get collections => 'Koleksi';
 }
 
 // Path: appIcon.names
@@ -6900,8 +6928,12 @@ extension on TranslationsId {
 			'fileSources.source' => 'Sumber',
 			'fileSources.name' => 'Nama',
 			'fileSources.endpoint' => 'URL server',
+			'fileSources.smbEndpointHint' => 'Contoh: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Masukkan server SMB dan satu folder berbagi.',
 			'fileSources.root' => 'Folder atau prefiks',
+			'fileSources.smbFolderHelp' => 'Biarkan kosong untuk memakai seluruh folder berbagi, atau masukkan folder di dalamnya.',
 			'fileSources.username' => 'Nama Pengguna',
+			'fileSources.smbDomain' => 'Domain (opsional)',
 			'fileSources.password' => 'Kata sandi',
 			'fileSources.token' => 'API Token',
 			'fileSources.accessKey' => 'Akses ke kunci ID',
@@ -6911,6 +6943,8 @@ extension on TranslationsId {
 			'fileSources.clientId' => 'ID pelanggan OAuth',
 			'fileSources.clientSecret' => 'OAuth Client Secret (hanya desktop Google)',
 			'fileSources.allowHttp' => 'Izinkan HTTP tanpa enkripsi di jaringan tepercaya',
+			'fileSources.smbEncryption' => 'Enkripsi koneksi SMB3',
+			'fileSources.smbEncryptionHint' => 'Gunakan enkripsi SMB3 jika NAS mendukungnya.',
 			'fileSources.connect' => 'Sambung',
 			'fileSources.cancel' => 'Batal',
 			'fileSources.save' => 'Simpan',
@@ -7154,6 +7188,18 @@ extension on TranslationsId {
 			'audiobook.statusFinished' => 'selesai',
 			'audiobook.goToTime' => 'Pergi ke Waktu',
 			'audiobook.timeHelp' => 'Waktu: menit: detik, atau menit: detik',
+			'comics.fitHeight' => 'Sesuaikan tinggi',
+			'comics.readingMode' => 'Mode baca',
+			'comics.paged' => 'Halaman',
+			'comics.webtoon' => 'Gulir berkelanjutan',
+			'comics.coverAlone' => 'Tampilkan sampul sendiri',
+			'comics.splitWide' => 'Bagi halaman lebar',
+			'comics.splitWideHelp' => 'Tampilkan setiap bagian secara terpisah sesuai urutan baca. Tampilan dua halaman berdampingan dijeda saat opsi ini aktif.',
+			'comics.thumbnails' => 'Thumbnail halaman',
+			'comics.controlsHelp' => 'Geser untuk membalik halaman. Ketuk dua kali untuk mengubah penyesuaian. Dalam gulir berkelanjutan, geser vertikal atau gunakan Page Up dan Page Down.',
+			'comics.savedForComic' => 'Pengaturan tampilan diingat untuk komik ini dalam profil ini.',
+			'comics.readLists' => 'Daftar bacaan',
+			'comics.collections' => 'Koleksi',
 			_ => null,
 		};
 	}

@@ -15,13 +15,9 @@ class OpenSubtitleDownload {
 /// The API key and optional account credentials are supplied by the encrypted
 /// file-source credential vault and are never stored in result/catalog records.
 class OpenSubtitlesClient {
-  OpenSubtitlesClient({
-    required String apiKey,
-    this.username,
-    this.password,
-    SourceTransport? transport,
-  }) : _apiKey = apiKey.trim(),
-       _transport = transport ?? SourceTransport();
+  OpenSubtitlesClient({required String apiKey, this.username, this.password, SourceTransport? transport})
+    : _apiKey = apiKey.trim(),
+      _transport = transport ?? SourceTransport();
 
   static final Uri _api = Uri.https('api.opensubtitles.com', '/api/v1');
   static const _userAgent = 'PlezyNG/1.0.0';
@@ -32,11 +28,7 @@ class OpenSubtitlesClient {
   Future<String?>? _tokenRequest;
   bool _closed = false;
 
-  Map<String, String> get _headers => {
-    'Api-Key': _apiKey,
-    'User-Agent': _userAgent,
-    'Accept': 'application/json',
-  };
+  Map<String, String> get _headers => {'Api-Key': _apiKey, 'User-Agent': _userAgent, 'Accept': 'application/json'};
 
   Future<String?> _token() {
     final current = _tokenRequest;
@@ -135,11 +127,7 @@ class OpenSubtitlesClient {
     final response = await _transport.json(
       'POST',
       _api.resolve('/api/v1/download'),
-      headers: {
-        ..._headers,
-        'Content-Type': 'application/json',
-        if (token != null) 'Authorization': token,
-      },
+      headers: {..._headers, 'Content-Type': 'application/json', 'Authorization': ?token},
       body: jsonEncode({'file_id': fileId, if (result.codec != null) 'sub_format': result.codec}),
     );
     final link = _string(response['link']);

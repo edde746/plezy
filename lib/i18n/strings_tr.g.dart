@@ -104,6 +104,7 @@ class TranslationsTr extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$tr fileSources = _Translations$fileSources$tr._(_root);
 	@override late final _Translations$lending$tr lending = _Translations$lending$tr._(_root);
 	@override late final _Translations$audiobook$tr audiobook = _Translations$audiobook$tr._(_root);
+	@override late final _Translations$comics$tr comics = _Translations$comics$tr._(_root);
 }
 
 // Path: app
@@ -2901,8 +2902,12 @@ class _Translations$fileSources$tr extends Translations$fileSources$en {
 	@override String get source => 'Kaynak';
 	@override String get name => 'Adı :';
 	@override String get endpoint => 'Sunucu URL\'si';
+	@override String get smbEndpointHint => 'Örnek: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Bir SMB sunucusu ve bir paylaşım girin.';
 	@override String get root => 'Folders veya Prefix';
+	@override String get smbFolderHelp => 'Paylaşımın tamamını kullanmak için boş bırakın veya içindeki bir klasörü girin.';
 	@override String get username => 'Kullanıcı adı';
+	@override String get smbDomain => 'Etki alanı (isteğe bağlı)';
 	@override String get password => 'Şifre';
 	@override String get token => 'API token';
 	@override String get accessKey => 'Anahtar Giriş ID';
@@ -2912,6 +2917,8 @@ class _Translations$fileSources$tr extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth müşteri kimliği';
 	@override String get clientSecret => 'OAuth müşteri gizliliği (yalnızca Google masaüstü)';
 	@override String get allowHttp => 'Güvenilir bir ağda şifrelenmemiş HTTP bağlantısına izin ver';
+	@override String get smbEncryption => 'SMB3 bağlantısını şifrele';
+	@override String get smbEncryptionHint => 'NAS destekliyorsa SMB3 şifrelemesini kullanın.';
 	@override String get connect => 'Bağlan';
 	@override String get cancel => 'İptal';
 	@override String get save => 'Kaydet';
@@ -3176,6 +3183,27 @@ class _Translations$audiobook$tr extends Translations$audiobook$en {
 	@override String get statusFinished => 'bitmiş';
 	@override String get goToTime => 'Zamanına gidin';
 	@override String get timeHelp => 'Saatler: dakikalar: saniye veya dakikalar: saniye';
+}
+
+// Path: comics
+class _Translations$comics$tr extends Translations$comics$en {
+	_Translations$comics$tr._(TranslationsTr root) : this._root = root, super.internal(root);
+
+	final TranslationsTr _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'Yüksekliğe sığdır';
+	@override String get readingMode => 'Okuma modu';
+	@override String get paged => 'Sayfalar';
+	@override String get webtoon => 'Sürekli kaydırma';
+	@override String get coverAlone => 'Kapağı tek başına göster';
+	@override String get splitWide => 'Geniş sayfaları böl';
+	@override String get splitWideHelp => 'Her yarıyı okuma sırasıyla ayrı gösterir. Bu seçenek açıkken iki sayfanın yan yana gösterimi duraklatılır.';
+	@override String get thumbnails => 'Sayfa küçük resimleri';
+	@override String get controlsHelp => 'Sayfa çevirmek için kaydırın. Sığdırmayı değiştirmek için çift dokunun. Sürekli kaydırmada dikey kaydırın veya Page Up ve Page Down kullanın.';
+	@override String get savedForComic => 'Görüntü ayarları bu profilde bu çizgi roman için hatırlanır.';
+	@override String get readLists => 'Okuma listeleri';
+	@override String get collections => 'Koleksiyonlar';
 }
 
 // Path: appIcon.names
@@ -6922,8 +6950,12 @@ extension on TranslationsTr {
 			'fileSources.source' => 'Kaynak',
 			'fileSources.name' => 'Adı :',
 			'fileSources.endpoint' => 'Sunucu URL\'si',
+			'fileSources.smbEndpointHint' => 'Örnek: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Bir SMB sunucusu ve bir paylaşım girin.',
 			'fileSources.root' => 'Folders veya Prefix',
+			'fileSources.smbFolderHelp' => 'Paylaşımın tamamını kullanmak için boş bırakın veya içindeki bir klasörü girin.',
 			'fileSources.username' => 'Kullanıcı adı',
+			'fileSources.smbDomain' => 'Etki alanı (isteğe bağlı)',
 			'fileSources.password' => 'Şifre',
 			'fileSources.token' => 'API token',
 			'fileSources.accessKey' => 'Anahtar Giriş ID',
@@ -6933,6 +6965,8 @@ extension on TranslationsTr {
 			'fileSources.clientId' => 'OAuth müşteri kimliği',
 			'fileSources.clientSecret' => 'OAuth müşteri gizliliği (yalnızca Google masaüstü)',
 			'fileSources.allowHttp' => 'Güvenilir bir ağda şifrelenmemiş HTTP bağlantısına izin ver',
+			'fileSources.smbEncryption' => 'SMB3 bağlantısını şifrele',
+			'fileSources.smbEncryptionHint' => 'NAS destekliyorsa SMB3 şifrelemesini kullanın.',
 			'fileSources.connect' => 'Bağlan',
 			'fileSources.cancel' => 'İptal',
 			'fileSources.save' => 'Kaydet',
@@ -7176,6 +7210,18 @@ extension on TranslationsTr {
 			'audiobook.statusFinished' => 'bitmiş',
 			'audiobook.goToTime' => 'Zamanına gidin',
 			'audiobook.timeHelp' => 'Saatler: dakikalar: saniye veya dakikalar: saniye',
+			'comics.fitHeight' => 'Yüksekliğe sığdır',
+			'comics.readingMode' => 'Okuma modu',
+			'comics.paged' => 'Sayfalar',
+			'comics.webtoon' => 'Sürekli kaydırma',
+			'comics.coverAlone' => 'Kapağı tek başına göster',
+			'comics.splitWide' => 'Geniş sayfaları böl',
+			'comics.splitWideHelp' => 'Her yarıyı okuma sırasıyla ayrı gösterir. Bu seçenek açıkken iki sayfanın yan yana gösterimi duraklatılır.',
+			'comics.thumbnails' => 'Sayfa küçük resimleri',
+			'comics.controlsHelp' => 'Sayfa çevirmek için kaydırın. Sığdırmayı değiştirmek için çift dokunun. Sürekli kaydırmada dikey kaydırın veya Page Up ve Page Down kullanın.',
+			'comics.savedForComic' => 'Görüntü ayarları bu profilde bu çizgi roman için hatırlanır.',
+			'comics.readLists' => 'Okuma listeleri',
+			'comics.collections' => 'Koleksiyonlar',
 			_ => null,
 		};
 	}

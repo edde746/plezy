@@ -15,6 +15,7 @@ import 'package:plezy/screens/sources/source_navigation.dart';
 import 'package:plezy/screens/sources/sources_screen.dart';
 import 'package:plezy/screens/sources/publication_reader_screen.dart';
 import 'package:plezy/sources/source_controller.dart';
+import 'package:plezy/providers/trackers_provider.dart';
 import 'package:plezy/sources/source_database.dart';
 import 'package:plezy/sources/source_models.dart';
 import 'package:plezy/sources/publication_shelf.dart';
@@ -72,8 +73,11 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
     addTearDown(tester.view.resetDevicePixelRatio);
     await tester.pumpWidget(
-      ChangeNotifierProvider<SourceController>.value(
-        value: sources,
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<SourceController>.value(value: sources),
+          ChangeNotifierProvider<TrackersProvider>(create: (_) => TrackersProvider()),
+        ],
         child: RepaintBoundary(
           key: const ValueKey('capture'),
           child: InputModeTracker(
@@ -154,13 +158,13 @@ void main() {
     expect(tester.takeException(), isNull);
     await capture(tester, 'libby-coming-soon');
   });
-  for (final fixed in [false, true]) {
-    testWidgets('reader preferences fit large text and show applicable controls ($fixed)', (tester) async {
+  for (final (fixed, comic) in [(false, false), (true, false), (true, true)]) {
+    testWidgets('reader preferences fit large text and show applicable controls ($fixed, $comic)', (tester) async {
       await pump(
         tester,
         MediaQuery(
           data: const MediaQueryData(textScaler: TextScaler.linear(2)),
-          child: ReaderSettingsScreen(settings: const {}, fixed: fixed, onChanged: (_) async {}),
+          child: ReaderSettingsScreen(settings: const {}, fixed: fixed, comic: comic, onChanged: (_) async {}),
         ),
         MonoPalette.dark,
         const Size(390, 844),

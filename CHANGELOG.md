@@ -2,6 +2,9 @@
 
 ## [Unreleased]
 
+- Expand comic reading with responsive spreads, RTL wide-page splitting, continuous scroll, thumbnails, touch zoom and per-comic display settings; harden page streaming and add reproducible browser test dependencies.
+- Repair source-reader merge compatibility and complete missing source setup translations.
+
 - Add experimental comic page streaming, Komga source integration and ComicInfo metadata support.
 
 ### Added

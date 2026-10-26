@@ -177,8 +177,7 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
                 initialValue: _language,
                 decoration: const InputDecoration(labelText: 'Subtitle language', border: OutlineInputBorder()),
                 items: [
-                  for (final item in _languages.entries)
-                    DropdownMenuItem(value: item.key, child: Text(item.value)),
+                  for (final item in _languages.entries) DropdownMenuItem(value: item.key, child: Text(item.value)),
                 ],
                 onChanged: (value) {
                   if (value == null) return;
@@ -187,11 +186,7 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
                 },
               ),
               if (_searching)
-                const Semantics(
-                  label: 'Searching OpenSubtitles',
-                  liveRegion: true,
-                  child: LinearProgressIndicator(),
-                ),
+                Semantics(label: 'Searching OpenSubtitles', liveRegion: true, child: LinearProgressIndicator()),
               if (_error != null)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
@@ -203,7 +198,7 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
               const SizedBox(height: 8),
               Expanded(
                 child: _hasSearched && _results.isEmpty && !_searching && _error == null
-                    ? const Semantics(
+                    ? Semantics(
                         liveRegion: true,
                         child: Center(child: Text('No matching subtitles found. Try a different title or language.')),
                       )

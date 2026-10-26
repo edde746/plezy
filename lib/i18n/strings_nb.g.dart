@@ -104,6 +104,7 @@ class TranslationsNb extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$nb fileSources = _Translations$fileSources$nb._(_root);
 	@override late final _Translations$lending$nb lending = _Translations$lending$nb._(_root);
 	@override late final _Translations$audiobook$nb audiobook = _Translations$audiobook$nb._(_root);
+	@override late final _Translations$comics$nb comics = _Translations$comics$nb._(_root);
 }
 
 // Path: app
@@ -2901,8 +2902,12 @@ class _Translations$fileSources$nb extends Translations$fileSources$en {
 	@override String get source => 'Kilde';
 	@override String get name => 'Navn';
 	@override String get endpoint => 'Server-URL';
+	@override String get smbEndpointHint => 'Eksempel: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Oppgi en SMB-server og én delt mappe.';
 	@override String get root => 'Fold eller forhåndsregister';
+	@override String get smbFolderHelp => 'La feltet stå tomt for å bruke hele den delte mappen, eller oppgi en undermappe.';
 	@override String get username => 'Brukernavn';
+	@override String get smbDomain => 'Domene (valgfritt)';
 	@override String get password => 'Passord';
 	@override String get token => 'API token';
 	@override String get accessKey => 'Oppsummering av Key ID';
@@ -2912,6 +2917,8 @@ class _Translations$fileSources$nb extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth klient ID';
 	@override String get clientSecret => 'OAuth-klienthemmelighet (desktop Google alene)';
 	@override String get allowHttp => 'Tillat ukryptert HTTP på et betrodd nettverk';
+	@override String get smbEncryption => 'Krypter SMB3-tilkoblingen';
+	@override String get smbEncryptionHint => 'Bruk SMB3-kryptering hvis NAS-en støtter det.';
 	@override String get connect => 'Koble til';
 	@override String get cancel => 'Avbryt';
 	@override String get save => 'Lagre';
@@ -3176,6 +3183,27 @@ class _Translations$audiobook$nb extends Translations$audiobook$en {
 	@override String get statusFinished => 'Avslutter';
 	@override String get goToTime => 'Gå til tid';
 	@override String get timeHelp => 'Tider: minutter: sekunder eller minutter: sekunder';
+}
+
+// Path: comics
+class _Translations$comics$nb extends Translations$comics$en {
+	_Translations$comics$nb._(TranslationsNb root) : this._root = root, super.internal(root);
+
+	final TranslationsNb _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'Tilpass høyden';
+	@override String get readingMode => 'Lesemodus';
+	@override String get paged => 'Sider';
+	@override String get webtoon => 'Kontinuerlig rulling';
+	@override String get coverAlone => 'Vis omslaget alene';
+	@override String get splitWide => 'Del brede sider';
+	@override String get splitWideHelp => 'Vis hver halvdel separat i leserekkefølge. Visning av to sider sammen settes på pause mens dette er slått på.';
+	@override String get thumbnails => 'Sideminiatyrer';
+	@override String get controlsHelp => 'Sveip for å bla. Trykk to ganger for å endre tilpasning. Ved kontinuerlig rulling sveiper du loddrett eller bruker Page Up og Page Down.';
+	@override String get savedForComic => 'Visningsinnstillingene huskes for denne tegneserien i denne profilen.';
+	@override String get readLists => 'Leselister';
+	@override String get collections => 'Samlinger';
 }
 
 // Path: appIcon.names
@@ -6922,8 +6950,12 @@ extension on TranslationsNb {
 			'fileSources.source' => 'Kilde',
 			'fileSources.name' => 'Navn',
 			'fileSources.endpoint' => 'Server-URL',
+			'fileSources.smbEndpointHint' => 'Eksempel: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Oppgi en SMB-server og én delt mappe.',
 			'fileSources.root' => 'Fold eller forhåndsregister',
+			'fileSources.smbFolderHelp' => 'La feltet stå tomt for å bruke hele den delte mappen, eller oppgi en undermappe.',
 			'fileSources.username' => 'Brukernavn',
+			'fileSources.smbDomain' => 'Domene (valgfritt)',
 			'fileSources.password' => 'Passord',
 			'fileSources.token' => 'API token',
 			'fileSources.accessKey' => 'Oppsummering av Key ID',
@@ -6933,6 +6965,8 @@ extension on TranslationsNb {
 			'fileSources.clientId' => 'OAuth klient ID',
 			'fileSources.clientSecret' => 'OAuth-klienthemmelighet (desktop Google alene)',
 			'fileSources.allowHttp' => 'Tillat ukryptert HTTP på et betrodd nettverk',
+			'fileSources.smbEncryption' => 'Krypter SMB3-tilkoblingen',
+			'fileSources.smbEncryptionHint' => 'Bruk SMB3-kryptering hvis NAS-en støtter det.',
 			'fileSources.connect' => 'Koble til',
 			'fileSources.cancel' => 'Avbryt',
 			'fileSources.save' => 'Lagre',
@@ -7176,6 +7210,18 @@ extension on TranslationsNb {
 			'audiobook.statusFinished' => 'Avslutter',
 			'audiobook.goToTime' => 'Gå til tid',
 			'audiobook.timeHelp' => 'Tider: minutter: sekunder eller minutter: sekunder',
+			'comics.fitHeight' => 'Tilpass høyden',
+			'comics.readingMode' => 'Lesemodus',
+			'comics.paged' => 'Sider',
+			'comics.webtoon' => 'Kontinuerlig rulling',
+			'comics.coverAlone' => 'Vis omslaget alene',
+			'comics.splitWide' => 'Del brede sider',
+			'comics.splitWideHelp' => 'Vis hver halvdel separat i leserekkefølge. Visning av to sider sammen settes på pause mens dette er slått på.',
+			'comics.thumbnails' => 'Sideminiatyrer',
+			'comics.controlsHelp' => 'Sveip for å bla. Trykk to ganger for å endre tilpasning. Ved kontinuerlig rulling sveiper du loddrett eller bruker Page Up og Page Down.',
+			'comics.savedForComic' => 'Visningsinnstillingene huskes for denne tegneserien i denne profilen.',
+			'comics.readLists' => 'Leselister',
+			'comics.collections' => 'Samlinger',
 			_ => null,
 		};
 	}

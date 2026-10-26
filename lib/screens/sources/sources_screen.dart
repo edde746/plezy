@@ -35,16 +35,18 @@ String sourceTransportLabel(FileSource source) {
   return switch (source.kind) {
     FileSourceKind.nfs =>
       '$type · ${source.options['rpcTls'] == 'required' ? 'RPC-with-TLS required' : 'Unencrypted NFS'}',
-    FileSourceKind.ftp =>
-      '$type · ${scheme == 'ftpes' || scheme == 'ftps' ? 'TLS encrypted' : 'Plain FTP'}',
+    FileSourceKind.ftp => '$type · ${scheme == 'ftpes' || scheme == 'ftps' ? 'TLS encrypted' : 'Plain FTP'}',
     FileSourceKind.sftp => '$type · SSH encrypted · host key pinned',
     FileSourceKind.smb =>
       '$type · ${source.options['encryptSmb'] == 'true' ? 'SMB3 encryption requested' : 'SMB3 encryption not requested'}',
-    FileSourceKind.webdav || FileSourceKind.opds || FileSourceKind.dlna ||
-    FileSourceKind.s3 || FileSourceKind.audiobookshelf || FileSourceKind.komga => '$type · $endpointSecurity',
+    FileSourceKind.webdav ||
+    FileSourceKind.opds ||
+    FileSourceKind.dlna ||
+    FileSourceKind.s3 ||
+    FileSourceKind.audiobookshelf ||
+    FileSourceKind.komga => '$type · $endpointSecurity',
     FileSourceKind.local => '$type · On this device',
-    FileSourceKind.googleDrive || FileSourceKind.oneDrive || FileSourceKind.dropbox =>
-      '$type · Provider sign-in',
+    FileSourceKind.googleDrive || FileSourceKind.oneDrive || FileSourceKind.dropbox => '$type · Provider sign-in',
   };
 }
 

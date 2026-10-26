@@ -18,8 +18,10 @@ import '../../i18n/strings.g.dart';
 import '../../i18n/locale_preferences.dart';
 import '../../i18n/presentation_formats.dart';
 import '../../focus/focusable_slider.dart';
+import '../../focus/focusable_wrapper.dart';
 import '../../services/playback_coordinator.dart';
 import '../../sources/publication_archive.dart';
+import '../../sources/comic_document.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
@@ -64,12 +66,15 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
   String _chapter = '';
   String? _selectedCFI, _selectedText, _overlayHref;
   int _pages = 0;
-  bool _fixed = false;
+  bool _fixed = false, _comic = false, _streamingComic = false;
+  String get _preferenceKey => widget.file.kind == SourceItemKind.comic
+      ? 'comicReader:${widget.entry.key}:${widget.file.fingerprint}'
+      : 'reader';
   Object _viewZoom = 'fit-page';
   Timer? _saveTimer;
   Future<void> _writes = Future.value();
   FlutterTts? _tts;
-  bool get pdf => p.extension(widget.file.name).toLowerCase() == '.pdf';
+  bool get pdf => !_streamingComic && p.extension(widget.file.name).toLowerCase() == '.pdf';
   bool get valid =>
       !_disposed &&
       _sources?.current(_generation) == true &&
@@ -117,19 +122,35 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
       if (await sources.repository.remoteConflict(_profile!, initial.key) != null) {
         throw const SourceException(SourceFailure.conflict);
       }
-      _settings = normalizeReaderPreferences(await sources.repository.preference(_profile!, 'reader'));
+      final defaults = await sources.repository.preference(_profile!, 'reader');
+      _settings = normalizeReaderPreferences({
+        ...defaults,
+        if (_preferenceKey != 'reader') ...await sources.repository.preference(_profile!, _preferenceKey),
+      });
       _annotations = (await sources.repository.annotations(
         _profile!,
         widget.entry.key,
       )).where((a) => a.edition == widget.file.fingerprint && a.mode == PublicationMode.reading).toList();
       final temp = await getTemporaryDirectory();
       final cached = await sources.downloads.local(_profile!, widget.entry.sourceId, widget.file);
-      final pages = cached == null && sources.sources.any((s) => s.id == widget.entry.sourceId)
-          ? await sources.adapter(widget.entry.sourceId).comicPages(widget.file) : null;
+      ComicPageSource? pages;
+      if (cached == null && sources.sources.any((s) => s.id == widget.entry.sourceId)) {
+        try {
+          pages = await sources.adapter(widget.entry.sourceId).comicPages(widget.file);
+        } on SourceException catch (error) {
+          // Some servers expose acquisitions without enabling their page API.
+          // Authentication, malformed data and session errors still surface.
+          if (widget.file.streamOnly ||
+              !const {SourceFailure.unavailable, SourceFailure.unsupported}.contains(error.reason)) {
+            rethrow;
+          }
+        }
+      }
       if (!valid) return;
       if (pages == null) _file = await sources.content(widget.entry, widget.file);
       if (!valid) return;
-      if (!pdf || pages != null) {
+      _streamingComic = pages != null;
+      if (!pdf) {
         final archive = pages != null
             ? await PublicationArchive.stream(pages, temp)
             : await PublicationArchive.open(_file!, temp, comic: widget.file.kind == SourceItemKind.comic);
@@ -212,6 +233,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
           'formattingLocale': LocalePreferences.formattingLocaleName.replaceAll('_', '-'),
           'interfaceDirection': Directionality.of(context) == TextDirection.rtl ? 'rtl' : 'ltr',
           'cfi': _progress?.locator?.cfi,
+          'page': _progress?.locator?.page,
           'settings': readerSettings(),
           'iconStyle': {'fill': AppIconDefaults.fill, 'weight': AppIconDefaults.weight},
           'icons': {
@@ -248,6 +270,16 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
             'reset': t.fileSources.resetReader,
             'fitPage': t.fileSources.fitPage,
             'fitWidth': t.fileSources.fitWidth,
+            'fitHeight': t.comics.fitHeight,
+            'comicMode': t.comics.readingMode,
+            'paged': t.comics.paged,
+            'webtoon': t.comics.webtoon,
+            'coverAlone': t.comics.coverAlone,
+            'splitWide': t.comics.splitWide,
+            'thumbnails': t.comics.thumbnails,
+            'comicHelp': '${t.fileSources.readerControlsHelp}\n\n${t.comics.controlsHelp}',
+            'retry': t.common.retry,
+
             'pageLayout': t.fileSources.pageLayout,
             'singlePage': t.fileSources.singlePage,
             'twoPages': t.fileSources.twoPages,
@@ -294,6 +326,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
           await _sources!.saveCover(widget.entry, base64Decode(data.split(',').last));
         }
       case 'ready':
+        _comic = message['comic'] == true;
         _toc = sourceList(message['toc']).map(sourceMap).toList();
         _overlays = sourceList(
           message['overlays'],
@@ -336,13 +369,13 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
           if (value is num && value.isFinite) {
             _settings['$key'] = value.clamp(key == 'zoom' ? .25 : 12, key == 'zoom' ? 6 : 72);
           }
-          if (key == 'zoom' && const ['fit-page', 'fit-width'].contains(value)) _settings['zoom'] = value;
-          await _sources!.repository.savePreference(_profile!, 'reader', _settings);
+          if (key == 'zoom' && const ['fit-page', 'fit-width', 'fit-height'].contains(value)) _settings['zoom'] = value;
+          await _sources!.repository.savePreference(_profile!, _preferenceKey, _settings);
         }
       case 'browserSettings':
         final value = sourceMap(message['settings']);
         _settings = normalizeReaderPreferences(message['reset'] == true ? {} : {..._settings, ...value});
-        await _sources!.repository.savePreference(_profile!, 'reader', _settings);
+        await _sources!.repository.savePreference(_profile!, _preferenceKey, _settings);
         await _js('settings', readerSettings());
       case 'browserSpeech':
         if (Platform.isLinux) {
@@ -558,7 +591,14 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
   Future<void> _contents() async {
     final target = await Navigator.push<Map<String, dynamic>>(
       context,
-      MaterialPageRoute(builder: (_) => _ReaderContents(items: _toc)),
+      MaterialPageRoute(
+        builder: (_) => _ReaderContents(
+          items: _toc,
+          comic: _comic,
+          origin: _server?.origin,
+          currentPage: _progress?.locator?.page ?? 1,
+        ),
+      ),
     );
     if (!valid || target == null) return;
     if (pdf) {
@@ -592,10 +632,11 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
         builder: (_) => ReaderSettingsScreen(
           settings: _settings,
           fixed: _fixed,
+          comic: _comic,
           onChanged: (value) async {
             if (!valid) return;
             _settings = normalizeReaderPreferences(value);
-            await _sources!.repository.savePreference(_profile!, 'reader', _settings);
+            await _sources!.repository.savePreference(_profile!, _preferenceKey, _settings);
             await _js('settings', readerSettings());
           },
         ),
@@ -905,15 +946,16 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
         title: Text(widget.entry.title, maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
           IconButton(
-            tooltip: t.fileSources.contents,
+            tooltip: _comic ? t.comics.thumbnails : t.fileSources.contents,
             onPressed: _ready ? () => sourceAction(context, _contents) : null,
             icon: const AppIcon(Symbols.format_list_bulleted_rounded),
           ),
-          IconButton(
-            tooltip: t.fileSources.searchBook,
-            onPressed: _ready ? () => sourceAction(context, _search) : null,
-            icon: const AppIcon(Symbols.search_rounded),
-          ),
+          if (!_comic)
+            IconButton(
+              tooltip: t.fileSources.searchBook,
+              onPressed: _ready ? () => sourceAction(context, _search) : null,
+              icon: const AppIcon(Symbols.search_rounded),
+            ),
           AppMenuButton<String>(
             icon: const AppIcon(Symbols.more_vert_rounded),
             tooltip: t.fileSources.preferences,
@@ -934,11 +976,12 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
               if (pdf || _fixed) ...[
                 AppMenuItem(value: 'fit-page', label: t.fileSources.fitPage, icon: Symbols.fit_screen_rounded),
                 AppMenuItem(value: 'fit-width', label: t.fileSources.fitWidth, icon: Symbols.width_rounded),
+                if (_comic) AppMenuItem(value: 'fit-height', label: t.comics.fitHeight, icon: Symbols.height_rounded),
                 AppMenuItem(value: 'actual', label: t.fileSources.actualSize, icon: Symbols.zoom_in_rounded),
               ],
               if (!pdf)
                 AppMenuItem(value: 'settings', label: t.fileSources.readerSettings, icon: Symbols.text_fields_rounded),
-              if (!Platform.isLinux)
+              if (!Platform.isLinux && !_comic)
                 AppMenuItem(
                   value: 'tts',
                   label: _speaking ? t.fileSources.stopReading : t.fileSources.readAloud,
@@ -958,6 +1001,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
                   await _jumpToPage();
                 case 'fit-page':
                 case 'fit-width':
+                case 'fit-height':
                 case 'actual':
                   await _zoom(action == 'actual' && !pdf ? 'actual' : action);
                 case 'note':
@@ -1054,27 +1098,73 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
 }
 
 class _ReaderContents extends StatelessWidget {
-  const _ReaderContents({required this.items});
+  const _ReaderContents({required this.items, this.comic = false, this.origin, this.currentPage = 1});
   final List<Map<String, dynamic>> items;
+  final bool comic;
+  final Uri? origin;
+  final int currentPage;
   @override
   Widget build(BuildContext context) => FocusedScrollScaffold(
-    title: Text(t.fileSources.contents),
+    title: Text(comic ? t.comics.thumbnails : t.fileSources.contents),
     slivers: [
       SliverPadding(
         padding: const EdgeInsets.all(24),
-        sliver: SliverList.builder(
-          itemCount: items.length,
-          itemBuilder: (context, i) => Padding(
-            padding: EdgeInsetsDirectional.only(start: (sourceInt(items[i]['depth']) ?? 0).clamp(0, 5) * 16.0),
-            child: SourceTile(
-              title: items[i]['title'] as String? ?? '',
-              index: i,
-              count: items.length,
-              onTap: () => Navigator.pop(context, items[i]),
-              icon: Symbols.menu_book_rounded,
-            ),
-          ),
-        ),
+        sliver: comic && origin != null
+            ? SliverGrid.builder(
+                gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                  maxCrossAxisExtent: 220,
+                  mainAxisExtent: 200 + MediaQuery.textScalerOf(context).scale(60),
+                  mainAxisSpacing: 12,
+                  crossAxisSpacing: 12,
+                ),
+                itemCount: items.length,
+                itemBuilder: (context, i) => Semantics(
+                  selected: i + 1 == currentPage,
+                  child: FocusableWrapper(
+                    disableScale: true,
+                    useBackgroundFocus: true,
+                    onSelect: () => Navigator.pop(context, items[i]),
+                    child: InkWell(
+                      canRequestFocus: false,
+                      onTap: () => Navigator.pop(context, items[i]),
+                      child: Column(
+                        children: [
+                          Expanded(
+                            child: Image.network(
+                              origin!.resolve('book/${Uri.encodeComponent('${items[i]['href']}')}').toString(),
+                              cacheWidth: 240,
+                              excludeFromSemantics: true,
+                              fit: BoxFit.contain,
+                              errorBuilder: (_, _, _) => const AppIcon(Symbols.image_not_supported_rounded),
+                            ),
+                          ),
+                          Padding(
+                            padding: const EdgeInsets.all(8),
+                            child: Text(
+                              t.fileSources.page(number: i + 1),
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+                ),
+              )
+            : SliverList.builder(
+                itemCount: items.length,
+                itemBuilder: (context, i) => Padding(
+                  padding: EdgeInsetsDirectional.only(start: (sourceInt(items[i]['depth']) ?? 0).clamp(0, 5) * 16.0),
+                  child: SourceTile(
+                    title: items[i]['title'] as String? ?? '',
+                    index: i,
+                    count: items.length,
+                    onTap: () => Navigator.pop(context, items[i]),
+                    icon: Symbols.menu_book_rounded,
+                  ),
+                ),
+              ),
       ),
     ],
   );
@@ -1198,8 +1288,14 @@ class _PdfSearchScreenState extends State<_PdfSearchScreen> {
 }
 
 class ReaderSettingsScreen extends StatefulWidget {
-  const ReaderSettingsScreen({super.key, required this.settings, required this.onChanged, this.fixed = false});
-  final bool fixed;
+  const ReaderSettingsScreen({
+    super.key,
+    required this.settings,
+    required this.onChanged,
+    this.fixed = false,
+    this.comic = false,
+  });
+  final bool fixed, comic;
   final Map<String, dynamic> settings;
   final Future<void> Function(Map<String, dynamic>) onChanged;
   @override
@@ -1223,8 +1319,42 @@ class _ReaderSettingsScreenState extends State<ReaderSettingsScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(t.fileSources.readerControlsHelp),
+              Text(
+                widget.comic
+                    ? '${t.fileSources.readerControlsHelp}\n\n${t.comics.controlsHelp}'
+                    : t.fileSources.readerControlsHelp,
+              ),
+              if (widget.comic) Text(t.comics.savedForComic),
               const SizedBox(height: 24),
+              if (widget.comic) ...[
+                DropdownButtonFormField<String>(
+                  key: ValueKey('comicMode:${value['comicMode']}'),
+                  isExpanded: true,
+                  initialValue: value['comicMode'] as String,
+                  decoration: InputDecoration(labelText: t.comics.readingMode),
+                  items: [
+                    DropdownMenuItem(value: 'paged', child: Text(t.comics.paged)),
+                    DropdownMenuItem(value: 'webtoon', child: Text(t.comics.webtoon)),
+                  ],
+                  onChanged: (v) {
+                    if (v != null) set('comicMode', v);
+                  },
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(t.comics.coverAlone),
+                  value: value['coverAlone'] == true,
+                  onChanged: value['comicMode'] == 'webtoon' ? null : (v) => set('coverAlone', v),
+                ),
+                SwitchListTile(
+                  contentPadding: EdgeInsets.zero,
+                  title: Text(t.comics.splitWide),
+                  subtitle: Text(t.comics.splitWideHelp),
+                  value: value['splitWide'] == true,
+                  onChanged: value['comicMode'] == 'webtoon' ? null : (v) => set('splitWide', v),
+                ),
+                const SizedBox(height: 24),
+              ],
               if (widget.fixed)
                 for (final option in [
                   (
@@ -1255,9 +1385,14 @@ class _ReaderSettingsScreenState extends State<ReaderSettingsScreen> {
                       for (final entry in option.$3.entries)
                         DropdownMenuItem(value: entry.key, child: Text(entry.value)),
                     ],
-                    onChanged: (v) {
-                      if (v != null) set(option.$1, v);
-                    },
+                    onChanged:
+                        widget.comic &&
+                            option.$1 == 'spread' &&
+                            (value['comicMode'] == 'webtoon' || value['splitWide'] == true)
+                        ? null
+                        : (v) {
+                            if (v != null) set(option.$1, v);
+                          },
                   ),
                   const SizedBox(height: 24),
                 ],

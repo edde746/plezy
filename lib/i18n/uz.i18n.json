@@ -2990,8 +2990,12 @@
     "source": "Kaynak",
     "name": "Namo",
     "endpoint": "Server URL-i",
+    "smbEndpointHint": "Misol: smb://nas/Movies",
+    "smbEndpointInvalid": "SMB serveri va bitta umumiy jildni kiriting.",
     "root": "Bir prefix o prefix",
+    "smbFolderHelp": "Butun umumiy jildni ishlatish uchun bo‘sh qoldiring yoki uning ichidagi jildni kiriting.",
     "username": "Foydalanuvchi nomi",
+    "smbDomain": "Domen (ixtiyoriy)",
     "password": "Parol",
     "token": "API token",
     "accessKey": "Key ID qozga",
@@ -3001,6 +3005,8 @@
     "clientId": "OAuth Client ID",
     "clientSecret": "OAuth client secret (so‘z Google desktop)",
     "allowHttp": "Ishonchli tarmoqda shifrlanmagan HTTP ulanishiga ruxsat berish",
+    "smbEncryption": "SMB3 ulanishini shifrlash",
+    "smbEncryptionHint": "NAS qo‘llasa, SMB3 shifrlashidan foydalaning.",
     "connect": "Ulanish",
     "cancel": "Bekor qilish",
     "save": "Saqlash",
@@ -3251,5 +3257,19 @@
     "statusFinished": "Konni",
     "goToTime": "O‘zadi.",
     "timeHelp": "Hours:minuts:seconds, o minutlar:seconds"
+  },
+  "comics": {
+    "fitHeight": "Balandlikka moslash",
+    "readingMode": "O‘qish rejimi",
+    "paged": "Sahifalar",
+    "webtoon": "Uzluksiz aylantirish",
+    "coverAlone": "Muqovani alohida ko‘rsatish",
+    "splitWide": "Keng sahifalarni bo‘lish",
+    "splitWideHelp": "Har bir yarmini o‘qish tartibida alohida ko‘rsatadi. Bu yoqilganda ikki sahifani yonma-yon ko‘rsatish to‘xtatiladi.",
+    "thumbnails": "Sahifa eskizlari",
+    "controlsHelp": "Sahifani almashtirish uchun suring. Moslashni o‘zgartirish uchun ikki marta bosing. Uzluksiz aylantirishda tik suring yoki Page Up va Page Down dan foydalaning.",
+    "savedForComic": "Bu profilda ushbu komiksning ko‘rsatish sozlamalari saqlanadi.",
+    "readLists": "O‘qish ro‘yxatlari",
+    "collections": "To‘plamlar"
   }
 }

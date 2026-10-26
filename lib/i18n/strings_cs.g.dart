@@ -104,6 +104,7 @@ class TranslationsCs extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$cs fileSources = _Translations$fileSources$cs._(_root);
 	@override late final _Translations$lending$cs lending = _Translations$lending$cs._(_root);
 	@override late final _Translations$audiobook$cs audiobook = _Translations$audiobook$cs._(_root);
+	@override late final _Translations$comics$cs comics = _Translations$comics$cs._(_root);
 }
 
 // Path: app
@@ -2935,8 +2936,12 @@ class _Translations$fileSources$cs extends Translations$fileSources$en {
 	@override String get source => 'Zdroj';
 	@override String get name => 'Jméno';
 	@override String get endpoint => 'server URL';
+	@override String get smbEndpointHint => 'Příklad: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Zadejte server SMB a jednu sdílenou složku.';
 	@override String get root => 'Složka nebo předpona';
+	@override String get smbFolderHelp => 'Nechte prázdné pro celou sdílenou složku, nebo zadejte složku uvnitř.';
 	@override String get username => 'Uživatelské jméno';
+	@override String get smbDomain => 'Doména (volitelné)';
 	@override String get password => 'Heslo';
 	@override String get token => 'API token';
 	@override String get accessKey => 'přístupový klíč ID';
@@ -2946,6 +2951,8 @@ class _Translations$fileSources$cs extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth klient ID';
 	@override String get clientSecret => 'OAuth klientská tajemství (pouze desktop Google)';
 	@override String get allowHttp => 'Povolit nešifrované HTTP v důvěryhodné síti';
+	@override String get smbEncryption => 'Šifrovat připojení SMB3';
+	@override String get smbEncryptionHint => 'Použít šifrování SMB3, pokud ho NAS podporuje.';
 	@override String get connect => 'Připojit';
 	@override String get cancel => 'Zrušit';
 	@override String get save => 'Uložit';
@@ -3212,6 +3219,27 @@ class _Translations$audiobook$cs extends Translations$audiobook$en {
 	@override String get statusFinished => 'Dokončené';
 	@override String get goToTime => 'Jděte do času';
 	@override String get timeHelp => 'Hodiny: minuty: sekundy nebo minuty: sekundy';
+}
+
+// Path: comics
+class _Translations$comics$cs extends Translations$comics$en {
+	_Translations$comics$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'Přizpůsobit výšce';
+	@override String get readingMode => 'Režim čtení';
+	@override String get paged => 'Stránky';
+	@override String get webtoon => 'Plynulé posouvání';
+	@override String get coverAlone => 'Zobrazit obálku samostatně';
+	@override String get splitWide => 'Rozdělit široké stránky';
+	@override String get splitWideHelp => 'Zobrazí každou polovinu samostatně v pořadí čtení. Při zapnutí se stránky nezobrazují ve dvojicích.';
+	@override String get thumbnails => 'Náhledy stránek';
+	@override String get controlsHelp => 'Přejetím otočíte stránku. Dvojitým klepnutím změníte přizpůsobení. Při plynulém posouvání přejeďte svisle nebo použijte Page Up a Page Down.';
+	@override String get savedForComic => 'Nastavení zobrazení se pro tento komiks ukládá v tomto profilu.';
+	@override String get readLists => 'Seznamy četby';
+	@override String get collections => 'Kolekce';
 }
 
 // Path: appIcon.names
@@ -6960,8 +6988,12 @@ extension on TranslationsCs {
 			'fileSources.source' => 'Zdroj',
 			'fileSources.name' => 'Jméno',
 			'fileSources.endpoint' => 'server URL',
+			'fileSources.smbEndpointHint' => 'Příklad: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Zadejte server SMB a jednu sdílenou složku.',
 			'fileSources.root' => 'Složka nebo předpona',
+			'fileSources.smbFolderHelp' => 'Nechte prázdné pro celou sdílenou složku, nebo zadejte složku uvnitř.',
 			'fileSources.username' => 'Uživatelské jméno',
+			'fileSources.smbDomain' => 'Doména (volitelné)',
 			'fileSources.password' => 'Heslo',
 			'fileSources.token' => 'API token',
 			'fileSources.accessKey' => 'přístupový klíč ID',
@@ -6971,6 +7003,8 @@ extension on TranslationsCs {
 			'fileSources.clientId' => 'OAuth klient ID',
 			'fileSources.clientSecret' => 'OAuth klientská tajemství (pouze desktop Google)',
 			'fileSources.allowHttp' => 'Povolit nešifrované HTTP v důvěryhodné síti',
+			'fileSources.smbEncryption' => 'Šifrovat připojení SMB3',
+			'fileSources.smbEncryptionHint' => 'Použít šifrování SMB3, pokud ho NAS podporuje.',
 			'fileSources.connect' => 'Připojit',
 			'fileSources.cancel' => 'Zrušit',
 			'fileSources.save' => 'Uložit',
@@ -7214,6 +7248,18 @@ extension on TranslationsCs {
 			'audiobook.statusFinished' => 'Dokončené',
 			'audiobook.goToTime' => 'Jděte do času',
 			'audiobook.timeHelp' => 'Hodiny: minuty: sekundy nebo minuty: sekundy',
+			'comics.fitHeight' => 'Přizpůsobit výšce',
+			'comics.readingMode' => 'Režim čtení',
+			'comics.paged' => 'Stránky',
+			'comics.webtoon' => 'Plynulé posouvání',
+			'comics.coverAlone' => 'Zobrazit obálku samostatně',
+			'comics.splitWide' => 'Rozdělit široké stránky',
+			'comics.splitWideHelp' => 'Zobrazí každou polovinu samostatně v pořadí čtení. Při zapnutí se stránky nezobrazují ve dvojicích.',
+			'comics.thumbnails' => 'Náhledy stránek',
+			'comics.controlsHelp' => 'Přejetím otočíte stránku. Dvojitým klepnutím změníte přizpůsobení. Při plynulém posouvání přejeďte svisle nebo použijte Page Up a Page Down.',
+			'comics.savedForComic' => 'Nastavení zobrazení se pro tento komiks ukládá v tomto profilu.',
+			'comics.readLists' => 'Seznamy četby',
+			'comics.collections' => 'Kolekce',
 			_ => null,
 		};
 	}

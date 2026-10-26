@@ -2990,8 +2990,12 @@
     "source": "Quelle",
     "name": "Name",
     "endpoint": "Server-URL",
+    "smbEndpointHint": "Beispiel: smb://nas/Movies",
+    "smbEndpointInvalid": "Gib einen SMB-Server und eine Freigabe ein.",
     "root": "Folder oder Prefix",
+    "smbFolderHelp": "Leer lassen, um die gesamte Freigabe zu verwenden, oder einen Ordner darin angeben.",
     "username": "Benutzername",
+    "smbDomain": "Domäne (optional)",
     "password": "Passwort",
     "token": "API Token",
     "accessKey": "Zugriffs-Key ID",
@@ -3001,6 +3005,8 @@
     "clientId": "OAuth Client ID",
     "clientSecret": "OAuth Client Secret (nur Google Desktop)",
     "allowHttp": "Unverschlüsseltes HTTP in einem vertrauenswürdigen Netzwerk erlauben",
+    "smbEncryption": "SMB3-Verbindung verschlüsseln",
+    "smbEncryptionHint": "SMB3-Verschlüsselung verwenden, wenn das NAS sie unterstützt.",
     "connect": "Verbinden",
     "cancel": "Abbrechen",
     "save": "Speichern",
@@ -3251,5 +3257,19 @@
     "statusFinished": "abgeschlossen",
     "goToTime": "Gehen Sie zur Zeit",
     "timeHelp": "Stunden: Minuten: Sekunden oder Minuten: Sekunden"
+  },
+  "comics": {
+    "fitHeight": "An Höhe anpassen",
+    "readingMode": "Lesemodus",
+    "paged": "Seiten",
+    "webtoon": "Fortlaufendes Scrollen",
+    "coverAlone": "Cover einzeln anzeigen",
+    "splitWide": "Breite Seiten teilen",
+    "splitWideHelp": "Zeigt jede Hälfte einzeln in Leserichtung an. Solange dies aktiviert ist, werden Seiten nicht als Doppelseiten angezeigt.",
+    "thumbnails": "Seitenvorschauen",
+    "controlsHelp": "Zum Umblättern wischen. Doppeltippen ändert die Anpassung. Beim fortlaufenden Scrollen senkrecht wischen oder Bild auf und Bild ab verwenden.",
+    "savedForComic": "Die Anzeigeeinstellungen werden für diesen Comic in diesem Profil gespeichert.",
+    "readLists": "Leselisten",
+    "collections": "Sammlungen"
   }
 }

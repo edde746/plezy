@@ -104,6 +104,7 @@ class TranslationsHe extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$he fileSources = _Translations$fileSources$he._(_root);
 	@override late final _Translations$lending$he lending = _Translations$lending$he._(_root);
 	@override late final _Translations$audiobook$he audiobook = _Translations$audiobook$he._(_root);
+	@override late final _Translations$comics$he comics = _Translations$comics$he._(_root);
 }
 
 // Path: app
@@ -2905,8 +2906,12 @@ class _Translations$fileSources$he extends Translations$fileSources$en {
 	@override String get source => 'מקור';
 	@override String get name => 'שם';
 	@override String get endpoint => 'כתובת URL';
+	@override String get smbEndpointHint => 'לדוגמה: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'הזינו שרת SMB ושיתוף אחד.';
 	@override String get root => 'תיקייה או קידומת';
+	@override String get smbFolderHelp => 'השאירו ריק כדי להשתמש בכל השיתוף, או הזינו תיקייה בתוכו.';
 	@override String get username => 'שם משתמש';
+	@override String get smbDomain => 'דומיין (אופציונלי)';
 	@override String get password => 'סיסמה';
 	@override String get token => 'API טוקן';
 	@override String get accessKey => 'גישה מפתח ID';
@@ -2916,6 +2921,8 @@ class _Translations$fileSources$he extends Translations$fileSources$en {
 	@override String get clientId => 'ה-OAuth Client ID';
 	@override String get clientSecret => 'OAuth Client Secret (משרד Google בלבד)';
 	@override String get allowHttp => 'לאפשר HTTP ללא הצפנה ברשת מהימנה';
+	@override String get smbEncryption => 'הצפנת חיבור SMB3';
+	@override String get smbEncryptionHint => 'שימוש בהצפנת SMB3 אם התקן ה־NAS תומך בה.';
 	@override String get connect => 'התחבר';
 	@override String get cancel => 'בטל';
 	@override String get save => 'שמור';
@@ -3181,6 +3188,27 @@ class _Translations$audiobook$he extends Translations$audiobook$en {
 	@override String get statusFinished => 'הסתיימה';
 	@override String get goToTime => 'ללכת בזמן';
 	@override String get timeHelp => 'שעות: דקות: שניות או דקות: שניות';
+}
+
+// Path: comics
+class _Translations$comics$he extends Translations$comics$en {
+	_Translations$comics$he._(TranslationsHe root) : this._root = root, super.internal(root);
+
+	final TranslationsHe _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'התאמה לגובה';
+	@override String get readingMode => 'מצב קריאה';
+	@override String get paged => 'עמודים';
+	@override String get webtoon => 'גלילה רציפה';
+	@override String get coverAlone => 'הצגת הכריכה בנפרד';
+	@override String get splitWide => 'פיצול עמודים רחבים';
+	@override String get splitWideHelp => 'כל חצי מוצג בנפרד לפי סדר הקריאה. כשהאפשרות פעילה, תצוגת שני עמודים יחד מושהית.';
+	@override String get thumbnails => 'תמונות ממוזערות של עמודים';
+	@override String get controlsHelp => 'החליקו כדי להפוך עמוד. הקישו פעמיים לשינוי ההתאמה. בגלילה רציפה, החליקו אנכית או השתמשו ב־Page Up וב־Page Down.';
+	@override String get savedForComic => 'הגדרות התצוגה נשמרות לקומיקס הזה בפרופיל הזה.';
+	@override String get readLists => 'רשימות קריאה';
+	@override String get collections => 'אוספים';
 }
 
 // Path: appIcon.names
@@ -6927,8 +6955,12 @@ extension on TranslationsHe {
 			'fileSources.source' => 'מקור',
 			'fileSources.name' => 'שם',
 			'fileSources.endpoint' => 'כתובת URL',
+			'fileSources.smbEndpointHint' => 'לדוגמה: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'הזינו שרת SMB ושיתוף אחד.',
 			'fileSources.root' => 'תיקייה או קידומת',
+			'fileSources.smbFolderHelp' => 'השאירו ריק כדי להשתמש בכל השיתוף, או הזינו תיקייה בתוכו.',
 			'fileSources.username' => 'שם משתמש',
+			'fileSources.smbDomain' => 'דומיין (אופציונלי)',
 			'fileSources.password' => 'סיסמה',
 			'fileSources.token' => 'API טוקן',
 			'fileSources.accessKey' => 'גישה מפתח ID',
@@ -6938,6 +6970,8 @@ extension on TranslationsHe {
 			'fileSources.clientId' => 'ה-OAuth Client ID',
 			'fileSources.clientSecret' => 'OAuth Client Secret (משרד Google בלבד)',
 			'fileSources.allowHttp' => 'לאפשר HTTP ללא הצפנה ברשת מהימנה',
+			'fileSources.smbEncryption' => 'הצפנת חיבור SMB3',
+			'fileSources.smbEncryptionHint' => 'שימוש בהצפנת SMB3 אם התקן ה־NAS תומך בה.',
 			'fileSources.connect' => 'התחבר',
 			'fileSources.cancel' => 'בטל',
 			'fileSources.save' => 'שמור',
@@ -7181,6 +7215,18 @@ extension on TranslationsHe {
 			'audiobook.statusFinished' => 'הסתיימה',
 			'audiobook.goToTime' => 'ללכת בזמן',
 			'audiobook.timeHelp' => 'שעות: דקות: שניות או דקות: שניות',
+			'comics.fitHeight' => 'התאמה לגובה',
+			'comics.readingMode' => 'מצב קריאה',
+			'comics.paged' => 'עמודים',
+			'comics.webtoon' => 'גלילה רציפה',
+			'comics.coverAlone' => 'הצגת הכריכה בנפרד',
+			'comics.splitWide' => 'פיצול עמודים רחבים',
+			'comics.splitWideHelp' => 'כל חצי מוצג בנפרד לפי סדר הקריאה. כשהאפשרות פעילה, תצוגת שני עמודים יחד מושהית.',
+			'comics.thumbnails' => 'תמונות ממוזערות של עמודים',
+			'comics.controlsHelp' => 'החליקו כדי להפוך עמוד. הקישו פעמיים לשינוי ההתאמה. בגלילה רציפה, החליקו אנכית או השתמשו ב־Page Up וב־Page Down.',
+			'comics.savedForComic' => 'הגדרות התצוגה נשמרות לקומיקס הזה בפרופיל הזה.',
+			'comics.readLists' => 'רשימות קריאה',
+			'comics.collections' => 'אוספים',
 			_ => null,
 		};
 	}

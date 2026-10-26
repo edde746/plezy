@@ -3026,8 +3026,12 @@
     "source": "Zdroj",
     "name": "Jméno",
     "endpoint": "server URL",
+    "smbEndpointHint": "Příklad: smb://nas/Movies",
+    "smbEndpointInvalid": "Zadejte server SMB a jednu sdílenou složku.",
     "root": "Složka nebo předpona",
+    "smbFolderHelp": "Nechte prázdné pro celou sdílenou složku, nebo zadejte složku uvnitř.",
     "username": "Uživatelské jméno",
+    "smbDomain": "Doména (volitelné)",
     "password": "Heslo",
     "token": "API token",
     "accessKey": "přístupový klíč ID",
@@ -3037,6 +3041,8 @@
     "clientId": "OAuth klient ID",
     "clientSecret": "OAuth klientská tajemství (pouze desktop Google)",
     "allowHttp": "Povolit nešifrované HTTP v důvěryhodné síti",
+    "smbEncryption": "Šifrovat připojení SMB3",
+    "smbEncryptionHint": "Použít šifrování SMB3, pokud ho NAS podporuje.",
     "connect": "Připojit",
     "cancel": "Zrušit",
     "save": "Uložit",
@@ -3289,5 +3295,19 @@
     "statusFinished": "Dokončené",
     "goToTime": "Jděte do času",
     "timeHelp": "Hodiny: minuty: sekundy nebo minuty: sekundy"
+  },
+  "comics": {
+    "fitHeight": "Přizpůsobit výšce",
+    "readingMode": "Režim čtení",
+    "paged": "Stránky",
+    "webtoon": "Plynulé posouvání",
+    "coverAlone": "Zobrazit obálku samostatně",
+    "splitWide": "Rozdělit široké stránky",
+    "splitWideHelp": "Zobrazí každou polovinu samostatně v pořadí čtení. Při zapnutí se stránky nezobrazují ve dvojicích.",
+    "thumbnails": "Náhledy stránek",
+    "controlsHelp": "Přejetím otočíte stránku. Dvojitým klepnutím změníte přizpůsobení. Při plynulém posouvání přejeďte svisle nebo použijte Page Up a Page Down.",
+    "savedForComic": "Nastavení zobrazení se pro tento komiks ukládá v tomto profilu.",
+    "readLists": "Seznamy četby",
+    "collections": "Kolekce"
   }
 }

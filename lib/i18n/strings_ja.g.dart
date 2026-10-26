@@ -104,6 +104,7 @@ class TranslationsJa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$ja fileSources = _Translations$fileSources$ja._(_root);
 	@override late final _Translations$lending$ja lending = _Translations$lending$ja._(_root);
 	@override late final _Translations$audiobook$ja audiobook = _Translations$audiobook$ja._(_root);
+	@override late final _Translations$comics$ja comics = _Translations$comics$ja._(_root);
 }
 
 // Path: app
@@ -2897,8 +2898,12 @@ class _Translations$fileSources$ja extends Translations$fileSources$en {
 	@override String get source => '源泉';
 	@override String get name => '名称';
 	@override String get endpoint => 'サーバー URL';
+	@override String get smbEndpointHint => '例: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'SMBサーバーと共有を1つ入力してください。';
 	@override String get root => 'フォルダーまたはプレフィックス';
+	@override String get smbFolderHelp => '共有全体を使う場合は空欄にします。特定のフォルダーを使う場合は共有内のフォルダーを入力します。';
 	@override String get username => 'ユーザー名';
+	@override String get smbDomain => 'ドメイン（任意）';
 	@override String get password => 'パスワード';
 	@override String get token => 'API トークン';
 	@override String get accessKey => 'アクセスキーID';
@@ -2908,6 +2913,8 @@ class _Translations$fileSources$ja extends Translations$fileSources$en {
 	@override String get clientId => 'クライアントID';
 	@override String get clientSecret => 'OAuth クライアント セキュリティ (Google デスクトップのみ)';
 	@override String get allowHttp => '信頼できるネットワークで暗号化されていないHTTP接続を許可する';
+	@override String get smbEncryption => 'SMB3接続を暗号化';
+	@override String get smbEncryptionHint => 'NASが対応している場合はSMB3暗号化を使います。';
 	@override String get connect => '接続';
 	@override String get cancel => 'キャンセル';
 	@override String get save => '保存';
@@ -3171,6 +3178,27 @@ class _Translations$audiobook$ja extends Translations$audiobook$en {
 	@override String get statusFinished => '終了';
 	@override String get goToTime => '時間へ行く';
 	@override String get timeHelp => '時間:分:秒、または分:秒';
+}
+
+// Path: comics
+class _Translations$comics$ja extends Translations$comics$en {
+	_Translations$comics$ja._(TranslationsJa root) : this._root = root, super.internal(root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => '高さに合わせる';
+	@override String get readingMode => '読書モード';
+	@override String get paged => 'ページ表示';
+	@override String get webtoon => '連続スクロール';
+	@override String get coverAlone => '表紙を単独で表示';
+	@override String get splitWide => '横長のページを分割';
+	@override String get splitWideHelp => '各半分を読む順序で個別に表示します。有効な間は見開き表示を一時停止します。';
+	@override String get thumbnails => 'ページのサムネイル';
+	@override String get controlsHelp => 'スワイプでページをめくります。ダブルタップで表示サイズを切り替えます。連続スクロールでは縦にスワイプするか、Page UpとPage Downを使います。';
+	@override String get savedForComic => 'このプロフィールで、このコミックの表示設定を保存します。';
+	@override String get readLists => '読書リスト';
+	@override String get collections => 'コレクション';
 }
 
 // Path: appIcon.names
@@ -6917,8 +6945,12 @@ extension on TranslationsJa {
 			'fileSources.source' => '源泉',
 			'fileSources.name' => '名称',
 			'fileSources.endpoint' => 'サーバー URL',
+			'fileSources.smbEndpointHint' => '例: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'SMBサーバーと共有を1つ入力してください。',
 			'fileSources.root' => 'フォルダーまたはプレフィックス',
+			'fileSources.smbFolderHelp' => '共有全体を使う場合は空欄にします。特定のフォルダーを使う場合は共有内のフォルダーを入力します。',
 			'fileSources.username' => 'ユーザー名',
+			'fileSources.smbDomain' => 'ドメイン（任意）',
 			'fileSources.password' => 'パスワード',
 			'fileSources.token' => 'API トークン',
 			'fileSources.accessKey' => 'アクセスキーID',
@@ -6928,6 +6960,8 @@ extension on TranslationsJa {
 			'fileSources.clientId' => 'クライアントID',
 			'fileSources.clientSecret' => 'OAuth クライアント セキュリティ (Google デスクトップのみ)',
 			'fileSources.allowHttp' => '信頼できるネットワークで暗号化されていないHTTP接続を許可する',
+			'fileSources.smbEncryption' => 'SMB3接続を暗号化',
+			'fileSources.smbEncryptionHint' => 'NASが対応している場合はSMB3暗号化を使います。',
 			'fileSources.connect' => '接続',
 			'fileSources.cancel' => 'キャンセル',
 			'fileSources.save' => '保存',
@@ -7171,6 +7205,18 @@ extension on TranslationsJa {
 			'audiobook.statusFinished' => '終了',
 			'audiobook.goToTime' => '時間へ行く',
 			'audiobook.timeHelp' => '時間:分:秒、または分:秒',
+			'comics.fitHeight' => '高さに合わせる',
+			'comics.readingMode' => '読書モード',
+			'comics.paged' => 'ページ表示',
+			'comics.webtoon' => '連続スクロール',
+			'comics.coverAlone' => '表紙を単独で表示',
+			'comics.splitWide' => '横長のページを分割',
+			'comics.splitWideHelp' => '各半分を読む順序で個別に表示します。有効な間は見開き表示を一時停止します。',
+			'comics.thumbnails' => 'ページのサムネイル',
+			'comics.controlsHelp' => 'スワイプでページをめくります。ダブルタップで表示サイズを切り替えます。連続スクロールでは縦にスワイプするか、Page UpとPage Downを使います。',
+			'comics.savedForComic' => 'このプロフィールで、このコミックの表示設定を保存します。',
+			'comics.readLists' => '読書リスト',
+			'comics.collections' => 'コレクション',
 			_ => null,
 		};
 	}

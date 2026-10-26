@@ -1,5 +1,7 @@
 import 'dart:async';
 
+import '../utils/display_text_finder.dart';
+
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
@@ -71,12 +73,12 @@ void main() {
 
     expect(harness.client.requestedStarts, [0, 200]);
     expect(harness.client.fullHubRequests, 0);
-    expect(find.text(t.common.retry), findsNothing);
+    expect(findDisplayText(t.common.retry), findsNothing);
 
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -30000));
     await tester.pumpAndSettle();
-    expect(find.text('Item 204'), findsOneWidget);
-    expect(find.text('Item 203'), findsNothing);
+    expect(findDisplayText('Item 204'), findsOneWidget);
+    expect(findDisplayText('Item 203'), findsNothing);
   });
 
   testWidgets('iOS status-bar tap scrolls the hub grid to top', (tester) async {
@@ -146,7 +148,7 @@ void main() {
     expect(harness.client.requestedSizes, [200, 200, 50]);
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -50000));
     await tester.pumpAndSettle();
-    expect(find.text('Item 449'), findsOneWidget);
+    expect(findDisplayText('Item 449'), findsOneWidget);
   });
 
   testWidgets('Plex hub replaces its preview with the full-hub response', (tester) async {
@@ -172,11 +174,11 @@ void main() {
 
     expect(harness.client.requestedStarts, [0]);
     expect(harness.client.fullHubRequests, 1);
-    expect(find.text(t.common.retry), findsNothing);
+    expect(findDisplayText(t.common.retry), findsNothing);
 
     await tester.drag(find.byType(CustomScrollView), const Offset(0, -30000));
     await tester.pumpAndSettle();
-    expect(find.text('Item 204'), findsOneWidget);
+    expect(findDisplayText('Item 204'), findsOneWidget);
   });
 
   testWidgets('hub detail grid packs the same columns as a library grid at equal width and density', (tester) async {
@@ -247,12 +249,12 @@ void main() {
       // applied when the sheet closes.
       await tester.tap(find.byTooltip(t.libraries.sort));
       await tester.pumpAndSettle();
-      await tester.tap(find.text(t.hubDetail.title));
+      await tester.tap(findDisplayText(t.hubDetail.title));
       await tester.pump();
       await tester.binding.handlePopRoute();
       await tester.pumpAndSettle();
 
-      expect(find.text('Alpha'), findsOneWidget);
+      expect(findDisplayText('Alpha'), findsOneWidget);
     }
 
     testWidgets('the highlight follows the item that moved', (tester) async {
@@ -294,7 +296,7 @@ void main() {
           ),
         ),
       );
-      await tester.tap(find.text('open'));
+      await tester.tap(findDisplayText('open'));
       await tester.pumpAndSettle();
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pumpAndSettle();
@@ -309,7 +311,7 @@ void main() {
       await tester.pumpAndSettle();
 
       expect(find.byType(HubDetailScreen), findsNothing);
-      expect(find.text('open'), findsOneWidget);
+      expect(findDisplayText('open'), findsOneWidget);
     });
   });
 
@@ -360,7 +362,7 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.escape);
       await tester.pumpAndSettle();
       expect(FocusManager.instance.primaryFocus?.debugLabel, 'hub_detail_sort');
-      expect(find.text('Zulu'), findsNothing, reason: 'the remembered card must be outside the build range');
+      expect(findDisplayText('Zulu'), findsNothing, reason: 'the remembered card must be outside the build range');
 
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pumpAndSettle();
@@ -375,7 +377,11 @@ void main() {
       await focusCard(tester, numbered(59));
       // BACK scrolls to the top, unmounting the remembered card.
       await backToAppBar(tester);
-      expect(find.text(numbered(59)), findsNothing, reason: 'the remembered card must be outside the build range');
+      expect(
+        findDisplayText(numbered(59)),
+        findsNothing,
+        reason: 'the remembered card must be outside the build range',
+      );
 
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pumpAndSettle();
@@ -431,8 +437,8 @@ void main() {
     await tester.tap(find.byTooltip(t.libraries.sort));
     await tester.pumpAndSettle();
     // A sort the loaded items cannot honor would silently order by title.
-    expect(find.text('Resolution'), findsNothing);
-    await tester.tap(find.text('Plays'));
+    expect(findDisplayText('Resolution'), findsNothing);
+    await tester.tap(findDisplayText('Plays'));
     await tester.pump();
     await tester.binding.handlePopRoute();
     await tester.pumpAndSettle();
@@ -490,9 +496,9 @@ void main() {
         find.byWidgetPredicate((w) => w is Tooltip && (w.message?.startsWith(t.libraries.filters) ?? false)),
       );
       await step(tester);
-      await tester.tap(find.text('By Genre'));
+      await tester.tap(findDisplayText('By Genre'));
       await step(tester);
-      await tester.tap(find.text(value));
+      await tester.tap(findDisplayText(value));
       await tester.pump();
       await tester.binding.handlePopRoute();
       await step(tester);
@@ -512,7 +518,7 @@ void main() {
 
       await tester.pumpAndSettle();
       expect(loads, ['', 'genre=g1']);
-      expect(find.text(t.libraries.noItemsMatchFilters), findsOneWidget);
+      expect(findDisplayText(t.libraries.noItemsMatchFilters), findsOneWidget);
       expect(find.byTooltip(t.libraries.filtersWithCount(count: 1)), findsOneWidget);
     });
 
@@ -534,8 +540,8 @@ void main() {
       pending['genre=g1']!.complete(items.take(1).toList());
       await tester.pumpAndSettle();
 
-      expect(find.text('Bravo'), findsOneWidget);
-      expect(find.text('Alpha'), findsNothing);
+      expect(findDisplayText('Bravo'), findsOneWidget);
+      expect(findDisplayText('Alpha'), findsNothing);
     });
   });
 
@@ -616,8 +622,9 @@ MediaItem _titled(String id, String title) => testMediaItem(
   serverName: 'Server',
 );
 
-FocusableMediaCard _cardFor(WidgetTester tester, String title) =>
-    tester.widget<FocusableMediaCard>(find.ancestor(of: find.text(title), matching: find.byType(FocusableMediaCard)));
+FocusableMediaCard _cardFor(WidgetTester tester, String title) => tester.widget<FocusableMediaCard>(
+  find.ancestor(of: findDisplayText(title), matching: find.byType(FocusableMediaCard)),
+);
 
 Future<_HubHarness> _createHarness(List<MediaItem> items, {required MediaBackend backend}) async {
   await SettingsService.getInstance();

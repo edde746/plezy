@@ -91,10 +91,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
             'Add an OpenSubtitles API key in this source’s optional subtitle settings. Search sends the title and available IMDb/TMDB IDs, not the video file.',
           ),
           actions: [
-            DialogActionButton(
-              onPressed: () => Navigator.pop(dialogContext, false),
-              label: t.common.cancel,
-            ),
+            DialogActionButton(onPressed: () => Navigator.pop(dialogContext, false), label: t.common.cancel),
             DialogActionButton(
               onPressed: () => Navigator.pop(dialogContext, true),
               label: '${t.common.edit} ${t.fileSources.source}',
@@ -105,10 +102,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
         ),
       );
       if (editSource == true && mounted) {
-        await Navigator.push(
-          context,
-          MaterialPageRoute(builder: (_) => AddSourceScreen(existing: source)),
-        );
+        await Navigator.push(context, MaterialPageRoute(builder: (_) => AddSourceScreen(existing: source)));
       }
       return;
     }

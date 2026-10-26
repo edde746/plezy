@@ -2994,8 +2994,12 @@
     "source": "מקור",
     "name": "שם",
     "endpoint": "כתובת URL",
+    "smbEndpointHint": "לדוגמה: smb://nas/Movies",
+    "smbEndpointInvalid": "הזינו שרת SMB ושיתוף אחד.",
     "root": "תיקייה או קידומת",
+    "smbFolderHelp": "השאירו ריק כדי להשתמש בכל השיתוף, או הזינו תיקייה בתוכו.",
     "username": "שם משתמש",
+    "smbDomain": "דומיין (אופציונלי)",
     "password": "סיסמה",
     "token": "API טוקן",
     "accessKey": "גישה מפתח ID",
@@ -3005,6 +3009,8 @@
     "clientId": "ה-OAuth Client ID",
     "clientSecret": "OAuth Client Secret (משרד Google בלבד)",
     "allowHttp": "לאפשר HTTP ללא הצפנה ברשת מהימנה",
+    "smbEncryption": "הצפנת חיבור SMB3",
+    "smbEncryptionHint": "שימוש בהצפנת SMB3 אם התקן ה־NAS תומך בה.",
     "connect": "התחבר",
     "cancel": "בטל",
     "save": "שמור",
@@ -3256,5 +3262,19 @@
     "statusFinished": "הסתיימה",
     "goToTime": "ללכת בזמן",
     "timeHelp": "שעות: דקות: שניות או דקות: שניות"
+  },
+  "comics": {
+    "fitHeight": "התאמה לגובה",
+    "readingMode": "מצב קריאה",
+    "paged": "עמודים",
+    "webtoon": "גלילה רציפה",
+    "coverAlone": "הצגת הכריכה בנפרד",
+    "splitWide": "פיצול עמודים רחבים",
+    "splitWideHelp": "כל חצי מוצג בנפרד לפי סדר הקריאה. כשהאפשרות פעילה, תצוגת שני עמודים יחד מושהית.",
+    "thumbnails": "תמונות ממוזערות של עמודים",
+    "controlsHelp": "החליקו כדי להפוך עמוד. הקישו פעמיים לשינוי ההתאמה. בגלילה רציפה, החליקו אנכית או השתמשו ב־Page Up וב־Page Down.",
+    "savedForComic": "הגדרות התצוגה נשמרות לקומיקס הזה בפרופיל הזה.",
+    "readLists": "רשימות קריאה",
+    "collections": "אוספים"
   }
 }

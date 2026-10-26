@@ -2990,8 +2990,12 @@
     "source": "Kaynak",
     "name": "İsim",
     "endpoint": "Server URL-i",
+    "smbEndpointHint": "Nümunə: smb://nas/Movies",
+    "smbEndpointInvalid": "SMB serverini və bir paylaşımı daxil edin.",
     "root": "Fərzər və Prefix",
+    "smbFolderHelp": "Bütün paylaşımı istifadə etmək üçün boş saxlayın və ya daxilindəki qovluğu yazın.",
     "username": "İstifadəçi adı",
+    "smbDomain": "Domen (istəyə bağlı)",
     "password": "Şifrə",
     "token": "API xətnamə",
     "accessKey": "Key ID qalıq",
@@ -3001,6 +3005,8 @@
     "clientId": "OAuth müştəri ID",
     "clientSecret": "OAuth müştəri gizli (yalnız Google namizədləri)",
     "allowHttp": "Etibarlı şəbəkədə şifrələnməmiş HTTP bağlantısına icazə ver",
+    "smbEncryption": "SMB3 bağlantısını şifrələ",
+    "smbEncryptionHint": "NAS dəstəkləyirsə SMB3 şifrələməsindən istifadə edin.",
     "connect": "Qoşul",
     "cancel": "Ləğv et",
     "save": "Yadda saxla",
@@ -3251,5 +3257,19 @@
     "statusFinished": "Hazırda",
     "goToTime": "Zamanla gəlin",
     "timeHelp": "Saatlar:minutlar:saniyələr və ya minutlar:saniyələr"
+  },
+  "comics": {
+    "fitHeight": "Hündürlüyə uyğunlaşdır",
+    "readingMode": "Oxu rejimi",
+    "paged": "Səhifələr",
+    "webtoon": "Davamlı sürüşdürmə",
+    "coverAlone": "Üz qabığını ayrıca göstər",
+    "splitWide": "Geniş səhifələri böl",
+    "splitWideHelp": "Hər yarını oxu ardıcıllığı ilə ayrıca göstər. Bu seçim aktiv olduqda iki səhifənin birlikdə göstərilməsi dayandırılır.",
+    "thumbnails": "Səhifə miniatürləri",
+    "controlsHelp": "Səhifələri çevirmək üçün sürüşdürün. Uyğunlaşdırmanı dəyişmək üçün iki dəfə toxunun. Davamlı sürüşdürmədə şaquli sürüşdürün və ya Page Up və Page Down istifadə edin.",
+    "savedForComic": "Görüntü ayarları bu profildə bu komiks üçün yadda saxlanılır.",
+    "readLists": "Oxu siyahıları",
+    "collections": "Kolleksiyalar"
   }
 }

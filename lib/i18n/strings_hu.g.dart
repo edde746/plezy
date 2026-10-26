@@ -104,6 +104,7 @@ class TranslationsHu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$hu fileSources = _Translations$fileSources$hu._(_root);
 	@override late final _Translations$lending$hu lending = _Translations$lending$hu._(_root);
 	@override late final _Translations$audiobook$hu audiobook = _Translations$audiobook$hu._(_root);
+	@override late final _Translations$comics$hu comics = _Translations$comics$hu._(_root);
 }
 
 // Path: app
@@ -2901,8 +2902,12 @@ class _Translations$fileSources$hu extends Translations$fileSources$en {
 	@override String get source => 'forrás';
 	@override String get name => 'nevét';
 	@override String get endpoint => 'Szerver URL-címe';
+	@override String get smbEndpointHint => 'Példa: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Adjon meg egy SMB-kiszolgálót és egy megosztást.';
 	@override String get root => 'Folder vagy prefix';
+	@override String get smbFolderHelp => 'Hagyja üresen a teljes megosztáshoz, vagy adjon meg egy azon belüli mappát.';
 	@override String get username => 'Felhasználónév';
+	@override String get smbDomain => 'Tartomány (opcionális)';
 	@override String get password => 'Jelszó';
 	@override String get token => 'API token';
 	@override String get accessKey => 'Access kulcs ID';
@@ -2912,6 +2917,8 @@ class _Translations$fileSources$hu extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth ügyfél ID';
 	@override String get clientSecret => 'OAuth ügyfél titka (csak a Google asztali)';
 	@override String get allowHttp => 'Titkosítatlan HTTP engedélyezése megbízható hálózaton';
+	@override String get smbEncryption => 'SMB3-kapcsolat titkosítása';
+	@override String get smbEncryptionHint => 'SMB3-titkosítás használata, ha a NAS támogatja.';
 	@override String get connect => 'Csatlakozás';
 	@override String get cancel => 'Mégse';
 	@override String get save => 'Mentés';
@@ -3176,6 +3183,27 @@ class _Translations$audiobook$hu extends Translations$audiobook$en {
 	@override String get statusFinished => 'befejezett';
 	@override String get goToTime => 'Menj az időbe';
 	@override String get timeHelp => 'Idők: percek: másodpercek, vagy percek: másodpercek';
+}
+
+// Path: comics
+class _Translations$comics$hu extends Translations$comics$en {
+	_Translations$comics$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'Magassághoz igazítás';
+	@override String get readingMode => 'Olvasási mód';
+	@override String get paged => 'Oldalak';
+	@override String get webtoon => 'Folyamatos görgetés';
+	@override String get coverAlone => 'Borító külön megjelenítése';
+	@override String get splitWide => 'Széles oldalak felosztása';
+	@override String get splitWideHelp => 'A két felet külön, olvasási sorrendben jeleníti meg. Bekapcsolva az oldalpárok megjelenítése szünetel.';
+	@override String get thumbnails => 'Oldalak bélyegképei';
+	@override String get controlsHelp => 'Lapozáshoz húzza el az ujját. Az igazítás módosításához koppintson duplán. Folyamatos görgetésnél húzza függőlegesen, vagy használja a Page Up és Page Down billentyűket.';
+	@override String get savedForComic => 'A megjelenítési beállításokat ez a profil megjegyzi ehhez a képregényhez.';
+	@override String get readLists => 'Olvasási listák';
+	@override String get collections => 'Gyűjtemények';
 }
 
 // Path: appIcon.names
@@ -6922,8 +6950,12 @@ extension on TranslationsHu {
 			'fileSources.source' => 'forrás',
 			'fileSources.name' => 'nevét',
 			'fileSources.endpoint' => 'Szerver URL-címe',
+			'fileSources.smbEndpointHint' => 'Példa: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Adjon meg egy SMB-kiszolgálót és egy megosztást.',
 			'fileSources.root' => 'Folder vagy prefix',
+			'fileSources.smbFolderHelp' => 'Hagyja üresen a teljes megosztáshoz, vagy adjon meg egy azon belüli mappát.',
 			'fileSources.username' => 'Felhasználónév',
+			'fileSources.smbDomain' => 'Tartomány (opcionális)',
 			'fileSources.password' => 'Jelszó',
 			'fileSources.token' => 'API token',
 			'fileSources.accessKey' => 'Access kulcs ID',
@@ -6933,6 +6965,8 @@ extension on TranslationsHu {
 			'fileSources.clientId' => 'OAuth ügyfél ID',
 			'fileSources.clientSecret' => 'OAuth ügyfél titka (csak a Google asztali)',
 			'fileSources.allowHttp' => 'Titkosítatlan HTTP engedélyezése megbízható hálózaton',
+			'fileSources.smbEncryption' => 'SMB3-kapcsolat titkosítása',
+			'fileSources.smbEncryptionHint' => 'SMB3-titkosítás használata, ha a NAS támogatja.',
 			'fileSources.connect' => 'Csatlakozás',
 			'fileSources.cancel' => 'Mégse',
 			'fileSources.save' => 'Mentés',
@@ -7176,6 +7210,18 @@ extension on TranslationsHu {
 			'audiobook.statusFinished' => 'befejezett',
 			'audiobook.goToTime' => 'Menj az időbe',
 			'audiobook.timeHelp' => 'Idők: percek: másodpercek, vagy percek: másodpercek',
+			'comics.fitHeight' => 'Magassághoz igazítás',
+			'comics.readingMode' => 'Olvasási mód',
+			'comics.paged' => 'Oldalak',
+			'comics.webtoon' => 'Folyamatos görgetés',
+			'comics.coverAlone' => 'Borító külön megjelenítése',
+			'comics.splitWide' => 'Széles oldalak felosztása',
+			'comics.splitWideHelp' => 'A két felet külön, olvasási sorrendben jeleníti meg. Bekapcsolva az oldalpárok megjelenítése szünetel.',
+			'comics.thumbnails' => 'Oldalak bélyegképei',
+			'comics.controlsHelp' => 'Lapozáshoz húzza el az ujját. Az igazítás módosításához koppintson duplán. Folyamatos görgetésnél húzza függőlegesen, vagy használja a Page Up és Page Down billentyűket.',
+			'comics.savedForComic' => 'A megjelenítési beállításokat ez a profil megjegyzi ehhez a képregényhez.',
+			'comics.readLists' => 'Olvasási listák',
+			'comics.collections' => 'Gyűjtemények',
 			_ => null,
 		};
 	}

@@ -104,6 +104,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$fileSources$en fileSources = Translations$fileSources$en.internal(_root);
 	late final Translations$lending$en lending = Translations$lending$en.internal(_root);
 	late final Translations$audiobook$en audiobook = Translations$audiobook$en.internal(_root);
+	late final Translations$comics$en comics = Translations$comics$en.internal(_root);
 }
 
 // Path: app
@@ -7996,6 +7997,51 @@ class Translations$audiobook$en {
 	String get timeHelp => 'Hours:minutes:seconds, or minutes:seconds';
 }
 
+// Path: comics
+class Translations$comics$en {
+	Translations$comics$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Fit height'
+	String get fitHeight => 'Fit height';
+
+	/// en: 'Reading mode'
+	String get readingMode => 'Reading mode';
+
+	/// en: 'Pages'
+	String get paged => 'Pages';
+
+	/// en: 'Continuous scroll'
+	String get webtoon => 'Continuous scroll';
+
+	/// en: 'Show cover on its own'
+	String get coverAlone => 'Show cover on its own';
+
+	/// en: 'Split wide pages'
+	String get splitWide => 'Split wide pages';
+
+	/// en: 'Show each half separately, in reading order. Double-page pairing is paused while this is on.'
+	String get splitWideHelp => 'Show each half separately, in reading order. Double-page pairing is paused while this is on.';
+
+	/// en: 'Page thumbnails'
+	String get thumbnails => 'Page thumbnails';
+
+	/// en: 'Swipe to turn pages. Double-tap to change fit. In continuous scroll, swipe vertically or use Page Up and Page Down.'
+	String get controlsHelp => 'Swipe to turn pages. Double-tap to change fit. In continuous scroll, swipe vertically or use Page Up and Page Down.';
+
+	/// en: 'Display settings are remembered for this comic in this profile.'
+	String get savedForComic => 'Display settings are remembered for this comic in this profile.';
+
+	/// en: 'Reading lists'
+	String get readLists => 'Reading lists';
+
+	/// en: 'Collections'
+	String get collections => 'Collections';
+}
+
 // Path: appIcon.names
 class Translations$appIcon$names$en {
 	Translations$appIcon$names$en.internal(this._root);
@@ -12491,8 +12537,6 @@ extension on Translations {
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',
@@ -13148,6 +13192,18 @@ extension on Translations {
 			'audiobook.statusFinished' => 'Finished',
 			'audiobook.goToTime' => 'Go to time',
 			'audiobook.timeHelp' => 'Hours:minutes:seconds, or minutes:seconds',
+			'comics.fitHeight' => 'Fit height',
+			'comics.readingMode' => 'Reading mode',
+			'comics.paged' => 'Pages',
+			'comics.webtoon' => 'Continuous scroll',
+			'comics.coverAlone' => 'Show cover on its own',
+			'comics.splitWide' => 'Split wide pages',
+			'comics.splitWideHelp' => 'Show each half separately, in reading order. Double-page pairing is paused while this is on.',
+			'comics.thumbnails' => 'Page thumbnails',
+			'comics.controlsHelp' => 'Swipe to turn pages. Double-tap to change fit. In continuous scroll, swipe vertically or use Page Up and Page Down.',
+			'comics.savedForComic' => 'Display settings are remembered for this comic in this profile.',
+			'comics.readLists' => 'Reading lists',
+			'comics.collections' => 'Collections',
 			_ => null,
 		};
 	}

@@ -2990,8 +2990,12 @@
     "source": "forrás",
     "name": "nevét",
     "endpoint": "Szerver URL-címe",
+    "smbEndpointHint": "Példa: smb://nas/Movies",
+    "smbEndpointInvalid": "Adjon meg egy SMB-kiszolgálót és egy megosztást.",
     "root": "Folder vagy prefix",
+    "smbFolderHelp": "Hagyja üresen a teljes megosztáshoz, vagy adjon meg egy azon belüli mappát.",
     "username": "Felhasználónév",
+    "smbDomain": "Tartomány (opcionális)",
     "password": "Jelszó",
     "token": "API token",
     "accessKey": "Access kulcs ID",
@@ -3001,6 +3005,8 @@
     "clientId": "OAuth ügyfél ID",
     "clientSecret": "OAuth ügyfél titka (csak a Google asztali)",
     "allowHttp": "Titkosítatlan HTTP engedélyezése megbízható hálózaton",
+    "smbEncryption": "SMB3-kapcsolat titkosítása",
+    "smbEncryptionHint": "SMB3-titkosítás használata, ha a NAS támogatja.",
     "connect": "Csatlakozás",
     "cancel": "Mégse",
     "save": "Mentés",
@@ -3251,5 +3257,19 @@
     "statusFinished": "befejezett",
     "goToTime": "Menj az időbe",
     "timeHelp": "Idők: percek: másodpercek, vagy percek: másodpercek"
+  },
+  "comics": {
+    "fitHeight": "Magassághoz igazítás",
+    "readingMode": "Olvasási mód",
+    "paged": "Oldalak",
+    "webtoon": "Folyamatos görgetés",
+    "coverAlone": "Borító külön megjelenítése",
+    "splitWide": "Széles oldalak felosztása",
+    "splitWideHelp": "A két felet külön, olvasási sorrendben jeleníti meg. Bekapcsolva az oldalpárok megjelenítése szünetel.",
+    "thumbnails": "Oldalak bélyegképei",
+    "controlsHelp": "Lapozáshoz húzza el az ujját. Az igazítás módosításához koppintson duplán. Folyamatos görgetésnél húzza függőlegesen, vagy használja a Page Up és Page Down billentyűket.",
+    "savedForComic": "A megjelenítési beállításokat ez a profil megjegyzi ehhez a képregényhez.",
+    "readLists": "Olvasási listák",
+    "collections": "Gyűjtemények"
   }
 }

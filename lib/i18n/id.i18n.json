@@ -2969,8 +2969,12 @@
     "source": "Sumber",
     "name": "Nama",
     "endpoint": "URL server",
+    "smbEndpointHint": "Contoh: smb://nas/Movies",
+    "smbEndpointInvalid": "Masukkan server SMB dan satu folder berbagi.",
     "root": "Folder atau prefiks",
+    "smbFolderHelp": "Biarkan kosong untuk memakai seluruh folder berbagi, atau masukkan folder di dalamnya.",
     "username": "Nama Pengguna",
+    "smbDomain": "Domain (opsional)",
     "password": "Kata sandi",
     "token": "API Token",
     "accessKey": "Akses ke kunci ID",
@@ -2980,6 +2984,8 @@
     "clientId": "ID pelanggan OAuth",
     "clientSecret": "OAuth Client Secret (hanya desktop Google)",
     "allowHttp": "Izinkan HTTP tanpa enkripsi di jaringan tepercaya",
+    "smbEncryption": "Enkripsi koneksi SMB3",
+    "smbEncryptionHint": "Gunakan enkripsi SMB3 jika NAS mendukungnya.",
     "connect": "Sambung",
     "cancel": "Batal",
     "save": "Simpan",
@@ -3229,5 +3235,19 @@
     "statusFinished": "selesai",
     "goToTime": "Pergi ke Waktu",
     "timeHelp": "Waktu: menit: detik, atau menit: detik"
+  },
+  "comics": {
+    "fitHeight": "Sesuaikan tinggi",
+    "readingMode": "Mode baca",
+    "paged": "Halaman",
+    "webtoon": "Gulir berkelanjutan",
+    "coverAlone": "Tampilkan sampul sendiri",
+    "splitWide": "Bagi halaman lebar",
+    "splitWideHelp": "Tampilkan setiap bagian secara terpisah sesuai urutan baca. Tampilan dua halaman berdampingan dijeda saat opsi ini aktif.",
+    "thumbnails": "Thumbnail halaman",
+    "controlsHelp": "Geser untuk membalik halaman. Ketuk dua kali untuk mengubah penyesuaian. Dalam gulir berkelanjutan, geser vertikal atau gunakan Page Up dan Page Down.",
+    "savedForComic": "Pengaturan tampilan diingat untuk komik ini dalam profil ini.",
+    "readLists": "Daftar bacaan",
+    "collections": "Koleksi"
   }
 }

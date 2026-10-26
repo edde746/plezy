@@ -2990,8 +2990,12 @@
     "source": "Kilde",
     "name": "Navn",
     "endpoint": "Server-URL",
+    "smbEndpointHint": "Eksempel: smb://nas/Movies",
+    "smbEndpointInvalid": "Oppgi en SMB-server og én delt mappe.",
     "root": "Fold eller forhåndsregister",
+    "smbFolderHelp": "La feltet stå tomt for å bruke hele den delte mappen, eller oppgi en undermappe.",
     "username": "Brukernavn",
+    "smbDomain": "Domene (valgfritt)",
     "password": "Passord",
     "token": "API token",
     "accessKey": "Oppsummering av Key ID",
@@ -3001,6 +3005,8 @@
     "clientId": "OAuth klient ID",
     "clientSecret": "OAuth-klienthemmelighet (desktop Google alene)",
     "allowHttp": "Tillat ukryptert HTTP på et betrodd nettverk",
+    "smbEncryption": "Krypter SMB3-tilkoblingen",
+    "smbEncryptionHint": "Bruk SMB3-kryptering hvis NAS-en støtter det.",
     "connect": "Koble til",
     "cancel": "Avbryt",
     "save": "Lagre",
@@ -3251,5 +3257,19 @@
     "statusFinished": "Avslutter",
     "goToTime": "Gå til tid",
     "timeHelp": "Tider: minutter: sekunder eller minutter: sekunder"
+  },
+  "comics": {
+    "fitHeight": "Tilpass høyden",
+    "readingMode": "Lesemodus",
+    "paged": "Sider",
+    "webtoon": "Kontinuerlig rulling",
+    "coverAlone": "Vis omslaget alene",
+    "splitWide": "Del brede sider",
+    "splitWideHelp": "Vis hver halvdel separat i leserekkefølge. Visning av to sider sammen settes på pause mens dette er slått på.",
+    "thumbnails": "Sideminiatyrer",
+    "controlsHelp": "Sveip for å bla. Trykk to ganger for å endre tilpasning. Ved kontinuerlig rulling sveiper du loddrett eller bruker Page Up og Page Down.",
+    "savedForComic": "Visningsinnstillingene huskes for denne tegneserien i denne profilen.",
+    "readLists": "Leselister",
+    "collections": "Samlinger"
   }
 }

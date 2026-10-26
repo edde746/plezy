@@ -2993,8 +2993,12 @@
     "source": "Fonte",
     "name": "Nome",
     "endpoint": "URL do servidor",
+    "smbEndpointHint": "Exemplo: smb://nas/Movies",
+    "smbEndpointInvalid": "Introduza um servidor SMB e uma partilha.",
     "root": "Fólio ou Prefixo",
+    "smbFolderHelp": "Deixe em branco para usar toda a partilha, ou introduza uma pasta dentro dela.",
     "username": "Usuário",
+    "smbDomain": "Domínio (opcional)",
     "password": "Senha",
     "token": "API Tópico",
     "accessKey": "ID de acesso",
@@ -3004,6 +3008,8 @@
     "clientId": "ID do cliente OAuth",
     "clientSecret": "OAuth Client Secret (só no Google Desktop)",
     "allowHttp": "Permitir HTTP sem encriptação numa rede de confiança",
+    "smbEncryption": "Encriptar a ligação SMB3",
+    "smbEncryptionHint": "Usar encriptação SMB3 se o NAS a suportar.",
     "connect": "Conectar",
     "cancel": "Cancelar",
     "save": "Salvar",
@@ -3255,5 +3261,19 @@
     "statusFinished": "Finalizado",
     "goToTime": "Vá ao tempo",
     "timeHelp": "Horas: minutos: segundos ou minutos: segundos"
+  },
+  "comics": {
+    "fitHeight": "Ajustar à altura",
+    "readingMode": "Modo de leitura",
+    "paged": "Páginas",
+    "webtoon": "Deslocamento contínuo",
+    "coverAlone": "Mostrar a capa sozinha",
+    "splitWide": "Dividir páginas largas",
+    "splitWideHelp": "Mostra cada metade separadamente, na ordem de leitura. A apresentação de duas páginas lado a lado fica suspensa enquanto esta opção estiver ativa.",
+    "thumbnails": "Miniaturas das páginas",
+    "controlsHelp": "Deslize para mudar de página. Toque duas vezes para alterar o ajuste. No deslocamento contínuo, deslize na vertical ou use Page Up e Page Down.",
+    "savedForComic": "As definições de apresentação são guardadas para esta banda desenhada neste perfil.",
+    "readLists": "Listas de leitura",
+    "collections": "Coleções"
   }
 }

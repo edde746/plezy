@@ -2986,8 +2986,12 @@
     "source": "源",
     "name": "名称",
     "endpoint": "服务器 URL",
+    "smbEndpointHint": "例如：smb://nas/Movies",
+    "smbEndpointInvalid": "输入 SMB 服务器和一个共享目录。",
     "root": "文件夹或前缀",
+    "smbFolderHelp": "留空以使用整个共享目录，或输入其中的文件夹。",
     "username": "用户名",
+    "smbDomain": "域（可选）",
     "password": "密码",
     "token": "API 标志",
     "accessKey": "关键 ID 访问",
@@ -2997,6 +3001,8 @@
     "clientId": "客戶 ID",
     "clientSecret": "OAuth 客户端秘密(仅限 Google 桌面)",
     "allowHttp": "允许在可信网络上使用未加密的 HTTP",
+    "smbEncryption": "加密 SMB3 连接",
+    "smbEncryptionHint": "如果 NAS 支持，则使用 SMB3 加密。",
     "connect": "连接",
     "cancel": "取消",
     "save": "保存",
@@ -3246,5 +3252,19 @@
     "statusFinished": "结束",
     "goToTime": "走到时间",
     "timeHelp": "时间: 分钟: 秒或 分钟: 秒"
+  },
+  "comics": {
+    "fitHeight": "适合高度",
+    "readingMode": "阅读模式",
+    "paged": "分页",
+    "webtoon": "连续滚动",
+    "coverAlone": "单独显示封面",
+    "splitWide": "拆分宽页",
+    "splitWideHelp": "按阅读顺序分别显示每一半。开启后暂停双页并排显示。",
+    "thumbnails": "页面缩略图",
+    "controlsHelp": "滑动翻页，双击切换适配方式。连续滚动时，垂直滑动或使用 Page Up 和 Page Down。",
+    "savedForComic": "此个人资料会记住这部漫画的显示设置。",
+    "readLists": "阅读列表",
+    "collections": "合集"
   }
 }
