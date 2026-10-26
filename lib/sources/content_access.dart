@@ -77,6 +77,10 @@ class PublicationDownloads {
       'plezy-source-${sourceDigest(jsonEncode([profile, sourceId, file.id, file.fingerprint]))}';
 
   static void _handleNativeTaskStatus(TaskStatusUpdate update) {
+    final context = _nativeContexts[update.task.taskId];
+    if (context != null && (update.status.isFinalState || update.status == TaskStatus.paused)) {
+      context.acceptingProgress = false;
+    }
     final waiter = _nativeWaiters[update.task.taskId];
     if (waiter != null &&
         !waiter.isCompleted &&
@@ -88,6 +92,7 @@ class PublicationDownloads {
   static void _handleNativeTaskProgress(TaskProgressUpdate update) {
     final context = _nativeContexts[update.task.taskId];
     if (context == null ||
+        !context.acceptingProgress ||
         context.task.cancellation.cancelled ||
         !update.progress.isFinite ||
         update.progress < 0) {
@@ -101,7 +106,11 @@ class PublicationDownloads {
     if (bytes == context.bytes && bytes < total) return;
     context.bytes = bytes;
     context.task.onProgress?.call(bytes, total);
-    unawaited(context.owner._persistNativeProgress(context, bytes).catchError((Object _) {}));
+    context.progressWrites = context.progressWrites.then<void>((_) async {
+      if (context.acceptingProgress && !context.task.cancellation.cancelled) {
+        await context.owner._persistNativeProgress(context, bytes);
+      }
+    }).catchError((Object _) {});
   }
 
   Future<void> _persistNativeProgress(_NativeDownloadContext context, int bytes) async {
@@ -137,14 +146,26 @@ class PublicationDownloads {
     await _ensureNativeDownloader();
     task.cancellation.check();
 
-    final waiter = Completer<TaskStatusUpdate>();
+    var waiter = Completer<TaskStatusUpdate>();
     _nativeWaiters[taskId] = waiter;
     final context = _NativeDownloadContext(this, task, expectedSize);
     _nativeContexts[taskId] = context;
     try {
       var record = await FileDownloader().database.recordForId(taskId);
-      if (record != null && record.task.group != _nativeDownloadGroup) {
+      if (record != null &&
+          (record.task.group != _nativeDownloadGroup || record.task is! DownloadTask)) {
         throw const SourceException(SourceFailure.invalidData);
+      }
+      if (record != null && record.task.url != lease.uri.toString()) {
+        // Source configuration can change while a job is suspended. Never
+        // resume the old endpoint under the new source identity.
+        context.acceptingProgress = false;
+        _nativeContexts.remove(taskId);
+        await _removeNativeTask(taskId);
+        waiter = Completer<TaskStatusUpdate>();
+        _nativeWaiters[taskId] = waiter;
+        _nativeContexts[taskId] = context;
+        record = null;
       }
       if (record != null && record.status == TaskStatus.complete) {
         if (await _isValidNativePartial(partial, expectedSize)) return;
@@ -190,6 +211,8 @@ class PublicationDownloads {
       }
       await _awaitNativeDownload(taskId, waiter, task.cancellation, partial, expectedSize);
     } finally {
+      context.acceptingProgress = false;
+      await context.progressWrites;
       _nativeWaiters.remove(taskId);
       _nativeContexts.remove(taskId);
     }
@@ -1151,6 +1174,8 @@ class _NativeDownloadContext {
   final _DownloadTask task;
   final int expectedSize;
   int bytes = 0;
+  bool acceptingProgress = true;
+  Future<void> progressWrites = Future<void>.value();
 }
 
 class _DownloadTask {
