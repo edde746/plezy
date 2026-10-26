@@ -14,6 +14,7 @@ import '../../mixins/refreshable.dart';
 import '../../mixins/tab_visibility_aware.dart';
 import '../../profiles/active_profile_provider.dart';
 import '../../services/playback_coordinator.dart';
+import '../../services/trackers/oauth_proxy_client.dart';
 import '../../services/settings_service.dart';
 import '../../sources/source_controller.dart';
 import '../../utils/dialogs.dart';
@@ -26,6 +27,7 @@ import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/settings_section.dart';
 import '../../widgets/setting_tile.dart';
 import 'game_connection_dialogs.dart';
+import '../../widgets/oauth_proxy_dialog.dart';
 import 'game_card.dart';
 
 class GamesScreen extends StatefulWidget {
@@ -142,6 +144,66 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
       );
     }
   }
+
+  Future<void> _linkSteamAccount() => _run((c) async {
+    final proxy = OAuthProxyClient();
+    try {
+      final start = await proxy.start('steam');
+      c.requireCurrent();
+      final cancelled = Completer<void>();
+      final navigator = Navigator.of(context, rootNavigator: true);
+      var dialogClosedByFlow = false;
+      var dialogOpen = true;
+      final dialog = showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => OAuthProxyDialog(
+          start: start,
+          serviceName: 'Steam',
+          onCancel: () {
+            if (dialogClosedByFlow) return;
+            dialogOpen = false;
+            if (!cancelled.isCompleted) cancelled.complete();
+          },
+        ),
+      );
+      OAuthProxyResult? result;
+      try {
+        result = await proxy.poll(
+          start.session,
+          shouldCancel: () => cancelled.isCompleted || !c.current,
+          onCancel: cancelled.future,
+        );
+      } finally {
+        if (dialogOpen) {
+          dialogClosedByFlow = true;
+          dialogOpen = false;
+          if (navigator.mounted) navigator.pop();
+        }
+        await dialog;
+      }
+      c.requireCurrent();
+      final linked = result;
+      if (cancelled.isCompleted || linked == null || linked.steamId == null) return;
+      final catalog = linked.steamGames.map(SteamCatalogGame.fromJson).toList(growable: false);
+      await c.saveSteamCatalog(
+        steamId: linked.steamId!,
+        games: catalog,
+        catalogAvailable: linked.steamLibraryAvailable,
+        catalogTruncated: linked.steamCatalogTruncated,
+      );
+      if (mounted && c.current) {
+        showSuccessSnackBar(
+          context,
+          linked.steamLibraryAvailable
+              ? 'Steam account linked (${catalog.length} games imported)'
+              : 'Steam account linked; the game library is private or unavailable',
+        );
+      }
+    } finally {
+      proxy.dispose();
+    }
+  });
 
   Future<void> _scan() async {
     final c = _controller;
@@ -314,6 +376,10 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     final byKey = {for (final game in state.games) game.key: game};
     final filtered = state.games.where((game) => game.name.toLowerCase().contains(_query.toLowerCase())).toList()
       ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
+    final steamCatalog = state.steamCatalog
+        .where((game) => game.name.toLowerCase().contains(_query.toLowerCase()))
+        .toList()
+      ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
     final recent = _query.isEmpty
         ? state.recent.map((key) => byKey[key]).whereType<StreamGame>().take(6).toList()
         : <StreamGame>[];
@@ -374,15 +440,23 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
                         icon: const AppIcon(Symbols.radar_rounded),
                         label: Text(c?.scanning == true ? t.games.scanning : t.games.findComputers),
                       ),
+                      OutlinedButton.icon(
+                        onPressed: enabled ? _linkSteamAccount : null,
+                        icon: const AppIcon(Symbols.link_rounded),
+                        label: Text(state.steamAccountId == null ? 'Link Steam account' : 'Refresh Steam account'),
+                      ),
                     ],
                   ),
-                  if (state.games.isEmpty) ...[const SizedBox(height: 12), Text(t.games.scanHint)],
+                  if (state.games.isEmpty && state.steamAccountId == null) ...[
+                    const SizedBox(height: 12),
+                    Text(t.games.scanHint),
+                  ],
                   if (_loading || c?.busy == true)
                     const Padding(padding: EdgeInsets.only(top: 16), child: LinearProgressIndicator()),
                 ],
               ),
             ),
-            if (state.games.isNotEmpty)
+            if (state.games.isNotEmpty || state.steamCatalog.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
                 child: TextField(
@@ -403,10 +477,63 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
         if (filtered.isNotEmpty) ...[
           SliverToBoxAdapter(child: _heading(t.games.allGames)),
           _grid(filtered, first: recent.isEmpty && favorites.isEmpty),
-        ] else if (state.games.isNotEmpty)
+        ] else if (state.games.isNotEmpty && steamCatalog.isEmpty)
           SliverToBoxAdapter(
             child: Padding(padding: const EdgeInsets.all(16), child: Text(t.games.noMatches)),
           ),
+        if (state.steamAccountId != null) ...[
+          SliverToBoxAdapter(child: _heading('Steam account library')),
+          const SliverToBoxAdapter(
+            child: Padding(
+              padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+              child: Text('Account games are for reference. Play games from a paired computer’s library.'),
+            ),
+          ),
+          if (!state.steamCatalogAvailable)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Text('Steam account linked. Its library is private or unavailable, so no games were imported.'),
+              ),
+            )
+          else if (steamCatalog.isEmpty)
+            SliverToBoxAdapter(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Text(
+                  state.steamCatalog.isEmpty ? 'No games are visible in this Steam account library.' : t.games.noMatches,
+                ),
+              ),
+            )
+          else
+            SliverList(
+              delegate: SliverChildBuilderDelegate(
+                (context, index) {
+                  final game = steamCatalog[index];
+                  return ListTile(
+                    leading: const AppIcon(Symbols.sports_esports_rounded),
+                    title: Text(game.name),
+                    subtitle: Text('Steam App ID: ${game.appId}'),
+                  );
+                },
+                childCount: steamCatalog.length,
+              ),
+            ),
+          if (state.steamCatalogStale)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Text('Steam could not refresh the library. Showing the last available catalog.'),
+              ),
+            ),
+          if (state.steamCatalogTruncated)
+            const SliverToBoxAdapter(
+              child: Padding(
+                padding: EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                child: Text('Showing up to 2,000 games. The Steam catalog was truncated.'),
+              ),
+            ),
+        ],
         SliverList(
           delegate: SliverChildListDelegate([
             if (!_loading && state.hosts.isEmpty)
@@ -444,7 +571,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
         SliverToBoxAdapter(
           child: SettingsGroup(
             children: [
-              Padding(padding: const EdgeInsets.all(16), child: Text(t.games.steamLibraryHint)),
+              Padding(padding: const EdgeInsets.all(16), child: Text(t.games.libraryHint)),
               if (_profile != null && defaultTargetPlatform == TargetPlatform.android)
                 SettingSwitchTile(
                   pref: SettingsService.gamePyrowaveForProfile(_profile!),

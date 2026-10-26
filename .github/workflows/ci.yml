@@ -25,6 +25,7 @@ env:
 jobs:
   analyze:
     name: Code Analysis
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-analyze"]}}', github.run_id)) }}
     permissions:
       contents: read
@@ -123,6 +124,7 @@ jobs:
 
   test:
     name: Unit Tests
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-test"]}}', github.run_id)) }}
     permissions:
       contents: read
@@ -182,9 +184,12 @@ jobs:
 
   android-test:
     name: Android JVM and Native Tests
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-android-test"]}}', github.run_id)) }}
     permissions:
+      actions: read
       contents: read
+      security-events: write
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -228,6 +233,14 @@ jobs:
       - name: Configure Android local properties
         run: printf 'flutter.sdk=%s\nsdk.dir=%s\n' "$FLUTTER_ROOT" "$ANDROID_HOME" > android/local.properties
 
+      # CodeQL runs inside this private JIT job. Advanced setup must be selected
+      # in repository security settings so SARIF uploads are accepted.
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4
+        with:
+          languages: cpp, java-kotlin
+          build-mode: manual
+
       - name: Configure Android host native tests
         run: |
           cmake -S android/app/src/test/cpp -B build/android-host-tests \
@@ -256,8 +269,14 @@ jobs:
         working-directory: android
         run: ./gradlew :moonlight:assembleDebug :steam:assembleDebug --stacktrace
 
+      - name: Upload CodeQL analysis
+        uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4
+        with:
+          category: /language:android
+
   native-format:
     name: Native Formatting
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-native-format"]}}', github.run_id)) }}
     permissions:
       contents: read
@@ -278,6 +297,7 @@ jobs:
 
   linux-native-test:
     name: Linux native reliability (${{ matrix.sanitizer }})
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-linux-native-test"]}}', github.run_id, strategy.job-index)) }}
     permissions:
       contents: read
@@ -373,6 +393,7 @@ jobs:
 
   apple-native-test:
     name: Apple native reliability (${{ matrix.platform }})
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-apple-native-test"]}}', github.run_id, strategy.job-index)) }}
     permissions:
       contents: read
@@ -518,6 +539,7 @@ jobs:
 
   windows-native-test:
     name: Windows native reliability (${{ matrix.arch }})
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ${{ matrix.runner == 'windows-latest' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) }}
     permissions:
       contents: read
@@ -604,6 +626,7 @@ jobs:
 
   dependency-check:
     name: Dependency Validation
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-dependency-check"]}}', github.run_id)) }}
     permissions:
       contents: read
@@ -636,6 +659,7 @@ jobs:
 
   server:
     name: Server checks
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-server"]}}', github.run_id)) }}
     permissions:
       contents: read
@@ -667,7 +691,7 @@ jobs:
   # checks above without packaging release artifacts.
   linux-packages:
     name: Linux package smoke build
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_linux_packages }}
+    if: ${{ (github.event_name != 'pull_request' || github.event.pull_request.head.repo.full_name == github.repository) && github.event_name == 'workflow_dispatch' && inputs.build_linux_packages }}
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-linux-packages"]}}', github.run_id)) }}
     permissions:
       contents: read

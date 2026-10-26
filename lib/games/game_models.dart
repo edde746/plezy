@@ -100,21 +100,69 @@ class StreamGame {
   );
 }
 
+class SteamCatalogGame {
+  SteamCatalogGame({required this.appId, required this.name, this.iconHash = ''}) {
+    if (appId < 1 ||
+        appId > 0xffffffff ||
+        name.trim().isEmpty ||
+        name.length > 256 ||
+        RegExp(r'[\x00-\x1f\x7f]').hasMatch(name) ||
+        iconHash.length > 64 ||
+        !RegExp(r'^[0-9a-fA-F]*$').hasMatch(iconHash)) {
+      throw const FormatException('Invalid Steam catalog entry');
+    }
+  }
+
+  final int appId;
+  final String name;
+  final String iconHash;
+  String get key => appId.toString();
+
+  Map<String, dynamic> toJson() => {'appId': appId, 'name': name, 'iconHash': iconHash};
+
+  factory SteamCatalogGame.fromJson(Map<String, dynamic> json) => SteamCatalogGame(
+    appId: (json['appId'] ?? json['appid']) as int,
+    name: json['name'] as String,
+    iconHash: json['iconHash'] as String? ?? '',
+  );
+}
+
 class GameLibrary {
-  const GameLibrary({this.hosts = const [], this.games = const [], this.recent = const [], this.favorites = const {}});
+  const GameLibrary({
+    this.hosts = const [],
+    this.games = const [],
+    this.recent = const [],
+    this.favorites = const {},
+    this.steamAccountId,
+    this.steamCatalogAvailable = false,
+    this.steamCatalogStale = false,
+    this.steamCatalogTruncated = false,
+    this.steamCatalog = const [],
+  });
   final List<GameHost> hosts;
   final List<StreamGame> games;
   final List<String> recent;
   final Set<String> favorites;
+  final String? steamAccountId;
+  final bool steamCatalogAvailable;
+  /// True when the last refresh failed but a previously visible catalog is cached.
+  final bool steamCatalogStale;
+  final bool steamCatalogTruncated;
+  final List<SteamCatalogGame> steamCatalog;
   Map<String, dynamic> toJson() => {
-    'version': 1,
+    'version': 2,
     'hosts': hosts.take(32).map((v) => v.toJson()).toList(),
     'games': games.take(2000).map((v) => v.toJson()).toList(),
     'recent': recent.take(30).toList(),
     'favorites': favorites.take(500).toList(),
+    if (steamAccountId != null) 'steamAccountId': steamAccountId,
+    'steamCatalogAvailable': steamCatalogAvailable,
+    'steamCatalogStale': steamCatalogStale,
+    'steamCatalogTruncated': steamCatalogTruncated,
+    'steamCatalog': steamCatalog.take(2000).map((v) => v.toJson()).toList(),
   };
   factory GameLibrary.fromJson(Map<String, dynamic> data) {
-    if (data['version'] != 1) return const GameLibrary();
+    if (data['version'] != 1 && data['version'] != 2) return const GameLibrary();
     final hosts = <String, GameHost>{};
     final games = <String, StreamGame>{};
     for (final row in _rows(data['hosts']).take(32)) {
@@ -133,11 +181,29 @@ class GameLibrary {
         /* Recover other entries. */
       }
     }
+    final rawSteamId = data['steamAccountId'];
+    final steamAccountId = rawSteamId is String && RegExp(r'^\d{17}$').hasMatch(rawSteamId) ? rawSteamId : null;
+    final steamCatalog = <String, SteamCatalogGame>{};
+    for (final row in _rows(data['steamCatalog']).take(2000)) {
+      try {
+        final game = SteamCatalogGame.fromJson(Map<String, dynamic>.from(row as Map));
+        steamCatalog[game.key] = game;
+      } catch (_) {
+        /* Recover other entries. */
+      }
+    }
     return GameLibrary(
       hosts: hosts.values.toList(),
       games: games.values.toList(),
       recent: _rows(data['recent']).whereType<String>().where(games.containsKey).toSet().take(30).toList(),
       favorites: _rows(data['favorites']).whereType<String>().where(games.containsKey).take(500).toSet(),
+      steamAccountId: steamAccountId,
+      steamCatalogAvailable: steamAccountId != null && data['steamCatalogAvailable'] == true,
+      steamCatalogStale:
+          steamAccountId != null && data['steamCatalogAvailable'] == true && data['steamCatalogStale'] == true,
+      steamCatalogTruncated:
+          steamAccountId != null && data['steamCatalogAvailable'] == true && data['steamCatalogTruncated'] == true,
+      steamCatalog: steamAccountId == null ? const [] : steamCatalog.values.toList(),
     );
   }
 }

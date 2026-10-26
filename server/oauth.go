@@ -54,10 +54,14 @@ type oauthServiceConfig struct {
 }
 
 type oauthTokenResult struct {
-	AccessToken  string `json:"accessToken,omitempty"`
-	RefreshToken string `json:"refreshToken,omitempty"`
-	ExpiresIn    int    `json:"expiresIn,omitempty"`
-	Error        string `json:"error,omitempty"`
+	AccessToken           string            `json:"accessToken,omitempty"`
+	RefreshToken          string            `json:"refreshToken,omitempty"`
+	ExpiresIn             int               `json:"expiresIn,omitempty"`
+	SteamID               string            `json:"steamId,omitempty"`
+	SteamLibraryAvailable bool              `json:"steamLibraryAvailable,omitempty"`
+	SteamGames            []steamOwnedGame  `json:"steamGames,omitempty"`
+	SteamCatalogTruncated bool              `json:"steamCatalogTruncated,omitempty"`
+	Error                 string            `json:"error,omitempty"`
 }
 
 // oauthSession links browser state to a device-only poll capability. Only the
@@ -120,6 +124,11 @@ type oauthProxy struct {
 	client    *http.Client
 	clientIPs clientIPResolver
 
+	steamWebAPIKey          string
+	steamOpenIDEndpoint     string
+	steamOwnedGamesEndpoint string
+	steamClient             *http.Client
+
 	mu            sync.Mutex
 	browserStates map[string]*oauthSession
 	pollDigests   map[[sha256.Size]byte]*oauthSession
@@ -133,9 +142,17 @@ func newOAuthProxy(baseURL string, services map[string]oauthServiceConfig, clien
 	return &oauthProxy{
 		baseURL:       strings.TrimRight(baseURL, "/"),
 		services:      services,
-		client:        &http.Client{Timeout: oauthUpstreamTimeout},
-		clientIPs:     clientIPs,
-		browserStates: make(map[string]*oauthSession),
+		client: &http.Client{Timeout: oauthUpstreamTimeout},
+		steamClient: &http.Client{
+			Timeout: oauthUpstreamTimeout,
+			CheckRedirect: func(_ *http.Request, _ []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		},
+		steamOpenIDEndpoint:     steamOpenIDEndpoint,
+		steamOwnedGamesEndpoint: steamOwnedGamesEndpoint,
+		clientIPs:               clientIPs,
+		browserStates:           make(map[string]*oauthSession),
 		pollDigests:   make(map[[sha256.Size]byte]*oauthSession),
 		ipRate:        make(map[string]*rateLimiter),
 		pollRate:      make(map[string]*rateLimiter),
@@ -166,7 +183,12 @@ func oauthConfigFromEnv(clientIPs clientIPResolver) (*oauthProxy, bool) {
 			TokenURL:     "https://anilist.co/api/v2/oauth/token",
 		}
 	}
-	return newOAuthProxy(base, services, clientIPs), true
+	// Steam OpenID establishes account identity without exposing a Steam
+	// password, app secret, or user Web API key to the client.
+	services["steam"] = oauthServiceConfig{}
+	proxy := newOAuthProxy(base, services, clientIPs)
+	proxy.steamWebAPIKey = strings.TrimSpace(os.Getenv("STEAM_WEB_API_KEY"))
+	return proxy, true
 }
 
 // registerOAuthRoutes mounts /auth/*; a nil proxy returns 503.
@@ -291,6 +313,10 @@ func (p *oauthProxy) handleAuthorize(w http.ResponseWriter, r *http.Request, ser
 		renderErrorPage(w, http.StatusNotFound, "This sign-in link is no longer valid. Start again from PlezyNG.")
 		return
 	}
+	if service == "steam" {
+		p.handleSteamAuthorize(w, r, sess)
+		return
+	}
 	authorizeURL, err := validatedOAuthAuthorizeURL(service, cfg.AuthorizeURL)
 	if err != nil {
 		renderErrorPage(w, http.StatusInternalServerError, "OAuth provider configuration is invalid.")
@@ -354,6 +380,10 @@ func (p *oauthProxy) handleCallback(w http.ResponseWriter, r *http.Request, serv
 	cfg, ok := p.services[service]
 	if !ok {
 		http.NotFound(w, r)
+		return
+	}
+	if service == "steam" {
+		p.handleSteamCallback(w, r)
 		return
 	}
 	q := r.URL.Query()

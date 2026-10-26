@@ -101,6 +101,11 @@ class GameLibraryController extends ChangeNotifier {
       games: state.games,
       recent: state.recent,
       favorites: state.favorites,
+      steamAccountId: state.steamAccountId,
+      steamCatalogAvailable: state.steamCatalogAvailable,
+      steamCatalogStale: state.steamCatalogStale,
+      steamCatalogTruncated: state.steamCatalogTruncated,
+      steamCatalog: state.steamCatalog,
     );
   });
   Future<void> removeHost(GameHost host) => _change(
@@ -110,6 +115,11 @@ class GameLibraryController extends ChangeNotifier {
         games: state.games,
         recent: state.recent,
         favorites: state.favorites,
+        steamAccountId: state.steamAccountId,
+        steamCatalogAvailable: state.steamCatalogAvailable,
+        steamCatalogStale: state.steamCatalogStale,
+        steamCatalogTruncated: state.steamCatalogTruncated,
+        steamCatalog: state.steamCatalog,
       ).toJson(),
     ),
   );
@@ -133,6 +143,11 @@ class GameLibraryController extends ChangeNotifier {
           ],
           recent: state.recent,
           favorites: state.favorites,
+          steamAccountId: state.steamAccountId,
+          steamCatalogAvailable: state.steamCatalogAvailable,
+          steamCatalogStale: state.steamCatalogStale,
+          steamCatalogTruncated: state.steamCatalogTruncated,
+          steamCatalog: state.steamCatalog,
         ).toJson(),
       ),
     );
@@ -145,13 +160,28 @@ class GameLibraryController extends ChangeNotifier {
         games: [...state.games.where((v) => v.key != game.key), game],
         recent: state.recent,
         favorites: state.favorites,
+        steamAccountId: state.steamAccountId,
+        steamCatalogAvailable: state.steamCatalogAvailable,
+        steamCatalogStale: state.steamCatalogStale,
+        steamCatalogTruncated: state.steamCatalogTruncated,
+        steamCatalog: state.steamCatalog,
       ).toJson(),
     ),
   );
   Future<void> toggleFavorite(StreamGame game) => _change((state) {
     final favorites = {...state.favorites};
     if (!favorites.remove(game.key)) favorites.add(game.key);
-    return GameLibrary(hosts: state.hosts, games: state.games, recent: state.recent, favorites: favorites);
+    return GameLibrary(
+      hosts: state.hosts,
+      games: state.games,
+      recent: state.recent,
+      favorites: favorites,
+      steamAccountId: state.steamAccountId,
+      steamCatalogAvailable: state.steamCatalogAvailable,
+      steamCatalogStale: state.steamCatalogStale,
+      steamCatalogTruncated: state.steamCatalogTruncated,
+      steamCatalog: state.steamCatalog,
+    );
   });
   Future<void> opened(StreamGame game) => _change(
     (state) => GameLibrary(
@@ -159,8 +189,42 @@ class GameLibraryController extends ChangeNotifier {
       games: state.games,
       recent: [game.key, ...state.recent.where((v) => v != game.key)].take(30).toList(),
       favorites: state.favorites,
+      steamAccountId: state.steamAccountId,
+      steamCatalogAvailable: state.steamCatalogAvailable,
+      steamCatalogStale: state.steamCatalogStale,
+      steamCatalogTruncated: state.steamCatalogTruncated,
+      steamCatalog: state.steamCatalog,
     ),
   );
+
+  Future<void> saveSteamCatalog({
+    required String steamId,
+    required List<SteamCatalogGame> games,
+    required bool catalogAvailable,
+    required bool catalogTruncated,
+  }) => _change((state) {
+    if (!RegExp(r'^\d{17}$').hasMatch(steamId)) {
+      throw const GameClientException(GameClientFailure.unavailable);
+    }
+    final sameAccount = state.steamAccountId == steamId;
+    return GameLibrary(
+      hosts: state.hosts,
+      games: state.games,
+      recent: state.recent,
+      favorites: state.favorites,
+      steamAccountId: steamId,
+      steamCatalogAvailable: catalogAvailable || (sameAccount && state.steamCatalogAvailable),
+      steamCatalogStale: !catalogAvailable && sameAccount && state.steamCatalogAvailable,
+      steamCatalogTruncated: catalogAvailable
+          ? catalogTruncated
+          : sameAccount && state.steamCatalogAvailable && state.steamCatalogTruncated,
+      steamCatalog: catalogAvailable
+          ? games.take(2000).toList()
+          : sameAccount
+          ? state.steamCatalog
+          : const [],
+    );
+  });
 
   @override
   void dispose() {

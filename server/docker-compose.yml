@@ -14,6 +14,7 @@ services:
       MAL_CLIENT_ID: ${MAL_CLIENT_ID:-}
       ANILIST_CLIENT_ID: ${ANILIST_CLIENT_ID:-}
       ANILIST_CLIENT_SECRET: ${ANILIST_CLIENT_SECRET:-}
+      STEAM_WEB_API_KEY: ${STEAM_WEB_API_KEY:-}
     logging:
       driver: "json-file"
       options:

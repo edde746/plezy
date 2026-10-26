@@ -117,10 +117,27 @@ class OAuthProxyClient {
         };
         throw OAuthProxyException('OAuth proxy failed: $category');
       }
+      final rawGames = body['steamGames'];
+      final steamGames = rawGames is List
+          ? rawGames
+                .whereType<Map>()
+                .take(2000)
+                .map((row) => Map<String, dynamic>.from(row))
+                .toList(growable: false)
+          : const <Map<String, dynamic>>[];
+      final accessToken = body['accessToken'];
+      final steamId = body['steamId'] as String?;
+      if (accessToken is! String && steamId == null) {
+        throw const OAuthProxyException('OAuth proxy returned an invalid result');
+      }
       return OAuthProxyResult(
-        accessToken: body['accessToken'] as String,
+        accessToken: accessToken is String ? accessToken : '',
         refreshToken: body['refreshToken'] as String?,
         expiresIn: (body['expiresIn'] as num?)?.toInt(),
+        steamId: steamId,
+        steamLibraryAvailable: body['steamLibraryAvailable'] == true,
+        steamCatalogTruncated: body['steamCatalogTruncated'] == true,
+        steamGames: steamGames,
       );
     }
   }
@@ -141,8 +158,20 @@ class OAuthProxyResult {
   final String accessToken;
   final String? refreshToken;
   final int? expiresIn;
+  final String? steamId;
+  final bool steamLibraryAvailable;
+  final bool steamCatalogTruncated;
+  final List<Map<String, dynamic>> steamGames;
 
-  const OAuthProxyResult({required this.accessToken, this.refreshToken, this.expiresIn});
+  const OAuthProxyResult({
+    required this.accessToken,
+    this.refreshToken,
+    this.expiresIn,
+    this.steamId,
+    this.steamLibraryAvailable = false,
+    this.steamCatalogTruncated = false,
+    this.steamGames = const [],
+  });
 }
 
 class OAuthProxyException implements Exception {
