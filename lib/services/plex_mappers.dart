@@ -114,8 +114,10 @@ List<MediaStream> _mediaStreamsFromPlexPart(Object? raw, {Map<String, dynamic>? 
     final kind = _mediaStreamKindFromPlexType(stream['streamType']);
     if (kind == MediaStreamKind.unknown) continue;
 
-    final criteria = kind == MediaStreamKind.video ? PlexMappers.displayCriteriaFromJson(media, stream) : null;
-    final isDolbyVision = kind == MediaStreamKind.video && _isDolbyVisionStream(stream);
+    final criteria = kind == MediaStreamKind.video
+        ? PlexMappers.displayCriteriaFromJson(media, stream, part: part)
+        : null;
+    final isDolbyVision = kind == MediaStreamKind.video && _isDolbyVisionStream(stream, media: media, part: part);
     final isHdr = criteria?.isHdr == true || isDolbyVision;
     final doviProfile = isDolbyVision ? flexibleInt(stream['DOVIProfile']) : null;
 
@@ -210,8 +212,31 @@ MediaStreamKind _mediaStreamKindFromPlexType(Object? raw) {
   };
 }
 
-bool _isDolbyVisionStream(Map<String, dynamic> stream) {
-  return (flexibleInt(stream['DOVIProfile']) ?? 0) > 0 || flexibleBool(stream['DOVIPresent']);
+bool _isDolbyVisionStream(Map<String, dynamic> stream, {Map<String, dynamic>? media, Map? part}) {
+  if ((flexibleInt(stream['DOVIProfile']) ?? 0) > 0 || flexibleBool(stream['DOVIPresent'])) return true;
+
+  // Plex can omit DOVIProfile while retaining an explicit stream codec/profile
+  // label or a DV marker in the selected media's display metadata.
+  final text = [
+    stream['codec'],
+    stream['codecID'],
+    stream['profile'],
+    stream['title'],
+    stream['displayTitle'],
+    stream['extendedDisplayTitle'],
+    stream['videoRangeType'],
+    stream['videoRange'],
+    media?['videoProfile'],
+    media?['displayTitle'],
+    media?['extendedDisplayTitle'],
+    part?['file'],
+  ].whereType<Object>().map((value) => value.toString()).join(' ').toLowerCase();
+  final tokens = RegExp(r'[a-z0-9]+').allMatches(text).map((match) => match.group(0)!).toSet();
+  return tokens.contains('dovi') ||
+      tokens.contains('dolbyvision') ||
+      tokens.contains('dv') ||
+      tokens.contains('dvhe') ||
+      tokens.contains('dvh1');
 }
 
 Object? _readPartKey(Map json, String _) => _partKeyFromJson(json['Part']);
@@ -1287,12 +1312,16 @@ class PlexMappers {
   static MediaVersion mediaVersionFromJson(Map<String, dynamic> json) =>
       mediaVersion(PlexMediaVersionDto.fromJson(json));
 
-  static MediaDisplayCriteria? displayCriteriaFromJson(Map<String, dynamic>? media, Map<String, dynamic>? videoStream) {
+  static MediaDisplayCriteria? displayCriteriaFromJson(
+    Map<String, dynamic>? media,
+    Map<String, dynamic>? videoStream, {
+    Map? part,
+  }) {
     if (videoStream == null) return null;
 
     final doviProfile = flexibleInt(videoStream['DOVIProfile']);
     final doviCompatibilityId = flexibleInt(videoStream['DOVIBLCompatID']);
-    final hasDolbyVision = (doviProfile != null && doviProfile > 0) || flexibleBool(videoStream['DOVIPresent']);
+    final hasDolbyVision = _isDolbyVisionStream(videoStream, media: media, part: part);
     final transfer = _stringOrNull(videoStream['colorTrc']);
     final primaries = _stringOrNull(videoStream['colorPrimaries']);
     final matrix = _stringOrNull(videoStream['colorSpace']);
@@ -1309,6 +1338,7 @@ class PlexMappers {
       width: videoStream['width'] ?? media?['width'],
       height: videoStream['height'] ?? media?['height'],
       doviProfile: doviProfile,
+      dolbyVisionPresent: hasDolbyVision,
       doviLevel: videoStream['DOVILevel'],
       doviCompatibilityId: doviCompatibilityId,
       doviBaseLayerPresent: videoStream['DOVIBLPresent'],

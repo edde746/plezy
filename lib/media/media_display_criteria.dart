@@ -69,6 +69,8 @@ class MediaDisplayCriteria {
   final int? width;
   final int? height;
   final int? doviProfile;
+  /// Positive Dolby Vision evidence without a reliable numeric profile.
+  final bool dolbyVisionPresent;
   final int? doviLevel;
   final int? doviCompatibilityId;
   final bool? doviBaseLayerPresent;
@@ -83,6 +85,7 @@ class MediaDisplayCriteria {
     this.width,
     this.height,
     this.doviProfile,
+    this.dolbyVisionPresent = false,
     this.doviLevel,
     this.doviCompatibilityId,
     this.doviBaseLayerPresent,
@@ -98,6 +101,7 @@ class MediaDisplayCriteria {
     Object? width,
     Object? height,
     Object? doviProfile,
+    bool dolbyVisionPresent = false,
     Object? doviLevel,
     Object? doviCompatibilityId,
     Object? doviBaseLayerPresent,
@@ -112,6 +116,7 @@ class MediaDisplayCriteria {
       width: flexibleInt(width),
       height: flexibleInt(height),
       doviProfile: flexibleInt(doviProfile),
+      dolbyVisionPresent: dolbyVisionPresent || (flexibleInt(doviProfile) ?? 0) > 0,
       doviLevel: flexibleInt(doviLevel),
       doviCompatibilityId: flexibleInt(doviCompatibilityId),
       doviBaseLayerPresent: flexibleBoolNullable(doviBaseLayerPresent),
@@ -128,18 +133,18 @@ class MediaDisplayCriteria {
   bool get hasFrameRate => (fps ?? 0) > 0;
 
   bool get hasDisplayMetadata =>
-      (doviProfile ?? 0) > 0 || _hasValue(transfer) || _hasValue(primaries) || _hasValue(matrix);
+      dolbyVisionPresent || (doviProfile ?? 0) > 0 || _hasValue(transfer) || _hasValue(primaries) || _hasValue(matrix);
 
-  /// True only when the server identified a Dolby Vision profile. Color tags
-  /// alone cannot distinguish a DV base layer from ordinary HDR10/HLG.
-  bool get hasDolbyVision => (doviProfile ?? 0) > 0;
+  /// True when the server supplied a DV profile or another explicit DV marker.
+  /// Generic color tags alone cannot distinguish DV from HDR10/HLG.
+  bool get hasDolbyVision => dolbyVisionPresent || (doviProfile ?? 0) > 0;
 
   /// Whether the server said enough to describe a stream: a rate, or
   /// dimensions plus color/DoVi tags.
   bool get isUsable => hasFrameRate || (hasDimensions && hasDisplayMetadata);
 
   MediaDisplayColorType get colorType => classifyMediaDisplayColor(
-    isDolbyVision: (doviProfile ?? 0) > 0,
+    isDolbyVision: hasDolbyVision,
     doviCompatibilityId: doviCompatibilityId,
     transfer: transfer,
     primaries: primaries,
