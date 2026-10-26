@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
@@ -72,6 +73,7 @@ class SourcesScreen extends StatefulWidget {
 }
 
 class _SourcesScreenState extends State<SourcesScreen> {
+  final _searchController = TextEditingController();
   List<SourceEntry> _entries = [];
   List<PublicationProgress> _progress = [];
   final Set<String> _offline = {};
@@ -100,6 +102,12 @@ class _SourcesScreenState extends State<SourcesScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _load({bool more = false}) async {
@@ -438,7 +446,8 @@ class _SourcesScreenState extends State<SourcesScreen> {
                     ],
                   const SizedBox(height: 16),
                 ],
-                TextField(
+                FocusableTextField(
+                  controller: _searchController,
                   decoration: InputDecoration(
                     prefixIcon: const AppIcon(Symbols.search_rounded),
                     labelText: root ? t.fileSources.searchCached : t.fileSources.search,

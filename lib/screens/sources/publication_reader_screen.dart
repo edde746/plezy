@@ -17,6 +17,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../i18n/strings.g.dart';
 import '../../i18n/locale_preferences.dart';
 import '../../i18n/presentation_formats.dart';
+import '../../focus/focusable_text_field.dart';
 import '../../focus/focusable_slider.dart';
 import '../../services/playback_coordinator.dart';
 import '../../sources/publication_archive.dart';
@@ -25,10 +26,12 @@ import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
 import '../../sources/reader_preferences.dart';
 import '../../theme/mono_tokens.dart';
+import '../../utils/dialogs.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/app_menu.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import 'source_notes_screen.dart';
 import 'source_sync_screen.dart';
@@ -507,13 +510,13 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
       text: formatDecimal(pdf ? _pdf.pageNumber ?? 1 : (_progress?.locator?.page ?? 1), maximumDecimals: 0),
     );
     final form = GlobalKey<FormState>();
-    final page = await showDialog<int>(
+    final page = await showScopedDialog<int>(
       context: context,
       builder: (context) => AlertDialog(
         title: Text(pdf || _fixed ? t.fileSources.goToPage : t.fileSources.goToSection),
         content: Form(
           key: form,
-          child: TextFormField(
+          child: FocusableTextFormField(
             controller: input,
             autofocus: true,
             keyboardType: TextInputType.number,
@@ -528,12 +531,13 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(t.fileSources.cancel)),
-          FilledButton(
+          DialogActionButton(onPressed: () => Navigator.pop(context), label: t.fileSources.cancel),
+          DialogActionButton(
             onPressed: () {
               if (form.currentState!.validate()) Navigator.pop(context, parseLocalizedInteger(input.text));
             },
-            child: Text(t.fileSources.goToPage),
+            label: t.fileSources.goToPage,
+            isPrimary: true,
           ),
         ],
       ),
@@ -1089,6 +1093,7 @@ class _BookSearchScreen extends StatefulWidget {
 }
 
 class _BookSearchScreenState extends State<_BookSearchScreen> {
+  final _query = TextEditingController();
   List<Map<String, dynamic>> _results = [];
   bool _searching = false;
   int _epoch = 0;
@@ -1104,6 +1109,12 @@ class _BookSearchScreenState extends State<_BookSearchScreen> {
   }
 
   @override
+  void dispose() {
+    _query.dispose();
+    super.dispose();
+  }
+
+  @override
   Widget build(BuildContext context) => FocusedScrollScaffold(
     title: Text(t.fileSources.searchBook),
     slivers: [
@@ -1112,7 +1123,8 @@ class _BookSearchScreenState extends State<_BookSearchScreen> {
         sliver: SliverToBoxAdapter(
           child: Column(
             children: [
-              TextField(
+              FocusableTextField(
+                controller: _query,
                 autofocus: true,
                 onSubmitted: (q) => sourceAction(context, () => _search(q)),
                 decoration: InputDecoration(
@@ -1151,6 +1163,7 @@ class _PdfSearchScreen extends StatefulWidget {
 }
 
 class _PdfSearchScreenState extends State<_PdfSearchScreen> {
+  final _query = TextEditingController();
   @override
   void initState() {
     super.initState();
@@ -1164,6 +1177,7 @@ class _PdfSearchScreenState extends State<_PdfSearchScreen> {
   @override
   void dispose() {
     widget.search.removeListener(_changed);
+    _query.dispose();
     super.dispose();
   }
 
@@ -1176,7 +1190,8 @@ class _PdfSearchScreenState extends State<_PdfSearchScreen> {
         sliver: SliverToBoxAdapter(
           child: Column(
             children: [
-              TextField(
+              FocusableTextField(
+                controller: _query,
                 autofocus: true,
                 onChanged: widget.search.startTextSearch,
                 decoration: InputDecoration(labelText: t.fileSources.searchBook),
