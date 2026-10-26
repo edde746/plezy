@@ -243,7 +243,18 @@ class DlnaSourceAdapter extends SourceAdapter {
   @override
   Future<ContentLease> resolve(PublicationFile file) async {
     final resource = await _resource(file.id);
-    return ContentLease(resource.uri, size: resource.size);
+    final endpoint = _endpoint;
+    final safeDirectResource =
+        resource.size != null &&
+        resource.uri.host.toLowerCase() == endpoint.host.toLowerCase() &&
+        resource.uri.userInfo.isEmpty &&
+        !resource.uri.hasQuery &&
+        !resource.uri.hasFragment;
+    return ContentLease(
+      resource.uri,
+      size: resource.size,
+      backgroundTransferSafe: safeDirectResource,
+    );
   }
 
   @override
