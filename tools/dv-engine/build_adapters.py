@@ -47,6 +47,22 @@ def verify_swift_pins(path: Path, expected: list, *, required=()):
         raise ValueError("Swift dependency resolution drifted; review and pin before compiling")
 
 
+def patch_felbaker_vs_output_key(source: Path) -> str:
+    """Match FelBaker's return declarations to VapourSynth's `clip` output key."""
+    entry = source / "src/VapourSynthEntry.cpp"
+    text = entry.read_text()
+    replacements = (
+        ('"baked:vnode;", bakeFilter', '"clip:vnode;", bakeFilter'),
+        ('"baked_rgb:vnode;", rgbFilter', '"clip:vnode;", rgbFilter'),
+    )
+    for old, new in replacements:
+        if text.count(old) != 1:
+            raise ValueError("FelBaker VapourSynth output signature changed; review the adapter patch")
+        text = text.replace(old, new, 1)
+    entry.write_text(text)
+    return hashlib.sha256(entry.read_bytes()).hexdigest()
+
+
 def checkout(source: Path, spec: dict):
     if not re.fullmatch(r"[0-9a-f]{40}", spec["commit"]):
         raise ValueError("source must name a full commit")
@@ -115,6 +131,7 @@ def main():
             # The plugin uses VS headers and a pinned libdovi submodule. The
             # upstream Meson integration tests need FFMS2, which is unrelated
             # to compiling this plugin, so keep them out of this source build.
+            report["patched_vapoursynth_entry_sha256"] = patch_felbaker_vs_output_key(source)
             run(["meson", "setup", work / "build", source, "--wrap-mode=nofallback",
                  "-Dcpu_tier=generic", "-Dtests=false"])
             run(["meson", "compile", "-C", work / "build", "-j", "2"])

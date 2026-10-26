@@ -114,14 +114,98 @@ The positional time is the capture target in seconds; the helper starts playback
 available, `vaapi-copy`). System runtime libraries required by the engine must
 also be resolvable; see the bundle's `provenance.json`.
 
+### Generate a synthetic Profile 7 FEL graph fixture
+
+The fixture generator creates original four-bar BL and center-patch EL video,
+then uses a pinned 384-byte MIT-licensed FEL RPU test vector from
+[`dovi_tool`](https://github.com/quietvoid/dovi_tool/blob/ef85991cfc31e26bc3ffed76364965f29f9fd281/assets/tests/fel_orig.bin).
+It does not use film footage. The output is a single-track P7 MP4 with authored
+3840x2160 BL, 1920x1080 EL, 48 frames at 24000/1001 fps, validated RPU/EL/BL
+flags, decoded EL luma codes, and complete PTS/DTS cadence. The source vector's
+license is [MIT](https://github.com/quietvoid/dovi_tool/blob/ef85991cfc31e26bc3ffed76364965f29f9fd281/LICENSE).
+
+Requirements: `x265`, `dovi_tool`, FFmpeg/`ffprobe`, and GPAC `MP4Box`. The
+generator uses the system Python standard library; it downloads only the pinned
+RPU vector and checks its length and SHA-256 before use. Use a new or empty
+output directory:
+
+```bash
+engine_root=/path/to/plezyng-dv-experimental
+python3 tools/dv-engine/generate_synthetic_p7.py --out-dir build/dv-synthetic-p7
+python3 tools/dv-engine/verify_synthetic_render.py \
+  --runner "$engine_root/bin/plezyng-dv-real-clip" \
+  --input build/dv-synthetic-p7/synthetic-p7-fel.mp4 \
+  --out-dir build/dv-synthetic-p7/render
+```
+
+The renderer helper is shipped in new experimental engine bundles; older
+bundles can compile `real_clip_smoke.c` using the command above. The checked-in
+render verifier captures a neutral-EL frame and a residual-EL frame through
+embedded libmpv `opengl-next`, confirms the P7 splitter, `[el_pair]` and
+`sh_dovi_compose_nlq` in both logs, then checks that the designed center patch
+dominates the output delta. It verifies EL-dependent pixels in this graph; it
+does not compare those pixels against Dolby's reference composer or qualify
+hardware, app presentation, or physical output.
+
+The 2026-10-26 software-GLES run used llvmpipe at 1280x720. All 230,400 pixels
+in the designed center patch changed by more than two 8-bit output codes between
+the neutral and residual phases; its mean absolute channel delta was 16.1666.
+The outside-region mean was 0.00517, with 360 outside pixels changing by more
+than two codes. The generated MP4 SHA-256 was
+`bdc0da2744554996eaad7918394f7e77fe91c74810ffa5da49d251aee67c7cc4`; the
+render report SHA-256 was
+`f3efad42a6deb53be1cfe8280a3969c1e58cc4a50fabff6b81f62af168dccf5f`.
+
+The injected test vector parses as Profile 7 FEL, CM v2.9, with residual enabled,
+10-bit BL/EL and a 12-bit VDR signal. The EL is authored independently of the
+vector's original mastering pixels, so the fixture tests residual use rather
+than known-correct reconstruction; CM v4.0 is not covered.
+
+### Verify the generated layers through FelBaker
+
+The pinned FelBaker source builder corrects its VapourSynth v4 output declaration
+to the `clip` key written by `createVideoFilter`; the upstream declaration
+otherwise emits `return value baked is required`. The adapter report records the
+SHA-256 of the exact patched entry source. Install a local VapourSynth runtime,
+NumPy and an FFMS2 v5 plugin that exports `DolbyVisionRPU` frame properties, then
+run the RGB48 verifier on the generated elementary streams:
+
+```bash
+python3 tools/dv-engine/verify_felbaker_synthetic.py \
+  --ffms-plugin /plugins/libffms2.so \
+  --felbaker-plugin build/dv-felbaker/build/libfelbaker.so \
+  --bl build/dv-synthetic-p7/demuxed-base.hevc \
+  --el build/dv-synthetic-p7/demuxed-enhancement.hevc \
+  --report build/dv-synthetic-p7/felbaker-report.json
+```
+
+The verifier requires 48 decoded frames per layer and RPU metadata on both
+sampled EL frames, reads all three RGB48 planes with their actual row strides,
+and compares neutral frame 8 with residual frame 40. The 2026-10-26 run changed
+all 2,073,600 authored center-patch pixels by more than two 16-bit codes; mean
+absolute RGB48 delta was 2392.4089 codes. The outside control mean was 0.000289
+codes, with four of 518,400 pixels changing by more than two codes. This confirms
+EL-dependent output in a companion composer; it is not a Dolby reference or
+accuracy measurement.
+
+The same 48-frame input also completed both offline encodes. `--target hdr10`
+produced 3840x2160 10-bit HEVC/PQ/BT.2020; `--target sdr --peak-nits 1000`
+produced 3840x2160 H.264/BT.709. `ffprobe` counted 48 frames and confirmed each
+target's color tags. These are lossy derived versions with `fel_qualified: false`
+and no Dolby Vision metadata or physical DV output claim.
+
 ## Acceptance still required
 
-- An independent numerical reference for reconstructed pixels. The current
+- An independent numerical reference for reconstructed pixels, based on ETSI
+  GS CCM 001 clause 5. That document defines generic BL mapping, EL NLQ,
+  residual addition and PQ conversion; map Profile 7 RPU fields and CM 2.9/4.0
+  rules to its composing metadata before calling it a P7 oracle. The current
   real-clip mark proves EL contribution qualitatively, not exact pixel accuracy.
-- A reproducible, redistributable/generated graph fixture that drives paired
-  decoded frames; the local Kodi clip must not be committed or used in public CI.
-- Both single-track and separately tracked layers, end-to-end PTS reorder/seek/flush handling,
-  broken metadata, CM2.9/CM4 cases and frame-specific active areas.
+- Expand the generated single-track graph fixture with separate-track input,
+  PTS pairing and reorder, seek/flush, broken metadata/RPU, CM2.9/CM4 cases,
+  scene changes, active area, malformed or missing EL, crop/chroma edges,
+  queue faults and bounded memory. The local Kodi clip remains private and must
+  not be committed or used in public CI.
 - Full app playback on Linux's Wayland plane, including zero-copy VA-API import,
   FBO precision, color tags, tone-map ownership, resize, subtitles, audio sync,
   suspend and output changes; full Flutter/native checks.
