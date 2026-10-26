@@ -82,6 +82,7 @@
 
 ### Fixed
 
+- Keep raw companion remote transport exceptions out of discovery and session messages.
 - Preserve existing TV and keyboard toolbar focus order when adding Find your next discovery actions.
 - Keep entitlement-controlled themes and icons locked when store access is disabled in the build.
 - Remove stale SVG imports after switching the setup and app-icon previews back to raster artwork.
