@@ -93,7 +93,11 @@ class _SupporterSheetState extends State<SupporterSheet> {
         position.maxScrollExtent,
       );
       if ((target - position.pixels).abs() < 1) return;
-      unawaited(position.animateTo(target, duration: const Duration(milliseconds: 200), curve: Curves.easeOut));
+      if (MediaQuery.disableAnimationsOf(context)) {
+        position.jumpTo(target);
+      } else {
+        unawaited(position.animateTo(target, duration: const Duration(milliseconds: 200), curve: Curves.easeOut));
+      }
     });
   }
 
@@ -161,7 +165,11 @@ class _SupporterSheetState extends State<SupporterSheet> {
   /// they and the button do not fit on screen together.
   void _scrollToTop() {
     if (!_scrollController.hasClients) return;
-    unawaited(_scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut));
+    if (MediaQuery.disableAnimationsOf(context)) {
+      _scrollController.jumpTo(0);
+    } else {
+      unawaited(_scrollController.animateTo(0, duration: const Duration(milliseconds: 200), curve: Curves.easeOut));
+    }
   }
 
   @override

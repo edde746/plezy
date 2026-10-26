@@ -601,39 +601,49 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
   }
 
   Widget _buildMobileLayout(BuildContext context) {
-    return GestureDetector(
-      behavior: HitTestBehavior.opaque,
+    return Semantics(
+      label: t.profiles.pinProtectionLabel,
+      hint: t.profiles.pinExplain,
+      textField: true,
+      obscured: true,
+      focused: _mobileFocusNode.hasFocus,
       onTap: _requestMobileKeyboardFocus,
-      child: Stack(
-        alignment: .center,
-        children: [
-          SizedBox(
-            width: 222,
-            height: 56,
-            child: IgnorePointer(
-              child: TextField(
-                controller: _mobileController,
-                focusNode: _mobileFocusNode,
-                keyboardType: TextInputType.number,
-                textInputAction: TextInputAction.done,
-                textAlign: TextAlign.center,
-                maxLength: 4,
-                obscureText: true,
-                autocorrect: false,
-                enableSuggestions: false,
-                enableInteractiveSelection: false,
-                showCursor: false,
-                cursorColor: Colors.transparent,
-                style: const TextStyle(color: Colors.transparent, fontSize: 1, height: 1),
-                decoration: const InputDecoration(counterText: '', border: InputBorder.none, contentPadding: .zero),
-                inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4)],
-                onChanged: _onMobilePinChanged,
-                onSubmitted: (_) => _trySubmit(),
+      onSetText: _onMobilePinChanged,
+      excludeSemantics: true,
+      child: GestureDetector(
+        behavior: HitTestBehavior.opaque,
+        onTap: _requestMobileKeyboardFocus,
+        child: Stack(
+          alignment: .center,
+          children: [
+            SizedBox(
+              width: 222,
+              height: 56,
+              child: IgnorePointer(
+                child: TextField(
+                  controller: _mobileController,
+                  focusNode: _mobileFocusNode,
+                  keyboardType: TextInputType.number,
+                  textInputAction: TextInputAction.done,
+                  textAlign: TextAlign.center,
+                  maxLength: 4,
+                  obscureText: true,
+                  autocorrect: false,
+                  enableSuggestions: false,
+                  enableInteractiveSelection: false,
+                  showCursor: false,
+                  cursorColor: Colors.transparent,
+                  style: const TextStyle(color: Colors.transparent, fontSize: 1, height: 1),
+                  decoration: const InputDecoration(counterText: '', border: InputBorder.none, contentPadding: .zero),
+                  inputFormatters: [FilteringTextInputFormatter.digitsOnly, LengthLimitingTextInputFormatter(4)],
+                  onChanged: _onMobilePinChanged,
+                  onSubmitted: (_) => _trySubmit(),
+                ),
               ),
             ),
-          ),
-          _buildDigitRow(context),
-        ],
+            ExcludeSemantics(child: _buildDigitRow(context)),
+          ],
+        ),
       ),
     );
   }

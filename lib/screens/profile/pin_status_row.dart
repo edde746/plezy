@@ -20,7 +20,10 @@ class PinStatusRow extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    return Row(
+    return Wrap(
+      spacing: 12,
+      runSpacing: 4,
+      crossAxisAlignment: WrapCrossAlignment.center,
       children: [
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -37,7 +40,6 @@ class PinStatusRow extends StatelessWidget {
             ],
           ),
         ),
-        const SizedBox(width: 12),
         FocusableButton(
           focusNode: changeFocusNode,
           useBackgroundFocus: true,
