@@ -32,6 +32,50 @@ if [[ -z "$JSON_PYTHON" || ! -x "$JSON_PYTHON" ]]; then
   exit 1
 fi
 
+if [[ -L /etc/os-release || ! -f /etc/os-release || ! -r /etc/os-release ]]; then
+  echo "The private JIT image must provide a readable, regular /etc/os-release." >&2
+  exit 1
+fi
+HOST_OS_FACTS="$("$JSON_PYTHON" - /etc/os-release <<'PY'
+import shlex
+import sys
+
+values = {}
+with open(sys.argv[1], encoding="utf-8") as os_release:
+    for line in os_release:
+        line = line.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, raw_value = line.split("=", 1)
+        parsed = shlex.split(raw_value, posix=True)
+        if len(parsed) == 1:
+            values[key] = parsed[0]
+print(values.get("ID", ""), values.get("VERSION_ID", ""), sep="\t")
+PY
+)"
+IFS=$'\t' read -r HOST_OS_ID HOST_OS_VERSION <<< "$HOST_OS_FACTS"
+if [[ "$HOST_OS_ID" != "ubuntu" || ! "$HOST_OS_VERSION" =~ ^(22\.04|24\.04|26\.04)$ ]]; then
+  echo "LG supports the Flutter-webOS build host on Ubuntu 22.04, 24.04, or 26.04; refusing unsupported host $HOST_OS_ID $HOST_OS_VERSION." >&2
+  exit 1
+fi
+
+REQUIRED_COMMANDS=(curl git git-lfs sha256sum df awk tee install unzip cmake pkg-config file clang clang++ tar)
+MISSING_COMMANDS=()
+for required_command in "${REQUIRED_COMMANDS[@]}"; do
+  if ! command -v "$required_command" >/dev/null 2>&1; then
+    MISSING_COMMANDS+=("$required_command")
+  fi
+done
+if (( ${#MISSING_COMMANDS[@]} != 0 )); then
+  printf 'The private JIT image is missing required LG Flutter-webOS build tools: %s\n' \
+    "${MISSING_COMMANDS[*]}" >&2
+  exit 1
+fi
+if ! pkg-config --exists gtk+-3.0; then
+  echo "The private JIT image must provide the GTK 3 development files required by the supported Linux host." >&2
+  exit 1
+fi
+
 read_lock() {
   "$JSON_PYTHON" - "$ROOT/tools/webos/compatibility.json" "$@" <<'PY'
 import json
@@ -104,7 +148,7 @@ printf 'Release artifact output: %s\n' "$OUTPUT_ROOT"
 df -h "$RUNNER_TEMP"
 
 if [[ "$(uname -m)" != "x86_64" ]]; then
-  echo "The locked engine toolchain currently targets an x86_64 Linux build host." >&2
+  echo "The locked engine toolchain currently targets an x86_64 Ubuntu build host." >&2
   exit 1
 fi
 
