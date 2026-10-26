@@ -20,6 +20,7 @@ import '../../widgets/provider_mark.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../libraries/state_messages.dart';
 import '../sources/source_widgets.dart';
 
 class PublicLibrariesScreen extends StatefulWidget {
@@ -32,6 +33,7 @@ class _PublicLibrariesScreenState extends State<PublicLibrariesScreen> {
   LendingService? _service;
   List<LendingLibrary> _libraries = [];
   Object? _error;
+  bool _loading = false;
   @override
   void initState() {
     super.initState();
@@ -39,9 +41,15 @@ class _PublicLibrariesScreenState extends State<PublicLibrariesScreen> {
   }
 
   Future<void> _load() async {
+    if (!mounted || _loading) return;
+    setState(() {
+      _loading = true;
+      _error = null;
+    });
     try {
       final sources = context.read<SourceController>();
       await sources.ready;
+      if (!mounted) return;
       sources.requireSession();
       final epoch = sources.generation;
       _service ??= LendingService(
@@ -58,11 +66,13 @@ class _PublicLibrariesScreenState extends State<PublicLibrariesScreen> {
       }
     } catch (error) {
       if (mounted) setState(() => _error = error);
+    } finally {
+      if (mounted) setState(() => _loading = false);
     }
   }
 
   Future<void> _add([LendingProvider? provider]) async {
-    if (_service == null) return;
+    if (_service == null || _loading) return;
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -73,21 +83,23 @@ class _PublicLibrariesScreenState extends State<PublicLibrariesScreen> {
   }
 
   Future<void> _open(LendingLibrary library) async {
+    final service = _service;
+    if (service == null) return;
     if (library.native && LendingService.overdriveEnabled) {
-      if (!await _service!.connected(library)) {
-        if (mounted) await _signIn(context, _service!, library);
-        if (!await _service!.connected(library)) return;
+      if (!await service.connected(library)) {
+        if (mounted) await _signIn(context, service, library);
+        if (!await service.connected(library)) return;
       }
       if (mounted) {
         await Navigator.push(
           context,
           MaterialPageRoute(
-            builder: (_) => LibraryCatalogueScreen(service: _service!, library: library),
+            builder: (_) => LibraryCatalogueScreen(service: service, library: library),
           ),
         );
       }
     } else {
-      await _service!.openPage(lendingHttps(library.home));
+      await service.openPage(lendingHttps(library.home));
     }
   }
 
@@ -101,7 +113,13 @@ class _PublicLibrariesScreenState extends State<PublicLibrariesScreen> {
   Widget build(BuildContext context) => FocusedScrollScaffold(
     title: Text(t.lending.title),
     focusableAppBarActions: true,
-    actions: [IconButton(tooltip: t.lending.add, onPressed: () => _add(), icon: const AppIcon(Symbols.add_rounded))],
+    actions: [
+      IconButton(
+        tooltip: t.lending.add,
+        onPressed: _service == null || _loading ? null : () => _add(),
+        icon: const AppIcon(Symbols.add_rounded),
+      ),
+    ],
     slivers: [
       SliverPadding(
         padding: const EdgeInsets.all(24),
@@ -114,19 +132,38 @@ class _PublicLibrariesScreenState extends State<PublicLibrariesScreen> {
                 children: [
                   Text(t.lending.intro, style: Theme.of(context).textTheme.headlineSmall),
                   const SizedBox(height: 24),
+                  if (_loading)
+                    Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 16),
+                      child: Row(
+                        children: [
+                          const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                          const SizedBox(width: 12),
+                          Text(t.common.loading, style: Theme.of(context).textTheme.bodyMedium),
+                        ],
+                      ),
+                    )
+                  else if (_error != null)
+                    SizedBox(
+                      height: 240,
+                      child: ErrorStateWidget(
+                        message: sourceFailureText(_error!),
+                        icon: Symbols.error_outline_rounded,
+                        onRetry: () => unawaited(_load()),
+                        actionUseBackgroundFocus: true,
+                      ),
+                    ),
                   SourceTile(
                     title: 'Open Library',
                     subtitle: t.lending.openLibraryNote,
                     icon: Symbols.menu_book_rounded,
-                    onTap: _service == null
+                    onTap: _service == null || _loading
                         ? null
                         : () => Navigator.push(
                             context,
                             MaterialPageRoute(builder: (_) => LibraryCatalogueScreen(service: _service!)),
                           ),
                   ),
-                  if (_error != null)
-                    Padding(padding: const EdgeInsets.symmetric(vertical: 16), child: Text(sourceFailureText(_error!))),
                   if (_libraries.isNotEmpty) ...[
                     const SizedBox(height: 32),
                     for (var i = 0; i < _libraries.length; i++)
@@ -186,7 +223,7 @@ class _PublicLibrariesScreenState extends State<PublicLibrariesScreen> {
                               ? const ProviderMark('libby.png', size: 24)
                               : null,
                           label: Text(provider.label),
-                          onPressed: () => _add(provider),
+                          onPressed: _service == null || _loading ? null : () => _add(provider),
                         ),
                     ],
                   ),
