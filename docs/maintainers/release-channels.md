@@ -8,6 +8,16 @@ This is the release support boundary for the PlezyNG client and its separate rel
 
 Push and pull-request CI runs checks; it does not build release packages or publish images. The only package build dispatch is **PlezyNG Release**. Publishing the draft triggers Discord, Homebrew/appcast, Chocolatey, WinGet, Snap Store, AUR, COPR, PPA, and relay-container workflows. App-store uploads are separate and manual; draft releases are accepted only for non-production testing uploads, while production Play uploads require a published stable release.
 
+## Build runner policy
+
+Required policy: all builds across `snapetech-org` must use private just-in-time (JIT) runners. This applies to all 65 organization repositories, including PlezyNG and `plezyng.app`. GitHub-hosted runners are not a fallback because hosted minutes are exhausted. This records the required target; the current workflow runner labels still need a coordinated migration.
+
+Keep workflow authorization and trust boundaries explicit. Fork and untrusted pull-request builds must use an isolated private JIT route that cannot access trusted-main runner routes or secrets. If a workflow or platform has no suitable private JIT route, provision one and block that build until it is available; do not fall back to GitHub-hosted runners.
+
+Windows release jobs require the private Windows `packer` JIT runner to be restored. Until that route is available and authorized, Windows builds are blocked; `windows-latest` is not an alternative.
+
+Coordinate shared runner-group, broker, and workflow changes before cutover. Preserve active release work, drain existing JIT jobs, and make the coordinated policy change once. Do not remove repositories or workflow references to fit an outdated allowlist baseline.
+
 ## Client packages on GitHub Releases
 
 | Platform | Architectures | GitHub Release assets |
