@@ -24,6 +24,9 @@ import '../providers/seerr_account_provider.dart';
 import '../providers/trackers_provider.dart';
 import '../providers/watch_state_store.dart';
 import '../database/app_database.dart';
+import '../multiview/workspace_controller.dart';
+import '../multiview/workspace_overlay.dart';
+import '../multiview/workspace_persistence.dart';
 import '../screens/main_screen.dart';
 import '../screens/sources/source_player_screen.dart';
 import '../screens/video_player_screen.dart';
@@ -153,6 +156,16 @@ class _ProfileSessionScreenState extends State<ProfileSessionScreen> {
           key: ValueKey<String?>('profile-session:$activeId'),
           child: MultiProvider(
             providers: [
+              ChangeNotifierProvider<MultiviewWorkspaceController>(
+                create: (_) {
+                  final workspace = MultiviewWorkspaceController(
+                    persistence: const SharedPreferencesWorkspaceSnapshotPersistence(),
+                    profileId: activeId,
+                  );
+                  unawaited(workspace.hydrate());
+                  return workspace;
+                },
+              ),
               ChangeNotifierProxyProvider<MultiServerProvider, WatchStateStore>(
                 create: (_) => WatchStateStore(),
                 update: (_, multiServer, previous) {
@@ -352,6 +365,7 @@ class _ProfileSessionNavigator extends StatefulWidget {
 
 class _ProfileSessionNavigatorState extends State<_ProfileSessionNavigator> {
   final _navigatorKey = GlobalKey<NavigatorState>();
+  final _workspaceOverlayKey = GlobalKey<OverlayState>();
   final _mainScaffoldMessengerKey = GlobalKey<ScaffoldMessengerState>();
   final _routeObserver = RouteObserver<PageRoute<dynamic>>();
 
@@ -433,6 +447,14 @@ class _ProfileSessionNavigatorState extends State<_ProfileSessionNavigator> {
                           );
                         },
                       ),
+                    ),
+                    Overlay(
+                      key: _workspaceOverlayKey,
+                      initialEntries: const [],
+                    ),
+                    MultiviewOverlayHost(
+                      controller: context.read<MultiviewWorkspaceController>(),
+                      overlayKey: _workspaceOverlayKey,
                     ),
                   ],
                 ),

@@ -361,9 +361,10 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     if (PlatformDetector.isTV()) throw const SourceException(SourceFailure.unsupported);
     await Navigator.push(
       context,
-      MaterialPageRoute(
+      PageRouteBuilder<void>(
         settings: const RouteSettings(name: 'publication-reader'),
-        builder: (_) => PublicationReaderScreen(entry: _entry, file: file),
+        opaque: false,
+        pageBuilder: (_, __, ___) => PublicationReaderScreen(entry: _entry, file: file),
       ),
     );
     if (mounted) await _load();

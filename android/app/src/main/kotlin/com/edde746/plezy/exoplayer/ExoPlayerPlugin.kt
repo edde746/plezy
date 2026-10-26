@@ -250,6 +250,7 @@ class ExoPlayerPlugin :
       "addSubtitleTrack" -> handleAddSubtitleTrack(call, result)
       "setVisible" -> handleSetVisible(call, result)
       "updateFrame" -> handleUpdateFrame(result)
+      "setVideoRect" -> handleSetVideoRect(call, result)
       "setVideoFrameRate" -> handleSetVideoFrameRate(call, result)
       "clearVideoFrameRate" -> handleClearVideoFrameRate(result)
       "requestAudioFocus" -> handleRequestAudioFocus(result)
@@ -1019,6 +1020,22 @@ class ExoPlayerPlugin :
     }
 
     activeSurfaceCore?.setVisible(visible)
+    result.success(null)
+  }
+
+  private fun handleSetVideoRect(call: MethodCall, result: MethodChannel.Result) {
+    val left = call.argument<Number>("left")?.toInt()
+    val top = call.argument<Number>("top")?.toInt()
+    val right = call.argument<Number>("right")?.toInt()
+    val bottom = call.argument<Number>("bottom")?.toInt()
+    val devicePixelRatio = call.argument<Number>("devicePixelRatio")?.toDouble()
+    if (left == null || top == null || right == null || bottom == null ||
+      devicePixelRatio == null || !devicePixelRatio.isFinite() || devicePixelRatio <= 0.0
+    ) {
+      result.error("INVALID_ARGS", "Missing or invalid video rectangle", null)
+      return
+    }
+    activeSurfaceCore?.setVideoRect(left, top, right, bottom, devicePixelRatio)
     result.success(null)
   }
 

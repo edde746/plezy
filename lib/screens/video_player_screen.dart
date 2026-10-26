@@ -86,6 +86,8 @@ import '../services/ambient_lighting_service.dart';
 import '../services/video_filter_manager.dart';
 import '../services/video_volume_controller.dart';
 import '../services/pip_service.dart';
+import '../multiview/workspace_controller.dart';
+import '../multiview/workspace_models.dart';
 import '../services/shader_service.dart';
 import '../providers/shader_provider.dart';
 import '../providers/account_preferences_controller.dart';
@@ -1020,6 +1022,9 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   PlaybackProgressTracker? _progressTracker;
   VideoFilterManager? _videoFilterManager;
   bool _pipInitialized = false;
+  String? _workspaceSessionId;
+  MultiviewWorkspaceController? _workspaceController;
+  bool _workspaceSurfaceDetached = false;
   ShaderService? _shaderService;
   AmbientLightingService? _ambientLightingService;
 
@@ -1918,12 +1923,21 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         _releaseFullscreenListener ??= bindListenable(FullscreenStateManager(), _onFullscreenChanged);
       }
 
-      // One-native-instance rule: a live music session owns the only audio
-      // core — stop it and wait for its dispose before constructing the
-      // video core (see PlaybackCoordinator).
+      // A music session explicitly retained in the app-owned workspace is a
+      // separate audio core and stays alive beside this video. Outside the
+      // workspace, keep the existing playback replacement policy.
       initPhase = 'claiming playback session';
       if (!mounted) return;
-      if (widget.launchObserver != null && context.read<MusicPlaybackService>().currentTrack != null) {
+      MultiviewWorkspaceController? workspace;
+      try {
+        workspace = context.read<MultiviewWorkspaceController>();
+      } catch (_) {
+        // Standalone player tests and embedders may not mount the profile shell.
+      }
+      final retainsMusic = workspace?.hasSessionOfKind(MultiviewMediaKind.music) ?? false;
+      if (widget.launchObserver != null &&
+          context.read<MusicPlaybackService>().currentTrack != null &&
+          !retainsMusic) {
         widget.launchObserver?.mark('blocked', blocker: 'playbackActive');
         return;
       }
@@ -2290,16 +2304,20 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       }
 
       final savedVolume = settingsService.read(SettingsService.volume).clamp(0.0, maxVolume.toDouble());
-      await currentPlayer.setVolume(savedVolume);
+      final allowInitialWorkspaceAudio = workspace == null || !workspace.hasAudioSelection;
+      await currentPlayer.setVolume(allowInitialWorkspaceAudio ? savedVolume : 0);
       if (!_isPlayerInitializationCurrent(generation)) return;
       _volumeController = VideoVolumeController(
         player: currentPlayer,
         settings: settingsService,
         initialVolume: savedVolume,
         onUserChange: _announceVolumeCommand,
-      );
+      )..setWorkspaceAudioEnabled(allowInitialWorkspaceAudio);
 
       player = currentPlayer;
+      if (workspace != null && workspace.sessionCount > 0) {
+        this._registerVideoWorkspaceSession(workspace);
+      }
       _playerBackendLabel = currentPlayer.playerType;
 
       initPhase = 'wiring player streams';
@@ -2542,6 +2560,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
 
   @override
   void dispose() {
+    final workspaceSessionId = _workspaceSessionId;
+    if (workspaceSessionId != null) {
+      _workspaceController?.unregister(workspaceSessionId);
+      _workspaceSessionId = null;
+      _workspaceSurfaceDetached = false;
+    }
     PlaybackCoordinator.instance.unregisterVideoSession(
       _shutdownVideo,
       retirement: () async {

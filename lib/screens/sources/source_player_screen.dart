@@ -6,6 +6,9 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../focus/focusable_slider.dart';
+import '../../multiview/source_playback_workspace_surface.dart';
+import '../../multiview/workspace_controller.dart';
+import '../../multiview/workspace_models.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../utils/formatters.dart';
@@ -37,9 +40,15 @@ class SourcePlayerScreen extends StatefulWidget {
 
 class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
   SourcePlayback? _session;
+  MultiviewWorkspaceController? _workspace;
+  MultiviewWorkspaceController? _observedWorkspace;
+  String? _workspaceSessionId;
+  bool _workspaceDetached = false;
+  bool _autoJoinScheduled = false;
   bool _full = false;
   double? _dragPosition;
   final _fullscreen = FullscreenStateManager();
+
   @override
   void initState() {
     super.initState();
@@ -49,16 +58,175 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    _session ??= context.read<SourcePlayback>();
-    _session!.fullPlayerVisible = true;
+    final playback = context.read<SourcePlayback>();
+    if (_session != playback) {
+      _session?.removeListener(_onPlaybackChanged);
+      _session = playback;
+      playback.addListener(_onPlaybackChanged);
+    }
+    playback.fullPlayerVisible = true;
+
+    final workspace = context.read<MultiviewWorkspaceController>();
+    if (_observedWorkspace != workspace) {
+      _observedWorkspace?.removeListener(_scheduleWorkspaceAutoJoin);
+      _observedWorkspace = workspace;
+      workspace.addListener(_scheduleWorkspaceAutoJoin);
+    }
+    _attachToExistingWorkspaceSession(playback, workspace);
+    _scheduleWorkspaceAutoJoin();
+  }
+
+  String? _stableWorkspaceSessionId(SourcePlayback playback) {
+    final progress = playback.progress;
+    if (progress == null) return null;
+    return "source:${sourceDigest('${progress.key}:${playback.mode.name}')}";
+  }
+
+  void _attachToExistingWorkspaceSession(
+    SourcePlayback playback,
+    MultiviewWorkspaceController workspace,
+  ) {
+    final id = _stableWorkspaceSessionId(playback);
+    if (id == null || _workspaceSessionId != null || workspace.session(id) == null) return;
+    _workspace = workspace;
+    _workspaceSessionId = id;
+    _workspaceDetached = workspace.visibleSessions.any((item) => item.descriptor.id == id);
+    playback.fullPlayerVisible = true;
+  }
+
+  void _scheduleWorkspaceAutoJoin() {
+    final workspace = _observedWorkspace;
+    final playback = _session;
+    if (!mounted ||
+        _autoJoinScheduled ||
+        playback == null ||
+        !playback.active ||
+        _workspaceSessionId != null ||
+        workspace == null ||
+        workspace.sessionCount == 0) {
+      return;
+    }
+    _autoJoinScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _autoJoinScheduled = false;
+      if (mounted &&
+          _session?.active == true &&
+          _workspaceSessionId == null &&
+          (_observedWorkspace?.sessionCount ?? 0) > 0) {
+        _toggleSourceWorkspace();
+      }
+    });
+  }
+
+  void _onPlaybackChanged() {
+    final playback = _session;
+    if (!mounted || playback == null) return;
+    var workspaceChanged = false;
+    if (!playback.active && _workspaceSessionId != null) {
+      final id = _workspaceSessionId!;
+      _workspace?.unregister(id);
+      _workspaceSessionId = null;
+      _workspace = null;
+      _workspaceDetached = false;
+      playback.fullPlayerVisible = false;
+      workspaceChanged = true;
+    }
+    _scheduleWorkspaceAutoJoin();
+    if (workspaceChanged && mounted) setState(() {});
+  }
+
+  void _toggleSourceWorkspace() {
+    final playback = _session;
+    if (playback == null || !playback.active) return;
+    final controller = _workspace ?? context.read<MultiviewWorkspaceController>();
+    final existingId = _workspaceSessionId;
+    if (existingId != null) {
+      if (_workspaceDetached) {
+        if (controller.isRestored(existingId)) {
+          controller.showSessionInWorkspace(existingId);
+          setState(() => _workspaceDetached = true);
+        } else {
+          controller.promoteToFullscreen(existingId);
+        }
+      } else if (controller.showSessionInWorkspace(existingId)) {
+        setState(() => _workspaceDetached = true);
+      }
+      return;
+    }
+
+    final id = _stableWorkspaceSessionId(playback);
+    if (id == null) return;
+    final navigator = Navigator.of(context);
+    final sourceRoute = ModalRoute.of(context);
+    final entry = playback.entry;
+    if (entry == null) return;
+    final registration = WorkspaceSurfaceRegistration(
+      descriptor: WorkspaceSessionDescriptor(
+        id: id,
+        kind: playback.video ? MultiviewMediaKind.video : MultiviewMediaKind.audiobook,
+        title: entry.displayTitle.trim().isEmpty ? t.common.unknown : entry.displayTitle,
+        subtitle: playback.currentChapter?.title ??
+            (entry.narrator.isNotEmpty ? entry.narrator : entry.author),
+        mediaKey: playback.progress?.key,
+        progressOwner: playback.progress?.key,
+        hasAudio: true,
+        hasVideo: playback.video,
+        openedAt: DateTime.now(),
+      ),
+      buildSurface: (_) => SourcePlaybackWorkspaceSurface(
+        playback: playback,
+        controller: controller,
+        sessionId: id,
+      ),
+      onRestore: () {
+        WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!mounted || _workspaceSessionId != id) return;
+          setState(() => _workspaceDetached = false);
+          final route = sourceRoute;
+          if (navigator.mounted && route?.isActive == true) {
+            navigator.popUntil((candidate) => identical(candidate, route));
+          }
+        });
+      },
+      onClose: () {
+        unawaited(() async {
+          await playback.stop();
+          playback.fullPlayerVisible = false;
+          final route = sourceRoute;
+          if (!navigator.mounted || route?.isActive != true) return;
+          if (route!.isCurrent) {
+            navigator.pop();
+          } else {
+            navigator.removeRoute(route);
+          }
+        }());
+      },
+      onAudioOwnershipChanged: playback.setWorkspaceAudioEnabled,
+    );
+
+    _workspace = controller;
+    _workspaceSessionId = id;
+    _workspaceDetached = true;
+    playback.fullPlayerVisible = true;
+    if (!controller.register(registration)) {
+      _workspace = null;
+      _workspaceSessionId = null;
+      _workspaceDetached = false;
+      return;
+    }
+    setState(() {});
   }
 
   @override
   void dispose() {
-    final s = _session;
-    if (s != null) {
-      s.fullPlayerVisible = false;
-      if (s.video) unawaited(s.stop());
+    _session?.removeListener(_onPlaybackChanged);
+    _observedWorkspace?.removeListener(_scheduleWorkspaceAutoJoin);
+    final playback = _session;
+    final id = _workspaceSessionId;
+    if (id != null) _workspace?.unregister(id);
+    if (playback != null) {
+      playback.fullPlayerVisible = false;
+      if (playback.video) unawaited(playback.stop());
     }
     if (_full) unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));
     if (_fullscreen.scopeOwnsFullscreen) unawaited(_fullscreen.exitFullscreen());
@@ -435,10 +603,27 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
     }
     final core = s.player;
     final video = s.video && core != null
-        ? AspectRatio(
-            aspectRatio: 16 / 9,
-            child: Video(player: core),
-          )
+        ? _workspaceDetached
+            ? AspectRatio(
+                aspectRatio: 16 / 9,
+                child: ColoredBox(
+                  color: Colors.black,
+                  child: Center(
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const AppIcon(Symbols.picture_in_picture_alt_rounded, size: 36, color: Colors.white),
+                        const SizedBox(height: 8),
+                        Text(t.videoControls.pipButton, style: const TextStyle(color: Colors.white)),
+                      ],
+                    ),
+                  ),
+                ),
+              )
+            : AspectRatio(
+                aspectRatio: 16 / 9,
+                child: Video(player: core),
+              )
         : null;
     return Focus(
       onKeyEvent: (_, e) {
@@ -470,6 +655,11 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
               title: Text(s.entry!.title),
               focusableAppBarActions: true,
               actions: [
+                IconButton(
+                  tooltip: t.videoControls.pipButton,
+                  onPressed: _toggleSourceWorkspace,
+                  icon: const AppIcon(Symbols.picture_in_picture_alt_rounded),
+                ),
                 IconButton(
                   tooltip: t.fileSources.stop,
                   onPressed: () => sourceAction(context, () async {

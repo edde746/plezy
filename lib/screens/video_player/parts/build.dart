@@ -166,7 +166,16 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
     _pinchStartZoomScale = null;
   }
 
-  Widget _buildVideoPlayer(BuildContext context) {
+  Widget _buildVideoPlayer(BuildContext context, {bool forWorkspace = false}) {
+    if (_workspaceSurfaceDetached && !forWorkspace) {
+      // The route retains ownership and stays mounted; its live Video surface
+      // is rendered by the profile overlay so native rect owners never receive
+      // competing geometry from two Video widgets.
+      return const Scaffold(
+        backgroundColor: Colors.transparent,
+        body: IgnorePointer(child: SizedBox.expand()),
+      );
+    }
     // Cache platform detection to avoid multiple calls
     final isMobile = PlatformDetector.isMobile(context);
     final hideChromeOnMouseExit = !(isMobile && !PlatformDetector.isTV());

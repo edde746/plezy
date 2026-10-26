@@ -15,6 +15,15 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
   var coreBase: MpvPlayerCoreBase? { playerCore }
   func setPlayerVisible(_ visible: Bool, restoreOnWindowVisible _: Bool) { playerCore?.setVisible(visible) }
   func updatePlayerFrame() { playerCore?.updateFrame() }
+  func setPlayerVideoRect(
+    left: Int,
+    top: Int,
+    right: Int,
+    bottom: Int,
+    devicePixelRatio: Double
+  ) {
+    playerCore?.setVideoRect(left: left, top: top, right: right, bottom: bottom, devicePixelRatio: devicePixelRatio)
+  }
   func setPlayerVideoZoom(_ scale: Double) { playerCore?.setVideoZoom(scale) }
 
   private var pipController: MpvPipController?
@@ -89,6 +98,8 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
       handleAwaitDisplayModeSwitch(call: call, result: result)
     case "setVisible":
       handleSetVisible(call: call, result: result)
+    case "setVideoRect":
+      handleSetVideoRect(call: call, result: result)
     case "setVideoZoom":
       handleSetVideoZoom(call: call, result: result)
     case "isInitialized":

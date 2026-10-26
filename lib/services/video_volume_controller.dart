@@ -26,6 +26,7 @@ final class VideoVolumeController implements ValueListenable<double> {
        _persistVolume = persistVolume ?? ((volume) => settings.write(SettingsService.volume, volume)),
        _desiredVolume = ValueNotifier<double>(_clampForSettings(settings, initialVolume)),
        _confirmedVolume = _clampForSettings(settings, initialVolume),
+       _confirmedLogicalVolume = _clampForSettings(settings, initialVolume),
        _preferredVolume = _initialPreferredVolume(settings),
        _lastPersistedVolume = _initialPreferredVolume(settings) {
     _volumeSubscription = player.streams.volume.listen(
@@ -55,7 +56,9 @@ final class VideoVolumeController implements ValueListenable<double> {
   _VolumeTransition? _activeTransition;
   Completer<void>? _idleCompleter;
   double _confirmedVolume;
+  double _confirmedLogicalVolume;
   double _preferredVolume;
+  bool _workspaceAudioEnabled = true;
   double _lastPersistedVolume;
   bool _draining = false;
   bool _disposed = false;
@@ -83,6 +86,14 @@ final class VideoVolumeController implements ValueListenable<double> {
   Future<void> get idle => _idleCompleter?.future ?? Future<void>.value();
 
   bool ownsPlayer(Player candidate) => identical(player, candidate);
+
+  /// Mutes this output for workspace audio focus without changing the user's
+  /// volume preference or mute state.
+  void setWorkspaceAudioEnabled(bool enabled) {
+    if (_disposed || _workspaceAudioEnabled == enabled) return;
+    _workspaceAudioEnabled = enabled;
+    _schedule(value, persistedVolume: null);
+  }
 
   /// Applies and persists a relative change against the latest user intent.
   void adjust(double delta) {
@@ -127,21 +138,28 @@ final class VideoVolumeController implements ValueListenable<double> {
     onUserChange?.call(playerVolume);
   }
 
-  void _schedule(double playerVolume, {required double? persistedVolume}) {
+  void _schedule(double logicalVolume, {required double? persistedVolume}) {
     if (_disposed) return;
+    final desired = _clamp(logicalVolume);
+    final outputVolume = _workspaceAudioEnabled ? desired : 0.0;
     final persisted = persistedVolume == null ? null : _clamp(persistedVolume);
     if (persisted != null) _preferredVolume = persisted;
 
-    _setDesiredVolume(playerVolume);
+    _setDesiredVolume(desired);
     final active = _activeTransition;
     if (_draining &&
         _pending == null &&
         active != null &&
-        active.playerVolume == playerVolume &&
+        active.logicalVolume == desired &&
+        active.playerVolume == outputVolume &&
         active.persistedVolume == persisted) {
       return;
     }
-    _pending = _VolumeTransition(playerVolume: playerVolume, persistedVolume: persisted);
+    _pending = _VolumeTransition(
+      logicalVolume: desired,
+      playerVolume: outputVolume,
+      persistedVolume: persisted,
+    );
     if (_draining) return;
 
     _draining = true;
@@ -166,13 +184,14 @@ final class VideoVolumeController implements ValueListenable<double> {
             if (transition.persistedVolume != null) {
               _preferredVolume = _lastPersistedVolume;
             }
-            _setDesiredVolume(_confirmedVolume);
+            _setDesiredVolume(_confirmedLogicalVolume);
           }
           continue;
         }
 
         if (_disposed) return;
         _confirmedVolume = transition.playerVolume;
+        _confirmedLogicalVolume = transition.logicalVolume;
 
         // A newer user intent supersedes both this apply's UI state and its
         // persistence. Drain only the latest record next.
@@ -204,9 +223,10 @@ final class VideoVolumeController implements ValueListenable<double> {
   }
 
   void _handlePlayerVolume(double volume) {
-    if (_disposed || _draining || !volume.isFinite) return;
+    if (_disposed || _draining || !_workspaceAudioEnabled || !volume.isFinite) return;
     final observed = _clamp(volume);
     _confirmedVolume = observed;
+    _confirmedLogicalVolume = observed;
     _setDesiredVolume(observed);
   }
 
@@ -232,8 +252,13 @@ final class VideoVolumeController implements ValueListenable<double> {
 }
 
 final class _VolumeTransition {
-  const _VolumeTransition({required this.playerVolume, required this.persistedVolume});
+  const _VolumeTransition({
+    required this.logicalVolume,
+    required this.playerVolume,
+    required this.persistedVolume,
+  });
 
+  final double logicalVolume;
   final double playerVolume;
   final double? persistedVolume;
 }

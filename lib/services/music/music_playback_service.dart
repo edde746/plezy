@@ -131,6 +131,10 @@ abstract class MusicPlaybackService extends ChangeNotifier {
   ValueListenable<double> get volumeListenable;
   Future<void> setVolume(double volume, {bool persist = true});
 
+  /// Routes this live music output through the workspace's explicit audio owner
+  /// without changing the user's saved volume preference.
+  Future<void> setWorkspaceAudioEnabled(bool enabled) async {}
+
   void setRepeatMode(MusicRepeatMode mode);
   void toggleShuffle();
 

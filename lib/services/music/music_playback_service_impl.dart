@@ -163,6 +163,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService
   AudioLoudnessProfile? _currentLoudnessProfile;
   bool _fadeCurrentTrackIn = false;
   double _musicGain = 1;
+  bool _workspaceAudioEnabled = true;
   Listenable? _sweetFadesSettingsListenable;
 
   /// Persisted music volume (0–100), applied to every audio player instance
@@ -512,6 +513,9 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService
 
       await _coordinator.claimMusic();
       if (!launchCurrent()) return;
+      // When video or another non-music surface owns workspace audio, keep a
+      // newly started music session silent until the user assigns it focus.
+      _workspaceAudioEnabled = !_coordinator.workspaceHasCompetingAudioOwner;
       // Settle the vehicle's answer before the opt-in below reads it: a cold
       // start would otherwise configure the session as if the car were mute and
       // leave background audio off until the next track.
@@ -769,8 +773,8 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService
       final debugLogging = SettingsService.instanceOrNull?.read(SettingsService.enableDebugLogging) ?? false;
       await player.setLogLevel(debugLogging ? 'v' : 'warn');
     }
-    if (isNew && _player == player && !player.disposed && _volume != 100.0) {
-      unawaited(player.setVolume(_volume * _musicGain));
+    if (isNew && _player == player && !player.disposed && (_volume != 100.0 || !_workspaceAudioEnabled)) {
+      unawaited(player.setVolume(_workspaceAudioEnabled ? _volume * _musicGain : 0));
     }
     if (isNew && _player == player && !player.disposed) await _applyAudioPassthrough(player);
     if (isNew && _player == player && !player.disposed) await _applyAudioOutputDevice(player);
@@ -1333,7 +1337,8 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService
     _musicGain = normalized;
     final player = _player;
     if (player == null || player.disposed) return;
-    final effectiveVolume = (_volume * normalized).clamp(0.0, 100.0).toDouble();
+    final effectiveVolume = (_volume * normalized * (_workspaceAudioEnabled ? 1.0 : 0.0))
+        .clamp(0.0, 100.0).toDouble();
     unawaited(
       player.setVolume(effectiveVolume).catchError((Object _) {
         appLogger.d('Music fade volume update failed');
@@ -1756,7 +1761,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService
     if (clamped != _volume) {
       _volume = clamped;
       _volumeNotifier.value = clamped;
-      playerUpdate = _player?.setVolume(clamped * _musicGain);
+      playerUpdate = _player?.setVolume(clamped * _musicGain * (_workspaceAudioEnabled ? 1.0 : 0.0));
     }
 
     final persistence = persist ? _persistVolume(clamped) : null;
@@ -1766,6 +1771,15 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService
       await playerUpdate;
       await persistence;
     }
+  }
+
+  @override
+  Future<void> setWorkspaceAudioEnabled(bool enabled) async {
+    if (_workspaceAudioEnabled == enabled) return;
+    _workspaceAudioEnabled = enabled;
+    final player = _player;
+    if (player == null || player.disposed) return;
+    await player.setVolume(enabled ? _volume * _musicGain : 0);
   }
 
   static Future<void> _writePersistedVolume(double volume) async {
@@ -1944,7 +1958,10 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService
   // ---------------------------------------------------------------------
 
   @override
-  Future<void> stop() => _stopSession(endStatus: MusicPlaybackStatus.idle);
+  Future<void> stop() async {
+    await _stopSession(endStatus: MusicPlaybackStatus.idle);
+    _workspaceAudioEnabled = true;
+  }
 
   /// The coordinator's video claim uses the exact same full-stop path, so
   /// the audio core is guaranteed disposed when it resolves.

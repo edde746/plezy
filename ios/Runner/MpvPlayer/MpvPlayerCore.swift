@@ -11,6 +11,7 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   private var containerView: UIView?
   private weak var window: UIWindow?
   private var mainBlankView: UIView?
+  private var requestedVideoFrame: CGRect?
   private var isVisible = false
   private static var activeDisplayCriteriaKey: String?
   #if os(tvOS)
@@ -92,6 +93,8 @@ class MpvPlayerCore: MpvPlayerCoreBase {
     withoutLayerAnimations {
       if let frame {
         containerView.frame = frame
+      } else if let requestedVideoFrame {
+        containerView.frame = requestedVideoFrame
       } else if let superview = containerView.superview {
         containerView.frame = superview.bounds
       } else if let window {
@@ -130,6 +133,21 @@ class MpvPlayerCore: MpvPlayerCoreBase {
   /// the inline OSD sibling layer keeps its own geometry. PiP is unaffected:
   /// the Dart side resets zoom before entry, and the system presents the
   /// layer's buffers, not its on-screen transform.
+  /// Move the existing AVFoundation surface to the app-owned workspace
+  /// viewport. Flutter reports physical pixels; UIKit views use points.
+  func setVideoRect(left: Int, top: Int, right: Int, bottom: Int, devicePixelRatio: Double) {
+    guard right > left, bottom > top, devicePixelRatio.isFinite, devicePixelRatio > 0 else { return }
+    let scale = CGFloat(devicePixelRatio)
+    let frame = CGRect(
+      x: CGFloat(left) / scale,
+      y: CGFloat(top) / scale,
+      width: CGFloat(right - left) / scale,
+      height: CGFloat(bottom - top) / scale
+    )
+    requestedVideoFrame = frame
+    updateFrame(frame)
+  }
+
   func setVideoZoom(_ scale: Double) {
     let clamped = min(max(scale, 0.25), 4.0)
     Self.log("setVideoZoom(\(scale)) -> \(clamped)")

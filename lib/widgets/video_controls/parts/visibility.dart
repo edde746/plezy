@@ -183,21 +183,11 @@ extension _PlexVideoControlsVisibilityMethods on _PlexVideoControlsState {
     await MacOSWindowService.setTrafficLightsVisible(visible);
   }
 
-  Future<void> _checkPipSupport() async {
-    if (!PlatformDetector.supportsPictureInPicture()) {
-      return;
-    }
-
-    try {
-      final supported = await PipService.isSupported();
-      if (mounted) {
-        _setControlsState(() {
-          _isPipSupported = supported;
-        });
-      }
-    } catch (e) {
-      return;
-    }
+  void _checkPipSupport() {
+    // The button represents Plezy's app-owned viewport. The OS PiP API is an
+    // optional background adaptation and does not gate this in-app action.
+    if (!mounted) return;
+    _isPipSupported = widget.onTogglePIPMode != null;
   }
 
   Future<void> _toggleFullscreen() async {

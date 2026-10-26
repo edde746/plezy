@@ -11,6 +11,7 @@ import '../../utils/app_logger.dart';
 import '../models.dart';
 import 'audio_rendering_mode.dart';
 import 'player_base.dart';
+import 'video_rect_support.dart';
 import 'mpv_certificate_trust.dart';
 
 typedef _AudioStateRequest = ({
@@ -26,7 +27,24 @@ typedef _AudioStateRequest = ({
 typedef _AudioStateGenerations = ({int passthrough, int normalization, int downmix, int equalizer, int rate});
 
 /// MPV-backed player for platforms where AetherEngine is not the native route.
-class PlayerNative extends PlayerBase {
+class PlayerNative extends PlayerBase implements VideoRectSupport {
+  @override
+  Future<void> setVideoRect({
+    required int left,
+    required int top,
+    required int right,
+    required int bottom,
+    required double devicePixelRatio,
+  }) async {
+    await invoke('setVideoRect', {
+      'left': left,
+      'top': top,
+      'right': right,
+      'bottom': bottom,
+      'devicePixelRatio': devicePixelRatio,
+    });
+  }
+
   /// Video player on the default mpv channels/core.
   ///
   /// [hardwareDecoding] mirrors the session's hardware-decoding setting so

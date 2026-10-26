@@ -1,6 +1,6 @@
 # PlezyNG Multiview — implementation handoff
 
-Status: **planned, not implemented by this change**. Prepared 2026-10-26 for Luna. Source audit: `snapetech-org/PlezyNG` main at `b32e396c036b465136228b6ddc2e7c5b7fec3c4b` (2.24.1+157). Recheck moved interfaces before implementation. This directory is a documentation-only delivery.
+Status: **implementation in progress; not code complete**. The plan is now being implemented on `codex/multiview-workspace-20261026`. Current source baseline: `snapetech-org/PlezyNG` main at `62b2ed0f4dd8c287e026bcc356e65395366c6b4a`. See DELIVERY.md for implemented slices, platform status, verification evidence and blockers. Do not open a draft PR until the required code and validation are complete.
 
 ## Decision
 

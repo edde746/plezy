@@ -5,6 +5,95 @@ import 'package:plezy/mpv/mpv.dart';
 import 'package:plezy/services/playback_coordinator.dart';
 
 void main() {
+  test('file playback can retain a video pane only when workspace opts in', () async {
+    final coordinator = PlaybackCoordinator.instance;
+    var videoStops = 0;
+    Future<void> videoOwner() async => videoStops++;
+    coordinator.registerVideoSession(shutdown: videoOwner);
+    coordinator.setWorkspaceRetainsVideo(true);
+    addTearDown(() {
+      coordinator.unregisterVideoSession(videoOwner);
+      coordinator.setWorkspaceRetainsVideo(false);
+    });
+
+    await coordinator.claimFiles();
+
+    expect(videoStops, 0);
+    await coordinator.claimFiles(preserveWorkspaceVideo: false);
+    expect(videoStops, 1);
+  });
+
+  test('workspace retained music survives a file playback claim when opted in', () async {
+    final coordinator = PlaybackCoordinator.instance;
+    var musicStops = 0;
+    var videoStops = 0;
+    Future<void> musicOwner() async => musicStops++;
+    Future<void> videoOwner() async => videoStops++;
+    coordinator.registerMusicSession(stopAndDispose: musicOwner);
+    coordinator.registerVideoSession(shutdown: videoOwner);
+    coordinator.setWorkspaceRetainsMusic(true);
+    coordinator.setWorkspaceRetainsVideo(true);
+    addTearDown(() {
+      coordinator.setWorkspaceRetainsMusic(false);
+      coordinator.setWorkspaceRetainsVideo(false);
+      coordinator.unregisterMusicSession(musicOwner);
+      coordinator.unregisterVideoSession(videoOwner);
+    });
+
+    await coordinator.claimFiles(preserveWorkspaceVideo: true, preserveWorkspaceMusic: true);
+
+    expect(musicStops, 0);
+    expect(videoStops, 0);
+  });
+
+  test('normal file claim still stops music outside the workspace', () async {
+    final coordinator = PlaybackCoordinator.instance;
+    var musicStops = 0;
+    Future<void> musicOwner() async => musicStops++;
+    coordinator.registerMusicSession(stopAndDispose: musicOwner);
+    coordinator.setWorkspaceRetainsMusic(false);
+    addTearDown(() {
+      coordinator.setWorkspaceRetainsMusic(false);
+      coordinator.unregisterMusicSession(musicOwner);
+    });
+
+    await coordinator.claimFiles();
+
+    expect(musicStops, 1);
+  });
+
+  test('workspace retained music survives a new video claim', () async {
+    final coordinator = PlaybackCoordinator.instance;
+    var musicStops = 0;
+    Future<void> musicOwner() async => musicStops++;
+    coordinator.registerMusicSession(stopAndDispose: musicOwner);
+    coordinator.setWorkspaceRetainsMusic(true);
+    addTearDown(() {
+      coordinator.setWorkspaceRetainsMusic(false);
+      coordinator.unregisterMusicSession(musicOwner);
+    });
+
+    await coordinator.claimVideo();
+
+    expect(musicStops, 0);
+    expect(coordinator.workspaceRetainsMusic, isTrue);
+  });
+
+  test('normal video claim still stops music outside the workspace', () async {
+    final coordinator = PlaybackCoordinator.instance;
+    var musicStops = 0;
+    Future<void> musicOwner() async => musicStops++;
+    coordinator.registerMusicSession(stopAndDispose: musicOwner);
+    coordinator.setWorkspaceRetainsMusic(false);
+    addTearDown(() {
+      coordinator.unregisterMusicSession(musicOwner);
+      coordinator.setWorkspaceRetainsMusic(false);
+    });
+
+    await coordinator.claimVideo();
+
+    expect(musicStops, 1);
+  });
   test('stale video release preserves the active owner and waits for its stop', () async {
     final coordinator = PlaybackCoordinator.instance;
     final stopped = Completer<void>();

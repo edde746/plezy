@@ -3074,6 +3074,21 @@ class MpvPlayerCore private constructor(
     }
   }
 
+  fun setVideoRect(
+    left: Int,
+    top: Int,
+    right: Int,
+    bottom: Int,
+    devicePixelRatio: Double,
+  ) {
+    if (audioOnly || disposing) return
+    runOnMain {
+      if (disposing) return@runOnMain
+      val container = surfaceContainer ?: return@runOnMain
+      PlayerSurfaceHost.setVideoRect(activity, container, left, top, right, bottom, devicePixelRatio)
+    }
+  }
+
   override fun setVisible(visible: Boolean) {
     // Audio-only: no render layer to show or hide — tolerated no-op.
     if (audioOnly || disposing) return

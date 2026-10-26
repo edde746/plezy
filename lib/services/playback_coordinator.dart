@@ -22,6 +22,28 @@ class PlaybackCoordinator {
   static final PlaybackCoordinator instance = PlaybackCoordinator._();
 
   Future<void> Function()? _stopMusicSession;
+
+  /// A music pane explicitly retained in Plezy's app-owned workspace survives
+  /// a newly opened video route. Outside Multiview, existing arbitration stays
+  /// unchanged.
+  bool _workspaceRetainsMusic = false;
+  bool get workspaceRetainsMusic => _workspaceRetainsMusic;
+  bool _workspaceRetainsVideo = false;
+  bool get workspaceRetainsVideo => _workspaceRetainsVideo;
+  bool _workspaceHasCompetingAudioOwner = false;
+  bool get workspaceHasCompetingAudioOwner => _workspaceHasCompetingAudioOwner;
+
+  void setWorkspaceRetainsMusic(bool retain) {
+    _workspaceRetainsMusic = retain;
+  }
+
+  void setWorkspaceRetainsVideo(bool retain) {
+    _workspaceRetainsVideo = retain;
+  }
+
+  void setWorkspaceHasCompetingAudioOwner(bool hasCompetingOwner) {
+    _workspaceHasCompetingAudioOwner = hasCompetingOwner;
+  }
   Future<void> Function()? _stopThemeSession;
   Future<void> Function()? _stopFileSession;
   bool Function()? _isFileSessionActive;
@@ -45,11 +67,11 @@ class PlaybackCoordinator {
   }
 
   /// File-backed audio, video and narration share the existing native channels.
-  Future<void> claimFiles() async {
+  Future<void> claimFiles({bool preserveWorkspaceVideo = true, bool preserveWorkspaceMusic = false}) async {
     await _stopNarration?.call();
     await _stopTheme();
-    await _stopMusicSession?.call();
-    await shutdownVideo();
+    if (!preserveWorkspaceMusic || !_workspaceRetainsMusic) await _stopMusicSession?.call();
+    if (!preserveWorkspaceVideo || !_workspaceRetainsVideo) await shutdownVideo();
   }
 
   /// Theme songs share the music channel, so both claims stop them first.
@@ -178,7 +200,7 @@ class PlaybackCoordinator {
     await _stopFileSession?.call();
     await _stopTheme();
     final stop = _stopMusicSession;
-    if (stop == null) return;
+    if (stop == null || _workspaceRetainsMusic) return;
     try {
       await stop();
     } catch (e, st) {

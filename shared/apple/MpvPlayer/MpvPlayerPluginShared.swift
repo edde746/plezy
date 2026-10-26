@@ -14,6 +14,13 @@ protocol MpvPluginShared: AnyObject, MpvPlayerDelegate {
 
   func setPlayerVisible(_ visible: Bool, restoreOnWindowVisible: Bool)
   func updatePlayerFrame()
+  func setPlayerVideoRect(
+    left: Int,
+    top: Int,
+    right: Int,
+    bottom: Int,
+    devicePixelRatio: Double
+  )
   /// Viewer zoom as a transform on the display layer: mpv's `video-zoom`
   /// would push every frame through vo_avfoundation's Core Image path.
   func setPlayerVideoZoom(_ scale: Double)
@@ -153,6 +160,32 @@ extension MpvPluginShared {
   func handleUpdateFrame(result: @escaping FlutterResult) {
     DispatchQueue.main.async { [weak self] in
       self?.updatePlayerFrame()
+      result(nil)
+    }
+  }
+
+  func handleSetVideoRect(call: FlutterMethodCall, result: @escaping FlutterResult) {
+    guard let args = call.arguments as? [String: Any],
+      let left = args["left"] as? Int,
+      let top = args["top"] as? Int,
+      let right = args["right"] as? Int,
+      let bottom = args["bottom"] as? Int,
+      let devicePixelRatio = args["devicePixelRatio"] as? Double,
+      devicePixelRatio.isFinite,
+      devicePixelRatio > 0
+    else {
+      result(FlutterError(code: "INVALID_ARGS", message: "Invalid video rectangle", details: nil))
+      return
+    }
+
+    DispatchQueue.main.async { [weak self] in
+      self?.setPlayerVideoRect(
+        left: left,
+        top: top,
+        right: right,
+        bottom: bottom,
+        devicePixelRatio: devicePixelRatio
+      )
       result(nil)
     }
   }

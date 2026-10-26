@@ -234,6 +234,7 @@ open class MpvPlayerPlugin(
       "observeProperty" -> handleObserveProperty(call, result)
       "command" -> handleCommand(call, result)
       "setVisible" -> handleSetVisible(call, result)
+      "setVideoRect" -> handleSetVideoRect(call, result)
       "updateFrame" -> handleUpdateFrame(result)
       "setVideoFrameRate" -> handleSetVideoFrameRate(call, result)
       "clearVideoFrameRate" -> handleClearVideoFrameRate(result)
@@ -597,6 +598,22 @@ open class MpvPlayerPlugin(
         }
       }
     }
+  }
+
+  private fun handleSetVideoRect(call: MethodCall, result: MethodChannel.Result) {
+    val left = call.argument<Number>("left")?.toInt()
+    val top = call.argument<Number>("top")?.toInt()
+    val right = call.argument<Number>("right")?.toInt()
+    val bottom = call.argument<Number>("bottom")?.toInt()
+    val devicePixelRatio = call.argument<Number>("devicePixelRatio")?.toDouble()
+    if (left == null || top == null || right == null || bottom == null ||
+      devicePixelRatio == null || !devicePixelRatio.isFinite() || devicePixelRatio <= 0.0
+    ) {
+      result.error("INVALID_ARGS", "Missing or invalid video rectangle", null)
+      return
+    }
+    playerCore?.setVideoRect(left, top, right, bottom, devicePixelRatio)
+    result.success(null)
   }
 
   private fun handleSetVisible(call: MethodCall, result: MethodChannel.Result) {

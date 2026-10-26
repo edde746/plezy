@@ -65,6 +65,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   bool fullPlayerVisible = false;
   Map<String, Uri> _localOverrides = const {};
   bool _disposed = false;
+  bool _workspaceAudioEnabled = true;
   bool _resumeAfterInterruption = false;
   bool _useEntryChapters = false;
   int _fileEpoch = 0;
@@ -115,6 +116,14 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   bool get active => entry != null;
   bool get video => mode == PublicationMode.watching;
   bool get playing => player?.state.isActive ?? false;
+
+  Future<void> setWorkspaceAudioEnabled(bool enabled) async {
+    if (_disposed || _workspaceAudioEnabled == enabled) return;
+    _workspaceAudioEnabled = enabled;
+    final native = player;
+    if (native == null || native.disposed) return;
+    await native.setVolume(enabled ? 100 : 0);
+  }
   double get speed => progress?.speed ?? 1;
   int get fileIndex => _fileIndex;
   int get _offset => List.generate(_fileIndex, (i) => _durations[i] ?? 0).fold(0, (a, b) => a + b);
@@ -150,14 +159,32 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       sources.requireSession();
       if (selected.isEmpty) throw const SourceException(SourceFailure.unsupported);
       if (PlatformDetector.isAutomotive()) await CarUxRestrictionsService.instance.ensureResolved();
-      await PlaybackCoordinator.instance.claimFiles();
+      final requestedMode =
+          playbackMode ??
+          (item.kind == SourceItemKind.video ? PublicationMode.watching : PublicationMode.listening);
+      final coordinator = PlaybackCoordinator.instance;
+      if (requestedMode == PublicationMode.watching &&
+          coordinator.workspaceRetainsMusic &&
+          !coordinator.workspaceRetainsVideo) {
+        await coordinator.claimVideo();
+      } else {
+        await coordinator.claimFiles(
+          preserveWorkspaceVideo: true,
+          preserveWorkspaceMusic: true,
+        );
+      }
+      // A retained music pane is the default audible surface until the user
+      // selects this source session. Start muted before opening the native
+      // player so registration cannot race an audible burst.
+      _workspaceAudioEnabled =
+          !coordinator.workspaceHasCompetingAudioOwner && !coordinator.workspaceRetainsMusic;
       sources.requireSession();
       _profile = sources.profileId;
       _profileGeneration = sources.generation;
       entry = item;
       files = List.unmodifiable(selected);
       _localOverrides = Map.unmodifiable(localOverrides);
-      mode = playbackMode ?? (item.kind == SourceItemKind.video ? PublicationMode.watching : PublicationMode.listening);
+      mode = requestedMode;
       _useEntryChapters =
           selected.length == item.audio.length &&
           List.generate(
@@ -219,6 +246,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       _gateway = SourceStreamGateway(valid: () => _valid && entry == item);
       final native = _playerFactory(video);
       player = native;
+      await native.setVolume(_workspaceAudioEnabled ? 100 : 0);
       _controls = _controlsFactory();
       await _controls!.setBackgroundMode(
         !video &&

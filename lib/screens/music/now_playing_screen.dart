@@ -19,6 +19,9 @@ import '../../media/ids.dart';
 import '../../media/lyrics.dart';
 import '../../media/media_item.dart';
 import '../../media/stepped_seek.dart';
+import '../../multiview/music_workspace_surface.dart';
+import '../../multiview/workspace_controller.dart';
+import '../../multiview/workspace_models.dart';
 import '../../media/media_server_client.dart';
 import '../../mixins/context_menu_tap_mixin.dart';
 import '../../mpv/mpv.dart';
@@ -67,7 +70,9 @@ class NowPlayingScreen extends StatefulWidget {
 class _NowPlayingScreenState extends State<NowPlayingScreen>
     with ContextMenuTapMixin<NowPlayingScreen>, SingleTickerProviderStateMixin {
   MusicPlaybackService? _service;
+  MultiviewWorkspaceController? _workspace;
   StreamSubscription<Object>? _errorsSub;
+  bool _autoJoinScheduled = false;
 
   bool _showLyrics = false;
   bool _showVisualizer = false;
@@ -106,10 +111,19 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final workspace = context.read<MultiviewWorkspaceController>();
+    if (workspace != _workspace) {
+      _workspace?.removeListener(_scheduleAutoJoinWorkspace);
+      _workspace = workspace;
+      workspace.addListener(_scheduleAutoJoinWorkspace);
+    }
+
     final service = context.read<MusicPlaybackService>();
     if (service != _service) {
       _errorsSub?.cancel();
+      _service?.removeListener(_scheduleAutoJoinWorkspace);
       _service = service;
+      service.addListener(_scheduleAutoJoinWorkspace);
       // Surface playback failures while the screen is open — the service
       // already recovers (skip / stop) by itself.
       _errorsSub = service.errors.listen((error) {
@@ -125,11 +139,42 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
         );
       });
     }
+    _scheduleAutoJoinWorkspace();
+  }
+
+  void _scheduleAutoJoinWorkspace() {
+    if (!mounted || _autoJoinScheduled) return;
+    final service = _service;
+    final workspace = _workspace;
+    if (service?.currentTrack == null ||
+        workspace == null ||
+        workspace.sessionCount == 0 ||
+        workspace.session('music:active') != null) {
+      return;
+    }
+    _autoJoinScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _autoJoinScheduled = false;
+      if (!mounted) return;
+      final currentService = _service;
+      final currentWorkspace = _workspace;
+      final track = currentService?.currentTrack;
+      if (currentService == null ||
+          track == null ||
+          currentWorkspace == null ||
+          currentWorkspace.sessionCount == 0 ||
+          currentWorkspace.session('music:active') != null) {
+        return;
+      }
+      unawaited(_openMusicInWorkspace(currentService, track));
+    });
   }
 
   @override
   void dispose() {
     _errorsSub?.cancel();
+    _service?.removeListener(_scheduleAutoJoinWorkspace);
+    _workspace?.removeListener(_scheduleAutoJoinWorkspace);
     _dismissSettle.dispose();
     _dismissDrag.dispose();
     _seekFocusNode.dispose();
@@ -168,6 +213,54 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
   void _setVisualizerPreset(MusicVisualizerPreset preset) {
     if (_visualizerPreset == preset) return;
     setState(() => _visualizerPreset = preset);
+  }
+
+
+  Future<void> _openMusicInWorkspace(MusicPlaybackService service, MediaItem track) async {
+    final controller = context.read<MultiviewWorkspaceController>();
+    const sessionId = 'music:active';
+    final existing = controller.session(sessionId);
+    if (existing != null) {
+      if (controller.isRestored(sessionId) || controller.parkedSessions.any((s) => s.descriptor.id == sessionId)) {
+        controller.showSessionInWorkspace(sessionId, fullscreen: true);
+      } else {
+        controller.promoteToFullscreen(sessionId);
+      }
+      if (mounted) Navigator.of(context).pop();
+      return;
+    }
+
+    final navigator = Navigator.of(context);
+    final descriptor = WorkspaceSessionDescriptor(
+      id: sessionId,
+      kind: MultiviewMediaKind.music,
+      title: track.title?.trim().isNotEmpty == true ? track.title!.trim() : t.common.unknown,
+      subtitle: track.trackArtistTitle,
+      mediaKey: track.globalKey,
+      progressOwner: 'music-session:$sessionId',
+      hasAudio: true,
+      hasVideo: true,
+      openedAt: DateTime.now(),
+    );
+    final registered = controller.register(
+      WorkspaceSurfaceRegistration(
+        descriptor: descriptor,
+        buildSurface: (_) => MusicWorkspaceSurface(
+          service: service,
+          controller: controller,
+          sessionId: sessionId,
+        ),
+        onRestore: () {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (navigator.mounted) unawaited(openNowPlaying(navigator.context));
+          });
+        },
+        onClose: () => unawaited(service.stop()),
+        onAudioOwnershipChanged: service.setWorkspaceAudioEnabled,
+      ),
+    );
+    if (!registered) return;
+    if (mounted) Navigator.of(context).pop();
   }
 
   void _focusTransport() => _playPauseFocusNode.requestFocus();
@@ -529,6 +622,11 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                       overflow: .ellipsis,
                       style: TextStyle(fontSize: 13, color: tk.textMuted),
                     ),
+            ),
+            IconButton(
+              tooltip: t.videoControls.pipButton,
+              onPressed: () => unawaited(_openMusicInWorkspace(service, track)),
+              icon: AppIcon(Symbols.picture_in_picture_alt_rounded, fill: 1, color: tk.text),
             ),
             _buildOverflowButton(track),
           ],

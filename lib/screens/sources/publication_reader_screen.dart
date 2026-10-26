@@ -17,6 +17,8 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../i18n/strings.g.dart';
 import '../../i18n/locale_preferences.dart';
 import '../../i18n/presentation_formats.dart';
+import '../../multiview/workspace_controller.dart';
+import '../../multiview/workspace_models.dart';
 import '../../focus/focusable_slider.dart';
 import '../../services/playback_coordinator.dart';
 import '../../sources/publication_archive.dart';
@@ -66,6 +68,11 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
   int _pages = 0;
   bool _fixed = false;
   Object _viewZoom = 'fit-page';
+  MultiviewWorkspaceController? _workspaceController;
+  MultiviewWorkspaceController? _observedWorkspaceController;
+  String? _workspaceSessionId;
+  bool _workspaceDetached = false;
+  bool _autoJoinScheduled = false;
   Timer? _saveTimer;
   Future<void> _writes = Future.value();
   FlutterTts? _tts;
@@ -83,11 +90,142 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
   }
 
   @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final workspace = context.read<MultiviewWorkspaceController>();
+    if (_observedWorkspaceController != workspace) {
+      _observedWorkspaceController?.removeListener(_scheduleWorkspaceAutoJoin);
+      _observedWorkspaceController = workspace;
+      workspace.addListener(_scheduleWorkspaceAutoJoin);
+    }
+    _scheduleWorkspaceAutoJoin();
+  }
+
+  void _markReaderReady({List<Map<String, dynamic>>? toc}) {
+    if (!mounted) return;
+    setState(() {
+      _ready = true;
+      if (toc != null) _toc = toc;
+    });
+    _scheduleWorkspaceAutoJoin();
+  }
+
+  void _scheduleWorkspaceAutoJoin() {
+    final workspace = _observedWorkspaceController;
+    if (!mounted ||
+        !_ready ||
+        _autoJoinScheduled ||
+        _workspaceSessionId != null ||
+        workspace == null ||
+        workspace.sessionCount == 0) {
+      return;
+    }
+    _autoJoinScheduled = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _autoJoinScheduled = false;
+      if (mounted &&
+          _ready &&
+          _workspaceSessionId == null &&
+          (_observedWorkspaceController?.sessionCount ?? 0) > 0) {
+        _toggleReaderWorkspace();
+      }
+    });
+  }
+
+  @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (state == AppLifecycleState.inactive || state == AppLifecycleState.paused) {
       unawaited(_flush());
       unawaited(_stopSpeech());
     }
+  }
+
+  void _toggleReaderWorkspace() {
+    final controller = _workspaceController ?? context.read<MultiviewWorkspaceController>();
+    final existingId = _workspaceSessionId;
+    if (existingId != null) {
+      if (_workspaceDetached) {
+        if (controller.isRestored(existingId)) {
+          controller.showSessionInWorkspace(existingId);
+          setState(() => _workspaceDetached = true);
+        } else {
+          controller.promoteToFullscreen(existingId);
+        }
+      } else if (controller.showSessionInWorkspace(existingId)) {
+        setState(() => _workspaceDetached = true);
+      }
+      return;
+    }
+
+    final idSeed = '${widget.entry.key}:${widget.file.fingerprint}';
+    final id = 'publication:${sourceDigest(idSeed)}';
+    final navigator = Navigator.of(context);
+    final readerRoute = ModalRoute.of(context);
+    _workspaceController = controller;
+    _workspaceSessionId = id;
+    _workspaceDetached = true;
+    final descriptor = WorkspaceSessionDescriptor(
+      id: id,
+      kind: widget.file.kind == SourceItemKind.comic
+          ? MultiviewMediaKind.comic
+          : MultiviewMediaKind.publication,
+      title: widget.entry.title.trim().isEmpty ? t.common.unknown : widget.entry.title,
+      subtitle: widget.file.name,
+      mediaKey: idSeed,
+      progressOwner: '${_profile ?? 'profile'}:${widget.entry.key}:${widget.file.fingerprint}',
+      hasAudio: _speaking || _readAlong,
+      hasVideo: false,
+      openedAt: DateTime.now(),
+    );
+    final registered = controller.register(
+      WorkspaceSurfaceRegistration(
+        descriptor: descriptor,
+        buildSurface: _buildReaderSurface,
+        onRestore: () {
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted || _workspaceSessionId != id) return;
+            setState(() => _workspaceDetached = false);
+            final route = readerRoute;
+            if (navigator.mounted && route?.isActive == true) {
+              navigator.popUntil((candidate) => identical(candidate, route));
+            }
+          });
+        },
+        onClose: () {
+          final route = readerRoute;
+          if (!navigator.mounted || route?.isActive != true) return;
+          if (route!.isCurrent) {
+            navigator.pop();
+          } else {
+            navigator.removeRoute(route);
+          }
+        },
+        onAudioOwnershipChanged: _onReaderAudioOwnershipChanged,
+      ),
+    );
+    if (!registered) {
+      _workspaceSessionId = null;
+      _workspaceController = null;
+      _workspaceDetached = false;
+    } else {
+      setState(() {});
+    }
+  }
+
+  void _syncReaderWorkspaceAudioCapability() {
+    final id = _workspaceSessionId;
+    final controller = _workspaceController;
+    if (id == null || controller == null) return;
+    final registration = controller.session(id);
+    if (registration == null) return;
+    controller.updateDescriptor(
+      registration.descriptor.copyWith(hasAudio: _speaking || _readAlong),
+    );
+  }
+
+  Future<void> _onReaderAudioOwnershipChanged(bool enabled) async {
+    if (_readAlong) await _playback?.setWorkspaceAudioEnabled(enabled);
+    if (!enabled && _speaking) await _stopSpeech();
   }
 
   Future<void> _open() async {
@@ -299,7 +437,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
         _overlays = sourceList(
           message['overlays'],
         ).take(100000).map(sourceMap).where((m) => _server!.archive.files.containsKey(m['audio'])).toList();
-        if (mounted) setState(() => _ready = true);
+        _markReaderReady();
       case 'location':
         if (_progress == null) return;
         final fraction = (message['fraction'] as num?)?.toDouble() ?? 0;
@@ -610,7 +748,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
       return;
     }
     await _playback!.stop();
-    await PlaybackCoordinator.instance.claimFiles();
+    await PlaybackCoordinator.instance.claimFiles(preserveWorkspaceVideo: true, preserveWorkspaceMusic: true);
     String text;
     if (pdf) {
       text = (await _pdf.document.pages[(_pdf.pageNumber ?? 1) - 1].loadText())?.fullText ?? '';
@@ -619,18 +757,23 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
     }
     if (text.trim().isEmpty || !valid) return;
     _tts ??= FlutterTts();
-    _tts!.setCompletionHandler(() {
-      if (mounted) setState(() => _speaking = false);
-    });
-    _tts!.setErrorHandler((_) {
-      if (mounted) setState(() => _speaking = false);
-    });
+    _tts!.setCompletionHandler(_onSpeechEnded);
+    _tts!.setErrorHandler((_) => _onSpeechEnded());
     await _tts!.setSpeechRate(.5);
     if (widget.entry.language.isNotEmpty) await _tts!.setLanguage(widget.entry.language);
     if (valid) {
       setState(() => _speaking = true);
+      _syncReaderWorkspaceAudioCapability();
+      final id = _workspaceSessionId;
+      if (id != null) await _workspaceController?.setAudibleSession(id);
       await _tts!.speak(text);
     }
+  }
+
+  void _onSpeechEnded() {
+    if (!mounted || !_speaking) return;
+    setState(() => _speaking = false);
+    _syncReaderWorkspaceAudioCapability();
   }
 
   Future<void> _stopSpeech() async {
@@ -642,7 +785,10 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
         // A closed browser has already stopped speech and retired its socket.
       }
     }
-    if (mounted && !_disposed && _speaking) setState(() => _speaking = false);
+    if (mounted && !_disposed && _speaking) {
+      setState(() => _speaking = false);
+      _syncReaderWorkspaceAudioCapability();
+    }
   }
 
   Future<void> _startReadAlong() async {
@@ -650,6 +796,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
       await _playback!.pause();
       _playback!.removeListener(_followAudio);
       setState(() => _readAlong = false);
+      _syncReaderWorkspaceAudioCapability();
       return;
     }
     await _stopSpeech();
@@ -680,6 +827,12 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
     if (!valid) return;
     _playback!.addListener(_followAudio);
     setState(() => _readAlong = true);
+    _syncReaderWorkspaceAudioCapability();
+    final workspaceId = _workspaceSessionId;
+    if (workspaceId != null) {
+      await _workspaceController?.setAudibleSession(workspaceId);
+      await _playback!.setWorkspaceAudioEnabled(true);
+    }
     _followAudio();
   }
 
@@ -715,15 +868,18 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
         .toList();
     final outline = await document.loadOutline();
     if (valid && mounted) {
-      setState(() {
-        _ready = true;
-        _toc = flatten(outline, 0);
-      });
+      _markReaderReady(toc: flatten(outline, 0));
     }
   }
 
   @override
   void dispose() {
+    final workspaceSessionId = _workspaceSessionId;
+    if (workspaceSessionId != null) {
+      _workspaceController?.unregister(workspaceSessionId);
+      _workspaceSessionId = null;
+      _workspaceDetached = false;
+    }
     final syncSources = _sources, syncKey = _progress?.key;
     if (syncSources != null && syncKey != null) {
       unawaited(
@@ -736,7 +892,10 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
     _disposed = true;
     WidgetsBinding.instance.removeObserver(this);
     _sources?.removeListener(_profileChanged);
+    _observedWorkspaceController?.removeListener(_scheduleWorkspaceAutoJoin);
     _playback?.removeListener(_followAudio);
+    final workspaceSessionId = _workspaceSessionId;
+    if (workspaceSessionId != null) _workspaceController?.unregister(workspaceSessionId);
     PlaybackCoordinator.instance.unregisterNarrationSession(_stopSpeech);
     _saveTimer?.cancel();
     unawaited(_stopSpeech());
@@ -758,6 +917,16 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
 
   @override
   Widget build(BuildContext context) {
+    if (_workspaceDetached) {
+      return const Scaffold(
+        backgroundColor: Colors.transparent,
+        body: IgnorePointer(child: SizedBox.expand()),
+      );
+    }
+    return _buildReaderSurface(context);
+  }
+
+  Widget _buildReaderSurface(BuildContext context) {
     final body = _error != null
         ? Center(
             child: SingleChildScrollView(
@@ -905,6 +1074,11 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
       appBar: AppBar(
         title: Text(widget.entry.title, maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
+          IconButton(
+            tooltip: t.videoControls.pipButton,
+            onPressed: _ready ? _toggleReaderWorkspace : null,
+            icon: const AppIcon(Symbols.picture_in_picture_alt_rounded),
+          ),
           IconButton(
             tooltip: t.fileSources.contents,
             onPressed: _ready ? () => sourceAction(context, _contents) : null,

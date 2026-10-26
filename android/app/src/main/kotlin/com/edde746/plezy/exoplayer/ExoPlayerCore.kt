@@ -4118,6 +4118,21 @@ class ExoPlayerCore(private val activity: Activity) :
     }
   }
 
+  override fun setVideoRect(
+    left: Int,
+    top: Int,
+    right: Int,
+    bottom: Int,
+    devicePixelRatio: Double,
+  ) {
+    if (disposing) return
+    activity.runOnUiThread {
+      if (disposing) return@runOnUiThread
+      val container = surfaceContainer ?: return@runOnUiThread
+      PlayerSurfaceHost.setVideoRect(activity, container, left, top, right, bottom, devicePixelRatio)
+    }
+  }
+
   override fun updateFrame() {
     if (disposing) return
     activity.runOnUiThread {
