@@ -92,6 +92,7 @@
 ### Changed
 
 - Align audiobook sync conflicts, playback input dialogs and source menus with shared Mono rows, focus and compact overflow patterns.
+- Keep Games entry points limited to supported Android handheld and TV builds; style Steam stream controls and dialogs with Mono surfaces, focus states and localized touch accessibility text.
 - Refresh sign-in with current plezyng.app product artwork bundled for offline use, including a high-resolution variant and responsive login choices and QR sizing for phone, desktop, TV and 4K screens.
 - Keep SMB setup copy localized and show the Videos shelf by default only for local and SMB sources.
 - Polish catalog, source, TV and cross-media discovery surfaces with Plezy's Mono focus and icon styles, RTL-aware navigation, accessible controls, responsive layouts, and localized error handling.

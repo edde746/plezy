@@ -57,6 +57,10 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
 
   Future<void> _load(String? id, int epoch) async {
     if (!mounted || epoch != _epoch || id == null) return;
+    if (!PlatformDetector.supportsEmbeddedGameStreaming()) {
+      setState(() => _loading = false);
+      return;
+    }
     final sources = context.read<SourceController>();
     try {
       await sources.ready;
@@ -305,6 +309,39 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
 
   @override
   Widget build(BuildContext context) {
+    if (!PlatformDetector.supportsEmbeddedGameStreaming()) {
+      final theme = Theme.of(context);
+      return FocusedScrollScaffold(
+        title: Text(t.games.title),
+        automaticallyImplyLeading: false,
+        slivers: [
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppIcon(
+                      Symbols.sports_esports_rounded,
+                      size: 40,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      t.games.engineUnavailable,
+                      style: theme.textTheme.titleMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
     final c = _controller;
     final state = c?.library ?? const GameLibrary();
     final byKey = {for (final game in state.games) game.key: game};

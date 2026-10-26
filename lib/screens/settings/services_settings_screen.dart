@@ -43,7 +43,7 @@ class ServicesSettingsScreen extends StatelessWidget {
               ),
             ),
             SettingsGroup(children: [for (final info in TrackerServiceInfo.all) _TrackerHubRow(info), _seerr()]),
-            if (profileId != null && !PlatformDetector.isAutomotive())
+            if (profileId != null && PlatformDetector.supportsEmbeddedGameStreaming())
               SettingsGroup(
                 title: t.games.title,
                 children: [

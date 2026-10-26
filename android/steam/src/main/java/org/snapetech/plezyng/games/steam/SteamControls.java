@@ -3,7 +3,6 @@ package org.snapetech.plezyng.games.steam;
 
 import android.content.Context;
 import android.graphics.Canvas;
-import android.graphics.Color;
 import android.graphics.Paint;
 import android.util.SparseArray;
 import android.view.MotionEvent;
@@ -34,6 +33,11 @@ final class SteamControls extends View {
     Control control;
     float x, y;
   }
+  private final int surface;
+  private final int text;
+  private final int accent;
+  private final int onPressed;
+  private final int outline;
   private final Listener listener;
   private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
   private final List<Control> controls = new ArrayList<>();
@@ -41,12 +45,21 @@ final class SteamControls extends View {
   private boolean enabled;
   private int mousePointer = -1;
   private float mouseX = .5f, mouseY = .5f;
-  SteamControls(Context context, boolean enabled, Listener listener) {
+  SteamControls(Context context, boolean enabled, String description, Listener listener) {
     super(context);
     this.enabled = enabled;
     this.listener = listener;
+    surface = withAlpha(context.getResources().getColor(R.color.plezy_steam_surface), 0xCC);
+    text = context.getResources().getColor(R.color.plezy_steam_text);
+    accent = context.getResources().getColor(R.color.plezy_steam_focus);
+    onPressed = context.getResources().getColor(R.color.plezy_steam_background);
+    outline = context.getResources().getColor(R.color.plezy_steam_outline);
     setFocusable(false);
-    setContentDescription("Game controller");
+    setImportantForAccessibility(View.IMPORTANT_FOR_ACCESSIBILITY_YES);
+    setContentDescription(description);
+  }
+  private static int withAlpha(int color, int alpha) {
+    return (color & 0x00FFFFFF) | (alpha << 24);
   }
   void reset() {
     if (mousePointer != -1)
@@ -100,14 +113,14 @@ final class SteamControls extends View {
         if (fingers.valueAt(i).control == c)
           pressed = true;
       paint.setStyle(Paint.Style.FILL);
-      paint.setColor(pressed ? 0x88ffffff : 0x44303030);
+      paint.setColor(pressed ? accent : surface);
       canvas.drawCircle(c.x, c.y, c.radius, paint);
       paint.setStyle(Paint.Style.STROKE);
-      paint.setStrokeWidth(2);
-      paint.setColor(0x99ffffff);
+      paint.setStrokeWidth(Math.max(1, getResources().getDisplayMetrics().density));
+      paint.setColor(pressed ? text : outline);
       canvas.drawCircle(c.x, c.y, c.radius, paint);
       paint.setStyle(Paint.Style.FILL);
-      paint.setColor(Color.WHITE);
+      paint.setColor(pressed ? onPressed : text);
       paint.setTextAlign(Paint.Align.CENTER);
       paint.setTextSize(c.radius * .63f);
       canvas.drawText(c.label, c.x, c.y - (paint.ascent() + paint.descent()) / 2, paint);
@@ -118,7 +131,7 @@ final class SteamControls extends View {
             continue;
           float dx = f.x - c.x, dy = f.y - c.y, len = (float) Math.hypot(dx, dy),
                 scale = len > c.radius ? c.radius / len : 1;
-          paint.setColor(0x88ffffff);
+          paint.setColor(text);
           canvas.drawCircle(c.x + dx * scale, c.y + dy * scale, c.radius * .35f, paint);
         }
     }

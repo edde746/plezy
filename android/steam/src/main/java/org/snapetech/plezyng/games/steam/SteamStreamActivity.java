@@ -3,7 +3,10 @@ package org.snapetech.plezyng.games.steam;
 
 import android.app.Activity;
 import android.app.AlertDialog;
+import android.content.res.ColorStateList;
 import android.graphics.Color;
+import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.StateListDrawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -15,8 +18,9 @@ import android.view.SurfaceHolder;
 import android.view.SurfaceView;
 import android.view.View;
 import android.view.WindowManager;
-import android.widget.Button;
 import android.widget.FrameLayout;
+import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.TextView;
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
@@ -51,33 +55,74 @@ public final class SteamStreamActivity extends Activity implements SurfaceHolder
     surface = new SurfaceView(this);
     root.addView(surface, new FrameLayout.LayoutParams(-1, -1, Gravity.CENTER));
     surface.getHolder().addCallback(this);
-    controls = new SteamControls(this, getIntent().getBooleanExtra("touch", true), new SteamControls.Listener() {
-      public void pad(short[] axes, int buttons) {
-        touch = axes;
-        touchButtons = buttons;
-        sendPad();
-      }
-      public void mouse(float x, float y, int button, boolean down) {
-        if (handle == 0)
-          return;
-        float sx = (x * root.getWidth() - surface.getLeft()) / Math.max(1, surface.getWidth());
-        float sy = (y * root.getHeight() - surface.getTop()) / Math.max(1, surface.getHeight());
-        NativeSteam.mouse(handle, sx, sy, button, down);
-      }
-    });
+    controls = new SteamControls(
+        this,
+        getIntent().getBooleanExtra("touch", true),
+        label("touchDescription", "On-screen game controller"),
+        new SteamControls.Listener() {
+          public void pad(short[] axes, int buttons) {
+            touch = axes;
+            touchButtons = buttons;
+            sendPad();
+          }
+          public void mouse(float x, float y, int button, boolean down) {
+            if (handle == 0)
+              return;
+            float sx = (x * root.getWidth() - surface.getLeft()) / Math.max(1, surface.getWidth());
+            float sy = (y * root.getHeight() - surface.getTop()) / Math.max(1, surface.getHeight());
+            NativeSteam.mouse(handle, sx, sy, button, down);
+          }
+        });
     root.addView(controls, new FrameLayout.LayoutParams(-1, -1));
     status = new TextView(this);
     status.setText(label("connecting", "Connecting…"));
-    status.setTextColor(Color.WHITE);
+    status.setTextColor(getResources().getColor(R.color.plezy_steam_text));
     status.setGravity(Gravity.CENTER);
     root.addView(status, new FrameLayout.LayoutParams(-1, -1));
-    Button menu = new Button(this);
-    menu.setText("⋮");
+    ImageButton menu = new ImageButton(this);
+    menu.setImageResource(R.drawable.ic_stream_more);
+    menu.setScaleType(ImageView.ScaleType.CENTER_INSIDE);
+    menu.setPadding(dp(12), dp(12), dp(12), dp(12));
     menu.setContentDescription(label("menu", "Stream controls"));
-    menu.setAlpha(.65f);
-    FrameLayout.LayoutParams menuLayout = new FrameLayout.LayoutParams(64, 64, Gravity.TOP | Gravity.END);
+    menu.setFocusable(true);
+    menu.setClickable(true);
+    menu.setBackground(menuButtonBackground());
+    int text = getResources().getColor(R.color.plezy_steam_text);
+    int onAccent = getResources().getColor(R.color.plezy_steam_background);
+    menu.setImageTintList(new ColorStateList(
+        new int[][] {{android.R.attr.state_pressed}, {android.R.attr.state_focused}, {}},
+        new int[] {onAccent, text, text}));
+    int targetSize = dp(48);
+    menu.setMinWidth(targetSize);
+    menu.setMinHeight(targetSize);
+    FrameLayout.LayoutParams menuLayout = new FrameLayout.LayoutParams(targetSize, targetSize, Gravity.TOP | Gravity.END);
+    menuLayout.setMargins(0, dp(12), dp(12), 0);
     root.addView(menu, menuLayout);
     menu.setOnClickListener(v -> showMenu());
+  }
+  private int dp(float value) {
+    return Math.round(value * getResources().getDisplayMetrics().density);
+  }
+  private GradientDrawable menuShape(int fillColor, int outlineColor, int outlineWidth) {
+    GradientDrawable shape = new GradientDrawable();
+    shape.setShape(GradientDrawable.RECTANGLE);
+    shape.setColor(fillColor);
+    shape.setCornerRadius(dp(24));
+    shape.setStroke(outlineWidth, outlineColor);
+    return shape;
+  }
+  private StateListDrawable menuButtonBackground() {
+    StateListDrawable states = new StateListDrawable();
+    states.addState(
+        new int[] {android.R.attr.state_pressed},
+        menuShape(getResources().getColor(R.color.plezy_steam_focus), getResources().getColor(R.color.plezy_steam_focus), dp(1)));
+    states.addState(
+        new int[] {android.R.attr.state_focused},
+        menuShape(getResources().getColor(R.color.plezy_steam_surface), getResources().getColor(R.color.plezy_steam_focus), dp(2)));
+    states.addState(
+        new int[0],
+        menuShape(getResources().getColor(R.color.plezy_steam_surface), getResources().getColor(R.color.plezy_steam_outline), dp(1)));
+    return states;
   }
   private String label(String key, String fallback) {
     String s = getIntent().getStringExtra(key);
@@ -162,7 +207,7 @@ public final class SteamStreamActivity extends Activity implements SurfaceHolder
         return;
       failed = true;
       stop();
-      new AlertDialog.Builder(this)
+      new AlertDialog.Builder(this, R.style.PlezySteamDialog)
           .setMessage(label("error", "The stream could not start. Check pairing and the host."))
           .setPositiveButton(android.R.string.ok, (d, w) -> finish())
           .setOnCancelListener(d -> finish())
@@ -199,7 +244,8 @@ public final class SteamStreamActivity extends Activity implements SurfaceHolder
   }
   private void showMenu() {
     releaseInput();
-    new AlertDialog.Builder(this)
+    new AlertDialog.Builder(this, R.style.PlezySteamDialog)
+        .setTitle(label("menu", "Stream controls"))
         .setItems(
             new String[] {label("touchLabel", "On-screen controller"), label("disconnect", "Disconnect")},
             (d, which) -> {

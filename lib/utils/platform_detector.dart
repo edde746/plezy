@@ -248,6 +248,9 @@ class PlatformDetector {
     return TvDetectionService.isAutomotiveSync();
   }
 
+  /// The embedded game streaming engines ship on Android handheld and TV builds.
+  static bool supportsEmbeddedGameStreaming() => Platform.isAndroid && !isAutomotive();
+
   /// Detects if the app should use side navigation (Desktop or TV).
   /// TV is covered because [isMobile] excludes it, so [isDesktop] is true there.
   static bool shouldUseSideNavigation(BuildContext context) {
