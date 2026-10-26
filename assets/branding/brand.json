@@ -1,0 +1,4327 @@
+{
+  "schema": 1,
+  "source": "assets/branding/plezyng-approved.png",
+  "source_sha256": "05b148e47d322debe3501a552c932b5b6c8b90a488bf71262404bf13b4251e4d",
+  "default_background": "#131928",
+  "themes": {
+    "crt": "#f1e7d3",
+    "ember": "#ec714d",
+    "facet": "#101116",
+    "glass": "#ff733f",
+    "gold": "#060505",
+    "line": "#fbf6f1",
+    "matcha": "#edf1e6",
+    "midnight": "#0b0b0c",
+    "neon": "#060508",
+    "ocean": "#06111f",
+    "oled": "#000000",
+    "paper": "#f2eee7",
+    "pixel": "#241b38",
+    "pop": "#ffd23f",
+    "sticker": "#ffd84a",
+    "strata": "#fbf3ea",
+    "sunset": "#ffb347",
+    "synthwave": "#0f0326",
+    "ticket": "#30060d",
+    "tilde": "#ec714d",
+    "titanium": "#34373d",
+    "ultraviolet": "#2e0f5e",
+    "vhs": "#141217"
+  },
+  "targets": [
+    {
+      "path": "assets/plezyng-app-icon.png",
+      "size": [
+        1254,
+        1254
+      ],
+      "role": "logo",
+      "fit": 1
+    },
+    {
+      "path": "assets/plezy.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "logo",
+      "fit": 1
+    },
+    {
+      "path": "assets/plezy_adaptive_foreground.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "adaptive"
+    },
+    {
+      "path": "assets/branding/plezyng-monochrome.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "monochrome",
+      "fit": 1
+    },
+    {
+      "path": "ios/plezy.icon/Assets/plezyng-app-icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "logo",
+      "fit": 1
+    },
+    {
+      "path": "macos/plezy.icon/Assets/plezyng-app-icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "logo",
+      "fit": 1
+    },
+    {
+      "path": "android/app/src/main/res/drawable-hdpi/ic_stat_notification.png",
+      "size": [
+        36,
+        36
+      ],
+      "role": "monochrome",
+      "fit": 0.9
+    },
+    {
+      "path": "android/app/src/main/res/drawable-mdpi/ic_stat_notification.png",
+      "size": [
+        24,
+        24
+      ],
+      "role": "monochrome",
+      "fit": 0.9
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_crt_background.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "background",
+      "theme": "crt"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_crt_foreground.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive",
+      "theme": "crt"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_crt_monochrome.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive_mono",
+      "theme": "crt"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_ember_background.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "background",
+      "theme": "ember"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_ember_foreground.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive",
+      "theme": "ember"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_ember_monochrome.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive_mono",
+      "theme": "ember"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_facet_background.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "background",
+      "theme": "facet"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_facet_foreground.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive",
+      "theme": "facet"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_facet_monochrome.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive_mono",
+      "theme": "facet"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_glass_background.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "background",
+      "theme": "glass"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_glass_foreground.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive",
+      "theme": "glass"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_glass_monochrome.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive_mono",
+      "theme": "glass"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_gold_background.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "background",
+      "theme": "gold"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_gold_foreground.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive",
+      "theme": "gold"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_gold_monochrome.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive_mono",
+      "theme": "gold"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_line_background.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "background",
+      "theme": "line"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_line_foreground.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive",
+      "theme": "line"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_line_monochrome.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive_mono",
+      "theme": "line"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_matcha_background.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "background",
+      "theme": "matcha"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_matcha_foreground.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive",
+      "theme": "matcha"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_matcha_monochrome.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive_mono",
+      "theme": "matcha"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_midnight_background.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "background",
+      "theme": "midnight"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_midnight_foreground.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive",
+      "theme": "midnight"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_midnight_monochrome.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive_mono",
+      "theme": "midnight"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_neon_background.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "background",
+      "theme": "neon"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_neon_foreground.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive",
+      "theme": "neon"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_neon_monochrome.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive_mono",
+      "theme": "neon"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_ocean_background.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "background",
+      "theme": "ocean"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_ocean_foreground.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive",
+      "theme": "ocean"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_ocean_monochrome.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive_mono",
+      "theme": "ocean"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_oled_background.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "background",
+      "theme": "oled"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_oled_foreground.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive",
+      "theme": "oled"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_oled_monochrome.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive_mono",
+      "theme": "oled"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_paper_background.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "background",
+      "theme": "paper"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_paper_foreground.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive",
+      "theme": "paper"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_paper_monochrome.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive_mono",
+      "theme": "paper"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_pixel_background.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "background",
+      "theme": "pixel"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_pixel_foreground.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive",
+      "theme": "pixel"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_pixel_monochrome.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive_mono",
+      "theme": "pixel"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_pop_background.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "background",
+      "theme": "pop"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_pop_foreground.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive",
+      "theme": "pop"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_pop_monochrome.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive_mono",
+      "theme": "pop"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_sticker_background.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "background",
+      "theme": "sticker"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_sticker_foreground.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive",
+      "theme": "sticker"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_sticker_monochrome.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive_mono",
+      "theme": "sticker"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_strata_background.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "background",
+      "theme": "strata"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_strata_foreground.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive",
+      "theme": "strata"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_strata_monochrome.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive_mono",
+      "theme": "strata"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_sunset_background.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "background",
+      "theme": "sunset"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_sunset_foreground.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive",
+      "theme": "sunset"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_sunset_monochrome.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive_mono",
+      "theme": "sunset"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_synthwave_background.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "background",
+      "theme": "synthwave"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_synthwave_foreground.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive",
+      "theme": "synthwave"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_synthwave_monochrome.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive_mono",
+      "theme": "synthwave"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_ticket_background.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "background",
+      "theme": "ticket"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_ticket_foreground.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive",
+      "theme": "ticket"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_ticket_monochrome.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive_mono",
+      "theme": "ticket"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_tilde_background.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "background",
+      "theme": "tilde"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_tilde_foreground.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive",
+      "theme": "tilde"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_tilde_monochrome.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive_mono",
+      "theme": "tilde"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_titanium_background.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "background",
+      "theme": "titanium"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_titanium_foreground.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive",
+      "theme": "titanium"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_titanium_monochrome.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive_mono",
+      "theme": "titanium"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_ultraviolet_background.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "background",
+      "theme": "ultraviolet"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_ultraviolet_foreground.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive",
+      "theme": "ultraviolet"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_ultraviolet_monochrome.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive_mono",
+      "theme": "ultraviolet"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_vhs_background.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "background",
+      "theme": "vhs"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_vhs_foreground.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive",
+      "theme": "vhs"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_vhs_monochrome.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive_mono",
+      "theme": "vhs"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/ic_stat_notification.png",
+      "size": [
+        48,
+        48
+      ],
+      "role": "monochrome",
+      "fit": 0.9
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/tv_banner.png",
+      "size": [
+        320,
+        180
+      ],
+      "role": "banner",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/tv_banner_crt.webp",
+      "size": [
+        320,
+        180
+      ],
+      "role": "banner",
+      "theme": "crt",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/tv_banner_ember.webp",
+      "size": [
+        320,
+        180
+      ],
+      "role": "banner",
+      "theme": "ember",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/tv_banner_facet.webp",
+      "size": [
+        320,
+        180
+      ],
+      "role": "banner",
+      "theme": "facet",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/tv_banner_glass.webp",
+      "size": [
+        320,
+        180
+      ],
+      "role": "banner",
+      "theme": "glass",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/tv_banner_gold.webp",
+      "size": [
+        320,
+        180
+      ],
+      "role": "banner",
+      "theme": "gold",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/tv_banner_line.webp",
+      "size": [
+        320,
+        180
+      ],
+      "role": "banner",
+      "theme": "line",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/tv_banner_matcha.webp",
+      "size": [
+        320,
+        180
+      ],
+      "role": "banner",
+      "theme": "matcha",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/tv_banner_midnight.webp",
+      "size": [
+        320,
+        180
+      ],
+      "role": "banner",
+      "theme": "midnight",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/tv_banner_neon.webp",
+      "size": [
+        320,
+        180
+      ],
+      "role": "banner",
+      "theme": "neon",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/tv_banner_ocean.webp",
+      "size": [
+        320,
+        180
+      ],
+      "role": "banner",
+      "theme": "ocean",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/tv_banner_oled.webp",
+      "size": [
+        320,
+        180
+      ],
+      "role": "banner",
+      "theme": "oled",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/tv_banner_paper.webp",
+      "size": [
+        320,
+        180
+      ],
+      "role": "banner",
+      "theme": "paper",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/tv_banner_pixel.webp",
+      "size": [
+        320,
+        180
+      ],
+      "role": "banner",
+      "theme": "pixel",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/tv_banner_pop.webp",
+      "size": [
+        320,
+        180
+      ],
+      "role": "banner",
+      "theme": "pop",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/tv_banner_sticker.webp",
+      "size": [
+        320,
+        180
+      ],
+      "role": "banner",
+      "theme": "sticker",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/tv_banner_strata.webp",
+      "size": [
+        320,
+        180
+      ],
+      "role": "banner",
+      "theme": "strata",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/tv_banner_sunset.webp",
+      "size": [
+        320,
+        180
+      ],
+      "role": "banner",
+      "theme": "sunset",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/tv_banner_synthwave.webp",
+      "size": [
+        320,
+        180
+      ],
+      "role": "banner",
+      "theme": "synthwave",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/tv_banner_ticket.webp",
+      "size": [
+        320,
+        180
+      ],
+      "role": "banner",
+      "theme": "ticket",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/tv_banner_tilde.webp",
+      "size": [
+        320,
+        180
+      ],
+      "role": "banner",
+      "theme": "tilde",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/tv_banner_titanium.webp",
+      "size": [
+        320,
+        180
+      ],
+      "role": "banner",
+      "theme": "titanium",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/tv_banner_ultraviolet.webp",
+      "size": [
+        320,
+        180
+      ],
+      "role": "banner",
+      "theme": "ultraviolet",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/tv_banner_vhs.webp",
+      "size": [
+        320,
+        180
+      ],
+      "role": "banner",
+      "theme": "vhs",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_crt_background.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "background",
+      "theme": "crt"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_crt_foreground.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive",
+      "theme": "crt"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_crt_monochrome.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive_mono",
+      "theme": "crt"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_ember_background.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "background",
+      "theme": "ember"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_ember_foreground.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive",
+      "theme": "ember"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_ember_monochrome.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive_mono",
+      "theme": "ember"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_facet_background.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "background",
+      "theme": "facet"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_facet_foreground.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive",
+      "theme": "facet"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_facet_monochrome.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive_mono",
+      "theme": "facet"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_glass_background.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "background",
+      "theme": "glass"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_glass_foreground.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive",
+      "theme": "glass"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_glass_monochrome.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive_mono",
+      "theme": "glass"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_gold_background.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "background",
+      "theme": "gold"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_gold_foreground.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive",
+      "theme": "gold"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_gold_monochrome.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive_mono",
+      "theme": "gold"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_line_background.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "background",
+      "theme": "line"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_line_foreground.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive",
+      "theme": "line"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_line_monochrome.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive_mono",
+      "theme": "line"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_matcha_background.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "background",
+      "theme": "matcha"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_matcha_foreground.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive",
+      "theme": "matcha"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_matcha_monochrome.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive_mono",
+      "theme": "matcha"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_midnight_background.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "background",
+      "theme": "midnight"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_midnight_foreground.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive",
+      "theme": "midnight"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_midnight_monochrome.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive_mono",
+      "theme": "midnight"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_neon_background.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "background",
+      "theme": "neon"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_neon_foreground.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive",
+      "theme": "neon"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_neon_monochrome.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive_mono",
+      "theme": "neon"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_ocean_background.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "background",
+      "theme": "ocean"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_ocean_foreground.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive",
+      "theme": "ocean"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_ocean_monochrome.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive_mono",
+      "theme": "ocean"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_oled_background.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "background",
+      "theme": "oled"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_oled_foreground.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive",
+      "theme": "oled"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_oled_monochrome.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive_mono",
+      "theme": "oled"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_paper_background.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "background",
+      "theme": "paper"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_paper_foreground.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive",
+      "theme": "paper"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_paper_monochrome.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive_mono",
+      "theme": "paper"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_pixel_background.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "background",
+      "theme": "pixel"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_pixel_foreground.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive",
+      "theme": "pixel"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_pixel_monochrome.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive_mono",
+      "theme": "pixel"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_pop_background.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "background",
+      "theme": "pop"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_pop_foreground.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive",
+      "theme": "pop"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_pop_monochrome.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive_mono",
+      "theme": "pop"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_sticker_background.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "background",
+      "theme": "sticker"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_sticker_foreground.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive",
+      "theme": "sticker"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_sticker_monochrome.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive_mono",
+      "theme": "sticker"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_strata_background.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "background",
+      "theme": "strata"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_strata_foreground.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive",
+      "theme": "strata"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_strata_monochrome.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive_mono",
+      "theme": "strata"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_sunset_background.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "background",
+      "theme": "sunset"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_sunset_foreground.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive",
+      "theme": "sunset"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_sunset_monochrome.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive_mono",
+      "theme": "sunset"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_synthwave_background.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "background",
+      "theme": "synthwave"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_synthwave_foreground.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive",
+      "theme": "synthwave"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_synthwave_monochrome.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive_mono",
+      "theme": "synthwave"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_ticket_background.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "background",
+      "theme": "ticket"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_ticket_foreground.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive",
+      "theme": "ticket"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_ticket_monochrome.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive_mono",
+      "theme": "ticket"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_tilde_background.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "background",
+      "theme": "tilde"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_tilde_foreground.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive",
+      "theme": "tilde"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_tilde_monochrome.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive_mono",
+      "theme": "tilde"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_titanium_background.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "background",
+      "theme": "titanium"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_titanium_foreground.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive",
+      "theme": "titanium"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_titanium_monochrome.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive_mono",
+      "theme": "titanium"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_ultraviolet_background.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "background",
+      "theme": "ultraviolet"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_ultraviolet_foreground.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive",
+      "theme": "ultraviolet"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_ultraviolet_monochrome.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive_mono",
+      "theme": "ultraviolet"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_vhs_background.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "background",
+      "theme": "vhs"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_vhs_foreground.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive",
+      "theme": "vhs"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_vhs_monochrome.webp",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive_mono",
+      "theme": "vhs"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/ic_stat_notification.png",
+      "size": [
+        72,
+        72
+      ],
+      "role": "monochrome",
+      "fit": 0.9
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/tv_banner.png",
+      "size": [
+        480,
+        270
+      ],
+      "role": "banner",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_crt_background.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "background",
+      "theme": "crt"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_crt_foreground.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive",
+      "theme": "crt"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_crt_monochrome.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive_mono",
+      "theme": "crt"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_ember_background.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "background",
+      "theme": "ember"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_ember_foreground.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive",
+      "theme": "ember"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_ember_monochrome.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive_mono",
+      "theme": "ember"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_facet_background.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "background",
+      "theme": "facet"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_facet_foreground.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive",
+      "theme": "facet"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_facet_monochrome.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive_mono",
+      "theme": "facet"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_glass_background.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "background",
+      "theme": "glass"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_glass_foreground.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive",
+      "theme": "glass"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_glass_monochrome.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive_mono",
+      "theme": "glass"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_gold_background.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "background",
+      "theme": "gold"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_gold_foreground.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive",
+      "theme": "gold"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_gold_monochrome.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive_mono",
+      "theme": "gold"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_line_background.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "background",
+      "theme": "line"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_line_foreground.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive",
+      "theme": "line"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_line_monochrome.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive_mono",
+      "theme": "line"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_matcha_background.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "background",
+      "theme": "matcha"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_matcha_foreground.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive",
+      "theme": "matcha"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_matcha_monochrome.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive_mono",
+      "theme": "matcha"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_midnight_background.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "background",
+      "theme": "midnight"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_midnight_foreground.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive",
+      "theme": "midnight"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_midnight_monochrome.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive_mono",
+      "theme": "midnight"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_neon_background.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "background",
+      "theme": "neon"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_neon_foreground.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive",
+      "theme": "neon"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_neon_monochrome.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive_mono",
+      "theme": "neon"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_ocean_background.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "background",
+      "theme": "ocean"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_ocean_foreground.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive",
+      "theme": "ocean"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_ocean_monochrome.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive_mono",
+      "theme": "ocean"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_oled_background.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "background",
+      "theme": "oled"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_oled_foreground.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive",
+      "theme": "oled"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_oled_monochrome.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive_mono",
+      "theme": "oled"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_paper_background.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "background",
+      "theme": "paper"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_paper_foreground.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive",
+      "theme": "paper"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_paper_monochrome.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive_mono",
+      "theme": "paper"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_pixel_background.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "background",
+      "theme": "pixel"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_pixel_foreground.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive",
+      "theme": "pixel"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_pixel_monochrome.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive_mono",
+      "theme": "pixel"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_pop_background.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "background",
+      "theme": "pop"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_pop_foreground.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive",
+      "theme": "pop"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_pop_monochrome.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive_mono",
+      "theme": "pop"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_sticker_background.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "background",
+      "theme": "sticker"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_sticker_foreground.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive",
+      "theme": "sticker"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_sticker_monochrome.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive_mono",
+      "theme": "sticker"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_strata_background.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "background",
+      "theme": "strata"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_strata_foreground.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive",
+      "theme": "strata"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_strata_monochrome.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive_mono",
+      "theme": "strata"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_sunset_background.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "background",
+      "theme": "sunset"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_sunset_foreground.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive",
+      "theme": "sunset"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_sunset_monochrome.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive_mono",
+      "theme": "sunset"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_synthwave_background.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "background",
+      "theme": "synthwave"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_synthwave_foreground.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive",
+      "theme": "synthwave"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_synthwave_monochrome.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive_mono",
+      "theme": "synthwave"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_ticket_background.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "background",
+      "theme": "ticket"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_ticket_foreground.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive",
+      "theme": "ticket"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_ticket_monochrome.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive_mono",
+      "theme": "ticket"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_tilde_background.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "background",
+      "theme": "tilde"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_tilde_foreground.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive",
+      "theme": "tilde"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_tilde_monochrome.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive_mono",
+      "theme": "tilde"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_titanium_background.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "background",
+      "theme": "titanium"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_titanium_foreground.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive",
+      "theme": "titanium"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_titanium_monochrome.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive_mono",
+      "theme": "titanium"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_ultraviolet_background.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "background",
+      "theme": "ultraviolet"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_ultraviolet_foreground.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive",
+      "theme": "ultraviolet"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_ultraviolet_monochrome.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive_mono",
+      "theme": "ultraviolet"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_vhs_background.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "background",
+      "theme": "vhs"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_vhs_foreground.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive",
+      "theme": "vhs"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_vhs_monochrome.webp",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive_mono",
+      "theme": "vhs"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_stat_notification.png",
+      "size": [
+        96,
+        96
+      ],
+      "role": "monochrome",
+      "fit": 0.9
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/tv_banner.png",
+      "size": [
+        640,
+        360
+      ],
+      "role": "banner",
+      "fit": 0.6
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-hdpi/ic_launcher.png",
+      "size": [
+        72,
+        72
+      ],
+      "role": "plate",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
+      "size": [
+        48,
+        48
+      ],
+      "role": "plate",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xhdpi/ic_launcher.png",
+      "size": [
+        96,
+        96
+      ],
+      "role": "plate",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxhdpi/ic_launcher.png",
+      "size": [
+        144,
+        144
+      ],
+      "role": "plate",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher.png",
+      "size": [
+        192,
+        192
+      ],
+      "role": "plate",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_crt.webp",
+      "size": [
+        192,
+        192
+      ],
+      "role": "plate",
+      "theme": "crt",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_ember.webp",
+      "size": [
+        192,
+        192
+      ],
+      "role": "plate",
+      "theme": "ember",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_facet.webp",
+      "size": [
+        192,
+        192
+      ],
+      "role": "plate",
+      "theme": "facet",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_glass.webp",
+      "size": [
+        192,
+        192
+      ],
+      "role": "plate",
+      "theme": "glass",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_gold.webp",
+      "size": [
+        192,
+        192
+      ],
+      "role": "plate",
+      "theme": "gold",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_line.webp",
+      "size": [
+        192,
+        192
+      ],
+      "role": "plate",
+      "theme": "line",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_matcha.webp",
+      "size": [
+        192,
+        192
+      ],
+      "role": "plate",
+      "theme": "matcha",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_midnight.webp",
+      "size": [
+        192,
+        192
+      ],
+      "role": "plate",
+      "theme": "midnight",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_neon.webp",
+      "size": [
+        192,
+        192
+      ],
+      "role": "plate",
+      "theme": "neon",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_ocean.webp",
+      "size": [
+        192,
+        192
+      ],
+      "role": "plate",
+      "theme": "ocean",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_oled.webp",
+      "size": [
+        192,
+        192
+      ],
+      "role": "plate",
+      "theme": "oled",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_paper.webp",
+      "size": [
+        192,
+        192
+      ],
+      "role": "plate",
+      "theme": "paper",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_pixel.webp",
+      "size": [
+        192,
+        192
+      ],
+      "role": "plate",
+      "theme": "pixel",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_pop.webp",
+      "size": [
+        192,
+        192
+      ],
+      "role": "plate",
+      "theme": "pop",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_sticker.webp",
+      "size": [
+        192,
+        192
+      ],
+      "role": "plate",
+      "theme": "sticker",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_strata.webp",
+      "size": [
+        192,
+        192
+      ],
+      "role": "plate",
+      "theme": "strata",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_sunset.webp",
+      "size": [
+        192,
+        192
+      ],
+      "role": "plate",
+      "theme": "sunset",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_synthwave.webp",
+      "size": [
+        192,
+        192
+      ],
+      "role": "plate",
+      "theme": "synthwave",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_ticket.webp",
+      "size": [
+        192,
+        192
+      ],
+      "role": "plate",
+      "theme": "ticket",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_tilde.webp",
+      "size": [
+        192,
+        192
+      ],
+      "role": "plate",
+      "theme": "tilde",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_titanium.webp",
+      "size": [
+        192,
+        192
+      ],
+      "role": "plate",
+      "theme": "titanium",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_ultraviolet.webp",
+      "size": [
+        192,
+        192
+      ],
+      "role": "plate",
+      "theme": "ultraviolet",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/mipmap-xxxhdpi/ic_launcher_vhs.webp",
+      "size": [
+        192,
+        192
+      ],
+      "role": "plate",
+      "theme": "vhs",
+      "fit": 0.76
+    },
+    {
+      "path": "android/app/src/main/res/drawable-mdpi/plezyng_launcher_foreground.png",
+      "size": [
+        108,
+        108
+      ],
+      "role": "adaptive"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-mdpi/plezyng_launcher_monochrome.png",
+      "size": [
+        108,
+        108
+      ],
+      "role": "adaptive_mono"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-hdpi/plezyng_launcher_foreground.png",
+      "size": [
+        162,
+        162
+      ],
+      "role": "adaptive"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-hdpi/plezyng_launcher_monochrome.png",
+      "size": [
+        162,
+        162
+      ],
+      "role": "adaptive_mono"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/plezyng_launcher_foreground.png",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xhdpi/plezyng_launcher_monochrome.png",
+      "size": [
+        216,
+        216
+      ],
+      "role": "adaptive_mono"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/plezyng_launcher_foreground.png",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxhdpi/plezyng_launcher_monochrome.png",
+      "size": [
+        324,
+        324
+      ],
+      "role": "adaptive_mono"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/plezyng_launcher_foreground.png",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive"
+    },
+    {
+      "path": "android/app/src/main/res/drawable-xxxhdpi/plezyng_launcher_monochrome.png",
+      "size": [
+        432,
+        432
+      ],
+      "role": "adaptive_mono"
+    },
+    {
+      "path": "ios/Runner/AlternateAppIcons.xcassets/AppIcon-crt.appiconset/icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "plate",
+      "theme": "crt",
+      "fit": 0.76
+    },
+    {
+      "path": "ios/Runner/AlternateAppIcons.xcassets/AppIcon-ember.appiconset/icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "plate",
+      "theme": "ember",
+      "fit": 0.76
+    },
+    {
+      "path": "ios/Runner/AlternateAppIcons.xcassets/AppIcon-facet.appiconset/icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "plate",
+      "theme": "facet",
+      "fit": 0.76
+    },
+    {
+      "path": "ios/Runner/AlternateAppIcons.xcassets/AppIcon-glass.appiconset/icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "plate",
+      "theme": "glass",
+      "fit": 0.76
+    },
+    {
+      "path": "ios/Runner/AlternateAppIcons.xcassets/AppIcon-gold.appiconset/icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "plate",
+      "theme": "gold",
+      "fit": 0.76
+    },
+    {
+      "path": "ios/Runner/AlternateAppIcons.xcassets/AppIcon-line.appiconset/icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "plate",
+      "theme": "line",
+      "fit": 0.76
+    },
+    {
+      "path": "ios/Runner/AlternateAppIcons.xcassets/AppIcon-matcha.appiconset/icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "plate",
+      "theme": "matcha",
+      "fit": 0.76
+    },
+    {
+      "path": "ios/Runner/AlternateAppIcons.xcassets/AppIcon-midnight.appiconset/icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "plate",
+      "theme": "midnight",
+      "fit": 0.76
+    },
+    {
+      "path": "ios/Runner/AlternateAppIcons.xcassets/AppIcon-neon.appiconset/icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "plate",
+      "theme": "neon",
+      "fit": 0.76
+    },
+    {
+      "path": "ios/Runner/AlternateAppIcons.xcassets/AppIcon-ocean.appiconset/icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "plate",
+      "theme": "ocean",
+      "fit": 0.76
+    },
+    {
+      "path": "ios/Runner/AlternateAppIcons.xcassets/AppIcon-oled.appiconset/icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "plate",
+      "theme": "oled",
+      "fit": 0.76
+    },
+    {
+      "path": "ios/Runner/AlternateAppIcons.xcassets/AppIcon-paper.appiconset/icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "plate",
+      "theme": "paper",
+      "fit": 0.76
+    },
+    {
+      "path": "ios/Runner/AlternateAppIcons.xcassets/AppIcon-pixel.appiconset/icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "plate",
+      "theme": "pixel",
+      "fit": 0.76
+    },
+    {
+      "path": "ios/Runner/AlternateAppIcons.xcassets/AppIcon-pop.appiconset/icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "plate",
+      "theme": "pop",
+      "fit": 0.76
+    },
+    {
+      "path": "ios/Runner/AlternateAppIcons.xcassets/AppIcon-sticker.appiconset/icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "plate",
+      "theme": "sticker",
+      "fit": 0.76
+    },
+    {
+      "path": "ios/Runner/AlternateAppIcons.xcassets/AppIcon-strata.appiconset/icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "plate",
+      "theme": "strata",
+      "fit": 0.76
+    },
+    {
+      "path": "ios/Runner/AlternateAppIcons.xcassets/AppIcon-sunset.appiconset/icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "plate",
+      "theme": "sunset",
+      "fit": 0.76
+    },
+    {
+      "path": "ios/Runner/AlternateAppIcons.xcassets/AppIcon-synthwave.appiconset/icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "plate",
+      "theme": "synthwave",
+      "fit": 0.76
+    },
+    {
+      "path": "ios/Runner/AlternateAppIcons.xcassets/AppIcon-ticket.appiconset/icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "plate",
+      "theme": "ticket",
+      "fit": 0.76
+    },
+    {
+      "path": "ios/Runner/AlternateAppIcons.xcassets/AppIcon-tilde.appiconset/icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "plate",
+      "theme": "tilde",
+      "fit": 0.76
+    },
+    {
+      "path": "ios/Runner/AlternateAppIcons.xcassets/AppIcon-titanium.appiconset/icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "plate",
+      "theme": "titanium",
+      "fit": 0.76
+    },
+    {
+      "path": "ios/Runner/AlternateAppIcons.xcassets/AppIcon-ultraviolet.appiconset/icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "plate",
+      "theme": "ultraviolet",
+      "fit": 0.76
+    },
+    {
+      "path": "ios/Runner/AlternateAppIcons.xcassets/AppIcon-vhs.appiconset/icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "plate",
+      "theme": "vhs",
+      "fit": 0.76
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-crt.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "background",
+      "theme": "crt"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-crt.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "background",
+      "theme": "crt"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-crt.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "logo",
+      "theme": "crt",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-crt.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "logo",
+      "theme": "crt",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-ember.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "background",
+      "theme": "ember"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-ember.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "background",
+      "theme": "ember"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-ember.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "logo",
+      "theme": "ember",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-ember.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "logo",
+      "theme": "ember",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-facet.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "background",
+      "theme": "facet"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-facet.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "background",
+      "theme": "facet"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-facet.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "logo",
+      "theme": "facet",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-facet.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "logo",
+      "theme": "facet",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-glass.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "background",
+      "theme": "glass"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-glass.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "background",
+      "theme": "glass"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-glass.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "logo",
+      "theme": "glass",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-glass.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "logo",
+      "theme": "glass",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-gold.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "background",
+      "theme": "gold"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-gold.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "background",
+      "theme": "gold"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-gold.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "logo",
+      "theme": "gold",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-gold.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "logo",
+      "theme": "gold",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-line.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "background",
+      "theme": "line"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-line.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "background",
+      "theme": "line"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-line.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "logo",
+      "theme": "line",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-line.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "logo",
+      "theme": "line",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-matcha.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "background",
+      "theme": "matcha"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-matcha.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "background",
+      "theme": "matcha"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-matcha.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "logo",
+      "theme": "matcha",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-matcha.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "logo",
+      "theme": "matcha",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-midnight.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "background",
+      "theme": "midnight"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-midnight.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "background",
+      "theme": "midnight"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-midnight.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "logo",
+      "theme": "midnight",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-midnight.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "logo",
+      "theme": "midnight",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-neon.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "background",
+      "theme": "neon"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-neon.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "background",
+      "theme": "neon"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-neon.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "logo",
+      "theme": "neon",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-neon.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "logo",
+      "theme": "neon",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-ocean.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "background",
+      "theme": "ocean"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-ocean.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "background",
+      "theme": "ocean"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-ocean.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "logo",
+      "theme": "ocean",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-ocean.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "logo",
+      "theme": "ocean",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-oled.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "background",
+      "theme": "oled"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-oled.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "background",
+      "theme": "oled"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-oled.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "logo",
+      "theme": "oled",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-oled.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "logo",
+      "theme": "oled",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-paper.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "background",
+      "theme": "paper"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-paper.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "background",
+      "theme": "paper"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-paper.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "logo",
+      "theme": "paper",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-paper.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "logo",
+      "theme": "paper",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-pixel.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "background",
+      "theme": "pixel"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-pixel.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "background",
+      "theme": "pixel"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-pixel.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "logo",
+      "theme": "pixel",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-pixel.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "logo",
+      "theme": "pixel",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-pop.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "background",
+      "theme": "pop"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-pop.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "background",
+      "theme": "pop"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-pop.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "logo",
+      "theme": "pop",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-pop.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "logo",
+      "theme": "pop",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-sticker.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "background",
+      "theme": "sticker"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-sticker.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "background",
+      "theme": "sticker"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-sticker.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "logo",
+      "theme": "sticker",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-sticker.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "logo",
+      "theme": "sticker",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-strata.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "background",
+      "theme": "strata"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-strata.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "background",
+      "theme": "strata"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-strata.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "logo",
+      "theme": "strata",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-strata.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "logo",
+      "theme": "strata",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-sunset.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "background",
+      "theme": "sunset"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-sunset.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "background",
+      "theme": "sunset"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-sunset.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "logo",
+      "theme": "sunset",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-sunset.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "logo",
+      "theme": "sunset",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-synthwave.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "background",
+      "theme": "synthwave"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-synthwave.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "background",
+      "theme": "synthwave"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-synthwave.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "logo",
+      "theme": "synthwave",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-synthwave.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "logo",
+      "theme": "synthwave",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-ticket.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "background",
+      "theme": "ticket"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-ticket.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "background",
+      "theme": "ticket"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-ticket.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "logo",
+      "theme": "ticket",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-ticket.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "logo",
+      "theme": "ticket",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-tilde.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "background",
+      "theme": "tilde"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-tilde.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "background",
+      "theme": "tilde"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-tilde.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "logo",
+      "theme": "tilde",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-tilde.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "logo",
+      "theme": "tilde",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-titanium.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "background",
+      "theme": "titanium"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-titanium.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "background",
+      "theme": "titanium"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-titanium.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "logo",
+      "theme": "titanium",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-titanium.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "logo",
+      "theme": "titanium",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-ultraviolet.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "background",
+      "theme": "ultraviolet"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-ultraviolet.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "background",
+      "theme": "ultraviolet"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-ultraviolet.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "logo",
+      "theme": "ultraviolet",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-ultraviolet.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "logo",
+      "theme": "ultraviolet",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-vhs.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "background",
+      "theme": "vhs"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-vhs.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "background",
+      "theme": "vhs"
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-vhs.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "logo",
+      "theme": "vhs",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/AlternateAppIcons.xcassets/AppIcon-vhs.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "logo",
+      "theme": "vhs",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/Assets.xcassets/AppIcon.brandassets/App Icon - App Store.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        1280,
+        768
+      ],
+      "role": "background"
+    },
+    {
+      "path": "tvos/Runner/Assets.xcassets/AppIcon.brandassets/App Icon - App Store.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        1280,
+        768
+      ],
+      "role": "logo",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/Assets.xcassets/AppIcon.brandassets/App Icon - App Store.imagestack/Middle.imagestacklayer/Content.imageset/Middle.png",
+      "size": [
+        1280,
+        768
+      ],
+      "role": "empty"
+    },
+    {
+      "path": "tvos/Runner/Assets.xcassets/AppIcon.brandassets/App Icon.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "background"
+    },
+    {
+      "path": "tvos/Runner/Assets.xcassets/AppIcon.brandassets/App Icon.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "background"
+    },
+    {
+      "path": "tvos/Runner/Assets.xcassets/AppIcon.brandassets/App Icon.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "logo",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/Assets.xcassets/AppIcon.brandassets/App Icon.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "logo",
+      "fit": 0.66
+    },
+    {
+      "path": "tvos/Runner/Assets.xcassets/AppIcon.brandassets/App Icon.imagestack/Middle.imagestacklayer/Content.imageset/Middle.png",
+      "size": [
+        400,
+        240
+      ],
+      "role": "empty"
+    },
+    {
+      "path": "tvos/Runner/Assets.xcassets/AppIcon.brandassets/App Icon.imagestack/Middle.imagestacklayer/Content.imageset/Middle@2x.png",
+      "size": [
+        800,
+        480
+      ],
+      "role": "empty"
+    },
+    {
+      "path": "tvos/Runner/Assets.xcassets/AppIcon.brandassets/Top Shelf Image Wide.imageset/top-shelf-wide.png",
+      "size": [
+        2320,
+        720
+      ],
+      "role": "banner",
+      "fit": 0.54
+    },
+    {
+      "path": "tvos/Runner/Assets.xcassets/AppIcon.brandassets/Top Shelf Image Wide.imageset/top-shelf-wide@2x.png",
+      "size": [
+        4640,
+        1440
+      ],
+      "role": "banner",
+      "fit": 0.54
+    },
+    {
+      "path": "tvos/Runner/Assets.xcassets/AppIcon.brandassets/Top Shelf Image.imageset/top-shelf.png",
+      "size": [
+        1920,
+        720
+      ],
+      "role": "banner",
+      "fit": 0.54
+    },
+    {
+      "path": "assets/app_icons/previews/crt.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "theme": "crt",
+      "fit": 0.76
+    },
+    {
+      "path": "assets/app_icons/previews/default-androidtv.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "fit": 0.6
+    },
+    {
+      "path": "assets/app_icons/previews/default-tvos.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "fit": 0.6
+    },
+    {
+      "path": "assets/app_icons/previews/ember.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "theme": "ember",
+      "fit": 0.76
+    },
+    {
+      "path": "assets/app_icons/previews/facet.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "theme": "facet",
+      "fit": 0.76
+    },
+    {
+      "path": "assets/app_icons/previews/glass.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "theme": "glass",
+      "fit": 0.76
+    },
+    {
+      "path": "assets/app_icons/previews/gold.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "theme": "gold",
+      "fit": 0.76
+    },
+    {
+      "path": "assets/app_icons/previews/line.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "theme": "line",
+      "fit": 0.76
+    },
+    {
+      "path": "assets/app_icons/previews/matcha.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "theme": "matcha",
+      "fit": 0.76
+    },
+    {
+      "path": "assets/app_icons/previews/midnight.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "theme": "midnight",
+      "fit": 0.76
+    },
+    {
+      "path": "assets/app_icons/previews/neon.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "theme": "neon",
+      "fit": 0.76
+    },
+    {
+      "path": "assets/app_icons/previews/ocean.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "theme": "ocean",
+      "fit": 0.76
+    },
+    {
+      "path": "assets/app_icons/previews/oled.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "theme": "oled",
+      "fit": 0.76
+    },
+    {
+      "path": "assets/app_icons/previews/paper.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "theme": "paper",
+      "fit": 0.76
+    },
+    {
+      "path": "assets/app_icons/previews/pixel.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "theme": "pixel",
+      "fit": 0.76
+    },
+    {
+      "path": "assets/app_icons/previews/pop.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "theme": "pop",
+      "fit": 0.76
+    },
+    {
+      "path": "assets/app_icons/previews/sticker.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "theme": "sticker",
+      "fit": 0.76
+    },
+    {
+      "path": "assets/app_icons/previews/strata.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "theme": "strata",
+      "fit": 0.76
+    },
+    {
+      "path": "assets/app_icons/previews/sunset.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "theme": "sunset",
+      "fit": 0.76
+    },
+    {
+      "path": "assets/app_icons/previews/synthwave.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "theme": "synthwave",
+      "fit": 0.76
+    },
+    {
+      "path": "assets/app_icons/previews/ticket.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "theme": "ticket",
+      "fit": 0.76
+    },
+    {
+      "path": "assets/app_icons/previews/tilde.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "theme": "tilde",
+      "fit": 0.76
+    },
+    {
+      "path": "assets/app_icons/previews/titanium.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "theme": "titanium",
+      "fit": 0.76
+    },
+    {
+      "path": "assets/app_icons/previews/ultraviolet.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "theme": "ultraviolet",
+      "fit": 0.76
+    },
+    {
+      "path": "assets/app_icons/previews/vhs.webp",
+      "size": [
+        216,
+        216
+      ],
+      "role": "plate",
+      "theme": "vhs",
+      "fit": 0.76
+    },
+    {
+      "path": "windows/msix/assets/SplashScreen.png",
+      "size": [
+        620,
+        300
+      ],
+      "role": "logo",
+      "fit": 0.88
+    },
+    {
+      "path": "windows/msix/assets/Square150x150Logo.png",
+      "size": [
+        150,
+        150
+      ],
+      "role": "logo",
+      "fit": 0.76
+    },
+    {
+      "path": "windows/msix/assets/Square150x150Logo.scale-200.png",
+      "size": [
+        300,
+        300
+      ],
+      "role": "logo",
+      "fit": 0.76
+    },
+    {
+      "path": "windows/msix/assets/Square310x310Logo.png",
+      "size": [
+        310,
+        310
+      ],
+      "role": "logo",
+      "fit": 0.76
+    },
+    {
+      "path": "windows/msix/assets/Square44x44Logo.png",
+      "size": [
+        44,
+        44
+      ],
+      "role": "logo",
+      "fit": 0.76
+    },
+    {
+      "path": "windows/msix/assets/Square44x44Logo.scale-200.png",
+      "size": [
+        88,
+        88
+      ],
+      "role": "logo",
+      "fit": 0.76
+    },
+    {
+      "path": "windows/msix/assets/Square44x44Logo.targetsize-16.png",
+      "size": [
+        16,
+        16
+      ],
+      "role": "logo",
+      "fit": 0.88
+    },
+    {
+      "path": "windows/msix/assets/Square44x44Logo.targetsize-16_altform-lightunplated.png",
+      "size": [
+        16,
+        16
+      ],
+      "role": "logo",
+      "fit": 0.88
+    },
+    {
+      "path": "windows/msix/assets/Square44x44Logo.targetsize-16_altform-unplated.png",
+      "size": [
+        16,
+        16
+      ],
+      "role": "logo",
+      "fit": 0.88
+    },
+    {
+      "path": "windows/msix/assets/Square44x44Logo.targetsize-24.png",
+      "size": [
+        24,
+        24
+      ],
+      "role": "logo",
+      "fit": 0.88
+    },
+    {
+      "path": "windows/msix/assets/Square44x44Logo.targetsize-24_altform-lightunplated.png",
+      "size": [
+        24,
+        24
+      ],
+      "role": "logo",
+      "fit": 0.88
+    },
+    {
+      "path": "windows/msix/assets/Square44x44Logo.targetsize-24_altform-unplated.png",
+      "size": [
+        24,
+        24
+      ],
+      "role": "logo",
+      "fit": 0.88
+    },
+    {
+      "path": "windows/msix/assets/Square44x44Logo.targetsize-256.png",
+      "size": [
+        256,
+        256
+      ],
+      "role": "logo",
+      "fit": 0.88
+    },
+    {
+      "path": "windows/msix/assets/Square44x44Logo.targetsize-256_altform-lightunplated.png",
+      "size": [
+        256,
+        256
+      ],
+      "role": "logo",
+      "fit": 0.88
+    },
+    {
+      "path": "windows/msix/assets/Square44x44Logo.targetsize-256_altform-unplated.png",
+      "size": [
+        256,
+        256
+      ],
+      "role": "logo",
+      "fit": 0.88
+    },
+    {
+      "path": "windows/msix/assets/Square44x44Logo.targetsize-32.png",
+      "size": [
+        32,
+        32
+      ],
+      "role": "logo",
+      "fit": 0.88
+    },
+    {
+      "path": "windows/msix/assets/Square44x44Logo.targetsize-32_altform-lightunplated.png",
+      "size": [
+        32,
+        32
+      ],
+      "role": "logo",
+      "fit": 0.88
+    },
+    {
+      "path": "windows/msix/assets/Square44x44Logo.targetsize-32_altform-unplated.png",
+      "size": [
+        32,
+        32
+      ],
+      "role": "logo",
+      "fit": 0.88
+    },
+    {
+      "path": "windows/msix/assets/Square44x44Logo.targetsize-48.png",
+      "size": [
+        48,
+        48
+      ],
+      "role": "logo",
+      "fit": 0.88
+    },
+    {
+      "path": "windows/msix/assets/Square44x44Logo.targetsize-48_altform-lightunplated.png",
+      "size": [
+        48,
+        48
+      ],
+      "role": "logo",
+      "fit": 0.88
+    },
+    {
+      "path": "windows/msix/assets/Square44x44Logo.targetsize-48_altform-unplated.png",
+      "size": [
+        48,
+        48
+      ],
+      "role": "logo",
+      "fit": 0.88
+    },
+    {
+      "path": "windows/msix/assets/StoreLogo.png",
+      "size": [
+        50,
+        50
+      ],
+      "role": "logo",
+      "fit": 0.76
+    },
+    {
+      "path": "windows/msix/assets/Wide310x150Logo.png",
+      "size": [
+        310,
+        150
+      ],
+      "role": "logo",
+      "fit": 0.76
+    },
+    {
+      "path": "windows/runner/resources/app_icon.ico",
+      "size": [
+        256,
+        256
+      ],
+      "role": "ico",
+      "fit": 0.9
+    },
+    {
+      "path": "docs/maintainers/store-listing-assets/google-play/app-icon-512.png",
+      "size": [
+        512,
+        512
+      ],
+      "role": "plate",
+      "fit": 0.76
+    },
+    {
+      "path": "docs/maintainers/store-listing-assets/google-play/feature-graphic-1024x500.png",
+      "size": [
+        1024,
+        500
+      ],
+      "role": "feature"
+    },
+    {
+      "path": "docs/maintainers/store-listing-assets/google-play/phone-01-server-options-1080x1920.png",
+      "size": [
+        1080,
+        1920
+      ],
+      "role": "server_options"
+    },
+    {
+      "path": "docs/maintainers/store-listing-assets/amazon/icon-large-512.png",
+      "size": [
+        512,
+        512
+      ],
+      "role": "plate",
+      "fit": 0.76
+    },
+    {
+      "path": "docs/maintainers/store-listing-assets/amazon/icon-small-114.png",
+      "size": [
+        114,
+        114
+      ],
+      "role": "plate",
+      "fit": 0.76
+    },
+    {
+      "path": "docs/maintainers/store-listing-assets/app-store/iphone-dynamic-island-medium/iphone-01-server-options-1179x2556.png",
+      "size": [
+        1179,
+        2556
+      ],
+      "role": "iphone_server_options"
+    }
+  ]
+}

@@ -273,7 +273,7 @@ class _DefaultIconPreview extends StatelessWidget {
         : _androidDayFill;
     return ColoredBox(
       color: fill,
-      child: Image.asset('assets/plezy.png', fit: BoxFit.contain, filterQuality: FilterQuality.high),
+      child: Image.asset('assets/plezy_adaptive_foreground.png', fit: BoxFit.contain),
     );
   }
 }
