@@ -1933,6 +1933,7 @@ class SettingsService extends BaseSharedPreferencesService {
     autoDownloadContinueWatching,
     askDownloadQualityEachTime,
     defaultQualityPreset,
+    downloadQualityPreset,
     cellularQualityPreset,
     remoteQualityPreset,
     musicQualityPreset,
