@@ -14,7 +14,7 @@ driver, EDID, kernel module or TV firmware is replaced automatically.
 | Offline companion | Pinned FelBaker source builder; explicit BL/EL → VapourSynth RGB48 → HDR10-compatible HEVC/PQ or SDR AVC/BT.709 MKV pipeline. | Real FFmpeg output encoding tested with synthetic RGB. Full FelBaker media pipeline and reference accuracy still require local media and plugins. Outputs are lossy derived versions, not native DV. |
 | Android | Existing native DV, P7→8.1 and base-layer routes remain available; new diagnostics label known EL-discarding routes. | Generic Android DV codec advertisement does not prove P7 FEL. CoreELEC S5 integration is a separate vendor/kernel project. |
 | webOS | Existing native and compatibility playback; use an ordinary companion-derived version where native fidelity is insufficient. | No BL/EL GPU composer is exposed by the current webOS app path. No root patch is installed. |
-| Windows | Existing mpv compatibility playback; portable route-policy and companion orchestration code. | No new D3D11/Vulkan FEL app adapter is claimed. A Windows plugin/toolchain and device run are still needed. |
+| Windows | Experimental D3D11 engine build recipe, verified bundle selection in the existing gpu-next app path, and standalone HDR/SDR launcher. | Native builds, production patch parity and device/pixel validation remain unverified. See [native ports](dv-native-ports.md). |
 
 `tools/dv-engine/route_policy.py` is a tested adapter contract and standalone
 selector, **not yet the app-wide playback arbiter**. It accepts an inspected source
@@ -24,6 +24,8 @@ adapters, never stalls on an unfinished companion, and distinguishes `reconstruc
 evidence flags are required for qualified FEL; physical DV output is separate.
 `strict-fel` refuses unqualified fallback. P5 cannot use plain base-layer or P7→8.1
 conversion. Reports are bounded to 1 MiB and adapter counts to 64.
+
+See [native FEL ports](dv-native-ports.md) for the Windows engine build, Apple device-SDK build matrix and production patch audit. These preparations do not enable full FEL on Android or webOS.
 
 ## App settings and diagnostics
 
@@ -243,3 +245,4 @@ decoder/display fingerprint, clip hash and permissions, settings, logs, frame
 times, reference/control captures, dropped frames and result/limitations. Keep
 private media and credentials outside the repository. Prefer a small licensed or
 original synthetic corpus for eventual public CI.
+

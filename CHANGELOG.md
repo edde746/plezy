@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Prepare native FEL ports with a Windows D3D11 engine builder and verified app bundle selection, unsigned Apple device-SDK build targets, and a production patch audit. Full Android/webOS FEL and cross-platform device qualification remain pending.
+
 - Honor Android Dolby Vision output and player tone-mapping preferences through the in-app compatibility player; preserve Profile 5 reshaping on software fallback. Add display-constrained experimental routing and real-time HDR/SDR output targets to the isolated DV launcher.
 
 - Fit Find your next to the screen with persistent action buttons, mirrored swipe/TV direction cues, contextual help, and artwork that follows the current pick. Restore downloaded and alternate covers, distinguish artwork loading from missing images, and allow failed source covers to be retried.

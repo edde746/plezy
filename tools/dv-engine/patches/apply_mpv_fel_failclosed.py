@@ -29,6 +29,22 @@ def apply(root: Path) -> None:
     if head != EXPECTED_COMMIT:
         raise SystemExit(f"Refusing to patch unexpected mpv source: {head}")
 
+    # App adapters query the running library, not a sidecar or version guess.
+    # This identifies the implemented pairing protocol; it is not pixel proof.
+    replace_once(
+        root, "player/command.c",
+        "static const struct m_property mp_properties_base[] = {\n",
+        """static int mp_property_plezyng_dv_engine(void *ctx, struct m_property *prop,
+                                         int action, void *arg)
+{
+    return m_property_strdup_ro(action, arg, "plezyng-dv-fel-v1");
+}
+
+static const struct m_property mp_properties_base[] = {
+    {"plezyng-dv-engine", mp_property_plezyng_dv_engine},
+""",
+    )
+
     repo_root = Path(__file__).resolve().parents[3]
     generated_files = (
         (repo_root / "tools/dv-engine/fel_pair_state.h", root / "filters/fel_pair_state.h"),
@@ -617,3 +633,4 @@ test('fel-pair-state', fel_pair_state)
 
 if __name__ == "__main__":
     main()
+

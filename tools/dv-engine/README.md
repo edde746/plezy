@@ -140,3 +140,7 @@ The standalone launcher accepts `--target auto`, `--target sdr`, or
 These render during playback and preserve source RPU/FEL data; they do not
 create a converted movie. See [client conversion](../../docs/maintainers/dv-client-conversion.md)
 for examples, device boundaries, and the distinction from offline companions.
+
+## Native port preparation
+
+[Native FEL ports](../../docs/maintainers/dv-native-ports.md) documents the Windows D3D11 builder and HDR/SDR launcher, explicit Windows app engine selection, Apple device-SDK builds, and production patch-series audit for Android/Apple/Linux/Windows. These are experimental preparations; Android and webOS do not gain a full-FEL player from this change.

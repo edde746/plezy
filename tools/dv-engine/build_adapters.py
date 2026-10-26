@@ -29,6 +29,31 @@ def verify_swift_pins(path: Path, expected: list):
         raise ValueError("Swift dependency resolution drifted; review and pin before compiling")
 
 
+def build_apple_devices(host: Path, work: Path, platforms: list[str], expected: list, results: dict) -> None:
+    """Compile actual device SDK slices without installing or signing an app."""
+    if not platforms:
+        return
+    if not shutil.which("xcodegen"):
+        raise ValueError("iOS/tvOS builds require XcodeGen")
+    run(["xcodegen", "generate"], cwd=host)
+    project = host / "PlezyNGDVExperiment.xcodeproj"
+    resolved = project / "project.xcworkspace/xcshareddata/swiftpm/Package.resolved"
+    resolved.parent.mkdir(parents=True, exist_ok=True)
+    shutil.copy2(host / "Package.resolved", resolved)
+    for name in platforms:
+        scheme, destination = {
+            "ios": ("PlezyNGDVExperimentIOS", "generic/platform=iOS"),
+            "tvos": ("PlezyNGDVExperimentTV", "generic/platform=tvOS"),
+        }[name]
+        run(["xcodebuild", "-project", project, "-scheme", scheme,
+             "-configuration", "Debug", "-destination", destination,
+             "-derivedDataPath", work / ("derived-" + name),
+             "-disableAutomaticPackageResolution", "-onlyUsePackageVersionsFromResolvedFile",
+             "CODE_SIGNING_ALLOWED=NO", "build"], cwd=host)
+        verify_swift_pins(resolved, expected)
+        results[name] = "compiled-device-sdk; unsigned, not installed or playback-tested"
+
+
 def checkout(source: Path, spec: dict):
     if not re.fullmatch(r"[0-9a-f]{40}", spec["commit"]):
         raise ValueError("source must name a full commit")
@@ -55,9 +80,13 @@ def main():
     parser.add_argument("--work-dir", type=Path, required=True)
     parser.add_argument("--build", action="store_true")
     parser.add_argument("--test", action="store_true", help="run upstream tests after building (Apple)")
+    parser.add_argument("--apple-platform", choices=("macos", "ios", "tvos", "all"), default="macos",
+                        help="SDK build selection; iOS/tvOS require XcodeGen and do not sign/install")
     args = parser.parse_args()
     if args.test and not args.build:
         parser.error("--test requires --build")
+    if args.component != "apple" and args.apple_platform != "macos":
+        parser.error("--apple-platform applies only to the Apple adapter")
     if args.component == "apple" and args.build and platform.system() != "Darwin":
         parser.error("Apple builds require a Mac with Xcode 27")
     if args.component == "felbaker" and args.test:
@@ -86,8 +115,15 @@ def main():
                 report["xcode"] = run(["xcodebuild", "-version"], capture=True).strip()
                 run(["swift", "package", "resolve"], cwd=host)
                 verify_swift_pins(host / "Package.resolved", spec["swift_pins"])
-                run(["swift", "build", "--force-resolved-versions", "--product", "PlezyNGDVExperiment"], cwd=host)
-                report["build"] = "passed"
+                platforms = ["macos", "ios", "tvos"] if args.apple_platform == "all" else [args.apple_platform]
+                report["platform_builds"] = {}
+                if "macos" in platforms:
+                    run(["swift", "build", "--force-resolved-versions", "--product", "PlezyNGDVExperiment"], cwd=host)
+                    report["platform_builds"]["macos"] = "compiled; playback not tested"
+                build_apple_devices(host, work, [name for name in platforms if name != "macos"],
+                                    spec["swift_pins"], report["platform_builds"])
+                verify_swift_pins(host / "Package.resolved", spec["swift_pins"])
+                report["build"] = "passed-requested-sdks"
                 if args.test:
                     run(["swift", "test", "--force-resolved-versions", "--traits", "DualLayerDolbyVision",
                          "--filter", "Dovi|DualLayer"], cwd=source)
@@ -108,3 +144,4 @@ def main():
 
 if __name__ == "__main__":
     main()
+

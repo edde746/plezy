@@ -20,6 +20,26 @@ endif()
 string(JSON MPV_ASSET_BASE GET "${MPV_LOCK}" artifacts windows assetBase)
 string(JSON MPV_ASSET GET "${MPV_LOCK}" artifacts windows assets "${MPV_ARCH}" asset)
 string(JSON MPV_SHA256 GET "${MPV_LOCK}" artifacts windows assets "${MPV_ARCH}" checksum)
+set(MPV_DOWNLOAD_URL "${MPV_ASSET_BASE}/${MPV_ASSET}")
+
+# Explicit development-only FEL engine selection. Never infer an engine from
+# a DLL on PATH, and never replace the production pin implicitly.
+set(PLEZYNG_DV_ENGINE_ARCHIVE "" CACHE FILEPATH "Experimental FEL engine ZIP")
+set(PLEZYNG_DV_ENGINE_SHA256 "" CACHE STRING "Expected SHA256 of the FEL engine ZIP")
+if(PLEZYNG_DV_ENGINE_ARCHIVE)
+  if(NOT IS_ABSOLUTE "${PLEZYNG_DV_ENGINE_ARCHIVE}" OR
+     NOT EXISTS "${PLEZYNG_DV_ENGINE_ARCHIVE}")
+    message(FATAL_ERROR "PLEZYNG_DV_ENGINE_ARCHIVE must be an existing absolute local path")
+  endif()
+  string(LENGTH "${PLEZYNG_DV_ENGINE_SHA256}" DV_HASH_LENGTH)
+  if(NOT DV_HASH_LENGTH EQUAL 64 OR NOT PLEZYNG_DV_ENGINE_SHA256 MATCHES "^[0-9a-fA-F]+$")
+    message(FATAL_ERROR "An explicit 64-digit PLEZYNG_DV_ENGINE_SHA256 is required")
+  endif()
+  set(MPV_DOWNLOAD_URL "${PLEZYNG_DV_ENGINE_ARCHIVE}")
+  set(MPV_SHA256 "${PLEZYNG_DV_ENGINE_SHA256}")
+elseif(PLEZYNG_DV_ENGINE_SHA256)
+  message(FATAL_ERROR "PLEZYNG_DV_ENGINE_SHA256 requires PLEZYNG_DV_ENGINE_ARCHIVE")
+endif()
 
 # Plain zips extract with CMake's built-in libarchive on every host arch, so
 # both arches share the FetchContent path (the old mpv-dev 7z needed a
@@ -27,7 +47,7 @@ string(JSON MPV_SHA256 GET "${MPV_LOCK}" artifacts windows assets "${MPV_ARCH}" 
 include(FetchContent)
 FetchContent_Declare(
   mpv_dev
-  URL "${MPV_ASSET_BASE}/${MPV_ASSET}"
+  URL "${MPV_DOWNLOAD_URL}"
   URL_HASH SHA256=${MPV_SHA256}
   DOWNLOAD_EXTRACT_TIMESTAMP TRUE
 )
@@ -35,6 +55,22 @@ FetchContent_MakeAvailable(mpv_dev)
 
 set(MPV_INCLUDE_DIR "${mpv_dev_SOURCE_DIR}/include")
 set(MPV_LIB_DIR "${mpv_dev_SOURCE_DIR}")
+set(MPV_RUNTIME_DLLS "${MPV_LIB_DIR}/libmpv-2.dll")
+if(PLEZYNG_DV_ENGINE_ARCHIVE)
+  find_package(Python3 3.11 REQUIRED COMPONENTS Interpreter)
+  execute_process(
+    COMMAND "${Python3_EXECUTABLE}"
+      "${CMAKE_CURRENT_SOURCE_DIR}/../tools/dv-engine/engine_bundle.py"
+      --root "${MPV_LIB_DIR}" --architecture "${MPV_ARCH}"
+      --source-lock "${CMAKE_CURRENT_SOURCE_DIR}/../tools/dv-engine/engine.lock.json"
+    RESULT_VARIABLE DV_BUNDLE_RESULT
+    OUTPUT_VARIABLE DV_BUNDLE_OUTPUT ERROR_VARIABLE DV_BUNDLE_ERROR)
+  if(NOT DV_BUNDLE_RESULT EQUAL 0)
+    message(FATAL_ERROR "Experimental FEL engine rejected: ${DV_BUNDLE_ERROR}")
+  endif()
+  message(WARNING "Using an unqualified experimental FEL engine. ${DV_BUNDLE_OUTPUT}")
+  file(GLOB MPV_RUNTIME_DLLS "${MPV_LIB_DIR}/*.dll")
+endif()
 
 # The winbuild toolchain dynamically links the Khronos Vulkan loader (since
 # 2026-08, and true of our pinned build), so libmpv-2.dll hard-imports
@@ -299,12 +335,20 @@ install(FILES "${AOT_LIBRARY}" DESTINATION "${INSTALL_BUNDLE_DATA_DIR}"
 # (DOWNLOAD_EXTRACT_TIMESTAMP above keeps it), so an incremental build over
 # an existing tree fetched the new pin and shipped the previous DLL. Same
 # pattern as the flutter_assets re-copy.
-install(CODE "
-  file(REMOVE \"${INSTALL_BUNDLE_LIB_DIR}/libmpv-2.dll\")
-  " COMPONENT Runtime)
-install(FILES "${MPV_LIB_DIR}/libmpv-2.dll"
+foreach(MPV_RUNTIME_DLL IN LISTS MPV_RUNTIME_DLLS)
+  get_filename_component(MPV_RUNTIME_NAME "${MPV_RUNTIME_DLL}" NAME)
+  install(CODE "file(REMOVE \"${INSTALL_BUNDLE_LIB_DIR}/${MPV_RUNTIME_NAME}\")" COMPONENT Runtime)
+endforeach()
+install(FILES ${MPV_RUNTIME_DLLS}
   DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
   COMPONENT Runtime)
+if(PLEZYNG_DV_ENGINE_ARCHIVE)
+  install(DIRECTORY "${MPV_LIB_DIR}/sources" "${MPV_LIB_DIR}/toolchain-licenses"
+    DESTINATION "${INSTALL_BUNDLE_DATA_DIR}/experimental-dv" COMPONENT Runtime)
+  install(FILES "${MPV_LIB_DIR}/engine-manifest.json" "${MPV_LIB_DIR}/feature-report.json"
+    "${MPV_LIB_DIR}/provenance.json"
+    DESTINATION "${INSTALL_BUNDLE_DATA_DIR}/experimental-dv" COMPONENT Runtime)
+endif()
 
 # Install the Vulkan loader (and its license) next to the executable so the
 # hard import in libmpv-2.dll resolves on machines whose GPU driver does not
@@ -312,3 +356,4 @@ install(FILES "${MPV_LIB_DIR}/libmpv-2.dll"
 install(FILES "${VULKAN_RT_DIR}/vulkan-1.dll" "${VULKAN_RT_DIR}/VulkanRT-License.txt"
   DESTINATION "${INSTALL_BUNDLE_LIB_DIR}"
   COMPONENT Runtime)
+
