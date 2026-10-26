@@ -168,9 +168,9 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
             children: [
               Text(t.sourceSetup.nfsReadTestHelp),
               const SizedBox(height: 12),
-              Text('4{t.sourceSetup.nfsReadBytes}: ${(result.bytes / (1024 * 1024)).toStringAsFixed(1)} MiB'),
-              Text('4{t.sourceSetup.nfsReadSpeed}: ${result.mebibytesPerSecond.toStringAsFixed(2)} MiB/s'),
-              Text('4{t.sourceSetup.nfsReadRequests}: 4{result.requests} · 4{t.sourceSetup.nfsReadAhead}: 4{result.readAhead}'),
+              Text('${t.sourceSetup.nfsReadBytes}: ${(result.bytes / (1024 * 1024)).toStringAsFixed(1)} MiB'),
+              Text('${t.sourceSetup.nfsReadSpeed}: ${result.mebibytesPerSecond.toStringAsFixed(2)} MiB/s'),
+              Text('${t.sourceSetup.nfsReadRequests}: ${result.requests} · ${t.sourceSetup.nfsReadAhead}: ${result.readAhead}'),
             ],
           ),
           actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.close))],
