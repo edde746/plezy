@@ -4,7 +4,7 @@
 
 - Fit Find your next to the screen with persistent action buttons, mirrored swipe/TV direction cues, contextual help, and artwork that follows the current pick. Restore downloaded and alternate covers, distinguish artwork loading from missing images, and allow failed source covers to be retried.
 
-- Request the experimental Android P7 FEL filter only when software rendering is needed, and report the route only after mpv accepts the filter; unsupported engine builds keep the existing fallback.
+- With explicit opt-in, force Android mpv P7 playback through the experimental software FEL graph even when native DV is advertised; switch only after mpv accepts the filter, and keep the existing fallback on unsupported engines.
 
 - Record synthetic Android FEL Surface evidence and per-platform Dolby Vision playback/output qualification gates; the experimental engine remains separate from production builds.
 

@@ -1601,7 +1601,6 @@ class MpvPlayerCore private constructor(
   private suspend fun applyDvReshapePolicy(
     p: MpvPlayer,
     track: org.json.JSONObject?,
-    softwareDecodeFallback: Boolean = false,
     profileOverride: Long? = null
   ) {
     val profile = track?.takeIf { it.has("dolby-vision-profile") }?.getLong("dolby-vision-profile") ?: profileOverride
@@ -1613,10 +1612,6 @@ class MpvPlayerCore private constructor(
     val wantsP7Fel = GpuVoPolicy.wantsP7FelReconstruction(
       dvProfile = profile,
       conversionMode = mode,
-      displaySupportsDv = routing.displaySupportsDv,
-      dvOutputAllowed = dvOutputAllowed,
-      canPlayP7Natively = p7Decoder != null,
-      softwareDecodeFallback = softwareDecodeFallback,
       experimentalEnabled = experimentalDolbyVision
     )
     val felActive = configureP7FelFilter(p, wantsP7Fel)
@@ -1709,9 +1704,6 @@ class MpvPlayerCore private constructor(
     val wantsP7Fel = GpuVoPolicy.wantsP7FelReconstruction(
       dvProfile = profile,
       conversionMode = mode,
-      displaySupportsDv = routing.displaySupportsDv,
-      dvOutputAllowed = dvOutputAllowed,
-      canPlayP7Natively = false,
       experimentalEnabled = experimentalDolbyVision
     )
     val felActive = configureP7FelFilter(p, wantsP7Fel)
@@ -1980,16 +1972,16 @@ class MpvPlayerCore private constructor(
       Log.i(TAG, "DV P5 decoded in software (hwdec-current=$hwdecCurrent): gpu-next reshaping")
       setGpuVoRequirement(GpuVoPolicy.REASON_DV_RESHAPE, true)
     }
-    // Some devices advertise a dual-layer decoder but reject a particular
-    // stream after opening it. Re-run the P7 policy on the observed software
-    // fallback so an engine that supports the graph can still reconstruct FEL.
-    // configureP7FelFilter fails closed on the current 0.41 Android engine.
+    // A device may advertise a dual-layer decoder but reject a particular
+    // stream after opening it. Re-check the explicit P7 experiment on the
+    // observed software fallback. The policy already forces software output
+    // before decode when its filter is available.
     val fallbackProfile = pendingDvProfile
     if (usesMediaCodecVo && fallbackProfile == 7L && hwdecCurrent == "no") {
       val p = player ?: return
       launchMpvWrite("P7 software decoder fallback") {
         if (pendingDvProfile == fallbackProfile) {
-          applyDvReshapePolicy(p, null, softwareDecodeFallback = true, profileOverride = fallbackProfile)
+          applyDvReshapePolicy(p, null, profileOverride = fallbackProfile)
         }
       }
     }

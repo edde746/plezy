@@ -27,39 +27,17 @@ class GpuVoPolicyTest {
   }
 
   @Test
-  fun `P7 requests FEL graph only after experimental opt-in`() {
-    assertFalse(GpuVoPolicy.wantsP7FelReconstruction(7L, "auto", false, true, true))
-    assertTrue(GpuVoPolicy.wantsP7FelReconstruction(7L, "auto", false, true, true, experimentalEnabled = true))
-    assertTrue(GpuVoPolicy.wantsP7FelReconstruction(7L, "auto", true, false, true, experimentalEnabled = true))
-    assertTrue(GpuVoPolicy.wantsP7FelReconstruction(7L, "auto", true, true, false, experimentalEnabled = true))
-    assertFalse(GpuVoPolicy.wantsP7FelReconstruction(7L, "dv81", false, true, false, experimentalEnabled = true))
-    assertFalse(GpuVoPolicy.wantsP7FelReconstruction(8L, "auto", false, true, false, experimentalEnabled = true))
+  fun `P7 experiment forces the FEL graph regardless of advertised native support`() {
+    assertFalse(GpuVoPolicy.wantsP7FelReconstruction(7L, "auto"))
+    assertTrue(GpuVoPolicy.wantsP7FelReconstruction(7L, "auto", experimentalEnabled = true))
+    assertFalse(GpuVoPolicy.wantsP7FelReconstruction(7L, "dv81", experimentalEnabled = true))
+    assertFalse(GpuVoPolicy.wantsP7FelReconstruction(8L, "auto", experimentalEnabled = true))
   }
 
   @Test
-  fun `P7 decoder fallback requests FEL even when a native decoder was advertised`() {
-    assertTrue(
-      GpuVoPolicy.wantsP7FelReconstruction(
-        dvProfile = 7L,
-        conversionMode = "auto",
-        displaySupportsDv = true,
-        dvOutputAllowed = true,
-        canPlayP7Natively = true,
-        softwareDecodeFallback = true,
-        experimentalEnabled = true
-      )
-    )
-    assertFalse(
-      GpuVoPolicy.wantsP7FelReconstruction(
-        dvProfile = 7L,
-        conversionMode = "native",
-        displaySupportsDv = true,
-        dvOutputAllowed = true,
-        canPlayP7Natively = true,
-        softwareDecodeFallback = true,
-        experimentalEnabled = true
-      )
-    )
+  fun `P7 experiment remains off for explicit compatibility modes`() {
+    assertFalse(GpuVoPolicy.wantsP7FelReconstruction(7L, "native", experimentalEnabled = true))
+    assertFalse(GpuVoPolicy.wantsP7FelReconstruction(7L, "hevc_strip", experimentalEnabled = true))
   }
 
   @Test
