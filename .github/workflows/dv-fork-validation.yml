@@ -4,6 +4,13 @@ on:
   pull_request_target:
     branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
+    paths:
+      - 'tools/dv-engine/**'
+      - 'tools/dv-apple/**'
+      - 'lib/**'
+      - 'test/**'
+      - 'linux/runner/mpv/**'
+      - '.github/workflows/dv-*.yml'
 
 permissions:
   contents: read

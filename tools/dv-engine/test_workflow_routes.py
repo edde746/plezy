@@ -81,6 +81,8 @@ class DolbyWorkflowRouteTests(unittest.TestCase):
         source = (WORKFLOWS / "dv-fork-validation.yml").read_text()
         self.assertIn("pull_request_target:", source)
         self.assertIn("branches: [main]", source)
+        self.assertIn("'tools/dv-engine/**'", source)
+        self.assertIn("'.github/workflows/dv-*.yml'", source)
         self.assertIn("group: gvisor-sandbox", source)
         self.assertIn("labels: gvisor-sandbox", source)
         self.assertIn("persist-credentials: false", source)
