@@ -772,10 +772,8 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
                   if (_cloudConflict) ...[
                     const SizedBox(height: 12),
                     TextButton.icon(
-                      onPressed: () => Navigator.push(
-                        context,
-                        MaterialPageRoute(builder: (_) => const SourceSyncScreen()),
-                      ),
+                      onPressed: () =>
+                          Navigator.push(context, MaterialPageRoute(builder: (_) => const SourceSyncScreen())),
                       icon: const AppIcon(Symbols.cloud_sync_rounded),
                       label: Text(t.audiobook.syncTitle),
                     ),

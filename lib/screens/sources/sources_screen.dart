@@ -256,7 +256,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
           icon: const AppIcon(Symbols.more_vert_rounded),
           adaptiveSheet: true,
           entriesBuilder: (_) => [
-            AppMenuHeader(label: t.common.sort),
+            AppMenuHeader(label: t.audiobook.librarySort),
             for (final value in PublicationSort.values)
               AppMenuItem(
                 value: 'sort:${value.name}',
@@ -269,7 +269,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
                   PublicationSort.recent => t.audiobook.sortRecent,
                 },
               ),
-            AppMenuHeader(label: t.common.filters),
+            AppMenuHeader(label: t.audiobook.statusFilter),
             for (final value in PublicationStatus.values)
               AppMenuItem(
                 value: 'status:${value.name}',

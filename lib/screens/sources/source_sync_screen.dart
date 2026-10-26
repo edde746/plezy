@@ -238,8 +238,9 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Text(
                           t.audiobook.lastSynced(
-                            time: MaterialLocalizations.of(context)
-                                .formatTimeOfDay(TimeOfDay.fromDateTime(sync.lastSuccess!.toLocal())),
+                            time: MaterialLocalizations.of(
+                              context,
+                            ).formatTimeOfDay(TimeOfDay.fromDateTime(sync.lastSuccess!.toLocal())),
                           ),
                         ),
                       ),

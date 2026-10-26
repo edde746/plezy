@@ -97,6 +97,7 @@
 
 ### Fixed
 
+- Use the localized sort and filter labels in the audiobook library menu.
 - Use CocoaPods for iOS and macOS builds until the pinned WebView plugin compiles with Xcode 26’s Swift Package Manager integration.
 - Let Xcode choose signing identities for iOS and tvOS archives instead of forcing one across all targets.
 - Keep raw companion remote transport exceptions out of discovery and session messages.
