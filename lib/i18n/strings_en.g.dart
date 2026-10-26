@@ -8394,8 +8394,8 @@ class Translations$sourceSetup$en {
 	/// en: 'NFS read measurement'
 	String get nfsQualificationResult => 'NFS read measurement';
 
-	/// en: 'Bytes read'
-	String get nfsReadBytes => 'Bytes read';
+	/// en: 'Data read'
+	String get nfsReadBytes => 'Data read';
 
 	/// en: 'Measured speed'
 	String get nfsReadSpeed => 'Measured speed';

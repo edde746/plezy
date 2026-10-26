@@ -3401,7 +3401,7 @@
     "nfsReadTest": "Measure NFS read performance",
     "nfsReadTestHelp": "Reads up to 64 MiB from the largest file to measure this NAS connection. This uses network bandwidth.",
     "nfsQualificationResult": "NFS read measurement",
-    "nfsReadBytes": "Bytes read",
+    "nfsReadBytes": "Data read",
     "nfsReadSpeed": "Measured speed",
     "nfsReadRequests": "Read requests"
   }
