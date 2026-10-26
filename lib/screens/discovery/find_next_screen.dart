@@ -635,10 +635,14 @@ class _FindNextScreenState extends State<FindNextScreen> {
                 runSpacing: 8,
                 children: [
                   for (final item in _DiscoveryFamily.values)
-                    ChoiceChip(
-                      label: Text(_familyLabel(item)),
-                      selected: item == family,
-                      onSelected: (_) => setSheetState(() => family = item),
+                    FocusableButton(
+                      onPressed: () => setSheetState(() => family = item),
+                      autoScroll: false,
+                      child: ChoiceChip(
+                        label: Text(_familyLabel(item)),
+                        selected: item == family,
+                        onSelected: (_) => setSheetState(() => family = item),
+                      ),
                     ),
                 ],
               ),
@@ -649,17 +653,21 @@ class _FindNextScreenState extends State<FindNextScreen> {
                 spacing: 8,
                 children: [
                   for (final item in <int?>[null, 20, 45, 90])
-                    ChoiceChip(
-                      label: Text(
-                        localizeDecimalDigits(switch (item) {
-                          null => t.discover.findNext.anyTime,
-                          20 => t.discover.findNext.twentyMinutes,
-                          45 => t.discover.findNext.fortyFiveMinutes,
-                          _ => t.discover.findNext.ninetyMinutes,
-                        }),
+                    FocusableButton(
+                      onPressed: () => setSheetState(() => maxMinutes = item),
+                      autoScroll: false,
+                      child: ChoiceChip(
+                        label: Text(
+                          localizeDecimalDigits(switch (item) {
+                            null => t.discover.findNext.anyTime,
+                            20 => t.discover.findNext.twentyMinutes,
+                            45 => t.discover.findNext.fortyFiveMinutes,
+                            _ => t.discover.findNext.ninetyMinutes,
+                          }),
+                        ),
+                        selected: item == maxMinutes,
+                        onSelected: (_) => setSheetState(() => maxMinutes = item),
                       ),
-                      selected: item == maxMinutes,
-                      onSelected: (_) => setSheetState(() => maxMinutes = item),
                     ),
                 ],
               ),
