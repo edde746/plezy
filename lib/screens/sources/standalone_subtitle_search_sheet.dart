@@ -1,14 +1,18 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
+import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
-import '../../widgets/focusable_list_tile.dart';
 import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/subtitles/subtitle_search_result.dart';
 import '../../services/open_subtitles_client.dart';
 import '../../utils/language_codes.dart';
+import '../../widgets/app_icon.dart';
+import '../../widgets/focusable_list_tile.dart';
 
 class StandaloneSubtitleSearchSheet extends StatefulWidget {
   const StandaloneSubtitleSearchSheet({
@@ -160,119 +164,137 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
 
   @override
   Widget build(BuildContext context) {
-    final bottom = MediaQuery.viewInsetsOf(context).bottom;
+    final media = MediaQuery.of(context);
+    final bottom = media.viewInsets.bottom;
+    final safeTop = math.max(media.padding.top, media.viewPadding.top);
+    final availableHeight = (media.size.height - safeTop - media.padding.bottom - bottom - 32)
+        .clamp(0.0, media.size.height)
+        .toDouble();
+    final sheetHeight = math.min(media.size.height * .78, availableHeight).toDouble();
     return SafeArea(
       child: Padding(
         padding: EdgeInsets.fromLTRB(20, 16, 20, 16 + bottom),
         child: SizedBox(
-          height: MediaQuery.sizeOf(context).height * .78,
-          child: SingleChildScrollView(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                Semantics(
-                  header: true,
-                  child: Text(t.sourceSetup.subtitleSearch, style: Theme.of(context).textTheme.titleLarge),
-                ),
-                const SizedBox(height: 4),
-                Text(t.sourceSetup.subtitleSearchPrivacy),
-                const SizedBox(height: 12),
-                Row(
-                  children: [
-                    Expanded(
-                      child: FocusableTextField(
-                        controller: _query,
-                        autofocus: true,
-                        textInputAction: TextInputAction.search,
-                        onSubmitted: (_) => _search(),
-                        decoration: InputDecoration(
-                          labelText: t.sourceSetup.movieOrShow,
-                          hintText: t.sourceSetup.subtitleTitleHint,
-                          border: OutlineInputBorder(),
+          height: sheetHeight,
+          child: Column(
+            children: [
+              Expanded(
+                flex: 2,
+                child: SingleChildScrollView(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Semantics(
+                        header: true,
+                        child: Text(t.sourceSetup.subtitleSearch, style: Theme.of(context).textTheme.titleLarge),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(t.sourceSetup.subtitleSearchPrivacy),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: FocusableTextField(
+                              controller: _query,
+                              autofocus: true,
+                              textInputAction: TextInputAction.search,
+                              onSubmitted: (_) => _search(),
+                              decoration: InputDecoration(
+                                labelText: t.sourceSetup.movieOrShow,
+                                hintText: t.sourceSetup.subtitleTitleHint,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(width: 8),
+                          FocusableButton(
+                            onPressed: _searching ? null : _search,
+                            child: IconButton.filled(
+                              tooltip: t.common.search,
+                              onPressed: _searching ? null : _search,
+                              icon: const AppIcon(Symbols.search_rounded),
+                            ),
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 8),
+                      DropdownButtonFormField<String>(
+                        initialValue: _language,
+                        isExpanded: true,
+                        decoration: InputDecoration(labelText: t.sourceSetup.subtitleLanguage),
+                        items: [
+                          for (final code in _languageCodes)
+                            DropdownMenuItem(
+                              value: code,
+                              child: Text(LanguageCodes.getDisplayName(code), overflow: TextOverflow.ellipsis),
+                            ),
+                        ],
+                        onChanged: (value) {
+                          if (value == null) return;
+                          setState(() => _language = value);
+                          unawaited(_search());
+                        },
+                      ),
+                      if (_searching)
+                        Semantics(
+                          label: t.sourceSetup.subtitleSearching,
+                          liveRegion: true,
+                          child: LinearProgressIndicator(),
                         ),
-                      ),
-                    ),
-                    const SizedBox(width: 8),
-                    IconButton.filled(
-                      tooltip: t.common.search,
-                      onPressed: _searching ? null : _search,
-                      icon: Icon(Icons.search),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 8),
-                DropdownButtonFormField<String>(
-                  initialValue: _language,
-                  isExpanded: true,
-                  decoration: InputDecoration(labelText: t.sourceSetup.subtitleLanguage, border: OutlineInputBorder()),
-                  items: [
-                    for (final code in _languageCodes)
-                      DropdownMenuItem(
-                        value: code,
-                        child: Text(LanguageCodes.getDisplayName(code), overflow: TextOverflow.ellipsis),
-                      ),
-                  ],
-                  onChanged: (value) {
-                    if (value == null) return;
-                    setState(() => _language = value);
-                    unawaited(_search());
-                  },
-                ),
-                if (_searching)
-                  Semantics(label: t.sourceSetup.subtitleSearching, liveRegion: true, child: LinearProgressIndicator()),
-                if (_error != null)
-                  Padding(
-                    padding: const EdgeInsets.symmetric(vertical: 8),
-                    child: Semantics(
-                      liveRegion: true,
-                      child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
-                    ),
+                      if (_error != null)
+                        Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 8),
+                          child: Semantics(
+                            liveRegion: true,
+                            child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                          ),
+                        ),
+                    ],
                   ),
-                const SizedBox(height: 8),
-                Builder(
-                  builder: (_) => _hasSearched && _results.isEmpty && !_searching && _error == null
-                      ? Semantics(liveRegion: true, child: Center(child: Text(t.sourceSetup.subtitleNoMatches)))
-                      : ListView.separated(
-                          shrinkWrap: true,
-                          physics: const NeverScrollableScrollPhysics(),
-                          itemCount: _results.length,
-                          separatorBuilder: (_, _) => const Divider(height: 1),
-                          itemBuilder: (context, index) {
-                            final result = _results[index];
-                            final title = result.displayTitle?.trim().isNotEmpty == true
-                                ? result.displayTitle!.trim()
-                                : result.title ?? t.sourceSetup.subtitle;
-                            final tags = <String>[
-                              if (result.language?.isNotEmpty == true) LanguageCodes.getDisplayName(result.language!),
-                              if (result.codec?.isNotEmpty == true) result.codec!.toUpperCase(),
-                              if (result.hearingImpaired) t.fileInfo.flagHearingImpaired,
-                              if (result.forced) t.fileInfo.flagForced,
-                              if (result.score != null)
-                                t.sourceSetup.subtitleRating(rating: formatDecimal(result.score!, maximumDecimals: 1)),
-                            ];
-                            final active = _downloading == result.key;
-                            return FocusableListTile(
-                              contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
-                              title: Text(isolateDisplayText(title), maxLines: 2, overflow: TextOverflow.ellipsis),
-                              subtitle: tags.isEmpty ? null : Text(tags.join(' · ')),
-                              trailing: active
-                                  ? Semantics(
-                                      label: t.sourceSetup.subtitleDownloading(title: isolateDisplayText(title)),
-                                      liveRegion: true,
-                                      child: const SizedBox(
-                                        width: 24,
-                                        height: 24,
-                                        child: CircularProgressIndicator(strokeWidth: 2),
-                                      ),
-                                    )
-                                  : Icon(Icons.download_rounded, semanticLabel: t.sourceSetup.downloadSubtitle),
-                              onTap: _downloading == null ? () => _download(result) : null,
-                            );
-                          },
-                        ),
                 ),
-              ],
-            ),
+              ),
+              const SizedBox(height: 8),
+              Expanded(
+                flex: 3,
+                child: _hasSearched && _results.isEmpty && !_searching && _error == null
+                    ? Semantics(liveRegion: true, child: Center(child: Text(t.sourceSetup.subtitleNoMatches)))
+                    : ListView.separated(
+                        itemCount: _results.length,
+                        separatorBuilder: (_, _) => const Divider(height: 1),
+                        itemBuilder: (context, index) {
+                          final result = _results[index];
+                          final title = result.displayTitle?.trim().isNotEmpty == true
+                              ? result.displayTitle!.trim()
+                              : result.title ?? t.sourceSetup.subtitle;
+                          final tags = <String>[
+                            if (result.language?.isNotEmpty == true) LanguageCodes.getDisplayName(result.language!),
+                            if (result.codec?.isNotEmpty == true) result.codec!.toUpperCase(),
+                            if (result.hearingImpaired) t.fileInfo.flagHearingImpaired,
+                            if (result.forced) t.fileInfo.flagForced,
+                            if (result.score != null)
+                              t.sourceSetup.subtitleRating(rating: formatDecimal(result.score!, maximumDecimals: 1)),
+                          ];
+                          final active = _downloading == result.key;
+                          return FocusableListTile(
+                            contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
+                            title: Text(isolateDisplayText(title), maxLines: 2, overflow: TextOverflow.ellipsis),
+                            subtitle: tags.isEmpty ? null : Text(tags.join(' · ')),
+                            trailing: active
+                                ? Semantics(
+                                    label: t.sourceSetup.subtitleDownloading(title: isolateDisplayText(title)),
+                                    liveRegion: true,
+                                    child: const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    ),
+                                  )
+                                : AppIcon(Symbols.download_rounded, semanticLabel: t.sourceSetup.downloadSubtitle),
+                            onTap: _downloading == null ? () => _download(result) : null,
+                          );
+                        },
+                      ),
+              ),
+            ],
           ),
         ),
       ),

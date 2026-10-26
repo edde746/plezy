@@ -25,6 +25,7 @@ import '../../utils/home_section_builder.dart'
 import '../../services/home_layout_sync_service.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_page.dart';
@@ -258,8 +259,8 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
         title: Text(t.homeLayout.resetHeroTitle),
         content: Text(t.homeLayout.resetHeroBody),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
-          TextButton(onPressed: () => Navigator.pop(context, true), child: Text(t.common.reset)),
+          DialogActionButton(onPressed: () => Navigator.pop(context, false), label: t.common.cancel),
+          DialogActionButton(onPressed: () => Navigator.pop(context, true), label: t.common.reset),
         ],
       ),
     );
@@ -329,8 +330,12 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
         title: Text(t.homeLayout.removeRowTitle),
         content: Text(t.homeLayout.removeRowBody(title: '"${section.title}"')),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext, false), child: Text(t.common.cancel)),
-          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(t.common.delete)),
+          DialogActionButton(onPressed: () => Navigator.pop(dialogContext, false), label: t.common.cancel),
+          DialogActionButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            label: t.common.delete,
+            isPrimary: true,
+          ),
         ],
       ),
     );
@@ -1575,8 +1580,8 @@ class _HomeSectionDialogState extends State<_HomeSectionDialog> {
       ),
     ),
     actions: [
-      TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-      FilledButton(
+      DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.cancel),
+      DialogActionButton(
         onPressed: () {
           final title = _title.text.trim().isEmpty ? _label(_kind) : _title.text.trim();
           Navigator.pop(
@@ -1601,7 +1606,8 @@ class _HomeSectionDialogState extends State<_HomeSectionDialog> {
             ),
           );
         },
-        child: Text(t.common.save),
+        label: t.common.save,
+        isPrimary: true,
       ),
     ],
   );

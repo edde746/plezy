@@ -10,6 +10,7 @@ import 'package:provider/provider.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../focus/focus_memory_tracker.dart';
+import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../focus/input_mode_tracker.dart';
 import '../../i18n/strings.g.dart';
@@ -237,7 +238,15 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
                   children: [
                     Text(t.profiles.settingsLocked),
                     const SizedBox(height: 12),
-                    FilledButton(onPressed: () => _requestSettingsUnlock(id), child: Text(t.profiles.unlockSettings)),
+                    FocusableButton(
+                      autofocus: true,
+                      useBackgroundFocus: true,
+                      onPressed: () => _requestSettingsUnlock(id),
+                      child: FilledButton(
+                        onPressed: () => _requestSettingsUnlock(id),
+                        child: Text(t.profiles.unlockSettings),
+                      ),
+                    ),
                   ],
                 ),
         ),

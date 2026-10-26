@@ -41,6 +41,7 @@ import '../../utils/media_image_helper.dart';
 import '../../utils/media_navigation_helper.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/overlay_sheet.dart';
 import 'discovery_artwork.dart';
 import 'discovery_controls.dart';
@@ -665,9 +666,13 @@ class _FindNextScreenState extends State<FindNextScreen> {
               const SizedBox(height: 20),
               Align(
                 alignment: AlignmentDirectional.centerEnd,
-                child: FilledButton(
+                child: FocusableButton(
                   onPressed: () => Navigator.of(sheetContext).pop((family: family, minutes: maxMinutes)),
-                  child: Text(t.discover.findNext.apply),
+                  useBackgroundFocus: true,
+                  child: FilledButton(
+                    onPressed: () => Navigator.of(sheetContext).pop((family: family, minutes: maxMinutes)),
+                    child: Text(t.discover.findNext.apply),
+                  ),
                 ),
               ),
             ],
@@ -1382,10 +1387,14 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
       appBar: AppBar(
         title: Text(t.discover.findNext.saved),
         actions: [
-          TextButton.icon(
+          FocusableButton(
             onPressed: _busy || !canUndo || profileChanged ? null : _undo,
-            icon: const AppIcon(Symbols.undo_rounded),
-            label: Text(t.discover.findNext.undo),
+            autoScroll: false,
+            child: TextButton.icon(
+              onPressed: _busy || !canUndo || profileChanged ? null : _undo,
+              icon: const AppIcon(Symbols.undo_rounded),
+              label: Text(t.discover.findNext.undo),
+            ),
           ),
         ],
       ),
@@ -1401,7 +1410,7 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
               separatorBuilder: (_, _) => const Divider(height: 1),
               itemBuilder: (context, index) {
                 final choice = savedChoices[index];
-                return ListTile(
+                return FocusableListTile(
                   leading: CircleAvatar(child: AppIcon(_savedIcon(choice), size: 22)),
                   title: Text(isolateDisplayText(choice.title), maxLines: 1, overflow: TextOverflow.ellipsis),
                   subtitle: Text(

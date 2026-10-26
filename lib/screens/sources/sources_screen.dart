@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
@@ -74,6 +75,7 @@ class SourcesScreen extends StatefulWidget {
 class _SourcesScreenState extends State<SourcesScreen> {
   List<SourceEntry> _entries = [];
   List<PublicationProgress> _progress = [];
+  final TextEditingController _searchController = TextEditingController();
   final Set<String> _offline = {};
   bool _loading = true;
   Object? _error;
@@ -100,6 +102,12 @@ class _SourcesScreenState extends State<SourcesScreen> {
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) => _load());
+  }
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
   }
 
   Future<void> _load({bool more = false}) async {
@@ -239,11 +247,12 @@ class _SourcesScreenState extends State<SourcesScreen> {
       _progress,
       sort: _sort,
       status: _status,
-      mode: widget.shelf == PublicationShelf.audiobooks
-          ? PublicationMode.listening
-          : widget.shelf != null
-          ? PublicationMode.reading
-          : null,
+      mode: switch (widget.shelf) {
+        PublicationShelf.audiobooks => PublicationMode.listening,
+        PublicationShelf.videos => PublicationMode.watching,
+        PublicationShelf.ebooks || PublicationShelf.comics => PublicationMode.reading,
+        null => null,
+      },
     );
     final continuations =
         _progress.where((p) => !p.finished && p.fraction < 1 && _entries.any((e) => e.key == p.entryKey)).toList()
@@ -438,7 +447,9 @@ class _SourcesScreenState extends State<SourcesScreen> {
                     ],
                   const SizedBox(height: 16),
                 ],
-                TextField(
+                FocusableTextField(
+                  controller: _searchController,
+                  textInputAction: TextInputAction.search,
                   decoration: InputDecoration(
                     prefixIcon: const AppIcon(Symbols.search_rounded),
                     labelText: root ? t.fileSources.searchCached : t.fileSources.search,

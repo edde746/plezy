@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 
 import '../../focus/focusable_slider.dart';
 import '../../focus/focusable_text_field.dart';
+import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
 import '../../utils/formatters.dart';
 import '../../mpv/mpv.dart';
@@ -467,7 +468,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
               ),
             )
           : FocusedScrollScaffold(
-              title: Text(s.entry!.title),
+              title: Text(isolateDisplayText(s.entry!.displayTitle)),
               focusableAppBarActions: true,
               actions: [
                 IconButton(
@@ -504,15 +505,15 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                                   ),
                                   const SizedBox(height: 24),
                                   Text(
-                                    s.entry!.displayTitle,
+                                    isolateDisplayText(s.entry!.displayTitle),
                                     style: Theme.of(context).textTheme.headlineSmall,
                                     textAlign: TextAlign.center,
                                   ),
-                                  if (s.entry!.author.isNotEmpty) Text(s.entry!.author),
+                                  if (s.entry!.author.isNotEmpty) Text(isolateDisplayText(s.entry!.author)),
                                   if (s.currentChapter != null)
                                     Padding(
                                       padding: const EdgeInsets.only(top: 8),
-                                      child: Text(s.currentChapter!.title),
+                                      child: Text(isolateDisplayText(s.currentChapter!.title)),
                                     ),
                                 ],
                               ),
@@ -531,7 +532,10 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                                     adaptiveSheet: true,
                                     entriesBuilder: (_) => [
                                       for (final track in core.state.tracks.audio)
-                                        AppMenuItem(value: track.id, label: track.title ?? track.language ?? track.id),
+                                        AppMenuItem(
+                                          value: track.id,
+                                          label: isolateDisplayText(track.title ?? track.language ?? track.id),
+                                        ),
                                     ],
                                     onSelected: (id) =>
                                         sourceAction(context, () => core.selectAudioTrack(AudioTrack(id: id))),
@@ -543,7 +547,10 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                                     entriesBuilder: (_) => [
                                       AppMenuItem(value: 'no', label: t.fileSources.none),
                                       for (final track in core.state.tracks.subtitle)
-                                        AppMenuItem(value: track.id, label: track.title ?? track.language ?? track.id),
+                                        AppMenuItem(
+                                          value: track.id,
+                                          label: isolateDisplayText(track.title ?? track.language ?? track.id),
+                                        ),
                                     ],
                                     onSelected: (id) =>
                                         sourceAction(context, () => core.selectSubtitleTrack(SubtitleTrack(id: id))),
@@ -561,7 +568,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                                   const SizedBox(height: 12),
                                   for (var i = 0; i < s.chapters.length; i++)
                                     SourceTile(
-                                      title: s.chapters[i].title,
+                                      title: isolateDisplayText(s.chapters[i].title),
                                       subtitle: sourceTime(s.chapters[i].startMs),
                                       icon: Symbols.format_list_numbered_rounded,
                                       index: i,
@@ -685,9 +692,9 @@ class SourceMiniPlayer extends StatelessWidget {
                       Expanded(
                         child: ListTile(
                           leading: const AppIcon(Symbols.headphones_rounded),
-                          title: Text(s.entry!.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+                          title: Text(isolateDisplayText(s.entry!.displayTitle), maxLines: 1, overflow: TextOverflow.ellipsis),
                           subtitle: Text(
-                            s.currentChapter?.title ?? s.entry!.author,
+                            isolateDisplayText(s.currentChapter?.title ?? s.entry!.author),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),

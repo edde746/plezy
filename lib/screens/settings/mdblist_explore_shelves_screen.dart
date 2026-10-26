@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../models/catalog/mdblist_explore_shelf.dart';
 import '../../i18n/strings.g.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/app_icon.dart';
 import '../../providers/catalog_sources_provider.dart';
@@ -101,8 +102,12 @@ class _MdblistExploreShelvesScreenState extends State<MdblistExploreShelvesScree
           decoration: InputDecoration(hintText: shelf.sourceName, helperText: t.explore.mdblistShelves.nameHint),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.cancel)),
-          TextButton(onPressed: () => Navigator.pop(context, editedName.trim()), child: Text(t.common.save)),
+          DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.cancel),
+          DialogActionButton(
+            onPressed: () => Navigator.pop(context, editedName.trim()),
+            label: t.common.save,
+            isPrimary: true,
+          ),
         ],
       ),
     );
