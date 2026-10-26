@@ -44,6 +44,7 @@ RELEASE_WORTHY_WORKFLOWS = {
     ".github/workflows/release-containers.yml",
 }
 NON_RELEASE_DIRECTORY_NAMES = {"test", "tests", "__tests__", "runnertests"}
+NON_RELEASE_FILE_NAMES = {"Package.resolved"}
 PLACEHOLDER_PATTERN = re.compile(
     r"\b(?:todo|tbd|placeholder)\b|add release notes here|\*\s*\(none\)\s*\*",
     re.IGNORECASE,
@@ -93,6 +94,8 @@ def is_release_worthy(path: str) -> bool:
         return True
 
     parsed = PurePosixPath(path)
+    if parsed.name in NON_RELEASE_FILE_NAMES:
+        return False
     if not parsed.parts or parsed.parts[0] not in RELEASE_WORTHY_ROOTS:
         return False
     if any(part.casefold() in NON_RELEASE_DIRECTORY_NAMES for part in parsed.parts):

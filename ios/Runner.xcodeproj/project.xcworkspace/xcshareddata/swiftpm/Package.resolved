@@ -45,6 +45,15 @@
       }
     },
     {
+      "identity" : "openiap",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/hyodotdev/openiap.git",
+      "state" : {
+        "revision" : "d1239c9a58ec7d47d5d80f35ecf602236a0b3ff9",
+        "version" : "4.0.5"
+      }
+    },
+    {
       "identity" : "sdwebimage",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/SDWebImage/SDWebImage",
