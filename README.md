@@ -9,7 +9,7 @@ See [Files, books and listening](docs/FILES_AND_BOOKS.md) for standard/cloud sou
 
 ## Fork scope and convergence
 
-PlezyNG is a maintenance fork for requested features that Plezy upstream has declined or has not shipped. The implementation targets upstream compatibility and supports Plex, Jellyfin, and Emby wherever their APIs allow.
+PlezyNG is a enhanced fork for requested features that Plezy upstream has declined or has not shipped, combined with unique new features added by the SnapeTech team. The implementation targets upstream compatibility and supports Plex, Jellyfin, and Emby wherever their APIs allow.
 
 Each row below is an upstream convergence target. When Plezy upstream provides equivalent behavior, PlezyNG should adopt that implementation and remove its duplicate. If the listed capabilities converge upstream, the fork-specific maintenance burden ends and PlezyNG should be retired in favor of upstream Plezy.
 
