@@ -39,6 +39,7 @@ import 'package:plezy/services/supporter/supporter_service.dart';
 import 'package:plezy/services/update_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/utils/snackbar_helper.dart';
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:plezy/widgets/dialog_action_button.dart';
 import 'package:plezy/widgets/focusable_list_tile.dart';
@@ -47,6 +48,7 @@ import 'package:plezy/widgets/setting_tile.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helpers/io_fakes.dart';
+import '../../test_helpers/pump.dart';
 import '../../test_helpers/prefs.dart';
 
 void main() {
@@ -451,6 +453,31 @@ void main() {
 
     expect(harness.locationEvents.take(3), ['path:null', 'type:null', 'refresh']);
     expect(SettingsService.instance.read(SettingsService.customDownloadPath), isNull);
+    await pumpUntil(tester, () => find.text(t.settings.resetSettingsSuccess).evaluate().isNotEmpty);
+  });
+
+  testWidgets('Reset All keeps feedback on the root messenger across a profile route rebuild', (tester) async {
+    await SettingsService.instance.write(SettingsService.forceTvMode, true);
+    final profileMessengerKeys = <GlobalKey<ScaffoldMessengerState>>[];
+    final harness = await _pumpSettingsScreen(
+      tester,
+      wrapSettingsInProfileMessenger: true,
+      profileMessengerKeys: profileMessengerKeys,
+    );
+    addTearDown(() => harness.dispose(tester));
+
+    await tester.tap(find.text(t.settings.resetSettings));
+    await _pumpUi(tester);
+    await tester.tap(find.text(t.common.reset));
+    await _pumpUi(tester);
+
+    await pumpUntil(tester, () => find.text(t.settings.resetSettingsSuccess).evaluate().isNotEmpty);
+    await tester.pump(const Duration(milliseconds: 400));
+
+    expect(SettingsService.instance.read(SettingsService.forceTvMode), isFalse);
+    expect(profileMessengerKeys, hasLength(greaterThanOrEqualTo(2)));
+    expect(profileMessengerKeys.first.currentState, isNull, reason: 'the initiating profile route was disposed');
+    expect(rootScaffoldMessengerKey.currentState, isNotNull);
     expect(find.text(t.settings.resetSettingsSuccess), findsOneWidget);
   });
 
@@ -678,6 +705,8 @@ Future<_SettingsHarness> _pumpSettingsScreen(
   Future<ImportResult?> Function()? settingsImporter,
   BackgroundWorkDiagnosticsService? backgroundWorkDiagnosticsService,
   bool pushSettingsRoute = false,
+  bool wrapSettingsInProfileMessenger = false,
+  List<GlobalKey<ScaffoldMessengerState>>? profileMessengerKeys,
   List<MediaLibrary> initialLibraries = const [],
   Future<bool> Function(RequireWiFi requirement)? requireWiFiOverride,
 }) async {
@@ -763,6 +792,19 @@ Future<_SettingsHarness> _pumpSettingsScreen(
     accountPreferences: accountPreferences,
   );
 
+  Widget settingsPage() {
+    final screen = SettingsScreen(
+      downloadDirectoryWritableChecker: writableChecker ?? (_) async => true,
+      settingsExporter: settingsExporter,
+      settingsImporter: settingsImporter,
+      backgroundWorkDiagnosticsService: backgroundWorkDiagnosticsService,
+    );
+    if (!wrapSettingsInProfileMessenger) return screen;
+    final key = GlobalKey<ScaffoldMessengerState>();
+    profileMessengerKeys?.add(key);
+    return ScaffoldMessenger(key: key, child: screen);
+  }
+
   await tester.pumpWidget(
     TranslationProvider(
       child: MultiProvider(
@@ -778,32 +820,28 @@ Future<_SettingsHarness> _pumpSettingsScreen(
         ],
         child: MaterialApp(
           theme: monoTheme(MonoPalette.dark).copyWith(platform: TargetPlatform.android),
-          home: pushSettingsRoute
+          builder: (context, child) => ScaffoldMessenger(
+            key: rootScaffoldMessengerKey,
+            child: Scaffold(backgroundColor: Colors.transparent, body: child ?? const SizedBox.shrink()),
+          ),
+          onGenerateRoute: wrapSettingsInProfileMessenger
+              ? (settings) => settings.name == '/' ? MaterialPageRoute<void>(builder: (_) => settingsPage()) : null
+              : null,
+          home: wrapSettingsInProfileMessenger
+              ? null
+              : pushSettingsRoute
               ? Builder(
                   builder: (context) => Scaffold(
                     body: Center(
                       child: ElevatedButton(
-                        onPressed: () => Navigator.of(context).push(
-                          MaterialPageRoute<void>(
-                            builder: (_) => SettingsScreen(
-                              downloadDirectoryWritableChecker: writableChecker ?? (_) async => true,
-                              settingsExporter: settingsExporter,
-                              settingsImporter: settingsImporter,
-                              backgroundWorkDiagnosticsService: backgroundWorkDiagnosticsService,
-                            ),
-                          ),
-                        ),
+                        onPressed: () =>
+                            Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => settingsPage())),
                         child: const Text('Settings launcher'),
                       ),
                     ),
                   ),
                 )
-              : SettingsScreen(
-                  downloadDirectoryWritableChecker: writableChecker ?? (_) async => true,
-                  settingsExporter: settingsExporter,
-                  settingsImporter: settingsImporter,
-                  backgroundWorkDiagnosticsService: backgroundWorkDiagnosticsService,
-                ),
+              : settingsPage(),
         ),
       ),
     ),

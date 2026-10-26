@@ -770,11 +770,23 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           await context.read<HiddenLibrariesProvider>().refresh();
           if (!mounted) return;
           unawaited(context.read<LibrariesProvider>().refresh());
+          var feedbackShown = false;
           final failures = await const SettingsMutationService().applyStoredEffects(
             context,
             previousRootConfiguration: previousRootConfiguration ?? const [],
+            beforeRootRebuild: (failures) {
+              if (failures.isEmpty) return;
+              showGlobalErrorSnackBar(failures.first.display);
+              feedbackShown = true;
+            },
           );
-          if (mounted && failures.isNotEmpty) showErrorSnackBar(context, failures.first.display);
+          if (failures.isNotEmpty && !feedbackShown) {
+            if (mounted) {
+              showErrorSnackBar(context, failures.first.display);
+            } else {
+              showGlobalErrorSnackBar(failures.first.display);
+            }
+          }
         },
       ),
     );
@@ -974,18 +986,16 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     await context.read<DownloadProvider>().resetDownloadLocation();
     await _settingsService.resetAllSettings();
     if (!mounted) return;
+    var feedbackShown = false;
     final failures = await const SettingsMutationService().applyStoredEffects(
       context,
       previousRootConfiguration: previousRootConfiguration,
+      beforeRootRebuild: (failures) {
+        _showGlobalMutationFeedback(failures, t.settings.resetSettingsSuccess);
+        feedbackShown = true;
+      },
     );
-    if (!mounted) return;
-    // Every pref is reset either way; only some runtime effect declined, so the
-    // reset itself is not a failure — name what did not take.
-    if (failures.isEmpty) {
-      showSuccessSnackBar(context, t.settings.resetSettingsSuccess);
-    } else {
-      showErrorSnackBar(context, failures.first.display);
-    }
+    if (!feedbackShown) _showMutationFeedback(failures, t.settings.resetSettingsSuccess);
   }
 
   Future<void> _handleExportSettings() async {
@@ -1033,17 +1043,17 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
           await hiddenLibrariesProvider.refresh();
           unawaited(librariesProvider.refresh());
           if (!mounted) return;
+          var feedbackShown = false;
           final failures = await const SettingsMutationService().applyStoredEffects(
             context,
             previousRootConfiguration: previousRootConfiguration,
+            beforeRootRebuild: (failures) {
+              _showGlobalMutationFeedback(failures, t.settings.importSettingsSuccess);
+              feedbackShown = true;
+            },
           );
 
-          if (!mounted) return;
-          if (failures.isEmpty) {
-            showSuccessSnackBar(context, t.settings.importSettingsSuccess);
-          } else {
-            showErrorSnackBar(context, failures.first.display);
-          }
+          if (!feedbackShown) _showMutationFeedback(failures, t.settings.importSettingsSuccess);
         } on NoUserSignedInException {
           if (mounted) showErrorSnackBar(context, t.settings.importSettingsNoUser);
         } on InvalidExportFileException {
@@ -1051,6 +1061,30 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
         }
       },
     );
+  }
+
+  void _showMutationFeedback(List<SettingsEffectFailure> failures, String successMessage) {
+    if (failures.isEmpty) {
+      if (mounted) {
+        showSuccessSnackBar(context, successMessage);
+      } else {
+        showGlobalSuccessSnackBar(successMessage);
+      }
+    } else {
+      if (mounted) {
+        showErrorSnackBar(context, failures.first.display);
+      } else {
+        showGlobalErrorSnackBar(failures.first.display);
+      }
+    }
+  }
+
+  void _showGlobalMutationFeedback(List<SettingsEffectFailure> failures, String successMessage) {
+    if (failures.isEmpty) {
+      showGlobalSuccessSnackBar(successMessage);
+    } else {
+      showGlobalErrorSnackBar(failures.first.display);
+    }
   }
 
   Future<void> _checkForUpdates() async {

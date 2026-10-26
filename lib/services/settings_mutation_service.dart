@@ -64,6 +64,8 @@ class SettingsEffectFailure implements Exception {
 class SettingsMutationService {
   const SettingsMutationService();
 
+  static const _localeEffectKeys = {'app_locale', 'format_locale', 'metadata_locale'};
+
   /// Every pref with a runtime effect, in the order bulk import/reset replays
   /// them. Prefs without an entry are plain stored values.
   static final List<_SettingsEffect> _effects = [
@@ -224,14 +226,29 @@ class SettingsMutationService {
   Future<List<SettingsEffectFailure>> applyStoredEffects(
     BuildContext context, {
     required List<Object?> previousRootConfiguration,
+    void Function(List<SettingsEffectFailure> failures)? beforeRootRebuild,
   }) async {
     final failures = <SettingsEffectFailure>[];
+    final localeEffects = <_SettingsEffect>[];
     for (final effect in _effects) {
-      if (!context.mounted) return failures;
+      if (_localeEffectKeys.contains(effect.pref.key)) {
+        localeEffects.add(effect);
+        continue;
+      }
+      if (!context.mounted) break;
       final failure = await applyEffects(context, effect.pref, rebuildRoot: false);
       if (failure != null) failures.add(failure);
     }
-    if (context.mounted && !listEquals(previousRootConfiguration, captureRootConfiguration())) rebuild(context);
+    // A locale change can rebuild TranslationProvider and unmount the screen
+    // that initiated a reset or import. Apply locale-dependent effects last so
+    // provider-dependent effects still have a live BuildContext.
+    final rootConfigurationChanged = !listEquals(previousRootConfiguration, captureRootConfiguration());
+    if (context.mounted && rootConfigurationChanged && localeEffects.isNotEmpty) {
+      final failure = await applyEffects(context, localeEffects.first.pref, rebuildRoot: false);
+      if (failure != null) failures.add(failure);
+    }
+    if (rootConfigurationChanged) beforeRootRebuild?.call(failures);
+    if (context.mounted && rootConfigurationChanged) rebuild(context);
     return failures;
   }
 

@@ -665,7 +665,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                           child: Align(
                             alignment: AlignmentDirectional.centerStart,
                             child: Chip(
-                              avatar: Icon(Icons.public_rounded, size: 18),
+                              avatar: const AppIcon(Symbols.public_rounded, size: 18),
                               label: Text(t.sourceSetup.metadataFromTrakt),
                             ),
                           ),
@@ -680,7 +680,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                             Semantics(liveRegion: true, child: Text(t.sourceSetup.metadataNoAutomaticMatch)),
                             TextButton.icon(
                               onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
-                              icon: Icon(Icons.search_rounded),
+                              icon: const AppIcon(Symbols.search_rounded),
                               label: Text(t.sourceSetup.metadataSearch),
                             ),
                           ],
@@ -695,7 +695,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                             Semantics(liveRegion: true, child: Text(t.sourceSetup.metadataFailed)),
                             TextButton.icon(
                               onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
-                              icon: const Icon(Icons.search_rounded),
+                              icon: const AppIcon(Symbols.search_rounded),
                               label: Text(t.sourceSetup.metadataSearch),
                             ),
                           ],
@@ -713,7 +713,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                             ),
                             TextButton.icon(
                               onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
-                              icon: Icon(Icons.search_rounded),
+                              icon: const AppIcon(Symbols.search_rounded),
                               label: Text(t.sourceSetup.metadataSearch),
                             ),
                           ],
@@ -734,7 +734,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                                 context,
                                 MaterialPageRoute(builder: (_) => const ServicesSettingsScreen()),
                               ),
-                              icon: const Icon(Icons.link_rounded),
+                              icon: const AppIcon(Symbols.link_rounded),
                               label: Text('${t.common.connect} ${t.trakt.title}'),
                             ),
                           ],
