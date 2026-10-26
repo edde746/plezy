@@ -401,8 +401,10 @@ class SourcePage {
   final String? title;
 }
 
-/// Ephemeral. Never serialized, cached in catalog records, or sent to OS media
-/// metadata. A lease can be renewed before each range request.
+/// Transient by default; never cached in catalogue records or sent to OS
+/// media metadata. Only an adapter-attested, credential-free direct URL may be
+/// persisted as a native background task. Headers, expiring leases, and URLs
+/// containing user info, query parameters, or fragments are never handed off.
 class ContentLease {
   const ContentLease(
     this.uri, {
