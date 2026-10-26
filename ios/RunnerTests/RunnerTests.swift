@@ -221,7 +221,7 @@ final class MpvPlayerContractTests: XCTestCase {
     XCTAssertFalse(core.isPaused, "The accepted pause write must commit before completion")
   }
 
-  func testMpvContextsPreferAVFoundationOverAudioUnit() {
+  func testMpvContextsPreferAVFoundationOverAudioUnit() throws {
     // ao_audiounit remixes 5.1/7.1 to stereo on AirPods (#2264); both the
     // video and the music core must probe AVFoundation first.
     let core = MpvAudioPlayerCore()
@@ -231,7 +231,18 @@ final class MpvPlayerContractTests: XCTestCase {
       core.queue.sync {}
     }
 
-    let outputOrder = try awaitGetProperty(core, name: "options/ao").get().split(separator: ",")
+    let rawOutputOrder: String
+    switch awaitGetProperty(core, name: "options/ao") {
+    case .success(let value?):
+      rawOutputOrder = value
+    case .success(nil):
+      XCTFail("Expected an audio output order to be configured")
+      return
+    case .failure:
+      XCTFail("Could not read the audio output order")
+      return
+    }
+    let outputOrder = rawOutputOrder.split(separator: ",")
     guard
       let avFoundationIndex = outputOrder.firstIndex(of: "avfoundation"),
       let audioUnitIndex = outputOrder.firstIndex(of: "audiounit")
