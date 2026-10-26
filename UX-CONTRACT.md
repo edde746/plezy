@@ -62,3 +62,9 @@ Settings → Appearance → Accessibility adds to operating-system preferences, 
 Reduced motion disables shared focus scaling, focus/TV scroll animation, Mono control transitions and page transitions; existing hero/visualizer consumers receive the same MediaQuery setting. Focus outlines and state feedback remain. Shared sliders retain screen-reader increase/decrease actions, respect RTL arrow direction, and support Home/End and Page Up/Down. Content, menus, dialogs and document navigation have keyboard alternatives to touch gestures.
 
 Reader zoom does not replace readable text reflow. Fixed pages expose fit/actual-size/zoom/pan and page entry; EPUB text exposes size, spacing, alignment and layout. Image-only pages are not described by invented alt text, and OCR is not implied. Automated semantics, narrow-screen/large-text and real-engine tests establish specific coverage; they are not a blanket accessibility certification or a substitute for physical screen-reader checks.
+
+# Planned Find your next discovery
+
+The [implementation handoff](docs/plezyng/swipe/README.md) and [detailed interaction contract](docs/plezyng/swipe/UX.md) define the next discovery work. No discovery runtime is introduced by the plan itself.
+
+Swipes map only to reversible profile-local Not now and Save decisions, with equivalent labelled buttons, persistent Undo and normal Back behavior. Playback, reading, requests, borrowing, downloading and provider watchlists remain explicit actions through their existing owners. Preview mode must preserve real progress, queues and reporting. Mixed-media candidates retain source-qualified identity, exact edition and current capability checks. Profile changes retire candidates, previews, async work and focus restoration. The [coverage matrix](docs/plezyng/swipe/COVERAGE.md) and [acceptance cases](docs/plezyng/swipe/DELIVERY.md) are the implementation completion criteria.
