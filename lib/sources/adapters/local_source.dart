@@ -66,7 +66,7 @@ class LocalSourceAdapter extends SourceAdapter {
       // continuation still has to observe the exact directory/query it began
       // with. Reject stale pages instead of mixing two sorted listings.
       final expectedStamp = int.tryParse(cursorParts[0].substring(1));
-      final directoryKey = sourceDigest('${source.id}\\u0000$directory').substring(0, 12);
+      final directoryKey = sourceDigest('${source.id}\u0000$directory').substring(0, 12);
       final offset = int.tryParse(cursorParts[3]);
       if (expectedStamp == null ||
           offset == null ||
@@ -93,7 +93,7 @@ class LocalSourceAdapter extends SourceAdapter {
     final next = end < snapshot.count
         ? snapshot.cached
             ? 's${snapshot.generation}:$queryKey:$end'
-            : 'u${snapshot.modified}:${sourceDigest('${source.id}\\u0000$directory').substring(0, 12)}:$queryKey:$end'
+            : 'u${snapshot.modified}:${sourceDigest('${source.id}\u0000$directory').substring(0, 12)}:$queryKey:$end'
         : null;
     return SourcePage(entries, next: next);
   }
