@@ -3450,7 +3450,7 @@ class _Translations$discover$findNext$nl extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} totaal';
 	@override String get timingVaries => 'Timing variëren';
 	@override String get notNow => 'Niet nu';
-	@override String get swipeHint => 'Swipe, of gebruik de knoppen hieronder';
+	@override String get swipeHint => 'Veeg de omslag naar een pijl of gebruik de knoppen hieronder.';
 	@override String get saved => 'Beveiligde picks';
 	@override String savedCount({required Object count}) => 'Geboekte punten · ${count}';
 	@override String get undo => 'eno';
@@ -3478,6 +3478,18 @@ class _Translations$discover$findNext$nl extends Translations$discover$findNext$
 	@override String get openFailed => 'Deze optie is niet meer beschikbaar.Fresh om opnieuw te controleren.';
 	@override String get changeFailed => 'Ik kan die verandering niet redden, probeer het nog eens.';
 	@override String get savedLimit => 'Save picks is vol. Verwijder een selectie om een andere te redden.';
+	@override String get chooseHint => 'Open een titel, bewaar hem voor later of sla hem over.';
+	@override String get howItWorks => 'Zo werkt het';
+	@override String get notNowHelp => 'Sla deze titel voorlopig over. Hij blijft in je bibliotheek.';
+	@override String get saveHelp => 'Bewaar hem bij de opgeslagen keuzes van dit profiel op dit apparaat. Opslaan downloadt de titel niet.';
+	@override String get openHelp => 'Selecteer de omslag voor details. Gebruik de hoofdactie om de titel af te spelen, te lezen of te openen.';
+	@override String get controlsHelp => 'Toetsenbord of afstandsbediening: selecteer een knop en druk op Enter of Selecteren. Ongedaan maken herstelt je laatste keuze.';
+	@override String get artworkLoading => 'Afbeelding laden…';
+	@override String get artworkUnavailable => 'Afbeelding niet beschikbaar';
+	@override String get savedFeedback => 'Toegevoegd aan opgeslagen keuzes';
+	@override String get skippedFeedback => 'Voorlopig overgeslagen';
+	@override String get releaseToConfirm => 'Laat los om te bevestigen';
+	@override String get remoteHint => 'Omslag geselecteerd: ← / → kiezen · Selecteren: details · ↑ / ↓ focus verplaatsen';
 }
 
 // Path: discover.person
@@ -5488,7 +5500,7 @@ extension on TranslationsNl {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} totaal',
 			'discover.findNext.timingVaries' => 'Timing variëren',
 			'discover.findNext.notNow' => 'Niet nu',
-			'discover.findNext.swipeHint' => 'Swipe, of gebruik de knoppen hieronder',
+			'discover.findNext.swipeHint' => 'Veeg de omslag naar een pijl of gebruik de knoppen hieronder.',
 			'discover.findNext.saved' => 'Beveiligde picks',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Geboekte punten · ${count}',
 			'discover.findNext.undo' => 'eno',
@@ -5516,6 +5528,18 @@ extension on TranslationsNl {
 			'discover.findNext.openFailed' => 'Deze optie is niet meer beschikbaar.Fresh om opnieuw te controleren.',
 			'discover.findNext.changeFailed' => 'Ik kan die verandering niet redden, probeer het nog eens.',
 			'discover.findNext.savedLimit' => 'Save picks is vol. Verwijder een selectie om een andere te redden.',
+			'discover.findNext.chooseHint' => 'Open een titel, bewaar hem voor later of sla hem over.',
+			'discover.findNext.howItWorks' => 'Zo werkt het',
+			'discover.findNext.notNowHelp' => 'Sla deze titel voorlopig over. Hij blijft in je bibliotheek.',
+			'discover.findNext.saveHelp' => 'Bewaar hem bij de opgeslagen keuzes van dit profiel op dit apparaat. Opslaan downloadt de titel niet.',
+			'discover.findNext.openHelp' => 'Selecteer de omslag voor details. Gebruik de hoofdactie om de titel af te spelen, te lezen of te openen.',
+			'discover.findNext.controlsHelp' => 'Toetsenbord of afstandsbediening: selecteer een knop en druk op Enter of Selecteren. Ongedaan maken herstelt je laatste keuze.',
+			'discover.findNext.artworkLoading' => 'Afbeelding laden…',
+			'discover.findNext.artworkUnavailable' => 'Afbeelding niet beschikbaar',
+			'discover.findNext.savedFeedback' => 'Toegevoegd aan opgeslagen keuzes',
+			'discover.findNext.skippedFeedback' => 'Voorlopig overgeslagen',
+			'discover.findNext.releaseToConfirm' => 'Laat los om te bevestigen',
+			'discover.findNext.remoteHint' => 'Omslag geselecteerd: ← / → kiezen · Selecteren: details · ↑ / ↓ focus verplaatsen',
 			'discover.extras' => 'Trailers en extra\'s',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Beoordeling',
@@ -5741,6 +5765,8 @@ extension on TranslationsNl {
 			'explore.mdblistShelves.nameHint' => 'Laat het blanke om de bronlijstnaam te gebruiken.',
 			'explore.mdblistShelves.add' => 'Voeg shelf toe',
 			'explore.mdblistShelves.save' => 'Save de shelves',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Verplaats ${title} naar boven',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Verplaats ${title} naar beneden',
 			'explore.mdblistShelves.unavailable' => 'Deze lijst is niet beschikbaar. verwijderen of verwijderen van de schelfs in instellingen.',
@@ -5753,8 +5779,6 @@ extension on TranslationsNl {
 			'explore.selectSource' => 'Bron kiezen',
 			'explore.rows.watchlist' => 'Kijklijst',
 			'explore.rows.recommendedMovies' => 'Aanbevolen films',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Aanbevolen series',
 			'explore.rows.trendingMovies' => 'Trending films',
 			'explore.rows.trendingShows' => 'Trending series',
@@ -6255,6 +6279,8 @@ extension on TranslationsNl {
 			'downloads.resumeDownload' => 'Download hervatten',
 			'downloads.cancelledDownload' => 'Geannuleerde download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} synchroniseren)',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} gedownload — klik om te voltooien',
 			'downloads.partialDownloadClickToComplete' => 'Gedeeltelijk gedownload — klik om te voltooien',
 			'downloads.deleting' => 'Verwijderen...',
@@ -6267,8 +6293,6 @@ extension on TranslationsNl {
 			'downloads.pauseAll' => 'Alles pauzeren',
 			'downloads.resumeAll' => 'Alles hervatten',
 			'downloads.retryAll' => 'Alles opnieuw proberen',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'Mislukte downloads opnieuw proberen',
 			'downloads.deleteAll' => 'Alles verwijderen',
 			'downloads.selectVersion' => 'Versie selecteren',
@@ -6769,6 +6793,8 @@ extension on TranslationsNl {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Kon de server niet bereiken: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Inloggen mislukt: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect mislukt: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Inloggen met Plex',
 			'addServer.pinExpired' => 'De pincode verliep voordat je kon inloggen. Probeer het opnieuw.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Account registreren mislukt: ${error}',
@@ -6781,8 +6807,6 @@ extension on TranslationsNl {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Verbinding maken met ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Voer je server-URL, gebruikersnaam en wachtwoord in.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Meld je aan bij je ${product}-server. Wordt gekoppeld aan ${name}.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Van een ander profiel lenen',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Hergebruik de verbinding van een ander profiel. Voor profielen met pincodebeveiliging is een pincode vereist.',
 			'addServer.invalidCredentials' => 'Ongeldige gebruikersnaam of ongeldig wachtwoord',

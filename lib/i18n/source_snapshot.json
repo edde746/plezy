@@ -1263,7 +1263,7 @@
   "discover.findNext.totalDuration": "2286a31da4a41f84",
   "discover.findNext.timingVaries": "56fc1160de92a2b8",
   "discover.findNext.notNow": "357d49a29677068c",
-  "discover.findNext.swipeHint": "6a039ec559238201",
+  "discover.findNext.swipeHint": "387bab7a3a812649",
   "discover.findNext.saved": "3b2870e273606d1f",
   "discover.findNext.savedCount": "acf28fcb6c862a36",
   "discover.findNext.undo": "675036bd3758c1f7",
@@ -2965,5 +2965,17 @@
   "settings.dvCompatibilityFallback": "e02fbf362156634e",
   "settings.dvCompatibilityFallbackDescription": "8193930ccc8ff9be",
   "settings.dvExperimentDiagnostics": "711ff20dc995e7b4",
-  "settings.dvExperimentDiagnosticsDescription": "a245ce46f0fa25be"
+  "settings.dvExperimentDiagnosticsDescription": "a245ce46f0fa25be",
+  "discover.findNext.chooseHint": "402f7fd7e1fd0c08",
+  "discover.findNext.howItWorks": "8adffc575cbeeb5a",
+  "discover.findNext.notNowHelp": "73c349977032fa65",
+  "discover.findNext.saveHelp": "6e61e6a997e445d5",
+  "discover.findNext.openHelp": "9d3a2ad87d6950de",
+  "discover.findNext.controlsHelp": "040f9cda9655d70c",
+  "discover.findNext.artworkLoading": "f4ccc841a5d10ee1",
+  "discover.findNext.artworkUnavailable": "400cb972d5a67ea6",
+  "discover.findNext.savedFeedback": "49a602af7c05db75",
+  "discover.findNext.skippedFeedback": "5ac1e4be7337611f",
+  "discover.findNext.releaseToConfirm": "df0cb0f2566d69bd",
+  "discover.findNext.remoteHint": "29e436b0349b161f"
 }

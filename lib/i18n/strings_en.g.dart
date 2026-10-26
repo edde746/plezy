@@ -8565,8 +8565,8 @@ class Translations$discover$findNext$en {
 	/// en: 'Not now'
 	String get notNow => 'Not now';
 
-	/// en: 'Swipe, or use the buttons below'
-	String get swipeHint => 'Swipe, or use the buttons below';
+	/// en: 'Swipe the cover toward an arrow, or use the buttons below.'
+	String get swipeHint => 'Swipe the cover toward an arrow, or use the buttons below.';
 
 	/// en: 'Saved picks'
 	String get saved => 'Saved picks';
@@ -8648,6 +8648,42 @@ class Translations$discover$findNext$en {
 
 	/// en: 'Saved picks is full. Remove a pick to save another.'
 	String get savedLimit => 'Saved picks is full. Remove a pick to save another.';
+
+	/// en: 'Open a pick, save it for later, or skip it.'
+	String get chooseHint => 'Open a pick, save it for later, or skip it.';
+
+	/// en: 'How it works'
+	String get howItWorks => 'How it works';
+
+	/// en: 'Skip this pick for now. It stays in your library.'
+	String get notNowHelp => 'Skip this pick for now. It stays in your library.';
+
+	/// en: 'Keep it in Saved picks for this profile on this device. Saving does not download it.'
+	String get saveHelp => 'Keep it in Saved picks for this profile on this device. Saving does not download it.';
+
+	/// en: 'Select the cover for details. Use the main action to play, read or open the title.'
+	String get openHelp => 'Select the cover for details. Use the main action to play, read or open the title.';
+
+	/// en: 'Keyboard or remote: focus a button, then press Enter or Select. Undo restores your last choice.'
+	String get controlsHelp => 'Keyboard or remote: focus a button, then press Enter or Select. Undo restores your last choice.';
+
+	/// en: 'Loading artwork…'
+	String get artworkLoading => 'Loading artwork…';
+
+	/// en: 'Artwork unavailable'
+	String get artworkUnavailable => 'Artwork unavailable';
+
+	/// en: 'Saved to Saved picks'
+	String get savedFeedback => 'Saved to Saved picks';
+
+	/// en: 'Skipped for now'
+	String get skippedFeedback => 'Skipped for now';
+
+	/// en: 'Release to confirm'
+	String get releaseToConfirm => 'Release to confirm';
+
+	/// en: 'Cover focused: ← / → choose · Select opens details · ↑ / ↓ moves focus'
+	String get remoteHint => 'Cover focused: ← / → choose · Select opens details · ↑ / ↓ moves focus';
 }
 
 // Path: discover.person
@@ -11466,7 +11502,7 @@ extension on Translations {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} total',
 			'discover.findNext.timingVaries' => 'Timing varies',
 			'discover.findNext.notNow' => 'Not now',
-			'discover.findNext.swipeHint' => 'Swipe, or use the buttons below',
+			'discover.findNext.swipeHint' => 'Swipe the cover toward an arrow, or use the buttons below.',
 			'discover.findNext.saved' => 'Saved picks',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Saved picks · ${count}',
 			'discover.findNext.undo' => 'Undo',
@@ -11494,6 +11530,18 @@ extension on Translations {
 			'discover.findNext.openFailed' => 'This choice is no longer available. Refresh to check again.',
 			'discover.findNext.changeFailed' => 'Could not save that change. Try again.',
 			'discover.findNext.savedLimit' => 'Saved picks is full. Remove a pick to save another.',
+			'discover.findNext.chooseHint' => 'Open a pick, save it for later, or skip it.',
+			'discover.findNext.howItWorks' => 'How it works',
+			'discover.findNext.notNowHelp' => 'Skip this pick for now. It stays in your library.',
+			'discover.findNext.saveHelp' => 'Keep it in Saved picks for this profile on this device. Saving does not download it.',
+			'discover.findNext.openHelp' => 'Select the cover for details. Use the main action to play, read or open the title.',
+			'discover.findNext.controlsHelp' => 'Keyboard or remote: focus a button, then press Enter or Select. Undo restores your last choice.',
+			'discover.findNext.artworkLoading' => 'Loading artwork…',
+			'discover.findNext.artworkUnavailable' => 'Artwork unavailable',
+			'discover.findNext.savedFeedback' => 'Saved to Saved picks',
+			'discover.findNext.skippedFeedback' => 'Skipped for now',
+			'discover.findNext.releaseToConfirm' => 'Release to confirm',
+			'discover.findNext.remoteHint' => 'Cover focused: ← / → choose · Select opens details · ↑ / ↓ moves focus',
 			'discover.extras' => 'Trailers & Extras',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Rating',
@@ -11719,6 +11767,8 @@ extension on Translations {
 			'explore.mdblistShelves.nameHint' => 'Leave blank to use the source list name.',
 			'explore.mdblistShelves.add' => 'Add shelf',
 			'explore.mdblistShelves.save' => 'Save shelves',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Move ${title} up',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Move ${title} down',
 			'explore.mdblistShelves.unavailable' => 'This list is unavailable. Retry or remove its shelf in settings.',
@@ -11731,8 +11781,6 @@ extension on Translations {
 			'explore.selectSource' => 'Select source',
 			'explore.rows.watchlist' => 'Watchlist',
 			'explore.rows.recommendedMovies' => 'Recommended Movies',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Recommended Shows',
 			'explore.rows.trendingMovies' => 'Trending Movies',
 			'explore.rows.trendingShows' => 'Trending Shows',
@@ -12233,6 +12281,8 @@ extension on Translations {
 			'downloads.resumeDownload' => 'Resume download',
 			'downloads.cancelledDownload' => 'Canceled download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (syncing ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Downloaded ${file} - Click to complete',
 			'downloads.partialDownloadClickToComplete' => 'Partially downloaded - Click to complete',
 			'downloads.deleting' => 'Deleting...',
@@ -12245,8 +12295,6 @@ extension on Translations {
 			'downloads.pauseAll' => 'Pause all',
 			'downloads.resumeAll' => 'Resume all',
 			'downloads.retryAll' => 'Retry all',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'Retry failed downloads',
 			'downloads.deleteAll' => 'Delete all',
 			'downloads.selectVersion' => 'Select Version',
@@ -12747,6 +12795,8 @@ extension on Translations {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Could not reach the server: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Sign-in failed: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect failed: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Sign in with Plex',
 			'addServer.pinExpired' => 'PIN expired before sign-in. Please try again.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Failed to register account: ${error}',
@@ -12759,8 +12809,6 @@ extension on Translations {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Connect to ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Enter your server URL, username, and password.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Sign in to your ${product} server. Binds to ${name}.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Borrow from another profile',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Reuse another profile\'s connection. PIN-protected profiles require a PIN.',
 			'addServer.invalidCredentials' => 'Invalid username or password',

@@ -3445,7 +3445,7 @@ class _Translations$discover$findNext$ja extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} 総合';
 	@override String get timingVaries => 'タイミングが変わる';
 	@override String get notNow => 'いまではない';
-	@override String get swipeHint => 'スイッチ、または下のボタンを使用します。';
+	@override String get swipeHint => '表紙を矢印の方向にスワイプするか、下のボタンを使ってください。';
 	@override String get saved => '保存ピック';
 	@override String savedCount({required Object count}) => 'トップページ > ${count}';
 	@override String get undo => 'でしょ';
@@ -3473,6 +3473,18 @@ class _Translations$discover$findNext$ja extends Translations$discover$findNext$
 	@override String get openFailed => 'この選択肢はもはや利用できません. 再度チェックするためにリフレッシュします。';
 	@override String get changeFailed => '変更はできませんが、もう一度試してみてください。';
 	@override String get savedLimit => '保存されたピックが満たされ、1つのピックを削除して別のピックを保存します。';
+	@override String get chooseHint => '作品を開く、後で見るために保存する、またはスキップします。';
+	@override String get howItWorks => '使い方';
+	@override String get notNowHelp => 'この作品をいったんスキップします。ライブラリからは削除されません。';
+	@override String get saveHelp => 'この端末の、このプロフィールの保存済み候補に追加します。保存してもダウンロードはされません。';
+	@override String get openHelp => '表紙を選ぶと詳細が表示されます。メインボタンで再生、読書、または作品を開けます。';
+	@override String get controlsHelp => 'キーボードやリモコンでは、ボタンにフォーカスして Enter または決定を押します。元に戻すと直前の選択を取り消せます。';
+	@override String get artworkLoading => '画像を読み込み中…';
+	@override String get artworkUnavailable => '画像を表示できません';
+	@override String get savedFeedback => '保存済み候補に追加しました';
+	@override String get skippedFeedback => 'いったんスキップしました';
+	@override String get releaseToConfirm => '離して確定';
+	@override String get remoteHint => '表紙にフォーカス：← / → で選択・決定で詳細・↑ / ↓ でフォーカス移動';
 }
 
 // Path: discover.person
@@ -5483,7 +5495,7 @@ extension on TranslationsJa {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} 総合',
 			'discover.findNext.timingVaries' => 'タイミングが変わる',
 			'discover.findNext.notNow' => 'いまではない',
-			'discover.findNext.swipeHint' => 'スイッチ、または下のボタンを使用します。',
+			'discover.findNext.swipeHint' => '表紙を矢印の方向にスワイプするか、下のボタンを使ってください。',
 			'discover.findNext.saved' => '保存ピック',
 			'discover.findNext.savedCount' => ({required Object count}) => 'トップページ > ${count}',
 			'discover.findNext.undo' => 'でしょ',
@@ -5511,6 +5523,18 @@ extension on TranslationsJa {
 			'discover.findNext.openFailed' => 'この選択肢はもはや利用できません. 再度チェックするためにリフレッシュします。',
 			'discover.findNext.changeFailed' => '変更はできませんが、もう一度試してみてください。',
 			'discover.findNext.savedLimit' => '保存されたピックが満たされ、1つのピックを削除して別のピックを保存します。',
+			'discover.findNext.chooseHint' => '作品を開く、後で見るために保存する、またはスキップします。',
+			'discover.findNext.howItWorks' => '使い方',
+			'discover.findNext.notNowHelp' => 'この作品をいったんスキップします。ライブラリからは削除されません。',
+			'discover.findNext.saveHelp' => 'この端末の、このプロフィールの保存済み候補に追加します。保存してもダウンロードはされません。',
+			'discover.findNext.openHelp' => '表紙を選ぶと詳細が表示されます。メインボタンで再生、読書、または作品を開けます。',
+			'discover.findNext.controlsHelp' => 'キーボードやリモコンでは、ボタンにフォーカスして Enter または決定を押します。元に戻すと直前の選択を取り消せます。',
+			'discover.findNext.artworkLoading' => '画像を読み込み中…',
+			'discover.findNext.artworkUnavailable' => '画像を表示できません',
+			'discover.findNext.savedFeedback' => '保存済み候補に追加しました',
+			'discover.findNext.skippedFeedback' => 'いったんスキップしました',
+			'discover.findNext.releaseToConfirm' => '離して確定',
+			'discover.findNext.remoteHint' => '表紙にフォーカス：← / → で選択・決定で詳細・↑ / ↓ でフォーカス移動',
 			'discover.extras' => '予告編とエクストラ',
 			'discover.studio' => 'スタジオ',
 			'discover.rating' => '評価',
@@ -5736,6 +5760,8 @@ extension on TranslationsJa {
 			'explore.mdblistShelves.nameHint' => 'オリジナルリスト名を使用するために白いままにします。',
 			'explore.mdblistShelves.add' => 'シェルフを追加',
 			'explore.mdblistShelves.save' => 'シェルター保存',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => '移動 ${title} アップ',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'ダウンロード ${title}',
 			'explore.mdblistShelves.unavailable' => 'このリストは利用できません. 設定でそのシールを取り戻すか削除します。',
@@ -5748,8 +5774,6 @@ extension on TranslationsJa {
 			'explore.selectSource' => 'ソースを選択',
 			'explore.rows.watchlist' => 'ウォッチリスト',
 			'explore.rows.recommendedMovies' => 'おすすめの映画',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'おすすめのテレビ番組',
 			'explore.rows.trendingMovies' => 'トレンドの映画',
 			'explore.rows.trendingShows' => 'トレンドのテレビ番組',
@@ -6250,6 +6274,8 @@ extension on TranslationsJa {
 			'downloads.resumeDownload' => 'ダウンロードを再開',
 			'downloads.cancelledDownload' => 'キャンセル済みのダウンロード',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file}（${status}を同期中）',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file}をダウンロード済み — クリックして完了',
 			'downloads.partialDownloadClickToComplete' => '一部ダウンロード済み — クリックして完了',
 			'downloads.deleting' => '削除中…',
@@ -6262,8 +6288,6 @@ extension on TranslationsJa {
 			'downloads.pauseAll' => 'すべて一時停止',
 			'downloads.resumeAll' => 'すべて再開',
 			'downloads.retryAll' => 'すべて再試行',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => '失敗したダウンロードを再試行',
 			'downloads.deleteAll' => 'すべて削除',
 			'downloads.selectVersion' => 'バージョンを選択',
@@ -6764,6 +6788,8 @@ extension on TranslationsJa {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'サーバーに接続できませんでした: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'サインインに失敗しました: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connectに失敗しました: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Plexでサインイン',
 			'addServer.pinExpired' => 'サインイン前にPINの有効期限が切れました。もう一度お試しください。',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'アカウントの登録に失敗しました: ${error}',
@@ -6776,8 +6802,6 @@ extension on TranslationsJa {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '${product}に接続',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'サーバーのURL、ユーザー名、パスワードを入力してください。',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product}サーバーにサインインします。「${name}」に紐付けられます。',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => '別のプロフィールの接続を利用',
 			'addServer.borrowFromAnotherProfileSubtitle' => '別のプロフィールの接続を再利用します。PINで保護されたプロフィールにはPINが必要です。',
 			'addServer.invalidCredentials' => 'ユーザー名またはパスワードが正しくありません',

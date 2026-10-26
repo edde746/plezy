@@ -3445,7 +3445,7 @@ class Translations$discover$findNext$zh extends Translations$discover$findNext$e
 	@override String totalDuration({required Object duration}) => '${duration} 总';
 	@override String get timingVaries => '时间差异';
 	@override String get notNow => '不是现在';
-	@override String get swipeHint => '转动,或者使用下面的按钮';
+	@override String get swipeHint => '朝箭头方向滑动封面，或使用下方按钮。';
 	@override String get saved => '拯救的皮克';
 	@override String savedCount({required Object count}) => '获取评分 · ${count}';
 	@override String get undo => '和';
@@ -3473,6 +3473,18 @@ class Translations$discover$findNext$zh extends Translations$discover$findNext$e
 	@override String get openFailed => '此选项不再可用. 更新再检查。';
 	@override String get changeFailed => '没办法改变,再试一次。';
 	@override String get savedLimit => '保存的点数是满的. 删除一个点数来保存另一个点数。';
+	@override String get chooseHint => '打开作品、保存以便稍后查看，或跳过。';
+	@override String get howItWorks => '使用方法';
+	@override String get notNowHelp => '暂时跳过这部作品。它仍会保留在媒体库中。';
+	@override String get saveHelp => '保存到此设备上当前个人资料的已保存推荐中。保存不会下载作品。';
+	@override String get openHelp => '选择封面查看详情。使用主按钮播放、阅读或打开作品。';
+	@override String get controlsHelp => '键盘或遥控器：将焦点移到按钮，然后按 Enter 或选择键。撤销可恢复上一次选择。';
+	@override String get artworkLoading => '正在加载图片…';
+	@override String get artworkUnavailable => '图片不可用';
+	@override String get savedFeedback => '已加入保存的推荐';
+	@override String get skippedFeedback => '已暂时跳过';
+	@override String get releaseToConfirm => '松开以确认';
+	@override String get remoteHint => '封面获得焦点时：← / → 选择 · 选择键查看详情 · ↑ / ↓ 移动焦点';
 }
 
 // Path: discover.person
@@ -5483,7 +5495,7 @@ extension on TranslationsZh {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} 总',
 			'discover.findNext.timingVaries' => '时间差异',
 			'discover.findNext.notNow' => '不是现在',
-			'discover.findNext.swipeHint' => '转动,或者使用下面的按钮',
+			'discover.findNext.swipeHint' => '朝箭头方向滑动封面，或使用下方按钮。',
 			'discover.findNext.saved' => '拯救的皮克',
 			'discover.findNext.savedCount' => ({required Object count}) => '获取评分 · ${count}',
 			'discover.findNext.undo' => '和',
@@ -5511,6 +5523,18 @@ extension on TranslationsZh {
 			'discover.findNext.openFailed' => '此选项不再可用. 更新再检查。',
 			'discover.findNext.changeFailed' => '没办法改变,再试一次。',
 			'discover.findNext.savedLimit' => '保存的点数是满的. 删除一个点数来保存另一个点数。',
+			'discover.findNext.chooseHint' => '打开作品、保存以便稍后查看，或跳过。',
+			'discover.findNext.howItWorks' => '使用方法',
+			'discover.findNext.notNowHelp' => '暂时跳过这部作品。它仍会保留在媒体库中。',
+			'discover.findNext.saveHelp' => '保存到此设备上当前个人资料的已保存推荐中。保存不会下载作品。',
+			'discover.findNext.openHelp' => '选择封面查看详情。使用主按钮播放、阅读或打开作品。',
+			'discover.findNext.controlsHelp' => '键盘或遥控器：将焦点移到按钮，然后按 Enter 或选择键。撤销可恢复上一次选择。',
+			'discover.findNext.artworkLoading' => '正在加载图片…',
+			'discover.findNext.artworkUnavailable' => '图片不可用',
+			'discover.findNext.savedFeedback' => '已加入保存的推荐',
+			'discover.findNext.skippedFeedback' => '已暂时跳过',
+			'discover.findNext.releaseToConfirm' => '松开以确认',
+			'discover.findNext.remoteHint' => '封面获得焦点时：← / → 选择 · 选择键查看详情 · ↑ / ↓ 移动焦点',
 			'discover.extras' => '预告片与花絮',
 			'discover.studio' => '制作公司',
 			'discover.rating' => '年龄分级',
@@ -5736,6 +5760,8 @@ extension on TranslationsZh {
 			'explore.mdblistShelves.nameHint' => '请点击使用源名单名称。',
 			'explore.mdblistShelves.add' => '添加Shelf',
 			'explore.mdblistShelves.save' => '保存沙地',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => '移动 ${title} 升',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => '移动 ${title} 下载',
 			'explore.mdblistShelves.unavailable' => '此列表不可用 退出或在设置中删除其架子。',
@@ -5748,8 +5774,6 @@ extension on TranslationsZh {
 			'explore.selectSource' => '选择来源',
 			'explore.rows.watchlist' => '想看列表',
 			'explore.rows.recommendedMovies' => '推荐电影',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => '推荐剧集',
 			'explore.rows.trendingMovies' => '近期热门电影',
 			'explore.rows.trendingShows' => '近期热门剧集',
@@ -6250,6 +6274,8 @@ extension on TranslationsZh {
 			'downloads.resumeDownload' => '继续下载',
 			'downloads.cancelledDownload' => '已取消的下载',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file}（正在同步 ${status}）',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '已下载 ${file} — 点击以完成',
 			'downloads.partialDownloadClickToComplete' => '已部分下载 — 点击以完成',
 			'downloads.deleting' => '正在删除…',
@@ -6262,8 +6288,6 @@ extension on TranslationsZh {
 			'downloads.pauseAll' => '全部暂停',
 			'downloads.resumeAll' => '全部继续',
 			'downloads.retryAll' => '全部重试',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => '重试失败的下载',
 			'downloads.deleteAll' => '全部删除',
 			'downloads.selectVersion' => '选择版本',
@@ -6764,6 +6788,8 @@ extension on TranslationsZh {
 			'addServer.couldNotReachServer' => ({required Object error}) => '无法连接到服务器：${error}',
 			'addServer.signInFailed' => ({required Object error}) => '登录失败：${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect 失败：${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => '使用 Plex 登录',
 			'addServer.pinExpired' => 'PIN 在登录前已过期。请重试。',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => '注册账户失败：${error}',
@@ -6776,8 +6802,6 @@ extension on TranslationsZh {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '连接到 ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => '输入你的服务器 URL、用户名和密码。',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '登录你的 ${product} 服务器。将绑定到 ${name}。',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => '使用其他用户资料的连接',
 			'addServer.borrowFromAnotherProfileSubtitle' => '复用另一个用户资料的连接。受 PIN 保护的用户资料需要输入 PIN。',
 			'addServer.invalidCredentials' => '用户名或密码无效',
