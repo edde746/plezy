@@ -12,7 +12,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'connection/connection.dart';
 import 'connection/connection_bootstrap.dart';
@@ -30,6 +29,10 @@ import 'models/external_player_models.dart';
 import 'mixins/mounted_set_state_mixin.dart';
 import 'theme/mono_theme.dart';
 import 'profiles/plex_home_service.dart';
+import 'screens/sources/file_sources_setup.dart';
+import 'widgets/app_accessibility.dart';
+import 'sources/source_controller.dart';
+import 'sources/source_playback.dart';
 import 'screens/auth_screen.dart';
 import 'screens/profile/pin_entry_dialog.dart';
 import 'screens/profile/profile_switch_screen.dart';
@@ -1210,6 +1213,14 @@ FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
 /// them here loads nothing until a reader runs.
 void _registerAppLicenses() {
   _registerShaderLicenses();
+  LicenseRegistry.addLicense(() async* {
+    yield LicenseEntryWithLineBreaks(const [
+      'Foliate JS',
+    ], await rootBundle.loadString('assets/reader/foliate/LICENSE'));
+    yield LicenseEntryWithLineBreaks(const [
+      'Provider artwork',
+    ], await rootBundle.loadString('assets/provider_marks/NOTICE.txt'));
+  });
   // iOS covers iPhone, iPad, and Apple TV; mpv-build links SpatialAudioBridge
   // into libmpv there and not on macOS.
   if (Platform.isIOS) _registerSpatialAudioLicenses();
@@ -1813,6 +1824,14 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         ),
         // Download provider. Downloads are shared, but sync rules are scoped to
         // the active profile and reload when the profile changes.
+        ChangeNotifierProxyProvider<ActiveProfileProvider, SourceController>(
+          create: (_) => SourceController(),
+          update: (_, active, previous) {
+            previous!.attachProfile(active.activeId, blocked: active.isBinding || !active.lastBindingSucceeded);
+            return previous;
+          },
+        ),
+        ChangeNotifierProvider<SourcePlayback>(create: (context) => SourcePlayback(context.read<SourceController>())),
         ChangeNotifierProxyProvider<ActiveProfileProvider, DownloadProvider>(
           create: (context) => DownloadProvider(downloadManager: _downloadManager, database: _appDatabase),
           update: (context, activeProfile, previous) {
@@ -2007,10 +2026,10 @@ class _AppShell extends StatelessWidget {
                         child: child ?? const SizedBox.shrink(),
                       );
                       final shell = rootShell(NavigatorBackHandler(navigatorKey: rootNavigatorKey, child: gatedChild));
-                      if (!agentControlEnabled) return shell;
+                      if (!agentControlEnabled) return AppAccessibility(child: shell);
                       return AgentControlScope(
                         commandContext: () => rootNavigatorKey.currentState?.overlay?.context,
-                        child: shell,
+                        child: AppAccessibility(child: shell),
                       );
                     },
                   ),
@@ -2274,6 +2293,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
     }
 
     if (allConnections.isEmpty) {
+      if (mounted && await openFileSourcesSession(context, createIfEmpty: false)) return;
       if (mounted) {
         unawaited(Navigator.pushReplacement(context, fadeRoute(const AuthScreen())));
       }

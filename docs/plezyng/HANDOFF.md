@@ -53,3 +53,7 @@ Status: 2026-10-25. PlezyNG is a fork of `edde746/plezy` intended to carry reque
 - New-episode notifications need Android/iOS device validation, including OS permission denial/recovery and notification behavior while the app is open. They intentionally do not claim background delivery while the app is suspended.
 - Google Cast needs validation against physical receivers on both platforms. The generic receiver does not use Plex's private receiver app and cannot add custom authorization headers; server adapters therefore provide self-contained HTTP(S) URLs, and playback is limited to formats supported by the receiver.
 - The live TV time-shift, local transcoding, and device-specific UI paths require real-device or server validation before release.
+
+## Planned cross-media swipe discovery
+
+The [Find your next handoff](swipe/README.md) specifies an artwork-led discovery route for all supported media, with moment-based choices, reversible saves/skips, isolated samples, exact editions, a useful shortlist and native touch/desktop/TV interaction. It includes 16 ordered implementation packages and 38 acceptance scenarios. This is a plan for Luna, not a completed feature. Follow its current dependency audit, existing DESIGN/UX contracts and capability-specific release gates.

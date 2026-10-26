@@ -650,7 +650,10 @@ jobs:
             echo "codesign=true" >> "$GITHUB_OUTPUT"
           fi
 
-          notary_values=("$APPLE_ID" "$APPLE_APP_SPECIFIC_PASSWORD" "$APPLE_TEAM_ID")
+          # APPLE_TEAM_ID is also used by the iOS and tvOS signing jobs, so its
+          # presence alone must not make optional macOS notarization appear
+          # partially configured.
+          notary_values=("$APPLE_ID" "$APPLE_APP_SPECIFIC_PASSWORD")
           notary_set=0
           notary_missing=0
           for value in "${notary_values[@]}"; do
@@ -658,8 +661,8 @@ jobs:
           done
           if (( notary_set == 0 )); then
             echo "notarize=false" >> "$GITHUB_OUTPUT"
-          elif (( notary_missing != 0 || signing_set == 0 )); then
-            echo "Apple notarization requires all three notarization secrets and a signing certificate." >&2
+          elif (( notary_missing != 0 || signing_set == 0 )) || [[ -z "$APPLE_TEAM_ID" ]]; then
+            echo "Apple notarization requires APPLE_ID, APPLE_APP_SPECIFIC_PASSWORD, APPLE_TEAM_ID, and a signing certificate." >&2
             exit 1
           else
             echo "notarize=true" >> "$GITHUB_OUTPUT"

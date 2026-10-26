@@ -744,7 +744,7 @@ class MpvPlayerCoreBase: NSObject {
   /// position is read first because mpv's audio clock is the queued audio
   /// times the speed, so it jumps the moment the write lands. Other AOs keep
   /// a short buffer and need no flush.
-  private func setSpeedAsync(_ value: String, completion: @escaping (Result<Void, Error>) -> Void) {
+  func setSpeedAsync(_ value: String, completion: @escaping (Result<Void, Error>) -> Void) {
     getPropertyAsync("current-ao") { [weak self] ao in
       guard let self else { return completion(.failure(MpvLifecycleUnavailableError("Player disposed"))) }
       guard case .success("avfoundation") = ao else {
@@ -975,7 +975,7 @@ class MpvPlayerCoreBase: NSObject {
     }
   }
 
-  private func setRawStringPropertyAsync(
+  func setRawStringPropertyAsync(
     _ name: String,
     value: String,
     completion: @escaping (Result<Void, Error>) -> Void

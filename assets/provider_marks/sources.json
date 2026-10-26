@@ -1,0 +1,27 @@
+{
+  "google_drive.png": {
+    "url": "https://www.gstatic.com/images/branding/productlogos/drive_2026/v2/web-64dp/logo_drive_2026_color_2x_web_64dp.png",
+    "sha256": "39e2c15449e7fa75ebe3a29f3f99e2e9ee11b5ef36aebf4dda3d30e484635495"
+  },
+  "dropbox.png": {
+    "url": "https://cdn.prod.website-files.com/66c503d081b2f012369fc5d2/674000d6c0a42d41f8c331be_dropbox-2-logo-png-transparent.png",
+    "sha256": "ff8ae0e67ed7993c5ee188058abcd1d3f99bf3cea674cf33a44885082ed2b78a"
+  },
+  "onedrive.svg": {
+    "url": "https://static2.sharepointonline.com/files/fabric/assets/brand-icons/product/svg/onedrive_48x1.svg",
+    "sha256": "393fe3509c33de52e4dcfb7aece1a5ea41d8114ac1be0d68b13948cc28962f6a"
+  },
+  "microsoft.svg": {
+    "url": "https://learn.microsoft.com/en-us/entra/identity-platform/media/howto-add-branding-in-apps/ms-symbollockup_mssymbol_19.svg",
+    "sha256": "929f48f88c8ca7f3f5d294be47ec4caf51acc28ac25340c19a903125d7ecd84a"
+  },
+  "overdrive_white.svg": {
+    "url": "https://static.od-cdn.com/OD-white-2020-01.svg",
+    "sha256": "d274e1946f237756d94153e4b52444813dc500c9d99369e1eff951660fbd2ba9"
+  },
+  "libby.png": {
+    "url": "https://static.od-cdn.com/LIBBY%20ICON-CIRCLE.ZIP",
+    "member": "Libby Icon (Circle)/Libby Logo_Icon_White Outline.png",
+    "sha256": "3a0481a03f401b9621e02471a43dd8bc89f8ef3641dc97e704a2955c2492fc73"
+  }
+}

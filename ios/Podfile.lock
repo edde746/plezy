@@ -1,20 +1,26 @@
 PODS:
   - Flutter (1.0.0)
+  - flutter_tts (0.0.1):
+    - Flutter
   - universal_gamepad (1.5.8):
     - Flutter
 
 DEPENDENCIES:
   - Flutter (from `Flutter`)
+  - flutter_tts (from `.symlinks/plugins/flutter_tts/ios`)
   - universal_gamepad (from `.symlinks/plugins/universal_gamepad/ios`)
 
 EXTERNAL SOURCES:
   Flutter:
     :path: Flutter
+  flutter_tts:
+    :path: ".symlinks/plugins/flutter_tts/ios"
   universal_gamepad:
     :path: ".symlinks/plugins/universal_gamepad/ios"
 
 SPEC CHECKSUMS:
   Flutter: 71a624a5bc0c04062bf19101d501e466baf2fb47
+  flutter_tts: 35ac3c7d42412733e795ea96ad2d7e05d0a75113
   universal_gamepad: 7c0cc0c2e3909dfb803d325387e42963b3ed842c
 
 PODFILE CHECKSUM: 0adb115f74a3cde46cf0e15649428c9b4e6975a0

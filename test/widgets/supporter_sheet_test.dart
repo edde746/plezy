@@ -310,10 +310,12 @@ void main() {
       expect(find.byType(SupporterSheet), findsNothing);
     }, variant: TargetPlatformVariant.only(TargetPlatform.iOS));
 
-    testWidgets('on a 1080p TV (960x540) the intro stays in view whenever focus reaches the top button', (
+    testWidgets('on a short TV-like screen the intro stays in view whenever focus reaches the top button', (
       tester,
     ) async {
-      tester.view.physicalSize = const Size(960, 540);
+      // Force overflow so this test covers the scroll-and-reveal behavior;
+      // at 960x540 the current copy can fit without scrolling.
+      tester.view.physicalSize = const Size(960, 360);
       tester.view.devicePixelRatio = 1;
       addTearDown(tester.view.reset);
       final harness = _Harness();

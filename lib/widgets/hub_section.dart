@@ -159,7 +159,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
   // Per-step scroll glide; platform-specific, see
   // FocusTheme.navigationScrollDuration. Successive steps retarget the
   // animation so a drag chains into one continuous glide.
-  static Duration get _navigationScrollDuration => FocusTheme.navigationScrollDuration();
+  Duration get _navigationScrollDuration => FocusTheme.navigationScrollDuration(context);
   final _selectLongPress = DpadSelectLongPressController();
 
   @override

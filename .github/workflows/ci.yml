@@ -456,14 +456,23 @@ jobs:
 
       - name: Run Apple native reliability tests
         run: |
+          result_bundle="$RUNNER_TEMP/apple-native-reliability.xcresult"
+          set +e
           xcodebuild test \
             -workspace "${{ matrix.workspace }}" \
             -scheme Runner \
             -configuration Debug \
             -destination "$APPLE_TEST_DESTINATION" \
             -disableAutomaticPackageResolution \
+            -resultBundlePath "$result_bundle" \
             CODE_SIGNING_ALLOWED=NO \
             COMPILER_INDEX_STORE_ENABLE=NO
+          test_status=$?
+          set -e
+          if [ "$test_status" -ne 0 ]; then
+            xcrun xcresulttool get test-results tests --path "$result_bundle"
+          fi
+          exit "$test_status"
 
   windows-native-test:
     name: Windows native reliability (${{ matrix.arch }})

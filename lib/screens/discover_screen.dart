@@ -345,6 +345,31 @@ class _DiscoverScreenState extends State<DiscoverScreen>
     _startAutoScroll();
   }
 
+  bool _disableAnimations = false;
+  bool _accessibleNavigation = false;
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final media = MediaQuery.of(context);
+    if (_disableAnimations != media.disableAnimations || _accessibleNavigation != media.accessibleNavigation) {
+      _disableAnimations = media.disableAnimations;
+      _accessibleNavigation = media.accessibleNavigation;
+      _startAutoScroll();
+    }
+  }
+
+  void _pageHero(int delta) {
+    if (!_heroController.hasClients) return;
+    final target = (_heroIndex.value + delta).clamp(0, _onDeck.length - 1);
+    final duration = tokens(context).slow;
+    if (_disableAnimations || duration == Duration.zero) {
+      _heroController.jumpToPage(target);
+    } else {
+      _heroController.animateToPage(target, duration: duration, curve: Curves.easeInOut);
+    }
+  }
+
   /// Mirror provider changes into this state's UI concerns: rebuild, apply
   /// pending TV-rail focus, and keep the hero carousel index in sync — a
   /// fresh [DiscoverProvider.load] resets it, a background Continue Watching
@@ -436,14 +461,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
       onUp: _focusTopActions,
       onLeft: () {
         if (_heroIndex.value > 0) {
-          _heroController.previousPage(duration: tokens(context).slow, curve: Curves.easeInOut);
+          _pageHero(-1);
         } else {
           _navigateToSidebar();
         }
       },
       onRight: () {
         if (_heroIndex.value < _onDeck.length - 1) {
-          _heroController.nextPage(duration: tokens(context).slow, curve: Curves.easeInOut);
+          _pageHero(1);
         }
       },
       onSelect: () {
@@ -494,6 +519,10 @@ class _DiscoverScreenState extends State<DiscoverScreen>
 
   void _startAutoScroll() {
     _autoScrollTimer?.cancel();
+    if (_disableAnimations || _accessibleNavigation) {
+      _stopIndicatorProgress();
+      return;
+    }
     if (PlatformDetector.isTV()) return;
     if (_isAutoScrollPaused) return;
 
@@ -518,7 +547,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
   }
 
   void _startIndicatorProgress() {
-    if (!mounted) return;
+    if (!mounted || _disableAnimations || _accessibleNavigation) return;
     _indicatorTimer?.cancel();
     _indicatorProgress.value = 0.0;
     final totalSteps = _heroAutoScrollDuration.inMilliseconds ~/ _indicatorUpdateInterval.inMilliseconds;
@@ -1404,11 +1433,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
               animation: _scrollController,
               builder: (context, child) {
                 final scrollOffset = _scrollController.hasClients ? _scrollController.offset : 0.0;
-                return Transform.translate(offset: Offset(0, scrollOffset * 0.3), child: child);
+                return Transform.translate(
+                  offset: Offset(0, _disableAnimations ? 0 : scrollOffset * 0.3),
+                  child: child,
+                );
               },
               child: TweenAnimationBuilder<double>(
                 tween: Tween(begin: 0.0, end: 1.0),
-                duration: const Duration(milliseconds: 800),
+                duration: _disableAnimations ? Duration.zero : const Duration(milliseconds: 800),
                 curve: Curves.easeOut,
                 builder: (context, value, child) {
                   return Transform.scale(

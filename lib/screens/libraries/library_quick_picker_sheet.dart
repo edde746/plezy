@@ -7,6 +7,8 @@ import '../../utils/content_utils.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focusable_list_tile.dart';
 import 'library_server_label.dart';
+import '../sources/source_navigation.dart';
+import '../../widgets/app_menu.dart';
 
 class LibraryQuickPickerSheet extends StatelessWidget {
   final List<MediaLibrary> libraries;
@@ -27,22 +29,30 @@ class LibraryQuickPickerSheet extends StatelessWidget {
   });
 
   List<Widget> _buildLibraryRows(BuildContext context) {
-    return buildLibraryServerEntries<Widget>(
-      libraries,
-      groupByServer: groupByServer,
-      buildHeader: (library, fallbackServerName) => Padding(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
-        child: LibraryServerLabel(
-          library: library,
-          fallbackServerName: fallbackServerName,
-          badgeSize: 12,
-          style: libraryServerHeaderStyle(context),
-          constrainText: true,
+    return [
+      ...buildLibraryServerEntries<Widget>(
+        libraries,
+        groupByServer: groupByServer,
+        buildHeader: (library, fallbackServerName) => Padding(
+          padding: const EdgeInsets.fromLTRB(16, 12, 16, 4),
+          child: LibraryServerLabel(
+            library: library,
+            fallbackServerName: fallbackServerName,
+            badgeSize: 12,
+            style: libraryServerHeaderStyle(context),
+            constrainText: true,
+          ),
         ),
+        buildItem: (library, {required bool showServerName}) =>
+            _buildLibraryTile(context, library, showServerName: showServerName),
       ),
-      buildItem: (library, {required bool showServerName}) =>
-          _buildLibraryTile(context, library, showServerName: showServerName),
-    );
+      for (final row in sourceLibraryMenu(context).whereType<AppMenuItem<String>>())
+        FocusableListTile(
+          leading: AppIcon(row.icon!, fill: 1, size: 22),
+          title: Text(row.label!),
+          onTap: () => onSelected(row.value),
+        ),
+    ];
   }
 
   Widget _buildLibraryTile(BuildContext context, MediaLibrary library, {required bool showServerName}) {
@@ -94,7 +104,7 @@ class LibraryQuickPickerSheet extends StatelessWidget {
         ),
         if (isLoading && libraries.isEmpty)
           const Padding(padding: .symmetric(vertical: 32), child: CircularProgressIndicator())
-        else if (libraries.isEmpty)
+        else if (libraries.isEmpty && sourceLibraryMenu(context).isEmpty)
           Padding(
             padding: const EdgeInsets.fromLTRB(24, 24, 24, 32),
             child: Text(emptyMessage, textAlign: TextAlign.center, style: theme.textTheme.bodyMedium),

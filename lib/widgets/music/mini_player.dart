@@ -38,7 +38,10 @@ class MusicUiRouteObserver extends NavigatorObserver {
 
   static bool _isSuppressingRoute(Route<dynamic> route) {
     final name = route.settings.name;
-    return name == kVideoPlayerRouteName || name == kNowPlayingRouteName;
+    return name == kVideoPlayerRouteName ||
+        name == kNowPlayingRouteName ||
+        name == 'source-player' ||
+        name == 'publication-reader';
   }
 
   void _recompute() {
@@ -98,6 +101,7 @@ class MiniPlayerInsetController extends ChangeNotifier {
   double _navRailInset = 0;
   bool _navBarSuspended = false;
   double _overlayHeight = 0;
+  double _sourceOverlayHeight = 0;
 
   /// Height of the mobile bottom navigation area the mini-player must clear;
   /// 0 while a pushed route covers it (safe-area padding takes over).
@@ -109,7 +113,12 @@ class MiniPlayerInsetController extends ChangeNotifier {
 
   /// Total vertical space the visible mini-player occupies (card + gaps).
   /// 0 while hidden. Music screens add this to their scroll bottom padding.
-  double get overlayHeight => _overlayHeight;
+  double get overlayHeight => _overlayHeight > _sourceOverlayHeight ? _overlayHeight : _sourceOverlayHeight;
+  void setSourceOverlayHeight(double value) {
+    if (_sourceOverlayHeight == value) return;
+    _sourceOverlayHeight = value;
+    notifyListeners();
+  }
 
   /// Report the shell's navigation extent. Exactly one of the two is non-zero
   /// at a time: the shell shows either the bottom bar or the leading rail.

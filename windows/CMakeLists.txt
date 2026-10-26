@@ -183,6 +183,47 @@ set(ENV{SENTRY_NATIVE_BACKEND} "inproc")
 # them to the application.
 include(flutter/generated_plugins.cmake)
 
+if(TARGET flutter_inappwebview_windows_plugin)
+  # The webview plugin restores NuGet packages in an unrelated ALL target.
+  # Targeted native builds skip that target, and Visual Studio evaluates the
+  # packages' .targets imports before build-time restore. Restore at configure
+  # time using the plugin's own pinned versions so both paths have the headers
+  # and WebView2 loader settings before their projects are generated.
+  get_target_property(WEBVIEW_PLUGIN_SOURCE flutter_inappwebview_windows_plugin SOURCE_DIR)
+  get_directory_property(WEBVIEW_NUGET DIRECTORY "${WEBVIEW_PLUGIN_SOURCE}" DEFINITION NUGET)
+  if(NOT WEBVIEW_NUGET)
+    message(FATAL_ERROR "NuGet is required to build the Windows ebook reader")
+  endif()
+  foreach(WEBVIEW_PACKAGE IN ITEMS
+    "Microsoft.Windows.ImplementationLibrary|WIL_VERSION"
+    "Microsoft.Windows.CppWinRT|CPP_WINRT_VERSION"
+    "Microsoft.Web.WebView2|WEBVIEW_VERSION"
+    "nlohmann.json|NLOHMANN_JSON_VERSION"
+  )
+    string(REPLACE "|" ";" WEBVIEW_PACKAGE_FIELDS "${WEBVIEW_PACKAGE}")
+    list(GET WEBVIEW_PACKAGE_FIELDS 0 WEBVIEW_PACKAGE_NAME)
+    list(GET WEBVIEW_PACKAGE_FIELDS 1 WEBVIEW_VERSION_VARIABLE)
+    get_directory_property(WEBVIEW_PACKAGE_VERSION
+      DIRECTORY "${WEBVIEW_PLUGIN_SOURCE}" DEFINITION "${WEBVIEW_VERSION_VARIABLE}")
+    if(NOT WEBVIEW_PACKAGE_VERSION)
+      message(FATAL_ERROR "The Windows webview plugin must pin ${WEBVIEW_PACKAGE_NAME}")
+    endif()
+    execute_process(
+      COMMAND "${WEBVIEW_NUGET}" install "${WEBVIEW_PACKAGE_NAME}"
+        -Version "${WEBVIEW_PACKAGE_VERSION}" -ExcludeVersion -NonInteractive
+        -OutputDirectory "${CMAKE_BINARY_DIR}/packages"
+      RESULT_VARIABLE WEBVIEW_RESTORE_RESULT
+    )
+    if(NOT WEBVIEW_RESTORE_RESULT EQUAL 0)
+      message(FATAL_ERROR "Could not restore ${WEBVIEW_PACKAGE_NAME} for the Windows ebook reader")
+    endif()
+  endforeach()
+  add_dependencies(flutter_inappwebview_windows_plugin flutter_inappwebview_windows_DEPS)
+  # Match the existing C++/WinRT compatibility setting below on MSVC 14.51.
+  target_compile_definitions(flutter_inappwebview_windows_plugin
+    PRIVATE _SILENCE_EXPERIMENTAL_COROUTINE_DEPRECATION_WARNINGS)
+endif()
+
 if(TARGET os_media_controls_plugin)
   # MSVC 14.51 makes C++/WinRT's experimental coroutine include a hard error.
   target_compile_definitions(

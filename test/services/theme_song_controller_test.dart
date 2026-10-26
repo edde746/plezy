@@ -141,6 +141,24 @@ void main() {
   final ownerA = Object();
   final ownerB = Object();
 
+  test('background file playback prevents a theme from taking its native channel', () async {
+    Future<void> stopFile() async {}
+    var active = true;
+    coordinator.registerFileSession(stopFile, isActive: () => active);
+    addTearDown(() => coordinator.unregisterFileSession(stopFile));
+    final audio = player('theme');
+    final theme = controller(() => audio);
+    await theme.request(ownerA, resolveUrl: () async => 'https://example.com/theme', volume: 30);
+    expect(audio.opened, isEmpty);
+    active = false;
+    final pending = Completer<String?>();
+    final request = theme.request(ownerA, resolveUrl: () => pending.future, volume: 30);
+    active = true;
+    pending.complete('https://example.com/theme');
+    await request;
+    expect(audio.opened, isEmpty);
+  });
+
   test('awaits volume before opening and opens paused before play without audio focus', () async {
     final audio = player('theme', holdVolume: true);
     final theme = controller(() => audio);

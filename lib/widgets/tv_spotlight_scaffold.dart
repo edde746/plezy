@@ -4,6 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import 'app_icon.dart';
 import '../i18n/strings.g.dart';
 import '../media/catalog_item_ref.dart';
 import '../media/media_hub.dart';
@@ -25,7 +26,6 @@ import '../utils/formatters.dart';
 import 'cast_member_strip.dart';
 import 'tv_browse_rail.dart';
 import 'tv_spotlight_background.dart';
-import 'app_icon.dart';
 
 class TvSpotlightController extends ValueNotifier<MediaItem?> {
   TvSpotlightController({Duration settleDelay = const Duration(milliseconds: 150)})

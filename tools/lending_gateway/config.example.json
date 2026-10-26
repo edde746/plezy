@@ -1,0 +1,16 @@
+{
+  "origin": "https://lending.example.org",
+  "client_id": "ASSIGNED_OVERDRIVE_CLIENT_ID",
+  "client_secret": "ASSIGNED_OVERDRIVE_CLIENT_SECRET",
+  "signing_key": "REPLACE_WITH_AT_LEAST_32_RANDOM_CHARACTERS",
+  "code_parameter": "code",
+  "libraries": [{
+    "id": "sandbox",
+    "name": "Integration library",
+    "websiteId": "0",
+    "libraryId": "0",
+    "home": "https://libbyapp.com",
+    "integration": true,
+    "circulation": true
+  }]
+}

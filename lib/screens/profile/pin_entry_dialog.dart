@@ -47,7 +47,7 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
 
     if (widget.errorMessage != null) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
-        _shakeController.forward(from: 0);
+        if (mounted && !MediaQuery.disableAnimationsOf(context)) _shakeController.forward(from: 0);
       });
     }
   }
@@ -86,7 +86,10 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
     return AnimatedBuilder(
       animation: _shakeAnimation,
       builder: (context, child) {
-        return Transform.translate(offset: Offset(_shakeAnimation.value, 0), child: child);
+        return Transform.translate(
+          offset: Offset(MediaQuery.disableAnimationsOf(context) ? 0 : _shakeAnimation.value, 0),
+          child: child,
+        );
       },
       child: isMobile ? _buildMobileDialog(theme) : _buildTvDialog(theme),
     );

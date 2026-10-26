@@ -24,8 +24,9 @@ class ThemeSongController {
     this.releaseGrace = const Duration(milliseconds: 750),
     this.fadeIn = const Duration(milliseconds: 1500),
     this.fadeOut = const Duration(milliseconds: 1000),
-  }) : _playerFactory = playerFactory ?? (() => Player.audio(exclusiveAudio: false)) {
-    (coordinator ?? PlaybackCoordinator.instance).registerThemeSession(() => stop(fade: false));
+  }) : _playerFactory = playerFactory ?? (() => Player.audio(exclusiveAudio: false)),
+       _coordinator = coordinator ?? PlaybackCoordinator.instance {
+    _coordinator.registerThemeSession(() => stop(fade: false));
   }
 
   static ThemeSongController get instance => _instance;
@@ -37,6 +38,7 @@ class ThemeSongController {
   static const _fadeStep = Duration(milliseconds: 50);
 
   final Player Function() _playerFactory;
+  final PlaybackCoordinator _coordinator;
   final Duration releaseGrace;
   final Duration fadeIn;
   final Duration fadeOut;
@@ -69,6 +71,7 @@ class ThemeSongController {
   /// Plays [owner]'s theme, replacing any other. A theme already playing from
   /// the same URL keeps going; no theme for [owner] stops the current one.
   Future<void> request(Object owner, {required Future<String?> Function() resolveUrl, required double volume}) async {
+    if (_coordinator.hasFileSession) return stop(fade: false);
     _releaseTimer?.cancel();
     _releaseTimer = null;
     _owner = owner;
@@ -80,14 +83,14 @@ class ThemeSongController {
     } catch (error, stack) {
       appLogger.d('Theme song unavailable', error: error, stackTrace: stack);
     }
-    if (_owner != owner || request != _request) return;
+    if (_owner != owner || request != _request || _coordinator.hasFileSession) return;
     if (url == null || url.isEmpty) return stop();
     return _playUrl(url);
   }
 
   Future<void> _playUrl(String url) {
     final generation = ++_generation;
-    bool current() => generation == _generation;
+    bool current() => generation == _generation && !_coordinator.hasFileSession;
     return _enqueue(() async {
       if (!current()) return;
       final existing = _player;

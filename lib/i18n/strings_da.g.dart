@@ -1407,6 +1407,7 @@ class _Translations$about$da extends Translations$about$en {
 
 	// Translations
 	@override String get title => 'Om';
+	@override String get privacyPolicy => 'Privatlivspolitik';
 	@override String get openSourceLicenses => 'Open source-licenser';
 	@override String versionLabel({required Object version}) => 'Version ${version}';
 	@override String get appDescription => 'En smuk Plex-, Jellyfin- og Emby-klient bygget med Flutter';
@@ -4723,6 +4724,7 @@ extension on TranslationsDa {
 			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => 'Om',
+			'about.privacyPolicy' => 'Privatlivspolitik',
 			'about.openSourceLicenses' => 'Open source-licenser',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
 			'about.appDescription' => 'En smuk Plex-, Jellyfin- og Emby-klient bygget med Flutter',
@@ -5022,9 +5024,9 @@ extension on TranslationsDa {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Kunne ikke slette samling: ${error}',
 			'collections.selectCollection' => 'Vælg samling',
 			'collections.collectionName' => 'Samlingsnavn',
-			'collections.enterCollectionName' => 'Indtast samlingsnavn',
 			_ => null,
 		} ?? switch (path) {
+			'collections.enterCollectionName' => 'Indtast samlingsnavn',
 			'collections.addedToCollection' => 'Tilføjet til samling',
 			'collections.errorAddingToCollection' => 'Kunne ikke tilføje til samling',
 			'collections.created' => 'Samling oprettet',
@@ -5536,9 +5538,9 @@ extension on TranslationsDa {
 			'externalPlayer.selectPlayer' => 'Vælg afspiller',
 			'externalPlayer.customPlayers' => 'Brugerdefinerede afspillere',
 			'externalPlayer.systemDefault' => 'Systemstandard',
-			'externalPlayer.addCustomPlayer' => 'Tilføj brugerdefineret afspiller',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.addCustomPlayer' => 'Tilføj brugerdefineret afspiller',
 			'externalPlayer.playerName' => 'Afspillernavn',
 			'externalPlayer.playerNameHint' => 'Min afspiller',
 			'externalPlayer.playerCommand' => 'Kommando',
