@@ -151,7 +151,7 @@ public final class SteamStreamActivity extends Activity implements SurfaceHolder
           sink.close();
           return;
         }
-        boolean pyrowave = NativeSteam.pyrowaveSupported();
+        boolean pyrowave = getIntent().getBooleanExtra("pyrowave", false) && NativeSteam.pyrowaveSupported();
         NativeSteam.run(
             session, address, getIntent().getIntExtra("port", 27036), getIntent().getLongExtra("hostId", 0),
             trust.device(), user, key, getIntent().getLongExtra("game", 0), SteamDecoder.supportsHevc(), pyrowave, sink);

@@ -744,6 +744,8 @@ class SettingsService extends BaseSharedPreferencesService {
       BoolPref(profileScopedPrefsKey(profileId, 'show_games_tab'), defaultValue: false);
   static BoolPref gameTouchControlsForProfile(String profileId) =>
       BoolPref(profileScopedPrefsKey(profileId, 'game_touch_controls'), defaultValue: true);
+  static BoolPref gamePyrowaveForProfile(String profileId) =>
+      BoolPref(profileScopedPrefsKey(profileId, 'game_pyrowave'), defaultValue: false);
   static StringPref preferredServerForProfile(String profileId) =>
       StringPref(profileScopedPrefsKey(profileId, 'preferred_server_id'));
   static BoolPref notifyNewEpisodesForProfile(String profileId) =>
