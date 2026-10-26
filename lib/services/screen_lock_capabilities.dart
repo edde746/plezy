@@ -1,29 +1,14 @@
 import 'dart:convert';
 import 'dart:io';
-import 'dart:math' as math;
 
 import 'package:crypto/crypto.dart';
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/foundation.dart';
 
-/// Independent touch counts reported by the device or demonstrated locally.
-/// Android's feature flags provide lower bounds, not an exact touch maximum.
+/// Requires a local touch demonstration before using a multi-finger unlock.
 @immutable
 class ScreenLockCapabilities {
-  const ScreenLockCapabilities({required this.reportedFingerLimit, required this.deviceKey})
-    : assert(reportedFingerLimit >= 1 && reportedFingerLimit <= 5);
-
-  factory ScreenLockCapabilities.fromSystemFeatures(Iterable<String> features, {required String deviceKey}) {
-    final featureSet = features.toSet();
-    final limit = featureSet.contains('android.hardware.touchscreen.multitouch.jazzhand')
-        ? 5
-        : featureSet.contains('android.hardware.touchscreen.multitouch.distinct')
-        ? 2
-        : 1;
-    return ScreenLockCapabilities(reportedFingerLimit: limit, deviceKey: deviceKey);
-  }
-
-  final int reportedFingerLimit;
+  const ScreenLockCapabilities({required this.deviceKey});
 
   /// Hardware/build identity digest used only to scope local touch validation.
   /// Fallback keys cannot carry validation between unidentified devices.
@@ -42,10 +27,7 @@ class ScreenLockCapabilities {
 
       final info = await DeviceInfoPlugin().androidInfo;
       final identity = jsonEncode([info.manufacturer, info.model, info.device, info.fingerprint]);
-      return ScreenLockCapabilities.fromSystemFeatures(
-        info.systemFeatures,
-        deviceKey: sha256.convert(utf8.encode(identity)).toString(),
-      );
+      return ScreenLockCapabilities(deviceKey: sha256.convert(utf8.encode(identity)).toString());
     } catch (_) {
       // An unanswered probe must not enable a lock the user cannot release.
       return _fallback();
@@ -53,16 +35,9 @@ class ScreenLockCapabilities {
   }
 
   static ScreenLockCapabilities _fallback() =>
-      ScreenLockCapabilities(reportedFingerLimit: 1, deviceKey: 'unverified:${Platform.operatingSystem}');
+      ScreenLockCapabilities(deviceKey: 'unverified:${Platform.operatingSystem}');
 
   bool get canRememberVerification => deviceKey.isNotEmpty && !deviceKey.startsWith('unverified:');
-
-  int supportedFingerLimit({required int verifiedFingerCount, required String verifiedDeviceKey}) {
-    final verifiedLimit = canRememberVerification && verifiedDeviceKey == deviceKey
-        ? verifiedFingerCount.clamp(1, 5)
-        : 1;
-    return math.max(reportedFingerLimit, verifiedLimit);
-  }
 
   int effectiveFingerCount(int preferred, {required int verifiedFingerCount, required String verifiedDeviceKey}) {
     final requested = preferred.clamp(1, 5);

@@ -1,5 +1,3 @@
-import 'dart:math' as math;
-
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
@@ -92,7 +90,7 @@ class _ScreenLockSettingsGroupState extends State<ScreenLockSettingsGroup> {
     try {
       final capabilities = await _capabilities;
       if (!mounted) return;
-      final maximum = capabilities.canRememberVerification ? 5 : capabilities.reportedFingerLimit;
+      final maximum = capabilities.canRememberVerification ? 5 : 1;
       final selected = await showSelectionDialog<int>(
         context: context,
         title: t.settings.unlockFingerCount,
@@ -116,15 +114,11 @@ class _ScreenLockSettingsGroupState extends State<ScreenLockSettingsGroup> {
         body: () async {
           final settings = SettingsService.instance;
           if (count > 1 && capabilities.canRememberVerification) {
-            final sameDevice = settings.read(SettingsService.screenLockVerifiedDeviceKey) == capabilities.deviceKey;
-            final verifiedCount = sameDevice
-                ? math.max(count, settings.read(SettingsService.screenLockVerifiedFingerCount))
-                : count;
             // Clear old proof before changing its device identity, so a partial
             // write cannot attach another device's higher touch count here.
             await settings.write(SettingsService.screenLockVerifiedFingerCount, 1);
             await settings.write(SettingsService.screenLockVerifiedDeviceKey, capabilities.deviceKey);
-            await settings.write(SettingsService.screenLockVerifiedFingerCount, verifiedCount);
+            await settings.write(SettingsService.screenLockVerifiedFingerCount, count);
           }
           await settings.write(SettingsService.screenLockFingerCount, count);
           return true;

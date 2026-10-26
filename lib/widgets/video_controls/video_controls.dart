@@ -1206,6 +1206,8 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
   @override
   Widget build(BuildContext context) {
     final isMobile = PlatformDetector.isMobile(context) && !PlatformDetector.isTV();
+    final lockFingers = _screenLockFingers;
+    final lockHoldMs = _settings.read(SettingsService.screenLockHoldDurationMs);
     // Auto-hide only fades the performance card out; the same flag also has to
     // stop its 500 ms native stats poll, which would otherwise keep running
     // behind a fully transparent widget.
@@ -1520,26 +1522,22 @@ class _PlexVideoControlsState extends State<PlexVideoControls>
                   if (_isScreenLocked)
                     Positioned.fill(
                       child: ScreenLockOverlay(
-                        requiredFingers: _screenLockFingers,
-                        holdDuration: Duration(milliseconds: _settings.read(SettingsService.screenLockHoldDurationMs)),
+                        requiredFingers: lockFingers,
+                        holdDuration: Duration(milliseconds: lockHoldMs),
                         onUnlock: _unlockScreen,
-                        instruction:
-                            _screenLockFingers == 1 && _settings.read(SettingsService.screenLockHoldDurationMs) == 500
+                        instruction: lockFingers == 1 && lockHoldMs == 500
                             ? t.videoControls.longPressToUnlock
                             : t.videoControls.lockHoldInstruction(
-                                fingers: _screenLockFingers == 1
+                                fingers: lockFingers == 1
                                     ? t.settings.screenLockOneFinger
-                                    : t.settings.screenLockFingers(count: _screenLockFingers.toString()),
+                                    : t.settings.screenLockFingers(count: lockFingers.toString()),
                                 duration: t.settings.screenLockSeconds(
-                                  seconds: (_settings.read(SettingsService.screenLockHoldDurationMs) / 1000)
-                                      .toStringAsFixed(
-                                        _settings.read(SettingsService.screenLockHoldDurationMs) % 1000 == 0 ? 0 : 1,
-                                      ),
+                                  seconds: (lockHoldMs / 1000).toStringAsFixed(lockHoldMs % 1000 == 0 ? 0 : 1),
                                 ),
                               ),
                         touchProgressLabelBuilder: (current) => t.videoControls.lockTouchCount(
                           current: current.toString(),
-                          required: _screenLockFingers.toString(),
+                          required: lockFingers.toString(),
                         ),
                       ),
                     ),

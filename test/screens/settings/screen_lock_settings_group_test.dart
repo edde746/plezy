@@ -15,9 +15,7 @@ void main() {
     resetSharedPreferencesForTest();
     await SettingsService.getInstance();
     LocaleSettings.setLocaleSync(AppLocale.en);
-    ScreenLockCapabilities.debugReset(
-      loader: () async => const ScreenLockCapabilities(reportedFingerLimit: 5, deviceKey: 'test-device'),
-    );
+    ScreenLockCapabilities.debugReset(loader: () async => const ScreenLockCapabilities(deviceKey: 'test-device'));
   });
 
   tearDown(ScreenLockCapabilities.debugReset);
@@ -96,7 +94,7 @@ void main() {
     expect(settings.read(SettingsService.screenLockVerifiedDeviceKey), isEmpty);
   });
 
-  for (final count in [3, 4]) {
+  for (final count in [3, 4, 5]) {
     testWidgets('$count-finger confirmation saves proof for this device after the full hold', (tester) async {
       final settings = SettingsService.instance;
       await settings.write(SettingsService.screenLockHoldDurationMs, 2000);
@@ -116,21 +114,6 @@ void main() {
       expect(find.text('$count fingers'), findsOneWidget);
     });
   }
-
-  testWidgets('actual touch confirmation can raise a conservative reported limit', (tester) async {
-    ScreenLockCapabilities.debugReset(
-      loader: () async => const ScreenLockCapabilities(reportedFingerLimit: 1, deviceKey: 'test-device'),
-    );
-    await pumpGroup(tester);
-    await chooseCount(tester, 4);
-    final touches = await touchArea(tester, 4);
-    await tester.pump(const Duration(milliseconds: 500));
-    await release(touches);
-    await tester.pumpAndSettle();
-
-    expect(SettingsService.instance.read(SettingsService.screenLockFingerCount), 4);
-    expect(find.text('4 fingers'), findsOneWidget);
-  });
 
   testWidgets('one finger can be restored without a multi-touch confirmation', (tester) async {
     final settings = SettingsService.instance;
@@ -168,7 +151,7 @@ void main() {
 
   testWidgets('unidentified devices cannot save unscoped multi-touch proof', (tester) async {
     ScreenLockCapabilities.debugReset(
-      loader: () async => const ScreenLockCapabilities(reportedFingerLimit: 1, deviceKey: 'unverified:android'),
+      loader: () async => const ScreenLockCapabilities(deviceKey: 'unverified:android'),
     );
     await pumpGroup(tester);
     await tester.tap(find.byKey(const ValueKey('screen-lock-finger-count')));

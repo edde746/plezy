@@ -174,9 +174,7 @@ void main() {
   testWidgets('screen lock enforces three fingers and the configured duration without pausing on release', (
     tester,
   ) async {
-    ScreenLockCapabilities.debugReset(
-      loader: () async => const ScreenLockCapabilities(reportedFingerLimit: 5, deviceKey: 'tablet'),
-    );
+    ScreenLockCapabilities.debugReset(loader: () async => const ScreenLockCapabilities(deviceKey: 'tablet'));
     addTearDown(ScreenLockCapabilities.debugReset);
     final settings = SettingsService.instance;
     await settings.write(SettingsService.screenLockFingerCount, 3);
@@ -213,9 +211,7 @@ void main() {
   });
 
   testWidgets('an unsupported restored finger count falls back to available touches', (tester) async {
-    ScreenLockCapabilities.debugReset(
-      loader: () async => const ScreenLockCapabilities(reportedFingerLimit: 1, deviceKey: 'different-tablet'),
-    );
+    ScreenLockCapabilities.debugReset(loader: () async => const ScreenLockCapabilities(deviceKey: 'different-tablet'));
     addTearDown(ScreenLockCapabilities.debugReset);
     final settings = SettingsService.instance;
     await settings.write(SettingsService.screenLockFingerCount, 4);
