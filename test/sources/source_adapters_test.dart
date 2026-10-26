@@ -11,9 +11,7 @@ import 'package:plezy/sources/source_transport.dart';
 
 void main() {
   test('source transport decodes top-level JSON arrays', () async {
-    final transport = SourceTransport(
-      client: MockClient((_) async => http.Response('[{"type":"movie"}]', 200)),
-    );
+    final transport = SourceTransport(client: MockClient((_) async => http.Response('[{"type":"movie"}]', 200)));
     expect(await transport.jsonValue('GET', Uri.parse('https://catalog.example/search')), [
       {'type': 'movie'},
     ]);

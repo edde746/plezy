@@ -543,6 +543,13 @@
     "dvConversionNativeDescription": "शक्ति मूल DV7 और डीवी रूपांतरण रिट्री को दबाने",
     "dvConversionDv81Description": "ताकत इनलाइन आरपीयू रूपांतरण Dolby Vision प्रोफ़ाइल 8.1",
     "dvConversionHevcStripDescription": "स्ट्रिप Dolby Vision आरपीयू / ईएल परतों और वर्तमान प्लेन HEVC",
+    "experimentalDolbyVision": "प्रायोगिक Dolby Vision",
+    "experimentalDolbyVisionDescription": "अगले प्लेबैक में प्रायोगिक FEL रेंडरर का उपयोग करें। इसके लिए इंजन का अलग बिल्ड चाहिए।",
+    "dvExperimentUnavailableDescription": "यह प्रयोग फ़िलहाल केवल Linux पर उपलब्ध है।",
+    "dvCompatibilityFallback": "अनुकूलता विकल्प",
+    "dvCompatibilityFallbackDescription": "प्रयोग शुरू न हो पाए तो मानक रेंडरर का उपयोग करें। FEL डेटा खो सकता है।",
+    "dvExperimentDiagnostics": "वीडियो प्रयोग की लॉगिंग",
+    "dvExperimentDiagnosticsDescription": "अगले प्लेबैक में प्लेयर के विस्तृत लॉग सक्षम करें।",
     "disableDolbyVision": "अक्षम Dolby Vision",
     "disableDolbyVisionDescription": "फ़ाइल के HDR10 या HLG परत को Dolby Vision के बजाय खेलें, जब इसमें एक",
     "hdrSdrConversion": "HDR से SDR के लिए रूपांतरण",
@@ -628,14 +635,7 @@
     "regionFormat": "क्षेत्रीय प्रारूप",
     "regionFormatDescription": "तारीखें, संख्याएँ और माप दिखाने का तरीका चुनें।",
     "metadataLanguage": "मीडिया विवरण की भाषा",
-    "metadataLanguageDescription": "सर्वर के समर्थन के अनुसार शीर्षकों और विवरणों की पसंदीदा भाषा। ऑडियो और उपशीर्षक की प्राथमिकताएँ अलग रहती हैं।",
-    "experimentalDolbyVision": "प्रायोगिक Dolby Vision",
-    "experimentalDolbyVisionDescription": "अगले प्लेबैक में प्रायोगिक FEL रेंडरर का उपयोग करें। इसके लिए इंजन का अलग बिल्ड चाहिए।",
-    "dvExperimentUnavailableDescription": "यह प्रयोग फ़िलहाल केवल Linux पर उपलब्ध है।",
-    "dvCompatibilityFallback": "अनुकूलता विकल्प",
-    "dvCompatibilityFallbackDescription": "प्रयोग शुरू न हो पाए तो मानक रेंडरर का उपयोग करें। FEL डेटा खो सकता है।",
-    "dvExperimentDiagnostics": "वीडियो प्रयोग की लॉगिंग",
-    "dvExperimentDiagnosticsDescription": "अगले प्लेबैक में प्लेयर के विस्तृत लॉग सक्षम करें।"
+    "metadataLanguageDescription": "सर्वर के समर्थन के अनुसार शीर्षकों और विवरणों की पसंदीदा भाषा। ऑडियो और उपशीर्षक की प्राथमिकताएँ अलग रहती हैं।"
   },
   "themeEditor": {
     "builtIn": "इमारत में",
@@ -3009,8 +3009,12 @@
     "source": "स्रोत",
     "name": "नाम",
     "endpoint": "सर्वर URL",
+    "smbEndpointHint": "उदाहरण: smb://nas/Movies",
+    "smbEndpointInvalid": "एक SMB सर्वर और एक साझा फ़ोल्डर दर्ज करें।",
     "root": "फ़ोल्डर या Prefix",
+    "smbFolderHelp": "पूरा साझा फ़ोल्डर इस्तेमाल करने के लिए खाली छोड़ें, या उसके अंदर का कोई फ़ोल्डर दर्ज करें।",
     "username": "उपयोगकर्ता नाम",
+    "smbDomain": "डोमेन (वैकल्पिक)",
     "password": "पासवर्ड",
     "token": "API टोकन",
     "accessKey": "Key ID के लिए",
@@ -3020,6 +3024,8 @@
     "clientId": "OAuth क्लाइंट आईडी",
     "clientSecret": "OAuth क्लाइंट रहस्य (केवल डेस्कटॉप Google)",
     "allowHttp": "विश्वसनीय नेटवर्क पर बिना एन्क्रिप्शन वाले HTTP की अनुमति दें",
+    "smbEncryption": "SMB3 कनेक्शन एन्क्रिप्ट करें",
+    "smbEncryptionHint": "NAS के समर्थन करने पर SMB3 एन्क्रिप्शन इस्तेमाल करें।",
     "connect": "कनेक्ट करें",
     "cancel": "रद्द करना",
     "save": "बचाओ",
@@ -3164,13 +3170,7 @@
     "zoom": "ज़ूम",
     "useFiles": "फ़ाइलों और किताबों का उपयोग करें",
     "cancelScan": "स्कैनिंग रद्द करें",
-    "googleDrive": "Google Drive",
-    "smbEndpointHint": "उदाहरण: smb://nas/Movies",
-    "smbEndpointInvalid": "एक SMB सर्वर और एक साझा फ़ोल्डर दर्ज करें।",
-    "smbFolderHelp": "पूरा साझा फ़ोल्डर इस्तेमाल करने के लिए खाली छोड़ें, या उसके अंदर का कोई फ़ोल्डर दर्ज करें।",
-    "smbDomain": "डोमेन (वैकल्पिक)",
-    "smbEncryption": "SMB3 कनेक्शन एन्क्रिप्ट करें",
-    "smbEncryptionHint": "NAS के समर्थन करने पर SMB3 एन्क्रिप्शन इस्तेमाल करें।"
+    "googleDrive": "Google Drive"
   },
   "lending": {
     "title": "सार्वजनिक पुस्तकालय",
@@ -3372,5 +3372,19 @@
     "selectedIdentity": "चुनी गई क्लाइंट पहचान: ${name}",
     "subtitleRating": "रेटिंग ${rating}",
     "subtitleDownloading": "सबटाइटल डाउनलोड हो रहा है: ${title}"
+  },
+  "comics": {
+    "fitHeight": "ऊँचाई के अनुसार फ़िट करें",
+    "readingMode": "पढ़ने का मोड",
+    "paged": "पृष्ठ",
+    "webtoon": "लगातार स्क्रॉल",
+    "coverAlone": "कवर अलग दिखाएँ",
+    "splitWide": "चौड़े पृष्ठ बाँटें",
+    "splitWideHelp": "पढ़ने के क्रम में हर आधे हिस्से को अलग दिखाएँ। यह विकल्प चालू होने पर दो पृष्ठ साथ दिखाना रुक जाता है।",
+    "thumbnails": "पृष्ठ थंबनेल",
+    "controlsHelp": "पृष्ठ पलटने के लिए स्वाइप करें। फ़िट बदलने के लिए दो बार टैप करें। लगातार स्क्रॉल में ऊपर-नीचे स्वाइप करें या Page Up और Page Down इस्तेमाल करें।",
+    "savedForComic": "इस प्रोफ़ाइल में इस कॉमिक की प्रदर्शन सेटिंग्स याद रखी जाती हैं।",
+    "readLists": "पठन सूचियाँ",
+    "collections": "संग्रह"
   }
 }

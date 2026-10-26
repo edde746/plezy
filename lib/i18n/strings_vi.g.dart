@@ -105,6 +105,7 @@ class TranslationsVi extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$lending$vi lending = _Translations$lending$vi._(_root);
 	@override late final _Translations$audiobook$vi audiobook = _Translations$audiobook$vi._(_root);
 	@override late final _Translations$sourceSetup$vi sourceSetup = _Translations$sourceSetup$vi._(_root);
+	@override late final _Translations$comics$vi comics = _Translations$comics$vi._(_root);
 }
 
 // Path: app
@@ -674,6 +675,13 @@ class _Translations$settings$vi extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Native Force DV7 và suppress DV conversion retry';
 	@override String get dvConversionDv81Description => 'Chuyển đổi RPU mạnh vào hồ sơ Dolby Vision 8.1';
 	@override String get dvConversionHevcStripDescription => 'Dây Dolby Vision lớp RPU/EL và mặt bằng hiện tại HEVC';
+	@override String get experimentalDolbyVision => 'Dolby Vision thử nghiệm';
+	@override String get experimentalDolbyVisionDescription => 'Dùng bộ kết xuất FEL thử nghiệm trong lần phát tiếp theo. Cần bản dựng bộ máy riêng.';
+	@override String get dvExperimentUnavailableDescription => 'Thử nghiệm này hiện chỉ có trên Linux.';
+	@override String get dvCompatibilityFallback => 'Phương án tương thích dự phòng';
+	@override String get dvCompatibilityFallbackDescription => 'Dùng bộ kết xuất tiêu chuẩn nếu không thể bắt đầu thử nghiệm. Dữ liệu FEL có thể bị mất.';
+	@override String get dvExperimentDiagnostics => 'Nhật ký thử nghiệm video';
+	@override String get dvExperimentDiagnosticsDescription => 'Bật nhật ký trình phát chi tiết trong lần phát tiếp theo.';
 	@override String get disableDolbyVision => 'Không thể bỏ qua Dolby Vision';
 	@override String get disableDolbyVisionDescription => 'Chơi file HDR10 hoặc lớp HLG thay vì Dolby Vision, khi nó có một';
 	@override String get hdrSdrConversion => 'HDR sang SDR chuyển đổi';
@@ -760,13 +768,6 @@ class _Translations$settings$vi extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Chọn cách hiển thị ngày, số và đơn vị đo.';
 	@override String get metadataLanguage => 'Ngôn ngữ siêu dữ liệu';
 	@override String get metadataLanguageDescription => 'Ngôn ngữ ưu tiên cho tiêu đề và mô tả khi máy chủ hỗ trợ. Tùy chọn âm thanh và phụ đề được thiết lập riêng.';
-	@override String get experimentalDolbyVision => 'Dolby Vision thử nghiệm';
-	@override String get experimentalDolbyVisionDescription => 'Dùng bộ kết xuất FEL thử nghiệm trong lần phát tiếp theo. Cần bản dựng bộ máy riêng.';
-	@override String get dvExperimentUnavailableDescription => 'Thử nghiệm này hiện chỉ có trên Linux.';
-	@override String get dvCompatibilityFallback => 'Phương án tương thích dự phòng';
-	@override String get dvCompatibilityFallbackDescription => 'Dùng bộ kết xuất tiêu chuẩn nếu không thể bắt đầu thử nghiệm. Dữ liệu FEL có thể bị mất.';
-	@override String get dvExperimentDiagnostics => 'Nhật ký thử nghiệm video';
-	@override String get dvExperimentDiagnosticsDescription => 'Bật nhật ký trình phát chi tiết trong lần phát tiếp theo.';
 }
 
 // Path: themeEditor
@@ -2890,8 +2891,12 @@ class _Translations$fileSources$vi extends Translations$fileSources$en {
 	@override String get source => 'Nguồn';
 	@override String get name => 'Tên';
 	@override String get endpoint => 'URL máy chủ';
+	@override String get smbEndpointHint => 'Ví dụ: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Nhập một máy chủ SMB và một thư mục chia sẻ.';
 	@override String get root => 'Folder hoặc Prefix';
+	@override String get smbFolderHelp => 'Để trống để dùng toàn bộ thư mục chia sẻ, hoặc nhập một thư mục bên trong.';
 	@override String get username => 'Tên đăng nhập';
+	@override String get smbDomain => 'Miền (không bắt buộc)';
 	@override String get password => 'Mật Khẩu';
 	@override String get token => 'API Đánh giá';
 	@override String get accessKey => 'Access Key ID';
@@ -2901,6 +2906,8 @@ class _Translations$fileSources$vi extends Translations$fileSources$en {
 	@override String get clientId => 'ID khách hàng OAuth';
 	@override String get clientSecret => 'OAuth Client Secret (chỉ Google Desktop)';
 	@override String get allowHttp => 'Cho phép HTTP không mã hóa trên mạng đáng tin cậy';
+	@override String get smbEncryption => 'Mã hóa kết nối SMB3';
+	@override String get smbEncryptionHint => 'Dùng mã hóa SMB3 khi NAS hỗ trợ.';
 	@override String get connect => 'Kết nối';
 	@override String get cancel => 'Hủy bỏ';
 	@override String get save => 'Lưu';
@@ -3045,12 +3052,6 @@ class _Translations$fileSources$vi extends Translations$fileSources$en {
 	@override String get useFiles => 'Sử dụng file và sách';
 	@override String get cancelScan => 'Đặt hủy scan';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'Ví dụ: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'Nhập một máy chủ SMB và một thư mục chia sẻ.';
-	@override String get smbFolderHelp => 'Để trống để dùng toàn bộ thư mục chia sẻ, hoặc nhập một thư mục bên trong.';
-	@override String get smbDomain => 'Miền (không bắt buộc)';
-	@override String get smbEncryption => 'Mã hóa kết nối SMB3';
-	@override String get smbEncryptionHint => 'Dùng mã hóa SMB3 khi NAS hỗ trợ.';
 }
 
 // Path: lending
@@ -3273,6 +3274,27 @@ class _Translations$sourceSetup$vi extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'Danh tính máy khách đã chọn: ${name}';
 	@override String subtitleRating({required Object rating}) => 'Điểm đánh giá ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'Đang tải phụ đề: ${title}';
+}
+
+// Path: comics
+class _Translations$comics$vi extends Translations$comics$en {
+	_Translations$comics$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'Vừa chiều cao';
+	@override String get readingMode => 'Chế độ đọc';
+	@override String get paged => 'Trang';
+	@override String get webtoon => 'Cuộn liên tục';
+	@override String get coverAlone => 'Hiển thị bìa riêng';
+	@override String get splitWide => 'Chia trang rộng';
+	@override String get splitWideHelp => 'Hiển thị riêng từng nửa theo thứ tự đọc. Tạm dừng hiển thị hai trang cạnh nhau khi bật tùy chọn này.';
+	@override String get thumbnails => 'Hình thu nhỏ của trang';
+	@override String get controlsHelp => 'Vuốt để lật trang. Chạm hai lần để đổi cách vừa trang. Khi cuộn liên tục, vuốt dọc hoặc dùng Page Up và Page Down.';
+	@override String get savedForComic => 'Cài đặt hiển thị được ghi nhớ cho truyện tranh này trong hồ sơ này.';
+	@override String get readLists => 'Danh sách đọc';
+	@override String get collections => 'Bộ sưu tập';
 }
 
 // Path: appIcon.names
@@ -4824,9 +4846,16 @@ extension on TranslationsVi {
 			'settings.dvConversionNativeDescription' => 'Native Force DV7 và suppress DV conversion retry',
 			'settings.dvConversionDv81Description' => 'Chuyển đổi RPU mạnh vào hồ sơ Dolby Vision 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Dây Dolby Vision lớp RPU/EL và mặt bằng hiện tại HEVC',
-			'settings.disableDolbyVision' => 'Không thể bỏ qua Dolby Vision',
+			'settings.experimentalDolbyVision' => 'Dolby Vision thử nghiệm',
 			_ => null,
 		} ?? switch (path) {
+			'settings.experimentalDolbyVisionDescription' => 'Dùng bộ kết xuất FEL thử nghiệm trong lần phát tiếp theo. Cần bản dựng bộ máy riêng.',
+			'settings.dvExperimentUnavailableDescription' => 'Thử nghiệm này hiện chỉ có trên Linux.',
+			'settings.dvCompatibilityFallback' => 'Phương án tương thích dự phòng',
+			'settings.dvCompatibilityFallbackDescription' => 'Dùng bộ kết xuất tiêu chuẩn nếu không thể bắt đầu thử nghiệm. Dữ liệu FEL có thể bị mất.',
+			'settings.dvExperimentDiagnostics' => 'Nhật ký thử nghiệm video',
+			'settings.dvExperimentDiagnosticsDescription' => 'Bật nhật ký trình phát chi tiết trong lần phát tiếp theo.',
+			'settings.disableDolbyVision' => 'Không thể bỏ qua Dolby Vision',
 			'settings.disableDolbyVisionDescription' => 'Chơi file HDR10 hoặc lớp HLG thay vì Dolby Vision, khi nó có một',
 			'settings.hdrSdrConversion' => 'HDR sang SDR chuyển đổi',
 			'settings.hdrSdrConversionDescription' => 'Chọn những gì chuyển đổi video HDR khi màn hình không thể hiển thị HDR.',
@@ -4912,13 +4941,6 @@ extension on TranslationsVi {
 			'settings.regionFormatDescription' => 'Chọn cách hiển thị ngày, số và đơn vị đo.',
 			'settings.metadataLanguage' => 'Ngôn ngữ siêu dữ liệu',
 			'settings.metadataLanguageDescription' => 'Ngôn ngữ ưu tiên cho tiêu đề và mô tả khi máy chủ hỗ trợ. Tùy chọn âm thanh và phụ đề được thiết lập riêng.',
-			'settings.experimentalDolbyVision' => 'Dolby Vision thử nghiệm',
-			'settings.experimentalDolbyVisionDescription' => 'Dùng bộ kết xuất FEL thử nghiệm trong lần phát tiếp theo. Cần bản dựng bộ máy riêng.',
-			'settings.dvExperimentUnavailableDescription' => 'Thử nghiệm này hiện chỉ có trên Linux.',
-			'settings.dvCompatibilityFallback' => 'Phương án tương thích dự phòng',
-			'settings.dvCompatibilityFallbackDescription' => 'Dùng bộ kết xuất tiêu chuẩn nếu không thể bắt đầu thử nghiệm. Dữ liệu FEL có thể bị mất.',
-			'settings.dvExperimentDiagnostics' => 'Nhật ký thử nghiệm video',
-			'settings.dvExperimentDiagnosticsDescription' => 'Bật nhật ký trình phát chi tiết trong lần phát tiếp theo.',
 			'themeEditor.builtIn' => 'xây dựng',
 			'themeEditor.presets' => 'Lời bài hát',
 			'themeEditor.custom' => 'Tùy chọn',
@@ -7048,8 +7070,12 @@ extension on TranslationsVi {
 			'fileSources.source' => 'Nguồn',
 			'fileSources.name' => 'Tên',
 			'fileSources.endpoint' => 'URL máy chủ',
+			'fileSources.smbEndpointHint' => 'Ví dụ: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Nhập một máy chủ SMB và một thư mục chia sẻ.',
 			'fileSources.root' => 'Folder hoặc Prefix',
+			'fileSources.smbFolderHelp' => 'Để trống để dùng toàn bộ thư mục chia sẻ, hoặc nhập một thư mục bên trong.',
 			'fileSources.username' => 'Tên đăng nhập',
+			'fileSources.smbDomain' => 'Miền (không bắt buộc)',
 			'fileSources.password' => 'Mật Khẩu',
 			'fileSources.token' => 'API Đánh giá',
 			'fileSources.accessKey' => 'Access Key ID',
@@ -7059,6 +7085,8 @@ extension on TranslationsVi {
 			'fileSources.clientId' => 'ID khách hàng OAuth',
 			'fileSources.clientSecret' => 'OAuth Client Secret (chỉ Google Desktop)',
 			'fileSources.allowHttp' => 'Cho phép HTTP không mã hóa trên mạng đáng tin cậy',
+			'fileSources.smbEncryption' => 'Mã hóa kết nối SMB3',
+			'fileSources.smbEncryptionHint' => 'Dùng mã hóa SMB3 khi NAS hỗ trợ.',
 			'fileSources.connect' => 'Kết nối',
 			'fileSources.cancel' => 'Hủy bỏ',
 			'fileSources.save' => 'Lưu',
@@ -7201,12 +7229,6 @@ extension on TranslationsVi {
 			'fileSources.useFiles' => 'Sử dụng file và sách',
 			'fileSources.cancelScan' => 'Đặt hủy scan',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'Ví dụ: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'Nhập một máy chủ SMB và một thư mục chia sẻ.',
-			'fileSources.smbFolderHelp' => 'Để trống để dùng toàn bộ thư mục chia sẻ, hoặc nhập một thư mục bên trong.',
-			'fileSources.smbDomain' => 'Miền (không bắt buộc)',
-			'fileSources.smbEncryption' => 'Mã hóa kết nối SMB3',
-			'fileSources.smbEncryptionHint' => 'Dùng mã hóa SMB3 khi NAS hỗ trợ.',
 			'lending.title' => 'Thư viện công cộng',
 			'lending.add' => 'Thêm một thư viện',
 			'lending.other' => 'Thư viện khác',
@@ -7404,6 +7426,18 @@ extension on TranslationsVi {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Danh tính máy khách đã chọn: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Điểm đánh giá ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Đang tải phụ đề: ${title}',
+			'comics.fitHeight' => 'Vừa chiều cao',
+			'comics.readingMode' => 'Chế độ đọc',
+			'comics.paged' => 'Trang',
+			'comics.webtoon' => 'Cuộn liên tục',
+			'comics.coverAlone' => 'Hiển thị bìa riêng',
+			'comics.splitWide' => 'Chia trang rộng',
+			'comics.splitWideHelp' => 'Hiển thị riêng từng nửa theo thứ tự đọc. Tạm dừng hiển thị hai trang cạnh nhau khi bật tùy chọn này.',
+			'comics.thumbnails' => 'Hình thu nhỏ của trang',
+			'comics.controlsHelp' => 'Vuốt để lật trang. Chạm hai lần để đổi cách vừa trang. Khi cuộn liên tục, vuốt dọc hoặc dùng Page Up và Page Down.',
+			'comics.savedForComic' => 'Cài đặt hiển thị được ghi nhớ cho truyện tranh này trong hồ sơ này.',
+			'comics.readLists' => 'Danh sách đọc',
+			'comics.collections' => 'Bộ sưu tập',
 			_ => null,
 		};
 	}

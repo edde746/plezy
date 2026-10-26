@@ -541,6 +541,13 @@
     "dvConversionNativeDescription": "네이티브 DV7을 강제하고 DV 변환 재시도를 억제합니다",
     "dvConversionDv81Description": "Dolby Vision 프로필 8.1로 인라인 RPU 변환을 강제합니다",
     "dvConversionHevcStripDescription": "Dolby Vision RPU/EL 레이어를 제거하고 일반 HEVC로 제공합니다",
+    "experimentalDolbyVision": "실험적 Dolby Vision",
+    "experimentalDolbyVisionDescription": "다음 재생에서 실험적 FEL 렌더러를 사용합니다. 별도로 빌드한 엔진이 필요합니다.",
+    "dvExperimentUnavailableDescription": "이 실험은 현재 Linux에서만 사용할 수 있습니다.",
+    "dvCompatibilityFallback": "호환성 대체 모드",
+    "dvCompatibilityFallbackDescription": "실험을 시작할 수 없으면 기본 렌더러를 사용합니다. FEL 데이터가 손실될 수 있습니다.",
+    "dvExperimentDiagnostics": "비디오 실험 로그",
+    "dvExperimentDiagnosticsDescription": "다음 재생에서 상세 플레이어 로그를 활성화합니다.",
     "disableDolbyVision": "Dolby Vision 끄기",
     "disableDolbyVisionDescription": "파일에 HDR10 또는 HLG 레이어가 있으면 Dolby Vision 대신 해당 레이어를 재생합니다",
     "hdrSdrConversion": "HDR을 SDR로 변환",
@@ -626,14 +633,7 @@
     "regionFormat": "지역별 표시 형식",
     "regionFormatDescription": "날짜, 숫자, 측정 단위의 표시 형식을 선택하세요.",
     "metadataLanguage": "메타데이터 언어",
-    "metadataLanguageDescription": "서버가 지원하는 경우 제목과 설명에 사용할 언어입니다. 오디오와 자막 언어는 별도로 설정합니다.",
-    "experimentalDolbyVision": "실험적 Dolby Vision",
-    "experimentalDolbyVisionDescription": "다음 재생에서 실험적 FEL 렌더러를 사용합니다. 별도로 빌드한 엔진이 필요합니다.",
-    "dvExperimentUnavailableDescription": "이 실험은 현재 Linux에서만 사용할 수 있습니다.",
-    "dvCompatibilityFallback": "호환성 대체 모드",
-    "dvCompatibilityFallbackDescription": "실험을 시작할 수 없으면 기본 렌더러를 사용합니다. FEL 데이터가 손실될 수 있습니다.",
-    "dvExperimentDiagnostics": "비디오 실험 로그",
-    "dvExperimentDiagnosticsDescription": "다음 재생에서 상세 플레이어 로그를 활성화합니다."
+    "metadataLanguageDescription": "서버가 지원하는 경우 제목과 설명에 사용할 언어입니다. 오디오와 자막 언어는 별도로 설정합니다."
   },
   "themeEditor": {
     "builtIn": "기본 제공",
@@ -3005,8 +3005,12 @@
     "source": "출처",
     "name": "이름",
     "endpoint": "서버 URL",
+    "smbEndpointHint": "예: smb://nas/Movies",
+    "smbEndpointInvalid": "SMB 서버와 공유 폴더 하나를 입력하세요.",
     "root": "폴더 또는 접두사",
+    "smbFolderHelp": "공유 폴더 전체를 사용하려면 비워 두고, 일부만 사용하려면 그 안의 폴더를 입력하세요.",
     "username": "사용자 이름",
+    "smbDomain": "도메인(선택 사항)",
     "password": "비밀번호",
     "token": "API 토큰",
     "accessKey": "액세스 키 ID",
@@ -3016,6 +3020,8 @@
     "clientId": "OAuth 고객 ID",
     "clientSecret": "OAuth 클라이언트 비밀 (Google 데스크톱만)",
     "allowHttp": "신뢰할 수 있는 네트워크에서 암호화되지 않은 HTTP 허용",
+    "smbEncryption": "SMB3 연결 암호화",
+    "smbEncryptionHint": "NAS에서 지원하는 경우 SMB3 암호화를 사용합니다.",
     "connect": "연결",
     "cancel": "취소",
     "save": "저장",
@@ -3159,13 +3165,7 @@
     "zoom": "확대/축소",
     "useFiles": "파일과 책을 사용하십시오",
     "cancelScan": "스캔 취소",
-    "googleDrive": "Google Drive",
-    "smbEndpointHint": "예: smb://nas/Movies",
-    "smbEndpointInvalid": "SMB 서버와 공유 폴더 하나를 입력하세요.",
-    "smbFolderHelp": "공유 폴더 전체를 사용하려면 비워 두고, 일부만 사용하려면 그 안의 폴더를 입력하세요.",
-    "smbDomain": "도메인(선택 사항)",
-    "smbEncryption": "SMB3 연결 암호화",
-    "smbEncryptionHint": "NAS에서 지원하는 경우 SMB3 암호화를 사용합니다."
+    "googleDrive": "Google Drive"
   },
   "lending": {
     "title": "공공 도서관",
@@ -3367,5 +3367,19 @@
     "selectedIdentity": "선택한 클라이언트 인증 정보: ${name}",
     "subtitleRating": "평점 ${rating}",
     "subtitleDownloading": "자막 다운로드 중: ${title}"
+  },
+  "comics": {
+    "fitHeight": "높이에 맞춤",
+    "readingMode": "읽기 모드",
+    "paged": "페이지",
+    "webtoon": "연속 스크롤",
+    "coverAlone": "표지 따로 표시",
+    "splitWide": "가로로 긴 페이지 나누기",
+    "splitWideHelp": "각 절반을 읽는 순서대로 따로 표시합니다. 이 옵션을 켜면 두 페이지 나란히 보기가 일시 중지됩니다.",
+    "thumbnails": "페이지 미리보기",
+    "controlsHelp": "스와이프하여 페이지를 넘기세요. 두 번 탭하여 맞춤 방식을 바꾸세요. 연속 스크롤에서는 세로로 스와이프하거나 Page Up 및 Page Down을 사용하세요.",
+    "savedForComic": "이 프로필에서 이 만화의 표시 설정을 기억합니다.",
+    "readLists": "읽기 목록",
+    "collections": "컬렉션"
   }
 }

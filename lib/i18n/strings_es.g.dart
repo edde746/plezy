@@ -105,6 +105,7 @@ class TranslationsEs extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final Translations$lending$es lending = Translations$lending$es.internal(_root);
 	@override late final Translations$audiobook$es audiobook = Translations$audiobook$es.internal(_root);
 	@override late final Translations$sourceSetup$es sourceSetup = Translations$sourceSetup$es.internal(_root);
+	@override late final Translations$comics$es comics = Translations$comics$es.internal(_root);
 }
 
 // Path: app
@@ -678,6 +679,13 @@ class Translations$settings$es extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Forzar DV7 nativo y suprimir el reintento de conversión DV';
 	@override String get dvConversionDv81Description => 'Forzar la conversión de RPU en línea al perfil 8.1 de Dolby Vision';
 	@override String get dvConversionHevcStripDescription => 'Eliminar las capas RPU/EL de Dolby Vision y presentar HEVC convencional';
+	@override String get experimentalDolbyVision => 'Dolby Vision experimental';
+	@override String get experimentalDolbyVisionDescription => 'Usar el renderizador FEL experimental en la próxima reproducción. Requiere una compilación independiente del motor.';
+	@override String get dvExperimentUnavailableDescription => 'Este experimento solo está disponible en Linux por ahora.';
+	@override String get dvCompatibilityFallback => 'Alternativa de compatibilidad';
+	@override String get dvCompatibilityFallbackDescription => 'Usar el renderizador estándar si el experimento no puede iniciarse. Se pueden perder los datos FEL.';
+	@override String get dvExperimentDiagnostics => 'Registro del experimento de vídeo';
+	@override String get dvExperimentDiagnosticsDescription => 'Activar registros detallados del reproductor en la próxima reproducción.';
 	@override String get disableDolbyVision => 'Desactivar Dolby Vision';
 	@override String get disableDolbyVisionDescription => 'Reproducir la capa HDR10 o HLG del archivo en lugar de Dolby Vision, si la tiene';
 	@override String get hdrSdrConversion => 'Conversión de HDR a SDR';
@@ -764,13 +772,6 @@ class Translations$settings$es extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Elige cómo se muestran las fechas, los números y las unidades de medida.';
 	@override String get metadataLanguage => 'Idioma de los metadatos';
 	@override String get metadataLanguageDescription => 'Idioma preferido para títulos y descripciones cuando el servidor lo permita. Las preferencias de audio y subtítulos se configuran por separado.';
-	@override String get experimentalDolbyVision => 'Dolby Vision experimental';
-	@override String get experimentalDolbyVisionDescription => 'Usar el renderizador FEL experimental en la próxima reproducción. Requiere una compilación independiente del motor.';
-	@override String get dvExperimentUnavailableDescription => 'Este experimento solo está disponible en Linux por ahora.';
-	@override String get dvCompatibilityFallback => 'Alternativa de compatibilidad';
-	@override String get dvCompatibilityFallbackDescription => 'Usar el renderizador estándar si el experimento no puede iniciarse. Se pueden perder los datos FEL.';
-	@override String get dvExperimentDiagnostics => 'Registro del experimento de vídeo';
-	@override String get dvExperimentDiagnosticsDescription => 'Activar registros detallados del reproductor en la próxima reproducción.';
 }
 
 // Path: themeEditor
@@ -2912,8 +2913,12 @@ class Translations$fileSources$es extends Translations$fileSources$en {
 	@override String get source => 'Fuente';
 	@override String get name => 'Nombre';
 	@override String get endpoint => 'URL del servidor';
+	@override String get smbEndpointHint => 'Ejemplo: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Introduce un servidor SMB y una carpeta compartida.';
 	@override String get root => 'Prefixo o prefixo';
+	@override String get smbFolderHelp => 'Déjalo en blanco para usar toda la carpeta compartida o introduce una carpeta dentro de ella.';
 	@override String get username => 'Usuario';
+	@override String get smbDomain => 'Dominio (opcional)';
 	@override String get password => 'Contraseña';
 	@override String get token => 'API Título';
 	@override String get accessKey => 'Acceso clave ID';
@@ -2923,6 +2928,8 @@ class Translations$fileSources$es extends Translations$fileSources$en {
 	@override String get clientId => 'ID de cliente de OAuth';
 	@override String get clientSecret => 'OAuth client secreto (sólo Google de escritorio)';
 	@override String get allowHttp => 'Permitir HTTP sin cifrar en una red de confianza';
+	@override String get smbEncryption => 'Cifrar la conexión SMB3';
+	@override String get smbEncryptionHint => 'Usar el cifrado SMB3 cuando el NAS lo admita.';
 	@override String get connect => 'Conectar';
 	@override String get cancel => 'Cancelar';
 	@override String get save => 'Guardar';
@@ -3069,12 +3076,6 @@ class Translations$fileSources$es extends Translations$fileSources$en {
 	@override String get useFiles => 'Utilice archivos y libros';
 	@override String get cancelScan => 'Cancelar el escáner';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'Ejemplo: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'Introduce un servidor SMB y una carpeta compartida.';
-	@override String get smbFolderHelp => 'Déjalo en blanco para usar toda la carpeta compartida o introduce una carpeta dentro de ella.';
-	@override String get smbDomain => 'Dominio (opcional)';
-	@override String get smbEncryption => 'Cifrar la conexión SMB3';
-	@override String get smbEncryptionHint => 'Usar el cifrado SMB3 cuando el NAS lo admita.';
 }
 
 // Path: lending
@@ -3297,6 +3298,27 @@ class Translations$sourceSetup$es extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'Identidad de cliente seleccionada: ${name}';
 	@override String subtitleRating({required Object rating}) => 'Valoración ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'Descargando subtítulos: ${title}';
+}
+
+// Path: comics
+class Translations$comics$es extends Translations$comics$en {
+	Translations$comics$es.internal(TranslationsEs root) : this._root = root, super.internal(root);
+
+	final TranslationsEs _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'Ajustar a la altura';
+	@override String get readingMode => 'Modo de lectura';
+	@override String get paged => 'Páginas';
+	@override String get webtoon => 'Desplazamiento continuo';
+	@override String get coverAlone => 'Mostrar la portada sola';
+	@override String get splitWide => 'Dividir páginas anchas';
+	@override String get splitWideHelp => 'Muestra cada mitad por separado, en orden de lectura. Mientras esté activado, se pausa la vista de dos páginas juntas.';
+	@override String get thumbnails => 'Miniaturas de páginas';
+	@override String get controlsHelp => 'Desliza para pasar de página. Toca dos veces para cambiar el ajuste. En desplazamiento continuo, desliza verticalmente o usa Re Pág y Av Pág.';
+	@override String get savedForComic => 'Los ajustes de visualización se guardan para este cómic en este perfil.';
+	@override String get readLists => 'Listas de lectura';
+	@override String get collections => 'Colecciones';
 }
 
 // Path: appIcon.names
@@ -4850,9 +4872,16 @@ extension on TranslationsEs {
 			'settings.dvConversionNativeDescription' => 'Forzar DV7 nativo y suprimir el reintento de conversión DV',
 			'settings.dvConversionDv81Description' => 'Forzar la conversión de RPU en línea al perfil 8.1 de Dolby Vision',
 			'settings.dvConversionHevcStripDescription' => 'Eliminar las capas RPU/EL de Dolby Vision y presentar HEVC convencional',
-			'settings.disableDolbyVision' => 'Desactivar Dolby Vision',
+			'settings.experimentalDolbyVision' => 'Dolby Vision experimental',
 			_ => null,
 		} ?? switch (path) {
+			'settings.experimentalDolbyVisionDescription' => 'Usar el renderizador FEL experimental en la próxima reproducción. Requiere una compilación independiente del motor.',
+			'settings.dvExperimentUnavailableDescription' => 'Este experimento solo está disponible en Linux por ahora.',
+			'settings.dvCompatibilityFallback' => 'Alternativa de compatibilidad',
+			'settings.dvCompatibilityFallbackDescription' => 'Usar el renderizador estándar si el experimento no puede iniciarse. Se pueden perder los datos FEL.',
+			'settings.dvExperimentDiagnostics' => 'Registro del experimento de vídeo',
+			'settings.dvExperimentDiagnosticsDescription' => 'Activar registros detallados del reproductor en la próxima reproducción.',
+			'settings.disableDolbyVision' => 'Desactivar Dolby Vision',
 			'settings.disableDolbyVisionDescription' => 'Reproducir la capa HDR10 o HLG del archivo en lugar de Dolby Vision, si la tiene',
 			'settings.hdrSdrConversion' => 'Conversión de HDR a SDR',
 			'settings.hdrSdrConversionDescription' => 'Elige qué convierte el vídeo HDR cuando la pantalla no puede mostrar HDR.',
@@ -4938,13 +4967,6 @@ extension on TranslationsEs {
 			'settings.regionFormatDescription' => 'Elige cómo se muestran las fechas, los números y las unidades de medida.',
 			'settings.metadataLanguage' => 'Idioma de los metadatos',
 			'settings.metadataLanguageDescription' => 'Idioma preferido para títulos y descripciones cuando el servidor lo permita. Las preferencias de audio y subtítulos se configuran por separado.',
-			'settings.experimentalDolbyVision' => 'Dolby Vision experimental',
-			'settings.experimentalDolbyVisionDescription' => 'Usar el renderizador FEL experimental en la próxima reproducción. Requiere una compilación independiente del motor.',
-			'settings.dvExperimentUnavailableDescription' => 'Este experimento solo está disponible en Linux por ahora.',
-			'settings.dvCompatibilityFallback' => 'Alternativa de compatibilidad',
-			'settings.dvCompatibilityFallbackDescription' => 'Usar el renderizador estándar si el experimento no puede iniciarse. Se pueden perder los datos FEL.',
-			'settings.dvExperimentDiagnostics' => 'Registro del experimento de vídeo',
-			'settings.dvExperimentDiagnosticsDescription' => 'Activar registros detallados del reproductor en la próxima reproducción.',
 			'themeEditor.builtIn' => 'Integrados',
 			'themeEditor.presets' => 'Predefinidos',
 			'themeEditor.custom' => 'Personalizado',
@@ -7074,8 +7096,12 @@ extension on TranslationsEs {
 			'fileSources.source' => 'Fuente',
 			'fileSources.name' => 'Nombre',
 			'fileSources.endpoint' => 'URL del servidor',
+			'fileSources.smbEndpointHint' => 'Ejemplo: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Introduce un servidor SMB y una carpeta compartida.',
 			'fileSources.root' => 'Prefixo o prefixo',
+			'fileSources.smbFolderHelp' => 'Déjalo en blanco para usar toda la carpeta compartida o introduce una carpeta dentro de ella.',
 			'fileSources.username' => 'Usuario',
+			'fileSources.smbDomain' => 'Dominio (opcional)',
 			'fileSources.password' => 'Contraseña',
 			'fileSources.token' => 'API Título',
 			'fileSources.accessKey' => 'Acceso clave ID',
@@ -7085,6 +7111,8 @@ extension on TranslationsEs {
 			'fileSources.clientId' => 'ID de cliente de OAuth',
 			'fileSources.clientSecret' => 'OAuth client secreto (sólo Google de escritorio)',
 			'fileSources.allowHttp' => 'Permitir HTTP sin cifrar en una red de confianza',
+			'fileSources.smbEncryption' => 'Cifrar la conexión SMB3',
+			'fileSources.smbEncryptionHint' => 'Usar el cifrado SMB3 cuando el NAS lo admita.',
 			'fileSources.connect' => 'Conectar',
 			'fileSources.cancel' => 'Cancelar',
 			'fileSources.save' => 'Guardar',
@@ -7227,12 +7255,6 @@ extension on TranslationsEs {
 			'fileSources.useFiles' => 'Utilice archivos y libros',
 			'fileSources.cancelScan' => 'Cancelar el escáner',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'Ejemplo: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'Introduce un servidor SMB y una carpeta compartida.',
-			'fileSources.smbFolderHelp' => 'Déjalo en blanco para usar toda la carpeta compartida o introduce una carpeta dentro de ella.',
-			'fileSources.smbDomain' => 'Dominio (opcional)',
-			'fileSources.smbEncryption' => 'Cifrar la conexión SMB3',
-			'fileSources.smbEncryptionHint' => 'Usar el cifrado SMB3 cuando el NAS lo admita.',
 			'lending.title' => 'Bibliotecas Públicas',
 			'lending.add' => 'Añadir una biblioteca',
 			'lending.other' => 'Otra biblioteca',
@@ -7430,6 +7452,18 @@ extension on TranslationsEs {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Identidad de cliente seleccionada: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Valoración ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Descargando subtítulos: ${title}',
+			'comics.fitHeight' => 'Ajustar a la altura',
+			'comics.readingMode' => 'Modo de lectura',
+			'comics.paged' => 'Páginas',
+			'comics.webtoon' => 'Desplazamiento continuo',
+			'comics.coverAlone' => 'Mostrar la portada sola',
+			'comics.splitWide' => 'Dividir páginas anchas',
+			'comics.splitWideHelp' => 'Muestra cada mitad por separado, en orden de lectura. Mientras esté activado, se pausa la vista de dos páginas juntas.',
+			'comics.thumbnails' => 'Miniaturas de páginas',
+			'comics.controlsHelp' => 'Desliza para pasar de página. Toca dos veces para cambiar el ajuste. En desplazamiento continuo, desliza verticalmente o usa Re Pág y Av Pág.',
+			'comics.savedForComic' => 'Los ajustes de visualización se guardan para este cómic en este perfil.',
+			'comics.readLists' => 'Listas de lectura',
+			'comics.collections' => 'Colecciones',
 			_ => null,
 		};
 	}

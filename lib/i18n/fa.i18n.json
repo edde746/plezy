@@ -543,6 +543,13 @@
     "dvConversionNativeDescription": "قدرت نادر DV7 و سرکوب DV تبدیل عقب نشینی",
     "dvConversionDv81Description": "تبدیل RPU به پروفایل Dolby Vision 8.1",
     "dvConversionHevcStripDescription": "نوار Dolby Vision لایه های RPU/EL و سطح فعلی HEVC",
+    "experimentalDolbyVision": "Dolby Vision آزمایشی",
+    "experimentalDolbyVisionDescription": "در پخش بعدی از رندرکنندهٔ آزمایشی FEL استفاده شود. به ساخت جداگانهٔ موتور نیاز دارد.",
+    "dvExperimentUnavailableDescription": "این آزمایش فعلاً فقط در Linux در دسترس است.",
+    "dvCompatibilityFallback": "گزینهٔ جایگزین سازگار",
+    "dvCompatibilityFallbackDescription": "اگر آزمایش شروع نشد، از رندرکنندهٔ استاندارد استفاده شود. ممکن است داده‌های FEL از دست بروند.",
+    "dvExperimentDiagnostics": "ثبت رویدادهای آزمایش ویدیو",
+    "dvExperimentDiagnosticsDescription": "در پخش بعدی گزارش‌های دقیق پخش‌کننده فعال شوند.",
     "disableDolbyVision": "غیر قابل اجرا Dolby Vision",
     "disableDolbyVisionDescription": "در فایل HDR10 یا لایه HLG به جای Dolby Vision بازی کنید، زمانی که یک",
     "hdrSdrConversion": "HDR به SDR تبدیل",
@@ -628,14 +635,7 @@
     "regionFormat": "قالب‌های منطقه‌ای",
     "regionFormatDescription": "نحوهٔ نمایش تاریخ‌ها، اعداد و واحدهای اندازه‌گیری را انتخاب کنید.",
     "metadataLanguage": "زبان فراداده",
-    "metadataLanguageDescription": "زبان دلخواه عنوان‌ها و توضیحات، در صورت پشتیبانی سرور. تنظیمات زبان صدا و زیرنویس مستقل هستند.",
-    "experimentalDolbyVision": "Dolby Vision آزمایشی",
-    "experimentalDolbyVisionDescription": "در پخش بعدی از رندرکنندهٔ آزمایشی FEL استفاده شود. به ساخت جداگانهٔ موتور نیاز دارد.",
-    "dvExperimentUnavailableDescription": "این آزمایش فعلاً فقط در Linux در دسترس است.",
-    "dvCompatibilityFallback": "گزینهٔ جایگزین سازگار",
-    "dvCompatibilityFallbackDescription": "اگر آزمایش شروع نشد، از رندرکنندهٔ استاندارد استفاده شود. ممکن است داده‌های FEL از دست بروند.",
-    "dvExperimentDiagnostics": "ثبت رویدادهای آزمایش ویدیو",
-    "dvExperimentDiagnosticsDescription": "در پخش بعدی گزارش‌های دقیق پخش‌کننده فعال شوند."
+    "metadataLanguageDescription": "زبان دلخواه عنوان‌ها و توضیحات، در صورت پشتیبانی سرور. تنظیمات زبان صدا و زیرنویس مستقل هستند."
   },
   "themeEditor": {
     "builtIn": "ساخته شده",
@@ -3009,8 +3009,12 @@
     "source": "منبع",
     "name": "نام",
     "endpoint": "سرور URL",
+    "smbEndpointHint": "مثال: smb://nas/Movies",
+    "smbEndpointInvalid": "یک سرور SMB و یک پوشهٔ اشتراکی وارد کنید.",
     "root": "پوشه یا پیشوند",
+    "smbFolderHelp": "برای استفاده از کل پوشهٔ اشتراکی، خالی بگذارید؛ یا پوشه‌ای درون آن وارد کنید.",
     "username": "نام کاربری",
+    "smbDomain": "دامنه (اختیاری)",
     "password": "گذرواژه",
     "token": "API توکن",
     "accessKey": "دسترسی کلید ID",
@@ -3020,6 +3024,8 @@
     "clientId": "OAuth مشتری ID",
     "clientSecret": "OAuth Client Secret (فقط Google Desktop)",
     "allowHttp": "اجازهٔ اتصال HTTP بدون رمزگذاری در یک شبکهٔ مورد اعتماد",
+    "smbEncryption": "رمزگذاری اتصال SMB3",
+    "smbEncryptionHint": "اگر دستگاه NAS پشتیبانی می‌کند، از رمزگذاری SMB3 استفاده کنید.",
     "connect": "اتصال",
     "cancel": "لغو کردن",
     "save": "ذخیره",
@@ -3164,13 +3170,7 @@
     "zoom": "پوشش دادن",
     "useFiles": "استفاده از فایل ها و کتاب ها",
     "cancelScan": "حذف اسکن",
-    "googleDrive": "Google Drive",
-    "smbEndpointHint": "مثال: smb://nas/Movies",
-    "smbEndpointInvalid": "یک سرور SMB و یک پوشهٔ اشتراکی وارد کنید.",
-    "smbFolderHelp": "برای استفاده از کل پوشهٔ اشتراکی، خالی بگذارید؛ یا پوشه‌ای درون آن وارد کنید.",
-    "smbDomain": "دامنه (اختیاری)",
-    "smbEncryption": "رمزگذاری اتصال SMB3",
-    "smbEncryptionHint": "اگر دستگاه NAS پشتیبانی می‌کند، از رمزگذاری SMB3 استفاده کنید."
+    "googleDrive": "Google Drive"
   },
   "lending": {
     "title": "کتابخانه های عمومی",
@@ -3372,5 +3372,19 @@
     "selectedIdentity": "هویت کارخواه انتخاب‌شده: ${name}",
     "subtitleRating": "امتیاز ${rating}",
     "subtitleDownloading": "در حال دریافت زیرنویس: ${title}"
+  },
+  "comics": {
+    "fitHeight": "اندازه بر اساس ارتفاع",
+    "readingMode": "حالت مطالعه",
+    "paged": "صفحه‌ها",
+    "webtoon": "پیمایش پیوسته",
+    "coverAlone": "نمایش جلد به‌تنهایی",
+    "splitWide": "تقسیم صفحه‌های عریض",
+    "splitWideHelp": "هر نیمه را جداگانه و به ترتیب مطالعه نشان می‌دهد. با فعال بودن این گزینه، نمایش دو صفحه کنار هم متوقف می‌شود.",
+    "thumbnails": "تصاویر بندانگشتی صفحه‌ها",
+    "controlsHelp": "برای ورق زدن بکشید. برای تغییر اندازهٔ نمایش دو بار ضربه بزنید. در پیمایش پیوسته، عمودی بکشید یا از Page Up و Page Down استفاده کنید.",
+    "savedForComic": "تنظیمات نمایش این کمیک در این نمایه ذخیره می‌شود.",
+    "readLists": "فهرست‌های مطالعه",
+    "collections": "مجموعه‌ها"
   }
 }

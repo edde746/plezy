@@ -543,6 +543,13 @@
     "dvConversionNativeDescription": "শক্তি প্রাকৃতিক DV7 এবং ডিভি পরিদর্শন রিট্রি প্রত্যাহার",
     "dvConversionDv81Description": "শক্তি ইনলাইন RPU পৃষ্ঠা Dolby Vision প্রোফাইল 8.1",
     "dvConversionHevcStripDescription": "স্ট্রিপ Dolby Vision RPU/EL layers এবং বর্তমান প্লাইন HEVC",
+    "experimentalDolbyVision": "পরীক্ষামূলক Dolby Vision",
+    "experimentalDolbyVisionDescription": "পরবর্তী প্লেব্যাকে পরীক্ষামূলক FEL রেন্ডারার ব্যবহার করুন। ইঞ্জিনের আলাদা বিল্ড প্রয়োজন।",
+    "dvExperimentUnavailableDescription": "এই পরীক্ষা বর্তমানে শুধু Linux-এ উপলব্ধ।",
+    "dvCompatibilityFallback": "সামঞ্জস্যপূর্ণ বিকল্প",
+    "dvCompatibilityFallbackDescription": "পরীক্ষা শুরু না হলে সাধারণ রেন্ডারার ব্যবহার করুন। FEL তথ্য হারিয়ে যেতে পারে।",
+    "dvExperimentDiagnostics": "ভিডিও পরীক্ষার লগ",
+    "dvExperimentDiagnosticsDescription": "পরবর্তী প্লেব্যাকে প্লেয়ারের বিস্তারিত লগ চালু করুন।",
     "disableDolbyVision": "অস্বাভাবিক Dolby Vision",
     "disableDolbyVisionDescription": "ফাইলের HDR10 বা HLG স্তরের পরিবর্তে Dolby Vision খেলুন, যখন এটি একটি আছে",
     "hdrSdrConversion": "HDR থেকে SDR সংকট",
@@ -628,14 +635,7 @@
     "regionFormat": "আঞ্চলিক বিন্যাস",
     "regionFormatDescription": "তারিখ, সংখ্যা ও পরিমাপ কীভাবে দেখানো হবে তা বেছে নিন।",
     "metadataLanguage": "মিডিয়ার তথ্যের ভাষা",
-    "metadataLanguageDescription": "সার্ভার সমর্থন করলে শিরোনাম ও বিবরণের পছন্দের ভাষা। অডিও ও সাবটাইটেলের পছন্দ আলাদাভাবে নির্ধারিত হয়।",
-    "experimentalDolbyVision": "পরীক্ষামূলক Dolby Vision",
-    "experimentalDolbyVisionDescription": "পরবর্তী প্লেব্যাকে পরীক্ষামূলক FEL রেন্ডারার ব্যবহার করুন। ইঞ্জিনের আলাদা বিল্ড প্রয়োজন।",
-    "dvExperimentUnavailableDescription": "এই পরীক্ষা বর্তমানে শুধু Linux-এ উপলব্ধ।",
-    "dvCompatibilityFallback": "সামঞ্জস্যপূর্ণ বিকল্প",
-    "dvCompatibilityFallbackDescription": "পরীক্ষা শুরু না হলে সাধারণ রেন্ডারার ব্যবহার করুন। FEL তথ্য হারিয়ে যেতে পারে।",
-    "dvExperimentDiagnostics": "ভিডিও পরীক্ষার লগ",
-    "dvExperimentDiagnosticsDescription": "পরবর্তী প্লেব্যাকে প্লেয়ারের বিস্তারিত লগ চালু করুন।"
+    "metadataLanguageDescription": "সার্ভার সমর্থন করলে শিরোনাম ও বিবরণের পছন্দের ভাষা। অডিও ও সাবটাইটেলের পছন্দ আলাদাভাবে নির্ধারিত হয়।"
   },
   "themeEditor": {
     "builtIn": "ভিত্তিতে",
@@ -3009,8 +3009,12 @@
     "source": "উৎস",
     "name": "নাম",
     "endpoint": "URL সার্ভার",
+    "smbEndpointHint": "উদাহরণ: smb://nas/Movies",
+    "smbEndpointInvalid": "একটি SMB সার্ভার এবং একটি শেয়ার করা ফোল্ডার লিখুন।",
     "root": "ফোল্ডার বা উপসর্গ",
+    "smbFolderHelp": "পুরো শেয়ার করা ফোল্ডার ব্যবহার করতে ফাঁকা রাখুন, অথবা তার ভেতরের কোনো ফোল্ডার লিখুন।",
     "username": "ব্যবহারকারী নাম",
+    "smbDomain": "ডোমেইন (ঐচ্ছিক)",
     "password": "পাসওয়ার্ড",
     "token": "API টকেন",
     "accessKey": "অ্যাক্সেস ক্লাই ID",
@@ -3020,6 +3024,8 @@
     "clientId": "OAuth ক্লায়েন্ট ID",
     "clientSecret": "OAuth ক্লায়েন্ট সার্ভিস (সুধুমাত্র Google ডেস্টো)",
     "allowHttp": "বিশ্বস্ত নেটওয়ার্কে এনক্রিপশনবিহীন HTTP সংযোগের অনুমতি দিন",
+    "smbEncryption": "SMB3 সংযোগ এনক্রিপ্ট করুন",
+    "smbEncryptionHint": "NAS সমর্থন করলে SMB3 এনক্রিপশন ব্যবহার করুন।",
     "connect": "কানেক্ট",
     "cancel": "বাতিল",
     "save": "সুরক্ষা",
@@ -3164,13 +3170,7 @@
     "zoom": "জুম",
     "useFiles": "ফাইল এবং বই ব্যবহার করুন",
     "cancelScan": "স্ক্যান বাতিল",
-    "googleDrive": "Google Drive",
-    "smbEndpointHint": "উদাহরণ: smb://nas/Movies",
-    "smbEndpointInvalid": "একটি SMB সার্ভার এবং একটি শেয়ার করা ফোল্ডার লিখুন।",
-    "smbFolderHelp": "পুরো শেয়ার করা ফোল্ডার ব্যবহার করতে ফাঁকা রাখুন, অথবা তার ভেতরের কোনো ফোল্ডার লিখুন।",
-    "smbDomain": "ডোমেইন (ঐচ্ছিক)",
-    "smbEncryption": "SMB3 সংযোগ এনক্রিপ্ট করুন",
-    "smbEncryptionHint": "NAS সমর্থন করলে SMB3 এনক্রিপশন ব্যবহার করুন।"
+    "googleDrive": "Google Drive"
   },
   "lending": {
     "title": "জনব্যাপী লাইব্রেরি",
@@ -3372,5 +3372,19 @@
     "selectedIdentity": "ক্লায়েন্টের নির্বাচিত পরিচয়পত্র: ${name}",
     "subtitleRating": "রেটিং ${rating}",
     "subtitleDownloading": "সাবটাইটেল ডাউনলোড হচ্ছে: ${title}"
+  },
+  "comics": {
+    "fitHeight": "উচ্চতা অনুযায়ী মানানসই",
+    "readingMode": "পড়ার ধরন",
+    "paged": "পৃষ্ঠা",
+    "webtoon": "একটানা স্ক্রল",
+    "coverAlone": "প্রচ্ছদ আলাদা করে দেখান",
+    "splitWide": "চওড়া পৃষ্ঠা ভাগ করুন",
+    "splitWideHelp": "পড়ার ক্রম অনুযায়ী প্রতিটি অর্ধেক আলাদা করে দেখান। এটি চালু থাকলে পাশাপাশি দুটি পৃষ্ঠা দেখানো বন্ধ থাকে।",
+    "thumbnails": "পৃষ্ঠার থাম্বনেইল",
+    "controlsHelp": "পৃষ্ঠা ওল্টাতে সোয়াইপ করুন। মানানসই আকার বদলাতে দুবার ট্যাপ করুন। একটানা স্ক্রলে উল্লম্বভাবে সোয়াইপ করুন বা Page Up ও Page Down ব্যবহার করুন।",
+    "savedForComic": "এই প্রোফাইলে এই কমিকের প্রদর্শন সেটিংস মনে রাখা হয়।",
+    "readLists": "পড়ার তালিকা",
+    "collections": "সংগ্রহ"
   }
 }

@@ -543,6 +543,13 @@
     "dvConversionNativeDescription": "A natív DV7 kényszerítése és a DV-átalakítási újrapróbálkozás letiltása",
     "dvConversionDv81Description": "A közvetlen RPU-átalakítás kényszerítése Dolby Vision Profile 8.1-re",
     "dvConversionHevcStripDescription": "A Dolby Vision RPU/EL-rétegek eltávolítása és egyszerű HEVC-ként való megjelenítés",
+    "experimentalDolbyVision": "Kísérleti Dolby Vision",
+    "experimentalDolbyVisionDescription": "A következő lejátszáskor a kísérleti FEL-megjelenítő használata. Külön motorbuild szükséges.",
+    "dvExperimentUnavailableDescription": "Ez a kísérlet jelenleg csak Linuxon érhető el.",
+    "dvCompatibilityFallback": "Kompatibilitási tartalék mód",
+    "dvCompatibilityFallbackDescription": "Ha a kísérlet nem indul, a normál megjelenítő használata. A FEL-adatok elveszhetnek.",
+    "dvExperimentDiagnostics": "Videókísérlet naplózása",
+    "dvExperimentDiagnosticsDescription": "Részletes lejátszónaplók engedélyezése a következő lejátszáskor.",
     "disableDolbyVision": "Dolby Vision letiltása",
     "disableDolbyVisionDescription": "A Dolby Vision helyett a fájl HDR10 vagy HLG rétegének lejátszása, ha van ilyen",
     "hdrSdrConversion": "HDR–SDR átalakítás",
@@ -628,14 +635,7 @@
     "regionFormat": "Területi formátumok",
     "regionFormatDescription": "Válassza ki a dátumok, számok és mértékegységek megjelenítési módját.",
     "metadataLanguage": "Metaadatok nyelve",
-    "metadataLanguageDescription": "A címek és leírások előnyben részesített nyelve, ha a kiszolgáló támogatja. A hang és a felirat nyelve külön állítható be.",
-    "experimentalDolbyVision": "Kísérleti Dolby Vision",
-    "experimentalDolbyVisionDescription": "A következő lejátszáskor a kísérleti FEL-megjelenítő használata. Külön motorbuild szükséges.",
-    "dvExperimentUnavailableDescription": "Ez a kísérlet jelenleg csak Linuxon érhető el.",
-    "dvCompatibilityFallback": "Kompatibilitási tartalék mód",
-    "dvCompatibilityFallbackDescription": "Ha a kísérlet nem indul, a normál megjelenítő használata. A FEL-adatok elveszhetnek.",
-    "dvExperimentDiagnostics": "Videókísérlet naplózása",
-    "dvExperimentDiagnosticsDescription": "Részletes lejátszónaplók engedélyezése a következő lejátszáskor."
+    "metadataLanguageDescription": "A címek és leírások előnyben részesített nyelve, ha a kiszolgáló támogatja. A hang és a felirat nyelve külön állítható be."
   },
   "themeEditor": {
     "builtIn": "Beépített",
@@ -3009,8 +3009,12 @@
     "source": "forrás",
     "name": "nevét",
     "endpoint": "Szerver URL-címe",
+    "smbEndpointHint": "Példa: smb://nas/Movies",
+    "smbEndpointInvalid": "Adjon meg egy SMB-kiszolgálót és egy megosztást.",
     "root": "Folder vagy prefix",
+    "smbFolderHelp": "Hagyja üresen a teljes megosztás használatához, vagy adjon meg egy azon belüli mappát.",
     "username": "Felhasználónév",
+    "smbDomain": "Tartomány (nem kötelező)",
     "password": "Jelszó",
     "token": "API token",
     "accessKey": "Access kulcs ID",
@@ -3020,6 +3024,8 @@
     "clientId": "OAuth ügyfél ID",
     "clientSecret": "OAuth ügyfél titka (csak a Google asztali)",
     "allowHttp": "Titkosítatlan HTTP engedélyezése megbízható hálózaton",
+    "smbEncryption": "SMB3-kapcsolat titkosítása",
+    "smbEncryptionHint": "SMB3-titkosítás használata, ha a NAS támogatja.",
     "connect": "Csatlakozás",
     "cancel": "Mégse",
     "save": "Mentés",
@@ -3164,13 +3170,7 @@
     "zoom": "Nagyítás",
     "useFiles": "Fájlok és könyvek használata",
     "cancelScan": "- törlés scan",
-    "googleDrive": "Google Drive",
-    "smbEndpointHint": "Példa: smb://nas/Movies",
-    "smbEndpointInvalid": "Adjon meg egy SMB-kiszolgálót és egy megosztást.",
-    "smbFolderHelp": "Hagyja üresen a teljes megosztás használatához, vagy adjon meg egy azon belüli mappát.",
-    "smbDomain": "Tartomány (nem kötelező)",
-    "smbEncryption": "SMB3-kapcsolat titkosítása",
-    "smbEncryptionHint": "SMB3-titkosítás használata, ha a NAS támogatja."
+    "googleDrive": "Google Drive"
   },
   "lending": {
     "title": "Közös könyvtárak",
@@ -3372,5 +3372,19 @@
     "selectedIdentity": "Kiválasztott kliensazonosság: ${name}",
     "subtitleRating": "Értékelés: ${rating}",
     "subtitleDownloading": "Felirat letöltése: ${title}"
+  },
+  "comics": {
+    "fitHeight": "Magassághoz igazítás",
+    "readingMode": "Olvasási mód",
+    "paged": "Oldalak",
+    "webtoon": "Folyamatos görgetés",
+    "coverAlone": "Borító külön megjelenítése",
+    "splitWide": "Széles oldalak felosztása",
+    "splitWideHelp": "A két felet külön, olvasási sorrendben jeleníti meg. Bekapcsolva az oldalpárok megjelenítése szünetel.",
+    "thumbnails": "Oldalak bélyegképei",
+    "controlsHelp": "Lapozáshoz húzza el az ujját. Az igazítás módosításához koppintson duplán. Folyamatos görgetésnél húzza függőlegesen, vagy használja a Page Up és Page Down billentyűket.",
+    "savedForComic": "A megjelenítési beállításokat ez a profil megjegyzi ehhez a képregényhez.",
+    "readLists": "Olvasási listák",
+    "collections": "Gyűjtemények"
   }
 }

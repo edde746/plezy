@@ -543,6 +543,13 @@
     "dvConversionNativeDescription": "Принуждава директно възпроизвеждане на DV7 и изключва повторния опит за преобразуване",
     "dvConversionDv81Description": "Принуждава директно преобразуване на RPU към Dolby Vision Profile 8.1",
     "dvConversionHevcStripDescription": "Премахва слоевете Dolby Vision RPU/EL и подава обикновен HEVC поток",
+    "experimentalDolbyVision": "Експериментален Dolby Vision",
+    "experimentalDolbyVisionDescription": "Използвайте експерименталния FEL рендерер при следващото възпроизвеждане. Изисква отделна компилация на енджина.",
+    "dvExperimentUnavailableDescription": "Този експеримент засега е достъпен само под Linux.",
+    "dvCompatibilityFallback": "Резервен режим за съвместимост",
+    "dvCompatibilityFallbackDescription": "Използвайте стандартния рендерер, ако експериментът не може да стартира. Данните FEL може да се загубят.",
+    "dvExperimentDiagnostics": "Дневник на видео експеримента",
+    "dvExperimentDiagnosticsDescription": "Включете подробни дневници на плейъра при следващото възпроизвеждане.",
     "disableDolbyVision": "Изключване на Dolby Vision",
     "disableDolbyVisionDescription": "Възпроизвежда слоя HDR10 или HLG на файла вместо Dolby Vision, когато има такъв",
     "hdrSdrConversion": "Преобразуване от HDR към SDR",
@@ -628,14 +635,7 @@
     "regionFormat": "Регионални формати",
     "regionFormatDescription": "Изберете как да се показват датите, числата и мерните единици.",
     "metadataLanguage": "Език на метаданните",
-    "metadataLanguageDescription": "Предпочитан език за заглавия и описания, ако сървърът го поддържа. Предпочитанията за звук и субтитри се задават отделно.",
-    "experimentalDolbyVision": "Експериментален Dolby Vision",
-    "experimentalDolbyVisionDescription": "Използвайте експерименталния FEL рендерер при следващото възпроизвеждане. Изисква отделна компилация на енджина.",
-    "dvExperimentUnavailableDescription": "Този експеримент засега е достъпен само под Linux.",
-    "dvCompatibilityFallback": "Резервен режим за съвместимост",
-    "dvCompatibilityFallbackDescription": "Използвайте стандартния рендерер, ако експериментът не може да стартира. Данните FEL може да се загубят.",
-    "dvExperimentDiagnostics": "Дневник на видео експеримента",
-    "dvExperimentDiagnosticsDescription": "Включете подробни дневници на плейъра при следващото възпроизвеждане."
+    "metadataLanguageDescription": "Предпочитан език за заглавия и описания, ако сървърът го поддържа. Предпочитанията за звук и субтитри се задават отделно."
   },
   "themeEditor": {
     "builtIn": "Вградени",
@@ -3009,8 +3009,12 @@
     "source": "източник",
     "name": "Име",
     "endpoint": "URL на сървъра",
+    "smbEndpointHint": "Пример: smb://nas/Movies",
+    "smbEndpointInvalid": "Въведете SMB сървър и една споделена папка.",
     "root": "Снимка или префикс",
+    "smbFolderHelp": "Оставете празно, за да използвате цялата споделена папка, или въведете папка в нея.",
     "username": "Потребителско име",
+    "smbDomain": "Домейн (незадължително)",
     "password": "Парола",
     "token": "API Токен",
     "accessKey": "Идентифициране на ключови",
@@ -3020,6 +3024,8 @@
     "clientId": "Идентифициране на клиента",
     "clientSecret": "OAuth клиент тайната (само на работното място на Google)",
     "allowHttp": "Разрешаване на нешифрован HTTP в доверена мрежа",
+    "smbEncryption": "Шифроване на SMB3 връзката",
+    "smbEncryptionHint": "Използвайте SMB3 шифроване, когато NAS го поддържа.",
     "connect": "Свържи",
     "cancel": "Отказ",
     "save": "Запази",
@@ -3164,13 +3170,7 @@
     "zoom": "Мащаб",
     "useFiles": "Използвайте файлове и книги",
     "cancelScan": "Отмяна на сканира",
-    "googleDrive": "Google Drive",
-    "smbEndpointHint": "Пример: smb://nas/Movies",
-    "smbEndpointInvalid": "Въведете SMB сървър и една споделена папка.",
-    "smbFolderHelp": "Оставете празно, за да използвате цялата споделена папка, или въведете папка в нея.",
-    "smbDomain": "Домейн (незадължително)",
-    "smbEncryption": "Шифроване на SMB3 връзката",
-    "smbEncryptionHint": "Използвайте SMB3 шифроване, когато NAS го поддържа."
+    "googleDrive": "Google Drive"
   },
   "lending": {
     "title": "Публични библиотеки",
@@ -3372,5 +3372,19 @@
     "selectedIdentity": "Избрана клиентска самоличност: ${name}",
     "subtitleRating": "Оценка ${rating}",
     "subtitleDownloading": "Изтегляне на субтитри: ${title}"
+  },
+  "comics": {
+    "fitHeight": "Побиране по височина",
+    "readingMode": "Режим на четене",
+    "paged": "Страници",
+    "webtoon": "Непрекъснато превъртане",
+    "coverAlone": "Показване на корицата отделно",
+    "splitWide": "Разделяне на широки страници",
+    "splitWideHelp": "Показва всяка половина отделно в реда на четене. Докато е включено, страниците не се показват по двойки.",
+    "thumbnails": "Миниатюри на страниците",
+    "controlsHelp": "Плъзнете, за да смените страницата. Докоснете два пъти, за да промените побирането. При непрекъснато превъртане плъзгайте вертикално или използвайте Page Up и Page Down.",
+    "savedForComic": "Настройките на изгледа се запомнят за този комикс в този профил.",
+    "readLists": "Списъци за четене",
+    "collections": "Колекции"
   }
 }

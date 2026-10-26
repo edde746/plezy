@@ -105,6 +105,7 @@ class TranslationsJa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$lending$ja lending = _Translations$lending$ja._(_root);
 	@override late final _Translations$audiobook$ja audiobook = _Translations$audiobook$ja._(_root);
 	@override late final _Translations$sourceSetup$ja sourceSetup = _Translations$sourceSetup$ja._(_root);
+	@override late final _Translations$comics$ja comics = _Translations$comics$ja._(_root);
 }
 
 // Path: app
@@ -674,6 +675,13 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'ネイティブ DV7 を強制し、DV 変換の再試行を抑制します';
 	@override String get dvConversionDv81Description => 'Dolby Vision プロファイル 8.1 へのインライン RPU 変換を強制します';
 	@override String get dvConversionHevcStripDescription => 'Dolby Vision の RPU/EL レイヤーを削除し、通常の HEVC として扱います';
+	@override String get experimentalDolbyVision => '実験的なDolby Vision';
+	@override String get experimentalDolbyVisionDescription => '次の再生で実験的なFELレンダラーを使用します。別途ビルドしたエンジンが必要です。';
+	@override String get dvExperimentUnavailableDescription => 'この実験は現在Linuxでのみ利用できます。';
+	@override String get dvCompatibilityFallback => '互換性フォールバック';
+	@override String get dvCompatibilityFallbackDescription => '実験を開始できない場合は標準レンダラーを使用します。FELデータが失われる可能性があります。';
+	@override String get dvExperimentDiagnostics => '動画実験のログ記録';
+	@override String get dvExperimentDiagnosticsDescription => '次の再生でプレーヤーの詳細ログを有効にします。';
 	@override String get disableDolbyVision => 'Dolby Vision を無効にする';
 	@override String get disableDolbyVisionDescription => 'ファイルに HDR10 または HLG レイヤーがある場合は、Dolby Vision の代わりにそれを再生します';
 	@override String get hdrSdrConversion => 'HDRからSDRへの変換';
@@ -760,13 +768,6 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get regionFormatDescription => '日付、数値、単位の表示形式を選択します。';
 	@override String get metadataLanguage => 'メタデータの言語';
 	@override String get metadataLanguageDescription => 'サーバーが対応している場合に、タイトルと説明に使用する言語です。音声と字幕の言語は別に設定します。';
-	@override String get experimentalDolbyVision => '実験的なDolby Vision';
-	@override String get experimentalDolbyVisionDescription => '次の再生で実験的なFELレンダラーを使用します。別途ビルドしたエンジンが必要です。';
-	@override String get dvExperimentUnavailableDescription => 'この実験は現在Linuxでのみ利用できます。';
-	@override String get dvCompatibilityFallback => '互換性フォールバック';
-	@override String get dvCompatibilityFallbackDescription => '実験を開始できない場合は標準レンダラーを使用します。FELデータが失われる可能性があります。';
-	@override String get dvExperimentDiagnostics => '動画実験のログ記録';
-	@override String get dvExperimentDiagnosticsDescription => '次の再生でプレーヤーの詳細ログを有効にします。';
 }
 
 // Path: themeEditor
@@ -2905,8 +2906,12 @@ class _Translations$fileSources$ja extends Translations$fileSources$en {
 	@override String get source => '源泉';
 	@override String get name => '名称';
 	@override String get endpoint => 'サーバー URL';
+	@override String get smbEndpointHint => '例: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'SMBサーバーと共有フォルダーを1つ入力してください。';
 	@override String get root => 'フォルダーまたはプレフィックス';
+	@override String get smbFolderHelp => '共有フォルダー全体を使う場合は空欄にし、一部だけを使う場合はその中のフォルダーを入力してください。';
 	@override String get username => 'ユーザー名';
+	@override String get smbDomain => 'ドメイン（任意）';
 	@override String get password => 'パスワード';
 	@override String get token => 'API トークン';
 	@override String get accessKey => 'アクセスキーID';
@@ -2916,6 +2921,8 @@ class _Translations$fileSources$ja extends Translations$fileSources$en {
 	@override String get clientId => 'クライアントID';
 	@override String get clientSecret => 'OAuth クライアント セキュリティ (Google デスクトップのみ)';
 	@override String get allowHttp => '信頼できるネットワークで暗号化されていないHTTP接続を許可する';
+	@override String get smbEncryption => 'SMB3接続を暗号化';
+	@override String get smbEncryptionHint => 'NASが対応している場合はSMB3暗号化を使用します。';
 	@override String get connect => '接続';
 	@override String get cancel => 'キャンセル';
 	@override String get save => '保存';
@@ -3060,12 +3067,6 @@ class _Translations$fileSources$ja extends Translations$fileSources$en {
 	@override String get useFiles => 'ファイルや本を使用する';
 	@override String get cancelScan => 'スキャンキャン';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => '例: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'SMBサーバーと共有フォルダーを1つ入力してください。';
-	@override String get smbFolderHelp => '共有フォルダー全体を使う場合は空欄にし、一部だけを使う場合はその中のフォルダーを入力してください。';
-	@override String get smbDomain => 'ドメイン（任意）';
-	@override String get smbEncryption => 'SMB3接続を暗号化';
-	@override String get smbEncryptionHint => 'NASが対応している場合はSMB3暗号化を使用します。';
 }
 
 // Path: lending
@@ -3288,6 +3289,27 @@ class _Translations$sourceSetup$ja extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => '選択したクライアント認証情報: ${name}';
 	@override String subtitleRating({required Object rating}) => '評価 ${rating}';
 	@override String subtitleDownloading({required Object title}) => '字幕をダウンロード中: ${title}';
+}
+
+// Path: comics
+class _Translations$comics$ja extends Translations$comics$en {
+	_Translations$comics$ja._(TranslationsJa root) : this._root = root, super.internal(root);
+
+	final TranslationsJa _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => '高さに合わせる';
+	@override String get readingMode => '読書モード';
+	@override String get paged => 'ページ表示';
+	@override String get webtoon => '連続スクロール';
+	@override String get coverAlone => '表紙を単独で表示';
+	@override String get splitWide => '横長のページを分割';
+	@override String get splitWideHelp => '各半分を読む順序で個別に表示します。有効な間は見開き表示を一時停止します。';
+	@override String get thumbnails => 'ページのサムネイル';
+	@override String get controlsHelp => 'スワイプでページをめくります。ダブルタップで表示サイズを切り替えます。連続スクロールでは縦にスワイプするか、Page UpとPage Downを使います。';
+	@override String get savedForComic => 'このプロフィールで、このコミックの表示設定を保存します。';
+	@override String get readLists => '読書リスト';
+	@override String get collections => 'コレクション';
 }
 
 // Path: appIcon.names
@@ -4841,9 +4863,16 @@ extension on TranslationsJa {
 			'settings.dvConversionNativeDescription' => 'ネイティブ DV7 を強制し、DV 変換の再試行を抑制します',
 			'settings.dvConversionDv81Description' => 'Dolby Vision プロファイル 8.1 へのインライン RPU 変換を強制します',
 			'settings.dvConversionHevcStripDescription' => 'Dolby Vision の RPU/EL レイヤーを削除し、通常の HEVC として扱います',
-			'settings.disableDolbyVision' => 'Dolby Vision を無効にする',
+			'settings.experimentalDolbyVision' => '実験的なDolby Vision',
 			_ => null,
 		} ?? switch (path) {
+			'settings.experimentalDolbyVisionDescription' => '次の再生で実験的なFELレンダラーを使用します。別途ビルドしたエンジンが必要です。',
+			'settings.dvExperimentUnavailableDescription' => 'この実験は現在Linuxでのみ利用できます。',
+			'settings.dvCompatibilityFallback' => '互換性フォールバック',
+			'settings.dvCompatibilityFallbackDescription' => '実験を開始できない場合は標準レンダラーを使用します。FELデータが失われる可能性があります。',
+			'settings.dvExperimentDiagnostics' => '動画実験のログ記録',
+			'settings.dvExperimentDiagnosticsDescription' => '次の再生でプレーヤーの詳細ログを有効にします。',
+			'settings.disableDolbyVision' => 'Dolby Vision を無効にする',
 			'settings.disableDolbyVisionDescription' => 'ファイルに HDR10 または HLG レイヤーがある場合は、Dolby Vision の代わりにそれを再生します',
 			'settings.hdrSdrConversion' => 'HDRからSDRへの変換',
 			'settings.hdrSdrConversionDescription' => 'ディスプレイがHDRを表示できないときに、HDR映像を何で変換するかを選択します。',
@@ -4929,13 +4958,6 @@ extension on TranslationsJa {
 			'settings.regionFormatDescription' => '日付、数値、単位の表示形式を選択します。',
 			'settings.metadataLanguage' => 'メタデータの言語',
 			'settings.metadataLanguageDescription' => 'サーバーが対応している場合に、タイトルと説明に使用する言語です。音声と字幕の言語は別に設定します。',
-			'settings.experimentalDolbyVision' => '実験的なDolby Vision',
-			'settings.experimentalDolbyVisionDescription' => '次の再生で実験的なFELレンダラーを使用します。別途ビルドしたエンジンが必要です。',
-			'settings.dvExperimentUnavailableDescription' => 'この実験は現在Linuxでのみ利用できます。',
-			'settings.dvCompatibilityFallback' => '互換性フォールバック',
-			'settings.dvCompatibilityFallbackDescription' => '実験を開始できない場合は標準レンダラーを使用します。FELデータが失われる可能性があります。',
-			'settings.dvExperimentDiagnostics' => '動画実験のログ記録',
-			'settings.dvExperimentDiagnosticsDescription' => '次の再生でプレーヤーの詳細ログを有効にします。',
 			'themeEditor.builtIn' => '標準',
 			'themeEditor.presets' => 'プリセット',
 			'themeEditor.custom' => 'カスタム',
@@ -7065,8 +7087,12 @@ extension on TranslationsJa {
 			'fileSources.source' => '源泉',
 			'fileSources.name' => '名称',
 			'fileSources.endpoint' => 'サーバー URL',
+			'fileSources.smbEndpointHint' => '例: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'SMBサーバーと共有フォルダーを1つ入力してください。',
 			'fileSources.root' => 'フォルダーまたはプレフィックス',
+			'fileSources.smbFolderHelp' => '共有フォルダー全体を使う場合は空欄にし、一部だけを使う場合はその中のフォルダーを入力してください。',
 			'fileSources.username' => 'ユーザー名',
+			'fileSources.smbDomain' => 'ドメイン（任意）',
 			'fileSources.password' => 'パスワード',
 			'fileSources.token' => 'API トークン',
 			'fileSources.accessKey' => 'アクセスキーID',
@@ -7076,6 +7102,8 @@ extension on TranslationsJa {
 			'fileSources.clientId' => 'クライアントID',
 			'fileSources.clientSecret' => 'OAuth クライアント セキュリティ (Google デスクトップのみ)',
 			'fileSources.allowHttp' => '信頼できるネットワークで暗号化されていないHTTP接続を許可する',
+			'fileSources.smbEncryption' => 'SMB3接続を暗号化',
+			'fileSources.smbEncryptionHint' => 'NASが対応している場合はSMB3暗号化を使用します。',
 			'fileSources.connect' => '接続',
 			'fileSources.cancel' => 'キャンセル',
 			'fileSources.save' => '保存',
@@ -7218,12 +7246,6 @@ extension on TranslationsJa {
 			'fileSources.useFiles' => 'ファイルや本を使用する',
 			'fileSources.cancelScan' => 'スキャンキャン',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => '例: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'SMBサーバーと共有フォルダーを1つ入力してください。',
-			'fileSources.smbFolderHelp' => '共有フォルダー全体を使う場合は空欄にし、一部だけを使う場合はその中のフォルダーを入力してください。',
-			'fileSources.smbDomain' => 'ドメイン（任意）',
-			'fileSources.smbEncryption' => 'SMB3接続を暗号化',
-			'fileSources.smbEncryptionHint' => 'NASが対応している場合はSMB3暗号化を使用します。',
 			'lending.title' => '公共図書館',
 			'lending.add' => '図書館を追加',
 			'lending.other' => 'もう一つの図書館',
@@ -7421,6 +7443,18 @@ extension on TranslationsJa {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => '選択したクライアント認証情報: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => '評価 ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => '字幕をダウンロード中: ${title}',
+			'comics.fitHeight' => '高さに合わせる',
+			'comics.readingMode' => '読書モード',
+			'comics.paged' => 'ページ表示',
+			'comics.webtoon' => '連続スクロール',
+			'comics.coverAlone' => '表紙を単独で表示',
+			'comics.splitWide' => '横長のページを分割',
+			'comics.splitWideHelp' => '各半分を読む順序で個別に表示します。有効な間は見開き表示を一時停止します。',
+			'comics.thumbnails' => 'ページのサムネイル',
+			'comics.controlsHelp' => 'スワイプでページをめくります。ダブルタップで表示サイズを切り替えます。連続スクロールでは縦にスワイプするか、Page UpとPage Downを使います。',
+			'comics.savedForComic' => 'このプロフィールで、このコミックの表示設定を保存します。',
+			'comics.readLists' => '読書リスト',
+			'comics.collections' => 'コレクション',
 			_ => null,
 		};
 	}

@@ -105,6 +105,7 @@ class TranslationsTh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$lending$th lending = _Translations$lending$th._(_root);
 	@override late final _Translations$audiobook$th audiobook = _Translations$audiobook$th._(_root);
 	@override late final _Translations$sourceSetup$th sourceSetup = _Translations$sourceSetup$th._(_root);
+	@override late final _Translations$comics$th comics = _Translations$comics$th._(_root);
 }
 
 // Path: app
@@ -674,6 +675,13 @@ class _Translations$settings$th extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Force native DV7 และยับยั้งการแปลง DV Retry';
 	@override String get dvConversionDv81Description => 'แปลง RPU ในร่องรัดไป Dolby Vision โปรไฟล์ 8.1';
 	@override String get dvConversionHevcStripDescription => 'เกรด Dolby Vision ชั้น RPU/EL และแบนปัจจุบัน HEVC';
+	@override String get experimentalDolbyVision => 'Dolby Vision แบบทดลอง';
+	@override String get experimentalDolbyVisionDescription => 'ใช้ตัวเรนเดอร์ FEL แบบทดลองในการเล่นครั้งถัดไป ต้องใช้เอนจินที่บิลด์แยกต่างหาก';
+	@override String get dvExperimentUnavailableDescription => 'ขณะนี้การทดลองนี้ใช้ได้เฉพาะบน Linux';
+	@override String get dvCompatibilityFallback => 'ทางเลือกเพื่อความเข้ากันได้';
+	@override String get dvCompatibilityFallbackDescription => 'ใช้ตัวเรนเดอร์มาตรฐานหากเริ่มการทดลองไม่ได้ ข้อมูล FEL อาจสูญหาย';
+	@override String get dvExperimentDiagnostics => 'บันทึกการทดลองวิดีโอ';
+	@override String get dvExperimentDiagnosticsDescription => 'เปิดบันทึกข้อมูลเครื่องเล่นแบบละเอียดในการเล่นครั้งถัดไป';
 	@override String get disableDolbyVision => 'ไม่สามารถใช้งานได้ Dolby Vision';
 	@override String get disableDolbyVisionDescription => 'เล่นไฟล์ HDR10 หรือชั้น HLG แทน Dolby Vision เมื่อมี';
 	@override String get hdrSdrConversion => 'การแปลง HDR ไปยัง SDR';
@@ -760,13 +768,6 @@ class _Translations$settings$th extends Translations$settings$en {
 	@override String get regionFormatDescription => 'เลือกวิธีแสดงวันที่ ตัวเลข และหน่วยวัด';
 	@override String get metadataLanguage => 'ภาษาข้อมูลสื่อ';
 	@override String get metadataLanguageDescription => 'ภาษาที่ต้องการสำหรับชื่อและคำอธิบายเมื่อเซิร์ฟเวอร์รองรับ การตั้งค่าเสียงและคำบรรยายจะแยกจากกัน';
-	@override String get experimentalDolbyVision => 'Dolby Vision แบบทดลอง';
-	@override String get experimentalDolbyVisionDescription => 'ใช้ตัวเรนเดอร์ FEL แบบทดลองในการเล่นครั้งถัดไป ต้องใช้เอนจินที่บิลด์แยกต่างหาก';
-	@override String get dvExperimentUnavailableDescription => 'ขณะนี้การทดลองนี้ใช้ได้เฉพาะบน Linux';
-	@override String get dvCompatibilityFallback => 'ทางเลือกเพื่อความเข้ากันได้';
-	@override String get dvCompatibilityFallbackDescription => 'ใช้ตัวเรนเดอร์มาตรฐานหากเริ่มการทดลองไม่ได้ ข้อมูล FEL อาจสูญหาย';
-	@override String get dvExperimentDiagnostics => 'บันทึกการทดลองวิดีโอ';
-	@override String get dvExperimentDiagnosticsDescription => 'เปิดบันทึกข้อมูลเครื่องเล่นแบบละเอียดในการเล่นครั้งถัดไป';
 }
 
 // Path: themeEditor
@@ -2890,8 +2891,12 @@ class _Translations$fileSources$th extends Translations$fileSources$en {
 	@override String get source => 'หลักสูตร';
 	@override String get name => 'ชื่อ';
 	@override String get endpoint => 'URL ของเซิร์ฟเวอร์';
+	@override String get smbEndpointHint => 'ตัวอย่าง: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'ป้อนเซิร์ฟเวอร์ SMB และโฟลเดอร์ที่แชร์หนึ่งโฟลเดอร์';
 	@override String get root => 'โฟลเดอร์หรือคำนำหน้า';
+	@override String get smbFolderHelp => 'เว้นว่างไว้เพื่อใช้ทั้งโฟลเดอร์ที่แชร์ หรือระบุโฟลเดอร์ย่อยภายในนั้น';
 	@override String get username => 'ชื่อผู้ใช้';
+	@override String get smbDomain => 'โดเมน (ไม่บังคับ)';
 	@override String get password => 'คู่มือ';
 	@override String get token => 'API โค้น';
 	@override String get accessKey => 'การเข้าถึง ID Key';
@@ -2901,6 +2906,8 @@ class _Translations$fileSources$th extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth ID ลูกค้า';
 	@override String get clientSecret => 'OAuth คีย์ความลับ (เดสก์ท็อป Google เท่านั้น)';
 	@override String get allowHttp => 'อนุญาต HTTP ที่ไม่เข้ารหัสบนเครือข่ายที่เชื่อถือได้';
+	@override String get smbEncryption => 'เข้ารหัสการเชื่อมต่อ SMB3';
+	@override String get smbEncryptionHint => 'ใช้การเข้ารหัส SMB3 เมื่อ NAS รองรับ';
 	@override String get connect => 'เชื่อมต่อ';
 	@override String get cancel => 'ยกเลิก';
 	@override String get save => 'บันทึก';
@@ -3045,12 +3052,6 @@ class _Translations$fileSources$th extends Translations$fileSources$en {
 	@override String get useFiles => 'ใช้ไฟล์และหนังสือ';
 	@override String get cancelScan => 'สแกนลบ';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'ตัวอย่าง: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'ป้อนเซิร์ฟเวอร์ SMB และโฟลเดอร์ที่แชร์หนึ่งโฟลเดอร์';
-	@override String get smbFolderHelp => 'เว้นว่างไว้เพื่อใช้ทั้งโฟลเดอร์ที่แชร์ หรือระบุโฟลเดอร์ย่อยภายในนั้น';
-	@override String get smbDomain => 'โดเมน (ไม่บังคับ)';
-	@override String get smbEncryption => 'เข้ารหัสการเชื่อมต่อ SMB3';
-	@override String get smbEncryptionHint => 'ใช้การเข้ารหัส SMB3 เมื่อ NAS รองรับ';
 }
 
 // Path: lending
@@ -3273,6 +3274,27 @@ class _Translations$sourceSetup$th extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'ข้อมูลประจำตัวไคลเอนต์ที่เลือก: ${name}';
 	@override String subtitleRating({required Object rating}) => 'คะแนน ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'กำลังดาวน์โหลดคำบรรยาย: ${title}';
+}
+
+// Path: comics
+class _Translations$comics$th extends Translations$comics$en {
+	_Translations$comics$th._(TranslationsTh root) : this._root = root, super.internal(root);
+
+	final TranslationsTh _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'พอดีความสูง';
+	@override String get readingMode => 'โหมดการอ่าน';
+	@override String get paged => 'หน้า';
+	@override String get webtoon => 'เลื่อนต่อเนื่อง';
+	@override String get coverAlone => 'แสดงปกแยกต่างหาก';
+	@override String get splitWide => 'แบ่งหน้ากว้าง';
+	@override String get splitWideHelp => 'แสดงแต่ละครึ่งแยกกันตามลำดับการอ่าน เมื่อเปิดตัวเลือกนี้จะหยุดแสดงสองหน้าคู่กันชั่วคราว';
+	@override String get thumbnails => 'ภาพย่อของหน้า';
+	@override String get controlsHelp => 'ปัดเพื่อเปลี่ยนหน้า แตะสองครั้งเพื่อเปลี่ยนการปรับขนาด ในโหมดเลื่อนต่อเนื่อง ให้ปัดแนวตั้งหรือใช้ Page Up และ Page Down';
+	@override String get savedForComic => 'จดจำการตั้งค่าการแสดงผลของการ์ตูนเรื่องนี้ในโปรไฟล์นี้';
+	@override String get readLists => 'รายการอ่าน';
+	@override String get collections => 'คอลเลกชัน';
 }
 
 // Path: appIcon.names
@@ -4824,9 +4846,16 @@ extension on TranslationsTh {
 			'settings.dvConversionNativeDescription' => 'Force native DV7 และยับยั้งการแปลง DV Retry',
 			'settings.dvConversionDv81Description' => 'แปลง RPU ในร่องรัดไป Dolby Vision โปรไฟล์ 8.1',
 			'settings.dvConversionHevcStripDescription' => 'เกรด Dolby Vision ชั้น RPU/EL และแบนปัจจุบัน HEVC',
-			'settings.disableDolbyVision' => 'ไม่สามารถใช้งานได้ Dolby Vision',
+			'settings.experimentalDolbyVision' => 'Dolby Vision แบบทดลอง',
 			_ => null,
 		} ?? switch (path) {
+			'settings.experimentalDolbyVisionDescription' => 'ใช้ตัวเรนเดอร์ FEL แบบทดลองในการเล่นครั้งถัดไป ต้องใช้เอนจินที่บิลด์แยกต่างหาก',
+			'settings.dvExperimentUnavailableDescription' => 'ขณะนี้การทดลองนี้ใช้ได้เฉพาะบน Linux',
+			'settings.dvCompatibilityFallback' => 'ทางเลือกเพื่อความเข้ากันได้',
+			'settings.dvCompatibilityFallbackDescription' => 'ใช้ตัวเรนเดอร์มาตรฐานหากเริ่มการทดลองไม่ได้ ข้อมูล FEL อาจสูญหาย',
+			'settings.dvExperimentDiagnostics' => 'บันทึกการทดลองวิดีโอ',
+			'settings.dvExperimentDiagnosticsDescription' => 'เปิดบันทึกข้อมูลเครื่องเล่นแบบละเอียดในการเล่นครั้งถัดไป',
+			'settings.disableDolbyVision' => 'ไม่สามารถใช้งานได้ Dolby Vision',
 			'settings.disableDolbyVisionDescription' => 'เล่นไฟล์ HDR10 หรือชั้น HLG แทน Dolby Vision เมื่อมี',
 			'settings.hdrSdrConversion' => 'การแปลง HDR ไปยัง SDR',
 			'settings.hdrSdrConversionDescription' => 'เลือกสิ่งที่แปลงวิดีโอ HDR เมื่อหน้าจอไม่สามารถแสดง HDR',
@@ -4912,13 +4941,6 @@ extension on TranslationsTh {
 			'settings.regionFormatDescription' => 'เลือกวิธีแสดงวันที่ ตัวเลข และหน่วยวัด',
 			'settings.metadataLanguage' => 'ภาษาข้อมูลสื่อ',
 			'settings.metadataLanguageDescription' => 'ภาษาที่ต้องการสำหรับชื่อและคำอธิบายเมื่อเซิร์ฟเวอร์รองรับ การตั้งค่าเสียงและคำบรรยายจะแยกจากกัน',
-			'settings.experimentalDolbyVision' => 'Dolby Vision แบบทดลอง',
-			'settings.experimentalDolbyVisionDescription' => 'ใช้ตัวเรนเดอร์ FEL แบบทดลองในการเล่นครั้งถัดไป ต้องใช้เอนจินที่บิลด์แยกต่างหาก',
-			'settings.dvExperimentUnavailableDescription' => 'ขณะนี้การทดลองนี้ใช้ได้เฉพาะบน Linux',
-			'settings.dvCompatibilityFallback' => 'ทางเลือกเพื่อความเข้ากันได้',
-			'settings.dvCompatibilityFallbackDescription' => 'ใช้ตัวเรนเดอร์มาตรฐานหากเริ่มการทดลองไม่ได้ ข้อมูล FEL อาจสูญหาย',
-			'settings.dvExperimentDiagnostics' => 'บันทึกการทดลองวิดีโอ',
-			'settings.dvExperimentDiagnosticsDescription' => 'เปิดบันทึกข้อมูลเครื่องเล่นแบบละเอียดในการเล่นครั้งถัดไป',
 			'themeEditor.builtIn' => 'โครงสร้าง',
 			'themeEditor.presets' => 'โพสต์',
 			'themeEditor.custom' => 'คู่มือ',
@@ -7048,8 +7070,12 @@ extension on TranslationsTh {
 			'fileSources.source' => 'หลักสูตร',
 			'fileSources.name' => 'ชื่อ',
 			'fileSources.endpoint' => 'URL ของเซิร์ฟเวอร์',
+			'fileSources.smbEndpointHint' => 'ตัวอย่าง: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'ป้อนเซิร์ฟเวอร์ SMB และโฟลเดอร์ที่แชร์หนึ่งโฟลเดอร์',
 			'fileSources.root' => 'โฟลเดอร์หรือคำนำหน้า',
+			'fileSources.smbFolderHelp' => 'เว้นว่างไว้เพื่อใช้ทั้งโฟลเดอร์ที่แชร์ หรือระบุโฟลเดอร์ย่อยภายในนั้น',
 			'fileSources.username' => 'ชื่อผู้ใช้',
+			'fileSources.smbDomain' => 'โดเมน (ไม่บังคับ)',
 			'fileSources.password' => 'คู่มือ',
 			'fileSources.token' => 'API โค้น',
 			'fileSources.accessKey' => 'การเข้าถึง ID Key',
@@ -7059,6 +7085,8 @@ extension on TranslationsTh {
 			'fileSources.clientId' => 'OAuth ID ลูกค้า',
 			'fileSources.clientSecret' => 'OAuth คีย์ความลับ (เดสก์ท็อป Google เท่านั้น)',
 			'fileSources.allowHttp' => 'อนุญาต HTTP ที่ไม่เข้ารหัสบนเครือข่ายที่เชื่อถือได้',
+			'fileSources.smbEncryption' => 'เข้ารหัสการเชื่อมต่อ SMB3',
+			'fileSources.smbEncryptionHint' => 'ใช้การเข้ารหัส SMB3 เมื่อ NAS รองรับ',
 			'fileSources.connect' => 'เชื่อมต่อ',
 			'fileSources.cancel' => 'ยกเลิก',
 			'fileSources.save' => 'บันทึก',
@@ -7201,12 +7229,6 @@ extension on TranslationsTh {
 			'fileSources.useFiles' => 'ใช้ไฟล์และหนังสือ',
 			'fileSources.cancelScan' => 'สแกนลบ',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'ตัวอย่าง: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'ป้อนเซิร์ฟเวอร์ SMB และโฟลเดอร์ที่แชร์หนึ่งโฟลเดอร์',
-			'fileSources.smbFolderHelp' => 'เว้นว่างไว้เพื่อใช้ทั้งโฟลเดอร์ที่แชร์ หรือระบุโฟลเดอร์ย่อยภายในนั้น',
-			'fileSources.smbDomain' => 'โดเมน (ไม่บังคับ)',
-			'fileSources.smbEncryption' => 'เข้ารหัสการเชื่อมต่อ SMB3',
-			'fileSources.smbEncryptionHint' => 'ใช้การเข้ารหัส SMB3 เมื่อ NAS รองรับ',
 			'lending.title' => 'สวนสาธารณะ',
 			'lending.add' => 'เพิ่มห้องสมุด',
 			'lending.other' => 'อื่น ๆ บิสตจักร',
@@ -7404,6 +7426,18 @@ extension on TranslationsTh {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'ข้อมูลประจำตัวไคลเอนต์ที่เลือก: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'คะแนน ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'กำลังดาวน์โหลดคำบรรยาย: ${title}',
+			'comics.fitHeight' => 'พอดีความสูง',
+			'comics.readingMode' => 'โหมดการอ่าน',
+			'comics.paged' => 'หน้า',
+			'comics.webtoon' => 'เลื่อนต่อเนื่อง',
+			'comics.coverAlone' => 'แสดงปกแยกต่างหาก',
+			'comics.splitWide' => 'แบ่งหน้ากว้าง',
+			'comics.splitWideHelp' => 'แสดงแต่ละครึ่งแยกกันตามลำดับการอ่าน เมื่อเปิดตัวเลือกนี้จะหยุดแสดงสองหน้าคู่กันชั่วคราว',
+			'comics.thumbnails' => 'ภาพย่อของหน้า',
+			'comics.controlsHelp' => 'ปัดเพื่อเปลี่ยนหน้า แตะสองครั้งเพื่อเปลี่ยนการปรับขนาด ในโหมดเลื่อนต่อเนื่อง ให้ปัดแนวตั้งหรือใช้ Page Up และ Page Down',
+			'comics.savedForComic' => 'จดจำการตั้งค่าการแสดงผลของการ์ตูนเรื่องนี้ในโปรไฟล์นี้',
+			'comics.readLists' => 'รายการอ่าน',
+			'comics.collections' => 'คอลเลกชัน',
 			_ => null,
 		};
 	}

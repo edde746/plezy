@@ -105,6 +105,7 @@ class TranslationsCs extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$lending$cs lending = _Translations$lending$cs._(_root);
 	@override late final _Translations$audiobook$cs audiobook = _Translations$audiobook$cs._(_root);
 	@override late final _Translations$sourceSetup$cs sourceSetup = _Translations$sourceSetup$cs._(_root);
+	@override late final _Translations$comics$cs comics = _Translations$comics$cs._(_root);
 }
 
 // Path: app
@@ -680,6 +681,13 @@ class _Translations$settings$cs extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Force native DV7 a potlačení DV konverze zpět';
 	@override String get dvConversionDv81Description => 'Konverze RPU na profil Dolby Vision 8.1';
 	@override String get dvConversionHevcStripDescription => 'Strip Dolby Vision RPU/EL vrstvy a současná rovina HEVC';
+	@override String get experimentalDolbyVision => 'Experimentální Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Při příštím přehrávání použít experimentální renderer FEL. Vyžaduje samostatné sestavení enginu.';
+	@override String get dvExperimentUnavailableDescription => 'Tento experiment je zatím dostupný pouze na Linuxu.';
+	@override String get dvCompatibilityFallback => 'Záložní režim kompatibility';
+	@override String get dvCompatibilityFallbackDescription => 'Pokud experiment nelze spustit, použít standardní renderer. Data FEL mohou být ztracena.';
+	@override String get dvExperimentDiagnostics => 'Protokolování videoexperimentu';
+	@override String get dvExperimentDiagnosticsDescription => 'Při příštím přehrávání zapnout podrobné protokoly přehrávače.';
 	@override String get disableDolbyVision => 'Zrušení Dolby Vision';
 	@override String get disableDolbyVisionDescription => 'Přehrávejte soubor HDR10 nebo vrstvu HLG namísto Dolby Vision, když má jeden';
 	@override String get hdrSdrConversion => 'HDR na SDR konverze';
@@ -766,13 +774,6 @@ class _Translations$settings$cs extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Zvolte způsob zobrazení dat, čísel a měrných jednotek.';
 	@override String get metadataLanguage => 'Jazyk metadat';
 	@override String get metadataLanguageDescription => 'Upřednostňovaný jazyk názvů a popisů, pokud jej server podporuje. Předvolby zvuku a titulků se nastavují samostatně.';
-	@override String get experimentalDolbyVision => 'Experimentální Dolby Vision';
-	@override String get experimentalDolbyVisionDescription => 'Při příštím přehrávání použít experimentální renderer FEL. Vyžaduje samostatné sestavení enginu.';
-	@override String get dvExperimentUnavailableDescription => 'Tento experiment je zatím dostupný pouze na Linuxu.';
-	@override String get dvCompatibilityFallback => 'Záložní režim kompatibility';
-	@override String get dvCompatibilityFallbackDescription => 'Pokud experiment nelze spustit, použít standardní renderer. Data FEL mohou být ztracena.';
-	@override String get dvExperimentDiagnostics => 'Protokolování videoexperimentu';
-	@override String get dvExperimentDiagnosticsDescription => 'Při příštím přehrávání zapnout podrobné protokoly přehrávače.';
 }
 
 // Path: themeEditor
@@ -2943,8 +2944,12 @@ class _Translations$fileSources$cs extends Translations$fileSources$en {
 	@override String get source => 'Zdroj';
 	@override String get name => 'Jméno';
 	@override String get endpoint => 'server URL';
+	@override String get smbEndpointHint => 'Příklad: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Zadejte server SMB a jednu sdílenou složku.';
 	@override String get root => 'Složka nebo předpona';
+	@override String get smbFolderHelp => 'Pro použití celé sdílené složky ponechte prázdné, nebo zadejte složku uvnitř ní.';
 	@override String get username => 'Uživatelské jméno';
+	@override String get smbDomain => 'Doména (nepovinné)';
 	@override String get password => 'Heslo';
 	@override String get token => 'API token';
 	@override String get accessKey => 'přístupový klíč ID';
@@ -2954,6 +2959,8 @@ class _Translations$fileSources$cs extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth klient ID';
 	@override String get clientSecret => 'OAuth klientská tajemství (pouze desktop Google)';
 	@override String get allowHttp => 'Povolit nešifrované HTTP v důvěryhodné síti';
+	@override String get smbEncryption => 'Šifrovat připojení SMB3';
+	@override String get smbEncryptionHint => 'Použít šifrování SMB3, pokud ho NAS podporuje.';
 	@override String get connect => 'Připojit';
 	@override String get cancel => 'Zrušit';
 	@override String get save => 'Uložit';
@@ -3101,12 +3108,6 @@ class _Translations$fileSources$cs extends Translations$fileSources$en {
 	@override String get useFiles => 'Použijte soubory a knihy';
 	@override String get cancelScan => 'Zrušit skenování';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'Příklad: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'Zadejte server SMB a jednu sdílenou složku.';
-	@override String get smbFolderHelp => 'Pro použití celé sdílené složky ponechte prázdné, nebo zadejte složku uvnitř ní.';
-	@override String get smbDomain => 'Doména (nepovinné)';
-	@override String get smbEncryption => 'Šifrovat připojení SMB3';
-	@override String get smbEncryptionHint => 'Použít šifrování SMB3, pokud ho NAS podporuje.';
 }
 
 // Path: lending
@@ -3329,6 +3330,27 @@ class _Translations$sourceSetup$cs extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'Vybraná identita klienta: ${name}';
 	@override String subtitleRating({required Object rating}) => 'Hodnocení ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'Stahování titulků: ${title}';
+}
+
+// Path: comics
+class _Translations$comics$cs extends Translations$comics$en {
+	_Translations$comics$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'Přizpůsobit výšce';
+	@override String get readingMode => 'Režim čtení';
+	@override String get paged => 'Stránky';
+	@override String get webtoon => 'Plynulé posouvání';
+	@override String get coverAlone => 'Zobrazit obálku samostatně';
+	@override String get splitWide => 'Rozdělit široké stránky';
+	@override String get splitWideHelp => 'Zobrazí každou polovinu samostatně v pořadí čtení. Při zapnutí se stránky nezobrazují ve dvojicích.';
+	@override String get thumbnails => 'Náhledy stránek';
+	@override String get controlsHelp => 'Přejetím otočíte stránku. Dvojitým klepnutím změníte přizpůsobení. Při plynulém posouvání přejeďte svisle nebo použijte Page Up a Page Down.';
+	@override String get savedForComic => 'Nastavení zobrazení se pro tento komiks ukládá v tomto profilu.';
+	@override String get readLists => 'Seznamy četby';
+	@override String get collections => 'Kolekce';
 }
 
 // Path: appIcon.names
@@ -4884,9 +4906,16 @@ extension on TranslationsCs {
 			'settings.dvConversionNativeDescription' => 'Force native DV7 a potlačení DV konverze zpět',
 			'settings.dvConversionDv81Description' => 'Konverze RPU na profil Dolby Vision 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Strip Dolby Vision RPU/EL vrstvy a současná rovina HEVC',
-			'settings.disableDolbyVision' => 'Zrušení Dolby Vision',
+			'settings.experimentalDolbyVision' => 'Experimentální Dolby Vision',
 			_ => null,
 		} ?? switch (path) {
+			'settings.experimentalDolbyVisionDescription' => 'Při příštím přehrávání použít experimentální renderer FEL. Vyžaduje samostatné sestavení enginu.',
+			'settings.dvExperimentUnavailableDescription' => 'Tento experiment je zatím dostupný pouze na Linuxu.',
+			'settings.dvCompatibilityFallback' => 'Záložní režim kompatibility',
+			'settings.dvCompatibilityFallbackDescription' => 'Pokud experiment nelze spustit, použít standardní renderer. Data FEL mohou být ztracena.',
+			'settings.dvExperimentDiagnostics' => 'Protokolování videoexperimentu',
+			'settings.dvExperimentDiagnosticsDescription' => 'Při příštím přehrávání zapnout podrobné protokoly přehrávače.',
+			'settings.disableDolbyVision' => 'Zrušení Dolby Vision',
 			'settings.disableDolbyVisionDescription' => 'Přehrávejte soubor HDR10 nebo vrstvu HLG namísto Dolby Vision, když má jeden',
 			'settings.hdrSdrConversion' => 'HDR na SDR konverze',
 			'settings.hdrSdrConversionDescription' => 'Vyberte, co konvertuje HDR video, když displej nedokáže zobrazit HDR.',
@@ -4972,13 +5001,6 @@ extension on TranslationsCs {
 			'settings.regionFormatDescription' => 'Zvolte způsob zobrazení dat, čísel a měrných jednotek.',
 			'settings.metadataLanguage' => 'Jazyk metadat',
 			'settings.metadataLanguageDescription' => 'Upřednostňovaný jazyk názvů a popisů, pokud jej server podporuje. Předvolby zvuku a titulků se nastavují samostatně.',
-			'settings.experimentalDolbyVision' => 'Experimentální Dolby Vision',
-			'settings.experimentalDolbyVisionDescription' => 'Při příštím přehrávání použít experimentální renderer FEL. Vyžaduje samostatné sestavení enginu.',
-			'settings.dvExperimentUnavailableDescription' => 'Tento experiment je zatím dostupný pouze na Linuxu.',
-			'settings.dvCompatibilityFallback' => 'Záložní režim kompatibility',
-			'settings.dvCompatibilityFallbackDescription' => 'Pokud experiment nelze spustit, použít standardní renderer. Data FEL mohou být ztracena.',
-			'settings.dvExperimentDiagnostics' => 'Protokolování videoexperimentu',
-			'settings.dvExperimentDiagnosticsDescription' => 'Při příštím přehrávání zapnout podrobné protokoly přehrávače.',
 			'themeEditor.builtIn' => 'stavět-in',
 			'themeEditor.presets' => 'přednášky',
 			'themeEditor.custom' => 'Vlastní',
@@ -7108,8 +7130,12 @@ extension on TranslationsCs {
 			'fileSources.source' => 'Zdroj',
 			'fileSources.name' => 'Jméno',
 			'fileSources.endpoint' => 'server URL',
+			'fileSources.smbEndpointHint' => 'Příklad: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Zadejte server SMB a jednu sdílenou složku.',
 			'fileSources.root' => 'Složka nebo předpona',
+			'fileSources.smbFolderHelp' => 'Pro použití celé sdílené složky ponechte prázdné, nebo zadejte složku uvnitř ní.',
 			'fileSources.username' => 'Uživatelské jméno',
+			'fileSources.smbDomain' => 'Doména (nepovinné)',
 			'fileSources.password' => 'Heslo',
 			'fileSources.token' => 'API token',
 			'fileSources.accessKey' => 'přístupový klíč ID',
@@ -7119,6 +7145,8 @@ extension on TranslationsCs {
 			'fileSources.clientId' => 'OAuth klient ID',
 			'fileSources.clientSecret' => 'OAuth klientská tajemství (pouze desktop Google)',
 			'fileSources.allowHttp' => 'Povolit nešifrované HTTP v důvěryhodné síti',
+			'fileSources.smbEncryption' => 'Šifrovat připojení SMB3',
+			'fileSources.smbEncryptionHint' => 'Použít šifrování SMB3, pokud ho NAS podporuje.',
 			'fileSources.connect' => 'Připojit',
 			'fileSources.cancel' => 'Zrušit',
 			'fileSources.save' => 'Uložit',
@@ -7261,12 +7289,6 @@ extension on TranslationsCs {
 			'fileSources.useFiles' => 'Použijte soubory a knihy',
 			'fileSources.cancelScan' => 'Zrušit skenování',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'Příklad: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'Zadejte server SMB a jednu sdílenou složku.',
-			'fileSources.smbFolderHelp' => 'Pro použití celé sdílené složky ponechte prázdné, nebo zadejte složku uvnitř ní.',
-			'fileSources.smbDomain' => 'Doména (nepovinné)',
-			'fileSources.smbEncryption' => 'Šifrovat připojení SMB3',
-			'fileSources.smbEncryptionHint' => 'Použít šifrování SMB3, pokud ho NAS podporuje.',
 			'lending.title' => 'veřejné knihovny',
 			'lending.add' => 'Přidejte knihovnu',
 			'lending.other' => 'Další knihovna',
@@ -7464,6 +7486,18 @@ extension on TranslationsCs {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Vybraná identita klienta: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Hodnocení ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Stahování titulků: ${title}',
+			'comics.fitHeight' => 'Přizpůsobit výšce',
+			'comics.readingMode' => 'Režim čtení',
+			'comics.paged' => 'Stránky',
+			'comics.webtoon' => 'Plynulé posouvání',
+			'comics.coverAlone' => 'Zobrazit obálku samostatně',
+			'comics.splitWide' => 'Rozdělit široké stránky',
+			'comics.splitWideHelp' => 'Zobrazí každou polovinu samostatně v pořadí čtení. Při zapnutí se stránky nezobrazují ve dvojicích.',
+			'comics.thumbnails' => 'Náhledy stránek',
+			'comics.controlsHelp' => 'Přejetím otočíte stránku. Dvojitým klepnutím změníte přizpůsobení. Při plynulém posouvání přejeďte svisle nebo použijte Page Up a Page Down.',
+			'comics.savedForComic' => 'Nastavení zobrazení se pro tento komiks ukládá v tomto profilu.',
+			'comics.readLists' => 'Seznamy četby',
+			'comics.collections' => 'Kolekce',
 			_ => null,
 		};
 	}

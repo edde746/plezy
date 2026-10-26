@@ -105,6 +105,7 @@ class TranslationsAr extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$lending$ar lending = _Translations$lending$ar._(_root);
 	@override late final _Translations$audiobook$ar audiobook = _Translations$audiobook$ar._(_root);
 	@override late final _Translations$sourceSetup$ar sourceSetup = _Translations$sourceSetup$ar._(_root);
+	@override late final _Translations$comics$ar comics = _Translations$comics$ar._(_root);
 }
 
 // Path: app
@@ -684,6 +685,13 @@ class _Translations$settings$ar extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'القوة الأصلية DV7 و القمع DV التحويل الانسحاب';
 	@override String get dvConversionDv81Description => 'تحويل قوة RPU إلى Dolby Vision ملف تعريف 8.1';
 	@override String get dvConversionHevcStripDescription => 'شريط Dolby Vision طبقات RPU/EL والطابق الحالي HEVC';
+	@override String get experimentalDolbyVision => 'Dolby Vision التجريبي';
+	@override String get experimentalDolbyVisionDescription => 'استخدم عارض FEL التجريبي عند التشغيل التالي. يتطلب إصدارًا منفصلًا من المحرك.';
+	@override String get dvExperimentUnavailableDescription => 'هذه التجربة متاحة حاليًا على Linux فقط.';
+	@override String get dvCompatibilityFallback => 'الرجوع للتوافق';
+	@override String get dvCompatibilityFallbackDescription => 'استخدم العارض القياسي إذا تعذر بدء التجربة. قد تُفقد بيانات FEL.';
+	@override String get dvExperimentDiagnostics => 'تسجيل تجربة الفيديو';
+	@override String get dvExperimentDiagnosticsDescription => 'فعّل سجلات المشغّل التفصيلية عند التشغيل التالي.';
 	@override String get disableDolbyVision => 'غير قابلة للتطبيق Dolby Vision';
 	@override String get disableDolbyVisionDescription => 'تلعب طبقة الملف HDR10 أو HLG بدلاً من Dolby Vision ، عندما يكون لديه طبقة واحدة';
 	@override String get hdrSdrConversion => 'تحويل HDR إلى SDR';
@@ -770,13 +778,6 @@ class _Translations$settings$ar extends Translations$settings$en {
 	@override String get regionFormatDescription => 'اختر طريقة عرض التواريخ والأرقام ووحدات القياس.';
 	@override String get metadataLanguage => 'لغة بيانات الوسائط';
 	@override String get metadataLanguageDescription => 'لغة العناوين والأوصاف المفضلة عندما يدعمها الخادم. تُضبط تفضيلات الصوت والترجمة بشكل مستقل.';
-	@override String get experimentalDolbyVision => 'Dolby Vision التجريبي';
-	@override String get experimentalDolbyVisionDescription => 'استخدم عارض FEL التجريبي عند التشغيل التالي. يتطلب إصدارًا منفصلًا من المحرك.';
-	@override String get dvExperimentUnavailableDescription => 'هذه التجربة متاحة حاليًا على Linux فقط.';
-	@override String get dvCompatibilityFallback => 'الرجوع للتوافق';
-	@override String get dvCompatibilityFallbackDescription => 'استخدم العارض القياسي إذا تعذر بدء التجربة. قد تُفقد بيانات FEL.';
-	@override String get dvExperimentDiagnostics => 'تسجيل تجربة الفيديو';
-	@override String get dvExperimentDiagnosticsDescription => 'فعّل سجلات المشغّل التفصيلية عند التشغيل التالي.';
 }
 
 // Path: themeEditor
@@ -2985,8 +2986,12 @@ class _Translations$fileSources$ar extends Translations$fileSources$en {
 	@override String get source => 'المصدر';
 	@override String get name => 'الاسم';
 	@override String get endpoint => 'عنوان الخادم';
+	@override String get smbEndpointHint => 'مثال: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'أدخل خادم SMB ومجلدًا مشتركًا واحدًا.';
 	@override String get root => 'المجلد أو بادئة المسار';
+	@override String get smbFolderHelp => 'اتركه فارغًا لاستخدام المجلد المشترك بالكامل، أو أدخل مجلدًا داخله.';
 	@override String get username => 'اسم المستخدم';
+	@override String get smbDomain => 'النطاق (اختياري)';
 	@override String get password => 'كلمة المرور';
 	@override String get token => 'رمز API';
 	@override String get accessKey => 'معرّف مفتاح الوصول';
@@ -2996,6 +3001,8 @@ class _Translations$fileSources$ar extends Translations$fileSources$en {
 	@override String get clientId => 'معرّف عميل OAuth';
 	@override String get clientSecret => 'سر عميل OAuth (لـ Google على سطح المكتب فقط)';
 	@override String get allowHttp => 'السماح باتصال HTTP غير المشفر على شبكة موثوقة';
+	@override String get smbEncryption => 'تشفير اتصال SMB3';
+	@override String get smbEncryptionHint => 'استخدم تشفير SMB3 عندما يدعمه جهاز NAS.';
 	@override String get connect => 'اتصال';
 	@override String get cancel => 'إلغاء';
 	@override String get save => 'حفظ';
@@ -3145,12 +3152,6 @@ class _Translations$fileSources$ar extends Translations$fileSources$en {
 	@override String get useFiles => 'استخدام الملفات والكتب';
 	@override String get cancelScan => 'إلغاء الفحص';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'مثال: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'أدخل خادم SMB ومجلدًا مشتركًا واحدًا.';
-	@override String get smbFolderHelp => 'اتركه فارغًا لاستخدام المجلد المشترك بالكامل، أو أدخل مجلدًا داخله.';
-	@override String get smbDomain => 'النطاق (اختياري)';
-	@override String get smbEncryption => 'تشفير اتصال SMB3';
-	@override String get smbEncryptionHint => 'استخدم تشفير SMB3 عندما يدعمه جهاز NAS.';
 }
 
 // Path: lending
@@ -3373,6 +3374,27 @@ class _Translations$sourceSetup$ar extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'هوية العميل المحدّدة: ${name}';
 	@override String subtitleRating({required Object rating}) => 'التقييم ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'جارٍ تنزيل الترجمة النصية: ${title}';
+}
+
+// Path: comics
+class _Translations$comics$ar extends Translations$comics$en {
+	_Translations$comics$ar._(TranslationsAr root) : this._root = root, super.internal(root);
+
+	final TranslationsAr _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'ملاءمة الارتفاع';
+	@override String get readingMode => 'وضع القراءة';
+	@override String get paged => 'صفحات';
+	@override String get webtoon => 'تمرير مستمر';
+	@override String get coverAlone => 'عرض الغلاف منفردًا';
+	@override String get splitWide => 'تقسيم الصفحات العريضة';
+	@override String get splitWideHelp => 'اعرض كل نصف على حدة بترتيب القراءة. يتوقف عرض الصفحتين معًا عند تفعيل هذا الخيار.';
+	@override String get thumbnails => 'صور مصغرة للصفحات';
+	@override String get controlsHelp => 'اسحب لتقليب الصفحات. انقر مرتين لتغيير الملاءمة. في التمرير المستمر، اسحب عموديًا أو استخدم Page Up وPage Down.';
+	@override String get savedForComic => 'تُحفظ إعدادات العرض لهذه القصة المصورة في هذا الملف الشخصي.';
+	@override String get readLists => 'قوائم القراءة';
+	@override String get collections => 'مجموعات';
 }
 
 // Path: appIcon.names
@@ -4934,9 +4956,16 @@ extension on TranslationsAr {
 			'settings.dvConversionNativeDescription' => 'القوة الأصلية DV7 و القمع DV التحويل الانسحاب',
 			'settings.dvConversionDv81Description' => 'تحويل قوة RPU إلى Dolby Vision ملف تعريف 8.1',
 			'settings.dvConversionHevcStripDescription' => 'شريط Dolby Vision طبقات RPU/EL والطابق الحالي HEVC',
-			'settings.disableDolbyVision' => 'غير قابلة للتطبيق Dolby Vision',
+			'settings.experimentalDolbyVision' => 'Dolby Vision التجريبي',
 			_ => null,
 		} ?? switch (path) {
+			'settings.experimentalDolbyVisionDescription' => 'استخدم عارض FEL التجريبي عند التشغيل التالي. يتطلب إصدارًا منفصلًا من المحرك.',
+			'settings.dvExperimentUnavailableDescription' => 'هذه التجربة متاحة حاليًا على Linux فقط.',
+			'settings.dvCompatibilityFallback' => 'الرجوع للتوافق',
+			'settings.dvCompatibilityFallbackDescription' => 'استخدم العارض القياسي إذا تعذر بدء التجربة. قد تُفقد بيانات FEL.',
+			'settings.dvExperimentDiagnostics' => 'تسجيل تجربة الفيديو',
+			'settings.dvExperimentDiagnosticsDescription' => 'فعّل سجلات المشغّل التفصيلية عند التشغيل التالي.',
+			'settings.disableDolbyVision' => 'غير قابلة للتطبيق Dolby Vision',
 			'settings.disableDolbyVisionDescription' => 'تلعب طبقة الملف HDR10 أو HLG بدلاً من Dolby Vision ، عندما يكون لديه طبقة واحدة',
 			'settings.hdrSdrConversion' => 'تحويل HDR إلى SDR',
 			'settings.hdrSdrConversionDescription' => 'اختر ما الذي يحول فيديو HDR عندما لا يمكن لعرض الشاشة عرض HDR.',
@@ -5022,13 +5051,6 @@ extension on TranslationsAr {
 			'settings.regionFormatDescription' => 'اختر طريقة عرض التواريخ والأرقام ووحدات القياس.',
 			'settings.metadataLanguage' => 'لغة بيانات الوسائط',
 			'settings.metadataLanguageDescription' => 'لغة العناوين والأوصاف المفضلة عندما يدعمها الخادم. تُضبط تفضيلات الصوت والترجمة بشكل مستقل.',
-			'settings.experimentalDolbyVision' => 'Dolby Vision التجريبي',
-			'settings.experimentalDolbyVisionDescription' => 'استخدم عارض FEL التجريبي عند التشغيل التالي. يتطلب إصدارًا منفصلًا من المحرك.',
-			'settings.dvExperimentUnavailableDescription' => 'هذه التجربة متاحة حاليًا على Linux فقط.',
-			'settings.dvCompatibilityFallback' => 'الرجوع للتوافق',
-			'settings.dvCompatibilityFallbackDescription' => 'استخدم العارض القياسي إذا تعذر بدء التجربة. قد تُفقد بيانات FEL.',
-			'settings.dvExperimentDiagnostics' => 'تسجيل تجربة الفيديو',
-			'settings.dvExperimentDiagnosticsDescription' => 'فعّل سجلات المشغّل التفصيلية عند التشغيل التالي.',
 			'themeEditor.builtIn' => 'بناء في',
 			'themeEditor.presets' => 'الكهنوت',
 			'themeEditor.custom' => 'مخصص',
@@ -7158,8 +7180,12 @@ extension on TranslationsAr {
 			'fileSources.source' => 'المصدر',
 			'fileSources.name' => 'الاسم',
 			'fileSources.endpoint' => 'عنوان الخادم',
+			'fileSources.smbEndpointHint' => 'مثال: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'أدخل خادم SMB ومجلدًا مشتركًا واحدًا.',
 			'fileSources.root' => 'المجلد أو بادئة المسار',
+			'fileSources.smbFolderHelp' => 'اتركه فارغًا لاستخدام المجلد المشترك بالكامل، أو أدخل مجلدًا داخله.',
 			'fileSources.username' => 'اسم المستخدم',
+			'fileSources.smbDomain' => 'النطاق (اختياري)',
 			'fileSources.password' => 'كلمة المرور',
 			'fileSources.token' => 'رمز API',
 			'fileSources.accessKey' => 'معرّف مفتاح الوصول',
@@ -7169,6 +7195,8 @@ extension on TranslationsAr {
 			'fileSources.clientId' => 'معرّف عميل OAuth',
 			'fileSources.clientSecret' => 'سر عميل OAuth (لـ Google على سطح المكتب فقط)',
 			'fileSources.allowHttp' => 'السماح باتصال HTTP غير المشفر على شبكة موثوقة',
+			'fileSources.smbEncryption' => 'تشفير اتصال SMB3',
+			'fileSources.smbEncryptionHint' => 'استخدم تشفير SMB3 عندما يدعمه جهاز NAS.',
 			'fileSources.connect' => 'اتصال',
 			'fileSources.cancel' => 'إلغاء',
 			'fileSources.save' => 'حفظ',
@@ -7311,12 +7339,6 @@ extension on TranslationsAr {
 			'fileSources.useFiles' => 'استخدام الملفات والكتب',
 			'fileSources.cancelScan' => 'إلغاء الفحص',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'مثال: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'أدخل خادم SMB ومجلدًا مشتركًا واحدًا.',
-			'fileSources.smbFolderHelp' => 'اتركه فارغًا لاستخدام المجلد المشترك بالكامل، أو أدخل مجلدًا داخله.',
-			'fileSources.smbDomain' => 'النطاق (اختياري)',
-			'fileSources.smbEncryption' => 'تشفير اتصال SMB3',
-			'fileSources.smbEncryptionHint' => 'استخدم تشفير SMB3 عندما يدعمه جهاز NAS.',
 			'lending.title' => 'المكتبات العامة',
 			'lending.add' => 'إضافة مكتبة',
 			'lending.other' => 'مكتبة أخرى',
@@ -7514,6 +7536,18 @@ extension on TranslationsAr {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'هوية العميل المحدّدة: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'التقييم ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'جارٍ تنزيل الترجمة النصية: ${title}',
+			'comics.fitHeight' => 'ملاءمة الارتفاع',
+			'comics.readingMode' => 'وضع القراءة',
+			'comics.paged' => 'صفحات',
+			'comics.webtoon' => 'تمرير مستمر',
+			'comics.coverAlone' => 'عرض الغلاف منفردًا',
+			'comics.splitWide' => 'تقسيم الصفحات العريضة',
+			'comics.splitWideHelp' => 'اعرض كل نصف على حدة بترتيب القراءة. يتوقف عرض الصفحتين معًا عند تفعيل هذا الخيار.',
+			'comics.thumbnails' => 'صور مصغرة للصفحات',
+			'comics.controlsHelp' => 'اسحب لتقليب الصفحات. انقر مرتين لتغيير الملاءمة. في التمرير المستمر، اسحب عموديًا أو استخدم Page Up وPage Down.',
+			'comics.savedForComic' => 'تُحفظ إعدادات العرض لهذه القصة المصورة في هذا الملف الشخصي.',
+			'comics.readLists' => 'قوائم القراءة',
+			'comics.collections' => 'مجموعات',
 			_ => null,
 		};
 	}

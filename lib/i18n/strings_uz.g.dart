@@ -105,6 +105,7 @@ class TranslationsUz extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$lending$uz lending = _Translations$lending$uz._(_root);
 	@override late final _Translations$audiobook$uz audiobook = _Translations$audiobook$uz._(_root);
 	@override late final _Translations$sourceSetup$uz sourceSetup = _Translations$sourceSetup$uz._(_root);
+	@override late final _Translations$comics$uz comics = _Translations$comics$uz._(_root);
 }
 
 // Path: app
@@ -676,6 +677,13 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Ichki DV7 rejimini majburlash';
 	@override String get dvConversionDv81Description => 'Dolby Vision profile 8.1 formatiga oʻtkazish';
 	@override String get dvConversionHevcStripDescription => 'Dolby Vision qatlamlarini olib tashlash va HEVC sifatida koʻrsatish';
+	@override String get experimentalDolbyVision => 'Tajribaviy Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Keyingi ijroda tajribaviy FEL renderidan foydalaning. Dvigatelning alohida yig‘ilmasi talab qilinadi.';
+	@override String get dvExperimentUnavailableDescription => 'Bu tajriba hozircha faqat Linux tizimida mavjud.';
+	@override String get dvCompatibilityFallback => 'Moslik uchun zaxira rejim';
+	@override String get dvCompatibilityFallbackDescription => 'Tajriba boshlanmasa, standart renderdan foydalaning. FEL ma’lumotlari yo‘qolishi mumkin.';
+	@override String get dvExperimentDiagnostics => 'Video tajribasi jurnali';
+	@override String get dvExperimentDiagnosticsDescription => 'Keyingi ijroda pleyerning batafsil jurnallarini yoqing.';
 	@override String get disableDolbyVision => 'Dolby Vision\'ni oʻchirish';
 	@override String get disableDolbyVisionDescription => 'Faylda boʻlsa, Dolby Vision oʻrniga HDR10 yoki HLG qatlamini ijro etish';
 	@override String get hdrSdrConversion => 'HDR\'ni SDR\'ga aylantirish';
@@ -762,13 +770,6 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Sana, sonlar va oʻlchov birliklari qanday koʻrsatilishini tanlang.';
 	@override String get metadataLanguage => 'Metamaʼlumotlar tili';
 	@override String get metadataLanguageDescription => 'Server qoʻllab-quvvatlasa, sarlavha va tavsiflar uchun afzal til. Audio va subtitr tili alohida sozlanadi.';
-	@override String get experimentalDolbyVision => 'Tajribaviy Dolby Vision';
-	@override String get experimentalDolbyVisionDescription => 'Keyingi ijroda tajribaviy FEL renderidan foydalaning. Dvigatelning alohida yig‘ilmasi talab qilinadi.';
-	@override String get dvExperimentUnavailableDescription => 'Bu tajriba hozircha faqat Linux tizimida mavjud.';
-	@override String get dvCompatibilityFallback => 'Moslik uchun zaxira rejim';
-	@override String get dvCompatibilityFallbackDescription => 'Tajriba boshlanmasa, standart renderdan foydalaning. FEL ma’lumotlari yo‘qolishi mumkin.';
-	@override String get dvExperimentDiagnostics => 'Video tajribasi jurnali';
-	@override String get dvExperimentDiagnosticsDescription => 'Keyingi ijroda pleyerning batafsil jurnallarini yoqing.';
 }
 
 // Path: themeEditor
@@ -2909,8 +2910,12 @@ class _Translations$fileSources$uz extends Translations$fileSources$en {
 	@override String get source => 'Kaynak';
 	@override String get name => 'Namo';
 	@override String get endpoint => 'Server URL-i';
+	@override String get smbEndpointHint => 'Misol: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'SMB serveri va bitta umumiy jildni kiriting.';
 	@override String get root => 'Bir prefix o prefix';
+	@override String get smbFolderHelp => 'Butun umumiy jilddan foydalanish uchun bo‘sh qoldiring yoki uning ichidagi jildni kiriting.';
 	@override String get username => 'Foydalanuvchi nomi';
+	@override String get smbDomain => 'Domen (ixtiyoriy)';
 	@override String get password => 'Parol';
 	@override String get token => 'API token';
 	@override String get accessKey => 'Key ID qozga';
@@ -2920,6 +2925,8 @@ class _Translations$fileSources$uz extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth Client ID';
 	@override String get clientSecret => 'OAuth client secret (so‘z Google desktop)';
 	@override String get allowHttp => 'Ishonchli tarmoqda shifrlanmagan HTTP ulanishiga ruxsat berish';
+	@override String get smbEncryption => 'SMB3 ulanishini shifrlash';
+	@override String get smbEncryptionHint => 'NAS qo‘llab-quvvatlasa, SMB3 shifrlashdan foydalaning.';
 	@override String get connect => 'Ulanish';
 	@override String get cancel => 'Bekor qilish';
 	@override String get save => 'Saqlash';
@@ -3065,12 +3072,6 @@ class _Translations$fileSources$uz extends Translations$fileSources$en {
 	@override String get useFiles => 'Fillar və kitablar kullanır.';
 	@override String get cancelScan => 'Sankcion';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'Misol: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'SMB serveri va bitta umumiy jildni kiriting.';
-	@override String get smbFolderHelp => 'Butun umumiy jilddan foydalanish uchun bo‘sh qoldiring yoki uning ichidagi jildni kiriting.';
-	@override String get smbDomain => 'Domen (ixtiyoriy)';
-	@override String get smbEncryption => 'SMB3 ulanishini shifrlash';
-	@override String get smbEncryptionHint => 'NAS qo‘llab-quvvatlasa, SMB3 shifrlashdan foydalaning.';
 }
 
 // Path: lending
@@ -3293,6 +3294,27 @@ class _Translations$sourceSetup$uz extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'Tanlangan klient identifikatsiya ma’lumotlari: ${name}';
 	@override String subtitleRating({required Object rating}) => 'Baho ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'Subtitr yuklanmoqda: ${title}';
+}
+
+// Path: comics
+class _Translations$comics$uz extends Translations$comics$en {
+	_Translations$comics$uz._(TranslationsUz root) : this._root = root, super.internal(root);
+
+	final TranslationsUz _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'Balandlikka moslash';
+	@override String get readingMode => 'O‘qish rejimi';
+	@override String get paged => 'Sahifalar';
+	@override String get webtoon => 'Uzluksiz aylantirish';
+	@override String get coverAlone => 'Muqovani alohida ko‘rsatish';
+	@override String get splitWide => 'Keng sahifalarni bo‘lish';
+	@override String get splitWideHelp => 'Har bir yarmini o‘qish tartibida alohida ko‘rsatadi. Bu yoqilganda ikki sahifani yonma-yon ko‘rsatish to‘xtatiladi.';
+	@override String get thumbnails => 'Sahifa eskizlari';
+	@override String get controlsHelp => 'Sahifani almashtirish uchun suring. Moslashni o‘zgartirish uchun ikki marta bosing. Uzluksiz aylantirishda tik suring yoki Page Up va Page Down dan foydalaning.';
+	@override String get savedForComic => 'Bu profilda ushbu komiksning ko‘rsatish sozlamalari saqlanadi.';
+	@override String get readLists => 'O‘qish ro‘yxatlari';
+	@override String get collections => 'To‘plamlar';
 }
 
 // Path: appIcon.names
@@ -4846,9 +4868,16 @@ extension on TranslationsUz {
 			'settings.dvConversionNativeDescription' => 'Ichki DV7 rejimini majburlash',
 			'settings.dvConversionDv81Description' => 'Dolby Vision profile 8.1 formatiga oʻtkazish',
 			'settings.dvConversionHevcStripDescription' => 'Dolby Vision qatlamlarini olib tashlash va HEVC sifatida koʻrsatish',
-			'settings.disableDolbyVision' => 'Dolby Vision\'ni oʻchirish',
+			'settings.experimentalDolbyVision' => 'Tajribaviy Dolby Vision',
 			_ => null,
 		} ?? switch (path) {
+			'settings.experimentalDolbyVisionDescription' => 'Keyingi ijroda tajribaviy FEL renderidan foydalaning. Dvigatelning alohida yig‘ilmasi talab qilinadi.',
+			'settings.dvExperimentUnavailableDescription' => 'Bu tajriba hozircha faqat Linux tizimida mavjud.',
+			'settings.dvCompatibilityFallback' => 'Moslik uchun zaxira rejim',
+			'settings.dvCompatibilityFallbackDescription' => 'Tajriba boshlanmasa, standart renderdan foydalaning. FEL ma’lumotlari yo‘qolishi mumkin.',
+			'settings.dvExperimentDiagnostics' => 'Video tajribasi jurnali',
+			'settings.dvExperimentDiagnosticsDescription' => 'Keyingi ijroda pleyerning batafsil jurnallarini yoqing.',
+			'settings.disableDolbyVision' => 'Dolby Vision\'ni oʻchirish',
 			'settings.disableDolbyVisionDescription' => 'Faylda boʻlsa, Dolby Vision oʻrniga HDR10 yoki HLG qatlamini ijro etish',
 			'settings.hdrSdrConversion' => 'HDR\'ni SDR\'ga aylantirish',
 			'settings.hdrSdrConversionDescription' => 'Displey HDR\'ni ko‘rsata olmaganda HDR videoni nima aylantirishini tanlang.',
@@ -4934,13 +4963,6 @@ extension on TranslationsUz {
 			'settings.regionFormatDescription' => 'Sana, sonlar va oʻlchov birliklari qanday koʻrsatilishini tanlang.',
 			'settings.metadataLanguage' => 'Metamaʼlumotlar tili',
 			'settings.metadataLanguageDescription' => 'Server qoʻllab-quvvatlasa, sarlavha va tavsiflar uchun afzal til. Audio va subtitr tili alohida sozlanadi.',
-			'settings.experimentalDolbyVision' => 'Tajribaviy Dolby Vision',
-			'settings.experimentalDolbyVisionDescription' => 'Keyingi ijroda tajribaviy FEL renderidan foydalaning. Dvigatelning alohida yig‘ilmasi talab qilinadi.',
-			'settings.dvExperimentUnavailableDescription' => 'Bu tajriba hozircha faqat Linux tizimida mavjud.',
-			'settings.dvCompatibilityFallback' => 'Moslik uchun zaxira rejim',
-			'settings.dvCompatibilityFallbackDescription' => 'Tajriba boshlanmasa, standart renderdan foydalaning. FEL ma’lumotlari yo‘qolishi mumkin.',
-			'settings.dvExperimentDiagnostics' => 'Video tajribasi jurnali',
-			'settings.dvExperimentDiagnosticsDescription' => 'Keyingi ijroda pleyerning batafsil jurnallarini yoqing.',
 			'themeEditor.builtIn' => 'Oʻrnatilgan',
 			'themeEditor.presets' => 'Tayyor mavzular',
 			'themeEditor.custom' => 'Shaxsiy',
@@ -7070,8 +7092,12 @@ extension on TranslationsUz {
 			'fileSources.source' => 'Kaynak',
 			'fileSources.name' => 'Namo',
 			'fileSources.endpoint' => 'Server URL-i',
+			'fileSources.smbEndpointHint' => 'Misol: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'SMB serveri va bitta umumiy jildni kiriting.',
 			'fileSources.root' => 'Bir prefix o prefix',
+			'fileSources.smbFolderHelp' => 'Butun umumiy jilddan foydalanish uchun bo‘sh qoldiring yoki uning ichidagi jildni kiriting.',
 			'fileSources.username' => 'Foydalanuvchi nomi',
+			'fileSources.smbDomain' => 'Domen (ixtiyoriy)',
 			'fileSources.password' => 'Parol',
 			'fileSources.token' => 'API token',
 			'fileSources.accessKey' => 'Key ID qozga',
@@ -7081,6 +7107,8 @@ extension on TranslationsUz {
 			'fileSources.clientId' => 'OAuth Client ID',
 			'fileSources.clientSecret' => 'OAuth client secret (so‘z Google desktop)',
 			'fileSources.allowHttp' => 'Ishonchli tarmoqda shifrlanmagan HTTP ulanishiga ruxsat berish',
+			'fileSources.smbEncryption' => 'SMB3 ulanishini shifrlash',
+			'fileSources.smbEncryptionHint' => 'NAS qo‘llab-quvvatlasa, SMB3 shifrlashdan foydalaning.',
 			'fileSources.connect' => 'Ulanish',
 			'fileSources.cancel' => 'Bekor qilish',
 			'fileSources.save' => 'Saqlash',
@@ -7223,12 +7251,6 @@ extension on TranslationsUz {
 			'fileSources.useFiles' => 'Fillar və kitablar kullanır.',
 			'fileSources.cancelScan' => 'Sankcion',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'Misol: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'SMB serveri va bitta umumiy jildni kiriting.',
-			'fileSources.smbFolderHelp' => 'Butun umumiy jilddan foydalanish uchun bo‘sh qoldiring yoki uning ichidagi jildni kiriting.',
-			'fileSources.smbDomain' => 'Domen (ixtiyoriy)',
-			'fileSources.smbEncryption' => 'SMB3 ulanishini shifrlash',
-			'fileSources.smbEncryptionHint' => 'NAS qo‘llab-quvvatlasa, SMB3 shifrlashdan foydalaning.',
 			'lending.title' => 'Public librarlar',
 			'lending.add' => 'Bir kütüphan qo‘yadi',
 			'lending.other' => 'Bir librariyada',
@@ -7426,6 +7448,18 @@ extension on TranslationsUz {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Tanlangan klient identifikatsiya ma’lumotlari: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Baho ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Subtitr yuklanmoqda: ${title}',
+			'comics.fitHeight' => 'Balandlikka moslash',
+			'comics.readingMode' => 'O‘qish rejimi',
+			'comics.paged' => 'Sahifalar',
+			'comics.webtoon' => 'Uzluksiz aylantirish',
+			'comics.coverAlone' => 'Muqovani alohida ko‘rsatish',
+			'comics.splitWide' => 'Keng sahifalarni bo‘lish',
+			'comics.splitWideHelp' => 'Har bir yarmini o‘qish tartibida alohida ko‘rsatadi. Bu yoqilganda ikki sahifani yonma-yon ko‘rsatish to‘xtatiladi.',
+			'comics.thumbnails' => 'Sahifa eskizlari',
+			'comics.controlsHelp' => 'Sahifani almashtirish uchun suring. Moslashni o‘zgartirish uchun ikki marta bosing. Uzluksiz aylantirishda tik suring yoki Page Up va Page Down dan foydalaning.',
+			'comics.savedForComic' => 'Bu profilda ushbu komiksning ko‘rsatish sozlamalari saqlanadi.',
+			'comics.readLists' => 'O‘qish ro‘yxatlari',
+			'comics.collections' => 'To‘plamlar',
 			_ => null,
 		};
 	}

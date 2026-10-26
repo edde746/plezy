@@ -105,6 +105,7 @@ class TranslationsHu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$lending$hu lending = _Translations$lending$hu._(_root);
 	@override late final _Translations$audiobook$hu audiobook = _Translations$audiobook$hu._(_root);
 	@override late final _Translations$sourceSetup$hu sourceSetup = _Translations$sourceSetup$hu._(_root);
+	@override late final _Translations$comics$hu comics = _Translations$comics$hu._(_root);
 }
 
 // Path: app
@@ -676,6 +677,13 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'A natív DV7 kényszerítése és a DV-átalakítási újrapróbálkozás letiltása';
 	@override String get dvConversionDv81Description => 'A közvetlen RPU-átalakítás kényszerítése Dolby Vision Profile 8.1-re';
 	@override String get dvConversionHevcStripDescription => 'A Dolby Vision RPU/EL-rétegek eltávolítása és egyszerű HEVC-ként való megjelenítés';
+	@override String get experimentalDolbyVision => 'Kísérleti Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'A következő lejátszáskor a kísérleti FEL-megjelenítő használata. Külön motorbuild szükséges.';
+	@override String get dvExperimentUnavailableDescription => 'Ez a kísérlet jelenleg csak Linuxon érhető el.';
+	@override String get dvCompatibilityFallback => 'Kompatibilitási tartalék mód';
+	@override String get dvCompatibilityFallbackDescription => 'Ha a kísérlet nem indul, a normál megjelenítő használata. A FEL-adatok elveszhetnek.';
+	@override String get dvExperimentDiagnostics => 'Videókísérlet naplózása';
+	@override String get dvExperimentDiagnosticsDescription => 'Részletes lejátszónaplók engedélyezése a következő lejátszáskor.';
 	@override String get disableDolbyVision => 'Dolby Vision letiltása';
 	@override String get disableDolbyVisionDescription => 'A Dolby Vision helyett a fájl HDR10 vagy HLG rétegének lejátszása, ha van ilyen';
 	@override String get hdrSdrConversion => 'HDR–SDR átalakítás';
@@ -762,13 +770,6 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Válassza ki a dátumok, számok és mértékegységek megjelenítési módját.';
 	@override String get metadataLanguage => 'Metaadatok nyelve';
 	@override String get metadataLanguageDescription => 'A címek és leírások előnyben részesített nyelve, ha a kiszolgáló támogatja. A hang és a felirat nyelve külön állítható be.';
-	@override String get experimentalDolbyVision => 'Kísérleti Dolby Vision';
-	@override String get experimentalDolbyVisionDescription => 'A következő lejátszáskor a kísérleti FEL-megjelenítő használata. Külön motorbuild szükséges.';
-	@override String get dvExperimentUnavailableDescription => 'Ez a kísérlet jelenleg csak Linuxon érhető el.';
-	@override String get dvCompatibilityFallback => 'Kompatibilitási tartalék mód';
-	@override String get dvCompatibilityFallbackDescription => 'Ha a kísérlet nem indul, a normál megjelenítő használata. A FEL-adatok elveszhetnek.';
-	@override String get dvExperimentDiagnostics => 'Videókísérlet naplózása';
-	@override String get dvExperimentDiagnosticsDescription => 'Részletes lejátszónaplók engedélyezése a következő lejátszáskor.';
 }
 
 // Path: themeEditor
@@ -2909,8 +2910,12 @@ class _Translations$fileSources$hu extends Translations$fileSources$en {
 	@override String get source => 'forrás';
 	@override String get name => 'nevét';
 	@override String get endpoint => 'Szerver URL-címe';
+	@override String get smbEndpointHint => 'Példa: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Adjon meg egy SMB-kiszolgálót és egy megosztást.';
 	@override String get root => 'Folder vagy prefix';
+	@override String get smbFolderHelp => 'Hagyja üresen a teljes megosztás használatához, vagy adjon meg egy azon belüli mappát.';
 	@override String get username => 'Felhasználónév';
+	@override String get smbDomain => 'Tartomány (nem kötelező)';
 	@override String get password => 'Jelszó';
 	@override String get token => 'API token';
 	@override String get accessKey => 'Access kulcs ID';
@@ -2920,6 +2925,8 @@ class _Translations$fileSources$hu extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth ügyfél ID';
 	@override String get clientSecret => 'OAuth ügyfél titka (csak a Google asztali)';
 	@override String get allowHttp => 'Titkosítatlan HTTP engedélyezése megbízható hálózaton';
+	@override String get smbEncryption => 'SMB3-kapcsolat titkosítása';
+	@override String get smbEncryptionHint => 'SMB3-titkosítás használata, ha a NAS támogatja.';
 	@override String get connect => 'Csatlakozás';
 	@override String get cancel => 'Mégse';
 	@override String get save => 'Mentés';
@@ -3065,12 +3072,6 @@ class _Translations$fileSources$hu extends Translations$fileSources$en {
 	@override String get useFiles => 'Fájlok és könyvek használata';
 	@override String get cancelScan => '- törlés scan';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'Példa: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'Adjon meg egy SMB-kiszolgálót és egy megosztást.';
-	@override String get smbFolderHelp => 'Hagyja üresen a teljes megosztás használatához, vagy adjon meg egy azon belüli mappát.';
-	@override String get smbDomain => 'Tartomány (nem kötelező)';
-	@override String get smbEncryption => 'SMB3-kapcsolat titkosítása';
-	@override String get smbEncryptionHint => 'SMB3-titkosítás használata, ha a NAS támogatja.';
 }
 
 // Path: lending
@@ -3293,6 +3294,27 @@ class _Translations$sourceSetup$hu extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'Kiválasztott kliensazonosság: ${name}';
 	@override String subtitleRating({required Object rating}) => 'Értékelés: ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'Felirat letöltése: ${title}';
+}
+
+// Path: comics
+class _Translations$comics$hu extends Translations$comics$en {
+	_Translations$comics$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'Magassághoz igazítás';
+	@override String get readingMode => 'Olvasási mód';
+	@override String get paged => 'Oldalak';
+	@override String get webtoon => 'Folyamatos görgetés';
+	@override String get coverAlone => 'Borító külön megjelenítése';
+	@override String get splitWide => 'Széles oldalak felosztása';
+	@override String get splitWideHelp => 'A két felet külön, olvasási sorrendben jeleníti meg. Bekapcsolva az oldalpárok megjelenítése szünetel.';
+	@override String get thumbnails => 'Oldalak bélyegképei';
+	@override String get controlsHelp => 'Lapozáshoz húzza el az ujját. Az igazítás módosításához koppintson duplán. Folyamatos görgetésnél húzza függőlegesen, vagy használja a Page Up és Page Down billentyűket.';
+	@override String get savedForComic => 'A megjelenítési beállításokat ez a profil megjegyzi ehhez a képregényhez.';
+	@override String get readLists => 'Olvasási listák';
+	@override String get collections => 'Gyűjtemények';
 }
 
 // Path: appIcon.names
@@ -4846,9 +4868,16 @@ extension on TranslationsHu {
 			'settings.dvConversionNativeDescription' => 'A natív DV7 kényszerítése és a DV-átalakítási újrapróbálkozás letiltása',
 			'settings.dvConversionDv81Description' => 'A közvetlen RPU-átalakítás kényszerítése Dolby Vision Profile 8.1-re',
 			'settings.dvConversionHevcStripDescription' => 'A Dolby Vision RPU/EL-rétegek eltávolítása és egyszerű HEVC-ként való megjelenítés',
-			'settings.disableDolbyVision' => 'Dolby Vision letiltása',
+			'settings.experimentalDolbyVision' => 'Kísérleti Dolby Vision',
 			_ => null,
 		} ?? switch (path) {
+			'settings.experimentalDolbyVisionDescription' => 'A következő lejátszáskor a kísérleti FEL-megjelenítő használata. Külön motorbuild szükséges.',
+			'settings.dvExperimentUnavailableDescription' => 'Ez a kísérlet jelenleg csak Linuxon érhető el.',
+			'settings.dvCompatibilityFallback' => 'Kompatibilitási tartalék mód',
+			'settings.dvCompatibilityFallbackDescription' => 'Ha a kísérlet nem indul, a normál megjelenítő használata. A FEL-adatok elveszhetnek.',
+			'settings.dvExperimentDiagnostics' => 'Videókísérlet naplózása',
+			'settings.dvExperimentDiagnosticsDescription' => 'Részletes lejátszónaplók engedélyezése a következő lejátszáskor.',
+			'settings.disableDolbyVision' => 'Dolby Vision letiltása',
 			'settings.disableDolbyVisionDescription' => 'A Dolby Vision helyett a fájl HDR10 vagy HLG rétegének lejátszása, ha van ilyen',
 			'settings.hdrSdrConversion' => 'HDR–SDR átalakítás',
 			'settings.hdrSdrConversionDescription' => 'Válaszd ki, mi alakítsa át a HDR-videót, ha a kijelző nem tud HDR-t megjeleníteni.',
@@ -4934,13 +4963,6 @@ extension on TranslationsHu {
 			'settings.regionFormatDescription' => 'Válassza ki a dátumok, számok és mértékegységek megjelenítési módját.',
 			'settings.metadataLanguage' => 'Metaadatok nyelve',
 			'settings.metadataLanguageDescription' => 'A címek és leírások előnyben részesített nyelve, ha a kiszolgáló támogatja. A hang és a felirat nyelve külön állítható be.',
-			'settings.experimentalDolbyVision' => 'Kísérleti Dolby Vision',
-			'settings.experimentalDolbyVisionDescription' => 'A következő lejátszáskor a kísérleti FEL-megjelenítő használata. Külön motorbuild szükséges.',
-			'settings.dvExperimentUnavailableDescription' => 'Ez a kísérlet jelenleg csak Linuxon érhető el.',
-			'settings.dvCompatibilityFallback' => 'Kompatibilitási tartalék mód',
-			'settings.dvCompatibilityFallbackDescription' => 'Ha a kísérlet nem indul, a normál megjelenítő használata. A FEL-adatok elveszhetnek.',
-			'settings.dvExperimentDiagnostics' => 'Videókísérlet naplózása',
-			'settings.dvExperimentDiagnosticsDescription' => 'Részletes lejátszónaplók engedélyezése a következő lejátszáskor.',
 			'themeEditor.builtIn' => 'Beépített',
 			'themeEditor.presets' => 'Előre beállított',
 			'themeEditor.custom' => 'Egyéni',
@@ -7070,8 +7092,12 @@ extension on TranslationsHu {
 			'fileSources.source' => 'forrás',
 			'fileSources.name' => 'nevét',
 			'fileSources.endpoint' => 'Szerver URL-címe',
+			'fileSources.smbEndpointHint' => 'Példa: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Adjon meg egy SMB-kiszolgálót és egy megosztást.',
 			'fileSources.root' => 'Folder vagy prefix',
+			'fileSources.smbFolderHelp' => 'Hagyja üresen a teljes megosztás használatához, vagy adjon meg egy azon belüli mappát.',
 			'fileSources.username' => 'Felhasználónév',
+			'fileSources.smbDomain' => 'Tartomány (nem kötelező)',
 			'fileSources.password' => 'Jelszó',
 			'fileSources.token' => 'API token',
 			'fileSources.accessKey' => 'Access kulcs ID',
@@ -7081,6 +7107,8 @@ extension on TranslationsHu {
 			'fileSources.clientId' => 'OAuth ügyfél ID',
 			'fileSources.clientSecret' => 'OAuth ügyfél titka (csak a Google asztali)',
 			'fileSources.allowHttp' => 'Titkosítatlan HTTP engedélyezése megbízható hálózaton',
+			'fileSources.smbEncryption' => 'SMB3-kapcsolat titkosítása',
+			'fileSources.smbEncryptionHint' => 'SMB3-titkosítás használata, ha a NAS támogatja.',
 			'fileSources.connect' => 'Csatlakozás',
 			'fileSources.cancel' => 'Mégse',
 			'fileSources.save' => 'Mentés',
@@ -7223,12 +7251,6 @@ extension on TranslationsHu {
 			'fileSources.useFiles' => 'Fájlok és könyvek használata',
 			'fileSources.cancelScan' => '- törlés scan',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'Példa: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'Adjon meg egy SMB-kiszolgálót és egy megosztást.',
-			'fileSources.smbFolderHelp' => 'Hagyja üresen a teljes megosztás használatához, vagy adjon meg egy azon belüli mappát.',
-			'fileSources.smbDomain' => 'Tartomány (nem kötelező)',
-			'fileSources.smbEncryption' => 'SMB3-kapcsolat titkosítása',
-			'fileSources.smbEncryptionHint' => 'SMB3-titkosítás használata, ha a NAS támogatja.',
 			'lending.title' => 'Közös könyvtárak',
 			'lending.add' => 'Hozzáadjuk a könyvtárat',
 			'lending.other' => 'Egy másik könyvtár',
@@ -7426,6 +7448,18 @@ extension on TranslationsHu {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Kiválasztott kliensazonosság: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Értékelés: ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Felirat letöltése: ${title}',
+			'comics.fitHeight' => 'Magassághoz igazítás',
+			'comics.readingMode' => 'Olvasási mód',
+			'comics.paged' => 'Oldalak',
+			'comics.webtoon' => 'Folyamatos görgetés',
+			'comics.coverAlone' => 'Borító külön megjelenítése',
+			'comics.splitWide' => 'Széles oldalak felosztása',
+			'comics.splitWideHelp' => 'A két felet külön, olvasási sorrendben jeleníti meg. Bekapcsolva az oldalpárok megjelenítése szünetel.',
+			'comics.thumbnails' => 'Oldalak bélyegképei',
+			'comics.controlsHelp' => 'Lapozáshoz húzza el az ujját. Az igazítás módosításához koppintson duplán. Folyamatos görgetésnél húzza függőlegesen, vagy használja a Page Up és Page Down billentyűket.',
+			'comics.savedForComic' => 'A megjelenítési beállításokat ez a profil megjegyzi ehhez a képregényhez.',
+			'comics.readLists' => 'Olvasási listák',
+			'comics.collections' => 'Gyűjtemények',
 			_ => null,
 		};
 	}

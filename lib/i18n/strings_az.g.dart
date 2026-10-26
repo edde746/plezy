@@ -105,6 +105,7 @@ class TranslationsAz extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$lending$az lending = _Translations$lending$az._(_root);
 	@override late final _Translations$audiobook$az audiobook = _Translations$audiobook$az._(_root);
 	@override late final _Translations$sourceSetup$az sourceSetup = _Translations$sourceSetup$az._(_root);
+	@override late final _Translations$comics$az comics = _Translations$comics$az._(_root);
 }
 
 // Path: app
@@ -676,6 +677,13 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Daxili DV7-ni məcburi et';
 	@override String get dvConversionDv81Description => 'Dolby Vision profile 8.1-ə çevrilməni məcburi et';
 	@override String get dvConversionHevcStripDescription => 'Dolby Vision təbəqələrini sil və sadə HEVC kimi təqdim et';
+	@override String get experimentalDolbyVision => 'Eksperimental Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Növbəti oxutmada eksperimental FEL renderindən istifadə edin. Mühərrikin ayrıca yığılması tələb olunur.';
+	@override String get dvExperimentUnavailableDescription => 'Bu sınaq hazırda yalnız Linux-da mövcuddur.';
+	@override String get dvCompatibilityFallback => 'Uyğunluq üçün ehtiyat rejim';
+	@override String get dvCompatibilityFallbackDescription => 'Sınaq başlaya bilməsə, standart renderdən istifadə edin. FEL məlumatları itə bilər.';
+	@override String get dvExperimentDiagnostics => 'Video sınağının jurnalı';
+	@override String get dvExperimentDiagnosticsDescription => 'Növbəti oxutmada ətraflı pleyer jurnallarını aktivləşdirin.';
 	@override String get disableDolbyVision => 'Dolby Vision-u söndür';
 	@override String get disableDolbyVisionDescription => 'Faylda varsa, Dolby Vision əvəzinə HDR10 və ya HLG təbəqəsini oynat';
 	@override String get hdrSdrConversion => 'HDR-dən SDR-ə çevirmə';
@@ -762,13 +770,6 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Tarixlərin, rəqəmlərin və ölçü vahidlərinin göstərilmə qaydasını seçin.';
 	@override String get metadataLanguage => 'Metaməlumat dili';
 	@override String get metadataLanguageDescription => 'Server dəstəklədikdə başlıqlar və təsvirlər üçün üstün tutulan dil. Səs və altyazı seçimləri ayrıca tənzimlənir.';
-	@override String get experimentalDolbyVision => 'Eksperimental Dolby Vision';
-	@override String get experimentalDolbyVisionDescription => 'Növbəti oxutmada eksperimental FEL renderindən istifadə edin. Mühərrikin ayrıca yığılması tələb olunur.';
-	@override String get dvExperimentUnavailableDescription => 'Bu sınaq hazırda yalnız Linux-da mövcuddur.';
-	@override String get dvCompatibilityFallback => 'Uyğunluq üçün ehtiyat rejim';
-	@override String get dvCompatibilityFallbackDescription => 'Sınaq başlaya bilməsə, standart renderdən istifadə edin. FEL məlumatları itə bilər.';
-	@override String get dvExperimentDiagnostics => 'Video sınağının jurnalı';
-	@override String get dvExperimentDiagnosticsDescription => 'Növbəti oxutmada ətraflı pleyer jurnallarını aktivləşdirin.';
 }
 
 // Path: themeEditor
@@ -2909,8 +2910,12 @@ class _Translations$fileSources$az extends Translations$fileSources$en {
 	@override String get source => 'Kaynak';
 	@override String get name => 'İsim';
 	@override String get endpoint => 'Server URL-i';
+	@override String get smbEndpointHint => 'Nümunə: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'SMB serverini və bir paylaşılan qovluğu daxil edin.';
 	@override String get root => 'Fərzər və Prefix';
+	@override String get smbFolderHelp => 'Bütün paylaşılan qovluqdan istifadə etmək üçün boş saxlayın və ya onun daxilindəki qovluğu daxil edin.';
 	@override String get username => 'İstifadəçi adı';
+	@override String get smbDomain => 'Domen (istəyə bağlı)';
 	@override String get password => 'Şifrə';
 	@override String get token => 'API xətnamə';
 	@override String get accessKey => 'Key ID qalıq';
@@ -2920,6 +2925,8 @@ class _Translations$fileSources$az extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth müştəri ID';
 	@override String get clientSecret => 'OAuth müştəri gizli (yalnız Google namizədləri)';
 	@override String get allowHttp => 'Etibarlı şəbəkədə şifrələnməmiş HTTP bağlantısına icazə ver';
+	@override String get smbEncryption => 'SMB3 bağlantısını şifrələ';
+	@override String get smbEncryptionHint => 'NAS dəstəkləyirsə, SMB3 şifrələməsindən istifadə edin.';
 	@override String get connect => 'Qoşul';
 	@override String get cancel => 'Ləğv et';
 	@override String get save => 'Yadda saxla';
@@ -3065,12 +3072,6 @@ class _Translations$fileSources$az extends Translations$fileSources$en {
 	@override String get useFiles => 'Fillər və kitablar';
 	@override String get cancelScan => 'Scanı iptal et';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'Nümunə: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'SMB serverini və bir paylaşılan qovluğu daxil edin.';
-	@override String get smbFolderHelp => 'Bütün paylaşılan qovluqdan istifadə etmək üçün boş saxlayın və ya onun daxilindəki qovluğu daxil edin.';
-	@override String get smbDomain => 'Domen (istəyə bağlı)';
-	@override String get smbEncryption => 'SMB3 bağlantısını şifrələ';
-	@override String get smbEncryptionHint => 'NAS dəstəkləyirsə, SMB3 şifrələməsindən istifadə edin.';
 }
 
 // Path: lending
@@ -3293,6 +3294,27 @@ class _Translations$sourceSetup$az extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'Seçilmiş klient kimlik məlumatları: ${name}';
 	@override String subtitleRating({required Object rating}) => 'Reytinq ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'Altyazı endirilir: ${title}';
+}
+
+// Path: comics
+class _Translations$comics$az extends Translations$comics$en {
+	_Translations$comics$az._(TranslationsAz root) : this._root = root, super.internal(root);
+
+	final TranslationsAz _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'Hündürlüyə uyğunlaşdır';
+	@override String get readingMode => 'Oxu rejimi';
+	@override String get paged => 'Səhifələr';
+	@override String get webtoon => 'Davamlı sürüşdürmə';
+	@override String get coverAlone => 'Üz qabığını ayrıca göstər';
+	@override String get splitWide => 'Geniş səhifələri böl';
+	@override String get splitWideHelp => 'Hər yarını oxu ardıcıllığı ilə ayrıca göstər. Bu seçim aktiv olduqda iki səhifənin birlikdə göstərilməsi dayandırılır.';
+	@override String get thumbnails => 'Səhifə miniatürləri';
+	@override String get controlsHelp => 'Səhifələri çevirmək üçün sürüşdürün. Uyğunlaşdırmanı dəyişmək üçün iki dəfə toxunun. Davamlı sürüşdürmədə şaquli sürüşdürün və ya Page Up və Page Down istifadə edin.';
+	@override String get savedForComic => 'Görüntü ayarları bu profildə bu komiks üçün yadda saxlanılır.';
+	@override String get readLists => 'Oxu siyahıları';
+	@override String get collections => 'Kolleksiyalar';
 }
 
 // Path: appIcon.names
@@ -4846,9 +4868,16 @@ extension on TranslationsAz {
 			'settings.dvConversionNativeDescription' => 'Daxili DV7-ni məcburi et',
 			'settings.dvConversionDv81Description' => 'Dolby Vision profile 8.1-ə çevrilməni məcburi et',
 			'settings.dvConversionHevcStripDescription' => 'Dolby Vision təbəqələrini sil və sadə HEVC kimi təqdim et',
-			'settings.disableDolbyVision' => 'Dolby Vision-u söndür',
+			'settings.experimentalDolbyVision' => 'Eksperimental Dolby Vision',
 			_ => null,
 		} ?? switch (path) {
+			'settings.experimentalDolbyVisionDescription' => 'Növbəti oxutmada eksperimental FEL renderindən istifadə edin. Mühərrikin ayrıca yığılması tələb olunur.',
+			'settings.dvExperimentUnavailableDescription' => 'Bu sınaq hazırda yalnız Linux-da mövcuddur.',
+			'settings.dvCompatibilityFallback' => 'Uyğunluq üçün ehtiyat rejim',
+			'settings.dvCompatibilityFallbackDescription' => 'Sınaq başlaya bilməsə, standart renderdən istifadə edin. FEL məlumatları itə bilər.',
+			'settings.dvExperimentDiagnostics' => 'Video sınağının jurnalı',
+			'settings.dvExperimentDiagnosticsDescription' => 'Növbəti oxutmada ətraflı pleyer jurnallarını aktivləşdirin.',
+			'settings.disableDolbyVision' => 'Dolby Vision-u söndür',
 			'settings.disableDolbyVisionDescription' => 'Faylda varsa, Dolby Vision əvəzinə HDR10 və ya HLG təbəqəsini oynat',
 			'settings.hdrSdrConversion' => 'HDR-dən SDR-ə çevirmə',
 			'settings.hdrSdrConversionDescription' => 'Ekran HDR göstərə bilmədikdə HDR videonu nəyin çevirəcəyini seçin.',
@@ -4934,13 +4963,6 @@ extension on TranslationsAz {
 			'settings.regionFormatDescription' => 'Tarixlərin, rəqəmlərin və ölçü vahidlərinin göstərilmə qaydasını seçin.',
 			'settings.metadataLanguage' => 'Metaməlumat dili',
 			'settings.metadataLanguageDescription' => 'Server dəstəklədikdə başlıqlar və təsvirlər üçün üstün tutulan dil. Səs və altyazı seçimləri ayrıca tənzimlənir.',
-			'settings.experimentalDolbyVision' => 'Eksperimental Dolby Vision',
-			'settings.experimentalDolbyVisionDescription' => 'Növbəti oxutmada eksperimental FEL renderindən istifadə edin. Mühərrikin ayrıca yığılması tələb olunur.',
-			'settings.dvExperimentUnavailableDescription' => 'Bu sınaq hazırda yalnız Linux-da mövcuddur.',
-			'settings.dvCompatibilityFallback' => 'Uyğunluq üçün ehtiyat rejim',
-			'settings.dvCompatibilityFallbackDescription' => 'Sınaq başlaya bilməsə, standart renderdən istifadə edin. FEL məlumatları itə bilər.',
-			'settings.dvExperimentDiagnostics' => 'Video sınağının jurnalı',
-			'settings.dvExperimentDiagnosticsDescription' => 'Növbəti oxutmada ətraflı pleyer jurnallarını aktivləşdirin.',
 			'themeEditor.builtIn' => 'Daxili',
 			'themeEditor.presets' => 'Hazır mövzular',
 			'themeEditor.custom' => 'Xüsusi',
@@ -7070,8 +7092,12 @@ extension on TranslationsAz {
 			'fileSources.source' => 'Kaynak',
 			'fileSources.name' => 'İsim',
 			'fileSources.endpoint' => 'Server URL-i',
+			'fileSources.smbEndpointHint' => 'Nümunə: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'SMB serverini və bir paylaşılan qovluğu daxil edin.',
 			'fileSources.root' => 'Fərzər və Prefix',
+			'fileSources.smbFolderHelp' => 'Bütün paylaşılan qovluqdan istifadə etmək üçün boş saxlayın və ya onun daxilindəki qovluğu daxil edin.',
 			'fileSources.username' => 'İstifadəçi adı',
+			'fileSources.smbDomain' => 'Domen (istəyə bağlı)',
 			'fileSources.password' => 'Şifrə',
 			'fileSources.token' => 'API xətnamə',
 			'fileSources.accessKey' => 'Key ID qalıq',
@@ -7081,6 +7107,8 @@ extension on TranslationsAz {
 			'fileSources.clientId' => 'OAuth müştəri ID',
 			'fileSources.clientSecret' => 'OAuth müştəri gizli (yalnız Google namizədləri)',
 			'fileSources.allowHttp' => 'Etibarlı şəbəkədə şifrələnməmiş HTTP bağlantısına icazə ver',
+			'fileSources.smbEncryption' => 'SMB3 bağlantısını şifrələ',
+			'fileSources.smbEncryptionHint' => 'NAS dəstəkləyirsə, SMB3 şifrələməsindən istifadə edin.',
 			'fileSources.connect' => 'Qoşul',
 			'fileSources.cancel' => 'Ləğv et',
 			'fileSources.save' => 'Yadda saxla',
@@ -7223,12 +7251,6 @@ extension on TranslationsAz {
 			'fileSources.useFiles' => 'Fillər və kitablar',
 			'fileSources.cancelScan' => 'Scanı iptal et',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'Nümunə: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'SMB serverini və bir paylaşılan qovluğu daxil edin.',
-			'fileSources.smbFolderHelp' => 'Bütün paylaşılan qovluqdan istifadə etmək üçün boş saxlayın və ya onun daxilindəki qovluğu daxil edin.',
-			'fileSources.smbDomain' => 'Domen (istəyə bağlı)',
-			'fileSources.smbEncryption' => 'SMB3 bağlantısını şifrələ',
-			'fileSources.smbEncryptionHint' => 'NAS dəstəkləyirsə, SMB3 şifrələməsindən istifadə edin.',
 			'lending.title' => 'Public kütüphane',
 			'lending.add' => 'Bir kütüphane də eklə',
 			'lending.other' => 'Bir çox kütüphane',
@@ -7426,6 +7448,18 @@ extension on TranslationsAz {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Seçilmiş klient kimlik məlumatları: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Reytinq ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Altyazı endirilir: ${title}',
+			'comics.fitHeight' => 'Hündürlüyə uyğunlaşdır',
+			'comics.readingMode' => 'Oxu rejimi',
+			'comics.paged' => 'Səhifələr',
+			'comics.webtoon' => 'Davamlı sürüşdürmə',
+			'comics.coverAlone' => 'Üz qabığını ayrıca göstər',
+			'comics.splitWide' => 'Geniş səhifələri böl',
+			'comics.splitWideHelp' => 'Hər yarını oxu ardıcıllığı ilə ayrıca göstər. Bu seçim aktiv olduqda iki səhifənin birlikdə göstərilməsi dayandırılır.',
+			'comics.thumbnails' => 'Səhifə miniatürləri',
+			'comics.controlsHelp' => 'Səhifələri çevirmək üçün sürüşdürün. Uyğunlaşdırmanı dəyişmək üçün iki dəfə toxunun. Davamlı sürüşdürmədə şaquli sürüşdürün və ya Page Up və Page Down istifadə edin.',
+			'comics.savedForComic' => 'Görüntü ayarları bu profildə bu komiks üçün yadda saxlanılır.',
+			'comics.readLists' => 'Oxu siyahıları',
+			'comics.collections' => 'Kolleksiyalar',
 			_ => null,
 		};
 	}

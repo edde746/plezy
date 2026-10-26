@@ -105,6 +105,7 @@ class TranslationsNl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$lending$nl lending = _Translations$lending$nl._(_root);
 	@override late final _Translations$audiobook$nl audiobook = _Translations$audiobook$nl._(_root);
 	@override late final _Translations$sourceSetup$nl sourceSetup = _Translations$sourceSetup$nl._(_root);
+	@override late final _Translations$comics$nl comics = _Translations$comics$nl._(_root);
 }
 
 // Path: app
@@ -676,6 +677,13 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Dwing native DV7 af en voorkom een nieuwe poging met DV-conversie';
 	@override String get dvConversionDv81Description => 'Dwing directe RPU-conversie naar Dolby Vision-profiel 8.1 af';
 	@override String get dvConversionHevcStripDescription => 'Verwijder Dolby Vision RPU/EL-lagen en bied gewone HEVC aan';
+	@override String get experimentalDolbyVision => 'Experimentele Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Gebruik de experimentele FEL-renderer bij de volgende keer afspelen. Vereist een afzonderlijke enginebuild.';
+	@override String get dvExperimentUnavailableDescription => 'Dit experiment is momenteel alleen beschikbaar op Linux.';
+	@override String get dvCompatibilityFallback => 'Compatibiliteitsterugval';
+	@override String get dvCompatibilityFallbackDescription => 'Gebruik de standaardrenderer als het experiment niet kan starten. FEL-gegevens kunnen verloren gaan.';
+	@override String get dvExperimentDiagnostics => 'Logboek voor video-experiment';
+	@override String get dvExperimentDiagnosticsDescription => 'Schakel uitgebreide spelerlogboeken in bij de volgende keer afspelen.';
 	@override String get disableDolbyVision => 'Dolby Vision uitschakelen';
 	@override String get disableDolbyVisionDescription => 'Speel de HDR10- of HLG-laag van het bestand af in plaats van Dolby Vision, indien aanwezig';
 	@override String get hdrSdrConversion => 'HDR-naar-SDR-conversie';
@@ -762,13 +770,6 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Kies hoe datums, getallen en maateenheden worden weergegeven.';
 	@override String get metadataLanguage => 'Taal van metadata';
 	@override String get metadataLanguageDescription => 'Voorkeurstaal voor titels en beschrijvingen wanneer de server dit ondersteunt. Voorkeuren voor audio en ondertitels worden apart ingesteld.';
-	@override String get experimentalDolbyVision => 'Experimentele Dolby Vision';
-	@override String get experimentalDolbyVisionDescription => 'Gebruik de experimentele FEL-renderer bij de volgende keer afspelen. Vereist een afzonderlijke enginebuild.';
-	@override String get dvExperimentUnavailableDescription => 'Dit experiment is momenteel alleen beschikbaar op Linux.';
-	@override String get dvCompatibilityFallback => 'Compatibiliteitsterugval';
-	@override String get dvCompatibilityFallbackDescription => 'Gebruik de standaardrenderer als het experiment niet kan starten. FEL-gegevens kunnen verloren gaan.';
-	@override String get dvExperimentDiagnostics => 'Logboek voor video-experiment';
-	@override String get dvExperimentDiagnosticsDescription => 'Schakel uitgebreide spelerlogboeken in bij de volgende keer afspelen.';
 }
 
 // Path: themeEditor
@@ -2909,8 +2910,12 @@ class _Translations$fileSources$nl extends Translations$fileSources$en {
 	@override String get source => 'Bron';
 	@override String get name => 'naam';
 	@override String get endpoint => 'Server-URL';
+	@override String get smbEndpointHint => 'Voorbeeld: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Voer een SMB-server en één gedeelde map in.';
 	@override String get root => 'Folders of prefix';
+	@override String get smbFolderHelp => 'Laat dit leeg om de hele gedeelde map te gebruiken, of voer een map daarbinnen in.';
 	@override String get username => 'Gebruikersnaam';
+	@override String get smbDomain => 'Domein (optioneel)';
 	@override String get password => 'Wachtwoord';
 	@override String get token => 'API Token';
 	@override String get accessKey => 'Toegang tot de sleutel ID';
@@ -2920,6 +2925,8 @@ class _Translations$fileSources$nl extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth klant ID';
 	@override String get clientSecret => 'OAuth client secret (de desktop Google alleen)';
 	@override String get allowHttp => 'Onversleutelde HTTP toestaan op een vertrouwd netwerk';
+	@override String get smbEncryption => 'SMB3-verbinding versleutelen';
+	@override String get smbEncryptionHint => 'Gebruik SMB3-versleuteling wanneer de NAS dit ondersteunt.';
 	@override String get connect => 'Verbinden';
 	@override String get cancel => 'Annuleren';
 	@override String get save => 'Opslaan';
@@ -3065,12 +3072,6 @@ class _Translations$fileSources$nl extends Translations$fileSources$en {
 	@override String get useFiles => 'Gebruik bestanden en boeken';
 	@override String get cancelScan => 'Scan af te sluiten';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'Voorbeeld: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'Voer een SMB-server en één gedeelde map in.';
-	@override String get smbFolderHelp => 'Laat dit leeg om de hele gedeelde map te gebruiken, of voer een map daarbinnen in.';
-	@override String get smbDomain => 'Domein (optioneel)';
-	@override String get smbEncryption => 'SMB3-verbinding versleutelen';
-	@override String get smbEncryptionHint => 'Gebruik SMB3-versleuteling wanneer de NAS dit ondersteunt.';
 }
 
 // Path: lending
@@ -3293,6 +3294,27 @@ class _Translations$sourceSetup$nl extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'Geselecteerde clientidentiteit: ${name}';
 	@override String subtitleRating({required Object rating}) => 'Beoordeling ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'Ondertitel downloaden: ${title}';
+}
+
+// Path: comics
+class _Translations$comics$nl extends Translations$comics$en {
+	_Translations$comics$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'Aan hoogte aanpassen';
+	@override String get readingMode => 'Leesmodus';
+	@override String get paged => 'Pagina’s';
+	@override String get webtoon => 'Doorlopend scrollen';
+	@override String get coverAlone => 'Omslag afzonderlijk tonen';
+	@override String get splitWide => 'Brede pagina’s splitsen';
+	@override String get splitWideHelp => 'Toon elke helft afzonderlijk in leesvolgorde. Zolang dit aanstaat, worden pagina’s niet naast elkaar weergegeven.';
+	@override String get thumbnails => 'Paginaminiaturen';
+	@override String get controlsHelp => 'Veeg om te bladeren. Tik dubbel om de aanpassing te wijzigen. Veeg bij doorlopend scrollen verticaal of gebruik Page Up en Page Down.';
+	@override String get savedForComic => 'De weergave-instellingen worden voor deze strip in dit profiel onthouden.';
+	@override String get readLists => 'Leeslijsten';
+	@override String get collections => 'Verzamelingen';
 }
 
 // Path: appIcon.names
@@ -4846,9 +4868,16 @@ extension on TranslationsNl {
 			'settings.dvConversionNativeDescription' => 'Dwing native DV7 af en voorkom een nieuwe poging met DV-conversie',
 			'settings.dvConversionDv81Description' => 'Dwing directe RPU-conversie naar Dolby Vision-profiel 8.1 af',
 			'settings.dvConversionHevcStripDescription' => 'Verwijder Dolby Vision RPU/EL-lagen en bied gewone HEVC aan',
-			'settings.disableDolbyVision' => 'Dolby Vision uitschakelen',
+			'settings.experimentalDolbyVision' => 'Experimentele Dolby Vision',
 			_ => null,
 		} ?? switch (path) {
+			'settings.experimentalDolbyVisionDescription' => 'Gebruik de experimentele FEL-renderer bij de volgende keer afspelen. Vereist een afzonderlijke enginebuild.',
+			'settings.dvExperimentUnavailableDescription' => 'Dit experiment is momenteel alleen beschikbaar op Linux.',
+			'settings.dvCompatibilityFallback' => 'Compatibiliteitsterugval',
+			'settings.dvCompatibilityFallbackDescription' => 'Gebruik de standaardrenderer als het experiment niet kan starten. FEL-gegevens kunnen verloren gaan.',
+			'settings.dvExperimentDiagnostics' => 'Logboek voor video-experiment',
+			'settings.dvExperimentDiagnosticsDescription' => 'Schakel uitgebreide spelerlogboeken in bij de volgende keer afspelen.',
+			'settings.disableDolbyVision' => 'Dolby Vision uitschakelen',
 			'settings.disableDolbyVisionDescription' => 'Speel de HDR10- of HLG-laag van het bestand af in plaats van Dolby Vision, indien aanwezig',
 			'settings.hdrSdrConversion' => 'HDR-naar-SDR-conversie',
 			'settings.hdrSdrConversionDescription' => 'Kies wat HDR-video omzet als het scherm geen HDR kan weergeven.',
@@ -4934,13 +4963,6 @@ extension on TranslationsNl {
 			'settings.regionFormatDescription' => 'Kies hoe datums, getallen en maateenheden worden weergegeven.',
 			'settings.metadataLanguage' => 'Taal van metadata',
 			'settings.metadataLanguageDescription' => 'Voorkeurstaal voor titels en beschrijvingen wanneer de server dit ondersteunt. Voorkeuren voor audio en ondertitels worden apart ingesteld.',
-			'settings.experimentalDolbyVision' => 'Experimentele Dolby Vision',
-			'settings.experimentalDolbyVisionDescription' => 'Gebruik de experimentele FEL-renderer bij de volgende keer afspelen. Vereist een afzonderlijke enginebuild.',
-			'settings.dvExperimentUnavailableDescription' => 'Dit experiment is momenteel alleen beschikbaar op Linux.',
-			'settings.dvCompatibilityFallback' => 'Compatibiliteitsterugval',
-			'settings.dvCompatibilityFallbackDescription' => 'Gebruik de standaardrenderer als het experiment niet kan starten. FEL-gegevens kunnen verloren gaan.',
-			'settings.dvExperimentDiagnostics' => 'Logboek voor video-experiment',
-			'settings.dvExperimentDiagnosticsDescription' => 'Schakel uitgebreide spelerlogboeken in bij de volgende keer afspelen.',
 			'themeEditor.builtIn' => 'Ingebouwd',
 			'themeEditor.presets' => 'Voorinstellingen',
 			'themeEditor.custom' => 'Aangepast',
@@ -7070,8 +7092,12 @@ extension on TranslationsNl {
 			'fileSources.source' => 'Bron',
 			'fileSources.name' => 'naam',
 			'fileSources.endpoint' => 'Server-URL',
+			'fileSources.smbEndpointHint' => 'Voorbeeld: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Voer een SMB-server en één gedeelde map in.',
 			'fileSources.root' => 'Folders of prefix',
+			'fileSources.smbFolderHelp' => 'Laat dit leeg om de hele gedeelde map te gebruiken, of voer een map daarbinnen in.',
 			'fileSources.username' => 'Gebruikersnaam',
+			'fileSources.smbDomain' => 'Domein (optioneel)',
 			'fileSources.password' => 'Wachtwoord',
 			'fileSources.token' => 'API Token',
 			'fileSources.accessKey' => 'Toegang tot de sleutel ID',
@@ -7081,6 +7107,8 @@ extension on TranslationsNl {
 			'fileSources.clientId' => 'OAuth klant ID',
 			'fileSources.clientSecret' => 'OAuth client secret (de desktop Google alleen)',
 			'fileSources.allowHttp' => 'Onversleutelde HTTP toestaan op een vertrouwd netwerk',
+			'fileSources.smbEncryption' => 'SMB3-verbinding versleutelen',
+			'fileSources.smbEncryptionHint' => 'Gebruik SMB3-versleuteling wanneer de NAS dit ondersteunt.',
 			'fileSources.connect' => 'Verbinden',
 			'fileSources.cancel' => 'Annuleren',
 			'fileSources.save' => 'Opslaan',
@@ -7223,12 +7251,6 @@ extension on TranslationsNl {
 			'fileSources.useFiles' => 'Gebruik bestanden en boeken',
 			'fileSources.cancelScan' => 'Scan af te sluiten',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'Voorbeeld: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'Voer een SMB-server en één gedeelde map in.',
-			'fileSources.smbFolderHelp' => 'Laat dit leeg om de hele gedeelde map te gebruiken, of voer een map daarbinnen in.',
-			'fileSources.smbDomain' => 'Domein (optioneel)',
-			'fileSources.smbEncryption' => 'SMB3-verbinding versleutelen',
-			'fileSources.smbEncryptionHint' => 'Gebruik SMB3-versleuteling wanneer de NAS dit ondersteunt.',
 			'lending.title' => 'Public Library',
 			'lending.add' => 'Voeg een bibliotheek toe',
 			'lending.other' => 'Een andere bibliotheek',
@@ -7426,6 +7448,18 @@ extension on TranslationsNl {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Geselecteerde clientidentiteit: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Beoordeling ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Ondertitel downloaden: ${title}',
+			'comics.fitHeight' => 'Aan hoogte aanpassen',
+			'comics.readingMode' => 'Leesmodus',
+			'comics.paged' => 'Pagina’s',
+			'comics.webtoon' => 'Doorlopend scrollen',
+			'comics.coverAlone' => 'Omslag afzonderlijk tonen',
+			'comics.splitWide' => 'Brede pagina’s splitsen',
+			'comics.splitWideHelp' => 'Toon elke helft afzonderlijk in leesvolgorde. Zolang dit aanstaat, worden pagina’s niet naast elkaar weergegeven.',
+			'comics.thumbnails' => 'Paginaminiaturen',
+			'comics.controlsHelp' => 'Veeg om te bladeren. Tik dubbel om de aanpassing te wijzigen. Veeg bij doorlopend scrollen verticaal of gebruik Page Up en Page Down.',
+			'comics.savedForComic' => 'De weergave-instellingen worden voor deze strip in dit profiel onthouden.',
+			'comics.readLists' => 'Leeslijsten',
+			'comics.collections' => 'Verzamelingen',
 			_ => null,
 		};
 	}

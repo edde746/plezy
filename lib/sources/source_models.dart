@@ -3,7 +3,22 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 
-enum FileSourceKind { local, webdav, smb, ftp, sftp, nfs, dlna, googleDrive, oneDrive, dropbox, s3, opds, audiobookshelf, komga }
+enum FileSourceKind {
+  local,
+  webdav,
+  smb,
+  ftp,
+  sftp,
+  nfs,
+  dlna,
+  googleDrive,
+  oneDrive,
+  dropbox,
+  s3,
+  opds,
+  audiobookshelf,
+  komga,
+}
 
 enum SourceItemKind { folder, ebook, audiobook, comic, music, video, unknown }
 

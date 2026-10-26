@@ -545,6 +545,13 @@
     "dvConversionNativeDescription": "Forzar DV7 nativo y suprimir el reintento de conversión DV",
     "dvConversionDv81Description": "Forzar la conversión de RPU en línea al perfil 8.1 de Dolby Vision",
     "dvConversionHevcStripDescription": "Eliminar las capas RPU/EL de Dolby Vision y presentar HEVC convencional",
+    "experimentalDolbyVision": "Dolby Vision experimental",
+    "experimentalDolbyVisionDescription": "Usar el renderizador FEL experimental en la próxima reproducción. Requiere una compilación independiente del motor.",
+    "dvExperimentUnavailableDescription": "Este experimento solo está disponible en Linux por ahora.",
+    "dvCompatibilityFallback": "Alternativa de compatibilidad",
+    "dvCompatibilityFallbackDescription": "Usar el renderizador estándar si el experimento no puede iniciarse. Se pueden perder los datos FEL.",
+    "dvExperimentDiagnostics": "Registro del experimento de vídeo",
+    "dvExperimentDiagnosticsDescription": "Activar registros detallados del reproductor en la próxima reproducción.",
     "disableDolbyVision": "Desactivar Dolby Vision",
     "disableDolbyVisionDescription": "Reproducir la capa HDR10 o HLG del archivo en lugar de Dolby Vision, si la tiene",
     "hdrSdrConversion": "Conversión de HDR a SDR",
@@ -630,14 +637,7 @@
     "regionFormat": "Formatos regionales",
     "regionFormatDescription": "Elige cómo se muestran las fechas, los números y las unidades de medida.",
     "metadataLanguage": "Idioma de los metadatos",
-    "metadataLanguageDescription": "Idioma preferido para títulos y descripciones cuando el servidor lo permita. Las preferencias de audio y subtítulos se configuran por separado.",
-    "experimentalDolbyVision": "Dolby Vision experimental",
-    "experimentalDolbyVisionDescription": "Usar el renderizador FEL experimental en la próxima reproducción. Requiere una compilación independiente del motor.",
-    "dvExperimentUnavailableDescription": "Este experimento solo está disponible en Linux por ahora.",
-    "dvCompatibilityFallback": "Alternativa de compatibilidad",
-    "dvCompatibilityFallbackDescription": "Usar el renderizador estándar si el experimento no puede iniciarse. Se pueden perder los datos FEL.",
-    "dvExperimentDiagnostics": "Registro del experimento de vídeo",
-    "dvExperimentDiagnosticsDescription": "Activar registros detallados del reproductor en la próxima reproducción."
+    "metadataLanguageDescription": "Idioma preferido para títulos y descripciones cuando el servidor lo permita. Las preferencias de audio y subtítulos se configuran por separado."
   },
   "themeEditor": {
     "builtIn": "Integrados",
@@ -3012,8 +3012,12 @@
     "source": "Fuente",
     "name": "Nombre",
     "endpoint": "URL del servidor",
+    "smbEndpointHint": "Ejemplo: smb://nas/Movies",
+    "smbEndpointInvalid": "Introduce un servidor SMB y una carpeta compartida.",
     "root": "Prefixo o prefixo",
+    "smbFolderHelp": "Déjalo en blanco para usar toda la carpeta compartida o introduce una carpeta dentro de ella.",
     "username": "Usuario",
+    "smbDomain": "Dominio (opcional)",
     "password": "Contraseña",
     "token": "API Título",
     "accessKey": "Acceso clave ID",
@@ -3023,6 +3027,8 @@
     "clientId": "ID de cliente de OAuth",
     "clientSecret": "OAuth client secreto (sólo Google de escritorio)",
     "allowHttp": "Permitir HTTP sin cifrar en una red de confianza",
+    "smbEncryption": "Cifrar la conexión SMB3",
+    "smbEncryptionHint": "Usar el cifrado SMB3 cuando el NAS lo admita.",
     "connect": "Conectar",
     "cancel": "Cancelar",
     "save": "Guardar",
@@ -3168,13 +3174,7 @@
     "zoom": "Zoom",
     "useFiles": "Utilice archivos y libros",
     "cancelScan": "Cancelar el escáner",
-    "googleDrive": "Google Drive",
-    "smbEndpointHint": "Ejemplo: smb://nas/Movies",
-    "smbEndpointInvalid": "Introduce un servidor SMB y una carpeta compartida.",
-    "smbFolderHelp": "Déjalo en blanco para usar toda la carpeta compartida o introduce una carpeta dentro de ella.",
-    "smbDomain": "Dominio (opcional)",
-    "smbEncryption": "Cifrar la conexión SMB3",
-    "smbEncryptionHint": "Usar el cifrado SMB3 cuando el NAS lo admita."
+    "googleDrive": "Google Drive"
   },
   "lending": {
     "title": "Bibliotecas Públicas",
@@ -3376,5 +3376,19 @@
     "selectedIdentity": "Identidad de cliente seleccionada: ${name}",
     "subtitleRating": "Valoración ${rating}",
     "subtitleDownloading": "Descargando subtítulos: ${title}"
+  },
+  "comics": {
+    "fitHeight": "Ajustar a la altura",
+    "readingMode": "Modo de lectura",
+    "paged": "Páginas",
+    "webtoon": "Desplazamiento continuo",
+    "coverAlone": "Mostrar la portada sola",
+    "splitWide": "Dividir páginas anchas",
+    "splitWideHelp": "Muestra cada mitad por separado, en orden de lectura. Mientras esté activado, se pausa la vista de dos páginas juntas.",
+    "thumbnails": "Miniaturas de páginas",
+    "controlsHelp": "Desliza para pasar de página. Toca dos veces para cambiar el ajuste. En desplazamiento continuo, desliza verticalmente o usa Re Pág y Av Pág.",
+    "savedForComic": "Los ajustes de visualización se guardan para este cómic en este perfil.",
+    "readLists": "Listas de lectura",
+    "collections": "Colecciones"
   }
 }

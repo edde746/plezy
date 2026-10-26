@@ -543,6 +543,13 @@
     "dvConversionNativeDescription": "Gennemtving indbygget DV7-understøttelse, og undlad at forsøge DV-konvertering igen",
     "dvConversionDv81Description": "Tving inline RPU-konvertering til Dolby Vision profil 8.1",
     "dvConversionHevcStripDescription": "Fjern Dolby Vision RPU/EL-lag og brug almindelig HEVC",
+    "experimentalDolbyVision": "Eksperimentel Dolby Vision",
+    "experimentalDolbyVisionDescription": "Brug den eksperimentelle FEL-renderer ved næste afspilning. Kræver en separat motorbygning.",
+    "dvExperimentUnavailableDescription": "Dette eksperiment er i øjeblikket kun tilgængeligt på Linux.",
+    "dvCompatibilityFallback": "Kompatibilitetsreserve",
+    "dvCompatibilityFallbackDescription": "Brug standardrendereren, hvis eksperimentet ikke kan starte. FEL-data kan gå tabt.",
+    "dvExperimentDiagnostics": "Logning af videoeksperiment",
+    "dvExperimentDiagnosticsDescription": "Aktivér detaljerede afspillerlogfiler ved næste afspilning.",
     "disableDolbyVision": "Deaktiver Dolby Vision",
     "disableDolbyVisionDescription": "Afspil filens HDR10- eller HLG-lag i stedet for Dolby Vision, når det findes",
     "hdrSdrConversion": "HDR til SDR-konvertering",
@@ -628,14 +635,7 @@
     "regionFormat": "Regionale formater",
     "regionFormatDescription": "Vælg, hvordan datoer, tal og måleenheder vises.",
     "metadataLanguage": "Sprog for metadata",
-    "metadataLanguageDescription": "Foretrukket sprog for titler og beskrivelser, når serveren understøtter det. Lyd og undertekster indstilles separat.",
-    "experimentalDolbyVision": "Eksperimentel Dolby Vision",
-    "experimentalDolbyVisionDescription": "Brug den eksperimentelle FEL-renderer ved næste afspilning. Kræver en separat motorbygning.",
-    "dvExperimentUnavailableDescription": "Dette eksperiment er i øjeblikket kun tilgængeligt på Linux.",
-    "dvCompatibilityFallback": "Kompatibilitetsreserve",
-    "dvCompatibilityFallbackDescription": "Brug standardrendereren, hvis eksperimentet ikke kan starte. FEL-data kan gå tabt.",
-    "dvExperimentDiagnostics": "Logning af videoeksperiment",
-    "dvExperimentDiagnosticsDescription": "Aktivér detaljerede afspillerlogfiler ved næste afspilning."
+    "metadataLanguageDescription": "Foretrukket sprog for titler og beskrivelser, når serveren understøtter det. Lyd og undertekster indstilles separat."
   },
   "themeEditor": {
     "builtIn": "Indbygget",
@@ -3009,8 +3009,12 @@
     "source": "Kilde",
     "name": "Navn",
     "endpoint": "Server-URL",
+    "smbEndpointHint": "Eksempel: smb://nas/Movies",
+    "smbEndpointInvalid": "Angiv en SMB-server og én delt mappe.",
     "root": "Forhåndsformidling eller forhåndsform",
+    "smbFolderHelp": "Lad feltet stå tomt for at bruge hele den delte mappe, eller angiv en mappe i den.",
     "username": "Brugernavn",
+    "smbDomain": "Domæne (valgfrit)",
     "password": "Adgangskode",
     "token": "API Token",
     "accessKey": "adgangskilde ID",
@@ -3020,6 +3024,8 @@
     "clientId": "OAuth klient ID",
     "clientSecret": "OAuth-klienthemmelighed (kun Google-desktop)",
     "allowHttp": "Tillad ukrypteret HTTP på et betroet netværk",
+    "smbEncryption": "Kryptér SMB3-forbindelsen",
+    "smbEncryptionHint": "Brug SMB3-kryptering, når NAS-enheden understøtter det.",
     "connect": "Forbind",
     "cancel": "Annuller",
     "save": "Gem",
@@ -3164,13 +3170,7 @@
     "zoom": "Zoom",
     "useFiles": "Brug filer og bøger",
     "cancelScan": "Afbryde skanning",
-    "googleDrive": "Google Drive",
-    "smbEndpointHint": "Eksempel: smb://nas/Movies",
-    "smbEndpointInvalid": "Angiv en SMB-server og én delt mappe.",
-    "smbFolderHelp": "Lad feltet stå tomt for at bruge hele den delte mappe, eller angiv en mappe i den.",
-    "smbDomain": "Domæne (valgfrit)",
-    "smbEncryption": "Kryptér SMB3-forbindelsen",
-    "smbEncryptionHint": "Brug SMB3-kryptering, når NAS-enheden understøtter det."
+    "googleDrive": "Google Drive"
   },
   "lending": {
     "title": "Offentlige biblioteker",
@@ -3372,5 +3372,19 @@
     "selectedIdentity": "Valgt klientidentitet: ${name}",
     "subtitleRating": "Bedømmelse ${rating}",
     "subtitleDownloading": "Henter undertekst: ${title}"
+  },
+  "comics": {
+    "fitHeight": "Tilpas til højden",
+    "readingMode": "Læsetilstand",
+    "paged": "Sider",
+    "webtoon": "Kontinuerlig rulning",
+    "coverAlone": "Vis omslaget alene",
+    "splitWide": "Opdel brede sider",
+    "splitWideHelp": "Vis hver halvdel separat i læserækkefølgen. Visning af to sider sammen sættes på pause, mens dette er slået til.",
+    "thumbnails": "Sideminiaturer",
+    "controlsHelp": "Stryg for at skifte side. Tryk to gange for at ændre tilpasningen. Ved kontinuerlig rulning skal du stryge lodret eller bruge Page Up og Page Down.",
+    "savedForComic": "Visningsindstillingerne huskes for denne tegneserie i denne profil.",
+    "readLists": "Læselister",
+    "collections": "Samlinger"
   }
 }

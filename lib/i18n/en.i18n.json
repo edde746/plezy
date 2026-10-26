@@ -3372,5 +3372,19 @@
     "selectedIdentity": "Selected client identity: ${name}",
     "subtitleRating": "Rating ${rating}",
     "subtitleDownloading": "Downloading subtitle: ${title}"
+  },
+  "comics": {
+    "fitHeight": "Fit height",
+    "readingMode": "Reading mode",
+    "paged": "Pages",
+    "webtoon": "Continuous scroll",
+    "coverAlone": "Show cover on its own",
+    "splitWide": "Split wide pages",
+    "splitWideHelp": "Show each half separately, in reading order. Double-page pairing is paused while this is on.",
+    "thumbnails": "Page thumbnails",
+    "controlsHelp": "Swipe to turn pages. Double-tap to change fit. In continuous scroll, swipe vertically or use Page Up and Page Down.",
+    "savedForComic": "Display settings are remembered for this comic in this profile.",
+    "readLists": "Reading lists",
+    "collections": "Collections"
   }
 }

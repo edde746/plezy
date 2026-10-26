@@ -14,7 +14,7 @@ void main() {
       rtl
           ? 'Arabic reader chrome accepts localized page digits and preserves book direction'
           : comic
-          ? 'real comic engine supports zoom, pan, fit width, RTL and page navigation'
+          ? 'real comic reader renders spreads, split halves, thumbnails, scrolling, zoom and resume'
           : 'real EPUB engine renders, navigates CFIs, searches and sanitizes publisher content',
       () async {
         final temporary = await Directory.systemTemp.createTemp('plezy-reader-browser-');
@@ -33,10 +33,13 @@ void main() {
         };
         if (comic) {
           files.clear();
-          for (var i = 1; i <= 3; i++) {
+          for (var i = 1; i <= 12; i++) {
+            final width = i == 5 ? 600 : 800;
             files['page$i.${i == 2 ? 'SVG' : 'svg'}'] =
-                '<svg xmlns="http://www.w3.org/2000/svg" width="800" height="1200" viewBox="0 0 800 1200"><rect width="800" height="1200" fill="#18202b"/><rect x="48" y="48" width="704" height="490" rx="14" fill="#40566e"/><rect x="48" y="565" width="704" height="490" rx="14" fill="#536778"/><text x="72" y="1130" font-size="36" fill="white">Page $i</text></svg>';
+                '<svg xmlns="http://www.w3.org/2000/svg" width="$width" height="1200" viewBox="0 0 800 1200"><rect width="800" height="1200" fill="#18202b"/><rect x="48" y="48" width="704" height="490" rx="14" fill="#40566e"/><rect x="48" y="565" width="704" height="490" rx="14" fill="#536778"/><text x="72" y="1130" font-size="36" fill="white">Page $i</text></svg>';
           }
+          files['ComicInfo.xml'] =
+              '<ComicInfo><Manga>YesAndRightToLeft</Manga><Pages><Page Image="2" DoublePage="true" Bookmark="The reveal"/></Pages></ComicInfo>';
         }
         for (final entry in files.entries) {
           zip.add(ArchiveFile.bytes(entry.key, utf8.encode(entry.value)));
@@ -78,6 +81,19 @@ void main() {
                     'columns': 2,
                   },
                   'labels': {
+                    'imagePage': 'Page',
+                    'comicMode': 'Reading mode',
+                    'coverAlone': 'Show cover on its own',
+                    'splitWide': 'Split wide pages',
+                    'retry': 'Retry',
+                    'paged': 'Pages',
+                    'webtoon': 'Continuous scroll',
+                    'thumbnails': 'Page thumbnails',
+                    'fitHeight': 'Fit height',
+                    'comicHelp': 'Swipe or use the arrow keys to turn pages.',
+                    'on': 'On',
+                    'off': 'Off',
+                    'reset': 'Reset',
                     'zoomIn': 'Zoom in',
                     'zoomOut': 'Zoom out',
                     'zoom': 'Zoom',

@@ -105,6 +105,7 @@ class TranslationsZh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final Translations$lending$zh lending = Translations$lending$zh.internal(_root);
 	@override late final Translations$audiobook$zh audiobook = Translations$audiobook$zh.internal(_root);
 	@override late final Translations$sourceSetup$zh sourceSetup = Translations$sourceSetup$zh.internal(_root);
+	@override late final Translations$comics$zh comics = Translations$comics$zh.internal(_root);
 }
 
 // Path: app
@@ -674,6 +675,13 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => '强制原生 DV7 并禁止重试 DV 转换';
 	@override String get dvConversionDv81Description => '强制内联 RPU 转换为 Dolby Vision Profile 8.1';
 	@override String get dvConversionHevcStripDescription => '移除 Dolby Vision RPU/EL 层并呈现普通 HEVC';
+	@override String get experimentalDolbyVision => '实验性 Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => '下次播放时使用实验性 FEL 渲染器。需要单独构建的播放引擎。';
+	@override String get dvExperimentUnavailableDescription => '此实验目前仅支持 Linux。';
+	@override String get dvCompatibilityFallback => '兼容性回退';
+	@override String get dvCompatibilityFallbackDescription => '如果实验无法启动，则使用标准渲染器。FEL 数据可能会丢失。';
+	@override String get dvExperimentDiagnostics => '视频实验日志';
+	@override String get dvExperimentDiagnosticsDescription => '在下次播放时启用详细的播放器日志。';
 	@override String get disableDolbyVision => '禁用 Dolby Vision';
 	@override String get disableDolbyVisionDescription => '文件包含 HDR10 或 HLG 层时，改为播放该层而非 Dolby Vision';
 	@override String get hdrSdrConversion => 'HDR 转 SDR';
@@ -760,13 +768,6 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get regionFormatDescription => '选择日期、数字和计量单位的显示方式。';
 	@override String get metadataLanguage => '元数据语言';
 	@override String get metadataLanguageDescription => '服务器支持时，优先使用此语言显示标题和简介。音频和字幕偏好单独设置。';
-	@override String get experimentalDolbyVision => '实验性 Dolby Vision';
-	@override String get experimentalDolbyVisionDescription => '下次播放时使用实验性 FEL 渲染器。需要单独构建的播放引擎。';
-	@override String get dvExperimentUnavailableDescription => '此实验目前仅支持 Linux。';
-	@override String get dvCompatibilityFallback => '兼容性回退';
-	@override String get dvCompatibilityFallbackDescription => '如果实验无法启动，则使用标准渲染器。FEL 数据可能会丢失。';
-	@override String get dvExperimentDiagnostics => '视频实验日志';
-	@override String get dvExperimentDiagnosticsDescription => '在下次播放时启用详细的播放器日志。';
 }
 
 // Path: themeEditor
@@ -2905,8 +2906,12 @@ class Translations$fileSources$zh extends Translations$fileSources$en {
 	@override String get source => '源';
 	@override String get name => '名称';
 	@override String get endpoint => '服务器 URL';
+	@override String get smbEndpointHint => '示例：smb://nas/Movies';
+	@override String get smbEndpointInvalid => '请输入 SMB 服务器和一个共享文件夹。';
 	@override String get root => '文件夹或前缀';
+	@override String get smbFolderHelp => '留空以使用整个共享文件夹，或输入其中的某个文件夹。';
 	@override String get username => '用户名';
+	@override String get smbDomain => '域（可选）';
 	@override String get password => '密码';
 	@override String get token => 'API 标志';
 	@override String get accessKey => '关键 ID 访问';
@@ -2916,6 +2921,8 @@ class Translations$fileSources$zh extends Translations$fileSources$en {
 	@override String get clientId => '客戶 ID';
 	@override String get clientSecret => 'OAuth 客户端秘密(仅限 Google 桌面)';
 	@override String get allowHttp => '允许在可信网络上使用未加密的 HTTP';
+	@override String get smbEncryption => '加密 SMB3 连接';
+	@override String get smbEncryptionHint => '当 NAS 支持时，使用 SMB3 加密。';
 	@override String get connect => '连接';
 	@override String get cancel => '取消';
 	@override String get save => '保存';
@@ -3060,12 +3067,6 @@ class Translations$fileSources$zh extends Translations$fileSources$en {
 	@override String get useFiles => '使用文件和书籍';
 	@override String get cancelScan => '取消扫描';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => '示例：smb://nas/Movies';
-	@override String get smbEndpointInvalid => '请输入 SMB 服务器和一个共享文件夹。';
-	@override String get smbFolderHelp => '留空以使用整个共享文件夹，或输入其中的某个文件夹。';
-	@override String get smbDomain => '域（可选）';
-	@override String get smbEncryption => '加密 SMB3 连接';
-	@override String get smbEncryptionHint => '当 NAS 支持时，使用 SMB3 加密。';
 }
 
 // Path: lending
@@ -3288,6 +3289,27 @@ class Translations$sourceSetup$zh extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => '已选客户端身份凭据：${name}';
 	@override String subtitleRating({required Object rating}) => '评分 ${rating}';
 	@override String subtitleDownloading({required Object title}) => '正在下载字幕：${title}';
+}
+
+// Path: comics
+class Translations$comics$zh extends Translations$comics$en {
+	Translations$comics$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => '适合高度';
+	@override String get readingMode => '阅读模式';
+	@override String get paged => '分页';
+	@override String get webtoon => '连续滚动';
+	@override String get coverAlone => '单独显示封面';
+	@override String get splitWide => '拆分宽页';
+	@override String get splitWideHelp => '按阅读顺序分别显示每一半。开启后暂停双页并排显示。';
+	@override String get thumbnails => '页面缩略图';
+	@override String get controlsHelp => '滑动翻页，双击切换适配方式。连续滚动时，垂直滑动或使用 Page Up 和 Page Down。';
+	@override String get savedForComic => '此个人资料会记住这部漫画的显示设置。';
+	@override String get readLists => '阅读列表';
+	@override String get collections => '合集';
 }
 
 // Path: appIcon.names
@@ -4841,9 +4863,16 @@ extension on TranslationsZh {
 			'settings.dvConversionNativeDescription' => '强制原生 DV7 并禁止重试 DV 转换',
 			'settings.dvConversionDv81Description' => '强制内联 RPU 转换为 Dolby Vision Profile 8.1',
 			'settings.dvConversionHevcStripDescription' => '移除 Dolby Vision RPU/EL 层并呈现普通 HEVC',
-			'settings.disableDolbyVision' => '禁用 Dolby Vision',
+			'settings.experimentalDolbyVision' => '实验性 Dolby Vision',
 			_ => null,
 		} ?? switch (path) {
+			'settings.experimentalDolbyVisionDescription' => '下次播放时使用实验性 FEL 渲染器。需要单独构建的播放引擎。',
+			'settings.dvExperimentUnavailableDescription' => '此实验目前仅支持 Linux。',
+			'settings.dvCompatibilityFallback' => '兼容性回退',
+			'settings.dvCompatibilityFallbackDescription' => '如果实验无法启动，则使用标准渲染器。FEL 数据可能会丢失。',
+			'settings.dvExperimentDiagnostics' => '视频实验日志',
+			'settings.dvExperimentDiagnosticsDescription' => '在下次播放时启用详细的播放器日志。',
+			'settings.disableDolbyVision' => '禁用 Dolby Vision',
 			'settings.disableDolbyVisionDescription' => '文件包含 HDR10 或 HLG 层时，改为播放该层而非 Dolby Vision',
 			'settings.hdrSdrConversion' => 'HDR 转 SDR',
 			'settings.hdrSdrConversionDescription' => '选择在显示器无法显示 HDR 时由谁转换 HDR 视频。',
@@ -4929,13 +4958,6 @@ extension on TranslationsZh {
 			'settings.regionFormatDescription' => '选择日期、数字和计量单位的显示方式。',
 			'settings.metadataLanguage' => '元数据语言',
 			'settings.metadataLanguageDescription' => '服务器支持时，优先使用此语言显示标题和简介。音频和字幕偏好单独设置。',
-			'settings.experimentalDolbyVision' => '实验性 Dolby Vision',
-			'settings.experimentalDolbyVisionDescription' => '下次播放时使用实验性 FEL 渲染器。需要单独构建的播放引擎。',
-			'settings.dvExperimentUnavailableDescription' => '此实验目前仅支持 Linux。',
-			'settings.dvCompatibilityFallback' => '兼容性回退',
-			'settings.dvCompatibilityFallbackDescription' => '如果实验无法启动，则使用标准渲染器。FEL 数据可能会丢失。',
-			'settings.dvExperimentDiagnostics' => '视频实验日志',
-			'settings.dvExperimentDiagnosticsDescription' => '在下次播放时启用详细的播放器日志。',
 			'themeEditor.builtIn' => '内置',
 			'themeEditor.presets' => '预设',
 			'themeEditor.custom' => '自定义',
@@ -7065,8 +7087,12 @@ extension on TranslationsZh {
 			'fileSources.source' => '源',
 			'fileSources.name' => '名称',
 			'fileSources.endpoint' => '服务器 URL',
+			'fileSources.smbEndpointHint' => '示例：smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => '请输入 SMB 服务器和一个共享文件夹。',
 			'fileSources.root' => '文件夹或前缀',
+			'fileSources.smbFolderHelp' => '留空以使用整个共享文件夹，或输入其中的某个文件夹。',
 			'fileSources.username' => '用户名',
+			'fileSources.smbDomain' => '域（可选）',
 			'fileSources.password' => '密码',
 			'fileSources.token' => 'API 标志',
 			'fileSources.accessKey' => '关键 ID 访问',
@@ -7076,6 +7102,8 @@ extension on TranslationsZh {
 			'fileSources.clientId' => '客戶 ID',
 			'fileSources.clientSecret' => 'OAuth 客户端秘密(仅限 Google 桌面)',
 			'fileSources.allowHttp' => '允许在可信网络上使用未加密的 HTTP',
+			'fileSources.smbEncryption' => '加密 SMB3 连接',
+			'fileSources.smbEncryptionHint' => '当 NAS 支持时，使用 SMB3 加密。',
 			'fileSources.connect' => '连接',
 			'fileSources.cancel' => '取消',
 			'fileSources.save' => '保存',
@@ -7218,12 +7246,6 @@ extension on TranslationsZh {
 			'fileSources.useFiles' => '使用文件和书籍',
 			'fileSources.cancelScan' => '取消扫描',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => '示例：smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => '请输入 SMB 服务器和一个共享文件夹。',
-			'fileSources.smbFolderHelp' => '留空以使用整个共享文件夹，或输入其中的某个文件夹。',
-			'fileSources.smbDomain' => '域（可选）',
-			'fileSources.smbEncryption' => '加密 SMB3 连接',
-			'fileSources.smbEncryptionHint' => '当 NAS 支持时，使用 SMB3 加密。',
 			'lending.title' => '公共图书馆',
 			'lending.add' => '添加图书馆',
 			'lending.other' => '另一家图书馆',
@@ -7421,6 +7443,18 @@ extension on TranslationsZh {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => '已选客户端身份凭据：${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => '评分 ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => '正在下载字幕：${title}',
+			'comics.fitHeight' => '适合高度',
+			'comics.readingMode' => '阅读模式',
+			'comics.paged' => '分页',
+			'comics.webtoon' => '连续滚动',
+			'comics.coverAlone' => '单独显示封面',
+			'comics.splitWide' => '拆分宽页',
+			'comics.splitWideHelp' => '按阅读顺序分别显示每一半。开启后暂停双页并排显示。',
+			'comics.thumbnails' => '页面缩略图',
+			'comics.controlsHelp' => '滑动翻页，双击切换适配方式。连续滚动时，垂直滑动或使用 Page Up 和 Page Down。',
+			'comics.savedForComic' => '此个人资料会记住这部漫画的显示设置。',
+			'comics.readLists' => '阅读列表',
+			'comics.collections' => '合集',
 			_ => null,
 		};
 	}

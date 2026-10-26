@@ -105,6 +105,7 @@ class TranslationsRu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$lending$ru lending = _Translations$lending$ru._(_root);
 	@override late final _Translations$audiobook$ru audiobook = _Translations$audiobook$ru._(_root);
 	@override late final _Translations$sourceSetup$ru sourceSetup = _Translations$sourceSetup$ru._(_root);
+	@override late final _Translations$comics$ru comics = _Translations$comics$ru._(_root);
 }
 
 // Path: app
@@ -680,6 +681,13 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Принудительно использовать нативный DV7 и не повторять DV-конвертацию';
 	@override String get dvConversionDv81Description => 'Принудительно выполнять inline-конвертацию RPU в Dolby Vision профиль 8.1';
 	@override String get dvConversionHevcStripDescription => 'Удалять слои Dolby Vision RPU/EL и передавать обычный HEVC';
+	@override String get experimentalDolbyVision => 'Экспериментальный Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'При следующем воспроизведении использовать экспериментальный рендерер FEL. Нужна отдельная сборка движка.';
+	@override String get dvExperimentUnavailableDescription => 'Этот эксперимент пока доступен только в Linux.';
+	@override String get dvCompatibilityFallback => 'Резервный режим совместимости';
+	@override String get dvCompatibilityFallbackDescription => 'Использовать стандартный рендерер, если эксперимент не запускается. Данные FEL могут быть потеряны.';
+	@override String get dvExperimentDiagnostics => 'Журнал видеоэксперимента';
+	@override String get dvExperimentDiagnosticsDescription => 'Включить подробные журналы проигрывателя при следующем воспроизведении.';
 	@override String get disableDolbyVision => 'Отключить Dolby Vision';
 	@override String get disableDolbyVisionDescription => 'Воспроизводить слой HDR10 или HLG из файла вместо Dolby Vision, если он есть';
 	@override String get hdrSdrConversion => 'Преобразование HDR в SDR';
@@ -766,13 +774,6 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Выберите формат отображения дат, чисел и единиц измерения.';
 	@override String get metadataLanguage => 'Язык метаданных';
 	@override String get metadataLanguageDescription => 'Предпочтительный язык названий и описаний, если сервер его поддерживает. Языки аудио и субтитров настраиваются отдельно.';
-	@override String get experimentalDolbyVision => 'Экспериментальный Dolby Vision';
-	@override String get experimentalDolbyVisionDescription => 'При следующем воспроизведении использовать экспериментальный рендерер FEL. Нужна отдельная сборка движка.';
-	@override String get dvExperimentUnavailableDescription => 'Этот эксперимент пока доступен только в Linux.';
-	@override String get dvCompatibilityFallback => 'Резервный режим совместимости';
-	@override String get dvCompatibilityFallbackDescription => 'Использовать стандартный рендерер, если эксперимент не запускается. Данные FEL могут быть потеряны.';
-	@override String get dvExperimentDiagnostics => 'Журнал видеоэксперимента';
-	@override String get dvExperimentDiagnosticsDescription => 'Включить подробные журналы проигрывателя при следующем воспроизведении.';
 }
 
 // Path: themeEditor
@@ -2947,8 +2948,12 @@ class _Translations$fileSources$ru extends Translations$fileSources$en {
 	@override String get source => 'Источник';
 	@override String get name => 'Имя';
 	@override String get endpoint => 'URL сервера';
+	@override String get smbEndpointHint => 'Пример: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Введите сервер SMB и одну общую папку.';
 	@override String get root => 'Фолдер или префикс';
+	@override String get smbFolderHelp => 'Оставьте поле пустым, чтобы использовать всю общую папку, или укажите папку внутри неё.';
 	@override String get username => 'Имя пользователя';
+	@override String get smbDomain => 'Домен (необязательно)';
 	@override String get password => 'Пароль';
 	@override String get token => 'API Токен';
 	@override String get accessKey => 'Доступный ключ ID';
@@ -2958,6 +2963,8 @@ class _Translations$fileSources$ru extends Translations$fileSources$en {
 	@override String get clientId => 'ID клиента OAuth';
 	@override String get clientSecret => 'OAuth Client Secret (на рабочем месте Google)';
 	@override String get allowHttp => 'Разрешить незашифрованное HTTP-соединение в доверенной сети';
+	@override String get smbEncryption => 'Шифровать соединение SMB3';
+	@override String get smbEncryptionHint => 'Использовать шифрование SMB3, если NAS его поддерживает.';
 	@override String get connect => 'Подключить';
 	@override String get cancel => 'Отмена';
 	@override String get save => 'Сохранить';
@@ -3105,12 +3112,6 @@ class _Translations$fileSources$ru extends Translations$fileSources$en {
 	@override String get useFiles => 'Используйте файлы и книги';
 	@override String get cancelScan => 'Отменить сканирование';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'Пример: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'Введите сервер SMB и одну общую папку.';
-	@override String get smbFolderHelp => 'Оставьте поле пустым, чтобы использовать всю общую папку, или укажите папку внутри неё.';
-	@override String get smbDomain => 'Домен (необязательно)';
-	@override String get smbEncryption => 'Шифровать соединение SMB3';
-	@override String get smbEncryptionHint => 'Использовать шифрование SMB3, если NAS его поддерживает.';
 }
 
 // Path: lending
@@ -3333,6 +3334,27 @@ class _Translations$sourceSetup$ru extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'Выбранные данные идентификации клиента: ${name}';
 	@override String subtitleRating({required Object rating}) => 'Оценка ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'Загрузка субтитров: ${title}';
+}
+
+// Path: comics
+class _Translations$comics$ru extends Translations$comics$en {
+	_Translations$comics$ru._(TranslationsRu root) : this._root = root, super.internal(root);
+
+	final TranslationsRu _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'По высоте';
+	@override String get readingMode => 'Режим чтения';
+	@override String get paged => 'Страницы';
+	@override String get webtoon => 'Непрерывная прокрутка';
+	@override String get coverAlone => 'Показывать обложку отдельно';
+	@override String get splitWide => 'Разделять широкие страницы';
+	@override String get splitWideHelp => 'Показывать каждую половину отдельно в порядке чтения. Пока опция включена, страницы не объединяются в развороты.';
+	@override String get thumbnails => 'Миниатюры страниц';
+	@override String get controlsHelp => 'Смахните, чтобы перелистнуть страницу. Двойное касание меняет подгонку размера. При непрерывной прокрутке смахивайте вертикально или используйте Page Up и Page Down.';
+	@override String get savedForComic => 'Настройки отображения сохраняются для этого комикса в этом профиле.';
+	@override String get readLists => 'Списки чтения';
+	@override String get collections => 'Коллекции';
 }
 
 // Path: appIcon.names
@@ -4890,9 +4912,16 @@ extension on TranslationsRu {
 			'settings.dvConversionNativeDescription' => 'Принудительно использовать нативный DV7 и не повторять DV-конвертацию',
 			'settings.dvConversionDv81Description' => 'Принудительно выполнять inline-конвертацию RPU в Dolby Vision профиль 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Удалять слои Dolby Vision RPU/EL и передавать обычный HEVC',
-			'settings.disableDolbyVision' => 'Отключить Dolby Vision',
+			'settings.experimentalDolbyVision' => 'Экспериментальный Dolby Vision',
 			_ => null,
 		} ?? switch (path) {
+			'settings.experimentalDolbyVisionDescription' => 'При следующем воспроизведении использовать экспериментальный рендерер FEL. Нужна отдельная сборка движка.',
+			'settings.dvExperimentUnavailableDescription' => 'Этот эксперимент пока доступен только в Linux.',
+			'settings.dvCompatibilityFallback' => 'Резервный режим совместимости',
+			'settings.dvCompatibilityFallbackDescription' => 'Использовать стандартный рендерер, если эксперимент не запускается. Данные FEL могут быть потеряны.',
+			'settings.dvExperimentDiagnostics' => 'Журнал видеоэксперимента',
+			'settings.dvExperimentDiagnosticsDescription' => 'Включить подробные журналы проигрывателя при следующем воспроизведении.',
+			'settings.disableDolbyVision' => 'Отключить Dolby Vision',
 			'settings.disableDolbyVisionDescription' => 'Воспроизводить слой HDR10 или HLG из файла вместо Dolby Vision, если он есть',
 			'settings.hdrSdrConversion' => 'Преобразование HDR в SDR',
 			'settings.hdrSdrConversionDescription' => 'Выберите, что преобразует HDR-видео, если дисплей не поддерживает HDR.',
@@ -4978,13 +5007,6 @@ extension on TranslationsRu {
 			'settings.regionFormatDescription' => 'Выберите формат отображения дат, чисел и единиц измерения.',
 			'settings.metadataLanguage' => 'Язык метаданных',
 			'settings.metadataLanguageDescription' => 'Предпочтительный язык названий и описаний, если сервер его поддерживает. Языки аудио и субтитров настраиваются отдельно.',
-			'settings.experimentalDolbyVision' => 'Экспериментальный Dolby Vision',
-			'settings.experimentalDolbyVisionDescription' => 'При следующем воспроизведении использовать экспериментальный рендерер FEL. Нужна отдельная сборка движка.',
-			'settings.dvExperimentUnavailableDescription' => 'Этот эксперимент пока доступен только в Linux.',
-			'settings.dvCompatibilityFallback' => 'Резервный режим совместимости',
-			'settings.dvCompatibilityFallbackDescription' => 'Использовать стандартный рендерер, если эксперимент не запускается. Данные FEL могут быть потеряны.',
-			'settings.dvExperimentDiagnostics' => 'Журнал видеоэксперимента',
-			'settings.dvExperimentDiagnosticsDescription' => 'Включить подробные журналы проигрывателя при следующем воспроизведении.',
 			'themeEditor.builtIn' => 'Встроенные',
 			'themeEditor.presets' => 'Готовые',
 			'themeEditor.custom' => 'Своя',
@@ -7114,8 +7136,12 @@ extension on TranslationsRu {
 			'fileSources.source' => 'Источник',
 			'fileSources.name' => 'Имя',
 			'fileSources.endpoint' => 'URL сервера',
+			'fileSources.smbEndpointHint' => 'Пример: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Введите сервер SMB и одну общую папку.',
 			'fileSources.root' => 'Фолдер или префикс',
+			'fileSources.smbFolderHelp' => 'Оставьте поле пустым, чтобы использовать всю общую папку, или укажите папку внутри неё.',
 			'fileSources.username' => 'Имя пользователя',
+			'fileSources.smbDomain' => 'Домен (необязательно)',
 			'fileSources.password' => 'Пароль',
 			'fileSources.token' => 'API Токен',
 			'fileSources.accessKey' => 'Доступный ключ ID',
@@ -7125,6 +7151,8 @@ extension on TranslationsRu {
 			'fileSources.clientId' => 'ID клиента OAuth',
 			'fileSources.clientSecret' => 'OAuth Client Secret (на рабочем месте Google)',
 			'fileSources.allowHttp' => 'Разрешить незашифрованное HTTP-соединение в доверенной сети',
+			'fileSources.smbEncryption' => 'Шифровать соединение SMB3',
+			'fileSources.smbEncryptionHint' => 'Использовать шифрование SMB3, если NAS его поддерживает.',
 			'fileSources.connect' => 'Подключить',
 			'fileSources.cancel' => 'Отмена',
 			'fileSources.save' => 'Сохранить',
@@ -7267,12 +7295,6 @@ extension on TranslationsRu {
 			'fileSources.useFiles' => 'Используйте файлы и книги',
 			'fileSources.cancelScan' => 'Отменить сканирование',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'Пример: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'Введите сервер SMB и одну общую папку.',
-			'fileSources.smbFolderHelp' => 'Оставьте поле пустым, чтобы использовать всю общую папку, или укажите папку внутри неё.',
-			'fileSources.smbDomain' => 'Домен (необязательно)',
-			'fileSources.smbEncryption' => 'Шифровать соединение SMB3',
-			'fileSources.smbEncryptionHint' => 'Использовать шифрование SMB3, если NAS его поддерживает.',
 			'lending.title' => 'Публичные библиотеки',
 			'lending.add' => 'Добавить библиотеку',
 			'lending.other' => 'Другая библиотека',
@@ -7470,6 +7492,18 @@ extension on TranslationsRu {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Выбранные данные идентификации клиента: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Оценка ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Загрузка субтитров: ${title}',
+			'comics.fitHeight' => 'По высоте',
+			'comics.readingMode' => 'Режим чтения',
+			'comics.paged' => 'Страницы',
+			'comics.webtoon' => 'Непрерывная прокрутка',
+			'comics.coverAlone' => 'Показывать обложку отдельно',
+			'comics.splitWide' => 'Разделять широкие страницы',
+			'comics.splitWideHelp' => 'Показывать каждую половину отдельно в порядке чтения. Пока опция включена, страницы не объединяются в развороты.',
+			'comics.thumbnails' => 'Миниатюры страниц',
+			'comics.controlsHelp' => 'Смахните, чтобы перелистнуть страницу. Двойное касание меняет подгонку размера. При непрерывной прокрутке смахивайте вертикально или используйте Page Up и Page Down.',
+			'comics.savedForComic' => 'Настройки отображения сохраняются для этого комикса в этом профиле.',
+			'comics.readLists' => 'Списки чтения',
+			'comics.collections' => 'Коллекции',
 			_ => null,
 		};
 	}

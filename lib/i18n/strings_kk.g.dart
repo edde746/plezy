@@ -105,6 +105,7 @@ class TranslationsKk extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$lending$kk lending = _Translations$lending$kk._(_root);
 	@override late final _Translations$audiobook$kk audiobook = _Translations$audiobook$kk._(_root);
 	@override late final _Translations$sourceSetup$kk sourceSetup = _Translations$sourceSetup$kk._(_root);
+	@override late final _Translations$comics$kk comics = _Translations$comics$kk._(_root);
 }
 
 // Path: app
@@ -676,6 +677,13 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Ішкі DV7 режимін мәжбүрлеу';
 	@override String get dvConversionDv81Description => 'Dolby Vision profile 8.1 форматына түрлендіру';
 	@override String get dvConversionHevcStripDescription => 'Dolby Vision қабаттарын алып тастап, HEVC ретінде көрсету';
+	@override String get experimentalDolbyVision => 'Тәжірибелік Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Келесі ойнатуда тәжірибелік FEL рендерерін пайдалану. Қозғалтқыштың бөлек құрастырылымы қажет.';
+	@override String get dvExperimentUnavailableDescription => 'Бұл тәжірибе әзірге тек Linux жүйесінде қолжетімді.';
+	@override String get dvCompatibilityFallback => 'Үйлесімді қосалқы режим';
+	@override String get dvCompatibilityFallbackDescription => 'Тәжірибе басталмаса, стандартты рендерерді пайдалану. FEL деректері жоғалуы мүмкін.';
+	@override String get dvExperimentDiagnostics => 'Бейне тәжірибесін журналға жазу';
+	@override String get dvExperimentDiagnosticsDescription => 'Келесі ойнатуда ойнатқыштың егжей-тегжейлі журналдарын қосу.';
 	@override String get disableDolbyVision => 'Dolby Vision-ды өшіру';
 	@override String get disableDolbyVisionDescription => 'Файлда бар болса, Dolby Vision орнына HDR10 немесе HLG қабатын ойнату';
 	@override String get hdrSdrConversion => 'HDR-ды SDR-ға түрлендіру';
@@ -762,13 +770,6 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Күндердің, сандардың және өлшем бірліктерінің көрсетілу пішімін таңдаңыз.';
 	@override String get metadataLanguage => 'Метадеректер тілі';
 	@override String get metadataLanguageDescription => 'Сервер қолдаса, атаулар мен сипаттамалар үшін қолданылатын тіл. Дыбыс пен субтитр тілі бөлек реттеледі.';
-	@override String get experimentalDolbyVision => 'Тәжірибелік Dolby Vision';
-	@override String get experimentalDolbyVisionDescription => 'Келесі ойнатуда тәжірибелік FEL рендерерін пайдалану. Қозғалтқыштың бөлек құрастырылымы қажет.';
-	@override String get dvExperimentUnavailableDescription => 'Бұл тәжірибе әзірге тек Linux жүйесінде қолжетімді.';
-	@override String get dvCompatibilityFallback => 'Үйлесімді қосалқы режим';
-	@override String get dvCompatibilityFallbackDescription => 'Тәжірибе басталмаса, стандартты рендерерді пайдалану. FEL деректері жоғалуы мүмкін.';
-	@override String get dvExperimentDiagnostics => 'Бейне тәжірибесін журналға жазу';
-	@override String get dvExperimentDiagnosticsDescription => 'Келесі ойнатуда ойнатқыштың егжей-тегжейлі журналдарын қосу.';
 }
 
 // Path: themeEditor
@@ -2909,8 +2910,12 @@ class _Translations$fileSources$kk extends Translations$fileSources$en {
 	@override String get source => 'Қайтаны';
 	@override String get name => 'Әйтсе де';
 	@override String get endpoint => 'Сервер URL-і';
+	@override String get smbEndpointHint => 'Мысалы: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'SMB серверін және бір ортақ қалтаны енгізіңіз.';
 	@override String get root => 'Олардың дағдырысы және';
+	@override String get smbFolderHelp => 'Бүкіл ортақ қалтаны пайдалану үшін бос қалдырыңыз немесе оның ішіндегі қалтаны енгізіңіз.';
 	@override String get username => 'Пайдаланушы аты';
+	@override String get smbDomain => 'Домен (міндетті емес)';
 	@override String get password => 'Құпия сөз';
 	@override String get token => 'API қақтар';
 	@override String get accessKey => 'Керіктің қабығы';
@@ -2920,6 +2925,8 @@ class _Translations$fileSources$kk extends Translations$fileSources$en {
 	@override String get clientId => 'ОАО «Клиент ID»';
 	@override String get clientSecret => 'ОАУТ клиенттік тайна (десктоп Google үшін)';
 	@override String get allowHttp => 'Сенімді желіде шифрланбаған HTTP қосылымына рұқсат беру';
+	@override String get smbEncryption => 'SMB3 қосылымын шифрлау';
+	@override String get smbEncryptionHint => 'NAS қолдаса, SMB3 шифрлауын пайдаланыңыз.';
 	@override String get connect => 'Қосылу';
 	@override String get cancel => 'Бас тарту';
 	@override String get save => 'Сақтау';
@@ -3065,12 +3072,6 @@ class _Translations$fileSources$kk extends Translations$fileSources$en {
 	@override String get useFiles => 'Бірінші мезгіл файлы және книги';
 	@override String get cancelScan => 'Сұрақтық Сұрағы';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'Мысалы: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'SMB серверін және бір ортақ қалтаны енгізіңіз.';
-	@override String get smbFolderHelp => 'Бүкіл ортақ қалтаны пайдалану үшін бос қалдырыңыз немесе оның ішіндегі қалтаны енгізіңіз.';
-	@override String get smbDomain => 'Домен (міндетті емес)';
-	@override String get smbEncryption => 'SMB3 қосылымын шифрлау';
-	@override String get smbEncryptionHint => 'NAS қолдаса, SMB3 шифрлауын пайдаланыңыз.';
 }
 
 // Path: lending
@@ -3293,6 +3294,27 @@ class _Translations$sourceSetup$kk extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'Таңдалған клиент сәйкестендіру деректері: ${name}';
 	@override String subtitleRating({required Object rating}) => 'Бағасы: ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'Субтитр жүктелуде: ${title}';
+}
+
+// Path: comics
+class _Translations$comics$kk extends Translations$comics$en {
+	_Translations$comics$kk._(TranslationsKk root) : this._root = root, super.internal(root);
+
+	final TranslationsKk _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'Биіктікке сәйкестендіру';
+	@override String get readingMode => 'Оқу режимі';
+	@override String get paged => 'Беттер';
+	@override String get webtoon => 'Үздіксіз айналдыру';
+	@override String get coverAlone => 'Мұқабаны бөлек көрсету';
+	@override String get splitWide => 'Кең беттерді бөлу';
+	@override String get splitWideHelp => 'Әр жартысын оқу ретімен бөлек көрсетеді. Бұл қосулы кезде екі бетті қатар көрсету тоқтатылады.';
+	@override String get thumbnails => 'Бет нобайлары';
+	@override String get controlsHelp => 'Бетті ауыстыру үшін сырғытыңыз. Сәйкестендіруді өзгерту үшін екі рет түртіңіз. Үздіксіз айналдыруда тігінен сырғытыңыз немесе Page Up және Page Down қолданыңыз.';
+	@override String get savedForComic => 'Бұл профильде осы комикстің көрсету параметрлері сақталады.';
+	@override String get readLists => 'Оқу тізімдері';
+	@override String get collections => 'Жинақтар';
 }
 
 // Path: appIcon.names
@@ -4846,9 +4868,16 @@ extension on TranslationsKk {
 			'settings.dvConversionNativeDescription' => 'Ішкі DV7 режимін мәжбүрлеу',
 			'settings.dvConversionDv81Description' => 'Dolby Vision profile 8.1 форматына түрлендіру',
 			'settings.dvConversionHevcStripDescription' => 'Dolby Vision қабаттарын алып тастап, HEVC ретінде көрсету',
-			'settings.disableDolbyVision' => 'Dolby Vision-ды өшіру',
+			'settings.experimentalDolbyVision' => 'Тәжірибелік Dolby Vision',
 			_ => null,
 		} ?? switch (path) {
+			'settings.experimentalDolbyVisionDescription' => 'Келесі ойнатуда тәжірибелік FEL рендерерін пайдалану. Қозғалтқыштың бөлек құрастырылымы қажет.',
+			'settings.dvExperimentUnavailableDescription' => 'Бұл тәжірибе әзірге тек Linux жүйесінде қолжетімді.',
+			'settings.dvCompatibilityFallback' => 'Үйлесімді қосалқы режим',
+			'settings.dvCompatibilityFallbackDescription' => 'Тәжірибе басталмаса, стандартты рендерерді пайдалану. FEL деректері жоғалуы мүмкін.',
+			'settings.dvExperimentDiagnostics' => 'Бейне тәжірибесін журналға жазу',
+			'settings.dvExperimentDiagnosticsDescription' => 'Келесі ойнатуда ойнатқыштың егжей-тегжейлі журналдарын қосу.',
+			'settings.disableDolbyVision' => 'Dolby Vision-ды өшіру',
 			'settings.disableDolbyVisionDescription' => 'Файлда бар болса, Dolby Vision орнына HDR10 немесе HLG қабатын ойнату',
 			'settings.hdrSdrConversion' => 'HDR-ды SDR-ға түрлендіру',
 			'settings.hdrSdrConversionDescription' => 'Дисплей HDR көрсете алмаған кезде HDR бейнесін не түрлендіретінін таңдаңыз.',
@@ -4934,13 +4963,6 @@ extension on TranslationsKk {
 			'settings.regionFormatDescription' => 'Күндердің, сандардың және өлшем бірліктерінің көрсетілу пішімін таңдаңыз.',
 			'settings.metadataLanguage' => 'Метадеректер тілі',
 			'settings.metadataLanguageDescription' => 'Сервер қолдаса, атаулар мен сипаттамалар үшін қолданылатын тіл. Дыбыс пен субтитр тілі бөлек реттеледі.',
-			'settings.experimentalDolbyVision' => 'Тәжірибелік Dolby Vision',
-			'settings.experimentalDolbyVisionDescription' => 'Келесі ойнатуда тәжірибелік FEL рендерерін пайдалану. Қозғалтқыштың бөлек құрастырылымы қажет.',
-			'settings.dvExperimentUnavailableDescription' => 'Бұл тәжірибе әзірге тек Linux жүйесінде қолжетімді.',
-			'settings.dvCompatibilityFallback' => 'Үйлесімді қосалқы режим',
-			'settings.dvCompatibilityFallbackDescription' => 'Тәжірибе басталмаса, стандартты рендерерді пайдалану. FEL деректері жоғалуы мүмкін.',
-			'settings.dvExperimentDiagnostics' => 'Бейне тәжірибесін журналға жазу',
-			'settings.dvExperimentDiagnosticsDescription' => 'Келесі ойнатуда ойнатқыштың егжей-тегжейлі журналдарын қосу.',
 			'themeEditor.builtIn' => 'Кірістірілген',
 			'themeEditor.presets' => 'Дайын тақырыптар',
 			'themeEditor.custom' => 'Жеке',
@@ -7070,8 +7092,12 @@ extension on TranslationsKk {
 			'fileSources.source' => 'Қайтаны',
 			'fileSources.name' => 'Әйтсе де',
 			'fileSources.endpoint' => 'Сервер URL-і',
+			'fileSources.smbEndpointHint' => 'Мысалы: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'SMB серверін және бір ортақ қалтаны енгізіңіз.',
 			'fileSources.root' => 'Олардың дағдырысы және',
+			'fileSources.smbFolderHelp' => 'Бүкіл ортақ қалтаны пайдалану үшін бос қалдырыңыз немесе оның ішіндегі қалтаны енгізіңіз.',
 			'fileSources.username' => 'Пайдаланушы аты',
+			'fileSources.smbDomain' => 'Домен (міндетті емес)',
 			'fileSources.password' => 'Құпия сөз',
 			'fileSources.token' => 'API қақтар',
 			'fileSources.accessKey' => 'Керіктің қабығы',
@@ -7081,6 +7107,8 @@ extension on TranslationsKk {
 			'fileSources.clientId' => 'ОАО «Клиент ID»',
 			'fileSources.clientSecret' => 'ОАУТ клиенттік тайна (десктоп Google үшін)',
 			'fileSources.allowHttp' => 'Сенімді желіде шифрланбаған HTTP қосылымына рұқсат беру',
+			'fileSources.smbEncryption' => 'SMB3 қосылымын шифрлау',
+			'fileSources.smbEncryptionHint' => 'NAS қолдаса, SMB3 шифрлауын пайдаланыңыз.',
 			'fileSources.connect' => 'Қосылу',
 			'fileSources.cancel' => 'Бас тарту',
 			'fileSources.save' => 'Сақтау',
@@ -7223,12 +7251,6 @@ extension on TranslationsKk {
 			'fileSources.useFiles' => 'Бірінші мезгіл файлы және книги',
 			'fileSources.cancelScan' => 'Сұрақтық Сұрағы',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'Мысалы: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'SMB серверін және бір ортақ қалтаны енгізіңіз.',
-			'fileSources.smbFolderHelp' => 'Бүкіл ортақ қалтаны пайдалану үшін бос қалдырыңыз немесе оның ішіндегі қалтаны енгізіңіз.',
-			'fileSources.smbDomain' => 'Домен (міндетті емес)',
-			'fileSources.smbEncryption' => 'SMB3 қосылымын шифрлау',
-			'fileSources.smbEncryptionHint' => 'NAS қолдаса, SMB3 шифрлауын пайдаланыңыз.',
 			'lending.title' => 'Публикалық библиотекасы',
 			'lending.add' => 'Бібліотекасы көшіру',
 			'lending.other' => 'Бібліотеканың басқа',
@@ -7426,6 +7448,18 @@ extension on TranslationsKk {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Таңдалған клиент сәйкестендіру деректері: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Бағасы: ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Субтитр жүктелуде: ${title}',
+			'comics.fitHeight' => 'Биіктікке сәйкестендіру',
+			'comics.readingMode' => 'Оқу режимі',
+			'comics.paged' => 'Беттер',
+			'comics.webtoon' => 'Үздіксіз айналдыру',
+			'comics.coverAlone' => 'Мұқабаны бөлек көрсету',
+			'comics.splitWide' => 'Кең беттерді бөлу',
+			'comics.splitWideHelp' => 'Әр жартысын оқу ретімен бөлек көрсетеді. Бұл қосулы кезде екі бетті қатар көрсету тоқтатылады.',
+			'comics.thumbnails' => 'Бет нобайлары',
+			'comics.controlsHelp' => 'Бетті ауыстыру үшін сырғытыңыз. Сәйкестендіруді өзгерту үшін екі рет түртіңіз. Үздіксіз айналдыруда тігінен сырғытыңыз немесе Page Up және Page Down қолданыңыз.',
+			'comics.savedForComic' => 'Бұл профильде осы комикстің көрсету параметрлері сақталады.',
+			'comics.readLists' => 'Оқу тізімдері',
+			'comics.collections' => 'Жинақтар',
 			_ => null,
 		};
 	}

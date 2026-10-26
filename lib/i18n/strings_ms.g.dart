@@ -105,6 +105,7 @@ class TranslationsMs extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$lending$ms lending = _Translations$lending$ms._(_root);
 	@override late final _Translations$audiobook$ms audiobook = _Translations$audiobook$ms._(_root);
 	@override late final _Translations$sourceSetup$ms sourceSetup = _Translations$sourceSetup$ms._(_root);
+	@override late final _Translations$comics$ms comics = _Translations$comics$ms._(_root);
 }
 
 // Path: app
@@ -674,6 +675,13 @@ class _Translations$settings$ms extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Kuasa asli DV7 dan penindasan DV penukaran retry';
 	@override String get dvConversionDv81Description => 'Kuasa dalam rangkaian RPU penukaran kepada Dolby Vision profil 8.1';
 	@override String get dvConversionHevcStripDescription => 'Strip Dolby Vision lapisan RPU/EL dan rata semasa HEVC';
+	@override String get experimentalDolbyVision => 'Dolby Vision eksperimen';
+	@override String get experimentalDolbyVisionDescription => 'Gunakan pemapar FEL eksperimen pada main balik seterusnya. Memerlukan binaan enjin yang berasingan.';
+	@override String get dvExperimentUnavailableDescription => 'Eksperimen ini kini hanya tersedia pada Linux.';
+	@override String get dvCompatibilityFallback => 'Pilihan sandaran keserasian';
+	@override String get dvCompatibilityFallbackDescription => 'Gunakan pemapar standard jika eksperimen tidak dapat dimulakan. Data FEL mungkin hilang.';
+	@override String get dvExperimentDiagnostics => 'Pengelogan eksperimen video';
+	@override String get dvExperimentDiagnosticsDescription => 'Dayakan log pemain terperinci pada main balik seterusnya.';
 	@override String get disableDolbyVision => 'Penyelesaian Dolby Vision';
 	@override String get disableDolbyVisionDescription => 'Mainkan lapisan fail HDR10 atau HLG daripada Dolby Vision, apabila ia mempunyai lapisan';
 	@override String get hdrSdrConversion => 'HDR kepada SDR Konversi';
@@ -760,13 +768,6 @@ class _Translations$settings$ms extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Pilih cara tarikh, nombor dan unit ukuran dipaparkan.';
 	@override String get metadataLanguage => 'Bahasa metadata';
 	@override String get metadataLanguageDescription => 'Bahasa tajuk dan huraian pilihan jika disokong oleh pelayan. Pilihan audio dan sari kata ditetapkan secara berasingan.';
-	@override String get experimentalDolbyVision => 'Dolby Vision eksperimen';
-	@override String get experimentalDolbyVisionDescription => 'Gunakan pemapar FEL eksperimen pada main balik seterusnya. Memerlukan binaan enjin yang berasingan.';
-	@override String get dvExperimentUnavailableDescription => 'Eksperimen ini kini hanya tersedia pada Linux.';
-	@override String get dvCompatibilityFallback => 'Pilihan sandaran keserasian';
-	@override String get dvCompatibilityFallbackDescription => 'Gunakan pemapar standard jika eksperimen tidak dapat dimulakan. Data FEL mungkin hilang.';
-	@override String get dvExperimentDiagnostics => 'Pengelogan eksperimen video';
-	@override String get dvExperimentDiagnosticsDescription => 'Dayakan log pemain terperinci pada main balik seterusnya.';
 }
 
 // Path: themeEditor
@@ -2890,8 +2891,12 @@ class _Translations$fileSources$ms extends Translations$fileSources$en {
 	@override String get source => 'Sumber';
 	@override String get name => 'Nama';
 	@override String get endpoint => 'Pelayan URL';
+	@override String get smbEndpointHint => 'Contoh: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Masukkan pelayan SMB dan satu folder kongsi.';
 	@override String get root => 'Folder atau awalan';
+	@override String get smbFolderHelp => 'Biarkan kosong untuk menggunakan seluruh folder kongsi, atau masukkan folder di dalamnya.';
 	@override String get username => 'Nama Pengguna';
+	@override String get smbDomain => 'Domain (pilihan)';
 	@override String get password => 'kata laluan';
 	@override String get token => 'API token';
 	@override String get accessKey => 'Akses ke kunci ID';
@@ -2901,6 +2906,8 @@ class _Translations$fileSources$ms extends Translations$fileSources$en {
 	@override String get clientId => 'Pengenalan kepada OAuth Client ID';
 	@override String get clientSecret => 'OAuth Client Secret (hanya desktop Google)';
 	@override String get allowHttp => 'Benarkan HTTP tanpa penyulitan pada rangkaian yang dipercayai';
+	@override String get smbEncryption => 'Sulitkan sambungan SMB3';
+	@override String get smbEncryptionHint => 'Gunakan penyulitan SMB3 apabila NAS menyokongnya.';
 	@override String get connect => 'Sambung';
 	@override String get cancel => 'Batalkan';
 	@override String get save => 'menyelamatkan';
@@ -3045,12 +3052,6 @@ class _Translations$fileSources$ms extends Translations$fileSources$en {
 	@override String get useFiles => 'Menggunakan fail dan buku';
 	@override String get cancelScan => 'Batalkan pemindaian';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'Contoh: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'Masukkan pelayan SMB dan satu folder kongsi.';
-	@override String get smbFolderHelp => 'Biarkan kosong untuk menggunakan seluruh folder kongsi, atau masukkan folder di dalamnya.';
-	@override String get smbDomain => 'Domain (pilihan)';
-	@override String get smbEncryption => 'Sulitkan sambungan SMB3';
-	@override String get smbEncryptionHint => 'Gunakan penyulitan SMB3 apabila NAS menyokongnya.';
 }
 
 // Path: lending
@@ -3273,6 +3274,27 @@ class _Translations$sourceSetup$ms extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'Identiti klien yang dipilih: ${name}';
 	@override String subtitleRating({required Object rating}) => 'Penilaian ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'Memuat turun sari kata: ${title}';
+}
+
+// Path: comics
+class _Translations$comics$ms extends Translations$comics$en {
+	_Translations$comics$ms._(TranslationsMs root) : this._root = root, super.internal(root);
+
+	final TranslationsMs _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'Muatkan mengikut tinggi';
+	@override String get readingMode => 'Mod bacaan';
+	@override String get paged => 'Halaman';
+	@override String get webtoon => 'Tatal berterusan';
+	@override String get coverAlone => 'Paparkan kulit buku secara berasingan';
+	@override String get splitWide => 'Bahagikan halaman lebar';
+	@override String get splitWideHelp => 'Paparkan setiap separuh secara berasingan mengikut urutan bacaan. Paparan dua halaman bersebelahan dijeda semasa pilihan ini aktif.';
+	@override String get thumbnails => 'Lakaran kecil halaman';
+	@override String get controlsHelp => 'Leret untuk menyelak halaman. Ketik dua kali untuk menukar padanan. Dalam tatal berterusan, leret menegak atau gunakan Page Up dan Page Down.';
+	@override String get savedForComic => 'Tetapan paparan diingati untuk komik ini dalam profil ini.';
+	@override String get readLists => 'Senarai bacaan';
+	@override String get collections => 'Koleksi';
 }
 
 // Path: appIcon.names
@@ -4824,9 +4846,16 @@ extension on TranslationsMs {
 			'settings.dvConversionNativeDescription' => 'Kuasa asli DV7 dan penindasan DV penukaran retry',
 			'settings.dvConversionDv81Description' => 'Kuasa dalam rangkaian RPU penukaran kepada Dolby Vision profil 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Strip Dolby Vision lapisan RPU/EL dan rata semasa HEVC',
-			'settings.disableDolbyVision' => 'Penyelesaian Dolby Vision',
+			'settings.experimentalDolbyVision' => 'Dolby Vision eksperimen',
 			_ => null,
 		} ?? switch (path) {
+			'settings.experimentalDolbyVisionDescription' => 'Gunakan pemapar FEL eksperimen pada main balik seterusnya. Memerlukan binaan enjin yang berasingan.',
+			'settings.dvExperimentUnavailableDescription' => 'Eksperimen ini kini hanya tersedia pada Linux.',
+			'settings.dvCompatibilityFallback' => 'Pilihan sandaran keserasian',
+			'settings.dvCompatibilityFallbackDescription' => 'Gunakan pemapar standard jika eksperimen tidak dapat dimulakan. Data FEL mungkin hilang.',
+			'settings.dvExperimentDiagnostics' => 'Pengelogan eksperimen video',
+			'settings.dvExperimentDiagnosticsDescription' => 'Dayakan log pemain terperinci pada main balik seterusnya.',
+			'settings.disableDolbyVision' => 'Penyelesaian Dolby Vision',
 			'settings.disableDolbyVisionDescription' => 'Mainkan lapisan fail HDR10 atau HLG daripada Dolby Vision, apabila ia mempunyai lapisan',
 			'settings.hdrSdrConversion' => 'HDR kepada SDR Konversi',
 			'settings.hdrSdrConversionDescription' => 'Pilih apa yang menukar video HDR apabila paparan tidak boleh menunjukkan HDR.',
@@ -4912,13 +4941,6 @@ extension on TranslationsMs {
 			'settings.regionFormatDescription' => 'Pilih cara tarikh, nombor dan unit ukuran dipaparkan.',
 			'settings.metadataLanguage' => 'Bahasa metadata',
 			'settings.metadataLanguageDescription' => 'Bahasa tajuk dan huraian pilihan jika disokong oleh pelayan. Pilihan audio dan sari kata ditetapkan secara berasingan.',
-			'settings.experimentalDolbyVision' => 'Dolby Vision eksperimen',
-			'settings.experimentalDolbyVisionDescription' => 'Gunakan pemapar FEL eksperimen pada main balik seterusnya. Memerlukan binaan enjin yang berasingan.',
-			'settings.dvExperimentUnavailableDescription' => 'Eksperimen ini kini hanya tersedia pada Linux.',
-			'settings.dvCompatibilityFallback' => 'Pilihan sandaran keserasian',
-			'settings.dvCompatibilityFallbackDescription' => 'Gunakan pemapar standard jika eksperimen tidak dapat dimulakan. Data FEL mungkin hilang.',
-			'settings.dvExperimentDiagnostics' => 'Pengelogan eksperimen video',
-			'settings.dvExperimentDiagnosticsDescription' => 'Dayakan log pemain terperinci pada main balik seterusnya.',
 			'themeEditor.builtIn' => 'dibina dalam',
 			'themeEditor.presets' => 'Persembahan',
 			'themeEditor.custom' => 'Khas',
@@ -7048,8 +7070,12 @@ extension on TranslationsMs {
 			'fileSources.source' => 'Sumber',
 			'fileSources.name' => 'Nama',
 			'fileSources.endpoint' => 'Pelayan URL',
+			'fileSources.smbEndpointHint' => 'Contoh: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Masukkan pelayan SMB dan satu folder kongsi.',
 			'fileSources.root' => 'Folder atau awalan',
+			'fileSources.smbFolderHelp' => 'Biarkan kosong untuk menggunakan seluruh folder kongsi, atau masukkan folder di dalamnya.',
 			'fileSources.username' => 'Nama Pengguna',
+			'fileSources.smbDomain' => 'Domain (pilihan)',
 			'fileSources.password' => 'kata laluan',
 			'fileSources.token' => 'API token',
 			'fileSources.accessKey' => 'Akses ke kunci ID',
@@ -7059,6 +7085,8 @@ extension on TranslationsMs {
 			'fileSources.clientId' => 'Pengenalan kepada OAuth Client ID',
 			'fileSources.clientSecret' => 'OAuth Client Secret (hanya desktop Google)',
 			'fileSources.allowHttp' => 'Benarkan HTTP tanpa penyulitan pada rangkaian yang dipercayai',
+			'fileSources.smbEncryption' => 'Sulitkan sambungan SMB3',
+			'fileSources.smbEncryptionHint' => 'Gunakan penyulitan SMB3 apabila NAS menyokongnya.',
 			'fileSources.connect' => 'Sambung',
 			'fileSources.cancel' => 'Batalkan',
 			'fileSources.save' => 'menyelamatkan',
@@ -7201,12 +7229,6 @@ extension on TranslationsMs {
 			'fileSources.useFiles' => 'Menggunakan fail dan buku',
 			'fileSources.cancelScan' => 'Batalkan pemindaian',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'Contoh: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'Masukkan pelayan SMB dan satu folder kongsi.',
-			'fileSources.smbFolderHelp' => 'Biarkan kosong untuk menggunakan seluruh folder kongsi, atau masukkan folder di dalamnya.',
-			'fileSources.smbDomain' => 'Domain (pilihan)',
-			'fileSources.smbEncryption' => 'Sulitkan sambungan SMB3',
-			'fileSources.smbEncryptionHint' => 'Gunakan penyulitan SMB3 apabila NAS menyokongnya.',
 			'lending.title' => 'Perpustakaan Awam',
 			'lending.add' => 'Menambah perpustakaan',
 			'lending.other' => 'Perpustakaan lain',
@@ -7404,6 +7426,18 @@ extension on TranslationsMs {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Identiti klien yang dipilih: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Penilaian ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Memuat turun sari kata: ${title}',
+			'comics.fitHeight' => 'Muatkan mengikut tinggi',
+			'comics.readingMode' => 'Mod bacaan',
+			'comics.paged' => 'Halaman',
+			'comics.webtoon' => 'Tatal berterusan',
+			'comics.coverAlone' => 'Paparkan kulit buku secara berasingan',
+			'comics.splitWide' => 'Bahagikan halaman lebar',
+			'comics.splitWideHelp' => 'Paparkan setiap separuh secara berasingan mengikut urutan bacaan. Paparan dua halaman bersebelahan dijeda semasa pilihan ini aktif.',
+			'comics.thumbnails' => 'Lakaran kecil halaman',
+			'comics.controlsHelp' => 'Leret untuk menyelak halaman. Ketik dua kali untuk menukar padanan. Dalam tatal berterusan, leret menegak atau gunakan Page Up dan Page Down.',
+			'comics.savedForComic' => 'Tetapan paparan diingati untuk komik ini dalam profil ini.',
+			'comics.readLists' => 'Senarai bacaan',
+			'comics.collections' => 'Koleksi',
 			_ => null,
 		};
 	}

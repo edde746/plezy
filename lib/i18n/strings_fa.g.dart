@@ -105,6 +105,7 @@ class TranslationsFa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$lending$fa lending = _Translations$lending$fa._(_root);
 	@override late final _Translations$audiobook$fa audiobook = _Translations$audiobook$fa._(_root);
 	@override late final _Translations$sourceSetup$fa sourceSetup = _Translations$sourceSetup$fa._(_root);
+	@override late final _Translations$comics$fa comics = _Translations$comics$fa._(_root);
 }
 
 // Path: app
@@ -676,6 +677,13 @@ class _Translations$settings$fa extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'قدرت نادر DV7 و سرکوب DV تبدیل عقب نشینی';
 	@override String get dvConversionDv81Description => 'تبدیل RPU به پروفایل Dolby Vision 8.1';
 	@override String get dvConversionHevcStripDescription => 'نوار Dolby Vision لایه های RPU/EL و سطح فعلی HEVC';
+	@override String get experimentalDolbyVision => 'Dolby Vision آزمایشی';
+	@override String get experimentalDolbyVisionDescription => 'در پخش بعدی از رندرکنندهٔ آزمایشی FEL استفاده شود. به ساخت جداگانهٔ موتور نیاز دارد.';
+	@override String get dvExperimentUnavailableDescription => 'این آزمایش فعلاً فقط در Linux در دسترس است.';
+	@override String get dvCompatibilityFallback => 'گزینهٔ جایگزین سازگار';
+	@override String get dvCompatibilityFallbackDescription => 'اگر آزمایش شروع نشد، از رندرکنندهٔ استاندارد استفاده شود. ممکن است داده‌های FEL از دست بروند.';
+	@override String get dvExperimentDiagnostics => 'ثبت رویدادهای آزمایش ویدیو';
+	@override String get dvExperimentDiagnosticsDescription => 'در پخش بعدی گزارش‌های دقیق پخش‌کننده فعال شوند.';
 	@override String get disableDolbyVision => 'غیر قابل اجرا Dolby Vision';
 	@override String get disableDolbyVisionDescription => 'در فایل HDR10 یا لایه HLG به جای Dolby Vision بازی کنید، زمانی که یک';
 	@override String get hdrSdrConversion => 'HDR به SDR تبدیل';
@@ -762,13 +770,6 @@ class _Translations$settings$fa extends Translations$settings$en {
 	@override String get regionFormatDescription => 'نحوهٔ نمایش تاریخ‌ها، اعداد و واحدهای اندازه‌گیری را انتخاب کنید.';
 	@override String get metadataLanguage => 'زبان فراداده';
 	@override String get metadataLanguageDescription => 'زبان دلخواه عنوان‌ها و توضیحات، در صورت پشتیبانی سرور. تنظیمات زبان صدا و زیرنویس مستقل هستند.';
-	@override String get experimentalDolbyVision => 'Dolby Vision آزمایشی';
-	@override String get experimentalDolbyVisionDescription => 'در پخش بعدی از رندرکنندهٔ آزمایشی FEL استفاده شود. به ساخت جداگانهٔ موتور نیاز دارد.';
-	@override String get dvExperimentUnavailableDescription => 'این آزمایش فعلاً فقط در Linux در دسترس است.';
-	@override String get dvCompatibilityFallback => 'گزینهٔ جایگزین سازگار';
-	@override String get dvCompatibilityFallbackDescription => 'اگر آزمایش شروع نشد، از رندرکنندهٔ استاندارد استفاده شود. ممکن است داده‌های FEL از دست بروند.';
-	@override String get dvExperimentDiagnostics => 'ثبت رویدادهای آزمایش ویدیو';
-	@override String get dvExperimentDiagnosticsDescription => 'در پخش بعدی گزارش‌های دقیق پخش‌کننده فعال شوند.';
 }
 
 // Path: themeEditor
@@ -2909,8 +2910,12 @@ class _Translations$fileSources$fa extends Translations$fileSources$en {
 	@override String get source => 'منبع';
 	@override String get name => 'نام';
 	@override String get endpoint => 'سرور URL';
+	@override String get smbEndpointHint => 'مثال: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'یک سرور SMB و یک پوشهٔ اشتراکی وارد کنید.';
 	@override String get root => 'پوشه یا پیشوند';
+	@override String get smbFolderHelp => 'برای استفاده از کل پوشهٔ اشتراکی، خالی بگذارید؛ یا پوشه‌ای درون آن وارد کنید.';
 	@override String get username => 'نام کاربری';
+	@override String get smbDomain => 'دامنه (اختیاری)';
 	@override String get password => 'گذرواژه';
 	@override String get token => 'API توکن';
 	@override String get accessKey => 'دسترسی کلید ID';
@@ -2920,6 +2925,8 @@ class _Translations$fileSources$fa extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth مشتری ID';
 	@override String get clientSecret => 'OAuth Client Secret (فقط Google Desktop)';
 	@override String get allowHttp => 'اجازهٔ اتصال HTTP بدون رمزگذاری در یک شبکهٔ مورد اعتماد';
+	@override String get smbEncryption => 'رمزگذاری اتصال SMB3';
+	@override String get smbEncryptionHint => 'اگر دستگاه NAS پشتیبانی می‌کند، از رمزگذاری SMB3 استفاده کنید.';
 	@override String get connect => 'اتصال';
 	@override String get cancel => 'لغو کردن';
 	@override String get save => 'ذخیره';
@@ -3065,12 +3072,6 @@ class _Translations$fileSources$fa extends Translations$fileSources$en {
 	@override String get useFiles => 'استفاده از فایل ها و کتاب ها';
 	@override String get cancelScan => 'حذف اسکن';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'مثال: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'یک سرور SMB و یک پوشهٔ اشتراکی وارد کنید.';
-	@override String get smbFolderHelp => 'برای استفاده از کل پوشهٔ اشتراکی، خالی بگذارید؛ یا پوشه‌ای درون آن وارد کنید.';
-	@override String get smbDomain => 'دامنه (اختیاری)';
-	@override String get smbEncryption => 'رمزگذاری اتصال SMB3';
-	@override String get smbEncryptionHint => 'اگر دستگاه NAS پشتیبانی می‌کند، از رمزگذاری SMB3 استفاده کنید.';
 }
 
 // Path: lending
@@ -3293,6 +3294,27 @@ class _Translations$sourceSetup$fa extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'هویت کارخواه انتخاب‌شده: ${name}';
 	@override String subtitleRating({required Object rating}) => 'امتیاز ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'در حال دریافت زیرنویس: ${title}';
+}
+
+// Path: comics
+class _Translations$comics$fa extends Translations$comics$en {
+	_Translations$comics$fa._(TranslationsFa root) : this._root = root, super.internal(root);
+
+	final TranslationsFa _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'اندازه بر اساس ارتفاع';
+	@override String get readingMode => 'حالت مطالعه';
+	@override String get paged => 'صفحه‌ها';
+	@override String get webtoon => 'پیمایش پیوسته';
+	@override String get coverAlone => 'نمایش جلد به‌تنهایی';
+	@override String get splitWide => 'تقسیم صفحه‌های عریض';
+	@override String get splitWideHelp => 'هر نیمه را جداگانه و به ترتیب مطالعه نشان می‌دهد. با فعال بودن این گزینه، نمایش دو صفحه کنار هم متوقف می‌شود.';
+	@override String get thumbnails => 'تصاویر بندانگشتی صفحه‌ها';
+	@override String get controlsHelp => 'برای ورق زدن بکشید. برای تغییر اندازهٔ نمایش دو بار ضربه بزنید. در پیمایش پیوسته، عمودی بکشید یا از Page Up و Page Down استفاده کنید.';
+	@override String get savedForComic => 'تنظیمات نمایش این کمیک در این نمایه ذخیره می‌شود.';
+	@override String get readLists => 'فهرست‌های مطالعه';
+	@override String get collections => 'مجموعه‌ها';
 }
 
 // Path: appIcon.names
@@ -4846,9 +4868,16 @@ extension on TranslationsFa {
 			'settings.dvConversionNativeDescription' => 'قدرت نادر DV7 و سرکوب DV تبدیل عقب نشینی',
 			'settings.dvConversionDv81Description' => 'تبدیل RPU به پروفایل Dolby Vision 8.1',
 			'settings.dvConversionHevcStripDescription' => 'نوار Dolby Vision لایه های RPU/EL و سطح فعلی HEVC',
-			'settings.disableDolbyVision' => 'غیر قابل اجرا Dolby Vision',
+			'settings.experimentalDolbyVision' => 'Dolby Vision آزمایشی',
 			_ => null,
 		} ?? switch (path) {
+			'settings.experimentalDolbyVisionDescription' => 'در پخش بعدی از رندرکنندهٔ آزمایشی FEL استفاده شود. به ساخت جداگانهٔ موتور نیاز دارد.',
+			'settings.dvExperimentUnavailableDescription' => 'این آزمایش فعلاً فقط در Linux در دسترس است.',
+			'settings.dvCompatibilityFallback' => 'گزینهٔ جایگزین سازگار',
+			'settings.dvCompatibilityFallbackDescription' => 'اگر آزمایش شروع نشد، از رندرکنندهٔ استاندارد استفاده شود. ممکن است داده‌های FEL از دست بروند.',
+			'settings.dvExperimentDiagnostics' => 'ثبت رویدادهای آزمایش ویدیو',
+			'settings.dvExperimentDiagnosticsDescription' => 'در پخش بعدی گزارش‌های دقیق پخش‌کننده فعال شوند.',
+			'settings.disableDolbyVision' => 'غیر قابل اجرا Dolby Vision',
 			'settings.disableDolbyVisionDescription' => 'در فایل HDR10 یا لایه HLG به جای Dolby Vision بازی کنید، زمانی که یک',
 			'settings.hdrSdrConversion' => 'HDR به SDR تبدیل',
 			'settings.hdrSdrConversionDescription' => 'انتخاب کنید که چه چیزی ویدئو HDR را تبدیل می کند زمانی که صفحه نمایش نمی تواند HDR را نشان دهد.',
@@ -4934,13 +4963,6 @@ extension on TranslationsFa {
 			'settings.regionFormatDescription' => 'نحوهٔ نمایش تاریخ‌ها، اعداد و واحدهای اندازه‌گیری را انتخاب کنید.',
 			'settings.metadataLanguage' => 'زبان فراداده',
 			'settings.metadataLanguageDescription' => 'زبان دلخواه عنوان‌ها و توضیحات، در صورت پشتیبانی سرور. تنظیمات زبان صدا و زیرنویس مستقل هستند.',
-			'settings.experimentalDolbyVision' => 'Dolby Vision آزمایشی',
-			'settings.experimentalDolbyVisionDescription' => 'در پخش بعدی از رندرکنندهٔ آزمایشی FEL استفاده شود. به ساخت جداگانهٔ موتور نیاز دارد.',
-			'settings.dvExperimentUnavailableDescription' => 'این آزمایش فعلاً فقط در Linux در دسترس است.',
-			'settings.dvCompatibilityFallback' => 'گزینهٔ جایگزین سازگار',
-			'settings.dvCompatibilityFallbackDescription' => 'اگر آزمایش شروع نشد، از رندرکنندهٔ استاندارد استفاده شود. ممکن است داده‌های FEL از دست بروند.',
-			'settings.dvExperimentDiagnostics' => 'ثبت رویدادهای آزمایش ویدیو',
-			'settings.dvExperimentDiagnosticsDescription' => 'در پخش بعدی گزارش‌های دقیق پخش‌کننده فعال شوند.',
 			'themeEditor.builtIn' => 'ساخته شده',
 			'themeEditor.presets' => 'پیشگویی',
 			'themeEditor.custom' => 'سفارشی',
@@ -7070,8 +7092,12 @@ extension on TranslationsFa {
 			'fileSources.source' => 'منبع',
 			'fileSources.name' => 'نام',
 			'fileSources.endpoint' => 'سرور URL',
+			'fileSources.smbEndpointHint' => 'مثال: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'یک سرور SMB و یک پوشهٔ اشتراکی وارد کنید.',
 			'fileSources.root' => 'پوشه یا پیشوند',
+			'fileSources.smbFolderHelp' => 'برای استفاده از کل پوشهٔ اشتراکی، خالی بگذارید؛ یا پوشه‌ای درون آن وارد کنید.',
 			'fileSources.username' => 'نام کاربری',
+			'fileSources.smbDomain' => 'دامنه (اختیاری)',
 			'fileSources.password' => 'گذرواژه',
 			'fileSources.token' => 'API توکن',
 			'fileSources.accessKey' => 'دسترسی کلید ID',
@@ -7081,6 +7107,8 @@ extension on TranslationsFa {
 			'fileSources.clientId' => 'OAuth مشتری ID',
 			'fileSources.clientSecret' => 'OAuth Client Secret (فقط Google Desktop)',
 			'fileSources.allowHttp' => 'اجازهٔ اتصال HTTP بدون رمزگذاری در یک شبکهٔ مورد اعتماد',
+			'fileSources.smbEncryption' => 'رمزگذاری اتصال SMB3',
+			'fileSources.smbEncryptionHint' => 'اگر دستگاه NAS پشتیبانی می‌کند، از رمزگذاری SMB3 استفاده کنید.',
 			'fileSources.connect' => 'اتصال',
 			'fileSources.cancel' => 'لغو کردن',
 			'fileSources.save' => 'ذخیره',
@@ -7223,12 +7251,6 @@ extension on TranslationsFa {
 			'fileSources.useFiles' => 'استفاده از فایل ها و کتاب ها',
 			'fileSources.cancelScan' => 'حذف اسکن',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'مثال: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'یک سرور SMB و یک پوشهٔ اشتراکی وارد کنید.',
-			'fileSources.smbFolderHelp' => 'برای استفاده از کل پوشهٔ اشتراکی، خالی بگذارید؛ یا پوشه‌ای درون آن وارد کنید.',
-			'fileSources.smbDomain' => 'دامنه (اختیاری)',
-			'fileSources.smbEncryption' => 'رمزگذاری اتصال SMB3',
-			'fileSources.smbEncryptionHint' => 'اگر دستگاه NAS پشتیبانی می‌کند، از رمزگذاری SMB3 استفاده کنید.',
 			'lending.title' => 'کتابخانه های عمومی',
 			'lending.add' => 'اضافه کردن کتابخانه',
 			'lending.other' => 'کتابخانه دیگری',
@@ -7426,6 +7448,18 @@ extension on TranslationsFa {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'هویت کارخواه انتخاب‌شده: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'امتیاز ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'در حال دریافت زیرنویس: ${title}',
+			'comics.fitHeight' => 'اندازه بر اساس ارتفاع',
+			'comics.readingMode' => 'حالت مطالعه',
+			'comics.paged' => 'صفحه‌ها',
+			'comics.webtoon' => 'پیمایش پیوسته',
+			'comics.coverAlone' => 'نمایش جلد به‌تنهایی',
+			'comics.splitWide' => 'تقسیم صفحه‌های عریض',
+			'comics.splitWideHelp' => 'هر نیمه را جداگانه و به ترتیب مطالعه نشان می‌دهد. با فعال بودن این گزینه، نمایش دو صفحه کنار هم متوقف می‌شود.',
+			'comics.thumbnails' => 'تصاویر بندانگشتی صفحه‌ها',
+			'comics.controlsHelp' => 'برای ورق زدن بکشید. برای تغییر اندازهٔ نمایش دو بار ضربه بزنید. در پیمایش پیوسته، عمودی بکشید یا از Page Up و Page Down استفاده کنید.',
+			'comics.savedForComic' => 'تنظیمات نمایش این کمیک در این نمایه ذخیره می‌شود.',
+			'comics.readLists' => 'فهرست‌های مطالعه',
+			'comics.collections' => 'مجموعه‌ها',
 			_ => null,
 		};
 	}

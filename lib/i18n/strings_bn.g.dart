@@ -105,6 +105,7 @@ class TranslationsBn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$lending$bn lending = _Translations$lending$bn._(_root);
 	@override late final _Translations$audiobook$bn audiobook = _Translations$audiobook$bn._(_root);
 	@override late final _Translations$sourceSetup$bn sourceSetup = _Translations$sourceSetup$bn._(_root);
+	@override late final _Translations$comics$bn comics = _Translations$comics$bn._(_root);
 }
 
 // Path: app
@@ -676,6 +677,13 @@ class _Translations$settings$bn extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'শক্তি প্রাকৃতিক DV7 এবং ডিভি পরিদর্শন রিট্রি প্রত্যাহার';
 	@override String get dvConversionDv81Description => 'শক্তি ইনলাইন RPU পৃষ্ঠা Dolby Vision প্রোফাইল 8.1';
 	@override String get dvConversionHevcStripDescription => 'স্ট্রিপ Dolby Vision RPU/EL layers এবং বর্তমান প্লাইন HEVC';
+	@override String get experimentalDolbyVision => 'পরীক্ষামূলক Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'পরবর্তী প্লেব্যাকে পরীক্ষামূলক FEL রেন্ডারার ব্যবহার করুন। ইঞ্জিনের আলাদা বিল্ড প্রয়োজন।';
+	@override String get dvExperimentUnavailableDescription => 'এই পরীক্ষা বর্তমানে শুধু Linux-এ উপলব্ধ।';
+	@override String get dvCompatibilityFallback => 'সামঞ্জস্যপূর্ণ বিকল্প';
+	@override String get dvCompatibilityFallbackDescription => 'পরীক্ষা শুরু না হলে সাধারণ রেন্ডারার ব্যবহার করুন। FEL তথ্য হারিয়ে যেতে পারে।';
+	@override String get dvExperimentDiagnostics => 'ভিডিও পরীক্ষার লগ';
+	@override String get dvExperimentDiagnosticsDescription => 'পরবর্তী প্লেব্যাকে প্লেয়ারের বিস্তারিত লগ চালু করুন।';
 	@override String get disableDolbyVision => 'অস্বাভাবিক Dolby Vision';
 	@override String get disableDolbyVisionDescription => 'ফাইলের HDR10 বা HLG স্তরের পরিবর্তে Dolby Vision খেলুন, যখন এটি একটি আছে';
 	@override String get hdrSdrConversion => 'HDR থেকে SDR সংকট';
@@ -762,13 +770,6 @@ class _Translations$settings$bn extends Translations$settings$en {
 	@override String get regionFormatDescription => 'তারিখ, সংখ্যা ও পরিমাপ কীভাবে দেখানো হবে তা বেছে নিন।';
 	@override String get metadataLanguage => 'মিডিয়ার তথ্যের ভাষা';
 	@override String get metadataLanguageDescription => 'সার্ভার সমর্থন করলে শিরোনাম ও বিবরণের পছন্দের ভাষা। অডিও ও সাবটাইটেলের পছন্দ আলাদাভাবে নির্ধারিত হয়।';
-	@override String get experimentalDolbyVision => 'পরীক্ষামূলক Dolby Vision';
-	@override String get experimentalDolbyVisionDescription => 'পরবর্তী প্লেব্যাকে পরীক্ষামূলক FEL রেন্ডারার ব্যবহার করুন। ইঞ্জিনের আলাদা বিল্ড প্রয়োজন।';
-	@override String get dvExperimentUnavailableDescription => 'এই পরীক্ষা বর্তমানে শুধু Linux-এ উপলব্ধ।';
-	@override String get dvCompatibilityFallback => 'সামঞ্জস্যপূর্ণ বিকল্প';
-	@override String get dvCompatibilityFallbackDescription => 'পরীক্ষা শুরু না হলে সাধারণ রেন্ডারার ব্যবহার করুন। FEL তথ্য হারিয়ে যেতে পারে।';
-	@override String get dvExperimentDiagnostics => 'ভিডিও পরীক্ষার লগ';
-	@override String get dvExperimentDiagnosticsDescription => 'পরবর্তী প্লেব্যাকে প্লেয়ারের বিস্তারিত লগ চালু করুন।';
 }
 
 // Path: themeEditor
@@ -2909,8 +2910,12 @@ class _Translations$fileSources$bn extends Translations$fileSources$en {
 	@override String get source => 'উৎস';
 	@override String get name => 'নাম';
 	@override String get endpoint => 'URL সার্ভার';
+	@override String get smbEndpointHint => 'উদাহরণ: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'একটি SMB সার্ভার এবং একটি শেয়ার করা ফোল্ডার লিখুন।';
 	@override String get root => 'ফোল্ডার বা উপসর্গ';
+	@override String get smbFolderHelp => 'পুরো শেয়ার করা ফোল্ডার ব্যবহার করতে ফাঁকা রাখুন, অথবা তার ভেতরের কোনো ফোল্ডার লিখুন।';
 	@override String get username => 'ব্যবহারকারী নাম';
+	@override String get smbDomain => 'ডোমেইন (ঐচ্ছিক)';
 	@override String get password => 'পাসওয়ার্ড';
 	@override String get token => 'API টকেন';
 	@override String get accessKey => 'অ্যাক্সেস ক্লাই ID';
@@ -2920,6 +2925,8 @@ class _Translations$fileSources$bn extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth ক্লায়েন্ট ID';
 	@override String get clientSecret => 'OAuth ক্লায়েন্ট সার্ভিস (সুধুমাত্র Google ডেস্টো)';
 	@override String get allowHttp => 'বিশ্বস্ত নেটওয়ার্কে এনক্রিপশনবিহীন HTTP সংযোগের অনুমতি দিন';
+	@override String get smbEncryption => 'SMB3 সংযোগ এনক্রিপ্ট করুন';
+	@override String get smbEncryptionHint => 'NAS সমর্থন করলে SMB3 এনক্রিপশন ব্যবহার করুন।';
 	@override String get connect => 'কানেক্ট';
 	@override String get cancel => 'বাতিল';
 	@override String get save => 'সুরক্ষা';
@@ -3065,12 +3072,6 @@ class _Translations$fileSources$bn extends Translations$fileSources$en {
 	@override String get useFiles => 'ফাইল এবং বই ব্যবহার করুন';
 	@override String get cancelScan => 'স্ক্যান বাতিল';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'উদাহরণ: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'একটি SMB সার্ভার এবং একটি শেয়ার করা ফোল্ডার লিখুন।';
-	@override String get smbFolderHelp => 'পুরো শেয়ার করা ফোল্ডার ব্যবহার করতে ফাঁকা রাখুন, অথবা তার ভেতরের কোনো ফোল্ডার লিখুন।';
-	@override String get smbDomain => 'ডোমেইন (ঐচ্ছিক)';
-	@override String get smbEncryption => 'SMB3 সংযোগ এনক্রিপ্ট করুন';
-	@override String get smbEncryptionHint => 'NAS সমর্থন করলে SMB3 এনক্রিপশন ব্যবহার করুন।';
 }
 
 // Path: lending
@@ -3293,6 +3294,27 @@ class _Translations$sourceSetup$bn extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'ক্লায়েন্টের নির্বাচিত পরিচয়পত্র: ${name}';
 	@override String subtitleRating({required Object rating}) => 'রেটিং ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'সাবটাইটেল ডাউনলোড হচ্ছে: ${title}';
+}
+
+// Path: comics
+class _Translations$comics$bn extends Translations$comics$en {
+	_Translations$comics$bn._(TranslationsBn root) : this._root = root, super.internal(root);
+
+	final TranslationsBn _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'উচ্চতা অনুযায়ী মানানসই';
+	@override String get readingMode => 'পড়ার ধরন';
+	@override String get paged => 'পৃষ্ঠা';
+	@override String get webtoon => 'একটানা স্ক্রল';
+	@override String get coverAlone => 'প্রচ্ছদ আলাদা করে দেখান';
+	@override String get splitWide => 'চওড়া পৃষ্ঠা ভাগ করুন';
+	@override String get splitWideHelp => 'পড়ার ক্রম অনুযায়ী প্রতিটি অর্ধেক আলাদা করে দেখান। এটি চালু থাকলে পাশাপাশি দুটি পৃষ্ঠা দেখানো বন্ধ থাকে।';
+	@override String get thumbnails => 'পৃষ্ঠার থাম্বনেইল';
+	@override String get controlsHelp => 'পৃষ্ঠা ওল্টাতে সোয়াইপ করুন। মানানসই আকার বদলাতে দুবার ট্যাপ করুন। একটানা স্ক্রলে উল্লম্বভাবে সোয়াইপ করুন বা Page Up ও Page Down ব্যবহার করুন।';
+	@override String get savedForComic => 'এই প্রোফাইলে এই কমিকের প্রদর্শন সেটিংস মনে রাখা হয়।';
+	@override String get readLists => 'পড়ার তালিকা';
+	@override String get collections => 'সংগ্রহ';
 }
 
 // Path: appIcon.names
@@ -4846,9 +4868,16 @@ extension on TranslationsBn {
 			'settings.dvConversionNativeDescription' => 'শক্তি প্রাকৃতিক DV7 এবং ডিভি পরিদর্শন রিট্রি প্রত্যাহার',
 			'settings.dvConversionDv81Description' => 'শক্তি ইনলাইন RPU পৃষ্ঠা Dolby Vision প্রোফাইল 8.1',
 			'settings.dvConversionHevcStripDescription' => 'স্ট্রিপ Dolby Vision RPU/EL layers এবং বর্তমান প্লাইন HEVC',
-			'settings.disableDolbyVision' => 'অস্বাভাবিক Dolby Vision',
+			'settings.experimentalDolbyVision' => 'পরীক্ষামূলক Dolby Vision',
 			_ => null,
 		} ?? switch (path) {
+			'settings.experimentalDolbyVisionDescription' => 'পরবর্তী প্লেব্যাকে পরীক্ষামূলক FEL রেন্ডারার ব্যবহার করুন। ইঞ্জিনের আলাদা বিল্ড প্রয়োজন।',
+			'settings.dvExperimentUnavailableDescription' => 'এই পরীক্ষা বর্তমানে শুধু Linux-এ উপলব্ধ।',
+			'settings.dvCompatibilityFallback' => 'সামঞ্জস্যপূর্ণ বিকল্প',
+			'settings.dvCompatibilityFallbackDescription' => 'পরীক্ষা শুরু না হলে সাধারণ রেন্ডারার ব্যবহার করুন। FEL তথ্য হারিয়ে যেতে পারে।',
+			'settings.dvExperimentDiagnostics' => 'ভিডিও পরীক্ষার লগ',
+			'settings.dvExperimentDiagnosticsDescription' => 'পরবর্তী প্লেব্যাকে প্লেয়ারের বিস্তারিত লগ চালু করুন।',
+			'settings.disableDolbyVision' => 'অস্বাভাবিক Dolby Vision',
 			'settings.disableDolbyVisionDescription' => 'ফাইলের HDR10 বা HLG স্তরের পরিবর্তে Dolby Vision খেলুন, যখন এটি একটি আছে',
 			'settings.hdrSdrConversion' => 'HDR থেকে SDR সংকট',
 			'settings.hdrSdrConversionDescription' => 'HDR ভিডিও কনভার্ট করে যা নির্বাচন করুন, যখন ডিভাইস HDR দেখতে পারবে না।',
@@ -4934,13 +4963,6 @@ extension on TranslationsBn {
 			'settings.regionFormatDescription' => 'তারিখ, সংখ্যা ও পরিমাপ কীভাবে দেখানো হবে তা বেছে নিন।',
 			'settings.metadataLanguage' => 'মিডিয়ার তথ্যের ভাষা',
 			'settings.metadataLanguageDescription' => 'সার্ভার সমর্থন করলে শিরোনাম ও বিবরণের পছন্দের ভাষা। অডিও ও সাবটাইটেলের পছন্দ আলাদাভাবে নির্ধারিত হয়।',
-			'settings.experimentalDolbyVision' => 'পরীক্ষামূলক Dolby Vision',
-			'settings.experimentalDolbyVisionDescription' => 'পরবর্তী প্লেব্যাকে পরীক্ষামূলক FEL রেন্ডারার ব্যবহার করুন। ইঞ্জিনের আলাদা বিল্ড প্রয়োজন।',
-			'settings.dvExperimentUnavailableDescription' => 'এই পরীক্ষা বর্তমানে শুধু Linux-এ উপলব্ধ।',
-			'settings.dvCompatibilityFallback' => 'সামঞ্জস্যপূর্ণ বিকল্প',
-			'settings.dvCompatibilityFallbackDescription' => 'পরীক্ষা শুরু না হলে সাধারণ রেন্ডারার ব্যবহার করুন। FEL তথ্য হারিয়ে যেতে পারে।',
-			'settings.dvExperimentDiagnostics' => 'ভিডিও পরীক্ষার লগ',
-			'settings.dvExperimentDiagnosticsDescription' => 'পরবর্তী প্লেব্যাকে প্লেয়ারের বিস্তারিত লগ চালু করুন।',
 			'themeEditor.builtIn' => 'ভিত্তিতে',
 			'themeEditor.presets' => 'প্রজাতন',
 			'themeEditor.custom' => 'কাস্টম',
@@ -7070,8 +7092,12 @@ extension on TranslationsBn {
 			'fileSources.source' => 'উৎস',
 			'fileSources.name' => 'নাম',
 			'fileSources.endpoint' => 'URL সার্ভার',
+			'fileSources.smbEndpointHint' => 'উদাহরণ: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'একটি SMB সার্ভার এবং একটি শেয়ার করা ফোল্ডার লিখুন।',
 			'fileSources.root' => 'ফোল্ডার বা উপসর্গ',
+			'fileSources.smbFolderHelp' => 'পুরো শেয়ার করা ফোল্ডার ব্যবহার করতে ফাঁকা রাখুন, অথবা তার ভেতরের কোনো ফোল্ডার লিখুন।',
 			'fileSources.username' => 'ব্যবহারকারী নাম',
+			'fileSources.smbDomain' => 'ডোমেইন (ঐচ্ছিক)',
 			'fileSources.password' => 'পাসওয়ার্ড',
 			'fileSources.token' => 'API টকেন',
 			'fileSources.accessKey' => 'অ্যাক্সেস ক্লাই ID',
@@ -7081,6 +7107,8 @@ extension on TranslationsBn {
 			'fileSources.clientId' => 'OAuth ক্লায়েন্ট ID',
 			'fileSources.clientSecret' => 'OAuth ক্লায়েন্ট সার্ভিস (সুধুমাত্র Google ডেস্টো)',
 			'fileSources.allowHttp' => 'বিশ্বস্ত নেটওয়ার্কে এনক্রিপশনবিহীন HTTP সংযোগের অনুমতি দিন',
+			'fileSources.smbEncryption' => 'SMB3 সংযোগ এনক্রিপ্ট করুন',
+			'fileSources.smbEncryptionHint' => 'NAS সমর্থন করলে SMB3 এনক্রিপশন ব্যবহার করুন।',
 			'fileSources.connect' => 'কানেক্ট',
 			'fileSources.cancel' => 'বাতিল',
 			'fileSources.save' => 'সুরক্ষা',
@@ -7223,12 +7251,6 @@ extension on TranslationsBn {
 			'fileSources.useFiles' => 'ফাইল এবং বই ব্যবহার করুন',
 			'fileSources.cancelScan' => 'স্ক্যান বাতিল',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'উদাহরণ: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'একটি SMB সার্ভার এবং একটি শেয়ার করা ফোল্ডার লিখুন।',
-			'fileSources.smbFolderHelp' => 'পুরো শেয়ার করা ফোল্ডার ব্যবহার করতে ফাঁকা রাখুন, অথবা তার ভেতরের কোনো ফোল্ডার লিখুন।',
-			'fileSources.smbDomain' => 'ডোমেইন (ঐচ্ছিক)',
-			'fileSources.smbEncryption' => 'SMB3 সংযোগ এনক্রিপ্ট করুন',
-			'fileSources.smbEncryptionHint' => 'NAS সমর্থন করলে SMB3 এনক্রিপশন ব্যবহার করুন।',
 			'lending.title' => 'জনব্যাপী লাইব্রেরি',
 			'lending.add' => 'একটি লাইব্রেরি যোগ করুন',
 			'lending.other' => 'আরেকটি লাইব্রেরি',
@@ -7426,6 +7448,18 @@ extension on TranslationsBn {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'ক্লায়েন্টের নির্বাচিত পরিচয়পত্র: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'রেটিং ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'সাবটাইটেল ডাউনলোড হচ্ছে: ${title}',
+			'comics.fitHeight' => 'উচ্চতা অনুযায়ী মানানসই',
+			'comics.readingMode' => 'পড়ার ধরন',
+			'comics.paged' => 'পৃষ্ঠা',
+			'comics.webtoon' => 'একটানা স্ক্রল',
+			'comics.coverAlone' => 'প্রচ্ছদ আলাদা করে দেখান',
+			'comics.splitWide' => 'চওড়া পৃষ্ঠা ভাগ করুন',
+			'comics.splitWideHelp' => 'পড়ার ক্রম অনুযায়ী প্রতিটি অর্ধেক আলাদা করে দেখান। এটি চালু থাকলে পাশাপাশি দুটি পৃষ্ঠা দেখানো বন্ধ থাকে।',
+			'comics.thumbnails' => 'পৃষ্ঠার থাম্বনেইল',
+			'comics.controlsHelp' => 'পৃষ্ঠা ওল্টাতে সোয়াইপ করুন। মানানসই আকার বদলাতে দুবার ট্যাপ করুন। একটানা স্ক্রলে উল্লম্বভাবে সোয়াইপ করুন বা Page Up ও Page Down ব্যবহার করুন।',
+			'comics.savedForComic' => 'এই প্রোফাইলে এই কমিকের প্রদর্শন সেটিংস মনে রাখা হয়।',
+			'comics.readLists' => 'পড়ার তালিকা',
+			'comics.collections' => 'সংগ্রহ',
 			_ => null,
 		};
 	}

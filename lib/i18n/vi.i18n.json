@@ -541,6 +541,13 @@
     "dvConversionNativeDescription": "Native Force DV7 và suppress DV conversion retry",
     "dvConversionDv81Description": "Chuyển đổi RPU mạnh vào hồ sơ Dolby Vision 8.1",
     "dvConversionHevcStripDescription": "Dây Dolby Vision lớp RPU/EL và mặt bằng hiện tại HEVC",
+    "experimentalDolbyVision": "Dolby Vision thử nghiệm",
+    "experimentalDolbyVisionDescription": "Dùng bộ kết xuất FEL thử nghiệm trong lần phát tiếp theo. Cần bản dựng bộ máy riêng.",
+    "dvExperimentUnavailableDescription": "Thử nghiệm này hiện chỉ có trên Linux.",
+    "dvCompatibilityFallback": "Phương án tương thích dự phòng",
+    "dvCompatibilityFallbackDescription": "Dùng bộ kết xuất tiêu chuẩn nếu không thể bắt đầu thử nghiệm. Dữ liệu FEL có thể bị mất.",
+    "dvExperimentDiagnostics": "Nhật ký thử nghiệm video",
+    "dvExperimentDiagnosticsDescription": "Bật nhật ký trình phát chi tiết trong lần phát tiếp theo.",
     "disableDolbyVision": "Không thể bỏ qua Dolby Vision",
     "disableDolbyVisionDescription": "Chơi file HDR10 hoặc lớp HLG thay vì Dolby Vision, khi nó có một",
     "hdrSdrConversion": "HDR sang SDR chuyển đổi",
@@ -626,14 +633,7 @@
     "regionFormat": "Định dạng khu vực",
     "regionFormatDescription": "Chọn cách hiển thị ngày, số và đơn vị đo.",
     "metadataLanguage": "Ngôn ngữ siêu dữ liệu",
-    "metadataLanguageDescription": "Ngôn ngữ ưu tiên cho tiêu đề và mô tả khi máy chủ hỗ trợ. Tùy chọn âm thanh và phụ đề được thiết lập riêng.",
-    "experimentalDolbyVision": "Dolby Vision thử nghiệm",
-    "experimentalDolbyVisionDescription": "Dùng bộ kết xuất FEL thử nghiệm trong lần phát tiếp theo. Cần bản dựng bộ máy riêng.",
-    "dvExperimentUnavailableDescription": "Thử nghiệm này hiện chỉ có trên Linux.",
-    "dvCompatibilityFallback": "Phương án tương thích dự phòng",
-    "dvCompatibilityFallbackDescription": "Dùng bộ kết xuất tiêu chuẩn nếu không thể bắt đầu thử nghiệm. Dữ liệu FEL có thể bị mất.",
-    "dvExperimentDiagnostics": "Nhật ký thử nghiệm video",
-    "dvExperimentDiagnosticsDescription": "Bật nhật ký trình phát chi tiết trong lần phát tiếp theo."
+    "metadataLanguageDescription": "Ngôn ngữ ưu tiên cho tiêu đề và mô tả khi máy chủ hỗ trợ. Tùy chọn âm thanh và phụ đề được thiết lập riêng."
   },
   "themeEditor": {
     "builtIn": "xây dựng",
@@ -2988,8 +2988,12 @@
     "source": "Nguồn",
     "name": "Tên",
     "endpoint": "URL máy chủ",
+    "smbEndpointHint": "Ví dụ: smb://nas/Movies",
+    "smbEndpointInvalid": "Nhập một máy chủ SMB và một thư mục chia sẻ.",
     "root": "Folder hoặc Prefix",
+    "smbFolderHelp": "Để trống để dùng toàn bộ thư mục chia sẻ, hoặc nhập một thư mục bên trong.",
     "username": "Tên đăng nhập",
+    "smbDomain": "Miền (không bắt buộc)",
     "password": "Mật Khẩu",
     "token": "API Đánh giá",
     "accessKey": "Access Key ID",
@@ -2999,6 +3003,8 @@
     "clientId": "ID khách hàng OAuth",
     "clientSecret": "OAuth Client Secret (chỉ Google Desktop)",
     "allowHttp": "Cho phép HTTP không mã hóa trên mạng đáng tin cậy",
+    "smbEncryption": "Mã hóa kết nối SMB3",
+    "smbEncryptionHint": "Dùng mã hóa SMB3 khi NAS hỗ trợ.",
     "connect": "Kết nối",
     "cancel": "Hủy bỏ",
     "save": "Lưu",
@@ -3142,13 +3148,7 @@
     "zoom": "Thu phóng",
     "useFiles": "Sử dụng file và sách",
     "cancelScan": "Đặt hủy scan",
-    "googleDrive": "Google Drive",
-    "smbEndpointHint": "Ví dụ: smb://nas/Movies",
-    "smbEndpointInvalid": "Nhập một máy chủ SMB và một thư mục chia sẻ.",
-    "smbFolderHelp": "Để trống để dùng toàn bộ thư mục chia sẻ, hoặc nhập một thư mục bên trong.",
-    "smbDomain": "Miền (không bắt buộc)",
-    "smbEncryption": "Mã hóa kết nối SMB3",
-    "smbEncryptionHint": "Dùng mã hóa SMB3 khi NAS hỗ trợ."
+    "googleDrive": "Google Drive"
   },
   "lending": {
     "title": "Thư viện công cộng",
@@ -3350,5 +3350,19 @@
     "selectedIdentity": "Danh tính máy khách đã chọn: ${name}",
     "subtitleRating": "Điểm đánh giá ${rating}",
     "subtitleDownloading": "Đang tải phụ đề: ${title}"
+  },
+  "comics": {
+    "fitHeight": "Vừa chiều cao",
+    "readingMode": "Chế độ đọc",
+    "paged": "Trang",
+    "webtoon": "Cuộn liên tục",
+    "coverAlone": "Hiển thị bìa riêng",
+    "splitWide": "Chia trang rộng",
+    "splitWideHelp": "Hiển thị riêng từng nửa theo thứ tự đọc. Tạm dừng hiển thị hai trang cạnh nhau khi bật tùy chọn này.",
+    "thumbnails": "Hình thu nhỏ của trang",
+    "controlsHelp": "Vuốt để lật trang. Chạm hai lần để đổi cách vừa trang. Khi cuộn liên tục, vuốt dọc hoặc dùng Page Up và Page Down.",
+    "savedForComic": "Cài đặt hiển thị được ghi nhớ cho truyện tranh này trong hồ sơ này.",
+    "readLists": "Danh sách đọc",
+    "collections": "Bộ sưu tập"
   }
 }

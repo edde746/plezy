@@ -541,6 +541,13 @@
     "dvConversionNativeDescription": "强制原生 DV7 并禁止重试 DV 转换",
     "dvConversionDv81Description": "强制内联 RPU 转换为 Dolby Vision Profile 8.1",
     "dvConversionHevcStripDescription": "移除 Dolby Vision RPU/EL 层并呈现普通 HEVC",
+    "experimentalDolbyVision": "实验性 Dolby Vision",
+    "experimentalDolbyVisionDescription": "下次播放时使用实验性 FEL 渲染器。需要单独构建的播放引擎。",
+    "dvExperimentUnavailableDescription": "此实验目前仅支持 Linux。",
+    "dvCompatibilityFallback": "兼容性回退",
+    "dvCompatibilityFallbackDescription": "如果实验无法启动，则使用标准渲染器。FEL 数据可能会丢失。",
+    "dvExperimentDiagnostics": "视频实验日志",
+    "dvExperimentDiagnosticsDescription": "在下次播放时启用详细的播放器日志。",
     "disableDolbyVision": "禁用 Dolby Vision",
     "disableDolbyVisionDescription": "文件包含 HDR10 或 HLG 层时，改为播放该层而非 Dolby Vision",
     "hdrSdrConversion": "HDR 转 SDR",
@@ -626,14 +633,7 @@
     "regionFormat": "区域格式",
     "regionFormatDescription": "选择日期、数字和计量单位的显示方式。",
     "metadataLanguage": "元数据语言",
-    "metadataLanguageDescription": "服务器支持时，优先使用此语言显示标题和简介。音频和字幕偏好单独设置。",
-    "experimentalDolbyVision": "实验性 Dolby Vision",
-    "experimentalDolbyVisionDescription": "下次播放时使用实验性 FEL 渲染器。需要单独构建的播放引擎。",
-    "dvExperimentUnavailableDescription": "此实验目前仅支持 Linux。",
-    "dvCompatibilityFallback": "兼容性回退",
-    "dvCompatibilityFallbackDescription": "如果实验无法启动，则使用标准渲染器。FEL 数据可能会丢失。",
-    "dvExperimentDiagnostics": "视频实验日志",
-    "dvExperimentDiagnosticsDescription": "在下次播放时启用详细的播放器日志。"
+    "metadataLanguageDescription": "服务器支持时，优先使用此语言显示标题和简介。音频和字幕偏好单独设置。"
   },
   "themeEditor": {
     "builtIn": "内置",
@@ -3005,8 +3005,12 @@
     "source": "源",
     "name": "名称",
     "endpoint": "服务器 URL",
+    "smbEndpointHint": "示例：smb://nas/Movies",
+    "smbEndpointInvalid": "请输入 SMB 服务器和一个共享文件夹。",
     "root": "文件夹或前缀",
+    "smbFolderHelp": "留空以使用整个共享文件夹，或输入其中的某个文件夹。",
     "username": "用户名",
+    "smbDomain": "域（可选）",
     "password": "密码",
     "token": "API 标志",
     "accessKey": "关键 ID 访问",
@@ -3016,6 +3020,8 @@
     "clientId": "客戶 ID",
     "clientSecret": "OAuth 客户端秘密(仅限 Google 桌面)",
     "allowHttp": "允许在可信网络上使用未加密的 HTTP",
+    "smbEncryption": "加密 SMB3 连接",
+    "smbEncryptionHint": "当 NAS 支持时，使用 SMB3 加密。",
     "connect": "连接",
     "cancel": "取消",
     "save": "保存",
@@ -3159,13 +3165,7 @@
     "zoom": "缩放",
     "useFiles": "使用文件和书籍",
     "cancelScan": "取消扫描",
-    "googleDrive": "Google Drive",
-    "smbEndpointHint": "示例：smb://nas/Movies",
-    "smbEndpointInvalid": "请输入 SMB 服务器和一个共享文件夹。",
-    "smbFolderHelp": "留空以使用整个共享文件夹，或输入其中的某个文件夹。",
-    "smbDomain": "域（可选）",
-    "smbEncryption": "加密 SMB3 连接",
-    "smbEncryptionHint": "当 NAS 支持时，使用 SMB3 加密。"
+    "googleDrive": "Google Drive"
   },
   "lending": {
     "title": "公共图书馆",
@@ -3367,5 +3367,19 @@
     "selectedIdentity": "已选客户端身份凭据：${name}",
     "subtitleRating": "评分 ${rating}",
     "subtitleDownloading": "正在下载字幕：${title}"
+  },
+  "comics": {
+    "fitHeight": "适合高度",
+    "readingMode": "阅读模式",
+    "paged": "分页",
+    "webtoon": "连续滚动",
+    "coverAlone": "单独显示封面",
+    "splitWide": "拆分宽页",
+    "splitWideHelp": "按阅读顺序分别显示每一半。开启后暂停双页并排显示。",
+    "thumbnails": "页面缩略图",
+    "controlsHelp": "滑动翻页，双击切换适配方式。连续滚动时，垂直滑动或使用 Page Up 和 Page Down。",
+    "savedForComic": "此个人资料会记住这部漫画的显示设置。",
+    "readLists": "阅读列表",
+    "collections": "合集"
   }
 }

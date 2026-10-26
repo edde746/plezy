@@ -105,6 +105,7 @@ class TranslationsNb extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$lending$nb lending = _Translations$lending$nb._(_root);
 	@override late final _Translations$audiobook$nb audiobook = _Translations$audiobook$nb._(_root);
 	@override late final _Translations$sourceSetup$nb sourceSetup = _Translations$sourceSetup$nb._(_root);
+	@override late final _Translations$comics$nb comics = _Translations$comics$nb._(_root);
 }
 
 // Path: app
@@ -676,6 +677,13 @@ class _Translations$settings$nb extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Tving opprinnelig DV7-avspilling og ikke prøv DV-konvertering på nytt';
 	@override String get dvConversionDv81Description => 'Tving direkte RPU-konvertering til Dolby Vision-profil 8.1';
 	@override String get dvConversionHevcStripDescription => 'Fjern Dolby Vision RPU/EL-lag og lever som vanlig HEVC';
+	@override String get experimentalDolbyVision => 'Eksperimentell Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Bruk den eksperimentelle FEL-rendereren ved neste avspilling. Krever en separat motorbygging.';
+	@override String get dvExperimentUnavailableDescription => 'Dette eksperimentet er foreløpig bare tilgjengelig på Linux.';
+	@override String get dvCompatibilityFallback => 'Kompatibilitetsreserve';
+	@override String get dvCompatibilityFallbackDescription => 'Bruk standardrendereren hvis eksperimentet ikke kan starte. FEL-data kan gå tapt.';
+	@override String get dvExperimentDiagnostics => 'Logging av videoeksperiment';
+	@override String get dvExperimentDiagnosticsDescription => 'Aktiver detaljerte spillerlogger ved neste avspilling.';
 	@override String get disableDolbyVision => 'Deaktiver Dolby Vision';
 	@override String get disableDolbyVisionDescription => 'Spill av filens HDR10- eller HLG-lag i stedet for Dolby Vision når det finnes';
 	@override String get hdrSdrConversion => 'HDR til SDR-konvertering';
@@ -762,13 +770,6 @@ class _Translations$settings$nb extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Velg hvordan datoer, tall og måleenheter vises.';
 	@override String get metadataLanguage => 'Språk for metadata';
 	@override String get metadataLanguageDescription => 'Foretrukket språk for titler og beskrivelser når serveren støtter det. Lyd og undertekster stilles inn separat.';
-	@override String get experimentalDolbyVision => 'Eksperimentell Dolby Vision';
-	@override String get experimentalDolbyVisionDescription => 'Bruk den eksperimentelle FEL-rendereren ved neste avspilling. Krever en separat motorbygging.';
-	@override String get dvExperimentUnavailableDescription => 'Dette eksperimentet er foreløpig bare tilgjengelig på Linux.';
-	@override String get dvCompatibilityFallback => 'Kompatibilitetsreserve';
-	@override String get dvCompatibilityFallbackDescription => 'Bruk standardrendereren hvis eksperimentet ikke kan starte. FEL-data kan gå tapt.';
-	@override String get dvExperimentDiagnostics => 'Logging av videoeksperiment';
-	@override String get dvExperimentDiagnosticsDescription => 'Aktiver detaljerte spillerlogger ved neste avspilling.';
 }
 
 // Path: themeEditor
@@ -2909,8 +2910,12 @@ class _Translations$fileSources$nb extends Translations$fileSources$en {
 	@override String get source => 'Kilde';
 	@override String get name => 'Navn';
 	@override String get endpoint => 'Server-URL';
+	@override String get smbEndpointHint => 'Eksempel: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Angi en SMB-server og én delt mappe.';
 	@override String get root => 'Fold eller forhåndsregister';
+	@override String get smbFolderHelp => 'La feltet stå tomt for å bruke hele den delte mappen, eller angi en mappe i den.';
 	@override String get username => 'Brukernavn';
+	@override String get smbDomain => 'Domene (valgfritt)';
 	@override String get password => 'Passord';
 	@override String get token => 'API token';
 	@override String get accessKey => 'Oppsummering av Key ID';
@@ -2920,6 +2925,8 @@ class _Translations$fileSources$nb extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth klient ID';
 	@override String get clientSecret => 'OAuth-klienthemmelighet (desktop Google alene)';
 	@override String get allowHttp => 'Tillat ukryptert HTTP på et betrodd nettverk';
+	@override String get smbEncryption => 'Krypter SMB3-tilkoblingen';
+	@override String get smbEncryptionHint => 'Bruk SMB3-kryptering når NAS-en støtter det.';
 	@override String get connect => 'Koble til';
 	@override String get cancel => 'Avbryt';
 	@override String get save => 'Lagre';
@@ -3065,12 +3072,6 @@ class _Translations$fileSources$nb extends Translations$fileSources$en {
 	@override String get useFiles => 'Bruk filer og bøker';
 	@override String get cancelScan => 'Avbestill skanningen';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'Eksempel: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'Angi en SMB-server og én delt mappe.';
-	@override String get smbFolderHelp => 'La feltet stå tomt for å bruke hele den delte mappen, eller angi en mappe i den.';
-	@override String get smbDomain => 'Domene (valgfritt)';
-	@override String get smbEncryption => 'Krypter SMB3-tilkoblingen';
-	@override String get smbEncryptionHint => 'Bruk SMB3-kryptering når NAS-en støtter det.';
 }
 
 // Path: lending
@@ -3293,6 +3294,27 @@ class _Translations$sourceSetup$nb extends Translations$sourceSetup$en {
 	@override String selectedIdentity({required Object name}) => 'Valgt klientidentitet: ${name}';
 	@override String subtitleRating({required Object rating}) => 'Vurdering ${rating}';
 	@override String subtitleDownloading({required Object title}) => 'Laster ned undertekst: ${title}';
+}
+
+// Path: comics
+class _Translations$comics$nb extends Translations$comics$en {
+	_Translations$comics$nb._(TranslationsNb root) : this._root = root, super.internal(root);
+
+	final TranslationsNb _root; // ignore: unused_field
+
+	// Translations
+	@override String get fitHeight => 'Tilpass høyden';
+	@override String get readingMode => 'Lesemodus';
+	@override String get paged => 'Sider';
+	@override String get webtoon => 'Kontinuerlig rulling';
+	@override String get coverAlone => 'Vis omslaget alene';
+	@override String get splitWide => 'Del brede sider';
+	@override String get splitWideHelp => 'Vis hver halvdel separat i leserekkefølge. Visning av to sider sammen settes på pause mens dette er slått på.';
+	@override String get thumbnails => 'Sideminiatyrer';
+	@override String get controlsHelp => 'Sveip for å bla. Trykk to ganger for å endre tilpasning. Ved kontinuerlig rulling sveiper du loddrett eller bruker Page Up og Page Down.';
+	@override String get savedForComic => 'Visningsinnstillingene huskes for denne tegneserien i denne profilen.';
+	@override String get readLists => 'Leselister';
+	@override String get collections => 'Samlinger';
 }
 
 // Path: appIcon.names
@@ -4846,9 +4868,16 @@ extension on TranslationsNb {
 			'settings.dvConversionNativeDescription' => 'Tving opprinnelig DV7-avspilling og ikke prøv DV-konvertering på nytt',
 			'settings.dvConversionDv81Description' => 'Tving direkte RPU-konvertering til Dolby Vision-profil 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Fjern Dolby Vision RPU/EL-lag og lever som vanlig HEVC',
-			'settings.disableDolbyVision' => 'Deaktiver Dolby Vision',
+			'settings.experimentalDolbyVision' => 'Eksperimentell Dolby Vision',
 			_ => null,
 		} ?? switch (path) {
+			'settings.experimentalDolbyVisionDescription' => 'Bruk den eksperimentelle FEL-rendereren ved neste avspilling. Krever en separat motorbygging.',
+			'settings.dvExperimentUnavailableDescription' => 'Dette eksperimentet er foreløpig bare tilgjengelig på Linux.',
+			'settings.dvCompatibilityFallback' => 'Kompatibilitetsreserve',
+			'settings.dvCompatibilityFallbackDescription' => 'Bruk standardrendereren hvis eksperimentet ikke kan starte. FEL-data kan gå tapt.',
+			'settings.dvExperimentDiagnostics' => 'Logging av videoeksperiment',
+			'settings.dvExperimentDiagnosticsDescription' => 'Aktiver detaljerte spillerlogger ved neste avspilling.',
+			'settings.disableDolbyVision' => 'Deaktiver Dolby Vision',
 			'settings.disableDolbyVisionDescription' => 'Spill av filens HDR10- eller HLG-lag i stedet for Dolby Vision når det finnes',
 			'settings.hdrSdrConversion' => 'HDR til SDR-konvertering',
 			'settings.hdrSdrConversionDescription' => 'Velg hva som konverterer HDR-video når skjermen ikke kan vise HDR.',
@@ -4934,13 +4963,6 @@ extension on TranslationsNb {
 			'settings.regionFormatDescription' => 'Velg hvordan datoer, tall og måleenheter vises.',
 			'settings.metadataLanguage' => 'Språk for metadata',
 			'settings.metadataLanguageDescription' => 'Foretrukket språk for titler og beskrivelser når serveren støtter det. Lyd og undertekster stilles inn separat.',
-			'settings.experimentalDolbyVision' => 'Eksperimentell Dolby Vision',
-			'settings.experimentalDolbyVisionDescription' => 'Bruk den eksperimentelle FEL-rendereren ved neste avspilling. Krever en separat motorbygging.',
-			'settings.dvExperimentUnavailableDescription' => 'Dette eksperimentet er foreløpig bare tilgjengelig på Linux.',
-			'settings.dvCompatibilityFallback' => 'Kompatibilitetsreserve',
-			'settings.dvCompatibilityFallbackDescription' => 'Bruk standardrendereren hvis eksperimentet ikke kan starte. FEL-data kan gå tapt.',
-			'settings.dvExperimentDiagnostics' => 'Logging av videoeksperiment',
-			'settings.dvExperimentDiagnosticsDescription' => 'Aktiver detaljerte spillerlogger ved neste avspilling.',
 			'themeEditor.builtIn' => 'Innebygde',
 			'themeEditor.presets' => 'Forhåndsinnstillinger',
 			'themeEditor.custom' => 'Egendefinert',
@@ -7070,8 +7092,12 @@ extension on TranslationsNb {
 			'fileSources.source' => 'Kilde',
 			'fileSources.name' => 'Navn',
 			'fileSources.endpoint' => 'Server-URL',
+			'fileSources.smbEndpointHint' => 'Eksempel: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Angi en SMB-server og én delt mappe.',
 			'fileSources.root' => 'Fold eller forhåndsregister',
+			'fileSources.smbFolderHelp' => 'La feltet stå tomt for å bruke hele den delte mappen, eller angi en mappe i den.',
 			'fileSources.username' => 'Brukernavn',
+			'fileSources.smbDomain' => 'Domene (valgfritt)',
 			'fileSources.password' => 'Passord',
 			'fileSources.token' => 'API token',
 			'fileSources.accessKey' => 'Oppsummering av Key ID',
@@ -7081,6 +7107,8 @@ extension on TranslationsNb {
 			'fileSources.clientId' => 'OAuth klient ID',
 			'fileSources.clientSecret' => 'OAuth-klienthemmelighet (desktop Google alene)',
 			'fileSources.allowHttp' => 'Tillat ukryptert HTTP på et betrodd nettverk',
+			'fileSources.smbEncryption' => 'Krypter SMB3-tilkoblingen',
+			'fileSources.smbEncryptionHint' => 'Bruk SMB3-kryptering når NAS-en støtter det.',
 			'fileSources.connect' => 'Koble til',
 			'fileSources.cancel' => 'Avbryt',
 			'fileSources.save' => 'Lagre',
@@ -7223,12 +7251,6 @@ extension on TranslationsNb {
 			'fileSources.useFiles' => 'Bruk filer og bøker',
 			'fileSources.cancelScan' => 'Avbestill skanningen',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'Eksempel: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'Angi en SMB-server og én delt mappe.',
-			'fileSources.smbFolderHelp' => 'La feltet stå tomt for å bruke hele den delte mappen, eller angi en mappe i den.',
-			'fileSources.smbDomain' => 'Domene (valgfritt)',
-			'fileSources.smbEncryption' => 'Krypter SMB3-tilkoblingen',
-			'fileSources.smbEncryptionHint' => 'Bruk SMB3-kryptering når NAS-en støtter det.',
 			'lending.title' => 'Offentlige bibliotek',
 			'lending.add' => 'Legg til biblioteket',
 			'lending.other' => 'En annen bibliotek',
@@ -7426,6 +7448,18 @@ extension on TranslationsNb {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Valgt klientidentitet: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Vurdering ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Laster ned undertekst: ${title}',
+			'comics.fitHeight' => 'Tilpass høyden',
+			'comics.readingMode' => 'Lesemodus',
+			'comics.paged' => 'Sider',
+			'comics.webtoon' => 'Kontinuerlig rulling',
+			'comics.coverAlone' => 'Vis omslaget alene',
+			'comics.splitWide' => 'Del brede sider',
+			'comics.splitWideHelp' => 'Vis hver halvdel separat i leserekkefølge. Visning av to sider sammen settes på pause mens dette er slått på.',
+			'comics.thumbnails' => 'Sideminiatyrer',
+			'comics.controlsHelp' => 'Sveip for å bla. Trykk to ganger for å endre tilpasning. Ved kontinuerlig rulling sveiper du loddrett eller bruker Page Up og Page Down.',
+			'comics.savedForComic' => 'Visningsinnstillingene huskes for denne tegneserien i denne profilen.',
+			'comics.readLists' => 'Leselister',
+			'comics.collections' => 'Samlinger',
 			_ => null,
 		};
 	}

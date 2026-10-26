@@ -547,6 +547,13 @@
     "dvConversionNativeDescription": "ДВ7 і ДВ-конверсійний ретрит",
     "dvConversionDv81Description": "Конвертація силового RPU на Dolby Vision профіль 8.1",
     "dvConversionHevcStripDescription": "Стрип Dolby Vision РПУ/ЕЛ шари і нинішня плоска HEVC",
+    "experimentalDolbyVision": "Експериментальний Dolby Vision",
+    "experimentalDolbyVisionDescription": "Під час наступного відтворення використовувати експериментальний рендерер FEL. Потрібна окрема збірка рушія.",
+    "dvExperimentUnavailableDescription": "Цей експеримент наразі доступний лише в Linux.",
+    "dvCompatibilityFallback": "Резервний режим сумісності",
+    "dvCompatibilityFallbackDescription": "Використовувати стандартний рендерер, якщо експеримент не запускається. Дані FEL можуть бути втрачені.",
+    "dvExperimentDiagnostics": "Журнал відеоексперименту",
+    "dvExperimentDiagnosticsDescription": "Увімкнути докладні журнали програвача під час наступного відтворення.",
     "disableDolbyVision": "Завантажити Dolby Vision",
     "disableDolbyVisionDescription": "Грати в файл HDR10 або HLG-слой замість Dolby Vision, коли у нього є один",
     "hdrSdrConversion": "Конвертація HDR до SDR",
@@ -632,14 +639,7 @@
     "regionFormat": "Регіональні формати",
     "regionFormatDescription": "Виберіть формат відображення дат, чисел і одиниць вимірювання.",
     "metadataLanguage": "Мова метаданих",
-    "metadataLanguageDescription": "Бажана мова назв та описів, якщо сервер її підтримує. Налаштування звуку й субтитрів залишаються окремими.",
-    "experimentalDolbyVision": "Експериментальний Dolby Vision",
-    "experimentalDolbyVisionDescription": "Під час наступного відтворення використовувати експериментальний рендерер FEL. Потрібна окрема збірка рушія.",
-    "dvExperimentUnavailableDescription": "Цей експеримент наразі доступний лише в Linux.",
-    "dvCompatibilityFallback": "Резервний режим сумісності",
-    "dvCompatibilityFallbackDescription": "Використовувати стандартний рендерер, якщо експеримент не запускається. Дані FEL можуть бути втрачені.",
-    "dvExperimentDiagnostics": "Журнал відеоексперименту",
-    "dvExperimentDiagnosticsDescription": "Увімкнути докладні журнали програвача під час наступного відтворення."
+    "metadataLanguageDescription": "Бажана мова назв та описів, якщо сервер її підтримує. Налаштування звуку й субтитрів залишаються окремими."
   },
   "themeEditor": {
     "builtIn": "Будівництво",
@@ -3045,8 +3045,12 @@
     "source": "Джерело",
     "name": "Ім’я",
     "endpoint": "Сервер URL",
+    "smbEndpointHint": "Приклад: smb://nas/Movies",
+    "smbEndpointInvalid": "Введіть сервер SMB та одну спільну папку.",
     "root": "Папка або префікс",
+    "smbFolderHelp": "Залиште поле порожнім, щоб використовувати всю спільну папку, або вкажіть папку всередині неї.",
     "username": "Ім’я користувача",
+    "smbDomain": "Домен (необов’язково)",
     "password": "Пароль",
     "token": "API токен",
     "accessKey": "Доступний ключ ID",
@@ -3056,6 +3060,8 @@
     "clientId": "Клієнт ID",
     "clientSecret": "OAuth Client Secret (один робочий стіл Google)",
     "allowHttp": "Дозволити незашифроване HTTP-з’єднання в довіреній мережі",
+    "smbEncryption": "Шифрувати з’єднання SMB3",
+    "smbEncryptionHint": "Використовувати шифрування SMB3, якщо NAS його підтримує.",
     "connect": "Підключитись",
     "cancel": "Скасувати",
     "save": "Зберегти",
@@ -3202,13 +3208,7 @@
     "zoom": "Масштабувати",
     "useFiles": "Використовуйте файли та книги",
     "cancelScan": "Сканувати сканування",
-    "googleDrive": "Google Drive",
-    "smbEndpointHint": "Приклад: smb://nas/Movies",
-    "smbEndpointInvalid": "Введіть сервер SMB та одну спільну папку.",
-    "smbFolderHelp": "Залиште поле порожнім, щоб використовувати всю спільну папку, або вкажіть папку всередині неї.",
-    "smbDomain": "Домен (необов’язково)",
-    "smbEncryption": "Шифрувати з’єднання SMB3",
-    "smbEncryptionHint": "Використовувати шифрування SMB3, якщо NAS його підтримує."
+    "googleDrive": "Google Drive"
   },
   "lending": {
     "title": "публічні бібліотеки",
@@ -3410,5 +3410,19 @@
     "selectedIdentity": "Вибрані ідентифікаційні дані клієнта: ${name}",
     "subtitleRating": "Оцінка ${rating}",
     "subtitleDownloading": "Завантаження субтитрів: ${title}"
+  },
+  "comics": {
+    "fitHeight": "За висотою",
+    "readingMode": "Режим читання",
+    "paged": "Сторінки",
+    "webtoon": "Безперервне прокручування",
+    "coverAlone": "Показувати обкладинку окремо",
+    "splitWide": "Розділяти широкі сторінки",
+    "splitWideHelp": "Показувати кожну половину окремо в порядку читання. Поки цю опцію ввімкнено, сторінки не відображаються парами.",
+    "thumbnails": "Мініатюри сторінок",
+    "controlsHelp": "Проведіть, щоб перегорнути сторінку. Подвійне торкання змінює припасування розміру. При безперервному прокручуванні проводьте вертикально або використовуйте Page Up і Page Down.",
+    "savedForComic": "Налаштування відображення зберігаються для цього коміксу в цьому профілі.",
+    "readLists": "Списки читання",
+    "collections": "Колекції"
   }
 }
