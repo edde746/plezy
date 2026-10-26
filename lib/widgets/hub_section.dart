@@ -348,7 +348,8 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
     final totalCount = _totalItemCount;
     if (totalCount == 0) return KeyEventResult.ignored;
 
-    // Left: move to previous item, or navigate to sidebar at left edge
+    // Leading: move to the previous item, or navigate to the sidebar at the
+    // first item (physical right in RTL).
     if (key.isInlineStart(context)) {
       if (_focusedIndex > 0) {
         setState(() {
@@ -358,14 +359,14 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
         _notifyFocusedItemChanged();
         _scrollToIndex(_focusedIndex);
       } else if (widget.onNavigateToSidebar != null) {
-        // At leftmost item: navigate to sidebar
+        // At the first item: navigate to the sidebar.
         widget.onNavigateToSidebar!();
       }
       // Always consume to prevent focus escape
       return KeyEventResult.handled;
     }
 
-    // Right: move to next item, ALWAYS consume to prevent escape
+    // Trailing: move to the next item, ALWAYS consume to prevent escape.
     if (key.isInlineEnd(context)) {
       if (_focusedIndex < totalCount - 1) {
         setState(() {
@@ -571,7 +572,13 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                       ],
                       if (widget.hub.more && !isKeyboardMode) ...[
                         const SizedBox(width: 4),
-                        AppIcon(Symbols.chevron_right_rounded, fill: 1, size: isTv ? 26 : 20),
+                        AppIcon(
+                          Directionality.of(context) == TextDirection.rtl
+                              ? Symbols.chevron_left_rounded
+                              : Symbols.chevron_right_rounded,
+                          fill: 1,
+                          size: isTv ? 26 : 20,
+                        ),
                       ],
                     ],
                   ),
@@ -721,7 +728,9 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                                         mainAxisSize: .min,
                                         children: [
                                           AppIcon(
-                                            Symbols.arrow_forward_rounded,
+                                            Directionality.of(context) == TextDirection.rtl
+                                                ? Symbols.arrow_back_rounded
+                                                : Symbols.arrow_forward_rounded,
                                             size: isTv ? 42 : 32,
                                             color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.7),
                                           ),

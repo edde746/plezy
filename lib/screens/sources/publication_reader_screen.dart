@@ -1015,7 +1015,11 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
               IconButton(
                 tooltip: t.fileSources.previousPage,
                 onPressed: _ready ? () => sourceAction(context, () => _navigate(false)) : null,
-                icon: const AppIcon(Symbols.chevron_left_rounded),
+                icon: AppIcon(
+                  Directionality.of(context) == TextDirection.rtl
+                      ? Symbols.chevron_right_rounded
+                      : Symbols.chevron_left_rounded,
+                ),
               ),
               Expanded(
                 child: Text(
@@ -1041,7 +1045,11 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
               IconButton(
                 tooltip: t.fileSources.nextPage,
                 onPressed: _ready ? () => sourceAction(context, () => _navigate(true)) : null,
-                icon: const AppIcon(Symbols.chevron_right_rounded),
+                icon: AppIcon(
+                  Directionality.of(context) == TextDirection.rtl
+                      ? Symbols.chevron_left_rounded
+                      : Symbols.chevron_right_rounded,
+                ),
               ),
             ],
           ),
@@ -1063,7 +1071,7 @@ class _ReaderContents extends StatelessWidget {
         sliver: SliverList.builder(
           itemCount: items.length,
           itemBuilder: (context, i) => Padding(
-            padding: EdgeInsets.only(left: (sourceInt(items[i]['depth']) ?? 0).clamp(0, 5) * 16.0),
+            padding: EdgeInsetsDirectional.only(start: (sourceInt(items[i]['depth']) ?? 0).clamp(0, 5) * 16.0),
             child: SourceTile(
               title: items[i]['title'] as String? ?? '',
               index: i,

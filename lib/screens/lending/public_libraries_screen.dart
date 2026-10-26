@@ -542,7 +542,11 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
                     prefixIcon: const AppIcon(Symbols.search_rounded),
                     suffixIcon: IconButton(
                       onPressed: _busy ? null : () => _load(),
-                      icon: const AppIcon(Symbols.arrow_forward_rounded),
+                      icon: AppIcon(
+                        Directionality.of(context) == TextDirection.rtl
+                            ? Symbols.arrow_back_rounded
+                            : Symbols.arrow_forward_rounded,
+                      ),
                     ),
                   ),
                 ),

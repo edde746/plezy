@@ -696,7 +696,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
     final actions = _actions();
 
     return Padding(
-      padding: .only(left: widget.depth * 16.0),
+      padding: .only(start: widget.depth * 16.0),
       child: FocusableWrapper(
         focusNode: _rowFocusNode,
         autofocus: widget.autofocus,
@@ -733,7 +733,15 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
     return Row(
       children: [
         if (canExpand)
-          AppIcon(widget.isExpanded ? Symbols.expand_more_rounded : Symbols.chevron_right_rounded, fill: 1, size: 20)
+          AppIcon(
+            widget.isExpanded
+                ? Symbols.expand_more_rounded
+                : Directionality.of(context) == TextDirection.rtl
+                    ? Symbols.chevron_left_rounded
+                    : Symbols.chevron_right_rounded,
+            fill: 1,
+            size: 20,
+          )
         else
           const SizedBox(width: 20),
 

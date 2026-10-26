@@ -860,9 +860,10 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     if (hub == null) return KeyEventResult.ignored;
     if (key.isDpadDirection || key.isContextMenuKey) _hasUserInteracted = true;
 
-    // Left never wraps on TV: the first card (hero or not) hands Left to the
-    // sidebar, otherwise the sidebar would be unreachable from a hero row.
-    // Right wraps on hero rows unless the user turned that off.
+    // The leading direction never wraps on TV: the first card (hero or not)
+    // hands focus to the sidebar, otherwise the sidebar would be unreachable
+    // from a hero row. The trailing direction wraps on hero rows unless the
+    // user turned that off.
     if (key.isInlineStart(context)) {
       if (_itemIndex > 0) {
         _moveItem(-1);
@@ -1659,7 +1660,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
       height: TvBrowseRailLayout.hubStripHeightForScale(scale),
       child: ExcludeFocus(
         child: Align(
-          alignment: .centerLeft,
+          alignment: AlignmentDirectional.centerStart,
           child: Row(
             children: [
               AppIcon(widget.iconForHub(hub, hubIndex), fill: 1, size: 20 * scale, color: iconColor),
@@ -1693,7 +1694,14 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
               ),
               if (_trailingFor(hub) == TvRailTrailing.viewAll) ...[
                 SizedBox(width: 8 * scale),
-                AppIcon(Symbols.chevron_right_rounded, fill: 1, size: 20 * scale, color: iconColor),
+                AppIcon(
+                  Directionality.of(context) == TextDirection.rtl
+                      ? Symbols.chevron_left_rounded
+                      : Symbols.chevron_right_rounded,
+                  fill: 1,
+                  size: 20 * scale,
+                  color: iconColor,
+                ),
                 SizedBox(width: 30 * scale),
               ],
             ],
@@ -2248,7 +2256,9 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
               metrics: metrics,
               isFocused: isFocused,
               scale: scale,
-              icon: Symbols.arrow_forward_rounded,
+              icon: Directionality.of(context) == TextDirection.rtl
+                  ? Symbols.arrow_back_rounded
+                  : Symbols.arrow_forward_rounded,
               label: t.common.viewAll,
             ),
           ),

@@ -172,6 +172,7 @@ class MediaBrowserAlphaBarStrategy implements LibraryAlphaBarStrategy {
   }) {
     if (isPhone) return false;
     if (isFolderGrouping) return false;
+    if (_letters.isEmpty) return false;
     if (loadedCharacterCount == 0) return false;
     return totalItemCount >= 80 || mediaBrowserAlphaPrefix != null;
   }

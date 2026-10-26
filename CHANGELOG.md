@@ -78,6 +78,7 @@
 - Refresh sign-in with the crisp PlezyNG product artwork and responsive login choices and QR sizing for phone, desktop, TV and 4K screens.
 - Polish catalog, source, TV and cross-media discovery surfaces to match Plezy's Mono focus, artwork, responsive layout and localized error patterns.
 - Complete localization coverage across settings, playback, downloads and accessibility labels; improve right-to-left focus navigation, numeric input, localized units and native permission prompts.
+- Mirror navigation affordances and tree controls for right-to-left reading order.
 - Route the Google Drive source label through localization.
 - Keep both iOS SwiftPM lockfiles pinned to the same Google Cast SDK revision.
 - Explain the default behavior on the screensaver library selection page.

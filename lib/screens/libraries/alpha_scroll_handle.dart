@@ -202,8 +202,8 @@ class _AlphaScrollHandleState extends State<AlphaScrollHandle> with SingleTicker
                   // Handle pill with touch target — only around the pill's position,
                   // not the full track, so it doesn't steal scroll gestures.
                   // Extra vertical padding makes it easier to grab.
-                  Positioned(
-                    right: 0,
+                  PositionedDirectional(
+                    end: 0,
                     top: handleTop - _touchTargetVerticalPadding,
                     child: MouseRegion(
                       cursor: SystemMouseCursors.resizeUpDown,
@@ -217,7 +217,7 @@ class _AlphaScrollHandleState extends State<AlphaScrollHandle> with SingleTicker
                           width: _touchTargetWidth,
                           height: _handleHeight + _touchTargetVerticalPadding * 2,
                           child: Align(
-                            alignment: .centerRight,
+                            alignment: AlignmentDirectional.centerEnd,
                             child: Container(
                               margin: const EdgeInsetsDirectional.only(end: 2),
                               width: _handleWidth,
@@ -234,8 +234,8 @@ class _AlphaScrollHandleState extends State<AlphaScrollHandle> with SingleTicker
                   ),
                   // Letter bubble (only while dragging)
                   if (_isDragging && _dragLetter != null)
-                    Positioned(
-                      right: _touchTargetWidth + _bubbleMarginRight,
+                    PositionedDirectional(
+                      end: _touchTargetWidth + _bubbleMarginRight,
                       top: handleTop + (_handleHeight - _bubbleSize) / 2,
                       child: Container(
                         width: _bubbleSize,
