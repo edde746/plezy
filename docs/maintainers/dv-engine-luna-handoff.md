@@ -69,11 +69,14 @@ BL/EL/RPU flags, an EL decoder configuration, and complete unique PTS and
 monotonic DTS checks. Its manifest verifies the decoded EL's neutral (512) and
 residual (640) center-patch codes before rendering.
 
-The generator now also remuxes the finished MP4 to Annex-B and requires exactly
-one RPU NAL per access unit. It records this as
-`container_check.rpu_access_units`, checking the container's decoded bitstream
-rather than the pre-mux HEVC file. This added check has not yet been run on an
-approved private-JIT job.
+The generator checks the pre-mux HEVC has one RPU in each AUD-delimited access
+unit, then checks the MP4's timestamped sample packets directly. It reads the
+NAL length size from the HEVC configuration record and requires exactly one RPU
+NAL per video packet, recorded as `container_check.rpu_per_video_packet`. The
+retained synthetic MP4 (`bdc0da2744554996eaad7918394f7e77fe91c74810ffa5da49d251aee67c7cc4`)
+passed locally: 48 packets, 48 RPUs, one per packet. The former post-mux Annex-B
+check was invalid because FFmpeg's demux output has no AUD NALs; the packet-based
+check replaces that assumption. It has not run on an approved private-JIT job.
 
 `dovi_tool` 2.3.1 parses the embedded vector as **Profile 7 FEL, CM v2.9** with
 `disable_residual_flag=false`, 10-bit BL/EL and a 12-bit VDR signal. The authored
@@ -131,6 +134,42 @@ evidence. Reports, PPMs and raw logs are retained under
 `synthetic-graph-software-rerun/` and `synthetic-graph-vaapi-gpu-rerun/`.
 The local rerun does not establish reference-pixel accuracy, zero-copy import,
 app presentation or physical Dolby Vision output.
+
+### Current-source local recheck (2026-10-26)
+
+The current branch's `real_clip_smoke.c` was compiled against the retained
+engine bundle and used to rerun the software GLES graph on the retained synthetic
+MP4. Both captures again logged the Profile 7 splitter, `[el_pair]` and
+`sh_dovi_compose_nlq`, with zero RPU replacement warnings. All 230,400 center
+pixels changed by more than two codes; center mean was 16.1666/255 and outside
+mean 0.00517/255. The report SHA-256 is
+`76d5e4ad45e92eca9dd89f0486b49889e52de84465967637c75dfd45e5969023`. Zero
+warnings still do not prove RPU/frame identity or correctness against a Dolby
+reference.
+
+The packet-level check parsed the fresh MP4's 48 FFprobe packets with the
+four-byte HEVC NAL length size from `hvcC` and found exactly one type-62 RPU in
+each. The full generator completes using the self-contained GPAC source-built
+MP4Box; the first extracted package could not run because its legacy FFmpeg 60
+and `liba52` runtime libraries were unavailable. Both failed package logs and
+the successful source-build retry are retained in the local evidence bundle.
+
+The generator now defaults to `--bframes 0`, records the encoder mode, and
+requires PTS=DTS for that deterministic fixture. On the fresh default file,
+software GLES and VA-API-copy plus GPU EGL/GLES each logged the full P7 graph,
+changed all 230,400 center-patch pixels by more than two codes, and emitted no
+RPU replacement warnings. The residual center mean was 16.1666/255 in software
+and 16.1628/255 on the hybrid path; outside means were 0.00517/255 and
+0.00511/255.
+
+The new `--bframes 3` stress run reproduced three RPU replacement warnings in
+the hybrid residual capture, while its packet audit still found one RPU in each
+of 48 packets. The corresponding zero-B-frame run had PTS=DTS and no warnings.
+This correlates the observed replacement warning with the reordered synthetic
+timeline on this path. RPU/frame identity for B-frame content remains
+unqualified; zero warnings do not prove frame identity. The final local suite
+ran 65/65 Dolby experiment contracts. These are local checks, not an approved
+private-JIT result or a Dolby reference-pixel comparison.
 
 ## Profile 7 RPU-to-CCM sample reference
 

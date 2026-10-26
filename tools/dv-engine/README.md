@@ -121,10 +121,19 @@ then uses a pinned 384-byte MIT-licensed FEL RPU test vector from
 [`dovi_tool`](https://github.com/quietvoid/dovi_tool/blob/ef85991cfc31e26bc3ffed76364965f29f9fd281/assets/tests/fel_orig.bin).
 It does not use film footage. The output is a single-track P7 MP4 with authored
 3840x2160 BL, 1920x1080 EL, 48 frames at 24000/1001 fps, validated RPU/EL/BL
-flags, decoded EL luma codes, and complete PTS/DTS cadence. It demuxes the MP4
-back to Annex-B and requires exactly one RPU NAL per access unit, recording the
-result as `container_check.rpu_access_units`. This new post-mux check is not yet
-run on an approved private-JIT job. The source vector's license is
+flags, decoded EL luma codes, and complete PTS/DTS cadence. The default uses
+zero B frames and requires PTS=DTS, keeping BL and EL presentation order
+deterministic for the graph check. Use `--bframes 3` to exercise reordered
+decode timestamps; this records PTS/DTS behavior without requiring identity
+order. Before muxing, it requires one RPU NAL in each AUD-delimited access unit
+of the authored HEVC stream. After muxing, it parses FFprobe's timestamped
+sample packets using the NAL length size from the HEVC configuration record
+and requires one RPU in each packet.
+This is recorded as `container_check.rpu_per_video_packet`; the MP4 demuxed
+Annex-B stream is not used for access-unit grouping because this GPAC output has
+no AUD NALs after muxing. The packet check passed locally against the retained
+48-frame synthetic MP4 (`bdc0da2744554996eaad7918394f7e77fe91c74810ffa5da49d251aee67c7cc4`),
+but has not run on an approved private-JIT job. The source vector's license is
 [MIT](https://github.com/quietvoid/dovi_tool/blob/ef85991cfc31e26bc3ffed76364965f29f9fd281/LICENSE).
 
 Requirements: `x265`, `dovi_tool`, FFmpeg/`ffprobe`, and GPAC `MP4Box`. The
@@ -180,16 +189,50 @@ pending as a new RPU is read, then replaces that buffer before frame side data
 is attached ([source](https://github.com/FFmpeg/FFmpeg/blob/46f23be8b1976ed4c8ec85584daabcf0e57a7b9e/libavcodec/hevc/hevcdec.c#L3998-L4009)).
 The synthetic HEVC has 48 access units and exactly one RPU NAL per access unit,
 so the warning is not evidence that the generated file contains duplicate RPU
-NALs within an access unit. Its cause remains open; frame reordering is one
-hypothesis, not a finding. The verifier now writes its report and fails when any
+NALs within an access unit. A follow-up using the same authored layers and RPU
+with B frames disabled had no replacement warnings on this route; the B-frame
+stress mode reproduced three. This correlates the warning with the reordered
+synthetic timeline on this hardware path, but does not qualify frame identity
+for B-frame media. The verifier now writes its report and fails when any
 replacement warning appears. Zero warnings still do not prove RPU/frame
 identity. Raw reports, images and logs are retained under
 `/home/keith/Documents/plezyng-dv-local-evidence-20261026/`.
+
+The current-source software rerun used a freshly compiled embedded render helper
+with the retained synthetic MP4. It again confirmed the complete graph, reported
+zero RPU replacement warnings, changed all 230,400 center-patch pixels by more
+than two codes, and produced the same 16.1666/255 center mean and 0.00517/255
+outside mean. Its report SHA-256 is
+`76d5e4ad45e92eca9dd89f0486b49889e52de84465967637c75dfd45e5969023`. The packet
+audit found 48 timestamped video packets and exactly one RPU in each. The run
+does not provide an independent Dolby pixel reference or frame-identity proof.
 
 The injected test vector parses as Profile 7 FEL, CM v2.9, with residual enabled,
 10-bit BL/EL and a 12-bit VDR signal. The EL is authored independently of the
 vector's original mastering pixels, so the fixture tests residual use rather
 than known-correct reconstruction; CM v4.0 is not covered.
+
+### Fresh generator and reorder stress rerun (2026-10-26)
+
+The full 48-frame generator now completes on `kspld0` with the self-contained
+GPAC source-built MP4Box. The default fixture has SHA-256
+`c25ea18f2933bd7d381b0830bbe68cde3d887ffac27256fa960d59660d9c9af9`; all 48
+MP4 packets contain exactly one RPU, and PTS equals DTS. The fresh software
+GLES render report is `453d7fb9007ce38668241728ff3809612a582292fe68f104e6afab03a66a5383`.
+The VA-API-copy decode plus GPU EGL/GLES render report is
+`f49065967c32f2edd3480ad9dd18eaba3d1447ffc772db46549029577d3dfd2f`; both
+reports have zero replacement warnings and all 230,400 center-patch pixels
+changed by more than two codes.
+
+The explicit `--bframes 3` stress fixture also passed the packet audit, with
+PTS/DTS reordering reported. Its hardware residual capture reproduced three
+replacement warnings and the verifier returned a diagnostic failure after
+writing report `1d17ec7087df995ab68e90dedc7b29cc910c665dd53edd0483809224d794f048`.
+This makes the test mode and observed boundary reproducible. It still is not
+frame-identity evidence or a Dolby reference-pixel comparison. The local
+Dolby-experiment suite passed 65/65 contracts; the detailed fixtures, images,
+logs and hashes are retained under
+`/home/keith/Documents/plezyng-dv-local-evidence-20261026/synthetic-graph-postmux-20261026/`.
 
 ### Map a parsed Profile 7 FEL RPU into the CCM reference
 

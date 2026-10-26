@@ -13,6 +13,7 @@ import hashlib
 import json
 import math
 from pathlib import Path
+import re
 import shlex
 import shutil
 import struct
@@ -168,6 +169,98 @@ def validate_rpu_access_units(data: bytes, expected_frames: int) -> dict:
     }
 
 
+def decode_ffprobe_hexdump(value: str) -> bytes:
+    """Decode FFprobe's `-show_data` hexadecimal field and verify its offsets."""
+    if not isinstance(value, str):
+        raise ValueError("FFprobe data field must be a hexadecimal dump string")
+    output = bytearray()
+    for line in value.splitlines():
+        match = re.match(r"^\s*([0-9a-fA-F]{8}):\s*(.*)$", line)
+        if match is None:
+            continue
+        offset = int(match.group(1), 16)
+        if offset != len(output):
+            raise ValueError("FFprobe hexadecimal dump has a gap or repeated offset")
+        hex_data = match.group(2).split("  ", 1)[0].strip()
+        try:
+            output.extend(bytes.fromhex(hex_data))
+        except ValueError as error:
+            raise ValueError("FFprobe hexadecimal dump contains invalid bytes") from error
+    if not output:
+        raise ValueError("FFprobe hexadecimal dump contains no bytes")
+    return bytes(output)
+
+
+def hevc_mp4_nal_length_size(stream: dict) -> int:
+    """Read the MP4 HEVC configuration record's NAL length field width."""
+    extra = decode_ffprobe_hexdump(stream.get("extradata"))
+    if len(extra) < 23 or extra[0] != 1:
+        raise RuntimeError("MP4 stream is missing a valid HEVC configuration record")
+    length_size = (extra[21] & 0x03) + 1
+    if length_size not in (1, 2, 4):
+        raise RuntimeError("MP4 stream uses a reserved HEVC NAL length size")
+    return length_size
+
+
+def length_prefixed_hevc_nal_types(data: bytes, length_size: int) -> tuple[int, ...]:
+    """Read HEVC NAL types from one MP4 packet's length-prefixed sample data."""
+    if length_size not in (1, 2, 4):
+        raise ValueError("HEVC NAL length size must be 1, 2, or 4 bytes")
+    nal_types = []
+    offset = 0
+    while offset < len(data):
+        if len(data) - offset < length_size:
+            raise ValueError("MP4 packet ends inside a HEVC NAL length field")
+        nal_size = int.from_bytes(data[offset:offset + length_size], "big")
+        offset += length_size
+        if nal_size < 2 or offset + nal_size > len(data):
+            raise ValueError("MP4 packet contains a truncated HEVC NAL unit")
+        first_header_byte = data[offset]
+        if first_header_byte & 0x80:
+            raise ValueError("MP4 packet HEVC NAL has forbidden_zero_bit set")
+        nal_types.append((first_header_byte >> 1) & 0x3F)
+        offset += nal_size
+    if not nal_types:
+        raise ValueError("MP4 video packet contains no HEVC NAL units")
+    return tuple(nal_types)
+
+
+def validate_rpu_video_packets(stream_probe: dict, packet_probe: dict, expected_frames: int) -> dict:
+    """Require one RPU NAL in each MP4 video packet."""
+    if isinstance(expected_frames, bool) or not isinstance(expected_frames, int) or expected_frames < 1:
+        raise ValueError("expected_frames must be a positive integer")
+    streams = stream_probe.get("streams")
+    if not isinstance(streams, list) or len(streams) != 1:
+        raise RuntimeError("MP4 probe did not find exactly one video stream")
+    packets = packet_probe.get("packets")
+    if not isinstance(packets, list) or len(packets) != expected_frames:
+        raise RuntimeError("MP4 video packet count does not match the authored frame count")
+    if any(not isinstance(packet, dict) for packet in packets):
+        raise RuntimeError("MP4 video packet probe contains an invalid packet record")
+
+    length_size = hevc_mp4_nal_length_size(streams[0])
+    counts = []
+    for index, packet in enumerate(packets):
+        try:
+            sample = decode_ffprobe_hexdump(packet.get("data"))
+            types = length_prefixed_hevc_nal_types(sample, length_size)
+        except ValueError as error:
+            raise RuntimeError(f"MP4 video packet {index} has invalid HEVC data: {error}") from error
+        counts.append(types.count(62))
+    if any(count != 1 for count in counts):
+        distribution = {count: counts.count(count) for count in sorted(set(counts))}
+        raise RuntimeError(
+            f"expected one RPU NAL per timestamped MP4 packet; observed distribution {distribution}"
+        )
+    return {
+        "video_packets": len(counts),
+        "rpu_nals": sum(counts),
+        "rpu_nals_per_packet": {"min": min(counts), "max": max(counts)},
+        "nal_length_size_bytes": length_size,
+        "exactly_one_rpu_per_packet": True,
+    }
+
+
 def validate_mp4_probe(probe: dict, frames: int) -> dict:
     """Require the MP4 container to identify a timestamped Profile 7 FEL track."""
     streams = probe.get("streams")
@@ -224,7 +317,7 @@ def validate_mp4_probe(probe: dict, frames: int) -> dict:
     }
 
 
-def validate_mp4_packets(probe: dict, frames: int) -> dict:
+def validate_mp4_packets(probe: dict, frames: int, *, require_no_reordering: bool = False) -> dict:
     """Require one distinct, monotonically decodable PTS/DTS per authored frame."""
     packets = probe.get("packets")
     if not isinstance(packets, list) or len(packets) != frames:
@@ -236,13 +329,16 @@ def validate_mp4_packets(probe: dict, frames: int) -> dict:
     except (KeyError, TypeError, ValueError) as error:
         raise RuntimeError("MP4 packet is missing presentation/decode timestamps") from error
     expected_pts = [index * 1001 for index in range(frames)]
+    presentation_decode_order_matches = pts == dts
     if (sorted(pts) != expected_pts or any(b <= a for a, b in zip(dts, dts[1:]))
-            or any(duration != 1001 for duration in durations)):
+            or any(duration != 1001 for duration in durations)
+            or (require_no_reordering and not presentation_decode_order_matches)):
         raise RuntimeError("MP4 PTS/DTS cadence does not match 24000/1001 fps")
     return {
         "packet_count": len(packets),
         "presentation_timestamps_unique_and_complete": True,
         "decode_timestamps_monotonic": True,
+        "presentation_decode_order_matches": presentation_decode_order_matches,
         "packet_duration_ticks": 1001,
     }
 
@@ -255,6 +351,7 @@ def _encode_x265(
     width: int,
     height: int,
     frames: int,
+    bframes: int,
     frame_factory,
     hdr10: bool,
 ) -> None:
@@ -269,6 +366,7 @@ def _encode_x265(
         "--output-depth", "10",
         "--profile", "main10",
         "--preset", "ultrafast",
+        "--bframes", str(bframes),
         "--lossless",
         "--keyint", str(keyint),
         "--min-keyint", str(keyint),
@@ -380,6 +478,9 @@ def generate(args) -> dict:
     frames = args.frames
     if frames < 24 or frames > 240 or frames % 2:
         raise ValueError("--frames must be an even number from 24 through 240")
+    bframes = args.bframes
+    if bframes < 0 or bframes > 16:
+        raise ValueError("--bframes must be from 0 through 16")
 
     template = out / "fel_orig.bin"
     _fetch_rpu(template, args.rpu_template)
@@ -394,11 +495,12 @@ def generate(args) -> dict:
 
     _encode_x265(
         args.x265, bl, out / "encode-base.log", width=BL_WIDTH, height=BL_HEIGHT,
-        frames=frames, frame_factory=lambda _: make_bl_frame(), hdr10=True,
+        frames=frames, bframes=bframes, frame_factory=lambda _: make_bl_frame(), hdr10=True,
     )
     _encode_x265(
         args.x265, el, out / "encode-enhancement.log", width=EL_WIDTH, height=EL_HEIGHT,
-        frames=frames, frame_factory=lambda index: make_el_frame(residual=index >= frames // 2),
+        frames=frames, bframes=bframes,
+        frame_factory=lambda index: make_el_frame(residual=index >= frames // 2),
         hdr10=False,
     )
 
@@ -411,6 +513,7 @@ def generate(args) -> dict:
           "--output", str(p7_el)], out / "inject-rpu.log")
     _run([args.dovi_tool, "mux", "--bl", str(bl), "--el", str(p7_el), "--output", str(p7)],
          out / "mux-p7.log")
+    source_rpu_check = validate_rpu_access_units(p7.read_bytes(), frames)
     credential_key = out / ".mp4box-credentials.key"
     try:
         _run([args.mp4box, f"-cred={credential_key}", "-add",
@@ -419,24 +522,21 @@ def generate(args) -> dict:
     finally:
         credential_key.unlink(missing_ok=True)
     probe = json.loads(_run(
-        [args.ffprobe, "-v", "error", "-select_streams", "v:0", "-show_streams", "-of", "json", str(p7_mp4)],
+        [args.ffprobe, "-v", "error", "-select_streams", "v:0", "-show_streams", "-show_data", "-of", "json", str(p7_mp4)],
         out / "probe-p7-mp4.log",
     ))
     container_check = validate_mp4_probe(probe, frames)
     packet_probe = json.loads(_run(
         [args.ffprobe, "-v", "error", "-select_streams", "v:0", "-show_packets",
-         "-show_entries", "packet=pts,dts,duration", "-of", "json", str(p7_mp4)],
+         "-show_data", "-show_entries", "packet=pts,dts,duration,data", "-of", "json", str(p7_mp4)],
         out / "probe-p7-packets.log",
     ))
-    container_check["packet_timestamps"] = validate_mp4_packets(packet_probe, frames)
-    mp4_demuxed = out / "mp4-demuxed.hevc"
-    _run(
-        [args.ffmpeg, "-v", "error", "-i", str(p7_mp4), "-map", "0:v:0", "-c:v", "copy",
-         "-bsf:v", "hevc_mp4toannexb", "-f", "hevc", str(mp4_demuxed)],
-        out / "demux-mp4.log",
+    container_check["packet_timestamps"] = validate_mp4_packets(
+        packet_probe, frames, require_no_reordering=bframes == 0
     )
-    container_check["rpu_access_units"] = validate_rpu_access_units(
-        mp4_demuxed.read_bytes(), frames
+    container_check["source_access_units"] = source_rpu_check
+    container_check["rpu_per_video_packet"] = validate_rpu_video_packets(
+        probe, packet_probe, frames
     )
     _run([args.dovi_tool, "extract-rpu", "--input", str(p7), "--rpu-out", str(rpu)],
          out / "extract-rpu.log")
@@ -454,7 +554,7 @@ def generate(args) -> dict:
         raise RuntimeError("generated stream's RPU did not identify Profile 7 FEL")
     el_result = _check_el(args.ffmpeg, demux_el, EL_WIDTH, EL_HEIGHT, frames, out / "decode-el.log")
 
-    files = [template, bl, el, p7_el, p7, p7_mp4, mp4_demuxed, rpu, demux_bl, demux_el]
+    files = [template, bl, el, p7_el, p7, p7_mp4, rpu, demux_bl, demux_el]
     manifest = {
         "schema_version": 1,
         "kind": "synthetic Dolby Vision Profile 7 FEL test input",
@@ -462,6 +562,7 @@ def generate(args) -> dict:
         "base_layer": {"width": BL_WIDTH, "height": BL_HEIGHT, "frame_rate": FRAME_RATE},
         "enhancement_layer": {"width": EL_WIDTH, "height": EL_HEIGHT, "frames": frames},
         "frame_count": frames,
+        "encoder": {"preset": "ultrafast", "b_frames": bframes, "lossless": True},
         "rpu": {"profile": 7, "el_type": "FEL", "frames": rpu_count,
                 "url": RPU_URL, "sha256": RPU_SHA256, "license": "MIT (dovi_tool test asset)"},
         "enhancement_design": {
@@ -482,6 +583,10 @@ def main() -> None:
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--out-dir", type=Path, required=True)
     parser.add_argument("--frames", type=int, default=48)
+    parser.add_argument(
+        "--bframes", type=int, default=0,
+        help="maximum consecutive B frames (default: 0 for deterministic BL/EL timing; use 3 to stress reordering)",
+    )
     parser.add_argument("--x265", default=shutil.which("x265") or "x265")
     parser.add_argument("--dovi-tool", default=shutil.which("dovi_tool") or "dovi_tool")
     parser.add_argument("--ffmpeg", default=shutil.which("ffmpeg") or "ffmpeg")
