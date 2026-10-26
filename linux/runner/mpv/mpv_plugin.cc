@@ -1168,6 +1168,14 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
         self->player = std::make_unique<mpv::MpvPlayer>();
       }
 
+      auto bool_arg = [args](const char* key, bool default_value) {
+        if (args == nullptr || fl_value_get_type(args) != FL_VALUE_TYPE_MAP) return default_value;
+        FlValue* value = fl_value_lookup_string(args, key);
+        return value && fl_value_get_type(value) == FL_VALUE_TYPE_BOOL ? (fl_value_get_bool(value) != FALSE)
+                                                                       : default_value;
+      };
+      self->player->ConfigureDolbyVisionExperiment(
+          bool_arg("experimentalDolbyVision", false), bool_arg("dvCompatibilityFallback", true));
       std::string error;
       if (!self->player->Initialize()) {
         release_video_resources(self);
@@ -1429,6 +1437,9 @@ static void mpv_plugin_handle_method_call(FlMethodChannel* channel, FlMethodCall
 
       if (name_value == nullptr || fl_value_get_type(name_value) != FL_VALUE_TYPE_STRING) {
         response = FL_METHOD_RESPONSE(fl_method_error_response_new("INVALID_ARGS", "Missing 'name'", nullptr));
+      } else if (strcmp(fl_value_get_string(name_value), "plezyng-dv-renderer") == 0) {
+        g_autoptr(FlValue) value = fl_value_new_string(self->player->DolbyVisionRendererStatus().c_str());
+        response = FL_METHOD_RESPONSE(fl_method_success_response_new(value));
       } else {
         g_object_ref(method_call);
         self->player->GetPropertyAsync(

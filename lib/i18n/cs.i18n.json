@@ -632,7 +632,14 @@
     "regionFormat": "Místní formáty",
     "regionFormatDescription": "Zvolte způsob zobrazení dat, čísel a měrných jednotek.",
     "metadataLanguage": "Jazyk metadat",
-    "metadataLanguageDescription": "Upřednostňovaný jazyk názvů a popisů, pokud jej server podporuje. Předvolby zvuku a titulků se nastavují samostatně."
+    "metadataLanguageDescription": "Upřednostňovaný jazyk názvů a popisů, pokud jej server podporuje. Předvolby zvuku a titulků se nastavují samostatně.",
+    "experimentalDolbyVision": "Experimentální Dolby Vision",
+    "experimentalDolbyVisionDescription": "Při příštím přehrávání použít experimentální renderer FEL. Vyžaduje samostatné sestavení enginu.",
+    "dvExperimentUnavailableDescription": "Tento experiment je zatím dostupný pouze na Linuxu.",
+    "dvCompatibilityFallback": "Záložní režim kompatibility",
+    "dvCompatibilityFallbackDescription": "Pokud experiment nelze spustit, použít standardní renderer. Data FEL mohou být ztracena.",
+    "dvExperimentDiagnostics": "Protokolování videoexperimentu",
+    "dvExperimentDiagnosticsDescription": "Při příštím přehrávání zapnout podrobné protokoly přehrávače."
   },
   "themeEditor": {
     "builtIn": "stavět-in",

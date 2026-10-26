@@ -7,6 +7,22 @@ A cross-platform media client for Plex, Jellyfin, and Emby, maintained as a fork
 
 See [Files, books and listening](docs/FILES_AND_BOOKS.md) for standard/cloud sources, readers and offline behavior, and [Public-library setup](docs/LENDING_SETUP.md) for the staged OverDrive integration.
 
+## Dolby Vision experiments
+
+PlezyNG is developing genuine Profile 7 FEL reconstruction alongside native and
+compatibility playback. The isolated Linux engine has rendered the FEL mark in a
+real P7 sample through standalone mpv and embedded libmpv; full app playback and
+independent reference-pixel accuracy still need qualification. Linux users can
+opt in under **Settings → Playback**, with a separate compatibility fallback and
+video experiment logging switch. A separate engine build is required.
+
+The repository also includes a pinned Apple dual-layer experiment host for
+macOS/iOS/tvOS, an offline FEL-to-HDR/SDR companion pipeline, and platform testing
+instructions. These are experimental paths, not a claim of universal or certified
+Dolby Vision support. P7→P8.1 compatibility discards EL and is labelled separately.
+See the [buildout, setup and Luna handoff](docs/maintainers/dv-platform-buildout.md)
+and [Linux engine evidence](docs/maintainers/dv-engine-luna-handoff.md).
+
 ## What PlezyNG has built
 
 PlezyNG builds on upstream Plezy with a broad set of features for Plex, Jellyfin, and Emby, wherever each server's APIs allow. The table below highlights what's been delivered, links related upstream work for context, and notes platform or server limitations.

@@ -761,6 +761,13 @@ class _Translations$settings$bn extends Translations$settings$en {
 	@override String get regionFormatDescription => 'তারিখ, সংখ্যা ও পরিমাপ কীভাবে দেখানো হবে তা বেছে নিন।';
 	@override String get metadataLanguage => 'মিডিয়ার তথ্যের ভাষা';
 	@override String get metadataLanguageDescription => 'সার্ভার সমর্থন করলে শিরোনাম ও বিবরণের পছন্দের ভাষা। অডিও ও সাবটাইটেলের পছন্দ আলাদাভাবে নির্ধারিত হয়।';
+	@override String get experimentalDolbyVision => 'পরীক্ষামূলক Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'পরবর্তী প্লেব্যাকে পরীক্ষামূলক FEL রেন্ডারার ব্যবহার করুন। ইঞ্জিনের আলাদা বিল্ড প্রয়োজন।';
+	@override String get dvExperimentUnavailableDescription => 'এই পরীক্ষা বর্তমানে শুধু Linux-এ উপলব্ধ।';
+	@override String get dvCompatibilityFallback => 'সামঞ্জস্যপূর্ণ বিকল্প';
+	@override String get dvCompatibilityFallbackDescription => 'পরীক্ষা শুরু না হলে সাধারণ রেন্ডারার ব্যবহার করুন। FEL তথ্য হারিয়ে যেতে পারে।';
+	@override String get dvExperimentDiagnostics => 'ভিডিও পরীক্ষার লগ';
+	@override String get dvExperimentDiagnosticsDescription => 'পরবর্তী প্লেব্যাকে প্লেয়ারের বিস্তারিত লগ চালু করুন।';
 }
 
 // Path: themeEditor
@@ -4805,6 +4812,13 @@ extension on TranslationsBn {
 			'settings.regionFormatDescription' => 'তারিখ, সংখ্যা ও পরিমাপ কীভাবে দেখানো হবে তা বেছে নিন।',
 			'settings.metadataLanguage' => 'মিডিয়ার তথ্যের ভাষা',
 			'settings.metadataLanguageDescription' => 'সার্ভার সমর্থন করলে শিরোনাম ও বিবরণের পছন্দের ভাষা। অডিও ও সাবটাইটেলের পছন্দ আলাদাভাবে নির্ধারিত হয়।',
+			'settings.experimentalDolbyVision' => 'পরীক্ষামূলক Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'পরবর্তী প্লেব্যাকে পরীক্ষামূলক FEL রেন্ডারার ব্যবহার করুন। ইঞ্জিনের আলাদা বিল্ড প্রয়োজন।',
+			'settings.dvExperimentUnavailableDescription' => 'এই পরীক্ষা বর্তমানে শুধু Linux-এ উপলব্ধ।',
+			'settings.dvCompatibilityFallback' => 'সামঞ্জস্যপূর্ণ বিকল্প',
+			'settings.dvCompatibilityFallbackDescription' => 'পরীক্ষা শুরু না হলে সাধারণ রেন্ডারার ব্যবহার করুন। FEL তথ্য হারিয়ে যেতে পারে।',
+			'settings.dvExperimentDiagnostics' => 'ভিডিও পরীক্ষার লগ',
+			'settings.dvExperimentDiagnosticsDescription' => 'পরবর্তী প্লেব্যাকে প্লেয়ারের বিস্তারিত লগ চালু করুন।',
 			'themeEditor.builtIn' => 'ভিত্তিতে',
 			'themeEditor.presets' => 'প্রজাতন',
 			'themeEditor.custom' => 'কাস্টম',
@@ -5225,6 +5239,8 @@ extension on TranslationsBn {
 			'messages.libraryScanStarted' => ({required Object title}) => 'লাইব্রেরি স্ক্যান শুরু হয় "${title}" জন্য',
 			'messages.libraryScanFailed' => ({required Object error}) => 'স্ক্যান করতে পারিনি লাইব্রেরি: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '“${title}” এর জন্য ফ্রেসিং মেটাদেট...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'মেটা ডেটা ফ্রিজ শুরু হয় "${title}" জন্য',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'ম্যাটা ডেটা আপডেট করতে পারিনি: ${error}',
 			'messages.logoutConfirm' => 'আপনি কি নিশ্চিত যে আপনি ডাউনলোড করতে চান?',
@@ -5232,8 +5248,6 @@ extension on TranslationsBn {
 			'messages.seasonsLoadFailed' => 'সপ্তাহের লোড করতে পারবেন না',
 			'messages.noEpisodesFound' => 'প্রথম সপ্তাহে কোন ঘটনা পাওয়া যায়নি।',
 			'messages.noEpisodesFoundGeneral' => 'কোন ঘটনা পাওয়া যায়নি',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'এজিসগুলি লোড করতে পারবেন না',
 			'messages.noResultsFound' => 'কোন ফলাফল পাওয়া যায় না',
 			'messages.sleepTimerSet' => ({required Object label}) => 'ঘুম টাইমার্ক ${label}',
@@ -5739,6 +5753,8 @@ extension on TranslationsBn {
 			'explore.selectSource' => 'সূত্র নির্বাচন',
 			'explore.rows.watchlist' => 'চোখের তালিকা',
 			'explore.rows.recommendedMovies' => 'প্রস্তাবিত চলচ্চিত্র',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'প্রস্তাবিত প্রদর্শন',
 			'explore.rows.trendingMovies' => 'ট্রেনিং সিনেমা',
 			'explore.rows.trendingShows' => 'ট্রেন্ডিং প্রদর্শনী',
@@ -5746,8 +5762,6 @@ extension on TranslationsBn {
 			'explore.rows.popularShows' => 'জনপ্রিয় প্রদর্শনী',
 			'explore.rows.trendingAnime' => 'ট্রেনিং অ্যানিম',
 			'explore.rows.suggestedAnime' => 'অ্যানিমের প্রস্তাব',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'অ্যানিমেটিক অ্যানিমেটিক',
 			'explore.rows.popularAnime' => 'সবচেয়ে জনপ্রিয় অ্যানিম',
 			'explore.rows.trending' => 'ট্রেন্ডিং',
@@ -6253,6 +6267,8 @@ extension on TranslationsBn {
 			'downloads.pauseAll' => 'সবার paus',
 			'downloads.resumeAll' => 'সমস্ত সমাধান',
 			'downloads.retryAll' => 'সবাই ফিরে',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => 'ফেরত ফেরত ফেরত ফেরত ফেরত',
 			'downloads.deleteAll' => 'সব মুছুন',
 			'downloads.selectVersion' => 'নির্বাচন Version',
@@ -6260,8 +6276,6 @@ extension on TranslationsBn {
 			'downloads.unwatchedOnly' => 'শুধুমাত্র চিন্তিত',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'পরবর্তী ${count} অপেক্ষা',
 			'downloads.customAmount' => 'কাস্টম কমানো...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'কাস্টম সংখ্যা (একটি)',
 			'downloads.randomEpisodes' => 'পরিস্থিতি',
 			'downloads.includeSpecials' => 'বিশেষ বিশেষ',
@@ -6767,6 +6781,8 @@ extension on TranslationsBn {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'সংযোগ ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'আপনার সার্ভার URL, ব্যবহারকারীর নাম এবং পাসওয়ার্ড লিখুন।',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'আপনার সার্ভার ${product} সার্ভারে প্রবেশ করুন. ${name} সার্ভারে সংযোগ করুন.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'অন্য প্রোফাইল থেকে ডাউনলোড',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'পিন সুরক্ষিত প্রোফাইলগুলি একটি পিন প্রয়োজন।',
 			'addServer.invalidCredentials' => 'ভুল ব্যবহারকারীর নাম বা পাসওয়ার্ড',
@@ -6774,8 +6790,6 @@ extension on TranslationsBn {
 			'addServer.authResponseIncomplete' => 'সার্ভার থেকে sign-in উত্তর অসম্পূর্ণ ছিল',
 			'addServer.quickConnectRejected' => 'Quick Connect সার্ভার দ্বারা বাতিল করা হয়',
 			'addServer.quickConnectNotJson' => 'Quick Connect উত্তরটি সঠিক ছিল না JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'উত্তর Quick Connect একটি কোড বা গোপনতা অল্প',
 			'addServer.quickConnectPollRejected' => 'Quick Connect সার্ভার দ্বারা অনুরোধ করা হয়',
 			'addServer.serverTimedOut' => 'সার্ভার সঠিক সময়ে উত্তর দেয়নি।',

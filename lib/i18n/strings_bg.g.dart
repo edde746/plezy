@@ -761,6 +761,13 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Изберете как да се показват датите, числата и мерните единици.';
 	@override String get metadataLanguage => 'Език на метаданните';
 	@override String get metadataLanguageDescription => 'Предпочитан език за заглавия и описания, ако сървърът го поддържа. Предпочитанията за звук и субтитри се задават отделно.';
+	@override String get experimentalDolbyVision => 'Експериментален Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Използвайте експерименталния FEL рендерер при следващото възпроизвеждане. Изисква отделна компилация на енджина.';
+	@override String get dvExperimentUnavailableDescription => 'Този експеримент засега е достъпен само под Linux.';
+	@override String get dvCompatibilityFallback => 'Резервен режим за съвместимост';
+	@override String get dvCompatibilityFallbackDescription => 'Използвайте стандартния рендерер, ако експериментът не може да стартира. Данните FEL може да се загубят.';
+	@override String get dvExperimentDiagnostics => 'Дневник на видео експеримента';
+	@override String get dvExperimentDiagnosticsDescription => 'Включете подробни дневници на плейъра при следващото възпроизвеждане.';
 }
 
 // Path: themeEditor
@@ -4805,6 +4812,13 @@ extension on TranslationsBg {
 			'settings.regionFormatDescription' => 'Изберете как да се показват датите, числата и мерните единици.',
 			'settings.metadataLanguage' => 'Език на метаданните',
 			'settings.metadataLanguageDescription' => 'Предпочитан език за заглавия и описания, ако сървърът го поддържа. Предпочитанията за звук и субтитри се задават отделно.',
+			'settings.experimentalDolbyVision' => 'Експериментален Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Използвайте експерименталния FEL рендерер при следващото възпроизвеждане. Изисква отделна компилация на енджина.',
+			'settings.dvExperimentUnavailableDescription' => 'Този експеримент засега е достъпен само под Linux.',
+			'settings.dvCompatibilityFallback' => 'Резервен режим за съвместимост',
+			'settings.dvCompatibilityFallbackDescription' => 'Използвайте стандартния рендерер, ако експериментът не може да стартира. Данните FEL може да се загубят.',
+			'settings.dvExperimentDiagnostics' => 'Дневник на видео експеримента',
+			'settings.dvExperimentDiagnosticsDescription' => 'Включете подробни дневници на плейъра при следващото възпроизвеждане.',
 			'themeEditor.builtIn' => 'Вградени',
 			'themeEditor.presets' => 'Готови теми',
 			'themeEditor.custom' => 'Персонализирана',
@@ -5225,6 +5239,8 @@ extension on TranslationsBg {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Сканирането на библиотеката е стартирано за "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Неуспешно сканиране на библиотеката: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Опресняване на метаданни за "${title}"...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Опресняването на метаданни е стартирано за "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Неуспешно опресняване на метаданни: ${error}',
 			'messages.logoutConfirm' => 'Сигурни ли сте, че искате да излезете?',
@@ -5232,8 +5248,6 @@ extension on TranslationsBg {
 			'messages.seasonsLoadFailed' => 'Неуспешно зареждане на сезони',
 			'messages.noEpisodesFound' => 'Не са намерени епизоди в първия сезон',
 			'messages.noEpisodesFoundGeneral' => 'Не са намерени епизоди',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Неуспешно зареждане на епизоди',
 			'messages.noResultsFound' => 'Няма намерени резултати',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Таймерът за заспиване е зададен за ${label}',
@@ -5739,6 +5753,8 @@ extension on TranslationsBg {
 			'explore.selectSource' => 'Избери източник',
 			'explore.rows.watchlist' => 'Списък за гледане',
 			'explore.rows.recommendedMovies' => 'Препоръчани филми',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Препоръчани сериали',
 			'explore.rows.trendingMovies' => 'Набиращи популярност филми',
 			'explore.rows.trendingShows' => 'Набиращи популярност сериали',
@@ -5746,8 +5762,6 @@ extension on TranslationsBg {
 			'explore.rows.popularShows' => 'Популярни сериали',
 			'explore.rows.trendingAnime' => 'Набиращи популярност аниме',
 			'explore.rows.suggestedAnime' => 'Препоръчани аниме',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Топ излъчвани аниме',
 			'explore.rows.popularAnime' => 'Най-популярни аниме',
 			'explore.rows.trending' => 'Набиращи популярност',
@@ -6253,6 +6267,8 @@ extension on TranslationsBg {
 			'downloads.pauseAll' => 'Пауза на всички',
 			'downloads.resumeAll' => 'Продължи всички',
 			'downloads.retryAll' => 'Опитай всички отново',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => 'Опитай отново неуспешните изтегляния',
 			'downloads.deleteAll' => 'Изтрий всички',
 			'downloads.selectVersion' => 'Избери версия',
@@ -6260,8 +6276,6 @@ extension on TranslationsBg {
 			'downloads.unwatchedOnly' => 'Само негледани',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Следващите ${count} негледани',
 			'downloads.customAmount' => 'Друг брой...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Посочен размер (на всяка година)',
 			'downloads.randomEpisodes' => 'Рандомични епизоди',
 			'downloads.includeSpecials' => 'Включи специалните',
@@ -6767,6 +6781,8 @@ extension on TranslationsBg {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Свържи се с ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Въведете URL адреса на сървъра, потребителското име и паролата.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Впишете се в своя ${product} сървър. Обвързва се с ${name}.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Използвай от друг профил',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Използвай връзка от друг профил. PIN-защитените профили изискват PIN.',
 			'addServer.invalidCredentials' => 'Невалидно потребителско име или парола',
@@ -6774,8 +6790,6 @@ extension on TranslationsBg {
 			'addServer.authResponseIncomplete' => 'Отговорът за вход от сървъра беше непълен',
 			'addServer.quickConnectRejected' => 'Quick Connect беше отхвърлен от сървъра',
 			'addServer.quickConnectNotJson' => 'Отговорът на Quick Connect не беше валиден JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'В отговора на Quick Connect липсва код или таен ключ',
 			'addServer.quickConnectPollRejected' => 'Запитването на Quick Connect беше отхвърлено от сървъра',
 			'addServer.serverTimedOut' => 'Сървърът не отговори навреме',

@@ -103,6 +103,7 @@ class TranslationsZh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final Translations$platform$zh platform = Translations$platform$zh.internal(_root);
 	@override late final Translations$fileSources$zh fileSources = Translations$fileSources$zh.internal(_root);
 	@override late final Translations$lending$zh lending = Translations$lending$zh.internal(_root);
+	@override late final Translations$audiobook$zh audiobook = Translations$audiobook$zh.internal(_root);
 }
 
 // Path: app
@@ -758,6 +759,13 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get regionFormatDescription => '选择日期、数字和计量单位的显示方式。';
 	@override String get metadataLanguage => '元数据语言';
 	@override String get metadataLanguageDescription => '服务器支持时，优先使用此语言显示标题和简介。音频和字幕偏好单独设置。';
+	@override String get experimentalDolbyVision => '实验性 Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => '下次播放时使用实验性 FEL 渲染器。需要单独构建的播放引擎。';
+	@override String get dvExperimentUnavailableDescription => '此实验目前仅支持 Linux。';
+	@override String get dvCompatibilityFallback => '兼容性回退';
+	@override String get dvCompatibilityFallbackDescription => '如果实验无法启动，则使用标准渲染器。FEL 数据可能会丢失。';
+	@override String get dvExperimentDiagnostics => '视频实验日志';
+	@override String get dvExperimentDiagnosticsDescription => '在下次播放时启用详细的播放器日志。';
 }
 
 // Path: themeEditor
@@ -1519,6 +1527,7 @@ class Translations$discover$zh extends Translations$discover$en {
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => '概述';
 	@override String get cast => '演员表';
+	@override late final Translations$discover$findNext$zh findNext = Translations$discover$findNext$zh.internal(_root);
 	@override String get extras => '预告片与花絮';
 	@override String get studio => '制作公司';
 	@override String get rating => '年龄分级';
@@ -3111,6 +3120,66 @@ class Translations$lending$zh extends Translations$lending$en {
 	@override String get editEmail => '更改通知电子邮件';
 }
 
+// Path: audiobook
+class Translations$audiobook$zh extends Translations$audiobook$en {
+	Translations$audiobook$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get syncTitle => '阅读与倾听Sync';
+	@override String get syncHelp => '在您的设备上保持阅读位置、倾听位置、完成状态、图标和笔记。 选择附加存储帐户并在每个设备上使用相同的同步代码. 阅读和倾听保持分开。';
+	@override String get addSyncSource => '首先将 Google Drive、OneDrive、Dropbox、WebDAV 或 S3 添加到文件和书籍中。';
+	@override String get syncDestination => '同步存储帐户';
+	@override String get syncFolder => '同步文件夹或预定';
+	@override String get syncFolderHelp => '在 WebDAV 源内使用一个单独的现有文件夹,或一个专门的 S3 预定。';
+	@override String get syncCode => '个人同步代码';
+	@override String get syncCodeHelp => '在您的第一台设备上创建一个代码,然后在您的其他设备上输入该代码. 保持一个私人副本:它是您的加密状态的关键。';
+	@override String get showCode => '显示或隐藏同步代码';
+	@override String get newSyncCode => '创建一个新的同步代码';
+	@override String get saveSync => '保存和同步';
+	@override String get disableSync => '在此设备上关闭同步';
+	@override String get syncSourceDisconnect => '删除此源将关闭阅读和听同步在这里. 加密的同步文件将留在提供商。';
+	@override String get syncReconnect => '重新连接存储帐户';
+	@override String lastSynced({required Object time}) => '上一篇: ${time}';
+	@override String get syncPrivacy => '只有加密的进展和笔记存储. 音频和电子书文件,帐户图标和密码不上传. Google Drive 和 OneDrive 使用应用程序存储; Dropbox 使用 PlezyNG Sync. 允许同步可能需要额外的写入访问。';
+	@override String get syncConflicts => '选择重定向的地方';
+	@override String get conflictHelp => '这些更改是独立进行的. 选择位置或图标版本保持. 后期时间表或更高的百分比不会自动赢得。';
+	@override String syncDevice({required Object device}) => '裝置 ${device}';
+	@override String get syncUnknownDevice => '未知设备';
+	@override String get deletedBookmark => '删除图标';
+	@override String get finished => '结束';
+	@override String readingPosition({required Object percent}) => '阅读 · ${percent}%';
+	@override String get chapterTimeline => '第四章 进展';
+	@override String get bookTimeline => '全书进展';
+	@override String bookRemaining({required Object time}) => '本书剩余时间：${time}';
+	@override String chapterRemaining({required Object time}) => '此分類上一篇: ${time}';
+	@override String get unknownRemaining => '全部时间可用,当部分被播放时';
+	@override String get undoSeek => '最后寻找';
+	@override String get customSpeed => '定制播放速度';
+	@override String get speedHelp => '选择速度从 0.25× 到 4×。';
+	@override String get apply => '應用';
+	@override String get customSleep => '定制睡眠时间';
+	@override String get sleepMinutes => '时间(1 - 1440)';
+	@override String sleepChapters({required Object count}) => '播放完${count}章后停止';
+	@override String get extendSleep => '添加5分钟';
+	@override String sleepRemaining({required Object time}) => '睡眠时间: ${time}';
+	@override String get useDefaults => '使用这些听力控制器为新书';
+	@override String get librarySort => '各式各样的书籍';
+	@override String get sortTitle => '标题';
+	@override String get sortAuthor => '作者';
+	@override String get sortNarrator => '讲话者';
+	@override String get sortSeries => '系列命令';
+	@override String get sortRecent => '最近开放';
+	@override String get statusFilter => '阅读状态';
+	@override String get statusAll => '所有书籍';
+	@override String get statusNew => '没有开始';
+	@override String get statusProgress => '进展';
+	@override String get statusFinished => '结束';
+	@override String get goToTime => '走到时间';
+	@override String get timeHelp => '时间: 分钟: 秒或 分钟: 秒';
+}
+
 // Path: appIcon.names
 class Translations$appIcon$names$zh extends Translations$appIcon$names$en {
 	Translations$appIcon$names$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
@@ -3353,6 +3422,57 @@ class Translations$accountPreferences$mediaReviewsOptions$zh extends Translation
 	@override String get usersOnly => '仅用户';
 	@override String get criticsOnly => '仅影评人';
 	@override String get nobody => '隐藏';
+}
+
+// Path: discover.findNext
+class Translations$discover$findNext$zh extends Translations$discover$findNext$en {
+	Translations$discover$findNext$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
+
+	final TranslationsZh _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '找你的下一个';
+	@override String get open => '找你的下一个';
+	@override String get anyTime => '任何时间';
+	@override String get timeAvailable => '你有多少时间?';
+	@override String get filters => '选择时刻';
+	@override String get watch => '观看';
+	@override String get listen => '听';
+	@override String get read => '阅读';
+	@override String finishable({required Object duration}) => '在 ${duration} 结束';
+	@override String aboutDuration({required Object duration}) => '關於 ${duration}';
+	@override String nextUnit({required Object duration}) => '下一章 · ${duration}';
+	@override String totalDuration({required Object duration}) => '${duration} 总';
+	@override String get timingVaries => '时间差异';
+	@override String get notNow => '不是现在';
+	@override String get swipeHint => '转动,或者使用下面的按钮';
+	@override String get saved => '拯救的皮克';
+	@override String savedCount({required Object count}) => '获取评分 · ${count}';
+	@override String get undo => '和';
+	@override String get details => '细节';
+	@override String get noPicks => '到目前为止还没有选择的';
+	@override String get noPicksHint => '连接图书馆或添加媒体来源开始。';
+	@override String get noMatches => '没有什么适合这个时刻';
+	@override String get noMatchesHint => '尝试另一个格式或给自己更多的时间。';
+	@override String get allDone => '你們都被抓住了';
+	@override String get allDoneHint => '开始新鲜的混合,再次看到这些选择。';
+	@override String get refresh => '寻找另一个混合';
+	@override String sourceReason({required Object source}) => '由 ${source}';
+	@override String libraryReason({required Object library}) => '由 ${library}';
+	@override String get ownedReason => '从你的图书馆';
+	@override String get liveNow => '现在的';
+	@override String get watchLive => '观看直播';
+	@override String get filterAnything => '任何事';
+	@override String get filterWatch => '观看';
+	@override String get filterListen => '听';
+	@override String get filterRead => '阅读';
+	@override String get twentyMinutes => '20分钟';
+	@override String get fortyFiveMinutes => '45分钟';
+	@override String get ninetyMinutes => '90分钟';
+	@override String get apply => '應用';
+	@override String get openFailed => '此选项不再可用. 更新再检查。';
+	@override String get changeFailed => '没办法改变,再试一次。';
+	@override String get savedLimit => '保存的点数是满的. 删除一个点数来保存另一个点数。';
 }
 
 // Path: discover.person
@@ -4687,6 +4807,13 @@ extension on TranslationsZh {
 			'settings.regionFormatDescription' => '选择日期、数字和计量单位的显示方式。',
 			'settings.metadataLanguage' => '元数据语言',
 			'settings.metadataLanguageDescription' => '服务器支持时，优先使用此语言显示标题和简介。音频和字幕偏好单独设置。',
+			'settings.experimentalDolbyVision' => '实验性 Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => '下次播放时使用实验性 FEL 渲染器。需要单独构建的播放引擎。',
+			'settings.dvExperimentUnavailableDescription' => '此实验目前仅支持 Linux。',
+			'settings.dvCompatibilityFallback' => '兼容性回退',
+			'settings.dvCompatibilityFallbackDescription' => '如果实验无法启动，则使用标准渲染器。FEL 数据可能会丢失。',
+			'settings.dvExperimentDiagnostics' => '视频实验日志',
+			'settings.dvExperimentDiagnosticsDescription' => '在下次播放时启用详细的播放器日志。',
 			'themeEditor.builtIn' => '内置',
 			'themeEditor.presets' => '预设',
 			'themeEditor.custom' => '自定义',
@@ -5107,6 +5234,8 @@ extension on TranslationsZh {
 			'messages.libraryScanStarted' => ({required Object title}) => '已开始扫描“${title}”媒体库',
 			'messages.libraryScanFailed' => ({required Object error}) => '无法扫描媒体库：${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '正在刷新“${title}”的元数据…',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '已开始刷新“${title}”的元数据',
 			'messages.metadataRefreshFailed' => ({required Object error}) => '无法刷新元数据：${error}',
 			'messages.logoutConfirm' => '确定要退出登录吗？',
@@ -5114,8 +5243,6 @@ extension on TranslationsZh {
 			'messages.seasonsLoadFailed' => '无法加载季',
 			'messages.noEpisodesFound' => '在第一季中未找到剧集',
 			'messages.noEpisodesFoundGeneral' => '未找到剧集',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => '无法加载剧集',
 			'messages.noResultsFound' => '未找到结果',
 			'messages.sleepTimerSet' => ({required Object label}) => '睡眠定时器已设置为 ${label}',
@@ -5342,6 +5469,48 @@ extension on TranslationsZh {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => '概述',
 			'discover.cast' => '演员表',
+			'discover.findNext.title' => '找你的下一个',
+			'discover.findNext.open' => '找你的下一个',
+			'discover.findNext.anyTime' => '任何时间',
+			'discover.findNext.timeAvailable' => '你有多少时间?',
+			'discover.findNext.filters' => '选择时刻',
+			'discover.findNext.watch' => '观看',
+			'discover.findNext.listen' => '听',
+			'discover.findNext.read' => '阅读',
+			'discover.findNext.finishable' => ({required Object duration}) => '在 ${duration} 结束',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => '關於 ${duration}',
+			'discover.findNext.nextUnit' => ({required Object duration}) => '下一章 · ${duration}',
+			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} 总',
+			'discover.findNext.timingVaries' => '时间差异',
+			'discover.findNext.notNow' => '不是现在',
+			'discover.findNext.swipeHint' => '转动,或者使用下面的按钮',
+			'discover.findNext.saved' => '拯救的皮克',
+			'discover.findNext.savedCount' => ({required Object count}) => '获取评分 · ${count}',
+			'discover.findNext.undo' => '和',
+			'discover.findNext.details' => '细节',
+			'discover.findNext.noPicks' => '到目前为止还没有选择的',
+			'discover.findNext.noPicksHint' => '连接图书馆或添加媒体来源开始。',
+			'discover.findNext.noMatches' => '没有什么适合这个时刻',
+			'discover.findNext.noMatchesHint' => '尝试另一个格式或给自己更多的时间。',
+			'discover.findNext.allDone' => '你們都被抓住了',
+			'discover.findNext.allDoneHint' => '开始新鲜的混合,再次看到这些选择。',
+			'discover.findNext.refresh' => '寻找另一个混合',
+			'discover.findNext.sourceReason' => ({required Object source}) => '由 ${source}',
+			'discover.findNext.libraryReason' => ({required Object library}) => '由 ${library}',
+			'discover.findNext.ownedReason' => '从你的图书馆',
+			'discover.findNext.liveNow' => '现在的',
+			'discover.findNext.watchLive' => '观看直播',
+			'discover.findNext.filterAnything' => '任何事',
+			'discover.findNext.filterWatch' => '观看',
+			'discover.findNext.filterListen' => '听',
+			'discover.findNext.filterRead' => '阅读',
+			'discover.findNext.twentyMinutes' => '20分钟',
+			'discover.findNext.fortyFiveMinutes' => '45分钟',
+			'discover.findNext.ninetyMinutes' => '90分钟',
+			'discover.findNext.apply' => '應用',
+			'discover.findNext.openFailed' => '此选项不再可用. 更新再检查。',
+			'discover.findNext.changeFailed' => '没办法改变,再试一次。',
+			'discover.findNext.savedLimit' => '保存的点数是满的. 删除一个点数来保存另一个点数。',
 			'discover.extras' => '预告片与花絮',
 			'discover.studio' => '制作公司',
 			'discover.rating' => '年龄分级',
@@ -5579,6 +5748,8 @@ extension on TranslationsZh {
 			'explore.selectSource' => '选择来源',
 			'explore.rows.watchlist' => '想看列表',
 			'explore.rows.recommendedMovies' => '推荐电影',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => '推荐剧集',
 			'explore.rows.trendingMovies' => '近期热门电影',
 			'explore.rows.trendingShows' => '近期热门剧集',
@@ -5628,8 +5799,6 @@ extension on TranslationsZh {
 			'explore.badge.processing' => '处理中',
 			'explore.badge.declined' => '已拒绝',
 			'explore.badge.requestFailed' => '请求失败',
-			_ => null,
-		} ?? switch (path) {
 			'explore.badge.requested4k' => '已请求 4K',
 			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => '已有 ${available}/${total} 季',
 			'explore.badge.nextEpisodeIn' => ({required Object episode, required Object duration}) => '第 ${episode} 集将在 ${duration} 后播出',
@@ -6093,6 +6262,8 @@ extension on TranslationsZh {
 			'downloads.pauseAll' => '全部暂停',
 			'downloads.resumeAll' => '全部继续',
 			'downloads.retryAll' => '全部重试',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => '重试失败的下载',
 			'downloads.deleteAll' => '全部删除',
 			'downloads.selectVersion' => '选择版本',
@@ -6142,8 +6313,6 @@ extension on TranslationsZh {
 			'downloads.syncUnwatchedItems' => '同步未观看项目',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => '服务器：${server} • ${status}',
 			'downloads.syncRuleAvailable' => '可用',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.syncRuleOffline' => '离线',
 			'downloads.syncRuleSignInRequired' => '需要登录',
 			'downloads.syncRuleAccessDenied' => '访问被拒绝',
@@ -6607,6 +6776,8 @@ extension on TranslationsZh {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '连接到 ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => '输入你的服务器 URL、用户名和密码。',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '登录你的 ${product} 服务器。将绑定到 ${name}。',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => '使用其他用户资料的连接',
 			'addServer.borrowFromAnotherProfileSubtitle' => '复用另一个用户资料的连接。受 PIN 保护的用户资料需要输入 PIN。',
 			'addServer.invalidCredentials' => '用户名或密码无效',
@@ -6656,8 +6827,6 @@ extension on TranslationsZh {
 			'homeLayout.resetToast' => '主页重新设置到原始Plezy英雄配置',
 			'homeLayout.resetHeroTitle' => '重定向英雄配置到存储Plezy?',
 			'homeLayout.resetHeroBody' => '关闭所有内容行的焦点横幅设置，并恢复首页顶部的单个轮播横幅，如同引入焦点横幅行之前的布局。内容行的顺序和显示状态不受影响。',
-			_ => null,
-		} ?? switch (path) {
 			'homeLayout.removeRowTitle' => '取消家居序列?',
 			'homeLayout.removeRowBody' => ({required Object title}) => '${title} 将被删除,此不能被删除。',
 			'homeLayout.sync' => '同步',
@@ -6965,6 +7134,57 @@ extension on TranslationsZh {
 			'lending.suspendMessage' => '要保留排队位置，让下一位读者先借阅此副本吗？您可以稍后恢复预约。',
 			'lending.resumeMessage' => '要恢复此预约，以便图书馆为您提供下一份可借阅的副本吗？',
 			'lending.editEmail' => '更改通知电子邮件',
+			'audiobook.syncTitle' => '阅读与倾听Sync',
+			'audiobook.syncHelp' => '在您的设备上保持阅读位置、倾听位置、完成状态、图标和笔记。 选择附加存储帐户并在每个设备上使用相同的同步代码. 阅读和倾听保持分开。',
+			'audiobook.addSyncSource' => '首先将 Google Drive、OneDrive、Dropbox、WebDAV 或 S3 添加到文件和书籍中。',
+			'audiobook.syncDestination' => '同步存储帐户',
+			'audiobook.syncFolder' => '同步文件夹或预定',
+			'audiobook.syncFolderHelp' => '在 WebDAV 源内使用一个单独的现有文件夹,或一个专门的 S3 预定。',
+			'audiobook.syncCode' => '个人同步代码',
+			'audiobook.syncCodeHelp' => '在您的第一台设备上创建一个代码,然后在您的其他设备上输入该代码. 保持一个私人副本:它是您的加密状态的关键。',
+			'audiobook.showCode' => '显示或隐藏同步代码',
+			'audiobook.newSyncCode' => '创建一个新的同步代码',
+			'audiobook.saveSync' => '保存和同步',
+			'audiobook.disableSync' => '在此设备上关闭同步',
+			'audiobook.syncSourceDisconnect' => '删除此源将关闭阅读和听同步在这里. 加密的同步文件将留在提供商。',
+			'audiobook.syncReconnect' => '重新连接存储帐户',
+			'audiobook.lastSynced' => ({required Object time}) => '上一篇: ${time}',
+			'audiobook.syncPrivacy' => '只有加密的进展和笔记存储. 音频和电子书文件,帐户图标和密码不上传. Google Drive 和 OneDrive 使用应用程序存储; Dropbox 使用 PlezyNG Sync. 允许同步可能需要额外的写入访问。',
+			'audiobook.syncConflicts' => '选择重定向的地方',
+			'audiobook.conflictHelp' => '这些更改是独立进行的. 选择位置或图标版本保持. 后期时间表或更高的百分比不会自动赢得。',
+			'audiobook.syncDevice' => ({required Object device}) => '裝置 ${device}',
+			'audiobook.syncUnknownDevice' => '未知设备',
+			'audiobook.deletedBookmark' => '删除图标',
+			'audiobook.finished' => '结束',
+			'audiobook.readingPosition' => ({required Object percent}) => '阅读 · ${percent}%',
+			'audiobook.chapterTimeline' => '第四章 进展',
+			'audiobook.bookTimeline' => '全书进展',
+			'audiobook.bookRemaining' => ({required Object time}) => '本书剩余时间：${time}',
+			'audiobook.chapterRemaining' => ({required Object time}) => '此分類上一篇: ${time}',
+			'audiobook.unknownRemaining' => '全部时间可用,当部分被播放时',
+			'audiobook.undoSeek' => '最后寻找',
+			'audiobook.customSpeed' => '定制播放速度',
+			'audiobook.speedHelp' => '选择速度从 0.25× 到 4×。',
+			'audiobook.apply' => '應用',
+			'audiobook.customSleep' => '定制睡眠时间',
+			'audiobook.sleepMinutes' => '时间(1 - 1440)',
+			'audiobook.sleepChapters' => ({required Object count}) => '播放完${count}章后停止',
+			'audiobook.extendSleep' => '添加5分钟',
+			'audiobook.sleepRemaining' => ({required Object time}) => '睡眠时间: ${time}',
+			'audiobook.useDefaults' => '使用这些听力控制器为新书',
+			'audiobook.librarySort' => '各式各样的书籍',
+			'audiobook.sortTitle' => '标题',
+			'audiobook.sortAuthor' => '作者',
+			'audiobook.sortNarrator' => '讲话者',
+			'audiobook.sortSeries' => '系列命令',
+			'audiobook.sortRecent' => '最近开放',
+			'audiobook.statusFilter' => '阅读状态',
+			'audiobook.statusAll' => '所有书籍',
+			'audiobook.statusNew' => '没有开始',
+			'audiobook.statusProgress' => '进展',
+			'audiobook.statusFinished' => '结束',
+			'audiobook.goToTime' => '走到时间',
+			'audiobook.timeHelp' => '时间: 分钟: 秒或 分钟: 秒',
 			_ => null,
 		};
 	}

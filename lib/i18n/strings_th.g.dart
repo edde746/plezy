@@ -759,6 +759,13 @@ class _Translations$settings$th extends Translations$settings$en {
 	@override String get regionFormatDescription => 'เลือกวิธีแสดงวันที่ ตัวเลข และหน่วยวัด';
 	@override String get metadataLanguage => 'ภาษาข้อมูลสื่อ';
 	@override String get metadataLanguageDescription => 'ภาษาที่ต้องการสำหรับชื่อและคำอธิบายเมื่อเซิร์ฟเวอร์รองรับ การตั้งค่าเสียงและคำบรรยายจะแยกจากกัน';
+	@override String get experimentalDolbyVision => 'Dolby Vision แบบทดลอง';
+	@override String get experimentalDolbyVisionDescription => 'ใช้ตัวเรนเดอร์ FEL แบบทดลองในการเล่นครั้งถัดไป ต้องใช้เอนจินที่บิลด์แยกต่างหาก';
+	@override String get dvExperimentUnavailableDescription => 'ขณะนี้การทดลองนี้ใช้ได้เฉพาะบน Linux';
+	@override String get dvCompatibilityFallback => 'ทางเลือกเพื่อความเข้ากันได้';
+	@override String get dvCompatibilityFallbackDescription => 'ใช้ตัวเรนเดอร์มาตรฐานหากเริ่มการทดลองไม่ได้ ข้อมูล FEL อาจสูญหาย';
+	@override String get dvExperimentDiagnostics => 'บันทึกการทดลองวิดีโอ';
+	@override String get dvExperimentDiagnosticsDescription => 'เปิดบันทึกข้อมูลเครื่องเล่นแบบละเอียดในการเล่นครั้งถัดไป';
 }
 
 // Path: themeEditor
@@ -4783,6 +4790,13 @@ extension on TranslationsTh {
 			'settings.regionFormatDescription' => 'เลือกวิธีแสดงวันที่ ตัวเลข และหน่วยวัด',
 			'settings.metadataLanguage' => 'ภาษาข้อมูลสื่อ',
 			'settings.metadataLanguageDescription' => 'ภาษาที่ต้องการสำหรับชื่อและคำอธิบายเมื่อเซิร์ฟเวอร์รองรับ การตั้งค่าเสียงและคำบรรยายจะแยกจากกัน',
+			'settings.experimentalDolbyVision' => 'Dolby Vision แบบทดลอง',
+			'settings.experimentalDolbyVisionDescription' => 'ใช้ตัวเรนเดอร์ FEL แบบทดลองในการเล่นครั้งถัดไป ต้องใช้เอนจินที่บิลด์แยกต่างหาก',
+			'settings.dvExperimentUnavailableDescription' => 'ขณะนี้การทดลองนี้ใช้ได้เฉพาะบน Linux',
+			'settings.dvCompatibilityFallback' => 'ทางเลือกเพื่อความเข้ากันได้',
+			'settings.dvCompatibilityFallbackDescription' => 'ใช้ตัวเรนเดอร์มาตรฐานหากเริ่มการทดลองไม่ได้ ข้อมูล FEL อาจสูญหาย',
+			'settings.dvExperimentDiagnostics' => 'บันทึกการทดลองวิดีโอ',
+			'settings.dvExperimentDiagnosticsDescription' => 'เปิดบันทึกข้อมูลเครื่องเล่นแบบละเอียดในการเล่นครั้งถัดไป',
 			'themeEditor.builtIn' => 'โครงสร้าง',
 			'themeEditor.presets' => 'โพสต์',
 			'themeEditor.custom' => 'คู่มือ',
@@ -5203,6 +5217,8 @@ extension on TranslationsTh {
 			'messages.libraryScanStarted' => ({required Object title}) => 'การสแกนห้องสมุดเริ่มสําหรับ "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'ไม่สามารถสแกนห้องสมุดได้: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'ข้อมูลจําเพาะสําหรับ "${title}"',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'การฟื้นฟู Metadata เริ่มต้นสําหรับ "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'ไม่สามารถปรับปรุงข้อมูลโลหะได้: ${error}',
 			'messages.logoutConfirm' => 'คุณแน่ใจว่าคุณต้องการที่จะลงทะเบียนออกหรือไม่',
@@ -5210,8 +5226,6 @@ extension on TranslationsTh {
 			'messages.seasonsLoadFailed' => 'ไม่สามารถโหลดฤดูกาล',
 			'messages.noEpisodesFound' => 'ไม่พบ episodes ในฤดูกาลแรก',
 			'messages.noEpisodesFoundGeneral' => 'ไม่พบเหตุการณ์',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'ไม่สามารถโหลด episodes',
 			'messages.noResultsFound' => 'ไม่มีผลลัพธ์',
 			'messages.sleepTimerSet' => ({required Object label}) => 'เวลานอนตั้งค่าสําหรับ ${label}',
@@ -5717,6 +5731,8 @@ extension on TranslationsTh {
 			'explore.selectSource' => 'เลือกแหล่งข้อมูล',
 			'explore.rows.watchlist' => 'รายการตรวจสอบ',
 			'explore.rows.recommendedMovies' => 'ภาพยนตร์ที่แนะนํา',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'แสดงที่แนะนํา',
 			'explore.rows.trendingMovies' => 'ภาพยนตร์แนวโน้ม',
 			'explore.rows.trendingShows' => 'แสดงแนวโน้ม',
@@ -5724,8 +5740,6 @@ extension on TranslationsTh {
 			'explore.rows.popularShows' => 'แสดงยอดนิยม',
 			'explore.rows.trendingAnime' => 'มือสมัครเล่น',
 			'explore.rows.suggestedAnime' => 'แนะนํา Anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'ออนิเมะ',
 			'explore.rows.popularAnime' => 'มากที่สุด Anime',
 			'explore.rows.trending' => 'ทนทาน',
@@ -6231,6 +6245,8 @@ extension on TranslationsTh {
 			'downloads.pauseAll' => 'สอดคล้องทั้งหมด',
 			'downloads.resumeAll' => 'ทบทวนทั้งหมด',
 			'downloads.retryAll' => 'กลับทั้งหมด',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => 'ดาวน์โหลดที่ล้มเหลว',
 			'downloads.deleteAll' => 'ลบทั้งหมด',
 			'downloads.selectVersion' => 'เลือกรุ่น',
@@ -6238,8 +6254,6 @@ extension on TranslationsTh {
 			'downloads.unwatchedOnly' => 'เท่านั้นไม่สังเกต',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'ถัดไป ${count} ไม่ตรวจสอบ',
 			'downloads.customAmount' => 'จํานวนที่กําหนดเอง',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'จํานวนที่กําหนดเอง (ทุกปี)',
 			'downloads.randomEpisodes' => 'ฉากที่สุ่ม',
 			'downloads.includeSpecials' => 'รวมพิเศษ',
@@ -6745,6 +6759,8 @@ extension on TranslationsTh {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'ติดต่อ ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'ใส่ URL, ชื่อผู้ใช้และรหัสผ่านเซิร์ฟเวอร์ของคุณ',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'ลงชื่อเข้าสู่เซิร์ฟเวอร์ ${product}. เชื่อมต่อกับ ${name}.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'โอกาสจากโปรไฟล์อื่น ๆ',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'ใช้การเชื่อมต่อของโปรไฟล์อื่น ๆ โปรไฟล์ที่ปกป้องด้วย PIN ต้องใช้ PIN',
 			'addServer.invalidCredentials' => 'ชื่อผู้ใช้หรือรหัสผ่านที่ไม่ถูกต้อง',
@@ -6752,8 +6768,6 @@ extension on TranslationsTh {
 			'addServer.authResponseIncomplete' => 'การตอบสนองการลงชื่อเข้าจากเซิร์ฟเวอร์ไม่สมบูรณ์',
 			'addServer.quickConnectRejected' => 'Quick Connect ได้รับการปฏิเสธโดยเซิร์ฟเวอร์',
 			'addServer.quickConnectNotJson' => 'คําตอบ Quick Connect ไม่ถูกต้อง JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'คําตอบ Quick Connect ไม่มีรหัสหรือความลับ',
 			'addServer.quickConnectPollRejected' => 'Quick Connect การสอบถามถูกปฏิเสธโดยเซิร์ฟเวอร์',
 			'addServer.serverTimedOut' => 'เซิร์ฟเวอร์ไม่ตอบสนองในเวลา',

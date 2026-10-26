@@ -761,6 +761,13 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Välj hur datum, tal och måttenheter visas.';
 	@override String get metadataLanguage => 'Språk för metadata';
 	@override String get metadataLanguageDescription => 'Föredraget språk för titlar och beskrivningar när servern stöder det. Ljud och undertexter ställs in separat.';
+	@override String get experimentalDolbyVision => 'Experimentell Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Använd den experimentella FEL-renderaren vid nästa uppspelning. Kräver en separat motorversion.';
+	@override String get dvExperimentUnavailableDescription => 'Det här experimentet är för närvarande endast tillgängligt på Linux.';
+	@override String get dvCompatibilityFallback => 'Kompatibilitetsreserv';
+	@override String get dvCompatibilityFallbackDescription => 'Använd standardrenderaren om experimentet inte kan starta. FEL-data kan gå förlorade.';
+	@override String get dvExperimentDiagnostics => 'Loggning av videoexperiment';
+	@override String get dvExperimentDiagnosticsDescription => 'Aktivera detaljerade spelarloggar vid nästa uppspelning.';
 }
 
 // Path: themeEditor
@@ -4805,6 +4812,13 @@ extension on TranslationsSv {
 			'settings.regionFormatDescription' => 'Välj hur datum, tal och måttenheter visas.',
 			'settings.metadataLanguage' => 'Språk för metadata',
 			'settings.metadataLanguageDescription' => 'Föredraget språk för titlar och beskrivningar när servern stöder det. Ljud och undertexter ställs in separat.',
+			'settings.experimentalDolbyVision' => 'Experimentell Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Använd den experimentella FEL-renderaren vid nästa uppspelning. Kräver en separat motorversion.',
+			'settings.dvExperimentUnavailableDescription' => 'Det här experimentet är för närvarande endast tillgängligt på Linux.',
+			'settings.dvCompatibilityFallback' => 'Kompatibilitetsreserv',
+			'settings.dvCompatibilityFallbackDescription' => 'Använd standardrenderaren om experimentet inte kan starta. FEL-data kan gå förlorade.',
+			'settings.dvExperimentDiagnostics' => 'Loggning av videoexperiment',
+			'settings.dvExperimentDiagnosticsDescription' => 'Aktivera detaljerade spelarloggar vid nästa uppspelning.',
 			'themeEditor.builtIn' => 'Inbyggda',
 			'themeEditor.presets' => 'Förinställda',
 			'themeEditor.custom' => 'Anpassat',
@@ -5225,6 +5239,8 @@ extension on TranslationsSv {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Biblioteksskanningen har startat för "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Det gick inte att skanna biblioteket: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Uppdaterar metadata för "${title}"...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadatauppdateringen har startat för "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Det gick inte att uppdatera metadata: ${error}',
 			'messages.logoutConfirm' => 'Är du säker på att du vill logga ut?',
@@ -5232,8 +5248,6 @@ extension on TranslationsSv {
 			'messages.seasonsLoadFailed' => 'Det gick inte att läsa in säsonger',
 			'messages.noEpisodesFound' => 'Inga avsnitt hittades i första säsongen',
 			'messages.noEpisodesFoundGeneral' => 'Inga avsnitt hittades',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Det gick inte att läsa in avsnitt',
 			'messages.noResultsFound' => 'Inga resultat hittades',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Sovtimer inställd för ${label}',
@@ -5739,6 +5753,8 @@ extension on TranslationsSv {
 			'explore.selectSource' => 'Välj källa',
 			'explore.rows.watchlist' => 'Bevakningslista',
 			'explore.rows.recommendedMovies' => 'Rekommenderade filmer',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Rekommenderade serier',
 			'explore.rows.trendingMovies' => 'Populära filmer just nu',
 			'explore.rows.trendingShows' => 'Populära serier just nu',
@@ -5746,8 +5762,6 @@ extension on TranslationsSv {
 			'explore.rows.popularShows' => 'Populära serier',
 			'explore.rows.trendingAnime' => 'Populär anime just nu',
 			'explore.rows.suggestedAnime' => 'Föreslagen anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Bästa anime som sänds nu',
 			'explore.rows.popularAnime' => 'Mest populära anime',
 			'explore.rows.trending' => 'Trendar nu',
@@ -6253,6 +6267,8 @@ extension on TranslationsSv {
 			'downloads.pauseAll' => 'Pausa alla',
 			'downloads.resumeAll' => 'Återuppta alla',
 			'downloads.retryAll' => 'Försök igen med alla',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => 'Försök igen med misslyckade nedladdningar',
 			'downloads.deleteAll' => 'Ta bort alla',
 			'downloads.selectVersion' => 'Välj version',
@@ -6260,8 +6276,6 @@ extension on TranslationsSv {
 			'downloads.unwatchedOnly' => 'Endast osedda',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Nästa ${count} osedda',
 			'downloads.customAmount' => 'Ange antal...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Enligt varje kvantitet (...',
 			'downloads.randomEpisodes' => 'Random episoder',
 			'downloads.includeSpecials' => 'Inkludera specialavsnitt',
@@ -6767,6 +6781,8 @@ extension on TranslationsSv {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Anslut till ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Ange din server-URL, användarnamn och lösenord.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Logga in på din ${product}-server. Knyts till ${name}.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Låna från en annan profil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Återanvänd en annan profils anslutning. PIN-skyddade profiler kräver en PIN.',
 			'addServer.invalidCredentials' => 'Ogiltigt användarnamn eller lösenord',
@@ -6774,8 +6790,6 @@ extension on TranslationsSv {
 			'addServer.authResponseIncomplete' => 'Inloggningssvaret från servern var ofullständigt',
 			'addServer.quickConnectRejected' => 'Quick Connect avvisades av servern',
 			'addServer.quickConnectNotJson' => 'Quick Connect-svaret var inte ett giltigt JSON-svar',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect-svaret saknar en kod eller hemlig nyckel',
 			'addServer.quickConnectPollRejected' => 'Servern avvisade avsökningen för Quick Connect',
 			'addServer.serverTimedOut' => 'Servern svarade inte i tid',

@@ -628,7 +628,14 @@
     "regionFormat": "क्षेत्रीय प्रारूप",
     "regionFormatDescription": "तारीखें, संख्याएँ और माप दिखाने का तरीका चुनें।",
     "metadataLanguage": "मीडिया विवरण की भाषा",
-    "metadataLanguageDescription": "सर्वर के समर्थन के अनुसार शीर्षकों और विवरणों की पसंदीदा भाषा। ऑडियो और उपशीर्षक की प्राथमिकताएँ अलग रहती हैं।"
+    "metadataLanguageDescription": "सर्वर के समर्थन के अनुसार शीर्षकों और विवरणों की पसंदीदा भाषा। ऑडियो और उपशीर्षक की प्राथमिकताएँ अलग रहती हैं।",
+    "experimentalDolbyVision": "प्रायोगिक Dolby Vision",
+    "experimentalDolbyVisionDescription": "अगले प्लेबैक में प्रायोगिक FEL रेंडरर का उपयोग करें। इसके लिए इंजन का अलग बिल्ड चाहिए।",
+    "dvExperimentUnavailableDescription": "यह प्रयोग फ़िलहाल केवल Linux पर उपलब्ध है।",
+    "dvCompatibilityFallback": "अनुकूलता विकल्प",
+    "dvCompatibilityFallbackDescription": "प्रयोग शुरू न हो पाए तो मानक रेंडरर का उपयोग करें। FEL डेटा खो सकता है।",
+    "dvExperimentDiagnostics": "वीडियो प्रयोग की लॉगिंग",
+    "dvExperimentDiagnosticsDescription": "अगले प्लेबैक में प्लेयर के विस्तृत लॉग सक्षम करें।"
   },
   "themeEditor": {
     "builtIn": "इमारत में",

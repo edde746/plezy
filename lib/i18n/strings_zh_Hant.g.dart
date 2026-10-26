@@ -104,6 +104,7 @@ class TranslationsZhHant extends TranslationsZh with BaseTranslations<AppLocale,
 	@override late final _Translations$platform$zh_Hant platform = _Translations$platform$zh_Hant._(_root);
 	@override late final _Translations$fileSources$zh_Hant fileSources = _Translations$fileSources$zh_Hant._(_root);
 	@override late final _Translations$lending$zh_Hant lending = _Translations$lending$zh_Hant._(_root);
+	@override late final _Translations$audiobook$zh_Hant audiobook = _Translations$audiobook$zh_Hant._(_root);
 }
 
 // Path: app
@@ -759,6 +760,13 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get regionFormatDescription => '選擇日期、數字及計量單位的顯示方式。';
 	@override String get metadataLanguage => '中繼資料語言';
 	@override String get metadataLanguageDescription => '伺服器支援時，優先使用此語言顯示標題及簡介。音訊和字幕偏好設定互相獨立。';
+	@override String get experimentalDolbyVision => '實驗性 Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => '下次播放時使用實驗性 FEL 算繪器。需要單獨建置的播放引擎。';
+	@override String get dvExperimentUnavailableDescription => '此實驗目前僅支援 Linux。';
+	@override String get dvCompatibilityFallback => '相容性備援';
+	@override String get dvCompatibilityFallbackDescription => '如果實驗無法啟動，則使用標準算繪器。FEL 資料可能會遺失。';
+	@override String get dvExperimentDiagnostics => '影片實驗記錄';
+	@override String get dvExperimentDiagnosticsDescription => '在下次播放時啟用詳細的播放器記錄。';
 }
 
 // Path: themeEditor
@@ -1520,6 +1528,7 @@ class _Translations$discover$zh_Hant extends Translations$discover$zh {
 	@override String playEpisode({required Object season, required Object episode}) => '第 ${season} 季 第 ${episode} 集';
 	@override String get overview => '概述';
 	@override String get cast => '演員陣容';
+	@override late final _Translations$discover$findNext$zh_Hant findNext = _Translations$discover$findNext$zh_Hant._(_root);
 	@override String get extras => '預告片與花絮';
 	@override String get studio => '製作商';
 	@override String get rating => '分級';
@@ -3112,6 +3121,66 @@ class _Translations$lending$zh_Hant extends Translations$lending$zh {
 	@override String get editEmail => '更改通知電子郵件';
 }
 
+// Path: audiobook
+class _Translations$audiobook$zh_Hant extends Translations$audiobook$zh {
+	_Translations$audiobook$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
+
+	final TranslationsZhHant _root; // ignore: unused_field
+
+	// Translations
+	@override String get syncTitle => '閱讀與傾聽Sync';
+	@override String get syncHelp => '在您的裝置上保持閱讀位置、傾聽位置、完成狀態、圖示和筆記。 選擇附加儲存帳戶並在每個裝置上使用相同的同步程式碼. 閱讀和傾聽保持分開。';
+	@override String get addSyncSource => '首先將 Google Drive、OneDrive、Dropbox、WebDAV 或 S3 新增到檔案和書籍中。';
+	@override String get syncDestination => '同步儲存帳戶';
+	@override String get syncFolder => '同步資料夾或預定';
+	@override String get syncFolderHelp => '在 WebDAV 源內使用一個單獨的現有資料夾,或一個專門的 S3 預定。';
+	@override String get syncCode => '個人同步程式碼';
+	@override String get syncCodeHelp => '在您的第一臺裝置上建立一個程式碼,然後在您的其他裝置上輸入該程式碼. 保持一個私人副本:它是您的加密狀態的關鍵。';
+	@override String get showCode => '顯示或隱藏同步程式碼';
+	@override String get newSyncCode => '建立一個新的同步程式碼';
+	@override String get saveSync => '儲存和同步';
+	@override String get disableSync => '在此裝置上關閉同步';
+	@override String get syncSourceDisconnect => '刪除此源將關閉閱讀和聽同步在這裡. 加密的同步檔案將留在提供商。';
+	@override String get syncReconnect => '重新連線儲存帳戶';
+	@override String lastSynced({required Object time}) => '上一篇: ${time}';
+	@override String get syncPrivacy => '只有加密的進展和筆記儲存. 音訊和電子書檔案,帳戶圖示和密碼不上傳. Google Drive 和 OneDrive 使用應用程式儲存; Dropbox 使用 PlezyNG Sync. 允許同步可能需要額外的寫入訪問。';
+	@override String get syncConflicts => '選擇重定向的地方';
+	@override String get conflictHelp => '這些更改是獨立進行的. 選擇位置或圖示版本保持. 後期時間表或更高的百分比不會自動贏得。';
+	@override String syncDevice({required Object device}) => '裝置 ${device}';
+	@override String get syncUnknownDevice => '未知裝置';
+	@override String get deletedBookmark => '刪除圖示';
+	@override String get finished => '結束';
+	@override String readingPosition({required Object percent}) => '閱讀 · ${percent}%';
+	@override String get chapterTimeline => '第四章 進展';
+	@override String get bookTimeline => '全書進展';
+	@override String bookRemaining({required Object time}) => '本書剩餘時間：${time}';
+	@override String chapterRemaining({required Object time}) => '此分類上一篇: ${time}';
+	@override String get unknownRemaining => '全部時間可用,當部分被播放時';
+	@override String get undoSeek => '最後尋找';
+	@override String get customSpeed => '定製播放速度';
+	@override String get speedHelp => '選擇速度從 0.25× 到 4×。';
+	@override String get apply => '應用';
+	@override String get customSleep => '定製睡眠時間';
+	@override String get sleepMinutes => '時間(1 - 1440)';
+	@override String sleepChapters({required Object count}) => '播放完${count}章後停止';
+	@override String get extendSleep => '新增5分鐘';
+	@override String sleepRemaining({required Object time}) => '睡眠時間: ${time}';
+	@override String get useDefaults => '使用這些聽力控制器為新書';
+	@override String get librarySort => '各式各樣的書籍';
+	@override String get sortTitle => '標題';
+	@override String get sortAuthor => '作者';
+	@override String get sortNarrator => '講話者';
+	@override String get sortSeries => '系列命令';
+	@override String get sortRecent => '最近開放';
+	@override String get statusFilter => '閱讀狀態';
+	@override String get statusAll => '所有書籍';
+	@override String get statusNew => '沒有開始';
+	@override String get statusProgress => '進展';
+	@override String get statusFinished => '結束';
+	@override String get goToTime => '走到時間';
+	@override String get timeHelp => '時間: 分鐘: 秒或 分鐘: 秒';
+}
+
 // Path: appIcon.names
 class _Translations$appIcon$names$zh_Hant extends Translations$appIcon$names$zh {
 	_Translations$appIcon$names$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
@@ -3354,6 +3423,57 @@ class _Translations$accountPreferences$mediaReviewsOptions$zh_Hant extends Trans
 	@override String get usersOnly => '僅使用者';
 	@override String get criticsOnly => '僅影評人';
 	@override String get nobody => '隱藏';
+}
+
+// Path: discover.findNext
+class _Translations$discover$findNext$zh_Hant extends Translations$discover$findNext$zh {
+	_Translations$discover$findNext$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
+
+	final TranslationsZhHant _root; // ignore: unused_field
+
+	// Translations
+	@override String get title => '找你的下一個';
+	@override String get open => '找你的下一個';
+	@override String get anyTime => '任何時間';
+	@override String get timeAvailable => '你有多少時間?';
+	@override String get filters => '選擇時刻';
+	@override String get watch => '觀看';
+	@override String get listen => '聽';
+	@override String get read => '閱讀';
+	@override String finishable({required Object duration}) => '在 ${duration} 結束';
+	@override String aboutDuration({required Object duration}) => '關於 ${duration}';
+	@override String nextUnit({required Object duration}) => '下一章 · ${duration}';
+	@override String totalDuration({required Object duration}) => '${duration} 總';
+	@override String get timingVaries => '時間差異';
+	@override String get notNow => '不是現在';
+	@override String get swipeHint => '轉動,或者使用下面的按鈕';
+	@override String get saved => '拯救的皮克';
+	@override String savedCount({required Object count}) => '獲取評分 · ${count}';
+	@override String get undo => '和';
+	@override String get details => '細節';
+	@override String get noPicks => '到目前為止還沒有選擇的';
+	@override String get noPicksHint => '連線圖書館或新增媒體來源開始。';
+	@override String get noMatches => '沒有什麼適合這個時刻';
+	@override String get noMatchesHint => '嘗試另一個格式或給自己更多的時間。';
+	@override String get allDone => '你們都被抓住了';
+	@override String get allDoneHint => '開始新鮮的混合,再次看到這些選擇。';
+	@override String get refresh => '尋找另一個混合';
+	@override String sourceReason({required Object source}) => '由 ${source}';
+	@override String libraryReason({required Object library}) => '由 ${library}';
+	@override String get ownedReason => '從你的圖書館';
+	@override String get liveNow => '現在的';
+	@override String get watchLive => '觀看直播';
+	@override String get filterAnything => '任何事';
+	@override String get filterWatch => '觀看';
+	@override String get filterListen => '聽';
+	@override String get filterRead => '閱讀';
+	@override String get twentyMinutes => '20分鐘';
+	@override String get fortyFiveMinutes => '45分鐘';
+	@override String get ninetyMinutes => '90分鐘';
+	@override String get apply => '應用';
+	@override String get openFailed => '此選項不再可用. 更新再檢查。';
+	@override String get changeFailed => '沒辦法改變,再試一次。';
+	@override String get savedLimit => '儲存的點數是滿的. 刪除一個點數來儲存另一個點數。';
 }
 
 // Path: discover.person
@@ -4688,6 +4808,13 @@ extension on TranslationsZhHant {
 			'settings.regionFormatDescription' => '選擇日期、數字及計量單位的顯示方式。',
 			'settings.metadataLanguage' => '中繼資料語言',
 			'settings.metadataLanguageDescription' => '伺服器支援時，優先使用此語言顯示標題及簡介。音訊和字幕偏好設定互相獨立。',
+			'settings.experimentalDolbyVision' => '實驗性 Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => '下次播放時使用實驗性 FEL 算繪器。需要單獨建置的播放引擎。',
+			'settings.dvExperimentUnavailableDescription' => '此實驗目前僅支援 Linux。',
+			'settings.dvCompatibilityFallback' => '相容性備援',
+			'settings.dvCompatibilityFallbackDescription' => '如果實驗無法啟動，則使用標準算繪器。FEL 資料可能會遺失。',
+			'settings.dvExperimentDiagnostics' => '影片實驗記錄',
+			'settings.dvExperimentDiagnosticsDescription' => '在下次播放時啟用詳細的播放器記錄。',
 			'themeEditor.builtIn' => '內建',
 			'themeEditor.presets' => '精選',
 			'themeEditor.custom' => '自訂',
@@ -5108,6 +5235,8 @@ extension on TranslationsZhHant {
 			'messages.libraryScanStarted' => ({required Object title}) => '已開始掃描「${title}」媒體庫',
 			'messages.libraryScanFailed' => ({required Object error}) => '無法掃描媒體庫：${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '正在重新整理「${title}」的中繼資料…',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '已開始重新整理「${title}」的中繼資料',
 			'messages.metadataRefreshFailed' => ({required Object error}) => '無法重新整理中繼資料：${error}',
 			'messages.logoutConfirm' => '您確定要登出嗎？',
@@ -5115,8 +5244,6 @@ extension on TranslationsZhHant {
 			'messages.seasonsLoadFailed' => '無法載入季數',
 			'messages.noEpisodesFound' => '在第一季中找不到單集',
 			'messages.noEpisodesFoundGeneral' => '找不到單集',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => '無法載入單集',
 			'messages.noResultsFound' => '找不到結果',
 			'messages.sleepTimerSet' => ({required Object label}) => '睡眠計時器已設定為 ${label}',
@@ -5343,6 +5470,48 @@ extension on TranslationsZhHant {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => '第 ${season} 季 第 ${episode} 集',
 			'discover.overview' => '概述',
 			'discover.cast' => '演員陣容',
+			'discover.findNext.title' => '找你的下一個',
+			'discover.findNext.open' => '找你的下一個',
+			'discover.findNext.anyTime' => '任何時間',
+			'discover.findNext.timeAvailable' => '你有多少時間?',
+			'discover.findNext.filters' => '選擇時刻',
+			'discover.findNext.watch' => '觀看',
+			'discover.findNext.listen' => '聽',
+			'discover.findNext.read' => '閱讀',
+			'discover.findNext.finishable' => ({required Object duration}) => '在 ${duration} 結束',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => '關於 ${duration}',
+			'discover.findNext.nextUnit' => ({required Object duration}) => '下一章 · ${duration}',
+			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} 總',
+			'discover.findNext.timingVaries' => '時間差異',
+			'discover.findNext.notNow' => '不是現在',
+			'discover.findNext.swipeHint' => '轉動,或者使用下面的按鈕',
+			'discover.findNext.saved' => '拯救的皮克',
+			'discover.findNext.savedCount' => ({required Object count}) => '獲取評分 · ${count}',
+			'discover.findNext.undo' => '和',
+			'discover.findNext.details' => '細節',
+			'discover.findNext.noPicks' => '到目前為止還沒有選擇的',
+			'discover.findNext.noPicksHint' => '連線圖書館或新增媒體來源開始。',
+			'discover.findNext.noMatches' => '沒有什麼適合這個時刻',
+			'discover.findNext.noMatchesHint' => '嘗試另一個格式或給自己更多的時間。',
+			'discover.findNext.allDone' => '你們都被抓住了',
+			'discover.findNext.allDoneHint' => '開始新鮮的混合,再次看到這些選擇。',
+			'discover.findNext.refresh' => '尋找另一個混合',
+			'discover.findNext.sourceReason' => ({required Object source}) => '由 ${source}',
+			'discover.findNext.libraryReason' => ({required Object library}) => '由 ${library}',
+			'discover.findNext.ownedReason' => '從你的圖書館',
+			'discover.findNext.liveNow' => '現在的',
+			'discover.findNext.watchLive' => '觀看直播',
+			'discover.findNext.filterAnything' => '任何事',
+			'discover.findNext.filterWatch' => '觀看',
+			'discover.findNext.filterListen' => '聽',
+			'discover.findNext.filterRead' => '閱讀',
+			'discover.findNext.twentyMinutes' => '20分鐘',
+			'discover.findNext.fortyFiveMinutes' => '45分鐘',
+			'discover.findNext.ninetyMinutes' => '90分鐘',
+			'discover.findNext.apply' => '應用',
+			'discover.findNext.openFailed' => '此選項不再可用. 更新再檢查。',
+			'discover.findNext.changeFailed' => '沒辦法改變,再試一次。',
+			'discover.findNext.savedLimit' => '儲存的點數是滿的. 刪除一個點數來儲存另一個點數。',
 			'discover.extras' => '預告片與花絮',
 			'discover.studio' => '製作商',
 			'discover.rating' => '分級',
@@ -5580,6 +5749,8 @@ extension on TranslationsZhHant {
 			'explore.selectSource' => '選擇來源',
 			'explore.rows.watchlist' => '待看清單',
 			'explore.rows.recommendedMovies' => '推薦電影',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => '推薦影集',
 			'explore.rows.trendingMovies' => '近期熱門電影',
 			'explore.rows.trendingShows' => '近期熱門影集',
@@ -5629,8 +5800,6 @@ extension on TranslationsZhHant {
 			'explore.badge.processing' => '處理中',
 			'explore.badge.declined' => '已拒絕',
 			'explore.badge.requestFailed' => '請求失敗',
-			_ => null,
-		} ?? switch (path) {
 			'explore.badge.requested4k' => '已請求 4K',
 			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => '${available}/${total} 季',
 			'explore.badge.nextEpisodeIn' => ({required Object episode, required Object duration}) => '第 ${episode} 集 ${duration} 後播出',
@@ -6094,6 +6263,8 @@ extension on TranslationsZhHant {
 			'downloads.pauseAll' => '全部暫停',
 			'downloads.resumeAll' => '全部繼續',
 			'downloads.retryAll' => '全部重試',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => '重試失敗的下載',
 			'downloads.deleteAll' => '全部刪除',
 			'downloads.selectVersion' => '選擇版本',
@@ -6143,8 +6314,6 @@ extension on TranslationsZhHant {
 			'downloads.syncUnwatchedItems' => '同步未觀看項目',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => '伺服器：${server} • ${status}',
 			'downloads.syncRuleAvailable' => '可用',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.syncRuleOffline' => '離線',
 			'downloads.syncRuleSignInRequired' => '需要登入',
 			'downloads.syncRuleAccessDenied' => '存取遭拒',
@@ -6608,6 +6777,8 @@ extension on TranslationsZhHant {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '連線至 ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => '輸入您的伺服器 URL、使用者名稱與密碼。',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '登入您的 ${product} 伺服器。將綁定至 ${name}。',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => '從另一個使用者設定檔共用',
 			'addServer.borrowFromAnotherProfileSubtitle' => '重複使用另一個使用者設定檔的連線資訊。受 PIN 碼保護的使用者設定檔需輸入 PIN 碼。',
 			'addServer.invalidCredentials' => '使用者名稱或密碼無效',
@@ -6657,8 +6828,6 @@ extension on TranslationsZhHant {
 			'homeLayout.resetToast' => '主頁重新設定到原始Plezy英雄配置',
 			'homeLayout.resetHeroTitle' => '重定向英雄配置到儲存Plezy?',
 			'homeLayout.resetHeroBody' => '關閉所有內容列的焦點橫幅設定，並恢復首頁頂端的單一輪播橫幅，如同引入焦點橫幅列之前的版面配置。內容列的順序和顯示狀態不受影響。',
-			_ => null,
-		} ?? switch (path) {
 			'homeLayout.removeRowTitle' => '取消家居序列?',
 			'homeLayout.removeRowBody' => ({required Object title}) => '${title} 將被刪除,此不能被刪除。',
 			'homeLayout.sync' => '同步',
@@ -6966,6 +7135,57 @@ extension on TranslationsZhHant {
 			'lending.suspendMessage' => '要保留排隊位置，讓下一位讀者先借閱此副本嗎？您可以稍後恢復預約。',
 			'lending.resumeMessage' => '要恢復此預約，讓圖書館為您提供下一份可借閱的副本嗎？',
 			'lending.editEmail' => '更改通知電子郵件',
+			'audiobook.syncTitle' => '閱讀與傾聽Sync',
+			'audiobook.syncHelp' => '在您的裝置上保持閱讀位置、傾聽位置、完成狀態、圖示和筆記。 選擇附加儲存帳戶並在每個裝置上使用相同的同步程式碼. 閱讀和傾聽保持分開。',
+			'audiobook.addSyncSource' => '首先將 Google Drive、OneDrive、Dropbox、WebDAV 或 S3 新增到檔案和書籍中。',
+			'audiobook.syncDestination' => '同步儲存帳戶',
+			'audiobook.syncFolder' => '同步資料夾或預定',
+			'audiobook.syncFolderHelp' => '在 WebDAV 源內使用一個單獨的現有資料夾,或一個專門的 S3 預定。',
+			'audiobook.syncCode' => '個人同步程式碼',
+			'audiobook.syncCodeHelp' => '在您的第一臺裝置上建立一個程式碼,然後在您的其他裝置上輸入該程式碼. 保持一個私人副本:它是您的加密狀態的關鍵。',
+			'audiobook.showCode' => '顯示或隱藏同步程式碼',
+			'audiobook.newSyncCode' => '建立一個新的同步程式碼',
+			'audiobook.saveSync' => '儲存和同步',
+			'audiobook.disableSync' => '在此裝置上關閉同步',
+			'audiobook.syncSourceDisconnect' => '刪除此源將關閉閱讀和聽同步在這裡. 加密的同步檔案將留在提供商。',
+			'audiobook.syncReconnect' => '重新連線儲存帳戶',
+			'audiobook.lastSynced' => ({required Object time}) => '上一篇: ${time}',
+			'audiobook.syncPrivacy' => '只有加密的進展和筆記儲存. 音訊和電子書檔案,帳戶圖示和密碼不上傳. Google Drive 和 OneDrive 使用應用程式儲存; Dropbox 使用 PlezyNG Sync. 允許同步可能需要額外的寫入訪問。',
+			'audiobook.syncConflicts' => '選擇重定向的地方',
+			'audiobook.conflictHelp' => '這些更改是獨立進行的. 選擇位置或圖示版本保持. 後期時間表或更高的百分比不會自動贏得。',
+			'audiobook.syncDevice' => ({required Object device}) => '裝置 ${device}',
+			'audiobook.syncUnknownDevice' => '未知裝置',
+			'audiobook.deletedBookmark' => '刪除圖示',
+			'audiobook.finished' => '結束',
+			'audiobook.readingPosition' => ({required Object percent}) => '閱讀 · ${percent}%',
+			'audiobook.chapterTimeline' => '第四章 進展',
+			'audiobook.bookTimeline' => '全書進展',
+			'audiobook.bookRemaining' => ({required Object time}) => '本書剩餘時間：${time}',
+			'audiobook.chapterRemaining' => ({required Object time}) => '此分類上一篇: ${time}',
+			'audiobook.unknownRemaining' => '全部時間可用,當部分被播放時',
+			'audiobook.undoSeek' => '最後尋找',
+			'audiobook.customSpeed' => '定製播放速度',
+			'audiobook.speedHelp' => '選擇速度從 0.25× 到 4×。',
+			'audiobook.apply' => '應用',
+			'audiobook.customSleep' => '定製睡眠時間',
+			'audiobook.sleepMinutes' => '時間(1 - 1440)',
+			'audiobook.sleepChapters' => ({required Object count}) => '播放完${count}章後停止',
+			'audiobook.extendSleep' => '新增5分鐘',
+			'audiobook.sleepRemaining' => ({required Object time}) => '睡眠時間: ${time}',
+			'audiobook.useDefaults' => '使用這些聽力控制器為新書',
+			'audiobook.librarySort' => '各式各樣的書籍',
+			'audiobook.sortTitle' => '標題',
+			'audiobook.sortAuthor' => '作者',
+			'audiobook.sortNarrator' => '講話者',
+			'audiobook.sortSeries' => '系列命令',
+			'audiobook.sortRecent' => '最近開放',
+			'audiobook.statusFilter' => '閱讀狀態',
+			'audiobook.statusAll' => '所有書籍',
+			'audiobook.statusNew' => '沒有開始',
+			'audiobook.statusProgress' => '進展',
+			'audiobook.statusFinished' => '結束',
+			'audiobook.goToTime' => '走到時間',
+			'audiobook.timeHelp' => '時間: 分鐘: 秒或 分鐘: 秒',
 			_ => null,
 		};
 	}
