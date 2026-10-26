@@ -45,9 +45,13 @@
         <uses-library android:name="android.car" android:required="false" />
         <!-- The activity itself has no launcher entry: the launcher components are the aliases
              below, so the app icon can be switched by enabling one alias and disabling the rest.
-             Deep links stay here so they resolve whichever alias is enabled. -->
+             Deep links stay here so they resolve whichever alias is enabled.
+             turnScreenOn lets a plezy:// link sent during the screensaver (e.g. by a home
+             automation) wake the device; set at runtime it comes too late, as the activity
+             is already launched behind the screensaver. -->
         <activity
             android:name=".PlezyActivity"
+            android:turnScreenOn="true"
             android:exported="true"
             android:launchMode="singleTop"
             android:taskAffinity=""
@@ -63,19 +67,13 @@
             <meta-data
                 android:name="flutter_deeplinking_enabled"
                 android:value="false" />
-            <!-- Deep link handler for Watch Next items -->
+            <!-- Every plezy:// link, whatever its host. DeepLinkPlugin forwards the URL unchanged;
+                 the grammar lives in lib/services/deep_links/deep_link.dart. -->
             <intent-filter>
                 <action android:name="android.intent.action.VIEW"/>
                 <category android:name="android.intent.category.DEFAULT"/>
                 <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="plezy" android:host="play"/>
-            </intent-filter>
-            <!-- Deep link for tuning a live TV channel: plezy://live?channel=...&start=beginning|live -->
-            <intent-filter>
-                <action android:name="android.intent.action.VIEW"/>
-                <category android:name="android.intent.category.DEFAULT"/>
-                <category android:name="android.intent.category.BROWSABLE"/>
-                <data android:scheme="plezy" android:host="live"/>
+                <data android:scheme="plezy"/>
             </intent-filter>
         </activity>
         <!-- The default icon. Keep this component name forever: it was the launcher activity before

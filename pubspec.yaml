@@ -170,6 +170,8 @@ flutter:
     - assets/mdblist_mark.svg
     - assets/go-noto-current-regular.ttf
     - assets/go-noto-kurrent-hangul.ttf
+    # Intro/credits chapter classifier; scripts/codegen/train_chapter_marker_model.py writes it.
+    - assets/chapter_marker_model.bin
     - assets/shaders/nvscaler/
     - assets/shaders/artcnn/
     - assets/shaders/anime4k/

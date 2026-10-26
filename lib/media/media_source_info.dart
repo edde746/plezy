@@ -1,5 +1,6 @@
 import '../i18n/strings.g.dart';
 import '../utils/track_label_builder.dart' show TrackLabel, TrackLabelBuilder;
+import 'chapter_marker_classifier.dart';
 import 'media_display_criteria.dart';
 import 'media_part_timeline.dart';
 
@@ -382,29 +383,31 @@ class PlaybackExtras {
   PlaybackExtras withoutCreditsMarkers() =>
       PlaybackExtras(chapters: chapters, markers: markers.where((marker) => !marker.isCredits).toList());
 
+  /// Built-in chapter-title patterns. They classify server markers with
+  /// non-standard type strings; chapter titles are classified by
+  /// [ChapterMarkerClassifier] unless the user replaced a pattern.
+  static const defaultIntroPattern = r'(?:^|\b)(?:intro(?:duction)?|opening)(?:\b|$)|^op(?:\s?\d+)?$';
+  static const defaultCreditsPattern = r'(?:^|\b)(?:outro|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$';
+
   static String? _classifyChapterTitle(String title, RegExp introPattern, RegExp creditsPattern) {
     if (introPattern.hasMatch(title)) return 'intro';
     if (creditsPattern.hasMatch(title)) return 'credits';
     return null;
   }
 
-  /// Compiles [pattern], falling back to [defaultPattern] when it is null or
-  /// blank: a blank stored/imported pattern would compile to a regex that
-  /// matches every chapter title, classifying every chapter as a marker.
-  static RegExp _patternOrDefault(String? pattern, String defaultPattern) {
-    final source = pattern == null || pattern.trim().isEmpty ? defaultPattern : pattern;
-    return RegExp(source, caseSensitive: false);
+  /// Compiles a user's own [pattern], or returns null when it is unset, blank,
+  /// or [defaultPattern]. A blank stored/imported pattern would compile to a
+  /// regex that matches every chapter title.
+  static RegExp? _customPattern(String? pattern, String defaultPattern) {
+    if (pattern == null || pattern.trim().isEmpty || pattern == defaultPattern) return null;
+    return RegExp(pattern, caseSensitive: false);
   }
 
-  /// Longest chapter that may become a chapter-derived intro marker.
-  ///
-  /// Detected intros (Plex, Intro Skipper) fall well inside two minutes; a
-  /// movie's first chapter titled "Opening Credits" or "Introduction" runs
-  /// five to ten minutes of actual picture, and skipping it skips the film
-  /// (#2235). Applies only to markers minted here from chapter titles, never
-  /// to server-supplied markers, and never to credits, which are legitimately
-  /// long on movies.
-  static const maxChapterIntroDuration = Duration(minutes: 3);
+  /// Longest chapter that may become a chapter-derived intro marker; see
+  /// [ChapterMarkerClassifier.maxIntroDuration]. Applies to chapters matched
+  /// by a custom pattern as well, never to server-supplied markers, and never
+  /// to credits, which are legitimately long on movies.
+  static const maxChapterIntroDuration = ChapterMarkerClassifier.maxIntroDuration;
 
   /// Earliest start, as a fraction of the runtime, for a chapter-derived
   /// credits marker.
@@ -413,33 +416,32 @@ class PlaybackExtras {
   /// "Closing Day" chapter starts 12% in, and skipping it skips three minutes
   /// of picture (#2734). End credits, an anime ED, and credits split by a
   /// post-credits scene all start in the final quarter. Applies only to
-  /// markers minted here from chapter titles, never to server-supplied
-  /// markers. The furthest chapter offset stands in for the runtime.
+  /// markers minted here from chapters, never to server-supplied markers. The
+  /// furthest chapter offset stands in for the runtime.
   static const minChapterCreditsStartFraction = 0.75;
 
   /// Returns [PlaybackExtras] using real markers when available, filling any
-  /// missing marker types from chapter titles matching intro/credits patterns.
-  /// [forceChapterFallback] prefers chapter-derived markers for any type they
-  /// provide. When real markers exist, reclassifies markers with unknown types
-  /// against the patterns so non-standard type strings get recognized.
+  /// missing marker types from the chapters: [classifier]'s intro and credits
+  /// picks, or, for a type whose pattern the user replaced ([introPatternStr],
+  /// [creditsPatternStr]), the chapters whose titles match it.
+  /// [forceChapterFallback] prefers chapter-derived markers for any type
+  /// they provide. When real markers exist, reclassifies markers with unknown
+  /// types against the patterns so non-standard type strings get recognized.
   /// Chapter-derived intros longer than [maxChapterIntroDuration] and
   /// chapter-derived credits starting before [minChapterCreditsStartFraction]
   /// of the runtime are dropped.
   factory PlaybackExtras.withChapterFallback({
     required List<MediaChapter> chapters,
     required List<MediaMarker> markers,
+    required ChapterMarkerClassifier classifier,
     String? introPatternStr,
     String? creditsPatternStr,
     bool forceChapterFallback = false,
   }) {
-    final introPattern = _patternOrDefault(
-      introPatternStr,
-      r'(?:^|\b)(?:intro(?:duction)?|opening)(?:\b|$)|^op(?:\s?\d+)?$',
-    );
-    final creditsPattern = _patternOrDefault(
-      creditsPatternStr,
-      r'(?:^|\b)(?:outro|credits?|ending)(?:\b|$)|^ed(?:\s?\d+)?$',
-    );
+    final customIntro = _customPattern(introPatternStr, defaultIntroPattern);
+    final customCredits = _customPattern(creditsPatternStr, defaultCreditsPattern);
+    final introPattern = customIntro ?? RegExp(defaultIntroPattern, caseSensitive: false);
+    final creditsPattern = customCredits ?? RegExp(defaultCreditsPattern, caseSensitive: false);
 
     final runtimeMs = chapters.fold<int>(0, (furthest, ch) {
       final offset = ch.endTimeOffset ?? ch.startTimeOffset ?? 0;
@@ -447,24 +449,38 @@ class PlaybackExtras {
     });
     final minCreditsStartMs = runtimeMs * minChapterCreditsStartFraction;
 
-    final synthetic = <MediaMarker>[];
+    // Chapters with a usable span; a missing end is the next chapter's start.
+    final spanned = <(MediaChapter, ChapterSpan)>[];
     for (var i = 0; i < chapters.length; i++) {
       final ch = chapters[i];
-      final title = ch.title;
-      if (title == null || title.isEmpty) continue;
-
-      final type = _classifyChapterTitle(title, introPattern, creditsPattern);
-      if (type == null) continue;
-
       final start = ch.startTimeOffset;
-      if (start == null) continue;
-
       final end = ch.endTimeOffset ?? (i + 1 < chapters.length ? chapters[i + 1].startTimeOffset : null);
-      if (end == null) continue;
-      if (type == 'intro' && end - start > maxChapterIntroDuration.inMilliseconds) continue;
-      if (type == 'credits' && start < minCreditsStartMs) continue;
+      if (start == null || end == null || end < start) continue;
+      spanned.add((ch, (title: ch.title, startMs: start, endMs: end)));
+    }
+    final picks = customIntro != null && customCredits != null
+        ? null
+        : classifier.pick([for (final (_, span) in spanned) span]);
 
-      synthetic.add(MediaMarker(id: ch.id, type: type, startTimeOffset: start, endTimeOffset: end));
+    final synthetic = <MediaMarker>[];
+    for (var i = 0; i < spanned.length; i++) {
+      final (ch, span) = spanned[i];
+      final title = ch.title;
+      bool matches(RegExp pattern) => title != null && title.isNotEmpty && pattern.hasMatch(title);
+
+      // A chapter claimed as the intro is never credits, even when the intro
+      // is then dropped for its length.
+      final String type;
+      if (customIntro != null ? matches(customIntro) : picks!.intro == i) {
+        if (span.endMs - span.startMs > maxChapterIntroDuration.inMilliseconds) continue;
+        type = 'intro';
+      } else if (customCredits != null ? matches(customCredits) : picks!.credits == i) {
+        if (span.startMs < minCreditsStartMs) continue;
+        type = 'credits';
+      } else {
+        continue;
+      }
+      synthetic.add(MediaMarker(id: ch.id, type: type, startTimeOffset: span.startMs, endTimeOffset: span.endMs));
     }
 
     if (markers.isNotEmpty) {

@@ -33,7 +33,8 @@
 		7CE4D37BDCAD02C28DFAF38A /* ShelfItemMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C339C20E52A6F6F6725EF31F /* ShelfItemMapper.swift */; };
 		81325C1CD13794375A81AC02 /* messages.g.swift in Sources */ = {isa = PBXBuildFile; fileRef = 34CD411CCD84E381C4BF4C1B /* messages.g.swift */; };
 		81F08E404EBEB19B00FF148D /* ConnectivityPlusPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 67C3193A50DFDECE2B92D075 /* ConnectivityPlusPlugin.swift */; };
-		89CF031971F407719E4B5DD8 /* TvosEventDeliveryCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66F56950138FF220CA079EB3 /* TvosEventDeliveryCoordinator.swift */; };
+		FF2FECD2C74D24587E5BB87E /* DeepLinkDeliveryCoordinator.swift in Sources */ = {isa = PBXBuildFile; fileRef = 165687F714D48208D3711578 /* DeepLinkDeliveryCoordinator.swift */; };
+		7C9DA00B32FA54E6632CF58A /* DeepLinkPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0681E7E28FF4C910F1EC0B6C /* DeepLinkPlugin.swift */; };
 		8E5EED3DDAC9455D4DAA9776 /* MpvPlayerPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9D7A998830EDC8F77BF521D1 /* MpvPlayerPlugin.swift */; };
 		97C146FC1CF9000F007C117D /* Main.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FA1CF9000F007C117D /* Main.storyboard */; };
 		97C146FE1CF9000F007C117D /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 97C146FD1CF9000F007C117D /* Assets.xcassets */; };
@@ -48,7 +49,7 @@
 		BDD87DA7F5C435F9DBB8F9BE /* TopShelfExtension.appex in Embed App Extensions */ = {isa = PBXBuildFile; fileRef = 035F0D5A5E54BE7AD9AFA23C /* TopShelfExtension.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		C6A15611158B29B0FF43A960 /* Pods_Runner.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 824D2C68D1F1206932E118C2 /* Pods_Runner.framework */; };
 		CD1C0534948840272E58248E /* PathMonitorConnectivityProvider.swift in Sources */ = {isa = PBXBuildFile; fileRef = 6AEF79DFBD1D80F00AB39CDA /* PathMonitorConnectivityProvider.swift */; };
-		D2004D7BB4A40340AB7A01E0 /* TvosEventDeliveryCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE6C8125B201A8BC3261AE2B /* TvosEventDeliveryCoordinatorTests.swift */; };
+		D2004D7BB4A40340AB7A01E0 /* DeepLinkDeliveryCoordinatorTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = FE6C8125B201A8BC3261AE2B /* DeepLinkDeliveryCoordinatorTests.swift */; };
 		D2A548D9DE1A0F319B30B74C /* SystemShelfPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0760C00EDC55A4D718BCB406 /* SystemShelfPlugin.swift */; };
 		E2CF133189FD5CD5272A4653 /* SceneLifecycleTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 026EA157972BC2E9A90763AC /* SceneLifecycleTests.swift */; };
 		E3DEAD2AAFC347A2E55AC0F7 /* SharedPreferencesPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = C0455EBA0EF4A61D3B71D2D7 /* SharedPreferencesPlugin.swift */; };
@@ -124,7 +125,8 @@
 		4F1000014F1000014F100001 /* FlutterNativeTextInputTests.mm */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.cpp.objcpp; path = FlutterNativeTextInputTests.mm; sourceTree = "<group>"; };
 		5D44F4361594F517C002DC45 /* TopShelfFetchContractTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TopShelfFetchContractTests.swift; sourceTree = "<group>"; };
 		5E1F41676FEF1AB57076F8B9 /* DeviceInfoPlusPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeviceInfoPlusPlugin.swift; sourceTree = "<group>"; };
-		66F56950138FF220CA079EB3 /* TvosEventDeliveryCoordinator.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TvosEventDeliveryCoordinator.swift; sourceTree = "<group>"; };
+		165687F714D48208D3711578 /* DeepLinkDeliveryCoordinator.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DeepLinkDeliveryCoordinator.swift; path = ../shared/apple/DeepLink/DeepLinkDeliveryCoordinator.swift; sourceTree = SOURCE_ROOT; };
+		0681E7E28FF4C910F1EC0B6C /* DeepLinkPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = DeepLinkPlugin.swift; path = ../shared/apple/DeepLink/DeepLinkPlugin.swift; sourceTree = SOURCE_ROOT; };
 		67C3193A50DFDECE2B92D075 /* ConnectivityPlusPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ConnectivityPlusPlugin.swift; sourceTree = "<group>"; };
 		6AEF79DFBD1D80F00AB39CDA /* PathMonitorConnectivityProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PathMonitorConnectivityProvider.swift; sourceTree = "<group>"; };
 		73645904F226A24585A092CE /* MpvPlayerPluginShared.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; name = MpvPlayerPluginShared.swift; path = ../shared/apple/MpvPlayer/MpvPlayerPluginShared.swift; sourceTree = "<source_root>"; };
@@ -159,7 +161,7 @@
 		EF0E0C298AEDE34FF7C8BFD5 /* Pods_RunnerTests.framework */ = {isa = PBXFileReference; explicitFileType = wrapper.framework; includeInIndex = 0; path = Pods_RunnerTests.framework; sourceTree = BUILT_PRODUCTS_DIR; };
 		F2F829B3F190657106F66379 /* TopShelfProvider.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TopShelfProvider.swift; sourceTree = "<group>"; };
 		F9426EFA282CDA8E0E98EEE9 /* PackageInfoPlusPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = PackageInfoPlusPlugin.swift; sourceTree = "<group>"; };
-		FE6C8125B201A8BC3261AE2B /* TvosEventDeliveryCoordinatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = TvosEventDeliveryCoordinatorTests.swift; sourceTree = "<group>"; };
+		FE6C8125B201A8BC3261AE2B /* DeepLinkDeliveryCoordinatorTests.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = DeepLinkDeliveryCoordinatorTests.swift; sourceTree = "<group>"; };
 		B1D51A6A2F00110000000011 /* VideoDecodeCapabilitiesPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = VideoDecodeCapabilitiesPlugin.swift; path = ../ios/Runner/VideoDecodeCapabilitiesPlugin.swift; sourceTree = SOURCE_ROOT; };
 		B1D51A6A2F00110000000021 /* ExternalPlayerPlugin.swift */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = sourcecode.swift; path = ExternalPlayerPlugin.swift; sourceTree = "<group>"; };
 		A9C0FF1C2F00120000000012 /* AppIconPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppIconPlugin.swift; path = ../shared/apple/AppIcon/AppIconPlugin.swift; sourceTree = SOURCE_ROOT; };
@@ -342,7 +344,8 @@
 				D58B788B11920D95BC7D750C /* Plugins */,
 				0760C00EDC55A4D718BCB406 /* SystemShelfPlugin.swift */,
 				937C0D45D6114EF1E957F5F6 /* Runner.entitlements */,
-				66F56950138FF220CA079EB3 /* TvosEventDeliveryCoordinator.swift */,
+				165687F714D48208D3711578 /* DeepLinkDeliveryCoordinator.swift */,
+				0681E7E28FF4C910F1EC0B6C /* DeepLinkPlugin.swift */,
 			);
 			path = Runner;
 			sourceTree = "<group>";
@@ -390,7 +393,7 @@
 			children = (
 				4F1000014F1000014F100001 /* FlutterNativeTextInputTests.mm */,
 				2A7C0B1D9E5F4A6381027C11 /* MpvPlayerContractTests.swift */,
-				FE6C8125B201A8BC3261AE2B /* TvosEventDeliveryCoordinatorTests.swift */,
+				FE6C8125B201A8BC3261AE2B /* DeepLinkDeliveryCoordinatorTests.swift */,
 				934BC4E316D2AC788C954766 /* ConnectivityPlusPluginTests.swift */,
 				A5E1F001234567890ABCDE01 /* SystemShelfPluginTests.swift */,
 				5D44F4361594F517C002DC45 /* TopShelfFetchContractTests.swift */,
@@ -650,7 +653,7 @@
 			files = (
 				4F1000024F1000024F100002 /* FlutterNativeTextInputTests.mm in Sources */,
 				2A7C0B1D9E5F4A6381027C12 /* MpvPlayerContractTests.swift in Sources */,
-				D2004D7BB4A40340AB7A01E0 /* TvosEventDeliveryCoordinatorTests.swift in Sources */,
+				D2004D7BB4A40340AB7A01E0 /* DeepLinkDeliveryCoordinatorTests.swift in Sources */,
 				65AC2C222043B3E6723E2076 /* ConnectivityPlusPluginTests.swift in Sources */,
 				A5E1F001234567890ABCDE02 /* SystemShelfPluginTests.swift in Sources */,
 				0092CB48B2682E3D69B1A09F /* TopShelfFetchContractTests.swift in Sources */,
@@ -686,7 +689,8 @@
 				A1F7CF09591B8FA69063EC27 /* StoreKit2Messages.g.swift in Sources */,
 				85196766A2A2BEF8AF7BB2D4 /* StoreKit2Translators.swift in Sources */,
 				D2A548D9DE1A0F319B30B74C /* SystemShelfPlugin.swift in Sources */,
-				89CF031971F407719E4B5DD8 /* TvosEventDeliveryCoordinator.swift in Sources */,
+				FF2FECD2C74D24587E5BB87E /* DeepLinkDeliveryCoordinator.swift in Sources */,
+				7C9DA00B32FA54E6632CF58A /* DeepLinkPlugin.swift in Sources */,
 				40C477DC462980F6AF17BEA1 /* ShelfFetcher.swift in Sources */,
 				7CE4D37BDCAD02C28DFAF38A /* ShelfItemMapper.swift in Sources */,
 				06E9C60A796154EDE0A0D0E8 /* ShelfSources.swift in Sources */,

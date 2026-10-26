@@ -135,6 +135,11 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
   /// Current visual focus index (not tied to Flutter's focus system)
   int _focusedIndex = 0;
 
+  /// Media item visual focus was on when it left the hub with no replacement
+  /// yet; the next refresh still follows it (see [followFocus]). Cleared once
+  /// the user moves or acts on the selection.
+  MediaItem? _displacedFocusItem;
+
   /// Reuses card widgets across rebuilds (parent setStates, focus moves) so
   /// only changed indices rebuild instead of every realized card in the row.
   final SliverChildMemo<MediaItem> _cardMemo = SliverChildMemo<MediaItem>();
@@ -173,6 +178,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
     if (widget.hub.id != oldWidget.hub.id) {
       _itemKeys.clear();
       _mediaCardKeys.clear();
+      _displacedFocusItem = null;
     } else if (widget.hub.items.length != oldWidget.hub.items.length || widget.hub.more != oldWidget.hub.more) {
       _itemKeys.removeWhere((index, _) => index >= _totalItemCount);
       _mediaCardKeys.removeWhere((index, _) => index >= widget.hub.items.length);
@@ -193,12 +199,15 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
   /// Keep visual focus on the media it was on when the hub's items reorder
   /// underneath it — a Continue Watching refresh after playback moves the
   /// just-played item to the front (#1987). The exact item wins; an episode
-  /// that left the row follows its series' replacement entry (next episode).
-  /// When neither is present the positional clamp above applies unchanged.
+  /// that left the row follows its series' replacement entry (next episode),
+  /// even when that entry lands a refresh later (#2814). When neither is
+  /// present the positional clamp above applies unchanged.
   void _followFocusedItem(List<MediaItem> oldItems) {
     if (identical(oldItems, widget.hub.items)) return;
-    if (_focusedIndex < 0 || _focusedIndex >= oldItems.length) return;
-    final followedIndex = followItemIndex(widget.hub.items, oldItems[_focusedIndex]);
+    final focused = _focusedIndex >= 0 && _focusedIndex < oldItems.length ? oldItems[_focusedIndex] : null;
+    final followed = followFocus(widget.hub.items, focused: focused, displaced: _displacedFocusItem);
+    _displacedFocusItem = followed.displaced;
+    final followedIndex = followed.index;
     if (followedIndex == -1 || followedIndex == _focusedIndex) return;
     _focusedIndex = followedIndex;
     widget.focusMemory.remapForHub(_focusMemoryKey, followedIndex);
@@ -239,6 +248,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
 
     final clamped = index.clamp(0, _totalItemCount - 1).toInt();
     _focusedIndex = clamped;
+    _displacedFocusItem = null;
     // Remember this position for this specific hub
     widget.focusMemory.setForHub(_focusMemoryKey, clamped);
     _notifyFocusedItemChanged();
@@ -330,6 +340,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
       if (_focusedIndex > 0) {
         setState(() {
           _focusedIndex--;
+          _displacedFocusItem = null;
         });
         widget.focusMemory.setForHub(_focusMemoryKey, _focusedIndex);
         _notifyFocusedItemChanged();
@@ -347,6 +358,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
       if (_focusedIndex < totalCount - 1) {
         setState(() {
           _focusedIndex++;
+          _displacedFocusItem = null;
         });
         widget.focusMemory.setForHub(_focusMemoryKey, _focusedIndex);
         _notifyFocusedItemChanged();
@@ -405,6 +417,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
   }
 
   void _activateCurrentItem() {
+    _displacedFocusItem = null;
     if (_focusedIndex == widget.hub.items.length && widget.hub.more) {
       _navigateToHubDetail(context);
       return;
@@ -419,6 +432,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
   }
 
   void _showContextMenuForCurrentItem() {
+    _displacedFocusItem = null;
     // No context menu for the "View All" card
     if (_focusedIndex >= widget.hub.items.length) return;
     final item = widget.hub.items[_focusedIndex];
@@ -805,6 +819,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
     final clamped = index.clamp(0, _totalItemCount - 1).toInt();
     setState(() {
       _focusedIndex = clamped;
+      _displacedFocusItem = null;
     });
     widget.focusMemory.setForHub(_focusMemoryKey, clamped);
     _notifyFocusedItemChanged();

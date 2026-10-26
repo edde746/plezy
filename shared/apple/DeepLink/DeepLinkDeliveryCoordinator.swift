@@ -1,12 +1,12 @@
 import Foundation
 
-/// Keeps tvOS launcher events single-shot without suppressing a deliberate
-/// second tap forever. All access is confined to the main thread by the host.
-final class TvosDeepLinkDeliveryCoordinator {
+/// Keeps incoming `plezy:` links single-shot without suppressing a deliberate
+/// second open forever. All access is confined to the main thread by the host.
+final class DeepLinkDeliveryCoordinator {
   struct Event: Equatable {
-    let contentId: String
+    let url: String
     let receivedAt: TimeInterval
-    var flutterArguments: [String: String] { ["contentId": contentId] }
+    var flutterArguments: [String: String] { ["url": url] }
     fileprivate let sequence: UInt64
   }
 
@@ -34,28 +34,28 @@ final class TvosDeepLinkDeliveryCoordinator {
   }
 
   /// A replacement Flutter engine must perform its initial read before live
-  /// delivery resumes. A launch event captured before registration is retained.
+  /// delivery resumes. A launch link captured before registration is retained.
   func bindEngine() {
     liveDeliveryEnabled = false
     inFlight = nil
   }
 
-  func receive(contentId: String) -> Receipt {
+  func receive(url: String) -> Receipt {
     let timestamp = now()
 
-    if let inFlight, isDuplicate(contentId: contentId, at: timestamp, of: inFlight) {
+    if let inFlight, isDuplicate(url: url, at: timestamp, of: inFlight) {
       return .duplicate
     }
-    if let pending, isDuplicate(contentId: contentId, at: timestamp, of: pending) {
+    if let pending, isDuplicate(url: url, at: timestamp, of: pending) {
       // A retained failed delivery is retryable when no send is active.
       return liveDeliveryEnabled && inFlight == nil ? beginDelivery(pending) : .duplicate
     }
-    if let lastDelivered, isDuplicate(contentId: contentId, at: timestamp, of: lastDelivered) {
+    if let lastDelivered, isDuplicate(url: url, at: timestamp, of: lastDelivered) {
       return .duplicate
     }
 
     sequence &+= 1
-    let event = Event(contentId: contentId, receivedAt: timestamp, sequence: sequence)
+    let event = Event(url: url, receivedAt: timestamp, sequence: sequence)
     pending = event
     guard liveDeliveryEnabled, inFlight == nil else { return .retained }
     return beginDelivery(event)
@@ -85,20 +85,20 @@ final class TvosDeepLinkDeliveryCoordinator {
     return beginDelivery(pending).event
   }
 
-  var retainedContentId: String? { pending?.contentId }
+  var retainedURL: String? { pending?.url }
 
   private func beginDelivery(_ event: Event) -> Receipt {
     inFlight = event
     return .deliver(event)
   }
 
-  private func isDuplicate(contentId: String, at timestamp: TimeInterval, of event: Event) -> Bool {
-    contentId == event.contentId && timestamp - event.receivedAt <= deduplicationWindow
+  private func isDuplicate(url: String, at timestamp: TimeInterval, of event: Event) -> Bool {
+    url == event.url && timestamp - event.receivedAt <= deduplicationWindow
   }
 }
 
-private extension TvosDeepLinkDeliveryCoordinator.Receipt {
-  var event: TvosDeepLinkDeliveryCoordinator.Event? {
+private extension DeepLinkDeliveryCoordinator.Receipt {
+  var event: DeepLinkDeliveryCoordinator.Event? {
     if case let .deliver(event) = self { return event }
     return nil
   }

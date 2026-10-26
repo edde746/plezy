@@ -23,6 +23,7 @@ import '../../widgets/backend_badge.dart';
 import '../../widgets/focusable_popup_menu_button.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/profile_switching_overlay.dart';
+import '../../widgets/deep_link_dialog.dart';
 import '../libraries/state_messages.dart';
 import 'add_local_profile_screen.dart';
 import 'pin_entry_dialog.dart';
@@ -209,11 +210,12 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
           // (e.g. a delete confirmation left open when the switch settles).
           final actionsEnabled = !widget.requireSelection && !_switching;
           final onManage = actionsEnabled ? () => _manageProfile(profile) : null;
+          final onShowLink = actionsEnabled ? () => _showProfileLink(profile) : null;
           final onDelete = profile.isLocal && actionsEnabled ? () => _deleteProfile(profile) : null;
           final onSignOut = profile.isPlexHome && profile.parentConnectionId != null && actionsEnabled
               ? () => _signOutPlexAccount(profile)
               : null;
-          final hasMenu = onManage != null || onDelete != null || onSignOut != null;
+          final hasMenu = onManage != null || onShowLink != null || onDelete != null || onSignOut != null;
 
           return Padding(
             key: ValueKey(profile.id),
@@ -246,6 +248,7 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
                   // borrowed connections is supported on plex_home too. Delete
                   // stays local-only (Plex Home users are owned by Plex).
                   onManage: onManage,
+                  onShowLink: onShowLink,
                   onDelete: onDelete,
                   onSignOut: onSignOut,
                   menuFocusNode: menuFocusNode,
@@ -291,6 +294,10 @@ class _ProfileSwitchScreenState extends State<ProfileSwitchScreen> with MountedS
     if (!mounted) return;
     await Navigator.of(context).push(MaterialPageRoute(builder: (_) => ProfileDetailScreen(profile: profile)));
   }
+
+  /// Not behind [_verifyPinForProfileAction]: opening the link still asks
+  /// for a protected profile's PIN.
+  Future<void> _showProfileLink(Profile profile) => showProfileLinkDialog(context, profile);
 
   /// Drop the parent Plex account [profile] hangs off — same effect as
   /// "Forget account" elsewhere in Plex apps. The shared teardown flow
@@ -411,6 +418,7 @@ class _ProfileTile extends StatelessWidget {
   final VoidCallback onTap;
   final VoidCallback? onLongPress;
   final VoidCallback? onManage;
+  final VoidCallback? onShowLink;
   final VoidCallback? onDelete;
   final VoidCallback? onSignOut;
   final FocusNode menuFocusNode;
@@ -426,6 +434,7 @@ class _ProfileTile extends StatelessWidget {
     required this.onTap,
     this.onLongPress,
     this.onManage,
+    this.onShowLink,
     this.onDelete,
     this.onSignOut,
     required this.menuFocusNode,
@@ -436,7 +445,7 @@ class _ProfileTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final hasMenu = onManage != null || onDelete != null || onSignOut != null;
+    final hasMenu = onManage != null || onShowLink != null || onDelete != null || onSignOut != null;
     return InkWell(
       canRequestFocus: false,
       onTap: isActive ? null : onTap,
@@ -484,6 +493,7 @@ class _ProfileTile extends StatelessWidget {
                 onSelected: _handleAction,
                 actions: [
                   if (onManage != null) _TileAction.manage,
+                  if (onShowLink != null) _TileAction.showLink,
                   if (onDelete != null) _TileAction.delete,
                   if (onSignOut != null) _TileAction.signOut,
                 ],
@@ -501,6 +511,9 @@ class _ProfileTile extends StatelessWidget {
       switch (action) {
         case _TileAction.manage:
           onManage?.call();
+          break;
+        case _TileAction.showLink:
+          onShowLink?.call();
           break;
         case _TileAction.delete:
           onDelete?.call();
@@ -547,13 +560,14 @@ extension _TileActionLabel on _TileAction {
   String get label {
     return switch (this) {
       _TileAction.manage => t.profiles.manage,
+      _TileAction.showLink => t.deepLinks.showProfileLink,
       _TileAction.delete => t.profiles.delete,
       _TileAction.signOut => t.profiles.signOut,
     };
   }
 }
 
-enum _TileAction { manage, delete, signOut }
+enum _TileAction { manage, showLink, delete, signOut }
 
 class _ConnectionChips extends StatelessWidget {
   final List<_ChipData> chips;

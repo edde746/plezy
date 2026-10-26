@@ -21,6 +21,7 @@ import '../services/offline_watch_sync_service.dart';
 import '../services/playlist_items_loader.dart';
 import '../services/recent_tags_service.dart';
 import '../services/watch_actions.dart';
+import '../services/deep_links/item_links.dart';
 import '../services/catalog/library_watchlist_candidates.dart';
 import '../utils/content_utils.dart';
 import '../utils/delete_impact.dart';
@@ -53,6 +54,7 @@ import '../utils/smart_deletion_handler.dart';
 import '../utils/video_player_navigation.dart';
 import '../utils/deletion_notifier.dart';
 import '../widgets/app_menu.dart';
+import '../widgets/deep_link_dialog.dart';
 import '../widgets/tag_edit_dialog.dart';
 import '../widgets/file_info_bottom_sheet.dart';
 import '../widgets/overlay_sheet.dart';
@@ -681,6 +683,8 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         _MenuAction(value: 'series', icon: Symbols.tv_rounded, label: t.mediaMenu.goToSeries),
       if (mediaKind == MediaKind.show || mediaKind == MediaKind.season)
         _MenuAction(value: 'shuffle_play', icon: Symbols.shuffle_rounded, label: t.mediaMenu.shufflePlay),
+      if (canLinkItem(mediaItem))
+        _MenuAction(value: 'show_link', icon: Symbols.link_rounded, label: t.deepLinks.showLink),
       ..._mediaSourceMenuActions(menu, mediaItem),
       ..._libraryMenuActions(context, menu, mediaItem),
     ];
@@ -928,6 +932,9 @@ class MediaContextMenuState extends State<MediaContextMenu> {
         break;
       case 'shuffle_play':
         await _handleShufflePlayWithQueue(context);
+        break;
+      case 'show_link':
+        if (mounted) await showItemLinkDialog(this.context, mediaItem);
         break;
       case 'play_version':
         outcome.didNavigate = await promptAndPlayVersion(context, _mediaItem!);

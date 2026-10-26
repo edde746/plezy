@@ -2556,5 +2556,24 @@
     "redirectDifferentHost": "Server boshqa xostga yoʻnaltirdi. Yakuniy ${product} URL-ini bevosita kiriting.",
     "redirectInsecure": "Server HTTPS manzilidan xavfsiz boʻlmagan URL-ga yoʻnaltirdi",
     "redirectUnsupportedEnterFinal": "Server qoʻllab-quvvatlanmaydigan URL-ga yoʻnaltirdi. Yakuniy ${product} URL-ini bevosita kiriting."
+  },
+  "deepLinks": {
+    "invalid": "",
+    "profileNotFound": "",
+    "serverUnavailable": "",
+    "notFound": "",
+    "unsupportedItem": "",
+    "noLiveTv": "",
+    "channelNotFound": "",
+    "showLink": "",
+    "showProfileLink": "",
+    "dialogTitle": "",
+    "showHint": "",
+    "movieHint": "",
+    "episodeHint": "",
+    "profileHint": "",
+    "openAsProfile": "",
+    "copy": "",
+    "copied": ""
   }
 }

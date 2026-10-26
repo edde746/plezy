@@ -21,9 +21,11 @@ import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/screens/profile/pin_entry_dialog.dart';
 import 'package:plezy/screens/profile/profile_detail_screen.dart';
 import 'package:plezy/screens/profile/profile_switch_screen.dart';
+import 'package:plezy/services/deep_links/deep_link.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
+import 'package:plezy/widgets/deep_link_dialog.dart';
 import 'package:provider/provider.dart';
 
 import '../../test_helpers/prefs.dart';
@@ -56,6 +58,33 @@ void main() {
 
     expect(find.text(t.profiles.manage), findsOneWidget);
     expect(find.text(t.profiles.delete), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    await tester.pump();
+  });
+
+  testWidgets('D-pad reaches Show profile link in the tile menu and opens the profile link', (tester) async {
+    final owner = Profile.local(id: 'local-owner', displayName: 'Owner', createdAt: DateTime(2026, 1, 1));
+    await _pumpPicker(tester, profiles: [owner], connections: const []);
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+
+    // The menu opens on Manage; Show profile link is the next entry.
+    expect(find.text(t.deepLinks.showProfileLink), findsOneWidget);
+    await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
+    await tester.pump();
+    await tester.sendKeyEvent(LogicalKeyboardKey.enter);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(ProfileLinkDialog), findsOneWidget);
+    const link = 'plezy://open?profile=local-owner';
+    expect(find.text(link), findsOneWidget);
+    final parsed = DeepLink.tryParse(link);
+    expect(parsed, isA<OpenLink>());
+    expect(resolveLinkProfile([owner], parsed!.profile!), owner);
 
     await tester.pumpWidget(const SizedBox.shrink());
     await tester.pump();

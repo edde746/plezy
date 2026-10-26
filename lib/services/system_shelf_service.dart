@@ -29,10 +29,7 @@ class SystemShelfService {
   static SystemShelfService? _testingInstance;
   factory SystemShelfService() => _testingInstance ?? _instance;
 
-  SystemShelfService._internal() : _channelOverride = null, _supportOverride = null, _tvosTargetOverride = null {
-    _androidChannel.setMethodCallHandler(_handleMethodCall);
-    _tvosChannel.setMethodCallHandler(_handleMethodCall);
-  }
+  SystemShelfService._internal() : _channelOverride = null, _supportOverride = null, _tvosTargetOverride = null;
 
   @visibleForTesting
   SystemShelfService.forTesting({
@@ -75,9 +72,6 @@ class SystemShelfService {
     _mutationTail = Future<void>.value();
   }
 
-  /// Callback for warm-start launcher surface taps.
-  ValueChanged<String>? onShelfItemTap;
-
   /// Whether this process targets the tvOS Top Shelf (as opposed to the
   /// Android Watch Next row). Decides artwork geometry and which native
   /// surface receives server sources.
@@ -94,21 +88,6 @@ class SystemShelfService {
     if (_isTvosTarget) return _tvosChannel;
     return null;
   }
-
-  Future<dynamic> _handleMethodCall(MethodCall call) async {
-    if (call.method != 'onWatchNextTap' && call.method != 'onShelfItemTap') {
-      return null;
-    }
-    final args = call.arguments;
-    final contentId = args is Map ? args['contentId'] as String? : null;
-    final callback = onShelfItemTap;
-    if (contentId == null || callback == null) return false;
-    callback(contentId);
-    return true;
-  }
-
-  @visibleForTesting
-  Future<dynamic> handleMethodCallForTesting(MethodCall call) => _handleMethodCall(call);
 
   /// Establishes the only owner allowed to publish launcher shelf state.
   ///
@@ -189,18 +168,6 @@ class SystemShelfService {
       log(failureLabel ?? label, error: e);
     }
     return null;
-  }
-
-  /// Get a pending deep link from cold start (consumed on first call).
-  Future<String?> getInitialDeepLink() async {
-    final channel = _channel;
-    if (channel == null) return null;
-    return _invokeGuarded<String>(
-      channel,
-      'getInitialDeepLink',
-      label: 'System shelf initial deep link failed',
-      failureLabel: 'Failed to get system shelf initial deep link',
-    );
   }
 
   /// Check whether the current platform has a launcher shelf integration.

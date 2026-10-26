@@ -24,6 +24,21 @@
 	<string>????</string>
 	<key>CFBundleVersion</key>
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
+	<key>CFBundleURLTypes</key>
+	<array>
+		<dict>
+			<key>CFBundleURLName</key>
+			<string>com.edde746.plezy</string>
+			<key>CFBundleURLSchemes</key>
+			<array>
+				<string>plezy</string>
+			</array>
+		</dict>
+	</array>
+	<!-- plezy:// links reach Dart through DeepLinkPlugin (com.plezy/deep_link);
+	     Flutter's router must not also push them as named routes. -->
+	<key>FlutterDeepLinkingEnabled</key>
+	<false/>
 	<key>ITSAppUsesNonExemptEncryption</key>
 	<false/>
 	<!-- canOpenURL returns false for undeclared schemes, which both blocks the
@@ -32,6 +47,7 @@
 	<array>
 		<string>vlc</string>
 		<string>infuse</string>
+		<string>outplayer</string>
 	</array>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>

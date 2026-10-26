@@ -522,8 +522,8 @@ class PlaybackSettingsScreen extends StatelessWidget {
     DeinterlaceMode.film => t.settings.deinterlaceFilm,
   };
 
-  // Normalization wins over passthrough in the player (neither loudnorm nor
-  // Android's platform effect can process a bitstream), so the switch reports
+  // Normalization wins over passthrough in the player (neither mpv's filter nor
+  // ExoPlayer's platform effect can process a bitstream), so the switch reports
   // that override instead of promising bitstreaming that will not happen.
   Widget _audioPassthroughTile() => SettingsBuilder(
     prefs: const [SettingsService.audioNormalization],

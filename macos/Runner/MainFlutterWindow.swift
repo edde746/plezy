@@ -40,6 +40,9 @@ class MainFlutterWindow: NSWindow {
     AppLookupPlugin.register(
       with: flutterViewController.registrar(forPlugin: "AppLookupPlugin"))
 
+    DeepLinkPlugin.register(
+      with: flutterViewController.registrar(forPlugin: "DeepLinkPlugin"))
+
     RegisterGeneratedPlugins(registry: flutterViewController)
 
     self.setFrameAutosaveName("com.edde746.plezy.MainWindow")
