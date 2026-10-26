@@ -57,7 +57,7 @@ Download from the workflow run above. These are research artifacts, not signed r
 
 The build proves compilation, selected feature availability, a synthetic GPU composition path and pairing-helper decisions. A local community P7 FEL test clip has since passed the actual single-track mpv graph through both standalone `gpu-next` and embedded `libmpv` `opengl-next` readback on an AMD RX 9070 XT. Its built-in FEL mark is present in the full render and absent from a BL-only control.
 
-Embedded VA-API `vaapi-copy` decode of both layers produced an 8-bit FBO image within one code value of software decode. Two duplicate-RPU warnings in its log still need investigation. This is qualitative real-clip evidence, not an independent numerical reference. The Kodi index claims fair use for testing, evaluation and documentation, but does not publish a formal license for this file; it remains local-only.
+Embedded VA-API `vaapi-copy` decode of both layers produced an 8-bit FBO image within one code value of software decode. Its log contains two pending-RPU replacement warnings, so hardware RPU/frame association remains unqualified. This is qualitative real-clip evidence, not an independent numerical reference. The Kodi index claims fair use for testing, evaluation and documentation, but does not publish a formal license for this file; it remains local-only.
 
 The Linux app builds, but full Plezy playback on its Wayland video plane, zero-copy hardware import, native Dolby Vision HDMI output and non-Linux platform builds remain unqualified. A display's DV badge is not proof of FEL reconstruction; see the [Luna handoff](../../docs/maintainers/dv-engine-luna-handoff.md) for the complete evidence and limits.
 
@@ -171,10 +171,16 @@ EGL/GLES device. Both captures confirmed the complete graph and all 230,400
 center-patch pixels changed by more than two codes. Compared with the llvmpipe
 captures, the hardware-decode/GPU-render output differed by at most one 8-bit
 code (mean channel delta 0.00853 neutral, 0.01230 residual). The residual log
-contains three `Multiple Dolby Vision RPUs found in one AU. Skipping previous.`
-warnings; the neutral and software runs contain none. Keep this warning open:
-the result does not qualify RPU/frame association, zero-copy import or app
-presentation. Raw reports, images and logs are retained under
+contains three RPU replacement warnings; the neutral and software runs contain
+none. The pinned FFmpeg decoder logs this when its prior RPU buffer is still
+pending as a new RPU is read, then replaces that buffer before frame side data
+is attached ([source](https://github.com/FFmpeg/FFmpeg/blob/46f23be8b1976ed4c8ec85584daabcf0e57a7b9e/libavcodec/hevc/hevcdec.c#L3998-L4009)).
+The synthetic HEVC has 48 access units and exactly one RPU NAL per access unit,
+so the warning is not evidence that the generated file contains duplicate RPU
+NALs within an access unit. Its cause remains open; frame reordering is one
+hypothesis, not a finding. The verifier now writes its report and fails when any
+replacement warning appears. Zero warnings still do not prove RPU/frame
+identity. Raw reports, images and logs are retained under
 `/home/keith/Documents/plezyng-dv-local-evidence-20261026/`.
 
 The injected test vector parses as Profile 7 FEL, CM v2.9, with residual enabled,

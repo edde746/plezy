@@ -8,6 +8,7 @@ from verify_synthetic_render import (
     capture_seconds,
     compare_pixels,
     read_ppm,
+    rpu_association_status,
     rpu_replacement_warning_count,
 )
 
@@ -46,9 +47,21 @@ class SyntheticRenderVerificationTest(unittest.TestCase):
         )
         self.assertNotIn("LIBGL_ALWAYS_SOFTWARE", environment)
 
-    def test_counts_rpu_replacement_warnings_by_access_unit(self):
+    def test_counts_rpu_replacement_warning_occurrences(self):
         warning = "Multiple Dolby Vision RPUs found in one AU. Skipping previous."
         self.assertEqual(rpu_replacement_warning_count(f"{warning}\nquiet\n{warning}"), 2)
+
+    def test_replacement_warning_fails_rpu_association_qualification(self):
+        self.assertEqual(
+            rpu_association_status(0),
+            "unverified: no replacement warning observed, but frame identity was not checked",
+        )
+        self.assertEqual(
+            rpu_association_status(1),
+            "unqualified: FFmpeg replaced a pending RPU buffer before frame attachment",
+        )
+        with self.assertRaises(ValueError):
+            rpu_association_status(-1)
 
     def test_requires_the_center_fel_patch_to_dominate_the_delta(self):
         width = height = 8

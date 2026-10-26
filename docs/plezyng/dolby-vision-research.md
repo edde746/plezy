@@ -25,7 +25,11 @@ untested hardware combinations and complete proprietary display-mapper equivalen
   an AMD RX 9070 XT. The FEL mark is visible in the full render and absent from
   a same-source BL-only control. Embedded VA-API `vaapi-copy` decoding of both
   layers produced an 8-bit FBO image within one code value of software decode.
-  The VA-API log also reports duplicate RPU warnings that still need investigation.
+  The VA-API log also reports pending-RPU replacement warnings. In the pinned
+  FFmpeg code, a warning means a prior RPU buffer was still pending when a new
+  RPU was read and was replaced before frame attachment. The synthetic stream
+  has exactly one RPU NAL per access unit, so this is not evidence of duplicate
+  NALs in the input; RPU/frame association remains unqualified.
   The Kodi page claims fair use for testing/evaluation/documentation, but has
   no formal file-specific redistribution license; the sample stays local. This proves
   the graph uses EL information qualitatively, not exact Dolby-reference pixel
@@ -50,9 +54,10 @@ untested hardware combinations and complete proprietary display-mapper equivalen
   metrics and hashes are in the [engine handoff](../maintainers/dv-engine-luna-handoff.md).
   A local hardware rerun decoded BL and EL through `vaapi-copy` on the RX 9070 XT
   and rendered with the integrated Radeon 610M; its output differed from the
-  llvmpipe captures by at most one 8-bit code. Three duplicate-RPU replacement
+  llvmpipe captures by at most one 8-bit code. Three pending-RPU replacement
   warnings appeared in the residual hardware log, so RPU/frame association is
-  still open. This does not qualify zero-copy or app presentation.
+  unqualified. The verifier now treats any such warning as failure and retains
+  its diagnostic report. This does not qualify zero-copy or app presentation.
 - `tools/dv-engine/profile7_fel_rpu_adapter.py` now maps one parsed
   `dovi_tool` Profile 7 FEL RPU into the sample-level CCM reference. A minimized
   frame-0 fixture from the pinned MIT RPU covers the real polynomial/MMR and

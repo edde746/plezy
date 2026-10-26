@@ -9,7 +9,7 @@ driver, EDID, kernel module or TV firmware is replaced automatically.
 
 | Platform/path | Implementation in this repository | Qualification boundary |
 | --- | --- | --- |
-| Linux app | Device-local Playback switches select `opengl-next`, permit one renderer-creation fallback, and enable player logging. Isolated FFmpeg/libplacebo/mpv build and launcher. Generated P7 video drives the embedded graph on software GLES and on `vaapi-copy` decode plus GPU EGL/GLES render; hardware readback differed from software by at most one 8-bit code. A real local clip also traversed the graph. | Full Plezy Wayland playback, zero-copy and independent pixel accuracy remain open. The synthetic result proves qualitative EL contribution only. Three FFmpeg duplicate-RPU replacement warnings appeared in the hardware residual capture; RPU/frame association remains open. |
+| Linux app | Device-local Playback switches select `opengl-next`, permit one renderer-creation fallback, and enable player logging. Isolated FFmpeg/libplacebo/mpv build and launcher. Generated P7 video drives the embedded graph on software GLES and on `vaapi-copy` decode plus GPU EGL/GLES render; hardware readback differed from software by at most one 8-bit code. A real local clip also traversed the graph. | Full Plezy Wayland playback, zero-copy and independent pixel accuracy remain open. The synthetic result proves qualitative EL contribution only. The hardware residual capture produced three pending-RPU replacement warnings; its RPU/frame association is unqualified. |
 | macOS, iOS, tvOS | Separate SwiftUI research host and pinned AetherEngine `DualLayerDolbyVision` trait; opt-in load, surface, play/pause, seek, stop and engine-route readout. | Not integrated into production `MpvPlayerCore`. This evidence set has no Mac build or Apple-device result; a route label does not qualify pixels or output. |
 | Offline companion | Pinned FelBaker builder patches its VapourSynth output key and builds a tested RGB48 pipeline. A 48-frame generated P7 sample changed all 2,073,600 designed residual-patch pixels; both HDR10/PQ HEVC and SDR/BT.709 H.264 outputs encoded and passed `ffprobe` frame/color-tag checks. | These lossy files are derived compatibility versions, not native DV. FelBaker is a comparison implementation, not an independent Dolby reference; real-clip and playback-device checks remain open. |
 | Android | Existing native DV, P7→8.1 and base-layer routes remain available; diagnostics label known EL-discarding routes. An arm64 debug APK built and 46 Dolby-related unit tests passed. | No experimental P7 FEL graph is packaged and no Android device render was run. Generic DV codec advertisement does not prove FEL. CoreELEC S5 remains a separate vendor/kernel project. |
@@ -74,7 +74,8 @@ Luna's checkpoint `552af300eee0754698fb123b5e193428528f1c7f` is carried forward 
 1,454 RPU frames parsed as FEL; `[el_pair]` and `sh_dovi_compose_nlq` executed;
 the sample's FEL mark survived embedded rendering and disappeared in a BL-only
 control. AMD `vaapi-copy` used both layers and differed from software by at most
-one 8-bit output code. Two duplicate-RPU warnings still need investigation.
+one 8-bit output code. Two pending-RPU replacement warnings appeared in the
+real-clip hardware log; hardware RPU/frame association remains unqualified.
 
 The evidence archive remains on the tester's machine at
 `/home/keith/Documents/plezyng-dv-fel-evidence-20261026/`; `OUTPUTS.md` indexes it
@@ -277,8 +278,10 @@ Priority testing handoff:
    test opt-in off/on, fallback on/off, strict env override, repeated sessions,
    resizing/fullscreen, seeking, pause/resume, subtitles and A/V sync. Confirm both
    `[el_pair]` and the composer, then the visible FEL control pattern.
-2. **Linux decode:** explain the two duplicate-RPU warnings on the local Kodi
-   sample and the three on the synthetic hardware residual capture. Compare
+2. **Linux decode:** trace the two pending-RPU replacement warnings on the local
+   Kodi sample and the three on the synthetic hardware residual capture. The
+   synthetic file has one RPU NAL per access unit; correlate NAL, packet,
+   decoded-frame and presented-frame identity. Compare
    software, `vaapi-copy`, then zero-copy independently. Capture BL/EL/RPU frame identities
    around seeks, reordering and EOF; verify an unavailable/mismatched EL fails
    closed in the experiment. Do not permit stale EL from an old playback epoch.

@@ -25,6 +25,14 @@ def rpu_replacement_warning_count(log_text: str) -> int:
     return log_text.count(RPU_REPLACEMENT_WARNING)
 
 
+def rpu_association_status(replacement_warning_count: int) -> str:
+    if replacement_warning_count < 0:
+        raise ValueError("replacement_warning_count must not be negative")
+    if replacement_warning_count:
+        return "unqualified: FFmpeg replaced a pending RPU buffer before frame attachment"
+    return "unverified: no replacement warning observed, but frame identity was not checked"
+
+
 def capture_environment(
     library_paths: list[Path], *, software_gles: bool, base_environment=None
 ) -> dict[str, str]:
@@ -191,9 +199,15 @@ def verify(args) -> dict:
         "mpv_graph": "Profile 7 splitter, [el_pair], and sh_dovi_compose_nlq confirmed in both logs",
         "pixel_comparison": comparison,
         "rpu_replacement_warning_count": warning_count,
-        "qualification": "synthetic FEL graph/pixel-path evidence only; not an independent Dolby pixel reference, zero-copy hardware, or physical output qualification",
+        "rpu_association_status": rpu_association_status(warning_count),
+        "qualification": "synthetic FEL graph/pixel-path evidence only; no independent Dolby pixel reference, RPU/frame identity proof, zero-copy hardware, or physical output qualification",
     }
     (args.out_dir / "render-report.json").write_text(json.dumps(report, indent=2) + "\n")
+    if warning_count:
+        raise RuntimeError(
+            f"FFmpeg replaced a pending RPU buffer {warning_count} time(s); "
+            f"captures are diagnostic only; see {args.out_dir / 'render-report.json'}"
+        )
     return report
 
 

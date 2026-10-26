@@ -44,7 +44,7 @@ A public P7 FEL test clip was found through the [Kodi sample index](https://kodi
 | RPU check | `dovi_tool` 2.3.4 parsed all 1,454 frames as **Profile 7 (FEL), DM v2 / CM v4.0**. Frame 490 reports `el_type: FEL` and `disable_residual_flag: false`. |
 | Standalone graph | 24 frames around 20 s through bundled mpv `gpu-next`, `x11egl`, OpenGL; software HEVC decode and AMD Radeon RX 9070 XT rendering (Mesa 26.2.5). |
 | Embedded graph | Bundled `libmpv` with `vo=libmpv`, `MPV_RENDER_API_TYPE_OPENGL_NEXT`, EGL/GLES3 pbuffer and a 1280x720 RGBA8 FBO. The harness uses the Linux runner's `FLIP_Y=1` and 8-bit depth parameters. The full sample reaches the same splitter, `[el_pair]` and `sh_dovi_compose_nlq` path and captures at 20.5205 s. |
-| Hardware decode | `vaapi-copy` decoded both 1920x1080 BL and 3840x2160 EL in hardware on the RX 9070 XT. At the same capture time, its 1280x720 readback differed from software by at most 1/255 (mean channel error 0.000259; no pixel exceeded 2/255). The log also emitted two `Multiple Dolby Vision RPUs found in one AU. Skipping previous.` warnings; their source and impact need investigation. Non-copy `vaapi` could not create a device in this embedded setup and fell back to software. |
+| Hardware decode | `vaapi-copy` decoded both 1920x1080 BL and 3840x2160 EL in hardware on the RX 9070 XT. At the same capture time, its 1280x720 readback differed from software by at most 1/255 (mean channel error 0.000259; no pixel exceeded 2/255). The log emitted two pending-RPU replacement warnings, so hardware RPU/frame association is unqualified. Non-copy `vaapi` could not create a device in this embedded setup and fell back to software. |
 | BL-only control | The BL was demuxed from this file and remuxed at the source rate with a 1/24000 MP4 timescale. Embedded readback at 20.520333 s is 0.167 ms from the full capture; it retains “Level 2” text but lacks the FEL mark. |
 | Pixel comparison | The 1280x720 full and BL-only outputs differ at 920,839 of 921,600 pixels by more than 2 RGB code values; mean absolute channel difference is 7.086/255, maximum 99. |
 | App build | The clean worktree built the Linux debug app with Flutter 3.47.1. The app was not launched with this media; this is not full Plezy playback or a Wayland-plane qualification. |
@@ -109,10 +109,18 @@ maximum difference was one 8-bit code (mean channel delta 0.00853 neutral and
 0.01230 residual).
 
 The hardware neutral capture had no RPU replacement warning. Its residual
-capture emitted three `Multiple Dolby Vision RPUs found in one AU. Skipping
-previous.` warnings. The synthetic graph still produces EL-dependent pixels,
-but those warnings leave RPU/frame association open. The software captures had
-no such warnings. Reports, PPMs and raw logs are retained under
+capture emitted three RPU replacement warnings. In the pinned FFmpeg source,
+the warning fires when a prior `rpu_buf` is still pending as another RPU NAL is
+read; FFmpeg replaces that buffer before attaching it as frame side data
+([source](https://github.com/FFmpeg/FFmpeg/blob/46f23be8b1976ed4c8ec85584daabcf0e57a7b9e/libavcodec/hevc/hevcdec.c#L3998-L4009)).
+The generated HEVC was inspected: it contains 48 access units, 48 RPU NALs,
+and exactly one RPU NAL in each access unit. Therefore, the warning does not
+show duplicate RPU NALs in this input. Its cause remains unknown; decode/output
+reordering is only a hypothesis. The synthetic graph still produces
+EL-dependent pixels, but the hardware capture is diagnostic only and RPU/frame
+association is unqualified. The verifier now fails on any replacement warning
+after writing its report. A zero-warning run still needs explicit frame identity
+evidence. Reports, PPMs and raw logs are retained under
 `/home/keith/Documents/plezyng-dv-local-evidence-20261026/` in
 `synthetic-graph-software-rerun/` and `synthetic-graph-vaapi-gpu-rerun/`.
 The local rerun does not establish reference-pixel accuracy, zero-copy import,
@@ -231,7 +239,7 @@ strengthened verifier.
 
 - The Kodi sample index claims fair use for testing, technical evaluation and documentation, but no formal file-specific redistribution license is published. Keep the clip local; do not commit it or use it in public CI.
 - No full-frame independent numerical pixel comparison has run. The new RPU-to-CCM adapter has a hand-calculated single-sample vector but is not yet JIT-tested or cross-checked against a trusted P7 composer. The real-clip mark and generated center-patch deltas remain qualitative EL-use evidence; the six synthetic composer vectors check residual cases but are not reference comparisons.
-- The graph trials cover a single-track dual-layer file. Separate-track sources, exact seek/flush/reorder boundaries, malformed RPU/EL, scene changes and queue faults still need graph-level tests. Investigate the two duplicate-RPU warnings emitted during VA-API-copy decoding before expanding hardware claims.
+- The graph trials cover a single-track dual-layer file. Separate-track sources, exact seek/flush/reorder boundaries, malformed RPU/EL, scene changes and queue faults still need graph-level tests. Trace the two pending-RPU replacement warnings emitted during VA-API-copy decoding before expanding hardware claims.
 - Full PlezyNG playback on the Wayland video plane remains unqualified. The libmpv API was exercised through EGL/GLES in a native harness, and the Linux debug app builds, but the app was not launched with media.
 - Hardware qualification is limited to `vaapi-copy` decode through this harness. Zero-copy VA-API import and application Wayland presentation remain unqualified.
 - Native HDMI DV signaling, target-TV output and Dolby-reference display mapping are not qualified.
