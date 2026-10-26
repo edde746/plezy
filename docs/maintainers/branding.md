@@ -12,6 +12,9 @@ already part of the artwork; never add a second badge or substitute the old
 wave mark. The SVG compatibility files embed the approved raster and are not
 editable vector reconstructions.
 
+The webOS TV package icon at `webos/meta/icon.png` is generated from the same
+approved master, so it stays in sync with the desktop and mobile app icons.
+
 `assets/plezyng-app-icon.png` is the full-resolution 1254 × 1254 compatibility
 export for store-listing workflows and uses the same approved master.
 
@@ -50,6 +53,7 @@ badge border; navy interiors become transparent for system tinting.
   wide shelf's 2× image are exported.
 - Windows ICO includes 16, 24, 32, 48, 64, 128 and 256 px frames. Every MSIX tile,
   target-size variant, store logo and splash image is exported.
+- The webOS TV package icon uses the same approved 1024 × 1024 mark.
 - Google Play and Amazon icons, the Play feature graphic, and the Android and
   iPhone server-selection screenshots use the selected mark. The graphic and
   screenshots retain their previous non-logo content from clean bases in

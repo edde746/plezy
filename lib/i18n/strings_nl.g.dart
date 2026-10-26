@@ -104,6 +104,7 @@ class TranslationsNl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$nl fileSources = _Translations$fileSources$nl._(_root);
 	@override late final _Translations$lending$nl lending = _Translations$lending$nl._(_root);
 	@override late final _Translations$audiobook$nl audiobook = _Translations$audiobook$nl._(_root);
+	@override late final _Translations$sourceSetup$nl sourceSetup = _Translations$sourceSetup$nl._(_root);
 	@override late final _Translations$comics$nl comics = _Translations$comics$nl._(_root);
 }
 
@@ -762,6 +763,13 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Kies hoe datums, getallen en maateenheden worden weergegeven.';
 	@override String get metadataLanguage => 'Taal van metadata';
 	@override String get metadataLanguageDescription => 'Voorkeurstaal voor titels en beschrijvingen wanneer de server dit ondersteunt. Voorkeuren voor audio en ondertitels worden apart ingesteld.';
+	@override String get experimentalDolbyVision => 'Experimentele Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Gebruik de experimentele FEL-renderer bij de volgende keer afspelen. Vereist een afzonderlijke enginebuild.';
+	@override String get dvExperimentUnavailableDescription => 'Dit experiment is momenteel alleen beschikbaar op Linux.';
+	@override String get dvCompatibilityFallback => 'Compatibiliteitsterugval';
+	@override String get dvCompatibilityFallbackDescription => 'Gebruik de standaardrenderer als het experiment niet kan starten. FEL-gegevens kunnen verloren gaan.';
+	@override String get dvExperimentDiagnostics => 'Logboek voor video-experiment';
+	@override String get dvExperimentDiagnosticsDescription => 'Schakel uitgebreide spelerlogboeken in bij de volgende keer afspelen.';
 }
 
 // Path: themeEditor
@@ -3064,6 +3072,12 @@ class _Translations$fileSources$nl extends Translations$fileSources$en {
 	@override String get useFiles => 'Gebruik bestanden en boeken';
 	@override String get cancelScan => 'Scan af te sluiten';
 	@override String get googleDrive => 'Google Drive';
+	@override String get smbEndpointHint => 'Voorbeeld: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Voer een SMB-server en één gedeelde map in.';
+	@override String get smbFolderHelp => 'Laat dit leeg om de hele gedeelde map te gebruiken, of voer een map daarbinnen in.';
+	@override String get smbDomain => 'Domein (optioneel)';
+	@override String get smbEncryption => 'SMB3-verbinding versleutelen';
+	@override String get smbEncryptionHint => 'Gebruik SMB3-versleuteling wanneer de NAS dit ondersteunt.';
 }
 
 // Path: lending
@@ -3185,13 +3199,110 @@ class _Translations$audiobook$nl extends Translations$audiobook$en {
 	@override String get timeHelp => 'uur: minuten: seconden of minuten: seconden';
 }
 
+// Path: sourceSetup
+class _Translations$sourceSetup$nl extends Translations$sourceSetup$en {
+	_Translations$sourceSetup$nl._(TranslationsNl root) : this._root = root, super.internal(root);
+
+	final TranslationsNl _root; // ignore: unused_field
+	// Translations
+	@override String get savedCertificate => 'Opgeslagen servercertificaat';
+	@override String get nfsEndpointInvalid => 'Voer een NFS-URL in, zoals nfs://nas:2049/export.';
+	@override String get dlnaNone => 'Geen DLNA-servers gevonden. Voer de URL van de apparaatbeschrijving handmatig in.';
+	@override String get dlnaServers => 'DLNA-mediaservers';
+	@override String get dlnaUnavailable => 'DLNA-detectie is niet beschikbaar op dit netwerk. Voer de URL van de apparaatbeschrijving handmatig in.';
+	@override String get dlnaSearching => 'Zoeken naar DLNA-servers op het lokale netwerk';
+	@override String get networkSearching => 'Lokaal netwerk doorzoeken…';
+	@override String get dlnaDiscover => 'DLNA-servers zoeken';
+	@override String get dlnaHelp => 'Detectie gebruikt multicast op het lokale netwerk. Verschijnt er geen server, voer dan hierboven de URL van de apparaatbeschrijving in.';
+	@override String get dlnaRoot => 'DLNA-object-ID; laat leeg om de hoofdmap van het apparaat te gebruiken.';
+	@override String get passwordOrKey => 'Voer een wachtwoord in of voeg hieronder een privésleutel toe.';
+	@override String get sshFingerprint => 'SHA256-vingerafdruk van de SSH-hostsleutel';
+	@override String get sshFingerprintHelp => 'Controleer deze bij de serverbeheerder. Voer op de server ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub uit en gebruik de SHA256-waarde.';
+	@override String get sshFingerprintKeep => 'Laat leeg om de huidige vastgelegde vingerafdruk te behouden, of voer een nieuwe servervingerafdruk in.';
+	@override String get sshAuthentication => 'SSH-authenticatie met openbare sleutel';
+	@override String get sshAuthenticationHelp => 'Optioneel; authenticatie met een wachtwoord wordt ook ondersteund.';
+	@override String get privateKey => 'Privésleutel (PEM- of OpenSSH-formaat)';
+	@override String get privateKeyPassphrase => 'Wachtwoordzin van de privésleutel';
+	@override String get nfsMountPort => 'TCP-poort van de NFS-mountservice';
+	@override String get nfsMountPortHelp => 'Standaard: 20048';
+	@override String get nfsUserId => 'NFS-gebruikers-ID (AUTH_SYS)';
+	@override String get nfsUserIdHelp => 'Standaard: 1000. Gebruik de ID die de NFS-share van de NAS toestaat.';
+	@override String get nfsGroupId => 'NFS-groeps-ID (AUTH_SYS)';
+	@override String get nfsGroupIdHelp => 'Standaard: 1000. Gebruik de groeps-ID die de NFS-share van de NAS toestaat.';
+	@override String get nfsEncryption => 'Versleutelde NFS vereisen (RPC-with-TLS)';
+	@override String get nfsEncryptionHelp => 'TLS 1.3 vereisen voor NFS en de mountservice. Ondersteunt de NAS dit niet, dan wordt de verbinding geweigerd.';
+	@override String get nfsTrustCertificate => 'Aangepaste NFS-CA of servercertificaat (PEM, optioneel)';
+	@override String get nfsTrustHelp => 'Laat leeg voor certificaten die dit apparaat vertrouwt. Voeg zo nodig een certificaat van een private CA of een zelfondertekend servercertificaat toe; de namen moeten overeenkomen met de host in de NFS-URL.';
+	@override String get nfsTrustInvalid => 'Gebruik een CA- of servercertificaat in PEM-formaat. Voeg geen privésleutel toe.';
+	@override String get addTrustCertificate => 'Aangepast vertrouwenscertificaat toevoegen';
+	@override String get replaceTrustCertificate => 'Opgeslagen aangepast certificaat vervangen';
+	@override String get nfsTlsHelp => 'RPC-with-TLS gebruikt de gebruikelijke poorten van NFS en de mountservice en vereist RFC 9289-ondersteuning op de NAS. TLS 1.3 is verplicht. De hostnaam of het IP-adres moet overeenkomen met het certificaat. AUTH_SYS-UID/GID blijven ook binnen het versleutelde kanaal gelden.';
+	@override String get clientCertificate => 'Clientcertificaat (optioneel)';
+	@override String get clientCertificateHelp => 'Hiermee kan de NAS deze client authenticeren; AUTH_SYS-ID’s blijven afhankelijk van het beleid van de NFS-share op de NAS.';
+	@override String get savedIdentity => 'Er wordt een opgeslagen clientidentiteit gebruikt.';
+	@override String get replaceIdentity => 'Opgeslagen clientidentiteit vervangen';
+	@override String get chooseIdentity => 'PKCS#12-clientidentiteit kiezen';
+	@override String get identityPassphrase => 'Wachtwoordzin van de clientidentiteit';
+	@override String get identityPassphraseHelp => 'Laat leeg als het bestand geen wachtwoordzin heeft.';
+	@override String get removeIdentity => 'Eventuele opgeslagen clientidentiteit verwijderen';
+	@override String get identityStorageHelp => 'Clientidentiteiten worden opgeslagen in de versleutelde opslag voor toegangsgegevens van de bron. Laat dit onderdeel ongewijzigd om de opgeslagen identiteit te behouden.';
+	@override String get nfsLimitations => 'Alleen-lezen NFSv3 via TCP. Zonder RPC-with-TLS is NFS-verkeer niet versleuteld. De NAS moet de gekozen AUTH_SYS-ID’s en niet-bevoorrechte clientpoorten toestaan (vaak de exportoptie ‘insecure’ genoemd). NFSv4 en UDP worden niet ondersteund.';
+	@override String get nfsSetupHelp => 'Hulp bij NFS-instellingen';
+	@override String get nfsSetupHint => 'Controleer deze instellingen als de verbinding niet tot stand komt.';
+	@override String get nfsSetupDetails => 'Gebruik een NFSv3-share via TCP. Als versleuteling vereist is, moeten zowel de NFS-service als de mountservice RPC-with-TLS ondersteunen. Laat het aangepaste certificaat leeg voor een servercertificaat dat dit apparaat vertrouwt, of voeg het CA- of zelfondertekende certificaat van de NAS toe. De certificaatnaam moet overeenkomen met de host van het eindpunt. Vraagt de NAS om wederzijdse TLS, voeg dan de PKCS#12-clientidentiteit toe. Controleer tot slot of de share de ingestelde AUTH_SYS-UID/GID en het beleid voor clientpoorten toestaat.';
+	@override String get ftpHelp => 'FTP gebruikt de passieve modus. Gebruik ftp:// voor onversleutelde FTP, ftpes:// voor expliciete TLS of ftps:// voor TLS (impliciet op poort 990; expliciet op andere poorten).';
+	@override String get openSubtitles => 'OpenSubtitles';
+	@override String get subtitleSetup => 'Optioneel ondertitels zoeken voor losse video’s.';
+	@override String get apiKey => 'API-sleutel';
+	@override String get optionalUsername => 'Gebruikersnaam van het account (optioneel)';
+	@override String get optionalPassword => 'Wachtwoord van het account (optioneel)';
+	@override String get subtitlePrivacy => 'Vraag een API-sleutel aan op opensubtitles.com. Zoeken verstuurt de videotitel en beschikbare IMDb/TMDB-ID’s, nooit het videobestand. De sleutel en optionele accountgegevens worden samen met deze bron versleuteld.';
+	@override String get automaticMetadata => 'Automatische online videometadata';
+	@override String get metadataPrivacy => 'Verstuurt alleen titel/jaar uit de bestandsnaam en afleveringsnummers, of een NFO-ID; nooit media of toegangsgegevens. NFO-velden blijven leidend.';
+	@override String get nfsEncryptionFailure => 'Controleer voor versleutelde NFS de ondersteuning van RFC 9289 en TLS 1.3 bij beide NAS-services, de certificaatnaam en de UID/GID van de share. PlezyNG probeert deze verbinding niet opnieuw zonder versleuteling.';
+	@override String get sourceConnecting => 'Verbinden met bron';
+	@override String get metadataSearchPrivacy => 'Deze titelzoekopdracht gaat naar Trakt. De ingevoerde titel wordt verstuurd, niet de video of de toegangsgegevens van de bron.';
+	@override String get chooseMatch => 'Een overeenkomst kiezen';
+	@override String get metadataMatchHelp => 'Controleer titel en jaar voordat je kiest. Trakt ontvangt de gezochte titel; de video blijft op de bron.';
+	@override String get metadataNoMatches => 'Geen overeenkomende titels online gevonden. Probeer een andere titel.';
+	@override String get metadataSearch => 'Online metadata zoeken';
+	@override String get metadataLoading => 'Online informatie over films en series zoeken…';
+	@override String get metadataFromTrakt => 'Online metadata van Trakt';
+	@override String get metadataNoAutomaticMatch => 'Geen automatische titelovereenkomst gevonden. Zoek naar de titel om een overeenkomst te kiezen.';
+	@override String get metadataFailed => 'Online metadata konden niet worden geladen. Afspelen en lokale informatie blijven beschikbaar.';
+	@override String get videoDetailsLoading => 'Videogegevens laden';
+	@override String get subtitleKeyRequired => 'OpenSubtitles-API-sleutel vereist';
+	@override String get subtitleKeyHelp => 'Bewerk deze bestandsbron en voeg een OpenSubtitles-API-sleutel toe bij de optionele ondertitelinstellingen.';
+	@override String get subtitleSearchFailed => 'Zoeken naar ondertitels mislukt. Controleer de API-sleutel, verbinding en toegang tot de dienst.';
+	@override String get subtitleApplyFailed => 'Deze ondertitel kon niet worden gedownload of toegepast. Controleer je verbinding en probeer een ander resultaat.';
+	@override String get subtitleSearch => 'Zoeken op OpenSubtitles';
+	@override String get subtitleSearchPrivacy => 'Zoeken gebruikt de titel en beschikbare IMDb/TMDB-ID’s. Het videobestand blijft op de bron. Controleer vóór je kiest de taal, aanduidingen voor geforceerde ondertitels of ondertitels voor slechthorenden en de beoordeling.';
+	@override String get movieOrShow => 'Film of serie';
+	@override String get subtitleTitleHint => 'Voer een titel in om de resultaten te verfijnen';
+	@override String get subtitleLanguage => 'Ondertiteltaal';
+	@override String get subtitleSearching => 'Zoeken op OpenSubtitles';
+	@override String get subtitleNoMatches => 'Geen passende ondertitels gevonden. Probeer een andere titel of taal.';
+	@override String get downloadSubtitle => 'Ondertitel downloaden';
+	@override String get subtitle => 'Ondertitel';
+	@override String get nfsTlsRequired => 'RPC-with-TLS vereist';
+	@override String get nfsUnencrypted => 'Onversleutelde NFS';
+	@override String get tlsEncrypted => 'Versleuteld met TLS';
+	@override String get ftpPlain => 'Onversleutelde FTP';
+	@override String get sshPinned => 'SSH versleuteld · hostsleutel vastgelegd';
+	@override String get smbEncrypted => 'SMB3-versleuteling aan';
+	@override String get smbUnencrypted => 'SMB3-versleuteling uit';
+	@override String get httpUnencrypted => 'HTTP zonder transportversleuteling';
+	@override String get checkEndpointSecurity => 'Beveiliging van het eindpunt controleren';
+	@override String fieldRequired({required Object label}) => '${label} is vereist.';
+	@override String integerRange({required Object label, required Object min, required Object max}) => 'Voer ${label} in tussen ${min} en ${max}.';
+	@override String replaceFile({required Object name}) => '${name} vervangen';
+	@override String selectedIdentity({required Object name}) => 'Geselecteerde clientidentiteit: ${name}';
+	@override String subtitleRating({required Object rating}) => 'Beoordeling ${rating}';
+	@override String subtitleDownloading({required Object title}) => 'Ondertitel downloaden: ${title}';
+}
 // Path: comics
 class _Translations$comics$nl extends Translations$comics$en {
 	_Translations$comics$nl._(TranslationsNl root) : this._root = root, super.internal(root);
-
-	final TranslationsNl _root; // ignore: unused_field
-
-	// Translations
 	@override String get fitHeight => 'Aan hoogte aanpassen';
 	@override String get readingMode => 'Leesmodus';
 	@override String get paged => 'Pagina’s';
@@ -3204,8 +3315,6 @@ class _Translations$comics$nl extends Translations$comics$en {
 	@override String get savedForComic => 'De weergave-instellingen worden voor deze strip in dit profiel onthouden.';
 	@override String get readLists => 'Leeslijsten';
 	@override String get collections => 'Verzamelingen';
-}
-
 // Path: appIcon.names
 class _Translations$appIcon$names$nl extends Translations$appIcon$names$en {
 	_Translations$appIcon$names$nl._(TranslationsNl root) : this._root = root, super.internal(root);
@@ -3457,48 +3566,60 @@ class _Translations$discover$findNext$nl extends Translations$discover$findNext$
 	final TranslationsNl _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Vind je volgende';
-	@override String get open => 'Vind je volgende';
-	@override String get anyTime => 'Elke keer';
+	@override String get title => 'Vind je volgende favoriet';
+	@override String get open => 'Vind je volgende favoriet';
+	@override String get anyTime => 'Onbeperkte tijd';
 	@override String get timeAvailable => 'Hoeveel tijd heb je?';
-	@override String get filters => 'Kies het moment';
-	@override String get watch => 'Kijk naar';
-	@override String get listen => 'luisteren';
-	@override String get read => 'Lees';
-	@override String finishable({required Object duration}) => 'Afsluiten in ${duration}';
-	@override String aboutDuration({required Object duration}) => 'Over ${duration}';
-	@override String nextUnit({required Object duration}) => 'Volgende hoofdstuk · ${duration}';
-	@override String totalDuration({required Object duration}) => '${duration} totaal';
-	@override String get timingVaries => 'Timing variëren';
+	@override String get filters => 'Kies wat bij dit moment past';
+	@override String get watch => 'Kijken';
+	@override String get listen => 'Luisteren';
+	@override String get read => 'Lezen';
+	@override String finishable({required Object duration}) => 'Af te ronden in ${duration}';
+	@override String aboutDuration({required Object duration}) => 'Ongeveer ${duration}';
+	@override String nextUnit({required Object duration}) => 'Volgend hoofdstuk · ${duration}';
+	@override String totalDuration({required Object duration}) => '${duration} in totaal';
+	@override String get timingVaries => 'De duur kan variëren';
 	@override String get notNow => 'Niet nu';
-	@override String get swipeHint => 'Swipe, of gebruik de knoppen hieronder';
-	@override String get saved => 'Beveiligde picks';
-	@override String savedCount({required Object count}) => 'Geboekte punten · ${count}';
-	@override String get undo => 'eno';
+	@override String get swipeHint => 'Veeg de omslag naar een pijl of gebruik de knoppen hieronder.';
+	@override String get saved => 'Opgeslagen suggesties';
+	@override String savedCount({required Object count}) => 'Opgeslagen suggesties · ${count}';
+	@override String get undo => 'Ongedaan maken';
 	@override String get details => 'Details';
-	@override String get noPicks => 'Niets te kiezen van nog';
+	@override String get noPicks => 'Er is nog niets om uit te kiezen';
 	@override String get noPicksHint => 'Verbind een bibliotheek of voeg een mediabron toe om te beginnen.';
-	@override String get noMatches => 'Niets past in dit moment';
-	@override String get noMatchesHint => 'Probeer een ander formaat of geef jezelf meer tijd.';
-	@override String get allDone => 'Jullie zijn allemaal gevangen';
-	@override String get allDoneHint => 'Begin met een verse mix om deze keuzes weer te zien.';
-	@override String get refresh => 'Vind nog een mix';
-	@override String sourceReason({required Object source}) => 'van ${source}';
-	@override String libraryReason({required Object library}) => 'van ${library}';
-	@override String get ownedReason => 'van uw bibliotheek';
-	@override String get liveNow => 'op nu';
-	@override String get watchLive => 'Bekijk live';
+	@override String get noMatches => 'Niets past bij dit moment';
+	@override String get noMatchesHint => 'Probeer een ander soort media of neem wat meer tijd.';
+	@override String get allDone => 'Je hebt alle suggesties bekeken';
+	@override String get allDoneHint => 'Begin een nieuwe selectie om deze opties opnieuw te zien.';
+	@override String get refresh => 'Een andere selectie zoeken';
+	@override String sourceReason({required Object source}) => 'Van ${source}';
+	@override String libraryReason({required Object library}) => 'Uit ${library}';
+	@override String get ownedReason => 'Uit je bibliotheek';
+	@override String get liveNow => 'Nu te zien';
+	@override String get watchLive => 'Live kijken';
 	@override String get filterAnything => 'Alles';
-	@override String get filterWatch => 'Kijk naar';
-	@override String get filterListen => 'luisteren';
-	@override String get filterRead => 'Lees';
-	@override String get twentyMinutes => '20 minuten';
-	@override String get fortyFiveMinutes => '45 minuten';
-	@override String get ninetyMinutes => '90 minuten';
-	@override String get apply => 'Aanvragen';
-	@override String get openFailed => 'Deze optie is niet meer beschikbaar.Fresh om opnieuw te controleren.';
-	@override String get changeFailed => 'Ik kan die verandering niet redden, probeer het nog eens.';
-	@override String get savedLimit => 'Save picks is vol. Verwijder een selectie om een andere te redden.';
+	@override String get filterWatch => 'Kijken';
+	@override String get filterListen => 'Luisteren';
+	@override String get filterRead => 'Lezen';
+	@override String get twentyMinutes => '20 min';
+	@override String get fortyFiveMinutes => '45 min';
+	@override String get ninetyMinutes => '90 min';
+	@override String get apply => 'Toepassen';
+	@override String get openFailed => 'Deze optie is niet meer beschikbaar. Vernieuw om het opnieuw te controleren.';
+	@override String get changeFailed => 'De wijziging kon niet worden opgeslagen. Probeer het opnieuw.';
+	@override String get savedLimit => 'De lijst met opgeslagen suggesties is vol. Verwijder er één om een andere op te slaan.';
+	@override String get chooseHint => 'Open een titel, bewaar hem voor later of sla hem over.';
+	@override String get howItWorks => 'Zo werkt het';
+	@override String get notNowHelp => 'Sla deze titel voorlopig over. Hij blijft in je bibliotheek.';
+	@override String get saveHelp => 'Bewaar hem bij de opgeslagen keuzes van dit profiel op dit apparaat. Opslaan downloadt de titel niet.';
+	@override String get openHelp => 'Selecteer de omslag voor details. Gebruik de hoofdactie om de titel af te spelen, te lezen of te openen.';
+	@override String get controlsHelp => 'Toetsenbord of afstandsbediening: selecteer een knop en druk op Enter of Selecteren. Ongedaan maken herstelt je laatste keuze.';
+	@override String get artworkLoading => 'Afbeelding laden…';
+	@override String get artworkUnavailable => 'Afbeelding niet beschikbaar';
+	@override String get savedFeedback => 'Toegevoegd aan opgeslagen keuzes';
+	@override String get skippedFeedback => 'Voorlopig overgeslagen';
+	@override String get releaseToConfirm => 'Laat los om te bevestigen';
+	@override String get remoteHint => 'Omslag geselecteerd: ← / → kiezen · Selecteren: details · ↑ / ↓ focus verplaatsen';
 }
 
 // Path: discover.person
@@ -4833,6 +4954,13 @@ extension on TranslationsNl {
 			'settings.regionFormatDescription' => 'Kies hoe datums, getallen en maateenheden worden weergegeven.',
 			'settings.metadataLanguage' => 'Taal van metadata',
 			'settings.metadataLanguageDescription' => 'Voorkeurstaal voor titels en beschrijvingen wanneer de server dit ondersteunt. Voorkeuren voor audio en ondertitels worden apart ingesteld.',
+			'settings.experimentalDolbyVision' => 'Experimentele Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Gebruik de experimentele FEL-renderer bij de volgende keer afspelen. Vereist een afzonderlijke enginebuild.',
+			'settings.dvExperimentUnavailableDescription' => 'Dit experiment is momenteel alleen beschikbaar op Linux.',
+			'settings.dvCompatibilityFallback' => 'Compatibiliteitsterugval',
+			'settings.dvCompatibilityFallbackDescription' => 'Gebruik de standaardrenderer als het experiment niet kan starten. FEL-gegevens kunnen verloren gaan.',
+			'settings.dvExperimentDiagnostics' => 'Logboek voor video-experiment',
+			'settings.dvExperimentDiagnosticsDescription' => 'Schakel uitgebreide spelerlogboeken in bij de volgende keer afspelen.',
 			'themeEditor.builtIn' => 'Ingebouwd',
 			'themeEditor.presets' => 'Voorinstellingen',
 			'themeEditor.custom' => 'Aangepast',
@@ -5253,6 +5381,8 @@ extension on TranslationsNl {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Bibliotheekscan gestart voor "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Bibliotheek scannen mislukt: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Metadata voor "${title}" vernieuwen...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Vernieuwen van metadata gestart voor "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Metadata vernieuwen mislukt: ${error}',
 			'messages.logoutConfirm' => 'Weet je zeker dat je wilt uitloggen?',
@@ -5260,8 +5390,6 @@ extension on TranslationsNl {
 			'messages.seasonsLoadFailed' => 'Kan seizoenen niet laden',
 			'messages.noEpisodesFound' => 'Geen afleveringen gevonden in eerste seizoen',
 			'messages.noEpisodesFoundGeneral' => 'Geen afleveringen gevonden',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Kan afleveringen niet laden',
 			'messages.noResultsFound' => 'Geen resultaten gevonden',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Slaaptimer ingesteld op ${label}',
@@ -5488,48 +5616,60 @@ extension on TranslationsNl {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Overzicht',
 			'discover.cast' => 'Acteurs',
-			'discover.findNext.title' => 'Vind je volgende',
-			'discover.findNext.open' => 'Vind je volgende',
-			'discover.findNext.anyTime' => 'Elke keer',
+			'discover.findNext.title' => 'Vind je volgende favoriet',
+			'discover.findNext.open' => 'Vind je volgende favoriet',
+			'discover.findNext.anyTime' => 'Onbeperkte tijd',
 			'discover.findNext.timeAvailable' => 'Hoeveel tijd heb je?',
-			'discover.findNext.filters' => 'Kies het moment',
-			'discover.findNext.watch' => 'Kijk naar',
-			'discover.findNext.listen' => 'luisteren',
-			'discover.findNext.read' => 'Lees',
-			'discover.findNext.finishable' => ({required Object duration}) => 'Afsluiten in ${duration}',
-			'discover.findNext.aboutDuration' => ({required Object duration}) => 'Over ${duration}',
-			'discover.findNext.nextUnit' => ({required Object duration}) => 'Volgende hoofdstuk · ${duration}',
-			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} totaal',
-			'discover.findNext.timingVaries' => 'Timing variëren',
+			'discover.findNext.filters' => 'Kies wat bij dit moment past',
+			'discover.findNext.watch' => 'Kijken',
+			'discover.findNext.listen' => 'Luisteren',
+			'discover.findNext.read' => 'Lezen',
+			'discover.findNext.finishable' => ({required Object duration}) => 'Af te ronden in ${duration}',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => 'Ongeveer ${duration}',
+			'discover.findNext.nextUnit' => ({required Object duration}) => 'Volgend hoofdstuk · ${duration}',
+			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} in totaal',
+			'discover.findNext.timingVaries' => 'De duur kan variëren',
 			'discover.findNext.notNow' => 'Niet nu',
-			'discover.findNext.swipeHint' => 'Swipe, of gebruik de knoppen hieronder',
-			'discover.findNext.saved' => 'Beveiligde picks',
-			'discover.findNext.savedCount' => ({required Object count}) => 'Geboekte punten · ${count}',
-			'discover.findNext.undo' => 'eno',
+			'discover.findNext.swipeHint' => 'Veeg de omslag naar een pijl of gebruik de knoppen hieronder.',
+			'discover.findNext.saved' => 'Opgeslagen suggesties',
+			'discover.findNext.savedCount' => ({required Object count}) => 'Opgeslagen suggesties · ${count}',
+			'discover.findNext.undo' => 'Ongedaan maken',
 			'discover.findNext.details' => 'Details',
-			'discover.findNext.noPicks' => 'Niets te kiezen van nog',
+			'discover.findNext.noPicks' => 'Er is nog niets om uit te kiezen',
 			'discover.findNext.noPicksHint' => 'Verbind een bibliotheek of voeg een mediabron toe om te beginnen.',
-			'discover.findNext.noMatches' => 'Niets past in dit moment',
-			'discover.findNext.noMatchesHint' => 'Probeer een ander formaat of geef jezelf meer tijd.',
-			'discover.findNext.allDone' => 'Jullie zijn allemaal gevangen',
-			'discover.findNext.allDoneHint' => 'Begin met een verse mix om deze keuzes weer te zien.',
-			'discover.findNext.refresh' => 'Vind nog een mix',
-			'discover.findNext.sourceReason' => ({required Object source}) => 'van ${source}',
-			'discover.findNext.libraryReason' => ({required Object library}) => 'van ${library}',
-			'discover.findNext.ownedReason' => 'van uw bibliotheek',
-			'discover.findNext.liveNow' => 'op nu',
-			'discover.findNext.watchLive' => 'Bekijk live',
+			'discover.findNext.noMatches' => 'Niets past bij dit moment',
+			'discover.findNext.noMatchesHint' => 'Probeer een ander soort media of neem wat meer tijd.',
+			'discover.findNext.allDone' => 'Je hebt alle suggesties bekeken',
+			'discover.findNext.allDoneHint' => 'Begin een nieuwe selectie om deze opties opnieuw te zien.',
+			'discover.findNext.refresh' => 'Een andere selectie zoeken',
+			'discover.findNext.sourceReason' => ({required Object source}) => 'Van ${source}',
+			'discover.findNext.libraryReason' => ({required Object library}) => 'Uit ${library}',
+			'discover.findNext.ownedReason' => 'Uit je bibliotheek',
+			'discover.findNext.liveNow' => 'Nu te zien',
+			'discover.findNext.watchLive' => 'Live kijken',
 			'discover.findNext.filterAnything' => 'Alles',
-			'discover.findNext.filterWatch' => 'Kijk naar',
-			'discover.findNext.filterListen' => 'luisteren',
-			'discover.findNext.filterRead' => 'Lees',
-			'discover.findNext.twentyMinutes' => '20 minuten',
-			'discover.findNext.fortyFiveMinutes' => '45 minuten',
-			'discover.findNext.ninetyMinutes' => '90 minuten',
-			'discover.findNext.apply' => 'Aanvragen',
-			'discover.findNext.openFailed' => 'Deze optie is niet meer beschikbaar.Fresh om opnieuw te controleren.',
-			'discover.findNext.changeFailed' => 'Ik kan die verandering niet redden, probeer het nog eens.',
-			'discover.findNext.savedLimit' => 'Save picks is vol. Verwijder een selectie om een andere te redden.',
+			'discover.findNext.filterWatch' => 'Kijken',
+			'discover.findNext.filterListen' => 'Luisteren',
+			'discover.findNext.filterRead' => 'Lezen',
+			'discover.findNext.twentyMinutes' => '20 min',
+			'discover.findNext.fortyFiveMinutes' => '45 min',
+			'discover.findNext.ninetyMinutes' => '90 min',
+			'discover.findNext.apply' => 'Toepassen',
+			'discover.findNext.openFailed' => 'Deze optie is niet meer beschikbaar. Vernieuw om het opnieuw te controleren.',
+			'discover.findNext.changeFailed' => 'De wijziging kon niet worden opgeslagen. Probeer het opnieuw.',
+			'discover.findNext.savedLimit' => 'De lijst met opgeslagen suggesties is vol. Verwijder er één om een andere op te slaan.',
+			'discover.findNext.chooseHint' => 'Open een titel, bewaar hem voor later of sla hem over.',
+			'discover.findNext.howItWorks' => 'Zo werkt het',
+			'discover.findNext.notNowHelp' => 'Sla deze titel voorlopig over. Hij blijft in je bibliotheek.',
+			'discover.findNext.saveHelp' => 'Bewaar hem bij de opgeslagen keuzes van dit profiel op dit apparaat. Opslaan downloadt de titel niet.',
+			'discover.findNext.openHelp' => 'Selecteer de omslag voor details. Gebruik de hoofdactie om de titel af te spelen, te lezen of te openen.',
+			'discover.findNext.controlsHelp' => 'Toetsenbord of afstandsbediening: selecteer een knop en druk op Enter of Selecteren. Ongedaan maken herstelt je laatste keuze.',
+			'discover.findNext.artworkLoading' => 'Afbeelding laden…',
+			'discover.findNext.artworkUnavailable' => 'Afbeelding niet beschikbaar',
+			'discover.findNext.savedFeedback' => 'Toegevoegd aan opgeslagen keuzes',
+			'discover.findNext.skippedFeedback' => 'Voorlopig overgeslagen',
+			'discover.findNext.releaseToConfirm' => 'Laat los om te bevestigen',
+			'discover.findNext.remoteHint' => 'Omslag geselecteerd: ← / → kiezen · Selecteren: details · ↑ / ↓ focus verplaatsen',
 			'discover.extras' => 'Trailers en extra\'s',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Beoordeling',
@@ -5755,6 +5895,8 @@ extension on TranslationsNl {
 			'explore.mdblistShelves.nameHint' => 'Laat het blanke om de bronlijstnaam te gebruiken.',
 			'explore.mdblistShelves.add' => 'Voeg shelf toe',
 			'explore.mdblistShelves.save' => 'Save de shelves',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Verplaats ${title} naar boven',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Verplaats ${title} naar beneden',
 			'explore.mdblistShelves.unavailable' => 'Deze lijst is niet beschikbaar. verwijderen of verwijderen van de schelfs in instellingen.',
@@ -5774,8 +5916,6 @@ extension on TranslationsNl {
 			'explore.rows.popularShows' => 'Populaire series',
 			'explore.rows.trendingAnime' => 'Trending anime',
 			'explore.rows.suggestedAnime' => 'Aanbevolen anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Beste lopende anime',
 			'explore.rows.popularAnime' => 'Populairste anime',
 			'explore.rows.trending' => 'Trending',
@@ -6269,6 +6409,8 @@ extension on TranslationsNl {
 			'downloads.resumeDownload' => 'Download hervatten',
 			'downloads.cancelledDownload' => 'Geannuleerde download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} synchroniseren)',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} gedownload — klik om te voltooien',
 			'downloads.partialDownloadClickToComplete' => 'Gedeeltelijk gedownload — klik om te voltooien',
 			'downloads.deleting' => 'Verwijderen...',
@@ -6288,8 +6430,6 @@ extension on TranslationsNl {
 			'downloads.unwatchedOnly' => 'Alleen ongekeken afleveringen',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Volgende ${count} ongekeken afleveringen',
 			'downloads.customAmount' => 'Aangepast aantal...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Een aantal (de hoeveelheid) voor elk...',
 			'downloads.randomEpisodes' => 'Willekeurige afleveringen',
 			'downloads.includeSpecials' => 'Specials meenemen',
@@ -6783,6 +6923,8 @@ extension on TranslationsNl {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Kon de server niet bereiken: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Inloggen mislukt: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect mislukt: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Inloggen met Plex',
 			'addServer.pinExpired' => 'De pincode verliep voordat je kon inloggen. Probeer het opnieuw.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Account registreren mislukt: ${error}',
@@ -6802,8 +6944,6 @@ extension on TranslationsNl {
 			'addServer.authResponseIncomplete' => 'Het aanmeldingsantwoord van de server was onvolledig',
 			'addServer.quickConnectRejected' => 'Quick Connect is door de server geweigerd',
 			'addServer.quickConnectNotJson' => 'Het Quick Connect-antwoord was geen geldige JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'In het Quick Connect-antwoord ontbreekt een code of geheim',
 			'addServer.quickConnectPollRejected' => 'Quick Connect-polling is door de server geweigerd',
 			'addServer.serverTimedOut' => 'De server heeft niet op tijd gereageerd',
@@ -7109,6 +7249,12 @@ extension on TranslationsNl {
 			'fileSources.useFiles' => 'Gebruik bestanden en boeken',
 			'fileSources.cancelScan' => 'Scan af te sluiten',
 			'fileSources.googleDrive' => 'Google Drive',
+			'fileSources.smbEndpointHint' => 'Voorbeeld: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Voer een SMB-server en één gedeelde map in.',
+			'fileSources.smbFolderHelp' => 'Laat dit leeg om de hele gedeelde map te gebruiken, of voer een map daarbinnen in.',
+			'fileSources.smbDomain' => 'Domein (optioneel)',
+			'fileSources.smbEncryption' => 'SMB3-verbinding versleutelen',
+			'fileSources.smbEncryptionHint' => 'Gebruik SMB3-versleuteling wanneer de NAS dit ondersteunt.',
 			'lending.title' => 'Public Library',
 			'lending.add' => 'Voeg een bibliotheek toe',
 			'lending.other' => 'Een andere bibliotheek',
@@ -7210,6 +7356,93 @@ extension on TranslationsNl {
 			'audiobook.statusFinished' => 'Afgerond',
 			'audiobook.goToTime' => 'Ga naar de tijd',
 			'audiobook.timeHelp' => 'uur: minuten: seconden of minuten: seconden',
+			'sourceSetup.savedCertificate' => 'Opgeslagen servercertificaat',
+			'sourceSetup.nfsEndpointInvalid' => 'Voer een NFS-URL in, zoals nfs://nas:2049/export.',
+			'sourceSetup.dlnaNone' => 'Geen DLNA-servers gevonden. Voer de URL van de apparaatbeschrijving handmatig in.',
+			'sourceSetup.dlnaServers' => 'DLNA-mediaservers',
+			'sourceSetup.dlnaUnavailable' => 'DLNA-detectie is niet beschikbaar op dit netwerk. Voer de URL van de apparaatbeschrijving handmatig in.',
+			'sourceSetup.dlnaSearching' => 'Zoeken naar DLNA-servers op het lokale netwerk',
+			'sourceSetup.networkSearching' => 'Lokaal netwerk doorzoeken…',
+			'sourceSetup.dlnaDiscover' => 'DLNA-servers zoeken',
+			'sourceSetup.dlnaHelp' => 'Detectie gebruikt multicast op het lokale netwerk. Verschijnt er geen server, voer dan hierboven de URL van de apparaatbeschrijving in.',
+			'sourceSetup.dlnaRoot' => 'DLNA-object-ID; laat leeg om de hoofdmap van het apparaat te gebruiken.',
+			'sourceSetup.passwordOrKey' => 'Voer een wachtwoord in of voeg hieronder een privésleutel toe.',
+			'sourceSetup.sshFingerprint' => 'SHA256-vingerafdruk van de SSH-hostsleutel',
+			'sourceSetup.sshFingerprintHelp' => 'Controleer deze bij de serverbeheerder. Voer op de server ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub uit en gebruik de SHA256-waarde.',
+			'sourceSetup.sshFingerprintKeep' => 'Laat leeg om de huidige vastgelegde vingerafdruk te behouden, of voer een nieuwe servervingerafdruk in.',
+			'sourceSetup.sshAuthentication' => 'SSH-authenticatie met openbare sleutel',
+			'sourceSetup.sshAuthenticationHelp' => 'Optioneel; authenticatie met een wachtwoord wordt ook ondersteund.',
+			'sourceSetup.privateKey' => 'Privésleutel (PEM- of OpenSSH-formaat)',
+			'sourceSetup.privateKeyPassphrase' => 'Wachtwoordzin van de privésleutel',
+			'sourceSetup.nfsMountPort' => 'TCP-poort van de NFS-mountservice',
+			'sourceSetup.nfsMountPortHelp' => 'Standaard: 20048',
+			'sourceSetup.nfsUserId' => 'NFS-gebruikers-ID (AUTH_SYS)',
+			'sourceSetup.nfsUserIdHelp' => 'Standaard: 1000. Gebruik de ID die de NFS-share van de NAS toestaat.',
+			'sourceSetup.nfsGroupId' => 'NFS-groeps-ID (AUTH_SYS)',
+			'sourceSetup.nfsGroupIdHelp' => 'Standaard: 1000. Gebruik de groeps-ID die de NFS-share van de NAS toestaat.',
+			'sourceSetup.nfsEncryption' => 'Versleutelde NFS vereisen (RPC-with-TLS)',
+			'sourceSetup.nfsEncryptionHelp' => 'TLS 1.3 vereisen voor NFS en de mountservice. Ondersteunt de NAS dit niet, dan wordt de verbinding geweigerd.',
+			'sourceSetup.nfsTrustCertificate' => 'Aangepaste NFS-CA of servercertificaat (PEM, optioneel)',
+			'sourceSetup.nfsTrustHelp' => 'Laat leeg voor certificaten die dit apparaat vertrouwt. Voeg zo nodig een certificaat van een private CA of een zelfondertekend servercertificaat toe; de namen moeten overeenkomen met de host in de NFS-URL.',
+			'sourceSetup.nfsTrustInvalid' => 'Gebruik een CA- of servercertificaat in PEM-formaat. Voeg geen privésleutel toe.',
+			'sourceSetup.addTrustCertificate' => 'Aangepast vertrouwenscertificaat toevoegen',
+			'sourceSetup.replaceTrustCertificate' => 'Opgeslagen aangepast certificaat vervangen',
+			'sourceSetup.nfsTlsHelp' => 'RPC-with-TLS gebruikt de gebruikelijke poorten van NFS en de mountservice en vereist RFC 9289-ondersteuning op de NAS. TLS 1.3 is verplicht. De hostnaam of het IP-adres moet overeenkomen met het certificaat. AUTH_SYS-UID/GID blijven ook binnen het versleutelde kanaal gelden.',
+			'sourceSetup.clientCertificate' => 'Clientcertificaat (optioneel)',
+			'sourceSetup.clientCertificateHelp' => 'Hiermee kan de NAS deze client authenticeren; AUTH_SYS-ID’s blijven afhankelijk van het beleid van de NFS-share op de NAS.',
+			'sourceSetup.savedIdentity' => 'Er wordt een opgeslagen clientidentiteit gebruikt.',
+			'sourceSetup.replaceIdentity' => 'Opgeslagen clientidentiteit vervangen',
+			'sourceSetup.chooseIdentity' => 'PKCS#12-clientidentiteit kiezen',
+			'sourceSetup.identityPassphrase' => 'Wachtwoordzin van de clientidentiteit',
+			'sourceSetup.identityPassphraseHelp' => 'Laat leeg als het bestand geen wachtwoordzin heeft.',
+			'sourceSetup.removeIdentity' => 'Eventuele opgeslagen clientidentiteit verwijderen',
+			'sourceSetup.identityStorageHelp' => 'Clientidentiteiten worden opgeslagen in de versleutelde opslag voor toegangsgegevens van de bron. Laat dit onderdeel ongewijzigd om de opgeslagen identiteit te behouden.',
+			'sourceSetup.nfsLimitations' => 'Alleen-lezen NFSv3 via TCP. Zonder RPC-with-TLS is NFS-verkeer niet versleuteld. De NAS moet de gekozen AUTH_SYS-ID’s en niet-bevoorrechte clientpoorten toestaan (vaak de exportoptie ‘insecure’ genoemd). NFSv4 en UDP worden niet ondersteund.',
+			'sourceSetup.nfsSetupHelp' => 'Hulp bij NFS-instellingen',
+			'sourceSetup.nfsSetupHint' => 'Controleer deze instellingen als de verbinding niet tot stand komt.',
+			'sourceSetup.nfsSetupDetails' => 'Gebruik een NFSv3-share via TCP. Als versleuteling vereist is, moeten zowel de NFS-service als de mountservice RPC-with-TLS ondersteunen. Laat het aangepaste certificaat leeg voor een servercertificaat dat dit apparaat vertrouwt, of voeg het CA- of zelfondertekende certificaat van de NAS toe. De certificaatnaam moet overeenkomen met de host van het eindpunt. Vraagt de NAS om wederzijdse TLS, voeg dan de PKCS#12-clientidentiteit toe. Controleer tot slot of de share de ingestelde AUTH_SYS-UID/GID en het beleid voor clientpoorten toestaat.',
+			'sourceSetup.ftpHelp' => 'FTP gebruikt de passieve modus. Gebruik ftp:// voor onversleutelde FTP, ftpes:// voor expliciete TLS of ftps:// voor TLS (impliciet op poort 990; expliciet op andere poorten).',
+			'sourceSetup.openSubtitles' => 'OpenSubtitles',
+			'sourceSetup.subtitleSetup' => 'Optioneel ondertitels zoeken voor losse video’s.',
+			'sourceSetup.apiKey' => 'API-sleutel',
+			'sourceSetup.optionalUsername' => 'Gebruikersnaam van het account (optioneel)',
+			'sourceSetup.optionalPassword' => 'Wachtwoord van het account (optioneel)',
+			'sourceSetup.subtitlePrivacy' => 'Vraag een API-sleutel aan op opensubtitles.com. Zoeken verstuurt de videotitel en beschikbare IMDb/TMDB-ID’s, nooit het videobestand. De sleutel en optionele accountgegevens worden samen met deze bron versleuteld.',
+			'sourceSetup.automaticMetadata' => 'Automatische online videometadata',
+			'sourceSetup.metadataPrivacy' => 'Verstuurt alleen titel/jaar uit de bestandsnaam en afleveringsnummers, of een NFO-ID; nooit media of toegangsgegevens. NFO-velden blijven leidend.',
+			'sourceSetup.nfsEncryptionFailure' => 'Controleer voor versleutelde NFS de ondersteuning van RFC 9289 en TLS 1.3 bij beide NAS-services, de certificaatnaam en de UID/GID van de share. PlezyNG probeert deze verbinding niet opnieuw zonder versleuteling.',
+			'sourceSetup.sourceConnecting' => 'Verbinden met bron',
+			'sourceSetup.metadataSearchPrivacy' => 'Deze titelzoekopdracht gaat naar Trakt. De ingevoerde titel wordt verstuurd, niet de video of de toegangsgegevens van de bron.',
+			'sourceSetup.chooseMatch' => 'Een overeenkomst kiezen',
+			'sourceSetup.metadataMatchHelp' => 'Controleer titel en jaar voordat je kiest. Trakt ontvangt de gezochte titel; de video blijft op de bron.',
+			'sourceSetup.metadataNoMatches' => 'Geen overeenkomende titels online gevonden. Probeer een andere titel.',
+			'sourceSetup.metadataSearch' => 'Online metadata zoeken',
+			'sourceSetup.metadataLoading' => 'Online informatie over films en series zoeken…',
+			'sourceSetup.metadataFromTrakt' => 'Online metadata van Trakt',
+			'sourceSetup.metadataNoAutomaticMatch' => 'Geen automatische titelovereenkomst gevonden. Zoek naar de titel om een overeenkomst te kiezen.',
+			'sourceSetup.metadataFailed' => 'Online metadata konden niet worden geladen. Afspelen en lokale informatie blijven beschikbaar.',
+			'sourceSetup.videoDetailsLoading' => 'Videogegevens laden',
+			'sourceSetup.subtitleKeyRequired' => 'OpenSubtitles-API-sleutel vereist',
+			'sourceSetup.subtitleKeyHelp' => 'Bewerk deze bestandsbron en voeg een OpenSubtitles-API-sleutel toe bij de optionele ondertitelinstellingen.',
+			'sourceSetup.subtitleSearchFailed' => 'Zoeken naar ondertitels mislukt. Controleer de API-sleutel, verbinding en toegang tot de dienst.',
+			'sourceSetup.subtitleApplyFailed' => 'Deze ondertitel kon niet worden gedownload of toegepast. Controleer je verbinding en probeer een ander resultaat.',
+			'sourceSetup.subtitleSearch' => 'Zoeken op OpenSubtitles',
+			'sourceSetup.subtitleSearchPrivacy' => 'Zoeken gebruikt de titel en beschikbare IMDb/TMDB-ID’s. Het videobestand blijft op de bron. Controleer vóór je kiest de taal, aanduidingen voor geforceerde ondertitels of ondertitels voor slechthorenden en de beoordeling.',
+			'sourceSetup.movieOrShow' => 'Film of serie',
+			'sourceSetup.subtitleTitleHint' => 'Voer een titel in om de resultaten te verfijnen',
+			'sourceSetup.subtitleLanguage' => 'Ondertiteltaal',
+			'sourceSetup.subtitleSearching' => 'Zoeken op OpenSubtitles',
+			'sourceSetup.subtitleNoMatches' => 'Geen passende ondertitels gevonden. Probeer een andere titel of taal.',
+			'sourceSetup.downloadSubtitle' => 'Ondertitel downloaden',
+			'sourceSetup.subtitle' => 'Ondertitel',
+			'sourceSetup.nfsTlsRequired' => 'RPC-with-TLS vereist',
+			'sourceSetup.nfsUnencrypted' => 'Onversleutelde NFS',
+			'sourceSetup.tlsEncrypted' => 'Versleuteld met TLS',
+			'sourceSetup.ftpPlain' => 'Onversleutelde FTP',
+			'sourceSetup.sshPinned' => 'SSH versleuteld · hostsleutel vastgelegd',
+			'sourceSetup.smbEncrypted' => 'SMB3-versleuteling aan',
+			'sourceSetup.smbUnencrypted' => 'SMB3-versleuteling uit',
+			'sourceSetup.httpUnencrypted' => 'HTTP zonder transportversleuteling',
 			'comics.fitHeight' => 'Aan hoogte aanpassen',
 			'comics.readingMode' => 'Leesmodus',
 			'comics.paged' => 'Pagina’s',
@@ -7222,6 +7455,15 @@ extension on TranslationsNl {
 			'comics.savedForComic' => 'De weergave-instellingen worden voor deze strip in dit profiel onthouden.',
 			'comics.readLists' => 'Leeslijsten',
 			'comics.collections' => 'Verzamelingen',
+			_ => null,
+		} ?? switch (path) {
+			'sourceSetup.checkEndpointSecurity' => 'Beveiliging van het eindpunt controleren',
+			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} is vereist.',
+			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Voer ${label} in tussen ${min} en ${max}.',
+			'sourceSetup.replaceFile' => ({required Object name}) => '${name} vervangen',
+			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Geselecteerde clientidentiteit: ${name}',
+			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Beoordeling ${rating}',
+			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Ondertitel downloaden: ${title}',
 			_ => null,
 		};
 	}

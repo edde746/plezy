@@ -104,6 +104,7 @@ class TranslationsIt extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$it fileSources = _Translations$fileSources$it._(_root);
 	@override late final _Translations$lending$it lending = _Translations$lending$it._(_root);
 	@override late final _Translations$audiobook$it audiobook = _Translations$audiobook$it._(_root);
+	@override late final _Translations$sourceSetup$it sourceSetup = _Translations$sourceSetup$it._(_root);
 	@override late final _Translations$comics$it comics = _Translations$comics$it._(_root);
 }
 
@@ -764,6 +765,13 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Scegli come visualizzare date, numeri e unità di misura.';
 	@override String get metadataLanguage => 'Lingua dei metadati';
 	@override String get metadataLanguageDescription => 'Lingua preferita per titoli e descrizioni, se supportata dal server. Le preferenze audio e sottotitoli si impostano separatamente.';
+	@override String get experimentalDolbyVision => 'Dolby Vision sperimentale';
+	@override String get experimentalDolbyVisionDescription => 'Usa il renderer FEL sperimentale alla prossima riproduzione. Richiede una compilazione separata del motore.';
+	@override String get dvExperimentUnavailableDescription => 'Questo esperimento è attualmente disponibile solo su Linux.';
+	@override String get dvCompatibilityFallback => 'Alternativa di compatibilità';
+	@override String get dvCompatibilityFallbackDescription => 'Usa il renderer standard se l’esperimento non si avvia. I dati FEL potrebbero andare persi.';
+	@override String get dvExperimentDiagnostics => 'Registro dell’esperimento video';
+	@override String get dvExperimentDiagnosticsDescription => 'Attiva i log dettagliati del lettore alla prossima riproduzione.';
 }
 
 // Path: themeEditor
@@ -3036,7 +3044,7 @@ class _Translations$fileSources$it extends Translations$fileSources$en {
 	@override String get fullscreen => 'schermo completo';
 	@override String get syncLocation => 'Fornitura di Progress Sync (opzionale)';
 	@override String get syncLocationHint => 'Una cartella dedicata WebDAV per PlezyNG stato. utilizza scrittura condizionale; i media rimangono invariati.';
-	@override String get audiobooks => 'Audiobochi';
+	@override String get audiobooks => 'Audiolibri';
 	@override String get comics => 'Fumetti';
 	@override String get scan => 'Scansione dei libri e dei media';
 	@override String get browserReader => 'Il lettore aperto';
@@ -3068,6 +3076,12 @@ class _Translations$fileSources$it extends Translations$fileSources$en {
 	@override String get useFiles => 'Utilizzare file e libri';
 	@override String get cancelScan => 'Cancelare la scansione';
 	@override String get googleDrive => 'Google Drive';
+	@override String get smbEndpointHint => 'Esempio: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Inserisci un server SMB e una cartella condivisa.';
+	@override String get smbFolderHelp => 'Lascia vuoto per usare l’intera cartella condivisa, oppure inserisci una cartella al suo interno.';
+	@override String get smbDomain => 'Dominio (facoltativo)';
+	@override String get smbEncryption => 'Crittografa la connessione SMB3';
+	@override String get smbEncryptionHint => 'Usa la crittografia SMB3 quando il NAS la supporta.';
 }
 
 // Path: lending
@@ -3077,56 +3091,56 @@ class _Translations$lending$it extends Translations$lending$en {
 	final TranslationsIt _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Librerie pubbliche';
+	@override String get title => 'Biblioteche pubbliche';
 	@override String get add => 'Aggiungi una biblioteca';
 	@override String get other => 'Un’altra biblioteca';
 	@override String get libraryName => 'Nome della biblioteca';
-	@override String get libraryUrl => 'Sito della Biblioteca';
-	@override String get libraryUrlHint => 'Utilizzare il catalogo della tua biblioteca o la pagina di iscrizione.';
-	@override String get intro => 'Prendi il tuo libro dalla tua biblioteca, tenete i vostri libri chiusi.';
-	@override String get handoff => 'Iscriviti, prestiti e leggi in modo sicuro con il servizio della tua biblioteca.';
-	@override String get openService => 'Biblioteca aperta';
+	@override String get libraryUrl => 'Sito della biblioteca';
+	@override String get libraryUrlHint => 'Usa il catalogo della tua biblioteca o la pagina di accesso.';
+	@override String get intro => 'Prendi in prestito dalla tua biblioteca. Tieni i tuoi libri a portata di mano.';
+	@override String get handoff => 'Accedi, prendi in prestito e leggi in sicurezza con il servizio della tua biblioteca.';
+	@override String get openService => 'Apri biblioteca';
 	@override String get findLibrary => 'Trova una biblioteca';
 	@override String get search => 'Cerca libri e autori';
-	@override String get catalogue => 'Cataloghi';
+	@override String get catalogue => 'Catalogo';
 	@override String get loans => 'Prestiti';
 	@override String get holds => 'Prenotazioni';
-	@override String get signIn => 'Iscriviti con la tua biblioteca';
-	@override String get waiting => 'Finite la registrazione nel vostro browser, poi tornate qui.';
+	@override String get signIn => 'Accedi tramite la tua biblioteca';
+	@override String get waiting => 'Completa l’accesso nel browser, poi torna qui.';
 	@override String get cancel => 'Annulla';
-	@override String get disconnect => 'Rimuovere la biblioteca';
+	@override String get disconnect => 'Rimuovi biblioteca';
 	@override String get disconnectMessage => 'Rimuovere questa biblioteca da questo profilo? I prestiti e le prenotazioni resteranno registrati presso la biblioteca.';
 	@override String get getBook => 'Ottieni il libro';
 	@override String get checkAvailability => 'Verifica disponibilità';
-	@override String get available => 'Disponibile per prestito';
-	@override String get unavailable => 'attualmente inutilizzabile';
+	@override String get available => 'Disponibile per il prestito';
+	@override String get unavailable => 'Al momento non disponibile';
 	@override String get borrow => 'Prendi in prestito';
 	@override String get placeHold => 'Prenota';
-	@override String get returnBook => 'Il ritorno presto';
+	@override String get returnBook => 'Restituisci in anticipo';
 	@override String get cancelHold => 'Annulla prenotazione';
-	@override String get confirmBorrow => 'Prendi questo titolo dalla tua biblioteca?';
+	@override String get confirmBorrow => 'Prendere in prestito questo titolo dalla tua biblioteca?';
 	@override String get confirmReturn => 'Restituire questo titolo adesso? Potresti doverlo prendere di nuovo in prestito per continuare.';
 	@override String get confirmCancelHold => 'Annullare la prenotazione di questo titolo?';
-	@override String get email => 'Tenere presente la notifica email';
-	@override String due({required Object date}) => 'Il numero di persone ${date}';
-	@override String queue({required Object position}) => 'Posizione ${position} in linea';
-	@override String get empty => 'Non ci sono titoli ancora.';
-	@override String get openLibraryNote => 'Scopri il catalogo della Open Library. Le opzioni di lettura e di prestito sono visualizzate sulla pagina di ogni titolo.';
+	@override String get email => 'Email per le notifiche sulle prenotazioni';
+	@override String due({required Object date}) => 'Scadenza: ${date}';
+	@override String queue({required Object position}) => 'Posizione in coda: ${position}';
+	@override String get empty => 'Non ci sono ancora titoli.';
+	@override String get openLibraryNote => 'Esplora il catalogo di Open Library. Le opzioni di lettura e prestito sono indicate nella pagina di ciascun titolo.';
 	@override String get more => 'Carica di più';
-	@override String get gateway => 'Libreria di iscrizione al servizio';
-	@override String get gatewayHint => 'Fornite dalla vostra biblioteca o dall\'amministratore PlezyNG.';
+	@override String get gateway => 'Servizio di accesso alla biblioteca';
+	@override String get gatewayHint => 'Fornito dalla tua biblioteca o dall’amministratore di PlezyNG.';
 	@override String get advanced => 'Integrazione della biblioteca';
 	@override String get loadLibraries => 'Scegli la tua biblioteca';
 	@override String get expired => 'Il prestito è scaduto.';
 	@override String get updated => 'Biblioteca aggiornata';
-	@override String get continueService => 'Continua a servire';
-	@override String get comingSoon => 'In-app prestito · Presto arriva';
-	@override String get comingSoonDescription => 'Puoi usare la tua biblioteca in Libby mentre finisci connetendola.';
-	@override String get suspendHold => 'Sospensione di tenere';
-	@override String get resumeHold => 'Riflessioni di Hold';
+	@override String get continueService => 'Continua nel servizio';
+	@override String get comingSoon => 'Prestiti nell’app · In arrivo';
+	@override String get comingSoonDescription => 'L’integrazione con Libby è in arrivo. Puoi usare la tua biblioteca in Libby mentre completiamo il collegamento.';
+	@override String get suspendHold => 'Sospendi prenotazione';
+	@override String get resumeHold => 'Riprendi prenotazione';
 	@override String get suspendMessage => 'Mantenere il tuo posto in coda e lasciare che il prossimo lettore prenda in prestito questa copia? Puoi riprendere la prenotazione in seguito.';
 	@override String get resumeMessage => 'Riprendere questa prenotazione per consentire alla biblioteca di offrirti la prossima copia disponibile?';
-	@override String get editEmail => 'Modifica di notifica email';
+	@override String get editEmail => 'Modifica l’email per le notifiche';
 }
 
 // Path: audiobook
@@ -3136,66 +3150,163 @@ class _Translations$audiobook$it extends Translations$audiobook$en {
 	final TranslationsIt _root; // ignore: unused_field
 
 	// Translations
-	@override String get syncTitle => 'Leggere e ascoltare Sync';
-	@override String get syncHelp => 'Mantenere le posizioni di lettura, le posizioni di ascolto, lo stato di completamento, i caratteri e le note attraverso i dispositivi. Scegli un account di archiviazione allegato e usi lo stesso codice di sincronizzazione su ciascun dispositivo. La lettura e l\'ascolto rimangono separati.';
-	@override String get addSyncSource => 'Aggiungi Google Drive, OneDrive, Dropbox, WebDAV o S3 in file e libri prima.';
-	@override String get syncDestination => 'L’account di storage sincronizzato';
-	@override String get syncFolder => 'Sincronizzazione mappa o prefix';
-	@override String get syncFolderHelp => 'Utilizzare una cartella esistente separata all\'interno della tua fonte WebDAV, o un prefix S3 dedicato.';
-	@override String get syncCode => 'Codice di sincronizzazione privata';
-	@override String get syncCodeHelp => 'Crea un codice sul tuo primo dispositivo, quindi inserisci quel codice sui tuoi altri dispositivi. Mantenere una copia privata: è la chiave per lo stato crittografato. Utilizzare un codice diverso per ciascuna persona.';
-	@override String get showCode => 'Mostra o nascondere il codice di sincronizzazione';
-	@override String get newSyncCode => 'Creare un nuovo codice di sincronizzazione';
-	@override String get saveSync => 'Salvare e sincronizzare';
-	@override String get disableSync => 'Disattivare la sincronizzazione su questo dispositivo';
-	@override String get syncSourceDisconnect => 'Rimuovere questa fonte si disattiverà la lettura e l\'ascolto di sincronizzazione qui. i file di sincronizzazione crittografati rimarranno nel fornitore.';
-	@override String get syncReconnect => 'Ripristinare l’account di storage';
-	@override String lastSynced({required Object time}) => 'Ultimo sincronizzato su ${time}';
-	@override String get syncPrivacy => 'Solo i progressi e le note crittografati vengono memorizzati. file audio e ebook, tokens di account e password non vengono caricati. Google Drive e OneDrive utilizzano lo storage app; Dropbox utilizza PlezyNG Sync. Per consentire la sincronizzazione può richiedere un accesso aggiuntivo di scrittura. Mentre è attivato, questa destinazione possiede la sincronizzazione del progresso; il progresso del server rimane separato.';
-	@override String get syncConflicts => 'Scegliamo dove riprendere';
-	@override String get conflictHelp => 'Questi cambiamenti sono stati effettuati in modo indipendente. Scegli la posizione o la versione di bookmark per mantenere. Un timestamp successivo o un percentuale superiore non vince automaticamente.';
+	@override String get syncTitle => 'Sincronizzazione di lettura e ascolto';
+	@override String get syncHelp => 'Sincronizza tra i tuoi dispositivi le posizioni di lettura e ascolto, lo stato di completamento, i segnalibri e le note. Scegli un account di archiviazione collegato e usa lo stesso codice di sincronizzazione su ogni dispositivo. Lettura e ascolto restano separati.';
+	@override String get addSyncSource => 'Aggiungi prima Google Drive, OneDrive, Dropbox, WebDAV o S3 in File e libri.';
+	@override String get syncDestination => 'Account di archiviazione per la sincronizzazione';
+	@override String get syncFolder => 'Cartella o prefisso di sincronizzazione';
+	@override String get syncFolderHelp => 'Usa una cartella separata già esistente nella tua fonte WebDAV oppure un prefisso S3 dedicato. I file dei libri non vengono mai modificati.';
+	@override String get syncCode => 'Codice privato di sincronizzazione';
+	@override String get syncCodeHelp => 'Crea un codice sul primo dispositivo, poi inseriscilo sugli altri dispositivi. Conservane una copia privata: è la chiave dei dati di sincronizzazione crittografati. Usa un codice diverso per ogni persona.';
+	@override String get showCode => 'Mostra o nascondi il codice di sincronizzazione';
+	@override String get newSyncCode => 'Crea un nuovo codice di sincronizzazione';
+	@override String get saveSync => 'Salva e sincronizza';
+	@override String get disableSync => 'Disattiva la sincronizzazione su questo dispositivo';
+	@override String get syncSourceDisconnect => 'Rimuovendo questa fonte, disattiverai la sincronizzazione di lettura e ascolto su questo dispositivo. I file di sincronizzazione crittografati resteranno presso il fornitore del servizio.';
+	@override String get syncReconnect => 'Ricollega l’account di archiviazione';
+	@override String lastSynced({required Object time}) => 'Ultima sincronizzazione: ${time}';
+	@override String get syncPrivacy => 'Vengono memorizzati solo i progressi e le note, in forma crittografata. I file audio e degli ebook, i token degli account e le password non vengono caricati. Google Drive e OneDrive usano lo spazio riservato all’app; Dropbox usa PlezyNG Sync. L’attivazione della sincronizzazione può richiedere ulteriori permessi di scrittura. Quando è attiva, questa destinazione gestisce la sincronizzazione dei progressi; i progressi sul server restano separati. Disattivandola, la cronologia locale e lo stato remoto vengono conservati.';
+	@override String get syncConflicts => 'Scegli da dove riprendere';
+	@override String get conflictHelp => 'Queste modifiche sono state apportate indipendentemente. Scegli quale posizione o versione del segnalibro conservare. Una data e ora più recente o una percentuale più alta non hanno automaticamente la precedenza.';
 	@override String syncDevice({required Object device}) => 'Dispositivo ${device}';
-	@override String get syncUnknownDevice => 'Dispositivi sconosciuti';
-	@override String get deletedBookmark => 'Bookmark cancellato';
-	@override String get finished => 'finito';
-	@override String readingPosition({required Object percent}) => 'Leggi · ${percent}%';
-	@override String get chapterTimeline => 'Capitolo Progresso';
-	@override String get bookTimeline => 'Tutto il libro Progresso';
+	@override String get syncUnknownDevice => 'dispositivo sconosciuto';
+	@override String get deletedBookmark => 'Segnalibro eliminato';
+	@override String get finished => 'Completato';
+	@override String readingPosition({required Object percent}) => 'Lettura · ${percent}%';
+	@override String get chapterTimeline => 'Avanzamento del capitolo';
+	@override String get bookTimeline => 'Avanzamento dell’intero libro';
 	@override String bookRemaining({required Object time}) => 'Il tempo rimanente in questo libro: ${time}';
 	@override String chapterRemaining({required Object time}) => 'Il tempo rimanente in questo capitolo: ${time}';
-	@override String get unknownRemaining => 'Tempo totale disponibile quando le parti vengono giocate';
-	@override String get undoSeek => 'L’ultima ricerca';
-	@override String get customSpeed => 'Velocità di playback personalizzata';
+	@override String get unknownRemaining => 'Il tempo totale sarà disponibile man mano che vengono riprodotte le parti';
+	@override String get undoSeek => 'Annulla l’ultimo salto di riproduzione';
+	@override String get customSpeed => 'Velocità di riproduzione personalizzata';
 	@override String get speedHelp => 'Scegli una velocità da 0,25× a 4×.';
-	@override String get apply => 'Applicazione';
-	@override String get customSleep => 'Tempo di sonno personalizzato';
-	@override String get sleepMinutes => 'Il tempo (1-440 minuti)';
-	@override String sleepChapters({required Object count}) => 'Smetti dopo ${count} capitoli';
+	@override String get apply => 'Applica';
+	@override String get customSleep => 'Timer di arresto personalizzato';
+	@override String get sleepMinutes => 'Minuti (1–1440)';
+	@override String sleepChapters({required Object count}) => 'Capitoli prima dell’arresto: ${count}';
 	@override String get extendSleep => 'Aggiungi 5 minuti';
-	@override String sleepRemaining({required Object time}) => 'Tempo di sonno: ${time}';
-	@override String get useDefaults => 'Utilizzare questi controlli di ascolto per nuovi libri';
-	@override String get librarySort => 'Libri di sorta';
+	@override String sleepRemaining({required Object time}) => 'Timer di arresto: ${time}';
+	@override String get useDefaults => 'Usa questi controlli di ascolto per i nuovi libri';
+	@override String get librarySort => 'Ordina i libri';
 	@override String get sortTitle => 'Titolo';
 	@override String get sortAuthor => 'Autore';
-	@override String get sortNarrator => 'narratore';
-	@override String get sortSeries => 'Serie Ordine';
-	@override String get sortRecent => 'Recentemente aperto';
-	@override String get statusFilter => 'Lo stato di lettura';
+	@override String get sortNarrator => 'Narratore';
+	@override String get sortSeries => 'Ordine della serie';
+	@override String get sortRecent => 'Aperti di recente';
+	@override String get statusFilter => 'Stato di lettura';
 	@override String get statusAll => 'Tutti i libri';
-	@override String get statusNew => 'Non è iniziato';
-	@override String get statusProgress => 'Il progresso';
-	@override String get statusFinished => 'finito';
-	@override String get goToTime => 'Vai al tempo';
-	@override String get timeHelp => 'ore: minuti: secondi o minuti: secondi';
+	@override String get statusNew => 'Non iniziato';
+	@override String get statusProgress => 'In corso';
+	@override String get statusFinished => 'Completato';
+	@override String get goToTime => 'Vai al tempo indicato';
+	@override String get timeHelp => 'ore:minuti:secondi oppure minuti:secondi';
 }
 
+// Path: sourceSetup
+class _Translations$sourceSetup$it extends Translations$sourceSetup$en {
+	_Translations$sourceSetup$it._(TranslationsIt root) : this._root = root, super.internal(root);
+
+	final TranslationsIt _root; // ignore: unused_field
+	// Translations
+	@override String get savedCertificate => 'Certificato del server salvato';
+	@override String get nfsEndpointInvalid => 'Inserisci un URL NFS, ad esempio nfs://nas:2049/export.';
+	@override String get dlnaNone => 'Nessun server DLNA trovato. Inserisci manualmente l’URL della descrizione del dispositivo.';
+	@override String get dlnaServers => 'Server multimediali DLNA';
+	@override String get dlnaUnavailable => 'Il rilevamento DLNA non è disponibile su questa rete. Inserisci manualmente l’URL della descrizione del dispositivo.';
+	@override String get dlnaSearching => 'Ricerca di server DLNA nella rete locale';
+	@override String get networkSearching => 'Ricerca nella rete locale…';
+	@override String get dlnaDiscover => 'Rileva server DLNA';
+	@override String get dlnaHelp => 'Il rilevamento dipende dal multicast sulla rete locale. Se non compare alcun server, inserisci qui sopra l’URL della sua descrizione del dispositivo.';
+	@override String get dlnaRoot => 'ID dell’oggetto DLNA; lascia vuoto per usare la radice del dispositivo.';
+	@override String get passwordOrKey => 'Inserisci una password oppure aggiungi una chiave privata qui sotto.';
+	@override String get sshFingerprint => 'Impronta SHA256 della chiave host SSH';
+	@override String get sshFingerprintHelp => 'Verificala con l’amministratore del server. Sul server, esegui ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub e usa il valore SHA256.';
+	@override String get sshFingerprintKeep => 'Lascia vuoto per mantenere l’impronta attualmente fissata oppure inserisci una nuova impronta del server.';
+	@override String get sshAuthentication => 'Autenticazione SSH con chiave pubblica';
+	@override String get sshAuthenticationHelp => 'Facoltativa; è supportata anche l’autenticazione con password.';
+	@override String get privateKey => 'Chiave privata (formato PEM o OpenSSH)';
+	@override String get privateKeyPassphrase => 'Passphrase della chiave privata';
+	@override String get nfsMountPort => 'Porta TCP del servizio di montaggio NFS';
+	@override String get nfsMountPortHelp => 'Predefinita: 20048';
+	@override String get nfsUserId => 'ID utente NFS (AUTH_SYS)';
+	@override String get nfsUserIdHelp => 'Predefinito: 1000. Usa l’ID consentito dalla condivisione NFS del NAS.';
+	@override String get nfsGroupId => 'ID gruppo NFS (AUTH_SYS)';
+	@override String get nfsGroupIdHelp => 'Predefinito: 1000. Usa l’ID gruppo consentito dalla condivisione NFS del NAS.';
+	@override String get nfsEncryption => 'Richiedi NFS crittografato (RPC-with-TLS)';
+	@override String get nfsEncryptionHelp => 'Richiedi TLS 1.3 per NFS e il servizio di montaggio. Se il NAS non lo supporta, la connessione viene rifiutata.';
+	@override String get nfsTrustCertificate => 'CA NFS personalizzata o certificato del server (PEM, facoltativo)';
+	@override String get nfsTrustHelp => 'Lascia vuoto per usare i certificati considerati attendibili da questo dispositivo. Se necessario, aggiungi un certificato di una CA privata o un certificato del server autofirmato; i nomi indicati devono corrispondere all’host nell’URL NFS.';
+	@override String get nfsTrustInvalid => 'Usa un certificato di una CA o del server in formato PEM. Non includere una chiave privata.';
+	@override String get addTrustCertificate => 'Aggiungi un certificato attendibile personalizzato';
+	@override String get replaceTrustCertificate => 'Sostituisci il certificato personalizzato salvato';
+	@override String get nfsTlsHelp => 'RPC-with-TLS usa le normali porte NFS e del servizio di montaggio e richiede che il NAS supporti RFC 9289. È necessario TLS 1.3. Il nome host o l’indirizzo IP deve corrispondere al certificato. Gli UID/GID AUTH_SYS restano validi anche nel canale crittografato.';
+	@override String get clientCertificate => 'Certificato client (facoltativo)';
+	@override String get clientCertificateHelp => 'Consente al NAS di autenticare questo client; gli ID AUTH_SYS dipendono comunque dai criteri della condivisione NFS del NAS.';
+	@override String get savedIdentity => 'Verrà usata un’identità client salvata.';
+	@override String get replaceIdentity => 'Sostituisci l’identità client salvata';
+	@override String get chooseIdentity => 'Scegli un’identità client PKCS#12';
+	@override String get identityPassphrase => 'Passphrase dell’identità client';
+	@override String get identityPassphraseHelp => 'Lascia vuoto se il file non ha una passphrase.';
+	@override String get removeIdentity => 'Rimuovi qualsiasi identità client salvata';
+	@override String get identityStorageHelp => 'Le identità client vengono salvate nell’archivio crittografato delle credenziali della fonte. Lascia invariata questa sezione per mantenere l’identità salvata.';
+	@override String get nfsLimitations => 'NFSv3 in sola lettura su TCP. Senza RPC-with-TLS, il traffico NFS non è crittografato. Il NAS deve consentire gli ID AUTH_SYS selezionati e le porte client non privilegiate (spesso tramite l’opzione di esportazione “insecure”). NFSv4 e UDP non sono supportati.';
+	@override String get nfsSetupHelp => 'Guida alla configurazione NFS';
+	@override String get nfsSetupHint => 'Controlla queste impostazioni se la connessione non si apre.';
+	@override String get nfsSetupDetails => 'Usa una condivisione NFSv3 su TCP. Quando è richiesta la crittografia, sia il servizio NFS sia quello di montaggio devono supportare RPC-with-TLS. Lascia vuoto il certificato personalizzato per usare un certificato del server attendibile per questo dispositivo, oppure aggiungi il certificato della CA del NAS o quello autofirmato. Il nome nel certificato deve corrispondere all’host dell’endpoint. Se il NAS richiede TLS reciproco, aggiungi la sua identità client PKCS#12. Infine, verifica che la condivisione consenta gli UID/GID AUTH_SYS configurati e i criteri delle porte client.';
+	@override String get ftpHelp => 'FTP usa la modalità passiva. Usa ftp:// per FTP non crittografato, ftpes:// per TLS esplicito oppure ftps:// per TLS (implicito sulla porta 990, esplicito sulle altre porte).';
+	@override String get openSubtitles => 'OpenSubtitles';
+	@override String get subtitleSetup => 'Ricerca facoltativa di sottotitoli per video indipendenti.';
+	@override String get apiKey => 'Chiave API';
+	@override String get optionalUsername => 'Nome utente dell’account (facoltativo)';
+	@override String get optionalPassword => 'Password dell’account (facoltativa)';
+	@override String get subtitlePrivacy => 'Ottieni una chiave API da opensubtitles.com. La ricerca invia il titolo del video e gli ID IMDb/TMDB disponibili, mai il file video. La chiave e le credenziali facoltative dell’account vengono crittografate insieme a questa fonte.';
+	@override String get automaticMetadata => 'Metadati video online automatici';
+	@override String get metadataPrivacy => 'Invia solo titolo/anno ricavati dal nome del file e numeri degli episodi, oppure un ID NFO; non invia mai contenuti multimediali o credenziali. I campi NFO mantengono la precedenza.';
+	@override String get nfsEncryptionFailure => 'Per NFS crittografato, verifica il supporto di RFC 9289 e TLS 1.3 su entrambi i servizi del NAS, il nome nel certificato e gli UID/GID della condivisione. PlezyNG non riproverà questa connessione senza crittografia.';
+	@override String get sourceConnecting => 'Connessione alla fonte';
+	@override String get metadataSearchPrivacy => 'Questa ricerca di titoli viene inviata a Trakt. Viene trasmesso il titolo inserito, non il video né le credenziali della fonte.';
+	@override String get chooseMatch => 'Scegli una corrispondenza';
+	@override String get metadataMatchHelp => 'Controlla titolo e anno prima di scegliere. Trakt riceve il titolo cercato; il video rimane nella sua fonte.';
+	@override String get metadataNoMatches => 'Nessun titolo corrispondente trovato online. Prova un titolo diverso.';
+	@override String get metadataSearch => 'Cerca metadati online';
+	@override String get metadataLoading => 'Ricerca online dei dettagli di film e serie TV…';
+	@override String get metadataFromTrakt => 'Metadati online da Trakt';
+	@override String get metadataNoAutomaticMatch => 'Nessuna corrispondenza automatica trovata per il titolo. Cerca il titolo per scegliere una corrispondenza.';
+	@override String get metadataFailed => 'Impossibile caricare i metadati online. La riproduzione e i dettagli locali restano disponibili.';
+	@override String get videoDetailsLoading => 'Caricamento dei dettagli del video';
+	@override String get subtitleKeyRequired => 'È necessaria una chiave API OpenSubtitles';
+	@override String get subtitleKeyHelp => 'Modifica questa fonte di file e aggiungi una chiave API OpenSubtitles nelle impostazioni facoltative dei sottotitoli.';
+	@override String get subtitleSearchFailed => 'Ricerca dei sottotitoli non riuscita. Controlla la chiave API, la connessione e l’accesso al servizio.';
+	@override String get subtitleApplyFailed => 'Impossibile scaricare o applicare questi sottotitoli. Controlla la connessione e prova un altro risultato.';
+	@override String get subtitleSearch => 'Cerca su OpenSubtitles';
+	@override String get subtitleSearchPrivacy => 'La ricerca usa il titolo e gli ID IMDb/TMDB disponibili. Il file video rimane nella sua fonte. Prima di scegliere, controlla lingua, indicazioni di sottotitoli forzati o per non udenti e valutazione.';
+	@override String get movieOrShow => 'Film o serie';
+	@override String get subtitleTitleHint => 'Inserisci un titolo per affinare i risultati';
+	@override String get subtitleLanguage => 'Lingua dei sottotitoli';
+	@override String get subtitleSearching => 'Ricerca su OpenSubtitles';
+	@override String get subtitleNoMatches => 'Nessun sottotitolo corrispondente trovato. Prova un titolo o una lingua diversi.';
+	@override String get downloadSubtitle => 'Scarica sottotitoli';
+	@override String get subtitle => 'Sottotitoli';
+	@override String get nfsTlsRequired => 'RPC-with-TLS obbligatorio';
+	@override String get nfsUnencrypted => 'NFS non crittografato';
+	@override String get tlsEncrypted => 'Crittografato con TLS';
+	@override String get ftpPlain => 'FTP non crittografato';
+	@override String get sshPinned => 'SSH crittografato · chiave host fissata';
+	@override String get smbEncrypted => 'Crittografia SMB3 attiva';
+	@override String get smbUnencrypted => 'Crittografia SMB3 disattivata';
+	@override String get httpUnencrypted => 'HTTP senza crittografia del trasporto';
+	@override String get checkEndpointSecurity => 'Controlla la sicurezza dell’endpoint';
+	@override String fieldRequired({required Object label}) => 'Campo obbligatorio: ${label}.';
+	@override String integerRange({required Object label, required Object min, required Object max}) => 'Inserisci ${label} tra ${min} e ${max}.';
+	@override String replaceFile({required Object name}) => 'Sostituisci ${name}';
+	@override String selectedIdentity({required Object name}) => 'Identità client selezionata: ${name}';
+	@override String subtitleRating({required Object rating}) => 'Valutazione ${rating}';
+	@override String subtitleDownloading({required Object title}) => 'Download dei sottotitoli: ${title}';
+}
 // Path: comics
 class _Translations$comics$it extends Translations$comics$en {
 	_Translations$comics$it._(TranslationsIt root) : this._root = root, super.internal(root);
-
-	final TranslationsIt _root; // ignore: unused_field
-
-	// Translations
 	@override String get fitHeight => 'Adatta all’altezza';
 	@override String get readingMode => 'Modalità di lettura';
 	@override String get paged => 'Pagine';
@@ -3208,8 +3319,6 @@ class _Translations$comics$it extends Translations$comics$en {
 	@override String get savedForComic => 'Le impostazioni di visualizzazione vengono memorizzate per questo fumetto in questo profilo.';
 	@override String get readLists => 'Liste di lettura';
 	@override String get collections => 'Raccolte';
-}
-
 // Path: appIcon.names
 class _Translations$appIcon$names$it extends Translations$appIcon$names$en {
 	_Translations$appIcon$names$it._(TranslationsIt root) : this._root = root, super.internal(root);
@@ -3461,48 +3570,60 @@ class _Translations$discover$findNext$it extends Translations$discover$findNext$
 	final TranslationsIt _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Trova il tuo prossimo';
-	@override String get open => 'Trova il tuo prossimo';
-	@override String get anyTime => 'In ogni momento';
+	@override String get title => 'La tua prossima scoperta';
+	@override String get open => 'La tua prossima scoperta';
+	@override String get anyTime => 'Senza limiti di tempo';
 	@override String get timeAvailable => 'Quanto tempo hai?';
-	@override String get filters => 'Scegli il momento';
-	@override String get watch => 'Guardate';
+	@override String get filters => 'Scegli per questo momento';
+	@override String get watch => 'Guarda';
 	@override String get listen => 'Ascolta';
 	@override String get read => 'Leggi';
-	@override String finishable({required Object duration}) => 'Sito ufficiale di ${duration}';
-	@override String aboutDuration({required Object duration}) => 'di ${duration}';
-	@override String nextUnit({required Object duration}) => 'Articolo successivo ${duration}';
-	@override String totalDuration({required Object duration}) => '${duration} totale';
-	@override String get timingVaries => 'Il tempo varia';
+	@override String finishable({required Object duration}) => 'Puoi finire in ${duration}';
+	@override String aboutDuration({required Object duration}) => 'Circa ${duration}';
+	@override String nextUnit({required Object duration}) => 'Prossimo capitolo · ${duration}';
+	@override String totalDuration({required Object duration}) => '${duration} in totale';
+	@override String get timingVaries => 'La durata può variare';
 	@override String get notNow => 'Non ora';
-	@override String get swipeHint => 'Scorrere o usare i pulsanti qui sotto';
-	@override String get saved => 'Piccoli salvati';
-	@override String savedCount({required Object count}) => 'Sviluppo di ${count}';
-	@override String get undo => 'e non';
-	@override String get details => 'i dettagli';
-	@override String get noPicks => 'Niente da scegliere finora';
-	@override String get noPicksHint => 'Connettiti una biblioteca o aggiungi una fonte di media per iniziare.';
-	@override String get noMatches => 'Niente si adatta a questo momento';
-	@override String get noMatchesHint => 'Prova un altro formato o darti più tempo.';
-	@override String get allDone => 'Siete tutti catturati';
-	@override String get allDoneHint => 'Inizia un mix fresco per vedere di nuovo queste scelte.';
-	@override String get refresh => 'Trova un altro mix';
-	@override String sourceReason({required Object source}) => 'da ${source}';
-	@override String libraryReason({required Object library}) => 'da ${library}';
-	@override String get ownedReason => 'dalla tua biblioteca';
-	@override String get liveNow => 'adesso';
-	@override String get watchLive => 'Guardate al vivo';
-	@override String get filterAnything => 'Tutto ciò';
-	@override String get filterWatch => 'Guardate';
+	@override String get swipeHint => 'Scorri la copertina verso una freccia oppure usa i pulsanti qui sotto.';
+	@override String get saved => 'Suggerimenti salvati';
+	@override String savedCount({required Object count}) => 'Suggerimenti salvati · ${count}';
+	@override String get undo => 'Annulla';
+	@override String get details => 'Dettagli';
+	@override String get noPicks => 'Non c’è ancora nulla da scegliere';
+	@override String get noPicksHint => 'Collega una libreria o aggiungi una fonte multimediale per iniziare.';
+	@override String get noMatches => 'Nulla di adatto a questo momento';
+	@override String get noMatchesHint => 'Prova un altro tipo di contenuto o concediti più tempo.';
+	@override String get allDone => 'Hai visto tutti i suggerimenti';
+	@override String get allDoneHint => 'Avvia una nuova selezione per rivedere queste proposte.';
+	@override String get refresh => 'Trova un’altra selezione';
+	@override String sourceReason({required Object source}) => 'Da ${source}';
+	@override String libraryReason({required Object library}) => 'Da ${library}';
+	@override String get ownedReason => 'Dalla tua libreria';
+	@override String get liveNow => 'In onda ora';
+	@override String get watchLive => 'Guarda in diretta';
+	@override String get filterAnything => 'Qualsiasi tipo';
+	@override String get filterWatch => 'Guarda';
 	@override String get filterListen => 'Ascolta';
 	@override String get filterRead => 'Leggi';
-	@override String get twentyMinutes => '20 minuti';
-	@override String get fortyFiveMinutes => '45 minuti';
-	@override String get ninetyMinutes => '90 minuti';
-	@override String get apply => 'Applicazione';
-	@override String get openFailed => 'Questa opzione non è più disponibile. rinfrescare per controllare di nuovo.';
-	@override String get changeFailed => 'Non riesco a risparmiare questo cambiamento, prova di nuovo.';
-	@override String get savedLimit => 'I picchi salvati sono pieni. rimuovere una selezione per salvare un\'altra.';
+	@override String get twentyMinutes => '20 min';
+	@override String get fortyFiveMinutes => '45 min';
+	@override String get ninetyMinutes => '90 min';
+	@override String get apply => 'Applica';
+	@override String get openFailed => 'Questa scelta non è più disponibile. Aggiorna per verificare di nuovo.';
+	@override String get changeFailed => 'Impossibile salvare la modifica. Riprova.';
+	@override String get savedLimit => 'L’elenco dei suggerimenti salvati è pieno. Rimuovine uno per salvarne un altro.';
+	@override String get chooseHint => 'Apri un titolo, salvalo per dopo o passa al successivo.';
+	@override String get howItWorks => 'Come funziona';
+	@override String get notNowHelp => 'Salta questo titolo per ora. Rimane nella tua libreria.';
+	@override String get saveHelp => 'Conservalo tra le scelte salvate di questo profilo su questo dispositivo. Il salvataggio non lo scarica.';
+	@override String get openHelp => 'Seleziona la copertina per i dettagli. Usa l’azione principale per riprodurre, leggere o aprire il titolo.';
+	@override String get controlsHelp => 'Tastiera o telecomando: seleziona un pulsante, poi premi Invio o Seleziona. Annulla ripristina la tua ultima scelta.';
+	@override String get artworkLoading => 'Caricamento immagine…';
+	@override String get artworkUnavailable => 'Immagine non disponibile';
+	@override String get savedFeedback => 'Aggiunto alle scelte salvate';
+	@override String get skippedFeedback => 'Saltato per ora';
+	@override String get releaseToConfirm => 'Rilascia per confermare';
+	@override String get remoteHint => 'Copertina selezionata: ← / → scegli · Seleziona: dettagli · ↑ / ↓ sposta il focus';
 }
 
 // Path: discover.person
@@ -4837,6 +4958,13 @@ extension on TranslationsIt {
 			'settings.regionFormatDescription' => 'Scegli come visualizzare date, numeri e unità di misura.',
 			'settings.metadataLanguage' => 'Lingua dei metadati',
 			'settings.metadataLanguageDescription' => 'Lingua preferita per titoli e descrizioni, se supportata dal server. Le preferenze audio e sottotitoli si impostano separatamente.',
+			'settings.experimentalDolbyVision' => 'Dolby Vision sperimentale',
+			'settings.experimentalDolbyVisionDescription' => 'Usa il renderer FEL sperimentale alla prossima riproduzione. Richiede una compilazione separata del motore.',
+			'settings.dvExperimentUnavailableDescription' => 'Questo esperimento è attualmente disponibile solo su Linux.',
+			'settings.dvCompatibilityFallback' => 'Alternativa di compatibilità',
+			'settings.dvCompatibilityFallbackDescription' => 'Usa il renderer standard se l’esperimento non si avvia. I dati FEL potrebbero andare persi.',
+			'settings.dvExperimentDiagnostics' => 'Registro dell’esperimento video',
+			'settings.dvExperimentDiagnosticsDescription' => 'Attiva i log dettagliati del lettore alla prossima riproduzione.',
 			'themeEditor.builtIn' => 'Integrati',
 			'themeEditor.presets' => 'Preimpostati',
 			'themeEditor.custom' => 'Personalizzato',
@@ -5257,6 +5385,8 @@ extension on TranslationsIt {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Scansione della libreria avviata per "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Impossibile eseguire la scansione della libreria: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Aggiornamento dei metadati di "${title}"...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Aggiornamento dei metadati avviato per "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Impossibile aggiornare i metadati: ${error}',
 			'messages.logoutConfirm' => 'Vuoi uscire dall\'account?',
@@ -5264,8 +5394,6 @@ extension on TranslationsIt {
 			'messages.seasonsLoadFailed' => 'Impossibile caricare le stagioni',
 			'messages.noEpisodesFound' => 'Nessun episodio trovato nella prima stagione',
 			'messages.noEpisodesFoundGeneral' => 'Nessun episodio trovato',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Impossibile caricare gli episodi',
 			'messages.noResultsFound' => 'Nessun risultato',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Timer di spegnimento impostato su ${label}',
@@ -5492,48 +5620,60 @@ extension on TranslationsIt {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Panoramica',
 			'discover.cast' => 'Attori',
-			'discover.findNext.title' => 'Trova il tuo prossimo',
-			'discover.findNext.open' => 'Trova il tuo prossimo',
-			'discover.findNext.anyTime' => 'In ogni momento',
+			'discover.findNext.title' => 'La tua prossima scoperta',
+			'discover.findNext.open' => 'La tua prossima scoperta',
+			'discover.findNext.anyTime' => 'Senza limiti di tempo',
 			'discover.findNext.timeAvailable' => 'Quanto tempo hai?',
-			'discover.findNext.filters' => 'Scegli il momento',
-			'discover.findNext.watch' => 'Guardate',
+			'discover.findNext.filters' => 'Scegli per questo momento',
+			'discover.findNext.watch' => 'Guarda',
 			'discover.findNext.listen' => 'Ascolta',
 			'discover.findNext.read' => 'Leggi',
-			'discover.findNext.finishable' => ({required Object duration}) => 'Sito ufficiale di ${duration}',
-			'discover.findNext.aboutDuration' => ({required Object duration}) => 'di ${duration}',
-			'discover.findNext.nextUnit' => ({required Object duration}) => 'Articolo successivo ${duration}',
-			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} totale',
-			'discover.findNext.timingVaries' => 'Il tempo varia',
+			'discover.findNext.finishable' => ({required Object duration}) => 'Puoi finire in ${duration}',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => 'Circa ${duration}',
+			'discover.findNext.nextUnit' => ({required Object duration}) => 'Prossimo capitolo · ${duration}',
+			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} in totale',
+			'discover.findNext.timingVaries' => 'La durata può variare',
 			'discover.findNext.notNow' => 'Non ora',
-			'discover.findNext.swipeHint' => 'Scorrere o usare i pulsanti qui sotto',
-			'discover.findNext.saved' => 'Piccoli salvati',
-			'discover.findNext.savedCount' => ({required Object count}) => 'Sviluppo di ${count}',
-			'discover.findNext.undo' => 'e non',
-			'discover.findNext.details' => 'i dettagli',
-			'discover.findNext.noPicks' => 'Niente da scegliere finora',
-			'discover.findNext.noPicksHint' => 'Connettiti una biblioteca o aggiungi una fonte di media per iniziare.',
-			'discover.findNext.noMatches' => 'Niente si adatta a questo momento',
-			'discover.findNext.noMatchesHint' => 'Prova un altro formato o darti più tempo.',
-			'discover.findNext.allDone' => 'Siete tutti catturati',
-			'discover.findNext.allDoneHint' => 'Inizia un mix fresco per vedere di nuovo queste scelte.',
-			'discover.findNext.refresh' => 'Trova un altro mix',
-			'discover.findNext.sourceReason' => ({required Object source}) => 'da ${source}',
-			'discover.findNext.libraryReason' => ({required Object library}) => 'da ${library}',
-			'discover.findNext.ownedReason' => 'dalla tua biblioteca',
-			'discover.findNext.liveNow' => 'adesso',
-			'discover.findNext.watchLive' => 'Guardate al vivo',
-			'discover.findNext.filterAnything' => 'Tutto ciò',
-			'discover.findNext.filterWatch' => 'Guardate',
+			'discover.findNext.swipeHint' => 'Scorri la copertina verso una freccia oppure usa i pulsanti qui sotto.',
+			'discover.findNext.saved' => 'Suggerimenti salvati',
+			'discover.findNext.savedCount' => ({required Object count}) => 'Suggerimenti salvati · ${count}',
+			'discover.findNext.undo' => 'Annulla',
+			'discover.findNext.details' => 'Dettagli',
+			'discover.findNext.noPicks' => 'Non c’è ancora nulla da scegliere',
+			'discover.findNext.noPicksHint' => 'Collega una libreria o aggiungi una fonte multimediale per iniziare.',
+			'discover.findNext.noMatches' => 'Nulla di adatto a questo momento',
+			'discover.findNext.noMatchesHint' => 'Prova un altro tipo di contenuto o concediti più tempo.',
+			'discover.findNext.allDone' => 'Hai visto tutti i suggerimenti',
+			'discover.findNext.allDoneHint' => 'Avvia una nuova selezione per rivedere queste proposte.',
+			'discover.findNext.refresh' => 'Trova un’altra selezione',
+			'discover.findNext.sourceReason' => ({required Object source}) => 'Da ${source}',
+			'discover.findNext.libraryReason' => ({required Object library}) => 'Da ${library}',
+			'discover.findNext.ownedReason' => 'Dalla tua libreria',
+			'discover.findNext.liveNow' => 'In onda ora',
+			'discover.findNext.watchLive' => 'Guarda in diretta',
+			'discover.findNext.filterAnything' => 'Qualsiasi tipo',
+			'discover.findNext.filterWatch' => 'Guarda',
 			'discover.findNext.filterListen' => 'Ascolta',
 			'discover.findNext.filterRead' => 'Leggi',
-			'discover.findNext.twentyMinutes' => '20 minuti',
-			'discover.findNext.fortyFiveMinutes' => '45 minuti',
-			'discover.findNext.ninetyMinutes' => '90 minuti',
-			'discover.findNext.apply' => 'Applicazione',
-			'discover.findNext.openFailed' => 'Questa opzione non è più disponibile. rinfrescare per controllare di nuovo.',
-			'discover.findNext.changeFailed' => 'Non riesco a risparmiare questo cambiamento, prova di nuovo.',
-			'discover.findNext.savedLimit' => 'I picchi salvati sono pieni. rimuovere una selezione per salvare un\'altra.',
+			'discover.findNext.twentyMinutes' => '20 min',
+			'discover.findNext.fortyFiveMinutes' => '45 min',
+			'discover.findNext.ninetyMinutes' => '90 min',
+			'discover.findNext.apply' => 'Applica',
+			'discover.findNext.openFailed' => 'Questa scelta non è più disponibile. Aggiorna per verificare di nuovo.',
+			'discover.findNext.changeFailed' => 'Impossibile salvare la modifica. Riprova.',
+			'discover.findNext.savedLimit' => 'L’elenco dei suggerimenti salvati è pieno. Rimuovine uno per salvarne un altro.',
+			'discover.findNext.chooseHint' => 'Apri un titolo, salvalo per dopo o passa al successivo.',
+			'discover.findNext.howItWorks' => 'Come funziona',
+			'discover.findNext.notNowHelp' => 'Salta questo titolo per ora. Rimane nella tua libreria.',
+			'discover.findNext.saveHelp' => 'Conservalo tra le scelte salvate di questo profilo su questo dispositivo. Il salvataggio non lo scarica.',
+			'discover.findNext.openHelp' => 'Seleziona la copertina per i dettagli. Usa l’azione principale per riprodurre, leggere o aprire il titolo.',
+			'discover.findNext.controlsHelp' => 'Tastiera o telecomando: seleziona un pulsante, poi premi Invio o Seleziona. Annulla ripristina la tua ultima scelta.',
+			'discover.findNext.artworkLoading' => 'Caricamento immagine…',
+			'discover.findNext.artworkUnavailable' => 'Immagine non disponibile',
+			'discover.findNext.savedFeedback' => 'Aggiunto alle scelte salvate',
+			'discover.findNext.skippedFeedback' => 'Saltato per ora',
+			'discover.findNext.releaseToConfirm' => 'Rilascia per confermare',
+			'discover.findNext.remoteHint' => 'Copertina selezionata: ← / → scegli · Seleziona: dettagli · ↑ / ↓ sposta il focus',
 			'discover.extras' => 'Trailer ed extra',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Valutazione',
@@ -5759,6 +5899,8 @@ extension on TranslationsIt {
 			'explore.mdblistShelves.nameHint' => 'Lascia la lista di fonti per utilizzare il nome della lista di fondi.',
 			'explore.mdblistShelves.add' => 'Aggiungi Shelf',
 			'explore.mdblistShelves.save' => 'Salva le scale',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Move ${title} in alto',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Rimuovere ${title}',
 			'explore.mdblistShelves.unavailable' => 'Questo elenco non è disponibile. rimuovere o rimuovere la sua scheda nelle impostazioni.',
@@ -5778,8 +5920,6 @@ extension on TranslationsIt {
 			'explore.rows.popularShows' => 'Serie TV popolari',
 			'explore.rows.trendingAnime' => 'Anime di tendenza',
 			'explore.rows.suggestedAnime' => 'Anime suggeriti',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Migliori anime in onda',
 			'explore.rows.popularAnime' => 'Anime più popolari',
 			'explore.rows.trending' => 'Di tendenza',
@@ -6273,6 +6413,8 @@ extension on TranslationsIt {
 			'downloads.resumeDownload' => 'Riprendi il download',
 			'downloads.cancelledDownload' => 'Download annullato',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (sincronizzazione ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} scaricato — fai clic per completare',
 			'downloads.partialDownloadClickToComplete' => 'Scaricato parzialmente — fai clic per completare',
 			'downloads.deleting' => 'Eliminazione...',
@@ -6292,8 +6434,6 @@ extension on TranslationsIt {
 			'downloads.unwatchedOnly' => 'Solo non visti',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Prossimi ${count} episodi non visti',
 			'downloads.customAmount' => 'Quantità personalizzata...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Quanti sono i vari (quanti sono i)',
 			'downloads.randomEpisodes' => 'Episodi casuali',
 			'downloads.includeSpecials' => 'Includi gli speciali',
@@ -6787,6 +6927,8 @@ extension on TranslationsIt {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Impossibile raggiungere il server: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Accesso non riuscito: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect non riuscito: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Accedi con Plex',
 			'addServer.pinExpired' => 'PIN scaduto prima dell\'accesso. Riprova.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Registrazione account non riuscita: ${error}',
@@ -6806,8 +6948,6 @@ extension on TranslationsIt {
 			'addServer.authResponseIncomplete' => 'La risposta di accesso del server era incompleta',
 			'addServer.quickConnectRejected' => 'Quick Connect è stato rifiutato dal server',
 			'addServer.quickConnectNotJson' => 'La risposta di Quick Connect non era un JSON valido',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Nella risposta di Quick Connect manca un codice o un segreto',
 			'addServer.quickConnectPollRejected' => 'Il polling di Quick Connect è stato rifiutato dal server',
 			'addServer.serverTimedOut' => 'Il server non ha risposto in tempo',
@@ -7081,7 +7221,7 @@ extension on TranslationsIt {
 			'fileSources.fullscreen' => 'schermo completo',
 			'fileSources.syncLocation' => 'Fornitura di Progress Sync (opzionale)',
 			'fileSources.syncLocationHint' => 'Una cartella dedicata WebDAV per PlezyNG stato. utilizza scrittura condizionale; i media rimangono invariati.',
-			'fileSources.audiobooks' => 'Audiobochi',
+			'fileSources.audiobooks' => 'Audiolibri',
 			'fileSources.comics' => 'Fumetti',
 			'fileSources.scan' => 'Scansione dei libri e dei media',
 			'fileSources.browserReader' => 'Il lettore aperto',
@@ -7113,107 +7253,200 @@ extension on TranslationsIt {
 			'fileSources.useFiles' => 'Utilizzare file e libri',
 			'fileSources.cancelScan' => 'Cancelare la scansione',
 			'fileSources.googleDrive' => 'Google Drive',
-			'lending.title' => 'Librerie pubbliche',
+			'fileSources.smbEndpointHint' => 'Esempio: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Inserisci un server SMB e una cartella condivisa.',
+			'fileSources.smbFolderHelp' => 'Lascia vuoto per usare l’intera cartella condivisa, oppure inserisci una cartella al suo interno.',
+			'fileSources.smbDomain' => 'Dominio (facoltativo)',
+			'fileSources.smbEncryption' => 'Crittografa la connessione SMB3',
+			'fileSources.smbEncryptionHint' => 'Usa la crittografia SMB3 quando il NAS la supporta.',
+			'lending.title' => 'Biblioteche pubbliche',
 			'lending.add' => 'Aggiungi una biblioteca',
 			'lending.other' => 'Un’altra biblioteca',
 			'lending.libraryName' => 'Nome della biblioteca',
-			'lending.libraryUrl' => 'Sito della Biblioteca',
-			'lending.libraryUrlHint' => 'Utilizzare il catalogo della tua biblioteca o la pagina di iscrizione.',
-			'lending.intro' => 'Prendi il tuo libro dalla tua biblioteca, tenete i vostri libri chiusi.',
-			'lending.handoff' => 'Iscriviti, prestiti e leggi in modo sicuro con il servizio della tua biblioteca.',
-			'lending.openService' => 'Biblioteca aperta',
+			'lending.libraryUrl' => 'Sito della biblioteca',
+			'lending.libraryUrlHint' => 'Usa il catalogo della tua biblioteca o la pagina di accesso.',
+			'lending.intro' => 'Prendi in prestito dalla tua biblioteca. Tieni i tuoi libri a portata di mano.',
+			'lending.handoff' => 'Accedi, prendi in prestito e leggi in sicurezza con il servizio della tua biblioteca.',
+			'lending.openService' => 'Apri biblioteca',
 			'lending.findLibrary' => 'Trova una biblioteca',
 			'lending.search' => 'Cerca libri e autori',
-			'lending.catalogue' => 'Cataloghi',
+			'lending.catalogue' => 'Catalogo',
 			'lending.loans' => 'Prestiti',
 			'lending.holds' => 'Prenotazioni',
-			'lending.signIn' => 'Iscriviti con la tua biblioteca',
-			'lending.waiting' => 'Finite la registrazione nel vostro browser, poi tornate qui.',
+			'lending.signIn' => 'Accedi tramite la tua biblioteca',
+			'lending.waiting' => 'Completa l’accesso nel browser, poi torna qui.',
 			'lending.cancel' => 'Annulla',
-			'lending.disconnect' => 'Rimuovere la biblioteca',
+			'lending.disconnect' => 'Rimuovi biblioteca',
 			'lending.disconnectMessage' => 'Rimuovere questa biblioteca da questo profilo? I prestiti e le prenotazioni resteranno registrati presso la biblioteca.',
 			'lending.getBook' => 'Ottieni il libro',
 			'lending.checkAvailability' => 'Verifica disponibilità',
-			'lending.available' => 'Disponibile per prestito',
-			'lending.unavailable' => 'attualmente inutilizzabile',
+			'lending.available' => 'Disponibile per il prestito',
+			'lending.unavailable' => 'Al momento non disponibile',
 			'lending.borrow' => 'Prendi in prestito',
 			'lending.placeHold' => 'Prenota',
-			'lending.returnBook' => 'Il ritorno presto',
+			'lending.returnBook' => 'Restituisci in anticipo',
 			'lending.cancelHold' => 'Annulla prenotazione',
-			'lending.confirmBorrow' => 'Prendi questo titolo dalla tua biblioteca?',
+			'lending.confirmBorrow' => 'Prendere in prestito questo titolo dalla tua biblioteca?',
 			'lending.confirmReturn' => 'Restituire questo titolo adesso? Potresti doverlo prendere di nuovo in prestito per continuare.',
 			'lending.confirmCancelHold' => 'Annullare la prenotazione di questo titolo?',
-			'lending.email' => 'Tenere presente la notifica email',
-			'lending.due' => ({required Object date}) => 'Il numero di persone ${date}',
-			'lending.queue' => ({required Object position}) => 'Posizione ${position} in linea',
-			'lending.empty' => 'Non ci sono titoli ancora.',
-			'lending.openLibraryNote' => 'Scopri il catalogo della Open Library. Le opzioni di lettura e di prestito sono visualizzate sulla pagina di ogni titolo.',
+			'lending.email' => 'Email per le notifiche sulle prenotazioni',
+			'lending.due' => ({required Object date}) => 'Scadenza: ${date}',
+			'lending.queue' => ({required Object position}) => 'Posizione in coda: ${position}',
+			'lending.empty' => 'Non ci sono ancora titoli.',
+			'lending.openLibraryNote' => 'Esplora il catalogo di Open Library. Le opzioni di lettura e prestito sono indicate nella pagina di ciascun titolo.',
 			'lending.more' => 'Carica di più',
-			'lending.gateway' => 'Libreria di iscrizione al servizio',
-			'lending.gatewayHint' => 'Fornite dalla vostra biblioteca o dall\'amministratore PlezyNG.',
+			'lending.gateway' => 'Servizio di accesso alla biblioteca',
+			'lending.gatewayHint' => 'Fornito dalla tua biblioteca o dall’amministratore di PlezyNG.',
 			'lending.advanced' => 'Integrazione della biblioteca',
 			'lending.loadLibraries' => 'Scegli la tua biblioteca',
 			'lending.expired' => 'Il prestito è scaduto.',
 			'lending.updated' => 'Biblioteca aggiornata',
-			'lending.continueService' => 'Continua a servire',
-			'lending.comingSoon' => 'In-app prestito · Presto arriva',
-			'lending.comingSoonDescription' => 'Puoi usare la tua biblioteca in Libby mentre finisci connetendola.',
-			'lending.suspendHold' => 'Sospensione di tenere',
-			'lending.resumeHold' => 'Riflessioni di Hold',
+			'lending.continueService' => 'Continua nel servizio',
+			'lending.comingSoon' => 'Prestiti nell’app · In arrivo',
+			'lending.comingSoonDescription' => 'L’integrazione con Libby è in arrivo. Puoi usare la tua biblioteca in Libby mentre completiamo il collegamento.',
+			'lending.suspendHold' => 'Sospendi prenotazione',
+			'lending.resumeHold' => 'Riprendi prenotazione',
 			'lending.suspendMessage' => 'Mantenere il tuo posto in coda e lasciare che il prossimo lettore prenda in prestito questa copia? Puoi riprendere la prenotazione in seguito.',
 			'lending.resumeMessage' => 'Riprendere questa prenotazione per consentire alla biblioteca di offrirti la prossima copia disponibile?',
-			'lending.editEmail' => 'Modifica di notifica email',
-			'audiobook.syncTitle' => 'Leggere e ascoltare Sync',
-			'audiobook.syncHelp' => 'Mantenere le posizioni di lettura, le posizioni di ascolto, lo stato di completamento, i caratteri e le note attraverso i dispositivi. Scegli un account di archiviazione allegato e usi lo stesso codice di sincronizzazione su ciascun dispositivo. La lettura e l\'ascolto rimangono separati.',
-			'audiobook.addSyncSource' => 'Aggiungi Google Drive, OneDrive, Dropbox, WebDAV o S3 in file e libri prima.',
-			'audiobook.syncDestination' => 'L’account di storage sincronizzato',
-			'audiobook.syncFolder' => 'Sincronizzazione mappa o prefix',
-			'audiobook.syncFolderHelp' => 'Utilizzare una cartella esistente separata all\'interno della tua fonte WebDAV, o un prefix S3 dedicato.',
-			'audiobook.syncCode' => 'Codice di sincronizzazione privata',
-			'audiobook.syncCodeHelp' => 'Crea un codice sul tuo primo dispositivo, quindi inserisci quel codice sui tuoi altri dispositivi. Mantenere una copia privata: è la chiave per lo stato crittografato. Utilizzare un codice diverso per ciascuna persona.',
-			'audiobook.showCode' => 'Mostra o nascondere il codice di sincronizzazione',
-			'audiobook.newSyncCode' => 'Creare un nuovo codice di sincronizzazione',
-			'audiobook.saveSync' => 'Salvare e sincronizzare',
-			'audiobook.disableSync' => 'Disattivare la sincronizzazione su questo dispositivo',
-			'audiobook.syncSourceDisconnect' => 'Rimuovere questa fonte si disattiverà la lettura e l\'ascolto di sincronizzazione qui. i file di sincronizzazione crittografati rimarranno nel fornitore.',
-			'audiobook.syncReconnect' => 'Ripristinare l’account di storage',
-			'audiobook.lastSynced' => ({required Object time}) => 'Ultimo sincronizzato su ${time}',
-			'audiobook.syncPrivacy' => 'Solo i progressi e le note crittografati vengono memorizzati. file audio e ebook, tokens di account e password non vengono caricati. Google Drive e OneDrive utilizzano lo storage app; Dropbox utilizza PlezyNG Sync. Per consentire la sincronizzazione può richiedere un accesso aggiuntivo di scrittura. Mentre è attivato, questa destinazione possiede la sincronizzazione del progresso; il progresso del server rimane separato.',
-			'audiobook.syncConflicts' => 'Scegliamo dove riprendere',
-			'audiobook.conflictHelp' => 'Questi cambiamenti sono stati effettuati in modo indipendente. Scegli la posizione o la versione di bookmark per mantenere. Un timestamp successivo o un percentuale superiore non vince automaticamente.',
+			'lending.editEmail' => 'Modifica l’email per le notifiche',
+			'audiobook.syncTitle' => 'Sincronizzazione di lettura e ascolto',
+			'audiobook.syncHelp' => 'Sincronizza tra i tuoi dispositivi le posizioni di lettura e ascolto, lo stato di completamento, i segnalibri e le note. Scegli un account di archiviazione collegato e usa lo stesso codice di sincronizzazione su ogni dispositivo. Lettura e ascolto restano separati.',
+			'audiobook.addSyncSource' => 'Aggiungi prima Google Drive, OneDrive, Dropbox, WebDAV o S3 in File e libri.',
+			'audiobook.syncDestination' => 'Account di archiviazione per la sincronizzazione',
+			'audiobook.syncFolder' => 'Cartella o prefisso di sincronizzazione',
+			'audiobook.syncFolderHelp' => 'Usa una cartella separata già esistente nella tua fonte WebDAV oppure un prefisso S3 dedicato. I file dei libri non vengono mai modificati.',
+			'audiobook.syncCode' => 'Codice privato di sincronizzazione',
+			'audiobook.syncCodeHelp' => 'Crea un codice sul primo dispositivo, poi inseriscilo sugli altri dispositivi. Conservane una copia privata: è la chiave dei dati di sincronizzazione crittografati. Usa un codice diverso per ogni persona.',
+			'audiobook.showCode' => 'Mostra o nascondi il codice di sincronizzazione',
+			'audiobook.newSyncCode' => 'Crea un nuovo codice di sincronizzazione',
+			'audiobook.saveSync' => 'Salva e sincronizza',
+			'audiobook.disableSync' => 'Disattiva la sincronizzazione su questo dispositivo',
+			'audiobook.syncSourceDisconnect' => 'Rimuovendo questa fonte, disattiverai la sincronizzazione di lettura e ascolto su questo dispositivo. I file di sincronizzazione crittografati resteranno presso il fornitore del servizio.',
+			'audiobook.syncReconnect' => 'Ricollega l’account di archiviazione',
+			'audiobook.lastSynced' => ({required Object time}) => 'Ultima sincronizzazione: ${time}',
+			'audiobook.syncPrivacy' => 'Vengono memorizzati solo i progressi e le note, in forma crittografata. I file audio e degli ebook, i token degli account e le password non vengono caricati. Google Drive e OneDrive usano lo spazio riservato all’app; Dropbox usa PlezyNG Sync. L’attivazione della sincronizzazione può richiedere ulteriori permessi di scrittura. Quando è attiva, questa destinazione gestisce la sincronizzazione dei progressi; i progressi sul server restano separati. Disattivandola, la cronologia locale e lo stato remoto vengono conservati.',
+			'audiobook.syncConflicts' => 'Scegli da dove riprendere',
+			'audiobook.conflictHelp' => 'Queste modifiche sono state apportate indipendentemente. Scegli quale posizione o versione del segnalibro conservare. Una data e ora più recente o una percentuale più alta non hanno automaticamente la precedenza.',
 			'audiobook.syncDevice' => ({required Object device}) => 'Dispositivo ${device}',
-			'audiobook.syncUnknownDevice' => 'Dispositivi sconosciuti',
-			'audiobook.deletedBookmark' => 'Bookmark cancellato',
-			'audiobook.finished' => 'finito',
-			'audiobook.readingPosition' => ({required Object percent}) => 'Leggi · ${percent}%',
-			'audiobook.chapterTimeline' => 'Capitolo Progresso',
-			'audiobook.bookTimeline' => 'Tutto il libro Progresso',
+			'audiobook.syncUnknownDevice' => 'dispositivo sconosciuto',
+			'audiobook.deletedBookmark' => 'Segnalibro eliminato',
+			'audiobook.finished' => 'Completato',
+			'audiobook.readingPosition' => ({required Object percent}) => 'Lettura · ${percent}%',
+			'audiobook.chapterTimeline' => 'Avanzamento del capitolo',
+			'audiobook.bookTimeline' => 'Avanzamento dell’intero libro',
 			'audiobook.bookRemaining' => ({required Object time}) => 'Il tempo rimanente in questo libro: ${time}',
 			'audiobook.chapterRemaining' => ({required Object time}) => 'Il tempo rimanente in questo capitolo: ${time}',
-			'audiobook.unknownRemaining' => 'Tempo totale disponibile quando le parti vengono giocate',
-			'audiobook.undoSeek' => 'L’ultima ricerca',
-			'audiobook.customSpeed' => 'Velocità di playback personalizzata',
+			'audiobook.unknownRemaining' => 'Il tempo totale sarà disponibile man mano che vengono riprodotte le parti',
+			'audiobook.undoSeek' => 'Annulla l’ultimo salto di riproduzione',
+			'audiobook.customSpeed' => 'Velocità di riproduzione personalizzata',
 			'audiobook.speedHelp' => 'Scegli una velocità da 0,25× a 4×.',
-			'audiobook.apply' => 'Applicazione',
-			'audiobook.customSleep' => 'Tempo di sonno personalizzato',
-			'audiobook.sleepMinutes' => 'Il tempo (1-440 minuti)',
-			'audiobook.sleepChapters' => ({required Object count}) => 'Smetti dopo ${count} capitoli',
+			'audiobook.apply' => 'Applica',
+			'audiobook.customSleep' => 'Timer di arresto personalizzato',
+			'audiobook.sleepMinutes' => 'Minuti (1–1440)',
+			'audiobook.sleepChapters' => ({required Object count}) => 'Capitoli prima dell’arresto: ${count}',
 			'audiobook.extendSleep' => 'Aggiungi 5 minuti',
-			'audiobook.sleepRemaining' => ({required Object time}) => 'Tempo di sonno: ${time}',
-			'audiobook.useDefaults' => 'Utilizzare questi controlli di ascolto per nuovi libri',
-			'audiobook.librarySort' => 'Libri di sorta',
+			'audiobook.sleepRemaining' => ({required Object time}) => 'Timer di arresto: ${time}',
+			'audiobook.useDefaults' => 'Usa questi controlli di ascolto per i nuovi libri',
+			'audiobook.librarySort' => 'Ordina i libri',
 			'audiobook.sortTitle' => 'Titolo',
 			'audiobook.sortAuthor' => 'Autore',
-			'audiobook.sortNarrator' => 'narratore',
-			'audiobook.sortSeries' => 'Serie Ordine',
-			'audiobook.sortRecent' => 'Recentemente aperto',
-			'audiobook.statusFilter' => 'Lo stato di lettura',
+			'audiobook.sortNarrator' => 'Narratore',
+			'audiobook.sortSeries' => 'Ordine della serie',
+			'audiobook.sortRecent' => 'Aperti di recente',
+			'audiobook.statusFilter' => 'Stato di lettura',
 			'audiobook.statusAll' => 'Tutti i libri',
-			'audiobook.statusNew' => 'Non è iniziato',
-			'audiobook.statusProgress' => 'Il progresso',
-			'audiobook.statusFinished' => 'finito',
-			'audiobook.goToTime' => 'Vai al tempo',
-			'audiobook.timeHelp' => 'ore: minuti: secondi o minuti: secondi',
+			'audiobook.statusNew' => 'Non iniziato',
+			'audiobook.statusProgress' => 'In corso',
+			'audiobook.statusFinished' => 'Completato',
+			'audiobook.goToTime' => 'Vai al tempo indicato',
+			'audiobook.timeHelp' => 'ore:minuti:secondi oppure minuti:secondi',
+			'sourceSetup.savedCertificate' => 'Certificato del server salvato',
+			'sourceSetup.nfsEndpointInvalid' => 'Inserisci un URL NFS, ad esempio nfs://nas:2049/export.',
+			'sourceSetup.dlnaNone' => 'Nessun server DLNA trovato. Inserisci manualmente l’URL della descrizione del dispositivo.',
+			'sourceSetup.dlnaServers' => 'Server multimediali DLNA',
+			'sourceSetup.dlnaUnavailable' => 'Il rilevamento DLNA non è disponibile su questa rete. Inserisci manualmente l’URL della descrizione del dispositivo.',
+			'sourceSetup.dlnaSearching' => 'Ricerca di server DLNA nella rete locale',
+			'sourceSetup.networkSearching' => 'Ricerca nella rete locale…',
+			'sourceSetup.dlnaDiscover' => 'Rileva server DLNA',
+			'sourceSetup.dlnaHelp' => 'Il rilevamento dipende dal multicast sulla rete locale. Se non compare alcun server, inserisci qui sopra l’URL della sua descrizione del dispositivo.',
+			'sourceSetup.dlnaRoot' => 'ID dell’oggetto DLNA; lascia vuoto per usare la radice del dispositivo.',
+			'sourceSetup.passwordOrKey' => 'Inserisci una password oppure aggiungi una chiave privata qui sotto.',
+			'sourceSetup.sshFingerprint' => 'Impronta SHA256 della chiave host SSH',
+			'sourceSetup.sshFingerprintHelp' => 'Verificala con l’amministratore del server. Sul server, esegui ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub e usa il valore SHA256.',
+			'sourceSetup.sshFingerprintKeep' => 'Lascia vuoto per mantenere l’impronta attualmente fissata oppure inserisci una nuova impronta del server.',
+			'sourceSetup.sshAuthentication' => 'Autenticazione SSH con chiave pubblica',
+			'sourceSetup.sshAuthenticationHelp' => 'Facoltativa; è supportata anche l’autenticazione con password.',
+			'sourceSetup.privateKey' => 'Chiave privata (formato PEM o OpenSSH)',
+			'sourceSetup.privateKeyPassphrase' => 'Passphrase della chiave privata',
+			'sourceSetup.nfsMountPort' => 'Porta TCP del servizio di montaggio NFS',
+			'sourceSetup.nfsMountPortHelp' => 'Predefinita: 20048',
+			'sourceSetup.nfsUserId' => 'ID utente NFS (AUTH_SYS)',
+			'sourceSetup.nfsUserIdHelp' => 'Predefinito: 1000. Usa l’ID consentito dalla condivisione NFS del NAS.',
+			'sourceSetup.nfsGroupId' => 'ID gruppo NFS (AUTH_SYS)',
+			'sourceSetup.nfsGroupIdHelp' => 'Predefinito: 1000. Usa l’ID gruppo consentito dalla condivisione NFS del NAS.',
+			'sourceSetup.nfsEncryption' => 'Richiedi NFS crittografato (RPC-with-TLS)',
+			'sourceSetup.nfsEncryptionHelp' => 'Richiedi TLS 1.3 per NFS e il servizio di montaggio. Se il NAS non lo supporta, la connessione viene rifiutata.',
+			'sourceSetup.nfsTrustCertificate' => 'CA NFS personalizzata o certificato del server (PEM, facoltativo)',
+			'sourceSetup.nfsTrustHelp' => 'Lascia vuoto per usare i certificati considerati attendibili da questo dispositivo. Se necessario, aggiungi un certificato di una CA privata o un certificato del server autofirmato; i nomi indicati devono corrispondere all’host nell’URL NFS.',
+			'sourceSetup.nfsTrustInvalid' => 'Usa un certificato di una CA o del server in formato PEM. Non includere una chiave privata.',
+			'sourceSetup.addTrustCertificate' => 'Aggiungi un certificato attendibile personalizzato',
+			'sourceSetup.replaceTrustCertificate' => 'Sostituisci il certificato personalizzato salvato',
+			'sourceSetup.nfsTlsHelp' => 'RPC-with-TLS usa le normali porte NFS e del servizio di montaggio e richiede che il NAS supporti RFC 9289. È necessario TLS 1.3. Il nome host o l’indirizzo IP deve corrispondere al certificato. Gli UID/GID AUTH_SYS restano validi anche nel canale crittografato.',
+			'sourceSetup.clientCertificate' => 'Certificato client (facoltativo)',
+			'sourceSetup.clientCertificateHelp' => 'Consente al NAS di autenticare questo client; gli ID AUTH_SYS dipendono comunque dai criteri della condivisione NFS del NAS.',
+			'sourceSetup.savedIdentity' => 'Verrà usata un’identità client salvata.',
+			'sourceSetup.replaceIdentity' => 'Sostituisci l’identità client salvata',
+			'sourceSetup.chooseIdentity' => 'Scegli un’identità client PKCS#12',
+			'sourceSetup.identityPassphrase' => 'Passphrase dell’identità client',
+			'sourceSetup.identityPassphraseHelp' => 'Lascia vuoto se il file non ha una passphrase.',
+			'sourceSetup.removeIdentity' => 'Rimuovi qualsiasi identità client salvata',
+			'sourceSetup.identityStorageHelp' => 'Le identità client vengono salvate nell’archivio crittografato delle credenziali della fonte. Lascia invariata questa sezione per mantenere l’identità salvata.',
+			'sourceSetup.nfsLimitations' => 'NFSv3 in sola lettura su TCP. Senza RPC-with-TLS, il traffico NFS non è crittografato. Il NAS deve consentire gli ID AUTH_SYS selezionati e le porte client non privilegiate (spesso tramite l’opzione di esportazione “insecure”). NFSv4 e UDP non sono supportati.',
+			'sourceSetup.nfsSetupHelp' => 'Guida alla configurazione NFS',
+			'sourceSetup.nfsSetupHint' => 'Controlla queste impostazioni se la connessione non si apre.',
+			'sourceSetup.nfsSetupDetails' => 'Usa una condivisione NFSv3 su TCP. Quando è richiesta la crittografia, sia il servizio NFS sia quello di montaggio devono supportare RPC-with-TLS. Lascia vuoto il certificato personalizzato per usare un certificato del server attendibile per questo dispositivo, oppure aggiungi il certificato della CA del NAS o quello autofirmato. Il nome nel certificato deve corrispondere all’host dell’endpoint. Se il NAS richiede TLS reciproco, aggiungi la sua identità client PKCS#12. Infine, verifica che la condivisione consenta gli UID/GID AUTH_SYS configurati e i criteri delle porte client.',
+			'sourceSetup.ftpHelp' => 'FTP usa la modalità passiva. Usa ftp:// per FTP non crittografato, ftpes:// per TLS esplicito oppure ftps:// per TLS (implicito sulla porta 990, esplicito sulle altre porte).',
+			'sourceSetup.openSubtitles' => 'OpenSubtitles',
+			'sourceSetup.subtitleSetup' => 'Ricerca facoltativa di sottotitoli per video indipendenti.',
+			'sourceSetup.apiKey' => 'Chiave API',
+			'sourceSetup.optionalUsername' => 'Nome utente dell’account (facoltativo)',
+			'sourceSetup.optionalPassword' => 'Password dell’account (facoltativa)',
+			'sourceSetup.subtitlePrivacy' => 'Ottieni una chiave API da opensubtitles.com. La ricerca invia il titolo del video e gli ID IMDb/TMDB disponibili, mai il file video. La chiave e le credenziali facoltative dell’account vengono crittografate insieme a questa fonte.',
+			'sourceSetup.automaticMetadata' => 'Metadati video online automatici',
+			'sourceSetup.metadataPrivacy' => 'Invia solo titolo/anno ricavati dal nome del file e numeri degli episodi, oppure un ID NFO; non invia mai contenuti multimediali o credenziali. I campi NFO mantengono la precedenza.',
+			'sourceSetup.nfsEncryptionFailure' => 'Per NFS crittografato, verifica il supporto di RFC 9289 e TLS 1.3 su entrambi i servizi del NAS, il nome nel certificato e gli UID/GID della condivisione. PlezyNG non riproverà questa connessione senza crittografia.',
+			'sourceSetup.sourceConnecting' => 'Connessione alla fonte',
+			'sourceSetup.metadataSearchPrivacy' => 'Questa ricerca di titoli viene inviata a Trakt. Viene trasmesso il titolo inserito, non il video né le credenziali della fonte.',
+			'sourceSetup.chooseMatch' => 'Scegli una corrispondenza',
+			'sourceSetup.metadataMatchHelp' => 'Controlla titolo e anno prima di scegliere. Trakt riceve il titolo cercato; il video rimane nella sua fonte.',
+			'sourceSetup.metadataNoMatches' => 'Nessun titolo corrispondente trovato online. Prova un titolo diverso.',
+			'sourceSetup.metadataSearch' => 'Cerca metadati online',
+			'sourceSetup.metadataLoading' => 'Ricerca online dei dettagli di film e serie TV…',
+			'sourceSetup.metadataFromTrakt' => 'Metadati online da Trakt',
+			'sourceSetup.metadataNoAutomaticMatch' => 'Nessuna corrispondenza automatica trovata per il titolo. Cerca il titolo per scegliere una corrispondenza.',
+			'sourceSetup.metadataFailed' => 'Impossibile caricare i metadati online. La riproduzione e i dettagli locali restano disponibili.',
+			'sourceSetup.videoDetailsLoading' => 'Caricamento dei dettagli del video',
+			'sourceSetup.subtitleKeyRequired' => 'È necessaria una chiave API OpenSubtitles',
+			'sourceSetup.subtitleKeyHelp' => 'Modifica questa fonte di file e aggiungi una chiave API OpenSubtitles nelle impostazioni facoltative dei sottotitoli.',
+			'sourceSetup.subtitleSearchFailed' => 'Ricerca dei sottotitoli non riuscita. Controlla la chiave API, la connessione e l’accesso al servizio.',
+			'sourceSetup.subtitleApplyFailed' => 'Impossibile scaricare o applicare questi sottotitoli. Controlla la connessione e prova un altro risultato.',
+			'sourceSetup.subtitleSearch' => 'Cerca su OpenSubtitles',
+			'sourceSetup.subtitleSearchPrivacy' => 'La ricerca usa il titolo e gli ID IMDb/TMDB disponibili. Il file video rimane nella sua fonte. Prima di scegliere, controlla lingua, indicazioni di sottotitoli forzati o per non udenti e valutazione.',
+			'sourceSetup.movieOrShow' => 'Film o serie',
+			'sourceSetup.subtitleTitleHint' => 'Inserisci un titolo per affinare i risultati',
+			'sourceSetup.subtitleLanguage' => 'Lingua dei sottotitoli',
+			'sourceSetup.subtitleSearching' => 'Ricerca su OpenSubtitles',
+			'sourceSetup.subtitleNoMatches' => 'Nessun sottotitolo corrispondente trovato. Prova un titolo o una lingua diversi.',
+			'sourceSetup.downloadSubtitle' => 'Scarica sottotitoli',
+			'sourceSetup.subtitle' => 'Sottotitoli',
+			'sourceSetup.nfsTlsRequired' => 'RPC-with-TLS obbligatorio',
+			'sourceSetup.nfsUnencrypted' => 'NFS non crittografato',
+			'sourceSetup.tlsEncrypted' => 'Crittografato con TLS',
+			'sourceSetup.ftpPlain' => 'FTP non crittografato',
+			'sourceSetup.sshPinned' => 'SSH crittografato · chiave host fissata',
+			'sourceSetup.smbEncrypted' => 'Crittografia SMB3 attiva',
+			'sourceSetup.smbUnencrypted' => 'Crittografia SMB3 disattivata',
+			'sourceSetup.httpUnencrypted' => 'HTTP senza crittografia del trasporto',
 			'comics.fitHeight' => 'Adatta all’altezza',
 			'comics.readingMode' => 'Modalità di lettura',
 			'comics.paged' => 'Pagine',
@@ -7226,6 +7459,15 @@ extension on TranslationsIt {
 			'comics.savedForComic' => 'Le impostazioni di visualizzazione vengono memorizzate per questo fumetto in questo profilo.',
 			'comics.readLists' => 'Liste di lettura',
 			'comics.collections' => 'Raccolte',
+			_ => null,
+		} ?? switch (path) {
+			'sourceSetup.checkEndpointSecurity' => 'Controlla la sicurezza dell’endpoint',
+			'sourceSetup.fieldRequired' => ({required Object label}) => 'Campo obbligatorio: ${label}.',
+			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Inserisci ${label} tra ${min} e ${max}.',
+			'sourceSetup.replaceFile' => ({required Object name}) => 'Sostituisci ${name}',
+			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Identità client selezionata: ${name}',
+			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Valutazione ${rating}',
+			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Download dei sottotitoli: ${title}',
 			_ => null,
 		};
 	}

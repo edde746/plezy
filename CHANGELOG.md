@@ -2,17 +2,22 @@
 
 ## [Unreleased]
 
+- Fit Find your next to the screen with persistent action buttons, mirrored swipe/TV direction cues, contextual help, and artwork that follows the current pick. Restore downloaded and alternate covers, distinguish artwork loading from missing images, and allow failed source covers to be retried.
+
 - Route comic reader pull request checks through private JIT and skip external forks.
 - Respect the app text scale in the browser reader and correct comic terminology in affected translations.
 - Keep the selected publication thumbnail visible and let reader dialogs scroll without losing their actions.
 - Expand comic reading with responsive spreads, RTL wide-page splitting, continuous scroll, thumbnails, touch zoom and per-comic display settings; harden page streaming and add reproducible browser test dependencies.
 - Keep comic page images resident during pinch gestures; apply zoom once when the gesture ends.
 - Repair source-reader merge compatibility and complete missing source setup translations.
-
 - Add experimental comic page streaming, Komga source integration and ComicInfo metadata support.
 - Fix file-source metadata and listing edge cases, and validate the experimental webOS ARM build on an LG C6.
 
 ### Added
+
+- Route every GitHub Actions workflow through compatible private JIT capacity, with no GitHub-hosted fallback.
+
+- Add device-local Dolby Vision experiment and compatibility switches, enhancement-layer diagnostics, pinned Apple/FelBaker experiments, and an offline HDR/SDR companion encoder; preserve Luna’s real P7 FEL graph evidence and remaining device qualification work.
 
 - Add SMB2/3 read-only NAS sources on Android, iOS, macOS, Windows, Linux, and Apple TV, with a Videos library shelf and resumable video watch progress.
 - Add passive FTP/FTPES/FTPS, pinned-host-key SFTP, and read-only NFSv3 sources with byte-range playback; NFS can require TLS 1.3 RPC-with-TLS, custom trust certificates, or a PKCS#12 client identity. Add best-effort SSDP discovery for DLNA ContentDirectory servers with manual URL fallback.
@@ -97,6 +102,7 @@
 - Check iOS audio-output ordering while allowing the Spatial Audio driver on iOS 26.
 - Build Android app and plugin modules with SDK 37 and generate BuildConfig for current Android dependencies.
 - Brand default and alternate app icons, splash art, and TV launch graphics with the PlezyNG badge.
+- Keep the webOS TV package icon generated from the approved NG-badged logo.
 - Refresh package and store descriptions to explain PlezyNG's Plex client features.
 - Refresh the release-channel guide with configured publishers and remaining credential requirements.
 - Record the current Google Play foreground-service demo links and release-run results in the channel guide.
@@ -107,6 +113,7 @@
 
 ### Fixed
 
+- Complete discovery, source-setup and subtitle-search translations; fix reviewed library and audiobook wording, add Arabic and Asian subtitle-language choices, and preserve regional numerals, mixed-direction titles and large-text layouts.
 - Use the localized sort and filter labels in the audiobook library menu.
 - Use CocoaPods for iOS and macOS builds until the pinned WebView plugin compiles with Xcode 26’s Swift Package Manager integration.
 - Let Xcode choose signing identities for iOS and tvOS archives instead of forcing one across all targets.

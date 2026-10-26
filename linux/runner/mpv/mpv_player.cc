@@ -433,7 +433,8 @@ bool MpvPlayer::InitRenderContextForSurface(EGLDisplay display, EGLConfig config
     g_warning("MPV: Video plane provided no usable EGL display or surface");
     return false;
   }
-  const char* render_api = ExperimentalRenderApi(std::getenv("PLEZYNG_EXPERIMENTAL_RENDER_API"));
+  const char* override_api = std::getenv("PLEZYNG_EXPERIMENTAL_RENDER_API");
+  const char* render_api = ExperimentalRenderApi(override_api, experimental_dv_);
   if (render_api == nullptr) {
     g_warning("MPV: PLEZYNG_EXPERIMENTAL_RENDER_API must be opengl or opengl-next");
     return false;
@@ -606,7 +607,18 @@ bool MpvPlayer::InitRenderContextForSurface(EGLDisplay display, EGLConfig config
 #endif
 
   mpv_render_context* candidate_gl = nullptr;
-  const int error = mpv_render_context_create(&candidate_gl, mpv_, params);
+  int error = mpv_render_context_create(&candidate_gl, mpv_, params);
+  bool compatibility_fallback = false;
+  if ((error < 0 || candidate_gl == nullptr) &&
+      ExperimentalRenderFallbackAllowed(override_api, experimental_dv_, dv_compatibility_fallback_)) {
+    if (candidate_gl) mpv_render_context_free(candidate_gl);
+    candidate_gl = nullptr;
+    g_warning("MPV: experimental DV renderer unavailable; using compatibility renderer (EL unverified)");
+    render_api = "opengl";
+    params[0].data = const_cast<char*>(render_api);
+    compatibility_fallback = true;
+    error = mpv_render_context_create(&candidate_gl, mpv_, params);
+  }
   if (error < 0 || candidate_gl == nullptr) {
     g_warning("MPV: video-plane render API '%s' failed: %s", render_api, mpv_error_string(error));
     if (std::strcmp(render_api, "opengl-next") == 0) {
@@ -623,6 +635,8 @@ bool MpvPlayer::InitRenderContextForSurface(EGLDisplay display, EGLConfig config
   egl_context_ = candidate_context;
   surface_depth_bits_ = depth_bits > 0 ? depth_bits : 8;
   mpv_gl_ = candidate_gl;
+  dv_renderer_status_ =
+      compatibility_fallback ? "opengl (experimental renderer unavailable; EL unverified)" : render_api;
   mpv_render_context_set_update_callback(mpv_gl_, OnMpvRenderUpdate, callback_context_.get());
   // Hand the context over unbound: from here on only the plane render thread
   // makes it current (RenderToSurface), and an EGLContext can be current on at
@@ -770,6 +784,7 @@ void MpvPlayer::Dispose() {
     teardown.callback_keep_alive = callback_context_;
     mpv_gl_ = nullptr;
     mpv_ = nullptr;
+    dv_renderer_status_ = "not-initialized";
     egl_display_ = EGL_NO_DISPLAY;
     egl_context_ = EGL_NO_CONTEXT;
     // The next player must not decide against this one's colour space.

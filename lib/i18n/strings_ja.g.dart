@@ -104,6 +104,7 @@ class TranslationsJa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$ja fileSources = _Translations$fileSources$ja._(_root);
 	@override late final _Translations$lending$ja lending = _Translations$lending$ja._(_root);
 	@override late final _Translations$audiobook$ja audiobook = _Translations$audiobook$ja._(_root);
+	@override late final _Translations$sourceSetup$ja sourceSetup = _Translations$sourceSetup$ja._(_root);
 	@override late final _Translations$comics$ja comics = _Translations$comics$ja._(_root);
 }
 
@@ -760,6 +761,13 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get regionFormatDescription => '日付、数値、単位の表示形式を選択します。';
 	@override String get metadataLanguage => 'メタデータの言語';
 	@override String get metadataLanguageDescription => 'サーバーが対応している場合に、タイトルと説明に使用する言語です。音声と字幕の言語は別に設定します。';
+	@override String get experimentalDolbyVision => '実験的なDolby Vision';
+	@override String get experimentalDolbyVisionDescription => '次の再生で実験的なFELレンダラーを使用します。別途ビルドしたエンジンが必要です。';
+	@override String get dvExperimentUnavailableDescription => 'この実験は現在Linuxでのみ利用できます。';
+	@override String get dvCompatibilityFallback => '互換性フォールバック';
+	@override String get dvCompatibilityFallbackDescription => '実験を開始できない場合は標準レンダラーを使用します。FELデータが失われる可能性があります。';
+	@override String get dvExperimentDiagnostics => '動画実験のログ記録';
+	@override String get dvExperimentDiagnosticsDescription => '次の再生でプレーヤーの詳細ログを有効にします。';
 }
 
 // Path: themeEditor
@@ -3059,6 +3067,12 @@ class _Translations$fileSources$ja extends Translations$fileSources$en {
 	@override String get useFiles => 'ファイルや本を使用する';
 	@override String get cancelScan => 'スキャンキャン';
 	@override String get googleDrive => 'Google Drive';
+	@override String get smbEndpointHint => '例: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'SMBサーバーと共有フォルダーを1つ入力してください。';
+	@override String get smbFolderHelp => '共有フォルダー全体を使う場合は空欄にし、一部だけを使う場合はその中のフォルダーを入力してください。';
+	@override String get smbDomain => 'ドメイン（任意）';
+	@override String get smbEncryption => 'SMB3接続を暗号化';
+	@override String get smbEncryptionHint => 'NASが対応している場合はSMB3暗号化を使用します。';
 }
 
 // Path: lending
@@ -3139,7 +3153,7 @@ class _Translations$audiobook$ja extends Translations$audiobook$en {
 	@override String get newSyncCode => '新しいシンクコードを作成する';
 	@override String get saveSync => '保存と同期';
 	@override String get disableSync => 'このデバイスでSync をオフにする';
-	@override String get syncSourceDisconnect => 'このソースを削除すると、ここで読み聞かせと聴く同期が停止されます。';
+	@override String get syncSourceDisconnect => 'このソースを削除すると、このデバイスでの読書と音声再生の同期が無効になります。暗号化された同期ファイルはストレージサービスに残ります。';
 	@override String get syncReconnect => 'ストレージアカウント再接続';
 	@override String lastSynced({required Object time}) => '最後に ${time} で同期';
 	@override String get syncPrivacy => '暗号化された進歩およびノートのみが保存されます. オーディオおよび電子書籍ファイル、アカウントのトークンおよびパスワードはアップロードされません. Google ドライブおよび OneDrive はアプリストレージを使用します. Dropbox は PlezyNG Sync を使用します. 同期を有効にするには追加の書き込みアクセスが要求される可能性があります. 有効にしている間、この目的地は進歩同期を所有しています. サーバーの進歩は別々に残ります. 回転同期は地元の歴史と遠隔状態を維持します。';
@@ -3180,13 +3194,110 @@ class _Translations$audiobook$ja extends Translations$audiobook$en {
 	@override String get timeHelp => '時間:分:秒、または分:秒';
 }
 
+// Path: sourceSetup
+class _Translations$sourceSetup$ja extends Translations$sourceSetup$en {
+	_Translations$sourceSetup$ja._(TranslationsJa root) : this._root = root, super.internal(root);
+
+	final TranslationsJa _root; // ignore: unused_field
+	// Translations
+	@override String get savedCertificate => '保存済みのサーバー証明書';
+	@override String get nfsEndpointInvalid => 'nfs://nas:2049/export のような NFS URL を入力してください。';
+	@override String get dlnaNone => 'DLNA サーバーが見つかりませんでした。デバイス記述の URL を手動で入力してください。';
+	@override String get dlnaServers => 'DLNA メディアサーバー';
+	@override String get dlnaUnavailable => 'このネットワークでは DLNA の検出を利用できません。デバイス記述の URL を手動で入力してください。';
+	@override String get dlnaSearching => 'ローカルネットワークで DLNA サーバーを検索中';
+	@override String get networkSearching => 'ローカルネットワークを検索中…';
+	@override String get dlnaDiscover => 'DLNA サーバーを検出';
+	@override String get dlnaHelp => '検出にはローカルネットワークのマルチキャストを使用します。サーバーが表示されない場合は、上にデバイス記述の URL を入力してください。';
+	@override String get dlnaRoot => 'DLNA オブジェクト ID。空欄にするとデバイスのルートを使用します。';
+	@override String get passwordOrKey => 'パスワードを入力するか、下に秘密鍵を追加してください。';
+	@override String get sshFingerprint => 'SSH ホスト鍵の SHA256 フィンガープリント';
+	@override String get sshFingerprintHelp => 'サーバー管理者に確認してください。サーバーで ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub を実行し、表示された SHA256 値を使用します。';
+	@override String get sshFingerprintKeep => '現在固定されているフィンガープリントを維持するには空欄にします。変更する場合は新しいサーバーのフィンガープリントを入力してください。';
+	@override String get sshAuthentication => 'SSH 公開鍵認証';
+	@override String get sshAuthenticationHelp => '任意です。パスワード認証も利用できます。';
+	@override String get privateKey => '秘密鍵（PEM または OpenSSH 形式）';
+	@override String get privateKeyPassphrase => '秘密鍵のパスフレーズ';
+	@override String get nfsMountPort => 'NFS マウントサービスの TCP ポート';
+	@override String get nfsMountPortHelp => '既定値: 20048';
+	@override String get nfsUserId => 'NFS ユーザー ID（AUTH_SYS）';
+	@override String get nfsUserIdHelp => '既定値: 1000。NAS のエクスポート設定で許可されている ID を使用してください。';
+	@override String get nfsGroupId => 'NFS グループ ID（AUTH_SYS）';
+	@override String get nfsGroupIdHelp => '既定値: 1000。NAS のエクスポート設定で許可されているグループ ID を使用してください。';
+	@override String get nfsEncryption => 'NFS の暗号化を必須にする（RPC-with-TLS）';
+	@override String get nfsEncryptionHelp => 'NFS とマウントサービスに TLS 1.3 を必須とします。NAS が対応していない場合、接続は拒否されます。';
+	@override String get nfsTrustCertificate => 'NFS のカスタム CA 証明書またはサーバー証明書（PEM、任意）';
+	@override String get nfsTrustHelp => 'このデバイスが信頼する証明書を使う場合は空欄にします。必要に応じてプライベート CA または自己署名のサーバー証明書を追加してください。証明書の名前は NFS URL のホスト名と一致する必要があります。';
+	@override String get nfsTrustInvalid => 'PEM 形式の CA 証明書またはサーバー証明書を使用してください。秘密鍵を含めないでください。';
+	@override String get addTrustCertificate => 'カスタムの信頼証明書を追加';
+	@override String get replaceTrustCertificate => '保存済みのカスタム証明書を置き換え';
+	@override String get nfsTlsHelp => 'RPC-with-TLS は通常の NFS およびマウントサービスのポートを使用し、NAS の RFC 9289 対応が必要です。TLS 1.3 が必須です。ホスト名または IP アドレスは証明書と一致する必要があります。暗号化された通信でも AUTH_SYS UID/GID は引き続き適用されます。';
+	@override String get clientCertificate => 'クライアント証明書（任意）';
+	@override String get clientCertificateHelp => 'NAS がこのクライアントを認証できるようにします。AUTH_SYS ID は引き続き NAS のエクスポートポリシーに従います。';
+	@override String get savedIdentity => '保存済みのクライアント認証情報 を使用します。';
+	@override String get replaceIdentity => '保存済みのクライアント認証情報 を置き換え';
+	@override String get chooseIdentity => 'PKCS#12 クライアント認証情報 を選択';
+	@override String get identityPassphrase => 'クライアント認証情報 のパスフレーズ';
+	@override String get identityPassphraseHelp => 'ファイルにパスフレーズがない場合は空欄にしてください。';
+	@override String get removeIdentity => '保存済みのクライアント認証情報 を削除';
+	@override String get identityStorageHelp => 'クライアント認証情報 は、ソースの暗号化された認証情報ストアに保存されます。保存済みの認証情報 を維持するには、このセクションを変更しないでください。';
+	@override String get nfsLimitations => 'TCP 経由の読み取り専用 NFSv3 です。RPC-with-TLS を使わない場合、NFS 通信は暗号化されません。NAS は、選択した AUTH_SYS ID と非特権クライアントポートを許可する必要があります（通常は「insecure」というエクスポートオプション）。NFSv4 と UDP には対応していません。';
+	@override String get nfsSetupHelp => 'NFS 設定のヘルプ';
+	@override String get nfsSetupHint => '接続できない場合は、これらの設定を確認してください。';
+	@override String get nfsSetupDetails => 'TCP の NFSv3 エクスポートを使用してください。暗号化を必須にする場合、NFS とマウントサービスの両方が RPC-with-TLS に対応している必要があります。このデバイスがサーバー証明書を信頼している場合、カスタム証明書は空欄にします。それ以外は NAS の CA 証明書または自己署名証明書を追加してください。証明書の名前は接続先のホスト名と一致する必要があります。NAS が相互 TLS を要求する場合は、その PKCS#12 クライアント認証情報 を追加してください。最後に、エクスポート設定が指定の AUTH_SYS UID/GID とクライアントポートのポリシーを許可しているか確認してください。';
+	@override String get ftpHelp => 'FTP はパッシブモードを使用します。暗号化されていない FTP には ftp://、明示的 TLS には ftpes://、TLS には ftps:// を使用してください（ポート 990 では暗黙的 TLS、それ以外では明示的 TLS）。';
+	@override String get openSubtitles => 'OpenSubtitles';
+	@override String get subtitleSetup => '単独の動画ファイルに使用できる、任意の字幕検索機能です。';
+	@override String get apiKey => 'API キー';
+	@override String get optionalUsername => 'アカウントのユーザー名（任意）';
+	@override String get optionalPassword => 'アカウントのパスワード（任意）';
+	@override String get subtitlePrivacy => 'opensubtitles.com から API キーを取得してください。検索では動画のタイトルと利用可能な IMDb/TMDB ID を送信しますが、動画ファイルは一切送信しません。キーと任意のアカウント認証情報は、このソースとともに暗号化して保存されます。';
+	@override String get automaticMetadata => '動画のオンラインメタデータを自動取得';
+	@override String get metadataPrivacy => '送信するのはファイル名のタイトル・年・エピソード番号、または NFO ID のみです。メディアや認証情報は一切送信しません。NFO の項目が常に優先されます。';
+	@override String get nfsEncryptionFailure => '暗号化された NFS では、NAS の両サービスが RFC 9289 と TLS 1.3 に対応しているか、証明書の名前とエクスポートの UID/GID が正しいかを確認してください。PlezyNG が暗号化なしでこの接続を再試行することはありません。';
+	@override String get sourceConnecting => 'ソースに接続中';
+	@override String get metadataSearchPrivacy => 'このタイトル検索は Trakt に送信されます。入力したタイトルのみを送信し、動画やソースの認証情報は送信しません。';
+	@override String get chooseMatch => '一致する作品を選択';
+	@override String get metadataMatchHelp => '選択する前にタイトルと年を確認してください。検索タイトルは Trakt に送信されますが、動画はソースに残ります。';
+	@override String get metadataNoMatches => 'オンラインで一致するタイトルが見つかりませんでした。別のタイトルをお試しください。';
+	@override String get metadataSearch => 'オンラインメタデータを検索';
+	@override String get metadataLoading => '映画や番組の情報をオンラインで検索中…';
+	@override String get metadataFromTrakt => 'Trakt のオンラインメタデータ';
+	@override String get metadataNoAutomaticMatch => 'タイトルの自動照合で一致が見つかりませんでした。タイトルを検索して、一致する作品を選択してください。';
+	@override String get metadataFailed => 'オンラインメタデータを読み込めませんでした。再生とローカルの情報は引き続き利用できます。';
+	@override String get videoDetailsLoading => '動画の情報を読み込み中';
+	@override String get subtitleKeyRequired => 'OpenSubtitles の API キーが必要です';
+	@override String get subtitleKeyHelp => 'このファイルソースを編集し、任意の字幕設定に OpenSubtitles の API キーを追加してください。';
+	@override String get subtitleSearchFailed => '字幕の検索に失敗しました。API キー、接続、サービスへのアクセスを確認してください。';
+	@override String get subtitleApplyFailed => 'この字幕をダウンロードまたは適用できませんでした。接続を確認し、別の検索結果をお試しください。';
+	@override String get subtitleSearch => 'OpenSubtitles を検索';
+	@override String get subtitleSearchPrivacy => '検索にはタイトルと利用可能な IMDb/TMDB ID を使用します。動画ファイルはソースに残ります。選択する前に、言語、強制表示や聴覚障がい者向けの表示、評価を確認してください。';
+	@override String get movieOrShow => '映画または番組';
+	@override String get subtitleTitleHint => 'タイトルを入力して検索結果を絞り込む';
+	@override String get subtitleLanguage => '字幕の言語';
+	@override String get subtitleSearching => 'OpenSubtitles を検索中';
+	@override String get subtitleNoMatches => '一致する字幕が見つかりませんでした。別のタイトルまたは言語をお試しください。';
+	@override String get downloadSubtitle => '字幕をダウンロード';
+	@override String get subtitle => '字幕';
+	@override String get nfsTlsRequired => 'RPC-with-TLS が必須';
+	@override String get nfsUnencrypted => '暗号化されていない NFS';
+	@override String get tlsEncrypted => 'TLS で暗号化';
+	@override String get ftpPlain => '暗号化されていない FTP';
+	@override String get sshPinned => 'SSH で暗号化 · ホスト鍵を固定済み';
+	@override String get smbEncrypted => 'SMB3 暗号化がオン';
+	@override String get smbUnencrypted => 'SMB3 暗号化がオフ';
+	@override String get httpUnencrypted => '転送が暗号化されていない HTTP';
+	@override String get checkEndpointSecurity => '接続先のセキュリティを確認';
+	@override String fieldRequired({required Object label}) => '${label}を入力してください。';
+	@override String integerRange({required Object label, required Object min, required Object max}) => '${label}を ${min} から ${max} の範囲で入力してください。';
+	@override String replaceFile({required Object name}) => '${name} を置き換え';
+	@override String selectedIdentity({required Object name}) => '選択したクライアント認証情報: ${name}';
+	@override String subtitleRating({required Object rating}) => '評価 ${rating}';
+	@override String subtitleDownloading({required Object title}) => '字幕をダウンロード中: ${title}';
+}
 // Path: comics
 class _Translations$comics$ja extends Translations$comics$en {
 	_Translations$comics$ja._(TranslationsJa root) : this._root = root, super.internal(root);
-
-	final TranslationsJa _root; // ignore: unused_field
-
-	// Translations
 	@override String get fitHeight => '高さに合わせる';
 	@override String get readingMode => '読書モード';
 	@override String get paged => 'ページ表示';
@@ -3199,8 +3310,6 @@ class _Translations$comics$ja extends Translations$comics$en {
 	@override String get savedForComic => 'このプロフィールで、このコミックの表示設定を保存します。';
 	@override String get readLists => '読書リスト';
 	@override String get collections => 'コレクション';
-}
-
 // Path: appIcon.names
 class _Translations$appIcon$names$ja extends Translations$appIcon$names$en {
 	_Translations$appIcon$names$ja._(TranslationsJa root) : this._root = root, super.internal(root);
@@ -3452,48 +3561,60 @@ class _Translations$discover$findNext$ja extends Translations$discover$findNext$
 	final TranslationsJa _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => '次を見つける';
-	@override String get open => '次を見つける';
-	@override String get anyTime => 'いつでも';
-	@override String get timeAvailable => 'あなたはどのくらいの時間を持っていますか?';
-	@override String get filters => '瞬間を選ぶ';
-	@override String get watch => '見る';
+	@override String get title => '次の楽しみを見つけよう';
+	@override String get open => '次の楽しみを見つけよう';
+	@override String get anyTime => '時間を指定しない';
+	@override String get timeAvailable => 'どれくらい時間がありますか？';
+	@override String get filters => '今に合うものを選ぶ';
+	@override String get watch => '観る';
 	@override String get listen => '聴く';
 	@override String get read => '読む';
-	@override String finishable({required Object duration}) => '${duration} で終了';
-	@override String aboutDuration({required Object duration}) => '${duration}について';
-	@override String nextUnit({required Object duration}) => '次 次の投稿: ${duration}';
-	@override String totalDuration({required Object duration}) => '${duration} 総合';
-	@override String get timingVaries => 'タイミングが変わる';
-	@override String get notNow => 'いまではない';
-	@override String get swipeHint => 'スイッチ、または下のボタンを使用します。';
-	@override String get saved => '保存ピック';
-	@override String savedCount({required Object count}) => 'トップページ > ${count}';
-	@override String get undo => 'でしょ';
+	@override String finishable({required Object duration}) => '${duration}で楽しみきれます';
+	@override String aboutDuration({required Object duration}) => '約${duration}';
+	@override String nextUnit({required Object duration}) => '次の章 · ${duration}';
+	@override String totalDuration({required Object duration}) => '合計${duration}';
+	@override String get timingVaries => '所要時間は異なります';
+	@override String get notNow => '今はスキップ';
+	@override String get swipeHint => '表紙を矢印の方向にスワイプするか、下のボタンを使ってください。';
+	@override String get saved => '保存した候補';
+	@override String savedCount({required Object count}) => '保存した候補 · ${count}';
+	@override String get undo => '元に戻す';
 	@override String get details => '詳細';
-	@override String get noPicks => 'まだ選べないもの';
-	@override String get noPicksHint => '図書館に接続するか、メディアソースを追加してスタートします。';
-	@override String get noMatches => 'この瞬間に合わないもの。';
-	@override String get noMatchesHint => '別のフォーマットを試すか、自分に時間を与えるか。';
-	@override String get allDone => 'みんな捕まえてる';
-	@override String get allDoneHint => 'これらの選択肢を再度見るために新鮮なミックスを開始します。';
-	@override String get refresh => 'もう一つのミックスを見つける';
-	@override String sourceReason({required Object source}) => 'から ${source}';
-	@override String libraryReason({required Object library}) => 'から ${library}';
-	@override String get ownedReason => 'あなたの図書館から';
-	@override String get liveNow => 'で今';
-	@override String get watchLive => '見るライブ';
-	@override String get filterAnything => '何でも';
-	@override String get filterWatch => '見る';
+	@override String get noPicks => 'まだ候補がありません';
+	@override String get noPicksHint => 'ライブラリに接続するか、メディアソースを追加して始めましょう。';
+	@override String get noMatches => '今に合う候補がありません';
+	@override String get noMatchesHint => '別のメディアの種類を選ぶか、使える時間を長くしてみてください。';
+	@override String get allDone => 'すべての候補を確認しました';
+	@override String get allDoneHint => '新しい組み合わせを作ると、これらの候補をもう一度見られます。';
+	@override String get refresh => '別の組み合わせを探す';
+	@override String sourceReason({required Object source}) => '提供元：${source}';
+	@override String libraryReason({required Object library}) => 'ライブラリ：${library}';
+	@override String get ownedReason => 'あなたのライブラリから';
+	@override String get liveNow => '現在放送中';
+	@override String get watchLive => 'ライブで観る';
+	@override String get filterAnything => 'すべて';
+	@override String get filterWatch => '観る';
 	@override String get filterListen => '聴く';
 	@override String get filterRead => '読む';
 	@override String get twentyMinutes => '20分';
 	@override String get fortyFiveMinutes => '45分';
 	@override String get ninetyMinutes => '90分';
-	@override String get apply => '応募';
-	@override String get openFailed => 'この選択肢はもはや利用できません. 再度チェックするためにリフレッシュします。';
-	@override String get changeFailed => '変更はできませんが、もう一度試してみてください。';
-	@override String get savedLimit => '保存されたピックが満たされ、1つのピックを削除して別のピックを保存します。';
+	@override String get apply => '適用';
+	@override String get openFailed => 'この候補は利用できなくなりました。更新してもう一度確認してください。';
+	@override String get changeFailed => '変更を保存できませんでした。もう一度お試しください。';
+	@override String get savedLimit => '保存した候補が上限に達しています。別の候補を保存するには、1件削除してください。';
+	@override String get chooseHint => '作品を開く、後で見るために保存する、またはスキップします。';
+	@override String get howItWorks => '使い方';
+	@override String get notNowHelp => 'この作品をいったんスキップします。ライブラリからは削除されません。';
+	@override String get saveHelp => 'この端末の、このプロフィールの保存済み候補に追加します。保存してもダウンロードはされません。';
+	@override String get openHelp => '表紙を選ぶと詳細が表示されます。メインボタンで再生、読書、または作品を開けます。';
+	@override String get controlsHelp => 'キーボードやリモコンでは、ボタンにフォーカスして Enter または決定を押します。元に戻すと直前の選択を取り消せます。';
+	@override String get artworkLoading => '画像を読み込み中…';
+	@override String get artworkUnavailable => '画像を表示できません';
+	@override String get savedFeedback => '保存済み候補に追加しました';
+	@override String get skippedFeedback => 'いったんスキップしました';
+	@override String get releaseToConfirm => '離して確定';
+	@override String get remoteHint => '表紙にフォーカス：← / → で選択・決定で詳細・↑ / ↓ でフォーカス移動';
 }
 
 // Path: discover.person
@@ -4828,6 +4949,13 @@ extension on TranslationsJa {
 			'settings.regionFormatDescription' => '日付、数値、単位の表示形式を選択します。',
 			'settings.metadataLanguage' => 'メタデータの言語',
 			'settings.metadataLanguageDescription' => 'サーバーが対応している場合に、タイトルと説明に使用する言語です。音声と字幕の言語は別に設定します。',
+			'settings.experimentalDolbyVision' => '実験的なDolby Vision',
+			'settings.experimentalDolbyVisionDescription' => '次の再生で実験的なFELレンダラーを使用します。別途ビルドしたエンジンが必要です。',
+			'settings.dvExperimentUnavailableDescription' => 'この実験は現在Linuxでのみ利用できます。',
+			'settings.dvCompatibilityFallback' => '互換性フォールバック',
+			'settings.dvCompatibilityFallbackDescription' => '実験を開始できない場合は標準レンダラーを使用します。FELデータが失われる可能性があります。',
+			'settings.dvExperimentDiagnostics' => '動画実験のログ記録',
+			'settings.dvExperimentDiagnosticsDescription' => '次の再生でプレーヤーの詳細ログを有効にします。',
 			'themeEditor.builtIn' => '標準',
 			'themeEditor.presets' => 'プリセット',
 			'themeEditor.custom' => 'カスタム',
@@ -5248,6 +5376,8 @@ extension on TranslationsJa {
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}"のライブラリスキャンを開始しました',
 			'messages.libraryScanFailed' => ({required Object error}) => 'ライブラリのスキャンに失敗しました: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '「${title}」のメタデータを更新中…',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}"のメタデータ更新を開始しました',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'メタデータの更新に失敗しました: ${error}',
 			'messages.logoutConfirm' => 'ログアウトしてもよろしいですか？',
@@ -5255,8 +5385,6 @@ extension on TranslationsJa {
 			'messages.seasonsLoadFailed' => 'シーズンを読み込めませんでした',
 			'messages.noEpisodesFound' => '最初のシーズンにエピソードが見つかりません',
 			'messages.noEpisodesFoundGeneral' => 'エピソードが見つかりません',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'エピソードを読み込めませんでした',
 			'messages.noResultsFound' => '結果が見つかりません',
 			'messages.sleepTimerSet' => ({required Object label}) => 'スリープタイマーを${label}に設定しました',
@@ -5483,48 +5611,60 @@ extension on TranslationsJa {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'あらすじ',
 			'discover.cast' => 'キャスト',
-			'discover.findNext.title' => '次を見つける',
-			'discover.findNext.open' => '次を見つける',
-			'discover.findNext.anyTime' => 'いつでも',
-			'discover.findNext.timeAvailable' => 'あなたはどのくらいの時間を持っていますか?',
-			'discover.findNext.filters' => '瞬間を選ぶ',
-			'discover.findNext.watch' => '見る',
+			'discover.findNext.title' => '次の楽しみを見つけよう',
+			'discover.findNext.open' => '次の楽しみを見つけよう',
+			'discover.findNext.anyTime' => '時間を指定しない',
+			'discover.findNext.timeAvailable' => 'どれくらい時間がありますか？',
+			'discover.findNext.filters' => '今に合うものを選ぶ',
+			'discover.findNext.watch' => '観る',
 			'discover.findNext.listen' => '聴く',
 			'discover.findNext.read' => '読む',
-			'discover.findNext.finishable' => ({required Object duration}) => '${duration} で終了',
-			'discover.findNext.aboutDuration' => ({required Object duration}) => '${duration}について',
-			'discover.findNext.nextUnit' => ({required Object duration}) => '次 次の投稿: ${duration}',
-			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} 総合',
-			'discover.findNext.timingVaries' => 'タイミングが変わる',
-			'discover.findNext.notNow' => 'いまではない',
-			'discover.findNext.swipeHint' => 'スイッチ、または下のボタンを使用します。',
-			'discover.findNext.saved' => '保存ピック',
-			'discover.findNext.savedCount' => ({required Object count}) => 'トップページ > ${count}',
-			'discover.findNext.undo' => 'でしょ',
+			'discover.findNext.finishable' => ({required Object duration}) => '${duration}で楽しみきれます',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => '約${duration}',
+			'discover.findNext.nextUnit' => ({required Object duration}) => '次の章 · ${duration}',
+			'discover.findNext.totalDuration' => ({required Object duration}) => '合計${duration}',
+			'discover.findNext.timingVaries' => '所要時間は異なります',
+			'discover.findNext.notNow' => '今はスキップ',
+			'discover.findNext.swipeHint' => '表紙を矢印の方向にスワイプするか、下のボタンを使ってください。',
+			'discover.findNext.saved' => '保存した候補',
+			'discover.findNext.savedCount' => ({required Object count}) => '保存した候補 · ${count}',
+			'discover.findNext.undo' => '元に戻す',
 			'discover.findNext.details' => '詳細',
-			'discover.findNext.noPicks' => 'まだ選べないもの',
-			'discover.findNext.noPicksHint' => '図書館に接続するか、メディアソースを追加してスタートします。',
-			'discover.findNext.noMatches' => 'この瞬間に合わないもの。',
-			'discover.findNext.noMatchesHint' => '別のフォーマットを試すか、自分に時間を与えるか。',
-			'discover.findNext.allDone' => 'みんな捕まえてる',
-			'discover.findNext.allDoneHint' => 'これらの選択肢を再度見るために新鮮なミックスを開始します。',
-			'discover.findNext.refresh' => 'もう一つのミックスを見つける',
-			'discover.findNext.sourceReason' => ({required Object source}) => 'から ${source}',
-			'discover.findNext.libraryReason' => ({required Object library}) => 'から ${library}',
-			'discover.findNext.ownedReason' => 'あなたの図書館から',
-			'discover.findNext.liveNow' => 'で今',
-			'discover.findNext.watchLive' => '見るライブ',
-			'discover.findNext.filterAnything' => '何でも',
-			'discover.findNext.filterWatch' => '見る',
+			'discover.findNext.noPicks' => 'まだ候補がありません',
+			'discover.findNext.noPicksHint' => 'ライブラリに接続するか、メディアソースを追加して始めましょう。',
+			'discover.findNext.noMatches' => '今に合う候補がありません',
+			'discover.findNext.noMatchesHint' => '別のメディアの種類を選ぶか、使える時間を長くしてみてください。',
+			'discover.findNext.allDone' => 'すべての候補を確認しました',
+			'discover.findNext.allDoneHint' => '新しい組み合わせを作ると、これらの候補をもう一度見られます。',
+			'discover.findNext.refresh' => '別の組み合わせを探す',
+			'discover.findNext.sourceReason' => ({required Object source}) => '提供元：${source}',
+			'discover.findNext.libraryReason' => ({required Object library}) => 'ライブラリ：${library}',
+			'discover.findNext.ownedReason' => 'あなたのライブラリから',
+			'discover.findNext.liveNow' => '現在放送中',
+			'discover.findNext.watchLive' => 'ライブで観る',
+			'discover.findNext.filterAnything' => 'すべて',
+			'discover.findNext.filterWatch' => '観る',
 			'discover.findNext.filterListen' => '聴く',
 			'discover.findNext.filterRead' => '読む',
 			'discover.findNext.twentyMinutes' => '20分',
 			'discover.findNext.fortyFiveMinutes' => '45分',
 			'discover.findNext.ninetyMinutes' => '90分',
-			'discover.findNext.apply' => '応募',
-			'discover.findNext.openFailed' => 'この選択肢はもはや利用できません. 再度チェックするためにリフレッシュします。',
-			'discover.findNext.changeFailed' => '変更はできませんが、もう一度試してみてください。',
-			'discover.findNext.savedLimit' => '保存されたピックが満たされ、1つのピックを削除して別のピックを保存します。',
+			'discover.findNext.apply' => '適用',
+			'discover.findNext.openFailed' => 'この候補は利用できなくなりました。更新してもう一度確認してください。',
+			'discover.findNext.changeFailed' => '変更を保存できませんでした。もう一度お試しください。',
+			'discover.findNext.savedLimit' => '保存した候補が上限に達しています。別の候補を保存するには、1件削除してください。',
+			'discover.findNext.chooseHint' => '作品を開く、後で見るために保存する、またはスキップします。',
+			'discover.findNext.howItWorks' => '使い方',
+			'discover.findNext.notNowHelp' => 'この作品をいったんスキップします。ライブラリからは削除されません。',
+			'discover.findNext.saveHelp' => 'この端末の、このプロフィールの保存済み候補に追加します。保存してもダウンロードはされません。',
+			'discover.findNext.openHelp' => '表紙を選ぶと詳細が表示されます。メインボタンで再生、読書、または作品を開けます。',
+			'discover.findNext.controlsHelp' => 'キーボードやリモコンでは、ボタンにフォーカスして Enter または決定を押します。元に戻すと直前の選択を取り消せます。',
+			'discover.findNext.artworkLoading' => '画像を読み込み中…',
+			'discover.findNext.artworkUnavailable' => '画像を表示できません',
+			'discover.findNext.savedFeedback' => '保存済み候補に追加しました',
+			'discover.findNext.skippedFeedback' => 'いったんスキップしました',
+			'discover.findNext.releaseToConfirm' => '離して確定',
+			'discover.findNext.remoteHint' => '表紙にフォーカス：← / → で選択・決定で詳細・↑ / ↓ でフォーカス移動',
 			'discover.extras' => '予告編とエクストラ',
 			'discover.studio' => 'スタジオ',
 			'discover.rating' => '評価',
@@ -5750,6 +5890,8 @@ extension on TranslationsJa {
 			'explore.mdblistShelves.nameHint' => 'オリジナルリスト名を使用するために白いままにします。',
 			'explore.mdblistShelves.add' => 'シェルフを追加',
 			'explore.mdblistShelves.save' => 'シェルター保存',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => '移動 ${title} アップ',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'ダウンロード ${title}',
 			'explore.mdblistShelves.unavailable' => 'このリストは利用できません. 設定でそのシールを取り戻すか削除します。',
@@ -5769,8 +5911,6 @@ extension on TranslationsJa {
 			'explore.rows.popularShows' => '人気のテレビ番組',
 			'explore.rows.trendingAnime' => 'トレンドのアニメ',
 			'explore.rows.suggestedAnime' => 'おすすめのアニメ',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => '放送中の注目アニメ',
 			'explore.rows.popularAnime' => '人気のアニメ',
 			'explore.rows.trending' => 'トレンド',
@@ -6264,6 +6404,8 @@ extension on TranslationsJa {
 			'downloads.resumeDownload' => 'ダウンロードを再開',
 			'downloads.cancelledDownload' => 'キャンセル済みのダウンロード',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file}（${status}を同期中）',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file}をダウンロード済み — クリックして完了',
 			'downloads.partialDownloadClickToComplete' => '一部ダウンロード済み — クリックして完了',
 			'downloads.deleting' => '削除中…',
@@ -6283,8 +6425,6 @@ extension on TranslationsJa {
 			'downloads.unwatchedOnly' => '未視聴のみ',
 			'downloads.nextNUnwatched' => ({required Object count}) => '次の${count}件の未視聴',
 			'downloads.customAmount' => '数を指定…',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => '定量(毎回)',
 			'downloads.randomEpisodes' => 'ランダムエピソード',
 			'downloads.includeSpecials' => 'スペシャルを含める',
@@ -6778,6 +6918,8 @@ extension on TranslationsJa {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'サーバーに接続できませんでした: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'サインインに失敗しました: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connectに失敗しました: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Plexでサインイン',
 			'addServer.pinExpired' => 'サインイン前にPINの有効期限が切れました。もう一度お試しください。',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'アカウントの登録に失敗しました: ${error}',
@@ -6797,8 +6939,6 @@ extension on TranslationsJa {
 			'addServer.authResponseIncomplete' => 'サーバーからのサインイン応答が不完全です',
 			'addServer.quickConnectRejected' => 'Quick Connectがサーバーに拒否されました',
 			'addServer.quickConnectNotJson' => 'Quick Connectのレスポンスが有効なJSONではありません',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connectのレスポンスにコードまたはシークレットがありません',
 			'addServer.quickConnectPollRejected' => 'Quick Connectのポーリングがサーバーに拒否されました',
 			'addServer.serverTimedOut' => 'サーバーが時間内に応答しませんでした',
@@ -7104,6 +7244,12 @@ extension on TranslationsJa {
 			'fileSources.useFiles' => 'ファイルや本を使用する',
 			'fileSources.cancelScan' => 'スキャンキャン',
 			'fileSources.googleDrive' => 'Google Drive',
+			'fileSources.smbEndpointHint' => '例: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'SMBサーバーと共有フォルダーを1つ入力してください。',
+			'fileSources.smbFolderHelp' => '共有フォルダー全体を使う場合は空欄にし、一部だけを使う場合はその中のフォルダーを入力してください。',
+			'fileSources.smbDomain' => 'ドメイン（任意）',
+			'fileSources.smbEncryption' => 'SMB3接続を暗号化',
+			'fileSources.smbEncryptionHint' => 'NASが対応している場合はSMB3暗号化を使用します。',
 			'lending.title' => '公共図書館',
 			'lending.add' => '図書館を追加',
 			'lending.other' => 'もう一つの図書館',
@@ -7166,7 +7312,7 @@ extension on TranslationsJa {
 			'audiobook.newSyncCode' => '新しいシンクコードを作成する',
 			'audiobook.saveSync' => '保存と同期',
 			'audiobook.disableSync' => 'このデバイスでSync をオフにする',
-			'audiobook.syncSourceDisconnect' => 'このソースを削除すると、ここで読み聞かせと聴く同期が停止されます。',
+			'audiobook.syncSourceDisconnect' => 'このソースを削除すると、このデバイスでの読書と音声再生の同期が無効になります。暗号化された同期ファイルはストレージサービスに残ります。',
 			'audiobook.syncReconnect' => 'ストレージアカウント再接続',
 			'audiobook.lastSynced' => ({required Object time}) => '最後に ${time} で同期',
 			'audiobook.syncPrivacy' => '暗号化された進歩およびノートのみが保存されます. オーディオおよび電子書籍ファイル、アカウントのトークンおよびパスワードはアップロードされません. Google ドライブおよび OneDrive はアプリストレージを使用します. Dropbox は PlezyNG Sync を使用します. 同期を有効にするには追加の書き込みアクセスが要求される可能性があります. 有効にしている間、この目的地は進歩同期を所有しています. サーバーの進歩は別々に残ります. 回転同期は地元の歴史と遠隔状態を維持します。',
@@ -7205,6 +7351,93 @@ extension on TranslationsJa {
 			'audiobook.statusFinished' => '終了',
 			'audiobook.goToTime' => '時間へ行く',
 			'audiobook.timeHelp' => '時間:分:秒、または分:秒',
+			'sourceSetup.savedCertificate' => '保存済みのサーバー証明書',
+			'sourceSetup.nfsEndpointInvalid' => 'nfs://nas:2049/export のような NFS URL を入力してください。',
+			'sourceSetup.dlnaNone' => 'DLNA サーバーが見つかりませんでした。デバイス記述の URL を手動で入力してください。',
+			'sourceSetup.dlnaServers' => 'DLNA メディアサーバー',
+			'sourceSetup.dlnaUnavailable' => 'このネットワークでは DLNA の検出を利用できません。デバイス記述の URL を手動で入力してください。',
+			'sourceSetup.dlnaSearching' => 'ローカルネットワークで DLNA サーバーを検索中',
+			'sourceSetup.networkSearching' => 'ローカルネットワークを検索中…',
+			'sourceSetup.dlnaDiscover' => 'DLNA サーバーを検出',
+			'sourceSetup.dlnaHelp' => '検出にはローカルネットワークのマルチキャストを使用します。サーバーが表示されない場合は、上にデバイス記述の URL を入力してください。',
+			'sourceSetup.dlnaRoot' => 'DLNA オブジェクト ID。空欄にするとデバイスのルートを使用します。',
+			'sourceSetup.passwordOrKey' => 'パスワードを入力するか、下に秘密鍵を追加してください。',
+			'sourceSetup.sshFingerprint' => 'SSH ホスト鍵の SHA256 フィンガープリント',
+			'sourceSetup.sshFingerprintHelp' => 'サーバー管理者に確認してください。サーバーで ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub を実行し、表示された SHA256 値を使用します。',
+			'sourceSetup.sshFingerprintKeep' => '現在固定されているフィンガープリントを維持するには空欄にします。変更する場合は新しいサーバーのフィンガープリントを入力してください。',
+			'sourceSetup.sshAuthentication' => 'SSH 公開鍵認証',
+			'sourceSetup.sshAuthenticationHelp' => '任意です。パスワード認証も利用できます。',
+			'sourceSetup.privateKey' => '秘密鍵（PEM または OpenSSH 形式）',
+			'sourceSetup.privateKeyPassphrase' => '秘密鍵のパスフレーズ',
+			'sourceSetup.nfsMountPort' => 'NFS マウントサービスの TCP ポート',
+			'sourceSetup.nfsMountPortHelp' => '既定値: 20048',
+			'sourceSetup.nfsUserId' => 'NFS ユーザー ID（AUTH_SYS）',
+			'sourceSetup.nfsUserIdHelp' => '既定値: 1000。NAS のエクスポート設定で許可されている ID を使用してください。',
+			'sourceSetup.nfsGroupId' => 'NFS グループ ID（AUTH_SYS）',
+			'sourceSetup.nfsGroupIdHelp' => '既定値: 1000。NAS のエクスポート設定で許可されているグループ ID を使用してください。',
+			'sourceSetup.nfsEncryption' => 'NFS の暗号化を必須にする（RPC-with-TLS）',
+			'sourceSetup.nfsEncryptionHelp' => 'NFS とマウントサービスに TLS 1.3 を必須とします。NAS が対応していない場合、接続は拒否されます。',
+			'sourceSetup.nfsTrustCertificate' => 'NFS のカスタム CA 証明書またはサーバー証明書（PEM、任意）',
+			'sourceSetup.nfsTrustHelp' => 'このデバイスが信頼する証明書を使う場合は空欄にします。必要に応じてプライベート CA または自己署名のサーバー証明書を追加してください。証明書の名前は NFS URL のホスト名と一致する必要があります。',
+			'sourceSetup.nfsTrustInvalid' => 'PEM 形式の CA 証明書またはサーバー証明書を使用してください。秘密鍵を含めないでください。',
+			'sourceSetup.addTrustCertificate' => 'カスタムの信頼証明書を追加',
+			'sourceSetup.replaceTrustCertificate' => '保存済みのカスタム証明書を置き換え',
+			'sourceSetup.nfsTlsHelp' => 'RPC-with-TLS は通常の NFS およびマウントサービスのポートを使用し、NAS の RFC 9289 対応が必要です。TLS 1.3 が必須です。ホスト名または IP アドレスは証明書と一致する必要があります。暗号化された通信でも AUTH_SYS UID/GID は引き続き適用されます。',
+			'sourceSetup.clientCertificate' => 'クライアント証明書（任意）',
+			'sourceSetup.clientCertificateHelp' => 'NAS がこのクライアントを認証できるようにします。AUTH_SYS ID は引き続き NAS のエクスポートポリシーに従います。',
+			'sourceSetup.savedIdentity' => '保存済みのクライアント認証情報 を使用します。',
+			'sourceSetup.replaceIdentity' => '保存済みのクライアント認証情報 を置き換え',
+			'sourceSetup.chooseIdentity' => 'PKCS#12 クライアント認証情報 を選択',
+			'sourceSetup.identityPassphrase' => 'クライアント認証情報 のパスフレーズ',
+			'sourceSetup.identityPassphraseHelp' => 'ファイルにパスフレーズがない場合は空欄にしてください。',
+			'sourceSetup.removeIdentity' => '保存済みのクライアント認証情報 を削除',
+			'sourceSetup.identityStorageHelp' => 'クライアント認証情報 は、ソースの暗号化された認証情報ストアに保存されます。保存済みの認証情報 を維持するには、このセクションを変更しないでください。',
+			'sourceSetup.nfsLimitations' => 'TCP 経由の読み取り専用 NFSv3 です。RPC-with-TLS を使わない場合、NFS 通信は暗号化されません。NAS は、選択した AUTH_SYS ID と非特権クライアントポートを許可する必要があります（通常は「insecure」というエクスポートオプション）。NFSv4 と UDP には対応していません。',
+			'sourceSetup.nfsSetupHelp' => 'NFS 設定のヘルプ',
+			'sourceSetup.nfsSetupHint' => '接続できない場合は、これらの設定を確認してください。',
+			'sourceSetup.nfsSetupDetails' => 'TCP の NFSv3 エクスポートを使用してください。暗号化を必須にする場合、NFS とマウントサービスの両方が RPC-with-TLS に対応している必要があります。このデバイスがサーバー証明書を信頼している場合、カスタム証明書は空欄にします。それ以外は NAS の CA 証明書または自己署名証明書を追加してください。証明書の名前は接続先のホスト名と一致する必要があります。NAS が相互 TLS を要求する場合は、その PKCS#12 クライアント認証情報 を追加してください。最後に、エクスポート設定が指定の AUTH_SYS UID/GID とクライアントポートのポリシーを許可しているか確認してください。',
+			'sourceSetup.ftpHelp' => 'FTP はパッシブモードを使用します。暗号化されていない FTP には ftp://、明示的 TLS には ftpes://、TLS には ftps:// を使用してください（ポート 990 では暗黙的 TLS、それ以外では明示的 TLS）。',
+			'sourceSetup.openSubtitles' => 'OpenSubtitles',
+			'sourceSetup.subtitleSetup' => '単独の動画ファイルに使用できる、任意の字幕検索機能です。',
+			'sourceSetup.apiKey' => 'API キー',
+			'sourceSetup.optionalUsername' => 'アカウントのユーザー名（任意）',
+			'sourceSetup.optionalPassword' => 'アカウントのパスワード（任意）',
+			'sourceSetup.subtitlePrivacy' => 'opensubtitles.com から API キーを取得してください。検索では動画のタイトルと利用可能な IMDb/TMDB ID を送信しますが、動画ファイルは一切送信しません。キーと任意のアカウント認証情報は、このソースとともに暗号化して保存されます。',
+			'sourceSetup.automaticMetadata' => '動画のオンラインメタデータを自動取得',
+			'sourceSetup.metadataPrivacy' => '送信するのはファイル名のタイトル・年・エピソード番号、または NFO ID のみです。メディアや認証情報は一切送信しません。NFO の項目が常に優先されます。',
+			'sourceSetup.nfsEncryptionFailure' => '暗号化された NFS では、NAS の両サービスが RFC 9289 と TLS 1.3 に対応しているか、証明書の名前とエクスポートの UID/GID が正しいかを確認してください。PlezyNG が暗号化なしでこの接続を再試行することはありません。',
+			'sourceSetup.sourceConnecting' => 'ソースに接続中',
+			'sourceSetup.metadataSearchPrivacy' => 'このタイトル検索は Trakt に送信されます。入力したタイトルのみを送信し、動画やソースの認証情報は送信しません。',
+			'sourceSetup.chooseMatch' => '一致する作品を選択',
+			'sourceSetup.metadataMatchHelp' => '選択する前にタイトルと年を確認してください。検索タイトルは Trakt に送信されますが、動画はソースに残ります。',
+			'sourceSetup.metadataNoMatches' => 'オンラインで一致するタイトルが見つかりませんでした。別のタイトルをお試しください。',
+			'sourceSetup.metadataSearch' => 'オンラインメタデータを検索',
+			'sourceSetup.metadataLoading' => '映画や番組の情報をオンラインで検索中…',
+			'sourceSetup.metadataFromTrakt' => 'Trakt のオンラインメタデータ',
+			'sourceSetup.metadataNoAutomaticMatch' => 'タイトルの自動照合で一致が見つかりませんでした。タイトルを検索して、一致する作品を選択してください。',
+			'sourceSetup.metadataFailed' => 'オンラインメタデータを読み込めませんでした。再生とローカルの情報は引き続き利用できます。',
+			'sourceSetup.videoDetailsLoading' => '動画の情報を読み込み中',
+			'sourceSetup.subtitleKeyRequired' => 'OpenSubtitles の API キーが必要です',
+			'sourceSetup.subtitleKeyHelp' => 'このファイルソースを編集し、任意の字幕設定に OpenSubtitles の API キーを追加してください。',
+			'sourceSetup.subtitleSearchFailed' => '字幕の検索に失敗しました。API キー、接続、サービスへのアクセスを確認してください。',
+			'sourceSetup.subtitleApplyFailed' => 'この字幕をダウンロードまたは適用できませんでした。接続を確認し、別の検索結果をお試しください。',
+			'sourceSetup.subtitleSearch' => 'OpenSubtitles を検索',
+			'sourceSetup.subtitleSearchPrivacy' => '検索にはタイトルと利用可能な IMDb/TMDB ID を使用します。動画ファイルはソースに残ります。選択する前に、言語、強制表示や聴覚障がい者向けの表示、評価を確認してください。',
+			'sourceSetup.movieOrShow' => '映画または番組',
+			'sourceSetup.subtitleTitleHint' => 'タイトルを入力して検索結果を絞り込む',
+			'sourceSetup.subtitleLanguage' => '字幕の言語',
+			'sourceSetup.subtitleSearching' => 'OpenSubtitles を検索中',
+			'sourceSetup.subtitleNoMatches' => '一致する字幕が見つかりませんでした。別のタイトルまたは言語をお試しください。',
+			'sourceSetup.downloadSubtitle' => '字幕をダウンロード',
+			'sourceSetup.subtitle' => '字幕',
+			'sourceSetup.nfsTlsRequired' => 'RPC-with-TLS が必須',
+			'sourceSetup.nfsUnencrypted' => '暗号化されていない NFS',
+			'sourceSetup.tlsEncrypted' => 'TLS で暗号化',
+			'sourceSetup.ftpPlain' => '暗号化されていない FTP',
+			'sourceSetup.sshPinned' => 'SSH で暗号化 · ホスト鍵を固定済み',
+			'sourceSetup.smbEncrypted' => 'SMB3 暗号化がオン',
+			'sourceSetup.smbUnencrypted' => 'SMB3 暗号化がオフ',
+			'sourceSetup.httpUnencrypted' => '転送が暗号化されていない HTTP',
 			'comics.fitHeight' => '高さに合わせる',
 			'comics.readingMode' => '読書モード',
 			'comics.paged' => 'ページ表示',
@@ -7217,6 +7450,15 @@ extension on TranslationsJa {
 			'comics.savedForComic' => 'このプロフィールで、このコミックの表示設定を保存します。',
 			'comics.readLists' => '読書リスト',
 			'comics.collections' => 'コレクション',
+			_ => null,
+		} ?? switch (path) {
+			'sourceSetup.checkEndpointSecurity' => '接続先のセキュリティを確認',
+			'sourceSetup.fieldRequired' => ({required Object label}) => '${label}を入力してください。',
+			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => '${label}を ${min} から ${max} の範囲で入力してください。',
+			'sourceSetup.replaceFile' => ({required Object name}) => '${name} を置き換え',
+			'sourceSetup.selectedIdentity' => ({required Object name}) => '選択したクライアント認証情報: ${name}',
+			'sourceSetup.subtitleRating' => ({required Object rating}) => '評価 ${rating}',
+			'sourceSetup.subtitleDownloading' => ({required Object title}) => '字幕をダウンロード中: ${title}',
 			_ => null,
 		};
 	}

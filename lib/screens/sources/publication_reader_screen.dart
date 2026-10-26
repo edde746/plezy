@@ -163,7 +163,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
       if (pages == null) _file = await sources.content(widget.entry, widget.file);
       if (!valid) return;
       _streamingComic = pages != null;
-      if (!pdf) {
+      if (!pdf || pages != null) {
         final archive = pages != null
             ? await PublicationArchive.stream(pages, temp)
             : await PublicationArchive.open(_file!, temp, comic: widget.file.kind == SourceItemKind.comic);
@@ -1526,3 +1526,4 @@ class _ReaderSettingsScreenState extends State<ReaderSettingsScreen> {
     ],
   );
 }
+

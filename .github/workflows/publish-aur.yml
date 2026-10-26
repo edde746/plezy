@@ -1,3 +1,4 @@
+# ng-runner-policy: private-jit-only-v1
 name: Update AUR package
 
 on:
@@ -16,7 +17,7 @@ permissions:
 jobs:
   update-aur:
     name: Update plezyng-bin on AUR
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-update-aur"]}}', github.run_id)) }}
     if: github.event_name != 'release' || github.event.release.prerelease == false
     steps:
       - name: Require main for manual updates

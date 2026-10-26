@@ -4,6 +4,7 @@ import 'dart:typed_data';
 import '../models/subtitles/subtitle_search_result.dart';
 import '../sources/source_models.dart';
 import '../sources/source_transport.dart';
+import '../utils/language_codes.dart';
 
 class OpenSubtitleDownload {
   const OpenSubtitleDownload({required this.fileName, required this.bytes});
@@ -66,7 +67,7 @@ class OpenSubtitlesClient {
     final boundedQuery = trimmedQuery.length > 120 ? trimmedQuery.substring(0, 120) : trimmedQuery;
     final params = <String, String>{
       'query': boundedQuery,
-      'languages': _language(languageCode),
+      'languages': languageCodeFor(languageCode),
       'order_by': 'download_count',
       'order_direction': 'desc',
       'limit': '30',
@@ -101,8 +102,8 @@ class OpenSubtitlesClient {
             id: id,
             key: fileId,
             codec: ext,
-            language: language.isEmpty ? _language(languageCode) : language,
-            languageCode: language.isEmpty ? _language(languageCode) : language,
+            language: language.isEmpty ? languageCodeFor(languageCode) : language,
+            languageCode: language.isEmpty ? languageCodeFor(languageCode) : language,
             score: _number(attributes['ratings']),
             providerTitle: 'OpenSubtitles',
             title: title.isEmpty ? fileName : title,
@@ -166,11 +167,19 @@ class OpenSubtitlesClient {
     );
   }
 
-  static String _language(String value) {
-    final normalized = value.trim().toLowerCase();
-    if (RegExp(r'^[a-z]{2}$').hasMatch(normalized)) return normalized;
-    if (RegExp(r'^[a-z]{3}$').hasMatch(normalized)) return normalized.substring(0, 2);
-    return 'en';
+  /// OpenSubtitles uses service-specific Chinese and Portuguese region codes.
+  /// Preserve them, and resolve ISO 639-2 aliases instead of truncating them.
+  static String languageCodeFor(String value) {
+    final normalized = value.trim().replaceAll('_', '-').toLowerCase();
+    final code = LanguageCodes.getIso6391Code(normalized);
+    if (code == 'zh') {
+      return normalized.contains('hant') || normalized.endsWith('-tw') || normalized.endsWith('-hk')
+          ? 'zh-tw'
+          : 'zh-cn';
+    }
+    if (code == 'pt') return normalized.endsWith('-br') ? 'pt-br' : 'pt-pt';
+    if (code == 'nb' || code == 'nn') return 'no';
+    return code ?? 'en';
   }
 
   static String _string(Object? value) => value == null ? '' : '$value';

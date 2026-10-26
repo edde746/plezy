@@ -1,3 +1,4 @@
+# ng-runner-policy: private-jit-only-v1
 name: Discord Release Announcement
 
 on:
@@ -10,7 +11,7 @@ jobs:
   announce-discord:
     name: Announce published release to Discord
     if: github.event.release.prerelease == false
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-announce-discord"]}}', github.run_id)) }}
     timeout-minutes: 5
     permissions:
       contents: read

@@ -9,6 +9,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
+import '../../i18n/presentation_formats.dart';
 import '../../models/trakt/trakt_catalog_entry.dart';
 import '../../providers/trackers_provider.dart';
 import '../../services/trackers/trakt/trakt_constants.dart';
@@ -155,22 +156,22 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(t.common.search),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text(
-              'This title search goes to Trakt. It sends the title you enter, not the video or source credentials.',
-            ),
-            const SizedBox(height: 12),
-            FocusableTextField(
-              controller: controller,
-              autofocus: true,
-              textInputAction: TextInputAction.search,
-              decoration: InputDecoration(hintText: t.search.hint),
-              onSubmitted: (_) => Navigator.pop(dialogContext, controller.text.trim()),
-            ),
-          ],
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(t.sourceSetup.metadataSearchPrivacy),
+              const SizedBox(height: 12),
+              FocusableTextField(
+                controller: controller,
+                autofocus: true,
+                textInputAction: TextInputAction.search,
+                decoration: InputDecoration(labelText: t.metadataEdit.title, hintText: t.search.hint),
+                onSubmitted: (_) => Navigator.pop(dialogContext, controller.text.trim()),
+              ),
+            ],
+          ),
         ),
         actions: [
           TextButton(
@@ -188,28 +189,60 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     return query;
   }
 
-  Future<TraktCatalogEntry?> _chooseMetadataMatch(
-    List<TraktCatalogEntry> candidates,
-  ) => showModalBottomSheet<TraktCatalogEntry>(
-    context: context,
-    isScrollControlled: true,
-    builder: (sheetContext) => SafeArea(
-      child: SizedBox(
-        height: MediaQuery.sizeOf(sheetContext).height * .72,
-        child: Column(
-          children: [
-            Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Semantics(
-                    header: true,
-                    child: Text('Choose a match', style: Theme.of(sheetContext).textTheme.titleLarge),
+  Future<TraktCatalogEntry?> _chooseMetadataMatch(List<TraktCatalogEntry> candidates) =>
+      showModalBottomSheet<TraktCatalogEntry>(
+        context: context,
+        isScrollControlled: true,
+        builder: (sheetContext) => SafeArea(
+          child: SizedBox(
+            height: MediaQuery.sizeOf(sheetContext).height * .72,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Semantics(
+                        header: true,
+                        child: Text(t.sourceSetup.chooseMatch, style: Theme.of(sheetContext).textTheme.titleLarge),
+                      ),
+                      const SizedBox(height: 4),
+                      Text(t.sourceSetup.metadataMatchHelp),
+                    ],
                   ),
-                  const SizedBox(height: 4),
-                  const Text(
-                    'Review the title and year before choosing. Trakt receives the search title; the video stays on its source.',
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: candidates.length,
+                    itemBuilder: (context, index) {
+                      final candidate = candidates[index];
+                      final media = candidate.media!;
+                      final title = media.title?.trim() ?? '';
+                      return FocusableListTile(
+                        title: Text(
+                          media.year == null
+                              ? isolateDisplayText(title)
+                              : '${isolateDisplayText(title)} (${formatDecimal(media.year!, maximumDecimals: 0)})',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: media.overview?.trim().isNotEmpty == true
+                            ? Text(isolateDisplayText(media.overview!), maxLines: 2, overflow: TextOverflow.ellipsis)
+                            : null,
+                        trailing: media.rating == null
+                            ? null
+                            : Semantics(
+                                label: t.sourceSetup.subtitleRating(
+                                  rating: isolateDisplayText(
+                                    '${formatRating(media.rating!)}/${formatDecimal(10, maximumDecimals: 0)}',
+                                  ),
+                                ),
+                                child: ExcludeSemantics(child: Text('★ ${formatRating(media.rating!)}')),
+                              ),
+                        onTap: () => Navigator.pop(sheetContext, candidate),
+                      );
+                    },
                   ),
                 ],
               ),
@@ -264,7 +297,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
           .take(25)
           .toList(growable: false);
       if (candidates.isEmpty) {
-        showAppSnackBar(context, t.messages.noResultsFound);
+        showAppSnackBar(context, t.sourceSetup.metadataNoMatches);
         return;
       }
       final selected = await _chooseMetadataMatch(candidates);
@@ -491,7 +524,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
       actions: [
         if (_entry.kind == SourceItemKind.video && hasTrakt)
           IconButton(
-            tooltip: 'Search online metadata',
+            tooltip: t.sourceSetup.metadataSearch,
             onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
             icon: const AppIcon(Symbols.search_rounded),
           ),
@@ -531,32 +564,38 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                         final details = Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(_entry.displayTitle, style: theme.textTheme.headlineMedium),
+                            Text(isolateDisplayText(_entry.displayTitle), style: theme.textTheme.headlineMedium),
                             if (_entry.author.isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(top: 12),
-                                child: Text(_entry.author, style: theme.textTheme.titleLarge),
+                                child: Text(isolateDisplayText(_entry.author), style: theme.textTheme.titleLarge),
                               ),
                             if (_entry.narrator.isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(top: 8),
                                 child: Text(
-                                  '${t.fileSources.narrator} · ${_entry.narrator}',
+                                  '${t.fileSources.narrator} · ${isolateDisplayText(_entry.narrator)}',
                                   style: theme.textTheme.bodyMedium?.copyWith(color: tk.textMuted),
                                 ),
                               ),
                             if (_entry.series.isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(top: 8),
-                                child: Text(_entry.series, style: theme.textTheme.bodyMedium),
+                                child: Text(isolateDisplayText(_entry.series), style: theme.textTheme.bodyMedium),
                               ),
                             if (_entry.releaseYear != null || _entry.rating != null)
                               Padding(
                                 padding: const EdgeInsets.only(top: 10),
                                 child: Text(
                                   [
-                                    if (_entry.releaseYear != null) '${_entry.releaseYear}',
-                                    if (_entry.rating != null) '★ ${_entry.rating!.toStringAsFixed(1)}/10',
+                                    if (_entry.releaseYear != null)
+                                      formatDecimal(_entry.releaseYear!, maximumDecimals: 0),
+                                    if (_entry.rating != null)
+                                      t.sourceSetup.subtitleRating(
+                                        rating: isolateDisplayText(
+                                          '${formatRating(_entry.rating!)}/${formatDecimal(10, maximumDecimals: 0)}',
+                                        ),
+                                      ),
                                   ].join(' · '),
                                   style: theme.textTheme.bodyMedium?.copyWith(color: tk.textMuted),
                                 ),
@@ -627,7 +666,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                       Padding(
                         padding: EdgeInsets.symmetric(vertical: 24),
                         child: Semantics(
-                          label: 'Loading video details',
+                          label: t.sourceSetup.videoDetailsLoading,
                           liveRegion: true,
                           child: LinearProgressIndicator(),
                         ),
@@ -636,13 +675,13 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                       Padding(
                         padding: EdgeInsets.only(top: 4, bottom: 12),
                         child: Semantics(
-                          label: 'Looking up online movie and TV details',
+                          label: t.sourceSetup.metadataLoading,
                           liveRegion: true,
                           child: Row(
                             children: [
                               SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
                               SizedBox(width: 12),
-                              Expanded(child: Text('Looking up online movie and TV details…')),
+                              Expanded(child: Text(t.sourceSetup.metadataLoading)),
                             ],
                           ),
                         ),
@@ -651,12 +690,12 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                       Padding(
                         padding: EdgeInsets.only(bottom: 12),
                         child: Semantics(
-                          label: 'Online metadata from Trakt',
+                          label: t.sourceSetup.metadataFromTrakt,
                           child: Align(
-                            alignment: Alignment.centerLeft,
+                            alignment: AlignmentDirectional.centerStart,
                             child: Chip(
                               avatar: Icon(Icons.public_rounded, size: 18),
-                              label: Text('Online metadata from Trakt'),
+                              label: Text(t.sourceSetup.metadataFromTrakt),
                             ),
                           ),
                         ),
@@ -667,16 +706,11 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Semantics(
-                              liveRegion: true,
-                              child: Text(
-                                'No automatic title match was found. Search for the title to choose a match.',
-                              ),
-                            ),
+                            Semantics(liveRegion: true, child: Text(t.sourceSetup.metadataNoAutomaticMatch)),
                             TextButton.icon(
                               onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
-                              icon: const Icon(Icons.search_rounded),
-                              label: const Text('Search online metadata'),
+                              icon: Icon(Icons.search_rounded),
+                              label: Text(t.sourceSetup.metadataSearch),
                             ),
                           ],
                         ),
@@ -687,16 +721,11 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Semantics(
-                              liveRegion: true,
-                              child: Text(
-                                'Online metadata could not be loaded. Playback and local details are still available.',
-                              ),
-                            ),
+                            Semantics(liveRegion: true, child: Text(t.sourceSetup.metadataFailed)),
                             TextButton.icon(
                               onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
                               icon: const Icon(Icons.search_rounded),
-                              label: const Text('Search online metadata'),
+                              label: Text(t.sourceSetup.metadataSearch),
                             ),
                           ],
                         ),
@@ -708,13 +737,13 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Automatic metadata lookup is off for this source. You can still search for a title manually.',
+                              '${t.sourceSetup.automaticMetadata} · ${t.common.off}',
                               style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                             ),
                             TextButton.icon(
                               onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
-                              icon: const Icon(Icons.search_rounded),
-                              label: const Text('Search online metadata'),
+                              icon: Icon(Icons.search_rounded),
+                              label: Text(t.sourceSetup.metadataSearch),
                             ),
                           ],
                         ),
@@ -726,7 +755,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             Text(
-                              'Connect Trakt in Settings → Services to enable online metadata, cast, artwork and trailer lookup. Searches send the title only; they never upload the video file.',
+                              t.sourceSetup.metadataSearchPrivacy,
                               style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
                             ),
                             TextButton.icon(
@@ -932,3 +961,4 @@ class _AudioOrderState extends State<_AudioOrder> {
     ],
   );
 }
+

@@ -104,6 +104,7 @@ class TranslationsSv extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$sv fileSources = _Translations$fileSources$sv._(_root);
 	@override late final _Translations$lending$sv lending = _Translations$lending$sv._(_root);
 	@override late final _Translations$audiobook$sv audiobook = _Translations$audiobook$sv._(_root);
+	@override late final _Translations$sourceSetup$sv sourceSetup = _Translations$sourceSetup$sv._(_root);
 	@override late final _Translations$comics$sv comics = _Translations$comics$sv._(_root);
 }
 
@@ -762,6 +763,13 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Välj hur datum, tal och måttenheter visas.';
 	@override String get metadataLanguage => 'Språk för metadata';
 	@override String get metadataLanguageDescription => 'Föredraget språk för titlar och beskrivningar när servern stöder det. Ljud och undertexter ställs in separat.';
+	@override String get experimentalDolbyVision => 'Experimentell Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Använd den experimentella FEL-renderaren vid nästa uppspelning. Kräver en separat motorversion.';
+	@override String get dvExperimentUnavailableDescription => 'Det här experimentet är för närvarande endast tillgängligt på Linux.';
+	@override String get dvCompatibilityFallback => 'Kompatibilitetsreserv';
+	@override String get dvCompatibilityFallbackDescription => 'Använd standardrenderaren om experimentet inte kan starta. FEL-data kan gå förlorade.';
+	@override String get dvExperimentDiagnostics => 'Loggning av videoexperiment';
+	@override String get dvExperimentDiagnosticsDescription => 'Aktivera detaljerade spelarloggar vid nästa uppspelning.';
 }
 
 // Path: themeEditor
@@ -3064,6 +3072,12 @@ class _Translations$fileSources$sv extends Translations$fileSources$en {
 	@override String get useFiles => 'Använd filer och böcker';
 	@override String get cancelScan => 'Avbryt skanning';
 	@override String get googleDrive => 'Google Drive';
+	@override String get smbEndpointHint => 'Exempel: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Ange en SMB-server och en delad mapp.';
+	@override String get smbFolderHelp => 'Lämna tomt för att använda hela den delade mappen, eller ange en mapp i den.';
+	@override String get smbDomain => 'Domän (valfritt)';
+	@override String get smbEncryption => 'Kryptera SMB3-anslutningen';
+	@override String get smbEncryptionHint => 'Använd SMB3-kryptering när NAS-enheten stöder det.';
 }
 
 // Path: lending
@@ -3185,13 +3199,110 @@ class _Translations$audiobook$sv extends Translations$audiobook$en {
 	@override String get timeHelp => 'Klockor: minuter: sekunder eller minuter: sekunder';
 }
 
+// Path: sourceSetup
+class _Translations$sourceSetup$sv extends Translations$sourceSetup$en {
+	_Translations$sourceSetup$sv._(TranslationsSv root) : this._root = root, super.internal(root);
+
+	final TranslationsSv _root; // ignore: unused_field
+	// Translations
+	@override String get savedCertificate => 'Sparat servercertifikat';
+	@override String get nfsEndpointInvalid => 'Ange en NFS-URL, till exempel nfs://nas:2049/export.';
+	@override String get dlnaNone => 'Inga DLNA-servrar hittades. Ange URL:en till enhetsbeskrivningen manuellt.';
+	@override String get dlnaServers => 'DLNA-medieservrar';
+	@override String get dlnaUnavailable => 'DLNA-sökning är inte tillgänglig i det här nätverket. Ange URL:en till enhetsbeskrivningen manuellt.';
+	@override String get dlnaSearching => 'Söker efter DLNA-servrar i det lokala nätverket';
+	@override String get networkSearching => 'Söker i det lokala nätverket…';
+	@override String get dlnaDiscover => 'Hitta DLNA-servrar';
+	@override String get dlnaHelp => 'Sökningen kräver multicast i det lokala nätverket. Om ingen server visas anger du URL:en till dess enhetsbeskrivning ovan.';
+	@override String get dlnaRoot => 'DLNA-objekt-ID; lämna tomt för att använda enhetens rot.';
+	@override String get passwordOrKey => 'Ange ett lösenord eller lägg till en privat nyckel nedan.';
+	@override String get sshFingerprint => 'SHA256-fingeravtryck för SSH-värdnyckeln';
+	@override String get sshFingerprintHelp => 'Kontrollera det med serveradministratören. Kör ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub på servern och använd dess SHA256-värde.';
+	@override String get sshFingerprintKeep => 'Lämna tomt för att behålla det låsta fingeravtrycket eller ange ett nytt serverfingeravtryck.';
+	@override String get sshAuthentication => 'SSH-autentisering med offentlig nyckel';
+	@override String get sshAuthenticationHelp => 'Valfritt; autentisering med lösenord stöds också.';
+	@override String get privateKey => 'Privat nyckel (PEM- eller OpenSSH-format)';
+	@override String get privateKeyPassphrase => 'Lösenfras för den privata nyckeln';
+	@override String get nfsMountPort => 'TCP-port för NFS-monteringstjänsten';
+	@override String get nfsMountPortHelp => 'Standard: 20048';
+	@override String get nfsUserId => 'NFS-användar-ID (AUTH_SYS)';
+	@override String get nfsUserIdHelp => 'Standard: 1000. Använd det ID som NAS-enhetens NFS-delning tillåter.';
+	@override String get nfsGroupId => 'NFS-grupp-ID (AUTH_SYS)';
+	@override String get nfsGroupIdHelp => 'Standard: 1000. Använd det grupp-ID som NAS-enhetens NFS-delning tillåter.';
+	@override String get nfsEncryption => 'Kräv krypterad NFS (RPC-with-TLS)';
+	@override String get nfsEncryptionHelp => 'Kräv TLS 1.3 för NFS och monteringstjänsten. Om NAS-enheten inte stöder detta nekas anslutningen.';
+	@override String get nfsTrustCertificate => 'Anpassad NFS-CA eller servercertifikat (PEM, valfritt)';
+	@override String get nfsTrustHelp => 'Lämna tomt för certifikat som den här enheten litar på. Lägg vid behov till ett certifikat från en privat CA eller ett självsignerat servercertifikat; namnen måste stämma överens med värden i NFS-URL:en.';
+	@override String get nfsTrustInvalid => 'Använd ett CA- eller servercertifikat i PEM-format. Ta inte med någon privat nyckel.';
+	@override String get addTrustCertificate => 'Lägg till anpassat betrott certifikat';
+	@override String get replaceTrustCertificate => 'Ersätt sparat anpassat certifikat';
+	@override String get nfsTlsHelp => 'RPC-with-TLS använder de vanliga portarna för NFS och monteringstjänsten och kräver stöd för RFC 9289 i NAS-enheten. TLS 1.3 krävs. Värdnamnet eller IP-adressen måste stämma överens med certifikatet. AUTH_SYS UID/GID gäller fortfarande i den krypterade kanalen.';
+	@override String get clientCertificate => 'Klientcertifikat (valfritt)';
+	@override String get clientCertificateHelp => 'Låter NAS-enheten autentisera den här klienten; AUTH_SYS-ID:n styrs fortfarande av reglerna för NAS-enhetens NFS-delning.';
+	@override String get savedIdentity => 'En sparad klientidentitet kommer att användas.';
+	@override String get replaceIdentity => 'Ersätt sparad klientidentitet';
+	@override String get chooseIdentity => 'Välj PKCS#12-klientidentitet';
+	@override String get identityPassphrase => 'Lösenfras för klientidentiteten';
+	@override String get identityPassphraseHelp => 'Lämna tomt om filen inte har någon lösenfras.';
+	@override String get removeIdentity => 'Ta bort eventuell sparad klientidentitet';
+	@override String get identityStorageHelp => 'Klientidentiteter sparas i källans krypterade lagring för inloggningsuppgifter. Lämna det här avsnittet oförändrat för att behålla den sparade identiteten.';
+	@override String get nfsLimitations => 'Skrivskyddad NFSv3 över TCP. Utan RPC-with-TLS är NFS-trafiken okrypterad. NAS-enheten måste tillåta valda AUTH_SYS-ID:n och klientportar utan särskilda privilegier (ofta kallat exportalternativet ”insecure”). NFSv4 och UDP stöds inte.';
+	@override String get nfsSetupHelp => 'Hjälp med NFS-inställningar';
+	@override String get nfsSetupHint => 'Kontrollera de här inställningarna om anslutningen inte upprättas.';
+	@override String get nfsSetupDetails => 'Använd en NFSv3-delning över TCP. När kryptering krävs måste både NFS-tjänsten och monteringstjänsten stödja RPC-with-TLS. Lämna det anpassade certifikatet tomt för ett servercertifikat som den här enheten litar på, eller lägg till NAS-enhetens CA-certifikat eller självsignerade certifikat. Certifikatnamnet måste stämma överens med värden i slutpunkten. Om NAS-enheten kräver ömsesidig TLS lägger du till dess PKCS#12-klientidentitet. Kontrollera slutligen att delningen tillåter inställda AUTH_SYS UID/GID och reglerna för klientportar.';
+	@override String get ftpHelp => 'FTP använder passivt läge. Använd ftp:// för okrypterad FTP, ftpes:// för explicit TLS eller ftps:// för TLS (implicit på port 990; explicit på andra portar).';
+	@override String get openSubtitles => 'OpenSubtitles';
+	@override String get subtitleSetup => 'Valfri undertextsökning för fristående videor.';
+	@override String get apiKey => 'API-nyckel';
+	@override String get optionalUsername => 'Kontots användarnamn (valfritt)';
+	@override String get optionalPassword => 'Kontots lösenord (valfritt)';
+	@override String get subtitlePrivacy => 'Hämta en API-nyckel från opensubtitles.com. Sökningen skickar videons titel och tillgängliga IMDb/TMDB-ID:n, aldrig videofilen. Nyckeln och valfria kontouppgifter krypteras tillsammans med den här källan.';
+	@override String get automaticMetadata => 'Automatiska videometadata från nätet';
+	@override String get metadataPrivacy => 'Skickar endast titel/år från filnamnet och avsnittsnummer eller ett NFO-ID, aldrig medier eller inloggningsuppgifter. NFO-fälten behåller företräde.';
+	@override String get nfsEncryptionFailure => 'För krypterad NFS: kontrollera stöd för RFC 9289 och TLS 1.3 i båda NAS-tjänsterna, certifikatnamnet och delningens UID/GID. PlezyNG försöker inte ansluta igen utan kryptering.';
+	@override String get sourceConnecting => 'Ansluter till källa';
+	@override String get metadataSearchPrivacy => 'Den här titelsökningen skickas till Trakt. Den skickar titeln du anger, inte videon eller källans inloggningsuppgifter.';
+	@override String get chooseMatch => 'Välj en träff';
+	@override String get metadataMatchHelp => 'Kontrollera titel och år innan du väljer. Trakt får söktiteln; videon stannar på sin källa.';
+	@override String get metadataNoMatches => 'Inga matchande titlar hittades på nätet. Försök med en annan titel.';
+	@override String get metadataSearch => 'Sök metadata på nätet';
+	@override String get metadataLoading => 'Söker efter film- och serieinformation på nätet…';
+	@override String get metadataFromTrakt => 'Metadata från Trakt på nätet';
+	@override String get metadataNoAutomaticMatch => 'Ingen automatisk titelträff hittades. Sök efter titeln för att välja en träff.';
+	@override String get metadataFailed => 'Metadata från nätet kunde inte läsas in. Uppspelning och lokal information är fortfarande tillgängliga.';
+	@override String get videoDetailsLoading => 'Läser in videoinformation';
+	@override String get subtitleKeyRequired => 'OpenSubtitles-API-nyckel krävs';
+	@override String get subtitleKeyHelp => 'Redigera den här filkällan och lägg till en OpenSubtitles-API-nyckel i dess valfria undertextinställningar.';
+	@override String get subtitleSearchFailed => 'Undertextsökningen misslyckades. Kontrollera API-nyckeln, anslutningen och åtkomsten till tjänsten.';
+	@override String get subtitleApplyFailed => 'Undertexten kunde inte hämtas eller användas. Kontrollera anslutningen och prova ett annat resultat.';
+	@override String get subtitleSearch => 'Sök på OpenSubtitles';
+	@override String get subtitleSearchPrivacy => 'Sökningen använder titeln och tillgängliga IMDb/TMDB-ID:n. Videofilen stannar på sin källa. Kontrollera språk, markeringar för tvingade undertexter eller undertexter för hörselskadade och betyg innan du väljer.';
+	@override String get movieOrShow => 'Film eller serie';
+	@override String get subtitleTitleHint => 'Ange en titel för att avgränsa resultaten';
+	@override String get subtitleLanguage => 'Undertextspråk';
+	@override String get subtitleSearching => 'Söker på OpenSubtitles';
+	@override String get subtitleNoMatches => 'Inga matchande undertexter hittades. Prova en annan titel eller ett annat språk.';
+	@override String get downloadSubtitle => 'Hämta undertext';
+	@override String get subtitle => 'Undertext';
+	@override String get nfsTlsRequired => 'RPC-with-TLS krävs';
+	@override String get nfsUnencrypted => 'Okrypterad NFS';
+	@override String get tlsEncrypted => 'TLS-krypterad';
+	@override String get ftpPlain => 'Okrypterad FTP';
+	@override String get sshPinned => 'SSH-krypterad · värdnyckel låst';
+	@override String get smbEncrypted => 'SMB3-kryptering på';
+	@override String get smbUnencrypted => 'SMB3-kryptering av';
+	@override String get httpUnencrypted => 'HTTP utan transportkryptering';
+	@override String get checkEndpointSecurity => 'Kontrollera slutpunktens säkerhet';
+	@override String fieldRequired({required Object label}) => '${label} krävs.';
+	@override String integerRange({required Object label, required Object min, required Object max}) => 'Ange ${label} från ${min} till ${max}.';
+	@override String replaceFile({required Object name}) => 'Ersätt ${name}';
+	@override String selectedIdentity({required Object name}) => 'Vald klientidentitet: ${name}';
+	@override String subtitleRating({required Object rating}) => 'Betyg ${rating}';
+	@override String subtitleDownloading({required Object title}) => 'Hämtar undertext: ${title}';
+}
 // Path: comics
 class _Translations$comics$sv extends Translations$comics$en {
 	_Translations$comics$sv._(TranslationsSv root) : this._root = root, super.internal(root);
-
-	final TranslationsSv _root; // ignore: unused_field
-
-	// Translations
 	@override String get fitHeight => 'Anpassa till höjden';
 	@override String get readingMode => 'Läsläge';
 	@override String get paged => 'Sidor';
@@ -3204,8 +3315,6 @@ class _Translations$comics$sv extends Translations$comics$en {
 	@override String get savedForComic => 'Visningsinställningarna sparas för den här serien i den här profilen.';
 	@override String get readLists => 'Läslistor';
 	@override String get collections => 'Samlingar';
-}
-
 // Path: appIcon.names
 class _Translations$appIcon$names$sv extends Translations$appIcon$names$en {
 	_Translations$appIcon$names$sv._(TranslationsSv root) : this._root = root, super.internal(root);
@@ -3457,48 +3566,60 @@ class _Translations$discover$findNext$sv extends Translations$discover$findNext$
 	final TranslationsSv _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Hitta din nästa';
-	@override String get open => 'Hitta din nästa';
-	@override String get anyTime => 'Varje gång';
+	@override String get title => 'Hitta din nästa favorit';
+	@override String get open => 'Hitta din nästa favorit';
+	@override String get anyTime => 'Obegränsat med tid';
 	@override String get timeAvailable => 'Hur mycket tid har du?';
-	@override String get filters => 'Välj ögonblicket';
-	@override String get watch => 'Titta på';
+	@override String get filters => 'Välj något för stunden';
+	@override String get watch => 'Titta';
 	@override String get listen => 'Lyssna';
 	@override String get read => 'Läs';
-	@override String finishable({required Object duration}) => 'Avsluta i ${duration}';
-	@override String aboutDuration({required Object duration}) => 'Om ${duration}';
+	@override String finishable({required Object duration}) => 'Går att avsluta på ${duration}';
+	@override String aboutDuration({required Object duration}) => 'Cirka ${duration}';
 	@override String nextUnit({required Object duration}) => 'Nästa kapitel · ${duration}';
-	@override String totalDuration({required Object duration}) => '${duration} Totalt';
-	@override String get timingVaries => 'Timing varierar';
-	@override String get notNow => 'inte nu';
-	@override String get swipeHint => 'Swipe, eller använd knapparna nedanför';
-	@override String get saved => 'Rädda picks';
-	@override String savedCount({required Object count}) => 'Spara uppsättningar · ${count}';
-	@override String get undo => 'och';
-	@override String get details => 'detaljer';
-	@override String get noPicks => 'Inget att välja mellan än';
-	@override String get noPicksHint => 'Anslut en bibliotek eller lägg till en media-källa för att börja.';
-	@override String get noMatches => 'Ingenting passar just det här ögonblicket';
-	@override String get noMatchesHint => 'Försök ett annat format eller ge dig mer tid.';
-	@override String get allDone => 'Ni är alla fångade';
-	@override String get allDoneHint => 'Börja en färsk blandning för att se dessa val igen.';
-	@override String get refresh => 'Hitta en annan mix';
+	@override String totalDuration({required Object duration}) => '${duration} totalt';
+	@override String get timingVaries => 'Tidsåtgången kan variera';
+	@override String get notNow => 'Inte nu';
+	@override String get swipeHint => 'Svep omslaget mot en pil eller använd knapparna nedan.';
+	@override String get saved => 'Sparade förslag';
+	@override String savedCount({required Object count}) => 'Sparade förslag · ${count}';
+	@override String get undo => 'Ångra';
+	@override String get details => 'Detaljer';
+	@override String get noPicks => 'Det finns inget att välja bland ännu';
+	@override String get noPicksHint => 'Anslut ett bibliotek eller lägg till en mediekälla för att komma igång.';
+	@override String get noMatches => 'Inget passar just nu';
+	@override String get noMatchesHint => 'Prova en annan medietyp eller ge dig själv mer tid.';
+	@override String get allDone => 'Du har sett alla förslag';
+	@override String get allDoneHint => 'Starta ett nytt urval för att se de här förslagen igen.';
+	@override String get refresh => 'Hitta ett nytt urval';
 	@override String sourceReason({required Object source}) => 'Från ${source}';
 	@override String libraryReason({required Object library}) => 'Från ${library}';
 	@override String get ownedReason => 'Från ditt bibliotek';
-	@override String get liveNow => 'på nu';
-	@override String get watchLive => 'Se live';
-	@override String get filterAnything => 'allting';
-	@override String get filterWatch => 'Titta på';
+	@override String get liveNow => 'Sänds nu';
+	@override String get watchLive => 'Titta live';
+	@override String get filterAnything => 'Vad som helst';
+	@override String get filterWatch => 'Titta';
 	@override String get filterListen => 'Lyssna';
 	@override String get filterRead => 'Läs';
 	@override String get twentyMinutes => '20 min';
 	@override String get fortyFiveMinutes => '45 min';
 	@override String get ninetyMinutes => '90 min';
-	@override String get apply => 'Applicera';
-	@override String get openFailed => 'Det här alternativet är inte längre tillgängligt. förnyar för att kolla igen.';
-	@override String get changeFailed => 'Kan inte spara den förändringen. försök igen.';
-	@override String get savedLimit => 'Spara picks är fulla. ta bort en pick för att spara en annan.';
+	@override String get apply => 'Tillämpa';
+	@override String get openFailed => 'Det här valet är inte längre tillgängligt. Uppdatera för att kontrollera igen.';
+	@override String get changeFailed => 'Ändringen kunde inte sparas. Försök igen.';
+	@override String get savedLimit => 'Listan med sparade förslag är full. Ta bort ett förslag för att spara ett nytt.';
+	@override String get chooseHint => 'Öppna en titel, spara den till senare eller hoppa över den.';
+	@override String get howItWorks => 'Så fungerar det';
+	@override String get notNowHelp => 'Hoppa över den här titeln för tillfället. Den finns kvar i ditt bibliotek.';
+	@override String get saveHelp => 'Spara den bland sparade val för den här profilen på den här enheten. Att spara laddar inte ned titeln.';
+	@override String get openHelp => 'Välj omslaget för detaljer. Använd huvudåtgärden för att spela upp, läsa eller öppna titeln.';
+	@override String get controlsHelp => 'Tangentbord eller fjärrkontroll: välj en knapp och tryck på Enter eller Välj. Ångra återställer ditt senaste val.';
+	@override String get artworkLoading => 'Läser in bild…';
+	@override String get artworkUnavailable => 'Bild saknas';
+	@override String get savedFeedback => 'Tillagd bland sparade val';
+	@override String get skippedFeedback => 'Överhoppad för tillfället';
+	@override String get releaseToConfirm => 'Släpp för att bekräfta';
+	@override String get remoteHint => 'Omslag i fokus: ← / → välj · Välj: detaljer · ↑ / ↓ flytta fokus';
 }
 
 // Path: discover.person
@@ -4833,6 +4954,13 @@ extension on TranslationsSv {
 			'settings.regionFormatDescription' => 'Välj hur datum, tal och måttenheter visas.',
 			'settings.metadataLanguage' => 'Språk för metadata',
 			'settings.metadataLanguageDescription' => 'Föredraget språk för titlar och beskrivningar när servern stöder det. Ljud och undertexter ställs in separat.',
+			'settings.experimentalDolbyVision' => 'Experimentell Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Använd den experimentella FEL-renderaren vid nästa uppspelning. Kräver en separat motorversion.',
+			'settings.dvExperimentUnavailableDescription' => 'Det här experimentet är för närvarande endast tillgängligt på Linux.',
+			'settings.dvCompatibilityFallback' => 'Kompatibilitetsreserv',
+			'settings.dvCompatibilityFallbackDescription' => 'Använd standardrenderaren om experimentet inte kan starta. FEL-data kan gå förlorade.',
+			'settings.dvExperimentDiagnostics' => 'Loggning av videoexperiment',
+			'settings.dvExperimentDiagnosticsDescription' => 'Aktivera detaljerade spelarloggar vid nästa uppspelning.',
 			'themeEditor.builtIn' => 'Inbyggda',
 			'themeEditor.presets' => 'Förinställda',
 			'themeEditor.custom' => 'Anpassat',
@@ -5253,6 +5381,8 @@ extension on TranslationsSv {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Biblioteksskanningen har startat för "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Det gick inte att skanna biblioteket: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Uppdaterar metadata för "${title}"...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadatauppdateringen har startat för "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Det gick inte att uppdatera metadata: ${error}',
 			'messages.logoutConfirm' => 'Är du säker på att du vill logga ut?',
@@ -5260,8 +5390,6 @@ extension on TranslationsSv {
 			'messages.seasonsLoadFailed' => 'Det gick inte att läsa in säsonger',
 			'messages.noEpisodesFound' => 'Inga avsnitt hittades i första säsongen',
 			'messages.noEpisodesFoundGeneral' => 'Inga avsnitt hittades',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Det gick inte att läsa in avsnitt',
 			'messages.noResultsFound' => 'Inga resultat hittades',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Sovtimer inställd för ${label}',
@@ -5488,48 +5616,60 @@ extension on TranslationsSv {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Översikt',
 			'discover.cast' => 'Rollbesättning',
-			'discover.findNext.title' => 'Hitta din nästa',
-			'discover.findNext.open' => 'Hitta din nästa',
-			'discover.findNext.anyTime' => 'Varje gång',
+			'discover.findNext.title' => 'Hitta din nästa favorit',
+			'discover.findNext.open' => 'Hitta din nästa favorit',
+			'discover.findNext.anyTime' => 'Obegränsat med tid',
 			'discover.findNext.timeAvailable' => 'Hur mycket tid har du?',
-			'discover.findNext.filters' => 'Välj ögonblicket',
-			'discover.findNext.watch' => 'Titta på',
+			'discover.findNext.filters' => 'Välj något för stunden',
+			'discover.findNext.watch' => 'Titta',
 			'discover.findNext.listen' => 'Lyssna',
 			'discover.findNext.read' => 'Läs',
-			'discover.findNext.finishable' => ({required Object duration}) => 'Avsluta i ${duration}',
-			'discover.findNext.aboutDuration' => ({required Object duration}) => 'Om ${duration}',
+			'discover.findNext.finishable' => ({required Object duration}) => 'Går att avsluta på ${duration}',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => 'Cirka ${duration}',
 			'discover.findNext.nextUnit' => ({required Object duration}) => 'Nästa kapitel · ${duration}',
-			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} Totalt',
-			'discover.findNext.timingVaries' => 'Timing varierar',
-			'discover.findNext.notNow' => 'inte nu',
-			'discover.findNext.swipeHint' => 'Swipe, eller använd knapparna nedanför',
-			'discover.findNext.saved' => 'Rädda picks',
-			'discover.findNext.savedCount' => ({required Object count}) => 'Spara uppsättningar · ${count}',
-			'discover.findNext.undo' => 'och',
-			'discover.findNext.details' => 'detaljer',
-			'discover.findNext.noPicks' => 'Inget att välja mellan än',
-			'discover.findNext.noPicksHint' => 'Anslut en bibliotek eller lägg till en media-källa för att börja.',
-			'discover.findNext.noMatches' => 'Ingenting passar just det här ögonblicket',
-			'discover.findNext.noMatchesHint' => 'Försök ett annat format eller ge dig mer tid.',
-			'discover.findNext.allDone' => 'Ni är alla fångade',
-			'discover.findNext.allDoneHint' => 'Börja en färsk blandning för att se dessa val igen.',
-			'discover.findNext.refresh' => 'Hitta en annan mix',
+			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} totalt',
+			'discover.findNext.timingVaries' => 'Tidsåtgången kan variera',
+			'discover.findNext.notNow' => 'Inte nu',
+			'discover.findNext.swipeHint' => 'Svep omslaget mot en pil eller använd knapparna nedan.',
+			'discover.findNext.saved' => 'Sparade förslag',
+			'discover.findNext.savedCount' => ({required Object count}) => 'Sparade förslag · ${count}',
+			'discover.findNext.undo' => 'Ångra',
+			'discover.findNext.details' => 'Detaljer',
+			'discover.findNext.noPicks' => 'Det finns inget att välja bland ännu',
+			'discover.findNext.noPicksHint' => 'Anslut ett bibliotek eller lägg till en mediekälla för att komma igång.',
+			'discover.findNext.noMatches' => 'Inget passar just nu',
+			'discover.findNext.noMatchesHint' => 'Prova en annan medietyp eller ge dig själv mer tid.',
+			'discover.findNext.allDone' => 'Du har sett alla förslag',
+			'discover.findNext.allDoneHint' => 'Starta ett nytt urval för att se de här förslagen igen.',
+			'discover.findNext.refresh' => 'Hitta ett nytt urval',
 			'discover.findNext.sourceReason' => ({required Object source}) => 'Från ${source}',
 			'discover.findNext.libraryReason' => ({required Object library}) => 'Från ${library}',
 			'discover.findNext.ownedReason' => 'Från ditt bibliotek',
-			'discover.findNext.liveNow' => 'på nu',
-			'discover.findNext.watchLive' => 'Se live',
-			'discover.findNext.filterAnything' => 'allting',
-			'discover.findNext.filterWatch' => 'Titta på',
+			'discover.findNext.liveNow' => 'Sänds nu',
+			'discover.findNext.watchLive' => 'Titta live',
+			'discover.findNext.filterAnything' => 'Vad som helst',
+			'discover.findNext.filterWatch' => 'Titta',
 			'discover.findNext.filterListen' => 'Lyssna',
 			'discover.findNext.filterRead' => 'Läs',
 			'discover.findNext.twentyMinutes' => '20 min',
 			'discover.findNext.fortyFiveMinutes' => '45 min',
 			'discover.findNext.ninetyMinutes' => '90 min',
-			'discover.findNext.apply' => 'Applicera',
-			'discover.findNext.openFailed' => 'Det här alternativet är inte längre tillgängligt. förnyar för att kolla igen.',
-			'discover.findNext.changeFailed' => 'Kan inte spara den förändringen. försök igen.',
-			'discover.findNext.savedLimit' => 'Spara picks är fulla. ta bort en pick för att spara en annan.',
+			'discover.findNext.apply' => 'Tillämpa',
+			'discover.findNext.openFailed' => 'Det här valet är inte längre tillgängligt. Uppdatera för att kontrollera igen.',
+			'discover.findNext.changeFailed' => 'Ändringen kunde inte sparas. Försök igen.',
+			'discover.findNext.savedLimit' => 'Listan med sparade förslag är full. Ta bort ett förslag för att spara ett nytt.',
+			'discover.findNext.chooseHint' => 'Öppna en titel, spara den till senare eller hoppa över den.',
+			'discover.findNext.howItWorks' => 'Så fungerar det',
+			'discover.findNext.notNowHelp' => 'Hoppa över den här titeln för tillfället. Den finns kvar i ditt bibliotek.',
+			'discover.findNext.saveHelp' => 'Spara den bland sparade val för den här profilen på den här enheten. Att spara laddar inte ned titeln.',
+			'discover.findNext.openHelp' => 'Välj omslaget för detaljer. Använd huvudåtgärden för att spela upp, läsa eller öppna titeln.',
+			'discover.findNext.controlsHelp' => 'Tangentbord eller fjärrkontroll: välj en knapp och tryck på Enter eller Välj. Ångra återställer ditt senaste val.',
+			'discover.findNext.artworkLoading' => 'Läser in bild…',
+			'discover.findNext.artworkUnavailable' => 'Bild saknas',
+			'discover.findNext.savedFeedback' => 'Tillagd bland sparade val',
+			'discover.findNext.skippedFeedback' => 'Överhoppad för tillfället',
+			'discover.findNext.releaseToConfirm' => 'Släpp för att bekräfta',
+			'discover.findNext.remoteHint' => 'Omslag i fokus: ← / → välj · Välj: detaljer · ↑ / ↓ flytta fokus',
 			'discover.extras' => 'Trailrar och extramaterial',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Betyg',
@@ -5755,6 +5895,8 @@ extension on TranslationsSv {
 			'explore.mdblistShelves.nameHint' => 'Låt blank använda källlista namn.',
 			'explore.mdblistShelves.add' => 'Lägg till shelf',
 			'explore.mdblistShelves.save' => 'Rädda shelter',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Flytta ${title} upp',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Flytta ${title} ner',
 			'explore.mdblistShelves.unavailable' => 'Denna lista är inte tillgänglig. ta bort eller ta bort dess sköld i inställningar.',
@@ -5774,8 +5916,6 @@ extension on TranslationsSv {
 			'explore.rows.popularShows' => 'Populära serier',
 			'explore.rows.trendingAnime' => 'Populär anime just nu',
 			'explore.rows.suggestedAnime' => 'Föreslagen anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Bästa anime som sänds nu',
 			'explore.rows.popularAnime' => 'Mest populära anime',
 			'explore.rows.trending' => 'Trendar nu',
@@ -6269,6 +6409,8 @@ extension on TranslationsSv {
 			'downloads.resumeDownload' => 'Återuppta nedladdning',
 			'downloads.cancelledDownload' => 'Avbruten nedladdning',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (synkroniserar ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} nedladdad – klicka för att slutföra',
 			'downloads.partialDownloadClickToComplete' => 'Delvis nedladdad – klicka för att slutföra',
 			'downloads.deleting' => 'Tar bort...',
@@ -6288,8 +6430,6 @@ extension on TranslationsSv {
 			'downloads.unwatchedOnly' => 'Endast osedda',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Nästa ${count} osedda',
 			'downloads.customAmount' => 'Ange antal...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Enligt varje kvantitet (...',
 			'downloads.randomEpisodes' => 'Random episoder',
 			'downloads.includeSpecials' => 'Inkludera specialavsnitt',
@@ -6783,6 +6923,8 @@ extension on TranslationsSv {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Kunde inte nå servern: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Det gick inte att logga in: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect misslyckades: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Logga in med Plex',
 			'addServer.pinExpired' => 'PIN-koden gick ut innan inloggning. Försök igen.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Kunde inte registrera kontot: ${error}',
@@ -6802,8 +6944,6 @@ extension on TranslationsSv {
 			'addServer.authResponseIncomplete' => 'Inloggningssvaret från servern var ofullständigt',
 			'addServer.quickConnectRejected' => 'Quick Connect avvisades av servern',
 			'addServer.quickConnectNotJson' => 'Quick Connect-svaret var inte ett giltigt JSON-svar',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect-svaret saknar en kod eller hemlig nyckel',
 			'addServer.quickConnectPollRejected' => 'Servern avvisade avsökningen för Quick Connect',
 			'addServer.serverTimedOut' => 'Servern svarade inte i tid',
@@ -7109,6 +7249,12 @@ extension on TranslationsSv {
 			'fileSources.useFiles' => 'Använd filer och böcker',
 			'fileSources.cancelScan' => 'Avbryt skanning',
 			'fileSources.googleDrive' => 'Google Drive',
+			'fileSources.smbEndpointHint' => 'Exempel: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Ange en SMB-server och en delad mapp.',
+			'fileSources.smbFolderHelp' => 'Lämna tomt för att använda hela den delade mappen, eller ange en mapp i den.',
+			'fileSources.smbDomain' => 'Domän (valfritt)',
+			'fileSources.smbEncryption' => 'Kryptera SMB3-anslutningen',
+			'fileSources.smbEncryptionHint' => 'Använd SMB3-kryptering när NAS-enheten stöder det.',
 			'lending.title' => 'Public bibliotek',
 			'lending.add' => 'Lägg till ett bibliotek',
 			'lending.other' => 'En annan bibliotek',
@@ -7210,6 +7356,93 @@ extension on TranslationsSv {
 			'audiobook.statusFinished' => 'Avslutad',
 			'audiobook.goToTime' => 'Gå till tiden',
 			'audiobook.timeHelp' => 'Klockor: minuter: sekunder eller minuter: sekunder',
+			'sourceSetup.savedCertificate' => 'Sparat servercertifikat',
+			'sourceSetup.nfsEndpointInvalid' => 'Ange en NFS-URL, till exempel nfs://nas:2049/export.',
+			'sourceSetup.dlnaNone' => 'Inga DLNA-servrar hittades. Ange URL:en till enhetsbeskrivningen manuellt.',
+			'sourceSetup.dlnaServers' => 'DLNA-medieservrar',
+			'sourceSetup.dlnaUnavailable' => 'DLNA-sökning är inte tillgänglig i det här nätverket. Ange URL:en till enhetsbeskrivningen manuellt.',
+			'sourceSetup.dlnaSearching' => 'Söker efter DLNA-servrar i det lokala nätverket',
+			'sourceSetup.networkSearching' => 'Söker i det lokala nätverket…',
+			'sourceSetup.dlnaDiscover' => 'Hitta DLNA-servrar',
+			'sourceSetup.dlnaHelp' => 'Sökningen kräver multicast i det lokala nätverket. Om ingen server visas anger du URL:en till dess enhetsbeskrivning ovan.',
+			'sourceSetup.dlnaRoot' => 'DLNA-objekt-ID; lämna tomt för att använda enhetens rot.',
+			'sourceSetup.passwordOrKey' => 'Ange ett lösenord eller lägg till en privat nyckel nedan.',
+			'sourceSetup.sshFingerprint' => 'SHA256-fingeravtryck för SSH-värdnyckeln',
+			'sourceSetup.sshFingerprintHelp' => 'Kontrollera det med serveradministratören. Kör ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub på servern och använd dess SHA256-värde.',
+			'sourceSetup.sshFingerprintKeep' => 'Lämna tomt för att behålla det låsta fingeravtrycket eller ange ett nytt serverfingeravtryck.',
+			'sourceSetup.sshAuthentication' => 'SSH-autentisering med offentlig nyckel',
+			'sourceSetup.sshAuthenticationHelp' => 'Valfritt; autentisering med lösenord stöds också.',
+			'sourceSetup.privateKey' => 'Privat nyckel (PEM- eller OpenSSH-format)',
+			'sourceSetup.privateKeyPassphrase' => 'Lösenfras för den privata nyckeln',
+			'sourceSetup.nfsMountPort' => 'TCP-port för NFS-monteringstjänsten',
+			'sourceSetup.nfsMountPortHelp' => 'Standard: 20048',
+			'sourceSetup.nfsUserId' => 'NFS-användar-ID (AUTH_SYS)',
+			'sourceSetup.nfsUserIdHelp' => 'Standard: 1000. Använd det ID som NAS-enhetens NFS-delning tillåter.',
+			'sourceSetup.nfsGroupId' => 'NFS-grupp-ID (AUTH_SYS)',
+			'sourceSetup.nfsGroupIdHelp' => 'Standard: 1000. Använd det grupp-ID som NAS-enhetens NFS-delning tillåter.',
+			'sourceSetup.nfsEncryption' => 'Kräv krypterad NFS (RPC-with-TLS)',
+			'sourceSetup.nfsEncryptionHelp' => 'Kräv TLS 1.3 för NFS och monteringstjänsten. Om NAS-enheten inte stöder detta nekas anslutningen.',
+			'sourceSetup.nfsTrustCertificate' => 'Anpassad NFS-CA eller servercertifikat (PEM, valfritt)',
+			'sourceSetup.nfsTrustHelp' => 'Lämna tomt för certifikat som den här enheten litar på. Lägg vid behov till ett certifikat från en privat CA eller ett självsignerat servercertifikat; namnen måste stämma överens med värden i NFS-URL:en.',
+			'sourceSetup.nfsTrustInvalid' => 'Använd ett CA- eller servercertifikat i PEM-format. Ta inte med någon privat nyckel.',
+			'sourceSetup.addTrustCertificate' => 'Lägg till anpassat betrott certifikat',
+			'sourceSetup.replaceTrustCertificate' => 'Ersätt sparat anpassat certifikat',
+			'sourceSetup.nfsTlsHelp' => 'RPC-with-TLS använder de vanliga portarna för NFS och monteringstjänsten och kräver stöd för RFC 9289 i NAS-enheten. TLS 1.3 krävs. Värdnamnet eller IP-adressen måste stämma överens med certifikatet. AUTH_SYS UID/GID gäller fortfarande i den krypterade kanalen.',
+			'sourceSetup.clientCertificate' => 'Klientcertifikat (valfritt)',
+			'sourceSetup.clientCertificateHelp' => 'Låter NAS-enheten autentisera den här klienten; AUTH_SYS-ID:n styrs fortfarande av reglerna för NAS-enhetens NFS-delning.',
+			'sourceSetup.savedIdentity' => 'En sparad klientidentitet kommer att användas.',
+			'sourceSetup.replaceIdentity' => 'Ersätt sparad klientidentitet',
+			'sourceSetup.chooseIdentity' => 'Välj PKCS#12-klientidentitet',
+			'sourceSetup.identityPassphrase' => 'Lösenfras för klientidentiteten',
+			'sourceSetup.identityPassphraseHelp' => 'Lämna tomt om filen inte har någon lösenfras.',
+			'sourceSetup.removeIdentity' => 'Ta bort eventuell sparad klientidentitet',
+			'sourceSetup.identityStorageHelp' => 'Klientidentiteter sparas i källans krypterade lagring för inloggningsuppgifter. Lämna det här avsnittet oförändrat för att behålla den sparade identiteten.',
+			'sourceSetup.nfsLimitations' => 'Skrivskyddad NFSv3 över TCP. Utan RPC-with-TLS är NFS-trafiken okrypterad. NAS-enheten måste tillåta valda AUTH_SYS-ID:n och klientportar utan särskilda privilegier (ofta kallat exportalternativet ”insecure”). NFSv4 och UDP stöds inte.',
+			'sourceSetup.nfsSetupHelp' => 'Hjälp med NFS-inställningar',
+			'sourceSetup.nfsSetupHint' => 'Kontrollera de här inställningarna om anslutningen inte upprättas.',
+			'sourceSetup.nfsSetupDetails' => 'Använd en NFSv3-delning över TCP. När kryptering krävs måste både NFS-tjänsten och monteringstjänsten stödja RPC-with-TLS. Lämna det anpassade certifikatet tomt för ett servercertifikat som den här enheten litar på, eller lägg till NAS-enhetens CA-certifikat eller självsignerade certifikat. Certifikatnamnet måste stämma överens med värden i slutpunkten. Om NAS-enheten kräver ömsesidig TLS lägger du till dess PKCS#12-klientidentitet. Kontrollera slutligen att delningen tillåter inställda AUTH_SYS UID/GID och reglerna för klientportar.',
+			'sourceSetup.ftpHelp' => 'FTP använder passivt läge. Använd ftp:// för okrypterad FTP, ftpes:// för explicit TLS eller ftps:// för TLS (implicit på port 990; explicit på andra portar).',
+			'sourceSetup.openSubtitles' => 'OpenSubtitles',
+			'sourceSetup.subtitleSetup' => 'Valfri undertextsökning för fristående videor.',
+			'sourceSetup.apiKey' => 'API-nyckel',
+			'sourceSetup.optionalUsername' => 'Kontots användarnamn (valfritt)',
+			'sourceSetup.optionalPassword' => 'Kontots lösenord (valfritt)',
+			'sourceSetup.subtitlePrivacy' => 'Hämta en API-nyckel från opensubtitles.com. Sökningen skickar videons titel och tillgängliga IMDb/TMDB-ID:n, aldrig videofilen. Nyckeln och valfria kontouppgifter krypteras tillsammans med den här källan.',
+			'sourceSetup.automaticMetadata' => 'Automatiska videometadata från nätet',
+			'sourceSetup.metadataPrivacy' => 'Skickar endast titel/år från filnamnet och avsnittsnummer eller ett NFO-ID, aldrig medier eller inloggningsuppgifter. NFO-fälten behåller företräde.',
+			'sourceSetup.nfsEncryptionFailure' => 'För krypterad NFS: kontrollera stöd för RFC 9289 och TLS 1.3 i båda NAS-tjänsterna, certifikatnamnet och delningens UID/GID. PlezyNG försöker inte ansluta igen utan kryptering.',
+			'sourceSetup.sourceConnecting' => 'Ansluter till källa',
+			'sourceSetup.metadataSearchPrivacy' => 'Den här titelsökningen skickas till Trakt. Den skickar titeln du anger, inte videon eller källans inloggningsuppgifter.',
+			'sourceSetup.chooseMatch' => 'Välj en träff',
+			'sourceSetup.metadataMatchHelp' => 'Kontrollera titel och år innan du väljer. Trakt får söktiteln; videon stannar på sin källa.',
+			'sourceSetup.metadataNoMatches' => 'Inga matchande titlar hittades på nätet. Försök med en annan titel.',
+			'sourceSetup.metadataSearch' => 'Sök metadata på nätet',
+			'sourceSetup.metadataLoading' => 'Söker efter film- och serieinformation på nätet…',
+			'sourceSetup.metadataFromTrakt' => 'Metadata från Trakt på nätet',
+			'sourceSetup.metadataNoAutomaticMatch' => 'Ingen automatisk titelträff hittades. Sök efter titeln för att välja en träff.',
+			'sourceSetup.metadataFailed' => 'Metadata från nätet kunde inte läsas in. Uppspelning och lokal information är fortfarande tillgängliga.',
+			'sourceSetup.videoDetailsLoading' => 'Läser in videoinformation',
+			'sourceSetup.subtitleKeyRequired' => 'OpenSubtitles-API-nyckel krävs',
+			'sourceSetup.subtitleKeyHelp' => 'Redigera den här filkällan och lägg till en OpenSubtitles-API-nyckel i dess valfria undertextinställningar.',
+			'sourceSetup.subtitleSearchFailed' => 'Undertextsökningen misslyckades. Kontrollera API-nyckeln, anslutningen och åtkomsten till tjänsten.',
+			'sourceSetup.subtitleApplyFailed' => 'Undertexten kunde inte hämtas eller användas. Kontrollera anslutningen och prova ett annat resultat.',
+			'sourceSetup.subtitleSearch' => 'Sök på OpenSubtitles',
+			'sourceSetup.subtitleSearchPrivacy' => 'Sökningen använder titeln och tillgängliga IMDb/TMDB-ID:n. Videofilen stannar på sin källa. Kontrollera språk, markeringar för tvingade undertexter eller undertexter för hörselskadade och betyg innan du väljer.',
+			'sourceSetup.movieOrShow' => 'Film eller serie',
+			'sourceSetup.subtitleTitleHint' => 'Ange en titel för att avgränsa resultaten',
+			'sourceSetup.subtitleLanguage' => 'Undertextspråk',
+			'sourceSetup.subtitleSearching' => 'Söker på OpenSubtitles',
+			'sourceSetup.subtitleNoMatches' => 'Inga matchande undertexter hittades. Prova en annan titel eller ett annat språk.',
+			'sourceSetup.downloadSubtitle' => 'Hämta undertext',
+			'sourceSetup.subtitle' => 'Undertext',
+			'sourceSetup.nfsTlsRequired' => 'RPC-with-TLS krävs',
+			'sourceSetup.nfsUnencrypted' => 'Okrypterad NFS',
+			'sourceSetup.tlsEncrypted' => 'TLS-krypterad',
+			'sourceSetup.ftpPlain' => 'Okrypterad FTP',
+			'sourceSetup.sshPinned' => 'SSH-krypterad · värdnyckel låst',
+			'sourceSetup.smbEncrypted' => 'SMB3-kryptering på',
+			'sourceSetup.smbUnencrypted' => 'SMB3-kryptering av',
+			'sourceSetup.httpUnencrypted' => 'HTTP utan transportkryptering',
 			'comics.fitHeight' => 'Anpassa till höjden',
 			'comics.readingMode' => 'Läsläge',
 			'comics.paged' => 'Sidor',
@@ -7222,6 +7455,15 @@ extension on TranslationsSv {
 			'comics.savedForComic' => 'Visningsinställningarna sparas för den här serien i den här profilen.',
 			'comics.readLists' => 'Läslistor',
 			'comics.collections' => 'Samlingar',
+			_ => null,
+		} ?? switch (path) {
+			'sourceSetup.checkEndpointSecurity' => 'Kontrollera slutpunktens säkerhet',
+			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} krävs.',
+			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Ange ${label} från ${min} till ${max}.',
+			'sourceSetup.replaceFile' => ({required Object name}) => 'Ersätt ${name}',
+			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Vald klientidentitet: ${name}',
+			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Betyg ${rating}',
+			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Hämtar undertext: ${title}',
 			_ => null,
 		};
 	}

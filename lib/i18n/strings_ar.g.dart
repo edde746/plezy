@@ -104,6 +104,7 @@ class TranslationsAr extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$ar fileSources = _Translations$fileSources$ar._(_root);
 	@override late final _Translations$lending$ar lending = _Translations$lending$ar._(_root);
 	@override late final _Translations$audiobook$ar audiobook = _Translations$audiobook$ar._(_root);
+	@override late final _Translations$sourceSetup$ar sourceSetup = _Translations$sourceSetup$ar._(_root);
 	@override late final _Translations$comics$ar comics = _Translations$comics$ar._(_root);
 }
 
@@ -770,6 +771,13 @@ class _Translations$settings$ar extends Translations$settings$en {
 	@override String get regionFormatDescription => 'اختر طريقة عرض التواريخ والأرقام ووحدات القياس.';
 	@override String get metadataLanguage => 'لغة بيانات الوسائط';
 	@override String get metadataLanguageDescription => 'لغة العناوين والأوصاف المفضلة عندما يدعمها الخادم. تُضبط تفضيلات الصوت والترجمة بشكل مستقل.';
+	@override String get experimentalDolbyVision => 'Dolby Vision التجريبي';
+	@override String get experimentalDolbyVisionDescription => 'استخدم عارض FEL التجريبي عند التشغيل التالي. يتطلب إصدارًا منفصلًا من المحرك.';
+	@override String get dvExperimentUnavailableDescription => 'هذه التجربة متاحة حاليًا على Linux فقط.';
+	@override String get dvCompatibilityFallback => 'الرجوع للتوافق';
+	@override String get dvCompatibilityFallbackDescription => 'استخدم العارض القياسي إذا تعذر بدء التجربة. قد تُفقد بيانات FEL.';
+	@override String get dvExperimentDiagnostics => 'تسجيل تجربة الفيديو';
+	@override String get dvExperimentDiagnosticsDescription => 'فعّل سجلات المشغّل التفصيلية عند التشغيل التالي.';
 }
 
 // Path: themeEditor
@@ -3144,6 +3152,12 @@ class _Translations$fileSources$ar extends Translations$fileSources$en {
 	@override String get useFiles => 'استخدام الملفات والكتب';
 	@override String get cancelScan => 'إلغاء الفحص';
 	@override String get googleDrive => 'Google Drive';
+	@override String get smbEndpointHint => 'مثال: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'أدخل خادم SMB ومجلدًا مشتركًا واحدًا.';
+	@override String get smbFolderHelp => 'اتركه فارغًا لاستخدام المجلد المشترك بالكامل، أو أدخل مجلدًا داخله.';
+	@override String get smbDomain => 'النطاق (اختياري)';
+	@override String get smbEncryption => 'تشفير اتصال SMB3';
+	@override String get smbEncryptionHint => 'استخدم تشفير SMB3 عندما يدعمه جهاز NAS.';
 }
 
 // Path: lending
@@ -3265,13 +3279,110 @@ class _Translations$audiobook$ar extends Translations$audiobook$en {
 	@override String get timeHelp => 'ساعات: دقائق: ثواني، أو دقائق: ثواني';
 }
 
+// Path: sourceSetup
+class _Translations$sourceSetup$ar extends Translations$sourceSetup$en {
+	_Translations$sourceSetup$ar._(TranslationsAr root) : this._root = root, super.internal(root);
+
+	final TranslationsAr _root; // ignore: unused_field
+	// Translations
+	@override String get savedCertificate => 'شهادة الخادم المحفوظة';
+	@override String get nfsEndpointInvalid => 'أدخل عنوان NFS مثل nfs://nas:2049/export.';
+	@override String get dlnaNone => 'لم يُعثر على خوادم DLNA. أدخل عنوان وصف الجهاز يدويًا.';
+	@override String get dlnaServers => 'خوادم وسائط DLNA';
+	@override String get dlnaUnavailable => 'اكتشاف DLNA غير متاح على هذه الشبكة. أدخل عنوان وصف الجهاز يدويًا.';
+	@override String get dlnaSearching => 'جارٍ البحث عن خوادم DLNA في الشبكة المحلية';
+	@override String get networkSearching => 'جارٍ البحث في الشبكة المحلية…';
+	@override String get dlnaDiscover => 'اكتشاف خوادم DLNA';
+	@override String get dlnaHelp => 'يعتمد الاكتشاف على البث المتعدد في الشبكة المحلية. إذا لم يظهر أي خادم، فأدخل عنوان وصف الجهاز أعلاه.';
+	@override String get dlnaRoot => 'معرّف عنصر DLNA؛ اتركه فارغًا لاستخدام جذر الجهاز.';
+	@override String get passwordOrKey => 'أدخل كلمة مرور أو أضف مفتاحًا خاصًا أدناه.';
+	@override String get sshFingerprint => 'بصمة SHA256 لمفتاح مضيف SSH';
+	@override String get sshFingerprintHelp => 'تحقّق منها مع مسؤول الخادم. شغّل على الخادم الأمر ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub واستخدم قيمة SHA256 التي يعرضها.';
+	@override String get sshFingerprintKeep => 'اتركه فارغًا للاحتفاظ بالبصمة المثبّتة حاليًا، أو أدخل بصمة خادم جديدة.';
+	@override String get sshAuthentication => 'المصادقة بمفتاح SSH عام';
+	@override String get sshAuthenticationHelp => 'اختياري؛ تُدعم المصادقة بكلمة مرور أيضًا.';
+	@override String get privateKey => 'المفتاح الخاص (بتنسيق PEM أو OpenSSH)';
+	@override String get privateKeyPassphrase => 'عبارة مرور المفتاح الخاص';
+	@override String get nfsMountPort => 'منفذ TCP لخدمة تركيب NFS';
+	@override String get nfsMountPortHelp => 'الافتراضي: 20048';
+	@override String get nfsUserId => 'معرّف مستخدم NFS ‏(AUTH_SYS)';
+	@override String get nfsUserIdHelp => 'الافتراضي: 1000. استخدم المعرّف الذي تسمح به إعدادات تصدير NAS.';
+	@override String get nfsGroupId => 'معرّف مجموعة NFS ‏(AUTH_SYS)';
+	@override String get nfsGroupIdHelp => 'الافتراضي: 1000. استخدم معرّف المجموعة الذي تسمح به إعدادات تصدير NAS.';
+	@override String get nfsEncryption => 'اشتراط تشفير NFS ‏(RPC-with-TLS)';
+	@override String get nfsEncryptionHelp => 'اشترط TLS 1.3 لخدمة NFS وخدمة التركيب. يُرفض الاتصال إذا لم يدعم NAS ذلك.';
+	@override String get nfsTrustCertificate => 'شهادة CA أو خادم مخصّصة لـ NFS ‏(PEM، اختيارية)';
+	@override String get nfsTrustHelp => 'اتركه فارغًا للشهادات التي يثق بها هذا الجهاز. أضف شهادة CA خاصة أو شهادة خادم موقّعة ذاتيًا عند الحاجة؛ يجب أن تطابق أسماؤها المضيف في عنوان NFS.';
+	@override String get nfsTrustInvalid => 'استخدم شهادة CA أو خادم بتنسيق PEM. لا تُضمّن مفتاحًا خاصًا.';
+	@override String get addTrustCertificate => 'إضافة شهادة ثقة مخصّصة';
+	@override String get replaceTrustCertificate => 'استبدال الشهادة المخصّصة المحفوظة';
+	@override String get nfsTlsHelp => 'يستخدم RPC-with-TLS منافذ NFS وخدمة التركيب المعتادة، ويتطلب دعم NAS للمعيار RFC 9289. يلزم TLS 1.3. يجب أن يطابق اسم المضيف أو عنوان IP الشهادة. تظل معرّفات AUTH_SYS UID/GID سارية داخل القناة المشفّرة.';
+	@override String get clientCertificate => 'شهادة العميل (اختيارية)';
+	@override String get clientCertificateHelp => 'تتيح لـ NAS التحقّق من هوية هذا العميل؛ تظل معرّفات AUTH_SYS خاضعة لسياسة تصدير NAS.';
+	@override String get savedIdentity => 'ستُستخدم هوية العميل المحفوظة.';
+	@override String get replaceIdentity => 'استبدال هوية العميل المحفوظة';
+	@override String get chooseIdentity => 'اختيار هوية عميل PKCS#12';
+	@override String get identityPassphrase => 'عبارة مرور هوية العميل';
+	@override String get identityPassphraseHelp => 'اتركه فارغًا إذا لم يكن للملف عبارة مرور.';
+	@override String get removeIdentity => 'إزالة أي هوية عميل محفوظة';
+	@override String get identityStorageHelp => 'تُحفظ هويات العملاء في مخزن بيانات اعتماد المصادر المشفّر. اترك هذا القسم دون تغيير للاحتفاظ بالهوية المحفوظة.';
+	@override String get nfsLimitations => 'استخدام NFSv3 للقراءة فقط عبر TCP. دون RPC-with-TLS، تكون حركة بيانات NFS غير مشفّرة. يجب أن يسمح NAS بمعرّفات AUTH_SYS المحدّدة ومنافذ العميل غير المميّزة (يُسمّى خيار التصدير هذا غالبًا «insecure»). لا يُدعم NFSv4 ولا UDP.';
+	@override String get nfsSetupHelp => 'مساعدة إعداد NFS';
+	@override String get nfsSetupHint => 'تحقّق من هذه الإعدادات إذا تعذّر الاتصال.';
+	@override String get nfsSetupDetails => 'استخدم تصدير NFSv3 عبر TCP. عند اشتراط التشفير، يجب أن تدعم كلٌّ من خدمة NFS وخدمة التركيب RPC-with-TLS. اترك الشهادة المخصّصة فارغة إذا كان هذا الجهاز يثق بشهادة الخادم، أو أضف شهادة CA الخاصة بـ NAS أو شهادته الموقّعة ذاتيًا. يجب أن يطابق اسم الشهادة المضيف في عنوان الاتصال. إذا طلب NAS مصادقة TLS متبادلة، فأضف هوية العميل PKCS#12 الخاصة به. أخيرًا، تأكّد من أن التصدير يسمح بمعرّفات AUTH_SYS UID/GID المضبوطة وبسياسة منافذ العميل.';
+	@override String get ftpHelp => 'يستخدم FTP الوضع السلبي. استخدم ftp:// لاتصال FTP غير المشفّر، وftpes:// لاتصال TLS الصريح، أو ftps:// لاتصال TLS (ضمني على المنفذ 990، وصريح على المنافذ الأخرى).';
+	@override String get openSubtitles => 'OpenSubtitles';
+	@override String get subtitleSetup => 'بحث اختياري عن ترجمات نصية لملفات الفيديو المستقلة.';
+	@override String get apiKey => 'مفتاح API';
+	@override String get optionalUsername => 'اسم مستخدم الحساب (اختياري)';
+	@override String get optionalPassword => 'كلمة مرور الحساب (اختيارية)';
+	@override String get subtitlePrivacy => 'احصل على مفتاح API من opensubtitles.com. يرسل البحث عنوان الفيديو ومعرّفات IMDb/TMDB المتاحة، ولا يرسل ملف الفيديو مطلقًا. يُحفظ المفتاح وبيانات الحساب الاختيارية بشكل مشفّر مع هذا المصدر.';
+	@override String get automaticMetadata => 'جلب بيانات الفيديو الوصفية من الإنترنت تلقائيًا';
+	@override String get metadataPrivacy => 'يُرسل فقط العنوان والسنة وأرقام الحلقات المستخرجة من اسم الملف، أو معرّف NFO، ولا يرسل الوسائط أو بيانات الاعتماد مطلقًا. تظل الأولوية لحقول NFO.';
+	@override String get nfsEncryptionFailure => 'لاتصال NFS المشفّر، تحقّق من دعم RFC 9289 وTLS 1.3 في خدمتي NAS، ومن اسم الشهادة ومعرّفات UID/GID للتصدير. لن يعيد PlezyNG محاولة هذا الاتصال دون تشفير.';
+	@override String get sourceConnecting => 'جارٍ الاتصال بالمصدر';
+	@override String get metadataSearchPrivacy => 'يُرسل هذا البحث عن العنوان إلى Trakt. يُرسل العنوان الذي تدخله فقط، ولا يُرسل الفيديو أو بيانات اعتماد المصدر.';
+	@override String get chooseMatch => 'اختيار نتيجة مطابقة';
+	@override String get metadataMatchHelp => 'راجع العنوان والسنة قبل الاختيار. يتلقى Trakt عنوان البحث؛ ويبقى الفيديو في مصدره.';
+	@override String get metadataNoMatches => 'لم يُعثر على عناوين مطابقة على الإنترنت. جرّب عنوانًا آخر.';
+	@override String get metadataSearch => 'البحث عن بيانات وصفية على الإنترنت';
+	@override String get metadataLoading => 'جارٍ البحث عن معلومات الأفلام والمسلسلات على الإنترنت…';
+	@override String get metadataFromTrakt => 'بيانات وصفية من Trakt عبر الإنترنت';
+	@override String get metadataNoAutomaticMatch => 'لم يُعثر على تطابق تلقائي للعنوان. ابحث عن العنوان لاختيار نتيجة مطابقة.';
+	@override String get metadataFailed => 'تعذّر تحميل البيانات الوصفية من الإنترنت. لا يزال التشغيل والمعلومات المحلية متاحين.';
+	@override String get videoDetailsLoading => 'جارٍ تحميل معلومات الفيديو';
+	@override String get subtitleKeyRequired => 'يلزم مفتاح API لخدمة OpenSubtitles';
+	@override String get subtitleKeyHelp => 'عدّل مصدر الملفات هذا وأضف مفتاح API لخدمة OpenSubtitles في إعدادات الترجمة النصية الاختيارية.';
+	@override String get subtitleSearchFailed => 'فشل البحث عن الترجمة النصية. تحقّق من مفتاح API والاتصال وإمكانية الوصول إلى الخدمة.';
+	@override String get subtitleApplyFailed => 'تعذّر تنزيل هذه الترجمة النصية أو تطبيقها. تحقّق من الاتصال وجرّب نتيجة أخرى.';
+	@override String get subtitleSearch => 'البحث في OpenSubtitles';
+	@override String get subtitleSearchPrivacy => 'يستخدم البحث العنوان ومعرّفات IMDb/TMDB المتاحة. يبقى ملف الفيديو في مصدره. تحقّق من اللغة وعلامات الترجمة الإجبارية أو المخصّصة لضعاف السمع والتقييم قبل الاختيار.';
+	@override String get movieOrShow => 'فيلم أو مسلسل';
+	@override String get subtitleTitleHint => 'أدخل عنوانًا لتضييق النتائج';
+	@override String get subtitleLanguage => 'لغة الترجمة النصية';
+	@override String get subtitleSearching => 'جارٍ البحث في OpenSubtitles';
+	@override String get subtitleNoMatches => 'لم يُعثر على ترجمة نصية مطابقة. جرّب عنوانًا أو لغة أخرى.';
+	@override String get downloadSubtitle => 'تنزيل الترجمة النصية';
+	@override String get subtitle => 'ترجمة نصية';
+	@override String get nfsTlsRequired => 'يلزم RPC-with-TLS';
+	@override String get nfsUnencrypted => 'NFS غير مشفّر';
+	@override String get tlsEncrypted => 'مشفّر باستخدام TLS';
+	@override String get ftpPlain => 'FTP غير مشفّر';
+	@override String get sshPinned => 'مشفّر باستخدام SSH · مفتاح المضيف مثبّت';
+	@override String get smbEncrypted => 'تشفير SMB3 مفعّل';
+	@override String get smbUnencrypted => 'تشفير SMB3 معطّل';
+	@override String get httpUnencrypted => 'HTTP دون تشفير للنقل';
+	@override String get checkEndpointSecurity => 'تحقّق من أمان عنوان الاتصال';
+	@override String fieldRequired({required Object label}) => 'يلزم إدخال ${label}.';
+	@override String integerRange({required Object label, required Object min, required Object max}) => 'أدخل ${label} من ${min} إلى ${max}.';
+	@override String replaceFile({required Object name}) => 'استبدال ${name}';
+	@override String selectedIdentity({required Object name}) => 'هوية العميل المحدّدة: ${name}';
+	@override String subtitleRating({required Object rating}) => 'التقييم ${rating}';
+	@override String subtitleDownloading({required Object title}) => 'جارٍ تنزيل الترجمة النصية: ${title}';
+}
 // Path: comics
 class _Translations$comics$ar extends Translations$comics$en {
 	_Translations$comics$ar._(TranslationsAr root) : this._root = root, super.internal(root);
-
-	final TranslationsAr _root; // ignore: unused_field
-
-	// Translations
 	@override String get fitHeight => 'ملاءمة الارتفاع';
 	@override String get readingMode => 'وضع القراءة';
 	@override String get paged => 'صفحات';
@@ -3284,8 +3395,6 @@ class _Translations$comics$ar extends Translations$comics$en {
 	@override String get savedForComic => 'تُحفظ إعدادات العرض لهذه القصة المصورة في هذا الملف الشخصي.';
 	@override String get readLists => 'قوائم القراءة';
 	@override String get collections => 'مجموعات';
-}
-
 // Path: appIcon.names
 class _Translations$appIcon$names$ar extends Translations$appIcon$names$en {
 	_Translations$appIcon$names$ar._(TranslationsAr root) : this._root = root, super.internal(root);
@@ -3537,48 +3646,60 @@ class _Translations$discover$findNext$ar extends Translations$discover$findNext$
 	final TranslationsAr _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'العثور على التالي';
-	@override String get open => 'العثور على التالي';
-	@override String get anyTime => 'أي وقت';
-	@override String get timeAvailable => 'كم من الوقت لديك؟';
-	@override String get filters => 'واختر اللحظة';
-	@override String get watch => 'مشاهدة';
-	@override String get listen => 'الاستماع';
-	@override String get read => 'قراءة';
-	@override String finishable({required Object duration}) => 'انتهاء في ${duration}';
-	@override String aboutDuration({required Object duration}) => 'حول ${duration}';
+	@override String get title => 'اكتشف اختيارك التالي';
+	@override String get open => 'اكتشف اختيارك التالي';
+	@override String get anyTime => 'أي مدة';
+	@override String get timeAvailable => 'كم لديك من الوقت؟';
+	@override String get filters => 'اختر ما يناسب وقتك';
+	@override String get watch => 'شاهد';
+	@override String get listen => 'استمع';
+	@override String get read => 'اقرأ';
+	@override String finishable({required Object duration}) => 'يمكنك إنهاؤه في ${duration}';
+	@override String aboutDuration({required Object duration}) => 'حوالي ${duration}';
 	@override String nextUnit({required Object duration}) => 'الفصل التالي · ${duration}';
-	@override String totalDuration({required Object duration}) => '${duration} كاملة';
-	@override String get timingVaries => 'التوقيت يختلف';
-	@override String get notNow => 'لا الآن';
-	@override String get swipeHint => 'تحريك أو استخدام الأزرار أدناه';
-	@override String get saved => 'النقابات المحفوظة';
-	@override String savedCount({required Object count}) => 'كلمات متعلقة ${count}';
-	@override String get undo => 'وواو';
-	@override String get details => 'تفاصيل';
-	@override String get noPicks => 'لا شيء يختاره حتى الآن';
-	@override String get noPicksHint => 'قم بتوصيل مكتبة أو إضافة مصدر وسائل الإعلام للبدء.';
-	@override String get noMatches => 'لا شيء يناسب هذه اللحظة';
-	@override String get noMatchesHint => 'حاول تنسيق آخر أو أعط نفسك المزيد من الوقت.';
-	@override String get allDone => 'أنتم جميعا تم القبض عليكم';
-	@override String get allDoneHint => 'ابدأ مزيجًا جديدًا لرؤية هذه الخيارات مرة أخرى.';
-	@override String get refresh => 'العثور على مزيج آخر';
+	@override String totalDuration({required Object duration}) => '${duration} إجمالًا';
+	@override String get timingVaries => 'تختلف المدة';
+	@override String get notNow => 'ليس الآن';
+	@override String get swipeHint => 'اسحب الغلاف باتجاه أحد السهمين أو استخدم الأزرار أدناه.';
+	@override String get saved => 'الاختيارات المحفوظة';
+	@override String savedCount({required Object count}) => 'الاختيارات المحفوظة · ${count}';
+	@override String get undo => 'تراجع';
+	@override String get details => 'التفاصيل';
+	@override String get noPicks => 'لا توجد اختيارات بعد';
+	@override String get noPicksHint => 'اربط مكتبة أو أضف مصدر وسائط للبدء.';
+	@override String get noMatches => 'لا شيء يناسب وقتك الآن';
+	@override String get noMatchesHint => 'جرّب نوعًا آخر من الوسائط أو خصّص وقتًا أطول.';
+	@override String get allDone => 'استعرضت كل الاختيارات';
+	@override String get allDoneHint => 'ابدأ بمجموعة جديدة لعرض هذه الاختيارات مجددًا.';
+	@override String get refresh => 'اعثر على مجموعة أخرى';
 	@override String sourceReason({required Object source}) => 'من ${source}';
 	@override String libraryReason({required Object library}) => 'من ${library}';
 	@override String get ownedReason => 'من مكتبتك';
-	@override String get liveNow => 'على الآن';
-	@override String get watchLive => 'مشاهدة live';
-	@override String get filterAnything => 'كل شيء';
-	@override String get filterWatch => 'مشاهدة';
-	@override String get filterListen => 'الاستماع';
-	@override String get filterRead => 'قراءة';
+	@override String get liveNow => 'يُعرض الآن';
+	@override String get watchLive => 'شاهد البث المباشر';
+	@override String get filterAnything => 'أي نوع';
+	@override String get filterWatch => 'شاهد';
+	@override String get filterListen => 'استمع';
+	@override String get filterRead => 'اقرأ';
 	@override String get twentyMinutes => '20 دقيقة';
 	@override String get fortyFiveMinutes => '45 دقيقة';
 	@override String get ninetyMinutes => '90 دقيقة';
 	@override String get apply => 'تطبيق';
-	@override String get openFailed => 'هذا الخيار لم يعد متاحا.تجديد للتحقق مرة أخرى.';
-	@override String get changeFailed => 'لا أستطيع أن أحفظ هذا التغيير، حاول مرة أخرى.';
-	@override String get savedLimit => 'النقاط التي تم حفظها كاملة.إزالة اختيار واحد لإنقاذ آخر.';
+	@override String get openFailed => 'لم يعد هذا الاختيار متاحًا. حدّث للتحقق مجددًا.';
+	@override String get changeFailed => 'تعذّر حفظ هذا التغيير. حاول مجددًا.';
+	@override String get savedLimit => 'قائمة الاختيارات المحفوظة ممتلئة. أزل اختيارًا لحفظ آخر.';
+	@override String get chooseHint => 'افتح عنوانًا أو احفظه لوقت لاحق أو تخطّه.';
+	@override String get howItWorks => 'طريقة الاستخدام';
+	@override String get notNowHelp => 'تخطَّ هذا العنوان حاليًا. سيبقى في مكتبتك.';
+	@override String get saveHelp => 'احتفظ به ضمن الاختيارات المحفوظة لهذا الملف الشخصي على هذا الجهاز. الحفظ لا ينزّل المحتوى.';
+	@override String get openHelp => 'اختر الغلاف لعرض التفاصيل. استخدم الإجراء الرئيسي لتشغيل العنوان أو قراءته أو فتحه.';
+	@override String get controlsHelp => 'بلوحة المفاتيح أو جهاز التحكم: انتقل إلى زر ثم اضغط Enter أو زر التحديد. التراجع يعيد اختيارك الأخير.';
+	@override String get artworkLoading => 'جارٍ تحميل الصورة…';
+	@override String get artworkUnavailable => 'الصورة غير متاحة';
+	@override String get savedFeedback => 'أُضيف إلى الاختيارات المحفوظة';
+	@override String get skippedFeedback => 'تم التخطي حاليًا';
+	@override String get releaseToConfirm => 'أفلت للتأكيد';
+	@override String get remoteHint => 'عند تحديد الغلاف: ← / → للاختيار · زر التحديد للتفاصيل · ↑ / ↓ لنقل التركيز';
 }
 
 // Path: discover.person
@@ -4921,6 +5042,13 @@ extension on TranslationsAr {
 			'settings.regionFormatDescription' => 'اختر طريقة عرض التواريخ والأرقام ووحدات القياس.',
 			'settings.metadataLanguage' => 'لغة بيانات الوسائط',
 			'settings.metadataLanguageDescription' => 'لغة العناوين والأوصاف المفضلة عندما يدعمها الخادم. تُضبط تفضيلات الصوت والترجمة بشكل مستقل.',
+			'settings.experimentalDolbyVision' => 'Dolby Vision التجريبي',
+			'settings.experimentalDolbyVisionDescription' => 'استخدم عارض FEL التجريبي عند التشغيل التالي. يتطلب إصدارًا منفصلًا من المحرك.',
+			'settings.dvExperimentUnavailableDescription' => 'هذه التجربة متاحة حاليًا على Linux فقط.',
+			'settings.dvCompatibilityFallback' => 'الرجوع للتوافق',
+			'settings.dvCompatibilityFallbackDescription' => 'استخدم العارض القياسي إذا تعذر بدء التجربة. قد تُفقد بيانات FEL.',
+			'settings.dvExperimentDiagnostics' => 'تسجيل تجربة الفيديو',
+			'settings.dvExperimentDiagnosticsDescription' => 'فعّل سجلات المشغّل التفصيلية عند التشغيل التالي.',
 			'themeEditor.builtIn' => 'بناء في',
 			'themeEditor.presets' => 'الكهنوت',
 			'themeEditor.custom' => 'مخصص',
@@ -5341,6 +5469,8 @@ extension on TranslationsAr {
 			'messages.libraryScanStarted' => ({required Object title}) => 'بدأت فحص المكتبة لـ "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'فشل في فحص المكتبة: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'إعادة تدوير البيانات الميتاتية لـ "${title}" ...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'بدأ تحديث البيانات الميتة لـ "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'لا يمكن تحديث البيانات الميتا: ${error}',
 			'messages.logoutConfirm' => 'هل أنت متأكد من أنك تريد الانسحاب؟',
@@ -5348,8 +5478,6 @@ extension on TranslationsAr {
 			'messages.seasonsLoadFailed' => 'لا أستطيع تحميل الموسم',
 			'messages.noEpisodesFound' => 'لا توجد أحداث في الموسم الأول',
 			'messages.noEpisodesFoundGeneral' => 'لم يتم العثور على أحداث',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'لا يمكن تحميل الحوادث',
 			'messages.noResultsFound' => 'لم يتم العثور على نتائج.',
 			'messages.sleepTimerSet' => ({required Object label}) => 'ساعة النوم المحددة ${label}',
@@ -5576,48 +5704,60 @@ extension on TranslationsAr {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'م${season} ح${episode}',
 			'discover.overview' => 'نظرة عامة',
 			'discover.cast' => 'كاست',
-			'discover.findNext.title' => 'العثور على التالي',
-			'discover.findNext.open' => 'العثور على التالي',
-			'discover.findNext.anyTime' => 'أي وقت',
-			'discover.findNext.timeAvailable' => 'كم من الوقت لديك؟',
-			'discover.findNext.filters' => 'واختر اللحظة',
-			'discover.findNext.watch' => 'مشاهدة',
-			'discover.findNext.listen' => 'الاستماع',
-			'discover.findNext.read' => 'قراءة',
-			'discover.findNext.finishable' => ({required Object duration}) => 'انتهاء في ${duration}',
-			'discover.findNext.aboutDuration' => ({required Object duration}) => 'حول ${duration}',
+			'discover.findNext.title' => 'اكتشف اختيارك التالي',
+			'discover.findNext.open' => 'اكتشف اختيارك التالي',
+			'discover.findNext.anyTime' => 'أي مدة',
+			'discover.findNext.timeAvailable' => 'كم لديك من الوقت؟',
+			'discover.findNext.filters' => 'اختر ما يناسب وقتك',
+			'discover.findNext.watch' => 'شاهد',
+			'discover.findNext.listen' => 'استمع',
+			'discover.findNext.read' => 'اقرأ',
+			'discover.findNext.finishable' => ({required Object duration}) => 'يمكنك إنهاؤه في ${duration}',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => 'حوالي ${duration}',
 			'discover.findNext.nextUnit' => ({required Object duration}) => 'الفصل التالي · ${duration}',
-			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} كاملة',
-			'discover.findNext.timingVaries' => 'التوقيت يختلف',
-			'discover.findNext.notNow' => 'لا الآن',
-			'discover.findNext.swipeHint' => 'تحريك أو استخدام الأزرار أدناه',
-			'discover.findNext.saved' => 'النقابات المحفوظة',
-			'discover.findNext.savedCount' => ({required Object count}) => 'كلمات متعلقة ${count}',
-			'discover.findNext.undo' => 'وواو',
-			'discover.findNext.details' => 'تفاصيل',
-			'discover.findNext.noPicks' => 'لا شيء يختاره حتى الآن',
-			'discover.findNext.noPicksHint' => 'قم بتوصيل مكتبة أو إضافة مصدر وسائل الإعلام للبدء.',
-			'discover.findNext.noMatches' => 'لا شيء يناسب هذه اللحظة',
-			'discover.findNext.noMatchesHint' => 'حاول تنسيق آخر أو أعط نفسك المزيد من الوقت.',
-			'discover.findNext.allDone' => 'أنتم جميعا تم القبض عليكم',
-			'discover.findNext.allDoneHint' => 'ابدأ مزيجًا جديدًا لرؤية هذه الخيارات مرة أخرى.',
-			'discover.findNext.refresh' => 'العثور على مزيج آخر',
+			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} إجمالًا',
+			'discover.findNext.timingVaries' => 'تختلف المدة',
+			'discover.findNext.notNow' => 'ليس الآن',
+			'discover.findNext.swipeHint' => 'اسحب الغلاف باتجاه أحد السهمين أو استخدم الأزرار أدناه.',
+			'discover.findNext.saved' => 'الاختيارات المحفوظة',
+			'discover.findNext.savedCount' => ({required Object count}) => 'الاختيارات المحفوظة · ${count}',
+			'discover.findNext.undo' => 'تراجع',
+			'discover.findNext.details' => 'التفاصيل',
+			'discover.findNext.noPicks' => 'لا توجد اختيارات بعد',
+			'discover.findNext.noPicksHint' => 'اربط مكتبة أو أضف مصدر وسائط للبدء.',
+			'discover.findNext.noMatches' => 'لا شيء يناسب وقتك الآن',
+			'discover.findNext.noMatchesHint' => 'جرّب نوعًا آخر من الوسائط أو خصّص وقتًا أطول.',
+			'discover.findNext.allDone' => 'استعرضت كل الاختيارات',
+			'discover.findNext.allDoneHint' => 'ابدأ بمجموعة جديدة لعرض هذه الاختيارات مجددًا.',
+			'discover.findNext.refresh' => 'اعثر على مجموعة أخرى',
 			'discover.findNext.sourceReason' => ({required Object source}) => 'من ${source}',
 			'discover.findNext.libraryReason' => ({required Object library}) => 'من ${library}',
 			'discover.findNext.ownedReason' => 'من مكتبتك',
-			'discover.findNext.liveNow' => 'على الآن',
-			'discover.findNext.watchLive' => 'مشاهدة live',
-			'discover.findNext.filterAnything' => 'كل شيء',
-			'discover.findNext.filterWatch' => 'مشاهدة',
-			'discover.findNext.filterListen' => 'الاستماع',
-			'discover.findNext.filterRead' => 'قراءة',
+			'discover.findNext.liveNow' => 'يُعرض الآن',
+			'discover.findNext.watchLive' => 'شاهد البث المباشر',
+			'discover.findNext.filterAnything' => 'أي نوع',
+			'discover.findNext.filterWatch' => 'شاهد',
+			'discover.findNext.filterListen' => 'استمع',
+			'discover.findNext.filterRead' => 'اقرأ',
 			'discover.findNext.twentyMinutes' => '20 دقيقة',
 			'discover.findNext.fortyFiveMinutes' => '45 دقيقة',
 			'discover.findNext.ninetyMinutes' => '90 دقيقة',
 			'discover.findNext.apply' => 'تطبيق',
-			'discover.findNext.openFailed' => 'هذا الخيار لم يعد متاحا.تجديد للتحقق مرة أخرى.',
-			'discover.findNext.changeFailed' => 'لا أستطيع أن أحفظ هذا التغيير، حاول مرة أخرى.',
-			'discover.findNext.savedLimit' => 'النقاط التي تم حفظها كاملة.إزالة اختيار واحد لإنقاذ آخر.',
+			'discover.findNext.openFailed' => 'لم يعد هذا الاختيار متاحًا. حدّث للتحقق مجددًا.',
+			'discover.findNext.changeFailed' => 'تعذّر حفظ هذا التغيير. حاول مجددًا.',
+			'discover.findNext.savedLimit' => 'قائمة الاختيارات المحفوظة ممتلئة. أزل اختيارًا لحفظ آخر.',
+			'discover.findNext.chooseHint' => 'افتح عنوانًا أو احفظه لوقت لاحق أو تخطّه.',
+			'discover.findNext.howItWorks' => 'طريقة الاستخدام',
+			'discover.findNext.notNowHelp' => 'تخطَّ هذا العنوان حاليًا. سيبقى في مكتبتك.',
+			'discover.findNext.saveHelp' => 'احتفظ به ضمن الاختيارات المحفوظة لهذا الملف الشخصي على هذا الجهاز. الحفظ لا ينزّل المحتوى.',
+			'discover.findNext.openHelp' => 'اختر الغلاف لعرض التفاصيل. استخدم الإجراء الرئيسي لتشغيل العنوان أو قراءته أو فتحه.',
+			'discover.findNext.controlsHelp' => 'بلوحة المفاتيح أو جهاز التحكم: انتقل إلى زر ثم اضغط Enter أو زر التحديد. التراجع يعيد اختيارك الأخير.',
+			'discover.findNext.artworkLoading' => 'جارٍ تحميل الصورة…',
+			'discover.findNext.artworkUnavailable' => 'الصورة غير متاحة',
+			'discover.findNext.savedFeedback' => 'أُضيف إلى الاختيارات المحفوظة',
+			'discover.findNext.skippedFeedback' => 'تم التخطي حاليًا',
+			'discover.findNext.releaseToConfirm' => 'أفلت للتأكيد',
+			'discover.findNext.remoteHint' => 'عند تحديد الغلاف: ← / → للاختيار · زر التحديد للتفاصيل · ↑ / ↓ لنقل التركيز',
 			'discover.extras' => 'تريلر و إضافات',
 			'discover.studio' => 'الاستوديو',
 			'discover.rating' => 'تصنيف',
@@ -5843,6 +5983,8 @@ extension on TranslationsAr {
 			'explore.mdblistShelves.nameHint' => 'اترك فارغا لاستخدام اسم قائمة المصدر.',
 			'explore.mdblistShelves.add' => 'إضافة شيلف',
 			'explore.mdblistShelves.save' => 'احفظ السترات',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'تحريك ${title} إلى الأعلى',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'تحريك ${title} إلى أسفل',
 			'explore.mdblistShelves.unavailable' => 'هذه القائمة غير متوفرة.إزالة أو إزالة الستار في الإعدادات.',
@@ -5862,8 +6004,6 @@ extension on TranslationsAr {
 			'explore.rows.popularShows' => 'العروض الشعبية',
 			'explore.rows.trendingAnime' => 'انيمات الاتجاهات',
 			'explore.rows.suggestedAnime' => 'انيمو الموصى بها',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'أعلى الهواء Anime',
 			'explore.rows.popularAnime' => 'الأنيمي الأكثر شعبية',
 			'explore.rows.trending' => 'الاتجاهات',
@@ -6357,6 +6497,8 @@ extension on TranslationsAr {
 			'downloads.resumeDownload' => 'إعادة التدوير download',
 			'downloads.cancelledDownload' => 'إلغاء تحميل',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (مزامنة ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'تحميل ${file} - انقر للانتهاء',
 			'downloads.partialDownloadClickToComplete' => 'تحميل جزئي - Click to complete',
 			'downloads.deleting' => 'إلغاء...',
@@ -6376,8 +6518,6 @@ extension on TranslationsAr {
 			'downloads.unwatchedOnly' => 'غير ملاحظة فقط',
 			'downloads.nextNUnwatched' => ({required Object count}) => '${count} غير مسبوق',
 			'downloads.customAmount' => 'المبلغ المحدد ...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'المبلغ المحدد (كل ...',
 			'downloads.randomEpisodes' => 'الحوادث العشوائية',
 			'downloads.includeSpecials' => 'إدخال الخصائص',
@@ -6871,6 +7011,8 @@ extension on TranslationsAr {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'لا يمكن الوصول إلى الخادم: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'تسجيل الدخول فاشلة: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect فشل: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'تسجيل الدخول مع Plex',
 			'addServer.pinExpired' => 'انتهاء صلاحية PIN قبل تسجيل الدخول، يرجى المحاولة مرة أخرى.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'فشل في تسجيل الحساب: ${error}',
@@ -6890,8 +7032,6 @@ extension on TranslationsAr {
 			'addServer.authResponseIncomplete' => 'استجابة التسجيل من الخادم كانت غير كاملة',
 			'addServer.quickConnectRejected' => 'Quick Connect تم رفضها من قبل الخادم',
 			'addServer.quickConnectNotJson' => 'رد Quick Connect لم يكن صالحا JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'رد Quick Connect يفتقر إلى رمز أو سر',
 			'addServer.quickConnectPollRejected' => 'Quick Connect استجواب تم رفضه من قبل الخادم',
 			'addServer.serverTimedOut' => 'لم يستجيب الخادم في الوقت المناسب.',
@@ -7197,6 +7337,12 @@ extension on TranslationsAr {
 			'fileSources.useFiles' => 'استخدام الملفات والكتب',
 			'fileSources.cancelScan' => 'إلغاء الفحص',
 			'fileSources.googleDrive' => 'Google Drive',
+			'fileSources.smbEndpointHint' => 'مثال: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'أدخل خادم SMB ومجلدًا مشتركًا واحدًا.',
+			'fileSources.smbFolderHelp' => 'اتركه فارغًا لاستخدام المجلد المشترك بالكامل، أو أدخل مجلدًا داخله.',
+			'fileSources.smbDomain' => 'النطاق (اختياري)',
+			'fileSources.smbEncryption' => 'تشفير اتصال SMB3',
+			'fileSources.smbEncryptionHint' => 'استخدم تشفير SMB3 عندما يدعمه جهاز NAS.',
 			'lending.title' => 'المكتبات العامة',
 			'lending.add' => 'إضافة مكتبة',
 			'lending.other' => 'مكتبة أخرى',
@@ -7298,6 +7444,93 @@ extension on TranslationsAr {
 			'audiobook.statusFinished' => 'الانتهاء',
 			'audiobook.goToTime' => 'اذهب إلى الزمن',
 			'audiobook.timeHelp' => 'ساعات: دقائق: ثواني، أو دقائق: ثواني',
+			'sourceSetup.savedCertificate' => 'شهادة الخادم المحفوظة',
+			'sourceSetup.nfsEndpointInvalid' => 'أدخل عنوان NFS مثل nfs://nas:2049/export.',
+			'sourceSetup.dlnaNone' => 'لم يُعثر على خوادم DLNA. أدخل عنوان وصف الجهاز يدويًا.',
+			'sourceSetup.dlnaServers' => 'خوادم وسائط DLNA',
+			'sourceSetup.dlnaUnavailable' => 'اكتشاف DLNA غير متاح على هذه الشبكة. أدخل عنوان وصف الجهاز يدويًا.',
+			'sourceSetup.dlnaSearching' => 'جارٍ البحث عن خوادم DLNA في الشبكة المحلية',
+			'sourceSetup.networkSearching' => 'جارٍ البحث في الشبكة المحلية…',
+			'sourceSetup.dlnaDiscover' => 'اكتشاف خوادم DLNA',
+			'sourceSetup.dlnaHelp' => 'يعتمد الاكتشاف على البث المتعدد في الشبكة المحلية. إذا لم يظهر أي خادم، فأدخل عنوان وصف الجهاز أعلاه.',
+			'sourceSetup.dlnaRoot' => 'معرّف عنصر DLNA؛ اتركه فارغًا لاستخدام جذر الجهاز.',
+			'sourceSetup.passwordOrKey' => 'أدخل كلمة مرور أو أضف مفتاحًا خاصًا أدناه.',
+			'sourceSetup.sshFingerprint' => 'بصمة SHA256 لمفتاح مضيف SSH',
+			'sourceSetup.sshFingerprintHelp' => 'تحقّق منها مع مسؤول الخادم. شغّل على الخادم الأمر ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub واستخدم قيمة SHA256 التي يعرضها.',
+			'sourceSetup.sshFingerprintKeep' => 'اتركه فارغًا للاحتفاظ بالبصمة المثبّتة حاليًا، أو أدخل بصمة خادم جديدة.',
+			'sourceSetup.sshAuthentication' => 'المصادقة بمفتاح SSH عام',
+			'sourceSetup.sshAuthenticationHelp' => 'اختياري؛ تُدعم المصادقة بكلمة مرور أيضًا.',
+			'sourceSetup.privateKey' => 'المفتاح الخاص (بتنسيق PEM أو OpenSSH)',
+			'sourceSetup.privateKeyPassphrase' => 'عبارة مرور المفتاح الخاص',
+			'sourceSetup.nfsMountPort' => 'منفذ TCP لخدمة تركيب NFS',
+			'sourceSetup.nfsMountPortHelp' => 'الافتراضي: 20048',
+			'sourceSetup.nfsUserId' => 'معرّف مستخدم NFS ‏(AUTH_SYS)',
+			'sourceSetup.nfsUserIdHelp' => 'الافتراضي: 1000. استخدم المعرّف الذي تسمح به إعدادات تصدير NAS.',
+			'sourceSetup.nfsGroupId' => 'معرّف مجموعة NFS ‏(AUTH_SYS)',
+			'sourceSetup.nfsGroupIdHelp' => 'الافتراضي: 1000. استخدم معرّف المجموعة الذي تسمح به إعدادات تصدير NAS.',
+			'sourceSetup.nfsEncryption' => 'اشتراط تشفير NFS ‏(RPC-with-TLS)',
+			'sourceSetup.nfsEncryptionHelp' => 'اشترط TLS 1.3 لخدمة NFS وخدمة التركيب. يُرفض الاتصال إذا لم يدعم NAS ذلك.',
+			'sourceSetup.nfsTrustCertificate' => 'شهادة CA أو خادم مخصّصة لـ NFS ‏(PEM، اختيارية)',
+			'sourceSetup.nfsTrustHelp' => 'اتركه فارغًا للشهادات التي يثق بها هذا الجهاز. أضف شهادة CA خاصة أو شهادة خادم موقّعة ذاتيًا عند الحاجة؛ يجب أن تطابق أسماؤها المضيف في عنوان NFS.',
+			'sourceSetup.nfsTrustInvalid' => 'استخدم شهادة CA أو خادم بتنسيق PEM. لا تُضمّن مفتاحًا خاصًا.',
+			'sourceSetup.addTrustCertificate' => 'إضافة شهادة ثقة مخصّصة',
+			'sourceSetup.replaceTrustCertificate' => 'استبدال الشهادة المخصّصة المحفوظة',
+			'sourceSetup.nfsTlsHelp' => 'يستخدم RPC-with-TLS منافذ NFS وخدمة التركيب المعتادة، ويتطلب دعم NAS للمعيار RFC 9289. يلزم TLS 1.3. يجب أن يطابق اسم المضيف أو عنوان IP الشهادة. تظل معرّفات AUTH_SYS UID/GID سارية داخل القناة المشفّرة.',
+			'sourceSetup.clientCertificate' => 'شهادة العميل (اختيارية)',
+			'sourceSetup.clientCertificateHelp' => 'تتيح لـ NAS التحقّق من هوية هذا العميل؛ تظل معرّفات AUTH_SYS خاضعة لسياسة تصدير NAS.',
+			'sourceSetup.savedIdentity' => 'ستُستخدم هوية العميل المحفوظة.',
+			'sourceSetup.replaceIdentity' => 'استبدال هوية العميل المحفوظة',
+			'sourceSetup.chooseIdentity' => 'اختيار هوية عميل PKCS#12',
+			'sourceSetup.identityPassphrase' => 'عبارة مرور هوية العميل',
+			'sourceSetup.identityPassphraseHelp' => 'اتركه فارغًا إذا لم يكن للملف عبارة مرور.',
+			'sourceSetup.removeIdentity' => 'إزالة أي هوية عميل محفوظة',
+			'sourceSetup.identityStorageHelp' => 'تُحفظ هويات العملاء في مخزن بيانات اعتماد المصادر المشفّر. اترك هذا القسم دون تغيير للاحتفاظ بالهوية المحفوظة.',
+			'sourceSetup.nfsLimitations' => 'استخدام NFSv3 للقراءة فقط عبر TCP. دون RPC-with-TLS، تكون حركة بيانات NFS غير مشفّرة. يجب أن يسمح NAS بمعرّفات AUTH_SYS المحدّدة ومنافذ العميل غير المميّزة (يُسمّى خيار التصدير هذا غالبًا «insecure»). لا يُدعم NFSv4 ولا UDP.',
+			'sourceSetup.nfsSetupHelp' => 'مساعدة إعداد NFS',
+			'sourceSetup.nfsSetupHint' => 'تحقّق من هذه الإعدادات إذا تعذّر الاتصال.',
+			'sourceSetup.nfsSetupDetails' => 'استخدم تصدير NFSv3 عبر TCP. عند اشتراط التشفير، يجب أن تدعم كلٌّ من خدمة NFS وخدمة التركيب RPC-with-TLS. اترك الشهادة المخصّصة فارغة إذا كان هذا الجهاز يثق بشهادة الخادم، أو أضف شهادة CA الخاصة بـ NAS أو شهادته الموقّعة ذاتيًا. يجب أن يطابق اسم الشهادة المضيف في عنوان الاتصال. إذا طلب NAS مصادقة TLS متبادلة، فأضف هوية العميل PKCS#12 الخاصة به. أخيرًا، تأكّد من أن التصدير يسمح بمعرّفات AUTH_SYS UID/GID المضبوطة وبسياسة منافذ العميل.',
+			'sourceSetup.ftpHelp' => 'يستخدم FTP الوضع السلبي. استخدم ftp:// لاتصال FTP غير المشفّر، وftpes:// لاتصال TLS الصريح، أو ftps:// لاتصال TLS (ضمني على المنفذ 990، وصريح على المنافذ الأخرى).',
+			'sourceSetup.openSubtitles' => 'OpenSubtitles',
+			'sourceSetup.subtitleSetup' => 'بحث اختياري عن ترجمات نصية لملفات الفيديو المستقلة.',
+			'sourceSetup.apiKey' => 'مفتاح API',
+			'sourceSetup.optionalUsername' => 'اسم مستخدم الحساب (اختياري)',
+			'sourceSetup.optionalPassword' => 'كلمة مرور الحساب (اختيارية)',
+			'sourceSetup.subtitlePrivacy' => 'احصل على مفتاح API من opensubtitles.com. يرسل البحث عنوان الفيديو ومعرّفات IMDb/TMDB المتاحة، ولا يرسل ملف الفيديو مطلقًا. يُحفظ المفتاح وبيانات الحساب الاختيارية بشكل مشفّر مع هذا المصدر.',
+			'sourceSetup.automaticMetadata' => 'جلب بيانات الفيديو الوصفية من الإنترنت تلقائيًا',
+			'sourceSetup.metadataPrivacy' => 'يُرسل فقط العنوان والسنة وأرقام الحلقات المستخرجة من اسم الملف، أو معرّف NFO، ولا يرسل الوسائط أو بيانات الاعتماد مطلقًا. تظل الأولوية لحقول NFO.',
+			'sourceSetup.nfsEncryptionFailure' => 'لاتصال NFS المشفّر، تحقّق من دعم RFC 9289 وTLS 1.3 في خدمتي NAS، ومن اسم الشهادة ومعرّفات UID/GID للتصدير. لن يعيد PlezyNG محاولة هذا الاتصال دون تشفير.',
+			'sourceSetup.sourceConnecting' => 'جارٍ الاتصال بالمصدر',
+			'sourceSetup.metadataSearchPrivacy' => 'يُرسل هذا البحث عن العنوان إلى Trakt. يُرسل العنوان الذي تدخله فقط، ولا يُرسل الفيديو أو بيانات اعتماد المصدر.',
+			'sourceSetup.chooseMatch' => 'اختيار نتيجة مطابقة',
+			'sourceSetup.metadataMatchHelp' => 'راجع العنوان والسنة قبل الاختيار. يتلقى Trakt عنوان البحث؛ ويبقى الفيديو في مصدره.',
+			'sourceSetup.metadataNoMatches' => 'لم يُعثر على عناوين مطابقة على الإنترنت. جرّب عنوانًا آخر.',
+			'sourceSetup.metadataSearch' => 'البحث عن بيانات وصفية على الإنترنت',
+			'sourceSetup.metadataLoading' => 'جارٍ البحث عن معلومات الأفلام والمسلسلات على الإنترنت…',
+			'sourceSetup.metadataFromTrakt' => 'بيانات وصفية من Trakt عبر الإنترنت',
+			'sourceSetup.metadataNoAutomaticMatch' => 'لم يُعثر على تطابق تلقائي للعنوان. ابحث عن العنوان لاختيار نتيجة مطابقة.',
+			'sourceSetup.metadataFailed' => 'تعذّر تحميل البيانات الوصفية من الإنترنت. لا يزال التشغيل والمعلومات المحلية متاحين.',
+			'sourceSetup.videoDetailsLoading' => 'جارٍ تحميل معلومات الفيديو',
+			'sourceSetup.subtitleKeyRequired' => 'يلزم مفتاح API لخدمة OpenSubtitles',
+			'sourceSetup.subtitleKeyHelp' => 'عدّل مصدر الملفات هذا وأضف مفتاح API لخدمة OpenSubtitles في إعدادات الترجمة النصية الاختيارية.',
+			'sourceSetup.subtitleSearchFailed' => 'فشل البحث عن الترجمة النصية. تحقّق من مفتاح API والاتصال وإمكانية الوصول إلى الخدمة.',
+			'sourceSetup.subtitleApplyFailed' => 'تعذّر تنزيل هذه الترجمة النصية أو تطبيقها. تحقّق من الاتصال وجرّب نتيجة أخرى.',
+			'sourceSetup.subtitleSearch' => 'البحث في OpenSubtitles',
+			'sourceSetup.subtitleSearchPrivacy' => 'يستخدم البحث العنوان ومعرّفات IMDb/TMDB المتاحة. يبقى ملف الفيديو في مصدره. تحقّق من اللغة وعلامات الترجمة الإجبارية أو المخصّصة لضعاف السمع والتقييم قبل الاختيار.',
+			'sourceSetup.movieOrShow' => 'فيلم أو مسلسل',
+			'sourceSetup.subtitleTitleHint' => 'أدخل عنوانًا لتضييق النتائج',
+			'sourceSetup.subtitleLanguage' => 'لغة الترجمة النصية',
+			'sourceSetup.subtitleSearching' => 'جارٍ البحث في OpenSubtitles',
+			'sourceSetup.subtitleNoMatches' => 'لم يُعثر على ترجمة نصية مطابقة. جرّب عنوانًا أو لغة أخرى.',
+			'sourceSetup.downloadSubtitle' => 'تنزيل الترجمة النصية',
+			'sourceSetup.subtitle' => 'ترجمة نصية',
+			'sourceSetup.nfsTlsRequired' => 'يلزم RPC-with-TLS',
+			'sourceSetup.nfsUnencrypted' => 'NFS غير مشفّر',
+			'sourceSetup.tlsEncrypted' => 'مشفّر باستخدام TLS',
+			'sourceSetup.ftpPlain' => 'FTP غير مشفّر',
+			'sourceSetup.sshPinned' => 'مشفّر باستخدام SSH · مفتاح المضيف مثبّت',
+			'sourceSetup.smbEncrypted' => 'تشفير SMB3 مفعّل',
+			'sourceSetup.smbUnencrypted' => 'تشفير SMB3 معطّل',
+			'sourceSetup.httpUnencrypted' => 'HTTP دون تشفير للنقل',
 			'comics.fitHeight' => 'ملاءمة الارتفاع',
 			'comics.readingMode' => 'وضع القراءة',
 			'comics.paged' => 'صفحات',
@@ -7310,6 +7543,15 @@ extension on TranslationsAr {
 			'comics.savedForComic' => 'تُحفظ إعدادات العرض لهذه القصة المصورة في هذا الملف الشخصي.',
 			'comics.readLists' => 'قوائم القراءة',
 			'comics.collections' => 'مجموعات',
+			_ => null,
+		} ?? switch (path) {
+			'sourceSetup.checkEndpointSecurity' => 'تحقّق من أمان عنوان الاتصال',
+			'sourceSetup.fieldRequired' => ({required Object label}) => 'يلزم إدخال ${label}.',
+			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'أدخل ${label} من ${min} إلى ${max}.',
+			'sourceSetup.replaceFile' => ({required Object name}) => 'استبدال ${name}',
+			'sourceSetup.selectedIdentity' => ({required Object name}) => 'هوية العميل المحدّدة: ${name}',
+			'sourceSetup.subtitleRating' => ({required Object rating}) => 'التقييم ${rating}',
+			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'جارٍ تنزيل الترجمة النصية: ${title}',
 			_ => null,
 		};
 	}

@@ -104,6 +104,7 @@ class TranslationsHu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$hu fileSources = _Translations$fileSources$hu._(_root);
 	@override late final _Translations$lending$hu lending = _Translations$lending$hu._(_root);
 	@override late final _Translations$audiobook$hu audiobook = _Translations$audiobook$hu._(_root);
+	@override late final _Translations$sourceSetup$hu sourceSetup = _Translations$sourceSetup$hu._(_root);
 	@override late final _Translations$comics$hu comics = _Translations$comics$hu._(_root);
 }
 
@@ -762,6 +763,13 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Válassza ki a dátumok, számok és mértékegységek megjelenítési módját.';
 	@override String get metadataLanguage => 'Metaadatok nyelve';
 	@override String get metadataLanguageDescription => 'A címek és leírások előnyben részesített nyelve, ha a kiszolgáló támogatja. A hang és a felirat nyelve külön állítható be.';
+	@override String get experimentalDolbyVision => 'Kísérleti Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'A következő lejátszáskor a kísérleti FEL-megjelenítő használata. Külön motorbuild szükséges.';
+	@override String get dvExperimentUnavailableDescription => 'Ez a kísérlet jelenleg csak Linuxon érhető el.';
+	@override String get dvCompatibilityFallback => 'Kompatibilitási tartalék mód';
+	@override String get dvCompatibilityFallbackDescription => 'Ha a kísérlet nem indul, a normál megjelenítő használata. A FEL-adatok elveszhetnek.';
+	@override String get dvExperimentDiagnostics => 'Videókísérlet naplózása';
+	@override String get dvExperimentDiagnosticsDescription => 'Részletes lejátszónaplók engedélyezése a következő lejátszáskor.';
 }
 
 // Path: themeEditor
@@ -3064,6 +3072,12 @@ class _Translations$fileSources$hu extends Translations$fileSources$en {
 	@override String get useFiles => 'Fájlok és könyvek használata';
 	@override String get cancelScan => '- törlés scan';
 	@override String get googleDrive => 'Google Drive';
+	@override String get smbEndpointHint => 'Példa: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Adjon meg egy SMB-kiszolgálót és egy megosztást.';
+	@override String get smbFolderHelp => 'Hagyja üresen a teljes megosztás használatához, vagy adjon meg egy azon belüli mappát.';
+	@override String get smbDomain => 'Tartomány (nem kötelező)';
+	@override String get smbEncryption => 'SMB3-kapcsolat titkosítása';
+	@override String get smbEncryptionHint => 'SMB3-titkosítás használata, ha a NAS támogatja.';
 }
 
 // Path: lending
@@ -3185,13 +3199,110 @@ class _Translations$audiobook$hu extends Translations$audiobook$en {
 	@override String get timeHelp => 'Idők: percek: másodpercek, vagy percek: másodpercek';
 }
 
+// Path: sourceSetup
+class _Translations$sourceSetup$hu extends Translations$sourceSetup$en {
+	_Translations$sourceSetup$hu._(TranslationsHu root) : this._root = root, super.internal(root);
+
+	final TranslationsHu _root; // ignore: unused_field
+	// Translations
+	@override String get savedCertificate => 'Mentett szervertanúsítvány';
+	@override String get nfsEndpointInvalid => 'Adj meg egy NFS URL-t, például: nfs://nas:2049/export.';
+	@override String get dlnaNone => 'Nem található DLNA-kiszolgáló. Add meg kézzel az eszközleírás URL-jét.';
+	@override String get dlnaServers => 'DLNA-médiakiszolgálók';
+	@override String get dlnaUnavailable => 'A DLNA-felderítés ezen a hálózaton nem érhető el. Add meg kézzel az eszközleírás URL-jét.';
+	@override String get dlnaSearching => 'DLNA-kiszolgálók keresése a helyi hálózaton';
+	@override String get networkSearching => 'Keresés a helyi hálózaton…';
+	@override String get dlnaDiscover => 'DLNA-kiszolgálók felderítése';
+	@override String get dlnaHelp => 'A felderítés a helyi hálózat multicast-forgalmától függ. Ha nem jelenik meg kiszolgáló, add meg fent az eszközleírásának URL-jét.';
+	@override String get dlnaRoot => 'DLNA-objektumazonosító; üresen hagyva az eszköz gyökerét használja.';
+	@override String get passwordOrKey => 'Adj meg egy jelszót, vagy adj hozzá lent egy privát kulcsot.';
+	@override String get sshFingerprint => 'Az SSH-gépkulcs SHA256-ujjlenyomata';
+	@override String get sshFingerprintHelp => 'Ellenőrizd a szerver rendszergazdájával. A szerveren futtasd az ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub parancsot, és használd az SHA256-értékét.';
+	@override String get sshFingerprintKeep => 'Hagyd üresen a jelenleg rögzített ujjlenyomat megőrzéséhez, vagy adj meg új szerverujjlenyomatot.';
+	@override String get sshAuthentication => 'SSH-hitelesítés nyilvános kulccsal';
+	@override String get sshAuthenticationHelp => 'Nem kötelező; a jelszavas hitelesítés is támogatott.';
+	@override String get privateKey => 'Privát kulcs (PEM- vagy OpenSSH-formátum)';
+	@override String get privateKeyPassphrase => 'A privát kulcs jelmondata';
+	@override String get nfsMountPort => 'Az NFS-csatolási szolgáltatás TCP-portja';
+	@override String get nfsMountPortHelp => 'Alapértelmezett: 20048';
+	@override String get nfsUserId => 'NFS-felhasználóazonosító (AUTH_SYS)';
+	@override String get nfsUserIdHelp => 'Alapértelmezett: 1000. A NAS NFS-megosztása által engedélyezett azonosítót használd.';
+	@override String get nfsGroupId => 'NFS-csoportazonosító (AUTH_SYS)';
+	@override String get nfsGroupIdHelp => 'Alapértelmezett: 1000. A NAS NFS-megosztása által engedélyezett csoportazonosítót használd.';
+	@override String get nfsEncryption => 'Titkosított NFS megkövetelése (RPC-with-TLS)';
+	@override String get nfsEncryptionHelp => 'TLS 1.3 megkövetelése az NFS-hez és a csatolási szolgáltatáshoz. Ha a NAS ezt nem támogatja, a kapcsolat nem jön létre.';
+	@override String get nfsTrustCertificate => 'Egyéni NFS CA vagy szervertanúsítvány (PEM, nem kötelező)';
+	@override String get nfsTrustHelp => 'Hagyd üresen az eszköz által megbízhatónak tartott tanúsítványokhoz. Szükség esetén adj hozzá privát CA-tanúsítványt vagy önaláírt szervertanúsítványt; a benne szereplő neveknek egyezniük kell az NFS URL gépnevével.';
+	@override String get nfsTrustInvalid => 'PEM-formátumú CA- vagy szervertanúsítványt használj. Ne adj meg privát kulcsot.';
+	@override String get addTrustCertificate => 'Egyéni megbízható tanúsítvány hozzáadása';
+	@override String get replaceTrustCertificate => 'Mentett egyéni tanúsítvány cseréje';
+	@override String get nfsTlsHelp => 'Az RPC-with-TLS a szokásos NFS- és csatolásiszolgáltatás-portokat használja, és RFC 9289-támogatást igényel a NAS-on. TLS 1.3 szükséges. A gépnévnek vagy IP-címnek egyeznie kell a tanúsítvánnyal. Az AUTH_SYS UID/GID a titkosított csatornán belül is érvényes.';
+	@override String get clientCertificate => 'Kliens tanúsítványa (nem kötelező)';
+	@override String get clientCertificateHelp => 'Lehetővé teszi, hogy a NAS hitelesítse ezt a klienst; az AUTH_SYS-azonosítók továbbra is a NAS NFS-megosztásának szabályaitól függenek.';
+	@override String get savedIdentity => 'A mentett kliensazonosság lesz használva.';
+	@override String get replaceIdentity => 'Mentett kliensazonosság cseréje';
+	@override String get chooseIdentity => 'PKCS#12-kliensazonosság kiválasztása';
+	@override String get identityPassphrase => 'A kliensazonosság jelmondata';
+	@override String get identityPassphraseHelp => 'Hagyd üresen, ha a fájlnak nincs jelmondata.';
+	@override String get removeIdentity => 'Mentett kliensazonosság eltávolítása';
+	@override String get identityStorageHelp => 'A kliensazonosságok a forrás titkosított hitelesítőadat-tárába kerülnek. A mentett azonosság megőrzéséhez hagyd változatlanul ezt a részt.';
+	@override String get nfsLimitations => 'Csak olvasható NFSv3 TCP felett. RPC-with-TLS nélkül az NFS-forgalom titkosítatlan. A NAS-nak engedélyeznie kell a választott AUTH_SYS-azonosítókat és a nem privilegizált kliensportokat (ez gyakran az „insecure” exportbeállítás). Az NFSv4 és az UDP nem támogatott.';
+	@override String get nfsSetupHelp => 'NFS-beállítási súgó';
+	@override String get nfsSetupHint => 'Ellenőrizd ezeket a beállításokat, ha nem jön létre a kapcsolat.';
+	@override String get nfsSetupDetails => 'NFSv3-megosztást használj TCP felett. Ha titkosítás szükséges, az NFS- és a csatolási szolgáltatásnak is támogatnia kell az RPC-with-TLS-t. Hagyd üresen az egyéni tanúsítványt az eszköz által megbízhatónak tartott szervertanúsítványhoz, vagy add hozzá a NAS CA-tanúsítványát vagy önaláírt tanúsítványát. A tanúsítványban lévő névnek egyeznie kell a végpont gépnevével. Ha a NAS kölcsönös TLS-hitelesítést kér, add hozzá a PKCS#12-kliensazonosságát. Végül ellenőrizd, hogy a megosztás engedélyezi-e a beállított AUTH_SYS UID/GID értékeket és a kliensportokra vonatkozó szabályokat.';
+	@override String get ftpHelp => 'Az FTP passzív módot használ. Titkosítatlan FTP-hez ftp://, explicit TLS-hez ftpes://, TLS-hez pedig ftps:// használható (a 990-es porton implicit, más portokon explicit).';
+	@override String get openSubtitles => 'OpenSubtitles';
+	@override String get subtitleSetup => 'Opcionális feliratkeresés önálló videókhoz.';
+	@override String get apiKey => 'API-kulcs';
+	@override String get optionalUsername => 'A fiók felhasználóneve (nem kötelező)';
+	@override String get optionalPassword => 'A fiók jelszava (nem kötelező)';
+	@override String get subtitlePrivacy => 'Szerezz API-kulcsot az opensubtitles.com oldalon. A keresés a videó címét és az elérhető IMDb/TMDB-azonosítókat küldi el, a videófájlt soha. A kulcs és az opcionális fiókhitelesítő adatok ezzel a forrással együtt titkosítva tárolódnak.';
+	@override String get automaticMetadata => 'Automatikus online videómetaadatok';
+	@override String get metadataPrivacy => 'Csak a fájlnévből származó címet/évet és epizódszámokat vagy egy NFO-azonosítót küld el, médiát vagy hitelesítő adatokat soha. Az NFO-mezők elsőbbsége megmarad.';
+	@override String get nfsEncryptionFailure => 'Titkosított NFS esetén ellenőrizd az RFC 9289 és a TLS 1.3 támogatását mindkét NAS-szolgáltatásnál, a tanúsítvány nevét és a megosztás UID/GID értékeit. A PlezyNG nem próbálja újra ezt a kapcsolatot titkosítás nélkül.';
+	@override String get sourceConnecting => 'Kapcsolódás a forráshoz';
+	@override String get metadataSearchPrivacy => 'Ez a címkeresés a Trakthoz kerül. A megadott címet küldi el, nem a videót vagy a forrás hitelesítő adatait.';
+	@override String get chooseMatch => 'Találat kiválasztása';
+	@override String get metadataMatchHelp => 'Választás előtt ellenőrizd a címet és az évet. A Trakt a keresett címet kapja meg; a videó a forrásán marad.';
+	@override String get metadataNoMatches => 'Nem található egyező cím online. Próbálj másik címet.';
+	@override String get metadataSearch => 'Online metaadatok keresése';
+	@override String get metadataLoading => 'Filmek és sorozatok adatainak keresése online…';
+	@override String get metadataFromTrakt => 'Online metaadatok a Trakttól';
+	@override String get metadataNoAutomaticMatch => 'Nem található automatikus címegyezés. Keress rá a címre a találat kiválasztásához.';
+	@override String get metadataFailed => 'Az online metaadatok nem tölthetők be. A lejátszás és a helyi adatok továbbra is elérhetők.';
+	@override String get videoDetailsLoading => 'Videóadatok betöltése';
+	@override String get subtitleKeyRequired => 'OpenSubtitles-API-kulcs szükséges';
+	@override String get subtitleKeyHelp => 'Szerkeszd ezt a fájlforrást, és adj hozzá OpenSubtitles-API-kulcsot az opcionális feliratbeállításoknál.';
+	@override String get subtitleSearchFailed => 'A feliratkeresés sikertelen. Ellenőrizd az API-kulcsot, a kapcsolatot és a szolgáltatás elérhetőségét.';
+	@override String get subtitleApplyFailed => 'A felirat nem tölthető le vagy nem alkalmazható. Ellenőrizd a kapcsolatot, és próbálj másik találatot.';
+	@override String get subtitleSearch => 'Keresés az OpenSubtitles oldalán';
+	@override String get subtitleSearchPrivacy => 'A keresés a címet és az elérhető IMDb/TMDB-azonosítókat használja. A videófájl a forrásán marad. Választás előtt ellenőrizd a nyelvet, a kényszerített vagy hallássérülteknek készült felirat jelölését és az értékelést.';
+	@override String get movieOrShow => 'Film vagy sorozat';
+	@override String get subtitleTitleHint => 'Adj meg címet a találatok pontosításához';
+	@override String get subtitleLanguage => 'Felirat nyelve';
+	@override String get subtitleSearching => 'Keresés az OpenSubtitles oldalán';
+	@override String get subtitleNoMatches => 'Nem található megfelelő felirat. Próbálj másik címet vagy nyelvet.';
+	@override String get downloadSubtitle => 'Felirat letöltése';
+	@override String get subtitle => 'Felirat';
+	@override String get nfsTlsRequired => 'RPC-with-TLS szükséges';
+	@override String get nfsUnencrypted => 'Titkosítatlan NFS';
+	@override String get tlsEncrypted => 'TLS-titkosítás';
+	@override String get ftpPlain => 'Titkosítatlan FTP';
+	@override String get sshPinned => 'Titkosított SSH · rögzített gépkulcs';
+	@override String get smbEncrypted => 'SMB3-titkosítás bekapcsolva';
+	@override String get smbUnencrypted => 'SMB3-titkosítás kikapcsolva';
+	@override String get httpUnencrypted => 'HTTP átviteli titkosítás nélkül';
+	@override String get checkEndpointSecurity => 'Végpont biztonságának ellenőrzése';
+	@override String fieldRequired({required Object label}) => 'Kötelező mező: ${label}.';
+	@override String integerRange({required Object label, required Object min, required Object max}) => 'A(z) ${label} értéke ${min} és ${max} között legyen.';
+	@override String replaceFile({required Object name}) => '${name} cseréje';
+	@override String selectedIdentity({required Object name}) => 'Kiválasztott kliensazonosság: ${name}';
+	@override String subtitleRating({required Object rating}) => 'Értékelés: ${rating}';
+	@override String subtitleDownloading({required Object title}) => 'Felirat letöltése: ${title}';
+}
 // Path: comics
 class _Translations$comics$hu extends Translations$comics$en {
 	_Translations$comics$hu._(TranslationsHu root) : this._root = root, super.internal(root);
-
-	final TranslationsHu _root; // ignore: unused_field
-
-	// Translations
 	@override String get fitHeight => 'Magassághoz igazítás';
 	@override String get readingMode => 'Olvasási mód';
 	@override String get paged => 'Oldalak';
@@ -3204,8 +3315,6 @@ class _Translations$comics$hu extends Translations$comics$en {
 	@override String get savedForComic => 'A megjelenítési beállításokat ez a profil megjegyzi ehhez a képregényhez.';
 	@override String get readLists => 'Olvasási listák';
 	@override String get collections => 'Gyűjtemények';
-}
-
 // Path: appIcon.names
 class _Translations$appIcon$names$hu extends Translations$appIcon$names$en {
 	_Translations$appIcon$names$hu._(TranslationsHu root) : this._root = root, super.internal(root);
@@ -3457,48 +3566,60 @@ class _Translations$discover$findNext$hu extends Translations$discover$findNext$
 	final TranslationsHu _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Találd meg a következő';
-	@override String get open => 'Találd meg a következő';
-	@override String get anyTime => 'Bármikor';
-	@override String get timeAvailable => 'Mennyi időt kapsz?';
-	@override String get filters => 'Válassza ki a pillanatot';
-	@override String get watch => 'Nézd meg';
+	@override String get title => 'Találd meg a következő kedvenced';
+	@override String get open => 'Találd meg a következő kedvenced';
+	@override String get anyTime => 'Bármennyi idő';
+	@override String get timeAvailable => 'Mennyi időd van?';
+	@override String get filters => 'Válassz a pillanathoz illőt';
+	@override String get watch => 'Nézés';
 	@override String get listen => 'Hallgatás';
-	@override String get read => 'Olvasd el';
-	@override String finishable({required Object duration}) => 'Szálláshelyek ${duration}';
-	@override String aboutDuration({required Object duration}) => 'Részletek ${duration}';
+	@override String get read => 'Olvasás';
+	@override String finishable({required Object duration}) => '${duration} alatt befejezhető';
+	@override String aboutDuration({required Object duration}) => 'Körülbelül ${duration}';
 	@override String nextUnit({required Object duration}) => 'Következő fejezet · ${duration}';
-	@override String totalDuration({required Object duration}) => '${duration} teljes';
-	@override String get timingVaries => 'Időjárás eltérő';
-	@override String get notNow => 'Nem most';
-	@override String get swipeHint => 'Töltse le, vagy használja az alábbi gombokat';
-	@override String get saved => 'Megtakarított picks';
-	@override String savedCount({required Object count}) => 'Megtakarítások · ${count}';
-	@override String get undo => 'és a';
-	@override String get details => 'részletek';
-	@override String get noPicks => 'Egyelőre semmit sem lehet választani';
-	@override String get noPicksHint => 'Csatlakozzon egy könyvtárhoz vagy adjon hozzá egy médiaforrást, hogy elinduljon.';
-	@override String get noMatches => 'Semmi sem illeszkedik ehhez a pillanathoz';
-	@override String get noMatchesHint => 'Próbáljon más formátumot, vagy adjon magának több időt.';
-	@override String get allDone => 'Mindannyian elfogták';
-	@override String get allDoneHint => 'Indítsa el a friss keveréket, hogy újra megnézze ezeket a lehetőségeket.';
-	@override String get refresh => 'Találjon egy másik mixet';
-	@override String sourceReason({required Object source}) => 'Az ${source}';
-	@override String libraryReason({required Object library}) => 'Az ${library}';
-	@override String get ownedReason => 'A könyvtárból';
-	@override String get liveNow => 'A most';
-	@override String get watchLive => 'Lásd élőben';
-	@override String get filterAnything => 'bármi';
-	@override String get filterWatch => 'Nézd meg';
+	@override String totalDuration({required Object duration}) => 'Összesen ${duration}';
+	@override String get timingVaries => 'Az időtartam változó';
+	@override String get notNow => 'Most nem';
+	@override String get swipeHint => 'Húzd a borítót valamelyik nyíl felé, vagy használd az alábbi gombokat.';
+	@override String get saved => 'Mentett ajánlások';
+	@override String savedCount({required Object count}) => 'Mentett ajánlások · ${count}';
+	@override String get undo => 'Visszavonás';
+	@override String get details => 'Részletek';
+	@override String get noPicks => 'Még nincs miből választani';
+	@override String get noPicksHint => 'A kezdéshez csatlakoztass egy könyvtárat, vagy adj hozzá egy médiaforrást.';
+	@override String get noMatches => 'Most nincs megfelelő ajánlás';
+	@override String get noMatchesHint => 'Próbálj más médiatípust, vagy szánj rá több időt.';
+	@override String get allDone => 'Minden ajánlást megnéztél';
+	@override String get allDoneHint => 'Indíts új válogatást, hogy újra lásd ezeket a lehetőségeket.';
+	@override String get refresh => 'Másik válogatás keresése';
+	@override String sourceReason({required Object source}) => 'Forrás: ${source}';
+	@override String libraryReason({required Object library}) => 'Könyvtár: ${library}';
+	@override String get ownedReason => 'A könyvtáradból';
+	@override String get liveNow => 'Most műsoron';
+	@override String get watchLive => 'Élő adás megtekintése';
+	@override String get filterAnything => 'Bármi';
+	@override String get filterWatch => 'Nézés';
 	@override String get filterListen => 'Hallgatás';
-	@override String get filterRead => 'Olvasd el';
+	@override String get filterRead => 'Olvasás';
 	@override String get twentyMinutes => '20 perc';
 	@override String get fortyFiveMinutes => '45 perc';
 	@override String get ninetyMinutes => '90 perc';
-	@override String get apply => 'alkalmazás';
-	@override String get openFailed => 'Ez a lehetőség már nem áll rendelkezésre. frissítse, hogy újra ellenőrizze.';
-	@override String get changeFailed => 'Ezt a változást nem tudjuk megmenteni, próbáljuk meg újra.';
-	@override String get savedLimit => 'Megtakarított csúcsok tele vannak. eltávolítsa az egyik csúcsot, hogy mentse a másik.';
+	@override String get apply => 'Alkalmaz';
+	@override String get openFailed => 'Ez a lehetőség már nem érhető el. Frissíts az újbóli ellenőrzéshez.';
+	@override String get changeFailed => 'A módosítást nem sikerült menteni. Próbáld újra.';
+	@override String get savedLimit => 'A mentett ajánlások listája megtelt. Távolíts el egyet, hogy másikat menthess.';
+	@override String get chooseHint => 'Nyiss meg egy címet, mentsd el későbbre, vagy hagyd ki.';
+	@override String get howItWorks => 'Így működik';
+	@override String get notNowHelp => 'Ezt a címet most kihagyod. A könyvtáradban megmarad.';
+	@override String get saveHelp => 'Mentsd a profil mentett ajánlatai közé ezen az eszközön. A mentés nem tölti le a címet.';
+	@override String get openHelp => 'A részletekhez válaszd ki a borítót. A fő művelettel lejátszhatod, olvashatod vagy megnyithatod a címet.';
+	@override String get controlsHelp => 'Billentyűzet vagy távirányító: válassz egy gombot, majd nyomd meg az Enter vagy a Kiválasztás gombot. A Visszavonás visszaállítja az utolsó választásodat.';
+	@override String get artworkLoading => 'Kép betöltése…';
+	@override String get artworkUnavailable => 'A kép nem érhető el';
+	@override String get savedFeedback => 'Hozzáadva a mentett ajánlatokhoz';
+	@override String get skippedFeedback => 'Most kihagyva';
+	@override String get releaseToConfirm => 'Engedd el a megerősítéshez';
+	@override String get remoteHint => 'Borító kijelölve: ← / → választás · Kiválasztás: részletek · ↑ / ↓ fókusz mozgatása';
 }
 
 // Path: discover.person
@@ -4833,6 +4954,13 @@ extension on TranslationsHu {
 			'settings.regionFormatDescription' => 'Válassza ki a dátumok, számok és mértékegységek megjelenítési módját.',
 			'settings.metadataLanguage' => 'Metaadatok nyelve',
 			'settings.metadataLanguageDescription' => 'A címek és leírások előnyben részesített nyelve, ha a kiszolgáló támogatja. A hang és a felirat nyelve külön állítható be.',
+			'settings.experimentalDolbyVision' => 'Kísérleti Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'A következő lejátszáskor a kísérleti FEL-megjelenítő használata. Külön motorbuild szükséges.',
+			'settings.dvExperimentUnavailableDescription' => 'Ez a kísérlet jelenleg csak Linuxon érhető el.',
+			'settings.dvCompatibilityFallback' => 'Kompatibilitási tartalék mód',
+			'settings.dvCompatibilityFallbackDescription' => 'Ha a kísérlet nem indul, a normál megjelenítő használata. A FEL-adatok elveszhetnek.',
+			'settings.dvExperimentDiagnostics' => 'Videókísérlet naplózása',
+			'settings.dvExperimentDiagnosticsDescription' => 'Részletes lejátszónaplók engedélyezése a következő lejátszáskor.',
 			'themeEditor.builtIn' => 'Beépített',
 			'themeEditor.presets' => 'Előre beállított',
 			'themeEditor.custom' => 'Egyéni',
@@ -5253,6 +5381,8 @@ extension on TranslationsHu {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Könyvtár beolvasása elindítva a következőhöz: "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Nem sikerült a könyvtár beolvasása: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Metaadatok frissítése a következőhöz: "${title}"...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metaadatok frissítése elindítva a következőhöz: "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Nem sikerült a metaadatok frissítése: ${error}',
 			'messages.logoutConfirm' => 'Biztosan ki szeretnél jelentkezni?',
@@ -5260,8 +5390,6 @@ extension on TranslationsHu {
 			'messages.seasonsLoadFailed' => 'Nem sikerült az évadok betöltése',
 			'messages.noEpisodesFound' => 'Nem találhatók epizódok az első évadban',
 			'messages.noEpisodesFoundGeneral' => 'Nem találhatók epizódok',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Nem sikerült az epizódok betöltése',
 			'messages.noResultsFound' => 'Nincs találat',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Elalvási időzítő beállítva: ${label}',
@@ -5488,48 +5616,60 @@ extension on TranslationsHu {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => '${season}. évad, ${episode}. epizód',
 			'discover.overview' => 'Áttekintés',
 			'discover.cast' => 'Szereplők',
-			'discover.findNext.title' => 'Találd meg a következő',
-			'discover.findNext.open' => 'Találd meg a következő',
-			'discover.findNext.anyTime' => 'Bármikor',
-			'discover.findNext.timeAvailable' => 'Mennyi időt kapsz?',
-			'discover.findNext.filters' => 'Válassza ki a pillanatot',
-			'discover.findNext.watch' => 'Nézd meg',
+			'discover.findNext.title' => 'Találd meg a következő kedvenced',
+			'discover.findNext.open' => 'Találd meg a következő kedvenced',
+			'discover.findNext.anyTime' => 'Bármennyi idő',
+			'discover.findNext.timeAvailable' => 'Mennyi időd van?',
+			'discover.findNext.filters' => 'Válassz a pillanathoz illőt',
+			'discover.findNext.watch' => 'Nézés',
 			'discover.findNext.listen' => 'Hallgatás',
-			'discover.findNext.read' => 'Olvasd el',
-			'discover.findNext.finishable' => ({required Object duration}) => 'Szálláshelyek ${duration}',
-			'discover.findNext.aboutDuration' => ({required Object duration}) => 'Részletek ${duration}',
+			'discover.findNext.read' => 'Olvasás',
+			'discover.findNext.finishable' => ({required Object duration}) => '${duration} alatt befejezhető',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => 'Körülbelül ${duration}',
 			'discover.findNext.nextUnit' => ({required Object duration}) => 'Következő fejezet · ${duration}',
-			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} teljes',
-			'discover.findNext.timingVaries' => 'Időjárás eltérő',
-			'discover.findNext.notNow' => 'Nem most',
-			'discover.findNext.swipeHint' => 'Töltse le, vagy használja az alábbi gombokat',
-			'discover.findNext.saved' => 'Megtakarított picks',
-			'discover.findNext.savedCount' => ({required Object count}) => 'Megtakarítások · ${count}',
-			'discover.findNext.undo' => 'és a',
-			'discover.findNext.details' => 'részletek',
-			'discover.findNext.noPicks' => 'Egyelőre semmit sem lehet választani',
-			'discover.findNext.noPicksHint' => 'Csatlakozzon egy könyvtárhoz vagy adjon hozzá egy médiaforrást, hogy elinduljon.',
-			'discover.findNext.noMatches' => 'Semmi sem illeszkedik ehhez a pillanathoz',
-			'discover.findNext.noMatchesHint' => 'Próbáljon más formátumot, vagy adjon magának több időt.',
-			'discover.findNext.allDone' => 'Mindannyian elfogták',
-			'discover.findNext.allDoneHint' => 'Indítsa el a friss keveréket, hogy újra megnézze ezeket a lehetőségeket.',
-			'discover.findNext.refresh' => 'Találjon egy másik mixet',
-			'discover.findNext.sourceReason' => ({required Object source}) => 'Az ${source}',
-			'discover.findNext.libraryReason' => ({required Object library}) => 'Az ${library}',
-			'discover.findNext.ownedReason' => 'A könyvtárból',
-			'discover.findNext.liveNow' => 'A most',
-			'discover.findNext.watchLive' => 'Lásd élőben',
-			'discover.findNext.filterAnything' => 'bármi',
-			'discover.findNext.filterWatch' => 'Nézd meg',
+			'discover.findNext.totalDuration' => ({required Object duration}) => 'Összesen ${duration}',
+			'discover.findNext.timingVaries' => 'Az időtartam változó',
+			'discover.findNext.notNow' => 'Most nem',
+			'discover.findNext.swipeHint' => 'Húzd a borítót valamelyik nyíl felé, vagy használd az alábbi gombokat.',
+			'discover.findNext.saved' => 'Mentett ajánlások',
+			'discover.findNext.savedCount' => ({required Object count}) => 'Mentett ajánlások · ${count}',
+			'discover.findNext.undo' => 'Visszavonás',
+			'discover.findNext.details' => 'Részletek',
+			'discover.findNext.noPicks' => 'Még nincs miből választani',
+			'discover.findNext.noPicksHint' => 'A kezdéshez csatlakoztass egy könyvtárat, vagy adj hozzá egy médiaforrást.',
+			'discover.findNext.noMatches' => 'Most nincs megfelelő ajánlás',
+			'discover.findNext.noMatchesHint' => 'Próbálj más médiatípust, vagy szánj rá több időt.',
+			'discover.findNext.allDone' => 'Minden ajánlást megnéztél',
+			'discover.findNext.allDoneHint' => 'Indíts új válogatást, hogy újra lásd ezeket a lehetőségeket.',
+			'discover.findNext.refresh' => 'Másik válogatás keresése',
+			'discover.findNext.sourceReason' => ({required Object source}) => 'Forrás: ${source}',
+			'discover.findNext.libraryReason' => ({required Object library}) => 'Könyvtár: ${library}',
+			'discover.findNext.ownedReason' => 'A könyvtáradból',
+			'discover.findNext.liveNow' => 'Most műsoron',
+			'discover.findNext.watchLive' => 'Élő adás megtekintése',
+			'discover.findNext.filterAnything' => 'Bármi',
+			'discover.findNext.filterWatch' => 'Nézés',
 			'discover.findNext.filterListen' => 'Hallgatás',
-			'discover.findNext.filterRead' => 'Olvasd el',
+			'discover.findNext.filterRead' => 'Olvasás',
 			'discover.findNext.twentyMinutes' => '20 perc',
 			'discover.findNext.fortyFiveMinutes' => '45 perc',
 			'discover.findNext.ninetyMinutes' => '90 perc',
-			'discover.findNext.apply' => 'alkalmazás',
-			'discover.findNext.openFailed' => 'Ez a lehetőség már nem áll rendelkezésre. frissítse, hogy újra ellenőrizze.',
-			'discover.findNext.changeFailed' => 'Ezt a változást nem tudjuk megmenteni, próbáljuk meg újra.',
-			'discover.findNext.savedLimit' => 'Megtakarított csúcsok tele vannak. eltávolítsa az egyik csúcsot, hogy mentse a másik.',
+			'discover.findNext.apply' => 'Alkalmaz',
+			'discover.findNext.openFailed' => 'Ez a lehetőség már nem érhető el. Frissíts az újbóli ellenőrzéshez.',
+			'discover.findNext.changeFailed' => 'A módosítást nem sikerült menteni. Próbáld újra.',
+			'discover.findNext.savedLimit' => 'A mentett ajánlások listája megtelt. Távolíts el egyet, hogy másikat menthess.',
+			'discover.findNext.chooseHint' => 'Nyiss meg egy címet, mentsd el későbbre, vagy hagyd ki.',
+			'discover.findNext.howItWorks' => 'Így működik',
+			'discover.findNext.notNowHelp' => 'Ezt a címet most kihagyod. A könyvtáradban megmarad.',
+			'discover.findNext.saveHelp' => 'Mentsd a profil mentett ajánlatai közé ezen az eszközön. A mentés nem tölti le a címet.',
+			'discover.findNext.openHelp' => 'A részletekhez válaszd ki a borítót. A fő művelettel lejátszhatod, olvashatod vagy megnyithatod a címet.',
+			'discover.findNext.controlsHelp' => 'Billentyűzet vagy távirányító: válassz egy gombot, majd nyomd meg az Enter vagy a Kiválasztás gombot. A Visszavonás visszaállítja az utolsó választásodat.',
+			'discover.findNext.artworkLoading' => 'Kép betöltése…',
+			'discover.findNext.artworkUnavailable' => 'A kép nem érhető el',
+			'discover.findNext.savedFeedback' => 'Hozzáadva a mentett ajánlatokhoz',
+			'discover.findNext.skippedFeedback' => 'Most kihagyva',
+			'discover.findNext.releaseToConfirm' => 'Engedd el a megerősítéshez',
+			'discover.findNext.remoteHint' => 'Borító kijelölve: ← / → választás · Kiválasztás: részletek · ↑ / ↓ fókusz mozgatása',
 			'discover.extras' => 'Előzetesek és extrák',
 			'discover.studio' => 'Stúdió',
 			'discover.rating' => 'Értékelés',
@@ -5755,6 +5895,8 @@ extension on TranslationsHu {
 			'explore.mdblistShelves.nameHint' => 'Hagyja a nyílt, hogy használja a forráslistát.',
 			'explore.mdblistShelves.add' => 'Add Shelf',
 			'explore.mdblistShelves.save' => 'mentse a tálcákat',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => '${title} felfelé',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => '${title} lefelé',
 			'explore.mdblistShelves.unavailable' => 'Ez a lista nem elérhető. visszavonja vagy távolítsa el a szekrényt a beállításokban.',
@@ -5774,8 +5916,6 @@ extension on TranslationsHu {
 			'explore.rows.popularShows' => 'Népszerű sorozatok',
 			'explore.rows.trendingAnime' => 'Felkapott animék',
 			'explore.rows.suggestedAnime' => 'Ajánlott animék',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Jelenleg futó top animék',
 			'explore.rows.popularAnime' => 'Legnépszerűbb animék',
 			'explore.rows.trending' => 'Felkapott',
@@ -6269,6 +6409,8 @@ extension on TranslationsHu {
 			'downloads.resumeDownload' => 'Letöltés folytatása',
 			'downloads.cancelledDownload' => 'Megszakított letöltés',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} szinkronizálása)',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Letöltve: ${file} - Kattints a befejezéshez',
 			'downloads.partialDownloadClickToComplete' => 'Részben letöltve - Kattints a befejezéshez',
 			'downloads.deleting' => 'Törlés...',
@@ -6288,8 +6430,6 @@ extension on TranslationsHu {
 			'downloads.unwatchedOnly' => 'Csak a nem látottak',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'A következő ${count} nem látott epizód',
 			'downloads.customAmount' => 'Egyéni mennyiség...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'A megadott összeg (minden)',
 			'downloads.randomEpisodes' => 'Rádió epizódok',
 			'downloads.includeSpecials' => 'Különkiadások is',
@@ -6783,6 +6923,8 @@ extension on TranslationsHu {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Nem sikerült elérni a szervert: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'A bejelentkezés nem sikerült: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'A Quick Connect használata nem sikerült: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Bejelentkezés Plexszel',
 			'addServer.pinExpired' => 'A PIN-kód a bejelentkezés előtt lejárt. Próbáld újra.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Nem sikerült a fiók regisztrálása: ${error}',
@@ -6802,8 +6944,6 @@ extension on TranslationsHu {
 			'addServer.authResponseIncomplete' => 'A szerver bejelentkezési válasza hiányos volt',
 			'addServer.quickConnectRejected' => 'A szerver elutasította a Quick Connect-kérést',
 			'addServer.quickConnectNotJson' => 'A Quick Connect válasza nem érvényes JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'A Quick Connect válaszából hiányzik a kód vagy a titkos kulcs',
 			'addServer.quickConnectPollRejected' => 'A szerver elutasította a Quick Connect lekérdezését',
 			'addServer.serverTimedOut' => 'A szerver nem válaszolt időben',
@@ -7109,6 +7249,12 @@ extension on TranslationsHu {
 			'fileSources.useFiles' => 'Fájlok és könyvek használata',
 			'fileSources.cancelScan' => '- törlés scan',
 			'fileSources.googleDrive' => 'Google Drive',
+			'fileSources.smbEndpointHint' => 'Példa: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Adjon meg egy SMB-kiszolgálót és egy megosztást.',
+			'fileSources.smbFolderHelp' => 'Hagyja üresen a teljes megosztás használatához, vagy adjon meg egy azon belüli mappát.',
+			'fileSources.smbDomain' => 'Tartomány (nem kötelező)',
+			'fileSources.smbEncryption' => 'SMB3-kapcsolat titkosítása',
+			'fileSources.smbEncryptionHint' => 'SMB3-titkosítás használata, ha a NAS támogatja.',
 			'lending.title' => 'Közös könyvtárak',
 			'lending.add' => 'Hozzáadjuk a könyvtárat',
 			'lending.other' => 'Egy másik könyvtár',
@@ -7210,6 +7356,93 @@ extension on TranslationsHu {
 			'audiobook.statusFinished' => 'befejezett',
 			'audiobook.goToTime' => 'Menj az időbe',
 			'audiobook.timeHelp' => 'Idők: percek: másodpercek, vagy percek: másodpercek',
+			'sourceSetup.savedCertificate' => 'Mentett szervertanúsítvány',
+			'sourceSetup.nfsEndpointInvalid' => 'Adj meg egy NFS URL-t, például: nfs://nas:2049/export.',
+			'sourceSetup.dlnaNone' => 'Nem található DLNA-kiszolgáló. Add meg kézzel az eszközleírás URL-jét.',
+			'sourceSetup.dlnaServers' => 'DLNA-médiakiszolgálók',
+			'sourceSetup.dlnaUnavailable' => 'A DLNA-felderítés ezen a hálózaton nem érhető el. Add meg kézzel az eszközleírás URL-jét.',
+			'sourceSetup.dlnaSearching' => 'DLNA-kiszolgálók keresése a helyi hálózaton',
+			'sourceSetup.networkSearching' => 'Keresés a helyi hálózaton…',
+			'sourceSetup.dlnaDiscover' => 'DLNA-kiszolgálók felderítése',
+			'sourceSetup.dlnaHelp' => 'A felderítés a helyi hálózat multicast-forgalmától függ. Ha nem jelenik meg kiszolgáló, add meg fent az eszközleírásának URL-jét.',
+			'sourceSetup.dlnaRoot' => 'DLNA-objektumazonosító; üresen hagyva az eszköz gyökerét használja.',
+			'sourceSetup.passwordOrKey' => 'Adj meg egy jelszót, vagy adj hozzá lent egy privát kulcsot.',
+			'sourceSetup.sshFingerprint' => 'Az SSH-gépkulcs SHA256-ujjlenyomata',
+			'sourceSetup.sshFingerprintHelp' => 'Ellenőrizd a szerver rendszergazdájával. A szerveren futtasd az ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub parancsot, és használd az SHA256-értékét.',
+			'sourceSetup.sshFingerprintKeep' => 'Hagyd üresen a jelenleg rögzített ujjlenyomat megőrzéséhez, vagy adj meg új szerverujjlenyomatot.',
+			'sourceSetup.sshAuthentication' => 'SSH-hitelesítés nyilvános kulccsal',
+			'sourceSetup.sshAuthenticationHelp' => 'Nem kötelező; a jelszavas hitelesítés is támogatott.',
+			'sourceSetup.privateKey' => 'Privát kulcs (PEM- vagy OpenSSH-formátum)',
+			'sourceSetup.privateKeyPassphrase' => 'A privát kulcs jelmondata',
+			'sourceSetup.nfsMountPort' => 'Az NFS-csatolási szolgáltatás TCP-portja',
+			'sourceSetup.nfsMountPortHelp' => 'Alapértelmezett: 20048',
+			'sourceSetup.nfsUserId' => 'NFS-felhasználóazonosító (AUTH_SYS)',
+			'sourceSetup.nfsUserIdHelp' => 'Alapértelmezett: 1000. A NAS NFS-megosztása által engedélyezett azonosítót használd.',
+			'sourceSetup.nfsGroupId' => 'NFS-csoportazonosító (AUTH_SYS)',
+			'sourceSetup.nfsGroupIdHelp' => 'Alapértelmezett: 1000. A NAS NFS-megosztása által engedélyezett csoportazonosítót használd.',
+			'sourceSetup.nfsEncryption' => 'Titkosított NFS megkövetelése (RPC-with-TLS)',
+			'sourceSetup.nfsEncryptionHelp' => 'TLS 1.3 megkövetelése az NFS-hez és a csatolási szolgáltatáshoz. Ha a NAS ezt nem támogatja, a kapcsolat nem jön létre.',
+			'sourceSetup.nfsTrustCertificate' => 'Egyéni NFS CA vagy szervertanúsítvány (PEM, nem kötelező)',
+			'sourceSetup.nfsTrustHelp' => 'Hagyd üresen az eszköz által megbízhatónak tartott tanúsítványokhoz. Szükség esetén adj hozzá privát CA-tanúsítványt vagy önaláírt szervertanúsítványt; a benne szereplő neveknek egyezniük kell az NFS URL gépnevével.',
+			'sourceSetup.nfsTrustInvalid' => 'PEM-formátumú CA- vagy szervertanúsítványt használj. Ne adj meg privát kulcsot.',
+			'sourceSetup.addTrustCertificate' => 'Egyéni megbízható tanúsítvány hozzáadása',
+			'sourceSetup.replaceTrustCertificate' => 'Mentett egyéni tanúsítvány cseréje',
+			'sourceSetup.nfsTlsHelp' => 'Az RPC-with-TLS a szokásos NFS- és csatolásiszolgáltatás-portokat használja, és RFC 9289-támogatást igényel a NAS-on. TLS 1.3 szükséges. A gépnévnek vagy IP-címnek egyeznie kell a tanúsítvánnyal. Az AUTH_SYS UID/GID a titkosított csatornán belül is érvényes.',
+			'sourceSetup.clientCertificate' => 'Kliens tanúsítványa (nem kötelező)',
+			'sourceSetup.clientCertificateHelp' => 'Lehetővé teszi, hogy a NAS hitelesítse ezt a klienst; az AUTH_SYS-azonosítók továbbra is a NAS NFS-megosztásának szabályaitól függenek.',
+			'sourceSetup.savedIdentity' => 'A mentett kliensazonosság lesz használva.',
+			'sourceSetup.replaceIdentity' => 'Mentett kliensazonosság cseréje',
+			'sourceSetup.chooseIdentity' => 'PKCS#12-kliensazonosság kiválasztása',
+			'sourceSetup.identityPassphrase' => 'A kliensazonosság jelmondata',
+			'sourceSetup.identityPassphraseHelp' => 'Hagyd üresen, ha a fájlnak nincs jelmondata.',
+			'sourceSetup.removeIdentity' => 'Mentett kliensazonosság eltávolítása',
+			'sourceSetup.identityStorageHelp' => 'A kliensazonosságok a forrás titkosított hitelesítőadat-tárába kerülnek. A mentett azonosság megőrzéséhez hagyd változatlanul ezt a részt.',
+			'sourceSetup.nfsLimitations' => 'Csak olvasható NFSv3 TCP felett. RPC-with-TLS nélkül az NFS-forgalom titkosítatlan. A NAS-nak engedélyeznie kell a választott AUTH_SYS-azonosítókat és a nem privilegizált kliensportokat (ez gyakran az „insecure” exportbeállítás). Az NFSv4 és az UDP nem támogatott.',
+			'sourceSetup.nfsSetupHelp' => 'NFS-beállítási súgó',
+			'sourceSetup.nfsSetupHint' => 'Ellenőrizd ezeket a beállításokat, ha nem jön létre a kapcsolat.',
+			'sourceSetup.nfsSetupDetails' => 'NFSv3-megosztást használj TCP felett. Ha titkosítás szükséges, az NFS- és a csatolási szolgáltatásnak is támogatnia kell az RPC-with-TLS-t. Hagyd üresen az egyéni tanúsítványt az eszköz által megbízhatónak tartott szervertanúsítványhoz, vagy add hozzá a NAS CA-tanúsítványát vagy önaláírt tanúsítványát. A tanúsítványban lévő névnek egyeznie kell a végpont gépnevével. Ha a NAS kölcsönös TLS-hitelesítést kér, add hozzá a PKCS#12-kliensazonosságát. Végül ellenőrizd, hogy a megosztás engedélyezi-e a beállított AUTH_SYS UID/GID értékeket és a kliensportokra vonatkozó szabályokat.',
+			'sourceSetup.ftpHelp' => 'Az FTP passzív módot használ. Titkosítatlan FTP-hez ftp://, explicit TLS-hez ftpes://, TLS-hez pedig ftps:// használható (a 990-es porton implicit, más portokon explicit).',
+			'sourceSetup.openSubtitles' => 'OpenSubtitles',
+			'sourceSetup.subtitleSetup' => 'Opcionális feliratkeresés önálló videókhoz.',
+			'sourceSetup.apiKey' => 'API-kulcs',
+			'sourceSetup.optionalUsername' => 'A fiók felhasználóneve (nem kötelező)',
+			'sourceSetup.optionalPassword' => 'A fiók jelszava (nem kötelező)',
+			'sourceSetup.subtitlePrivacy' => 'Szerezz API-kulcsot az opensubtitles.com oldalon. A keresés a videó címét és az elérhető IMDb/TMDB-azonosítókat küldi el, a videófájlt soha. A kulcs és az opcionális fiókhitelesítő adatok ezzel a forrással együtt titkosítva tárolódnak.',
+			'sourceSetup.automaticMetadata' => 'Automatikus online videómetaadatok',
+			'sourceSetup.metadataPrivacy' => 'Csak a fájlnévből származó címet/évet és epizódszámokat vagy egy NFO-azonosítót küld el, médiát vagy hitelesítő adatokat soha. Az NFO-mezők elsőbbsége megmarad.',
+			'sourceSetup.nfsEncryptionFailure' => 'Titkosított NFS esetén ellenőrizd az RFC 9289 és a TLS 1.3 támogatását mindkét NAS-szolgáltatásnál, a tanúsítvány nevét és a megosztás UID/GID értékeit. A PlezyNG nem próbálja újra ezt a kapcsolatot titkosítás nélkül.',
+			'sourceSetup.sourceConnecting' => 'Kapcsolódás a forráshoz',
+			'sourceSetup.metadataSearchPrivacy' => 'Ez a címkeresés a Trakthoz kerül. A megadott címet küldi el, nem a videót vagy a forrás hitelesítő adatait.',
+			'sourceSetup.chooseMatch' => 'Találat kiválasztása',
+			'sourceSetup.metadataMatchHelp' => 'Választás előtt ellenőrizd a címet és az évet. A Trakt a keresett címet kapja meg; a videó a forrásán marad.',
+			'sourceSetup.metadataNoMatches' => 'Nem található egyező cím online. Próbálj másik címet.',
+			'sourceSetup.metadataSearch' => 'Online metaadatok keresése',
+			'sourceSetup.metadataLoading' => 'Filmek és sorozatok adatainak keresése online…',
+			'sourceSetup.metadataFromTrakt' => 'Online metaadatok a Trakttól',
+			'sourceSetup.metadataNoAutomaticMatch' => 'Nem található automatikus címegyezés. Keress rá a címre a találat kiválasztásához.',
+			'sourceSetup.metadataFailed' => 'Az online metaadatok nem tölthetők be. A lejátszás és a helyi adatok továbbra is elérhetők.',
+			'sourceSetup.videoDetailsLoading' => 'Videóadatok betöltése',
+			'sourceSetup.subtitleKeyRequired' => 'OpenSubtitles-API-kulcs szükséges',
+			'sourceSetup.subtitleKeyHelp' => 'Szerkeszd ezt a fájlforrást, és adj hozzá OpenSubtitles-API-kulcsot az opcionális feliratbeállításoknál.',
+			'sourceSetup.subtitleSearchFailed' => 'A feliratkeresés sikertelen. Ellenőrizd az API-kulcsot, a kapcsolatot és a szolgáltatás elérhetőségét.',
+			'sourceSetup.subtitleApplyFailed' => 'A felirat nem tölthető le vagy nem alkalmazható. Ellenőrizd a kapcsolatot, és próbálj másik találatot.',
+			'sourceSetup.subtitleSearch' => 'Keresés az OpenSubtitles oldalán',
+			'sourceSetup.subtitleSearchPrivacy' => 'A keresés a címet és az elérhető IMDb/TMDB-azonosítókat használja. A videófájl a forrásán marad. Választás előtt ellenőrizd a nyelvet, a kényszerített vagy hallássérülteknek készült felirat jelölését és az értékelést.',
+			'sourceSetup.movieOrShow' => 'Film vagy sorozat',
+			'sourceSetup.subtitleTitleHint' => 'Adj meg címet a találatok pontosításához',
+			'sourceSetup.subtitleLanguage' => 'Felirat nyelve',
+			'sourceSetup.subtitleSearching' => 'Keresés az OpenSubtitles oldalán',
+			'sourceSetup.subtitleNoMatches' => 'Nem található megfelelő felirat. Próbálj másik címet vagy nyelvet.',
+			'sourceSetup.downloadSubtitle' => 'Felirat letöltése',
+			'sourceSetup.subtitle' => 'Felirat',
+			'sourceSetup.nfsTlsRequired' => 'RPC-with-TLS szükséges',
+			'sourceSetup.nfsUnencrypted' => 'Titkosítatlan NFS',
+			'sourceSetup.tlsEncrypted' => 'TLS-titkosítás',
+			'sourceSetup.ftpPlain' => 'Titkosítatlan FTP',
+			'sourceSetup.sshPinned' => 'Titkosított SSH · rögzített gépkulcs',
+			'sourceSetup.smbEncrypted' => 'SMB3-titkosítás bekapcsolva',
+			'sourceSetup.smbUnencrypted' => 'SMB3-titkosítás kikapcsolva',
+			'sourceSetup.httpUnencrypted' => 'HTTP átviteli titkosítás nélkül',
 			'comics.fitHeight' => 'Magassághoz igazítás',
 			'comics.readingMode' => 'Olvasási mód',
 			'comics.paged' => 'Oldalak',
@@ -7222,6 +7455,15 @@ extension on TranslationsHu {
 			'comics.savedForComic' => 'A megjelenítési beállításokat ez a profil megjegyzi ehhez a képregényhez.',
 			'comics.readLists' => 'Olvasási listák',
 			'comics.collections' => 'Gyűjtemények',
+			_ => null,
+		} ?? switch (path) {
+			'sourceSetup.checkEndpointSecurity' => 'Végpont biztonságának ellenőrzése',
+			'sourceSetup.fieldRequired' => ({required Object label}) => 'Kötelező mező: ${label}.',
+			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'A(z) ${label} értéke ${min} és ${max} között legyen.',
+			'sourceSetup.replaceFile' => ({required Object name}) => '${name} cseréje',
+			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Kiválasztott kliensazonosság: ${name}',
+			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Értékelés: ${rating}',
+			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Felirat letöltése: ${title}',
 			_ => null,
 		};
 	}

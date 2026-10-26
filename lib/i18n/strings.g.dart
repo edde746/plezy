@@ -4,7 +4,7 @@
 /// To regenerate, run: `dart run slang`
 ///
 /// Locales: 37
-/// Strings: 100687 (2721 per locale)
+/// Strings: 104072 (2812 per locale)
 
 // coverage:ignore-file
 // ignore_for_file: type=lint, unused_import
@@ -705,3 +705,4 @@ class AppLocaleUtils extends BaseAppLocaleUtils<AppLocale, Translations> {
 	static List<Locale> get supportedLocales => instance.supportedLocales;
 	static List<String> get supportedLocalesRaw => instance.supportedLocalesRaw;
 }
+

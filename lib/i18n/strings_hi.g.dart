@@ -104,6 +104,7 @@ class TranslationsHi extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$hi fileSources = _Translations$fileSources$hi._(_root);
 	@override late final _Translations$lending$hi lending = _Translations$lending$hi._(_root);
 	@override late final _Translations$audiobook$hi audiobook = _Translations$audiobook$hi._(_root);
+	@override late final _Translations$sourceSetup$hi sourceSetup = _Translations$sourceSetup$hi._(_root);
 	@override late final _Translations$comics$hi comics = _Translations$comics$hi._(_root);
 }
 
@@ -762,6 +763,13 @@ class _Translations$settings$hi extends Translations$settings$en {
 	@override String get regionFormatDescription => 'तारीखें, संख्याएँ और माप दिखाने का तरीका चुनें।';
 	@override String get metadataLanguage => 'मीडिया विवरण की भाषा';
 	@override String get metadataLanguageDescription => 'सर्वर के समर्थन के अनुसार शीर्षकों और विवरणों की पसंदीदा भाषा। ऑडियो और उपशीर्षक की प्राथमिकताएँ अलग रहती हैं।';
+	@override String get experimentalDolbyVision => 'प्रायोगिक Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'अगले प्लेबैक में प्रायोगिक FEL रेंडरर का उपयोग करें। इसके लिए इंजन का अलग बिल्ड चाहिए।';
+	@override String get dvExperimentUnavailableDescription => 'यह प्रयोग फ़िलहाल केवल Linux पर उपलब्ध है।';
+	@override String get dvCompatibilityFallback => 'अनुकूलता विकल्प';
+	@override String get dvCompatibilityFallbackDescription => 'प्रयोग शुरू न हो पाए तो मानक रेंडरर का उपयोग करें। FEL डेटा खो सकता है।';
+	@override String get dvExperimentDiagnostics => 'वीडियो प्रयोग की लॉगिंग';
+	@override String get dvExperimentDiagnosticsDescription => 'अगले प्लेबैक में प्लेयर के विस्तृत लॉग सक्षम करें।';
 }
 
 // Path: themeEditor
@@ -3064,6 +3072,12 @@ class _Translations$fileSources$hi extends Translations$fileSources$en {
 	@override String get useFiles => 'फ़ाइलों और किताबों का उपयोग करें';
 	@override String get cancelScan => 'स्कैनिंग रद्द करें';
 	@override String get googleDrive => 'Google Drive';
+	@override String get smbEndpointHint => 'उदाहरण: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'एक SMB सर्वर और एक साझा फ़ोल्डर दर्ज करें।';
+	@override String get smbFolderHelp => 'पूरा साझा फ़ोल्डर इस्तेमाल करने के लिए खाली छोड़ें, या उसके अंदर का कोई फ़ोल्डर दर्ज करें।';
+	@override String get smbDomain => 'डोमेन (वैकल्पिक)';
+	@override String get smbEncryption => 'SMB3 कनेक्शन एन्क्रिप्ट करें';
+	@override String get smbEncryptionHint => 'NAS के समर्थन करने पर SMB3 एन्क्रिप्शन इस्तेमाल करें।';
 }
 
 // Path: lending
@@ -3185,13 +3199,110 @@ class _Translations$audiobook$hi extends Translations$audiobook$en {
 	@override String get timeHelp => 'घंटे: मिनट: सेकंड, या मिनट: सेकंड';
 }
 
+// Path: sourceSetup
+class _Translations$sourceSetup$hi extends Translations$sourceSetup$en {
+	_Translations$sourceSetup$hi._(TranslationsHi root) : this._root = root, super.internal(root);
+
+	final TranslationsHi _root; // ignore: unused_field
+	// Translations
+	@override String get savedCertificate => 'सहेजा गया सर्वर प्रमाणपत्र';
+	@override String get nfsEndpointInvalid => 'nfs://nas:2049/export जैसा NFS URL दर्ज करें।';
+	@override String get dlnaNone => 'कोई DLNA सर्वर नहीं मिला। डिवाइस विवरण का URL खुद दर्ज करें।';
+	@override String get dlnaServers => 'DLNA मीडिया सर्वर';
+	@override String get dlnaUnavailable => 'इस नेटवर्क पर DLNA डिवाइस खोजना उपलब्ध नहीं है। डिवाइस विवरण का URL खुद दर्ज करें।';
+	@override String get dlnaSearching => 'स्थानीय नेटवर्क पर DLNA सर्वर खोजे जा रहे हैं';
+	@override String get networkSearching => 'स्थानीय नेटवर्क पर खोज जारी है…';
+	@override String get dlnaDiscover => 'DLNA सर्वर खोजें';
+	@override String get dlnaHelp => 'डिवाइस खोजने के लिए स्थानीय नेटवर्क का मल्टीकास्ट ज़रूरी है। कोई सर्वर न दिखे तो ऊपर उसके डिवाइस विवरण का URL दर्ज करें।';
+	@override String get dlnaRoot => 'DLNA ऑब्जेक्ट ID; डिवाइस का रूट इस्तेमाल करने के लिए खाली छोड़ें।';
+	@override String get passwordOrKey => 'पासवर्ड दर्ज करें या नीचे निजी कुंजी जोड़ें।';
+	@override String get sshFingerprint => 'SSH होस्ट कुंजी का SHA256 फ़िंगरप्रिंट';
+	@override String get sshFingerprintHelp => 'सर्वर व्यवस्थापक से इसकी पुष्टि करें। सर्वर पर ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub चलाएँ और उससे मिलने वाला SHA256 मान इस्तेमाल करें।';
+	@override String get sshFingerprintKeep => 'मौजूदा पिन किया गया फ़िंगरप्रिंट रखने के लिए खाली छोड़ें, या सर्वर का नया फ़िंगरप्रिंट दर्ज करें।';
+	@override String get sshAuthentication => 'SSH सार्वजनिक कुंजी से प्रमाणीकरण';
+	@override String get sshAuthenticationHelp => 'वैकल्पिक; पासवर्ड से प्रमाणीकरण भी समर्थित है।';
+	@override String get privateKey => 'निजी कुंजी (PEM या OpenSSH प्रारूप)';
+	@override String get privateKeyPassphrase => 'निजी कुंजी का पासफ़्रेज़';
+	@override String get nfsMountPort => 'NFS माउंट सेवा का TCP पोर्ट';
+	@override String get nfsMountPortHelp => 'डिफ़ॉल्ट: 20048';
+	@override String get nfsUserId => 'NFS उपयोगकर्ता ID (AUTH_SYS)';
+	@override String get nfsUserIdHelp => 'डिफ़ॉल्ट: 1000। NAS एक्सपोर्ट की अनुमति वाला ID इस्तेमाल करें।';
+	@override String get nfsGroupId => 'NFS समूह ID (AUTH_SYS)';
+	@override String get nfsGroupIdHelp => 'डिफ़ॉल्ट: 1000। NAS एक्सपोर्ट की अनुमति वाला समूह ID इस्तेमाल करें।';
+	@override String get nfsEncryption => 'एन्क्रिप्टेड NFS अनिवार्य करें (RPC-with-TLS)';
+	@override String get nfsEncryptionHelp => 'NFS और माउंट सेवा के लिए TLS 1.3 अनिवार्य करें। NAS में समर्थन न होने पर कनेक्शन अस्वीकार कर दिया जाता है।';
+	@override String get nfsTrustCertificate => 'कस्टम NFS CA या सर्वर प्रमाणपत्र (PEM, वैकल्पिक)';
+	@override String get nfsTrustHelp => 'इस डिवाइस के भरोसेमंद प्रमाणपत्रों के लिए खाली छोड़ें। ज़रूरत होने पर निजी CA या स्वयं हस्ताक्षरित सर्वर प्रमाणपत्र जोड़ें; उसके नाम NFS URL के होस्ट से मेल खाने चाहिए।';
+	@override String get nfsTrustInvalid => 'PEM प्रारूप में CA या सर्वर प्रमाणपत्र इस्तेमाल करें। निजी कुंजी शामिल न करें।';
+	@override String get addTrustCertificate => 'कस्टम भरोसेमंद प्रमाणपत्र जोड़ें';
+	@override String get replaceTrustCertificate => 'सहेजा गया कस्टम प्रमाणपत्र बदलें';
+	@override String get nfsTlsHelp => 'RPC-with-TLS सामान्य NFS और माउंट सेवा पोर्ट इस्तेमाल करता है और NAS में RFC 9289 का समर्थन होना ज़रूरी है। TLS 1.3 अनिवार्य है। होस्ट का नाम या IP प्रमाणपत्र से मेल खाना चाहिए। एन्क्रिप्टेड चैनल में भी AUTH_SYS UID/GID लागू रहते हैं।';
+	@override String get clientCertificate => 'क्लाइंट प्रमाणपत्र (वैकल्पिक)';
+	@override String get clientCertificateHelp => 'NAS को इस क्लाइंट की पहचान सत्यापित करने देता है; AUTH_SYS ID अब भी NAS की एक्सपोर्ट नीति पर निर्भर रहते हैं।';
+	@override String get savedIdentity => 'सहेजी गई क्लाइंट पहचान इस्तेमाल की जाएगी।';
+	@override String get replaceIdentity => 'सहेजी गई क्लाइंट पहचान बदलें';
+	@override String get chooseIdentity => 'PKCS#12 क्लाइंट पहचान चुनें';
+	@override String get identityPassphrase => 'क्लाइंट पहचान का पासफ़्रेज़';
+	@override String get identityPassphraseHelp => 'फ़ाइल में पासफ़्रेज़ न हो तो खाली छोड़ें।';
+	@override String get removeIdentity => 'सहेजी गई क्लाइंट पहचान हटाएँ';
+	@override String get identityStorageHelp => 'क्लाइंट पहचानें स्रोत के एन्क्रिप्टेड क्रेडेंशियल स्टोर में सहेजी जाती हैं। सहेजी गई पहचान बनाए रखने के लिए इस अनुभाग में बदलाव न करें।';
+	@override String get nfsLimitations => 'TCP पर केवल पढ़ने के लिए NFSv3। RPC-with-TLS के बिना NFS ट्रैफ़िक एन्क्रिप्ट नहीं होता। NAS को चुने गए AUTH_SYS ID और गैर-विशेषाधिकार प्राप्त क्लाइंट पोर्ट की अनुमति देनी होगी (एक्सपोर्ट में इसे अक्सर “insecure” विकल्प कहा जाता है)। NFSv4 और UDP समर्थित नहीं हैं।';
+	@override String get nfsSetupHelp => 'NFS सेटअप सहायता';
+	@override String get nfsSetupHint => 'कनेक्शन न खुले तो ये सेटिंग जाँचें।';
+	@override String get nfsSetupDetails => 'TCP वाला NFSv3 एक्सपोर्ट इस्तेमाल करें। एन्क्रिप्शन अनिवार्य होने पर NFS और माउंट सेवा, दोनों को RPC-with-TLS का समर्थन करना होगा। इस डिवाइस के भरोसेमंद सर्वर प्रमाणपत्र के लिए कस्टम प्रमाणपत्र खाली छोड़ें, या NAS का CA अथवा स्वयं हस्ताक्षरित प्रमाणपत्र जोड़ें। प्रमाणपत्र का नाम एंडपॉइंट के होस्ट से मेल खाना चाहिए। NAS आपसी TLS प्रमाणीकरण माँगे तो उसकी PKCS#12 क्लाइंट पहचान जोड़ें। आखिर में पुष्टि करें कि एक्सपोर्ट में सेट किए गए AUTH_SYS UID/GID और क्लाइंट पोर्ट नीति की अनुमति है।';
+	@override String get ftpHelp => 'FTP पैसिव मोड इस्तेमाल करता है। बिना एन्क्रिप्शन वाले FTP के लिए ftp://, स्पष्ट TLS के लिए ftpes://, या TLS के लिए ftps:// इस्तेमाल करें (पोर्ट 990 पर निहित TLS; दूसरे पोर्ट पर स्पष्ट TLS)।';
+	@override String get openSubtitles => 'OpenSubtitles';
+	@override String get subtitleSetup => 'अलग वीडियो फ़ाइलों के लिए वैकल्पिक सबटाइटल खोज।';
+	@override String get apiKey => 'API कुंजी';
+	@override String get optionalUsername => 'खाते का उपयोगकर्ता नाम (वैकल्पिक)';
+	@override String get optionalPassword => 'खाते का पासवर्ड (वैकल्पिक)';
+	@override String get subtitlePrivacy => 'opensubtitles.com से API कुंजी लें। खोज में वीडियो का शीर्षक और उपलब्ध IMDb/TMDB ID भेजे जाते हैं, वीडियो फ़ाइल कभी नहीं भेजी जाती। कुंजी और वैकल्पिक खाते के क्रेडेंशियल इस स्रोत के साथ एन्क्रिप्ट करके सहेजे जाते हैं।';
+	@override String get automaticMetadata => 'ऑनलाइन वीडियो मेटाडेटा अपने-आप पाएँ';
+	@override String get metadataPrivacy => 'केवल फ़ाइलनाम से शीर्षक, वर्ष और एपिसोड नंबर या NFO ID भेजा जाता है; मीडिया या क्रेडेंशियल कभी नहीं भेजे जाते। NFO फ़ील्ड को हमेशा प्राथमिकता मिलती है।';
+	@override String get nfsEncryptionFailure => 'एन्क्रिप्टेड NFS के लिए NAS की दोनों सेवाओं में RFC 9289 और TLS 1.3 का समर्थन, प्रमाणपत्र का नाम तथा एक्सपोर्ट UID/GID जाँचें। PlezyNG बिना एन्क्रिप्शन के इस कनेक्शन की फिर कोशिश नहीं करेगा।';
+	@override String get sourceConnecting => 'स्रोत से कनेक्ट हो रहा है';
+	@override String get metadataSearchPrivacy => 'यह शीर्षक खोज Trakt को भेजी जाती है। इसमें केवल आपके दर्ज किए शीर्षक को भेजा जाता है, वीडियो या स्रोत के क्रेडेंशियल को नहीं।';
+	@override String get chooseMatch => 'मिलता-जुलता परिणाम चुनें';
+	@override String get metadataMatchHelp => 'चुनने से पहले शीर्षक और वर्ष जाँचें। Trakt को खोज का शीर्षक मिलता है; वीडियो अपने स्रोत पर ही रहता है।';
+	@override String get metadataNoMatches => 'कोई मेल खाता ऑनलाइन शीर्षक नहीं मिला। कोई दूसरा शीर्षक आज़माएँ।';
+	@override String get metadataSearch => 'ऑनलाइन मेटाडेटा खोजें';
+	@override String get metadataLoading => 'फ़िल्म और टीवी कार्यक्रम की जानकारी ऑनलाइन खोजी जा रही है…';
+	@override String get metadataFromTrakt => 'Trakt से ऑनलाइन मेटाडेटा';
+	@override String get metadataNoAutomaticMatch => 'अपने-आप कोई मेल खाता शीर्षक नहीं मिला। शीर्षक खोजकर सही परिणाम चुनें।';
+	@override String get metadataFailed => 'ऑनलाइन मेटाडेटा लोड नहीं हो सका। प्लेबैक और स्थानीय जानकारी अब भी उपलब्ध हैं।';
+	@override String get videoDetailsLoading => 'वीडियो की जानकारी लोड हो रही है';
+	@override String get subtitleKeyRequired => 'OpenSubtitles API कुंजी ज़रूरी है';
+	@override String get subtitleKeyHelp => 'इस फ़ाइल स्रोत में बदलाव करें और उसकी वैकल्पिक सबटाइटल सेटिंग में OpenSubtitles API कुंजी जोड़ें।';
+	@override String get subtitleSearchFailed => 'सबटाइटल खोज असफल रही। API कुंजी, कनेक्शन और सेवा तक पहुँच जाँचें।';
+	@override String get subtitleApplyFailed => 'यह सबटाइटल डाउनलोड या लागू नहीं हो सका। कनेक्शन जाँचें और कोई दूसरा परिणाम आज़माएँ।';
+	@override String get subtitleSearch => 'OpenSubtitles में खोजें';
+	@override String get subtitleSearchPrivacy => 'खोज में शीर्षक और उपलब्ध IMDb/TMDB ID इस्तेमाल होते हैं। वीडियो फ़ाइल अपने स्रोत पर ही रहती है। चुनने से पहले भाषा, अनिवार्य रूप से दिखाए जाने वाले या श्रवण-बाधित दर्शकों के लिए सबटाइटल के चिह्न और रेटिंग जाँचें।';
+	@override String get movieOrShow => 'फ़िल्म या टीवी कार्यक्रम';
+	@override String get subtitleTitleHint => 'नतीजे सीमित करने के लिए शीर्षक दर्ज करें';
+	@override String get subtitleLanguage => 'सबटाइटल की भाषा';
+	@override String get subtitleSearching => 'OpenSubtitles में खोज जारी है';
+	@override String get subtitleNoMatches => 'कोई मेल खाता सबटाइटल नहीं मिला। दूसरा शीर्षक या भाषा आज़माएँ।';
+	@override String get downloadSubtitle => 'सबटाइटल डाउनलोड करें';
+	@override String get subtitle => 'सबटाइटल';
+	@override String get nfsTlsRequired => 'RPC-with-TLS अनिवार्य';
+	@override String get nfsUnencrypted => 'बिना एन्क्रिप्शन वाला NFS';
+	@override String get tlsEncrypted => 'TLS से एन्क्रिप्टेड';
+	@override String get ftpPlain => 'बिना एन्क्रिप्शन वाला FTP';
+	@override String get sshPinned => 'SSH से एन्क्रिप्टेड · होस्ट कुंजी पिन की गई है';
+	@override String get smbEncrypted => 'SMB3 एन्क्रिप्शन चालू';
+	@override String get smbUnencrypted => 'SMB3 एन्क्रिप्शन बंद';
+	@override String get httpUnencrypted => 'ट्रांसपोर्ट एन्क्रिप्शन के बिना HTTP';
+	@override String get checkEndpointSecurity => 'एंडपॉइंट की सुरक्षा जाँचें';
+	@override String fieldRequired({required Object label}) => '${label} दर्ज करना ज़रूरी है।';
+	@override String integerRange({required Object label, required Object min, required Object max}) => '${label} का मान ${min} से ${max} के बीच दर्ज करें।';
+	@override String replaceFile({required Object name}) => '${name} बदलें';
+	@override String selectedIdentity({required Object name}) => 'चुनी गई क्लाइंट पहचान: ${name}';
+	@override String subtitleRating({required Object rating}) => 'रेटिंग ${rating}';
+	@override String subtitleDownloading({required Object title}) => 'सबटाइटल डाउनलोड हो रहा है: ${title}';
+}
 // Path: comics
 class _Translations$comics$hi extends Translations$comics$en {
 	_Translations$comics$hi._(TranslationsHi root) : this._root = root, super.internal(root);
-
-	final TranslationsHi _root; // ignore: unused_field
-
-	// Translations
 	@override String get fitHeight => 'ऊँचाई के अनुसार फ़िट करें';
 	@override String get readingMode => 'पढ़ने का मोड';
 	@override String get paged => 'पृष्ठ';
@@ -3204,8 +3315,6 @@ class _Translations$comics$hi extends Translations$comics$en {
 	@override String get savedForComic => 'इस प्रोफ़ाइल में इस कॉमिक की प्रदर्शन सेटिंग्स याद रखी जाती हैं।';
 	@override String get readLists => 'पठन सूचियाँ';
 	@override String get collections => 'संग्रह';
-}
-
 // Path: appIcon.names
 class _Translations$appIcon$names$hi extends Translations$appIcon$names$en {
 	_Translations$appIcon$names$hi._(TranslationsHi root) : this._root = root, super.internal(root);
@@ -3457,48 +3566,60 @@ class _Translations$discover$findNext$hi extends Translations$discover$findNext$
 	final TranslationsHi _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'अपने अगले को खोजें';
-	@override String get open => 'अपने अगले को खोजें';
-	@override String get anyTime => 'किसी भी समय';
+	@override String get title => 'अपनी अगली पसंद खोजें';
+	@override String get open => 'अपनी अगली पसंद खोजें';
+	@override String get anyTime => 'समय की कोई सीमा नहीं';
 	@override String get timeAvailable => 'आपके पास कितना समय है?';
-	@override String get filters => 'क्षण चुनें';
+	@override String get filters => 'इस पल के लिए चुनें';
 	@override String get watch => 'देखें';
-	@override String get listen => 'सुनो';
-	@override String get read => 'पढ़ना';
-	@override String finishable({required Object duration}) => '${duration} में समाप्त';
-	@override String aboutDuration({required Object duration}) => 'के बारे में ${duration}';
-	@override String nextUnit({required Object duration}) => 'अगले अध्याय · ${duration}';
-	@override String totalDuration({required Object duration}) => '${duration} कुल';
-	@override String get timingVaries => 'समय बदलता है';
-	@override String get notNow => 'अब नहीं';
-	@override String get swipeHint => 'स्विप करें, या नीचे दिए गए बटन का उपयोग करें';
-	@override String get saved => 'बचाए गए पिक्से';
-	@override String savedCount({required Object count}) => 'संपादित करें · ${count}';
-	@override String get undo => 'और';
+	@override String get listen => 'सुनें';
+	@override String get read => 'पढ़ें';
+	@override String finishable({required Object duration}) => '${duration} में पूरा किया जा सकता है';
+	@override String aboutDuration({required Object duration}) => 'लगभग ${duration}';
+	@override String nextUnit({required Object duration}) => 'अगला अध्याय · ${duration}';
+	@override String totalDuration({required Object duration}) => 'कुल ${duration}';
+	@override String get timingVaries => 'समय अलग-अलग हो सकता है';
+	@override String get notNow => 'अभी नहीं';
+	@override String get swipeHint => 'कवर को किसी तीर की दिशा में स्वाइप करें या नीचे दिए बटन इस्तेमाल करें।';
+	@override String get saved => 'सहेजे गए सुझाव';
+	@override String savedCount({required Object count}) => 'सहेजे गए सुझाव · ${count}';
+	@override String get undo => 'पिछली कार्रवाई वापस लें';
 	@override String get details => 'विवरण';
-	@override String get noPicks => 'अभी तक चुनने के लिए कुछ भी नहीं';
-	@override String get noPicksHint => 'एक लाइब्रेरी से कनेक्ट करें या शुरू करने के लिए एक मीडिया स्रोत जोड़ें।';
-	@override String get noMatches => 'इस क्षण के लिए कुछ भी नहीं है';
-	@override String get noMatchesHint => 'एक और प्रारूप का प्रयास करें या खुद को अधिक समय दें।';
-	@override String get allDone => 'आप सभी पकड़े गए हैं';
-	@override String get allDoneHint => 'इन विकल्पों को फिर से देखने के लिए एक ताजा मिश्रण शुरू करें।';
-	@override String get refresh => 'एक और मिश्रण खोजें';
-	@override String sourceReason({required Object source}) => 'से ${source}';
-	@override String libraryReason({required Object library}) => 'से ${library}';
-	@override String get ownedReason => 'आपकी पुस्तकालय से';
-	@override String get liveNow => 'अब में';
-	@override String get watchLive => 'देखें लाइव';
-	@override String get filterAnything => 'सब कुछ';
+	@override String get noPicks => 'अभी चुनने के लिए कुछ नहीं है';
+	@override String get noPicksHint => 'शुरू करने के लिए कोई लाइब्रेरी जोड़ें या मीडिया का स्रोत जोड़ें।';
+	@override String get noMatches => 'इस समय के हिसाब से कुछ नहीं मिला';
+	@override String get noMatchesHint => 'किसी दूसरे प्रकार का मीडिया चुनें या थोड़ा ज़्यादा समय रखें।';
+	@override String get allDone => 'आपने सभी सुझाव देख लिए हैं';
+	@override String get allDoneHint => 'इन विकल्पों को फिर देखने के लिए सुझावों का नया समूह शुरू करें।';
+	@override String get refresh => 'दूसरे सुझाव खोजें';
+	@override String sourceReason({required Object source}) => 'स्रोत: ${source}';
+	@override String libraryReason({required Object library}) => 'लाइब्रेरी: ${library}';
+	@override String get ownedReason => 'आपकी लाइब्रेरी से';
+	@override String get liveNow => 'अभी प्रसारित हो रहा है';
+	@override String get watchLive => 'लाइव देखें';
+	@override String get filterAnything => 'कोई भी प्रकार';
 	@override String get filterWatch => 'देखें';
-	@override String get filterListen => 'सुनो';
-	@override String get filterRead => 'पढ़ना';
+	@override String get filterListen => 'सुनें';
+	@override String get filterRead => 'पढ़ें';
 	@override String get twentyMinutes => '20 मिनट';
 	@override String get fortyFiveMinutes => '45 मिनट';
 	@override String get ninetyMinutes => '90 मिनट';
-	@override String get apply => 'आवेदन करें';
-	@override String get openFailed => 'यह विकल्प अब उपलब्ध नहीं है. फिर से जांच करने के लिए ताज़ा करें.';
-	@override String get changeFailed => 'यह बदलाव नहीं किया जा सकता है. फिर से कोशिश करें.';
-	@override String get savedLimit => 'बचाए गए पिक्स भरे हुए हैं. एक चयन को हटाने के लिए दूसरे को बचाने के लिए.';
+	@override String get apply => 'लागू करें';
+	@override String get openFailed => 'यह विकल्प अब उपलब्ध नहीं है। फिर जाँचने के लिए रीफ़्रेश करें।';
+	@override String get changeFailed => 'बदलाव सहेजा नहीं जा सका। फिर कोशिश करें।';
+	@override String get savedLimit => 'सहेजे गए सुझावों की सूची भर गई है। नया सुझाव सहेजने के लिए कोई पुराना सुझाव हटाएँ।';
+	@override String get chooseHint => 'कोई शीर्षक खोलें, बाद के लिए सहेजें या छोड़ दें।';
+	@override String get howItWorks => 'कैसे इस्तेमाल करें';
+	@override String get notNowHelp => 'इस शीर्षक को अभी छोड़ दें। यह आपकी लाइब्रेरी में रहेगा।';
+	@override String get saveHelp => 'इसे इस डिवाइस पर इस प्रोफ़ाइल के सहेजे गए विकल्पों में रखें। सहेजने से यह डाउनलोड नहीं होता।';
+	@override String get openHelp => 'जानकारी के लिए कवर चुनें। शीर्षक चलाने, पढ़ने या खोलने के लिए मुख्य बटन इस्तेमाल करें।';
+	@override String get controlsHelp => 'कीबोर्ड या रिमोट: किसी बटन पर जाएँ, फिर Enter या चयन बटन दबाएँ। पहले जैसा करें आपकी पिछली पसंद वापस लाता है।';
+	@override String get artworkLoading => 'चित्र लोड हो रहा है…';
+	@override String get artworkUnavailable => 'चित्र उपलब्ध नहीं है';
+	@override String get savedFeedback => 'सहेजे गए विकल्पों में जोड़ा गया';
+	@override String get skippedFeedback => 'अभी छोड़ दिया गया';
+	@override String get releaseToConfirm => 'पुष्टि के लिए छोड़ें';
+	@override String get remoteHint => 'कवर पर फ़ोकस: ← / → चुनें · चयन बटन: जानकारी · ↑ / ↓ फ़ोकस बदलें';
 }
 
 // Path: discover.person
@@ -4833,6 +4954,13 @@ extension on TranslationsHi {
 			'settings.regionFormatDescription' => 'तारीखें, संख्याएँ और माप दिखाने का तरीका चुनें।',
 			'settings.metadataLanguage' => 'मीडिया विवरण की भाषा',
 			'settings.metadataLanguageDescription' => 'सर्वर के समर्थन के अनुसार शीर्षकों और विवरणों की पसंदीदा भाषा। ऑडियो और उपशीर्षक की प्राथमिकताएँ अलग रहती हैं।',
+			'settings.experimentalDolbyVision' => 'प्रायोगिक Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'अगले प्लेबैक में प्रायोगिक FEL रेंडरर का उपयोग करें। इसके लिए इंजन का अलग बिल्ड चाहिए।',
+			'settings.dvExperimentUnavailableDescription' => 'यह प्रयोग फ़िलहाल केवल Linux पर उपलब्ध है।',
+			'settings.dvCompatibilityFallback' => 'अनुकूलता विकल्प',
+			'settings.dvCompatibilityFallbackDescription' => 'प्रयोग शुरू न हो पाए तो मानक रेंडरर का उपयोग करें। FEL डेटा खो सकता है।',
+			'settings.dvExperimentDiagnostics' => 'वीडियो प्रयोग की लॉगिंग',
+			'settings.dvExperimentDiagnosticsDescription' => 'अगले प्लेबैक में प्लेयर के विस्तृत लॉग सक्षम करें।',
 			'themeEditor.builtIn' => 'इमारत में',
 			'themeEditor.presets' => 'उपन्यास',
 			'themeEditor.custom' => 'कस्टम',
@@ -5253,6 +5381,8 @@ extension on TranslationsHi {
 			'messages.libraryScanStarted' => ({required Object title}) => 'पुस्तकालय स्कैन "${title}" के लिए शुरू हुआ',
 			'messages.libraryScanFailed' => ({required Object error}) => 'पुस्तकालय स्कैन करने में विफलता: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '"${title}" के लिए ताज़ा मेटाडेटा ...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}" के लिए मेटाडेटा रिफ्रेश शुरू हुआ',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'मेटाडेटा को पुनर्जीवित करने में विफलता: ${error}',
 			'messages.logoutConfirm' => 'क्या आप निश्चित हैं कि आप लॉग इन करना चाहते हैं?',
@@ -5260,8 +5390,6 @@ extension on TranslationsHi {
 			'messages.seasonsLoadFailed' => 'मौसम नहीं ले सकते',
 			'messages.noEpisodesFound' => 'पहली सीजन में कोई घटना नहीं मिली',
 			'messages.noEpisodesFoundGeneral' => 'कोई घटना नहीं मिली',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'घटनाओं को लोड नहीं किया जा सकता',
 			'messages.noResultsFound' => 'कोई परिणाम नहीं मिला',
 			'messages.sleepTimerSet' => ({required Object label}) => 'नींद टाइमर सेट ${label} के लिए',
@@ -5488,48 +5616,60 @@ extension on TranslationsHi {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'सीज़न ${season} एपिसोड ${episode}',
 			'discover.overview' => 'समीक्षा',
 			'discover.cast' => 'कास्टिंग',
-			'discover.findNext.title' => 'अपने अगले को खोजें',
-			'discover.findNext.open' => 'अपने अगले को खोजें',
-			'discover.findNext.anyTime' => 'किसी भी समय',
+			'discover.findNext.title' => 'अपनी अगली पसंद खोजें',
+			'discover.findNext.open' => 'अपनी अगली पसंद खोजें',
+			'discover.findNext.anyTime' => 'समय की कोई सीमा नहीं',
 			'discover.findNext.timeAvailable' => 'आपके पास कितना समय है?',
-			'discover.findNext.filters' => 'क्षण चुनें',
+			'discover.findNext.filters' => 'इस पल के लिए चुनें',
 			'discover.findNext.watch' => 'देखें',
-			'discover.findNext.listen' => 'सुनो',
-			'discover.findNext.read' => 'पढ़ना',
-			'discover.findNext.finishable' => ({required Object duration}) => '${duration} में समाप्त',
-			'discover.findNext.aboutDuration' => ({required Object duration}) => 'के बारे में ${duration}',
-			'discover.findNext.nextUnit' => ({required Object duration}) => 'अगले अध्याय · ${duration}',
-			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} कुल',
-			'discover.findNext.timingVaries' => 'समय बदलता है',
-			'discover.findNext.notNow' => 'अब नहीं',
-			'discover.findNext.swipeHint' => 'स्विप करें, या नीचे दिए गए बटन का उपयोग करें',
-			'discover.findNext.saved' => 'बचाए गए पिक्से',
-			'discover.findNext.savedCount' => ({required Object count}) => 'संपादित करें · ${count}',
-			'discover.findNext.undo' => 'और',
+			'discover.findNext.listen' => 'सुनें',
+			'discover.findNext.read' => 'पढ़ें',
+			'discover.findNext.finishable' => ({required Object duration}) => '${duration} में पूरा किया जा सकता है',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => 'लगभग ${duration}',
+			'discover.findNext.nextUnit' => ({required Object duration}) => 'अगला अध्याय · ${duration}',
+			'discover.findNext.totalDuration' => ({required Object duration}) => 'कुल ${duration}',
+			'discover.findNext.timingVaries' => 'समय अलग-अलग हो सकता है',
+			'discover.findNext.notNow' => 'अभी नहीं',
+			'discover.findNext.swipeHint' => 'कवर को किसी तीर की दिशा में स्वाइप करें या नीचे दिए बटन इस्तेमाल करें।',
+			'discover.findNext.saved' => 'सहेजे गए सुझाव',
+			'discover.findNext.savedCount' => ({required Object count}) => 'सहेजे गए सुझाव · ${count}',
+			'discover.findNext.undo' => 'पिछली कार्रवाई वापस लें',
 			'discover.findNext.details' => 'विवरण',
-			'discover.findNext.noPicks' => 'अभी तक चुनने के लिए कुछ भी नहीं',
-			'discover.findNext.noPicksHint' => 'एक लाइब्रेरी से कनेक्ट करें या शुरू करने के लिए एक मीडिया स्रोत जोड़ें।',
-			'discover.findNext.noMatches' => 'इस क्षण के लिए कुछ भी नहीं है',
-			'discover.findNext.noMatchesHint' => 'एक और प्रारूप का प्रयास करें या खुद को अधिक समय दें।',
-			'discover.findNext.allDone' => 'आप सभी पकड़े गए हैं',
-			'discover.findNext.allDoneHint' => 'इन विकल्पों को फिर से देखने के लिए एक ताजा मिश्रण शुरू करें।',
-			'discover.findNext.refresh' => 'एक और मिश्रण खोजें',
-			'discover.findNext.sourceReason' => ({required Object source}) => 'से ${source}',
-			'discover.findNext.libraryReason' => ({required Object library}) => 'से ${library}',
-			'discover.findNext.ownedReason' => 'आपकी पुस्तकालय से',
-			'discover.findNext.liveNow' => 'अब में',
-			'discover.findNext.watchLive' => 'देखें लाइव',
-			'discover.findNext.filterAnything' => 'सब कुछ',
+			'discover.findNext.noPicks' => 'अभी चुनने के लिए कुछ नहीं है',
+			'discover.findNext.noPicksHint' => 'शुरू करने के लिए कोई लाइब्रेरी जोड़ें या मीडिया का स्रोत जोड़ें।',
+			'discover.findNext.noMatches' => 'इस समय के हिसाब से कुछ नहीं मिला',
+			'discover.findNext.noMatchesHint' => 'किसी दूसरे प्रकार का मीडिया चुनें या थोड़ा ज़्यादा समय रखें।',
+			'discover.findNext.allDone' => 'आपने सभी सुझाव देख लिए हैं',
+			'discover.findNext.allDoneHint' => 'इन विकल्पों को फिर देखने के लिए सुझावों का नया समूह शुरू करें।',
+			'discover.findNext.refresh' => 'दूसरे सुझाव खोजें',
+			'discover.findNext.sourceReason' => ({required Object source}) => 'स्रोत: ${source}',
+			'discover.findNext.libraryReason' => ({required Object library}) => 'लाइब्रेरी: ${library}',
+			'discover.findNext.ownedReason' => 'आपकी लाइब्रेरी से',
+			'discover.findNext.liveNow' => 'अभी प्रसारित हो रहा है',
+			'discover.findNext.watchLive' => 'लाइव देखें',
+			'discover.findNext.filterAnything' => 'कोई भी प्रकार',
 			'discover.findNext.filterWatch' => 'देखें',
-			'discover.findNext.filterListen' => 'सुनो',
-			'discover.findNext.filterRead' => 'पढ़ना',
+			'discover.findNext.filterListen' => 'सुनें',
+			'discover.findNext.filterRead' => 'पढ़ें',
 			'discover.findNext.twentyMinutes' => '20 मिनट',
 			'discover.findNext.fortyFiveMinutes' => '45 मिनट',
 			'discover.findNext.ninetyMinutes' => '90 मिनट',
-			'discover.findNext.apply' => 'आवेदन करें',
-			'discover.findNext.openFailed' => 'यह विकल्प अब उपलब्ध नहीं है. फिर से जांच करने के लिए ताज़ा करें.',
-			'discover.findNext.changeFailed' => 'यह बदलाव नहीं किया जा सकता है. फिर से कोशिश करें.',
-			'discover.findNext.savedLimit' => 'बचाए गए पिक्स भरे हुए हैं. एक चयन को हटाने के लिए दूसरे को बचाने के लिए.',
+			'discover.findNext.apply' => 'लागू करें',
+			'discover.findNext.openFailed' => 'यह विकल्प अब उपलब्ध नहीं है। फिर जाँचने के लिए रीफ़्रेश करें।',
+			'discover.findNext.changeFailed' => 'बदलाव सहेजा नहीं जा सका। फिर कोशिश करें।',
+			'discover.findNext.savedLimit' => 'सहेजे गए सुझावों की सूची भर गई है। नया सुझाव सहेजने के लिए कोई पुराना सुझाव हटाएँ।',
+			'discover.findNext.chooseHint' => 'कोई शीर्षक खोलें, बाद के लिए सहेजें या छोड़ दें।',
+			'discover.findNext.howItWorks' => 'कैसे इस्तेमाल करें',
+			'discover.findNext.notNowHelp' => 'इस शीर्षक को अभी छोड़ दें। यह आपकी लाइब्रेरी में रहेगा।',
+			'discover.findNext.saveHelp' => 'इसे इस डिवाइस पर इस प्रोफ़ाइल के सहेजे गए विकल्पों में रखें। सहेजने से यह डाउनलोड नहीं होता।',
+			'discover.findNext.openHelp' => 'जानकारी के लिए कवर चुनें। शीर्षक चलाने, पढ़ने या खोलने के लिए मुख्य बटन इस्तेमाल करें।',
+			'discover.findNext.controlsHelp' => 'कीबोर्ड या रिमोट: किसी बटन पर जाएँ, फिर Enter या चयन बटन दबाएँ। पहले जैसा करें आपकी पिछली पसंद वापस लाता है।',
+			'discover.findNext.artworkLoading' => 'चित्र लोड हो रहा है…',
+			'discover.findNext.artworkUnavailable' => 'चित्र उपलब्ध नहीं है',
+			'discover.findNext.savedFeedback' => 'सहेजे गए विकल्पों में जोड़ा गया',
+			'discover.findNext.skippedFeedback' => 'अभी छोड़ दिया गया',
+			'discover.findNext.releaseToConfirm' => 'पुष्टि के लिए छोड़ें',
+			'discover.findNext.remoteHint' => 'कवर पर फ़ोकस: ← / → चुनें · चयन बटन: जानकारी · ↑ / ↓ फ़ोकस बदलें',
 			'discover.extras' => 'ट्रेलर और अतिरिक्त',
 			'discover.studio' => 'स्टूडियो',
 			'discover.rating' => 'रेटिंग',
@@ -5755,6 +5895,8 @@ extension on TranslationsHi {
 			'explore.mdblistShelves.nameHint' => 'स्रोत सूची नाम का उपयोग करने के लिए सफेद छोड़ दें।',
 			'explore.mdblistShelves.add' => 'शेल को जोड़ें',
 			'explore.mdblistShelves.save' => 'सीटों को बचाएं',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => '${title} से ऊपर',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => '${title} नीचे जाने के लिए',
 			'explore.mdblistShelves.unavailable' => 'यह सूची उपलब्ध नहीं है. सेटिंग्स में अपने शेल्फ को वापस या हटा दें.',
@@ -5774,8 +5916,6 @@ extension on TranslationsHi {
 			'explore.rows.popularShows' => 'लोकप्रिय शो',
 			'explore.rows.trendingAnime' => 'एनिमेटेड ट्रेंड',
 			'explore.rows.suggestedAnime' => 'अनुशंसित एनीम',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'शीर्ष एनीमिया',
 			'explore.rows.popularAnime' => 'सबसे लोकप्रिय एनीमिया',
 			'explore.rows.trending' => 'रुझान',
@@ -6269,6 +6409,8 @@ extension on TranslationsHi {
 			'downloads.resumeDownload' => 'डाउनलोड करें',
 			'downloads.cancelledDownload' => 'डाउनलोड रद्द',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (सेंसिंग ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'डाउनलोड ${file} - पूरा करने के लिए क्लिक करें',
 			'downloads.partialDownloadClickToComplete' => 'डाउनलोड करें - पूरा करने के लिए क्लिक करें',
 			'downloads.deleting' => 'हटाने...',
@@ -6288,8 +6430,6 @@ extension on TranslationsHi {
 			'downloads.unwatchedOnly' => 'अनदेखा केवल',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'अगला ${count} अनदेखा किया गया',
 			'downloads.customAmount' => 'कस्टम राशि...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'प्रत्येक व्यक्ति की मात्रा (प्रत्येक व्यक्ति)',
 			'downloads.randomEpisodes' => 'यादृच्छिक घटनाएं',
 			'downloads.includeSpecials' => 'विशेषताएं शामिल हैं',
@@ -6783,6 +6923,8 @@ extension on TranslationsHi {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'सर्वर तक नहीं पहुंच सकता: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'हस्ताक्षर विफल: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect असफल: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Plex के साथ साइन इन करें',
 			'addServer.pinExpired' => 'पिन लॉग इन करने से पहले समाप्त हो गया है. कृपया फिर से कोशिश करें.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'अकाउंट रजिस्टर करने में विफल: ${error}',
@@ -6802,8 +6944,6 @@ extension on TranslationsHi {
 			'addServer.authResponseIncomplete' => 'सर्वर से साइन-इन प्रतिक्रिया अपूर्ण थी',
 			'addServer.quickConnectRejected' => 'Quick Connect सर्वर द्वारा अस्वीकार कर दिया गया था',
 			'addServer.quickConnectNotJson' => 'Quick Connect जवाब JSON वैध नहीं था',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect का जवाब एक कोड या रहस्य की कमी है',
 			'addServer.quickConnectPollRejected' => 'Quick Connect पूछताछ सर्वर द्वारा अस्वीकार कर दिया गया था',
 			'addServer.serverTimedOut' => 'सर्वर ने समय पर जवाब नहीं दिया',
@@ -7109,6 +7249,12 @@ extension on TranslationsHi {
 			'fileSources.useFiles' => 'फ़ाइलों और किताबों का उपयोग करें',
 			'fileSources.cancelScan' => 'स्कैनिंग रद्द करें',
 			'fileSources.googleDrive' => 'Google Drive',
+			'fileSources.smbEndpointHint' => 'उदाहरण: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'एक SMB सर्वर और एक साझा फ़ोल्डर दर्ज करें।',
+			'fileSources.smbFolderHelp' => 'पूरा साझा फ़ोल्डर इस्तेमाल करने के लिए खाली छोड़ें, या उसके अंदर का कोई फ़ोल्डर दर्ज करें।',
+			'fileSources.smbDomain' => 'डोमेन (वैकल्पिक)',
+			'fileSources.smbEncryption' => 'SMB3 कनेक्शन एन्क्रिप्ट करें',
+			'fileSources.smbEncryptionHint' => 'NAS के समर्थन करने पर SMB3 एन्क्रिप्शन इस्तेमाल करें।',
 			'lending.title' => 'सार्वजनिक पुस्तकालय',
 			'lending.add' => 'एक पुस्तकालय जोड़ें',
 			'lending.other' => 'एक और पुस्तकालय',
@@ -7210,6 +7356,93 @@ extension on TranslationsHi {
 			'audiobook.statusFinished' => 'समाप्त',
 			'audiobook.goToTime' => 'समय के लिए जाओ',
 			'audiobook.timeHelp' => 'घंटे: मिनट: सेकंड, या मिनट: सेकंड',
+			'sourceSetup.savedCertificate' => 'सहेजा गया सर्वर प्रमाणपत्र',
+			'sourceSetup.nfsEndpointInvalid' => 'nfs://nas:2049/export जैसा NFS URL दर्ज करें।',
+			'sourceSetup.dlnaNone' => 'कोई DLNA सर्वर नहीं मिला। डिवाइस विवरण का URL खुद दर्ज करें।',
+			'sourceSetup.dlnaServers' => 'DLNA मीडिया सर्वर',
+			'sourceSetup.dlnaUnavailable' => 'इस नेटवर्क पर DLNA डिवाइस खोजना उपलब्ध नहीं है। डिवाइस विवरण का URL खुद दर्ज करें।',
+			'sourceSetup.dlnaSearching' => 'स्थानीय नेटवर्क पर DLNA सर्वर खोजे जा रहे हैं',
+			'sourceSetup.networkSearching' => 'स्थानीय नेटवर्क पर खोज जारी है…',
+			'sourceSetup.dlnaDiscover' => 'DLNA सर्वर खोजें',
+			'sourceSetup.dlnaHelp' => 'डिवाइस खोजने के लिए स्थानीय नेटवर्क का मल्टीकास्ट ज़रूरी है। कोई सर्वर न दिखे तो ऊपर उसके डिवाइस विवरण का URL दर्ज करें।',
+			'sourceSetup.dlnaRoot' => 'DLNA ऑब्जेक्ट ID; डिवाइस का रूट इस्तेमाल करने के लिए खाली छोड़ें।',
+			'sourceSetup.passwordOrKey' => 'पासवर्ड दर्ज करें या नीचे निजी कुंजी जोड़ें।',
+			'sourceSetup.sshFingerprint' => 'SSH होस्ट कुंजी का SHA256 फ़िंगरप्रिंट',
+			'sourceSetup.sshFingerprintHelp' => 'सर्वर व्यवस्थापक से इसकी पुष्टि करें। सर्वर पर ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub चलाएँ और उससे मिलने वाला SHA256 मान इस्तेमाल करें।',
+			'sourceSetup.sshFingerprintKeep' => 'मौजूदा पिन किया गया फ़िंगरप्रिंट रखने के लिए खाली छोड़ें, या सर्वर का नया फ़िंगरप्रिंट दर्ज करें।',
+			'sourceSetup.sshAuthentication' => 'SSH सार्वजनिक कुंजी से प्रमाणीकरण',
+			'sourceSetup.sshAuthenticationHelp' => 'वैकल्पिक; पासवर्ड से प्रमाणीकरण भी समर्थित है।',
+			'sourceSetup.privateKey' => 'निजी कुंजी (PEM या OpenSSH प्रारूप)',
+			'sourceSetup.privateKeyPassphrase' => 'निजी कुंजी का पासफ़्रेज़',
+			'sourceSetup.nfsMountPort' => 'NFS माउंट सेवा का TCP पोर्ट',
+			'sourceSetup.nfsMountPortHelp' => 'डिफ़ॉल्ट: 20048',
+			'sourceSetup.nfsUserId' => 'NFS उपयोगकर्ता ID (AUTH_SYS)',
+			'sourceSetup.nfsUserIdHelp' => 'डिफ़ॉल्ट: 1000। NAS एक्सपोर्ट की अनुमति वाला ID इस्तेमाल करें।',
+			'sourceSetup.nfsGroupId' => 'NFS समूह ID (AUTH_SYS)',
+			'sourceSetup.nfsGroupIdHelp' => 'डिफ़ॉल्ट: 1000। NAS एक्सपोर्ट की अनुमति वाला समूह ID इस्तेमाल करें।',
+			'sourceSetup.nfsEncryption' => 'एन्क्रिप्टेड NFS अनिवार्य करें (RPC-with-TLS)',
+			'sourceSetup.nfsEncryptionHelp' => 'NFS और माउंट सेवा के लिए TLS 1.3 अनिवार्य करें। NAS में समर्थन न होने पर कनेक्शन अस्वीकार कर दिया जाता है।',
+			'sourceSetup.nfsTrustCertificate' => 'कस्टम NFS CA या सर्वर प्रमाणपत्र (PEM, वैकल्पिक)',
+			'sourceSetup.nfsTrustHelp' => 'इस डिवाइस के भरोसेमंद प्रमाणपत्रों के लिए खाली छोड़ें। ज़रूरत होने पर निजी CA या स्वयं हस्ताक्षरित सर्वर प्रमाणपत्र जोड़ें; उसके नाम NFS URL के होस्ट से मेल खाने चाहिए।',
+			'sourceSetup.nfsTrustInvalid' => 'PEM प्रारूप में CA या सर्वर प्रमाणपत्र इस्तेमाल करें। निजी कुंजी शामिल न करें।',
+			'sourceSetup.addTrustCertificate' => 'कस्टम भरोसेमंद प्रमाणपत्र जोड़ें',
+			'sourceSetup.replaceTrustCertificate' => 'सहेजा गया कस्टम प्रमाणपत्र बदलें',
+			'sourceSetup.nfsTlsHelp' => 'RPC-with-TLS सामान्य NFS और माउंट सेवा पोर्ट इस्तेमाल करता है और NAS में RFC 9289 का समर्थन होना ज़रूरी है। TLS 1.3 अनिवार्य है। होस्ट का नाम या IP प्रमाणपत्र से मेल खाना चाहिए। एन्क्रिप्टेड चैनल में भी AUTH_SYS UID/GID लागू रहते हैं।',
+			'sourceSetup.clientCertificate' => 'क्लाइंट प्रमाणपत्र (वैकल्पिक)',
+			'sourceSetup.clientCertificateHelp' => 'NAS को इस क्लाइंट की पहचान सत्यापित करने देता है; AUTH_SYS ID अब भी NAS की एक्सपोर्ट नीति पर निर्भर रहते हैं।',
+			'sourceSetup.savedIdentity' => 'सहेजी गई क्लाइंट पहचान इस्तेमाल की जाएगी।',
+			'sourceSetup.replaceIdentity' => 'सहेजी गई क्लाइंट पहचान बदलें',
+			'sourceSetup.chooseIdentity' => 'PKCS#12 क्लाइंट पहचान चुनें',
+			'sourceSetup.identityPassphrase' => 'क्लाइंट पहचान का पासफ़्रेज़',
+			'sourceSetup.identityPassphraseHelp' => 'फ़ाइल में पासफ़्रेज़ न हो तो खाली छोड़ें।',
+			'sourceSetup.removeIdentity' => 'सहेजी गई क्लाइंट पहचान हटाएँ',
+			'sourceSetup.identityStorageHelp' => 'क्लाइंट पहचानें स्रोत के एन्क्रिप्टेड क्रेडेंशियल स्टोर में सहेजी जाती हैं। सहेजी गई पहचान बनाए रखने के लिए इस अनुभाग में बदलाव न करें।',
+			'sourceSetup.nfsLimitations' => 'TCP पर केवल पढ़ने के लिए NFSv3। RPC-with-TLS के बिना NFS ट्रैफ़िक एन्क्रिप्ट नहीं होता। NAS को चुने गए AUTH_SYS ID और गैर-विशेषाधिकार प्राप्त क्लाइंट पोर्ट की अनुमति देनी होगी (एक्सपोर्ट में इसे अक्सर “insecure” विकल्प कहा जाता है)। NFSv4 और UDP समर्थित नहीं हैं।',
+			'sourceSetup.nfsSetupHelp' => 'NFS सेटअप सहायता',
+			'sourceSetup.nfsSetupHint' => 'कनेक्शन न खुले तो ये सेटिंग जाँचें।',
+			'sourceSetup.nfsSetupDetails' => 'TCP वाला NFSv3 एक्सपोर्ट इस्तेमाल करें। एन्क्रिप्शन अनिवार्य होने पर NFS और माउंट सेवा, दोनों को RPC-with-TLS का समर्थन करना होगा। इस डिवाइस के भरोसेमंद सर्वर प्रमाणपत्र के लिए कस्टम प्रमाणपत्र खाली छोड़ें, या NAS का CA अथवा स्वयं हस्ताक्षरित प्रमाणपत्र जोड़ें। प्रमाणपत्र का नाम एंडपॉइंट के होस्ट से मेल खाना चाहिए। NAS आपसी TLS प्रमाणीकरण माँगे तो उसकी PKCS#12 क्लाइंट पहचान जोड़ें। आखिर में पुष्टि करें कि एक्सपोर्ट में सेट किए गए AUTH_SYS UID/GID और क्लाइंट पोर्ट नीति की अनुमति है।',
+			'sourceSetup.ftpHelp' => 'FTP पैसिव मोड इस्तेमाल करता है। बिना एन्क्रिप्शन वाले FTP के लिए ftp://, स्पष्ट TLS के लिए ftpes://, या TLS के लिए ftps:// इस्तेमाल करें (पोर्ट 990 पर निहित TLS; दूसरे पोर्ट पर स्पष्ट TLS)।',
+			'sourceSetup.openSubtitles' => 'OpenSubtitles',
+			'sourceSetup.subtitleSetup' => 'अलग वीडियो फ़ाइलों के लिए वैकल्पिक सबटाइटल खोज।',
+			'sourceSetup.apiKey' => 'API कुंजी',
+			'sourceSetup.optionalUsername' => 'खाते का उपयोगकर्ता नाम (वैकल्पिक)',
+			'sourceSetup.optionalPassword' => 'खाते का पासवर्ड (वैकल्पिक)',
+			'sourceSetup.subtitlePrivacy' => 'opensubtitles.com से API कुंजी लें। खोज में वीडियो का शीर्षक और उपलब्ध IMDb/TMDB ID भेजे जाते हैं, वीडियो फ़ाइल कभी नहीं भेजी जाती। कुंजी और वैकल्पिक खाते के क्रेडेंशियल इस स्रोत के साथ एन्क्रिप्ट करके सहेजे जाते हैं।',
+			'sourceSetup.automaticMetadata' => 'ऑनलाइन वीडियो मेटाडेटा अपने-आप पाएँ',
+			'sourceSetup.metadataPrivacy' => 'केवल फ़ाइलनाम से शीर्षक, वर्ष और एपिसोड नंबर या NFO ID भेजा जाता है; मीडिया या क्रेडेंशियल कभी नहीं भेजे जाते। NFO फ़ील्ड को हमेशा प्राथमिकता मिलती है।',
+			'sourceSetup.nfsEncryptionFailure' => 'एन्क्रिप्टेड NFS के लिए NAS की दोनों सेवाओं में RFC 9289 और TLS 1.3 का समर्थन, प्रमाणपत्र का नाम तथा एक्सपोर्ट UID/GID जाँचें। PlezyNG बिना एन्क्रिप्शन के इस कनेक्शन की फिर कोशिश नहीं करेगा।',
+			'sourceSetup.sourceConnecting' => 'स्रोत से कनेक्ट हो रहा है',
+			'sourceSetup.metadataSearchPrivacy' => 'यह शीर्षक खोज Trakt को भेजी जाती है। इसमें केवल आपके दर्ज किए शीर्षक को भेजा जाता है, वीडियो या स्रोत के क्रेडेंशियल को नहीं।',
+			'sourceSetup.chooseMatch' => 'मिलता-जुलता परिणाम चुनें',
+			'sourceSetup.metadataMatchHelp' => 'चुनने से पहले शीर्षक और वर्ष जाँचें। Trakt को खोज का शीर्षक मिलता है; वीडियो अपने स्रोत पर ही रहता है।',
+			'sourceSetup.metadataNoMatches' => 'कोई मेल खाता ऑनलाइन शीर्षक नहीं मिला। कोई दूसरा शीर्षक आज़माएँ।',
+			'sourceSetup.metadataSearch' => 'ऑनलाइन मेटाडेटा खोजें',
+			'sourceSetup.metadataLoading' => 'फ़िल्म और टीवी कार्यक्रम की जानकारी ऑनलाइन खोजी जा रही है…',
+			'sourceSetup.metadataFromTrakt' => 'Trakt से ऑनलाइन मेटाडेटा',
+			'sourceSetup.metadataNoAutomaticMatch' => 'अपने-आप कोई मेल खाता शीर्षक नहीं मिला। शीर्षक खोजकर सही परिणाम चुनें।',
+			'sourceSetup.metadataFailed' => 'ऑनलाइन मेटाडेटा लोड नहीं हो सका। प्लेबैक और स्थानीय जानकारी अब भी उपलब्ध हैं।',
+			'sourceSetup.videoDetailsLoading' => 'वीडियो की जानकारी लोड हो रही है',
+			'sourceSetup.subtitleKeyRequired' => 'OpenSubtitles API कुंजी ज़रूरी है',
+			'sourceSetup.subtitleKeyHelp' => 'इस फ़ाइल स्रोत में बदलाव करें और उसकी वैकल्पिक सबटाइटल सेटिंग में OpenSubtitles API कुंजी जोड़ें।',
+			'sourceSetup.subtitleSearchFailed' => 'सबटाइटल खोज असफल रही। API कुंजी, कनेक्शन और सेवा तक पहुँच जाँचें।',
+			'sourceSetup.subtitleApplyFailed' => 'यह सबटाइटल डाउनलोड या लागू नहीं हो सका। कनेक्शन जाँचें और कोई दूसरा परिणाम आज़माएँ।',
+			'sourceSetup.subtitleSearch' => 'OpenSubtitles में खोजें',
+			'sourceSetup.subtitleSearchPrivacy' => 'खोज में शीर्षक और उपलब्ध IMDb/TMDB ID इस्तेमाल होते हैं। वीडियो फ़ाइल अपने स्रोत पर ही रहती है। चुनने से पहले भाषा, अनिवार्य रूप से दिखाए जाने वाले या श्रवण-बाधित दर्शकों के लिए सबटाइटल के चिह्न और रेटिंग जाँचें।',
+			'sourceSetup.movieOrShow' => 'फ़िल्म या टीवी कार्यक्रम',
+			'sourceSetup.subtitleTitleHint' => 'नतीजे सीमित करने के लिए शीर्षक दर्ज करें',
+			'sourceSetup.subtitleLanguage' => 'सबटाइटल की भाषा',
+			'sourceSetup.subtitleSearching' => 'OpenSubtitles में खोज जारी है',
+			'sourceSetup.subtitleNoMatches' => 'कोई मेल खाता सबटाइटल नहीं मिला। दूसरा शीर्षक या भाषा आज़माएँ।',
+			'sourceSetup.downloadSubtitle' => 'सबटाइटल डाउनलोड करें',
+			'sourceSetup.subtitle' => 'सबटाइटल',
+			'sourceSetup.nfsTlsRequired' => 'RPC-with-TLS अनिवार्य',
+			'sourceSetup.nfsUnencrypted' => 'बिना एन्क्रिप्शन वाला NFS',
+			'sourceSetup.tlsEncrypted' => 'TLS से एन्क्रिप्टेड',
+			'sourceSetup.ftpPlain' => 'बिना एन्क्रिप्शन वाला FTP',
+			'sourceSetup.sshPinned' => 'SSH से एन्क्रिप्टेड · होस्ट कुंजी पिन की गई है',
+			'sourceSetup.smbEncrypted' => 'SMB3 एन्क्रिप्शन चालू',
+			'sourceSetup.smbUnencrypted' => 'SMB3 एन्क्रिप्शन बंद',
+			'sourceSetup.httpUnencrypted' => 'ट्रांसपोर्ट एन्क्रिप्शन के बिना HTTP',
 			'comics.fitHeight' => 'ऊँचाई के अनुसार फ़िट करें',
 			'comics.readingMode' => 'पढ़ने का मोड',
 			'comics.paged' => 'पृष्ठ',
@@ -7222,6 +7455,15 @@ extension on TranslationsHi {
 			'comics.savedForComic' => 'इस प्रोफ़ाइल में इस कॉमिक की प्रदर्शन सेटिंग्स याद रखी जाती हैं।',
 			'comics.readLists' => 'पठन सूचियाँ',
 			'comics.collections' => 'संग्रह',
+			_ => null,
+		} ?? switch (path) {
+			'sourceSetup.checkEndpointSecurity' => 'एंडपॉइंट की सुरक्षा जाँचें',
+			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} दर्ज करना ज़रूरी है।',
+			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => '${label} का मान ${min} से ${max} के बीच दर्ज करें।',
+			'sourceSetup.replaceFile' => ({required Object name}) => '${name} बदलें',
+			'sourceSetup.selectedIdentity' => ({required Object name}) => 'चुनी गई क्लाइंट पहचान: ${name}',
+			'sourceSetup.subtitleRating' => ({required Object rating}) => 'रेटिंग ${rating}',
+			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'सबटाइटल डाउनलोड हो रहा है: ${title}',
 			_ => null,
 		};
 	}

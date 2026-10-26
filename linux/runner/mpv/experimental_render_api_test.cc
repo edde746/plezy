@@ -21,6 +21,13 @@ int main() {
   for (const char* value : invalid) {
     if (mpv::ExperimentalRenderApi(value) != nullptr) return 3;
   }
-  std::puts("Experimental render API selection passed");
+  if (std::strcmp(mpv::ExperimentalRenderApi(nullptr, true), "opengl-next") != 0) return 4;
+  if (std::strcmp(mpv::ExperimentalRenderApi("opengl", true), "opengl") != 0) return 5;
+  if (!mpv::ExperimentalRenderFallbackAllowed(nullptr, true, true)) return 6;
+  if (mpv::ExperimentalRenderFallbackAllowed(nullptr, true, false)) return 7;
+  if (mpv::ExperimentalRenderFallbackAllowed(nullptr, false, true)) return 8;
+  if (mpv::ExperimentalRenderFallbackAllowed("opengl-next", true, true)) return 9;
+  if (mpv::ExperimentalRenderFallbackAllowed("typo", true, true)) return 10;
+  std::puts("Experimental render API selection and fallback gates passed");
   return 0;
 }

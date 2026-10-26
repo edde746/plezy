@@ -86,10 +86,8 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
       final editSource = await showScopedDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
-          title: const Text('OpenSubtitles API key required'),
-          content: const Text(
-            'Add an OpenSubtitles API key in this source’s optional subtitle settings. Search sends the title and available IMDb/TMDB IDs, not the video file.',
-          ),
+          title: Text(t.sourceSetup.subtitleKeyRequired),
+          content: Text(t.sourceSetup.subtitleKeyHelp),
           actions: [
             DialogActionButton(onPressed: () => Navigator.pop(dialogContext, false), label: t.common.cancel),
             DialogActionButton(

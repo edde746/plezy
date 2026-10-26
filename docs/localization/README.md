@@ -56,6 +56,13 @@ It separates semantic sample review from automated scans, records before/after
 corrections, and documents the review limits. Its coverage applies to the
 catalog snapshot named in the report; it is not approval of every message.
 
+The [integration QA addendum](LANGUAGE_QA_INTEGRATION.md) records the discovery
+and source-setup additions, SMB guidance, and further Italian corrections. Its exact reviewed messages
+and catalog hashes are separate from the original review, so later feature
+additions cannot silently inherit language approval. The [merge QA overlay](LANGUAGE_QA_MERGE.md)
+records the subsequently reviewed swipe hints and retains newer messages without
+extending semantic approval to them.
+
 `sources.json` records source blob identifiers, model provenance and licenses.
 `translation-provenance.json` records message origins and review status;
 `coverage.json` is a reproducible structural report. Bundled attribution appears

@@ -104,6 +104,7 @@ class TranslationsBn extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$bn fileSources = _Translations$fileSources$bn._(_root);
 	@override late final _Translations$lending$bn lending = _Translations$lending$bn._(_root);
 	@override late final _Translations$audiobook$bn audiobook = _Translations$audiobook$bn._(_root);
+	@override late final _Translations$sourceSetup$bn sourceSetup = _Translations$sourceSetup$bn._(_root);
 	@override late final _Translations$comics$bn comics = _Translations$comics$bn._(_root);
 }
 
@@ -762,6 +763,13 @@ class _Translations$settings$bn extends Translations$settings$en {
 	@override String get regionFormatDescription => 'তারিখ, সংখ্যা ও পরিমাপ কীভাবে দেখানো হবে তা বেছে নিন।';
 	@override String get metadataLanguage => 'মিডিয়ার তথ্যের ভাষা';
 	@override String get metadataLanguageDescription => 'সার্ভার সমর্থন করলে শিরোনাম ও বিবরণের পছন্দের ভাষা। অডিও ও সাবটাইটেলের পছন্দ আলাদাভাবে নির্ধারিত হয়।';
+	@override String get experimentalDolbyVision => 'পরীক্ষামূলক Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'পরবর্তী প্লেব্যাকে পরীক্ষামূলক FEL রেন্ডারার ব্যবহার করুন। ইঞ্জিনের আলাদা বিল্ড প্রয়োজন।';
+	@override String get dvExperimentUnavailableDescription => 'এই পরীক্ষা বর্তমানে শুধু Linux-এ উপলব্ধ।';
+	@override String get dvCompatibilityFallback => 'সামঞ্জস্যপূর্ণ বিকল্প';
+	@override String get dvCompatibilityFallbackDescription => 'পরীক্ষা শুরু না হলে সাধারণ রেন্ডারার ব্যবহার করুন। FEL তথ্য হারিয়ে যেতে পারে।';
+	@override String get dvExperimentDiagnostics => 'ভিডিও পরীক্ষার লগ';
+	@override String get dvExperimentDiagnosticsDescription => 'পরবর্তী প্লেব্যাকে প্লেয়ারের বিস্তারিত লগ চালু করুন।';
 }
 
 // Path: themeEditor
@@ -3064,6 +3072,12 @@ class _Translations$fileSources$bn extends Translations$fileSources$en {
 	@override String get useFiles => 'ফাইল এবং বই ব্যবহার করুন';
 	@override String get cancelScan => 'স্ক্যান বাতিল';
 	@override String get googleDrive => 'Google Drive';
+	@override String get smbEndpointHint => 'উদাহরণ: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'একটি SMB সার্ভার এবং একটি শেয়ার করা ফোল্ডার লিখুন।';
+	@override String get smbFolderHelp => 'পুরো শেয়ার করা ফোল্ডার ব্যবহার করতে ফাঁকা রাখুন, অথবা তার ভেতরের কোনো ফোল্ডার লিখুন।';
+	@override String get smbDomain => 'ডোমেইন (ঐচ্ছিক)';
+	@override String get smbEncryption => 'SMB3 সংযোগ এনক্রিপ্ট করুন';
+	@override String get smbEncryptionHint => 'NAS সমর্থন করলে SMB3 এনক্রিপশন ব্যবহার করুন।';
 }
 
 // Path: lending
@@ -3185,13 +3199,110 @@ class _Translations$audiobook$bn extends Translations$audiobook$en {
 	@override String get timeHelp => 'ঘণ্টা : মিনিট : সেকেন্ড বা মিনিট : সেকেন্ড';
 }
 
+// Path: sourceSetup
+class _Translations$sourceSetup$bn extends Translations$sourceSetup$en {
+	_Translations$sourceSetup$bn._(TranslationsBn root) : this._root = root, super.internal(root);
+
+	final TranslationsBn _root; // ignore: unused_field
+	// Translations
+	@override String get savedCertificate => 'সংরক্ষিত সার্ভার সার্টিফিকেট';
+	@override String get nfsEndpointInvalid => 'nfs://nas:2049/export-এর মতো একটি NFS URL লিখুন।';
+	@override String get dlnaNone => 'কোনো DLNA সার্ভার পাওয়া যায়নি। ডিভাইসের বিবরণের URL নিজে লিখুন।';
+	@override String get dlnaServers => 'DLNA মিডিয়া সার্ভার';
+	@override String get dlnaUnavailable => 'এই নেটওয়ার্কে DLNA ডিভাইস খোঁজা যাচ্ছে না। ডিভাইসের বিবরণের URL নিজে লিখুন।';
+	@override String get dlnaSearching => 'স্থানীয় নেটওয়ার্কে DLNA সার্ভার খোঁজা হচ্ছে';
+	@override String get networkSearching => 'স্থানীয় নেটওয়ার্কে খোঁজা হচ্ছে…';
+	@override String get dlnaDiscover => 'DLNA সার্ভার খুঁজুন';
+	@override String get dlnaHelp => 'ডিভাইস খুঁজতে স্থানীয় নেটওয়ার্কে মাল্টিকাস্ট প্রয়োজন। কোনো সার্ভার না দেখালে উপরে তার ডিভাইসের বিবরণের URL লিখুন।';
+	@override String get dlnaRoot => 'DLNA অবজেক্ট ID; ডিভাইসের রুট ব্যবহার করতে ফাঁকা রাখুন।';
+	@override String get passwordOrKey => 'পাসওয়ার্ড লিখুন অথবা নিচে একটি ব্যক্তিগত কী যোগ করুন।';
+	@override String get sshFingerprint => 'SSH হোস্ট কী-এর SHA256 ফিঙ্গারপ্রিন্ট';
+	@override String get sshFingerprintHelp => 'সার্ভারের প্রশাসকের কাছে যাচাই করুন। সার্ভারে ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub চালিয়ে পাওয়া SHA256 মানটি ব্যবহার করুন।';
+	@override String get sshFingerprintKeep => 'বর্তমানে পিন করা ফিঙ্গারপ্রিন্ট রাখতে ফাঁকা রাখুন, অথবা সার্ভারের নতুন ফিঙ্গারপ্রিন্ট লিখুন।';
+	@override String get sshAuthentication => 'SSH পাবলিক কী দিয়ে পরিচয় যাচাই';
+	@override String get sshAuthenticationHelp => 'ঐচ্ছিক; পাসওয়ার্ড দিয়েও পরিচয় যাচাই করা যায়।';
+	@override String get privateKey => 'ব্যক্তিগত কী (PEM বা OpenSSH ফরম্যাট)';
+	@override String get privateKeyPassphrase => 'ব্যক্তিগত কী-এর পাসফ্রেজ';
+	@override String get nfsMountPort => 'NFS মাউন্ট সেবার TCP পোর্ট';
+	@override String get nfsMountPortHelp => 'ডিফল্ট: 20048';
+	@override String get nfsUserId => 'NFS ব্যবহারকারী ID (AUTH_SYS)';
+	@override String get nfsUserIdHelp => 'ডিফল্ট: 1000। NAS এক্সপোর্টে অনুমোদিত ID ব্যবহার করুন।';
+	@override String get nfsGroupId => 'NFS গ্রুপ ID (AUTH_SYS)';
+	@override String get nfsGroupIdHelp => 'ডিফল্ট: 1000। NAS এক্সপোর্টে অনুমোদিত গ্রুপ ID ব্যবহার করুন।';
+	@override String get nfsEncryption => 'এনক্রিপ্ট করা NFS বাধ্যতামূলক করুন (RPC-with-TLS)';
+	@override String get nfsEncryptionHelp => 'NFS ও মাউন্ট সেবার জন্য TLS 1.3 বাধ্যতামূলক করুন। NAS এটি সমর্থন না করলে সংযোগ প্রত্যাখ্যান করা হবে।';
+	@override String get nfsTrustCertificate => 'কাস্টম NFS CA বা সার্ভার সার্টিফিকেট (PEM, ঐচ্ছিক)';
+	@override String get nfsTrustHelp => 'এই ডিভাইসের বিশ্বস্ত সার্টিফিকেটের জন্য ফাঁকা রাখুন। প্রয়োজনে ব্যক্তিগত CA বা স্ব-স্বাক্ষরিত সার্ভার সার্টিফিকেট যোগ করুন; এর নামগুলো NFS URL-এর হোস্টের সঙ্গে মিলতে হবে।';
+	@override String get nfsTrustInvalid => 'PEM ফরম্যাটে CA বা সার্ভার সার্টিফিকেট ব্যবহার করুন। ব্যক্তিগত কী অন্তর্ভুক্ত করবেন না।';
+	@override String get addTrustCertificate => 'কাস্টম বিশ্বস্ত সার্টিফিকেট যোগ করুন';
+	@override String get replaceTrustCertificate => 'সংরক্ষিত কাস্টম সার্টিফিকেট প্রতিস্থাপন করুন';
+	@override String get nfsTlsHelp => 'RPC-with-TLS সাধারণ NFS ও মাউন্ট সেবার পোর্ট ব্যবহার করে এবং NAS-এ RFC 9289 সমর্থন থাকা প্রয়োজন। TLS 1.3 বাধ্যতামূলক। হোস্টের নাম বা IP সার্টিফিকেটের সঙ্গে মিলতে হবে। এনক্রিপ্ট করা চ্যানেলের ভেতরেও AUTH_SYS UID/GID প্রযোজ্য থাকে।';
+	@override String get clientCertificate => 'ক্লায়েন্ট সার্টিফিকেট (ঐচ্ছিক)';
+	@override String get clientCertificateHelp => 'NAS-কে এই ক্লায়েন্টের পরিচয় যাচাই করতে দেয়; AUTH_SYS ID এখনো NAS এক্সপোর্টের নীতির ওপর নির্ভর করে।';
+	@override String get savedIdentity => 'ক্লায়েন্টের সংরক্ষিত পরিচয়পত্র ব্যবহার করা হবে।';
+	@override String get replaceIdentity => 'ক্লায়েন্টের সংরক্ষিত পরিচয়পত্র প্রতিস্থাপন করুন';
+	@override String get chooseIdentity => 'PKCS#12 ক্লায়েন্ট পরিচয়পত্র বেছে নিন';
+	@override String get identityPassphrase => 'ক্লায়েন্ট পরিচয়পত্রের পাসফ্রেজ';
+	@override String get identityPassphraseHelp => 'ফাইলে পাসফ্রেজ না থাকলে ফাঁকা রাখুন।';
+	@override String get removeIdentity => 'ক্লায়েন্টের সংরক্ষিত পরিচয়পত্র সরান';
+	@override String get identityStorageHelp => 'ক্লায়েন্টের পরিচয়পত্র উৎসের এনক্রিপ্ট করা প্রবেশতথ্যের ভান্ডারে রাখা হয়। সংরক্ষিত পরিচয়পত্র রাখতে এই অংশ অপরিবর্তিত রাখুন।';
+	@override String get nfsLimitations => 'TCP-এর মাধ্যমে শুধু পড়ার জন্য NFSv3। RPC-with-TLS ছাড়া NFS ট্র্যাফিক এনক্রিপ্ট করা হয় না। NAS-এ নির্বাচিত AUTH_SYS ID এবং বিশেষ অধিকার প্রয়োজন হয় না এমন ক্লায়েন্ট পোর্টের অনুমতি থাকতে হবে (এক্সপোর্টের এই বিকল্পকে সাধারণত “insecure” বলা হয়)। NFSv4 ও UDP সমর্থিত নয়।';
+	@override String get nfsSetupHelp => 'NFS সেটআপ সহায়তা';
+	@override String get nfsSetupHint => 'সংযোগ না খুললে এই সেটিংগুলো পরীক্ষা করুন।';
+	@override String get nfsSetupDetails => 'TCP-ভিত্তিক NFSv3 এক্সপোর্ট ব্যবহার করুন। এনক্রিপশন বাধ্যতামূলক হলে NFS ও মাউন্ট সেবা—দুটিকেই RPC-with-TLS সমর্থন করতে হবে। এই ডিভাইস সার্ভার সার্টিফিকেটকে বিশ্বাস করলে কাস্টম সার্টিফিকেট ফাঁকা রাখুন; অন্যথায় NAS-এর CA বা স্ব-স্বাক্ষরিত সার্টিফিকেট যোগ করুন। সার্টিফিকেটের নাম এন্ডপয়েন্টের হোস্টের সঙ্গে মিলতে হবে। NAS পারস্পরিক TLS চাইলে তার PKCS#12 ক্লায়েন্ট পরিচয়পত্র যোগ করুন। শেষে নিশ্চিত করুন, এক্সপোর্টে নির্ধারিত AUTH_SYS UID/GID ও ক্লায়েন্ট পোর্ট নীতির অনুমতি আছে।';
+	@override String get ftpHelp => 'FTP প্যাসিভ মোড ব্যবহার করে। এনক্রিপশন ছাড়া FTP-এর জন্য ftp://, আলাদা কমান্ড দিয়ে TLS চালু করতে ftpes://, অথবা TLS-এর জন্য ftps:// ব্যবহার করুন (পোর্ট 990-এ TLS সঙ্গে সঙ্গে চালু হয়; অন্য পোর্টে আলাদা কমান্ড দিয়ে চালু হয়)।';
+	@override String get openSubtitles => 'OpenSubtitles';
+	@override String get subtitleSetup => 'স্বতন্ত্র ভিডিও ফাইলের জন্য ঐচ্ছিক সাবটাইটেল অনুসন্ধান।';
+	@override String get apiKey => 'API কী';
+	@override String get optionalUsername => 'অ্যাকাউন্টের ব্যবহারকারীর নাম (ঐচ্ছিক)';
+	@override String get optionalPassword => 'অ্যাকাউন্টের পাসওয়ার্ড (ঐচ্ছিক)';
+	@override String get subtitlePrivacy => 'opensubtitles.com থেকে API কী নিন। অনুসন্ধানে ভিডিওর শিরোনাম ও উপলব্ধ IMDb/TMDB ID পাঠানো হয়, ভিডিও ফাইল কখনোই পাঠানো হয় না। কী ও ঐচ্ছিক অ্যাকাউন্টের প্রবেশতথ্য এই উৎসের সঙ্গে এনক্রিপ্ট করে রাখা হয়।';
+	@override String get automaticMetadata => 'স্বয়ংক্রিয়ভাবে অনলাইন ভিডিও মেটাডেটা পান';
+	@override String get metadataPrivacy => 'শুধু ফাইলের নাম থেকে শিরোনাম, বছর ও পর্বের নম্বর অথবা NFO ID পাঠানো হয়; মিডিয়া বা প্রবেশতথ্য কখনো পাঠানো হয় না। NFO ফিল্ড সবসময় অগ্রাধিকার পায়।';
+	@override String get nfsEncryptionFailure => 'এনক্রিপ্ট করা NFS-এর জন্য NAS-এর দুই সেবায় RFC 9289 ও TLS 1.3 সমর্থন, সার্টিফিকেটের নাম এবং এক্সপোর্টের UID/GID পরীক্ষা করুন। PlezyNG এনক্রিপশন ছাড়া এই সংযোগ আবার চেষ্টা করবে না।';
+	@override String get sourceConnecting => 'উৎসের সঙ্গে সংযোগ করা হচ্ছে';
+	@override String get metadataSearchPrivacy => 'এই শিরোনাম অনুসন্ধান Trakt-এ পাঠানো হয়। শুধু আপনার লেখা শিরোনাম পাঠানো হয়, ভিডিও বা উৎসের প্রবেশতথ্য নয়।';
+	@override String get chooseMatch => 'মিল পাওয়া ফলাফল বেছে নিন';
+	@override String get metadataMatchHelp => 'বেছে নেওয়ার আগে শিরোনাম ও বছর পরীক্ষা করুন। Trakt অনুসন্ধানের শিরোনাম পায়; ভিডিও তার উৎসেই থাকে।';
+	@override String get metadataNoMatches => 'অনলাইনে মিলে যায় এমন কোনো শিরোনাম পাওয়া যায়নি। অন্য শিরোনাম দিয়ে চেষ্টা করুন।';
+	@override String get metadataSearch => 'অনলাইন মেটাডেটা খুঁজুন';
+	@override String get metadataLoading => 'সিনেমা ও টিভি অনুষ্ঠানের তথ্য অনলাইনে খোঁজা হচ্ছে…';
+	@override String get metadataFromTrakt => 'Trakt থেকে অনলাইন মেটাডেটা';
+	@override String get metadataNoAutomaticMatch => 'স্বয়ংক্রিয়ভাবে কোনো শিরোনামের মিল পাওয়া যায়নি। শিরোনাম খুঁজে সঠিক ফলাফল বেছে নিন।';
+	@override String get metadataFailed => 'অনলাইন মেটাডেটা লোড করা যায়নি। প্লেব্যাক ও স্থানীয় তথ্য এখনো পাওয়া যাবে।';
+	@override String get videoDetailsLoading => 'ভিডিওর তথ্য লোড হচ্ছে';
+	@override String get subtitleKeyRequired => 'OpenSubtitles API কী প্রয়োজন';
+	@override String get subtitleKeyHelp => 'এই ফাইল উৎসটি সম্পাদনা করে তার ঐচ্ছিক সাবটাইটেল সেটিংসে OpenSubtitles API কী যোগ করুন।';
+	@override String get subtitleSearchFailed => 'সাবটাইটেল অনুসন্ধান ব্যর্থ হয়েছে। API কী, সংযোগ ও সেবায় প্রবেশাধিকার পরীক্ষা করুন।';
+	@override String get subtitleApplyFailed => 'এই সাবটাইটেল ডাউনলোড বা প্রয়োগ করা যায়নি। সংযোগ পরীক্ষা করে অন্য ফলাফল দিয়ে চেষ্টা করুন।';
+	@override String get subtitleSearch => 'OpenSubtitles-এ খুঁজুন';
+	@override String get subtitleSearchPrivacy => 'অনুসন্ধানে শিরোনাম ও উপলব্ধ IMDb/TMDB ID ব্যবহার করা হয়। ভিডিও ফাইল তার উৎসেই থাকে। বেছে নেওয়ার আগে ভাষা, বাধ্যতামূলকভাবে দেখানো বা শ্রবণপ্রতিবন্ধীদের উপযোগী সাবটাইটেলের চিহ্ন এবং রেটিং পরীক্ষা করুন।';
+	@override String get movieOrShow => 'সিনেমা বা টিভি অনুষ্ঠান';
+	@override String get subtitleTitleHint => 'ফলাফল সীমিত করতে শিরোনাম লিখুন';
+	@override String get subtitleLanguage => 'সাবটাইটেলের ভাষা';
+	@override String get subtitleSearching => 'OpenSubtitles-এ খোঁজা হচ্ছে';
+	@override String get subtitleNoMatches => 'কোনো মিল পাওয়া সাবটাইটেল নেই। অন্য শিরোনাম বা ভাষা দিয়ে চেষ্টা করুন।';
+	@override String get downloadSubtitle => 'সাবটাইটেল ডাউনলোড করুন';
+	@override String get subtitle => 'সাবটাইটেল';
+	@override String get nfsTlsRequired => 'RPC-with-TLS বাধ্যতামূলক';
+	@override String get nfsUnencrypted => 'এনক্রিপশন ছাড়া NFS';
+	@override String get tlsEncrypted => 'TLS দিয়ে এনক্রিপ্ট করা';
+	@override String get ftpPlain => 'এনক্রিপশন ছাড়া FTP';
+	@override String get sshPinned => 'SSH দিয়ে এনক্রিপ্ট করা · হোস্ট কী পিন করা আছে';
+	@override String get smbEncrypted => 'SMB3 এনক্রিপশন চালু';
+	@override String get smbUnencrypted => 'SMB3 এনক্রিপশন বন্ধ';
+	@override String get httpUnencrypted => 'পরিবহন এনক্রিপশন ছাড়া HTTP';
+	@override String get checkEndpointSecurity => 'এন্ডপয়েন্টের নিরাপত্তা পরীক্ষা করুন';
+	@override String fieldRequired({required Object label}) => '${label} লেখা আবশ্যক।';
+	@override String integerRange({required Object label, required Object min, required Object max}) => '${label}-এর মান ${min} থেকে ${max}-এর মধ্যে লিখুন।';
+	@override String replaceFile({required Object name}) => '${name} প্রতিস্থাপন করুন';
+	@override String selectedIdentity({required Object name}) => 'ক্লায়েন্টের নির্বাচিত পরিচয়পত্র: ${name}';
+	@override String subtitleRating({required Object rating}) => 'রেটিং ${rating}';
+	@override String subtitleDownloading({required Object title}) => 'সাবটাইটেল ডাউনলোড হচ্ছে: ${title}';
+}
 // Path: comics
 class _Translations$comics$bn extends Translations$comics$en {
 	_Translations$comics$bn._(TranslationsBn root) : this._root = root, super.internal(root);
-
-	final TranslationsBn _root; // ignore: unused_field
-
-	// Translations
 	@override String get fitHeight => 'উচ্চতা অনুযায়ী মানানসই';
 	@override String get readingMode => 'পড়ার ধরন';
 	@override String get paged => 'পৃষ্ঠা';
@@ -3204,8 +3315,6 @@ class _Translations$comics$bn extends Translations$comics$en {
 	@override String get savedForComic => 'এই প্রোফাইলে এই কমিকের প্রদর্শন সেটিংস মনে রাখা হয়।';
 	@override String get readLists => 'পড়ার তালিকা';
 	@override String get collections => 'সংগ্রহ';
-}
-
 // Path: appIcon.names
 class _Translations$appIcon$names$bn extends Translations$appIcon$names$en {
 	_Translations$appIcon$names$bn._(TranslationsBn root) : this._root = root, super.internal(root);
@@ -3457,48 +3566,60 @@ class _Translations$discover$findNext$bn extends Translations$discover$findNext$
 	final TranslationsBn _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'আপনার পরবর্তী খুঁজুন';
-	@override String get open => 'আপনার পরবর্তী খুঁজুন';
-	@override String get anyTime => 'যেকোন সময়';
-	@override String get timeAvailable => 'আপনার কত সময় আছে?';
-	@override String get filters => 'মুহূর্ত নির্বাচন করুন';
+	@override String get title => 'পরের পছন্দটি খুঁজুন';
+	@override String get open => 'পরের পছন্দটি খুঁজুন';
+	@override String get anyTime => 'সময়ের সীমা নেই';
+	@override String get timeAvailable => 'আপনার হাতে কতটা সময় আছে?';
+	@override String get filters => 'এই মুহূর্তের জন্য বেছে নিন';
 	@override String get watch => 'দেখুন';
 	@override String get listen => 'শুনুন';
 	@override String get read => 'পড়ুন';
-	@override String finishable({required Object duration}) => 'ফাইনালে ${duration}';
-	@override String aboutDuration({required Object duration}) => '${duration} সম্পর্কে';
-	@override String nextUnit({required Object duration}) => 'পরবর্তী বিভাগ · ${duration}';
-	@override String totalDuration({required Object duration}) => '${duration} মোট';
-	@override String get timingVaries => 'সময়মাত্রা ভিন্ন';
-	@override String get notNow => 'এখন না';
-	@override String get swipeHint => 'অথবা নিচের বোতল ব্যবহার করুন';
-	@override String get saved => 'বাঁচানো পিক্স';
-	@override String savedCount({required Object count}) => 'সুরক্ষিত পিক্স · ${count}';
-	@override String get undo => 'অ্যান্ডো';
+	@override String finishable({required Object duration}) => '${duration}-এর মধ্যে শেষ করা যাবে';
+	@override String aboutDuration({required Object duration}) => 'প্রায় ${duration}';
+	@override String nextUnit({required Object duration}) => 'পরের অধ্যায় · ${duration}';
+	@override String totalDuration({required Object duration}) => 'মোট ${duration}';
+	@override String get timingVaries => 'সময় কমবেশি হতে পারে';
+	@override String get notNow => 'এখন নয়';
+	@override String get swipeHint => 'প্রচ্ছদটি কোনো তিরের দিকে সোয়াইপ করুন বা নিচের বোতাম ব্যবহার করুন।';
+	@override String get saved => 'সংরক্ষিত পছন্দ';
+	@override String savedCount({required Object count}) => 'সংরক্ষিত পছন্দ · ${count}';
+	@override String get undo => 'পূর্বাবস্থায় ফেরান';
 	@override String get details => 'বিস্তারিত';
-	@override String get noPicks => 'এখনো কিছুই বেছে নিতে হবে না।';
-	@override String get noPicksHint => 'একটি লাইব্রেরি সংযোগ করুন বা শুরু করার জন্য একটি মিডিয়া উৎস যোগ করুন।';
-	@override String get noMatches => 'এই মুহূর্তে কিছুই নেই।';
-	@override String get noMatchesHint => 'অন্য ফর্মটি চেষ্টা করুন বা নিজেকে আরো সময় দিন।';
-	@override String get allDone => 'তুমি সবাই চিহ্নিত';
-	@override String get allDoneHint => 'এই সিদ্ধান্তগুলি আবার দেখতে নতুন মিশন শুরু করুন।';
-	@override String get refresh => 'আরেকটি মিশন খুঁজুন';
-	@override String sourceReason({required Object source}) => '${source} থেকে';
-	@override String libraryReason({required Object library}) => '${library} থেকে';
-	@override String get ownedReason => 'আপনার লাইব্রেরিতে';
-	@override String get liveNow => 'এখন';
-	@override String get watchLive => 'লাইভ দেখুন';
-	@override String get filterAnything => 'সবকিছু';
+	@override String get noPicks => 'বেছে নেওয়ার মতো কিছু এখনো নেই';
+	@override String get noPicksHint => 'শুরু করতে একটি লাইব্রেরি সংযুক্ত করুন অথবা মিডিয়ার উৎস যোগ করুন।';
+	@override String get noMatches => 'এই মুহূর্তের জন্য উপযুক্ত কিছু নেই';
+	@override String get noMatchesHint => 'অন্য ধরনের মিডিয়া বেছে নিন অথবা আরও কিছুটা সময় রাখুন।';
+	@override String get allDone => 'সব প্রস্তাব দেখা হয়ে গেছে';
+	@override String get allDoneHint => 'এই পছন্দগুলো আবার দেখতে নতুন একটি তালিকা তৈরি করুন।';
+	@override String get refresh => 'আরেকটি তালিকা খুঁজুন';
+	@override String sourceReason({required Object source}) => 'উৎস: ${source}';
+	@override String libraryReason({required Object library}) => 'লাইব্রেরি: ${library}';
+	@override String get ownedReason => 'আপনার লাইব্রেরি থেকে';
+	@override String get liveNow => 'এখন সম্প্রচারিত হচ্ছে';
+	@override String get watchLive => 'সরাসরি দেখুন';
+	@override String get filterAnything => 'যেকোনোটি';
 	@override String get filterWatch => 'দেখুন';
 	@override String get filterListen => 'শুনুন';
 	@override String get filterRead => 'পড়ুন';
 	@override String get twentyMinutes => '২০ মিনিট';
 	@override String get fortyFiveMinutes => '৪৫ মিনিট';
-	@override String get ninetyMinutes => '90 মিনিট';
+	@override String get ninetyMinutes => '৯০ মিনিট';
 	@override String get apply => 'প্রয়োগ করুন';
-	@override String get openFailed => 'এই পছন্দ এখন আর পাওয়া যায় না. আবার চেক করার জন্য ফ্রিজ করুন।';
-	@override String get changeFailed => 'এই পরিবর্তনটা করতে পারবেন না, আবারও চেষ্টা করুন।';
-	@override String get savedLimit => 'সুরক্ষিত পিক্স সম্পূর্ণ. একটি পিক্সটি মুছে ফেলুন আরেকটি সুরক্ষা করতে।';
+	@override String get openFailed => 'এই পছন্দটি আর পাওয়া যাচ্ছে না। আবার যাচাই করতে রিফ্রেশ করুন।';
+	@override String get changeFailed => 'পরিবর্তনটি সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।';
+	@override String get savedLimit => 'সংরক্ষিত পছন্দের তালিকা পূর্ণ। আরেকটি সংরক্ষণ করতে একটি পছন্দ সরিয়ে দিন।';
+	@override String get chooseHint => 'কোনো শিরোনাম খুলুন, পরের জন্য সংরক্ষণ করুন বা এড়িয়ে যান।';
+	@override String get howItWorks => 'ব্যবহারের নিয়ম';
+	@override String get notNowHelp => 'এই শিরোনামটি আপাতত এড়িয়ে যান। এটি আপনার লাইব্রেরিতে থাকবে।';
+	@override String get saveHelp => 'এই ডিভাইসে এই প্রোফাইলের সংরক্ষিত পছন্দে রাখুন। সংরক্ষণ করলে ডাউনলোড হয় না।';
+	@override String get openHelp => 'বিস্তারিত দেখতে প্রচ্ছদ নির্বাচন করুন। চালানো, পড়া বা খোলার জন্য প্রধান বোতাম ব্যবহার করুন।';
+	@override String get controlsHelp => 'কীবোর্ড বা রিমোট: একটি বোতামে যান, তারপর Enter বা নির্বাচন বোতাম চাপুন। পূর্বাবস্থায় ফেরালে শেষ পছন্দটি ফিরে আসে।';
+	@override String get artworkLoading => 'ছবি লোড হচ্ছে…';
+	@override String get artworkUnavailable => 'ছবি উপলব্ধ নয়';
+	@override String get savedFeedback => 'সংরক্ষিত পছন্দে যোগ করা হয়েছে';
+	@override String get skippedFeedback => 'আপাতত এড়িয়ে যাওয়া হয়েছে';
+	@override String get releaseToConfirm => 'নিশ্চিত করতে ছেড়ে দিন';
+	@override String get remoteHint => 'প্রচ্ছদে ফোকাস: ← / → বেছে নিন · নির্বাচন বোতাম: বিস্তারিত · ↑ / ↓ ফোকাস বদলান';
 }
 
 // Path: discover.person
@@ -4833,6 +4954,13 @@ extension on TranslationsBn {
 			'settings.regionFormatDescription' => 'তারিখ, সংখ্যা ও পরিমাপ কীভাবে দেখানো হবে তা বেছে নিন।',
 			'settings.metadataLanguage' => 'মিডিয়ার তথ্যের ভাষা',
 			'settings.metadataLanguageDescription' => 'সার্ভার সমর্থন করলে শিরোনাম ও বিবরণের পছন্দের ভাষা। অডিও ও সাবটাইটেলের পছন্দ আলাদাভাবে নির্ধারিত হয়।',
+			'settings.experimentalDolbyVision' => 'পরীক্ষামূলক Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'পরবর্তী প্লেব্যাকে পরীক্ষামূলক FEL রেন্ডারার ব্যবহার করুন। ইঞ্জিনের আলাদা বিল্ড প্রয়োজন।',
+			'settings.dvExperimentUnavailableDescription' => 'এই পরীক্ষা বর্তমানে শুধু Linux-এ উপলব্ধ।',
+			'settings.dvCompatibilityFallback' => 'সামঞ্জস্যপূর্ণ বিকল্প',
+			'settings.dvCompatibilityFallbackDescription' => 'পরীক্ষা শুরু না হলে সাধারণ রেন্ডারার ব্যবহার করুন। FEL তথ্য হারিয়ে যেতে পারে।',
+			'settings.dvExperimentDiagnostics' => 'ভিডিও পরীক্ষার লগ',
+			'settings.dvExperimentDiagnosticsDescription' => 'পরবর্তী প্লেব্যাকে প্লেয়ারের বিস্তারিত লগ চালু করুন।',
 			'themeEditor.builtIn' => 'ভিত্তিতে',
 			'themeEditor.presets' => 'প্রজাতন',
 			'themeEditor.custom' => 'কাস্টম',
@@ -5253,6 +5381,8 @@ extension on TranslationsBn {
 			'messages.libraryScanStarted' => ({required Object title}) => 'লাইব্রেরি স্ক্যান শুরু হয় "${title}" জন্য',
 			'messages.libraryScanFailed' => ({required Object error}) => 'স্ক্যান করতে পারিনি লাইব্রেরি: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '“${title}” এর জন্য ফ্রেসিং মেটাদেট...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'মেটা ডেটা ফ্রিজ শুরু হয় "${title}" জন্য',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'ম্যাটা ডেটা আপডেট করতে পারিনি: ${error}',
 			'messages.logoutConfirm' => 'আপনি কি নিশ্চিত যে আপনি ডাউনলোড করতে চান?',
@@ -5260,8 +5390,6 @@ extension on TranslationsBn {
 			'messages.seasonsLoadFailed' => 'সপ্তাহের লোড করতে পারবেন না',
 			'messages.noEpisodesFound' => 'প্রথম সপ্তাহে কোন ঘটনা পাওয়া যায়নি।',
 			'messages.noEpisodesFoundGeneral' => 'কোন ঘটনা পাওয়া যায়নি',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'এজিসগুলি লোড করতে পারবেন না',
 			'messages.noResultsFound' => 'কোন ফলাফল পাওয়া যায় না',
 			'messages.sleepTimerSet' => ({required Object label}) => 'ঘুম টাইমার্ক ${label}',
@@ -5488,48 +5616,60 @@ extension on TranslationsBn {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'সিজন ${season} পর্ব ${episode}',
 			'discover.overview' => 'বিবরণ',
 			'discover.cast' => 'কাস্ট',
-			'discover.findNext.title' => 'আপনার পরবর্তী খুঁজুন',
-			'discover.findNext.open' => 'আপনার পরবর্তী খুঁজুন',
-			'discover.findNext.anyTime' => 'যেকোন সময়',
-			'discover.findNext.timeAvailable' => 'আপনার কত সময় আছে?',
-			'discover.findNext.filters' => 'মুহূর্ত নির্বাচন করুন',
+			'discover.findNext.title' => 'পরের পছন্দটি খুঁজুন',
+			'discover.findNext.open' => 'পরের পছন্দটি খুঁজুন',
+			'discover.findNext.anyTime' => 'সময়ের সীমা নেই',
+			'discover.findNext.timeAvailable' => 'আপনার হাতে কতটা সময় আছে?',
+			'discover.findNext.filters' => 'এই মুহূর্তের জন্য বেছে নিন',
 			'discover.findNext.watch' => 'দেখুন',
 			'discover.findNext.listen' => 'শুনুন',
 			'discover.findNext.read' => 'পড়ুন',
-			'discover.findNext.finishable' => ({required Object duration}) => 'ফাইনালে ${duration}',
-			'discover.findNext.aboutDuration' => ({required Object duration}) => '${duration} সম্পর্কে',
-			'discover.findNext.nextUnit' => ({required Object duration}) => 'পরবর্তী বিভাগ · ${duration}',
-			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} মোট',
-			'discover.findNext.timingVaries' => 'সময়মাত্রা ভিন্ন',
-			'discover.findNext.notNow' => 'এখন না',
-			'discover.findNext.swipeHint' => 'অথবা নিচের বোতল ব্যবহার করুন',
-			'discover.findNext.saved' => 'বাঁচানো পিক্স',
-			'discover.findNext.savedCount' => ({required Object count}) => 'সুরক্ষিত পিক্স · ${count}',
-			'discover.findNext.undo' => 'অ্যান্ডো',
+			'discover.findNext.finishable' => ({required Object duration}) => '${duration}-এর মধ্যে শেষ করা যাবে',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => 'প্রায় ${duration}',
+			'discover.findNext.nextUnit' => ({required Object duration}) => 'পরের অধ্যায় · ${duration}',
+			'discover.findNext.totalDuration' => ({required Object duration}) => 'মোট ${duration}',
+			'discover.findNext.timingVaries' => 'সময় কমবেশি হতে পারে',
+			'discover.findNext.notNow' => 'এখন নয়',
+			'discover.findNext.swipeHint' => 'প্রচ্ছদটি কোনো তিরের দিকে সোয়াইপ করুন বা নিচের বোতাম ব্যবহার করুন।',
+			'discover.findNext.saved' => 'সংরক্ষিত পছন্দ',
+			'discover.findNext.savedCount' => ({required Object count}) => 'সংরক্ষিত পছন্দ · ${count}',
+			'discover.findNext.undo' => 'পূর্বাবস্থায় ফেরান',
 			'discover.findNext.details' => 'বিস্তারিত',
-			'discover.findNext.noPicks' => 'এখনো কিছুই বেছে নিতে হবে না।',
-			'discover.findNext.noPicksHint' => 'একটি লাইব্রেরি সংযোগ করুন বা শুরু করার জন্য একটি মিডিয়া উৎস যোগ করুন।',
-			'discover.findNext.noMatches' => 'এই মুহূর্তে কিছুই নেই।',
-			'discover.findNext.noMatchesHint' => 'অন্য ফর্মটি চেষ্টা করুন বা নিজেকে আরো সময় দিন।',
-			'discover.findNext.allDone' => 'তুমি সবাই চিহ্নিত',
-			'discover.findNext.allDoneHint' => 'এই সিদ্ধান্তগুলি আবার দেখতে নতুন মিশন শুরু করুন।',
-			'discover.findNext.refresh' => 'আরেকটি মিশন খুঁজুন',
-			'discover.findNext.sourceReason' => ({required Object source}) => '${source} থেকে',
-			'discover.findNext.libraryReason' => ({required Object library}) => '${library} থেকে',
-			'discover.findNext.ownedReason' => 'আপনার লাইব্রেরিতে',
-			'discover.findNext.liveNow' => 'এখন',
-			'discover.findNext.watchLive' => 'লাইভ দেখুন',
-			'discover.findNext.filterAnything' => 'সবকিছু',
+			'discover.findNext.noPicks' => 'বেছে নেওয়ার মতো কিছু এখনো নেই',
+			'discover.findNext.noPicksHint' => 'শুরু করতে একটি লাইব্রেরি সংযুক্ত করুন অথবা মিডিয়ার উৎস যোগ করুন।',
+			'discover.findNext.noMatches' => 'এই মুহূর্তের জন্য উপযুক্ত কিছু নেই',
+			'discover.findNext.noMatchesHint' => 'অন্য ধরনের মিডিয়া বেছে নিন অথবা আরও কিছুটা সময় রাখুন।',
+			'discover.findNext.allDone' => 'সব প্রস্তাব দেখা হয়ে গেছে',
+			'discover.findNext.allDoneHint' => 'এই পছন্দগুলো আবার দেখতে নতুন একটি তালিকা তৈরি করুন।',
+			'discover.findNext.refresh' => 'আরেকটি তালিকা খুঁজুন',
+			'discover.findNext.sourceReason' => ({required Object source}) => 'উৎস: ${source}',
+			'discover.findNext.libraryReason' => ({required Object library}) => 'লাইব্রেরি: ${library}',
+			'discover.findNext.ownedReason' => 'আপনার লাইব্রেরি থেকে',
+			'discover.findNext.liveNow' => 'এখন সম্প্রচারিত হচ্ছে',
+			'discover.findNext.watchLive' => 'সরাসরি দেখুন',
+			'discover.findNext.filterAnything' => 'যেকোনোটি',
 			'discover.findNext.filterWatch' => 'দেখুন',
 			'discover.findNext.filterListen' => 'শুনুন',
 			'discover.findNext.filterRead' => 'পড়ুন',
 			'discover.findNext.twentyMinutes' => '২০ মিনিট',
 			'discover.findNext.fortyFiveMinutes' => '৪৫ মিনিট',
-			'discover.findNext.ninetyMinutes' => '90 মিনিট',
+			'discover.findNext.ninetyMinutes' => '৯০ মিনিট',
 			'discover.findNext.apply' => 'প্রয়োগ করুন',
-			'discover.findNext.openFailed' => 'এই পছন্দ এখন আর পাওয়া যায় না. আবার চেক করার জন্য ফ্রিজ করুন।',
-			'discover.findNext.changeFailed' => 'এই পরিবর্তনটা করতে পারবেন না, আবারও চেষ্টা করুন।',
-			'discover.findNext.savedLimit' => 'সুরক্ষিত পিক্স সম্পূর্ণ. একটি পিক্সটি মুছে ফেলুন আরেকটি সুরক্ষা করতে।',
+			'discover.findNext.openFailed' => 'এই পছন্দটি আর পাওয়া যাচ্ছে না। আবার যাচাই করতে রিফ্রেশ করুন।',
+			'discover.findNext.changeFailed' => 'পরিবর্তনটি সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।',
+			'discover.findNext.savedLimit' => 'সংরক্ষিত পছন্দের তালিকা পূর্ণ। আরেকটি সংরক্ষণ করতে একটি পছন্দ সরিয়ে দিন।',
+			'discover.findNext.chooseHint' => 'কোনো শিরোনাম খুলুন, পরের জন্য সংরক্ষণ করুন বা এড়িয়ে যান।',
+			'discover.findNext.howItWorks' => 'ব্যবহারের নিয়ম',
+			'discover.findNext.notNowHelp' => 'এই শিরোনামটি আপাতত এড়িয়ে যান। এটি আপনার লাইব্রেরিতে থাকবে।',
+			'discover.findNext.saveHelp' => 'এই ডিভাইসে এই প্রোফাইলের সংরক্ষিত পছন্দে রাখুন। সংরক্ষণ করলে ডাউনলোড হয় না।',
+			'discover.findNext.openHelp' => 'বিস্তারিত দেখতে প্রচ্ছদ নির্বাচন করুন। চালানো, পড়া বা খোলার জন্য প্রধান বোতাম ব্যবহার করুন।',
+			'discover.findNext.controlsHelp' => 'কীবোর্ড বা রিমোট: একটি বোতামে যান, তারপর Enter বা নির্বাচন বোতাম চাপুন। পূর্বাবস্থায় ফেরালে শেষ পছন্দটি ফিরে আসে।',
+			'discover.findNext.artworkLoading' => 'ছবি লোড হচ্ছে…',
+			'discover.findNext.artworkUnavailable' => 'ছবি উপলব্ধ নয়',
+			'discover.findNext.savedFeedback' => 'সংরক্ষিত পছন্দে যোগ করা হয়েছে',
+			'discover.findNext.skippedFeedback' => 'আপাতত এড়িয়ে যাওয়া হয়েছে',
+			'discover.findNext.releaseToConfirm' => 'নিশ্চিত করতে ছেড়ে দিন',
+			'discover.findNext.remoteHint' => 'প্রচ্ছদে ফোকাস: ← / → বেছে নিন · নির্বাচন বোতাম: বিস্তারিত · ↑ / ↓ ফোকাস বদলান',
 			'discover.extras' => 'ট্রাইলিং & অতিরিক্ত',
 			'discover.studio' => 'স্টুডিও',
 			'discover.rating' => 'রেটিং',
@@ -5755,6 +5895,8 @@ extension on TranslationsBn {
 			'explore.mdblistShelves.nameHint' => 'সূত্র তালিকা নাম ব্যবহার করার জন্য বাদ রাখুন।',
 			'explore.mdblistShelves.add' => 'শেলি যোগ করুন',
 			'explore.mdblistShelves.save' => 'শিগগির সংরক্ষণ',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'মোট ${title} আপ',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'ফাঁস করুন ${title}',
 			'explore.mdblistShelves.unavailable' => 'এই তালিকা পাওয়া যায় না. সেটিংসগুলিতে তার স্কেল ফেরত বা মুছে ফেলুন.',
@@ -5774,8 +5916,6 @@ extension on TranslationsBn {
 			'explore.rows.popularShows' => 'জনপ্রিয় প্রদর্শনী',
 			'explore.rows.trendingAnime' => 'ট্রেনিং অ্যানিম',
 			'explore.rows.suggestedAnime' => 'অ্যানিমের প্রস্তাব',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'অ্যানিমেটিক অ্যানিমেটিক',
 			'explore.rows.popularAnime' => 'সবচেয়ে জনপ্রিয় অ্যানিম',
 			'explore.rows.trending' => 'ট্রেন্ডিং',
@@ -6269,6 +6409,8 @@ extension on TranslationsBn {
 			'downloads.resumeDownload' => 'ডাউনলোড করুন',
 			'downloads.cancelledDownload' => 'বাতিল ডাউনলোড',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (সিন্সিং ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'ডাউনলোড করা হয়েছে ${file} - সম্পূর্ণ করতে ক্লিক করুন',
 			'downloads.partialDownloadClickToComplete' => 'সম্পূর্ণভাবে ডাউনলোড - ক্লিক করুন',
 			'downloads.deleting' => 'মুছে ফেলা...',
@@ -6288,8 +6430,6 @@ extension on TranslationsBn {
 			'downloads.unwatchedOnly' => 'শুধুমাত্র চিন্তিত',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'পরবর্তী ${count} অপেক্ষা',
 			'downloads.customAmount' => 'কাস্টম কমানো...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'কাস্টম সংখ্যা (একটি)',
 			'downloads.randomEpisodes' => 'পরিস্থিতি',
 			'downloads.includeSpecials' => 'বিশেষ বিশেষ',
@@ -6783,6 +6923,8 @@ extension on TranslationsBn {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'সার্ভার পৌঁছাতে পারবেন না: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'অ্যাকাউন্ট ভুল: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect অসম্ভব: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'সাইন আপ করুন Plex',
 			'addServer.pinExpired' => 'PIN-টি অন্তর্ভুক্ত হওয়ার আগে শেষ হয়ে গেছে, আবারও চেষ্টা করুন।',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'অ্যাকাউন্ট নিবন্ধন করতে পারিনি: ${error}',
@@ -6802,8 +6944,6 @@ extension on TranslationsBn {
 			'addServer.authResponseIncomplete' => 'সার্ভার থেকে sign-in উত্তর অসম্পূর্ণ ছিল',
 			'addServer.quickConnectRejected' => 'Quick Connect সার্ভার দ্বারা বাতিল করা হয়',
 			'addServer.quickConnectNotJson' => 'Quick Connect উত্তরটি সঠিক ছিল না JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'উত্তর Quick Connect একটি কোড বা গোপনতা অল্প',
 			'addServer.quickConnectPollRejected' => 'Quick Connect সার্ভার দ্বারা অনুরোধ করা হয়',
 			'addServer.serverTimedOut' => 'সার্ভার সঠিক সময়ে উত্তর দেয়নি।',
@@ -7109,6 +7249,12 @@ extension on TranslationsBn {
 			'fileSources.useFiles' => 'ফাইল এবং বই ব্যবহার করুন',
 			'fileSources.cancelScan' => 'স্ক্যান বাতিল',
 			'fileSources.googleDrive' => 'Google Drive',
+			'fileSources.smbEndpointHint' => 'উদাহরণ: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'একটি SMB সার্ভার এবং একটি শেয়ার করা ফোল্ডার লিখুন।',
+			'fileSources.smbFolderHelp' => 'পুরো শেয়ার করা ফোল্ডার ব্যবহার করতে ফাঁকা রাখুন, অথবা তার ভেতরের কোনো ফোল্ডার লিখুন।',
+			'fileSources.smbDomain' => 'ডোমেইন (ঐচ্ছিক)',
+			'fileSources.smbEncryption' => 'SMB3 সংযোগ এনক্রিপ্ট করুন',
+			'fileSources.smbEncryptionHint' => 'NAS সমর্থন করলে SMB3 এনক্রিপশন ব্যবহার করুন।',
 			'lending.title' => 'জনব্যাপী লাইব্রেরি',
 			'lending.add' => 'একটি লাইব্রেরি যোগ করুন',
 			'lending.other' => 'আরেকটি লাইব্রেরি',
@@ -7210,6 +7356,93 @@ extension on TranslationsBn {
 			'audiobook.statusFinished' => 'শেষ',
 			'audiobook.goToTime' => 'সময় নিয়ে যান',
 			'audiobook.timeHelp' => 'ঘণ্টা : মিনিট : সেকেন্ড বা মিনিট : সেকেন্ড',
+			'sourceSetup.savedCertificate' => 'সংরক্ষিত সার্ভার সার্টিফিকেট',
+			'sourceSetup.nfsEndpointInvalid' => 'nfs://nas:2049/export-এর মতো একটি NFS URL লিখুন।',
+			'sourceSetup.dlnaNone' => 'কোনো DLNA সার্ভার পাওয়া যায়নি। ডিভাইসের বিবরণের URL নিজে লিখুন।',
+			'sourceSetup.dlnaServers' => 'DLNA মিডিয়া সার্ভার',
+			'sourceSetup.dlnaUnavailable' => 'এই নেটওয়ার্কে DLNA ডিভাইস খোঁজা যাচ্ছে না। ডিভাইসের বিবরণের URL নিজে লিখুন।',
+			'sourceSetup.dlnaSearching' => 'স্থানীয় নেটওয়ার্কে DLNA সার্ভার খোঁজা হচ্ছে',
+			'sourceSetup.networkSearching' => 'স্থানীয় নেটওয়ার্কে খোঁজা হচ্ছে…',
+			'sourceSetup.dlnaDiscover' => 'DLNA সার্ভার খুঁজুন',
+			'sourceSetup.dlnaHelp' => 'ডিভাইস খুঁজতে স্থানীয় নেটওয়ার্কে মাল্টিকাস্ট প্রয়োজন। কোনো সার্ভার না দেখালে উপরে তার ডিভাইসের বিবরণের URL লিখুন।',
+			'sourceSetup.dlnaRoot' => 'DLNA অবজেক্ট ID; ডিভাইসের রুট ব্যবহার করতে ফাঁকা রাখুন।',
+			'sourceSetup.passwordOrKey' => 'পাসওয়ার্ড লিখুন অথবা নিচে একটি ব্যক্তিগত কী যোগ করুন।',
+			'sourceSetup.sshFingerprint' => 'SSH হোস্ট কী-এর SHA256 ফিঙ্গারপ্রিন্ট',
+			'sourceSetup.sshFingerprintHelp' => 'সার্ভারের প্রশাসকের কাছে যাচাই করুন। সার্ভারে ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub চালিয়ে পাওয়া SHA256 মানটি ব্যবহার করুন।',
+			'sourceSetup.sshFingerprintKeep' => 'বর্তমানে পিন করা ফিঙ্গারপ্রিন্ট রাখতে ফাঁকা রাখুন, অথবা সার্ভারের নতুন ফিঙ্গারপ্রিন্ট লিখুন।',
+			'sourceSetup.sshAuthentication' => 'SSH পাবলিক কী দিয়ে পরিচয় যাচাই',
+			'sourceSetup.sshAuthenticationHelp' => 'ঐচ্ছিক; পাসওয়ার্ড দিয়েও পরিচয় যাচাই করা যায়।',
+			'sourceSetup.privateKey' => 'ব্যক্তিগত কী (PEM বা OpenSSH ফরম্যাট)',
+			'sourceSetup.privateKeyPassphrase' => 'ব্যক্তিগত কী-এর পাসফ্রেজ',
+			'sourceSetup.nfsMountPort' => 'NFS মাউন্ট সেবার TCP পোর্ট',
+			'sourceSetup.nfsMountPortHelp' => 'ডিফল্ট: 20048',
+			'sourceSetup.nfsUserId' => 'NFS ব্যবহারকারী ID (AUTH_SYS)',
+			'sourceSetup.nfsUserIdHelp' => 'ডিফল্ট: 1000। NAS এক্সপোর্টে অনুমোদিত ID ব্যবহার করুন।',
+			'sourceSetup.nfsGroupId' => 'NFS গ্রুপ ID (AUTH_SYS)',
+			'sourceSetup.nfsGroupIdHelp' => 'ডিফল্ট: 1000। NAS এক্সপোর্টে অনুমোদিত গ্রুপ ID ব্যবহার করুন।',
+			'sourceSetup.nfsEncryption' => 'এনক্রিপ্ট করা NFS বাধ্যতামূলক করুন (RPC-with-TLS)',
+			'sourceSetup.nfsEncryptionHelp' => 'NFS ও মাউন্ট সেবার জন্য TLS 1.3 বাধ্যতামূলক করুন। NAS এটি সমর্থন না করলে সংযোগ প্রত্যাখ্যান করা হবে।',
+			'sourceSetup.nfsTrustCertificate' => 'কাস্টম NFS CA বা সার্ভার সার্টিফিকেট (PEM, ঐচ্ছিক)',
+			'sourceSetup.nfsTrustHelp' => 'এই ডিভাইসের বিশ্বস্ত সার্টিফিকেটের জন্য ফাঁকা রাখুন। প্রয়োজনে ব্যক্তিগত CA বা স্ব-স্বাক্ষরিত সার্ভার সার্টিফিকেট যোগ করুন; এর নামগুলো NFS URL-এর হোস্টের সঙ্গে মিলতে হবে।',
+			'sourceSetup.nfsTrustInvalid' => 'PEM ফরম্যাটে CA বা সার্ভার সার্টিফিকেট ব্যবহার করুন। ব্যক্তিগত কী অন্তর্ভুক্ত করবেন না।',
+			'sourceSetup.addTrustCertificate' => 'কাস্টম বিশ্বস্ত সার্টিফিকেট যোগ করুন',
+			'sourceSetup.replaceTrustCertificate' => 'সংরক্ষিত কাস্টম সার্টিফিকেট প্রতিস্থাপন করুন',
+			'sourceSetup.nfsTlsHelp' => 'RPC-with-TLS সাধারণ NFS ও মাউন্ট সেবার পোর্ট ব্যবহার করে এবং NAS-এ RFC 9289 সমর্থন থাকা প্রয়োজন। TLS 1.3 বাধ্যতামূলক। হোস্টের নাম বা IP সার্টিফিকেটের সঙ্গে মিলতে হবে। এনক্রিপ্ট করা চ্যানেলের ভেতরেও AUTH_SYS UID/GID প্রযোজ্য থাকে।',
+			'sourceSetup.clientCertificate' => 'ক্লায়েন্ট সার্টিফিকেট (ঐচ্ছিক)',
+			'sourceSetup.clientCertificateHelp' => 'NAS-কে এই ক্লায়েন্টের পরিচয় যাচাই করতে দেয়; AUTH_SYS ID এখনো NAS এক্সপোর্টের নীতির ওপর নির্ভর করে।',
+			'sourceSetup.savedIdentity' => 'ক্লায়েন্টের সংরক্ষিত পরিচয়পত্র ব্যবহার করা হবে।',
+			'sourceSetup.replaceIdentity' => 'ক্লায়েন্টের সংরক্ষিত পরিচয়পত্র প্রতিস্থাপন করুন',
+			'sourceSetup.chooseIdentity' => 'PKCS#12 ক্লায়েন্ট পরিচয়পত্র বেছে নিন',
+			'sourceSetup.identityPassphrase' => 'ক্লায়েন্ট পরিচয়পত্রের পাসফ্রেজ',
+			'sourceSetup.identityPassphraseHelp' => 'ফাইলে পাসফ্রেজ না থাকলে ফাঁকা রাখুন।',
+			'sourceSetup.removeIdentity' => 'ক্লায়েন্টের সংরক্ষিত পরিচয়পত্র সরান',
+			'sourceSetup.identityStorageHelp' => 'ক্লায়েন্টের পরিচয়পত্র উৎসের এনক্রিপ্ট করা প্রবেশতথ্যের ভান্ডারে রাখা হয়। সংরক্ষিত পরিচয়পত্র রাখতে এই অংশ অপরিবর্তিত রাখুন।',
+			'sourceSetup.nfsLimitations' => 'TCP-এর মাধ্যমে শুধু পড়ার জন্য NFSv3। RPC-with-TLS ছাড়া NFS ট্র্যাফিক এনক্রিপ্ট করা হয় না। NAS-এ নির্বাচিত AUTH_SYS ID এবং বিশেষ অধিকার প্রয়োজন হয় না এমন ক্লায়েন্ট পোর্টের অনুমতি থাকতে হবে (এক্সপোর্টের এই বিকল্পকে সাধারণত “insecure” বলা হয়)। NFSv4 ও UDP সমর্থিত নয়।',
+			'sourceSetup.nfsSetupHelp' => 'NFS সেটআপ সহায়তা',
+			'sourceSetup.nfsSetupHint' => 'সংযোগ না খুললে এই সেটিংগুলো পরীক্ষা করুন।',
+			'sourceSetup.nfsSetupDetails' => 'TCP-ভিত্তিক NFSv3 এক্সপোর্ট ব্যবহার করুন। এনক্রিপশন বাধ্যতামূলক হলে NFS ও মাউন্ট সেবা—দুটিকেই RPC-with-TLS সমর্থন করতে হবে। এই ডিভাইস সার্ভার সার্টিফিকেটকে বিশ্বাস করলে কাস্টম সার্টিফিকেট ফাঁকা রাখুন; অন্যথায় NAS-এর CA বা স্ব-স্বাক্ষরিত সার্টিফিকেট যোগ করুন। সার্টিফিকেটের নাম এন্ডপয়েন্টের হোস্টের সঙ্গে মিলতে হবে। NAS পারস্পরিক TLS চাইলে তার PKCS#12 ক্লায়েন্ট পরিচয়পত্র যোগ করুন। শেষে নিশ্চিত করুন, এক্সপোর্টে নির্ধারিত AUTH_SYS UID/GID ও ক্লায়েন্ট পোর্ট নীতির অনুমতি আছে।',
+			'sourceSetup.ftpHelp' => 'FTP প্যাসিভ মোড ব্যবহার করে। এনক্রিপশন ছাড়া FTP-এর জন্য ftp://, আলাদা কমান্ড দিয়ে TLS চালু করতে ftpes://, অথবা TLS-এর জন্য ftps:// ব্যবহার করুন (পোর্ট 990-এ TLS সঙ্গে সঙ্গে চালু হয়; অন্য পোর্টে আলাদা কমান্ড দিয়ে চালু হয়)।',
+			'sourceSetup.openSubtitles' => 'OpenSubtitles',
+			'sourceSetup.subtitleSetup' => 'স্বতন্ত্র ভিডিও ফাইলের জন্য ঐচ্ছিক সাবটাইটেল অনুসন্ধান।',
+			'sourceSetup.apiKey' => 'API কী',
+			'sourceSetup.optionalUsername' => 'অ্যাকাউন্টের ব্যবহারকারীর নাম (ঐচ্ছিক)',
+			'sourceSetup.optionalPassword' => 'অ্যাকাউন্টের পাসওয়ার্ড (ঐচ্ছিক)',
+			'sourceSetup.subtitlePrivacy' => 'opensubtitles.com থেকে API কী নিন। অনুসন্ধানে ভিডিওর শিরোনাম ও উপলব্ধ IMDb/TMDB ID পাঠানো হয়, ভিডিও ফাইল কখনোই পাঠানো হয় না। কী ও ঐচ্ছিক অ্যাকাউন্টের প্রবেশতথ্য এই উৎসের সঙ্গে এনক্রিপ্ট করে রাখা হয়।',
+			'sourceSetup.automaticMetadata' => 'স্বয়ংক্রিয়ভাবে অনলাইন ভিডিও মেটাডেটা পান',
+			'sourceSetup.metadataPrivacy' => 'শুধু ফাইলের নাম থেকে শিরোনাম, বছর ও পর্বের নম্বর অথবা NFO ID পাঠানো হয়; মিডিয়া বা প্রবেশতথ্য কখনো পাঠানো হয় না। NFO ফিল্ড সবসময় অগ্রাধিকার পায়।',
+			'sourceSetup.nfsEncryptionFailure' => 'এনক্রিপ্ট করা NFS-এর জন্য NAS-এর দুই সেবায় RFC 9289 ও TLS 1.3 সমর্থন, সার্টিফিকেটের নাম এবং এক্সপোর্টের UID/GID পরীক্ষা করুন। PlezyNG এনক্রিপশন ছাড়া এই সংযোগ আবার চেষ্টা করবে না।',
+			'sourceSetup.sourceConnecting' => 'উৎসের সঙ্গে সংযোগ করা হচ্ছে',
+			'sourceSetup.metadataSearchPrivacy' => 'এই শিরোনাম অনুসন্ধান Trakt-এ পাঠানো হয়। শুধু আপনার লেখা শিরোনাম পাঠানো হয়, ভিডিও বা উৎসের প্রবেশতথ্য নয়।',
+			'sourceSetup.chooseMatch' => 'মিল পাওয়া ফলাফল বেছে নিন',
+			'sourceSetup.metadataMatchHelp' => 'বেছে নেওয়ার আগে শিরোনাম ও বছর পরীক্ষা করুন। Trakt অনুসন্ধানের শিরোনাম পায়; ভিডিও তার উৎসেই থাকে।',
+			'sourceSetup.metadataNoMatches' => 'অনলাইনে মিলে যায় এমন কোনো শিরোনাম পাওয়া যায়নি। অন্য শিরোনাম দিয়ে চেষ্টা করুন।',
+			'sourceSetup.metadataSearch' => 'অনলাইন মেটাডেটা খুঁজুন',
+			'sourceSetup.metadataLoading' => 'সিনেমা ও টিভি অনুষ্ঠানের তথ্য অনলাইনে খোঁজা হচ্ছে…',
+			'sourceSetup.metadataFromTrakt' => 'Trakt থেকে অনলাইন মেটাডেটা',
+			'sourceSetup.metadataNoAutomaticMatch' => 'স্বয়ংক্রিয়ভাবে কোনো শিরোনামের মিল পাওয়া যায়নি। শিরোনাম খুঁজে সঠিক ফলাফল বেছে নিন।',
+			'sourceSetup.metadataFailed' => 'অনলাইন মেটাডেটা লোড করা যায়নি। প্লেব্যাক ও স্থানীয় তথ্য এখনো পাওয়া যাবে।',
+			'sourceSetup.videoDetailsLoading' => 'ভিডিওর তথ্য লোড হচ্ছে',
+			'sourceSetup.subtitleKeyRequired' => 'OpenSubtitles API কী প্রয়োজন',
+			'sourceSetup.subtitleKeyHelp' => 'এই ফাইল উৎসটি সম্পাদনা করে তার ঐচ্ছিক সাবটাইটেল সেটিংসে OpenSubtitles API কী যোগ করুন।',
+			'sourceSetup.subtitleSearchFailed' => 'সাবটাইটেল অনুসন্ধান ব্যর্থ হয়েছে। API কী, সংযোগ ও সেবায় প্রবেশাধিকার পরীক্ষা করুন।',
+			'sourceSetup.subtitleApplyFailed' => 'এই সাবটাইটেল ডাউনলোড বা প্রয়োগ করা যায়নি। সংযোগ পরীক্ষা করে অন্য ফলাফল দিয়ে চেষ্টা করুন।',
+			'sourceSetup.subtitleSearch' => 'OpenSubtitles-এ খুঁজুন',
+			'sourceSetup.subtitleSearchPrivacy' => 'অনুসন্ধানে শিরোনাম ও উপলব্ধ IMDb/TMDB ID ব্যবহার করা হয়। ভিডিও ফাইল তার উৎসেই থাকে। বেছে নেওয়ার আগে ভাষা, বাধ্যতামূলকভাবে দেখানো বা শ্রবণপ্রতিবন্ধীদের উপযোগী সাবটাইটেলের চিহ্ন এবং রেটিং পরীক্ষা করুন।',
+			'sourceSetup.movieOrShow' => 'সিনেমা বা টিভি অনুষ্ঠান',
+			'sourceSetup.subtitleTitleHint' => 'ফলাফল সীমিত করতে শিরোনাম লিখুন',
+			'sourceSetup.subtitleLanguage' => 'সাবটাইটেলের ভাষা',
+			'sourceSetup.subtitleSearching' => 'OpenSubtitles-এ খোঁজা হচ্ছে',
+			'sourceSetup.subtitleNoMatches' => 'কোনো মিল পাওয়া সাবটাইটেল নেই। অন্য শিরোনাম বা ভাষা দিয়ে চেষ্টা করুন।',
+			'sourceSetup.downloadSubtitle' => 'সাবটাইটেল ডাউনলোড করুন',
+			'sourceSetup.subtitle' => 'সাবটাইটেল',
+			'sourceSetup.nfsTlsRequired' => 'RPC-with-TLS বাধ্যতামূলক',
+			'sourceSetup.nfsUnencrypted' => 'এনক্রিপশন ছাড়া NFS',
+			'sourceSetup.tlsEncrypted' => 'TLS দিয়ে এনক্রিপ্ট করা',
+			'sourceSetup.ftpPlain' => 'এনক্রিপশন ছাড়া FTP',
+			'sourceSetup.sshPinned' => 'SSH দিয়ে এনক্রিপ্ট করা · হোস্ট কী পিন করা আছে',
+			'sourceSetup.smbEncrypted' => 'SMB3 এনক্রিপশন চালু',
+			'sourceSetup.smbUnencrypted' => 'SMB3 এনক্রিপশন বন্ধ',
+			'sourceSetup.httpUnencrypted' => 'পরিবহন এনক্রিপশন ছাড়া HTTP',
 			'comics.fitHeight' => 'উচ্চতা অনুযায়ী মানানসই',
 			'comics.readingMode' => 'পড়ার ধরন',
 			'comics.paged' => 'পৃষ্ঠা',
@@ -7222,6 +7455,15 @@ extension on TranslationsBn {
 			'comics.savedForComic' => 'এই প্রোফাইলে এই কমিকের প্রদর্শন সেটিংস মনে রাখা হয়।',
 			'comics.readLists' => 'পড়ার তালিকা',
 			'comics.collections' => 'সংগ্রহ',
+			_ => null,
+		} ?? switch (path) {
+			'sourceSetup.checkEndpointSecurity' => 'এন্ডপয়েন্টের নিরাপত্তা পরীক্ষা করুন',
+			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} লেখা আবশ্যক।',
+			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => '${label}-এর মান ${min} থেকে ${max}-এর মধ্যে লিখুন।',
+			'sourceSetup.replaceFile' => ({required Object name}) => '${name} প্রতিস্থাপন করুন',
+			'sourceSetup.selectedIdentity' => ({required Object name}) => 'ক্লায়েন্টের নির্বাচিত পরিচয়পত্র: ${name}',
+			'sourceSetup.subtitleRating' => ({required Object rating}) => 'রেটিং ${rating}',
+			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'সাবটাইটেল ডাউনলোড হচ্ছে: ${title}',
 			_ => null,
 		};
 	}

@@ -104,6 +104,7 @@ class TranslationsRu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$ru fileSources = _Translations$fileSources$ru._(_root);
 	@override late final _Translations$lending$ru lending = _Translations$lending$ru._(_root);
 	@override late final _Translations$audiobook$ru audiobook = _Translations$audiobook$ru._(_root);
+	@override late final _Translations$sourceSetup$ru sourceSetup = _Translations$sourceSetup$ru._(_root);
 	@override late final _Translations$comics$ru comics = _Translations$comics$ru._(_root);
 }
 
@@ -766,6 +767,13 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Выберите формат отображения дат, чисел и единиц измерения.';
 	@override String get metadataLanguage => 'Язык метаданных';
 	@override String get metadataLanguageDescription => 'Предпочтительный язык названий и описаний, если сервер его поддерживает. Языки аудио и субтитров настраиваются отдельно.';
+	@override String get experimentalDolbyVision => 'Экспериментальный Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'При следующем воспроизведении использовать экспериментальный рендерер FEL. Нужна отдельная сборка движка.';
+	@override String get dvExperimentUnavailableDescription => 'Этот эксперимент пока доступен только в Linux.';
+	@override String get dvCompatibilityFallback => 'Резервный режим совместимости';
+	@override String get dvCompatibilityFallbackDescription => 'Использовать стандартный рендерер, если эксперимент не запускается. Данные FEL могут быть потеряны.';
+	@override String get dvExperimentDiagnostics => 'Журнал видеоэксперимента';
+	@override String get dvExperimentDiagnosticsDescription => 'Включить подробные журналы проигрывателя при следующем воспроизведении.';
 }
 
 // Path: themeEditor
@@ -3104,6 +3112,12 @@ class _Translations$fileSources$ru extends Translations$fileSources$en {
 	@override String get useFiles => 'Используйте файлы и книги';
 	@override String get cancelScan => 'Отменить сканирование';
 	@override String get googleDrive => 'Google Drive';
+	@override String get smbEndpointHint => 'Пример: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Введите сервер SMB и одну общую папку.';
+	@override String get smbFolderHelp => 'Оставьте поле пустым, чтобы использовать всю общую папку, или укажите папку внутри неё.';
+	@override String get smbDomain => 'Домен (необязательно)';
+	@override String get smbEncryption => 'Шифровать соединение SMB3';
+	@override String get smbEncryptionHint => 'Использовать шифрование SMB3, если NAS его поддерживает.';
 }
 
 // Path: lending
@@ -3225,13 +3239,110 @@ class _Translations$audiobook$ru extends Translations$audiobook$en {
 	@override String get timeHelp => 'Часы: минуты: секунды или минуты: секунды';
 }
 
+// Path: sourceSetup
+class _Translations$sourceSetup$ru extends Translations$sourceSetup$en {
+	_Translations$sourceSetup$ru._(TranslationsRu root) : this._root = root, super.internal(root);
+
+	final TranslationsRu _root; // ignore: unused_field
+	// Translations
+	@override String get savedCertificate => 'Сохранённый сертификат сервера';
+	@override String get nfsEndpointInvalid => 'Введите URL NFS, например nfs://nas:2049/export.';
+	@override String get dlnaNone => 'Серверы DLNA не найдены. Введите URL описания устройства вручную.';
+	@override String get dlnaServers => 'Медиасерверы DLNA';
+	@override String get dlnaUnavailable => 'Обнаружение DLNA недоступно в этой сети. Введите URL описания устройства вручную.';
+	@override String get dlnaSearching => 'Поиск серверов DLNA в локальной сети';
+	@override String get networkSearching => 'Поиск в локальной сети…';
+	@override String get dlnaDiscover => 'Найти серверы DLNA';
+	@override String get dlnaHelp => 'Обнаружение зависит от многоадресной рассылки в локальной сети. Если сервер не появляется, введите выше URL описания его устройства.';
+	@override String get dlnaRoot => 'ID объекта DLNA; оставьте пустым, чтобы использовать корень устройства.';
+	@override String get passwordOrKey => 'Введите пароль или добавьте закрытый ключ ниже.';
+	@override String get sshFingerprint => 'Отпечаток SHA256 ключа хоста SSH';
+	@override String get sshFingerprintHelp => 'Сверьте его с администратором сервера. На сервере выполните ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub и используйте значение SHA256.';
+	@override String get sshFingerprintKeep => 'Оставьте пустым, чтобы сохранить закреплённый отпечаток, или введите новый отпечаток сервера.';
+	@override String get sshAuthentication => 'Аутентификация SSH по открытому ключу';
+	@override String get sshAuthenticationHelp => 'Необязательно; аутентификация по паролю также поддерживается.';
+	@override String get privateKey => 'Закрытый ключ (формат PEM или OpenSSH)';
+	@override String get privateKeyPassphrase => 'Парольная фраза закрытого ключа';
+	@override String get nfsMountPort => 'TCP-порт службы монтирования NFS';
+	@override String get nfsMountPortHelp => 'По умолчанию: 20048';
+	@override String get nfsUserId => 'ID пользователя NFS (AUTH_SYS)';
+	@override String get nfsUserIdHelp => 'По умолчанию: 1000. Используйте ID, разрешённый экспортом NFS на NAS.';
+	@override String get nfsGroupId => 'ID группы NFS (AUTH_SYS)';
+	@override String get nfsGroupIdHelp => 'По умолчанию: 1000. Используйте ID группы, разрешённый экспортом NFS на NAS.';
+	@override String get nfsEncryption => 'Требовать шифрование NFS (RPC-with-TLS)';
+	@override String get nfsEncryptionHelp => 'Требовать TLS 1.3 для NFS и службы монтирования. Если NAS его не поддерживает, подключение будет отклонено.';
+	@override String get nfsTrustCertificate => 'Собственный CA NFS или сертификат сервера (PEM, необязательно)';
+	@override String get nfsTrustHelp => 'Оставьте пустым для сертификатов, которым доверяет это устройство. При необходимости добавьте сертификат частного CA или самоподписанный сертификат сервера; имена в нём должны совпадать с хостом в URL NFS.';
+	@override String get nfsTrustInvalid => 'Используйте сертификат CA или сервера в формате PEM. Не добавляйте закрытый ключ.';
+	@override String get addTrustCertificate => 'Добавить собственный доверенный сертификат';
+	@override String get replaceTrustCertificate => 'Заменить сохранённый собственный сертификат';
+	@override String get nfsTlsHelp => 'RPC-with-TLS использует обычные порты NFS и службы монтирования и требует поддержки RFC 9289 на NAS. Требуется TLS 1.3. Имя хоста или IP-адрес должны соответствовать сертификату. UID/GID AUTH_SYS по-прежнему применяются внутри зашифрованного канала.';
+	@override String get clientCertificate => 'Сертификат клиента (необязательно)';
+	@override String get clientCertificateHelp => 'Позволяет NAS аутентифицировать этого клиента; ID AUTH_SYS по-прежнему зависят от правил экспорта NFS на NAS.';
+	@override String get savedIdentity => 'Будут использованы сохранённые данные идентификации клиента.';
+	@override String get replaceIdentity => 'Заменить сохранённые данные идентификации клиента';
+	@override String get chooseIdentity => 'Выбрать данные идентификации клиента PKCS#12';
+	@override String get identityPassphrase => 'Парольная фраза данных идентификации клиента';
+	@override String get identityPassphraseHelp => 'Оставьте пустым, если у файла нет парольной фразы.';
+	@override String get removeIdentity => 'Удалить сохранённые данные идентификации клиента';
+	@override String get identityStorageHelp => 'Данные идентификации клиента сохраняются в зашифрованном хранилище учётных данных источника. Не меняйте этот раздел, чтобы сохранить имеющиеся данные идентификации.';
+	@override String get nfsLimitations => 'NFSv3 по TCP, только чтение. Без RPC-with-TLS трафик NFS не шифруется. NAS должен разрешать выбранные ID AUTH_SYS и непривилегированные порты клиента (часто это параметр экспорта «insecure»). NFSv4 и UDP не поддерживаются.';
+	@override String get nfsSetupHelp => 'Помощь с настройкой NFS';
+	@override String get nfsSetupHint => 'Проверьте эти настройки, если подключение не устанавливается.';
+	@override String get nfsSetupDetails => 'Используйте экспорт NFSv3 по TCP. Если требуется шифрование, и служба NFS, и служба монтирования должны поддерживать RPC-with-TLS. Оставьте собственный сертификат пустым для сертификата сервера, которому доверяет это устройство, или добавьте сертификат CA NAS либо самоподписанный сертификат. Имя в сертификате должно совпадать с хостом конечной точки. Если NAS требует взаимную аутентификацию TLS, добавьте его данные идентификации клиента PKCS#12. Наконец, убедитесь, что экспорт допускает настроенные UID/GID AUTH_SYS и правила портов клиента.';
+	@override String get ftpHelp => 'FTP использует пассивный режим. Используйте ftp:// для FTP без шифрования, ftpes:// для явного TLS или ftps:// для TLS (неявного на порту 990; явного на других портах).';
+	@override String get openSubtitles => 'OpenSubtitles';
+	@override String get subtitleSetup => 'Необязательный поиск субтитров для отдельных видео.';
+	@override String get apiKey => 'Ключ API';
+	@override String get optionalUsername => 'Имя пользователя аккаунта (необязательно)';
+	@override String get optionalPassword => 'Пароль аккаунта (необязательно)';
+	@override String get subtitlePrivacy => 'Получите ключ API на opensubtitles.com. Поиск отправляет название видео и доступные ID IMDb/TMDB, но никогда не отправляет видеофайл. Ключ и необязательные учётные данные аккаунта шифруются вместе с этим источником.';
+	@override String get automaticMetadata => 'Автоматические метаданные видео из интернета';
+	@override String get metadataPrivacy => 'Отправляет только название/год из имени файла и номера эпизодов либо ID NFO, но никогда не отправляет медиафайлы или учётные данные. Поля NFO сохраняют приоритет.';
+	@override String get nfsEncryptionFailure => 'Для зашифрованного NFS проверьте поддержку RFC 9289 и TLS 1.3 обеими службами NAS, имя в сертификате и UID/GID экспорта. PlezyNG не будет повторять это подключение без шифрования.';
+	@override String get sourceConnecting => 'Подключение к источнику';
+	@override String get metadataSearchPrivacy => 'Этот поиск названия отправляется в Trakt. Передаётся введённое название, а не видео или учётные данные источника.';
+	@override String get chooseMatch => 'Выбрать совпадение';
+	@override String get metadataMatchHelp => 'Перед выбором проверьте название и год. Trakt получает поисковое название; видео остаётся в своём источнике.';
+	@override String get metadataNoMatches => 'Совпадающих названий в интернете не найдено. Попробуйте другое название.';
+	@override String get metadataSearch => 'Поиск метаданных в интернете';
+	@override String get metadataLoading => 'Поиск сведений о фильмах и сериалах в интернете…';
+	@override String get metadataFromTrakt => 'Метаданные из Trakt';
+	@override String get metadataNoAutomaticMatch => 'Автоматическое совпадение названия не найдено. Найдите название, чтобы выбрать совпадение.';
+	@override String get metadataFailed => 'Не удалось загрузить метаданные из интернета. Воспроизведение и локальные сведения по-прежнему доступны.';
+	@override String get videoDetailsLoading => 'Загрузка сведений о видео';
+	@override String get subtitleKeyRequired => 'Требуется ключ API OpenSubtitles';
+	@override String get subtitleKeyHelp => 'Измените этот файловый источник и добавьте ключ API OpenSubtitles в необязательных настройках субтитров.';
+	@override String get subtitleSearchFailed => 'Поиск субтитров не удался. Проверьте ключ API, соединение и доступ к сервису.';
+	@override String get subtitleApplyFailed => 'Не удалось скачать или применить эти субтитры. Проверьте соединение и попробуйте другой результат.';
+	@override String get subtitleSearch => 'Поиск в OpenSubtitles';
+	@override String get subtitleSearchPrivacy => 'Поиск использует название и доступные ID IMDb/TMDB. Видеофайл остаётся в своём источнике. Перед выбором проверьте язык, отметки принудительных субтитров или субтитров для людей с нарушениями слуха и оценку.';
+	@override String get movieOrShow => 'Фильм или сериал';
+	@override String get subtitleTitleHint => 'Введите название для уточнения результатов';
+	@override String get subtitleLanguage => 'Язык субтитров';
+	@override String get subtitleSearching => 'Поиск в OpenSubtitles';
+	@override String get subtitleNoMatches => 'Подходящие субтитры не найдены. Попробуйте другое название или язык.';
+	@override String get downloadSubtitle => 'Скачать субтитры';
+	@override String get subtitle => 'Субтитры';
+	@override String get nfsTlsRequired => 'Требуется RPC-with-TLS';
+	@override String get nfsUnencrypted => 'NFS без шифрования';
+	@override String get tlsEncrypted => 'Шифрование TLS';
+	@override String get ftpPlain => 'FTP без шифрования';
+	@override String get sshPinned => 'SSH с шифрованием · ключ хоста закреплён';
+	@override String get smbEncrypted => 'Шифрование SMB3 включено';
+	@override String get smbUnencrypted => 'Шифрование SMB3 выключено';
+	@override String get httpUnencrypted => 'HTTP без шифрования транспорта';
+	@override String get checkEndpointSecurity => 'Проверить безопасность конечной точки';
+	@override String fieldRequired({required Object label}) => 'Обязательное поле: ${label}.';
+	@override String integerRange({required Object label, required Object min, required Object max}) => 'Поле «${label}»: введите значение от ${min} до ${max}.';
+	@override String replaceFile({required Object name}) => 'Заменить ${name}';
+	@override String selectedIdentity({required Object name}) => 'Выбранные данные идентификации клиента: ${name}';
+	@override String subtitleRating({required Object rating}) => 'Оценка ${rating}';
+	@override String subtitleDownloading({required Object title}) => 'Загрузка субтитров: ${title}';
+}
 // Path: comics
 class _Translations$comics$ru extends Translations$comics$en {
 	_Translations$comics$ru._(TranslationsRu root) : this._root = root, super.internal(root);
-
-	final TranslationsRu _root; // ignore: unused_field
-
-	// Translations
 	@override String get fitHeight => 'По высоте';
 	@override String get readingMode => 'Режим чтения';
 	@override String get paged => 'Страницы';
@@ -3244,8 +3355,6 @@ class _Translations$comics$ru extends Translations$comics$en {
 	@override String get savedForComic => 'Настройки отображения сохраняются для этого комикса в этом профиле.';
 	@override String get readLists => 'Списки чтения';
 	@override String get collections => 'Коллекции';
-}
-
 // Path: appIcon.names
 class _Translations$appIcon$names$ru extends Translations$appIcon$names$en {
 	_Translations$appIcon$names$ru._(TranslationsRu root) : this._root = root, super.internal(root);
@@ -3497,38 +3606,38 @@ class _Translations$discover$findNext$ru extends Translations$discover$findNext$
 	final TranslationsRu _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Найди свой следующий';
-	@override String get open => 'Найди свой следующий';
-	@override String get anyTime => 'В любое время';
-	@override String get timeAvailable => 'Сколько времени у вас есть?';
-	@override String get filters => 'Выберите момент';
+	@override String get title => 'Что выбрать дальше?';
+	@override String get open => 'Что выбрать дальше?';
+	@override String get anyTime => 'Без ограничения по времени';
+	@override String get timeAvailable => 'Сколько у вас времени?';
+	@override String get filters => 'Выберите подходящее для этого момента';
 	@override String get watch => 'Смотреть';
 	@override String get listen => 'Слушать';
 	@override String get read => 'Читать';
-	@override String finishable({required Object duration}) => 'Окончание в ${duration}';
-	@override String aboutDuration({required Object duration}) => 'Об ${duration}';
-	@override String nextUnit({required Object duration}) => 'Следующая статья · ${duration}';
-	@override String totalDuration({required Object duration}) => '${duration} Общее';
-	@override String get timingVaries => 'Время варьируется';
+	@override String finishable({required Object duration}) => 'Время до завершения: ${duration}';
+	@override String aboutDuration({required Object duration}) => 'Примерная длительность: ${duration}';
+	@override String nextUnit({required Object duration}) => 'Следующая глава · ${duration}';
+	@override String totalDuration({required Object duration}) => 'Всего ${duration}';
+	@override String get timingVaries => 'Продолжительность может отличаться';
 	@override String get notNow => 'Не сейчас';
-	@override String get swipeHint => 'Переключайте или используйте кнопки ниже';
-	@override String get saved => 'Спасенные пики';
-	@override String savedCount({required Object count}) => 'Заброшенные пики · ${count}';
-	@override String get undo => 'Инде';
-	@override String get details => 'Подробности';
-	@override String get noPicks => 'Ничего не выбирать пока';
+	@override String get swipeHint => 'Смахните обложку в сторону стрелки или используйте кнопки ниже.';
+	@override String get saved => 'Сохранённые рекомендации';
+	@override String savedCount({required Object count}) => 'Сохранённые рекомендации · ${count}';
+	@override String get undo => 'Отменить действие';
+	@override String get details => 'Подробнее';
+	@override String get noPicks => 'Пока не из чего выбирать';
 	@override String get noPicksHint => 'Подключите библиотеку или добавьте источник медиа, чтобы начать.';
-	@override String get noMatches => 'Ничто не соответствует этому моменту';
-	@override String get noMatchesHint => 'Попробуйте другой формат или дайте себе больше времени.';
-	@override String get allDone => 'Вы все пойманы';
-	@override String get allDoneHint => 'Начните свежую смесь, чтобы увидеть эти варианты снова.';
-	@override String get refresh => 'Найти еще одну смесь';
-	@override String sourceReason({required Object source}) => 'От ${source}';
-	@override String libraryReason({required Object library}) => 'От ${library}';
+	@override String get noMatches => 'Ничего подходящего на этот момент';
+	@override String get noMatchesHint => 'Попробуйте другой вид медиа или выделите больше времени.';
+	@override String get allDone => 'Вы просмотрели все рекомендации';
+	@override String get allDoneHint => 'Создайте новую подборку, чтобы снова увидеть эти варианты.';
+	@override String get refresh => 'Найти другую подборку';
+	@override String sourceReason({required Object source}) => 'Источник: ${source}';
+	@override String libraryReason({required Object library}) => 'Библиотека: ${library}';
 	@override String get ownedReason => 'Из вашей библиотеки';
-	@override String get liveNow => 'В настоящее время';
-	@override String get watchLive => 'Смотреть Live';
-	@override String get filterAnything => 'Всё';
+	@override String get liveNow => 'Сейчас в эфире';
+	@override String get watchLive => 'Смотреть в прямом эфире';
+	@override String get filterAnything => 'Любой вид';
 	@override String get filterWatch => 'Смотреть';
 	@override String get filterListen => 'Слушать';
 	@override String get filterRead => 'Читать';
@@ -3536,9 +3645,21 @@ class _Translations$discover$findNext$ru extends Translations$discover$findNext$
 	@override String get fortyFiveMinutes => '45 мин';
 	@override String get ninetyMinutes => '90 мин';
 	@override String get apply => 'Применить';
-	@override String get openFailed => 'Этот вариант больше не доступен. обновляйте, чтобы снова проверить.';
-	@override String get changeFailed => 'Я не могу спасти эти изменения, попробуйте еще раз.';
-	@override String get savedLimit => 'Спасенные пики полны. удалить один выбор, чтобы сохранить другой.';
+	@override String get openFailed => 'Этот вариант больше недоступен. Обновите, чтобы проверить ещё раз.';
+	@override String get changeFailed => 'Не удалось сохранить изменение. Попробуйте снова.';
+	@override String get savedLimit => 'Список сохранённых рекомендаций заполнен. Удалите одну рекомендацию, чтобы сохранить другую.';
+	@override String get chooseHint => 'Откройте произведение, сохраните на потом или пропустите.';
+	@override String get howItWorks => 'Как это работает';
+	@override String get notNowHelp => 'Пропустите это произведение пока. Оно останется в вашей библиотеке.';
+	@override String get saveHelp => 'Добавьте его в сохранённые подборки этого профиля на этом устройстве. Сохранение не скачивает произведение.';
+	@override String get openHelp => 'Выберите обложку для просмотра подробностей. Основная кнопка позволяет воспроизвести, читать или открыть произведение.';
+	@override String get controlsHelp => 'Клавиатура или пульт: выберите кнопку и нажмите Enter или кнопку выбора. Отмена восстанавливает последний выбор.';
+	@override String get artworkLoading => 'Загрузка обложки…';
+	@override String get artworkUnavailable => 'Обложка недоступна';
+	@override String get savedFeedback => 'Добавлено в сохранённые подборки';
+	@override String get skippedFeedback => 'Пока пропущено';
+	@override String get releaseToConfirm => 'Отпустите для подтверждения';
+	@override String get remoteHint => 'Фокус на обложке: ← / → выбор · Кнопка выбора: подробности · ↑ / ↓ перемещение фокуса';
 }
 
 // Path: discover.person
@@ -4877,6 +4998,13 @@ extension on TranslationsRu {
 			'settings.regionFormatDescription' => 'Выберите формат отображения дат, чисел и единиц измерения.',
 			'settings.metadataLanguage' => 'Язык метаданных',
 			'settings.metadataLanguageDescription' => 'Предпочтительный язык названий и описаний, если сервер его поддерживает. Языки аудио и субтитров настраиваются отдельно.',
+			'settings.experimentalDolbyVision' => 'Экспериментальный Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'При следующем воспроизведении использовать экспериментальный рендерер FEL. Нужна отдельная сборка движка.',
+			'settings.dvExperimentUnavailableDescription' => 'Этот эксперимент пока доступен только в Linux.',
+			'settings.dvCompatibilityFallback' => 'Резервный режим совместимости',
+			'settings.dvCompatibilityFallbackDescription' => 'Использовать стандартный рендерер, если эксперимент не запускается. Данные FEL могут быть потеряны.',
+			'settings.dvExperimentDiagnostics' => 'Журнал видеоэксперимента',
+			'settings.dvExperimentDiagnosticsDescription' => 'Включить подробные журналы проигрывателя при следующем воспроизведении.',
 			'themeEditor.builtIn' => 'Встроенные',
 			'themeEditor.presets' => 'Готовые',
 			'themeEditor.custom' => 'Своя',
@@ -5297,6 +5425,8 @@ extension on TranslationsRu {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Сканирование библиотеки начато для "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Не удалось отсканировать библиотеку: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Обновление метаданных "${title}"...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Обновление метаданных начато для "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Не удалось обновить метаданные: ${error}',
 			'messages.logoutConfirm' => 'Вы уверены, что хотите выйти?',
@@ -5304,8 +5434,6 @@ extension on TranslationsRu {
 			'messages.seasonsLoadFailed' => 'Не удалось загрузить сезоны',
 			'messages.noEpisodesFound' => 'Эпизоды в первом сезоне не найдены',
 			'messages.noEpisodesFoundGeneral' => 'Эпизоды не найдены',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Не удалось загрузить эпизоды',
 			'messages.noResultsFound' => 'Результаты не найдены',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Таймер сна установлен на ${label}',
@@ -5532,38 +5660,38 @@ extension on TranslationsRu {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Обзор',
 			'discover.cast' => 'В ролях',
-			'discover.findNext.title' => 'Найди свой следующий',
-			'discover.findNext.open' => 'Найди свой следующий',
-			'discover.findNext.anyTime' => 'В любое время',
-			'discover.findNext.timeAvailable' => 'Сколько времени у вас есть?',
-			'discover.findNext.filters' => 'Выберите момент',
+			'discover.findNext.title' => 'Что выбрать дальше?',
+			'discover.findNext.open' => 'Что выбрать дальше?',
+			'discover.findNext.anyTime' => 'Без ограничения по времени',
+			'discover.findNext.timeAvailable' => 'Сколько у вас времени?',
+			'discover.findNext.filters' => 'Выберите подходящее для этого момента',
 			'discover.findNext.watch' => 'Смотреть',
 			'discover.findNext.listen' => 'Слушать',
 			'discover.findNext.read' => 'Читать',
-			'discover.findNext.finishable' => ({required Object duration}) => 'Окончание в ${duration}',
-			'discover.findNext.aboutDuration' => ({required Object duration}) => 'Об ${duration}',
-			'discover.findNext.nextUnit' => ({required Object duration}) => 'Следующая статья · ${duration}',
-			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} Общее',
-			'discover.findNext.timingVaries' => 'Время варьируется',
+			'discover.findNext.finishable' => ({required Object duration}) => 'Время до завершения: ${duration}',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => 'Примерная длительность: ${duration}',
+			'discover.findNext.nextUnit' => ({required Object duration}) => 'Следующая глава · ${duration}',
+			'discover.findNext.totalDuration' => ({required Object duration}) => 'Всего ${duration}',
+			'discover.findNext.timingVaries' => 'Продолжительность может отличаться',
 			'discover.findNext.notNow' => 'Не сейчас',
-			'discover.findNext.swipeHint' => 'Переключайте или используйте кнопки ниже',
-			'discover.findNext.saved' => 'Спасенные пики',
-			'discover.findNext.savedCount' => ({required Object count}) => 'Заброшенные пики · ${count}',
-			'discover.findNext.undo' => 'Инде',
-			'discover.findNext.details' => 'Подробности',
-			'discover.findNext.noPicks' => 'Ничего не выбирать пока',
+			'discover.findNext.swipeHint' => 'Смахните обложку в сторону стрелки или используйте кнопки ниже.',
+			'discover.findNext.saved' => 'Сохранённые рекомендации',
+			'discover.findNext.savedCount' => ({required Object count}) => 'Сохранённые рекомендации · ${count}',
+			'discover.findNext.undo' => 'Отменить действие',
+			'discover.findNext.details' => 'Подробнее',
+			'discover.findNext.noPicks' => 'Пока не из чего выбирать',
 			'discover.findNext.noPicksHint' => 'Подключите библиотеку или добавьте источник медиа, чтобы начать.',
-			'discover.findNext.noMatches' => 'Ничто не соответствует этому моменту',
-			'discover.findNext.noMatchesHint' => 'Попробуйте другой формат или дайте себе больше времени.',
-			'discover.findNext.allDone' => 'Вы все пойманы',
-			'discover.findNext.allDoneHint' => 'Начните свежую смесь, чтобы увидеть эти варианты снова.',
-			'discover.findNext.refresh' => 'Найти еще одну смесь',
-			'discover.findNext.sourceReason' => ({required Object source}) => 'От ${source}',
-			'discover.findNext.libraryReason' => ({required Object library}) => 'От ${library}',
+			'discover.findNext.noMatches' => 'Ничего подходящего на этот момент',
+			'discover.findNext.noMatchesHint' => 'Попробуйте другой вид медиа или выделите больше времени.',
+			'discover.findNext.allDone' => 'Вы просмотрели все рекомендации',
+			'discover.findNext.allDoneHint' => 'Создайте новую подборку, чтобы снова увидеть эти варианты.',
+			'discover.findNext.refresh' => 'Найти другую подборку',
+			'discover.findNext.sourceReason' => ({required Object source}) => 'Источник: ${source}',
+			'discover.findNext.libraryReason' => ({required Object library}) => 'Библиотека: ${library}',
 			'discover.findNext.ownedReason' => 'Из вашей библиотеки',
-			'discover.findNext.liveNow' => 'В настоящее время',
-			'discover.findNext.watchLive' => 'Смотреть Live',
-			'discover.findNext.filterAnything' => 'Всё',
+			'discover.findNext.liveNow' => 'Сейчас в эфире',
+			'discover.findNext.watchLive' => 'Смотреть в прямом эфире',
+			'discover.findNext.filterAnything' => 'Любой вид',
 			'discover.findNext.filterWatch' => 'Смотреть',
 			'discover.findNext.filterListen' => 'Слушать',
 			'discover.findNext.filterRead' => 'Читать',
@@ -5571,9 +5699,21 @@ extension on TranslationsRu {
 			'discover.findNext.fortyFiveMinutes' => '45 мин',
 			'discover.findNext.ninetyMinutes' => '90 мин',
 			'discover.findNext.apply' => 'Применить',
-			'discover.findNext.openFailed' => 'Этот вариант больше не доступен. обновляйте, чтобы снова проверить.',
-			'discover.findNext.changeFailed' => 'Я не могу спасти эти изменения, попробуйте еще раз.',
-			'discover.findNext.savedLimit' => 'Спасенные пики полны. удалить один выбор, чтобы сохранить другой.',
+			'discover.findNext.openFailed' => 'Этот вариант больше недоступен. Обновите, чтобы проверить ещё раз.',
+			'discover.findNext.changeFailed' => 'Не удалось сохранить изменение. Попробуйте снова.',
+			'discover.findNext.savedLimit' => 'Список сохранённых рекомендаций заполнен. Удалите одну рекомендацию, чтобы сохранить другую.',
+			'discover.findNext.chooseHint' => 'Откройте произведение, сохраните на потом или пропустите.',
+			'discover.findNext.howItWorks' => 'Как это работает',
+			'discover.findNext.notNowHelp' => 'Пропустите это произведение пока. Оно останется в вашей библиотеке.',
+			'discover.findNext.saveHelp' => 'Добавьте его в сохранённые подборки этого профиля на этом устройстве. Сохранение не скачивает произведение.',
+			'discover.findNext.openHelp' => 'Выберите обложку для просмотра подробностей. Основная кнопка позволяет воспроизвести, читать или открыть произведение.',
+			'discover.findNext.controlsHelp' => 'Клавиатура или пульт: выберите кнопку и нажмите Enter или кнопку выбора. Отмена восстанавливает последний выбор.',
+			'discover.findNext.artworkLoading' => 'Загрузка обложки…',
+			'discover.findNext.artworkUnavailable' => 'Обложка недоступна',
+			'discover.findNext.savedFeedback' => 'Добавлено в сохранённые подборки',
+			'discover.findNext.skippedFeedback' => 'Пока пропущено',
+			'discover.findNext.releaseToConfirm' => 'Отпустите для подтверждения',
+			'discover.findNext.remoteHint' => 'Фокус на обложке: ← / → выбор · Кнопка выбора: подробности · ↑ / ↓ перемещение фокуса',
 			'discover.extras' => 'Трейлеры и доп. материалы',
 			'discover.studio' => 'Студия',
 			'discover.rating' => 'Рейтинг',
@@ -5799,6 +5939,8 @@ extension on TranslationsRu {
 			'explore.mdblistShelves.nameHint' => 'Оставьте белый, чтобы использовать название источника.',
 			'explore.mdblistShelves.add' => 'Добавить шейх',
 			'explore.mdblistShelves.save' => 'Спасти шары',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Погрузка ${title} вверх',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Погрузка ${title}',
 			'explore.mdblistShelves.unavailable' => 'Этот список недоступен. Отменить или удалить его шлюх в настройках.',
@@ -5818,8 +5960,6 @@ extension on TranslationsRu {
 			'explore.rows.popularShows' => 'Популярные сериалы',
 			'explore.rows.trendingAnime' => 'Аниме в тренде',
 			'explore.rows.suggestedAnime' => 'Рекомендуемые аниме',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Топ выходящих аниме',
 			'explore.rows.popularAnime' => 'Самые популярные аниме',
 			'explore.rows.trending' => 'В тренде',
@@ -6313,6 +6453,8 @@ extension on TranslationsRu {
 			'downloads.resumeDownload' => 'Возобновить загрузку',
 			'downloads.cancelledDownload' => 'Загрузка отменена',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (синхронизация ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} загружен — нажмите, чтобы завершить',
 			'downloads.partialDownloadClickToComplete' => 'Частично загружено — нажмите, чтобы завершить',
 			'downloads.deleting' => 'Удаление...',
@@ -6332,8 +6474,6 @@ extension on TranslationsRu {
 			'downloads.unwatchedOnly' => 'Только непросмотренные',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Следующие ${count} непросмотренных',
 			'downloads.customAmount' => 'Указать количество...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Показатель (каждый раз)',
 			'downloads.randomEpisodes' => 'Рандиальные эпизоды',
 			'downloads.includeSpecials' => 'Включить спецвыпуски',
@@ -6827,6 +6967,8 @@ extension on TranslationsRu {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Не удалось связаться с сервером: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Не удалось войти: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect не удался: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Войти через Plex',
 			'addServer.pinExpired' => 'Срок действия PIN истёк до входа. Попробуйте снова.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Не удалось зарегистрировать учётную запись: ${error}',
@@ -6846,8 +6988,6 @@ extension on TranslationsRu {
 			'addServer.authResponseIncomplete' => 'Ответ сервера при входе оказался неполным',
 			'addServer.quickConnectRejected' => 'Quick Connect был отклонён сервером',
 			'addServer.quickConnectNotJson' => 'Ответ Quick Connect не является допустимым JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'В ответе Quick Connect отсутствует код или секрет',
 			'addServer.quickConnectPollRejected' => 'Опрос Quick Connect был отклонён сервером',
 			'addServer.serverTimedOut' => 'Сервер не ответил вовремя',
@@ -7153,6 +7293,12 @@ extension on TranslationsRu {
 			'fileSources.useFiles' => 'Используйте файлы и книги',
 			'fileSources.cancelScan' => 'Отменить сканирование',
 			'fileSources.googleDrive' => 'Google Drive',
+			'fileSources.smbEndpointHint' => 'Пример: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Введите сервер SMB и одну общую папку.',
+			'fileSources.smbFolderHelp' => 'Оставьте поле пустым, чтобы использовать всю общую папку, или укажите папку внутри неё.',
+			'fileSources.smbDomain' => 'Домен (необязательно)',
+			'fileSources.smbEncryption' => 'Шифровать соединение SMB3',
+			'fileSources.smbEncryptionHint' => 'Использовать шифрование SMB3, если NAS его поддерживает.',
 			'lending.title' => 'Публичные библиотеки',
 			'lending.add' => 'Добавить библиотеку',
 			'lending.other' => 'Другая библиотека',
@@ -7254,6 +7400,93 @@ extension on TranslationsRu {
 			'audiobook.statusFinished' => 'Завершился',
 			'audiobook.goToTime' => 'Идите в Время',
 			'audiobook.timeHelp' => 'Часы: минуты: секунды или минуты: секунды',
+			'sourceSetup.savedCertificate' => 'Сохранённый сертификат сервера',
+			'sourceSetup.nfsEndpointInvalid' => 'Введите URL NFS, например nfs://nas:2049/export.',
+			'sourceSetup.dlnaNone' => 'Серверы DLNA не найдены. Введите URL описания устройства вручную.',
+			'sourceSetup.dlnaServers' => 'Медиасерверы DLNA',
+			'sourceSetup.dlnaUnavailable' => 'Обнаружение DLNA недоступно в этой сети. Введите URL описания устройства вручную.',
+			'sourceSetup.dlnaSearching' => 'Поиск серверов DLNA в локальной сети',
+			'sourceSetup.networkSearching' => 'Поиск в локальной сети…',
+			'sourceSetup.dlnaDiscover' => 'Найти серверы DLNA',
+			'sourceSetup.dlnaHelp' => 'Обнаружение зависит от многоадресной рассылки в локальной сети. Если сервер не появляется, введите выше URL описания его устройства.',
+			'sourceSetup.dlnaRoot' => 'ID объекта DLNA; оставьте пустым, чтобы использовать корень устройства.',
+			'sourceSetup.passwordOrKey' => 'Введите пароль или добавьте закрытый ключ ниже.',
+			'sourceSetup.sshFingerprint' => 'Отпечаток SHA256 ключа хоста SSH',
+			'sourceSetup.sshFingerprintHelp' => 'Сверьте его с администратором сервера. На сервере выполните ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub и используйте значение SHA256.',
+			'sourceSetup.sshFingerprintKeep' => 'Оставьте пустым, чтобы сохранить закреплённый отпечаток, или введите новый отпечаток сервера.',
+			'sourceSetup.sshAuthentication' => 'Аутентификация SSH по открытому ключу',
+			'sourceSetup.sshAuthenticationHelp' => 'Необязательно; аутентификация по паролю также поддерживается.',
+			'sourceSetup.privateKey' => 'Закрытый ключ (формат PEM или OpenSSH)',
+			'sourceSetup.privateKeyPassphrase' => 'Парольная фраза закрытого ключа',
+			'sourceSetup.nfsMountPort' => 'TCP-порт службы монтирования NFS',
+			'sourceSetup.nfsMountPortHelp' => 'По умолчанию: 20048',
+			'sourceSetup.nfsUserId' => 'ID пользователя NFS (AUTH_SYS)',
+			'sourceSetup.nfsUserIdHelp' => 'По умолчанию: 1000. Используйте ID, разрешённый экспортом NFS на NAS.',
+			'sourceSetup.nfsGroupId' => 'ID группы NFS (AUTH_SYS)',
+			'sourceSetup.nfsGroupIdHelp' => 'По умолчанию: 1000. Используйте ID группы, разрешённый экспортом NFS на NAS.',
+			'sourceSetup.nfsEncryption' => 'Требовать шифрование NFS (RPC-with-TLS)',
+			'sourceSetup.nfsEncryptionHelp' => 'Требовать TLS 1.3 для NFS и службы монтирования. Если NAS его не поддерживает, подключение будет отклонено.',
+			'sourceSetup.nfsTrustCertificate' => 'Собственный CA NFS или сертификат сервера (PEM, необязательно)',
+			'sourceSetup.nfsTrustHelp' => 'Оставьте пустым для сертификатов, которым доверяет это устройство. При необходимости добавьте сертификат частного CA или самоподписанный сертификат сервера; имена в нём должны совпадать с хостом в URL NFS.',
+			'sourceSetup.nfsTrustInvalid' => 'Используйте сертификат CA или сервера в формате PEM. Не добавляйте закрытый ключ.',
+			'sourceSetup.addTrustCertificate' => 'Добавить собственный доверенный сертификат',
+			'sourceSetup.replaceTrustCertificate' => 'Заменить сохранённый собственный сертификат',
+			'sourceSetup.nfsTlsHelp' => 'RPC-with-TLS использует обычные порты NFS и службы монтирования и требует поддержки RFC 9289 на NAS. Требуется TLS 1.3. Имя хоста или IP-адрес должны соответствовать сертификату. UID/GID AUTH_SYS по-прежнему применяются внутри зашифрованного канала.',
+			'sourceSetup.clientCertificate' => 'Сертификат клиента (необязательно)',
+			'sourceSetup.clientCertificateHelp' => 'Позволяет NAS аутентифицировать этого клиента; ID AUTH_SYS по-прежнему зависят от правил экспорта NFS на NAS.',
+			'sourceSetup.savedIdentity' => 'Будут использованы сохранённые данные идентификации клиента.',
+			'sourceSetup.replaceIdentity' => 'Заменить сохранённые данные идентификации клиента',
+			'sourceSetup.chooseIdentity' => 'Выбрать данные идентификации клиента PKCS#12',
+			'sourceSetup.identityPassphrase' => 'Парольная фраза данных идентификации клиента',
+			'sourceSetup.identityPassphraseHelp' => 'Оставьте пустым, если у файла нет парольной фразы.',
+			'sourceSetup.removeIdentity' => 'Удалить сохранённые данные идентификации клиента',
+			'sourceSetup.identityStorageHelp' => 'Данные идентификации клиента сохраняются в зашифрованном хранилище учётных данных источника. Не меняйте этот раздел, чтобы сохранить имеющиеся данные идентификации.',
+			'sourceSetup.nfsLimitations' => 'NFSv3 по TCP, только чтение. Без RPC-with-TLS трафик NFS не шифруется. NAS должен разрешать выбранные ID AUTH_SYS и непривилегированные порты клиента (часто это параметр экспорта «insecure»). NFSv4 и UDP не поддерживаются.',
+			'sourceSetup.nfsSetupHelp' => 'Помощь с настройкой NFS',
+			'sourceSetup.nfsSetupHint' => 'Проверьте эти настройки, если подключение не устанавливается.',
+			'sourceSetup.nfsSetupDetails' => 'Используйте экспорт NFSv3 по TCP. Если требуется шифрование, и служба NFS, и служба монтирования должны поддерживать RPC-with-TLS. Оставьте собственный сертификат пустым для сертификата сервера, которому доверяет это устройство, или добавьте сертификат CA NAS либо самоподписанный сертификат. Имя в сертификате должно совпадать с хостом конечной точки. Если NAS требует взаимную аутентификацию TLS, добавьте его данные идентификации клиента PKCS#12. Наконец, убедитесь, что экспорт допускает настроенные UID/GID AUTH_SYS и правила портов клиента.',
+			'sourceSetup.ftpHelp' => 'FTP использует пассивный режим. Используйте ftp:// для FTP без шифрования, ftpes:// для явного TLS или ftps:// для TLS (неявного на порту 990; явного на других портах).',
+			'sourceSetup.openSubtitles' => 'OpenSubtitles',
+			'sourceSetup.subtitleSetup' => 'Необязательный поиск субтитров для отдельных видео.',
+			'sourceSetup.apiKey' => 'Ключ API',
+			'sourceSetup.optionalUsername' => 'Имя пользователя аккаунта (необязательно)',
+			'sourceSetup.optionalPassword' => 'Пароль аккаунта (необязательно)',
+			'sourceSetup.subtitlePrivacy' => 'Получите ключ API на opensubtitles.com. Поиск отправляет название видео и доступные ID IMDb/TMDB, но никогда не отправляет видеофайл. Ключ и необязательные учётные данные аккаунта шифруются вместе с этим источником.',
+			'sourceSetup.automaticMetadata' => 'Автоматические метаданные видео из интернета',
+			'sourceSetup.metadataPrivacy' => 'Отправляет только название/год из имени файла и номера эпизодов либо ID NFO, но никогда не отправляет медиафайлы или учётные данные. Поля NFO сохраняют приоритет.',
+			'sourceSetup.nfsEncryptionFailure' => 'Для зашифрованного NFS проверьте поддержку RFC 9289 и TLS 1.3 обеими службами NAS, имя в сертификате и UID/GID экспорта. PlezyNG не будет повторять это подключение без шифрования.',
+			'sourceSetup.sourceConnecting' => 'Подключение к источнику',
+			'sourceSetup.metadataSearchPrivacy' => 'Этот поиск названия отправляется в Trakt. Передаётся введённое название, а не видео или учётные данные источника.',
+			'sourceSetup.chooseMatch' => 'Выбрать совпадение',
+			'sourceSetup.metadataMatchHelp' => 'Перед выбором проверьте название и год. Trakt получает поисковое название; видео остаётся в своём источнике.',
+			'sourceSetup.metadataNoMatches' => 'Совпадающих названий в интернете не найдено. Попробуйте другое название.',
+			'sourceSetup.metadataSearch' => 'Поиск метаданных в интернете',
+			'sourceSetup.metadataLoading' => 'Поиск сведений о фильмах и сериалах в интернете…',
+			'sourceSetup.metadataFromTrakt' => 'Метаданные из Trakt',
+			'sourceSetup.metadataNoAutomaticMatch' => 'Автоматическое совпадение названия не найдено. Найдите название, чтобы выбрать совпадение.',
+			'sourceSetup.metadataFailed' => 'Не удалось загрузить метаданные из интернета. Воспроизведение и локальные сведения по-прежнему доступны.',
+			'sourceSetup.videoDetailsLoading' => 'Загрузка сведений о видео',
+			'sourceSetup.subtitleKeyRequired' => 'Требуется ключ API OpenSubtitles',
+			'sourceSetup.subtitleKeyHelp' => 'Измените этот файловый источник и добавьте ключ API OpenSubtitles в необязательных настройках субтитров.',
+			'sourceSetup.subtitleSearchFailed' => 'Поиск субтитров не удался. Проверьте ключ API, соединение и доступ к сервису.',
+			'sourceSetup.subtitleApplyFailed' => 'Не удалось скачать или применить эти субтитры. Проверьте соединение и попробуйте другой результат.',
+			'sourceSetup.subtitleSearch' => 'Поиск в OpenSubtitles',
+			'sourceSetup.subtitleSearchPrivacy' => 'Поиск использует название и доступные ID IMDb/TMDB. Видеофайл остаётся в своём источнике. Перед выбором проверьте язык, отметки принудительных субтитров или субтитров для людей с нарушениями слуха и оценку.',
+			'sourceSetup.movieOrShow' => 'Фильм или сериал',
+			'sourceSetup.subtitleTitleHint' => 'Введите название для уточнения результатов',
+			'sourceSetup.subtitleLanguage' => 'Язык субтитров',
+			'sourceSetup.subtitleSearching' => 'Поиск в OpenSubtitles',
+			'sourceSetup.subtitleNoMatches' => 'Подходящие субтитры не найдены. Попробуйте другое название или язык.',
+			'sourceSetup.downloadSubtitle' => 'Скачать субтитры',
+			'sourceSetup.subtitle' => 'Субтитры',
+			'sourceSetup.nfsTlsRequired' => 'Требуется RPC-with-TLS',
+			'sourceSetup.nfsUnencrypted' => 'NFS без шифрования',
+			'sourceSetup.tlsEncrypted' => 'Шифрование TLS',
+			'sourceSetup.ftpPlain' => 'FTP без шифрования',
+			'sourceSetup.sshPinned' => 'SSH с шифрованием · ключ хоста закреплён',
+			'sourceSetup.smbEncrypted' => 'Шифрование SMB3 включено',
+			'sourceSetup.smbUnencrypted' => 'Шифрование SMB3 выключено',
+			'sourceSetup.httpUnencrypted' => 'HTTP без шифрования транспорта',
 			'comics.fitHeight' => 'По высоте',
 			'comics.readingMode' => 'Режим чтения',
 			'comics.paged' => 'Страницы',
@@ -7266,6 +7499,15 @@ extension on TranslationsRu {
 			'comics.savedForComic' => 'Настройки отображения сохраняются для этого комикса в этом профиле.',
 			'comics.readLists' => 'Списки чтения',
 			'comics.collections' => 'Коллекции',
+			_ => null,
+		} ?? switch (path) {
+			'sourceSetup.checkEndpointSecurity' => 'Проверить безопасность конечной точки',
+			'sourceSetup.fieldRequired' => ({required Object label}) => 'Обязательное поле: ${label}.',
+			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Поле «${label}»: введите значение от ${min} до ${max}.',
+			'sourceSetup.replaceFile' => ({required Object name}) => 'Заменить ${name}',
+			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Выбранные данные идентификации клиента: ${name}',
+			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Оценка ${rating}',
+			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Загрузка субтитров: ${title}',
 			_ => null,
 		};
 	}

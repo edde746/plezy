@@ -1,4 +1,3 @@
-
 import 'package:flutter/services.dart';
 
 const MethodChannel _smbChannel = MethodChannel('org.snapetech.plezyng/smb2');
@@ -36,13 +35,8 @@ class Smb2CancelToken {
 }
 
 class Smb2Stat {
-  Smb2Stat({
-    this.size = 0,
-    DateTime? modified,
-    this.isHidden = false,
-    this.isFile = true,
-    this.isDirectory = false,
-  }) : modified = modified ?? DateTime.fromMillisecondsSinceEpoch(0);
+  Smb2Stat({this.size = 0, DateTime? modified, this.isHidden = false, this.isFile = true, this.isDirectory = false})
+    : modified = modified ?? DateTime.fromMillisecondsSinceEpoch(0);
 
   final int size;
   final DateTime modified;
@@ -52,12 +46,7 @@ class Smb2Stat {
 }
 
 class Smb2DirectoryEntry {
-  const Smb2DirectoryEntry({
-    required this.name,
-    required this.stat,
-    this.isDirectory = false,
-    this.isFile = true,
-  });
+  const Smb2DirectoryEntry({required this.name, required this.stat, this.isDirectory = false, this.isFile = true});
 
   final String name;
   final Smb2Stat stat;
@@ -154,12 +143,7 @@ class Smb2Pool {
     return value;
   }
 
-  Future<List<int>> _read(
-    String path,
-    int offset,
-    int length,
-    Smb2CancelToken? cancelToken,
-  ) async {
+  Future<List<int>> _read(String path, int offset, int length, Smb2CancelToken? cancelToken) async {
     _ensureOpen();
     if (cancelToken?.isCancelled == true) {
       throw const Smb2Exception(type: Smb2ErrorType.cancelled);
@@ -168,11 +152,7 @@ class Smb2Pool {
       throw const Smb2Exception(type: Smb2ErrorType.invalidParam);
     }
     try {
-      final bytes = await _invoke<Uint8List>('read', _arguments({
-        'path': path,
-        'offset': offset,
-        'length': length,
-      }));
+      final bytes = await _invoke<Uint8List>('read', _arguments({'path': path, 'offset': offset, 'length': length}));
       if (cancelToken?.isCancelled == true) {
         throw const Smb2Exception(type: Smb2ErrorType.cancelled);
       }
@@ -194,10 +174,7 @@ class Smb2Pool {
     }
   }
 
-  Map<String, Object?> _arguments(Map<String, Object?> values) => {
-    ...values,
-    'handle': _handle,
-  };
+  Map<String, Object?> _arguments(Map<String, Object?> values) => {...values, 'handle': _handle};
 
   void _ensureOpen() {
     if (_closed) throw const Smb2Exception(type: Smb2ErrorType.cancelled);
@@ -240,3 +217,4 @@ Smb2ErrorType _errorType(String code) => switch (code) {
   'isADirectory' => Smb2ErrorType.isADirectory,
   _ => Smb2ErrorType.network,
 };
+

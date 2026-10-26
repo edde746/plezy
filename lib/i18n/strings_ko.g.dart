@@ -104,6 +104,7 @@ class TranslationsKo extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$ko fileSources = _Translations$fileSources$ko._(_root);
 	@override late final _Translations$lending$ko lending = _Translations$lending$ko._(_root);
 	@override late final _Translations$audiobook$ko audiobook = _Translations$audiobook$ko._(_root);
+	@override late final _Translations$sourceSetup$ko sourceSetup = _Translations$sourceSetup$ko._(_root);
 	@override late final _Translations$comics$ko comics = _Translations$comics$ko._(_root);
 }
 
@@ -760,6 +761,13 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get regionFormatDescription => '날짜, 숫자, 측정 단위의 표시 형식을 선택하세요.';
 	@override String get metadataLanguage => '메타데이터 언어';
 	@override String get metadataLanguageDescription => '서버가 지원하는 경우 제목과 설명에 사용할 언어입니다. 오디오와 자막 언어는 별도로 설정합니다.';
+	@override String get experimentalDolbyVision => '실험적 Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => '다음 재생에서 실험적 FEL 렌더러를 사용합니다. 별도로 빌드한 엔진이 필요합니다.';
+	@override String get dvExperimentUnavailableDescription => '이 실험은 현재 Linux에서만 사용할 수 있습니다.';
+	@override String get dvCompatibilityFallback => '호환성 대체 모드';
+	@override String get dvCompatibilityFallbackDescription => '실험을 시작할 수 없으면 기본 렌더러를 사용합니다. FEL 데이터가 손실될 수 있습니다.';
+	@override String get dvExperimentDiagnostics => '비디오 실험 로그';
+	@override String get dvExperimentDiagnosticsDescription => '다음 재생에서 상세 플레이어 로그를 활성화합니다.';
 }
 
 // Path: themeEditor
@@ -3059,6 +3067,12 @@ class _Translations$fileSources$ko extends Translations$fileSources$en {
 	@override String get useFiles => '파일과 책을 사용하십시오';
 	@override String get cancelScan => '스캔 취소';
 	@override String get googleDrive => 'Google Drive';
+	@override String get smbEndpointHint => '예: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'SMB 서버와 공유 폴더 하나를 입력하세요.';
+	@override String get smbFolderHelp => '공유 폴더 전체를 사용하려면 비워 두고, 일부만 사용하려면 그 안의 폴더를 입력하세요.';
+	@override String get smbDomain => '도메인(선택 사항)';
+	@override String get smbEncryption => 'SMB3 연결 암호화';
+	@override String get smbEncryptionHint => 'NAS에서 지원하는 경우 SMB3 암호화를 사용합니다.';
 }
 
 // Path: lending
@@ -3125,7 +3139,6 @@ class _Translations$audiobook$ko extends Translations$audiobook$en {
 	_Translations$audiobook$ko._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
-
 	// Translations
 	@override String get syncTitle => '읽기 & 듣기 Sync';
 	@override String get syncHelp => '기기 내에서 읽기 위치, 듣기 위치, 완성 상태, 책표 및 노트를 유지하십시오. 연결된 스토리지 계정을 선택하고 각 장치에 동일한 동기화 코드를 사용하십시오. 읽기 및 듣기는 별도로 남아 있습니다.';
@@ -3179,14 +3192,106 @@ class _Translations$audiobook$ko extends Translations$audiobook$en {
 	@override String get goToTime => '시간에 가라';
 	@override String get timeHelp => '시간:분:초 또는 분:초';
 }
-
+// Path: sourceSetup
+class _Translations$sourceSetup$ko extends Translations$sourceSetup$en {
+	_Translations$sourceSetup$ko._(TranslationsKo root) : this._root = root, super.internal(root);
+	@override String get savedCertificate => '저장된 서버 인증서';
+	@override String get nfsEndpointInvalid => 'nfs://nas:2049/export와 같은 NFS URL을 입력하세요.';
+	@override String get dlnaNone => 'DLNA 서버를 찾지 못했습니다. 장치 설명 URL을 직접 입력하세요.';
+	@override String get dlnaServers => 'DLNA 미디어 서버';
+	@override String get dlnaUnavailable => '이 네트워크에서는 DLNA 검색을 사용할 수 없습니다. 장치 설명 URL을 직접 입력하세요.';
+	@override String get dlnaSearching => '로컬 네트워크에서 DLNA 서버 검색 중';
+	@override String get networkSearching => '로컬 네트워크 검색 중…';
+	@override String get dlnaDiscover => 'DLNA 서버 찾기';
+	@override String get dlnaHelp => '장치를 찾으려면 로컬 네트워크의 멀티캐스트가 필요합니다. 서버가 나타나지 않으면 위에 장치 설명 URL을 입력하세요.';
+	@override String get dlnaRoot => 'DLNA 개체 ID입니다. 비워 두면 장치의 루트를 사용합니다.';
+	@override String get passwordOrKey => '비밀번호를 입력하거나 아래에 개인 키를 추가하세요.';
+	@override String get sshFingerprint => 'SSH 호스트 키의 SHA256 지문';
+	@override String get sshFingerprintHelp => '서버 관리자에게 확인하세요. 서버에서 ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub 명령을 실행하고 표시된 SHA256 값을 사용하세요.';
+	@override String get sshFingerprintKeep => '현재 고정된 지문을 유지하려면 비워 두세요. 변경하려면 새 서버 지문을 입력하세요.';
+	@override String get sshAuthentication => 'SSH 공개 키 인증';
+	@override String get sshAuthenticationHelp => '선택 사항입니다. 비밀번호 인증도 지원합니다.';
+	@override String get privateKey => '개인 키(PEM 또는 OpenSSH 형식)';
+	@override String get privateKeyPassphrase => '개인 키 암호 구문';
+	@override String get nfsMountPort => 'NFS 마운트 서비스 TCP 포트';
+	@override String get nfsMountPortHelp => '기본값: 20048';
+	@override String get nfsUserId => 'NFS 사용자 ID(AUTH_SYS)';
+	@override String get nfsUserIdHelp => '기본값: 1000. NAS 내보내기 설정에서 허용한 ID를 사용하세요.';
+	@override String get nfsGroupId => 'NFS 그룹 ID(AUTH_SYS)';
+	@override String get nfsGroupIdHelp => '기본값: 1000. NAS 내보내기 설정에서 허용한 그룹 ID를 사용하세요.';
+	@override String get nfsEncryption => 'NFS 암호화 필수(RPC-with-TLS)';
+	@override String get nfsEncryptionHelp => 'NFS와 마운트 서비스에 TLS 1.3을 요구합니다. NAS가 지원하지 않으면 연결을 거부합니다.';
+	@override String get nfsTrustCertificate => '사용자 지정 NFS CA 또는 서버 인증서(PEM, 선택 사항)';
+	@override String get nfsTrustHelp => '이 장치에서 신뢰하는 인증서를 사용하려면 비워 두세요. 필요하면 사설 CA 또는 자체 서명 서버 인증서를 추가하세요. 인증서의 이름은 NFS URL의 호스트와 일치해야 합니다.';
+	@override String get nfsTrustInvalid => 'PEM 형식의 CA 또는 서버 인증서를 사용하세요. 개인 키는 포함하지 마세요.';
+	@override String get addTrustCertificate => '사용자 지정 신뢰 인증서 추가';
+	@override String get replaceTrustCertificate => '저장된 사용자 지정 인증서 교체';
+	@override String get nfsTlsHelp => 'RPC-with-TLS는 일반 NFS 및 마운트 서비스 포트를 사용하며, NAS가 RFC 9289를 지원해야 합니다. TLS 1.3이 필수입니다. 호스트 이름 또는 IP가 인증서와 일치해야 합니다. 암호화된 채널에서도 AUTH_SYS UID/GID가 적용됩니다.';
+	@override String get clientCertificate => '클라이언트 인증서(선택 사항)';
+	@override String get clientCertificateHelp => 'NAS가 이 클라이언트를 인증하도록 합니다. AUTH_SYS ID에는 여전히 NAS 내보내기 정책이 적용됩니다.';
+	@override String get savedIdentity => '저장된 클라이언트 인증 정보를 사용합니다.';
+	@override String get replaceIdentity => '저장된 클라이언트 인증 정보 교체';
+	@override String get chooseIdentity => 'PKCS#12 클라이언트 인증 정보 선택';
+	@override String get identityPassphrase => '클라이언트 인증 정보 암호 구문';
+	@override String get identityPassphraseHelp => '파일에 암호 구문이 없으면 비워 두세요.';
+	@override String get removeIdentity => '저장된 클라이언트 인증 정보 제거';
+	@override String get identityStorageHelp => '클라이언트 인증 정보는 암호화된 소스 자격 증명 저장소에 저장됩니다. 저장된 인증 정보를 유지하려면 이 섹션을 변경하지 마세요.';
+	@override String get nfsLimitations => 'TCP를 통한 읽기 전용 NFSv3입니다. RPC-with-TLS를 사용하지 않으면 NFS 트래픽이 암호화되지 않습니다. NAS는 선택한 AUTH_SYS ID와 비특권 클라이언트 포트를 허용해야 합니다(보통 내보내기 옵션에서 ‘insecure’로 표시됨). NFSv4와 UDP는 지원하지 않습니다.';
+	@override String get nfsSetupHelp => 'NFS 설정 도움말';
+	@override String get nfsSetupHint => '연결되지 않으면 이 설정들을 확인하세요.';
+	@override String get nfsSetupDetails => 'TCP 기반 NFSv3 내보내기를 사용하세요. 암호화가 필수인 경우 NFS와 마운트 서비스가 모두 RPC-with-TLS를 지원해야 합니다. 이 장치에서 서버 인증서를 신뢰하면 사용자 지정 인증서를 비워 두세요. 그렇지 않으면 NAS CA 또는 자체 서명 인증서를 추가하세요. 인증서 이름은 엔드포인트의 호스트와 일치해야 합니다. NAS가 상호 TLS를 요구하면 해당 PKCS#12 클라이언트 인증 정보를 추가하세요. 마지막으로 내보내기 설정이 지정한 AUTH_SYS UID/GID와 클라이언트 포트 정책을 허용하는지 확인하세요.';
+	@override String get ftpHelp => 'FTP는 패시브 모드를 사용합니다. 암호화되지 않은 FTP에는 ftp://, 명시적 TLS에는 ftpes://를 사용하세요. ftps://도 TLS를 사용하며, 포트 990에서는 암시적 TLS를, 다른 포트에서는 명시적 TLS를 사용합니다.';
+	@override String get openSubtitles => 'OpenSubtitles';
+	@override String get subtitleSetup => '독립 동영상 파일에 사용할 수 있는 선택적 자막 검색 기능입니다.';
+	@override String get apiKey => 'API 키';
+	@override String get optionalUsername => '계정 사용자 이름(선택 사항)';
+	@override String get optionalPassword => '계정 비밀번호(선택 사항)';
+	@override String get subtitlePrivacy => 'opensubtitles.com에서 API 키를 받으세요. 검색 시 동영상 제목과 사용 가능한 IMDb/TMDB ID만 전송하며, 동영상 파일은 절대 전송하지 않습니다. 키와 선택적 계정 자격 증명은 이 소스와 함께 암호화하여 저장합니다.';
+	@override String get automaticMetadata => '온라인 동영상 메타데이터 자동 조회';
+	@override String get metadataPrivacy => '파일명의 제목·연도·에피소드 번호 또는 NFO ID만 전송하며, 미디어나 자격 증명은 절대 전송하지 않습니다. NFO 필드가 항상 우선합니다.';
+	@override String get nfsEncryptionFailure => '암호화된 NFS 연결에서는 NAS의 두 서비스가 RFC 9289와 TLS 1.3을 지원하는지, 인증서 이름과 내보내기 UID/GID가 올바른지 확인하세요. PlezyNG는 암호화 없이 이 연결을 다시 시도하지 않습니다.';
+	@override String get sourceConnecting => '소스에 연결 중';
+	@override String get metadataSearchPrivacy => '이 제목 검색은 Trakt로 전송됩니다. 입력한 제목만 전송하며, 동영상이나 소스 자격 증명은 전송하지 않습니다.';
+	@override String get chooseMatch => '일치하는 결과 선택';
+	@override String get metadataMatchHelp => '선택하기 전에 제목과 연도를 확인하세요. Trakt에는 검색 제목이 전송되며, 동영상은 원래 소스에 그대로 남습니다.';
+	@override String get metadataNoMatches => '일치하는 온라인 제목을 찾지 못했습니다. 다른 제목으로 검색하세요.';
+	@override String get metadataSearch => '온라인 메타데이터 검색';
+	@override String get metadataLoading => '온라인 영화 및 TV 프로그램 정보 조회 중…';
+	@override String get metadataFromTrakt => 'Trakt의 온라인 메타데이터';
+	@override String get metadataNoAutomaticMatch => '자동으로 일치하는 제목을 찾지 못했습니다. 제목을 검색하여 일치하는 결과를 선택하세요.';
+	@override String get metadataFailed => '온라인 메타데이터를 불러오지 못했습니다. 재생과 로컬 정보는 계속 사용할 수 있습니다.';
+	@override String get videoDetailsLoading => '동영상 정보 불러오는 중';
+	@override String get subtitleKeyRequired => 'OpenSubtitles API 키 필요';
+	@override String get subtitleKeyHelp => '이 파일 소스를 편집하여 선택적 자막 설정에 OpenSubtitles API 키를 추가하세요.';
+	@override String get subtitleSearchFailed => '자막 검색에 실패했습니다. API 키, 연결 및 서비스 접근 권한을 확인하세요.';
+	@override String get subtitleApplyFailed => '이 자막을 다운로드하거나 적용하지 못했습니다. 연결을 확인하고 다른 결과를 선택하세요.';
+	@override String get subtitleSearch => 'OpenSubtitles 검색';
+	@override String get subtitleSearchPrivacy => '검색에는 제목과 사용 가능한 IMDb/TMDB ID를 사용합니다. 동영상 파일은 원래 소스에 그대로 남습니다. 선택하기 전에 언어, 강제 표시 또는 청각 장애인용 자막 표시, 평점을 확인하세요.';
+	@override String get movieOrShow => '영화 또는 TV 프로그램';
+	@override String get subtitleTitleHint => '제목을 입력하여 검색 결과 좁히기';
+	@override String get subtitleLanguage => '자막 언어';
+	@override String get subtitleSearching => 'OpenSubtitles 검색 중';
+	@override String get subtitleNoMatches => '일치하는 자막을 찾지 못했습니다. 다른 제목이나 언어를 선택하세요.';
+	@override String get downloadSubtitle => '자막 다운로드';
+	@override String get subtitle => '자막';
+	@override String get nfsTlsRequired => 'RPC-with-TLS 필수';
+	@override String get nfsUnencrypted => '암호화되지 않은 NFS';
+	@override String get tlsEncrypted => 'TLS로 암호화됨';
+	@override String get ftpPlain => '암호화되지 않은 FTP';
+	@override String get sshPinned => 'SSH 암호화 · 호스트 키 고정됨';
+	@override String get smbEncrypted => 'SMB3 암호화 켜짐';
+	@override String get smbUnencrypted => 'SMB3 암호화 꺼짐';
+	@override String get httpUnencrypted => '전송 암호화 없는 HTTP';
+	@override String get checkEndpointSecurity => '엔드포인트 보안 확인';
+	@override String fieldRequired({required Object label}) => '필수 입력 항목: ${label}.';
+	@override String integerRange({required Object label, required Object min, required Object max}) => '${label}: ${min}부터 ${max}까지의 값을 입력하세요.';
+	@override String replaceFile({required Object name}) => '${name} 교체';
+	@override String selectedIdentity({required Object name}) => '선택한 클라이언트 인증 정보: ${name}';
+	@override String subtitleRating({required Object rating}) => '평점 ${rating}';
+	@override String subtitleDownloading({required Object title}) => '자막 다운로드 중: ${title}';
 // Path: comics
 class _Translations$comics$ko extends Translations$comics$en {
 	_Translations$comics$ko._(TranslationsKo root) : this._root = root, super.internal(root);
-
-	final TranslationsKo _root; // ignore: unused_field
-
-	// Translations
 	@override String get fitHeight => '높이에 맞춤';
 	@override String get readingMode => '읽기 모드';
 	@override String get paged => '페이지';
@@ -3199,8 +3304,6 @@ class _Translations$comics$ko extends Translations$comics$en {
 	@override String get savedForComic => '이 프로필에서 이 만화의 표시 설정을 기억합니다.';
 	@override String get readLists => '읽기 목록';
 	@override String get collections => '컬렉션';
-}
-
 // Path: appIcon.names
 class _Translations$appIcon$names$ko extends Translations$appIcon$names$en {
 	_Translations$appIcon$names$ko._(TranslationsKo root) : this._root = root, super.internal(root);
@@ -3450,16 +3553,68 @@ class _Translations$discover$findNext$ko extends Translations$discover$findNext$
 	_Translations$discover$findNext$ko._(TranslationsKo root) : this._root = root, super.internal(root);
 
 	final TranslationsKo _root; // ignore: unused_field
-
 	// Translations
+	@override String get title => '다음에 즐길 콘텐츠 찾기';
+	@override String get open => '다음에 즐길 콘텐츠 찾기';
+	@override String get anyTime => '시간 제한 없음';
+	@override String get timeAvailable => '시간이 얼마나 있나요?';
+	@override String get filters => '지금 이 순간에 맞게 선택하세요';
+	@override String get watch => '보기';
+	@override String get listen => '듣기';
+	@override String get read => '읽기';
+	@override String finishable({required Object duration}) => '${duration} 안에 끝낼 수 있습니다';
+	@override String aboutDuration({required Object duration}) => '약 ${duration}';
+	@override String nextUnit({required Object duration}) => '다음 챕터 · ${duration}';
+	@override String totalDuration({required Object duration}) => '총 ${duration}';
+	@override String get timingVaries => '소요 시간은 달라질 수 있습니다';
+	@override String get notNow => '지금은 건너뛰기';
+	@override String get swipeHint => '표지를 화살표 방향으로 밀거나 아래 버튼을 사용하세요.';
+	@override String get saved => '저장한 추천';
+	@override String savedCount({required Object count}) => '저장한 추천 · ${count}';
+	@override String get undo => '실행 취소';
+	@override String get details => '상세 정보';
+	@override String get noPicks => '아직 선택할 콘텐츠가 없습니다';
+	@override String get noPicksHint => '라이브러리를 연결하거나 미디어 소스를 추가하여 시작하세요.';
+	@override String get noMatches => '지금 조건에 맞는 콘텐츠가 없습니다';
+	@override String get noMatchesHint => '다른 미디어 종류를 선택하거나 시간을 조금 더 늘려 보세요.';
+	@override String get allDone => '모든 추천을 확인했습니다';
+	@override String get allDoneHint => '새로운 추천 조합을 만들면 이 선택지들을 다시 볼 수 있습니다.';
+	@override String get refresh => '다른 추천 조합 찾기';
+	@override String sourceReason({required Object source}) => '출처: ${source}';
+	@override String libraryReason({required Object library}) => '라이브러리: ${library}';
+	@override String get ownedReason => '내 라이브러리에서';
+	@override String get liveNow => '현재 방송 중';
+	@override String get watchLive => '실시간 시청';
+	@override String get filterAnything => '모든 종류';
+	@override String get filterWatch => '보기';
+	@override String get filterListen => '듣기';
+	@override String get filterRead => '읽기';
+	@override String get twentyMinutes => '20분';
+	@override String get fortyFiveMinutes => '45분';
+	@override String get ninetyMinutes => '90분';
+	@override String get apply => '적용';
+	@override String get openFailed => '이 콘텐츠는 더 이상 이용할 수 없습니다. 새로고침하여 다시 확인하세요.';
+	@override String get changeFailed => '변경 사항을 저장할 수 없습니다. 다시 시도하세요.';
+	@override String get savedLimit => '저장한 추천 목록이 가득 찼습니다. 다른 추천을 저장하려면 하나를 삭제하세요.';
+	@override String get chooseHint => '작품을 열거나, 나중을 위해 저장하거나, 건너뛰세요.';
+	@override String get howItWorks => '사용 방법';
+	@override String get notNowHelp => '이 작품을 지금은 건너뜁니다. 라이브러리에는 그대로 남습니다.';
+	@override String get saveHelp => '이 기기의 현재 프로필에 저장된 추천으로 보관합니다. 저장해도 다운로드되지는 않습니다.';
+	@override String get openHelp => '표지를 선택하면 상세 정보를 볼 수 있습니다. 기본 버튼으로 재생하거나 읽거나 작품을 여세요.';
+	@override String get controlsHelp => '키보드나 리모컨: 버튼에 초점을 맞추고 Enter 또는 선택을 누르세요. 실행 취소는 마지막 선택을 되돌립니다.';
+	@override String get artworkLoading => '이미지 불러오는 중…';
+	@override String get artworkUnavailable => '이미지를 표시할 수 없음';
+	@override String get savedFeedback => '저장된 추천에 추가됨';
+	@override String get skippedFeedback => '지금은 건너뜀';
+	@override String get releaseToConfirm => '놓아서 확인';
+	@override String get remoteHint => '표지에 초점: ← / → 선택 · 선택 버튼: 상세 정보 · ↑ / ↓ 초점 이동';
+}
 	@override String get title => '당신의 다음을 찾아라';
 	@override String get open => '당신의 다음을 찾아라';
 	@override String get anyTime => '언제든지';
 	@override String get timeAvailable => '당신은 얼마나 많은 시간이 있습니까?';
 	@override String get filters => '순간을 선택하라';
 	@override String get watch => '보세요';
-	@override String get listen => '듣기';
-	@override String get read => '읽기';
 	@override String finishable({required Object duration}) => '${duration}에 대한 자세한 내용';
 	@override String aboutDuration({required Object duration}) => '에 대해서 ${duration}';
 	@override String nextUnit({required Object duration}) => '다음 기사 · ${duration}';
@@ -3485,8 +3640,6 @@ class _Translations$discover$findNext$ko extends Translations$discover$findNext$
 	@override String get watchLive => '라이브 보기';
 	@override String get filterAnything => '모든 것';
 	@override String get filterWatch => '보세요';
-	@override String get filterListen => '듣기';
-	@override String get filterRead => '읽기';
 	@override String get twentyMinutes => '20 분';
 	@override String get fortyFiveMinutes => '45 분';
 	@override String get ninetyMinutes => '90 분';
@@ -3494,8 +3647,6 @@ class _Translations$discover$findNext$ko extends Translations$discover$findNext$
 	@override String get openFailed => '이 선택은 더 이상 사용할 수 없습니다. 다시 확인하기 위해 새롭게 확인하십시오.';
 	@override String get changeFailed => '이 변화를 저장할 수 없습니다.다시 시도해 보세요.';
 	@override String get savedLimit => '저장된 픽스가 가득합니다. 하나의 픽스를 제거하여 다른 하나를 저장합니다.';
-}
-
 // Path: discover.person
 class _Translations$discover$person$ko extends Translations$discover$person$en {
 	_Translations$discover$person$ko._(TranslationsKo root) : this._root = root, super.internal(root);
@@ -4828,6 +4979,13 @@ extension on TranslationsKo {
 			'settings.regionFormatDescription' => '날짜, 숫자, 측정 단위의 표시 형식을 선택하세요.',
 			'settings.metadataLanguage' => '메타데이터 언어',
 			'settings.metadataLanguageDescription' => '서버가 지원하는 경우 제목과 설명에 사용할 언어입니다. 오디오와 자막 언어는 별도로 설정합니다.',
+			'settings.experimentalDolbyVision' => '실험적 Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => '다음 재생에서 실험적 FEL 렌더러를 사용합니다. 별도로 빌드한 엔진이 필요합니다.',
+			'settings.dvExperimentUnavailableDescription' => '이 실험은 현재 Linux에서만 사용할 수 있습니다.',
+			'settings.dvCompatibilityFallback' => '호환성 대체 모드',
+			'settings.dvCompatibilityFallbackDescription' => '실험을 시작할 수 없으면 기본 렌더러를 사용합니다. FEL 데이터가 손실될 수 있습니다.',
+			'settings.dvExperimentDiagnostics' => '비디오 실험 로그',
+			'settings.dvExperimentDiagnosticsDescription' => '다음 재생에서 상세 플레이어 로그를 활성화합니다.',
 			'themeEditor.builtIn' => '기본 제공',
 			'themeEditor.presets' => '프리셋',
 			'themeEditor.custom' => '사용자 지정',
@@ -5248,6 +5406,8 @@ extension on TranslationsKo {
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}" 미디어 라이브러리 스캔 시작',
 			'messages.libraryScanFailed' => ({required Object error}) => '미디어 라이브러리 스캔 실패: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '"${title}" 메타데이터 새로고침 중...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}" 메타데이터 새로고침 시작됨',
 			'messages.metadataRefreshFailed' => ({required Object error}) => '메타데이터 새로고침 실패: ${error}',
 			'messages.logoutConfirm' => '로그아웃하시겠습니까?',
@@ -5255,8 +5415,6 @@ extension on TranslationsKo {
 			'messages.seasonsLoadFailed' => '시즌을 불러오지 못했습니다',
 			'messages.noEpisodesFound' => '시즌 1에서 에피소드를 찾을 수 없습니다',
 			'messages.noEpisodesFoundGeneral' => '에피소드를 찾을 수 없습니다',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => '에피소드를 불러오지 못했습니다',
 			'messages.noResultsFound' => '결과를 찾을 수 없습니다',
 			'messages.sleepTimerSet' => ({required Object label}) => '취침 타이머가 ${label}(으)로 설정되었습니다',
@@ -5483,14 +5641,66 @@ extension on TranslationsKo {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => '개요',
 			'discover.cast' => '출연진',
+			'discover.findNext.title' => '다음에 즐길 콘텐츠 찾기',
+			'discover.findNext.open' => '다음에 즐길 콘텐츠 찾기',
+			'discover.findNext.anyTime' => '시간 제한 없음',
+			'discover.findNext.timeAvailable' => '시간이 얼마나 있나요?',
+			'discover.findNext.filters' => '지금 이 순간에 맞게 선택하세요',
+			'discover.findNext.watch' => '보기',
+			'discover.findNext.listen' => '듣기',
+			'discover.findNext.read' => '읽기',
+			'discover.findNext.finishable' => ({required Object duration}) => '${duration} 안에 끝낼 수 있습니다',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => '약 ${duration}',
+			'discover.findNext.nextUnit' => ({required Object duration}) => '다음 챕터 · ${duration}',
+			'discover.findNext.totalDuration' => ({required Object duration}) => '총 ${duration}',
+			'discover.findNext.timingVaries' => '소요 시간은 달라질 수 있습니다',
+			'discover.findNext.notNow' => '지금은 건너뛰기',
+			'discover.findNext.swipeHint' => '표지를 화살표 방향으로 밀거나 아래 버튼을 사용하세요.',
+			'discover.findNext.saved' => '저장한 추천',
+			'discover.findNext.savedCount' => ({required Object count}) => '저장한 추천 · ${count}',
+			'discover.findNext.undo' => '실행 취소',
+			'discover.findNext.details' => '상세 정보',
+			'discover.findNext.noPicks' => '아직 선택할 콘텐츠가 없습니다',
+			'discover.findNext.noPicksHint' => '라이브러리를 연결하거나 미디어 소스를 추가하여 시작하세요.',
+			'discover.findNext.noMatches' => '지금 조건에 맞는 콘텐츠가 없습니다',
+			'discover.findNext.noMatchesHint' => '다른 미디어 종류를 선택하거나 시간을 조금 더 늘려 보세요.',
+			'discover.findNext.allDone' => '모든 추천을 확인했습니다',
+			'discover.findNext.allDoneHint' => '새로운 추천 조합을 만들면 이 선택지들을 다시 볼 수 있습니다.',
+			'discover.findNext.refresh' => '다른 추천 조합 찾기',
+			'discover.findNext.sourceReason' => ({required Object source}) => '출처: ${source}',
+			'discover.findNext.libraryReason' => ({required Object library}) => '라이브러리: ${library}',
+			'discover.findNext.ownedReason' => '내 라이브러리에서',
+			'discover.findNext.liveNow' => '현재 방송 중',
+			'discover.findNext.watchLive' => '실시간 시청',
+			'discover.findNext.filterAnything' => '모든 종류',
+			'discover.findNext.filterWatch' => '보기',
+			'discover.findNext.filterListen' => '듣기',
+			'discover.findNext.filterRead' => '읽기',
+			'discover.findNext.twentyMinutes' => '20분',
+			'discover.findNext.fortyFiveMinutes' => '45분',
+			'discover.findNext.ninetyMinutes' => '90분',
+			'discover.findNext.apply' => '적용',
+			'discover.findNext.openFailed' => '이 콘텐츠는 더 이상 이용할 수 없습니다. 새로고침하여 다시 확인하세요.',
+			'discover.findNext.changeFailed' => '변경 사항을 저장할 수 없습니다. 다시 시도하세요.',
+			'discover.findNext.savedLimit' => '저장한 추천 목록이 가득 찼습니다. 다른 추천을 저장하려면 하나를 삭제하세요.',
+			'discover.findNext.chooseHint' => '작품을 열거나, 나중을 위해 저장하거나, 건너뛰세요.',
+			'discover.findNext.howItWorks' => '사용 방법',
+			'discover.findNext.notNowHelp' => '이 작품을 지금은 건너뜁니다. 라이브러리에는 그대로 남습니다.',
+			'discover.findNext.saveHelp' => '이 기기의 현재 프로필에 저장된 추천으로 보관합니다. 저장해도 다운로드되지는 않습니다.',
+			'discover.findNext.openHelp' => '표지를 선택하면 상세 정보를 볼 수 있습니다. 기본 버튼으로 재생하거나 읽거나 작품을 여세요.',
+			'discover.findNext.controlsHelp' => '키보드나 리모컨: 버튼에 초점을 맞추고 Enter 또는 선택을 누르세요. 실행 취소는 마지막 선택을 되돌립니다.',
+			'discover.findNext.artworkLoading' => '이미지 불러오는 중…',
+			'discover.findNext.artworkUnavailable' => '이미지를 표시할 수 없음',
+			'discover.findNext.savedFeedback' => '저장된 추천에 추가됨',
+			'discover.findNext.skippedFeedback' => '지금은 건너뜀',
+			'discover.findNext.releaseToConfirm' => '놓아서 확인',
+			'discover.findNext.remoteHint' => '표지에 초점: ← / → 선택 · 선택 버튼: 상세 정보 · ↑ / ↓ 초점 이동',
 			'discover.findNext.title' => '당신의 다음을 찾아라',
 			'discover.findNext.open' => '당신의 다음을 찾아라',
 			'discover.findNext.anyTime' => '언제든지',
 			'discover.findNext.timeAvailable' => '당신은 얼마나 많은 시간이 있습니까?',
 			'discover.findNext.filters' => '순간을 선택하라',
 			'discover.findNext.watch' => '보세요',
-			'discover.findNext.listen' => '듣기',
-			'discover.findNext.read' => '읽기',
 			'discover.findNext.finishable' => ({required Object duration}) => '${duration}에 대한 자세한 내용',
 			'discover.findNext.aboutDuration' => ({required Object duration}) => '에 대해서 ${duration}',
 			'discover.findNext.nextUnit' => ({required Object duration}) => '다음 기사 · ${duration}',
@@ -5516,8 +5726,6 @@ extension on TranslationsKo {
 			'discover.findNext.watchLive' => '라이브 보기',
 			'discover.findNext.filterAnything' => '모든 것',
 			'discover.findNext.filterWatch' => '보세요',
-			'discover.findNext.filterListen' => '듣기',
-			'discover.findNext.filterRead' => '읽기',
 			'discover.findNext.twentyMinutes' => '20 분',
 			'discover.findNext.fortyFiveMinutes' => '45 분',
 			'discover.findNext.ninetyMinutes' => '90 분',
@@ -5750,6 +5958,8 @@ extension on TranslationsKo {
 			'explore.mdblistShelves.nameHint' => '출처 목록 이름을 사용하기 위해 빈을 남겨 두십시오.',
 			'explore.mdblistShelves.add' => '셰일프 추가',
 			'explore.mdblistShelves.save' => '좌석을 구하라',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => '이동 ${title} 위로',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => '이동 ${title} 아래로',
 			'explore.mdblistShelves.unavailable' => '이 목록은 사용할 수 없습니다. 설정에서 셰일을 제거하거나 제거합니다.',
@@ -6264,6 +6474,8 @@ extension on TranslationsKo {
 			'downloads.resumeDownload' => '다운로드 재개',
 			'downloads.cancelledDownload' => '취소된 다운로드',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} 동기화 중)',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} 다운로드됨 — 클릭하여 완료',
 			'downloads.partialDownloadClickToComplete' => '부분 다운로드됨 — 클릭하여 완료',
 			'downloads.deleting' => '삭제 중...',
@@ -6778,6 +6990,8 @@ extension on TranslationsKo {
 			'addServer.couldNotReachServer' => ({required Object error}) => '서버에 연결할 수 없습니다: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => '로그인 실패: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect 실패: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Plex로 로그인',
 			'addServer.pinExpired' => '로그인 전에 PIN이 만료되었습니다. 다시 시도하세요.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => '계정 등록 실패: ${error}',
@@ -7104,6 +7318,12 @@ extension on TranslationsKo {
 			'fileSources.useFiles' => '파일과 책을 사용하십시오',
 			'fileSources.cancelScan' => '스캔 취소',
 			'fileSources.googleDrive' => 'Google Drive',
+			'fileSources.smbEndpointHint' => '예: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'SMB 서버와 공유 폴더 하나를 입력하세요.',
+			'fileSources.smbFolderHelp' => '공유 폴더 전체를 사용하려면 비워 두고, 일부만 사용하려면 그 안의 폴더를 입력하세요.',
+			'fileSources.smbDomain' => '도메인(선택 사항)',
+			'fileSources.smbEncryption' => 'SMB3 연결 암호화',
+			'fileSources.smbEncryptionHint' => 'NAS에서 지원하는 경우 SMB3 암호화를 사용합니다.',
 			'lending.title' => '공공 도서관',
 			'lending.add' => '도서관 추가',
 			'lending.other' => '또 다른 도서관',
@@ -7205,6 +7425,93 @@ extension on TranslationsKo {
 			'audiobook.statusFinished' => '마무리',
 			'audiobook.goToTime' => '시간에 가라',
 			'audiobook.timeHelp' => '시간:분:초 또는 분:초',
+			'sourceSetup.savedCertificate' => '저장된 서버 인증서',
+			'sourceSetup.nfsEndpointInvalid' => 'nfs://nas:2049/export와 같은 NFS URL을 입력하세요.',
+			'sourceSetup.dlnaNone' => 'DLNA 서버를 찾지 못했습니다. 장치 설명 URL을 직접 입력하세요.',
+			'sourceSetup.dlnaServers' => 'DLNA 미디어 서버',
+			'sourceSetup.dlnaUnavailable' => '이 네트워크에서는 DLNA 검색을 사용할 수 없습니다. 장치 설명 URL을 직접 입력하세요.',
+			'sourceSetup.dlnaSearching' => '로컬 네트워크에서 DLNA 서버 검색 중',
+			'sourceSetup.networkSearching' => '로컬 네트워크 검색 중…',
+			'sourceSetup.dlnaDiscover' => 'DLNA 서버 찾기',
+			'sourceSetup.dlnaHelp' => '장치를 찾으려면 로컬 네트워크의 멀티캐스트가 필요합니다. 서버가 나타나지 않으면 위에 장치 설명 URL을 입력하세요.',
+			'sourceSetup.dlnaRoot' => 'DLNA 개체 ID입니다. 비워 두면 장치의 루트를 사용합니다.',
+			'sourceSetup.passwordOrKey' => '비밀번호를 입력하거나 아래에 개인 키를 추가하세요.',
+			'sourceSetup.sshFingerprint' => 'SSH 호스트 키의 SHA256 지문',
+			'sourceSetup.sshFingerprintHelp' => '서버 관리자에게 확인하세요. 서버에서 ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub 명령을 실행하고 표시된 SHA256 값을 사용하세요.',
+			'sourceSetup.sshFingerprintKeep' => '현재 고정된 지문을 유지하려면 비워 두세요. 변경하려면 새 서버 지문을 입력하세요.',
+			'sourceSetup.sshAuthentication' => 'SSH 공개 키 인증',
+			'sourceSetup.sshAuthenticationHelp' => '선택 사항입니다. 비밀번호 인증도 지원합니다.',
+			'sourceSetup.privateKey' => '개인 키(PEM 또는 OpenSSH 형식)',
+			'sourceSetup.privateKeyPassphrase' => '개인 키 암호 구문',
+			'sourceSetup.nfsMountPort' => 'NFS 마운트 서비스 TCP 포트',
+			'sourceSetup.nfsMountPortHelp' => '기본값: 20048',
+			'sourceSetup.nfsUserId' => 'NFS 사용자 ID(AUTH_SYS)',
+			'sourceSetup.nfsUserIdHelp' => '기본값: 1000. NAS 내보내기 설정에서 허용한 ID를 사용하세요.',
+			'sourceSetup.nfsGroupId' => 'NFS 그룹 ID(AUTH_SYS)',
+			'sourceSetup.nfsGroupIdHelp' => '기본값: 1000. NAS 내보내기 설정에서 허용한 그룹 ID를 사용하세요.',
+			'sourceSetup.nfsEncryption' => 'NFS 암호화 필수(RPC-with-TLS)',
+			'sourceSetup.nfsEncryptionHelp' => 'NFS와 마운트 서비스에 TLS 1.3을 요구합니다. NAS가 지원하지 않으면 연결을 거부합니다.',
+			'sourceSetup.nfsTrustCertificate' => '사용자 지정 NFS CA 또는 서버 인증서(PEM, 선택 사항)',
+			'sourceSetup.nfsTrustHelp' => '이 장치에서 신뢰하는 인증서를 사용하려면 비워 두세요. 필요하면 사설 CA 또는 자체 서명 서버 인증서를 추가하세요. 인증서의 이름은 NFS URL의 호스트와 일치해야 합니다.',
+			'sourceSetup.nfsTrustInvalid' => 'PEM 형식의 CA 또는 서버 인증서를 사용하세요. 개인 키는 포함하지 마세요.',
+			'sourceSetup.addTrustCertificate' => '사용자 지정 신뢰 인증서 추가',
+			'sourceSetup.replaceTrustCertificate' => '저장된 사용자 지정 인증서 교체',
+			'sourceSetup.nfsTlsHelp' => 'RPC-with-TLS는 일반 NFS 및 마운트 서비스 포트를 사용하며, NAS가 RFC 9289를 지원해야 합니다. TLS 1.3이 필수입니다. 호스트 이름 또는 IP가 인증서와 일치해야 합니다. 암호화된 채널에서도 AUTH_SYS UID/GID가 적용됩니다.',
+			'sourceSetup.clientCertificate' => '클라이언트 인증서(선택 사항)',
+			'sourceSetup.clientCertificateHelp' => 'NAS가 이 클라이언트를 인증하도록 합니다. AUTH_SYS ID에는 여전히 NAS 내보내기 정책이 적용됩니다.',
+			'sourceSetup.savedIdentity' => '저장된 클라이언트 인증 정보를 사용합니다.',
+			'sourceSetup.replaceIdentity' => '저장된 클라이언트 인증 정보 교체',
+			'sourceSetup.chooseIdentity' => 'PKCS#12 클라이언트 인증 정보 선택',
+			'sourceSetup.identityPassphrase' => '클라이언트 인증 정보 암호 구문',
+			'sourceSetup.identityPassphraseHelp' => '파일에 암호 구문이 없으면 비워 두세요.',
+			'sourceSetup.removeIdentity' => '저장된 클라이언트 인증 정보 제거',
+			'sourceSetup.identityStorageHelp' => '클라이언트 인증 정보는 암호화된 소스 자격 증명 저장소에 저장됩니다. 저장된 인증 정보를 유지하려면 이 섹션을 변경하지 마세요.',
+			'sourceSetup.nfsLimitations' => 'TCP를 통한 읽기 전용 NFSv3입니다. RPC-with-TLS를 사용하지 않으면 NFS 트래픽이 암호화되지 않습니다. NAS는 선택한 AUTH_SYS ID와 비특권 클라이언트 포트를 허용해야 합니다(보통 내보내기 옵션에서 ‘insecure’로 표시됨). NFSv4와 UDP는 지원하지 않습니다.',
+			'sourceSetup.nfsSetupHelp' => 'NFS 설정 도움말',
+			'sourceSetup.nfsSetupHint' => '연결되지 않으면 이 설정들을 확인하세요.',
+			'sourceSetup.nfsSetupDetails' => 'TCP 기반 NFSv3 내보내기를 사용하세요. 암호화가 필수인 경우 NFS와 마운트 서비스가 모두 RPC-with-TLS를 지원해야 합니다. 이 장치에서 서버 인증서를 신뢰하면 사용자 지정 인증서를 비워 두세요. 그렇지 않으면 NAS CA 또는 자체 서명 인증서를 추가하세요. 인증서 이름은 엔드포인트의 호스트와 일치해야 합니다. NAS가 상호 TLS를 요구하면 해당 PKCS#12 클라이언트 인증 정보를 추가하세요. 마지막으로 내보내기 설정이 지정한 AUTH_SYS UID/GID와 클라이언트 포트 정책을 허용하는지 확인하세요.',
+			'sourceSetup.ftpHelp' => 'FTP는 패시브 모드를 사용합니다. 암호화되지 않은 FTP에는 ftp://, 명시적 TLS에는 ftpes://를 사용하세요. ftps://도 TLS를 사용하며, 포트 990에서는 암시적 TLS를, 다른 포트에서는 명시적 TLS를 사용합니다.',
+			'sourceSetup.openSubtitles' => 'OpenSubtitles',
+			'sourceSetup.subtitleSetup' => '독립 동영상 파일에 사용할 수 있는 선택적 자막 검색 기능입니다.',
+			'sourceSetup.apiKey' => 'API 키',
+			'sourceSetup.optionalUsername' => '계정 사용자 이름(선택 사항)',
+			'sourceSetup.optionalPassword' => '계정 비밀번호(선택 사항)',
+			'sourceSetup.subtitlePrivacy' => 'opensubtitles.com에서 API 키를 받으세요. 검색 시 동영상 제목과 사용 가능한 IMDb/TMDB ID만 전송하며, 동영상 파일은 절대 전송하지 않습니다. 키와 선택적 계정 자격 증명은 이 소스와 함께 암호화하여 저장합니다.',
+			'sourceSetup.automaticMetadata' => '온라인 동영상 메타데이터 자동 조회',
+			'sourceSetup.metadataPrivacy' => '파일명의 제목·연도·에피소드 번호 또는 NFO ID만 전송하며, 미디어나 자격 증명은 절대 전송하지 않습니다. NFO 필드가 항상 우선합니다.',
+			'sourceSetup.nfsEncryptionFailure' => '암호화된 NFS 연결에서는 NAS의 두 서비스가 RFC 9289와 TLS 1.3을 지원하는지, 인증서 이름과 내보내기 UID/GID가 올바른지 확인하세요. PlezyNG는 암호화 없이 이 연결을 다시 시도하지 않습니다.',
+			'sourceSetup.sourceConnecting' => '소스에 연결 중',
+			'sourceSetup.metadataSearchPrivacy' => '이 제목 검색은 Trakt로 전송됩니다. 입력한 제목만 전송하며, 동영상이나 소스 자격 증명은 전송하지 않습니다.',
+			'sourceSetup.chooseMatch' => '일치하는 결과 선택',
+			'sourceSetup.metadataMatchHelp' => '선택하기 전에 제목과 연도를 확인하세요. Trakt에는 검색 제목이 전송되며, 동영상은 원래 소스에 그대로 남습니다.',
+			'sourceSetup.metadataNoMatches' => '일치하는 온라인 제목을 찾지 못했습니다. 다른 제목으로 검색하세요.',
+			'sourceSetup.metadataSearch' => '온라인 메타데이터 검색',
+			'sourceSetup.metadataLoading' => '온라인 영화 및 TV 프로그램 정보 조회 중…',
+			'sourceSetup.metadataFromTrakt' => 'Trakt의 온라인 메타데이터',
+			'sourceSetup.metadataNoAutomaticMatch' => '자동으로 일치하는 제목을 찾지 못했습니다. 제목을 검색하여 일치하는 결과를 선택하세요.',
+			'sourceSetup.metadataFailed' => '온라인 메타데이터를 불러오지 못했습니다. 재생과 로컬 정보는 계속 사용할 수 있습니다.',
+			'sourceSetup.videoDetailsLoading' => '동영상 정보 불러오는 중',
+			'sourceSetup.subtitleKeyRequired' => 'OpenSubtitles API 키 필요',
+			'sourceSetup.subtitleKeyHelp' => '이 파일 소스를 편집하여 선택적 자막 설정에 OpenSubtitles API 키를 추가하세요.',
+			'sourceSetup.subtitleSearchFailed' => '자막 검색에 실패했습니다. API 키, 연결 및 서비스 접근 권한을 확인하세요.',
+			'sourceSetup.subtitleApplyFailed' => '이 자막을 다운로드하거나 적용하지 못했습니다. 연결을 확인하고 다른 결과를 선택하세요.',
+			'sourceSetup.subtitleSearch' => 'OpenSubtitles 검색',
+			'sourceSetup.subtitleSearchPrivacy' => '검색에는 제목과 사용 가능한 IMDb/TMDB ID를 사용합니다. 동영상 파일은 원래 소스에 그대로 남습니다. 선택하기 전에 언어, 강제 표시 또는 청각 장애인용 자막 표시, 평점을 확인하세요.',
+			'sourceSetup.movieOrShow' => '영화 또는 TV 프로그램',
+			'sourceSetup.subtitleTitleHint' => '제목을 입력하여 검색 결과 좁히기',
+			'sourceSetup.subtitleLanguage' => '자막 언어',
+			'sourceSetup.subtitleSearching' => 'OpenSubtitles 검색 중',
+			'sourceSetup.subtitleNoMatches' => '일치하는 자막을 찾지 못했습니다. 다른 제목이나 언어를 선택하세요.',
+			'sourceSetup.downloadSubtitle' => '자막 다운로드',
+			'sourceSetup.subtitle' => '자막',
+			'sourceSetup.nfsTlsRequired' => 'RPC-with-TLS 필수',
+			'sourceSetup.nfsUnencrypted' => '암호화되지 않은 NFS',
+			'sourceSetup.tlsEncrypted' => 'TLS로 암호화됨',
+			'sourceSetup.ftpPlain' => '암호화되지 않은 FTP',
+			'sourceSetup.sshPinned' => 'SSH 암호화 · 호스트 키 고정됨',
+			'sourceSetup.smbEncrypted' => 'SMB3 암호화 켜짐',
+			'sourceSetup.smbUnencrypted' => 'SMB3 암호화 꺼짐',
+			'sourceSetup.httpUnencrypted' => '전송 암호화 없는 HTTP',
 			'comics.fitHeight' => '높이에 맞춤',
 			'comics.readingMode' => '읽기 모드',
 			'comics.paged' => '페이지',
@@ -7217,6 +7524,15 @@ extension on TranslationsKo {
 			'comics.savedForComic' => '이 프로필에서 이 만화의 표시 설정을 기억합니다.',
 			'comics.readLists' => '읽기 목록',
 			'comics.collections' => '컬렉션',
+			_ => null,
+		} ?? switch (path) {
+			'sourceSetup.checkEndpointSecurity' => '엔드포인트 보안 확인',
+			'sourceSetup.fieldRequired' => ({required Object label}) => '필수 입력 항목: ${label}.',
+			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => '${label}: ${min}부터 ${max}까지의 값을 입력하세요.',
+			'sourceSetup.replaceFile' => ({required Object name}) => '${name} 교체',
+			'sourceSetup.selectedIdentity' => ({required Object name}) => '선택한 클라이언트 인증 정보: ${name}',
+			'sourceSetup.subtitleRating' => ({required Object rating}) => '평점 ${rating}',
+			'sourceSetup.subtitleDownloading' => ({required Object title}) => '자막 다운로드 중: ${title}',
 			_ => null,
 		};
 	}

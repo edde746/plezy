@@ -275,7 +275,8 @@ class FtpSourceAdapter extends SourceAdapter {
         }
         if (remaining != 0) throw const SourceException(SourceFailure.invalidData);
       } finally {
-        data.destroy();
+        // This transfer owns the data stream, including early range completion.
+        await data.close();
       }
     } finally {
       await _release(session);
@@ -477,3 +478,4 @@ class _FtpSession {
     control?.destroy();
   }
 }
+

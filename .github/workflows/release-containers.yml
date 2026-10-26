@@ -1,3 +1,4 @@
+# ng-runner-policy: private-jit-only-v1
 name: Publish Relay Containers
 
 on:
@@ -17,7 +18,7 @@ permissions:
 jobs:
   publish:
     if: github.event_name != 'release' || github.event.release.prerelease == false
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-publish"]}}', github.run_id)) }}
     timeout-minutes: 30
     steps:
       - name: Require the default branch for manual retries

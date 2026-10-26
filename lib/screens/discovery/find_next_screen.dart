@@ -7,9 +7,10 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../discovery/discovery_choice.dart';
-import '../../discovery/discovery_store.dart';
 import '../../focus/focusable_button.dart';
+import '../../discovery/discovery_store.dart';
 import '../../i18n/strings.g.dart';
+import '../../i18n/presentation_formats.dart';
 import '../../media/ids.dart';
 import '../../media/library_query.dart';
 import '../../media/media_item.dart';
@@ -30,7 +31,6 @@ import '../../screens/sources/source_detail_screen.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../services/settings_service.dart';
-import '../../theme/mono_tokens.dart';
 import '../../utils/formatters.dart';
 import '../../utils/catalog_navigation_helper.dart';
 import '../../utils/global_key_utils.dart';
@@ -39,11 +39,12 @@ import '../../utils/live_tv_matching.dart';
 import '../../utils/live_tv_player_navigation.dart';
 import '../../utils/media_image_helper.dart';
 import '../../utils/media_navigation_helper.dart';
-import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
-import '../../widgets/optimized_media_image.dart';
 import '../../widgets/overlay_sheet.dart';
+import 'discovery_artwork.dart';
+import 'discovery_controls.dart';
+import 'discovery_deck_view.dart';
 
 enum _DiscoveryFamily { anything, watch, listen, read }
 
@@ -85,7 +86,8 @@ class _FindNextScreenState extends State<FindNextScreen> {
   bool _loading = true;
   bool _committing = false;
   bool _retired = false;
-  double _dragDx = 0;
+  String? _feedback;
+  int _artworkRevision = 0;
   DiscoveryChoice? _restoredChoice;
   _DiscoveryFamily _family = _DiscoveryFamily.anything;
   int? _maxMinutes;
@@ -158,7 +160,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
     setState(() {
       _loading = true;
       _retired = false;
-      _dragDx = 0;
+      _feedback = null;
     });
     try {
       await sources.ready;
@@ -178,6 +180,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
       setState(() {
         _state = state;
         _choices = ranked;
+        _restoredChoice = null;
         _position = nextPosition < 0 ? ranked.length : nextPosition;
         _loading = false;
       });
@@ -366,6 +369,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
     bool offlineReady = false,
     String? libraryId,
   }) {
+    if (item.serverId == null && library.serverId != null) {
+      item = item.copyWith(serverId: library.serverId);
+    }
     final type = discoveryTypeForMediaKind(item.kind);
     final id = discoveryMediaIdentity(item);
     final title = item.title?.trim() ?? '';
@@ -374,7 +380,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
     final subtitle = [
       item.parentTitle,
       item.albumArtistTitle,
-      item.year?.toString(),
+      if (item.year != null) formatDecimal(item.year!, maximumDecimals: 0),
       if (item.libraryTitle != null) item.libraryTitle,
     ].whereType<String>().where((value) => value.trim().isNotEmpty).toSet().join(' · ');
     return DiscoveryChoice(
@@ -383,7 +389,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
       title: title,
       subtitle: subtitle,
       reason: library.title.isNotEmpty
-          ? t.discover.findNext.libraryReason(library: library.title)
+          ? t.discover.findNext.libraryReason(library: isolateDisplayText(library.title))
           : t.discover.findNext.ownedReason,
       summary: item.summary ?? '',
       durationMs: duration,
@@ -398,7 +404,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
       year: item.year,
       offlineReady: offlineReady,
       mediaItem: item,
-      artworkPath: item.posterThumb(mixedHubContext: true) ?? item.artPath,
+      artworkPath: item.posterThumb(mixedHubContext: true),
     );
   }
 
@@ -420,7 +426,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
       type: DiscoveryChoiceType.video,
       title: title,
       subtitle: sourceLabel,
-      reason: t.discover.findNext.sourceReason(source: sourceLabel),
+      reason: t.discover.findNext.sourceReason(source: isolateDisplayText(sourceLabel)),
       summary: item.overview ?? '',
       durationMs: item.kind == MediaKind.movie ? media.durationMs : null,
       totalDurationMs: item.kind == MediaKind.movie ? media.durationMs : null,
@@ -496,7 +502,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
       type: type,
       title: entry.title.trim(),
       subtitle: subtitle,
-      reason: t.discover.findNext.sourceReason(source: source.name),
+      reason: t.discover.findNext.sourceReason(source: isolateDisplayText(source.name)),
       summary: entry.description,
       durationMs: unitDuration,
       totalDurationMs: totalDuration,
@@ -643,12 +649,14 @@ class _FindNextScreenState extends State<FindNextScreen> {
                 children: [
                   for (final item in <int?>[null, 20, 45, 90])
                     ChoiceChip(
-                      label: Text(switch (item) {
-                        null => t.discover.findNext.anyTime,
-                        20 => t.discover.findNext.twentyMinutes,
-                        45 => t.discover.findNext.fortyFiveMinutes,
-                        _ => t.discover.findNext.ninetyMinutes,
-                      }),
+                      label: Text(
+                        localizeDecimalDigits(switch (item) {
+                          null => t.discover.findNext.anyTime,
+                          20 => t.discover.findNext.twentyMinutes,
+                          45 => t.discover.findNext.fortyFiveMinutes,
+                          _ => t.discover.findNext.ninetyMinutes,
+                        }),
+                      ),
                       selected: item == maxMinutes,
                       onSelected: (_) => setSheetState(() => maxMinutes = item),
                     ),
@@ -669,6 +677,8 @@ class _FindNextScreenState extends State<FindNextScreen> {
     );
     if (!mounted || result == null) return;
     setState(() {
+      _restoredChoice = null;
+      _feedback = null;
       _family = result.family;
       _maxMinutes = result.minutes;
       _position = _choices.indexWhere((choice) => !_state.seen.contains(choice.id) && _matchesFilters(choice));
@@ -710,7 +720,9 @@ class _FindNextScreenState extends State<FindNextScreen> {
           final index = _choices.indexWhere((item) => item.id == choice.id);
           if (index >= _position) _position = index + 1;
         }
-        _dragDx = 0;
+        _feedback = action == DiscoveryDecisionAction.save
+            ? t.discover.findNext.savedFeedback
+            : t.discover.findNext.skippedFeedback;
       });
     } catch (_) {
       if (mounted) showErrorSnackBar(context, t.discover.findNext.changeFailed);
@@ -738,6 +750,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
         final currentVersion = _choices.where((choice) => choice.id == snapshot.id).firstOrNull;
         setState(() {
           _state = state;
+          _feedback = null;
           _restoredChoice = currentVersion ?? snapshot;
         });
       }
@@ -1011,16 +1024,6 @@ class _FindNextScreenState extends State<FindNextScreen> {
     await _openChoice(choice, detailsOnly: true);
   }
 
-  void _handleSwipeEnd({required double threshold}) {
-    final logicalDx = Directionality.of(context) == TextDirection.rtl ? -_dragDx : _dragDx;
-    setState(() => _dragDx = 0);
-    if (logicalDx > threshold) {
-      unawaited(_decide(DiscoveryDecisionAction.save));
-    } else if (logicalDx < -threshold) {
-      unawaited(_decide(DiscoveryDecisionAction.notNow));
-    }
-  }
-
   String _typeLabel(DiscoveryChoice choice) {
     if (choice.liveProgramId != null) return t.discover.findNext.liveNow;
     if (choice.mediaKind != null) return choice.mediaKind!.label;
@@ -1092,51 +1095,49 @@ class _FindNextScreenState extends State<FindNextScreen> {
     DiscoveryChoiceType.comic => GridLayoutConstants.fullCardPosterAspectRatio,
   };
 
-  Widget _artwork(DiscoveryChoice choice) {
-    final radius = tokens(context).radiusLg;
-    final isCover = _isCoverChoice(choice);
-    final fit = isCover ? BoxFit.contain : BoxFit.cover;
-    final placeholderColor = Theme.of(context).colorScheme.surfaceContainerHighest;
+  Widget _artwork(DiscoveryChoice choice, {bool backdrop = false}) {
     final sourceEntry = choice.sourceEntry;
-    if (sourceEntry != null) {
-      return ClipRRect(
-        borderRadius: BorderRadius.circular(radius),
-        child: ColoredBox(
-          color: placeholderColor,
-          child: FutureBuilder(
-            future: context.read<SourceController>().cover(sourceEntry),
-            builder: (context, snapshot) {
-              final file = snapshot.data;
-              if (file == null) return _artFallback(choice);
-              return Image.file(file, fit: fit, errorBuilder: (_, _, _) => _artFallback(choice));
-            },
-          ),
-        ),
-      );
-    }
-    final client = choice.serverId == null
+    final sources = context.read<SourceController>();
+    final serverId = choice.serverId;
+    final client = serverId == null
         ? null
-        : context.read<MultiServerProvider>().getClientForServer(ServerId(choice.serverId!));
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(radius),
-      child: ColoredBox(
-        color: placeholderColor,
-        child: OptimizedMediaImage(
-          client: client,
-          imagePath: choice.artworkPath,
-          fit: fit,
-          fallbackIcon: _iconForChoice(choice),
-          imageType: switch (choice.type) {
-            DiscoveryChoiceType.music => ImageType.square,
-            DiscoveryChoiceType.liveProgram => ImageType.thumb,
-            DiscoveryChoiceType.video ||
-            DiscoveryChoiceType.sourceVideo ||
-            DiscoveryChoiceType.audiobook ||
-            DiscoveryChoiceType.ebook ||
-            DiscoveryChoiceType.comic => ImageType.poster,
-          },
-        ),
+        : context.watch<MultiServerProvider>().getClientForServer(ServerId(serverId));
+    final downloads = context.watch<DownloadProvider>();
+    // Prefer every available downloaded image before making a network request.
+    // A show's poster may not be cached, while an episode/album thumb is.
+    final paths = discoveryArtworkPaths(choice, backdrop: backdrop);
+    final downloadedThumb = choice.mediaItem == null
+        ? null
+        : downloads.getArtworkPaths(choice.mediaItem!.globalKey)?.thumbPath;
+    if (downloadedThumb != null && downloadedThumb.isNotEmpty && !paths.contains(downloadedThumb)) {
+      paths.add(downloadedThumb);
+    }
+    return DiscoveryArtwork(
+      key: ValueKey(
+        [
+          _ownerProfileId,
+          _sourceGeneration,
+          _artworkRevision,
+          choice.id,
+          sourceEntry?.coverId,
+          sourceEntry?.onlinePosterUrl,
+        ].join(':'),
       ),
+      paths: paths,
+      decorative: backdrop,
+      onRetry: backdrop ? null : () => setState(() => _artworkRevision++),
+      client: client,
+      localPathFor: serverId == null ? null : (path) => downloads.getArtworkLocalPath(ServerId(serverId), path),
+      loadCover: sourceEntry == null ? null : (refresh) => sources.cover(sourceEntry, refresh: refresh),
+      fit: !backdrop && _isCoverChoice(choice) ? BoxFit.contain : BoxFit.cover,
+      icon: _iconForChoice(choice),
+      imageType: backdrop
+          ? ImageType.art
+          : switch (choice.type) {
+              DiscoveryChoiceType.music => ImageType.square,
+              DiscoveryChoiceType.liveProgram => ImageType.thumb,
+              _ => ImageType.poster,
+            },
     );
   }
 
@@ -1149,415 +1150,153 @@ class _FindNextScreenState extends State<FindNextScreen> {
     DiscoveryChoiceType.liveProgram => Symbols.live_tv_rounded,
   };
 
-  Widget _artFallback(DiscoveryChoice choice) => ColoredBox(
-    color: Theme.of(context).colorScheme.surfaceContainerHighest,
-    child: Center(
-      child: AppIcon(_iconForChoice(choice), fill: 1, size: 76, color: Theme.of(context).colorScheme.onSurfaceVariant),
+  Widget _buildChoice(DiscoveryChoice choice, {required bool canUndo}) => DiscoveryDeckView(
+    choiceId: choice.id,
+    title: isolateDisplayText(choice.title),
+    subtitle: [choice.subtitle, choice.reason].where((text) => text.isNotEmpty).map(isolateDisplayText).join(' · '),
+    facts: [_typeLabel(choice), _durationLabel(choice), if (choice.offlineReady) t.fileSources.offline].join(' · '),
+    summary: choice.summary,
+    artwork: _artwork(choice),
+    artworkAspectRatio: _artworkAspectRatio(choice),
+    enabled: !_committing,
+    onSave: () => _decide(DiscoveryDecisionAction.save),
+    onSkip: () => _decide(DiscoveryDecisionAction.notNow),
+    onDetails: () => _showDetails(choice),
+    actions: DiscoveryActionBar(
+      primaryLabel: _primaryLabel(choice),
+      primaryIcon: _iconForChoice(choice),
+      showDetails: _primaryLabel(choice) != t.discover.findNext.details,
+      onSkip: _committing ? null : () => _decide(DiscoveryDecisionAction.notNow),
+      onSave: _committing ? null : () => _decide(DiscoveryDecisionAction.save),
+      onOpen: _committing ? null : () => _openChoice(choice),
+      onDetails: _committing || _primaryLabel(choice) == t.discover.findNext.details
+          ? null
+          : () => _showDetails(choice),
+      onUndo: _committing || !canUndo ? null : _undo,
+      feedback: _feedback,
     ),
   );
 
-  Widget _buildChoice(DiscoveryChoice choice) {
-    final theme = Theme.of(context);
-    final isTv = PlatformDetector.isTV();
-    final tvScale = TvLayoutConstants.scaleOf(context);
-    final reducedMotion = MediaQuery.disableAnimationsOf(context);
-    final canSwipe = !isTv && !MediaQuery.accessibleNavigationOf(context) && !_committing;
-    final artAspectRatio = _artworkAspectRatio(choice);
-    final textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
-    final logicalDrag = Directionality.of(context) == TextDirection.rtl ? -_dragDx : _dragDx;
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final screenWidth = constraints.maxWidth;
-        final horizontalInset = isTv
-            ? TvLayoutConstants.horizontalInset * tvScale
-            : ScreenBreakpoints.isMobile(screenWidth)
-            ? 20.0
-            : ScreenBreakpoints.isDesktopOrLarger(screenWidth)
-            ? 36.0
-            : 28.0;
-        final maxContentWidth = isTv || screenWidth >= ScreenBreakpoints.largeDesktop ? 1440.0 : 1280.0;
-        final contentWidth = math.min(screenWidth - horizontalInset * 2, maxContentWidth).toDouble();
-        final useSideBySide =
-            (isTv || ScreenBreakpoints.isWideTabletOrLarger(screenWidth)) &&
-            contentWidth >= 740 &&
-            constraints.maxHeight >= 520 &&
-            textScale < 1.4;
-        final gap = isTv ? 40.0 * tvScale : 32.0;
-        final sideArtWidth = math.min(isTv ? 460.0 * tvScale : 400.0, (contentWidth - gap) * 0.42).toDouble();
-        final sideArtHeight = math.min(sideArtWidth / artAspectRatio, constraints.maxHeight - 40).toDouble();
-        final actualSideArtWidth = sideArtHeight * artAspectRatio;
-        final detailWidth = contentWidth - actualSideArtWidth - gap;
-        final columnArtMaxWidth = math.min(contentWidth, isTv ? 640.0 * tvScale : 520.0).toDouble();
-        final compactColumn = constraints.maxHeight < 560 || textScale >= 1.35;
-        final columnArtHeight = math
-            .min(constraints.maxHeight * (compactColumn ? 0.46 : 0.56), columnArtMaxWidth / artAspectRatio)
-            .toDouble();
-        final columnArtWidth = columnArtHeight * artAspectRatio;
-        final gestureArtWidth = useSideBySide ? actualSideArtWidth : columnArtWidth;
-        final swipeThreshold = (gestureArtWidth * 0.25).clamp(64.0, 144.0).toDouble();
-        final offset = reducedMotion ? 0.0 : _dragDx.clamp(-180.0, 180.0).toDouble();
-        final alignment = useSideBySide ? CrossAxisAlignment.start : CrossAxisAlignment.center;
-        final textAlignment = useSideBySide ? TextAlign.start : TextAlign.center;
-
-        Widget artwork = _artwork(choice);
-        if (canSwipe && _dragDx.abs() > 18) {
-          artwork = Stack(
-            fit: StackFit.expand,
-            children: [
-              artwork,
-              PositionedDirectional(
-                top: 16,
-                end: logicalDrag > 0 ? 16 : null,
-                start: logicalDrag < 0 ? 16 : null,
-                child: _PillLabel(
-                  icon: logicalDrag > 0 ? Symbols.bookmark_add_rounded : Symbols.arrow_forward_rounded,
-                  text: logicalDrag > 0 ? t.common.save : t.discover.findNext.notNow,
-                ),
-              ),
-            ],
-          );
-        }
-        artwork = GestureDetector(
-          behavior: HitTestBehavior.opaque,
-          onHorizontalDragUpdate: canSwipe ? (details) => setState(() => _dragDx += details.delta.dx) : null,
-          onHorizontalDragEnd: canSwipe ? (_) => _handleSwipeEnd(threshold: swipeThreshold) : null,
-          onHorizontalDragCancel: canSwipe ? () => setState(() => _dragDx = 0) : null,
-          child: reducedMotion ? artwork : Transform.translate(offset: Offset(offset, 0), child: artwork),
-        );
-
-        final titleStyle = isTv ? theme.textTheme.headlineMedium : theme.textTheme.headlineSmall;
-        final title = Text(choice.title, textAlign: textAlignment, style: titleStyle);
-        final subtitle = choice.subtitle.isEmpty
-            ? null
-            : Text(
-                choice.subtitle,
-                textAlign: textAlignment,
-                style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-              );
-        final typeFact = Text(_typeLabel(choice), style: theme.textTheme.labelLarge);
-        final durationFact = Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AppIcon(Symbols.schedule_rounded, size: 17, color: theme.colorScheme.onSurfaceVariant),
-            const SizedBox(width: 6),
-            Flexible(
-              child: Text(
-                _durationLabel(choice),
-                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-              ),
-            ),
-          ],
-        );
-        final offlineFact = ConstrainedBox(
-          constraints: BoxConstraints(maxWidth: useSideBySide ? detailWidth : contentWidth),
-          child: Row(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AppIcon(Symbols.download_done_rounded, size: 17, color: theme.colorScheme.onSurfaceVariant),
-              const SizedBox(width: 6),
-              Flexible(
-                child: Text(
-                  t.fileSources.offline,
-                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                ),
-              ),
-            ],
-          ),
-        );
-        final facts = Wrap(
-          alignment: useSideBySide ? WrapAlignment.start : WrapAlignment.center,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          spacing: 14,
-          runSpacing: 8,
-          children: [typeFact, durationFact, if (choice.offlineReady) offlineFact],
-        );
-        final notNow = FocusableButton(
-          onPressed: _committing ? null : () => _decide(DiscoveryDecisionAction.notNow),
-          child: OutlinedButton.icon(
-            onPressed: _committing ? null : () => _decide(DiscoveryDecisionAction.notNow),
-            icon: const AppIcon(Symbols.arrow_forward_rounded),
-            label: Text(t.discover.findNext.notNow),
-          ),
-        );
-        final save = FocusableButton(
-          onPressed: _committing ? null : () => _decide(DiscoveryDecisionAction.save),
-          child: FilledButton.tonalIcon(
-            onPressed: _committing ? null : () => _decide(DiscoveryDecisionAction.save),
-            icon: const AppIcon(Symbols.bookmark_add_rounded),
-            label: Text(t.common.save),
-          ),
-        );
-        final primaryAction = FocusableButton(
-          onPressed: _committing ? null : () => _openChoice(choice),
-          child: FilledButton.icon(
-            onPressed: _committing ? null : () => _openChoice(choice),
-            icon: AppIcon(_iconForChoice(choice)),
-            label: Text(_primaryLabel(choice)),
-          ),
-        );
-        final showDetails = _primaryLabel(choice) != t.discover.findNext.details;
-        final detailsAction = FocusableButton(
-          onPressed: _committing ? null : () => _showDetails(choice),
-          child: TextButton.icon(
-            onPressed: _committing ? null : () => _showDetails(choice),
-            icon: const AppIcon(Symbols.info_rounded),
-            label: Text(t.discover.findNext.details),
-          ),
-        );
-        final actionAlignment = useSideBySide ? WrapAlignment.start : WrapAlignment.center;
-        final actions = Column(
-          crossAxisAlignment: alignment,
-          children: [
-            Wrap(alignment: actionAlignment, spacing: 8, runSpacing: 8, children: [notNow, save, primaryAction]),
-            if (showDetails) ...[
-              const SizedBox(height: 4),
-              Wrap(alignment: actionAlignment, children: [detailsAction]),
-            ],
-          ],
-        );
-
-        final details = Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: alignment,
-          children: [
-            title,
-            if (subtitle != null) ...[const SizedBox(height: 4), subtitle],
-            const SizedBox(height: 14),
-            facts,
-            if (choice.reason.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Text(
-                choice.reason,
-                textAlign: textAlignment,
-                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-              ),
-            ],
-            if (choice.summary.isNotEmpty) ...[
-              const SizedBox(height: 10),
-              Text(
-                choice.summary,
-                textAlign: textAlignment,
-                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-              ),
-            ],
-            if (canSwipe) ...[
-              const SizedBox(height: 8),
-              Text(
-                t.discover.findNext.swipeHint,
-                textAlign: textAlignment,
-                style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-              ),
-            ],
-            const SizedBox(height: 18),
-            actions,
-          ],
-        );
-
-        return SingleChildScrollView(
-          child: ConstrainedBox(
-            constraints: BoxConstraints(minHeight: constraints.maxHeight),
-            child: Padding(
-              padding: EdgeInsetsDirectional.fromSTEB(horizontalInset, isTv ? 12 : 8, horizontalInset, isTv ? 16 : 20),
-              child: Center(
-                key: ValueKey(choice.id),
-                child: ConstrainedBox(
-                  constraints: BoxConstraints(maxWidth: maxContentWidth),
-                  child: useSideBySide
-                      ? Row(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            SizedBox(width: actualSideArtWidth, height: sideArtHeight, child: artwork),
-                            SizedBox(width: gap),
-                            SizedBox(width: detailWidth, child: details),
-                          ],
-                        )
-                      : Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          crossAxisAlignment: CrossAxisAlignment.center,
-                          children: [
-                            SizedBox(width: columnArtWidth, height: columnArtHeight, child: artwork),
-                            const SizedBox(height: 18),
-                            ConstrainedBox(
-                              constraints: BoxConstraints(maxWidth: math.min(contentWidth, 720.0).toDouble()),
-                              child: details,
-                            ),
-                          ],
-                        ),
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildEmpty({required bool noMatches, bool allSeen = false}) {
-    final theme = Theme.of(context);
-    final heading = noMatches
+  Widget _buildEmpty({required bool noMatches, bool allSeen = false}) => DiscoveryEmptyView(
+    heading: noMatches
         ? t.discover.findNext.noMatches
         : allSeen
         ? t.discover.findNext.allDone
-        : t.discover.findNext.noPicks;
-    final hint = noMatches
+        : t.discover.findNext.noPicks,
+    hint: noMatches
         ? t.discover.findNext.noMatchesHint
         : allSeen
         ? t.discover.findNext.allDoneHint
-        : t.discover.findNext.noPicksHint;
-    return Center(
-      child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 430),
-        child: Padding(
-          padding: const EdgeInsets.all(32),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              AppIcon(
-                noMatches ? Symbols.hourglass_empty_rounded : Symbols.explore_rounded,
-                size: 52,
-                color: theme.colorScheme.onSurfaceVariant,
-              ),
-              const SizedBox(height: 18),
-              Text(heading, textAlign: TextAlign.center, style: theme.textTheme.titleLarge),
-              const SizedBox(height: 8),
-              Text(
-                hint,
-                textAlign: TextAlign.center,
-                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-              ),
-              const SizedBox(height: 18),
-              FilledButton.icon(
-                onPressed: _loading ? null : () => _load(fresh: true),
-                icon: const AppIcon(Symbols.shuffle_rounded),
-                label: Text(t.discover.findNext.refresh),
-              ),
-            ],
-          ),
-        ),
+        : t.discover.findNext.noPicksHint,
+    icon: noMatches ? Symbols.hourglass_empty_rounded : Symbols.explore_rounded,
+    onRefresh: _loading ? null : () => _load(fresh: true),
+  );
+
+  Widget _emptyAction(String label, VoidCallback? action) => Expanded(
+    child: FocusableButton(
+      onPressed: action,
+      autoScroll: false,
+      child: TextButton(
+        onPressed: action,
+        child: Text(label, maxLines: 2, overflow: TextOverflow.ellipsis, textAlign: TextAlign.center),
       ),
-    );
-  }
+    ),
+  );
 
   @override
   Widget build(BuildContext context) {
     final activeId = context.watch<ActiveProfileProvider>().active?.id;
     final profileChanged = _ownerProfileId != null && activeId != _ownerProfileId;
     final current = profileChanged ? null : _current;
-    final theme = Theme.of(context);
     final title = t.discover.findNext.title;
     final savedChoices = _state.saved.where((choice) => _catalogAllowed || choice.catalogSourceId == null).toList();
     final canUndo =
         _state.history.isNotEmpty && (_catalogAllowed || _state.history.last.choice.catalogSourceId == null);
-    final durationLabel = switch (_maxMinutes) {
-      null => t.discover.findNext.anyTime,
-      20 => t.discover.findNext.twentyMinutes,
-      45 => t.discover.findNext.fortyFiveMinutes,
-      _ => t.discover.findNext.ninetyMinutes,
-    };
-    final filterLabel = '${_familyLabel(_family)} · $durationLabel';
     final matching = _choices.where(_matchesFilters).toList(growable: false);
     final noMatches = _choices.isNotEmpty && matching.isEmpty;
     final allSeen = matching.isNotEmpty && matching.every((choice) => _state.seen.contains(choice.id));
-    return Scaffold(
-      appBar: AppBar(
-        title: Text(title),
-        actions: [
-          IconButton(
-            tooltip: t.discover.findNext.filters,
-            onPressed: profileChanged || _loading ? null : _showFilters,
-            icon: const AppIcon(Symbols.tune_rounded),
+    final theme = Theme.of(context);
+    return Stack(
+      fit: StackFit.expand,
+      children: [
+        ColoredBox(color: theme.colorScheme.surface),
+        if (current != null && !_loading && !profileChanged)
+          Positioned.fill(
+            child: ExcludeSemantics(child: IgnorePointer(child: _artwork(current, backdrop: true))),
           ),
-          IconButton(
-            tooltip: t.discover.findNext.savedCount(count: '${savedChoices.length}'),
-            onPressed: profileChanged || _loading ? null : _openSaved,
-            icon: Badge(
-              isLabelVisible: savedChoices.isNotEmpty,
-              label: Text('${savedChoices.length}'),
-              child: const AppIcon(Symbols.bookmarks_rounded),
-            ),
-          ),
-          const SizedBox(width: 8),
-        ],
-      ),
-      body: SafeArea(
-        top: false,
-        child: Column(
-          children: [
-            Align(
-              alignment: AlignmentDirectional.center,
-              child: Padding(
-                padding: const EdgeInsets.only(top: 4),
-                child: InputChip(
-                  avatar: const AppIcon(Symbols.bolt_rounded, size: 18),
-                  label: Text(filterLabel),
-                  onPressed: profileChanged || _loading ? null : _showFilters,
-                  visualDensity: VisualDensity.compact,
+        Positioned.fill(
+          child: IgnorePointer(
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                  colors: [
+                    theme.colorScheme.surface.withValues(alpha: 0.90),
+                    theme.colorScheme.surface.withValues(alpha: 0.74),
+                    theme.colorScheme.surface.withValues(alpha: 0.94),
+                  ],
                 ),
               ),
             ),
-            Expanded(
-              child: _loading
-                  ? const Center(child: CircularProgressIndicator())
-                  : profileChanged
-                  ? _buildEmpty(noMatches: false)
-                  : current == null
-                  ? _buildEmpty(noMatches: noMatches, allSeen: allSeen)
-                  : AnimatedSwitcher(
-                      duration: MediaQuery.disableAnimationsOf(context) ? Duration.zero : tokens(context).normal,
-                      switchInCurve: Curves.easeOutCubic,
-                      switchOutCurve: Curves.easeInCubic,
-                      child: _buildChoice(current),
-                    ),
+          ),
+        ),
+        Scaffold(
+          backgroundColor: Colors.transparent,
+          appBar: AppBar(
+            backgroundColor: Colors.transparent,
+            title: Text(
+              MediaQuery.sizeOf(context).height < 500 ? isolateDisplayText(current?.title ?? title) : title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
-            Padding(
-              padding: const EdgeInsetsDirectional.fromSTEB(16, 0, 16, 12),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  TextButton.icon(
-                    onPressed: _committing || !canUndo || profileChanged ? null : _undo,
-                    icon: const AppIcon(Symbols.undo_rounded),
-                    label: Text(t.discover.findNext.undo),
-                  ),
-                  const SizedBox(width: 18),
-                  Text(
-                    current == null ? '' : '${_state.seen.length + 1}',
-                    style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                  ),
-                ],
+            actions: [
+              IconButton(
+                tooltip: t.discover.findNext.filters,
+                onPressed: profileChanged || _loading ? null : _showFilters,
+                icon: Badge(
+                  isLabelVisible: _family != _DiscoveryFamily.anything || _maxMinutes != null,
+                  child: const AppIcon(Symbols.tune_rounded),
+                ),
               ),
-            ),
-          ],
+              IconButton(
+                tooltip: t.discover.findNext.savedCount(count: formatCount(savedChoices.length)),
+                onPressed: profileChanged || _loading ? null : _openSaved,
+                icon: Badge(
+                  isLabelVisible: savedChoices.isNotEmpty,
+                  label: Text(formatCount(savedChoices.length)),
+                  child: const AppIcon(Symbols.bookmarks_rounded),
+                ),
+              ),
+              const SizedBox(width: 8),
+            ],
+          ),
+          body: SafeArea(
+            top: false,
+            child: current != null && !_loading && !profileChanged
+                ? _buildChoice(current, canUndo: canUndo)
+                : Column(
+                    children: [
+                      Expanded(
+                        child: _loading
+                            ? const Center(child: CircularProgressIndicator())
+                            : _buildEmpty(noMatches: noMatches, allSeen: allSeen),
+                      ),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          _emptyAction(
+                            t.discover.findNext.undo,
+                            _loading || _committing || !canUndo || profileChanged ? null : _undo,
+                          ),
+                          _emptyAction(t.discover.findNext.howItWorks, () => showDiscoveryHelp(context)),
+                        ],
+                      ),
+                    ],
+                  ),
+          ),
         ),
-      ),
-    );
-  }
-}
-
-class _PillLabel extends StatelessWidget {
-  const _PillLabel({required this.icon, required this.text});
-  final IconData icon;
-  final String text;
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return DecoratedBox(
-      decoration: BoxDecoration(
-        color: theme.colorScheme.surfaceContainerHigh,
-        borderRadius: BorderRadius.circular(MonoTokens.radiusFull),
-      ),
-      child: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            AppIcon(icon, size: 16, color: theme.colorScheme.onSurface),
-            const SizedBox(width: 6),
-            Text(text, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurface)),
-          ],
-        ),
-      ),
+      ],
     );
   }
 }
@@ -1664,11 +1403,11 @@ class _SavedPicksScreenState extends State<_SavedPicksScreen> {
                 final choice = savedChoices[index];
                 return ListTile(
                   leading: CircleAvatar(child: AppIcon(_savedIcon(choice), size: 22)),
-                  title: Text(choice.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+                  title: Text(isolateDisplayText(choice.title), maxLines: 1, overflow: TextOverflow.ellipsis),
                   subtitle: Text(
                     [
                       _localizedChoiceType(choice),
-                      choice.subtitle,
+                      isolateDisplayText(choice.subtitle),
                       choice.durationMs == null ? null : formatDurationTextual(choice.durationMs!),
                     ].whereType<String>().where((value) => value.isNotEmpty).join(' · '),
                     maxLines: 2,

@@ -104,6 +104,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$fileSources$en fileSources = Translations$fileSources$en.internal(_root);
 	late final Translations$lending$en lending = Translations$lending$en.internal(_root);
 	late final Translations$audiobook$en audiobook = Translations$audiobook$en.internal(_root);
+	late final Translations$sourceSetup$en sourceSetup = Translations$sourceSetup$en.internal(_root);
 	late final Translations$comics$en comics = Translations$comics$en.internal(_root);
 }
 
@@ -1605,6 +1606,27 @@ class Translations$settings$en {
 
 	/// en: 'Strip Dolby Vision RPU/EL layers and present plain HEVC'
 	String get dvConversionHevcStripDescription => 'Strip Dolby Vision RPU/EL layers and present plain HEVC';
+
+	/// en: 'Experimental Dolby Vision'
+	String get experimentalDolbyVision => 'Experimental Dolby Vision';
+
+	/// en: 'Use the experimental FEL renderer on the next playback. Requires a separate engine build.'
+	String get experimentalDolbyVisionDescription => 'Use the experimental FEL renderer on the next playback. Requires a separate engine build.';
+
+	/// en: 'This experiment is currently available on Linux only.'
+	String get dvExperimentUnavailableDescription => 'This experiment is currently available on Linux only.';
+
+	/// en: 'Compatibility fallback'
+	String get dvCompatibilityFallback => 'Compatibility fallback';
+
+	/// en: 'Use the standard renderer if the experiment cannot start. FEL data may be lost.'
+	String get dvCompatibilityFallbackDescription => 'Use the standard renderer if the experiment cannot start. FEL data may be lost.';
+
+	/// en: 'Video experiment logging'
+	String get dvExperimentDiagnostics => 'Video experiment logging';
+
+	/// en: 'Enable detailed player logs on the next playback.'
+	String get dvExperimentDiagnosticsDescription => 'Enable detailed player logs on the next playback.';
 
 	/// en: 'Disable Dolby Vision'
 	String get disableDolbyVision => 'Disable Dolby Vision';
@@ -7997,51 +8019,228 @@ class Translations$audiobook$en {
 	String get timeHelp => 'Hours:minutes:seconds, or minutes:seconds';
 }
 
+// Path: sourceSetup
+class Translations$sourceSetup$en {
+	Translations$sourceSetup$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+	// Translations
+	/// en: 'Saved server certificate'
+	String get savedCertificate => 'Saved server certificate';
+	/// en: 'Enter an NFS URL such as nfs://nas:2049/export.'
+	String get nfsEndpointInvalid => 'Enter an NFS URL such as nfs://nas:2049/export.';
+	/// en: 'No DLNA servers found. Enter the device description URL manually.'
+	String get dlnaNone => 'No DLNA servers found. Enter the device description URL manually.';
+	/// en: 'DLNA media servers'
+	String get dlnaServers => 'DLNA media servers';
+	/// en: 'DLNA discovery is unavailable on this network. Enter the device description URL manually.'
+	String get dlnaUnavailable => 'DLNA discovery is unavailable on this network. Enter the device description URL manually.';
+	/// en: 'Searching local network for DLNA servers'
+	String get dlnaSearching => 'Searching local network for DLNA servers';
+	/// en: 'Searching local network…'
+	String get networkSearching => 'Searching local network…';
+	/// en: 'Discover DLNA servers'
+	String get dlnaDiscover => 'Discover DLNA servers';
+	/// en: 'Discovery depends on local-network multicast. If no server appears, enter its device description URL above.'
+	String get dlnaHelp => 'Discovery depends on local-network multicast. If no server appears, enter its device description URL above.';
+	/// en: 'DLNA object ID; blank uses the device root.'
+	String get dlnaRoot => 'DLNA object ID; blank uses the device root.';
+	/// en: 'Enter a password or add a private key below.'
+	String get passwordOrKey => 'Enter a password or add a private key below.';
+	/// en: 'SSH host key SHA256 fingerprint'
+	String get sshFingerprint => 'SSH host key SHA256 fingerprint';
+	/// en: 'Verify with the server administrator. On the server, run ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub and use its SHA256 value.'
+	String get sshFingerprintHelp => 'Verify with the server administrator. On the server, run ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub and use its SHA256 value.';
+	/// en: 'Leave blank to keep the current pin, or enter a new server fingerprint.'
+	String get sshFingerprintKeep => 'Leave blank to keep the current pin, or enter a new server fingerprint.';
+	/// en: 'SSH public key authentication'
+	String get sshAuthentication => 'SSH public key authentication';
+	/// en: 'Optional; password authentication is also supported.'
+	String get sshAuthenticationHelp => 'Optional; password authentication is also supported.';
+	/// en: 'Private key (PEM or OpenSSH format)'
+	String get privateKey => 'Private key (PEM or OpenSSH format)';
+	/// en: 'Private key passphrase'
+	String get privateKeyPassphrase => 'Private key passphrase';
+	/// en: 'NFS mount service TCP port'
+	String get nfsMountPort => 'NFS mount service TCP port';
+	/// en: 'Default: 20048'
+	String get nfsMountPortHelp => 'Default: 20048';
+	/// en: 'NFS user ID (AUTH_SYS)'
+	String get nfsUserId => 'NFS user ID (AUTH_SYS)';
+	/// en: 'Default: 1000. Use the ID the NAS export allows.'
+	String get nfsUserIdHelp => 'Default: 1000. Use the ID the NAS export allows.';
+	/// en: 'NFS group ID (AUTH_SYS)'
+	String get nfsGroupId => 'NFS group ID (AUTH_SYS)';
+	/// en: 'Default: 1000. Use the group ID the NAS export allows.'
+	String get nfsGroupIdHelp => 'Default: 1000. Use the group ID the NAS export allows.';
+	/// en: 'Require encrypted NFS (RPC-with-TLS)'
+	String get nfsEncryption => 'Require encrypted NFS (RPC-with-TLS)';
+	/// en: 'Require TLS 1.3 for NFS and the mount service. Connections fail closed if the NAS does not support it.'
+	String get nfsEncryptionHelp => 'Require TLS 1.3 for NFS and the mount service. Connections fail closed if the NAS does not support it.';
+	/// en: 'Custom NFS CA or server certificate (PEM, optional)'
+	String get nfsTrustCertificate => 'Custom NFS CA or server certificate (PEM, optional)';
+	/// en: 'Leave blank for certificates trusted by this device. Add a private CA or self-signed server certificate when needed; its names must match the NFS URL host.'
+	String get nfsTrustHelp => 'Leave blank for certificates trusted by this device. Add a private CA or self-signed server certificate when needed; its names must match the NFS URL host.';
+	/// en: 'Use a CA or server certificate in PEM format. Do not include a private key.'
+	String get nfsTrustInvalid => 'Use a CA or server certificate in PEM format. Do not include a private key.';
+	/// en: 'Add custom trust certificate'
+	String get addTrustCertificate => 'Add custom trust certificate';
+	/// en: 'Replace saved custom certificate'
+	String get replaceTrustCertificate => 'Replace saved custom certificate';
+	/// en: 'RPC-with-TLS uses the usual NFS and mount service ports and requires NAS support for RFC 9289. TLS 1.3 is required. The host name or IP must match the certificate. AUTH_SYS UID/GID still apply inside the encrypted channel.'
+	String get nfsTlsHelp => 'RPC-with-TLS uses the usual NFS and mount service ports and requires NAS support for RFC 9289. TLS 1.3 is required. The host name or IP must match the certificate. AUTH_SYS UID/GID still apply inside the encrypted channel.';
+	/// en: 'Client certificate (optional)'
+	String get clientCertificate => 'Client certificate (optional)';
+	/// en: 'Lets the NAS authenticate this client; AUTH_SYS IDs still depend on NAS export policy.'
+	String get clientCertificateHelp => 'Lets the NAS authenticate this client; AUTH_SYS IDs still depend on NAS export policy.';
+	/// en: 'A saved client identity will be used.'
+	String get savedIdentity => 'A saved client identity will be used.';
+	/// en: 'Replace saved client identity'
+	String get replaceIdentity => 'Replace saved client identity';
+	/// en: 'Choose PKCS#12 client identity'
+	String get chooseIdentity => 'Choose PKCS#12 client identity';
+	/// en: 'Client identity passphrase'
+	String get identityPassphrase => 'Client identity passphrase';
+	/// en: 'Leave blank if the file has no passphrase.'
+	String get identityPassphraseHelp => 'Leave blank if the file has no passphrase.';
+	/// en: 'Remove any saved client identity'
+	String get removeIdentity => 'Remove any saved client identity';
+	/// en: 'Client identities are saved in the encrypted source credential store. Leave this section unchanged to keep the saved identity.'
+	String get identityStorageHelp => 'Client identities are saved in the encrypted source credential store. Leave this section unchanged to keep the saved identity.';
+	/// en: 'Read-only NFSv3 over TCP. Without RPC-with-TLS, NFS traffic is unencrypted. The NAS must allow the selected AUTH_SYS IDs and unprivileged client ports (often called the “insecure” export option). NFSv4 and UDP are not supported.'
+	String get nfsLimitations => 'Read-only NFSv3 over TCP. Without RPC-with-TLS, NFS traffic is unencrypted. The NAS must allow the selected AUTH_SYS IDs and unprivileged client ports (often called the “insecure” export option). NFSv4 and UDP are not supported.';
+	/// en: 'NFS setup help'
+	String get nfsSetupHelp => 'NFS setup help';
+	/// en: 'Check these settings if the connection does not open.'
+	String get nfsSetupHint => 'Check these settings if the connection does not open.';
+	/// en: 'Use an NFSv3 TCP export. The NFS service and mount service must both support RPC-with-TLS when encryption is required. Leave the custom certificate blank for a server certificate trusted by this device, or add the NAS CA/self-signed certificate. The certificate name must match the host in the endpoint. If the NAS asks for mutual TLS, add its PKCS#12 client identity. Finally, confirm the export allows the configured AUTH_SYS UID/GID and the client port policy.'
+	String get nfsSetupDetails => 'Use an NFSv3 TCP export. The NFS service and mount service must both support RPC-with-TLS when encryption is required. Leave the custom certificate blank for a server certificate trusted by this device, or add the NAS CA/self-signed certificate. The certificate name must match the host in the endpoint. If the NAS asks for mutual TLS, add its PKCS#12 client identity. Finally, confirm the export allows the configured AUTH_SYS UID/GID and the client port policy.';
+	/// en: 'FTP uses passive mode. Use ftp:// for plain FTP, ftpes:// for explicit TLS, or ftps:// for TLS (implicit on port 990; explicit on other ports).'
+	String get ftpHelp => 'FTP uses passive mode. Use ftp:// for plain FTP, ftpes:// for explicit TLS, or ftps:// for TLS (implicit on port 990; explicit on other ports).';
+	/// en: 'OpenSubtitles'
+	String get openSubtitles => 'OpenSubtitles';
+	/// en: 'Optional subtitle search for standalone videos.'
+	String get subtitleSetup => 'Optional subtitle search for standalone videos.';
+	/// en: 'API key'
+	String get apiKey => 'API key';
+	/// en: 'Account username (optional)'
+	String get optionalUsername => 'Account username (optional)';
+	/// en: 'Account password (optional)'
+	String get optionalPassword => 'Account password (optional)';
+	/// en: 'Get an API key from opensubtitles.com. Search sends the video title and available IMDb/TMDB IDs, never the video file. The key and optional account credentials are encrypted with this source.'
+	String get subtitlePrivacy => 'Get an API key from opensubtitles.com. Search sends the video title and available IMDb/TMDB IDs, never the video file. The key and optional account credentials are encrypted with this source.';
+	/// en: 'Automatic online video metadata'
+	String get automaticMetadata => 'Automatic online video metadata';
+	/// en: 'Sends only filename title/year and episode numbers or an NFO ID, never media or credentials. NFO fields stay authoritative.'
+	String get metadataPrivacy => 'Sends only filename title/year and episode numbers or an NFO ID, never media or credentials. NFO fields stay authoritative.';
+	/// en: 'For encrypted NFS, check RFC 9289 and TLS 1.3 support on both NAS services, the certificate name, and the export UID/GID. PlezyNG will not retry this connection without encryption.'
+	String get nfsEncryptionFailure => 'For encrypted NFS, check RFC 9289 and TLS 1.3 support on both NAS services, the certificate name, and the export UID/GID. PlezyNG will not retry this connection without encryption.';
+	/// en: 'Connecting to source'
+	String get sourceConnecting => 'Connecting to source';
+	/// en: 'This title search goes to Trakt. It sends the title you enter, not the video or source credentials.'
+	String get metadataSearchPrivacy => 'This title search goes to Trakt. It sends the title you enter, not the video or source credentials.';
+	/// en: 'Choose a match'
+	String get chooseMatch => 'Choose a match';
+	/// en: 'Review the title and year before choosing. Trakt receives the search title; the video stays on its source.'
+	String get metadataMatchHelp => 'Review the title and year before choosing. Trakt receives the search title; the video stays on its source.';
+	/// en: 'No online title matches were found. Try a different title.'
+	String get metadataNoMatches => 'No online title matches were found. Try a different title.';
+	/// en: 'Search online metadata'
+	String get metadataSearch => 'Search online metadata';
+	/// en: 'Looking up online movie and TV details…'
+	String get metadataLoading => 'Looking up online movie and TV details…';
+	/// en: 'Online metadata from Trakt'
+	String get metadataFromTrakt => 'Online metadata from Trakt';
+	/// en: 'No automatic title match was found. Search for the title to choose a match.'
+	String get metadataNoAutomaticMatch => 'No automatic title match was found. Search for the title to choose a match.';
+	/// en: 'Online metadata could not be loaded. Playback and local details are still available.'
+	String get metadataFailed => 'Online metadata could not be loaded. Playback and local details are still available.';
+	/// en: 'Loading video details'
+	String get videoDetailsLoading => 'Loading video details';
+	/// en: 'OpenSubtitles API key required'
+	String get subtitleKeyRequired => 'OpenSubtitles API key required';
+	/// en: 'Edit this file source and add an OpenSubtitles API key in its optional subtitle settings.'
+	String get subtitleKeyHelp => 'Edit this file source and add an OpenSubtitles API key in its optional subtitle settings.';
+	/// en: 'Subtitle search failed. Check the API key, connection, and service access.'
+	String get subtitleSearchFailed => 'Subtitle search failed. Check the API key, connection, and service access.';
+	/// en: 'Could not download or apply this subtitle. Check your connection and try another result.'
+	String get subtitleApplyFailed => 'Could not download or apply this subtitle. Check your connection and try another result.';
+	/// en: 'Search OpenSubtitles'
+	String get subtitleSearch => 'Search OpenSubtitles';
+	/// en: 'Search uses the title and available IMDb/TMDB IDs. The video file stays on its source. Check language, forced or hearing-impaired flags, and rating before choosing.'
+	String get subtitleSearchPrivacy => 'Search uses the title and available IMDb/TMDB IDs. The video file stays on its source. Check language, forced or hearing-impaired flags, and rating before choosing.';
+	/// en: 'Movie or show'
+	String get movieOrShow => 'Movie or show';
+	/// en: 'Enter a title to refine results'
+	String get subtitleTitleHint => 'Enter a title to refine results';
+	/// en: 'Subtitle language'
+	String get subtitleLanguage => 'Subtitle language';
+	/// en: 'Searching OpenSubtitles'
+	String get subtitleSearching => 'Searching OpenSubtitles';
+	/// en: 'No matching subtitles found. Try a different title or language.'
+	String get subtitleNoMatches => 'No matching subtitles found. Try a different title or language.';
+	/// en: 'Download subtitle'
+	String get downloadSubtitle => 'Download subtitle';
+	/// en: 'Subtitle'
+	String get subtitle => 'Subtitle';
+	/// en: 'RPC-with-TLS required'
+	String get nfsTlsRequired => 'RPC-with-TLS required';
+	/// en: 'Unencrypted NFS'
+	String get nfsUnencrypted => 'Unencrypted NFS';
+	/// en: 'TLS encrypted'
+	String get tlsEncrypted => 'TLS encrypted';
+	/// en: 'Plain FTP'
+	String get ftpPlain => 'Plain FTP';
+	/// en: 'SSH encrypted · host key pinned'
+	String get sshPinned => 'SSH encrypted · host key pinned';
+	/// en: 'SMB3 encryption on'
+	String get smbEncrypted => 'SMB3 encryption on';
+	/// en: 'SMB3 encryption off'
+	String get smbUnencrypted => 'SMB3 encryption off';
+	/// en: 'HTTP without transport encryption'
+	String get httpUnencrypted => 'HTTP without transport encryption';
+	/// en: 'Check endpoint security'
+	String get checkEndpointSecurity => 'Check endpoint security';
+	/// en: '${label} is required.'
+	String fieldRequired({required Object label}) => '${label} is required.';
+	/// en: 'Enter ${label} from ${min} to ${max}.'
+	String integerRange({required Object label, required Object min, required Object max}) => 'Enter ${label} from ${min} to ${max}.';
+	/// en: 'Replace ${name}'
+	String replaceFile({required Object name}) => 'Replace ${name}';
+	/// en: 'Selected client identity: ${name}'
+	String selectedIdentity({required Object name}) => 'Selected client identity: ${name}';
+	/// en: 'Rating ${rating}'
+	String subtitleRating({required Object rating}) => 'Rating ${rating}';
+	/// en: 'Downloading subtitle: ${title}'
+	String subtitleDownloading({required Object title}) => 'Downloading subtitle: ${title}';
+}
 // Path: comics
 class Translations$comics$en {
 	Translations$comics$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
 	/// en: 'Fit height'
 	String get fitHeight => 'Fit height';
-
 	/// en: 'Reading mode'
 	String get readingMode => 'Reading mode';
-
 	/// en: 'Pages'
 	String get paged => 'Pages';
-
 	/// en: 'Continuous scroll'
 	String get webtoon => 'Continuous scroll';
-
 	/// en: 'Show cover on its own'
 	String get coverAlone => 'Show cover on its own';
-
 	/// en: 'Split wide pages'
 	String get splitWide => 'Split wide pages';
-
 	/// en: 'Show each half separately, in reading order. Double-page pairing is paused while this is on.'
 	String get splitWideHelp => 'Show each half separately, in reading order. Double-page pairing is paused while this is on.';
-
 	/// en: 'Page thumbnails'
 	String get thumbnails => 'Page thumbnails';
-
 	/// en: 'Swipe to turn pages. Double-tap to change fit. In continuous scroll, swipe vertically or use Page Up and Page Down.'
 	String get controlsHelp => 'Swipe to turn pages. Double-tap to change fit. In continuous scroll, swipe vertically or use Page Up and Page Down.';
-
 	/// en: 'Display settings are remembered for this comic in this profile.'
 	String get savedForComic => 'Display settings are remembered for this comic in this profile.';
-
 	/// en: 'Reading lists'
 	String get readLists => 'Reading lists';
-
 	/// en: 'Collections'
 	String get collections => 'Collections';
-}
-
 // Path: appIcon.names
 class Translations$appIcon$names$en {
 	Translations$appIcon$names$en.internal(this._root);
@@ -8590,8 +8789,8 @@ class Translations$discover$findNext$en {
 	/// en: 'Not now'
 	String get notNow => 'Not now';
 
-	/// en: 'Swipe, or use the buttons below'
-	String get swipeHint => 'Swipe, or use the buttons below';
+	/// en: 'Swipe the cover toward an arrow, or use the buttons below.'
+	String get swipeHint => 'Swipe the cover toward an arrow, or use the buttons below.';
 
 	/// en: 'Saved picks'
 	String get saved => 'Saved picks';
@@ -8673,6 +8872,42 @@ class Translations$discover$findNext$en {
 
 	/// en: 'Saved picks is full. Remove a pick to save another.'
 	String get savedLimit => 'Saved picks is full. Remove a pick to save another.';
+
+	/// en: 'Open a pick, save it for later, or skip it.'
+	String get chooseHint => 'Open a pick, save it for later, or skip it.';
+
+	/// en: 'How it works'
+	String get howItWorks => 'How it works';
+
+	/// en: 'Skip this pick for now. It stays in your library.'
+	String get notNowHelp => 'Skip this pick for now. It stays in your library.';
+
+	/// en: 'Keep it in Saved picks for this profile on this device. Saving does not download it.'
+	String get saveHelp => 'Keep it in Saved picks for this profile on this device. Saving does not download it.';
+
+	/// en: 'Select the cover for details. Use the main action to play, read or open the title.'
+	String get openHelp => 'Select the cover for details. Use the main action to play, read or open the title.';
+
+	/// en: 'Keyboard or remote: focus a button, then press Enter or Select. Undo restores your last choice.'
+	String get controlsHelp => 'Keyboard or remote: focus a button, then press Enter or Select. Undo restores your last choice.';
+
+	/// en: 'Loading artwork…'
+	String get artworkLoading => 'Loading artwork…';
+
+	/// en: 'Artwork unavailable'
+	String get artworkUnavailable => 'Artwork unavailable';
+
+	/// en: 'Saved to Saved picks'
+	String get savedFeedback => 'Saved to Saved picks';
+
+	/// en: 'Skipped for now'
+	String get skippedFeedback => 'Skipped for now';
+
+	/// en: 'Release to confirm'
+	String get releaseToConfirm => 'Release to confirm';
+
+	/// en: 'Cover focused: ← / → choose · Select opens details · ↑ / ↓ moves focus'
+	String get remoteHint => 'Cover focused: ← / → choose · Select opens details · ↑ / ↓ moves focus';
 }
 
 // Path: discover.person
@@ -10727,9 +10962,16 @@ extension on Translations {
 			'settings.dvConversionNativeDescription' => 'Force native DV7 and suppress DV conversion retry',
 			'settings.dvConversionDv81Description' => 'Force inline RPU conversion to Dolby Vision profile 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Strip Dolby Vision RPU/EL layers and present plain HEVC',
-			'settings.disableDolbyVision' => 'Disable Dolby Vision',
+			'settings.experimentalDolbyVision' => 'Experimental Dolby Vision',
 			_ => null,
 		} ?? switch (path) {
+			'settings.experimentalDolbyVisionDescription' => 'Use the experimental FEL renderer on the next playback. Requires a separate engine build.',
+			'settings.dvExperimentUnavailableDescription' => 'This experiment is currently available on Linux only.',
+			'settings.dvCompatibilityFallback' => 'Compatibility fallback',
+			'settings.dvCompatibilityFallbackDescription' => 'Use the standard renderer if the experiment cannot start. FEL data may be lost.',
+			'settings.dvExperimentDiagnostics' => 'Video experiment logging',
+			'settings.dvExperimentDiagnosticsDescription' => 'Enable detailed player logs on the next playback.',
+			'settings.disableDolbyVision' => 'Disable Dolby Vision',
 			'settings.disableDolbyVisionDescription' => 'Play the file\'s HDR10 or HLG layer instead of Dolby Vision, when it has one',
 			'settings.hdrSdrConversion' => 'HDR to SDR Conversion',
 			'settings.hdrSdrConversionDescription' => 'Choose what converts HDR video when the display can\'t show HDR.',
@@ -11235,6 +11477,8 @@ extension on Translations {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Library scan started for "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Failed to scan library: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Refreshing metadata for "${title}"...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadata refresh started for "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Failed to refresh metadata: ${error}',
 			'messages.logoutConfirm' => 'Are you sure you want to log out?',
@@ -11242,8 +11486,6 @@ extension on Translations {
 			'messages.seasonsLoadFailed' => 'Couldn\'t load seasons',
 			'messages.noEpisodesFound' => 'No episodes found in first season',
 			'messages.noEpisodesFoundGeneral' => 'No episodes found',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Couldn\'t load episodes',
 			'messages.noResultsFound' => 'No results found',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Sleep timer set for ${label}',
@@ -11484,7 +11726,7 @@ extension on Translations {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} total',
 			'discover.findNext.timingVaries' => 'Timing varies',
 			'discover.findNext.notNow' => 'Not now',
-			'discover.findNext.swipeHint' => 'Swipe, or use the buttons below',
+			'discover.findNext.swipeHint' => 'Swipe the cover toward an arrow, or use the buttons below.',
 			'discover.findNext.saved' => 'Saved picks',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Saved picks · ${count}',
 			'discover.findNext.undo' => 'Undo',
@@ -11512,6 +11754,18 @@ extension on Translations {
 			'discover.findNext.openFailed' => 'This choice is no longer available. Refresh to check again.',
 			'discover.findNext.changeFailed' => 'Could not save that change. Try again.',
 			'discover.findNext.savedLimit' => 'Saved picks is full. Remove a pick to save another.',
+			'discover.findNext.chooseHint' => 'Open a pick, save it for later, or skip it.',
+			'discover.findNext.howItWorks' => 'How it works',
+			'discover.findNext.notNowHelp' => 'Skip this pick for now. It stays in your library.',
+			'discover.findNext.saveHelp' => 'Keep it in Saved picks for this profile on this device. Saving does not download it.',
+			'discover.findNext.openHelp' => 'Select the cover for details. Use the main action to play, read or open the title.',
+			'discover.findNext.controlsHelp' => 'Keyboard or remote: focus a button, then press Enter or Select. Undo restores your last choice.',
+			'discover.findNext.artworkLoading' => 'Loading artwork…',
+			'discover.findNext.artworkUnavailable' => 'Artwork unavailable',
+			'discover.findNext.savedFeedback' => 'Saved to Saved picks',
+			'discover.findNext.skippedFeedback' => 'Skipped for now',
+			'discover.findNext.releaseToConfirm' => 'Release to confirm',
+			'discover.findNext.remoteHint' => 'Cover focused: ← / → choose · Select opens details · ↑ / ↓ moves focus',
 			'discover.extras' => 'Trailers & Extras',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Rating',
@@ -11737,6 +11991,8 @@ extension on Translations {
 			'explore.mdblistShelves.nameHint' => 'Leave blank to use the source list name.',
 			'explore.mdblistShelves.add' => 'Add shelf',
 			'explore.mdblistShelves.save' => 'Save shelves',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Move ${title} up',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Move ${title} down',
 			'explore.mdblistShelves.unavailable' => 'This list is unavailable. Retry or remove its shelf in settings.',
@@ -11756,8 +12012,6 @@ extension on Translations {
 			'explore.rows.popularShows' => 'Popular Shows',
 			'explore.rows.trendingAnime' => 'Trending Anime',
 			'explore.rows.suggestedAnime' => 'Suggested Anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Top Airing Anime',
 			'explore.rows.popularAnime' => 'Most Popular Anime',
 			'explore.rows.trending' => 'Trending',
@@ -12251,6 +12505,8 @@ extension on Translations {
 			'downloads.resumeDownload' => 'Resume download',
 			'downloads.cancelledDownload' => 'Canceled download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (syncing ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Downloaded ${file} - Click to complete',
 			'downloads.partialDownloadClickToComplete' => 'Partially downloaded - Click to complete',
 			'downloads.deleting' => 'Deleting...',
@@ -12270,8 +12526,6 @@ extension on Translations {
 			'downloads.unwatchedOnly' => 'Unwatched only',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Next ${count} unwatched',
 			'downloads.customAmount' => 'Custom amount...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Custom amount (any)...',
 			'downloads.randomEpisodes' => 'Random episodes',
 			'downloads.includeSpecials' => 'Include Specials',
@@ -12765,6 +13019,8 @@ extension on Translations {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Could not reach the server: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Sign-in failed: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect failed: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Sign in with Plex',
 			'addServer.pinExpired' => 'PIN expired before sign-in. Please try again.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Failed to register account: ${error}',
@@ -12784,8 +13040,6 @@ extension on Translations {
 			'addServer.authResponseIncomplete' => 'The sign-in response from the server was incomplete',
 			'addServer.quickConnectRejected' => 'Quick Connect was rejected by the server',
 			'addServer.quickConnectNotJson' => 'The Quick Connect response was not valid JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'The Quick Connect response is missing a code or secret',
 			'addServer.quickConnectPollRejected' => 'Quick Connect polling was rejected by the server',
 			'addServer.serverTimedOut' => 'The server did not respond in time',
@@ -13192,6 +13446,93 @@ extension on Translations {
 			'audiobook.statusFinished' => 'Finished',
 			'audiobook.goToTime' => 'Go to time',
 			'audiobook.timeHelp' => 'Hours:minutes:seconds, or minutes:seconds',
+			'sourceSetup.savedCertificate' => 'Saved server certificate',
+			'sourceSetup.nfsEndpointInvalid' => 'Enter an NFS URL such as nfs://nas:2049/export.',
+			'sourceSetup.dlnaNone' => 'No DLNA servers found. Enter the device description URL manually.',
+			'sourceSetup.dlnaServers' => 'DLNA media servers',
+			'sourceSetup.dlnaUnavailable' => 'DLNA discovery is unavailable on this network. Enter the device description URL manually.',
+			'sourceSetup.dlnaSearching' => 'Searching local network for DLNA servers',
+			'sourceSetup.networkSearching' => 'Searching local network…',
+			'sourceSetup.dlnaDiscover' => 'Discover DLNA servers',
+			'sourceSetup.dlnaHelp' => 'Discovery depends on local-network multicast. If no server appears, enter its device description URL above.',
+			'sourceSetup.dlnaRoot' => 'DLNA object ID; blank uses the device root.',
+			'sourceSetup.passwordOrKey' => 'Enter a password or add a private key below.',
+			'sourceSetup.sshFingerprint' => 'SSH host key SHA256 fingerprint',
+			'sourceSetup.sshFingerprintHelp' => 'Verify with the server administrator. On the server, run ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub and use its SHA256 value.',
+			'sourceSetup.sshFingerprintKeep' => 'Leave blank to keep the current pin, or enter a new server fingerprint.',
+			'sourceSetup.sshAuthentication' => 'SSH public key authentication',
+			'sourceSetup.sshAuthenticationHelp' => 'Optional; password authentication is also supported.',
+			'sourceSetup.privateKey' => 'Private key (PEM or OpenSSH format)',
+			'sourceSetup.privateKeyPassphrase' => 'Private key passphrase',
+			'sourceSetup.nfsMountPort' => 'NFS mount service TCP port',
+			'sourceSetup.nfsMountPortHelp' => 'Default: 20048',
+			'sourceSetup.nfsUserId' => 'NFS user ID (AUTH_SYS)',
+			'sourceSetup.nfsUserIdHelp' => 'Default: 1000. Use the ID the NAS export allows.',
+			'sourceSetup.nfsGroupId' => 'NFS group ID (AUTH_SYS)',
+			'sourceSetup.nfsGroupIdHelp' => 'Default: 1000. Use the group ID the NAS export allows.',
+			'sourceSetup.nfsEncryption' => 'Require encrypted NFS (RPC-with-TLS)',
+			'sourceSetup.nfsEncryptionHelp' => 'Require TLS 1.3 for NFS and the mount service. Connections fail closed if the NAS does not support it.',
+			'sourceSetup.nfsTrustCertificate' => 'Custom NFS CA or server certificate (PEM, optional)',
+			'sourceSetup.nfsTrustHelp' => 'Leave blank for certificates trusted by this device. Add a private CA or self-signed server certificate when needed; its names must match the NFS URL host.',
+			'sourceSetup.nfsTrustInvalid' => 'Use a CA or server certificate in PEM format. Do not include a private key.',
+			'sourceSetup.addTrustCertificate' => 'Add custom trust certificate',
+			'sourceSetup.replaceTrustCertificate' => 'Replace saved custom certificate',
+			'sourceSetup.nfsTlsHelp' => 'RPC-with-TLS uses the usual NFS and mount service ports and requires NAS support for RFC 9289. TLS 1.3 is required. The host name or IP must match the certificate. AUTH_SYS UID/GID still apply inside the encrypted channel.',
+			'sourceSetup.clientCertificate' => 'Client certificate (optional)',
+			'sourceSetup.clientCertificateHelp' => 'Lets the NAS authenticate this client; AUTH_SYS IDs still depend on NAS export policy.',
+			'sourceSetup.savedIdentity' => 'A saved client identity will be used.',
+			'sourceSetup.replaceIdentity' => 'Replace saved client identity',
+			'sourceSetup.chooseIdentity' => 'Choose PKCS#12 client identity',
+			'sourceSetup.identityPassphrase' => 'Client identity passphrase',
+			'sourceSetup.identityPassphraseHelp' => 'Leave blank if the file has no passphrase.',
+			'sourceSetup.removeIdentity' => 'Remove any saved client identity',
+			'sourceSetup.identityStorageHelp' => 'Client identities are saved in the encrypted source credential store. Leave this section unchanged to keep the saved identity.',
+			'sourceSetup.nfsLimitations' => 'Read-only NFSv3 over TCP. Without RPC-with-TLS, NFS traffic is unencrypted. The NAS must allow the selected AUTH_SYS IDs and unprivileged client ports (often called the “insecure” export option). NFSv4 and UDP are not supported.',
+			'sourceSetup.nfsSetupHelp' => 'NFS setup help',
+			'sourceSetup.nfsSetupHint' => 'Check these settings if the connection does not open.',
+			'sourceSetup.nfsSetupDetails' => 'Use an NFSv3 TCP export. The NFS service and mount service must both support RPC-with-TLS when encryption is required. Leave the custom certificate blank for a server certificate trusted by this device, or add the NAS CA/self-signed certificate. The certificate name must match the host in the endpoint. If the NAS asks for mutual TLS, add its PKCS#12 client identity. Finally, confirm the export allows the configured AUTH_SYS UID/GID and the client port policy.',
+			'sourceSetup.ftpHelp' => 'FTP uses passive mode. Use ftp:// for plain FTP, ftpes:// for explicit TLS, or ftps:// for TLS (implicit on port 990; explicit on other ports).',
+			'sourceSetup.openSubtitles' => 'OpenSubtitles',
+			'sourceSetup.subtitleSetup' => 'Optional subtitle search for standalone videos.',
+			'sourceSetup.apiKey' => 'API key',
+			'sourceSetup.optionalUsername' => 'Account username (optional)',
+			'sourceSetup.optionalPassword' => 'Account password (optional)',
+			'sourceSetup.subtitlePrivacy' => 'Get an API key from opensubtitles.com. Search sends the video title and available IMDb/TMDB IDs, never the video file. The key and optional account credentials are encrypted with this source.',
+			'sourceSetup.automaticMetadata' => 'Automatic online video metadata',
+			'sourceSetup.metadataPrivacy' => 'Sends only filename title/year and episode numbers or an NFO ID, never media or credentials. NFO fields stay authoritative.',
+			'sourceSetup.nfsEncryptionFailure' => 'For encrypted NFS, check RFC 9289 and TLS 1.3 support on both NAS services, the certificate name, and the export UID/GID. PlezyNG will not retry this connection without encryption.',
+			'sourceSetup.sourceConnecting' => 'Connecting to source',
+			'sourceSetup.metadataSearchPrivacy' => 'This title search goes to Trakt. It sends the title you enter, not the video or source credentials.',
+			'sourceSetup.chooseMatch' => 'Choose a match',
+			'sourceSetup.metadataMatchHelp' => 'Review the title and year before choosing. Trakt receives the search title; the video stays on its source.',
+			'sourceSetup.metadataNoMatches' => 'No online title matches were found. Try a different title.',
+			'sourceSetup.metadataSearch' => 'Search online metadata',
+			'sourceSetup.metadataLoading' => 'Looking up online movie and TV details…',
+			'sourceSetup.metadataFromTrakt' => 'Online metadata from Trakt',
+			'sourceSetup.metadataNoAutomaticMatch' => 'No automatic title match was found. Search for the title to choose a match.',
+			'sourceSetup.metadataFailed' => 'Online metadata could not be loaded. Playback and local details are still available.',
+			'sourceSetup.videoDetailsLoading' => 'Loading video details',
+			'sourceSetup.subtitleKeyRequired' => 'OpenSubtitles API key required',
+			'sourceSetup.subtitleKeyHelp' => 'Edit this file source and add an OpenSubtitles API key in its optional subtitle settings.',
+			'sourceSetup.subtitleSearchFailed' => 'Subtitle search failed. Check the API key, connection, and service access.',
+			'sourceSetup.subtitleApplyFailed' => 'Could not download or apply this subtitle. Check your connection and try another result.',
+			'sourceSetup.subtitleSearch' => 'Search OpenSubtitles',
+			'sourceSetup.subtitleSearchPrivacy' => 'Search uses the title and available IMDb/TMDB IDs. The video file stays on its source. Check language, forced or hearing-impaired flags, and rating before choosing.',
+			'sourceSetup.movieOrShow' => 'Movie or show',
+			'sourceSetup.subtitleTitleHint' => 'Enter a title to refine results',
+			'sourceSetup.subtitleLanguage' => 'Subtitle language',
+			'sourceSetup.subtitleSearching' => 'Searching OpenSubtitles',
+			'sourceSetup.subtitleNoMatches' => 'No matching subtitles found. Try a different title or language.',
+			'sourceSetup.downloadSubtitle' => 'Download subtitle',
+			'sourceSetup.subtitle' => 'Subtitle',
+			'sourceSetup.nfsTlsRequired' => 'RPC-with-TLS required',
+			'sourceSetup.nfsUnencrypted' => 'Unencrypted NFS',
+			'sourceSetup.tlsEncrypted' => 'TLS encrypted',
+			'sourceSetup.ftpPlain' => 'Plain FTP',
+			'sourceSetup.sshPinned' => 'SSH encrypted · host key pinned',
+			'sourceSetup.smbEncrypted' => 'SMB3 encryption on',
+			'sourceSetup.smbUnencrypted' => 'SMB3 encryption off',
+			'sourceSetup.httpUnencrypted' => 'HTTP without transport encryption',
 			'comics.fitHeight' => 'Fit height',
 			'comics.readingMode' => 'Reading mode',
 			'comics.paged' => 'Pages',
@@ -13204,6 +13545,15 @@ extension on Translations {
 			'comics.savedForComic' => 'Display settings are remembered for this comic in this profile.',
 			'comics.readLists' => 'Reading lists',
 			'comics.collections' => 'Collections',
+			_ => null,
+		} ?? switch (path) {
+			'sourceSetup.checkEndpointSecurity' => 'Check endpoint security',
+			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} is required.',
+			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Enter ${label} from ${min} to ${max}.',
+			'sourceSetup.replaceFile' => ({required Object name}) => 'Replace ${name}',
+			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Selected client identity: ${name}',
+			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Rating ${rating}',
+			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Downloading subtitle: ${title}',
 			_ => null,
 		};
 	}

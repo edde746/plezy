@@ -1,3 +1,4 @@
+# ng-runner-policy: private-jit-only-v1
 name: PlezyNG Release
 run-name: ${{ format('Release {0}', inputs.release_tag) }}
 
@@ -27,7 +28,7 @@ env:
 jobs:
   validate-trusted-ref:
     name: Validate release request
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-validate-trusted-ref"]}}', github.run_id)) }}
     permissions:
       contents: read
     steps:
@@ -61,7 +62,7 @@ jobs:
 
   build-android:
     needs: validate-trusted-ref
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-build-android"]}}', github.run_id)) }}
     permissions:
       id-token: write
       attestations: write
@@ -192,7 +193,7 @@ jobs:
 
   build-ios:
     needs: validate-trusted-ref
-    runs-on: macos-26
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-build-ios"]}}', github.run_id)) }}
     permissions:
       id-token: write
       attestations: write
@@ -371,7 +372,7 @@ jobs:
   build-tvos:
     needs: validate-trusted-ref
     name: Build tvOS developer package (arm64)
-    runs-on: macos-26
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-build-tvos"]}}', github.run_id)) }}
     permissions:
       id-token: write
       attestations: write
@@ -563,7 +564,7 @@ jobs:
 
   build-macos:
     needs: validate-trusted-ref
-    runs-on: macos-26
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-build-macos"]}}', github.run_id)) }}
     permissions:
       id-token: write
       attestations: write
@@ -813,7 +814,7 @@ jobs:
   build-windows:
     needs: validate-trusted-ref
     name: Build Windows (${{ matrix.arch }})
-    runs-on: ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner == 'windows-latest' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-build-windows"]}}', github.run_id, strategy.job-index)) }}
     permissions:
       contents: read
     strategy:
@@ -957,7 +958,7 @@ jobs:
 
   package-windows:
     needs: build-windows
-    runs-on: windows-latest
+    runs-on: ${{ fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-package-windows"]}}', github.run_id)) }}
     permissions:
       id-token: write
       attestations: write
@@ -1174,7 +1175,7 @@ jobs:
   build-linux:
     needs: validate-trusted-ref
     name: Build Linux (${{ matrix.arch }})
-    runs-on: ${{ matrix.runner }}
+    runs-on: ${{ matrix.runner == 'ubuntu-24.04' && fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-build-linux"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","arm64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-build-linux"]}}', github.run_id, strategy.job-index)) }}
     permissions:
       id-token: write
       attestations: write
@@ -1472,7 +1473,7 @@ jobs:
   create-release:
     needs: [validate-trusted-ref, build-android, build-ios, build-tvos, build-macos, build-windows, package-windows, build-linux]
     if: ${{ always() && needs.validate-trusted-ref.result == 'success' && !contains(needs.*.result, 'failure') && !contains(needs.*.result, 'cancelled') }}
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-create-release"]}}', github.run_id)) }}
     permissions:
       contents: write
       id-token: write
