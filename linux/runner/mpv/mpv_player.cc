@@ -610,8 +610,9 @@ bool MpvPlayer::InitRenderContextForSurface(EGLDisplay display, EGLConfig config
   if (error < 0 || candidate_gl == nullptr) {
     g_warning("MPV: video-plane render API '%s' failed: %s", render_api, mpv_error_string(error));
     if (std::strcmp(render_api, "opengl-next") == 0) {
-      g_warning("MPV: opengl-next requires an experimental engine implementing mpv PR #18607; "
-                "no legacy-renderer fallback was attempted");
+      g_warning(
+          "MPV: opengl-next requires an experimental engine implementing mpv PR #18607; "
+          "no legacy-renderer fallback was attempted");
     }
     if (candidate_gl) mpv_render_context_free(candidate_gl);
     destroy_candidate_context();
