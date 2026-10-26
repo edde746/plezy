@@ -126,18 +126,11 @@ class DownloadsScreenState extends State<DownloadsScreen>
   /// through the same [MediaServerClient] path as Plex.
   MediaServerClient? _clientForDownload(String globalKey) {
     final serverId = parseGlobalKey(globalKey)?.serverId ?? globalKey;
-    return context.read<MultiServerProvider>().serverManager.getClient(
-      ServerId(serverId),
-    );
+    return context.read<MultiServerProvider>().serverManager.getClient(ServerId(serverId));
   }
 
   void _retryDownloads(List<String> globalKeys) {
-    unawaited(
-      context.read<DownloadProvider>().retryDownloads(
-        globalKeys,
-        _clientForDownload,
-      ),
-    );
+    unawaited(context.read<DownloadProvider>().retryDownloads(globalKeys, _clientForDownload));
   }
 
   Future<void> _reviewOrphanDownloads() async {
@@ -196,8 +189,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
       index,
       onSelectWhenActive: _focusCurrentTab,
       onNavigateDown: _focusCurrentTab,
-      onNavigateToActions: () =>
-          _actionBarKey.currentState?.requestFocusOnFirst(),
+      onNavigateToActions: () => _actionBarKey.currentState?.requestFocusOnFirst(),
     );
   }
 
@@ -234,10 +226,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
     if (summary.changed) {
       showSuccessSnackBar(
         context,
-        t.downloads.syncComplete(
-          queued: summary.queuedCount,
-          removed: summary.deletedCount,
-        ),
+        t.downloads.syncComplete(queued: summary.queuedCount, removed: summary.deletedCount),
       );
     } else {
       showAppSnackBar(context, t.downloads.downloadsUpToDate);
@@ -261,31 +250,24 @@ class DownloadsScreenState extends State<DownloadsScreen>
             actions: [
               Consumer<DownloadProvider>(
                 builder: (context, downloadProvider, _) {
-                  final isOffline = context.select<OfflineModeProvider?, bool>(
-                    (p) => p?.isOffline ?? false,
-                  );
-                  final hasFailedDownloads =
-                      downloadProvider.hasFailedDownloads;
+                  final isOffline = context.select<OfflineModeProvider?, bool>((p) => p?.isOffline ?? false);
+                  final hasFailedDownloads = downloadProvider.hasFailedDownloads;
                   // Retrying the last failure removes the focused action;
                   // hand D-pad focus to its neighbour instead of dropping it.
                   if (!hasFailedDownloads && _retryFailedFocusNode.hasFocus) {
                     WidgetsBinding.instance.addPostFrameCallback((_) {
-                      if (mounted)
-                        _actionBarKey.currentState?.requestFocusOnFirst();
+                      if (mounted) _actionBarKey.currentState?.requestFocusOnFirst();
                     });
                   }
                   // Manual sync is only meaningful online and when there's an
                   // enabled rule to evaluate. The spinner shows while any
                   // reconcile (manual or automatic) is in flight.
-                  final hasEnabledRule = downloadProvider.syncRules.values.any(
-                    (r) => r.enabled,
-                  );
+                  final hasEnabledRule = downloadProvider.syncRules.values.any((r) => r.enabled);
                   final showSync = !isOffline && hasEnabledRule;
                   final reconciling = downloadProvider.isReconciling;
                   return FocusableActionBar(
                     key: _actionBarKey,
-                    onNavigateLeft: () =>
-                        getTabChipFocusNode(tabCount - 1).requestFocus(),
+                    onNavigateLeft: () => getTabChipFocusNode(tabCount - 1).requestFocus(),
                     onNavigateDown: _focusCurrentTab,
                     actions: [
                       if (hasFailedDownloads)
@@ -294,18 +276,14 @@ class DownloadsScreenState extends State<DownloadsScreen>
                           tooltip: t.downloads.retryFailed,
                           debugLabel: 'downloads_retry_failed',
                           focusNode: _retryFailedFocusNode,
-                          onPressed: () => _retryDownloads(
-                            context.read<DownloadProvider>().failedDownloadKeys,
-                          ),
+                          onPressed: () => _retryDownloads(context.read<DownloadProvider>().failedDownloadKeys),
                         ),
                       if (showSync)
                         FocusableAction(
                           debugLabel: 'downloads_sync_now',
                           icon: Symbols.sync_rounded,
                           tooltip: t.downloads.syncNow,
-                          onPressed: reconciling
-                              ? null
-                              : () => _handleManualSync(context),
+                          onPressed: reconciling ? null : () => _handleManualSync(context),
                           child: reconciling
                               ? const SizedBox(
                                   width: 48,
@@ -314,9 +292,7 @@ class DownloadsScreenState extends State<DownloadsScreen>
                                     child: SizedBox(
                                       width: 20,
                                       height: 20,
-                                      child: CircularProgressIndicator(
-                                        strokeWidth: 2,
-                                      ),
+                                      child: CircularProgressIndicator(strokeWidth: 2),
                                     ),
                                   ),
                                 )
@@ -326,12 +302,8 @@ class DownloadsScreenState extends State<DownloadsScreen>
                         icon: Symbols.rule_settings_rounded,
                         tooltip: t.downloads.activeSyncRules,
                         debugLabel: 'downloads_sync_rules',
-                        onPressed: () => Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const SyncRulesScreen(),
-                          ),
-                        ),
+                        onPressed: () =>
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const SyncRulesScreen())),
                       ),
                       if (downloadProvider.canReviewOrphanDownloads)
                         FocusableAction(
@@ -342,14 +314,12 @@ class DownloadsScreenState extends State<DownloadsScreen>
                         ),
                       // Mobile mirrors the library browse options action; desktop
                       // and TV expose the same options as per-tab chips instead.
-                      if (PlatformDetector.isMobile(context) &&
-                          tabController.index > 0)
+                      if (PlatformDetector.isMobile(context) && tabController.index > 0)
                         FocusableAction(
                           icon: Symbols.tune_rounded,
                           tooltip: t.downloads.options,
                           debugLabel: 'downloads_options',
-                          onPressed: () =>
-                              _activeOptionsTab()?.showOptionsSheet(),
+                          onPressed: () => _activeOptionsTab()?.showOptionsSheet(),
                         ),
                     ],
                   );
@@ -370,20 +340,14 @@ class DownloadsScreenState extends State<DownloadsScreen>
                   Selector<DownloadProvider, bool>(
                     selector: (_, provider) => provider.downloads.values.any(
                       (progress) =>
-                          progress.status == DownloadStatus.downloading ||
-                          progress.status == DownloadStatus.queued,
+                          progress.status == DownloadStatus.downloading || progress.status == DownloadStatus.queued,
                     ),
                     builder: (context, hasPendingDownloads, _) =>
-                        BackgroundDownloadWarningBanner(
-                          hasPendingDownloads: hasPendingDownloads,
-                        ),
+                        BackgroundDownloadWarningBanner(hasPendingDownloads: hasPendingDownloads),
                   ),
                   if (!PlatformDetector.shouldUseSideNavigation(context))
                     Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
                       alignment: .centerLeft,
                       child: SingleChildScrollView(
                         scrollDirection: Axis.horizontal,
@@ -415,26 +379,19 @@ class DownloadsScreenState extends State<DownloadsScreen>
                               onResume: (globalKey) {
                                 final client = _clientForDownload(globalKey);
                                 if (client != null) {
-                                  downloadProvider.resumeDownload(
-                                    globalKey,
-                                    client,
-                                  );
+                                  downloadProvider.resumeDownload(globalKey, client);
                                 }
                               },
                               onRetry: (globalKey) {
                                 final client = _clientForDownload(globalKey);
                                 if (client != null) {
-                                  downloadProvider.retryDownload(
-                                    globalKey,
-                                    client,
-                                  );
+                                  downloadProvider.retryDownload(globalKey, client);
                                 }
                               },
                               onRetryAll: _retryDownloads,
                               onCancel: downloadProvider.cancelDownload,
                               onDelete: downloadProvider.deleteDownload,
-                              onNavigateLeft: () =>
-                                  MainScreenFocusScope.focusSidebarOf(context),
+                              onNavigateLeft: () => MainScreenFocusScope.focusSidebarOf(context),
                               onBack: focusTabBar,
                               suppressAutoFocus: suppressAutoFocus,
                             );
@@ -485,38 +442,22 @@ class _DownloadStorageSummary extends StatelessWidget {
     final List<String> counts;
     switch (tabController.index) {
       case 1:
-        usage = provider.completedDownloadUsage(
-          where: (item) => item.isEpisode,
-        );
-        counts = [
-          t.downloads.showCount(n: provider.downloadedShows.length),
-          t.explore.episodeCount(n: usage.count),
-        ];
+        usage = provider.completedDownloadUsage(where: (item) => item.isEpisode);
+        counts = [t.downloads.showCount(n: provider.downloadedShows.length), t.explore.episodeCount(n: usage.count)];
       case 2:
         usage = provider.completedDownloadUsage(where: (item) => item.isMovie);
         counts = [t.downloads.movieCount(n: usage.count)];
       case 3:
-        usage = provider.completedDownloadUsage(
-          where: (item) => item.kind == MediaKind.track,
-        );
-        counts = [
-          t.downloads.albumCount(n: provider.downloadedAlbums.length),
-          t.music.trackCount(n: usage.count),
-        ];
+        usage = provider.completedDownloadUsage(where: (item) => item.kind == MediaKind.track);
+        counts = [t.downloads.albumCount(n: provider.downloadedAlbums.length), t.music.trackCount(n: usage.count)];
       default:
         usage = provider.completedDownloadUsage(
-          where: (item) =>
-              item.isEpisode || item.isMovie || item.kind == MediaKind.track,
+          where: (item) => item.isEpisode || item.isMovie || item.kind == MediaKind.track,
         );
         counts = [t.downloads.downloadCount(n: usage.count)];
     }
     if (usage.bytes == 0) return null;
-    return [
-      t.downloads.storageUsed(
-        size: ByteFormatter.formatBytes(usage.bytes, decimals: 1),
-      ),
-      ...counts,
-    ];
+    return [t.downloads.storageUsed(size: ByteFormatter.formatBytes(usage.bytes, decimals: 1)), ...counts];
   }
 
   @override
@@ -532,8 +473,7 @@ class _DownloadStorageSummary extends StatelessWidget {
             alignment: .centerLeft,
             child: Text(
               parts.join(' · '),
-              style: Theme.of(context).textTheme.bodySmall
-                  ?.copyWith(color: tokens(context).textMuted),
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted),
               maxLines: 1,
               overflow: .ellipsis,
             ),
@@ -559,26 +499,18 @@ class _DownloadsGridContent extends StatefulWidget {
   /// (and re-derive the whole list for) every tab.
   final bool isActive;
 
-  const _DownloadsGridContent({
-    super.key,
-    required this.type,
-    required this.isActive,
-    this.onBack,
-  });
+  const _DownloadsGridContent({super.key, required this.type, required this.isActive, this.onBack});
 
   @override
   State<_DownloadsGridContent> createState() => _DownloadsGridContentState();
 }
 
 class _DownloadsGridContentState extends State<_DownloadsGridContent>
-    with
-        AutomaticKeepAliveClientMixin,
-        DownloadsTabOptionsMixin<_DownloadsGridContent> {
+    with AutomaticKeepAliveClientMixin, DownloadsTabOptionsMixin<_DownloadsGridContent> {
   @override
   bool get wantKeepAlive => true;
   @override
-  String get optionsSectionId =>
-      widget.type == DownloadType.tvShows ? 'downloads:tv' : 'downloads:movies';
+  String get optionsSectionId => widget.type == DownloadType.tvShows ? 'downloads:tv' : 'downloads:movies';
 
   @override
   List<String> get groupingOptions => switch (widget.type) {
@@ -589,11 +521,7 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent>
       browseGroupingCollections,
       browseGroupingLibrary,
     ],
-    DownloadType.movies => const [
-      browseGroupingMovies,
-      browseGroupingCollections,
-      browseGroupingLibrary,
-    ],
+    DownloadType.movies => const [browseGroupingMovies, browseGroupingCollections, browseGroupingLibrary],
   };
 
   @override
@@ -627,9 +555,7 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent>
       DownloadType.movies => provider.downloadedMovies,
     };
     final items = applyDownloadsOptions(provider, raw);
-    return selectedGrouping == browseGroupingCollections
-        ? groupDownloadsByCollection(provider, items)
-        : items;
+    return selectedGrouping == browseGroupingCollections ? groupDownloadsByCollection(provider, items) : items;
   }
 
   @override
@@ -642,10 +568,8 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent>
         final sections = selectedGrouping == browseGroupingLibrary
             ? bucketDownloadsByLibrary(
                 items,
-                serverNameOf: (serverId) => context
-                    .read<MultiServerProvider>()
-                    .serverManager
-                    .serverDisplayName(ServerId(serverId)),
+                serverNameOf: (serverId) =>
+                    context.read<MultiServerProvider>().serverManager.serverDisplayName(ServerId(serverId)),
               )
             : null;
 
@@ -660,15 +584,12 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent>
             final settings = SettingsService.instance;
             final viewMode = settings.read(SettingsService.viewMode);
             final density = settings.read(SettingsService.libraryDensity);
-            final fullCardLayout =
-                PlatformDetector.isTV() &&
-                settings.read(SettingsService.tvFullCardLayout);
+            final fullCardLayout = PlatformDetector.isTV() && settings.read(SettingsService.tvFullCardLayout);
             // Episode grids use the wide 16:9 cell when episode thumbnails are
             // the configured poster mode, matching the library browse grid.
             final useWideRatio =
                 selectedGrouping == browseGroupingEpisodes &&
-                settings.read(SettingsService.episodePosterMode) ==
-                    EpisodePosterMode.episodeThumbnail;
+                settings.read(SettingsService.episodePosterMode) == EpisodePosterMode.episodeThumbnail;
 
             return CustomScrollView(
               // Restores the scroll offset when the tab is re-entered after
@@ -679,12 +600,7 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent>
               slivers: [
                 optionsChipsBarSliver(),
                 if (sections != null)
-                  ..._librarySlivers(
-                    sections,
-                    viewMode: viewMode,
-                    density: density,
-                    fullCardLayout: fullCardLayout,
-                  )
+                  ..._librarySlivers(sections, viewMode: viewMode, density: density, fullCardLayout: fullCardLayout)
                 else if (items.isEmpty)
                   _emptySliver()
                 else
@@ -731,9 +647,7 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent>
         final item = items[position.index];
         return FocusableMediaCard(
           item: item,
-          focusNode: attachFirstItemFocus && position.index == 0
-              ? firstItemFocusNode
-              : null,
+          focusNode: attachFirstItemFocus && position.index == 0 ? firstItemFocusNode : null,
           disableScale: position.disableScale,
           onBack: widget.onBack,
           isOffline: true, // Downloaded content works without server
@@ -754,9 +668,7 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent>
     if (sections.isEmpty) return [_emptySliver()];
     return [
       for (var i = 0; i < sections.length; i++) ...[
-        SliverToBoxAdapter(
-          child: DownloadsLibrarySectionHeader(section: sections[i]),
-        ),
+        SliverToBoxAdapter(child: DownloadsLibrarySectionHeader(section: sections[i])),
         _itemsSliver(
           sections[i].items,
           viewMode: viewMode,
@@ -802,9 +714,7 @@ class _OrphanDownloadReviewDialog extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final height = (MediaQuery.sizeOf(context).height * 0.52)
-        .clamp(120.0, 560.0)
-        .toDouble();
+    final height = (MediaQuery.sizeOf(context).height * 0.52).clamp(120.0, 560.0).toDouble();
     return AlertDialog(
       title: Text(t.downloads.orphanReviewTitle),
       content: SizedBox(
@@ -815,10 +725,7 @@ class _OrphanDownloadReviewDialog extends StatelessWidget {
             Text(t.downloads.orphanReviewDescription),
             const SizedBox(height: 12),
             Text(
-              t.downloads.orphanReviewCount(
-                count: scan.files.length,
-                size: ByteFormatter.formatBytes(scan.totalBytes),
-              ),
+              t.downloads.orphanReviewCount(count: scan.files.length, size: ByteFormatter.formatBytes(scan.totalBytes)),
               style: theme.textTheme.titleSmall,
             ),
             const SizedBox(height: 8),
@@ -832,10 +739,7 @@ class _OrphanDownloadReviewDialog extends StatelessWidget {
                     autofocus: index == 0,
                     onPressed: () {},
                     child: Padding(
-                      padding: const EdgeInsets.symmetric(
-                        vertical: 8,
-                        horizontal: 4,
-                      ),
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
                       child: Row(
                         children: [
                           Expanded(
@@ -847,10 +751,7 @@ class _OrphanDownloadReviewDialog extends StatelessWidget {
                             ),
                           ),
                           const SizedBox(width: 12),
-                          Text(
-                            ByteFormatter.formatBytes(file.sizeBytes),
-                            style: theme.textTheme.bodySmall,
-                          ),
+                          Text(ByteFormatter.formatBytes(file.sizeBytes), style: theme.textTheme.bodySmall),
                         ],
                       ),
                     ),
@@ -862,11 +763,7 @@ class _OrphanDownloadReviewDialog extends StatelessWidget {
         ),
       ),
       actions: [
-        DialogActionButton(
-          autofocus: true,
-          onPressed: () => Navigator.pop(context, false),
-          label: t.common.cancel,
-        ),
+        DialogActionButton(autofocus: true, onPressed: () => Navigator.pop(context, false), label: t.common.cancel),
         DialogActionButton(
           onPressed: () => Navigator.pop(context, true),
           label: t.downloads.orphanDeleteFiles(count: scan.files.length),
@@ -896,12 +793,8 @@ class _MusicListEntry {
       isFirst = false,
       isLast = false;
 
-  const _MusicListEntry.track(
-    this.albumTracks,
-    this.trackIndex, {
-    required this.isFirst,
-    required this.isLast,
-  }) : album = null;
+  const _MusicListEntry.track(this.albumTracks, this.trackIndex, {required this.isFirst, required this.isLast})
+    : album = null;
 }
 
 /// Music tab: downloaded tracks grouped under their album (square cover +
@@ -916,32 +809,21 @@ class _DownloadedMusicContent extends StatefulWidget {
   /// (and re-derive the whole list for) every tab.
   final bool isActive;
 
-  const _DownloadedMusicContent({
-    super.key,
-    required this.isActive,
-    this.onBack,
-  });
+  const _DownloadedMusicContent({super.key, required this.isActive, this.onBack});
 
   @override
-  State<_DownloadedMusicContent> createState() =>
-      _DownloadedMusicContentState();
+  State<_DownloadedMusicContent> createState() => _DownloadedMusicContentState();
 }
 
 class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
-    with
-        AutomaticKeepAliveClientMixin,
-        DownloadsTabOptionsMixin<_DownloadedMusicContent> {
+    with AutomaticKeepAliveClientMixin, DownloadsTabOptionsMixin<_DownloadedMusicContent> {
   @override
   bool get wantKeepAlive => true;
   @override
   String get optionsSectionId => 'downloads:music';
 
   @override
-  List<String> get groupingOptions => const [
-    browseGroupingAlbums,
-    browseGroupingTracks,
-    browseGroupingLibrary,
-  ];
+  List<String> get groupingOptions => const [browseGroupingAlbums, browseGroupingTracks, browseGroupingLibrary];
 
   @override
   void initState() {
@@ -961,18 +843,12 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
   @override
   void navigateToSidebar() => MainScreenFocusScope.focusSidebarOf(context);
 
-  Future<void> _playAlbumFrom(
-    List<MediaItem> albumTracks,
-    MediaItem track,
-  ) async {
+  Future<void> _playAlbumFrom(List<MediaItem> albumTracks, MediaItem track) async {
     await playTracks(
       context,
       tracks: albumTracks,
       startTrack: track,
-      playContext: MusicPlayContext(
-        title: track.albumTitle ?? '',
-        kind: MusicPlayContextKind.album,
-      ),
+      playContext: MusicPlayContext(title: track.albumTitle ?? '', kind: MusicPlayContextKind.album),
     );
   }
 
@@ -982,33 +858,21 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
       context,
       tracks: tracks,
       startTrack: track,
-      playContext: MusicPlayContext(
-        title: t.downloads.title,
-        kind: MusicPlayContextKind.tracks,
-      ),
+      playContext: MusicPlayContext(title: t.downloads.title, kind: MusicPlayContextKind.tracks),
     );
   }
 
-  Widget _buildAlbumHeader(
-    BuildContext context,
-    DownloadProvider provider,
-    MediaItem album,
-  ) {
+  Widget _buildAlbumHeader(BuildContext context, DownloadProvider provider, MediaItem album) {
     final tk = tokens(context);
     final textTheme = Theme.of(context).textTheme;
     final artist = album.albumArtistTitle;
     final serverId = album.serverId;
-    final localArt = serverId == null
-        ? null
-        : provider.getArtworkLocalPath(ServerId(serverId), album.thumbPath);
+    final localArt = serverId == null ? null : provider.getArtworkLocalPath(ServerId(serverId), album.thumbPath);
     final ImageProvider? localCoverImage;
     if (localArt == null) {
       localCoverImage = null;
     } else {
-      final pixelRatio = MediaImageHelper.artworkPixelRatio(
-        context,
-        imageType: ImageType.square,
-      );
+      final pixelRatio = MediaImageHelper.artworkPixelRatio(context, imageType: ImageType.square);
       final (memWidth, memHeight) = MediaImageHelper.getMemCacheDimensions(
         displayWidth: (48 * pixelRatio).round(),
         displayHeight: (48 * pixelRatio).round(),
@@ -1024,12 +888,7 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
       width: 48,
       height: 48,
       color: tk.surface,
-      child: AppIcon(
-        Symbols.album_rounded,
-        fill: 1,
-        size: 24,
-        color: tk.textMuted,
-      ),
+      child: AppIcon(Symbols.album_rounded, fill: 1, size: 24, color: tk.textMuted),
     );
 
     return Padding(
@@ -1044,10 +903,7 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
                     width: 48,
                     height: 48,
                     fit: BoxFit.cover,
-                    filterQuality: MediaImageHelper.artworkFilterQuality(
-                      context,
-                      ImageType.square,
-                    ),
+                    filterQuality: MediaImageHelper.artworkFilterQuality(context, ImageType.square),
                     errorBuilder: (_, _, _) => fallbackCover(),
                   )
                 : fallbackCover(),
@@ -1057,12 +913,7 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
             child: Column(
               crossAxisAlignment: .start,
               children: [
-                Text(
-                  album.displayTitle,
-                  style: textTheme.titleSmall,
-                  maxLines: 1,
-                  overflow: .ellipsis,
-                ),
+                Text(album.displayTitle, style: textTheme.titleSmall, maxLines: 1, overflow: .ellipsis),
                 if (artist != null && artist.isNotEmpty)
                   Text(
                     artist,
@@ -1089,14 +940,7 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
       if (tracks.isEmpty) continue;
       rows.add(_MusicListEntry.header(album));
       for (var i = 0; i < tracks.length; i++) {
-        rows.add(
-          _MusicListEntry.track(
-            tracks,
-            i,
-            isFirst: i == 0,
-            isLast: i == tracks.length - 1,
-          ),
-        );
+        rows.add(_MusicListEntry.track(tracks, i, isFirst: i == 0, isLast: i == tracks.length - 1));
       }
     }
     return rows;
@@ -1109,22 +953,15 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
     return Consumer<DownloadProvider>(
       builder: (context, downloadProvider, _) {
         // Keep the last rows reachable above the floating mini-player.
-        final bottomInset =
-            context.watch<MiniPlayerInsetController?>()?.overlayHeight ?? 0;
+        final bottomInset = context.watch<MiniPlayerInsetController?>()?.overlayHeight ?? 0;
 
         return SettingsBuilder(
-          prefs: const [
-            SettingsService.viewMode,
-            SettingsService.libraryDensity,
-            SettingsService.tvFullCardLayout,
-          ],
+          prefs: const [SettingsService.viewMode, SettingsService.libraryDensity, SettingsService.tvFullCardLayout],
           builder: (context) {
             final settings = SettingsService.instance;
             final viewMode = settings.read(SettingsService.viewMode);
             final density = settings.read(SettingsService.libraryDensity);
-            final fullCardLayout =
-                PlatformDetector.isTV() &&
-                settings.read(SettingsService.tvFullCardLayout);
+            final fullCardLayout = PlatformDetector.isTV() && settings.read(SettingsService.tvFullCardLayout);
 
             return CustomScrollView(
               // Restores the scroll offset when the tab is re-entered after
@@ -1190,9 +1027,7 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
             // row sits at index 1.
             final isFirstTrackRow = index == 1;
             return Padding(
-              padding: EdgeInsets.only(
-                top: row.isFirst ? 0 : tokens(context).groupGap,
-              ),
+              padding: EdgeInsets.only(top: row.isFirst ? 0 : tokens(context).groupGap),
               child: TrackRow(
                 key: ValueKey(item.globalKey),
                 item: item,
@@ -1225,9 +1060,7 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
           itemBuilder: (context, index) {
             final item = tracks[index];
             return Padding(
-              padding: EdgeInsets.only(
-                top: index == 0 ? 0 : tokens(context).groupGap,
-              ),
+              padding: EdgeInsets.only(top: index == 0 ? 0 : tokens(context).groupGap),
               child: TrackRow(
                 key: ValueKey(item.globalKey),
                 item: item,
@@ -1258,10 +1091,8 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
     final albums = applyDownloadsOptions(provider, provider.downloadedAlbums);
     final sections = bucketDownloadsByLibrary(
       albums,
-      serverNameOf: (serverId) => context
-          .read<MultiServerProvider>()
-          .serverManager
-          .serverDisplayName(ServerId(serverId)),
+      serverNameOf: (serverId) =>
+          context.read<MultiServerProvider>().serverManager.serverDisplayName(ServerId(serverId)),
     );
     if (sections.isEmpty) return [_emptySliver()];
 
@@ -1269,9 +1100,7 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
     const effectivePadding = EdgeInsets.only(left: 8, right: 8, top: 8);
     return [
       for (var i = 0; i < sections.length; i++) ...[
-        SliverToBoxAdapter(
-          child: DownloadsLibrarySectionHeader(section: sections[i]),
-        ),
+        SliverToBoxAdapter(child: DownloadsLibrarySectionHeader(section: sections[i])),
         MediaCardSliverLayout(
           viewMode: viewMode,
           itemCount: sections[i].items.length,
@@ -1282,16 +1111,12 @@ class _DownloadedMusicContentState extends State<_DownloadedMusicContent>
             final item = sections[i].items[position.index];
             return FocusableMediaCard(
               item: item,
-              focusNode: i == 0 && position.index == 0
-                  ? firstItemFocusNode
-                  : null,
+              focusNode: i == 0 && position.index == 0 ? firstItemFocusNode : null,
               disableScale: position.disableScale,
               onBack: widget.onBack,
               isOffline: true, // Downloaded content works without server
               fullBleedImage: fullCardLayout && position.isGrid,
-              onNavigateUp: i == 0 && position.isFirstRow
-                  ? navigateToChips
-                  : null,
+              onNavigateUp: i == 0 && position.isFirstRow ? navigateToChips : null,
               onNavigateLeft: position.isFirstColumn ? navigateToSidebar : null,
             );
           },
