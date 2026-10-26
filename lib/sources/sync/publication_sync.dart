@@ -37,6 +37,8 @@ class _LocalValue {
   final BookAnnotation? annotation;
 }
 
+typedef _EditionCandidate = ({String edition, List<dynamic> descriptor});
+
 class _SyncCache {
   _SyncCache(Map<String, dynamic> j)
     : document = j['document'] == null ? SyncDocument() : SyncDocument.fromJson(sourceMap(j['document'])),
@@ -119,6 +121,9 @@ class PublicationSync {
     final config = await this.config(profile);
     if (config == null) throw const SourceException(SourceFailure.unsupported);
     try {
+      if (text.length > 7 * 1024 * 1024 || utf8.encode(text).length > 7 * 1024 * 1024) {
+        throw const SourceException(SourceFailure.invalidData);
+      }
       final envelope = sourceMap(jsonDecode(text));
       final cipher = SyncCipher(config.code);
       final name = envelope['name'];
@@ -137,7 +142,7 @@ class PublicationSync {
         cache.document.merge(incoming);
         cache.document.compactSafe(actor: device);
         cache.published = '';
-        await _apply(profile, cache, _identities(sources, entries, entryMappings), activeKeys);
+        await _apply(profile, cache, _identities(sources, entries, entryMappings), entryMappings, activeKeys);
         await repository.savePreference(profile, cacheKey, cache.toJson());
       });
     } on SourceException {
@@ -159,13 +164,22 @@ class PublicationSync {
     await repository.database.transaction(() async {
       final entryMappings = await sharedEntryMappings(profile);
       final identityMigrations = <String, String>{};
+      final editionMigrations = <String, String>{};
       for (final entry in entries) {
         final sharedEntryId = entryMappings[entry.key];
         final oldIdentity = entryIdentity(oldSource, entry, sharedEntryId: sharedEntryId);
         final newIdentity = entryIdentity(newSource, entry, sharedEntryId: sharedEntryId);
         if (oldIdentity != newIdentity) identityMigrations[oldIdentity] = newIdentity;
+        editionMigrations.addAll(
+          _editionMigrationForEntry(
+            entry,
+            oldIdentity,
+            oldSource.options['syncLibrary']?.trim().isNotEmpty == true ? sharedEntryId : null,
+            newSource.options['syncLibrary']?.trim().isNotEmpty == true ? sharedEntryId : null,
+          ),
+        );
       }
-      await _migrateCachedIdentities(profile, identityMigrations);
+      await _migrateCachedIdentities(profile, identityMigrations, editionMigrations);
     });
   }
 
@@ -214,7 +228,14 @@ class PublicationSync {
       }
       final oldIdentity = entryIdentity(source, entry, sharedEntryId: oldSharedEntryId);
       final newIdentity = entryIdentity(source, entry, sharedEntryId: normalized);
-      if (oldIdentity != newIdentity) await _migrateCachedIdentities(profile, {oldIdentity: newIdentity});
+      final editionMigrations = _editionMigrationForEntry(entry, oldIdentity, oldSharedEntryId, normalized);
+      if (oldIdentity != newIdentity || editionMigrations.isNotEmpty) {
+        await _migrateCachedIdentities(
+          profile,
+          oldIdentity == newIdentity ? const {} : {oldIdentity: newIdentity},
+          editionMigrations,
+        );
+      }
       if (normalized == null) {
         current.remove(mappingKey);
       } else {
@@ -224,8 +245,98 @@ class PublicationSync {
     });
   }
 
-  Future<void> _migrateCachedIdentities(String profile, Map<String, String> identityMigrations) async {
-    if (identityMigrations.isEmpty) return;
+  static String _editionMigrationKey(String identity, PublicationMode mode, String edition) =>
+      canonicalSyncJson([identity, mode.name, edition]);
+
+  static List<_EditionCandidate> _editionCandidates(SourceEntry entry, PublicationMode mode) {
+    final byEdition = <String, List<dynamic>>{};
+    void add(List<PublicationFile> files, String edition) {
+      byEdition.putIfAbsent(
+        edition,
+        () => [
+          'catalog',
+          for (final file in entry.files) [file.kind.name, file.mimeType.trim().toLowerCase(), file.size],
+          'selection',
+          for (final file in files) entry.files.indexWhere((candidate) => candidate.fingerprint == file.fingerprint),
+          for (final file in files) [file.kind.name, file.mimeType.trim().toLowerCase(), file.size],
+        ],
+      );
+    }
+
+    if (mode == PublicationMode.reading) {
+      for (final file in entry.ebooks) {
+        add([file], file.fingerprint);
+      }
+    } else if (mode == PublicationMode.listening) {
+      if (entry.audio.isNotEmpty) add(entry.audio, sourceDigest(jsonEncode(entry.audio.map((f) => f.fingerprint).toList())));
+      for (final file in entry.files) {
+        add([file], sourceDigest(jsonEncode([file.fingerprint])));
+      }
+    } else {
+      if (entry.files.isNotEmpty) add(entry.files, sourceDigest(jsonEncode(entry.files.map((f) => f.fingerprint).toList())));
+      for (final file in entry.files) {
+        add([file], sourceDigest(jsonEncode([file.fingerprint])));
+      }
+    }
+    return [for (final candidate in byEdition.entries) (edition: candidate.key, descriptor: candidate.value)];
+  }
+
+  static String? _sharedEditionId(SourceEntry entry, String sharedEntryId, PublicationMode mode, String edition) {
+    final candidates = _editionCandidates(entry, mode);
+    final matches = candidates.where((candidate) => candidate.edition == edition).toList();
+    if (matches.length != 1) return null;
+    final descriptor = matches.single.descriptor;
+    final token = sourceDigest(canonicalSyncJson(['paired-edition-v1', sharedEntryId.trim().toLowerCase(), mode.name, descriptor]));
+    if (candidates.where((candidate) {
+      return sourceDigest(
+            canonicalSyncJson(['paired-edition-v1', sharedEntryId.trim().toLowerCase(), mode.name, candidate.descriptor]),
+          ) ==
+          token;
+    }).length != 1) {
+      return null;
+    }
+    return token;
+  }
+
+  static String? _localEditionForShared(SourceEntry entry, String sharedEntryId, PublicationMode mode, String sharedEdition) {
+    final matches = _editionCandidates(entry, mode).where((candidate) {
+      final token = sourceDigest(
+        canonicalSyncJson(['paired-edition-v1', sharedEntryId.trim().toLowerCase(), mode.name, candidate.descriptor]),
+      );
+      return token == sharedEdition;
+    }).toList();
+    return matches.length == 1 ? matches.single.edition : null;
+  }
+
+  static Map<String, String> _editionMigrationForEntry(
+    SourceEntry entry,
+    String oldIdentity,
+    String? oldSharedEntryId,
+    String? newSharedEntryId,
+  ) {
+    final migrations = <String, String>{};
+    for (final mode in PublicationMode.values) {
+      for (final candidate in _editionCandidates(entry, mode)) {
+        final oldEdition = oldSharedEntryId == null
+            ? candidate.edition
+            : _sharedEditionId(entry, oldSharedEntryId, mode, candidate.edition) ?? candidate.edition;
+        final newEdition = newSharedEntryId == null
+            ? candidate.edition
+            : _sharedEditionId(entry, newSharedEntryId, mode, candidate.edition) ?? candidate.edition;
+        if (oldEdition != newEdition) {
+          migrations[_editionMigrationKey(oldIdentity, mode, oldEdition)] = newEdition;
+        }
+      }
+    }
+    return migrations;
+  }
+
+  Future<void> _migrateCachedIdentities(
+    String profile,
+    Map<String, String> identityMigrations,
+    Map<String, String> editionMigrations,
+  ) async {
+    if (identityMigrations.isEmpty && editionMigrations.isEmpty) return;
     final cacheRows = await repository.database
         .customSelect(
           "SELECT key,payload FROM preferences WHERE profile=? AND key LIKE 'publication-sync-cache-v1:%'",
@@ -241,23 +352,42 @@ class PublicationSync {
       for (final record in cache.document.records.entries) {
         for (final version in record.value) {
           final value = version.value;
-          final newIdentity = identityMigrations[value['entry']];
-          if (newIdentity == null) continue;
+          final oldIdentity = value['entry'];
+          if (oldIdentity is! String) continue;
+          final newIdentity = identityMigrations[oldIdentity] ?? oldIdentity;
           final data = sourceMap(value['data']);
           final type = value['type'];
-          final migratedValue = {...value, 'entry': newIdentity};
+          final mode = PublicationMode.values.where((item) => item.name == data['mode']).firstOrNull;
+          final oldEdition = data['edition'];
+          final newEdition = mode != null && oldEdition is String
+              ? editionMigrations[_editionMigrationKey(oldIdentity, mode, oldEdition)] ?? oldEdition
+              : oldEdition;
+          if (newIdentity == oldIdentity && newEdition == oldEdition) continue;
+          final migratedData = {...data, if (newEdition != null) 'edition': newEdition};
+          final migratedValue = {...value, 'entry': newIdentity, 'data': migratedData};
           final String? migratedKey;
           if (type == 'progress' &&
-              data['edition'] is String &&
-              PublicationMode.values.any((mode) => mode.name == data['mode'])) {
-            migratedKey = progressKey(newIdentity, data['edition'] as String, PublicationMode.values.byName(data['mode'] as String));
+              newEdition is String &&
+              mode != null) {
+            migratedKey = progressKey(newIdentity, newEdition, mode);
           } else if (type == 'annotation' && data['id'] is String) {
             migratedKey = annotationKey(newIdentity, data['id'] as String);
           } else {
             continue;
           }
+          final sameKeyValueChanged = migratedKey == record.key && canonicalSyncJson(migratedValue) != canonicalSyncJson(value);
+          var migratedClock = version.clock;
+          var migratedActor = version.actor;
+          if (sameKeyValueChanged) {
+            final actor = device ?? version.actor;
+            if (actor == null) throw const SourceException(SourceFailure.invalidData);
+            migratedClock = Map<String, int>.from(version.clock);
+            migratedClock[actor] = (migratedClock[actor] ?? 0) + 1;
+            if (migratedClock[actor]! > 9007199254740991) throw const SourceException(SourceFailure.invalidData);
+            migratedActor = actor;
+          }
           additions.merge(SyncDocument({
-            migratedKey: [SyncVersion(version.clock, migratedValue, actor: version.actor)],
+            migratedKey: [SyncVersion(migratedClock, migratedValue, actor: migratedActor)],
           }));
           if (cache.observed[record.key] == _hash(value)) {
             cache.observed[migratedKey] = _hash(migratedValue);
@@ -303,19 +433,19 @@ class PublicationSync {
   static String progressKey(String entry, String edition, PublicationMode mode) =>
       sourceDigest(jsonEncode(['progress', entry, edition, mode.name]));
   static String annotationKey(String entry, String id) => sourceDigest(jsonEncode(['annotation', entry, id]));
-  static Map<String, dynamic> _progressValue(String identity, PublicationProgress p) => {
+  static Map<String, dynamic> _progressValue(String identity, PublicationProgress p, {String? edition}) => {
     'type': 'progress',
     'entry': identity,
-    'data': {...p.toJson()}
+    'data': {...p.toJson(), if (edition != null) 'edition': edition}
       ..remove('entryKey')
       ..remove('session')
       ..remove('revision')
       ..remove('updatedAt'),
   };
-  static Map<String, dynamic> _annotationValue(String identity, BookAnnotation a) => {
+  static Map<String, dynamic> _annotationValue(String identity, BookAnnotation a, {String? edition}) => {
     'type': 'annotation',
     'entry': identity,
-    'data': {...a.toJson()}
+    'data': {...a.toJson(), if (edition != null) 'edition': edition}
       ..remove('entryKey')
       ..remove('updatedAt'),
   };
@@ -337,10 +467,14 @@ class PublicationSync {
     for (final p in await repository.allProgress(profile)) {
       final identity = identities[p.entryKey];
       if (identity != null) {
-        values[progressKey(identity, p.edition, p.mode)] = _LocalValue(
-          _progressValue(identity, p),
+        final entry = byKey[p.entryKey]!;
+        final sharedEntryId = entryMappings[entry.key];
+        final pairedEdition = sharedEntryId == null ? null : _sharedEditionId(entry, sharedEntryId, p.mode, p.edition);
+        final edition = pairedEdition ?? p.edition;
+        values[progressKey(identity, edition, p.mode)] = _LocalValue(
+          _progressValue(identity, p, edition: edition),
           p.key,
-          byKey[p.entryKey]!,
+          entry,
           progress: p,
         );
       }
@@ -352,10 +486,14 @@ class PublicationSync {
       final a = BookAnnotation.fromJson(sourceMap(jsonDecode(row.read<String>('payload'))));
       final identity = identities[a.entryKey];
       if (identity != null) {
+        final entry = byKey[a.entryKey]!;
+        final sharedEntryId = entryMappings[entry.key];
+        final pairedEdition = sharedEntryId == null ? null : _sharedEditionId(entry, sharedEntryId, a.mode, a.edition);
+        final edition = pairedEdition ?? a.edition;
         values[annotationKey(identity, a.id)] = _LocalValue(
-          _annotationValue(identity, a),
+          _annotationValue(identity, a, edition: edition),
           a.id,
-          byKey[a.entryKey]!,
+          entry,
           annotation: a,
         );
       }
@@ -383,25 +521,20 @@ class PublicationSync {
         entryIdentity(sources.firstWhere((s) => s.id == e.sourceId), e, sharedEntryId: entryMappings[e.key]): e,
   };
 
-  bool _compatible(SourceEntry entry, Map<String, dynamic> data) {
+  bool _compatible(SourceEntry entry, Map<String, dynamic> data, {String? sharedEntryId}) {
     final edition = data['edition'], mode = data['mode'];
-    if (mode == PublicationMode.reading.name) return entry.ebooks.any((f) => f.fingerprint == edition);
-    // Every selected sequence has a distinct edition; individual media are
-    // also selectable. Never apply an offset to a replaced/reordered file set.
-    final groups = <List<PublicationFile>>[
-      entry.audio,
-      for (final f in entry.files) [f],
-    ];
-    return const ['listening', 'watching'].contains(mode) &&
-        groups
-            .where((g) => g.isNotEmpty)
-            .any((g) => sourceDigest(jsonEncode(g.map((f) => f.fingerprint).toList())) == edition);
+    if (edition is! String) return false;
+    final publicationMode = PublicationMode.values.where((candidate) => candidate.name == mode).firstOrNull;
+    if (publicationMode == null) return false;
+    if (_editionCandidates(entry, publicationMode).any((candidate) => candidate.edition == edition)) return true;
+    return sharedEntryId != null && _localEditionForShared(entry, sharedEntryId, publicationMode, edition) != null;
   }
 
   Future<void> _apply(
     String profile,
     _SyncCache cache,
     Map<String, SourceEntry> identities,
+    Map<String, String> entryMappings,
     Set<String> activeKeys,
   ) async {
     conflicts.clear();
@@ -434,14 +567,23 @@ class PublicationSync {
       if (expectedKey.isEmpty || expectedKey != record.key) {
         throw const SourceException(SourceFailure.invalidData);
       }
-      if (!(first['type'] == 'annotation' && data['deleted'] == true) && !_compatible(entry, data)) continue;
+      final sharedEntryId = entryMappings[entry.key];
+      if (!(first['type'] == 'annotation' && data['deleted'] == true) &&
+          !_compatible(entry, data, sharedEntryId: sharedEntryId)) {
+        continue;
+      }
+      final publicationMode = PublicationMode.values.byName(mode as String);
+      final localEdition = sharedEntryId == null
+          ? edition as String
+          : _localEditionForShared(entry, sharedEntryId, publicationMode, edition as String) ?? edition as String;
+      final localData = localEdition == edition ? data : {...data, 'edition': localEdition};
       final hash = _hash(first);
       if (cache.observed[record.key] == hash) {
         cache.basis[record.key] = joinedClock(values);
         continue;
       }
       if (first['type'] == 'progress') {
-        final value = PublicationProgress.fromJson({...data, 'entryKey': entry.key, 'session': const Uuid().v4()});
+        final value = PublicationProgress.fromJson({...localData, 'entryKey': entry.key, 'session': const Uuid().v4()});
         if (value.positionMs < 0 ||
             value.filePositionMs < 0 ||
             value.fileIndex < 0 ||
@@ -463,7 +605,7 @@ class PublicationSync {
         await repository.acknowledge(profile, saved.key, saved.revision);
       } else if (first['type'] == 'annotation') {
         final a = BookAnnotation.fromJson({
-          ...data,
+          ...localData,
           'entryKey': entry.key,
           'updatedAt': DateTime.now().millisecondsSinceEpoch,
         });
@@ -549,7 +691,7 @@ class PublicationSync {
         _capture(cache, device, publishedLocals);
         cache.document.merge(remote);
         cache.document.compactSafe(actor: device);
-        await _apply(profile, cache, _identities(sources, entries, entryMappings), activeKeys);
+        await _apply(profile, cache, _identities(sources, entries, entryMappings), entryMappings, activeKeys);
         check();
         await repository.savePreference(profile, cacheKey, cache.toJson());
       });
@@ -626,7 +768,13 @@ class PublicationSync {
       cache.document.edit(key, device, selected.value, joinedClock(current));
       cache.observed.remove(key);
       final entryMappings = await sharedEntryMappings(profile);
-      await _apply(profile, cache, _identities(sources, await repository.entries(profile), entryMappings), activeKeys);
+      await _apply(
+        profile,
+        cache,
+        _identities(sources, await repository.entries(profile), entryMappings),
+        entryMappings,
+        activeKeys,
+      );
       check();
       await repository.savePreference(profile, cacheKey, cache.toJson());
     });
