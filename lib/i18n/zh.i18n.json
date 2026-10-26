@@ -1516,6 +1516,7 @@
   },
   "about": {
     "title": "关于",
+    "privacyPolicy": "隐私政策",
     "openSourceLicenses": "开源许可证",
     "versionLabel": "版本 ${version}",
     "appDescription": "一款精美的 Flutter Plex、Jellyfin 和 Emby 客户端",

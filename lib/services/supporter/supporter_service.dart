@@ -208,7 +208,7 @@ class SupporterService extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Whether entitlement-controlled presentation is usable right now.
   bool get isUnlocked => switch (availability) {
-    SupporterAvailability.hidden => true,
+    SupporterAvailability.hidden => false,
     SupporterAvailability.free => true,
     SupporterAvailability.purchasable => _purchased || isTrialActive,
   };
@@ -267,7 +267,7 @@ class SupporterService extends ChangeNotifier with DisposableChangeNotifierMixin
   /// [isUnlocked] for the pre-provider startup frame, from the same build
   /// policy and entitlement cache this service starts from.
   static bool startupUnlocked(SettingsService settings) => switch (supporterAvailabilityFor(supporterBuildMode)) {
-    SupporterAvailability.hidden => true,
+    SupporterAvailability.hidden => false,
     SupporterAvailability.free => true,
     SupporterAvailability.purchasable =>
       settings.read(SettingsService.supporterEntitlementCached) ||

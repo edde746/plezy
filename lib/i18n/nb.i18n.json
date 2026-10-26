@@ -1522,6 +1522,7 @@
   },
   "about": {
     "title": "Om",
+    "privacyPolicy": "Personvernerklæring",
     "openSourceLicenses": "Lisenser for åpen kildekode",
     "versionLabel": "Versjon ${version}",
     "appDescription": "En vakker Plex-, Jellyfin- og Emby-klient for Flutter",

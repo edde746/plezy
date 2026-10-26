@@ -1407,6 +1407,7 @@ class _Translations$about$uz extends Translations$about$en {
 
 	// Translations
 	@override String get title => 'Dastur haqida';
+	@override String get privacyPolicy => 'Maxfiylik siyosati';
 	@override String get openSourceLicenses => 'Ochiq kodli litsenziyalar';
 	@override String versionLabel({required Object version}) => 'Versiya ${version}';
 	@override String get appDescription => 'Flutter asosidagi qulay Plex, Jellyfin va Emby mijozi';
@@ -4723,6 +4724,7 @@ extension on TranslationsUz {
 			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => 'Dastur haqida',
+			'about.privacyPolicy' => 'Maxfiylik siyosati',
 			'about.openSourceLicenses' => 'Ochiq kodli litsenziyalar',
 			'about.versionLabel' => ({required Object version}) => 'Versiya ${version}',
 			'about.appDescription' => 'Flutter asosidagi qulay Plex, Jellyfin va Emby mijozi',
@@ -5022,9 +5024,9 @@ extension on TranslationsUz {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Toʻplamni oʻchirish xatoligi: ${error}',
 			'collections.selectCollection' => 'Toʻplamni tanlash',
 			'collections.collectionName' => 'Toʻplam nomi',
-			'collections.enterCollectionName' => 'Toʻplam nomini kiriting',
 			_ => null,
 		} ?? switch (path) {
+			'collections.enterCollectionName' => 'Toʻplam nomini kiriting',
 			'collections.addedToCollection' => 'Toʻplamga qoʻshildi',
 			'collections.errorAddingToCollection' => 'Toʻplamga qoʻshib boʻlmadi',
 			'collections.created' => 'Toʻplam yaratildi',
@@ -5536,9 +5538,9 @@ extension on TranslationsUz {
 			'externalPlayer.selectPlayer' => 'Pleyerni tanlash',
 			'externalPlayer.customPlayers' => 'Maxsus pleyerlar',
 			'externalPlayer.systemDefault' => 'Tizim standarti',
-			'externalPlayer.addCustomPlayer' => 'Maxsus pleyer qoʻshish',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.addCustomPlayer' => 'Maxsus pleyer qoʻshish',
 			'externalPlayer.playerName' => 'Pleyer nomi',
 			'externalPlayer.playerNameHint' => 'Mening pleyerim',
 			'externalPlayer.playerCommand' => 'Buyruq',

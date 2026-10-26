@@ -1522,6 +1522,7 @@
   },
   "about": {
     "title": "À propos",
+    "privacyPolicy": "Politique de confidentialité",
     "openSourceLicenses": "Licences libres",
     "versionLabel": "Version ${version}",
     "appDescription": "Un magnifique client Plex, Jellyfin et Emby pour Flutter",

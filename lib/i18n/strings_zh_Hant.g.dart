@@ -1403,6 +1403,7 @@ class _Translations$about$zh_Hant extends Translations$about$zh {
 
 	// Translations
 	@override String get title => '關於';
+	@override String get privacyPolicy => '隱私權政策';
 	@override String get openSourceLicenses => '開源授權條款';
 	@override String versionLabel({required Object version}) => '版本 ${version}';
 	@override String get appDescription => '一款精美的 Plex、Jellyfin 與 Emby Flutter 用戶端';
@@ -4712,6 +4713,7 @@ extension on TranslationsZhHant {
 			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => '關於',
+			'about.privacyPolicy' => '隱私權政策',
 			'about.openSourceLicenses' => '開源授權條款',
 			'about.versionLabel' => ({required Object version}) => '版本 ${version}',
 			'about.appDescription' => '一款精美的 Plex、Jellyfin 與 Emby Flutter 用戶端',
@@ -5011,9 +5013,9 @@ extension on TranslationsZhHant {
 			'collections.deleteFailedWithError' => ({required Object error}) => '刪除收藏集失敗：${error}',
 			'collections.selectCollection' => '選擇收藏集',
 			'collections.collectionName' => '收藏集名稱',
-			'collections.enterCollectionName' => '輸入收藏集名稱',
 			_ => null,
 		} ?? switch (path) {
+			'collections.enterCollectionName' => '輸入收藏集名稱',
 			'collections.addedToCollection' => '已新增至收藏集',
 			'collections.errorAddingToCollection' => '新增至收藏集失敗',
 			'collections.created' => '已建立收藏集',
@@ -5525,9 +5527,9 @@ extension on TranslationsZhHant {
 			'externalPlayer.selectPlayer' => '選擇播放器',
 			'externalPlayer.customPlayers' => '自訂播放器',
 			'externalPlayer.systemDefault' => '系統預設',
-			'externalPlayer.addCustomPlayer' => '新增自訂播放器',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.addCustomPlayer' => '新增自訂播放器',
 			'externalPlayer.playerName' => '播放器名稱',
 			'externalPlayer.playerNameHint' => '我的播放器',
 			'externalPlayer.playerCommand' => '執行命令',

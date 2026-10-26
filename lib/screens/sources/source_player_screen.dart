@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_slider.dart';
 import '../../i18n/strings.g.dart';
 import '../../mpv/mpv.dart';
 import '../../sources/source_models.dart';
@@ -61,9 +62,10 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
     mainAxisSize: MainAxisSize.min,
     children: [
       if (s.opening) const LinearProgressIndicator(),
-      Slider(
+      FocusableSlider(
         value: (_dragPosition ?? s.positionMs.toDouble()).clamp(0, s.durationMs > 0 ? s.durationMs.toDouble() : 1),
         max: s.durationMs > 0 ? s.durationMs.toDouble() : 1,
+        semanticLabel: t.fileSources.timePosition,
         semanticFormatterCallback: (v) => sourceTime(v.round()),
         onChanged: s.durationMs > 0 ? (v) => setState(() => _dragPosition = v) : null,
         onChangeEnd: s.durationMs > 0
@@ -75,12 +77,17 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
       ),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 24),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(sourceTime(s.positionMs)),
-            Text(t.fileSources.remaining(time: sourceTime(((s.durationMs - s.positionMs) / s.speed).round()))),
-          ],
+        child: SizedBox(
+          width: double.infinity,
+          child: Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            spacing: 16,
+            runSpacing: 4,
+            children: [
+              Text(sourceTime(s.positionMs)),
+              Text(t.fileSources.remaining(time: sourceTime(((s.durationMs - s.positionMs) / s.speed).round()))),
+            ],
+          ),
         ),
       ),
       const SizedBox(height: 12),
@@ -90,7 +97,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
         spacing: 12,
         children: [
           IconButton(
-            tooltip: t.fileSources.previousPage,
+            tooltip: t.videoControls.previousChapterButton,
             onPressed: () => sourceAction(context, s.previousChapter),
             icon: const AppIcon(Symbols.skip_previous_rounded),
           ),
@@ -111,7 +118,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
             icon: const AppIcon(Symbols.forward_media_rounded),
           ),
           IconButton(
-            tooltip: t.fileSources.nextPage,
+            tooltip: t.videoControls.nextChapterButton,
             onPressed: () => sourceAction(context, s.nextChapter),
             icon: const AppIcon(Symbols.skip_next_rounded),
           ),

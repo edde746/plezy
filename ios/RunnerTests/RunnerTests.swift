@@ -32,6 +32,44 @@ final class ControllablePropertyCore: MpvPlayerCoreBase {
   }
 }
 
+final class RecordingSpeedFlushCore: MpvPlayerCoreBase {
+  let currentAudioOutput: String
+  let currentPosition: String
+  private(set) var operations: [String] = []
+
+  init(currentAudioOutput: String, currentPosition: String = "12.5") {
+    self.currentAudioOutput = currentAudioOutput
+    self.currentPosition = currentPosition
+    super.init()
+  }
+
+  override func getPropertyAsync(
+    _ name: String,
+    completion: @escaping (Result<String?, Error>) -> Void
+  ) {
+    operations.append("get:\(name)")
+    let value = name == "current-ao" ? currentAudioOutput : currentPosition
+    completion(.success(value))
+  }
+
+  override func setRawStringPropertyAsync(
+    _ name: String,
+    value: String,
+    completion: @escaping (Result<Void, Error>) -> Void
+  ) {
+    operations.append("set:\(name)=\(value)")
+    completion(.success(()))
+  }
+
+  override func commandAsync(
+    _ args: [String],
+    completion: @escaping (Result<Int64?, Error>) -> Void
+  ) {
+    operations.append("command:\(args.joined(separator: " "))")
+    completion(.success(nil))
+  }
+}
+
 final class RecordingMpvPlugin: MpvPluginShared {
   var coreBase: MpvPlayerCoreBase?
   var eventSink: FlutterEventSink?
@@ -221,7 +259,7 @@ final class MpvPlayerContractTests: XCTestCase {
     XCTAssertFalse(core.isPaused, "The accepted pause write must commit before completion")
   }
 
-  func testMpvContextsPreferAVFoundationOverAudioUnit() {
+  func testMpvContextsPreferAVFoundationOverAudioUnit() throws {
     // ao_audiounit remixes 5.1/7.1 to stereo on AirPods (#2264); both the
     // video and the music core must probe AVFoundation first.
     let core = MpvAudioPlayerCore()
@@ -231,7 +269,18 @@ final class MpvPlayerContractTests: XCTestCase {
       core.queue.sync {}
     }
 
-    let outputOrder = try awaitGetProperty(core, name: "options/ao").get().split(separator: ",")
+    let rawOutputOrder: String
+    switch awaitGetProperty(core, name: "options/ao") {
+    case .success(let value?):
+      rawOutputOrder = value
+    case .success(nil):
+      XCTFail("Expected an audio output order to be configured")
+      return
+    case .failure:
+      XCTFail("Could not read the audio output order")
+      return
+    }
+    let outputOrder = rawOutputOrder.split(separator: ",")
     guard
       let avFoundationIndex = outputOrder.firstIndex(of: "avfoundation"),
       let audioUnitIndex = outputOrder.firstIndex(of: "audiounit")
@@ -275,6 +324,11 @@ final class MpvPlayerContractTests: XCTestCase {
   // Together room pauses, changes its rate and plays; playback must run at the
   // new rate from the paused position, not drift off while that queue drains.
   func testSpeedWrittenWhilePausedTakesEffectOnPlay() throws {
+    #if os(iOS) && targetEnvironment(simulator)
+      throw XCTSkip(
+        "The iOS simulator does not start AVFoundation audio in CI; speed flush ordering has deterministic coverage."
+      )
+    #endif
     let (core, file) = try startSilentPlayback()
     defer { stopSilentPlayback(core, file: file) }
 
@@ -292,6 +346,11 @@ final class MpvPlayerContractTests: XCTestCase {
   }
 
   func testSpeedWrittenWhilePlayingTakesEffectAtOnce() throws {
+    #if os(iOS) && targetEnvironment(simulator)
+      throw XCTSkip(
+        "The iOS simulator does not start AVFoundation audio in CI; speed flush ordering has deterministic coverage."
+      )
+    #endif
     let (core, file) = try startSilentPlayback()
     defer { stopSilentPlayback(core, file: file) }
 
@@ -302,6 +361,29 @@ final class MpvPlayerContractTests: XCTestCase {
 
     let expected = changedFrom + 2 * Date().timeIntervalSince(changedAt)
     XCTAssertEqual(try timePos(core), expected, accuracy: 0.5)
+  }
+
+  func testAvfoundationSpeedChangeFlushesAtThePreChangePosition() {
+    let core = RecordingSpeedFlushCore(currentAudioOutput: "avfoundation")
+    var result: Result<Void, Error>?
+
+    core.setSpeedAsync("2") { result = $0 }
+
+    XCTAssertSuccess(result ?? .failure(failure))
+    XCTAssertEqual(
+      core.operations,
+      ["get:current-ao", "get:time-pos", "set:speed=2", "command:seek 12.5 absolute+exact"]
+    )
+  }
+
+  func testOtherAudioOutputsDoNotSeekAfterSpeedChanges() {
+    let core = RecordingSpeedFlushCore(currentAudioOutput: "audiounit")
+    var result: Result<Void, Error>?
+
+    core.setSpeedAsync("1.5") { result = $0 }
+
+    XCTAssertSuccess(result ?? .failure(failure))
+    XCTAssertEqual(core.operations, ["get:current-ao", "set:speed=1.5"])
   }
 
   func testOlderPauseReplyCannotOverwriteNewerUserIntent() {

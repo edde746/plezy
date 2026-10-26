@@ -1516,6 +1516,7 @@
   },
   "about": {
     "title": "소개",
+    "privacyPolicy": "개인정보 처리방침",
     "openSourceLicenses": "오픈소스 라이선스",
     "versionLabel": "버전 ${version}",
     "appDescription": "Flutter로 만든 아름다운 Plex, Jellyfin 및 Emby 클라이언트",

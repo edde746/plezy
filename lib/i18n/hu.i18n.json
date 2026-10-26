@@ -1522,6 +1522,7 @@
   },
   "about": {
     "title": "Névjegy",
+    "privacyPolicy": "Adatvédelmi tájékoztató",
     "openSourceLicenses": "Nyílt forráskódú licencek",
     "versionLabel": "Verzió: ${version}",
     "appDescription": "Gyönyörű Flutter-kliens a Plexhez, a Jellyfinhez és az Embyhez",

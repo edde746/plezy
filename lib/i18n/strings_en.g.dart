@@ -4014,6 +4014,9 @@ class Translations$about$en {
 	/// en: 'About'
 	String get title => 'About';
 
+	/// en: 'Privacy Policy'
+	String get privacyPolicy => 'Privacy Policy';
+
 	/// en: 'Open Source Licenses'
 	String get openSourceLicenses => 'Open Source Licenses';
 
@@ -11199,6 +11202,7 @@ extension on Translations {
 			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => 'About',
+			'about.privacyPolicy' => 'Privacy Policy',
 			'about.openSourceLicenses' => 'Open Source Licenses',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
 			'about.appDescription' => 'A beautiful Plex, Jellyfin, and Emby client for Flutter',
@@ -11333,9 +11337,9 @@ extension on Translations {
 			'explore.badge.nextAiringIn' => ({required Object duration}) => 'Next in ${duration}',
 			'explore.badge.episodesShort' => ({required Object n}) => '${n} eps',
 			'explore.badge.minutesPerEpisode' => ({required Object n}) => '${n} min/ep',
-			'explore.badge.adult' => '18+',
 			_ => null,
 		} ?? switch (path) {
+			'explore.badge.adult' => '18+',
 			'explore.stats.listed' => ({required Object n}) => '${n} listed',
 			'explore.stats.viewersDay' => ({required Object n}) => '${n} watched today',
 			'explore.stats.viewersWeek' => ({required Object n}) => '${n} watched this week',
@@ -11847,9 +11851,9 @@ extension on Translations {
 			'downloads.syncRuleAccessDenied' => 'Access denied',
 			'downloads.syncRuleNotAvailableForProfile' => 'Not available for current profile',
 			'downloads.syncRuleUnknownServer' => 'Unknown server',
-			'downloads.syncRuleListCreated' => 'Sync rule created',
 			_ => null,
 		} ?? switch (path) {
+			'downloads.syncRuleListCreated' => 'Sync rule created',
 			'downloads.backgroundWarning.bannerBlocked' => 'Downloads will stop when you leave the app',
 			'downloads.backgroundWarning.bannerDegraded' => 'Background downloads may be limited',
 			'downloads.backgroundWarning.bannerAction' => 'Details',
@@ -12361,9 +12365,9 @@ extension on Translations {
 			'homeLayout.sync' => 'Sync',
 			'homeLayout.syncAccountTitle' => 'Sync layout with your Plex account',
 			'homeLayout.syncAccountOn' => 'On: this device shares row order, rows, Hero and Auto-slide with your other devices.',
-			'homeLayout.syncAccountOff' => 'Off: this device keeps its own layout.',
 			_ => null,
 		} ?? switch (path) {
+			'homeLayout.syncAccountOff' => 'Off: this device keeps its own layout.',
 			'homeLayout.syncNow' => 'Sync now',
 			'homeLayout.plexHomeManager' => 'Plex Home manager',
 			'homeLayout.managePlexRows' => 'Manage Plex rows in Plezy',

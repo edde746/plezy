@@ -1407,6 +1407,7 @@ class _Translations$about$nl extends Translations$about$en {
 
 	// Translations
 	@override String get title => 'Over';
+	@override String get privacyPolicy => 'Privacyverklaring';
 	@override String get openSourceLicenses => 'Opensourcelicenties';
 	@override String versionLabel({required Object version}) => 'Versie ${version}';
 	@override String get appDescription => 'Een mooie Plex-, Jellyfin- en Emby-client voor Flutter';
@@ -4723,6 +4724,7 @@ extension on TranslationsNl {
 			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => 'Over',
+			'about.privacyPolicy' => 'Privacyverklaring',
 			'about.openSourceLicenses' => 'Opensourcelicenties',
 			'about.versionLabel' => ({required Object version}) => 'Versie ${version}',
 			'about.appDescription' => 'Een mooie Plex-, Jellyfin- en Emby-client voor Flutter',
@@ -5022,9 +5024,9 @@ extension on TranslationsNl {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Collectie verwijderen mislukt: ${error}',
 			'collections.selectCollection' => 'Collectie selecteren',
 			'collections.collectionName' => 'Collectienaam',
-			'collections.enterCollectionName' => 'Voer een collectienaam in',
 			_ => null,
 		} ?? switch (path) {
+			'collections.enterCollectionName' => 'Voer een collectienaam in',
 			'collections.addedToCollection' => 'Toegevoegd aan collectie',
 			'collections.errorAddingToCollection' => 'Fout bij toevoegen aan collectie',
 			'collections.created' => 'Collectie gemaakt',
@@ -5536,9 +5538,9 @@ extension on TranslationsNl {
 			'externalPlayer.selectPlayer' => 'Speler selecteren',
 			'externalPlayer.customPlayers' => 'Aangepaste spelers',
 			'externalPlayer.systemDefault' => 'Systeemstandaard',
-			'externalPlayer.addCustomPlayer' => 'Aangepaste speler toevoegen',
 			_ => null,
 		} ?? switch (path) {
+			'externalPlayer.addCustomPlayer' => 'Aangepaste speler toevoegen',
 			'externalPlayer.playerName' => 'Spelernaam',
 			'externalPlayer.playerNameHint' => 'Mijn speler',
 			'externalPlayer.playerCommand' => 'Commando',
