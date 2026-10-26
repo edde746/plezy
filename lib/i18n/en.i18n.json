@@ -3395,7 +3395,7 @@
     "nfsReadAhead": "NFS read-ahead requests",
     "nfsReadAheadHelp": "More parallel reads can improve throughput on a fast NAS or network. Use 1 if the server limits concurrent requests.",
     "nfsReadTest": "Measure NFS read performance",
-    "nfsReadTestHelp": "Reads up to 64 MiB from the first file to measure this NAS connection. This uses network bandwidth.",
+    "nfsReadTestHelp": "Reads up to 64 MiB from the largest file to measure this NAS connection. This uses network bandwidth.",
     "nfsQualificationResult": "NFS read measurement",
     "nfsReadBytes": "Bytes read",
     "nfsReadSpeed": "Measured speed",
