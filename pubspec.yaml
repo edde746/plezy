@@ -83,6 +83,7 @@ dependencies:
   universal_gamepad: ^1.5.7
   drift: ^2.31.0
   crypto: ^3.0.7
+  dartssh2: ^4.1.0
   cryptography: ^2.9.0
   # 10.x retains the win32 5.x API used by the vendored wakelock plugin.
   flutter_secure_storage: ^10.3.4

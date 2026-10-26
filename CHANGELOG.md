@@ -5,9 +5,9 @@
 ### Added
 
 - Add SMB2/3 read-only NAS sources on Android, iOS, macOS, Windows, Linux, and Apple TV, with a Videos library shelf and resumable video watch progress.
-- Add passive FTP/explicit-FTPS sources with byte-range playback and manual DLNA ContentDirectory sources.
-- Add user-initiated Trakt metadata matching for standalone videos, including online posters, cast, ratings and safe trailer links.
-- Search and download OpenSubtitles for standalone videos using source-scoped, encrypted API credentials.
+- Add passive FTP/FTPES/FTPS, pinned-host-key SFTP, and read-only NFSv3 sources with byte-range playback; add best-effort SSDP discovery for DLNA ContentDirectory servers with manual URL fallback.
+- Automatically match standalone video filenames against Trakt with confidence and ambiguity checks; add online posters, cast, ratings, IDs, and validated trailer links. Manual matching remains available.
+- Search and download OpenSubtitles for standalone videos, including SMB files, using source-scoped encrypted API credentials.
 - Read offline Kodi/Jellyfin NFO sidecars and sibling posters to enrich local and SMB video titles, summaries, ratings, genres, years, and external IDs.
 - Sync SMB and other file-source progress and notes across devices through one configured WebDAV state folder.
 - Add an isolated experimental Dolby Vision engine build with a Linux gpu-next embedding option and profile inspection lab; full FEL and device output qualification remain pending.

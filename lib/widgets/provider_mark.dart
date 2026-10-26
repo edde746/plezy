@@ -43,6 +43,9 @@ class FileSourceMark extends StatelessWidget {
     FileSourceKind.opds => AppIcon(Symbols.auto_stories_rounded, size: size),
     FileSourceKind.audiobookshelf => AppIcon(Symbols.headphones_rounded, size: size),
     FileSourceKind.webdav || FileSourceKind.s3 => AppIcon(Symbols.cloud_queue_rounded, size: size),
-    FileSourceKind.smb || FileSourceKind.ftp || FileSourceKind.dlna => AppIcon(Symbols.storage_rounded, size: size),
+    FileSourceKind.smb || FileSourceKind.ftp || FileSourceKind.dlna =>
+      AppIcon(Symbols.storage_rounded, size: size),
+    FileSourceKind.sftp => AppIcon(Symbols.lock_rounded, size: size),
+    FileSourceKind.nfs => AppIcon(Symbols.folder_open_rounded, size: size),
   };
 }
