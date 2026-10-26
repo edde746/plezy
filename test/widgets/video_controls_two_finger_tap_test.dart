@@ -86,6 +86,7 @@ void main() {
 
   Future<void> pumpControls(
     WidgetTester tester, {
+    TargetPlatform platform = TargetPlatform.android,
     bool wireTransportCallback = true,
     double videoZoomScale = 1.0,
     bool canControl = true,
@@ -100,7 +101,7 @@ void main() {
           ChangeNotifierProvider<WatchTogetherProvider>.value(value: watchTogether),
         ],
         child: MaterialApp(
-          theme: ThemeData(platform: TargetPlatform.android, extensions: const [testMonoTokens]),
+          theme: ThemeData(platform: platform, extensions: const [testMonoTokens]),
           home: Scaffold(
             body: SizedBox(
               width: surface.width,
@@ -171,63 +172,65 @@ void main() {
     expect(chrome.controlsVisible, isFalse);
   }
 
-  testWidgets('screen lock enforces three fingers and the configured duration without pausing on release', (
-    tester,
-  ) async {
-    ScreenLockCapabilities.debugReset(loader: () async => const ScreenLockCapabilities(deviceKey: 'tablet'));
-    addTearDown(ScreenLockCapabilities.debugReset);
-    final settings = SettingsService.instance;
-    await settings.write(SettingsService.screenLockFingerCount, 3);
-    await settings.write(SettingsService.screenLockVerifiedFingerCount, 3);
-    await settings.write(SettingsService.screenLockVerifiedDeviceKey, 'tablet');
-    await settings.write(SettingsService.screenLockHoldDurationMs, 1500);
-    await pumpControls(tester);
-    await lockControls(tester);
+  for (final platform in [TargetPlatform.android, TargetPlatform.iOS]) {
+    testWidgets('${platform.name} lock requires the configured gesture and preserves playback', (tester) async {
+      ScreenLockCapabilities.debugReset(loader: () async => const ScreenLockCapabilities(deviceKey: 'tablet'));
+      addTearDown(ScreenLockCapabilities.debugReset);
+      final settings = SettingsService.instance;
+      await settings.write(SettingsService.screenLockFingerCount, 3);
+      await settings.write(SettingsService.screenLockVerifiedFingerCount, 3);
+      await settings.write(SettingsService.screenLockVerifiedDeviceKey, 'tablet');
+      await settings.write(SettingsService.screenLockHoldDurationMs, 1500);
+      await pumpControls(tester, platform: platform);
+      await lockControls(tester);
 
-    final centre = centreOf(tester);
-    final single = await tester.startGesture(centre, pointer: _nextPointer());
-    await tester.pump(const Duration(seconds: 2));
-    expect(find.byType(ScreenLockOverlay), findsOneWidget);
-    await single.up();
-    await tester.pump();
+      final centre = centreOf(tester);
+      final single = await tester.startGesture(centre, pointer: _nextPointer());
+      await tester.pump(const Duration(seconds: 2));
+      expect(find.byType(ScreenLockOverlay), findsOneWidget);
+      await single.up();
+      await tester.pump();
 
-    final fingers = [
-      await tester.startGesture(centre - const Offset(60, 0), pointer: _nextPointer()),
-      await tester.startGesture(centre, pointer: _nextPointer()),
-      await tester.startGesture(centre + const Offset(60, 0), pointer: _nextPointer()),
-    ];
-    await tester.pump(const Duration(milliseconds: 1499));
-    expect(find.byType(ScreenLockOverlay), findsOneWidget);
-    await tester.pump(const Duration(milliseconds: 1));
-    expect(find.byType(ScreenLockOverlay), findsNothing);
-    for (final finger in fingers) {
+      final fingers = [
+        await tester.startGesture(centre - const Offset(60, 0), pointer: _nextPointer()),
+        await tester.startGesture(centre, pointer: _nextPointer()),
+        await tester.startGesture(centre + const Offset(60, 0), pointer: _nextPointer()),
+      ];
+      await tester.pump(const Duration(milliseconds: 1499));
+      expect(find.byType(ScreenLockOverlay), findsOneWidget);
+      await tester.pump(const Duration(milliseconds: 1));
+      expect(find.byType(ScreenLockOverlay), findsNothing);
+      for (final finger in fingers) {
+        await finger.up();
+      }
+      await tester.pump(const Duration(milliseconds: 400));
+      expect(transportCommands, isEmpty);
+      expect(player.state.playing, isTrue);
+      expect(chrome.controlsVisible, isTrue);
+      await settle(tester);
+    });
+
+    testWidgets('${platform.name} lock falls back to one finger after restoring another device', (tester) async {
+      ScreenLockCapabilities.debugReset(
+        loader: () async => const ScreenLockCapabilities(deviceKey: 'different-tablet'),
+      );
+      addTearDown(ScreenLockCapabilities.debugReset);
+      final settings = SettingsService.instance;
+      await settings.write(SettingsService.screenLockFingerCount, 4);
+      await settings.write(SettingsService.screenLockVerifiedFingerCount, 4);
+      await settings.write(SettingsService.screenLockVerifiedDeviceKey, 'original-tablet');
+      await pumpControls(tester, platform: platform);
+      await lockControls(tester);
+      expect(tester.widget<ScreenLockOverlay>(find.byType(ScreenLockOverlay)).requiredFingers, 1);
+      final finger = await tester.startGesture(centreOf(tester), pointer: _nextPointer());
+      await tester.pump(const Duration(milliseconds: 500));
+      expect(find.byType(ScreenLockOverlay), findsNothing);
       await finger.up();
-    }
-    await tester.pump(const Duration(milliseconds: 400));
-    expect(transportCommands, isEmpty);
-    expect(player.state.playing, isTrue);
-    expect(chrome.controlsVisible, isTrue);
-    await settle(tester);
-  });
-
-  testWidgets('an unsupported restored finger count falls back to available touches', (tester) async {
-    ScreenLockCapabilities.debugReset(loader: () async => const ScreenLockCapabilities(deviceKey: 'different-tablet'));
-    addTearDown(ScreenLockCapabilities.debugReset);
-    final settings = SettingsService.instance;
-    await settings.write(SettingsService.screenLockFingerCount, 4);
-    await settings.write(SettingsService.screenLockVerifiedFingerCount, 4);
-    await settings.write(SettingsService.screenLockVerifiedDeviceKey, 'original-tablet');
-    await pumpControls(tester);
-    await lockControls(tester);
-    expect(tester.widget<ScreenLockOverlay>(find.byType(ScreenLockOverlay)).requiredFingers, 1);
-    final finger = await tester.startGesture(centreOf(tester), pointer: _nextPointer());
-    await tester.pump(const Duration(milliseconds: 500));
-    expect(find.byType(ScreenLockOverlay), findsNothing);
-    await finger.up();
-    await tester.pump();
-    expect(transportCommands, isEmpty);
-    await settle(tester);
-  });
+      await tester.pump();
+      expect(transportCommands, isEmpty);
+      await settle(tester);
+    });
+  }
 
   testWidgets('a two-finger tap pauses without raising the chrome', (tester) async {
     await pumpControls(tester);

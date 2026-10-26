@@ -103,21 +103,20 @@ class _ScreenLockOverlayState extends State<ScreenLockOverlay>
   void _updateHold() {
     _stopHold();
     _hintTimer?.cancel();
-    if (!_completed && _active && !_blockedUntilRelease && _touchOrigins.length == widget.requiredFingers) {
-      unawaited(_progress.forward());
-      // The timer, rather than an animation completion, enforces the selected
-      // duration even when accessibility settings alter animation behavior.
-      _holdTimer = Timer(widget.holdDuration, () {
-        _holdTimer = null;
-        if (!mounted || _completed || !_active || _blockedUntilRelease) return;
-        if (_touchOrigins.length != widget.requiredFingers) return;
-        _completed = true;
-        _progress.value = 1;
-        widget.onUnlock();
-      });
-    } else {
+    if (_completed || !_active || _blockedUntilRelease || _touchOrigins.length != widget.requiredFingers) {
       _scheduleHintHide();
+      return;
     }
+    unawaited(_progress.forward());
+    // Time the hold independently of animation settings.
+    _holdTimer = Timer(widget.holdDuration, () {
+      _holdTimer = null;
+      if (!mounted || _completed || !_active || _blockedUntilRelease) return;
+      if (_touchOrigins.length != widget.requiredFingers) return;
+      _completed = true;
+      _progress.value = 1;
+      widget.onUnlock();
+    });
   }
 
   void _pointerDown(PointerDownEvent event) {

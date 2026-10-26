@@ -1,11 +1,12 @@
 import 'dart:async';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/services/screen_lock_capabilities.dart';
 
 void main() {
-  TestWidgetsFlutterBinding.ensureInitialized();
+  final binding = TestWidgetsFlutterBinding.ensureInitialized();
 
   const device = ScreenLockCapabilities(deviceKey: 'tablet-a');
 
@@ -75,5 +76,42 @@ void main() {
     expect(await second, same(device));
     expect(await ScreenLockCapabilities.load(), same(device));
     expect(calls, 1);
+  });
+
+  test('scopes iOS verification to model and OS build', () async {
+    const channel = MethodChannel('dev.fluttercommunity.plus/device_info');
+    debugDefaultTargetPlatformOverride = TargetPlatform.iOS;
+    addTearDown(() {
+      debugDefaultTargetPlatformOverride = null;
+      binding.defaultBinaryMessenger.setMockMethodCallHandler(channel, null);
+    });
+
+    final keys = <String>{};
+    for (final (model, build) in [('iPhone15,2', 'build-a'), ('iPad13,18', 'build-a'), ('iPad13,18', 'build-b')]) {
+      binding.defaultBinaryMessenger.setMockMethodCallHandler(
+        channel,
+        (_) async => {
+          'name': 'Test device',
+          'systemName': 'iOS',
+          'systemVersion': '18.0',
+          'model': 'iPad',
+          'modelName': 'iPad',
+          'localizedModel': 'iPad',
+          'freeDiskSize': 0,
+          'totalDiskSize': 0,
+          'isPhysicalDevice': false,
+          'physicalRamSize': 0,
+          'availableRamSize': 0,
+          'isiOSAppOnMac': false,
+          'isiOSAppOnVision': false,
+          'utsname': {'sysname': 'Darwin', 'nodename': 'test', 'release': '24.0', 'version': build, 'machine': model},
+        },
+      );
+      ScreenLockCapabilities.debugReset();
+      final capability = await ScreenLockCapabilities.load();
+      expect(capability.canRememberVerification, isTrue);
+      keys.add(capability.deviceKey);
+    }
+    expect(keys, hasLength(3));
   });
 }

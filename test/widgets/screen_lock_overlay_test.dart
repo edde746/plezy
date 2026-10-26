@@ -40,7 +40,7 @@ void main() {
     return gesture;
   }
 
-  testWidgets('the complete hold duration is required, including with reduced animations', (tester) async {
+  testWidgets('requires the full hold with reduced animations', (tester) async {
     var unlocked = 0;
     await pumpOverlay(tester, onUnlock: () => unlocked++, disableAnimations: true);
     final finger = await touch(tester, 1);
@@ -53,7 +53,7 @@ void main() {
     await finger.up();
   });
 
-  testWidgets('three fingers must overlap for the entire hold', (tester) async {
+  testWidgets('requires all three fingers for the full hold', (tester) async {
     var unlocked = 0;
     await pumpOverlay(tester, fingers: 3, onUnlock: () => unlocked++);
     final first = await touch(tester, 1);
@@ -70,7 +70,7 @@ void main() {
     await third.up();
   });
 
-  testWidgets('four and five finger holds are supported', (tester) async {
+  testWidgets('supports four- and five-finger holds', (tester) async {
     for (final count in [4, 5]) {
       var unlocked = 0;
       await pumpOverlay(tester, fingers: count, onUnlock: () => unlocked++);
@@ -87,7 +87,7 @@ void main() {
     }
   });
 
-  testWidgets('excess fingers interrupt the hold and returning to the exact count starts over', (tester) async {
+  testWidgets('an extra finger restarts the hold', (tester) async {
     var unlocked = 0;
     await pumpOverlay(tester, fingers: 2, onUnlock: () => unlocked++);
     final first = await touch(tester, 1);
@@ -105,7 +105,7 @@ void main() {
     await second.up();
   });
 
-  testWidgets('lifting and replacing a finger does not retain elapsed time', (tester) async {
+  testWidgets('replacing a finger restarts the hold', (tester) async {
     var unlocked = 0;
     await pumpOverlay(tester, fingers: 2, onUnlock: () => unlocked++);
     final first = await touch(tester, 1);
@@ -121,7 +121,7 @@ void main() {
     await replacement.up();
   });
 
-  testWidgets('a canceled touch requires every remaining finger to release before retrying', (tester) async {
+  testWidgets('canceled touches require a full release', (tester) async {
     var unlocked = 0;
     await pumpOverlay(tester, fingers: 2, onUnlock: () => unlocked++);
     final first = await touch(tester, 1);
@@ -141,7 +141,7 @@ void main() {
     await retrySecond.up();
   });
 
-  testWidgets('swiping cannot turn into an unlock by stopping or returning to the origin', (tester) async {
+  testWidgets('a swipe stays canceled until release', (tester) async {
     var unlocked = 0;
     await pumpOverlay(tester, onUnlock: () => unlocked++);
     final finger = await touch(tester, 1, position: const Offset(100, 100));
@@ -157,7 +157,7 @@ void main() {
     await retry.up();
   });
 
-  testWidgets('small normal finger movement remains a stationary hold', (tester) async {
+  testWidgets('allows movement within touch slop', (tester) async {
     var unlocked = 0;
     await pumpOverlay(tester, onUnlock: () => unlocked++);
     final finger = await touch(tester, 1, position: const Offset(100, 100));
@@ -167,7 +167,7 @@ void main() {
     await finger.up();
   });
 
-  testWidgets('mouse and stylus pointers cannot satisfy a finger requirement', (tester) async {
+  testWidgets('ignores mouse and stylus pointers', (tester) async {
     var unlocked = 0;
     await pumpOverlay(tester, onUnlock: () => unlocked++);
     for (final kind in [PointerDeviceKind.mouse, PointerDeviceKind.stylus]) {
@@ -179,7 +179,7 @@ void main() {
     }
   });
 
-  testWidgets('inactive and resumed app states discard an interrupted hold', (tester) async {
+  testWidgets('backgrounding cancels the hold', (tester) async {
     var unlocked = 0;
     await pumpOverlay(tester, onUnlock: () => unlocked++);
     final finger = await touch(tester, 1);
@@ -197,7 +197,7 @@ void main() {
     await retry.up();
   });
 
-  testWidgets('changing the required count cancels touches held under the old requirement', (tester) async {
+  testWidgets('changing finger count requires a fresh hold', (tester) async {
     var unlocked = 0;
     await pumpOverlay(tester, onUnlock: () => unlocked++);
     final first = await touch(tester, 1);
@@ -216,7 +216,7 @@ void main() {
     await retrySecond.up();
   });
 
-  testWidgets('changing the duration requires a fresh hold with the new duration', (tester) async {
+  testWidgets('changing duration requires a fresh hold', (tester) async {
     var unlocked = 0;
     await pumpOverlay(tester, onUnlock: () => unlocked++);
     final finger = await touch(tester, 1);
@@ -233,7 +233,7 @@ void main() {
     await retry.up();
   });
 
-  testWidgets('disposing the overlay cancels pending unlock and hint timers', (tester) async {
+  testWidgets('disposal cancels pending timers', (tester) async {
     var unlocked = 0;
     await pumpOverlay(tester, onUnlock: () => unlocked++);
     final finger = await touch(tester, 1);
@@ -245,7 +245,7 @@ void main() {
     await finger.up();
   });
 
-  testWidgets('the hidden hint still absorbs touches and reappears on a touch', (tester) async {
+  testWidgets('touching a hidden hint shows it without tapping playback', (tester) async {
     var underlyingTaps = 0;
     await tester.pumpWidget(
       MaterialApp(
@@ -277,7 +277,7 @@ void main() {
     expect(underlyingTaps, 0);
   });
 
-  testWidgets('the hint remains visible throughout a hold longer than its normal timeout', (tester) async {
+  testWidgets('keeps the hint visible during a long hold', (tester) async {
     var unlocked = 0;
     await pumpOverlay(tester, duration: const Duration(seconds: 5), onUnlock: () => unlocked++);
     final finger = await touch(tester, 1);
@@ -289,13 +289,13 @@ void main() {
     await finger.up();
   });
 
-  testWidgets('preview mode keeps the instruction visible without a touch', (tester) async {
+  testWidgets('keeps the preview hint visible', (tester) async {
     await pumpOverlay(tester, onUnlock: () {}, autoHideHint: false);
     await tester.pump(const Duration(seconds: 5));
     expect(tester.widget<AnimatedOpacity>(find.byType(AnimatedOpacity)).opacity, 1);
   });
 
-  testWidgets('lifting the unlocking finger after removing the overlay does not tap playback', (tester) async {
+  testWidgets('releasing after unlock does not tap playback', (tester) async {
     var locked = true;
     var underlyingTaps = 0;
     await tester.pumpWidget(
@@ -330,7 +330,7 @@ void main() {
     expect(underlyingTaps, 1);
   });
 
-  testWidgets('incomplete unlock touches do not activate an ancestor playback gesture', (tester) async {
+  testWidgets('blocks ancestor tap gestures', (tester) async {
     var playbackTaps = 0;
     await tester.pumpWidget(
       MaterialApp(
@@ -352,20 +352,15 @@ void main() {
     expect(playbackTaps, 0);
   });
 
-  testWidgets('semantics describes the hold without a tap or long-press bypass', (tester) async {
-    final semantics = tester.ensureSemantics();
-    try {
-      await pumpOverlay(tester, fingers: 3, onUnlock: () {});
-      final node = tester.getSemantics(find.byType(ScreenLockOverlay));
-      expect(node.label, 'Hold 3 fingers to unlock');
-      expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isFalse);
-      expect(node.getSemanticsData().hasAction(SemanticsAction.longPress), isFalse);
-    } finally {
-      semantics.dispose();
-    }
+  testWidgets('semantics has no tap or long-press bypass', (tester) async {
+    await pumpOverlay(tester, fingers: 3, onUnlock: () {});
+    final node = tester.getSemantics(find.byType(ScreenLockOverlay));
+    expect(node.label, 'Hold 3 fingers to unlock');
+    expect(node.getSemanticsData().hasAction(SemanticsAction.tap), isFalse);
+    expect(node.getSemanticsData().hasAction(SemanticsAction.longPress), isFalse);
   });
 
-  testWidgets('optional feedback reports the current number of touch fingers', (tester) async {
+  testWidgets('shows the current finger count', (tester) async {
     await pumpOverlay(tester, fingers: 3, onUnlock: () {}, progressLabel: (count) => '$count / 3');
     expect(find.text('0 / 3'), findsOneWidget);
     final finger = await touch(tester, 1);

@@ -9,7 +9,7 @@ void main() {
     SettingsService.resetForTesting();
   });
 
-  test('screen lock defaults preserve the one-finger short hold', () async {
+  test('defaults to one finger and 500 ms', () async {
     final settings = await SettingsService.getInstance();
     expect(settings.read(SettingsService.screenLockHoldDurationMs), 500);
     expect(settings.read(SettingsService.screenLockFingerCount), 1);
@@ -17,7 +17,7 @@ void main() {
     expect(settings.read(SettingsService.screenLockVerifiedDeviceKey), isEmpty);
   });
 
-  test('out-of-range stored lock settings are bounded', () async {
+  test('clamps stored gesture values', () async {
     resetSharedPreferencesForTest(
       initialAsync: {
         'screen_lock_hold_duration_ms': -100,
@@ -31,7 +31,7 @@ void main() {
     expect(settings.read(SettingsService.screenLockVerifiedFingerCount), 1);
   });
 
-  test('touch counts and verification do not travel in settings exports', () {
+  test('excludes finger count and verification from exports', () {
     final portableKeys = SettingsService.portablePrefs.map((pref) => pref.key).toSet();
     expect(portableKeys, contains(SettingsService.screenLockHoldDurationMs.key));
     expect(portableKeys, isNot(contains(SettingsService.screenLockFingerCount.key)));
@@ -39,7 +39,7 @@ void main() {
     expect(portableKeys, isNot(contains(SettingsService.screenLockVerifiedDeviceKey.key)));
   });
 
-  test('reset clears the configured gesture and its device verification', () async {
+  test('reset clears the gesture and verification', () async {
     final settings = await SettingsService.getInstance();
     await settings.write(SettingsService.screenLockHoldDurationMs, 4000);
     await settings.write(SettingsService.screenLockFingerCount, 4);

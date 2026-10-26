@@ -1,5 +1,4 @@
 import 'dart:convert';
-import 'dart:io';
 
 import 'package:crypto/crypto.dart';
 import 'package:device_info_plus/device_info_plus.dart';
@@ -10,8 +9,7 @@ import 'package:flutter/foundation.dart';
 class ScreenLockCapabilities {
   const ScreenLockCapabilities({required this.deviceKey});
 
-  /// Hardware/build identity digest used only to scope local touch validation.
-  /// Fallback keys cannot carry validation between unidentified devices.
+  /// Scopes touch verification to the device model and OS build.
   final String deviceKey;
 
   static Future<ScreenLockCapabilities>? _cached;
@@ -23,27 +21,33 @@ class ScreenLockCapabilities {
     try {
       final override = _debugLoader;
       if (override != null) return await override();
-      if (!Platform.isAndroid) return _fallback();
-
-      final info = await DeviceInfoPlugin().androidInfo;
-      final identity = jsonEncode([info.manufacturer, info.model, info.device, info.fingerprint]);
-      return ScreenLockCapabilities(deviceKey: sha256.convert(utf8.encode(identity)).toString());
+      final deviceInfo = DeviceInfoPlugin();
+      final List<String> identity;
+      if (defaultTargetPlatform == TargetPlatform.android) {
+        final info = await deviceInfo.androidInfo;
+        identity = [info.manufacturer, info.model, info.device, info.fingerprint];
+      } else if (defaultTargetPlatform == TargetPlatform.iOS) {
+        final info = await deviceInfo.iosInfo;
+        identity = [info.systemName, info.utsname.machine, info.utsname.version];
+      } else {
+        return _fallback();
+      }
+      return ScreenLockCapabilities(deviceKey: sha256.convert(utf8.encode(jsonEncode(identity))).toString());
     } catch (_) {
-      // An unanswered probe must not enable a lock the user cannot release.
+      // Keep one-finger unlocking when device info is unavailable.
       return _fallback();
     }
   }
 
   static ScreenLockCapabilities _fallback() =>
-      ScreenLockCapabilities(deviceKey: 'unverified:${Platform.operatingSystem}');
+      ScreenLockCapabilities(deviceKey: 'unverified:${defaultTargetPlatform.name}');
 
   bool get canRememberVerification => deviceKey.isNotEmpty && !deviceKey.startsWith('unverified:');
 
   int effectiveFingerCount(int preferred, {required int verifiedFingerCount, required String verifiedDeviceKey}) {
     final requested = preferred.clamp(1, 5);
     if (requested == 1) return 1;
-    // Hardware support alone cannot account for system/accessibility gestures
-    // consuming contacts. Restored settings need a local demonstration again.
+    // Restored settings need a local demonstration before using multiple fingers.
     if (!canRememberVerification || verifiedDeviceKey != deviceKey || verifiedFingerCount.clamp(1, 5) < requested) {
       return 1;
     }

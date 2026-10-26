@@ -114,8 +114,7 @@ class _ScreenLockSettingsGroupState extends State<ScreenLockSettingsGroup> {
         body: () async {
           final settings = SettingsService.instance;
           if (count > 1 && capabilities.canRememberVerification) {
-            // Clear old proof before changing its device identity, so a partial
-            // write cannot attach another device's higher touch count here.
+            // Invalidate old verification first so interrupted writes stay safe.
             await settings.write(SettingsService.screenLockVerifiedFingerCount, 1);
             await settings.write(SettingsService.screenLockVerifiedDeviceKey, capabilities.deviceKey);
             await settings.write(SettingsService.screenLockVerifiedFingerCount, count);
@@ -158,31 +157,27 @@ class _ScreenLockSettingsGroupState extends State<ScreenLockSettingsGroup> {
             children: [
               Text(t.settings.lockGestureTestDescription),
               const SizedBox(height: 16),
-              ClipRRect(
-                borderRadius: BorderRadius.circular(16),
-                child: ColoredBox(
-                  color: Colors.black,
-                  child: SizedBox(
-                    key: const ValueKey('screen-lock-test-area'),
-                    width: double.infinity,
-                    height: 240,
-                    child: ScreenLockOverlay(
-                      requiredFingers: fingers,
-                      holdDuration: Duration(milliseconds: milliseconds),
-                      autoHideHint: false,
-                      instruction: t.videoControls.lockHoldInstruction(
-                        fingers: _fingerLabel(fingers),
-                        duration: _durationLabel(milliseconds),
-                      ),
-                      touchProgressLabelBuilder: (current) =>
-                          t.videoControls.lockTouchCount(current: current.toString(), required: fingers.toString()),
-                      onUnlock: () {
-                        if (dialogContext.mounted && ModalRoute.of(dialogContext)?.isCurrent == true) {
-                          Navigator.of(dialogContext).pop(true);
-                        }
-                      },
-                    ),
+              Container(
+                key: const ValueKey('screen-lock-test-area'),
+                width: double.infinity,
+                height: 240,
+                clipBehavior: Clip.antiAlias,
+                decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(16)),
+                child: ScreenLockOverlay(
+                  requiredFingers: fingers,
+                  holdDuration: Duration(milliseconds: milliseconds),
+                  autoHideHint: false,
+                  instruction: t.videoControls.lockHoldInstruction(
+                    fingers: _fingerLabel(fingers),
+                    duration: _durationLabel(milliseconds),
                   ),
+                  touchProgressLabelBuilder: (current) =>
+                      t.videoControls.lockTouchCount(current: current.toString(), required: fingers.toString()),
+                  onUnlock: () {
+                    if (dialogContext.mounted && ModalRoute.of(dialogContext)?.isCurrent == true) {
+                      Navigator.of(dialogContext).pop(true);
+                    }
+                  },
                 ),
               ),
             ],
