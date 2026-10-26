@@ -8,12 +8,6 @@ providers.exec {
     commandLine System.getProperty('os.name').toLowerCase().contains('windows') ? 'python' : 'python3', recipe.absolutePath
 }.result.get().assertNormalExitValue()
 
-repositories {
-    exclusiveContent {
-        forRepository { maven { url 'https://jitpack.io' } }
-        filter { includeGroup 'com.github.cgutman' }
-    }
-}
 android {
     namespace 'com.limelight'
     compileSdk 37
