@@ -2538,6 +2538,10 @@
     "redirectUnsupported": "El servidor redirigió a una URL no compatible",
     "redirectDifferentHost": "El servidor redirigió a un host diferente. Introduce directamente la URL final de ${product}.",
     "redirectInsecure": "El servidor redirigió de HTTPS a una URL no segura",
-    "redirectUnsupportedEnterFinal": "El servidor redirigió a una URL no compatible. Introduce directamente la URL final de ${product}."
+    "redirectUnsupportedEnterFinal": "El servidor redirigió a una URL no compatible. Introduce directamente la URL final de ${product}.",
+    "insecureTitle": "",
+    "insecureDescription": "",
+    "allowHttp": "",
+    "httpsRequired": ""
   }
 }

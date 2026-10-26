@@ -11,6 +11,7 @@ import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
 import '../../services/jellyfin_endpoint_discovery.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/insecure_connection_consent.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/loading_indicator_box.dart';
@@ -46,6 +47,7 @@ class _EditJellyfinConnectionScreenState extends State<EditJellyfinConnectionScr
         final registry = context.read<ConnectionRegistry>();
         final updated = await registry.prepareMediaBrowserEndpoints(widget.connection, _enteredUrls());
         if (!mounted) return;
+        if (!await confirmInsecureConnection(context, updated.baseUrl) || !mounted) return;
         await registry.upsert(updated, expected: widget.connection);
         if (!mounted) return;
         Navigator.of(context).pop(true);

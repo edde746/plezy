@@ -2538,6 +2538,10 @@
     "redirectUnsupported": "Server dəstəklənməyən URL-ə yönləndirdi",
     "redirectDifferentHost": "Server başqa hosta yönləndirdi. Son ${product} URL-ni birbaşa daxil edin.",
     "redirectInsecure": "Server HTTPS-dən təhlükəsiz olmayan URL-ə yönləndirdi",
-    "redirectUnsupportedEnterFinal": "Server dəstəklənməyən URL-ə yönləndirdi. Son ${product} URL-ni birbaşa daxil edin."
+    "redirectUnsupportedEnterFinal": "Server dəstəklənməyən URL-ə yönləndirdi. Son ${product} URL-ni birbaşa daxil edin.",
+    "insecureTitle": "",
+    "insecureDescription": "",
+    "allowHttp": "",
+    "httpsRequired": ""
   }
 }

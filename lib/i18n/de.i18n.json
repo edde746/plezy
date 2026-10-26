@@ -2538,6 +2538,10 @@
     "redirectUnsupported": "Der Server hat zu einer nicht unterstützten URL weitergeleitet",
     "redirectDifferentHost": "Der Server hat zu einem anderen Host weitergeleitet. Gib die endgültige ${product}-URL direkt ein.",
     "redirectInsecure": "Der Server hat von HTTPS zu einer unsicheren URL weitergeleitet",
-    "redirectUnsupportedEnterFinal": "Der Server hat zu einer nicht unterstützten URL weitergeleitet. Gib die endgültige ${product}-URL direkt ein."
+    "redirectUnsupportedEnterFinal": "Der Server hat zu einer nicht unterstützten URL weitergeleitet. Gib die endgültige ${product}-URL direkt ein.",
+    "insecureTitle": "",
+    "insecureDescription": "",
+    "allowHttp": "",
+    "httpsRequired": ""
   }
 }

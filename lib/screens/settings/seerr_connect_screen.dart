@@ -12,6 +12,7 @@ import '../../providers/seerr_account_provider.dart';
 import '../../services/seerr/seerr_constants.dart';
 import '../../services/seerr/seerr_exceptions.dart';
 import '../../theme/mono_tokens.dart';
+import '../../utils/insecure_connection_consent.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/loading_indicator_box.dart';
@@ -125,19 +126,23 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen>
   }
 
   Future<void> _signInWithPlex() async {
+    final baseUrl = _baseUrl;
+    if (!await confirmInsecureConnection(context, baseUrl) || !mounted) return;
     await runAsync<void>(() async {
       final account = context.read<SeerrAccountProvider>();
       final token = await account.resolvePlexToken();
       if (token == null || token.isEmpty) {
         throw SeerrAuthException('No Plex token available', display: t.seerr.noPlexTokenForReauth);
       }
-      final session = await account.authService.signInWithPlex(baseUrl: _baseUrl, plexToken: token);
+      final session = await account.authService.signInWithPlex(baseUrl: baseUrl, plexToken: token);
       await _finish(account, session);
     }, errorMapper: _describeError);
   }
 
   Future<void> _signInWithCredentials() async {
+    final baseUrl = _baseUrl;
     if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!await confirmInsecureConnection(context, baseUrl) || !mounted) return;
     final form = _form;
     await runAsync<void>(() async {
       final account = context.read<SeerrAccountProvider>();
@@ -145,13 +150,13 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen>
       final password = _passwordController.text;
       final session = switch (form) {
         _CredentialForm.jellyfin || _CredentialForm.emby => await account.authService.signInWithJellyfin(
-          baseUrl: _baseUrl,
+          baseUrl: baseUrl,
           username: identifier,
           password: password,
           emby: form == _CredentialForm.emby,
         ),
         _CredentialForm.local => await account.authService.signInWithLocal(
-          baseUrl: _baseUrl,
+          baseUrl: baseUrl,
           email: identifier,
           password: password,
         ),
@@ -166,11 +171,13 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen>
   /// `/settings/public` exposes no "Quick Connect enabled" flag, so auto-firing
   /// would blind-hit instances that cannot serve it.
   Future<void> _startQuickConnect() async {
+    final baseUrl = _baseUrl;
+    if (!await confirmInsecureConnection(context, baseUrl) || !mounted) return;
     final attemptId = beginQuickConnectAttempt();
     await runAsync<void>(
       () async {
         final account = context.read<SeerrAccountProvider>();
-        final initiation = await account.authService.initiateQuickConnect(_baseUrl);
+        final initiation = await account.authService.initiateQuickConnect(baseUrl);
         if (!isCurrentQuickConnectAttempt(attemptId)) return;
         // Show the waiting panel without a spinner — opt out of busy mid-flow
         // so the visible state matches "we're polling, nothing for you to do".
@@ -179,7 +186,7 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen>
         setBusy(false);
 
         final session = await account.authService.signInWithQuickConnect(
-          baseUrl: _baseUrl,
+          baseUrl: baseUrl,
           secret: initiation.secret,
           shouldCancel: () => quickConnectAborted(attemptId),
         );

@@ -2538,6 +2538,10 @@
     "redirectUnsupported": "Сервер қолдау көрсетілмейтін URL-ге қайта бағыттады",
     "redirectDifferentHost": "Сервер басқа хостқа қайта бағыттады. Соңғы ${product} URL-ін тікелей енгізіңіз.",
     "redirectInsecure": "Сервер HTTPS мекенжайынан қауіпсіз емес URL-ге қайта бағыттады",
-    "redirectUnsupportedEnterFinal": "Сервер қолдау көрсетілмейтін URL-ге қайта бағыттады. Соңғы ${product} URL-ін тікелей енгізіңіз."
+    "redirectUnsupportedEnterFinal": "Сервер қолдау көрсетілмейтін URL-ге қайта бағыттады. Соңғы ${product} URL-ін тікелей енгізіңіз.",
+    "insecureTitle": "",
+    "insecureDescription": "",
+    "allowHttp": "",
+    "httpsRequired": ""
   }
 }

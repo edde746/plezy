@@ -2538,6 +2538,10 @@
     "redirectUnsupported": "Server qoʻllab-quvvatlanmaydigan URL-ga yoʻnaltirdi",
     "redirectDifferentHost": "Server boshqa xostga yoʻnaltirdi. Yakuniy ${product} URL-ini bevosita kiriting.",
     "redirectInsecure": "Server HTTPS manzilidan xavfsiz boʻlmagan URL-ga yoʻnaltirdi",
-    "redirectUnsupportedEnterFinal": "Server qoʻllab-quvvatlanmaydigan URL-ga yoʻnaltirdi. Yakuniy ${product} URL-ini bevosita kiriting."
+    "redirectUnsupportedEnterFinal": "Server qoʻllab-quvvatlanmaydigan URL-ga yoʻnaltirdi. Yakuniy ${product} URL-ini bevosita kiriting.",
+    "insecureTitle": "",
+    "insecureDescription": "",
+    "allowHttp": "",
+    "httpsRequired": ""
   }
 }

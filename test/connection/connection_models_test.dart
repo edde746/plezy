@@ -42,6 +42,19 @@ void main() {
       expect(restored.lastAuthenticatedAt, base.lastAuthenticatedAt);
     });
 
+    test('HTTPS connections drop saved HTTP fallback URLs', () {
+      final restored = JellyfinConnection.fromConfigJson(
+        id: 'legacy',
+        json: {
+          ...base.toConfigJson(),
+          'baseUrls': ['https://jellyfin.example.com', 'http://jellyfin.example.com:8096'],
+        },
+        createdAt: base.createdAt,
+      );
+
+      expect(restored.baseUrls, ['https://jellyfin.example.com']);
+    });
+
     test('primary image tag round-trips through config JSON', () {
       final tagged = base.copyWith(primaryImageTag: 'avatar-tag');
       final restored = JellyfinConnection.fromConfigJson(

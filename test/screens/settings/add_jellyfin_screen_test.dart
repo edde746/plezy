@@ -724,6 +724,12 @@ void main() {
     await tester.pump();
     await tester.pump();
 
+    // An HTTP discovery result needs explicit consent before Quick Connect starts.
+    expect(find.text('Unencrypted connection'), findsOneWidget);
+    await tester.tap(find.text('Allow HTTP'));
+    await tester.pump();
+    await tester.pump();
+
     // Pre-swap frames: probe done, initiate in flight — no keyboard.
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
 

@@ -68,6 +68,34 @@ Future<Object> _captureError(Future<dynamic> future) async {
 const _serverInfo = JellyfinServerInfo(serverName: 'Home', machineId: 'srv-1', version: '10.9.0');
 
 void main() {
+  test('HTTP credentials and Quick Connect secrets require explicit consent before any request', () async {
+    var calls = 0;
+    final service = _service(
+      handler: (_) {
+        calls++;
+        return _status(500);
+      },
+    );
+    await expectLater(
+      service.authenticateByName(
+        baseUrl: 'http://server:8096',
+        username: 'name',
+        password: 'secret',
+        deviceId: 'device',
+      ),
+      throwsA(isA<MediaServerAuthException>()),
+    );
+    await expectLater(
+      service.initiateQuickConnect(baseUrl: 'http://server:8096', deviceId: 'device'),
+      throwsA(isA<MediaServerAuthException>()),
+    );
+    await expectLater(
+      service.authenticateByQuickConnect(baseUrl: 'http://server:8096', secret: 'poll-secret', deviceId: 'device'),
+      throwsA(isA<MediaServerAuthException>()),
+    );
+    expect(calls, 0);
+  });
+
   setUp(LogRedactionManager.clearTrackedValues);
   tearDown(LogRedactionManager.clearTrackedValues);
 

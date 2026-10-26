@@ -270,6 +270,22 @@ void main() {
       expect(result.serverInfo.machineId, 'srv-1');
     });
 
+    test('prefers a slower HTTPS endpoint and does not persist its HTTP fallback', () async {
+      const httpUrl = 'http://jf.example.com:8096';
+      const httpsUrl = 'https://jf.example.com';
+      final discovery = JellyfinEndpointDiscovery(
+        testHttpClientFactory: () => MockClient((request) async {
+          await Future<void>.delayed(Duration(milliseconds: request.url.scheme == 'https' ? 35 : 1));
+          return _info(id: 'srv-1');
+        }),
+      );
+
+      final result = await discovery.raceEndpoints([httpUrl, httpsUrl], baseUrlsToPersist: [httpUrl, httpsUrl]);
+
+      expect(result.activeBaseUrl, httpsUrl);
+      expect(result.baseUrls, [httpsUrl]);
+    });
+
     test('an unreachable persisted endpoint survives a save', () async {
       const offlineUrl = 'https://offline.example.com';
       const activeUrl = 'https://jf.example.com';

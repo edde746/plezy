@@ -6089,6 +6089,18 @@ class Translations$addServer$en {
 
 	/// en: 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.'
 	String redirectUnsupportedEnterFinal({required Object product}) => 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.';
+
+	/// en: 'Unencrypted connection'
+	String get insecureTitle => 'Unencrypted connection';
+
+	/// en: '$url uses HTTP. People on the network may read or change your password, tokens and media. Use HTTPS when available. Only continue if you trust this network and accept the risk.'
+	String insecureDescription({required Object url}) => '${url} uses HTTP. People on the network may read or change your password, tokens and media. Use HTTPS when available. Only continue if you trust this network and accept the risk.';
+
+	/// en: 'Allow HTTP'
+	String get allowHttp => 'Allow HTTP';
+
+	/// en: 'Use HTTPS or explicitly allow an unencrypted connection.'
+	String get httpsRequired => 'Use HTTPS or explicitly allow an unencrypted connection.';
 }
 
 // Path: appIcon.names
@@ -10338,6 +10350,10 @@ extension on Translations {
 			'addServer.redirectDifferentHost' => ({required Object product}) => 'The server redirected to a different host. Enter the final ${product} URL directly.',
 			'addServer.redirectInsecure' => 'The server redirected from HTTPS to an insecure URL',
 			'addServer.redirectUnsupportedEnterFinal' => ({required Object product}) => 'The server redirected to an unsupported URL. Enter the final ${product} URL directly.',
+			'addServer.insecureTitle' => 'Unencrypted connection',
+			'addServer.insecureDescription' => ({required Object url}) => '${url} uses HTTP. People on the network may read or change your password, tokens and media. Use HTTPS when available. Only continue if you trust this network and accept the risk.',
+			'addServer.allowHttp' => 'Allow HTTP',
+			'addServer.httpsRequired' => 'Use HTTPS or explicitly allow an unencrypted connection.',
 			_ => null,
 		};
 	}

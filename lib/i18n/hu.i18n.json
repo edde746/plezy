@@ -2538,6 +2538,10 @@
     "redirectUnsupported": "A szerver nem támogatott URL-re irányított át",
     "redirectDifferentHost": "A szerver egy másik gazdagépre irányított át. Add meg közvetlenül a végleges ${product} URL-t.",
     "redirectInsecure": "A szerver HTTPS-ről nem biztonságos URL-re irányított át",
-    "redirectUnsupportedEnterFinal": "A szerver nem támogatott URL-re irányított át. Add meg közvetlenül a végleges ${product} URL-t."
+    "redirectUnsupportedEnterFinal": "A szerver nem támogatott URL-re irányított át. Add meg közvetlenül a végleges ${product} URL-t.",
+    "insecureTitle": "",
+    "insecureDescription": "",
+    "allowHttp": "",
+    "httpsRequired": ""
   }
 }
