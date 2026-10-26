@@ -150,6 +150,37 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     }
   }
 
+  Future<void> _qualifyNfsRead() async {
+    final controller = context.read<SourceController>();
+    if (_entry.files.isEmpty) return;
+    final file = _entry.files.reduce((a, b) => (a.size ?? 0) >= (b.size ?? 0) ? a : b);
+    setState(() => _busy = true);
+    try {
+      final result = await controller.qualifyNfsRead(_entry.sourceId, file);
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(t.sourceSetup.nfsQualificationResult),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(t.sourceSetup.nfsReadTestHelp),
+              const SizedBox(height: 12),
+              Text('4{t.sourceSetup.nfsReadBytes}: ${(result.bytes / (1024 * 1024)).toStringAsFixed(1)} MiB'),
+              Text('4{t.sourceSetup.nfsReadSpeed}: ${result.mebibytesPerSecond.toStringAsFixed(2)} MiB/s'),
+              Text('4{t.sourceSetup.nfsReadRequests}: 4{result.requests} · 4{t.sourceSetup.nfsReadAhead}: 4{result.readAhead}'),
+            ],
+          ),
+          actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.close))],
+        ),
+      );
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
   Future<String?> _metadataSearchQuery() async {
     final controller = TextEditingController(text: _entry.displayTitle);
     final query = await showDialog<String>(
@@ -493,6 +524,12 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
       title: Text(_entry.displayTitle),
       focusableAppBarActions: true,
       actions: [
+        if (source?.kind == FileSourceKind.nfs && _entry.files.isNotEmpty)
+          IconButton(
+            tooltip: t.sourceSetup.nfsReadTest,
+            onPressed: _busy ? null : () => sourceAction(context, _qualifyNfsRead),
+            icon: const AppIcon(Symbols.speed_rounded),
+          ),
         if (_entry.kind == SourceItemKind.video && hasTrakt)
           IconButton(
             tooltip: t.sourceSetup.metadataSearch,
