@@ -12,6 +12,7 @@ import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
 import '../../services/jellyfin_endpoint_discovery.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/error_message_utils.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/loading_indicator_box.dart';
@@ -53,9 +54,9 @@ class _EditJellyfinConnectionScreenState extends State<EditJellyfinConnectionScr
         Navigator.of(context).pop(true);
       },
       errorMapper: (e) {
-        if (e is MediaServerUrlException) return e.display ?? e.message;
+        if (e is MediaServerUrlException && e.display != null) return e.display!;
         appLogger.e('Edit ${widget.connection.dialect.productName} connection failed', error: e);
-        return t.addServer.couldNotReachServer(error: e.toString());
+        return t.addServer.couldNotReachServer(error: localizedErrorReason(e));
       },
     );
   }

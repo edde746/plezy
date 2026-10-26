@@ -29,11 +29,13 @@ String companionRemotePairingErrorMessage(Object error) {
       PeerErrorType.timeout => t.companionRemote.pairing.connectionTimedOut,
       PeerErrorType.connectionFailed || PeerErrorType.invalidSession => t.companionRemote.pairing.sessionNotFound,
       PeerErrorType.authFailed => t.companionRemote.pairing.authFailed,
-      _ => error.message,
+      PeerErrorType.networkError => error.message,
+      PeerErrorType.serverError => t.companionRemote.errors.serverStartFailed(error: t.errors.reasonUnexpected),
+      _ => t.companionRemote.pairing.failedToConnect(error: t.errors.reasonUnexpected),
     };
   }
 
-  final message = error.toString().replaceFirst('Exception: ', '');
+  final message = error.toString();
   if (message.contains('timeout') || message.contains('Timed out')) {
     return t.companionRemote.pairing.connectionTimedOut;
   } else if (message.contains('Failed to connect')) {
@@ -41,7 +43,7 @@ String companionRemotePairingErrorMessage(Object error) {
   } else if (message.contains('Authentication failed')) {
     return t.companionRemote.pairing.authFailed;
   }
-  return t.companionRemote.pairing.failedToConnect(error: message);
+  return t.companionRemote.pairing.failedToConnect(error: t.errors.reasonUnexpected);
 }
 
 /// Discovers LAN hosts and provides UI to connect to them.

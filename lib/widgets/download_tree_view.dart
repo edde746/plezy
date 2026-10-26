@@ -796,8 +796,8 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
               if (_effectiveStatus == DownloadStatus.failed && widget.node.downloadProgress?.errorMessage != null) ...[
                 const SizedBox(height: 4),
                 Text(
-                  widget.node.downloadProgress!.errorMessage!,
-                  style: theme.textTheme.bodySmall?.copyWith(color: Colors.red.withValues(alpha: 0.8)),
+                  t.downloads.errorDownloadFailed,
+                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
                   maxLines: 2,
                   overflow: .ellipsis,
                 ),

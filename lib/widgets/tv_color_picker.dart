@@ -3,9 +3,10 @@ import 'package:flutter/services.dart';
 
 import '../i18n/strings.g.dart';
 import '../focus/dpad_navigator.dart';
-import '../focus/focusable_button.dart';
 import '../focus/focusable_text_field.dart';
 import '../mixins/controller_disposer_mixin.dart';
+import '../theme/mono_tokens.dart';
+import 'expressive_button_group.dart';
 import 'tv_number_spinner.dart';
 
 /// How the three channel rows are expressed.
@@ -169,7 +170,7 @@ class _TvColorPickerState extends State<TvColorPicker> with ControllerDisposerMi
           decoration: BoxDecoration(
             color: currentColor,
             borderRadius: const BorderRadius.all(Radius.circular(8)),
-            border: const Border.fromBorderSide(BorderSide(color: Colors.grey)),
+            border: Border.fromBorderSide(BorderSide(color: tokens(context).outline)),
           ),
         ),
         const SizedBox(height: 12),
@@ -274,8 +275,8 @@ class _TvColorPickerState extends State<TvColorPicker> with ControllerDisposerMi
   }
 }
 
-/// HSV/RGB switch. A focusable pair rather than a segmented control so the
-/// D-pad reaches it the same way it reaches the channel rows.
+/// HSV/RGB switch. The shared segmented control handles pointer, keyboard,
+/// screen-reader, and D-pad selection in the same Mono style as other options.
 class _ModeToggle extends StatelessWidget {
   const _ModeToggle({required this.mode, required this.onChanged});
 
@@ -284,21 +285,15 @@ class _ModeToggle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Row(
-      mainAxisSize: .min,
-      children: [
-        for (final option in TvColorPickerMode.values)
-          Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: FocusableButton(
-              onPressed: () => onChanged(option),
-              child: Text(switch (option) {
-                TvColorPickerMode.hsv => t.accessibility.colorModeHsv,
-                TvColorPickerMode.rgb => t.accessibility.colorModeRgb,
-              }, style: TextStyle(fontWeight: option == mode ? .bold : .normal)),
-            ),
-          ),
+    return ExpressiveButtonGroup<TvColorPickerMode>(
+      expandSegments: false,
+      minHeight: 40,
+      selected: mode,
+      segments: [
+        ButtonSegment(value: TvColorPickerMode.hsv, label: Text(t.accessibility.colorModeHsv)),
+        ButtonSegment(value: TvColorPickerMode.rgb, label: Text(t.accessibility.colorModeRgb)),
       ],
+      onChanged: onChanged,
     );
   }
 }

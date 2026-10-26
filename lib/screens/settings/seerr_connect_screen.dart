@@ -13,6 +13,8 @@ import '../../providers/seerr_account_provider.dart';
 import '../../services/seerr/seerr_constants.dart';
 import '../../services/seerr/seerr_exceptions.dart';
 import '../../theme/mono_tokens.dart';
+import '../../utils/app_logger.dart';
+import '../../utils/error_message_utils.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/loading_indicator_box.dart';
@@ -218,11 +220,29 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen>
     Navigator.of(context).pop(true);
   }
 
-  String _describeError(Object e) => switch (e) {
-    SeerrUrlException(:final message, :final display) => display ?? message,
-    SeerrAuthException(:final message, :final display) => display ?? message,
-    SeerrProxyException(:final display) => display,
-    _ => t.addServer.couldNotReachServer(error: e.toString()),
+  String _describeError(Object e) {
+    appLogger.e('Seerr connection flow failed', error: e);
+    return switch (e) {
+      SeerrUrlException(:final display, :final statusCode) =>
+        display ?? t.addServer.couldNotReachServer(error: _seerrReason(statusCode)),
+      SeerrAuthException(:final display) => display ?? t.addServer.signInFailed(error: t.errors.reasonRefused),
+      SeerrReauthUnavailableException(:final display) =>
+        display ?? t.addServer.signInFailed(error: t.errors.reasonUnexpected),
+      SeerrProxyException(:final display) => display,
+      SeerrPermissionException(:final display) => display,
+      SeerrApiException(:final statusCode) => t.addServer.couldNotReachServer(
+        error: statusCode >= 500 ? t.errors.reasonServerError : t.errors.reasonUnexpected,
+      ),
+      _ => t.addServer.couldNotReachServer(error: localizedErrorReason(e)),
+    };
+  }
+
+  String _seerrReason(int? statusCode) => switch (statusCode) {
+    null => t.errors.reasonUnreachable,
+    401 => t.errors.reasonRefused,
+    403 => t.errors.reasonRefused,
+    >= 500 => t.errors.reasonServerError,
+    _ => t.errors.reasonUnexpected,
   };
 
   @override

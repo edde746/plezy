@@ -111,7 +111,11 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
           ),
           if (widget.errorMessage != null) ...[
             const SizedBox(height: 12),
-            Text(widget.errorMessage!, style: TextStyle(color: theme.colorScheme.error, fontSize: 12), maxLines: 2),
+            Text(
+              widget.errorMessage!,
+              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.error),
+              maxLines: 2,
+            ),
           ],
         ],
       ),
@@ -156,7 +160,11 @@ class _PinEntryDialogState extends State<PinEntryDialog> with SingleTickerProvid
             ),
             if (widget.errorMessage != null) ...[
               const SizedBox(height: 12),
-              Text(widget.errorMessage!, style: TextStyle(color: colorScheme.error, fontSize: 12), maxLines: 2),
+              Text(
+                widget.errorMessage!,
+                style: theme.textTheme.bodySmall?.copyWith(color: colorScheme.error),
+                maxLines: 2,
+              ),
             ],
           ],
         ),
@@ -520,25 +528,40 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
     final selected = row == _row && column == _column;
     final background = selected ? colorScheme.primary : colorScheme.surfaceContainerHighest.withValues(alpha: 0.88);
     final foreground = selected ? colorScheme.onPrimary : colorScheme.onSurface;
+    final semanticLabel = switch (key.type) {
+      _PinKeyType.digit => key.label,
+      _PinKeyType.backspace => t.common.delete,
+      _PinKeyType.close => t.common.cancel,
+    };
+
+    void activate() {
+      setState(() {
+        _row = row;
+        _column = column;
+      });
+      _activate(key);
+    }
 
     return ClickableCursor(
-      child: GestureDetector(
-        onTap: () {
-          setState(() {
-            _row = row;
-            _column = column;
-          });
-          _activate(key);
-        },
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 120),
-          width: _keySize,
-          height: _keySize,
-          alignment: .center,
-          decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(16)),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 4),
-            child: _buildKeyContent(context, key, foreground),
+      child: Semantics(
+        button: true,
+        focused: selected,
+        label: semanticLabel,
+        onTap: activate,
+        child: ExcludeSemantics(
+          child: GestureDetector(
+            onTap: activate,
+            child: AnimatedContainer(
+              duration: FocusTheme.getAnimationDuration(context),
+              width: _keySize,
+              height: _keySize,
+              alignment: .center,
+              decoration: BoxDecoration(color: background, borderRadius: BorderRadius.circular(16)),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 4),
+                child: _buildKeyContent(context, key, foreground),
+              ),
+            ),
           ),
         ),
       ),
@@ -629,7 +652,7 @@ class _DigitBox extends StatelessWidget {
       mainAxisSize: .min,
       children: [
         AnimatedContainer(
-          duration: const Duration(milliseconds: 150),
+          duration: FocusTheme.getAnimationDuration(context),
           width: 48,
           height: 56,
           alignment: .center,

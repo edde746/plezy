@@ -24,6 +24,7 @@ import '../../services/jellyfin_lan_discovery_service.dart';
 import '../../services/storage_service.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/device_identity.dart';
+import '../../utils/error_message_utils.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/backend_badge.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
@@ -235,8 +236,11 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen>
         if (!autoStart) requestFocusAfterFrame(_usernameFocus);
         return autoStart;
       },
-      errorMapper: (e) =>
-          e is MediaServerUrlException ? e.display ?? e.message : t.addServer.couldNotReachServer(error: e.toString()),
+      errorMapper: (e) {
+        if (e is MediaServerUrlException && e.display != null) return e.display!;
+        appLogger.e('Add ${widget.dialect.productName} server probe failed', error: e);
+        return t.addServer.couldNotReachServer(error: localizedErrorReason(e));
+      },
     );
     // Sequenced after the probe's runAsync so busy stays set straight through
     // /QuickConnect/Initiate. Started from inside the probe body, the probe's
@@ -275,9 +279,9 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen>
         await _persistAndExit(connection);
       },
       errorMapper: (e) {
-        if (e is MediaServerAuthException) return e.display ?? e.message;
+        if (e is MediaServerAuthException && e.display != null) return e.display!;
         appLogger.e('Add ${widget.dialect.productName} failed', error: e);
-        return t.addServer.signInFailed(error: e.toString());
+        return t.addServer.signInFailed(error: localizedErrorReason(e));
       },
     );
   }
@@ -328,9 +332,9 @@ class _AddJellyfinScreenState extends State<AddJellyfinScreen>
         await _persistAndExit(connection);
       },
       errorMapper: (e) {
-        if (e is MediaServerAuthException) return e.display ?? e.message;
+        if (e is MediaServerAuthException && e.display != null) return e.display!;
         appLogger.e('Jellyfin Quick Connect failed', error: e);
-        return t.addServer.quickConnectFailed(error: e.toString());
+        return t.addServer.quickConnectFailed(error: localizedErrorReason(e));
       },
       shouldApplyState: () => isCurrentQuickConnectAttempt(attemptId),
     );

@@ -175,7 +175,10 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
               );
               if (value != null) await s.setSpeed(double.parse(value));
             }),
-            child: TextButton(onPressed: null, child: Text('${s.speed}×')),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Text('${s.speed}×', style: Theme.of(context).textTheme.labelLarge),
+            ),
           ),
           AppMenuButton<int>(
             icon: AppIcon(s.sleepEnabled ? Symbols.bedtime_rounded : Symbols.bedtime_off_rounded),

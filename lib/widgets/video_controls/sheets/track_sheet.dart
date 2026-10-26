@@ -499,10 +499,9 @@ class _SubtitleColumn extends StatelessWidget {
 }
 
 List<Widget> _buildSubtitleFooter(BuildContext context, TrackControlsState state, Player player) {
-  final footer = <Widget>[];
+  final actions = <Widget>[];
   if (state.canSearchSubtitles) {
-    footer.addAll([
-      Divider(height: 1, color: Theme.of(context).dividerColor),
+    actions.add(
       FocusableListTile(
         leading: const AppIcon(Symbols.search_rounded),
         title: Text(t.videoControls.searchSubtitles),
@@ -518,29 +517,29 @@ List<Widget> _buildSubtitleFooter(BuildContext context, TrackControlsState state
           );
         },
       ),
-    ]);
+    );
   }
 
   if (player.playerType != 'exoplayer') {
-    footer.addAll([
-      Divider(height: 1, color: Theme.of(context).dividerColor),
+    actions.add(
       FocusableListTile(
         leading: const AppIcon(Symbols.file_open_rounded),
         title: Text(t.videoControls.loadSubtitleFile),
         onTap: () => _loadSubtitleFile(context, player),
       ),
-    ]);
+    );
   }
 
-  footer.addAll([
-    Divider(height: 1, color: Theme.of(context).dividerColor),
+  actions.add(
     FocusableListTile(
       leading: const AppIcon(Symbols.format_size_rounded),
       title: Text(t.screens.subtitleStyling),
       onTap: () => OverlaySheetController.of(context).push(builder: (_) => InPlayerSubtitleStyleSheet(player: player)),
     ),
-  ]);
-  return footer;
+  );
+
+  if (actions.isEmpty) return const [];
+  return [Divider(height: 1, color: Theme.of(context).dividerColor), ...actions];
 }
 
 Future<void> _loadSubtitleFile(BuildContext context, Player player) async {

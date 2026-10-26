@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 
 import '../../discovery/discovery_choice.dart';
 import '../../discovery/discovery_store.dart';
+import '../../focus/focusable_button.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/ids.dart';
 import '../../media/library_query.dart';
@@ -33,10 +34,12 @@ import '../../theme/mono_tokens.dart';
 import '../../utils/formatters.dart';
 import '../../utils/catalog_navigation_helper.dart';
 import '../../utils/global_key_utils.dart';
+import '../../utils/layout_constants.dart';
 import '../../utils/live_tv_matching.dart';
 import '../../utils/live_tv_player_navigation.dart';
 import '../../utils/media_image_helper.dart';
 import '../../utils/media_navigation_helper.dart';
+import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/optimized_media_image.dart';
@@ -1008,12 +1011,12 @@ class _FindNextScreenState extends State<FindNextScreen> {
     await _openChoice(choice, detailsOnly: true);
   }
 
-  void _handleSwipeEnd() {
+  void _handleSwipeEnd({required double threshold}) {
     final logicalDx = Directionality.of(context) == TextDirection.rtl ? -_dragDx : _dragDx;
     setState(() => _dragDx = 0);
-    if (logicalDx > 110) {
+    if (logicalDx > threshold) {
       unawaited(_decide(DiscoveryDecisionAction.save));
-    } else if (logicalDx < -110) {
+    } else if (logicalDx < -threshold) {
       unawaited(_decide(DiscoveryDecisionAction.notNow));
     }
   }
@@ -1071,19 +1074,43 @@ class _FindNextScreenState extends State<FindNextScreen> {
     return t.discover.findNext.totalDuration(duration: displayDuration);
   }
 
+  bool _isCoverChoice(DiscoveryChoice choice) => switch (choice.type) {
+    DiscoveryChoiceType.music ||
+    DiscoveryChoiceType.audiobook ||
+    DiscoveryChoiceType.ebook ||
+    DiscoveryChoiceType.comic => true,
+    DiscoveryChoiceType.video || DiscoveryChoiceType.sourceVideo || DiscoveryChoiceType.liveProgram => false,
+  };
+
+  double _artworkAspectRatio(DiscoveryChoice choice) => switch (choice.type) {
+    DiscoveryChoiceType.music => GridLayoutConstants.squareAspectRatio,
+    DiscoveryChoiceType.liveProgram => GridLayoutConstants.episodeThumbnailAspectRatio,
+    DiscoveryChoiceType.video ||
+    DiscoveryChoiceType.sourceVideo ||
+    DiscoveryChoiceType.audiobook ||
+    DiscoveryChoiceType.ebook ||
+    DiscoveryChoiceType.comic => GridLayoutConstants.fullCardPosterAspectRatio,
+  };
+
   Widget _artwork(DiscoveryChoice choice) {
     final radius = tokens(context).radiusLg;
+    final isCover = _isCoverChoice(choice);
+    final fit = isCover ? BoxFit.contain : BoxFit.cover;
+    final placeholderColor = Theme.of(context).colorScheme.surfaceContainerHighest;
     final sourceEntry = choice.sourceEntry;
     if (sourceEntry != null) {
       return ClipRRect(
         borderRadius: BorderRadius.circular(radius),
-        child: FutureBuilder(
-          future: context.read<SourceController>().cover(sourceEntry),
-          builder: (context, snapshot) {
-            final file = snapshot.data;
-            if (file == null) return _artFallback(choice);
-            return Image.file(file, fit: BoxFit.cover, errorBuilder: (_, _, _) => _artFallback(choice));
-          },
+        child: ColoredBox(
+          color: placeholderColor,
+          child: FutureBuilder(
+            future: context.read<SourceController>().cover(sourceEntry),
+            builder: (context, snapshot) {
+              final file = snapshot.data;
+              if (file == null) return _artFallback(choice);
+              return Image.file(file, fit: fit, errorBuilder: (_, _, _) => _artFallback(choice));
+            },
+          ),
         ),
       );
     }
@@ -1092,12 +1119,23 @@ class _FindNextScreenState extends State<FindNextScreen> {
         : context.read<MultiServerProvider>().getClientForServer(ServerId(choice.serverId!));
     return ClipRRect(
       borderRadius: BorderRadius.circular(radius),
-      child: OptimizedMediaImage(
-        client: client,
-        imagePath: choice.artworkPath,
-        fit: BoxFit.cover,
-        fallbackIcon: _iconForChoice(choice),
-        imageType: choice.type == DiscoveryChoiceType.music ? ImageType.square : ImageType.poster,
+      child: ColoredBox(
+        color: placeholderColor,
+        child: OptimizedMediaImage(
+          client: client,
+          imagePath: choice.artworkPath,
+          fit: fit,
+          fallbackIcon: _iconForChoice(choice),
+          imageType: switch (choice.type) {
+            DiscoveryChoiceType.music => ImageType.square,
+            DiscoveryChoiceType.liveProgram => ImageType.thumb,
+            DiscoveryChoiceType.video ||
+            DiscoveryChoiceType.sourceVideo ||
+            DiscoveryChoiceType.audiobook ||
+            DiscoveryChoiceType.ebook ||
+            DiscoveryChoiceType.comic => ImageType.poster,
+          },
+        ),
       ),
     );
   }
@@ -1120,184 +1158,238 @@ class _FindNextScreenState extends State<FindNextScreen> {
 
   Widget _buildChoice(DiscoveryChoice choice) {
     final theme = Theme.of(context);
-    final screenWidth = MediaQuery.sizeOf(context).width;
-    final artWidth = math.min(screenWidth - 40, 520.0).toDouble();
-    final artHeight = math.min(MediaQuery.sizeOf(context).height * 0.42, artWidth * 1.22).toDouble();
-    final offset = _dragDx.clamp(-180.0, 180.0).toDouble();
-    final logicalDrag = Directionality.of(context) == TextDirection.rtl ? -_dragDx : _dragDx;
+    final isTv = PlatformDetector.isTV();
+    final tvScale = TvLayoutConstants.scaleOf(context);
     final reducedMotion = MediaQuery.disableAnimationsOf(context);
+    final canSwipe = !isTv && !MediaQuery.accessibleNavigationOf(context) && !_committing;
+    final artAspectRatio = _artworkAspectRatio(choice);
+    final textScale = MediaQuery.textScalerOf(context).scale(14) / 14;
+    final logicalDrag = Directionality.of(context) == TextDirection.rtl ? -_dragDx : _dragDx;
     return LayoutBuilder(
-      builder: (context, constraints) => SingleChildScrollView(
-        child: ConstrainedBox(
-          constraints: BoxConstraints(minHeight: constraints.maxHeight),
-          child: Center(
-            key: ValueKey(choice.id),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 780),
-              child: Padding(
-                padding: const EdgeInsets.fromLTRB(20, 8, 20, 20),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    SizedBox(
-                      width: artWidth,
-                      height: artHeight,
-                      child: GestureDetector(
-                        behavior: HitTestBehavior.opaque,
-                        onHorizontalDragUpdate: _committing
-                            ? null
-                            : (details) => setState(() => _dragDx += details.delta.dx),
-                        onHorizontalDragEnd: _committing ? null : (_) => _handleSwipeEnd(),
-                        onHorizontalDragCancel: () => setState(() => _dragDx = 0),
-                        child: Transform.translate(
-                          offset: Offset(offset, 0),
-                          child: Transform.rotate(
-                            angle: reducedMotion ? 0 : offset / 180 * 0.035,
-                            child: Stack(
-                              fit: StackFit.expand,
-                              children: [
-                                _artwork(choice),
-                                DecoratedBox(
-                                  decoration: BoxDecoration(
-                                    borderRadius: BorderRadius.circular(tokens(context).radiusLg),
-                                    gradient: const LinearGradient(
-                                      begin: Alignment.topCenter,
-                                      end: Alignment.bottomCenter,
-                                      colors: [Colors.transparent, Color(0x99000000)],
-                                      stops: [0.45, 1],
-                                    ),
-                                  ),
-                                ),
-                                PositionedDirectional(
-                                  start: 18,
-                                  top: 18,
-                                  child: _PillLabel(icon: _iconForChoice(choice), text: _typeLabel(choice)),
-                                ),
-                                PositionedDirectional(
-                                  start: 24,
-                                  end: 24,
-                                  bottom: 24,
-                                  child: Column(
-                                    crossAxisAlignment: CrossAxisAlignment.start,
-                                    children: [
-                                      Text(
-                                        choice.title,
-                                        maxLines: 2,
-                                        overflow: TextOverflow.ellipsis,
-                                        style: theme.textTheme.headlineSmall?.copyWith(
-                                          color: Colors.white,
-                                          fontWeight: FontWeight.w700,
-                                        ),
-                                      ),
-                                      if (choice.subtitle.isNotEmpty) ...[
-                                        const SizedBox(height: 5),
-                                        Text(
-                                          choice.subtitle,
-                                          maxLines: 1,
-                                          overflow: TextOverflow.ellipsis,
-                                          style: theme.textTheme.bodyMedium?.copyWith(color: Colors.white70),
-                                        ),
-                                      ],
-                                    ],
-                                  ),
-                                ),
-                                if (_dragDx.abs() > 18)
-                                  PositionedDirectional(
-                                    top: 24,
-                                    end: logicalDrag > 0 ? 24 : null,
-                                    start: logicalDrag < 0 ? 24 : null,
-                                    child: _PillLabel(
-                                      icon: logicalDrag > 0
-                                          ? Symbols.bookmark_add_rounded
-                                          : Symbols.arrow_forward_rounded,
-                                      text: logicalDrag > 0 ? t.common.save : t.discover.findNext.notNow,
-                                    ),
-                                  ),
-                              ],
+      builder: (context, constraints) {
+        final screenWidth = constraints.maxWidth;
+        final horizontalInset = isTv
+            ? TvLayoutConstants.horizontalInset * tvScale
+            : ScreenBreakpoints.isMobile(screenWidth)
+            ? 20.0
+            : ScreenBreakpoints.isDesktopOrLarger(screenWidth)
+            ? 36.0
+            : 28.0;
+        final maxContentWidth = isTv || screenWidth >= ScreenBreakpoints.largeDesktop ? 1440.0 : 1280.0;
+        final contentWidth = math.min(screenWidth - horizontalInset * 2, maxContentWidth).toDouble();
+        final useSideBySide =
+            (isTv || ScreenBreakpoints.isWideTabletOrLarger(screenWidth)) &&
+            contentWidth >= 740 &&
+            constraints.maxHeight >= 520 &&
+            textScale < 1.4;
+        final gap = isTv ? 40.0 * tvScale : 32.0;
+        final sideArtWidth = math.min(isTv ? 460.0 * tvScale : 400.0, (contentWidth - gap) * 0.42).toDouble();
+        final sideArtHeight = math.min(sideArtWidth / artAspectRatio, constraints.maxHeight - 40).toDouble();
+        final actualSideArtWidth = sideArtHeight * artAspectRatio;
+        final detailWidth = contentWidth - actualSideArtWidth - gap;
+        final columnArtMaxWidth = math.min(contentWidth, isTv ? 640.0 * tvScale : 520.0).toDouble();
+        final compactColumn = constraints.maxHeight < 560 || textScale >= 1.35;
+        final columnArtHeight = math
+            .min(constraints.maxHeight * (compactColumn ? 0.46 : 0.56), columnArtMaxWidth / artAspectRatio)
+            .toDouble();
+        final columnArtWidth = columnArtHeight * artAspectRatio;
+        final gestureArtWidth = useSideBySide ? actualSideArtWidth : columnArtWidth;
+        final swipeThreshold = (gestureArtWidth * 0.25).clamp(64.0, 144.0).toDouble();
+        final offset = reducedMotion ? 0.0 : _dragDx.clamp(-180.0, 180.0).toDouble();
+        final alignment = useSideBySide ? CrossAxisAlignment.start : CrossAxisAlignment.center;
+        final textAlignment = useSideBySide ? TextAlign.start : TextAlign.center;
+
+        Widget artwork = _artwork(choice);
+        if (canSwipe && _dragDx.abs() > 18) {
+          artwork = Stack(
+            fit: StackFit.expand,
+            children: [
+              artwork,
+              PositionedDirectional(
+                top: 16,
+                end: logicalDrag > 0 ? 16 : null,
+                start: logicalDrag < 0 ? 16 : null,
+                child: _PillLabel(
+                  icon: logicalDrag > 0 ? Symbols.bookmark_add_rounded : Symbols.arrow_forward_rounded,
+                  text: logicalDrag > 0 ? t.common.save : t.discover.findNext.notNow,
+                ),
+              ),
+            ],
+          );
+        }
+        artwork = GestureDetector(
+          behavior: HitTestBehavior.opaque,
+          onHorizontalDragUpdate: canSwipe ? (details) => setState(() => _dragDx += details.delta.dx) : null,
+          onHorizontalDragEnd: canSwipe ? (_) => _handleSwipeEnd(threshold: swipeThreshold) : null,
+          onHorizontalDragCancel: canSwipe ? () => setState(() => _dragDx = 0) : null,
+          child: reducedMotion ? artwork : Transform.translate(offset: Offset(offset, 0), child: artwork),
+        );
+
+        final titleStyle = isTv ? theme.textTheme.headlineMedium : theme.textTheme.headlineSmall;
+        final title = Text(choice.title, textAlign: textAlignment, style: titleStyle);
+        final subtitle = choice.subtitle.isEmpty
+            ? null
+            : Text(
+                choice.subtitle,
+                textAlign: textAlignment,
+                style: theme.textTheme.titleSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              );
+        final typeFact = Text(_typeLabel(choice), style: theme.textTheme.labelLarge);
+        final durationFact = Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppIcon(Symbols.schedule_rounded, size: 17, color: theme.colorScheme.onSurfaceVariant),
+            const SizedBox(width: 6),
+            Flexible(
+              child: Text(
+                _durationLabel(choice),
+                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+            ),
+          ],
+        );
+        final offlineFact = ConstrainedBox(
+          constraints: BoxConstraints(maxWidth: useSideBySide ? detailWidth : contentWidth),
+          child: Row(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              AppIcon(Symbols.download_done_rounded, size: 17, color: theme.colorScheme.onSurfaceVariant),
+              const SizedBox(width: 6),
+              Flexible(
+                child: Text(
+                  t.fileSources.offline,
+                  style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                ),
+              ),
+            ],
+          ),
+        );
+        final facts = Wrap(
+          alignment: useSideBySide ? WrapAlignment.start : WrapAlignment.center,
+          crossAxisAlignment: WrapCrossAlignment.center,
+          spacing: 14,
+          runSpacing: 8,
+          children: [typeFact, durationFact, if (choice.offlineReady) offlineFact],
+        );
+        final notNow = FocusableButton(
+          onPressed: _committing ? null : () => _decide(DiscoveryDecisionAction.notNow),
+          child: OutlinedButton.icon(
+            onPressed: _committing ? null : () => _decide(DiscoveryDecisionAction.notNow),
+            icon: const AppIcon(Symbols.arrow_forward_rounded),
+            label: Text(t.discover.findNext.notNow),
+          ),
+        );
+        final save = FocusableButton(
+          onPressed: _committing ? null : () => _decide(DiscoveryDecisionAction.save),
+          child: FilledButton.tonalIcon(
+            onPressed: _committing ? null : () => _decide(DiscoveryDecisionAction.save),
+            icon: const AppIcon(Symbols.bookmark_add_rounded),
+            label: Text(t.common.save),
+          ),
+        );
+        final primaryAction = FocusableButton(
+          onPressed: _committing ? null : () => _openChoice(choice),
+          child: FilledButton.icon(
+            onPressed: _committing ? null : () => _openChoice(choice),
+            icon: AppIcon(_iconForChoice(choice)),
+            label: Text(_primaryLabel(choice)),
+          ),
+        );
+        final showDetails = _primaryLabel(choice) != t.discover.findNext.details;
+        final detailsAction = FocusableButton(
+          onPressed: _committing ? null : () => _showDetails(choice),
+          child: TextButton.icon(
+            onPressed: _committing ? null : () => _showDetails(choice),
+            icon: const AppIcon(Symbols.info_rounded),
+            label: Text(t.discover.findNext.details),
+          ),
+        );
+        final actionAlignment = useSideBySide ? WrapAlignment.start : WrapAlignment.center;
+        final actions = Column(
+          crossAxisAlignment: alignment,
+          children: [
+            Wrap(alignment: actionAlignment, spacing: 8, runSpacing: 8, children: [notNow, save, primaryAction]),
+            if (showDetails) ...[
+              const SizedBox(height: 4),
+              Wrap(alignment: actionAlignment, children: [detailsAction]),
+            ],
+          ],
+        );
+
+        final details = Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: alignment,
+          children: [
+            title,
+            if (subtitle != null) ...[const SizedBox(height: 4), subtitle],
+            const SizedBox(height: 14),
+            facts,
+            if (choice.reason.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Text(
+                choice.reason,
+                textAlign: textAlignment,
+                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+            ],
+            if (choice.summary.isNotEmpty) ...[
+              const SizedBox(height: 10),
+              Text(
+                choice.summary,
+                textAlign: textAlignment,
+                style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+            ],
+            if (canSwipe) ...[
+              const SizedBox(height: 8),
+              Text(
+                t.discover.findNext.swipeHint,
+                textAlign: textAlignment,
+                style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+              ),
+            ],
+            const SizedBox(height: 18),
+            actions,
+          ],
+        );
+
+        return SingleChildScrollView(
+          child: ConstrainedBox(
+            constraints: BoxConstraints(minHeight: constraints.maxHeight),
+            child: Padding(
+              padding: EdgeInsetsDirectional.fromSTEB(horizontalInset, isTv ? 12 : 8, horizontalInset, isTv ? 16 : 20),
+              child: Center(
+                key: ValueKey(choice.id),
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(maxWidth: maxContentWidth),
+                  child: useSideBySide
+                      ? Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            SizedBox(width: actualSideArtWidth, height: sideArtHeight, child: artwork),
+                            SizedBox(width: gap),
+                            SizedBox(width: detailWidth, child: details),
+                          ],
+                        )
+                      : Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          crossAxisAlignment: CrossAxisAlignment.center,
+                          children: [
+                            SizedBox(width: columnArtWidth, height: columnArtHeight, child: artwork),
+                            const SizedBox(height: 18),
+                            ConstrainedBox(
+                              constraints: BoxConstraints(maxWidth: math.min(contentWidth, 720.0).toDouble()),
+                              child: details,
                             ),
-                          ),
+                          ],
                         ),
-                      ),
-                    ),
-                    const SizedBox(height: 14),
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        AppIcon(Symbols.schedule_rounded, size: 17, color: theme.colorScheme.onSurfaceVariant),
-                        const SizedBox(width: 6),
-                        Flexible(
-                          child: Text(
-                            _durationLabel(choice),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Flexible(
-                          child: Text(
-                            choice.reason,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                          ),
-                        ),
-                      ],
-                    ),
-                    if (choice.summary.isNotEmpty) ...[
-                      const SizedBox(height: 8),
-                      ConstrainedBox(
-                        constraints: BoxConstraints(maxWidth: artWidth),
-                        child: Text(
-                          choice.summary,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          textAlign: TextAlign.center,
-                          style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                        ),
-                      ),
-                    ],
-                    const SizedBox(height: 6),
-                    Text(
-                      t.discover.findNext.swipeHint,
-                      style: theme.textTheme.labelSmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                    ),
-                    const SizedBox(height: 20),
-                    Wrap(
-                      alignment: WrapAlignment.center,
-                      spacing: 10,
-                      runSpacing: 10,
-                      children: [
-                        OutlinedButton.icon(
-                          onPressed: _committing ? null : () => _decide(DiscoveryDecisionAction.notNow),
-                          icon: const AppIcon(Symbols.arrow_forward_rounded),
-                          label: Text(t.discover.findNext.notNow),
-                        ),
-                        FilledButton.tonalIcon(
-                          onPressed: _committing ? null : () => _decide(DiscoveryDecisionAction.save),
-                          icon: const AppIcon(Symbols.bookmark_add_rounded),
-                          label: Text(t.common.save),
-                        ),
-                        FilledButton.icon(
-                          onPressed: _committing ? null : () => _openChoice(choice),
-                          icon: AppIcon(_iconForChoice(choice)),
-                          label: Text(_primaryLabel(choice)),
-                        ),
-                        if (_primaryLabel(choice) != t.discover.findNext.details)
-                          TextButton.icon(
-                            onPressed: _committing ? null : () => _showDetails(choice),
-                            icon: const AppIcon(Symbols.info_rounded),
-                            label: Text(t.discover.findNext.details),
-                          ),
-                      ],
-                    ),
-                  ],
                 ),
               ),
             ),
           ),
-        ),
-      ),
+        );
+      },
     );
   }
 
@@ -1448,20 +1540,26 @@ class _PillLabel extends StatelessWidget {
   final IconData icon;
   final String text;
   @override
-  Widget build(BuildContext context) => DecoratedBox(
-    decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.60), borderRadius: BorderRadius.circular(100)),
-    child: Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          AppIcon(icon, size: 16, color: Colors.white),
-          const SizedBox(width: 6),
-          Text(text, style: Theme.of(context).textTheme.labelMedium?.copyWith(color: Colors.white)),
-        ],
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    return DecoratedBox(
+      decoration: BoxDecoration(
+        color: theme.colorScheme.surfaceContainerHigh,
+        borderRadius: BorderRadius.circular(MonoTokens.radiusFull),
       ),
-    ),
-  );
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            AppIcon(icon, size: 16, color: theme.colorScheme.onSurface),
+            const SizedBox(width: 6),
+            Text(text, style: theme.textTheme.labelMedium?.copyWith(color: theme.colorScheme.onSurface)),
+          ],
+        ),
+      ),
+    );
+  }
 }
 
 class _SavedPicksScreen extends StatefulWidget {

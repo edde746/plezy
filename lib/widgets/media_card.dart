@@ -8,7 +8,6 @@ import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../focus/card_focus_scope.dart';
-import '../focus/focus_theme.dart';
 import '../focus/input_mode_tracker.dart';
 import '../i18n/app_locale_utils.dart';
 import '../media/catalog_item_ref.dart';
@@ -289,7 +288,6 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
   }
 
   CatalogItem? _cachedCatalogItem;
-  Color? _catalogAccent;
   String? _cachedSemanticLabel;
   AppLocale? _cachedSemanticLocale;
   bool? _cachedSemanticIsWatched;
@@ -315,7 +313,6 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
 
   void _cacheCatalogItem(Object item) {
     _cachedCatalogItem = item is MediaItem ? item.catalogItem : null;
-    _catalogAccent = _parseCatalogAccent(_cachedCatalogItem?.accentColor);
   }
 
   String _semanticLabel(Object item) {
@@ -641,8 +638,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
       if (badgeLabels.isNotEmpty) _CatalogBadges(labels: badgeLabels),
     ];
     return ExcludeSemantics(
-      child: _CatalogFocusBorder(
-        accentColor: _catalogAccent,
+      child: CardFocusBorder(
         borderRadius: _posterFocusRadius(context, item),
         child: fullBleed
             ? _clipPosterImage(context, item, Stack(fit: StackFit.expand, children: [image, ...overlays]))
@@ -1283,12 +1279,6 @@ class _MediaCardHelpers {
   }
 }
 
-Color? _parseCatalogAccent(String? value) {
-  if (value == null || value.length != 7 || value.codeUnitAt(0) != 0x23) return null;
-  final rgb = int.tryParse(value.substring(1), radix: 16);
-  return rgb == null ? null : Color(0xff000000 | rgb);
-}
-
 String? _catalogRankBadge(CatalogItem item) {
   String? allTimeLabel;
   for (final rank in item.ranks ?? const <CatalogRank>[]) {
@@ -1423,6 +1413,7 @@ class _CatalogBadges extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final theme = Theme.of(context);
     return Positioned(
       key: const Key('catalog-badges'),
       top: 6,
@@ -1444,41 +1435,13 @@ class _CatalogBadges extends StatelessWidget {
                   labels[index],
                   maxLines: 1,
                   overflow: .ellipsis,
-                  style: const TextStyle(color: Colors.white, fontSize: 9, fontWeight: .w700, height: 1),
+                  style: theme.textTheme.labelSmall?.copyWith(color: Colors.white, fontWeight: .w700, height: 1),
                 ),
               ),
             ),
           ],
         ],
       ),
-    );
-  }
-}
-
-class _CatalogFocusBorder extends StatelessWidget {
-  final Color? accentColor;
-  final double borderRadius;
-  final Widget child;
-
-  const _CatalogFocusBorder({required this.accentColor, required this.borderRadius, required this.child});
-
-  @override
-  Widget build(BuildContext context) {
-    final color = accentColor;
-    if (color == null) return CardFocusBorder(borderRadius: borderRadius, child: child);
-    final showFocus = CardFocusScope.maybeOf(context);
-    if (showFocus == null) return child;
-    return AnimatedContainer(
-      duration: FocusTheme.getAnimationDuration(context),
-      curve: Curves.easeOutCubic,
-      foregroundDecoration: FocusTheme.focusDecoration(
-        context,
-        isFocused: showFocus,
-        borderRadius: borderRadius,
-        borderStrokeAlign: BorderSide.strokeAlignOutside,
-        color: color,
-      ),
-      child: child,
     );
   }
 }
