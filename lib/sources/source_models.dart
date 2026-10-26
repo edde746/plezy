@@ -9,7 +9,7 @@ enum SourceItemKind { folder, ebook, audiobook, comic, music, video, unknown }
 
 enum PublicationMode { reading, listening, watching }
 
-enum SourceFailure { authentication, permission, unavailable, unsupported, invalidData, cancelled, conflict }
+enum SourceFailure { authentication, permission, unavailable, unsupported, invalidData, cancelled, conflict, quotaExceeded }
 
 /// Deliberately carries no URL, token or provider response into UI/logging.
 class SourceException implements Exception {
@@ -607,4 +607,5 @@ SourceItemKind classifySourceFile(String name, [String mime = '']) {
   }
   return SourceItemKind.unknown;
 }
+
 
