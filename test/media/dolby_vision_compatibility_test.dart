@@ -38,6 +38,40 @@ void main() {
     expect(shouldRequestCompatibleDolbyVisionRendition(requested: true, source: null), isFalse);
   });
 
+  test('server SDR routes are profile- and backend-specific', () {
+    const profile5 = MediaDisplayCriteria(doviProfile: 5, doviBaseLayerPresent: false);
+    const profile7Hdr10 = MediaDisplayCriteria(doviProfile: 7, doviCompatibilityId: 6, doviBaseLayerPresent: true);
+    const profile7InferredHdr10 = MediaDisplayCriteria(doviProfile: 7, doviCompatibilityId: 6);
+    const profile8Hdr10 = MediaDisplayCriteria(doviProfile: 8, doviCompatibilityId: 1, doviBaseLayerPresent: true);
+    const profile8Hlg = MediaDisplayCriteria(doviProfile: 8, doviCompatibilityId: 4, doviBaseLayerPresent: true);
+    const unknownProfile = MediaDisplayCriteria(dolbyVisionPresent: true);
+
+    expect(serverHasDolbyVisionSdrRoute(backend: DolbyVisionSdrBackend.jellyfin, source: profile5), isTrue);
+    expect(serverHasDolbyVisionSdrRoute(backend: DolbyVisionSdrBackend.jellyfin, source: profile8Hlg), isTrue);
+    expect(serverHasDolbyVisionSdrRoute(backend: DolbyVisionSdrBackend.jellyfin, source: profile7Hdr10), isTrue);
+    expect(
+      serverHasDolbyVisionSdrRoute(backend: DolbyVisionSdrBackend.jellyfin, source: profile7InferredHdr10),
+      isTrue,
+    );
+
+    expect(serverHasDolbyVisionSdrRoute(backend: DolbyVisionSdrBackend.plex, source: profile5), isFalse);
+    expect(serverHasDolbyVisionSdrRoute(backend: DolbyVisionSdrBackend.plex, source: profile7Hdr10), isTrue);
+    expect(serverHasDolbyVisionSdrRoute(backend: DolbyVisionSdrBackend.plex, source: profile8Hdr10), isTrue);
+    expect(serverHasDolbyVisionSdrRoute(backend: DolbyVisionSdrBackend.plex, source: profile8Hlg), isFalse);
+
+    expect(serverHasDolbyVisionSdrRoute(backend: DolbyVisionSdrBackend.emby, source: profile5), isFalse);
+    expect(serverHasDolbyVisionSdrRoute(backend: DolbyVisionSdrBackend.emby, source: profile7Hdr10), isTrue);
+    expect(serverHasDolbyVisionSdrRoute(backend: DolbyVisionSdrBackend.emby, source: profile8Hdr10), isTrue);
+    expect(serverHasDolbyVisionSdrRoute(backend: DolbyVisionSdrBackend.emby, source: unknownProfile), isFalse);
+    expect(
+      serverHasDolbyVisionSdrRoute(
+        backend: DolbyVisionSdrBackend.plex,
+        source: const MediaDisplayCriteria(doviProfile: 7, doviCompatibilityId: 6, doviBaseLayerPresent: false),
+      ),
+      isFalse,
+    );
+  });
+
   test('compatibility HLS output must explicitly declare SDR for every video variant', () {
     const sdr = '''
 #EXTM3U

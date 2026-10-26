@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Route identified Dolby Vision sources through a profile-aware policy before opening them: keep profiles reported by the native path (or an explicit Profile 7 experiment), otherwise request an SDR encode and refuse the rendition unless every HLS video variant declares SDR.
+- Gate server conversions by source profile and backend: retain Jellyfin's P5/P8 route and HDR10-compatible P7, allow only known HDR10-compatible P7/P8.1 on Plex/Emby, and refuse unsupported or unknown combinations instead of direct-playing them.
 - Send unsupported downloaded Dolby Vision files through the server route when online, bypass downloaded copies on an explicit retry, and fail clearly when offline playback has no reported local profile path.
 - Fit Find your next to the screen with persistent action buttons, mirrored swipe/TV direction cues, contextual help, and artwork that follows the current pick. Restore downloaded and alternate covers, distinguish artwork loading from missing images, and allow failed source covers to be retried.
 

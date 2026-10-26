@@ -15,7 +15,7 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
     return t.messages.errorLoading(error: redacted);
   }
 
-  void _onPlayerError(PlayerError err) {
+  void _onPlayerError(PlayerError err, {bool dolbyVisionFallbackFailed = false}) {
     appLogger.e('[Player ERROR] ${err.message}');
     if (!mounted || _isExiting.value) return;
     // The open already failed and its verdict is on screen: every further
@@ -72,13 +72,17 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
         // on the way to the stall (a chain that failed, a stream that never
         // produced) is the only diagnosis there is, so it rides along too.
         final lastLogError = _lastLogError;
-        final message = switch (err.cause) {
-          PlayerError.playerInitFailed => t.messages.playbackFailed,
-          PlayerError.openTimedOut =>
-            lastLogError == null ? t.messages.playbackFailed : t.messages.playbackFailedDetail(error: lastLogError),
-          PlayerError.audioOutputFailed => t.messages.audioOutputFailed,
-          _ => t.messages.playbackFailedDetail(error: _redactPlayerError(lastLogError ?? err.message)),
-        };
+        final message = dolbyVisionFallbackFailed
+            ? t.messages.playbackFailedDetail(error: t.fileSources.errorUnsupported)
+            : switch (err.cause) {
+                PlayerError.playerInitFailed => t.messages.playbackFailed,
+                PlayerError.openTimedOut =>
+                  lastLogError == null
+                      ? t.messages.playbackFailed
+                      : t.messages.playbackFailedDetail(error: lastLogError),
+                PlayerError.audioOutputFailed => t.messages.audioOutputFailed,
+                _ => t.messages.playbackFailedDetail(error: _redactPlayerError(lastLogError ?? err.message)),
+              };
         // Live TV has no in-place reload to retry through: its own start
         // flow leaves the route on failure, so a dead live session does too.
         if (widget.isLive) {
@@ -147,7 +151,7 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
     }
 
     if (outcome == MediaReloadOutcome.failed || outcome == MediaReloadOutcome.rejected) {
-      _onPlayerError(originalError);
+      _onPlayerError(originalError, dolbyVisionFallbackFailed: true);
     }
   }
 

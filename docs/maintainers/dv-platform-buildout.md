@@ -25,12 +25,22 @@ DV source with no matching local profile also yields to the server; offline-only
 playback fails clearly when no compatible local route is reported. Live TV is
 unchanged. A later initialization failure still gets one bounded server retry.
 
-Plex, Jellyfin and Emby share the same request policy. Jellyfin/Emby receive a
-`VideoRangeType=SDR` output constraint; Plex is forced to encode video. Before
-opening a forced DV rendition, Plezy reads the HLS master and requires every
-video variant to declare `VIDEO-RANGE=SDR`. That is a server claim, not proof
-that its tone mapper produced correct pixels. Server-generated color and
-visible output still need real-sample, platform and display qualification.
+The server route is profile- and backend-specific. Jellyfin's documented
+Dolby Vision to SDR path accepts Profiles 5 and 8; Profile 7 is accepted only
+with its HDR10-compatible base layer. Plex is accepted only for HDR10-compatible
+P7.6/P8.1 (`DOVIBLCompatID` 6/1). Emby uses the same known base-layer routes,
+while Profile 5 is refused because stable P5 conversion remains unverified and
+users have reported green/magenta transcodes.
+Unknown profiles and incompatible base layers fail before Plezy opens the
+original DV stream.
+
+Jellyfin/Emby receive a `VideoRangeType=SDR` output constraint; Plex is forced
+to encode video. Before opening a forced DV rendition, Plezy reads the HLS
+master and requires every video variant to declare `VIDEO-RANGE=SDR`. This
+combines source/backend support, a forced video encode and output signaling,
+but it still cannot inspect the server's configured GPU/driver or prove the
+decoded pixels are correct. Real server transcodes, source-reference pixels,
+platform playback and visible output remain qualification gates.
 
 `tools/dv-engine/route_policy.py` is a tested adapter contract and standalone
 selector, **not yet the app-wide playback arbiter**. It accepts an inspected source

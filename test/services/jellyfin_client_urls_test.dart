@@ -42,6 +42,7 @@ JellyfinConnection _conn({String accessToken = 'tok-abc', String baseUrl = 'http
 JellyfinClient _clientWithPlaybackInfo(
   Future<http.Response> Function(http.Request request) playbackInfo, {
   List<Map<String, dynamic>>? itemSources,
+  bool emby = false,
 }) {
   final sources =
       itemSources ??
@@ -55,7 +56,7 @@ JellyfinClient _clientWithPlaybackInfo(
         },
       ];
   return JellyfinClient.forTesting(
-    connection: _conn(),
+    connection: emby ? testEmbyConnection(accessToken: 'tok-abc', baseUrl: 'https://emby.example.com') : _conn(),
     httpClient: MockClient((request) {
       if (request.url.path == '/Users/user-1/Items/item-1') {
         return Future.value(jsonResponse({'Id': 'item-1', 'Type': 'Movie', 'Name': 'Movie', 'MediaSources': sources}));
@@ -5958,5 +5959,44 @@ void main() {
         isA<PlaybackException>().having((error) => error.reason, 'reason', PlaybackFailureReason.noPlayableSource),
       ),
     );
+  });
+
+  test('Emby Profile 5 refuses the transcode before PlaybackInfo can return unsafe colors', () async {
+    var playbackInfoRequests = 0;
+    final client = _clientWithPlaybackInfo(
+      (_) async {
+        playbackInfoRequests++;
+        return jsonResponse(const <String, dynamic>{});
+      },
+      emby: true,
+      itemSources: [
+        {
+          'Id': 'src-1',
+          'Container': 'mkv',
+          'Width': 3840,
+          'Height': 2160,
+          'MediaStreams': [
+            {'Index': 0, 'Type': 'Video', 'Codec': 'hevc', 'DvProfile': 5, 'VideoRangeType': 'DOVI'},
+          ],
+        },
+      ],
+    );
+    addTearDown(client.close);
+
+    await expectLater(
+      client.getPlaybackInitialization(
+        PlaybackInitializationOptions(
+          metadata: testMediaItem(id: 'item-1', backend: MediaBackend.emby, kind: MediaKind.movie, serverId: 'srv-1'),
+          selectedMediaIndex: 0,
+          requestCompatibleDolbyVisionRendition: true,
+        ),
+      ),
+      throwsA(
+        isA<PlaybackException>()
+            .having((error) => error.reason, 'reason', PlaybackFailureReason.noPlayableSource)
+            .having((error) => error.message, 'message', contains('color-safe')),
+      ),
+    );
+    expect(playbackInfoRequests, 0);
   });
 }

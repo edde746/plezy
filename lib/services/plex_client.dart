@@ -3949,6 +3949,16 @@ class PlexClient
       final audioPreset = options.audioQualityPreset ?? AudioQualityPreset.original;
       final sourceCodecRefused = !isTrack && _sourceCodecRefused(data);
       final forceCompatibleDolbyVisionTranscode = options.requestsCompatibleDolbyVisionRendition(data.mediaInfo);
+      if (forceCompatibleDolbyVisionTranscode &&
+          !options.hasServerDolbyVisionSdrRoute(data.mediaInfo, backend: DolbyVisionSdrBackend.plex)) {
+        final profile = data.mediaInfo?.displayCriteria?.doviProfile;
+        final label = profile == null ? 'an unknown Dolby Vision profile' : 'Dolby Vision Profile $profile';
+        appLogger.w('Refusing $label: Plex has no known SDR conversion route for this profile');
+        throw PlaybackException(
+          'No supported color-safe SDR conversion route is available for $label on this Plex server.',
+          reason: PlaybackFailureReason.noPlayableSource,
+        );
+      }
       final wantTranscode = isTrack
           ? !audioPreset.isOriginal
           : sourceCodecRefused ||

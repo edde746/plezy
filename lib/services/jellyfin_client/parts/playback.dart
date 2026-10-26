@@ -294,6 +294,19 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
     final audioPreset = options.audioQualityPreset ?? AudioQualityPreset.original;
     final wantsOriginal = isTrack ? audioPreset.isOriginal : preset.isOriginal;
     final forceCompatibleDolbyVisionTranscode = !isTrack && options.requestsCompatibleDolbyVisionRendition(mediaInfo);
+    if (forceCompatibleDolbyVisionTranscode &&
+        !options.hasServerDolbyVisionSdrRoute(
+          mediaInfo,
+          backend: dialect == MediaBrowserDialect.emby ? DolbyVisionSdrBackend.emby : DolbyVisionSdrBackend.jellyfin,
+        )) {
+      final profile = mediaInfo.displayCriteria?.doviProfile;
+      final label = profile == null ? 'an unknown Dolby Vision profile' : 'Dolby Vision Profile $profile';
+      appLogger.w('Refusing $label: $dialect has no known SDR conversion route for this profile');
+      throw PlaybackException(
+        'No supported color-safe SDR conversion route is available for $label on this server.',
+        reason: PlaybackFailureReason.noPlayableSource,
+      );
+    }
     final requestedAudioStreamId = options.selectedAudioStreamId == null
         ? options.preferredAudioTrack == null
               ? null

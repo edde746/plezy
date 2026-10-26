@@ -102,6 +102,9 @@ class PlaybackInitializationOptions {
     allowExperimentalProfile7: allowExperimentalDolbyVisionProfile7,
   );
 
+  bool hasServerDolbyVisionSdrRoute(MediaSourceInfo? source, {required DolbyVisionSdrBackend backend}) =>
+      serverHasDolbyVisionSdrRoute(backend: backend, source: source?.displayCriteria);
+
   const PlaybackInitializationOptions({
     required this.metadata,
     required this.selectedMediaIndex,
