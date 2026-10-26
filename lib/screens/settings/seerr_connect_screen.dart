@@ -143,8 +143,8 @@ class _SeerrConnectScreenState extends State<SeerrConnectScreen>
 
   Future<void> _signInWithCredentials() async {
     final baseUrl = _baseUrl;
-    if (!await confirmInsecureConnection(context, baseUrl) || !mounted) return;
     if (!(_formKey.currentState?.validate() ?? false)) return;
+    if (!await confirmInsecureConnection(context, baseUrl) || !mounted) return;
     final form = _form;
     await runAsync<void>(() async {
       final account = context.read<SeerrAccountProvider>();
