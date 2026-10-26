@@ -829,7 +829,7 @@ jobs:
   build-windows:
     needs: validate-trusted-ref
     name: Build Windows (${{ matrix.arch }})
-    runs-on: ${{ matrix.runner }}
+    runs-on: ${{ matrix.arch == 'x64' && fromJSON('{"group":"packer-windows","labels":["self-hosted","Windows","X64","on-demand","packer-windows","PlezyNG"]}') || fromJSON('{"group":"windows-arm64-jit","labels":["self-hosted","Windows","ARM64","on-demand","windows-arm64-jit","PlezyNG"]}') }}
     permissions:
       contents: read
     strategy:
@@ -837,11 +837,9 @@ jobs:
       matrix:
         include:
           - arch: x64
-            runner: windows-latest
             flutter_setup: action
             native_cache_path: build/windows/x64/_deps
           - arch: arm64
-            runner: windows-11-arm
             flutter_setup: git
             native_cache_path: build/windows/arm64/_deps
     steps:
