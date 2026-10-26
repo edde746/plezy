@@ -626,7 +626,14 @@
     "regionFormat": "Định dạng khu vực",
     "regionFormatDescription": "Chọn cách hiển thị ngày, số và đơn vị đo.",
     "metadataLanguage": "Ngôn ngữ siêu dữ liệu",
-    "metadataLanguageDescription": "Ngôn ngữ ưu tiên cho tiêu đề và mô tả khi máy chủ hỗ trợ. Tùy chọn âm thanh và phụ đề được thiết lập riêng."
+    "metadataLanguageDescription": "Ngôn ngữ ưu tiên cho tiêu đề và mô tả khi máy chủ hỗ trợ. Tùy chọn âm thanh và phụ đề được thiết lập riêng.",
+    "experimentalDolbyVision": "Dolby Vision thử nghiệm",
+    "experimentalDolbyVisionDescription": "Dùng bộ kết xuất FEL thử nghiệm trong lần phát tiếp theo. Cần bản dựng bộ máy riêng.",
+    "dvExperimentUnavailableDescription": "Thử nghiệm này hiện chỉ có trên Linux.",
+    "dvCompatibilityFallback": "Phương án tương thích dự phòng",
+    "dvCompatibilityFallbackDescription": "Dùng bộ kết xuất tiêu chuẩn nếu không thể bắt đầu thử nghiệm. Dữ liệu FEL có thể bị mất.",
+    "dvExperimentDiagnostics": "Nhật ký thử nghiệm video",
+    "dvExperimentDiagnosticsDescription": "Bật nhật ký trình phát chi tiết trong lần phát tiếp theo."
   },
   "themeEditor": {
     "builtIn": "xây dựng",

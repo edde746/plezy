@@ -628,7 +628,14 @@
     "regionFormat": "قالب‌های منطقه‌ای",
     "regionFormatDescription": "نحوهٔ نمایش تاریخ‌ها، اعداد و واحدهای اندازه‌گیری را انتخاب کنید.",
     "metadataLanguage": "زبان فراداده",
-    "metadataLanguageDescription": "زبان دلخواه عنوان‌ها و توضیحات، در صورت پشتیبانی سرور. تنظیمات زبان صدا و زیرنویس مستقل هستند."
+    "metadataLanguageDescription": "زبان دلخواه عنوان‌ها و توضیحات، در صورت پشتیبانی سرور. تنظیمات زبان صدا و زیرنویس مستقل هستند.",
+    "experimentalDolbyVision": "Dolby Vision آزمایشی",
+    "experimentalDolbyVisionDescription": "در پخش بعدی از رندرکنندهٔ آزمایشی FEL استفاده شود. به ساخت جداگانهٔ موتور نیاز دارد.",
+    "dvExperimentUnavailableDescription": "این آزمایش فعلاً فقط در Linux در دسترس است.",
+    "dvCompatibilityFallback": "گزینهٔ جایگزین سازگار",
+    "dvCompatibilityFallbackDescription": "اگر آزمایش شروع نشد، از رندرکنندهٔ استاندارد استفاده شود. ممکن است داده‌های FEL از دست بروند.",
+    "dvExperimentDiagnostics": "ثبت رویدادهای آزمایش ویدیو",
+    "dvExperimentDiagnosticsDescription": "در پخش بعدی گزارش‌های دقیق پخش‌کننده فعال شوند."
   },
   "themeEditor": {
     "builtIn": "ساخته شده",

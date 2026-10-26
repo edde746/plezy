@@ -626,7 +626,14 @@
     "regionFormat": "รูปแบบภูมิภาค",
     "regionFormatDescription": "เลือกวิธีแสดงวันที่ ตัวเลข และหน่วยวัด",
     "metadataLanguage": "ภาษาข้อมูลสื่อ",
-    "metadataLanguageDescription": "ภาษาที่ต้องการสำหรับชื่อและคำอธิบายเมื่อเซิร์ฟเวอร์รองรับ การตั้งค่าเสียงและคำบรรยายจะแยกจากกัน"
+    "metadataLanguageDescription": "ภาษาที่ต้องการสำหรับชื่อและคำอธิบายเมื่อเซิร์ฟเวอร์รองรับ การตั้งค่าเสียงและคำบรรยายจะแยกจากกัน",
+    "experimentalDolbyVision": "Dolby Vision แบบทดลอง",
+    "experimentalDolbyVisionDescription": "ใช้ตัวเรนเดอร์ FEL แบบทดลองในการเล่นครั้งถัดไป ต้องใช้เอนจินที่บิลด์แยกต่างหาก",
+    "dvExperimentUnavailableDescription": "ขณะนี้การทดลองนี้ใช้ได้เฉพาะบน Linux",
+    "dvCompatibilityFallback": "ทางเลือกเพื่อความเข้ากันได้",
+    "dvCompatibilityFallbackDescription": "ใช้ตัวเรนเดอร์มาตรฐานหากเริ่มการทดลองไม่ได้ ข้อมูล FEL อาจสูญหาย",
+    "dvExperimentDiagnostics": "บันทึกการทดลองวิดีโอ",
+    "dvExperimentDiagnosticsDescription": "เปิดบันทึกข้อมูลเครื่องเล่นแบบละเอียดในการเล่นครั้งถัดไป"
   },
   "themeEditor": {
     "builtIn": "โครงสร้าง",

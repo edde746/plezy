@@ -626,7 +626,14 @@
     "regionFormat": "Format serantau",
     "regionFormatDescription": "Pilih cara tarikh, nombor dan unit ukuran dipaparkan.",
     "metadataLanguage": "Bahasa metadata",
-    "metadataLanguageDescription": "Bahasa tajuk dan huraian pilihan jika disokong oleh pelayan. Pilihan audio dan sari kata ditetapkan secara berasingan."
+    "metadataLanguageDescription": "Bahasa tajuk dan huraian pilihan jika disokong oleh pelayan. Pilihan audio dan sari kata ditetapkan secara berasingan.",
+    "experimentalDolbyVision": "Dolby Vision eksperimen",
+    "experimentalDolbyVisionDescription": "Gunakan pemapar FEL eksperimen pada main balik seterusnya. Memerlukan binaan enjin yang berasingan.",
+    "dvExperimentUnavailableDescription": "Eksperimen ini kini hanya tersedia pada Linux.",
+    "dvCompatibilityFallback": "Pilihan sandaran keserasian",
+    "dvCompatibilityFallbackDescription": "Gunakan pemapar standard jika eksperimen tidak dapat dimulakan. Data FEL mungkin hilang.",
+    "dvExperimentDiagnostics": "Pengelogan eksperimen video",
+    "dvExperimentDiagnosticsDescription": "Dayakan log pemain terperinci pada main balik seterusnya."
   },
   "themeEditor": {
     "builtIn": "dibina dalam",

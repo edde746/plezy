@@ -759,6 +759,13 @@ class _Translations$settings$vi extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Chọn cách hiển thị ngày, số và đơn vị đo.';
 	@override String get metadataLanguage => 'Ngôn ngữ siêu dữ liệu';
 	@override String get metadataLanguageDescription => 'Ngôn ngữ ưu tiên cho tiêu đề và mô tả khi máy chủ hỗ trợ. Tùy chọn âm thanh và phụ đề được thiết lập riêng.';
+	@override String get experimentalDolbyVision => 'Dolby Vision thử nghiệm';
+	@override String get experimentalDolbyVisionDescription => 'Dùng bộ kết xuất FEL thử nghiệm trong lần phát tiếp theo. Cần bản dựng bộ máy riêng.';
+	@override String get dvExperimentUnavailableDescription => 'Thử nghiệm này hiện chỉ có trên Linux.';
+	@override String get dvCompatibilityFallback => 'Phương án tương thích dự phòng';
+	@override String get dvCompatibilityFallbackDescription => 'Dùng bộ kết xuất tiêu chuẩn nếu không thể bắt đầu thử nghiệm. Dữ liệu FEL có thể bị mất.';
+	@override String get dvExperimentDiagnostics => 'Nhật ký thử nghiệm video';
+	@override String get dvExperimentDiagnosticsDescription => 'Bật nhật ký trình phát chi tiết trong lần phát tiếp theo.';
 }
 
 // Path: themeEditor
@@ -4783,6 +4790,13 @@ extension on TranslationsVi {
 			'settings.regionFormatDescription' => 'Chọn cách hiển thị ngày, số và đơn vị đo.',
 			'settings.metadataLanguage' => 'Ngôn ngữ siêu dữ liệu',
 			'settings.metadataLanguageDescription' => 'Ngôn ngữ ưu tiên cho tiêu đề và mô tả khi máy chủ hỗ trợ. Tùy chọn âm thanh và phụ đề được thiết lập riêng.',
+			'settings.experimentalDolbyVision' => 'Dolby Vision thử nghiệm',
+			'settings.experimentalDolbyVisionDescription' => 'Dùng bộ kết xuất FEL thử nghiệm trong lần phát tiếp theo. Cần bản dựng bộ máy riêng.',
+			'settings.dvExperimentUnavailableDescription' => 'Thử nghiệm này hiện chỉ có trên Linux.',
+			'settings.dvCompatibilityFallback' => 'Phương án tương thích dự phòng',
+			'settings.dvCompatibilityFallbackDescription' => 'Dùng bộ kết xuất tiêu chuẩn nếu không thể bắt đầu thử nghiệm. Dữ liệu FEL có thể bị mất.',
+			'settings.dvExperimentDiagnostics' => 'Nhật ký thử nghiệm video',
+			'settings.dvExperimentDiagnosticsDescription' => 'Bật nhật ký trình phát chi tiết trong lần phát tiếp theo.',
 			'themeEditor.builtIn' => 'xây dựng',
 			'themeEditor.presets' => 'Lời bài hát',
 			'themeEditor.custom' => 'Tùy chọn',
@@ -5203,6 +5217,8 @@ extension on TranslationsVi {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Thư viện quét bắt đầu cho "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Không thể quét thư viện: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Tải về các thông tin mới cho "${title}"',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadata update bắt đầu cho "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Không cập nhật dữ liệu siêu dữ liệu: ${error}',
 			'messages.logoutConfirm' => 'Bạn có chắc chắn bạn muốn đăng nhập không?',
@@ -5210,8 +5226,6 @@ extension on TranslationsVi {
 			'messages.seasonsLoadFailed' => 'Không thể tải mùa',
 			'messages.noEpisodesFound' => 'Không có sự kiện nào được tìm thấy trong mùa giải đầu tiên',
 			'messages.noEpisodesFoundGeneral' => 'Không tìm thấy sự kiện',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Không thể tải các sự kiện',
 			'messages.noResultsFound' => 'Không tìm thấy kết quả nào.',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Thời gian ngủ được thiết lập cho ${label}',
@@ -5717,6 +5731,8 @@ extension on TranslationsVi {
 			'explore.selectSource' => 'Chọn nguồn',
 			'explore.rows.watchlist' => 'Danh sách Watchlist',
 			'explore.rows.recommendedMovies' => 'Phim khuyến cáo',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Ưu đãi show',
 			'explore.rows.trendingMovies' => 'Phim Trending',
 			'explore.rows.trendingShows' => 'Xu hướng show',
@@ -5724,8 +5740,6 @@ extension on TranslationsVi {
 			'explore.rows.popularShows' => 'Ưu đãi phổ biến',
 			'explore.rows.trendingAnime' => 'Xu hướng Anime',
 			'explore.rows.suggestedAnime' => 'Anime đề xuất',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Lời bài hát: Top Airing Anime',
 			'explore.rows.popularAnime' => 'Anime phổ biến nhất',
 			'explore.rows.trending' => 'xu hướng',
@@ -6231,6 +6245,8 @@ extension on TranslationsVi {
 			'downloads.pauseAll' => 'All nghỉ ngơi',
 			'downloads.resumeAll' => 'Tóm lại tất cả',
 			'downloads.retryAll' => 'Quay lại tất cả',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => 'Retry thất bại Downloads',
 			'downloads.deleteAll' => 'Xóa Hết',
 			'downloads.selectVersion' => 'Chọn phiên bản',
@@ -6238,8 +6254,6 @@ extension on TranslationsVi {
 			'downloads.unwatchedOnly' => 'Không chỉ quan sát',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Tiếp theo ${count} chưa được xem',
 			'downloads.customAmount' => 'Số lượng tùy chỉnh...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Số lượng (tất cả)',
 			'downloads.randomEpisodes' => 'Ngẫu thuật episodes',
 			'downloads.includeSpecials' => 'bao gồm đặc biệt',
@@ -6745,6 +6759,8 @@ extension on TranslationsVi {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Kết nối với ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Nhập URL, tên người dùng và mật khẩu máy chủ của bạn.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Đăng nhập vào máy chủ của bạn ${product}. kết nối với ${name}.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Loan từ một hồ sơ khác',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Sử dụng lại kết nối của hồ sơ khác. hồ sơ được bảo vệ bằng PIN đòi hỏi một PIN.',
 			'addServer.invalidCredentials' => 'Tên người dùng hoặc mật khẩu không hợp lệ',
@@ -6752,8 +6768,6 @@ extension on TranslationsVi {
 			'addServer.authResponseIncomplete' => 'Trả lời đăng nhập từ máy chủ là không đầy đủ',
 			'addServer.quickConnectRejected' => 'Quick Connect đã bị từ chối bởi máy chủ',
 			'addServer.quickConnectNotJson' => 'Câu trả lời Quick Connect không đúng JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Câu trả lời Quick Connect thiếu mã hoặc bí mật',
 			'addServer.quickConnectPollRejected' => 'Quick Connect truy vấn đã bị từ chối bởi máy chủ',
 			'addServer.serverTimedOut' => 'Server không trả lời kịp thời',

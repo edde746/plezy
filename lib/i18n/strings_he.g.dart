@@ -763,6 +763,13 @@ class _Translations$settings$he extends Translations$settings$en {
 	@override String get regionFormatDescription => 'בחירת אופן ההצגה של תאריכים, מספרים ויחידות מידה.';
 	@override String get metadataLanguage => 'שפת פרטי המדיה';
 	@override String get metadataLanguageDescription => 'השפה המועדפת לשמות ולתיאורים, כשהשרת תומך בה. העדפות השמע והכתוביות מוגדרות בנפרד.';
+	@override String get experimentalDolbyVision => 'Dolby Vision ניסיוני';
+	@override String get experimentalDolbyVisionDescription => 'שימוש במנוע הרינדור הניסיוני של FEL בהפעלה הבאה. נדרשת בנייה נפרדת של המנוע.';
+	@override String get dvExperimentUnavailableDescription => 'הניסוי הזה זמין כרגע רק ב-Linux.';
+	@override String get dvCompatibilityFallback => 'חלופת תאימות';
+	@override String get dvCompatibilityFallbackDescription => 'שימוש במנוע הרינדור הרגיל אם הניסוי לא מצליח להתחיל. נתוני FEL עלולים ללכת לאיבוד.';
+	@override String get dvExperimentDiagnostics => 'רישום יומן לניסוי הווידאו';
+	@override String get dvExperimentDiagnosticsDescription => 'הפעלת יומנים מפורטים של הנגן בהפעלה הבאה.';
 }
 
 // Path: themeEditor
@@ -4810,6 +4817,13 @@ extension on TranslationsHe {
 			'settings.regionFormatDescription' => 'בחירת אופן ההצגה של תאריכים, מספרים ויחידות מידה.',
 			'settings.metadataLanguage' => 'שפת פרטי המדיה',
 			'settings.metadataLanguageDescription' => 'השפה המועדפת לשמות ולתיאורים, כשהשרת תומך בה. העדפות השמע והכתוביות מוגדרות בנפרד.',
+			'settings.experimentalDolbyVision' => 'Dolby Vision ניסיוני',
+			'settings.experimentalDolbyVisionDescription' => 'שימוש במנוע הרינדור הניסיוני של FEL בהפעלה הבאה. נדרשת בנייה נפרדת של המנוע.',
+			'settings.dvExperimentUnavailableDescription' => 'הניסוי הזה זמין כרגע רק ב-Linux.',
+			'settings.dvCompatibilityFallback' => 'חלופת תאימות',
+			'settings.dvCompatibilityFallbackDescription' => 'שימוש במנוע הרינדור הרגיל אם הניסוי לא מצליח להתחיל. נתוני FEL עלולים ללכת לאיבוד.',
+			'settings.dvExperimentDiagnostics' => 'רישום יומן לניסוי הווידאו',
+			'settings.dvExperimentDiagnosticsDescription' => 'הפעלת יומנים מפורטים של הנגן בהפעלה הבאה.',
 			'themeEditor.builtIn' => 'בנוי',
 			'themeEditor.presets' => 'נציגים',
 			'themeEditor.custom' => 'מותאם אישית',
@@ -5230,6 +5244,8 @@ extension on TranslationsHe {
 			'messages.libraryScanStarted' => ({required Object title}) => 'סריקת הספרייה החלה עבור "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'לא הצליח לסרוק את הספרייה: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'נתונים מטא-נתונים עבור "${title}..."',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'מחדש נתונים מתחיל עבור "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'לא הצליח לשחזר נתונים מטאוגרפיים: ${error}',
 			'messages.logoutConfirm' => 'אתה בטוח שאתה רוצה להיכנס?',
@@ -5237,8 +5253,6 @@ extension on TranslationsHe {
 			'messages.seasonsLoadFailed' => 'לא יכול להיות עונות',
 			'messages.noEpisodesFound' => 'לא נמצאו פרקים בעונה הראשונה',
 			'messages.noEpisodesFoundGeneral' => 'לא נמצאו פרקים',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'אי אפשר להעלות את הפרקים',
 			'messages.noResultsFound' => 'לא נמצאו תוצאות.',
 			'messages.sleepTimerSet' => ({required Object label}) => 'זמן שינה מוגדר עבור ${label}',
@@ -5744,6 +5758,8 @@ extension on TranslationsHe {
 			'explore.selectSource' => 'בחר מקור',
 			'explore.rows.watchlist' => 'שומרים',
 			'explore.rows.recommendedMovies' => 'סרטים מומלצים',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'הצגות מומלצות',
 			'explore.rows.trendingMovies' => 'סרטים טרנדים',
 			'explore.rows.trendingShows' => 'תצוגות טרנד',
@@ -5751,8 +5767,6 @@ extension on TranslationsHe {
 			'explore.rows.popularShows' => 'הופעות פופולריות',
 			'explore.rows.trendingAnime' => 'אנמיה טרנד',
 			'explore.rows.suggestedAnime' => 'אנמיה מומלצת',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'האנימציה העליונה',
 			'explore.rows.popularAnime' => 'האנימציה הפופולרית ביותר',
 			'explore.rows.trending' => 'טרנד',
@@ -6258,6 +6272,8 @@ extension on TranslationsHe {
 			'downloads.pauseAll' => 'הפסקה הכול',
 			'downloads.resumeAll' => 'סיכום הכול',
 			'downloads.retryAll' => 'להחזיר את כולם',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => 'הורדות נכשלות',
 			'downloads.deleteAll' => 'מחק הכל',
 			'downloads.selectVersion' => 'בחר גרסה',
@@ -6265,8 +6281,6 @@ extension on TranslationsHe {
 			'downloads.unwatchedOnly' => 'לא נצפה רק',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'הבא ${count} לא נצפה',
 			'downloads.customAmount' => 'כמות מותאמת...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'כל סכום (כל סכום)',
 			'downloads.randomEpisodes' => 'אירועים אקראיים',
 			'downloads.includeSpecials' => 'כולל מיוחד',
@@ -6772,6 +6786,8 @@ extension on TranslationsHe {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'חיבור ל- ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'הקלד את כתובת ה-URL, שם המשתמש ואת הסיסמה שלך.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'הצטרפו לשרת ${product}.חברים ל- ${name}.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'הלוואה מפרט אחר',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'השתמש מחדש בקשר של פרופיל אחר.פרופילים מוגנים ב-PIN דורשים PIN.',
 			'addServer.invalidCredentials' => 'שם משתמש או סיסמה בלתי חוקיים',
@@ -6779,8 +6795,6 @@ extension on TranslationsHe {
 			'addServer.authResponseIncomplete' => 'התגובה של השרת הייתה לא שלמה.',
 			'addServer.quickConnectRejected' => 'Quick Connect נדחה על ידי השרת',
 			'addServer.quickConnectNotJson' => 'התשובה Quick Connect לא הייתה שווה JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'התשובה Quick Connect חסרה קוד או סוד',
 			'addServer.quickConnectPollRejected' => 'Quick Connect בקשה נדחתה על ידי השרת',
 			'addServer.serverTimedOut' => 'השרת לא הגיב בזמן',

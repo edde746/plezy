@@ -628,7 +628,14 @@
     "regionFormat": "Regionale formater",
     "regionFormatDescription": "Velg hvordan datoer, tall og måleenheter vises.",
     "metadataLanguage": "Språk for metadata",
-    "metadataLanguageDescription": "Foretrukket språk for titler og beskrivelser når serveren støtter det. Lyd og undertekster stilles inn separat."
+    "metadataLanguageDescription": "Foretrukket språk for titler og beskrivelser når serveren støtter det. Lyd og undertekster stilles inn separat.",
+    "experimentalDolbyVision": "Eksperimentell Dolby Vision",
+    "experimentalDolbyVisionDescription": "Bruk den eksperimentelle FEL-rendereren ved neste avspilling. Krever en separat motorbygging.",
+    "dvExperimentUnavailableDescription": "Dette eksperimentet er foreløpig bare tilgjengelig på Linux.",
+    "dvCompatibilityFallback": "Kompatibilitetsreserve",
+    "dvCompatibilityFallbackDescription": "Bruk standardrendereren hvis eksperimentet ikke kan starte. FEL-data kan gå tapt.",
+    "dvExperimentDiagnostics": "Logging av videoeksperiment",
+    "dvExperimentDiagnosticsDescription": "Aktiver detaljerte spillerlogger ved neste avspilling."
   },
   "themeEditor": {
     "builtIn": "Innebygde",

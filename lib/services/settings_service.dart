@@ -910,6 +910,12 @@ class SettingsService extends BaseSharedPreferencesService {
   /// Apple TV only; Profile 5 has no base layer and stays Dolby Vision on
   /// Android.
   static const disableDolbyVision = BoolPref('disable_dolby_vision');
+
+  /// Device-local, next-session experiments. A renderer request is not FEL
+  /// qualification; it never installs or replaces an engine.
+  static const experimentalDolbyVision = BoolPref('experimental_dolby_vision');
+  static const dvCompatibilityFallback = BoolPref('dv_compatibility_fallback', defaultValue: true);
+  static const dvExperimentDiagnostics = BoolPref('dv_experiment_diagnostics');
   static const hdrSdrConversion = EnumPref<HdrSdrConversion>(
     'hdr_sdr_conversion',
     values: HdrSdrConversion.values,
@@ -1941,6 +1947,9 @@ class SettingsService extends BaseSharedPreferencesService {
   /// per-device state plus user-authored player configuration, none of which
   /// should travel between installations.
   static final List<Pref<Object?>> _resetOnlyPrefs = [
+    experimentalDolbyVision,
+    dvCompatibilityFallback,
+    dvExperimentDiagnostics,
     customDownloadPathType,
     mediaVersionPreferences,
     localLastPlayedAt,

@@ -761,6 +761,13 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Válassza ki a dátumok, számok és mértékegységek megjelenítési módját.';
 	@override String get metadataLanguage => 'Metaadatok nyelve';
 	@override String get metadataLanguageDescription => 'A címek és leírások előnyben részesített nyelve, ha a kiszolgáló támogatja. A hang és a felirat nyelve külön állítható be.';
+	@override String get experimentalDolbyVision => 'Kísérleti Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'A következő lejátszáskor a kísérleti FEL-megjelenítő használata. Külön motorbuild szükséges.';
+	@override String get dvExperimentUnavailableDescription => 'Ez a kísérlet jelenleg csak Linuxon érhető el.';
+	@override String get dvCompatibilityFallback => 'Kompatibilitási tartalék mód';
+	@override String get dvCompatibilityFallbackDescription => 'Ha a kísérlet nem indul, a normál megjelenítő használata. A FEL-adatok elveszhetnek.';
+	@override String get dvExperimentDiagnostics => 'Videókísérlet naplózása';
+	@override String get dvExperimentDiagnosticsDescription => 'Részletes lejátszónaplók engedélyezése a következő lejátszáskor.';
 }
 
 // Path: themeEditor
@@ -4805,6 +4812,13 @@ extension on TranslationsHu {
 			'settings.regionFormatDescription' => 'Válassza ki a dátumok, számok és mértékegységek megjelenítési módját.',
 			'settings.metadataLanguage' => 'Metaadatok nyelve',
 			'settings.metadataLanguageDescription' => 'A címek és leírások előnyben részesített nyelve, ha a kiszolgáló támogatja. A hang és a felirat nyelve külön állítható be.',
+			'settings.experimentalDolbyVision' => 'Kísérleti Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'A következő lejátszáskor a kísérleti FEL-megjelenítő használata. Külön motorbuild szükséges.',
+			'settings.dvExperimentUnavailableDescription' => 'Ez a kísérlet jelenleg csak Linuxon érhető el.',
+			'settings.dvCompatibilityFallback' => 'Kompatibilitási tartalék mód',
+			'settings.dvCompatibilityFallbackDescription' => 'Ha a kísérlet nem indul, a normál megjelenítő használata. A FEL-adatok elveszhetnek.',
+			'settings.dvExperimentDiagnostics' => 'Videókísérlet naplózása',
+			'settings.dvExperimentDiagnosticsDescription' => 'Részletes lejátszónaplók engedélyezése a következő lejátszáskor.',
 			'themeEditor.builtIn' => 'Beépített',
 			'themeEditor.presets' => 'Előre beállított',
 			'themeEditor.custom' => 'Egyéni',
@@ -5225,6 +5239,8 @@ extension on TranslationsHu {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Könyvtár beolvasása elindítva a következőhöz: "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Nem sikerült a könyvtár beolvasása: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Metaadatok frissítése a következőhöz: "${title}"...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metaadatok frissítése elindítva a következőhöz: "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Nem sikerült a metaadatok frissítése: ${error}',
 			'messages.logoutConfirm' => 'Biztosan ki szeretnél jelentkezni?',
@@ -5232,8 +5248,6 @@ extension on TranslationsHu {
 			'messages.seasonsLoadFailed' => 'Nem sikerült az évadok betöltése',
 			'messages.noEpisodesFound' => 'Nem találhatók epizódok az első évadban',
 			'messages.noEpisodesFoundGeneral' => 'Nem találhatók epizódok',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Nem sikerült az epizódok betöltése',
 			'messages.noResultsFound' => 'Nincs találat',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Elalvási időzítő beállítva: ${label}',
@@ -5739,6 +5753,8 @@ extension on TranslationsHu {
 			'explore.selectSource' => 'Forrás kiválasztása',
 			'explore.rows.watchlist' => 'Néznivalók listája',
 			'explore.rows.recommendedMovies' => 'Ajánlott filmek',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Ajánlott sorozatok',
 			'explore.rows.trendingMovies' => 'Felkapott filmek',
 			'explore.rows.trendingShows' => 'Felkapott sorozatok',
@@ -5746,8 +5762,6 @@ extension on TranslationsHu {
 			'explore.rows.popularShows' => 'Népszerű sorozatok',
 			'explore.rows.trendingAnime' => 'Felkapott animék',
 			'explore.rows.suggestedAnime' => 'Ajánlott animék',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Jelenleg futó top animék',
 			'explore.rows.popularAnime' => 'Legnépszerűbb animék',
 			'explore.rows.trending' => 'Felkapott',
@@ -6253,6 +6267,8 @@ extension on TranslationsHu {
 			'downloads.pauseAll' => 'Összes szüneteltetése',
 			'downloads.resumeAll' => 'Összes folytatása',
 			'downloads.retryAll' => 'Összes újrapróbálása',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => 'Sikertelen letöltések újrapróbálása',
 			'downloads.deleteAll' => 'Összes törlése',
 			'downloads.selectVersion' => 'Verzió kiválasztása',
@@ -6260,8 +6276,6 @@ extension on TranslationsHu {
 			'downloads.unwatchedOnly' => 'Csak a nem látottak',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'A következő ${count} nem látott epizód',
 			'downloads.customAmount' => 'Egyéni mennyiség...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'A megadott összeg (minden)',
 			'downloads.randomEpisodes' => 'Rádió epizódok',
 			'downloads.includeSpecials' => 'Különkiadások is',
@@ -6767,6 +6781,8 @@ extension on TranslationsHu {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Csatlakozás a(z) ${product} szolgáltatáshoz',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Adja meg a szerver URL-jét, felhasználónevét és jelszavát.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Jelentkezzen be a(z) ${product} szerverére. A(z) ${name} szolgáltatáshoz kötődik.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Kapcsolat használata másik profilból',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Egy másik profil kapcsolatának használata. A PIN-kóddal védett profilokhoz PIN-kód szükséges.',
 			'addServer.invalidCredentials' => 'Érvénytelen felhasználónév vagy jelszó',
@@ -6774,8 +6790,6 @@ extension on TranslationsHu {
 			'addServer.authResponseIncomplete' => 'A szerver bejelentkezési válasza hiányos volt',
 			'addServer.quickConnectRejected' => 'A szerver elutasította a Quick Connect-kérést',
 			'addServer.quickConnectNotJson' => 'A Quick Connect válasza nem érvényes JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'A Quick Connect válaszából hiányzik a kód vagy a titkos kulcs',
 			'addServer.quickConnectPollRejected' => 'A szerver elutasította a Quick Connect lekérdezését',
 			'addServer.serverTimedOut' => 'A szerver nem válaszolt időben',

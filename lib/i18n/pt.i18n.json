@@ -630,7 +630,14 @@
     "regionFormat": "Formatos regionais",
     "regionFormatDescription": "Escolha como as datas, os números e as unidades de medida são apresentados.",
     "metadataLanguage": "Idioma dos metadados",
-    "metadataLanguageDescription": "Idioma preferido para títulos e descrições quando o servidor o suportar. As preferências de áudio e legendas são definidas separadamente."
+    "metadataLanguageDescription": "Idioma preferido para títulos e descrições quando o servidor o suportar. As preferências de áudio e legendas são definidas separadamente.",
+    "experimentalDolbyVision": "Dolby Vision experimental",
+    "experimentalDolbyVisionDescription": "Usar o renderizador FEL experimental na próxima reprodução. Requer uma compilação separada do motor.",
+    "dvExperimentUnavailableDescription": "Este experimento está disponível apenas no Linux por enquanto.",
+    "dvCompatibilityFallback": "Alternativa de compatibilidade",
+    "dvCompatibilityFallbackDescription": "Usar o renderizador padrão se o experimento não iniciar. Os dados FEL podem ser perdidos.",
+    "dvExperimentDiagnostics": "Registro do experimento de vídeo",
+    "dvExperimentDiagnosticsDescription": "Ativar registros detalhados do reprodutor na próxima reprodução."
   },
   "themeEditor": {
     "builtIn": "Integrados",

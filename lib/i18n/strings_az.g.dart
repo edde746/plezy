@@ -761,6 +761,13 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Tarixlərin, rəqəmlərin və ölçü vahidlərinin göstərilmə qaydasını seçin.';
 	@override String get metadataLanguage => 'Metaməlumat dili';
 	@override String get metadataLanguageDescription => 'Server dəstəklədikdə başlıqlar və təsvirlər üçün üstün tutulan dil. Səs və altyazı seçimləri ayrıca tənzimlənir.';
+	@override String get experimentalDolbyVision => 'Eksperimental Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Növbəti oxutmada eksperimental FEL renderindən istifadə edin. Mühərrikin ayrıca yığılması tələb olunur.';
+	@override String get dvExperimentUnavailableDescription => 'Bu sınaq hazırda yalnız Linux-da mövcuddur.';
+	@override String get dvCompatibilityFallback => 'Uyğunluq üçün ehtiyat rejim';
+	@override String get dvCompatibilityFallbackDescription => 'Sınaq başlaya bilməsə, standart renderdən istifadə edin. FEL məlumatları itə bilər.';
+	@override String get dvExperimentDiagnostics => 'Video sınağının jurnalı';
+	@override String get dvExperimentDiagnosticsDescription => 'Növbəti oxutmada ətraflı pleyer jurnallarını aktivləşdirin.';
 }
 
 // Path: themeEditor
@@ -4805,6 +4812,13 @@ extension on TranslationsAz {
 			'settings.regionFormatDescription' => 'Tarixlərin, rəqəmlərin və ölçü vahidlərinin göstərilmə qaydasını seçin.',
 			'settings.metadataLanguage' => 'Metaməlumat dili',
 			'settings.metadataLanguageDescription' => 'Server dəstəklədikdə başlıqlar və təsvirlər üçün üstün tutulan dil. Səs və altyazı seçimləri ayrıca tənzimlənir.',
+			'settings.experimentalDolbyVision' => 'Eksperimental Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Növbəti oxutmada eksperimental FEL renderindən istifadə edin. Mühərrikin ayrıca yığılması tələb olunur.',
+			'settings.dvExperimentUnavailableDescription' => 'Bu sınaq hazırda yalnız Linux-da mövcuddur.',
+			'settings.dvCompatibilityFallback' => 'Uyğunluq üçün ehtiyat rejim',
+			'settings.dvCompatibilityFallbackDescription' => 'Sınaq başlaya bilməsə, standart renderdən istifadə edin. FEL məlumatları itə bilər.',
+			'settings.dvExperimentDiagnostics' => 'Video sınağının jurnalı',
+			'settings.dvExperimentDiagnosticsDescription' => 'Növbəti oxutmada ətraflı pleyer jurnallarını aktivləşdirin.',
 			'themeEditor.builtIn' => 'Daxili',
 			'themeEditor.presets' => 'Hazır mövzular',
 			'themeEditor.custom' => 'Xüsusi',
@@ -5225,6 +5239,8 @@ extension on TranslationsAz {
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}" üçün skan başladı',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Kitabxana skan edilə bilmədi: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '"${title}" üçün meta-məlumatlar yenilənir...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}" üçün meta-məlumat yenilənməsi başladı',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Meta-məlumatlar yenilənə bilmədi: ${error}',
 			'messages.logoutConfirm' => 'Çıxış etmək istədiyinizdən əminsiniz?',
@@ -5232,8 +5248,6 @@ extension on TranslationsAz {
 			'messages.seasonsLoadFailed' => 'Mövsümlər yüklənə bilmədi',
 			'messages.noEpisodesFound' => 'Birinci mövsümdə seriya tapılmadı',
 			'messages.noEpisodesFoundGeneral' => 'Seriya tapılmadı',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Seriyalar yüklənə bilmədi',
 			'messages.noResultsFound' => 'Nəticə tapılmadı',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Yuxu taymeri ${label} üçün təyin edildi',
@@ -5739,6 +5753,8 @@ extension on TranslationsAz {
 			'explore.selectSource' => 'Mənbə seçin',
 			'explore.rows.watchlist' => 'İzləmə siyahısı',
 			'explore.rows.recommendedMovies' => 'Tövsiyə olunan kinolar',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Tövsiyə olunan seriallar',
 			'explore.rows.trendingMovies' => 'Trend kinolar',
 			'explore.rows.trendingShows' => 'Trend seriallar',
@@ -5746,8 +5762,6 @@ extension on TranslationsAz {
 			'explore.rows.popularShows' => 'Məşhur seriallar',
 			'explore.rows.trendingAnime' => 'Trend animelər',
 			'explore.rows.suggestedAnime' => 'Tövsiyə olunan animelər',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Ən yaxşı yayımlanan animelər',
 			'explore.rows.popularAnime' => 'Ən məşhur animelər',
 			'explore.rows.trending' => 'Trendlər',
@@ -6253,6 +6267,8 @@ extension on TranslationsAz {
 			'downloads.pauseAll' => 'Hamısını fasilə et',
 			'downloads.resumeAll' => 'Hamısını davam etdir',
 			'downloads.retryAll' => 'Hamısını təzədən cəhd et',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => 'Uğursuz yükləmələri təzədən cəhd et',
 			'downloads.deleteAll' => 'Hamısını sil',
 			'downloads.selectVersion' => 'Versiya seç',
@@ -6260,8 +6276,6 @@ extension on TranslationsAz {
 			'downloads.unwatchedOnly' => 'Yalnız baxılmayanlar',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Növbəti ${count} baxılmayan',
 			'downloads.customAmount' => 'Xüsusi miqdar...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Hər bir dəfə (yəni)',
 			'downloads.randomEpisodes' => 'Random epizodları',
 			'downloads.includeSpecials' => 'Xüsusi seriyaları daxil et',
@@ -6767,6 +6781,8 @@ extension on TranslationsAz {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '${product}-a qoşul',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Server URL-inizi, istifadəçi adınızı və şifrənizi daxil edin.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} serverinizə daxil olun. ${name} ilə əlaqələndirilir.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Başqa profildən götür',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Başqa profilin qoşulmasını yenidən istifadə edin. PIN ilə qorunan profillər PIN tələb edir.',
 			'addServer.invalidCredentials' => 'İstifadəçi adı və ya şifrə yanlışdır',
@@ -6774,8 +6790,6 @@ extension on TranslationsAz {
 			'addServer.authResponseIncomplete' => 'Serverin giriş cavabı natamam idi',
 			'addServer.quickConnectRejected' => 'Quick Connect server tərəfindən rədd edildi',
 			'addServer.quickConnectNotJson' => 'Quick Connect cavabı etibarlı JSON deyildi',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect cavabında kod və ya məxfi açar yoxdur',
 			'addServer.quickConnectPollRejected' => 'Quick Connect sorğulaması server tərəfindən rədd edildi',
 			'addServer.serverTimedOut' => 'Server vaxtında cavab vermədi',

@@ -761,6 +761,13 @@ class _Translations$settings$de extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Wähle, wie Datumsangaben, Zahlen und Maßeinheiten angezeigt werden.';
 	@override String get metadataLanguage => 'Sprache der Metadaten';
 	@override String get metadataLanguageDescription => 'Bevorzugte Sprache für Titel und Beschreibungen, sofern vom Server unterstützt. Audio- und Untertitelsprachen werden separat eingestellt.';
+	@override String get experimentalDolbyVision => 'Experimentelles Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Bei der nächsten Wiedergabe den experimentellen FEL-Renderer verwenden. Erfordert einen separat erstellten Wiedergabekern.';
+	@override String get dvExperimentUnavailableDescription => 'Dieses Experiment ist derzeit nur unter Linux verfügbar.';
+	@override String get dvCompatibilityFallback => 'Kompatibilitätsfallback';
+	@override String get dvCompatibilityFallbackDescription => 'Den Standard-Renderer verwenden, falls das Experiment nicht startet. FEL-Daten können verloren gehen.';
+	@override String get dvExperimentDiagnostics => 'Videoexperiment protokollieren';
+	@override String get dvExperimentDiagnosticsDescription => 'Bei der nächsten Wiedergabe ausführliche Player-Protokolle aktivieren.';
 }
 
 // Path: themeEditor
@@ -4805,6 +4812,13 @@ extension on TranslationsDe {
 			'settings.regionFormatDescription' => 'Wähle, wie Datumsangaben, Zahlen und Maßeinheiten angezeigt werden.',
 			'settings.metadataLanguage' => 'Sprache der Metadaten',
 			'settings.metadataLanguageDescription' => 'Bevorzugte Sprache für Titel und Beschreibungen, sofern vom Server unterstützt. Audio- und Untertitelsprachen werden separat eingestellt.',
+			'settings.experimentalDolbyVision' => 'Experimentelles Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Bei der nächsten Wiedergabe den experimentellen FEL-Renderer verwenden. Erfordert einen separat erstellten Wiedergabekern.',
+			'settings.dvExperimentUnavailableDescription' => 'Dieses Experiment ist derzeit nur unter Linux verfügbar.',
+			'settings.dvCompatibilityFallback' => 'Kompatibilitätsfallback',
+			'settings.dvCompatibilityFallbackDescription' => 'Den Standard-Renderer verwenden, falls das Experiment nicht startet. FEL-Daten können verloren gehen.',
+			'settings.dvExperimentDiagnostics' => 'Videoexperiment protokollieren',
+			'settings.dvExperimentDiagnosticsDescription' => 'Bei der nächsten Wiedergabe ausführliche Player-Protokolle aktivieren.',
 			'themeEditor.builtIn' => 'Integriert',
 			'themeEditor.presets' => 'Vorlagen',
 			'themeEditor.custom' => 'Benutzerdefiniert',
@@ -5225,6 +5239,8 @@ extension on TranslationsDe {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Mediathekscan gestartet für „${title}“',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Fehler beim Scannen der Mediathek: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Metadaten für „${title}“ werden aktualisiert …',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadaten-Aktualisierung gestartet für „${title}“',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Metadaten konnten nicht aktualisiert werden: ${error}',
 			'messages.logoutConfirm' => 'Abmeldung wirklich durchführen?',
@@ -5232,8 +5248,6 @@ extension on TranslationsDe {
 			'messages.seasonsLoadFailed' => 'Staffeln konnten nicht geladen werden',
 			'messages.noEpisodesFound' => 'Keine Episoden in der ersten Staffel gefunden',
 			'messages.noEpisodesFoundGeneral' => 'Keine Episoden gefunden',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Episoden konnten nicht geladen werden',
 			'messages.noResultsFound' => 'Keine Ergebnisse gefunden',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Schlaftimer auf ${label} eingestellt',
@@ -5739,6 +5753,8 @@ extension on TranslationsDe {
 			'explore.selectSource' => 'Quelle auswählen',
 			'explore.rows.watchlist' => 'Merkliste',
 			'explore.rows.recommendedMovies' => 'Empfohlene Filme',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Empfohlene Serien',
 			'explore.rows.trendingMovies' => 'Angesagte Filme',
 			'explore.rows.trendingShows' => 'Angesagte Serien',
@@ -5746,8 +5762,6 @@ extension on TranslationsDe {
 			'explore.rows.popularShows' => 'Beliebte Serien',
 			'explore.rows.trendingAnime' => 'Angesagte Anime',
 			'explore.rows.suggestedAnime' => 'Empfohlene Anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Beste derzeit laufende Anime',
 			'explore.rows.popularAnime' => 'Beliebteste Anime',
 			'explore.rows.trending' => 'Angesagt',
@@ -6253,6 +6267,8 @@ extension on TranslationsDe {
 			'downloads.pauseAll' => 'Alle pausieren',
 			'downloads.resumeAll' => 'Alle fortsetzen',
 			'downloads.retryAll' => 'Alle wiederholen',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => 'Fehlgeschlagene Downloads wiederholen',
 			'downloads.deleteAll' => 'Alle löschen',
 			'downloads.selectVersion' => 'Version auswählen',
@@ -6260,8 +6276,6 @@ extension on TranslationsDe {
 			'downloads.unwatchedOnly' => 'Nur ungesehene',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Nächste ${count} ungesehene',
 			'downloads.customAmount' => 'Eigene Anzahl...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Ein bestimmtes Betrag (ein einzelnes ...',
 			'downloads.randomEpisodes' => 'Random-Episode',
 			'downloads.includeSpecials' => 'Sonderfolgen einschließen',
@@ -6767,6 +6781,8 @@ extension on TranslationsDe {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Mit ${product} verbinden',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Gib Server-URL, Benutzername und Passwort ein.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Melde dich bei deinem ${product}-Server an. Wird mit ${name} verknüpft.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Von einem anderen Profil ausleihen',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Verbindung eines anderen Profils wiederverwenden. PIN-geschützte Profile erfordern eine PIN.',
 			'addServer.invalidCredentials' => 'Ungültiger Benutzername oder ungültiges Passwort',
@@ -6774,8 +6790,6 @@ extension on TranslationsDe {
 			'addServer.authResponseIncomplete' => 'Die Anmeldeantwort des Servers war unvollständig',
 			'addServer.quickConnectRejected' => 'Quick Connect wurde vom Server abgelehnt',
 			'addServer.quickConnectNotJson' => 'Die Quick Connect-Antwort war kein gültiges JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'In der Quick Connect-Antwort fehlt ein Code oder Geheimnis',
 			'addServer.quickConnectPollRejected' => 'Die Quick Connect-Abfrage wurde vom Server abgelehnt',
 			'addServer.serverTimedOut' => 'Der Server hat nicht rechtzeitig geantwortet',

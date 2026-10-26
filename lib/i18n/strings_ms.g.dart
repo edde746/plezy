@@ -759,6 +759,13 @@ class _Translations$settings$ms extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Pilih cara tarikh, nombor dan unit ukuran dipaparkan.';
 	@override String get metadataLanguage => 'Bahasa metadata';
 	@override String get metadataLanguageDescription => 'Bahasa tajuk dan huraian pilihan jika disokong oleh pelayan. Pilihan audio dan sari kata ditetapkan secara berasingan.';
+	@override String get experimentalDolbyVision => 'Dolby Vision eksperimen';
+	@override String get experimentalDolbyVisionDescription => 'Gunakan pemapar FEL eksperimen pada main balik seterusnya. Memerlukan binaan enjin yang berasingan.';
+	@override String get dvExperimentUnavailableDescription => 'Eksperimen ini kini hanya tersedia pada Linux.';
+	@override String get dvCompatibilityFallback => 'Pilihan sandaran keserasian';
+	@override String get dvCompatibilityFallbackDescription => 'Gunakan pemapar standard jika eksperimen tidak dapat dimulakan. Data FEL mungkin hilang.';
+	@override String get dvExperimentDiagnostics => 'Pengelogan eksperimen video';
+	@override String get dvExperimentDiagnosticsDescription => 'Dayakan log pemain terperinci pada main balik seterusnya.';
 }
 
 // Path: themeEditor
@@ -4783,6 +4790,13 @@ extension on TranslationsMs {
 			'settings.regionFormatDescription' => 'Pilih cara tarikh, nombor dan unit ukuran dipaparkan.',
 			'settings.metadataLanguage' => 'Bahasa metadata',
 			'settings.metadataLanguageDescription' => 'Bahasa tajuk dan huraian pilihan jika disokong oleh pelayan. Pilihan audio dan sari kata ditetapkan secara berasingan.',
+			'settings.experimentalDolbyVision' => 'Dolby Vision eksperimen',
+			'settings.experimentalDolbyVisionDescription' => 'Gunakan pemapar FEL eksperimen pada main balik seterusnya. Memerlukan binaan enjin yang berasingan.',
+			'settings.dvExperimentUnavailableDescription' => 'Eksperimen ini kini hanya tersedia pada Linux.',
+			'settings.dvCompatibilityFallback' => 'Pilihan sandaran keserasian',
+			'settings.dvCompatibilityFallbackDescription' => 'Gunakan pemapar standard jika eksperimen tidak dapat dimulakan. Data FEL mungkin hilang.',
+			'settings.dvExperimentDiagnostics' => 'Pengelogan eksperimen video',
+			'settings.dvExperimentDiagnosticsDescription' => 'Dayakan log pemain terperinci pada main balik seterusnya.',
 			'themeEditor.builtIn' => 'dibina dalam',
 			'themeEditor.presets' => 'Persembahan',
 			'themeEditor.custom' => 'Khas',
@@ -5203,6 +5217,8 @@ extension on TranslationsMs {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Perpustakaan pemindaian bermula untuk "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Kegagalan untuk memindai perpustakaan: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Mengemaskini metadata untuk "${title}" ...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadata pembaharuan bermula untuk "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Tidak dapat memperbaharui metadata: ${error}',
 			'messages.logoutConfirm' => 'Adakah anda pasti anda mahu log keluar?',
@@ -5210,8 +5226,6 @@ extension on TranslationsMs {
 			'messages.seasonsLoadFailed' => 'Tidak boleh mengisi musim',
 			'messages.noEpisodesFound' => 'Tiada episod yang ditemui pada musim pertama',
 			'messages.noEpisodesFoundGeneral' => 'Tiada episod yang ditemui',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Tidak boleh memuatkan episod',
 			'messages.noResultsFound' => 'Tiada hasil yang ditemui',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Jam tidur set untuk ${label}',
@@ -5717,6 +5731,8 @@ extension on TranslationsMs {
 			'explore.selectSource' => 'Pilih sumber',
 			'explore.rows.watchlist' => 'Pengawasan',
 			'explore.rows.recommendedMovies' => 'Filem yang disyorkan',
+			_ => null,
+		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Persembahan yang disyorkan',
 			'explore.rows.trendingMovies' => 'filem trending',
 			'explore.rows.trendingShows' => 'Rujukan Trend',
@@ -5724,8 +5740,6 @@ extension on TranslationsMs {
 			'explore.rows.popularShows' => 'Persembahan popular',
 			'explore.rows.trendingAnime' => 'Perbincangan Anime',
 			'explore.rows.suggestedAnime' => 'Anime yang disyorkan',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Anime teratas yang sedang ditayangkan',
 			'explore.rows.popularAnime' => 'Anime yang paling popular',
 			'explore.rows.trending' => 'Trend yang',
@@ -6231,6 +6245,8 @@ extension on TranslationsMs {
 			'downloads.pauseAll' => 'Beristirahat semua',
 			'downloads.resumeAll' => 'Menggambar semua',
 			'downloads.retryAll' => 'Kembalikan semua',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.retryFailed' => 'Retry kegagalan download',
 			'downloads.deleteAll' => 'Padam semua',
 			'downloads.selectVersion' => 'Pilih versi',
@@ -6238,8 +6254,6 @@ extension on TranslationsMs {
 			'downloads.unwatchedOnly' => 'Hanya tidak diperhatikan',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Seterusnya ${count} tidak dilihat',
 			'downloads.customAmount' => 'Jumlah yang disesuaikan...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Jumlah yang disesuaikan (setiap tahun)',
 			'downloads.randomEpisodes' => 'Kejadian rawak',
 			'downloads.includeSpecials' => 'Termasuk spesial',
@@ -6745,6 +6759,8 @@ extension on TranslationsMs {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Hubungi ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Masukkan URL, nama pengguna dan kata laluan pelayan anda.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Mendaftar masuk ke pelayan ${product} anda. menghubungkan ke ${name}.',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Pinjaman daripada profil lain',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Menggunakan semula sambungan profil lain. profil yang dilindungi PIN memerlukan PIN.',
 			'addServer.invalidCredentials' => 'Nama pengguna atau kata laluan yang tidak sah',
@@ -6752,8 +6768,6 @@ extension on TranslationsMs {
 			'addServer.authResponseIncomplete' => 'Jawapan pendaftaran daripada pelayan tidak lengkap',
 			'addServer.quickConnectRejected' => 'Quick Connect telah ditolak oleh pelayan',
 			'addServer.quickConnectNotJson' => 'Jawapan Quick Connect tidak sah JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Jawapan Quick Connect kekurangan kod atau rahsia',
 			'addServer.quickConnectPollRejected' => 'Quick Connect pertanyaan telah ditolak oleh pelayan',
 			'addServer.serverTimedOut' => 'Pelayan tidak bertindak balas dalam masa',

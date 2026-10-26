@@ -628,7 +628,14 @@
     "regionFormat": "Regionale notatie",
     "regionFormatDescription": "Kies hoe datums, getallen en maateenheden worden weergegeven.",
     "metadataLanguage": "Taal van metadata",
-    "metadataLanguageDescription": "Voorkeurstaal voor titels en beschrijvingen wanneer de server dit ondersteunt. Voorkeuren voor audio en ondertitels worden apart ingesteld."
+    "metadataLanguageDescription": "Voorkeurstaal voor titels en beschrijvingen wanneer de server dit ondersteunt. Voorkeuren voor audio en ondertitels worden apart ingesteld.",
+    "experimentalDolbyVision": "Experimentele Dolby Vision",
+    "experimentalDolbyVisionDescription": "Gebruik de experimentele FEL-renderer bij de volgende keer afspelen. Vereist een afzonderlijke enginebuild.",
+    "dvExperimentUnavailableDescription": "Dit experiment is momenteel alleen beschikbaar op Linux.",
+    "dvCompatibilityFallback": "Compatibiliteitsterugval",
+    "dvCompatibilityFallbackDescription": "Gebruik de standaardrenderer als het experiment niet kan starten. FEL-gegevens kunnen verloren gaan.",
+    "dvExperimentDiagnostics": "Logboek voor video-experiment",
+    "dvExperimentDiagnosticsDescription": "Schakel uitgebreide spelerlogboeken in bij de volgende keer afspelen."
   },
   "themeEditor": {
     "builtIn": "Ingebouwd",
