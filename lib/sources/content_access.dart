@@ -505,6 +505,39 @@ class PublicationDownloads {
     await repository.setDownloadState(profile, key(sourceId, file), 'paused');
   }
 
+  Future<void> removeQueuedJob(String profile, String downloadKey) async {
+    var row = await repository.download(profile, downloadKey);
+    if (row == null) return;
+    final sourceId = row['source_id'] as String? ?? '';
+    final task = _tasks.values.where((task) =>
+      task.profile == profile && key(task.adapter.source.id, task.file) == downloadKey).firstOrNull;
+    if (task != null) {
+      await cancelAndWait(profile, task.adapter.source.id, task.file);
+    } else if (sourceId.isNotEmpty && row['file_payload'] is String && row['file_payload'] != '{}') {
+      try {
+        final file = PublicationFile.fromJson(sourceMap(jsonDecode(row['file_payload'] as String)));
+        if (key(sourceId, file) == downloadKey) await cancelAndWait(profile, sourceId, file);
+      } on SourceException {
+        rethrow;
+      } on Object {
+        throw const SourceException(SourceFailure.invalidData);
+      }
+    }
+    row = await repository.download(profile, downloadKey);
+    if (row == null) return;
+    if (row['complete'] == 1) throw const SourceException(SourceFailure.conflict);
+    final path = row['path'] as String? ?? '';
+    final expected = p.join(directory.path, sourceDigest(profile));
+    if (path.isEmpty || !p.isWithin(expected, path)) throw const SourceException(SourceFailure.permission);
+    final partial = File(path);
+    if (await partial.exists()) await partial.delete();
+    if (path.endsWith('.partial')) {
+      final validator = File('${p.withoutExtension(path)}.validator');
+      if (await validator.exists() && p.isWithin(expected, validator.path)) await validator.delete();
+    }
+    await repository.forgetDownload(profile, downloadKey);
+  }
+
   Future<void> cancelSource(String profile, String sourceId) async {
     final tasks = _tasks.values.where((task) => task.profile == profile && task.adapter.source.id == sourceId).toList();
     final transferKeys = tasks.map((task) => task.transferKey).toList(growable: false);
@@ -520,6 +553,16 @@ class PublicationDownloads {
       final transfer = _pending[transferKey];
       return transfer == null ? Future<void>.value() : transfer.then<void>((_) {}, onError: (Object _) {});
     }));
+    for (final row in await repository.downloads(profile)) {
+      if (row['source_id'] != sourceId || row['complete'] == 1) continue;
+      final downloadKey = row['key'] as String;
+      try {
+        await removeQueuedJob(profile, downloadKey);
+      } on SourceException {
+        final current = await repository.download(profile, downloadKey);
+        if (current != null && current['complete'] != 1) await repository.forgetDownload(profile, downloadKey);
+      }
+    }
   }
 
   /// Profile deletion waits for file writers to retire before removing their
