@@ -25,8 +25,13 @@ ANDROID_TV_BANNERS = [
     ROOT / "android/app/src/main/res/drawable-xxhdpi/tv_banner.png",
     ROOT / "android/app/src/main/res/drawable-xxxhdpi/tv_banner.png",
 ]
-ANDROID_ADAPTIVE_FOREGROUND = ROOT / "android/app/src/main/res/drawable-nodpi/plezyng_launcher_foreground.png"
-ANDROID_ADAPTIVE_MONOCHROME = ROOT / "android/app/src/main/res/drawable-nodpi/plezyng_launcher_monochrome.png"
+ANDROID_ADAPTIVE_DENSITIES = {
+    "mdpi": 108,
+    "hdpi": 162,
+    "xhdpi": 216,
+    "xxhdpi": 324,
+    "xxxhdpi": 432,
+}
 
 TVOS_FRONT_ART = [
     ROOT / "tvos/Runner/Assets.xcassets/AppIcon.brandassets/App Icon.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
@@ -84,7 +89,7 @@ def _clean_source(magick: str, scratch: Path) -> Path:
         "-channel",
         "A",
         "-fx",
-        "u<=0.025?0:u",
+        "a<0.125?0:a",
         "+channel",
         "-strip",
         str(cleaned),
@@ -105,7 +110,7 @@ def _fit_art(
     target_width = max(1, round(width * scale))
     target_height = max(1, round(height * scale))
     output.parent.mkdir(parents=True, exist_ok=True)
-    _run(
+    command = [
         magick,
         str(source),
         "-resize",
@@ -116,9 +121,11 @@ def _fit_art(
         background,
         "-extent",
         f"{width}x{height}",
-        "-strip",
-        str(output),
-    )
+    ]
+    if background != "none":
+        command.extend(["-background", background, "-alpha", "remove", "-alpha", "off"])
+    command.extend(["-strip", str(output)])
+    _run(*command)
 
 
 def _generate_app_icon_composer_sources(magick: str, source: Path) -> None:
@@ -126,52 +133,69 @@ def _generate_app_icon_composer_sources(magick: str, source: Path) -> None:
         icon_dir = ROOT / platform / "plezy.icon"
         image_name = "plezyng-app-icon.png"
         output = icon_dir / "Assets" / image_name
-        _fit_art(magick, source, output, 1024, 1024)
+        _fit_art(magick, source, output, 1024, 1024, background=ICON_BACKGROUND)
 
         icon_json = icon_dir / "icon.json"
         contents = icon_json.read_text()
         contents = contents.replace('"image-name" : "plezy-cropped.svg"', f'"image-name" : "{image_name}"')
+        contents = contents.replace('"glass" : true', '"glass" : false')
         icon_json.write_text(contents)
 
 
 def _generate_android_icons(magick: str, source: Path) -> None:
     for output in ANDROID_DEFAULT_ICONS:
         size = _dimensions(magick, output)[0]
-        _fit_art(magick, source, output, size, size)
+        _fit_art(magick, source, output, size, size, background=ICON_BACKGROUND)
 
     # Android's adaptive icon foreground must keep all of the artwork inside the
     # central 66dp safe circle of the 108dp canvas.
-    adaptive_size = 432
-    padded = ANDROID_ADAPTIVE_FOREGROUND.with_name(".plezyng-adaptive-foreground.png")
-    _fit_art(magick, source, padded, adaptive_size, adaptive_size, scale=66 / 108)
-    padded.replace(ANDROID_ADAPTIVE_FOREGROUND)
+    for density, size in ANDROID_ADAPTIVE_DENSITIES.items():
+        foreground = ROOT / f"android/app/src/main/res/drawable-{density}/plezyng_launcher_foreground.png"
+        _fit_art(magick, source, foreground, size, size, scale=66 / 108)
 
-    _run(
-        magick,
-        str(ANDROID_ADAPTIVE_FOREGROUND),
-        "-fill",
-        "white",
-        "-colorize",
-        "100%",
-        "-strip",
-        str(ANDROID_ADAPTIVE_MONOCHROME),
-    )
+    subprocess.run(["bash", str(ROOT / "scripts/codegen/generate_android_icons.sh")], check=True)
 
     for output in ANDROID_TV_BANNERS:
         width, height = _dimensions(magick, output)
         _fit_art(magick, source, output, width, height, scale=0.88, background=ICON_BACKGROUND)
 
 
-def _generate_windows_icons(magick: str, source: Path) -> None:
+def _generate_windows_icons(magick: str, source: Path, scratch: Path) -> None:
+    altform_light = scratch / "plezyng-windows-altform-light.png"
+    altform_dark = scratch / "plezyng-windows-altform-dark.png"
+    for output, color in ((altform_light, "black"), (altform_dark, "white")):
+        _run(
+            magick,
+            str(source),
+            "-fuzz",
+            "12%",
+            "-transparent",
+            ICON_BACKGROUND,
+            "-fill",
+            color,
+            "-colorize",
+            "100%",
+            "-strip",
+            str(output),
+        )
+
     for output in WINDOWS_MSIX_ASSETS.glob("*.png"):
         width, height = _dimensions(magick, output)
         scale = 1.0 if width == height else 0.88
-        background = "none" if "_altform-" in output.stem else ICON_BACKGROUND
-        _fit_art(magick, source, output, width, height, scale=scale, background=background)
+        if "_altform-lightunplated" in output.stem:
+            _fit_art(magick, altform_light, output, width, height, scale=scale)
+        elif "_altform-" in output.stem:
+            _fit_art(magick, altform_dark, output, width, height, scale=scale)
+        else:
+            _fit_art(magick, source, output, width, height, scale=scale, background=ICON_BACKGROUND)
 
     _run(
         magick,
         str(source),
+        "-background",
+        ICON_BACKGROUND,
+        "-alpha",
+        "remove",
         "-resize",
         "256x256",
         "-define",
@@ -213,7 +237,7 @@ def main() -> None:
         _fit_art(magick, source, ASSETS / "plezy.png", 1024, 1024)
         _generate_app_icon_composer_sources(magick, source)
         _generate_android_icons(magick, source)
-        _generate_windows_icons(magick, source)
+        _generate_windows_icons(magick, source, scratch)
         _generate_tvos_icons(magick, source)
         _generate_top_shelf(magick, rsvg, scratch)
     print("Generated the PlezyNG primary icon for app targets, launchers, and store artwork.")

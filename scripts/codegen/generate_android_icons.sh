@@ -28,11 +28,19 @@ echo "Generating Android icons from $APP_ICON_SOURCE..."
 generate_white_icon() {
     local size=$1
     local output=$2
+    local adaptive=$3
+    local art_size=$size
+
+    if [[ "$adaptive" == "true" ]]; then
+        art_size=$((size * 66 / 108))
+    fi
     mkdir -p "$(dirname "$output")"
 
     "$IMAGEMAGICK" "$APP_ICON_SOURCE" \
-        -channel A -fx 'u<=0.025?0:u' +channel \
-        -resize "${size}x${size}" \
+        -channel A -fx 'a<0.125?0:a' +channel \
+        -fuzz 12% -transparent '#131928' \
+        -resize "${art_size}x${art_size}" \
+        -gravity center -background none -extent "${size}x${size}" \
         -fill white -colorize 100% \
         -define png:color-type=6 \
         "$output"
@@ -49,7 +57,7 @@ declare -A NOTIF_SIZES=(
 )
 
 for density in "${!NOTIF_SIZES[@]}"; do
-    generate_white_icon "${NOTIF_SIZES[$density]}" "$ANDROID_RES/drawable-$density/ic_stat_notification.png"
+    generate_white_icon "${NOTIF_SIZES[$density]}" "$ANDROID_RES/drawable-$density/ic_stat_notification.png" false
 done
 
 declare -A MONO_SIZES=(
@@ -61,7 +69,7 @@ declare -A MONO_SIZES=(
 )
 
 for density in "${!MONO_SIZES[@]}"; do
-    generate_white_icon "${MONO_SIZES[$density]}" "$ANDROID_RES/mipmap-$density/ic_launcher_monochrome.png"
+    generate_white_icon "${MONO_SIZES[$density]}" "$ANDROID_RES/drawable-$density/plezyng_launcher_monochrome.png" true
 done
 
 echo "Generated Android notification and monochrome icons."
