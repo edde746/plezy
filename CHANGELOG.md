@@ -4,6 +4,8 @@
 
 ### Added
 
+- Add an isolated experimental Dolby Vision engine build with a Linux gpu-next embedding option and a profile inspection lab. Full FEL and device output qualification remain pending.
+
 - Add a review-first cleanup for orphaned tagged downloads in PlezyNG's default app-managed folders.
 - Add an automatically started seven-day full-app trial followed by a USD $2.99 one-time lifetime unlock for Apple, Google Play, and Amazon builds.
 - Use the new nested-triangle PlezyNG artwork as the default app icon across platforms and in store listings.
