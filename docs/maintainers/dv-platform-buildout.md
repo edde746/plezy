@@ -14,7 +14,7 @@ driver, EDID, kernel module or TV firmware is replaced automatically.
 | Offline companion | Pinned FelBaker builder patches its VapourSynth output key and builds a tested RGB48 pipeline. A 48-frame generated P7 sample changed all 2,073,600 designed residual-patch pixels; both HDR10/PQ HEVC and SDR/BT.709 H.264 outputs encoded and passed `ffprobe` frame/color-tag checks. | These lossy files are derived compatibility versions, not native DV. FelBaker is a comparison implementation, not an independent Dolby reference; real-clip and playback-device checks remain open. |
 | Android | Existing native DV, P7→8.1 and base-layer routes remain available; diagnostics label known EL-discarding routes. An arm64 debug APK built and 46 Dolby-related unit tests passed. | No experimental P7 FEL graph is packaged and no Android device render was run. Generic DV codec advertisement does not prove FEL. CoreELEC S5 remains a separate vendor/kernel project. |
 | webOS | Existing native and compatibility playback; use an ordinary companion-derived version where native fidelity is insufficient. | No BL/EL GPU composer is exposed by the current webOS app path. No root patch is installed. |
-| Windows | Existing mpv compatibility playback; portable route-policy and companion orchestration code. | No D3D11/Vulkan FEL adapter build or device result is claimed. The former private Packer route is retired and must be restored and verified before Windows builds can run. |
+| Windows | Existing mpv compatibility playback; portable route-policy and companion orchestration code. The existing private Packer x64 route is being restored. | No D3D11/Vulkan FEL adapter build or device result is claimed. The `packer-windows` group now exists, but it has no registered runner and does not yet authorize PlezyNG. |
 
 `tools/dv-engine/route_policy.py` is a tested adapter contract and standalone
 selector, **not yet the app-wide playback arbiter**. It accepts an inspected source
@@ -217,7 +217,7 @@ A read-only organization API check found these exact routes:
 | --- | --- | --- |
 | Trusted Linux jobs | PlezyNG is selected in `ng-shared-main-jit` (group 10). The live allowlist contains only `build.yml@refs/heads/main`. | `dv-platforms.yml` and `dv-experimental.yml` are not in the group or broker allowlists. The workflow jobs now declare the existing per-job JIT label shape, but cannot run until the owner adds those exact workflow refs and job IDs. |
 | Apple source and contract jobs | `private-apple-builds` (group 8) has an online `kspld0-private-apple` runner. | PlezyNG is not selected. The current runner is static, so Dolby jobs require an ephemeral JIT runner with the dedicated `private-apple-jit` label plus group and broker authorization. The workflow deliberately cannot match the static runner. |
-| Windows contract job | No `packer-windows` runner group is currently returned by the organization API. | The former route is retired. Restore the Packer JIT route, then allowlist `dv-platforms.yml` and job `windows-contracts`; do not use the trusted Linux pool. |
+| Windows contract job | `packer-windows` (group 11) exists and selects only `snapetech-org/packer/.github/workflows/ci.yml@refs/heads/main`. It selects only the Packer repository and currently has zero registered runners; no organization runner named `packer` is registered. | The broker still has no Windows group binding, and the group has no PlezyNG or Dolby workflow authorization. Packer owner-validation runs [40330520703](https://github.com/snapetech-org/packer/actions/runs/40330520703) and [40332285276](https://github.com/snapetech-org/packer/actions/runs/40332285276) remain queued. Preserve the owner's C0/slot and drain gates; do not dispatch a canary or use the trusted Linux pool. |
 | Fork and untrusted PR checks | `gvisor-sandbox` (group 6) is a disposable, restricted-egress JIT sandbox. | Its live allowlist contains only smoke workflows for other repositories. `dv-fork-validation.yml` is isolated on this group, but PlezyNG and the workflow are not authorized in the group or broker. `public-fork-jit` also has no PlezyNG workflow; `private-pr-jit` (group 9) has none selected. |
 
 The trusted jobs are main-ref only and all Dolby workflows now name JIT groups;
@@ -229,8 +229,11 @@ none has a GitHub-hosted runner or hosted fallback. The owner-side route work is
 2. Provision an ephemeral Apple JIT runner in group 8 carrying
    `private-apple-jit`, then authorize `dv-platforms.yml@refs/heads/main` in the
    group and its broker.
-3. Restore the Packer Windows JIT route, then authorize
-   `dv-platforms.yml@refs/heads/main` and `windows-contracts` there.
+3. The Packer owner is restoring the existing Windows route. Group 11 now exists,
+   but it is Packer-only, runnerless, and not bound in the broker; the two owner
+   validation runs remain queued. Preserve the owner's C0/slot and drain gates.
+   After the owner provisions and verifies the runner and authorizes PlezyNG,
+   allowlist `dv-platforms.yml@refs/heads/main` and job `windows-contracts`.
 4. Add `dv-fork-validation.yml@refs/heads/main` to group 6 and its broker. The
    broker must accept this exact `pull_request_target` workflow and head SHA,
    with read-only repository access, no secrets, and the isolated
