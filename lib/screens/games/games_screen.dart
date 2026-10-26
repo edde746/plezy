@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_button.dart';
+import '../../focus/focusable_text_field.dart';
 import '../../games/game_discovery.dart';
 import '../../games/game_library_controller.dart';
 import '../../games/game_models.dart';
@@ -20,6 +22,7 @@ import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/app_menu.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/settings_section.dart';
@@ -36,6 +39,7 @@ class GamesScreen extends StatefulWidget {
 class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibilityAware {
   GameLibraryController? _controller;
   final _firstFocus = FocusNode();
+  final _searchController = TextEditingController();
   String? _profile;
   int? _sourceGeneration;
   int _epoch = 0;
@@ -57,6 +61,10 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
 
   Future<void> _load(String? id, int epoch) async {
     if (!mounted || epoch != _epoch || id == null) return;
+    if (!PlatformDetector.supportsEmbeddedGameStreaming()) {
+      setState(() => _loading = false);
+      return;
+    }
     final sources = context.read<SourceController>();
     try {
       await sources.ready;
@@ -104,6 +112,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     _epoch++;
     _retire();
     _firstFocus.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -220,7 +229,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
         title: Text(t.games.engineUnavailable),
         scrollable: true,
         content: Text(host.protocol == GameProtocol.steam ? t.games.steamEnginePending : t.games.nativeEnginePending),
-        actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.ok))],
+        actions: [DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.ok)],
       ),
     );
   }
@@ -305,6 +314,39 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
 
   @override
   Widget build(BuildContext context) {
+    if (!PlatformDetector.supportsEmbeddedGameStreaming()) {
+      final theme = Theme.of(context);
+      return FocusedScrollScaffold(
+        title: Text(t.games.title),
+        automaticallyImplyLeading: false,
+        slivers: [
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: Center(
+              child: Padding(
+                padding: const EdgeInsets.all(32),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    AppIcon(
+                      Symbols.sports_esports_rounded,
+                      size: 40,
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(height: 16),
+                    Text(
+                      t.games.engineUnavailable,
+                      style: theme.textTheme.titleMedium,
+                      textAlign: TextAlign.center,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        ],
+      );
+    }
     final c = _controller;
     final state = c?.library ?? const GameLibrary();
     final byKey = {for (final game in state.games) game.key: game};
@@ -340,7 +382,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
               title: Text(t.games.help),
               scrollable: true,
               content: Text(t.games.helpBody),
-              actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.ok))],
+              actions: [DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.ok)],
             ),
           ),
         ),
@@ -359,16 +401,23 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
                     spacing: 12,
                     runSpacing: 8,
                     children: [
-                      FilledButton.icon(
+                      FocusableButton(
                         focusNode: filtered.isEmpty ? _firstFocus : null,
                         onPressed: enabled ? _add : null,
-                        icon: const AppIcon(Symbols.add_rounded),
-                        label: Text(t.games.addComputer),
+                        useBackgroundFocus: true,
+                        child: FilledButton.icon(
+                          onPressed: enabled ? _add : null,
+                          icon: const AppIcon(Symbols.add_rounded),
+                          label: Text(t.games.addComputer),
+                        ),
                       ),
-                      OutlinedButton.icon(
+                      FocusableButton(
                         onPressed: enabled && c?.scanning == false ? _scan : null,
-                        icon: const AppIcon(Symbols.radar_rounded),
-                        label: Text(c?.scanning == true ? t.games.scanning : t.games.findComputers),
+                        child: OutlinedButton.icon(
+                          onPressed: enabled && c?.scanning == false ? _scan : null,
+                          icon: const AppIcon(Symbols.radar_rounded),
+                          label: Text(c?.scanning == true ? t.games.scanning : t.games.findComputers),
+                        ),
                       ),
                     ],
                   ),
@@ -381,7 +430,8 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
             if (state.games.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                child: TextField(
+                child: FocusableTextField(
+                  controller: _searchController,
                   decoration: InputDecoration(
                     labelText: t.games.search,
                     prefixIcon: const AppIcon(Symbols.search_rounded),
