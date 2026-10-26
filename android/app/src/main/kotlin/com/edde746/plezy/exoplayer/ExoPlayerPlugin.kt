@@ -21,7 +21,9 @@ import io.flutter.plugin.common.MethodChannel
 import java.util.concurrent.CancellationException
 import java.util.concurrent.atomic.AtomicBoolean
 
-class ExoPlayerPlugin :
+open class ExoPlayerPlugin(
+  private val methodChannelName: String = "com.plezy/exo_player"
+) :
   FlutterPlugin,
   MethodChannel.MethodCallHandler,
   EventChannel.StreamHandler,
@@ -35,10 +37,11 @@ class ExoPlayerPlugin :
     private const val METHOD_CHANNEL = "com.plezy/exo_player"
   }
 
-  private val channels = PlayerChannelBinding(METHOD_CHANNEL, this, this, TAG)
+  private val channels = PlayerChannelBinding(methodChannelName, this, this, TAG)
   private val mainHandler get() = channels.mainHandler
   private fun runOnMain(block: () -> Unit) = channels.runOnMain(block)
   private var playerCore: ExoPlayerCore? = null
+  private var audioFocusEnabled = true
 
   // The Dart instanceId that created the current core. A `dispose` carrying a
   // different token lost the ownership race to a successor and must not tear
@@ -253,6 +256,7 @@ class ExoPlayerPlugin :
       "setVideoRect" -> handleSetVideoRect(call, result)
       "setVideoFrameRate" -> handleSetVideoFrameRate(call, result)
       "clearVideoFrameRate" -> handleClearVideoFrameRate(result)
+      "setAudioFocusEnabled" -> handleSetAudioFocusEnabled(call, result)
       "requestAudioFocus" -> handleRequestAudioFocus(result)
       "abandonAudioFocus" -> handleAbandonAudioFocus(result)
       "isInitialized" -> result.success(
@@ -352,6 +356,7 @@ class ExoPlayerPlugin :
         val core = ExoPlayerCore(currentActivity).apply {
           delegate = this@ExoPlayerPlugin
           this.debugLoggingEnabled = this@ExoPlayerPlugin.debugLoggingEnabled
+          setAudioFocusEnabled(this@ExoPlayerPlugin.audioFocusEnabled)
         }
         playerCore = core
         coreInstanceId = call.argument<Number>("instanceId")?.toLong()
@@ -599,7 +604,7 @@ class ExoPlayerPlugin :
     oldCore.dispose(preserveDisplayMode = true)
 
     val replacementCore = try {
-      createMpvCore(act)
+      createMpvCore(act).apply { setAudioFocusEnabled(this@ExoPlayerPlugin.audioFocusEnabled) }
     } catch (error: Exception) {
       failMpvReplacementInitialization(
         request.mediaGeneration,
@@ -1079,6 +1084,18 @@ class ExoPlayerPlugin :
     result.success(granted)
   }
 
+  private fun handleSetAudioFocusEnabled(call: MethodCall, result: MethodChannel.Result) {
+    val enabled = call.argument<Boolean>("enabled")
+    if (enabled == null) {
+      result.error("INVALID_ARGS", "Missing 'enabled'", null)
+      return
+    }
+    audioFocusEnabled = enabled
+    playerCore?.setAudioFocusEnabled(enabled)
+    mpvCore?.setAudioFocusEnabled(enabled)
+    result.success(null)
+  }
+
   private fun handleAbandonAudioFocus(result: MethodChannel.Result) {
     Log.d(TAG, "abandonAudioFocus")
     activeSurfaceCore?.abandonAudioFocus()
@@ -1532,7 +1549,7 @@ class ExoPlayerPlugin :
           val act = activity ?: return@post
 
           try {
-            val core = createMpvCore(act)
+            val core = createMpvCore(act).apply { setAudioFocusEnabled(this@ExoPlayerPlugin.audioFocusEnabled) }
             core.delegate = MpvDelegate(core)
             mpvCore = core
 
@@ -1593,3 +1610,6 @@ class ExoPlayerPlugin :
     return true
   }
 }
+
+/** Independent ExoPlayer/fallback-MPV channel and core for the second workspace video. */
+class ExoWorkspacePlayerPlugin : ExoPlayerPlugin("com.plezy/exo_player/workspace")

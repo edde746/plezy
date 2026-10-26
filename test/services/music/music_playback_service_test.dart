@@ -20,6 +20,7 @@ import 'package:plezy/models/companion_remote/remote_command.dart';
 import 'package:plezy/models/download_models.dart';
 import 'package:plezy/mpv/player/audio_rendering_mode.dart';
 import 'package:plezy/mpv/player/player.dart';
+import 'package:plezy/mpv/player/player_base.dart' show PlayerAudioFocusControl;
 import 'package:plezy/mpv/player/player_native.dart';
 import 'package:plezy/mpv/player/player_state.dart';
 import 'package:plezy/mpv/player/player_streams.dart';
@@ -81,7 +82,7 @@ class _CallGate {
 
 /// In-memory audio player: records calls, exposes manual stream controllers
 /// so tests drive transitions/completion/errors deterministically.
-class FakePlayer implements Player {
+class FakePlayer implements Player, PlayerAudioFocusControl {
   final playingCtrl = StreamController<bool>.broadcast(sync: true);
   final completedCtrl = StreamController<bool>.broadcast(sync: true);
   final bufferingCtrl = StreamController<bool>.broadcast(sync: true);
@@ -153,6 +154,9 @@ class FakePlayer implements Player {
   int playCalls = 0;
   int pauseCalls = 0;
   int stopCalls = 0;
+  bool audioFocusEnabled = true;
+  int audioFocusRequests = 0;
+  final audioFocusChanges = <bool>[];
   bool _disposed = false;
   Media? _armedMedia;
 
@@ -353,6 +357,12 @@ class FakePlayer implements Player {
   Future<void> setVolume(double volume) async => volumes.add(volume);
 
   @override
+  Future<void> setAudioFocusEnabled(bool enabled) async {
+    audioFocusEnabled = enabled;
+    audioFocusChanges.add(enabled);
+  }
+
+  @override
   Future<void> setRate(double rate) async {}
 
   @override
@@ -442,7 +452,10 @@ class FakePlayer implements Player {
   Future<String> runtimePlayerType() async => 'fake';
 
   @override
-  Future<bool> requestAudioFocus() async => true;
+  Future<bool> requestAudioFocus() async {
+    audioFocusRequests++;
+    return true;
+  }
 
   @override
   Future<void> abandonAudioFocus() async {}
@@ -893,6 +906,21 @@ void main() {
     expect(h.player.volumes, [42]);
     expect(volumeNotifications, 1);
     expect(serviceNotifications, 0);
+  });
+
+  test('workspace audio ownership releases and reacquires focus around music volume', () async {
+    await h.playTracks([t1]);
+    expect(h.player.state.isActive, isTrue);
+
+    await h.service.setWorkspaceAudioEnabled(false);
+    expect(h.player.audioFocusEnabled, isFalse);
+    expect(h.player.volumes.last, 0);
+
+    final focusRequestsBeforeReenable = h.player.audioFocusRequests;
+    await h.service.setWorkspaceAudioEnabled(true);
+    expect(h.player.audioFocusEnabled, isTrue);
+    expect(h.player.audioFocusRequests, focusRequestsBeforeReenable + 1);
+    expect(h.player.volumes.last, h.service.volume);
   });
 
   test('volume persistence keeps one write in flight and coalesces a burst to the latest value', () async {

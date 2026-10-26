@@ -23,6 +23,7 @@ class WorkspaceSurfaceRegistration {
     this.onClose,
     this.onAudioOwnershipChanged,
     this.onInputOwnershipChanged,
+    this.videoPlayerSlot,
   });
 
   final WorkspaceSessionDescriptor descriptor;
@@ -35,6 +36,7 @@ class WorkspaceSurfaceRegistration {
   final VoidCallback? onClose;
   final WorkspaceOwnershipHandler? onAudioOwnershipChanged;
   final WorkspaceOwnershipHandler? onInputOwnershipChanged;
+  final VideoPlayerSlot? videoPlayerSlot;
 }
 
 /// Profile-scoped state and command surface for app-owned Multiview.
@@ -111,6 +113,14 @@ class MultiviewWorkspaceController extends ChangeNotifier {
   String? get fullscreenSessionId => _fullscreenSessionId;
   bool get sessionTrayVisible => _sessionTrayVisible;
   int get sessionCount => _sessions.length;
+  int get videoSessionCount => _sessions.values
+      .where(
+        (session) =>
+            session.descriptor.hasVideo &&
+            (session.descriptor.kind == MultiviewMediaKind.video ||
+                session.descriptor.kind == MultiviewMediaKind.liveTv),
+      )
+      .length;
   String? get focusedSessionId => _focusedSessionId;
   String? get audibleSessionId => _audibleSessionId;
   String? get inputSessionId => _inputSessionId;
@@ -147,8 +157,17 @@ class MultiviewWorkspaceController extends ChangeNotifier {
     if (_disposed) return;
     final coordinator = PlaybackCoordinator.instance;
     coordinator.setWorkspaceRetainsMusic(hasSessionOfKind(MultiviewMediaKind.music));
-    coordinator.setWorkspaceRetainsVideo(
-      hasSessionOfKind(MultiviewMediaKind.video) || hasSessionOfKind(MultiviewMediaKind.liveTv),
+    coordinator.setWorkspaceVideoSessionCount(videoSessionCount);
+    coordinator.setWorkspaceVideoPlayerSlots(
+      _sessions.values
+          .where(
+            (session) =>
+                session.descriptor.hasVideo &&
+                (session.descriptor.kind == MultiviewMediaKind.video ||
+                    session.descriptor.kind == MultiviewMediaKind.liveTv),
+          )
+          .map((session) => session.videoPlayerSlot)
+          .whereType<VideoPlayerSlot>(),
     );
     coordinator.setWorkspaceHasCompetingAudioOwner(hasCompetingAudioOwner);
     notifyListeners();
@@ -186,6 +205,15 @@ class MultiviewWorkspaceController extends ChangeNotifier {
     if (descriptor.hasAudio && registration.onAudioOwnershipChanged == null) return false;
     if (descriptor.acceptsInput && registration.onInputOwnershipChanged == null) return false;
     if (_sessions.containsKey(descriptor.id)) return false;
+    if (descriptor.hasVideo &&
+        registration.videoPlayerSlot != null &&
+        _sessions.values.any(
+          (session) =>
+              session.descriptor.hasVideo &&
+              session.videoPlayerSlot == registration.videoPlayerSlot,
+        )) {
+      return false;
+    }
 
     final index = _sessions.length;
     _sessions[descriptor.id] = registration;
@@ -207,7 +235,9 @@ class MultiviewWorkspaceController extends ChangeNotifier {
     if (descriptor.hasAudio) {
       if (_requestedAudibleSessionId == descriptor.id) {
         unawaited(_enqueueAudioReconcile());
-      } else if (_requestedAudibleSessionId == null && !_hasExplicitAudioSelection) {
+      } else if (_requestedAudibleSessionId == null &&
+          !_hasExplicitAudioSelection &&
+          registration.videoPlayerSlot != VideoPlayerSlot.companion) {
         _requestedAudibleSessionId = descriptor.id;
         unawaited(_enqueueAudioReconcile());
       } else {
@@ -230,13 +260,28 @@ class MultiviewWorkspaceController extends ChangeNotifier {
 
   /// Replaces presentation metadata while preserving the live adapter and
   /// identity. Useful when the same player advances to another episode/track.
-  bool updateDescriptor(WorkspaceSessionDescriptor descriptor) {
+  bool updateDescriptor(
+    WorkspaceSessionDescriptor descriptor, {
+    VideoPlayerSlot? videoPlayerSlot,
+    bool clearVideoPlayerSlot = false,
+  }) {
     final existing = _sessions[descriptor.id];
     if (existing == null ||
         descriptor.id.trim().isEmpty ||
         descriptor.title.trim().isEmpty ||
         (descriptor.hasAudio && existing.onAudioOwnershipChanged == null) ||
         (descriptor.acceptsInput && existing.onInputOwnershipChanged == null)) {
+      return false;
+    }
+    final nextVideoPlayerSlot = clearVideoPlayerSlot ? null : (videoPlayerSlot ?? existing.videoPlayerSlot);
+    if (descriptor.hasVideo &&
+        nextVideoPlayerSlot != null &&
+        _sessions.values.any(
+          (session) =>
+              session.descriptor.id != descriptor.id &&
+              session.descriptor.hasVideo &&
+              session.videoPlayerSlot == nextVideoPlayerSlot,
+        )) {
       return false;
     }
     if (!descriptor.acceptsInput) _focusedInputSurfaceIds.remove(descriptor.id);
@@ -247,6 +292,7 @@ class MultiviewWorkspaceController extends ChangeNotifier {
       onClose: existing.onClose,
       onAudioOwnershipChanged: existing.onAudioOwnershipChanged,
       onInputOwnershipChanged: existing.onInputOwnershipChanged,
+      videoPlayerSlot: nextVideoPlayerSlot,
     );
     if ((!descriptor.hasAudio && (_requestedAudibleSessionId == descriptor.id || _audibleSessionId == descriptor.id))) {
       _requestedAudibleSessionId = _firstSessionIdWhere(
@@ -937,7 +983,8 @@ class MultiviewWorkspaceController extends ChangeNotifier {
     _persistenceTimer?.cancel();
     PlaybackCoordinator.instance
       ..setWorkspaceRetainsMusic(false)
-      ..setWorkspaceRetainsVideo(false)
+      ..setWorkspaceVideoSessionCount(0)
+      ..setWorkspaceVideoPlayerSlots(const <VideoPlayerSlot>{})
       ..setWorkspaceHasCompetingAudioOwner(false);
     final persistence = _persistence;
     final profileId = _profileId;

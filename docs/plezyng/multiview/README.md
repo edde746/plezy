@@ -1,6 +1,6 @@
 # PlezyNG Multiview — implementation handoff
 
-Status: **implementation in progress; not code complete**. The plan is now being implemented on `codex/multiview-workspace-20261026`. Current source baseline: `snapetech-org/PlezyNG` main at `62b2ed0f4dd8c287e026bcc356e65395366c6b4a`. See DELIVERY.md for implemented slices, platform status, verification evidence and blockers. Do not open a draft PR until the required code and validation are complete.
+Status: **feature code complete on `codex/multiview-workspace-20261026`; automated and device validation pending**. See DELIVERY.md for implemented slices, platform boundaries, verification evidence and remaining qualification work. Keep the PR in draft until the required checks pass; do not merge to main before release review.
 
 ## Decision
 
@@ -31,7 +31,7 @@ Yes. The upstream `lib/services/pip_service.dart` and the audited fork expose na
 - tvOS has an explicit unsupported stub. Windows, Linux, and webOS have no native implementation through `PipService`.
 - Music already has a persistent mini-player and visualizer. Neither establishes a general multi-session workspace.
 
-The current `PlaybackCoordinator` deliberately tears down conflicting media. Native event channels have one current owner per channel. Simply placing two existing player screens in a `Row` would break ownership, progress, focus, or rendering. These are foundational changes, not just a new PiP button.
+The `PlaybackCoordinator` still protects the primary playback route, while Multiview reserves a primary or companion MPV/Exo native channel for each video. Reservations are made before asynchronous teardown and held until native disposal finishes, so concurrent opens cannot claim the same core and an occupied companion remains isolated if the primary closes. Each channel has its own native core and event owner.
 
 See [RESEARCH.md](RESEARCH.md) for immutable code references, platform evidence, and confidence levels.
 
@@ -72,16 +72,14 @@ See [RESEARCH.md](RESEARCH.md) for immutable code references, platform evidence,
 7. [VALIDATION.md](VALIDATION.md): test cases and device qualification.
 8. [wireframes.svg](wireframes.svg): schematic layouts using audited dark-theme tokens; these are proposed layouts, not screenshots of working functionality.
 
-## First implementation slice
+## Implementation boundary
 
-Start with MV01–MV05: characterize current single-player behavior; add identity and admission contracts; extract session lifetime from routes; introduce the profile workspace; deliver **one video plus one reader** and **music plus one reader** behind a flag. The first slice must already preserve positions and survive swap, navigation, profile change, and failed admission.
-
-Then finish multi-instance native isolation before enabling two video decoders. Complete desktop windows, OS PiP adaptation, embedded games, multi-pane expansion, and qualification in the dependency order. Do not equate a mock adapter, a capability flag, a launcher, or this plan with a working media backend.
+The branch now includes profile-scoped workspace state and persistence, shared pane controls, session adapters for current video/music/source/reader surfaces, two isolated native video channels, and an Android Steam retained surface. Capability checks keep unsupported engine/platform combinations out of the embedded path. GameStream/Moonlight, non-Android game surfaces, desktop pop-out windows, additional video slots, and device-specific composition remain future work; see DELIVERY.md for exact boundaries. An implemented adapter is not device-qualified until the validation matrix passes.
 
 ## Handoff boundaries
 
-Games is a dependency, not an assumed completed backend. No `lib/games/` exists in the audited main tree. An in-progress local Games implementation inspected during this audit has `GameStreamingClient.open()` and an Android Moonlight activity, not a retained embeddable workspace surface. Its integration contract is captured here; Luna must locate the landed Games revision before editing it. Steam, beta codecs, and other game engines are only eligible when the actual engine implements the session/surface contract.
+The feature branch includes the Games library and Android native modules. Android Steam has a retained surface adapter and can open as an app-owned pane. GameStream/Moonlight still uses an Activity and is not advertised as an inline surface; other platform game renderers remain unavailable. Do not widen the embedded capability flag until a target has an independently owned renderer, audio/input handoff and teardown implementation.
 
 The current comic delivery document still lists renderer and device work as incomplete, and the publication reader rejects TV. Existing work may land during this handoff. Preserve it and integrate at the adapter boundary; do not replace the comic, localization, audiobook-sync, or Dolby Vision projects with parallel implementations.
 
-No application tests, native builds, or device qualification were performed for this documentation change. Document structure, references, and wireframe rendering are checked separately. Release status must be recorded per backend and scenario as defined in VALIDATION.md.
+The latest continuation adds focused Dart and JVM regression tests and CI coverage for the Android adapter and app build. Those checks are authored but have not run in this workspace. Record their results and device qualification per backend and scenario as defined in VALIDATION.md before release.

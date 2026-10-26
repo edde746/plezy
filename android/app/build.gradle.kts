@@ -485,7 +485,9 @@ tasks.matching { it.name.startsWith("merge") && it.name.endsWith("JniLibFolders"
 }
 
 dependencies {
-  coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.4")
+  if (findProject(":moonlight") != null) implementation(project(":moonlight"))
+  if (findProject(":steam") != null) implementation(project(":steam"))
+  coreLibraryDesugaring("com.android.tools:desugar_jdk_libs:2.1.5")
 
   // mpv-build's mpv-android library: libmpv, FFmpeg and the JNI glue with
   // its Kotlin API (com.edde746.mpv).

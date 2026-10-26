@@ -44,6 +44,10 @@ import MediaPlayer
       MpvPlayerPlugin.register(with: registrar)
     }
 
+    if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "MpvWorkspacePlayerPlugin") {
+      MpvPlayerPlugin.registerWorkspace(with: registrar)
+    }
+
     if let registrar = engineBridge.pluginRegistry.registrar(forPlugin: "MpvAudioPlayerPlugin") {
       MpvAudioPlayerPlugin.register(with: registrar)
     }

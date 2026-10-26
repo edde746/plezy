@@ -407,7 +407,7 @@ abstract class Player {
   /// vo=mediacodec (with gpu behind it) for hardware sessions, gpu-next for
   /// software ones, where DV reshaping can actually happen (see
   /// MpvPlayerCore.initialVideoOutput; #2010).
-  factory Player({bool? useExoPlayer, bool hardwareDecoding = true}) {
+  factory Player({bool? useExoPlayer, bool hardwareDecoding = true, bool companionSession = false}) {
     if (PlatformDetector.isWebOSBuild()) {
       return PlayerWebOS();
     }
@@ -416,18 +416,18 @@ abstract class Player {
       // The caller should pass useExoPlayer based on SettingsService.useExoPlayer.
       final useExo = useExoPlayer ?? false;
       if (useExo) {
-        return PlayerAndroid(); // ExoPlayer (opt-in)
+        return PlayerAndroid(companionSession: companionSession); // ExoPlayer (opt-in)
       }
-      return PlayerNative(hardwareDecoding: hardwareDecoding); // MPV (default)
+      return PlayerNative(hardwareDecoding: hardwareDecoding, companionSession: companionSession); // MPV (default)
     }
     if (Platform.isMacOS || Platform.isIOS) {
-      return PlayerNative();
+      return PlayerNative(companionSession: companionSession);
     }
     if (Platform.isWindows) {
-      return PlayerWindows();
+      return PlayerWindows(companionSession: companionSession);
     }
     if (Platform.isLinux) {
-      return PlayerLinux();
+      return PlayerLinux(companionSession: companionSession);
     }
     throw UnsupportedError('Player is not supported on this platform');
   }

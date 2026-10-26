@@ -91,6 +91,12 @@ static void my_application_activate(GApplication* application) {
       fl_plugin_registry_get_registrar_for_plugin(FL_PLUGIN_REGISTRY(self->flutter_view), "MpvPlugin");
   mpv_plugin_register_with_registrar(registrar);
 
+  // A separate plugin object owns a separate MPV core, event stream, and
+  // Wayland plane for the second workspace video.
+  FlPluginRegistrar* workspace_registrar =
+      fl_plugin_registry_get_registrar_for_plugin(FL_PLUGIN_REGISTRY(self->flutter_view), "MpvWorkspacePlugin");
+  mpv_workspace_plugin_register_with_registrar(workspace_registrar);
+
   // Register the dedicated audio-only MPV core for music playback (no
   // video or GL work at all).
   FlPluginRegistrar* audio_registrar =

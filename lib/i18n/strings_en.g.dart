@@ -105,6 +105,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$lending$en lending = Translations$lending$en.internal(_root);
 	late final Translations$audiobook$en audiobook = Translations$audiobook$en.internal(_root);
 	late final Translations$sourceSetup$en sourceSetup = Translations$sourceSetup$en.internal(_root);
+	late final Translations$games$en games = Translations$games$en.internal(_root);
 }
 
 // Path: app
@@ -8309,6 +8310,216 @@ class Translations$sourceSetup$en {
 	String subtitleDownloading({required Object title}) => 'Downloading subtitle: ${title}';
 }
 
+// Path: games
+class Translations$games$en {
+	Translations$games$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Games'
+	String get title => 'Games';
+
+	/// en: 'Show Games for this profile'
+	String get enable => 'Show Games for this profile';
+
+	/// en: 'Discover your gaming computers and play with an embedded streaming engine.'
+	String get enableDescription => 'Discover your gaming computers and play with an embedded streaming engine.';
+
+	/// en: 'Your games, from your computers.'
+	String get subtitle => 'Your games, from your computers.';
+
+	/// en: 'Your computers'
+	String get computers => 'Your computers';
+
+	/// en: 'Nearby computers'
+	String get nearby => 'Nearby computers';
+
+	/// en: 'Find computers'
+	String get findComputers => 'Find computers';
+
+	/// en: 'Add computer'
+	String get addComputer => 'Add computer';
+
+	/// en: 'Keep Steam Remote Play or Sunshine running on the same network. VPNs and guest networks may need a manual address.'
+	String get scanHint => 'Keep Steam Remote Play or Sunshine running on the same network. VPNs and guest networks may need a manual address.';
+
+	/// en: 'Add your gaming computer to get started.'
+	String get empty => 'Add your gaming computer to get started.';
+
+	/// en: 'No computers found on this network. You can enter an address manually.'
+	String get noNearby => 'No computers found on this network. You can enter an address manually.';
+
+	/// en: 'Computer name'
+	String get name => 'Computer name';
+
+	/// en: 'IP address or hostname'
+	String get address => 'IP address or hostname';
+
+	/// en: 'Service port'
+	String get port => 'Service port';
+
+	/// en: 'Streaming service'
+	String get protocol => 'Streaming service';
+
+	/// en: 'Sunshine / Moonlight'
+	String get moonlight => 'Sunshine / Moonlight';
+
+	/// en: 'Steam Remote Play'
+	String get steam => 'Steam Remote Play';
+
+	/// en: 'Save computer'
+	String get save => 'Save computer';
+
+	/// en: 'Enter a valid hostname or IP address, without a URL, and a port from 1 to 65534.'
+	String get invalidAddress => 'Enter a valid hostname or IP address, without a URL, and a port from 1 to 65534.';
+
+	/// en: 'Connect computer'
+	String get pair => 'Connect computer';
+
+	/// en: 'Approve this device'
+	String get pairTitle => 'Approve this device';
+
+	/// en: 'Enter this code in the host’s pairing prompt. For Sunshine, use the PIN page below. Keep this screen open until the computer approves.'
+	String get pairInstructions => 'Enter this code in the host’s pairing prompt. For Sunshine, use the PIN page below. Keep this screen open until the computer approves.';
+
+	/// en: 'Connect this computer again to approve or renew pairing.'
+	String get pairHelp => 'Connect this computer again to approve or renew pairing.';
+
+	/// en: 'Open Sunshine PIN page'
+	String get openPairingPage => 'Open Sunshine PIN page';
+
+	/// en: 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.'
+	String get qrHelp => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.';
+
+	/// en: 'Refresh games'
+	String get refreshGames => 'Refresh games';
+
+	/// en: 'Play'
+	String get play => 'Play';
+
+	/// en: 'Recently opened'
+	String get recent => 'Recently opened';
+
+	/// en: 'Favorites'
+	String get favorites => 'Favorites';
+
+	/// en: 'All games'
+	String get allGames => 'All games';
+
+	/// en: 'Find a game'
+	String get search => 'Find a game';
+
+	/// en: 'No games match this search.'
+	String get noMatches => 'No games match this search.';
+
+	/// en: 'Save favorite'
+	String get favorite => 'Save favorite';
+
+	/// en: 'Remove favorite'
+	String get unfavorite => 'Remove favorite';
+
+	/// en: 'Forget computer'
+	String get forget => 'Forget computer';
+
+	/// en: 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.'
+	String get forgetDescription => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.';
+
+	/// en: 'The connection could not complete. Check that the computer is awake and paired, then try again.'
+	String get unavailable => 'The connection could not complete. Check that the computer is awake and paired, then try again.';
+
+	/// en: 'Connection timed out. Check the computer, pairing code and network before trying again.'
+	String get timeout => 'Connection timed out. Check the computer, pairing code and network before trying again.';
+
+	/// en: 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.'
+	String get libraryHint => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.';
+
+	/// en: 'On-screen controller'
+	String get touchControls => 'On-screen controller';
+
+	/// en: 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.'
+	String get touchDescription => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.';
+
+	/// en: 'On-screen controls'
+	String get touchSetup => 'On-screen controls';
+
+	/// en: 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.'
+	String get touchSetupHint => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.';
+
+	/// en: 'Add game shortcut'
+	String get addGame => 'Add game shortcut';
+
+	/// en: 'Game name'
+	String get gameName => 'Game name';
+
+	/// en: 'Host application ID'
+	String get gameId => 'Host application ID';
+
+	/// en: 'Enter a game name and a positive numeric host application ID.'
+	String get invalidGame => 'Enter a game name and a positive numeric host application ID.';
+
+	/// en: 'Wake computer'
+	String get wake => 'Wake computer';
+
+	/// en: 'Wake request sent. The computer must support Wake-on-LAN on this network.'
+	String get wakeSent => 'Wake request sent. The computer must support Wake-on-LAN on this network.';
+
+	/// en: 'MAC address (optional)'
+	String get mac => 'MAC address (optional)';
+
+	/// en: 'Games help'
+	String get help => 'Games help';
+
+	/// en: 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library. Both Android engines include touch controls and gamepad input. Other native platforms and the Pyrowave decoder are still in development. Pairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network. Disconnecting leaves the game running on the computer.'
+	String get helpBody => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Other native platforms and the Pyrowave decoder are still in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.';
+
+	/// en: 'Cancel'
+	String get cancel => 'Cancel';
+
+	/// en: 'Looking for computers…'
+	String get scanning => 'Looking for computers…';
+
+	/// en: 'Save shortcut'
+	String get saveShortcut => 'Save shortcut';
+
+	/// en: 'For Moonlight use the host’s GameStream HTTP port (usually 47989), not its web settings port. Steam normally advertises on 27036.'
+	String get manualHint => 'For Moonlight use the host’s GameStream HTTP port (usually 47989), not its web settings port. Steam normally advertises on 27036.';
+
+	/// en: 'In-app streaming is not available here yet'
+	String get engineUnavailable => 'In-app streaming is not available here yet';
+
+	/// en: 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.'
+	String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
+
+	/// en: 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Other platforms and Pyrowave remain under development.'
+	String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Other platforms and Pyrowave remain under development.';
+
+	/// en: 'Steam beta · Pyrowave'
+	String get steamBetaTitle => 'Steam beta · Pyrowave';
+
+	/// en: 'Steam’s Pyrowave beta is a GPU-decoded video codec. It is not enabled in this build: Steam packet framing and GPU presentation still need integration and host validation. The embedded Android Steam player currently requests H.264 or HEVC.'
+	String get steamBetaDescription => 'Steam’s Pyrowave beta is a GPU-decoded video codec. It is not enabled in this build: Steam packet framing and GPU presentation still need integration and host validation. The embedded Android Steam player currently requests H.264 or HEVC.';
+
+	/// en: 'Steam library'
+	String get steamLibrary => 'Steam library';
+
+	/// en: 'Connecting…'
+	String get connecting => 'Connecting…';
+
+	/// en: 'Disconnect'
+	String get disconnect => 'Disconnect';
+
+	/// en: 'Stream controls'
+	String get streamControls => 'Stream controls';
+
+	/// en: 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.'
+	String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
+
+	/// en: 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.'
+	String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
+}
+
 // Path: appIcon.names
 class Translations$appIcon$names$en {
 	Translations$appIcon$names$en.internal(this._root);
@@ -13610,6 +13821,73 @@ extension on Translations {
 			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Selected client identity: ${name}',
 			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Rating ${rating}',
 			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Downloading subtitle: ${title}',
+			'games.title' => 'Games',
+			'games.enable' => 'Show Games for this profile',
+			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
+			'games.subtitle' => 'Your games, from your computers.',
+			'games.computers' => 'Your computers',
+			'games.nearby' => 'Nearby computers',
+			'games.findComputers' => 'Find computers',
+			'games.addComputer' => 'Add computer',
+			'games.scanHint' => 'Keep Steam Remote Play or Sunshine running on the same network. VPNs and guest networks may need a manual address.',
+			'games.empty' => 'Add your gaming computer to get started.',
+			'games.noNearby' => 'No computers found on this network. You can enter an address manually.',
+			'games.name' => 'Computer name',
+			'games.address' => 'IP address or hostname',
+			'games.port' => 'Service port',
+			'games.protocol' => 'Streaming service',
+			'games.moonlight' => 'Sunshine / Moonlight',
+			'games.steam' => 'Steam Remote Play',
+			'games.save' => 'Save computer',
+			'games.invalidAddress' => 'Enter a valid hostname or IP address, without a URL, and a port from 1 to 65534.',
+			'games.pair' => 'Connect computer',
+			'games.pairTitle' => 'Approve this device',
+			'games.pairInstructions' => 'Enter this code in the host’s pairing prompt. For Sunshine, use the PIN page below. Keep this screen open until the computer approves.',
+			'games.pairHelp' => 'Connect this computer again to approve or renew pairing.',
+			'games.openPairingPage' => 'Open Sunshine PIN page',
+			'games.qrHelp' => 'Scan to open the PIN page. The QR code contains only the computer address, never a password or pairing credential.',
+			'games.refreshGames' => 'Refresh games',
+			'games.play' => 'Play',
+			'games.recent' => 'Recently opened',
+			'games.favorites' => 'Favorites',
+			'games.allGames' => 'All games',
+			'games.search' => 'Find a game',
+			'games.noMatches' => 'No games match this search.',
+			'games.favorite' => 'Save favorite',
+			'games.unfavorite' => 'Remove favorite',
+			'games.forget' => 'Forget computer',
+			'games.forgetDescription' => 'Remove this computer and its game shortcuts from this profile? To revoke this device’s authorization, remove it from the host’s paired devices.',
+			'games.unavailable' => 'The connection could not complete. Check that the computer is awake and paired, then try again.',
+			'games.timeout' => 'Connection timed out. Check the computer, pairing code and network before trying again.',
+			'games.libraryHint' => 'Choose a computer to connect and load its games. Once connected, choose a game to play inside PlezyNG.',
+			'games.touchControls' => 'On-screen controller',
+			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
+			'games.touchSetup' => 'On-screen controls',
+			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
+			'games.addGame' => 'Add game shortcut',
+			'games.gameName' => 'Game name',
+			'games.gameId' => 'Host application ID',
+			'games.invalidGame' => 'Enter a game name and a positive numeric host application ID.',
+			'games.wake' => 'Wake computer',
+			'games.wakeSent' => 'Wake request sent. The computer must support Wake-on-LAN on this network.',
+			'games.mac' => 'MAC address (optional)',
+			'games.help' => 'Games help',
+			'games.helpBody' => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Other native platforms and the Pyrowave decoder are still in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.',
+			'games.cancel' => 'Cancel',
+			'games.scanning' => 'Looking for computers…',
+			'games.saveShortcut' => 'Save shortcut',
+			'games.manualHint' => 'For Moonlight use the host’s GameStream HTTP port (usually 47989), not its web settings port. Steam normally advertises on 27036.',
+			'games.engineUnavailable' => 'In-app streaming is not available here yet',
+			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
+			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Other platforms and Pyrowave remain under development.',
+			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
+			'games.steamBetaDescription' => 'Steam’s Pyrowave beta is a GPU-decoded video codec. It is not enabled in this build: Steam packet framing and GPU presentation still need integration and host validation. The embedded Android Steam player currently requests H.264 or HEVC.',
+			'games.steamLibrary' => 'Steam library',
+			'games.connecting' => 'Connecting…',
+			'games.disconnect' => 'Disconnect',
+			'games.streamControls' => 'Stream controls',
+			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
+			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
 			_ => null,
 		};
 	}

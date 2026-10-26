@@ -1,0 +1,12 @@
+# Native/JNI and reflective entry points are private to the embedded engine.
+-keep class org.snapetech.plezyng.games.EmbeddedGameStream { public static *; }
+-keep class com.limelight.** { *; }
+-keep class org.bouncycastle.jcajce.provider.asymmetric.** { *; }
+-keep class org.bouncycastle.jcajce.provider.digest.** { *; }
+-keep class org.bouncycastle.jcajce.provider.symmetric.** { *; }
+-keep class org.bouncycastle.jcajce.spec.** { *; }
+-keep class org.bouncycastle.jce.** { *; }
+-dontwarn javax.naming.**
+-dontwarn javax.jmdns.impl.DNSCache
+-dontwarn org.slf4j.**
+-dontwarn org.codehaus.mojo.animal_sniffer.IgnoreJRERequirement

@@ -29,8 +29,10 @@ import android.widget.FrameLayout
 import androidx.annotation.RequiresApi
 import com.edde746.plezy.car.CarRestrictionsMonitor
 import com.edde746.plezy.exoplayer.ExoPlayerPlugin
+import com.edde746.plezy.exoplayer.ExoWorkspacePlayerPlugin
 import com.edde746.plezy.mpv.MpvAudioPlayerPlugin
 import com.edde746.plezy.mpv.MpvPlayerPlugin
+import com.edde746.plezy.mpv.MpvWorkspacePlayerPlugin
 import com.edde746.plezy.shared.AssistiveTechnologyMonitor
 import com.edde746.plezy.shared.DeviceQuirks
 import com.edde746.plezy.shared.MediaCodecQuery
@@ -128,6 +130,7 @@ class PlezyActivity : FlutterActivity() {
   private var flutterSurfaceReconnectPending = false
   private var activityStarted = false
   private val externalPlayerChannel = ExternalPlayerChannel(this)
+  private val gamesChannel = GamesChannel(this)
   private val userCertificateChannel = UserCertificateChannel()
   private val appIconChannel = AppIconChannel(this)
   private val exitDiagnosticsRequested = AtomicBoolean(false)
@@ -617,6 +620,7 @@ class PlezyActivity : FlutterActivity() {
 
   override fun onDestroy() {
     externalPlayerChannel.dispose()
+    gamesChannel.dispose()
     systemBarsInsetsHost?.setOnApplyWindowInsetsListener(null)
     systemBarsInsetsHost = null
     cancelPendingSystemBarsHide()
@@ -873,8 +877,18 @@ class PlezyActivity : FlutterActivity() {
   override fun configureFlutterEngine(flutterEngine: FlutterEngine) {
     super.configureFlutterEngine(flutterEngine)
     flutterEngine.plugins.add(MpvPlayerPlugin())
+    flutterEngine.plugins.add(MpvWorkspacePlayerPlugin())
     flutterEngine.plugins.add(ExoPlayerPlugin())
+    flutterEngine.plugins.add(ExoWorkspacePlayerPlugin())
     flutterEngine.plugins.add(MpvAudioPlayerPlugin())
+    if (runCatching {
+        Class.forName("org.snapetech.plezyng.games.steam.SteamStreamView", false, classLoader)
+      }.isSuccess) {
+      flutterEngine.platformViewsController.registry.registerViewFactory(
+        SteamStreamPlatformViewFactory.VIEW_TYPE,
+        SteamStreamPlatformViewFactory(flutterEngine.dartExecutor.binaryMessenger),
+      )
+    }
 
     MethodChannel(flutterEngine.dartExecutor.binaryMessenger, DEVICE_CHANNEL).setMethodCallHandler { call, result ->
       when (call.method) {
@@ -1000,6 +1014,7 @@ class PlezyActivity : FlutterActivity() {
     }
 
     externalPlayerChannel.attach(flutterEngine.dartExecutor.binaryMessenger)
+    gamesChannel.attach(flutterEngine.dartExecutor.binaryMessenger)
     userCertificateChannel.attach(flutterEngine.dartExecutor.binaryMessenger)
     appIconChannel.attach(flutterEngine.dartExecutor.binaryMessenger)
 

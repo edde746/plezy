@@ -1,3 +1,4 @@
+import 'games/games_screen.dart';
 import 'dart:async';
 import '../media/ids.dart';
 import '../media/media_item.dart';
@@ -443,6 +444,7 @@ class _MainScreenState extends State<MainScreen>
   MultiServerProvider? _multiServerProvider;
   CatalogSourcesProvider? _catalogSourcesProvider;
   ValueListenable<bool>? _showExploreTabListenable;
+  ValueListenable<bool>? _gamesTabListenable;
   ValueListenable<bool>? _profileShowExploreTabListenable;
   String? _boundExploreProfileId;
   RouteObserver<PageRoute<dynamic>>? _profileRouteObserver;
@@ -877,6 +879,12 @@ class _MainScreenState extends State<MainScreen>
         ? null
         : settings.listenable(SettingsService.showExploreTabForProfile(profileId));
     _profileShowExploreTabListenable?.addListener(_handleCatalogSourcesChanged);
+    _gamesTabListenable?.removeListener(_handleTabAvailabilityChanged);
+    _gamesTabListenable = profileId == null || settings == null
+        ? null
+        : settings.listenable(SettingsService.showGamesTabForProfile(profileId));
+    _gamesTabListenable?.addListener(_handleTabAvailabilityChanged);
+    _handleTabAvailabilityChanged();
     _handleCatalogSourcesChanged();
   }
 
@@ -1228,6 +1236,7 @@ class _MainScreenState extends State<MainScreen>
     _multiServerProvider?.removeListener(_handleLiveTvChanged);
     _catalogSourcesProvider?.removeListener(_handleCatalogSourcesChanged);
     _showExploreTabListenable?.removeListener(_handleCatalogSourcesChanged);
+    _gamesTabListenable?.removeListener(_handleTabAvailabilityChanged);
     _profileShowExploreTabListenable?.removeListener(_handleCatalogSourcesChanged);
     if (_bindingSettleListener != null) {
       _activeProfileForListener?.removeListener(_bindingSettleListener!);
@@ -1402,6 +1411,7 @@ class _MainScreenState extends State<MainScreen>
       NavigationTabId.search => SearchScreen(key: _screenKeys[tab]),
       NavigationTabId.downloads => DownloadsScreen(key: _screenKeys[tab]),
       NavigationTabId.settings => SettingsScreen(key: _screenKeys[tab]),
+      NavigationTabId.games => GamesScreen(key: _screenKeys[tab]),
     };
   }
 
@@ -1417,6 +1427,7 @@ class _MainScreenState extends State<MainScreen>
     isOffline: isOffline,
     hasLiveTv: _hasLiveTv,
     hasExplore: _lastHasExplore,
+    hasGames: _hasGames,
     preferredStartup: SettingsService.instanceOrNull?.read(SettingsService.startupSection),
   );
 
@@ -2306,8 +2317,20 @@ class _MainScreenState extends State<MainScreen>
   /// Updated by _handleLiveTvChanged when the provider notifies.
   bool get _hasLiveTv => _lastHasLiveTv;
 
+  bool get _hasGames {
+    final id = _activeProfileForListener?.activeId ?? context.read<ActiveProfileProvider?>()?.activeId;
+    return id != null &&
+        !PlatformDetector.isAutomotive() &&
+        (SettingsService.instanceOrNull?.read(SettingsService.showGamesTabForProfile(id)) ?? false);
+  }
+
   List<NavigationTab> _getVisibleTabs(bool isOffline) {
-    return NavigationTab.getVisibleTabs(isOffline: isOffline, hasLiveTv: _hasLiveTv, hasExplore: _lastHasExplore);
+    return NavigationTab.getVisibleTabs(
+      isOffline: isOffline,
+      hasLiveTv: _hasLiveTv,
+      hasExplore: _lastHasExplore,
+      hasGames: _hasGames,
+    );
   }
 
   List<NavigationTab> _getBottomNavigationTabs(BuildContext context) {

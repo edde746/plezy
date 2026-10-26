@@ -107,6 +107,13 @@ class _MultiviewOverlay extends StatelessWidget {
       animation: controller,
       builder: (context, _) {
         final visible = controller.visibleSessions;
+        final visibleIds = visible.map((session) => session.descriptor.id).toSet();
+        final retainedGameSurfaces = controller.sessions.where(
+          (session) =>
+              session.descriptor.kind == MultiviewMediaKind.game &&
+              !visibleIds.contains(session.descriptor.id) &&
+              !controller.isRestored(session.descriptor.id),
+        );
         final fullscreenId = controller.fullscreenSessionId;
         final fullscreen = fullscreenId == null ? null : controller.session(fullscreenId);
         final content = fullscreen != null
@@ -135,6 +142,14 @@ class _MultiviewOverlay extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             Positioned.fill(child: content),
+            // Keep hidden Steam PlatformViews attached while another pane is
+            // fullscreen or a game is parked. Their SurfaceView owns the live
+            // decoder; removing the widget would disconnect the stream.
+            for (final registration in retainedGameSurfaces)
+              Offstage(
+                offstage: true,
+                child: SizedBox(width: 320, height: 180, child: registration.buildSurface(context)),
+              ),
             PositionedDirectional(end: 12, bottom: 12, child: _WorkspaceDock(controller: controller)),
             if (controller.sessionTrayVisible)
               PositionedDirectional(end: 12, bottom: 68, child: _WorkspaceSessionTray(controller: controller)),
@@ -267,14 +282,6 @@ class _WorkspaceWindowState extends State<_WorkspaceWindow> {
     widget.controller.setSurfaceInputFocus(widget.registration.descriptor.id, _focusNode.hasFocus);
   }
 
-  bool get _supportsDirectLongPressMove => switch (widget.registration.descriptor.kind) {
-    MultiviewMediaKind.video ||
-    MultiviewMediaKind.liveTv ||
-    MultiviewMediaKind.music ||
-    MultiviewMediaKind.audiobook => true,
-    MultiviewMediaKind.publication || MultiviewMediaKind.comic || MultiviewMediaKind.game => false,
-  };
-
   @override
   void dispose() {
     widget.controller.setSurfaceInputFocus(widget.registration.descriptor.id, false);
@@ -297,8 +304,6 @@ class _WorkspaceWindowState extends State<_WorkspaceWindow> {
         child: surface,
       );
     }
-    if (!_supportsDirectLongPressMove) return surface;
-
     return GestureDetector(
       behavior: HitTestBehavior.translucent,
       onLongPressStart: (_) {

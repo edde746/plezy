@@ -27,7 +27,7 @@ typedef _AudioStateRequest = ({
 typedef _AudioStateGenerations = ({int passthrough, int normalization, int downmix, int equalizer, int rate});
 
 /// MPV-backed player for platforms where AetherEngine is not the native route.
-class PlayerNative extends PlayerBase implements VideoRectSupport {
+class PlayerNative extends PlayerBase implements VideoRectSupport, PlayerAudioFocusControl {
   ({int left, int top, int right, int bottom, double devicePixelRatio})? _pendingVideoRect;
 
   @override
@@ -63,11 +63,12 @@ class PlayerNative extends PlayerBase implements VideoRectSupport {
   /// initializes: the fork's vo=mediacodec (with gpu behind it) for hardware
   /// sessions, gpu-next for software ones (see
   /// MpvPlayerCore.initialVideoOutput; #2010). Other platforms ignore it.
-  PlayerNative({this._hardwareDecoding = true})
-    : methodChannel = const MethodChannel('com.plezy/mpv_player'),
-      eventChannel = const EventChannel('com.plezy/mpv_player/events'),
+  PlayerNative({this._hardwareDecoding = true, bool companionSession = false, bool listenToNativeEvents = true})
+    : methodChannel = MethodChannel('com.plezy/mpv_player${companionSession ? '/workspace' : ''}'),
+      eventChannel = EventChannel('com.plezy/mpv_player${companionSession ? '/workspace' : ''}/events'),
       audioOnly = false,
-      _exclusiveAudio = true;
+      _exclusiveAudio = true,
+      super(listenToNativeEvents: listenToNativeEvents);
 
   /// Audio-only player on the dedicated music channels/core (see
   /// [Player.audio]). Skips every video concern: no render layer
@@ -1392,6 +1393,12 @@ class PlayerNative extends PlayerBase implements VideoRectSupport {
   Future<void> clearVideoFrameRate() async {
     if (_nativeCoreUnavailable || !Platform.isAndroid || !initialized) return;
     await invoke('clearVideoFrameRate');
+  }
+
+  @override
+  Future<void> setAudioFocusEnabled(bool enabled) async {
+    if (_nativeCoreUnavailable || !Platform.isAndroid) return;
+    await invoke('setAudioFocusEnabled', {'enabled': enabled});
   }
 
   @override

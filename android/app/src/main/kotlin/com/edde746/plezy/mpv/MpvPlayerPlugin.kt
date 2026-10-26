@@ -67,6 +67,7 @@ open class MpvPlayerPlugin(
 
   private val channels = PlayerChannelBinding(channelBase, this, this, tag)
   private var playerCore: MpvPlayerCore? = null
+  private var audioFocusEnabled = true
   private var activity: Activity? = null
   private var activityBinding: ActivityPluginBinding? = null
   private var applicationContext: Context? = null
@@ -238,6 +239,7 @@ open class MpvPlayerPlugin(
       "updateFrame" -> handleUpdateFrame(result)
       "setVideoFrameRate" -> handleSetVideoFrameRate(call, result)
       "clearVideoFrameRate" -> handleClearVideoFrameRate(result)
+      "setAudioFocusEnabled" -> handleSetAudioFocusEnabled(call, result)
       "requestAudioFocus" -> handleRequestAudioFocus(result)
       "getAudioSpdifCodecs" -> handleGetAudioSpdifCodecs(result)
       "abandonAudioFocus" -> handleAbandonAudioFocus(result)
@@ -336,6 +338,7 @@ open class MpvPlayerPlugin(
         gen = ++sessionGeneration
         core = createCore(coreContext, hardwareDecoding, subtitleRenderScale, logLevel).apply {
           delegate = this@MpvPlayerPlugin
+          setAudioFocusEnabled(audioFocusEnabled)
         }
         playerCore = core
         coreInstanceId = call.argument<Number>("instanceId")?.toLong()
@@ -667,6 +670,17 @@ open class MpvPlayerPlugin(
     result.success(granted)
   }
 
+  private fun handleSetAudioFocusEnabled(call: MethodCall, result: MethodChannel.Result) {
+    val enabled = call.argument<Boolean>("enabled")
+    if (enabled == null) {
+      result.error("INVALID_ARGS", "Missing 'enabled'", null)
+      return
+    }
+    audioFocusEnabled = enabled
+    playerCore?.setAudioFocusEnabled(enabled)
+    result.success(null)
+  }
+
   private fun handleAbandonAudioFocus(result: MethodChannel.Result) {
     PlayerDebugLog.d(tag) { "abandonAudioFocus" }
     playerCore?.abandonAudioFocus()
@@ -753,3 +767,6 @@ open class MpvPlayerPlugin(
  * drop a second [MpvPlayerPlugin] registration.
  */
 class MpvAudioPlayerPlugin : MpvPlayerPlugin(channelBase = "com.plezy/mpv_audio_player", audioOnly = true)
+
+/** Independent MPV channel and core for the second retained workspace video. */
+class MpvWorkspacePlayerPlugin : MpvPlayerPlugin(channelBase = "com.plezy/mpv_player/workspace")

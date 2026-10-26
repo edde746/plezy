@@ -94,6 +94,8 @@ class _SourcePlaybackWorkspaceSurfaceState extends State<SourcePlaybackWorkspace
         hasAudio: true,
         hasVideo: playback.video,
       ),
+      videoPlayerSlot: playback.videoPlayerSlot,
+      clearVideoPlayerSlot: !playback.video,
     );
   }
 

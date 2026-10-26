@@ -1023,6 +1023,8 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   VideoFilterManager? _videoFilterManager;
   bool _pipInitialized = false;
   String? _workspaceSessionId;
+  VideoPlayerSlot? _videoPlayerSlot;
+  VideoPlayerLease? _videoPlayerLease;
   MultiviewWorkspaceController? _workspaceController;
   bool _workspaceSurfaceDetached = false;
   ShaderService? _shaderService;
@@ -1783,6 +1785,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
   Future<void> _runPlayerInitializationAttempt(int generation, {required bool replaceCurrent}) async {
     var initPhase = 'starting';
     Player? attemptPlayer;
+    VideoPlayerLease? attemptVideoLease;
     var committed = false;
     String? failureMessage;
     try {
@@ -1939,12 +1942,29 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         widget.launchObserver?.mark('blocked', blocker: 'playbackActive');
         return;
       }
-      await PlaybackCoordinator.instance.claimVideo();
+      final coordinator = PlaybackCoordinator.instance;
+      final existingLease = _videoPlayerLease;
+      if (existingLease == null) {
+        attemptVideoLease = await coordinator.claimVideoSlot();
+        _videoPlayerLease = attemptVideoLease;
+      } else {
+        attemptVideoLease = existingLease;
+        await coordinator.claimVideoForLease(existingLease);
+      }
       if (!mounted || generation != _playerInitializationGeneration) return;
 
       initPhase = 'creating player';
-      final currentPlayer = Player(useExoPlayer: useExoPlayer, hardwareDecoding: enableHardwareDecoding);
+      final videoSlot = attemptVideoLease!.slot;
+      _videoPlayerSlot = videoSlot;
+      final allowInitialWorkspaceAudio =
+          workspace == null || (!workspace.hasAudioSelection && videoSlot == VideoPlayerSlot.primary);
+      final currentPlayer = Player(
+        useExoPlayer: useExoPlayer,
+        hardwareDecoding: enableHardwareDecoding,
+        companionSession: videoSlot == VideoPlayerSlot.companion,
+      );
       attemptPlayer = currentPlayer;
+      await currentPlayer.setWorkspaceAudioFocusEnabled(allowInitialWorkspaceAudio);
       if (!mounted || generation != _playerInitializationGeneration) return;
       if (Platform.isAndroid) {
         await currentPlayer.setLogLevel(debugLoggingEnabled ? 'v' : 'warn');
@@ -2302,15 +2322,15 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       }
 
       final savedVolume = settingsService.read(SettingsService.volume).clamp(0.0, maxVolume.toDouble());
-      final allowInitialWorkspaceAudio = workspace == null || !workspace.hasAudioSelection;
       await currentPlayer.setVolume(allowInitialWorkspaceAudio ? savedVolume : 0);
       if (!_isPlayerInitializationCurrent(generation)) return;
       _volumeController = VideoVolumeController(
         player: currentPlayer,
         settings: settingsService,
         initialVolume: savedVolume,
+        initialWorkspaceAudioEnabled: allowInitialWorkspaceAudio,
         onUserChange: _announceVolumeCommand,
-      )..setWorkspaceAudioEnabled(allowInitialWorkspaceAudio);
+      );
 
       player = currentPlayer;
       if (workspace != null && workspace.sessionCount > 0) {
@@ -2393,6 +2413,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       final failedAttempt = attemptPlayer;
       if (!committed && failedAttempt != null) {
         await _disposePlayerInitializationAttempt(failedAttempt);
+      }
+      if (!committed && _isPlayerInitializationCurrent(generation) && attemptVideoLease != null) {
+        if (identical(_videoPlayerLease, attemptVideoLease)) {
+          _videoPlayerLease = null;
+          _videoPlayerSlot = null;
+          attemptVideoLease.release();
+        }
       }
     }
 
@@ -2569,8 +2596,12 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
       retirement: () async {
         // Capture cleanup only after synchronous disposal has assigned every
         // operation. Route navigation itself never awaits this retirement.
-        await _routeDisposed.future;
-        await Future.wait<void>([?_playerInitializationOperation, ?_shutdownOperation, ?_nativeDisposal]);
+        try {
+          await _routeDisposed.future;
+          await Future.wait<void>([?_playerInitializationOperation, ?_shutdownOperation, ?_nativeDisposal]);
+        } finally {
+          _releaseVideoPlayerLease();
+        }
       }(),
     );
     _retireLaunchObserver();
@@ -2733,6 +2764,13 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
     }
     super.dispose();
     _routeDisposed.complete();
+  }
+
+  void _releaseVideoPlayerLease() {
+    final lease = _videoPlayerLease;
+    _videoPlayerLease = null;
+    _videoPlayerSlot = null;
+    lease?.release();
   }
 
   /// When focus leaves the entire video player subtree, reclaim it.

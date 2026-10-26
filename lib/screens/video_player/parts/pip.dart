@@ -114,6 +114,7 @@ extension _VideoPlayerPipMethods on VideoPlayerScreenState {
         hasVideo: true,
         openedAt: DateTime.now(),
       ),
+      videoPlayerSlot: _videoPlayerSlot,
       buildSurface: (workspaceContext) => OverlaySheetHost(
         canPop: false,
         onBack: () => _handleScreenPlayerNavigation(PlayerNavigationKey.back),
@@ -131,7 +132,10 @@ extension _VideoPlayerPipMethods on VideoPlayerScreenState {
         });
       },
       onClose: () => unawaited(_handleBackButton()),
-      onAudioOwnershipChanged: (enabled) => _volumeController?.setWorkspaceAudioEnabled(enabled),
+      onAudioOwnershipChanged: (enabled) async {
+        final volumeController = _volumeController;
+        if (volumeController != null) await volumeController.setWorkspaceAudioEnabled(enabled);
+      },
     );
 
     if (!workspace.register(registration)) {

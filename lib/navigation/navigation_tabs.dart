@@ -6,7 +6,7 @@ import '../i18n/strings.g.dart';
 import '../utils/platform_detector.dart';
 
 /// Navigation tab identifiers
-enum NavigationTabId { discover, explore, libraries, liveTv, search, downloads, settings }
+enum NavigationTabId { discover, explore, libraries, liveTv, search, downloads, settings, games }
 
 /// Represents a navigation tab with its configuration
 class NavigationTab {
@@ -45,9 +45,11 @@ class NavigationTab {
     required bool isOffline,
     bool hasLiveTv = false,
     bool hasExplore = false,
+    bool hasGames = false,
   }) {
     return allNavigationTabs.where((tab) {
       if (isOffline && tab.onlineOnly) return false;
+      if (tab.id == NavigationTabId.games && !hasGames) return false;
       if (tab.id == NavigationTabId.liveTv && !hasLiveTv) return false;
       if (tab.id == NavigationTabId.explore && !hasExplore) return false;
       if (tab.id == NavigationTabId.downloads && PlatformDetector.isAppleTV()) return false;
@@ -64,9 +66,10 @@ class NavigationTab {
     required bool isOffline,
     required bool hasLiveTv,
     bool hasExplore = false,
+    bool hasGames = false,
     required NavigationTabId? preferredStartup,
   }) {
-    final tabs = getVisibleTabs(isOffline: isOffline, hasLiveTv: hasLiveTv, hasExplore: hasExplore);
+    final tabs = getVisibleTabs(isOffline: isOffline, hasLiveTv: hasLiveTv, hasExplore: hasExplore, hasGames: hasGames);
     if (isOffline && tabs.any((t) => t.id == NavigationTabId.downloads)) {
       return NavigationTabId.downloads;
     }
@@ -84,6 +87,7 @@ String _getLibrariesLabel() => t.navigation.libraries;
 String _getLiveTvLabel() => t.navigation.liveTv;
 String _getSearchLabel() => t.common.search;
 String _getDownloadsLabel() => t.navigation.downloads;
+String _getGamesLabel() => t.games.title;
 String _getSettingsLabel() => t.common.settings;
 
 /// All navigation tabs in display order
@@ -108,6 +112,12 @@ const allNavigationTabs = [
     onlineOnly: false,
     icon: Symbols.download_rounded,
     getLabel: _getDownloadsLabel,
+  ),
+  NavigationTab(
+    id: NavigationTabId.games,
+    onlineOnly: false,
+    icon: Symbols.sports_esports_rounded,
+    getLabel: _getGamesLabel,
   ),
   NavigationTab(
     id: NavigationTabId.settings,

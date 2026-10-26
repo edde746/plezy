@@ -2,6 +2,7 @@ import 'dart:io';
 import 'package:drift/native.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/services/playback_coordinator.dart';
 import 'package:plezy/sources/source_database.dart';
 import 'package:plezy/sources/source_models.dart';
 import 'package:plezy/sources/source_playback.dart';
@@ -46,6 +47,9 @@ void main() {
     files: [first, second],
   );
   setUp(() async {
+    PlaybackCoordinator.instance
+      ..setWorkspaceVideoSessionCount(0)
+      ..setWorkspaceVideoPlayerSlots(const []);
     directory = await Directory.systemTemp.createTemp('plezy-source-playback-');
     db = SourceDatabase(NativeDatabase.memory());
     sources = MemorySources(SourceRepository(db), directory);
@@ -62,6 +66,9 @@ void main() {
     await playback.stop();
     playback.dispose();
     await playback.stop();
+    PlaybackCoordinator.instance
+      ..setWorkspaceVideoSessionCount(0)
+      ..setWorkspaceVideoPlayerSlots(const []);
     controls.closeControllers();
     sources.dispose();
     await db.close();
@@ -87,6 +94,38 @@ void main() {
     expect(stored.data.toString(), contains('192000'));
     expect(playback.progress!.filePositionMs, 12000);
     expect(playback.progress!.fileIndex, 1);
+  });
+  test('source video retains its native slot until the player is disposed', () async {
+    await playback.start(
+      item,
+      [first],
+      playbackMode: PublicationMode.watching,
+      localOverrides: {'one': Uri.file('${directory.path}/one')},
+    );
+
+    expect(playback.videoPlayerSlot, VideoPlayerSlot.primary);
+    expect(PlaybackCoordinator.instance.nextVideoPlayerSlot, VideoPlayerSlot.companion);
+
+    await playback.stop();
+
+    expect(playback.videoPlayerSlot, isNull);
+    expect(PlaybackCoordinator.instance.nextVideoPlayerSlot, VideoPlayerSlot.primary);
+  });
+  test('source companion video starts muted and excluded from native audio focus', () async {
+    PlaybackCoordinator.instance
+      ..setWorkspaceVideoSessionCount(1)
+      ..setWorkspaceVideoPlayerSlots(const [VideoPlayerSlot.primary]);
+
+    await playback.start(
+      item,
+      [first],
+      playbackMode: PublicationMode.watching,
+      localOverrides: {'one': Uri.file('${directory.path}/one')},
+    );
+
+    expect(playback.videoPlayerSlot, VideoPlayerSlot.companion);
+    expect(native.audioFocusEnabled, isFalse);
+    expect(native.volumes.first, 0);
   });
   test('end-of-chapter sleep stops at the boundary and does not advance to the next part', () async {
     await start();

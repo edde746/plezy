@@ -23,6 +23,7 @@
 // C-style registration functions for the video and audio-only plugin
 // instances.
 void MpvPlayerPluginRegisterWithRegistrar(FlutterDesktopPluginRegistrarRef registrar);
+void MpvWorkspacePlayerPluginRegisterWithRegistrar(FlutterDesktopPluginRegistrarRef registrar);
 void MpvAudioPlayerPluginRegisterWithRegistrar(FlutterDesktopPluginRegistrarRef registrar);
 
 namespace mpv {
@@ -34,11 +35,11 @@ class MpvPlayerPlugin : public flutter::Plugin {
   // no child HWND, no display-mode handling (see MpvPlayer).
   static void RegisterWithRegistrar(
       flutter::PluginRegistrarWindows* registrar, const std::string& channel_name = "com.plezy/mpv_player",
-      bool audio_only = false);
+      bool audio_only = false, UINT platform_task_message = 0);
 
   MpvPlayerPlugin(
       flutter::PluginRegistrarWindows* registrar, const std::string& channel_name = "com.plezy/mpv_player",
-      bool audio_only = false);
+      bool audio_only = false, UINT platform_task_message = 0);
   virtual ~MpvPlayerPlugin();
 
  private:

@@ -9,9 +9,19 @@ import '../player_base.dart';
 import '../video_rect_support.dart';
 
 /// Android implementation using ExoPlayer with ASS subtitle support via libass-android.
-class PlayerAndroid extends PlayerBase implements VideoRectSupport {
-  static const _methodChannel = MethodChannel('com.plezy/exo_player');
-  static const _eventChannel = EventChannel('com.plezy/exo_player/events');
+class PlayerAndroid extends PlayerBase implements VideoRectSupport, PlayerAudioFocusControl {
+  static const _channelBase = 'com.plezy/exo_player';
+
+  PlayerAndroid({bool companionSession = false, bool listenToNativeEvents = true})
+    : methodChannel = MethodChannel('$_channelBase${companionSession ? '/workspace' : ''}'),
+      eventChannel = EventChannel('$_channelBase${companionSession ? '/workspace' : ''}/events'),
+      super(listenToNativeEvents: listenToNativeEvents);
+
+  @override
+  final MethodChannel methodChannel;
+
+  @override
+  final EventChannel eventChannel;
 
   String _bufferTier = 'auto';
   int _bufferMb = 0;
@@ -46,12 +56,6 @@ class PlayerAndroid extends PlayerBase implements VideoRectSupport {
   /// Track that un-hiding restores: whatever was selected when subtitles were
   /// hidden, then whatever was selected for the current media while hidden.
   String? _hiddenSubtitleTrackId;
-
-  @override
-  MethodChannel get methodChannel => _methodChannel;
-
-  @override
-  EventChannel get eventChannel => _eventChannel;
 
   @override
   String get logPrefix => 'ExoPlayer';
@@ -612,6 +616,12 @@ class PlayerAndroid extends PlayerBase implements VideoRectSupport {
   Future<void> updateFrame() async {
     if (disposed || !initialized) return;
     await invoke('updateFrame');
+  }
+
+  @override
+  Future<void> setAudioFocusEnabled(bool enabled) async {
+    if (disposed) return;
+    await invoke('setAudioFocusEnabled', {'enabled': enabled});
   }
 
   @override

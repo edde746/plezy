@@ -30,7 +30,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     Player Function(bool video)? playerFactory,
     MediaControlsManager Function()? controlsFactory,
     WakelockPlatformToggle? wakelockToggle,
-  }) : _playerFactory = playerFactory ?? ((video) => video ? Player() : Player.audio()),
+  }) : _playerFactory = playerFactory,
        _wakelock = WakelockController(platformToggle: wakelockToggle),
        _controlsFactory = controlsFactory ?? MediaControlsManager.new {
     sources.stopPlayback = stop;
@@ -52,7 +52,9 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
 
   final SourceController sources;
   final WakelockController _wakelock;
-  final Player Function(bool) _playerFactory;
+  final Player Function(bool)? _playerFactory;
+  VideoPlayerSlot? videoPlayerSlot;
+  VideoPlayerLease? _videoPlayerLease;
   final MediaControlsManager Function() _controlsFactory;
   Player? player;
   SourceEntry? entry;
@@ -122,7 +124,26 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     _workspaceAudioEnabled = enabled;
     final native = player;
     if (native == null || native.disposed) return;
-    await native.setVolume(enabled ? 100 : 0);
+    if (enabled) {
+      try {
+        await native.setWorkspaceAudioFocusEnabled(true);
+        if (native.state.isActive) await native.requestAudioFocus();
+      } catch (error, stackTrace) {
+        appLogger.w('Source workspace audio focus handoff failed', error: error, stackTrace: stackTrace);
+      }
+      await native.setVolume(100);
+      return;
+    }
+
+    try {
+      await native.setVolume(0);
+    } finally {
+      try {
+        await native.setWorkspaceAudioFocusEnabled(false);
+      } catch (error, stackTrace) {
+        appLogger.w('Source workspace audio focus release failed', error: error, stackTrace: stackTrace);
+      }
+    }
   }
 
   double get speed => progress?.speed ?? 1;
@@ -163,20 +184,25 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       final requestedMode =
           playbackMode ?? (item.kind == SourceItemKind.video ? PublicationMode.watching : PublicationMode.listening);
       final coordinator = PlaybackCoordinator.instance;
-      if (requestedMode == PublicationMode.watching && coordinator.workspaceRetainsVideo) {
-        throw const SourceException(SourceFailure.unsupported);
-      }
-      if (requestedMode == PublicationMode.watching &&
-          coordinator.workspaceRetainsMusic &&
-          !coordinator.workspaceRetainsVideo) {
-        await coordinator.claimVideo();
+      if (requestedMode == PublicationMode.watching) {
+        // This SourcePlayback is itself the registered file owner. Asking the
+        // coordinator to stop that callback while this serialized start is
+        // running would wait on this same operation. _stop() above retires its
+        // previous item; claimVideoSlot reserves one of the two native video slots.
+        final lease = await coordinator.claimVideoSlot(stopFileSession: false);
+        _videoPlayerLease = lease;
+        videoPlayerSlot = lease.slot;
       } else {
+        videoPlayerSlot = null;
         await coordinator.claimFiles(preserveWorkspaceVideo: true, preserveWorkspaceMusic: true);
       }
       // A retained music pane is the default audible surface until the user
       // selects this source session. Start muted before opening the native
       // player so registration cannot race an audible burst.
-      _workspaceAudioEnabled = !coordinator.workspaceHasCompetingAudioOwner && !coordinator.workspaceRetainsMusic;
+      _workspaceAudioEnabled =
+          !coordinator.workspaceHasCompetingAudioOwner &&
+          !coordinator.workspaceRetainsMusic &&
+          (requestedMode != PublicationMode.watching || videoPlayerSlot == VideoPlayerSlot.primary);
       sources.requireSession();
       _profile = sources.profileId;
       _profileGeneration = sources.generation;
@@ -219,7 +245,10 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       smartRewind = settings['smartRewind'] as bool? ?? true;
       backwardSeconds = (sourceInt(settings['backwardSeconds']) ?? 15).clamp(5, 120);
       forwardSeconds = (sourceInt(settings['forwardSeconds']) ?? 30).clamp(5, 120);
-      if (!_valid) return;
+      if (!_valid) {
+        await _stop();
+        return;
+      }
       _fileIndex = progress!.fileIndex.clamp(0, files.length - 1);
       var localPosition = progress!.filePositionMs;
       if (hasCompleteTimeline) {
@@ -243,8 +272,10 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       }
       // Unknown-duration multipart books persist file-relative time explicitly.
       _gateway = SourceStreamGateway(valid: () => _valid && entry == item);
-      final native = _playerFactory(video);
+      final native = _playerFactory?.call(video) ??
+          (video ? Player(companionSession: videoPlayerSlot == VideoPlayerSlot.companion) : Player.audio());
       player = native;
+      await native.setWorkspaceAudioFocusEnabled(_workspaceAudioEnabled);
       await native.setVolume(_workspaceAudioEnabled ? 100 : 0);
       _controls = _controlsFactory();
       await _controls!.setBackgroundMode(
@@ -827,8 +858,12 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     _hardware = null;
     final native = player;
     player = null;
+    final videoLease = _videoPlayerLease;
+    _videoPlayerLease = null;
+    videoPlayerSlot = null;
     await release(() async => native?.stop());
     await release(() async => native?.dispose());
+    videoLease?.release();
     for (final file in _temporarySubtitles) {
       await release(() async {
         if (await file.exists()) await file.delete();

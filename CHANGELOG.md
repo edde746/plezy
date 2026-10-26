@@ -3,7 +3,8 @@
 ## [Unreleased]
 
 - Increase Multiview title-bar, session-tray, and resize controls to consistent 48dp focus targets.
-- Add the first app-owned Multiview workspace slice for retained video, music, source playback and publication surfaces, with floating/split layouts and shared audio focus.
+- Add an app-owned Multiview workspace for retained video, music, source playback and publication surfaces, with floating/split layouts, shared audio and input ownership, and independent native channels for two simultaneous video sessions.
+- Add a retained Android Steam game surface to Multiview with workspace audio ownership and exclusive gamepad input; other game engines remain on their existing launch paths.
 
 - Fit Find your next to the screen with persistent action buttons, mirrored swipe/TV direction cues, contextual help, and artwork that follows the current pick. Restore downloaded and alternate covers, distinguish artwork loading from missing images, and allow failed source covers to be retried.
 
@@ -11,6 +12,8 @@
 - Fix file-source metadata and listing edge cases, and validate the experimental webOS ARM build on an LG C6.
 
 ### Added
+
+- Add an opt-in Games category with LAN discovery, artwork card grids, profile libraries, PIN/QR pairing, and an embedded Android Moonlight engine with touch controls. Add an experimental embedded Android Steam PIN/streaming adapter with encrypted device trust, direct game-ID launch, H.264/HEVC/Opus and a mobile controller. Steam catalog import, Pyrowave and native ports remain in development; Games never hands a stream to another app.
 
 - Add device-local Dolby Vision experiment and compatibility switches, enhancement-layer diagnostics, pinned Apple/FelBaker experiments, and an offline HDR/SDR companion encoder; preserve Luna’s real P7 FEL graph evidence and remaining device qualification work.
 

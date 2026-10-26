@@ -20,6 +20,7 @@ final class VideoVolumeController implements ValueListenable<double> {
     required this.player,
     required SettingsService settings,
     required double initialVolume,
+    bool initialWorkspaceAudioEnabled = true,
     VideoVolumePersistenceWriter? persistVolume,
     this.onUserChange,
   }) : _settings = settings,
@@ -28,7 +29,8 @@ final class VideoVolumeController implements ValueListenable<double> {
        _confirmedVolume = _clampForSettings(settings, initialVolume),
        _confirmedLogicalVolume = _clampForSettings(settings, initialVolume),
        _preferredVolume = _initialPreferredVolume(settings),
-       _lastPersistedVolume = _initialPreferredVolume(settings) {
+       _lastPersistedVolume = _initialPreferredVolume(settings),
+       _workspaceAudioEnabled = initialWorkspaceAudioEnabled {
     _volumeSubscription = player.streams.volume.listen(
       _handlePlayerVolume,
       onError: (Object error, StackTrace stackTrace) {
@@ -58,7 +60,7 @@ final class VideoVolumeController implements ValueListenable<double> {
   double _confirmedVolume;
   double _confirmedLogicalVolume;
   double _preferredVolume;
-  bool _workspaceAudioEnabled = true;
+  bool _workspaceAudioEnabled;
   double _lastPersistedVolume;
   bool _draining = false;
   bool _disposed = false;
@@ -89,10 +91,30 @@ final class VideoVolumeController implements ValueListenable<double> {
 
   /// Mutes this output for workspace audio focus without changing the user's
   /// volume preference or mute state.
-  void setWorkspaceAudioEnabled(bool enabled) {
+  Future<void> setWorkspaceAudioEnabled(bool enabled) async {
     if (_disposed || _workspaceAudioEnabled == enabled) return;
     _workspaceAudioEnabled = enabled;
+    if (enabled) {
+      try {
+        await player.setWorkspaceAudioFocusEnabled(true);
+        if (player.state.isActive) await player.requestAudioFocus();
+      } catch (error, stackTrace) {
+        appLogger.w('Video workspace audio focus handoff failed', error: error, stackTrace: stackTrace);
+      } finally {
+        _schedule(value, persistedVolume: null);
+      }
+      return;
+    }
+
     _schedule(value, persistedVolume: null);
+    // Finish muting before releasing system focus; the next pane may request
+    // focus as soon as this ownership callback completes.
+    await idle;
+    try {
+      await player.setWorkspaceAudioFocusEnabled(false);
+    } catch (error, stackTrace) {
+      appLogger.w('Video workspace audio focus release failed', error: error, stackTrace: stackTrace);
+    }
   }
 
   /// Applies and persists a relative change against the latest user intent.

@@ -13,6 +13,12 @@ void MpvPlayerPluginRegisterWithRegistrar(FlutterDesktopPluginRegistrarRef regis
       flutter::PluginRegistrarManager::GetInstance()->GetRegistrar<flutter::PluginRegistrarWindows>(registrar));
 }
 
+void MpvWorkspacePlayerPluginRegisterWithRegistrar(FlutterDesktopPluginRegistrarRef registrar) {
+  mpv::MpvPlayerPlugin::RegisterWithRegistrar(
+      flutter::PluginRegistrarManager::GetInstance()->GetRegistrar<flutter::PluginRegistrarWindows>(registrar),
+      "com.plezy/mpv_player/workspace", /*audio_only=*/false, WM_APP + 0x04D2);
+}
+
 void MpvAudioPlayerPluginRegisterWithRegistrar(FlutterDesktopPluginRegistrarRef registrar) {
   mpv::MpvPlayerPlugin::RegisterWithRegistrar(
       flutter::PluginRegistrarManager::GetInstance()->GetRegistrar<flutter::PluginRegistrarWindows>(registrar),
@@ -27,17 +33,21 @@ constexpr UINT kAudioPlatformTaskMessage = WM_APP + 0x04D1;
 }  // namespace
 
 void MpvPlayerPlugin::RegisterWithRegistrar(
-    flutter::PluginRegistrarWindows* registrar, const std::string& channel_name, bool audio_only) {
-  auto plugin = std::make_unique<MpvPlayerPlugin>(registrar, channel_name, audio_only);
+    flutter::PluginRegistrarWindows* registrar, const std::string& channel_name, bool audio_only,
+    UINT platform_task_message) {
+  auto plugin = std::make_unique<MpvPlayerPlugin>(registrar, channel_name, audio_only, platform_task_message);
   registrar->AddPlugin(std::move(plugin));
 }
 
 MpvPlayerPlugin::MpvPlayerPlugin(
-    flutter::PluginRegistrarWindows* registrar, const std::string& channel_name, bool audio_only)
+    flutter::PluginRegistrarWindows* registrar, const std::string& channel_name, bool audio_only,
+    UINT platform_task_message)
     : registrar_(registrar),
       platform_thread_id_(::GetCurrentThreadId()),
       audio_only_(audio_only),
-      platform_task_message_(audio_only ? kAudioPlatformTaskMessage : kPlatformTaskMessage) {
+      platform_task_message_(platform_task_message != 0
+                                 ? platform_task_message
+                                 : (audio_only ? kAudioPlatformTaskMessage : kPlatformTaskMessage)) {
   method_channel_ = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
       registrar->messenger(), channel_name, &flutter::StandardMethodCodec::GetInstance());
 

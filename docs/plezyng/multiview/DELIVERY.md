@@ -1,6 +1,6 @@
 # Multiview delivery ledger
 
-Status: **in progress; no pull request yet.** This ledger is for the feature branch and must be updated from evidence as implementation continues.
+Status: **feature code complete; draft PR and automated validation pending.** This ledger is for `codex/multiview-workspace-20261026`; the branch is not to be merged to main before release review.
 
 Source baseline: PlezyNG main `62b2ed0f4dd8c287e026bcc356e65395366c6b4a`. The user requires this work to stay on `codex/multiview-workspace-20261026`, be tested thoroughly, and not be merged to main.
 
@@ -9,8 +9,9 @@ Source baseline: PlezyNG main `62b2ed0f4dd8c287e026bcc356e65395366c6b4a`. The us
 | Area | Current implementation |
 |---|---|
 | Workspace state | Profile-scoped session descriptors, floating/split/fullscreen layouts, focus, placement history, audio ownership and exclusive gamepad-input leases, restore/park/tray actions, schema migration and safe metadata persistence. `WorkspaceGameInputBinding` routes raw controller events only to the focused interactive adapter while its pane retains Flutter focus and is not in Move mode, stops app-navigation repeats at handoff, captures mapped desktop key mirrors without dropping raw input, and signals control resets on lease release, focus loss, app backgrounding and controller disconnect. A dialog, positioning action or another route taking focus suspends the gamepad lease. |
-| Shared interaction | Flutter overlay shell; tap focuses; video, music and audiobook panes support long-press drag; title-bar drag works across panes. Explicit Move mode enables body-drag for readers, comics and games while preserving their normal gestures otherwise; keyboard/remote arrows move and resize. Title double-tap and the explicit fullscreen action promote, and the session tray offers an accessible return to the source screen. |
-| Video | Keeps the existing screen-owned video session while its video widget is presented in the workspace. Native rectangle hooks are implemented in code for Android, Apple, Windows and Linux, with the latest bounds retained until player initialization; webOS keeps its existing video surface widget path. A second retained video claim currently fails closed because the native channels still have one video owner. This does not provide independent concurrent video decoding. |
+| Shared interaction | Flutter overlay shell; tap focuses; long-press drag works on every pane surface, with title-bar drag and accessible Move mode as alternatives. Keyboard/remote arrows move and resize. Title double-tap and the explicit fullscreen action promote, and the session tray offers an accessible return to the source screen. |
+| Video | Keeps each existing screen-owned video session while its widget is presented in the workspace. Primary and companion MPV channels are registered independently on Android, iOS, macOS, Windows and Linux; Android Exo also has separate channel/core/event instances. `PlaybackCoordinator` reserves a free slot before async teardown and retains it through native disposal; admission caps video at two sessions. webOS continues to use its independent VideoPlayerController surfaces. |
+| Games | Merged the Games library and native engines into this feature branch. Android Steam now exposes a retained PlatformView with independent native transport/decoder/audio, workspace audio ownership and exclusive gamepad/key routing. Full-screen Steam and GameStream remain available through their existing activity flow. GameStream/Moonlight and all non-Android targets do not advertise an embedded game surface. |
 | Music | Reuses the existing queue, visualizer and transport; workspace audio ownership gates output without changing saved volume; video/source playback claims can retain the music service when it is part of the workspace. |
 | Source media | Source audiobook/video playback has a workspace pane and route restore/close flow. Its existing progress owner remains authoritative. |
 | Publication readers | Existing PDF/EPUB/comic reader route can be presented in a workspace pane. Read-along and TTS update its audio capability and transfer workspace audio ownership. |
@@ -19,7 +20,7 @@ Source baseline: PlezyNG main `62b2ed0f4dd8c287e026bcc356e65395366c6b4a`. The us
 
 The workspace uses one Flutter interaction and state model across supported targets. Placement is stored as normalized app-window geometry, while each video backend applies physical-pixel bounds through its platform adapter. This keeps focus, pane actions, audio/input ownership and restore behavior consistent without depending on operating-system PiP.
 
-Touch users tap to focus and can long-press-drag floating video, Live TV, music and audiobook panes. Floating panes also support title-bar dragging; reader, comic and game panes use an explicit Move mode for body dragging so page turns, zoom and gameplay gestures remain intact. Keyboard and remote arrows move in Move mode, Enter commits, and Escape cancels; accessibility semantics expose incremental resize actions. Double-tapping the pane title promotes it to fullscreen; the visible fullscreen control provides the same action to assistive and single-tap users. Companions stay available from the workspace tray until explicitly restored or closed.
+Touch users tap to focus and can long-press-drag any floating pane. Short taps and normal content gestures remain available; title-bar dragging, the explicit Move control and keyboard/remote Move mode provide alternatives. Arrow keys move in Move mode, Enter commits, and Escape cancels; accessibility semantics expose incremental resize actions. Double-tapping the pane title promotes it to fullscreen; the visible fullscreen control provides the same action to assistive and single-tap users. Companions stay available from the workspace tray until explicitly restored or closed.
 
 ## Cross-platform target map
 
@@ -27,18 +28,18 @@ This is a code-path map, **not device qualification**. No target has been verifi
 
 | Target | Intended path | Current blocker/evidence |
 |---|---|---|
-| Android phone/tablet/TV | Shared Flutter overlay; MPV/Exo native surface bounds | Native adapter edits are unbuilt and untested. One video core remains. |
-| iOS/iPadOS/tvOS | Shared Flutter overlay; Apple native video layer bounds | iOS source is also wired into tvOS; platform builds and remote/focus behavior are unverified. |
-| macOS | Shared Flutter overlay; native video layer bounds | Native build and window-scale behavior are unverified. Separate desktop pop-out windows are not implemented. |
-| Windows | Shared Flutter overlay; child HWND bounds | Native build, DPI/monitor moves and z-order behavior are unverified. |
-| Linux | Shared Flutter overlay; Wayland video plane | Wayland-only path; X11 support is not claimed. Native build and compositor behavior are unverified. |
+| Android phone/tablet/TV | Shared Flutter overlay; separate MPV/Exo video cores; Android Steam PlatformView | Native adapter edits and app composition are unbuilt and untested. SurfaceView composition, audio/input handoff and two concurrent decoders need device qualification. |
+| iOS/iPadOS/tvOS | Shared Flutter overlay; separate Apple MPV plugin instances and native video layers | iOS source is also wired into tvOS; platform builds and remote/focus behavior are unverified. |
+| macOS | Shared Flutter overlay; separate MPV plugin instances and native video layers | Native build and window-scale behavior are unverified. Separate desktop pop-out windows are not implemented. |
+| Windows | Shared Flutter overlay; separate MPV plugin instances and child HWNDs | Native build, DPI/monitor moves, task-message isolation and z-order behavior are unverified. |
+| Linux | Shared Flutter overlay; separate MPV plugin instances and Wayland video planes | Wayland-only path; X11 support is not claimed. Native build and two-plane compositor behavior are unverified. |
 | webOS TV | Shared Flutter overlay; existing webOS surface widget | No device validation; platform-specific overlay and remote focus remain open. |
 
 ## Not complete
 
-- Independent concurrent video cores and event/lifecycle identity. Workspace-aware playback claims now refuse a second retained video session, but every video-opening path still needs auditing and the backend has no independent per-session channels. Dual-video support remains blocked.
+- Native dual-video channels and slot leases are implemented across the existing MPV/Exo platform backends; server video and source-file video admission use the lease contract. The builds and target-specific simultaneous-decoder behavior are still unverified; physical plane z-order, HDR/DRM combinations and resource pressure need qualification.
 - A real compositor/software fallback for overlapping video, reader and game surfaces; native plane clipping, z-order and occlusion are not yet qualified.
-- Games integration. The current main baseline has no Games engine/API to host. Keep this scenario open until a compatible engine lands; do not import unrelated dirty worktree changes into this branch.
+- Retained game coverage outside Android Steam. Moonlight still launches an Activity; iOS, tvOS, macOS, Windows, Linux and webOS have no in-app game surface yet.
 - Portable EPUB/PDF/comic reader implementations and semantics on every target, especially TV/webOS.
 - Desktop detached-window hosts and crash/dock recovery.
 - Complete resource admission, thermal behavior, fallback diagnostics and full localization/semantics review.
@@ -55,5 +56,6 @@ This is a code-path map, **not device qualification**. No target has been verifi
 - Full repository analysis and test suite: not qualified on the exact feature base. Analyzer runs against the older checkout report missing source-reader modules, plugin packages and generated localization data that are present in the feature branch.
 - Native builds and device qualification: not run. No platform is marked verified.
 - Flutter verification is currently blocked in this workspace: the first-run Flutter CLI attempted to contact a link-local cloud metadata endpoint and automatic approval review rejected that access. I did not retry through Flutter, Dart, or another invocation path.
-- Pull request: not created; the branch remains in progress.
+- This continuation adds native player-channel isolation, reserved primary/companion slots, a retained Android Steam PlatformView, capability-gated game admission, game audio/input lease routing, source-video slot selection, Dart/JVM regression tests and CI coverage. The new tests and Android app build are authored but not executed locally; the earlier Flutter first-run auto-review rejection bars another Flutter/Dart or Gradle-triggered Flutter invocation here. The updated CI workflow will run the focused tests, Steam unit tests and Android app build on the draft PR.
+- Pull request: pending creation after this code-complete pass; it must remain draft until automated checks and device qualification are reviewed.
 

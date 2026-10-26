@@ -753,6 +753,8 @@ class MpvPlayerCore private constructor(
 
   private var audioFocusManager: AudioFocusManager? = null
 
+  @Volatile private var audioFocusEnabled: Boolean = true
+
   @Volatile private var cachedPaused: Boolean = true
 
   @Volatile private var desiredPaused: Boolean = true
@@ -1383,7 +1385,16 @@ class MpvPlayerCore private constructor(
 
   // Audio Focus
 
+  override fun setAudioFocusEnabled(enabled: Boolean) {
+    audioFocusEnabled = enabled
+    if (!enabled) {
+      audioFocusManager?.abandonAudioFocus()
+      if (pausedForAudioFocusLoss) resumeAfterAudioFocusGain("workspace audio focus disabled")
+    }
+  }
+
   override fun requestAudioFocus(): Boolean {
+    if (!audioFocusEnabled) return true
     val granted = audioFocusManager?.requestAudioFocus() ?: false
     if (granted && pausedForAudioFocusLoss) {
       resumeAfterAudioFocusGain("audio focus request granted")
@@ -2798,7 +2809,7 @@ class MpvPlayerCore private constructor(
         publicPauseIntentGeneration == pauseIntent.generation && pausedForAudioFocusLoss
       }
       if (shouldReclaimAudioFocus) {
-        val focusGranted = audioFocusManager?.requestAudioFocus() == true
+        val focusGranted = !audioFocusEnabled || audioFocusManager?.requestAudioFocus() == true
         if (!focusGranted) {
           Log.w(TAG, "Audio focus request denied; keeping public resume pending")
           completePublicResumeNoOp(onComplete)

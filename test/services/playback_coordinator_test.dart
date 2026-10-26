@@ -10,10 +10,10 @@ void main() {
     var videoStops = 0;
     Future<void> videoOwner() async => videoStops++;
     coordinator.registerVideoSession(shutdown: videoOwner);
-    coordinator.setWorkspaceRetainsVideo(true);
+    coordinator.setWorkspaceVideoSessionCount(1);
     addTearDown(() {
       coordinator.unregisterVideoSession(videoOwner);
-      coordinator.setWorkspaceRetainsVideo(false);
+      coordinator.setWorkspaceVideoSessionCount(0);
     });
 
     await coordinator.claimFiles();
@@ -32,10 +32,10 @@ void main() {
     coordinator.registerMusicSession(stopAndDispose: musicOwner);
     coordinator.registerVideoSession(shutdown: videoOwner);
     coordinator.setWorkspaceRetainsMusic(true);
-    coordinator.setWorkspaceRetainsVideo(true);
+    coordinator.setWorkspaceVideoSessionCount(1);
     addTearDown(() {
       coordinator.setWorkspaceRetainsMusic(false);
-      coordinator.setWorkspaceRetainsVideo(false);
+      coordinator.setWorkspaceVideoSessionCount(0);
       coordinator.unregisterMusicSession(musicOwner);
       coordinator.unregisterVideoSession(videoOwner);
     });
@@ -62,7 +62,7 @@ void main() {
     expect(musicStops, 1);
   });
 
-  test('a retained workspace video cannot be displaced by a second video claim', () async {
+  test('a retained workspace video admits one independent companion session', () async {
     final coordinator = PlaybackCoordinator.instance;
     var musicStops = 0;
     var videoStops = 0;
@@ -70,18 +70,84 @@ void main() {
     Future<void> videoOwner() async => videoStops++;
     coordinator.registerMusicSession(stopAndDispose: musicOwner);
     coordinator.registerVideoSession(shutdown: videoOwner);
-    coordinator.setWorkspaceRetainsVideo(true);
+    coordinator.setWorkspaceVideoSessionCount(1);
     addTearDown(() {
-      coordinator.setWorkspaceRetainsVideo(false);
+      coordinator.setWorkspaceVideoSessionCount(0);
       coordinator.unregisterMusicSession(musicOwner);
       coordinator.unregisterVideoSession(videoOwner);
     });
 
-    await expectLater(coordinator.claimVideo(), throwsA(isA<WorkspaceVideoCapacityException>()));
+    await coordinator.claimVideo();
 
     expect(musicStops, 0);
     expect(videoStops, 0);
     expect(coordinator.hasVideoSession, isTrue);
+  });
+
+  test('two retained workspace videos reject a third native video session', () async {
+    final coordinator = PlaybackCoordinator.instance;
+    coordinator.setWorkspaceVideoSessionCount(2);
+    addTearDown(() => coordinator.setWorkspaceVideoSessionCount(0));
+
+    await expectLater(coordinator.claimVideo(), throwsA(isA<WorkspaceVideoCapacityException>()));
+  });
+
+  test('concurrent native video opens reserve primary and companion before awaiting teardown', () async {
+    final coordinator = PlaybackCoordinator.instance;
+    coordinator.setWorkspaceVideoSessionCount(0);
+    coordinator.setWorkspaceVideoPlayerSlots(const []);
+    final teardown = Completer<void>();
+    Future<void> stopNarration() => teardown.future;
+    coordinator.registerNarrationSession(stopNarration);
+    addTearDown(() {
+      coordinator.unregisterNarrationSession(stopNarration);
+      coordinator.setWorkspaceVideoSessionCount(0);
+      coordinator.setWorkspaceVideoPlayerSlots(const []);
+    });
+
+    final primaryFuture = coordinator.claimVideoSlot();
+    final companionFuture = coordinator.claimVideoSlot();
+
+    expect(coordinator.nextVideoPlayerSlot, isNull);
+    teardown.complete();
+    final primary = await primaryFuture;
+    final companion = await companionFuture;
+    expect(primary.slot, VideoPlayerSlot.primary);
+    expect(companion.slot, VideoPlayerSlot.companion);
+
+    primary.release();
+    expect(coordinator.nextVideoPlayerSlot, VideoPlayerSlot.primary);
+    companion.release();
+    expect(coordinator.nextVideoPlayerSlot, VideoPlayerSlot.primary);
+  });
+
+  test('failed native video admission releases its reserved channel', () async {
+    final coordinator = PlaybackCoordinator.instance;
+    coordinator.setWorkspaceVideoSessionCount(0);
+    coordinator.setWorkspaceVideoPlayerSlots(const []);
+    Future<void> reject() => Future<void>.error(StateError('narration teardown failed'));
+    coordinator.registerNarrationSession(reject);
+    addTearDown(() {
+      coordinator.unregisterNarrationSession(reject);
+      coordinator.setWorkspaceVideoSessionCount(0);
+      coordinator.setWorkspaceVideoPlayerSlots(const []);
+    });
+
+    await expectLater(coordinator.claimVideoSlot(), throwsStateError);
+
+    expect(coordinator.nextVideoPlayerSlot, VideoPlayerSlot.primary);
+  });
+
+  test('a file-backed video can claim a native slot without stopping its own serialized owner', () async {
+    final coordinator = PlaybackCoordinator.instance;
+    var fileStops = 0;
+    Future<void> fileOwner() async => fileStops++;
+    coordinator.registerFileSession(fileOwner);
+    addTearDown(() => coordinator.unregisterFileSession(fileOwner));
+
+    await coordinator.claimVideo(stopFileSession: false);
+
+    expect(fileStops, 0);
   });
 
   test('workspace retained music survives a new video claim', () async {

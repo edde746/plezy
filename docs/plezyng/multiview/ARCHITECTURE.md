@@ -116,9 +116,9 @@ A surface move within one engine must keep the same native media instance. Cross
 
 ## Native player isolation
 
-Current fixed channels include `com.plezy/mpv_player`, `com.plezy/mpv_audio_player`, `com.plezy/exo_player`, and singleton `com.plezy/pip`. Current `PlayerBase` event-owner and retirement safeguards are intentional. Do not remove them without equivalent protections.
+The current implementation keeps the legacy primary channels and adds isolated companion channels: `com.plezy/mpv_player` / `com.plezy/mpv_player/workspace`, `com.plezy/exo_player` / `com.plezy/exo_player/workspace`, and one plugin/core/event owner per channel on Apple, Windows and Linux. Audio-only MPV remains on `com.plezy/mpv_audio_player`; system PiP remains its separate singleton platform capability. `PlaybackCoordinator` leases a slot synchronously before asynchronous session arbitration and releases it only after its owner has disposed the core. `PlayerBase` event-owner and retirement safeguards remain scoped to each channel. The fixed companion route is an interim two-slot contract; any future slot growth should move to explicit session IDs or a native registry.
 
-Introduce a native session factory/registry. Choose either per-instance method/event channels or one multiplexed channel with an explicit instance ID on every message. Prefer one multiplexed control/event transport per engine with a native registry and Dart dispatcher, provided backpressure and teardown tests pass. Old calls resolve to a reserved legacy instance during migration; new workspace code always supplies an ID.
+Keep channel registration isolated and verify that the primary and companion instances have separate cores, event sinks, surfaces and retirement state. If workspace capacity grows beyond two native video slots, introduce a native session factory/registry with explicit instance IDs instead of adding more fixed channels. Old calls continue to resolve to the primary instance.
 
 Each native session owns its core, decoder, event sink, HTTP/source state, subtitle renderer, surface binding, timers, observers and retirement task. A disposal for A cannot cancel B's event stream, audio device, PiP delegate or surface. Add operation generation checks at both ends; an ID is not enough if it is reused. Avoid unbounded dispatch queues from multiple 60 Hz property streams.
 

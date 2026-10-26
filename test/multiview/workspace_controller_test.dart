@@ -38,6 +38,7 @@ WorkspaceSessionDescriptor _descriptor(
 
 WorkspaceSurfaceRegistration _registration(
   WorkspaceSessionDescriptor descriptor, {
+  VideoPlayerSlot? videoPlayerSlot,
   void Function()? onRestore,
   void Function()? onClose,
   WorkspaceOwnershipHandler? onAudioOwnershipChanged,
@@ -49,6 +50,7 @@ WorkspaceSurfaceRegistration _registration(
   onClose: onClose,
   onAudioOwnershipChanged: onAudioOwnershipChanged ?? (descriptor.hasAudio ? (_) {} : null),
   onInputOwnershipChanged: onInputOwnershipChanged ?? (descriptor.acceptsInput ? (_) {} : null),
+  videoPlayerSlot: videoPlayerSlot,
 );
 
 void main() {
@@ -160,6 +162,70 @@ void main() {
       expect(updated.kind, MultiviewMediaKind.video);
       expect(updated.hasVideo, isTrue);
       expect(updated.id, 'reader');
+    });
+
+    test('native video slots remain stable and the released slot is reused first', () {
+      final controller = MultiviewWorkspaceController();
+      addTearDown(controller.dispose);
+      final first = _descriptor('primary', hasAudio: true, hasVideo: true);
+      final second = _descriptor('companion', hasAudio: true, hasVideo: true);
+
+      expect(
+        controller.register(_registration(first, videoPlayerSlot: VideoPlayerSlot.primary)),
+        isTrue,
+      );
+      expect(PlaybackCoordinator.instance.nextVideoPlayerSlot, VideoPlayerSlot.companion);
+      expect(
+        controller.register(
+          _registration(_descriptor('duplicate-primary', hasAudio: true, hasVideo: true),
+              videoPlayerSlot: VideoPlayerSlot.primary),
+        ),
+        isFalse,
+      );
+      expect(
+        controller.register(_registration(second, videoPlayerSlot: VideoPlayerSlot.companion)),
+        isTrue,
+      );
+      expect(PlaybackCoordinator.instance.nextVideoPlayerSlot, isNull);
+      expect(
+        controller.updateDescriptor(second.copyWith(title: 'Companion film', subtitle: 'Updated metadata')),
+        isTrue,
+      );
+      expect(PlaybackCoordinator.instance.nextVideoPlayerSlot, isNull);
+
+      controller.unregister('primary');
+      expect(PlaybackCoordinator.instance.nextVideoPlayerSlot, VideoPlayerSlot.primary);
+      controller.unregister('companion');
+      expect(PlaybackCoordinator.instance.nextVideoPlayerSlot, VideoPlayerSlot.primary);
+    });
+
+    test('a companion that registers first stays muted until the primary arrives', () async {
+      final controller = MultiviewWorkspaceController();
+      addTearDown(controller.dispose);
+      final audioChanges = <String>[];
+
+      controller.register(
+        _registration(
+          _descriptor('companion', hasAudio: true, hasVideo: true),
+          videoPlayerSlot: VideoPlayerSlot.companion,
+          onAudioOwnershipChanged: (enabled) => audioChanges.add('companion:$enabled'),
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+      expect(controller.audibleSessionId, isNull);
+      expect(audioChanges, ['companion:false']);
+
+      controller.register(
+        _registration(
+          _descriptor('primary', hasAudio: true, hasVideo: true),
+          videoPlayerSlot: VideoPlayerSlot.primary,
+          onAudioOwnershipChanged: (enabled) => audioChanges.add('primary:$enabled'),
+        ),
+      );
+      await Future<void>.delayed(Duration.zero);
+
+      expect(controller.audibleSessionId, 'primary');
+      expect(audioChanges, ['companion:false', 'primary:true']);
     });
 
     test('hydrates profile layout before matching live sessions and saves changes', () async {

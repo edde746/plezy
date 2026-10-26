@@ -45,6 +45,18 @@ Future<void> _mount(WidgetTester tester, MultiviewWorkspaceController controller
   await tester.pump();
 }
 
+final class _MountProbe extends StatefulWidget {
+  const _MountProbe({super.key});
+
+  @override
+  State<_MountProbe> createState() => _MountProbeState();
+}
+
+final class _MountProbeState extends State<_MountProbe> {
+  @override
+  Widget build(BuildContext context) => const Text('Retained game surface');
+}
+
 void main() {
   testWidgets('long press and drag moves a video pane on the shared surface', (tester) async {
     final controller = MultiviewWorkspaceController();
@@ -67,32 +79,31 @@ void main() {
     controller.dispose();
   });
 
-  testWidgets('reader body dragging requires the explicit Move mode', (tester) async {
-    final controller = MultiviewWorkspaceController();
-    controller.register(_registration(id: 'reader', title: 'Book', kind: MultiviewMediaKind.publication));
-    await _mount(tester, controller);
+  testWidgets('long press and drag moves reader, comic and game panes', (tester) async {
+    for (final (id, kind) in [
+      ('reader', MultiviewMediaKind.publication),
+      ('comic', MultiviewMediaKind.comic),
+      ('game', MultiviewMediaKind.game),
+    ]) {
+      final controller = MultiviewWorkspaceController();
+      controller.register(_registration(id: id, title: id, kind: kind));
+      await _mount(tester, controller);
 
-    final surface = find.byKey(const ValueKey('workspace_surface'));
-    final initial = controller.placementFor('reader');
-    var gesture = await tester.startGesture(tester.getCenter(surface));
-    await gesture.moveBy(const Offset(60, 40));
-    await tester.pump();
-    await gesture.up();
-    await tester.pump();
-    expect(controller.placementFor('reader').left, initial.left);
+      final surface = find.byKey(const ValueKey('workspace_surface'));
+      final initial = controller.placementFor(id);
+      final gesture = await tester.startGesture(tester.getCenter(surface));
+      await tester.pump(const Duration(milliseconds: 600));
+      await gesture.moveBy(const Offset(60, 40));
+      await tester.pump();
+      await gesture.up();
+      await tester.pump();
 
-    await tester.tap(find.widgetWithIcon(IconButton, Symbols.drag_handle_rounded));
-    await tester.pump();
-    gesture = await tester.startGesture(tester.getCenter(surface));
-    await gesture.moveBy(const Offset(60, 40));
-    await tester.pump();
-    await gesture.up();
-    await tester.pump();
+      expect(controller.placementFor(id).left, greaterThan(initial.left), reason: '$kind body long press');
+      expect(controller.placementFor(id).top, greaterThan(initial.top), reason: '$kind body long press');
 
-    expect(controller.placementFor('reader').left, greaterThan(initial.left));
-
-    await tester.pumpWidget(const SizedBox.shrink());
-    controller.dispose();
+      await tester.pumpWidget(const SizedBox.shrink());
+      controller.dispose();
+    }
   });
 
   testWidgets('fullscreen is available through an explicit accessible control', (tester) async {
@@ -106,6 +117,48 @@ void main() {
     await tester.pumpAndSettle();
 
     expect(controller.fullscreenSessionId, 'video');
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+  });
+
+  testWidgets('a hidden game surface stays mounted while another pane is fullscreen', (tester) async {
+    final controller = MultiviewWorkspaceController();
+    final gameSurfaceKey = GlobalKey<_MountProbeState>();
+    controller.register(
+      WorkspaceSurfaceRegistration(
+        descriptor: WorkspaceSessionDescriptor(
+          id: 'game',
+          kind: MultiviewMediaKind.game,
+          title: 'Game',
+          hasVideo: true,
+          openedAt: DateTime.utc(2026, 1, 1),
+        ),
+        buildSurface: (_) => _MountProbe(key: gameSurfaceKey),
+        onRestore: () {},
+      ),
+    );
+    controller.register(
+      WorkspaceSurfaceRegistration(
+        descriptor: WorkspaceSessionDescriptor(
+          id: 'video',
+          kind: MultiviewMediaKind.video,
+          title: 'Film',
+          hasVideo: true,
+          openedAt: DateTime.utc(2026, 1, 1),
+        ),
+        buildSurface: (_) => const ColoredBox(color: Colors.black),
+        onRestore: () {},
+      ),
+    );
+    await _mount(tester, controller);
+    expect(gameSurfaceKey.currentState, isNotNull);
+
+    controller.promoteToFullscreen('video');
+    await tester.pumpAndSettle();
+
+    expect(gameSurfaceKey.currentState, isNotNull);
+    expect(find.text('Retained game surface', skipOffstage: false), findsOneWidget);
 
     await tester.pumpWidget(const SizedBox.shrink());
     controller.dispose();

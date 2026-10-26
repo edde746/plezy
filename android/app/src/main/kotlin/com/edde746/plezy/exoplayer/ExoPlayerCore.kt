@@ -367,6 +367,8 @@ class ExoPlayerCore(private val activity: Activity) :
   // Audio focus
   private var audioFocusManager: AudioFocusManager? = null
 
+  @Volatile private var audioFocusEnabled: Boolean = true
+
   // Track state for event emission
   private var lastPosition: Long = 0
 
@@ -4148,7 +4150,13 @@ class ExoPlayerCore(private val activity: Activity) :
 
   // Audio Focus
 
-  override fun requestAudioFocus(): Boolean = audioFocusManager?.requestAudioFocus() ?: false
+  override fun setAudioFocusEnabled(enabled: Boolean) {
+    audioFocusEnabled = enabled
+    if (!enabled) audioFocusManager?.abandonAudioFocus()
+  }
+
+  override fun requestAudioFocus(): Boolean =
+    if (!audioFocusEnabled) true else audioFocusManager?.requestAudioFocus() ?: false
 
   override fun abandonAudioFocus() {
     audioFocusManager?.abandonAudioFocus()

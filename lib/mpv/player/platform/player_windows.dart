@@ -5,4 +5,6 @@ import '../video_rect_support.dart';
 ///
 /// mpv renders into a child HWND, so Flutter only ever tells it where to sit
 /// (see [VideoRectSupport]).
-class PlayerWindows extends PlayerNative {}
+class PlayerWindows extends PlayerNative {
+  PlayerWindows({super.companionSession});
+}

@@ -64,6 +64,23 @@ class MpvPlayerPlugin: NSObject, FlutterPlugin, FlutterStreamHandler, MpvPluginS
     }
   }
 
+  /// Registers the isolated in-app workspace decoder. It intentionally has no
+  /// system PiP channel; the workspace owns that presentation and lifecycle.
+  static func registerWorkspace(with registrar: FlutterPluginRegistrar) {
+    let methodChannel = FlutterMethodChannel(
+      name: "com.plezy/mpv_player/workspace",
+      binaryMessenger: registrar.messenger()
+    )
+    let eventChannel = FlutterEventChannel(
+      name: "com.plezy/mpv_player/workspace/events",
+      binaryMessenger: registrar.messenger()
+    )
+    let instance = MpvPlayerPlugin()
+    instance.registrar = registrar
+    registrar.addMethodCallDelegate(instance, channel: methodChannel)
+    eventChannel.setStreamHandler(instance)
+  }
+
   // MARK: - FlutterStreamHandler
 
   func onListen(withArguments arguments: Any?, eventSink events: @escaping FlutterEventSink)

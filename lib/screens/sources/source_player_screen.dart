@@ -14,6 +14,7 @@ import '../../multiview/workspace_controller.dart';
 import '../../multiview/workspace_models.dart';
 import '../../utils/formatters.dart';
 import '../../services/open_subtitles_client.dart';
+import '../../services/playback_coordinator.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
 import '../../sources/listening_tools.dart';
@@ -169,6 +170,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
         hasVideo: playback.video,
         openedAt: DateTime.now(),
       ),
+      videoPlayerSlot: playback.videoPlayerSlot,
       buildSurface: (_) => SourcePlaybackWorkspaceSurface(playback: playback, controller: controller, sessionId: id),
       onRestore: () {
         WidgetsBinding.instance.addPostFrameCallback((_) {

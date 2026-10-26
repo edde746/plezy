@@ -16,6 +16,7 @@ import '../../media/media_source_info.dart';
 import '../../models/companion_remote/remote_command.dart';
 import '../../mpv/models.dart';
 import '../../mpv/player/player.dart';
+import '../../mpv/player/player_base.dart' show PlayerAudioFocusOwnership;
 import '../../mpv/player/player_native.dart';
 import '../../utils/app_logger.dart';
 import '../../utils/notification_permission.dart';
@@ -524,6 +525,8 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService
         if (!launchCurrent()) return;
       }
       final player = await _ensurePlayer();
+      if (!launchCurrent() || _player != player) return;
+      await player.setWorkspaceAudioFocusEnabled(_workspaceAudioEnabled);
       if (!launchCurrent() || _player != player) return;
       _ensureMediaControls();
       // Re-asserted per open (cheap, idempotent): the native side drops the
@@ -1778,7 +1781,26 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService
     _workspaceAudioEnabled = enabled;
     final player = _player;
     if (player == null || player.disposed) return;
-    await player.setVolume(enabled ? _volume * _musicGain : 0);
+    if (enabled) {
+      try {
+        await player.setWorkspaceAudioFocusEnabled(true);
+        if (player.state.isActive) await player.requestAudioFocus();
+      } catch (error, stackTrace) {
+        appLogger.w('Music workspace audio focus handoff failed', error: error, stackTrace: stackTrace);
+      }
+      await player.setVolume(_volume * _musicGain);
+      return;
+    }
+
+    try {
+      await player.setVolume(0);
+    } finally {
+      try {
+        await player.setWorkspaceAudioFocusEnabled(false);
+      } catch (error, stackTrace) {
+        appLogger.w('Music workspace audio focus release failed', error: error, stackTrace: stackTrace);
+      }
+    }
   }
 
   static Future<void> _writePersistedVolume(double volume) async {

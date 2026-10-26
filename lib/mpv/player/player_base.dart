@@ -18,6 +18,19 @@ import 'player_state.dart';
 import 'player_stream_controllers.dart';
 import 'player_streams.dart';
 
+/// Optional native control for excluding a muted workspace session from the
+/// device's app-wide audio-focus arbitration.
+abstract interface class PlayerAudioFocusControl {
+  Future<void> setAudioFocusEnabled(bool enabled);
+}
+
+extension PlayerAudioFocusOwnership on Player {
+  Future<void> setWorkspaceAudioFocusEnabled(bool enabled) async {
+    final current = this;
+    if (current is PlayerAudioFocusControl) await current.setAudioFocusEnabled(enabled);
+  }
+}
+
 /// Abstract base class for player implementations.
 ///
 /// This class contains shared logic for both [PlayerAndroid] (ExoPlayer)
