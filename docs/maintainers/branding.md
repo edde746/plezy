@@ -40,7 +40,7 @@ badge border; navy interiors become transparent for system tinting.
 ## Platform coverage
 
 - Flutter startup, authentication, about, README and Linux packaging use the
-  shared PNG exports. Startup and the icon picker use the padded foreground.
+  shared PNG exports. The icon picker uses the padded foreground.
 - Android legacy, adaptive, monochrome, notification, TV, and all 23 alternate
   slots are exported. Adaptive foregrounds fit the entire mark and NG badge
   inside a circle smaller than the Android safe area.
@@ -50,11 +50,11 @@ badge border; navy interiors become transparent for system tinting.
   wide shelf's 2× image are exported.
 - Windows ICO includes 16, 24, 32, 48, 64, 128 and 256 px frames. Every MSIX tile,
   target-size variant, store logo and splash image is exported.
-- Google Play's icon, feature graphic, and server-selection screenshot use the
-  selected mark. The latter two retain their previous non-logo content from
-  clean bases in `assets/branding`. The server-selection screenshot has a logo
-  replacement, not a new device capture. Other screenshots do not contain the
-  replaced mark.
+- Google Play and Amazon icons, the Play feature graphic, and the Android and
+  iPhone server-selection screenshots use the selected mark. The graphic and
+  screenshots retain their previous non-logo content from clean bases in
+  `assets/branding`. These are logo replacements in existing screenshots, not
+  new device captures. Other screenshots do not contain the replaced mark.
 
 The 23 alternate names and launcher identifiers are permanent compatibility
 identifiers. Their old motifs have been replaced with this logo; only the

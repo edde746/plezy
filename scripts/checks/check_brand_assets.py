@@ -8,6 +8,7 @@ import json
 import re
 import struct
 import sys
+import xml.etree.ElementTree as ET
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
@@ -78,6 +79,14 @@ def check(root: Path = ROOT) -> list[str]:
     for layer in ('foreground', 'monochrome'):
         if (root / f'android/app/src/main/res/drawable/ic_launcher_{layer}.xml').exists():
             errors.append(f'Obsolete Android vector shadows the selected {layer} PNG')
+    adaptive = ET.parse(root / 'android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml').getroot()
+    for layer in ('foreground', 'monochrome'):
+        resource = adaptive.find(layer).attrib['{http://schemas.android.com/apk/res/android}drawable']
+        name = resource.removeprefix('@drawable/')
+        for density in ('mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'):
+            path = f'android/app/src/main/res/drawable-{density}/{name}.png'
+            if path not in exports:
+                errors.append(f'Android launcher references art outside the approved exports: {path}')
     # The old unique curve must not survive in source SVG / Android resources.
     for directory in ('assets', 'ios/plezy.icon', 'macos/plezy.icon', 'android/app/src/main/res'):
         for path in (root / directory).rglob('*'):

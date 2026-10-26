@@ -40,9 +40,9 @@ Changing the install IDs means an install signed under upstream's identity canno
 | WinGet | Wired, credential-gated | `publish-winget.yml` submits fork-specific manifests as a pull request. Microsoft review and merge are still required. |
 | Chocolatey | Wired, credential-gated | `publish-chocolatey.yml` publishes the fork-specific package after a release. Chocolatey moderation may be required. |
 | Microsoft Store | Package prepared, listing identity required | Set the repository variables below to build `plezyng-windows.msixbundle`; submit it through PlezyNG's Partner Center listing. The optional signed Inno Setup installer is also retained for manual EXE/MSI listing workflows. No automated Partner Center submission is configured. |
-| Google Play | Draft app record; closed-test release not published | First upload the signed, Play-billing-enabled AAB to an internal or closed testing track. Play Console currently requires a processed billing-enabled artifact before it enables one-time product setup. Then create `plezyng_lifetime_unlock` at USD $2.99, publish the closed-test release, and give testers the opt-in URL in the README. The link is inactive until the test is published, and only invited accounts can join. At least 12 testers must remain opted in continuously for 14 days before production access. |
-| Amazon Appstore / Fire TV | App record and lifetime IAP created; Test submission incomplete | `plezyng_lifetime_unlock` is currently saved at CAD $2.99; change the base price to USD $2.99. The Amazon public key is in the Android assets. A new Amazon security profile is mapped to App Submission API and its credentials are configured in GitHub Actions. Amazon still returns a generic error when the IAP is submitted to Test; app release metadata is incomplete. |
-| Apple App Store (iOS) | App record and lifetime IAP created; signed build and TestFlight setup incomplete | `plezyng_lifetime_unlock` is a non-consumable currently configured with a CAD $2.99 base price; change it to USD $2.99. All 175 regions are selected and English (Canada) copy is present. It remains Prepare for Submission. A signed IPA must be uploaded before it can be distributed through TestFlight or submitted with an app version. |
+| Google Play | Draft app record; Alpha regions and five tester accounts configured; closed-test release not published | The Alpha track targets all 178 available regions and has a tester list with five accounts. First upload the signed, Play-billing-enabled AAB to an internal or closed testing track. Play Console currently requires a processed billing-enabled artifact before it enables one-time product setup. Then create `plezyng_lifetime_unlock` at USD $2.99 and publish the closed-test release. The opt-in URL is in the README but stays inactive until publication; only listed accounts can join. At least 12 testers must remain opted in continuously for 14 days before production access. |
+| Amazon Appstore / Fire TV | App record and lifetime IAP created; Test submission incomplete | `plezyng_lifetime_unlock` is saved at a USD $2.99 base price; Amazon calculates local-market equivalents. The Amazon public key is in the Android assets. A new Amazon security profile is mapped to App Submission API and its credentials are configured in GitHub Actions. Amazon still returns a generic error when the IAP is submitted to Test; app release metadata is incomplete. |
+| Apple App Store (iOS) | App record and lifetime IAP created; signed build and TestFlight setup incomplete | `plezyng_lifetime_unlock` is a non-consumable with a USD $2.99 base price and a price schedule for 175 regions. English (Canada) copy is present. It remains Prepare for Submission. A signed IPA must be uploaded before it can be distributed through TestFlight or submitted with an app version. |
 | Apple App Store (tvOS) | App record created; signing and TestFlight setup incomplete | The app's iOS and tvOS platforms can share the lifetime IAP. The manual workflow uploads a signed tvOS IPA to App Store Connect without submitting it to App Review. |
 | Mac App Store | Not a Plezy upstream channel | Plezy distributes macOS through a direct DMG and Homebrew. |
 | Snap Store | Name registered, credential scope needs verification | `publish-snap.yml` uploads the matching architecture package to `stable` after a published release. `SNAPCRAFT_STORE_CREDENTIALS` must authorize the registered `plezyng` snap and required channels. Manual dispatch can publish an existing release to `edge`, `beta`, `candidate`, or `stable`. |
@@ -89,23 +89,23 @@ For iOS, the base64 export-options plist must declare `method` as `app-store-con
 
 GHCR uses the workflow's `GITHUB_TOKEN`; make the first package public in GitHub Packages settings if anonymous pulls are intended. The Discord publisher uses `DISCORD_RELEASE_WEBHOOK`.
 
-At the 2026-10-25 readiness check, repository secrets are configured for Android signing, Amazon
+At the 2026-10-26 readiness check, repository secrets are configured for Android signing, Amazon
 Appstore, AUR, Chocolatey, COPR, Discord, Docker Hub, Launchpad signing, Snap, and WinGet. The `AUR_PACKAGE_NAME`,
 `COPR_PROJECT`, and `LAUNCHPAD_PPA` variables are also configured. The `ppa:keefshape/plezyng`
 archive is active and empty. COPR project `slskdn/plezyng` is active for Fedora 43–45 and Rawhide
 on x86_64 and aarch64, with no builds yet. The `plezyng` Snap name is registered; verify that the
 existing Snap credential has the package and channel scope required by the publisher. The Amazon
 developer account has passed ID verification and a PlezyNG app record exists. Its
-`plezyng_lifetime_unlock` entitlement is currently saved at CAD $2.99 and needs to be changed to
-USD $2.99; the security profile is mapped to App
+`plezyng_lifetime_unlock` entitlement is saved at a USD $2.99 base price; the security profile is mapped to App
 Submission API; GitHub secrets `AMAZON_APPSTORE_CLIENT_ID` and `AMAZON_APPSTORE_CLIENT_SECRET` are
 configured. The IAP remains Ready to Submit after a generic Test-submission error, and the app
-release metadata is incomplete. Google Play has a PlezyNG draft record; one-time product creation
-is gated on an uploaded billing-enabled APK/AAB, and production access still needs 12 closed-test
-participants for 14 days after the closed-test release is published and the README contains the
-active tester opt-in URL. Apple has iOS and tvOS records; its non-consumable lifetime IAP is
-currently configured at CAD $2.99 with all current regions selected and needs to be changed to
-USD $2.99; it remains Prepare for Submission.
+release metadata is incomplete. Google Play has a PlezyNG draft record and an Alpha closed-test
+track targeting 178 regions, with five tester accounts configured and no release. One-time product
+creation is gated on a processed billing-enabled APK/AAB; the signed `2.24.1` release build is in
+progress. Production access still needs 12 closed-test participants to remain opted in for 14 days
+after publication; the README contains the opt-in URL and notes that it is not live yet. Apple has
+iOS and tvOS records; its non-consumable lifetime IAP is configured with a USD $2.99 base price
+and a 175-region schedule; it remains Prepare for Submission.
 Google Play service-account access, Apple signing and submission credentials, Sparkle signing,
 Windows installer signing, and Microsoft Store identity values are not configured. Keep existing
 credentials intact when adding replacements; do not reuse signing keys or store identities from

@@ -32,8 +32,15 @@ RETIRED = [
     "android/app/src/main/res/drawable/ic_launcher_monochrome.xml",
     "ios/plezy.icon/Assets/plezy-cropped.svg",
     "macos/plezy.icon/Assets/plezy-cropped.svg",
+    "ios/plezy.icon/Assets/plezy-cropped.png",
+    "macos/plezy.icon/Assets/plezy-cropped.png",
     "assets/plezy_ng_badge.svg",
     "scripts/codegen/ng_brand_badge.py",
+]
+RETIRED += [
+    f"android/app/src/main/res/drawable-{density}/ic_launcher_{layer}.png"
+    for density in ("mdpi", "hdpi", "xhdpi", "xxhdpi", "xxxhdpi")
+    for layer in ("foreground", "monochrome")
 ]
 
 
@@ -126,6 +133,10 @@ class BrandRenderer:
             image = Image.open(ROOT / "assets/branding/server-options-base.png").convert("RGBA")
             image.alpha_composite(self.frame((315, 315), 1), (382, 173))
             image = image.convert("RGB")
+        elif role == "iphone_server_options":
+            image = Image.open(ROOT / "assets/branding/iphone-server-options-base.png").convert("RGBA")
+            image.alpha_composite(self.frame((424, 424), 1), (376, 229))
+            image = image.convert("RGB")
         else:
             raise ValueError(f"Unknown brand asset role: {role}")
         if image.size != size:
@@ -183,7 +194,7 @@ class BrandRenderer:
             definition = json.loads((ROOT / path).read_text())
             group = definition["groups"][0]
             layer = group["layers"][0]
-            layer["image-name"] = "plezy-cropped.png"
+            layer["image-name"] = "plezyng-app-icon.png"
             layer["position"]["scale"] = .75
             layer["glass"] = False
             group["specular"] = False

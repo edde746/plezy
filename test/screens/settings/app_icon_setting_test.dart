@@ -364,16 +364,16 @@ void main() {
         expect(defaultLogo(), findsNothing);
       });
 
-      testWidgets('on Android phones: white, or #1A1A1A in night mode', (tester) async {
+      testWidgets('on Android phones: the navy plate in both brightness modes', (tester) async {
         debugDefaultTargetPlatformOverride = TargetPlatform.android;
         try {
           await pumpDefault(tester);
-          expect(plate(tester), const Color(0xFFFFFFFF));
+          expect(plate(tester), const Color(0xFF131928));
 
           tester.platformDispatcher.platformBrightnessTestValue = Brightness.dark;
           addTearDown(tester.platformDispatcher.clearPlatformBrightnessTestValue);
           await tester.pump();
-          expect(plate(tester), const Color(0xFF1A1A1A));
+          expect(plate(tester), const Color(0xFF131928));
         } finally {
           debugDefaultTargetPlatformOverride = null;
         }

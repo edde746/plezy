@@ -2,7 +2,7 @@
   "schema": 1,
   "source": "assets/branding/plezyng-approved.png",
   "source_sha256": "05b148e47d322debe3501a552c932b5b6c8b90a488bf71262404bf13b4251e4d",
-  "default_background": "#101521",
+  "default_background": "#131928",
   "themes": {
     "crt": "#f1e7d3",
     "ember": "#ec714d",
@@ -65,7 +65,7 @@
       "fit": 1
     },
     {
-      "path": "ios/plezy.icon/Assets/plezy-cropped.png",
+      "path": "ios/plezy.icon/Assets/plezyng-app-icon.png",
       "size": [
         1024,
         1024
@@ -74,7 +74,7 @@
       "fit": 1
     },
     {
-      "path": "macos/plezy.icon/Assets/plezy-cropped.png",
+      "path": "macos/plezy.icon/Assets/plezyng-app-icon.png",
       "size": [
         1024,
         1024
@@ -2523,7 +2523,7 @@
       "fit": 0.76
     },
     {
-      "path": "android/app/src/main/res/drawable-mdpi/ic_launcher_foreground.png",
+      "path": "android/app/src/main/res/drawable-mdpi/plezyng_launcher_foreground.png",
       "size": [
         108,
         108
@@ -2531,7 +2531,7 @@
       "role": "adaptive"
     },
     {
-      "path": "android/app/src/main/res/drawable-mdpi/ic_launcher_monochrome.png",
+      "path": "android/app/src/main/res/drawable-mdpi/plezyng_launcher_monochrome.png",
       "size": [
         108,
         108
@@ -2539,7 +2539,7 @@
       "role": "adaptive_mono"
     },
     {
-      "path": "android/app/src/main/res/drawable-hdpi/ic_launcher_foreground.png",
+      "path": "android/app/src/main/res/drawable-hdpi/plezyng_launcher_foreground.png",
       "size": [
         162,
         162
@@ -2547,7 +2547,7 @@
       "role": "adaptive"
     },
     {
-      "path": "android/app/src/main/res/drawable-hdpi/ic_launcher_monochrome.png",
+      "path": "android/app/src/main/res/drawable-hdpi/plezyng_launcher_monochrome.png",
       "size": [
         162,
         162
@@ -2555,7 +2555,7 @@
       "role": "adaptive_mono"
     },
     {
-      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_foreground.png",
+      "path": "android/app/src/main/res/drawable-xhdpi/plezyng_launcher_foreground.png",
       "size": [
         216,
         216
@@ -2563,7 +2563,7 @@
       "role": "adaptive"
     },
     {
-      "path": "android/app/src/main/res/drawable-xhdpi/ic_launcher_monochrome.png",
+      "path": "android/app/src/main/res/drawable-xhdpi/plezyng_launcher_monochrome.png",
       "size": [
         216,
         216
@@ -2571,7 +2571,7 @@
       "role": "adaptive_mono"
     },
     {
-      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_foreground.png",
+      "path": "android/app/src/main/res/drawable-xxhdpi/plezyng_launcher_foreground.png",
       "size": [
         324,
         324
@@ -2579,7 +2579,7 @@
       "role": "adaptive"
     },
     {
-      "path": "android/app/src/main/res/drawable-xxhdpi/ic_launcher_monochrome.png",
+      "path": "android/app/src/main/res/drawable-xxhdpi/plezyng_launcher_monochrome.png",
       "size": [
         324,
         324
@@ -2587,7 +2587,7 @@
       "role": "adaptive_mono"
     },
     {
-      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_foreground.png",
+      "path": "android/app/src/main/res/drawable-xxxhdpi/plezyng_launcher_foreground.png",
       "size": [
         432,
         432
@@ -2595,7 +2595,7 @@
       "role": "adaptive"
     },
     {
-      "path": "android/app/src/main/res/drawable-xxxhdpi/ic_launcher_monochrome.png",
+      "path": "android/app/src/main/res/drawable-xxxhdpi/plezyng_launcher_monochrome.png",
       "size": [
         432,
         432
@@ -4296,6 +4296,32 @@
         1920
       ],
       "role": "server_options"
+    },
+    {
+      "path": "docs/maintainers/store-listing-assets/amazon/icon-large-512.png",
+      "size": [
+        512,
+        512
+      ],
+      "role": "plate",
+      "fit": 0.76
+    },
+    {
+      "path": "docs/maintainers/store-listing-assets/amazon/icon-small-114.png",
+      "size": [
+        114,
+        114
+      ],
+      "role": "plate",
+      "fit": 0.76
+    },
+    {
+      "path": "docs/maintainers/store-listing-assets/app-store/iphone-dynamic-island-medium/iphone-01-server-options-1179x2556.png",
+      "size": [
+        1179,
+        2556
+      ],
+      "role": "iphone_server_options"
     }
   ]
 }
