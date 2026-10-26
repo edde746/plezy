@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../i18n/strings.g.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
+import '../../sources/publication_library.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
@@ -20,6 +21,7 @@ import 'source_detail_screen.dart';
 import 'source_widgets.dart';
 import '../../sources/publication_shelf.dart';
 import 'source_navigation.dart';
+import 'source_sync_screen.dart';
 import '../lending/public_libraries_screen.dart';
 
 class SourcesScreen extends StatefulWidget {
@@ -52,6 +54,21 @@ class _SourcesScreenState extends State<SourcesScreen> {
   String _query = '';
   SourceItemKind? _filter;
   int _request = 0;
+  PublicationSort _sort = PublicationSort.title;
+  PublicationStatus _status = PublicationStatus.all;
+  String? _preferenceProfile;
+  String get _browsePreference => 'publication-browse:${widget.source?.id ?? widget.shelf?.name ?? 'all'}';
+  Future<void> _saveBrowsePreference() async {
+    final sources = context.read<SourceController>();
+    await sourceAction(context, () async {
+      sources.requireSession();
+      await sources.repository.savePreference(sources.profileId!, _browsePreference, {
+        'sort': _sort.name,
+        'status': _status.name,
+      });
+    });
+  }
+
   @override
   void initState() {
     super.initState();
@@ -68,6 +85,13 @@ class _SourcesScreenState extends State<SourcesScreen> {
       await controller.ready;
       controller.requireSession();
       final epoch = controller.generation, profile = controller.profileId!;
+      if (_preferenceProfile != profile) {
+        final prefs = await controller.repository.preference(profile, _browsePreference);
+        controller.requireSession(epoch);
+        _sort = PublicationSort.values.where((v) => v.name == prefs['sort']).firstOrNull ?? PublicationSort.title;
+        _status = PublicationStatus.values.where((v) => v.name == prefs['status']).firstOrNull ?? PublicationStatus.all;
+        _preferenceProfile = profile;
+      }
       List<SourceEntry> items;
       if (widget.source == null || widget.offlineOnly) {
         items = await controller.repository.entries(profile);
@@ -140,10 +164,13 @@ class _SourcesScreenState extends State<SourcesScreen> {
     } else if (action == 'cancel-scan') {
       controller.cancelScan(source.id);
     } else if (action == 'remove') {
+      final removesSyncSource = controller.syncConfig?.sourceId == source.id;
       if (!await showConfirmDialog(
         context,
         title: t.fileSources.removeSource,
-        message: t.fileSources.disconnectMessage,
+        message: removesSyncSource
+            ? '${t.fileSources.disconnectMessage}\n${t.audiobook.syncSourceDisconnect}'
+            : t.fileSources.disconnectMessage,
         confirmText: t.fileSources.removeSource,
       )) {
         return;
@@ -171,7 +198,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
   Widget build(BuildContext context) {
     final sources = context.watch<SourceController>();
     final root = widget.source == null && !widget.offlineOnly && widget.shelf == null;
-    final entries = _entries
+    final filtered = _entries
         .where(
           (e) =>
               (widget.shelf == null || widget.shelf!.includes(e)) &&
@@ -180,12 +207,16 @@ class _SourcesScreenState extends State<SourcesScreen> {
               ('${e.title} ${e.author} ${e.narrator} ${e.series}').toLowerCase().contains(_query.toLowerCase()),
         )
         .toList();
-    entries.sort(
-      (a, b) => a.isFolder == b.isFolder
-          ? a.title.toLowerCase().compareTo(b.title.toLowerCase())
-          : a.isFolder
-          ? -1
-          : 1,
+    final entries = organizePublications(
+      filtered,
+      _progress,
+      sort: _sort,
+      status: _status,
+      mode: widget.shelf == PublicationShelf.audiobooks
+          ? PublicationMode.listening
+          : widget.shelf != null
+          ? PublicationMode.reading
+          : null,
     );
     final continuations =
         _progress.where((p) => !p.finished && p.fraction < 1 && _entries.any((e) => e.key == p.entryKey)).toList()
@@ -203,6 +234,60 @@ class _SourcesScreenState extends State<SourcesScreen> {
           ),
       focusableAppBarActions: true,
       actions: [
+        AppMenuButton<PublicationSort>(
+          tooltip: t.audiobook.librarySort,
+          icon: const AppIcon(Symbols.sort_rounded),
+          adaptiveSheet: true,
+          entriesBuilder: (_) => [
+            for (final value in PublicationSort.values)
+              AppMenuItem(
+                value: value,
+                selected: _sort == value,
+                label: switch (value) {
+                  PublicationSort.title => t.audiobook.sortTitle,
+                  PublicationSort.author => t.audiobook.sortAuthor,
+                  PublicationSort.narrator => t.audiobook.sortNarrator,
+                  PublicationSort.series => t.audiobook.sortSeries,
+                  PublicationSort.recent => t.audiobook.sortRecent,
+                },
+              ),
+          ],
+          onSelected: (v) {
+            setState(() => _sort = v);
+            unawaited(_saveBrowsePreference());
+          },
+        ),
+        AppMenuButton<PublicationStatus>(
+          tooltip: t.audiobook.statusFilter,
+          icon: const AppIcon(Symbols.filter_list_rounded),
+          adaptiveSheet: true,
+          entriesBuilder: (_) => [
+            for (final value in PublicationStatus.values)
+              AppMenuItem(
+                value: value,
+                selected: _status == value,
+                label: switch (value) {
+                  PublicationStatus.all => t.audiobook.statusAll,
+                  PublicationStatus.unstarted => t.audiobook.statusNew,
+                  PublicationStatus.inProgress => t.audiobook.statusProgress,
+                  PublicationStatus.finished => t.audiobook.statusFinished,
+                },
+              ),
+          ],
+          onSelected: (v) {
+            setState(() => _status = v);
+            unawaited(_saveBrowsePreference());
+          },
+        ),
+        if (widget.source == null)
+          IconButton(
+            tooltip: t.audiobook.syncTitle,
+            icon: const AppIcon(Symbols.cloud_sync_rounded),
+            onPressed: () async {
+              await Navigator.push(context, MaterialPageRoute(builder: (_) => const SourceSyncScreen()));
+              if (mounted) await _load();
+            },
+          ),
         if (root)
           IconButton(
             tooltip: t.fileSources.importFiles,

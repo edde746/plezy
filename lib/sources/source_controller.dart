@@ -21,6 +21,9 @@ import 'source_models.dart';
 import 'source_oauth.dart';
 import 'source_transport.dart';
 import 'publication_shelf.dart';
+import 'sync/publication_sync.dart';
+import 'sync/sync_store.dart';
+import 'sync/sync_document.dart';
 
 class SourceController extends ChangeNotifier {
   SourceController({SourceRepository? repository}) {
@@ -28,6 +31,24 @@ class SourceController extends ChangeNotifier {
   }
   late final Future<void> ready;
   late SourceRepository repository;
+  late PublicationSync cloudSync;
+  PublicationSyncConfig? syncConfig;
+  final Set<String> activeProgressKeys = {};
+  void holdProgress(String key) => activeProgressKeys.add(key);
+  void releaseProgress(String key) => activeProgressKeys.remove(key);
+  bool cloudConflict(String key) => cloudSync.conflicts.values.any(
+    (c) => c.values.any((v) {
+      final d = sourceMap(v.value['data']);
+      return v.value['type'] == 'progress' &&
+          PublicationProgress(
+                entryKey: c.entry.key,
+                edition: d['edition'] as String,
+                mode: PublicationMode.values.byName(d['mode'] as String),
+                session: '',
+              ).key ==
+              key;
+    }),
+  );
   late SourceOAuthService oauth;
   late PublicationDownloads downloads;
   final Map<String, Future<File?>> _covers = {};
@@ -60,6 +81,7 @@ class SourceController extends ChangeNotifier {
 
   Future<void> _initialize(SourceRepository? provided) async {
     repository = provided ?? SourceRepository(await SourceDatabase.open());
+    cloudSync = PublicationSync(repository);
     oauth = SourceOAuthService(repository);
     downloads = PublicationDownloads(
       repository,
@@ -73,6 +95,8 @@ class SourceController extends ChangeNotifier {
     profileId = id;
     this.blocked = blocked;
     generation++;
+    activeProgressKeys.clear();
+    syncConfig = null;
     sources = const [];
     shelves = {};
     scanning.clear();
@@ -92,6 +116,10 @@ class SourceController extends ChangeNotifier {
             oauth.cancel();
             if (id != null && !blocked && current(epoch)) {
               sources = await repository.sources(id);
+              final config = await cloudSync.config(id);
+              if (!current(epoch)) return;
+              cloudSync.resetStatus();
+              syncConfig = config;
               await _shelves(id, epoch);
               scheduleSync();
             }
@@ -221,6 +249,7 @@ class SourceController extends ChangeNotifier {
   Future<void> remove(FileSource source) async {
     requireSession();
     if (source.profileId != profileId) throw const SourceException(SourceFailure.permission);
+    if (syncConfig?.sourceId == source.id) await configureCloudSync(null);
     cancelScan(source.id);
     await stopPlayback?.call();
     _adapters.remove(source.id)?.close();
@@ -358,10 +387,20 @@ class SourceController extends ChangeNotifier {
     await ready;
     requireSession();
     final epoch = generation, profile = profileId!;
+    if (syncConfig != null) {
+      try {
+        await sync();
+      } on SourceException catch (e) {
+        if (e.reason == SourceFailure.cancelled || e.reason == SourceFailure.invalidData) rethrow;
+      } catch (_) {
+        /* Durable local progress remains usable offline. */
+      }
+      requireSession(epoch);
+    }
     var local = await repository.progress(profile, initial.key);
     if (sources.any((s) => s.id == entry.sourceId)) {
       final provider = adapter(entry.sourceId);
-      if (provider.supportsProgress(entry, initial)) {
+      if (syncConfig == null && provider.supportsProgress(entry, initial)) {
         try {
           final remote = await provider.readProgress(entry, local ?? initial);
           requireSession(epoch);
@@ -520,6 +559,24 @@ class SourceController extends ChangeNotifier {
     await ready;
     requireSession();
     final epoch = generation, profile = profileId!;
+    if (syncConfig != null) {
+      final config = syncConfig!;
+      final source = sources.where((s) => s.id == config.sourceId).firstOrNull;
+      if (source == null) throw const SourceException(SourceFailure.authentication);
+      try {
+        await cloudSync.run(
+          profile: profile,
+          sources: List.of(sources),
+          config: config,
+          store: ProviderSyncStore(adapter(source.id), folder: config.folder, check: () => requireSession(epoch)),
+          activeKeys: activeProgressKeys,
+          check: () => requireSession(epoch),
+        );
+      } finally {
+        if (current(epoch)) _notify();
+      }
+      return;
+    }
     final entries = await repository.entries(profile);
     final events = await repository.pendingEvents(profile);
     final latest = <String, Map<String, dynamic>>{};
@@ -574,6 +631,63 @@ class SourceController extends ChangeNotifier {
       await repository.database.customStatement('DELETE FROM events WHERE profile=? AND id=?', [profile, event['id']]);
     }
     _notify();
+  }
+
+  Future<void> configureCloudSync(PublicationSyncConfig? config) async {
+    await ready;
+    requireSession();
+    final epoch = generation, profile = profileId!;
+    if (config != null) {
+      SyncCipher(config.code);
+      final source = sources.firstWhere((s) => s.id == config.sourceId);
+      if (!ProviderSyncStore.supports(source.kind)) throw const SourceException(SourceFailure.unsupported);
+      if (source.options['syncWrites'] != 'true' &&
+          const {FileSourceKind.googleDrive, FileSourceKind.oneDrive, FileSourceKind.dropbox}.contains(source.kind)) {
+        final writable = FileSource(
+          id: source.id,
+          profileId: profile,
+          kind: source.kind,
+          name: source.name,
+          endpoint: source.endpoint,
+          root: source.root,
+          options: {...source.options, 'syncWrites': 'true'},
+        );
+        final previous = await repository.credentials(source);
+        final credentials = await oauth.authorize(writable, clientSecret: previous['clientSecret']);
+        requireSession(epoch);
+        await add(writable, credentials);
+        await reconnect(source.id);
+      }
+    }
+    requireSession(epoch);
+    // Wait for the old target's in-flight cycle before replacing its config.
+    await _syncQueue;
+    requireSession(epoch);
+    await cloudSync.configure(profile, config);
+    syncConfig = config;
+    _notify();
+    if (config != null) await sync();
+  }
+
+  Future<void> resolveCloudConflict(String key, SyncVersion selected) {
+    final operation = _syncQueue.then((_) async {
+      requireSession();
+      final epoch = generation, profile = profileId!, config = syncConfig;
+      if (config == null) throw const SourceException(SourceFailure.cancelled);
+      await cloudSync.resolve(
+        profile: profile,
+        config: config,
+        key: key,
+        selected: selected,
+        sources: List.of(sources),
+        activeKeys: activeProgressKeys,
+        check: () => requireSession(epoch),
+      );
+      requireSession(epoch);
+      _notify();
+    });
+    _syncQueue = operation.catchError((Object _) {});
+    return operation.then((_) => sync());
   }
 
   @override

@@ -19,6 +19,7 @@ import 'publication_reader_screen.dart';
 import 'source_notes_screen.dart';
 import 'source_player_screen.dart';
 import 'source_widgets.dart';
+import 'source_sync_screen.dart';
 
 class SourceDetailScreen extends StatefulWidget {
   const SourceDetailScreen({super.key, required this.entry});
@@ -247,6 +248,14 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
       title: Text(_entry.title),
       focusableAppBarActions: true,
       actions: [
+        IconButton(
+          tooltip: t.audiobook.syncTitle,
+          icon: const AppIcon(Symbols.cloud_sync_rounded),
+          onPressed: () async {
+            await Navigator.push(context, MaterialPageRoute(builder: (_) => const SourceSyncScreen()));
+            if (mounted) await _load();
+          },
+        ),
         IconButton(
           tooltip: t.fileSources.bookmarks,
           onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SourceNotesScreen(entry: _entry))),

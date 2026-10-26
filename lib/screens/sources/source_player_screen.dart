@@ -10,6 +10,7 @@ import '../../i18n/strings.g.dart';
 import '../../mpv/mpv.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
+import '../../sources/listening_tools.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
@@ -63,12 +64,16 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
     children: [
       if (s.opening) const LinearProgressIndicator(),
       FocusableSlider(
-        value: (_dragPosition ?? s.positionMs.toDouble()).clamp(0, s.durationMs > 0 ? s.durationMs.toDouble() : 1),
-        max: s.durationMs > 0 ? s.durationMs.toDouble() : 1,
+        value: (_dragPosition ?? s.positionMs.toDouble()).clamp(
+          s.timelineStartMs.toDouble(),
+          s.timelineEndMs > s.timelineStartMs ? s.timelineEndMs.toDouble() : s.timelineStartMs + 1.0,
+        ),
+        min: s.timelineStartMs.toDouble(),
+        max: s.timelineEndMs > s.timelineStartMs ? s.timelineEndMs.toDouble() : s.timelineStartMs + 1.0,
         semanticLabel: t.fileSources.timePosition,
         semanticFormatterCallback: (v) => sourceTime(v.round()),
-        onChanged: s.durationMs > 0 ? (v) => setState(() => _dragPosition = v) : null,
-        onChangeEnd: s.durationMs > 0
+        onChanged: s.timelineEndMs > s.timelineStartMs ? (v) => setState(() => _dragPosition = v) : null,
+        onChangeEnd: s.timelineEndMs > s.timelineStartMs
             ? (v) {
                 setState(() => _dragPosition = null);
                 unawaited(sourceAction(context, () => s.seek(v.round())));
@@ -81,15 +86,34 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
           width: double.infinity,
           child: Wrap(
             alignment: WrapAlignment.spaceBetween,
-            spacing: 16,
-            runSpacing: 4,
+            spacing: 24,
+            runSpacing: 8,
             children: [
-              Text(sourceTime(s.positionMs)),
-              Text(t.fileSources.remaining(time: sourceTime(((s.durationMs - s.positionMs) / s.speed).round()))),
+              Text(sourceTime(s.positionMs - s.timelineStartMs)),
+              if (s.chapterRemainingMs != null)
+                Text(t.audiobook.chapterRemaining(time: sourceTime(s.chapterRemainingMs!))),
+              if (s.bookRemainingMs != null)
+                Text(
+                  s.entry?.kind == SourceItemKind.audiobook
+                      ? t.audiobook.bookRemaining(time: sourceTime(s.bookRemainingMs!))
+                      : t.fileSources.remaining(time: sourceTime(s.bookRemainingMs!)),
+                )
+              else
+                Text(t.audiobook.unknownRemaining),
             ],
           ),
         ),
       ),
+      if (!s.video && s.chapters.isNotEmpty)
+        TextButton(
+          onPressed: () => sourceAction(context, () async {
+            s.chapterTimeline = !s.chapterTimeline;
+            await s.savePreferences();
+          }),
+          child: Text(s.chapterTimeline ? t.audiobook.chapterTimeline : t.audiobook.bookTimeline),
+        ),
+      if (s.sleepDeadline != null)
+        Text(t.audiobook.sleepRemaining(time: sourceTime(s.sleepDeadline!.difference(DateTime.now()).inMilliseconds))),
       const SizedBox(height: 12),
       Wrap(
         alignment: WrapAlignment.center,
@@ -134,10 +158,23 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
             tooltip: t.fileSources.speed,
             adaptiveSheet: true,
             entriesBuilder: (_) => [
-              for (final rate in [.5, .75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0])
+              AppMenuItem(value: -1, label: t.audiobook.customSpeed),
+              for (final rate in [.5, .75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 4.0])
                 AppMenuItem(value: rate, label: '$rate×', selected: rate == s.speed),
             ],
-            onSelected: (rate) => sourceAction(context, () => s.setSpeed(rate)),
+            onSelected: (rate) => sourceAction(context, () async {
+              if (rate != -1) {
+                await s.setSpeed(rate);
+                return;
+              }
+              final value = await _entryDialog(
+                title: t.audiobook.customSpeed,
+                help: t.audiobook.speedHelp,
+                initial: '${s.speed}',
+                valid: (v) => double.tryParse(v)?.isFinite == true && double.parse(v) >= .25 && double.parse(v) <= 4,
+              );
+              if (value != null) await s.setSpeed(double.parse(value));
+            }),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
               child: Text('${s.speed}×', style: Theme.of(context).textTheme.labelLarge),
@@ -150,21 +187,58 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
             entriesBuilder: (_) => [
               AppMenuItem(value: 0, label: t.fileSources.sleepOff),
               AppMenuItem(value: -1, label: t.fileSources.endChapter),
+              for (final count in [2, 3, 5])
+                AppMenuItem(
+                  value: -count,
+                  label: t.audiobook.sleepChapters(count: count),
+                ),
+              AppMenuItem(value: -10, label: t.audiobook.customSleep),
+              if (s.sleepDeadline != null) AppMenuItem(value: -11, label: t.audiobook.extendSleep),
               for (final n in [5, 15, 30, 45, 60, 90])
                 AppMenuItem(
                   value: n,
                   label: t.fileSources.minutes(count: n),
                 ),
             ],
-            onSelected: (n) {
-              if (n == 0) {
+            onSelected: (n) async {
+              if (n == -10) {
+                final value = await _entryDialog(
+                  title: t.audiobook.customSleep,
+                  help: t.audiobook.sleepMinutes,
+                  initial: '20',
+                  valid: (v) => int.tryParse(v) != null && int.parse(v) >= 1 && int.parse(v) <= 1440,
+                );
+                if (value != null) s.sleepFor(Duration(minutes: int.parse(value)));
+              } else if (n == -11) {
+                s.extendSleep(const Duration(minutes: 5));
+              } else if (n == 0) {
                 s.clearSleep();
-              } else if (n == -1) {
-                s.sleepAfterChapter();
+              } else if (n < 0) {
+                s.sleepAfterChapter(count: -n);
               } else {
                 s.sleepFor(Duration(minutes: n));
               }
             },
+          ),
+          IconButton(
+            tooltip: t.audiobook.undoSeek,
+            onPressed: s.canUndoSeek ? () => sourceAction(context, s.undoSeek) : null,
+            icon: const AppIcon(Symbols.undo_rounded),
+          ),
+          IconButton(
+            tooltip: t.audiobook.goToTime,
+            icon: const AppIcon(Symbols.schedule_rounded),
+            onPressed: () => sourceAction(context, () async {
+              final value = await _entryDialog(
+                title: t.audiobook.goToTime,
+                help: t.audiobook.timeHelp,
+                initial: sourceTime(s.positionMs - (s.hasCompleteTimeline ? 0 : s.timelineStartMs)),
+                valid: (v) => parseListeningTime(v) != null,
+              );
+              if (value != null) {
+                await s.seek(parseListeningTime(value)! + (s.hasCompleteTimeline ? 0 : s.timelineStartMs));
+              }
+            }),
           ),
           IconButton(
             tooltip: t.fileSources.bookmark,
@@ -183,7 +257,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                   builder: (_) => SourceNotesScreen(entry: s.entry!, edition: s.progress?.edition, mode: s.mode),
                 ),
               );
-              if (note?.positionMs != null) await s.seek(note!.positionMs!);
+              if (note != null) await s.seekBookmark(note);
             }),
             icon: const AppIcon(Symbols.bookmarks_rounded),
           ),
@@ -217,6 +291,48 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
         Padding(padding: const EdgeInsets.all(16), child: Text(sourceFailureText(SourceException(s.failure!)))),
     ],
   );
+  Future<String?> _entryDialog({
+    required String title,
+    required String help,
+    required String initial,
+    required bool Function(String) valid,
+  }) async {
+    final input = TextEditingController(text: initial);
+    final form = GlobalKey<FormState>();
+    try {
+      return await showDialog<String>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: Text(title),
+          content: Form(
+            key: form,
+            child: TextFormField(
+              controller: input,
+              autofocus: true,
+              autocorrect: false,
+              decoration: InputDecoration(helperText: help, helperMaxLines: 3),
+              validator: (v) => valid(v?.trim() ?? '') ? null : help,
+              onFieldSubmitted: (_) {
+                if (form.currentState!.validate()) Navigator.pop(dialogContext, input.text.trim());
+              },
+            ),
+          ),
+          actions: [
+            TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
+            FilledButton(
+              onPressed: () {
+                if (form.currentState!.validate()) Navigator.pop(dialogContext, input.text.trim());
+              },
+              child: Text(t.audiobook.apply),
+            ),
+          ],
+        ),
+      );
+    } finally {
+      input.dispose();
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final s = context.watch<SourcePlayback>();
@@ -396,6 +512,10 @@ class SourceListeningSettings extends StatelessWidget {
                     s.smartRewind = v;
                     unawaited(s.savePreferences());
                   },
+                ),
+                TextButton(
+                  onPressed: () => sourceAction(context, () => s.savePreferences(asDefault: true)),
+                  child: Text(t.audiobook.useDefaults),
                 ),
                 for (final forward in [false, true])
                   ListTile(
