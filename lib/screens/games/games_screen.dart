@@ -37,6 +37,7 @@ class GamesScreen extends StatefulWidget {
 class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibilityAware {
   GameLibraryController? _controller;
   final _firstFocus = FocusNode();
+  final _searchController = TextEditingController();
   String? _profile;
   int? _sourceGeneration;
   int _epoch = 0;
@@ -49,6 +50,10 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     final id = context.watch<ActiveProfileProvider>().activeId;
     final generation = context.select<SourceController, int>((s) => s.generation);
     if (id == _profile && generation == _sourceGeneration && _controller != null) return;
+    if (id != _profile) {
+      _searchController.clear();
+      _query = '';
+    }
     _profile = id;
     _sourceGeneration = generation;
     _retire();
@@ -105,6 +110,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     _epoch++;
     _retire();
     _firstFocus.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -386,6 +392,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
                 child: TextField(
+                  controller: _searchController,
                   decoration: InputDecoration(
                     labelText: t.games.search,
                     prefixIcon: const AppIcon(Symbols.search_rounded),

@@ -9,6 +9,13 @@ import '../../games/game_models.dart';
 import '../../games/game_streaming_client.dart';
 import '../../i18n/strings.g.dart';
 
+// Leave room for AlertDialog's default outer inset and horizontal content padding.
+double _gameDialogContentWidth(BuildContext context) =>
+    (MediaQuery.sizeOf(context).width - 128).clamp(0.0, 420.0).toDouble();
+
+double _gamePairingQrSize(BuildContext context) =>
+    min(360.0, _gameDialogContentWidth(context)).toDouble();
+
 class AddGameComputerDialog extends StatefulWidget {
   const AddGameComputerDialog({super.key});
   @override
@@ -53,7 +60,7 @@ class _AddGameComputerDialogState extends State<AddGameComputerDialog> {
     title: Text(t.games.addComputer),
     scrollable: true,
     content: SizedBox(
-      width: 420,
+      width: _gameDialogContentWidth(context),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -129,6 +136,7 @@ class _PairGameComputerDialogState extends State<PairGameComputerDialog> {
   late final String _pin = Random.secure().nextInt(10000).toString().padLeft(4, '0');
   String? _error;
   bool _complete = false;
+  bool _closingStale = false;
   @override
   void initState() {
     super.initState();
@@ -137,19 +145,65 @@ class _PairGameComputerDialogState extends State<PairGameComputerDialog> {
 
   Future<void> _pair() async {
     try {
-      if (!widget.isCurrent()) return;
+      if (!widget.isCurrent()) {
+        _closeIfStale();
+        return;
+      }
       await widget.client.pair(widget.host, _pin);
-      if (!mounted || !widget.isCurrent()) return;
+      if (!mounted) return;
+      if (!widget.isCurrent()) {
+        _closeIfStale();
+        return;
+      }
       _complete = true;
       Navigator.pop(context, true);
     } catch (error) {
-      if (mounted) {
-        setState(
-          () => _error = error is GameClientException && error.failure == GameClientFailure.timedOut
-              ? t.games.timeout
-              : t.games.unavailable,
-        );
+      if (!mounted) return;
+      if (!widget.isCurrent()) {
+        _closeIfStale();
+        return;
       }
+      setState(
+        () => _error = error is GameClientException && error.failure == GameClientFailure.timedOut
+            ? t.games.timeout
+            : t.games.unavailable,
+      );
+    }
+  }
+
+  void _closeIfStale() {
+    if (!mounted || widget.isCurrent() || _closingStale) return;
+    _closingStale = true;
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      if (widget.isCurrent()) {
+        _closingStale = false;
+        return;
+      }
+      if (ModalRoute.of(context)?.isCurrent == true) Navigator.of(context).pop(false);
+    });
+  }
+
+  Future<void> _openPairingPage() async {
+    if (!widget.isCurrent()) {
+      _closeIfStale();
+      return;
+    }
+    try {
+      final opened = await launchUrl(widget.host.sunshinePairingPage, mode: LaunchMode.externalApplication);
+      if (!mounted) return;
+      if (!widget.isCurrent()) {
+        _closeIfStale();
+        return;
+      }
+      if (!opened) setState(() => _error = t.games.unavailable);
+    } catch (_) {
+      if (!mounted) return;
+      if (!widget.isCurrent()) {
+        _closeIfStale();
+        return;
+      }
+      setState(() => _error = t.games.unavailable);
     }
   }
 
@@ -164,7 +218,7 @@ class _PairGameComputerDialogState extends State<PairGameComputerDialog> {
     title: Text(t.games.pairTitle),
     scrollable: true,
     content: SizedBox(
-      width: 420,
+      width: _gameDialogContentWidth(context),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -179,24 +233,17 @@ class _PairGameComputerDialogState extends State<PairGameComputerDialog> {
               label: t.games.qrHelp,
               image: true,
               child: SizedBox.square(
-                dimension: 180,
+                dimension: _gamePairingQrSize(context),
                 child: QrImageView(
                   data: widget.host.sunshinePairingPage.toString(),
-                  size: 180,
+                  size: _gamePairingQrSize(context),
                   backgroundColor: Colors.white,
                 ),
               ),
             ),
             Text(t.games.qrHelp),
             TextButton(
-              onPressed: () async {
-                if (!widget.isCurrent()) return;
-                try {
-                  await launchUrl(widget.host.sunshinePairingPage, mode: LaunchMode.externalApplication);
-                } catch (_) {
-                  if (mounted) setState(() => _error = t.games.unavailable);
-                }
-              },
+              onPressed: _openPairingPage,
               child: Text(t.games.openPairingPage),
             ),
           ],
