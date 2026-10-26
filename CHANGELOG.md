@@ -10,6 +10,8 @@
 
 - Expose the existing Apple P7 conversion controls in Playback settings for the AVFoundation route.
 
+- Add a checksum-verified local Android AAR override for building Plezy against an experimental FEL engine without changing the production engine pin.
+
 - Record synthetic Android FEL Surface evidence and per-platform Dolby Vision playback/output qualification gates; the experimental engine remains separate from production builds.
 
 - Add experimental comic page streaming, Komga source integration and ComicInfo metadata support.

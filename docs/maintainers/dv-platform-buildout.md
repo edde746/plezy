@@ -53,7 +53,34 @@ the Plezy UI; the production AAR remains unchanged. It does not qualify a
 physical Android device, hardware decoder, display output, or Dolby Vision
 signaling.
 
+On 2026-10-26, the complete Plezy debug APK also built against this AAR through
+the local Gradle override below. The APK SHA-256 is
+`73e41f76a58e1d2316f1639f34284ca80bda8ee6c7f9849903fe83e7a9c25125`; its
+arm64-v8a and x86_64 `libmpv.so` hashes match the input AAR. The Flutter
+Dart-side settings/route suite passed 41 tests, and Android's targeted
+`GpuVoPolicyTest` and `MpvPlayerPluginTest` JVM classes passed. No Android device
+or emulator was connected, so this is app packaging evidence, not Plezy UI
+playback evidence. The APK and logs remain in
+`/tmp/plezy-dv-platforms-build-20261026/` on the build host.
+
 The matching builder change is in draft [mpv-build PR #9](https://github.com/edde746/mpv-build/pull/9). It has not been merged or released, so shipping Android builds still use the stable engine lock.
+
+To validate the complete Plezy Android app against an experimental AAR before
+publishing that engine, pass a local path and its SHA-256 to Gradle. The override
+is build-local; it does not edit `mpv-build.lock.json` or the production
+dependency-verification entry:
+
+```bash
+cd android
+./gradlew --no-daemon :app:assembleDebug \
+  -PplezyExperimentalMpvAar=/absolute/path/to/mpv-android-experimental.aar \
+  -PplezyExperimentalMpvAarSha256=<64-character-sha256>
+adb install -r ../build/app/outputs/flutter-apk/app-debug.apk
+```
+
+Both Gradle properties are required together. The app then uses the normal
+Playback setting to opt into the FEL filter. Keep the AAR and APK out of source
+control; the override is for local integration testing, not a release path.
 
 ## App settings and diagnostics
 

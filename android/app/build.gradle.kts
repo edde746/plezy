@@ -45,6 +45,27 @@ if (!mpvVerificationFile.readText().contains("<sha256 value=\"${mpvAar.getValue(
     "$mpvVerificationFile doesn't check mpv-android against $mpvLockFile's sha256; run scripts/set_native_revision.sh"
   )
 }
+// Local-only path for validating Plezy against an experimental FEL AAR before
+// mpv-build publishes it. Both properties are required, and the file must
+// match the caller-supplied digest. Normal builds continue to resolve and
+// verify the production artifact above.
+val experimentalMpvAarPath = providers.gradleProperty("plezyExperimentalMpvAar").orNull
+val experimentalMpvAarSha256 = providers.gradleProperty("plezyExperimentalMpvAarSha256").orNull
+val experimentalMpvAar = when {
+  experimentalMpvAarPath == null && experimentalMpvAarSha256 == null -> null
+  experimentalMpvAarPath == null || experimentalMpvAarSha256 == null -> throw GradleException(
+    "plezyExperimentalMpvAar and plezyExperimentalMpvAarSha256 must be supplied together"
+  )
+  else -> {
+    if (!experimentalMpvAarSha256.matches(Regex("[0-9a-fA-F]{64}"))) {
+      throw GradleException("plezyExperimentalMpvAarSha256 must be a 64-character SHA-256")
+    }
+    val file = project.file(experimentalMpvAarPath).canonicalFile
+    if (!file.isFile) throw GradleException("Experimental mpv AAR does not exist: ${file.absolutePath}")
+    verifySha256(file, experimentalMpvAarSha256.lowercase(), "experimental mpv-android AAR")
+    file
+  }
+}
 repositories {
   exclusiveContent {
     forRepository {
@@ -58,7 +79,9 @@ repositories {
     filter { includeModule("edde746", "mpv-android") }
   }
 }
-val mpvAarDependency = "edde746:mpv-android:${mpvAar.getValue("key")}@aar"
+val mpvAarDependency: Any = experimentalMpvAar?.let { files(it) }
+  ?: "edde746:mpv-android:${mpvAar.getValue("key")}@aar"
+val mpvAarDependencyLabel = experimentalMpvAar?.absolutePath ?: mpvAarDependency.toString()
 
 // The AAR's native libraries this build reads itself: the FFmpeg libraries the
 // Media3 adapter links (CMake then packages those same bytes), and the libc++
@@ -85,7 +108,7 @@ val extractMpvNatives = tasks.register<Sync>("extractMpvNatives") {
   doLast {
     val missing = mpvAbis.map { abi -> File(mpvLibcxxJniDir, "$abi/libc++_shared.so") }.filterNot(File::isFile)
     if (missing.isNotEmpty()) {
-      throw GradleException("$mpvAarDependency carries no libc++ runtime for: ${missing.joinToString { it.parentFile.name }}")
+      throw GradleException("$mpvAarDependencyLabel carries no libc++ runtime for: ${missing.joinToString { it.parentFile.name }}")
     }
   }
 }
