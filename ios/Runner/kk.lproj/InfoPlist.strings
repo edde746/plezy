@@ -1,5 +1,5 @@
 // Generated from lib/i18n; edit the source catalog.
 "NSLocalNetworkUsageDescription" = "PlezyNG жергілікті желіңіздегі медиа серверлерге және ойнату құрылғыларына қосылады.";
-"NSLocationWhenInUseUsageDescription" = "PlezyNG қосымшасы бар, iOS қосымшасы арқылы қосымшасы және қосымшасы бойынша қосымшасы туралы қосымшасы.";
-"NSPhotoLibraryUsageDescription" = "Бұл үшін фото-библиотекасы мен медиа-артуінің артықшылықтармен таныстырып қараңыз.";
-"NSCameraUsageDescription" = "Бұл үшін QR кодсы бар, содан кейінгі ұзақ уақытқа дейін.";
+"NSLocationWhenInUseUsageDescription" = "Жергілікті желіні анықтап, медиа серверлерге қосылу үшін iOS талап еткенде, PlezyNG орналасқан жер туралы деректерге қол жеткізу рұқсатын пайдаланады.";
+"NSPhotoLibraryUsageDescription" = "Медиа мұқабалары ретінде пайдалану үшін фотокітапханаңыздан суреттерді таңдаңыз.";
+"NSCameraUsageDescription" = "Companion Remote басқару пультін жұптау үшін QR кодтарын сканерлеңіз.";

@@ -198,7 +198,7 @@ class _Translations$auth$kk extends Translations$auth$en {
 	@override String get quickConnectWaiting => 'Растау күтілуде…';
 	@override String get quickConnectCancel => 'Бас тарту';
 	@override String get quickConnectExpired => 'Жылдам қосылу мерзімі өтті. Қайтадан байқап көріңіз.';
-	@override String get localDataRecoveryRequired => 'PlezyNG жергілікті кіру мәліметтерін қалпына келтіре алмады. Қайтадан кіріңіз.';
+	@override String get localDataRecoveryRequired => 'PlezyNG жергілікті кіру деректерін және өңдеуді күтіп тұрған ойнату деректерін қауіпсіз қалпына келтіре алмады. Қайта кіріңіз.';
 	@override String get pinCheckRejected => 'Plex PIN кодын тексеру қабылданбады';
 	@override String get connectToDirectPlex => 'Қаланың тұрақты тұрғындарының саны Plex';
 }
@@ -1073,10 +1073,10 @@ class _Translations$accessibility$kk extends Translations$accessibility$en {
 	@override String get highContrastHint => 'Бұл үшін тек, ауқызы және фокус индикаторы мен светлы және түйі ұзақтығы.';
 	@override String get interaction => 'Ақыттық және интерфейс';
 	@override String get reduceMotion => 'Ақыттық рух';
-	@override String get reduceMotionHint => 'Бұл үшін, қазір мен қазір мен детективтік ефекттер.';
+	@override String get reduceMotionHint => 'Фокус көрсеткішінің қозғалысын, бет ауысу анимациясын және сәндік әсерлерді тоқтатыңыз.';
 	@override String get largeTargets => 'Өнімдер сенімді';
 	@override String get largeTargetsHint => '«Жеңіске» және «Жектеу» деген әлі де ұзақ уақытқа дейін ұзақ уақыт бойы жасылып отыр.';
-	@override String get navigationHint => '«Жеңіске» және «Жекте» және «Сайфт» және «Тұрақты» және «Карта» және «Бұрақты», «Жестеске» және „Жестестеске» бағдарламасы бар.';
+	@override String get navigationHint => 'Басқару элементтері арасында ауысу үшін Tab және Shift+Tab, іске қосу үшін Enter немесе Бос орын, жабу үшін Escape немесе Артқа түймесін пайдаланыңыз. Кітап ашық кезде масштаб пен оқу параметрлерін өзгертуге болады.';
 }
 
 // Path: tooltips
@@ -1382,7 +1382,7 @@ class _Translations$profiles$kk extends Translations$profiles$en {
 	@override String summaryMultipleWithActive({required Object count, required Object activeName}) => '${count} профиль · белсенді: ${activeName}';
 	@override String summaryMultiple({required Object count}) => '${count} профиль';
 	@override String get removeConnectionTitle => 'Қосылым өшірілсін бе?';
-	@override String removeConnectionMessage({required Object displayName, required Object connectionLabel}) => '${displayName} пайдаланушысының ${connectionLabel} қолжетімділігі өшіріледі.';
+	@override String removeConnectionMessage({required Object displayName, required Object connectionLabel}) => '${displayName} пайдаланушысының ${connectionLabel} қосылымына кіру құқығы жойылады. Басқа профильдердің кіру құқығы сақталады.';
 	@override String get deleteProfileTitle => 'Профиль өшірілсін бе?';
 	@override String deleteProfileMessage({required Object displayName}) => '${displayName} мен оның қосылымдары өшіріледі. Серверлер қолжетімді күйінде қалады.';
 	@override String get profileNameLabel => 'Профиль атауы';
@@ -1921,7 +1921,7 @@ class _Translations$collections$kk extends Translations$collections$en {
 	@override String get collection => 'Топтама';
 	@override String get empty => 'Топтама бос';
 	@override String get deleteCollection => 'Топтаманы өшіру';
-	@override String deleteConfirm({required Object title}) => '"${title}" өшірілсін бе?';
+	@override String deleteConfirm({required Object title}) => '"${title}" өшірілсін бе? Бұл әрекетті кері қайтару мүмкін емес.';
 	@override String get deleted => 'Топтама өшірілді';
 	@override String get deleteFailed => 'Топтаманы өшіру мүмкін болмады';
 	@override String deleteFailedWithError({required Object error}) => 'Топтаманы өшіру қатесі: ${error}';
@@ -1999,7 +1999,7 @@ class _Translations$music$kk extends Translations$music$en {
 	@override String get clearQueue => 'Кезекті тазалау';
 	@override String get lyrics => 'Ән мәтіні';
 	@override String get visualizer => 'Жүктесі';
-	@override String get visualizerProfileLoading => 'Ауыздан кейінгі тек тек тек тек...';
+	@override String get visualizerProfileLoading => 'Тректі талдау деректері оқылуда…';
 	@override String get visualizerAmbientMotion => 'Абайғасы';
 	@override String get visualizerPlexLoudness => 'Plex қақтар';
 	@override String get visualizerPreviousPreset => 'Previous Жүктесің стиль';
@@ -2744,7 +2744,7 @@ class _Translations$addServer$kk extends Translations$addServer$en {
 	@override String connectDirectPlexCardSubtitleScoped({required Object name}) => 'Қаланың тұрақты тұрғындарының IP немесе URL-ті қосылды. ${name} қосылды';
 	@override String get insecureTitle => 'Негізгі қосылды';
 	@override String insecureDescription({required Object url}) => '${url} HTTP пайдаланады. Желідегі басқа адамдар құпиясөзіңізді, токендеріңізді және медиаңызды оқуы немесе өзгертуі мүмкін. Мүмкін болса, HTTPS пайдаланыңыз. Осы желіге сенсеңіз және тәуекелді қабылдасаңыз ғана жалғастырыңыз.';
-	@override String get allowHttp => 'Қазір қазір HTTP';
+	@override String get allowHttp => 'HTTP-ге рұқсат беру';
 	@override String get httpsRequired => 'HTTPS пайдаланыңыз немесе шифрланбаған қосылымға нақты рұқсат беріңіз.';
 }
 
@@ -2881,9 +2881,9 @@ class _Translations$platform$kk extends Translations$platform$en {
 
 	// Translations
 	@override String get localNetworkPermission => 'PlezyNG жергілікті желіңіздегі медиа серверлерге және ойнату құрылғыларына қосылады.';
-	@override String get locationPermission => 'PlezyNG қосымшасы бар, iOS қосымшасы арқылы қосымшасы және қосымшасы бойынша қосымшасы туралы қосымшасы.';
-	@override String get photoLibraryPermission => 'Бұл үшін фото-библиотекасы мен медиа-артуінің артықшылықтармен таныстырып қараңыз.';
-	@override String get cameraPermission => 'Бұл үшін QR кодсы бар, содан кейінгі ұзақ уақытқа дейін.';
+	@override String get locationPermission => 'Жергілікті желіні анықтап, медиа серверлерге қосылу үшін iOS талап еткенде, PlezyNG орналасқан жер туралы деректерге қол жеткізу рұқсатын пайдаланады.';
+	@override String get photoLibraryPermission => 'Медиа мұқабалары ретінде пайдалану үшін фотокітапханаңыздан суреттерді таңдаңыз.';
+	@override String get cameraPermission => 'Companion Remote басқару пультін жұптау үшін QR кодтарын сканерлеңіз.';
 }
 
 // Path: fileSources
@@ -2952,8 +2952,8 @@ class _Translations$fileSources$kk extends Translations$fileSources$en {
 	@override String get sync => 'Өткен өңдеу';
 	@override String get synced => 'Өнімдермен өңдеу';
 	@override String get conflict => 'Бұл үшін бір-бірімен басқа да бір-бірек қосуға болады.';
-	@override String get useLocal => 'Бұл приспособление';
-	@override String get useRemote => 'Ауыз іші шығыңыз';
+	@override String get useLocal => 'Осы құрылғыны пайдалану';
+	@override String get useRemote => 'Басқа құрылғыны пайдалану';
 	@override String get history => 'Ауыздан соң';
 	@override String get groupAudio => 'Аудиологиялық қағидалар';
 	@override String get groupHint => 'Бұл қабығы мен қабығы мақалалар мен қабықтар мен қабырға мақалалар бар.';
@@ -2990,15 +2990,15 @@ class _Translations$fileSources$kk extends Translations$fileSources$en {
 	@override String get paper => 'Қағаз';
 	@override String get sepia => 'Септа';
 	@override String get night => 'Өзінің';
-	@override String get readAloud => 'Бұл сайтдың қағидалар';
+	@override String get readAloud => 'Осы бетті дауыстап оқу';
 	@override String get readAlong => 'Жүктеу';
-	@override String get stopReading => 'Жаққа қабығы';
+	@override String get stopReading => 'Дауыстап оқуды тоқтату';
 	@override String get searchBook => 'Бірінші мезгіл';
 	@override String get noMatches => 'Не күш';
-	@override String get previousPage => 'Қазір қазір';
-	@override String get nextPage => 'Қазіргі таңда';
+	@override String get previousPage => 'Алдыңғы бет';
+	@override String get nextPage => 'Келесі бет';
 	@override String page({required Object number}) => 'Қаланың тұрақты тұрғындарының саны ${number}';
-	@override String get externalBlocked => 'Бұл үшін, аударыптар мен аударыпталар мен аударыпалар мен аудармалар мен ауды.';
+	@override String get externalBlocked => 'Оқу құралында кітаптардың сыртқы сілтемелері өшірілген.';
 	@override String get loading => 'Одан...';
 	@override String get narrator => 'Ақыттық';
 	@override String get audio => 'Аудио';
@@ -3008,10 +3008,10 @@ class _Translations$fileSources$kk extends Translations$fileSources$en {
 	@override String get downloads => 'Offline файл';
 	@override String get confirmDelete => 'Таңдалған офлайн көшірмені жою керек пе? Оқу немесе тыңдау орны мен жазбаларыңыз сақталады.';
 	@override String get errorAuthentication => 'Бұл қағидалар мен қағидалары мен қағидамлар мен қаһарманлар.';
-	@override String get errorPermission => 'Бұл өнімнің дағдысы бар дағдысын дағдысқа дағдығы не айталады.';
+	@override String get errorPermission => 'Бұл дереккөз сұралған файлға кіруге рұқсат бермеді.';
 	@override String get errorUnavailable => 'Бұл үшін бір-бірімен таныстырып, басқа да басқа да аударып, басқа да аудар.';
 	@override String get errorUnsupported => 'Бұл форматтау немесе конекцияның бұл қосыланы не қосылады.';
-	@override String get errorInvalidData => 'Бұл файл немесе сервер-отзық не күтіледі.';
+	@override String get errorInvalidData => 'Бұл файлды немесе сервер жауабын қауіпсіз оқу мүмкін болмады.';
 	@override String get errorCancelled => 'Операцияның ануға болады.';
 	@override String get errorConflict => 'Бұл үшін бір сессияның бір-бірімен бір-бірін бір-бірин бір-біректік бір-біретімен бір-бирімен бір.';
 	@override String get signIn => 'Кіру';
@@ -3046,11 +3046,11 @@ class _Translations$fileSources$kk extends Translations$fileSources$en {
 	@override String get singlePage => 'Екіп сайын';
 	@override String get twoPages => '2 қаңтар';
 	@override String get readingDirection => 'Жүктеуiң қанақтық';
-	@override String get leftToRight => 'Алдыңғы қабығы';
-	@override String get rightToLeft => 'Олардың дағдыры';
+	@override String get leftToRight => 'Солдан оңға';
+	@override String get rightToLeft => 'Оңнан солға';
 	@override String get letterSpacing => 'Есімдіктің қағидалар';
 	@override String get wordSpacing => 'Әдеп ұзын';
-	@override String get readerControlsHelp => 'Қандай-ақ, бұл қабырға айналады және қабырға жарыққа ұлыстыратын, қабырға дағдарыстатын, қабаттар дағдарыстырды және қабығы дағдарысды.';
+	@override String get readerControlsHelp => 'Бетті үлкейту үшін екі саусағыңызды алшақтатыңыз немесе масштаб түймелерін пайдаланыңыз. Бетті жылжыту үшін сүйреңіз. Ctrl/⌘ және + немесе − масштабты өзгертеді; Ctrl/⌘ және 0 оны қалпына келтіреді. Page Up және Page Down беттерді ауыстырады.';
 	@override String get imagePage => 'Комедиялық сайт';
 	@override String get resetReader => 'Жүктесінен репетициясы';
 	@override String get zoom => 'Масштаб';
@@ -3079,23 +3079,23 @@ class _Translations$lending$kk extends Translations$lending$en {
 	@override String get search => 'Бібліотекасы және авторлары';
 	@override String get catalogue => 'Каталог';
 	@override String get loans => 'Кредиттер';
-	@override String get holds => 'Қайта';
+	@override String get holds => 'Брондар';
 	@override String get signIn => 'Бібліотеканың ең айқын көрмесі';
 	@override String get waiting => 'Бұл үшін сіздің браузерде көреген, онда сіздің қосыңызға болады.';
 	@override String get cancel => 'Бас тарту';
 	@override String get disconnect => 'Бібліотекасы көтерілу';
-	@override String get disconnectMessage => 'Бұл бірақтың да оның профильде көреміз? - Сіздің кредит және сіздің библиотекасы бар.';
+	@override String get disconnectMessage => 'Бұл кітапхана осы профильден жойылсын ба? Кітапханадағы уақытша алған кітаптарыңыз бен брондарыңыз өзгермейді.';
 	@override String get getBook => 'Бібліі';
 	@override String get checkAvailability => 'Қайтанының дағдыры';
 	@override String get available => 'Керіктің қабығы';
 	@override String get unavailable => 'Қазіргі таңда қазір';
-	@override String get borrow => 'Кредиттер';
-	@override String get placeHold => 'Қазір қазір';
+	@override String get borrow => 'Уақытша алу';
+	@override String get placeHold => 'Брондау';
 	@override String get returnBook => 'Өткен қайтарып';
-	@override String get cancelHold => 'Абайдың қабығы';
+	@override String get cancelHold => 'Брондаудан бас тарту';
 	@override String get confirmBorrow => 'Бұл қағидалардан бір-бірінен биліктің қағидалары бар?';
-	@override String get confirmReturn => 'Бұл үшін бұл қағидалар мен қағидалары мен қағидаталар мен қабақшаларынан тұрады.';
-	@override String get confirmCancelHold => 'Бұл тийрмелер мен тийрмен таныстырып келдім?';
+	@override String get confirmReturn => 'Бұл кітапты қазір қайтарасыз ба? Жалғастыру үшін оны қайтадан алуыңыз қажет болуы мүмкін.';
+	@override String get confirmCancelHold => 'Осы кітапқа жасаған броныңыздан бас тартасыз ба?';
 	@override String get email => 'электрондық поштадағы электрондық пошты';
 	@override String due({required Object date}) => 'Қайтару мерзімі: ${date}';
 	@override String queue({required Object position}) => 'Қаланың тұрақты тұрғындарының саны ${position}';
@@ -3113,8 +3113,8 @@ class _Translations$lending$kk extends Translations$lending$en {
 	@override String get comingSoonDescription => 'Бизнес әріптестікке және кооперацияға ұсыныс.';
 	@override String get suspendHold => 'Жаққалы';
 	@override String get resumeHold => 'Жүктесі';
-	@override String get suspendMessage => 'Бұл үшін, бізге сіздің қағидалар мен қағидаларынан тұрады, және сіздің қаһарманның қағидаларын қараңыз?';
-	@override String get resumeMessage => 'Бұл қағидалар мен қағидалары мен қағидамлар мен қаһарманлардан тұрады.';
+	@override String get suspendMessage => 'Кезектегі орныңызды сақтап, келесі оқырманға осы дананы алуға мүмкіндік бересіз бе? Брондауды кейін жалғастыра аласыз.';
+	@override String get resumeMessage => 'Кітапхана келесі қолжетімді дананы ұсына алуы үшін осы брондауды жалғастырасыз ба?';
 	@override String get editEmail => 'электрондық поштадағы электрондық пошты';
 }
 
@@ -3614,7 +3614,7 @@ class _Translations$libraries$selection$kk extends Translations$libraries$select
 	@override String selectedCount({required Object count}) => '${count} таңдалды';
 	@override String get actions => 'Алдыңғы акциясы';
 	@override String get confirmDescendants => 'Бұл үшін бірнеше епізод, соңынан кейін, кеңінен танымал.';
-	@override String get confirmUnwatched => 'Бұл үшін реттегінің реттегімен реттегінен реттегіне реттегінде реттегі.';
+	@override String get confirmUnwatched => 'Бұл таңдалған элементтердің ойнату барысын да өшіреді.';
 	@override String confirmCount({required Object count}) => 'Қаланың тұрақты тұрғындарының саны: ${count}.';
 	@override String completed({required Object count}) => 'Қаланың тұрақты тұрғындарының саны: ${count}.';
 	@override String partialFailure({required Object succeeded, required Object failed}) => 'Жаңартылды: ${succeeded}; сәтсіз: ${failed}. Сәтсіз элементтер таңдалған күйінде қалады.';
@@ -4268,7 +4268,7 @@ extension on TranslationsKk {
 			'auth.quickConnectWaiting' => 'Растау күтілуде…',
 			'auth.quickConnectCancel' => 'Бас тарту',
 			'auth.quickConnectExpired' => 'Жылдам қосылу мерзімі өтті. Қайтадан байқап көріңіз.',
-			'auth.localDataRecoveryRequired' => 'PlezyNG жергілікті кіру мәліметтерін қалпына келтіре алмады. Қайтадан кіріңіз.',
+			'auth.localDataRecoveryRequired' => 'PlezyNG жергілікті кіру деректерін және өңдеуді күтіп тұрған ойнату деректерін қауіпсіз қалпына келтіре алмады. Қайта кіріңіз.',
 			'auth.pinCheckRejected' => 'Plex PIN кодын тексеру қабылданбады',
 			'auth.connectToDirectPlex' => 'Қаланың тұрақты тұрғындарының саны Plex',
 			'common.cancel' => 'Бас тарту',
@@ -5084,10 +5084,10 @@ extension on TranslationsKk {
 			'accessibility.highContrastHint' => 'Бұл үшін тек, ауқызы және фокус индикаторы мен светлы және түйі ұзақтығы.',
 			'accessibility.interaction' => 'Ақыттық және интерфейс',
 			'accessibility.reduceMotion' => 'Ақыттық рух',
-			'accessibility.reduceMotionHint' => 'Бұл үшін, қазір мен қазір мен детективтік ефекттер.',
+			'accessibility.reduceMotionHint' => 'Фокус көрсеткішінің қозғалысын, бет ауысу анимациясын және сәндік әсерлерді тоқтатыңыз.',
 			'accessibility.largeTargets' => 'Өнімдер сенімді',
 			'accessibility.largeTargetsHint' => '«Жеңіске» және «Жектеу» деген әлі де ұзақ уақытқа дейін ұзақ уақыт бойы жасылып отыр.',
-			'accessibility.navigationHint' => '«Жеңіске» және «Жекте» және «Сайфт» және «Тұрақты» және «Карта» және «Бұрақты», «Жестеске» және „Жестестеске» бағдарламасы бар.',
+			'accessibility.navigationHint' => 'Басқару элементтері арасында ауысу үшін Tab және Shift+Tab, іске қосу үшін Enter немесе Бос орын, жабу үшін Escape немесе Артқа түймесін пайдаланыңыз. Кітап ашық кезде масштаб пен оқу параметрлерін өзгертуге болады.',
 			'tooltips.shufflePlay' => 'Араластырып ойнату',
 			'tooltips.playTrailer' => 'Трейлерді ойнату',
 			'tooltips.markAsWatched' => 'Көрілді деп белгілеу',
@@ -5324,7 +5324,7 @@ extension on TranslationsKk {
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} профиль · белсенді: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} профиль',
 			'profiles.removeConnectionTitle' => 'Қосылым өшірілсін бе?',
-			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => '${displayName} пайдаланушысының ${connectionLabel} қолжетімділігі өшіріледі.',
+			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => '${displayName} пайдаланушысының ${connectionLabel} қосылымына кіру құқығы жойылады. Басқа профильдердің кіру құқығы сақталады.',
 			'profiles.deleteProfileTitle' => 'Профиль өшірілсін бе?',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => '${displayName} мен оның қосылымдары өшіріледі. Серверлер қолжетімді күйінде қалады.',
 			'profiles.profileNameLabel' => 'Профиль атауы',
@@ -5654,7 +5654,7 @@ extension on TranslationsKk {
 			'libraries.selection.selectedCount' => ({required Object count}) => '${count} таңдалды',
 			'libraries.selection.actions' => 'Алдыңғы акциясы',
 			'libraries.selection.confirmDescendants' => 'Бұл үшін бірнеше епізод, соңынан кейін, кеңінен танымал.',
-			'libraries.selection.confirmUnwatched' => 'Бұл үшін реттегінің реттегімен реттегінен реттегіне реттегінде реттегі.',
+			'libraries.selection.confirmUnwatched' => 'Бұл таңдалған элементтердің ойнату барысын да өшіреді.',
 			'libraries.selection.confirmCount' => ({required Object count}) => 'Қаланың тұрақты тұрғындарының саны: ${count}.',
 			'libraries.selection.completed' => ({required Object count}) => 'Қаланың тұрақты тұрғындарының саны: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Жаңартылды: ${succeeded}; сәтсіз: ${failed}. Сәтсіз элементтер таңдалған күйінде қалады.',
@@ -5984,7 +5984,7 @@ extension on TranslationsKk {
 			'collections.collection' => 'Топтама',
 			'collections.empty' => 'Топтама бос',
 			'collections.deleteCollection' => 'Топтаманы өшіру',
-			'collections.deleteConfirm' => ({required Object title}) => '"${title}" өшірілсін бе?',
+			'collections.deleteConfirm' => ({required Object title}) => '"${title}" өшірілсін бе? Бұл әрекетті кері қайтару мүмкін емес.',
 			'collections.deleted' => 'Топтама өшірілді',
 			'collections.deleteFailed' => 'Топтаманы өшіру мүмкін болмады',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Топтаманы өшіру қатесі: ${error}',
@@ -6038,7 +6038,7 @@ extension on TranslationsKk {
 			'music.clearQueue' => 'Кезекті тазалау',
 			'music.lyrics' => 'Ән мәтіні',
 			'music.visualizer' => 'Жүктесі',
-			'music.visualizerProfileLoading' => 'Ауыздан кейінгі тек тек тек тек...',
+			'music.visualizerProfileLoading' => 'Тректі талдау деректері оқылуда…',
 			'music.visualizerAmbientMotion' => 'Абайғасы',
 			'music.visualizerPlexLoudness' => 'Plex қақтар',
 			'music.visualizerPreviousPreset' => 'Previous Жүктесің стиль',
@@ -6801,7 +6801,7 @@ extension on TranslationsKk {
 			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => 'Қаланың тұрақты тұрғындарының IP немесе URL-ті қосылды. ${name} қосылды',
 			'addServer.insecureTitle' => 'Негізгі қосылды',
 			'addServer.insecureDescription' => ({required Object url}) => '${url} HTTP пайдаланады. Желідегі басқа адамдар құпиясөзіңізді, токендеріңізді және медиаңызды оқуы немесе өзгертуі мүмкін. Мүмкін болса, HTTPS пайдаланыңыз. Осы желіге сенсеңіз және тәуекелді қабылдасаңыз ғана жалғастырыңыз.',
-			'addServer.allowHttp' => 'Қазір қазір HTTP',
+			'addServer.allowHttp' => 'HTTP-ге рұқсат беру',
 			'addServer.httpsRequired' => 'HTTPS пайдаланыңыз немесе шифрланбаған қосылымға нақты рұқсат беріңіз.',
 			'watchLink.serverUnavailable' => 'Бұл қағидалар үшін Plex сервері не айтасыз.',
 			'watchLink.notFound' => 'Бұл сериал немесе фильм Plex серверлеріңізден табылмады.',
@@ -6911,9 +6911,9 @@ extension on TranslationsKk {
 			'homeLayout.on' => 'Қазір',
 			'homeLayout.resetHeroButtonDescription' => 'Бұл үшін, бұл жерде бір-бірімен, бір-бірін, бір-бирімен, басқа да бір-бірин, бір-бетімен, бір, бір-басқа, бір-бысқа, бір, бірақ, бір-бесімен, бір және бір-бірек, бір-бенді, бір-бір, бір-байға, бір-бей, бір-ақ, бір-қой, бір-қатынас, бір-әрекет, бір-шой, бір, қағал, бір-шара, бір-шаң, бір-шікүй, бір-сің, бір, қараша, бір-шың, бір.',
 			'platform.localNetworkPermission' => 'PlezyNG жергілікті желіңіздегі медиа серверлерге және ойнату құрылғыларына қосылады.',
-			'platform.locationPermission' => 'PlezyNG қосымшасы бар, iOS қосымшасы арқылы қосымшасы және қосымшасы бойынша қосымшасы туралы қосымшасы.',
-			'platform.photoLibraryPermission' => 'Бұл үшін фото-библиотекасы мен медиа-артуінің артықшылықтармен таныстырып қараңыз.',
-			'platform.cameraPermission' => 'Бұл үшін QR кодсы бар, содан кейінгі ұзақ уақытқа дейін.',
+			'platform.locationPermission' => 'Жергілікті желіні анықтап, медиа серверлерге қосылу үшін iOS талап еткенде, PlezyNG орналасқан жер туралы деректерге қол жеткізу рұқсатын пайдаланады.',
+			'platform.photoLibraryPermission' => 'Медиа мұқабалары ретінде пайдалану үшін фотокітапханаңыздан суреттерді таңдаңыз.',
+			'platform.cameraPermission' => 'Companion Remote басқару пультін жұптау үшін QR кодтарын сканерлеңіз.',
 			'fileSources.title' => 'Бібліотекасы және файлы',
 			'fileSources.subtitle' => 'Бұл үшін, бізге сіздің файлсы мен файлсы мен қараңыз.',
 			'fileSources.add' => 'Қайталық',
@@ -6973,8 +6973,8 @@ extension on TranslationsKk {
 			'fileSources.sync' => 'Өткен өңдеу',
 			'fileSources.synced' => 'Өнімдермен өңдеу',
 			'fileSources.conflict' => 'Бұл үшін бір-бірімен басқа да бір-бірек қосуға болады.',
-			'fileSources.useLocal' => 'Бұл приспособление',
-			'fileSources.useRemote' => 'Ауыз іші шығыңыз',
+			'fileSources.useLocal' => 'Осы құрылғыны пайдалану',
+			'fileSources.useRemote' => 'Басқа құрылғыны пайдалану',
 			'fileSources.history' => 'Ауыздан соң',
 			'fileSources.groupAudio' => 'Аудиологиялық қағидалар',
 			'fileSources.groupHint' => 'Бұл қабығы мен қабығы мақалалар мен қабықтар мен қабырға мақалалар бар.',
@@ -7008,15 +7008,15 @@ extension on TranslationsKk {
 			'fileSources.paper' => 'Қағаз',
 			'fileSources.sepia' => 'Септа',
 			'fileSources.night' => 'Өзінің',
-			'fileSources.readAloud' => 'Бұл сайтдың қағидалар',
+			'fileSources.readAloud' => 'Осы бетті дауыстап оқу',
 			'fileSources.readAlong' => 'Жүктеу',
-			'fileSources.stopReading' => 'Жаққа қабығы',
+			'fileSources.stopReading' => 'Дауыстап оқуды тоқтату',
 			'fileSources.searchBook' => 'Бірінші мезгіл',
 			'fileSources.noMatches' => 'Не күш',
-			'fileSources.previousPage' => 'Қазір қазір',
-			'fileSources.nextPage' => 'Қазіргі таңда',
+			'fileSources.previousPage' => 'Алдыңғы бет',
+			'fileSources.nextPage' => 'Келесі бет',
 			'fileSources.page' => ({required Object number}) => 'Қаланың тұрақты тұрғындарының саны ${number}',
-			'fileSources.externalBlocked' => 'Бұл үшін, аударыптар мен аударыпталар мен аударыпалар мен аудармалар мен ауды.',
+			'fileSources.externalBlocked' => 'Оқу құралында кітаптардың сыртқы сілтемелері өшірілген.',
 			'fileSources.loading' => 'Одан...',
 			'fileSources.narrator' => 'Ақыттық',
 			'fileSources.audio' => 'Аудио',
@@ -7026,10 +7026,10 @@ extension on TranslationsKk {
 			'fileSources.downloads' => 'Offline файл',
 			'fileSources.confirmDelete' => 'Таңдалған офлайн көшірмені жою керек пе? Оқу немесе тыңдау орны мен жазбаларыңыз сақталады.',
 			'fileSources.errorAuthentication' => 'Бұл қағидалар мен қағидалары мен қағидамлар мен қаһарманлар.',
-			'fileSources.errorPermission' => 'Бұл өнімнің дағдысы бар дағдысын дағдысқа дағдығы не айталады.',
+			'fileSources.errorPermission' => 'Бұл дереккөз сұралған файлға кіруге рұқсат бермеді.',
 			'fileSources.errorUnavailable' => 'Бұл үшін бір-бірімен таныстырып, басқа да басқа да аударып, басқа да аудар.',
 			'fileSources.errorUnsupported' => 'Бұл форматтау немесе конекцияның бұл қосыланы не қосылады.',
-			'fileSources.errorInvalidData' => 'Бұл файл немесе сервер-отзық не күтіледі.',
+			'fileSources.errorInvalidData' => 'Бұл файлды немесе сервер жауабын қауіпсіз оқу мүмкін болмады.',
 			'fileSources.errorCancelled' => 'Операцияның ануға болады.',
 			'fileSources.errorConflict' => 'Бұл үшін бір сессияның бір-бірімен бір-бірін бір-бірин бір-біректік бір-біретімен бір-бирімен бір.',
 			'fileSources.signIn' => 'Кіру',
@@ -7064,11 +7064,11 @@ extension on TranslationsKk {
 			'fileSources.singlePage' => 'Екіп сайын',
 			'fileSources.twoPages' => '2 қаңтар',
 			'fileSources.readingDirection' => 'Жүктеуiң қанақтық',
-			'fileSources.leftToRight' => 'Алдыңғы қабығы',
-			'fileSources.rightToLeft' => 'Олардың дағдыры',
+			'fileSources.leftToRight' => 'Солдан оңға',
+			'fileSources.rightToLeft' => 'Оңнан солға',
 			'fileSources.letterSpacing' => 'Есімдіктің қағидалар',
 			'fileSources.wordSpacing' => 'Әдеп ұзын',
-			'fileSources.readerControlsHelp' => 'Қандай-ақ, бұл қабырға айналады және қабырға жарыққа ұлыстыратын, қабырға дағдарыстатын, қабаттар дағдарыстырды және қабығы дағдарысды.',
+			'fileSources.readerControlsHelp' => 'Бетті үлкейту үшін екі саусағыңызды алшақтатыңыз немесе масштаб түймелерін пайдаланыңыз. Бетті жылжыту үшін сүйреңіз. Ctrl/⌘ және + немесе − масштабты өзгертеді; Ctrl/⌘ және 0 оны қалпына келтіреді. Page Up және Page Down беттерді ауыстырады.',
 			'fileSources.imagePage' => 'Комедиялық сайт',
 			'fileSources.resetReader' => 'Жүктесінен репетициясы',
 			'fileSources.zoom' => 'Масштаб',
@@ -7088,23 +7088,23 @@ extension on TranslationsKk {
 			'lending.search' => 'Бібліотекасы және авторлары',
 			'lending.catalogue' => 'Каталог',
 			'lending.loans' => 'Кредиттер',
-			'lending.holds' => 'Қайта',
+			'lending.holds' => 'Брондар',
 			'lending.signIn' => 'Бібліотеканың ең айқын көрмесі',
 			'lending.waiting' => 'Бұл үшін сіздің браузерде көреген, онда сіздің қосыңызға болады.',
 			'lending.cancel' => 'Бас тарту',
 			'lending.disconnect' => 'Бібліотекасы көтерілу',
-			'lending.disconnectMessage' => 'Бұл бірақтың да оның профильде көреміз? - Сіздің кредит және сіздің библиотекасы бар.',
+			'lending.disconnectMessage' => 'Бұл кітапхана осы профильден жойылсын ба? Кітапханадағы уақытша алған кітаптарыңыз бен брондарыңыз өзгермейді.',
 			'lending.getBook' => 'Бібліі',
 			'lending.checkAvailability' => 'Қайтанының дағдыры',
 			'lending.available' => 'Керіктің қабығы',
 			'lending.unavailable' => 'Қазіргі таңда қазір',
-			'lending.borrow' => 'Кредиттер',
-			'lending.placeHold' => 'Қазір қазір',
+			'lending.borrow' => 'Уақытша алу',
+			'lending.placeHold' => 'Брондау',
 			'lending.returnBook' => 'Өткен қайтарып',
-			'lending.cancelHold' => 'Абайдың қабығы',
+			'lending.cancelHold' => 'Брондаудан бас тарту',
 			'lending.confirmBorrow' => 'Бұл қағидалардан бір-бірінен биліктің қағидалары бар?',
-			'lending.confirmReturn' => 'Бұл үшін бұл қағидалар мен қағидалары мен қағидаталар мен қабақшаларынан тұрады.',
-			'lending.confirmCancelHold' => 'Бұл тийрмелер мен тийрмен таныстырып келдім?',
+			'lending.confirmReturn' => 'Бұл кітапты қазір қайтарасыз ба? Жалғастыру үшін оны қайтадан алуыңыз қажет болуы мүмкін.',
+			'lending.confirmCancelHold' => 'Осы кітапқа жасаған броныңыздан бас тартасыз ба?',
 			'lending.email' => 'электрондық поштадағы электрондық пошты',
 			'lending.due' => ({required Object date}) => 'Қайтару мерзімі: ${date}',
 			'lending.queue' => ({required Object position}) => 'Қаланың тұрақты тұрғындарының саны ${position}',
@@ -7122,8 +7122,8 @@ extension on TranslationsKk {
 			'lending.comingSoonDescription' => 'Бизнес әріптестікке және кооперацияға ұсыныс.',
 			'lending.suspendHold' => 'Жаққалы',
 			'lending.resumeHold' => 'Жүктесі',
-			'lending.suspendMessage' => 'Бұл үшін, бізге сіздің қағидалар мен қағидаларынан тұрады, және сіздің қаһарманның қағидаларын қараңыз?',
-			'lending.resumeMessage' => 'Бұл қағидалар мен қағидалары мен қағидамлар мен қаһарманлардан тұрады.',
+			'lending.suspendMessage' => 'Кезектегі орныңызды сақтап, келесі оқырманға осы дананы алуға мүмкіндік бересіз бе? Брондауды кейін жалғастыра аласыз.',
+			'lending.resumeMessage' => 'Кітапхана келесі қолжетімді дананы ұсына алуы үшін осы брондауды жалғастырасыз ба?',
 			'lending.editEmail' => 'электрондық поштадағы электрондық пошты',
 			'audiobook.syncTitle' => 'Ауыз ішінен ішінен ішінен',
 			'audiobook.syncHelp' => 'Қаланың тұрақты тұрғындарының саны 1 адамды құрайды, 1 адамды құрайды, 1 адамды құрайды, 1 адамды құрайды, 1 адамды құрайды.',

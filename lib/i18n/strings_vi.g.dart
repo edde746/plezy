@@ -198,7 +198,7 @@ class _Translations$auth$vi extends Translations$auth$en {
 	@override String get quickConnectWaiting => 'Đang chờ sự chấp thuận...';
 	@override String get quickConnectCancel => 'Hủy bỏ';
 	@override String get quickConnectExpired => 'Quick Connect đã hết hạn. thử lại.';
-	@override String get localDataRecoveryRequired => 'PlezyNG không thể an toàn khôi phục lại dữ liệu đăng nhập địa phương và xem lại chờ đợi.';
+	@override String get localDataRecoveryRequired => 'PlezyNG không thể khôi phục an toàn dữ liệu đăng nhập cục bộ và dữ liệu phát đang chờ xử lý. Vui lòng đăng nhập lại.';
 	@override String get pinCheckRejected => 'Kiểm tra PIN Plex đã bị từ chối';
 	@override String get connectToDirectPlex => 'Kết nối với máy chủ địa phương Plex';
 }
@@ -522,7 +522,7 @@ class _Translations$settings$vi extends Translations$settings$en {
 	@override String get importSettingsInvalidFile => 'Tệp này không phải là một hợp lệ PlezyNG cài đặt xuất khẩu';
 	@override String get importSettingsNoUser => 'Đăng nhập trước khi nhập cài đặt';
 	@override String get cloudBackup => 'Mây Backup';
-	@override String get cloudBackupDescription => 'Backup cài đặt di động đến một điểm kết thúc WebDAV trên HTTPS. kết nối máy chủ và tín dụng vẫn ở trên thiết bị này.';
+	@override String get cloudBackupDescription => 'Sao lưu các cài đặt có thể chuyển sang thiết bị khác đến địa chỉ WebDAV qua HTTPS. Kết nối máy chủ và thông tin đăng nhập vẫn nằm trên thiết bị này.';
 	@override String get cloudBackupUrl => 'WebDAV JSON tập tin URL';
 	@override String get cloudBackupUsername => 'Tên đăng nhập';
 	@override String get cloudBackupPassword => 'Mật Khẩu';
@@ -789,7 +789,7 @@ class _Translations$themeEditor$vi extends Translations$themeEditor$en {
 	@override late final _Translations$themeEditor$contrast$vi contrast = _Translations$themeEditor$contrast$vi._(_root);
 	@override String lowContrast({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, dưới số đề xuất ${minimum}:1';
 	@override String get discardTitle => 'Thay đổi không?';
-	@override String get discardMessage => 'Những thay đổi màu sắc không được tiết kiệm của bạn sẽ bị mất.';
+	@override String get discardMessage => 'Các thay đổi màu chưa lưu sẽ bị mất.';
 	@override String get discard => 'Khác';
 	@override String previewCardTitle({required Object number}) => 'Chương ${number}';
 	@override String previewCardSubtitle({required Object minutes}) => '${minutes} phút left';
@@ -979,19 +979,19 @@ class _Translations$mediaMenu$vi extends Translations$mediaMenu$en {
 	@override String get deleteShowConfirm => 'Hiển thị Delete';
 	@override String get deleteMovieConfirm => 'xóa phim';
 	@override String get deleteAnyway => 'xóa bất cứ';
-	@override String confirmDeleteTarget({required Object title}) => 'Xóa ${title} từ máy chủ của bạn?';
-	@override String get deleteMultipleWarning => 'Điều này bao gồm tất cả các tập tin và các tập tin của họ.';
+	@override String confirmDeleteTarget({required Object title}) => 'Xóa vĩnh viễn ${title} khỏi máy chủ của bạn?';
+	@override String get deleteMultipleWarning => 'Bao gồm tất cả các tập phim và tệp của chúng.';
 	@override String deleteEpisodeCountWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n,
-		other: 'Điều này xóa tất cả ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} tập tin trong nó, và các tệp của họ.',
+		other: 'Thao tác này xóa tất cả ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} tập phim trong mục này cùng các tệp của chúng.',
 	);
 	@override String deleteMultiPartWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n,
-		other: 'Bài viết này được lưu trữ trên các tập tin ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} và tất cả chúng sẽ bị xóa.',
+		other: 'Mục này được lưu trong ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} tệp và tất cả các tệp đó sẽ bị xóa.',
 	);
 	@override String deleteSharedFileHeading({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n,
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} các tập tin khác được lưu trữ trong cùng một tệp và cũng sẽ bị xóa:',
+		other: 'Có ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} tập phim khác được lưu trong cùng tệp và cũng sẽ bị xóa:',
 	);
-	@override String get deleteScopeUnverifiedProbeFailed => 'PlezyNG không thể kiểm tra các tệp này sẽ xóa, vì vậy nó có thể xóa nhiều hơn mục được đề cập ở trên.';
-	@override String get deleteScopeUnverifiedNoFileInfo => 'Máy chủ của bạn không cung cấp các chi tiết tệp cho mục này, vì vậy PlezyNG không thể kiểm tra các tệp này sẽ xóa.';
+	@override String get deleteScopeUnverifiedProbeFailed => 'PlezyNG không thể xác định những tệp sẽ bị xóa, nên có thể xóa nhiều hơn mục nêu trên. Hãy hủy và thử lại, hoặc vẫn xóa.';
+	@override String get deleteScopeUnverifiedNoFileInfo => 'Máy chủ không cung cấp thông tin tệp cho mục này, nên PlezyNG không thể xác định những tệp sẽ bị xóa. Có thể xóa nhiều hơn mục nêu trên.';
 	@override String get mediaDeletedSuccessfully => 'Media item đã bị xóa thành công';
 	@override String get mediaFailedToDelete => 'Không xóa các mục phương tiện truyền thông';
 	@override String get rate => 'Đánh giá';
@@ -1028,7 +1028,7 @@ class _Translations$accessibility$vi extends Translations$accessibility$en {
 	@override String mediaCardSeason({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
 	@override String get mediaCardWatched => 'Đã xem';
 	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} phần trăm xem';
-	@override String get mediaCardUnwatched => 'Không quan sát';
+	@override String get mediaCardUnwatched => 'chưa xem';
 	@override String get tapToPlay => 'Nhập để chơi';
 	@override String get decrease => 'Giảm';
 	@override String get increase => 'tăng';
@@ -1041,7 +1041,7 @@ class _Translations$accessibility$vi extends Translations$accessibility$en {
 	@override String get expandText => 'Tăng văn bản';
 	@override String get collapseText => 'Tác phẩm sụp đổ';
 	@override String get alphabetNavigation => 'Alphabet Navigation (liên kết  sửa đổi)';
-	@override String get alphabetScrollHint => 'Chuyển lên hoặc xuống để di chuyển bằng thư';
+	@override String get alphabetScrollHint => 'Vuốt lên hoặc xuống để di chuyển theo chữ cái';
 	@override String rowColumnPosition({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Dòng ${row} của ${rowCount}, cột ${column} của ${columnCount}';
 	@override String rowPosition({required Object row, required Object rowCount}) => 'Dòng ${row} của ${rowCount}';
 	@override String get autoScrollPlay => 'Chơi Auto-Scroll';
@@ -1068,10 +1068,10 @@ class _Translations$accessibility$vi extends Translations$accessibility$en {
 	@override String get highContrastHint => 'Văn bản mạnh hơn, chi tiết và chỉ số tập trung trên các bề mặt sáng hoặc tối.';
 	@override String get interaction => 'động và tương tác';
 	@override String get reduceMotion => 'Giảm động lực';
-	@override String get reduceMotionHint => 'Giữ tập trung, chuyển đổi trang và hiệu ứng trang trí vẫn.';
+	@override String get reduceMotionHint => 'Dừng chuyển động của dấu chỉ tiêu điểm, hiệu ứng chuyển trang và các hiệu ứng trang trí.';
 	@override String get largeTargets => 'Mục tiêu Touch lớn hơn';
-	@override String get largeTargetsHint => 'Give shared controls more space for touch and assistive navigation. - Cho các điều khiển được chia sẻ thêm không gian cho việc chạm và giúp việc điều hướng.';
-	@override String get navigationHint => 'Sử dụng Tab và Shift+Tab để di chuyển giữa các điều khiển, Enter hoặc Space để kích hoạt, và Escape hoặc Back to close.';
+	@override String get largeTargetsHint => 'Tăng diện tích các điều khiển dùng chung để dễ chạm và điều hướng bằng công nghệ hỗ trợ.';
+	@override String get navigationHint => 'Dùng Tab và Shift+Tab để di chuyển giữa các điều khiển, Enter hoặc Space để kích hoạt, Escape hoặc nút Quay lại để đóng. Bạn có thể chỉnh mức thu phóng và tùy chọn đọc khi mở sách.';
 }
 
 // Path: tooltips
@@ -1575,7 +1575,7 @@ class _Translations$libraries$vi extends Translations$libraries$en {
 	@override String get analyze => 'phân tích';
 	@override String get analyzeLibrary => 'Phân tích Thư viện';
 	@override String get refreshMetadata => 'Làm mới dữ liệu mô tả';
-	@override String get emptyTrash => 'trash trash trash trash trash trash trash trash';
+	@override String get emptyTrash => 'Dọn sạch thùng rác';
 	@override String emptyingTrash({required Object title}) => 'Khả năng làm sạch bụi bẩn cho "${title}..."';
 	@override String trashEmptied({required Object title}) => 'Trash emptied cho "${title}"';
 	@override String failedToEmptyTrash({required Object error}) => 'Không làm trống rỗng: ${error}';
@@ -1692,7 +1692,7 @@ class _Translations$startup$vi extends Translations$startup$en {
 	// Translations
 	@override String get failedTitle => 'PlezyNG không thể bắt đầu';
 	@override String get failedBody => 'Một cái gì đó đã sai trong quá trình khởi động. chi tiết bên dưới xác định những gì đã thất bại.';
-	@override String get failedBodyRepairable => 'Tệp cài đặt được tiết kiệm của PlezyNG bị hư hỏng và phải được xây dựng lại trước khi PlezyNG có thể bắt đầu.';
+	@override String get failedBodyRepairable => 'Tệp cài đặt đã lưu của PlezyNG bị hỏng và phải được tạo lại trước khi ứng dụng có thể khởi động. Thử lại sẽ không giúp ích — hãy chọn sửa bộ nhớ.';
 	@override String get phaseLabel => 'Bước bước';
 	@override String get showDetails => 'Hiển thị chi tiết';
 	@override String get hideDetails => 'Ẩn chi tiết';
@@ -1703,8 +1703,8 @@ class _Translations$startup$vi extends Translations$startup$en {
 	@override String get repairTitle => 'sửa lại dữ liệu được lưu trữ?';
 	@override String get repairBodyCommon => 'Tệp cài đặt của PlezyNG bị hư hỏng và không thể đọc được. sửa chữa tái cài đặt mỗi cài đặt theo mặc định.';
 	@override String get repairBodyOneCredential => 'Một đăng nhập được lưu được bị hư hỏng và không thể đọc được. sửa chữa loại bỏ chỉ một; các cài đặt khác của bạn được để lại một mình.';
-	@override String get repairBodySignInsKept => 'Các máy chủ và hồ sơ của bạn nên được đăng ký.';
-	@override String get repairBodySignInsLost => 'Chìa khóa bảo vệ các ghi chú được lưu không thể được khôi phục từ tệp này, vì vậy bạn sẽ phải đăng nhập vào mỗi máy chủ và hồ sơ một lần nữa.';
+	@override String get repairBodySignInsKept => 'Trạng thái đăng nhập vào các máy chủ và hồ sơ của bạn sẽ được giữ lại nếu quá trình khôi phục diễn ra bình thường.';
+	@override String get repairBodySignInsLost => 'Không thể khôi phục khóa bảo vệ thông tin đăng nhập đã lưu từ tệp này. Bạn sẽ phải đăng nhập lại vào từng máy chủ và hồ sơ. Không có gì trên máy chủ nội dung bị ảnh hưởng.';
 	@override String get repairBodySessionsUncertain => 'Trackers (MAL, AniList, Simkl, Trakt) và Seerr được lưu trữ riêng biệt và có thể hay không tồn tại. PlezyNG sẽ cho bạn biết chính xác những gì nó giữ.';
 	@override String get repairConfirm => 'sửa chữa';
 	@override String get repairSucceeded => 'lưu trữ sửa chữa';
@@ -1712,11 +1712,11 @@ class _Translations$startup$vi extends Translations$startup$en {
 	@override String get restartRequiredBody => 'Dữ liệu của bạn đã được sửa, nhưng cần khởi động lại PlezyNG để sử dụng. Hãy đóng PlezyNG rồi mở lại.';
 	@override String get quitPlezy => 'Đánh giá PlezyNG';
 	@override String get repairFailed => 'sửa chữa thất bại';
-	@override String get repairKeptSignIns => 'Các máy chủ và hồ sơ của bạn vẫn được đăng ký.';
-	@override String get repairLostSignIns => 'Chìa khóa bảo vệ các ghi chú được lưu không thể được khôi phục. bạn sẽ phải đăng nhập vào mỗi máy chủ và hồ sơ một lần nữa.';
+	@override String get repairKeptSignIns => 'Bạn vẫn đang đăng nhập vào các máy chủ và hồ sơ của mình.';
+	@override String get repairLostSignIns => 'Không thể khôi phục khóa bảo vệ thông tin đăng nhập đã lưu. Bạn sẽ phải đăng nhập lại vào từng máy chủ và hồ sơ.';
 	@override String get repairLostSessions => 'Ít nhất một tracker hoặc kết nối Seerr đã bị mất và phải được nối lại.';
 	@override String get backupTitle => 'Một bản sao của file bị hư hỏng đã được giữ lại';
-	@override String get backupWarning => 'Nó chứa tín dụng đăng nhập của bạn. đừng tải lên hoặc chia sẻ nó.';
+	@override String get backupWarning => 'Bản sao này chứa thông tin đăng nhập của bạn. Không tải lên hoặc chia sẻ.';
 	@override String get deleteBackup => 'xóa copy';
 	@override String get backupDeleted => 'Bản sao bị xóa';
 	@override String get previousFailureTitle => 'PlezyNG không bắt đầu lần cuối';
@@ -1910,7 +1910,7 @@ class _Translations$collections$vi extends Translations$collections$en {
 	@override String get collection => 'Bộ Sưu Tập';
 	@override String get empty => 'Bộ sưu tập trống';
 	@override String get deleteCollection => 'Xóa Bộ Sưu Tập';
-	@override String deleteConfirm({required Object title}) => 'Xóa "${title}"? điều này không thể bị bỏ qua.';
+	@override String deleteConfirm({required Object title}) => 'Xóa "${title}"? Không thể hoàn tác thao tác này.';
 	@override String get deleted => 'Bộ sưu tập xóa';
 	@override String get deleteFailed => 'Không xóa bộ sưu tập';
 	@override String deleteFailedWithError({required Object error}) => 'Không xóa bộ sưu tập: ${error}';
@@ -2503,7 +2503,7 @@ class _Translations$metadataEdit$vi extends Translations$metadataEdit$en {
 	@override String get hide => 'Ẩn';
 	@override String get episodeOrdering => 'Episode Đặt hàng';
 	@override String get tmdbAiring => 'Cơ sở dữ liệu phim (Aired)';
-	@override String get tvdbAiring => 'TNHH TNHH TNHH TNHH TNHH TNHH TNHH TNHH TNHH TNHH TNHH TNHH';
+	@override String get tvdbAiring => 'TheTVDB (theo thứ tự phát sóng)';
 	@override String get tvdbAbsolute => 'TTVDB (tự nhiên)';
 	@override String get metadataLanguage => 'Metadata ngôn ngữ';
 	@override String get useOriginalTitle => 'Sử dụng tiêu đề gốc';
@@ -2625,7 +2625,7 @@ class _Translations$seerr$vi extends Translations$seerr$en {
 	@override String get quickConnectUnsupported => 'Ví dụ Seerr này không hỗ trợ Quick Connect. nó cần Seerr 3.4 hoặc mới hơn.';
 	@override String get notInitialized => 'Ví dụ này Seerr không hoàn thành cài đặt chạy đầu tiên';
 	@override String get noPlexTokenForReauth => 'Số token Plex có sẵn để đăng ký lại';
-	@override String get noStoredCredentials => 'Không có tín dụng được lưu trữ có sẵn để đăng ký lại';
+	@override String get noStoredCredentials => 'Không có thông tin đăng nhập đã lưu để đăng nhập lại';
 	@override String get signInRejected => 'Sign-in bị từ chối';
 	@override String get noSessionCookie => 'Seerr không phát hành cookie session';
 	@override String get freshCookieRejected => 'Seerr từ chối cookie phiên mới';
@@ -2725,7 +2725,7 @@ class _Translations$addServer$vi extends Translations$addServer$en {
 	@override String connectDirectPlexCardSubtitleScoped({required Object name}) => 'Kết nối trực tiếp bằng cách sử dụng địa phương IP hoặc URL. Kết nối đến ${name}.';
 	@override String get insecureTitle => 'Kết nối không mã hóa';
 	@override String insecureDescription({required Object url}) => '${url} sử dụng HTTP. Người khác trên mạng có thể đọc hoặc thay đổi mật khẩu, mã thông báo và nội dung của bạn. Hãy dùng HTTPS nếu có. Chỉ tiếp tục nếu bạn tin tưởng mạng này và chấp nhận rủi ro.';
-	@override String get allowHttp => 'Đánh giá HTTP';
+	@override String get allowHttp => 'Cho phép HTTP';
 	@override String get httpsRequired => 'Sử dụng HTTPS hoặc rõ ràng cho phép kết nối không mã hóa.';
 }
 
@@ -2961,22 +2961,22 @@ class _Translations$fileSources$vi extends Translations$fileSources$en {
 	@override String get font => 'Typeface hình';
 	@override String get serif => 'Có chân';
 	@override String get sans => 'Không có serif';
-	@override String get mono => 'Món không gian';
+	@override String get mono => 'Đơn cách';
 	@override String get columns => 'Cột';
 	@override String get scroll => 'Cuộn dọc';
-	@override String get justify => 'Tạo văn bản';
+	@override String get justify => 'Căn đều hai bên';
 	@override String get readerTheme => 'Trang xuất hiện';
 	@override String get appTheme => 'Theo dõi app theme';
 	@override String get paper => 'giấy';
 	@override String get sepia => 'Sepia';
 	@override String get night => 'đêm';
-	@override String get readAloud => 'Đọc bài này khôn ngoan';
-	@override String get readAlong => 'Đọc tiếp';
+	@override String get readAloud => 'Đọc to trang này';
+	@override String get readAlong => 'Đọc theo lời đọc';
 	@override String get stopReading => 'Ngừng kể chuyện';
 	@override String get searchBook => 'Tìm kiếm trong sách';
 	@override String get noMatches => 'Không trận đấu';
-	@override String get previousPage => 'Previous Page Đánh giá';
-	@override String get nextPage => 'Next Page Đề';
+	@override String get previousPage => 'Trang trước';
+	@override String get nextPage => 'Trang sau';
 	@override String page({required Object number}) => 'Trang ${number}';
 	@override String get externalBlocked => 'Các liên kết sách bên ngoài bị vô hiệu hóa trong người đọc.';
 	@override String get loading => 'Mở...';
@@ -2991,7 +2991,7 @@ class _Translations$fileSources$vi extends Translations$fileSources$en {
 	@override String get errorPermission => 'Nguồn này không cho phép truy cập vào tệp yêu cầu.';
 	@override String get errorUnavailable => 'Nguồn không sẵn dùng.Chiên thử lại, hoặc mở bản sao offline.';
 	@override String get errorUnsupported => 'Định dạng hoặc kết nối này không được hỗ trợ trên thiết bị này. kiểm tra hướng dẫn cài đặt nguồn.';
-	@override String get errorInvalidData => 'Tác phẩm hoặc phản ứng máy chủ này không thể được đọc an toàn.';
+	@override String get errorInvalidData => 'Không thể đọc tệp hoặc phản hồi của máy chủ này một cách an toàn.';
 	@override String get errorCancelled => 'Chiến dịch đã bị hủy bỏ.';
 	@override String get errorConflict => 'Vị trí thay đổi trong phiên khác. mở lại mục để chọn một vị trí.';
 	@override String get signIn => 'Đăng nhập';
@@ -3030,7 +3030,7 @@ class _Translations$fileSources$vi extends Translations$fileSources$en {
 	@override String get rightToLeft => 'Phải sang Trái';
 	@override String get letterSpacing => 'Thư không gian';
 	@override String get wordSpacing => 'Lời bài hát Spacing';
-	@override String get readerControlsHelp => 'Nhấn hoặc sử dụng các điều khiển zoom để mở rộng các trang. kéo đến bảng. Ctrl/ ⁇  + hoặc − điều chỉnh zoom; Ctrl/ ⁇  0 tái thiết lại. Page Up và Page Down chuyển các trang.';
+	@override String get readerControlsHelp => 'Dùng hai ngón tay để phóng to hoặc dùng các nút thu phóng. Kéo để di chuyển trang. Ctrl/⌘ cùng + hoặc − điều chỉnh mức thu phóng; Ctrl/⌘ cùng 0 đặt lại mức thu phóng. Page Up và Page Down chuyển trang.';
 	@override String get imagePage => 'Trang truyện tranh';
 	@override String get resetReader => 'Đặt lại các ưu tiên đọc';
 	@override String get zoom => 'Thu phóng';
@@ -3051,50 +3051,50 @@ class _Translations$lending$vi extends Translations$lending$en {
 	@override String get other => 'Thư viện khác';
 	@override String get libraryName => 'Thư viện tên';
 	@override String get libraryUrl => 'Thư viện website';
-	@override String get libraryUrlHint => 'Sử dụng thư viện của bạn hoặc đăng ký vào trang.';
+	@override String get libraryUrlHint => 'Dùng danh mục hoặc trang đăng nhập của thư viện.';
 	@override String get intro => 'Hãy vay từ thư viện của bạn, hãy giữ cho sách của bạn gần.';
-	@override String get handoff => 'Đăng ký, vay mượn và đọc một cách an toàn với dịch vụ của thư viện của bạn.';
+	@override String get handoff => 'Đăng nhập, mượn sách và đọc an toàn qua dịch vụ riêng của thư viện.';
 	@override String get openService => 'Thư viện mở';
 	@override String get findLibrary => 'Tìm một thư viện';
 	@override String get search => 'Tìm kiếm sách và tác giả';
 	@override String get catalogue => 'Danh mục';
-	@override String get loans => 'vay';
-	@override String get holds => 'giữ';
+	@override String get loans => 'Sách đã mượn';
+	@override String get holds => 'Đặt trước';
 	@override String get signIn => 'Đăng nhập với thư viện của bạn';
 	@override String get waiting => 'Kết thúc đăng ký trong trình duyệt của bạn, sau đó trở lại đây.';
 	@override String get cancel => 'Hủy bỏ';
 	@override String get disconnect => 'xóa thư viện';
-	@override String get disconnectMessage => 'Xóa thư viện này từ hồ sơ này? vay và giữ chỗ ở với thư viện của bạn.';
+	@override String get disconnectMessage => 'Xóa thư viện này khỏi hồ sơ này? Các sách đã mượn và lượt đặt trước vẫn được giữ tại thư viện.';
 	@override String get getBook => 'Nhận sách';
 	@override String get checkAvailability => 'Kiểm tra khả dụng';
 	@override String get available => 'Có sẵn để vay';
 	@override String get unavailable => 'Hiện chưa có';
-	@override String get borrow => 'vay';
-	@override String get placeHold => 'chỗ giữ';
-	@override String get returnBook => 'Trở về sớm';
-	@override String get cancelHold => 'hủy giữ';
+	@override String get borrow => 'Mượn';
+	@override String get placeHold => 'Đặt trước';
+	@override String get returnBook => 'Trả trước hạn';
+	@override String get cancelHold => 'Hủy đặt trước';
 	@override String get confirmBorrow => 'Bạn có nên mượn danh hiệu này từ thư viện của mình?';
-	@override String get confirmReturn => 'Bạn có thể cần phải vay lại để tiếp tục.';
-	@override String get confirmCancelHold => 'Bạn có muốn loại bỏ danh hiệu này không?';
+	@override String get confirmReturn => 'Trả tựa sách này ngay? Bạn có thể cần mượn lại để tiếp tục.';
+	@override String get confirmCancelHold => 'Hủy lượt đặt trước của bạn cho tựa sách này?';
 	@override String get email => 'Đặt thông báo email';
-	@override String due({required Object date}) => 'Đã có ${date}';
+	@override String due({required Object date}) => 'Hạn trả: ${date}';
 	@override String queue({required Object position}) => 'Vị trí ${position} trong dòng';
 	@override String get empty => 'Không có tiêu đề nào ở đây.';
-	@override String get openLibraryNote => 'Khám phá danh sách Thư viện mở.Tùy chọn đọc và vay được hiển thị trên trang của mỗi tiêu đề.';
+	@override String get openLibraryNote => 'Khám phá danh mục của Open Library. Các tùy chọn đọc và mượn được hiển thị trên trang của từng tựa sách.';
 	@override String get more => 'tải thêm';
 	@override String get gateway => 'Thư viện đăng ký dịch vụ';
 	@override String get gatewayHint => 'Được cung cấp bởi thư viện của bạn hoặc quản trị viên PlezyNG.';
 	@override String get advanced => 'Thư viện Integration';
 	@override String get loadLibraries => 'Chọn thư viện của bạn';
-	@override String get expired => 'khoản vay này đã hết hạn.';
+	@override String get expired => 'Thời hạn mượn sách này đã kết thúc.';
 	@override String get updated => 'Thư viện cập nhật';
 	@override String get continueService => 'tiếp tục phục vụ';
 	@override String get comingSoon => 'Lương In-app · Đến sớm';
 	@override String get comingSoonDescription => 'Bạn có thể sử dụng thư viện của bạn trong Libby trong khi chúng tôi kết thúc kết nối nó.';
-	@override String get suspendHold => 'Hủy hoại';
-	@override String get resumeHold => 'Đánh giá Hold';
-	@override String get suspendMessage => 'Giữ vị trí của bạn trong dòng và cho phép người đọc tiếp theo vay mượn bản sao này?';
-	@override String get resumeMessage => 'Đã đăng ký lại để thư viện của bạn có thể cung cấp cho bạn bản sao tiếp theo có sẵn?';
+	@override String get suspendHold => 'Tạm dừng đặt trước';
+	@override String get resumeHold => 'Tiếp tục đặt trước';
+	@override String get suspendMessage => 'Giữ vị trí trong hàng chờ và để người đọc tiếp theo mượn bản này? Bạn có thể tiếp tục lượt đặt trước sau.';
+	@override String get resumeMessage => 'Tiếp tục lượt đặt trước này để thư viện có thể cung cấp bản sẵn có tiếp theo cho bạn?';
 	@override String get editEmail => 'Thay đổi thông báo email';
 }
 
@@ -3594,7 +3594,7 @@ class _Translations$libraries$selection$vi extends Translations$libraries$select
 	@override String selectedCount({required Object count}) => '${count} được chọn';
 	@override String get actions => 'Tùy chọn hành động';
 	@override String get confirmDescendants => 'Điều này thay đổi tất cả các tập trong các chương trình và mùa được chọn.';
-	@override String get confirmUnwatched => 'Điều này cũng làm rõ tiến bộ playback cho các mục được chọn.';
+	@override String get confirmUnwatched => 'Thao tác này cũng xóa tiến trình phát của các mục đã chọn.';
 	@override String confirmCount({required Object count}) => 'Các mục được chọn: ${count}.';
 	@override String completed({required Object count}) => 'Các mục được cập nhật: ${count}.';
 	@override String partialFailure({required Object succeeded, required Object failed}) => 'Cập nhật ${succeeded}; thất bại ${failed}. mục thất bại vẫn được chọn.';
@@ -4246,7 +4246,7 @@ extension on TranslationsVi {
 			'auth.quickConnectWaiting' => 'Đang chờ sự chấp thuận...',
 			'auth.quickConnectCancel' => 'Hủy bỏ',
 			'auth.quickConnectExpired' => 'Quick Connect đã hết hạn. thử lại.',
-			'auth.localDataRecoveryRequired' => 'PlezyNG không thể an toàn khôi phục lại dữ liệu đăng nhập địa phương và xem lại chờ đợi.',
+			'auth.localDataRecoveryRequired' => 'PlezyNG không thể khôi phục an toàn dữ liệu đăng nhập cục bộ và dữ liệu phát đang chờ xử lý. Vui lòng đăng nhập lại.',
 			'auth.pinCheckRejected' => 'Kiểm tra PIN Plex đã bị từ chối',
 			'auth.connectToDirectPlex' => 'Kết nối với máy chủ địa phương Plex',
 			'common.cancel' => 'Hủy bỏ',
@@ -4544,7 +4544,7 @@ extension on TranslationsVi {
 			'settings.importSettingsInvalidFile' => 'Tệp này không phải là một hợp lệ PlezyNG cài đặt xuất khẩu',
 			'settings.importSettingsNoUser' => 'Đăng nhập trước khi nhập cài đặt',
 			'settings.cloudBackup' => 'Mây Backup',
-			'settings.cloudBackupDescription' => 'Backup cài đặt di động đến một điểm kết thúc WebDAV trên HTTPS. kết nối máy chủ và tín dụng vẫn ở trên thiết bị này.',
+			'settings.cloudBackupDescription' => 'Sao lưu các cài đặt có thể chuyển sang thiết bị khác đến địa chỉ WebDAV qua HTTPS. Kết nối máy chủ và thông tin đăng nhập vẫn nằm trên thiết bị này.',
 			'settings.cloudBackupUrl' => 'WebDAV JSON tập tin URL',
 			'settings.cloudBackupUsername' => 'Tên đăng nhập',
 			'settings.cloudBackupPassword' => 'Mật Khẩu',
@@ -4815,7 +4815,7 @@ extension on TranslationsVi {
 			'themeEditor.contrast.labelOnAccent' => 'Bút nhãn trên accent',
 			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, dưới số đề xuất ${minimum}:1',
 			'themeEditor.discardTitle' => 'Thay đổi không?',
-			'themeEditor.discardMessage' => 'Những thay đổi màu sắc không được tiết kiệm của bạn sẽ bị mất.',
+			'themeEditor.discardMessage' => 'Các thay đổi màu chưa lưu sẽ bị mất.',
 			'themeEditor.discard' => 'Khác',
 			'themeEditor.previewCardTitle' => ({required Object number}) => 'Chương ${number}',
 			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '${minutes} phút left',
@@ -4997,13 +4997,13 @@ extension on TranslationsVi {
 			'mediaMenu.deleteShowConfirm' => 'Hiển thị Delete',
 			'mediaMenu.deleteMovieConfirm' => 'xóa phim',
 			'mediaMenu.deleteAnyway' => 'xóa bất cứ',
-			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => 'Xóa ${title} từ máy chủ của bạn?',
-			'mediaMenu.deleteMultipleWarning' => 'Điều này bao gồm tất cả các tập tin và các tập tin của họ.',
-			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: 'Điều này xóa tất cả ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} tập tin trong nó, và các tệp của họ.', ), 
-			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: 'Bài viết này được lưu trữ trên các tập tin ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} và tất cả chúng sẽ bị xóa.', ), 
-			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} các tập tin khác được lưu trữ trong cùng một tệp và cũng sẽ bị xóa:', ), 
-			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG không thể kiểm tra các tệp này sẽ xóa, vì vậy nó có thể xóa nhiều hơn mục được đề cập ở trên.',
-			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Máy chủ của bạn không cung cấp các chi tiết tệp cho mục này, vì vậy PlezyNG không thể kiểm tra các tệp này sẽ xóa.',
+			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => 'Xóa vĩnh viễn ${title} khỏi máy chủ của bạn?',
+			'mediaMenu.deleteMultipleWarning' => 'Bao gồm tất cả các tập phim và tệp của chúng.',
+			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: 'Thao tác này xóa tất cả ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} tập phim trong mục này cùng các tệp của chúng.', ), 
+			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: 'Mục này được lưu trong ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} tệp và tất cả các tệp đó sẽ bị xóa.', ), 
+			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('vi'))(n, other: 'Có ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} tập phim khác được lưu trong cùng tệp và cũng sẽ bị xóa:', ), 
+			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG không thể xác định những tệp sẽ bị xóa, nên có thể xóa nhiều hơn mục nêu trên. Hãy hủy và thử lại, hoặc vẫn xóa.',
+			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Máy chủ không cung cấp thông tin tệp cho mục này, nên PlezyNG không thể xác định những tệp sẽ bị xóa. Có thể xóa nhiều hơn mục nêu trên.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media item đã bị xóa thành công',
 			'mediaMenu.mediaFailedToDelete' => 'Không xóa các mục phương tiện truyền thông',
 			'mediaMenu.rate' => 'Đánh giá',
@@ -5022,7 +5022,7 @@ extension on TranslationsVi {
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
 			'accessibility.mediaCardWatched' => 'Đã xem',
 			'accessibility.mediaCardPartiallyWatched' => ({required Object percent}) => '${percent} phần trăm xem',
-			'accessibility.mediaCardUnwatched' => 'Không quan sát',
+			'accessibility.mediaCardUnwatched' => 'chưa xem',
 			'accessibility.tapToPlay' => 'Nhập để chơi',
 			'accessibility.decrease' => 'Giảm',
 			'accessibility.increase' => 'tăng',
@@ -5035,7 +5035,7 @@ extension on TranslationsVi {
 			'accessibility.expandText' => 'Tăng văn bản',
 			'accessibility.collapseText' => 'Tác phẩm sụp đổ',
 			'accessibility.alphabetNavigation' => 'Alphabet Navigation (liên kết  sửa đổi)',
-			'accessibility.alphabetScrollHint' => 'Chuyển lên hoặc xuống để di chuyển bằng thư',
+			'accessibility.alphabetScrollHint' => 'Vuốt lên hoặc xuống để di chuyển theo chữ cái',
 			'accessibility.rowColumnPosition' => ({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Dòng ${row} của ${rowCount}, cột ${column} của ${columnCount}',
 			'accessibility.rowPosition' => ({required Object row, required Object rowCount}) => 'Dòng ${row} của ${rowCount}',
 			'accessibility.autoScrollPlay' => 'Chơi Auto-Scroll',
@@ -5062,10 +5062,10 @@ extension on TranslationsVi {
 			'accessibility.highContrastHint' => 'Văn bản mạnh hơn, chi tiết và chỉ số tập trung trên các bề mặt sáng hoặc tối.',
 			'accessibility.interaction' => 'động và tương tác',
 			'accessibility.reduceMotion' => 'Giảm động lực',
-			'accessibility.reduceMotionHint' => 'Giữ tập trung, chuyển đổi trang và hiệu ứng trang trí vẫn.',
+			'accessibility.reduceMotionHint' => 'Dừng chuyển động của dấu chỉ tiêu điểm, hiệu ứng chuyển trang và các hiệu ứng trang trí.',
 			'accessibility.largeTargets' => 'Mục tiêu Touch lớn hơn',
-			'accessibility.largeTargetsHint' => 'Give shared controls more space for touch and assistive navigation. - Cho các điều khiển được chia sẻ thêm không gian cho việc chạm và giúp việc điều hướng.',
-			'accessibility.navigationHint' => 'Sử dụng Tab và Shift+Tab để di chuyển giữa các điều khiển, Enter hoặc Space để kích hoạt, và Escape hoặc Back to close.',
+			'accessibility.largeTargetsHint' => 'Tăng diện tích các điều khiển dùng chung để dễ chạm và điều hướng bằng công nghệ hỗ trợ.',
+			'accessibility.navigationHint' => 'Dùng Tab và Shift+Tab để di chuyển giữa các điều khiển, Enter hoặc Space để kích hoạt, Escape hoặc nút Quay lại để đóng. Bạn có thể chỉnh mức thu phóng và tùy chọn đọc khi mở sách.',
 			'tooltips.shufflePlay' => 'Shuffle chơi',
 			'tooltips.playTrailer' => 'Trò chơi Trailer',
 			'tooltips.markAsWatched' => 'Mark theo dõi',
@@ -5523,7 +5523,7 @@ extension on TranslationsVi {
 			'libraries.analyze' => 'phân tích',
 			'libraries.analyzeLibrary' => 'Phân tích Thư viện',
 			'libraries.refreshMetadata' => 'Làm mới dữ liệu mô tả',
-			'libraries.emptyTrash' => 'trash trash trash trash trash trash trash trash',
+			'libraries.emptyTrash' => 'Dọn sạch thùng rác',
 			'libraries.emptyingTrash' => ({required Object title}) => 'Khả năng làm sạch bụi bẩn cho "${title}..."',
 			'libraries.trashEmptied' => ({required Object title}) => 'Trash emptied cho "${title}"',
 			'libraries.failedToEmptyTrash' => ({required Object error}) => 'Không làm trống rỗng: ${error}',
@@ -5632,7 +5632,7 @@ extension on TranslationsVi {
 			'libraries.selection.selectedCount' => ({required Object count}) => '${count} được chọn',
 			'libraries.selection.actions' => 'Tùy chọn hành động',
 			'libraries.selection.confirmDescendants' => 'Điều này thay đổi tất cả các tập trong các chương trình và mùa được chọn.',
-			'libraries.selection.confirmUnwatched' => 'Điều này cũng làm rõ tiến bộ playback cho các mục được chọn.',
+			'libraries.selection.confirmUnwatched' => 'Thao tác này cũng xóa tiến trình phát của các mục đã chọn.',
 			'libraries.selection.confirmCount' => ({required Object count}) => 'Các mục được chọn: ${count}.',
 			'libraries.selection.completed' => ({required Object count}) => 'Các mục được cập nhật: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Cập nhật ${succeeded}; thất bại ${failed}. mục thất bại vẫn được chọn.',
@@ -5659,7 +5659,7 @@ extension on TranslationsVi {
 			'detail.endsAt' => ({required Object time}) => 'Kết thúc tại ${time}',
 			'startup.failedTitle' => 'PlezyNG không thể bắt đầu',
 			'startup.failedBody' => 'Một cái gì đó đã sai trong quá trình khởi động. chi tiết bên dưới xác định những gì đã thất bại.',
-			'startup.failedBodyRepairable' => 'Tệp cài đặt được tiết kiệm của PlezyNG bị hư hỏng và phải được xây dựng lại trước khi PlezyNG có thể bắt đầu.',
+			'startup.failedBodyRepairable' => 'Tệp cài đặt đã lưu của PlezyNG bị hỏng và phải được tạo lại trước khi ứng dụng có thể khởi động. Thử lại sẽ không giúp ích — hãy chọn sửa bộ nhớ.',
 			'startup.phaseLabel' => 'Bước bước',
 			'startup.showDetails' => 'Hiển thị chi tiết',
 			'startup.hideDetails' => 'Ẩn chi tiết',
@@ -5670,8 +5670,8 @@ extension on TranslationsVi {
 			'startup.repairTitle' => 'sửa lại dữ liệu được lưu trữ?',
 			'startup.repairBodyCommon' => 'Tệp cài đặt của PlezyNG bị hư hỏng và không thể đọc được. sửa chữa tái cài đặt mỗi cài đặt theo mặc định.',
 			'startup.repairBodyOneCredential' => 'Một đăng nhập được lưu được bị hư hỏng và không thể đọc được. sửa chữa loại bỏ chỉ một; các cài đặt khác của bạn được để lại một mình.',
-			'startup.repairBodySignInsKept' => 'Các máy chủ và hồ sơ của bạn nên được đăng ký.',
-			'startup.repairBodySignInsLost' => 'Chìa khóa bảo vệ các ghi chú được lưu không thể được khôi phục từ tệp này, vì vậy bạn sẽ phải đăng nhập vào mỗi máy chủ và hồ sơ một lần nữa.',
+			'startup.repairBodySignInsKept' => 'Trạng thái đăng nhập vào các máy chủ và hồ sơ của bạn sẽ được giữ lại nếu quá trình khôi phục diễn ra bình thường.',
+			'startup.repairBodySignInsLost' => 'Không thể khôi phục khóa bảo vệ thông tin đăng nhập đã lưu từ tệp này. Bạn sẽ phải đăng nhập lại vào từng máy chủ và hồ sơ. Không có gì trên máy chủ nội dung bị ảnh hưởng.',
 			'startup.repairBodySessionsUncertain' => 'Trackers (MAL, AniList, Simkl, Trakt) và Seerr được lưu trữ riêng biệt và có thể hay không tồn tại. PlezyNG sẽ cho bạn biết chính xác những gì nó giữ.',
 			'startup.repairConfirm' => 'sửa chữa',
 			'startup.repairSucceeded' => 'lưu trữ sửa chữa',
@@ -5679,11 +5679,11 @@ extension on TranslationsVi {
 			'startup.restartRequiredBody' => 'Dữ liệu của bạn đã được sửa, nhưng cần khởi động lại PlezyNG để sử dụng. Hãy đóng PlezyNG rồi mở lại.',
 			'startup.quitPlezy' => 'Đánh giá PlezyNG',
 			'startup.repairFailed' => 'sửa chữa thất bại',
-			'startup.repairKeptSignIns' => 'Các máy chủ và hồ sơ của bạn vẫn được đăng ký.',
-			'startup.repairLostSignIns' => 'Chìa khóa bảo vệ các ghi chú được lưu không thể được khôi phục. bạn sẽ phải đăng nhập vào mỗi máy chủ và hồ sơ một lần nữa.',
+			'startup.repairKeptSignIns' => 'Bạn vẫn đang đăng nhập vào các máy chủ và hồ sơ của mình.',
+			'startup.repairLostSignIns' => 'Không thể khôi phục khóa bảo vệ thông tin đăng nhập đã lưu. Bạn sẽ phải đăng nhập lại vào từng máy chủ và hồ sơ.',
 			'startup.repairLostSessions' => 'Ít nhất một tracker hoặc kết nối Seerr đã bị mất và phải được nối lại.',
 			'startup.backupTitle' => 'Một bản sao của file bị hư hỏng đã được giữ lại',
-			'startup.backupWarning' => 'Nó chứa tín dụng đăng nhập của bạn. đừng tải lên hoặc chia sẻ nó.',
+			'startup.backupWarning' => 'Bản sao này chứa thông tin đăng nhập của bạn. Không tải lên hoặc chia sẻ.',
 			'startup.deleteBackup' => 'xóa copy',
 			'startup.backupDeleted' => 'Bản sao bị xóa',
 			'startup.previousFailureTitle' => 'PlezyNG không bắt đầu lần cuối',
@@ -5962,7 +5962,7 @@ extension on TranslationsVi {
 			'collections.collection' => 'Bộ Sưu Tập',
 			'collections.empty' => 'Bộ sưu tập trống',
 			'collections.deleteCollection' => 'Xóa Bộ Sưu Tập',
-			'collections.deleteConfirm' => ({required Object title}) => 'Xóa "${title}"? điều này không thể bị bỏ qua.',
+			'collections.deleteConfirm' => ({required Object title}) => 'Xóa "${title}"? Không thể hoàn tác thao tác này.',
 			'collections.deleted' => 'Bộ sưu tập xóa',
 			'collections.deleteFailed' => 'Không xóa bộ sưu tập',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Không xóa bộ sưu tập: ${error}',
@@ -6585,7 +6585,7 @@ extension on TranslationsVi {
 			'metadataEdit.hide' => 'Ẩn',
 			'metadataEdit.episodeOrdering' => 'Episode Đặt hàng',
 			'metadataEdit.tmdbAiring' => 'Cơ sở dữ liệu phim (Aired)',
-			'metadataEdit.tvdbAiring' => 'TNHH TNHH TNHH TNHH TNHH TNHH TNHH TNHH TNHH TNHH TNHH TNHH',
+			'metadataEdit.tvdbAiring' => 'TheTVDB (theo thứ tự phát sóng)',
 			'metadataEdit.tvdbAbsolute' => 'TTVDB (tự nhiên)',
 			'metadataEdit.metadataLanguage' => 'Metadata ngôn ngữ',
 			'metadataEdit.useOriginalTitle' => 'Sử dụng tiêu đề gốc',
@@ -6671,7 +6671,7 @@ extension on TranslationsVi {
 			'seerr.quickConnectUnsupported' => 'Ví dụ Seerr này không hỗ trợ Quick Connect. nó cần Seerr 3.4 hoặc mới hơn.',
 			'seerr.notInitialized' => 'Ví dụ này Seerr không hoàn thành cài đặt chạy đầu tiên',
 			'seerr.noPlexTokenForReauth' => 'Số token Plex có sẵn để đăng ký lại',
-			'seerr.noStoredCredentials' => 'Không có tín dụng được lưu trữ có sẵn để đăng ký lại',
+			'seerr.noStoredCredentials' => 'Không có thông tin đăng nhập đã lưu để đăng nhập lại',
 			'seerr.signInRejected' => 'Sign-in bị từ chối',
 			'seerr.noSessionCookie' => 'Seerr không phát hành cookie session',
 			'seerr.freshCookieRejected' => 'Seerr từ chối cookie phiên mới',
@@ -6779,7 +6779,7 @@ extension on TranslationsVi {
 			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => 'Kết nối trực tiếp bằng cách sử dụng địa phương IP hoặc URL. Kết nối đến ${name}.',
 			'addServer.insecureTitle' => 'Kết nối không mã hóa',
 			'addServer.insecureDescription' => ({required Object url}) => '${url} sử dụng HTTP. Người khác trên mạng có thể đọc hoặc thay đổi mật khẩu, mã thông báo và nội dung của bạn. Hãy dùng HTTPS nếu có. Chỉ tiếp tục nếu bạn tin tưởng mạng này và chấp nhận rủi ro.',
-			'addServer.allowHttp' => 'Đánh giá HTTP',
+			'addServer.allowHttp' => 'Cho phép HTTP',
 			'addServer.httpsRequired' => 'Sử dụng HTTPS hoặc rõ ràng cho phép kết nối không mã hóa.',
 			'watchLink.serverUnavailable' => 'Tôi không thể truy cập một máy chủ Plex cho liên kết này.',
 			'watchLink.notFound' => 'Tôi không thể tìm thấy chương trình hoặc bộ phim này trên máy chủ của bạn Plex.',
@@ -6977,22 +6977,22 @@ extension on TranslationsVi {
 			'fileSources.font' => 'Typeface hình',
 			'fileSources.serif' => 'Có chân',
 			'fileSources.sans' => 'Không có serif',
-			'fileSources.mono' => 'Món không gian',
+			'fileSources.mono' => 'Đơn cách',
 			'fileSources.columns' => 'Cột',
 			'fileSources.scroll' => 'Cuộn dọc',
-			'fileSources.justify' => 'Tạo văn bản',
+			'fileSources.justify' => 'Căn đều hai bên',
 			'fileSources.readerTheme' => 'Trang xuất hiện',
 			'fileSources.appTheme' => 'Theo dõi app theme',
 			'fileSources.paper' => 'giấy',
 			'fileSources.sepia' => 'Sepia',
 			'fileSources.night' => 'đêm',
-			'fileSources.readAloud' => 'Đọc bài này khôn ngoan',
-			'fileSources.readAlong' => 'Đọc tiếp',
+			'fileSources.readAloud' => 'Đọc to trang này',
+			'fileSources.readAlong' => 'Đọc theo lời đọc',
 			'fileSources.stopReading' => 'Ngừng kể chuyện',
 			'fileSources.searchBook' => 'Tìm kiếm trong sách',
 			'fileSources.noMatches' => 'Không trận đấu',
-			'fileSources.previousPage' => 'Previous Page Đánh giá',
-			'fileSources.nextPage' => 'Next Page Đề',
+			'fileSources.previousPage' => 'Trang trước',
+			'fileSources.nextPage' => 'Trang sau',
 			'fileSources.page' => ({required Object number}) => 'Trang ${number}',
 			'fileSources.externalBlocked' => 'Các liên kết sách bên ngoài bị vô hiệu hóa trong người đọc.',
 			'fileSources.loading' => 'Mở...',
@@ -7007,7 +7007,7 @@ extension on TranslationsVi {
 			'fileSources.errorPermission' => 'Nguồn này không cho phép truy cập vào tệp yêu cầu.',
 			'fileSources.errorUnavailable' => 'Nguồn không sẵn dùng.Chiên thử lại, hoặc mở bản sao offline.',
 			'fileSources.errorUnsupported' => 'Định dạng hoặc kết nối này không được hỗ trợ trên thiết bị này. kiểm tra hướng dẫn cài đặt nguồn.',
-			'fileSources.errorInvalidData' => 'Tác phẩm hoặc phản ứng máy chủ này không thể được đọc an toàn.',
+			'fileSources.errorInvalidData' => 'Không thể đọc tệp hoặc phản hồi của máy chủ này một cách an toàn.',
 			'fileSources.errorCancelled' => 'Chiến dịch đã bị hủy bỏ.',
 			'fileSources.errorConflict' => 'Vị trí thay đổi trong phiên khác. mở lại mục để chọn một vị trí.',
 			'fileSources.signIn' => 'Đăng nhập',
@@ -7046,7 +7046,7 @@ extension on TranslationsVi {
 			'fileSources.rightToLeft' => 'Phải sang Trái',
 			'fileSources.letterSpacing' => 'Thư không gian',
 			'fileSources.wordSpacing' => 'Lời bài hát Spacing',
-			'fileSources.readerControlsHelp' => 'Nhấn hoặc sử dụng các điều khiển zoom để mở rộng các trang. kéo đến bảng. Ctrl/ ⁇  + hoặc − điều chỉnh zoom; Ctrl/ ⁇  0 tái thiết lại. Page Up và Page Down chuyển các trang.',
+			'fileSources.readerControlsHelp' => 'Dùng hai ngón tay để phóng to hoặc dùng các nút thu phóng. Kéo để di chuyển trang. Ctrl/⌘ cùng + hoặc − điều chỉnh mức thu phóng; Ctrl/⌘ cùng 0 đặt lại mức thu phóng. Page Up và Page Down chuyển trang.',
 			'fileSources.imagePage' => 'Trang truyện tranh',
 			'fileSources.resetReader' => 'Đặt lại các ưu tiên đọc',
 			'fileSources.zoom' => 'Thu phóng',
@@ -7058,50 +7058,50 @@ extension on TranslationsVi {
 			'lending.other' => 'Thư viện khác',
 			'lending.libraryName' => 'Thư viện tên',
 			'lending.libraryUrl' => 'Thư viện website',
-			'lending.libraryUrlHint' => 'Sử dụng thư viện của bạn hoặc đăng ký vào trang.',
+			'lending.libraryUrlHint' => 'Dùng danh mục hoặc trang đăng nhập của thư viện.',
 			'lending.intro' => 'Hãy vay từ thư viện của bạn, hãy giữ cho sách của bạn gần.',
-			'lending.handoff' => 'Đăng ký, vay mượn và đọc một cách an toàn với dịch vụ của thư viện của bạn.',
+			'lending.handoff' => 'Đăng nhập, mượn sách và đọc an toàn qua dịch vụ riêng của thư viện.',
 			'lending.openService' => 'Thư viện mở',
 			'lending.findLibrary' => 'Tìm một thư viện',
 			'lending.search' => 'Tìm kiếm sách và tác giả',
 			'lending.catalogue' => 'Danh mục',
-			'lending.loans' => 'vay',
-			'lending.holds' => 'giữ',
+			'lending.loans' => 'Sách đã mượn',
+			'lending.holds' => 'Đặt trước',
 			'lending.signIn' => 'Đăng nhập với thư viện của bạn',
 			'lending.waiting' => 'Kết thúc đăng ký trong trình duyệt của bạn, sau đó trở lại đây.',
 			'lending.cancel' => 'Hủy bỏ',
 			'lending.disconnect' => 'xóa thư viện',
-			'lending.disconnectMessage' => 'Xóa thư viện này từ hồ sơ này? vay và giữ chỗ ở với thư viện của bạn.',
+			'lending.disconnectMessage' => 'Xóa thư viện này khỏi hồ sơ này? Các sách đã mượn và lượt đặt trước vẫn được giữ tại thư viện.',
 			'lending.getBook' => 'Nhận sách',
 			'lending.checkAvailability' => 'Kiểm tra khả dụng',
 			'lending.available' => 'Có sẵn để vay',
 			'lending.unavailable' => 'Hiện chưa có',
-			'lending.borrow' => 'vay',
-			'lending.placeHold' => 'chỗ giữ',
-			'lending.returnBook' => 'Trở về sớm',
-			'lending.cancelHold' => 'hủy giữ',
+			'lending.borrow' => 'Mượn',
+			'lending.placeHold' => 'Đặt trước',
+			'lending.returnBook' => 'Trả trước hạn',
+			'lending.cancelHold' => 'Hủy đặt trước',
 			'lending.confirmBorrow' => 'Bạn có nên mượn danh hiệu này từ thư viện của mình?',
-			'lending.confirmReturn' => 'Bạn có thể cần phải vay lại để tiếp tục.',
-			'lending.confirmCancelHold' => 'Bạn có muốn loại bỏ danh hiệu này không?',
+			'lending.confirmReturn' => 'Trả tựa sách này ngay? Bạn có thể cần mượn lại để tiếp tục.',
+			'lending.confirmCancelHold' => 'Hủy lượt đặt trước của bạn cho tựa sách này?',
 			'lending.email' => 'Đặt thông báo email',
-			'lending.due' => ({required Object date}) => 'Đã có ${date}',
+			'lending.due' => ({required Object date}) => 'Hạn trả: ${date}',
 			'lending.queue' => ({required Object position}) => 'Vị trí ${position} trong dòng',
 			'lending.empty' => 'Không có tiêu đề nào ở đây.',
-			'lending.openLibraryNote' => 'Khám phá danh sách Thư viện mở.Tùy chọn đọc và vay được hiển thị trên trang của mỗi tiêu đề.',
+			'lending.openLibraryNote' => 'Khám phá danh mục của Open Library. Các tùy chọn đọc và mượn được hiển thị trên trang của từng tựa sách.',
 			'lending.more' => 'tải thêm',
 			'lending.gateway' => 'Thư viện đăng ký dịch vụ',
 			'lending.gatewayHint' => 'Được cung cấp bởi thư viện của bạn hoặc quản trị viên PlezyNG.',
 			'lending.advanced' => 'Thư viện Integration',
 			'lending.loadLibraries' => 'Chọn thư viện của bạn',
-			'lending.expired' => 'khoản vay này đã hết hạn.',
+			'lending.expired' => 'Thời hạn mượn sách này đã kết thúc.',
 			'lending.updated' => 'Thư viện cập nhật',
 			'lending.continueService' => 'tiếp tục phục vụ',
 			'lending.comingSoon' => 'Lương In-app · Đến sớm',
 			'lending.comingSoonDescription' => 'Bạn có thể sử dụng thư viện của bạn trong Libby trong khi chúng tôi kết thúc kết nối nó.',
-			'lending.suspendHold' => 'Hủy hoại',
-			'lending.resumeHold' => 'Đánh giá Hold',
-			'lending.suspendMessage' => 'Giữ vị trí của bạn trong dòng và cho phép người đọc tiếp theo vay mượn bản sao này?',
-			'lending.resumeMessage' => 'Đã đăng ký lại để thư viện của bạn có thể cung cấp cho bạn bản sao tiếp theo có sẵn?',
+			'lending.suspendHold' => 'Tạm dừng đặt trước',
+			'lending.resumeHold' => 'Tiếp tục đặt trước',
+			'lending.suspendMessage' => 'Giữ vị trí trong hàng chờ và để người đọc tiếp theo mượn bản này? Bạn có thể tiếp tục lượt đặt trước sau.',
+			'lending.resumeMessage' => 'Tiếp tục lượt đặt trước này để thư viện có thể cung cấp bản sẵn có tiếp theo cho bạn?',
 			'lending.editEmail' => 'Thay đổi thông báo email',
 			'audiobook.syncTitle' => 'Đọc & lắng nghe Sync',
 			'audiobook.syncHelp' => 'Giữ vị trí đọc, nghe vị trí, trạng thái hoàn thành, sổ ghi chép và ghi chú trên thiết bị của bạn. Chọn một tài khoản lưu trữ được gắn và sử dụng cùng mã đồng bộ trên mỗi thiết bị. Đọc và nghe vẫn riêng biệt.',

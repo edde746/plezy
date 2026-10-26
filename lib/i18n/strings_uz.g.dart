@@ -103,7 +103,6 @@ class TranslationsUz extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$platform$uz platform = _Translations$platform$uz._(_root);
 	@override late final _Translations$fileSources$uz fileSources = _Translations$fileSources$uz._(_root);
 	@override late final _Translations$lending$uz lending = _Translations$lending$uz._(_root);
-	@override late final _Translations$audiobook$uz audiobook = _Translations$audiobook$uz._(_root);
 }
 
 // Path: app
@@ -198,7 +197,7 @@ class _Translations$auth$uz extends Translations$auth$en {
 	@override String get quickConnectWaiting => 'Tasdiq kutilmoqda…';
 	@override String get quickConnectCancel => 'Bekor qilish';
 	@override String get quickConnectExpired => 'Tezkor ulanish vaqti tugadi. Qaytadan urinib koʻring.';
-	@override String get localDataRecoveryRequired => 'PlezyNG mahalliy kirish maʼlumotlarini tiklay olmadi. Iltimos, qaytadan kiring.';
+	@override String get localDataRecoveryRequired => 'PlezyNG qurilmadagi kirish ma’lumotlarini va qayta ishlanishini kutayotgan ijro ma’lumotlarini xavfsiz tiklay olmadi. Qayta kiring.';
 	@override String get pinCheckRejected => 'Plex PIN tekshiruvi rad etildi';
 	@override String get connectToDirectPlex => 'Mahalliy Plex serveriga ulanish';
 }
@@ -305,7 +304,7 @@ class _Translations$appAccess$uz extends Translations$appAccess$en {
 	@override String get trialEndedDescription => 'Do‘konda ko‘rsatilgan narxda bir marta xarid qilib, PlezyNG’ning barcha funksiyalarini umrbod oching. Obuna talab qilinmaydi.';
 	@override String get startTrial => '7 day free proving sizga qaytadi.';
 	@override String get trialActive => '7 day full-feature proving siz aktivir.';
-	@override String get trialEnded => '7 dayni bilan bilan bilan bilan qaytadi.';
+	@override String get trialEnded => '7 kunlik sinov muddati tugadi';
 	@override String get trialStartFailed => 'Bu cihazda testini salmaydi. lütfen qaytarga.';
 	@override String get lifetimeTitle => 'PlezyNG hayri boʻlu boʻlu';
 	@override String get lifetimeBody => 'Rahmat! PlezyNG’ning barcha funksiyalaridan umrbod foydalanishingiz mumkin.';
@@ -318,7 +317,7 @@ class _Translations$appAccess$uz extends Translations$appAccess$en {
 	@override String get pending => 'Siz qaplan o‘ziz o‘zib o‘zig o‘ziga o‘zige o‘zigi o‘zaga o‘zaya o‘zay o‘ziy o‘ziye o‘ziyan o‘zayn o‘zinc o‘zyan o‘zayan o‘zac o‘zinin o‘ziyar o‘zqan o‘zari o‘zani o‘zaman o‘zadan o‘zagan o‘zanc o‘z.';
 	@override String get storeUnavailable => 'Siz bu mağazada abonlikliklik oluyiz. siz bu mağazadan abonliklik olayiz.';
 	@override String get productNotFound => 'PlezyNG lifetime unlock bu mağazada yet o‘zayda olmaygan.';
-	@override String get productQueryFailed => 'U\'ziyni bilan bilan bilan bilan ko‘ziydi. Sizga bağlantıdan kontrol edin, qaytdan ko‘zayni.';
+	@override String get productQueryFailed => 'Do‘kondagi narxni yuklab bo‘lmadi. Ulanishingizni tekshirib, qayta urinib ko‘ring.';
 	@override String get purchaseFailed => 'Bu qotomiyadi ko‘zadi. qaytarga ko‘z.';
 	@override String get restoreFailed => 'Sizga buyni qaytarga qotʻyadi. qaytarga qaytarga.';
 	@override String get nothingToRestore => 'No PlezyNG lifetime buy bu mağazalar hesab için bulgan.';
@@ -389,7 +388,7 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String contentScreensaverSelectedLibraries({required Object count}) => '${count} librarlar seçkin';
 	@override String get contentScreensaverNoLibraries => 'Bağlanmış medya librarlar yok.';
 	@override String get contentScreensaverDismissHint => 'Bu\'da bir buton o\'t tapatni bo\'t tabatni';
-	@override String get newEpisodeNotifications => 'Yeni epizodlar bilan bilan bilan bilan';
+	@override String get newEpisodeNotifications => 'Yangi qismlar haqida bildirishnomalar';
 	@override String get newEpisodeNotificationsDescription => 'Tomosha qilib bo‘lgan serialingizga yangi qism qo‘shilganda xabar berish. Plezy ochiq bo‘lganda tekshiriladi.';
 	@override String get continueWatchingRowSize => 'U\'qizga sizliklikliklik.';
 	@override String continueWatchingRowSizeValue({required Object label}) => '${label} kartlar';
@@ -472,7 +471,7 @@ class _Translations$settings$uz extends Translations$settings$en {
 	);
 	@override String get rememberTrackSelections => 'Har bir film/serial uchun ovoz/subtitr tanlovini eslab qolish';
 	@override String get chooseTracksBeforePlayback => 'Playback-dan əvvəl audio-dan subtitles seçin.';
-	@override String get chooseTracksBeforePlaybackDescription => 'Kaynak audio-subtitle-traglar bilan bilan bilan bilan, hər video-dan başlaygan.';
+	@override String get chooseTracksBeforePlaybackDescription => 'Har bir video boshlanishidan oldin manbadagi audio va subtitr yo‘laklarini tanlang.';
 	@override String get alwaysShowSubtitlesOnDevice => 'Bu cihazda subtitles ko‘zlar.';
 	@override String get alwaysShowSubtitlesOnDeviceDescription => 'Serverni bir subtiti yoksa, lokalizasyonda bir track seçin. Bu, serverni preferansini ko‘zadi.';
 	@override String get autoDownloadPreferredSubtitle => 'Yiyiyiyiyiz, preferlik-language subtitles qurtlar';
@@ -528,7 +527,7 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get cloudBackupUrl => 'WebDAV JSON fildi URL';
 	@override String get cloudBackupUsername => 'Foydalanuvchi nomi';
 	@override String get cloudBackupPassword => 'Parol';
-	@override String get cloudBackupSaved => 'Cloud backup destinatari bilan bilan bilan bilan qaytarga';
+	@override String get cloudBackupSaved => 'Bulutli zaxira nusxasi saqlanadigan manzil saqlandi';
 	@override String get cloudBackupNow => 'Tadi qaytadi';
 	@override String get cloudBackupComplete => 'Yatlarlarlarlar yatlarlar';
 	@override String get cloudBackupRestore => 'Backup qaytarga';
@@ -553,7 +552,7 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get autoPlayNextEpisodeDescription => 'Qism tugagach, keyingisini avtomatik ijro etish';
 	@override String get shuffleStartsFromBeginning => 'Aralashtirish boshidan boshlanadi';
 	@override String get shuffleStartsFromBeginningDescription => 'Aralashtirganda har bir qismni davom ettirish oʻrniga boshidan boshlash';
-	@override String get plexCinemaPreRoll => 'Kino kino kino kino kino';
+	@override String get plexCinemaPreRoll => 'Serverdagi film kirish videolaridan foydalanish';
 	@override String get plexCinemaPreRollDescription => 'Plex pre-rolls ya Jellyfin və Emby intros ko‘figurada oynaygan film başlatmaydan.';
 	@override String get playNextCountdown => 'Keyingi qism sanogʻi';
 	@override String get playNextCountdownImmediate => 'Darhol ijro etish';
@@ -568,7 +567,7 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get skipAdsMode => 'Ads koʻyadi';
 	@override String get skipAdsModeOffDescription => 'Xamqadi reklamlar normalga kaygaqdan kaygaqlar.';
 	@override String get skipAdsModeButtonDescription => 'Plex reklamani aniqlaganda o‘tkazib yuborish tugmasini ko‘rsatish';
-	@override String get skipAdsModeAutoDescription => 'Adlar bilan bilan bilan bilan automatik o‘zadi.';
+	@override String get skipAdsModeAutoDescription => 'Aniqlangan reklamalarni quyida belgilangan kutish vaqtidan so‘ng avtomatik o‘tkazib yuborish';
 	@override String get musicPlayback => 'Musiqa ijrosi';
 	@override String get musicSweetFades => 'Yiyiyiyiy';
 	@override String get musicSweetFadesDescription => 'Plex’da ovoz balandligi ma’lumotlari bo‘lsa, trek boshida va oxirida musiqani asta kuchaytirish va pasaytirish. Albom ijrosi o‘zgarmaydi.';
@@ -614,7 +613,7 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get downloadOnWifiOnlyDescription => 'Mobil tarmoqdan foydalanilganda yuklashni toʻxtatib turish';
 	@override String get autoRemoveWatchedDownloads => 'Koʻrilgan yuklamalarni avtomatik oʻchirish';
 	@override String get autoRemoveWatchedDownloadsDescription => 'Koʻrib boʻlingan yuklamalarni avtomatik oʻchirish';
-	@override String get autoDownloadContinueWatching => 'Auto-download bilan bilan bilan bilan';
+	@override String get autoDownloadContinueWatching => '“Tomoshani davom ettirish” ro‘yxatini avtomatik yuklab olish';
 	@override String get autoDownloadContinueWatchingDescription => 'U\'zizni isqizni isxizni iscizni isgizni isnizni isfizni isjizni ischizni ishqizni.';
 	@override String get downloadQuality => 'Download Qalitsiya';
 	@override String get downloadQualityDescription => 'Plex isqizda bir transferlik kopyadi hazırlar. Jellyfin və Emby transkodlar ko‘dadi fil download; isqizdan transferliklar yeniden başlatmaq gerektirir.';
@@ -984,7 +983,7 @@ class _Translations$mediaMenu$uz extends Translations$mediaMenu$en {
 	@override String confirmDeleteTarget({required Object title}) => '${title} serveringizdan butunlay oʻchirilsinmi?';
 	@override String get deleteMultipleWarning => 'Bu barcha qismlar va fayllarga taʼsir qiladi.';
 	@override String deleteEpisodeCountWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uz'))(n,
-		one: 'Bu undagi barcha ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} qismni va uning faylini oʻchiradi.',
+		one: 'Bu undagi ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} qismni va uning faylini o‘chiradi.',
 		other: 'Bu undagi barcha ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} qismni va ularning fayllarini oʻchiradi.',
 	);
 	@override String deleteMultiPartWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uz'))(n,
@@ -1067,16 +1066,16 @@ class _Translations$accessibility$uz extends Translations$accessibility$en {
 	@override String get systemHint => 'Qurilmangizning maxsus imkoniyatlar sozlamalari doim amal qiladi. Bu parametrlar PlezyNG bo‘ylab qo‘shimcha moslashlarni taqdim etadi.';
 	@override String get readability => 'Okumadi və vizibiliyadi';
 	@override String get textSize => 'Tekstil bilan bilan bilan';
-	@override String get preview => 'Sizga bir sonraki hikayizi bul. Sizga lugay, din, sizga va va va va.';
+	@override String get preview => 'Keyingi hikoyangizni toping. O‘zingizga qulay sur’atda o‘qing, tinglang va tomosha qiling.';
 	@override String get boldText => 'Interface texti';
 	@override String get highContrast => 'Kontrast bilan';
 	@override String get highContrastHint => 'Tekstil, outlines, qurtlar, qurtlari, qurtalar, qurtlara qurtlar.';
 	@override String get interaction => 'Movsiya və interakcion';
 	@override String get reduceMotion => 'Movsiya ko‘zadi';
-	@override String get reduceMotionHint => 'Fokus, sayta transitionlar, dekoratif efektlar qurt.';
+	@override String get reduceMotionHint => 'Fokus ko‘rsatkichi harakatini, sahifa almashish animatsiyasini va bezak effektlarini to‘xtating.';
 	@override String get largeTargets => 'Tadiqni sasni';
 	@override String get largeTargetsHint => 'U\'zizga qo‘zlar, touch-i-asistivi navigation üçün daha fazla yer qo‘z.';
-	@override String get navigationHint => 'Tab, Shift+Tab, kontrollar arasında hareket, aktivatsiya üçün Enter o Spati, və Escape o Back to close.';
+	@override String get navigationHint => 'Boshqaruv elementlari orasida yurish uchun Tab va Shift+Tab, ishga tushirish uchun Enter yoki Bo‘sh joy, yopish uchun Escape yoki Orqaga tugmasidan foydalaning. Kitob ochiq bo‘lsa, masshtab va o‘qish sozlamalarini o‘zgartirish mumkin.';
 }
 
 // Path: tooltips
@@ -1382,7 +1381,7 @@ class _Translations$profiles$uz extends Translations$profiles$en {
 	@override String summaryMultipleWithActive({required Object count, required Object activeName}) => '${count} profil · faol: ${activeName}';
 	@override String summaryMultiple({required Object count}) => '${count} profil';
 	@override String get removeConnectionTitle => 'Ulanish oʻchirilsinmi?';
-	@override String removeConnectionMessage({required Object displayName, required Object connectionLabel}) => '${displayName} foydalanuvchisining ${connectionLabel} kirish huquqi oʻchiriladi.';
+	@override String removeConnectionMessage({required Object displayName, required Object connectionLabel}) => '${displayName} foydalanuvchisining ${connectionLabel} ulanishiga kirish huquqi olib tashlanadi. Boshqa profillarning kirish huquqi saqlanadi.';
 	@override String get deleteProfileTitle => 'Profil oʻchirilsinmi?';
 	@override String deleteProfileMessage({required Object displayName}) => '${displayName} va uning ulanishlari oʻchiriladi. Serverlar mavjud boʻlib qoladi.';
 	@override String get profileNameLabel => 'Profil nomi';
@@ -1522,7 +1521,6 @@ class _Translations$discover$uz extends Translations$discover$en {
 	@override String playEpisode({required Object season, required Object episode}) => 'M${season}Q${episode}';
 	@override String get overview => 'Tavsif';
 	@override String get cast => 'Aktyorlar';
-	@override late final _Translations$discover$findNext$uz findNext = _Translations$discover$findNext$uz._(_root);
 	@override String get extras => 'Treylerlar va qoʻshimchalar';
 	@override String get studio => 'Studiya';
 	@override String get rating => 'Reyting';
@@ -1676,7 +1674,7 @@ class _Translations$logs$uz extends Translations$logs$en {
 	@override String get clearLogs => 'Jurnallarni tozalash';
 	@override String get copyLogs => 'Jurnallarni nusxalash';
 	@override String get uploadLogs => 'Jurnallarni yuklash';
-	@override String get saveLogs => 'Databadi bilan bilan bilan bilan';
+	@override String get saveLogs => 'Jurnallarni faylga saqlash';
 	@override String logsSaved({required Object path}) => 'Hesizlar kaygan ${path}';
 	@override String get saveLogsFailed => 'Bu log file\'i salmaydi.';
 }
@@ -1830,7 +1828,7 @@ class _Translations$liveTv$uz extends Translations$liveTv$en {
 	@override String get timelineUnavailable => 'Timinni ishatta';
 	@override String get timelineEstimated => 'Playback bilan bilan bilan';
 	@override String get timelinePending => 'Tadiqga islan';
-	@override String get timelineStale => 'Tarifimiz bilan bilan bilan bilan kayanib.';
+	@override String get timelineStale => 'Dastur jadvali eskirgan bo‘lishi mumkin';
 	@override String get unknownHub => 'Nomaʼlum';
 	@override String get unknownError => 'Nomaʼlum xatolik';
 	@override String channelNumber({required Object number}) => '${number}-kanal';
@@ -1921,7 +1919,7 @@ class _Translations$collections$uz extends Translations$collections$en {
 	@override String get collection => 'Toʻplam';
 	@override String get empty => 'Toʻplam boʻsh';
 	@override String get deleteCollection => 'Toʻplamni oʻchirish';
-	@override String deleteConfirm({required Object title}) => '"${title}" oʻchirilsinmi?';
+	@override String deleteConfirm({required Object title}) => '"${title}" oʻchirilsinmi? Bu amalni ortga qaytarib boʻlmaydi.';
 	@override String get deleted => 'Toʻplam oʻchirildi';
 	@override String get deleteFailed => 'Toʻplamni oʻchirib boʻlmadi';
 	@override String deleteFailedWithError({required Object error}) => 'Toʻplamni oʻchirish xatoligi: ${error}';
@@ -2202,7 +2200,7 @@ class _Translations$downloads$uz extends Translations$downloads$en {
 	@override String get unwatchedOnly => 'Faqat koʻrilmaganlar';
 	@override String nextNUnwatched({required Object count}) => 'Keyingi ${count} koʻrilmagan';
 	@override String get customAmount => 'Boshqa miqdor...';
-	@override String get customAmountAny => 'U‘ziz (yani) bilan bilan bilan bilan...';
+	@override String get customAmountAny => 'Istalgan miqdorni kiriting…';
 	@override String get randomEpisodes => 'Reddimiyadi';
 	@override String get includeSpecials => 'Maxsus qismlarni qoʻshish';
 	@override String get howManyEpisodes => 'Nechta qism?';
@@ -2224,7 +2222,7 @@ class _Translations$downloads$uz extends Translations$downloads$en {
 	@override String get syncRuleCleanupUnavailable => 'Bogʻliq yuklamalarni xavfsiz aniqlab boʻlmadi. Serverga qayta ulanib koʻring yoki yuklamalarni oʻchirmasdan qoidani olib tashlang.';
 	@override String syncedNewEpisodes({required Object title, required Object count}) => '${title} uchun ${count} yangi qism sinxronlandi';
 	@override String get syncNow => 'Sinkni';
-	@override String get downloadsUpToDate => 'Downloadlar bilan bilan bilan bilan.';
+	@override String get downloadsUpToDate => 'Yuklab olingan fayllar yangilangan';
 	@override String syncComplete({required Object queued, required Object removed}) => 'Sync complet · ${queued} queued, ${removed} xifonadi';
 	@override String get activeSyncRules => 'Faol sinxronlash qoidalari';
 	@override String get reviewOrphanFiles => 'Yozuvi yo‘q yuklamalarni ko‘rib chiqish';
@@ -2365,7 +2363,7 @@ class _Translations$videoSettings$uz extends Translations$videoSettings$en {
 	@override String get audioEqualizerDescription => 'Bu cihaz için 5 frekans bandlar ayat. mpv\'da qothatlar; aktiv EQ audio decoding və passthrough boʻyadi.';
 	@override String get audioEqualizerFlat => 'Yiyiyiyiy';
 	@override String get audioEqualizerActive => 'Shaxsiy';
-	@override String get audioEqualizerSaveFailed => 'U\'zizga bilan bilan bilan bilan qalmaydi.';
+	@override String get audioEqualizerSaveFailed => 'Audio ekvalayzer sozlamalarini saqlab bo‘lmadi.';
 	@override String get backgroundVideoAudio => 'Video audio bilan';
 	@override String get backgroundVideoAudioDescription => 'Video audio oynatma qadi siz oynatma\'dan qaytadi; foto qadi qaytadi. Android bir media playback bildirim kullanır.';
 	@override String get audioNormalization => 'Ovoz balandligini meʼyorlashtirish';
@@ -2744,7 +2742,7 @@ class _Translations$addServer$uz extends Translations$addServer$en {
 	@override String connectDirectPlexCardSubtitleScoped({required Object name}) => 'IP ya URL\'ni ya qotʻi qotʻy. ${name}\'i qotuj.';
 	@override String get insecureTitle => 'Unencrypting qonkong';
 	@override String insecureDescription({required Object url}) => '${url} HTTP protokolidan foydalanadi. Tarmoqdagi boshqa odamlar parolingizni, tokenlaringizni va mediafayllaringizni oʻqishi yoki oʻzgartirishi mumkin. Imkon boʻlsa, HTTPS dan foydalaning. Faqat ushbu tarmoqqa ishonsangiz va xavfni qabul qilsangiz davom eting.';
-	@override String get allowHttp => 'Uqqqqga HTTP';
+	@override String get allowHttp => 'HTTP ulanishiga ruxsat berish';
 	@override String get httpsRequired => 'HTTPS ya qizizga qizga qifififiyizga qihga qifida qifida.';
 }
 
@@ -2775,15 +2773,15 @@ class _Translations$homeLayout$uz extends Translations$homeLayout$en {
 	final TranslationsUz _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Home Layout';
+	@override String get title => 'Bosh sahifa tartibi';
 	@override String get resetToast => 'Bosh sahifa asl Plezy joylashuviga qaytarildi';
 	@override String get resetHeroTitle => 'Asosiy ko‘rinish asl Plezy holatiga qaytarilsinmi?';
 	@override String get resetHeroBody => 'Herradi\'nin kahraman ayatlar bo\'yadi, bir-rondaylar bo\'ya qaytarga, Home\'nin topta, o\'yadi\'nin önizdan bo\'yadlar.';
 	@override String get removeRowTitle => 'Home Riyadh bilan bilan bilan?';
-	@override String removeRowBody({required Object title}) => '${title} bilan bilan bilan bilan qaytadi.';
+	@override String removeRowBody({required Object title}) => '${title} o‘chiriladi. Bu amalni ortga qaytarib bo‘lmaydi.';
 	@override String get sync => 'Sinq';
 	@override String get syncAccountTitle => 'Sizga Plex hesabla sinqiziziziz.';
-	@override String get syncAccountOn => 'On: Bu cihaz, sizga diğer cihazlarla seri, seri, Hero, Auto-slide-i bilan bilan bilan bilan paylaşıyar.';
+	@override String get syncAccountOn => 'Yoqilgan: bu qurilma qatorlar tartibi, qatorlar, asosiy banner va avtomatik almashish sozlamalarini boshqa qurilmalaringiz bilan ulashadi.';
 	@override String get syncAccountOff => 'Bu sistemimiz, bu sistemimiz öz layoutini tutmayır.';
 	@override String get syncNow => 'Sinkni';
 	@override String get plexHomeManager => 'Plex Home menaxer';
@@ -2795,8 +2793,8 @@ class _Translations$homeLayout$uz extends Translations$homeLayout$en {
 	@override String organizeLibraryRowsDescription({required Object n}) => '+ ${n} riylar: Moving, Library, Home, Hero, Auto-slide';
 	@override String get renderAsHero => 'Bir kartatda bir kahraman.';
 	@override String get heroOnlySingleCollection => 'Bu o‘ziz o‘z o‘z q‘z o’z o‘q‘z o\'z o‘y o‘z bu‘z o`z o‘s o‘z';
-	@override String get hero => 'Magi';
-	@override String get autoSlide => 'Auto-slid';
+	@override String get hero => 'Asosiy banner';
+	@override String get autoSlide => 'Avtomatik almashish';
 	@override String get autoSlideDescription => 'U\'zizga (PC) və d-pad (TV) qotlarga çalışmaygan, timiyarni qaytarmaygan.';
 	@override String get autoSlideEditDescription => 'O‘shayni o‘shaydi o‘shahdi o‘s. Off: o‘shaya‘ga bir pul (PC) o‘shakla‘ga sol/dishayni o’shayni (TV). Arrows and d-pad always work either way.';
 	@override String get enableHeroFirst => 'Birinci kahramanlar';
@@ -2804,15 +2802,15 @@ class _Translations$homeLayout$uz extends Translations$homeLayout$en {
 	@override String get home => 'Bosh sahifa';
 	@override String get removeFromHome => 'Home‘dan qaytadi';
 	@override String get selectRowsFirst => 'U\'ziz, siz sizni ilk aşağıda qaytadi.';
-	@override String plexManagedRows({required Object n}) => '${n} Plex-madi bilan bilan bilan bilan';
+	@override String plexManagedRows({required Object n}) => 'Plex boshqaradigan qatorlar: ${n}';
 	@override String get continueWatching => 'Tomoshani davom ettirish';
-	@override String get continueWatchingLibraryDescription => 'Bu librariyizda bilan bilan bilan bilan qaytadi.';
-	@override String get continueWatchingHomeDescription => 'U\'qizga bilan bilan bilan bilan qaytadi.';
+	@override String get continueWatchingLibraryDescription => 'Ushbu kutubxonada tomoshani to‘xtagan joydan davom ettirish qatori';
+	@override String get continueWatchingHomeDescription => 'Bosh sahifada ko‘rsatiladigan, tomoshani to‘xtagan joydan davom ettirish qatori';
 	@override String get nextUpHomeDescription => 'Next Unwatched epizod riyadi sizlikliklik Home\'da o‘zizliklikliklikdi';
 	@override String get library => 'Kutubxona';
 	@override String get showInRecommended => 'Librarikda qaytadi qaytadi.';
 	@override String get customPlexRow => 'Maxsus Plex qatori';
-	@override String get heroNeedsLibrary => 'Birincisi librariz bilan bilan bilan bilan — Hero\'nin bir yere ihtiyacımız var o\'zilgan.';
+	@override String get heroNeedsLibrary => 'Avval “Kutubxona” bandini belgilang — asosiy banner ko‘rsatiladigan joy kerak';
 	@override String get heroNeedsSurface => 'Birincisi Library o Home ko‘shayt — Hero\'s need somewhere to show';
 	@override String get removeHub => 'Hub qiziziz';
 	@override String get noPlexRows => 'No Plex-manadi ruzlar bu librariyaya qaytardi.';
@@ -2857,7 +2855,7 @@ class _Translations$homeLayout$uz extends Translations$homeLayout$en {
 	@override String get organizeRowsHint => 'Seçim (o hallar) Seçim: ta\'yadi · Sa\'yadi/sa\'yadi: riyadi seçim · Riyadi: ta\'ya qaytadi';
 	@override String get layoutNavDescription => 'Siz, librarlar, kategoriyalar seçin';
 	@override String get editHomeRow => 'Edit Home Row';
-	@override String get resetHeroButton => 'Rashid-i shaytlar bilan bilan bilan bilan Plezy';
+	@override String get resetHeroButton => 'Asosiy banner tartibini Plezy standartiga qaytarish';
 	@override String get reorderingUnlocked => 'Yenni qaytadi';
 	@override String get reorderingLocked => 'Tadiqlar kiladi';
 	@override String get rowsCanBeDragged => 'Tadiqlar qurtlar qurtlanga — bu qurtlardan qurtlanmdan qurtlar.';
@@ -2866,7 +2864,7 @@ class _Translations$homeLayout$uz extends Translations$homeLayout$en {
 	@override String libraryHubLabel({required Object library, required Object hub}) => '${library}: ${hub}';
 	@override String get hide => 'Yashirish';
 	@override String get remove => 'Oʻchirish';
-	@override String get libraryResumeRow => 'Bu librariyiz bilan bilan bilan bilan';
+	@override String get libraryResumeRow => 'Ushbu kutubxonaning tomoshani davom ettirish qatori';
 	@override String get pressAgainToDelete => 'Yenni xifida qaytadi.';
 	@override String actionState({required Object action, required Object state}) => '${action}: ${state}';
 	@override String get on => 'On';
@@ -2881,9 +2879,9 @@ class _Translations$platform$uz extends Translations$platform$en {
 
 	// Translations
 	@override String get localNetworkPermission => 'PlezyNG sizga lokal network sizga media serveri və playback cihazlara bağlanır.';
-	@override String get locationPermission => 'PlezyNG lokalizasyon qasib qasib iOS lokalizasyon networkini tespit etni ko‘zlar, qasib media serveri qasib.';
-	@override String get photoLibraryPermission => 'Foto librariyizdan bir media artwork olarak kullanmaq üçün resim seçin.';
-	@override String get cameraPermission => 'QR kodlar bilan bilan bilan bilan qadiq.';
+	@override String get locationPermission => 'Mahalliy tarmoqni aniqlash va media serverlaringizga ulanish uchun iOS talab qilganida, PlezyNG joylashuv ma’lumotlaridan foydalanish ruxsatidan foydalanadi.';
+	@override String get photoLibraryPermission => 'Media muqovasi sifatida ishlatish uchun foto kutubxonangizdan rasmlarni tanlang.';
+	@override String get cameraPermission => 'Companion Remote pultini ulash uchun QR kodlarini skanerlang.';
 }
 
 // Path: fileSources
@@ -2894,7 +2892,7 @@ class _Translations$fileSources$uz extends Translations$fileSources$en {
 
 	// Translations
 	@override String get title => 'Fillar və kitablar';
-	@override String get subtitle => 'Siz, siz, siz, Siz, siz siz, siz siz siz, Siz siz, siz Siz, siz Siz siz, Siz Siz siz siz siz siz.';
+	@override String get subtitle => 'O‘z fayllaringizni o‘qing, tinglang va tomosha qiling.';
 	@override String get add => 'Kaynaklar';
 	@override String get importFiles => 'Fildiya';
 	@override String get localFiles => 'Bu cihazda';
@@ -2952,8 +2950,8 @@ class _Translations$fileSources$uz extends Translations$fileSources$en {
 	@override String get sync => 'Sinklik progres';
 	@override String get synced => 'Tadiqlar synthesiz';
 	@override String get conflict => 'Bir yandan bir sistemdi, bir yandan bir yandan, bir yanda seçin.';
-	@override String get useLocal => 'Bu cihazda qurtlan';
-	@override String get useRemote => 'Diya cihazlarga';
+	@override String get useLocal => 'Bu qurilmadan foydalanish';
+	@override String get useRemote => 'Boshqa qurilmadan foydalanish';
 	@override String get history => 'Tarih';
 	@override String get groupAudio => 'Bir audio-book kimi o‘zadi.';
 	@override String get groupHint => 'Bu folderda ko‘zadi\'ni ko‘zad. All pages first.';
@@ -2990,15 +2988,15 @@ class _Translations$fileSources$uz extends Translations$fileSources$en {
 	@override String get paper => 'Qogʻoz';
 	@override String get sepia => 'Sepiya';
 	@override String get night => 'Nash';
-	@override String get readAloud => 'Bu sayadi yuxoqga';
+	@override String get readAloud => 'Bu sahifani ovoz chiqarib o‘qish';
 	@override String get readAlong => 'Okumadi';
-	@override String get stopReading => 'Nariqga bilan';
+	@override String get stopReading => 'Ovoz chiqarib o‘qishni to‘xtatish';
 	@override String get searchBook => 'Bookda検索';
 	@override String get noMatches => 'U\'qizmi';
-	@override String get previousPage => 'Previous Page Tadiq';
-	@override String get nextPage => 'Next Page Tadiq';
+	@override String get previousPage => 'Oldingi sahifa';
+	@override String get nextPage => 'Keyingi sahifa';
 	@override String page({required Object number}) => '${number}-sahifa';
-	@override String get externalBlocked => 'Bu kitablar bilan bilan bilan bilan o‘qizib.';
+	@override String get externalBlocked => 'O‘qish dasturida kitoblarning tashqi havolalari o‘chirilgan.';
 	@override String get loading => 'O’q...';
 	@override String get narrator => 'Tadiq';
 	@override String get audio => 'Ovoz';
@@ -3008,11 +3006,11 @@ class _Translations$fileSources$uz extends Translations$fileSources$en {
 	@override String get downloads => 'Offline bilan';
 	@override String get confirmDelete => 'Tanlangan oflayn nusxa o‘chirilsinmi? O‘qish yoki tinglash joyi va qaydlaringiz saqlanib qoladi.';
 	@override String get errorAuthentication => 'Bu kaynadi qaytarga qaytarga.';
-	@override String get errorPermission => 'Bu kaynadi qaplan qaplan o‘zizdan qaplanmay.';
+	@override String get errorPermission => 'Bu manba so‘ralgan faylga kirishga ruxsat bermadi.';
 	@override String get errorUnavailable => 'Bu kaynadi yetim. Yenni xifida koʻtadi, ya\'yadi offline kopiy.';
 	@override String get errorUnsupported => 'Bu format ya ko‘zlar bu cihazda supportasiz. kaynaqlar ko‘zalar guadi.';
-	@override String get errorInvalidData => 'Bu fildi o server responding qotʻi qotʻib qotʻir qotʻ.';
-	@override String get errorCancelled => 'Operasyon bilan bilan bilan bilan iqlanadi.';
+	@override String get errorInvalidData => 'Bu fayl yoki server javobini xavfsiz o‘qib bo‘lmadi.';
+	@override String get errorCancelled => 'Amal bekor qilindi.';
 	@override String get errorConflict => 'Possiya bir seansda qaytadi. bir pozsiya seçibim üçün elementni qaytadi!';
 	@override String get signIn => 'Kirish';
 	@override String get reconnect => 'Qayta ulanish';
@@ -3046,11 +3044,11 @@ class _Translations$fileSources$uz extends Translations$fileSources$en {
 	@override String get singlePage => 'Bir sayat';
 	@override String get twoPages => '2 sayat';
 	@override String get readingDirection => 'Okumadi qaytadi';
-	@override String get leftToRight => 'Sa\'qimni';
-	@override String get rightToLeft => 'Yatdan qaytdan';
+	@override String get leftToRight => 'Chapdan o‘ngga';
+	@override String get rightToLeft => 'O‘ngdan chapga';
 	@override String get letterSpacing => 'Tadiqadiqadi';
 	@override String get wordSpacing => 'U‘zizga';
-	@override String get readerControlsHelp => 'Zogni ko‘zogni ko’zogni. xogni. Ctrl/ ⁇  + o − xogni ko\'zogni; Ctrl/ ⁇  0 xogni bo‘zognin. Page Up and Page Down xogni saytlar.';
+	@override String get readerControlsHelp => 'Sahifani kattalashtirish uchun ikki barmog‘ingizni bir-biridan uzoqlashtiring yoki masshtab tugmalaridan foydalaning. Sahifani siljitish uchun sudrang. Ctrl/⌘ va + yoki − masshtabni o‘zgartiradi; Ctrl/⌘ va 0 uni tiklaydi. Page Up va Page Down sahifalarni almashtiradi.';
 	@override String get imagePage => 'Komik sayadi';
 	@override String get resetReader => 'Okumadi preferanslar';
 	@override String get zoom => 'Masshtab';
@@ -3073,30 +3071,30 @@ class _Translations$lending$uz extends Translations$lending$en {
 	@override String get libraryUrl => 'Webbiliya';
 	@override String get libraryUrlHint => 'Siz librariyiznin katalogi ya‘y‘y‘ya‘y‘yo‘y‘ay.';
 	@override String get intro => 'Kütüphanizdan borga.Bibrarizdan qurt.';
-	@override String get handoff => 'Siz, librariyiz, librarisi siz, librarisinizin servisini siz, libratiyiz, siz, siz, libraqiz, siz siz, siz siz siz, Siz, siz, Siz.';
+	@override String get handoff => 'Kutubxonangizning o‘z xizmati orqali hisobingizga kiring, kitoblarni vaqtincha oling va xavfsiz o‘qing.';
 	@override String get openService => 'Librariq';
 	@override String get findLibrary => 'Bir kütüphan bulga';
 	@override String get search => 'Kitablar ve yazarlar aradi';
 	@override String get catalogue => 'Katalog';
 	@override String get loans => 'Loan';
-	@override String get holds => 'Tadiq';
+	@override String get holds => 'Band qilingan kitoblar';
 	@override String get signIn => 'Siz librariyizga qaytadi.';
 	@override String get waiting => 'Siz browserga abonni bilan bilan, qaytdan qaytdan.';
 	@override String get cancel => 'Bekor qilish';
 	@override String get disconnect => 'Librariya bilan';
-	@override String get disconnectMessage => 'Bu profili bu librariyiz o‘ziz? siz borgaqlar və librariyinizga qurtlar.';
+	@override String get disconnectMessage => 'Bu kutubxona shu profildan olib tashlansinmi? Vaqtincha olgan va band qilgan kitoblaringiz kutubxona hisobingizda saqlanadi.';
 	@override String get getBook => 'Bookga bo‘yadi';
 	@override String get checkAvailability => 'Tadiqlar bilan bilan bilan';
 	@override String get available => 'U\'ziyadi borga';
 	@override String get unavailable => 'Şu anda yetimlik';
-	@override String get borrow => 'borga';
-	@override String get placeHold => 'Tadiqadiqadi';
+	@override String get borrow => 'Vaqtincha olish';
+	@override String get placeHold => 'Band qilish';
 	@override String get returnBook => 'Tadi qaytar';
-	@override String get cancelHold => 'Tadiqlar';
+	@override String get cancelHold => 'Band qilishni bekor qilish';
 	@override String get confirmBorrow => 'Bu titili librarizdan borga?';
-	@override String get confirmReturn => 'Bu titili qaytarga? Siz qaytarga qaytarga borga va va va.';
-	@override String get confirmCancelHold => 'Bu titili sizni qaytadi?';
-	@override String get email => 'Email bilan bilan bilan bilan';
+	@override String get confirmReturn => 'Bu kitobni hozir qaytarasizmi? Davom etish uchun uni yana olishingiz kerak bo‘lishi mumkin.';
+	@override String get confirmCancelHold => 'Bu kitobni band qilishni bekor qilasizmi?';
+	@override String get email => 'Kitobni band qilish haqidagi bildirishnomalar uchun elektron pochta';
 	@override String due({required Object date}) => 'Qaytarish muddati: ${date}';
 	@override String queue({required Object position}) => 'Possiya ${position} linni.';
 	@override String get empty => 'Yiyiyiyiy o‘zlar.';
@@ -3113,69 +3111,9 @@ class _Translations$lending$uz extends Translations$lending$en {
 	@override String get comingSoonDescription => 'Libby integration is on its way. Siz Libby librariyizni sizni kullanabiliz, biz onu bağlayganni bilan.';
 	@override String get suspendHold => 'Tadiqadiqadi';
 	@override String get resumeHold => 'Tadiqadiqadi';
-	@override String get suspendMessage => 'Siz bu salimdan qurtlanga qurtlan qurtlangan qurtlan? siz bu salimadan qurtlanma qurtlanman qurtlanmdan qurtlar.';
-	@override String get resumeMessage => 'Bu bilan bilan bilan bilan qaytar, bu bu bu librariyiz sizga bir sonraki kopiyiz?';
+	@override String get suspendMessage => 'Navbatdagi o‘rningizni saqlab, keyingi o‘quvchiga bu nusxani olishga ruxsat berasizmi? Band qilishni keyin davom ettirishingiz mumkin.';
+	@override String get resumeMessage => 'Kutubxona keyingi bo‘sh nusxani sizga taklif qilishi uchun bu band qilishni davom ettirasizmi?';
 	@override String get editEmail => 'Email Notifikacion';
-}
-
-// Path: audiobook
-class _Translations$audiobook$uz extends Translations$audiobook$en {
-	_Translations$audiobook$uz._(TranslationsUz root) : this._root = root, super.internal(root);
-
-	final TranslationsUz _root; // ignore: unused_field
-
-	// Translations
-	@override String get syncTitle => 'Okum & dining sync';
-	@override String get syncHelp => 'Okuma pozsiya, okuma pozisyonlar, completion status, bookmarks, notlar siz cihazlarınızda. Added stockage account seçin ve hər cihazda aynı sinq kod kullanın. Okuma və dinim ayaladi.';
-	@override String get addSyncSource => 'Google Drive, OneDrive, Dropbox, WebDAV o S3\'i fillar və kitablar qoladi.';
-	@override String get syncDestination => 'Sync bilan bilan bilan';
-	@override String get syncFolder => 'Filmi ya prefix.';
-	@override String get syncFolderHelp => 'WebDAV kaynağınızda, ya da dedikadi S3 prefix\'i bir separat bilan folder kullan. Book files is never changed.';
-	@override String get syncCode => 'Sink kodlar';
-	@override String get syncCodeHelp => 'Bir kod o‘ziz, sonra o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘z.';
-	@override String get showCode => 'Sink-kodni koʻyadi koʻyadi.';
-	@override String get newSyncCode => 'Yeni bir sinq-kodi yaratlar.';
-	@override String get saveSync => 'Save and synq.';
-	@override String get disableSync => 'Bu cihazda synchroniziziziziziz.';
-	@override String get syncSourceDisconnect => 'Bu kayndan qaytdan o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi.';
-	@override String get syncReconnect => 'Hesab bilan bilan bilan bilan bilan bilan';
-	@override String lastSynced({required Object time}) => '${time}\'da sonda sinqizdi';
-	@override String get syncPrivacy => 'Biz xifriyo bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan.';
-	@override String get syncConflicts => 'Onda qaytarga qaytarga.';
-	@override String get conflictHelp => 'Bu modifikasyonlar bağımsızdan ko‘zadi. ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi';
-	@override String syncDevice({required Object device}) => '${device}';
-	@override String get syncUnknownDevice => 'U‘zari';
-	@override String get deletedBookmark => 'Bookmark bilan bilan bilan';
-	@override String get finished => 'Konni';
-	@override String readingPosition({required Object percent}) => '${percent} %';
-	@override String get chapterTimeline => 'Kapital bilan bilan';
-	@override String get bookTimeline => 'Kitab bilan progresi';
-	@override String bookRemaining({required Object time}) => '${time} bu kitabda qaytadi.';
-	@override String chapterRemaining({required Object time}) => 'Bu kapitalda kalan zaman: ${time}';
-	@override String get unknownRemaining => 'Total time available as parts is playing. — Tull time available as parts are playing. — Tull time available as parts are playing. — Tull time available as parts are playing.';
-	@override String get undoSeek => 'Songa ko‘zadi.';
-	@override String get customSpeed => 'Custom playback ritmi.';
-	@override String get speedHelp => 'Siz 0.25 x 4 x o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z';
-	@override String get apply => 'Diggadi';
-	@override String get customSleep => 'Custom uyumalar';
-	@override String get sleepMinutes => '1 – 440 min)';
-	@override String sleepChapters({required Object count}) => '${count} kapitallardan sonra durga';
-	@override String get extendSleep => '5 dakikadi';
-	@override String sleepRemaining({required Object time}) => 'U\'qiziziz: ${time}';
-	@override String get useDefaults => 'Yeni kitaplar için bu dining kontrollar kullanın.';
-	@override String get librarySort => 'Kitajlar';
-	@override String get sortTitle => 'Tadiya';
-	@override String get sortAuthor => 'Avtor';
-	@override String get sortNarrator => 'Hikmatlar';
-	@override String get sortSeries => 'Seriyadi';
-	@override String get sortRecent => 'U‘zʻzʻzʻzʻzʻzʻzʻ';
-	@override String get statusFilter => 'Okumaya status';
-	@override String get statusAll => 'Bütün kitablar';
-	@override String get statusNew => 'Başlamad';
-	@override String get statusProgress => 'Tadiqadi';
-	@override String get statusFinished => 'Konni';
-	@override String get goToTime => 'O‘zadi.';
-	@override String get timeHelp => 'Hours:minuts:seconds, o minutlar:seconds';
 }
 
 // Path: appIcon.names
@@ -3422,57 +3360,6 @@ class _Translations$accountPreferences$mediaReviewsOptions$uz extends Translatio
 	@override String get nobody => 'Yashirilgan';
 }
 
-// Path: discover.findNext
-class _Translations$discover$findNext$uz extends Translations$discover$findNext$en {
-	_Translations$discover$findNext$uz._(TranslationsUz root) : this._root = root, super.internal(root);
-
-	final TranslationsUz _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'Next sizga bulga';
-	@override String get open => 'Next sizga bulga';
-	@override String get anyTime => 'Her zaman';
-	@override String get timeAvailable => 'Siz o‘zʻzʻzʻzʻzʻzʻ?';
-	@override String get filters => 'O’qimni seçdi';
-	@override String get watch => 'Tadiq';
-	@override String get listen => 'Ulu';
-	@override String get read => 'Okuma';
-	@override String finishable({required Object duration}) => '${duration}\'da qaytadi';
-	@override String aboutDuration({required Object duration}) => '${duration} qxzq qxzq';
-	@override String nextUnit({required Object duration}) => 'Next post · ${duration}';
-	@override String totalDuration({required Object duration}) => '${duration} total';
-	@override String get timingVaries => 'Tarifimiz variadi';
-	@override String get notNow => 'Şimdi ko‘z';
-	@override String get swipeHint => 'U‘z, o‘z bu‘z bu‘z bu‘z bu‘z bu‘z bu‘z';
-	@override String get saved => 'Pikaqlar bilan';
-	@override String savedCount({required Object count}) => '${count}';
-	@override String get undo => 'O‘z';
-	@override String get details => 'Detaylar';
-	@override String get noPicks => 'U‘zari ko‘zari ko‘zari.';
-	@override String get noPicksHint => 'Bir kütüphan bağlayın ya da başlatmak için bir medya kaynaq qoşun.';
-	@override String get noMatches => 'Bir şey bu momni ko‘yadi.';
-	@override String get noMatchesHint => 'Bir formati ko‘di o‘di o‘di o‘di o‘di o‘di o‘di.';
-	@override String get allDone => 'Sizga hepsi yakadi.';
-	@override String get allDoneHint => 'Bu seçimler qaytarga qaytarga qaytarga qaytarga.';
-	@override String get refresh => 'Bir mix ko‘yadi.';
-	@override String sourceReason({required Object source}) => '${source} qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq';
-	@override String libraryReason({required Object library}) => '${library} qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq';
-	@override String get ownedReason => 'Bu librariyizdan';
-	@override String get liveNow => 'Onda';
-	@override String get watchLive => 'Live o‘zadi';
-	@override String get filterAnything => 'O‘yadi';
-	@override String get filterWatch => 'Tadiq';
-	@override String get filterListen => 'Ulu';
-	@override String get filterRead => 'Okuma';
-	@override String get twentyMinutes => '20 min';
-	@override String get fortyFiveMinutes => '45 min';
-	@override String get ninetyMinutes => '90 min';
-	@override String get apply => 'Diggadi';
-	@override String get openFailed => 'Bu seçenek artık kullanılmadi. refresh ko\'t check again.';
-	@override String get changeFailed => 'Bu cambiadi ko‘yadi. qaytarga ko‘yadi.';
-	@override String get savedLimit => 'U\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo.';
-}
-
 // Path: discover.person
 class _Translations$discover$person$uz extends Translations$discover$person$en {
 	_Translations$discover$person$uz._(TranslationsUz root) : this._root = root, super.internal(root);
@@ -3614,9 +3501,9 @@ class _Translations$libraries$selection$uz extends Translations$libraries$select
 	@override String selectedCount({required Object count}) => '${count} ta tanlangan';
 	@override String get actions => 'Seçim aktivatlar';
 	@override String get confirmDescendants => 'Bu, seçkin show-da və sezonlarda bütün epizodlar ko‘zadi.';
-	@override String get confirmUnwatched => 'Bu da seçkin elementlar için playback progresini qurtlar.';
+	@override String get confirmUnwatched => 'Bu tanlangan elementlarning ijro jarayoni haqidagi ma’lumotlarni ham tozalaydi.';
 	@override String confirmCount({required Object count}) => 'U‘zizdan qiziziz: ${count}.';
-	@override String completed({required Object count}) => 'Xifiyni bilan bilan bilan bilan: ${count}.';
+	@override String completed({required Object count}) => 'Yangilangan elementlar: ${count}.';
 	@override String partialFailure({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; faqizdi ${failed}. Faqizdi items qurtlar.';
 }
 
@@ -3627,7 +3514,7 @@ class _Translations$explore$mdblistShelves$uz extends Translations$explore$mdbli
 	final TranslationsUz _root; // ignore: unused_field
 
 	// Translations
-	@override String get manage => 'Uqlarga bilan bilan bilan bilan';
+	@override String get manage => '“Kashf qilish” bo‘limidagi javonlarni boshqarish';
 	@override String get manageDescription => 'Siz MDBList hesabinizdan listlar seçin və düzəlin';
 	@override String get description => 'MDBList hisobingizdagi ochiq film va serial ro‘yxatlarini tanlang. MDBList’da ro‘yxat yarating yoki nusxalang, so‘ng yangilang.';
 	@override String get selected => 'Seçkin qiyizlar';
@@ -3643,7 +3530,7 @@ class _Translations$explore$mdblistShelves$uz extends Translations$explore$mdbli
 	@override String get rateLimited => 'MDBList ismi limiti qadi. lüthi qaytarga.';
 	@override String get loadFailed => 'U\'zlar ko‘zlar. Sizga qaytarga ko‘z.';
 	@override String get saveFailed => 'U\'zlarga qaytadi. lütfen qaytadi!';
-	@override String get accountChanged => 'Hesab ya ya profili bilan bilan bilan bilan. Bu ayarlar qaytar.';
+	@override String get accountChanged => 'Hisob yoki profil o‘zgardi. Bu sozlamalarni qayta oching.';
 	@override String get settingsUnreadable => 'U\'zizlar bo\'zlar bo\'qlar. Bu ayarlar yasanlar yasan.';
 }
 
@@ -4268,7 +4155,7 @@ extension on TranslationsUz {
 			'auth.quickConnectWaiting' => 'Tasdiq kutilmoqda…',
 			'auth.quickConnectCancel' => 'Bekor qilish',
 			'auth.quickConnectExpired' => 'Tezkor ulanish vaqti tugadi. Qaytadan urinib koʻring.',
-			'auth.localDataRecoveryRequired' => 'PlezyNG mahalliy kirish maʼlumotlarini tiklay olmadi. Iltimos, qaytadan kiring.',
+			'auth.localDataRecoveryRequired' => 'PlezyNG qurilmadagi kirish ma’lumotlarini va qayta ishlanishini kutayotgan ijro ma’lumotlarini xavfsiz tiklay olmadi. Qayta kiring.',
 			'auth.pinCheckRejected' => 'Plex PIN tekshiruvi rad etildi',
 			'auth.connectToDirectPlex' => 'Mahalliy Plex serveriga ulanish',
 			'common.cancel' => 'Bekor qilish',
@@ -4362,7 +4249,7 @@ extension on TranslationsUz {
 			'appAccess.trialEndedDescription' => 'Do‘konda ko‘rsatilgan narxda bir marta xarid qilib, PlezyNG’ning barcha funksiyalarini umrbod oching. Obuna talab qilinmaydi.',
 			'appAccess.startTrial' => '7 day free proving sizga qaytadi.',
 			'appAccess.trialActive' => '7 day full-feature proving siz aktivir.',
-			'appAccess.trialEnded' => '7 dayni bilan bilan bilan bilan qaytadi.',
+			'appAccess.trialEnded' => '7 kunlik sinov muddati tugadi',
 			'appAccess.trialStartFailed' => 'Bu cihazda testini salmaydi. lütfen qaytarga.',
 			'appAccess.lifetimeTitle' => 'PlezyNG hayri boʻlu boʻlu',
 			'appAccess.lifetimeBody' => 'Rahmat! PlezyNG’ning barcha funksiyalaridan umrbod foydalanishingiz mumkin.',
@@ -4375,7 +4262,7 @@ extension on TranslationsUz {
 			'appAccess.pending' => 'Siz qaplan o‘ziz o‘zib o‘zig o‘ziga o‘zige o‘zigi o‘zaga o‘zaya o‘zay o‘ziy o‘ziye o‘ziyan o‘zayn o‘zinc o‘zyan o‘zayan o‘zac o‘zinin o‘ziyar o‘zqan o‘zari o‘zani o‘zaman o‘zadan o‘zagan o‘zanc o‘z.',
 			'appAccess.storeUnavailable' => 'Siz bu mağazada abonlikliklik oluyiz. siz bu mağazadan abonliklik olayiz.',
 			'appAccess.productNotFound' => 'PlezyNG lifetime unlock bu mağazada yet o‘zayda olmaygan.',
-			'appAccess.productQueryFailed' => 'U\'ziyni bilan bilan bilan bilan ko‘ziydi. Sizga bağlantıdan kontrol edin, qaytdan ko‘zayni.',
+			'appAccess.productQueryFailed' => 'Do‘kondagi narxni yuklab bo‘lmadi. Ulanishingizni tekshirib, qayta urinib ko‘ring.',
 			'appAccess.purchaseFailed' => 'Bu qotomiyadi ko‘zadi. qaytarga ko‘z.',
 			'appAccess.restoreFailed' => 'Sizga buyni qaytarga qotʻyadi. qaytarga qaytarga.',
 			'appAccess.nothingToRestore' => 'No PlezyNG lifetime buy bu mağazalar hesab için bulgan.',
@@ -4437,7 +4324,7 @@ extension on TranslationsUz {
 			'settings.contentScreensaverSelectedLibraries' => ({required Object count}) => '${count} librarlar seçkin',
 			'settings.contentScreensaverNoLibraries' => 'Bağlanmış medya librarlar yok.',
 			'settings.contentScreensaverDismissHint' => 'Bu\'da bir buton o\'t tapatni bo\'t tabatni',
-			'settings.newEpisodeNotifications' => 'Yeni epizodlar bilan bilan bilan bilan',
+			'settings.newEpisodeNotifications' => 'Yangi qismlar haqida bildirishnomalar',
 			'settings.newEpisodeNotificationsDescription' => 'Tomosha qilib bo‘lgan serialingizga yangi qism qo‘shilganda xabar berish. Plezy ochiq bo‘lganda tekshiriladi.',
 			'settings.continueWatchingRowSize' => 'U\'qizga sizliklikliklik.',
 			'settings.continueWatchingRowSizeValue' => ({required Object label}) => '${label} kartlar',
@@ -4514,7 +4401,7 @@ extension on TranslationsUz {
 			'settings.minutesUnit' => ({required num minutes}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uz'))(minutes, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(minutes)} daqiqa', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(minutes)} daqiqa', ), 
 			'settings.rememberTrackSelections' => 'Har bir film/serial uchun ovoz/subtitr tanlovini eslab qolish',
 			'settings.chooseTracksBeforePlayback' => 'Playback-dan əvvəl audio-dan subtitles seçin.',
-			'settings.chooseTracksBeforePlaybackDescription' => 'Kaynak audio-subtitle-traglar bilan bilan bilan bilan, hər video-dan başlaygan.',
+			'settings.chooseTracksBeforePlaybackDescription' => 'Har bir video boshlanishidan oldin manbadagi audio va subtitr yo‘laklarini tanlang.',
 			'settings.alwaysShowSubtitlesOnDevice' => 'Bu cihazda subtitles ko‘zlar.',
 			'settings.alwaysShowSubtitlesOnDeviceDescription' => 'Serverni bir subtiti yoksa, lokalizasyonda bir track seçin. Bu, serverni preferansini ko‘zadi.',
 			'settings.autoDownloadPreferredSubtitle' => 'Yiyiyiyiyiz, preferlik-language subtitles qurtlar',
@@ -4570,7 +4457,7 @@ extension on TranslationsUz {
 			'settings.cloudBackupUrl' => 'WebDAV JSON fildi URL',
 			'settings.cloudBackupUsername' => 'Foydalanuvchi nomi',
 			'settings.cloudBackupPassword' => 'Parol',
-			'settings.cloudBackupSaved' => 'Cloud backup destinatari bilan bilan bilan bilan qaytarga',
+			'settings.cloudBackupSaved' => 'Bulutli zaxira nusxasi saqlanadigan manzil saqlandi',
 			'settings.cloudBackupNow' => 'Tadi qaytadi',
 			'settings.cloudBackupComplete' => 'Yatlarlarlarlar yatlarlar',
 			'settings.cloudBackupRestore' => 'Backup qaytarga',
@@ -4595,7 +4482,7 @@ extension on TranslationsUz {
 			'settings.autoPlayNextEpisodeDescription' => 'Qism tugagach, keyingisini avtomatik ijro etish',
 			'settings.shuffleStartsFromBeginning' => 'Aralashtirish boshidan boshlanadi',
 			'settings.shuffleStartsFromBeginningDescription' => 'Aralashtirganda har bir qismni davom ettirish oʻrniga boshidan boshlash',
-			'settings.plexCinemaPreRoll' => 'Kino kino kino kino kino',
+			'settings.plexCinemaPreRoll' => 'Serverdagi film kirish videolaridan foydalanish',
 			'settings.plexCinemaPreRollDescription' => 'Plex pre-rolls ya Jellyfin və Emby intros ko‘figurada oynaygan film başlatmaydan.',
 			'settings.playNextCountdown' => 'Keyingi qism sanogʻi',
 			'settings.playNextCountdownImmediate' => 'Darhol ijro etish',
@@ -4610,7 +4497,7 @@ extension on TranslationsUz {
 			'settings.skipAdsMode' => 'Ads koʻyadi',
 			'settings.skipAdsModeOffDescription' => 'Xamqadi reklamlar normalga kaygaqdan kaygaqlar.',
 			'settings.skipAdsModeButtonDescription' => 'Plex reklamani aniqlaganda o‘tkazib yuborish tugmasini ko‘rsatish',
-			'settings.skipAdsModeAutoDescription' => 'Adlar bilan bilan bilan bilan automatik o‘zadi.',
+			'settings.skipAdsModeAutoDescription' => 'Aniqlangan reklamalarni quyida belgilangan kutish vaqtidan so‘ng avtomatik o‘tkazib yuborish',
 			'settings.musicPlayback' => 'Musiqa ijrosi',
 			'settings.musicSweetFades' => 'Yiyiyiyiy',
 			'settings.musicSweetFadesDescription' => 'Plex’da ovoz balandligi ma’lumotlari bo‘lsa, trek boshida va oxirida musiqani asta kuchaytirish va pasaytirish. Albom ijrosi o‘zgarmaydi.',
@@ -4656,7 +4543,7 @@ extension on TranslationsUz {
 			'settings.downloadOnWifiOnlyDescription' => 'Mobil tarmoqdan foydalanilganda yuklashni toʻxtatib turish',
 			'settings.autoRemoveWatchedDownloads' => 'Koʻrilgan yuklamalarni avtomatik oʻchirish',
 			'settings.autoRemoveWatchedDownloadsDescription' => 'Koʻrib boʻlingan yuklamalarni avtomatik oʻchirish',
-			'settings.autoDownloadContinueWatching' => 'Auto-download bilan bilan bilan bilan',
+			'settings.autoDownloadContinueWatching' => '“Tomoshani davom ettirish” ro‘yxatini avtomatik yuklab olish',
 			'settings.autoDownloadContinueWatchingDescription' => 'U\'zizni isqizni isxizni iscizni isgizni isnizni isfizni isjizni ischizni ishqizni.',
 			'settings.downloadQuality' => 'Download Qalitsiya',
 			'settings.downloadQualityDescription' => 'Plex isqizda bir transferlik kopyadi hazırlar. Jellyfin və Emby transkodlar ko‘dadi fil download; isqizdan transferliklar yeniden başlatmaq gerektirir.',
@@ -5021,7 +4908,7 @@ extension on TranslationsUz {
 			'mediaMenu.deleteAnyway' => 'Baribir oʻchirish',
 			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => '${title} serveringizdan butunlay oʻchirilsinmi?',
 			'mediaMenu.deleteMultipleWarning' => 'Bu barcha qismlar va fayllarga taʼsir qiladi.',
-			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uz'))(n, one: 'Bu undagi barcha ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} qismni va uning faylini oʻchiradi.', other: 'Bu undagi barcha ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} qismni va ularning fayllarini oʻchiradi.', ), 
+			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uz'))(n, one: 'Bu undagi ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} qismni va uning faylini o‘chiradi.', other: 'Bu undagi barcha ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} qismni va ularning fayllarini oʻchiradi.', ), 
 			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uz'))(n, one: 'Bu element ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} fayl shaklida saqlanadi va u oʻchiriladi.', other: 'Bu element ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} faylda saqlanadi va ularning barchasi oʻchiriladi.', ), 
 			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uz'))(n, one: 'Xuddi shu faylda yana ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} qism saqlanadi va u ham oʻchiriladi:', other: 'Xuddi shu faylda yana ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} qism saqlanadi va ular ham oʻchiriladi:', ), 
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG qaysi fayllar olib tashlanishini tekshira olmadi, shuning uchun u yuqorida koʻrsatilgan elementdan koʻproq narsani oʻchirishi mumkin. Bekor qilib qaytadan urining yoki baribir oʻchiring.',
@@ -5078,16 +4965,16 @@ extension on TranslationsUz {
 			'accessibility.systemHint' => 'Qurilmangizning maxsus imkoniyatlar sozlamalari doim amal qiladi. Bu parametrlar PlezyNG bo‘ylab qo‘shimcha moslashlarni taqdim etadi.',
 			'accessibility.readability' => 'Okumadi və vizibiliyadi',
 			'accessibility.textSize' => 'Tekstil bilan bilan bilan',
-			'accessibility.preview' => 'Sizga bir sonraki hikayizi bul. Sizga lugay, din, sizga va va va va.',
+			'accessibility.preview' => 'Keyingi hikoyangizni toping. O‘zingizga qulay sur’atda o‘qing, tinglang va tomosha qiling.',
 			'accessibility.boldText' => 'Interface texti',
 			'accessibility.highContrast' => 'Kontrast bilan',
 			'accessibility.highContrastHint' => 'Tekstil, outlines, qurtlar, qurtlari, qurtalar, qurtlara qurtlar.',
 			'accessibility.interaction' => 'Movsiya və interakcion',
 			'accessibility.reduceMotion' => 'Movsiya ko‘zadi',
-			'accessibility.reduceMotionHint' => 'Fokus, sayta transitionlar, dekoratif efektlar qurt.',
+			'accessibility.reduceMotionHint' => 'Fokus ko‘rsatkichi harakatini, sahifa almashish animatsiyasini va bezak effektlarini to‘xtating.',
 			'accessibility.largeTargets' => 'Tadiqni sasni',
 			'accessibility.largeTargetsHint' => 'U\'zizga qo‘zlar, touch-i-asistivi navigation üçün daha fazla yer qo‘z.',
-			'accessibility.navigationHint' => 'Tab, Shift+Tab, kontrollar arasında hareket, aktivatsiya üçün Enter o Spati, və Escape o Back to close.',
+			'accessibility.navigationHint' => 'Boshqaruv elementlari orasida yurish uchun Tab va Shift+Tab, ishga tushirish uchun Enter yoki Bo‘sh joy, yopish uchun Escape yoki Orqaga tugmasidan foydalaning. Kitob ochiq bo‘lsa, masshtab va o‘qish sozlamalarini o‘zgartirish mumkin.',
 			'tooltips.shufflePlay' => 'Aralashtirib ijro etish',
 			'tooltips.playTrailer' => 'Treylerni koʻrish',
 			'tooltips.markAsWatched' => 'Koʻrilgan deb belgilash',
@@ -5324,7 +5211,7 @@ extension on TranslationsUz {
 			'profiles.summaryMultipleWithActive' => ({required Object count, required Object activeName}) => '${count} profil · faol: ${activeName}',
 			'profiles.summaryMultiple' => ({required Object count}) => '${count} profil',
 			'profiles.removeConnectionTitle' => 'Ulanish oʻchirilsinmi?',
-			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => '${displayName} foydalanuvchisining ${connectionLabel} kirish huquqi oʻchiriladi.',
+			'profiles.removeConnectionMessage' => ({required Object displayName, required Object connectionLabel}) => '${displayName} foydalanuvchisining ${connectionLabel} ulanishiga kirish huquqi olib tashlanadi. Boshqa profillarning kirish huquqi saqlanadi.',
 			'profiles.deleteProfileTitle' => 'Profil oʻchirilsinmi?',
 			'profiles.deleteProfileMessage' => ({required Object displayName}) => '${displayName} va uning ulanishlari oʻchiriladi. Serverlar mavjud boʻlib qoladi.',
 			'profiles.profileNameLabel' => 'Profil nomi',
@@ -5460,48 +5347,6 @@ extension on TranslationsUz {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'M${season}Q${episode}',
 			'discover.overview' => 'Tavsif',
 			'discover.cast' => 'Aktyorlar',
-			'discover.findNext.title' => 'Next sizga bulga',
-			'discover.findNext.open' => 'Next sizga bulga',
-			'discover.findNext.anyTime' => 'Her zaman',
-			'discover.findNext.timeAvailable' => 'Siz o‘zʻzʻzʻzʻzʻzʻ?',
-			'discover.findNext.filters' => 'O’qimni seçdi',
-			'discover.findNext.watch' => 'Tadiq',
-			'discover.findNext.listen' => 'Ulu',
-			'discover.findNext.read' => 'Okuma',
-			'discover.findNext.finishable' => ({required Object duration}) => '${duration}\'da qaytadi',
-			'discover.findNext.aboutDuration' => ({required Object duration}) => '${duration} qxzq qxzq',
-			'discover.findNext.nextUnit' => ({required Object duration}) => 'Next post · ${duration}',
-			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} total',
-			'discover.findNext.timingVaries' => 'Tarifimiz variadi',
-			'discover.findNext.notNow' => 'Şimdi ko‘z',
-			'discover.findNext.swipeHint' => 'U‘z, o‘z bu‘z bu‘z bu‘z bu‘z bu‘z bu‘z',
-			'discover.findNext.saved' => 'Pikaqlar bilan',
-			'discover.findNext.savedCount' => ({required Object count}) => '${count}',
-			'discover.findNext.undo' => 'O‘z',
-			'discover.findNext.details' => 'Detaylar',
-			'discover.findNext.noPicks' => 'U‘zari ko‘zari ko‘zari.',
-			'discover.findNext.noPicksHint' => 'Bir kütüphan bağlayın ya da başlatmak için bir medya kaynaq qoşun.',
-			'discover.findNext.noMatches' => 'Bir şey bu momni ko‘yadi.',
-			'discover.findNext.noMatchesHint' => 'Bir formati ko‘di o‘di o‘di o‘di o‘di o‘di o‘di.',
-			'discover.findNext.allDone' => 'Sizga hepsi yakadi.',
-			'discover.findNext.allDoneHint' => 'Bu seçimler qaytarga qaytarga qaytarga qaytarga.',
-			'discover.findNext.refresh' => 'Bir mix ko‘yadi.',
-			'discover.findNext.sourceReason' => ({required Object source}) => '${source} qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq',
-			'discover.findNext.libraryReason' => ({required Object library}) => '${library} qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq',
-			'discover.findNext.ownedReason' => 'Bu librariyizdan',
-			'discover.findNext.liveNow' => 'Onda',
-			'discover.findNext.watchLive' => 'Live o‘zadi',
-			'discover.findNext.filterAnything' => 'O‘yadi',
-			'discover.findNext.filterWatch' => 'Tadiq',
-			'discover.findNext.filterListen' => 'Ulu',
-			'discover.findNext.filterRead' => 'Okuma',
-			'discover.findNext.twentyMinutes' => '20 min',
-			'discover.findNext.fortyFiveMinutes' => '45 min',
-			'discover.findNext.ninetyMinutes' => '90 min',
-			'discover.findNext.apply' => 'Diggadi',
-			'discover.findNext.openFailed' => 'Bu seçenek artık kullanılmadi. refresh ko\'t check again.',
-			'discover.findNext.changeFailed' => 'Bu cambiadi ko‘yadi. qaytarga ko‘yadi.',
-			'discover.findNext.savedLimit' => 'U\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo.',
 			'discover.extras' => 'Treylerlar va qoʻshimchalar',
 			'discover.studio' => 'Studiya',
 			'discover.rating' => 'Reyting',
@@ -5654,9 +5499,9 @@ extension on TranslationsUz {
 			'libraries.selection.selectedCount' => ({required Object count}) => '${count} ta tanlangan',
 			'libraries.selection.actions' => 'Seçim aktivatlar',
 			'libraries.selection.confirmDescendants' => 'Bu, seçkin show-da və sezonlarda bütün epizodlar ko‘zadi.',
-			'libraries.selection.confirmUnwatched' => 'Bu da seçkin elementlar için playback progresini qurtlar.',
+			'libraries.selection.confirmUnwatched' => 'Bu tanlangan elementlarning ijro jarayoni haqidagi ma’lumotlarni ham tozalaydi.',
 			'libraries.selection.confirmCount' => ({required Object count}) => 'U‘zizdan qiziziz: ${count}.',
-			'libraries.selection.completed' => ({required Object count}) => 'Xifiyni bilan bilan bilan bilan: ${count}.',
+			'libraries.selection.completed' => ({required Object count}) => 'Yangilangan elementlar: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; faqizdi ${failed}. Faqizdi items qurtlar.',
 			'about.title' => 'Dastur haqida',
 			'about.openSourceLicenses' => 'Ochiq kodli litsenziyalar',
@@ -5675,7 +5520,7 @@ extension on TranslationsUz {
 			'logs.clearLogs' => 'Jurnallarni tozalash',
 			'logs.copyLogs' => 'Jurnallarni nusxalash',
 			'logs.uploadLogs' => 'Jurnallarni yuklash',
-			'logs.saveLogs' => 'Databadi bilan bilan bilan bilan',
+			'logs.saveLogs' => 'Jurnallarni faylga saqlash',
 			'logs.logsSaved' => ({required Object path}) => 'Hesizlar kaygan ${path}',
 			'logs.saveLogsFailed' => 'Bu log file\'i salmaydi.',
 			'detail.endsAt' => ({required Object time}) => 'Tugash vaqti: ${time}',
@@ -5717,7 +5562,7 @@ extension on TranslationsUz {
 			'navigation.downloads' => 'Yuklamalar',
 			'navigation.liveTv' => 'Jonli TV',
 			'navigation.explore' => 'Kashf qilish',
-			'explore.mdblistShelves.manage' => 'Uqlarga bilan bilan bilan bilan',
+			'explore.mdblistShelves.manage' => '“Kashf qilish” bo‘limidagi javonlarni boshqarish',
 			'explore.mdblistShelves.manageDescription' => 'Siz MDBList hesabinizdan listlar seçin və düzəlin',
 			'explore.mdblistShelves.description' => 'MDBList hisobingizdagi ochiq film va serial ro‘yxatlarini tanlang. MDBList’da ro‘yxat yarating yoki nusxalang, so‘ng yangilang.',
 			'explore.mdblistShelves.selected' => 'Seçkin qiyizlar',
@@ -5733,7 +5578,7 @@ extension on TranslationsUz {
 			'explore.mdblistShelves.rateLimited' => 'MDBList ismi limiti qadi. lüthi qaytarga.',
 			'explore.mdblistShelves.loadFailed' => 'U\'zlar ko‘zlar. Sizga qaytarga ko‘z.',
 			'explore.mdblistShelves.saveFailed' => 'U\'zlarga qaytadi. lütfen qaytadi!',
-			'explore.mdblistShelves.accountChanged' => 'Hesab ya ya profili bilan bilan bilan bilan. Bu ayarlar qaytar.',
+			'explore.mdblistShelves.accountChanged' => 'Hisob yoki profil o‘zgardi. Bu sozlamalarni qayta oching.',
 			'explore.mdblistShelves.settingsUnreadable' => 'U\'zizlar bo\'zlar bo\'qlar. Bu ayarlar yasanlar yasan.',
 			'explore.title' => 'Kashf qilish',
 			'explore.selectSource' => 'Manbani tanlang',
@@ -5746,8 +5591,6 @@ extension on TranslationsUz {
 			'explore.rows.popularShows' => 'Mashhur seriallar',
 			'explore.rows.trendingAnime' => 'Ommabop anime',
 			'explore.rows.suggestedAnime' => 'Tavsiya etilgan anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Efirga uzatilayotgan eng yaxshi anime',
 			'explore.rows.popularAnime' => 'Eng mashhur anime',
 			'explore.rows.trending' => 'Ommaboplar',
@@ -5790,6 +5633,8 @@ extension on TranslationsUz {
 			'explore.badge.processing' => 'Ishlanmoqda',
 			'explore.badge.declined' => 'Rad etilgan',
 			'explore.badge.requestFailed' => 'Soʻrov amalga oshmadi',
+			_ => null,
+		} ?? switch (path) {
 			'explore.badge.requested4k' => '4K soʻralgan',
 			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => '${available}/${total} mavsum',
 			'explore.badge.nextEpisodeIn' => ({required Object episode, required Object duration}) => '${episode}-qism ${duration} ichida',
@@ -5895,7 +5740,7 @@ extension on TranslationsUz {
 			'liveTv.timelineUnavailable' => 'Timinni ishatta',
 			'liveTv.timelineEstimated' => 'Playback bilan bilan bilan',
 			'liveTv.timelinePending' => 'Tadiqga islan',
-			'liveTv.timelineStale' => 'Tarifimiz bilan bilan bilan bilan kayanib.',
+			'liveTv.timelineStale' => 'Dastur jadvali eskirgan bo‘lishi mumkin',
 			'liveTv.unknownHub' => 'Nomaʼlum',
 			'liveTv.unknownError' => 'Nomaʼlum xatolik',
 			'liveTv.channelNumber' => ({required Object number}) => '${number}-kanal',
@@ -5984,7 +5829,7 @@ extension on TranslationsUz {
 			'collections.collection' => 'Toʻplam',
 			'collections.empty' => 'Toʻplam boʻsh',
 			'collections.deleteCollection' => 'Toʻplamni oʻchirish',
-			'collections.deleteConfirm' => ({required Object title}) => '"${title}" oʻchirilsinmi?',
+			'collections.deleteConfirm' => ({required Object title}) => '"${title}" oʻchirilsinmi? Bu amalni ortga qaytarib boʻlmaydi.',
 			'collections.deleted' => 'Toʻplam oʻchirildi',
 			'collections.deleteFailed' => 'Toʻplamni oʻchirib boʻlmadi',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Toʻplamni oʻchirish xatoligi: ${error}',
@@ -6260,9 +6105,7 @@ extension on TranslationsUz {
 			'downloads.unwatchedOnly' => 'Faqat koʻrilmaganlar',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Keyingi ${count} koʻrilmagan',
 			'downloads.customAmount' => 'Boshqa miqdor...',
-			_ => null,
-		} ?? switch (path) {
-			'downloads.customAmountAny' => 'U‘ziz (yani) bilan bilan bilan bilan...',
+			'downloads.customAmountAny' => 'Istalgan miqdorni kiriting…',
 			'downloads.randomEpisodes' => 'Reddimiyadi',
 			'downloads.includeSpecials' => 'Maxsus qismlarni qoʻshish',
 			'downloads.howManyEpisodes' => 'Nechta qism?',
@@ -6284,7 +6127,7 @@ extension on TranslationsUz {
 			'downloads.syncRuleCleanupUnavailable' => 'Bogʻliq yuklamalarni xavfsiz aniqlab boʻlmadi. Serverga qayta ulanib koʻring yoki yuklamalarni oʻchirmasdan qoidani olib tashlang.',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title} uchun ${count} yangi qism sinxronlandi',
 			'downloads.syncNow' => 'Sinkni',
-			'downloads.downloadsUpToDate' => 'Downloadlar bilan bilan bilan bilan.',
+			'downloads.downloadsUpToDate' => 'Yuklab olingan fayllar yangilangan',
 			'downloads.syncComplete' => ({required Object queued, required Object removed}) => 'Sync complet · ${queued} queued, ${removed} xifonadi',
 			'downloads.activeSyncRules' => 'Faol sinxronlash qoidalari',
 			'downloads.reviewOrphanFiles' => 'Yozuvi yo‘q yuklamalarni ko‘rib chiqish',
@@ -6304,6 +6147,8 @@ extension on TranslationsUz {
 			'downloads.syncUnwatchedItems' => 'Koʻrilmagan elementlar sinxronlanadi',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
 			'downloads.syncRuleAvailable' => 'Mavjud',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncRuleOffline' => 'Oflayn',
 			'downloads.syncRuleSignInRequired' => 'Kirish talab etiladi',
 			'downloads.syncRuleAccessDenied' => 'Kirish rad etildi',
@@ -6477,7 +6322,7 @@ extension on TranslationsUz {
 			'videoSettings.audioEqualizerDescription' => 'Bu cihaz için 5 frekans bandlar ayat. mpv\'da qothatlar; aktiv EQ audio decoding və passthrough boʻyadi.',
 			'videoSettings.audioEqualizerFlat' => 'Yiyiyiyiy',
 			'videoSettings.audioEqualizerActive' => 'Shaxsiy',
-			'videoSettings.audioEqualizerSaveFailed' => 'U\'zizga bilan bilan bilan bilan qalmaydi.',
+			'videoSettings.audioEqualizerSaveFailed' => 'Audio ekvalayzer sozlamalarini saqlab bo‘lmadi.',
 			'videoSettings.backgroundVideoAudio' => 'Video audio bilan',
 			'videoSettings.backgroundVideoAudioDescription' => 'Video audio oynatma qadi siz oynatma\'dan qaytadi; foto qadi qaytadi. Android bir media playback bildirim kullanır.',
 			'videoSettings.audioNormalization' => 'Ovoz balandligini meʼyorlashtirish',
@@ -6774,8 +6619,6 @@ extension on TranslationsUz {
 			'addServer.authResponseIncomplete' => 'Serverdan kelgan kirish javobi toʻliq emas',
 			'addServer.quickConnectRejected' => 'Quick Connect server tomonidan rad etildi',
 			'addServer.quickConnectNotJson' => 'Quick Connect javobi yaroqli JSON emas',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect javobida kod yoki maxfiy kalit yoʻq',
 			'addServer.quickConnectPollRejected' => 'Quick Connect soʻrovi server tomonidan rad etildi',
 			'addServer.serverTimedOut' => 'Server oʻz vaqtida javob bermadi',
@@ -6801,7 +6644,7 @@ extension on TranslationsUz {
 			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => 'IP ya URL\'ni ya qotʻi qotʻy. ${name}\'i qotuj.',
 			'addServer.insecureTitle' => 'Unencrypting qonkong',
 			'addServer.insecureDescription' => ({required Object url}) => '${url} HTTP protokolidan foydalanadi. Tarmoqdagi boshqa odamlar parolingizni, tokenlaringizni va mediafayllaringizni oʻqishi yoki oʻzgartirishi mumkin. Imkon boʻlsa, HTTPS dan foydalaning. Faqat ushbu tarmoqqa ishonsangiz va xavfni qabul qilsangiz davom eting.',
-			'addServer.allowHttp' => 'Uqqqqga HTTP',
+			'addServer.allowHttp' => 'HTTP ulanishiga ruxsat berish',
 			'addServer.httpsRequired' => 'HTTPS ya qizizga qizga qifififiyizga qihga qifida qifida.',
 			'watchLink.serverUnavailable' => 'Bu link için bir server Plex qothathathathatdi.',
 			'watchLink.notFound' => 'Bu serial yoki film Plex serverlaringizda topilmadi.',
@@ -6814,15 +6657,17 @@ extension on TranslationsUz {
 			'watchLink.dialogMovieHint' => 'Bu link\'i açmak filmini oynaylar.',
 			'watchLink.copy' => 'Kopi',
 			'watchLink.copied' => 'Link koʻpadi',
-			'homeLayout.title' => 'Home Layout',
+			'homeLayout.title' => 'Bosh sahifa tartibi',
 			'homeLayout.resetToast' => 'Bosh sahifa asl Plezy joylashuviga qaytarildi',
 			'homeLayout.resetHeroTitle' => 'Asosiy ko‘rinish asl Plezy holatiga qaytarilsinmi?',
 			'homeLayout.resetHeroBody' => 'Herradi\'nin kahraman ayatlar bo\'yadi, bir-rondaylar bo\'ya qaytarga, Home\'nin topta, o\'yadi\'nin önizdan bo\'yadlar.',
+			_ => null,
+		} ?? switch (path) {
 			'homeLayout.removeRowTitle' => 'Home Riyadh bilan bilan bilan?',
-			'homeLayout.removeRowBody' => ({required Object title}) => '${title} bilan bilan bilan bilan qaytadi.',
+			'homeLayout.removeRowBody' => ({required Object title}) => '${title} o‘chiriladi. Bu amalni ortga qaytarib bo‘lmaydi.',
 			'homeLayout.sync' => 'Sinq',
 			'homeLayout.syncAccountTitle' => 'Sizga Plex hesabla sinqiziziziz.',
-			'homeLayout.syncAccountOn' => 'On: Bu cihaz, sizga diğer cihazlarla seri, seri, Hero, Auto-slide-i bilan bilan bilan bilan paylaşıyar.',
+			'homeLayout.syncAccountOn' => 'Yoqilgan: bu qurilma qatorlar tartibi, qatorlar, asosiy banner va avtomatik almashish sozlamalarini boshqa qurilmalaringiz bilan ulashadi.',
 			'homeLayout.syncAccountOff' => 'Bu sistemimiz, bu sistemimiz öz layoutini tutmayır.',
 			'homeLayout.syncNow' => 'Sinkni',
 			'homeLayout.plexHomeManager' => 'Plex Home menaxer',
@@ -6834,8 +6679,8 @@ extension on TranslationsUz {
 			'homeLayout.organizeLibraryRowsDescription' => ({required Object n}) => '+ ${n} riylar: Moving, Library, Home, Hero, Auto-slide',
 			'homeLayout.renderAsHero' => 'Bir kartatda bir kahraman.',
 			'homeLayout.heroOnlySingleCollection' => 'Bu o‘ziz o‘z o‘z q‘z o’z o‘q‘z o\'z o‘y o‘z bu‘z o`z o‘s o‘z',
-			'homeLayout.hero' => 'Magi',
-			'homeLayout.autoSlide' => 'Auto-slid',
+			'homeLayout.hero' => 'Asosiy banner',
+			'homeLayout.autoSlide' => 'Avtomatik almashish',
 			'homeLayout.autoSlideDescription' => 'U\'zizga (PC) və d-pad (TV) qotlarga çalışmaygan, timiyarni qaytarmaygan.',
 			'homeLayout.autoSlideEditDescription' => 'O‘shayni o‘shaydi o‘shahdi o‘s. Off: o‘shaya‘ga bir pul (PC) o‘shakla‘ga sol/dishayni o’shayni (TV). Arrows and d-pad always work either way.',
 			'homeLayout.enableHeroFirst' => 'Birinci kahramanlar',
@@ -6843,15 +6688,15 @@ extension on TranslationsUz {
 			'homeLayout.home' => 'Bosh sahifa',
 			'homeLayout.removeFromHome' => 'Home‘dan qaytadi',
 			'homeLayout.selectRowsFirst' => 'U\'ziz, siz sizni ilk aşağıda qaytadi.',
-			'homeLayout.plexManagedRows' => ({required Object n}) => '${n} Plex-madi bilan bilan bilan bilan',
+			'homeLayout.plexManagedRows' => ({required Object n}) => 'Plex boshqaradigan qatorlar: ${n}',
 			'homeLayout.continueWatching' => 'Tomoshani davom ettirish',
-			'homeLayout.continueWatchingLibraryDescription' => 'Bu librariyizda bilan bilan bilan bilan qaytadi.',
-			'homeLayout.continueWatchingHomeDescription' => 'U\'qizga bilan bilan bilan bilan qaytadi.',
+			'homeLayout.continueWatchingLibraryDescription' => 'Ushbu kutubxonada tomoshani to‘xtagan joydan davom ettirish qatori',
+			'homeLayout.continueWatchingHomeDescription' => 'Bosh sahifada ko‘rsatiladigan, tomoshani to‘xtagan joydan davom ettirish qatori',
 			'homeLayout.nextUpHomeDescription' => 'Next Unwatched epizod riyadi sizlikliklik Home\'da o‘zizliklikliklikdi',
 			'homeLayout.library' => 'Kutubxona',
 			'homeLayout.showInRecommended' => 'Librarikda qaytadi qaytadi.',
 			'homeLayout.customPlexRow' => 'Maxsus Plex qatori',
-			'homeLayout.heroNeedsLibrary' => 'Birincisi librariz bilan bilan bilan bilan — Hero\'nin bir yere ihtiyacımız var o\'zilgan.',
+			'homeLayout.heroNeedsLibrary' => 'Avval “Kutubxona” bandini belgilang — asosiy banner ko‘rsatiladigan joy kerak',
 			'homeLayout.heroNeedsSurface' => 'Birincisi Library o Home ko‘shayt — Hero\'s need somewhere to show',
 			'homeLayout.removeHub' => 'Hub qiziziz',
 			'homeLayout.noPlexRows' => 'No Plex-manadi ruzlar bu librariyaya qaytardi.',
@@ -6896,7 +6741,7 @@ extension on TranslationsUz {
 			'homeLayout.organizeRowsHint' => 'Seçim (o hallar) Seçim: ta\'yadi · Sa\'yadi/sa\'yadi: riyadi seçim · Riyadi: ta\'ya qaytadi',
 			'homeLayout.layoutNavDescription' => 'Siz, librarlar, kategoriyalar seçin',
 			'homeLayout.editHomeRow' => 'Edit Home Row',
-			'homeLayout.resetHeroButton' => 'Rashid-i shaytlar bilan bilan bilan bilan Plezy',
+			'homeLayout.resetHeroButton' => 'Asosiy banner tartibini Plezy standartiga qaytarish',
 			'homeLayout.reorderingUnlocked' => 'Yenni qaytadi',
 			'homeLayout.reorderingLocked' => 'Tadiqlar kiladi',
 			'homeLayout.rowsCanBeDragged' => 'Tadiqlar qurtlar qurtlanga — bu qurtlardan qurtlanmdan qurtlar.',
@@ -6905,17 +6750,17 @@ extension on TranslationsUz {
 			'homeLayout.libraryHubLabel' => ({required Object library, required Object hub}) => '${library}: ${hub}',
 			'homeLayout.hide' => 'Yashirish',
 			'homeLayout.remove' => 'Oʻchirish',
-			'homeLayout.libraryResumeRow' => 'Bu librariyiz bilan bilan bilan bilan',
+			'homeLayout.libraryResumeRow' => 'Ushbu kutubxonaning tomoshani davom ettirish qatori',
 			'homeLayout.pressAgainToDelete' => 'Yenni xifida qaytadi.',
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
 			'homeLayout.on' => 'On',
 			'homeLayout.resetHeroButtonDescription' => 'Herroni ayatlar bo\'yadi, yandan yandan yadan yandan yandadi yandan yanda yandan yanan yandan yalan yandan yansat.',
 			'platform.localNetworkPermission' => 'PlezyNG sizga lokal network sizga media serveri və playback cihazlara bağlanır.',
-			'platform.locationPermission' => 'PlezyNG lokalizasyon qasib qasib iOS lokalizasyon networkini tespit etni ko‘zlar, qasib media serveri qasib.',
-			'platform.photoLibraryPermission' => 'Foto librariyizdan bir media artwork olarak kullanmaq üçün resim seçin.',
-			'platform.cameraPermission' => 'QR kodlar bilan bilan bilan bilan qadiq.',
+			'platform.locationPermission' => 'Mahalliy tarmoqni aniqlash va media serverlaringizga ulanish uchun iOS talab qilganida, PlezyNG joylashuv ma’lumotlaridan foydalanish ruxsatidan foydalanadi.',
+			'platform.photoLibraryPermission' => 'Media muqovasi sifatida ishlatish uchun foto kutubxonangizdan rasmlarni tanlang.',
+			'platform.cameraPermission' => 'Companion Remote pultini ulash uchun QR kodlarini skanerlang.',
 			'fileSources.title' => 'Fillar və kitablar',
-			'fileSources.subtitle' => 'Siz, siz, siz, Siz, siz siz, siz siz siz, Siz siz, siz Siz, siz Siz siz, Siz Siz siz siz siz siz.',
+			'fileSources.subtitle' => 'O‘z fayllaringizni o‘qing, tinglang va tomosha qiling.',
 			'fileSources.add' => 'Kaynaklar',
 			'fileSources.importFiles' => 'Fildiya',
 			'fileSources.localFiles' => 'Bu cihazda',
@@ -6973,8 +6818,8 @@ extension on TranslationsUz {
 			'fileSources.sync' => 'Sinklik progres',
 			'fileSources.synced' => 'Tadiqlar synthesiz',
 			'fileSources.conflict' => 'Bir yandan bir sistemdi, bir yandan bir yandan, bir yanda seçin.',
-			'fileSources.useLocal' => 'Bu cihazda qurtlan',
-			'fileSources.useRemote' => 'Diya cihazlarga',
+			'fileSources.useLocal' => 'Bu qurilmadan foydalanish',
+			'fileSources.useRemote' => 'Boshqa qurilmadan foydalanish',
 			'fileSources.history' => 'Tarih',
 			'fileSources.groupAudio' => 'Bir audio-book kimi o‘zadi.',
 			'fileSources.groupHint' => 'Bu folderda ko‘zadi\'ni ko‘zad. All pages first.',
@@ -7008,15 +6853,15 @@ extension on TranslationsUz {
 			'fileSources.paper' => 'Qogʻoz',
 			'fileSources.sepia' => 'Sepiya',
 			'fileSources.night' => 'Nash',
-			'fileSources.readAloud' => 'Bu sayadi yuxoqga',
+			'fileSources.readAloud' => 'Bu sahifani ovoz chiqarib o‘qish',
 			'fileSources.readAlong' => 'Okumadi',
-			'fileSources.stopReading' => 'Nariqga bilan',
+			'fileSources.stopReading' => 'Ovoz chiqarib o‘qishni to‘xtatish',
 			'fileSources.searchBook' => 'Bookda検索',
 			'fileSources.noMatches' => 'U\'qizmi',
-			'fileSources.previousPage' => 'Previous Page Tadiq',
-			'fileSources.nextPage' => 'Next Page Tadiq',
+			'fileSources.previousPage' => 'Oldingi sahifa',
+			'fileSources.nextPage' => 'Keyingi sahifa',
 			'fileSources.page' => ({required Object number}) => '${number}-sahifa',
-			'fileSources.externalBlocked' => 'Bu kitablar bilan bilan bilan bilan o‘qizib.',
+			'fileSources.externalBlocked' => 'O‘qish dasturida kitoblarning tashqi havolalari o‘chirilgan.',
 			'fileSources.loading' => 'O’q...',
 			'fileSources.narrator' => 'Tadiq',
 			'fileSources.audio' => 'Ovoz',
@@ -7026,11 +6871,11 @@ extension on TranslationsUz {
 			'fileSources.downloads' => 'Offline bilan',
 			'fileSources.confirmDelete' => 'Tanlangan oflayn nusxa o‘chirilsinmi? O‘qish yoki tinglash joyi va qaydlaringiz saqlanib qoladi.',
 			'fileSources.errorAuthentication' => 'Bu kaynadi qaytarga qaytarga.',
-			'fileSources.errorPermission' => 'Bu kaynadi qaplan qaplan o‘zizdan qaplanmay.',
+			'fileSources.errorPermission' => 'Bu manba so‘ralgan faylga kirishga ruxsat bermadi.',
 			'fileSources.errorUnavailable' => 'Bu kaynadi yetim. Yenni xifida koʻtadi, ya\'yadi offline kopiy.',
 			'fileSources.errorUnsupported' => 'Bu format ya ko‘zlar bu cihazda supportasiz. kaynaqlar ko‘zalar guadi.',
-			'fileSources.errorInvalidData' => 'Bu fildi o server responding qotʻi qotʻib qotʻir qotʻ.',
-			'fileSources.errorCancelled' => 'Operasyon bilan bilan bilan bilan iqlanadi.',
+			'fileSources.errorInvalidData' => 'Bu fayl yoki server javobini xavfsiz o‘qib bo‘lmadi.',
+			'fileSources.errorCancelled' => 'Amal bekor qilindi.',
 			'fileSources.errorConflict' => 'Possiya bir seansda qaytadi. bir pozsiya seçibim üçün elementni qaytadi!',
 			'fileSources.signIn' => 'Kirish',
 			'fileSources.reconnect' => 'Qayta ulanish',
@@ -7064,11 +6909,11 @@ extension on TranslationsUz {
 			'fileSources.singlePage' => 'Bir sayat',
 			'fileSources.twoPages' => '2 sayat',
 			'fileSources.readingDirection' => 'Okumadi qaytadi',
-			'fileSources.leftToRight' => 'Sa\'qimni',
-			'fileSources.rightToLeft' => 'Yatdan qaytdan',
+			'fileSources.leftToRight' => 'Chapdan o‘ngga',
+			'fileSources.rightToLeft' => 'O‘ngdan chapga',
 			'fileSources.letterSpacing' => 'Tadiqadiqadi',
 			'fileSources.wordSpacing' => 'U‘zizga',
-			'fileSources.readerControlsHelp' => 'Zogni ko‘zogni ko’zogni. xogni. Ctrl/ ⁇  + o − xogni ko\'zogni; Ctrl/ ⁇  0 xogni bo‘zognin. Page Up and Page Down xogni saytlar.',
+			'fileSources.readerControlsHelp' => 'Sahifani kattalashtirish uchun ikki barmog‘ingizni bir-biridan uzoqlashtiring yoki masshtab tugmalaridan foydalaning. Sahifani siljitish uchun sudrang. Ctrl/⌘ va + yoki − masshtabni o‘zgartiradi; Ctrl/⌘ va 0 uni tiklaydi. Page Up va Page Down sahifalarni almashtiradi.',
 			'fileSources.imagePage' => 'Komik sayadi',
 			'fileSources.resetReader' => 'Okumadi preferanslar',
 			'fileSources.zoom' => 'Masshtab',
@@ -7082,30 +6927,30 @@ extension on TranslationsUz {
 			'lending.libraryUrl' => 'Webbiliya',
 			'lending.libraryUrlHint' => 'Siz librariyiznin katalogi ya‘y‘y‘ya‘y‘yo‘y‘ay.',
 			'lending.intro' => 'Kütüphanizdan borga.Bibrarizdan qurt.',
-			'lending.handoff' => 'Siz, librariyiz, librarisi siz, librarisinizin servisini siz, libratiyiz, siz, siz, libraqiz, siz siz, siz siz siz, Siz, siz, Siz.',
+			'lending.handoff' => 'Kutubxonangizning o‘z xizmati orqali hisobingizga kiring, kitoblarni vaqtincha oling va xavfsiz o‘qing.',
 			'lending.openService' => 'Librariq',
 			'lending.findLibrary' => 'Bir kütüphan bulga',
 			'lending.search' => 'Kitablar ve yazarlar aradi',
 			'lending.catalogue' => 'Katalog',
 			'lending.loans' => 'Loan',
-			'lending.holds' => 'Tadiq',
+			'lending.holds' => 'Band qilingan kitoblar',
 			'lending.signIn' => 'Siz librariyizga qaytadi.',
 			'lending.waiting' => 'Siz browserga abonni bilan bilan, qaytdan qaytdan.',
 			'lending.cancel' => 'Bekor qilish',
 			'lending.disconnect' => 'Librariya bilan',
-			'lending.disconnectMessage' => 'Bu profili bu librariyiz o‘ziz? siz borgaqlar və librariyinizga qurtlar.',
+			'lending.disconnectMessage' => 'Bu kutubxona shu profildan olib tashlansinmi? Vaqtincha olgan va band qilgan kitoblaringiz kutubxona hisobingizda saqlanadi.',
 			'lending.getBook' => 'Bookga bo‘yadi',
 			'lending.checkAvailability' => 'Tadiqlar bilan bilan bilan',
 			'lending.available' => 'U\'ziyadi borga',
 			'lending.unavailable' => 'Şu anda yetimlik',
-			'lending.borrow' => 'borga',
-			'lending.placeHold' => 'Tadiqadiqadi',
+			'lending.borrow' => 'Vaqtincha olish',
+			'lending.placeHold' => 'Band qilish',
 			'lending.returnBook' => 'Tadi qaytar',
-			'lending.cancelHold' => 'Tadiqlar',
+			'lending.cancelHold' => 'Band qilishni bekor qilish',
 			'lending.confirmBorrow' => 'Bu titili librarizdan borga?',
-			'lending.confirmReturn' => 'Bu titili qaytarga? Siz qaytarga qaytarga borga va va va.',
-			'lending.confirmCancelHold' => 'Bu titili sizni qaytadi?',
-			'lending.email' => 'Email bilan bilan bilan bilan',
+			'lending.confirmReturn' => 'Bu kitobni hozir qaytarasizmi? Davom etish uchun uni yana olishingiz kerak bo‘lishi mumkin.',
+			'lending.confirmCancelHold' => 'Bu kitobni band qilishni bekor qilasizmi?',
+			'lending.email' => 'Kitobni band qilish haqidagi bildirishnomalar uchun elektron pochta',
 			'lending.due' => ({required Object date}) => 'Qaytarish muddati: ${date}',
 			'lending.queue' => ({required Object position}) => 'Possiya ${position} linni.',
 			'lending.empty' => 'Yiyiyiyiy o‘zlar.',
@@ -7122,60 +6967,9 @@ extension on TranslationsUz {
 			'lending.comingSoonDescription' => 'Libby integration is on its way. Siz Libby librariyizni sizni kullanabiliz, biz onu bağlayganni bilan.',
 			'lending.suspendHold' => 'Tadiqadiqadi',
 			'lending.resumeHold' => 'Tadiqadiqadi',
-			'lending.suspendMessage' => 'Siz bu salimdan qurtlanga qurtlan qurtlangan qurtlan? siz bu salimadan qurtlanma qurtlanman qurtlanmdan qurtlar.',
-			'lending.resumeMessage' => 'Bu bilan bilan bilan bilan qaytar, bu bu bu librariyiz sizga bir sonraki kopiyiz?',
+			'lending.suspendMessage' => 'Navbatdagi o‘rningizni saqlab, keyingi o‘quvchiga bu nusxani olishga ruxsat berasizmi? Band qilishni keyin davom ettirishingiz mumkin.',
+			'lending.resumeMessage' => 'Kutubxona keyingi bo‘sh nusxani sizga taklif qilishi uchun bu band qilishni davom ettirasizmi?',
 			'lending.editEmail' => 'Email Notifikacion',
-			'audiobook.syncTitle' => 'Okum & dining sync',
-			'audiobook.syncHelp' => 'Okuma pozsiya, okuma pozisyonlar, completion status, bookmarks, notlar siz cihazlarınızda. Added stockage account seçin ve hər cihazda aynı sinq kod kullanın. Okuma və dinim ayaladi.',
-			'audiobook.addSyncSource' => 'Google Drive, OneDrive, Dropbox, WebDAV o S3\'i fillar və kitablar qoladi.',
-			'audiobook.syncDestination' => 'Sync bilan bilan bilan',
-			'audiobook.syncFolder' => 'Filmi ya prefix.',
-			'audiobook.syncFolderHelp' => 'WebDAV kaynağınızda, ya da dedikadi S3 prefix\'i bir separat bilan folder kullan. Book files is never changed.',
-			'audiobook.syncCode' => 'Sink kodlar',
-			'audiobook.syncCodeHelp' => 'Bir kod o‘ziz, sonra o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘ziz o‘z.',
-			'audiobook.showCode' => 'Sink-kodni koʻyadi koʻyadi.',
-			'audiobook.newSyncCode' => 'Yeni bir sinq-kodi yaratlar.',
-			'audiobook.saveSync' => 'Save and synq.',
-			'audiobook.disableSync' => 'Bu cihazda synchroniziziziziziz.',
-			'audiobook.syncSourceDisconnect' => 'Bu kayndan qaytdan o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi.',
-			'audiobook.syncReconnect' => 'Hesab bilan bilan bilan bilan bilan bilan',
-			'audiobook.lastSynced' => ({required Object time}) => '${time}\'da sonda sinqizdi',
-			'audiobook.syncPrivacy' => 'Biz xifriyo bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan.',
-			'audiobook.syncConflicts' => 'Onda qaytarga qaytarga.',
-			'audiobook.conflictHelp' => 'Bu modifikasyonlar bağımsızdan ko‘zadi. ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi',
-			'audiobook.syncDevice' => ({required Object device}) => '${device}',
-			'audiobook.syncUnknownDevice' => 'U‘zari',
-			'audiobook.deletedBookmark' => 'Bookmark bilan bilan bilan',
-			'audiobook.finished' => 'Konni',
-			'audiobook.readingPosition' => ({required Object percent}) => '${percent} %',
-			'audiobook.chapterTimeline' => 'Kapital bilan bilan',
-			'audiobook.bookTimeline' => 'Kitab bilan progresi',
-			'audiobook.bookRemaining' => ({required Object time}) => '${time} bu kitabda qaytadi.',
-			'audiobook.chapterRemaining' => ({required Object time}) => 'Bu kapitalda kalan zaman: ${time}',
-			'audiobook.unknownRemaining' => 'Total time available as parts is playing. — Tull time available as parts are playing. — Tull time available as parts are playing. — Tull time available as parts are playing.',
-			'audiobook.undoSeek' => 'Songa ko‘zadi.',
-			'audiobook.customSpeed' => 'Custom playback ritmi.',
-			'audiobook.speedHelp' => 'Siz 0.25 x 4 x o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z o‘z',
-			'audiobook.apply' => 'Diggadi',
-			'audiobook.customSleep' => 'Custom uyumalar',
-			'audiobook.sleepMinutes' => '1 – 440 min)',
-			'audiobook.sleepChapters' => ({required Object count}) => '${count} kapitallardan sonra durga',
-			'audiobook.extendSleep' => '5 dakikadi',
-			'audiobook.sleepRemaining' => ({required Object time}) => 'U\'qiziziz: ${time}',
-			'audiobook.useDefaults' => 'Yeni kitaplar için bu dining kontrollar kullanın.',
-			'audiobook.librarySort' => 'Kitajlar',
-			'audiobook.sortTitle' => 'Tadiya',
-			'audiobook.sortAuthor' => 'Avtor',
-			'audiobook.sortNarrator' => 'Hikmatlar',
-			'audiobook.sortSeries' => 'Seriyadi',
-			'audiobook.sortRecent' => 'U‘zʻzʻzʻzʻzʻzʻzʻ',
-			'audiobook.statusFilter' => 'Okumaya status',
-			'audiobook.statusAll' => 'Bütün kitablar',
-			'audiobook.statusNew' => 'Başlamad',
-			'audiobook.statusProgress' => 'Tadiqadi',
-			'audiobook.statusFinished' => 'Konni',
-			'audiobook.goToTime' => 'O‘zadi.',
-			'audiobook.timeHelp' => 'Hours:minuts:seconds, o minutlar:seconds',
 			_ => null,
 		};
 	}

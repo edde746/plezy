@@ -198,7 +198,7 @@ class _Translations$auth$hi extends Translations$auth$en {
 	@override String get quickConnectWaiting => 'अनुमोदन के लिए इंतजार...';
 	@override String get quickConnectCancel => 'रद्द करना';
 	@override String get quickConnectExpired => 'त्वरित कनेक्ट की समय-सीमा समाप्त हो गई। फिर कोशिश करें।';
-	@override String get localDataRecoveryRequired => 'PlezyNG सुरक्षित रूप से स्थानीय साइन इन और लंबे समय तक प्लेबैक डेटा को पुनर्प्राप्त नहीं कर सकता. कृपया फिर से साइन इन करें.';
+	@override String get localDataRecoveryRequired => 'PlezyNG स्थानीय साइन-इन जानकारी और लंबित प्लेबैक डेटा को सुरक्षित रूप से पुनर्प्राप्त नहीं कर सका। कृपया फिर से साइन इन करें।';
 	@override String get pinCheckRejected => 'Plex PIN चेक को अस्वीकार कर दिया गया';
 	@override String get connectToDirectPlex => 'स्थानीय सर्वर से कनेक्ट करें Plex';
 }
@@ -231,7 +231,7 @@ class _Translations$common$hi extends Translations$common$en {
 	@override String get createNew => 'नया बनाएं';
 	@override String get connect => 'कनेक्ट करें';
 	@override String get disconnect => 'डिस्कनेक्ट';
-	@override String get play => 'खेलना';
+	@override String get play => 'चलाएँ';
 	@override String get pause => 'रोकें';
 	@override String get resume => 'फिर से चलाएँ';
 	@override String get error => 'गलती';
@@ -524,7 +524,7 @@ class _Translations$settings$hi extends Translations$settings$en {
 	@override String get importSettingsInvalidFile => 'यह फ़ाइल एक वैध PlezyNG सेटिंग्स निर्यात नहीं है';
 	@override String get importSettingsNoUser => 'आयात से पहले इनपुट करें';
 	@override String get cloudBackup => 'क्लाउड बैकअप';
-	@override String get cloudBackupDescription => 'HTTPS से अधिक WebDAV के अंत बिंदु पर पोर्टेबल सेटिंग्स का बैकअप करें. सर्वर कनेक्शन और क्रेडिट इस डिवाइस पर रहें.';
+	@override String get cloudBackupDescription => 'स्थानांतरित की जा सकने वाली सेटिंग्स का HTTPS के ज़रिए WebDAV पते पर बैकअप लें। सर्वर कनेक्शन और साइन-इन जानकारी इसी डिवाइस पर रहती है।';
 	@override String get cloudBackupUrl => 'WebDAV JSON फ़ाइल URL';
 	@override String get cloudBackupUsername => 'उपयोगकर्ता नाम';
 	@override String get cloudBackupPassword => 'पासवर्ड';
@@ -791,7 +791,7 @@ class _Translations$themeEditor$hi extends Translations$themeEditor$en {
 	@override late final _Translations$themeEditor$contrast$hi contrast = _Translations$themeEditor$contrast$hi._(_root);
 	@override String lowContrast({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, अनुशंसित ${minimum}:1 के नीचे';
 	@override String get discardTitle => 'बदलावों को नजरअंदाज?';
-	@override String get discardMessage => 'आपके अनसुलझे रंग परिवर्तन खो जाएंगे।';
+	@override String get discardMessage => 'रंगों में किए गए ऐसे बदलाव खो जाएँगे जिन्हें आपने सहेजा नहीं है।';
 	@override String get discard => 'डिस्काउंट';
 	@override String previewCardTitle({required Object number}) => 'पदों की संख्या ${number}';
 	@override String previewCardSubtitle({required Object minutes}) => '${minutes} मिनट छोड़ दिया';
@@ -984,16 +984,16 @@ class _Translations$mediaMenu$hi extends Translations$mediaMenu$en {
 	@override String confirmDeleteTarget({required Object title}) => 'अपने सर्वर से स्थायी रूप से ${title} को हटा दें?';
 	@override String get deleteMultipleWarning => 'इसमें सभी एपिसोड और उनके फ़ाइल शामिल हैं।';
 	@override String deleteEpisodeCountWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hi'))(n,
-		one: 'यह इसमें सभी ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} एपिसोड को हटा देता है, और इसकी फ़ाइल।',
-		other: 'यह इसमें सभी ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} एपिसोड और उनके फ़ाइलों को हटा देता है।',
+		one: 'इससे इसमें मौजूद ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} एपिसोड और उसकी फ़ाइल मिट जाएँगे।',
+		other: 'इससे इसमें मौजूद सभी ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} एपिसोड और उनकी फ़ाइलें मिट जाएँगे।',
 	);
 	@override String deleteMultiPartWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hi'))(n,
-		one: 'इस आइटम को ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} फ़ाइल के रूप में संग्रहीत किया जाता है, जो हटा दिया जाएगा।',
-		other: 'यह आइटम ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} फ़ाइलों के माध्यम से संग्रहीत किया जाता है, और उन सभी को हटा दिया जाएगा।',
+		one: 'यह आइटम ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} फ़ाइल में संग्रहीत है और वह फ़ाइल मिट जाएगी।',
+		other: 'यह आइटम ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} फ़ाइलों में संग्रहीत है और वे सभी मिट जाएँगी।',
 	);
 	@override String deleteSharedFileHeading({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hi'))(n,
-		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} अन्य एपिसोड एक ही फ़ाइल में संग्रहीत हैं और इसे भी हटा दिया जाएगा:',
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} अन्य एपिसोड एक ही फ़ाइल में संग्रहीत किए जाते हैं और इसे भी हटा दिया जाएगा:',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} अन्य एपिसोड उसी फ़ाइल में संग्रहीत है और वह भी मिट जाएगा:',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} अन्य एपिसोड उसी फ़ाइल में संग्रहीत हैं और वे भी मिट जाएँगे:',
 	);
 	@override String get deleteScopeUnverifiedProbeFailed => 'PlezyNG यह जांच नहीं कर सकता है कि यह कौन से फ़ाइलों को हटा देगा, इसलिए यह ऊपर नामित आइटम से अधिक हटा सकता है. रद्द करें और फिर से कोशिश करें, या किसी भी तरह से हटा दें.';
 	@override String get deleteScopeUnverifiedNoFileInfo => 'आपके सर्वर ने इस आइटम के लिए फ़ाइल विवरण प्रदान नहीं किया है, इसलिए PlezyNG यह जांच नहीं कर सकता है कि यह किस फ़ाइल को हटा देगा. यह ऊपर नामित आइटम से अधिक हटा सकता है.';
@@ -1073,10 +1073,10 @@ class _Translations$accessibility$hi extends Translations$accessibility$en {
 	@override String get highContrastHint => 'मजबूत पाठ, आउटलिंग और प्रकाश या अंधेरे सतहों पर ध्यान केंद्रित करने वाले संकेतक।';
 	@override String get interaction => 'आंदोलन और बातचीत';
 	@override String get reduceMotion => 'आंदोलन को कम करें';
-	@override String get reduceMotionHint => 'ध्यान, पृष्ठ संक्रमण और सजावटी प्रभावों को बनाए रखें।';
+	@override String get reduceMotionHint => 'फ़ोकस संकेतक, पृष्ठ परिवर्तन और सजावटी प्रभावों की गति बंद रखें।';
 	@override String get largeTargets => 'अधिक लक्षित लक्ष्य';
 	@override String get largeTargetsHint => 'साझा नियंत्रण को स्पर्श और सहायक नेविगेशन के लिए अधिक स्थान दें।';
-	@override String get navigationHint => 'नियंत्रण के बीच स्थानांतरित करने के लिए टैब और शिफ्ट + टैब का उपयोग करें, सक्रिय करने के लिए इनपुट या स्पेस, और बंद करने के लिए बचें या वापस लौटें. एक पुस्तक खोलने के दौरान पढ़ने और पढ़ने के लिए प्राथमिकताएं उपलब्ध हैं.';
+	@override String get navigationHint => 'नियंत्रणों के बीच जाने के लिए Tab और Shift+Tab, सक्रिय करने के लिए Enter या Space और बंद करने के लिए Escape या वापस जाने वाले बटन का उपयोग करें। किताब खुली होने पर ज़ूम और पढ़ने की प्राथमिकताएँ उपलब्ध रहती हैं।';
 }
 
 // Path: tooltips
@@ -1700,7 +1700,7 @@ class _Translations$startup$hi extends Translations$startup$en {
 	// Translations
 	@override String get failedTitle => 'PlezyNG शुरू नहीं किया जा सकता';
 	@override String get failedBody => 'स्टार्टअप के दौरान कुछ गलत हो गया. नीचे दिए गए विवरण बताते हैं कि क्या विफल रहा।';
-	@override String get failedBodyRepairable => 'PlezyNG की सहेजे गए सेटिंग्स फ़ाइल क्षतिग्रस्त है और PlezyNG शुरू करने से पहले पुनर्निर्माण किया जाना चाहिए. रिटर्न मदद नहीं करेगा — मरम्मत भंडारण का चयन करें.';
+	@override String get failedBodyRepairable => 'PlezyNG की सहेजी हुई सेटिंग्स फ़ाइल क्षतिग्रस्त है। ऐप शुरू होने से पहले इसे फिर से बनाना होगा। दोबारा कोशिश करने से मदद नहीं मिलेगी — स्टोरेज की मरम्मत का विकल्प चुनें।';
 	@override String get phaseLabel => 'कदम';
 	@override String get showDetails => 'विवरण दिखाएं';
 	@override String get hideDetails => 'विवरण छिपाएं';
@@ -1711,20 +1711,20 @@ class _Translations$startup$hi extends Translations$startup$en {
 	@override String get repairTitle => 'संग्रहीत डेटा की मरम्मत?';
 	@override String get repairBodyCommon => 'PlezyNG की सेटिंग्स फ़ाइल क्षतिग्रस्त है और इसे पढ़ा नहीं जा सकता है. मरम्मत प्रत्येक सेटिंग को डिफ़ॉल्ट रूप से पुनर्स्थापित करती है.';
 	@override String get repairBodyOneCredential => 'एक सहेजा हुआ साइन-इन क्षतिग्रस्त है और पढ़ा नहीं जा सकता है. मरम्मत केवल उस एक को हटा देती है; आपके अन्य सेटिंग्स अकेले छोड़ दिए जाते हैं.';
-	@override String get repairBodySignInsKept => 'आपके सर्वर और प्रोफ़ाइल साइन अप में रहना चाहिए।';
-	@override String get repairBodySignInsLost => 'कुंजी आपकी सहेजे गए सिग्नल को बचाने के लिए इस फ़ाइल से पुनर्प्राप्त नहीं किया जा सकता है, इसलिए आपको हर सर्वर और प्रोफ़ाइल में फिर से साइन इन करना होगा. मीडिया सर्वर पर कुछ भी प्रभावित नहीं होता है.';
+	@override String get repairBodySignInsKept => 'आपके सर्वर और प्रोफ़ाइल में साइन-इन स्थिति बनी रहनी चाहिए।';
+	@override String get repairBodySignInsLost => 'सहेजी गई साइन-इन जानकारी की सुरक्षा करने वाली कुंजी इस फ़ाइल से पुनर्प्राप्त नहीं हो सकती। इसलिए हर सर्वर और प्रोफ़ाइल में फिर से साइन इन करना होगा। आपके मीडिया सर्वर पर कुछ भी प्रभावित नहीं होगा।';
 	@override String get repairBodySessionsUncertain => 'ट्रैकर (MAL, AniList, Simkl, Trakt) और Seerr को अलग से संग्रहीत किया जाता है और जीवित रह सकता है या नहीं हो सकता है. PlezyNG आपको सटीक रूप से बताएगा कि यह क्या रखता है.';
 	@override String get repairConfirm => 'सुधार';
 	@override String get repairSucceeded => 'भंडारण सुधार';
 	@override String get repairNeedsRestart => 'भंडारण सुधार - पुनरारंभ आवश्यक';
-	@override String get restartRequiredBody => 'आपके डेटा को ठीक किया गया है, लेकिन PlezyNG का उपयोग करने से पहले ताजा शुरू करना होगा. PlezyNG के पास जाएं और इसे फिर से खोलें.';
+	@override String get restartRequiredBody => 'आपका डेटा ठीक कर दिया गया है, लेकिन उसका उपयोग करने के लिए PlezyNG को फिर से चालू करना होगा। PlezyNG बंद करके दोबारा खोलें।';
 	@override String get quitPlezy => 'क्यूट PlezyNG';
 	@override String get repairFailed => 'मरम्मत असफल';
-	@override String get repairKeptSignIns => 'आपके सर्वर और प्रोफाइल अभी भी साइन अप कर रहे हैं।';
-	@override String get repairLostSignIns => 'आपके सहेजे गए सिग्नल को बचाने की कुंजी को पुनर्प्राप्त नहीं किया जा सकता. आपको फिर से प्रत्येक सर्वर और प्रोफ़ाइल में साइन इन करना होगा.';
+	@override String get repairKeptSignIns => 'आपके सर्वर और प्रोफ़ाइल में अभी भी साइन इन है।';
+	@override String get repairLostSignIns => 'सहेजी गई साइन-इन जानकारी की सुरक्षा करने वाली कुंजी पुनर्प्राप्त नहीं हो सकी। हर सर्वर और प्रोफ़ाइल में फिर से साइन इन करना होगा।';
 	@override String get repairLostSessions => 'कम से कम एक ट्रैकर या Seerr कनेक्शन खो गया है और फिर से कनेक्ट किया जाना चाहिए।';
 	@override String get backupTitle => 'क्षतिग्रस्त फ़ाइल का एक प्रति बनाए रखा गया है';
-	@override String get backupWarning => 'इसमें आपके साइन इन क्रेडिट शामिल हैं. इसे अपलोड या साझा न करें.';
+	@override String get backupWarning => 'इसमें आपकी साइन-इन जानकारी है। इसे अपलोड या साझा न करें।';
 	@override String get deleteBackup => 'कॉपी हटाएँ';
 	@override String get backupDeleted => 'कॉपी हटा दी गई है।';
 	@override String get previousFailureTitle => 'PlezyNG पिछली बार शुरू करने में विफल';
@@ -1921,7 +1921,7 @@ class _Translations$collections$hi extends Translations$collections$en {
 	@override String get collection => 'संग्रह';
 	@override String get empty => 'संग्रह खाली है';
 	@override String get deleteCollection => 'संग्रह हटाएँ';
-	@override String deleteConfirm({required Object title}) => '"${title}" को हटा दें? यह अनदेखा नहीं किया जा सकता है.';
+	@override String deleteConfirm({required Object title}) => '"${title}" मिटाएँ? इस कार्रवाई को वापस नहीं किया जा सकता।';
 	@override String get deleted => 'संग्रह हटा दिया';
 	@override String get deleteFailed => 'संग्रह को हटाने में विफलता';
 	@override String deleteFailedWithError({required Object error}) => 'संग्रह को हटाने में विफलता: ${error}';
@@ -2644,7 +2644,7 @@ class _Translations$seerr$hi extends Translations$seerr$en {
 	@override String get quickConnectUnsupported => 'इस Seerr उदाहरण का समर्थन नहीं करता Quick Connect. यह Seerr 3.4 या उससे अधिक की आवश्यकता है.';
 	@override String get notInitialized => 'यह Seerr उदाहरण पहली बार चलने वाले सेटअप को पूरा नहीं करता है';
 	@override String get noPlexTokenForReauth => 'नंबर Plex टोकन फिर से साइन अप करने के लिए उपलब्ध है';
-	@override String get noStoredCredentials => 'कोई संग्रहीत क्रेडिट फिर से हस्ताक्षर करने के लिए उपलब्ध नहीं हैं';
+	@override String get noStoredCredentials => 'फिर से साइन इन करने के लिए कोई सहेजी हुई साइन-इन जानकारी उपलब्ध नहीं है';
 	@override String get signInRejected => 'Sign-in को अस्वीकार कर दिया गया';
 	@override String get noSessionCookie => 'Seerr ने कोई सत्र कुकी जारी नहीं की';
 	@override String get freshCookieRejected => 'Seerr ने नए सत्र कुकी को खारिज कर दिया';
@@ -2744,7 +2744,7 @@ class _Translations$addServer$hi extends Translations$addServer$en {
 	@override String connectDirectPlexCardSubtitleScoped({required Object name}) => 'सीधे स्थानीय आईपी या यूआरएल का उपयोग करके कनेक्ट करें. ${name} से कनेक्ट करें.';
 	@override String get insecureTitle => 'अनगिनत कनेक्शन';
 	@override String insecureDescription({required Object url}) => '${url} HTTP का उपयोग करता है। नेटवर्क पर मौजूद लोग आपका पासवर्ड, टोकन और मीडिया पढ़ या बदल सकते हैं। उपलब्ध होने पर HTTPS का उपयोग करें। केवल तभी जारी रखें जब आपको इस नेटवर्क पर भरोसा हो और आप जोखिम स्वीकार करते हों।';
-	@override String get allowHttp => 'अनुमति HTTP';
+	@override String get allowHttp => 'HTTP की अनुमति दें';
 	@override String get httpsRequired => 'HTTPS का उपयोग करें या स्पष्ट रूप से एक अज्ञात कनेक्शन की अनुमति दें।';
 }
 
@@ -2979,20 +2979,20 @@ class _Translations$fileSources$hi extends Translations$fileSources$en {
 	@override String get lineHeight => 'लाइन स्पेसिंग';
 	@override String get margin => 'मार्जिन';
 	@override String get font => 'टाइपफैक्स';
-	@override String get serif => 'सीरियल';
-	@override String get sans => 'सीरियल के बिना';
+	@override String get serif => 'सेरिफ़';
+	@override String get sans => 'बिना सेरिफ़';
 	@override String get mono => 'मॉनस्पेस';
 	@override String get columns => 'कोलंबन';
 	@override String get scroll => 'Vertical स्क्रॉल करें';
-	@override String get justify => 'पाठ को सही';
+	@override String get justify => 'पाठ दोनों किनारों पर बराबर करें';
 	@override String get readerTheme => 'पृष्ठ की उपस्थिति';
 	@override String get appTheme => 'App Theme के बारे में टिप्पणियाँ';
 	@override String get paper => 'कागज';
 	@override String get sepia => 'सेप्पा';
 	@override String get night => 'रात';
-	@override String get readAloud => 'इस पृष्ठ को पढ़ने के लिए आलो';
-	@override String get readAlong => 'पढ़ने के लिए';
-	@override String get stopReading => 'नारियल को रोकें';
+	@override String get readAloud => 'यह पृष्ठ ज़ोर से पढ़ें';
+	@override String get readAlong => 'आवाज़ के साथ पढ़ें';
+	@override String get stopReading => 'पढ़कर सुनाना बंद करें';
 	@override String get searchBook => 'पुस्तक में खोज';
 	@override String get noMatches => 'कोई मैच नहीं';
 	@override String get previousPage => 'पिछला पृष्ठ';
@@ -3016,7 +3016,7 @@ class _Translations$fileSources$hi extends Translations$fileSources$en {
 	@override String get errorConflict => 'स्थिति में परिवर्तन एक और सत्र में. एक स्थिति का चयन करने के लिए आइटम को फिर से खोलें.';
 	@override String get signIn => 'साइन इन';
 	@override String get reconnect => 'फिर से जुड़ें';
-	@override String get folderHelp => 'स्रोत कोर से शुरू करने के लिए खाली छोड़ दें. S3 URLs में बक्से शामिल हैं.';
+	@override String get folderHelp => 'स्रोत के मूल फ़ोल्डर से शुरू करने के लिए इसे खाली छोड़ें। S3 URL में बकेट का नाम शामिल होता है।';
 	@override String get preferences => 'प्राथमिकताएं';
 	@override String get timePosition => 'स्थिति';
 	@override String get audioTrack => 'ऑडियो ट्रैक';
@@ -3024,7 +3024,7 @@ class _Translations$fileSources$hi extends Translations$fileSources$en {
 	@override String get none => 'कोई नहीं';
 	@override String get fullscreen => 'पूर्ण स्क्रीन';
 	@override String get syncLocation => 'प्रगति सिंक्रनाइज़ेशन फ़ोल्डर (वैकल्पिक)';
-	@override String get syncLocationHint => 'PlezyNG राज्य के लिए एक समर्पित फ़ोल्डर WebDAV. शर्त लिखने का उपयोग करता है; मीडिया अपरिवर्तित रहता है.';
+	@override String get syncLocationHint => 'PlezyNG की स्थिति के लिए एक अलग WebDAV फ़ोल्डर। डेटा शर्त पूरी होने पर लिखा जाता है; मीडिया में कोई बदलाव नहीं होता।';
 	@override String get audiobooks => 'ऑडियोबुक';
 	@override String get comics => 'कॉमिक्स';
 	@override String get scan => 'पुस्तक और मीडिया के लिए स्कैन';
@@ -3046,11 +3046,11 @@ class _Translations$fileSources$hi extends Translations$fileSources$en {
 	@override String get singlePage => 'एकल पृष्ठ';
 	@override String get twoPages => '2 पृष्ठ';
 	@override String get readingDirection => 'पढ़ने की दिशा';
-	@override String get leftToRight => 'दाईं ओर बाईं ओर';
-	@override String get rightToLeft => 'जाने के लिए सही';
+	@override String get leftToRight => 'बाएँ से दाएँ';
+	@override String get rightToLeft => 'दाएँ से बाएँ';
 	@override String get letterSpacing => 'पत्र स्पेस';
 	@override String get wordSpacing => 'शब्द स्पेस';
-	@override String get readerControlsHelp => 'पृष्ठों को विस्तारित करने के लिए स्पिन या ज़ूम नियंत्रण का उपयोग करें. स्पिन पर स्क्रॉल करें. Ctrl/ ⁇  + या − ज़ूम को समायोजित करता है; Ctrl/ ⁇  0 इसे पुनर्स्थापित करता है. Page Up और Page Down पृष्ठों को स्क्रॉल करते हैं.';
+	@override String get readerControlsHelp => 'पृष्ठ बड़ा करने के लिए दो उँगलियाँ फैलाएँ या ज़ूम नियंत्रण का उपयोग करें। पृष्ठ खिसकाने के लिए खींचें। Ctrl/⌘ के साथ + या − ज़ूम बदलता है; Ctrl/⌘ के साथ 0 उसे रीसेट करता है। Page Up और Page Down से पृष्ठ बदलें।';
 	@override String get imagePage => 'कॉमिक्स पृष्ठ';
 	@override String get resetReader => 'पढ़ने की पसंद को पुनर्स्थापित करें';
 	@override String get zoom => 'ज़ूम';
@@ -3072,32 +3072,32 @@ class _Translations$lending$hi extends Translations$lending$en {
 	@override String get libraryName => 'पुस्तकालय का नाम';
 	@override String get libraryUrl => 'पुस्तकालय वेबसाइट';
 	@override String get libraryUrlHint => 'अपने पुस्तकालय के कैटलॉग या साइन-इन पेज का उपयोग करें।';
-	@override String get intro => 'अपनी पुस्तकालय से ऋण लें. अपनी किताबें बंद रखें.';
+	@override String get intro => 'अपनी लाइब्रेरी से किताबें उधार लें और उन्हें अपने पास रखें।';
 	@override String get handoff => 'साइन इन करें, उधार लें और अपनी पुस्तकालय की सेवा के साथ सुरक्षित रूप से पढ़ें।';
 	@override String get openService => 'खुली पुस्तकालय';
 	@override String get findLibrary => 'एक पुस्तकालय खोजें';
 	@override String get search => 'किताबें और लेखकों की खोज';
 	@override String get catalogue => 'कैटलॉग';
 	@override String get loans => 'ऋण';
-	@override String get holds => 'रखें';
+	@override String get holds => 'आरक्षण';
 	@override String get signIn => 'अपनी पुस्तकालय के साथ साइन इन करें';
 	@override String get waiting => 'अपने ब्राउज़र में साइन इन करना बंद करें, फिर यहां वापस जाएं।';
 	@override String get cancel => 'रद्द करना';
 	@override String get disconnect => 'पुस्तकालय को हटा दें';
-	@override String get disconnectMessage => 'इस प्रोफ़ाइल से इस पुस्तकालय को हटा दें? आपके ऋण और आपके पुस्तकालय के साथ रहने के लिए रखते हैं.';
+	@override String get disconnectMessage => 'इस लाइब्रेरी को इस प्रोफ़ाइल से हटाएँ? उधार ली गई किताबें और आरक्षण आपकी लाइब्रेरी में बने रहेंगे।';
 	@override String get getBook => 'किताबें प्राप्त करें';
 	@override String get checkAvailability => 'उपलब्धता की जांच करें';
 	@override String get available => 'ऋण के लिए उपलब्ध';
 	@override String get unavailable => 'वर्तमान में उपलब्ध नहीं';
-	@override String get borrow => 'ऋण';
-	@override String get placeHold => 'जगह रखें';
+	@override String get borrow => 'उधार लें';
+	@override String get placeHold => 'आरक्षित करें';
 	@override String get returnBook => 'जल्दी लौटें';
-	@override String get cancelHold => 'रद्द करें';
+	@override String get cancelHold => 'आरक्षण रद्द करें';
 	@override String get confirmBorrow => 'क्या आप अपनी पुस्तकालय से इस शीर्षक को उधार लेते हैं?';
-	@override String get confirmReturn => 'अब इस शीर्षक को वापस लाओ. आपको इसे फिर से उधार देने की आवश्यकता हो सकती है.';
-	@override String get confirmCancelHold => 'इस शीर्षक पर अपनी धारणा को हटा दें?';
+	@override String get confirmReturn => 'यह किताब अभी लौटाएँ? पढ़ना जारी रखने के लिए इसे फिर से उधार लेना पड़ सकता है।';
+	@override String get confirmCancelHold => 'इस किताब का अपना आरक्षण रद्द करें?';
 	@override String get email => 'ईमेल नोटिस रखें';
-	@override String due({required Object date}) => 'कुल पदों की संख्या: ${date}';
+	@override String due({required Object date}) => 'लौटाने की तारीख: ${date}';
 	@override String queue({required Object position}) => 'पद ${position} लाइन में';
 	@override String get empty => 'अभी तक कोई शीर्षक नहीं है।';
 	@override String get openLibraryNote => 'Open Library के कैटलॉग का पता लगाएं. पढ़ने और ऋण के विकल्प प्रत्येक शीर्षक के पृष्ठ पर दिखाई देते हैं.';
@@ -3111,10 +3111,10 @@ class _Translations$lending$hi extends Translations$lending$en {
 	@override String get continueService => 'सेवा में जारी रखें';
 	@override String get comingSoon => 'जल्द ही आने वाले ऋण';
 	@override String get comingSoonDescription => 'आप Libby में अपनी पुस्तकालय का उपयोग कर सकते हैं जबकि हम इसे कनेक्ट करने के लिए समाप्त कर सकते हैं।';
-	@override String get suspendHold => 'निलंबित रखें';
-	@override String get resumeHold => 'संदर्भ रखें';
-	@override String get suspendMessage => 'अपनी जगह को लाइन में रखें और अगले पाठक को इस प्रति को उधार देने दें? आप बाद में रखरखाव को फिर से कर सकते हैं.';
-	@override String get resumeMessage => 'इस धार को फिर से रखें ताकि आपकी पुस्तकालय आपको अगली उपलब्ध प्रतिलिपि प्रदान कर सके?';
+	@override String get suspendHold => 'आरक्षण अस्थायी रूप से रोकें';
+	@override String get resumeHold => 'आरक्षण फिर से चालू करें';
+	@override String get suspendMessage => 'कतार में अपनी जगह बनाए रखकर अगले पाठक को यह प्रति उधार लेने दें? आप बाद में आरक्षण फिर से चालू कर सकते हैं।';
+	@override String get resumeMessage => 'यह आरक्षण फिर से चालू करें ताकि लाइब्रेरी अगली उपलब्ध प्रति आपको दे सके?';
 	@override String get editEmail => 'ईमेल नोटिस बदलना';
 }
 
@@ -4268,7 +4268,7 @@ extension on TranslationsHi {
 			'auth.quickConnectWaiting' => 'अनुमोदन के लिए इंतजार...',
 			'auth.quickConnectCancel' => 'रद्द करना',
 			'auth.quickConnectExpired' => 'त्वरित कनेक्ट की समय-सीमा समाप्त हो गई। फिर कोशिश करें।',
-			'auth.localDataRecoveryRequired' => 'PlezyNG सुरक्षित रूप से स्थानीय साइन इन और लंबे समय तक प्लेबैक डेटा को पुनर्प्राप्त नहीं कर सकता. कृपया फिर से साइन इन करें.',
+			'auth.localDataRecoveryRequired' => 'PlezyNG स्थानीय साइन-इन जानकारी और लंबित प्लेबैक डेटा को सुरक्षित रूप से पुनर्प्राप्त नहीं कर सका। कृपया फिर से साइन इन करें।',
 			'auth.pinCheckRejected' => 'Plex PIN चेक को अस्वीकार कर दिया गया',
 			'auth.connectToDirectPlex' => 'स्थानीय सर्वर से कनेक्ट करें Plex',
 			'common.cancel' => 'रद्द करना',
@@ -4292,7 +4292,7 @@ extension on TranslationsHi {
 			'common.createNew' => 'नया बनाएं',
 			'common.connect' => 'कनेक्ट करें',
 			'common.disconnect' => 'डिस्कनेक्ट',
-			'common.play' => 'खेलना',
+			'common.play' => 'चलाएँ',
 			'common.pause' => 'रोकें',
 			'common.resume' => 'फिर से चलाएँ',
 			'common.error' => 'गलती',
@@ -4566,7 +4566,7 @@ extension on TranslationsHi {
 			'settings.importSettingsInvalidFile' => 'यह फ़ाइल एक वैध PlezyNG सेटिंग्स निर्यात नहीं है',
 			'settings.importSettingsNoUser' => 'आयात से पहले इनपुट करें',
 			'settings.cloudBackup' => 'क्लाउड बैकअप',
-			'settings.cloudBackupDescription' => 'HTTPS से अधिक WebDAV के अंत बिंदु पर पोर्टेबल सेटिंग्स का बैकअप करें. सर्वर कनेक्शन और क्रेडिट इस डिवाइस पर रहें.',
+			'settings.cloudBackupDescription' => 'स्थानांतरित की जा सकने वाली सेटिंग्स का HTTPS के ज़रिए WebDAV पते पर बैकअप लें। सर्वर कनेक्शन और साइन-इन जानकारी इसी डिवाइस पर रहती है।',
 			'settings.cloudBackupUrl' => 'WebDAV JSON फ़ाइल URL',
 			'settings.cloudBackupUsername' => 'उपयोगकर्ता नाम',
 			'settings.cloudBackupPassword' => 'पासवर्ड',
@@ -4837,7 +4837,7 @@ extension on TranslationsHi {
 			'themeEditor.contrast.labelOnAccent' => 'बटन लेबल पर ध्यान केंद्रित करें',
 			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, अनुशंसित ${minimum}:1 के नीचे',
 			'themeEditor.discardTitle' => 'बदलावों को नजरअंदाज?',
-			'themeEditor.discardMessage' => 'आपके अनसुलझे रंग परिवर्तन खो जाएंगे।',
+			'themeEditor.discardMessage' => 'रंगों में किए गए ऐसे बदलाव खो जाएँगे जिन्हें आपने सहेजा नहीं है।',
 			'themeEditor.discard' => 'डिस्काउंट',
 			'themeEditor.previewCardTitle' => ({required Object number}) => 'पदों की संख्या ${number}',
 			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '${minutes} मिनट छोड़ दिया',
@@ -5021,9 +5021,9 @@ extension on TranslationsHi {
 			'mediaMenu.deleteAnyway' => 'किसी भी तरह से हटाएं',
 			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => 'अपने सर्वर से स्थायी रूप से ${title} को हटा दें?',
 			'mediaMenu.deleteMultipleWarning' => 'इसमें सभी एपिसोड और उनके फ़ाइल शामिल हैं।',
-			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hi'))(n, one: 'यह इसमें सभी ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} एपिसोड को हटा देता है, और इसकी फ़ाइल।', other: 'यह इसमें सभी ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} एपिसोड और उनके फ़ाइलों को हटा देता है।', ), 
-			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hi'))(n, one: 'इस आइटम को ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} फ़ाइल के रूप में संग्रहीत किया जाता है, जो हटा दिया जाएगा।', other: 'यह आइटम ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} फ़ाइलों के माध्यम से संग्रहीत किया जाता है, और उन सभी को हटा दिया जाएगा।', ), 
-			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hi'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} अन्य एपिसोड एक ही फ़ाइल में संग्रहीत हैं और इसे भी हटा दिया जाएगा:', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} अन्य एपिसोड एक ही फ़ाइल में संग्रहीत किए जाते हैं और इसे भी हटा दिया जाएगा:', ), 
+			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hi'))(n, one: 'इससे इसमें मौजूद ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} एपिसोड और उसकी फ़ाइल मिट जाएँगे।', other: 'इससे इसमें मौजूद सभी ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} एपिसोड और उनकी फ़ाइलें मिट जाएँगे।', ), 
+			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hi'))(n, one: 'यह आइटम ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} फ़ाइल में संग्रहीत है और वह फ़ाइल मिट जाएगी।', other: 'यह आइटम ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} फ़ाइलों में संग्रहीत है और वे सभी मिट जाएँगी।', ), 
+			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('hi'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} अन्य एपिसोड उसी फ़ाइल में संग्रहीत है और वह भी मिट जाएगा:', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} अन्य एपिसोड उसी फ़ाइल में संग्रहीत हैं और वे भी मिट जाएँगे:', ), 
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG यह जांच नहीं कर सकता है कि यह कौन से फ़ाइलों को हटा देगा, इसलिए यह ऊपर नामित आइटम से अधिक हटा सकता है. रद्द करें और फिर से कोशिश करें, या किसी भी तरह से हटा दें.',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'आपके सर्वर ने इस आइटम के लिए फ़ाइल विवरण प्रदान नहीं किया है, इसलिए PlezyNG यह जांच नहीं कर सकता है कि यह किस फ़ाइल को हटा देगा. यह ऊपर नामित आइटम से अधिक हटा सकता है.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'मीडिया के आइटम को सफलतापूर्वक हटा दिया गया',
@@ -5084,10 +5084,10 @@ extension on TranslationsHi {
 			'accessibility.highContrastHint' => 'मजबूत पाठ, आउटलिंग और प्रकाश या अंधेरे सतहों पर ध्यान केंद्रित करने वाले संकेतक।',
 			'accessibility.interaction' => 'आंदोलन और बातचीत',
 			'accessibility.reduceMotion' => 'आंदोलन को कम करें',
-			'accessibility.reduceMotionHint' => 'ध्यान, पृष्ठ संक्रमण और सजावटी प्रभावों को बनाए रखें।',
+			'accessibility.reduceMotionHint' => 'फ़ोकस संकेतक, पृष्ठ परिवर्तन और सजावटी प्रभावों की गति बंद रखें।',
 			'accessibility.largeTargets' => 'अधिक लक्षित लक्ष्य',
 			'accessibility.largeTargetsHint' => 'साझा नियंत्रण को स्पर्श और सहायक नेविगेशन के लिए अधिक स्थान दें।',
-			'accessibility.navigationHint' => 'नियंत्रण के बीच स्थानांतरित करने के लिए टैब और शिफ्ट + टैब का उपयोग करें, सक्रिय करने के लिए इनपुट या स्पेस, और बंद करने के लिए बचें या वापस लौटें. एक पुस्तक खोलने के दौरान पढ़ने और पढ़ने के लिए प्राथमिकताएं उपलब्ध हैं.',
+			'accessibility.navigationHint' => 'नियंत्रणों के बीच जाने के लिए Tab और Shift+Tab, सक्रिय करने के लिए Enter या Space और बंद करने के लिए Escape या वापस जाने वाले बटन का उपयोग करें। किताब खुली होने पर ज़ूम और पढ़ने की प्राथमिकताएँ उपलब्ध रहती हैं।',
 			'tooltips.shufflePlay' => 'शूफ खेल',
 			'tooltips.playTrailer' => 'ट्रेलर खेलना',
 			'tooltips.markAsWatched' => 'मार्क देखने के लिए',
@@ -5681,7 +5681,7 @@ extension on TranslationsHi {
 			'detail.endsAt' => ({required Object time}) => '${time} पर समाप्त',
 			'startup.failedTitle' => 'PlezyNG शुरू नहीं किया जा सकता',
 			'startup.failedBody' => 'स्टार्टअप के दौरान कुछ गलत हो गया. नीचे दिए गए विवरण बताते हैं कि क्या विफल रहा।',
-			'startup.failedBodyRepairable' => 'PlezyNG की सहेजे गए सेटिंग्स फ़ाइल क्षतिग्रस्त है और PlezyNG शुरू करने से पहले पुनर्निर्माण किया जाना चाहिए. रिटर्न मदद नहीं करेगा — मरम्मत भंडारण का चयन करें.',
+			'startup.failedBodyRepairable' => 'PlezyNG की सहेजी हुई सेटिंग्स फ़ाइल क्षतिग्रस्त है। ऐप शुरू होने से पहले इसे फिर से बनाना होगा। दोबारा कोशिश करने से मदद नहीं मिलेगी — स्टोरेज की मरम्मत का विकल्प चुनें।',
 			'startup.phaseLabel' => 'कदम',
 			'startup.showDetails' => 'विवरण दिखाएं',
 			'startup.hideDetails' => 'विवरण छिपाएं',
@@ -5692,20 +5692,20 @@ extension on TranslationsHi {
 			'startup.repairTitle' => 'संग्रहीत डेटा की मरम्मत?',
 			'startup.repairBodyCommon' => 'PlezyNG की सेटिंग्स फ़ाइल क्षतिग्रस्त है और इसे पढ़ा नहीं जा सकता है. मरम्मत प्रत्येक सेटिंग को डिफ़ॉल्ट रूप से पुनर्स्थापित करती है.',
 			'startup.repairBodyOneCredential' => 'एक सहेजा हुआ साइन-इन क्षतिग्रस्त है और पढ़ा नहीं जा सकता है. मरम्मत केवल उस एक को हटा देती है; आपके अन्य सेटिंग्स अकेले छोड़ दिए जाते हैं.',
-			'startup.repairBodySignInsKept' => 'आपके सर्वर और प्रोफ़ाइल साइन अप में रहना चाहिए।',
-			'startup.repairBodySignInsLost' => 'कुंजी आपकी सहेजे गए सिग्नल को बचाने के लिए इस फ़ाइल से पुनर्प्राप्त नहीं किया जा सकता है, इसलिए आपको हर सर्वर और प्रोफ़ाइल में फिर से साइन इन करना होगा. मीडिया सर्वर पर कुछ भी प्रभावित नहीं होता है.',
+			'startup.repairBodySignInsKept' => 'आपके सर्वर और प्रोफ़ाइल में साइन-इन स्थिति बनी रहनी चाहिए।',
+			'startup.repairBodySignInsLost' => 'सहेजी गई साइन-इन जानकारी की सुरक्षा करने वाली कुंजी इस फ़ाइल से पुनर्प्राप्त नहीं हो सकती। इसलिए हर सर्वर और प्रोफ़ाइल में फिर से साइन इन करना होगा। आपके मीडिया सर्वर पर कुछ भी प्रभावित नहीं होगा।',
 			'startup.repairBodySessionsUncertain' => 'ट्रैकर (MAL, AniList, Simkl, Trakt) और Seerr को अलग से संग्रहीत किया जाता है और जीवित रह सकता है या नहीं हो सकता है. PlezyNG आपको सटीक रूप से बताएगा कि यह क्या रखता है.',
 			'startup.repairConfirm' => 'सुधार',
 			'startup.repairSucceeded' => 'भंडारण सुधार',
 			'startup.repairNeedsRestart' => 'भंडारण सुधार - पुनरारंभ आवश्यक',
-			'startup.restartRequiredBody' => 'आपके डेटा को ठीक किया गया है, लेकिन PlezyNG का उपयोग करने से पहले ताजा शुरू करना होगा. PlezyNG के पास जाएं और इसे फिर से खोलें.',
+			'startup.restartRequiredBody' => 'आपका डेटा ठीक कर दिया गया है, लेकिन उसका उपयोग करने के लिए PlezyNG को फिर से चालू करना होगा। PlezyNG बंद करके दोबारा खोलें।',
 			'startup.quitPlezy' => 'क्यूट PlezyNG',
 			'startup.repairFailed' => 'मरम्मत असफल',
-			'startup.repairKeptSignIns' => 'आपके सर्वर और प्रोफाइल अभी भी साइन अप कर रहे हैं।',
-			'startup.repairLostSignIns' => 'आपके सहेजे गए सिग्नल को बचाने की कुंजी को पुनर्प्राप्त नहीं किया जा सकता. आपको फिर से प्रत्येक सर्वर और प्रोफ़ाइल में साइन इन करना होगा.',
+			'startup.repairKeptSignIns' => 'आपके सर्वर और प्रोफ़ाइल में अभी भी साइन इन है।',
+			'startup.repairLostSignIns' => 'सहेजी गई साइन-इन जानकारी की सुरक्षा करने वाली कुंजी पुनर्प्राप्त नहीं हो सकी। हर सर्वर और प्रोफ़ाइल में फिर से साइन इन करना होगा।',
 			'startup.repairLostSessions' => 'कम से कम एक ट्रैकर या Seerr कनेक्शन खो गया है और फिर से कनेक्ट किया जाना चाहिए।',
 			'startup.backupTitle' => 'क्षतिग्रस्त फ़ाइल का एक प्रति बनाए रखा गया है',
-			'startup.backupWarning' => 'इसमें आपके साइन इन क्रेडिट शामिल हैं. इसे अपलोड या साझा न करें.',
+			'startup.backupWarning' => 'इसमें आपकी साइन-इन जानकारी है। इसे अपलोड या साझा न करें।',
 			'startup.deleteBackup' => 'कॉपी हटाएँ',
 			'startup.backupDeleted' => 'कॉपी हटा दी गई है।',
 			'startup.previousFailureTitle' => 'PlezyNG पिछली बार शुरू करने में विफल',
@@ -5984,7 +5984,7 @@ extension on TranslationsHi {
 			'collections.collection' => 'संग्रह',
 			'collections.empty' => 'संग्रह खाली है',
 			'collections.deleteCollection' => 'संग्रह हटाएँ',
-			'collections.deleteConfirm' => ({required Object title}) => '"${title}" को हटा दें? यह अनदेखा नहीं किया जा सकता है.',
+			'collections.deleteConfirm' => ({required Object title}) => '"${title}" मिटाएँ? इस कार्रवाई को वापस नहीं किया जा सकता।',
 			'collections.deleted' => 'संग्रह हटा दिया',
 			'collections.deleteFailed' => 'संग्रह को हटाने में विफलता',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'संग्रह को हटाने में विफलता: ${error}',
@@ -6693,7 +6693,7 @@ extension on TranslationsHi {
 			'seerr.quickConnectUnsupported' => 'इस Seerr उदाहरण का समर्थन नहीं करता Quick Connect. यह Seerr 3.4 या उससे अधिक की आवश्यकता है.',
 			'seerr.notInitialized' => 'यह Seerr उदाहरण पहली बार चलने वाले सेटअप को पूरा नहीं करता है',
 			'seerr.noPlexTokenForReauth' => 'नंबर Plex टोकन फिर से साइन अप करने के लिए उपलब्ध है',
-			'seerr.noStoredCredentials' => 'कोई संग्रहीत क्रेडिट फिर से हस्ताक्षर करने के लिए उपलब्ध नहीं हैं',
+			'seerr.noStoredCredentials' => 'फिर से साइन इन करने के लिए कोई सहेजी हुई साइन-इन जानकारी उपलब्ध नहीं है',
 			'seerr.signInRejected' => 'Sign-in को अस्वीकार कर दिया गया',
 			'seerr.noSessionCookie' => 'Seerr ने कोई सत्र कुकी जारी नहीं की',
 			'seerr.freshCookieRejected' => 'Seerr ने नए सत्र कुकी को खारिज कर दिया',
@@ -6801,7 +6801,7 @@ extension on TranslationsHi {
 			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => 'सीधे स्थानीय आईपी या यूआरएल का उपयोग करके कनेक्ट करें. ${name} से कनेक्ट करें.',
 			'addServer.insecureTitle' => 'अनगिनत कनेक्शन',
 			'addServer.insecureDescription' => ({required Object url}) => '${url} HTTP का उपयोग करता है। नेटवर्क पर मौजूद लोग आपका पासवर्ड, टोकन और मीडिया पढ़ या बदल सकते हैं। उपलब्ध होने पर HTTPS का उपयोग करें। केवल तभी जारी रखें जब आपको इस नेटवर्क पर भरोसा हो और आप जोखिम स्वीकार करते हों।',
-			'addServer.allowHttp' => 'अनुमति HTTP',
+			'addServer.allowHttp' => 'HTTP की अनुमति दें',
 			'addServer.httpsRequired' => 'HTTPS का उपयोग करें या स्पष्ट रूप से एक अज्ञात कनेक्शन की अनुमति दें।',
 			'watchLink.serverUnavailable' => 'इस लिंक के लिए Plex सर्वर तक पहुंच नहीं पाया।',
 			'watchLink.notFound' => 'इस शो या फिल्म को आपके Plex सर्वर पर नहीं पाया जा सकता।',
@@ -6997,20 +6997,20 @@ extension on TranslationsHi {
 			'fileSources.lineHeight' => 'लाइन स्पेसिंग',
 			'fileSources.margin' => 'मार्जिन',
 			'fileSources.font' => 'टाइपफैक्स',
-			'fileSources.serif' => 'सीरियल',
-			'fileSources.sans' => 'सीरियल के बिना',
+			'fileSources.serif' => 'सेरिफ़',
+			'fileSources.sans' => 'बिना सेरिफ़',
 			'fileSources.mono' => 'मॉनस्पेस',
 			'fileSources.columns' => 'कोलंबन',
 			'fileSources.scroll' => 'Vertical स्क्रॉल करें',
-			'fileSources.justify' => 'पाठ को सही',
+			'fileSources.justify' => 'पाठ दोनों किनारों पर बराबर करें',
 			'fileSources.readerTheme' => 'पृष्ठ की उपस्थिति',
 			'fileSources.appTheme' => 'App Theme के बारे में टिप्पणियाँ',
 			'fileSources.paper' => 'कागज',
 			'fileSources.sepia' => 'सेप्पा',
 			'fileSources.night' => 'रात',
-			'fileSources.readAloud' => 'इस पृष्ठ को पढ़ने के लिए आलो',
-			'fileSources.readAlong' => 'पढ़ने के लिए',
-			'fileSources.stopReading' => 'नारियल को रोकें',
+			'fileSources.readAloud' => 'यह पृष्ठ ज़ोर से पढ़ें',
+			'fileSources.readAlong' => 'आवाज़ के साथ पढ़ें',
+			'fileSources.stopReading' => 'पढ़कर सुनाना बंद करें',
 			'fileSources.searchBook' => 'पुस्तक में खोज',
 			'fileSources.noMatches' => 'कोई मैच नहीं',
 			'fileSources.previousPage' => 'पिछला पृष्ठ',
@@ -7034,7 +7034,7 @@ extension on TranslationsHi {
 			'fileSources.errorConflict' => 'स्थिति में परिवर्तन एक और सत्र में. एक स्थिति का चयन करने के लिए आइटम को फिर से खोलें.',
 			'fileSources.signIn' => 'साइन इन',
 			'fileSources.reconnect' => 'फिर से जुड़ें',
-			'fileSources.folderHelp' => 'स्रोत कोर से शुरू करने के लिए खाली छोड़ दें. S3 URLs में बक्से शामिल हैं.',
+			'fileSources.folderHelp' => 'स्रोत के मूल फ़ोल्डर से शुरू करने के लिए इसे खाली छोड़ें। S3 URL में बकेट का नाम शामिल होता है।',
 			'fileSources.preferences' => 'प्राथमिकताएं',
 			'fileSources.timePosition' => 'स्थिति',
 			'fileSources.audioTrack' => 'ऑडियो ट्रैक',
@@ -7042,7 +7042,7 @@ extension on TranslationsHi {
 			'fileSources.none' => 'कोई नहीं',
 			'fileSources.fullscreen' => 'पूर्ण स्क्रीन',
 			'fileSources.syncLocation' => 'प्रगति सिंक्रनाइज़ेशन फ़ोल्डर (वैकल्पिक)',
-			'fileSources.syncLocationHint' => 'PlezyNG राज्य के लिए एक समर्पित फ़ोल्डर WebDAV. शर्त लिखने का उपयोग करता है; मीडिया अपरिवर्तित रहता है.',
+			'fileSources.syncLocationHint' => 'PlezyNG की स्थिति के लिए एक अलग WebDAV फ़ोल्डर। डेटा शर्त पूरी होने पर लिखा जाता है; मीडिया में कोई बदलाव नहीं होता।',
 			'fileSources.audiobooks' => 'ऑडियोबुक',
 			'fileSources.comics' => 'कॉमिक्स',
 			'fileSources.scan' => 'पुस्तक और मीडिया के लिए स्कैन',
@@ -7064,11 +7064,11 @@ extension on TranslationsHi {
 			'fileSources.singlePage' => 'एकल पृष्ठ',
 			'fileSources.twoPages' => '2 पृष्ठ',
 			'fileSources.readingDirection' => 'पढ़ने की दिशा',
-			'fileSources.leftToRight' => 'दाईं ओर बाईं ओर',
-			'fileSources.rightToLeft' => 'जाने के लिए सही',
+			'fileSources.leftToRight' => 'बाएँ से दाएँ',
+			'fileSources.rightToLeft' => 'दाएँ से बाएँ',
 			'fileSources.letterSpacing' => 'पत्र स्पेस',
 			'fileSources.wordSpacing' => 'शब्द स्पेस',
-			'fileSources.readerControlsHelp' => 'पृष्ठों को विस्तारित करने के लिए स्पिन या ज़ूम नियंत्रण का उपयोग करें. स्पिन पर स्क्रॉल करें. Ctrl/ ⁇  + या − ज़ूम को समायोजित करता है; Ctrl/ ⁇  0 इसे पुनर्स्थापित करता है. Page Up और Page Down पृष्ठों को स्क्रॉल करते हैं.',
+			'fileSources.readerControlsHelp' => 'पृष्ठ बड़ा करने के लिए दो उँगलियाँ फैलाएँ या ज़ूम नियंत्रण का उपयोग करें। पृष्ठ खिसकाने के लिए खींचें। Ctrl/⌘ के साथ + या − ज़ूम बदलता है; Ctrl/⌘ के साथ 0 उसे रीसेट करता है। Page Up और Page Down से पृष्ठ बदलें।',
 			'fileSources.imagePage' => 'कॉमिक्स पृष्ठ',
 			'fileSources.resetReader' => 'पढ़ने की पसंद को पुनर्स्थापित करें',
 			'fileSources.zoom' => 'ज़ूम',
@@ -7081,32 +7081,32 @@ extension on TranslationsHi {
 			'lending.libraryName' => 'पुस्तकालय का नाम',
 			'lending.libraryUrl' => 'पुस्तकालय वेबसाइट',
 			'lending.libraryUrlHint' => 'अपने पुस्तकालय के कैटलॉग या साइन-इन पेज का उपयोग करें।',
-			'lending.intro' => 'अपनी पुस्तकालय से ऋण लें. अपनी किताबें बंद रखें.',
+			'lending.intro' => 'अपनी लाइब्रेरी से किताबें उधार लें और उन्हें अपने पास रखें।',
 			'lending.handoff' => 'साइन इन करें, उधार लें और अपनी पुस्तकालय की सेवा के साथ सुरक्षित रूप से पढ़ें।',
 			'lending.openService' => 'खुली पुस्तकालय',
 			'lending.findLibrary' => 'एक पुस्तकालय खोजें',
 			'lending.search' => 'किताबें और लेखकों की खोज',
 			'lending.catalogue' => 'कैटलॉग',
 			'lending.loans' => 'ऋण',
-			'lending.holds' => 'रखें',
+			'lending.holds' => 'आरक्षण',
 			'lending.signIn' => 'अपनी पुस्तकालय के साथ साइन इन करें',
 			'lending.waiting' => 'अपने ब्राउज़र में साइन इन करना बंद करें, फिर यहां वापस जाएं।',
 			'lending.cancel' => 'रद्द करना',
 			'lending.disconnect' => 'पुस्तकालय को हटा दें',
-			'lending.disconnectMessage' => 'इस प्रोफ़ाइल से इस पुस्तकालय को हटा दें? आपके ऋण और आपके पुस्तकालय के साथ रहने के लिए रखते हैं.',
+			'lending.disconnectMessage' => 'इस लाइब्रेरी को इस प्रोफ़ाइल से हटाएँ? उधार ली गई किताबें और आरक्षण आपकी लाइब्रेरी में बने रहेंगे।',
 			'lending.getBook' => 'किताबें प्राप्त करें',
 			'lending.checkAvailability' => 'उपलब्धता की जांच करें',
 			'lending.available' => 'ऋण के लिए उपलब्ध',
 			'lending.unavailable' => 'वर्तमान में उपलब्ध नहीं',
-			'lending.borrow' => 'ऋण',
-			'lending.placeHold' => 'जगह रखें',
+			'lending.borrow' => 'उधार लें',
+			'lending.placeHold' => 'आरक्षित करें',
 			'lending.returnBook' => 'जल्दी लौटें',
-			'lending.cancelHold' => 'रद्द करें',
+			'lending.cancelHold' => 'आरक्षण रद्द करें',
 			'lending.confirmBorrow' => 'क्या आप अपनी पुस्तकालय से इस शीर्षक को उधार लेते हैं?',
-			'lending.confirmReturn' => 'अब इस शीर्षक को वापस लाओ. आपको इसे फिर से उधार देने की आवश्यकता हो सकती है.',
-			'lending.confirmCancelHold' => 'इस शीर्षक पर अपनी धारणा को हटा दें?',
+			'lending.confirmReturn' => 'यह किताब अभी लौटाएँ? पढ़ना जारी रखने के लिए इसे फिर से उधार लेना पड़ सकता है।',
+			'lending.confirmCancelHold' => 'इस किताब का अपना आरक्षण रद्द करें?',
 			'lending.email' => 'ईमेल नोटिस रखें',
-			'lending.due' => ({required Object date}) => 'कुल पदों की संख्या: ${date}',
+			'lending.due' => ({required Object date}) => 'लौटाने की तारीख: ${date}',
 			'lending.queue' => ({required Object position}) => 'पद ${position} लाइन में',
 			'lending.empty' => 'अभी तक कोई शीर्षक नहीं है।',
 			'lending.openLibraryNote' => 'Open Library के कैटलॉग का पता लगाएं. पढ़ने और ऋण के विकल्प प्रत्येक शीर्षक के पृष्ठ पर दिखाई देते हैं.',
@@ -7120,10 +7120,10 @@ extension on TranslationsHi {
 			'lending.continueService' => 'सेवा में जारी रखें',
 			'lending.comingSoon' => 'जल्द ही आने वाले ऋण',
 			'lending.comingSoonDescription' => 'आप Libby में अपनी पुस्तकालय का उपयोग कर सकते हैं जबकि हम इसे कनेक्ट करने के लिए समाप्त कर सकते हैं।',
-			'lending.suspendHold' => 'निलंबित रखें',
-			'lending.resumeHold' => 'संदर्भ रखें',
-			'lending.suspendMessage' => 'अपनी जगह को लाइन में रखें और अगले पाठक को इस प्रति को उधार देने दें? आप बाद में रखरखाव को फिर से कर सकते हैं.',
-			'lending.resumeMessage' => 'इस धार को फिर से रखें ताकि आपकी पुस्तकालय आपको अगली उपलब्ध प्रतिलिपि प्रदान कर सके?',
+			'lending.suspendHold' => 'आरक्षण अस्थायी रूप से रोकें',
+			'lending.resumeHold' => 'आरक्षण फिर से चालू करें',
+			'lending.suspendMessage' => 'कतार में अपनी जगह बनाए रखकर अगले पाठक को यह प्रति उधार लेने दें? आप बाद में आरक्षण फिर से चालू कर सकते हैं।',
+			'lending.resumeMessage' => 'यह आरक्षण फिर से चालू करें ताकि लाइब्रेरी अगली उपलब्ध प्रति आपको दे सके?',
 			'lending.editEmail' => 'ईमेल नोटिस बदलना',
 			'audiobook.syncTitle' => 'पढ़ना और सुनना सिंक्रनाइज़ेशन',
 			'audiobook.syncHelp' => 'अपने डिवाइस के माध्यम से पढ़ने की स्थिति, सुनने की स्थिति, पूरा होने की स्थिति, बुकमार्क और नोट्स रखें. एक संलग्न स्टोरेज खाता चुनें और प्रत्येक डिवाइस पर एक ही सिंक्रनाइज़ेशन कोड का उपयोग करें. पढ़ना और सुनना अलग रहता है.',

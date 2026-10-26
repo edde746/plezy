@@ -103,7 +103,6 @@ class TranslationsZh extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final Translations$platform$zh platform = Translations$platform$zh.internal(_root);
 	@override late final Translations$fileSources$zh fileSources = Translations$fileSources$zh.internal(_root);
 	@override late final Translations$lending$zh lending = Translations$lending$zh.internal(_root);
-	@override late final Translations$audiobook$zh audiobook = Translations$audiobook$zh.internal(_root);
 }
 
 // Path: app
@@ -302,7 +301,7 @@ class Translations$appAccess$zh extends Translations$appAccess$en {
 	// Translations
 	@override String get title => '每個功能都免費嘗試7天';
 	@override String get description => '开始一个七天的试用,完全访问每个PlezyNG功能,在试用期间没有费用,没有订阅,试用后,在您的商店价格上一生购买,终身开锁PlezyNG。';
-	@override String get trialEndedDescription => '解锁每件功能在 PlezyNG 终身,在您的商店价格购买一件。';
+	@override String get trialEndedDescription => '按商店显示的价格一次性购买，即可终身解锁 PlezyNG 的全部功能，无需订阅。';
 	@override String get startTrial => '开始我的7天免费试验';
 	@override String get trialActive => '您的7天全功能测试已活跃。';
 	@override String get trialEnded => '你的七天审判结束了';
@@ -315,8 +314,8 @@ class Translations$appAccess$zh extends Translations$appAccess$en {
 	@override String get loadingPrice => '货物价格...';
 	@override String get retryPrice => '回报价格 查看';
 	@override String get restore => '恢复终身购买';
-	@override String get pending => '您的購買等待付款或批准. 終身存取會在商店完成後開啟。';
-	@override String get storeUnavailable => '購買不適用. 請確認您已登錄到商店,並允許在該裝置上購買。';
+	@override String get pending => '您的购买正在等待付款或批准。商店完成交易后，终身使用权限将立即解锁。';
+	@override String get storeUnavailable => '目前无法购买。请确认您已登录商店，且此设备允许购买。';
 	@override String get productNotFound => 'PlezyNG 终身解锁 目前尚未在本商店提供。';
 	@override String get productQueryFailed => '无法收取商店价格,请检查您的连接并尝试一次。';
 	@override String get purchaseFailed => '購買不錯了,再試一次。';
@@ -442,7 +441,7 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get playbackBufferDescription => '针对不稳定的连接缓冲更多内容。也受缓冲大小限制。';
 	@override String get streamBufferSize => '布格大小';
 	@override String streamBufferSizeValue({required Object size}) => '${size} MB';
-	@override String get streamBufferSizeDescription => '直播时要上传多少视频? 转码在服务器的转码库弗上停止。';
+	@override String get streamBufferSizeDescription => '直接播放时预先加载的视频量。转码播放以服务器自身的转码缓冲区为限。0 = 自动';
 	@override String get streamBufferSizeExoNote => '取代 Playback Buffer 设置时,在应用程序的内存限制中半个';
 	@override String get streamBufferMegabytes => '梅加比特';
 	@override String get defaultQualityTitle => '默认画质';
@@ -522,7 +521,7 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get importSettingsInvalidFile => '此文件不是有效的 PlezyNG 设置导出';
 	@override String get importSettingsNoUser => '导入设置前请先登录';
 	@override String get cloudBackup => '云备份';
-	@override String get cloudBackupDescription => '备份移动设置到 WebDAV 端点超过 HTTPS. 服务器连接和认证保持在该设备上。';
+	@override String get cloudBackupDescription => '通过 HTTPS 将可迁移的设置备份到 WebDAV 地址。服务器连接和登录凭据保留在此设备上。';
 	@override String get cloudBackupUrl => 'WebDAV JSON 文件 URL';
 	@override String get cloudBackupUsername => '用户名';
 	@override String get cloudBackupPassword => '密码';
@@ -576,14 +575,14 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get forceSkipMarkerFallback => '强制使用备用标记';
 	@override String get forceSkipMarkerFallbackDescription => '即使 Plex 有标记，也使用章节标题模式';
 	@override String get theIntroDbFallback => '使用 TheIntroDB 作为 Intro Fallback';
-	@override String get theIntroDbFallbackDescription => '使用社区时间仅在服务器没有输入标记时使用。';
+	@override String get theIntroDbFallbackDescription => '仅在服务器没有片头标记时使用社区提供的时间点。匹配结果可能因发行版本而异。';
 	@override String get autoSkipDelay => '自动跳过延迟';
 	@override String autoSkipDelayDescription({required Object seconds}) => '自动跳过前等待 ${seconds} 秒';
 	@override String get introPattern => '片头标记模式';
 	@override String get introPatternDescription => '用于匹配章节标题中片头标记的正则表达式';
 	@override String get creditsPattern => '片尾标记模式';
 	@override String get creditsPatternDescription => '用于匹配章节标题中片尾标记的正则表达式';
-	@override String get prerolls => '⁇   ⁇';
+	@override String get prerolls => '片前视频';
 	@override String get playPrerollsBeforeMovies => '电影前玩预告片';
 	@override String get playPrerollsBeforeMoviesDescription => '在每部電影之前播放下面的選項中的偶然剪輯,按一下回來跳。';
 	@override String get prerollLibrary => '普雷罗图书馆';
@@ -982,15 +981,15 @@ class Translations$mediaMenu$zh extends Translations$mediaMenu$en {
 	@override String confirmDeleteTarget({required Object title}) => '从你的服务器永久删除 ${title}？';
 	@override String get deleteMultipleWarning => '这包括所有剧集及其文件。';
 	@override String deleteEpisodeCountWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n,
-		one: '此删除所有 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 集,以及其文件。',
+		one: '这将删除其中的 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 集及其文件。',
 		other: '这将删除其中全部 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 集以及它们的文件。',
 	);
 	@override String deleteMultiPartWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n,
-		one: '此項目將保存為 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 檔案,將被刪除。',
+		one: '此项目存储在 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 个文件中，该文件将被删除。',
 		other: '此项目存储在 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 个文件中，所有这些文件都会被删除。',
 	);
 	@override String deleteSharedFileHeading({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n,
-		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 其他集被存储在同一文件中,并将被删除:',
+		one: '另有 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 集存储在同一个文件中，也会一并删除：',
 		other: '另外 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 集存储在同一个文件中，也会一并删除：',
 	);
 	@override String get deleteScopeUnverifiedProbeFailed => 'PlezyNG 无法确认此操作会删除哪些文件，因此删除范围可能超出上面提到的项目。请取消后重试，或仍然删除。';
@@ -1068,13 +1067,13 @@ class Translations$accessibility$zh extends Translations$accessibility$en {
 	@override String get preview => '找下一个故事,阅读,听,并以自己的速度观看。';
 	@override String get boldText => '勇敢的界面文本';
 	@override String get highContrast => '高度对比';
-	@override String get highContrastHint => '更强的文本、图表和焦点指标在光或黑暗的表面上。';
+	@override String get highContrastHint => '在浅色或深色背景上，让文字、轮廓线和焦点指示器更清晰。';
 	@override String get interaction => '动作与互动';
 	@override String get reduceMotion => '减少动作';
-	@override String get reduceMotionHint => '保持焦点、页面过渡和装饰效果。';
+	@override String get reduceMotionHint => '停止焦点指示器、页面切换和装饰效果的动画。';
 	@override String get largeTargets => '触摸目标';
 	@override String get largeTargetsHint => '共享控制器提供更多触摸和辅助导航空间。';
-	@override String get navigationHint => '使用 Tab 和 Shift+Tab 移动控制器, 输入或空间激活, 逃避或返回关闭。';
+	@override String get navigationHint => '使用 Tab 和 Shift+Tab 在控件之间移动，按 Enter 或空格键激活，按 Escape 或返回按钮关闭。打开书籍后，可调整缩放比例和阅读偏好。';
 }
 
 // Path: tooltips
@@ -1520,7 +1519,6 @@ class Translations$discover$zh extends Translations$discover$en {
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => '概述';
 	@override String get cast => '演员表';
-	@override late final Translations$discover$findNext$zh findNext = Translations$discover$findNext$zh.internal(_root);
 	@override String get extras => '预告片与花絮';
 	@override String get studio => '制作公司';
 	@override String get rating => '年龄分级';
@@ -2740,7 +2738,7 @@ class Translations$addServer$zh extends Translations$addServer$en {
 	@override String connectDirectPlexCardSubtitleScoped({required Object name}) => '直接使用本地IP或URL连接,连接到${name}。';
 	@override String get insecureTitle => '未加密的连接';
 	@override String insecureDescription({required Object url}) => '${url} 使用 HTTP。网络中的其他人可能读取或篡改您的密码、令牌和媒体内容。请尽可能使用 HTTPS。只有在您信任此网络并接受风险时才继续。';
-	@override String get allowHttp => '许可 HTTP';
+	@override String get allowHttp => '允许 HTTP';
 	@override String get httpsRequired => '使用 HTTPS 或明确允许未加密的连接。';
 }
 
@@ -2774,12 +2772,12 @@ class Translations$homeLayout$zh extends Translations$homeLayout$en {
 	@override String get title => 'Home 布局';
 	@override String get resetToast => '主页重新设置到原始Plezy英雄配置';
 	@override String get resetHeroTitle => '重定向英雄配置到存储Plezy?';
-	@override String get resetHeroBody => '它将每个行的英雄设置转移到家顶,像英雄行之前一样,将单曲旋转的旗帜带回来。';
+	@override String get resetHeroBody => '关闭所有内容行的焦点横幅设置，并恢复首页顶部的单个轮播横幅，如同引入焦点横幅行之前的布局。内容行的顺序和显示状态不受影响。';
 	@override String get removeRowTitle => '取消家居序列?';
 	@override String removeRowBody({required Object title}) => '${title} 将被删除,此不能被删除。';
 	@override String get sync => '同步';
 	@override String get syncAccountTitle => '与您的 Plex 帐户同步配置';
-	@override String get syncAccountOn => '此裝置與您的其他裝置共享順序、行、英雄和自動滑板。';
+	@override String get syncAccountOn => '开启：此设备会与您的其他设备共享内容行顺序、内容行、焦点横幅和自动轮播设置。';
 	@override String get syncAccountOff => '关闭:此设备保持其自己的配置。';
 	@override String get syncNow => '现在的Sync';
 	@override String get plexHomeManager => 'Plex 主持人';
@@ -2789,12 +2787,12 @@ class Translations$homeLayout$zh extends Translations$homeLayout$en {
 	@override String organizeHomeRowsDescription({required Object n}) => '${n} 行: 移动, 英雄, 自动滑动, 移除';
 	@override String organizeLibraryRows({required Object library}) => '组织 ${library} 行';
 	@override String organizeLibraryRowsDescription({required Object n}) => '继续观看 + ${n} 行: 移动, 图书馆, 家, 英雄, 自动滑板';
-	@override String get renderAsHero => '作为英雄卡的登记';
+	@override String get renderAsHero => '显示为焦点横幅';
 	@override String get heroOnlySingleCollection => '只有当此行解决到单一集合的实际标题时才可用';
-	@override String get hero => '英雄';
-	@override String get autoSlide => '自动滑板';
-	@override String get autoSlideDescription => '接口(PC)和d-pad(TV)总是工作,并重新启动时间表。';
-	@override String get autoSlideEditDescription => '它每隔几秒钟都会自行滑动,关闭:只在点击箭头(PC)或按左/右在远程(电视)时移动。';
+	@override String get hero => '焦点横幅';
+	@override String get autoSlide => '自动轮播';
+	@override String get autoSlideDescription => '每隔几秒也会自动切换。电脑上的箭头按钮和电视遥控器的方向键始终可用，使用后会重新开始计时。';
+	@override String get autoSlideEditDescription => '每隔几秒也会自动切换。关闭时，仅在点击电脑上的箭头按钮或按电视遥控器的左右方向键时切换。无论此设置是否开启，箭头按钮和方向键都可用。';
 	@override String get enableHeroFirst => '英雄第一';
 	@override String get showOnHome => '显示在主屏幕上';
 	@override String get home => '首页';
@@ -2816,11 +2814,11 @@ class Translations$homeLayout$zh extends Translations$homeLayout$en {
 	@override String get heroCards => '英雄卡';
 	@override String get tapHeroCard => '打破英雄卡';
 	@override String get tvPlayFocus => '电视远程:突出点击播放按钮';
-	@override String get tvPlayFocusDescription => 'D-pad 下停止在播放按钮之前移动到下一个行。';
+	@override String get tvPlayFocusDescription => '按方向键下键时，焦点会先停在播放按钮上，再移到下一行。关闭时会直接跳到下一行。';
 	@override String get tvWrap => '电视远程: loop 英雄卡';
-	@override String get tvWrapDescription => '最后一张卡上,回到第一张,最后一张牌上,左一张卡总是回到侧栏。';
-	@override String get castOnHero => '英雄的旗帜';
-	@override String get castOnHeroDescription => '显示在英雄旗帜底部的投标,只保留标题和总结。';
+	@override String get tvWrapDescription => '在最后一张卡片上按右键会回到第一张；关闭时则停在最后一张。在第一张卡片上按左键始终会进入侧边栏。';
+	@override String get castOnHero => '在焦点横幅上显示演员';
+	@override String get castOnHeroDescription => '在焦点横幅底部显示演员列表。关闭时仅保留标题和简介。';
 	@override String get customRows => '定位线';
 	@override String get loading => '家用布局...';
 	@override String get noCustomRows => '尚未有定位';
@@ -2838,7 +2836,7 @@ class Translations$homeLayout$zh extends Translations$homeLayout$en {
 	@override String get libraryRecommended => '推荐图书馆';
 	@override String get heroCard => '英雄卡';
 	@override String get heroCardDescription => '显示为一个全宽旋转卡,而不是海报架。';
-	@override String get heroUnavailableDescription => '只有当此行解决到单一集的实际标题时才可用 - 选择了多个集,没有一个标题可以转过。';
+	@override String get heroUnavailableDescription => '仅当此内容行展示单个合集中的具体媒体条目时才可用；选择多个合集时，没有可供轮播的单个媒体条目。';
 	@override String get librariesSelection => '图书馆(所有未经检查的图书馆都包含)';
 	@override String get librariesMergedDescription => '这里查看的每一个图书馆都合并到这个单一的行列。';
 	@override String get movieCollectionsSelection => '电影收藏(每个选择的图书馆都没有查看)';
@@ -2847,13 +2845,13 @@ class Translations$homeLayout$zh extends Translations$homeLayout$en {
 	@override String get allCollections => '所有收藏';
 	@override String get noRowsHere => '目前还没有线条。';
 	@override String get hideWatchedRows => '隐藏在行列中观看的物品';
-	@override String get hideWatchedRowsDescription => '全观看的标题离开家和图书馆推荐行。';
+	@override String get hideWatchedRowsDescription => '已看完的媒体条目会从首页和媒体库的推荐行中移除，尚未看完的条目会保留。';
 	@override String get untitledCollection => '未经标题收藏';
 	@override String get moveRowHint => '向上/下: 移动行 · 选择: 将此处放下 · 返回: 取消';
 	@override String get organizeRowsHint => '选择行(或保持):移动 · 左/右:行选项 · 返回:完成';
 	@override String get layoutNavDescription => '选择行、图书馆和收藏类别';
 	@override String get editHomeRow => '编辑 主页 序列';
-	@override String get resetHeroButton => '重定向英雄配置到存储 Plezy';
+	@override String get resetHeroButton => '恢复 Plezy 默认焦点横幅布局';
 	@override String get reorderingUnlocked => '重新排序 开锁';
 	@override String get reorderingLocked => '重新安排锁';
 	@override String get rowsCanBeDragged => '可以拖绳 - 点击锁,以防止';
@@ -2866,7 +2864,7 @@ class Translations$homeLayout$zh extends Translations$homeLayout$en {
 	@override String get pressAgainToDelete => '再次按下删除';
 	@override String actionState({required Object action, required Object state}) => '${action}: ${state}';
 	@override String get on => '到';
-	@override String get resetHeroButtonDescription => '它将每个行英雄设置转移到顶部,并将单曲线带回顶部,就像英雄行之前一样。';
+	@override String get resetHeroButtonDescription => '关闭所有内容行的焦点横幅设置，并恢复顶部的单个轮播横幅，如同引入焦点横幅行之前的布局。内容行顺序保持不变。';
 }
 
 // Path: platform
@@ -2876,10 +2874,10 @@ class Translations$platform$zh extends Translations$platform$en {
 	final TranslationsZh _root; // ignore: unused_field
 
 	// Translations
-	@override String get localNetworkPermission => 'PlezyNG 连接到您的媒体服务器和播放设备在您的本地网络。';
-	@override String get locationPermission => 'PlezyNG 使用位置访问,当 iOS 要求它检测您的本地网络并连接到您的媒体服务器时。';
-	@override String get photoLibraryPermission => '选择您的照片图书馆中的图像作为媒体艺术作品。';
-	@override String get cameraPermission => '扫描 QR 代码,以便配备 Companion Remote。';
+	@override String get localNetworkPermission => 'PlezyNG 会连接到您本地网络中的媒体服务器和播放设备。';
+	@override String get locationPermission => '当 iOS 要求提供位置权限才能检测本地网络并连接媒体服务器时，PlezyNG 会使用此权限。';
+	@override String get photoLibraryPermission => '从照片图库中选择图片，用作媒体封面等图像。';
+	@override String get cameraPermission => '扫描二维码以配对 Companion Remote。';
 }
 
 // Path: fileSources
@@ -2897,7 +2895,7 @@ class Translations$fileSources$zh extends Translations$fileSources$en {
 	@override String get source => '源';
 	@override String get name => '名称';
 	@override String get endpoint => '服务器 URL';
-	@override String get root => '文件夹或预定';
+	@override String get root => '文件夹或前缀';
 	@override String get username => '用户名';
 	@override String get password => '密码';
 	@override String get token => 'API 标志';
@@ -2916,7 +2914,7 @@ class Translations$fileSources$zh extends Translations$fileSources$en {
 	@override String get disconnectMessage => '要断开此来源的连接吗？已下载的文件以及阅读和收听历史将保留在此设备上。';
 	@override String get localFolder => '选择文件夹';
 	@override String get empty => '这里还什么都没有';
-	@override String get emptyHint => '添加源或进口书籍、音频书籍、音乐或视频。';
+	@override String get emptyHint => '添加来源，或导入书籍、有声书、音乐或视频。';
 	@override String get search => '搜索此文件夹';
 	@override String get searchCached => '搜索 保存图书馆';
 	@override String get refresh => '刷新';
@@ -2948,7 +2946,7 @@ class Translations$fileSources$zh extends Translations$fileSources$en {
 	@override String get sync => '同步进展';
 	@override String get synced => '进展合成';
 	@override String get conflict => '另一个设备有不同的位置,选择去哪里。';
-	@override String get useLocal => '使用此裝置';
+	@override String get useLocal => '使用此设备';
 	@override String get useRemote => '使用其他设备';
 	@override String get history => '位置历史';
 	@override String get groupAudio => '听作一本音频书';
@@ -2974,26 +2972,26 @@ class Translations$fileSources$zh extends Translations$fileSources$en {
 	@override String get lineHeight => '线路空间';
 	@override String get margin => '马格林';
 	@override String get font => '型号';
-	@override String get serif => '序列';
-	@override String get sans => '无序列';
-	@override String get mono => '单元空间';
+	@override String get serif => '衬线字体';
+	@override String get sans => '无衬线字体';
+	@override String get mono => '等宽字体';
 	@override String get columns => '列';
 	@override String get scroll => '垂直滑动';
-	@override String get justify => '文本正当化';
+	@override String get justify => '两端对齐';
 	@override String get readerTheme => '页面外观';
 	@override String get appTheme => '跟随应用主题';
 	@override String get paper => '纸张';
 	@override String get sepia => '塞比亚';
 	@override String get night => '夜晚';
-	@override String get readAloud => '阅读此页面 热情';
-	@override String get readAlong => '阅读 继续';
-	@override String get stopReading => '停止讲话';
+	@override String get readAloud => '朗读此页';
+	@override String get readAlong => '跟读';
+	@override String get stopReading => '停止朗读';
 	@override String get searchBook => '搜索书中';
 	@override String get noMatches => '没有比赛';
-	@override String get previousPage => '上一篇页面';
+	@override String get previousPage => '上一页';
 	@override String get nextPage => '下一页';
 	@override String page({required Object number}) => '页面 ${number}';
-	@override String get externalBlocked => '外部书籍链接在读者中被禁用。';
+	@override String get externalBlocked => '阅读器中已禁用书籍的外部链接。';
 	@override String get loading => '开...';
 	@override String get narrator => '讲话者';
 	@override String get audio => '音频';
@@ -3005,13 +3003,13 @@ class Translations$fileSources$zh extends Translations$fileSources$en {
 	@override String get errorAuthentication => '再登录,重新连接这个来源。';
 	@override String get errorPermission => '此源未允许访问所要求的文件。';
 	@override String get errorUnavailable => '源不可用 再试一次,或者打开一个离线副本。';
-	@override String get errorUnsupported => '此格式或连接不支持此设备. 查看源设置指南。';
+	@override String get errorUnsupported => '此设备不支持该格式或连接方式。请查看来源设置指南。';
 	@override String get errorInvalidData => '此文件或服务器回复无法安全地阅读。';
 	@override String get errorCancelled => '行动被取消了。';
-	@override String get errorConflict => '位置在另一个会议中改变,重新打开项目以选择位置。';
+	@override String get errorConflict => '阅读或收听位置已在另一个会话中改变。请重新打开项目，选择要使用的位置。';
 	@override String get signIn => '登录';
 	@override String get reconnect => '重新连接';
-	@override String get folderHelp => '放下白色以从源根开始. S3 URL 包含泡沫。';
+	@override String get folderHelp => '留空可从来源根目录开始。S3 URL 包含存储桶名称。';
 	@override String get preferences => '偏好';
 	@override String get timePosition => '位置';
 	@override String get audioTrack => '音频轨道';
@@ -3019,7 +3017,7 @@ class Translations$fileSources$zh extends Translations$fileSources$en {
 	@override String get none => '无';
 	@override String get fullscreen => '全屏幕';
 	@override String get syncLocation => '进展同步文件夹(可选)';
-	@override String get syncLocationHint => '使用条件写作;媒体保持不变的WebDAV文件夹为PlezyNG状态。';
+	@override String get syncLocationHint => '用于保存 PlezyNG 状态的专用 WebDAV 文件夹。采用条件写入，不会更改媒体文件。';
 	@override String get audiobooks => '音频书籍';
 	@override String get comics => '漫画';
 	@override String get scan => '扫描书籍和媒体';
@@ -3028,7 +3026,7 @@ class Translations$fileSources$zh extends Translations$fileSources$en {
 	@override String get on => '到';
 	@override String get advancedSetup => 'App 登记';
 	@override String get microsoftSignIn => '与Microsoft登录';
-	@override String get zoomIn => '⁇   ⁇';
+	@override String get zoomIn => '放大';
 	@override String get zoomOut => '出Zoom';
 	@override String get fitPage => '合适页面';
 	@override String get fitWidth => '合适的宽度';
@@ -3042,10 +3040,10 @@ class Translations$fileSources$zh extends Translations$fileSources$en {
 	@override String get twoPages => '二页';
 	@override String get readingDirection => '阅读方向';
 	@override String get leftToRight => '左向右';
-	@override String get rightToLeft => '右去离开';
+	@override String get rightToLeft => '从右到左';
 	@override String get letterSpacing => '信 空间';
 	@override String get wordSpacing => '字 空间';
-	@override String get readerControlsHelp => '点击或使用 zoom 控制器来扩展页面. 拖到页面. Ctrl/ ⁇  + 或 − 调整 zoom; Ctrl/ ⁇  0 重新设置。';
+	@override String get readerControlsHelp => '双指张开或使用缩放控件放大页面，拖动可平移页面。按 Ctrl/⌘ 与 + 或 − 调整缩放，按 Ctrl/⌘ 与 0 重置缩放。使用 Page Up 和 Page Down 翻页。';
 	@override String get imagePage => '漫画页面';
 	@override String get resetReader => '重新设置阅读偏好';
 	@override String get zoom => '缩放';
@@ -3067,110 +3065,50 @@ class Translations$lending$zh extends Translations$lending$en {
 	@override String get libraryName => '图书馆名称';
 	@override String get libraryUrl => '图书馆网站';
 	@override String get libraryUrlHint => '使用您的图书馆的目录或登录页面。';
-	@override String get intro => '借给你的图书馆,把你的书关上。';
+	@override String get intro => '从图书馆借阅，让书籍随时相伴。';
 	@override String get handoff => '登录、借款和安全阅读,您图书馆的服务。';
 	@override String get openService => '开放图书馆';
 	@override String get findLibrary => '找个图书馆';
 	@override String get search => '搜索书籍和作家';
 	@override String get catalogue => '目录';
-	@override String get loans => '借款';
-	@override String get holds => '保持';
+	@override String get loans => '借阅';
+	@override String get holds => '预约';
 	@override String get signIn => '与您的图书馆登录';
 	@override String get waiting => '结束登录在您的浏览器,然后返回这里。';
 	@override String get cancel => '取消';
 	@override String get disconnect => '取消图书馆';
-	@override String get disconnectMessage => '取出此图书馆从此个人资料? 您的贷款和持留与您的图书馆。';
+	@override String get disconnectMessage => '要从此个人资料中移除此图书馆吗？借阅和预约记录仍会保留在图书馆。';
 	@override String get getBook => '获书';
 	@override String get checkAvailability => '查看可用性';
-	@override String get available => '可借款';
+	@override String get available => '可借阅';
 	@override String get unavailable => '目前不可用';
-	@override String get borrow => '借款';
-	@override String get placeHold => '站点保持';
-	@override String get returnBook => '早点回来';
-	@override String get cancelHold => '取消持有';
+	@override String get borrow => '借阅';
+	@override String get placeHold => '预约借阅';
+	@override String get returnBook => '提前归还';
+	@override String get cancelHold => '取消预约';
 	@override String get confirmBorrow => '借这本书从图书馆里?';
-	@override String get confirmReturn => '现在回来这个标题吗?你可能需要再借钱才能继续。';
-	@override String get confirmCancelHold => '把你的头在这个标题上取消了吗?';
+	@override String get confirmReturn => '现在归还此书吗？您可能需要重新借阅才能继续阅读。';
+	@override String get confirmCancelHold => '要取消此书的预约吗？';
 	@override String get email => '留下通知电子邮件';
-	@override String due({required Object date}) => '二元 ${date}';
-	@override String queue({required Object position}) => '位置 ${position} 在线';
+	@override String due({required Object date}) => '归还日期：${date}';
+	@override String queue({required Object position}) => '排队位置：${position}';
 	@override String get empty => '还没有标题。';
-	@override String get openLibraryNote => '探索开放图书馆的目录. 阅读和借款选项显示在每个标题的页面上。';
+	@override String get openLibraryNote => '探索 Open Library 的目录。每本书的页面上都会显示阅读和借阅选项。';
 	@override String get more => '加载更多';
 	@override String get gateway => '图书馆登录服务';
 	@override String get gatewayHint => '由您的图书馆或管理员提供,PlezyNG。';
 	@override String get advanced => '图书馆集成';
 	@override String get loadLibraries => '选择您的图书馆';
-	@override String get expired => '这个贷款已经结束了。';
+	@override String get expired => '此借阅已到期。';
 	@override String get updated => '图书馆更新';
 	@override String get continueService => '继续服务';
 	@override String get comingSoon => '借款 即将到来';
-	@override String get comingSoonDescription => '您可以使用您的 Libby 图书馆,而我们完成连接它。';
-	@override String get suspendHold => '停止持有';
-	@override String get resumeHold => '回复 保持';
-	@override String get suspendMessage => '保持您的位置顺序,让下一个读者借这个副本吗? 您可以稍后重新保留。';
-	@override String get resumeMessage => '重新保存此文件,以便您的图书馆可以为您提供下一个可用的副本吗?';
+	@override String get comingSoonDescription => '即将支持 Libby 集成。在连接功能完成之前，您可以先在 Libby 中使用图书馆服务。';
+	@override String get suspendHold => '暂停预约';
+	@override String get resumeHold => '恢复预约';
+	@override String get suspendMessage => '要保留排队位置，让下一位读者先借阅此副本吗？您可以稍后恢复预约。';
+	@override String get resumeMessage => '要恢复此预约，以便图书馆为您提供下一份可借阅的副本吗？';
 	@override String get editEmail => '更改通知电子邮件';
-}
-
-// Path: audiobook
-class Translations$audiobook$zh extends Translations$audiobook$en {
-	Translations$audiobook$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
-
-	final TranslationsZh _root; // ignore: unused_field
-
-	// Translations
-	@override String get syncTitle => '阅读与倾听Sync';
-	@override String get syncHelp => '在您的设备上保持阅读位置、倾听位置、完成状态、图标和笔记。 选择附加存储帐户并在每个设备上使用相同的同步代码. 阅读和倾听保持分开。';
-	@override String get addSyncSource => '首先将 Google Drive、OneDrive、Dropbox、WebDAV 或 S3 添加到文件和书籍中。';
-	@override String get syncDestination => '同步存储帐户';
-	@override String get syncFolder => '同步文件夹或预定';
-	@override String get syncFolderHelp => '在 WebDAV 源内使用一个单独的现有文件夹,或一个专门的 S3 预定。';
-	@override String get syncCode => '个人同步代码';
-	@override String get syncCodeHelp => '在您的第一台设备上创建一个代码,然后在您的其他设备上输入该代码. 保持一个私人副本:它是您的加密状态的关键。';
-	@override String get showCode => '显示或隐藏同步代码';
-	@override String get newSyncCode => '创建一个新的同步代码';
-	@override String get saveSync => '保存和同步';
-	@override String get disableSync => '在此设备上关闭同步';
-	@override String get syncSourceDisconnect => '删除此源将关闭阅读和听同步在这里. 加密的同步文件将留在提供商。';
-	@override String get syncReconnect => '重新连接存储帐户';
-	@override String lastSynced({required Object time}) => '上一篇: ${time}';
-	@override String get syncPrivacy => '只有加密的进展和笔记存储. 音频和电子书文件,帐户图标和密码不上传. Google Drive 和 OneDrive 使用应用程序存储; Dropbox 使用 PlezyNG Sync. 允许同步可能需要额外的写入访问。';
-	@override String get syncConflicts => '选择重定向的地方';
-	@override String get conflictHelp => '这些更改是独立进行的. 选择位置或图标版本保持. 后期时间表或更高的百分比不会自动赢得。';
-	@override String syncDevice({required Object device}) => '裝置 ${device}';
-	@override String get syncUnknownDevice => '未知设备';
-	@override String get deletedBookmark => '删除图标';
-	@override String get finished => '结束';
-	@override String readingPosition({required Object percent}) => '阅读 · ${percent}%';
-	@override String get chapterTimeline => '第四章 进展';
-	@override String get bookTimeline => '全书进展';
-	@override String bookRemaining({required Object time}) => '本书剩余时间：${time}';
-	@override String chapterRemaining({required Object time}) => '此分類上一篇: ${time}';
-	@override String get unknownRemaining => '全部时间可用,当部分被播放时';
-	@override String get undoSeek => '最后寻找';
-	@override String get customSpeed => '定制播放速度';
-	@override String get speedHelp => '选择速度从 0.25× 到 4×。';
-	@override String get apply => '應用';
-	@override String get customSleep => '定制睡眠时间';
-	@override String get sleepMinutes => '时间(1 - 1440)';
-	@override String sleepChapters({required Object count}) => '播放完${count}章后停止';
-	@override String get extendSleep => '添加5分钟';
-	@override String sleepRemaining({required Object time}) => '睡眠时间: ${time}';
-	@override String get useDefaults => '使用这些听力控制器为新书';
-	@override String get librarySort => '各式各样的书籍';
-	@override String get sortTitle => '标题';
-	@override String get sortAuthor => '作者';
-	@override String get sortNarrator => '讲话者';
-	@override String get sortSeries => '系列命令';
-	@override String get sortRecent => '最近开放';
-	@override String get statusFilter => '阅读状态';
-	@override String get statusAll => '所有书籍';
-	@override String get statusNew => '没有开始';
-	@override String get statusProgress => '进展';
-	@override String get statusFinished => '结束';
-	@override String get goToTime => '走到时间';
-	@override String get timeHelp => '时间: 分钟: 秒或 分钟: 秒';
 }
 
 // Path: appIcon.names
@@ -3417,57 +3355,6 @@ class Translations$accountPreferences$mediaReviewsOptions$zh extends Translation
 	@override String get nobody => '隐藏';
 }
 
-// Path: discover.findNext
-class Translations$discover$findNext$zh extends Translations$discover$findNext$en {
-	Translations$discover$findNext$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
-
-	final TranslationsZh _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => '找你的下一个';
-	@override String get open => '找你的下一个';
-	@override String get anyTime => '任何时间';
-	@override String get timeAvailable => '你有多少时间?';
-	@override String get filters => '选择时刻';
-	@override String get watch => '观看';
-	@override String get listen => '听';
-	@override String get read => '阅读';
-	@override String finishable({required Object duration}) => '在 ${duration} 结束';
-	@override String aboutDuration({required Object duration}) => '關於 ${duration}';
-	@override String nextUnit({required Object duration}) => '下一章 · ${duration}';
-	@override String totalDuration({required Object duration}) => '${duration} 总';
-	@override String get timingVaries => '时间差异';
-	@override String get notNow => '不是现在';
-	@override String get swipeHint => '转动,或者使用下面的按钮';
-	@override String get saved => '拯救的皮克';
-	@override String savedCount({required Object count}) => '获取评分 · ${count}';
-	@override String get undo => '和';
-	@override String get details => '细节';
-	@override String get noPicks => '到目前为止还没有选择的';
-	@override String get noPicksHint => '连接图书馆或添加媒体来源开始。';
-	@override String get noMatches => '没有什么适合这个时刻';
-	@override String get noMatchesHint => '尝试另一个格式或给自己更多的时间。';
-	@override String get allDone => '你們都被抓住了';
-	@override String get allDoneHint => '开始新鲜的混合,再次看到这些选择。';
-	@override String get refresh => '寻找另一个混合';
-	@override String sourceReason({required Object source}) => '由 ${source}';
-	@override String libraryReason({required Object library}) => '由 ${library}';
-	@override String get ownedReason => '从你的图书馆';
-	@override String get liveNow => '现在的';
-	@override String get watchLive => '观看直播';
-	@override String get filterAnything => '任何事';
-	@override String get filterWatch => '观看';
-	@override String get filterListen => '听';
-	@override String get filterRead => '阅读';
-	@override String get twentyMinutes => '20分钟';
-	@override String get fortyFiveMinutes => '45分钟';
-	@override String get ninetyMinutes => '90分钟';
-	@override String get apply => '應用';
-	@override String get openFailed => '此选项不再可用. 更新再检查。';
-	@override String get changeFailed => '没办法改变,再试一次。';
-	@override String get savedLimit => '保存的点数是满的. 删除一个点数来保存另一个点数。';
-}
-
 // Path: discover.person
 class Translations$discover$person$zh extends Translations$discover$person$en {
 	Translations$discover$person$zh.internal(TranslationsZh root) : this._root = root, super.internal(root);
@@ -3609,7 +3496,7 @@ class Translations$libraries$selection$zh extends Translations$libraries$selecti
 	@override String selectedCount({required Object count}) => '已选 ${count} 项';
 	@override String get actions => '选择行动';
 	@override String get confirmDescendants => '这一变化改变了所有节目和季节的节目。';
-	@override String get confirmUnwatched => '这也清晰了对所选择的项目的播放进展。';
+	@override String get confirmUnwatched => '这也会清除所选项目的播放进度。';
 	@override String confirmCount({required Object count}) => '已选择的项目: ${count}。';
 	@override String completed({required Object count}) => '更新項目: ${count}';
 	@override String partialFailure({required Object succeeded, required Object failed}) => '更新 ${succeeded}; 失败 ${failed}. 失败的项目仍然被选择。';
@@ -4354,7 +4241,7 @@ extension on TranslationsZh {
 			'update.checkFailed' => '无法检查更新',
 			'appAccess.title' => '每個功能都免費嘗試7天',
 			'appAccess.description' => '开始一个七天的试用,完全访问每个PlezyNG功能,在试用期间没有费用,没有订阅,试用后,在您的商店价格上一生购买,终身开锁PlezyNG。',
-			'appAccess.trialEndedDescription' => '解锁每件功能在 PlezyNG 终身,在您的商店价格购买一件。',
+			'appAccess.trialEndedDescription' => '按商店显示的价格一次性购买，即可终身解锁 PlezyNG 的全部功能，无需订阅。',
 			'appAccess.startTrial' => '开始我的7天免费试验',
 			'appAccess.trialActive' => '您的7天全功能测试已活跃。',
 			'appAccess.trialEnded' => '你的七天审判结束了',
@@ -4367,8 +4254,8 @@ extension on TranslationsZh {
 			'appAccess.loadingPrice' => '货物价格...',
 			'appAccess.retryPrice' => '回报价格 查看',
 			'appAccess.restore' => '恢复终身购买',
-			'appAccess.pending' => '您的購買等待付款或批准. 終身存取會在商店完成後開啟。',
-			'appAccess.storeUnavailable' => '購買不適用. 請確認您已登錄到商店,並允許在該裝置上購買。',
+			'appAccess.pending' => '您的购买正在等待付款或批准。商店完成交易后，终身使用权限将立即解锁。',
+			'appAccess.storeUnavailable' => '目前无法购买。请确认您已登录商店，且此设备允许购买。',
 			'appAccess.productNotFound' => 'PlezyNG 终身解锁 目前尚未在本商店提供。',
 			'appAccess.productQueryFailed' => '无法收取商店价格,请检查您的连接并尝试一次。',
 			'appAccess.purchaseFailed' => '購買不錯了,再試一次。',
@@ -4485,7 +4372,7 @@ extension on TranslationsZh {
 			'settings.playbackBufferDescription' => '针对不稳定的连接缓冲更多内容。也受缓冲大小限制。',
 			'settings.streamBufferSize' => '布格大小',
 			'settings.streamBufferSizeValue' => ({required Object size}) => '${size} MB',
-			'settings.streamBufferSizeDescription' => '直播时要上传多少视频? 转码在服务器的转码库弗上停止。',
+			'settings.streamBufferSizeDescription' => '直接播放时预先加载的视频量。转码播放以服务器自身的转码缓冲区为限。0 = 自动',
 			'settings.streamBufferSizeExoNote' => '取代 Playback Buffer 设置时,在应用程序的内存限制中半个',
 			'settings.streamBufferMegabytes' => '梅加比特',
 			'settings.defaultQualityTitle' => '默认画质',
@@ -4561,7 +4448,7 @@ extension on TranslationsZh {
 			'settings.importSettingsInvalidFile' => '此文件不是有效的 PlezyNG 设置导出',
 			'settings.importSettingsNoUser' => '导入设置前请先登录',
 			'settings.cloudBackup' => '云备份',
-			'settings.cloudBackupDescription' => '备份移动设置到 WebDAV 端点超过 HTTPS. 服务器连接和认证保持在该设备上。',
+			'settings.cloudBackupDescription' => '通过 HTTPS 将可迁移的设置备份到 WebDAV 地址。服务器连接和登录凭据保留在此设备上。',
 			'settings.cloudBackupUrl' => 'WebDAV JSON 文件 URL',
 			'settings.cloudBackupUsername' => '用户名',
 			'settings.cloudBackupPassword' => '密码',
@@ -4615,14 +4502,14 @@ extension on TranslationsZh {
 			'settings.forceSkipMarkerFallback' => '强制使用备用标记',
 			'settings.forceSkipMarkerFallbackDescription' => '即使 Plex 有标记，也使用章节标题模式',
 			'settings.theIntroDbFallback' => '使用 TheIntroDB 作为 Intro Fallback',
-			'settings.theIntroDbFallbackDescription' => '使用社区时间仅在服务器没有输入标记时使用。',
+			'settings.theIntroDbFallbackDescription' => '仅在服务器没有片头标记时使用社区提供的时间点。匹配结果可能因发行版本而异。',
 			'settings.autoSkipDelay' => '自动跳过延迟',
 			'settings.autoSkipDelayDescription' => ({required Object seconds}) => '自动跳过前等待 ${seconds} 秒',
 			'settings.introPattern' => '片头标记模式',
 			'settings.introPatternDescription' => '用于匹配章节标题中片头标记的正则表达式',
 			'settings.creditsPattern' => '片尾标记模式',
 			'settings.creditsPatternDescription' => '用于匹配章节标题中片尾标记的正则表达式',
-			'settings.prerolls' => '⁇   ⁇',
+			'settings.prerolls' => '片前视频',
 			'settings.playPrerollsBeforeMovies' => '电影前玩预告片',
 			'settings.playPrerollsBeforeMoviesDescription' => '在每部電影之前播放下面的選項中的偶然剪輯,按一下回來跳。',
 			'settings.prerollLibrary' => '普雷罗图书馆',
@@ -5016,9 +4903,9 @@ extension on TranslationsZh {
 			'mediaMenu.deleteAnyway' => '仍然删除',
 			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => '从你的服务器永久删除 ${title}？',
 			'mediaMenu.deleteMultipleWarning' => '这包括所有剧集及其文件。',
-			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '此删除所有 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 集,以及其文件。', other: '这将删除其中全部 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 集以及它们的文件。', ), 
-			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '此項目將保存為 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 檔案,將被刪除。', other: '此项目存储在 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 个文件中，所有这些文件都会被删除。', ), 
-			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 其他集被存储在同一文件中,并将被删除:', other: '另外 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 集存储在同一个文件中，也会一并删除：', ), 
+			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '这将删除其中的 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 集及其文件。', other: '这将删除其中全部 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 集以及它们的文件。', ), 
+			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '此项目存储在 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 个文件中，该文件将被删除。', other: '此项目存储在 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 个文件中，所有这些文件都会被删除。', ), 
+			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('zh'))(n, one: '另有 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 集存储在同一个文件中，也会一并删除：', other: '另外 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 集存储在同一个文件中，也会一并删除：', ), 
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG 无法确认此操作会删除哪些文件，因此删除范围可能超出上面提到的项目。请取消后重试，或仍然删除。',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => '你的服务器没有提供此项目的文件详情，因此 PlezyNG 无法确认此操作会删除哪些文件。删除范围可能超出上面提到的项目。',
 			'mediaMenu.mediaDeletedSuccessfully' => '媒体项已成功删除',
@@ -5076,13 +4963,13 @@ extension on TranslationsZh {
 			'accessibility.preview' => '找下一个故事,阅读,听,并以自己的速度观看。',
 			'accessibility.boldText' => '勇敢的界面文本',
 			'accessibility.highContrast' => '高度对比',
-			'accessibility.highContrastHint' => '更强的文本、图表和焦点指标在光或黑暗的表面上。',
+			'accessibility.highContrastHint' => '在浅色或深色背景上，让文字、轮廓线和焦点指示器更清晰。',
 			'accessibility.interaction' => '动作与互动',
 			'accessibility.reduceMotion' => '减少动作',
-			'accessibility.reduceMotionHint' => '保持焦点、页面过渡和装饰效果。',
+			'accessibility.reduceMotionHint' => '停止焦点指示器、页面切换和装饰效果的动画。',
 			'accessibility.largeTargets' => '触摸目标',
 			'accessibility.largeTargetsHint' => '共享控制器提供更多触摸和辅助导航空间。',
-			'accessibility.navigationHint' => '使用 Tab 和 Shift+Tab 移动控制器, 输入或空间激活, 逃避或返回关闭。',
+			'accessibility.navigationHint' => '使用 Tab 和 Shift+Tab 在控件之间移动，按 Enter 或空格键激活，按 Escape 或返回按钮关闭。打开书籍后，可调整缩放比例和阅读偏好。',
 			'tooltips.shufflePlay' => '随机播放',
 			'tooltips.playTrailer' => '播放预告片',
 			'tooltips.markAsWatched' => '标记为已观看',
@@ -5455,48 +5342,6 @@ extension on TranslationsZh {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => '概述',
 			'discover.cast' => '演员表',
-			'discover.findNext.title' => '找你的下一个',
-			'discover.findNext.open' => '找你的下一个',
-			'discover.findNext.anyTime' => '任何时间',
-			'discover.findNext.timeAvailable' => '你有多少时间?',
-			'discover.findNext.filters' => '选择时刻',
-			'discover.findNext.watch' => '观看',
-			'discover.findNext.listen' => '听',
-			'discover.findNext.read' => '阅读',
-			'discover.findNext.finishable' => ({required Object duration}) => '在 ${duration} 结束',
-			'discover.findNext.aboutDuration' => ({required Object duration}) => '關於 ${duration}',
-			'discover.findNext.nextUnit' => ({required Object duration}) => '下一章 · ${duration}',
-			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} 总',
-			'discover.findNext.timingVaries' => '时间差异',
-			'discover.findNext.notNow' => '不是现在',
-			'discover.findNext.swipeHint' => '转动,或者使用下面的按钮',
-			'discover.findNext.saved' => '拯救的皮克',
-			'discover.findNext.savedCount' => ({required Object count}) => '获取评分 · ${count}',
-			'discover.findNext.undo' => '和',
-			'discover.findNext.details' => '细节',
-			'discover.findNext.noPicks' => '到目前为止还没有选择的',
-			'discover.findNext.noPicksHint' => '连接图书馆或添加媒体来源开始。',
-			'discover.findNext.noMatches' => '没有什么适合这个时刻',
-			'discover.findNext.noMatchesHint' => '尝试另一个格式或给自己更多的时间。',
-			'discover.findNext.allDone' => '你們都被抓住了',
-			'discover.findNext.allDoneHint' => '开始新鲜的混合,再次看到这些选择。',
-			'discover.findNext.refresh' => '寻找另一个混合',
-			'discover.findNext.sourceReason' => ({required Object source}) => '由 ${source}',
-			'discover.findNext.libraryReason' => ({required Object library}) => '由 ${library}',
-			'discover.findNext.ownedReason' => '从你的图书馆',
-			'discover.findNext.liveNow' => '现在的',
-			'discover.findNext.watchLive' => '观看直播',
-			'discover.findNext.filterAnything' => '任何事',
-			'discover.findNext.filterWatch' => '观看',
-			'discover.findNext.filterListen' => '听',
-			'discover.findNext.filterRead' => '阅读',
-			'discover.findNext.twentyMinutes' => '20分钟',
-			'discover.findNext.fortyFiveMinutes' => '45分钟',
-			'discover.findNext.ninetyMinutes' => '90分钟',
-			'discover.findNext.apply' => '應用',
-			'discover.findNext.openFailed' => '此选项不再可用. 更新再检查。',
-			'discover.findNext.changeFailed' => '没办法改变,再试一次。',
-			'discover.findNext.savedLimit' => '保存的点数是满的. 删除一个点数来保存另一个点数。',
 			'discover.extras' => '预告片与花絮',
 			'discover.studio' => '制作公司',
 			'discover.rating' => '年龄分级',
@@ -5649,7 +5494,7 @@ extension on TranslationsZh {
 			'libraries.selection.selectedCount' => ({required Object count}) => '已选 ${count} 项',
 			'libraries.selection.actions' => '选择行动',
 			'libraries.selection.confirmDescendants' => '这一变化改变了所有节目和季节的节目。',
-			'libraries.selection.confirmUnwatched' => '这也清晰了对所选择的项目的播放进展。',
+			'libraries.selection.confirmUnwatched' => '这也会清除所选项目的播放进度。',
 			'libraries.selection.confirmCount' => ({required Object count}) => '已选择的项目: ${count}。',
 			'libraries.selection.completed' => ({required Object count}) => '更新項目: ${count}',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => '更新 ${succeeded}; 失败 ${failed}. 失败的项目仍然被选择。',
@@ -5741,8 +5586,6 @@ extension on TranslationsZh {
 			'explore.rows.popularShows' => '人气剧集',
 			'explore.rows.trendingAnime' => '热门动画',
 			'explore.rows.suggestedAnime' => '推荐动画',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => '热门连载动画',
 			'explore.rows.popularAnime' => '最受欢迎动画',
 			'explore.rows.trending' => '近期热门',
@@ -5785,6 +5628,8 @@ extension on TranslationsZh {
 			'explore.badge.processing' => '处理中',
 			'explore.badge.declined' => '已拒绝',
 			'explore.badge.requestFailed' => '请求失败',
+			_ => null,
+		} ?? switch (path) {
 			'explore.badge.requested4k' => '已请求 4K',
 			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => '已有 ${available}/${total} 季',
 			'explore.badge.nextEpisodeIn' => ({required Object episode, required Object duration}) => '第 ${episode} 集将在 ${duration} 后播出',
@@ -6255,8 +6100,6 @@ extension on TranslationsZh {
 			'downloads.unwatchedOnly' => '仅未观看',
 			'downloads.nextNUnwatched' => ({required Object count}) => '接下来 ${count} 集未观看',
 			'downloads.customAmount' => '自定义数量…',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => '每個數量(每個數...',
 			'downloads.randomEpisodes' => '随机事件',
 			'downloads.includeSpecials' => '包含特别篇',
@@ -6299,6 +6142,8 @@ extension on TranslationsZh {
 			'downloads.syncUnwatchedItems' => '同步未观看项目',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => '服务器：${server} • ${status}',
 			'downloads.syncRuleAvailable' => '可用',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncRuleOffline' => '离线',
 			'downloads.syncRuleSignInRequired' => '需要登录',
 			'downloads.syncRuleAccessDenied' => '访问被拒绝',
@@ -6769,8 +6614,6 @@ extension on TranslationsZh {
 			'addServer.authResponseIncomplete' => '服务器返回的登录响应不完整',
 			'addServer.quickConnectRejected' => '服务器拒绝了 Quick Connect',
 			'addServer.quickConnectNotJson' => 'Quick Connect 响应不是有效的 JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect 响应中缺少代码或密钥',
 			'addServer.quickConnectPollRejected' => '服务器拒绝了 Quick Connect 轮询',
 			'addServer.serverTimedOut' => '服务器未及时响应',
@@ -6796,7 +6639,7 @@ extension on TranslationsZh {
 			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => '直接使用本地IP或URL连接,连接到${name}。',
 			'addServer.insecureTitle' => '未加密的连接',
 			'addServer.insecureDescription' => ({required Object url}) => '${url} 使用 HTTP。网络中的其他人可能读取或篡改您的密码、令牌和媒体内容。请尽可能使用 HTTPS。只有在您信任此网络并接受风险时才继续。',
-			'addServer.allowHttp' => '许可 HTTP',
+			'addServer.allowHttp' => '允许 HTTP',
 			'addServer.httpsRequired' => '使用 HTTPS 或明确允许未加密的连接。',
 			'watchLink.serverUnavailable' => '无法访问 Plex 服务器此链接。',
 			'watchLink.notFound' => '我无法在您的服务器上找到此节目或电影 Plex。',
@@ -6812,12 +6655,14 @@ extension on TranslationsZh {
 			'homeLayout.title' => 'Home 布局',
 			'homeLayout.resetToast' => '主页重新设置到原始Plezy英雄配置',
 			'homeLayout.resetHeroTitle' => '重定向英雄配置到存储Plezy?',
-			'homeLayout.resetHeroBody' => '它将每个行的英雄设置转移到家顶,像英雄行之前一样,将单曲旋转的旗帜带回来。',
+			'homeLayout.resetHeroBody' => '关闭所有内容行的焦点横幅设置，并恢复首页顶部的单个轮播横幅，如同引入焦点横幅行之前的布局。内容行的顺序和显示状态不受影响。',
+			_ => null,
+		} ?? switch (path) {
 			'homeLayout.removeRowTitle' => '取消家居序列?',
 			'homeLayout.removeRowBody' => ({required Object title}) => '${title} 将被删除,此不能被删除。',
 			'homeLayout.sync' => '同步',
 			'homeLayout.syncAccountTitle' => '与您的 Plex 帐户同步配置',
-			'homeLayout.syncAccountOn' => '此裝置與您的其他裝置共享順序、行、英雄和自動滑板。',
+			'homeLayout.syncAccountOn' => '开启：此设备会与您的其他设备共享内容行顺序、内容行、焦点横幅和自动轮播设置。',
 			'homeLayout.syncAccountOff' => '关闭:此设备保持其自己的配置。',
 			'homeLayout.syncNow' => '现在的Sync',
 			'homeLayout.plexHomeManager' => 'Plex 主持人',
@@ -6827,12 +6672,12 @@ extension on TranslationsZh {
 			'homeLayout.organizeHomeRowsDescription' => ({required Object n}) => '${n} 行: 移动, 英雄, 自动滑动, 移除',
 			'homeLayout.organizeLibraryRows' => ({required Object library}) => '组织 ${library} 行',
 			'homeLayout.organizeLibraryRowsDescription' => ({required Object n}) => '继续观看 + ${n} 行: 移动, 图书馆, 家, 英雄, 自动滑板',
-			'homeLayout.renderAsHero' => '作为英雄卡的登记',
+			'homeLayout.renderAsHero' => '显示为焦点横幅',
 			'homeLayout.heroOnlySingleCollection' => '只有当此行解决到单一集合的实际标题时才可用',
-			'homeLayout.hero' => '英雄',
-			'homeLayout.autoSlide' => '自动滑板',
-			'homeLayout.autoSlideDescription' => '接口(PC)和d-pad(TV)总是工作,并重新启动时间表。',
-			'homeLayout.autoSlideEditDescription' => '它每隔几秒钟都会自行滑动,关闭:只在点击箭头(PC)或按左/右在远程(电视)时移动。',
+			'homeLayout.hero' => '焦点横幅',
+			'homeLayout.autoSlide' => '自动轮播',
+			'homeLayout.autoSlideDescription' => '每隔几秒也会自动切换。电脑上的箭头按钮和电视遥控器的方向键始终可用，使用后会重新开始计时。',
+			'homeLayout.autoSlideEditDescription' => '每隔几秒也会自动切换。关闭时，仅在点击电脑上的箭头按钮或按电视遥控器的左右方向键时切换。无论此设置是否开启，箭头按钮和方向键都可用。',
 			'homeLayout.enableHeroFirst' => '英雄第一',
 			'homeLayout.showOnHome' => '显示在主屏幕上',
 			'homeLayout.home' => '首页',
@@ -6854,11 +6699,11 @@ extension on TranslationsZh {
 			'homeLayout.heroCards' => '英雄卡',
 			'homeLayout.tapHeroCard' => '打破英雄卡',
 			'homeLayout.tvPlayFocus' => '电视远程:突出点击播放按钮',
-			'homeLayout.tvPlayFocusDescription' => 'D-pad 下停止在播放按钮之前移动到下一个行。',
+			'homeLayout.tvPlayFocusDescription' => '按方向键下键时，焦点会先停在播放按钮上，再移到下一行。关闭时会直接跳到下一行。',
 			'homeLayout.tvWrap' => '电视远程: loop 英雄卡',
-			'homeLayout.tvWrapDescription' => '最后一张卡上,回到第一张,最后一张牌上,左一张卡总是回到侧栏。',
-			'homeLayout.castOnHero' => '英雄的旗帜',
-			'homeLayout.castOnHeroDescription' => '显示在英雄旗帜底部的投标,只保留标题和总结。',
+			'homeLayout.tvWrapDescription' => '在最后一张卡片上按右键会回到第一张；关闭时则停在最后一张。在第一张卡片上按左键始终会进入侧边栏。',
+			'homeLayout.castOnHero' => '在焦点横幅上显示演员',
+			'homeLayout.castOnHeroDescription' => '在焦点横幅底部显示演员列表。关闭时仅保留标题和简介。',
 			'homeLayout.customRows' => '定位线',
 			'homeLayout.loading' => '家用布局...',
 			'homeLayout.noCustomRows' => '尚未有定位',
@@ -6876,7 +6721,7 @@ extension on TranslationsZh {
 			'homeLayout.libraryRecommended' => '推荐图书馆',
 			'homeLayout.heroCard' => '英雄卡',
 			'homeLayout.heroCardDescription' => '显示为一个全宽旋转卡,而不是海报架。',
-			'homeLayout.heroUnavailableDescription' => '只有当此行解决到单一集的实际标题时才可用 - 选择了多个集,没有一个标题可以转过。',
+			'homeLayout.heroUnavailableDescription' => '仅当此内容行展示单个合集中的具体媒体条目时才可用；选择多个合集时，没有可供轮播的单个媒体条目。',
 			'homeLayout.librariesSelection' => '图书馆(所有未经检查的图书馆都包含)',
 			'homeLayout.librariesMergedDescription' => '这里查看的每一个图书馆都合并到这个单一的行列。',
 			'homeLayout.movieCollectionsSelection' => '电影收藏(每个选择的图书馆都没有查看)',
@@ -6885,13 +6730,13 @@ extension on TranslationsZh {
 			'homeLayout.allCollections' => '所有收藏',
 			'homeLayout.noRowsHere' => '目前还没有线条。',
 			'homeLayout.hideWatchedRows' => '隐藏在行列中观看的物品',
-			'homeLayout.hideWatchedRowsDescription' => '全观看的标题离开家和图书馆推荐行。',
+			'homeLayout.hideWatchedRowsDescription' => '已看完的媒体条目会从首页和媒体库的推荐行中移除，尚未看完的条目会保留。',
 			'homeLayout.untitledCollection' => '未经标题收藏',
 			'homeLayout.moveRowHint' => '向上/下: 移动行 · 选择: 将此处放下 · 返回: 取消',
 			'homeLayout.organizeRowsHint' => '选择行(或保持):移动 · 左/右:行选项 · 返回:完成',
 			'homeLayout.layoutNavDescription' => '选择行、图书馆和收藏类别',
 			'homeLayout.editHomeRow' => '编辑 主页 序列',
-			'homeLayout.resetHeroButton' => '重定向英雄配置到存储 Plezy',
+			'homeLayout.resetHeroButton' => '恢复 Plezy 默认焦点横幅布局',
 			'homeLayout.reorderingUnlocked' => '重新排序 开锁',
 			'homeLayout.reorderingLocked' => '重新安排锁',
 			'homeLayout.rowsCanBeDragged' => '可以拖绳 - 点击锁,以防止',
@@ -6904,11 +6749,11 @@ extension on TranslationsZh {
 			'homeLayout.pressAgainToDelete' => '再次按下删除',
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
 			'homeLayout.on' => '到',
-			'homeLayout.resetHeroButtonDescription' => '它将每个行英雄设置转移到顶部,并将单曲线带回顶部,就像英雄行之前一样。',
-			'platform.localNetworkPermission' => 'PlezyNG 连接到您的媒体服务器和播放设备在您的本地网络。',
-			'platform.locationPermission' => 'PlezyNG 使用位置访问,当 iOS 要求它检测您的本地网络并连接到您的媒体服务器时。',
-			'platform.photoLibraryPermission' => '选择您的照片图书馆中的图像作为媒体艺术作品。',
-			'platform.cameraPermission' => '扫描 QR 代码,以便配备 Companion Remote。',
+			'homeLayout.resetHeroButtonDescription' => '关闭所有内容行的焦点横幅设置，并恢复顶部的单个轮播横幅，如同引入焦点横幅行之前的布局。内容行顺序保持不变。',
+			'platform.localNetworkPermission' => 'PlezyNG 会连接到您本地网络中的媒体服务器和播放设备。',
+			'platform.locationPermission' => '当 iOS 要求提供位置权限才能检测本地网络并连接媒体服务器时，PlezyNG 会使用此权限。',
+			'platform.photoLibraryPermission' => '从照片图库中选择图片，用作媒体封面等图像。',
+			'platform.cameraPermission' => '扫描二维码以配对 Companion Remote。',
 			'fileSources.title' => '文件和书籍',
 			'fileSources.subtitle' => '阅读、听、从自己的文件中观看。',
 			'fileSources.add' => '添加源',
@@ -6917,7 +6762,7 @@ extension on TranslationsZh {
 			'fileSources.source' => '源',
 			'fileSources.name' => '名称',
 			'fileSources.endpoint' => '服务器 URL',
-			'fileSources.root' => '文件夹或预定',
+			'fileSources.root' => '文件夹或前缀',
 			'fileSources.username' => '用户名',
 			'fileSources.password' => '密码',
 			'fileSources.token' => 'API 标志',
@@ -6936,7 +6781,7 @@ extension on TranslationsZh {
 			'fileSources.disconnectMessage' => '要断开此来源的连接吗？已下载的文件以及阅读和收听历史将保留在此设备上。',
 			'fileSources.localFolder' => '选择文件夹',
 			'fileSources.empty' => '这里还什么都没有',
-			'fileSources.emptyHint' => '添加源或进口书籍、音频书籍、音乐或视频。',
+			'fileSources.emptyHint' => '添加来源，或导入书籍、有声书、音乐或视频。',
 			'fileSources.search' => '搜索此文件夹',
 			'fileSources.searchCached' => '搜索 保存图书馆',
 			'fileSources.refresh' => '刷新',
@@ -6968,7 +6813,7 @@ extension on TranslationsZh {
 			'fileSources.sync' => '同步进展',
 			'fileSources.synced' => '进展合成',
 			'fileSources.conflict' => '另一个设备有不同的位置,选择去哪里。',
-			'fileSources.useLocal' => '使用此裝置',
+			'fileSources.useLocal' => '使用此设备',
 			'fileSources.useRemote' => '使用其他设备',
 			'fileSources.history' => '位置历史',
 			'fileSources.groupAudio' => '听作一本音频书',
@@ -6992,26 +6837,26 @@ extension on TranslationsZh {
 			'fileSources.lineHeight' => '线路空间',
 			'fileSources.margin' => '马格林',
 			'fileSources.font' => '型号',
-			'fileSources.serif' => '序列',
-			'fileSources.sans' => '无序列',
-			'fileSources.mono' => '单元空间',
+			'fileSources.serif' => '衬线字体',
+			'fileSources.sans' => '无衬线字体',
+			'fileSources.mono' => '等宽字体',
 			'fileSources.columns' => '列',
 			'fileSources.scroll' => '垂直滑动',
-			'fileSources.justify' => '文本正当化',
+			'fileSources.justify' => '两端对齐',
 			'fileSources.readerTheme' => '页面外观',
 			'fileSources.appTheme' => '跟随应用主题',
 			'fileSources.paper' => '纸张',
 			'fileSources.sepia' => '塞比亚',
 			'fileSources.night' => '夜晚',
-			'fileSources.readAloud' => '阅读此页面 热情',
-			'fileSources.readAlong' => '阅读 继续',
-			'fileSources.stopReading' => '停止讲话',
+			'fileSources.readAloud' => '朗读此页',
+			'fileSources.readAlong' => '跟读',
+			'fileSources.stopReading' => '停止朗读',
 			'fileSources.searchBook' => '搜索书中',
 			'fileSources.noMatches' => '没有比赛',
-			'fileSources.previousPage' => '上一篇页面',
+			'fileSources.previousPage' => '上一页',
 			'fileSources.nextPage' => '下一页',
 			'fileSources.page' => ({required Object number}) => '页面 ${number}',
-			'fileSources.externalBlocked' => '外部书籍链接在读者中被禁用。',
+			'fileSources.externalBlocked' => '阅读器中已禁用书籍的外部链接。',
 			'fileSources.loading' => '开...',
 			'fileSources.narrator' => '讲话者',
 			'fileSources.audio' => '音频',
@@ -7023,13 +6868,13 @@ extension on TranslationsZh {
 			'fileSources.errorAuthentication' => '再登录,重新连接这个来源。',
 			'fileSources.errorPermission' => '此源未允许访问所要求的文件。',
 			'fileSources.errorUnavailable' => '源不可用 再试一次,或者打开一个离线副本。',
-			'fileSources.errorUnsupported' => '此格式或连接不支持此设备. 查看源设置指南。',
+			'fileSources.errorUnsupported' => '此设备不支持该格式或连接方式。请查看来源设置指南。',
 			'fileSources.errorInvalidData' => '此文件或服务器回复无法安全地阅读。',
 			'fileSources.errorCancelled' => '行动被取消了。',
-			'fileSources.errorConflict' => '位置在另一个会议中改变,重新打开项目以选择位置。',
+			'fileSources.errorConflict' => '阅读或收听位置已在另一个会话中改变。请重新打开项目，选择要使用的位置。',
 			'fileSources.signIn' => '登录',
 			'fileSources.reconnect' => '重新连接',
-			'fileSources.folderHelp' => '放下白色以从源根开始. S3 URL 包含泡沫。',
+			'fileSources.folderHelp' => '留空可从来源根目录开始。S3 URL 包含存储桶名称。',
 			'fileSources.preferences' => '偏好',
 			'fileSources.timePosition' => '位置',
 			'fileSources.audioTrack' => '音频轨道',
@@ -7037,7 +6882,7 @@ extension on TranslationsZh {
 			'fileSources.none' => '无',
 			'fileSources.fullscreen' => '全屏幕',
 			'fileSources.syncLocation' => '进展同步文件夹(可选)',
-			'fileSources.syncLocationHint' => '使用条件写作;媒体保持不变的WebDAV文件夹为PlezyNG状态。',
+			'fileSources.syncLocationHint' => '用于保存 PlezyNG 状态的专用 WebDAV 文件夹。采用条件写入，不会更改媒体文件。',
 			'fileSources.audiobooks' => '音频书籍',
 			'fileSources.comics' => '漫画',
 			'fileSources.scan' => '扫描书籍和媒体',
@@ -7046,7 +6891,7 @@ extension on TranslationsZh {
 			'fileSources.on' => '到',
 			'fileSources.advancedSetup' => 'App 登记',
 			'fileSources.microsoftSignIn' => '与Microsoft登录',
-			'fileSources.zoomIn' => '⁇   ⁇',
+			'fileSources.zoomIn' => '放大',
 			'fileSources.zoomOut' => '出Zoom',
 			'fileSources.fitPage' => '合适页面',
 			'fileSources.fitWidth' => '合适的宽度',
@@ -7060,10 +6905,10 @@ extension on TranslationsZh {
 			'fileSources.twoPages' => '二页',
 			'fileSources.readingDirection' => '阅读方向',
 			'fileSources.leftToRight' => '左向右',
-			'fileSources.rightToLeft' => '右去离开',
+			'fileSources.rightToLeft' => '从右到左',
 			'fileSources.letterSpacing' => '信 空间',
 			'fileSources.wordSpacing' => '字 空间',
-			'fileSources.readerControlsHelp' => '点击或使用 zoom 控制器来扩展页面. 拖到页面. Ctrl/ ⁇  + 或 − 调整 zoom; Ctrl/ ⁇  0 重新设置。',
+			'fileSources.readerControlsHelp' => '双指张开或使用缩放控件放大页面，拖动可平移页面。按 Ctrl/⌘ 与 + 或 − 调整缩放，按 Ctrl/⌘ 与 0 重置缩放。使用 Page Up 和 Page Down 翻页。',
 			'fileSources.imagePage' => '漫画页面',
 			'fileSources.resetReader' => '重新设置阅读偏好',
 			'fileSources.zoom' => '缩放',
@@ -7076,101 +6921,50 @@ extension on TranslationsZh {
 			'lending.libraryName' => '图书馆名称',
 			'lending.libraryUrl' => '图书馆网站',
 			'lending.libraryUrlHint' => '使用您的图书馆的目录或登录页面。',
-			'lending.intro' => '借给你的图书馆,把你的书关上。',
+			'lending.intro' => '从图书馆借阅，让书籍随时相伴。',
 			'lending.handoff' => '登录、借款和安全阅读,您图书馆的服务。',
 			'lending.openService' => '开放图书馆',
 			'lending.findLibrary' => '找个图书馆',
 			'lending.search' => '搜索书籍和作家',
 			'lending.catalogue' => '目录',
-			'lending.loans' => '借款',
-			'lending.holds' => '保持',
+			'lending.loans' => '借阅',
+			'lending.holds' => '预约',
 			'lending.signIn' => '与您的图书馆登录',
 			'lending.waiting' => '结束登录在您的浏览器,然后返回这里。',
 			'lending.cancel' => '取消',
 			'lending.disconnect' => '取消图书馆',
-			'lending.disconnectMessage' => '取出此图书馆从此个人资料? 您的贷款和持留与您的图书馆。',
+			'lending.disconnectMessage' => '要从此个人资料中移除此图书馆吗？借阅和预约记录仍会保留在图书馆。',
 			'lending.getBook' => '获书',
 			'lending.checkAvailability' => '查看可用性',
-			'lending.available' => '可借款',
+			'lending.available' => '可借阅',
 			'lending.unavailable' => '目前不可用',
-			'lending.borrow' => '借款',
-			'lending.placeHold' => '站点保持',
-			'lending.returnBook' => '早点回来',
-			'lending.cancelHold' => '取消持有',
+			'lending.borrow' => '借阅',
+			'lending.placeHold' => '预约借阅',
+			'lending.returnBook' => '提前归还',
+			'lending.cancelHold' => '取消预约',
 			'lending.confirmBorrow' => '借这本书从图书馆里?',
-			'lending.confirmReturn' => '现在回来这个标题吗?你可能需要再借钱才能继续。',
-			'lending.confirmCancelHold' => '把你的头在这个标题上取消了吗?',
+			'lending.confirmReturn' => '现在归还此书吗？您可能需要重新借阅才能继续阅读。',
+			'lending.confirmCancelHold' => '要取消此书的预约吗？',
 			'lending.email' => '留下通知电子邮件',
-			'lending.due' => ({required Object date}) => '二元 ${date}',
-			'lending.queue' => ({required Object position}) => '位置 ${position} 在线',
+			'lending.due' => ({required Object date}) => '归还日期：${date}',
+			'lending.queue' => ({required Object position}) => '排队位置：${position}',
 			'lending.empty' => '还没有标题。',
-			'lending.openLibraryNote' => '探索开放图书馆的目录. 阅读和借款选项显示在每个标题的页面上。',
+			'lending.openLibraryNote' => '探索 Open Library 的目录。每本书的页面上都会显示阅读和借阅选项。',
 			'lending.more' => '加载更多',
 			'lending.gateway' => '图书馆登录服务',
 			'lending.gatewayHint' => '由您的图书馆或管理员提供,PlezyNG。',
 			'lending.advanced' => '图书馆集成',
 			'lending.loadLibraries' => '选择您的图书馆',
-			'lending.expired' => '这个贷款已经结束了。',
+			'lending.expired' => '此借阅已到期。',
 			'lending.updated' => '图书馆更新',
 			'lending.continueService' => '继续服务',
 			'lending.comingSoon' => '借款 即将到来',
-			'lending.comingSoonDescription' => '您可以使用您的 Libby 图书馆,而我们完成连接它。',
-			'lending.suspendHold' => '停止持有',
-			'lending.resumeHold' => '回复 保持',
-			'lending.suspendMessage' => '保持您的位置顺序,让下一个读者借这个副本吗? 您可以稍后重新保留。',
-			'lending.resumeMessage' => '重新保存此文件,以便您的图书馆可以为您提供下一个可用的副本吗?',
+			'lending.comingSoonDescription' => '即将支持 Libby 集成。在连接功能完成之前，您可以先在 Libby 中使用图书馆服务。',
+			'lending.suspendHold' => '暂停预约',
+			'lending.resumeHold' => '恢复预约',
+			'lending.suspendMessage' => '要保留排队位置，让下一位读者先借阅此副本吗？您可以稍后恢复预约。',
+			'lending.resumeMessage' => '要恢复此预约，以便图书馆为您提供下一份可借阅的副本吗？',
 			'lending.editEmail' => '更改通知电子邮件',
-			'audiobook.syncTitle' => '阅读与倾听Sync',
-			'audiobook.syncHelp' => '在您的设备上保持阅读位置、倾听位置、完成状态、图标和笔记。 选择附加存储帐户并在每个设备上使用相同的同步代码. 阅读和倾听保持分开。',
-			'audiobook.addSyncSource' => '首先将 Google Drive、OneDrive、Dropbox、WebDAV 或 S3 添加到文件和书籍中。',
-			'audiobook.syncDestination' => '同步存储帐户',
-			'audiobook.syncFolder' => '同步文件夹或预定',
-			'audiobook.syncFolderHelp' => '在 WebDAV 源内使用一个单独的现有文件夹,或一个专门的 S3 预定。',
-			'audiobook.syncCode' => '个人同步代码',
-			'audiobook.syncCodeHelp' => '在您的第一台设备上创建一个代码,然后在您的其他设备上输入该代码. 保持一个私人副本:它是您的加密状态的关键。',
-			'audiobook.showCode' => '显示或隐藏同步代码',
-			'audiobook.newSyncCode' => '创建一个新的同步代码',
-			'audiobook.saveSync' => '保存和同步',
-			'audiobook.disableSync' => '在此设备上关闭同步',
-			'audiobook.syncSourceDisconnect' => '删除此源将关闭阅读和听同步在这里. 加密的同步文件将留在提供商。',
-			'audiobook.syncReconnect' => '重新连接存储帐户',
-			'audiobook.lastSynced' => ({required Object time}) => '上一篇: ${time}',
-			'audiobook.syncPrivacy' => '只有加密的进展和笔记存储. 音频和电子书文件,帐户图标和密码不上传. Google Drive 和 OneDrive 使用应用程序存储; Dropbox 使用 PlezyNG Sync. 允许同步可能需要额外的写入访问。',
-			'audiobook.syncConflicts' => '选择重定向的地方',
-			'audiobook.conflictHelp' => '这些更改是独立进行的. 选择位置或图标版本保持. 后期时间表或更高的百分比不会自动赢得。',
-			'audiobook.syncDevice' => ({required Object device}) => '裝置 ${device}',
-			'audiobook.syncUnknownDevice' => '未知设备',
-			'audiobook.deletedBookmark' => '删除图标',
-			'audiobook.finished' => '结束',
-			'audiobook.readingPosition' => ({required Object percent}) => '阅读 · ${percent}%',
-			'audiobook.chapterTimeline' => '第四章 进展',
-			'audiobook.bookTimeline' => '全书进展',
-			'audiobook.bookRemaining' => ({required Object time}) => '本书剩余时间：${time}',
-			'audiobook.chapterRemaining' => ({required Object time}) => '此分類上一篇: ${time}',
-			'audiobook.unknownRemaining' => '全部时间可用,当部分被播放时',
-			'audiobook.undoSeek' => '最后寻找',
-			'audiobook.customSpeed' => '定制播放速度',
-			'audiobook.speedHelp' => '选择速度从 0.25× 到 4×。',
-			'audiobook.apply' => '應用',
-			'audiobook.customSleep' => '定制睡眠时间',
-			'audiobook.sleepMinutes' => '时间(1 - 1440)',
-			'audiobook.sleepChapters' => ({required Object count}) => '播放完${count}章后停止',
-			'audiobook.extendSleep' => '添加5分钟',
-			'audiobook.sleepRemaining' => ({required Object time}) => '睡眠时间: ${time}',
-			'audiobook.useDefaults' => '使用这些听力控制器为新书',
-			'audiobook.librarySort' => '各式各样的书籍',
-			'audiobook.sortTitle' => '标题',
-			'audiobook.sortAuthor' => '作者',
-			'audiobook.sortNarrator' => '讲话者',
-			'audiobook.sortSeries' => '系列命令',
-			'audiobook.sortRecent' => '最近开放',
-			'audiobook.statusFilter' => '阅读状态',
-			'audiobook.statusAll' => '所有书籍',
-			'audiobook.statusNew' => '没有开始',
-			'audiobook.statusProgress' => '进展',
-			'audiobook.statusFinished' => '结束',
-			'audiobook.goToTime' => '走到时间',
-			'audiobook.timeHelp' => '时间: 分钟: 秒或 分钟: 秒',
 			_ => null,
 		};
 	}

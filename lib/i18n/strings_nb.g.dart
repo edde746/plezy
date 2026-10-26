@@ -524,7 +524,7 @@ class _Translations$settings$nb extends Translations$settings$en {
 	@override String get importSettingsInvalidFile => 'Denne filen er ikke en gyldig PlezyNG-innstillingseksport';
 	@override String get importSettingsNoUser => 'Logg inn før import av innstillinger';
 	@override String get cloudBackup => 'Sikkerhetskopi i skyen';
-	@override String get cloudBackupDescription => 'Backup bærbare innstillinger til en WebDAV sluttenpunkt over HTTPS. serverforbindelser og akkrediteringer forblir på denne enheten.';
+	@override String get cloudBackupDescription => 'Sikkerhetskopier innstillinger som kan overføres, til en WebDAV-adresse via HTTPS. Servertilkoblinger og påloggingsinformasjon blir på denne enheten.';
 	@override String get cloudBackupUrl => 'WebDAV JSON fil URL';
 	@override String get cloudBackupUsername => 'Brukernavn';
 	@override String get cloudBackupPassword => 'Passord';
@@ -1073,10 +1073,10 @@ class _Translations$accessibility$nb extends Translations$accessibility$en {
 	@override String get highContrastHint => 'Større tekst, utskrifter og fokusindikatorer på lys eller mørke overflater.';
 	@override String get interaction => 'Motion og interaksjon';
 	@override String get reduceMotion => 'Redusere bevegelse';
-	@override String get reduceMotionHint => 'Hold fokus, sideovergangen og dekorative effekter fortsatt.';
+	@override String get reduceMotionHint => 'Stopp bevegelser i fokusmarkeringer, sideoverganger og dekorative effekter.';
 	@override String get largeTargets => 'Større touch mål';
 	@override String get largeTargetsHint => 'Gi delte kontroller mer plass for berøring og assistent navigasjon.';
-	@override String get navigationHint => 'Bruk Tab og Shift+Tab for å flytte mellom kontroller, Enter eller Space for å aktivere, og Escape eller Back for å lukke.';
+	@override String get navigationHint => 'Bruk Tab og Shift+Tab for å flytte mellom kontroller, Enter eller mellomrom for å aktivere og Escape eller Tilbake for å lukke. Zoom og leseinnstillinger er tilgjengelige når en bok er åpen.';
 }
 
 // Path: tooltips
@@ -2744,7 +2744,7 @@ class _Translations$addServer$nb extends Translations$addServer$en {
 	@override String connectDirectPlexCardSubtitleScoped({required Object name}) => 'Koble direkte ved hjelp av lokal IP eller URL. Kobler til ${name}.';
 	@override String get insecureTitle => 'Unencrypted tilkobling';
 	@override String insecureDescription({required Object url}) => '${url} bruker HTTP. Andre på nettverket kan lese eller endre passordet, tokenene og mediene dine. Bruk HTTPS når det er tilgjengelig. Fortsett bare hvis du stoler på dette nettverket og godtar risikoen.';
-	@override String get allowHttp => 'Låter å HTTP';
+	@override String get allowHttp => 'Tillat HTTP';
 	@override String get httpsRequired => 'Bruk HTTPS eller uttrykkelig tillate en ukryptert tilkobling.';
 }
 
@@ -2880,10 +2880,10 @@ class _Translations$platform$nb extends Translations$platform$en {
 	final TranslationsNb _root; // ignore: unused_field
 
 	// Translations
-	@override String get localNetworkPermission => 'PlezyNG kobler til dine medie- og spillenheter på ditt lokale nettverk.';
+	@override String get localNetworkPermission => 'PlezyNG kobler til medieserverne og avspillingsenhetene dine på det lokale nettverket.';
 	@override String get locationPermission => 'PlezyNG bruker lokasjonstilgang når iOS krever det for å oppdage ditt lokale nettverk og koble til dine medie servere.';
-	@override String get photoLibraryPermission => 'Velg bilder fra fotobiblioteket for å bruke som medie kunstverk.';
-	@override String get cameraPermission => 'Skaner QR-koder for å parere en Companion Remote.';
+	@override String get photoLibraryPermission => 'Velg bilder fra bildebiblioteket som omslag og illustrasjoner til medieinnhold.';
+	@override String get cameraPermission => 'Skann QR-koder for å pare en Companion Remote.';
 }
 
 // Path: fileSources
@@ -2917,7 +2917,7 @@ class _Translations$fileSources$nb extends Translations$fileSources$en {
 	@override String get save => 'Lagre';
 	@override String get close => 'Lukk';
 	@override String get removeSource => 'Avkoblet kilde';
-	@override String get disconnectMessage => 'Laste ned filer og din lesings- og lyttehistorie vil forbli på denne enheten.';
+	@override String get disconnectMessage => 'Koble fra denne kilden? Nedlastede filer og lese- og lyttehistorikken din blir på denne enheten.';
 	@override String get localFolder => 'Velg mappe';
 	@override String get empty => 'Ingenting her ennå';
 	@override String get emptyHint => 'Legg til en kilde eller importere en bok, lydbok, musikk eller video.';
@@ -3029,7 +3029,7 @@ class _Translations$fileSources$nb extends Translations$fileSources$en {
 	@override String get comics => 'Komikere';
 	@override String get scan => 'Skankering av bøker og media';
 	@override String get browserReader => 'Åpne lesere';
-	@override String get browserReaderHelp => 'Leseren er åpen i nettleseren din. Hold PlezyNG åpen for å spare plass og notater.';
+	@override String get browserReaderHelp => 'Leseren er åpen i nettleseren. Hold PlezyNG åpen for å lagre leseposisjonen og notatene dine.';
 	@override String get on => 'På';
 	@override String get advancedSetup => 'App registrering';
 	@override String get microsoftSignIn => 'Registrer deg med Microsoft';
@@ -3046,11 +3046,11 @@ class _Translations$fileSources$nb extends Translations$fileSources$en {
 	@override String get singlePage => 'Enkel side';
 	@override String get twoPages => 'To sider';
 	@override String get readingDirection => 'Lesende retning';
-	@override String get leftToRight => 'Til høyre til venstre';
-	@override String get rightToLeft => 'Rett til å forlate';
+	@override String get leftToRight => 'Fra venstre mot høyre';
+	@override String get rightToLeft => 'Fra høyre mot venstre';
 	@override String get letterSpacing => 'Brev om spati';
 	@override String get wordSpacing => 'Ord spati';
-	@override String get readerControlsHelp => 'Pinch eller bruk zoomkontroller for å utvide sider. Drag til pan. Ctrl/ ⁇  + eller − justerer zoom; Ctrl/ ⁇  0 resetter det. Page Up og Page Down turn sider.';
+	@override String get readerControlsHelp => 'Spre to fingre, eller bruk zoomkontrollene for å forstørre sider. Dra for å flytte siden. Ctrl/⌘ med + eller − justerer zoom; Ctrl/⌘ med 0 nullstiller den. Page Up og Page Down blar mellom sidene.';
 	@override String get imagePage => 'Komiktside';
 	@override String get resetReader => 'Åpne lesingsfortrinnene';
 	@override String get zoom => 'Zoom';
@@ -3084,18 +3084,18 @@ class _Translations$lending$nb extends Translations$lending$en {
 	@override String get waiting => 'Endre registreringen i nettleseren din, og deretter tilbake her.';
 	@override String get cancel => 'Avbryt';
 	@override String get disconnect => 'Fjern biblioteket';
-	@override String get disconnectMessage => 'Fjern denne biblioteket fra denne profilen? dine lån og holder opphold med biblioteket.';
+	@override String get disconnectMessage => 'Fjern dette biblioteket fra denne profilen? Lånene og reservasjonene dine blir hos biblioteket.';
 	@override String get getBook => 'Få bok';
 	@override String get checkAvailability => 'Sjekk tilgjengeligheten';
 	@override String get available => 'Tilgjengelig for lån';
 	@override String get unavailable => 'Foreløpig ikke tilgjengelig';
 	@override String get borrow => 'Lån';
-	@override String get placeHold => 'Plasser hold';
+	@override String get placeHold => 'Reserver';
 	@override String get returnBook => 'Retur tidlig';
-	@override String get cancelHold => 'Avbestill hold';
+	@override String get cancelHold => 'Avbestill reservasjon';
 	@override String get confirmBorrow => 'Lån dette titlet fra biblioteket ditt?';
-	@override String get confirmReturn => 'Kanskje du må låne den igjen for å fortsette.';
-	@override String get confirmCancelHold => 'Fjerner du holdet ditt på denne tittelen?';
+	@override String get confirmReturn => 'Lever tilbake denne tittelen nå? Du må kanskje låne den igjen for å fortsette.';
+	@override String get confirmCancelHold => 'Avbestill reservasjonen din av denne tittelen?';
 	@override String get email => 'Hold melding e-post';
 	@override String due({required Object date}) => 'Avgjørende ${date}';
 	@override String queue({required Object position}) => 'Posisjon ${position} i linje';
@@ -3113,8 +3113,8 @@ class _Translations$lending$nb extends Translations$lending$en {
 	@override String get comingSoonDescription => 'Du kan bruke biblioteket ditt i Libby mens vi slutter å koble det.';
 	@override String get suspendHold => 'Opphør hold';
 	@override String get resumeHold => 'Resumé hold';
-	@override String get suspendMessage => 'Hold din plass i linje og la neste leser låne denne kopien?';
-	@override String get resumeMessage => 'Gjør dette igjen slik at biblioteket ditt kan tilby deg neste tilgjengelig kopi?';
+	@override String get suspendMessage => 'Behold plassen din i køen, og la neste leser låne dette eksemplaret? Du kan gjenoppta reservasjonen senere.';
+	@override String get resumeMessage => 'Gjenoppta denne reservasjonen slik at biblioteket kan tilby deg neste tilgjengelige eksemplar?';
 	@override String get editEmail => 'Endre melding e-post';
 }
 
@@ -3614,7 +3614,7 @@ class _Translations$libraries$selection$nb extends Translations$libraries$select
 	@override String selectedCount({required Object count}) => '${count} valgt';
 	@override String get actions => 'Seleksjonshandlinger';
 	@override String get confirmDescendants => 'Dette endrer alle episoder i de utvalgte showene og sesongene.';
-	@override String get confirmUnwatched => 'Dette gjør også det klart for spillingen av de utvalgte elementene.';
+	@override String get confirmUnwatched => 'Dette nullstiller også avspillingsfremdriften for de valgte elementene.';
 	@override String confirmCount({required Object count}) => 'Velg elementer: ${count}.';
 	@override String completed({required Object count}) => 'Oppdaterte elementer: ${count}.';
 	@override String partialFailure({required Object succeeded, required Object failed}) => 'Oppdatert ${succeeded}; mislyktes ${failed}. mislyktede elementer forblir valgt.';
@@ -4566,7 +4566,7 @@ extension on TranslationsNb {
 			'settings.importSettingsInvalidFile' => 'Denne filen er ikke en gyldig PlezyNG-innstillingseksport',
 			'settings.importSettingsNoUser' => 'Logg inn før import av innstillinger',
 			'settings.cloudBackup' => 'Sikkerhetskopi i skyen',
-			'settings.cloudBackupDescription' => 'Backup bærbare innstillinger til en WebDAV sluttenpunkt over HTTPS. serverforbindelser og akkrediteringer forblir på denne enheten.',
+			'settings.cloudBackupDescription' => 'Sikkerhetskopier innstillinger som kan overføres, til en WebDAV-adresse via HTTPS. Servertilkoblinger og påloggingsinformasjon blir på denne enheten.',
 			'settings.cloudBackupUrl' => 'WebDAV JSON fil URL',
 			'settings.cloudBackupUsername' => 'Brukernavn',
 			'settings.cloudBackupPassword' => 'Passord',
@@ -5084,10 +5084,10 @@ extension on TranslationsNb {
 			'accessibility.highContrastHint' => 'Større tekst, utskrifter og fokusindikatorer på lys eller mørke overflater.',
 			'accessibility.interaction' => 'Motion og interaksjon',
 			'accessibility.reduceMotion' => 'Redusere bevegelse',
-			'accessibility.reduceMotionHint' => 'Hold fokus, sideovergangen og dekorative effekter fortsatt.',
+			'accessibility.reduceMotionHint' => 'Stopp bevegelser i fokusmarkeringer, sideoverganger og dekorative effekter.',
 			'accessibility.largeTargets' => 'Større touch mål',
 			'accessibility.largeTargetsHint' => 'Gi delte kontroller mer plass for berøring og assistent navigasjon.',
-			'accessibility.navigationHint' => 'Bruk Tab og Shift+Tab for å flytte mellom kontroller, Enter eller Space for å aktivere, og Escape eller Back for å lukke.',
+			'accessibility.navigationHint' => 'Bruk Tab og Shift+Tab for å flytte mellom kontroller, Enter eller mellomrom for å aktivere og Escape eller Tilbake for å lukke. Zoom og leseinnstillinger er tilgjengelige når en bok er åpen.',
 			'tooltips.shufflePlay' => 'Tilfeldig avspilling',
 			'tooltips.playTrailer' => 'Spill trailer',
 			'tooltips.markAsWatched' => 'Merk som sett',
@@ -5654,7 +5654,7 @@ extension on TranslationsNb {
 			'libraries.selection.selectedCount' => ({required Object count}) => '${count} valgt',
 			'libraries.selection.actions' => 'Seleksjonshandlinger',
 			'libraries.selection.confirmDescendants' => 'Dette endrer alle episoder i de utvalgte showene og sesongene.',
-			'libraries.selection.confirmUnwatched' => 'Dette gjør også det klart for spillingen av de utvalgte elementene.',
+			'libraries.selection.confirmUnwatched' => 'Dette nullstiller også avspillingsfremdriften for de valgte elementene.',
 			'libraries.selection.confirmCount' => ({required Object count}) => 'Velg elementer: ${count}.',
 			'libraries.selection.completed' => ({required Object count}) => 'Oppdaterte elementer: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Oppdatert ${succeeded}; mislyktes ${failed}. mislyktede elementer forblir valgt.',
@@ -6801,7 +6801,7 @@ extension on TranslationsNb {
 			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => 'Koble direkte ved hjelp av lokal IP eller URL. Kobler til ${name}.',
 			'addServer.insecureTitle' => 'Unencrypted tilkobling',
 			'addServer.insecureDescription' => ({required Object url}) => '${url} bruker HTTP. Andre på nettverket kan lese eller endre passordet, tokenene og mediene dine. Bruk HTTPS når det er tilgjengelig. Fortsett bare hvis du stoler på dette nettverket og godtar risikoen.',
-			'addServer.allowHttp' => 'Låter å HTTP',
+			'addServer.allowHttp' => 'Tillat HTTP',
 			'addServer.httpsRequired' => 'Bruk HTTPS eller uttrykkelig tillate en ukryptert tilkobling.',
 			'watchLink.serverUnavailable' => 'Kan ikke nå en server på Plex for denne koblingen.',
 			'watchLink.notFound' => 'Du kan ikke finne denne show eller film på serverne dine Plex.',
@@ -6910,10 +6910,10 @@ extension on TranslationsNb {
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
 			'homeLayout.on' => 'På',
 			'homeLayout.resetHeroButtonDescription' => 'Avbryter hver rad av hjertesetting og bringer tilbake den ene roterende banneret til toppen, som før hjerteserien eksisterte.',
-			'platform.localNetworkPermission' => 'PlezyNG kobler til dine medie- og spillenheter på ditt lokale nettverk.',
+			'platform.localNetworkPermission' => 'PlezyNG kobler til medieserverne og avspillingsenhetene dine på det lokale nettverket.',
 			'platform.locationPermission' => 'PlezyNG bruker lokasjonstilgang når iOS krever det for å oppdage ditt lokale nettverk og koble til dine medie servere.',
-			'platform.photoLibraryPermission' => 'Velg bilder fra fotobiblioteket for å bruke som medie kunstverk.',
-			'platform.cameraPermission' => 'Skaner QR-koder for å parere en Companion Remote.',
+			'platform.photoLibraryPermission' => 'Velg bilder fra bildebiblioteket som omslag og illustrasjoner til medieinnhold.',
+			'platform.cameraPermission' => 'Skann QR-koder for å pare en Companion Remote.',
 			'fileSources.title' => 'Filer og bøker',
 			'fileSources.subtitle' => 'Les, lytte og se fra dine egne filer.',
 			'fileSources.add' => 'Legg til kilde',
@@ -6938,7 +6938,7 @@ extension on TranslationsNb {
 			'fileSources.save' => 'Lagre',
 			'fileSources.close' => 'Lukk',
 			'fileSources.removeSource' => 'Avkoblet kilde',
-			'fileSources.disconnectMessage' => 'Laste ned filer og din lesings- og lyttehistorie vil forbli på denne enheten.',
+			'fileSources.disconnectMessage' => 'Koble fra denne kilden? Nedlastede filer og lese- og lyttehistorikken din blir på denne enheten.',
 			'fileSources.localFolder' => 'Velg mappe',
 			'fileSources.empty' => 'Ingenting her ennå',
 			'fileSources.emptyHint' => 'Legg til en kilde eller importere en bok, lydbok, musikk eller video.',
@@ -7047,7 +7047,7 @@ extension on TranslationsNb {
 			'fileSources.comics' => 'Komikere',
 			'fileSources.scan' => 'Skankering av bøker og media',
 			'fileSources.browserReader' => 'Åpne lesere',
-			'fileSources.browserReaderHelp' => 'Leseren er åpen i nettleseren din. Hold PlezyNG åpen for å spare plass og notater.',
+			'fileSources.browserReaderHelp' => 'Leseren er åpen i nettleseren. Hold PlezyNG åpen for å lagre leseposisjonen og notatene dine.',
 			'fileSources.on' => 'På',
 			'fileSources.advancedSetup' => 'App registrering',
 			'fileSources.microsoftSignIn' => 'Registrer deg med Microsoft',
@@ -7064,11 +7064,11 @@ extension on TranslationsNb {
 			'fileSources.singlePage' => 'Enkel side',
 			'fileSources.twoPages' => 'To sider',
 			'fileSources.readingDirection' => 'Lesende retning',
-			'fileSources.leftToRight' => 'Til høyre til venstre',
-			'fileSources.rightToLeft' => 'Rett til å forlate',
+			'fileSources.leftToRight' => 'Fra venstre mot høyre',
+			'fileSources.rightToLeft' => 'Fra høyre mot venstre',
 			'fileSources.letterSpacing' => 'Brev om spati',
 			'fileSources.wordSpacing' => 'Ord spati',
-			'fileSources.readerControlsHelp' => 'Pinch eller bruk zoomkontroller for å utvide sider. Drag til pan. Ctrl/ ⁇  + eller − justerer zoom; Ctrl/ ⁇  0 resetter det. Page Up og Page Down turn sider.',
+			'fileSources.readerControlsHelp' => 'Spre to fingre, eller bruk zoomkontrollene for å forstørre sider. Dra for å flytte siden. Ctrl/⌘ med + eller − justerer zoom; Ctrl/⌘ med 0 nullstiller den. Page Up og Page Down blar mellom sidene.',
 			'fileSources.imagePage' => 'Komiktside',
 			'fileSources.resetReader' => 'Åpne lesingsfortrinnene',
 			'fileSources.zoom' => 'Zoom',
@@ -7093,18 +7093,18 @@ extension on TranslationsNb {
 			'lending.waiting' => 'Endre registreringen i nettleseren din, og deretter tilbake her.',
 			'lending.cancel' => 'Avbryt',
 			'lending.disconnect' => 'Fjern biblioteket',
-			'lending.disconnectMessage' => 'Fjern denne biblioteket fra denne profilen? dine lån og holder opphold med biblioteket.',
+			'lending.disconnectMessage' => 'Fjern dette biblioteket fra denne profilen? Lånene og reservasjonene dine blir hos biblioteket.',
 			'lending.getBook' => 'Få bok',
 			'lending.checkAvailability' => 'Sjekk tilgjengeligheten',
 			'lending.available' => 'Tilgjengelig for lån',
 			'lending.unavailable' => 'Foreløpig ikke tilgjengelig',
 			'lending.borrow' => 'Lån',
-			'lending.placeHold' => 'Plasser hold',
+			'lending.placeHold' => 'Reserver',
 			'lending.returnBook' => 'Retur tidlig',
-			'lending.cancelHold' => 'Avbestill hold',
+			'lending.cancelHold' => 'Avbestill reservasjon',
 			'lending.confirmBorrow' => 'Lån dette titlet fra biblioteket ditt?',
-			'lending.confirmReturn' => 'Kanskje du må låne den igjen for å fortsette.',
-			'lending.confirmCancelHold' => 'Fjerner du holdet ditt på denne tittelen?',
+			'lending.confirmReturn' => 'Lever tilbake denne tittelen nå? Du må kanskje låne den igjen for å fortsette.',
+			'lending.confirmCancelHold' => 'Avbestill reservasjonen din av denne tittelen?',
 			'lending.email' => 'Hold melding e-post',
 			'lending.due' => ({required Object date}) => 'Avgjørende ${date}',
 			'lending.queue' => ({required Object position}) => 'Posisjon ${position} i linje',
@@ -7122,8 +7122,8 @@ extension on TranslationsNb {
 			'lending.comingSoonDescription' => 'Du kan bruke biblioteket ditt i Libby mens vi slutter å koble det.',
 			'lending.suspendHold' => 'Opphør hold',
 			'lending.resumeHold' => 'Resumé hold',
-			'lending.suspendMessage' => 'Hold din plass i linje og la neste leser låne denne kopien?',
-			'lending.resumeMessage' => 'Gjør dette igjen slik at biblioteket ditt kan tilby deg neste tilgjengelig kopi?',
+			'lending.suspendMessage' => 'Behold plassen din i køen, og la neste leser låne dette eksemplaret? Du kan gjenoppta reservasjonen senere.',
+			'lending.resumeMessage' => 'Gjenoppta denne reservasjonen slik at biblioteket kan tilby deg neste tilgjengelige eksemplar?',
 			'lending.editEmail' => 'Endre melding e-post',
 			'audiobook.syncTitle' => 'Lesing og lytte synkroniserer',
 			'audiobook.syncHelp' => 'Hold lesingposisjoner, lyttingposisjoner, fullføringstilstand, bokmerker og notater over enhetene dine. Velg en tilkoblet lagringskonto og bruk den samme synkroniseringskoden på hver enhet. Lesing og lytting forblir separate.',

@@ -6,6 +6,8 @@ the merged books, cloud-source, lending and accessibility features.
 ## Completed checks
 
 - Full Flutter analysis: no issues.
+- Analysis was repeated after the final main integration with no issues. A focused
+  22-test run of locale selection, preferences and source screens also passed.
 - Regression run: all 480 executed tests passed. The three invalid test-path
   entries in that invocation were corrected in a separate 68-test run, which
   passed. These runs overlap and their counts must not be added as unique tests.
@@ -23,15 +25,35 @@ the merged books, cloud-source, lending and accessibility features.
 - Browser screenshots were inspected after applying the bundled Noto font
   fallback. The final label added on main received a fresh Slang generation and
   catalog verification.
+- After the initial independent AI language QA corrections, Flutter analysis again found
+  no issues and all 76 focused locale, formatting, source-screen and real Chromium
+  reader tests passed. This suite overlaps the earlier runs. Slang and native
+  permission resources were regenerated; catalog, hygiene, quantity and native
+  freshness checks passed.
+- Final language remediation verified all 1,218 correction records against their
+  original and corrected values, including all 291 first-pass residual findings.
+  All 37 provenance hashes and origin counts match. Slang, native permissions and
+  the English source checkpoint were regenerated after the final corrections.
+  The source/placeholder, hygiene, quantity/native freshness, six catalog unit
+  tests and hardcoded-text checks passed. The review scan verifies zero remaining
+  corruption, repeated-word or checked opposite-label collision findings.
+- The final combined run passed all 141 tests: locale and formatting behavior,
+  source layouts, real Chromium readers, destructive-action dialogs, detail
+  sheets and queue subtitles. Arabic/Egypt year digits and localized episode
+  labels are covered. Stale English label/unit assertions were updated to the
+  shared localized format. A disk-space failure in the test runner was resolved
+  by clearing task-owned disposable caches before this successful run.
 
 ## Review boundaries
 
 These checks establish structural and behavioral coverage. They do not certify
 native fluency. Newly introduced translations include machine drafts and targeted
 AI corrections; per-message provenance and catalog hashes are recorded alongside
-the coverage report. Native speakers should review long descriptions, terminology,
-and screen-reader announcements before a release claims reviewed translation
-quality.
+the coverage report. The independent [language QA report](LANGUAGE_QA.md) records
+3,466 directly inspected non-English locale/message pairs, 1,218 corrections and
+zero unaddressed findings from this bounded pass. Native speakers should review
+long descriptions, terminology and screen-reader announcements before a release
+claims native-speaker approval.
 
 Physical Android, Apple TV, iOS and macOS permission dialogs, native IME behavior,
 screen-reader voices and glyph shaping still require device QA. In particular,

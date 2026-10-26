@@ -862,7 +862,7 @@
     "confirmDeleteTarget": "Permanently delete ${title} from your server?",
     "deleteMultipleWarning": "This includes all episodes and their files.",
     "deleteEpisodeCountWarning": {
-      "one": "This deletes all ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} episode in it, and its file.",
+      "one": "This deletes the ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} episode it contains and its file.",
       "other": "This deletes all ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} episodes in it, and their files."
     },
     "deleteMultiPartWarning": {

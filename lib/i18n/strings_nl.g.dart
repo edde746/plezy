@@ -524,7 +524,7 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get importSettingsInvalidFile => 'Dit bestand is geen geldige PlezyNG-export';
 	@override String get importSettingsNoUser => 'Meld je aan voordat je instellingen importeert';
 	@override String get cloudBackup => 'Cloudback-up';
-	@override String get cloudBackupDescription => 'Backup portable instellingen naar een eindpunt van WebDAV over HTTPS. serververbindingen en credentials blijven op dit apparaat.';
+	@override String get cloudBackupDescription => 'Maak via HTTPS een back-up van overdraagbare instellingen op een WebDAV-adres. Serververbindingen en aanmeldgegevens blijven op dit apparaat.';
 	@override String get cloudBackupUrl => 'WebDAV JSON bestand URL';
 	@override String get cloudBackupUsername => 'Gebruikersnaam';
 	@override String get cloudBackupPassword => 'Wachtwoord';
@@ -1073,10 +1073,10 @@ class _Translations$accessibility$nl extends Translations$accessibility$en {
 	@override String get highContrastHint => 'Sterker tekst, outlines en focusindicatoren op licht of donkere oppervlakken.';
 	@override String get interaction => 'Motie en interactie';
 	@override String get reduceMotion => 'Verminderde beweging';
-	@override String get reduceMotionHint => 'Houd je focus, pagina-overgang en decoratieve effecten nog steeds.';
+	@override String get reduceMotionHint => 'Animaties van de focusindicator, paginaovergangen en decoratieve effecten stilzetten.';
 	@override String get largeTargets => 'Grotere touch doelen';
 	@override String get largeTargetsHint => 'Geef gedeelde controles meer ruimte voor touch en assistieve navigatie.';
-	@override String get navigationHint => 'Gebruik Tab en Shift+Tab om te bewegen tussen de controles, Enter of Space om te activeren, en Escape or Back to close.';
+	@override String get navigationHint => 'Gebruik Tab en Shift+Tab om tussen bedieningselementen te bewegen, Enter of de spatiebalk om ze te activeren en Escape of Terug om te sluiten. Als een boek geopend is, zijn zoom en leesvoorkeuren beschikbaar.';
 }
 
 // Path: tooltips
@@ -2744,7 +2744,7 @@ class _Translations$addServer$nl extends Translations$addServer$en {
 	@override String connectDirectPlexCardSubtitleScoped({required Object name}) => 'Blijf rechtstreeks verbonden met behulp van lokale IP of URL. Blijf verbonden aan ${name}.';
 	@override String get insecureTitle => 'Oncrypt verbinding';
 	@override String insecureDescription({required Object url}) => '${url} gebruikt HTTP. Anderen op het netwerk kunnen je wachtwoord, tokens en media lezen of wijzigen. Gebruik HTTPS als dat beschikbaar is. Ga alleen verder als je dit netwerk vertrouwt en het risico accepteert.';
-	@override String get allowHttp => 'Toegankelijkheid HTTP';
+	@override String get allowHttp => 'HTTP toestaan';
 	@override String get httpsRequired => 'Gebruik HTTPS of toelaat uitdrukkelijk een niet-encrypt verbinding.';
 }
 
@@ -2882,7 +2882,7 @@ class _Translations$platform$nl extends Translations$platform$en {
 	// Translations
 	@override String get localNetworkPermission => 'PlezyNG verbindt zich met uw media servers en afspelenapparaten op uw lokale netwerk.';
 	@override String get locationPermission => 'PlezyNG maakt gebruik van locatie-toegang wanneer iOS nodig heeft om uw lokale netwerk te detecteren en verbinding te maken met uw media servers.';
-	@override String get photoLibraryPermission => 'Kies afbeeldingen uit uw foto-bibliotheek om te gebruiken als media kunstwerk.';
+	@override String get photoLibraryPermission => 'Kies afbeeldingen uit je fotobibliotheek als omslag of illustratie voor je media.';
 	@override String get cameraPermission => 'Scan QR codes om een Companion Remote te koppelen.';
 }
 
@@ -2917,7 +2917,7 @@ class _Translations$fileSources$nl extends Translations$fileSources$en {
 	@override String get save => 'Opslaan';
 	@override String get close => 'Sluiten';
 	@override String get removeSource => 'Ontbinding van de bron';
-	@override String get disconnectMessage => 'Afsluiten van deze bron? gedownload bestanden en uw lees- en luisteraar zal op deze apparaat blijven.';
+	@override String get disconnectMessage => 'Verbinding met deze bron verbreken? Gedownloade bestanden en je lees- en luistergeschiedenis blijven op dit apparaat.';
 	@override String get localFolder => 'Kies een folder';
 	@override String get empty => 'Hier is nog niets';
 	@override String get emptyHint => 'Voeg een bron toe of import een boek, audiobook, muziek of video.';
@@ -2990,7 +2990,7 @@ class _Translations$fileSources$nl extends Translations$fileSources$en {
 	@override String get paper => 'Papier';
 	@override String get sepia => 'SEA';
 	@override String get night => 'Nacht';
-	@override String get readAloud => 'Lees deze pagina alvast';
+	@override String get readAloud => 'Deze pagina voorlezen';
 	@override String get readAlong => 'Lees verder';
 	@override String get stopReading => 'Stop met narratie';
 	@override String get searchBook => 'Zoek in boek';
@@ -2998,7 +2998,7 @@ class _Translations$fileSources$nl extends Translations$fileSources$en {
 	@override String get previousPage => 'Vorige pagina';
 	@override String get nextPage => 'Volgende pagina';
 	@override String page({required Object number}) => 'Pagina ${number}';
-	@override String get externalBlocked => 'Externe boekverbindingen zijn in de lezer ontworpen.';
+	@override String get externalBlocked => 'Externe boeklinks zijn uitgeschakeld in de lezer.';
 	@override String get loading => 'Opening...';
 	@override String get narrator => 'verhalen';
 	@override String get audio => 'Audio';
@@ -3029,7 +3029,7 @@ class _Translations$fileSources$nl extends Translations$fileSources$en {
 	@override String get comics => 'Strips';
 	@override String get scan => 'Scan voor boeken en media';
 	@override String get browserReader => 'Open lezer';
-	@override String get browserReaderHelp => 'De lezer is open in uw browser. Houd PlezyNG open om uw plaats en notities te redden.';
+	@override String get browserReaderHelp => 'De lezer is geopend in je browser. Houd PlezyNG open om je leespositie en notities op te slaan.';
 	@override String get on => 'op';
 	@override String get advancedSetup => 'App registratie';
 	@override String get microsoftSignIn => 'Sign in met Microsoft';
@@ -3047,10 +3047,10 @@ class _Translations$fileSources$nl extends Translations$fileSources$en {
 	@override String get twoPages => 'Twee pagina\'s';
 	@override String get readingDirection => 'Lees richting';
 	@override String get leftToRight => 'Links naar rechts';
-	@override String get rightToLeft => 'Recht naar verlaten';
+	@override String get rightToLeft => 'Van rechts naar links';
 	@override String get letterSpacing => 'Letterafstand';
 	@override String get wordSpacing => 'Woord ruimte';
-	@override String get readerControlsHelp => 'Pinch of gebruik zoomcontroles om pagina\'s te vergroten. Druk naar de pan. Ctrl/ ⁇  + of − aanpast zoom; Ctrl/ ⁇  0 herstelt het. Page Up en Page Down draaien pagina\'s.';
+	@override String get readerControlsHelp => 'Beweeg twee vingers uit elkaar of gebruik de zoomknoppen om pagina’s te vergroten. Sleep om de pagina te verschuiven. Ctrl/⌘ met + of − past de zoom aan; Ctrl/⌘ met 0 herstelt de zoom. Page Up en Page Down slaan de pagina om.';
 	@override String get imagePage => 'Comic pagina';
 	@override String get resetReader => 'Herstelt leesvoorkeuren';
 	@override String get zoom => 'Zoom';
@@ -3079,23 +3079,23 @@ class _Translations$lending$nl extends Translations$lending$en {
 	@override String get search => 'Zoek boeken en auteurs';
 	@override String get catalogue => 'Catalogus';
 	@override String get loans => 'Lenen';
-	@override String get holds => 'Houd';
+	@override String get holds => 'Reserveringen';
 	@override String get signIn => 'Meld je aan bij je bibliotheek';
 	@override String get waiting => 'Sluit de inschrijving in uw browser en kom dan terug.';
 	@override String get cancel => 'Annuleren';
 	@override String get disconnect => 'Verwijder bibliotheek';
-	@override String get disconnectMessage => 'Verwijder deze bibliotheek van dit profiel? uw leningen en houdt verblijf met uw bibliotheek.';
+	@override String get disconnectMessage => 'Deze bibliotheek uit dit profiel verwijderen? Je uitleningen en reserveringen blijven bij de bibliotheek bewaard.';
 	@override String get getBook => 'Krijg boek';
 	@override String get checkAvailability => 'Controleer beschikbaarheid';
 	@override String get available => 'beschikbaar voor lening';
 	@override String get unavailable => 'Momenteel niet beschikbaar';
 	@override String get borrow => 'Lenen';
-	@override String get placeHold => 'Plaats houden';
+	@override String get placeHold => 'Reserveren';
 	@override String get returnBook => 'Vroeg terug';
-	@override String get cancelHold => 'annuleren houd';
+	@override String get cancelHold => 'Reservering annuleren';
 	@override String get confirmBorrow => 'Lenen deze titel van je bibliotheek?';
 	@override String get confirmReturn => 'Ga deze titel nu terug? u moet het misschien opnieuw lenen om verder te gaan.';
-	@override String get confirmCancelHold => 'Verwijder je houding op deze titel?';
+	@override String get confirmCancelHold => 'Je reservering voor deze titel annuleren?';
 	@override String get email => 'Houd de melding e-mail';
 	@override String due({required Object date}) => 'Gevangen ${date}';
 	@override String queue({required Object position}) => 'Positie ${position} in de lijn';
@@ -3113,8 +3113,8 @@ class _Translations$lending$nl extends Translations$lending$en {
 	@override String get comingSoonDescription => 'U kunt uw bibliotheek in Libby gebruiken terwijl we het eindigen met het verbinden.';
 	@override String get suspendHold => 'Stoppen houden';
 	@override String get resumeHold => 'Resume houden';
-	@override String get suspendMessage => 'Houd je plaats in lijn en laat de volgende lezer deze kopie lenen?';
-	@override String get resumeMessage => 'Herhaal deze houding opnieuw zodat uw bibliotheek u de volgende beschikbare kopie kan bieden?';
+	@override String get suspendMessage => 'Je plaats in de wachtrij behouden en de volgende lezer dit exemplaar laten lenen? Je kunt de reservering later hervatten.';
+	@override String get resumeMessage => 'Deze reservering hervatten zodat de bibliotheek je het volgende beschikbare exemplaar kan aanbieden?';
 	@override String get editEmail => 'Wijziging van de e-mail notificatie';
 }
 
@@ -3614,7 +3614,7 @@ class _Translations$libraries$selection$nl extends Translations$libraries$select
 	@override String selectedCount({required Object count}) => '${count} geselecteerd';
 	@override String get actions => 'Selectie acties';
 	@override String get confirmDescendants => 'Dit verandert alle episodes in de geselecteerde shows en seizoenen.';
-	@override String get confirmUnwatched => 'Dit verduidelijkt ook de voortgang van de afspelen voor de geselecteerde items.';
+	@override String get confirmUnwatched => 'Hiermee wordt ook de afspeelvoortgang van de geselecteerde items gewist.';
 	@override String confirmCount({required Object count}) => 'De geselecteerde items: ${count}.';
 	@override String completed({required Object count}) => 'Geplaatst in: ${count}';
 	@override String partialFailure({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failliet ${failed}. failliet items blijven geselecteerd.';
@@ -4566,7 +4566,7 @@ extension on TranslationsNl {
 			'settings.importSettingsInvalidFile' => 'Dit bestand is geen geldige PlezyNG-export',
 			'settings.importSettingsNoUser' => 'Meld je aan voordat je instellingen importeert',
 			'settings.cloudBackup' => 'Cloudback-up',
-			'settings.cloudBackupDescription' => 'Backup portable instellingen naar een eindpunt van WebDAV over HTTPS. serververbindingen en credentials blijven op dit apparaat.',
+			'settings.cloudBackupDescription' => 'Maak via HTTPS een back-up van overdraagbare instellingen op een WebDAV-adres. Serververbindingen en aanmeldgegevens blijven op dit apparaat.',
 			'settings.cloudBackupUrl' => 'WebDAV JSON bestand URL',
 			'settings.cloudBackupUsername' => 'Gebruikersnaam',
 			'settings.cloudBackupPassword' => 'Wachtwoord',
@@ -5084,10 +5084,10 @@ extension on TranslationsNl {
 			'accessibility.highContrastHint' => 'Sterker tekst, outlines en focusindicatoren op licht of donkere oppervlakken.',
 			'accessibility.interaction' => 'Motie en interactie',
 			'accessibility.reduceMotion' => 'Verminderde beweging',
-			'accessibility.reduceMotionHint' => 'Houd je focus, pagina-overgang en decoratieve effecten nog steeds.',
+			'accessibility.reduceMotionHint' => 'Animaties van de focusindicator, paginaovergangen en decoratieve effecten stilzetten.',
 			'accessibility.largeTargets' => 'Grotere touch doelen',
 			'accessibility.largeTargetsHint' => 'Geef gedeelde controles meer ruimte voor touch en assistieve navigatie.',
-			'accessibility.navigationHint' => 'Gebruik Tab en Shift+Tab om te bewegen tussen de controles, Enter of Space om te activeren, en Escape or Back to close.',
+			'accessibility.navigationHint' => 'Gebruik Tab en Shift+Tab om tussen bedieningselementen te bewegen, Enter of de spatiebalk om ze te activeren en Escape of Terug om te sluiten. Als een boek geopend is, zijn zoom en leesvoorkeuren beschikbaar.',
 			'tooltips.shufflePlay' => 'Willekeurig afspelen',
 			'tooltips.playTrailer' => 'Trailer afspelen',
 			'tooltips.markAsWatched' => 'Als bekeken markeren',
@@ -5654,7 +5654,7 @@ extension on TranslationsNl {
 			'libraries.selection.selectedCount' => ({required Object count}) => '${count} geselecteerd',
 			'libraries.selection.actions' => 'Selectie acties',
 			'libraries.selection.confirmDescendants' => 'Dit verandert alle episodes in de geselecteerde shows en seizoenen.',
-			'libraries.selection.confirmUnwatched' => 'Dit verduidelijkt ook de voortgang van de afspelen voor de geselecteerde items.',
+			'libraries.selection.confirmUnwatched' => 'Hiermee wordt ook de afspeelvoortgang van de geselecteerde items gewist.',
 			'libraries.selection.confirmCount' => ({required Object count}) => 'De geselecteerde items: ${count}.',
 			'libraries.selection.completed' => ({required Object count}) => 'Geplaatst in: ${count}',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failliet ${failed}. failliet items blijven geselecteerd.',
@@ -6801,7 +6801,7 @@ extension on TranslationsNl {
 			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => 'Blijf rechtstreeks verbonden met behulp van lokale IP of URL. Blijf verbonden aan ${name}.',
 			'addServer.insecureTitle' => 'Oncrypt verbinding',
 			'addServer.insecureDescription' => ({required Object url}) => '${url} gebruikt HTTP. Anderen op het netwerk kunnen je wachtwoord, tokens en media lezen of wijzigen. Gebruik HTTPS als dat beschikbaar is. Ga alleen verder als je dit netwerk vertrouwt en het risico accepteert.',
-			'addServer.allowHttp' => 'Toegankelijkheid HTTP',
+			'addServer.allowHttp' => 'HTTP toestaan',
 			'addServer.httpsRequired' => 'Gebruik HTTPS of toelaat uitdrukkelijk een niet-encrypt verbinding.',
 			'watchLink.serverUnavailable' => 'Ik kon geen Plex server bereiken voor deze link.',
 			'watchLink.notFound' => 'Ik kon deze show of film niet vinden op je servers Plex.',
@@ -6912,7 +6912,7 @@ extension on TranslationsNl {
 			'homeLayout.resetHeroButtonDescription' => 'Het schakelt de heldinstelling van elke rij uit en brengt de single rotating banner terug naar de top, net als voordat de held-lijnen bestaan.',
 			'platform.localNetworkPermission' => 'PlezyNG verbindt zich met uw media servers en afspelenapparaten op uw lokale netwerk.',
 			'platform.locationPermission' => 'PlezyNG maakt gebruik van locatie-toegang wanneer iOS nodig heeft om uw lokale netwerk te detecteren en verbinding te maken met uw media servers.',
-			'platform.photoLibraryPermission' => 'Kies afbeeldingen uit uw foto-bibliotheek om te gebruiken als media kunstwerk.',
+			'platform.photoLibraryPermission' => 'Kies afbeeldingen uit je fotobibliotheek als omslag of illustratie voor je media.',
 			'platform.cameraPermission' => 'Scan QR codes om een Companion Remote te koppelen.',
 			'fileSources.title' => 'Bestanden en boeken',
 			'fileSources.subtitle' => 'Lees, luister en kijk van je eigen bestanden.',
@@ -6938,7 +6938,7 @@ extension on TranslationsNl {
 			'fileSources.save' => 'Opslaan',
 			'fileSources.close' => 'Sluiten',
 			'fileSources.removeSource' => 'Ontbinding van de bron',
-			'fileSources.disconnectMessage' => 'Afsluiten van deze bron? gedownload bestanden en uw lees- en luisteraar zal op deze apparaat blijven.',
+			'fileSources.disconnectMessage' => 'Verbinding met deze bron verbreken? Gedownloade bestanden en je lees- en luistergeschiedenis blijven op dit apparaat.',
 			'fileSources.localFolder' => 'Kies een folder',
 			'fileSources.empty' => 'Hier is nog niets',
 			'fileSources.emptyHint' => 'Voeg een bron toe of import een boek, audiobook, muziek of video.',
@@ -7008,7 +7008,7 @@ extension on TranslationsNl {
 			'fileSources.paper' => 'Papier',
 			'fileSources.sepia' => 'SEA',
 			'fileSources.night' => 'Nacht',
-			'fileSources.readAloud' => 'Lees deze pagina alvast',
+			'fileSources.readAloud' => 'Deze pagina voorlezen',
 			'fileSources.readAlong' => 'Lees verder',
 			'fileSources.stopReading' => 'Stop met narratie',
 			'fileSources.searchBook' => 'Zoek in boek',
@@ -7016,7 +7016,7 @@ extension on TranslationsNl {
 			'fileSources.previousPage' => 'Vorige pagina',
 			'fileSources.nextPage' => 'Volgende pagina',
 			'fileSources.page' => ({required Object number}) => 'Pagina ${number}',
-			'fileSources.externalBlocked' => 'Externe boekverbindingen zijn in de lezer ontworpen.',
+			'fileSources.externalBlocked' => 'Externe boeklinks zijn uitgeschakeld in de lezer.',
 			'fileSources.loading' => 'Opening...',
 			'fileSources.narrator' => 'verhalen',
 			'fileSources.audio' => 'Audio',
@@ -7047,7 +7047,7 @@ extension on TranslationsNl {
 			'fileSources.comics' => 'Strips',
 			'fileSources.scan' => 'Scan voor boeken en media',
 			'fileSources.browserReader' => 'Open lezer',
-			'fileSources.browserReaderHelp' => 'De lezer is open in uw browser. Houd PlezyNG open om uw plaats en notities te redden.',
+			'fileSources.browserReaderHelp' => 'De lezer is geopend in je browser. Houd PlezyNG open om je leespositie en notities op te slaan.',
 			'fileSources.on' => 'op',
 			'fileSources.advancedSetup' => 'App registratie',
 			'fileSources.microsoftSignIn' => 'Sign in met Microsoft',
@@ -7065,10 +7065,10 @@ extension on TranslationsNl {
 			'fileSources.twoPages' => 'Twee pagina\'s',
 			'fileSources.readingDirection' => 'Lees richting',
 			'fileSources.leftToRight' => 'Links naar rechts',
-			'fileSources.rightToLeft' => 'Recht naar verlaten',
+			'fileSources.rightToLeft' => 'Van rechts naar links',
 			'fileSources.letterSpacing' => 'Letterafstand',
 			'fileSources.wordSpacing' => 'Woord ruimte',
-			'fileSources.readerControlsHelp' => 'Pinch of gebruik zoomcontroles om pagina\'s te vergroten. Druk naar de pan. Ctrl/ ⁇  + of − aanpast zoom; Ctrl/ ⁇  0 herstelt het. Page Up en Page Down draaien pagina\'s.',
+			'fileSources.readerControlsHelp' => 'Beweeg twee vingers uit elkaar of gebruik de zoomknoppen om pagina’s te vergroten. Sleep om de pagina te verschuiven. Ctrl/⌘ met + of − past de zoom aan; Ctrl/⌘ met 0 herstelt de zoom. Page Up en Page Down slaan de pagina om.',
 			'fileSources.imagePage' => 'Comic pagina',
 			'fileSources.resetReader' => 'Herstelt leesvoorkeuren',
 			'fileSources.zoom' => 'Zoom',
@@ -7088,23 +7088,23 @@ extension on TranslationsNl {
 			'lending.search' => 'Zoek boeken en auteurs',
 			'lending.catalogue' => 'Catalogus',
 			'lending.loans' => 'Lenen',
-			'lending.holds' => 'Houd',
+			'lending.holds' => 'Reserveringen',
 			'lending.signIn' => 'Meld je aan bij je bibliotheek',
 			'lending.waiting' => 'Sluit de inschrijving in uw browser en kom dan terug.',
 			'lending.cancel' => 'Annuleren',
 			'lending.disconnect' => 'Verwijder bibliotheek',
-			'lending.disconnectMessage' => 'Verwijder deze bibliotheek van dit profiel? uw leningen en houdt verblijf met uw bibliotheek.',
+			'lending.disconnectMessage' => 'Deze bibliotheek uit dit profiel verwijderen? Je uitleningen en reserveringen blijven bij de bibliotheek bewaard.',
 			'lending.getBook' => 'Krijg boek',
 			'lending.checkAvailability' => 'Controleer beschikbaarheid',
 			'lending.available' => 'beschikbaar voor lening',
 			'lending.unavailable' => 'Momenteel niet beschikbaar',
 			'lending.borrow' => 'Lenen',
-			'lending.placeHold' => 'Plaats houden',
+			'lending.placeHold' => 'Reserveren',
 			'lending.returnBook' => 'Vroeg terug',
-			'lending.cancelHold' => 'annuleren houd',
+			'lending.cancelHold' => 'Reservering annuleren',
 			'lending.confirmBorrow' => 'Lenen deze titel van je bibliotheek?',
 			'lending.confirmReturn' => 'Ga deze titel nu terug? u moet het misschien opnieuw lenen om verder te gaan.',
-			'lending.confirmCancelHold' => 'Verwijder je houding op deze titel?',
+			'lending.confirmCancelHold' => 'Je reservering voor deze titel annuleren?',
 			'lending.email' => 'Houd de melding e-mail',
 			'lending.due' => ({required Object date}) => 'Gevangen ${date}',
 			'lending.queue' => ({required Object position}) => 'Positie ${position} in de lijn',
@@ -7122,8 +7122,8 @@ extension on TranslationsNl {
 			'lending.comingSoonDescription' => 'U kunt uw bibliotheek in Libby gebruiken terwijl we het eindigen met het verbinden.',
 			'lending.suspendHold' => 'Stoppen houden',
 			'lending.resumeHold' => 'Resume houden',
-			'lending.suspendMessage' => 'Houd je plaats in lijn en laat de volgende lezer deze kopie lenen?',
-			'lending.resumeMessage' => 'Herhaal deze houding opnieuw zodat uw bibliotheek u de volgende beschikbare kopie kan bieden?',
+			'lending.suspendMessage' => 'Je plaats in de wachtrij behouden en de volgende lezer dit exemplaar laten lenen? Je kunt de reservering later hervatten.',
+			'lending.resumeMessage' => 'Deze reservering hervatten zodat de bibliotheek je het volgende beschikbare exemplaar kan aanbieden?',
 			'lending.editEmail' => 'Wijziging van de e-mail notificatie',
 			'audiobook.syncTitle' => 'Lezen en luisteren sync',
 			'audiobook.syncHelp' => 'Houd leesposities, luisterposities, voltooiingsstatus, bookmarks en notities op uw apparaten.Kies een bijgevoegde opslagaccount en gebruik dezelfde synchronisatiecode op elk apparaat.Lezen en luisteren blijven gescheiden.',

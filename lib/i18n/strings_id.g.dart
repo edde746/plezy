@@ -198,7 +198,7 @@ class _Translations$auth$id extends Translations$auth$en {
 	@override String get quickConnectWaiting => 'Menunggu kelulusan...';
 	@override String get quickConnectCancel => 'Batal';
 	@override String get quickConnectExpired => 'Koneksi Cepat kedaluwarsa. Coba lagi.';
-	@override String get localDataRecoveryRequired => 'PlezyNG tidak dapat dengan aman memulihkan data login lokal dan pendengaran playback.';
+	@override String get localDataRecoveryRequired => 'PlezyNG tidak dapat memulihkan data masuk lokal dan data pemutaran yang tertunda dengan aman. Silakan masuk lagi.';
 	@override String get pinCheckRejected => 'Pengesahan PIN Plex ditolak';
 	@override String get connectToDirectPlex => 'Menghubungkan ke server lokal Plex';
 }
@@ -522,7 +522,7 @@ class _Translations$settings$id extends Translations$settings$en {
 	@override String get importSettingsInvalidFile => 'Fail ini tidak valid PlezyNG pengeksportan pengaturan';
 	@override String get importSettingsNoUser => 'Mendaftar sebelum mengimport pengaturan';
 	@override String get cloudBackup => 'Cloud Backup untuk';
-	@override String get cloudBackupDescription => 'Backup pengaturan portabel ke titik akhir WebDAV di atas HTTPS. koneksi server dan pengesahan tetap pada perangkat ini.';
+	@override String get cloudBackupDescription => 'Cadangkan pengaturan yang dapat dipindahkan ke alamat WebDAV melalui HTTPS. Koneksi server dan informasi masuk tetap disimpan di perangkat ini.';
 	@override String get cloudBackupUrl => 'URL berkas JSON WebDAV';
 	@override String get cloudBackupUsername => 'Nama Pengguna';
 	@override String get cloudBackupPassword => 'Kata sandi';
@@ -990,8 +990,8 @@ class _Translations$mediaMenu$id extends Translations$mediaMenu$en {
 	@override String deleteSharedFileHeading({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('id'))(n,
 		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episode lain disimpan dalam file yang sama dan juga akan dihapus:',
 	);
-	@override String get deleteScopeUnverifiedProbeFailed => 'PlezyNG tidak dapat memeriksa file mana yang akan dihapus, sehingga dapat menghapus lebih dari item yang disebutkan di atas.';
-	@override String get deleteScopeUnverifiedNoFileInfo => 'Server Anda tidak memberikan rincian file untuk item ini, sehingga PlezyNG tidak dapat memeriksa file mana yang akan dihapus.';
+	@override String get deleteScopeUnverifiedProbeFailed => 'PlezyNG tidak dapat memeriksa berkas mana yang akan dihapus, sehingga mungkin menghapus lebih dari item yang disebutkan di atas. Batalkan dan coba lagi, atau tetap hapus.';
+	@override String get deleteScopeUnverifiedNoFileInfo => 'Server tidak memberikan rincian berkas untuk item ini, sehingga PlezyNG tidak dapat memeriksa berkas mana yang akan dihapus. Penghapusan mungkin mencakup lebih dari item yang disebutkan di atas.';
 	@override String get mediaDeletedSuccessfully => 'Media item dihapus dengan sukses';
 	@override String get mediaFailedToDelete => 'gagal menghapus media item';
 	@override String get rate => 'Rating';
@@ -1028,8 +1028,8 @@ class _Translations$accessibility$id extends Translations$accessibility$en {
 	@override String mediaCardSeason({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
 	@override String get mediaCardWatched => 'Ditonton';
 	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} persen dilihat';
-	@override String get mediaCardUnwatched => 'tidak diperhatikan';
-	@override String get tapToPlay => 'TAP untuk bermain';
+	@override String get mediaCardUnwatched => 'belum ditonton';
+	@override String get tapToPlay => 'Ketuk untuk memutar';
 	@override String get decrease => 'Penurunan';
 	@override String get increase => 'Meningkat';
 	@override String decreaseValue({required Object label}) => 'Penurunan ${label}';
@@ -1041,7 +1041,7 @@ class _Translations$accessibility$id extends Translations$accessibility$en {
 	@override String get expandText => 'Perkembangan teks';
 	@override String get collapseText => 'Teks yang runtuh';
 	@override String get alphabetNavigation => 'Navigasi Alphabet';
-	@override String get alphabetScrollHint => 'Menarik ke atas atau ke bawah untuk bergerak melalui surat';
+	@override String get alphabetScrollHint => 'Geser ke atas atau ke bawah untuk berpindah menurut huruf';
 	@override String rowColumnPosition({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Jalur ${row} dari ${rowCount}, kolom ${column} dari ${columnCount}';
 	@override String rowPosition({required Object row, required Object rowCount}) => 'Ruang ${row} dari ${rowCount}';
 	@override String get autoScrollPlay => 'Bermain dengan Auto-Scroll';
@@ -1068,10 +1068,10 @@ class _Translations$accessibility$id extends Translations$accessibility$en {
 	@override String get highContrastHint => 'Teks yang lebih kuat, outlines dan fokus indikator pada permukaan terang atau gelap.';
 	@override String get interaction => 'Pergerakan dan Interaksi';
 	@override String get reduceMotion => 'Mengurangi gerakan';
-	@override String get reduceMotionHint => 'Tetap fokus, transisi halaman dan efek dekoratif tetap.';
+	@override String get reduceMotionHint => 'Hentikan animasi indikator fokus, transisi halaman, dan efek dekoratif.';
 	@override String get largeTargets => 'Target Touch yang lebih besar';
 	@override String get largeTargetsHint => 'Memberi kontrol yang dikongsi lebih banyak ruang untuk sentuhan dan navigasi asisten.';
-	@override String get navigationHint => 'Gunakan Tab dan Shift+Tab untuk bergerak antara kontrol, Enter atau Space untuk mengaktifkan, dan Escape atau Back to close.';
+	@override String get navigationHint => 'Gunakan Tab dan Shift+Tab untuk berpindah antar kontrol, Enter atau Space untuk mengaktifkan, dan Escape atau tombol Kembali untuk menutup. Zoom dan preferensi membaca tersedia saat buku terbuka.';
 }
 
 // Path: tooltips
@@ -1367,7 +1367,7 @@ class _Translations$profiles$id extends Translations$profiles$en {
 	@override String get signOutPlexTitle => 'Mendaftar keluar dari Plex?';
 	@override String signOutPlexMessage({required Object displayName}) => 'Menghapus ${displayName} dan semua Plex Pengguna Rumah?';
 	@override String get signOutPlexDeleteDownloads => 'Juga menghapus download';
-	@override String get signOutPlexDeleteDownloadsDescription => 'Jika tidak, mereka tetap di perangkat ini dan kembali ketika Anda mendaftar kembali ke akun ini.';
+	@override String get signOutPlexDeleteDownloadsDescription => 'Jika tidak, unduhan tetap disimpan di perangkat ini dan tersedia lagi saat Anda masuk kembali ke akun ini.';
 	@override String get signedOutPlex => 'Ditandatangani dari Plex.';
 	@override String get signOutFailed => 'Menandatangani gagal';
 	@override String get sectionTitle => 'Profil';
@@ -1692,7 +1692,7 @@ class _Translations$startup$id extends Translations$startup$en {
 	// Translations
 	@override String get failedTitle => 'PlezyNG tidak bisa memulai';
 	@override String get failedBody => 'Ada sesuatu yang salah selama startup. detail di bawah ini mengidentifikasi apa yang gagal.';
-	@override String get failedBodyRepairable => 'File pengaturan yang disimpan di PlezyNG rusak dan harus dibangun kembali sebelum PlezyNG dapat dimulai.';
+	@override String get failedBodyRepairable => 'Berkas pengaturan PlezyNG yang tersimpan rusak dan harus dibuat ulang sebelum aplikasi dapat dimulai. Mencoba lagi tidak akan membantu — pilih Perbaiki penyimpanan.';
 	@override String get phaseLabel => 'Langkah';
 	@override String get showDetails => 'Tunjukkan detail';
 	@override String get hideDetails => 'Temukan detail';
@@ -1703,20 +1703,20 @@ class _Translations$startup$id extends Translations$startup$en {
 	@override String get repairTitle => 'Membaiki data yang disimpan?';
 	@override String get repairBodyCommon => 'file pengaturan PlezyNG rusak dan tidak dapat dibaca. perbaikan mengatur kembali setiap pengaturan ke defaultnya.';
 	@override String get repairBodyOneCredential => 'Satu login yang disimpan rosak dan tidak dapat dibaca. pembaikan menghapus hanya satu; seting lain Anda ditinggalkan sendirian.';
-	@override String get repairBodySignInsKept => 'Server dan profil Anda harus tetap terdaftar.';
-	@override String get repairBodySignInsLost => 'Kunci yang melindungi sign-in Anda yang disimpan tidak dapat dikembalikan dari file ini, jadi Anda harus mendaftar masuk ke setiap server dan profil lagi.';
+	@override String get repairBodySignInsKept => 'Sesi masuk ke server dan profil Anda seharusnya tetap aktif.';
+	@override String get repairBodySignInsLost => 'Kunci yang melindungi data masuk tersimpan tidak dapat dipulihkan dari berkas ini. Anda harus masuk lagi ke setiap server dan profil. Tidak ada yang berubah di server media Anda.';
 	@override String get repairBodySessionsUncertain => 'Data pelacak (MAL, AniList, Simkl, Trakt) dan Seerr disimpan terpisah dan mungkin tetap tersimpan atau hilang. PlezyNG akan memberi tahu dengan tepat data yang dipertahankan.';
 	@override String get repairConfirm => 'Perbaikan';
 	@override String get repairSucceeded => 'Penyimpanan diperbaiki';
 	@override String get repairNeedsRestart => 'Penyimpanan diperbaiki - perlu memulai kembali';
-	@override String get restartRequiredBody => 'Data Anda telah diperbaiki, tetapi PlezyNG harus mulai segar sebelum dapat menggunakannya. mendekati PlezyNG dan buka lagi.';
+	@override String get restartRequiredBody => 'Data Anda telah diperbaiki, tetapi PlezyNG harus dimulai ulang sebelum dapat menggunakannya. Tutup PlezyNG lalu buka kembali.';
 	@override String get quitPlezy => 'Berdasarkan PlezyNG';
 	@override String get repairFailed => 'Perbaikan gagal';
-	@override String get repairKeptSignIns => 'Server dan profil Anda masih terdaftar.';
+	@override String get repairKeptSignIns => 'Sesi masuk ke server dan profil Anda masih aktif.';
 	@override String get repairLostSignIns => 'Kunci melindungi sign-ins yang disimpan Anda tidak dapat dipulihkan. Anda akan perlu mendaftar masuk ke setiap server dan profil lagi.';
 	@override String get repairLostSessions => 'Sekurang-kurangnya satu tracker atau koneksi Seerr telah hilang dan harus dihubungkan kembali.';
 	@override String get backupTitle => 'Satu salinan file yang rusak disimpan';
-	@override String get backupWarning => 'Ini berisi pengesahan masuk Anda.Jangan upload atau berbagi.';
+	@override String get backupWarning => 'Salinan ini berisi informasi masuk Anda. Jangan unggah atau bagikan.';
 	@override String get deleteBackup => 'Menghapus Kopi';
 	@override String get backupDeleted => 'Kopi yang dihapus.';
 	@override String get previousFailureTitle => 'PlezyNG gagal memulai kali terakhir';
@@ -1869,7 +1869,7 @@ class _Translations$liveTv$id extends Translations$liveTv$en {
 	@override String cancelRecordingMessage({required Object title}) => '${title} tidak akan lagi tercatat.';
 	@override String get deleteRule => 'Menghapus aturan';
 	@override String get deleteRuleTitle => 'Menghapus aturan rekaman?';
-	@override String deleteRuleMessage({required Object title}) => 'Episod masa depan dari ${title} tidak akan tercatat.';
+	@override String deleteRuleMessage({required Object title}) => 'Episode mendatang dari ${title} tidak akan direkam.';
 	@override String get recordingScheduled => 'Perekaman dijadwalkan.';
 	@override String get alreadyScheduled => 'Program ini sudah direncanakan';
 	@override String get dvrAdminRequired => 'Pengaturan DVR membutuhkan akun admin';
@@ -1910,7 +1910,7 @@ class _Translations$collections$id extends Translations$collections$en {
 	@override String get collection => 'Koleksi';
 	@override String get empty => 'Koleksi itu kosong';
 	@override String get deleteCollection => 'Menghapus Koleksi';
-	@override String deleteConfirm({required Object title}) => 'Menghapus "${title}"? ini tidak dapat diabaikan.';
+	@override String deleteConfirm({required Object title}) => 'Hapus "${title}"? Tindakan ini tidak dapat dibatalkan.';
 	@override String get deleted => 'Koleksi dihapus';
 	@override String get deleteFailed => 'gagal menghapus koleksi';
 	@override String deleteFailedWithError({required Object error}) => 'Tidak berhasil menghapus koleksi: ${error}';
@@ -2197,7 +2197,7 @@ class _Translations$downloads$id extends Translations$downloads$en {
 	@override String keepNUnwatched({required Object count}) => 'Tinggalkan ${count} tidak dipantau';
 	@override String get editSyncRule => 'Mengedit Sink';
 	@override String get removeSyncRule => 'Menghapus aturan sinergi';
-	@override String removeSyncRuleConfirm({required Object title}) => 'Hentikan penyegerakan "${title}"? episode yang dimuat turun akan disimpan.';
+	@override String removeSyncRuleConfirm({required Object title}) => 'Hentikan sinkronisasi "${title}"? Episode yang telah diunduh akan tetap disimpan.';
 	@override String removeListSyncRuleConfirm({required Object title}) => 'Berhenti menyinkronkan "${title}"';
 	@override String get deleteSyncRuleDownloads => 'Juga menghapus download yang terkait';
 	@override String get deleteSyncRuleDownloadsDescription => 'Download yang digunakan oleh aturan sink atau profil lain akan disimpan.';
@@ -2725,7 +2725,7 @@ class _Translations$addServer$id extends Translations$addServer$en {
 	@override String connectDirectPlexCardSubtitleScoped({required Object name}) => 'Hubungi secara langsung menggunakan IP lokal atau URL. Hubungi ${name}.';
 	@override String get insecureTitle => 'Koneksi yang tidak terenkripsi';
 	@override String insecureDescription({required Object url}) => '${url} menggunakan HTTP. Orang lain di jaringan dapat membaca atau mengubah kata sandi, token, dan media Anda. Gunakan HTTPS jika tersedia. Lanjutkan hanya jika Anda memercayai jaringan ini dan menerima risikonya.';
-	@override String get allowHttp => 'Permohonan HTTP';
+	@override String get allowHttp => 'Izinkan HTTP';
 	@override String get httpsRequired => 'Menggunakan HTTPS atau secara eksplisit memungkinkan koneksi yang tidak terenkripsi.';
 }
 
@@ -2882,7 +2882,7 @@ class _Translations$fileSources$id extends Translations$fileSources$en {
 	@override String get source => 'Sumber';
 	@override String get name => 'Nama';
 	@override String get endpoint => 'URL server';
-	@override String get root => 'Fungsi atau Prefix';
+	@override String get root => 'Folder atau prefiks';
 	@override String get username => 'Nama Pengguna';
 	@override String get password => 'Kata sandi';
 	@override String get token => 'API Token';
@@ -2959,19 +2959,19 @@ class _Translations$fileSources$id extends Translations$fileSources$en {
 	@override String get lineHeight => 'Line ruang';
 	@override String get margin => 'Margin';
 	@override String get font => 'Tipe Wajah';
-	@override String get serif => 'Serius';
-	@override String get sans => 'Tanpa seri';
-	@override String get mono => 'Monopoli';
+	@override String get serif => 'Serif';
+	@override String get sans => 'Tanpa serif';
+	@override String get mono => 'Monospace';
 	@override String get columns => 'Kolom';
 	@override String get scroll => 'Scroll secara vertikal';
-	@override String get justify => 'Menghukum teks';
+	@override String get justify => 'Ratakan teks kiri-kanan';
 	@override String get readerTheme => 'Penampilan halaman';
 	@override String get appTheme => 'Mengikuti tema app';
 	@override String get paper => 'Kertas';
 	@override String get sepia => 'Sepia';
 	@override String get night => 'Malam yang';
-	@override String get readAloud => 'Baca halaman ini dengan teliti';
-	@override String get readAlong => 'Baca Selanjutnya';
+	@override String get readAloud => 'Bacakan halaman ini';
+	@override String get readAlong => 'Baca sambil mendengarkan';
 	@override String get stopReading => 'Hentikan narasi';
 	@override String get searchBook => 'Pencarian dalam buku';
 	@override String get noMatches => 'Tidak ada pertandingan';
@@ -2987,9 +2987,9 @@ class _Translations$fileSources$id extends Translations$fileSources$en {
 	@override String get all => 'Semua';
 	@override String get downloads => 'File Offline';
 	@override String get confirmDelete => 'Hapus salinan luring yang dipilih? Posisi membaca atau mendengarkan dan catatan Anda akan tetap tersimpan.';
-	@override String get errorAuthentication => 'Tandakan kembali untuk menghubungkan kembali sumber ini.';
+	@override String get errorAuthentication => 'Masuk lagi untuk menyambungkan kembali sumber ini.';
 	@override String get errorPermission => 'Sumber ini tidak memberikan akses ke file yang diminta.';
-	@override String get errorUnavailable => 'Coba lagi, atau buka salinan offline.';
+	@override String get errorUnavailable => 'Sumber tidak tersedia. Coba lagi, atau buka salinan luring.';
 	@override String get errorUnsupported => 'Format atau koneksi ini tidak didukung pada perangkat ini. periksa panduan pengaturan sumber.';
 	@override String get errorInvalidData => 'File atau respons server ini tidak dapat dibaca dengan aman.';
 	@override String get errorCancelled => 'Operasi ini dibatalkan.';
@@ -3027,10 +3027,10 @@ class _Translations$fileSources$id extends Translations$fileSources$en {
 	@override String get twoPages => '2 Halaman';
 	@override String get readingDirection => 'Membaca arah';
 	@override String get leftToRight => 'ke kiri ke kanan';
-	@override String get rightToLeft => 'Kebenaran untuk meninggalkan';
+	@override String get rightToLeft => 'Kanan ke kiri';
 	@override String get letterSpacing => 'Surat yang Spasial';
 	@override String get wordSpacing => 'Kata ruang';
-	@override String get readerControlsHelp => 'Pinch atau gunakan kontrol zoom untuk memperbesar halaman. drag ke pan. Ctrl/ ⁇  + atau − menyesuaikan zoom; Ctrl/ ⁇  0 mengatur kembali. Page Up dan Page Down memutar halaman.';
+	@override String get readerControlsHelp => 'Rentangkan dua jari atau gunakan kontrol zoom untuk memperbesar halaman. Seret untuk menggeser halaman. Ctrl/⌘ dengan + atau − mengubah zoom; Ctrl/⌘ dengan 0 meresetnya. Page Up dan Page Down membalik halaman.';
 	@override String get imagePage => 'Komik halaman';
 	@override String get resetReader => 'Reset preferensi bacaan';
 	@override String get zoom => 'Penutup';
@@ -3051,33 +3051,33 @@ class _Translations$lending$id extends Translations$lending$en {
 	@override String get other => 'Perpustakaan lain';
 	@override String get libraryName => 'Nama perpustakaan';
 	@override String get libraryUrl => 'Situs Perpustakaan';
-	@override String get libraryUrlHint => 'Gunakan katalog perpustakaan atau daftar halaman.';
+	@override String get libraryUrlHint => 'Gunakan katalog perpustakaan atau halaman masuknya.';
 	@override String get intro => 'Pinjam dari perpustakaan Anda.Tahan buku Anda dekat.';
-	@override String get handoff => 'Mendaftar, meminjam dan membaca dengan aman dengan layanan perpustakaan Anda sendiri.';
+	@override String get handoff => 'Masuk, pinjam, dan baca dengan aman melalui layanan perpustakaan Anda sendiri.';
 	@override String get openService => 'Perpustakaan Terbuka';
 	@override String get findLibrary => 'Temukan perpustakaan';
 	@override String get search => 'Mencari buku dan penulis';
 	@override String get catalogue => 'Katalog';
 	@override String get loans => 'Pinjaman';
-	@override String get holds => 'Tahan';
+	@override String get holds => 'Reservasi';
 	@override String get signIn => 'Mendaftar dengan perpustakaan Anda';
 	@override String get waiting => 'Selesaikan pendaftaran di browser Anda, kemudian kembali ke sini.';
 	@override String get cancel => 'Batal';
 	@override String get disconnect => 'Menghapus perpustakaan';
-	@override String get disconnectMessage => 'Menghapus perpustakaan ini dari profil ini? pinjaman dan kekal dengan perpustakaan Anda.';
+	@override String get disconnectMessage => 'Hapus perpustakaan ini dari profil ini? Pinjaman dan reservasi Anda tetap tersimpan di perpustakaan.';
 	@override String get getBook => 'Dapatkan Buku';
 	@override String get checkAvailability => 'Periksa ketersediaan';
 	@override String get available => 'tersedia untuk pinjaman';
 	@override String get unavailable => 'Saat ini tidak tersedia';
-	@override String get borrow => 'Pinjaman';
-	@override String get placeHold => 'Tempat yang tahan';
+	@override String get borrow => 'Pinjam';
+	@override String get placeHold => 'Buat reservasi';
 	@override String get returnBook => 'Kembali Cepat';
-	@override String get cancelHold => 'Pembatalan Hold';
+	@override String get cancelHold => 'Batalkan reservasi';
 	@override String get confirmBorrow => 'Apakah Anda meminjam judul ini dari perpustakaan Anda?';
-	@override String get confirmReturn => 'Anda mungkin perlu meminjamnya lagi untuk melanjutkan.';
-	@override String get confirmCancelHold => 'Apakah Anda akan menghapus kekayaan Anda pada judul ini?';
+	@override String get confirmReturn => 'Kembalikan judul ini sekarang? Anda mungkin perlu meminjamnya lagi untuk melanjutkan.';
+	@override String get confirmCancelHold => 'Batalkan reservasi Anda untuk judul ini?';
 	@override String get email => 'Pastikan pemberitahuan email';
-	@override String due({required Object date}) => 'Jumlah : ${date}';
+	@override String due({required Object date}) => 'Batas pengembalian: ${date}';
 	@override String queue({required Object position}) => 'Posisi ${position} dalam baris';
 	@override String get empty => 'Belum ada judul di sini.';
 	@override String get openLibraryNote => 'Temukan katalog Open Library. opsi bacaan dan pinjaman ditampilkan di halaman setiap judul.';
@@ -3091,10 +3091,10 @@ class _Translations$lending$id extends Translations$lending$en {
 	@override String get continueService => 'Terus di Layanan';
 	@override String get comingSoon => 'In-app pinjaman · Datang segera';
 	@override String get comingSoonDescription => 'Anda dapat menggunakan perpustakaan Anda di Libby saat kami selesai menghubungkannya.';
-	@override String get suspendHold => 'Tahan Tahan';
-	@override String get resumeHold => 'Resume yang tetap';
-	@override String get suspendMessage => 'Tetaplah tempat Anda dalam baris dan biarkan pembaca berikutnya meminjam salinan ini? Anda dapat memulihkan pemegangannya kemudian.';
-	@override String get resumeMessage => 'Mengulangi kekurangan ini sehingga perpustakaan Anda dapat menawarkan Anda salinan berikutnya yang tersedia?';
+	@override String get suspendHold => 'Tangguhkan reservasi';
+	@override String get resumeHold => 'Lanjutkan reservasi';
+	@override String get suspendMessage => 'Pertahankan posisi Anda dalam antrean dan biarkan pembaca berikutnya meminjam salinan ini? Anda dapat melanjutkan reservasi nanti.';
+	@override String get resumeMessage => 'Lanjutkan reservasi ini agar perpustakaan dapat menawarkan salinan berikutnya yang tersedia?';
 	@override String get editEmail => 'Perubahan email pemberitahuan';
 }
 
@@ -4246,7 +4246,7 @@ extension on TranslationsId {
 			'auth.quickConnectWaiting' => 'Menunggu kelulusan...',
 			'auth.quickConnectCancel' => 'Batal',
 			'auth.quickConnectExpired' => 'Koneksi Cepat kedaluwarsa. Coba lagi.',
-			'auth.localDataRecoveryRequired' => 'PlezyNG tidak dapat dengan aman memulihkan data login lokal dan pendengaran playback.',
+			'auth.localDataRecoveryRequired' => 'PlezyNG tidak dapat memulihkan data masuk lokal dan data pemutaran yang tertunda dengan aman. Silakan masuk lagi.',
 			'auth.pinCheckRejected' => 'Pengesahan PIN Plex ditolak',
 			'auth.connectToDirectPlex' => 'Menghubungkan ke server lokal Plex',
 			'common.cancel' => 'Batal',
@@ -4544,7 +4544,7 @@ extension on TranslationsId {
 			'settings.importSettingsInvalidFile' => 'Fail ini tidak valid PlezyNG pengeksportan pengaturan',
 			'settings.importSettingsNoUser' => 'Mendaftar sebelum mengimport pengaturan',
 			'settings.cloudBackup' => 'Cloud Backup untuk',
-			'settings.cloudBackupDescription' => 'Backup pengaturan portabel ke titik akhir WebDAV di atas HTTPS. koneksi server dan pengesahan tetap pada perangkat ini.',
+			'settings.cloudBackupDescription' => 'Cadangkan pengaturan yang dapat dipindahkan ke alamat WebDAV melalui HTTPS. Koneksi server dan informasi masuk tetap disimpan di perangkat ini.',
 			'settings.cloudBackupUrl' => 'URL berkas JSON WebDAV',
 			'settings.cloudBackupUsername' => 'Nama Pengguna',
 			'settings.cloudBackupPassword' => 'Kata sandi',
@@ -5002,8 +5002,8 @@ extension on TranslationsId {
 			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('id'))(n, other: 'Ini menghapus semua ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episode di dalamnya, dan file mereka.', ), 
 			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('id'))(n, other: 'Item ini disimpan di seluruh file ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}, dan semua dari mereka akan dihapus.', ), 
 			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('id'))(n, other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episode lain disimpan dalam file yang sama dan juga akan dihapus:', ), 
-			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG tidak dapat memeriksa file mana yang akan dihapus, sehingga dapat menghapus lebih dari item yang disebutkan di atas.',
-			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Server Anda tidak memberikan rincian file untuk item ini, sehingga PlezyNG tidak dapat memeriksa file mana yang akan dihapus.',
+			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG tidak dapat memeriksa berkas mana yang akan dihapus, sehingga mungkin menghapus lebih dari item yang disebutkan di atas. Batalkan dan coba lagi, atau tetap hapus.',
+			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Server tidak memberikan rincian berkas untuk item ini, sehingga PlezyNG tidak dapat memeriksa berkas mana yang akan dihapus. Penghapusan mungkin mencakup lebih dari item yang disebutkan di atas.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media item dihapus dengan sukses',
 			'mediaMenu.mediaFailedToDelete' => 'gagal menghapus media item',
 			'mediaMenu.rate' => 'Rating',
@@ -5022,8 +5022,8 @@ extension on TranslationsId {
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
 			'accessibility.mediaCardWatched' => 'Ditonton',
 			'accessibility.mediaCardPartiallyWatched' => ({required Object percent}) => '${percent} persen dilihat',
-			'accessibility.mediaCardUnwatched' => 'tidak diperhatikan',
-			'accessibility.tapToPlay' => 'TAP untuk bermain',
+			'accessibility.mediaCardUnwatched' => 'belum ditonton',
+			'accessibility.tapToPlay' => 'Ketuk untuk memutar',
 			'accessibility.decrease' => 'Penurunan',
 			'accessibility.increase' => 'Meningkat',
 			'accessibility.decreaseValue' => ({required Object label}) => 'Penurunan ${label}',
@@ -5035,7 +5035,7 @@ extension on TranslationsId {
 			'accessibility.expandText' => 'Perkembangan teks',
 			'accessibility.collapseText' => 'Teks yang runtuh',
 			'accessibility.alphabetNavigation' => 'Navigasi Alphabet',
-			'accessibility.alphabetScrollHint' => 'Menarik ke atas atau ke bawah untuk bergerak melalui surat',
+			'accessibility.alphabetScrollHint' => 'Geser ke atas atau ke bawah untuk berpindah menurut huruf',
 			'accessibility.rowColumnPosition' => ({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Jalur ${row} dari ${rowCount}, kolom ${column} dari ${columnCount}',
 			'accessibility.rowPosition' => ({required Object row, required Object rowCount}) => 'Ruang ${row} dari ${rowCount}',
 			'accessibility.autoScrollPlay' => 'Bermain dengan Auto-Scroll',
@@ -5062,10 +5062,10 @@ extension on TranslationsId {
 			'accessibility.highContrastHint' => 'Teks yang lebih kuat, outlines dan fokus indikator pada permukaan terang atau gelap.',
 			'accessibility.interaction' => 'Pergerakan dan Interaksi',
 			'accessibility.reduceMotion' => 'Mengurangi gerakan',
-			'accessibility.reduceMotionHint' => 'Tetap fokus, transisi halaman dan efek dekoratif tetap.',
+			'accessibility.reduceMotionHint' => 'Hentikan animasi indikator fokus, transisi halaman, dan efek dekoratif.',
 			'accessibility.largeTargets' => 'Target Touch yang lebih besar',
 			'accessibility.largeTargetsHint' => 'Memberi kontrol yang dikongsi lebih banyak ruang untuk sentuhan dan navigasi asisten.',
-			'accessibility.navigationHint' => 'Gunakan Tab dan Shift+Tab untuk bergerak antara kontrol, Enter atau Space untuk mengaktifkan, dan Escape atau Back to close.',
+			'accessibility.navigationHint' => 'Gunakan Tab dan Shift+Tab untuk berpindah antar kontrol, Enter atau Space untuk mengaktifkan, dan Escape atau tombol Kembali untuk menutup. Zoom dan preferensi membaca tersedia saat buku terbuka.',
 			'tooltips.shufflePlay' => 'Permainan Shuffle',
 			'tooltips.playTrailer' => 'Bermain Trailer',
 			'tooltips.markAsWatched' => 'Mark yang ditonton',
@@ -5294,7 +5294,7 @@ extension on TranslationsId {
 			'profiles.signOutPlexTitle' => 'Mendaftar keluar dari Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Menghapus ${displayName} dan semua Plex Pengguna Rumah?',
 			'profiles.signOutPlexDeleteDownloads' => 'Juga menghapus download',
-			'profiles.signOutPlexDeleteDownloadsDescription' => 'Jika tidak, mereka tetap di perangkat ini dan kembali ketika Anda mendaftar kembali ke akun ini.',
+			'profiles.signOutPlexDeleteDownloadsDescription' => 'Jika tidak, unduhan tetap disimpan di perangkat ini dan tersedia lagi saat Anda masuk kembali ke akun ini.',
 			'profiles.signedOutPlex' => 'Ditandatangani dari Plex.',
 			'profiles.signOutFailed' => 'Menandatangani gagal',
 			'profiles.sectionTitle' => 'Profil',
@@ -5659,7 +5659,7 @@ extension on TranslationsId {
 			'detail.endsAt' => ({required Object time}) => 'Berakhir di ${time}',
 			'startup.failedTitle' => 'PlezyNG tidak bisa memulai',
 			'startup.failedBody' => 'Ada sesuatu yang salah selama startup. detail di bawah ini mengidentifikasi apa yang gagal.',
-			'startup.failedBodyRepairable' => 'File pengaturan yang disimpan di PlezyNG rusak dan harus dibangun kembali sebelum PlezyNG dapat dimulai.',
+			'startup.failedBodyRepairable' => 'Berkas pengaturan PlezyNG yang tersimpan rusak dan harus dibuat ulang sebelum aplikasi dapat dimulai. Mencoba lagi tidak akan membantu — pilih Perbaiki penyimpanan.',
 			'startup.phaseLabel' => 'Langkah',
 			'startup.showDetails' => 'Tunjukkan detail',
 			'startup.hideDetails' => 'Temukan detail',
@@ -5670,20 +5670,20 @@ extension on TranslationsId {
 			'startup.repairTitle' => 'Membaiki data yang disimpan?',
 			'startup.repairBodyCommon' => 'file pengaturan PlezyNG rusak dan tidak dapat dibaca. perbaikan mengatur kembali setiap pengaturan ke defaultnya.',
 			'startup.repairBodyOneCredential' => 'Satu login yang disimpan rosak dan tidak dapat dibaca. pembaikan menghapus hanya satu; seting lain Anda ditinggalkan sendirian.',
-			'startup.repairBodySignInsKept' => 'Server dan profil Anda harus tetap terdaftar.',
-			'startup.repairBodySignInsLost' => 'Kunci yang melindungi sign-in Anda yang disimpan tidak dapat dikembalikan dari file ini, jadi Anda harus mendaftar masuk ke setiap server dan profil lagi.',
+			'startup.repairBodySignInsKept' => 'Sesi masuk ke server dan profil Anda seharusnya tetap aktif.',
+			'startup.repairBodySignInsLost' => 'Kunci yang melindungi data masuk tersimpan tidak dapat dipulihkan dari berkas ini. Anda harus masuk lagi ke setiap server dan profil. Tidak ada yang berubah di server media Anda.',
 			'startup.repairBodySessionsUncertain' => 'Data pelacak (MAL, AniList, Simkl, Trakt) dan Seerr disimpan terpisah dan mungkin tetap tersimpan atau hilang. PlezyNG akan memberi tahu dengan tepat data yang dipertahankan.',
 			'startup.repairConfirm' => 'Perbaikan',
 			'startup.repairSucceeded' => 'Penyimpanan diperbaiki',
 			'startup.repairNeedsRestart' => 'Penyimpanan diperbaiki - perlu memulai kembali',
-			'startup.restartRequiredBody' => 'Data Anda telah diperbaiki, tetapi PlezyNG harus mulai segar sebelum dapat menggunakannya. mendekati PlezyNG dan buka lagi.',
+			'startup.restartRequiredBody' => 'Data Anda telah diperbaiki, tetapi PlezyNG harus dimulai ulang sebelum dapat menggunakannya. Tutup PlezyNG lalu buka kembali.',
 			'startup.quitPlezy' => 'Berdasarkan PlezyNG',
 			'startup.repairFailed' => 'Perbaikan gagal',
-			'startup.repairKeptSignIns' => 'Server dan profil Anda masih terdaftar.',
+			'startup.repairKeptSignIns' => 'Sesi masuk ke server dan profil Anda masih aktif.',
 			'startup.repairLostSignIns' => 'Kunci melindungi sign-ins yang disimpan Anda tidak dapat dipulihkan. Anda akan perlu mendaftar masuk ke setiap server dan profil lagi.',
 			'startup.repairLostSessions' => 'Sekurang-kurangnya satu tracker atau koneksi Seerr telah hilang dan harus dihubungkan kembali.',
 			'startup.backupTitle' => 'Satu salinan file yang rusak disimpan',
-			'startup.backupWarning' => 'Ini berisi pengesahan masuk Anda.Jangan upload atau berbagi.',
+			'startup.backupWarning' => 'Salinan ini berisi informasi masuk Anda. Jangan unggah atau bagikan.',
 			'startup.deleteBackup' => 'Menghapus Kopi',
 			'startup.backupDeleted' => 'Kopi yang dihapus.',
 			'startup.previousFailureTitle' => 'PlezyNG gagal memulai kali terakhir',
@@ -5923,7 +5923,7 @@ extension on TranslationsId {
 			'liveTv.cancelRecordingMessage' => ({required Object title}) => '${title} tidak akan lagi tercatat.',
 			'liveTv.deleteRule' => 'Menghapus aturan',
 			'liveTv.deleteRuleTitle' => 'Menghapus aturan rekaman?',
-			'liveTv.deleteRuleMessage' => ({required Object title}) => 'Episod masa depan dari ${title} tidak akan tercatat.',
+			'liveTv.deleteRuleMessage' => ({required Object title}) => 'Episode mendatang dari ${title} tidak akan direkam.',
 			'liveTv.recordingScheduled' => 'Perekaman dijadwalkan.',
 			'liveTv.alreadyScheduled' => 'Program ini sudah direncanakan',
 			'liveTv.dvrAdminRequired' => 'Pengaturan DVR membutuhkan akun admin',
@@ -5962,7 +5962,7 @@ extension on TranslationsId {
 			'collections.collection' => 'Koleksi',
 			'collections.empty' => 'Koleksi itu kosong',
 			'collections.deleteCollection' => 'Menghapus Koleksi',
-			'collections.deleteConfirm' => ({required Object title}) => 'Menghapus "${title}"? ini tidak dapat diabaikan.',
+			'collections.deleteConfirm' => ({required Object title}) => 'Hapus "${title}"? Tindakan ini tidak dapat dibatalkan.',
 			'collections.deleted' => 'Koleksi dihapus',
 			'collections.deleteFailed' => 'gagal menghapus koleksi',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Tidak berhasil menghapus koleksi: ${error}',
@@ -6250,7 +6250,7 @@ extension on TranslationsId {
 			'downloads.keepNUnwatched' => ({required Object count}) => 'Tinggalkan ${count} tidak dipantau',
 			'downloads.editSyncRule' => 'Mengedit Sink',
 			'downloads.removeSyncRule' => 'Menghapus aturan sinergi',
-			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'Hentikan penyegerakan "${title}"? episode yang dimuat turun akan disimpan.',
+			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'Hentikan sinkronisasi "${title}"? Episode yang telah diunduh akan tetap disimpan.',
 			'downloads.removeListSyncRuleConfirm' => ({required Object title}) => 'Berhenti menyinkronkan "${title}"',
 			'downloads.deleteSyncRuleDownloads' => 'Juga menghapus download yang terkait',
 			'downloads.deleteSyncRuleDownloadsDescription' => 'Download yang digunakan oleh aturan sink atau profil lain akan disimpan.',
@@ -6779,7 +6779,7 @@ extension on TranslationsId {
 			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => 'Hubungi secara langsung menggunakan IP lokal atau URL. Hubungi ${name}.',
 			'addServer.insecureTitle' => 'Koneksi yang tidak terenkripsi',
 			'addServer.insecureDescription' => ({required Object url}) => '${url} menggunakan HTTP. Orang lain di jaringan dapat membaca atau mengubah kata sandi, token, dan media Anda. Gunakan HTTPS jika tersedia. Lanjutkan hanya jika Anda memercayai jaringan ini dan menerima risikonya.',
-			'addServer.allowHttp' => 'Permohonan HTTP',
+			'addServer.allowHttp' => 'Izinkan HTTP',
 			'addServer.httpsRequired' => 'Menggunakan HTTPS atau secara eksplisit memungkinkan koneksi yang tidak terenkripsi.',
 			'watchLink.serverUnavailable' => 'Saya tidak bisa mengakses server Plex untuk link ini.',
 			'watchLink.notFound' => 'Saya tidak dapat menemukan acara atau film ini di server Plex Anda.',
@@ -6900,7 +6900,7 @@ extension on TranslationsId {
 			'fileSources.source' => 'Sumber',
 			'fileSources.name' => 'Nama',
 			'fileSources.endpoint' => 'URL server',
-			'fileSources.root' => 'Fungsi atau Prefix',
+			'fileSources.root' => 'Folder atau prefiks',
 			'fileSources.username' => 'Nama Pengguna',
 			'fileSources.password' => 'Kata sandi',
 			'fileSources.token' => 'API Token',
@@ -6975,19 +6975,19 @@ extension on TranslationsId {
 			'fileSources.lineHeight' => 'Line ruang',
 			'fileSources.margin' => 'Margin',
 			'fileSources.font' => 'Tipe Wajah',
-			'fileSources.serif' => 'Serius',
-			'fileSources.sans' => 'Tanpa seri',
-			'fileSources.mono' => 'Monopoli',
+			'fileSources.serif' => 'Serif',
+			'fileSources.sans' => 'Tanpa serif',
+			'fileSources.mono' => 'Monospace',
 			'fileSources.columns' => 'Kolom',
 			'fileSources.scroll' => 'Scroll secara vertikal',
-			'fileSources.justify' => 'Menghukum teks',
+			'fileSources.justify' => 'Ratakan teks kiri-kanan',
 			'fileSources.readerTheme' => 'Penampilan halaman',
 			'fileSources.appTheme' => 'Mengikuti tema app',
 			'fileSources.paper' => 'Kertas',
 			'fileSources.sepia' => 'Sepia',
 			'fileSources.night' => 'Malam yang',
-			'fileSources.readAloud' => 'Baca halaman ini dengan teliti',
-			'fileSources.readAlong' => 'Baca Selanjutnya',
+			'fileSources.readAloud' => 'Bacakan halaman ini',
+			'fileSources.readAlong' => 'Baca sambil mendengarkan',
 			'fileSources.stopReading' => 'Hentikan narasi',
 			'fileSources.searchBook' => 'Pencarian dalam buku',
 			'fileSources.noMatches' => 'Tidak ada pertandingan',
@@ -7003,9 +7003,9 @@ extension on TranslationsId {
 			'fileSources.all' => 'Semua',
 			'fileSources.downloads' => 'File Offline',
 			'fileSources.confirmDelete' => 'Hapus salinan luring yang dipilih? Posisi membaca atau mendengarkan dan catatan Anda akan tetap tersimpan.',
-			'fileSources.errorAuthentication' => 'Tandakan kembali untuk menghubungkan kembali sumber ini.',
+			'fileSources.errorAuthentication' => 'Masuk lagi untuk menyambungkan kembali sumber ini.',
 			'fileSources.errorPermission' => 'Sumber ini tidak memberikan akses ke file yang diminta.',
-			'fileSources.errorUnavailable' => 'Coba lagi, atau buka salinan offline.',
+			'fileSources.errorUnavailable' => 'Sumber tidak tersedia. Coba lagi, atau buka salinan luring.',
 			'fileSources.errorUnsupported' => 'Format atau koneksi ini tidak didukung pada perangkat ini. periksa panduan pengaturan sumber.',
 			'fileSources.errorInvalidData' => 'File atau respons server ini tidak dapat dibaca dengan aman.',
 			'fileSources.errorCancelled' => 'Operasi ini dibatalkan.',
@@ -7043,10 +7043,10 @@ extension on TranslationsId {
 			'fileSources.twoPages' => '2 Halaman',
 			'fileSources.readingDirection' => 'Membaca arah',
 			'fileSources.leftToRight' => 'ke kiri ke kanan',
-			'fileSources.rightToLeft' => 'Kebenaran untuk meninggalkan',
+			'fileSources.rightToLeft' => 'Kanan ke kiri',
 			'fileSources.letterSpacing' => 'Surat yang Spasial',
 			'fileSources.wordSpacing' => 'Kata ruang',
-			'fileSources.readerControlsHelp' => 'Pinch atau gunakan kontrol zoom untuk memperbesar halaman. drag ke pan. Ctrl/ ⁇  + atau − menyesuaikan zoom; Ctrl/ ⁇  0 mengatur kembali. Page Up dan Page Down memutar halaman.',
+			'fileSources.readerControlsHelp' => 'Rentangkan dua jari atau gunakan kontrol zoom untuk memperbesar halaman. Seret untuk menggeser halaman. Ctrl/⌘ dengan + atau − mengubah zoom; Ctrl/⌘ dengan 0 meresetnya. Page Up dan Page Down membalik halaman.',
 			'fileSources.imagePage' => 'Komik halaman',
 			'fileSources.resetReader' => 'Reset preferensi bacaan',
 			'fileSources.zoom' => 'Penutup',
@@ -7058,33 +7058,33 @@ extension on TranslationsId {
 			'lending.other' => 'Perpustakaan lain',
 			'lending.libraryName' => 'Nama perpustakaan',
 			'lending.libraryUrl' => 'Situs Perpustakaan',
-			'lending.libraryUrlHint' => 'Gunakan katalog perpustakaan atau daftar halaman.',
+			'lending.libraryUrlHint' => 'Gunakan katalog perpustakaan atau halaman masuknya.',
 			'lending.intro' => 'Pinjam dari perpustakaan Anda.Tahan buku Anda dekat.',
-			'lending.handoff' => 'Mendaftar, meminjam dan membaca dengan aman dengan layanan perpustakaan Anda sendiri.',
+			'lending.handoff' => 'Masuk, pinjam, dan baca dengan aman melalui layanan perpustakaan Anda sendiri.',
 			'lending.openService' => 'Perpustakaan Terbuka',
 			'lending.findLibrary' => 'Temukan perpustakaan',
 			'lending.search' => 'Mencari buku dan penulis',
 			'lending.catalogue' => 'Katalog',
 			'lending.loans' => 'Pinjaman',
-			'lending.holds' => 'Tahan',
+			'lending.holds' => 'Reservasi',
 			'lending.signIn' => 'Mendaftar dengan perpustakaan Anda',
 			'lending.waiting' => 'Selesaikan pendaftaran di browser Anda, kemudian kembali ke sini.',
 			'lending.cancel' => 'Batal',
 			'lending.disconnect' => 'Menghapus perpustakaan',
-			'lending.disconnectMessage' => 'Menghapus perpustakaan ini dari profil ini? pinjaman dan kekal dengan perpustakaan Anda.',
+			'lending.disconnectMessage' => 'Hapus perpustakaan ini dari profil ini? Pinjaman dan reservasi Anda tetap tersimpan di perpustakaan.',
 			'lending.getBook' => 'Dapatkan Buku',
 			'lending.checkAvailability' => 'Periksa ketersediaan',
 			'lending.available' => 'tersedia untuk pinjaman',
 			'lending.unavailable' => 'Saat ini tidak tersedia',
-			'lending.borrow' => 'Pinjaman',
-			'lending.placeHold' => 'Tempat yang tahan',
+			'lending.borrow' => 'Pinjam',
+			'lending.placeHold' => 'Buat reservasi',
 			'lending.returnBook' => 'Kembali Cepat',
-			'lending.cancelHold' => 'Pembatalan Hold',
+			'lending.cancelHold' => 'Batalkan reservasi',
 			'lending.confirmBorrow' => 'Apakah Anda meminjam judul ini dari perpustakaan Anda?',
-			'lending.confirmReturn' => 'Anda mungkin perlu meminjamnya lagi untuk melanjutkan.',
-			'lending.confirmCancelHold' => 'Apakah Anda akan menghapus kekayaan Anda pada judul ini?',
+			'lending.confirmReturn' => 'Kembalikan judul ini sekarang? Anda mungkin perlu meminjamnya lagi untuk melanjutkan.',
+			'lending.confirmCancelHold' => 'Batalkan reservasi Anda untuk judul ini?',
 			'lending.email' => 'Pastikan pemberitahuan email',
-			'lending.due' => ({required Object date}) => 'Jumlah : ${date}',
+			'lending.due' => ({required Object date}) => 'Batas pengembalian: ${date}',
 			'lending.queue' => ({required Object position}) => 'Posisi ${position} dalam baris',
 			'lending.empty' => 'Belum ada judul di sini.',
 			'lending.openLibraryNote' => 'Temukan katalog Open Library. opsi bacaan dan pinjaman ditampilkan di halaman setiap judul.',
@@ -7098,10 +7098,10 @@ extension on TranslationsId {
 			'lending.continueService' => 'Terus di Layanan',
 			'lending.comingSoon' => 'In-app pinjaman · Datang segera',
 			'lending.comingSoonDescription' => 'Anda dapat menggunakan perpustakaan Anda di Libby saat kami selesai menghubungkannya.',
-			'lending.suspendHold' => 'Tahan Tahan',
-			'lending.resumeHold' => 'Resume yang tetap',
-			'lending.suspendMessage' => 'Tetaplah tempat Anda dalam baris dan biarkan pembaca berikutnya meminjam salinan ini? Anda dapat memulihkan pemegangannya kemudian.',
-			'lending.resumeMessage' => 'Mengulangi kekurangan ini sehingga perpustakaan Anda dapat menawarkan Anda salinan berikutnya yang tersedia?',
+			'lending.suspendHold' => 'Tangguhkan reservasi',
+			'lending.resumeHold' => 'Lanjutkan reservasi',
+			'lending.suspendMessage' => 'Pertahankan posisi Anda dalam antrean dan biarkan pembaca berikutnya meminjam salinan ini? Anda dapat melanjutkan reservasi nanti.',
+			'lending.resumeMessage' => 'Lanjutkan reservasi ini agar perpustakaan dapat menawarkan salinan berikutnya yang tersedia?',
 			'lending.editEmail' => 'Perubahan email pemberitahuan',
 			'audiobook.syncTitle' => 'Membaca & Mendengarkan Sync',
 			'audiobook.syncHelp' => 'Tetap membaca posisi, mendengarkan posisi, status penyelesaian, buku catatan dan catatan di seluruh perangkat Anda. Pilih akun penyimpanan yang disertakan dan gunakan kode sinkron yang sama pada setiap perangkat. Membaca dan mendengarkan tetap terpisah.',

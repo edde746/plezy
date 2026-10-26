@@ -1,5 +1,5 @@
 // Generated from lib/i18n; edit the source catalog.
 "NSLocalNetworkUsageDescription" = "PlezyNG은 현지 네트워크에서 미디어 서버 및 플레이백 장치에 연결됩니다.";
-"NSLocationWhenInUseUsageDescription" = "PlezyNG은 위치 접근을 사용하여 iOS이 해당 위치 네트워크를 탐지하고 미디어 서버에 연결할 필요가 있는 경우에 해당 위치 접근이 필요합니다.";
-"NSPhotoLibraryUsageDescription" = "사진 도서관에서 미디어 예술 작품으로 사용하기 위해 사진을 선택합니다.";
+"NSLocationWhenInUseUsageDescription" = "PlezyNG는 로컬 네트워크를 찾고 미디어 서버에 연결하는 데 iOS가 요구하는 경우 위치 접근 권한을 사용합니다.";
+"NSPhotoLibraryUsageDescription" = "사진 보관함에서 미디어 아트워크로 사용할 이미지를 선택하세요.";
 "NSCameraUsageDescription" = "QR 코드를 스캔하여 Companion Remote를 연결합니다.";

@@ -103,7 +103,6 @@ class TranslationsKo extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$platform$ko platform = _Translations$platform$ko._(_root);
 	@override late final _Translations$fileSources$ko fileSources = _Translations$fileSources$ko._(_root);
 	@override late final _Translations$lending$ko lending = _Translations$lending$ko._(_root);
-	@override late final _Translations$audiobook$ko audiobook = _Translations$audiobook$ko._(_root);
 }
 
 // Path: app
@@ -133,7 +132,7 @@ class _Translations$cast$ko extends Translations$cast$en {
 	@override String get stopCasting => '카스팅을 멈추세요';
 	@override String get castToDevice => '장치에 던져';
 	@override String get noEpisodeAvailable => '촬영할 에피소드가 없습니다.';
-	@override String get startFailed => '⁇ 을 시작할 수 없습니다. 서버를 확인하고 다시 시도하십시오.';
+	@override String get startFailed => '캐스트를 시작할 수 없습니다. 서버를 확인하고 다시 시도하세요.';
 }
 
 // Path: automation
@@ -522,7 +521,7 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get importSettingsInvalidFile => '유효한 PlezyNG 설정 내보내기 파일이 아닙니다';
 	@override String get importSettingsNoUser => '설정을 가져오기 전에 로그인하세요';
 	@override String get cloudBackup => '클라우드 백업';
-	@override String get cloudBackupDescription => 'HTTPS 이상의 WebDAV 엔드 포인트로 이동 설정을 백업합니다. 서버 연결 및 인증서가 이 장치에 남아 있습니다.';
+	@override String get cloudBackupDescription => '이동 가능한 설정을 HTTPS를 통해 WebDAV 주소에 백업합니다. 서버 연결 및 로그인 정보는 이 기기에 유지됩니다.';
 	@override String get cloudBackupUrl => 'WebDAV JSON 파일 URL';
 	@override String get cloudBackupUsername => '사용자 이름';
 	@override String get cloudBackupPassword => '비밀번호';
@@ -617,7 +616,7 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get downloadQuality => '다운로드 품질';
 	@override String get downloadQualityDescription => 'Plex은 다운로드 쿼드에 변환 된 복사본을 준비합니다. Jellyfin 및 Emby는 파일 다운로드 중 트랜스코드; 중단 된 전송은 다시 시작해야 할 수 있습니다.';
 	@override String get askDownloadQualityEachTime => '각 다운로드에 대한 품질 선택';
-	@override String get askDownloadQualityEachTimeDescription => '각 비디오 다운로드를  ⁇ 기 전에 품질 피커를 표시합니다.';
+	@override String get askDownloadQualityEachTimeDescription => '각 동영상 다운로드를 대기열에 추가하기 전에 화질 선택 화면 표시';
 	@override String get cellularDownloadBlocked => '셀룰러에서는 다운로드가 차단됩니다. Wi-Fi를 사용하거나 설정을 변경하세요.';
 	@override String get maxVolume => '최대 볼륨';
 	@override String get maxVolumeDescription => '음량이 작은 콘텐츠를 위해 100% 이상의 볼륨을 허용합니다';
@@ -982,15 +981,15 @@ class _Translations$mediaMenu$ko extends Translations$mediaMenu$en {
 	@override String confirmDeleteTarget({required Object title}) => '서버에서 ${title}을(를) 영구 삭제할까요?';
 	@override String get deleteMultipleWarning => '모든 에피소드와 파일이 포함됩니다.';
 	@override String deleteEpisodeCountWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n,
-		one: '이 파일은 모든 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 에피소드와 그 파일을 삭제합니다.',
+		one: '포함된 에피소드 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}개와 해당 파일이 삭제됩니다.',
 		other: '포함된 에피소드 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}개와 해당 파일이 모두 삭제됩니다.',
 	);
 	@override String deleteMultiPartWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n,
-		one: '이 항목은 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 파일로 저장되며, 삭제됩니다.',
+		one: '이 항목은 파일 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}개에 저장되어 있으며, 해당 파일이 삭제됩니다.',
 		other: '이 항목은 파일 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}개에 걸쳐 저장되어 있으며, 모든 파일이 삭제됩니다.',
 	);
 	@override String deleteSharedFileHeading({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n,
-		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 다른 에피소드는 같은 파일에 저장되며 또한 삭제됩니다 :',
+		one: '같은 파일에 저장된 다른 에피소드 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}개도 함께 삭제됩니다:',
 		other: '같은 파일에 저장된 다른 에피소드 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}개도 함께 삭제됩니다:',
 	);
 	@override String get deleteScopeUnverifiedProbeFailed => 'Plezy가 어떤 파일이 삭제될지 확인하지 못해 위 항목보다 더 많은 파일이 삭제될 수 있습니다. 취소하고 다시 시도하거나 그래도 삭제하세요.';
@@ -1068,13 +1067,13 @@ class _Translations$accessibility$ko extends Translations$accessibility$en {
 	@override String get preview => '다음 이야기를 찾아보세요.읽고, 듣고, 자신의 속도로 보세요.';
 	@override String get boldText => '용감한 인터페이스 텍스트';
 	@override String get highContrast => '높은 대조';
-	@override String get highContrastHint => '더 강력한 텍스트, 출처 및 밝거나 어두운 표면에 초점을 지표.';
+	@override String get highContrastHint => '밝거나 어두운 배경에서 텍스트, 윤곽선 및 포커스 표시를 더 선명하게 보여줍니다.';
 	@override String get interaction => '운동과 상호 작용';
 	@override String get reduceMotion => '움직임을 줄이기';
-	@override String get reduceMotionHint => '초점, 페이지 전환 및 장식 효과를 계속 유지하십시오.';
+	@override String get reduceMotionHint => '포커스 표시, 페이지 전환 및 장식 효과의 움직임을 멈춥니다.';
 	@override String get largeTargets => '더 큰 터치 목표';
-	@override String get largeTargetsHint => '공유 컨트롤을 더 많은 터치 및 보조 항해 공간을 제공합니다.';
-	@override String get navigationHint => '탭과 Shift+Tab을 사용하여 컨트롤 사이를 이동, 활성화하기 위해 입력 또는 공간, 탈출 또는 닫기 위해 다시 사용합니다.';
+	@override String get largeTargetsHint => '공통 컨트롤의 영역을 넓혀 터치와 보조 기술을 통한 탐색을 쉽게 합니다.';
+	@override String get navigationHint => 'Tab과 Shift+Tab으로 컨트롤 사이를 이동하고, Enter 또는 Space로 실행하고, Escape 또는 뒤로 버튼으로 닫으세요. 책을 열면 확대/축소와 읽기 설정을 사용할 수 있습니다.';
 }
 
 // Path: tooltips
@@ -1520,7 +1519,6 @@ class _Translations$discover$ko extends Translations$discover$en {
 	@override String playEpisode({required Object season, required Object episode}) => 'S${season}E${episode}';
 	@override String get overview => '개요';
 	@override String get cast => '출연진';
-	@override late final _Translations$discover$findNext$ko findNext = _Translations$discover$findNext$ko._(_root);
 	@override String get extras => '예고편 및 부가영상';
 	@override String get studio => '제작사';
 	@override String get rating => '연령 등급';
@@ -1827,7 +1825,7 @@ class _Translations$liveTv$ko extends Translations$liveTv$en {
 	@override String get timelineBuffer => '버퍼 타임 라인';
 	@override String get timelineUnavailable => '시간표가 불가능';
 	@override String get timelineEstimated => '값진 플레이백';
-	@override String get timelinePending => '찾기  ⁇';
+	@override String get timelinePending => '재생 위치 이동 대기 중';
 	@override String get timelineStale => '일정은 과장될 수 있습니다.';
 	@override String get unknownHub => '알 수 없음';
 	@override String get unknownError => '알 수 없는 오류';
@@ -2740,7 +2738,7 @@ class _Translations$addServer$ko extends Translations$addServer$en {
 	@override String connectDirectPlexCardSubtitleScoped({required Object name}) => 'IP 또는 URL을 사용하여 직접 연결합니다. ${name}에 연결합니다.';
 	@override String get insecureTitle => '암호화되지 않은 연결';
 	@override String insecureDescription({required Object url}) => '${url}은(는) HTTP를 사용합니다. 네트워크의 다른 사용자가 비밀번호, 토큰 및 미디어를 읽거나 변경할 수 있습니다. 가능하면 HTTPS를 사용하세요. 이 네트워크를 신뢰하고 위험을 감수하는 경우에만 계속하세요.';
-	@override String get allowHttp => '허용 HTTP';
+	@override String get allowHttp => 'HTTP 허용';
 	@override String get httpsRequired => 'HTTPS 또는 명시적으로 암호화되지 않은 연결을 허용합니다.';
 }
 
@@ -2775,7 +2773,7 @@ class _Translations$homeLayout$ko extends Translations$homeLayout$en {
 	@override String get resetToast => '홈 다시 원래 Plezy 영웅 레이아웃으로 설정';
 	@override String get resetHeroTitle => '영웅 레이아웃을 주식으로 다시 설정할 수 있습니까 Plezy?';
 	@override String get resetHeroBody => '각 라인의 영웅 설정을 끄고 홈의 상단에있는 단일 회전 밴드를 반환합니다, 영웅 라인이 존재하기 전과 마찬가지입니다.';
-	@override String get removeRowTitle => '집에서  ⁇ 을 벗어나는 것?';
+	@override String get removeRowTitle => '홈 화면의 행을 삭제할까요?';
 	@override String removeRowBody({required Object title}) => '${title} 삭제될 것입니다.이것은 무시할 수 없습니다.';
 	@override String get sync => '시나리오';
 	@override String get syncAccountTitle => 'Plex 계정과 동기화된 배열';
@@ -2791,8 +2789,8 @@ class _Translations$homeLayout$ko extends Translations$homeLayout$en {
 	@override String organizeLibraryRowsDescription({required Object n}) => '계속 보기 + ${n} 라인: 이동, 도서관, 홈, 영웅, 자동 슬라이드';
 	@override String get renderAsHero => '영웅 카드로 렌더';
 	@override String get heroOnlySingleCollection => '이 순서가 단일 컬렉션의 실제 제목에 해결되면만 사용할 수 있습니다.';
-	@override String get hero => '영웅';
-	@override String get autoSlide => '스위치 스위치';
+	@override String get hero => '히어로';
+	@override String get autoSlide => '자동 슬라이드';
 	@override String get autoSlideDescription => '또한 몇 초마다 스스로 슬라이드합니다. 링 (PC) 및 d-pad (TV)는 항상 작동하고 타이머를 다시 시작합니다.';
 	@override String get autoSlideEditDescription => '또한 몇 초마다 스스로 슬라이드합니다. 끄기 : 펜 (PC)을 클릭하거나 원격 (TV)에서 왼쪽/오른쪽을 누르면 움직입니다.';
 	@override String get enableHeroFirst => '영웅을 먼저 할 수 있습니다.';
@@ -2814,7 +2812,7 @@ class _Translations$homeLayout$ko extends Translations$homeLayout$en {
 	@override String get noPlexRows => 'No. Plex 관리 라인이 이 도서관에 반환되었습니다.';
 	@override String get openDetails => '개방된 세부 사항';
 	@override String get heroCards => '영웅 카드';
-	@override String get tapHeroCard => '영웅 카드를  ⁇ 다';
+	@override String get tapHeroCard => '히어로 카드를 탭할 때';
 	@override String get tvPlayFocus => 'TV 원격: 히틀러 플레이 버튼';
 	@override String get tvPlayFocusDescription => 'D-pad 아래는 다음 라인으로 이동하기 전에 플레이 버튼을 멈추고 다음 라인에 직접 스키를 끄십시오.';
 	@override String get tvWrap => 'TV 원격: 롤 영웅 카드';
@@ -2877,8 +2875,8 @@ class _Translations$platform$ko extends Translations$platform$en {
 
 	// Translations
 	@override String get localNetworkPermission => 'PlezyNG은 현지 네트워크에서 미디어 서버 및 플레이백 장치에 연결됩니다.';
-	@override String get locationPermission => 'PlezyNG은 위치 접근을 사용하여 iOS이 해당 위치 네트워크를 탐지하고 미디어 서버에 연결할 필요가 있는 경우에 해당 위치 접근이 필요합니다.';
-	@override String get photoLibraryPermission => '사진 도서관에서 미디어 예술 작품으로 사용하기 위해 사진을 선택합니다.';
+	@override String get locationPermission => 'PlezyNG는 로컬 네트워크를 찾고 미디어 서버에 연결하는 데 iOS가 요구하는 경우 위치 접근 권한을 사용합니다.';
+	@override String get photoLibraryPermission => '사진 보관함에서 미디어 아트워크로 사용할 이미지를 선택하세요.';
 	@override String get cameraPermission => 'QR 코드를 스캔하여 Companion Remote를 연결합니다.';
 }
 
@@ -2897,7 +2895,7 @@ class _Translations$fileSources$ko extends Translations$fileSources$en {
 	@override String get source => '출처';
 	@override String get name => '이름';
 	@override String get endpoint => '서버 URL';
-	@override String get root => '폴더 또는 사전';
+	@override String get root => '폴더 또는 접두사';
 	@override String get username => '사용자 이름';
 	@override String get password => '비밀번호';
 	@override String get token => 'API 토큰';
@@ -2952,7 +2950,7 @@ class _Translations$fileSources$ko extends Translations$fileSources$en {
 	@override String get useRemote => '다른 장치를 사용하라';
 	@override String get history => '위치 역사';
 	@override String get groupAudio => '한 개의 오디오 책으로 들으십시오.';
-	@override String get groupHint => '이 폴더에 현재 업로드된 오디오 파일을 결합합니다.이 폴더에서 모든 페이지를 먼저 업로드합니다.';
+	@override String get groupHint => '현재 이 폴더에 불러온 오디오 파일을 하나로 묶습니다. 먼저 모든 페이지를 불러오세요.';
 	@override String get order => '파일 명령';
 	@override String get moveUp => '움직이기 위하여';
 	@override String get moveDown => '아래로 이동';
@@ -2974,26 +2972,26 @@ class _Translations$fileSources$ko extends Translations$fileSources$en {
 	@override String get lineHeight => '라인 스페셜';
 	@override String get margin => '마르지나';
 	@override String get font => '타이프페이스';
-	@override String get serif => '시리얼';
-	@override String get sans => '시리얼 없음';
-	@override String get mono => '단일 공간';
+	@override String get serif => '세리프';
+	@override String get sans => '산세리프';
+	@override String get mono => '고정폭';
 	@override String get columns => '콜럼버스';
 	@override String get scroll => 'Vertically 스크롤';
-	@override String get justify => '텍스트 정당화';
+	@override String get justify => '양쪽 맞춤';
 	@override String get readerTheme => '페이지 출현';
 	@override String get appTheme => '앱 테마 추적';
 	@override String get paper => '종이';
 	@override String get sepia => '세피아';
 	@override String get night => '밤이';
-	@override String get readAloud => '이 페이지를 읽으십시오.';
-	@override String get readAlong => '계속 읽어보세요';
-	@override String get stopReading => '멈추기 이야기';
+	@override String get readAloud => '이 페이지 소리 내어 읽기';
+	@override String get readAlong => '음성에 맞춰 읽기';
+	@override String get stopReading => '읽어주기 중지';
 	@override String get searchBook => '책에서 검색';
 	@override String get noMatches => '경기 없음';
 	@override String get previousPage => '이전 페이지';
 	@override String get nextPage => '다음 페이지';
 	@override String page({required Object number}) => '페이지 ${number}';
-	@override String get externalBlocked => '외부 책 링크가 독자에서 꺼져 있습니다.';
+	@override String get externalBlocked => '리더에서는 책의 외부 링크가 비활성화되어 있습니다.';
 	@override String get loading => '열기...';
 	@override String get narrator => '묘사기';
 	@override String get audio => '오디오';
@@ -3004,14 +3002,14 @@ class _Translations$fileSources$ko extends Translations$fileSources$en {
 	@override String get confirmDelete => '선택한 오프라인 사본을 삭제할까요? 읽기 또는 청취 위치와 메모는 유지됩니다.';
 	@override String get errorAuthentication => '다시 이 소스를 다시 연결하려면 로그인하십시오.';
 	@override String get errorPermission => '이 소스는 요청된 파일에 대한 액세스를 허용하지 않았습니다.';
-	@override String get errorUnavailable => '다시 시도하거나 오프라인 복사본을 열어보세요.';
+	@override String get errorUnavailable => '소스를 사용할 수 없습니다. 다시 시도하거나 오프라인 사본을 여세요.';
 	@override String get errorUnsupported => '이 형식 또는 연결이 이 장치에서 지원되지 않습니다.이 장치에서 원본 설정 가이드를 확인합니다.';
 	@override String get errorInvalidData => '이 파일 또는 서버 응답은 안전하게 읽을 수 없습니다.';
 	@override String get errorCancelled => '이 작업은 취소되었다.';
 	@override String get errorConflict => '위치가 다른 세션에서 변경되었습니다. 항목을 다시 열어 위치를 선택합니다.';
 	@override String get signIn => '로그인';
 	@override String get reconnect => '다시 연결';
-	@override String get folderHelp => '출처 뿌리에서 시작하기 위해 빈을 남겨 두십시오.S3 URL에는 뷔페가 포함되어 있습니다.';
+	@override String get folderHelp => '비워 두면 소스의 루트에서 시작합니다. S3 URL에는 버킷 이름이 포함됩니다.';
 	@override String get preferences => '선호도';
 	@override String get timePosition => '위치';
 	@override String get audioTrack => '오디오 트랙';
@@ -3024,28 +3022,28 @@ class _Translations$fileSources$ko extends Translations$fileSources$en {
 	@override String get comics => '코미디';
 	@override String get scan => '책과 미디어를 위한 스캔';
 	@override String get browserReader => '오픈 리더';
-	@override String get browserReaderHelp => '브라우저에서 읽기 열려 있습니다. PlezyNG을 열어 위치와 노트를 저장합니다.';
+	@override String get browserReaderHelp => '브라우저에서 리더가 열려 있습니다. 읽던 위치와 메모를 저장하려면 PlezyNG를 열어 두세요.';
 	@override String get on => '에';
 	@override String get advancedSetup => 'App 등록';
 	@override String get microsoftSignIn => 'Microsoft와 함께 가입하세요';
 	@override String get zoomIn => 'Zoom에 대한';
 	@override String get zoomOut => 'Zoom 출력';
-	@override String get fitPage => '⁇  페이지';
+	@override String get fitPage => '페이지에 맞춤';
 	@override String get fitWidth => '넓은 넓은';
 	@override String get actualSize => '현재 크기';
 	@override String get goToPage => '페이지로 가기';
-	@override String get goToSection => '⁇ 에 가서';
+	@override String get goToSection => '챕터로 이동';
 	@override String pageRange({required Object count}) => '1에서 ${count} 사이의 숫자를 입력하세요';
 	@override String get pageLayout => '페이지 레이아웃';
 	@override String get automatic => '자동';
 	@override String get singlePage => '단일 페이지';
 	@override String get twoPages => '2 페이지';
 	@override String get readingDirection => '읽기 방향';
-	@override String get leftToRight => '오른쪽으로 오른쪽';
-	@override String get rightToLeft => '오른쪽으로 떠나';
+	@override String get leftToRight => '왼쪽에서 오른쪽으로';
+	@override String get rightToLeft => '오른쪽에서 왼쪽으로';
 	@override String get letterSpacing => '우주 편지';
 	@override String get wordSpacing => '단어 스페셜';
-	@override String get readerControlsHelp => '페이지를 확장하기 위해 핀치 또는 zoom 컨트롤을 사용합니다. Ctrl/ ⁇  + 또는 −는 zoom을 조정합니다. Ctrl / ⁇  0은 다시 설정합니다. Page Up and Page Down는 페이지를 회전합니다.';
+	@override String get readerControlsHelp => '두 손가락을 벌리거나 확대/축소 컨트롤을 사용하여 페이지를 확대하세요. 드래그하여 페이지를 이동하세요. Ctrl/⌘와 + 또는 −로 배율을 조절하고, Ctrl/⌘와 0으로 초기화합니다. Page Up과 Page Down으로 페이지를 넘깁니다.';
 	@override String get imagePage => '코미디 페이지';
 	@override String get resetReader => '읽기 선호도를 다시 설정';
 	@override String get zoom => '확대/축소';
@@ -3066,33 +3064,33 @@ class _Translations$lending$ko extends Translations$lending$en {
 	@override String get other => '또 다른 도서관';
 	@override String get libraryName => '도서관 이름';
 	@override String get libraryUrl => '도서관 웹사이트';
-	@override String get libraryUrlHint => '도서관의 카탈로그 또는 서명 페이지를 사용하십시오.';
-	@override String get intro => '도서관에서 대출을 받으십시오.책을 닫으십시오.';
-	@override String get handoff => '등록, 대출 및 도서관의 자체 서비스로 안전하게 읽으십시오.';
+	@override String get libraryUrlHint => '도서관의 도서 목록 또는 로그인 페이지를 사용하세요.';
+	@override String get intro => '도서관에서 책을 빌리고 언제나 가까이 두세요.';
+	@override String get handoff => '도서관 자체 서비스를 통해 로그인하고 책을 빌려 안전하게 읽으세요.';
 	@override String get openService => '오픈 도서관';
 	@override String get findLibrary => '도서관 찾기';
 	@override String get search => '책과 저자를 찾아보세요';
 	@override String get catalogue => '카탈로그';
 	@override String get loans => '대출';
-	@override String get holds => '⁇ 스';
+	@override String get holds => '예약';
 	@override String get signIn => '도서관에 가입하십시오';
 	@override String get waiting => '브라우저에서 가입을 마무리하고 여기로 돌아갑니다.';
 	@override String get cancel => '취소';
 	@override String get disconnect => '도서관 삭제';
-	@override String get disconnectMessage => '이 프로필에서이 도서관을 제거하십시오?당신의 대출과 당신의 도서관과 함께 머무를 수 있습니다.';
+	@override String get disconnectMessage => '이 프로필에서 이 도서관을 제거할까요? 대출 및 예약 내역은 도서관에 그대로 유지됩니다.';
 	@override String get getBook => '책을 얻으라';
 	@override String get checkAvailability => '이용 가능성을 확인하기';
 	@override String get available => '대출을 위해 사용할 수 있는';
 	@override String get unavailable => '현재 이용할 수 없는';
 	@override String get borrow => '대출';
-	@override String get placeHold => '장소 유지';
-	@override String get returnBook => '일찍 돌아오는';
-	@override String get cancelHold => '취소 홀드';
+	@override String get placeHold => '예약하기';
+	@override String get returnBook => '기한 전에 반납';
+	@override String get cancelHold => '예약 취소';
 	@override String get confirmBorrow => '이 책을 도서관에서 빌려주시나요?';
 	@override String get confirmReturn => '이 제목을 지금 돌려주십시오.이 제목을 계속하기 위해 다시 대출해야 할 수도 있습니다.';
-	@override String get confirmCancelHold => '이 제목에 대한 당신의 헌신을 제거하십시오?';
+	@override String get confirmCancelHold => '이 도서의 예약을 취소할까요?';
 	@override String get email => '이메일 통보를 유지';
-	@override String due({required Object date}) => '덕분에 ${date}';
+	@override String due({required Object date}) => '반납 기한: ${date}';
 	@override String queue({required Object position}) => '위치 ${position} 라인';
 	@override String get empty => '아직 제목이 없습니다.';
 	@override String get openLibraryNote => 'Open Library의 카탈로그를 탐색하십시오.읽기 및 대출 옵션은 각 제목의 페이지에 표시됩니다.';
@@ -3106,71 +3104,11 @@ class _Translations$lending$ko extends Translations$lending$en {
 	@override String get continueService => '계속 서비스에';
 	@override String get comingSoon => '신속하게 도착하는 앱 대출';
 	@override String get comingSoonDescription => 'Libby 통합은 그 길에 있습니다. Libby에서 도서관을 사용할 수 있습니다.';
-	@override String get suspendHold => '멈추는  ⁇';
-	@override String get resumeHold => '리스본 홀드';
-	@override String get suspendMessage => '당신의 위치를 순서대로 유지하고 다음 독자가 이 복사본을 빌려주도록하십시오.';
-	@override String get resumeMessage => '이 문서를 다시 작성하여 도서관이 다음에 사용할 수 있는 복사본을 제공할 수 있습니까?';
+	@override String get suspendHold => '예약 일시 중지';
+	@override String get resumeHold => '예약 재개';
+	@override String get suspendMessage => '대기 순서를 유지하고 다음 독자가 이 책을 먼저 빌리도록 할까요? 나중에 예약을 재개할 수 있습니다.';
+	@override String get resumeMessage => '도서관에서 다음으로 이용 가능한 책을 제공할 수 있도록 이 예약을 재개할까요?';
 	@override String get editEmail => '이메일 통지 변경';
-}
-
-// Path: audiobook
-class _Translations$audiobook$ko extends Translations$audiobook$en {
-	_Translations$audiobook$ko._(TranslationsKo root) : this._root = root, super.internal(root);
-
-	final TranslationsKo _root; // ignore: unused_field
-
-	// Translations
-	@override String get syncTitle => '읽기 & 듣기 Sync';
-	@override String get syncHelp => '기기 내에서 읽기 위치, 듣기 위치, 완성 상태, 책표 및 노트를 유지하십시오. 연결된 스토리지 계정을 선택하고 각 장치에 동일한 동기화 코드를 사용하십시오. 읽기 및 듣기는 별도로 남아 있습니다.';
-	@override String get addSyncSource => '먼저 Google 드라이브, OneDrive, Dropbox, WebDAV 또는 S3를 파일 및 책에 추가합니다.';
-	@override String get syncDestination => 'Sync 스토리지 계정';
-	@override String get syncFolder => '동기화 폴더 또는 Prefix';
-	@override String get syncFolderHelp => 'WebDAV 소스 내에서 별도의 기존 폴더 또는 전용 S3 사전을 사용하십시오.책 파일은 변경되지 않습니다.';
-	@override String get syncCode => '개인 동기화 코드';
-	@override String get syncCodeHelp => '첫 번째 장치에서 코드를 만들고 다른 장치에서 그 코드를 입력하십시오.개인 복사본을 유지하십시오.그것은 암호화 상태의 열쇠입니다.모든 사람에게 다른 코드를 사용하십시오.';
-	@override String get showCode => 'Sync 코드를 표시하거나 숨기십시오.';
-	@override String get newSyncCode => '새로운 Sync 코드를 만들기';
-	@override String get saveSync => '저장 및 동기화';
-	@override String get disableSync => '이 장치에서 Sync를 끄십시오.';
-	@override String get syncSourceDisconnect => '이 소스를 제거하면 여기에서 읽기 및 듣기 동기화가 중지됩니다. 암호화 된 동기화 파일은 공급자에 남아 있습니다.';
-	@override String get syncReconnect => '스토리지 계좌 다시 연결';
-	@override String lastSynced({required Object time}) => '마지막으로 합성된 ${time}';
-	@override String get syncPrivacy => '오직 암호화된 프로세스 및 노트만 저장됩니다. 오디오 및 ebook 파일, 계정 토큰 및 암호는 업로드되지 않습니다. Google 드라이브 및 OneDrive는 애플리케이션 스토리지를 사용합니다. Dropbox는 PlezyNG Sync를 사용합니다. Sync를 활성화하는 것은 추가 글쓰기 액세스를 요구할 수 있습니다. 활성화하는 동안,이 목적지는 프로세스를 소유하고 있습니다. 서버 프로세스는 별도로 남아 있습니다.';
-	@override String get syncConflicts => '다시 시작하는 곳을 선택하십시오';
-	@override String get conflictHelp => '이러한 변경 사항은 독립적으로 수행되었습니다. 위치 또는 상표 버전을 선택하여 유지하십시오. 나중에 시간표 또는 더 높은 비율은 자동으로 이기지 않습니다.';
-	@override String syncDevice({required Object device}) => '장치 ${device}';
-	@override String get syncUnknownDevice => '알려지지 않은 장치';
-	@override String get deletedBookmark => '삭제된 Bookmark';
-	@override String get finished => '마무리';
-	@override String readingPosition({required Object percent}) => '읽기 · ${percent}%';
-	@override String get chapterTimeline => '제1장 진보';
-	@override String get bookTimeline => '책 전체 진행';
-	@override String bookRemaining({required Object time}) => '이 책에 남아있는 시간 : ${time}';
-	@override String chapterRemaining({required Object time}) => '이 장에 남아있는 시간: ${time}';
-	@override String get unknownRemaining => '전체 시간 사용할 수 있기 때문에 부분이 재생됩니다';
-	@override String get undoSeek => '마지막 찾기';
-	@override String get customSpeed => 'Custom Playback 속도';
-	@override String get speedHelp => '0.25×에서 4×까지의 속도를 선택합니다.';
-	@override String get apply => '응용';
-	@override String get customSleep => '사용자 지정 수면 시간';
-	@override String get sleepMinutes => '1 분 (1 - 1440)';
-	@override String sleepChapters({required Object count}) => '${count} 장 후 중지';
-	@override String get extendSleep => '추가 5 분';
-	@override String sleepRemaining({required Object time}) => '잠자리 타이머: ${time}';
-	@override String get useDefaults => '새로운 책을 위해 이러한 듣기 컨트롤을 사용하십시오.';
-	@override String get librarySort => '다양한 책들';
-	@override String get sortTitle => '제목';
-	@override String get sortAuthor => '작가';
-	@override String get sortNarrator => '연설자';
-	@override String get sortSeries => '시리즈 명령';
-	@override String get sortRecent => '최근에 열렸다';
-	@override String get statusFilter => '읽기 상태';
-	@override String get statusAll => '모든 책들';
-	@override String get statusNew => '시작하지 않음';
-	@override String get statusProgress => '진행 중에';
-	@override String get statusFinished => '마무리';
-	@override String get goToTime => '시간에 가라';
-	@override String get timeHelp => '시간:분:초 또는 분:초';
 }
 
 // Path: appIcon.names
@@ -3417,57 +3355,6 @@ class _Translations$accountPreferences$mediaReviewsOptions$ko extends Translatio
 	@override String get nobody => '숨김';
 }
 
-// Path: discover.findNext
-class _Translations$discover$findNext$ko extends Translations$discover$findNext$en {
-	_Translations$discover$findNext$ko._(TranslationsKo root) : this._root = root, super.internal(root);
-
-	final TranslationsKo _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => '당신의 다음을 찾아라';
-	@override String get open => '당신의 다음을 찾아라';
-	@override String get anyTime => '언제든지';
-	@override String get timeAvailable => '당신은 얼마나 많은 시간이 있습니까?';
-	@override String get filters => '순간을 선택하라';
-	@override String get watch => '보세요';
-	@override String get listen => '듣기';
-	@override String get read => '읽기';
-	@override String finishable({required Object duration}) => '${duration}에 대한 자세한 내용';
-	@override String aboutDuration({required Object duration}) => '에 대해서 ${duration}';
-	@override String nextUnit({required Object duration}) => '다음 기사 · ${duration}';
-	@override String totalDuration({required Object duration}) => '${duration} 전체';
-	@override String get timingVaries => '타이밍이 다양하다';
-	@override String get notNow => '지금은 아니고';
-	@override String get swipeHint => '스위프트, 또는 아래 버튼을 사용 하 여';
-	@override String get saved => '저장된 피크';
-	@override String savedCount({required Object count}) => '저장된 피크 · ${count}';
-	@override String get undo => '안오';
-	@override String get details => '세부 사항';
-	@override String get noPicks => '아직 선택할 수 있는 것은 없다.';
-	@override String get noPicksHint => '도서관에 연결하거나 시작하기 위해 미디어 소스를 추가하십시오.';
-	@override String get noMatches => '아무것도 이 순간에 맞지 않는다.';
-	@override String get noMatchesHint => '다른 형식을 시도하거나 자신에게 더 많은 시간을주십시오.';
-	@override String get allDone => '너희는 모두 잡혀있어';
-	@override String get allDoneHint => '신선한 혼합물을 시작하여 이러한 선택을 다시 볼 수 있습니다.';
-	@override String get refresh => '또 다른 믹스를 찾아보세요.';
-	@override String sourceReason({required Object source}) => '에 의해 ${source}';
-	@override String libraryReason({required Object library}) => '에 의해 ${library}';
-	@override String get ownedReason => '당신의 도서관에서';
-	@override String get liveNow => '지금은';
-	@override String get watchLive => '라이브 보기';
-	@override String get filterAnything => '모든 것';
-	@override String get filterWatch => '보세요';
-	@override String get filterListen => '듣기';
-	@override String get filterRead => '읽기';
-	@override String get twentyMinutes => '20 분';
-	@override String get fortyFiveMinutes => '45 분';
-	@override String get ninetyMinutes => '90 분';
-	@override String get apply => '응용';
-	@override String get openFailed => '이 선택은 더 이상 사용할 수 없습니다. 다시 확인하기 위해 새롭게 확인하십시오.';
-	@override String get changeFailed => '이 변화를 저장할 수 없습니다.다시 시도해 보세요.';
-	@override String get savedLimit => '저장된 픽스가 가득합니다. 하나의 픽스를 제거하여 다른 하나를 저장합니다.';
-}
-
 // Path: discover.person
 class _Translations$discover$person$ko extends Translations$discover$person$en {
 	_Translations$discover$person$ko._(TranslationsKo root) : this._root = root, super.internal(root);
@@ -3609,7 +3496,7 @@ class _Translations$libraries$selection$ko extends Translations$libraries$select
 	@override String selectedCount({required Object count}) => '${count}개 선택됨';
 	@override String get actions => '선택 행동';
 	@override String get confirmDescendants => '이것은 선택한 쇼와 시즌의 모든 에피소드를 변경합니다.';
-	@override String get confirmUnwatched => '이것은 또한 선택된 항목에 대한 재생 진행을 명확히합니다.';
+	@override String get confirmUnwatched => '선택한 항목의 재생 진행 상황도 초기화됩니다.';
 	@override String confirmCount({required Object count}) => '선택된 항목: ${count}';
 	@override String completed({required Object count}) => '업데이트된 항목: ${count}';
 	@override String partialFailure({required Object succeeded, required Object failed}) => '업데이트 ${succeeded}; 실패 ${failed}. 실패 항목은 여전히 선택됩니다.';
@@ -3636,8 +3523,8 @@ class _Translations$explore$mdblistShelves$ko extends Translations$explore$mdbli
 	@override String moveDown({required Object title}) => '이동 ${title} 아래로';
 	@override String get unavailable => '이 목록은 사용할 수 없습니다. 설정에서 셰일을 제거하거나 제거합니다.';
 	@override String get rateLimited => 'MDBList 요청 제한이 달성되었습니다. 나중에 철회하시기 바랍니다.';
-	@override String get loadFailed => '⁇ 을 충전 할 수 없습니다. 연결을 확인하고 회전.';
-	@override String get saveFailed => '⁇ 을  ⁇  수 없으니 퇴원하시기 바랍니다.';
+	@override String get loadFailed => '선반을 불러올 수 없습니다. 연결을 확인하고 다시 시도하세요.';
+	@override String get saveFailed => '선반을 저장할 수 없습니다. 다시 시도하세요.';
 	@override String get accountChanged => '계정 또는 프로필이 변경되었습니다.이 설정을 다시 열어보세요.';
 	@override String get settingsUnreadable => '저장된 탭은 읽을 수 없습니다.이 설정을 대체하기 위해 목록을 다시 선택합니다.';
 }
@@ -4212,7 +4099,7 @@ extension on TranslationsKo {
 			'cast.stopCasting' => '카스팅을 멈추세요',
 			'cast.castToDevice' => '장치에 던져',
 			'cast.noEpisodeAvailable' => '촬영할 에피소드가 없습니다.',
-			'cast.startFailed' => '⁇ 을 시작할 수 없습니다. 서버를 확인하고 다시 시도하십시오.',
+			'cast.startFailed' => '캐스트를 시작할 수 없습니다. 서버를 확인하고 다시 시도하세요.',
 			'automation.noActivePlayback' => '통제할 수 있는 비디오 세션은 없습니다.',
 			'automation.profileNotFound' => 'Plezy 프로필은 찾을 수 없었습니다.',
 			'notifications.newEpisodeTitle' => '새로운 에피소드',
@@ -4561,7 +4448,7 @@ extension on TranslationsKo {
 			'settings.importSettingsInvalidFile' => '유효한 PlezyNG 설정 내보내기 파일이 아닙니다',
 			'settings.importSettingsNoUser' => '설정을 가져오기 전에 로그인하세요',
 			'settings.cloudBackup' => '클라우드 백업',
-			'settings.cloudBackupDescription' => 'HTTPS 이상의 WebDAV 엔드 포인트로 이동 설정을 백업합니다. 서버 연결 및 인증서가 이 장치에 남아 있습니다.',
+			'settings.cloudBackupDescription' => '이동 가능한 설정을 HTTPS를 통해 WebDAV 주소에 백업합니다. 서버 연결 및 로그인 정보는 이 기기에 유지됩니다.',
 			'settings.cloudBackupUrl' => 'WebDAV JSON 파일 URL',
 			'settings.cloudBackupUsername' => '사용자 이름',
 			'settings.cloudBackupPassword' => '비밀번호',
@@ -4656,7 +4543,7 @@ extension on TranslationsKo {
 			'settings.downloadQuality' => '다운로드 품질',
 			'settings.downloadQualityDescription' => 'Plex은 다운로드 쿼드에 변환 된 복사본을 준비합니다. Jellyfin 및 Emby는 파일 다운로드 중 트랜스코드; 중단 된 전송은 다시 시작해야 할 수 있습니다.',
 			'settings.askDownloadQualityEachTime' => '각 다운로드에 대한 품질 선택',
-			'settings.askDownloadQualityEachTimeDescription' => '각 비디오 다운로드를  ⁇ 기 전에 품질 피커를 표시합니다.',
+			'settings.askDownloadQualityEachTimeDescription' => '각 동영상 다운로드를 대기열에 추가하기 전에 화질 선택 화면 표시',
 			'settings.cellularDownloadBlocked' => '셀룰러에서는 다운로드가 차단됩니다. Wi-Fi를 사용하거나 설정을 변경하세요.',
 			'settings.maxVolume' => '최대 볼륨',
 			'settings.maxVolumeDescription' => '음량이 작은 콘텐츠를 위해 100% 이상의 볼륨을 허용합니다',
@@ -5016,9 +4903,9 @@ extension on TranslationsKo {
 			'mediaMenu.deleteAnyway' => '그래도 삭제',
 			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => '서버에서 ${title}을(를) 영구 삭제할까요?',
 			'mediaMenu.deleteMultipleWarning' => '모든 에피소드와 파일이 포함됩니다.',
-			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, one: '이 파일은 모든 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 에피소드와 그 파일을 삭제합니다.', other: '포함된 에피소드 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}개와 해당 파일이 모두 삭제됩니다.', ), 
-			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, one: '이 항목은 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 파일로 저장되며, 삭제됩니다.', other: '이 항목은 파일 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}개에 걸쳐 저장되어 있으며, 모든 파일이 삭제됩니다.', ), 
-			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} 다른 에피소드는 같은 파일에 저장되며 또한 삭제됩니다 :', other: '같은 파일에 저장된 다른 에피소드 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}개도 함께 삭제됩니다:', ), 
+			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, one: '포함된 에피소드 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}개와 해당 파일이 삭제됩니다.', other: '포함된 에피소드 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}개와 해당 파일이 모두 삭제됩니다.', ), 
+			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, one: '이 항목은 파일 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}개에 저장되어 있으며, 해당 파일이 삭제됩니다.', other: '이 항목은 파일 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}개에 걸쳐 저장되어 있으며, 모든 파일이 삭제됩니다.', ), 
+			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('ko'))(n, one: '같은 파일에 저장된 다른 에피소드 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}개도 함께 삭제됩니다:', other: '같은 파일에 저장된 다른 에피소드 ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}개도 함께 삭제됩니다:', ), 
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'Plezy가 어떤 파일이 삭제될지 확인하지 못해 위 항목보다 더 많은 파일이 삭제될 수 있습니다. 취소하고 다시 시도하거나 그래도 삭제하세요.',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => '서버가 이 항목의 파일 정보를 제공하지 않아 Plezy가 어떤 파일이 삭제될지 확인할 수 없습니다. 위 항목보다 더 많은 파일이 삭제될 수 있습니다.',
 			'mediaMenu.mediaDeletedSuccessfully' => '미디어 항목이 성공적으로 삭제되었습니다',
@@ -5076,13 +4963,13 @@ extension on TranslationsKo {
 			'accessibility.preview' => '다음 이야기를 찾아보세요.읽고, 듣고, 자신의 속도로 보세요.',
 			'accessibility.boldText' => '용감한 인터페이스 텍스트',
 			'accessibility.highContrast' => '높은 대조',
-			'accessibility.highContrastHint' => '더 강력한 텍스트, 출처 및 밝거나 어두운 표면에 초점을 지표.',
+			'accessibility.highContrastHint' => '밝거나 어두운 배경에서 텍스트, 윤곽선 및 포커스 표시를 더 선명하게 보여줍니다.',
 			'accessibility.interaction' => '운동과 상호 작용',
 			'accessibility.reduceMotion' => '움직임을 줄이기',
-			'accessibility.reduceMotionHint' => '초점, 페이지 전환 및 장식 효과를 계속 유지하십시오.',
+			'accessibility.reduceMotionHint' => '포커스 표시, 페이지 전환 및 장식 효과의 움직임을 멈춥니다.',
 			'accessibility.largeTargets' => '더 큰 터치 목표',
-			'accessibility.largeTargetsHint' => '공유 컨트롤을 더 많은 터치 및 보조 항해 공간을 제공합니다.',
-			'accessibility.navigationHint' => '탭과 Shift+Tab을 사용하여 컨트롤 사이를 이동, 활성화하기 위해 입력 또는 공간, 탈출 또는 닫기 위해 다시 사용합니다.',
+			'accessibility.largeTargetsHint' => '공통 컨트롤의 영역을 넓혀 터치와 보조 기술을 통한 탐색을 쉽게 합니다.',
+			'accessibility.navigationHint' => 'Tab과 Shift+Tab으로 컨트롤 사이를 이동하고, Enter 또는 Space로 실행하고, Escape 또는 뒤로 버튼으로 닫으세요. 책을 열면 확대/축소와 읽기 설정을 사용할 수 있습니다.',
 			'tooltips.shufflePlay' => '무작위 재생',
 			'tooltips.playTrailer' => '예고편 재생',
 			'tooltips.markAsWatched' => '시청 완료로 표시',
@@ -5455,48 +5342,6 @@ extension on TranslationsKo {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => '개요',
 			'discover.cast' => '출연진',
-			'discover.findNext.title' => '당신의 다음을 찾아라',
-			'discover.findNext.open' => '당신의 다음을 찾아라',
-			'discover.findNext.anyTime' => '언제든지',
-			'discover.findNext.timeAvailable' => '당신은 얼마나 많은 시간이 있습니까?',
-			'discover.findNext.filters' => '순간을 선택하라',
-			'discover.findNext.watch' => '보세요',
-			'discover.findNext.listen' => '듣기',
-			'discover.findNext.read' => '읽기',
-			'discover.findNext.finishable' => ({required Object duration}) => '${duration}에 대한 자세한 내용',
-			'discover.findNext.aboutDuration' => ({required Object duration}) => '에 대해서 ${duration}',
-			'discover.findNext.nextUnit' => ({required Object duration}) => '다음 기사 · ${duration}',
-			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} 전체',
-			'discover.findNext.timingVaries' => '타이밍이 다양하다',
-			'discover.findNext.notNow' => '지금은 아니고',
-			'discover.findNext.swipeHint' => '스위프트, 또는 아래 버튼을 사용 하 여',
-			'discover.findNext.saved' => '저장된 피크',
-			'discover.findNext.savedCount' => ({required Object count}) => '저장된 피크 · ${count}',
-			'discover.findNext.undo' => '안오',
-			'discover.findNext.details' => '세부 사항',
-			'discover.findNext.noPicks' => '아직 선택할 수 있는 것은 없다.',
-			'discover.findNext.noPicksHint' => '도서관에 연결하거나 시작하기 위해 미디어 소스를 추가하십시오.',
-			'discover.findNext.noMatches' => '아무것도 이 순간에 맞지 않는다.',
-			'discover.findNext.noMatchesHint' => '다른 형식을 시도하거나 자신에게 더 많은 시간을주십시오.',
-			'discover.findNext.allDone' => '너희는 모두 잡혀있어',
-			'discover.findNext.allDoneHint' => '신선한 혼합물을 시작하여 이러한 선택을 다시 볼 수 있습니다.',
-			'discover.findNext.refresh' => '또 다른 믹스를 찾아보세요.',
-			'discover.findNext.sourceReason' => ({required Object source}) => '에 의해 ${source}',
-			'discover.findNext.libraryReason' => ({required Object library}) => '에 의해 ${library}',
-			'discover.findNext.ownedReason' => '당신의 도서관에서',
-			'discover.findNext.liveNow' => '지금은',
-			'discover.findNext.watchLive' => '라이브 보기',
-			'discover.findNext.filterAnything' => '모든 것',
-			'discover.findNext.filterWatch' => '보세요',
-			'discover.findNext.filterListen' => '듣기',
-			'discover.findNext.filterRead' => '읽기',
-			'discover.findNext.twentyMinutes' => '20 분',
-			'discover.findNext.fortyFiveMinutes' => '45 분',
-			'discover.findNext.ninetyMinutes' => '90 분',
-			'discover.findNext.apply' => '응용',
-			'discover.findNext.openFailed' => '이 선택은 더 이상 사용할 수 없습니다. 다시 확인하기 위해 새롭게 확인하십시오.',
-			'discover.findNext.changeFailed' => '이 변화를 저장할 수 없습니다.다시 시도해 보세요.',
-			'discover.findNext.savedLimit' => '저장된 픽스가 가득합니다. 하나의 픽스를 제거하여 다른 하나를 저장합니다.',
 			'discover.extras' => '예고편 및 부가영상',
 			'discover.studio' => '제작사',
 			'discover.rating' => '연령 등급',
@@ -5649,7 +5494,7 @@ extension on TranslationsKo {
 			'libraries.selection.selectedCount' => ({required Object count}) => '${count}개 선택됨',
 			'libraries.selection.actions' => '선택 행동',
 			'libraries.selection.confirmDescendants' => '이것은 선택한 쇼와 시즌의 모든 에피소드를 변경합니다.',
-			'libraries.selection.confirmUnwatched' => '이것은 또한 선택된 항목에 대한 재생 진행을 명확히합니다.',
+			'libraries.selection.confirmUnwatched' => '선택한 항목의 재생 진행 상황도 초기화됩니다.',
 			'libraries.selection.confirmCount' => ({required Object count}) => '선택된 항목: ${count}',
 			'libraries.selection.completed' => ({required Object count}) => '업데이트된 항목: ${count}',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => '업데이트 ${succeeded}; 실패 ${failed}. 실패 항목은 여전히 선택됩니다.',
@@ -5726,8 +5571,8 @@ extension on TranslationsKo {
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => '이동 ${title} 아래로',
 			'explore.mdblistShelves.unavailable' => '이 목록은 사용할 수 없습니다. 설정에서 셰일을 제거하거나 제거합니다.',
 			'explore.mdblistShelves.rateLimited' => 'MDBList 요청 제한이 달성되었습니다. 나중에 철회하시기 바랍니다.',
-			'explore.mdblistShelves.loadFailed' => '⁇ 을 충전 할 수 없습니다. 연결을 확인하고 회전.',
-			'explore.mdblistShelves.saveFailed' => '⁇ 을  ⁇  수 없으니 퇴원하시기 바랍니다.',
+			'explore.mdblistShelves.loadFailed' => '선반을 불러올 수 없습니다. 연결을 확인하고 다시 시도하세요.',
+			'explore.mdblistShelves.saveFailed' => '선반을 저장할 수 없습니다. 다시 시도하세요.',
 			'explore.mdblistShelves.accountChanged' => '계정 또는 프로필이 변경되었습니다.이 설정을 다시 열어보세요.',
 			'explore.mdblistShelves.settingsUnreadable' => '저장된 탭은 읽을 수 없습니다.이 설정을 대체하기 위해 목록을 다시 선택합니다.',
 			'explore.title' => '탐색',
@@ -5741,8 +5586,6 @@ extension on TranslationsKo {
 			'explore.rows.popularShows' => '인기 TV 프로그램',
 			'explore.rows.trendingAnime' => '지금 뜨는 애니메이션',
 			'explore.rows.suggestedAnime' => '추천 애니메이션',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => '방영 중인 인기 애니메이션',
 			'explore.rows.popularAnime' => '가장 인기 있는 애니메이션',
 			'explore.rows.trending' => '지금 뜨는 콘텐츠',
@@ -5785,6 +5628,8 @@ extension on TranslationsKo {
 			'explore.badge.processing' => '처리 중',
 			'explore.badge.declined' => '거절됨',
 			'explore.badge.requestFailed' => '요청 실패',
+			_ => null,
+		} ?? switch (path) {
 			'explore.badge.requested4k' => '4K 요청됨',
 			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => '시즌 ${available}/${total}',
 			'explore.badge.nextEpisodeIn' => ({required Object episode, required Object duration}) => '${episode}화 · ${duration} 후',
@@ -5889,7 +5734,7 @@ extension on TranslationsKo {
 			'liveTv.timelineBuffer' => '버퍼 타임 라인',
 			'liveTv.timelineUnavailable' => '시간표가 불가능',
 			'liveTv.timelineEstimated' => '값진 플레이백',
-			'liveTv.timelinePending' => '찾기  ⁇',
+			'liveTv.timelinePending' => '재생 위치 이동 대기 중',
 			'liveTv.timelineStale' => '일정은 과장될 수 있습니다.',
 			'liveTv.unknownHub' => '알 수 없음',
 			'liveTv.unknownError' => '알 수 없는 오류',
@@ -6255,8 +6100,6 @@ extension on TranslationsKo {
 			'downloads.unwatchedOnly' => '시청하지 않은 것만',
 			'downloads.nextNUnwatched' => ({required Object count}) => '다음 ${count}개 미시청',
 			'downloads.customAmount' => '직접 입력...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => '각각의 수량(일반적으로)',
 			'downloads.randomEpisodes' => '우연한 사건',
 			'downloads.includeSpecials' => '스페셜 포함',
@@ -6299,6 +6142,8 @@ extension on TranslationsKo {
 			'downloads.syncUnwatchedItems' => '시청하지 않은 항목 동기화 중',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => '서버: ${server} • ${status}',
 			'downloads.syncRuleAvailable' => '사용 가능',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncRuleOffline' => '오프라인',
 			'downloads.syncRuleSignInRequired' => '로그인 필요',
 			'downloads.syncRuleAccessDenied' => '접근 거부됨',
@@ -6769,8 +6614,6 @@ extension on TranslationsKo {
 			'addServer.authResponseIncomplete' => '서버의 로그인 응답이 불완전합니다',
 			'addServer.quickConnectRejected' => '서버에서 Quick Connect를 거부했습니다',
 			'addServer.quickConnectNotJson' => 'Quick Connect 응답이 유효한 JSON이 아닙니다',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect 응답에 코드 또는 비밀 키가 없습니다',
 			'addServer.quickConnectPollRejected' => '서버에서 Quick Connect 폴링을 거부했습니다',
 			'addServer.serverTimedOut' => '서버가 제시간에 응답하지 않았습니다',
@@ -6796,7 +6639,7 @@ extension on TranslationsKo {
 			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => 'IP 또는 URL을 사용하여 직접 연결합니다. ${name}에 연결합니다.',
 			'addServer.insecureTitle' => '암호화되지 않은 연결',
 			'addServer.insecureDescription' => ({required Object url}) => '${url}은(는) HTTP를 사용합니다. 네트워크의 다른 사용자가 비밀번호, 토큰 및 미디어를 읽거나 변경할 수 있습니다. 가능하면 HTTPS를 사용하세요. 이 네트워크를 신뢰하고 위험을 감수하는 경우에만 계속하세요.',
-			'addServer.allowHttp' => '허용 HTTP',
+			'addServer.allowHttp' => 'HTTP 허용',
 			'addServer.httpsRequired' => 'HTTPS 또는 명시적으로 암호화되지 않은 연결을 허용합니다.',
 			'watchLink.serverUnavailable' => '이 링크를 위해 Plex 서버에 접근할 수 없었습니다.',
 			'watchLink.notFound' => '이 쇼 또는 영화를 Plex 서버에서 찾을 수 없습니다.',
@@ -6813,7 +6656,9 @@ extension on TranslationsKo {
 			'homeLayout.resetToast' => '홈 다시 원래 Plezy 영웅 레이아웃으로 설정',
 			'homeLayout.resetHeroTitle' => '영웅 레이아웃을 주식으로 다시 설정할 수 있습니까 Plezy?',
 			'homeLayout.resetHeroBody' => '각 라인의 영웅 설정을 끄고 홈의 상단에있는 단일 회전 밴드를 반환합니다, 영웅 라인이 존재하기 전과 마찬가지입니다.',
-			'homeLayout.removeRowTitle' => '집에서  ⁇ 을 벗어나는 것?',
+			_ => null,
+		} ?? switch (path) {
+			'homeLayout.removeRowTitle' => '홈 화면의 행을 삭제할까요?',
 			'homeLayout.removeRowBody' => ({required Object title}) => '${title} 삭제될 것입니다.이것은 무시할 수 없습니다.',
 			'homeLayout.sync' => '시나리오',
 			'homeLayout.syncAccountTitle' => 'Plex 계정과 동기화된 배열',
@@ -6829,8 +6674,8 @@ extension on TranslationsKo {
 			'homeLayout.organizeLibraryRowsDescription' => ({required Object n}) => '계속 보기 + ${n} 라인: 이동, 도서관, 홈, 영웅, 자동 슬라이드',
 			'homeLayout.renderAsHero' => '영웅 카드로 렌더',
 			'homeLayout.heroOnlySingleCollection' => '이 순서가 단일 컬렉션의 실제 제목에 해결되면만 사용할 수 있습니다.',
-			'homeLayout.hero' => '영웅',
-			'homeLayout.autoSlide' => '스위치 스위치',
+			'homeLayout.hero' => '히어로',
+			'homeLayout.autoSlide' => '자동 슬라이드',
 			'homeLayout.autoSlideDescription' => '또한 몇 초마다 스스로 슬라이드합니다. 링 (PC) 및 d-pad (TV)는 항상 작동하고 타이머를 다시 시작합니다.',
 			'homeLayout.autoSlideEditDescription' => '또한 몇 초마다 스스로 슬라이드합니다. 끄기 : 펜 (PC)을 클릭하거나 원격 (TV)에서 왼쪽/오른쪽을 누르면 움직입니다.',
 			'homeLayout.enableHeroFirst' => '영웅을 먼저 할 수 있습니다.',
@@ -6852,7 +6697,7 @@ extension on TranslationsKo {
 			'homeLayout.noPlexRows' => 'No. Plex 관리 라인이 이 도서관에 반환되었습니다.',
 			'homeLayout.openDetails' => '개방된 세부 사항',
 			'homeLayout.heroCards' => '영웅 카드',
-			'homeLayout.tapHeroCard' => '영웅 카드를  ⁇ 다',
+			'homeLayout.tapHeroCard' => '히어로 카드를 탭할 때',
 			'homeLayout.tvPlayFocus' => 'TV 원격: 히틀러 플레이 버튼',
 			'homeLayout.tvPlayFocusDescription' => 'D-pad 아래는 다음 라인으로 이동하기 전에 플레이 버튼을 멈추고 다음 라인에 직접 스키를 끄십시오.',
 			'homeLayout.tvWrap' => 'TV 원격: 롤 영웅 카드',
@@ -6906,8 +6751,8 @@ extension on TranslationsKo {
 			'homeLayout.on' => '에',
 			'homeLayout.resetHeroButtonDescription' => '각 라인의 영웅 설정을 끄고 영웅 라인이 존재하기 전과 마찬가지로 상단에 단일 회전 밴드를 반환합니다.',
 			'platform.localNetworkPermission' => 'PlezyNG은 현지 네트워크에서 미디어 서버 및 플레이백 장치에 연결됩니다.',
-			'platform.locationPermission' => 'PlezyNG은 위치 접근을 사용하여 iOS이 해당 위치 네트워크를 탐지하고 미디어 서버에 연결할 필요가 있는 경우에 해당 위치 접근이 필요합니다.',
-			'platform.photoLibraryPermission' => '사진 도서관에서 미디어 예술 작품으로 사용하기 위해 사진을 선택합니다.',
+			'platform.locationPermission' => 'PlezyNG는 로컬 네트워크를 찾고 미디어 서버에 연결하는 데 iOS가 요구하는 경우 위치 접근 권한을 사용합니다.',
+			'platform.photoLibraryPermission' => '사진 보관함에서 미디어 아트워크로 사용할 이미지를 선택하세요.',
 			'platform.cameraPermission' => 'QR 코드를 스캔하여 Companion Remote를 연결합니다.',
 			'fileSources.title' => '파일 및 책',
 			'fileSources.subtitle' => '읽고, 듣고, 자신의 파일에서 관찰합니다.',
@@ -6917,7 +6762,7 @@ extension on TranslationsKo {
 			'fileSources.source' => '출처',
 			'fileSources.name' => '이름',
 			'fileSources.endpoint' => '서버 URL',
-			'fileSources.root' => '폴더 또는 사전',
+			'fileSources.root' => '폴더 또는 접두사',
 			'fileSources.username' => '사용자 이름',
 			'fileSources.password' => '비밀번호',
 			'fileSources.token' => 'API 토큰',
@@ -6972,7 +6817,7 @@ extension on TranslationsKo {
 			'fileSources.useRemote' => '다른 장치를 사용하라',
 			'fileSources.history' => '위치 역사',
 			'fileSources.groupAudio' => '한 개의 오디오 책으로 들으십시오.',
-			'fileSources.groupHint' => '이 폴더에 현재 업로드된 오디오 파일을 결합합니다.이 폴더에서 모든 페이지를 먼저 업로드합니다.',
+			'fileSources.groupHint' => '현재 이 폴더에 불러온 오디오 파일을 하나로 묶습니다. 먼저 모든 페이지를 불러오세요.',
 			'fileSources.order' => '파일 명령',
 			'fileSources.moveUp' => '움직이기 위하여',
 			'fileSources.moveDown' => '아래로 이동',
@@ -6992,26 +6837,26 @@ extension on TranslationsKo {
 			'fileSources.lineHeight' => '라인 스페셜',
 			'fileSources.margin' => '마르지나',
 			'fileSources.font' => '타이프페이스',
-			'fileSources.serif' => '시리얼',
-			'fileSources.sans' => '시리얼 없음',
-			'fileSources.mono' => '단일 공간',
+			'fileSources.serif' => '세리프',
+			'fileSources.sans' => '산세리프',
+			'fileSources.mono' => '고정폭',
 			'fileSources.columns' => '콜럼버스',
 			'fileSources.scroll' => 'Vertically 스크롤',
-			'fileSources.justify' => '텍스트 정당화',
+			'fileSources.justify' => '양쪽 맞춤',
 			'fileSources.readerTheme' => '페이지 출현',
 			'fileSources.appTheme' => '앱 테마 추적',
 			'fileSources.paper' => '종이',
 			'fileSources.sepia' => '세피아',
 			'fileSources.night' => '밤이',
-			'fileSources.readAloud' => '이 페이지를 읽으십시오.',
-			'fileSources.readAlong' => '계속 읽어보세요',
-			'fileSources.stopReading' => '멈추기 이야기',
+			'fileSources.readAloud' => '이 페이지 소리 내어 읽기',
+			'fileSources.readAlong' => '음성에 맞춰 읽기',
+			'fileSources.stopReading' => '읽어주기 중지',
 			'fileSources.searchBook' => '책에서 검색',
 			'fileSources.noMatches' => '경기 없음',
 			'fileSources.previousPage' => '이전 페이지',
 			'fileSources.nextPage' => '다음 페이지',
 			'fileSources.page' => ({required Object number}) => '페이지 ${number}',
-			'fileSources.externalBlocked' => '외부 책 링크가 독자에서 꺼져 있습니다.',
+			'fileSources.externalBlocked' => '리더에서는 책의 외부 링크가 비활성화되어 있습니다.',
 			'fileSources.loading' => '열기...',
 			'fileSources.narrator' => '묘사기',
 			'fileSources.audio' => '오디오',
@@ -7022,14 +6867,14 @@ extension on TranslationsKo {
 			'fileSources.confirmDelete' => '선택한 오프라인 사본을 삭제할까요? 읽기 또는 청취 위치와 메모는 유지됩니다.',
 			'fileSources.errorAuthentication' => '다시 이 소스를 다시 연결하려면 로그인하십시오.',
 			'fileSources.errorPermission' => '이 소스는 요청된 파일에 대한 액세스를 허용하지 않았습니다.',
-			'fileSources.errorUnavailable' => '다시 시도하거나 오프라인 복사본을 열어보세요.',
+			'fileSources.errorUnavailable' => '소스를 사용할 수 없습니다. 다시 시도하거나 오프라인 사본을 여세요.',
 			'fileSources.errorUnsupported' => '이 형식 또는 연결이 이 장치에서 지원되지 않습니다.이 장치에서 원본 설정 가이드를 확인합니다.',
 			'fileSources.errorInvalidData' => '이 파일 또는 서버 응답은 안전하게 읽을 수 없습니다.',
 			'fileSources.errorCancelled' => '이 작업은 취소되었다.',
 			'fileSources.errorConflict' => '위치가 다른 세션에서 변경되었습니다. 항목을 다시 열어 위치를 선택합니다.',
 			'fileSources.signIn' => '로그인',
 			'fileSources.reconnect' => '다시 연결',
-			'fileSources.folderHelp' => '출처 뿌리에서 시작하기 위해 빈을 남겨 두십시오.S3 URL에는 뷔페가 포함되어 있습니다.',
+			'fileSources.folderHelp' => '비워 두면 소스의 루트에서 시작합니다. S3 URL에는 버킷 이름이 포함됩니다.',
 			'fileSources.preferences' => '선호도',
 			'fileSources.timePosition' => '위치',
 			'fileSources.audioTrack' => '오디오 트랙',
@@ -7042,28 +6887,28 @@ extension on TranslationsKo {
 			'fileSources.comics' => '코미디',
 			'fileSources.scan' => '책과 미디어를 위한 스캔',
 			'fileSources.browserReader' => '오픈 리더',
-			'fileSources.browserReaderHelp' => '브라우저에서 읽기 열려 있습니다. PlezyNG을 열어 위치와 노트를 저장합니다.',
+			'fileSources.browserReaderHelp' => '브라우저에서 리더가 열려 있습니다. 읽던 위치와 메모를 저장하려면 PlezyNG를 열어 두세요.',
 			'fileSources.on' => '에',
 			'fileSources.advancedSetup' => 'App 등록',
 			'fileSources.microsoftSignIn' => 'Microsoft와 함께 가입하세요',
 			'fileSources.zoomIn' => 'Zoom에 대한',
 			'fileSources.zoomOut' => 'Zoom 출력',
-			'fileSources.fitPage' => '⁇  페이지',
+			'fileSources.fitPage' => '페이지에 맞춤',
 			'fileSources.fitWidth' => '넓은 넓은',
 			'fileSources.actualSize' => '현재 크기',
 			'fileSources.goToPage' => '페이지로 가기',
-			'fileSources.goToSection' => '⁇ 에 가서',
+			'fileSources.goToSection' => '챕터로 이동',
 			'fileSources.pageRange' => ({required Object count}) => '1에서 ${count} 사이의 숫자를 입력하세요',
 			'fileSources.pageLayout' => '페이지 레이아웃',
 			'fileSources.automatic' => '자동',
 			'fileSources.singlePage' => '단일 페이지',
 			'fileSources.twoPages' => '2 페이지',
 			'fileSources.readingDirection' => '읽기 방향',
-			'fileSources.leftToRight' => '오른쪽으로 오른쪽',
-			'fileSources.rightToLeft' => '오른쪽으로 떠나',
+			'fileSources.leftToRight' => '왼쪽에서 오른쪽으로',
+			'fileSources.rightToLeft' => '오른쪽에서 왼쪽으로',
 			'fileSources.letterSpacing' => '우주 편지',
 			'fileSources.wordSpacing' => '단어 스페셜',
-			'fileSources.readerControlsHelp' => '페이지를 확장하기 위해 핀치 또는 zoom 컨트롤을 사용합니다. Ctrl/ ⁇  + 또는 −는 zoom을 조정합니다. Ctrl / ⁇  0은 다시 설정합니다. Page Up and Page Down는 페이지를 회전합니다.',
+			'fileSources.readerControlsHelp' => '두 손가락을 벌리거나 확대/축소 컨트롤을 사용하여 페이지를 확대하세요. 드래그하여 페이지를 이동하세요. Ctrl/⌘와 + 또는 −로 배율을 조절하고, Ctrl/⌘와 0으로 초기화합니다. Page Up과 Page Down으로 페이지를 넘깁니다.',
 			'fileSources.imagePage' => '코미디 페이지',
 			'fileSources.resetReader' => '읽기 선호도를 다시 설정',
 			'fileSources.zoom' => '확대/축소',
@@ -7075,33 +6920,33 @@ extension on TranslationsKo {
 			'lending.other' => '또 다른 도서관',
 			'lending.libraryName' => '도서관 이름',
 			'lending.libraryUrl' => '도서관 웹사이트',
-			'lending.libraryUrlHint' => '도서관의 카탈로그 또는 서명 페이지를 사용하십시오.',
-			'lending.intro' => '도서관에서 대출을 받으십시오.책을 닫으십시오.',
-			'lending.handoff' => '등록, 대출 및 도서관의 자체 서비스로 안전하게 읽으십시오.',
+			'lending.libraryUrlHint' => '도서관의 도서 목록 또는 로그인 페이지를 사용하세요.',
+			'lending.intro' => '도서관에서 책을 빌리고 언제나 가까이 두세요.',
+			'lending.handoff' => '도서관 자체 서비스를 통해 로그인하고 책을 빌려 안전하게 읽으세요.',
 			'lending.openService' => '오픈 도서관',
 			'lending.findLibrary' => '도서관 찾기',
 			'lending.search' => '책과 저자를 찾아보세요',
 			'lending.catalogue' => '카탈로그',
 			'lending.loans' => '대출',
-			'lending.holds' => '⁇ 스',
+			'lending.holds' => '예약',
 			'lending.signIn' => '도서관에 가입하십시오',
 			'lending.waiting' => '브라우저에서 가입을 마무리하고 여기로 돌아갑니다.',
 			'lending.cancel' => '취소',
 			'lending.disconnect' => '도서관 삭제',
-			'lending.disconnectMessage' => '이 프로필에서이 도서관을 제거하십시오?당신의 대출과 당신의 도서관과 함께 머무를 수 있습니다.',
+			'lending.disconnectMessage' => '이 프로필에서 이 도서관을 제거할까요? 대출 및 예약 내역은 도서관에 그대로 유지됩니다.',
 			'lending.getBook' => '책을 얻으라',
 			'lending.checkAvailability' => '이용 가능성을 확인하기',
 			'lending.available' => '대출을 위해 사용할 수 있는',
 			'lending.unavailable' => '현재 이용할 수 없는',
 			'lending.borrow' => '대출',
-			'lending.placeHold' => '장소 유지',
-			'lending.returnBook' => '일찍 돌아오는',
-			'lending.cancelHold' => '취소 홀드',
+			'lending.placeHold' => '예약하기',
+			'lending.returnBook' => '기한 전에 반납',
+			'lending.cancelHold' => '예약 취소',
 			'lending.confirmBorrow' => '이 책을 도서관에서 빌려주시나요?',
 			'lending.confirmReturn' => '이 제목을 지금 돌려주십시오.이 제목을 계속하기 위해 다시 대출해야 할 수도 있습니다.',
-			'lending.confirmCancelHold' => '이 제목에 대한 당신의 헌신을 제거하십시오?',
+			'lending.confirmCancelHold' => '이 도서의 예약을 취소할까요?',
 			'lending.email' => '이메일 통보를 유지',
-			'lending.due' => ({required Object date}) => '덕분에 ${date}',
+			'lending.due' => ({required Object date}) => '반납 기한: ${date}',
 			'lending.queue' => ({required Object position}) => '위치 ${position} 라인',
 			'lending.empty' => '아직 제목이 없습니다.',
 			'lending.openLibraryNote' => 'Open Library의 카탈로그를 탐색하십시오.읽기 및 대출 옵션은 각 제목의 페이지에 표시됩니다.',
@@ -7115,62 +6960,11 @@ extension on TranslationsKo {
 			'lending.continueService' => '계속 서비스에',
 			'lending.comingSoon' => '신속하게 도착하는 앱 대출',
 			'lending.comingSoonDescription' => 'Libby 통합은 그 길에 있습니다. Libby에서 도서관을 사용할 수 있습니다.',
-			'lending.suspendHold' => '멈추는  ⁇',
-			'lending.resumeHold' => '리스본 홀드',
-			'lending.suspendMessage' => '당신의 위치를 순서대로 유지하고 다음 독자가 이 복사본을 빌려주도록하십시오.',
-			'lending.resumeMessage' => '이 문서를 다시 작성하여 도서관이 다음에 사용할 수 있는 복사본을 제공할 수 있습니까?',
+			'lending.suspendHold' => '예약 일시 중지',
+			'lending.resumeHold' => '예약 재개',
+			'lending.suspendMessage' => '대기 순서를 유지하고 다음 독자가 이 책을 먼저 빌리도록 할까요? 나중에 예약을 재개할 수 있습니다.',
+			'lending.resumeMessage' => '도서관에서 다음으로 이용 가능한 책을 제공할 수 있도록 이 예약을 재개할까요?',
 			'lending.editEmail' => '이메일 통지 변경',
-			'audiobook.syncTitle' => '읽기 & 듣기 Sync',
-			'audiobook.syncHelp' => '기기 내에서 읽기 위치, 듣기 위치, 완성 상태, 책표 및 노트를 유지하십시오. 연결된 스토리지 계정을 선택하고 각 장치에 동일한 동기화 코드를 사용하십시오. 읽기 및 듣기는 별도로 남아 있습니다.',
-			'audiobook.addSyncSource' => '먼저 Google 드라이브, OneDrive, Dropbox, WebDAV 또는 S3를 파일 및 책에 추가합니다.',
-			'audiobook.syncDestination' => 'Sync 스토리지 계정',
-			'audiobook.syncFolder' => '동기화 폴더 또는 Prefix',
-			'audiobook.syncFolderHelp' => 'WebDAV 소스 내에서 별도의 기존 폴더 또는 전용 S3 사전을 사용하십시오.책 파일은 변경되지 않습니다.',
-			'audiobook.syncCode' => '개인 동기화 코드',
-			'audiobook.syncCodeHelp' => '첫 번째 장치에서 코드를 만들고 다른 장치에서 그 코드를 입력하십시오.개인 복사본을 유지하십시오.그것은 암호화 상태의 열쇠입니다.모든 사람에게 다른 코드를 사용하십시오.',
-			'audiobook.showCode' => 'Sync 코드를 표시하거나 숨기십시오.',
-			'audiobook.newSyncCode' => '새로운 Sync 코드를 만들기',
-			'audiobook.saveSync' => '저장 및 동기화',
-			'audiobook.disableSync' => '이 장치에서 Sync를 끄십시오.',
-			'audiobook.syncSourceDisconnect' => '이 소스를 제거하면 여기에서 읽기 및 듣기 동기화가 중지됩니다. 암호화 된 동기화 파일은 공급자에 남아 있습니다.',
-			'audiobook.syncReconnect' => '스토리지 계좌 다시 연결',
-			'audiobook.lastSynced' => ({required Object time}) => '마지막으로 합성된 ${time}',
-			'audiobook.syncPrivacy' => '오직 암호화된 프로세스 및 노트만 저장됩니다. 오디오 및 ebook 파일, 계정 토큰 및 암호는 업로드되지 않습니다. Google 드라이브 및 OneDrive는 애플리케이션 스토리지를 사용합니다. Dropbox는 PlezyNG Sync를 사용합니다. Sync를 활성화하는 것은 추가 글쓰기 액세스를 요구할 수 있습니다. 활성화하는 동안,이 목적지는 프로세스를 소유하고 있습니다. 서버 프로세스는 별도로 남아 있습니다.',
-			'audiobook.syncConflicts' => '다시 시작하는 곳을 선택하십시오',
-			'audiobook.conflictHelp' => '이러한 변경 사항은 독립적으로 수행되었습니다. 위치 또는 상표 버전을 선택하여 유지하십시오. 나중에 시간표 또는 더 높은 비율은 자동으로 이기지 않습니다.',
-			'audiobook.syncDevice' => ({required Object device}) => '장치 ${device}',
-			'audiobook.syncUnknownDevice' => '알려지지 않은 장치',
-			'audiobook.deletedBookmark' => '삭제된 Bookmark',
-			'audiobook.finished' => '마무리',
-			'audiobook.readingPosition' => ({required Object percent}) => '읽기 · ${percent}%',
-			'audiobook.chapterTimeline' => '제1장 진보',
-			'audiobook.bookTimeline' => '책 전체 진행',
-			'audiobook.bookRemaining' => ({required Object time}) => '이 책에 남아있는 시간 : ${time}',
-			'audiobook.chapterRemaining' => ({required Object time}) => '이 장에 남아있는 시간: ${time}',
-			'audiobook.unknownRemaining' => '전체 시간 사용할 수 있기 때문에 부분이 재생됩니다',
-			'audiobook.undoSeek' => '마지막 찾기',
-			'audiobook.customSpeed' => 'Custom Playback 속도',
-			'audiobook.speedHelp' => '0.25×에서 4×까지의 속도를 선택합니다.',
-			'audiobook.apply' => '응용',
-			'audiobook.customSleep' => '사용자 지정 수면 시간',
-			'audiobook.sleepMinutes' => '1 분 (1 - 1440)',
-			'audiobook.sleepChapters' => ({required Object count}) => '${count} 장 후 중지',
-			'audiobook.extendSleep' => '추가 5 분',
-			'audiobook.sleepRemaining' => ({required Object time}) => '잠자리 타이머: ${time}',
-			'audiobook.useDefaults' => '새로운 책을 위해 이러한 듣기 컨트롤을 사용하십시오.',
-			'audiobook.librarySort' => '다양한 책들',
-			'audiobook.sortTitle' => '제목',
-			'audiobook.sortAuthor' => '작가',
-			'audiobook.sortNarrator' => '연설자',
-			'audiobook.sortSeries' => '시리즈 명령',
-			'audiobook.sortRecent' => '최근에 열렸다',
-			'audiobook.statusFilter' => '읽기 상태',
-			'audiobook.statusAll' => '모든 책들',
-			'audiobook.statusNew' => '시작하지 않음',
-			'audiobook.statusProgress' => '진행 중에',
-			'audiobook.statusFinished' => '마무리',
-			'audiobook.goToTime' => '시간에 가라',
-			'audiobook.timeHelp' => '시간:분:초 또는 분:초',
 			_ => null,
 		};
 	}

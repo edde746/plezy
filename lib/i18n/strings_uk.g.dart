@@ -198,7 +198,7 @@ class _Translations$auth$uk extends Translations$auth$en {
 	@override String get quickConnectWaiting => 'Чекаємо на затвердження...';
 	@override String get quickConnectCancel => 'Скасувати';
 	@override String get quickConnectExpired => 'Термін дії швидкого підключення минув. Спробуйте ще раз.';
-	@override String get localDataRecoveryRequired => 'PlezyNG не змогла безпечно відновити місцеві записні та відновлювальні дані.';
+	@override String get localDataRecoveryRequired => 'PlezyNG не вдалося безпечно відновити локальні дані входу та дані відтворення, що очікують обробки. Увійдіть знову.';
 	@override String get pinCheckRejected => 'Кінцевий код PIN Plex відхилено';
 	@override String get connectToDirectPlex => 'Підключення до локального сервера Plex';
 }
@@ -360,7 +360,7 @@ class _Translations$settings$uk extends Translations$settings$en {
 	@override String get darkTheme => 'Темний';
 	@override String get oledTheme => 'OLED';
 	@override String get emberTheme => 'Чоловік';
-	@override String get glacierTheme => '⁇   ⁇   ⁇   ⁇';
+	@override String get glacierTheme => 'Льодовик';
 	@override String get forestTheme => 'ліс';
 	@override String get plumTheme => 'Плюм';
 	@override String get paperTheme => 'папір';
@@ -528,7 +528,7 @@ class _Translations$settings$uk extends Translations$settings$en {
 	@override String get importSettingsInvalidFile => 'Цей файл не є дійсним експортом PlezyNG налаштувань';
 	@override String get importSettingsNoUser => 'Зареєструйтесь перед імпортуванням';
 	@override String get cloudBackup => 'Створення Cloud Backup';
-	@override String get cloudBackupDescription => 'Завантажити портативні налаштування до кінцевої точки WebDAV понад HTTPS.Серверні зв\'язки та акредитації залишаються на цьому пристрої.';
+	@override String get cloudBackupDescription => 'Збережіть резервну копію переносних налаштувань за адресою WebDAV через HTTPS. Підключення до серверів і дані входу залишаться на цьому пристрої.';
 	@override String get cloudBackupUrl => 'WebDAV URL файлу JSON';
 	@override String get cloudBackupUsername => 'Ім’я користувача';
 	@override String get cloudBackupPassword => 'Пароль';
@@ -795,7 +795,7 @@ class _Translations$themeEditor$uk extends Translations$themeEditor$en {
 	@override late final _Translations$themeEditor$contrast$uk contrast = _Translations$themeEditor$contrast$uk._(_root);
 	@override String lowContrast({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, нижче рекомендованої ${minimum}:1';
 	@override String get discardTitle => 'Не вистачає змін?';
-	@override String get discardMessage => 'Ваші незбагненні зміни кольору будуть втрачені.';
+	@override String get discardMessage => 'Незбережені зміни кольорів буде втрачено.';
 	@override String get discard => 'Дискард';
 	@override String previewCardTitle({required Object number}) => 'Епізод ${number}';
 	@override String previewCardSubtitle({required Object minutes}) => '${minutes} хвилини';
@@ -988,19 +988,25 @@ class _Translations$mediaMenu$uk extends Translations$mediaMenu$en {
 	@override String confirmDeleteTarget({required Object title}) => 'Постійно видаляти ${title} з сервера?';
 	@override String get deleteMultipleWarning => 'Це включає в себе всі епізоди і їх файли.';
 	@override String deleteEpisodeCountWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uk'))(n,
-		one: 'Це видаляє всі ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} епізоди в ньому, і його файл.',
-		other: 'Це видаляє всі ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} епізоди в ньому, а також їх файли.',
+		one: 'Це видалить ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} епізод у ньому та його файл.',
+		few: 'Це видалить усі ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} епізоди в ньому та їхні файли.',
+		many: 'Це видалить усі ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} епізодів у ньому та їхні файли.',
+		other: 'Буде видалено всі епізоди в цьому елементі (кількість: ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}) та їхні файли.',
 	);
 	@override String deleteMultiPartWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uk'))(n,
-		one: 'Цей елемент зберігається як файл ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}, який буде видалений.',
-		other: 'Цей елемент зберігається через файли ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}, і всі вони будуть видалені.',
+		one: 'Цей елемент зберігається в ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} файлі, який буде видалено.',
+		few: 'Цей елемент зберігається в ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} файлах, і всі вони будуть видалені.',
+		many: 'Цей елемент зберігається в ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} файлах, і всі вони будуть видалені.',
+		other: 'Цей елемент зберігається у файлах (кількість: ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}); усі ці файли буде видалено.',
 	);
 	@override String deleteSharedFileHeading({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uk'))(n,
-		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} інші епізоди зберігаються в тому ж файлі і також будуть видалені:',
-		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} інші епізоди зберігаються в тому ж файлі і також будуть видалені:',
+		one: 'У тому самому файлі зберігається ще ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} епізод, який також буде видалено:',
+		few: 'У тому самому файлі зберігаються ще ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} епізоди, які також буде видалено:',
+		many: 'У тому самому файлі зберігається ще ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} епізодів, які також буде видалено:',
+		other: 'Інші епізоди в тому самому файлі (кількість: ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}) також буде видалено:',
 	);
-	@override String get deleteScopeUnverifiedProbeFailed => 'PlezyNG не змогла перевірити, які файли це буде видаляти, так що вона може видаляти більше, ніж пункт, названий вище.';
-	@override String get deleteScopeUnverifiedNoFileInfo => 'Ваш сервер не надає дані файлу для цього елемента, тому PlezyNG не може перевірити, які файли він буде видаляти.';
+	@override String get deleteScopeUnverifiedProbeFailed => 'PlezyNG не вдалося перевірити, які файли буде видалено, тому може бути видалено більше, ніж зазначений вище елемент. Скасуйте дію та спробуйте знову або видаліть попри це.';
+	@override String get deleteScopeUnverifiedNoFileInfo => 'Сервер не надав відомостей про файли цього елемента, тому PlezyNG не може перевірити, які файли буде видалено. Може бути видалено більше, ніж зазначений вище елемент.';
 	@override String get mediaDeletedSuccessfully => 'Медіа-елементи успішно видалені';
 	@override String get mediaFailedToDelete => 'Не вдалося видалити медіа';
 	@override String get rate => 'Оцінити';
@@ -1037,7 +1043,7 @@ class _Translations$accessibility$uk extends Translations$accessibility$en {
 	@override String mediaCardSeason({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}';
 	@override String get mediaCardWatched => 'Переглянуто';
 	@override String mediaCardPartiallyWatched({required Object percent}) => '${percent} відсотків переглянуто';
-	@override String get mediaCardUnwatched => 'Неоцінений';
+	@override String get mediaCardUnwatched => 'не переглянуто';
 	@override String get tapToPlay => 'Натисніть, щоб грати';
 	@override String get decrease => 'Зниження';
 	@override String get increase => 'Збільшення';
@@ -1050,8 +1056,8 @@ class _Translations$accessibility$uk extends Translations$accessibility$en {
 	@override String get expandText => 'Розширення тексту';
 	@override String get collapseText => 'Порушення тексту';
 	@override String get alphabetNavigation => 'Алфавитна навігація';
-	@override String get alphabetScrollHint => 'Підніміть або знижуйте, щоб пересуватися за листом';
-	@override String rowColumnPosition({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Стіна ${row} з ${rowCount}, колона ${column} з ${columnCount}';
+	@override String get alphabetScrollHint => 'Проведіть угору або вниз, щоб переходити за літерами';
+	@override String rowColumnPosition({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Рядок ${row} із ${rowCount}, стовпець ${column} із ${columnCount}';
 	@override String rowPosition({required Object row, required Object rowCount}) => 'Роль ${row} з ${rowCount}';
 	@override String get autoScrollPlay => 'Грати в Auto-Scroll';
 	@override String get autoScrollPause => 'Відпочинок Auto-Scroll';
@@ -1077,10 +1083,10 @@ class _Translations$accessibility$uk extends Translations$accessibility$en {
 	@override String get highContrastHint => 'Сильніший текст, виклади та індикатори фокусу на світлих або темних поверхнях.';
 	@override String get interaction => 'Мотивація і взаємодія';
 	@override String get reduceMotion => 'Зменшення руху';
-	@override String get reduceMotionHint => 'Зберігайте фокус, перехід сторінки та декоративні ефекти.';
+	@override String get reduceMotionHint => 'Зупиняє анімацію індикатора фокусу, переходи сторінок і декоративні ефекти.';
 	@override String get largeTargets => 'Більшість цілей';
 	@override String get largeTargetsHint => 'Дайте спільним контролям більше місця для дотику і асистентської навігації.';
-	@override String get navigationHint => 'Використовуйте клавішу та клавішу Shift+Tab для переміщення між контролями, вхід або простір для активізації, а також Escape або Back для закриття.';
+	@override String get navigationHint => 'Використовуйте Tab і Shift+Tab для переходу між елементами керування, Enter або пробіл для активації, а Escape або кнопку «Назад» для закриття. Коли книгу відкрито, доступні масштабування й налаштування читання.';
 }
 
 // Path: tooltips
@@ -1372,7 +1378,7 @@ class _Translations$profiles$uk extends Translations$profiles$en {
 	@override String get addPlezyProfile => 'Додати профіль PlezyNG';
 	@override String get switchingProfile => 'Профільний перехід...';
 	@override String get deleteThisProfileTitle => 'Чи можна видалити цей профіль?';
-	@override String deleteThisProfileMessage({required Object displayName}) => 'Усунути ${displayName}.Посилання не впливають.';
+	@override String deleteThisProfileMessage({required Object displayName}) => 'Видалити ${displayName}. Підключення залишаться без змін.';
 	@override String get active => 'Активний';
 	@override String get manage => 'Управління';
 	@override String get delete => 'Видалити';
@@ -1380,7 +1386,7 @@ class _Translations$profiles$uk extends Translations$profiles$en {
 	@override String get signOutPlexTitle => 'Зареєструйтеся на Plex?';
 	@override String signOutPlexMessage({required Object displayName}) => 'Видалити ${displayName} і всі Plex Домашні користувачі?';
 	@override String get signOutPlexDeleteDownloads => 'Також видаляти завантаження';
-	@override String get signOutPlexDeleteDownloadsDescription => 'В іншому випадку вони залишаються на цьому пристрої і повертаються, коли ви зареєструєтеся назад на цей обліковий запис.';
+	@override String get signOutPlexDeleteDownloadsDescription => 'Інакше завантаження залишаться на цьому пристрої й знову з’являться, коли ви ввійдете в цей обліковий запис.';
 	@override String get signedOutPlex => 'Підписано з Plex.';
 	@override String get signOutFailed => 'Підписання провалилася.';
 	@override String get sectionTitle => 'Профіль';
@@ -1708,7 +1714,7 @@ class _Translations$startup$uk extends Translations$startup$en {
 	// Translations
 	@override String get failedTitle => 'PlezyNG не може почати';
 	@override String get failedBody => 'Щось пройшло неправильно під час стартапу. деталі нижче визначають, що не вдалося.';
-	@override String get failedBodyRepairable => 'Файл збережених налаштувань PlezyNG пошкоджений і повинен бути відновлений, перш ніж PlezyNG може почати.';
+	@override String get failedBodyRepairable => 'Збережений файл налаштувань PlezyNG пошкоджено. Перед запуском програми його потрібно відновити. Повторна спроба не допоможе — виберіть відновлення сховища.';
 	@override String get phaseLabel => 'Крок';
 	@override String get showDetails => 'Покажіть деталі';
 	@override String get hideDetails => 'Сховати деталі';
@@ -1717,10 +1723,10 @@ class _Translations$startup$uk extends Translations$startup$en {
 	@override String get uploadDetails => 'Завантажити деталі';
 	@override String get repairStorage => 'Ремонт зберігання';
 	@override String get repairTitle => 'Поправка зберіганих даних?';
-	@override String get repairBodyCommon => 'Файл налаштувань PlezyNG пошкоджений і не може бути прочитаний.';
-	@override String get repairBodyOneCredential => 'Один збережений підпис пошкоджений і не може бути прочитаний. відновлення видаляє тільки той один; ваші інші налаштування залишаються один.';
-	@override String get repairBodySignInsKept => 'Ваш сервер і профілі повинні залишатися підписаними.';
-	@override String get repairBodySignInsLost => 'Ключ, що захищає ваші збережені записи, не може бути відновлено з цього файлу, тому вам доведеться знову зареєструватися на кожному сервері і профілі.';
+	@override String get repairBodyCommon => 'Файл налаштувань PlezyNG пошкоджено й неможливо прочитати. Відновлення скине всі налаштування до типових значень.';
+	@override String get repairBodyOneCredential => 'Дані одного зі збережених входів пошкоджено й неможливо прочитати. Відновлення видалить лише їх; решта налаштувань залишиться без змін.';
+	@override String get repairBodySignInsKept => 'Вхід на сервери та в профілі має зберегтися.';
+	@override String get repairBodySignInsLost => 'Ключ, що захищає збережені дані входу, неможливо відновити з цього файлу. Тому доведеться знову ввійти на кожен сервер і в кожен профіль. Нічого на медіасервері не зміниться.';
 	@override String get repairBodySessionsUncertain => 'Дані сервісів відстеження (MAL, AniList, Simkl, Trakt) і Seerr зберігаються окремо та можуть як зберегтися, так і зникнути. PlezyNG точно повідомить, які дані вдалося зберегти.';
 	@override String get repairConfirm => 'Ремонт';
 	@override String get repairSucceeded => 'Зберігання відремонтовано';
@@ -1728,8 +1734,8 @@ class _Translations$startup$uk extends Translations$startup$en {
 	@override String get restartRequiredBody => 'Ваші дані відновлено, але PlezyNG потрібно перезапустити, щоб ними скористатися. Закрийте PlezyNG і відкрийте знову.';
 	@override String get quitPlezy => 'Завантажити PlezyNG';
 	@override String get repairFailed => 'Поправка провалилася';
-	@override String get repairKeptSignIns => 'Ваші сервери та профілі все ще підписуються.';
-	@override String get repairLostSignIns => 'Ключ, що захищає ваші збережені знаки, не може бути відновлено. Ви будете змушені знову зареєструватися на кожному сервері і профілі.';
+	@override String get repairKeptSignIns => 'Вхід на сервери та в профілі досі активний.';
+	@override String get repairLostSignIns => 'Не вдалося відновити ключ, що захищає збережені дані входу. Потрібно знову ввійти на кожен сервер і в кожен профіль.';
 	@override String get repairLostSessions => 'Принаймні один тракер або Seerr зв\'язок втрачено і потрібно відновити зв\'язок.';
 	@override String get backupTitle => 'Копія пошкодженого файлу зберігається';
 	@override String get backupWarning => 'Вона містить ваші аутентифікації. не завантажуйте або не ділитеся.';
@@ -1933,7 +1939,7 @@ class _Translations$collections$uk extends Translations$collections$en {
 	@override String get collection => 'Колекція';
 	@override String get empty => 'Колекція порожня';
 	@override String get deleteCollection => 'Видалити Колекцію';
-	@override String deleteConfirm({required Object title}) => 'Вимкніть "${title}"?Це не може бути без.';
+	@override String deleteConfirm({required Object title}) => 'Видалити «${title}»? Цю дію неможливо скасувати.';
 	@override String get deleted => 'Колекція видалена';
 	@override String get deleteFailed => 'Не вдалося видалити колекцію';
 	@override String deleteFailedWithError({required Object error}) => 'Не вдалося видалити збірку: ${error}';
@@ -2232,7 +2238,7 @@ class _Translations$downloads$uk extends Translations$downloads$en {
 	@override String keepNUnwatched({required Object count}) => 'Залишити ${count} не перевірено';
 	@override String get editSyncRule => 'Регулювання правила синхронізації';
 	@override String get removeSyncRule => 'Видалення правила синхронізації';
-	@override String removeSyncRuleConfirm({required Object title}) => 'Залишити синхронізацію "${title}"? завантажені епізоди будуть зберігатися.';
+	@override String removeSyncRuleConfirm({required Object title}) => 'Припинити синхронізацію «${title}»? Завантажені епізоди буде збережено.';
 	@override String removeListSyncRuleConfirm({required Object title}) => 'Залишити синхронізацію «${title}»?';
 	@override String get deleteSyncRuleDownloads => 'Також видаляти пов\'язані завантаження';
 	@override String get deleteSyncRuleDownloadsDescription => 'Завантаження, які використовуються іншим правилом синхронізації або профілем, будуть зберігатися.';
@@ -2672,7 +2678,7 @@ class _Translations$seerr$uk extends Translations$seerr$en {
 	@override String get quickConnectUnsupported => 'Цей приклад Seerr не підтримує Quick Connect. він потребує Seerr 3.4 або вище.';
 	@override String get notInitialized => 'Цей приклад Seerr не завершив першочергову установку';
 	@override String get noPlexTokenForReauth => 'Токен No Plex доступний для реєстрації знову';
-	@override String get noStoredCredentials => 'Зареєстровані акредитації не доступні для реєстрації знову';
+	@override String get noStoredCredentials => 'Немає збережених даних для повторного входу';
 	@override String get signInRejected => 'Підписання було відхилено';
 	@override String get noSessionCookie => 'Seerr не видав cookie сесії';
 	@override String get freshCookieRejected => 'Seerr відмовився від нового cookie сесії';
@@ -2909,8 +2915,8 @@ class _Translations$platform$uk extends Translations$platform$en {
 
 	// Translations
 	@override String get localNetworkPermission => 'PlezyNG підключається до ваших медіа-серверів та пристроїв відтворення на вашій локальній мережі.';
-	@override String get locationPermission => 'PlezyNG використовує місцевий доступ, коли iOS вимагає його для виявлення вашої локальної мережі та підключення до ваших медіа-серверів.';
-	@override String get photoLibraryPermission => 'Виберіть зображення з вашої фотобібліотеки для використання в якості медіа-історії.';
+	@override String get locationPermission => 'PlezyNG використовує доступ до геопозиції, коли iOS вимагає його для виявлення локальної мережі та підключення до ваших медіасерверів.';
+	@override String get photoLibraryPermission => 'Виберіть зображення з фототеки для обкладинок медіафайлів.';
 	@override String get cameraPermission => 'Сканувати QR-коди, щоб з\'єднати Companion Remote.';
 }
 
@@ -2929,7 +2935,7 @@ class _Translations$fileSources$uk extends Translations$fileSources$en {
 	@override String get source => 'Джерело';
 	@override String get name => 'Ім’я';
 	@override String get endpoint => 'Сервер URL';
-	@override String get root => 'Пост або префікс';
+	@override String get root => 'Папка або префікс';
 	@override String get username => 'Ім’я користувача';
 	@override String get password => 'Пароль';
 	@override String get token => 'API токен';
@@ -2984,7 +2990,7 @@ class _Translations$fileSources$uk extends Translations$fileSources$en {
 	@override String get useRemote => 'Використовуйте інші пристрої';
 	@override String get history => 'Історія позиції';
 	@override String get groupAudio => 'Слухайте як аудіокнигу';
-	@override String get groupHint => 'Спілкує аудіофайли, які зараз завантажуються в цій папці. Завантажити всі сторінки перш за все.';
+	@override String get groupHint => 'Об’єднує аудіофайли, завантажені зараз у цій папці. Спочатку завантажте всі сторінки.';
 	@override String get order => 'Файловий порядок';
 	@override String get moveUp => 'Змінюйся';
 	@override String get moveDown => 'Перемістити вниз';
@@ -3010,11 +3016,11 @@ class _Translations$fileSources$uk extends Translations$fileSources$en {
 	@override String get margin => 'Маргіна';
 	@override String get font => 'Тип';
 	@override String get serif => 'Серіф';
-	@override String get sans => 'Без сервісу';
-	@override String get mono => 'Монако';
+	@override String get sans => 'Без засічок';
+	@override String get mono => 'Моноширинний';
 	@override String get columns => 'Колонки';
 	@override String get scroll => 'Скріл вертикально';
-	@override String get justify => 'Виправданий текст';
+	@override String get justify => 'Вирівняти текст за шириною';
 	@override String get readerTheme => 'Поява сторінки';
 	@override String get appTheme => 'Слідкуйте за темою App';
 	@override String get paper => 'папір';
@@ -3022,13 +3028,13 @@ class _Translations$fileSources$uk extends Translations$fileSources$en {
 	@override String get night => 'Ночі';
 	@override String get readAloud => 'Читати цю сторінку голосно';
 	@override String get readAlong => 'Читати далі';
-	@override String get stopReading => 'Залишити розповідь';
+	@override String get stopReading => 'Зупинити озвучення';
 	@override String get searchBook => 'Пошук в книзі';
 	@override String get noMatches => 'Ніяких матчів';
 	@override String get previousPage => 'Попередня сторінка';
 	@override String get nextPage => 'Наступна сторінка';
 	@override String page({required Object number}) => 'Сторінка ${number}';
-	@override String get externalBlocked => 'Внутрішні посилання на книгу вимкнені в читачах.';
+	@override String get externalBlocked => 'Зовнішні посилання в книгах вимкнено в читачі.';
 	@override String get loading => 'Відкриття...';
 	@override String get narrator => 'Назавжди';
 	@override String get audio => 'Аудіо';
@@ -3037,7 +3043,7 @@ class _Translations$fileSources$uk extends Translations$fileSources$en {
 	@override String get all => 'Всі';
 	@override String get downloads => 'Офлайн файли';
 	@override String get confirmDelete => 'Видалити вибрану офлайн-копію? Ваше місце читання або прослуховування та нотатки збережуться.';
-	@override String get errorAuthentication => 'Зверніть увагу на те, що ви знову підключили цей джерело.';
+	@override String get errorAuthentication => 'Увійдіть знову, щоб відновити з’єднання з цим джерелом.';
 	@override String get errorPermission => 'Цей джерело не надало доступу до запитуваного файлу.';
 	@override String get errorUnavailable => 'Попробуйте знову або відкрийте офлайн-копію.';
 	@override String get errorUnsupported => 'Цей формат або підключення не підтримується на цьому пристрої. перевірте джерело інсталяції.';
@@ -3054,7 +3060,7 @@ class _Translations$fileSources$uk extends Translations$fileSources$en {
 	@override String get none => 'Нічого';
 	@override String get fullscreen => 'Повний екран';
 	@override String get syncLocation => 'Прогрес синхронізування папки (опціональна)';
-	@override String get syncLocationHint => 'Доданий папку WebDAV для PlezyNG штату. використовує умовно написані записи; засоби масової інформації залишаються незмінними.';
+	@override String get syncLocationHint => 'Окрема папка WebDAV для стану PlezyNG. Використовує умовний запис; медіафайли не змінюються.';
 	@override String get audiobooks => 'Аудіокниги';
 	@override String get comics => 'Комічні';
 	@override String get scan => 'Скенію для книг та медіа';
@@ -3080,7 +3086,7 @@ class _Translations$fileSources$uk extends Translations$fileSources$en {
 	@override String get rightToLeft => 'Справа наліво';
 	@override String get letterSpacing => 'Письмо простір';
 	@override String get wordSpacing => 'Слово простір';
-	@override String get readerControlsHelp => 'Натисніть або використовуйте контролі зуму для розширення сторінок. перейдіть до панелі. Ctrl/ ⁇  + або − налаштує зум; Ctrl/ ⁇  0 перезавантажує його.';
+	@override String get readerControlsHelp => 'Щоб збільшити сторінку, розведіть два пальці або скористайтеся кнопками масштабування. Перетягуйте, щоб переміщувати сторінку. Ctrl/⌘ разом із + або − змінює масштаб; Ctrl/⌘ разом із 0 скидає його. Page Up і Page Down перегортають сторінки.';
 	@override String get imagePage => 'Комічна сторінка';
 	@override String get resetReader => 'Перезавантаження переваг читання';
 	@override String get zoom => 'Масштабувати';
@@ -3101,50 +3107,50 @@ class _Translations$lending$uk extends Translations$lending$en {
 	@override String get other => 'Інша бібліотека';
 	@override String get libraryName => 'Назва бібліотеки';
 	@override String get libraryUrl => 'Бібліотека сайт';
-	@override String get libraryUrlHint => 'Використовуйте каталог або сторінку підпису в бібліотеці.';
-	@override String get intro => 'Залишайте книжки у бібліотеці, залишайте їх у закритті.';
-	@override String get handoff => 'Зареєструйтесь, позичайте і читайте безпечно за допомогою власного сервісу бібліотеки.';
+	@override String get libraryUrlHint => 'Скористайтеся каталогом бібліотеки або її сторінкою входу.';
+	@override String get intro => 'Позичайте книги у своїй бібліотеці й тримайте їх поруч.';
+	@override String get handoff => 'Увійдіть, позичайте книги й читайте безпечно через власний сервіс бібліотеки.';
 	@override String get openService => 'Відкрита бібліотека';
 	@override String get findLibrary => 'Знайдіть бібліотеку';
 	@override String get search => 'Пошук книг та авторів';
 	@override String get catalogue => 'каталог';
-	@override String get loans => 'Кредит';
-	@override String get holds => 'Ходячи';
+	@override String get loans => 'Позичені книги';
+	@override String get holds => 'Бронювання';
 	@override String get signIn => 'Підписуйтесь у Вашій бібліотеці';
 	@override String get waiting => 'Завершити підписання в браузері, а потім повернутися сюди.';
 	@override String get cancel => 'Скасувати';
 	@override String get disconnect => 'Видалення бібліотеки';
-	@override String get disconnectMessage => 'Видалити цю бібліотеку з цього профілю? Ваші кредити і зберігає перебування з вашою бібліотекою.';
+	@override String get disconnectMessage => 'Вилучити цю бібліотеку з цього профілю? Ваші позичені книги та бронювання залишаться в бібліотеці.';
 	@override String get getBook => 'Отримайте книгу';
 	@override String get checkAvailability => 'Перевірка наявності';
 	@override String get available => 'Доступно для позики';
 	@override String get unavailable => 'В даний час недоступні';
-	@override String get borrow => 'Кредит';
-	@override String get placeHold => 'Місце зберігання';
+	@override String get borrow => 'Позичити';
+	@override String get placeHold => 'Забронювати';
 	@override String get returnBook => 'Повернення рано';
-	@override String get cancelHold => 'Відмінити зберігання';
+	@override String get cancelHold => 'Скасувати бронювання';
 	@override String get confirmBorrow => 'Ви можете замовити цю книжку у вашій бібліотеці?';
 	@override String get confirmReturn => 'Ви можете повернути цей титул зараз? Ви можете замовити його знову, щоб продовжити.';
-	@override String get confirmCancelHold => 'Чи відмовилися ви від цієї титулу?';
+	@override String get confirmCancelHold => 'Скасувати бронювання цього видання?';
 	@override String get email => 'Зберігайте повідомлення електронною поштою';
-	@override String due({required Object date}) => 'Дайте ${date}';
+	@override String due({required Object date}) => 'Повернути до ${date}';
 	@override String queue({required Object position}) => 'Позиція ${position} в лінії';
 	@override String get empty => 'Тепер тут немає титулів.';
-	@override String get openLibraryNote => 'Відкритий каталог бібліотеки. варіанти читання та позики відображаються на сторінці кожного заголовка.';
+	@override String get openLibraryNote => 'Переглядайте каталог Open Library. Варіанти читання й позичання наведено на сторінці кожного видання.';
 	@override String get more => 'Завантажити більше';
 	@override String get gateway => 'Бібліотека підписується';
 	@override String get gatewayHint => 'Пропонується вашою бібліотекою або адміністратором PlezyNG.';
 	@override String get advanced => 'Бібліотека інтеграція';
 	@override String get loadLibraries => 'Виберіть свою бібліотеку';
-	@override String get expired => 'Цей кредит закінчився.';
+	@override String get expired => 'Термін користування цією книгою минув.';
 	@override String get updated => 'Бібліотека оновлена';
 	@override String get continueService => 'Продовжуйте службу';
 	@override String get comingSoon => 'Заробітна плата в Україні · Приїжджає незабаром';
 	@override String get comingSoonDescription => 'Ви можете використовувати свою бібліотеку в Libby, поки ми закінчимо підключення її.';
-	@override String get suspendHold => 'Затримка тримається';
-	@override String get resumeHold => 'Резюме Дотримуй';
-	@override String get suspendMessage => 'Зберігайте своє місце в порядку і дозволяйте наступному читачу позичати цю копію?';
-	@override String get resumeMessage => 'Чи можна відновити цю книжку, щоб бібліотека могла запропонувати вам наступну доступну копію?';
+	@override String get suspendHold => 'Призупинити бронювання';
+	@override String get resumeHold => 'Відновити бронювання';
+	@override String get suspendMessage => 'Зберегти своє місце в черзі й дозволити наступному читачеві позичити цей примірник? Бронювання можна відновити пізніше.';
+	@override String get resumeMessage => 'Відновити бронювання, щоб бібліотека могла запропонувати вам наступний доступний примірник?';
 	@override String get editEmail => 'Зміни повідомлення електронної пошти';
 }
 
@@ -4300,7 +4306,7 @@ extension on TranslationsUk {
 			'auth.quickConnectWaiting' => 'Чекаємо на затвердження...',
 			'auth.quickConnectCancel' => 'Скасувати',
 			'auth.quickConnectExpired' => 'Термін дії швидкого підключення минув. Спробуйте ще раз.',
-			'auth.localDataRecoveryRequired' => 'PlezyNG не змогла безпечно відновити місцеві записні та відновлювальні дані.',
+			'auth.localDataRecoveryRequired' => 'PlezyNG не вдалося безпечно відновити локальні дані входу та дані відтворення, що очікують обробки. Увійдіть знову.',
 			'auth.pinCheckRejected' => 'Кінцевий код PIN Plex відхилено',
 			'auth.connectToDirectPlex' => 'Підключення до локального сервера Plex',
 			'common.cancel' => 'Скасувати',
@@ -4440,7 +4446,7 @@ extension on TranslationsUk {
 			'settings.darkTheme' => 'Темний',
 			'settings.oledTheme' => 'OLED',
 			'settings.emberTheme' => 'Чоловік',
-			'settings.glacierTheme' => '⁇   ⁇   ⁇   ⁇',
+			'settings.glacierTheme' => 'Льодовик',
 			'settings.forestTheme' => 'ліс',
 			'settings.plumTheme' => 'Плюм',
 			'settings.paperTheme' => 'папір',
@@ -4598,7 +4604,7 @@ extension on TranslationsUk {
 			'settings.importSettingsInvalidFile' => 'Цей файл не є дійсним експортом PlezyNG налаштувань',
 			'settings.importSettingsNoUser' => 'Зареєструйтесь перед імпортуванням',
 			'settings.cloudBackup' => 'Створення Cloud Backup',
-			'settings.cloudBackupDescription' => 'Завантажити портативні налаштування до кінцевої точки WebDAV понад HTTPS.Серверні зв\'язки та акредитації залишаються на цьому пристрої.',
+			'settings.cloudBackupDescription' => 'Збережіть резервну копію переносних налаштувань за адресою WebDAV через HTTPS. Підключення до серверів і дані входу залишаться на цьому пристрої.',
 			'settings.cloudBackupUrl' => 'WebDAV URL файлу JSON',
 			'settings.cloudBackupUsername' => 'Ім’я користувача',
 			'settings.cloudBackupPassword' => 'Пароль',
@@ -4869,7 +4875,7 @@ extension on TranslationsUk {
 			'themeEditor.contrast.labelOnAccent' => 'Кнопка на акценті',
 			'themeEditor.lowContrast' => ({required Object pair, required Object ratio, required Object minimum}) => '${pair}: ${ratio}:1, нижче рекомендованої ${minimum}:1',
 			'themeEditor.discardTitle' => 'Не вистачає змін?',
-			'themeEditor.discardMessage' => 'Ваші незбагненні зміни кольору будуть втрачені.',
+			'themeEditor.discardMessage' => 'Незбережені зміни кольорів буде втрачено.',
 			'themeEditor.discard' => 'Дискард',
 			'themeEditor.previewCardTitle' => ({required Object number}) => 'Епізод ${number}',
 			'themeEditor.previewCardSubtitle' => ({required Object minutes}) => '${minutes} хвилини',
@@ -5053,11 +5059,11 @@ extension on TranslationsUk {
 			'mediaMenu.deleteAnyway' => 'Зніміть в будь-якому випадку',
 			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => 'Постійно видаляти ${title} з сервера?',
 			'mediaMenu.deleteMultipleWarning' => 'Це включає в себе всі епізоди і їх файли.',
-			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uk'))(n, one: 'Це видаляє всі ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} епізоди в ньому, і його файл.', other: 'Це видаляє всі ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} епізоди в ньому, а також їх файли.', ), 
-			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uk'))(n, one: 'Цей елемент зберігається як файл ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}, який буде видалений.', other: 'Цей елемент зберігається через файли ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}, і всі вони будуть видалені.', ), 
-			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uk'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} інші епізоди зберігаються в тому ж файлі і також будуть видалені:', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} інші епізоди зберігаються в тому ж файлі і також будуть видалені:', ), 
-			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG не змогла перевірити, які файли це буде видаляти, так що вона може видаляти більше, ніж пункт, названий вище.',
-			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Ваш сервер не надає дані файлу для цього елемента, тому PlezyNG не може перевірити, які файли він буде видаляти.',
+			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uk'))(n, one: 'Це видалить ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} епізод у ньому та його файл.', few: 'Це видалить усі ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} епізоди в ньому та їхні файли.', many: 'Це видалить усі ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} епізодів у ньому та їхні файли.', other: 'Буде видалено всі епізоди в цьому елементі (кількість: ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}) та їхні файли.', ), 
+			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uk'))(n, one: 'Цей елемент зберігається в ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} файлі, який буде видалено.', few: 'Цей елемент зберігається в ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} файлах, і всі вони будуть видалені.', many: 'Цей елемент зберігається в ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} файлах, і всі вони будуть видалені.', other: 'Цей елемент зберігається у файлах (кількість: ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}); усі ці файли буде видалено.', ), 
+			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('uk'))(n, one: 'У тому самому файлі зберігається ще ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} епізод, який також буде видалено:', few: 'У тому самому файлі зберігаються ще ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} епізоди, які також буде видалено:', many: 'У тому самому файлі зберігається ще ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} епізодів, які також буде видалено:', other: 'Інші епізоди в тому самому файлі (кількість: ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)}) також буде видалено:', ), 
+			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG не вдалося перевірити, які файли буде видалено, тому може бути видалено більше, ніж зазначений вище елемент. Скасуйте дію та спробуйте знову або видаліть попри це.',
+			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Сервер не надав відомостей про файли цього елемента, тому PlezyNG не може перевірити, які файли буде видалено. Може бути видалено більше, ніж зазначений вище елемент.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Медіа-елементи успішно видалені',
 			'mediaMenu.mediaFailedToDelete' => 'Не вдалося видалити медіа',
 			'mediaMenu.rate' => 'Оцінити',
@@ -5076,7 +5082,7 @@ extension on TranslationsUk {
 			'accessibility.mediaCardSeason' => ({required Object title, required Object seasonInfo}) => '${title}, ${seasonInfo}',
 			'accessibility.mediaCardWatched' => 'Переглянуто',
 			'accessibility.mediaCardPartiallyWatched' => ({required Object percent}) => '${percent} відсотків переглянуто',
-			'accessibility.mediaCardUnwatched' => 'Неоцінений',
+			'accessibility.mediaCardUnwatched' => 'не переглянуто',
 			'accessibility.tapToPlay' => 'Натисніть, щоб грати',
 			'accessibility.decrease' => 'Зниження',
 			'accessibility.increase' => 'Збільшення',
@@ -5089,8 +5095,8 @@ extension on TranslationsUk {
 			'accessibility.expandText' => 'Розширення тексту',
 			'accessibility.collapseText' => 'Порушення тексту',
 			'accessibility.alphabetNavigation' => 'Алфавитна навігація',
-			'accessibility.alphabetScrollHint' => 'Підніміть або знижуйте, щоб пересуватися за листом',
-			'accessibility.rowColumnPosition' => ({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Стіна ${row} з ${rowCount}, колона ${column} з ${columnCount}',
+			'accessibility.alphabetScrollHint' => 'Проведіть угору або вниз, щоб переходити за літерами',
+			'accessibility.rowColumnPosition' => ({required Object row, required Object rowCount, required Object column, required Object columnCount}) => 'Рядок ${row} із ${rowCount}, стовпець ${column} із ${columnCount}',
 			'accessibility.rowPosition' => ({required Object row, required Object rowCount}) => 'Роль ${row} з ${rowCount}',
 			'accessibility.autoScrollPlay' => 'Грати в Auto-Scroll',
 			'accessibility.autoScrollPause' => 'Відпочинок Auto-Scroll',
@@ -5116,10 +5122,10 @@ extension on TranslationsUk {
 			'accessibility.highContrastHint' => 'Сильніший текст, виклади та індикатори фокусу на світлих або темних поверхнях.',
 			'accessibility.interaction' => 'Мотивація і взаємодія',
 			'accessibility.reduceMotion' => 'Зменшення руху',
-			'accessibility.reduceMotionHint' => 'Зберігайте фокус, перехід сторінки та декоративні ефекти.',
+			'accessibility.reduceMotionHint' => 'Зупиняє анімацію індикатора фокусу, переходи сторінок і декоративні ефекти.',
 			'accessibility.largeTargets' => 'Більшість цілей',
 			'accessibility.largeTargetsHint' => 'Дайте спільним контролям більше місця для дотику і асистентської навігації.',
-			'accessibility.navigationHint' => 'Використовуйте клавішу та клавішу Shift+Tab для переміщення між контролями, вхід або простір для активізації, а також Escape або Back для закриття.',
+			'accessibility.navigationHint' => 'Використовуйте Tab і Shift+Tab для переходу між елементами керування, Enter або пробіл для активації, а Escape або кнопку «Назад» для закриття. Коли книгу відкрито, доступні масштабування й налаштування читання.',
 			'tooltips.shufflePlay' => 'Шуффлей грає',
 			'tooltips.playTrailer' => 'Грати в трейлер',
 			'tooltips.markAsWatched' => 'Марк як спостерігається',
@@ -5340,7 +5346,7 @@ extension on TranslationsUk {
 			'profiles.addPlezyProfile' => 'Додати профіль PlezyNG',
 			'profiles.switchingProfile' => 'Профільний перехід...',
 			'profiles.deleteThisProfileTitle' => 'Чи можна видалити цей профіль?',
-			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Усунути ${displayName}.Посилання не впливають.',
+			'profiles.deleteThisProfileMessage' => ({required Object displayName}) => 'Видалити ${displayName}. Підключення залишаться без змін.',
 			'profiles.active' => 'Активний',
 			'profiles.manage' => 'Управління',
 			'profiles.delete' => 'Видалити',
@@ -5348,7 +5354,7 @@ extension on TranslationsUk {
 			'profiles.signOutPlexTitle' => 'Зареєструйтеся на Plex?',
 			'profiles.signOutPlexMessage' => ({required Object displayName}) => 'Видалити ${displayName} і всі Plex Домашні користувачі?',
 			'profiles.signOutPlexDeleteDownloads' => 'Також видаляти завантаження',
-			'profiles.signOutPlexDeleteDownloadsDescription' => 'В іншому випадку вони залишаються на цьому пристрої і повертаються, коли ви зареєструєтеся назад на цей обліковий запис.',
+			'profiles.signOutPlexDeleteDownloadsDescription' => 'Інакше завантаження залишаться на цьому пристрої й знову з’являться, коли ви ввійдете в цей обліковий запис.',
 			'profiles.signedOutPlex' => 'Підписано з Plex.',
 			'profiles.signOutFailed' => 'Підписання провалилася.',
 			'profiles.sectionTitle' => 'Профіль',
@@ -5713,7 +5719,7 @@ extension on TranslationsUk {
 			'detail.endsAt' => ({required Object time}) => 'Завершився на ${time}',
 			'startup.failedTitle' => 'PlezyNG не може почати',
 			'startup.failedBody' => 'Щось пройшло неправильно під час стартапу. деталі нижче визначають, що не вдалося.',
-			'startup.failedBodyRepairable' => 'Файл збережених налаштувань PlezyNG пошкоджений і повинен бути відновлений, перш ніж PlezyNG може почати.',
+			'startup.failedBodyRepairable' => 'Збережений файл налаштувань PlezyNG пошкоджено. Перед запуском програми його потрібно відновити. Повторна спроба не допоможе — виберіть відновлення сховища.',
 			'startup.phaseLabel' => 'Крок',
 			'startup.showDetails' => 'Покажіть деталі',
 			'startup.hideDetails' => 'Сховати деталі',
@@ -5722,10 +5728,10 @@ extension on TranslationsUk {
 			'startup.uploadDetails' => 'Завантажити деталі',
 			'startup.repairStorage' => 'Ремонт зберігання',
 			'startup.repairTitle' => 'Поправка зберіганих даних?',
-			'startup.repairBodyCommon' => 'Файл налаштувань PlezyNG пошкоджений і не може бути прочитаний.',
-			'startup.repairBodyOneCredential' => 'Один збережений підпис пошкоджений і не може бути прочитаний. відновлення видаляє тільки той один; ваші інші налаштування залишаються один.',
-			'startup.repairBodySignInsKept' => 'Ваш сервер і профілі повинні залишатися підписаними.',
-			'startup.repairBodySignInsLost' => 'Ключ, що захищає ваші збережені записи, не може бути відновлено з цього файлу, тому вам доведеться знову зареєструватися на кожному сервері і профілі.',
+			'startup.repairBodyCommon' => 'Файл налаштувань PlezyNG пошкоджено й неможливо прочитати. Відновлення скине всі налаштування до типових значень.',
+			'startup.repairBodyOneCredential' => 'Дані одного зі збережених входів пошкоджено й неможливо прочитати. Відновлення видалить лише їх; решта налаштувань залишиться без змін.',
+			'startup.repairBodySignInsKept' => 'Вхід на сервери та в профілі має зберегтися.',
+			'startup.repairBodySignInsLost' => 'Ключ, що захищає збережені дані входу, неможливо відновити з цього файлу. Тому доведеться знову ввійти на кожен сервер і в кожен профіль. Нічого на медіасервері не зміниться.',
 			'startup.repairBodySessionsUncertain' => 'Дані сервісів відстеження (MAL, AniList, Simkl, Trakt) і Seerr зберігаються окремо та можуть як зберегтися, так і зникнути. PlezyNG точно повідомить, які дані вдалося зберегти.',
 			'startup.repairConfirm' => 'Ремонт',
 			'startup.repairSucceeded' => 'Зберігання відремонтовано',
@@ -5733,8 +5739,8 @@ extension on TranslationsUk {
 			'startup.restartRequiredBody' => 'Ваші дані відновлено, але PlezyNG потрібно перезапустити, щоб ними скористатися. Закрийте PlezyNG і відкрийте знову.',
 			'startup.quitPlezy' => 'Завантажити PlezyNG',
 			'startup.repairFailed' => 'Поправка провалилася',
-			'startup.repairKeptSignIns' => 'Ваші сервери та профілі все ще підписуються.',
-			'startup.repairLostSignIns' => 'Ключ, що захищає ваші збережені знаки, не може бути відновлено. Ви будете змушені знову зареєструватися на кожному сервері і профілі.',
+			'startup.repairKeptSignIns' => 'Вхід на сервери та в профілі досі активний.',
+			'startup.repairLostSignIns' => 'Не вдалося відновити ключ, що захищає збережені дані входу. Потрібно знову ввійти на кожен сервер і в кожен профіль.',
 			'startup.repairLostSessions' => 'Принаймні один тракер або Seerr зв\'язок втрачено і потрібно відновити зв\'язок.',
 			'startup.backupTitle' => 'Копія пошкодженого файлу зберігається',
 			'startup.backupWarning' => 'Вона містить ваші аутентифікації. не завантажуйте або не ділитеся.',
@@ -6016,7 +6022,7 @@ extension on TranslationsUk {
 			'collections.collection' => 'Колекція',
 			'collections.empty' => 'Колекція порожня',
 			'collections.deleteCollection' => 'Видалити Колекцію',
-			'collections.deleteConfirm' => ({required Object title}) => 'Вимкніть "${title}"?Це не може бути без.',
+			'collections.deleteConfirm' => ({required Object title}) => 'Видалити «${title}»? Цю дію неможливо скасувати.',
 			'collections.deleted' => 'Колекція видалена',
 			'collections.deleteFailed' => 'Не вдалося видалити колекцію',
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Не вдалося видалити збірку: ${error}',
@@ -6304,7 +6310,7 @@ extension on TranslationsUk {
 			'downloads.keepNUnwatched' => ({required Object count}) => 'Залишити ${count} не перевірено',
 			'downloads.editSyncRule' => 'Регулювання правила синхронізації',
 			'downloads.removeSyncRule' => 'Видалення правила синхронізації',
-			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'Залишити синхронізацію "${title}"? завантажені епізоди будуть зберігатися.',
+			'downloads.removeSyncRuleConfirm' => ({required Object title}) => 'Припинити синхронізацію «${title}»? Завантажені епізоди буде збережено.',
 			'downloads.removeListSyncRuleConfirm' => ({required Object title}) => 'Залишити синхронізацію «${title}»?',
 			'downloads.deleteSyncRuleDownloads' => 'Також видаляти пов\'язані завантаження',
 			'downloads.deleteSyncRuleDownloadsDescription' => 'Завантаження, які використовуються іншим правилом синхронізації або профілем, будуть зберігатися.',
@@ -6725,7 +6731,7 @@ extension on TranslationsUk {
 			'seerr.quickConnectUnsupported' => 'Цей приклад Seerr не підтримує Quick Connect. він потребує Seerr 3.4 або вище.',
 			'seerr.notInitialized' => 'Цей приклад Seerr не завершив першочергову установку',
 			'seerr.noPlexTokenForReauth' => 'Токен No Plex доступний для реєстрації знову',
-			'seerr.noStoredCredentials' => 'Зареєстровані акредитації не доступні для реєстрації знову',
+			'seerr.noStoredCredentials' => 'Немає збережених даних для повторного входу',
 			'seerr.signInRejected' => 'Підписання було відхилено',
 			'seerr.noSessionCookie' => 'Seerr не видав cookie сесії',
 			'seerr.freshCookieRejected' => 'Seerr відмовився від нового cookie сесії',
@@ -6943,8 +6949,8 @@ extension on TranslationsUk {
 			'homeLayout.on' => 'На',
 			'homeLayout.resetHeroButtonDescription' => 'Відкидає налаштування героя кожної серії і повертає єдиний ротаційний банер вгору, як і до того, як героїчні серії існували.',
 			'platform.localNetworkPermission' => 'PlezyNG підключається до ваших медіа-серверів та пристроїв відтворення на вашій локальній мережі.',
-			'platform.locationPermission' => 'PlezyNG використовує місцевий доступ, коли iOS вимагає його для виявлення вашої локальної мережі та підключення до ваших медіа-серверів.',
-			'platform.photoLibraryPermission' => 'Виберіть зображення з вашої фотобібліотеки для використання в якості медіа-історії.',
+			'platform.locationPermission' => 'PlezyNG використовує доступ до геопозиції, коли iOS вимагає його для виявлення локальної мережі та підключення до ваших медіасерверів.',
+			'platform.photoLibraryPermission' => 'Виберіть зображення з фототеки для обкладинок медіафайлів.',
 			'platform.cameraPermission' => 'Сканувати QR-коди, щоб з\'єднати Companion Remote.',
 			'fileSources.title' => 'Файли та книги',
 			'fileSources.subtitle' => 'Читати, слухати і спостерігати за своїми файлами.',
@@ -6954,7 +6960,7 @@ extension on TranslationsUk {
 			'fileSources.source' => 'Джерело',
 			'fileSources.name' => 'Ім’я',
 			'fileSources.endpoint' => 'Сервер URL',
-			'fileSources.root' => 'Пост або префікс',
+			'fileSources.root' => 'Папка або префікс',
 			'fileSources.username' => 'Ім’я користувача',
 			'fileSources.password' => 'Пароль',
 			'fileSources.token' => 'API токен',
@@ -7009,7 +7015,7 @@ extension on TranslationsUk {
 			'fileSources.useRemote' => 'Використовуйте інші пристрої',
 			'fileSources.history' => 'Історія позиції',
 			'fileSources.groupAudio' => 'Слухайте як аудіокнигу',
-			'fileSources.groupHint' => 'Спілкує аудіофайли, які зараз завантажуються в цій папці. Завантажити всі сторінки перш за все.',
+			'fileSources.groupHint' => 'Об’єднує аудіофайли, завантажені зараз у цій папці. Спочатку завантажте всі сторінки.',
 			'fileSources.order' => 'Файловий порядок',
 			'fileSources.moveUp' => 'Змінюйся',
 			'fileSources.moveDown' => 'Перемістити вниз',
@@ -7030,11 +7036,11 @@ extension on TranslationsUk {
 			'fileSources.margin' => 'Маргіна',
 			'fileSources.font' => 'Тип',
 			'fileSources.serif' => 'Серіф',
-			'fileSources.sans' => 'Без сервісу',
-			'fileSources.mono' => 'Монако',
+			'fileSources.sans' => 'Без засічок',
+			'fileSources.mono' => 'Моноширинний',
 			'fileSources.columns' => 'Колонки',
 			'fileSources.scroll' => 'Скріл вертикально',
-			'fileSources.justify' => 'Виправданий текст',
+			'fileSources.justify' => 'Вирівняти текст за шириною',
 			'fileSources.readerTheme' => 'Поява сторінки',
 			'fileSources.appTheme' => 'Слідкуйте за темою App',
 			'fileSources.paper' => 'папір',
@@ -7042,13 +7048,13 @@ extension on TranslationsUk {
 			'fileSources.night' => 'Ночі',
 			'fileSources.readAloud' => 'Читати цю сторінку голосно',
 			'fileSources.readAlong' => 'Читати далі',
-			'fileSources.stopReading' => 'Залишити розповідь',
+			'fileSources.stopReading' => 'Зупинити озвучення',
 			'fileSources.searchBook' => 'Пошук в книзі',
 			'fileSources.noMatches' => 'Ніяких матчів',
 			'fileSources.previousPage' => 'Попередня сторінка',
 			'fileSources.nextPage' => 'Наступна сторінка',
 			'fileSources.page' => ({required Object number}) => 'Сторінка ${number}',
-			'fileSources.externalBlocked' => 'Внутрішні посилання на книгу вимкнені в читачах.',
+			'fileSources.externalBlocked' => 'Зовнішні посилання в книгах вимкнено в читачі.',
 			'fileSources.loading' => 'Відкриття...',
 			'fileSources.narrator' => 'Назавжди',
 			'fileSources.audio' => 'Аудіо',
@@ -7057,7 +7063,7 @@ extension on TranslationsUk {
 			'fileSources.all' => 'Всі',
 			'fileSources.downloads' => 'Офлайн файли',
 			'fileSources.confirmDelete' => 'Видалити вибрану офлайн-копію? Ваше місце читання або прослуховування та нотатки збережуться.',
-			'fileSources.errorAuthentication' => 'Зверніть увагу на те, що ви знову підключили цей джерело.',
+			'fileSources.errorAuthentication' => 'Увійдіть знову, щоб відновити з’єднання з цим джерелом.',
 			'fileSources.errorPermission' => 'Цей джерело не надало доступу до запитуваного файлу.',
 			'fileSources.errorUnavailable' => 'Попробуйте знову або відкрийте офлайн-копію.',
 			'fileSources.errorUnsupported' => 'Цей формат або підключення не підтримується на цьому пристрої. перевірте джерело інсталяції.',
@@ -7074,7 +7080,7 @@ extension on TranslationsUk {
 			'fileSources.none' => 'Нічого',
 			'fileSources.fullscreen' => 'Повний екран',
 			'fileSources.syncLocation' => 'Прогрес синхронізування папки (опціональна)',
-			'fileSources.syncLocationHint' => 'Доданий папку WebDAV для PlezyNG штату. використовує умовно написані записи; засоби масової інформації залишаються незмінними.',
+			'fileSources.syncLocationHint' => 'Окрема папка WebDAV для стану PlezyNG. Використовує умовний запис; медіафайли не змінюються.',
 			'fileSources.audiobooks' => 'Аудіокниги',
 			'fileSources.comics' => 'Комічні',
 			'fileSources.scan' => 'Скенію для книг та медіа',
@@ -7100,7 +7106,7 @@ extension on TranslationsUk {
 			'fileSources.rightToLeft' => 'Справа наліво',
 			'fileSources.letterSpacing' => 'Письмо простір',
 			'fileSources.wordSpacing' => 'Слово простір',
-			'fileSources.readerControlsHelp' => 'Натисніть або використовуйте контролі зуму для розширення сторінок. перейдіть до панелі. Ctrl/ ⁇  + або − налаштує зум; Ctrl/ ⁇  0 перезавантажує його.',
+			'fileSources.readerControlsHelp' => 'Щоб збільшити сторінку, розведіть два пальці або скористайтеся кнопками масштабування. Перетягуйте, щоб переміщувати сторінку. Ctrl/⌘ разом із + або − змінює масштаб; Ctrl/⌘ разом із 0 скидає його. Page Up і Page Down перегортають сторінки.',
 			'fileSources.imagePage' => 'Комічна сторінка',
 			'fileSources.resetReader' => 'Перезавантаження переваг читання',
 			'fileSources.zoom' => 'Масштабувати',
@@ -7112,50 +7118,50 @@ extension on TranslationsUk {
 			'lending.other' => 'Інша бібліотека',
 			'lending.libraryName' => 'Назва бібліотеки',
 			'lending.libraryUrl' => 'Бібліотека сайт',
-			'lending.libraryUrlHint' => 'Використовуйте каталог або сторінку підпису в бібліотеці.',
-			'lending.intro' => 'Залишайте книжки у бібліотеці, залишайте їх у закритті.',
-			'lending.handoff' => 'Зареєструйтесь, позичайте і читайте безпечно за допомогою власного сервісу бібліотеки.',
+			'lending.libraryUrlHint' => 'Скористайтеся каталогом бібліотеки або її сторінкою входу.',
+			'lending.intro' => 'Позичайте книги у своїй бібліотеці й тримайте їх поруч.',
+			'lending.handoff' => 'Увійдіть, позичайте книги й читайте безпечно через власний сервіс бібліотеки.',
 			'lending.openService' => 'Відкрита бібліотека',
 			'lending.findLibrary' => 'Знайдіть бібліотеку',
 			'lending.search' => 'Пошук книг та авторів',
 			'lending.catalogue' => 'каталог',
-			'lending.loans' => 'Кредит',
-			'lending.holds' => 'Ходячи',
+			'lending.loans' => 'Позичені книги',
+			'lending.holds' => 'Бронювання',
 			'lending.signIn' => 'Підписуйтесь у Вашій бібліотеці',
 			'lending.waiting' => 'Завершити підписання в браузері, а потім повернутися сюди.',
 			'lending.cancel' => 'Скасувати',
 			'lending.disconnect' => 'Видалення бібліотеки',
-			'lending.disconnectMessage' => 'Видалити цю бібліотеку з цього профілю? Ваші кредити і зберігає перебування з вашою бібліотекою.',
+			'lending.disconnectMessage' => 'Вилучити цю бібліотеку з цього профілю? Ваші позичені книги та бронювання залишаться в бібліотеці.',
 			'lending.getBook' => 'Отримайте книгу',
 			'lending.checkAvailability' => 'Перевірка наявності',
 			'lending.available' => 'Доступно для позики',
 			'lending.unavailable' => 'В даний час недоступні',
-			'lending.borrow' => 'Кредит',
-			'lending.placeHold' => 'Місце зберігання',
+			'lending.borrow' => 'Позичити',
+			'lending.placeHold' => 'Забронювати',
 			'lending.returnBook' => 'Повернення рано',
-			'lending.cancelHold' => 'Відмінити зберігання',
+			'lending.cancelHold' => 'Скасувати бронювання',
 			'lending.confirmBorrow' => 'Ви можете замовити цю книжку у вашій бібліотеці?',
 			'lending.confirmReturn' => 'Ви можете повернути цей титул зараз? Ви можете замовити його знову, щоб продовжити.',
-			'lending.confirmCancelHold' => 'Чи відмовилися ви від цієї титулу?',
+			'lending.confirmCancelHold' => 'Скасувати бронювання цього видання?',
 			'lending.email' => 'Зберігайте повідомлення електронною поштою',
-			'lending.due' => ({required Object date}) => 'Дайте ${date}',
+			'lending.due' => ({required Object date}) => 'Повернути до ${date}',
 			'lending.queue' => ({required Object position}) => 'Позиція ${position} в лінії',
 			'lending.empty' => 'Тепер тут немає титулів.',
-			'lending.openLibraryNote' => 'Відкритий каталог бібліотеки. варіанти читання та позики відображаються на сторінці кожного заголовка.',
+			'lending.openLibraryNote' => 'Переглядайте каталог Open Library. Варіанти читання й позичання наведено на сторінці кожного видання.',
 			'lending.more' => 'Завантажити більше',
 			'lending.gateway' => 'Бібліотека підписується',
 			'lending.gatewayHint' => 'Пропонується вашою бібліотекою або адміністратором PlezyNG.',
 			'lending.advanced' => 'Бібліотека інтеграція',
 			'lending.loadLibraries' => 'Виберіть свою бібліотеку',
-			'lending.expired' => 'Цей кредит закінчився.',
+			'lending.expired' => 'Термін користування цією книгою минув.',
 			'lending.updated' => 'Бібліотека оновлена',
 			'lending.continueService' => 'Продовжуйте службу',
 			'lending.comingSoon' => 'Заробітна плата в Україні · Приїжджає незабаром',
 			'lending.comingSoonDescription' => 'Ви можете використовувати свою бібліотеку в Libby, поки ми закінчимо підключення її.',
-			'lending.suspendHold' => 'Затримка тримається',
-			'lending.resumeHold' => 'Резюме Дотримуй',
-			'lending.suspendMessage' => 'Зберігайте своє місце в порядку і дозволяйте наступному читачу позичати цю копію?',
-			'lending.resumeMessage' => 'Чи можна відновити цю книжку, щоб бібліотека могла запропонувати вам наступну доступну копію?',
+			'lending.suspendHold' => 'Призупинити бронювання',
+			'lending.resumeHold' => 'Відновити бронювання',
+			'lending.suspendMessage' => 'Зберегти своє місце в черзі й дозволити наступному читачеві позичити цей примірник? Бронювання можна відновити пізніше.',
+			'lending.resumeMessage' => 'Відновити бронювання, щоб бібліотека могла запропонувати вам наступний доступний примірник?',
 			'lending.editEmail' => 'Зміни повідомлення електронної пошти',
 			'audiobook.syncTitle' => 'Читання та слухання Sync',
 			'audiobook.syncHelp' => 'Зберігайте позиції читання, позиції слуху, стан завершення, знаки книг і записи на ваших пристроях. Виберіть прикріплений обліковий запис зберігання і використовуйте той же код синхронізації на кожному пристрої. Читання і слухання залишаються окремими.',

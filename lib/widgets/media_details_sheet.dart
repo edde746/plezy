@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../focus/focusable_wrapper.dart';
+import '../i18n/presentation_formats.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
 import '../utils/content_utils.dart';
@@ -69,7 +70,7 @@ class _MediaDetailsSheetState extends State<MediaDetailsSheet> {
       if (item.isEpisode && item.originallyAvailableAt != null)
         formatAbbreviatedDate(item.originallyAvailableAt!)
       else if (item.year != null)
-        item.year.toString(),
+        formatDecimal(item.year!, maximumDecimals: 0),
       if (item.contentRating != null) formatContentRating(item.contentRating!),
       if (item.durationMs != null) formatDurationTextual(item.durationMs!),
       ...buildMediaQualityLabels(item),

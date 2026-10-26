@@ -524,7 +524,7 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get importSettingsInvalidFile => 'Този файл не е валиден експорт на настройки от PlezyNG';
 	@override String get importSettingsNoUser => 'Влезте, преди да импортирате настройки';
 	@override String get cloudBackup => 'Облачна резервна копие';
-	@override String get cloudBackupDescription => 'Backup на преносимите настройки до крайната точка WebDAV над HTTPS. сървърни връзки и поверителности остават на това устройство.';
+	@override String get cloudBackupDescription => 'Архивирайте преносимите настройки на WebDAV адрес чрез HTTPS. Връзките със сървърите и данните за вход остават на това устройство.';
 	@override String get cloudBackupUrl => 'WebDAV JSON URL файл';
 	@override String get cloudBackupUsername => 'Потребителско име';
 	@override String get cloudBackupPassword => 'Парола';
@@ -984,7 +984,7 @@ class _Translations$mediaMenu$bg extends Translations$mediaMenu$en {
 	@override String confirmDeleteTarget({required Object title}) => 'Завинаги да изтрия ли ${title} от сървъра ви?';
 	@override String get deleteMultipleWarning => 'Това включва всички епизоди и техните файлове.';
 	@override String deleteEpisodeCountWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bg'))(n,
-		one: 'Това изтрива целия ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} епизод в него, както и файла му.',
+		one: 'Това изтрива съдържащия се в него ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} епизод и файла му.',
 		other: 'Това изтрива всичките ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} епизода в него, както и техните файлове.',
 	);
 	@override String deleteMultiPartWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bg'))(n,
@@ -1073,10 +1073,10 @@ class _Translations$accessibility$bg extends Translations$accessibility$en {
 	@override String get highContrastHint => 'По-силен текст, изводи и фокусирани показатели на светли или тъмни повърхности.';
 	@override String get interaction => 'Мотивите и взаимодействието';
 	@override String get reduceMotion => 'Намаляване на движението';
-	@override String get reduceMotionHint => 'Дръжте фокуса, преходните страници и декоративните ефекти все още.';
+	@override String get reduceMotionHint => 'Спиране на анимациите на индикатора за фокус, преходите между страниците и декоративните ефекти.';
 	@override String get largeTargets => 'По-големи цели за докосване';
 	@override String get largeTargetsHint => 'Дават споделени контрола повече място за докосване и асистирана навигация.';
-	@override String get navigationHint => 'Използвайте Tab и Shift+Tab, за да се движите между контролите, Enter или Space да активирате, и Escape или Back да затворите.';
+	@override String get navigationHint => 'Използвайте Tab и Shift+Tab за преминаване между контролите, Enter или интервал за активиране и Escape или бутона Назад за затваряне. Когато е отворена книга, са достъпни мащабиране и настройки за четене.';
 }
 
 // Path: tooltips
@@ -2744,7 +2744,7 @@ class _Translations$addServer$bg extends Translations$addServer$en {
 	@override String connectDirectPlexCardSubtitleScoped({required Object name}) => 'Включете се директно с локален IP или URL. Включва се към ${name}.';
 	@override String get insecureTitle => 'Нешифрована връзка';
 	@override String insecureDescription({required Object url}) => '${url} използва HTTP. Хора в мрежата могат да прочетат или променят паролата, токените и мултимедията ви. Използвайте HTTPS, когато е наличен. Продължете само ако имате доверие на тази мрежа и приемате риска.';
-	@override String get allowHttp => 'Разрешение HTTP';
+	@override String get allowHttp => 'Разреши HTTP';
 	@override String get httpsRequired => 'Използвайте HTTPS или изрично разрешавате нешифровано свързване.';
 }
 
@@ -2881,8 +2881,8 @@ class _Translations$platform$bg extends Translations$platform$en {
 
 	// Translations
 	@override String get localNetworkPermission => 'PlezyNG се свързва с вашите медийни сървъри и устройства за възпроизвеждане на локална мрежа.';
-	@override String get locationPermission => 'PlezyNG използва локален достъп, когато iOS го изисква, за да открие локалната ви мрежа и да се свърже с вашите медийни сървъри.';
-	@override String get photoLibraryPermission => 'Изберете изображения от вашата фотобиблиотека, за да използвате като медийна художествена работа.';
+	@override String get locationPermission => 'PlezyNG използва достъп до местоположението, когато iOS го изисква за откриване на локалната мрежа и свързване с медийните ви сървъри.';
+	@override String get photoLibraryPermission => 'Изберете снимки от фотобиблиотеката за изображения към медийното съдържание.';
 	@override String get cameraPermission => 'Скениране на QR кодове, за да се свърже с Companion Remote.';
 }
 
@@ -2917,7 +2917,7 @@ class _Translations$fileSources$bg extends Translations$fileSources$en {
 	@override String get save => 'Запази';
 	@override String get close => 'Затвори';
 	@override String get removeSource => 'Източник на разкъсване';
-	@override String get disconnectMessage => 'Изтеглените файлове и историята ви за четене и слушане ще останат на това устройство.';
+	@override String get disconnectMessage => 'Да се прекъсне ли връзката с този източник? Изтеглените файлове и историята на четене и слушане ще останат на това устройство.';
 	@override String get localFolder => 'Изберете папката';
 	@override String get empty => 'Тук все още няма нищо';
 	@override String get emptyHint => 'Добавете източник или импортирайте книга, аудио книга, музика или видео.';
@@ -2990,7 +2990,7 @@ class _Translations$fileSources$bg extends Translations$fileSources$en {
 	@override String get paper => 'Хартия';
 	@override String get sepia => 'Сепията';
 	@override String get night => 'Нощта';
-	@override String get readAloud => 'Прочетете тази страница на Алоу';
+	@override String get readAloud => 'Прочети тази страница на глас';
 	@override String get readAlong => 'Прочетете по-долу';
 	@override String get stopReading => 'Прекратяване на разкази';
 	@override String get searchBook => 'Търсене в книгата';
@@ -3006,7 +3006,7 @@ class _Translations$fileSources$bg extends Translations$fileSources$en {
 	@override String get ebooks => 'Екскъпи';
 	@override String get all => 'Всички';
 	@override String get downloads => 'Офлайн файлове';
-	@override String get confirmDelete => 'Изтрийте избраната офлайн копие? позицията и белезите ви ще останат.';
+	@override String get confirmDelete => 'Да се премахне ли избраното офлайн копие? Мястото ви на четене или слушане и бележките ще се запазят.';
 	@override String get errorAuthentication => 'Запишете се отново, за да се свържете отново с този източник.';
 	@override String get errorPermission => 'Този източник не предостави достъп до поискания файл.';
 	@override String get errorUnavailable => 'Източникът не е на разположение. опитайте отново или отворите офлайн копие.';
@@ -3029,7 +3029,7 @@ class _Translations$fileSources$bg extends Translations$fileSources$en {
 	@override String get comics => 'Комедия';
 	@override String get scan => 'Скениране на книги и медии';
 	@override String get browserReader => 'Отворени читатели';
-	@override String get browserReaderHelp => 'Прочетете в браузъра си.Дръжте PlezyNG отворен, за да запазите мястото и белезите си.';
+	@override String get browserReaderHelp => 'Четецът е отворен в браузъра. Оставете PlezyNG отворен, за да се запазват мястото ви на четене и бележките.';
 	@override String get on => 'на';
 	@override String get advancedSetup => 'Регистрация на App';
 	@override String get microsoftSignIn => 'Подписване с Microsoft';
@@ -3047,10 +3047,10 @@ class _Translations$fileSources$bg extends Translations$fileSources$en {
 	@override String get twoPages => '2 страници';
 	@override String get readingDirection => 'Прочетете насока';
 	@override String get leftToRight => 'Отляво на дясно';
-	@override String get rightToLeft => 'Правото да напуснеш';
+	@override String get rightToLeft => 'Отдясно наляво';
 	@override String get letterSpacing => 'Писмо за пространство';
 	@override String get wordSpacing => 'Слово пространство';
-	@override String get readerControlsHelp => 'Натиснете или използвайте контрола за зъби, за да разширите страници. Влезте в панела. Ctrl/ ⁇  + или − коригира зъба; Ctrl/ ⁇  0 го пренасочва. Page Up и Page Down превръщат страници.';
+	@override String get readerControlsHelp => 'Раздалечете два пръста или използвайте контролите за мащабиране, за да увеличите страницата. Плъзнете, за да я преместите. Ctrl/⌘ с + или − променя мащаба; Ctrl/⌘ с 0 го нулира. Page Up и Page Down прелистват страниците.';
 	@override String get imagePage => 'Комедия страница';
 	@override String get resetReader => 'Препоръки за преразглеждане';
 	@override String get zoom => 'Мащаб';
@@ -3079,23 +3079,23 @@ class _Translations$lending$bg extends Translations$lending$en {
 	@override String get search => 'Търсене на книги и автори';
 	@override String get catalogue => 'Каталог';
 	@override String get loans => 'Кредит';
-	@override String get holds => 'Дръжте';
+	@override String get holds => 'Резервации';
 	@override String get signIn => 'Регистрирайте се с библиотеката си';
 	@override String get waiting => 'Завършете регистрацията в браузъра си, а след това се върнете тук.';
 	@override String get cancel => 'Отказ';
 	@override String get disconnect => 'Изтриване на библиотеката';
-	@override String get disconnectMessage => 'Изтрийте тази библиотека от този профил? Вашите заеми и поддържате престой с вашата библиотека.';
+	@override String get disconnectMessage => 'Да се премахне ли тази библиотека от този профил? Заетите книги и резервациите ви ще останат в библиотеката.';
 	@override String get getBook => 'Вземете книга';
 	@override String get checkAvailability => 'Проверяване на наличността';
 	@override String get available => 'Достъпни за заем';
 	@override String get unavailable => 'В момента недостъпни';
-	@override String get borrow => 'Заем';
-	@override String get placeHold => 'Мястото за задържане';
+	@override String get borrow => 'Заеми';
+	@override String get placeHold => 'Резервирай';
 	@override String get returnBook => 'Върни се рано';
-	@override String get cancelHold => 'Отмяна на задържането';
+	@override String get cancelHold => 'Отмени резервацията';
 	@override String get confirmBorrow => 'Заемат ли сте този заглавие от библиотеката си?';
-	@override String get confirmReturn => 'Може да се наложи да я позаем отново, за да продължите.';
-	@override String get confirmCancelHold => 'Да се отървете от този титла?';
+	@override String get confirmReturn => 'Да се върне ли това заглавие сега? Може да се наложи да го заемете отново, за да продължите.';
+	@override String get confirmCancelHold => 'Да се отмени ли резервацията ви за това заглавие?';
 	@override String get email => 'Дръжте имейл за уведомление';
 	@override String due({required Object date}) => 'Дълго време ${date}';
 	@override String queue({required Object position}) => 'Позиция ${position} в линия';
@@ -3113,8 +3113,8 @@ class _Translations$lending$bg extends Translations$lending$en {
 	@override String get comingSoonDescription => 'Можете да използвате библиотеката си в Libby, докато свързваме.';
 	@override String get suspendHold => 'Прекъсване на задържането';
 	@override String get resumeHold => 'Резюме за задържане';
-	@override String get suspendMessage => 'Дръжте мястото си в ред и позволете на следващия читател да вземе заем на тази копия?';
-	@override String get resumeMessage => 'Превърнете ли тази страница, така че библиотеката ви да може да ви предложи следващата налична копие?';
+	@override String get suspendMessage => 'Да се запази ли мястото ви в опашката, за да може следващият читател да заеме този екземпляр? Можете да възобновите резервацията по-късно.';
+	@override String get resumeMessage => 'Да се възобнови ли резервацията, за да може библиотеката да ви предложи следващия наличен екземпляр?';
 	@override String get editEmail => 'Промяна на имейл уведомление';
 }
 
@@ -4566,7 +4566,7 @@ extension on TranslationsBg {
 			'settings.importSettingsInvalidFile' => 'Този файл не е валиден експорт на настройки от PlezyNG',
 			'settings.importSettingsNoUser' => 'Влезте, преди да импортирате настройки',
 			'settings.cloudBackup' => 'Облачна резервна копие',
-			'settings.cloudBackupDescription' => 'Backup на преносимите настройки до крайната точка WebDAV над HTTPS. сървърни връзки и поверителности остават на това устройство.',
+			'settings.cloudBackupDescription' => 'Архивирайте преносимите настройки на WebDAV адрес чрез HTTPS. Връзките със сървърите и данните за вход остават на това устройство.',
 			'settings.cloudBackupUrl' => 'WebDAV JSON URL файл',
 			'settings.cloudBackupUsername' => 'Потребителско име',
 			'settings.cloudBackupPassword' => 'Парола',
@@ -5021,7 +5021,7 @@ extension on TranslationsBg {
 			'mediaMenu.deleteAnyway' => 'Изтрий въпреки това',
 			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => 'Завинаги да изтрия ли ${title} от сървъра ви?',
 			'mediaMenu.deleteMultipleWarning' => 'Това включва всички епизоди и техните файлове.',
-			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bg'))(n, one: 'Това изтрива целия ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} епизод в него, както и файла му.', other: 'Това изтрива всичките ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} епизода в него, както и техните файлове.', ), 
+			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bg'))(n, one: 'Това изтрива съдържащия се в него ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} епизод и файла му.', other: 'Това изтрива всичките ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} епизода в него, както и техните файлове.', ), 
 			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bg'))(n, one: 'Този елемент се съхранява като ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} файл, който ще бъде изтрит.', other: 'Този елемент се съхранява в ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} файла и всички те ще бъдат изтрити.', ), 
 			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('bg'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} друг епизод се съхранява в същия файл и също ще бъде изтрит:', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} други епизода се съхраняват в същия файл и също ще бъдат изтрити:', ), 
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG не успя да провери кои файлове ще бъдат премахнати, така че може да изтрие повече от посочения по-горе елемент. Откажете и опитайте отново, или изтрийте въпреки това.',
@@ -5084,10 +5084,10 @@ extension on TranslationsBg {
 			'accessibility.highContrastHint' => 'По-силен текст, изводи и фокусирани показатели на светли или тъмни повърхности.',
 			'accessibility.interaction' => 'Мотивите и взаимодействието',
 			'accessibility.reduceMotion' => 'Намаляване на движението',
-			'accessibility.reduceMotionHint' => 'Дръжте фокуса, преходните страници и декоративните ефекти все още.',
+			'accessibility.reduceMotionHint' => 'Спиране на анимациите на индикатора за фокус, преходите между страниците и декоративните ефекти.',
 			'accessibility.largeTargets' => 'По-големи цели за докосване',
 			'accessibility.largeTargetsHint' => 'Дават споделени контрола повече място за докосване и асистирана навигация.',
-			'accessibility.navigationHint' => 'Използвайте Tab и Shift+Tab, за да се движите между контролите, Enter или Space да активирате, и Escape или Back да затворите.',
+			'accessibility.navigationHint' => 'Използвайте Tab и Shift+Tab за преминаване между контролите, Enter или интервал за активиране и Escape или бутона Назад за затваряне. Когато е отворена книга, са достъпни мащабиране и настройки за четене.',
 			'tooltips.shufflePlay' => 'Разбъркано възпроизвеждане',
 			'tooltips.playTrailer' => 'Пусни трейлър',
 			'tooltips.markAsWatched' => 'Маркирай като гледано',
@@ -6801,7 +6801,7 @@ extension on TranslationsBg {
 			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => 'Включете се директно с локален IP или URL. Включва се към ${name}.',
 			'addServer.insecureTitle' => 'Нешифрована връзка',
 			'addServer.insecureDescription' => ({required Object url}) => '${url} използва HTTP. Хора в мрежата могат да прочетат или променят паролата, токените и мултимедията ви. Използвайте HTTPS, когато е наличен. Продължете само ако имате доверие на тази мрежа и приемате риска.',
-			'addServer.allowHttp' => 'Разрешение HTTP',
+			'addServer.allowHttp' => 'Разреши HTTP',
 			'addServer.httpsRequired' => 'Използвайте HTTPS или изрично разрешавате нешифровано свързване.',
 			'watchLink.serverUnavailable' => 'Не може да се получи достъп до сървър Plex за този линк.',
 			'watchLink.notFound' => 'Не може да се намери това шоу или филм на вашите сървъри Plex.',
@@ -6911,8 +6911,8 @@ extension on TranslationsBg {
 			'homeLayout.on' => 'на',
 			'homeLayout.resetHeroButtonDescription' => 'Отклонява настройката на героя на всяка линия и връща един ротиращ банер на върха, както преди героите на редиците съществуват.',
 			'platform.localNetworkPermission' => 'PlezyNG се свързва с вашите медийни сървъри и устройства за възпроизвеждане на локална мрежа.',
-			'platform.locationPermission' => 'PlezyNG използва локален достъп, когато iOS го изисква, за да открие локалната ви мрежа и да се свърже с вашите медийни сървъри.',
-			'platform.photoLibraryPermission' => 'Изберете изображения от вашата фотобиблиотека, за да използвате като медийна художествена работа.',
+			'platform.locationPermission' => 'PlezyNG използва достъп до местоположението, когато iOS го изисква за откриване на локалната мрежа и свързване с медийните ви сървъри.',
+			'platform.photoLibraryPermission' => 'Изберете снимки от фотобиблиотеката за изображения към медийното съдържание.',
 			'platform.cameraPermission' => 'Скениране на QR кодове, за да се свърже с Companion Remote.',
 			'fileSources.title' => 'Филми и книги',
 			'fileSources.subtitle' => 'Прочетете, слушате и наблюдавате от собствените си файлове.',
@@ -6938,7 +6938,7 @@ extension on TranslationsBg {
 			'fileSources.save' => 'Запази',
 			'fileSources.close' => 'Затвори',
 			'fileSources.removeSource' => 'Източник на разкъсване',
-			'fileSources.disconnectMessage' => 'Изтеглените файлове и историята ви за четене и слушане ще останат на това устройство.',
+			'fileSources.disconnectMessage' => 'Да се прекъсне ли връзката с този източник? Изтеглените файлове и историята на четене и слушане ще останат на това устройство.',
 			'fileSources.localFolder' => 'Изберете папката',
 			'fileSources.empty' => 'Тук все още няма нищо',
 			'fileSources.emptyHint' => 'Добавете източник или импортирайте книга, аудио книга, музика или видео.',
@@ -7008,7 +7008,7 @@ extension on TranslationsBg {
 			'fileSources.paper' => 'Хартия',
 			'fileSources.sepia' => 'Сепията',
 			'fileSources.night' => 'Нощта',
-			'fileSources.readAloud' => 'Прочетете тази страница на Алоу',
+			'fileSources.readAloud' => 'Прочети тази страница на глас',
 			'fileSources.readAlong' => 'Прочетете по-долу',
 			'fileSources.stopReading' => 'Прекратяване на разкази',
 			'fileSources.searchBook' => 'Търсене в книгата',
@@ -7024,7 +7024,7 @@ extension on TranslationsBg {
 			'fileSources.ebooks' => 'Екскъпи',
 			'fileSources.all' => 'Всички',
 			'fileSources.downloads' => 'Офлайн файлове',
-			'fileSources.confirmDelete' => 'Изтрийте избраната офлайн копие? позицията и белезите ви ще останат.',
+			'fileSources.confirmDelete' => 'Да се премахне ли избраното офлайн копие? Мястото ви на четене или слушане и бележките ще се запазят.',
 			'fileSources.errorAuthentication' => 'Запишете се отново, за да се свържете отново с този източник.',
 			'fileSources.errorPermission' => 'Този източник не предостави достъп до поискания файл.',
 			'fileSources.errorUnavailable' => 'Източникът не е на разположение. опитайте отново или отворите офлайн копие.',
@@ -7047,7 +7047,7 @@ extension on TranslationsBg {
 			'fileSources.comics' => 'Комедия',
 			'fileSources.scan' => 'Скениране на книги и медии',
 			'fileSources.browserReader' => 'Отворени читатели',
-			'fileSources.browserReaderHelp' => 'Прочетете в браузъра си.Дръжте PlezyNG отворен, за да запазите мястото и белезите си.',
+			'fileSources.browserReaderHelp' => 'Четецът е отворен в браузъра. Оставете PlezyNG отворен, за да се запазват мястото ви на четене и бележките.',
 			'fileSources.on' => 'на',
 			'fileSources.advancedSetup' => 'Регистрация на App',
 			'fileSources.microsoftSignIn' => 'Подписване с Microsoft',
@@ -7065,10 +7065,10 @@ extension on TranslationsBg {
 			'fileSources.twoPages' => '2 страници',
 			'fileSources.readingDirection' => 'Прочетете насока',
 			'fileSources.leftToRight' => 'Отляво на дясно',
-			'fileSources.rightToLeft' => 'Правото да напуснеш',
+			'fileSources.rightToLeft' => 'Отдясно наляво',
 			'fileSources.letterSpacing' => 'Писмо за пространство',
 			'fileSources.wordSpacing' => 'Слово пространство',
-			'fileSources.readerControlsHelp' => 'Натиснете или използвайте контрола за зъби, за да разширите страници. Влезте в панела. Ctrl/ ⁇  + или − коригира зъба; Ctrl/ ⁇  0 го пренасочва. Page Up и Page Down превръщат страници.',
+			'fileSources.readerControlsHelp' => 'Раздалечете два пръста или използвайте контролите за мащабиране, за да увеличите страницата. Плъзнете, за да я преместите. Ctrl/⌘ с + или − променя мащаба; Ctrl/⌘ с 0 го нулира. Page Up и Page Down прелистват страниците.',
 			'fileSources.imagePage' => 'Комедия страница',
 			'fileSources.resetReader' => 'Препоръки за преразглеждане',
 			'fileSources.zoom' => 'Мащаб',
@@ -7088,23 +7088,23 @@ extension on TranslationsBg {
 			'lending.search' => 'Търсене на книги и автори',
 			'lending.catalogue' => 'Каталог',
 			'lending.loans' => 'Кредит',
-			'lending.holds' => 'Дръжте',
+			'lending.holds' => 'Резервации',
 			'lending.signIn' => 'Регистрирайте се с библиотеката си',
 			'lending.waiting' => 'Завършете регистрацията в браузъра си, а след това се върнете тук.',
 			'lending.cancel' => 'Отказ',
 			'lending.disconnect' => 'Изтриване на библиотеката',
-			'lending.disconnectMessage' => 'Изтрийте тази библиотека от този профил? Вашите заеми и поддържате престой с вашата библиотека.',
+			'lending.disconnectMessage' => 'Да се премахне ли тази библиотека от този профил? Заетите книги и резервациите ви ще останат в библиотеката.',
 			'lending.getBook' => 'Вземете книга',
 			'lending.checkAvailability' => 'Проверяване на наличността',
 			'lending.available' => 'Достъпни за заем',
 			'lending.unavailable' => 'В момента недостъпни',
-			'lending.borrow' => 'Заем',
-			'lending.placeHold' => 'Мястото за задържане',
+			'lending.borrow' => 'Заеми',
+			'lending.placeHold' => 'Резервирай',
 			'lending.returnBook' => 'Върни се рано',
-			'lending.cancelHold' => 'Отмяна на задържането',
+			'lending.cancelHold' => 'Отмени резервацията',
 			'lending.confirmBorrow' => 'Заемат ли сте този заглавие от библиотеката си?',
-			'lending.confirmReturn' => 'Може да се наложи да я позаем отново, за да продължите.',
-			'lending.confirmCancelHold' => 'Да се отървете от този титла?',
+			'lending.confirmReturn' => 'Да се върне ли това заглавие сега? Може да се наложи да го заемете отново, за да продължите.',
+			'lending.confirmCancelHold' => 'Да се отмени ли резервацията ви за това заглавие?',
 			'lending.email' => 'Дръжте имейл за уведомление',
 			'lending.due' => ({required Object date}) => 'Дълго време ${date}',
 			'lending.queue' => ({required Object position}) => 'Позиция ${position} в линия',
@@ -7122,8 +7122,8 @@ extension on TranslationsBg {
 			'lending.comingSoonDescription' => 'Можете да използвате библиотеката си в Libby, докато свързваме.',
 			'lending.suspendHold' => 'Прекъсване на задържането',
 			'lending.resumeHold' => 'Резюме за задържане',
-			'lending.suspendMessage' => 'Дръжте мястото си в ред и позволете на следващия читател да вземе заем на тази копия?',
-			'lending.resumeMessage' => 'Превърнете ли тази страница, така че библиотеката ви да може да ви предложи следващата налична копие?',
+			'lending.suspendMessage' => 'Да се запази ли мястото ви в опашката, за да може следващият читател да заеме този екземпляр? Можете да възобновите резервацията по-късно.',
+			'lending.resumeMessage' => 'Да се възобнови ли резервацията, за да може библиотеката да ви предложи следващия наличен екземпляр?',
 			'lending.editEmail' => 'Промяна на имейл уведомление',
 			'audiobook.syncTitle' => 'Четене и слушане Sync',
 			'audiobook.syncHelp' => 'Поддържайте позициите за четене, позициите за слушане, състоянието на завършване, белезите и белезите на устройството. Изберете свързан акаунт за съхранение и използвайте същия код за синхронизиране на всяко устройство.',

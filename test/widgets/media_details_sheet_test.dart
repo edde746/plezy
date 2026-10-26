@@ -94,10 +94,7 @@ void main() {
     // One free-flowing bulleted line (the trailing placeholder is the inline
     // rating badge run), not a row of chips.
     final metadataLine = tester.widget<Text>(find.textContaining('PG-13'));
-    expect(
-      metadataLine.textSpan!.toPlainText(),
-      '2026  •  PG-13  •  1h 52min  •  4K  •  DV  •  TrueHD Atmos  •  \uFFFC',
-    );
+    expect(metadataLine.textSpan!.toPlainText(), '2026  •  PG-13  •  1h 52m  •  4K  •  DV  •  TrueHD Atmos  •  \uFFFC');
     expect(find.text('21%'), findsOneWidget);
     expect(find.text('87%'), findsOneWidget);
     expect(find.text('7.4'), findsOneWidget);
@@ -126,11 +123,11 @@ void main() {
     // metadata line, and the show's genres follow it (#2217).
     expect(find.text('The Show'), findsOneWidget);
     final title = find.text('Chapter Three');
-    final metadataLine = tester.widget<Text>(find.textContaining('S1 E3'));
+    final metadataLine = tester.widget<Text>(find.textContaining('S1E3'));
     expect(title, findsOneWidget);
-    expect(tester.getBottomLeft(title).dy, lessThanOrEqualTo(tester.getTopLeft(find.textContaining('S1 E3')).dy));
+    expect(tester.getBottomLeft(title).dy, lessThanOrEqualTo(tester.getTopLeft(find.textContaining('S1E3')).dy));
     // Episode label and air date only — no appended standalone year.
-    expect(metadataLine.textSpan!.toPlainText(), 'S1 E3  •  ${formatAbbreviatedDate('2026-02-14')}');
+    expect(metadataLine.textSpan!.toPlainText(), 'S1E3  •  ${formatAbbreviatedDate('2026-02-14')}');
     expect(find.text('Drama'), findsOneWidget);
   });
 
