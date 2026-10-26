@@ -67,6 +67,7 @@ public final class EmbeddedSteam {
                         .putExtra("port", port(args))
                         .putExtra("hostId", id(args))
                         .putExtra("game", game)
+                        .putExtra("pyrowave", Boolean.TRUE.equals(args.get("pyrowave")))
                         .putExtra("touch", Boolean.TRUE.equals(args.get("touchControls")));
     for (String label : new String[] {"connecting", "error", "disconnect", "menu", "touchLabel"}) {
       Object value = args.get(label);

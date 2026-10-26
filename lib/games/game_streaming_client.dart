@@ -22,7 +22,7 @@ abstract class GameStreamingClient {
   Future<GameClientCapabilities> capabilities(GameHost host);
   Future<void> pair(GameHost host, String pin);
   Future<List<StreamGame>> games(GameHost host);
-  Future<void> open(GameHost host, {required StreamGame game, bool touchControls = true});
+  Future<void> open(GameHost host, {required StreamGame game, bool touchControls = true, bool pyrowave = false});
   void cancel();
 }
 
@@ -101,13 +101,14 @@ class NativeGameStreamingClient implements GameStreamingClient {
   }
 
   @override
-  Future<void> open(GameHost host, {required StreamGame game, bool touchControls = true}) async {
+  Future<void> open(GameHost host, {required StreamGame game, bool touchControls = true, bool pyrowave = false}) async {
     if (game.hostKey != host.key) throw const GameClientException(GameClientFailure.unavailable);
     final ok = await _invoke<bool>('open', {
       ..._host(host),
       'appId': game.id,
       'appName': game.name,
       'touchControls': touchControls,
+      'pyrowave': pyrowave,
       'hdr': game.hdr,
       'connecting': t.games.connecting,
       'error': t.games.unavailable,

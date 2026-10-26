@@ -50,8 +50,26 @@ void main() {
     expect(call!.method, 'open');
     expect(call!.arguments['appName'], 'A & B');
     expect(call!.arguments['touchControls'], isFalse);
+    expect(call!.arguments['pyrowave'], isFalse);
     expect(call!.arguments['hdr'], isTrue);
     expect(call!.arguments['port'], 47989);
+  });
+  test('Pyrowave is opt-in and passed through for Steam sessions', () async {
+    MethodCall? call;
+    messenger.setMockMethodCallHandler(NativeGameStreamingClient.channel, (value) async {
+      call = value;
+      return true;
+    });
+    final steam = GameHost(id: '123', name: 'Steam PC', address: '192.168.1.2', protocol: GameProtocol.steam);
+    await NativeGameStreamingClient().open(
+      steam,
+      game: StreamGame(hostKey: steam.key, id: '620', name: 'Portal 2'),
+      pyrowave: true,
+    );
+    expect(call!.method, 'open');
+    expect(call!.arguments['protocol'], 'steam');
+    expect(call!.arguments['appId'], '620');
+    expect(call!.arguments['pyrowave'], isTrue);
   });
   test('cancel discards a native result that arrives after the profile retired', () async {
     final response = Completer<List<dynamic>>();

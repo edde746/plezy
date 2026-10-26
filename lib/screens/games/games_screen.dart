@@ -208,6 +208,9 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
       touchControls:
           !PlatformDetector.isTV() &&
           SettingsService.instance.read(SettingsService.gameTouchControlsForProfile(c.profileId)),
+      pyrowave:
+          host.protocol == GameProtocol.steam &&
+          SettingsService.instance.read(SettingsService.gamePyrowaveForProfile(c.profileId)),
     );
     c.requireCurrent();
     await c.opened(game);
@@ -439,10 +442,17 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
         ),
         SliverToBoxAdapter(
           child: SettingsGroup(
-            title: t.games.steamBetaTitle,
             children: [
               Padding(padding: const EdgeInsets.all(16), child: Text(t.games.steamLibraryHint)),
-              Padding(padding: const EdgeInsets.all(16), child: Text(t.games.steamBetaDescription)),
+              if (_profile != null && defaultTargetPlatform == TargetPlatform.android)
+                SettingSwitchTile(
+                  pref: SettingsService.gamePyrowaveForProfile(_profile!),
+                  icon: Symbols.speed_rounded,
+                  title: t.games.steamBetaTitle,
+                  subtitle: t.games.steamBetaDescription,
+                )
+              else
+                Padding(padding: const EdgeInsets.all(16), child: Text(t.games.steamBetaDescription)),
             ],
           ),
         ),
