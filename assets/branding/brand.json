@@ -48,6 +48,15 @@
       "fit": 1
     },
     {
+      "path": "webos/meta/icon.png",
+      "size": [
+        1024,
+        1024
+      ],
+      "role": "logo",
+      "fit": 1
+    },
+    {
       "path": "assets/plezy_adaptive_foreground.png",
       "size": [
         1024,
