@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Generate PlezyNG-branded default icons and update the vector icon sources."""
+"""Generate PlezyNG's primary app icons and launch artwork from its approved PNG."""
 
 from __future__ import annotations
 
@@ -8,11 +8,10 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from ng_brand_badge import Bounds, overlay_badge, svg_with_badge
-
 ROOT = Path(__file__).resolve().parents[2]
 ASSETS = ROOT / "assets"
-DEFAULT_ART_BOUNDS = Bounds(0, 38.14, 335.65, 387.58)
+APP_ICON_SOURCE = ASSETS / "plezyng-app-icon.png"
+ICON_BACKGROUND = "#131928"
 
 ANDROID_DEFAULT_ICONS = [
     ROOT / "android/app/src/main/res/mipmap-mdpi/ic_launcher.png",
@@ -26,24 +25,30 @@ ANDROID_TV_BANNERS = [
     ROOT / "android/app/src/main/res/drawable-xxhdpi/tv_banner.png",
     ROOT / "android/app/src/main/res/drawable-xxxhdpi/tv_banner.png",
 ]
+ANDROID_ADAPTIVE_FOREGROUND = ROOT / "android/app/src/main/res/drawable-nodpi/plezyng_launcher_foreground.png"
+ANDROID_ADAPTIVE_MONOCHROME = ROOT / "android/app/src/main/res/drawable-nodpi/plezyng_launcher_monochrome.png"
+
 TVOS_FRONT_ART = [
     ROOT / "tvos/Runner/Assets.xcassets/AppIcon.brandassets/App Icon.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
     ROOT / "tvos/Runner/Assets.xcassets/AppIcon.brandassets/App Icon.imagestack/Front.imagestacklayer/Content.imageset/Front@2x.png",
     ROOT / "tvos/Runner/Assets.xcassets/AppIcon.brandassets/App Icon - App Store.imagestack/Front.imagestacklayer/Content.imageset/Front.png",
 ]
+TVOS_MIDDLE_ART = [
+    ROOT / "tvos/Runner/Assets.xcassets/AppIcon.brandassets/App Icon.imagestack/Middle.imagestacklayer/Content.imageset/Middle.png",
+    ROOT / "tvos/Runner/Assets.xcassets/AppIcon.brandassets/App Icon.imagestack/Middle.imagestacklayer/Content.imageset/Middle@2x.png",
+    ROOT / "tvos/Runner/Assets.xcassets/AppIcon.brandassets/App Icon - App Store.imagestack/Middle.imagestacklayer/Content.imageset/Middle.png",
+]
+TVOS_BACK_ART = [
+    ROOT / "tvos/Runner/Assets.xcassets/AppIcon.brandassets/App Icon.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+    ROOT / "tvos/Runner/Assets.xcassets/AppIcon.brandassets/App Icon.imagestack/Back.imagestacklayer/Content.imageset/Back@2x.png",
+    ROOT / "tvos/Runner/Assets.xcassets/AppIcon.brandassets/App Icon - App Store.imagestack/Back.imagestacklayer/Content.imageset/Back.png",
+]
 TVOS_TOP_SHELF = [
     ROOT / "tvos/Runner/Assets.xcassets/AppIcon.brandassets/Top Shelf Image.imageset/top-shelf.png",
     ROOT / "tvos/Runner/Assets.xcassets/AppIcon.brandassets/Top Shelf Image Wide.imageset/top-shelf-wide.png",
 ]
-ANDROID_VECTOR_BADGE = """        <!-- PlezyNG lower-right brand badge. -->
-        <group android:translateX="171.18" android:translateY="323.04" android:scaleX="3.4964" android:scaleY="3.4964">
-            <path android:fillColor="#FF131928" android:pathData="M8,0H36A8,8 0,0 1,44 8V18A8,8 0,0 1,36 26H8A8,8 0,0 1,0 18V8A8,8 0,0 1,8 0Z" />
-            <path android:fillColor="#00131928" android:strokeColor="#38FFFFFF" android:strokeWidth="2" android:pathData="M8,1H36A7,7 0,0 1,43 8V18A7,7 0,0 1,36 25H8A7,7 0,0 1,1 18V8A7,7 0,0 1,8 1Z" />
-            <group android:translateX="6" android:translateY="20" android:scaleY="-1">
-                <path android:fillColor="#FFFFFFFF" android:pathData="M14.459,0 L10.619,0 L4.4,10.8 L4.319,10.8 Q4.359,9.781 4.409,8.759 Q4.459,7.741 4.5,6.719 L4.5,0 L1.8,0 L1.8,14.281 L5.619,14.281 L11.819,3.581 L11.881,3.581 Q11.859,4.581 11.819,5.559 Q11.781,6.541 11.741,7.519 L11.741,14.281 L14.459,14.281 Z M23.479,8.019 L29.141,8.019 L29.141,0.619 Q28.019,0.241 26.81,0.019 Q25.601,-0.2 24.06,-0.2 Q20.86,-0.2 19.138,1.678 Q17.419,3.559 17.419,7.159 Q17.419,9.4 18.288,11.041 Q19.16,12.681 20.819,13.581 Q22.479,14.481 24.879,14.481 Q26.019,14.481 27.119,14.241 Q28.219,14 29.119,13.6 L28.119,11.181 Q27.46,11.519 26.619,11.738 Q25.779,11.959 24.86,11.959 Q23.541,11.959 22.569,11.359 Q21.601,10.759 21.069,9.669 Q20.541,8.581 20.541,7.1 Q20.541,5.7 20.919,4.619 Q21.301,3.541 22.119,2.928 Q22.941,2.319 24.26,2.319 Q24.901,2.319 25.351,2.378 Q25.801,2.441 26.179,2.519 L26.179,5.5 L23.479,5.5 L23.479,8.019 Z" />
-            </group>
-        </group>
-"""
+WINDOWS_MSIX_ASSETS = ROOT / "windows/msix/assets"
+WINDOWS_RUNNER_ICON = ROOT / "windows/runner/resources/app_icon.ico"
 
 
 def _tool(name: str) -> str:
@@ -59,43 +64,138 @@ def _run(*args: str) -> None:
         raise RuntimeError(f"command failed: {' '.join(args)}\n{result.stderr.strip()}")
 
 
-def _ensure_svg_badge(path: Path, bounds: Bounds) -> None:
-    original = path.read_text()
-    branded = svg_with_badge(original, bounds)
-    if branded != original:
-        path.write_text(branded)
+def _dimensions(magick: str, image: Path) -> tuple[int, int]:
+    result = subprocess.run(
+        [magick, "identify", "-format", "%w %h", str(image)],
+        capture_output=True,
+        text=True,
+        check=True,
+    )
+    width, height = (int(value) for value in result.stdout.split())
+    return width, height
 
 
-def _ensure_android_vector_badge(path: Path) -> None:
-    original = path.read_text()
-    if "PlezyNG lower-right brand badge" in original:
-        return
-    marker = "</path>\n    </group>\n</vector>"
-    if marker not in original:
-        raise ValueError(f"cannot find the main icon group in {path}")
-    path.write_text(original.replace(marker, f"</path>\n{ANDROID_VECTOR_BADGE}    </group>\n</vector>", 1))
+def _clean_source(magick: str, scratch: Path) -> Path:
+    """Clear the supplied artwork's faint red matting pixels around transparent edges."""
+    cleaned = scratch / "plezyng-app-icon-clean.png"
+    _run(
+        magick,
+        str(APP_ICON_SOURCE),
+        "-channel",
+        "A",
+        "-fx",
+        "u<=0.025?0:u",
+        "+channel",
+        "-strip",
+        str(cleaned),
+    )
+    return cleaned
 
 
-def _generate_default_png(magick: str, rsvg: str, scratch: Path) -> None:
-    source = ASSETS / "plezy.svg"
-    svg = svg_with_badge(source.read_text(), DEFAULT_ART_BOUNDS)
-    svg_path = scratch / "plezyng-default.svg"
-    output = scratch / "plezyng-default.png"
-    svg_path.write_text(svg)
-    _run(rsvg, "-w", "1024", "-h", "1024", "-o", str(output), str(svg_path))
-    _run(magick, str(output), "-strip", "-define", "png:compression-level=9", str(ASSETS / "plezy.png"))
+def _fit_art(
+    magick: str,
+    source: Path,
+    output: Path,
+    width: int,
+    height: int,
+    *,
+    scale: float = 1.0,
+    background: str = "none",
+) -> None:
+    target_width = max(1, round(width * scale))
+    target_height = max(1, round(height * scale))
+    output.parent.mkdir(parents=True, exist_ok=True)
+    _run(
+        magick,
+        str(source),
+        "-resize",
+        f"{target_width}x{target_height}",
+        "-gravity",
+        "center",
+        "-background",
+        background,
+        "-extent",
+        f"{width}x{height}",
+        "-strip",
+        str(output),
+    )
+
+
+def _generate_app_icon_composer_sources(magick: str, source: Path) -> None:
+    for platform in ("ios", "macos"):
+        icon_dir = ROOT / platform / "plezy.icon"
+        image_name = "plezyng-app-icon.png"
+        output = icon_dir / "Assets" / image_name
+        _fit_art(magick, source, output, 1024, 1024)
+
+        icon_json = icon_dir / "icon.json"
+        contents = icon_json.read_text()
+        contents = contents.replace('"image-name" : "plezy-cropped.svg"', f'"image-name" : "{image_name}"')
+        icon_json.write_text(contents)
+
+
+def _generate_android_icons(magick: str, source: Path) -> None:
+    for output in ANDROID_DEFAULT_ICONS:
+        size = _dimensions(magick, output)[0]
+        _fit_art(magick, source, output, size, size)
+
+    # Android's adaptive icon foreground must keep all of the artwork inside the
+    # central 66dp safe circle of the 108dp canvas.
+    adaptive_size = 432
+    padded = ANDROID_ADAPTIVE_FOREGROUND.with_name(".plezyng-adaptive-foreground.png")
+    _fit_art(magick, source, padded, adaptive_size, adaptive_size, scale=66 / 108)
+    padded.replace(ANDROID_ADAPTIVE_FOREGROUND)
+
+    _run(
+        magick,
+        str(ANDROID_ADAPTIVE_FOREGROUND),
+        "-fill",
+        "white",
+        "-colorize",
+        "100%",
+        "-strip",
+        str(ANDROID_ADAPTIVE_MONOCHROME),
+    )
+
+    for output in ANDROID_TV_BANNERS:
+        width, height = _dimensions(magick, output)
+        _fit_art(magick, source, output, width, height, scale=0.88, background=ICON_BACKGROUND)
+
+
+def _generate_windows_icons(magick: str, source: Path) -> None:
+    for output in WINDOWS_MSIX_ASSETS.glob("*.png"):
+        width, height = _dimensions(magick, output)
+        scale = 1.0 if width == height else 0.88
+        background = "none" if "_altform-" in output.stem else ICON_BACKGROUND
+        _fit_art(magick, source, output, width, height, scale=scale, background=background)
+
+    _run(
+        magick,
+        str(source),
+        "-resize",
+        "256x256",
+        "-define",
+        "icon:auto-resize=16,24,32,48,64,128,256",
+        str(WINDOWS_RUNNER_ICON),
+    )
+
+
+def _generate_tvos_icons(magick: str, source: Path) -> None:
+    for output in TVOS_BACK_ART:
+        width, height = _dimensions(magick, output)
+        _run(magick, "-size", f"{width}x{height}", f"xc:{ICON_BACKGROUND}", str(output))
+    for output in TVOS_MIDDLE_ART:
+        width, height = _dimensions(magick, output)
+        _run(magick, "-size", f"{width}x{height}", "xc:none", str(output))
+    for output in TVOS_FRONT_ART:
+        width, height = _dimensions(magick, output)
+        _fit_art(magick, source, output, width, height, scale=0.9)
 
 
 def _generate_top_shelf(magick: str, rsvg: str, scratch: Path) -> None:
     source = ASSETS / "plezyng_top_shelf.svg"
     for output in TVOS_TOP_SHELF:
-        result = subprocess.run(
-            [magick, "identify", "-format", "%w %h", str(output)],
-            capture_output=True,
-            text=True,
-            check=True,
-        )
-        width, height = (int(value) for value in result.stdout.split())
+        width, height = _dimensions(magick, output)
         rendered = scratch / f"{output.stem}-{width}x{height}.png"
         _run(rsvg, "-w", str(width), "-h", str(height), "-o", str(rendered), str(source))
         shutil.copyfile(rendered, output)
@@ -104,29 +204,19 @@ def _generate_top_shelf(magick: str, rsvg: str, scratch: Path) -> None:
 def main() -> None:
     magick = _tool("magick")
     rsvg = _tool("rsvg-convert")
+    if not APP_ICON_SOURCE.exists():
+        raise SystemExit(f"error: approved app icon not found: {APP_ICON_SOURCE}")
+
     with tempfile.TemporaryDirectory(prefix="plezyng-brand-assets-") as temporary:
         scratch = Path(temporary)
-        _ensure_svg_badge(ASSETS / "plezy_adaptive_foreground.svg", DEFAULT_ART_BOUNDS)
-        _ensure_svg_badge(ROOT / "ios/plezy.icon/Assets/plezy-cropped.svg", DEFAULT_ART_BOUNDS)
-        _ensure_svg_badge(ROOT / "macos/plezy.icon/Assets/plezy-cropped.svg", DEFAULT_ART_BOUNDS)
-        _ensure_android_vector_badge(ROOT / "android/app/src/main/res/drawable/ic_launcher_foreground.xml")
-
-        _generate_default_png(magick, rsvg, scratch)
-
-        bitmap_targets = [
-            *ANDROID_DEFAULT_ICONS,
-            *TVOS_FRONT_ART,
-            *(ROOT / "windows/msix/assets").glob("*.png"),
-            ROOT / "windows/runner/resources/app_icon.ico",
-        ]
-        for target in sorted(bitmap_targets):
-            overlay_badge(magick, rsvg, target, target, scratch)
-
-        for target in ANDROID_TV_BANNERS:
-            overlay_badge(magick, rsvg, target, target, scratch, use_orange_bounds=True)
-
+        source = _clean_source(magick, scratch)
+        _fit_art(magick, source, ASSETS / "plezy.png", 1024, 1024)
+        _generate_app_icon_composer_sources(magick, source)
+        _generate_android_icons(magick, source)
+        _generate_windows_icons(magick, source)
+        _generate_tvos_icons(magick, source)
         _generate_top_shelf(magick, rsvg, scratch)
-    print("Generated branded default icon, splash, store and TV launch artwork.")
+    print("Generated the PlezyNG primary icon for app targets, launchers, and store artwork.")
 
 
 if __name__ == "__main__":

@@ -6,7 +6,7 @@
 
 - Add a review-first cleanup for orphaned tagged downloads in PlezyNG's default app-managed folders.
 - Add an automatically started seven-day full-app trial followed by a USD $2.99 one-time lifetime unlock for Apple, Google Play, and Amazon builds.
-- Use the new nested-triangle PlezyNG artwork as the high-resolution app icon and Google Play listing icon.
+- Use the new nested-triangle PlezyNG artwork as the default app icon across platforms and in store listings.
 - Add configurable skipping for Plex-detected commercial markers, six original animated visualizer styles, and opt-in loudness-aware music fades.
 - Add converted download quality for Jellyfin and Emby, and let sync rules keep their own quality preset.
 - Add per-server Continue Watching downloads that remove shelf items when they leave the shelf.

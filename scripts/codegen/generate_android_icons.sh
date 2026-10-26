@@ -1,124 +1,67 @@
 #!/usr/bin/env bash
 
-# Generate Android notification and monochrome icons from assets/plezy.svg.
+# Generate Android notification and monochrome icons from the approved PlezyNG app icon.
 
-set -e
+set -euo pipefail
 
-SVG_SOURCE="assets/plezy.svg"
+APP_ICON_SOURCE="assets/plezyng-app-icon.png"
 ANDROID_RES="android/app/src/main/res"
-TEMP_DIR="/tmp/android_icons_$$"
+TEMP_DIR=$(mktemp -d "${TMPDIR:-/tmp}/plezyng-android-icons.XXXXXX")
+trap 'rm -rf -- "$TEMP_DIR"' EXIT
 
-if [ ! -f "$SVG_SOURCE" ]; then
-    echo "Error: $SVG_SOURCE not found"
+if [[ ! -f "$APP_ICON_SOURCE" ]]; then
+    echo "Error: $APP_ICON_SOURCE not found" >&2
     exit 1
 fi
 
-if ! command -v rsvg-convert &> /dev/null; then
-    echo "Error: rsvg-convert not found. Install with: brew install librsvg"
-    exit 1
-fi
-
-if command -v magick &> /dev/null; then
+if command -v magick >/dev/null 2>&1; then
     IMAGEMAGICK=magick
-elif command -v convert &> /dev/null; then
+elif command -v convert >/dev/null 2>&1; then
     IMAGEMAGICK=convert
 else
-    echo "Error: ImageMagick not found. Install with: brew install imagemagick"
+    echo "Error: ImageMagick not found. Install with: brew install imagemagick" >&2
     exit 1
 fi
 
-if ! command -v bc &> /dev/null; then
-    echo "Error: bc not found. Install with: brew install bc"
-    exit 1
-fi
-
-mkdir -p "$TEMP_DIR"
-
-echo "🎨 Generating Android icons from $SVG_SOURCE..."
+echo "Generating Android icons from $APP_ICON_SOURCE..."
 
 generate_white_icon() {
     local size=$1
     local output=$2
+    mkdir -p "$(dirname "$output")"
 
-    # Read dimensions so non-square artwork can be padded.
-    local svg_viewbox=$(grep -o 'viewBox="[^"]*"' "$SVG_SOURCE" | sed 's/viewBox="//;s/"//')
-    local svg_width=$(echo "$svg_viewbox" | awk '{print $3}')
-    local svg_height=$(echo "$svg_viewbox" | awk '{print $4}')
-
-    # Preserve the source aspect ratio.
-    if (( $(echo "$svg_width != $svg_height" | bc -l) )); then
-        # Center non-square artwork on a transparent square canvas.
-        rsvg-convert --keep-aspect-ratio --background-color=transparent "$SVG_SOURCE" -o "$TEMP_DIR/temp_unpadded.png"
-
-        "$IMAGEMAGICK" "$TEMP_DIR/temp_unpadded.png" \
-            -resize "${size}x${size}" \
-            -gravity center \
-            -background transparent \
-            -extent "${size}x${size}" \
-            "$TEMP_DIR/temp.png"
-    else
-        rsvg-convert -w "$size" -h "$size" --background-color=transparent "$SVG_SOURCE" -o "$TEMP_DIR/temp.png"
-    fi
-
-    # Convert the source alpha channel to a white silhouette.
-    "$IMAGEMAGICK" "$TEMP_DIR/temp.png" \
-        -alpha extract \
-        "$TEMP_DIR/alpha_mask.png"
-
-    "$IMAGEMAGICK" -size "${size}x${size}" xc:white \
-        "$TEMP_DIR/alpha_mask.png" \
-        -alpha off \
-        -compose copy-opacity \
-        -composite \
+    "$IMAGEMAGICK" "$APP_ICON_SOURCE" \
+        -channel A -fx 'u<=0.025?0:u' +channel \
+        -resize "${size}x${size}" \
+        -fill white -colorize 100% \
         -define png:color-type=6 \
         "$output"
 
-    echo "  ✓ Generated $(basename $output) (${size}x${size}px)"
+    echo "  Generated $(basename "$output") (${size}x${size}px)"
 }
 
-echo ""
-echo "📱 Generating notification icons (ic_stat_notification.png)..."
-
 declare -A NOTIF_SIZES=(
-    ["mdpi"]=24
-    ["hdpi"]=36
-    ["xhdpi"]=48
-    ["xxhdpi"]=72
-    ["xxxhdpi"]=96
+    [mdpi]=24
+    [hdpi]=36
+    [xhdpi]=48
+    [xxhdpi]=72
+    [xxxhdpi]=96
 )
 
 for density in "${!NOTIF_SIZES[@]}"; do
-    size=${NOTIF_SIZES[$density]}
-    output_dir="$ANDROID_RES/drawable-$density"
-    mkdir -p "$output_dir"
-    generate_white_icon "$size" "$output_dir/ic_stat_notification.png"
+    generate_white_icon "${NOTIF_SIZES[$density]}" "$ANDROID_RES/drawable-$density/ic_stat_notification.png"
 done
 
-echo ""
-echo "🚀 Generating monochrome launcher icons (ic_launcher_monochrome.png)..."
-
 declare -A MONO_SIZES=(
-    ["mdpi"]=108
-    ["hdpi"]=162
-    ["xhdpi"]=216
-    ["xxhdpi"]=324
-    ["xxxhdpi"]=432
+    [mdpi]=108
+    [hdpi]=162
+    [xhdpi]=216
+    [xxhdpi]=324
+    [xxxhdpi]=432
 )
 
 for density in "${!MONO_SIZES[@]}"; do
-    size=${MONO_SIZES[$density]}
-    output_dir="$ANDROID_RES/mipmap-$density"
-    mkdir -p "$output_dir"
-    generate_white_icon "$size" "$output_dir/ic_launcher_monochrome.png"
+    generate_white_icon "${MONO_SIZES[$density]}" "$ANDROID_RES/mipmap-$density/ic_launcher_monochrome.png"
 done
 
-rm -rf "$TEMP_DIR"
-
-echo ""
-echo "✅ All icons generated successfully!"
-echo ""
-echo "Icon locations:"
-echo "  • Notification icons: $ANDROID_RES/drawable-*/ic_stat_notification.png"
-echo "  • Monochrome icons: $ANDROID_RES/mipmap-*/ic_launcher_monochrome.png"
-echo ""
-echo "To apply changes, rebuild the app: flutter clean && flutter build apk"
+echo "Generated Android notification and monochrome icons."
