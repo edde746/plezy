@@ -21,7 +21,9 @@ permissions:
 jobs:
   submit:
     if: github.event_name != 'release' || github.event.release.prerelease == false
-    runs-on: windows-latest
+    runs-on:
+      group: packer-windows
+      labels: [self-hosted, Windows, X64, on-demand, packer-windows, PlezyNG]
     timeout-minutes: 20
     steps:
       - name: Resolve and validate published release
