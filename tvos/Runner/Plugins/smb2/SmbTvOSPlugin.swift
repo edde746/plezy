@@ -63,7 +63,7 @@ final class SmbTvOSPlugin: NSObject, FlutterPlugin {
       let password = arguments["password"] as? String ?? ""
       let domain = arguments["domain"] as? String ?? ""
       let credential: URLCredential?
-      if let username, !username.isEmpty {
+      if let username = username, !username.isEmpty {
         credential = URLCredential(
           user: username,
           password: password,
@@ -128,7 +128,7 @@ final class SmbTvOSPlugin: NSObject, FlutterPlugin {
         throw SmbBridgeFailure.invalidParameter
       }
       let manager = removeManager(for: handle)
-      if let manager {
+      if let manager = manager {
         try await manager.disconnectShare(gracefully: true)
       }
       return nil
@@ -157,7 +157,7 @@ final class SmbTvOSPlugin: NSObject, FlutterPlugin {
     lock.lock()
     let manager = managers[handle]
     lock.unlock()
-    guard let manager else { throw SmbBridgeFailure.cancelled }
+    guard let manager = manager else { throw SmbBridgeFailure.cancelled }
     return manager
   }
 
