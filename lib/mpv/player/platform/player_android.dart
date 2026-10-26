@@ -29,6 +29,7 @@ class PlayerAndroid extends PlayerBase implements VideoRectSupport {
   /// Rides on `open` rather than a standalone call because it is per-item and
   /// must be known before the native side settles tunneling for that item.
   double? _contentFrameRate;
+  ({int left, int top, int right, int bottom, double devicePixelRatio})? _pendingVideoRect;
 
   /// The native plugin switched from ExoPlayer to its mpv fallback for this
   /// session. Sticky for the instance lifetime, mirroring the native flag
@@ -81,6 +82,38 @@ class PlayerAndroid extends PlayerBase implements VideoRectSupport {
 
   @override
   bool get audioPassthroughActive => _audioPassthroughEnabled;
+
+  @override
+  Future<void> setVideoRect({
+    required int left,
+    required int top,
+    required int right,
+    required int bottom,
+    required double devicePixelRatio,
+  }) async {
+    if (disposed) return;
+    _pendingVideoRect = (
+      left: left,
+      top: top,
+      right: right,
+      bottom: bottom,
+      devicePixelRatio: devicePixelRatio,
+    );
+    if (initialized) await _applyPendingVideoRect();
+  }
+
+  Future<void> _applyPendingVideoRect() async {
+    final rect = _pendingVideoRect;
+    if (rect == null || disposed || !initialized) return;
+    await invoke('setVideoRect', {
+      'left': rect.left,
+      'top': rect.top,
+      'right': rect.right,
+      'bottom': rect.bottom,
+      'devicePixelRatio': rect.devicePixelRatio,
+    });
+    if (_pendingVideoRect == rect) _pendingVideoRect = null;
+  }
 
   @override
   void handlePlayerEvent(String name, Map? data) {
@@ -155,6 +188,7 @@ class PlayerAndroid extends PlayerBase implements VideoRectSupport {
       if (disposed) throw StateError('Player was disposed during initialization');
 
       initialized = true;
+      await _applyPendingVideoRect();
     } catch (e) {
       _initFuture = null;
       if (!disposed) errorController.add(PlayerError(e.toString(), cause: PlayerError.playerInitFailed));

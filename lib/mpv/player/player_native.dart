@@ -28,6 +28,8 @@ typedef _AudioStateGenerations = ({int passthrough, int normalization, int downm
 
 /// MPV-backed player for platforms where AetherEngine is not the native route.
 class PlayerNative extends PlayerBase implements VideoRectSupport {
+  ({int left, int top, int right, int bottom, double devicePixelRatio})? _pendingVideoRect;
+
   @override
   Future<void> setVideoRect({
     required int left,
@@ -36,13 +38,28 @@ class PlayerNative extends PlayerBase implements VideoRectSupport {
     required int bottom,
     required double devicePixelRatio,
   }) async {
+    if (audioOnly || _nativeCoreUnavailable) return;
+    _pendingVideoRect = (
+      left: left,
+      top: top,
+      right: right,
+      bottom: bottom,
+      devicePixelRatio: devicePixelRatio,
+    );
+    if (initialized) await _applyPendingVideoRect();
+  }
+
+  Future<void> _applyPendingVideoRect() async {
+    final rect = _pendingVideoRect;
+    if (rect == null || audioOnly || _nativeCoreUnavailable || !initialized) return;
     await invoke('setVideoRect', {
-      'left': left,
-      'top': top,
-      'right': right,
-      'bottom': bottom,
-      'devicePixelRatio': devicePixelRatio,
+      'left': rect.left,
+      'top': rect.top,
+      'right': rect.right,
+      'bottom': rect.bottom,
+      'devicePixelRatio': rect.devicePixelRatio,
     });
+    if (_pendingVideoRect == rect) _pendingVideoRect = null;
   }
 
   /// Video player on the default mpv channels/core.
@@ -354,6 +371,7 @@ class PlayerNative extends PlayerBase implements VideoRectSupport {
 
       if (_nativeCoreUnavailable) throw StateError('Player was disposed during initialization');
       initialized = true;
+      await _applyPendingVideoRect();
     } catch (e) {
       _initFuture = null;
       if (!_nativeCoreUnavailable) {

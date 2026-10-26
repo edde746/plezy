@@ -1,13 +1,24 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/mpv/models.dart';
 import 'package:plezy/mpv/player/player_native.dart';
 import 'package:plezy/mpv/video.dart';
+import 'package:plezy/services/settings_service.dart';
 
 import '../test_helpers/mock_player_channels.dart';
+import '../test_helpers/prefs.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
+
+  setUp(() async {
+    resetSharedPreferencesForTest();
+    SettingsService.resetForTesting();
+    await SettingsService.getInstance();
+  });
+
+  tearDown(SettingsService.resetForTesting);
 
   testWidgets('Video reports updated physical pane bounds when workspace layout moves', (tester) async {
     final rectCalls = <Map<Object?, Object?>>[];
@@ -18,6 +29,7 @@ void main() {
         if (call.method == 'setVideoRect') {
           rectCalls.add(call.arguments as Map<Object?, Object?>);
         }
+        if (call.method == 'initialize') return true;
         return null;
       },
       testBody: () async {
@@ -35,6 +47,7 @@ void main() {
           ),
         );
         await tester.pump();
+        await player.open(Media('https://example.test/video.mp4'), play: false);
 
         await tester.pumpWidget(
           MediaQuery(
