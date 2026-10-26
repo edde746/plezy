@@ -1402,7 +1402,6 @@ class Translations$about$zh extends Translations$about$en {
 
 	// Translations
 	@override String get title => '关于';
-	@override String get privacyPolicy => '隐私政策';
 	@override String get openSourceLicenses => '开源许可证';
 	@override String versionLabel({required Object version}) => '版本 ${version}';
 	@override String get appDescription => '一款精美的 Flutter Plex、Jellyfin 和 Emby 客户端';
@@ -4712,7 +4711,6 @@ extension on TranslationsZh {
 			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => '关于',
-			'about.privacyPolicy' => '隐私政策',
 			'about.openSourceLicenses' => '开源许可证',
 			'about.versionLabel' => ({required Object version}) => '版本 ${version}',
 			'about.appDescription' => '一款精美的 Flutter Plex、Jellyfin 和 Emby 客户端',
@@ -5012,9 +5010,9 @@ extension on TranslationsZh {
 			'collections.deleteFailedWithError' => ({required Object error}) => '删除合集失败：${error}',
 			'collections.selectCollection' => '选择合集',
 			'collections.collectionName' => '合集名称',
+			'collections.enterCollectionName' => '输入合集名称',
 			_ => null,
 		} ?? switch (path) {
-			'collections.enterCollectionName' => '输入合集名称',
 			'collections.addedToCollection' => '已添加到合集',
 			'collections.errorAddingToCollection' => '添加到合集失败',
 			'collections.created' => '已创建合集',
@@ -5526,9 +5524,9 @@ extension on TranslationsZh {
 			'externalPlayer.selectPlayer' => '选择播放器',
 			'externalPlayer.customPlayers' => '自定义播放器',
 			'externalPlayer.systemDefault' => '系统默认',
+			'externalPlayer.addCustomPlayer' => '添加自定义播放器',
 			_ => null,
 		} ?? switch (path) {
-			'externalPlayer.addCustomPlayer' => '添加自定义播放器',
 			'externalPlayer.playerName' => '播放器名称',
 			'externalPlayer.playerNameHint' => '我的播放器',
 			'externalPlayer.playerCommand' => '命令',

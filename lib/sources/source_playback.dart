@@ -82,11 +82,33 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   Timer? _saveTimer;
   Timer? _sleepTimer;
   int? _sleepAtMs;
+  int? _sleepUntilFile;
+  int? _sleepBoundaryFile;
+  ({int file, int position})? _undoSeek;
+  bool chapterTimeline = false;
   DateTime? sleepDeadline;
   DateTime? _pausedAt;
   bool smartRewind = true;
   int backwardSeconds = 15;
   int forwardSeconds = 30;
+  bool get canUndoSeek => _undoSeek != null;
+  int get currentFilePositionMs => player?.currentPosition.inMilliseconds ?? 0;
+  int get currentFileDurationMs => _durations[_fileIndex] ?? player?.state.duration.inMilliseconds ?? 0;
+  int get timelineStartMs => chapterTimeline && currentChapter != null
+      ? currentChapter!.startMs
+      : hasCompleteTimeline
+      ? 0
+      : _offset;
+  int get timelineEndMs => chapterTimeline && (currentChapter?.endMs ?? 0) > timelineStartMs
+      ? currentChapter!.endMs
+      : hasCompleteTimeline
+      ? durationMs
+      : _offset + currentFileDurationMs;
+  int? get bookRemainingMs =>
+      hasCompleteTimeline ? ((durationMs - positionMs).clamp(0, durationMs) / speed).round() : null;
+  int? get chapterRemainingMs => currentChapter != null && currentChapter!.endMs > positionMs
+      ? ((currentChapter!.endMs - positionMs) / speed).round()
+      : null;
   bool get active => entry != null;
   bool get video => mode == PublicationMode.watching;
   bool get playing => player?.state.isActive ?? false;
@@ -149,9 +171,12 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       final edition = sourceDigest(jsonEncode(files.map((f) => f.fingerprint).toList()));
       final initial = PublicationProgress(entryKey: item.key, edition: edition, mode: mode, session: const Uuid().v4());
       progress = await sources.openProgress(item, initial);
-      if (await sources.repository.remoteConflict(_profile!, initial.key) != null) {
+      if (sources.cloudConflict(initial.key) ||
+          await sources.repository.remoteConflict(_profile!, initial.key) != null) {
         throw const SourceException(SourceFailure.conflict);
       }
+      sources.holdProgress(initial.key);
+      _undoSeek = null;
       if (progress!.finished) {
         progress = await sources.repository.saveProgress(
           _profile!,
@@ -159,7 +184,9 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
           kind: 'restart',
         );
       }
-      final settings = await sources.repository.preference(_profile!, 'playback:$edition');
+      final specific = await sources.repository.preference(_profile!, 'playback:$edition');
+      final settings = {...await sources.repository.preference(_profile!, 'playback-defaults'), ...specific};
+      chapterTimeline = settings['chapterTimeline'] == true;
       smartRewind = settings['smartRewind'] as bool? ?? true;
       backwardSeconds = (sourceInt(settings['backwardSeconds']) ?? 15).clamp(5, 120);
       forwardSeconds = (sourceInt(settings['forwardSeconds']) ?? 30).clamp(5, 120);
@@ -169,6 +196,21 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       if (hasCompleteTimeline) {
         _fileIndex = _indexAt(progress!.positionMs);
         localPosition = progress!.positionMs - _offset;
+      }
+      if (smartRewind && progress!.updatedAt > 0 && !progress!.finished) {
+        final away = DateTime.now().millisecondsSinceEpoch - progress!.updatedAt;
+        final rewind = away > 300000
+            ? 15000
+            : away > 30000
+            ? 5000
+            : 0;
+        if (hasCompleteTimeline) {
+          final target = math.max(0, progress!.positionMs - rewind);
+          _fileIndex = _indexAt(target);
+          localPosition = target - _offset;
+        } else {
+          localPosition = math.max(0, localPosition - rewind);
+        }
       }
       // Unknown-duration multipart books persist file-relative time explicitly.
       _gateway = SourceStreamGateway(valid: () => _valid && entry == item);
@@ -210,6 +252,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
         native.streams.position.listen((_) {
           if (!current()) return;
           if (_sleepAtMs != null && positionMs >= _sleepAtMs!) {
+            _sleepBoundaryFile = _fileIndex;
             clearSleep();
             unawaited(pause());
           }
@@ -261,6 +304,17 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
           unawaited(
             _serialize(() async {
               if (!current() || _fileEpoch != epoch) return;
+              if (_sleepBoundaryFile == _fileIndex ||
+                  (_sleepAtMs != null && _offset + (_durations[_fileIndex] ?? 0) >= _sleepAtMs!) ||
+                  (_sleepUntilFile != null && _fileIndex >= _sleepUntilFile!)) {
+                _sleepBoundaryFile = _fileIndex;
+                clearSleep();
+                await native.pause();
+                _pausedAt = DateTime.now();
+                await _persist();
+                _notify();
+                return;
+              }
               if (_fileIndex + 1 < files.length) {
                 await _persist();
                 await _openFile(_fileIndex + 1, 0);
@@ -402,6 +456,33 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> play() => _serialize(() async {
     if (!_valid || player == null || !automotivePlaybackAllowedNow()) return;
+    if (!playing && progress != null && entry != null) {
+      final old = progress!;
+      sources.releaseProgress(old.key);
+      try {
+        final latest = await sources.openProgress(entry!, old);
+        if (!_valid) return;
+        if (sources.cloudConflict(old.key) || await sources.repository.remoteConflict(_profile!, old.key) != null) {
+          throw const SourceException(SourceFailure.conflict);
+        }
+        if (latest.revision != old.revision) {
+          progress = latest;
+          final index = latest.fileIndex.clamp(0, files.length - 1);
+          if (index != _fileIndex) {
+            await _openFile(index, latest.filePositionMs, play: false);
+          } else {
+            await player!.seek(Duration(milliseconds: latest.filePositionMs));
+          }
+          await player!.setRate(latest.speed);
+        }
+      } finally {
+        if (_valid) sources.holdProgress(old.key);
+      }
+    }
+    if (_sleepBoundaryFile == _fileIndex && _completedEpoch == _fileEpoch && _fileIndex + 1 < files.length) {
+      await _openFile(_fileIndex + 1, 0, play: false);
+    }
+    _sleepBoundaryFile = null;
     if (smartRewind && _pausedAt != null) {
       final away = DateTime.now().difference(_pausedAt!).inSeconds;
       final rewind = away > 300
@@ -419,10 +500,45 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     await player?.pause();
     _pausedAt = DateTime.now();
     await _persist();
+    sources.scheduleSync();
     _notify();
   });
   Future<void> toggle() => playing ? pause() : play();
-  Future<void> seek(int milliseconds) => _serialize(() => _seek(milliseconds));
+  Future<void> seek(int milliseconds) => _serialize(() async {
+    if (!_valid || player == null) return;
+    _undoSeek = (file: _fileIndex, position: currentFilePositionMs);
+    await _seek(milliseconds);
+  });
+  Future<void> seekBookmark(BookAnnotation annotation) => _serialize(() async {
+    if (!_valid || player == null) return;
+    _undoSeek = (file: _fileIndex, position: currentFilePositionMs);
+    final index = annotation.fileIndex, offset = annotation.filePositionMs;
+    if (!hasCompleteTimeline && index != null && offset != null) {
+      if (index < 0 || index >= files.length || offset < 0) {
+        throw const SourceException(SourceFailure.invalidData);
+      }
+      final shouldPlay = playing;
+      await _persist();
+      await _openFile(index, offset, play: shouldPlay);
+      await _persist();
+      _notify();
+    } else if (annotation.positionMs != null) {
+      await _seek(annotation.positionMs!);
+    }
+  });
+  Future<void> undoSeek() => _serialize(() async {
+    final previous = _undoSeek;
+    if (!_valid || previous == null || player == null) return;
+    _undoSeek = null;
+    final shouldPlay = playing;
+    if (previous.file != _fileIndex) {
+      await _openFile(previous.file, previous.position, play: shouldPlay);
+    } else {
+      await player!.seek(Duration(milliseconds: previous.position));
+    }
+    await _persist();
+    _notify();
+  });
   Future<void> _seek(int milliseconds) async {
     if (!_valid || player == null) return;
     final maximum = hasCompleteTimeline
@@ -449,8 +565,10 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     if (index < 0 || index >= chapters.length) return;
     if (!hasCompleteTimeline && chapters.length == files.length) {
       await _serialize(() async {
+        _undoSeek = (file: _fileIndex, position: currentFilePositionMs);
+        final shouldPlay = playing;
         await _persist();
-        await _openFile(index, 0);
+        await _openFile(index, 0, play: shouldPlay);
       });
     } else {
       await seek(chapters[index].startMs);
@@ -459,6 +577,10 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
 
   Future<void> skip(int seconds) => seek(positionMs + seconds * 1000);
   Future<void> nextChapter() async {
+    if (!hasCompleteTimeline && chapters.length == files.length) {
+      if (_fileIndex + 1 < files.length) await seekChapter(_fileIndex + 1);
+      return;
+    }
     final next = chapters.where((c) => c.startMs > positionMs + 500).firstOrNull;
     if (next != null) {
       await seek(next.startMs);
@@ -471,6 +593,10 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   }
 
   Future<void> previousChapter() async {
+    if (!hasCompleteTimeline && chapters.length == files.length) {
+      await seekChapter(currentFilePositionMs > 3000 ? _fileIndex : math.max(0, _fileIndex - 1));
+      return;
+    }
     final previous = chapters.where((c) => c.startMs < positionMs - 3000).lastOrNull;
     if (previous != null) {
       await seek(previous.startMs);
@@ -486,17 +612,34 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     await _persist();
     _notify();
   });
-  Future<void> savePreferences() async {
+  Future<void> savePreferences({bool asDefault = false}) async {
     if (_profile == null || progress == null) return;
-    await sources.repository.savePreference(_profile!, 'playback:${progress!.edition}', {
+    final settings = <String, dynamic>{
+      'chapterTimeline': chapterTimeline,
       'smartRewind': smartRewind,
       'backwardSeconds': backwardSeconds,
       'forwardSeconds': forwardSeconds,
-    });
+    };
+    await sources.repository.savePreference(_profile!, 'playback:${progress!.edition}', settings);
+    if (asDefault) await sources.repository.savePreference(_profile!, 'playback-defaults', settings);
+    await _controls?.setControlsEnabled(
+      canPlayPause: true,
+      canSeek: true,
+      canGoNext: true,
+      canGoPrevious: true,
+      canStop: true,
+      canSkip: true,
+      canSetSpeed: true,
+      preferSkipOverTrackButtons: true,
+      skipInterval: Duration(seconds: backwardSeconds),
+    );
     _notify();
   }
 
   void sleepFor(Duration duration) {
+    if (duration <= Duration.zero || duration > const Duration(hours: 24)) {
+      throw const SourceException(SourceFailure.invalidData);
+    }
     clearSleep();
     sleepDeadline = DateTime.now().add(duration);
     _sleepTimer = Timer(duration, () {
@@ -506,17 +649,30 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     _notify();
   }
 
-  void sleepAfterChapter() {
+  void extendSleep(Duration duration) {
+    final left = sleepDeadline?.difference(DateTime.now()) ?? Duration.zero;
+    sleepFor((left.isNegative ? Duration.zero : left) + duration);
+  }
+
+  void sleepAfterChapter({int count = 1}) {
+    if (count < 1 || count > 100) throw const SourceException(SourceFailure.invalidData);
     clearSleep();
-    _sleepAtMs = currentChapter?.endMs ?? (_offset + (_durations[_fileIndex] ?? 0));
+    if (hasCompleteTimeline && chapters.isNotEmpty) {
+      final current = chapters.indexOf(currentChapter ?? chapters.first);
+      final index = (current + count - 1).clamp(0, chapters.length - 1);
+      _sleepAtMs = chapters[index].endMs > 0 ? chapters[index].endMs : durationMs;
+    } else {
+      _sleepUntilFile = (_fileIndex + count - 1).clamp(0, files.length - 1);
+    }
     _notify();
   }
 
-  bool get sleepEnabled => _sleepTimer != null || _sleepAtMs != null;
+  bool get sleepEnabled => _sleepTimer != null || _sleepAtMs != null || _sleepUntilFile != null;
   void clearSleep() {
     _sleepTimer?.cancel();
     _sleepTimer = null;
     _sleepAtMs = null;
+    _sleepUntilFile = null;
     sleepDeadline = null;
     _notify();
   }
@@ -531,6 +687,8 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
         edition: progress!.edition,
         mode: mode,
         positionMs: positionMs,
+        fileIndex: _fileIndex,
+        filePositionMs: currentFilePositionMs,
         note: note,
         updatedAt: DateTime.now().millisecondsSinceEpoch,
       ),
@@ -595,6 +753,10 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     clearSleep();
     await _persist();
     await _writes;
+    if (progress != null) sources.releaseProgress(progress!.key);
+    _pausedAt = null;
+    _sleepBoundaryFile = null;
+    _undoSeek = null;
     sources.scheduleSync();
     _generation++;
     for (final sub in _subscriptions) {

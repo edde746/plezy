@@ -28,6 +28,7 @@ class S3SourceAdapter extends SourceAdapter {
     required DateTime time,
     String? sessionToken,
     int expires = 900,
+    String method = 'GET',
   }) {
     final timestamp =
         '${time.toUtc().toIso8601String().replaceAll('-', '').replaceAll(':', '').split('.').first.replaceAll('Z', '')}Z';
@@ -44,7 +45,7 @@ class S3SourceAdapter extends SourceAdapter {
     final keys = parameters.keys.toList()..sort();
     final query = keys.map((k) => '${_encode(k)}=${_encode(parameters[k]!)}').join('&');
     final path = '/${uri.pathSegments.map(_encode).join('/')}';
-    final canonical = 'GET\n$path\n$query\nhost:${uri.authority}\n\nhost\nUNSIGNED-PAYLOAD';
+    final canonical = '$method\n$path\n$query\nhost:${uri.authority}\n\nhost\nUNSIGNED-PAYLOAD';
     final toSign = 'AWS4-HMAC-SHA256\n$timestamp\n$scope\n${sha256.convert(utf8.encode(canonical))}';
     final key = _hmac(_hmac(_hmac(_hmac(utf8.encode('AWS4$secretKey'), date), region), 's3'), 'aws4_request');
     final signature = Hmac(sha256, key).convert(utf8.encode(toSign)).toString();

@@ -1407,7 +1407,6 @@ class _Translations$about$it extends Translations$about$en {
 
 	// Translations
 	@override String get title => 'Informazioni';
-	@override String get privacyPolicy => 'Informativa sulla privacy';
 	@override String get openSourceLicenses => 'Licenze open source';
 	@override String versionLabel({required Object version}) => 'Versione ${version}';
 	@override String get appDescription => 'Un elegante client Plex, Jellyfin ed Emby per Flutter';
@@ -4724,7 +4723,6 @@ extension on TranslationsIt {
 			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => 'Informazioni',
-			'about.privacyPolicy' => 'Informativa sulla privacy',
 			'about.openSourceLicenses' => 'Licenze open source',
 			'about.versionLabel' => ({required Object version}) => 'Versione ${version}',
 			'about.appDescription' => 'Un elegante client Plex, Jellyfin ed Emby per Flutter',
@@ -5024,9 +5022,9 @@ extension on TranslationsIt {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Impossibile eliminare la raccolta: ${error}',
 			'collections.selectCollection' => 'Seleziona raccolta',
 			'collections.collectionName' => 'Nome raccolta',
+			'collections.enterCollectionName' => 'Inserisci nome raccolta',
 			_ => null,
 		} ?? switch (path) {
-			'collections.enterCollectionName' => 'Inserisci nome raccolta',
 			'collections.addedToCollection' => 'Elemento aggiunto alla raccolta',
 			'collections.errorAddingToCollection' => 'Impossibile aggiungere l\'elemento alla raccolta',
 			'collections.created' => 'Raccolta creata',
@@ -5538,9 +5536,9 @@ extension on TranslationsIt {
 			'externalPlayer.selectPlayer' => 'Seleziona il lettore',
 			'externalPlayer.customPlayers' => 'Lettori personalizzati',
 			'externalPlayer.systemDefault' => 'Predefinito di sistema',
+			'externalPlayer.addCustomPlayer' => 'Aggiungi lettore personalizzato',
 			_ => null,
 		} ?? switch (path) {
-			'externalPlayer.addCustomPlayer' => 'Aggiungi lettore personalizzato',
 			'externalPlayer.playerName' => 'Nome del lettore',
 			'externalPlayer.playerNameHint' => 'Il mio lettore',
 			'externalPlayer.playerCommand' => 'Comando',

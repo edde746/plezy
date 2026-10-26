@@ -88,6 +88,18 @@ void main() {
     expect(playback.progress!.filePositionMs, 12000);
     expect(playback.progress!.fileIndex, 1);
   });
+  test('end-of-chapter sleep stops at the boundary and does not advance to the next part', () async {
+    await start();
+    playback.sleepAfterChapter();
+    expect(playback.sleepEnabled, isTrue);
+    native.setPosition(const Duration(minutes: 3));
+    await playback.pause();
+    expect(playback.sleepEnabled, isFalse);
+    expect(playback.playing, isFalse);
+    native.emitCompleted();
+    await playback.pause();
+    expect(native.openedUris, hasLength(1));
+  });
   test('explicit reset cannot be overwritten by a late player tick', () async {
     await start();
     native.setPosition(const Duration(seconds: 40));

@@ -301,6 +301,15 @@ class SourceRepository {
       annotation.entryKey,
       jsonEncode(annotation.toJson()),
     ]);
+    // Annotation events are absolute snapshots. An older unpushed edit for
+    // the same bookmark carries no additional information.
+    final events = await pendingEvents(profile);
+    for (final event in events.where((e) => e['kind'] == 'annotation' && e['key'] == annotation.entryKey)) {
+      final payload = sourceMap(jsonDecode(event['payload'] as String));
+      if (payload['id'] == annotation.id) {
+        await database.customStatement('UPDATE events SET pending=0 WHERE profile=? AND id=?', [profile, event['id']]);
+      }
+    }
     await database.customStatement('INSERT INTO events VALUES (?,?,?,?,?,?,1)', [
       profile,
       _uuid.v4(),
@@ -309,6 +318,16 @@ class SourceRepository {
       'annotation',
       annotation.updatedAt,
     ]);
+  });
+
+  Future<void> acknowledgeAnnotation(String profile, BookAnnotation annotation) => database.transaction(() async {
+    final events = await pendingEvents(profile);
+    for (final event in events.where((e) => e['kind'] == 'annotation' && e['key'] == annotation.entryKey)) {
+      final payload = BookAnnotation.fromJson(sourceMap(jsonDecode(event['payload'] as String)));
+      if (payload.id == annotation.id && jsonEncode(payload.toJson()) == jsonEncode(annotation.toJson())) {
+        await database.customStatement('UPDATE events SET pending=0 WHERE profile=? AND id=?', [profile, event['id']]);
+      }
+    }
   });
   Future<List<BookAnnotation>> annotations(String profile, String entry) async =>
       (await database

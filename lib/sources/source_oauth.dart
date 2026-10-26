@@ -25,19 +25,30 @@ class SourceOAuthConfig {
         clientId: override ?? const String.fromEnvironment('GOOGLE_DRIVE_DESKTOP_CLIENT_ID'),
         authorize: Uri.https('accounts.google.com', '/o/oauth2/v2/auth'),
         token: Uri.https('oauth2.googleapis.com', '/token'),
-        scopes: const ['https://www.googleapis.com/auth/drive.readonly'],
+        scopes: [
+          'https://www.googleapis.com/auth/drive.readonly',
+          if (source.options['syncWrites'] == 'true') 'https://www.googleapis.com/auth/drive.appdata',
+        ],
       ),
       FileSourceKind.oneDrive => SourceOAuthConfig(
         clientId: override ?? const String.fromEnvironment('ONEDRIVE_CLIENT_ID'),
         authorize: Uri.https('login.microsoftonline.com', '/common/oauth2/v2.0/authorize'),
         token: Uri.https('login.microsoftonline.com', '/common/oauth2/v2.0/token'),
-        scopes: const ['Files.Read', 'offline_access'],
+        scopes: [
+          'Files.Read',
+          'offline_access',
+          if (source.options['syncWrites'] == 'true') 'Files.ReadWrite.AppFolder',
+        ],
       ),
       FileSourceKind.dropbox => SourceOAuthConfig(
         clientId: override ?? const String.fromEnvironment('DROPBOX_CLIENT_ID'),
         authorize: Uri.https('www.dropbox.com', '/oauth2/authorize'),
         token: Uri.https('api.dropboxapi.com', '/oauth2/token'),
-        scopes: const ['files.metadata.read', 'files.content.read'],
+        scopes: [
+          'files.metadata.read',
+          'files.content.read',
+          if (source.options['syncWrites'] == 'true') 'files.content.write',
+        ],
       ),
       _ => throw const SourceException(SourceFailure.unsupported),
     };
@@ -53,7 +64,6 @@ class SourceOAuthService {
   final Future<bool> Function(Uri) launch;
   final Map<String, Future<String>> _refreshing = {};
   static Future<void>? _googleInitialization;
-  static const _driveScopes = ['https://www.googleapis.com/auth/drive.readonly'];
   bool _disposed = false;
   void Function()? _cancel;
 
@@ -77,8 +87,10 @@ class SourceOAuthService {
   Future<Map<String, String>> authorize(FileSource source, {String? clientSecret}) async {
     if (source.kind == FileSourceKind.googleDrive && (Platform.isAndroid || Platform.isIOS)) {
       await _initializeGoogle();
-      final account = await GoogleSignIn.instance.authenticate(scopeHint: _driveScopes);
-      final authorization = await account.authorizationClient.authorizeScopes(_driveScopes);
+      final account = await GoogleSignIn.instance.authenticate(scopeHint: SourceOAuthConfig.forSource(source).scopes);
+      final authorization = await account.authorizationClient.authorizeScopes(
+        SourceOAuthConfig.forSource(source).scopes,
+      );
       return {
         'accessToken': authorization.accessToken,
         'accountId': account.id,
@@ -206,7 +218,9 @@ class SourceOAuthService {
       if (force && previous['accessToken'] != null) {
         await account.authorizationClient.clearAuthorizationToken(accessToken: previous['accessToken']!);
       }
-      final authorization = await account.authorizationClient.authorizationForScopes(_driveScopes);
+      final authorization = await account.authorizationClient.authorizationForScopes(
+        SourceOAuthConfig.forSource(source).scopes,
+      );
       if (authorization == null) throw const SourceException(SourceFailure.authentication);
       updated = {
         ...previous,

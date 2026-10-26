@@ -105,6 +105,8 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
         session: const Uuid().v4(),
       );
       _progress = await sources.openProgress(widget.entry, initial);
+      if (sources.cloudConflict(initial.key)) throw const SourceException(SourceFailure.conflict);
+      sources.holdProgress(initial.key);
       if (await sources.repository.remoteConflict(_profile!, initial.key) != null) {
         throw const SourceException(SourceFailure.conflict);
       }
@@ -712,13 +714,21 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
 
   @override
   void dispose() {
+    final syncSources = _sources, syncKey = _progress?.key;
+    if (syncSources != null && syncKey != null) {
+      unawaited(
+        _flush().whenComplete(() {
+          syncSources.releaseProgress(syncKey);
+          syncSources.scheduleSync();
+        }),
+      );
+    }
     _disposed = true;
     WidgetsBinding.instance.removeObserver(this);
     _sources?.removeListener(_profileChanged);
     _playback?.removeListener(_followAudio);
     PlaybackCoordinator.instance.unregisterNarrationSession(_stopSpeech);
     _saveTimer?.cancel();
-    unawaited(_flush());
     unawaited(_stopSpeech());
     _pdfSearch?.dispose();
     final session = _playback, server = _server;

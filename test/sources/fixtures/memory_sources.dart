@@ -44,6 +44,12 @@ class MemorySources extends ChangeNotifier implements SourceController {
   @override
   void scheduleSync() {}
   @override
+  void holdProgress(String key) {}
+  @override
+  void releaseProgress(String key) {}
+  @override
+  bool cloudConflict(String key) => false;
+  @override
   Future<File?> cover(SourceEntry entry) async => null;
   @override
   Future<PublicationProgress> openProgress(SourceEntry entry, PublicationProgress initial) async =>
