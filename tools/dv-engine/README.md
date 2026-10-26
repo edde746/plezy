@@ -55,7 +55,11 @@ Download from the workflow run above. These are research artifacts, not signed r
 
 ## Evidence boundary
 
-The build proves compilation, selected feature availability, a synthetic GPU composition path and pairing-helper decisions. It **does not yet prove a real Profile 7 FEL file** was dual-decoded, paired through mpv's filter graph, composed with its actual residual and matched to a trusted reference. No licensed real FEL clip, physical GPU/Wayland run, full PlezyNG playback, native Dolby Vision HDMI output, or non-Linux platform build has been qualified. A display's DV badge is not proof of FEL reconstruction.
+The build proves compilation, selected feature availability, a synthetic GPU composition path and pairing-helper decisions. A local community P7 FEL test clip has since passed the actual single-track mpv graph through both standalone `gpu-next` and embedded `libmpv` `opengl-next` readback on an AMD RX 9070 XT. Its built-in FEL mark is present in the full render and absent from a BL-only control.
+
+Embedded VA-API `vaapi-copy` decode of both layers produced an 8-bit FBO image within one code value of software decode. Two duplicate-RPU warnings in its log still need investigation. This is qualitative real-clip evidence, not an independent numerical reference. The Kodi index claims fair use for testing, evaluation and documentation, but does not publish a formal license for this file; it remains local-only.
+
+The Linux app builds, but full Plezy playback on its Wayland video plane, zero-copy hardware import, native Dolby Vision HDMI output and non-Linux platform builds remain unqualified. A display's DV badge is not proof of FEL reconstruction; see the [Luna handoff](../../docs/maintainers/dv-engine-luna-handoff.md) for the complete evidence and limits.
 
 ## Run the extracted bundle
 
@@ -75,16 +79,44 @@ instead of silently retaining the legacy renderer. Close it and launch the norma
 app to return to the release engine. Run the experiment without another PlezyNG
 instance; otherwise the desktop single-instance handler may route to that process.
 
+### Capture a user-provided FEL clip through embedded libmpv
+
+`real_clip_smoke.c` renders one frame through the bundled embedded
+`opengl-next` API into an EGL/GLES FBO and saves an 8-bit PPM. It does not bundle
+or download media and does not certify pixel accuracy; compare the output with a
+BL-only control and inspect the mpv log for the `[el_pair]` filter and composer
+shader. Run in a Linux session with EGL/GLES development headers and the engine's
+runtime dependencies available:
+
+```bash
+dv_engine_root=/path/to/plezyng-dv-experimental
+cc -std=c11 -Wall -Wextra -Werror -O2 \
+  -I "$dv_engine_root/include" tools/dv-engine/real_clip_smoke.c \
+  -L "$dv_engine_root/lib" -Wl,-rpath,"$dv_engine_root/lib" \
+  -Wl,--allow-shlib-undefined -lmpv -lEGL -lGLESv2 -lm \
+  -o /tmp/plezy-dv-real-clip
+LD_LIBRARY_PATH="$dv_engine_root/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+  /tmp/plezy-dv-real-clip /path/to/sample.mp4 /tmp/full.ppm /tmp/full.log 20.5 no
+LD_LIBRARY_PATH="$dv_engine_root/lib${LD_LIBRARY_PATH:+:$LD_LIBRARY_PATH}" \
+  /tmp/plezy-dv-real-clip /path/to/sample.mp4 /tmp/full-vaapi.ppm /tmp/full-vaapi.log 20.5 vaapi-copy
+```
+
+The positional time is the capture target in seconds; the helper starts playback
+0.5 s earlier. The final option is the mpv `hwdec` mode (`no` or, where
+available, `vaapi-copy`). System runtime libraries required by the engine must
+also be resolvable; see the bundle's `provenance.json`.
+
 ## Acceptance still required
 
-- Reference P7 FEL clips with BL-only and reconstructed pixel comparisons, including
-  a residual that visibly changes the image. A DV badge is insufficient.
-- Add a separate test that drives the actual mpv filter graph through paired
-  decoded frames; the helper test alone does not prove graph integration.
+- An independent numerical reference for reconstructed pixels. The current
+  real-clip mark proves EL contribution qualitatively, not exact pixel accuracy.
+- A reproducible, redistributable/generated graph fixture that drives paired
+  decoded frames; the local Kodi clip must not be committed or used in public CI.
 - Both single-track and separately tracked layers, end-to-end PTS reorder/seek/flush handling,
   broken metadata, CM2.9/CM4 cases and frame-specific active areas.
-- Actual Linux GPU/Wayland FBO precision, color tags, tone-map ownership, resize,
-  subtitles, audio sync, suspend and output changes; full Flutter/native checks.
+- Full app playback on Linux's Wayland plane, including zero-copy VA-API import,
+  FBO precision, color tags, tone-map ownership, resize, subtitles, audio sync,
+  suspend and output changes; full Flutter/native checks.
 - Rebase and validate the production TLS/network, decoder, audio, subtitle and
   platform patches before making this an ordinary app engine option.
 - Separate evidence for reconstructed HDR/SDR versus native DV display signaling.
