@@ -1118,39 +1118,55 @@ class _ReaderContents extends StatelessWidget {
                   crossAxisSpacing: 12,
                 ),
                 itemCount: items.length,
-                itemBuilder: (context, i) => Semantics(
-                  selected: i + 1 == currentPage,
-                  child: FocusableWrapper(
-                    disableScale: true,
-                    useBackgroundFocus: true,
-                    onSelect: () => Navigator.pop(context, items[i]),
-                    child: InkWell(
-                      canRequestFocus: false,
-                      onTap: () => Navigator.pop(context, items[i]),
-                      child: Column(
-                        children: [
-                          Expanded(
-                            child: Image.network(
-                              origin!.resolve('book/${Uri.encodeComponent('${items[i]['href']}')}').toString(),
-                              cacheWidth: 240,
-                              excludeFromSemantics: true,
-                              fit: BoxFit.contain,
-                              errorBuilder: (_, _, _) => const AppIcon(Symbols.image_not_supported_rounded),
+                itemBuilder: (context, i) {
+                  final selected = i + 1 == currentPage;
+                  final radius = tokens(context).radiusMd;
+                  final theme = Theme.of(context);
+                  return Semantics(
+                    selected: selected,
+                    child: FocusableWrapper(
+                      disableScale: true,
+                      borderRadius: radius,
+                      onSelect: () => Navigator.pop(context, items[i]),
+                      child: Material(
+                        color: theme.colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(radius),
+                        clipBehavior: Clip.antiAlias,
+                        child: InkWell(
+                          canRequestFocus: false,
+                          onTap: () => Navigator.pop(context, items[i]),
+                          child: DecoratedBox(
+                            decoration: BoxDecoration(
+                              color: selected ? theme.colorScheme.primary.withValues(alpha: 0.12) : null,
+                              borderRadius: BorderRadius.circular(radius),
+                            ),
+                            child: Column(
+                              children: [
+                                Expanded(
+                                  child: Image.network(
+                                    origin!.resolve('book/${Uri.encodeComponent('${items[i]['href']}')}').toString(),
+                                    cacheWidth: 240,
+                                    excludeFromSemantics: true,
+                                    fit: BoxFit.contain,
+                                    errorBuilder: (_, _, _) => const AppIcon(Symbols.image_not_supported_rounded),
+                                  ),
+                                ),
+                                Padding(
+                                  padding: const EdgeInsets.all(8),
+                                  child: Text(
+                                    t.fileSources.page(number: i + 1),
+                                    maxLines: 2,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                              ],
                             ),
                           ),
-                          Padding(
-                            padding: const EdgeInsets.all(8),
-                            child: Text(
-                              t.fileSources.page(number: i + 1),
-                              maxLines: 2,
-                              overflow: TextOverflow.ellipsis,
-                            ),
-                          ),
-                        ],
+                        ),
                       ),
                     ),
-                  ),
-                ),
+                  );
+                },
               )
             : SliverList.builder(
                 itemCount: items.length,

@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Keep the selected publication thumbnail visible and let reader dialogs scroll without losing their actions.
 - Expand comic reading with responsive spreads, RTL wide-page splitting, continuous scroll, thumbnails, touch zoom and per-comic display settings; harden page streaming and add reproducible browser test dependencies.
 - Repair source-reader merge compatibility and complete missing source setup translations.
 
