@@ -931,8 +931,18 @@ class SourceController extends ChangeNotifier {
       if (storedEntry == null) continue;
       final owner = sourcesById[storedEntry.sourceId];
       if (owner == null) continue;
-      final entry = _withSyncIdentity(owner, storedEntry);
-      final source = _stateAdapter(entry, progress);
+      late SourceEntry entry;
+      SourceAdapter? source;
+      try {
+        entry = _withSyncIdentity(owner, storedEntry);
+        source = _stateAdapter(entry, progress);
+      } catch (error, stackTrace) {
+        requireSession(epoch);
+        _sourceSyncFailed(owner.id);
+        firstFailure ??= error;
+        firstFailureStack ??= stackTrace;
+        continue;
+      }
       if (source == null) continue;
       try {
         if (!_sourceSyncReady(source.source.id)) continue;
@@ -980,14 +990,24 @@ class SourceController extends ChangeNotifier {
       if (storedEntry == null) continue;
       final owner = sourcesById[storedEntry.sourceId];
       if (owner == null) continue;
-      final entry = _withSyncIdentity(owner, storedEntry);
-      final annotationProgress = PublicationProgress(
-        entryKey: annotation.entryKey,
-        edition: annotation.edition,
-        mode: annotation.mode,
-        session: '',
-      );
-      final source = _stateAdapter(entry, annotationProgress);
+      late SourceEntry entry;
+      late SourceAdapter? source;
+      try {
+        entry = _withSyncIdentity(owner, storedEntry);
+        final annotationProgress = PublicationProgress(
+          entryKey: annotation.entryKey,
+          edition: annotation.edition,
+          mode: annotation.mode,
+          session: '',
+        );
+        source = _stateAdapter(entry, annotationProgress);
+      } catch (error, stackTrace) {
+        requireSession(epoch);
+        _sourceSyncFailed(owner.id);
+        firstFailure ??= error;
+        firstFailureStack ??= stackTrace;
+        continue;
+      }
       if (source == null ||
           !source.capabilities.annotations ||
           (source.source.kind == FileSourceKind.audiobookshelf && annotation.mode != PublicationMode.listening)) {
