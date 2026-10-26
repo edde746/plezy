@@ -226,6 +226,15 @@ class GameLibraryController extends ChangeNotifier {
     );
   });
 
+  Future<void> unlinkSteamAccount() => _change(
+    (state) => GameLibrary(
+      hosts: state.hosts,
+      games: state.games,
+      recent: state.recent,
+      favorites: state.favorites,
+    ),
+  );
+
   @override
   void dispose() {
     _disposed = true;
