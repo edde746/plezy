@@ -404,11 +404,32 @@ class SourcePage {
 /// Ephemeral. Never serialized, cached in catalog records, or sent to OS media
 /// metadata. A lease can be renewed before each range request.
 class ContentLease {
-  const ContentLease(this.uri, {this.headers = const {}, this.expiresAt, this.size});
+  const ContentLease(
+    this.uri, {
+    this.headers = const {},
+    this.expiresAt,
+    this.size,
+    this.backgroundTransferSafe = false,
+  });
   final Uri uri;
   final Map<String, String> headers;
   final DateTime? expiresAt;
   final int? size;
+
+  /// Only adapters that know a URL is a direct, credential-free resource may
+  /// opt it into a persistent native task. Never infer this from empty headers
+  /// alone: signed URLs can carry credentials in their query string.
+  final bool backgroundTransferSafe;
+
+  bool get canPersistForBackgroundTransfer =>
+      backgroundTransferSafe &&
+      headers.isEmpty &&
+      expiresAt == null &&
+      uri.host.isNotEmpty &&
+      uri.userInfo.isEmpty &&
+      !uri.hasQuery &&
+      !uri.hasFragment &&
+      const {'http', 'https'}.contains(uri.scheme);
 }
 
 /// Provider-native byte stream for sources without an HTTP media URL.
