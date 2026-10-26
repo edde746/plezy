@@ -132,6 +132,61 @@ class PublicationDownloads {
   /// failed jobs stay available for an intentional retry.
   Future<void> restoreProfile(String profile, SourceAdapter? Function(String) resolveAdapter) async {
     for (final row in await repository.downloads(profile)) {
+      if (row['state'] == 'importing') {
+        // A picker-backed input grant cannot be resumed after process death.
+        // If promotion completed just before the crash, reconstruct the final
+        // descriptor from its file metadata and commit the already-copied file.
+        final rowKey = row['key'] as String;
+        final sourceId = row['source_id'] as String? ?? '';
+        final path = row['path'] as String? ?? '';
+        final expectedRoot = p.join(directory.path, sourceDigest(profile));
+        PublicationFile? pendingFile;
+        try {
+          pendingFile = PublicationFile.fromJson(sourceMap(jsonDecode(row['file_payload'] as String)));
+        } on Object {
+          // Keep malformed rows removable; never derive a path from bad data.
+        }
+        final isContainedPartial = path.isNotEmpty &&
+            p.isWithin(expectedRoot, path) &&
+            p.equals(p.dirname(path), p.join(expectedRoot, 'imports')) &&
+            p.basename(path).startsWith('.') &&
+            p.basename(path).endsWith('.partial');
+        final name = pendingFile?.name ?? '';
+        final pendingSize = pendingFile?.size;
+        final finalCopy = isContainedPartial && name.isNotEmpty && p.basename(name) == name
+            ? File(p.join(p.dirname(path), name))
+            : null;
+        if (sourceId.isNotEmpty && finalCopy != null && await finalCopy.exists()) {
+          final stat = await finalCopy.stat();
+          if (stat.type == FileSystemEntityType.file &&
+              stat.size > 0 &&
+              (pendingSize == null || pendingSize == stat.size)) {
+            final file = PublicationFile(
+              id: name,
+              name: name,
+              mimeType: '',
+              size: stat.size,
+              revision: '${stat.modified.microsecondsSinceEpoch}:${stat.size}',
+            );
+            await repository.recordDownload(
+              profile,
+              rowKey,
+              finalCopy.path,
+              file.fingerprint,
+              stat.size,
+              reservedBytes: stat.size,
+              sourceId: sourceId,
+              file: file,
+              label: row['label'] as String? ?? name,
+            );
+            continue;
+          }
+        }
+        // Keep the partial and reservation removable, but never replay it as
+        // a provider download because the picker grant is no longer valid.
+        await repository.setDownloadState(profile, row['key'] as String, 'orphaned');
+        continue;
+      }
       if (row['state'] != 'queued' && row['state'] != 'running') continue;
       try {
         final sourceId = row['source_id'] as String;
@@ -464,6 +519,9 @@ class PublicationDownloads {
         file.fingerprint,
         size,
         reservedBytes: expectedSize ?? size,
+        sourceId: adapter.source.id,
+        file: file,
+        label: label,
       );
       cancel.check();
     } catch (_) {
@@ -509,11 +567,12 @@ class PublicationDownloads {
     var row = await repository.download(profile, downloadKey);
     if (row == null) return;
     final sourceId = row['source_id'] as String? ?? '';
+    final interruptedImport = row['state'] == 'orphaned';
     final task = _tasks.values.where((task) =>
       task.profile == profile && key(task.adapter.source.id, task.file) == downloadKey).firstOrNull;
     if (task != null) {
       await cancelAndWait(profile, task.adapter.source.id, task.file);
-    } else if (sourceId.isNotEmpty && row['file_payload'] is String && row['file_payload'] != '{}') {
+    } else if (!interruptedImport && sourceId.isNotEmpty && row['file_payload'] is String && row['file_payload'] != '{}') {
       try {
         final file = PublicationFile.fromJson(sourceMap(jsonDecode(row['file_payload'] as String)));
         if (key(sourceId, file) == downloadKey) await cancelAndWait(profile, sourceId, file);
@@ -544,8 +603,18 @@ class PublicationDownloads {
         // The row can be removed without touching a path from an invalid descriptor.
       }
       if (descriptor != null) {
-        final target = _target(profile, sourceId, descriptor);
-        if (target.path != path && p.isWithin(expected, target.path) && await target.exists()) await target.delete();
+        if (interruptedImport) {
+          final imports = p.join(expected, 'imports');
+          final imported = File(p.join(imports, p.basename(descriptor.name)));
+          if (p.basename(descriptor.name) == descriptor.name &&
+              p.isWithin(imports, imported.path) &&
+              await imported.exists()) {
+            await imported.delete();
+          }
+        } else {
+          final target = _target(profile, sourceId, descriptor);
+          if (target.path != path && p.isWithin(expected, target.path) && await target.exists()) await target.delete();
+        }
       }
     }
     await repository.forgetDownload(profile, downloadKey);
