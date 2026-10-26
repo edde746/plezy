@@ -1,0 +1,19 @@
+# ng-runner-policy: private-jit-only-v1
+name: PlezyNG public-fork CodeQL
+
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, reopened, synchronize, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: public-fork-codeql-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  analyze:
+    name: Isolated public-fork CodeQL
+    uses: snapetech-org/PlezyNG/.github/workflows/codeql.yml@3fbb23b2edb329b6fb8c71d1a692759d6ae6302f
