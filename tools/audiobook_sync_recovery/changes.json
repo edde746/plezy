@@ -1,0 +1,510 @@
+{
+  "version": 1,
+  "status": "Draft reconstruction after execution environment loss; not validated or applied to main",
+  "foundation": "Pending file/book source implementation from codex/books-cloud-sources-20261026",
+  "files": [
+    {
+      "path": "lib/sources/sync/sync_document.dart",
+      "content": "import 'dart:convert';\nimport 'dart:math';\nimport 'package:cryptography/cryptography.dart';\nimport '../source_models.dart';\n\nclass SyncVersion {\n  SyncVersion(this.clock, this.value);\n  final Map<String, int> clock;\n  final Map<String, dynamic> value;\n  Map<String, dynamic> toJson() => {'clock': clock, 'value': value};\n  factory SyncVersion.fromJson(Map<String, dynamic> json) {\n    final raw = sourceMap(json['clock']);\n    if (raw.isEmpty || raw.length > 128 || json['value'] is! Map) {\n      throw const SourceException(SourceFailure.invalidData);\n    }\n    final clock = <String, int>{};\n    for (final e in raw.entries) {\n      if (!RegExp(r'^[a-f0-9]{32}$').hasMatch(e.key) ||\n          e.value is! int || e.value <= 0 || e.value > 9007199254740991) {\n        throw const SourceException(SourceFailure.invalidData);\n      }\n      clock[e.key] = e.value as int;\n    }\n    return SyncVersion(clock, sourceMap(json['value']));\n  }\n}\n\nString canonicalSyncJson(Object? value) {\n  Object? sorted(Object? v) {\n    if (v is Map) {\n      final keys = v.keys.cast<String>().toList()..sort();\n      return {for (final k in keys) k: sorted(v[k])};\n    }\n    if (v is List) return v.map(sorted).toList();\n    return v;\n  }\n  return jsonEncode(sorted(value));\n}\n\nMap<String, int> joinedClock(Iterable<SyncVersion> values) {\n  final result = <String, int>{};\n  for (final v in values) {\n    for (final e in v.clock.entries) {\n      if (e.value > (result[e.key] ?? 0)) result[e.key] = e.value;\n    }\n  }\n  return result;\n}\n\nbool _covers(Map<String, int> a, Map<String, int> b) =>\n    b.entries.every((e) => (a[e.key] ?? 0) >= e.value);\n\n/// Multi-value register: only causally newer values supersede prior values.\n/// Neither wall-clock time nor furthest progress selects a winner.\nclass SyncDocument {\n  SyncDocument([Map<String, List<SyncVersion>>? records]) : records = records ?? {};\n  final Map<String, List<SyncVersion>> records;\n  static const maxRecords = 20000;\n  static const maxBytes = 4 * 1024 * 1024;\n\n  void merge(SyncDocument other) {\n    for (final e in other.records.entries) {\n      for (final incoming in e.value) {\n        final current = records.putIfAbsent(e.key, () => []);\n        var covered = false;\n        for (final old in current) {\n          if (_covers(old.clock, incoming.clock)) {\n            if (_covers(incoming.clock, old.clock) &&\n                canonicalSyncJson(old.value) != canonicalSyncJson(incoming.value)) {\n              throw const SourceException(SourceFailure.invalidData);\n            }\n            covered = true;\n          }\n        }\n        if (covered) continue;\n        current.removeWhere((old) => _covers(incoming.clock, old.clock));\n        current.add(incoming);\n        current.sort((a, b) => canonicalSyncJson(a.clock).compareTo(canonicalSyncJson(b.clock)));\n        if (current.length > 128 || records.length > maxRecords) {\n          throw const SourceException(SourceFailure.invalidData);\n        }\n      }\n    }\n  }\n\n  /// The basis is the last value applied locally, not every downloaded value.\n  /// Remote progress deferred by an active reader must remain concurrent.\n  SyncVersion edit(String key, String device, Map<String, dynamic> value, Map<String, int> basis) {\n    final existing = records[key] ?? [];\n    final clock = Map<String, int>.from(basis);\n    final seen = joinedClock(existing)[device] ?? 0;\n    clock[device] = (seen > (clock[device] ?? 0) ? seen : (clock[device] ?? 0)) + 1;\n    if (clock.length > 128) throw const SourceException(SourceFailure.invalidData);\n    final next = SyncVersion(clock, value);\n    merge(SyncDocument({key: [next]}));\n    return next;\n  }\n\n  bool conflicted(String key) =>\n      (records[key] ?? []).map((v) => canonicalSyncJson(v.value)).toSet().length > 1;\n  Map<String, dynamic> toJson() => {\n    'version': 1,\n    'records': records.map((k, v) => MapEntry(k, v.map((x) => x.toJson()).toList())),\n  };\n  factory SyncDocument.fromJson(Map<String, dynamic> json) {\n    if (json['version'] != 1) throw const SourceException(SourceFailure.unsupported);\n    final raw = sourceMap(json['records']);\n    if (raw.length > maxRecords) throw const SourceException(SourceFailure.invalidData);\n    final result = SyncDocument();\n    for (final e in raw.entries) {\n      if (!RegExp(r'^[a-f0-9]{64}$').hasMatch(e.key) || e.value is! List ||\n          (e.value as List).isEmpty || (e.value as List).length > 128) {\n        throw const SourceException(SourceFailure.invalidData);\n      }\n      result.merge(SyncDocument({\n        e.key: (e.value as List).map((v) => SyncVersion.fromJson(sourceMap(v))).toList(),\n      }));\n    }\n    return result;\n  }\n}\n\n/// A random 256-bit join code encrypts all progress and annotations.\n/// Filenames are authenticated; tokens and media never enter the document.\nclass SyncCipher {\n  SyncCipher(String code) : keyBytes = decodeCode(code);\n  final List<int> keyBytes;\n  static final _algorithm = AesGcm.with256bits();\n  static String newCode() {\n    final random = Random.secure();\n    return base64UrlEncode(List.generate(32, (_) => random.nextInt(256))).replaceAll('=', '');\n  }\n  static List<int> decodeCode(String code) {\n    try {\n      final bytes = base64Url.decode(base64Url.normalize(code.trim()));\n      if (bytes.length != 32) throw const FormatException();\n      return bytes;\n    } catch (_) {\n      throw const SourceException(SourceFailure.invalidData);\n    }\n  }\n  String get namespace => sourceDigest(base64UrlEncode(keyBytes)).substring(0, 24);\n  Future<String> seal(SyncDocument document, String name) async {\n    final bytes = utf8.encode(canonicalSyncJson(document.toJson()));\n    if (bytes.length > SyncDocument.maxBytes) throw const SourceException(SourceFailure.invalidData);\n    final box = await _algorithm.encrypt(bytes, secretKey: SecretKey(keyBytes), aad: utf8.encode(name));\n    return jsonEncode({\n      'version': 1, 'nonce': base64Encode(box.nonce),\n      'ciphertext': base64Encode(box.cipherText), 'mac': base64Encode(box.mac.bytes),\n    });\n  }\n  Future<SyncDocument> open(String text, String name) async {\n    try {\n      if (utf8.encode(text).length > 6 * 1024 * 1024) throw const FormatException();\n      final json = sourceMap(jsonDecode(text));\n      if (json['version'] != 1) throw const SourceException(SourceFailure.unsupported);\n      final nonce = base64Decode(json['nonce'] as String), mac = base64Decode(json['mac'] as String);\n      if (nonce.length != 12 || mac.length != 16) throw const FormatException();\n      final clear = await _algorithm.decrypt(\n        SecretBox(base64Decode(json['ciphertext'] as String), nonce: nonce, mac: Mac(mac)),\n        secretKey: SecretKey(keyBytes), aad: utf8.encode(name),\n      );\n      if (clear.length > SyncDocument.maxBytes) throw const FormatException();\n      return SyncDocument.fromJson(sourceMap(jsonDecode(utf8.decode(clear))));\n    } on SourceException {\n      rethrow;\n    } catch (_) {\n      throw const SourceException(SourceFailure.invalidData);\n    }\n  }\n}\n"
+    },
+    {
+      "path": "lib/sources/sync/sync_store.dart",
+      "content": "import 'dart:convert';\nimport 'package:xml/xml.dart';\nimport 'package:uuid/uuid.dart';\nimport '../adapters/cloud_sources.dart';\nimport '../adapters/s3_source.dart';\nimport '../adapters/webdav_source.dart';\nimport '../source_models.dart';\nimport '../source_transport.dart';\n\nclass SyncFile {\n  const SyncFile(this.name, this.id);\n  final String name;\n  final String id;\n  static final pattern = RegExp(r'^plezyng-state-v1-([a-f0-9]{24})-([a-f0-9]{32})-([0-9]{16})\\.json$');\n  String get device => pattern.firstMatch(name)!.group(2)!;\n  int get sequence => int.parse(pattern.firstMatch(name)!.group(3)!);\n  static String filename(String namespace, String device, int sequence) =>\n      'plezyng-state-v1-$namespace-$device-${sequence.toString().padLeft(16, '0')}.json';\n}\n\nabstract class SyncStore {\n  Future<List<SyncFile>> list(String namespace);\n  Future<String> read(SyncFile file);\n  Future<void> create(String name, String text);\n  Future<void> delete(SyncFile file);\n}\n\n/// Immutable generations avoid shared-file overwrite races. Only this device's\n/// older generations can be pruned after a successful publish.\nclass ProviderSyncStore implements SyncStore {\n  ProviderSyncStore(this.adapter, {this.folder = '', this.check = _noop});\n  final SourceAdapter adapter;\n  final String folder;\n  final void Function() check;\n  static void _noop() {}\n  SourceTransport get transport => adapter.transport;\n  FileSourceKind get kind => adapter.source.kind;\n  static bool supports(FileSourceKind kind) => const {\n    FileSourceKind.googleDrive, FileSourceKind.oneDrive, FileSourceKind.dropbox,\n    FileSourceKind.webdav, FileSourceKind.s3,\n  }.contains(kind);\n  final Map<String, Set<String>> _listed = {};\n  String _prefix(String namespace) => 'plezyng-state-v1-$namespace-';\n  void _name(String name) {\n    check();\n    if (!SyncFile.pattern.hasMatch(name)) throw const SourceException(SourceFailure.invalidData);\n  }\n  void _file(SyncFile file) {\n    _name(file.name);\n    if (!(_listed[file.name]?.contains(file.id) ?? false)) {\n      throw const SourceException(SourceFailure.permission);\n    }\n  }\n  Future<Map<String, String>> _headers() async {\n    check();\n    final a = adapter;\n    if (a is OAuthSourceAdapter) return {'Authorization': 'Bearer ${await a.token(refresh: false)}'};\n    if (a is WebDavSourceAdapter) return a.headers();\n    return {};\n  }\n  Uri _graph(String path) => Uri.https('graph.microsoft.com', '/v1.0/me/drive$path');\n  Uri _dropbox(String action, {bool content = false}) =>\n      Uri.https(content ? 'content.dropboxapi.com' : 'api.dropboxapi.com', '/2/files/$action');\n  Future<Map<String, dynamic>> _json(String method, Uri uri, {Object? body}) async {\n    check();\n    return (adapter as OAuthSourceAdapter).api(method, uri, body: body);\n  }\n  Uri get _davRoot {\n    if (folder.trim().isEmpty) throw const SourceException(SourceFailure.invalidData);\n    return (adapter as WebDavSourceAdapter).contained('${folder.replaceAll(RegExp(r'/+$'), '')}/');\n  }\n  String get _s3Prefix {\n    final base = adapter.source.root.replaceAll(RegExp(r'^/+|/+$'), '');\n    final relative = folder.replaceAll(RegExp(r'^/+|/+$'), '');\n    if (relative.isEmpty || relative.contains('\\\\') ||\n        relative.split('/').any((s) => s == '.' || s == '..' || s.isEmpty)) {\n      throw const SourceException(SourceFailure.invalidData);\n    }\n    return '${base.isEmpty ? '' : '$base/'}$relative/';\n  }\n  Future<Uri> _s3(String method, {String? key, Map<String, String>? query}) async {\n    final a = adapter as S3SourceAdapter;\n    final base = Uri.parse(a.source.endpoint);\n    final uri = base.replace(\n      pathSegments: [...base.pathSegments.where((s) => s.isNotEmpty), if (key != null) ...key.split('/')],\n      queryParameters: query,\n    );\n    final credentials = await a.credentials();\n    check();\n    return S3SourceAdapter.sign(\n      uri: uri, method: method, accessKey: credentials['accessKey'] ?? '',\n      secretKey: credentials['secretKey'] ?? '', region: a.source.options['region'] ?? 'us-east-1',\n      sessionToken: credentials['sessionToken'], time: DateTime.now(),\n    );\n  }\n  void _add(List<SyncFile> files, String namespace, String name, String id) {\n    if (!name.startsWith(_prefix(namespace)) || !SyncFile.pattern.hasMatch(name)) return;\n    if (files.length >= 2048) throw const SourceException(SourceFailure.invalidData);\n    _listed.putIfAbsent(name, () => {}).add(id);\n    files.add(SyncFile(name, id));\n  }\n\n  @override\n  Future<List<SyncFile>> list(String namespace) async {\n    check();\n    if (!RegExp(r'^[a-f0-9]{24}$').hasMatch(namespace)) throw const SourceException(SourceFailure.invalidData);\n    _listed.clear();\n    final result = <SyncFile>[];\n    final cursors = <String>{};\n    String? cursor;\n    do {\n      check();\n      if (cursor != null && (!cursors.add(cursor) || cursors.length > 64)) {\n        throw const SourceException(SourceFailure.invalidData);\n      }\n      switch (kind) {\n        case FileSourceKind.googleDrive:\n          final data = await _json('GET', Uri.https('www.googleapis.com', '/drive/v3/files', {\n            'spaces': 'appDataFolder', 'q': \"trashed = false and name contains '${_prefix(namespace)}'\",\n            'pageSize': '1000', 'fields': 'nextPageToken,files(id,name)', 'pageToken': ?cursor,\n          }));\n          for (final raw in sourceList(data['files'])) {\n            final row = sourceMap(raw);\n            _add(result, namespace, row['name'] as String, row['id'] as String);\n          }\n          cursor = data['nextPageToken'] as String?;\n        case FileSourceKind.oneDrive:\n          final uri = cursor == null\n              ? _graph('/special/approot/children').replace(queryParameters: {'\\$top': '200', '\\$select': 'id,name'})\n              : Uri.parse(cursor);\n          if (uri.scheme != 'https' || uri.host != 'graph.microsoft.com' ||\n              uri.port != 443 || uri.userInfo.isNotEmpty) {\n            throw const SourceException(SourceFailure.permission);\n          }\n          final data = await _json('GET', uri);\n          for (final raw in sourceList(data['value'])) {\n            final row = sourceMap(raw);\n            _add(result, namespace, row['name'] as String, row['id'] as String);\n          }\n          cursor = data['@odata.nextLink'] as String?;\n        case FileSourceKind.dropbox:\n          Map<String, dynamic> data;\n          try {\n            data = await _json('POST', _dropbox(cursor == null ? 'list_folder' : 'list_folder/continue'),\n              body: cursor == null ? {'path': '/PlezyNG Sync', 'limit': 1000} : {'cursor': cursor});\n          } on SourceException catch (e) {\n            if (e.status != 409 || cursor != null) rethrow;\n            await _json('POST', _dropbox('create_folder_v2'),\n              body: {'path': '/PlezyNG Sync', 'autorename': false});\n            data = await _json('POST', _dropbox('list_folder'),\n              body: {'path': '/PlezyNG Sync', 'limit': 1000});\n          }\n          for (final raw in sourceList(data['entries'])) {\n            final row = sourceMap(raw);\n            if (row['.tag'] == 'file') _add(result, namespace, row['name'] as String, row['id'] as String);\n          }\n          cursor = data['has_more'] == true ? data['cursor'] as String? : null;\n        case FileSourceKind.webdav:\n          final root = _davRoot;\n          final text = await transport.text('PROPFIND', root,\n            headers: {...await _headers(), 'Depth': '1', 'Content-Type': 'application/xml'},\n            body: '<d:propfind xmlns:d=\"DAV:\"><d:prop><d:resourcetype/></d:prop></d:propfind>');\n          final xml = XmlDocument.parse(text);\n          for (final row in xml.descendants.whereType<XmlElement>().where((e) => e.name.local == 'response')) {\n            final href = row.descendants.whereType<XmlElement>()\n                .where((e) => e.name.local == 'href').firstOrNull?.innerText;\n            if (href == null) continue;\n            final uri = root.resolve(href);\n            if (!sameSourceOrigin(root, uri) || uri.hasQuery || uri.hasFragment || uri.userInfo.isNotEmpty) continue;\n            final name = uri.pathSegments.lastOrNull ?? '';\n            if (uri.path != root.resolve(Uri(pathSegments: [name]).toString()).path) continue;\n            _add(result, namespace, name, uri.toString());\n          }\n          cursor = null;\n        case FileSourceKind.s3:\n          final prefix = '$_s3Prefix${_prefix(namespace)}';\n          final xml = XmlDocument.parse(await transport.text('GET', await _s3('GET', query: {\n            'list-type': '2', 'prefix': prefix, 'max-keys': '1000', 'continuation-token': ?cursor,\n          })));\n          for (final row in xml.descendants.whereType<XmlElement>().where((e) => e.name.local == 'Contents')) {\n            final key = row.childElements.where((e) => e.name.local == 'Key').firstOrNull?.innerText;\n            if (key != null && key.startsWith(_s3Prefix)) {\n              _add(result, namespace, key.substring(_s3Prefix.length), key);\n            }\n          }\n          cursor = xml.rootElement.childElements\n              .where((e) => e.name.local == 'NextContinuationToken').firstOrNull?.innerText;\n          if (cursor?.isEmpty == true) cursor = null;\n        default:\n          throw const SourceException(SourceFailure.unsupported);\n      }\n    } while (cursor != null);\n    check();\n    return result;\n  }\n\n  @override\n  Future<String> read(SyncFile file) async {\n    _file(file);\n    switch (kind) {\n      case FileSourceKind.googleDrive:\n        return transport.text('GET',\n          Uri.https('www.googleapis.com', '/drive/v3/files/${file.id}', {'alt': 'media'}),\n          headers: await _headers(), limit: 6 * 1024 * 1024);\n      case FileSourceKind.oneDrive:\n        return transport.text('GET', _graph('/items/${file.id}/content'),\n          headers: await _headers(), redirects: true, limit: 6 * 1024 * 1024);\n      case FileSourceKind.dropbox:\n        return transport.text('POST', _dropbox('download', content: true),\n          headers: {...await _headers(), 'Dropbox-API-Arg': jsonEncode({'path': file.id})},\n          limit: 6 * 1024 * 1024);\n      case FileSourceKind.webdav:\n        return transport.text('GET', Uri.parse(file.id), headers: await _headers(), limit: 6 * 1024 * 1024);\n      case FileSourceKind.s3:\n        return transport.text('GET', await _s3('GET', key: file.id), limit: 6 * 1024 * 1024);\n      default:\n        throw const SourceException(SourceFailure.unsupported);\n    }\n  }\n\n  @override\n  Future<void> create(String name, String text) async {\n    _name(name);\n    if (utf8.encode(text).length > 6 * 1024 * 1024) throw const SourceException(SourceFailure.invalidData);\n    switch (kind) {\n      case FileSourceKind.googleDrive:\n        final boundary = 'plezyng-${const Uuid().v4()}';\n        await transport.text('POST',\n          Uri.https('www.googleapis.com', '/upload/drive/v3/files', {'uploadType': 'multipart'}),\n          headers: {...await _headers(), 'Content-Type': 'multipart/related; boundary=$boundary'},\n          body: '--$boundary\\r\\nContent-Type: application/json; charset=UTF-8\\r\\n\\r\\n${jsonEncode({'name': name, 'parents': ['appDataFolder'], 'mimeType': 'application/json'})}\\r\\n--$boundary\\r\\nContent-Type: application/json\\r\\n\\r\\n$text\\r\\n--$boundary--\\r\\n');\n      case FileSourceKind.oneDrive:\n        await transport.text('PUT', _graph('/special/approot:/$name:/content'),\n          headers: {...await _headers(), 'Content-Type': 'application/json', 'If-None-Match': '*'}, body: text);\n      case FileSourceKind.dropbox:\n        await transport.text('POST', _dropbox('upload', content: true),\n          headers: {...await _headers(), 'Content-Type': 'application/octet-stream',\n            'Dropbox-API-Arg': jsonEncode({'path': '/PlezyNG Sync/$name', 'mode': 'add',\n              'autorename': false, 'mute': true, 'strict_conflict': true})}, body: text);\n      case FileSourceKind.webdav:\n        await transport.text('PUT', _davRoot.resolve(name),\n          headers: {...await _headers(), 'Content-Type': 'application/json', 'If-None-Match': '*'}, body: text);\n      case FileSourceKind.s3:\n        await transport.text('PUT', await _s3('PUT', key: '$_s3Prefix$name'),\n          headers: {'Content-Type': 'application/json', 'If-None-Match': '*'}, body: text);\n      default:\n        throw const SourceException(SourceFailure.unsupported);\n    }\n    check();\n  }\n\n  @override\n  Future<void> delete(SyncFile file) async {\n    _file(file);\n    switch (kind) {\n      case FileSourceKind.googleDrive:\n        await transport.text('DELETE', Uri.https('www.googleapis.com', '/drive/v3/files/${file.id}'),\n          headers: await _headers());\n      case FileSourceKind.oneDrive:\n        await transport.text('DELETE', _graph('/items/${file.id}'), headers: await _headers());\n      case FileSourceKind.dropbox:\n        await _json('POST', _dropbox('delete_v2'), body: {'path': file.id});\n      case FileSourceKind.webdav:\n        await transport.text('DELETE', Uri.parse(file.id), headers: await _headers());\n      case FileSourceKind.s3:\n        await transport.text('DELETE', await _s3('DELETE', key: file.id));\n      default:\n        throw const SourceException(SourceFailure.unsupported);\n    }\n  }\n}\n"
+    },
+    {
+      "path": "lib/sources/sync/publication_sync.dart",
+      "content": "import 'dart:convert';\nimport 'package:drift/drift.dart';\nimport 'package:uuid/uuid.dart';\nimport '../source_database.dart';\nimport '../source_models.dart';\nimport 'sync_document.dart';\nimport 'sync_store.dart';\n\nclass PublicationSyncConfig {\n  const PublicationSyncConfig({required this.sourceId, required this.code, this.folder = ''});\n  final String sourceId;\n  final String code;\n  final String folder;\n  Map<String, dynamic> toJson() => {'sourceId': sourceId, 'code': code, 'folder': folder};\n  factory PublicationSyncConfig.fromJson(Map<String, dynamic> j) => PublicationSyncConfig(\n    sourceId: j['sourceId'] as String, code: j['code'] as String, folder: j['folder'] as String? ?? '');\n}\nclass PublicationSyncConflict {\n  PublicationSyncConflict(this.key, this.entry, this.values);\n  final String key;\n  final SourceEntry entry;\n  final List<SyncVersion> values;\n}\nclass _LocalValue {\n  _LocalValue(this.value, this.localKey, this.entry);\n  final Map<String, dynamic> value;\n  final String localKey;\n  final SourceEntry entry;\n}\nclass _SyncCache {\n  _SyncCache(Map<String, dynamic> j)\n    : document = j['document'] == null ? SyncDocument() : SyncDocument.fromJson(sourceMap(j['document'])),\n      observed = sourceMap(j['observed']).map((k, v) => MapEntry(k, v as String)),\n      basis = sourceMap(j['basis']).map((k, v) => MapEntry(k, sourceMap(v).map((a, b) => MapEntry(a, b as int)))),\n      sequence = sourceInt(j['sequence']) ?? 0,\n      published = j['published'] as String? ?? '';\n  final SyncDocument document;\n  final Map<String, String> observed;\n  final Map<String, Map<String, int>> basis;\n  int sequence;\n  String published;\n  Map<String, dynamic> toJson() => {\n    'document': document.toJson(), 'observed': observed, 'basis': basis,\n    'sequence': sequence, 'published': published,\n  };\n}\n\n/// Profile-scoped replication. Local rows and their import baseline commit\n/// together. All network results are checked against the owning session.\nclass PublicationSync {\n  PublicationSync(this.repository);\n  final SourceRepository repository;\n  final Map<String, PublicationSyncConflict> conflicts = {};\n  bool running = false;\n  SourceFailure? failure;\n  DateTime? lastSuccess;\n  static const configKey = 'publication-sync-config-v1';\n  static String _cacheKey(String namespace) => 'publication-sync-cache-v1:$namespace';\n  void resetStatus() { conflicts.clear(); failure = null; lastSuccess = null; }\n  Future<PublicationSyncConfig?> config(String profile) async {\n    final json = await repository.privatePreference(profile, configKey);\n    return json.isEmpty ? null : PublicationSyncConfig.fromJson(json);\n  }\n  Future<void> configure(String profile, PublicationSyncConfig? value) async {\n    if (value == null) {\n      await repository.forgetPreference(profile, configKey);\n      resetStatus();\n      return;\n    }\n    SyncCipher(value.code);\n    await repository.savePrivatePreference(profile, configKey, value.toJson());\n    resetStatus();\n  }\n  static String entryIdentity(FileSource source, SourceEntry entry) {\n    final library = source.options['syncLibrary'];\n    return sourceDigest(canonicalSyncJson([\n      source.kind.name,\n      library?.isNotEmpty == true ? library :\n        source.kind == FileSourceKind.local ? source.root :\n        source.endpoint.replaceAll(RegExp(r'/+$'), ''),\n      source.options['driveId'] ?? '', entry.id,\n    ]));\n  }\n  static String progressKey(String entry, String edition, PublicationMode mode) =>\n      sourceDigest(jsonEncode(['progress', entry, edition, mode.name]));\n  static Map<String, dynamic> _progressValue(String identity, PublicationProgress p) => {\n    'type': 'progress', 'entry': identity,\n    'data': {...p.toJson()}..remove('entryKey')..remove('session')..remove('revision')..remove('updatedAt'),\n  };\n  static Map<String, dynamic> _annotationValue(String identity, BookAnnotation a) => {\n    'type': 'annotation', 'entry': identity,\n    'data': {...a.toJson()}..remove('entryKey')..remove('updatedAt'),\n  };\n  static String _hash(Map<String, dynamic> value) => sourceDigest(canonicalSyncJson(value));\n\n  Future<Map<String, _LocalValue>> _locals(\n    String profile, List<FileSource> sources, List<SourceEntry> entries,\n  ) async {\n    final identities = <String, String>{};\n    for (final entry in entries) {\n      final source = sources.where((s) => s.id == entry.sourceId).firstOrNull;\n      if (source != null) identities[entry.key] = entryIdentity(source, entry);\n    }\n    final byKey = {for (final e in entries) e.key: e};\n    final values = <String, _LocalValue>{};\n    for (final p in await repository.allProgress(profile)) {\n      final identity = identities[p.entryKey];\n      if (identity != null) {\n        values[progressKey(identity, p.edition, p.mode)] =\n          _LocalValue(_progressValue(identity, p), p.key, byKey[p.entryKey]!);\n      }\n    }\n    final rows = await repository.database.customSelect(\n      'SELECT payload FROM annotations WHERE profile=?', variables: [Variable(profile)],\n    ).get();\n    for (final row in rows) {\n      final a = BookAnnotation.fromJson(sourceMap(jsonDecode(row.read<String>('payload'))));\n      final identity = identities[a.entryKey];\n      if (identity != null) {\n        values[sourceDigest(jsonEncode(['annotation', identity, a.id]))] =\n          _LocalValue(_annotationValue(identity, a), a.id, byKey[a.entryKey]!);\n      }\n    }\n    return values;\n  }\n  void _capture(_SyncCache cache, String device, Map<String, _LocalValue> locals) {\n    for (final e in locals.entries) {\n      final hash = _hash(e.value.value);\n      if (cache.observed[e.key] == hash) continue;\n      final next = cache.document.edit(e.key, device, e.value.value, cache.basis[e.key] ?? {});\n      cache.basis[e.key] = next.clock;\n      cache.observed[e.key] = hash;\n    }\n  }\n  Map<String, SourceEntry> _identities(List<FileSource> sources, List<SourceEntry> entries) => {\n    for (final e in entries)\n      if (sources.any((s) => s.id == e.sourceId))\n        entryIdentity(sources.firstWhere((s) => s.id == e.sourceId), e): e,\n  };\n  bool _compatible(SourceEntry entry, Map<String, dynamic> data) {\n    final edition = data['edition'], mode = data['mode'];\n    if (mode == PublicationMode.reading.name) return entry.ebooks.any((f) => f.fingerprint == edition);\n    final groups = <List<PublicationFile>>[entry.audio, for (final f in entry.files) [f]];\n    return const ['listening', 'watching'].contains(mode) &&\n      groups.where((g) => g.isNotEmpty).any(\n        (g) => sourceDigest(jsonEncode(g.map((f) => f.fingerprint).toList())) == edition);\n  }\n  Future<void> _apply(String profile, _SyncCache cache,\n    Map<String, SourceEntry> identities, Set<String> activeKeys,\n  ) async {\n    conflicts.clear();\n    for (final record in cache.document.records.entries) {\n      final values = record.value;\n      final first = values.first.value;\n      final entry = identities[first['entry']];\n      if (entry == null) continue;\n      for (final v in values) {\n        if (v.value['entry'] != first['entry'] || v.value['type'] != first['type']) {\n          throw const SourceException(SourceFailure.invalidData);\n        }\n      }\n      if (cache.document.conflicted(record.key)) {\n        conflicts[record.key] = PublicationSyncConflict(record.key, entry, values);\n        continue;\n      }\n      final data = sourceMap(first['data']);\n      if (!_compatible(entry, data)) continue;\n      final hash = _hash(first);\n      if (cache.observed[record.key] == hash) {\n        cache.basis[record.key] = joinedClock(values);\n        continue;\n      }\n      if (first['type'] == 'progress') {\n        final value = PublicationProgress.fromJson({\n          ...data, 'entryKey': entry.key, 'session': const Uuid().v4(),\n        });\n        if (value.positionMs < 0 || value.filePositionMs < 0 || value.fileIndex < 0 ||\n            value.fileIndex >= entry.files.length || !value.speed.isFinite) {\n          throw const SourceException(SourceFailure.invalidData);\n        }\n        if (activeKeys.contains(value.key)) continue;\n        final current = await repository.progress(profile, value.key);\n        final saved = await repository.saveProgress(\n          profile, value.copyWith(revision: current?.revision ?? 0), kind: 'cloud');\n        await repository.acknowledge(profile, saved.key, saved.revision);\n      } else if (first['type'] == 'annotation') {\n        final a = BookAnnotation.fromJson({\n          ...data, 'entryKey': entry.key, 'updatedAt': DateTime.now().millisecondsSinceEpoch,\n        });\n        if (a.note.length > 100000 || a.quote.length > 100000 || a.id.length > 200) {\n          throw const SourceException(SourceFailure.invalidData);\n        }\n        await repository.database.customStatement(\n          'INSERT OR REPLACE INTO annotations VALUES (?,?,?,?)',\n          [profile, a.id, a.entryKey, jsonEncode(a.toJson())]);\n      } else {\n        throw const SourceException(SourceFailure.invalidData);\n      }\n      cache.observed[record.key] = hash;\n      cache.basis[record.key] = joinedClock(values);\n    }\n  }\n\n  Future<void> run({\n    required String profile, required List<FileSource> sources,\n    required PublicationSyncConfig config, required SyncStore store,\n    required Set<String> activeKeys, required void Function() check,\n  }) async {\n    if (running) throw const SourceException(SourceFailure.conflict);\n    running = true;\n    failure = null;\n    try {\n      check();\n      final cipher = SyncCipher(config.code);\n      final cacheKey = _cacheKey(cipher.namespace);\n      final cache = _SyncCache(await repository.preference(profile, cacheKey));\n      final deviceConfig = await repository.preference(profile, 'publication-sync-device-v1');\n      final device = deviceConfig['id'] as String? ?? const Uuid().v4().replaceAll('-', '');\n      check();\n      await repository.savePreference(profile, 'publication-sync-device-v1', {'id': device});\n      final entries = await repository.entries(profile);\n      // Durable capture precedes all network I/O, retaining offline edits.\n      await repository.database.transaction(() async {\n        check();\n        _capture(cache, device, await _locals(profile, sources, entries));\n        await repository.savePreference(profile, cacheKey, cache.toJson());\n      });\n      final listed = await store.list(cipher.namespace);\n      check();\n      final latest = <String, int>{};\n      for (final f in listed) {\n        if (f.sequence > (latest[f.device] ?? -1)) latest[f.device] = f.sequence;\n        if (f.device == device && f.sequence > cache.sequence) cache.sequence = f.sequence;\n      }\n      if (latest.length > 128 || latest.length == 128 && !latest.containsKey(device)) {\n        throw const SourceException(SourceFailure.invalidData);\n      }\n      final remote = SyncDocument();\n      for (final f in listed.where((f) => latest[f.device] == f.sequence)) {\n        check();\n        final document = await cipher.open(await store.read(f), f.name);\n        check();\n        remote.merge(document);\n      }\n      // Capture ticks arriving during pull against the pre-pull basis.\n      await repository.database.transaction(() async {\n        check();\n        _capture(cache, device, await _locals(profile, sources, entries));\n        cache.document.merge(remote);\n        await _apply(profile, cache, _identities(sources, entries), activeKeys);\n        check();\n        await repository.savePreference(profile, cacheKey, cache.toJson());\n      });\n      final digest = _hash(cache.document.toJson());\n      if (digest != cache.published || !latest.containsKey(device)) {\n        cache.sequence++;\n        if (cache.sequence > 9999999999999999) throw const SourceException(SourceFailure.invalidData);\n        check();\n        await repository.savePreference(profile, cacheKey, cache.toJson());\n        final name = SyncFile.filename(cipher.namespace, device, cache.sequence);\n        final encrypted = await cipher.seal(cache.document, name);\n        check();\n        await store.create(name, encrypted);\n        check();\n        cache.published = digest;\n        await repository.savePreference(profile, cacheKey, cache.toJson());\n        final owned = listed.where((f) => f.device == device).toList()\n          ..sort((a,b) => b.sequence.compareTo(a.sequence));\n        // Keep one previous successful snapshot, and never prune other devices.\n        for (final old in owned.skip(1)) {\n          check();\n          try {\n            await store.delete(old);\n          } on SourceException catch (e) {\n            if (e.reason == SourceFailure.cancelled) rethrow;\n          }\n        }\n      }\n      check();\n      lastSuccess = DateTime.now();\n    } on SourceException catch (e) {\n      failure = e.reason;\n      rethrow;\n    } catch (_) {\n      failure = SourceFailure.unavailable;\n      rethrow;\n    } finally {\n      running = false;\n    }\n  }\n\n  Future<void> resolve({\n    required String profile, required PublicationSyncConfig config,\n    required String key, required SyncVersion selected,\n    required List<FileSource> sources, required Set<String> activeKeys,\n    required void Function() check,\n  }) async {\n    final cacheKey = _cacheKey(SyncCipher(config.code).namespace);\n    await repository.database.transaction(() async {\n      check();\n      final cache = _SyncCache(await repository.preference(profile, cacheKey));\n      final current = cache.document.records[key] ?? [];\n      if (!current.any((v) => canonicalSyncJson(v.toJson()) == canonicalSyncJson(selected.toJson()))) {\n        throw const SourceException(SourceFailure.conflict);\n      }\n      final device = (await repository.preference(profile, 'publication-sync-device-v1'))['id'] as String;\n      cache.document.edit(key, device, selected.value, joinedClock(current));\n      cache.observed.remove(key);\n      await _apply(profile, cache, _identities(sources, await repository.entries(profile)), activeKeys);\n      check();\n      await repository.savePreference(profile, cacheKey, cache.toJson());\n    });\n  }\n}\n"
+    },
+    {
+      "path": "lib/sources/listening_tools.dart",
+      "content": "/// Parse source time; long books may exceed 24 hours. Invalid input never\n/// silently turns into a seek to the beginning.\nint? parseListeningTime(String input) {\n  final parts = input.trim().split(':');\n  if (parts.length < 2 || parts.length > 3 ||\n      parts.any((p) => !RegExp(r'^\\d{1,5}$').hasMatch(p))) return null;\n  final values = parts.map(int.parse).toList();\n  if (values.last >= 60 || parts.length == 3 && values[1] >= 60) return null;\n  final seconds = parts.length == 3\n      ? values[0] * 3600 + values[1] * 60 + values[2]\n      : values[0] * 60 + values[1];\n  return seconds * 1000;\n}\n"
+    },
+    {
+      "path": "lib/sources/publication_library.dart",
+      "content": "import 'source_models.dart';\nenum PublicationSort { title, author, narrator, series, recent }\nenum PublicationStatus { all, unstarted, inProgress, finished }\n\nList<SourceEntry> organizePublications(List<SourceEntry> entries, List<PublicationProgress> progress, {\n  PublicationSort sort = PublicationSort.title,\n  PublicationStatus status = PublicationStatus.all,\n  PublicationMode? mode,\n}) {\n  final latest = <String, PublicationProgress>{};\n  for (final p in progress) {\n    if (mode != null && p.mode != mode) continue;\n    if ((latest[p.entryKey]?.updatedAt ?? -1) < p.updatedAt) latest[p.entryKey] = p;\n  }\n  bool started(PublicationProgress? p) =>\n      p != null && (p.positionMs > 0 || p.fraction > 0 || p.locator != null);\n  final result = entries.where((e) {\n    if (e.isFolder) return true;\n    final p = latest[e.key];\n    return switch (status) {\n      PublicationStatus.all => true,\n      PublicationStatus.unstarted => p?.finished != true && !started(p),\n      PublicationStatus.inProgress => p?.finished != true && started(p),\n      PublicationStatus.finished => p?.finished == true,\n    };\n  }).toList();\n  int text(String a, String b) => a.toLowerCase().compareTo(b.toLowerCase());\n  result.sort((a, b) {\n    if (a.isFolder != b.isFolder) return a.isFolder ? -1 : 1;\n    final primary = switch (sort) {\n      PublicationSort.title => text(a.title, b.title),\n      PublicationSort.author => text(a.author, b.author),\n      PublicationSort.narrator => text(a.narrator, b.narrator),\n      PublicationSort.series => text(a.series, b.series) != 0\n          ? text(a.series, b.series)\n          : (a.seriesOrder ?? double.infinity).compareTo(b.seriesOrder ?? double.infinity),\n      PublicationSort.recent => (latest[b.key]?.updatedAt ?? 0).compareTo(latest[a.key]?.updatedAt ?? 0),\n    };\n    if (primary != 0) return primary;\n    final title = text(a.title, b.title);\n    return title != 0 ? title : a.key.compareTo(b.key);\n  });\n  return result;\n}\n"
+    },
+    {
+      "path": "lib/screens/sources/source_sync_screen.dart",
+      "content": "import 'package:flutter/material.dart';\nimport 'package:material_symbols_icons/symbols.dart';\nimport 'package:provider/provider.dart';\nimport '../../i18n/strings.g.dart';\nimport '../../sources/source_controller.dart';\nimport '../../sources/source_models.dart';\nimport '../../sources/sync/publication_sync.dart';\nimport '../../sources/sync/sync_document.dart';\nimport '../../sources/sync/sync_store.dart';\nimport '../../widgets/app_icon.dart';\nimport '../../widgets/focused_scroll_scaffold.dart';\nimport 'source_widgets.dart';\n\nclass SourceSyncScreen extends StatefulWidget {\n  const SourceSyncScreen({super.key});\n  @override\n  State<SourceSyncScreen> createState() => _SourceSyncScreenState();\n}\nclass _SourceSyncScreenState extends State<SourceSyncScreen> {\n  final _code = TextEditingController(), _folder = TextEditingController();\n  String? _source;\n  bool _busy = false, _reveal = false, _loaded = false;\n  Object? _error;\n  @override\n  void didChangeDependencies() {\n    super.didChangeDependencies();\n    if (_loaded) return;\n    _loaded = true;\n    final config = context.read<SourceController>().syncConfig;\n    _source = config?.sourceId;\n    _code.text = config?.code ?? '';\n    _folder.text = config?.folder ?? '.plezyng-sync';\n  }\n  @override\n  void dispose() {\n    _code.dispose();\n    _folder.dispose();\n    super.dispose();\n  }\n  Future<void> _action(Future<void> Function() action) async {\n    setState(() { _busy = true; _error = null; });\n    try {\n      await action();\n    } catch (e) {\n      if (mounted) setState(() => _error = e);\n    } finally {\n      if (mounted) setState(() => _busy = false);\n    }\n  }\n  String _choice(SyncVersion version) {\n    final data = sourceMap(version.value['data']);\n    if (version.value['type'] == 'annotation') {\n      return data['deleted'] == true\n          ? t.audiobook.deletedBookmark\n          : '${data['note'] ?? ''} ${data['quote'] ?? ''}'.trim();\n    }\n    if (data['finished'] == true) return t.audiobook.finished;\n    if (data['mode'] == 'reading') {\n      return t.audiobook.readingPosition(percent: ((data['fraction'] as num? ?? 0) * 100).round());\n    }\n    return sourceTime(sourceInt(data['positionMs']) ?? 0);\n  }\n  @override\n  Widget build(BuildContext context) {\n    final controller = context.watch<SourceController>();\n    final sources = controller.sources.where((s) => ProviderSyncStore.supports(s.kind)).toList();\n    final selected = sources.where((s) => s.id == _source).firstOrNull;\n    final configured = controller.syncConfig != null;\n    final sync = controller.cloudSync;\n    return FocusedScrollScaffold(\n      title: Text(t.audiobook.syncTitle),\n      slivers: [SliverToBoxAdapter(child: Center(child: ConstrainedBox(\n        constraints: const BoxConstraints(maxWidth: 720),\n        child: Padding(padding: const EdgeInsets.all(24), child: Column(\n          crossAxisAlignment: CrossAxisAlignment.stretch,\n          children: [\n            Text(t.audiobook.syncHelp),\n            const SizedBox(height: 24),\n            if (sources.isEmpty) Text(t.audiobook.addSyncSource)\n            else DropdownButtonFormField<String>(\n              isExpanded: true, initialValue: selected?.id,\n              decoration: InputDecoration(labelText: t.audiobook.syncDestination),\n              items: [for (final s in sources) DropdownMenuItem(value: s.id,\n                child: Text('${s.name} · ${sourceKindName(s.kind)}', overflow: TextOverflow.ellipsis))],\n              onChanged: _busy ? null : (v) => setState(() => _source = v),\n            ),\n            if (selected?.kind == FileSourceKind.webdav || selected?.kind == FileSourceKind.s3) ...[\n              const SizedBox(height: 16),\n              TextField(controller: _folder, enabled: !_busy, autocorrect: false,\n                decoration: InputDecoration(labelText: t.audiobook.syncFolder,\n                  helperText: t.audiobook.syncFolderHelp, helperMaxLines: 3)),\n            ],\n            const SizedBox(height: 16),\n            TextField(controller: _code, enabled: !_busy, obscureText: !_reveal,\n              autocorrect: false, enableSuggestions: false,\n              decoration: InputDecoration(labelText: t.audiobook.syncCode,\n                helperText: t.audiobook.syncCodeHelp, helperMaxLines: 4,\n                suffixIcon: IconButton(tooltip: t.audiobook.showCode,\n                  onPressed: () => setState(() => _reveal = !_reveal),\n                  icon: AppIcon(_reveal ? Symbols.visibility_off_rounded : Symbols.visibility_rounded)))),\n            if (!configured) Align(alignment: AlignmentDirectional.centerStart,\n              child: TextButton.icon(\n                onPressed: _busy ? null : () => setState(() {\n                  _code.text = SyncCipher.newCode(); _reveal = true;\n                }),\n                icon: const AppIcon(Symbols.add_rounded), label: Text(t.audiobook.newSyncCode))),\n            const SizedBox(height: 16),\n            FilledButton(\n              onPressed: _busy || selected == null ? null : () => _action(\n                () => controller.configureCloudSync(PublicationSyncConfig(\n                  sourceId: selected.id, code: _code.text.trim(), folder: _folder.text.trim()))),\n              child: Text(t.audiobook.saveSync)),\n            if (configured) ...[\n              const SizedBox(height: 12),\n              OutlinedButton.icon(onPressed: _busy ? null : () => _action(controller.sync),\n                icon: const AppIcon(Symbols.sync_rounded), label: Text(t.fileSources.sync)),\n              TextButton(onPressed: _busy ? null : () => _action(\n                () => controller.configureCloudSync(null)), child: Text(t.audiobook.disableSync)),\n            ],\n            if (_busy || sync.running) const LinearProgressIndicator(),\n            if (_error != null || sync.failure != null) Padding(\n              padding: const EdgeInsets.symmetric(vertical: 16),\n              child: Text(sourceFailureText(_error ?? SourceException(sync.failure!)))),\n            if (sync.lastSuccess != null) Padding(\n              padding: const EdgeInsets.symmetric(vertical: 8),\n              child: Text(t.audiobook.lastSynced(time: MaterialLocalizations.of(context)\n                .formatTimeOfDay(TimeOfDay.fromDateTime(sync.lastSuccess!.toLocal()))))),\n            Text(t.audiobook.syncPrivacy, style: Theme.of(context).textTheme.bodySmall),\n            if (sync.conflicts.isNotEmpty) ...[\n              const SizedBox(height: 32),\n              Text(t.audiobook.syncConflicts, style: Theme.of(context).textTheme.titleLarge),\n              const SizedBox(height: 8),\n              Text(t.audiobook.conflictHelp),\n              for (final conflict in sync.conflicts.values) Padding(\n                padding: const EdgeInsets.symmetric(vertical: 16),\n                child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: [\n                  Text(conflict.entry.title, style: Theme.of(context).textTheme.titleMedium),\n                  for (final version in conflict.values) OutlinedButton(\n                    onPressed: _busy ? null : () => _action(() async {\n                      await controller.stopPlayback?.call();\n                      await controller.resolveCloudConflict(conflict.key, version);\n                    }),\n                    child: Text(_choice(version).isEmpty ? t.fileSources.bookmark : _choice(version),\n                      maxLines: 4, overflow: TextOverflow.ellipsis)),\n                ])),\n            ],\n          ],\n        )),\n      )))],\n    );\n  }\n}\n"
+    },
+    {
+      "path": "test/sources/sync/sync_document_test.dart",
+      "content": "import 'package:flutter_test/flutter_test.dart';\nimport 'package:plezy/sources/source_models.dart';\nimport 'package:plezy/sources/sync/sync_document.dart';\nimport 'package:plezy/sources/sync/sync_store.dart';\n\nvoid main() {\n  final a = 'a' * 32, b = 'b' * 32, key = 'f' * 64;\n  test('merge commutes and repeats safely; reset beats observed progress', () {\n    final one = SyncDocument()..edit(key, a, {'position': 100}, {});\n    final two = SyncDocument.fromJson(one.toJson());\n    two.edit(key, b, {'position': 0}, joinedClock(two.records[key]!));\n    final left = SyncDocument()..merge(one)..merge(two)..merge(one);\n    final right = SyncDocument()..merge(two)..merge(one)..merge(two);\n    expect(canonicalSyncJson(left.toJson()), canonicalSyncJson(right.toJson()));\n    expect(left.records[key]!.single.value['position'], 0);\n    expect(left.conflicted(key), isFalse);\n  });\n  test('independent offline edits retained until an explicit choice', () {\n    final one = SyncDocument()..edit(key, a, {'position': 100}, {});\n    final two = SyncDocument()..edit(key, b, {'position': 20}, {});\n    one.merge(two);\n    expect(one.conflicted(key), isTrue);\n    one.edit(key, a, {'position': 20}, joinedClock(one.records[key]!));\n    two.merge(one);\n    expect(two.records[key]!.single.value['position'], 20);\n    expect(two.conflicted(key), isFalse);\n  });\n  test('deferred remote data is not an ancestor of local edits', () {\n    final doc = SyncDocument();\n    final basis = doc.edit(key, a, {'position': 100}, {}).clock;\n    final remote = SyncDocument.fromJson(doc.toJson());\n    remote.edit(key, b, {'position': 200}, joinedClock(remote.records[key]!));\n    doc.merge(remote);\n    doc.edit(key, a, {'position': 110}, basis);\n    expect(doc.conflicted(key), isTrue);\n  });\n  test('equal vector with different data is corruption', () {\n    final doc = SyncDocument()..edit(key, a, {'position': 1}, {});\n    expect(() => doc.merge(SyncDocument({\n      key: [SyncVersion({a: 1}, {'position': 2})],\n    })), throwsA(isA<SourceException>()));\n  });\n  test('encryption requires the correct key and authenticated filename', () async {\n    final cipher = SyncCipher(SyncCipher.newCode());\n    final doc = SyncDocument()..edit(key, a, {'note': 'private annotation'}, {});\n    final name = SyncFile.filename(cipher.namespace, a, 1);\n    final encrypted = await cipher.seal(doc, name);\n    expect(encrypted, isNot(contains('private annotation')));\n    expect(canonicalSyncJson((await cipher.open(encrypted, name)).toJson()),\n      canonicalSyncJson(doc.toJson()));\n    await expectLater(cipher.open(encrypted, '$name.changed'), throwsA(isA<SourceException>()));\n    await expectLater(SyncCipher(SyncCipher.newCode()).open(encrypted, name),\n      throwsA(isA<SourceException>()));\n    await expectLater(cipher.open('{}', name), throwsA(isA<SourceException>()));\n  });\n  test('invalid keys, schemas, record IDs and clocks are rejected', () {\n    expect(() => SyncCipher('password'), throwsA(isA<SourceException>()));\n    expect(() => SyncDocument.fromJson({'version': 2, 'records': {}}),\n      throwsA(isA<SourceException>()));\n    expect(() => SyncDocument.fromJson({'version': 1, 'records': {'../escape': []}}),\n      throwsA(isA<SourceException>()));\n    expect(() => SyncVersion.fromJson({'clock': {a: -1}, 'value': {}}),\n      throwsA(isA<SourceException>()));\n  });\n}\n"
+    },
+    {
+      "path": "test/sources/sync/publication_sync_test.dart",
+      "content": "import 'dart:convert';\nimport 'package:drift/native.dart';\nimport 'package:flutter_test/flutter_test.dart';\nimport 'package:plezy/sources/source_database.dart';\nimport 'package:plezy/sources/source_models.dart';\nimport 'package:plezy/sources/sync/publication_sync.dart';\nimport 'package:plezy/sources/sync/sync_document.dart';\nimport 'package:plezy/sources/sync/sync_store.dart';\n\nclass MemorySyncStore implements SyncStore {\n  final files = <String, String>{};\n  bool offline = false;\n  Future<void> Function()? onRead;\n  @override\n  Future<List<SyncFile>> list(String namespace) async {\n    if (offline) throw const SourceException(SourceFailure.unavailable);\n    return files.keys.where((n) => n.contains(namespace)).map((n) => SyncFile(n, n)).toList();\n  }\n  @override\n  Future<String> read(SyncFile file) async {\n    await onRead?.call();\n    return files[file.id]!;\n  }\n  @override\n  Future<void> create(String name, String text) async {\n    if (offline) throw const SourceException(SourceFailure.unavailable);\n    files[name] = text;\n  }\n  @override\n  Future<void> delete(SyncFile file) async { files.remove(file.id); }\n}\n\nvoid main() {\n  const audio = PublicationFile(id: 'audio-id', name: 'book.m4b', mimeType: 'audio/mp4',\n    size: 500000, revision: 'v1', durationMs: 300000);\n  const ebook = PublicationFile(id: 'epub-id', name: 'book.epub',\n    mimeType: 'application/epub+zip', size: 1000, revision: 'v1');\n  final edition = sourceDigest(jsonEncode([audio.fingerprint]));\n  late SourceRepository repoA, repoB;\n  late PublicationSync a, b;\n  late MemorySyncStore store;\n  late PublicationSyncConfig config;\n  const sourceA = FileSource(id: 'connection-A', profileId: 'profile-A',\n    kind: FileSourceKind.googleDrive, name: 'Books');\n  const sourceB = FileSource(id: 'connection-B', profileId: 'profile-B',\n    kind: FileSourceKind.googleDrive, name: 'My Drive');\n  const entryA = SourceEntry(sourceId: 'connection-A', id: 'same-provider-book',\n    title: 'Book', kind: SourceItemKind.audiobook, files: [audio, ebook]);\n  const entryB = SourceEntry(sourceId: 'connection-B', id: 'same-provider-book',\n    title: 'Book', kind: SourceItemKind.audiobook, files: [audio, ebook]);\n  String localKey(SourceEntry entry) => PublicationProgress(entryKey: entry.key,\n    edition: edition, mode: PublicationMode.listening, session: '').key;\n  Future<void> position(SourceRepository repo, String profile, SourceEntry entry, int ms,\n    {bool finished = false}) async {\n    final old = await repo.progress(profile, localKey(entry));\n    await repo.saveProgress(profile, PublicationProgress(\n      entryKey: entry.key, edition: edition, mode: PublicationMode.listening,\n      session: 'session', revision: old?.revision ?? 0, positionMs: ms,\n      filePositionMs: ms, fraction: ms / 300000, finished: finished));\n  }\n  Future<int?> at(SourceRepository repo, String profile, SourceEntry entry) async =>\n      (await repo.progress(profile, localKey(entry)))?.positionMs;\n  Future<void> runA({Set<String> active = const {}, void Function()? check}) => a.run(\n    profile: 'profile-A', sources: [sourceA], config: config, store: store,\n    activeKeys: active, check: check ?? () {});\n  Future<void> runB() => b.run(profile: 'profile-B', sources: [sourceB],\n    config: config, store: store, activeKeys: {}, check: () {});\n  setUp(() async {\n    SourceRepository repo() => SourceRepository(SourceDatabase(NativeDatabase.memory()),\n      protect: (s) async => s, reveal: (s) async => s);\n    repoA = repo(); repoB = repo();\n    a = PublicationSync(repoA); b = PublicationSync(repoB);\n    store = MemorySyncStore();\n    config = PublicationSyncConfig(sourceId: sourceA.id, code: SyncCipher.newCode());\n    await repoA.cacheEntries('profile-A', [entryA]);\n    await repoB.cacheEntries('profile-B', [entryB]);\n  });\n  tearDown(() async {\n    await repoA.database.close();\n    await repoB.database.close();\n  });\n  test('different local profile and connection IDs resume the same provider edition', () async {\n    await position(repoA, 'profile-A', entryA, 60000);\n    await runA(); await runB();\n    expect(await at(repoB, 'profile-B', entryB), 60000);\n    expect(await repoB.allProgress('profile-A'), isEmpty);\n    expect(store.files.values.join(), isNot(contains('same-provider-book')));\n  });\n  test('fresh device imports without manufacturing a competing zero position', () async {\n    await position(repoA, 'profile-A', entryA, 100000);\n    await runA(); await runB(); await runA();\n    expect(a.conflicts, isEmpty); expect(b.conflicts, isEmpty);\n  });\n  test('explicit rewind propagates instead of taking furthest progress', () async {\n    await position(repoA, 'profile-A', entryA, 200000);\n    await runA(); await runB();\n    await position(repoB, 'profile-B', entryB, 0);\n    await runB(); await runA();\n    expect(await at(repoA, 'profile-A', entryA), 0);\n    expect(a.conflicts, isEmpty);\n  });\n  test('offline divergent positions require choice and then converge', () async {\n    await position(repoA, 'profile-A', entryA, 100000);\n    await runA(); await runB();\n    await position(repoA, 'profile-A', entryA, 200000);\n    await position(repoB, 'profile-B', entryB, 150000);\n    await runA(); await runB(); await runA();\n    expect(a.conflicts.length, 1); expect(b.conflicts.length, 1);\n    final conflict = b.conflicts.values.single;\n    final chosen = conflict.values.firstWhere(\n      (v) => sourceMap(v.value['data'])['positionMs'] == 150000);\n    await b.resolve(profile: 'profile-B', config: config, key: conflict.key,\n      selected: chosen, sources: [sourceB], activeKeys: {}, check: () {});\n    await runB(); await runA();\n    expect(a.conflicts, isEmpty);\n    expect(await at(repoA, 'profile-A', entryA), 150000);\n  });\n  test('network failure retains local edits across service restart', () async {\n    await position(repoA, 'profile-A', entryA, 42000);\n    store.offline = true;\n    await expectLater(runA(), throwsA(isA<SourceException>()));\n    a = PublicationSync(repoA);\n    store.offline = false;\n    await runA(); await runB();\n    expect(await at(repoB, 'profile-B', entryB), 42000);\n  });\n  test('active player is not moved; continued local playback conflicts', () async {\n    await position(repoA, 'profile-A', entryA, 100000);\n    await runA(); await runB();\n    await position(repoB, 'profile-B', entryB, 200000);\n    await runB();\n    await runA(active: {localKey(entryA)});\n    expect(await at(repoA, 'profile-A', entryA), 100000);\n    await position(repoA, 'profile-A', entryA, 110000);\n    await runA();\n    expect(a.conflicts.length, 1);\n  });\n  test('remote progress applies after paused player releases cursor', () async {\n    await position(repoA, 'profile-A', entryA, 100000);\n    await runA(); await runB();\n    await position(repoB, 'profile-B', entryB, 200000);\n    await runB();\n    await runA(active: {localKey(entryA)});\n    await runA();\n    expect(await at(repoA, 'profile-A', entryA), 200000);\n  });\n  test('a tick arriving during pull is not overwritten', () async {\n    await position(repoA, 'profile-A', entryA, 100000);\n    await runA(); await runB();\n    await position(repoB, 'profile-B', entryB, 200000);\n    await runB();\n    store.onRead = () async {\n      store.onRead = null;\n      await position(repoA, 'profile-A', entryA, 80000);\n    };\n    await runA();\n    expect(a.conflicts.length, 1);\n    expect(await at(repoA, 'profile-A', entryA), 80000);\n  });\n  test('deleted bookmarks do not resurrect on an old device', () async {\n    BookAnnotation note(bool deleted) => BookAnnotation(\n      id: 'note-1', entryKey: entryA.key, edition: edition,\n      mode: PublicationMode.listening, positionMs: 10000,\n      note: 'Remember this', updatedAt: 1, deleted: deleted);\n    await repoA.saveAnnotation('profile-A', note(false));\n    await runA(); await runB();\n    expect((await repoB.annotations('profile-B', entryB.key)).single.note, 'Remember this');\n    await repoA.saveAnnotation('profile-A', note(true));\n    await runA(); await runB(); await runA();\n    expect(await repoB.annotations('profile-B', entryB.key), isEmpty);\n    expect(a.conflicts, isEmpty);\n  });\n  test('ebook and listening positions coexist without percent-to-time conversion', () async {\n    await position(repoA, 'profile-A', entryA, 60000);\n    await repoA.saveProgress('profile-A', PublicationProgress(\n      entryKey: entryA.key, edition: ebook.fingerprint, mode: PublicationMode.reading,\n      session: 'read', locator: const ReadingLocator(\n        href: 'chapter.xhtml', cfi: 'epubcfi(/6/2)', progression: .5), fraction: .5));\n    await runA(); await runB();\n    final rows = await repoB.allProgress('profile-B');\n    expect(rows.length, 2);\n    expect(rows.firstWhere((p) => p.mode == PublicationMode.reading).locator!.cfi, 'epubcfi(/6/2)');\n    expect(await at(repoB, 'profile-B', entryB), 60000);\n  });\n  test('replaced media edition is not assigned the prior offset', () async {\n    await position(repoA, 'profile-A', entryA, 60000); await runA();\n    await repoB.cacheEntries('profile-B', [const SourceEntry(\n      sourceId: 'connection-B', id: 'same-provider-book', title: 'Book',\n      kind: SourceItemKind.audiobook, files: [\n        PublicationFile(id: 'audio-id', name: 'book.m4b',\n          mimeType: 'audio/mp4', size: 500000, revision: 'v2'),\n      ])]);\n    await runB();\n    expect(await repoB.allProgress('profile-B'), isEmpty);\n  });\n  test('retention prunes only own generations and keeps a recovery copy', () async {\n    for (var i = 1; i <= 6; i++) {\n      await position(repoA, 'profile-A', entryA, i * 1000); await runA();\n    }\n    expect(store.files.length, 2);\n    await runB();\n    final otherFiles = store.files.keys.toSet();\n    await position(repoA, 'profile-A', entryA, 8000); await runA();\n    expect(store.files.keys.any(otherFiles.contains), isTrue);\n    expect(store.files.length, 3);\n  });\n  test('corrupt generation prevents publication over unknown state', () async {\n    await position(repoA, 'profile-A', entryA, 1000); await runA();\n    final name = store.files.keys.single;\n    store.files[name] = '{}';\n    final before = store.files.length;\n    await expectLater(runB(), throwsA(isA<SourceException>()));\n    expect(store.files.length, before);\n    expect(await repoB.allProgress('profile-B'), isEmpty);\n  });\n  test('profile retirement during pull cannot import or publish', () async {\n    await position(repoB, 'profile-B', entryB, 5000); await runB();\n    var valid = true;\n    store.onRead = () async { valid = false; };\n    await expectLater(runA(check: () {\n      if (!valid) throw const SourceException(SourceFailure.cancelled);\n    }), throwsA(isA<SourceException>()));\n    expect(await repoA.allProgress('profile-A'), isEmpty);\n    expect(store.files.length, 1);\n  });\n}\n"
+    }
+  ],
+  "edits": [
+    {
+      "path": "lib/sources/source_controller.dart",
+      "before": "import 'publication_shelf.dart';",
+      "after": "import 'publication_shelf.dart';\nimport 'sync/publication_sync.dart';\nimport 'sync/sync_store.dart';\nimport 'sync/sync_document.dart';",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_controller.dart",
+      "before": "  late SourceRepository repository;",
+      "after": "  late SourceRepository repository;\n  late PublicationSync cloudSync;\n  PublicationSyncConfig? syncConfig;\n  final Set<String> activeProgressKeys = {};\n  void holdProgress(String key) => activeProgressKeys.add(key);\n  void releaseProgress(String key) => activeProgressKeys.remove(key);\n  bool cloudConflict(String key) => cloudSync.conflicts.values.any((c) => c.values.any((v) {\n    final d = sourceMap(v.value['data']);\n    return v.value['type'] == 'progress' &&\n      PublicationProgress(entryKey: c.entry.key, edition: d['edition'] as String,\n        mode: PublicationMode.values.byName(d['mode'] as String), session: '').key == key;\n  }));",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_controller.dart",
+      "before": "    oauth = SourceOAuthService(repository);",
+      "after": "    cloudSync = PublicationSync(repository);\n    oauth = SourceOAuthService(repository);",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_controller.dart",
+      "before": "    generation++;\n    sources = const [];",
+      "after": "    generation++;\n    activeProgressKeys.clear();\n    syncConfig = null;\n    sources = const [];",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_controller.dart",
+      "before": "              sources = await repository.sources(id);",
+      "after": "              sources = await repository.sources(id);\n              final config = await cloudSync.config(id);\n              if (!current(epoch)) return;\n              cloudSync.resetStatus();\n              syncConfig = config;",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_controller.dart",
+      "before": "    var local = await repository.progress(profile, initial.key);",
+      "after": "    if (syncConfig != null) {\n      try { await sync(); } on SourceException catch (e) {\n        if (e.reason == SourceFailure.cancelled || e.reason == SourceFailure.invalidData) rethrow;\n      } catch (_) { /* Durable local state remains usable offline. */ }\n      requireSession(epoch);\n    }\n    var local = await repository.progress(profile, initial.key);",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_controller.dart",
+      "before": "      if (provider.supportsProgress(entry, initial)) {",
+      "after": "      if (syncConfig == null && provider.supportsProgress(entry, initial)) {",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_controller.dart",
+      "before": "    final entries = await repository.entries(profile);\n    final events = await repository.pendingEvents(profile);",
+      "after": "    if (syncConfig != null) {\n      final config = syncConfig!;\n      final source = sources.where((s) => s.id == config.sourceId).firstOrNull;\n      if (source == null) throw const SourceException(SourceFailure.authentication);\n      try {\n        await cloudSync.run(profile: profile, sources: List.of(sources), config: config,\n          store: ProviderSyncStore(adapter(source.id), folder: config.folder,\n            check: () => requireSession(epoch)),\n          activeKeys: activeProgressKeys, check: () => requireSession(epoch));\n      } finally { if (current(epoch)) _notify(); }\n      return;\n    }\n    final entries = await repository.entries(profile);\n    final events = await repository.pendingEvents(profile);",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_controller.dart",
+      "before": "  @override\n  void dispose() {",
+      "after": "  Future<void> configureCloudSync(PublicationSyncConfig? config) async {\n    await ready;\n    requireSession();\n    final epoch = generation, profile = profileId!;\n    if (config != null) {\n      final source = sources.firstWhere((s) => s.id == config.sourceId);\n      if (!ProviderSyncStore.supports(source.kind)) throw const SourceException(SourceFailure.unsupported);\n      if (source.options['syncWrites'] != 'true' &&\n          const {FileSourceKind.googleDrive, FileSourceKind.oneDrive, FileSourceKind.dropbox}.contains(source.kind)) {\n        final writable = FileSource(id: source.id, profileId: profile, kind: source.kind,\n          name: source.name, endpoint: source.endpoint, root: source.root,\n          options: {...source.options, 'syncWrites': 'true'});\n        final previous = await repository.credentials(source);\n        final credentials = await oauth.authorize(writable, clientSecret: previous['clientSecret']);\n        requireSession(epoch);\n        await add(writable, credentials);\n        await reconnect(source.id);\n      }\n    }\n    requireSession(epoch);\n    await _syncQueue;\n    requireSession(epoch);\n    await cloudSync.configure(profile, config);\n    syncConfig = config;\n    _notify();\n    if (config != null) await sync();\n  }\n\n  Future<void> resolveCloudConflict(String key, SyncVersion selected) {\n    final operation = _syncQueue.then((_) async {\n      requireSession();\n      final epoch = generation, profile = profileId!, config = syncConfig;\n      if (config == null) throw const SourceException(SourceFailure.cancelled);\n      await cloudSync.resolve(profile: profile, config: config, key: key, selected: selected,\n        sources: List.of(sources), activeKeys: activeProgressKeys, check: () => requireSession(epoch));\n      requireSession(epoch);\n      _notify();\n    });\n    _syncQueue = operation.catchError((Object _) {});\n    return operation.then((_) => sync());\n  }\n\n  @override\n  void dispose() {",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_oauth.dart",
+      "before": "scopes: const ['https://www.googleapis.com/auth/drive.readonly'],",
+      "after": "scopes: ['https://www.googleapis.com/auth/drive.readonly', if (source.options['syncWrites'] == 'true') 'https://www.googleapis.com/auth/drive.appdata'],",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_oauth.dart",
+      "before": "scopes: const ['Files.Read', 'offline_access'],",
+      "after": "scopes: ['Files.Read', 'offline_access', if (source.options['syncWrites'] == 'true') 'Files.ReadWrite.AppFolder'],",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_oauth.dart",
+      "before": "scopes: const ['files.metadata.read', 'files.content.read'],",
+      "after": "scopes: ['files.metadata.read', 'files.content.read', if (source.options['syncWrites'] == 'true') 'files.content.write'],",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_oauth.dart",
+      "before": "  static const _driveScopes = ['https://www.googleapis.com/auth/drive.readonly'];\n",
+      "after": "",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_oauth.dart",
+      "before": "scopeHint: _driveScopes",
+      "after": "scopeHint: SourceOAuthConfig.forSource(source).scopes",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_oauth.dart",
+      "before": "authorizeScopes(_driveScopes)",
+      "after": "authorizeScopes(SourceOAuthConfig.forSource(source).scopes)",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_oauth.dart",
+      "before": "authorizationForScopes(_driveScopes)",
+      "after": "authorizationForScopes(SourceOAuthConfig.forSource(source).scopes)",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/adapters/s3_source.dart",
+      "before": "    int expires = 900,",
+      "after": "    int expires = 900,\n    String method = 'GET',",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/adapters/s3_source.dart",
+      "before": "final canonical = 'GET\\n$path",
+      "after": "final canonical = '$method\\n$path",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/add_source_screen.dart",
+      "before": "        options: {\n          'allowHttp'",
+      "after": "        options: {\n          ...?widget.existing?.options,\n          'allowHttp'",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/publication_reader_screen.dart",
+      "before": "      _progress = await sources.openProgress(widget.entry, initial);",
+      "after": "      _progress = await sources.openProgress(widget.entry, initial);\n      if (sources.cloudConflict(initial.key)) throw const SourceException(SourceFailure.conflict);\n      sources.holdProgress(initial.key);",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/publication_reader_screen.dart",
+      "before": "  void dispose() {",
+      "after": "  void dispose() {\n    final syncSources = _sources, syncKey = _progress?.key;\n    if (syncSources != null && syncKey != null) {\n      unawaited(_flush().whenComplete(() {\n        syncSources.releaseProgress(syncKey);\n        syncSources.scheduleSync();\n      }));\n    }",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/publication_reader_screen.dart",
+      "before": "    _saveTimer?.cancel();\n    unawaited(_flush());\n    unawaited(_stopSpeech());",
+      "after": "    _saveTimer?.cancel();\n    unawaited(_stopSpeech());",
+      "count": 1
+    },
+    {
+      "path": "test/sources/fixtures/memory_sources.dart",
+      "before": "  void scheduleSync() {}",
+      "after": "  void scheduleSync() {}\n  @override\n  void holdProgress(String key) {}\n  @override\n  void releaseProgress(String key) {}\n  @override\n  bool cloudConflict(String key) => false;",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/sources_screen.dart",
+      "before": "import 'source_navigation.dart';",
+      "after": "import 'source_navigation.dart';\nimport 'source_sync_screen.dart';",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/sources_screen.dart",
+      "before": "      actions: [\n        if (root)",
+      "after": "      actions: [\n        if (widget.source == null)\n          IconButton(tooltip: t.audiobook.syncTitle,\n            icon: const AppIcon(Symbols.cloud_sync_rounded),\n            onPressed: () async {\n              await Navigator.push(context, MaterialPageRoute(builder: (_) => const SourceSyncScreen()));\n              if (mounted) await _load();\n            }),\n        if (root)",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/source_detail_screen.dart",
+      "before": "import 'source_widgets.dart';",
+      "after": "import 'source_widgets.dart';\nimport 'source_sync_screen.dart';",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/source_detail_screen.dart",
+      "before": "      actions: [",
+      "after": "      actions: [\n        IconButton(tooltip: t.audiobook.syncTitle, icon: const AppIcon(Symbols.cloud_sync_rounded),\n          onPressed: () async {\n            await Navigator.push(context, MaterialPageRoute(builder: (_) => const SourceSyncScreen()));\n            if (mounted) await _load();\n          }),",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_playback.dart",
+      "before": "  int? _sleepAtMs;",
+      "after": "  int? _sleepAtMs;\n  int? _sleepUntilFile;\n  int? _sleepBoundaryFile;\n  ({int file, int position})? _undoSeek;\n  bool chapterTimeline = false;",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_playback.dart",
+      "before": "  bool get active =>",
+      "after": "  bool get canUndoSeek => _undoSeek != null;\n  int get currentFilePositionMs => player?.currentPosition.inMilliseconds ?? 0;\n  int get currentFileDurationMs => _durations[_fileIndex] ?? player?.state.duration.inMilliseconds ?? 0;\n  int get timelineStartMs => chapterTimeline && currentChapter != null\n      ? currentChapter!.startMs : hasCompleteTimeline ? 0 : _offset;\n  int get timelineEndMs => chapterTimeline && (currentChapter?.endMs ?? 0) > timelineStartMs\n      ? currentChapter!.endMs : hasCompleteTimeline ? durationMs : _offset + currentFileDurationMs;\n  int? get bookRemainingMs => hasCompleteTimeline\n      ? ((durationMs - positionMs).clamp(0, durationMs) / speed).round() : null;\n  int? get chapterRemainingMs => currentChapter != null && currentChapter!.endMs > positionMs\n      ? ((currentChapter!.endMs - positionMs) / speed).round() : null;\n  bool get active =>",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_playback.dart",
+      "before": "      if (await sources.repository.remoteConflict(_profile!, initial.key) != null)",
+      "after": "      if (sources.cloudConflict(initial.key) || await sources.repository.remoteConflict(_profile!, initial.key) != null)",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_playback.dart",
+      "before": "      if (progress!.finished) {",
+      "after": "      sources.holdProgress(initial.key);\n      _undoSeek = null;\n      if (progress!.finished) {",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_playback.dart",
+      "before": "      final settings = await sources.repository.preference(_profile!, 'playback:$edition');",
+      "after": "      final specific = await sources.repository.preference(_profile!, 'playback:$edition');\n      final settings = {...await sources.repository.preference(_profile!, 'playback-defaults'), ...specific};\n      chapterTimeline = settings['chapterTimeline'] == true;",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_playback.dart",
+      "before": "      // Unknown-duration multipart books persist",
+      "after": "      if (smartRewind && progress!.updatedAt > 0 && !progress!.finished) {\n        final away = DateTime.now().millisecondsSinceEpoch - progress!.updatedAt;\n        final rewind = away > 300000 ? 15000 : away > 30000 ? 5000 : 0;\n        if (hasCompleteTimeline) {\n          final target = math.max(0, progress!.positionMs - rewind);\n          _fileIndex = _indexAt(target);\n          localPosition = target - _offset;\n        } else { localPosition = math.max(0, localPosition - rewind); }\n      }\n      // Unknown-duration multipart books persist",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_playback.dart",
+      "before": "          if (_sleepAtMs != null && positionMs >= _sleepAtMs!) {\n            clearSleep();",
+      "after": "          if (_sleepAtMs != null && positionMs >= _sleepAtMs!) {\n            _sleepBoundaryFile = _fileIndex;\n            clearSleep();",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_playback.dart",
+      "before": "              if (_fileIndex + 1 < files.length) {",
+      "after": "              if (_sleepBoundaryFile == _fileIndex ||\n                  (_sleepAtMs != null && _offset + (_durations[_fileIndex] ?? 0) >= _sleepAtMs!) ||\n                  (_sleepUntilFile != null && _fileIndex >= _sleepUntilFile!)) {\n                _sleepBoundaryFile = _fileIndex;\n                clearSleep();\n                await native.pause();\n                _pausedAt = DateTime.now();\n                await _persist();\n                _notify();\n                return;\n              }\n              if (_fileIndex + 1 < files.length) {",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_playback.dart",
+      "before": "    if (!_valid || player == null || !automotivePlaybackAllowedNow()) return;\n    if (smartRewind",
+      "after": "    if (!_valid || player == null || !automotivePlaybackAllowedNow()) return;\n    if (!playing && progress != null && entry != null) {\n      final old = progress!;\n      sources.releaseProgress(old.key);\n      try {\n        final latest = await sources.openProgress(entry!, old);\n        if (!_valid) return;\n        if (sources.cloudConflict(old.key) ||\n            await sources.repository.remoteConflict(_profile!, old.key) != null) {\n          throw const SourceException(SourceFailure.conflict);\n        }\n        if (latest.revision != old.revision) {\n          progress = latest;\n          final index = latest.fileIndex.clamp(0, files.length - 1);\n          if (index != _fileIndex) {\n            await _openFile(index, latest.filePositionMs, play: false);\n          } else { await player!.seek(Duration(milliseconds: latest.filePositionMs)); }\n          await player!.setRate(latest.speed);\n        }\n      } finally { if (_valid) sources.holdProgress(old.key); }\n    }\n    if (_sleepBoundaryFile == _fileIndex &&\n        _completedEpoch == _fileEpoch && _fileIndex + 1 < files.length) {\n      await _openFile(_fileIndex + 1, 0, play: false);\n    }\n    _sleepBoundaryFile = null;\n    if (smartRewind",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_playback.dart",
+      "before": "    await _persist();\n    _notify();\n  });\n  Future<void> toggle()",
+      "after": "    await _persist();\n    sources.scheduleSync();\n    _notify();\n  });\n  Future<void> toggle()",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_playback.dart",
+      "before": "  Future<void> seek(int milliseconds) => _serialize(() => _seek(milliseconds));",
+      "after": "  Future<void> seek(int milliseconds) => _serialize(() async {\n    if (!_valid || player == null) return;\n    _undoSeek = (file: _fileIndex, position: currentFilePositionMs);\n    await _seek(milliseconds);\n  });\n  Future<void> undoSeek() => _serialize(() async {\n    final previous = _undoSeek;\n    if (!_valid || previous == null || player == null) return;\n    _undoSeek = null;\n    final shouldPlay = playing;\n    if (previous.file != _fileIndex) {\n      await _openFile(previous.file, previous.position, play: shouldPlay);\n    } else { await player!.seek(Duration(milliseconds: previous.position)); }\n    await _persist();\n    _notify();\n  });",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_playback.dart",
+      "before": "    if (!hasCompleteTimeline && chapters.length == files.length) {\n      await _serialize(() async {\n        await _persist();\n        await _openFile(index, 0);",
+      "after": "    if (!hasCompleteTimeline && chapters.length == files.length) {\n      await _serialize(() async {\n        _undoSeek = (file: _fileIndex, position: currentFilePositionMs);\n        final shouldPlay = playing;\n        await _persist();\n        await _openFile(index, 0, play: shouldPlay);",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_playback.dart",
+      "before": "  Future<void> nextChapter() async {\n    final next",
+      "after": "  Future<void> nextChapter() async {\n    if (!hasCompleteTimeline && chapters.length == files.length) {\n      if (_fileIndex + 1 < files.length) await seekChapter(_fileIndex + 1);\n      return;\n    }\n    final next",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_playback.dart",
+      "before": "  Future<void> previousChapter() async {\n    final previous",
+      "after": "  Future<void> previousChapter() async {\n    if (!hasCompleteTimeline && chapters.length == files.length) {\n      await seekChapter(currentFilePositionMs > 3000 ? _fileIndex : math.max(0, _fileIndex - 1));\n      return;\n    }\n    final previous",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_playback.dart",
+      "before": "  Future<void> savePreferences() async {",
+      "after": "  Future<void> savePreferences({bool asDefault = false}) async {",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_playback.dart",
+      "before": "    await sources.repository.savePreference(_profile!, 'playback:${progress!.edition}', {",
+      "after": "    final settings = <String, dynamic>{\n      'chapterTimeline': chapterTimeline,",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_playback.dart",
+      "before": "      'forwardSeconds': forwardSeconds,\n    });",
+      "after": "      'forwardSeconds': forwardSeconds,\n    };\n    await sources.repository.savePreference(_profile!, 'playback:${progress!.edition}', settings);\n    if (asDefault) await sources.repository.savePreference(_profile!, 'playback-defaults', settings);\n    await _controls?.setControlsEnabled(canPlayPause: true, canSeek: true,\n      canGoNext: true, canGoPrevious: true, canStop: true, canSkip: true,\n      canSetSpeed: true, preferSkipOverTrackButtons: true,\n      skipInterval: Duration(seconds: backwardSeconds));",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_playback.dart",
+      "before": "  void sleepFor(Duration duration) {\n    clearSleep();",
+      "after": "  void sleepFor(Duration duration) {\n    if (duration <= Duration.zero || duration > const Duration(hours: 24)) {\n      throw const SourceException(SourceFailure.invalidData);\n    }\n    clearSleep();",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_playback.dart",
+      "before": "  void sleepAfterChapter() {\n    clearSleep();\n    _sleepAtMs = currentChapter?.endMs ?? (_offset + (_durations[_fileIndex] ?? 0));",
+      "after": "  void extendSleep(Duration duration) {\n    final left = sleepDeadline?.difference(DateTime.now()) ?? Duration.zero;\n    sleepFor((left.isNegative ? Duration.zero : left) + duration);\n  }\n  void sleepAfterChapter({int count = 1}) {\n    if (count < 1 || count > 100) throw const SourceException(SourceFailure.invalidData);\n    clearSleep();\n    if (hasCompleteTimeline && chapters.isNotEmpty) {\n      final current = chapters.indexOf(currentChapter ?? chapters.first);\n      final index = (current + count - 1).clamp(0, chapters.length - 1);\n      _sleepAtMs = chapters[index].endMs > 0 ? chapters[index].endMs : durationMs;\n    } else {\n      _sleepUntilFile = (_fileIndex + count - 1).clamp(0, files.length - 1);\n    }",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_playback.dart",
+      "before": "  bool get sleepEnabled => _sleepTimer != null || _sleepAtMs != null;",
+      "after": "  bool get sleepEnabled => _sleepTimer != null || _sleepAtMs != null || _sleepUntilFile != null;",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_playback.dart",
+      "before": "    _sleepAtMs = null;\n    sleepDeadline",
+      "after": "    _sleepAtMs = null;\n    _sleepUntilFile = null;\n    sleepDeadline",
+      "count": 1
+    },
+    {
+      "path": "lib/sources/source_playback.dart",
+      "before": "    await _writes;\n    sources.scheduleSync();",
+      "after": "    await _writes;\n    if (progress != null) sources.releaseProgress(progress!.key);\n    _pausedAt = null;\n    _sleepBoundaryFile = null;\n    _undoSeek = null;\n    sources.scheduleSync();",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/source_player_screen.dart",
+      "before": "import '../../sources/source_playback.dart';",
+      "after": "import '../../sources/source_playback.dart';\nimport '../../sources/listening_tools.dart';",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/source_player_screen.dart",
+      "before": "        value: (_dragPosition ?? s.positionMs.toDouble()).clamp(0, s.durationMs > 0 ? s.durationMs.toDouble() : 1),\n        max: s.durationMs > 0 ? s.durationMs.toDouble() : 1,",
+      "after": "        value: (_dragPosition ?? s.positionMs.toDouble()).clamp(\n          s.timelineStartMs.toDouble(),\n          s.timelineEndMs > s.timelineStartMs ? s.timelineEndMs.toDouble() : s.timelineStartMs + 1.0),\n        min: s.timelineStartMs.toDouble(),\n        max: s.timelineEndMs > s.timelineStartMs ? s.timelineEndMs.toDouble() : s.timelineStartMs + 1.0,",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/source_player_screen.dart",
+      "before": "onChanged: s.durationMs > 0",
+      "after": "onChanged: s.timelineEndMs > s.timelineStartMs",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/source_player_screen.dart",
+      "before": "onChangeEnd: s.durationMs > 0",
+      "after": "onChangeEnd: s.timelineEndMs > s.timelineStartMs",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/source_player_screen.dart",
+      "before": "        child: Row(\n          mainAxisAlignment: MainAxisAlignment.spaceBetween,",
+      "after": "        child: Wrap(\n          alignment: WrapAlignment.spaceBetween,\n          spacing: 24,\n          runSpacing: 8,",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/source_player_screen.dart",
+      "before": "            Text(sourceTime(s.positionMs)),\n            Text(t.fileSources.remaining(time: sourceTime(((s.durationMs - s.positionMs) / s.speed).round()))),",
+      "after": "            Text(sourceTime(s.positionMs - s.timelineStartMs)),\n            if (s.chapterRemainingMs != null)\n              Text(t.audiobook.chapterRemaining(time: sourceTime(s.chapterRemainingMs!))),\n            if (s.bookRemainingMs != null)\n              Text(t.audiobook.bookRemaining(time: sourceTime(s.bookRemainingMs!)))\n            else Text(t.audiobook.unknownRemaining),",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/source_player_screen.dart",
+      "before": "      const SizedBox(height: 12),\n      Wrap(",
+      "after": "      if (!s.video && s.chapters.isNotEmpty) TextButton(\n        onPressed: () => sourceAction(context, () async {\n          s.chapterTimeline = !s.chapterTimeline;\n          await s.savePreferences();\n        }),\n        child: Text(s.chapterTimeline ? t.audiobook.chapterTimeline : t.audiobook.bookTimeline)),\n      if (s.sleepDeadline != null)\n        Text(t.audiobook.sleepRemaining(time: sourceTime(\n          s.sleepDeadline!.difference(DateTime.now()).inMilliseconds))),\n      const SizedBox(height: 12),\n      Wrap(",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/source_player_screen.dart",
+      "before": "              for (final rate in [.5, .75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0])",
+      "after": "              AppMenuItem(value: -1, label: t.audiobook.customSpeed),\n              for (final rate in [.5, .75, 1.0, 1.25, 1.5, 1.75, 2.0, 2.5, 3.0, 4.0])",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/source_player_screen.dart",
+      "before": "            onSelected: (rate) => sourceAction(context, () => s.setSpeed(rate)),",
+      "after": "            onSelected: (rate) => sourceAction(context, () async {\n              if (rate != -1) { await s.setSpeed(rate); return; }\n              final value = await _entryDialog(title: t.audiobook.customSpeed,\n                help: t.audiobook.speedHelp, initial: '${s.speed}',\n                valid: (v) => double.tryParse(v)?.isFinite == true &&\n                  double.parse(v) >= .25 && double.parse(v) <= 4);\n              if (value != null) await s.setSpeed(double.parse(value));\n            }),",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/source_player_screen.dart",
+      "before": "              AppMenuItem(value: -1, label: t.fileSources.endChapter),",
+      "after": "              AppMenuItem(value: -1, label: t.fileSources.endChapter),\n              for (final count in [2, 3, 5])\n                AppMenuItem(value: -count, label: t.audiobook.sleepChapters(count: count)),\n              AppMenuItem(value: -10, label: t.audiobook.customSleep),\n              if (s.sleepDeadline != null) AppMenuItem(value: -11, label: t.audiobook.extendSleep),",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/source_player_screen.dart",
+      "before": "            onSelected: (n) {\n              if (n == 0)",
+      "after": "            onSelected: (n) async {\n              if (n == -10) {\n                final value = await _entryDialog(title: t.audiobook.customSleep,\n                  help: t.audiobook.sleepMinutes, initial: '20',\n                  valid: (v) => int.tryParse(v) != null && int.parse(v) >= 1 && int.parse(v) <= 1440);\n                if (value != null) s.sleepFor(Duration(minutes: int.parse(value)));\n              } else if (n == -11) {\n                s.extendSleep(const Duration(minutes: 5));\n              } else if (n == 0)",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/source_player_screen.dart",
+      "before": "              } else if (n == -1) {\n                s.sleepAfterChapter();",
+      "after": "              } else if (n < 0) {\n                s.sleepAfterChapter(count: -n);",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/source_player_screen.dart",
+      "before": "          IconButton(\n            tooltip: t.fileSources.bookmark,",
+      "after": "          IconButton(tooltip: t.audiobook.undoSeek,\n            onPressed: s.canUndoSeek ? () => sourceAction(context, s.undoSeek) : null,\n            icon: const AppIcon(Symbols.undo_rounded)),\n          IconButton(tooltip: t.audiobook.goToTime, icon: const AppIcon(Symbols.schedule_rounded),\n            onPressed: () => sourceAction(context, () async {\n              final value = await _entryDialog(title: t.audiobook.goToTime,\n                help: t.audiobook.timeHelp,\n                initial: sourceTime(s.positionMs - (s.hasCompleteTimeline ? 0 : s.timelineStartMs)),\n                valid: (v) => parseListeningTime(v) != null);\n              if (value != null) await s.seek(parseListeningTime(value)! +\n                (s.hasCompleteTimeline ? 0 : s.positionMs - s.currentFilePositionMs));\n            })),\n          IconButton(\n            tooltip: t.fileSources.bookmark,",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/source_player_screen.dart",
+      "before": "  @override\n  Widget build(BuildContext context) {",
+      "after": "  Future<String?> _entryDialog({\n    required String title, required String help, required String initial,\n    required bool Function(String) valid,\n  }) async {\n    final input = TextEditingController(text: initial);\n    final form = GlobalKey<FormState>();\n    try {\n      return await showDialog<String>(context: context, builder: (dialogContext) => AlertDialog(\n        title: Text(title),\n        content: Form(key: form, child: TextFormField(\n          controller: input, autofocus: true, autocorrect: false,\n          decoration: InputDecoration(helperText: help, helperMaxLines: 3),\n          validator: (v) => valid(v?.trim() ?? '') ? null : help,\n          onFieldSubmitted: (_) {\n            if (form.currentState!.validate()) Navigator.pop(dialogContext, input.text.trim());\n          })),\n        actions: [\n          TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),\n          FilledButton(onPressed: () {\n            if (form.currentState!.validate()) Navigator.pop(dialogContext, input.text.trim());\n          }, child: Text(t.audiobook.apply)),\n        ],\n      ));\n    } finally { input.dispose(); }\n  }\n\n  @override\n  Widget build(BuildContext context) {",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/source_player_screen.dart",
+      "before": "                for (final forward in [false, true])",
+      "after": "                TextButton(onPressed: () => sourceAction(context,\n                  () => s.savePreferences(asDefault: true)), child: Text(t.audiobook.useDefaults)),\n                for (final forward in [false, true])",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/sources_screen.dart",
+      "before": "import '../../sources/source_models.dart';",
+      "after": "import '../../sources/source_models.dart';\nimport '../../sources/publication_library.dart';",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/sources_screen.dart",
+      "before": "  int _request = 0;",
+      "after": "  int _request = 0;\n  PublicationSort _sort = PublicationSort.title;\n  PublicationStatus _status = PublicationStatus.all;\n  String? _preferenceProfile;\n  String get _browsePreference => 'publication-browse:${widget.source?.id ?? widget.shelf?.name ?? 'all'}';\n  Future<void> _saveBrowsePreference() async {\n    final sources = context.read<SourceController>();\n    await sourceAction(context, () async {\n      sources.requireSession();\n      await sources.repository.savePreference(sources.profileId!, _browsePreference,\n        {'sort': _sort.name, 'status': _status.name});\n    });\n  }",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/sources_screen.dart",
+      "before": "      List<SourceEntry> items;",
+      "after": "      if (_preferenceProfile != profile) {\n        final prefs = await controller.repository.preference(profile, _browsePreference);\n        controller.requireSession(epoch);\n        _sort = PublicationSort.values.where((v) => v.name == prefs['sort']).firstOrNull ?? PublicationSort.title;\n        _status = PublicationStatus.values.where((v) => v.name == prefs['status']).firstOrNull ?? PublicationStatus.all;\n        _preferenceProfile = profile;\n      }\n      List<SourceEntry> items;",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/sources_screen.dart",
+      "before": "    final entries = _entries\n        .where(",
+      "after": "    final filtered = _entries\n        .where(",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/sources_screen.dart",
+      "before": "    entries.sort(\n      (a, b) => a.isFolder == b.isFolder\n          ? a.title.toLowerCase().compareTo(b.title.toLowerCase())\n          : a.isFolder\n          ? -1\n          : 1,\n    );",
+      "after": "    final entries = organizePublications(filtered, _progress, sort: _sort, status: _status,\n      mode: widget.shelf == PublicationShelf.audiobooks ? PublicationMode.listening :\n        widget.shelf != null ? PublicationMode.reading : null);",
+      "count": 1
+    },
+    {
+      "path": "lib/screens/sources/sources_screen.dart",
+      "before": "      actions: [\n        if (widget.source == null)",
+      "after": "      actions: [\n        AppMenuButton<PublicationSort>(tooltip: t.audiobook.librarySort,\n          icon: const AppIcon(Symbols.sort_rounded), adaptiveSheet: true,\n          entriesBuilder: (_) => [\n            for (final value in PublicationSort.values)\n              AppMenuItem(value: value, selected: _sort == value,\n                label: switch (value) {\n                  PublicationSort.title => t.audiobook.sortTitle,\n                  PublicationSort.author => t.audiobook.sortAuthor,\n                  PublicationSort.narrator => t.audiobook.sortNarrator,\n                  PublicationSort.series => t.audiobook.sortSeries,\n                  PublicationSort.recent => t.audiobook.sortRecent,\n                }),\n          ], onSelected: (v) { setState(() => _sort = v); unawaited(_saveBrowsePreference()); }),\n        AppMenuButton<PublicationStatus>(tooltip: t.audiobook.statusFilter,\n          icon: const AppIcon(Symbols.filter_list_rounded), adaptiveSheet: true,\n          entriesBuilder: (_) => [\n            for (final value in PublicationStatus.values)\n              AppMenuItem(value: value, selected: _status == value,\n                label: switch (value) {\n                  PublicationStatus.all => t.audiobook.statusAll,\n                  PublicationStatus.unstarted => t.audiobook.statusNew,\n                  PublicationStatus.inProgress => t.audiobook.statusProgress,\n                  PublicationStatus.finished => t.audiobook.statusFinished,\n                }),\n          ], onSelected: (v) { setState(() => _status = v); unawaited(_saveBrowsePreference()); }),\n        if (widget.source == null)",
+      "count": 1
+    }
+  ],
+  "english": {
+    "syncTitle": "Reading & listening sync",
+    "syncHelp": "Keep reading positions, listening positions, completion state, bookmarks and notes across your devices. Choose an attached storage account and use the same sync code on each device. Reading and listening remain separate.",
+    "addSyncSource": "Add Google Drive, OneDrive, Dropbox, WebDAV or S3 in Files & books first.",
+    "syncDestination": "Sync storage account",
+    "syncFolder": "Sync folder or prefix",
+    "syncFolderHelp": "Use a separate existing folder within your WebDAV source, or a dedicated S3 prefix. Book files are never changed.",
+    "syncCode": "Private sync code",
+    "syncCodeHelp": "Create a code on your first device, then enter that code on your other devices. Keep a private copy: it is the key to your encrypted state. Use a different code for each person.",
+    "showCode": "Show or hide sync code",
+    "newSyncCode": "Create a new sync code",
+    "saveSync": "Save and sync",
+    "disableSync": "Turn off sync on this device",
+    "lastSynced": "Last synced at $time",
+    "syncPrivacy": "Only encrypted progress and notes are stored. Audio and ebook files, account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync. Enabling sync may request additional write access. While enabled, this destination owns progress sync; server progress remains separate. Turning sync off keeps local history and remote state.",
+    "syncConflicts": "Choose where to resume",
+    "conflictHelp": "These changes were made independently. Choose the position or bookmark version to keep. A later timestamp or a higher percentage does not automatically win.",
+    "deletedBookmark": "Deleted bookmark",
+    "finished": "Finished",
+    "readingPosition": "Reading · $percent%",
+    "chapterTimeline": "Chapter progress",
+    "bookTimeline": "Whole book progress",
+    "bookRemaining": "Book: $time left",
+    "chapterRemaining": "Chapter: $time left",
+    "unknownRemaining": "Total time available as parts are played",
+    "undoSeek": "Undo last seek",
+    "customSpeed": "Custom playback speed",
+    "speedHelp": "Choose a speed from 0.25× to 4×.",
+    "apply": "Apply",
+    "customSleep": "Custom sleep timer",
+    "sleepMinutes": "Minutes (1–1440)",
+    "sleepChapters": "Stop after $count chapters",
+    "extendSleep": "Add 5 minutes",
+    "sleepRemaining": "Sleep timer: $time",
+    "useDefaults": "Use these listening controls for new books",
+    "librarySort": "Sort books",
+    "sortTitle": "Title",
+    "sortAuthor": "Author",
+    "sortNarrator": "Narrator",
+    "sortSeries": "Series order",
+    "sortRecent": "Recently opened",
+    "statusFilter": "Reading status",
+    "statusAll": "All books",
+    "statusNew": "Not started",
+    "statusProgress": "In progress",
+    "statusFinished": "Finished",
+    "goToTime": "Go to time",
+    "timeHelp": "Hours:minutes:seconds, or minutes:seconds"
+  }
+}
