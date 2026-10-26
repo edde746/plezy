@@ -63,6 +63,34 @@ void main() {
     controller.dispose();
   });
 
+  testWidgets('reader body dragging requires the explicit Move mode', (tester) async {
+    final controller = MultiviewWorkspaceController();
+    controller.register(_registration(id: 'reader', title: 'Book', kind: MultiviewMediaKind.publication));
+    await _mount(tester, controller);
+
+    final surface = find.byKey(const ValueKey('workspace_surface'));
+    final initial = controller.placementFor('reader');
+    var gesture = await tester.startGesture(tester.getCenter(surface));
+    await gesture.moveBy(const Offset(60, 40));
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+    expect(controller.placementFor('reader').left, initial.left);
+
+    await tester.tap(find.widgetWithIcon(IconButton, Symbols.drag_handle_rounded));
+    await tester.pump();
+    gesture = await tester.startGesture(tester.getCenter(surface));
+    await gesture.moveBy(const Offset(60, 40));
+    await tester.pump();
+    await gesture.up();
+    await tester.pump();
+
+    expect(controller.placementFor('reader').left, greaterThan(initial.left));
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+  });
+
   testWidgets('fullscreen is available through an explicit accessible control', (tester) async {
     final controller = MultiviewWorkspaceController();
     controller.register(_registration(id: 'video', title: 'Film', kind: MultiviewMediaKind.video));

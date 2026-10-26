@@ -48,7 +48,7 @@ This is a code-path map, **not device qualification**. No target has been verifi
 
 - Flutter/Dart SDK: Flutter 3.47.1, Dart 3.13.1.
 - Formatting: `dart format --output=none --set-exit-if-changed` passed for all changed Dart files.
-- Focused tests: 43 passed across workspace controller/placement/persistence/ownership, overlay drag/fullscreen, playback coordination, MPV/Exo deferred rectangle application, and video-pane geometry on move.
+- Focused tests: 44 passed across workspace controller/placement/persistence/ownership, overlay drag/fullscreen and reader Move mode, playback coordination, MPV/Exo deferred rectangle application, and video-pane geometry on move.
 - Core analysis: `dart analyze` passed with “No issues found” for the workspace model/controller/overlay, music surface, playback coordinator, native player adapters, video rectangle contract, music player surface, and focused tests.
 - Test environment caveat: the local complete checkout was an older `785fd870` tree, while the feature base is `62b2ed0`. The isolated test copy overlaid the feature branch files, but used small test-only compatibility adaptations for the older checkout’s missing WebOS plugin/source files, generated reader strings and settings entries. The focused results validate the changed workspace path; they do not replace testing on the exact feature base.
 - Full repository analysis and test suite: not qualified on the exact feature base. Analyzer runs against the older checkout report missing source-reader modules, plugin packages and generated localization data that are present in the feature branch.
