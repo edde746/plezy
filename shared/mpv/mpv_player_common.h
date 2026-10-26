@@ -525,6 +525,8 @@ inline const char* TargetColorspaceHint(bool hdr_enabled) { return hdr_enabled ?
 // mpv_create() and mpv_initialize(); platform-specific options (vo, hwdec,
 // wid, HDR/tone-mapping, log level) stay with the caller.
 inline void ApplyCommonStartupOptions(mpv_handle* mpv, bool audio_only) {
+  // Set before initialization for every video and audio core.
+  mpv_set_option_string(mpv, "tls-verify", "yes");
   if (audio_only) {
     // Music core: no VO, no video decode. vid=no keeps embedded cover art
     // from ever becoming a video track, and force-window/audio-display make

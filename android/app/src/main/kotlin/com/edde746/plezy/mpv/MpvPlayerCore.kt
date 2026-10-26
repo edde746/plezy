@@ -1022,6 +1022,7 @@ class MpvPlayerCore private constructor(
             withContext(NonCancellable) {
               // Blocks through mpv_initialize on this write worker (IO), never main.
               val created = MpvPlayer.create(context.applicationContext, mpvListener, HOOK_TIMEOUT_MS) {
+                setOption("tls-verify", "yes")
                 // The level Dart hands us at `initialize` drives mpv's own
                 // verbosity and the Kotlin-side traces alike.
                 PlayerDebugLog.applyLogLevel(initialLogLevel)

@@ -11,6 +11,7 @@ import '../../utils/app_logger.dart';
 import '../models.dart';
 import 'audio_rendering_mode.dart';
 import 'player_base.dart';
+import 'mpv_certificate_trust.dart';
 
 typedef _AudioStateRequest = ({
   bool passthrough,
@@ -276,6 +277,12 @@ class PlayerNative extends PlayerBase {
         throw const PlayerInitializationException();
       }
       if (_nativeCoreUnavailable) throw StateError('Player was disposed during initialization');
+
+      final caFile = await MpvCertificateTrust.caFile();
+      if (caFile != null) {
+        await invoke('setProperty', {'name': 'tls-ca-file', 'value': caFile});
+      }
+      await invoke('setProperty', {'name': 'tls-verify', 'value': 'yes'});
 
       // Subscribe to MPV properties before flipping `initialized` so partial
       // failures don't leave us in a half-initialized state that the memoized
