@@ -393,20 +393,31 @@ class SourceController extends ChangeNotifier {
     if (source.profileId != profileId) throw const SourceException(SourceFailure.permission);
     final epoch = generation;
     final oldSource = sources.where((candidate) => candidate.id == source.id).firstOrNull;
-    final identityChanged = oldSource != null && oldSource.options['syncLibrary'] != source.options['syncLibrary'];
+    final identityChanged = oldSource != null &&
+        (oldSource.kind != source.kind ||
+            oldSource.endpoint != source.endpoint ||
+            oldSource.root != source.root ||
+            oldSource.options['syncLibrary'] != source.options['syncLibrary'] ||
+            oldSource.options['driveId'] != source.options['driveId']);
     final existingEntries = identityChanged ? await repository.entries(source.profileId, source: source.id) : const <SourceEntry>[];
     requireSession(epoch);
-    await repository.saveSource(source, credentials);
-    requireSession(epoch);
     if (identityChanged) {
-      await cloudSync.migrateSourceIdentity(
-        profile: source.profileId,
-        oldSource: oldSource!,
-        newSource: source,
-        entries: existingEntries,
-      );
+      final migration = _syncQueue.then((_) async {
+        requireSession(epoch);
+        await cloudSync.migrateSourceIdentity(
+          profile: source.profileId,
+          oldSource: oldSource!,
+          newSource: source,
+          entries: existingEntries,
+        );
+        requireSession(epoch);
+      });
+      _syncQueue = migration.catchError((Object _) {});
+      await migration;
       requireSession(epoch);
     }
+    await repository.saveSource(source, credentials);
+    requireSession(epoch);
     _sourceSyncSucceeded(source.id);
     await reload();
   }
@@ -422,9 +433,9 @@ class SourceController extends ChangeNotifier {
     if (syncConfig?.sourceId == source.id) await configureCloudSync(null);
     cancelScan(source.id);
     await stopPlayback?.call();
+    await downloads.cancelSource(profileId!, source.id);
     _adapters.remove(source.id)?.close();
     _sourceSyncSucceeded(source.id);
-    downloads.cancelSource(profileId!, source.id);
     await repository.removeSource(profileId!, source.id);
     await reload();
   }
@@ -660,6 +671,37 @@ class SourceController extends ChangeNotifier {
     if (sourceId.isEmpty || file.fingerprint != row['fingerprint']) throw const SourceException(SourceFailure.invalidData);
     await downloads.download(profile, adapter(sourceId), file, label: row['label'] as String? ?? '');
     requireSession(epoch);
+  }
+
+  Future<String?> sharedEntryMapping(SourceEntry entry) async {
+    await ready;
+    requireSession();
+    if (!sources.any((source) => source.id == entry.sourceId)) throw const SourceException(SourceFailure.authentication);
+    return cloudSync.sharedEntryMapping(profileId!, entry);
+  }
+
+  Future<void> setSharedEntryMapping(SourceEntry entry, String? sharedEntryId) async {
+    await ready;
+    requireSession();
+    final epoch = generation, profile = profileId!;
+    final source = sources.where((candidate) => candidate.id == entry.sourceId).firstOrNull;
+    if (source == null || source.options['syncLibrary']?.trim().isNotEmpty != true) {
+      throw const SourceException(SourceFailure.unsupported);
+    }
+    final operation = _syncQueue.then((_) async {
+      requireSession(epoch);
+      await cloudSync.setSharedEntryMapping(
+        profile: profile,
+        source: source,
+        entry: entry,
+        sharedEntryId: sharedEntryId,
+      );
+      requireSession(epoch);
+    });
+    _syncQueue = operation.catchError((Object _) {});
+    await operation;
+    scheduleSync();
+    _notify();
   }
 
   Future<({int bytes, int elapsedMs, int requests, int readAhead, double mebibytesPerSecond})> qualifyNfsRead(
@@ -1140,7 +1182,10 @@ class SourceController extends ChangeNotifier {
 
   Future<String> exportCloudSyncRecovery() async {
     await ready;
-    requireSession();
+    final epoch = generation;
+    requireSession(epoch);
+    await _syncQueue;
+    requireSession(epoch);
     return cloudSync.exportRecovery(profileId!);
   }
 
@@ -1148,12 +1193,16 @@ class SourceController extends ChangeNotifier {
     await ready;
     requireSession();
     final epoch = generation, profile = profileId!;
-    await cloudSync.importRecovery(
+    final activeSources = List<FileSource>.of(sources);
+    final activeKeys = Set<String>.of(activeProgressKeys);
+    final operation = _syncQueue.then((_) => cloudSync.importRecovery(
       profile: profile,
       text: text,
-      sources: List.of(sources),
-      activeKeys: activeProgressKeys,
-    );
+      sources: activeSources,
+      activeKeys: activeKeys,
+    ));
+    _syncQueue = operation.catchError((Object _) {});
+    await operation;
     requireSession(epoch);
     _notify();
     scheduleSync();
