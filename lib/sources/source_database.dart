@@ -148,6 +148,34 @@ class SourceRepository {
         .toList();
   }
 
+  /// Bounded recent index slice for lightweight surfaces such as discovery.
+  /// Unlike [entries], this puts the bound in SQL and does not materialize a
+  /// large profile index merely to select a few candidate cards.
+  Future<List<SourceEntry>> recentEntries(String profile, {String? source, int limit = 120}) async {
+    final safeLimit = limit.clamp(1, 500).toInt();
+    final rows = await database
+        .customSelect(
+          source == null
+              ? 'SELECT payload FROM entries WHERE profile = ? ORDER BY rowid DESC LIMIT ?'
+              : 'SELECT payload FROM entries WHERE profile = ? AND source = ? ORDER BY rowid DESC LIMIT ?',
+          variables: source == null
+              ? [Variable(profile), Variable(safeLimit)]
+              : [Variable(profile), Variable(source), Variable(safeLimit)],
+        )
+        .get();
+    return rows.map((row) => SourceEntry.fromJson(sourceMap(jsonDecode(row.read<String>('payload'))))).toList();
+  }
+
+  Future<SourceEntry?> entryById(String profile, String source, String id) async {
+    final row = await database
+        .customSelect(
+          'SELECT payload FROM entries WHERE profile = ? AND source = ? AND id = ?',
+          variables: [Variable(profile), Variable(source), Variable(id)],
+        )
+        .getSingleOrNull();
+    return row == null ? null : SourceEntry.fromJson(sourceMap(jsonDecode(row.read<String>('payload'))));
+  }
+
   Future<PublicationProgress?> progress(String profile, String key) async {
     final row = await database
         .customSelect(
