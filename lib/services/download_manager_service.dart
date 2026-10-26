@@ -22,6 +22,7 @@ import 'api_cache.dart';
 import 'connectivity_probe.dart';
 import 'download_artwork_helpers.dart';
 import 'download_artwork_service.dart';
+import 'orphan_download_cleanup_service.dart';
 import 'jellyfin_cache_resolver.dart';
 import 'plex_api_cache.dart';
 import 'settings_service.dart';
@@ -155,6 +156,7 @@ List<List<DownloadSubtitleSpec>> _subtitlesPerPart(DownloadResolution resolution
 class DownloadManagerService {
   final AppDatabase _database;
   final DownloadStorageService _storageService;
+  final OrphanDownloadCleanupService _orphanDownloadCleanup = const OrphanDownloadCleanupService();
   final MediaServerHttpClient _http;
   final DownloadArtworkService _artworkService;
   final SafStorageOperations _safStorage;
@@ -327,6 +329,70 @@ class DownloadManagerService {
        _artworkService = DownloadArtworkService(storageService: storageService, http: http ?? httpClient);
 
   bool get downloadsSupported => _downloadsSupportedOverride ?? platformDownloadsSupported;
+
+  /// Orphan cleanup deliberately excludes iOS Documents (Files-visible) and
+  /// all custom filesystem/SAF locations, where PlezyNG cannot claim ownership
+  /// of every item in the selected tree.
+  bool get canReviewOrphanDownloads => downloadsSupported && !Platform.isIOS && !_storageService.isUsingCustomPath();
+
+  Future<OrphanDownloadScan> scanOrphanDownloads() async {
+    if (!canReviewOrphanDownloads) {
+      return const OrphanDownloadScan(
+        rootPath: '',
+        files: [],
+        failure: OrphanDownloadScanFailure.unsafeRoot,
+        scannedEntries: 0,
+      );
+    }
+
+    try {
+      final rows = await _database.select(_database.downloadedMedia).get();
+      final tasks = await _nativeOps.allTasks();
+      final protectedTags = <String>{
+        for (final row in rows) DownloadStorageService.tagForGlobalKey(row.globalKey),
+        for (final task in tasks)
+          if (task.metaData.isNotEmpty) DownloadStorageService.tagForGlobalKey(task.metaData),
+      };
+      final root = await _storageService.getAppManagedDownloadsDirectory();
+      return await _orphanDownloadCleanup.scan(root, protectedTags: protectedTags);
+    } catch (error) {
+      appLogger.w('Could not safely prepare orphan-download review', error: error);
+      return const OrphanDownloadScan(
+        rootPath: '',
+        files: [],
+        failure: OrphanDownloadScanFailure.scanFailed,
+        scannedEntries: 0,
+      );
+    }
+  }
+
+  Future<OrphanDownloadCleanupResult> deleteOrphanDownloads(OrphanDownloadScan scan) async {
+    if (!canReviewOrphanDownloads || !scan.canDelete) {
+      return OrphanDownloadCleanupResult(deletedCount: 0, deletedBytes: 0, skippedCount: scan.files.length);
+    }
+
+    try {
+      final root = await _storageService.getAppManagedDownloadsDirectory();
+      final canonicalRoot = path.normalize(await root.resolveSymbolicLinks());
+      if (!path.equals(canonicalRoot, scan.rootPath)) {
+        return OrphanDownloadCleanupResult(deletedCount: 0, deletedBytes: 0, skippedCount: scan.files.length);
+      }
+
+      // Re-read both stores after the review dialog so downloads added while
+      // the user was deciding are kept. If task enumeration fails, fail closed.
+      final rows = await _database.select(_database.downloadedMedia).get();
+      final tasks = await _nativeOps.allTasks();
+      final protectedTags = <String>{
+        for (final row in rows) DownloadStorageService.tagForGlobalKey(row.globalKey),
+        for (final task in tasks)
+          if (task.metaData.isNotEmpty) DownloadStorageService.tagForGlobalKey(task.metaData),
+      };
+      return await _orphanDownloadCleanup.delete(scan, protectedTags: protectedTags);
+    } catch (error) {
+      appLogger.w('Could not safely delete reviewed orphan downloads', error: error);
+      return OrphanDownloadCleanupResult(deletedCount: 0, deletedBytes: 0, skippedCount: scan.files.length);
+    }
+  }
 
   NativeDownloaderOps get _nativeOps =>
       _nativeOpsOverride ??

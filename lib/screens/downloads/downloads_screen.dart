@@ -2,10 +2,14 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+
 import '../../media/ids.dart';
+
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
+
 import '../../focus/focusable_action_bar.dart';
+import '../../focus/focusable_button.dart';
 import '../../media/media_item.dart';
 import '../../media/media_item_types.dart';
 import '../../media/media_kind.dart';
@@ -36,6 +40,9 @@ import '../../widgets/desktop_app_bar.dart';
 import '../../widgets/focusable_media_card.dart';
 import '../../widgets/media_card_sliver_layout.dart';
 import '../../widgets/download_tree_view.dart';
+import '../../widgets/dialog_action_button.dart';
+import '../../utils/dialogs.dart';
+import '../../services/orphan_download_cleanup_service.dart';
 import '../libraries/library_browse_grouping.dart';
 import '../main_screen.dart';
 import '../libraries/state_messages.dart';
@@ -124,6 +131,43 @@ class DownloadsScreenState extends State<DownloadsScreen>
 
   void _retryDownloads(List<String> globalKeys) {
     unawaited(context.read<DownloadProvider>().retryDownloads(globalKeys, _clientForDownload));
+  }
+
+  Future<void> _reviewOrphanDownloads() async {
+    final provider = context.read<DownloadProvider>();
+    final scan = await provider.scanOrphanDownloads();
+    if (!mounted) return;
+
+    if (!scan.isComplete) {
+      showAppSnackBar(context, t.downloads.orphanCleanupFailed);
+      return;
+    }
+    if (scan.files.isEmpty) {
+      showAppSnackBar(context, t.downloads.orphanCleanupNone);
+      return;
+    }
+
+    final confirmed = await showScopedDialog<bool>(
+      context: context,
+      builder: (dialogContext) => _OrphanDownloadReviewDialog(scan: scan),
+    );
+    if (confirmed != true || !mounted) return;
+
+    final result = await provider.deleteOrphanDownloads(scan);
+    if (!mounted) return;
+    if (result.deletedCount == 0 && result.skippedCount > 0) {
+      showAppSnackBar(context, t.downloads.orphanCleanupChanged);
+    } else if (result.deletedCount > 0) {
+      showSuccessSnackBar(
+        context,
+        t.downloads.orphanCleanupComplete(
+          count: result.deletedCount,
+          size: ByteFormatter.formatBytes(result.deletedBytes),
+        ),
+      );
+    } else {
+      showAppSnackBar(context, t.downloads.orphanCleanupNone);
+    }
   }
 
   /// Focus the top of the currently active tab — its chips bar on
@@ -261,6 +305,13 @@ class DownloadsScreenState extends State<DownloadsScreen>
                         onPressed: () =>
                             Navigator.push(context, MaterialPageRoute(builder: (_) => const SyncRulesScreen())),
                       ),
+                      if (downloadProvider.canReviewOrphanDownloads)
+                        FocusableAction(
+                          icon: Symbols.delete_sweep_rounded,
+                          tooltip: t.downloads.reviewOrphanFiles,
+                          debugLabel: 'downloads_review_orphans',
+                          onPressed: _reviewOrphanDownloads,
+                        ),
                       // Mobile mirrors the library browse options action; desktop
                       // and TV expose the same options as per-tab chips instead.
                       if (PlatformDetector.isMobile(context) && tabController.index > 0)
@@ -651,6 +702,78 @@ class _DownloadsGridContentState extends State<_DownloadsGridContent>
         icon: Symbols.download_rounded,
         iconSize: 80,
       ),
+    );
+  }
+}
+
+class _OrphanDownloadReviewDialog extends StatelessWidget {
+  const _OrphanDownloadReviewDialog({required this.scan});
+
+  final OrphanDownloadScan scan;
+
+  @override
+  Widget build(BuildContext context) {
+    final theme = Theme.of(context);
+    final height = (MediaQuery.sizeOf(context).height * 0.52).clamp(120.0, 560.0).toDouble();
+    return AlertDialog(
+      title: Text(t.downloads.orphanReviewTitle),
+      content: SizedBox(
+        height: height,
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(t.downloads.orphanReviewDescription),
+            const SizedBox(height: 12),
+            Text(
+              t.downloads.orphanReviewCount(count: scan.files.length, size: ByteFormatter.formatBytes(scan.totalBytes)),
+              style: theme.textTheme.titleSmall,
+            ),
+            const SizedBox(height: 8),
+            const Divider(height: 1),
+            Expanded(
+              child: ListView.builder(
+                itemCount: scan.files.length,
+                itemBuilder: (context, index) {
+                  final file = scan.files[index];
+                  return FocusableButton(
+                    autofocus: index == 0,
+                    onPressed: () {},
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
+                      child: Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              file.relativePath,
+                              maxLines: 2,
+                              overflow: TextOverflow.ellipsis,
+                              style: theme.textTheme.bodyMedium,
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Text(ByteFormatter.formatBytes(file.sizeBytes), style: theme.textTheme.bodySmall),
+                        ],
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
+          ],
+        ),
+      ),
+      actions: [
+        DialogActionButton(autofocus: true, onPressed: () => Navigator.pop(context, false), label: t.common.cancel),
+        DialogActionButton(
+          onPressed: () => Navigator.pop(context, true),
+          label: t.downloads.orphanDeleteFiles(count: scan.files.length),
+          isPrimary: true,
+          style: FilledButton.styleFrom(
+            backgroundColor: theme.colorScheme.error,
+            foregroundColor: theme.colorScheme.onError,
+          ),
+        ),
+      ],
     );
   }
 }

@@ -316,6 +316,7 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get gridView => 'グリッド';
 	@override String get listView => 'リスト';
 	@override String get showHeroSection => '注目コンテンツを表示';
+	@override String get contentScreensaverLibrariesDescription => 'スクリーンセーバーの画像に使うライブラリを選択します。何も選択しない場合は、すべてのライブラリの画像が使われます。';
 	@override String get continueWatchingAction => '視聴中の操作';
 	@override String get continueWatchingPlay => '再生';
 	@override String get continueWatchingDetails => '詳細を開く';
@@ -1978,6 +1979,15 @@ class _Translations$downloads$ja extends Translations$downloads$en {
 	@override String get syncRuleCleanupUnavailable => '関連するダウンロードを安全に特定できませんでした。サーバーに再接続して再試行するか、ダウンロードを削除せずにルールを削除してください。';
 	@override String syncedNewEpisodes({required Object title, required Object count}) => '${title}の新しいエピソードを${count}件同期しました';
 	@override String get activeSyncRules => '同期ルール';
+	@override String get reviewOrphanFiles => '記録のないダウンロードを確認';
+	@override String get orphanReviewTitle => '記録のないダウンロードを確認';
+	@override String get orphanReviewDescription => 'これらのタグ付きファイルは、PlezyNG が管理する既定のダウンロードフォルダー内にありますが、対応するダウンロード記録や実行中のタスクがありません。削除する前に一覧を確認してください。';
+	@override String orphanReviewCount({required Object count, required Object size}) => '${count} 個のファイル · ${size}';
+	@override String orphanDeleteFiles({required Object count}) => '${count} 個のファイルを削除';
+	@override String get orphanCleanupNone => '記録のないダウンロードファイルは見つかりませんでした';
+	@override String get orphanCleanupFailed => 'PlezyNG は管理対象のダウンロードフォルダーを安全にスキャンできませんでした。ファイルは削除されていません。';
+	@override String get orphanCleanupChanged => '確認中にダウンロード一覧が変更されました。整理する前にファイルをもう一度確認してください。';
+	@override String orphanCleanupComplete({required Object count, required Object size}) => '${count} 個の孤立ファイルを削除 · ${size} の空き容量を確保';
 	@override String get noSyncRules => '同期ルールなし';
 	@override String get manageSyncRule => '同期を管理';
 	@override String get editEpisodeCount => 'エピソード数';
@@ -3708,6 +3718,7 @@ extension on TranslationsJa {
 			'settings.gridView' => 'グリッド',
 			'settings.listView' => 'リスト',
 			'settings.showHeroSection' => '注目コンテンツを表示',
+			'settings.contentScreensaverLibrariesDescription' => 'スクリーンセーバーの画像に使うライブラリを選択します。何も選択しない場合は、すべてのライブラリの画像が使われます。',
 			'settings.continueWatchingAction' => '視聴中の操作',
 			'settings.continueWatchingPlay' => '再生',
 			'settings.continueWatchingDetails' => '詳細を開く',
@@ -4019,9 +4030,9 @@ extension on TranslationsJa {
 			'themeEditor.slots.outline' => '枠線',
 			'themeEditor.slots.text' => 'テキスト',
 			'themeEditor.slots.textMuted' => '補助テキスト',
-			'themeEditor.slots.accent' => 'アクセント',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => 'アクセント',
 			'themeEditor.opacity' => '不透明度',
 			'themeEditor.hexHint' => '#RRGGBB または #AARRGGBB',
 			'themeEditor.fromOtherThemes' => '他のテーマから',
@@ -4533,9 +4544,9 @@ extension on TranslationsJa {
 			'profiles.pinExplain' => 'プロフィール切り替えには4桁のPINが必要です。',
 			'profiles.continueButton' => '続ける',
 			'profiles.pinsDontMatch' => 'PINが一致しません',
-			'profiles.tokenIdentityMismatch' => 'Plexプロフィールのトークンから予期しないサーバーが特定されました',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'Plexプロフィールのトークンから予期しないサーバーが特定されました',
 			'connections.sectionTitle' => '接続',
 			'connections.addConnection' => '接続を追加',
 			'connections.addConnectionSubtitleNoProfile' => 'Plexでサインインするか、JellyfinまたはEmbyサーバーに接続',
@@ -5047,9 +5058,9 @@ extension on TranslationsJa {
 			'liveTv.guideReloadFailed' => '番組表を再読み込みできませんでした',
 			'liveTv.rulesProcessRequested' => '録画ルールの再評価をリクエストしました',
 			'liveTv.rulesProcessFailed' => '録画ルールを再適用できませんでした',
-			'liveTv.recordShow' => '番組を録画',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordShow' => '番組を録画',
 			'liveTv.recordSettings.startEarly' => '早めに開始（秒）',
 			'liveTv.recordSettings.endLate' => '遅めに終了（秒）',
 			'liveTv.recordSettings.newOnly' => '新しいエピソードのみ',
@@ -5354,6 +5365,15 @@ extension on TranslationsJa {
 			'downloads.syncRuleCleanupUnavailable' => '関連するダウンロードを安全に特定できませんでした。サーバーに再接続して再試行するか、ダウンロードを削除せずにルールを削除してください。',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title}の新しいエピソードを${count}件同期しました',
 			'downloads.activeSyncRules' => '同期ルール',
+			'downloads.reviewOrphanFiles' => '記録のないダウンロードを確認',
+			'downloads.orphanReviewTitle' => '記録のないダウンロードを確認',
+			'downloads.orphanReviewDescription' => 'これらのタグ付きファイルは、PlezyNG が管理する既定のダウンロードフォルダー内にありますが、対応するダウンロード記録や実行中のタスクがありません。削除する前に一覧を確認してください。',
+			'downloads.orphanReviewCount' => ({required Object count, required Object size}) => '${count} 個のファイル · ${size}',
+			'downloads.orphanDeleteFiles' => ({required Object count}) => '${count} 個のファイルを削除',
+			'downloads.orphanCleanupNone' => '記録のないダウンロードファイルは見つかりませんでした',
+			'downloads.orphanCleanupFailed' => 'PlezyNG は管理対象のダウンロードフォルダーを安全にスキャンできませんでした。ファイルは削除されていません。',
+			'downloads.orphanCleanupChanged' => '確認中にダウンロード一覧が変更されました。整理する前にファイルをもう一度確認してください。',
+			'downloads.orphanCleanupComplete' => ({required Object count, required Object size}) => '${count} 個の孤立ファイルを削除 · ${size} の空き容量を確保',
 			'downloads.noSyncRules' => '同期ルールなし',
 			'downloads.manageSyncRule' => '同期を管理',
 			'downloads.editEpisodeCount' => 'エピソード数',
@@ -5552,6 +5572,8 @@ extension on TranslationsJa {
 			'performanceOverlay.dvRpus' => 'DV RPU',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU 平均',
 			'performanceOverlay.dvSampleAverage' => 'DV サンプル平均',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => '最大輝度',
 			'performanceOverlay.minLuma' => '最小輝度',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5562,8 +5584,6 @@ extension on TranslationsJa {
 			'performanceOverlay.player' => 'プレーヤー',
 			'performanceOverlay.memory' => 'メモリ',
 			'performanceOverlay.uiFps' => 'UI FPS',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',

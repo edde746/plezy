@@ -316,6 +316,7 @@ class _Translations$settings$da extends Translations$settings$en {
 	@override String get gridView => 'Gitter';
 	@override String get listView => 'Liste';
 	@override String get showHeroSection => 'Vis udvalgt indhold';
+	@override String get contentScreensaverLibrariesDescription => 'Vælg, hvilke biblioteker der leverer pauseskærmens billeder. Hvis ingen vælges, bruges billeder fra alle biblioteker.';
 	@override String get continueWatchingAction => 'Handling for "Fortsæt med at se"';
 	@override String get continueWatchingPlay => 'Afspil';
 	@override String get continueWatchingDetails => 'Åbn detaljer';
@@ -1988,6 +1989,15 @@ class _Translations$downloads$da extends Translations$downloads$en {
 	@override String get syncRuleCleanupUnavailable => 'Tilknyttede downloads kunne ikke identificeres sikkert. Genopret forbindelse til serveren og prøv igen, eller fjern reglen uden at slette downloads.';
 	@override String syncedNewEpisodes({required Object count, required Object title}) => 'Synkroniserede ${count} nye episoder for ${title}';
 	@override String get activeSyncRules => 'Synkroniseringsregler';
+	@override String get reviewOrphanFiles => 'Gennemgå forældreløse downloads';
+	@override String get orphanReviewTitle => 'Gennemgå forældreløse downloads';
+	@override String get orphanReviewDescription => 'Disse mærkede filer ligger i PlezyNGs standardmapper for downloads, som appen administrerer, og har ingen tilhørende downloadpost eller aktiv opgave. Gennemgå listen, før du sletter dem.';
+	@override String orphanReviewCount({required Object count, required Object size}) => '${count} filer · ${size}';
+	@override String orphanDeleteFiles({required Object count}) => 'Slet ${count} filer';
+	@override String get orphanCleanupNone => 'Ingen forældreløse downloadfiler fundet';
+	@override String get orphanCleanupFailed => 'PlezyNG kunne ikke scanne den administrerede downloadmappe sikkert. Ingen filer blev slettet.';
+	@override String get orphanCleanupChanged => 'Downloadlisten ændrede sig under gennemgangen. Gennemgå filerne igen, før du rydder op.';
+	@override String orphanCleanupComplete({required Object count, required Object size}) => '${count} forældreløse downloadfiler slettet · ${size} frigjort';
 	@override String get noSyncRules => 'Ingen synkroniseringsregler';
 	@override String get manageSyncRule => 'Administrer synkronisering';
 	@override String get editEpisodeCount => 'Antal episoder';
@@ -3720,6 +3730,7 @@ extension on TranslationsDa {
 			'settings.gridView' => 'Gitter',
 			'settings.listView' => 'Liste',
 			'settings.showHeroSection' => 'Vis udvalgt indhold',
+			'settings.contentScreensaverLibrariesDescription' => 'Vælg, hvilke biblioteker der leverer pauseskærmens billeder. Hvis ingen vælges, bruges billeder fra alle biblioteker.',
 			'settings.continueWatchingAction' => 'Handling for "Fortsæt med at se"',
 			'settings.continueWatchingPlay' => 'Afspil',
 			'settings.continueWatchingDetails' => 'Åbn detaljer',
@@ -4031,9 +4042,9 @@ extension on TranslationsDa {
 			'themeEditor.slots.outline' => 'Kontur',
 			'themeEditor.slots.text' => 'Tekst',
 			'themeEditor.slots.textMuted' => 'Sekundær tekst',
-			'themeEditor.slots.accent' => 'Accentfarve',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => 'Accentfarve',
 			'themeEditor.opacity' => 'Opacitet',
 			'themeEditor.hexHint' => '#RRGGBB eller #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Fra andre temaer',
@@ -4545,9 +4556,9 @@ extension on TranslationsDa {
 			'profiles.pinExplain' => 'Der kræves en 4-cifret PIN-kode for at skifte profil.',
 			'profiles.continueButton' => 'Fortsæt',
 			'profiles.pinsDontMatch' => 'PIN-koderne matcher ikke',
-			'profiles.tokenIdentityMismatch' => 'Plex-profiltokenet blev knyttet til en uventet server',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'Plex-profiltokenet blev knyttet til en uventet server',
 			'connections.sectionTitle' => 'Forbindelser',
 			'connections.addConnection' => 'Tilføj forbindelse',
 			'connections.addConnectionSubtitleNoProfile' => 'Log ind med Plex eller forbind til en Jellyfin- eller Emby-server',
@@ -5059,9 +5070,9 @@ extension on TranslationsDa {
 			'liveTv.guideReloadFailed' => 'Kunne ikke opdatere guiden',
 			'liveTv.rulesProcessRequested' => 'Der er anmodet om en ny evaluering af reglerne',
 			'liveTv.rulesProcessFailed' => 'Kunne ikke behandle optagelsesreglerne igen',
-			'liveTv.recordShow' => 'Optag program',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordShow' => 'Optag program',
 			'liveTv.recordSettings.startEarly' => 'Start tidligere (sekunder)',
 			'liveTv.recordSettings.endLate' => 'Slut senere (sekunder)',
 			'liveTv.recordSettings.newOnly' => 'Kun nye afsnit',
@@ -5366,6 +5377,15 @@ extension on TranslationsDa {
 			'downloads.syncRuleCleanupUnavailable' => 'Tilknyttede downloads kunne ikke identificeres sikkert. Genopret forbindelse til serveren og prøv igen, eller fjern reglen uden at slette downloads.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Synkroniserede ${count} nye episoder for ${title}',
 			'downloads.activeSyncRules' => 'Synkroniseringsregler',
+			'downloads.reviewOrphanFiles' => 'Gennemgå forældreløse downloads',
+			'downloads.orphanReviewTitle' => 'Gennemgå forældreløse downloads',
+			'downloads.orphanReviewDescription' => 'Disse mærkede filer ligger i PlezyNGs standardmapper for downloads, som appen administrerer, og har ingen tilhørende downloadpost eller aktiv opgave. Gennemgå listen, før du sletter dem.',
+			'downloads.orphanReviewCount' => ({required Object count, required Object size}) => '${count} filer · ${size}',
+			'downloads.orphanDeleteFiles' => ({required Object count}) => 'Slet ${count} filer',
+			'downloads.orphanCleanupNone' => 'Ingen forældreløse downloadfiler fundet',
+			'downloads.orphanCleanupFailed' => 'PlezyNG kunne ikke scanne den administrerede downloadmappe sikkert. Ingen filer blev slettet.',
+			'downloads.orphanCleanupChanged' => 'Downloadlisten ændrede sig under gennemgangen. Gennemgå filerne igen, før du rydder op.',
+			'downloads.orphanCleanupComplete' => ({required Object count, required Object size}) => '${count} forældreløse downloadfiler slettet · ${size} frigjort',
 			'downloads.noSyncRules' => 'Ingen synkroniseringsregler',
 			'downloads.manageSyncRule' => 'Administrer synkronisering',
 			'downloads.editEpisodeCount' => 'Antal episoder',
@@ -5564,6 +5584,8 @@ extension on TranslationsDa {
 			'performanceOverlay.dvRpus' => 'DV RPU’er',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU gns.',
 			'performanceOverlay.dvSampleAverage' => 'DV-sample gns.',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Maks. luma',
 			'performanceOverlay.minLuma' => 'Min. luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5574,8 +5596,6 @@ extension on TranslationsDa {
 			'performanceOverlay.player' => 'Afspiller',
 			'performanceOverlay.memory' => 'Hukommelse',
 			'performanceOverlay.uiFps' => 'UI-FPS',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',

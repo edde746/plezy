@@ -316,6 +316,7 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get gridView => 'Izgara';
 	@override String get listView => 'Liste';
 	@override String get showHeroSection => 'Öne Çıkan Bölümünü Göster';
+	@override String get contentScreensaverLibrariesDescription => 'Ekran koruyucu görsellerinin hangi kitaplıklardan alınacağını seçin. Hiçbiri seçilmezse tüm kitaplıklardaki görseller kullanılır.';
 	@override String get continueWatchingAction => 'İzlemeye Devam Et Eylemi';
 	@override String get continueWatchingPlay => 'Oynat';
 	@override String get continueWatchingDetails => 'Detayları Aç';
@@ -1988,6 +1989,15 @@ class _Translations$downloads$tr extends Translations$downloads$en {
 	@override String get syncRuleCleanupUnavailable => 'İlişkili indirmeler güvenli biçimde belirlenemedi. Sunucuya yeniden bağlanıp tekrar deneyin veya kuralı indirmeleri silmeden kaldırın.';
 	@override String syncedNewEpisodes({required Object title, required Object count}) => '${title} için ${count} yeni bölüm eşitlendi';
 	@override String get activeSyncRules => 'Eşitleme kuralları';
+	@override String get reviewOrphanFiles => 'Eşleşmeyen indirmeleri gözden geçir';
+	@override String get orphanReviewTitle => 'Eşleşmeyen indirmeleri gözden geçir';
+	@override String get orphanReviewDescription => 'Bu etiketli dosyalar PlezyNG\'nin yönettiği varsayılan indirme klasörlerinde bulunuyor, ancak eşleşen bir indirme kaydı veya etkin görev yok. Silmeden önce listeyi kontrol edin.';
+	@override String orphanReviewCount({required Object count, required Object size}) => '${count} dosya · ${size}';
+	@override String orphanDeleteFiles({required Object count}) => '${count} dosyayı sil';
+	@override String get orphanCleanupNone => 'Eşleşmeyen indirme dosyası bulunamadı';
+	@override String get orphanCleanupFailed => 'PlezyNG, yönetilen indirme klasörünü güvenli biçimde tarayamadı. Hiçbir dosya silinmedi.';
+	@override String get orphanCleanupChanged => 'İnceleme sırasında indirme listesi değişti. Temizlemeden önce dosyaları yeniden gözden geçirin.';
+	@override String orphanCleanupComplete({required Object count, required Object size}) => '${count} eşleşmeyen dosya silindi · ${size} boşaltıldı';
 	@override String get noSyncRules => 'Eşitleme kuralı yok';
 	@override String get manageSyncRule => 'Eşitlemeyi yönet';
 	@override String get editEpisodeCount => 'Bölüm sayısı';
@@ -3720,6 +3730,7 @@ extension on TranslationsTr {
 			'settings.gridView' => 'Izgara',
 			'settings.listView' => 'Liste',
 			'settings.showHeroSection' => 'Öne Çıkan Bölümünü Göster',
+			'settings.contentScreensaverLibrariesDescription' => 'Ekran koruyucu görsellerinin hangi kitaplıklardan alınacağını seçin. Hiçbiri seçilmezse tüm kitaplıklardaki görseller kullanılır.',
 			'settings.continueWatchingAction' => 'İzlemeye Devam Et Eylemi',
 			'settings.continueWatchingPlay' => 'Oynat',
 			'settings.continueWatchingDetails' => 'Detayları Aç',
@@ -4031,9 +4042,9 @@ extension on TranslationsTr {
 			'themeEditor.slots.outline' => 'Kenarlık',
 			'themeEditor.slots.text' => 'Metin',
 			'themeEditor.slots.textMuted' => 'İkincil metin',
-			'themeEditor.slots.accent' => 'Vurgu',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => 'Vurgu',
 			'themeEditor.opacity' => 'Opaklık',
 			'themeEditor.hexHint' => '#RRGGBB veya #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Diğer temalardan',
@@ -4545,9 +4556,9 @@ extension on TranslationsTr {
 			'profiles.pinExplain' => 'Profiller arasında geçiş yapmak için 4 haneli PIN gereklidir.',
 			'profiles.continueButton' => 'Devam Et',
 			'profiles.pinsDontMatch' => 'PIN\'ler eşleşmiyor',
-			'profiles.tokenIdentityMismatch' => 'Plex profil belirtecinin beklenmeyen bir sunucuya ait olduğu belirlendi',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'Plex profil belirtecinin beklenmeyen bir sunucuya ait olduğu belirlendi',
 			'connections.sectionTitle' => 'Bağlantılar',
 			'connections.addConnection' => 'Bağlantı ekle',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex ile giriş yapın veya bir Jellyfin ya da Emby sunucusu bağlayın',
@@ -5059,9 +5070,9 @@ extension on TranslationsTr {
 			'liveTv.guideReloadFailed' => 'Rehber yenilenemedi',
 			'liveTv.rulesProcessRequested' => 'Kuralın yeniden değerlendirilmesi istendi',
 			'liveTv.rulesProcessFailed' => 'Kayıt kuralları yeniden değerlendirilemedi',
-			'liveTv.recordShow' => 'Programı kaydet',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordShow' => 'Programı kaydet',
 			'liveTv.recordSettings.startEarly' => 'Erken başlat (saniye)',
 			'liveTv.recordSettings.endLate' => 'Geç bitir (saniye)',
 			'liveTv.recordSettings.newOnly' => 'Yalnızca yeni bölümler',
@@ -5366,6 +5377,15 @@ extension on TranslationsTr {
 			'downloads.syncRuleCleanupUnavailable' => 'İlişkili indirmeler güvenli biçimde belirlenemedi. Sunucuya yeniden bağlanıp tekrar deneyin veya kuralı indirmeleri silmeden kaldırın.',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title} için ${count} yeni bölüm eşitlendi',
 			'downloads.activeSyncRules' => 'Eşitleme kuralları',
+			'downloads.reviewOrphanFiles' => 'Eşleşmeyen indirmeleri gözden geçir',
+			'downloads.orphanReviewTitle' => 'Eşleşmeyen indirmeleri gözden geçir',
+			'downloads.orphanReviewDescription' => 'Bu etiketli dosyalar PlezyNG\'nin yönettiği varsayılan indirme klasörlerinde bulunuyor, ancak eşleşen bir indirme kaydı veya etkin görev yok. Silmeden önce listeyi kontrol edin.',
+			'downloads.orphanReviewCount' => ({required Object count, required Object size}) => '${count} dosya · ${size}',
+			'downloads.orphanDeleteFiles' => ({required Object count}) => '${count} dosyayı sil',
+			'downloads.orphanCleanupNone' => 'Eşleşmeyen indirme dosyası bulunamadı',
+			'downloads.orphanCleanupFailed' => 'PlezyNG, yönetilen indirme klasörünü güvenli biçimde tarayamadı. Hiçbir dosya silinmedi.',
+			'downloads.orphanCleanupChanged' => 'İnceleme sırasında indirme listesi değişti. Temizlemeden önce dosyaları yeniden gözden geçirin.',
+			'downloads.orphanCleanupComplete' => ({required Object count, required Object size}) => '${count} eşleşmeyen dosya silindi · ${size} boşaltıldı',
 			'downloads.noSyncRules' => 'Eşitleme kuralı yok',
 			'downloads.manageSyncRule' => 'Eşitlemeyi yönet',
 			'downloads.editEpisodeCount' => 'Bölüm sayısı',
@@ -5564,6 +5584,8 @@ extension on TranslationsTr {
 			'performanceOverlay.dvRpus' => 'DV RPU\'ları',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU Ort.',
 			'performanceOverlay.dvSampleAverage' => 'DV Örnek Ort.',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Maks Luma',
 			'performanceOverlay.minLuma' => 'Min Luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5574,8 +5596,6 @@ extension on TranslationsTr {
 			'performanceOverlay.player' => 'Oynatıcı',
 			'performanceOverlay.memory' => 'Bellek',
 			'performanceOverlay.uiFps' => 'Arayüz (UI) FPS',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android Donanım',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA Donanım',

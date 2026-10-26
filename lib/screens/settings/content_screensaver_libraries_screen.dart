@@ -77,6 +77,17 @@ class _ContentScreensaverLibrariesScreenState extends State<ContentScreensaverLi
     await SettingsService.instance.write(SettingsService.contentScreensaverLibraryKeys, next);
   }
 
+  Widget _description(BuildContext context) {
+    final theme = Theme.of(context);
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
+      child: Text(
+        t.settings.contentScreensaverLibrariesDescription,
+        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return FutureBuilder<List<MediaLibrary>>(
@@ -85,8 +96,9 @@ class _ContentScreensaverLibrariesScreenState extends State<ContentScreensaverLi
         if (snapshot.connectionState != ConnectionState.done) {
           return SettingsPage(
             title: Text(t.settings.contentScreensaverLibraries),
-            children: const [
-              Center(
+            children: [
+              _description(context),
+              const Center(
                 child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator()),
               ),
             ],
@@ -97,6 +109,7 @@ class _ContentScreensaverLibrariesScreenState extends State<ContentScreensaverLi
           return SettingsPage(
             title: Text(t.settings.contentScreensaverLibraries),
             children: [
+              _description(context),
               SettingsGroup(children: [FocusableListTile(title: Text(t.settings.contentScreensaverNoLibraries))]),
             ],
           );
@@ -115,6 +128,7 @@ class _ContentScreensaverLibrariesScreenState extends State<ContentScreensaverLi
             return SettingsPage(
               title: Text(t.settings.contentScreensaverLibraries),
               children: [
+                _description(context),
                 for (final group in groups.entries)
                   SettingsGroup(
                     title: group.key,

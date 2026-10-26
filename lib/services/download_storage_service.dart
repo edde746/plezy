@@ -109,7 +109,9 @@ class DownloadStorageService {
   /// digest of the server and item ids (the ids themselves run to 32-40
   /// characters), so enqueue, completion and SAF recovery all derive the same
   /// name, and it must not change: in-flight downloads are looked up by it.
-  String _itemTag(MediaItem item) => '[${md5.convert(utf8.encode(item.globalKey)).toString().substring(0, 8)}]';
+  static String tagForGlobalKey(String globalKey) => md5.convert(utf8.encode(globalKey)).toString().substring(0, 8);
+
+  String _itemTag(MediaItem item) => '[${tagForGlobalKey(item.globalKey)}]';
 
   /// Format episode filename base: S{XX}E{XX} - {Title} [{tag}]
   String _formatEpisodeFileName(MediaItem episode) {
@@ -158,6 +160,14 @@ class DownloadStorageService {
     final baseDir = await _getBaseAppDir();
     _baseDownloadsDir = await _ensureDirectoryExists(Directory(path.join(baseDir.path, 'downloads')));
     return _baseDownloadsDir!;
+  }
+
+  /// The default app-managed downloads directory without creating it or
+  /// following a configured custom location. Cleanup tools use this to keep
+  /// their scope fixed even when the user has selected external storage.
+  Future<Directory> getAppManagedDownloadsDirectory() async {
+    final baseDir = await _getBaseAppDir();
+    return Directory(path.join(baseDir.path, 'downloads'));
   }
 
   /// Get centralized artwork directory for offline artwork caching

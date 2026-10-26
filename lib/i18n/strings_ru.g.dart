@@ -316,6 +316,7 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get gridView => 'Сетка';
 	@override String get listView => 'Список';
 	@override String get showHeroSection => 'Показать раздел избранного';
+	@override String get contentScreensaverLibrariesDescription => 'Выберите библиотеки, из которых брать изображения для заставки. Если не выбрать ни одной, будут использоваться изображения из всех библиотек.';
 	@override String get continueWatchingAction => 'Действие для «Продолжить просмотр»';
 	@override String get continueWatchingPlay => 'Воспроизвести';
 	@override String get continueWatchingDetails => 'Открыть сведения';
@@ -2008,6 +2009,15 @@ class _Translations$downloads$ru extends Translations$downloads$en {
 	@override String get syncRuleCleanupUnavailable => 'Не удалось надёжно определить связанные загрузки. Переподключите сервер и повторите попытку либо удалите правило без удаления загрузок.';
 	@override String syncedNewEpisodes({required Object count, required Object title}) => 'Синхронизировано ${count} новых эпизодов для ${title}';
 	@override String get activeSyncRules => 'Правила синхронизации';
+	@override String get reviewOrphanFiles => 'Проверить загрузки без записи';
+	@override String get orphanReviewTitle => 'Проверить загрузки без записи';
+	@override String get orphanReviewDescription => 'Эти помеченные файлы находятся в стандартных папках загрузок, которыми управляет PlezyNG, но для них нет соответствующей записи о загрузке или активной задачи. Проверьте список перед удалением.';
+	@override String orphanReviewCount({required Object count, required Object size}) => 'Файлов: ${count} · ${size}';
+	@override String orphanDeleteFiles({required Object count}) => 'Удалить файлы: ${count}';
+	@override String get orphanCleanupNone => 'Файлы загрузок без записи не найдены';
+	@override String get orphanCleanupFailed => 'PlezyNG не удалось безопасно просканировать управляемую папку загрузок. Файлы не удалены.';
+	@override String get orphanCleanupChanged => 'Во время проверки список загрузок изменился. Перед очисткой проверьте файлы ещё раз.';
+	@override String orphanCleanupComplete({required Object count, required Object size}) => 'Удалено файлов без записи: ${count} · освобождено ${size}';
 	@override String get noSyncRules => 'Нет правил синхронизации';
 	@override String get manageSyncRule => 'Управление синхронизацией';
 	@override String get editEpisodeCount => 'Количество эпизодов';
@@ -3744,6 +3754,7 @@ extension on TranslationsRu {
 			'settings.gridView' => 'Сетка',
 			'settings.listView' => 'Список',
 			'settings.showHeroSection' => 'Показать раздел избранного',
+			'settings.contentScreensaverLibrariesDescription' => 'Выберите библиотеки, из которых брать изображения для заставки. Если не выбрать ни одной, будут использоваться изображения из всех библиотек.',
 			'settings.continueWatchingAction' => 'Действие для «Продолжить просмотр»',
 			'settings.continueWatchingPlay' => 'Воспроизвести',
 			'settings.continueWatchingDetails' => 'Открыть сведения',
@@ -4055,9 +4066,9 @@ extension on TranslationsRu {
 			'themeEditor.slots.outline' => 'Обводка',
 			'themeEditor.slots.text' => 'Текст',
 			'themeEditor.slots.textMuted' => 'Второстепенный текст',
-			'themeEditor.slots.accent' => 'Акцент',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => 'Акцент',
 			'themeEditor.opacity' => 'Непрозрачность',
 			'themeEditor.hexHint' => '#RRGGBB или #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Из других тем',
@@ -4569,9 +4580,9 @@ extension on TranslationsRu {
 			'profiles.pinExplain' => 'Для переключения профилей нужен 4-значный PIN.',
 			'profiles.continueButton' => 'Продолжить',
 			'profiles.pinsDontMatch' => 'PIN-коды не совпадают',
-			'profiles.tokenIdentityMismatch' => 'Токен профиля Plex указал на неожиданный сервер',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'Токен профиля Plex указал на неожиданный сервер',
 			'connections.sectionTitle' => 'Подключения',
 			'connections.addConnection' => 'Добавить подключение',
 			'connections.addConnectionSubtitleNoProfile' => 'Войдите через Plex или подключите сервер Jellyfin или Emby',
@@ -5083,9 +5094,9 @@ extension on TranslationsRu {
 			'liveTv.guideReloadFailed' => 'Не удалось обновить программу',
 			'liveTv.rulesProcessRequested' => 'Запрошен пересчёт правил',
 			'liveTv.rulesProcessFailed' => 'Не удалось повторно применить правила записи',
-			'liveTv.recordShow' => 'Записать передачу',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordShow' => 'Записать передачу',
 			'liveTv.recordSettings.startEarly' => 'Начинать раньше (секунды)',
 			'liveTv.recordSettings.endLate' => 'Заканчивать позже (секунды)',
 			'liveTv.recordSettings.newOnly' => 'Только новые эпизоды',
@@ -5390,6 +5401,15 @@ extension on TranslationsRu {
 			'downloads.syncRuleCleanupUnavailable' => 'Не удалось надёжно определить связанные загрузки. Переподключите сервер и повторите попытку либо удалите правило без удаления загрузок.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Синхронизировано ${count} новых эпизодов для ${title}',
 			'downloads.activeSyncRules' => 'Правила синхронизации',
+			'downloads.reviewOrphanFiles' => 'Проверить загрузки без записи',
+			'downloads.orphanReviewTitle' => 'Проверить загрузки без записи',
+			'downloads.orphanReviewDescription' => 'Эти помеченные файлы находятся в стандартных папках загрузок, которыми управляет PlezyNG, но для них нет соответствующей записи о загрузке или активной задачи. Проверьте список перед удалением.',
+			'downloads.orphanReviewCount' => ({required Object count, required Object size}) => 'Файлов: ${count} · ${size}',
+			'downloads.orphanDeleteFiles' => ({required Object count}) => 'Удалить файлы: ${count}',
+			'downloads.orphanCleanupNone' => 'Файлы загрузок без записи не найдены',
+			'downloads.orphanCleanupFailed' => 'PlezyNG не удалось безопасно просканировать управляемую папку загрузок. Файлы не удалены.',
+			'downloads.orphanCleanupChanged' => 'Во время проверки список загрузок изменился. Перед очисткой проверьте файлы ещё раз.',
+			'downloads.orphanCleanupComplete' => ({required Object count, required Object size}) => 'Удалено файлов без записи: ${count} · освобождено ${size}',
 			'downloads.noSyncRules' => 'Нет правил синхронизации',
 			'downloads.manageSyncRule' => 'Управление синхронизацией',
 			'downloads.editEpisodeCount' => 'Количество эпизодов',
@@ -5588,6 +5608,8 @@ extension on TranslationsRu {
 			'performanceOverlay.dvRpus' => 'DV RPU',
 			'performanceOverlay.dvRpuAverage' => 'Сред. DV RPU',
 			'performanceOverlay.dvSampleAverage' => 'Сред. сэмпл DV',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Макс. яркость',
 			'performanceOverlay.minLuma' => 'Мин. яркость',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5598,8 +5620,6 @@ extension on TranslationsRu {
 			'performanceOverlay.player' => 'Плеер',
 			'performanceOverlay.memory' => 'Память',
 			'performanceOverlay.uiFps' => 'FPS интерфейса',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android, аппаратный',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA, аппаратный',

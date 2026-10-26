@@ -101,7 +101,9 @@ void main() {
     final rssMb = data.remove('rssMb') as int;
     final maxRssMb = data.remove('maxRssMb') as int;
     expect(rssMb, greaterThan(0));
-    expect(maxRssMb, greaterThanOrEqualTo(rssMb));
+    // These counters are sampled separately and rounded to whole MiB. The
+    // process can cross a rounding boundary between reads, so allow one MiB.
+    expect(maxRssMb + 1, greaterThanOrEqualTo(rssMb));
     expect(data, {
       'imageCacheMb': 6,
       'imageCacheImages': 2,

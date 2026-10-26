@@ -316,6 +316,7 @@ class _Translations$settings$nb extends Translations$settings$en {
 	@override String get gridView => 'Rutenett';
 	@override String get listView => 'Liste';
 	@override String get showHeroSection => 'Vis fremhevet seksjon';
+	@override String get contentScreensaverLibrariesDescription => 'Velg hvilke biblioteker som skal levere bilder til skjermspareren. Hvis ingen velges, brukes bilder fra alle biblioteker.';
 	@override String get continueWatchingAction => 'Handling for «Fortsett å se»';
 	@override String get continueWatchingPlay => 'Spill av';
 	@override String get continueWatchingDetails => 'Åpne detaljer';
@@ -1988,6 +1989,15 @@ class _Translations$downloads$nb extends Translations$downloads$en {
 	@override String get syncRuleCleanupUnavailable => 'Tilknyttede nedlastinger kunne ikke identifiseres på en trygg måte. Koble til serveren på nytt og prøv igjen, eller fjern regelen uten å slette nedlastingene.';
 	@override String syncedNewEpisodes({required Object count, required Object title}) => 'Synkroniserte ${count} nye episoder for ${title}';
 	@override String get activeSyncRules => 'Synkroniseringsregler';
+	@override String get reviewOrphanFiles => 'Se over foreldreløse nedlastinger';
+	@override String get orphanReviewTitle => 'Se over foreldreløse nedlastinger';
+	@override String get orphanReviewDescription => 'Disse merkede filene ligger i PlezyNGs standardmapper for appstyrte nedlastinger, men har ingen tilsvarende nedlastingsoppføring eller aktiv oppgave. Kontroller listen før du sletter dem.';
+	@override String orphanReviewCount({required Object count, required Object size}) => '${count} filer · ${size}';
+	@override String orphanDeleteFiles({required Object count}) => 'Slett ${count} filer';
+	@override String get orphanCleanupNone => 'Fant ingen foreldreløse nedlastingsfiler';
+	@override String get orphanCleanupFailed => 'PlezyNG kunne ikke skanne den administrerte nedlastingsmappen på en trygg måte. Ingen filer ble slettet.';
+	@override String get orphanCleanupChanged => 'Nedlastingslisten ble endret mens du gikk gjennom den. Se over filene på nytt før du rydder opp.';
+	@override String orphanCleanupComplete({required Object count, required Object size}) => 'Slettet ${count} foreldreløse filer · ${size} frigjort';
 	@override String get noSyncRules => 'Ingen synkroniseringsregler';
 	@override String get manageSyncRule => 'Administrer synkronisering';
 	@override String get editEpisodeCount => 'Antall episoder';
@@ -3720,6 +3730,7 @@ extension on TranslationsNb {
 			'settings.gridView' => 'Rutenett',
 			'settings.listView' => 'Liste',
 			'settings.showHeroSection' => 'Vis fremhevet seksjon',
+			'settings.contentScreensaverLibrariesDescription' => 'Velg hvilke biblioteker som skal levere bilder til skjermspareren. Hvis ingen velges, brukes bilder fra alle biblioteker.',
 			'settings.continueWatchingAction' => 'Handling for «Fortsett å se»',
 			'settings.continueWatchingPlay' => 'Spill av',
 			'settings.continueWatchingDetails' => 'Åpne detaljer',
@@ -4031,9 +4042,9 @@ extension on TranslationsNb {
 			'themeEditor.slots.outline' => 'Kontur',
 			'themeEditor.slots.text' => 'Tekst',
 			'themeEditor.slots.textMuted' => 'Sekundærtekst',
-			'themeEditor.slots.accent' => 'Aksent',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => 'Aksent',
 			'themeEditor.opacity' => 'Opasitet',
 			'themeEditor.hexHint' => '#RRGGBB eller #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Fra andre temaer',
@@ -4545,9 +4556,9 @@ extension on TranslationsNb {
 			'profiles.pinExplain' => '4-sifret PIN kreves for å bytte profiler.',
 			'profiles.continueButton' => 'Fortsett',
 			'profiles.pinsDontMatch' => 'PIN-ene samsvarer ikke',
-			'profiles.tokenIdentityMismatch' => 'Plex-profiltokenet ble knyttet til en uventet server',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'Plex-profiltokenet ble knyttet til en uventet server',
 			'connections.sectionTitle' => 'Tilkoblinger',
 			'connections.addConnection' => 'Legg til tilkobling',
 			'connections.addConnectionSubtitleNoProfile' => 'Logg inn med Plex eller koble til en Jellyfin- eller Emby-server',
@@ -5059,9 +5070,9 @@ extension on TranslationsNb {
 			'liveTv.guideReloadFailed' => 'Kunne ikke oppdatere programguiden',
 			'liveTv.rulesProcessRequested' => 'Ny vurdering av reglene er forespurt',
 			'liveTv.rulesProcessFailed' => 'Kunne ikke kjøre opptaksreglene på nytt',
-			'liveTv.recordShow' => 'Ta opp program',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordShow' => 'Ta opp program',
 			'liveTv.recordSettings.startEarly' => 'Start tidligere (sekunder)',
 			'liveTv.recordSettings.endLate' => 'Slutt senere (sekunder)',
 			'liveTv.recordSettings.newOnly' => 'Bare nye episoder',
@@ -5366,6 +5377,15 @@ extension on TranslationsNb {
 			'downloads.syncRuleCleanupUnavailable' => 'Tilknyttede nedlastinger kunne ikke identifiseres på en trygg måte. Koble til serveren på nytt og prøv igjen, eller fjern regelen uten å slette nedlastingene.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Synkroniserte ${count} nye episoder for ${title}',
 			'downloads.activeSyncRules' => 'Synkroniseringsregler',
+			'downloads.reviewOrphanFiles' => 'Se over foreldreløse nedlastinger',
+			'downloads.orphanReviewTitle' => 'Se over foreldreløse nedlastinger',
+			'downloads.orphanReviewDescription' => 'Disse merkede filene ligger i PlezyNGs standardmapper for appstyrte nedlastinger, men har ingen tilsvarende nedlastingsoppføring eller aktiv oppgave. Kontroller listen før du sletter dem.',
+			'downloads.orphanReviewCount' => ({required Object count, required Object size}) => '${count} filer · ${size}',
+			'downloads.orphanDeleteFiles' => ({required Object count}) => 'Slett ${count} filer',
+			'downloads.orphanCleanupNone' => 'Fant ingen foreldreløse nedlastingsfiler',
+			'downloads.orphanCleanupFailed' => 'PlezyNG kunne ikke skanne den administrerte nedlastingsmappen på en trygg måte. Ingen filer ble slettet.',
+			'downloads.orphanCleanupChanged' => 'Nedlastingslisten ble endret mens du gikk gjennom den. Se over filene på nytt før du rydder opp.',
+			'downloads.orphanCleanupComplete' => ({required Object count, required Object size}) => 'Slettet ${count} foreldreløse filer · ${size} frigjort',
 			'downloads.noSyncRules' => 'Ingen synkroniseringsregler',
 			'downloads.manageSyncRule' => 'Administrer synkronisering',
 			'downloads.editEpisodeCount' => 'Antall episoder',
@@ -5564,6 +5584,8 @@ extension on TranslationsNb {
 			'performanceOverlay.dvRpus' => 'DV RPU-er',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU snitt',
 			'performanceOverlay.dvSampleAverage' => 'DV-sample snitt',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Maks luma',
 			'performanceOverlay.minLuma' => 'Min luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5574,8 +5596,6 @@ extension on TranslationsNb {
 			'performanceOverlay.player' => 'Spiller',
 			'performanceOverlay.memory' => 'Minne',
 			'performanceOverlay.uiFps' => 'UI FPS',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android-maskinvare',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA-maskinvare',

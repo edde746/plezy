@@ -316,6 +316,7 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get gridView => 'Raster';
 	@override String get listView => 'Lijst';
 	@override String get showHeroSection => 'Toon hoofdsectie';
+	@override String get contentScreensaverLibrariesDescription => 'Kies welke bibliotheken afbeeldingen voor de schermbeveiliging leveren. Als je niets selecteert, worden afbeeldingen uit alle bibliotheken gebruikt.';
 	@override String get continueWatchingAction => 'Actie voor \'Doorgaan met kijken\'';
 	@override String get continueWatchingPlay => 'Afspelen';
 	@override String get continueWatchingDetails => 'Details openen';
@@ -1988,6 +1989,15 @@ class _Translations$downloads$nl extends Translations$downloads$en {
 	@override String get syncRuleCleanupUnavailable => 'Gekoppelde downloads konden niet veilig worden geïdentificeerd. Maak opnieuw verbinding met de server en probeer het opnieuw, of verwijder de regel zonder de downloads te verwijderen.';
 	@override String syncedNewEpisodes({required Object count, required Object title}) => '${count} nieuwe afleveringen gesynchroniseerd voor ${title}';
 	@override String get activeSyncRules => 'Synchronisatieregels';
+	@override String get reviewOrphanFiles => 'Niet-gekoppelde downloads controleren';
+	@override String get orphanReviewTitle => 'Niet-gekoppelde downloads controleren';
+	@override String get orphanReviewDescription => 'Deze gemarkeerde bestanden staan in de standaardmappen voor downloads die PlezyNG beheert, maar er is geen bijbehorende downloadregistratie of actieve taak. Controleer de lijst voordat je ze verwijdert.';
+	@override String orphanReviewCount({required Object count, required Object size}) => '${count} bestanden · ${size}';
+	@override String orphanDeleteFiles({required Object count}) => '${count} bestanden verwijderen';
+	@override String get orphanCleanupNone => 'Geen niet-gekoppelde downloadbestanden gevonden';
+	@override String get orphanCleanupFailed => 'PlezyNG kon de beheerde downloadmap niet veilig scannen. Er zijn geen bestanden verwijderd.';
+	@override String get orphanCleanupChanged => 'De downloadlijst is tijdens het controleren gewijzigd. Controleer de bestanden opnieuw voordat je opruimt.';
+	@override String orphanCleanupComplete({required Object count, required Object size}) => '${count} niet-gekoppelde bestanden verwijderd · ${size} vrijgemaakt';
 	@override String get noSyncRules => 'Geen synchronisatieregels';
 	@override String get manageSyncRule => 'Synchronisatie beheren';
 	@override String get editEpisodeCount => 'Aantal afleveringen';
@@ -3720,6 +3730,7 @@ extension on TranslationsNl {
 			'settings.gridView' => 'Raster',
 			'settings.listView' => 'Lijst',
 			'settings.showHeroSection' => 'Toon hoofdsectie',
+			'settings.contentScreensaverLibrariesDescription' => 'Kies welke bibliotheken afbeeldingen voor de schermbeveiliging leveren. Als je niets selecteert, worden afbeeldingen uit alle bibliotheken gebruikt.',
 			'settings.continueWatchingAction' => 'Actie voor \'Doorgaan met kijken\'',
 			'settings.continueWatchingPlay' => 'Afspelen',
 			'settings.continueWatchingDetails' => 'Details openen',
@@ -4031,9 +4042,9 @@ extension on TranslationsNl {
 			'themeEditor.slots.outline' => 'Rand',
 			'themeEditor.slots.text' => 'Tekst',
 			'themeEditor.slots.textMuted' => 'Secundaire tekst',
-			'themeEditor.slots.accent' => 'Accent',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => 'Accent',
 			'themeEditor.opacity' => 'Dekking',
 			'themeEditor.hexHint' => '#RRGGBB of #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Uit andere thema\'s',
@@ -4545,9 +4556,9 @@ extension on TranslationsNl {
 			'profiles.pinExplain' => 'Een viercijferige pincode is vereist om van profiel te wisselen.',
 			'profiles.continueButton' => 'Doorgaan',
 			'profiles.pinsDontMatch' => 'De pincodes komen niet overeen',
-			'profiles.tokenIdentityMismatch' => 'Het token van het Plex-profiel bleek bij een onverwachte server te horen',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'Het token van het Plex-profiel bleek bij een onverwachte server te horen',
 			'connections.sectionTitle' => 'Verbindingen',
 			'connections.addConnection' => 'Verbinding toevoegen',
 			'connections.addConnectionSubtitleNoProfile' => 'Meld je aan met Plex of verbind een Jellyfin- of Emby-server',
@@ -5059,9 +5070,9 @@ extension on TranslationsNl {
 			'liveTv.guideReloadFailed' => 'Gids herladen mislukt',
 			'liveTv.rulesProcessRequested' => 'Nieuwe evaluatie van regels aangevraagd',
 			'liveTv.rulesProcessFailed' => 'Opnameregels opnieuw uitvoeren mislukt',
-			'liveTv.recordShow' => 'Programma opnemen',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordShow' => 'Programma opnemen',
 			'liveTv.recordSettings.startEarly' => 'Eerder beginnen (seconden)',
 			'liveTv.recordSettings.endLate' => 'Later stoppen (seconden)',
 			'liveTv.recordSettings.newOnly' => 'Alleen nieuwe afleveringen',
@@ -5366,6 +5377,15 @@ extension on TranslationsNl {
 			'downloads.syncRuleCleanupUnavailable' => 'Gekoppelde downloads konden niet veilig worden geïdentificeerd. Maak opnieuw verbinding met de server en probeer het opnieuw, of verwijder de regel zonder de downloads te verwijderen.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} nieuwe afleveringen gesynchroniseerd voor ${title}',
 			'downloads.activeSyncRules' => 'Synchronisatieregels',
+			'downloads.reviewOrphanFiles' => 'Niet-gekoppelde downloads controleren',
+			'downloads.orphanReviewTitle' => 'Niet-gekoppelde downloads controleren',
+			'downloads.orphanReviewDescription' => 'Deze gemarkeerde bestanden staan in de standaardmappen voor downloads die PlezyNG beheert, maar er is geen bijbehorende downloadregistratie of actieve taak. Controleer de lijst voordat je ze verwijdert.',
+			'downloads.orphanReviewCount' => ({required Object count, required Object size}) => '${count} bestanden · ${size}',
+			'downloads.orphanDeleteFiles' => ({required Object count}) => '${count} bestanden verwijderen',
+			'downloads.orphanCleanupNone' => 'Geen niet-gekoppelde downloadbestanden gevonden',
+			'downloads.orphanCleanupFailed' => 'PlezyNG kon de beheerde downloadmap niet veilig scannen. Er zijn geen bestanden verwijderd.',
+			'downloads.orphanCleanupChanged' => 'De downloadlijst is tijdens het controleren gewijzigd. Controleer de bestanden opnieuw voordat je opruimt.',
+			'downloads.orphanCleanupComplete' => ({required Object count, required Object size}) => '${count} niet-gekoppelde bestanden verwijderd · ${size} vrijgemaakt',
 			'downloads.noSyncRules' => 'Geen synchronisatieregels',
 			'downloads.manageSyncRule' => 'Synchronisatie beheren',
 			'downloads.editEpisodeCount' => 'Aantal afleveringen',
@@ -5564,6 +5584,8 @@ extension on TranslationsNl {
 			'performanceOverlay.dvRpus' => 'DV RPU’s',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU gem.',
 			'performanceOverlay.dvSampleAverage' => 'DV-sample gem.',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Max luma',
 			'performanceOverlay.minLuma' => 'Min luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5574,8 +5596,6 @@ extension on TranslationsNl {
 			'performanceOverlay.player' => 'Speler',
 			'performanceOverlay.memory' => 'Geheugen',
 			'performanceOverlay.uiFps' => 'UI FPS',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',

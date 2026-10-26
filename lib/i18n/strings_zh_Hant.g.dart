@@ -317,6 +317,7 @@ class _Translations$settings$zh_Hant extends Translations$settings$zh {
 	@override String get gridView => '網格檢視';
 	@override String get listView => '清單檢視';
 	@override String get showHeroSection => '顯示精選內容區';
+	@override String get contentScreensaverLibrariesDescription => '選擇要用來提供螢幕保護程式圖片的媒體庫。若未選擇任何媒體庫，則會使用所有媒體庫的圖片。';
 	@override String get continueWatchingAction => '繼續觀看操作';
 	@override String get continueWatchingPlay => '播放影片';
 	@override String get continueWatchingDetails => '開啟詳情頁';
@@ -1979,6 +1980,15 @@ class _Translations$downloads$zh_Hant extends Translations$downloads$zh {
 	@override String get syncRuleCleanupUnavailable => '無法安全地識別相關的下載內容。請重新連線伺服器後再試，或在不刪除下載內容的情況下移除規則。';
 	@override String syncedNewEpisodes({required Object title, required Object count}) => '已為 ${title} 同步 ${count} 個新單集';
 	@override String get activeSyncRules => '同步規則';
+	@override String get reviewOrphanFiles => '檢查無對應紀錄的下載';
+	@override String get orphanReviewTitle => '檢查無對應紀錄的下載';
+	@override String get orphanReviewDescription => '這些已標記的檔案位於 PlezyNG 預設管理的下載資料夾中，但沒有相符的下載紀錄或進行中的工作。刪除前請先檢查清單。';
+	@override String orphanReviewCount({required Object count, required Object size}) => '${count} 個檔案 · ${size}';
+	@override String orphanDeleteFiles({required Object count}) => '刪除 ${count} 個檔案';
+	@override String get orphanCleanupNone => '找不到無對應紀錄的下載檔案';
+	@override String get orphanCleanupFailed => 'PlezyNG 無法安全地掃描受管理的下載資料夾。沒有刪除任何檔案。';
+	@override String get orphanCleanupChanged => '檢查期間下載清單已變更。清理前請重新檢查檔案。';
+	@override String orphanCleanupComplete({required Object count, required Object size}) => '已刪除 ${count} 個無對應紀錄的檔案 · 釋出 ${size}';
 	@override String get noSyncRules => '沒有同步規則';
 	@override String get manageSyncRule => '管理同步';
 	@override String get editEpisodeCount => '單集數量';
@@ -3709,6 +3719,7 @@ extension on TranslationsZhHant {
 			'settings.gridView' => '網格檢視',
 			'settings.listView' => '清單檢視',
 			'settings.showHeroSection' => '顯示精選內容區',
+			'settings.contentScreensaverLibrariesDescription' => '選擇要用來提供螢幕保護程式圖片的媒體庫。若未選擇任何媒體庫，則會使用所有媒體庫的圖片。',
 			'settings.continueWatchingAction' => '繼續觀看操作',
 			'settings.continueWatchingPlay' => '播放影片',
 			'settings.continueWatchingDetails' => '開啟詳情頁',
@@ -4020,9 +4031,9 @@ extension on TranslationsZhHant {
 			'themeEditor.slots.outline' => '外框',
 			'themeEditor.slots.text' => '文字',
 			'themeEditor.slots.textMuted' => '次要文字',
-			'themeEditor.slots.accent' => '強調色',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => '強調色',
 			'themeEditor.opacity' => '不透明度',
 			'themeEditor.hexHint' => '#RRGGBB 或 #AARRGGBB',
 			'themeEditor.fromOtherThemes' => '來自其他主題',
@@ -4534,9 +4545,9 @@ extension on TranslationsZhHant {
 			'profiles.pinExplain' => '切換至此使用者設定檔時需要 4 位數 PIN 碼。',
 			'profiles.continueButton' => '繼續',
 			'profiles.pinsDontMatch' => 'PIN 碼不符合',
-			'profiles.tokenIdentityMismatch' => 'Plex 使用者設定檔權杖解析到非預期的伺服器',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'Plex 使用者設定檔權杖解析到非預期的伺服器',
 			'connections.sectionTitle' => '連線',
 			'connections.addConnection' => '新增連線',
 			'connections.addConnectionSubtitleNoProfile' => '使用 Plex 登入或連線至 Jellyfin 或 Emby 伺服器',
@@ -5048,9 +5059,9 @@ extension on TranslationsZhHant {
 			'liveTv.guideReloadFailed' => '無法重新載入節目表指南',
 			'liveTv.rulesProcessRequested' => '已要求重新評估規則',
 			'liveTv.rulesProcessFailed' => '無法重新評估錄影規則',
-			'liveTv.recordShow' => '錄製節目',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordShow' => '錄製節目',
 			'liveTv.recordSettings.startEarly' => '提早開始（秒）',
 			'liveTv.recordSettings.endLate' => '延後結束（秒）',
 			'liveTv.recordSettings.newOnly' => '僅新劇集',
@@ -5355,6 +5366,15 @@ extension on TranslationsZhHant {
 			'downloads.syncRuleCleanupUnavailable' => '無法安全地識別相關的下載內容。請重新連線伺服器後再試，或在不刪除下載內容的情況下移除規則。',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '已為 ${title} 同步 ${count} 個新單集',
 			'downloads.activeSyncRules' => '同步規則',
+			'downloads.reviewOrphanFiles' => '檢查無對應紀錄的下載',
+			'downloads.orphanReviewTitle' => '檢查無對應紀錄的下載',
+			'downloads.orphanReviewDescription' => '這些已標記的檔案位於 PlezyNG 預設管理的下載資料夾中，但沒有相符的下載紀錄或進行中的工作。刪除前請先檢查清單。',
+			'downloads.orphanReviewCount' => ({required Object count, required Object size}) => '${count} 個檔案 · ${size}',
+			'downloads.orphanDeleteFiles' => ({required Object count}) => '刪除 ${count} 個檔案',
+			'downloads.orphanCleanupNone' => '找不到無對應紀錄的下載檔案',
+			'downloads.orphanCleanupFailed' => 'PlezyNG 無法安全地掃描受管理的下載資料夾。沒有刪除任何檔案。',
+			'downloads.orphanCleanupChanged' => '檢查期間下載清單已變更。清理前請重新檢查檔案。',
+			'downloads.orphanCleanupComplete' => ({required Object count, required Object size}) => '已刪除 ${count} 個無對應紀錄的檔案 · 釋出 ${size}',
 			'downloads.noSyncRules' => '沒有同步規則',
 			'downloads.manageSyncRule' => '管理同步',
 			'downloads.editEpisodeCount' => '單集數量',
@@ -5553,6 +5573,8 @@ extension on TranslationsZhHant {
 			'performanceOverlay.dvRpus' => 'DV RPU 數',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU 平均',
 			'performanceOverlay.dvSampleAverage' => 'DV 取樣平均',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => '最大亮度',
 			'performanceOverlay.minLuma' => '最小亮度',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5563,8 +5585,6 @@ extension on TranslationsZhHant {
 			'performanceOverlay.player' => '播放器',
 			'performanceOverlay.memory' => '記憶體',
 			'performanceOverlay.uiFps' => '介面 FPS',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android 硬體',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA 硬體',

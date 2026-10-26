@@ -316,6 +316,7 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get gridView => 'Rutnät';
 	@override String get listView => 'Lista';
 	@override String get showHeroSection => 'Visa utvalt innehåll';
+	@override String get contentScreensaverLibrariesDescription => 'Välj vilka bibliotek som ska tillhandahålla bilder till skärmsläckaren. Om inget väljs används bilder från alla bibliotek.';
 	@override String get continueWatchingAction => 'Åtgärd för Fortsätt titta';
 	@override String get continueWatchingPlay => 'Spela';
 	@override String get continueWatchingDetails => 'Öppna detaljer';
@@ -1988,6 +1989,15 @@ class _Translations$downloads$sv extends Translations$downloads$en {
 	@override String get syncRuleCleanupUnavailable => 'Associerade nedladdningar kunde inte identifieras på ett säkert sätt. Återanslut servern och försök igen, eller ta bort regeln utan att ta bort nedladdningar.';
 	@override String syncedNewEpisodes({required Object count, required Object title}) => 'Synkroniserade ${count} nya avsnitt för ${title}';
 	@override String get activeSyncRules => 'Synkregler';
+	@override String get reviewOrphanFiles => 'Granska nedladdningar utan post';
+	@override String get orphanReviewTitle => 'Granska nedladdningar utan post';
+	@override String get orphanReviewDescription => 'Dessa märkta filer finns i PlezyNG:s standardmappar för apphanterade nedladdningar, men saknar en motsvarande nedladdningspost eller en aktiv uppgift. Kontrollera listan innan du raderar dem.';
+	@override String orphanReviewCount({required Object count, required Object size}) => 'Antal filer: ${count} · ${size}';
+	@override String orphanDeleteFiles({required Object count}) => 'Radera ${count} filer';
+	@override String get orphanCleanupNone => 'Inga nedladdningsfiler utan post hittades';
+	@override String get orphanCleanupFailed => 'PlezyNG kunde inte söka igenom den hanterade nedladdningsmappen på ett säkert sätt. Inga filer har raderats.';
+	@override String get orphanCleanupChanged => 'Nedladdningslistan ändrades medan du granskade den. Granska filerna igen innan du rensar.';
+	@override String orphanCleanupComplete({required Object count, required Object size}) => '${count} nedladdningsfiler utan post raderades · ${size} frigjordes';
 	@override String get noSyncRules => 'Inga synkregler';
 	@override String get manageSyncRule => 'Hantera synkronisering';
 	@override String get editEpisodeCount => 'Antal avsnitt';
@@ -3720,6 +3730,7 @@ extension on TranslationsSv {
 			'settings.gridView' => 'Rutnät',
 			'settings.listView' => 'Lista',
 			'settings.showHeroSection' => 'Visa utvalt innehåll',
+			'settings.contentScreensaverLibrariesDescription' => 'Välj vilka bibliotek som ska tillhandahålla bilder till skärmsläckaren. Om inget väljs används bilder från alla bibliotek.',
 			'settings.continueWatchingAction' => 'Åtgärd för Fortsätt titta',
 			'settings.continueWatchingPlay' => 'Spela',
 			'settings.continueWatchingDetails' => 'Öppna detaljer',
@@ -4031,9 +4042,9 @@ extension on TranslationsSv {
 			'themeEditor.slots.outline' => 'Kontur',
 			'themeEditor.slots.text' => 'Text',
 			'themeEditor.slots.textMuted' => 'Sekundär text',
-			'themeEditor.slots.accent' => 'Accentfärg',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => 'Accentfärg',
 			'themeEditor.opacity' => 'Opacitet',
 			'themeEditor.hexHint' => '#RRGGBB eller #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Från andra teman',
@@ -4545,9 +4556,9 @@ extension on TranslationsSv {
 			'profiles.pinExplain' => 'En fyrsiffrig PIN-kod krävs för att byta profil.',
 			'profiles.continueButton' => 'Fortsätt',
 			'profiles.pinsDontMatch' => 'PIN-koderna stämmer inte överens',
-			'profiles.tokenIdentityMismatch' => 'Plex-profiltoken kopplades till en oväntad server',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'Plex-profiltoken kopplades till en oväntad server',
 			'connections.sectionTitle' => 'Anslutningar',
 			'connections.addConnection' => 'Lägg till anslutning',
 			'connections.addConnectionSubtitleNoProfile' => 'Logga in med Plex eller anslut en Jellyfin- eller Emby-server',
@@ -5059,9 +5070,9 @@ extension on TranslationsSv {
 			'liveTv.guideReloadFailed' => 'Programguiden kunde inte uppdateras',
 			'liveTv.rulesProcessRequested' => 'Ny regelutvärdering har begärts',
 			'liveTv.rulesProcessFailed' => 'Inspelningsreglerna kunde inte köras om',
-			'liveTv.recordShow' => 'Spela in program',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordShow' => 'Spela in program',
 			'liveTv.recordSettings.startEarly' => 'Börja tidigare (sekunder)',
 			'liveTv.recordSettings.endLate' => 'Sluta senare (sekunder)',
 			'liveTv.recordSettings.newOnly' => 'Endast nya avsnitt',
@@ -5366,6 +5377,15 @@ extension on TranslationsSv {
 			'downloads.syncRuleCleanupUnavailable' => 'Associerade nedladdningar kunde inte identifieras på ett säkert sätt. Återanslut servern och försök igen, eller ta bort regeln utan att ta bort nedladdningar.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Synkroniserade ${count} nya avsnitt för ${title}',
 			'downloads.activeSyncRules' => 'Synkregler',
+			'downloads.reviewOrphanFiles' => 'Granska nedladdningar utan post',
+			'downloads.orphanReviewTitle' => 'Granska nedladdningar utan post',
+			'downloads.orphanReviewDescription' => 'Dessa märkta filer finns i PlezyNG:s standardmappar för apphanterade nedladdningar, men saknar en motsvarande nedladdningspost eller en aktiv uppgift. Kontrollera listan innan du raderar dem.',
+			'downloads.orphanReviewCount' => ({required Object count, required Object size}) => 'Antal filer: ${count} · ${size}',
+			'downloads.orphanDeleteFiles' => ({required Object count}) => 'Radera ${count} filer',
+			'downloads.orphanCleanupNone' => 'Inga nedladdningsfiler utan post hittades',
+			'downloads.orphanCleanupFailed' => 'PlezyNG kunde inte söka igenom den hanterade nedladdningsmappen på ett säkert sätt. Inga filer har raderats.',
+			'downloads.orphanCleanupChanged' => 'Nedladdningslistan ändrades medan du granskade den. Granska filerna igen innan du rensar.',
+			'downloads.orphanCleanupComplete' => ({required Object count, required Object size}) => '${count} nedladdningsfiler utan post raderades · ${size} frigjordes',
 			'downloads.noSyncRules' => 'Inga synkregler',
 			'downloads.manageSyncRule' => 'Hantera synkronisering',
 			'downloads.editEpisodeCount' => 'Antal avsnitt',
@@ -5564,6 +5584,8 @@ extension on TranslationsSv {
 			'performanceOverlay.dvRpus' => 'DV-RPU:er',
 			'performanceOverlay.dvRpuAverage' => 'DV-RPU, genomsnitt',
 			'performanceOverlay.dvSampleAverage' => 'DV-sampling, genomsnitt',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Max luma',
 			'performanceOverlay.minLuma' => 'Min luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5574,8 +5596,6 @@ extension on TranslationsSv {
 			'performanceOverlay.player' => 'Spelare',
 			'performanceOverlay.memory' => 'Minne',
 			'performanceOverlay.uiFps' => 'UI FPS',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',

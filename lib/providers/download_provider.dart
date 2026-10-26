@@ -18,6 +18,7 @@ import '../database/download_collection_operations.dart';
 import '../database/download_operations.dart';
 import '../services/background_work_diagnostics_service.dart';
 import '../services/download_manager_service.dart';
+import '../services/orphan_download_cleanup_service.dart';
 import '../services/download_size_calculator.dart';
 import '../services/api_cache.dart';
 import '../services/download_artwork_service.dart';
@@ -205,6 +206,13 @@ class DownloadProvider extends ChangeNotifier with DisposableChangeNotifierMixin
 
   /// Ensures persisted downloads have been loaded from disk.
   Future<void> ensureInitialized() => _initFuture;
+
+  bool get canReviewOrphanDownloads => _downloadManager.canReviewOrphanDownloads;
+
+  Future<OrphanDownloadScan> scanOrphanDownloads() => _downloadManager.scanOrphanDownloads();
+
+  Future<OrphanDownloadCleanupResult> deleteOrphanDownloads(OrphanDownloadScan scan) =>
+      _downloadManager.deleteOrphanDownloads(scan);
 
   Future<void> setDownloadLocation({required String path, required String pathType, void Function()? checkCurrent}) {
     return _downloadManager.setDownloadLocation(path: path, pathType: pathType, checkCurrent: checkCurrent);

@@ -4,6 +4,7 @@
 
 ### Added
 
+- Add a review-first cleanup for orphaned tagged downloads in PlezyNG's default app-managed folders.
 - Add configurable skipping for Plex-detected commercial markers, six original animated visualizer styles, and opt-in loudness-aware music fades.
 - Add converted download quality for Jellyfin and Emby, and let sync rules keep their own quality preset.
 - Add per-server Continue Watching downloads that remove shelf items when they leave the shelf.
@@ -51,6 +52,11 @@
 
 ### Changed
 
+- Keep both iOS SwiftPM lockfiles pinned to the same Google Cast SDK revision.
+- Explain the default behavior on the screensaver library selection page.
+- Format the download and screensaver library views with Flutter's configured Dart formatter.
+- Check iOS audio-output ordering while allowing the Spatial Audio driver on iOS 26.
+- Build Android app and plugin modules with SDK 37 and generate BuildConfig for current Android dependencies.
 - Brand default and alternate app icons, splash art, and TV launch graphics with the PlezyNG badge.
 - Refresh the release-channel guide with configured publishers and remaining credential requirements.
 - Declare Bash explicitly when naming the Snap release artifact.

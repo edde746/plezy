@@ -316,6 +316,7 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get gridView => 'Siatka';
 	@override String get listView => 'Lista';
 	@override String get showHeroSection => 'Pokaż sekcję wyróżnioną';
+	@override String get contentScreensaverLibrariesDescription => 'Wybierz biblioteki, z których mają pochodzić grafiki wygaszacza ekranu. Jeśli nie wybierzesz żadnej, używane będą grafiki ze wszystkich bibliotek.';
 	@override String get continueWatchingAction => 'Działanie w sekcji „Kontynuuj oglądanie”';
 	@override String get continueWatchingPlay => 'Odtwórz';
 	@override String get continueWatchingDetails => 'Otwórz szczegóły';
@@ -2008,6 +2009,15 @@ class _Translations$downloads$pl extends Translations$downloads$en {
 	@override String get syncRuleCleanupUnavailable => 'Nie udało się bezpiecznie zidentyfikować powiązanych pobrań. Połącz się ponownie z serwerem i spróbuj ponownie albo usuń regułę bez usuwania pobrań.';
 	@override String syncedNewEpisodes({required Object count, required Object title}) => 'Zsynchronizowano ${count} nowych odcinków dla ${title}';
 	@override String get activeSyncRules => 'Reguły synchronizacji';
+	@override String get reviewOrphanFiles => 'Sprawdź pobrania bez wpisu';
+	@override String get orphanReviewTitle => 'Sprawdź pobrania bez wpisu';
+	@override String get orphanReviewDescription => 'Te oznaczone pliki znajdują się w domyślnych folderach pobierania zarządzanych przez aplikację PlezyNG, ale nie mają pasującego wpisu pobrania ani aktywnego zadania. Sprawdź listę przed ich usunięciem.';
+	@override String orphanReviewCount({required Object count, required Object size}) => 'Liczba plików: ${count} · ${size}';
+	@override String orphanDeleteFiles({required Object count}) => 'Usuń pliki: ${count}';
+	@override String get orphanCleanupNone => 'Nie znaleziono osieroconych plików do pobrania';
+	@override String get orphanCleanupFailed => 'PlezyNG nie może bezpiecznie przeskanować zarządzanego folderu pobierania. Żadne pliki nie zostały usunięte.';
+	@override String get orphanCleanupChanged => 'Lista pobrań zmieniła się podczas przeglądania. Sprawdź pliki ponownie przed czyszczeniem.';
+	@override String orphanCleanupComplete({required Object count, required Object size}) => 'Usunięto ${count} osieroconych plików · zwolniono ${size}';
 	@override String get noSyncRules => 'Brak reguł synchronizacji';
 	@override String get manageSyncRule => 'Zarządzaj synchronizacją';
 	@override String get editEpisodeCount => 'Liczba odcinków';
@@ -3744,6 +3754,7 @@ extension on TranslationsPl {
 			'settings.gridView' => 'Siatka',
 			'settings.listView' => 'Lista',
 			'settings.showHeroSection' => 'Pokaż sekcję wyróżnioną',
+			'settings.contentScreensaverLibrariesDescription' => 'Wybierz biblioteki, z których mają pochodzić grafiki wygaszacza ekranu. Jeśli nie wybierzesz żadnej, używane będą grafiki ze wszystkich bibliotek.',
 			'settings.continueWatchingAction' => 'Działanie w sekcji „Kontynuuj oglądanie”',
 			'settings.continueWatchingPlay' => 'Odtwórz',
 			'settings.continueWatchingDetails' => 'Otwórz szczegóły',
@@ -4055,9 +4066,9 @@ extension on TranslationsPl {
 			'themeEditor.slots.outline' => 'Kontur',
 			'themeEditor.slots.text' => 'Tekst',
 			'themeEditor.slots.textMuted' => 'Tekst drugorzędny',
-			'themeEditor.slots.accent' => 'Akcent',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => 'Akcent',
 			'themeEditor.opacity' => 'Krycie',
 			'themeEditor.hexHint' => '#RRGGBB lub #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Z innych motywów',
@@ -4569,9 +4580,9 @@ extension on TranslationsPl {
 			'profiles.pinExplain' => 'Do przełączania profili wymagany jest 4-cyfrowy PIN.',
 			'profiles.continueButton' => 'Kontynuuj',
 			'profiles.pinsDontMatch' => 'PIN-y nie pasują',
-			'profiles.tokenIdentityMismatch' => 'Token profilu Plex został powiązany z nieoczekiwanym serwerem',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'Token profilu Plex został powiązany z nieoczekiwanym serwerem',
 			'connections.sectionTitle' => 'Połączenia',
 			'connections.addConnection' => 'Dodaj połączenie',
 			'connections.addConnectionSubtitleNoProfile' => 'Zaloguj się przez Plex lub połącz serwer Jellyfin albo Emby',
@@ -5083,9 +5094,9 @@ extension on TranslationsPl {
 			'liveTv.guideReloadFailed' => 'Nie udało się odświeżyć przewodnika',
 			'liveTv.rulesProcessRequested' => 'Zażądano ponownej oceny reguł',
 			'liveTv.rulesProcessFailed' => 'Nie udało się ponownie przetworzyć reguł nagrywania',
-			'liveTv.recordShow' => 'Nagraj program',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordShow' => 'Nagraj program',
 			'liveTv.recordSettings.startEarly' => 'Zacznij wcześniej (sekundy)',
 			'liveTv.recordSettings.endLate' => 'Zakończ później (sekundy)',
 			'liveTv.recordSettings.newOnly' => 'Tylko nowe odcinki',
@@ -5390,6 +5401,15 @@ extension on TranslationsPl {
 			'downloads.syncRuleCleanupUnavailable' => 'Nie udało się bezpiecznie zidentyfikować powiązanych pobrań. Połącz się ponownie z serwerem i spróbuj ponownie albo usuń regułę bez usuwania pobrań.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Zsynchronizowano ${count} nowych odcinków dla ${title}',
 			'downloads.activeSyncRules' => 'Reguły synchronizacji',
+			'downloads.reviewOrphanFiles' => 'Sprawdź pobrania bez wpisu',
+			'downloads.orphanReviewTitle' => 'Sprawdź pobrania bez wpisu',
+			'downloads.orphanReviewDescription' => 'Te oznaczone pliki znajdują się w domyślnych folderach pobierania zarządzanych przez aplikację PlezyNG, ale nie mają pasującego wpisu pobrania ani aktywnego zadania. Sprawdź listę przed ich usunięciem.',
+			'downloads.orphanReviewCount' => ({required Object count, required Object size}) => 'Liczba plików: ${count} · ${size}',
+			'downloads.orphanDeleteFiles' => ({required Object count}) => 'Usuń pliki: ${count}',
+			'downloads.orphanCleanupNone' => 'Nie znaleziono osieroconych plików do pobrania',
+			'downloads.orphanCleanupFailed' => 'PlezyNG nie może bezpiecznie przeskanować zarządzanego folderu pobierania. Żadne pliki nie zostały usunięte.',
+			'downloads.orphanCleanupChanged' => 'Lista pobrań zmieniła się podczas przeglądania. Sprawdź pliki ponownie przed czyszczeniem.',
+			'downloads.orphanCleanupComplete' => ({required Object count, required Object size}) => 'Usunięto ${count} osieroconych plików · zwolniono ${size}',
 			'downloads.noSyncRules' => 'Brak reguł synchronizacji',
 			'downloads.manageSyncRule' => 'Zarządzaj synchronizacją',
 			'downloads.editEpisodeCount' => 'Liczba odcinków',
@@ -5588,6 +5608,8 @@ extension on TranslationsPl {
 			'performanceOverlay.dvRpus' => 'DV RPU',
 			'performanceOverlay.dvRpuAverage' => 'Śr. DV RPU',
 			'performanceOverlay.dvSampleAverage' => 'Śr. próbki DV',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Maks. luma',
 			'performanceOverlay.minLuma' => 'Min. luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5598,8 +5620,6 @@ extension on TranslationsPl {
 			'performanceOverlay.player' => 'Odtwarzacz',
 			'performanceOverlay.memory' => 'Pamięć',
 			'performanceOverlay.uiFps' => 'FPS interfejsu',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android (sprzętowy)',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA (sprzętowy)',

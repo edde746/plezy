@@ -316,6 +316,7 @@ class _Translations$settings$de extends Translations$settings$en {
 	@override String get gridView => 'Raster';
 	@override String get listView => 'Liste';
 	@override String get showHeroSection => 'Empfehlungsbereich anzeigen';
+	@override String get contentScreensaverLibrariesDescription => 'Wählen Sie die Bibliotheken aus, deren Bilder der Bildschirmschoner verwenden soll. Wenn keine ausgewählt ist, werden Bilder aus allen Bibliotheken verwendet.';
 	@override String get continueWatchingAction => 'Aktion für Weiterschauen';
 	@override String get continueWatchingPlay => 'Abspielen';
 	@override String get continueWatchingDetails => 'Details öffnen';
@@ -1988,6 +1989,15 @@ class _Translations$downloads$de extends Translations$downloads$en {
 	@override String get syncRuleCleanupUnavailable => 'Zugehörige Downloads konnten nicht sicher ermittelt werden. Verbinde den Server erneut und versuche es noch einmal, oder entferne die Regel, ohne die Downloads zu löschen.';
 	@override String syncedNewEpisodes({required Object count, required Object title}) => '${count} neue Episoden für ${title} synchronisiert';
 	@override String get activeSyncRules => 'Synchronisierungsregeln';
+	@override String get reviewOrphanFiles => 'Verwaiste Downloads prüfen';
+	@override String get orphanReviewTitle => 'Verwaiste Downloads prüfen';
+	@override String get orphanReviewDescription => 'Diese markierten Dateien liegen in PlezyNGs standardmäßigen, von der App verwalteten Downloadordnern. Es gibt keinen passenden Download-Eintrag und keinen aktiven Auftrag. Prüfen Sie die Liste, bevor Sie die Dateien löschen.';
+	@override String orphanReviewCount({required Object count, required Object size}) => '${count} Dateien · ${size}';
+	@override String orphanDeleteFiles({required Object count}) => '${count} Dateien löschen';
+	@override String get orphanCleanupNone => 'Keine verwaisten Download-Dateien gefunden';
+	@override String get orphanCleanupFailed => 'PlezyNG konnte den verwalteten Downloadordner nicht sicher scannen. Es wurden keine Dateien gelöscht.';
+	@override String get orphanCleanupChanged => 'Die Downloadliste hat sich während der Prüfung geändert. Prüfen Sie die Dateien erneut, bevor Sie aufräumen.';
+	@override String orphanCleanupComplete({required Object count, required Object size}) => '${count} verwaiste Download-Dateien gelöscht · ${size} freigegeben';
 	@override String get noSyncRules => 'Keine Synchronisierungsregeln';
 	@override String get manageSyncRule => 'Synchronisierung verwalten';
 	@override String get editEpisodeCount => 'Episodenanzahl';
@@ -3720,6 +3730,7 @@ extension on TranslationsDe {
 			'settings.gridView' => 'Raster',
 			'settings.listView' => 'Liste',
 			'settings.showHeroSection' => 'Empfehlungsbereich anzeigen',
+			'settings.contentScreensaverLibrariesDescription' => 'Wählen Sie die Bibliotheken aus, deren Bilder der Bildschirmschoner verwenden soll. Wenn keine ausgewählt ist, werden Bilder aus allen Bibliotheken verwendet.',
 			'settings.continueWatchingAction' => 'Aktion für Weiterschauen',
 			'settings.continueWatchingPlay' => 'Abspielen',
 			'settings.continueWatchingDetails' => 'Details öffnen',
@@ -4031,9 +4042,9 @@ extension on TranslationsDe {
 			'themeEditor.slots.outline' => 'Kontur',
 			'themeEditor.slots.text' => 'Text',
 			'themeEditor.slots.textMuted' => 'Sekundärtext',
-			'themeEditor.slots.accent' => 'Akzent',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => 'Akzent',
 			'themeEditor.opacity' => 'Deckkraft',
 			'themeEditor.hexHint' => '#RRGGBB oder #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Aus anderen Designs',
@@ -4545,9 +4556,9 @@ extension on TranslationsDe {
 			'profiles.pinExplain' => '4-stellige PIN zum Profilwechsel erforderlich.',
 			'profiles.continueButton' => 'Weiter',
 			'profiles.pinsDontMatch' => 'PINs stimmen nicht überein',
-			'profiles.tokenIdentityMismatch' => 'Das Plex-Profil-Token wurde einem unerwarteten Server zugeordnet',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'Das Plex-Profil-Token wurde einem unerwarteten Server zugeordnet',
 			'connections.sectionTitle' => 'Verbindungen',
 			'connections.addConnection' => 'Verbindung hinzufügen',
 			'connections.addConnectionSubtitleNoProfile' => 'Mit Plex anmelden oder mit einem Jellyfin- oder Emby-Server verbinden',
@@ -5059,9 +5070,9 @@ extension on TranslationsDe {
 			'liveTv.guideReloadFailed' => 'TV-Programm konnte nicht aktualisiert werden',
 			'liveTv.rulesProcessRequested' => 'Regelauswertung angefordert',
 			'liveTv.rulesProcessFailed' => 'Aufnahmeregeln konnten nicht neu ausgewertet werden',
-			'liveTv.recordShow' => 'Sendung aufnehmen',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordShow' => 'Sendung aufnehmen',
 			'liveTv.recordSettings.startEarly' => 'Früher starten (Sekunden)',
 			'liveTv.recordSettings.endLate' => 'Später beenden (Sekunden)',
 			'liveTv.recordSettings.newOnly' => 'Nur neue Episoden',
@@ -5366,6 +5377,15 @@ extension on TranslationsDe {
 			'downloads.syncRuleCleanupUnavailable' => 'Zugehörige Downloads konnten nicht sicher ermittelt werden. Verbinde den Server erneut und versuche es noch einmal, oder entferne die Regel, ohne die Downloads zu löschen.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} neue Episoden für ${title} synchronisiert',
 			'downloads.activeSyncRules' => 'Synchronisierungsregeln',
+			'downloads.reviewOrphanFiles' => 'Verwaiste Downloads prüfen',
+			'downloads.orphanReviewTitle' => 'Verwaiste Downloads prüfen',
+			'downloads.orphanReviewDescription' => 'Diese markierten Dateien liegen in PlezyNGs standardmäßigen, von der App verwalteten Downloadordnern. Es gibt keinen passenden Download-Eintrag und keinen aktiven Auftrag. Prüfen Sie die Liste, bevor Sie die Dateien löschen.',
+			'downloads.orphanReviewCount' => ({required Object count, required Object size}) => '${count} Dateien · ${size}',
+			'downloads.orphanDeleteFiles' => ({required Object count}) => '${count} Dateien löschen',
+			'downloads.orphanCleanupNone' => 'Keine verwaisten Download-Dateien gefunden',
+			'downloads.orphanCleanupFailed' => 'PlezyNG konnte den verwalteten Downloadordner nicht sicher scannen. Es wurden keine Dateien gelöscht.',
+			'downloads.orphanCleanupChanged' => 'Die Downloadliste hat sich während der Prüfung geändert. Prüfen Sie die Dateien erneut, bevor Sie aufräumen.',
+			'downloads.orphanCleanupComplete' => ({required Object count, required Object size}) => '${count} verwaiste Download-Dateien gelöscht · ${size} freigegeben',
 			'downloads.noSyncRules' => 'Keine Synchronisierungsregeln',
 			'downloads.manageSyncRule' => 'Synchronisierung verwalten',
 			'downloads.editEpisodeCount' => 'Episodenanzahl',
@@ -5564,6 +5584,8 @@ extension on TranslationsDe {
 			'performanceOverlay.dvRpus' => 'DV-RPUs',
 			'performanceOverlay.dvRpuAverage' => 'DV-RPU Ø',
 			'performanceOverlay.dvSampleAverage' => 'DV-Sample Ø',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Max. Luma',
 			'performanceOverlay.minLuma' => 'Min. Luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5574,8 +5596,6 @@ extension on TranslationsDe {
 			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.memory' => 'Speicher',
 			'performanceOverlay.uiFps' => 'UI-FPS',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
