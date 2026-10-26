@@ -5,6 +5,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_text_field.dart';
 import '../../games/game_discovery.dart';
 import '../../games/game_library_controller.dart';
 import '../../games/game_models.dart';
@@ -37,6 +38,7 @@ class GamesScreen extends StatefulWidget {
 class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibilityAware {
   GameLibraryController? _controller;
   final _firstFocus = FocusNode();
+  final _searchController = TextEditingController();
   String? _profile;
   int? _sourceGeneration;
   int _epoch = 0;
@@ -105,6 +107,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     _epoch++;
     _retire();
     _firstFocus.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -385,12 +388,16 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
             if (state.games.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                child: TextField(
+                child: FocusableTextField(
+                  controller: _searchController,
+                  textInputAction: TextInputAction.search,
                   decoration: InputDecoration(
                     labelText: t.games.search,
                     prefixIcon: const AppIcon(Symbols.search_rounded),
                   ),
                   onChanged: (value) => setState(() => _query = value),
+                  onSubmitted: (_) => _firstFocus.requestFocus(),
+                  onNavigateDown: _firstFocus.requestFocus,
                 ),
               ),
           ]),

@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Route Games search and host/shortcut entry through the shared TV-aware text fields and directional focus flow.
 - Fit Find your next to the screen with persistent action buttons, mirrored swipe/TV direction cues, contextual help, and artwork that follows the current pick. Restore downloaded and alternate covers, distinguish artwork loading from missing images, and allow failed source covers to be retried.
 
 - Add experimental comic page streaming, Komga source integration and ComicInfo metadata support.

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:qr_flutter/qr_flutter.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../focus/focusable_text_field.dart';
 import '../../games/game_models.dart';
 import '../../games/game_streaming_client.dart';
 import '../../i18n/strings.g.dart';
@@ -20,12 +21,20 @@ class _AddGameComputerDialogState extends State<AddGameComputerDialog> {
       _address = TextEditingController(),
       _port = TextEditingController(text: '47989'),
       _mac = TextEditingController();
+  final _nameFocus = FocusNode(debugLabel: 'Game host name');
+  final _addressFocus = FocusNode(debugLabel: 'Game host address');
+  final _portFocus = FocusNode(debugLabel: 'Game host port');
+  final _macFocus = FocusNode(debugLabel: 'Game host MAC address');
+  final _saveFocus = FocusNode(debugLabel: 'Save game host');
   GameProtocol _protocol = GameProtocol.gameStream;
   String? _error;
   @override
   void dispose() {
     for (final c in [_name, _address, _port, _mac]) {
       c.dispose();
+    }
+    for (final node in [_nameFocus, _addressFocus, _portFocus, _macFocus, _saveFocus]) {
+      node.dispose();
     }
     super.dispose();
   }
@@ -76,30 +85,46 @@ class _AddGameComputerDialogState extends State<AddGameComputerDialog> {
               }
             },
           ),
-          TextField(
+          FocusableTextField(
             controller: _name,
+            focusNode: _nameFocus,
             decoration: InputDecoration(labelText: t.games.name),
             maxLength: 256,
+            textInputAction: TextInputAction.next,
+            onNavigateDown: _addressFocus.requestFocus,
           ),
-          TextField(
+          FocusableTextField(
             controller: _address,
+            focusNode: _addressFocus,
             decoration: InputDecoration(labelText: t.games.address),
             autocorrect: false,
             enableSuggestions: false,
             textDirection: TextDirection.ltr,
+            textInputAction: TextInputAction.next,
+            onNavigateUp: _nameFocus.requestFocus,
+            onNavigateDown: _portFocus.requestFocus,
           ),
-          TextField(
+          FocusableTextField(
             controller: _port,
+            focusNode: _portFocus,
             decoration: InputDecoration(labelText: t.games.port),
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            textInputAction: TextInputAction.next,
+            onNavigateUp: _addressFocus.requestFocus,
+            onNavigateDown: _macFocus.requestFocus,
           ),
-          TextField(
+          FocusableTextField(
             controller: _mac,
+            focusNode: _macFocus,
             decoration: InputDecoration(labelText: t.games.mac),
             autocorrect: false,
             enableSuggestions: false,
             textDirection: TextDirection.ltr,
+            textInputAction: TextInputAction.done,
+            onSubmitted: (_) => _save(),
+            onNavigateUp: _portFocus.requestFocus,
+            onNavigateDown: _saveFocus.requestFocus,
           ),
           if (_error != null)
             Semantics(
@@ -111,7 +136,7 @@ class _AddGameComputerDialogState extends State<AddGameComputerDialog> {
     ),
     actions: [
       TextButton(onPressed: () => Navigator.pop(context), child: Text(t.games.cancel)),
-      FilledButton(onPressed: _save, child: Text(t.games.save)),
+      FilledButton(focusNode: _saveFocus, onPressed: _save, child: Text(t.games.save)),
     ],
   );
 }
@@ -223,12 +248,28 @@ class AddGameShortcutDialog extends StatefulWidget {
 
 class _AddGameShortcutDialogState extends State<AddGameShortcutDialog> {
   final _name = TextEditingController(), _id = TextEditingController();
+  final _nameFocus = FocusNode(debugLabel: 'Game shortcut name');
+  final _idFocus = FocusNode(debugLabel: 'Game shortcut ID');
+  final _saveFocus = FocusNode(debugLabel: 'Save game shortcut');
   bool _invalid = false;
+
   @override
   void dispose() {
     _name.dispose();
     _id.dispose();
+    _nameFocus.dispose();
+    _idFocus.dispose();
+    _saveFocus.dispose();
     super.dispose();
+  }
+
+  void _save() {
+    final id = int.tryParse(_id.text);
+    if (_name.text.trim().isEmpty || id == null || id < 1 || id > 0x7fffffff) {
+      setState(() => _invalid = true);
+      return;
+    }
+    Navigator.pop(context, StreamGame(hostKey: widget.host.key, id: '$id', name: _name.text.trim()));
   }
 
   @override
@@ -238,33 +279,31 @@ class _AddGameShortcutDialogState extends State<AddGameShortcutDialog> {
     content: Column(
       mainAxisSize: MainAxisSize.min,
       children: [
-        TextField(
+        FocusableTextField(
           controller: _name,
+          focusNode: _nameFocus,
           maxLength: 256,
           decoration: InputDecoration(labelText: t.games.gameName),
+          textInputAction: TextInputAction.next,
+          onNavigateDown: _idFocus.requestFocus,
         ),
-        TextField(
+        FocusableTextField(
           controller: _id,
+          focusNode: _idFocus,
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
           decoration: InputDecoration(labelText: t.games.gameId),
+          textInputAction: TextInputAction.done,
+          onSubmitted: (_) => _save(),
+          onNavigateUp: _nameFocus.requestFocus,
+          onNavigateDown: _saveFocus.requestFocus,
         ),
         if (_invalid) Text(t.games.invalidGame),
       ],
     ),
     actions: [
       TextButton(onPressed: () => Navigator.pop(context), child: Text(t.games.cancel)),
-      FilledButton(
-        onPressed: () {
-          final id = int.tryParse(_id.text);
-          if (_name.text.trim().isEmpty || id == null || id < 1 || id > 0x7fffffff) {
-            setState(() => _invalid = true);
-            return;
-          }
-          Navigator.pop(context, StreamGame(hostKey: widget.host.key, id: '$id', name: _name.text.trim()));
-        },
-        child: Text(t.games.saveShortcut),
-      ),
+      FilledButton(focusNode: _saveFocus, onPressed: _save, child: Text(t.games.saveShortcut)),
     ],
   );
 }
