@@ -1,3 +1,4 @@
+# ng-runner-policy: private-jit-only-v1
 name: Dolby Vision platform experiments
 
 on:
@@ -25,7 +26,7 @@ jobs:
       fail-fast: false
       matrix:
         os: [ubuntu-24.04, windows-2025, macos-15]
-    runs-on: ${{ matrix.os }}
+    runs-on: ${{ matrix.os == 'ubuntu-24.04' && fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-contracts"]}}', github.run_id, strategy.job-index)) || matrix.os == 'windows-2025' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-contracts"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-contracts"]}}', github.run_id, strategy.job-index)) }}
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -34,7 +35,7 @@ jobs:
       - run: python3 scripts/test_dv_experiments.py
 
   app-tests:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-app-tests"]}}', github.run_id)) }}
     timeout-minutes: 30
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -64,7 +65,7 @@ jobs:
         run: git diff --exit-code -- lib test
 
   felbaker-source:
-    runs-on: ubuntu-24.04
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-felbaker-source"]}}', github.run_id)) }}
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -91,7 +92,7 @@ jobs:
           retention-days: 14
 
   apple-source:
-    runs-on: xcode-27
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-apple-source"]}}', github.run_id)) }}
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
