@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../i18n/presentation_formats.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../services/music/music_playback_service.dart';
@@ -125,7 +126,7 @@ class _MusicWorkspaceTrack extends StatelessWidget {
                 children: [
                   const Spacer(),
                   Text(
-                    track.title ?? t.common.unknown,
+                    isolateDisplayText(track.title ?? t.common.unknown),
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
                     style: Theme.of(
@@ -135,7 +136,7 @@ class _MusicWorkspaceTrack extends StatelessWidget {
                   if (artist != null && artist.isNotEmpty) ...[
                     SizedBox(height: tk.space * 0.25),
                     Text(
-                      artist,
+                      isolateDisplayText(artist),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white70),

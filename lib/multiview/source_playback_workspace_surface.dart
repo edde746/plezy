@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../focus/focusable_slider.dart';
+import '../i18n/presentation_formats.dart';
 import '../i18n/strings.g.dart';
 import '../screens/sources/source_widgets.dart';
 import '../sources/source_models.dart';
@@ -144,7 +146,7 @@ class _SourcePlaybackWorkspaceSurfaceState extends State<SourcePlaybackWorkspace
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        entry.displayTitle,
+                        isolateDisplayText(entry.displayTitle),
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: Theme.of(
@@ -155,7 +157,7 @@ class _SourcePlaybackWorkspaceSurfaceState extends State<SourcePlaybackWorkspace
                         Padding(
                           padding: EdgeInsets.only(top: tk.space * 0.2),
                           child: Text(
-                            playback.currentChapter!.title,
+                            isolateDisplayText(playback.currentChapter!.title),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tk.textMuted),
@@ -188,12 +190,14 @@ class _SourcePlaybackWorkspaceSurfaceState extends State<SourcePlaybackWorkspace
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Semantics(
-            label: t.fileSources.timePosition,
-            child: Slider(
+          Directionality(
+            textDirection: TextDirection.ltr,
+            child: FocusableSlider(
               value: position,
               min: start.toDouble(),
               max: canSeek ? end.toDouble() : start + 1.0,
+              semanticLabel: t.fileSources.timePosition,
+              semanticFormatterCallback: (value) => formatDurationTextual(value.round(), abbreviated: false),
               onChanged: canSeek ? (value) => setState(() => _seekValue = value) : null,
               onChangeEnd: canSeek
                   ? (value) {

@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../focus/focusable_wrapper.dart';
+import '../i18n/presentation_formats.dart';
 import '../i18n/strings.g.dart';
 import '../theme/mono_motion.dart';
 import '../theme/mono_tokens.dart';
@@ -135,9 +136,17 @@ class _MultiviewOverlay extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             Positioned.fill(child: content),
-            PositionedDirectional(end: 12, bottom: 12, child: _WorkspaceDock(controller: controller)),
+            PositionedDirectional(
+              end: 12,
+              bottom: 12,
+              child: SafeArea(top: false, child: _WorkspaceDock(controller: controller)),
+            ),
             if (controller.sessionTrayVisible)
-              PositionedDirectional(end: 12, bottom: 68, child: _WorkspaceSessionTray(controller: controller)),
+              PositionedDirectional(
+                end: 12,
+                bottom: 68,
+                child: SafeArea(top: false, child: _WorkspaceSessionTray(controller: controller)),
+              ),
           ],
         );
       },
@@ -193,7 +202,11 @@ class _SplitWorkspace extends StatelessWidget {
         child: LayoutBuilder(
           builder: (context, constraints) {
             final horizontal = constraints.maxWidth >= 760;
-            final crossAxisCount = horizontal ? columns : 1;
+            final maxColumns = ((constraints.maxWidth - tk.space * 2 + tk.groupGap) / (220.0 + tk.groupGap))
+                .floor()
+                .clamp(1, columns)
+                .toInt();
+            final crossAxisCount = horizontal ? maxColumns : 1;
             return GridView.builder(
               padding: EdgeInsets.all(tk.space),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
@@ -382,7 +395,7 @@ class _WorkspaceWindowState extends State<_WorkspaceWindow> {
       },
       child: Semantics(
         container: true,
-        label: registration.descriptor.title,
+        label: isolateDisplayText(registration.descriptor.title),
         onIncrease: () =>
             controller.resizeByPixels(id, const Offset(20, 12), widget.viewport, paneSize: widget.paneSize),
         onDecrease: () =>
@@ -492,7 +505,7 @@ class _WorkspaceTitleBar extends StatelessWidget {
                   child: Align(
                     alignment: AlignmentDirectional.centerStart,
                     child: Text(
-                      registration.descriptor.title,
+                      isolateDisplayText(registration.descriptor.title),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: Theme.of(
@@ -627,7 +640,11 @@ class _WorkspaceSessionTray extends StatelessWidget {
                       ? Symbols.pause_circle_outline_rounded
                       : Symbols.play_circle_rounded,
                 ),
-                title: Text(registration.descriptor.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+                title: Text(
+                  isolateDisplayText(registration.descriptor.title),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
                 onTap: () {
                   final id = registration.descriptor.id;
                   controller.unpark(id);
