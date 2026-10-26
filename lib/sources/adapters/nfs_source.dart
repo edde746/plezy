@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
@@ -86,8 +87,19 @@ class NfsSourceAdapter extends SourceAdapter {
   final Map<String, List<int>> _handles = {};
   final Map<String, _RpcSession> _rpcSessions = {};
   final Map<String, Future<_RpcSession>> _rpcSessionOpenings = {};
+  final _readLimiter = _NfsReadLimiter(4);
   Future<List<int>>? _mount;
   int _readLimit = _maxRead;
+  int _readRequests = 0;
+  int _readBytes = 0;
+  int _readMicros = 0;
+  int get _readAhead => (int.tryParse(source.options['readAhead'] ?? '') ?? 3).clamp(1, 4).toInt();
+  ({int requests, int bytes, int averageMicros, int readAhead}) get readQualificationMetrics => (
+    requests: _readRequests,
+    bytes: _readBytes,
+    averageMicros: _readRequests == 0 ? 0 : _readMicros ~/ _readRequests,
+    readAhead: _readAhead,
+  );
   bool _closed = false;
 
   @override
@@ -199,10 +211,18 @@ class NfsSourceAdapter extends SourceAdapter {
     return handle;
   }
 
-  Future<Uint8List> _rpc(String host, int port, int program, int version, int procedure, Uint8List arguments) async {
+  Future<Uint8List> _rpc(
+    String host,
+    int port,
+    int program,
+    int version,
+    int procedure,
+    Uint8List arguments, {
+    int lane = 0,
+  }) async {
     if (_closed) throw const SourceException(SourceFailure.cancelled);
     final securityContext = _requiresRpcTls ? await _secureRpcContext() : null;
-    final connectionKey = '$host:$port/$program/$version';
+    final connectionKey = '$host:$port/$program/$version/${lane == 0 ? 'control' : 'read-$lane'}';
     final xid = math.Random.secure().nextInt(0xffffffff);
     final auth = _XdrWriter()
       ..uint32(DateTime.now().millisecondsSinceEpoch ~/ 1000)
@@ -270,7 +290,7 @@ class NfsSourceAdapter extends SourceAdapter {
     if (existing != null) await _retireRpcSession(key, existing);
     var opening = _rpcSessionOpenings[key];
     if (opening == null) {
-      opening = _openRpcSession(host, port, program, version, securityContext);
+      opening = _openRpcSession(key, host, port, program, version, securityContext);
       _rpcSessionOpenings[key] = opening;
     }
     try {
@@ -281,6 +301,7 @@ class NfsSourceAdapter extends SourceAdapter {
   }
 
   Future<_RpcSession> _openRpcSession(
+    String key,
     String host,
     int port,
     int program,
@@ -298,7 +319,7 @@ class NfsSourceAdapter extends SourceAdapter {
         throw const SourceException(SourceFailure.cancelled);
       }
       final session = _RpcSession(socket);
-      _rpcSessions['$host:$port/$program/$version'] = session;
+      _rpcSessions[key] = session;
       return session;
     } on Object {
       raw.destroy();
@@ -603,31 +624,40 @@ class NfsSourceAdapter extends SourceAdapter {
     var offset = 0;
     while (offset < size) {
       final chunk = await _read(handle, offset, math.min(_maxRead, size - offset));
-      if (chunk.isEmpty) break;
-      bytes.add(chunk);
-      offset += chunk.length;
+      if (chunk.bytes.isEmpty) break;
+      bytes.add(chunk.bytes);
+      offset += chunk.bytes.length;
+      if (chunk.eof && offset < size) break;
     }
     final result = bytes.takeBytes();
     return result.length == size ? result : null;
   }
 
-  Future<Uint8List> _read(List<int> handle, int offset, int count) async {
+  Future<({Uint8List bytes, bool eof})> _read(List<int> handle, int offset, int count, {int lane = 0}) async {
+    final started = DateTime.now();
     final args = _XdrWriter()
       ..opaque(handle)
       ..uint64(offset)
       ..uint32(count);
-    final response = await _rpc(_endpoint.host, _nfsPort, _nfsProgram, _nfsVersion, 6, args.take());
+    final response = lane == 0
+        ? await _rpc(_endpoint.host, _nfsPort, _nfsProgram, _nfsVersion, 6, args.take())
+        : await _readLimiter.run(
+            () => _rpc(_endpoint.host, _nfsPort, _nfsProgram, _nfsVersion, 6, args.take(), lane: lane),
+          );
     final reader = _XdrReader(response);
     final status = reader.uint32();
     if (status != 0) throw _nfsError(status);
     _postAttributes(reader);
     final returned = reader.uint32();
-    reader.boolean();
+    final eof = reader.boolean();
     final bytes = reader.opaque(maxLength: _maxRead);
     if (bytes.length > count || returned != bytes.length) {
       throw const SourceException(SourceFailure.invalidData);
     }
-    return bytes;
+    _readRequests++;
+    _readBytes += bytes.length;
+    _readMicros += DateTime.now().difference(started).inMicroseconds;
+    return (bytes: Uint8List.fromList(bytes), eof: eof);
   }
 
   @override
@@ -709,14 +739,65 @@ class NfsSourceAdapter extends SourceAdapter {
     return (await _getAttributes(await _handleForPath(file.id))).size;
   }
 
+  Future<({int bytes, int elapsedMs, int requests, int readAhead, double mebibytesPerSecond})> qualifyRead(
+    PublicationFile file, {
+    int sampleBytes = 64 * 1024 * 1024,
+  }) async {
+    if (sampleBytes < 1 || sampleBytes > 64 * 1024 * 1024) {
+      throw const SourceException(SourceFailure.invalidData);
+    }
+    final size = await contentSize(file);
+    if (size == null || size <= 0) throw const SourceException(SourceFailure.invalidData);
+    final beforeRequests = _readRequests;
+    final started = DateTime.now();
+    final content = await openContent(file, offset: 0, length: math.min(size, sampleBytes));
+    if (content == null) throw const SourceException(SourceFailure.unsupported);
+    var bytes = 0;
+    await for (final chunk in content.stream.timeout(const Duration(seconds: 45))) {
+      if (_closed) throw const SourceException(SourceFailure.cancelled);
+      bytes += chunk.length;
+    }
+    final elapsed = DateTime.now().difference(started);
+    final seconds = elapsed.inMicroseconds / Duration.microsecondsPerSecond;
+    if (bytes == 0 || seconds <= 0) throw const SourceException(SourceFailure.unavailable);
+    return (
+      bytes: bytes,
+      elapsedMs: elapsed.inMilliseconds,
+      requests: _readRequests - beforeRequests,
+      readAhead: _readAhead,
+      mebibytesPerSecond: bytes / (1024 * 1024) / seconds,
+    );
+  }
+
+  Future<({Uint8List bytes, bool eof})> _readChunk(List<int> handle, int offset, int count, int lane) async {
+    final bytes = <int>[];
+    var eof = false;
+    while (bytes.length < count) {
+      final part = await _read(handle, offset + bytes.length, count - bytes.length, lane: lane);
+      bytes.addAll(part.bytes);
+      eof = part.eof;
+      if (eof || part.bytes.isEmpty) break;
+    }
+    return (bytes: Uint8List.fromList(bytes), eof: eof);
+  }
+
   Stream<List<int>> _readRange(List<int> handle, int size, int offset, int length) async* {
     var position = offset;
     final end = offset + length;
     while (position < end) {
-      final count = math.min(_readLimit, end - position);
-      final List<int> bytes;
+      final batchStart = position;
+      final futures = <Future<({Uint8List bytes, bool eof})>>[];
+      final counts = <int>[];
+      var scheduled = 0;
+      for (var lane = 1; lane <= _readAhead && batchStart + scheduled < end; lane++) {
+        final count = math.min(_readLimit, end - batchStart - scheduled).toInt();
+        counts.add(count);
+        futures.add(_readChunk(handle, batchStart + scheduled, count, lane));
+        scheduled += count;
+      }
+      List<({Uint8List bytes, bool eof})> chunks;
       try {
-        bytes = await _read(handle, position, count);
+        chunks = await Future.wait(futures);
       } on SourceException catch (error) {
         // Some NFS servers reject requests above their configured rsize. Fall
         // back toward the historical 256 KiB limit and remember it per source.
@@ -726,9 +807,24 @@ class NfsSourceAdapter extends SourceAdapter {
         }
         rethrow;
       }
-      if (bytes.isEmpty) break;
-      yield bytes;
-      position += bytes.length;
+      var ended = false;
+      for (var index = 0; index < chunks.length; index++) {
+        final chunk = chunks[index];
+        if (chunk.bytes.isEmpty) {
+          ended = true;
+          break;
+        }
+        if (chunk.bytes.length > counts[index] || position + chunk.bytes.length > end) {
+          throw const SourceException(SourceFailure.invalidData);
+        }
+        yield chunk.bytes;
+        position += chunk.bytes.length;
+        if (chunk.eof) {
+          ended = true;
+          break;
+        }
+      }
+      if (ended) break;
     }
   }
 
@@ -759,6 +855,32 @@ class NfsSourceAdapter extends SourceAdapter {
     _rpcSessions.clear();
     _rpcSessionOpenings.clear();
     super.close();
+  }
+}
+
+class _NfsReadLimiter {
+  _NfsReadLimiter(this.maximum);
+  final int maximum;
+  final Queue<Completer<void>> _waiters = Queue();
+  int _active = 0;
+
+  Future<T> run<T>(Future<T> Function() action) async {
+    if (_active < maximum) {
+      _active++;
+    } else {
+      final waiter = Completer<void>();
+      _waiters.addLast(waiter);
+      await waiter.future;
+    }
+    try {
+      return await action();
+    } finally {
+      if (_waiters.isEmpty) {
+        _active--;
+      } else {
+        _waiters.removeFirst().complete();
+      }
+    }
   }
 }
 
