@@ -23,6 +23,7 @@ import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/app_menu.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../settings/services_settings_screen.dart';
@@ -158,22 +159,38 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     try {
       final result = await controller.qualifyNfsRead(_entry.sourceId, file);
       if (!mounted) return;
-      await showDialog<void>(
+      await showScopedDialog<void>(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (dialogContext) => AlertDialog(
           title: Text(t.sourceSetup.nfsQualificationResult),
+          scrollable: true,
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(t.sourceSetup.nfsReadTestHelp),
               const SizedBox(height: 12),
-              Text('${t.sourceSetup.nfsReadBytes}: ${(result.bytes / (1024 * 1024)).toStringAsFixed(1)} MiB'),
-              Text('${t.sourceSetup.nfsReadSpeed}: ${result.mebibytesPerSecond.toStringAsFixed(2)} MiB/s'),
-              Text('${t.sourceSetup.nfsReadRequests}: ${result.requests} · ${t.sourceSetup.nfsReadAhead}: ${result.readAhead}'),
+              Text(
+                '${t.sourceSetup.nfsReadBytes}: '
+                '${formatDecimal(result.bytes / (1024 * 1024), minimumDecimals: 1, maximumDecimals: 1)} MiB',
+              ),
+              Text(
+                '${t.sourceSetup.nfsReadSpeed}: '
+                '${formatDecimal(result.mebibytesPerSecond, minimumDecimals: 2, maximumDecimals: 2)} MiB/s',
+              ),
+              Text(
+                '${t.sourceSetup.nfsReadRequests}: ${formatCount(result.requests)} · '
+                '${t.sourceSetup.nfsReadAhead}: ${formatCount(result.readAhead)}',
+              ),
             ],
           ),
-          actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.close))],
+          actions: [
+            DialogActionButton(
+              autofocus: true,
+              onPressed: () => Navigator.pop(dialogContext),
+              label: t.common.close,
+            ),
+          ],
         ),
       );
     } finally {
