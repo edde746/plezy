@@ -4,6 +4,14 @@
 
 ### Added
 
+- Add SMB2/3 read-only NAS sources on Android, iOS, macOS, Windows, Linux, and Apple TV, with a Videos library shelf and resumable watch progress.
+- Add passive FTP/FTPES/FTPS, pinned-host-key SFTP, and read-only NFSv3. NFS can require TLS 1.3 RPC-with-TLS (RFC 9289), trust device CAs or a custom NAS certificate, and use optional PKCS#12 mutual TLS; encrypted connections never fall back to plaintext. Add best-effort SSDP discovery for DLNA with manual URL fallback.
+- Automatically match standalone video filenames against Trakt with confidence and ambiguity checks; add online posters, cast, ratings, IDs, and validated trailer links. Manual matching remains available.
+- Search and download OpenSubtitles for standalone videos, including SMB files, using source-scoped encrypted API credentials. Add clearer privacy/setup help, accessible search and download states, and screen-reader progress announcements.
+- Read offline Kodi/Jellyfin NFO sidecars and sibling posters to enrich local and SMB video details.
+- Sync SMB and other file-source progress and notes across devices through one configured WebDAV state folder.
+
+
 - Add an isolated experimental Dolby Vision engine build with a Linux gpu-next embedding option and profile inspection lab; full FEL and device output qualification remain pending.
 - Add Find your next, a profile-local swipe discovery deck across media libraries, Explore catalogs, live TV, file sources and completed downloads, with format/time filters, Saved picks, Undo and normal Plezy launch routes.
 - Replace PlezyNG branding across the app, launchers, TV, desktop packages and store artwork with the selected nested-play logo and lower-right NG badge; preserve existing alternate icon selections.
@@ -83,8 +91,9 @@
 
 ### Fixed
 
-- Use CocoaPods for iOS and macOS builds until the pinned WebView plugin compiles with Xcode 26’s Swift Package Manager integration.
+- Use CocoaPods for iOS and macOS builds until the pinned WebView plugin compiles with Xcode 26's Swift Package Manager integration.
 - Let Xcode choose signing identities for iOS and tvOS archives instead of forcing one across all targets.
+
 - Preserve existing TV and keyboard toolbar focus order when adding Find your next discovery actions.
 - Keep entitlement-controlled themes and icons locked when store access is disabled in the build.
 - Remove stale SVG imports after switching the setup and app-icon previews back to raster artwork.

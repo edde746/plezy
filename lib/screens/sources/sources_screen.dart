@@ -22,6 +22,23 @@ import '../../sources/publication_shelf.dart';
 import 'source_navigation.dart';
 import '../lending/public_libraries_screen.dart';
 
+String sourceTransportLabel(FileSource source) {
+  final type = sourceKindName(source.kind);
+  final scheme = Uri.tryParse(source.endpoint)?.scheme.toLowerCase();
+  return switch (source.kind) {
+    FileSourceKind.nfs =>
+      '$type · ${source.options['rpcTls'] == 'required' ? 'RPC-with-TLS required' : 'Unencrypted NFS'}',
+    FileSourceKind.ftp =>
+      '$type · ${scheme == 'ftpes' || scheme == 'ftps' ? 'TLS encrypted' : 'Plain FTP'}',
+    FileSourceKind.sftp => '$type · SSH encrypted · host key pinned',
+    FileSourceKind.smb =>
+      '$type · ${source.options['encryptSmb'] == 'true' ? 'SMB3 encryption on' : 'SMB3 encryption off'}',
+    FileSourceKind.webdav || FileSourceKind.opds || FileSourceKind.dlna =>
+      '$type · ${scheme == 'https' ? 'HTTPS' : scheme == 'http' ? 'HTTP without transport encryption' : 'Check endpoint security'}',
+    _ => type,
+  };
+}
+
 class SourcesScreen extends StatefulWidget {
   const SourcesScreen({
     super.key,
@@ -159,7 +176,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
   bool downloaded(SourceEntry e) => e.files.any((f) => _offline.contains(sourceKey(e.sourceId, f.id)));
   Widget itemTile(SourceEntry e, int index, int count, {PublicationProgress? progress}) => SourceTile(
     key: ValueKey('${e.key}:${progress?.mode.name ?? ''}'),
-    title: e.title,
+    title: e.displayTitle,
     subtitle: [e.author, e.series, if (downloaded(e)) t.fileSources.offline].where((s) => s.isNotEmpty).join(' · '),
     icon: sourceItemIcon(e.kind),
     onTap: () => _open(e),
@@ -265,7 +282,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
                   for (var i = 0; i < sources.sources.length; i++)
                     SourceTile(
                       title: sources.sources[i].name,
-                      subtitle: sourceKindName(sources.sources[i].kind),
+                      subtitle: sourceTransportLabel(sources.sources[i]),
                       icon: Symbols.cloud_queue_rounded,
                       leading: FileSourceMark(sources.sources[i].kind),
                       index: i,

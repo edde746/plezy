@@ -31,10 +31,15 @@ Future<void> sourceAction(BuildContext context, Future<void> Function() action) 
 
 String sourceKindName(FileSourceKind kind) => switch (kind) {
   FileSourceKind.local => t.fileSources.localFiles,
-  FileSourceKind.googleDrive => t.fileSources.googleDrive,
+  FileSourceKind.googleDrive => 'Google Drive',
   FileSourceKind.oneDrive => 'OneDrive',
   FileSourceKind.dropbox => 'Dropbox',
   FileSourceKind.webdav => 'WebDAV / Nextcloud',
+  FileSourceKind.smb => 'SMB / NAS',
+  FileSourceKind.ftp => 'FTP / FTPES / FTPS',
+  FileSourceKind.sftp => 'SFTP',
+  FileSourceKind.nfs => 'NFS',
+  FileSourceKind.dlna => 'DLNA / UPnP',
   FileSourceKind.s3 => 'S3',
   FileSourceKind.opds => 'OPDS',
   FileSourceKind.audiobookshelf => 'Audiobookshelf',
@@ -118,7 +123,10 @@ class SourceTile extends StatelessWidget {
                         ],
                         if (progress != null) ...[
                           const SizedBox(height: 8),
-                          LinearProgressIndicator(value: progress!.clamp(0, 1), minHeight: 2),
+                          Semantics(
+                            label: '${(progress!.clamp(0, 1) * 100).round()}% complete',
+                            child: LinearProgressIndicator(value: progress!.clamp(0, 1), minHeight: 2),
+                          ),
                         ],
                       ],
                     ),
@@ -152,7 +160,11 @@ class _SourceCoverState extends State<SourceCover> {
   @override
   void didUpdateWidget(covariant SourceCover old) {
     super.didUpdateWidget(old);
-    if (old.entry.key != widget.entry.key) _cover = context.read<SourceController?>()?.cover(widget.entry);
+    if (old.entry.key != widget.entry.key ||
+        old.entry.coverId != widget.entry.coverId ||
+        old.entry.onlinePosterUrl != widget.entry.onlinePosterUrl) {
+      _cover = context.read<SourceController?>()?.cover(widget.entry);
+    }
   }
 
   @override
@@ -203,7 +215,10 @@ class SourcePosterCard extends StatelessWidget {
                 if (progress != null)
                   Align(
                     alignment: Alignment.bottomCenter,
-                    child: LinearProgressIndicator(value: progress!.clamp(0, 1), minHeight: 3),
+                    child: Semantics(
+                      label: '${(progress!.clamp(0, 1) * 100).round()}% complete',
+                      child: LinearProgressIndicator(value: progress!.clamp(0, 1), minHeight: 3),
+                    ),
                   ),
               ],
             ),

@@ -8,6 +8,7 @@ import 'package:provider/provider.dart';
 import '../../focus/focusable_slider.dart';
 import '../../i18n/strings.g.dart';
 import '../../mpv/mpv.dart';
+import '../../services/open_subtitles_client.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
 import '../../theme/mono_tokens.dart';
@@ -19,6 +20,7 @@ import '../../widgets/app_menu.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/music/mini_player.dart';
 import 'source_notes_screen.dart';
+import 'standalone_subtitle_search_sheet.dart';
 import 'source_widgets.dart';
 
 class SourcePlayerScreen extends StatefulWidget {
@@ -56,6 +58,67 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
     if (_fullscreen.scopeOwnsFullscreen) unawaited(_fullscreen.exitFullscreen());
     _fullscreen.endScope();
     super.dispose();
+  }
+
+  Future<void> _searchStandaloneSubtitles(SourcePlayback s) async {
+    final entry = s.entry;
+    if (entry == null) return;
+    FileSource? source;
+    for (final candidate in s.sources.sources) {
+      if (candidate.id == entry.sourceId) {
+        source = candidate;
+        break;
+      }
+    }
+    if (source == null) throw const SourceException(SourceFailure.authentication);
+    final epoch = s.sources.generation;
+    final credentials = await s.sources.repository.credentials(source);
+    if (!s.sources.current(epoch)) throw const SourceException(SourceFailure.cancelled);
+    final key = credentials['openSubtitlesApiKey']?.trim() ?? '';
+    if (key.isEmpty) {
+      if (!mounted) return;
+      await showDialog<void>(
+        context: context,
+        builder: (dialogContext) => AlertDialog(
+          title: const Text('OpenSubtitles API key required'),
+          content: const Text(
+            'Edit this file source and add an OpenSubtitles API key in its optional subtitle settings. Search sends the title and available IMDb/TMDB IDs; it does not upload the video.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(dialogContext),
+              child: Text(MaterialLocalizations.of(dialogContext).okButtonLabel),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+    final client = OpenSubtitlesClient(
+      apiKey: key,
+      username: credentials['openSubtitlesUsername'],
+      password: credentials['openSubtitlesPassword'],
+    );
+    try {
+      await showModalBottomSheet<bool>(
+        context: context,
+        isScrollControlled: true,
+        useSafeArea: true,
+        builder: (_) => StandaloneSubtitleSearchSheet(
+          client: client,
+          title: entry.displayTitle,
+          imdbId: entry.identifiers['imdb'],
+          tmdbId: entry.identifiers['tmdb'],
+          year: entry.releaseYear,
+          onApply: (download) => s.applyExternalSubtitle(
+            name: download.fileName,
+            bytes: download.bytes,
+          ),
+        ),
+      );
+    } finally {
+      client.close();
+    }
   }
 
   Widget controls(SourcePlayback s) => Column(
@@ -195,6 +258,12 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
           ),
           if (s.video)
             IconButton(
+              tooltip: t.videoControls.searchSubtitles,
+              onPressed: () => sourceAction(context, () => _searchStandaloneSubtitles(s)),
+              icon: const AppIcon(Symbols.subtitles_rounded),
+            ),
+          if (s.video)
+            IconButton(
               tooltip: t.fileSources.fullscreen,
               onPressed: () async {
                 setState(() => _full = !_full);
@@ -297,7 +366,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                                   ),
                                   const SizedBox(height: 24),
                                   Text(
-                                    s.entry!.title,
+                                    s.entry!.displayTitle,
                                     style: Theme.of(context).textTheme.headlineSmall,
                                     textAlign: TextAlign.center,
                                   ),

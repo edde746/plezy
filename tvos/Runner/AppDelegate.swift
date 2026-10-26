@@ -195,6 +195,9 @@ import wakelock_plus
     if let r = pluginRegistry.registrar(forPlugin: "InAppPurchasePlugin") {
       InAppPurchasePlugin.register(with: r)
     }
+    if let r = pluginRegistry.registrar(forPlugin: "SmbTvOSPlugin") {
+      SmbTvOSPlugin.register(with: r)
+    }
   }
 
   override func application(

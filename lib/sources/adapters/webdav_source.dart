@@ -110,7 +110,7 @@ class WebDavSourceAdapter extends SourceAdapter {
   Uri _stateUri(SourceEntry entry, PublicationProgress progress) {
     if (!capabilities.writableState) throw const SourceException(SourceFailure.unsupported);
     final folder = contained('${source.options['syncRoot']!.replaceAll(RegExp(r'/+$'), '')}/');
-    return folder.resolve('${sourceDigest(jsonEncode([entry.id, progress.edition, progress.mode.name]))}.json');
+    return folder.resolve('${sourceDigest(jsonEncode([entry.syncIdentity ?? entry.id, progress.edition, progress.mode.name]))}.json');
   }
 
   Future<Map<String, dynamic>> _readState(Uri uri) async {

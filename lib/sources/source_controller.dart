@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
+import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -11,16 +12,49 @@ import 'package:uuid/uuid.dart';
 
 import 'adapters/audiobookshelf_source.dart';
 import 'adapters/cloud_sources.dart';
+import 'adapters/dlna_source.dart';
+import 'adapters/ftp_source.dart';
 import 'adapters/local_source.dart';
+import 'adapters/nfs_source.dart';
+import 'adapters/sftp_source.dart';
 import 'adapters/opds_source.dart';
 import 'adapters/s3_source.dart';
+import 'adapters/smb_source.dart';
 import 'adapters/webdav_source.dart';
 import 'content_access.dart';
 import 'source_database.dart';
 import 'source_models.dart';
 import 'source_oauth.dart';
+import '../services/standalone_video_metadata_client.dart';
 import 'source_transport.dart';
 import 'publication_shelf.dart';
+
+Uri? _trustedOnlinePosterUri(String? value) {
+  final uri = Uri.tryParse(value ?? '');
+  final host = uri?.host.toLowerCase();
+  if (uri == null ||
+      uri.scheme != 'https' ||
+      host == null ||
+      !(host == 'trakt.tv' || host.endsWith('.trakt.tv')) ||
+      uri.userInfo.isNotEmpty) {
+    return null;
+  }
+  return uri;
+}
+
+Uri? _trustedOnlineTrailerUri(String? value) {
+  final uri = Uri.tryParse(value ?? '');
+  final host = uri?.host.toLowerCase();
+  if (uri == null || uri.scheme != 'https' || host == null || uri.userInfo.isNotEmpty) return null;
+  if (host == 'youtu.be' ||
+      host == 'youtube.com' ||
+      host.endsWith('.youtube.com') ||
+      host == 'vimeo.com' ||
+      host.endsWith('.vimeo.com')) {
+    return uri;
+  }
+  return null;
+}
 
 class SourceController extends ChangeNotifier {
   SourceController({SourceRepository? repository}) {
@@ -31,6 +65,8 @@ class SourceController extends ChangeNotifier {
   late SourceOAuthService oauth;
   late PublicationDownloads downloads;
   final Map<String, Future<File?>> _covers = {};
+  final Map<String, Future<SourceEntry>> _onlineLookups = {};
+  final StandaloneVideoMetadataClient _videoMetadata = StandaloneVideoMetadataClient();
   final Map<String, SourceAdapter> _adapters = {};
   List<FileSource> sources = const [];
   Set<PublicationShelf> shelves = {};
@@ -111,6 +147,76 @@ class SourceController extends ChangeNotifier {
   }
 
   bool current(int epoch) => !_disposed && generation == epoch;
+
+  SourceEntry _withSyncIdentity(FileSource source, SourceEntry entry) {
+    if (source.kind == FileSourceKind.webdav) {
+      // Preserve existing WebDAV state-file names for its own content.
+      return entry.copyWith(syncIdentity: entry.id);
+    }
+    final endpoint = Uri.tryParse(source.endpoint);
+    final normalizedEndpoint = endpoint == null
+        ? source.endpoint.trim()
+        : endpoint
+            .replace(
+              scheme: endpoint.scheme.toLowerCase(),
+              host: endpoint.host.toLowerCase(),
+              path: endpoint.path.replaceAll(RegExp(r'/+$'), ''),
+              port: endpoint.scheme == 'smb' && endpoint.hasPort && endpoint.port == 445
+                  ? null
+                  : endpoint.port,
+            )
+            .toString();
+    final normalizedRoot = source.root.replaceAll('\\', '/').replaceAll(RegExp(r'/+$'), '');
+    final normalizedEntryId = entry.id.replaceAll('\\', '/');
+    final identity = sourceDigest(
+      jsonEncode([
+        source.kind.name,
+        if (source.kind != FileSourceKind.smb) source.name,
+        normalizedEndpoint,
+        normalizedRoot,
+        normalizedEntryId,
+      ]),
+    );
+    return entry.copyWith(syncIdentity: identity);
+  }
+
+  SourceEntry _applyCachedOnlineMetadata(SourceEntry fresh, SourceEntry? cached) {
+    if (fresh.kind != SourceItemKind.video || cached?.kind != SourceItemKind.video) {
+      return fresh;
+    }
+    return fresh.copyWith(
+      onlineTitle: cached.onlineTitle,
+      description: fresh.description.isNotEmpty ? fresh.description : cached.description,
+      releaseYear: fresh.releaseYear ?? cached.releaseYear,
+      rating: fresh.rating ?? cached.rating,
+      genres: fresh.genres.isNotEmpty ? fresh.genres : cached.genres,
+      identifiers: {...cached.identifiers, ...fresh.identifiers},
+      onlinePosterUrl: cached.onlinePosterUrl,
+      trailerUrl: cached.trailerUrl,
+      cast: cached.cast,
+      onlineMetadataProvider: cached.onlineMetadataProvider,
+      onlineMetadataCheckedAt: cached.onlineMetadataCheckedAt,
+    );
+  }
+
+  SourceAdapter? _stateAdapter(SourceEntry entry, PublicationProgress progress) {
+    final owner = sources.where((source) => source.id == entry.sourceId).firstOrNull;
+    if (owner != null) {
+      final local = adapter(owner.id);
+      if (local.supportsProgress(entry, progress)) return local;
+    }
+    // A single configured WebDAV state folder can synchronize other sources.
+    // If more than one is configured, leave cross-source progress local.
+    final targets = sources.where(
+      (source) =>
+          source.kind == FileSourceKind.webdav &&
+          (source.options['syncRoot']?.trim().isNotEmpty ?? false),
+    ).toList();
+    if (targets.length != 1) return null;
+    final target = adapter(targets.single.id);
+    return target.supportsProgress(entry, progress) ? target : null;
+  }
+
   void requireSession([int? epoch]) {
     if (_disposed || blocked || profileId == null || (epoch != null && !current(epoch))) {
       throw const SourceException(SourceFailure.cancelled);
@@ -149,7 +255,7 @@ class SourceController extends ChangeNotifier {
     shelves = {
       for (final shelf in PublicationShelf.values)
         if (entries.any(shelf.includes) ||
-            sources.any((s) => (s.options['shelves'] ?? 'ebooks,audiobooks').split(',').contains(shelf.name)))
+            sources.any((s) => (s.options['shelves'] ?? 'ebooks,audiobooks,videos').split(',').contains(shelf.name)))
           shelf,
     };
   }
@@ -244,6 +350,11 @@ class SourceController extends ChangeNotifier {
         FileSourceKind.oneDrive => OneDriveSourceAdapter(source, transport, token),
         FileSourceKind.dropbox => DropboxSourceAdapter(source, transport, token),
         FileSourceKind.s3 => S3SourceAdapter(source, transport, credentials),
+        FileSourceKind.smb => SmbSourceAdapter(source, transport, credentials),
+        FileSourceKind.ftp => FtpSourceAdapter(source, transport, credentials),
+        FileSourceKind.sftp => SftpSourceAdapter(source, transport, credentials),
+        FileSourceKind.nfs => NfsSourceAdapter(source, transport, credentials),
+        FileSourceKind.dlna => DlnaSourceAdapter(source, transport),
         FileSourceKind.opds => OpdsSourceAdapter(source, transport, credentials),
         FileSourceKind.audiobookshelf => AudiobookshelfSourceAdapter(source, transport, credentials),
       };
@@ -254,21 +365,145 @@ class SourceController extends ChangeNotifier {
     await ready;
     requireSession();
     final epoch = generation, profile = profileId!;
+    final fileSource = sources.where((item) => item.id == source).firstOrNull;
+    if (fileSource == null) throw const SourceException(SourceFailure.authentication);
     final page = await adapter(source).browse(parent: parent, cursor: cursor, query: query);
     requireSession(epoch);
-    await repository.cacheEntries(profile, page.entries);
-    shelves.addAll(PublicationShelf.values.where((s) => page.entries.any(s.includes)));
+    final entries = <SourceEntry>[];
+    for (final entry in page.entries) {
+      final fresh = _withSyncIdentity(fileSource, entry);
+      final cached = fresh.kind == SourceItemKind.video
+          ? await repository.entryById(profile, source, fresh.id)
+          : null;
+      entries.add(_applyCachedOnlineMetadata(fresh, cached));
+    }
+    await repository.cacheEntries(profile, entries);
+    shelves.addAll(PublicationShelf.values.where((s) => entries.any(s.includes)));
     _notify();
-    return page;
+    return SourcePage(entries, next: page.next, title: page.title);
   }
 
   Future<SourceEntry> hydrate(SourceEntry entry) async {
     requireSession();
     final epoch = generation, profile = profileId!;
-    final result = await adapter(entry.sourceId).hydrate(entry);
+    final fileSource = sources.where((item) => item.id == entry.sourceId).firstOrNull;
+    if (fileSource == null) throw const SourceException(SourceFailure.authentication);
+    final fresh = _withSyncIdentity(fileSource, await adapter(entry.sourceId).hydrate(entry));
+    final cached = fresh.kind == SourceItemKind.video
+        ? await repository.entryById(profile, entry.sourceId, fresh.id)
+        : null;
+    final result = _applyCachedOnlineMetadata(fresh, cached);
     requireSession(epoch);
     await repository.cacheEntries(profile, [result]);
     return result;
+  }
+
+  Future<void> saveOnlineMetadata(
+    SourceEntry entry, {
+    required String title,
+    String? overview,
+    int? releaseYear,
+    double? rating,
+    List<String> genres = const [],
+    Map<String, String> identifiers = const {},
+    String? posterUrl,
+    String? trailerUrl,
+    List<String> cast = const [],
+    required String provider,
+  }) async {
+    await ready;
+    requireSession();
+    final profile = profileId!;
+    final epoch = generation;
+    final source = sources.where((item) => item.id == entry.sourceId).firstOrNull;
+    if (source == null || entry.kind != SourceItemKind.video || title.trim().isEmpty) {
+      throw const SourceException(SourceFailure.invalidData);
+    }
+    final poster = _trustedOnlinePosterUri(posterUrl)?.toString();
+    final trailer = _trustedOnlineTrailerUri(trailerUrl)?.toString();
+    final matched = _withSyncIdentity(
+      source,
+      entry.copyWith(
+        onlineTitle: title.trim(),
+        description: entry.description.isNotEmpty ? entry.description : overview,
+        releaseYear: entry.releaseYear ?? releaseYear,
+        rating: entry.rating ?? rating,
+        genres: entry.genres.isNotEmpty ? entry.genres : genres,
+        identifiers: {...entry.identifiers, ...identifiers},
+        onlinePosterUrl: poster,
+        trailerUrl: trailer,
+        cast: cast.take(20).toList(growable: false),
+        onlineMetadataProvider: provider,
+        onlineMetadataCheckedAt: DateTime.now().millisecondsSinceEpoch,
+      ),
+    );
+    await repository.cacheEntries(profile, [matched]);
+    requireSession(epoch);
+    _covers.remove(sourceKey(profile, entry.key));
+    _notify();
+  }
+
+  Future<SourceEntry> identifyOnlineMetadata(SourceEntry entry, {bool force = false}) async {
+    await ready;
+    requireSession();
+    if (entry.kind != SourceItemKind.video) return entry;
+    final profile = profileId!;
+    final source = sources.where((item) => item.id == entry.sourceId).firstOrNull;
+    if (source == null || source.options['onlineMetadata'] == 'false') return entry;
+    final key = sourceKey(profile, entry.key);
+    final cachedLookup = _onlineLookups[key];
+    if (cachedLookup != null) return cachedLookup;
+    final task = _identifyOnlineMetadata(entry, source, profile, generation, force);
+    _onlineLookups[key] = task;
+    try {
+      return await task;
+    } finally {
+      if (identical(_onlineLookups[key], task)) _onlineLookups.remove(key);
+    }
+  }
+
+  Future<SourceEntry> _identifyOnlineMetadata(
+    SourceEntry entry,
+    FileSource source,
+    String profile,
+    int epoch,
+    bool force,
+  ) async {
+    final cached = await repository.entryById(profile, source.id, entry.id);
+    final current = _applyCachedOnlineMetadata(entry, cached);
+    if (!force && (current.onlineMetadataProvider != null ||
+        current.onlineMetadataCheckedAt != null &&
+            DateTime.now().millisecondsSinceEpoch - current.onlineMetadataCheckedAt! < const Duration(days: 30).inMilliseconds)) {
+      return current;
+    }
+    try {
+      final metadata = await _videoMetadata.identify(current);
+      requireSession(epoch);
+      if (metadata == null) {
+        final checked = _withSyncIdentity(source, current.copyWith(
+          onlineMetadataCheckedAt: DateTime.now().millisecondsSinceEpoch,
+        ));
+        await repository.cacheEntries(profile, [checked]);
+        return checked;
+      }
+      await saveOnlineMetadata(
+        current,
+        title: metadata.title,
+        overview: metadata.overview,
+        releaseYear: metadata.year,
+        rating: metadata.rating,
+        genres: metadata.genres,
+        identifiers: metadata.identifiers,
+        posterUrl: metadata.posterUrl,
+        trailerUrl: metadata.trailerUrl,
+        cast: metadata.cast,
+        provider: metadata.provider,
+      );
+      requireSession(epoch);
+      return await repository.entryById(profile, source.id, entry.id) ?? current;
+    } on Object {
+      return current;
+    }
   }
 
   Future<File> content(SourceEntry entry, PublicationFile file, {void Function(int, int?)? onProgress}) async {
@@ -289,12 +524,25 @@ class SourceController extends ChangeNotifier {
       await ready;
       final epoch = generation;
       final file = File(
-        p.join(downloads.directory.path, sourceDigest(profile), 'covers', '${sourceDigest(entry.key)}.png'),
+        p.join(
+          downloads.directory.path,
+          sourceDigest(profile),
+          'covers',
+          '${sourceDigest(jsonEncode([entry.key, entry.coverId, entry.onlinePosterUrl]))}.png',
+        ),
       );
       if (await file.exists()) return file;
       if (!sources.any((s) => s.id == entry.sourceId)) return null;
       try {
-        final provider = adapter(entry.sourceId), lease = await adapter(entry.sourceId).cover(entry);
+        final provider = adapter(entry.sourceId);
+        final directBytes = await provider.coverBytes(entry);
+        if (directBytes != null) {
+          requireSession(epoch);
+          return await saveCover(entry, Uint8List.fromList(directBytes), profile: profile);
+        }
+        final posterUri = _trustedOnlinePosterUri(entry.onlinePosterUrl);
+        final lease = await provider.cover(entry) ??
+            (posterUri == null ? null : ContentLease(posterUri));
         if (lease == null) return null;
         final response = await provider.transport.send('GET', lease.uri, headers: lease.headers, redirects: true);
         SourceTransport.check(response.statusCode);
@@ -323,7 +571,12 @@ class SourceController extends ChangeNotifier {
     requireSession(epoch);
     if (owner != profileId || image == null) throw const SourceException(SourceFailure.cancelled);
     final file = File(
-      p.join(downloads.directory.path, sourceDigest(owner), 'covers', '${sourceDigest(entry.key)}.png'),
+      p.join(
+        downloads.directory.path,
+        sourceDigest(owner),
+        'covers',
+        '${sourceDigest(jsonEncode([entry.key, entry.coverId, entry.onlinePosterUrl]))}.png',
+      ),
     );
     await file.parent.create(recursive: true);
     await file.writeAsBytes(image.buffer.asUint8List(), flush: true);
@@ -359,11 +612,13 @@ class SourceController extends ChangeNotifier {
     requireSession();
     final epoch = generation, profile = profileId!;
     var local = await repository.progress(profile, initial.key);
-    if (sources.any((s) => s.id == entry.sourceId)) {
-      final provider = adapter(entry.sourceId);
-      if (provider.supportsProgress(entry, initial)) {
+    final owner = sources.where((s) => s.id == entry.sourceId).firstOrNull;
+    final syncEntry = owner == null ? entry : _withSyncIdentity(owner, entry);
+    if (owner != null) {
+      final provider = _stateAdapter(syncEntry, initial);
+      if (provider != null) {
         try {
-          final remote = await provider.readProgress(entry, local ?? initial);
+          final remote = await provider.readProgress(syncEntry, local ?? initial);
           requireSession(epoch);
           if (remote != null) {
             if (local == null || !await repository.isPending(profile, initial.key)) {
@@ -380,7 +635,7 @@ class SourceController extends ChangeNotifier {
           } else if (local == null) {
             await _baseline(profile, initial);
           }
-          final notes = await provider.readAnnotations(entry, local ?? initial);
+          final notes = await provider.readAnnotations(syncEntry, local ?? initial);
           requireSession(epoch);
           final existing = await repository.annotations(profile, entry.key);
           for (final note in notes) {
@@ -530,10 +785,13 @@ class SourceController extends ChangeNotifier {
       requireSession(epoch);
       final progress = PublicationProgress.fromJson(sourceMap(jsonDecode(event['payload'] as String)));
       if (onlyKey != null && progress.key != onlyKey) continue;
-      final entry = entries.where((e) => e.key == progress.entryKey).firstOrNull;
-      if (entry == null || !sources.any((s) => s.id == entry.sourceId)) continue;
-      final source = adapter(entry.sourceId);
-      if (!source.supportsProgress(entry, progress)) continue;
+      final storedEntry = entries.where((e) => e.key == progress.entryKey).firstOrNull;
+      if (storedEntry == null) continue;
+      final owner = sources.where((s) => s.id == storedEntry.sourceId).firstOrNull;
+      if (owner == null) continue;
+      final entry = _withSyncIdentity(owner, storedEntry);
+      final source = _stateAdapter(entry, progress);
+      if (source == null) continue;
       PublicationProgress? remote;
       try {
         remote = await source.readProgress(entry, progress);
@@ -560,10 +818,19 @@ class SourceController extends ChangeNotifier {
     for (final event in events.where((e) => e['kind'] == 'annotation')) {
       requireSession(epoch);
       final annotation = BookAnnotation.fromJson(sourceMap(jsonDecode(event['payload'] as String)));
-      final entry = entries.where((e) => e.key == annotation.entryKey).firstOrNull;
-      if (entry == null || !sources.any((s) => s.id == entry.sourceId)) continue;
-      final source = adapter(entry.sourceId);
-      if (!source.capabilities.annotations ||
+      final storedEntry = entries.where((e) => e.key == annotation.entryKey).firstOrNull;
+      if (storedEntry == null) continue;
+      final owner = sources.where((s) => s.id == storedEntry.sourceId).firstOrNull;
+      if (owner == null) continue;
+      final entry = _withSyncIdentity(owner, storedEntry);
+      final annotationProgress = PublicationProgress(
+        entryKey: annotation.entryKey,
+        edition: annotation.edition,
+        mode: annotation.mode,
+        session: '',
+      );
+      final source = _stateAdapter(entry, annotationProgress);
+      if (source == null || !source.capabilities.annotations ||
           (source.source.kind == FileSourceKind.audiobookshelf && annotation.mode != PublicationMode.listening)) {
         continue;
       }
@@ -587,6 +854,7 @@ class SourceController extends ChangeNotifier {
       adapter.close();
     }
     _adapters.clear();
+    _videoMetadata.close();
     unawaited(
       ready.then((_) async {
         oauth.dispose();

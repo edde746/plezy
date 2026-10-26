@@ -1,9 +1,11 @@
 import 'dart:async';
 import 'dart:convert';
+import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:flutter/widgets.dart';
 import 'package:os_media_controls/os_media_controls.dart';
+import 'package:path/path.dart' as p;
 import 'package:uuid/uuid.dart';
 
 import '../mpv/mpv.dart';
@@ -74,6 +76,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
   final Map<int, int> _durations = {};
   final Map<int, List<BookChapter>> _fileChapters = {};
   final List<StreamSubscription<dynamic>> _subscriptions = [];
+  final List<File> _temporarySubtitles = [];
   SourceStreamGateway? _gateway;
   MediaControlsManager? _controls;
   MusicHardwareTransportHandler? _hardware;
@@ -282,6 +285,38 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       rethrow;
     }
   });
+  Future<void> applyExternalSubtitle({required String name, required List<int> bytes}) async {
+    final native = player;
+    final profile = _profile;
+    if (!_valid || !video || native == null || profile == null) {
+      throw const SourceException(SourceFailure.cancelled);
+    }
+    if (bytes.isEmpty || bytes.length > 5 * 1024 * 1024) {
+      throw const SourceException(SourceFailure.invalidData);
+    }
+    final requestedExtension = p.extension(name).toLowerCase();
+    final extension = const {'.srt', '.ass', '.ssa', '.vtt', '.sub'}.contains(requestedExtension)
+        ? requestedExtension
+        : '.srt';
+    final directory = Directory(
+      p.join(sources.downloads.directory.path, sourceDigest(profile), 'external-subtitles'),
+    );
+    await directory.create(recursive: true);
+    if (!_valid || native != player) throw const SourceException(SourceFailure.cancelled);
+    final file = File(p.join(directory.path, '${const Uuid().v4()}$extension'));
+    try {
+      await file.writeAsBytes(bytes, flush: true);
+      if (!_valid || native != player) throw const SourceException(SourceFailure.cancelled);
+      await native.command(['sub-add', file.path, 'select']);
+      if (!_valid || native != player) throw const SourceException(SourceFailure.cancelled);
+      _temporarySubtitles.add(file);
+      _notify();
+    } catch (_) {
+      if (await file.exists()) await file.delete();
+      rethrow;
+    }
+  }
+
   int _indexAt(int absolute) {
     var total = 0;
     for (var i = 0; i < files.length; i++) {
@@ -322,7 +357,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     await native.setRate(speed);
     if (!_valid || player != native) return;
     await _controls?.updateFileMetadata(
-      title: item.title,
+      title: item.displayTitle,
       author: item.narrator.isEmpty ? item.author : item.narrator,
       duration: hasCompleteTimeline ? Duration(milliseconds: durationMs) : null,
     );
@@ -607,6 +642,12 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     player = null;
     await release(() async => native?.stop());
     await release(() async => native?.dispose());
+    for (final file in _temporarySubtitles) {
+      await release(() async {
+        if (await file.exists()) await file.delete();
+      });
+    }
+    _temporarySubtitles.clear();
     await release(() async => _controls?.clear());
     await release(() => _controls?.dispose());
     _controls = null;

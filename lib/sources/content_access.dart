@@ -1,5 +1,6 @@
 import 'dart:async';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:path/path.dart' as p;
 
@@ -84,37 +85,64 @@ class PublicationDownloads {
     // A byte range is safe to append only when the server can condition it on
     // the exact representation previously received. Otherwise restart.
     if (offset > 0 && validator == null) offset = 0;
-    var lease = await adapter.resolve(file);
+    var expectedSize = file.size ?? await adapter.contentSize(file);
+    final directStream = await adapter.openContent(file, offset: 0, length: expectedSize ?? 0);
     cancel.check();
-    if (lease.uri.scheme == 'file') {
-      final input = File.fromUri(lease.uri);
-      await input.copy(partial.path);
-      cancel.check();
+    if (directStream != null) {
+      expectedSize = directStream.size;
+      if (directStream.offset != 0 || directStream.length != directStream.size) {
+        throw const SourceException(SourceFailure.invalidData);
+      }
+      var received = 0;
+      final sink = partial.openWrite();
+      try {
+        await sink.addStream(
+          directStream.stream.timeout(const Duration(seconds: 45)).map((bytes) {
+            cancel.check();
+            received += bytes.length;
+            if (received > directStream.size) throw const SourceException(SourceFailure.invalidData);
+            onProgress?.call(received, directStream.size);
+            return bytes;
+          }),
+        );
+        await sink.flush();
+      } finally {
+        await sink.close();
+      }
+      if (received != directStream.size) throw const SourceException(SourceFailure.invalidData);
     } else {
-      var response = await adapter.transport.send(
-        'GET',
-        lease.uri,
-        headers: {...lease.headers, if (offset > 0) 'Range': 'bytes=$offset-', if (offset > 0) 'If-Range': validator!},
-        redirects: true,
-        abort: cancel.aborted,
-      );
-      if (const {401, 403}.contains(response.statusCode)) {
-        await response.stream.listen(null).cancel();
-        await adapter.refreshAuthorization();
-        lease = await adapter.resolve(file);
-        response = await adapter.transport.send(
+      var lease = await adapter.resolve(file);
+      expectedSize ??= lease.size;
+      cancel.check();
+      if (lease.uri.scheme == 'file') {
+        final input = File.fromUri(lease.uri);
+        await input.copy(partial.path);
+        cancel.check();
+      } else {
+        var response = await adapter.transport.send(
           'GET',
           lease.uri,
-          headers: {
-            ...lease.headers,
-            if (offset > 0) 'Range': 'bytes=$offset-',
-            if (offset > 0) 'If-Range': validator!,
-          },
+          headers: {...lease.headers, if (offset > 0) 'Range': 'bytes=$offset-', if (offset > 0) 'If-Range': validator!},
           redirects: true,
           abort: cancel.aborted,
         );
-      }
-      {
+        if (const {401, 403}.contains(response.statusCode)) {
+          await response.stream.listen(null).cancel();
+          await adapter.refreshAuthorization();
+          lease = await adapter.resolve(file);
+          expectedSize ??= lease.size;
+          response = await adapter.transport.send(
+            'GET',
+            lease.uri,
+            headers: {
+              ...lease.headers,
+              if (offset > 0) 'Range': 'bytes=$offset-',
+              if (offset > 0) 'If-Range': validator!,
+            },
+            redirects: true,
+            abort: cancel.aborted,
+          );
+        }
         if (response.statusCode < 200 || response.statusCode >= 300) {
           await response.stream.listen(null).cancel();
           // A stale or complete partial is never promoted on a 416 response.
@@ -130,10 +158,11 @@ class PublicationDownloads {
           throw const SourceException(SourceFailure.conflict);
         }
         if (response.statusCode == 206) {
-          final match = RegExp(r'^bytes (\d+)-(\d+)/(\d+|\*)$').firstMatch(response.headers['content-range'] ?? '');
+          final match = RegExp(r'^bytes (\d+)-(\d+)/(\d+|\*)$')
+              .firstMatch(response.headers['content-range'] ?? '');
           if (match == null ||
               int.parse(match[1]!) != offset ||
-              (file.size ?? lease.size) != null && match[3] != '${file.size ?? lease.size}') {
+              expectedSize != null && match[3] != '$expectedSize') {
             await response.stream.listen(null).cancel();
             throw const SourceException(SourceFailure.invalidData);
           }
@@ -149,10 +178,10 @@ class PublicationDownloads {
             response.stream.timeout(const Duration(seconds: 45)).map((bytes) {
               cancel.check();
               offset += bytes.length;
-              if ((file.size ?? lease.size) != null && offset > (file.size ?? lease.size)!) {
+              if (expectedSize != null && offset > expectedSize!) {
                 throw const SourceException(SourceFailure.invalidData);
               }
-              onProgress?.call(offset, file.size ?? lease.size);
+              onProgress?.call(offset, expectedSize);
               return bytes;
             }),
           );
@@ -165,7 +194,7 @@ class PublicationDownloads {
     cancel.check();
     final size = await partial.length();
     cancel.check();
-    if (size == 0 || ((file.size ?? lease.size) != null && size != (file.size ?? lease.size))) {
+    if (size == 0 || (expectedSize != null && size != expectedSize)) {
       throw const SourceException(SourceFailure.invalidData);
     }
     // Same-directory rename publishes a complete file atomically. A different
@@ -208,6 +237,198 @@ class PublicationDownloads {
     }
     await repository.forgetDownload(profile, key(sourceId, file));
   }
+}
+
+({int offset, int length})? _byteRange(String? value, int size) {
+  if (value == null) return (offset: 0, length: size);
+  final match = RegExp(r'^bytes=(\d*)-(\d*)$').firstMatch(value);
+  if (match == null || size < 0) return null;
+  final first = match[1]!, last = match[2]!;
+  if ((first.isEmpty && last.isEmpty) || size == 0) return null;
+  if (first.isEmpty) {
+    final suffix = int.tryParse(last);
+    if (suffix == null || suffix <= 0) return null;
+    final length = math.min(suffix, size).toInt();
+    return (offset: size - length, length: length);
+  }
+  final offset = int.tryParse(first);
+  final end = last.isEmpty ? size - 1 : int.tryParse(last);
+  if (offset == null || end == null || offset >= size || end < offset) return null;
+  final boundedEnd = math.min(end, size - 1).toInt();
+  return (offset: offset, length: boundedEnd - offset + 1);
+}
+
+/// A session-owned loopback gateway keeps provider credentials away from
+/// native player logging, redirects and OS metadata. It only serves explicitly
+/// registered files, renews expired leases, and streams with backpressure.
+class SourceStreamGateway {
+  SourceStreamGateway({required this.valid});
+  final bool Function() valid;
+  HttpServer? _server;
+  final _secret = SourceOAuthService.randomSecret();
+  final Map<String, ({SourceAdapter adapter, PublicationFile file})> _files = {};
+  final Map<String, ContentLease> _leases = {};
+  final _abort = Completer<void>();
+  Future<Uri> register(SourceAdapter adapter, PublicationFile file) async {
+    if (!valid()) throw const SourceException(SourceFailure.cancelled);
+    if (_server == null) {
+      _server = await HttpServer.bind(InternetAddress.loopbackIPv4, 0);
+      _server!.listen((request) => unawaited(_serve(request)));
+    }
+    final id = sourceDigest(sourceKey(adapter.source.id, file.id));
+    _files[id] = (adapter: adapter, file: file);
+    return Uri.parse('http://127.0.0.1:${_server!.port}/$_secret/$id');
+  }
+
+  Future<void> _serve(HttpRequest request) async {
+    try {
+      final segments = request.uri.pathSegments;
+      final expectedHost = '127.0.0.1:${_server?.port}';
+      if (!valid() ||
+          request.headers.value(HttpHeaders.hostHeader) != expectedHost ||
+          request.headers.value('origin') != null ||
+          segments.length != 2 ||
+          segments[0] != _secret ||
+          !const {'GET', 'HEAD'}.contains(request.method)) {
+        request.response.statusCode = 403;
+        return;
+      }
+      final ref = _files[segments[1]];
+      if (ref == null) {
+        request.response.statusCode = 404;
+        return;
+      }
+      final range = request.headers.value(HttpHeaders.rangeHeader);
+      if (range != null && !RegExp(r'^bytes=(\d+-\d*|-\d+)$').hasMatch(range)) {
+        request.response.statusCode = 416;
+        return;
+      }
+      final size = await ref.adapter.contentSize(ref.file);
+      if (size != null) {
+        final requested = _byteRange(range, size);
+        if (requested == null) {
+          request.response.statusCode = HttpStatus.requestedRangeNotSatisfiable;
+          request.response.headers.set(HttpHeaders.contentRangeHeader, 'bytes */$size');
+          request.response.headers.set(HttpHeaders.acceptRangesHeader, 'bytes');
+          return;
+        }
+        final content = await ref.adapter.openContent(
+          ref.file,
+          offset: requested.offset,
+          length: requested.length,
+        );
+        if (content != null) {
+          request.response.statusCode = range == null ? HttpStatus.ok : HttpStatus.partialContent;
+          request.response.headers
+            ..set(HttpHeaders.cacheControlHeader, 'no-store')
+            ..set(HttpHeaders.acceptRangesHeader, 'bytes')
+            ..set(HttpHeaders.contentLengthHeader, content.length)
+            ..set(
+              HttpHeaders.contentTypeHeader,
+              ref.file.mimeType.isEmpty ? 'application/octet-stream' : ref.file.mimeType,
+            );
+          if (range != null && content.length > 0) {
+            request.response.headers.set(
+              HttpHeaders.contentRangeHeader,
+              'bytes ${content.offset}-${content.offset + content.length - 1}/${content.size}',
+            );
+          }
+          if (request.method == 'HEAD') return;
+          await request.response.addStream(
+            content.stream.timeout(const Duration(seconds: 45)).map((bytes) {
+              if (!valid()) throw const SourceException(SourceFailure.cancelled);
+              return bytes;
+            }),
+          );
+          return;
+        }
+      }
+      var lease = _leases[segments[1]];
+      if (lease == null || (lease.expiresAt?.isBefore(DateTime.now().add(const Duration(seconds: 30))) ?? false)) {
+        lease = await ref.adapter.resolve(ref.file);
+        _leases[segments[1]] = lease;
+      }
+      if (!valid()) throw const SourceException(SourceFailure.cancelled);
+      if (lease.uri.scheme == 'file') throw const SourceException(SourceFailure.invalidData);
+      var response = await ref.adapter.transport.send(
+        'GET',
+        lease.uri,
+        headers: {...lease.headers, 'Range': ?range},
+        redirects: true,
+        abort: _abort.future,
+      );
+      if (const {401, 403}.contains(response.statusCode)) {
+        await response.stream.drain<void>();
+        _leases.remove(segments[1]);
+        await ref.adapter.refreshAuthorization();
+        lease = await ref.adapter.resolve(ref.file);
+        response = await ref.adapter.transport.send(
+          'GET',
+          lease.uri,
+          headers: {...lease.headers, 'Range': ?range},
+          redirects: true,
+          abort: _abort.future,
+        );
+      }
+      if (response.statusCode < 200 || response.statusCode >= 300) await response.stream.listen(null).cancel();
+      SourceTransport.check(response.statusCode);
+      request.response.statusCode = response.statusCode;
+      request.response.headers.set('Cache-Control', 'no-store');
+      for (final name in [
+        'content-type',
+        'content-length',
+        'content-range',
+        'accept-ranges',
+        'etag',
+        'last-modified',
+      ]) {
+        final value = response.headers[name];
+        if (value != null) request.response.headers.set(name, value);
+      }
+      if (request.method == 'HEAD') {
+        await response.stream.listen(null).cancel();
+        return;
+      }
+      await request.response.addStream(
+        response.stream.timeout(const Duration(seconds: 45)).map((bytes) {
+          if (!valid()) throw const SourceException(SourceFailure.cancelled);
+          return bytes;
+        }),
+      );
+    } catch (_) {
+      try {
+        request.response.statusCode = 502;
+      } catch (_) {}
+    } finally {
+      try {
+        await request.response.close();
+      } catch (_) {}
+    }
+  }
+
+  Future<void> close() async {
+    _files.clear();
+    _leases.clear();
+    if (!_abort.isCompleted) _abort.complete();
+    await _server?.close(force: true);
+    _server = null;
+  }
+}
+).firstMatch(value);
+  if (match == null || size < 0) return null;
+  final first = match[1]!, last = match[2]!;
+  if ((first.isEmpty && last.isEmpty) || size == 0) return null;
+  if (first.isEmpty) {
+    final suffix = int.tryParse(last);
+    if (suffix == null || suffix <= 0) return null;
+    final length = math.min(suffix, size).toInt();
+    return (offset: size - length, length: length);
+  }
+  final offset = int.tryParse(first);
+  final end = last.isEmpty ? size - 1 : int.tryParse(last);
+  if (offset == null || end == null || offset >= size || end < offset) return null;
+  final boundedEnd = math.min(end, size - 1).toInt();
+  return (offset: offset, length: boundedEnd - offset + 1);
 }
 
 /// A session-owned loopback gateway keeps provider credentials away from

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 
-enum FileSourceKind { local, webdav, googleDrive, oneDrive, dropbox, s3, opds, audiobookshelf }
+enum FileSourceKind { local, webdav, smb, ftp, sftp, nfs, dlna, googleDrive, oneDrive, dropbox, s3, opds, audiobookshelf }
 
 enum SourceItemKind { folder, ebook, audiobook, comic, music, video, unknown }
 
@@ -42,6 +42,30 @@ void validatePublicSourceUri(Uri uri, {bool allowHttp = false}) {
       uri.queryParameters.keys.any(sourceCredentialParameter.hasMatch)) {
     throw const SourceException(SourceFailure.permission);
   }
+}
+
+/// SMB endpoints identify one server share. Credentials stay in the encrypted
+/// vault, and the default port is enforced until custom ports are supported.
+Uri validateSmbSourceEndpoint(String value) {
+  final uri = Uri.tryParse(value);
+  final shares = uri?.pathSegments.where((segment) => segment.isNotEmpty).toList() ?? const <String>[];
+  if (uri == null ||
+      uri.scheme != 'smb' ||
+      uri.host.isEmpty ||
+      uri.userInfo.isNotEmpty ||
+      uri.hasQuery ||
+      uri.hasFragment ||
+      (uri.hasPort && uri.port != 445) ||
+      shares.length != 1 ||
+      shares.any((segment) =>
+          segment == '.' ||
+          segment == '..' ||
+          segment.contains('/') ||
+          segment.contains('\\') ||
+          segment.contains('\u0000'))) {
+    throw const SourceException(SourceFailure.permission);
+  }
+  return uri;
 }
 
 class FileSource {
@@ -172,6 +196,16 @@ class SourceEntry {
     this.files = const [],
     this.chapters = const [],
     this.identifiers = const {},
+    this.releaseYear,
+    this.rating,
+    this.genres = const [],
+    this.syncIdentity,
+    this.onlineTitle,
+    this.onlinePosterUrl,
+    this.trailerUrl,
+    this.cast = const [],
+    this.onlineMetadataProvider,
+    this.onlineMetadataCheckedAt,
   });
   final String sourceId;
   final String id;
@@ -188,8 +222,76 @@ class SourceEntry {
   final List<PublicationFile> files;
   final List<BookChapter> chapters;
   final Map<String, String> identifiers;
+  final int? releaseYear;
+  final double? rating;
+  final List<String> genres;
+  final String? syncIdentity;
+  final String? onlineTitle;
+  final String? onlinePosterUrl;
+  final String? trailerUrl;
+  final List<String> cast;
+  final String? onlineMetadataProvider;
+  final int? onlineMetadataCheckedAt;
+
+  SourceEntry copyWith({
+    String? parentId,
+    String? title,
+    String? description,
+    String? coverId,
+    int? releaseYear,
+    double? rating,
+    List<String>? genres,
+    Map<String, String>? identifiers,
+    String? syncIdentity,
+    String? onlineTitle,
+    String? onlinePosterUrl,
+    String? trailerUrl,
+    List<String>? cast,
+    String? onlineMetadataProvider,
+    int? onlineMetadataCheckedAt,
+  }) => SourceEntry(
+    sourceId: sourceId,
+    id: id,
+    title: title ?? this.title,
+    kind: kind,
+    parentId: parentId ?? this.parentId,
+    author: author,
+    narrator: narrator,
+    series: series,
+    seriesOrder: seriesOrder,
+    description: description ?? this.description,
+    language: language,
+    coverId: coverId ?? this.coverId,
+    files: files,
+    chapters: chapters,
+    identifiers: identifiers ?? this.identifiers,
+    releaseYear: releaseYear ?? this.releaseYear,
+    rating: rating ?? this.rating,
+    genres: genres ?? this.genres,
+    syncIdentity: syncIdentity ?? this.syncIdentity,
+    onlineTitle: onlineTitle ?? this.onlineTitle,
+    onlinePosterUrl: onlinePosterUrl ?? this.onlinePosterUrl,
+    trailerUrl: trailerUrl ?? this.trailerUrl,
+    cast: cast ?? this.cast,
+    onlineMetadataProvider: onlineMetadataProvider ?? this.onlineMetadataProvider,
+    onlineMetadataCheckedAt: onlineMetadataCheckedAt ?? this.onlineMetadataCheckedAt,
+  );
+
   String get key => sourceKey(sourceId, id);
   bool get isFolder => kind == SourceItemKind.folder;
+
+  /// Video source names begin as filenames. Keep their descriptive stem while
+  /// omitting only the container extension in user-facing titles.
+  String get displayTitle {
+    if (kind != SourceItemKind.video) return title;
+    // Offline NFO titles stay authoritative; online matching only replaces the
+    // original filename stem when no richer local title was supplied.
+    final filename = files.firstOrNull?.name;
+    final isFilename = filename == null || filename == title;
+    final matched = onlineTitle?.trim();
+    if (isFilename && matched?.isNotEmpty == true) return matched!;
+    return isFilename ? p.withoutExtension(title) : title;
+  }
   List<PublicationFile> get ebooks =>
       files.where((f) => (f.kind == SourceItemKind.ebook || f.kind == SourceItemKind.comic)).toList();
   List<PublicationFile> get audio =>
@@ -210,6 +312,16 @@ class SourceEntry {
     'files': files.map((f) => f.toJson()).toList(),
     'chapters': chapters.map((c) => c.toJson()).toList(),
     'identifiers': identifiers,
+    if (releaseYear != null) 'releaseYear': releaseYear,
+    if (rating != null) 'rating': rating,
+    if (genres.isNotEmpty) 'genres': genres,
+    if (syncIdentity != null) 'syncIdentity': syncIdentity,
+    if (onlineTitle != null) 'onlineTitle': onlineTitle,
+    if (onlinePosterUrl != null) 'onlinePosterUrl': onlinePosterUrl,
+    if (trailerUrl != null) 'trailerUrl': trailerUrl,
+    if (cast.isNotEmpty) 'cast': cast,
+    if (onlineMetadataProvider != null) 'onlineMetadataProvider': onlineMetadataProvider,
+    if (onlineMetadataCheckedAt != null) 'onlineMetadataCheckedAt': onlineMetadataCheckedAt,
   };
   factory SourceEntry.fromJson(Map<String, dynamic> j) => SourceEntry(
     sourceId: j['sourceId'] as String,
@@ -227,6 +339,16 @@ class SourceEntry {
     files: sourceList(j['files']).map((f) => PublicationFile.fromJson(sourceMap(f))).toList(),
     chapters: sourceList(j['chapters']).map((c) => BookChapter.fromJson(sourceMap(c))).toList(),
     identifiers: sourceMap(j['identifiers']).map((k, v) => MapEntry(k, '$v')),
+    releaseYear: sourceInt(j['releaseYear']),
+    rating: (j['rating'] as num?)?.toDouble(),
+    genres: sourceList(j['genres']).whereType<String>().toList(),
+    syncIdentity: j['syncIdentity'] as String?,
+    onlineTitle: j['onlineTitle'] as String?,
+    onlinePosterUrl: j['onlinePosterUrl'] as String?,
+    trailerUrl: j['trailerUrl'] as String?,
+    cast: sourceList(j['cast']).whereType<String>().toList(),
+    onlineMetadataProvider: j['onlineMetadataProvider'] as String?,
+    onlineMetadataCheckedAt: sourceInt(j['onlineMetadataCheckedAt']),
   );
 }
 
@@ -245,6 +367,20 @@ class ContentLease {
   final Map<String, String> headers;
   final DateTime? expiresAt;
   final int? size;
+}
+
+/// Provider-native byte stream for sources without an HTTP media URL.
+class SourceByteStream {
+  const SourceByteStream({
+    required this.stream,
+    required this.size,
+    required this.offset,
+    required this.length,
+  });
+  final Stream<List<int>> stream;
+  final int size;
+  final int offset;
+  final int length;
 }
 
 class ReadingLocator {

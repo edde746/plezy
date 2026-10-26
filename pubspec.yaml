@@ -83,6 +83,7 @@ dependencies:
   universal_gamepad: ^1.5.7
   drift: ^2.31.0
   crypto: ^3.0.7
+  dartssh2: ^4.1.0
   cryptography: ^2.9.0
   # 10.x retains the win32 5.x API used by the vendored wakelock plugin.
   flutter_secure_storage: ^10.3.4
@@ -143,6 +144,7 @@ dependencies:
   google_sign_in: ^7.2.0
   mime: ^2.0.0
   archive: ^4.5.2
+  dart_smb2: ^0.2.3
   flutter_tts: ^4.2.5
 
 dev_dependencies:
@@ -207,16 +209,20 @@ dependency_overrides:
   shared_preferences_linux:
     path: packages/shared_preferences_linux
 flutter:
+  uses-material-design: true
   config:
     # flutter_inappwebview_macos 1.2.0-beta.3 fails SwiftPM builds on Xcode 26.
     enable-swift-package-manager: false
-  uses-material-design: true
   assets:
     - assets/reader/
     - assets/provider_marks/
     - assets/reader/foliate/
     - assets/certificates/cacert.pem
     - assets/licenses/SpatialAudioBridge.txt
+    - assets/licenses/dart_smb2_NOTICE.txt
+    - assets/licenses/AMSMB2_NOTICE.txt
+    - assets/licenses/AMSMB2_MIT_LICENSE.txt
+    - assets/licenses/libsmb2-LGPL-2.1.txt
     - assets/plezy.png
     - assets/plezy_adaptive_foreground.png
     - assets/plex_chevron.svg

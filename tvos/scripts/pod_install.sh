@@ -11,4 +11,5 @@ cd "$TVOS_DIR"
 export LANG=en_US.UTF-8
 export LC_ALL=en_US.UTF-8
 
+ruby "$TVOS_DIR/scripts/wire_plugins.rb"
 exec pod install "$@"
