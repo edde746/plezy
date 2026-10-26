@@ -6,12 +6,16 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../i18n/presentation_formats.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../sources/publication_library.dart';
 import '../../utils/dialogs.dart';
+import '../../utils/formatters.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/dialog_action_button.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/provider_mark.dart';
 import '../../widgets/music/mini_player.dart';
 import '../../widgets/app_menu.dart';
@@ -229,14 +233,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
   }
 
   String _formatBytes(int bytes) {
-    const units = ['B', 'KiB', 'MiB', 'GiB', 'TiB'];
-    var value = bytes.toDouble();
-    var unit = 0;
-    while (value >= 1024 && unit < units.length - 1) {
-      value /= 1024;
-      unit++;
-    }
-    return '${value.toStringAsFixed(unit == 0 ? 0 : 1)} ${units[unit]}';
+    return ByteFormatter.formatBytes(bytes, decimals: 1);
   }
 
   Future<void> _editOfflineQuota(SourceController controller) async {
@@ -249,11 +246,12 @@ class _SourcesScreenState extends State<SourcesScreen> {
     if (!mounted) return;
     final choices = [1, 2, 5, 10, 20, 50, 100, 250, 500, 1024].map((gb) => gb * 1024 * 1024 * 1024).toList();
     var selected = choices.reduce((a, b) => (a - current).abs() <= (b - current).abs() ? a : b);
-    final result = await showDialog<int>(
+    final result = await showScopedDialog<int>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
           title: Text(t.fileSources.offlineQuota),
+          scrollable: true,
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
@@ -276,8 +274,16 @@ class _SourcesScreenState extends State<SourcesScreen> {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
-            FilledButton(onPressed: () => Navigator.pop(dialogContext, selected), child: Text(t.common.save)),
+            DialogActionButton(
+              autofocus: true,
+              onPressed: () => Navigator.pop(dialogContext),
+              label: t.common.cancel,
+            ),
+            DialogActionButton(
+              isPrimary: true,
+              onPressed: () => Navigator.pop(dialogContext, selected),
+              label: t.common.save,
+            ),
           ],
         ),
       ),
@@ -285,6 +291,71 @@ class _SourcesScreenState extends State<SourcesScreen> {
     if (result == null || !mounted) return;
     await sourceAction(context, () => controller.repository.setDownloadQuota(profile, result));
     if (mounted) await _load();
+  }
+
+  Widget _downloadJobTile(SourceController sources, Map<String, dynamic> job) {
+    final state = job['state'];
+    final retryable = state == 'failed' || state == 'paused';
+    final actionLabel = retryable ? t.common.retry : t.common.cancel;
+    final statusLabel = switch (state) {
+      'running' => t.fileSources.downloadRunning,
+      'queued' => t.fileSources.downloadQueued,
+      'paused' => t.fileSources.downloadPaused,
+      'failed' => t.fileSources.downloadFailed,
+      _ => t.fileSources.downloadQueued,
+    };
+    final label = (job['label'] as String?)?.trim() ?? '';
+    final key = job['key'] as String;
+    final action = _loading
+        ? null
+        : () => sourceAction(context, () async {
+            if (retryable) {
+              await sources.retryDownload(key);
+            } else {
+              await sources.cancelDownload(key);
+            }
+            if (mounted) await _load();
+          });
+    return FocusableListTile(
+      contentPadding: EdgeInsets.zero,
+      leading: const AppIcon(Symbols.downloading_rounded),
+      title: Text(
+        label.isEmpty ? t.fileSources.offline : isolateDisplayText(label),
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+      ),
+      subtitle: Text('$statusLabel · $actionLabel'),
+      trailing: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          IconButton(
+            tooltip: actionLabel,
+            icon: AppIcon(retryable ? Symbols.refresh_rounded : Symbols.close_rounded),
+            onPressed: action,
+          ),
+          IconButton(
+            tooltip: t.fileSources.removeDownloadJob,
+            icon: const AppIcon(Symbols.delete_outline_rounded),
+            onPressed: _loading
+                ? null
+                : () => sourceAction(context, () async {
+                    if (!await showConfirmDialog(
+                      context,
+                      title: t.fileSources.removeDownloadJob,
+                      message: t.fileSources.confirmRemoveDownloadJob,
+                      confirmText: t.fileSources.removeDownloadJob,
+                      isDestructive: true,
+                    )) {
+                      return;
+                    }
+                    await sources.removeDownloadJob(key);
+                    if (mounted) await _load();
+                  }),
+          ),
+        ],
+      ),
+      onTap: action,
+    );
   }
 
   Future<void> _sourceAction(String action, FileSource source) async {
@@ -482,59 +553,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
                 if (widget.offlineOnly && _downloadJobs.isNotEmpty) ...[
                   Text(t.fileSources.downloadQueue, style: Theme.of(context).textTheme.titleLarge),
                   const SizedBox(height: 8),
-                  for (final job in _downloadJobs)
-                    ListTile(
-                      contentPadding: EdgeInsets.zero,
-                      leading: const AppIcon(Symbols.downloading_rounded),
-                      title: Text((job['label'] as String?)?.isNotEmpty == true ? job['label'] as String : t.fileSources.offline),
-                      subtitle: Text(switch (job['state']) {
-                        'running' => t.fileSources.downloadRunning,
-                        'queued' => t.fileSources.downloadQueued,
-                        'paused' => t.fileSources.downloadPaused,
-                        'failed' => t.fileSources.downloadFailed,
-                        _ => t.fileSources.downloadQueued,
-                      }),
-                      trailing: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          IconButton(
-                            tooltip: job['state'] == 'failed' || job['state'] == 'paused' ? t.common.retry : t.common.cancel,
-                            icon: AppIcon(job['state'] == 'failed' || job['state'] == 'paused'
-                                ? Symbols.refresh_rounded
-                                : Symbols.close_rounded),
-                            onPressed: _loading
-                                ? null
-                                : () => sourceAction(context, () async {
-                                    if (job['state'] == 'failed' || job['state'] == 'paused') {
-                                      await sources.retryDownload(job['key'] as String);
-                                    } else {
-                                      await sources.cancelDownload(job['key'] as String);
-                                    }
-                                    if (mounted) await _load();
-                                  }),
-                          ),
-                          IconButton(
-                            tooltip: t.fileSources.removeDownload,
-                            icon: const AppIcon(Symbols.delete_outline_rounded),
-                            onPressed: _loading
-                                ? null
-                                : () => sourceAction(context, () async {
-                                    if (!await showConfirmDialog(
-                                      context,
-                                      title: t.fileSources.removeDownload,
-                                      message: t.fileSources.confirmDelete,
-                                      confirmText: t.fileSources.removeDownload,
-                                      isDestructive: true,
-                                    )) {
-                                      return;
-                                    }
-                                    await sources.removeDownloadJob(job['key'] as String);
-                                    if (mounted) await _load();
-                                  }),
-                          ),
-                        ],
-                      ),
-                    ),
+                    for (final job in _downloadJobs) _downloadJobTile(sources, job),
                   const SizedBox(height: 12),
                 ],
                 if (root) ...[

@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../sources/source_controller.dart';
@@ -13,7 +14,9 @@ import '../../sources/source_models.dart';
 import '../../sources/sync/publication_sync.dart';
 import '../../sources/sync/sync_document.dart';
 import '../../sources/sync/sync_store.dart';
+import '../../utils/dialogs.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import 'add_source_screen.dart';
 import 'source_widgets.dart';
@@ -126,14 +129,23 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
   }
 
   Future<void> _importRecovery(SourceController controller) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showScopedDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
         title: Text(t.audiobook.recoveryImport),
+        scrollable: true,
         content: Text(t.audiobook.recoveryImportConfirm),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(t.audiobook.recoveryImport)),
+          DialogActionButton(
+            autofocus: true,
+            onPressed: () => Navigator.pop(dialogContext, false),
+            label: t.common.cancel,
+          ),
+          DialogActionButton(
+            isPrimary: true,
+            onPressed: () => Navigator.pop(dialogContext, true),
+            label: t.audiobook.recoveryImport,
+          ),
         ],
       ),
     );
@@ -273,15 +285,21 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                       ),
                       const SizedBox(height: 8),
                       Text(t.audiobook.recoveryHelp, style: Theme.of(context).textTheme.bodySmall),
-                      OutlinedButton.icon(
+                      FocusableButton(
                         onPressed: _busy ? null : () => _exportRecovery(controller),
-                        icon: const AppIcon(Symbols.file_upload_outlined),
-                        label: Text(t.audiobook.recoveryExport),
+                        child: OutlinedButton.icon(
+                          onPressed: _busy ? null : () => _exportRecovery(controller),
+                          icon: const AppIcon(Symbols.file_upload_outlined),
+                          label: Text(t.audiobook.recoveryExport),
+                        ),
                       ),
-                      OutlinedButton.icon(
+                      FocusableButton(
                         onPressed: _busy ? null : () => _importRecovery(controller),
-                        icon: const AppIcon(Symbols.file_download_outlined),
-                        label: Text(t.audiobook.recoveryImport),
+                        child: OutlinedButton.icon(
+                          onPressed: _busy ? null : () => _importRecovery(controller),
+                          icon: const AppIcon(Symbols.file_download_outlined),
+                          label: Text(t.audiobook.recoveryImport),
+                        ),
                       ),
                     ],
                     if (_busy || sync.running) const LinearProgressIndicator(),
