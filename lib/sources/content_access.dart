@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:math' as math;
 
+import 'package:background_downloader/background_downloader.dart';
 import 'package:disk_usage/disk_usage.dart';
 import 'package:path/path.dart' as p;
 
@@ -38,6 +39,241 @@ class PublicationDownloads {
   final Map<String, int> _pendingStorageWrites = {};
   Future<void> _storageCheckQueue = Future<void>.value();
   int _activeTransfers = 0;
+
+  static const _nativeDownloadGroup = 'publication_source_downloads';
+  static Future<void>? _nativeDownloaderSetup;
+  static final Map<String, Completer<TaskStatusUpdate>> _nativeWaiters = {};
+  static final Map<String, _NativeDownloadContext> _nativeContexts = {};
+
+  static bool get _supportsNativeBackgroundDownloads => Platform.isAndroid || Platform.isIOS;
+
+  Future<void> _ensureNativeDownloader() {
+    if (!_supportsNativeBackgroundDownloads) return Future<void>.value();
+    final existing = _nativeDownloaderSetup;
+    if (existing != null) return existing;
+    final setup = () async {
+      FileDownloader().registerCallbacks(
+        group: _nativeDownloadGroup,
+        taskStatusCallback: _handleNativeTaskStatus,
+        taskProgressCallback: _handleNativeTaskProgress,
+      );
+      await FileDownloader().configure(
+        globalConfig: [(Config.checkAvailableSpace, true), (Config.holdingQueue, (1, 1, 1))],
+      );
+      await FileDownloader().trackTasksInGroup(_nativeDownloadGroup);
+      await FileDownloader().resumeFromBackground();
+      Timer(const Duration(seconds: 5), () {
+        unawaited(FileDownloader().rescheduleKilledTasks().then<void>((_) {}, onError: (Object _) {}));
+      });
+    }();
+    _nativeDownloaderSetup = setup.catchError((Object error, StackTrace stackTrace) {
+      _nativeDownloaderSetup = null;
+      Error.throwWithStackTrace(error, stackTrace);
+    });
+    return _nativeDownloaderSetup!;
+  }
+
+  static String _nativeTaskId(String profile, String sourceId, PublicationFile file) =>
+      'plezy-source-${sourceDigest(jsonEncode([profile, sourceId, file.id, file.fingerprint]))}';
+
+  static void _handleNativeTaskStatus(TaskStatusUpdate update) {
+    final waiter = _nativeWaiters[update.task.taskId];
+    if (waiter != null &&
+        !waiter.isCompleted &&
+        (update.status.isFinalState || update.status == TaskStatus.paused)) {
+      waiter.complete(update);
+    }
+  }
+
+  static void _handleNativeTaskProgress(TaskProgressUpdate update) {
+    final context = _nativeContexts[update.task.taskId];
+    if (context == null ||
+        context.task.cancellation.cancelled ||
+        !update.progress.isFinite ||
+        update.progress < 0) {
+      return;
+    }
+    final total = update.hasExpectedFileSize && update.expectedFileSize > 0
+        ? update.expectedFileSize
+        : context.expectedSize;
+    if (total <= 0) return;
+    final bytes = (total * update.progress.clamp(0.0, 1.0)).round().clamp(0, total);
+    if (bytes == context.bytes && bytes < total) return;
+    context.bytes = bytes;
+    context.task.onProgress?.call(bytes, total);
+    unawaited(context.owner._persistNativeProgress(context, bytes).catchError((Object _) {}));
+  }
+
+  Future<void> _persistNativeProgress(_NativeDownloadContext context, int bytes) async {
+    final task = context.task;
+    final safeBytes = bytes.clamp(0, context.expectedSize);
+    await repository.reserveDownload(
+      profile: task.profile,
+      key: key(task.adapter.source.id, task.file),
+      sourceId: task.adapter.source.id,
+      file: task.file,
+      path: '${_target(task.profile, task.adapter.source.id, task.file).path}.partial',
+      reservedBytes: context.expectedSize,
+      bytes: safeBytes,
+      state: 'running',
+      label: task.label,
+    );
+  }
+
+  Future<bool> _isValidNativePartial(File partial, int expectedSize) async {
+    if (!await partial.exists()) return false;
+    final stat = await partial.stat();
+    return stat.type == FileSystemEntityType.file && stat.size > 0 && stat.size == expectedSize;
+  }
+
+  Future<void> _runNativeDownload({
+    required _DownloadTask task,
+    required ContentLease lease,
+    required int expectedSize,
+    required File partial,
+    required File validatorFile,
+  }) async {
+    final taskId = _nativeTaskId(task.profile, task.adapter.source.id, task.file);
+    await _ensureNativeDownloader();
+    task.cancellation.check();
+
+    final waiter = Completer<TaskStatusUpdate>();
+    _nativeWaiters[taskId] = waiter;
+    final context = _NativeDownloadContext(this, task, expectedSize);
+    _nativeContexts[taskId] = context;
+    try {
+      var record = await FileDownloader().database.recordForId(taskId);
+      if (record != null && record.task.group != _nativeDownloadGroup) {
+        throw const SourceException(SourceFailure.invalidData);
+      }
+      if (record != null && record.status == TaskStatus.complete) {
+        if (await _isValidNativePartial(partial, expectedSize)) return;
+        await FileDownloader().database.deleteRecordWithId(taskId);
+        record = null;
+      }
+      if (record != null && record.status == TaskStatus.paused) {
+        final existing = record.task;
+        if (existing is DownloadTask && await FileDownloader().resume(existing)) {
+          await _awaitNativeDownload(taskId, waiter, task.cancellation, partial, expectedSize);
+          return;
+        }
+        await FileDownloader().database.deleteRecordWithId(taskId);
+        record = null;
+      } else if (record != null && !record.status.isFinalState) {
+        await _awaitNativeDownload(taskId, waiter, task.cancellation, partial, expectedSize);
+        return;
+      } else if (record != null) {
+        await FileDownloader().database.deleteRecordWithId(taskId);
+      }
+
+      if (await partial.exists()) await partial.delete();
+      if (await validatorFile.exists()) await validatorFile.delete();
+      task.cancellation.check();
+      final nativeTask = UriDownloadTask(
+        taskId: taskId,
+        url: lease.uri.toString(),
+        filename: p.basename(partial.path),
+        directoryUri: partial.parent.uri,
+        headers: const {},
+        group: _nativeDownloadGroup,
+        updates: Updates.statusAndProgress,
+        allowPause: true,
+        retries: 3,
+        displayName: 'Publication download',
+      );
+      final enqueued = await FileDownloader().enqueue(nativeTask);
+      if (!enqueued) {
+        final current = await FileDownloader().database.recordForId(taskId);
+        if (current == null || current.status.isFinalState) {
+          throw const SourceException(SourceFailure.unavailable);
+        }
+      }
+      await _awaitNativeDownload(taskId, waiter, task.cancellation, partial, expectedSize);
+    } finally {
+      _nativeWaiters.remove(taskId);
+      _nativeContexts.remove(taskId);
+    }
+  }
+
+  Future<void> _awaitNativeDownload(
+    String taskId,
+    Completer<TaskStatusUpdate> waiter,
+    TransferCancellation cancellation,
+    File partial,
+    int expectedSize,
+  ) async {
+    unawaited(cancellation.aborted.then((_) => _pauseNativeTask(taskId)));
+    final record = await FileDownloader().database.recordForId(taskId);
+    if (record?.status == TaskStatus.complete) {
+      if (await _isValidNativePartial(partial, expectedSize)) return;
+      throw const SourceException(SourceFailure.invalidData);
+    }
+    if (record != null &&
+        record.status.isFinalState &&
+        record.status != TaskStatus.complete) {
+      if (cancellation.cancelled || record.status == TaskStatus.canceled) {
+        throw const SourceException(SourceFailure.cancelled);
+      }
+      throw const SourceException(SourceFailure.unavailable);
+    }
+    final update = await waiter.future;
+    if (cancellation.cancelled ||
+        update.status == TaskStatus.paused ||
+        update.status == TaskStatus.canceled) {
+      throw const SourceException(SourceFailure.cancelled);
+    }
+    if (update.status != TaskStatus.complete ||
+        !await _isValidNativePartial(partial, expectedSize)) {
+      throw const SourceException(SourceFailure.unavailable);
+    }
+  }
+
+  static Future<void> _pauseNativeTask(String taskId) async {
+    if (!_supportsNativeBackgroundDownloads) return;
+    try {
+      final record = await FileDownloader().database.recordForId(taskId);
+      if (record == null ||
+          record.status.isFinalState ||
+          record.status == TaskStatus.paused) {
+        return;
+      }
+      final existing = record.task;
+      if (existing is DownloadTask && !await FileDownloader().pause(existing)) {
+        await FileDownloader().cancelTaskWithId(taskId);
+      }
+    } on Object {
+      // Keep cancellation best-effort and avoid exposing native task details.
+    }
+  }
+
+  static Future<void> _removeNativeTask(String taskId) async {
+    if (!_supportsNativeBackgroundDownloads) return;
+    await _ensureNativeSetupForRemoval();
+    final record = await FileDownloader().database.recordForId(taskId);
+    if (record == null) return;
+    if (!record.status.isFinalState && record.status != TaskStatus.paused) {
+      await FileDownloader().cancelTaskWithId(taskId);
+      var stillActive = true;
+      for (var attempt = 0; attempt < 20; attempt++) {
+        final tasks = await FileDownloader().allTasks(group: _nativeDownloadGroup);
+        if (!tasks.any((task) => task.taskId == taskId)) {
+          stillActive = false;
+          break;
+        }
+        await Future<void>.delayed(const Duration(milliseconds: 100));
+      }
+      if (stillActive) throw const SourceException(SourceFailure.conflict);
+    }
+    await FileDownloader().database.deleteRecordWithId(taskId);
+  }
+
+  static Future<void> _ensureNativeSetupForRemoval() async {
+    if (_nativeDownloaderSetup == null) {
+      await FileDownloader().trackTasksInGroup(_nativeDownloadGroup);
+    } else {
+      await _nativeDownloaderSetup;
+    }
+  }
 
   static const int minimumFreeStorageReserveBytes = 512 * 1024 * 1024;
   static const bool _webOsBuild = bool.fromEnvironment('PLEZY_WEBOS');
@@ -240,6 +476,7 @@ class PublicationDownloads {
   /// Requeues transfers interrupted by process death. Explicitly paused and
   /// failed jobs stay available for an intentional retry.
   Future<void> restoreProfile(String profile, SourceAdapter? Function(String) resolveAdapter) async {
+    if (_supportsNativeBackgroundDownloads) await _ensureNativeDownloader();
     for (final row in await repository.downloads(profile)) {
       if (row['state'] == 'importing') {
         // A picker-backed input grant cannot be resumed after process death.
@@ -305,6 +542,7 @@ class PublicationDownloads {
         }
         final adapter = resolveAdapter(sourceId);
         if (adapter == null) {
+          await _pauseNativeTask(_nativeTaskId(profile, sourceId, file));
           await repository.setDownloadState(profile, row['key'] as String, 'paused');
           continue;
         }
@@ -405,6 +643,7 @@ class PublicationDownloads {
     // A durable incomplete row lets startup and the download surface
     // distinguish a recoverable transfer from a completed offline edition.
     var expectedSize = file.size ?? await adapter.contentSize(file);
+    var usedNativeBackgroundTask = false;
     await repository.reserveDownload(
       profile: profile,
       key: recordKey,
@@ -493,7 +732,33 @@ class PublicationDownloads {
       var lease = await adapter.resolve(file);
       expectedSize ??= lease.size;
       cancel.check();
-      if (lease.uri.scheme == 'file') {
+      if (_supportsNativeBackgroundDownloads &&
+          lease.canPersistForBackgroundTransfer &&
+          expectedSize != null &&
+          expectedSize > 0 &&
+          lease.size == expectedSize) {
+        // The durable app quota already reserves the full known file size.
+        // Check that reservation plus the stricter free-space floor before
+        // handing writes to the native downloader.
+        final releaseStorage = await reserveStorageWrite(
+          profile: profile,
+          transferKey: transferKey,
+          chunkBytes: 1,
+          unknownSize: false,
+        );
+        releaseStorage();
+        final queuedTask = _tasks[transferKey];
+        if (queuedTask == null) throw const SourceException(SourceFailure.cancelled);
+        await _runNativeDownload(
+          task: queuedTask,
+          lease: lease,
+          expectedSize: expectedSize,
+          partial: partial,
+          validatorFile: validatorFile,
+        );
+        usedNativeBackgroundTask = true;
+        offset = expectedSize;
+      } else if (lease.uri.scheme == 'file') {
         final input = File.fromUri(lease.uri);
         expectedSize ??= await input.length();
         await _persistChunk(
@@ -704,6 +969,15 @@ class PublicationDownloads {
       if (await target.exists()) await target.delete();
       rethrow;
     }
+    if (usedNativeBackgroundTask) {
+      try {
+        await FileDownloader().database.deleteRecordWithId(
+          _nativeTaskId(profile, adapter.source.id, file),
+        );
+      } on Object {
+        // A stale native record must not invalidate an already committed copy.
+      }
+    }
     return target;
   }
 
@@ -724,6 +998,9 @@ class PublicationDownloads {
     final transferKey = sourceKey(profile, key(sourceId, file));
     final task = _tasks[transferKey];
     task?.cancellation.cancel();
+    if (_supportsNativeBackgroundDownloads) {
+      unawaited(_pauseNativeTask(_nativeTaskId(profile, sourceId, file)));
+    }
     if (task != null && _queue.remove(task)) {
       unawaited(repository.setDownloadState(profile, key(sourceId, file), 'paused').catchError((_) {}));
       if (!task.completer.isCompleted) task.completer.completeError(const SourceException(SourceFailure.cancelled));
@@ -734,6 +1011,9 @@ class PublicationDownloads {
   Future<void> cancelAndWait(String profile, String sourceId, PublicationFile file) async {
     final transferKey = sourceKey(profile, key(sourceId, file));
     cancel(profile, sourceId, file);
+    if (_supportsNativeBackgroundDownloads) {
+      await _pauseNativeTask(_nativeTaskId(profile, sourceId, file));
+    }
     final pending = _pending[transferKey];
     if (pending != null) await pending.then<void>((_) {}, onError: (Object _) {});
     await repository.setDownloadState(profile, key(sourceId, file), 'paused');
@@ -764,6 +1044,20 @@ class PublicationDownloads {
     final path = row['path'] as String? ?? '';
     final expected = p.join(directory.path, sourceDigest(profile));
     if (path.isEmpty || !p.isWithin(expected, path)) throw const SourceException(SourceFailure.permission);
+    if (!interruptedImport && sourceId.isNotEmpty && row['file_payload'] is String && row['file_payload'] != '{}') {
+      try {
+        final nativeFile = PublicationFile.fromJson(
+          sourceMap(jsonDecode(row['file_payload'] as String)),
+        );
+        if (key(sourceId, nativeFile) == downloadKey) {
+          await _removeNativeTask(_nativeTaskId(profile, sourceId, nativeFile));
+        }
+      } on SourceException {
+        rethrow;
+      } on Object {
+        throw const SourceException(SourceFailure.invalidData);
+      }
+    }
     final partial = File(path);
     if (await partial.exists()) await partial.delete();
     if (path.endsWith('.partial')) {
@@ -842,6 +1136,15 @@ class PublicationDownloads {
     }
     await repository.forgetDownload(profile, key(sourceId, file));
   }
+}
+
+class _NativeDownloadContext {
+  _NativeDownloadContext(this.owner, this.task, this.expectedSize);
+
+  final PublicationDownloads owner;
+  final _DownloadTask task;
+  final int expectedSize;
+  int bytes = 0;
 }
 
 class _DownloadTask {
