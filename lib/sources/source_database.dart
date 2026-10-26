@@ -867,11 +867,14 @@ class SourceRepository {
     int bytes, {
     bool complete = true,
     int? reservedBytes,
+    String sourceId = '',
+    PublicationFile? file,
+    String label = '',
   }) {
     _writable(profile);
     return database.customStatement(
       'INSERT INTO downloads(profile,key,path,fingerprint,bytes,complete,source_id,file_payload,state,updated,reserved_bytes,label) '
-      'VALUES (?,?,?,?,?,? ,\'\',\'{}\',?,?,?,\'\') ON CONFLICT(profile,key) DO UPDATE SET '
+      'VALUES (?,?,?,?,?,?,?,?,?,?,?,?) ON CONFLICT(profile,key) DO UPDATE SET '
       'path=excluded.path,fingerprint=excluded.fingerprint,bytes=excluded.bytes,complete=excluded.complete,'
       'state=excluded.state,updated=excluded.updated,reserved_bytes=MAX(excluded.reserved_bytes,excluded.bytes),'
       'source_id=CASE WHEN excluded.source_id=\'\' THEN downloads.source_id ELSE excluded.source_id END,'
@@ -884,9 +887,12 @@ class SourceRepository {
         fingerprint,
         bytes,
         complete ? 1 : 0,
+        sourceId,
+        file == null ? '{}' : jsonEncode(file.toJson()),
         complete ? 'completed' : 'running',
         DateTime.now().millisecondsSinceEpoch,
         reservedBytes ?? bytes,
+        label,
       ],
     );
   }
@@ -937,7 +943,9 @@ class SourceRepository {
     required String label,
   }) async {
     _writable(profile);
-    if (reservedBytes < 0 || bytes < 0 || !const {'queued', 'running', 'paused', 'failed', 'completed'}.contains(state)) {
+    if (reservedBytes < 0 ||
+        bytes < 0 ||
+        !const {'queued', 'running', 'paused', 'failed', 'completed', 'importing'}.contains(state)) {
       throw const SourceException(SourceFailure.invalidData);
     }
     await database.transaction(() async {
