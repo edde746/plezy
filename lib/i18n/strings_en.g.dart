@@ -8367,6 +8367,18 @@ class Translations$sourceSetup$en {
 	/// en: 'Generate a shared library ID'
 	String get generateSharedLibraryId => 'Generate a shared library ID';
 
+	/// en: 'Pair this item'
+	String get sharedEntryPair => 'Pair this item';
+
+	/// en: 'Enter the same ID for this item on each device. Use a stable shared identifier or generate one and copy it to the matching item. Blank removes this mapping.'
+	String get sharedEntryPairHelp => 'Enter the same ID for this item on each device. Use a stable shared identifier or generate one and copy it to the matching item. Blank removes this mapping.';
+
+	/// en: 'Shared item ID'
+	String get sharedEntryId => 'Shared item ID';
+
+	/// en: 'Generate shared item ID'
+	String get generateSharedEntryId => 'Generate shared item ID';
+
 	/// en: 'NFS read-ahead requests'
 	String get nfsReadAhead => 'NFS read-ahead requests';
 
