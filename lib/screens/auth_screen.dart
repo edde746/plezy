@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
@@ -311,117 +312,139 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget build(BuildContext context) {
     if (PlatformDetector.isTV()) return _buildTvLayout(context);
 
-    // Use two-column layout on desktop, single column on mobile
-    final isDesktop = MediaQuery.sizeOf(context).width > 700;
+    final size = MediaQuery.sizeOf(context);
+    final scale = _authUiScale(size);
+    final isWide = size.width >= 1000;
+    final wideQrMaxSize = _wideAuthColumnWidth(size, scale);
+    final logoSize = isWide ? 120 * scale : 104.0;
+    final headline = Theme.of(context).textTheme.headlineMedium;
+    final titleStyle = headline?.copyWith(fontWeight: FontWeight.bold, fontSize: (headline.fontSize ?? 28) * scale);
 
     return Scaffold(
-      body: Center(
-        child: Container(
-          constraints: BoxConstraints(maxWidth: isDesktop ? 800 : 400),
-          padding: .fromLTRB(24, 24, 24, 24 + MediaQuery.paddingOf(context).bottom),
-          child: isDesktop
-              ? Row(
-                  crossAxisAlignment: .center,
-                  children: [
-                    Expanded(
-                      child: Column(
-                        mainAxisAlignment: .center,
-                        crossAxisAlignment: .center,
-                        children: [
-                          Image.asset('assets/plezy.png', width: 120, height: 120),
-                          const SizedBox(height: 24),
-                          Text(
-                            t.app.title,
-                            style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: .bold),
-                            textAlign: TextAlign.center,
+      backgroundColor: Theme.of(context).colorScheme.surface,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const _AuthScreenBackground(),
+          Center(
+            child: Container(
+              constraints: BoxConstraints(maxWidth: isWide ? 1040 * scale : 480),
+              padding: EdgeInsets.fromLTRB(
+                24 * scale,
+                24 * scale,
+                24 * scale,
+                24 * scale + MediaQuery.paddingOf(context).bottom,
+              ),
+              child: isWide
+                  ? Row(
+                      crossAxisAlignment: CrossAxisAlignment.center,
+                      children: [
+                        Expanded(
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            crossAxisAlignment: CrossAxisAlignment.center,
+                            children: [
+                              Image.asset('assets/plezy.png', width: logoSize, height: logoSize),
+                              SizedBox(height: 24 * scale),
+                              Text(t.app.title, style: titleStyle, textAlign: TextAlign.center),
+                            ],
                           ),
+                        ),
+                        SizedBox(width: 48 * scale),
+                        Expanded(
+                          child: Center(
+                            child: SingleChildScrollView(
+                              child: Column(
+                                mainAxisSize: MainAxisSize.min,
+                                crossAxisAlignment: CrossAxisAlignment.stretch,
+                                children: [_buildAuthBody(qrMaxSize: wideQrMaxSize)],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ],
+                    )
+                  : SingleChildScrollView(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        crossAxisAlignment: CrossAxisAlignment.stretch,
+                        children: [
+                          Image.asset('assets/plezy.png', width: logoSize, height: logoSize),
+                          SizedBox(height: 20 * scale),
+                          Text(t.app.title, style: titleStyle, textAlign: TextAlign.center),
+                          SizedBox(height: 36 * scale),
+                          _buildAuthBody(qrMaxSize: 420),
                         ],
                       ),
                     ),
-                    const SizedBox(width: 48),
-                    Expanded(
-                      child: Center(
-                        child: SingleChildScrollView(
-                          child: Column(mainAxisSize: .min, crossAxisAlignment: .stretch, children: [_buildAuthBody()]),
-                        ),
-                      ),
-                    ),
-                  ],
-                )
-              : SingleChildScrollView(
-                  child: Column(
-                    mainAxisSize: .min,
-                    crossAxisAlignment: .stretch,
-                    children: [
-                      Image.asset('assets/plezy.png', width: 120, height: 120),
-                      const SizedBox(height: 24),
-                      Text(
-                        t.app.title,
-                        style: Theme.of(context).textTheme.headlineMedium?.copyWith(fontWeight: .bold),
-                        textAlign: TextAlign.center,
-                      ),
-                      const SizedBox(height: 48),
-                      _buildAuthBody(),
-                    ],
-                  ),
-                ),
-        ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   Widget _buildTvLayout(BuildContext context) {
     final theme = Theme.of(context);
+    final size = MediaQuery.sizeOf(context);
+    final scale = _authUiScale(size);
+    final qrMaxSize = _tvAuthQrMaxSize(size, scale);
+    final headline = theme.textTheme.displaySmall;
+    final titleStyle = headline?.copyWith(fontWeight: FontWeight.bold, fontSize: (headline.fontSize ?? 36) * scale);
+
     return Scaffold(
-      body: SafeArea(
-        child: Center(
-          child: ConstrainedBox(
-            constraints: const BoxConstraints(maxWidth: 1280),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 64, vertical: 36),
-              child: Row(
-                children: [
-                  Expanded(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Image.asset('assets/plezy.png', width: 176, height: 176),
-                        const SizedBox(height: 28),
-                        Text(
-                          t.app.title,
-                          style: theme.textTheme.displaySmall?.copyWith(fontWeight: FontWeight.bold),
-                          textAlign: TextAlign.center,
+      backgroundColor: theme.colorScheme.surface,
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          const _AuthScreenBackground(),
+          SafeArea(
+            child: Center(
+              child: ConstrainedBox(
+                constraints: BoxConstraints(maxWidth: 1280 * scale),
+                child: Padding(
+                  padding: EdgeInsets.symmetric(horizontal: 64 * scale, vertical: 36 * scale),
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Column(
+                          mainAxisAlignment: MainAxisAlignment.center,
+                          children: [
+                            Image.asset('assets/plezy.png', width: 176 * scale, height: 176 * scale),
+                            SizedBox(height: 28 * scale),
+                            Text(t.app.title, style: titleStyle, textAlign: TextAlign.center),
+                          ],
                         ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(width: 56),
-                  Expanded(
-                    child: Center(
-                      child: ConstrainedBox(
-                        constraints: const BoxConstraints(maxWidth: 560),
-                        child: Card(
-                          child: Padding(
-                            padding: const EdgeInsets.all(32),
-                            child: SingleChildScrollView(child: _buildAuthBody()),
+                      ),
+                      SizedBox(width: 56 * scale),
+                      Expanded(
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints: BoxConstraints(maxWidth: 720 * scale),
+                            child: Card(
+                              child: Padding(
+                                padding: EdgeInsets.all(32 * scale),
+                                child: SingleChildScrollView(child: _buildAuthBody(qrMaxSize: qrMaxSize)),
+                              ),
+                            ),
                           ),
                         ),
                       ),
-                    ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
           ),
-        ),
+        ],
       ),
     );
   }
 
-  Widget _buildAuthBody() {
+  Widget _buildAuthBody({required double qrMaxSize}) {
     if (_isAuthenticating) {
       return Column(
-        mainAxisSize: .min,
+        mainAxisSize: MainAxisSize.min,
         children: [
           const Center(child: CircularProgressIndicator()),
           const SizedBox(height: 16),
@@ -439,6 +462,7 @@ class _AuthScreenState extends State<AuthScreen> {
       onTokenReceived: _connectToAllServersAndNavigate,
       autoStartQrOnTV: false,
       initializeService: widget.initializeServices,
+      qrMaxSize: qrMaxSize,
       initialButtonsBuilder: _buildInitialButtons,
     );
   }
@@ -446,6 +470,19 @@ class _AuthScreenState extends State<AuthScreen> {
   Widget _buildInitialButtons(BuildContext context, VoidCallback startBrowser, VoidCallback startQr, bool busy) {
     final isTV = PlatformDetector.isTV();
     final isAppleTV = PlatformDetector.isAppleTV();
+    final scale = _authUiScale(MediaQuery.sizeOf(context));
+    final theme = Theme.of(context);
+    final buttonHeight = (56 * scale).clamp(56.0, 88.0).toDouble();
+    final buttonFontSize = (16 * scale).clamp(16.0, 24.0).toDouble();
+    final badgeSize = (18 * scale).clamp(18.0, 28.0).toDouble();
+    final supportingFontSize = (14 * scale).clamp(14.0, 21.0).toDouble();
+    final gap = 12 * scale;
+    final sectionGap = 24 * scale;
+    final actionStyle = ButtonStyle(
+      minimumSize: WidgetStatePropertyAll(Size.fromHeight(buttonHeight)),
+      padding: WidgetStatePropertyAll(EdgeInsets.symmetric(horizontal: 24 * scale, vertical: 12 * scale)),
+      textStyle: WidgetStatePropertyAll(theme.textTheme.labelLarge?.copyWith(fontSize: buttonFontSize)),
+    );
     void startBrowserAfterRecovery() => unawaited(_startPlexAfterRecovery(startBrowser));
     void startQrAfterRecovery() => unawaited(_startPlexAfterRecovery(startQr));
     const jellyfinDialect = MediaBrowserDialect.jellyfin;
@@ -464,12 +501,11 @@ class _AuthScreenState extends State<AuthScreen> {
               onPressed: busy ? null : () => unawaited(_connectToDiscoveredPlexServer(server)),
               child: ElevatedButton.icon(
                 onPressed: busy ? null : () => unawaited(_connectToDiscoveredPlexServer(server)),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(vertical: 16),
-                  backgroundColor: Theme.of(context).colorScheme.primaryContainer,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimaryContainer,
+                style: actionStyle.copyWith(
+                  backgroundColor: WidgetStatePropertyAll(theme.colorScheme.primaryContainer),
+                  foregroundColor: WidgetStatePropertyAll(theme.colorScheme.onPrimaryContainer),
                 ),
-                icon: const BackendBadge(backend: MediaBackend.plex, size: 18),
+                icon: BackendBadge(backend: MediaBackend.plex, size: badgeSize),
                 label: Text(
                   t.auth.connectToMediaBrowser(product: server.name),
                   maxLines: 1,
@@ -477,7 +513,7 @@ class _AuthScreenState extends State<AuthScreen> {
                 ),
               ),
             ),
-            const SizedBox(height: 12),
+            SizedBox(height: gap),
           ],
         ],
         if (isTV) ...[
@@ -487,25 +523,25 @@ class _AuthScreenState extends State<AuthScreen> {
             useBackgroundFocus: true,
             child: ElevatedButton(
               onPressed: busy ? null : startQrAfterRecovery,
-              style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+              style: actionStyle,
               child: Row(
                 mainAxisAlignment: .center,
                 mainAxisSize: .min,
                 children: [
-                  const BackendBadge(backend: MediaBackend.plex, size: 18),
-                  const SizedBox(width: 8),
+                  BackendBadge(backend: MediaBackend.plex, size: badgeSize),
+                  SizedBox(width: 8 * scale),
                   Text(t.auth.signInWithPlex),
                 ],
               ),
             ),
           ),
           if (!isAppleTV) ...[
-            const SizedBox(height: 12),
+            SizedBox(height: gap),
             FocusableButton(
               onPressed: busy ? null : startBrowserAfterRecovery,
               child: OutlinedButton(
                 onPressed: busy ? null : startBrowserAfterRecovery,
-                style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+                style: actionStyle,
                 child: Text(t.auth.useBrowser),
               ),
             ),
@@ -516,77 +552,79 @@ class _AuthScreenState extends State<AuthScreen> {
             useBackgroundFocus: true,
             child: ElevatedButton.icon(
               onPressed: busy ? null : startBrowserAfterRecovery,
-              style: ElevatedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-              icon: const BackendBadge(backend: MediaBackend.plex, size: 18),
+              style: actionStyle,
+              icon: BackendBadge(backend: MediaBackend.plex, size: badgeSize),
               label: Text(t.auth.signInWithPlex),
             ),
           ),
-          const SizedBox(height: 12),
+          SizedBox(height: gap),
           FocusableButton(
             onPressed: busy ? null : startQrAfterRecovery,
             child: OutlinedButton(
               onPressed: busy ? null : startQrAfterRecovery,
-              style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
+              style: actionStyle,
               child: Text(t.auth.showQRCode),
             ),
           ),
         ],
-        const SizedBox(height: 24),
+        SizedBox(height: sectionGap),
         Row(
           children: [
             Expanded(child: Divider(color: Theme.of(context).colorScheme.outlineVariant)),
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 12),
+              padding: EdgeInsets.symmetric(horizontal: 12 * scale),
               child: Text(
                 t.auth.or,
-                style: Theme.of(
-                  context,
-                ).textTheme.bodySmall?.copyWith(color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.6)),
+                style: theme.textTheme.bodyMedium?.copyWith(
+                  fontSize: supportingFontSize,
+                  color: theme.colorScheme.onSurface.withValues(alpha: 0.7),
+                ),
               ),
             ),
             Expanded(child: Divider(color: Theme.of(context).colorScheme.outlineVariant)),
           ],
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: gap),
         FocusableButton(
           onPressed: connectToJellyfin,
           child: OutlinedButton.icon(
             onPressed: connectToJellyfin,
-            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-            icon: const BackendBadge(backend: MediaBackend.jellyfin, size: 18),
+            style: actionStyle,
+            icon: BackendBadge(backend: MediaBackend.jellyfin, size: badgeSize),
             label: Text(t.auth.connectToMediaBrowser(product: jellyfinDialect.productName)),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: gap),
         FocusableButton(
           onPressed: connectToEmby,
           child: OutlinedButton.icon(
             onPressed: connectToEmby,
-            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-            icon: const BackendBadge(backend: MediaBackend.emby, size: 18),
+            style: actionStyle,
+            icon: BackendBadge(backend: MediaBackend.emby, size: badgeSize),
             label: Text(t.auth.connectToMediaBrowser(product: embyDialect.productName)),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: gap),
         FocusableButton(
           onPressed: connectToDirectPlex,
           child: OutlinedButton.icon(
             onPressed: connectToDirectPlex,
-            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16)),
-            icon: const BackendBadge(backend: MediaBackend.plex, size: 18),
+            style: actionStyle,
+            icon: BackendBadge(backend: MediaBackend.plex, size: badgeSize),
             label: Text(t.auth.connectToDirectPlex),
           ),
         ),
-        const SizedBox(height: 12),
+        SizedBox(height: gap),
         FocusableButton(
           onPressed: busy ? null : () => unawaited(sourceAction(context, _connectToFiles)),
           child: OutlinedButton(
             onPressed: busy ? null : () => unawaited(sourceAction(context, _connectToFiles)),
+            style: actionStyle,
             child: Text(t.fileSources.useFiles),
           ),
         ),
         if (kDebugMode) ...[
-          const SizedBox(height: 12),
+          SizedBox(height: gap),
           FocusableButton(
             onPressed: _handleDebugTap,
             child: OutlinedButton(
@@ -600,14 +638,115 @@ class _AuthScreenState extends State<AuthScreen> {
           ),
         ],
         if (_errorMessage != null) ...[
-          const SizedBox(height: 16),
+          SizedBox(height: gap),
           Text(
             _errorMessage!,
-            style: TextStyle(color: Theme.of(context).colorScheme.error),
+            style: theme.textTheme.bodyLarge?.copyWith(fontSize: supportingFontSize, color: theme.colorScheme.error),
             textAlign: TextAlign.center,
           ),
         ],
       ],
+    );
+  }
+}
+
+double _authUiScale(Size size) {
+  if (size.width < 700) return 1;
+  final widthScale = size.width / 1280;
+  final heightScale = size.height / 800;
+  return math.min(widthScale, heightScale).clamp(1.0, 1.55).toDouble();
+}
+
+double _wideAuthColumnWidth(Size size, double scale) {
+  final layoutWidth = math.min(1040 * scale, size.width);
+  return math.max(140, (layoutWidth - 96 * scale) / 2).toDouble();
+}
+
+double _tvAuthQrMaxSize(Size size, double scale) {
+  final layoutWidth = math.min(1280 * scale, size.width);
+  final columnWidth = (layoutWidth - 184 * scale) / 2;
+  final cardWidth = math.min(720 * scale, columnWidth);
+  return math.max(140, cardWidth - 64 * scale).toDouble();
+}
+
+class _AuthScreenBackground extends StatelessWidget {
+  const _AuthScreenBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    final surface = Theme.of(context).colorScheme.surface;
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final size = constraints.biggest;
+        final compact = size.width < 760;
+        final illustrationWidth = math.min(size.width * 0.82, 1800.0).toDouble();
+        final illustrationHeight = math.min(size.height * 0.44, size.width * 0.72).toDouble();
+        return Stack(
+          fit: StackFit.expand,
+          children: [
+            ColoredBox(color: surface),
+            if (compact)
+              Positioned(
+                top: 0,
+                left: 0,
+                right: 0,
+                height: illustrationHeight,
+                child: ExcludeSemantics(
+                  child: Image.asset(
+                    'assets/branding/plezyng-product-illustration.png',
+                    fit: BoxFit.contain,
+                    alignment: Alignment.topCenter,
+                  ),
+                ),
+              )
+            else
+              Positioned(
+                top: 0,
+                bottom: 0,
+                right: 0,
+                width: illustrationWidth,
+                child: ExcludeSemantics(
+                  child: Image.asset(
+                    'assets/branding/plezyng-product-illustration.png',
+                    fit: BoxFit.contain,
+                    alignment: Alignment.centerRight,
+                  ),
+                ),
+              ),
+            Positioned.fill(
+              child: IgnorePointer(
+                child: DecoratedBox(
+                  decoration: BoxDecoration(
+                    gradient: compact
+                        ? LinearGradient(
+                            begin: Alignment.topCenter,
+                            end: Alignment.bottomCenter,
+                            stops: const [0, 0.42, 0.72, 1],
+                            colors: [
+                              surface.withValues(alpha: 0.06),
+                              surface.withValues(alpha: 0.42),
+                              surface.withValues(alpha: 0.92),
+                              surface,
+                            ],
+                          )
+                        : LinearGradient(
+                            begin: Alignment.centerLeft,
+                            end: Alignment.centerRight,
+                            stops: const [0, 0.34, 0.66, 1],
+                            colors: [
+                              surface,
+                              surface.withValues(alpha: 0.96),
+                              surface.withValues(alpha: 0.56),
+                              surface.withValues(alpha: 0.02),
+                            ],
+                          ),
+                  ),
+                ),
+              ),
+            ),
+          ],
+        );
+      },
     );
   }
 }

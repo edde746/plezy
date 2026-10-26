@@ -1,0 +1,55 @@
+{
+  "schema_version": 1,
+  "assessed_on": "2026-10-25",
+  "purpose": "Research snapshot only; not an approved production build lock or hardware qualification.",
+  "plezyng": {
+    "repository": "snapetech-org/PlezyNG",
+    "inspected_commit": "1b12fd8bb2182a67a58aa8eb949c01006d8fbc31",
+    "engine_repository": "edde746/mpv-build",
+    "engine_commit": "582f6d6e748a87a1536bf5cdad0af97b75725ffb",
+    "mpv": "41f6a645068483470267271e1d09966ca3b9f413",
+    "ffmpeg": "894da5ca7d742e4429ffb2af534fcda0103ef593",
+    "linux_libplacebo": "cee9b076f2c63104ccfd497fa79c39a867293ec4"
+  },
+  "candidates": [
+    {
+      "component": "mpv",
+      "repository": "mpv-player/mpv",
+      "commit": "baa3e11d42cb7978da634a8a6a3a55fe074d01be",
+      "status": "source inspected; build/runtime unqualified"
+    },
+    {
+      "component": "ffmpeg",
+      "repository": "FFmpeg/FFmpeg",
+      "commit": "46f23be8b1976ed4c8ec85584daabcf0e57a7b9e",
+      "status": "source inspected; build/runtime unqualified"
+    },
+    {
+      "component": "libplacebo",
+      "repository": "haasn/libplacebo",
+      "commit": "275f7dea27924cdd34ab2e6c20e448b6bc4fab65",
+      "status": "upstream author mirror; build/runtime unqualified"
+    },
+    {
+      "component": "libmpv-opengl-next",
+      "repository": "kakulukia/mpv",
+      "commit": "16563d120f3260cdc0beb1b07f199818fc32dd8c",
+      "upstream_pr": 18607,
+      "status": "open RFC; must rebase and test with chosen engine stack"
+    },
+    {
+      "component": "CB1",
+      "repository": "CroqueMr/libreelec-x86-DV",
+      "commit": "5e63e16df862bc3acb658f42a3c2bbb5154880e0",
+      "status": "research candidate; not vendored or hardware-qualified"
+    }
+  ],
+  "sources": {
+    "fel_merge": "https://github.com/mpv-player/mpv/pull/17932",
+    "render_api": "https://github.com/mpv-player/mpv/pull/18607",
+    "previous_render_api": "https://github.com/mpv-player/mpv/pull/16818",
+    "vulkan_proposal": "https://github.com/mpv-player/mpv/issues/18343",
+    "profile_spec": "https://ott.dolby.com/OnDelKits/Dolby_Vision_Online_Delivery_Kit/v1/Documentation/Specs/Visio_Profiles/help_files/topics/c_dovi_profiles.html",
+    "composer_spec": "https://www.etsi.org/deliver/etsi_gs/CCM/001_099/001/01.01.01_60/gs_ccm001v010101p.pdf"
+  }
+}
