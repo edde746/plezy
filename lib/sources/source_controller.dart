@@ -102,6 +102,23 @@ class SourceController extends ChangeNotifier {
   Timer? _syncTimer;
   Timer? _syncSoon;
   Future<void> _syncQueue = Future.value();
+  final Map<String, int> _sourceSyncFailures = {};
+  final Map<String, DateTime> _sourceSyncRetryAt = {};
+
+  bool _sourceSyncReady(String sourceId) => !(_sourceSyncRetryAt[sourceId]?.isAfter(DateTime.now()) ?? false);
+
+  void _sourceSyncFailed(String sourceId) {
+    final failures = (_sourceSyncFailures[sourceId] ?? 0) + 1;
+    _sourceSyncFailures[sourceId] = failures;
+    final shift = (failures - 1).clamp(0, 7).toInt();
+    final seconds = (30 << shift).clamp(30, 3600).toInt();
+    _sourceSyncRetryAt[sourceId] = DateTime.now().add(Duration(seconds: seconds));
+  }
+
+  void _sourceSyncSucceeded(String sourceId) {
+    _sourceSyncFailures.remove(sourceId);
+    _sourceSyncRetryAt.remove(sourceId);
+  }
   void scheduleSync() {
     if (_disposed || blocked || profileId == null) return;
     _syncSoon ??= Timer(const Duration(seconds: 15), () {
@@ -130,6 +147,8 @@ class SourceController extends ChangeNotifier {
     profileId = id;
     this.blocked = blocked;
     generation++;
+    _sourceSyncFailures.clear();
+    _sourceSyncRetryAt.clear();
     activeProgressKeys.clear();
     syncConfig = null;
     sources = const [];
@@ -366,11 +385,13 @@ class SourceController extends ChangeNotifier {
     final epoch = generation;
     await repository.saveSource(source, credentials);
     requireSession(epoch);
+    _sourceSyncSucceeded(source.id);
     await reload();
   }
 
   Future<void> reconnect(String id) async {
     _adapters.remove(id)?.close();
+    _sourceSyncSucceeded(id);
   }
 
   Future<void> remove(FileSource source) async {
@@ -380,6 +401,7 @@ class SourceController extends ChangeNotifier {
     cancelScan(source.id);
     await stopPlayback?.call();
     _adapters.remove(source.id)?.close();
+    _sourceSyncSucceeded(source.id);
     downloads.cancelAll();
     await repository.removeSource(profileId!, source.id);
     await reload();
@@ -875,51 +897,88 @@ class SourceController extends ChangeNotifier {
       return;
     }
     final entries = await repository.entries(profile);
+    final entriesByKey = <String, SourceEntry>{};
+    for (final entry in entries) {
+      entriesByKey.putIfAbsent(entry.key, () => entry);
+    }
+    final sourcesById = <String, FileSource>{for (final source in sources) source.id: source};
     final events = await repository.pendingEvents(profile);
+    Object? firstFailure;
+    StackTrace? firstFailureStack;
     final latest = <String, Map<String, dynamic>>{};
     for (final event in events) {
-      if (event['kind'] != 'annotation') latest[event['key'] as String] = event;
+      if (event['kind'] == 'annotation') continue;
+      final key = event['key'];
+      if (event['kind'] != 'progress' || key is! String || key.isEmpty) {
+        firstFailure ??= const SourceException(SourceFailure.invalidData);
+        firstFailureStack ??= StackTrace.current;
+        continue;
+      }
+      latest[key] = event;
     }
     for (final event in latest.values) {
       requireSession(epoch);
-      final progress = PublicationProgress.fromJson(sourceMap(jsonDecode(event['payload'] as String)));
+      late PublicationProgress progress;
+      try {
+        progress = PublicationProgress.fromJson(sourceMap(jsonDecode(event['payload'] as String)));
+      } catch (error, stackTrace) {
+        firstFailure ??= error;
+        firstFailureStack ??= stackTrace;
+        continue;
+      }
       if (onlyKey != null && progress.key != onlyKey) continue;
-      final storedEntry = entries.where((e) => e.key == progress.entryKey).firstOrNull;
+      final storedEntry = entriesByKey[progress.entryKey];
       if (storedEntry == null) continue;
-      final owner = sources.where((s) => s.id == storedEntry.sourceId).firstOrNull;
+      final owner = sourcesById[storedEntry.sourceId];
       if (owner == null) continue;
       final entry = _withSyncIdentity(owner, storedEntry);
       final source = _stateAdapter(entry, progress);
       if (source == null) continue;
-      PublicationProgress? remote;
       try {
-        remote = await source.readProgress(entry, progress);
-      } on SourceException catch (e) {
-        if (e.status != 404) rethrow;
+        if (!_sourceSyncReady(source.source.id)) continue;
+        PublicationProgress? remote;
+        try {
+          remote = await source.readProgress(entry, progress);
+        } on SourceException catch (e) {
+          if (e.status != 404) rethrow;
+        }
+        requireSession(epoch);
+        if (remote != null && await _diverged(profile, progress, remote)) {
+          await repository.recordRemoteConflict(profile, remote);
+          continue;
+        }
+        try {
+          await source.writeProgress(entry, progress);
+        } on SourceException catch (e) {
+          if (e.reason != SourceFailure.conflict) rethrow;
+          final changed = await source.readProgress(entry, progress);
+          if (changed != null) await repository.recordRemoteConflict(profile, changed);
+          continue;
+        }
+        requireSession(epoch);
+        await _baseline(profile, progress);
+        await repository.acknowledge(profile, progress.key, progress.revision);
+        _sourceSyncSucceeded(source.source.id);
+      } catch (error, stackTrace) {
+        requireSession(epoch);
+        _sourceSyncFailed(source.source.id);
+        firstFailure ??= error;
+        firstFailureStack ??= stackTrace;
       }
-      requireSession(epoch);
-      if (remote != null && await _diverged(profile, progress, remote)) {
-        await repository.recordRemoteConflict(profile, remote);
-        continue;
-      }
-      try {
-        await source.writeProgress(entry, progress);
-      } on SourceException catch (e) {
-        if (e.reason != SourceFailure.conflict) rethrow;
-        final changed = await source.readProgress(entry, progress);
-        if (changed != null) await repository.recordRemoteConflict(profile, changed);
-        continue;
-      }
-      requireSession(epoch);
-      await _baseline(profile, progress);
-      await repository.acknowledge(profile, progress.key, progress.revision);
     }
     for (final event in events.where((e) => e['kind'] == 'annotation')) {
       requireSession(epoch);
-      final annotation = BookAnnotation.fromJson(sourceMap(jsonDecode(event['payload'] as String)));
-      final storedEntry = entries.where((e) => e.key == annotation.entryKey).firstOrNull;
+      late BookAnnotation annotation;
+      try {
+        annotation = BookAnnotation.fromJson(sourceMap(jsonDecode(event['payload'] as String)));
+      } catch (error, stackTrace) {
+        firstFailure ??= error;
+        firstFailureStack ??= stackTrace;
+        continue;
+      }
+      final storedEntry = entriesByKey[annotation.entryKey];
       if (storedEntry == null) continue;
-      final owner = sources.where((s) => s.id == storedEntry.sourceId).firstOrNull;
+      final owner = sourcesById[storedEntry.sourceId];
       if (owner == null) continue;
       final entry = _withSyncIdentity(owner, storedEntry);
       final annotationProgress = PublicationProgress(
@@ -934,13 +993,23 @@ class SourceController extends ChangeNotifier {
           (source.source.kind == FileSourceKind.audiobookshelf && annotation.mode != PublicationMode.listening)) {
         continue;
       }
-      await source.writeAnnotation(entry, annotation);
-      requireSession(epoch);
-      // The annotation/tombstone remains in its durable table. Only this exact
-      // acknowledged event can be removed; newer edits have a different ID.
-      await repository.database.customStatement('DELETE FROM events WHERE profile=? AND id=?', [profile, event['id']]);
+      try {
+        if (!_sourceSyncReady(source.source.id)) continue;
+        await source.writeAnnotation(entry, annotation);
+        requireSession(epoch);
+        // The annotation/tombstone remains in its durable table. Only this exact
+        // acknowledged event can be removed; newer edits have a different ID.
+        await repository.database.customStatement('DELETE FROM events WHERE profile=? AND id=?', [profile, event['id']]);
+        _sourceSyncSucceeded(source.source.id);
+      } catch (error, stackTrace) {
+        requireSession(epoch);
+        _sourceSyncFailed(source.source.id);
+        firstFailure ??= error;
+        firstFailureStack ??= stackTrace;
+      }
     }
     _notify();
+    if (firstFailure != null) Error.throwWithStackTrace(firstFailure!, firstFailureStack!);
   }
 
   Future<void> configureCloudSync(PublicationSyncConfig? config) async {
