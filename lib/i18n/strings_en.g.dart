@@ -1433,6 +1433,36 @@ class Translations$settings$en {
 	/// en: 'Gestures'
 	String get gestures => 'Gestures';
 
+	/// en: 'Control Lock'
+	String get controlLock => 'Control Lock';
+
+	/// en: 'Unlock Hold Duration'
+	String get unlockHoldDuration => 'Unlock Hold Duration';
+
+	/// en: 'Fingers to Unlock'
+	String get unlockFingerCount => 'Fingers to Unlock';
+
+	/// en: '1 finger'
+	String get screenLockOneFinger => '1 finger';
+
+	/// en: '${count} fingers'
+	String screenLockFingers({required Object count}) => '${count} fingers';
+
+	/// en: '${seconds} s'
+	String screenLockSeconds({required Object seconds}) => '${seconds} s';
+
+	/// en: 'Try Unlock Gesture'
+	String get testUnlockGesture => 'Try Unlock Gesture';
+
+	/// en: 'Hold the requested fingers anywhere in the test area. Release and try again if the hold resets.'
+	String get lockGestureTestDescription => 'Hold the requested fingers anywhere in the test area. Release and try again if the hold resets.';
+
+	/// en: 'Unlock gesture verified'
+	String get lockGestureVerified => 'Unlock gesture verified';
+
+	/// en: 'Touch support could not be verified. Try again before changing the finger count.'
+	String get lockGestureUnavailable => 'Touch support could not be verified. Try again before changing the finger count.';
+
 	/// en: 'Brightness Swipe'
 	String get gestureBrightnessSwipe => 'Brightness Swipe';
 
@@ -2428,6 +2458,12 @@ class Translations$videoControls$en {
 
 	/// en: 'Long press to unlock'
 	String get longPressToUnlock => 'Long press to unlock';
+
+	/// en: 'Hold ${fingers} for ${duration} to unlock'
+	String lockHoldInstruction({required Object fingers, required Object duration}) => 'Hold ${fingers} for ${duration} to unlock';
+
+	/// en: '${current} / ${required} fingers'
+	String lockTouchCount({required Object current, required Object required}) => '${current} / ${required} fingers';
 
 	/// en: 'Video timeline'
 	String get timelineSlider => 'Video timeline';
@@ -8562,6 +8598,16 @@ extension on Translations {
 			'settings.seekAndTiming' => 'Seek & Timing',
 			'settings.behavior' => 'Behavior',
 			'settings.gestures' => 'Gestures',
+			'settings.controlLock' => 'Control Lock',
+			'settings.unlockHoldDuration' => 'Unlock Hold Duration',
+			'settings.unlockFingerCount' => 'Fingers to Unlock',
+			'settings.screenLockOneFinger' => '1 finger',
+			'settings.screenLockFingers' => ({required Object count}) => '${count} fingers',
+			'settings.screenLockSeconds' => ({required Object seconds}) => '${seconds} s',
+			'settings.testUnlockGesture' => 'Try Unlock Gesture',
+			'settings.lockGestureTestDescription' => 'Hold the requested fingers anywhere in the test area. Release and try again if the hold resets.',
+			'settings.lockGestureVerified' => 'Unlock gesture verified',
+			'settings.lockGestureUnavailable' => 'Touch support could not be verified. Try again before changing the finger count.',
 			'settings.gestureBrightnessSwipe' => 'Brightness Swipe',
 			'settings.gestureBrightnessSwipeDescription' => 'Swipe up or down on the left edge to adjust brightness',
 			'settings.gestureVolumeSwipe' => 'Volume Swipe',
@@ -8591,6 +8637,8 @@ extension on Translations {
 			'themeEditor.locked' => 'Unlock with Supporter',
 			'themeEditor.savedLocked' => 'Saved — unlocks with Supporter',
 			'themeEditor.title' => 'Custom Theme',
+			_ => null,
+		} ?? switch (path) {
 			'themeEditor.startFrom' => 'Start from',
 			'themeEditor.startFromDescription' => 'Copy all colors from another theme',
 			'themeEditor.colors' => 'Colors',
@@ -8601,8 +8649,6 @@ extension on Translations {
 			'themeEditor.slots.text' => 'Text',
 			'themeEditor.slots.textMuted' => 'Secondary text',
 			'themeEditor.slots.accent' => 'Accent',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.opacity' => 'Opacity',
 			'themeEditor.hexHint' => '#RRGGBB or #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'From other themes',
@@ -8899,6 +8945,8 @@ extension on Translations {
 			'videoControls.lockScreen' => 'Lock screen',
 			'videoControls.screenLockButton' => 'Screen lock',
 			'videoControls.longPressToUnlock' => 'Long press to unlock',
+			'videoControls.lockHoldInstruction' => ({required Object fingers, required Object duration}) => 'Hold ${fingers} for ${duration} to unlock',
+			'videoControls.lockTouchCount' => ({required Object current, required Object required}) => '${current} / ${required} fingers',
 			'videoControls.timelineSlider' => 'Video timeline',
 			'videoControls.volumeSlider' => 'Volume level',
 			'videoControls.endsAt' => ({required Object time}) => 'Ends at ${time}',
@@ -9103,6 +9151,8 @@ extension on Translations {
 			'profiles.borrowFailed' => 'Failed to borrow connection.',
 			'profiles.incorrectPin' => 'Incorrect PIN.',
 			'profiles.incorrectPinTryAgain' => 'Incorrect PIN. Please try again.',
+			_ => null,
+		} ?? switch (path) {
 			'profiles.sourceProfileMissingParentAccount' => 'Source profile is missing its parent account.',
 			'profiles.failedToLoadHomeUsers' => 'Could not load your Plex Home users. Check your connection and try again.',
 			'profiles.failedToVerifyPin' => 'Failed to verify PIN.',
@@ -9115,8 +9165,6 @@ extension on Translations {
 			'profiles.tokenIdentityMismatch' => 'The Plex profile token resolved to an unexpected server',
 			'connections.sectionTitle' => 'Connections',
 			'connections.addConnection' => 'Add connection',
-			_ => null,
-		} ?? switch (path) {
 			'connections.addConnectionSubtitleNoProfile' => 'Sign in with Plex or connect a Jellyfin or Emby server',
 			'connections.addConnectionSubtitleScoped' => ({required Object displayName}) => 'Add to ${displayName}: Plex, Jellyfin, Emby, or another profile connection',
 			'connections.sessionExpiredOne' => ({required Object name}) => 'Session expired for ${name}',
@@ -9617,6 +9665,8 @@ extension on Translations {
 			'liveTv.recordingRuleUpdated' => 'Recording rule updated',
 			'liveTv.guideReloadRequested' => 'Guide refresh requested',
 			'liveTv.guideReloadFailed' => 'Couldn\'t refresh the guide',
+			_ => null,
+		} ?? switch (path) {
 			'liveTv.rulesProcessRequested' => 'Rule re-evaluation requested',
 			'liveTv.rulesProcessFailed' => 'Couldn\'t re-evaluate recording rules',
 			'liveTv.recordShow' => 'Record show',
@@ -9629,8 +9679,6 @@ extension on Translations {
 			'liveTv.recordSettings.keepUpTo' => 'Episodes to keep',
 			'liveTv.recordSettings.keepUpToHint' => '0 keeps every episode',
 			'liveTv.startingInMinutes' => ({required Object minutes}) => 'Starting in ${minutes} min',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.dayAtTime' => ({required Object day, required Object time}) => '${day} at ${time}',
 			'liveTv.invalidPlaybackData' => ({required Object product}) => '${product} returned invalid Live TV playback data',
 			'liveTv.failedToStartChannel' => 'Could not start the live channel',
@@ -10131,6 +10179,8 @@ extension on Translations {
 			'performanceOverlay.cacheUsed' => 'Cache Used',
 			'performanceOverlay.cacheLimit' => 'Cache Limit',
 			'performanceOverlay.speed' => 'Speed',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.player' => 'Player',
 			'performanceOverlay.playMethod' => 'Play Method',
 			'performanceOverlay.memory' => 'Memory',
@@ -10143,8 +10193,6 @@ extension on Translations {
 			'performanceOverlay.decoderExynosHw' => 'Exynos HW',
 			'performanceOverlay.decoderSoftware' => 'Software',
 			'performanceOverlay.decoderHardware' => 'Hardware',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.tunnelingActive' => 'Active',
 			'performanceOverlay.dvRpuFailed' => ({required Object converted, required Object failures}) => '${converted} (${failures} failed)',
 			'externalPlayer.title' => 'External Player',

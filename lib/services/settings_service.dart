@@ -816,6 +816,24 @@ class SettingsService extends BaseSharedPreferencesService {
   static const gestureVolumeSwipe = BoolPref('gesture_volume_swipe', defaultValue: true);
   static const gesturePinchToZoom = BoolPref('gesture_pinch_to_zoom', defaultValue: true);
 
+  static final screenLockHoldDurationMs = IntPref(
+    'screen_lock_hold_duration_ms',
+    defaultValue: 500,
+    transform: (v) => v.clamp(500, 10000),
+  );
+  static final screenLockFingerCount = IntPref(
+    'screen_lock_finger_count',
+    defaultValue: 1,
+    transform: (v) => v.clamp(1, 5),
+  );
+  // Touch verification belongs to the device that demonstrated the gesture.
+  static final screenLockVerifiedFingerCount = IntPref(
+    'screen_lock_verified_finger_count',
+    defaultValue: 1,
+    transform: (v) => v.clamp(1, 5),
+  );
+  static const screenLockVerifiedDeviceKey = StringPref('screen_lock_verified_device_key');
+
   /// Remember the brightness level set by the swipe gesture (#2178). When on,
   /// playback starts at [rememberedBrightnessLevel] instead of the system
   /// level; the player exit still restores the pre-playback brightness.
@@ -1516,6 +1534,7 @@ class SettingsService extends BaseSharedPreferencesService {
     gestureBrightnessSwipe,
     gestureVolumeSwipe,
     gesturePinchToZoom,
+    screenLockHoldDurationMs,
     rememberBrightnessLevel,
     directPlayCoveredQuality,
     deinterlaceMode,
@@ -1625,6 +1644,9 @@ class SettingsService extends BaseSharedPreferencesService {
     companionRemoteLastHostAddress,
     rememberedBrightnessLevel,
     refusedVideoCodecs,
+    screenLockFingerCount,
+    screenLockVerifiedFingerCount,
+    screenLockVerifiedDeviceKey,
     audioOutputDevice,
   ];
 
@@ -1656,6 +1678,8 @@ class SettingsService extends BaseSharedPreferencesService {
     'sleep_timer_duration' => (5, 240),
     'play_next_countdown' => (0, 30),
     'auto_skip_delay' => (1, 30),
+    'screen_lock_hold_duration_ms' => (500, 10000),
+    'screen_lock_finger_count' || 'screen_lock_verified_finger_count' => (1, 5),
     'subtitle_font_size' => (10, 80),
     'subtitle_border_size' => (0, 5),
     'subtitle_position' => (0, 150),

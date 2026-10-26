@@ -22,6 +22,7 @@ import 'external_player_screen.dart';
 import 'mpv_config_screen.dart';
 import 'settings_utils.dart';
 import 'subtitle_styling_screen.dart';
+import 'screen_lock_settings_group.dart';
 
 class PlaybackSettingsScreen extends StatelessWidget {
   const PlaybackSettingsScreen({super.key});
@@ -146,6 +147,7 @@ class PlaybackSettingsScreen extends StatelessWidget {
             _autoPlayAndSkipGroup(),
             _behaviorGroup(context, isMobile),
             if (isMobile) _gesturesGroup(),
+            if (isMobile) const ScreenLockSettingsGroup(),
             _rememberPlayerChangesGroup(),
             const SizedBox(height: 24),
           ],
