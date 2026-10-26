@@ -7,6 +7,7 @@ import '../../focus/card_focus_scope.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../games/game_artwork.dart';
 import '../../games/game_models.dart';
+import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
 import '../../services/settings_service.dart';
 import '../../theme/mono_tokens.dart';
@@ -102,7 +103,7 @@ class _GameCardState extends State<GameCard> {
     if (box == null || widget.onPlay == null) return;
     final action = await showAdaptiveAppMenu<String>(
       context,
-      title: widget.game.name,
+      title: isolateDisplayText(widget.game.name),
       anchorRect: box.localToGlobal(Offset.zero) & box.size,
       focusFirstItem: true,
       entries: [
@@ -144,7 +145,7 @@ class _GameCardState extends State<GameCard> {
         delegateFocusBorder: true,
         borderRadius: radius,
         descendantsAreFocusable: false,
-        semanticLabel: '${widget.game.name}, ${widget.host.name}',
+        semanticLabel: '${isolateDisplayText(widget.game.name)}, ${isolateDisplayText(widget.host.name)}',
         semanticValue: widget.favorite ? t.games.favorites : null,
         onSelect: widget.onPlay,
         onLongPress: enabled ? _menu : null,
@@ -200,13 +201,13 @@ class _GameCardState extends State<GameCard> {
               ),
               const SizedBox(height: 8),
               Text(
-                widget.game.name,
+                isolateDisplayText(widget.game.name),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(height: 1.4),
               ),
               Text(
-                widget.host.name,
+                isolateDisplayText(widget.host.name),
                 maxLines: 1,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(

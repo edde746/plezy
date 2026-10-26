@@ -9,6 +9,7 @@ import '../../games/game_discovery.dart';
 import '../../games/game_library_controller.dart';
 import '../../games/game_models.dart';
 import '../../games/game_streaming_client.dart';
+import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/refreshable.dart';
 import '../../mixins/tab_visibility_aware.dart';
@@ -332,8 +333,10 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     leading: AppIcon(
       host.protocol == GameProtocol.steam ? Symbols.sports_esports_rounded : Symbols.desktop_windows_rounded,
     ),
-    title: Text(host.name),
-    subtitle: Text('${host.address} · ${host.protocol == GameProtocol.steam ? t.games.steam : t.games.moonlight}'),
+    title: Text(isolateDisplayText(host.name)),
+    subtitle: Text(
+      '${isolateDisplayText(host.address)} · ${host.protocol == GameProtocol.steam ? t.games.steam : t.games.moonlight}',
+    ),
     onTap: _controller!.busy ? null : () => _connect(host),
     trailing: AppMenuButton<String>(
       tooltip: t.games.computers,
@@ -490,9 +493,9 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
                 children: nearby
                     .map(
                       (host) => FocusableListTile(
-                        title: Text(host.name),
+                        title: Text(isolateDisplayText(host.name)),
                         subtitle: Text(
-                          '${host.address} · ${host.protocol == GameProtocol.steam ? t.games.steam : t.games.moonlight}',
+                          '${isolateDisplayText(host.address)} · ${host.protocol == GameProtocol.steam ? t.games.steam : t.games.moonlight}',
                         ),
                         leading: const AppIcon(Symbols.computer_rounded),
                         onTap: enabled

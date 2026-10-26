@@ -5,6 +5,7 @@ import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../focus/focusable_wrapper.dart';
+import '../i18n/presentation_formats.dart';
 import '../i18n/strings.g.dart';
 import '../theme/mono_motion.dart';
 import '../theme/mono_tokens.dart';
@@ -505,11 +506,11 @@ class _WorkspaceTitleBar extends StatelessWidget {
             Expanded(
               child: Semantics(
                 button: true,
-                label: registration.descriptor.title,
+                label: isolateDisplayText(registration.descriptor.title),
                 hint: t.common.workspaceTitleHint,
                 onTap: () => controller.focus(id),
                 child: Tooltip(
-                  message: t.common.workspaceTitleHint,
+                  message: isolateDisplayText(registration.descriptor.title),
                   child: GestureDetector(
                     behavior: HitTestBehavior.opaque,
                     onPanUpdate: floating

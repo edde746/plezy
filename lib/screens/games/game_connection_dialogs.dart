@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../games/game_models.dart';
 import '../../games/game_streaming_client.dart';
+import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
 
 class AddGameComputerDialog extends StatefulWidget {
@@ -168,7 +169,7 @@ class _PairGameComputerDialogState extends State<PairGameComputerDialog> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(widget.host.name),
+          Text(isolateDisplayText(widget.host.name)),
           const SizedBox(height: 12),
           Text(widget.host.protocol == GameProtocol.steam ? t.games.steamPairInstructions : t.games.pairInstructions),
           const SizedBox(height: 16),
