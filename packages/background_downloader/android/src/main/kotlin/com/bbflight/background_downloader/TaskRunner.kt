@@ -1082,6 +1082,37 @@ fun getTaskMap(prefs: SharedPreferences): MutableMap<String, Task> {
 }
 
 /**
+ * Persist only an updated encrypted descriptor. The actual request URL and
+ * headers returned by an auth callback are intentionally never written here.
+ */
+private fun persistProtectedTaskMetadata(task: Task, prefs: SharedPreferences) {
+    if (!AuthTaskRegistry.isProtected(task) ||
+        !task.metaData.startsWith("enc:v2:") ||
+        task.metaData.toByteArray().size > 16384
+    ) {
+        return
+    }
+    BDPlugin.prefsLock.write {
+        val storedJson = prefs.getString(BDPlugin.keyTasksMap, "{}") ?: "{}"
+        val tasksMap = bdJson.decodeFromString<MutableMap<String, Task>>(storedJson)
+        val stored = tasksMap[task.taskId] ?: return@write
+        if (stored.url != task.url ||
+            !stored.metaData.startsWith("enc:v2:") ||
+            stored.metaData == task.metaData
+        ) {
+            return@write
+        }
+        tasksMap[task.taskId] = stored.copyWith(metaData = task.metaData)
+        prefs.edit {
+            putString(
+                BDPlugin.keyTasksMap,
+                bdJson.encodeToString<MutableMap<String, Task>>(tasksMap)
+            )
+        }
+    }
+}
+
+/**
  * Returns a [task] that may be modified through callbacks
  *
  * Callbacks would be attached to the task via its [Task.options] property, and if
@@ -1093,17 +1124,37 @@ fun getTaskMap(prefs: SharedPreferences): MutableMap<String, Task> {
  * for the actual task execution
  */
 suspend fun getModifiedTask(context: Context, task: Task): Task {
+    var workingTask = task
+    val initialAuth = workingTask.options?.auth
+    if (initialAuth?.hasOnAuthCallback() == true && workingTask.metaData.startsWith("enc:v2:")) {
+        val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+        val storedTask = getTaskMap(prefs)[workingTask.taskId]
+        if (storedTask != null &&
+            storedTask.url == workingTask.url &&
+            storedTask.metaData.startsWith("enc:v2:") &&
+            storedTask.metaData != workingTask.metaData
+        ) {
+            // WorkManager's input Data can be older than the durable task record
+            // after process death. Use only the rotated encrypted descriptor.
+            workingTask = workingTask.copyWith(metaData = storedTask.metaData)
+        }
+    }
+
     var authTask: Task? = null
-    val auth = task.options?.auth
+    val auth = workingTask.options?.auth
     if (auth != null) {
-        AuthTaskRegistry.remember(task)
+        AuthTaskRegistry.remember(workingTask)
         // Refresh token if needed
         if (auth.isTokenExpired() && auth.hasOnAuthCallback()) {
             authTask = withContext(Dispatchers.IO) {
-                Callbacks.invokeOnAuthCallback(context, task)
+                Callbacks.invokeOnAuthCallback(context, workingTask)
             }
         }
-        authTask = authTask ?: task // Either original or newly authorized
+        authTask = authTask ?: workingTask // Either original or newly authorized
+        // Save a rotated token before running a request that could be stopped
+        // or have its process killed.
+        val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+        persistProtectedTaskMetadata(AuthTaskRegistry.persistable(authTask), prefs)
         val newAuth = authTask.options?.auth
         if (newAuth != null) {
             // Insert query parameters and headers when the callback retained Auth.
@@ -1117,15 +1168,18 @@ suspend fun getModifiedTask(context: Context, task: Task): Task {
             authTask = authTask.copyWith(url = uri.toString(), headers = headers)
         }
     }
-    authTask = authTask ?: task
-    if (task.options?.hasOnStartCallback() != true) {
+    authTask = authTask ?: workingTask
+    if (workingTask.options?.hasOnStartCallback() != true) {
         return authTask
     }
     // onStart callback
     val modifiedTask = withContext(Dispatchers.IO) {
         Callbacks.invokeOnTaskStartCallback(context, authTask)
     }
-    return modifiedTask ?: authTask
+    val result = modifiedTask ?: authTask
+    val prefs = PreferenceManager.getDefaultSharedPreferences(context)
+    persistProtectedTaskMetadata(AuthTaskRegistry.persistable(result), prefs)
+    return result
 }
 
 /**
