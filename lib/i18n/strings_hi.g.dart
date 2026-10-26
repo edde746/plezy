@@ -3450,7 +3450,7 @@ class _Translations$discover$findNext$hi extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} कुल';
 	@override String get timingVaries => 'समय बदलता है';
 	@override String get notNow => 'अब नहीं';
-	@override String get swipeHint => 'स्विप करें, या नीचे दिए गए बटन का उपयोग करें';
+	@override String get swipeHint => 'कवर को किसी तीर की दिशा में स्वाइप करें या नीचे दिए बटन इस्तेमाल करें।';
 	@override String get saved => 'बचाए गए पिक्से';
 	@override String savedCount({required Object count}) => 'संपादित करें · ${count}';
 	@override String get undo => 'और';
@@ -3478,6 +3478,18 @@ class _Translations$discover$findNext$hi extends Translations$discover$findNext$
 	@override String get openFailed => 'यह विकल्प अब उपलब्ध नहीं है. फिर से जांच करने के लिए ताज़ा करें.';
 	@override String get changeFailed => 'यह बदलाव नहीं किया जा सकता है. फिर से कोशिश करें.';
 	@override String get savedLimit => 'बचाए गए पिक्स भरे हुए हैं. एक चयन को हटाने के लिए दूसरे को बचाने के लिए.';
+	@override String get chooseHint => 'कोई शीर्षक खोलें, बाद के लिए सहेजें या छोड़ दें।';
+	@override String get howItWorks => 'कैसे इस्तेमाल करें';
+	@override String get notNowHelp => 'इस शीर्षक को अभी छोड़ दें। यह आपकी लाइब्रेरी में रहेगा।';
+	@override String get saveHelp => 'इसे इस डिवाइस पर इस प्रोफ़ाइल के सहेजे गए विकल्पों में रखें। सहेजने से यह डाउनलोड नहीं होता।';
+	@override String get openHelp => 'जानकारी के लिए कवर चुनें। शीर्षक चलाने, पढ़ने या खोलने के लिए मुख्य बटन इस्तेमाल करें।';
+	@override String get controlsHelp => 'कीबोर्ड या रिमोट: किसी बटन पर जाएँ, फिर Enter या चयन बटन दबाएँ। पहले जैसा करें आपकी पिछली पसंद वापस लाता है।';
+	@override String get artworkLoading => 'चित्र लोड हो रहा है…';
+	@override String get artworkUnavailable => 'चित्र उपलब्ध नहीं है';
+	@override String get savedFeedback => 'सहेजे गए विकल्पों में जोड़ा गया';
+	@override String get skippedFeedback => 'अभी छोड़ दिया गया';
+	@override String get releaseToConfirm => 'पुष्टि के लिए छोड़ें';
+	@override String get remoteHint => 'कवर पर फ़ोकस: ← / → चुनें · चयन बटन: जानकारी · ↑ / ↓ फ़ोकस बदलें';
 }
 
 // Path: discover.person
@@ -5488,7 +5500,7 @@ extension on TranslationsHi {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} कुल',
 			'discover.findNext.timingVaries' => 'समय बदलता है',
 			'discover.findNext.notNow' => 'अब नहीं',
-			'discover.findNext.swipeHint' => 'स्विप करें, या नीचे दिए गए बटन का उपयोग करें',
+			'discover.findNext.swipeHint' => 'कवर को किसी तीर की दिशा में स्वाइप करें या नीचे दिए बटन इस्तेमाल करें।',
 			'discover.findNext.saved' => 'बचाए गए पिक्से',
 			'discover.findNext.savedCount' => ({required Object count}) => 'संपादित करें · ${count}',
 			'discover.findNext.undo' => 'और',
@@ -5516,6 +5528,18 @@ extension on TranslationsHi {
 			'discover.findNext.openFailed' => 'यह विकल्प अब उपलब्ध नहीं है. फिर से जांच करने के लिए ताज़ा करें.',
 			'discover.findNext.changeFailed' => 'यह बदलाव नहीं किया जा सकता है. फिर से कोशिश करें.',
 			'discover.findNext.savedLimit' => 'बचाए गए पिक्स भरे हुए हैं. एक चयन को हटाने के लिए दूसरे को बचाने के लिए.',
+			'discover.findNext.chooseHint' => 'कोई शीर्षक खोलें, बाद के लिए सहेजें या छोड़ दें।',
+			'discover.findNext.howItWorks' => 'कैसे इस्तेमाल करें',
+			'discover.findNext.notNowHelp' => 'इस शीर्षक को अभी छोड़ दें। यह आपकी लाइब्रेरी में रहेगा।',
+			'discover.findNext.saveHelp' => 'इसे इस डिवाइस पर इस प्रोफ़ाइल के सहेजे गए विकल्पों में रखें। सहेजने से यह डाउनलोड नहीं होता।',
+			'discover.findNext.openHelp' => 'जानकारी के लिए कवर चुनें। शीर्षक चलाने, पढ़ने या खोलने के लिए मुख्य बटन इस्तेमाल करें।',
+			'discover.findNext.controlsHelp' => 'कीबोर्ड या रिमोट: किसी बटन पर जाएँ, फिर Enter या चयन बटन दबाएँ। पहले जैसा करें आपकी पिछली पसंद वापस लाता है।',
+			'discover.findNext.artworkLoading' => 'चित्र लोड हो रहा है…',
+			'discover.findNext.artworkUnavailable' => 'चित्र उपलब्ध नहीं है',
+			'discover.findNext.savedFeedback' => 'सहेजे गए विकल्पों में जोड़ा गया',
+			'discover.findNext.skippedFeedback' => 'अभी छोड़ दिया गया',
+			'discover.findNext.releaseToConfirm' => 'पुष्टि के लिए छोड़ें',
+			'discover.findNext.remoteHint' => 'कवर पर फ़ोकस: ← / → चुनें · चयन बटन: जानकारी · ↑ / ↓ फ़ोकस बदलें',
 			'discover.extras' => 'ट्रेलर और अतिरिक्त',
 			'discover.studio' => 'स्टूडियो',
 			'discover.rating' => 'रेटिंग',
@@ -5741,6 +5765,8 @@ extension on TranslationsHi {
 			'explore.mdblistShelves.nameHint' => 'स्रोत सूची नाम का उपयोग करने के लिए सफेद छोड़ दें।',
 			'explore.mdblistShelves.add' => 'शेल को जोड़ें',
 			'explore.mdblistShelves.save' => 'सीटों को बचाएं',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => '${title} से ऊपर',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => '${title} नीचे जाने के लिए',
 			'explore.mdblistShelves.unavailable' => 'यह सूची उपलब्ध नहीं है. सेटिंग्स में अपने शेल्फ को वापस या हटा दें.',
@@ -5753,8 +5779,6 @@ extension on TranslationsHi {
 			'explore.selectSource' => 'स्रोत चुनें',
 			'explore.rows.watchlist' => 'चेकलिस्ट',
 			'explore.rows.recommendedMovies' => 'अनुशंसित फिल्में',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'अनुशंसित शो',
 			'explore.rows.trendingMovies' => 'ट्रेंड फिल्में',
 			'explore.rows.trendingShows' => 'ट्रेंड शो',
@@ -6255,6 +6279,8 @@ extension on TranslationsHi {
 			'downloads.resumeDownload' => 'डाउनलोड करें',
 			'downloads.cancelledDownload' => 'डाउनलोड रद्द',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (सेंसिंग ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'डाउनलोड ${file} - पूरा करने के लिए क्लिक करें',
 			'downloads.partialDownloadClickToComplete' => 'डाउनलोड करें - पूरा करने के लिए क्लिक करें',
 			'downloads.deleting' => 'हटाने...',
@@ -6267,8 +6293,6 @@ extension on TranslationsHi {
 			'downloads.pauseAll' => 'सबको आराम',
 			'downloads.resumeAll' => 'सभी को संक्षेप में',
 			'downloads.retryAll' => 'सबको वापस',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'असफल डाउनलोड करें',
 			'downloads.deleteAll' => 'डिलीट सभी',
 			'downloads.selectVersion' => 'चुनें संस्करण',
@@ -6769,6 +6793,8 @@ extension on TranslationsHi {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'सर्वर तक नहीं पहुंच सकता: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'हस्ताक्षर विफल: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect असफल: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Plex के साथ साइन इन करें',
 			'addServer.pinExpired' => 'पिन लॉग इन करने से पहले समाप्त हो गया है. कृपया फिर से कोशिश करें.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'अकाउंट रजिस्टर करने में विफल: ${error}',
@@ -6781,8 +6807,6 @@ extension on TranslationsHi {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'कनेक्ट करें ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'अपने सर्वर URL, उपयोगकर्ता नाम और पासवर्ड दर्ज करें।',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'अपने सर्वर ${product} पर साइन इन करें. ${name} पर लिंक करें.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'एक और प्रोफ़ाइल से ऋण',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'एक और प्रोफ़ाइल कनेक्शन का पुन: उपयोग करें. PIN-सुरक्षित प्रोफ़ाइलों को एक PIN की आवश्यकता होती है.',
 			'addServer.invalidCredentials' => 'अक्षम उपयोगकर्ता नाम या पासवर्ड',

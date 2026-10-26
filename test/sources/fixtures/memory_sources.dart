@@ -50,7 +50,7 @@ class MemorySources extends ChangeNotifier implements SourceController {
   @override
   bool cloudConflict(String key) => false;
   @override
-  Future<File?> cover(SourceEntry entry) async => null;
+  Future<File?> cover(SourceEntry entry, {bool refresh = false}) async => null;
   @override
   Future<PublicationProgress> openProgress(SourceEntry entry, PublicationProgress initial) async =>
       await repository.progress(profileId!, initial.key) ?? initial;

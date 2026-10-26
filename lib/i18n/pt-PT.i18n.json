@@ -228,7 +228,22 @@
     "director": "Realizador",
     "directors": "Realizadores",
     "movie": "Filme",
-    "moreLikeThis": "Títulos semelhantes"
+    "moreLikeThis": "Títulos semelhantes",
+    "findNext": {
+      "chooseHint": "Abra um título, guarde-o para mais tarde ou passe ao seguinte.",
+      "howItWorks": "Como funciona",
+      "swipeHint": "Deslize a capa na direção de uma seta ou use os botões abaixo.",
+      "notNowHelp": "Ignore este título por agora. Ele continua na sua biblioteca.",
+      "saveHelp": "Guarde-o nas escolhas guardadas deste perfil neste dispositivo. Guardar não inicia uma transferência.",
+      "openHelp": "Selecione a capa para ver os detalhes. Use a ação principal para reproduzir, ler ou abrir o título.",
+      "controlsHelp": "Teclado ou comando: selecione um botão e prima Enter ou Selecionar. Anular restaura a sua última escolha.",
+      "artworkLoading": "A carregar a imagem…",
+      "artworkUnavailable": "Imagem indisponível",
+      "savedFeedback": "Adicionado às escolhas guardadas",
+      "skippedFeedback": "Ignorado por agora",
+      "releaseToConfirm": "Solte para confirmar",
+      "remoteHint": "Capa em foco: ← / → escolher · Selecionar: detalhes · ↑ / ↓ mover o foco"
+    }
   },
   "libraries": {
     "title": "Bibliotecas",

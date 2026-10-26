@@ -3450,7 +3450,7 @@ class _Translations$discover$findNext$hu extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} teljes';
 	@override String get timingVaries => 'Időjárás eltérő';
 	@override String get notNow => 'Nem most';
-	@override String get swipeHint => 'Töltse le, vagy használja az alábbi gombokat';
+	@override String get swipeHint => 'Húzd a borítót valamelyik nyíl felé, vagy használd az alábbi gombokat.';
 	@override String get saved => 'Megtakarított picks';
 	@override String savedCount({required Object count}) => 'Megtakarítások · ${count}';
 	@override String get undo => 'és a';
@@ -3478,6 +3478,18 @@ class _Translations$discover$findNext$hu extends Translations$discover$findNext$
 	@override String get openFailed => 'Ez a lehetőség már nem áll rendelkezésre. frissítse, hogy újra ellenőrizze.';
 	@override String get changeFailed => 'Ezt a változást nem tudjuk megmenteni, próbáljuk meg újra.';
 	@override String get savedLimit => 'Megtakarított csúcsok tele vannak. eltávolítsa az egyik csúcsot, hogy mentse a másik.';
+	@override String get chooseHint => 'Nyiss meg egy címet, mentsd el későbbre, vagy hagyd ki.';
+	@override String get howItWorks => 'Így működik';
+	@override String get notNowHelp => 'Ezt a címet most kihagyod. A könyvtáradban megmarad.';
+	@override String get saveHelp => 'Mentsd a profil mentett ajánlatai közé ezen az eszközön. A mentés nem tölti le a címet.';
+	@override String get openHelp => 'A részletekhez válaszd ki a borítót. A fő művelettel lejátszhatod, olvashatod vagy megnyithatod a címet.';
+	@override String get controlsHelp => 'Billentyűzet vagy távirányító: válassz egy gombot, majd nyomd meg az Enter vagy a Kiválasztás gombot. A Visszavonás visszaállítja az utolsó választásodat.';
+	@override String get artworkLoading => 'Kép betöltése…';
+	@override String get artworkUnavailable => 'A kép nem érhető el';
+	@override String get savedFeedback => 'Hozzáadva a mentett ajánlatokhoz';
+	@override String get skippedFeedback => 'Most kihagyva';
+	@override String get releaseToConfirm => 'Engedd el a megerősítéshez';
+	@override String get remoteHint => 'Borító kijelölve: ← / → választás · Kiválasztás: részletek · ↑ / ↓ fókusz mozgatása';
 }
 
 // Path: discover.person
@@ -5488,7 +5500,7 @@ extension on TranslationsHu {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} teljes',
 			'discover.findNext.timingVaries' => 'Időjárás eltérő',
 			'discover.findNext.notNow' => 'Nem most',
-			'discover.findNext.swipeHint' => 'Töltse le, vagy használja az alábbi gombokat',
+			'discover.findNext.swipeHint' => 'Húzd a borítót valamelyik nyíl felé, vagy használd az alábbi gombokat.',
 			'discover.findNext.saved' => 'Megtakarított picks',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Megtakarítások · ${count}',
 			'discover.findNext.undo' => 'és a',
@@ -5516,6 +5528,18 @@ extension on TranslationsHu {
 			'discover.findNext.openFailed' => 'Ez a lehetőség már nem áll rendelkezésre. frissítse, hogy újra ellenőrizze.',
 			'discover.findNext.changeFailed' => 'Ezt a változást nem tudjuk megmenteni, próbáljuk meg újra.',
 			'discover.findNext.savedLimit' => 'Megtakarított csúcsok tele vannak. eltávolítsa az egyik csúcsot, hogy mentse a másik.',
+			'discover.findNext.chooseHint' => 'Nyiss meg egy címet, mentsd el későbbre, vagy hagyd ki.',
+			'discover.findNext.howItWorks' => 'Így működik',
+			'discover.findNext.notNowHelp' => 'Ezt a címet most kihagyod. A könyvtáradban megmarad.',
+			'discover.findNext.saveHelp' => 'Mentsd a profil mentett ajánlatai közé ezen az eszközön. A mentés nem tölti le a címet.',
+			'discover.findNext.openHelp' => 'A részletekhez válaszd ki a borítót. A fő művelettel lejátszhatod, olvashatod vagy megnyithatod a címet.',
+			'discover.findNext.controlsHelp' => 'Billentyűzet vagy távirányító: válassz egy gombot, majd nyomd meg az Enter vagy a Kiválasztás gombot. A Visszavonás visszaállítja az utolsó választásodat.',
+			'discover.findNext.artworkLoading' => 'Kép betöltése…',
+			'discover.findNext.artworkUnavailable' => 'A kép nem érhető el',
+			'discover.findNext.savedFeedback' => 'Hozzáadva a mentett ajánlatokhoz',
+			'discover.findNext.skippedFeedback' => 'Most kihagyva',
+			'discover.findNext.releaseToConfirm' => 'Engedd el a megerősítéshez',
+			'discover.findNext.remoteHint' => 'Borító kijelölve: ← / → választás · Kiválasztás: részletek · ↑ / ↓ fókusz mozgatása',
 			'discover.extras' => 'Előzetesek és extrák',
 			'discover.studio' => 'Stúdió',
 			'discover.rating' => 'Értékelés',
@@ -5741,6 +5765,8 @@ extension on TranslationsHu {
 			'explore.mdblistShelves.nameHint' => 'Hagyja a nyílt, hogy használja a forráslistát.',
 			'explore.mdblistShelves.add' => 'Add Shelf',
 			'explore.mdblistShelves.save' => 'mentse a tálcákat',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => '${title} felfelé',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => '${title} lefelé',
 			'explore.mdblistShelves.unavailable' => 'Ez a lista nem elérhető. visszavonja vagy távolítsa el a szekrényt a beállításokban.',
@@ -5753,8 +5779,6 @@ extension on TranslationsHu {
 			'explore.selectSource' => 'Forrás kiválasztása',
 			'explore.rows.watchlist' => 'Néznivalók listája',
 			'explore.rows.recommendedMovies' => 'Ajánlott filmek',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Ajánlott sorozatok',
 			'explore.rows.trendingMovies' => 'Felkapott filmek',
 			'explore.rows.trendingShows' => 'Felkapott sorozatok',
@@ -6255,6 +6279,8 @@ extension on TranslationsHu {
 			'downloads.resumeDownload' => 'Letöltés folytatása',
 			'downloads.cancelledDownload' => 'Megszakított letöltés',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} szinkronizálása)',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Letöltve: ${file} - Kattints a befejezéshez',
 			'downloads.partialDownloadClickToComplete' => 'Részben letöltve - Kattints a befejezéshez',
 			'downloads.deleting' => 'Törlés...',
@@ -6267,8 +6293,6 @@ extension on TranslationsHu {
 			'downloads.pauseAll' => 'Összes szüneteltetése',
 			'downloads.resumeAll' => 'Összes folytatása',
 			'downloads.retryAll' => 'Összes újrapróbálása',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'Sikertelen letöltések újrapróbálása',
 			'downloads.deleteAll' => 'Összes törlése',
 			'downloads.selectVersion' => 'Verzió kiválasztása',
@@ -6769,6 +6793,8 @@ extension on TranslationsHu {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Nem sikerült elérni a szervert: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'A bejelentkezés nem sikerült: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'A Quick Connect használata nem sikerült: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Bejelentkezés Plexszel',
 			'addServer.pinExpired' => 'A PIN-kód a bejelentkezés előtt lejárt. Próbáld újra.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Nem sikerült a fiók regisztrálása: ${error}',
@@ -6781,8 +6807,6 @@ extension on TranslationsHu {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Csatlakozás a(z) ${product} szolgáltatáshoz',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Adja meg a szerver URL-jét, felhasználónevét és jelszavát.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Jelentkezzen be a(z) ${product} szerverére. A(z) ${name} szolgáltatáshoz kötődik.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Kapcsolat használata másik profilból',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Egy másik profil kapcsolatának használata. A PIN-kóddal védett profilokhoz PIN-kód szükséges.',
 			'addServer.invalidCredentials' => 'Érvénytelen felhasználónév vagy jelszó',

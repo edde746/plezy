@@ -3450,7 +3450,7 @@ class _Translations$discover$findNext$tr extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} Toplam';
 	@override String get timingVaries => 'Zaman değişikliği';
 	@override String get notNow => 'Şimdi değil';
-	@override String get swipeHint => 'Aşağıdaki düğmeleri kullanın veya kaydırın.';
+	@override String get swipeHint => 'Kapağı ok yönünde kaydırın veya aşağıdaki düğmeleri kullanın.';
 	@override String get saved => 'kurtarılmış picks';
 	@override String savedCount({required Object count}) => 'Yorumlar için tıklayınız ${count}';
 	@override String get undo => 'veo';
@@ -3478,6 +3478,18 @@ class _Translations$discover$findNext$tr extends Translations$discover$findNext$
 	@override String get openFailed => 'Bu seçenek artık mevcut değildir. yeniden kontrol etmek için yenileme.';
 	@override String get changeFailed => 'Bu değişikliği kurtaramazsınız, tekrar deneyin.';
 	@override String get savedLimit => 'Kurtarılan pikler doludur. bir seçim kaldırmak için başka bir kurtarmak.';
+	@override String get chooseHint => 'Bir başlığı açın, sonrası için kaydedin veya atlayın.';
+	@override String get howItWorks => 'Nasıl kullanılır';
+	@override String get notNowHelp => 'Bu başlığı şimdilik atlayın. Kitaplığınızda kalır.';
+	@override String get saveHelp => 'Bu cihazda bu profilin kayıtlı seçimlerine ekleyin. Kaydetmek içeriği indirmez.';
+	@override String get openHelp => 'Ayrıntılar için kapağı seçin. Başlığı oynatmak, okumak veya açmak için ana düğmeyi kullanın.';
+	@override String get controlsHelp => 'Klavye veya kumanda: bir düğmeye odaklanın, ardından Enter veya Seç tuşuna basın. Geri al son seçiminizi geri getirir.';
+	@override String get artworkLoading => 'Görsel yükleniyor…';
+	@override String get artworkUnavailable => 'Görsel kullanılamıyor';
+	@override String get savedFeedback => 'Kayıtlı seçimlere eklendi';
+	@override String get skippedFeedback => 'Şimdilik atlandı';
+	@override String get releaseToConfirm => 'Onaylamak için bırakın';
+	@override String get remoteHint => 'Kapak odakta: ← / → seç · Seç tuşu: ayrıntılar · ↑ / ↓ odağı taşı';
 }
 
 // Path: discover.person
@@ -5488,7 +5500,7 @@ extension on TranslationsTr {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} Toplam',
 			'discover.findNext.timingVaries' => 'Zaman değişikliği',
 			'discover.findNext.notNow' => 'Şimdi değil',
-			'discover.findNext.swipeHint' => 'Aşağıdaki düğmeleri kullanın veya kaydırın.',
+			'discover.findNext.swipeHint' => 'Kapağı ok yönünde kaydırın veya aşağıdaki düğmeleri kullanın.',
 			'discover.findNext.saved' => 'kurtarılmış picks',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Yorumlar için tıklayınız ${count}',
 			'discover.findNext.undo' => 'veo',
@@ -5516,6 +5528,18 @@ extension on TranslationsTr {
 			'discover.findNext.openFailed' => 'Bu seçenek artık mevcut değildir. yeniden kontrol etmek için yenileme.',
 			'discover.findNext.changeFailed' => 'Bu değişikliği kurtaramazsınız, tekrar deneyin.',
 			'discover.findNext.savedLimit' => 'Kurtarılan pikler doludur. bir seçim kaldırmak için başka bir kurtarmak.',
+			'discover.findNext.chooseHint' => 'Bir başlığı açın, sonrası için kaydedin veya atlayın.',
+			'discover.findNext.howItWorks' => 'Nasıl kullanılır',
+			'discover.findNext.notNowHelp' => 'Bu başlığı şimdilik atlayın. Kitaplığınızda kalır.',
+			'discover.findNext.saveHelp' => 'Bu cihazda bu profilin kayıtlı seçimlerine ekleyin. Kaydetmek içeriği indirmez.',
+			'discover.findNext.openHelp' => 'Ayrıntılar için kapağı seçin. Başlığı oynatmak, okumak veya açmak için ana düğmeyi kullanın.',
+			'discover.findNext.controlsHelp' => 'Klavye veya kumanda: bir düğmeye odaklanın, ardından Enter veya Seç tuşuna basın. Geri al son seçiminizi geri getirir.',
+			'discover.findNext.artworkLoading' => 'Görsel yükleniyor…',
+			'discover.findNext.artworkUnavailable' => 'Görsel kullanılamıyor',
+			'discover.findNext.savedFeedback' => 'Kayıtlı seçimlere eklendi',
+			'discover.findNext.skippedFeedback' => 'Şimdilik atlandı',
+			'discover.findNext.releaseToConfirm' => 'Onaylamak için bırakın',
+			'discover.findNext.remoteHint' => 'Kapak odakta: ← / → seç · Seç tuşu: ayrıntılar · ↑ / ↓ odağı taşı',
 			'discover.extras' => 'Fragmanlar ve Ekstralar',
 			'discover.studio' => 'Stüdyo',
 			'discover.rating' => 'Derecelendirme',
@@ -5741,6 +5765,8 @@ extension on TranslationsTr {
 			'explore.mdblistShelves.nameHint' => 'Kaynak listesi adını kullanmak için boş bırakın.',
 			'explore.mdblistShelves.add' => 'Şelale ekle',
 			'explore.mdblistShelves.save' => 'kurtarma şemaları',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Yürüyüş ${title} yukarı',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => '${title} aşağı hareket',
 			'explore.mdblistShelves.unavailable' => 'Bu liste mevcut değildir. ayarlarda şelalesi geri veya kaldırın.',
@@ -5753,8 +5779,6 @@ extension on TranslationsTr {
 			'explore.selectSource' => 'Kaynak seçin',
 			'explore.rows.watchlist' => 'İzleme Listesi',
 			'explore.rows.recommendedMovies' => 'Önerilen Filmler',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Önerilen Diziler',
 			'explore.rows.trendingMovies' => 'Trend Filmler',
 			'explore.rows.trendingShows' => 'Trend Diziler',
@@ -6255,6 +6279,8 @@ extension on TranslationsTr {
 			'downloads.resumeDownload' => 'İndirmeyi devam ettir',
 			'downloads.cancelledDownload' => 'İptal edilen indirme',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} eşitleniyor)',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'İndirildi ${file} - Tamamlamak için tıklayın',
 			'downloads.partialDownloadClickToComplete' => 'Kısmen indirildi - Tamamlamak için tıklayın',
 			'downloads.deleting' => 'Siliniyor...',
@@ -6267,8 +6293,6 @@ extension on TranslationsTr {
 			'downloads.pauseAll' => 'Tümünü duraklat',
 			'downloads.resumeAll' => 'Tümünü devam ettir',
 			'downloads.retryAll' => 'Tümünü tekrar dene',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'Başarısız indirmeleri tekrar dene',
 			'downloads.deleteAll' => 'Tümünü sil',
 			'downloads.selectVersion' => 'Sürüm Seç',
@@ -6769,6 +6793,8 @@ extension on TranslationsTr {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Sunucuya ulaşılamadı: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Giriş başarısız: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Hızlı Bağlantı başarısız: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Plex ile Giriş Yap',
 			'addServer.pinExpired' => 'Giriş yapmadan önce PIN süresi doldu. Lütfen tekrar deneyin.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Hesap kaydı başarısız oldu: ${error}',
@@ -6781,8 +6807,6 @@ extension on TranslationsTr {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => '${product} ile Bağlan',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Sunucu URL\'nizi, kullanıcı adınızı ve şifrenizi girin.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => '${product} sunucunuza giriş yapın. ${name} profiline bağlanır.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Başka bir profilden ödünç al',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Başka bir profilin bağlantısını yeniden kullanın. PIN korumalı profiller bir PIN gerektirir.',
 			'addServer.invalidCredentials' => 'Geçersiz kullanıcı adı veya şifre',

@@ -3430,7 +3430,7 @@ class _Translations$discover$findNext$vi extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} tổng số';
 	@override String get timingVaries => 'Thời gian khác nhau';
 	@override String get notNow => 'Không bây giờ';
-	@override String get swipeHint => 'Chuyển đổi, hoặc sử dụng các nút bên dưới';
+	@override String get swipeHint => 'Vuốt ảnh bìa theo hướng mũi tên hoặc dùng các nút bên dưới.';
 	@override String get saved => 'Tiết kiệm picks';
 	@override String savedCount({required Object count}) => 'Tiết kiệm chi phí · ${count}';
 	@override String get undo => 'và';
@@ -3458,6 +3458,18 @@ class _Translations$discover$findNext$vi extends Translations$discover$findNext$
 	@override String get openFailed => 'Lựa chọn này không còn sẵn dùng nữa.Xem lại để kiểm tra lại.';
 	@override String get changeFailed => 'Tôi không thể tiết kiệm được sự thay đổi đó, hãy thử lại.';
 	@override String get savedLimit => 'Tiết kiệm picks là đầy. loại bỏ một pick để tiết kiệm một khác.';
+	@override String get chooseHint => 'Mở một tựa, lưu để xem sau hoặc bỏ qua.';
+	@override String get howItWorks => 'Cách sử dụng';
+	@override String get notNowHelp => 'Tạm bỏ qua tựa này. Tựa vẫn ở trong thư viện của bạn.';
+	@override String get saveHelp => 'Lưu vào các lựa chọn đã lưu của hồ sơ này trên thiết bị này. Việc lưu không tải nội dung xuống.';
+	@override String get openHelp => 'Chọn ảnh bìa để xem chi tiết. Dùng nút chính để phát, đọc hoặc mở tựa.';
+	@override String get controlsHelp => 'Bàn phím hoặc điều khiển: chọn một nút rồi nhấn Enter hoặc nút Chọn. Hoàn tác khôi phục lựa chọn vừa rồi.';
+	@override String get artworkLoading => 'Đang tải ảnh…';
+	@override String get artworkUnavailable => 'Không có ảnh';
+	@override String get savedFeedback => 'Đã thêm vào các lựa chọn đã lưu';
+	@override String get skippedFeedback => 'Đã tạm bỏ qua';
+	@override String get releaseToConfirm => 'Thả để xác nhận';
+	@override String get remoteHint => 'Khi chọn ảnh bìa: ← / → chọn · Nút Chọn: chi tiết · ↑ / ↓ chuyển tiêu điểm';
 }
 
 // Path: discover.person
@@ -5466,7 +5478,7 @@ extension on TranslationsVi {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} tổng số',
 			'discover.findNext.timingVaries' => 'Thời gian khác nhau',
 			'discover.findNext.notNow' => 'Không bây giờ',
-			'discover.findNext.swipeHint' => 'Chuyển đổi, hoặc sử dụng các nút bên dưới',
+			'discover.findNext.swipeHint' => 'Vuốt ảnh bìa theo hướng mũi tên hoặc dùng các nút bên dưới.',
 			'discover.findNext.saved' => 'Tiết kiệm picks',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Tiết kiệm chi phí · ${count}',
 			'discover.findNext.undo' => 'và',
@@ -5494,6 +5506,18 @@ extension on TranslationsVi {
 			'discover.findNext.openFailed' => 'Lựa chọn này không còn sẵn dùng nữa.Xem lại để kiểm tra lại.',
 			'discover.findNext.changeFailed' => 'Tôi không thể tiết kiệm được sự thay đổi đó, hãy thử lại.',
 			'discover.findNext.savedLimit' => 'Tiết kiệm picks là đầy. loại bỏ một pick để tiết kiệm một khác.',
+			'discover.findNext.chooseHint' => 'Mở một tựa, lưu để xem sau hoặc bỏ qua.',
+			'discover.findNext.howItWorks' => 'Cách sử dụng',
+			'discover.findNext.notNowHelp' => 'Tạm bỏ qua tựa này. Tựa vẫn ở trong thư viện của bạn.',
+			'discover.findNext.saveHelp' => 'Lưu vào các lựa chọn đã lưu của hồ sơ này trên thiết bị này. Việc lưu không tải nội dung xuống.',
+			'discover.findNext.openHelp' => 'Chọn ảnh bìa để xem chi tiết. Dùng nút chính để phát, đọc hoặc mở tựa.',
+			'discover.findNext.controlsHelp' => 'Bàn phím hoặc điều khiển: chọn một nút rồi nhấn Enter hoặc nút Chọn. Hoàn tác khôi phục lựa chọn vừa rồi.',
+			'discover.findNext.artworkLoading' => 'Đang tải ảnh…',
+			'discover.findNext.artworkUnavailable' => 'Không có ảnh',
+			'discover.findNext.savedFeedback' => 'Đã thêm vào các lựa chọn đã lưu',
+			'discover.findNext.skippedFeedback' => 'Đã tạm bỏ qua',
+			'discover.findNext.releaseToConfirm' => 'Thả để xác nhận',
+			'discover.findNext.remoteHint' => 'Khi chọn ảnh bìa: ← / → chọn · Nút Chọn: chi tiết · ↑ / ↓ chuyển tiêu điểm',
 			'discover.extras' => 'Trailers và Extras',
 			'discover.studio' => 'Hãng phim',
 			'discover.rating' => 'Đánh giá',
@@ -5719,6 +5743,8 @@ extension on TranslationsVi {
 			'explore.mdblistShelves.nameHint' => 'Để lại màu trắng để sử dụng tên danh sách nguồn.',
 			'explore.mdblistShelves.add' => 'Thêm Shelf',
 			'explore.mdblistShelves.save' => 'Bảo vệ shelves',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Chuyển ${title} lên',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Chuyển ${title} xuống',
 			'explore.mdblistShelves.unavailable' => 'Danh sách này không sẵn dùng. rút hoặc xóa hộp trong cài đặt.',
@@ -5731,8 +5757,6 @@ extension on TranslationsVi {
 			'explore.selectSource' => 'Chọn nguồn',
 			'explore.rows.watchlist' => 'Danh sách Watchlist',
 			'explore.rows.recommendedMovies' => 'Phim khuyến cáo',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Ưu đãi show',
 			'explore.rows.trendingMovies' => 'Phim Trending',
 			'explore.rows.trendingShows' => 'Xu hướng show',
@@ -6233,6 +6257,8 @@ extension on TranslationsVi {
 			'downloads.resumeDownload' => 'Đánh giá download',
 			'downloads.cancelledDownload' => 'Hủy download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (tính hợp ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Tải về ${file} - Click để hoàn thành',
 			'downloads.partialDownloadClickToComplete' => 'Tải về - Click to complete',
 			'downloads.deleting' => 'xóa...',
@@ -6245,8 +6271,6 @@ extension on TranslationsVi {
 			'downloads.pauseAll' => 'All nghỉ ngơi',
 			'downloads.resumeAll' => 'Tóm lại tất cả',
 			'downloads.retryAll' => 'Quay lại tất cả',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'Retry thất bại Downloads',
 			'downloads.deleteAll' => 'Xóa Hết',
 			'downloads.selectVersion' => 'Chọn phiên bản',
@@ -6747,6 +6771,8 @@ extension on TranslationsVi {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Không thể truy cập máy chủ: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Đăng ký thất bại: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect thất bại: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Đăng ký với Plex',
 			'addServer.pinExpired' => 'PIN đã hết hạn trước khi đăng nhập. xin vui lòng thử lại.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Không đăng ký tài khoản: ${error}',
@@ -6759,8 +6785,6 @@ extension on TranslationsVi {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Kết nối với ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Nhập URL, tên người dùng và mật khẩu máy chủ của bạn.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Đăng nhập vào máy chủ của bạn ${product}. kết nối với ${name}.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Loan từ một hồ sơ khác',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Sử dụng lại kết nối của hồ sơ khác. hồ sơ được bảo vệ bằng PIN đòi hỏi một PIN.',
 			'addServer.invalidCredentials' => 'Tên người dùng hoặc mật khẩu không hợp lệ',

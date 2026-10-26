@@ -3454,7 +3454,7 @@ class Translations$discover$findNext$fr extends Translations$discover$findNext$e
 	@override String totalDuration({required Object duration}) => '${duration} total';
 	@override String get timingVaries => 'Temps varié';
 	@override String get notNow => 'Pas maintenant';
-	@override String get swipeHint => 'Télécharger ou utiliser les boutons ci-dessous';
+	@override String get swipeHint => 'Faites glisser la couverture vers une flèche ou utilisez les boutons ci-dessous.';
 	@override String get saved => 'Les pics sauvés';
 	@override String savedCount({required Object count}) => 'Réservation de l\'écran · ${count}';
 	@override String get undo => 'et non';
@@ -3482,6 +3482,18 @@ class Translations$discover$findNext$fr extends Translations$discover$findNext$e
 	@override String get openFailed => 'Cette option n’est plus disponible.Refresh pour vérifier à nouveau.';
 	@override String get changeFailed => 'Je ne pouvais pas sauver ce changement, essayez de nouveau.';
 	@override String get savedLimit => 'Les pics sauvés sont remplis. supprimer un choix pour sauver un autre.';
+	@override String get chooseHint => 'Ouvrez un titre, gardez-le pour plus tard ou passez au suivant.';
+	@override String get howItWorks => 'Comment ça marche';
+	@override String get notNowHelp => 'Passez ce titre pour le moment. Il reste dans votre bibliothèque.';
+	@override String get saveHelp => 'Gardez-le dans les sélections enregistrées de ce profil sur cet appareil. Cela ne le télécharge pas.';
+	@override String get openHelp => 'Sélectionnez la couverture pour afficher les détails. Utilisez l’action principale pour lancer, lire ou ouvrir le titre.';
+	@override String get controlsHelp => 'Clavier ou télécommande : sélectionnez un bouton, puis appuyez sur Entrée ou Sélectionner. Annuler rétablit votre dernier choix.';
+	@override String get artworkLoading => 'Chargement de l’illustration…';
+	@override String get artworkUnavailable => 'Illustration indisponible';
+	@override String get savedFeedback => 'Ajouté aux sélections enregistrées';
+	@override String get skippedFeedback => 'Ignoré pour le moment';
+	@override String get releaseToConfirm => 'Relâchez pour confirmer';
+	@override String get remoteHint => 'Couverture sélectionnée : ← / → choisir · Sélectionner : détails · ↑ / ↓ : déplacer la sélection';
 }
 
 // Path: discover.person
@@ -5492,7 +5504,7 @@ extension on TranslationsFr {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} total',
 			'discover.findNext.timingVaries' => 'Temps varié',
 			'discover.findNext.notNow' => 'Pas maintenant',
-			'discover.findNext.swipeHint' => 'Télécharger ou utiliser les boutons ci-dessous',
+			'discover.findNext.swipeHint' => 'Faites glisser la couverture vers une flèche ou utilisez les boutons ci-dessous.',
 			'discover.findNext.saved' => 'Les pics sauvés',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Réservation de l\'écran · ${count}',
 			'discover.findNext.undo' => 'et non',
@@ -5520,6 +5532,18 @@ extension on TranslationsFr {
 			'discover.findNext.openFailed' => 'Cette option n’est plus disponible.Refresh pour vérifier à nouveau.',
 			'discover.findNext.changeFailed' => 'Je ne pouvais pas sauver ce changement, essayez de nouveau.',
 			'discover.findNext.savedLimit' => 'Les pics sauvés sont remplis. supprimer un choix pour sauver un autre.',
+			'discover.findNext.chooseHint' => 'Ouvrez un titre, gardez-le pour plus tard ou passez au suivant.',
+			'discover.findNext.howItWorks' => 'Comment ça marche',
+			'discover.findNext.notNowHelp' => 'Passez ce titre pour le moment. Il reste dans votre bibliothèque.',
+			'discover.findNext.saveHelp' => 'Gardez-le dans les sélections enregistrées de ce profil sur cet appareil. Cela ne le télécharge pas.',
+			'discover.findNext.openHelp' => 'Sélectionnez la couverture pour afficher les détails. Utilisez l’action principale pour lancer, lire ou ouvrir le titre.',
+			'discover.findNext.controlsHelp' => 'Clavier ou télécommande : sélectionnez un bouton, puis appuyez sur Entrée ou Sélectionner. Annuler rétablit votre dernier choix.',
+			'discover.findNext.artworkLoading' => 'Chargement de l’illustration…',
+			'discover.findNext.artworkUnavailable' => 'Illustration indisponible',
+			'discover.findNext.savedFeedback' => 'Ajouté aux sélections enregistrées',
+			'discover.findNext.skippedFeedback' => 'Ignoré pour le moment',
+			'discover.findNext.releaseToConfirm' => 'Relâchez pour confirmer',
+			'discover.findNext.remoteHint' => 'Couverture sélectionnée : ← / → choisir · Sélectionner : détails · ↑ / ↓ : déplacer la sélection',
 			'discover.extras' => 'Bandes-annonces et bonus',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Évaluation',
@@ -5745,6 +5769,8 @@ extension on TranslationsFr {
 			'explore.mdblistShelves.nameHint' => 'Laissez blanche pour utiliser le nom de la liste source.',
 			'explore.mdblistShelves.add' => 'Ajouter le shelf',
 			'explore.mdblistShelves.save' => 'Sauver les chariots',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Mouvement ${title} en haut',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Mouvement ${title} en bas',
 			'explore.mdblistShelves.unavailable' => 'Cette liste n\'est pas disponible. Retire ou supprimer son fil dans les paramètres.',
@@ -5757,8 +5783,6 @@ extension on TranslationsFr {
 			'explore.selectSource' => 'Sélectionner la source',
 			'explore.rows.watchlist' => 'Liste de suivi',
 			'explore.rows.recommendedMovies' => 'Films recommandés',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Séries recommandées',
 			'explore.rows.trendingMovies' => 'Films tendance',
 			'explore.rows.trendingShows' => 'Séries tendance',
@@ -6259,6 +6283,8 @@ extension on TranslationsFr {
 			'downloads.resumeDownload' => 'Reprendre le téléchargement',
 			'downloads.cancelledDownload' => 'Téléchargement annulé',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (synchronisation ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} téléchargé — cliquez pour terminer',
 			'downloads.partialDownloadClickToComplete' => 'Téléchargement partiel — cliquez pour terminer',
 			'downloads.deleting' => 'Suppression...',
@@ -6271,8 +6297,6 @@ extension on TranslationsFr {
 			'downloads.pauseAll' => 'Tout mettre en pause',
 			'downloads.resumeAll' => 'Tout reprendre',
 			'downloads.retryAll' => 'Tout réessayer',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'Réessayer les téléchargements en échec',
 			'downloads.deleteAll' => 'Tout supprimer',
 			'downloads.selectVersion' => 'Sélectionner la version',
@@ -6773,6 +6797,8 @@ extension on TranslationsFr {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Impossible de joindre le serveur : ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Échec de la connexion : ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Échec de Quick Connect : ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Se connecter avec Plex',
 			'addServer.pinExpired' => 'Le PIN a expiré avant la connexion. Veuillez réessayer.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Échec de l\'enregistrement du compte : ${error}',
@@ -6785,8 +6811,6 @@ extension on TranslationsFr {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Se connecter à ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Saisissez l\'URL de votre serveur, votre nom d\'utilisateur et votre mot de passe.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Connectez-vous à votre serveur ${product}. Sera associé à ${name}.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Emprunter à un autre profil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Réutiliser la connexion d\'un autre profil. Les profils protégés par PIN exigent un PIN.',
 			'addServer.invalidCredentials' => 'Nom d’utilisateur ou mot de passe incorrect',

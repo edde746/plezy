@@ -3450,7 +3450,7 @@ class _Translations$discover$findNext$fa extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} کل';
 	@override String get timingVaries => 'زمانبندی متفاوت';
 	@override String get notNow => 'در حال حاضر نه';
-	@override String get swipeHint => 'سوئیچ کنید یا از دکمه های زیر استفاده کنید.';
+	@override String get swipeHint => 'جلد را به سمت یکی از پیکان‌ها بکشید یا از دکمه‌های زیر استفاده کنید.';
 	@override String get saved => 'نجات پیتزا';
 	@override String savedCount({required Object count}) => 'دانلود بازی ${count}';
 	@override String get undo => 'و یا';
@@ -3478,6 +3478,18 @@ class _Translations$discover$findNext$fa extends Translations$discover$findNext$
 	@override String get openFailed => 'این گزینه دیگر در دسترس نیست.تجدید برای بررسی دوباره.';
 	@override String get changeFailed => 'نمی توانم این تغییرات را حفظ کنم، دوباره امتحان کنید.';
 	@override String get savedLimit => 'ذخیره شده پیک ها پر است. حذف یک پیک برای ذخیره دیگری.';
+	@override String get chooseHint => 'عنوانی را باز کنید، برای بعد ذخیره کنید یا از آن بگذرید.';
+	@override String get howItWorks => 'روش استفاده';
+	@override String get notNowHelp => 'فعلاً از این عنوان بگذرید. در کتابخانه شما باقی می‌ماند.';
+	@override String get saveHelp => 'آن را در انتخاب‌های ذخیره‌شده این نمایه روی این دستگاه نگه دارید. ذخیره کردن باعث دانلود نمی‌شود.';
+	@override String get openHelp => 'برای دیدن جزئیات، جلد را انتخاب کنید. از دکمه اصلی برای پخش، خواندن یا باز کردن عنوان استفاده کنید.';
+	@override String get controlsHelp => 'صفحه‌کلید یا کنترل: روی یک دکمه بروید و Enter یا دکمه انتخاب را بزنید. واگرد آخرین انتخاب شما را برمی‌گرداند.';
+	@override String get artworkLoading => 'در حال بارگیری تصویر…';
+	@override String get artworkUnavailable => 'تصویر در دسترس نیست';
+	@override String get savedFeedback => 'به انتخاب‌های ذخیره‌شده افزوده شد';
+	@override String get skippedFeedback => 'فعلاً رد شد';
+	@override String get releaseToConfirm => 'برای تأیید رها کنید';
+	@override String get remoteHint => 'با تمرکز روی جلد: ← / → انتخاب · دکمه انتخاب: جزئیات · ↑ / ↓ جابه‌جایی تمرکز';
 }
 
 // Path: discover.person
@@ -5488,7 +5500,7 @@ extension on TranslationsFa {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} کل',
 			'discover.findNext.timingVaries' => 'زمانبندی متفاوت',
 			'discover.findNext.notNow' => 'در حال حاضر نه',
-			'discover.findNext.swipeHint' => 'سوئیچ کنید یا از دکمه های زیر استفاده کنید.',
+			'discover.findNext.swipeHint' => 'جلد را به سمت یکی از پیکان‌ها بکشید یا از دکمه‌های زیر استفاده کنید.',
 			'discover.findNext.saved' => 'نجات پیتزا',
 			'discover.findNext.savedCount' => ({required Object count}) => 'دانلود بازی ${count}',
 			'discover.findNext.undo' => 'و یا',
@@ -5516,6 +5528,18 @@ extension on TranslationsFa {
 			'discover.findNext.openFailed' => 'این گزینه دیگر در دسترس نیست.تجدید برای بررسی دوباره.',
 			'discover.findNext.changeFailed' => 'نمی توانم این تغییرات را حفظ کنم، دوباره امتحان کنید.',
 			'discover.findNext.savedLimit' => 'ذخیره شده پیک ها پر است. حذف یک پیک برای ذخیره دیگری.',
+			'discover.findNext.chooseHint' => 'عنوانی را باز کنید، برای بعد ذخیره کنید یا از آن بگذرید.',
+			'discover.findNext.howItWorks' => 'روش استفاده',
+			'discover.findNext.notNowHelp' => 'فعلاً از این عنوان بگذرید. در کتابخانه شما باقی می‌ماند.',
+			'discover.findNext.saveHelp' => 'آن را در انتخاب‌های ذخیره‌شده این نمایه روی این دستگاه نگه دارید. ذخیره کردن باعث دانلود نمی‌شود.',
+			'discover.findNext.openHelp' => 'برای دیدن جزئیات، جلد را انتخاب کنید. از دکمه اصلی برای پخش، خواندن یا باز کردن عنوان استفاده کنید.',
+			'discover.findNext.controlsHelp' => 'صفحه‌کلید یا کنترل: روی یک دکمه بروید و Enter یا دکمه انتخاب را بزنید. واگرد آخرین انتخاب شما را برمی‌گرداند.',
+			'discover.findNext.artworkLoading' => 'در حال بارگیری تصویر…',
+			'discover.findNext.artworkUnavailable' => 'تصویر در دسترس نیست',
+			'discover.findNext.savedFeedback' => 'به انتخاب‌های ذخیره‌شده افزوده شد',
+			'discover.findNext.skippedFeedback' => 'فعلاً رد شد',
+			'discover.findNext.releaseToConfirm' => 'برای تأیید رها کنید',
+			'discover.findNext.remoteHint' => 'با تمرکز روی جلد: ← / → انتخاب · دکمه انتخاب: جزئیات · ↑ / ↓ جابه‌جایی تمرکز',
 			'discover.extras' => 'تریلر و اضافی',
 			'discover.studio' => 'استودیو',
 			'discover.rating' => 'رتبه بندی',
@@ -5741,6 +5765,8 @@ extension on TranslationsFa {
 			'explore.mdblistShelves.nameHint' => 'اجازه دهید نام لیست منبع را خالی کنید.',
 			'explore.mdblistShelves.add' => 'اضافه کردن شیل',
 			'explore.mdblistShelves.save' => 'ذخیره شلوارها',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'حرکت ${title} بالا',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'حرکت ${title} به پایین',
 			'explore.mdblistShelves.unavailable' => 'این لیست در دسترس نیست.در تنظیمات، اسلاید خود را بازگردانید یا حذف کنید.',
@@ -5753,8 +5779,6 @@ extension on TranslationsFa {
 			'explore.selectSource' => 'انتخاب منبع',
 			'explore.rows.watchlist' => 'لیست نظارت',
 			'explore.rows.recommendedMovies' => 'فیلم های توصیه شده',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'نمایش های توصیه شده',
 			'explore.rows.trendingMovies' => 'فیلم های روندی',
 			'explore.rows.trendingShows' => 'نمایش های روندی',
@@ -6255,6 +6279,8 @@ extension on TranslationsFa {
 			'downloads.resumeDownload' => 'دانلود مجدد',
 			'downloads.cancelledDownload' => 'دانلود لغو',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (تولید ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'دانلود شده ${file} - کلیک کنید برای تکمیل',
 			'downloads.partialDownloadClickToComplete' => 'دانلود جزئی - کلیک کنید برای تکمیل',
 			'downloads.deleting' => 'حذف...',
@@ -6267,8 +6293,6 @@ extension on TranslationsFa {
 			'downloads.pauseAll' => 'استراحت همه',
 			'downloads.resumeAll' => 'خلاصه همه',
 			'downloads.retryAll' => 'بازگشت همه',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'دانلود بازی های شکست خورده',
 			'downloads.deleteAll' => 'حذف همه',
 			'downloads.selectVersion' => 'انتخاب نسخه',
@@ -6769,6 +6793,8 @@ extension on TranslationsFa {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'نمی توانم به سرور دسترسی داشته باشم: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'ثبت نام شکست خورده: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect شکست خورده: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'ثبت نام با شماره Plex',
 			'addServer.pinExpired' => 'PIN قبل از ثبت نام به پایان رسیده است لطفا دوباره امتحان کنید.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'عدم ثبت حساب: ${error}',
@@ -6781,8 +6807,6 @@ extension on TranslationsFa {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'تماس با ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'URL سرور، نام کاربری و رمز عبور خود را وارد کنید.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'ثبت نام در سرور ${product} شما. اتصال به ${name}.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'وام از یک پروفایل دیگر',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'استفاده مجدد از اتصال پروفایل دیگری. پروفایل های محافظت شده از PIN نیاز به یک PIN دارند.',
 			'addServer.invalidCredentials' => 'نام کاربری یا رمز عبور نادرست',
