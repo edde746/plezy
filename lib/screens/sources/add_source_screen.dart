@@ -25,8 +25,8 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
   final _form = GlobalKey<FormState>();
   final _fields = <String, TextEditingController>{};
   FileSourceKind _kind = FileSourceKind.webdav;
-  bool _busy = false, _allowHttp = false;
-  Set<PublicationShelf> _shelves = {PublicationShelf.ebooks, PublicationShelf.audiobooks};
+  bool _busy = false, _allowHttp = false, _encryptSmb = false;
+  Set<PublicationShelf> _shelves = {PublicationShelf.ebooks, PublicationShelf.audiobooks, PublicationShelf.videos};
   Object? _error;
   SourceController? _connecting;
   TextEditingController field(String key) => _fields.putIfAbsent(key, TextEditingController.new);
@@ -42,8 +42,9 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
       field('root').text = old.root;
       field('clientId').text = old.options['clientId'] ?? '';
       _allowHttp = old.options['allowHttp'] == 'true';
+      _encryptSmb = old.options['encryptSmb'] == 'true';
       _shelves = PublicationShelf.values
-          .where((s) => (old.options['shelves'] ?? 'ebooks,audiobooks').split(',').contains(s.name))
+          .where((s) => (old.options['shelves'] ?? 'ebooks,audiobooks,videos').split(',').contains(s.name))
           .toSet();
       field('syncRoot').text = old.options['syncRoot'] ?? '';
       field('region').text = old.options['region'] ?? '';
@@ -91,7 +92,8 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
         root: field('root').text.trim(),
         options: {
           ...?widget.existing?.options,
-          'allowHttp': '$_allowHttp',
+          'allowHttp': '${_kind != FileSourceKind.smb && _allowHttp}',
+          if (_kind == FileSourceKind.smb) 'encryptSmb': '$_encryptSmb',
           'shelves': _shelves.map((s) => s.name).join(','),
           if (field('clientId').text.trim().isNotEmpty) 'clientId': field('clientId').text.trim(),
           if (_kind == FileSourceKind.s3)
@@ -100,13 +102,20 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
             'syncRoot': field('syncRoot').text.trim(),
         },
       );
+      final credentialKeys = switch (_kind) {
+        FileSourceKind.webdav || FileSourceKind.opds => const ['username', 'password'],
+        FileSourceKind.smb => const ['username', 'password', 'domain'],
+        FileSourceKind.s3 => const ['accessKey', 'secretKey', 'sessionToken'],
+        FileSourceKind.audiobookshelf => const ['token'],
+        _ => const <String>[],
+      };
       Map<String, String> credentials;
       if (oauth) {
         credentials = await controller.oauth.authorize(source, clientSecret: field('clientSecret').text);
       } else {
         credentials = {
           if (widget.existing != null) ...await controller.repository.credentials(widget.existing!),
-          for (final key in ['username', 'password', 'token', 'accessKey', 'secretKey', 'sessionToken'])
+          for (final key in credentialKeys)
             if (field(key).text.isNotEmpty) key: field(key).text,
         };
       }
@@ -146,7 +155,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                       decoration: InputDecoration(labelText: t.fileSources.source),
                       items: [
                         for (final kind in FileSourceKind.values)
-                          if (kind != FileSourceKind.local || PlatformDetector.isDesktopOS())
+                          if ((kind != FileSourceKind.local || PlatformDetector.isDesktopOS()))
                             DropdownMenuItem(
                               value: kind,
                               child: Row(
@@ -164,7 +173,12 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                     const SizedBox(height: 24),
                     input('name', t.fileSources.name),
                     if (!oauth && _kind != FileSourceKind.local)
-                      input('endpoint', t.fileSources.endpoint, required: true),
+                      input(
+                        'endpoint',
+                        t.fileSources.endpoint,
+                        required: true,
+                        hint: _kind == FileSourceKind.smb ? 'smb://nas/Movies' : null,
+                      ),
                     if (_kind == FileSourceKind.local) ...[
                       input('root', t.fileSources.root, required: true),
                       OutlinedButton(
@@ -178,9 +192,18 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                       ),
                     ] else if (_kind != FileSourceKind.audiobookshelf && _kind != FileSourceKind.opds)
                       input('root', t.fileSources.root, hint: t.fileSources.folderHelp),
-                    if (const {FileSourceKind.webdav, FileSourceKind.opds}.contains(_kind)) ...[
+                    if (const {FileSourceKind.webdav, FileSourceKind.opds, FileSourceKind.smb}.contains(_kind)) ...[
                       input('username', t.fileSources.username),
                       input('password', t.fileSources.password, secret: true),
+                      if (_kind == FileSourceKind.smb) input('domain', 'Domain (optional)'),
+                      if (_kind == FileSourceKind.smb)
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: const Text('Encrypt SMB3 connection'),
+                          subtitle: const Text('Use SMB3 encryption when the NAS supports it.'),
+                          value: _encryptSmb,
+                          onChanged: _busy ? null : (value) => setState(() => _encryptSmb = value),
+                        ),
                     ],
                     if (_kind == FileSourceKind.audiobookshelf)
                       input('token', t.fileSources.token, secret: true, required: widget.existing == null),
@@ -200,7 +223,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                             input('clientSecret', t.fileSources.clientSecret, secret: true),
                         ],
                       ),
-                    if (!oauth && _kind != FileSourceKind.local)
+                    if (!oauth && _kind != FileSourceKind.local && _kind != FileSourceKind.smb)
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(t.fileSources.allowHttp),
@@ -228,6 +251,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                               PublicationShelf.ebooks => t.fileSources.ebooks,
                               PublicationShelf.audiobooks => t.fileSources.audiobooks,
                               PublicationShelf.comics => t.fileSources.comics,
+                              PublicationShelf.videos => t.fileSources.video,
                             }),
                             selected: _shelves.contains(shelf),
                             onSelected: _busy

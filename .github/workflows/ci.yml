@@ -376,7 +376,12 @@ jobs:
           pub-cache: false
 
       - name: Install locked Dart dependencies
+        if: matrix.platform != 'tvOS'
         run: flutter pub get --enforce-lockfile --no-example
+
+      - name: Install tvOS dependencies with the unsupported SMB native asset stub
+        if: matrix.platform == 'tvOS'
+        run: tvos/scripts/pub_get.sh
 
       - name: Record committed CocoaPods lockfile
         if: matrix.platform != 'tvOS'

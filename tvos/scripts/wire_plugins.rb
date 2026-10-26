@@ -24,6 +24,7 @@ PLUGIN_BASENAMES = %w[
   InAppPurchasePlugin+StoreKit2.swift
   StoreKit2Messages.g.swift
   StoreKit2Translators.swift
+  SmbTvOSPlugin.swift
 ]
 
 # Remove any existing file refs for these basenames from the entire project.
@@ -73,6 +74,11 @@ plugins = {
     InAppPurchasePlugin+StoreKit2.swift
     StoreKit2Messages.g.swift
     StoreKit2Translators.swift
+  ],
+  # Shared SMB2/3 source bridge. The SMB2 implementation comes from the
+  # dynamically linked AMSMB2 Swift package declared by Runner.xcodeproj.
+  'smb2' => %w[
+    SmbTvOSPlugin.swift
   ],
   # universal_gamepad + os_media_controls come from CocoaPods (tvos/Podfile)
   # — their upstream podspecs declare tvOS support, so no embedded copy

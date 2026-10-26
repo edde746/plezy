@@ -8,14 +8,15 @@ The screens use PlezyNG's Mono theme, connected settings rows, cover grids, shar
 
 | Source | Connection | Content and state |
 | --- | --- | --- |
-| Local files | Import using the system picker; desktop users can connect a folder | Imports are copied into profile-owned storage. Connected folders remain read-only. |
+| Local files | Import using the system picker; desktop users can connect a folder | Imports are copied into profile-owned storage. Connected folders remain read-only. Kodi/Jellyfin `.nfo` metadata and sibling poster images enrich local video details offline. |
 | OPDS 1/2 | Atom or JSON catalogue URL; optional Basic credentials | Standard direct, open-access and sample acquisitions; navigation and pagination; catalogue covers. Borrow/purchase links are never treated as files. |
+| SMB2/3 | `smb://server/share`, optional account, folder and SMB3 encryption | Read-only NAS browsing with range-based streaming on Android, iOS, macOS, Windows, Linux and tvOS. Kodi/Jellyfin `.nfo` sidecars and sibling poster images enrich details offline. |
 | Audiobookshelf | Server URL and the user's API token | Libraries, books, primary/secondary ebooks, multipart tracks, chapters, covers, reading/listening progress and audio bookmarks. |
-| Google Drive | Hosted Google authorization | Read-only book browsing and downloads. Optional state sync uses the Drive app-data area. |
-| OneDrive | Hosted Microsoft authorization | Read-only book browsing and downloads. Optional state sync uses the app's `approot`. |
-| Dropbox | Hosted Dropbox authorization | Read-only book browsing and downloads. Optional state sync uses `/PlezyNG Sync`. |
-| WebDAV / Nextcloud | HTTPS endpoint, folder and optional account/app password | Read-only book browsing; optional state sync writes only inside the separate folder selected in Sync settings. |
-| S3-compatible storage | Bucket endpoint, prefix, region and restricted access credentials | Read-only book browsing and signed downloads; optional state sync writes under a dedicated prefix selected in Sync settings. |
+| Google Drive | Hosted Google authorization | Read-only folder browsing, shared-drive items and fresh download authorization. Optional encrypted state sync uses Drive app data. |
+| OneDrive | Hosted Microsoft authorization | Read-only Graph browsing and fresh download URLs. Optional encrypted state sync uses the app's `approot`. |
+| Dropbox | Hosted Dropbox authorization | Metadata/content read scopes and short-lived content URLs. Optional encrypted state sync uses `/PlezyNG Sync`. |
+| WebDAV / Nextcloud | HTTPS endpoint, folder and optional account/app password | Read-only file browsing; optional encrypted state sync writes only inside the separate existing folder selected in Sync settings. |
+| S3-compatible storage | Bucket endpoint, prefix, region and restricted access credentials | List and signed GET requests; optional encrypted state sync writes under a dedicated prefix selected in Sync settings. |
 
 An indexer/organizer such as Chaptarr does not need an NG fork. Expose its organized files through a supported standard service or point Audiobookshelf/OPDS at the library. No private Chaptarr endpoint or dependency is required. S3-compatible storage is a protocol, so its row deliberately uses a generic cloud symbol rather than an AWS endorsement.
 
@@ -45,6 +46,8 @@ Download editions explicitly from the detail screen. Completed files publish ato
 Progress, bookmarks and notes are durable locally. Optional encrypted cross-device sync supports Google Drive, OneDrive, Dropbox, WebDAV and S3-compatible storage. It stores immutable state generations only in the provider-specific app area or the separate WebDAV folder/S3 prefix selected in Sync settings. Audio, ebook files and unrelated cloud files are never uploaded, edited or deleted. Repeated offline edits coalesce; a local snapshot is acknowledged only after a matching encrypted generation has been written successfully.
 
 The sync code is a 256-bit encryption key. Generate one in Sync settings, enter the same code on each device, and keep a copy in a password manager: PlezyNG cannot recover synced state if the code is lost. Cloud filenames and metadata do not include book titles or profile IDs. OAuth-backed providers may request extra write scope only when this feature is enabled. While cloud sync is enabled, the selected destination owns cross-device progress; server-side Audiobookshelf progress remains separate. Turning sync off preserves local history and does not remove remote snapshots.
+
+When encrypted cloud sync is disabled, a single configured WebDAV state folder can synchronize progress and notes for WebDAV, SMB and other file sources across devices. It uses per-source/per-edition files and conditional writes; configure the same SMB endpoint/root and source identity on each device. If multiple WebDAV state folders are configured, cross-source state stays local until the destination is unambiguous. This fallback sync never modifies media files. Audiobookshelf progress and bookmarks continue to use its APIs.
 
 The synchronizer merges causal edits rather than choosing the furthest position or newest wall-clock timestamp. Explicit rewinds and completion resets propagate. Concurrent edits stay visible as conflicts for a user choice; a remote position is not applied underneath an active player. Each device keeps its own immutable generations and one recovery copy; cleanup only removes older generations owned by that device. Local imports use their local source identity, so cross-device matching requires the same stable source identity and edition fingerprint.
 

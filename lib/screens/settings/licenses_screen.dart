@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
@@ -33,6 +34,23 @@ class LicensesScreen extends StatelessWidget {
         allPackageNames[packageName]!.addAll(license.packages);
       }
     }
+
+    final amsmb2Notice = await rootBundle.loadString('assets/licenses/AMSMB2_NOTICE.txt');
+    final amsmb2MitLicense = await rootBundle.loadString('assets/licenses/AMSMB2_MIT_LICENSE.txt');
+    final amsmb2License = await rootBundle.loadString('assets/licenses/libsmb2-LGPL-2.1.txt');
+    licenseMap['AMSMB2'] = [
+      LicenseEntryWithLineBreaks([
+        'AMSMB2',
+      ], '${amsmb2Notice.trimRight()}\n${amsmb2MitLicense.trimRight()}\n${amsmb2License.trimRight()}'),
+    ];
+    allPackageNames['AMSMB2'] = {'AMSMB2'};
+
+    final nativeNotice = await rootBundle.loadString('assets/licenses/dart_smb2_NOTICE.txt');
+    final nativeLicense = await rootBundle.loadString('assets/licenses/libsmb2-LGPL-2.1.txt');
+    licenseMap['libsmb2'] = [
+      LicenseEntryWithLineBreaks(['libsmb2'], '${nativeNotice.trimRight()}\n${nativeLicense.trimRight()}'),
+    ];
+    allPackageNames['libsmb2'] = {'libsmb2'};
 
     final mergedLicenses = licenseMap.entries.map((entry) {
       return MergedLicenseEntry(

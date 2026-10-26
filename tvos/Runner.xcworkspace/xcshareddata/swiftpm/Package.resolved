@@ -2,6 +2,15 @@
   "originHash" : "c535d3cdb62bd4e11e67f3c9e68290fa7ee9306634c5f56d2b0396eb75ed41ee",
   "pins" : [
     {
+      "identity" : "amsmb2",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/amosavian/AMSMB2",
+      "state" : {
+        "revision" : "fbb1d37880b7e1d7504c6a6dc9371c10ff932bc9",
+        "version" : "3.0.0"
+      }
+    },
+    {
       "identity" : "mpv-build",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/edde746/mpv-build",

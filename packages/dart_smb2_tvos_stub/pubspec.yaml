@@ -1,0 +1,11 @@
+name: dart_smb2
+description: tvOS MethodChannel implementation of the dart_smb2 source API.
+version: 0.2.3
+publish_to: none
+
+environment:
+  sdk: ">=3.12.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter

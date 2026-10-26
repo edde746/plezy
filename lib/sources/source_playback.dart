@@ -376,7 +376,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     await native.setRate(speed);
     if (!_valid || player != native) return;
     await _controls?.updateFileMetadata(
-      title: item.title,
+      title: item.displayTitle,
       author: item.narrator.isEmpty ? item.author : item.narrator,
       duration: hasCompleteTimeline ? Duration(milliseconds: durationMs) : null,
     );

@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 
-enum FileSourceKind { local, webdav, googleDrive, oneDrive, dropbox, s3, opds, audiobookshelf }
+enum FileSourceKind { local, webdav, smb, googleDrive, oneDrive, dropbox, s3, opds, audiobookshelf }
 
 enum SourceItemKind { folder, ebook, audiobook, comic, music, video, unknown }
 
@@ -42,6 +42,59 @@ void validatePublicSourceUri(Uri uri, {bool allowHttp = false}) {
       uri.queryParameters.keys.any(sourceCredentialParameter.hasMatch)) {
     throw const SourceException(SourceFailure.permission);
   }
+}
+
+/// SMB endpoints identify one server share. Credentials stay in the encrypted
+/// vault, and the default port is enforced until custom ports are supported.
+Uri validateSmbSourceEndpoint(String value) {
+  final schemeEnd = value.indexOf('://');
+  String rawPath = '';
+  if (schemeEnd >= 0) {
+    final pathStart = value.indexOf('/', schemeEnd + 3);
+    if (pathStart >= 0) {
+      final pathEnd = value.indexOf(RegExp(r'[?#]'), pathStart);
+      rawPath = value.substring(pathStart + 1, pathEnd < 0 ? value.length : pathEnd);
+    }
+  }
+  var unsafeRawSegment = false;
+  for (final segment in rawPath.split('/').where((part) => part.isNotEmpty)) {
+    try {
+      final decoded = Uri.decodeComponent(segment);
+      if (decoded == '.' ||
+          decoded == '..' ||
+          decoded.contains('/') ||
+          decoded.contains('\\') ||
+          decoded.contains('\u0000')) {
+        unsafeRawSegment = true;
+        break;
+      }
+    } on FormatException {
+      unsafeRawSegment = true;
+      break;
+    }
+  }
+  final uri = Uri.tryParse(value);
+  final shares = uri?.pathSegments.where((segment) => segment.isNotEmpty).toList() ?? const <String>[];
+  if (unsafeRawSegment ||
+      uri == null ||
+      uri.scheme != 'smb' ||
+      uri.host.isEmpty ||
+      uri.userInfo.isNotEmpty ||
+      uri.hasQuery ||
+      uri.hasFragment ||
+      (uri.hasPort && uri.port != 445) ||
+      shares.length != 1 ||
+      shares.any(
+        (segment) =>
+            segment == '.' ||
+            segment == '..' ||
+            segment.contains('/') ||
+            segment.contains('\\') ||
+            segment.contains('\u0000'),
+      )) {
+    throw const SourceException(SourceFailure.permission);
+  }
+  return uri;
 }
 
 class FileSource {
@@ -172,6 +225,10 @@ class SourceEntry {
     this.files = const [],
     this.chapters = const [],
     this.identifiers = const {},
+    this.releaseYear,
+    this.rating,
+    this.genres = const [],
+    this.syncIdentity,
   });
   final String sourceId;
   final String id;
@@ -188,8 +245,48 @@ class SourceEntry {
   final List<PublicationFile> files;
   final List<BookChapter> chapters;
   final Map<String, String> identifiers;
+  final int? releaseYear;
+  final double? rating;
+  final List<String> genres;
+  final String? syncIdentity;
+
+  SourceEntry copyWith({
+    String? title,
+    String? description,
+    String? coverId,
+    int? releaseYear,
+    double? rating,
+    List<String>? genres,
+    Map<String, String>? identifiers,
+    String? syncIdentity,
+  }) => SourceEntry(
+    sourceId: sourceId,
+    id: id,
+    title: title ?? this.title,
+    kind: kind,
+    parentId: parentId,
+    author: author,
+    narrator: narrator,
+    series: series,
+    seriesOrder: seriesOrder,
+    description: description ?? this.description,
+    language: language,
+    coverId: coverId ?? this.coverId,
+    files: files,
+    chapters: chapters,
+    identifiers: identifiers ?? this.identifiers,
+    releaseYear: releaseYear ?? this.releaseYear,
+    rating: rating ?? this.rating,
+    genres: genres ?? this.genres,
+    syncIdentity: syncIdentity ?? this.syncIdentity,
+  );
+
   String get key => sourceKey(sourceId, id);
   bool get isFolder => kind == SourceItemKind.folder;
+
+  /// Video source names begin as filenames. Keep their descriptive stem while
+  /// omitting only the container extension in user-facing titles.
+  String get displayTitle => kind == SourceItemKind.video ? p.withoutExtension(title) : title;
   List<PublicationFile> get ebooks =>
       files.where((f) => (f.kind == SourceItemKind.ebook || f.kind == SourceItemKind.comic)).toList();
   List<PublicationFile> get audio =>
@@ -210,6 +307,10 @@ class SourceEntry {
     'files': files.map((f) => f.toJson()).toList(),
     'chapters': chapters.map((c) => c.toJson()).toList(),
     'identifiers': identifiers,
+    if (releaseYear != null) 'releaseYear': releaseYear,
+    if (rating != null) 'rating': rating,
+    if (genres.isNotEmpty) 'genres': genres,
+    if (syncIdentity != null) 'syncIdentity': syncIdentity,
   };
   factory SourceEntry.fromJson(Map<String, dynamic> j) => SourceEntry(
     sourceId: j['sourceId'] as String,
@@ -227,6 +328,10 @@ class SourceEntry {
     files: sourceList(j['files']).map((f) => PublicationFile.fromJson(sourceMap(f))).toList(),
     chapters: sourceList(j['chapters']).map((c) => BookChapter.fromJson(sourceMap(c))).toList(),
     identifiers: sourceMap(j['identifiers']).map((k, v) => MapEntry(k, '$v')),
+    releaseYear: sourceInt(j['releaseYear']),
+    rating: (j['rating'] as num?)?.toDouble(),
+    genres: sourceList(j['genres']).whereType<String>().toList(),
+    syncIdentity: j['syncIdentity'] as String?,
   );
 }
 
@@ -245,6 +350,15 @@ class ContentLease {
   final Map<String, String> headers;
   final DateTime? expiresAt;
   final int? size;
+}
+
+/// Provider-native byte stream for sources without an HTTP media URL.
+class SourceByteStream {
+  const SourceByteStream({required this.stream, required this.size, required this.offset, required this.length});
+  final Stream<List<int>> stream;
+  final int size;
+  final int offset;
+  final int length;
 }
 
 class ReadingLocator {

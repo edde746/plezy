@@ -71,6 +71,13 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
             mode: PublicationMode.listening,
             session: const Uuid().v4(),
           ),
+        if (_entry.kind == SourceItemKind.video && _entry.files.isNotEmpty)
+          PublicationProgress(
+            entryKey: _entry.key,
+            edition: sourceDigest(jsonEncode(_entry.files.map((f) => f.fingerprint).toList())),
+            mode: PublicationMode.watching,
+            session: const Uuid().v4(),
+          ),
       ];
       for (final seed in seeds) {
         await sources.openProgress(_entry, seed);
@@ -245,7 +252,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context), tk = tokens(context), audio = _entry.audio;
     return FocusedScrollScaffold(
-      title: Text(_entry.title),
+      title: Text(_entry.displayTitle),
       focusableAppBarActions: true,
       actions: [
         IconButton(
@@ -284,7 +291,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                         final details = Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            Text(_entry.title, style: theme.textTheme.headlineMedium),
+                            Text(_entry.displayTitle, style: theme.textTheme.headlineMedium),
                             if (_entry.author.isNotEmpty)
                               Padding(
                                 padding: const EdgeInsets.only(top: 12),
@@ -302,6 +309,25 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                               Padding(
                                 padding: const EdgeInsets.only(top: 8),
                                 child: Text(_entry.series, style: theme.textTheme.bodyMedium),
+                              ),
+                            if (_entry.releaseYear != null || _entry.rating != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 10),
+                                child: Text(
+                                  [
+                                    if (_entry.releaseYear != null) '${_entry.releaseYear}',
+                                    if (_entry.rating != null) '★ ${_entry.rating!.toStringAsFixed(1)}/10',
+                                  ].join(' · '),
+                                  style: theme.textTheme.bodyMedium?.copyWith(color: tk.textMuted),
+                                ),
+                              ),
+                            if (_entry.genres.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  _entry.genres.join(' · '),
+                                  style: theme.textTheme.bodyMedium?.copyWith(color: tk.textMuted),
+                                ),
                               ),
                             const SizedBox(height: 24),
                             Wrap(
@@ -399,7 +425,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                             ? t.fileSources.read
                             : progress.mode == PublicationMode.listening
                             ? t.fileSources.listen
-                            : t.fileSources.play,
+                            : t.fileSources.continueWatching,
                         subtitle: progress.finished
                             ? t.fileSources.finished
                             : progress.mode == PublicationMode.reading
@@ -408,7 +434,12 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                         progress: progress.fraction,
                         icon: progress.mode == PublicationMode.reading
                             ? Symbols.menu_book_rounded
-                            : Symbols.headphones_rounded,
+                            : progress.mode == PublicationMode.listening
+                            ? Symbols.headphones_rounded
+                            : Symbols.movie_rounded,
+                        onTap: progress.mode == PublicationMode.watching
+                            ? () => sourceAction(context, () => _play(_entry.files))
+                            : null,
                         trailing: AppMenuButton<String>(
                           icon: const AppIcon(Symbols.more_vert_rounded),
                           tooltip: t.fileSources.timePosition,
