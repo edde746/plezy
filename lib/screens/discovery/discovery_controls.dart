@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
 import '../../focus/focusable_button.dart';
@@ -96,20 +95,6 @@ class _DiscoverySwipeCardState extends State<DiscoverySwipeCard> {
           disableScale: true,
           borderRadius: tokens(context).radiusLg,
           onSelect: widget.onDetails,
-          onKeyEvent: (node, event) {
-            if (!node.hasPrimaryFocus || MediaQuery.accessibleNavigationOf(context)) return KeyEventResult.ignored;
-            final key = event.logicalKey;
-            if (key != LogicalKeyboardKey.arrowLeft && key != LogicalKeyboardKey.arrowRight) {
-              return KeyEventResult.ignored;
-            }
-            // A held direction must never consume a deck. Repeats and key-up
-            // are swallowed even while persistence is busy or a new card loads.
-            if (event is KeyDownEvent && widget.canSwipe) {
-              final towardSave = rtl ? key == LogicalKeyboardKey.arrowLeft : key == LogicalKeyboardKey.arrowRight;
-              (towardSave ? widget.onSave : widget.onSkip)();
-            }
-            return KeyEventResult.handled;
-          },
           child: MouseRegion(
             cursor: widget.onDetails == null ? MouseCursor.defer : SystemMouseCursors.click,
             child: GestureDetector(
@@ -199,7 +184,7 @@ class DiscoveryActionBar extends StatelessWidget {
     final hint = MediaQuery.accessibleNavigationOf(context)
         ? t.discover.findNext.chooseHint
         : keyboard
-        ? t.discover.findNext.remoteHint
+        ? t.discover.findNext.controlsHelp
         : t.discover.findNext.swipeHint;
     final theme = Theme.of(context);
     return ColoredBox(
@@ -325,43 +310,49 @@ class DiscoveryActionBar extends StatelessWidget {
   );
 }
 
-Future<void> showDiscoveryHelp(BuildContext context) => OverlaySheetController.showAdaptive<void>(
-  context,
-  builder: (sheetContext) => SingleChildScrollView(
-    padding: const EdgeInsets.all(24),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        Text(t.discover.findNext.howItWorks, style: Theme.of(sheetContext).textTheme.titleLarge),
-        const SizedBox(height: 16),
-        Text(t.discover.findNext.chooseHint),
-        const SizedBox(height: 16),
-        const DiscoverySwipeHints(),
-        const SizedBox(height: 8),
-        Text(t.discover.findNext.swipeHint),
-        const SizedBox(height: 16),
-        Text(t.discover.findNext.notNow, style: Theme.of(sheetContext).textTheme.titleSmall),
-        Text(t.discover.findNext.notNowHelp),
-        const SizedBox(height: 16),
-        Text(t.common.save, style: Theme.of(sheetContext).textTheme.titleSmall),
-        Text(t.discover.findNext.saveHelp),
-        const SizedBox(height: 16),
-        Text(t.discover.findNext.details, style: Theme.of(sheetContext).textTheme.titleSmall),
-        Text(t.discover.findNext.openHelp),
-        const SizedBox(height: 16),
-        Text(t.discover.findNext.controlsHelp),
-        const SizedBox(height: 8),
-        Text(t.discover.findNext.remoteHint),
-        const SizedBox(height: 16),
-        Align(
-          alignment: AlignmentDirectional.centerEnd,
-          child: FocusableButton(
-            onPressed: () => Navigator.of(sheetContext).pop(),
-            child: FilledButton(onPressed: () => Navigator.of(sheetContext).pop(), child: Text(t.common.close)),
+Future<void> showDiscoveryHelp(BuildContext context) {
+  final showGestureDirections =
+      !PlatformDetector.isTV() &&
+      !InputModeTracker.isKeyboardMode(context) &&
+      !MediaQuery.accessibleNavigationOf(context);
+  return OverlaySheetController.showAdaptive<void>(
+    context,
+    builder: (sheetContext) => SingleChildScrollView(
+      padding: const EdgeInsets.all(24),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(t.discover.findNext.howItWorks, style: Theme.of(sheetContext).textTheme.titleLarge),
+          const SizedBox(height: 16),
+          Text(t.discover.findNext.chooseHint),
+          if (showGestureDirections) ...[
+            const SizedBox(height: 16),
+            const DiscoverySwipeHints(),
+            const SizedBox(height: 8),
+            Text(t.discover.findNext.swipeHint),
+          ],
+          const SizedBox(height: 16),
+          Text(t.discover.findNext.notNow, style: Theme.of(sheetContext).textTheme.titleSmall),
+          Text(t.discover.findNext.notNowHelp),
+          const SizedBox(height: 16),
+          Text(t.common.save, style: Theme.of(sheetContext).textTheme.titleSmall),
+          Text(t.discover.findNext.saveHelp),
+          const SizedBox(height: 16),
+          Text(t.discover.findNext.details, style: Theme.of(sheetContext).textTheme.titleSmall),
+          Text(t.discover.findNext.openHelp),
+          const SizedBox(height: 16),
+          Text(t.discover.findNext.controlsHelp),
+          const SizedBox(height: 16),
+          Align(
+            alignment: AlignmentDirectional.centerEnd,
+            child: FocusableButton(
+              onPressed: () => Navigator.of(sheetContext).pop(),
+              child: FilledButton(onPressed: () => Navigator.of(sheetContext).pop(), child: Text(t.common.close)),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     ),
-  ),
-);
+  );
+}
