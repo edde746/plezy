@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'dart:math' as math;
 
 import 'package:drift/drift.dart';
 import 'package:drift/native.dart';
@@ -23,7 +24,7 @@ class SourceDatabase extends GeneratedDatabase {
   }
 
   @override
-  int get schemaVersion => 7;
+  int get schemaVersion => 8;
   @override
   Iterable<TableInfo<Table, Object?>> get allTables => const [];
   @override
@@ -43,7 +44,8 @@ class SourceDatabase extends GeneratedDatabase {
         'CREATE TABLE events (profile TEXT NOT NULL, id TEXT NOT NULL, key TEXT NOT NULL, payload TEXT NOT NULL, kind TEXT NOT NULL, created INTEGER NOT NULL, pending INTEGER NOT NULL, PRIMARY KEY(profile,id))',
         'CREATE INDEX events_pending ON events(profile,pending,created)',
         'CREATE TABLE annotations (profile TEXT NOT NULL, id TEXT NOT NULL, entry TEXT NOT NULL, payload TEXT NOT NULL, PRIMARY KEY(profile,id))',
-        'CREATE TABLE downloads (profile TEXT NOT NULL, key TEXT NOT NULL, path TEXT NOT NULL, fingerprint TEXT NOT NULL, bytes INTEGER NOT NULL, complete INTEGER NOT NULL, PRIMARY KEY(profile,key))',
+        'CREATE TABLE downloads (profile TEXT NOT NULL, key TEXT NOT NULL, path TEXT NOT NULL, fingerprint TEXT NOT NULL, bytes INTEGER NOT NULL, complete INTEGER NOT NULL, source_id TEXT NOT NULL DEFAULT \'\', file_payload TEXT NOT NULL DEFAULT \'{}\', state TEXT NOT NULL DEFAULT \'completed\', updated INTEGER NOT NULL DEFAULT 0, reserved_bytes INTEGER NOT NULL DEFAULT 0, label TEXT NOT NULL DEFAULT \'\', PRIMARY KEY(profile,key))',
+        'CREATE INDEX downloads_profile_state ON downloads(profile,state,updated)',
         'CREATE TABLE preferences (profile TEXT NOT NULL, key TEXT NOT NULL, payload TEXT NOT NULL, PRIMARY KEY(profile,key))',
       ]) {
         await customStatement(sql);
@@ -113,6 +115,19 @@ class SourceDatabase extends GeneratedDatabase {
         }
       }
       if (from < 7) await _createEntrySearchIndex();
+      if (from < 8) {
+        await customStatement("ALTER TABLE downloads ADD COLUMN source_id TEXT NOT NULL DEFAULT ''");
+        await customStatement("ALTER TABLE downloads ADD COLUMN file_payload TEXT NOT NULL DEFAULT '{}'");
+        await customStatement("ALTER TABLE downloads ADD COLUMN state TEXT NOT NULL DEFAULT 'completed'");
+        await customStatement('ALTER TABLE downloads ADD COLUMN updated INTEGER NOT NULL DEFAULT 0');
+        await customStatement('ALTER TABLE downloads ADD COLUMN reserved_bytes INTEGER NOT NULL DEFAULT 0');
+        await customStatement("ALTER TABLE downloads ADD COLUMN label TEXT NOT NULL DEFAULT ''");
+        await customStatement('CREATE INDEX downloads_profile_state ON downloads(profile,state,updated)');
+        // Older partial rows have no persisted file descriptor, so they cannot
+        // be reconstructed as queue jobs. Leave their partial files available
+        // for a later explicit retry but keep them out of the actionable queue.
+        await customStatement("UPDATE downloads SET state='legacy',updated=? WHERE complete=0", [DateTime.now().millisecondsSinceEpoch]);
+      }
     },
   );
 
@@ -159,6 +174,9 @@ class SourceRepository {
   final Future<String> Function(String) protect;
   final Future<String?> Function(String) reveal;
   static const _uuid = Uuid();
+  static const defaultDownloadQuotaBytes = 10 * 1024 * 1024 * 1024;
+  static const minimumDownloadQuotaBytes = 256 * 1024 * 1024;
+  static const maximumDownloadQuotaBytes = 1024 * 1024 * 1024 * 1024;
   final _removedProfiles = <String>{};
   bool? _ftsSearchAvailable;
   void _writable(String profile) {
@@ -816,16 +834,109 @@ class SourceRepository {
     String fingerprint,
     int bytes, {
     bool complete = true,
+    int? reservedBytes,
   }) {
     _writable(profile);
-    return database.customStatement('INSERT OR REPLACE INTO downloads VALUES (?,?,?,?,?,?)', [
-      profile,
-      key,
-      path,
-      fingerprint,
-      bytes,
-      complete ? 1 : 0,
-    ]);
+    return database.customStatement(
+      'INSERT INTO downloads(profile,key,path,fingerprint,bytes,complete,source_id,file_payload,state,updated,reserved_bytes,label) '
+      'VALUES (?,?,?,?,?,? ,\'\',\'{}\',?,?,?,\'\') ON CONFLICT(profile,key) DO UPDATE SET '
+      'path=excluded.path,fingerprint=excluded.fingerprint,bytes=excluded.bytes,complete=excluded.complete,'
+      'state=excluded.state,updated=excluded.updated,reserved_bytes=MAX(excluded.reserved_bytes,excluded.bytes),'
+      'source_id=CASE WHEN excluded.source_id=\'\' THEN downloads.source_id ELSE excluded.source_id END,'
+      'file_payload=CASE WHEN excluded.file_payload=\'{}\' THEN downloads.file_payload ELSE excluded.file_payload END,'
+      'label=CASE WHEN excluded.label=\'\' THEN downloads.label ELSE excluded.label END',
+      [
+        profile,
+        key,
+        path,
+        fingerprint,
+        bytes,
+        complete ? 1 : 0,
+        complete ? 'completed' : 'running',
+        DateTime.now().millisecondsSinceEpoch,
+        reservedBytes ?? bytes,
+      ],
+    );
+  }
+
+  Future<int> downloadQuota(String profile) async {
+    final value = sourceInt((await preference(profile, 'publication-download-quota-v1'))['bytes']);
+    return (value ?? defaultDownloadQuotaBytes).clamp(minimumDownloadQuotaBytes, maximumDownloadQuotaBytes).toInt();
+  }
+
+  Future<void> setDownloadQuota(String profile, int bytes) async {
+    _writable(profile);
+    if (bytes < minimumDownloadQuotaBytes || bytes > maximumDownloadQuotaBytes) {
+      throw const SourceException(SourceFailure.invalidData);
+    }
+    await savePreference(profile, 'publication-download-quota-v1', {'bytes': bytes});
+  }
+
+  Future<({int usedBytes, int reservedBytes})> downloadStorageUsage(String profile) async {
+    final row = await database.customSelect(
+      'SELECT COALESCE(SUM(bytes),0) AS used,COALESCE(SUM(MAX(bytes,reserved_bytes)),0) AS reserved '
+      'FROM downloads WHERE profile=?',
+      variables: [Variable(profile)],
+    ).getSingle();
+    return (usedBytes: row.read<int>('used'), reservedBytes: row.read<int>('reserved'));
+  }
+
+  /// Atomically reserves quota before a transfer starts or grows its reservation.
+  /// Completed copies and concurrent reservations are included in the same cap.
+  Future<void> reserveDownload({
+    required String profile,
+    required String key,
+    required String sourceId,
+    required PublicationFile file,
+    required String path,
+    required int reservedBytes,
+    required int bytes,
+    required String state,
+    required String label,
+  }) async {
+    _writable(profile);
+    if (reservedBytes < 0 || bytes < 0 || !const {'queued', 'running', 'paused', 'failed', 'completed'}.contains(state)) {
+      throw const SourceException(SourceFailure.invalidData);
+    }
+    await database.transaction(() async {
+      _writable(profile);
+      final quota = await downloadQuota(profile);
+      final row = await database.customSelect(
+        'SELECT COALESCE(SUM(MAX(bytes,reserved_bytes)),0) AS used FROM downloads WHERE profile=? AND key<>?',
+        variables: [Variable(profile), Variable(key)],
+      ).getSingle();
+      if (row.read<int>('used') + math.max(reservedBytes, bytes) > quota) {
+        throw const SourceException(SourceFailure.quotaExceeded);
+      }
+      await database.customStatement(
+        'INSERT INTO downloads(profile,key,path,fingerprint,bytes,complete,source_id,file_payload,state,updated,reserved_bytes,label) '
+        'VALUES (?,?,?,?,?,0,?,?,?,?,?,?) ON CONFLICT(profile,key) DO UPDATE SET '
+        'path=excluded.path,fingerprint=excluded.fingerprint,bytes=excluded.bytes,complete=0,source_id=excluded.source_id,'
+        'file_payload=excluded.file_payload,state=excluded.state,updated=excluded.updated,'
+        'reserved_bytes=excluded.reserved_bytes,label=excluded.label',
+        [
+          profile,
+          key,
+          path,
+          file.fingerprint,
+          bytes,
+          sourceId,
+          jsonEncode(file.toJson()),
+          state,
+          DateTime.now().millisecondsSinceEpoch,
+          math.max(reservedBytes, bytes),
+          label,
+        ],
+      );
+    });
+  }
+
+  Future<void> setDownloadState(String profile, String key, String state) async {
+    _writable(profile);
+    await database.customStatement(
+      'UPDATE downloads SET state=?,updated=? WHERE profile=? AND key=? AND complete=0',
+      [state, DateTime.now().millisecondsSinceEpoch, profile, key],
+    );
   }
 
   Future<Map<String, dynamic>?> download(String profile, String key) async =>
