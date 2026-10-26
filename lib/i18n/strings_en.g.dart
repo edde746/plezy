@@ -8379,6 +8379,9 @@ class Translations$sourceSetup$en {
 	/// en: 'Enter the same ID for this item on each device. Use a stable shared identifier or generate one and copy it to the matching item. Progress pairs only when the edition file types, sizes, and order match. Blank removes this mapping.'
 	String get sharedEntryPairHelp => 'Enter the same ID for this item on each device. Use a stable shared identifier or generate one and copy it to the matching item. Blank removes this mapping.';
 
+	/// en: 'This shared item ID is already paired with another item in this library. Choose a different ID.'
+	String get sharedEntryConflict => 'This shared item ID is already paired with another item in this library. Choose a different ID.';
+
 	/// en: 'Shared item ID'
 	String get sharedEntryId => 'Shared item ID';
 
