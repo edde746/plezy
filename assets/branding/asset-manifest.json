@@ -2,7 +2,7 @@
   "schema": 1,
   "source": "assets/branding/plezyng-approved.png",
   "source_sha256": "05b148e47d322debe3501a552c932b5b6c8b90a488bf71262404bf13b4251e4d",
-  "config_sha256": "ad12796595bbf26f13b47281185e404eb0f40b088a947f6862861c4b6ef71e03",
+  "config_sha256": "4e9f470fccec00276f61bed01b11b10868a534bfcf5fa27f3351a892d238b50e",
   "generator_sha256": "e9b77c4da309ad50a5e6eefdd5841d11c7b28fcc65b5f783d1abde878ccc7dbf",
   "exports": {
     "android/app/src/main/res/drawable-hdpi/ic_stat_notification.png": "64e2f71709bcfa2f9e85ac63ddeaa472924f43fd74165302646d46b76868dfde",
@@ -545,6 +545,7 @@
     "tvos/Runner/Assets.xcassets/AppIcon.brandassets/Top Shelf Image Wide.imageset/top-shelf-wide.png": "2579434d3c1327bd84ccf7f95fd4b4c5d868fb551d7e92f3278f5193b7810ceb",
     "tvos/Runner/Assets.xcassets/AppIcon.brandassets/Top Shelf Image Wide.imageset/top-shelf-wide@2x.png": "f4aacc62d4f9580f454b2edd066ae533f8a68246cb08b11fe0fe222c694f2765",
     "tvos/Runner/Assets.xcassets/AppIcon.brandassets/Top Shelf Image.imageset/top-shelf.png": "664c990ab343a6ee128ab8dca841ed6287d48498a81fa72037db5ea7bfa3783b",
+    "webos/meta/icon.png": "47a83662a03f8a6959193bd571a3127b4a4a6f9d05351851e210d3cf2d040737",
     "windows/msix/assets/SplashScreen.png": "9eca797ef91c926ea7500d9290051a4bb613a8bb35a71da1991d3bcaebaa2a97",
     "windows/msix/assets/Square150x150Logo.png": "873288ecbda0a9d59088747d683a388ceb5a7d05eef6391d471fa692ee0986af",
     "windows/msix/assets/Square150x150Logo.scale-200.png": "cc8773d54bbd4e068881ec864c44fcae8003bee9a47f7e3f9d1a1902a0c2bd21",
