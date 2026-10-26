@@ -6,13 +6,13 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
-import '../../widgets/app_icon.dart';
-import '../../widgets/focusable_list_tile.dart';
 import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/subtitles/subtitle_search_result.dart';
 import '../../services/open_subtitles_client.dart';
 import '../../utils/language_codes.dart';
+import '../../widgets/app_icon.dart';
+import '../../widgets/focusable_list_tile.dart';
 import 'source_widgets.dart';
 
 class StandaloneSubtitleSearchSheet extends StatefulWidget {
