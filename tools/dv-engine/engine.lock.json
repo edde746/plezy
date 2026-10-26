@@ -1,0 +1,30 @@
+{
+  "schema_version": 1,
+  "name": "plezyng-dv-experimental-linux-gl",
+  "status": "experimental-unqualified",
+  "base_image": "docker.io/library/ubuntu:24.04@sha256:33ceb71981b602c1a7443a53469e4dba065f7503eab3078a2d7a57a2ab987517",
+  "sources": {
+    "ffmpeg": {
+      "url": "https://github.com/FFmpeg/FFmpeg.git",
+      "commit": "46f23be8b1976ed4c8ec85584daabcf0e57a7b9e"
+    },
+    "libplacebo": {
+      "url": "https://github.com/haasn/libplacebo.git",
+      "commit": "275f7dea27924cdd34ab2e6c20e448b6bc4fab65"
+    },
+    "mpv": {
+      "url": "https://github.com/kakulukia/mpv.git",
+      "commit": "16563d120f3260cdc0beb1b07f199818fc32dd8c"
+    }
+  },
+  "upstream_fel_merge": "99b4c12cccb4d8d3f72b41944cb6c640e2156650",
+  "render_api_proposal": "https://github.com/mpv-player/mpv/pull/18607",
+  "render_api": "opengl-next",
+  "production_patch_parity": false,
+  "qualification": {
+    "real_fel_clip": "not_tested",
+    "creative_metadata": "not_tested",
+    "physical_dv_output": "not_tested",
+    "app_integration": "not_tested"
+  }
+}
