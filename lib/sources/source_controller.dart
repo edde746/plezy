@@ -673,6 +673,14 @@ class SourceController extends ChangeNotifier {
     requireSession(epoch);
   }
 
+  Future<void> removeDownloadJob(String downloadKey) async {
+    await ready;
+    requireSession();
+    final epoch = generation, profile = profileId!;
+    await downloads.removeQueuedJob(profile, downloadKey);
+    requireSession(epoch);
+  }
+
   Future<String?> sharedEntryMapping(SourceEntry entry) async {
     await ready;
     requireSession();
