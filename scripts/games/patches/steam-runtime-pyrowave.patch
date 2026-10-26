@@ -22,7 +22,7 @@ index 37866c2..e3747c9 100644
              .maxWidth = 1920,
              .maxHeight = 1080,
              .maxFps = 60,
-@@ -118,12 +119,14 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
+@@ -118,11 +119,13 @@ static void OnNegotiationInit(IHS_SessionChannel *channel, const CNegotiationIni
      for (int i = 0; i < message->n_supported_video_codecs; i++) {
          IHS_SessionLog(session, IHS_LogLevelInfo, "Negotiation", "Host offers video codec %d%s",
                         message->supported_video_codecs[i],
@@ -30,7 +30,6 @@ index 37866c2..e3747c9 100644
                         message->supported_video_codecs[i] == k_EStreamVideoCodecHEVC ? " (HEVC)" :
                         message->supported_video_codecs[i] == k_EStreamVideoCodecH264 ? " (H264)" : "");
      }
- 
      EStreamAudioCodec audioCodec = k_EStreamAudioCodecNone;
      EStreamVideoCodec videoCodec = k_EStreamVideoCodecNone;
 +    bool pyrowaveSelected = false;
