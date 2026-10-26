@@ -392,7 +392,12 @@ class _FiltersBottomSheetState extends State<FiltersBottomSheet> {
                   ),
                 ),
               if (summary != null) const SizedBox(width: 8),
-              const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              AppIcon(
+                Directionality.of(context) == TextDirection.rtl
+                    ? Symbols.chevron_left_rounded
+                    : Symbols.chevron_right_rounded,
+                fill: 1,
+              ),
             ],
           ),
           onTap: () => unawaited(_openFilter(filter)),

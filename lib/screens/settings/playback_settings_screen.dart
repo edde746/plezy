@@ -1041,7 +1041,9 @@ class _PrerollItemPickerDialogState extends State<_PrerollItemPickerDialog> {
       title: Text(t.settings.prerollItemPicker),
       content: SizedBox(
         width: double.maxFinite,
-        height: 400,
+        height: (MediaQuery.sizeOf(context).height - MediaQuery.viewInsetsOf(context).bottom - 220)
+            .clamp(80.0, 560.0)
+            .toDouble(),
         child: _items == null
             ? Center(child: _error != null ? Text(_error!) : const CircularProgressIndicator())
             : ListView.builder(

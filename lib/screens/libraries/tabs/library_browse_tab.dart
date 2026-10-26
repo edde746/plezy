@@ -1123,6 +1123,9 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
 
   Widget _buildBrowseOptionsSheet(BuildContext sheetContext) {
     final controller = OverlaySheetController.of(sheetContext);
+    final inlineEndChevron = Directionality.of(sheetContext) == TextDirection.rtl
+        ? Symbols.chevron_left_rounded
+        : Symbols.chevron_right_rounded;
     return BottomSheetPageScaffold(
       title: t.libraries.libraryOptions,
       icon: Symbols.tune_rounded,
@@ -1135,7 +1138,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
             leading: const AppIcon(Symbols.category_rounded, fill: 1),
             title: Text(t.libraries.groupings.title),
             subtitle: Text(_getGroupingLabel(_selectedGrouping)),
-            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+            trailing: AppIcon(inlineEndChevron, fill: 1),
             onTap: () => _showGroupingOptionsPage(controller),
           ),
           if (_isFiltersChipVisible)
@@ -1146,7 +1149,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
                     ? t.libraries.filters
                     : t.libraries.filtersWithCount(count: _activeFilterFieldCount),
               ),
-              trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              trailing: AppIcon(inlineEndChevron, fill: 1),
               onTap: () => _showFiltersOptionsPage(controller),
             ),
           if (_isSortChipVisible)
@@ -1154,7 +1157,7 @@ class _LibraryBrowseTabState extends BaseLibraryTabState<MediaItem, LibraryBrows
               leading: const AppIcon(Symbols.sort_rounded, fill: 1),
               title: Text(t.libraries.sort),
               subtitle: _selectedSort == null ? null : Text(_selectedSort!.title),
-              trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+              trailing: AppIcon(inlineEndChevron, fill: 1),
               onTap: () => _showSortOptionsPage(controller),
             ),
         ],

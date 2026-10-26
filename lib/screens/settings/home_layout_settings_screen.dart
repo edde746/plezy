@@ -371,6 +371,33 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
   Widget _maybeDraggable({required bool unlocked, required int index, required Widget child}) =>
       unlocked ? ReorderableDragStartListener(index: index, child: child) : child;
 
+  /// Keeps the row controls beside their title when there's room, then gives
+  /// them a full-width line on narrow screens or when text is enlarged. The
+  /// multi-checkbox controls otherwise squeeze the title and subtitle into a
+  /// very narrow column on phones.
+  Widget _responsiveControlTile({Widget? leading, required Widget title, Widget? subtitle, required Widget controls}) {
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        final enlargedText = MediaQuery.textScalerOf(context).scale(14) > 18;
+        final stackControls = constraints.maxWidth < 520 || enlargedText;
+        if (!stackControls) {
+          return ListTile(dense: true, leading: leading, title: title, subtitle: subtitle, trailing: controls);
+        }
+
+        return Column(
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            ListTile(dense: true, leading: leading, title: title, subtitle: subtitle),
+            Padding(
+              padding: EdgeInsetsDirectional.only(start: leading == null ? 16 : 56, end: 16, bottom: 8),
+              child: controls,
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   /// A tappable padlock — open means unlocked (rows can be dragged by
   /// clicking anywhere on them), closed means locked (a whole-row click
   /// does nothing, so the Hero/Library checkboxes underneath can be
@@ -849,11 +876,10 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
                         child: _maybeDraggable(
                           unlocked: _organizerReorderUnlocked,
                           index: indexed.$1,
-                          child: ListTile(
-                            dense: true,
+                          child: _responsiveControlTile(
                             leading: const AppIcon(Symbols.drag_indicator_rounded),
                             title: Text(indexed.$2.label),
-                            trailing: Wrap(
+                            controls: Wrap(
                               spacing: 2,
                               crossAxisAlignment: WrapCrossAlignment.center,
                               children: [
@@ -1013,11 +1039,10 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
             onReorder: (keys) => _applyLibraryOrder(library, keys),
           )
         else
-          ListTile(
-            dense: true,
+          _responsiveControlTile(
             title: Text(t.homeLayout.continueWatching),
             subtitle: Text(t.homeLayout.continueWatchingLibraryDescription),
-            trailing: Wrap(
+            controls: Wrap(
               spacing: 2,
               crossAxisAlignment: WrapCrossAlignment.center,
               children: [
@@ -1095,12 +1120,11 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
                   child: _maybeDraggable(
                     unlocked: _libraryReorderUnlocked[library.globalKey] ?? true,
                     index: index,
-                    child: ListTile(
-                      dense: true,
+                    child: _responsiveControlTile(
                       leading: const AppIcon(Symbols.drag_indicator_rounded),
                       title: Text(rows[index].title),
                       subtitle: rows[index].deletable ? Text(t.homeLayout.customPlexRow) : null,
-                      trailing: Wrap(
+                      controls: Wrap(
                         spacing: 2,
                         crossAxisAlignment: WrapCrossAlignment.center,
                         children: [

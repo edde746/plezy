@@ -11,6 +11,7 @@ import '../../i18n/strings.g.dart';
 import '../../models/subtitles/subtitle_search_result.dart';
 import '../../services/open_subtitles_client.dart';
 import '../../utils/language_codes.dart';
+import '../../widgets/app_icon.dart';
 
 class StandaloneSubtitleSearchSheet extends StatefulWidget {
   const StandaloneSubtitleSearchSheet({

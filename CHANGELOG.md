@@ -93,7 +93,7 @@
 - Align audiobook sync conflicts, playback input dialogs and source menus with shared Mono rows, focus and compact overflow patterns.
 - Refresh sign-in with current plezyng.app product artwork bundled for offline use, including a high-resolution variant and responsive login choices and QR sizing for phone, desktop, TV and 4K screens.
 - Keep SMB setup copy localized and show the Videos shelf by default only for local and SMB sources.
-- Polish catalog, source, TV and cross-media discovery surfaces to match Plezy's Mono focus, artwork, responsive layout and localized error patterns.
+- Polish catalog, source, TV and cross-media discovery surfaces with Plezy's Mono focus and icon styles, RTL-aware navigation, accessible controls, responsive layouts, and localized error handling.
 - Complete localization coverage across settings, playback, downloads and accessibility labels; improve right-to-left focus navigation, numeric input, localized units and native permission prompts.
 - Mirror navigation affordances and tree controls for right-to-left reading order.
 - Route the Google Drive source label through localization.
