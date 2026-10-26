@@ -9,6 +9,7 @@ import 'package:provider/provider.dart';
 import '../../discovery/discovery_choice.dart';
 import '../../focus/focusable_button.dart';
 import '../../discovery/discovery_store.dart';
+import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
 import '../../i18n/presentation_formats.dart';
 import '../../media/ids.dart';
@@ -1155,7 +1156,7 @@ class _FindNextScreenState extends State<FindNextScreen> {
     title: isolateDisplayText(choice.title),
     subtitle: [choice.subtitle, choice.reason].where((text) => text.isNotEmpty).map(isolateDisplayText).join(' · '),
     facts: [_typeLabel(choice), _durationLabel(choice), if (choice.offlineReady) t.fileSources.offline].join(' · '),
-    summary: choice.summary,
+    summary: isolateDisplayText(choice.summary),
     artwork: _artwork(choice),
     artworkAspectRatio: _artworkAspectRatio(choice),
     enabled: !_committing,
