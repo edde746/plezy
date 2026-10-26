@@ -637,10 +637,14 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
             icon: const AppIcon(Symbols.search_rounded),
           ),
         if (source?.options['syncLibrary']?.trim().isNotEmpty == true && !_entry.isFolder && !_entry.id.startsWith('group:'))
-          IconButton(
-            tooltip: t.sourceSetup.sharedEntryPair,
+          FocusableButton(
+            autoScroll: false,
             onPressed: _busy ? null : () => sourceAction(context, _editSharedEntryMapping),
-            icon: const AppIcon(Symbols.link_rounded),
+            child: IconButton(
+              tooltip: t.sourceSetup.sharedEntryPair,
+              onPressed: _busy ? null : () => sourceAction(context, _editSharedEntryMapping),
+              icon: const AppIcon(Symbols.link_rounded),
+            ),
           ),
         IconButton(
           tooltip: t.audiobook.syncTitle,
@@ -752,15 +756,6 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                                     onPressed: () => sourceAction(context, _openTrailer),
                                     icon: const AppIcon(Symbols.movie_rounded),
                                     label: Text(t.tooltips.playTrailer),
-                                  ),
-                                if (source?.options['syncLibrary']?.trim().isNotEmpty == true)
-                                  FocusableButton(
-                                    onPressed: _busy ? null : () => sourceAction(context, _editSharedEntryMapping),
-                                    child: TextButton.icon(
-                                      onPressed: _busy ? null : () => sourceAction(context, _editSharedEntryMapping),
-                                      icon: const AppIcon(Symbols.link_rounded),
-                                      label: Text(t.sourceSetup.sharedEntryPair),
-                                    ),
                                   ),
                               ],
                             ),

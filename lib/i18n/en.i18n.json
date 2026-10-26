@@ -3292,7 +3292,7 @@
     "recoveryHelp": "Export a recent encrypted copy before moving or repairing sync data. Imports merge with current state; they never replace local sync history. Keep the sync code separately.",
     "recoveryExport": "Export encrypted recovery file",
     "recoveryImport": "Import encrypted recovery file",
-    "recoveryImportConfirm": "Merge this encrypted recovery file with current reading positions and notes? Existing history will be retained.",
+    "recoveryImportConfirm": "Merge this encrypted recovery file with current reading positions and notes? Existing history will be retained. Shared library and item IDs are not included; set matching IDs on every device before importing.",
     "recoveryExported": "Encrypted recovery file saved.",
     "recoveryImported": "Recovery data merged."
   },

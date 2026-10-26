@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Improve source browsing and pairing with locale-aware metrics, clearer removal guidance, TV focus and responsive dialogs for offline storage and sync recovery.
+- Improve source browsing and pairing with locale-aware metrics, clearer download-removal and recovery-import guidance, TV focus and responsive dialogs.
 - Require an explicit confirmation before exclusive encrypted sync pauses Audiobookshelf progress and bookmark sync.
 - Isolate provider sync failures by source with bounded exponential retry backoff, retaining failed events while unrelated pending work proceeds.
 - Provision pinned Chromium and make the existing publication reader browser suite required in the private JIT CI job.

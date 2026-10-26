@@ -8064,8 +8064,8 @@ class Translations$audiobook$en {
 	/// en: 'Import encrypted recovery file'
 	String get recoveryImport => 'Import encrypted recovery file';
 
-	/// en: 'Merge this encrypted recovery file with current reading positions and notes? Existing history will be retained.'
-	String get recoveryImportConfirm => 'Merge this encrypted recovery file with current reading positions and notes? Existing history will be retained.';
+	/// en: 'Merge this encrypted recovery file with current reading positions and notes? Existing history will be retained. Shared library and item IDs are not included; set matching IDs on every device before importing.'
+	String get recoveryImportConfirm => 'Merge this encrypted recovery file with current reading positions and notes? Existing history will be retained. Shared library and item IDs are not included; set matching IDs on every device before importing.';
 
 	/// en: 'Encrypted recovery file saved.'
 	String get recoveryExported => 'Encrypted recovery file saved.';
