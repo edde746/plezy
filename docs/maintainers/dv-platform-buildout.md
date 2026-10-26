@@ -242,6 +242,14 @@ not open or merge a PR until that PR route is also JIT-only. No jobs were
 dispatched, and no shared group, broker allowlist, runner service, or other
 worktree was changed during this work.
 
+This is only the Dolby workflow route. The org-wide inventory tracked in
+[Packer PR #9](https://github.com/snapetech-org/packer/pull/9) counts 407
+workflow files and 779 jobs across 60 repositories; 667 job definitions still
+contain hosted runner labels. Plezy's [shared-JIT PR #26](https://github.com/snapetech-org/PlezyNG/pull/26)
+covers three trusted release jobs, not the remaining Plezy or org-wide routes.
+Keep each lane blocked until its exact private JIT route and trust boundary are
+verified.
+
 Private-JIT validation checks (blocked until route provisioning):
 
 ```bash
