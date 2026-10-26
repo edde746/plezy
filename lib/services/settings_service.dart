@@ -1943,6 +1943,8 @@ class SettingsService extends BaseSharedPreferencesService {
     enableCompanionRemoteServer,
     startInFullscreen,
     exitFullscreenOnPlayerClose,
+    enterFullscreenOnPlaybackStart,
+    extendVideoIntoDisplayCutout,
   ];
 
   /// Group three: reset but *not* exported — device-local paths, endpoints and
