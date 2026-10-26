@@ -35,7 +35,10 @@ Before packaging, the build checks `dovi_split`, Dolby Vision stream groups,
 libplacebo enhancement-frame/NLQ interfaces, the `gpu-next` VO, and the new render
 API. It decodes a red PPM through libmpv and reads its pixels back through a
 surfaceless OpenGL ES gpu-next framebuffer on Mesa software rendering. It runs
-the upstream mpv and libplacebo tests. These checks do not prove FEL pixel fidelity
+the upstream mpv and libplacebo tests. Six synthetic composer vectors also compare
+positive/negative/zero/clamped residuals against precomposed values. A local patch
+rejects failed EL sampling instead of continuing BL-only. These checks do not prove
+complete FEL pixel fidelity
 or a hardware display's output. No media samples or credentials are uploaded.
 
 ## Run the extracted bundle

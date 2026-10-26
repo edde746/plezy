@@ -8,6 +8,8 @@
 #include <mpv/client.h>
 #include <mpv/render_gl.h>
 
+int test_fel_residual(void);
+
 static void* get_proc(void* opaque, const char* name) {
   (void)opaque;
   return (void*)eglGetProcAddress(name);
@@ -116,6 +118,9 @@ cleanup:
   if (result) fprintf(stderr, "Embedded render smoke failed (EGL error 0x%x)\n", eglGetError());
   if (renderer) mpv_render_context_free(renderer);
   if (mpv) mpv_terminate_destroy(mpv);
+  // The mpv renderer is gone: only one libplacebo context may own this GL
+  // context at a time. Reuse it now for the direct composer integration test.
+  if (result == 0) result = test_fel_residual();
   if (context != EGL_NO_CONTEXT) {
     if (framebuffer) glDeleteFramebuffers(1, &framebuffer);
     if (texture) glDeleteTextures(1, &texture);

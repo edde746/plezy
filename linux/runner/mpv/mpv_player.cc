@@ -27,6 +27,7 @@
 #include <cstdlib>
 #include <cstring>
 
+#include "experimental_render_api.h"
 #include "sanitize_utf8.h"
 
 namespace {
@@ -365,8 +366,9 @@ bool MpvPlayer::Initialize() {
     // description and is applied and withdrawn in RunPendingHdrOutput instead.
     // See applied_tone_mapping_ in mpv_player.h for why it cannot be global.
     mpv_set_option_string(mpv_, "hdr-compute-peak", "auto");
-    // Declared by vo_gpu_next only, so inert for the render API this player
-    // runs. Set anyway so the startup value agrees with what a later
+    // The legacy render API does not act on this native-output hint. The
+    // experimental gpu-next embedding still leaves output negotiation with
+    // our Wayland plane. Set it so the startup value agrees with what a later
     // `hdr-enabled` write puts here through SetHDREnabled.
     mpv_set_option_string(mpv_, "target-colorspace-hint", plezy::mpv_common::TargetColorspaceHint(hdr_enabled_));
   }
@@ -431,6 +433,11 @@ bool MpvPlayer::InitRenderContextForSurface(EGLDisplay display, EGLConfig config
     g_warning("MPV: Video plane provided no usable EGL display or surface");
     return false;
   }
+  const char* render_api = ExperimentalRenderApi(std::getenv("PLEZYNG_EXPERIMENTAL_RENDER_API"));
+  if (render_api == nullptr) {
+    g_warning("MPV: PLEZYNG_EXPERIMENTAL_RENDER_API must be opengl or opengl-next");
+    return false;
+  }
   if (!eglBindAPI(EGL_OPENGL_ES_API)) {
     g_warning("MPV: Failed to bind OpenGL ES API: 0x%x", eglGetError());
     return false;
@@ -442,7 +449,8 @@ bool MpvPlayer::InitRenderContextForSurface(EGLDisplay display, EGLConfig config
   // targets (mpv picks an rgba16f FBO on this path) and ES 3.1 semantics for
   // the rest.
   //
-  // It does **not** buy compute shaders. mpv refuses them on any GLES context at
+  // The legacy OpenGL backend does **not** gain compute shaders from this.
+  // That backend refuses them on any GLES context at
   // any version, by construction (`video/out/opengl/ra_gl.c:136-139` in v0.40.0):
   //
   //   // While we can handle compute shaders on GLES the spec (intentionally)
@@ -450,14 +458,14 @@ bool MpvPlayer::InitRenderContextForSurface(EGLDisplay display, EGLConfig config
   //   // mpv would require. So disable it unconditionally anyway.
   //   if (ra->glsl_es) ra->caps &= ~RA_CAP_COMPUTE;
   //
-  // So `hdr-compute-peak` is unreachable through the render API here however
+  // So `hdr-compute-peak` is unreachable through the legacy backend here however
   // new the context is - confirmed on hardware with an ES 3.2 context whose
   // glDispatchCompute and glBindImageTexture both resolve, where mpv still
   // logs "Disabling HDR peak computation (compute shaders=0)". The player-side
   // tone map therefore aims at the peak the source declares rather than one
-  // measured from the frames. Reaching it needs a desktop-GL context on the
-  // plane, which is the same architectural door as libplacebo and belongs with
-  // it rather than in a version bump.
+  // measured from the frames. The opt-in opengl-next backend instead delegates
+  // capabilities to libplacebo; its compute/precision support needs separate
+  // verification on this GLES context and must not be inferred from the version.
   //
   // EGL_CONTEXT_MINOR_VERSION needs EGL 1.5 or EGL_KHR_create_context. Where
   // neither is present eglCreateContext rejects the attribute outright, so the
@@ -567,7 +575,7 @@ bool MpvPlayer::InitRenderContextForSurface(EGLDisplay display, EGLConfig config
   gl_init_params.get_proc_address = get_opengl_proc_address;
   gl_init_params.get_proc_address_ctx = nullptr;
   mpv_render_param params[] = {
-      {MPV_RENDER_PARAM_API_TYPE, const_cast<char*>(MPV_RENDER_API_TYPE_OPENGL)},
+      {MPV_RENDER_PARAM_API_TYPE, const_cast<char*>(render_api)},
       {MPV_RENDER_PARAM_OPENGL_INIT_PARAMS, &gl_init_params},
       {MPV_RENDER_PARAM_INVALID, nullptr},
       {MPV_RENDER_PARAM_INVALID, nullptr},
@@ -600,7 +608,11 @@ bool MpvPlayer::InitRenderContextForSurface(EGLDisplay display, EGLConfig config
   mpv_render_context* candidate_gl = nullptr;
   const int error = mpv_render_context_create(&candidate_gl, mpv_, params);
   if (error < 0 || candidate_gl == nullptr) {
-    g_warning("MPV: mpv_render_context_create() failed for the video plane: %s", mpv_error_string(error));
+    g_warning("MPV: video-plane render API '%s' failed: %s", render_api, mpv_error_string(error));
+    if (std::strcmp(render_api, "opengl-next") == 0) {
+      g_warning("MPV: opengl-next requires an experimental engine implementing mpv PR #18607; "
+                "no legacy-renderer fallback was attempted");
+    }
     if (candidate_gl) mpv_render_context_free(candidate_gl);
     destroy_candidate_context();
     return false;
@@ -618,7 +630,7 @@ bool MpvPlayer::InitRenderContextForSurface(EGLDisplay display, EGLConfig config
   if (!eglMakeCurrent(display, EGL_NO_SURFACE, EGL_NO_SURFACE, EGL_NO_CONTEXT)) {
     g_warning("MPV: could not unbind the video-plane EGL context after creation: 0x%x", eglGetError());
   }
-  g_message("MPV: Render context created on the Wayland video plane");
+  g_message("MPV: Render context created on the Wayland video plane (API=%s; DV output unverified)", render_api);
   return true;
 }
 

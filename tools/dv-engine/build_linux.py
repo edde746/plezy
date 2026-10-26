@@ -70,6 +70,11 @@ def build(work: Path, jobs: int):
             raise SystemExit(f"Unpinned or unresolved submodule for {name}")
         provenance["sources"][name] = {"commit": actual, "submodules": submodules}
 
+    patch = HERE / "patches/libplacebo-reject-failed-fel.patch"
+    execute(["git", "apply", "--check", patch], cwd=source_root / "libplacebo")
+    execute(["git", "apply", patch], cwd=source_root / "libplacebo")
+    provenance["patches"] = {patch.name: hashlib.sha256(patch.read_bytes()).hexdigest()}
+
     ffmpeg = source_root / "ffmpeg"
     ffmpeg_build = work / "ffmpeg-build"
     ffmpeg_build.mkdir()
@@ -122,13 +127,14 @@ def build(work: Path, jobs: int):
     provenance["system_packages"] = execute(["dpkg-query", "-W", "-f=${Package}\t${Version}\n"], capture=True)
 
     smoke = work / "render_smoke"
-    flags = shlex.split(execute(["pkg-config", "--cflags", "--libs", "mpv", "egl", "glesv2"], capture=True))
-    execute(["cc", "-std=c11", "-Wall", "-Wextra", "-Werror", HERE / "render_smoke.c", "-o", smoke, *flags])
+    flags = shlex.split(execute(["pkg-config", "--cflags", "--libs", "mpv", "libplacebo", "egl", "glesv2"], capture=True))
+    execute(["cc", "-std=c11", "-Wall", "-Wextra", "-Werror", HERE / "render_smoke.c", HERE / "fel_smoke.c", "-o", smoke, *flags, "-lm"])
     env.update({"LIBGL_ALWAYS_SOFTWARE": "1", "EGL_PLATFORM": "surfaceless"})
     # The test asks for an ES context to match the application's surface family.
     # llvmpipe is a renderer integration check, not a real GPU/TV qualification.
     execute([smoke, work / "smoke.ppm"])
     provenance["surfaceless_gles_render_smoke"] = "passed-software-mesa"
+    provenance["synthetic_fel_vectors"] = "passed-zero-positive-negative-threshold-clamping"
     execute(["meson", "test", "-C", mpv_build, "--print-errorlogs", "--no-rebuild", "--timeout-multiplier=3"])
     execute(["meson", "test", "-C", placebo_build, "--print-errorlogs", "--no-rebuild", "--timeout-multiplier=3"])
 
@@ -141,6 +147,7 @@ def build(work: Path, jobs: int):
                         filter=lambda item: None if ".git" in Path(item.name).parts else item)
     for name in ("engine.lock.json", "README.md", "run.py"):
         shutil.copy2(HERE / name, prefix / name)
+    shutil.copytree(HERE / "patches", prefix / "patches")
     (prefix / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")
     artifact = work / f"plezyng-dv-experimental-{platform.machine()}.tar.xz"
     with tarfile.open(artifact, "w:xz") as archive:

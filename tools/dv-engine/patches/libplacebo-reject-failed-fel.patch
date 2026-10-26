@@ -1,0 +1,13 @@
+--- a/src/renderer.c
++++ b/src/renderer.c
+@@ -2132,8 +2132,9 @@
+             el_sh = sample_el(pass, image->enhancement_layer);
+             if (!el_sh) {
+                 PL_ERR(rr, "Failed sampling enhancement layer; "
+-                           "falling back to base-layer-only rendering");
++                           "refusing base-layer-only rendering in the FEL experiment");
+                 rr->errors |= PL_RENDER_ERR_SAMPLING;
++                return false;
+             }
+         }
+ #endif
