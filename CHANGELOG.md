@@ -7,6 +7,7 @@
 - Add SMB2/3 read-only NAS sources on Android, iOS, macOS, Windows, Linux, and Apple TV, with a Videos library shelf and resumable video watch progress.
 - Read offline Kodi/Jellyfin NFO sidecars and sibling posters to enrich local and SMB video titles, summaries, ratings, genres, years, and external IDs.
 - Sync SMB and other file-source progress and notes across devices through one configured WebDAV state folder.
+- Add Find your next, a profile-local swipe discovery deck across media libraries, Explore catalogs, live TV, file sources and completed downloads, with format/time filters, Saved picks, Undo and normal Plezy launch routes.
 - Replace PlezyNG branding across the app, launchers, TV, desktop packages and store artwork with the selected nested-play logo and lower-right NG badge; preserve existing alternate icon selections.
 - Add a review-first cleanup for orphaned tagged downloads in PlezyNG's default app-managed folders.
 - Add an automatically started seven-day full-app trial followed by a USD $2.99 one-time lifetime unlock for Apple, Google Play, and Amazon builds.
@@ -51,6 +52,8 @@
 
 ### Security
 
+- Upgrade the branding asset generator to Pillow 13.0.0 to include upstream security fixes.
+- Clarify that the branding verifier parses only the checked-in Android launcher manifest.
 - Clarify that the publication reader's local WebSocket bridge is restricted to loopback and a per-session capability.
 - Restrict OAuth authorization redirects to configured provider hosts, preserve relay error status for log downloads, and remove the bundled Trakt client secret.
 - Update the relay to Go 1.27.3 for GO-2026-6809 and refresh its immutable container pin.

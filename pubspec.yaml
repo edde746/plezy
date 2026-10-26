@@ -1,7 +1,7 @@
 name: plezy
 description: "A cross-platform PlezyNG client for Plex, Jellyfin, and Emby"
 publish_to: "none"
-version: 2.24.1+156
+version: 2.24.1+157
 
 environment:
   # Dart floor stays 3.12: freezed 3.x emits `final` constructor parameters,
@@ -184,6 +184,7 @@ flutter:
     - assets/licenses/AMSMB2_MIT_LICENSE.txt
     - assets/licenses/libsmb2-LGPL-2.1.txt
     - assets/plezy.png
+    - assets/plezy_adaptive_foreground.png
     - assets/plex_chevron.svg
     - assets/jellyfin_icon.svg
     - assets/emby_icon.svg

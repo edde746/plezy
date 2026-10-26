@@ -68,6 +68,6 @@ File sources and public libraries extend the existing grouped rows, quiet action
 
 App accessibility preferences live in Appearance and compose with system settings. High contrast retains Mono geometry, font sizing reflows, and reduced motion keeps visible focus while removing decorative movement. Shared controls keep labelled keyboard/screen-reader actions and adequate touch targets. Do not replace a semantic control with an unlabelled custom gesture.
 
-## Planned cross-media discovery
+## Cross-media discovery
 
-[Find your next](docs/plezyng/swipe/README.md) defines the swipe-discovery handoff. Its [interaction contract](docs/plezyng/swipe/UX.md) preserves the existing Mono palette, runtime geometry, artwork, shared controls, adaptive sheets and TV focus flow. One focused choice uses visible Not now, Save and explicit media actions; a gesture is an optional shortcut. This section records planned behavior, not a shipped runtime feature.
+[Find your next](docs/plezyng/swipe/README.md) is an artwork-led cross-media route entered from Discover, Libraries, Explore and Downloads. It uses the existing Mono palette, artwork pipeline, adaptive sheet, labelled buttons and canonical media detail/play routes. Touch swipe is an optional shortcut for the same reversible Not now and Save actions; Undo and profile-local Saved picks remain visible. Candidate loading is bounded and revalidates server, catalog, source and live-TV references before opening. The current runtime scope and its deferred capabilities are tracked in the [delivery status](docs/plezyng/swipe/DELIVERY.md).
