@@ -496,27 +496,32 @@ class _SourcesScreenState extends State<SourcesScreen> {
                         'queued' => t.fileSources.downloadQueued,
                         'paused' => t.fileSources.downloadPaused,
                         'failed' => t.fileSources.downloadFailed,
+                        'importing' => t.fileSources.importing,
+                        'orphaned' => t.fileSources.importInterrupted,
                         _ => t.fileSources.downloadQueued,
                       }),
                       trailing: Row(
                         mainAxisSize: MainAxisSize.min,
                         children: [
-                          IconButton(
-                            tooltip: job['state'] == 'failed' || job['state'] == 'paused' ? t.common.retry : t.common.cancel,
-                            icon: AppIcon(job['state'] == 'failed' || job['state'] == 'paused'
-                                ? Symbols.refresh_rounded
-                                : Symbols.close_rounded),
-                            onPressed: _loading
-                                ? null
-                                : () => sourceAction(context, () async {
-                                    if (job['state'] == 'failed' || job['state'] == 'paused') {
-                                      await sources.retryDownload(job['key'] as String);
-                                    } else {
-                                      await sources.cancelDownload(job['key'] as String);
-                                    }
-                                    if (mounted) await _load();
-                                  }),
-                          ),
+                          if (job['state'] != 'orphaned')
+                            IconButton(
+                              tooltip: job['state'] == 'failed' || job['state'] == 'paused'
+                                  ? t.common.retry
+                                  : t.common.cancel,
+                              icon: AppIcon(job['state'] == 'failed' || job['state'] == 'paused'
+                                  ? Symbols.refresh_rounded
+                                  : Symbols.close_rounded),
+                              onPressed: _loading
+                                  ? null
+                                  : () => sourceAction(context, () async {
+                                      if (job['state'] == 'failed' || job['state'] == 'paused') {
+                                        await sources.retryDownload(job['key'] as String);
+                                      } else {
+                                        await sources.cancelDownload(job['key'] as String);
+                                      }
+                                      if (mounted) await _load();
+                                    }),
+                            ),
                           IconButton(
                             tooltip: t.fileSources.removeDownload,
                             icon: const AppIcon(Symbols.delete_outline_rounded),
