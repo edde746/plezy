@@ -8,6 +8,16 @@ This is the release support boundary for the PlezyNG client and its separate rel
 
 Push and pull-request CI runs checks; it does not build release packages or publish images. The only package build dispatch is **PlezyNG Release**. Publishing the draft triggers Discord, Homebrew/appcast, Chocolatey, WinGet, Snap Store, AUR, COPR, PPA, and relay-container workflows. App-store uploads are separate and manual; draft releases are accepted only for non-production testing uploads, while production Play uploads require a published stable release.
 
+## Build runner policy
+
+Required policy: every build across `snapetech-org` must use a private just-in-time (JIT) route. This applies to all 65 organization repositories, including PlezyNG and `plezyng.app`. GitHub-hosted runners are not a fallback because hosted minutes are exhausted. The shared Linux JIT migration applies only to the specified Linux jobs; Windows uses its existing private `packer` route. The current workflow runner labels still need a coordinated migration.
+
+Keep workflow authorization and trust boundaries explicit. Fork and untrusted pull-request builds must use an isolated private route that cannot access trusted-main runner routes or secrets. If a workflow or platform has no suitable private route, provision one and block that build until it is available; do not fall back to GitHub-hosted runners.
+
+Windows release jobs stay on the existing private Windows `packer` JIT route and its trusted Windows runner labels. If Packer was retired, coordinate with its owner to restore the prior scope. The shared Linux JIT migration applies only to the specified Linux jobs; do not route Windows jobs to GitHub-hosted runners or make an uncoordinated runner-policy change.
+
+Coordinate shared runner-group, broker, and workflow changes before cutover. Preserve active release work, drain existing JIT jobs, and make the coordinated policy change once. Do not remove repositories or workflow references to fit an outdated allowlist baseline.
+
 ## Client packages on GitHub Releases
 
 | Platform | Architectures | GitHub Release assets |
