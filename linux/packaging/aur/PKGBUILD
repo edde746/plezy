@@ -1,7 +1,7 @@
 pkgname=plezyng-bin
 pkgver=2.24.1
 pkgrel=1
-pkgdesc='Native media client for Plex, Jellyfin, and Emby'
+pkgdesc='Plex client with Jellyfin and Emby support, offline downloads, and HDR'
 arch=('x86_64' 'aarch64')
 url='https://github.com/snapetech-org/PlezyNG'
 license=('GPL-3.0-only')

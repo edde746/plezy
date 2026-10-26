@@ -97,7 +97,7 @@ function New-AppxManifest {
   <Applications>
     <Application Id="PlezyNG" Executable="plezy.exe" EntryPoint="Windows.FullTrustApplication">
       <uap:VisualElements DisplayName="$SafeAppDisplayName"
-                          Description="A modern client for Plex, Jellyfin, and Emby"
+                          Description="Plex client with Jellyfin and Emby support, offline downloads, and HDR"
                           BackgroundColor="transparent"
                           Square150x150Logo="assets\Square150x150Logo.png"
                           Square44x44Logo="assets\Square44x44Logo.png">

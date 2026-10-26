@@ -18,7 +18,7 @@ METADATA = {
     "vendor": "SnapeTech",
     "maintainer": "SnapeTech <noreply@github.com>",
     "url": "https://github.com/snapetech-org/PlezyNG",
-    "description": "A modern PlezyNG client for Plex, Jellyfin, and Emby",
+    "description": "Plex client with Jellyfin and Emby support, offline downloads, and HDR",
 }
 
 ICON_SIZES = [16, 32, 48, 64, 128, 256, 512]

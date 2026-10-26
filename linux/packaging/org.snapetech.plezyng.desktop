@@ -1,7 +1,7 @@
 [Desktop Entry]
 Type=Application
 Name=PlezyNG
-Comment=A modern Plex, Jellyfin, and Emby client for desktop and mobile
+Comment=Plex client with Jellyfin and Emby support, offline downloads, and HDR
 Exec=plezy
 Icon=plezy
 Terminal=false

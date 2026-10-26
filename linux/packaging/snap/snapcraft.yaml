@@ -1,10 +1,20 @@
 name: plezyng
 title: PlezyNG
 version: '0.0.0'
-summary: Plex, Jellyfin, and Emby media client
+summary: Plex client with Jellyfin and Emby support, offline downloads, and HDR
 description: |
-  PlezyNG is a native media client for Plex, Jellyfin, and Emby servers. Browse
-  libraries, stream video and music, and download media for offline playback.
+  PlezyNG is an enhanced Plex client that also supports Jellyfin and Emby.
+  Browse movies, shows, and music across your servers, search connected
+  libraries, and keep watchlists and viewing progress in sync.
+
+  Download media for offline playback. Watch Live TV and DVR where your server
+  supports them. Choose audio tracks and subtitles, adjust playback speed and
+  audio sync, and use HDR or Dolby Vision on supported devices.
+
+  Watch Together keeps playback in sync when everyone can access the same media
+  on the same server. Use PlezyNG on phones, tablets, TVs, and desktop
+  computers. You’ll need your own Plex, Jellyfin, or Emby server. Features vary
+  by server, device, and media.
 license: GPL-3.0-only
 contact: https://github.com/snapetech-org/PlezyNG/issues
 website: https://github.com/snapetech-org/PlezyNG

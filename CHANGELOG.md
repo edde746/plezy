@@ -58,6 +58,7 @@
 - Check iOS audio-output ordering while allowing the Spatial Audio driver on iOS 26.
 - Build Android app and plugin modules with SDK 37 and generate BuildConfig for current Android dependencies.
 - Brand default and alternate app icons, splash art, and TV launch graphics with the PlezyNG badge.
+- Refresh package and store descriptions to explain PlezyNG's Plex client features.
 - Refresh the release-channel guide with configured publishers and remaining credential requirements.
 - Declare Bash explicitly when naming the Snap release artifact.
 - Update remaining app and OAuth messages to PlezyNG and make donation copy provider-neutral.
