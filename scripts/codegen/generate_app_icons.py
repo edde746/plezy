@@ -9,6 +9,8 @@ Sources, one directory per icon under assets/app_icons/source/<id>/ (not bundled
 * monochrome.svg: the visible mark as a silhouette, for Android 13 themed icons. Only its alpha is
   used. Derived once from the designer generator's measurement silhouettes (no glows, shadows or
   backdrops); edit it by hand like any other source.
+* The colored icon outputs get the shared PlezyNG badge in the lower-right corner. Monochrome
+  silhouettes stay as single-color marks so Android can tint them cleanly.
 * tv_background.svg (optional): a hand-composed wide back layer for designs whose backdrop has to
   line up with the mark (CRT's screen, VHS's stripes) or would be clipped by a mechanical crop
   (Pop's burst). Drawn in the foreground's 1024 coordinates and wide enough for 16:9. Without it
@@ -41,8 +43,9 @@ launcher component (.appicon.<id>) enabled across updates: removing or renaming 
 those users with an icon the app no longer ships or, on Android, no launcher entry at all. The
 Dart catalog (lib/services/app_icon/app_icon_catalog.dart) lists the same ids.
 
-Needs rsvg-convert (librsvg), ImageMagick 7 (magick) and cwebp (libwebp):
-    brew install librsvg imagemagick webp
+Needs rsvg-convert (librsvg) and ImageMagick 7 (magick). cwebp (libwebp) is optional; ImageMagick
+handles WebP output when cwebp is unavailable:
+    brew install librsvg imagemagick
 Run from the repository root:
     python3 scripts/codegen/generate_app_icons.py
 """
@@ -56,6 +59,8 @@ import subprocess
 import sys
 import tempfile
 from pathlib import Path
+
+from ng_brand_badge import overlay_badge
 
 ROOT = Path(__file__).resolve().parents[2]
 SOURCE = ROOT / "assets/app_icons/source"
@@ -151,7 +156,7 @@ class Renderer:
         self._counter = 0
         self.rsvg = _tool("rsvg-convert")
         self.magick = _tool("magick")
-        self.cwebp = _tool("cwebp")
+        self.cwebp = shutil.which("cwebp")
 
     def temp(self, suffix: str) -> Path:
         self._counter += 1
@@ -166,6 +171,23 @@ class Renderer:
 
     def square(self, path: Path, size: int) -> Path:
         return self.svg(path.read_text(), size, size)
+
+    def with_badge(self, image: Path, artwork: Path | None = None) -> Path:
+        out = self.temp(".png")
+        overlay_badge(
+            self.magick,
+            self.rsvg,
+            image,
+            out,
+            self._scratch,
+            bounds_from=artwork or image,
+        )
+        return out
+
+    def icon(self, icon: Path, size: int) -> Path:
+        image = self.square(icon / "icon.svg", size)
+        artwork = self.square(icon / "foreground.svg", size)
+        return self.with_badge(image, artwork)
 
     def wide(self, icon: Path, layer: str, width: int, height: int) -> Path:
         """[layer] ("foreground" or "background") of [icon] framed for a [width]x[height] tile."""
@@ -263,8 +285,18 @@ class Renderer:
 
     def webp(self, source: Path, out: Path, *, lossless: bool = False) -> None:
         out.parent.mkdir(parents=True, exist_ok=True)
-        quality = ["-lossless", "-z", "9"] if lossless else ["-q", WEBP_QUALITY, "-sharp_yuv", "-alpha_q", "100"]
-        _run(self.cwebp, "-quiet", "-m", "6", "-metadata", "none", *quality, str(source), "-o", str(out))
+        if self.cwebp is not None:
+            quality = ["-lossless", "-z", "9"] if lossless else ["-q", WEBP_QUALITY, "-sharp_yuv", "-alpha_q", "100"]
+            _run(self.cwebp, "-quiet", "-m", "6", "-metadata", "none", *quality, str(source), "-o", str(out))
+            return
+
+        # ImageMagick's WebP encoder is a local fallback for environments without cwebp.
+        args = [self.magick, str(source), "-strip", "-define", "webp:method=6"]
+        if lossless:
+            args += ["-define", "webp:lossless=true", "-quality", "100"]
+        else:
+            args += ["-quality", WEBP_QUALITY]
+        _run(*args, str(out))
 
 
 def _write_json(path: Path, data: object) -> None:
@@ -295,7 +327,7 @@ def generate_ios(renderer: Renderer) -> None:
     _write_json(IOS_CATALOG / "Contents.json", XCASSETS_INFO)
     for icon in ICONS:
         icon_set = IOS_CATALOG / f"AppIcon-{icon}.appiconset"
-        renderer.png(renderer.square(SOURCE / icon / "icon.svg", CANVAS), icon_set / "icon.png", opaque=True)
+        renderer.png(renderer.icon(SOURCE / icon, CANVAS), icon_set / "icon.png", opaque=True)
         _write_json(
             icon_set / "Contents.json",
             {
@@ -321,7 +353,10 @@ def generate_tvos(renderer: Renderer) -> None:
             images = []
             for suffix, (width, height) in TVOS_SIZES.items():
                 filename = f"{name}{suffix}.png"
-                renderer.png(renderer.wide(SOURCE / icon, layer, width, height), imageset / filename, opaque=name == "Back")
+                image = renderer.wide(SOURCE / icon, layer, width, height)
+                if name == "Front":
+                    image = renderer.with_badge(image)
+                renderer.png(image, imageset / filename, opaque=name == "Back")
                 images.append({"filename": filename, "idiom": "tv", "scale": "2x" if suffix else "1x"})
             _write_json(imageset / "Contents.json", {"images": images, **XCASSETS_INFO})
     names = "".join(f"\t\t\t<string>AppIcon-{icon}</string>\n" for icon in ICONS)
@@ -381,18 +416,20 @@ def generate_android(renderer: Renderer) -> None:
         for density, size in ANDROID_LAYER_DENSITIES.items():
             drawable = ANDROID_RES / f"drawable-{density}"
             renderer.webp(renderer.square(source / "background.svg", size), drawable / f"ic_launcher_{icon}_background.webp")
-            renderer.webp(renderer.square(source / "foreground.svg", size), drawable / f"ic_launcher_{icon}_foreground.webp")
+            foreground = renderer.square(source / "foreground.svg", size)
+            renderer.webp(renderer.with_badge(foreground), drawable / f"ic_launcher_{icon}_foreground.webp")
             renderer.webp(
                 renderer.white_silhouette(source / "monochrome.svg", size),
                 drawable / f"ic_launcher_{icon}_monochrome.webp",
                 lossless=True,
             )
         legacy_density, legacy_size = ANDROID_LEGACY_DENSITY
-        legacy = renderer.rounded(renderer.square(source / "icon.svg", legacy_size), legacy_size, legacy_size * 0.2)
+        legacy = renderer.rounded(renderer.icon(source, legacy_size), legacy_size, legacy_size * 0.2)
         renderer.webp(legacy, ANDROID_RES / f"mipmap-{legacy_density}" / f"ic_launcher_{icon}.webp")
         for density, (width, height) in ANDROID_BANNER_DENSITIES.items():
+            front = renderer.wide(source, "foreground", width, height)
             banner = renderer.composite(
-                renderer.wide(source, "background", width, height), renderer.wide(source, "foreground", width, height)
+                renderer.wide(source, "background", width, height), renderer.with_badge(front)
             )
             renderer.webp(banner, ANDROID_RES / f"drawable-{density}" / f"tv_banner_{icon}.webp")
     _write_manifest_aliases()
@@ -401,7 +438,7 @@ def generate_android(renderer: Renderer) -> None:
 def generate_previews(renderer: Renderer) -> None:
     _reset_dir(PREVIEWS)
     for icon in ICONS:
-        renderer.webp(renderer.square(SOURCE / icon / "icon.svg", PREVIEW_SIZE), PREVIEWS / f"{icon}.webp")
+        renderer.webp(renderer.icon(SOURCE / icon, PREVIEW_SIZE), PREVIEWS / f"{icon}.webp")
     tvos = TVOS_DEFAULT_STACK
     stack = renderer.composite(
         renderer.composite(

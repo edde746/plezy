@@ -51,6 +51,7 @@
 
 ### Changed
 
+- Brand default and alternate app icons, splash art, and TV launch graphics with the PlezyNG badge.
 - Refresh the release-channel guide with configured publishers and remaining credential requirements.
 - Declare Bash explicitly when naming the Snap release artifact.
 - Update remaining app and OAuth messages to PlezyNG and make donation copy provider-neutral.
