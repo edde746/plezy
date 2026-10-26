@@ -39,6 +39,7 @@ final class SteamControls extends View {
   private final List<Control> controls = new ArrayList<>();
   private final SparseArray<Finger> fingers = new SparseArray<>();
   private boolean enabled;
+  private boolean inputEnabled;
   private int mousePointer = -1;
   private float mouseX = .5f, mouseY = .5f;
   SteamControls(Context context, boolean enabled, Listener listener) {
@@ -67,6 +68,9 @@ final class SteamControls extends View {
     reset();
     enabled = value;
     invalidate();
+  }
+  void setInputEnabled(boolean value) {
+    inputEnabled = value;
   }
   @Override
   protected void onSizeChanged(int w, int h, int oldw, int oldh) {
@@ -132,6 +136,10 @@ final class SteamControls extends View {
   }
   @Override
   public boolean onTouchEvent(MotionEvent event) {
+    // The overlay spans the whole video surface. An unselected pane must let
+    // touch events pass through without turning them into game mouse input.
+    if (!inputEnabled)
+      return false;
     int action = event.getActionMasked(), index = event.getActionIndex(), id = event.getPointerId(index);
     if (action == MotionEvent.ACTION_CANCEL) {
       reset();

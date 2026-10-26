@@ -4,7 +4,7 @@
 
 - Increase Multiview title-bar, session-tray, and resize controls to consistent 48dp focus targets.
 - Add an app-owned Multiview workspace for retained video, music, source playback and publication surfaces, with floating/split layouts, shared audio and input ownership, and independent native channels for two simultaneous video sessions.
-- Add a retained Android Steam game surface to Multiview with workspace audio ownership and exclusive gamepad input; other game engines remain on their existing launch paths.
+- Add a retained Android Steam game surface to Multiview with workspace audio ownership and gamepad, touch, and mouse input restricted to the selected pane; other game engines remain on their existing launch paths.
 
 - Fit Find your next to the screen with persistent action buttons, mirrored swipe/TV direction cues, contextual help, and artwork that follows the current pick. Restore downloaded and alternate covers, distinguish artwork loading from missing images, and allow failed source covers to be retried.
 

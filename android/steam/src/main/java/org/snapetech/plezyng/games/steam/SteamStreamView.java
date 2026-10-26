@@ -53,13 +53,21 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
     surface.getHolder().addCallback(this);
     controls = new SteamControls(context, Boolean.TRUE.equals(args.get("touchControls")), new SteamControls.Listener() {
       @Override public void pad(short[] axes, int buttons) {
+        if (!inputEnabled) {
+          touch = new short[6];
+          touchButtons = 0;
+          sendPad();
+          return;
+        }
         touch = axes;
         touchButtons = buttons;
         sendPad();
       }
       @Override public void mouse(float x, float y, int button, boolean down) {
         long session = handle;
-        if (session == 0 || stopping) return;
+        // Allow a release during ownership handoff, but never start a click
+        // from a pane that no longer owns game input.
+        if (session == 0 || stopping || (down && !inputEnabled)) return;
         float sx = (x * getWidth() - surface.getLeft()) / Math.max(1, surface.getWidth());
         float sy = (y * getHeight() - surface.getTop()) / Math.max(1, surface.getHeight());
         NativeSteam.mouse(session, sx, sy, button, down);
@@ -88,8 +96,9 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
 
   public void setInputEnabled(boolean enabled) {
     if (inputEnabled == enabled) return;
-    inputEnabled = enabled;
     if (!enabled) releaseInput();
+    inputEnabled = enabled;
+    controls.setInputEnabled(enabled);
     controls.setEnabled(enabled && Boolean.TRUE.equals(args.get("touchControls")));
     if (enabled) requestFocus();
     else clearFocus();
