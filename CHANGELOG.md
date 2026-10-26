@@ -83,7 +83,7 @@
 
 ### Changed
 
-- Use shared focus controls and TV text input for Home row dialogs and video equalizer sliders.
+- Use shared focus controls for Home row dialogs, subtitle styling and video equalizer sliders, with TV text input for Home row names.
 - Align audiobook sync conflicts, playback input dialogs and source menus with shared Mono rows, focus and compact overflow patterns.
 - Refresh sign-in with the crisp PlezyNG product artwork and responsive login choices and QR sizing for phone, desktop, TV and 4K screens.
 - Keep SMB setup copy localized and show the Videos shelf by default only for local and SMB sources.
