@@ -1,7 +1,25 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/sources/comic_document.dart';
+import 'package:plezy/sources/source_models.dart';
 
 void main() {
+  test('OPDS stream-only publication files keep their flag across persistence', () {
+    const file = PublicationFile(
+      id: 'stream',
+      name: 'Example.cbz',
+      mimeType: 'application/vnd.comicbook+zip',
+      streamOnly: true,
+    );
+
+    expect(PublicationFile.fromJson(file.toJson()).streamOnly, isTrue);
+    expect(
+      PublicationFile.fromJson(
+        const PublicationFile(id: 'download', name: 'Example.cbz', mimeType: '').toJson(),
+      ).streamOnly,
+      isFalse,
+    );
+  });
+
   test('natural ordering excludes archive housekeeping and preserves image case', () {
     final doc = ComicDocument.fromFiles(['10.JPG', '2.png', '__MACOSX/1.png', '.hidden.png', '1.webp']);
     expect(doc.pages.map((p) => p.name), ['1.webp', '2.png', '10.JPG']);
