@@ -181,6 +181,52 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     }
   }
 
+  Future<void> _editSharedEntryMapping() async {
+    final controller = context.read<SourceController>();
+    final current = await controller.sharedEntryMapping(_entry);
+    if (!mounted) return;
+    final sharedId = TextEditingController(text: current ?? '');
+    final save = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(t.sourceSetup.sharedEntryPair),
+        content: SingleChildScrollView(
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(t.sourceSetup.sharedEntryPairHelp),
+              const SizedBox(height: 12),
+              FocusableTextField(
+                controller: sharedId,
+                autofocus: true,
+                decoration: InputDecoration(labelText: t.sourceSetup.sharedEntryId),
+              ),
+              Align(
+                alignment: Alignment.centerRight,
+                child: TextButton(
+                  onPressed: () => sharedId.text = const Uuid().v4(),
+                  child: Text(t.sourceSetup.generateSharedEntryId),
+                ),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
+          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(t.common.save)),
+        ],
+      ),
+    );
+    if (save != true || !mounted) return;
+    final value = sharedId.text.trim();
+    await sourceAction(
+      context,
+      () => controller.setSharedEntryMapping(_entry, value.isEmpty ? null : value),
+    );
+    sharedId.dispose();
+  }
+
   Future<String?> _metadataSearchQuery() async {
     final controller = TextEditingController(text: _entry.displayTitle);
     final query = await showDialog<String>(
