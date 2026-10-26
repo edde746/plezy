@@ -28,13 +28,14 @@ class DlnaDiscovery {
   }) async {
     RawDatagramSocket? socket;
     StreamSubscription<RawSocketEvent>? subscription;
-    final locations = <String, Uri>{};
+    final locations = <String, ({Uri location, String responder})>{};
     try {
-      socket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
-      subscription = socket.listen((event) {
+      final datagramSocket = await RawDatagramSocket.bind(InternetAddress.anyIPv4, 0);
+      socket = datagramSocket;
+      subscription = datagramSocket.listen((event) {
         if (event != RawSocketEvent.read) return;
         Datagram? datagram;
-        while ((datagram = socket!.receive()) != null) {
+        while ((datagram = datagramSocket.receive()) != null) {
           final packet = utf8.decode(datagram!.data, allowMalformed: true);
           for (final line in const LineSplitter().convert(packet).skip(1)) {
             final colon = line.indexOf(':');
@@ -45,11 +46,10 @@ class DlnaDiscovery {
                 location.host.isEmpty ||
                 location.userInfo.isNotEmpty ||
                 location.hasQuery ||
-                location.hasFragment ||
-                location.host.toLowerCase() != datagram!.address.address.toLowerCase()) {
+                location.hasFragment) {
               continue;
             }
-            locations[location.toString()] = location;
+            locations[location.toString()] = (location: location, responder: datagram!.address.address);
           }
         }
       }, onError: (_) {});
@@ -63,7 +63,7 @@ class DlnaDiscovery {
           '',
           '',
         ].join('\r\n');
-        socket.send(utf8.encode(request), InternetAddress(_group), _port);
+        datagramSocket.send(utf8.encode(request), InternetAddress(_group), _port);
       }
       await Future<void>.delayed(timeout);
     } on Object {
@@ -76,7 +76,8 @@ class DlnaDiscovery {
     final transport = SourceTransport(allowHttp: true);
     try {
       final found = await Future.wait(
-        locations.values.take(24).map((location) => _describe(location, transport)),
+        locations.values.take(24).map((candidate) =>
+            _describe(candidate.location, candidate.responder, transport)),
       );
       final devices = found.whereType<DlnaDiscoveredDevice>().toList()
         ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
@@ -86,8 +87,14 @@ class DlnaDiscovery {
     }
   }
 
-  Future<DlnaDiscoveredDevice?> _describe(Uri location, SourceTransport transport) async {
+  Future<DlnaDiscoveredDevice?> _describe(
+    Uri location,
+    String responder,
+    SourceTransport transport,
+  ) async {
     try {
+      final addresses = await InternetAddress.lookup(location.host).timeout(const Duration(seconds: 2));
+      if (!addresses.any((address) => address.address == responder)) return null;
       final xml = await transport.text('GET', location, limit: 2 * 1024 * 1024)
           .timeout(const Duration(seconds: 4));
       final document = XmlDocument.parse(xml);
