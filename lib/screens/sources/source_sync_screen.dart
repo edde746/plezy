@@ -97,14 +97,23 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
   }
 
   Future<void> _confirmExclusiveSync(SourceController controller, PublicationSyncConfig config) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showScopedDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
+        scrollable: true,
         title: Text(t.audiobook.syncTitle),
         content: Text(t.audiobook.syncPrivacy),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(t.audiobook.saveSync)),
+          DialogActionButton(
+            autofocus: true,
+            onPressed: () => Navigator.pop(dialogContext, false),
+            label: t.common.cancel,
+          ),
+          DialogActionButton(
+            isPrimary: true,
+            onPressed: () => Navigator.pop(dialogContext, true),
+            label: t.audiobook.saveSync,
+          ),
         ],
       ),
     );
