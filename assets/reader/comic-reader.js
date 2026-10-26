@@ -44,21 +44,38 @@ export class ComicReader extends HTMLElement {
             this.viewport.focus({preventScroll:true});
             this.viewport.setPointerCapture(e.pointerId);
             if(pointers.size===1)gesture={x:e.clientX,y:e.clientY,lastX:e.clientX,lastY:e.clientY};
-            if(pointers.size===2){const [a,b]=[...pointers.values()];pinch={distance:Math.hypot(a.x-b.x,a.y-b.y),scale:this.scale};gesture=null;}
+            if(pointers.size===2){
+                const [a,b]=[...pointers.values()];
+                const stage=this.stage.getBoundingClientRect(),viewport=this.viewport.getBoundingClientRect();
+                pinch={distance:Math.hypot(a.x-b.x,a.y-b.y),scale:this.scale,zoom:this.scale,changed:false,
+                    originX:this.viewport.clientWidth/2-(stage.left-viewport.left),
+                    originY:this.viewport.clientHeight/2-(stage.top-viewport.top)};
+                gesture=null;
+            }
         });
         this.viewport.addEventListener('pointermove',e=>{
             if(!pointers.has(e.pointerId))return;
             pointers.set(e.pointerId,{x:e.clientX,y:e.clientY});
             if(pinch && pointers.size===2 && this.settings.comicMode!=='webtoon'){
                 const [a,b]=[...pointers.values()];
-                this.applyZoom(Math.min(6,Math.max(.25,pinch.scale*Math.hypot(a.x-b.x,a.y-b.y)/Math.max(1,pinch.distance))),false);
+                pinch.zoom=Math.min(6,Math.max(.25,pinch.scale*Math.hypot(a.x-b.x,a.y-b.y)/Math.max(1,pinch.distance)));
+                pinch.changed=Math.abs(pinch.zoom-pinch.scale)>0.001;
+                this.previewZoom(pinch.zoom,pinch.scale,pinch.originX,pinch.originY);
             }else if(gesture && (this.canPan||this.settings.comicMode==='webtoon')){
                 this.pan({x:gesture.lastX-e.clientX,y:gesture.lastY-e.clientY});gesture.lastX=e.clientX;gesture.lastY=e.clientY;
             }
         });
         const end=e=>{
             pointers.delete(e.pointerId);
-            if(pinch){if(!pointers.size){pinch=null;this.report();this.send('readerSetting',{key:'zoom',value:this.settings.zoom});}return;}
+            if(pinch){
+                if(!pointers.size){
+                    const completedPinch=pinch;pinch=null;
+                    if(completedPinch.changed&&this.settings.comicMode!=='webtoon')this.applyZoom(completedPinch.zoom,false);
+                    else{this.stage.style.removeProperty('transform');this.stage.style.removeProperty('transform-origin');this.stage.style.removeProperty('will-change');this.report();}
+                    this.send('readerSetting',{key:'zoom',value:this.settings.zoom});
+                }
+                return;
+            }
             if(!gesture)return;
             const dx=e.clientX-gesture.x,dy=e.clientY-gesture.y;gesture=null;
             if(e.type==='pointercancel'||this.settings.comicMode==='webtoon'||this.canPan)return;
@@ -107,6 +124,7 @@ export class ComicReader extends HTMLElement {
     }
     render() {
         if(!this.pages || !this.clientWidth || !this.clientHeight)return;
+        this.stage.style.removeProperty('transform');this.stage.style.removeProperty('transform-origin');this.stage.style.removeProperty('will-change');
         this.epoch++;this.unload(this.stage);
         this.rendering=true;
         this.stage.className=this.settings.comicMode==='webtoon'?'strip':'';
@@ -218,6 +236,11 @@ export class ComicReader extends HTMLElement {
         this.settings.zoom=zoom;this.options.settings.zoom=zoom;this.render();
         if(typeof zoom==='number'&&this.settings.comicMode!=='webtoon'){this.viewport.scrollLeft=(x+this.clientWidth/2)*this.scale/oldScale-this.clientWidth/2;this.viewport.scrollTop=(y+this.clientHeight/2)*this.scale/oldScale-this.clientHeight/2;}
         this.report();if(save)this.send('readerSetting',{key:'zoom',value:zoom});
+    }
+    previewZoom(zoom,baseScale,originX,originY){
+        this.stage.style.willChange='transform';
+        this.stage.style.transformOrigin=`${originX}px ${originY}px`;
+        this.stage.style.transform=`scale(${zoom/baseScale})`;
     }
     pan({x=0,y=0}){this.viewport.scrollBy(x,y);}
     key(e){
