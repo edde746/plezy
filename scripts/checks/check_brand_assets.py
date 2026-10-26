@@ -71,6 +71,8 @@ def check(root: Path = ROOT) -> list[str]:
                 errors.append(f'Alternate art missing from manifest: {path}')
     for platform in ('ios', 'macos'):
         icon = root / platform / 'plezy.icon'
+        if (icon / 'Assets/plezy-cropped.png').exists():
+            errors.append(f'Retired Icon Composer source remains: {platform}/plezy-cropped.png')
         definition = json.loads((icon / 'icon.json').read_text())
         for group in definition['groups']:
             for layer in group['layers']:
@@ -79,6 +81,9 @@ def check(root: Path = ROOT) -> list[str]:
     for layer in ('foreground', 'monochrome'):
         if (root / f'android/app/src/main/res/drawable/ic_launcher_{layer}.xml').exists():
             errors.append(f'Obsolete Android vector shadows the selected {layer} PNG')
+        for density in ('mdpi', 'hdpi', 'xhdpi', 'xxhdpi', 'xxxhdpi'):
+            if (root / f'android/app/src/main/res/drawable-{density}/ic_launcher_{layer}.png').exists():
+                errors.append(f'Retired Android {density} {layer} PNG remains')
     adaptive = ET.parse(root / 'android/app/src/main/res/mipmap-anydpi-v26/ic_launcher.xml').getroot()
     for layer in ('foreground', 'monochrome'):
         resource = adaptive.find(layer).attrib['{http://schemas.android.com/apk/res/android}drawable']
