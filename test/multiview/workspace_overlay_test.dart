@@ -11,6 +11,7 @@ WorkspaceSurfaceRegistration _registration({
   required String title,
   required MultiviewMediaKind kind,
   VoidCallback? onRestore,
+  VoidCallback? onClose,
   bool acceptsInput = false,
   WorkspaceOwnershipHandler? onInputOwnershipChanged,
 }) => WorkspaceSurfaceRegistration(
@@ -24,6 +25,7 @@ WorkspaceSurfaceRegistration _registration({
   ),
   buildSurface: (_) => const ColoredBox(key: ValueKey('workspace_surface'), color: Colors.black),
   onRestore: onRestore ?? () {},
+  onClose: onClose,
   onInputOwnershipChanged: onInputOwnershipChanged ?? (acceptsInput ? (_) {} : null),
 );
 
@@ -152,6 +154,69 @@ void main() {
       await tester.pumpWidget(const SizedBox.shrink());
       controller.dispose();
     }
+  });
+
+  testWidgets('move and resize affordances explain their accessible interactions', (tester) async {
+    final semantics = tester.ensureSemantics();
+    final controller = MultiviewWorkspaceController();
+    controller.register(_registration(id: 'video', title: 'Film', kind: MultiviewMediaKind.video));
+    await _mount(tester, controller);
+
+    expect(find.byTooltip('Move window'), findsOneWidget);
+    expect(find.byTooltip('Resize window'), findsOneWidget);
+    final moveSemantics = tester.getSemantics(find.bySemanticsLabel('Move window'));
+    expect(moveSemantics.getSemanticsData().hint, contains('Long-press and drag'));
+    final resizeSemantics = tester.getSemantics(find.bySemanticsLabel('Resize window'));
+    expect(resizeSemantics.getSemanticsData().hint, contains('arrow keys to resize'));
+
+    await tester.tap(find.byTooltip('Move window'));
+    await tester.pump();
+    expect(find.byTooltip('Finish moving window'), findsOneWidget);
+    expect(find.textContaining('Drag to move'), findsOneWidget);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
+    semantics.dispose();
+  });
+
+  testWidgets('parking keeps the session reachable and close ends it from the tray', (tester) async {
+    var closes = 0;
+    final controller = MultiviewWorkspaceController();
+    controller.register(
+      _registration(
+        id: 'video',
+        title: 'Film',
+        kind: MultiviewMediaKind.video,
+        onClose: () => closes++,
+      ),
+    );
+    await _mount(tester, controller);
+
+    await tester.tap(find.byTooltip('Move to session tray'));
+    await tester.pumpAndSettle();
+
+    expect(controller.visibleSessions, isEmpty);
+    expect(controller.sessionTrayVisible, isTrue);
+    expect(find.text('Media sessions'), findsOneWidget);
+    expect(find.text('Parked'), findsOneWidget);
+
+    await tester.tap(find.text('Film'));
+    await tester.pumpAndSettle();
+    expect(controller.visibleSessions.map((session) => session.descriptor.id), ['video']);
+    expect(controller.sessionTrayVisible, isFalse);
+
+    await tester.tap(find.byTooltip('Move to session tray'));
+    await tester.pumpAndSettle();
+
+    await tester.tap(find.byTooltip('Close mini player'));
+    await tester.pumpAndSettle();
+
+    expect(controller.sessionCount, 0);
+    expect(controller.sessionTrayVisible, isFalse);
+    expect(closes, 1);
+
+    await tester.pumpWidget(const SizedBox.shrink());
+    controller.dispose();
   });
 
   testWidgets('a hidden game surface stays mounted while another pane is fullscreen', (tester) async {

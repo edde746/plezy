@@ -398,6 +398,7 @@ class MultiviewWorkspaceController extends ChangeNotifier {
     if (_focusedSessionId == id) {
       _focusedSessionId = _firstVisibleSessionId() ?? (_sessions.isEmpty ? null : _sessions.keys.last);
     }
+    if (_sessions.isEmpty) _sessionTrayVisible = false;
     return registration;
   }
 
@@ -765,6 +766,9 @@ class MultiviewWorkspaceController extends ChangeNotifier {
     if (_focusedSessionId == id) {
       _focusedSessionId = _firstVisibleSessionId(excluding: id);
     }
+    // Parking the last visible pane must leave the session tray available so
+    // the live session can be brought back without reopening its source.
+    if (visibleSessions.isEmpty) _sessionTrayVisible = true;
     if (_requestedInputSessionId == id || _inputSessionId == id) {
       _requestedInputSessionId = _firstSessionIdWhere(
         (session) =>

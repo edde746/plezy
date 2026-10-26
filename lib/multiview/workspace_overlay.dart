@@ -166,7 +166,8 @@ class _MultiviewOverlay extends StatelessWidget {
     // media surfaces get their own one-tap exit from the mini window; games
     // use fullscreen as their expand action instead.
     final hasRestoreAction = registration.descriptor.kind != MultiviewMediaKind.game;
-    final titleBarActionCount = 3 + (registration.descriptor.hasAudio ? 1 : 0) + (hasRestoreAction ? 1 : 0);
+    final titleBarActionCount =
+        (floating ? 4 : 3) + (registration.descriptor.hasAudio ? 1 : 0) + (hasRestoreAction ? 1 : 0);
     final minWidth = math.min(math.max(220.0, titleBarActionCount * 48.0 + 64.0), viewport.width);
     final width = (viewport.width * placement.width).clamp(minWidth, math.min(520.0, viewport.width)).toDouble();
     final height = (viewport.height * placement.height)
@@ -390,11 +391,16 @@ class _WorkspaceWindowState extends State<_WorkspaceWindow> {
       },
       child: Semantics(
         container: true,
-        label: registration.descriptor.title,
-        onIncrease: () =>
-            controller.resizeByPixels(id, const Offset(20, 12), widget.viewport, paneSize: widget.paneSize),
-        onDecrease: () =>
-            controller.resizeByPixels(id, const Offset(-20, -12), widget.viewport, paneSize: widget.paneSize),
+        explicitChildNodes: true,
+        label: t.common.workspaceWindowLabel(title: registration.descriptor.title),
+        hint: widget.floating && !widget.fullscreen ? t.common.workspaceWindowHint : t.common.workspacePaneHint,
+        focused: selected,
+        onIncrease: widget.floating && !widget.fullscreen
+            ? () => controller.resizeByPixels(id, const Offset(20, 12), widget.viewport, paneSize: widget.paneSize)
+            : null,
+        onDecrease: widget.floating && !widget.fullscreen
+            ? () => controller.resizeByPixels(id, const Offset(-20, -12), widget.viewport, paneSize: widget.paneSize)
+            : null,
         child: Listener(
           behavior: HitTestBehavior.translucent,
           onPointerDown: (_) {
@@ -430,6 +436,21 @@ class _WorkspaceWindowState extends State<_WorkspaceWindow> {
                       }
                     },
                   ),
+                  if (widget.floating && moving)
+                    Container(
+                      width: double.infinity,
+                      color: tk.accent.withValues(alpha: 0.14),
+                      padding: EdgeInsets.symmetric(horizontal: tk.space, vertical: tk.space * 0.4),
+                      child: Semantics(
+                        liveRegion: true,
+                        child: Text(
+                          t.common.movingWindowHelp,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: Theme.of(context).textTheme.labelSmall?.copyWith(color: tk.text),
+                        ),
+                      ),
+                    ),
                   Expanded(
                     child: SizedBox.expand(
                       child: _buildSurfaceWithMoveGestures(context, id, registration),
@@ -482,42 +503,56 @@ class _WorkspaceTitleBar extends StatelessWidget {
         child: Row(
           children: [
             Expanded(
-              child: GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onPanUpdate: floating
-                    ? (details) => controller.moveByPixels(id, details.delta, viewport, paneSize: paneSize)
-                    : null,
+              child: Semantics(
+                button: true,
+                label: registration.descriptor.title,
+                hint: t.common.workspaceTitleHint,
                 onTap: () => controller.focus(id),
-                onDoubleTap: () {
-                  if (fullscreen) {
-                    controller.exitFullscreen();
-                  } else {
-                    controller.promoteToFullscreen(id);
-                  }
-                },
-                child: Padding(
-                  padding: EdgeInsetsDirectional.only(start: tk.space * 1.4),
-                  child: Align(
-                    alignment: AlignmentDirectional.centerStart,
-                    child: Text(
-                      registration.descriptor.title,
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: Theme.of(
-                        context,
-                      ).textTheme.labelLarge?.copyWith(color: tk.text, fontWeight: FontWeight.w600),
+                child: Tooltip(
+                  message: t.common.workspaceTitleHint,
+                  child: GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onPanUpdate: floating
+                        ? (details) => controller.moveByPixels(id, details.delta, viewport, paneSize: paneSize)
+                        : null,
+                    onTap: () => controller.focus(id),
+                    onDoubleTap: () {
+                      if (fullscreen) {
+                        controller.exitFullscreen();
+                      } else {
+                        controller.promoteToFullscreen(id);
+                      }
+                    },
+                    child: Padding(
+                      padding: EdgeInsetsDirectional.only(start: tk.space * 1.4),
+                      child: Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: ExcludeSemantics(
+                          child: Text(
+                            registration.descriptor.title,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(
+                              context,
+                            ).textTheme.labelLarge?.copyWith(color: tk.text, fontWeight: FontWeight.w600),
+                          ),
+                        ),
+                      ),
                     ),
                   ),
                 ),
               ),
             ),
             if (floating && !fullscreen)
-              IconButton(
-                tooltip: moving ? t.common.save : t.common.edit,
-                visualDensity: VisualDensity.standard,
-                iconSize: 19,
-                onPressed: onMoveToggle,
-                icon: Icon(moving ? Symbols.check_rounded : Symbols.drag_handle_rounded),
+              Semantics(
+                hint: t.common.moveWindowHint,
+                child: IconButton(
+                  tooltip: moving ? t.common.finishMovingWindow : t.common.moveWindow,
+                  visualDensity: VisualDensity.standard,
+                  iconSize: 19,
+                  onPressed: onMoveToggle,
+                  icon: Icon(moving ? Symbols.check_rounded : Symbols.drag_handle_rounded),
+                ),
               ),
             if (registration.descriptor.hasAudio)
               IconButton(
@@ -527,6 +562,16 @@ class _WorkspaceTitleBar extends StatelessWidget {
                 onPressed: () => controller.setAudibleSession(controller.audibleSessionId == id ? null : id),
                 icon: Icon(controller.audibleSessionId == id ? Symbols.volume_up_rounded : Symbols.volume_off_rounded),
               ),
+            Semantics(
+              hint: t.common.moveToSessionTrayHint,
+              child: IconButton(
+                tooltip: t.common.moveToSessionTray,
+                visualDensity: VisualDensity.standard,
+                iconSize: 19,
+                onPressed: () => controller.park(id),
+                icon: const Icon(Symbols.keyboard_arrow_down_rounded),
+              ),
+            ),
             if (registration.descriptor.kind != MultiviewMediaKind.game)
               IconButton(
                 tooltip: registration.descriptor.kind == MultiviewMediaKind.video ||
@@ -551,15 +596,18 @@ class _WorkspaceTitleBar extends StatelessWidget {
                 }
               },
             ),
-            IconButton(
-              tooltip: registration.descriptor.kind == MultiviewMediaKind.video ||
-                      registration.descriptor.kind == MultiviewMediaKind.liveTv
-                  ? t.common.closeMiniPlayer
-                  : t.common.closeWorkspaceWindow,
-              visualDensity: VisualDensity.standard,
-              iconSize: 19,
-              onPressed: () => controller.close(id),
-              icon: const Icon(Symbols.close_rounded),
+            Semantics(
+              hint: t.common.closeSessionHint,
+              child: IconButton(
+                tooltip: registration.descriptor.kind == MultiviewMediaKind.video ||
+                        registration.descriptor.kind == MultiviewMediaKind.liveTv
+                    ? t.common.closeMiniPlayer
+                    : t.common.closeWorkspaceWindow,
+                visualDensity: VisualDensity.standard,
+                iconSize: 19,
+                onPressed: () => controller.close(id),
+                icon: const Icon(Symbols.close_rounded),
+              ),
             ),
           ],
         ),
@@ -587,7 +635,7 @@ class _WorkspaceDock extends StatelessWidget {
         children: [
           if (!fullscreen && controller.visibleSessions.length > 1)
             IconButton(
-              tooltip: t.common.viewAll,
+              tooltip: t.common.switchToNextWindow,
               onPressed: controller.swapFocusedWithNext,
               icon: const Icon(Symbols.swap_horiz_rounded),
             ),
@@ -609,10 +657,13 @@ class _WorkspaceDock extends StatelessWidget {
                     : Symbols.picture_in_picture_alt_rounded,
               ),
             ),
-          IconButton(
-            tooltip: t.common.manageMediaSessions,
-            onPressed: controller.toggleSessionTray,
-            icon: const Icon(Symbols.dashboard_customize_rounded),
+          Semantics(
+            expanded: controller.sessionTrayVisible,
+            child: IconButton(
+              tooltip: controller.sessionTrayVisible ? t.common.hideMediaSessions : t.common.manageMediaSessions,
+              onPressed: controller.toggleSessionTray,
+              icon: const Icon(Symbols.dashboard_customize_rounded),
+            ),
           ),
         ],
       ),
@@ -634,44 +685,111 @@ class _WorkspaceSessionTray extends StatelessWidget {
       borderRadius: BorderRadius.circular(tk.radiusLg),
       elevation: 18,
       child: ConstrainedBox(
-        constraints: const BoxConstraints(maxWidth: 320, maxHeight: 360),
+        constraints: const BoxConstraints(maxWidth: 340, maxHeight: 400),
         child: ListView(
           shrinkWrap: true,
           padding: EdgeInsets.all(tk.space * 0.5),
           children: [
+            Padding(
+              padding: EdgeInsetsDirectional.only(start: tk.space, top: tk.space * 0.35, bottom: tk.space * 0.2),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Semantics(
+                      header: true,
+                      liveRegion: true,
+                      child: Text(
+                        t.common.mediaSessions,
+                        style: Theme.of(context).textTheme.titleSmall?.copyWith(color: tk.text),
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    tooltip: t.common.hideMediaSessions,
+                    visualDensity: VisualDensity.standard,
+                    onPressed: () => controller.setSessionTrayVisible(false),
+                    icon: const Icon(Symbols.close_rounded),
+                  ),
+                ],
+              ),
+            ),
+            Padding(
+              padding: EdgeInsetsDirectional.fromSTEB(tk.space, 0, tk.space, tk.space * 0.65),
+              child: Text(
+                t.common.mediaSessionsHint,
+                style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tk.textMuted),
+              ),
+            ),
+            Divider(height: tk.groupGap, color: tk.outline),
             for (final registration in sessions)
-              FocusableListTile(
-                dense: false,
-                visualDensity: VisualDensity.standard,
-                selected: controller.focusedSessionId == registration.descriptor.id,
-                leading: Icon(
-                  controller.parkedSessions.any((s) => s.descriptor.id == registration.descriptor.id)
-                      ? Symbols.pause_circle_outline_rounded
-                      : Symbols.play_circle_rounded,
-                ),
-                title: Text(registration.descriptor.title, maxLines: 1, overflow: TextOverflow.ellipsis),
-                onTap: () {
+              Builder(
+                builder: (context) {
                   final id = registration.descriptor.id;
-                  controller.unpark(id);
-                  if (controller.fullscreenSessionId != null) {
-                    controller.promoteToFullscreen(id);
-                  } else {
-                    controller.focus(id);
-                  }
-                  controller.setSessionTrayVisible(false);
-                },
-                trailing: IconButton(
-                  tooltip: registration.descriptor.kind == MultiviewMediaKind.video ||
+                  final parked = controller.parkedSessions.any((session) => session.descriptor.id == id);
+                  final fullscreen = controller.fullscreenSessionId == id;
+                  final returnLabel = registration.descriptor.kind == MultiviewMediaKind.video ||
                           registration.descriptor.kind == MultiviewMediaKind.liveTv
                       ? t.videoControls.returnToFullPlayer
-                      : t.common.returnToFullView,
-                  visualDensity: VisualDensity.standard,
-                  icon: const Icon(Symbols.arrow_back_rounded),
-                  onPressed: () {
-                    controller.setSessionTrayVisible(false);
-                    controller.restore(registration.descriptor.id);
-                  },
-                ),
+                      : t.common.returnToFullView;
+                  final closeLabel = registration.descriptor.kind == MultiviewMediaKind.video ||
+                          registration.descriptor.kind == MultiviewMediaKind.liveTv
+                      ? t.common.closeMiniPlayer
+                      : t.common.closeWorkspaceWindow;
+                  return FocusableListTile(
+                    dense: false,
+                    visualDensity: VisualDensity.standard,
+                    selected: controller.focusedSessionId == id,
+                    leading: Icon(
+                      parked
+                          ? Symbols.visibility_off_rounded
+                          : fullscreen
+                          ? Symbols.fullscreen_rounded
+                          : Symbols.picture_in_picture_alt_rounded,
+                    ),
+                    title: Text(registration.descriptor.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+                    subtitle: Text(
+                      parked
+                          ? t.common.sessionParked
+                          : fullscreen
+                          ? t.common.sessionFullscreen
+                          : t.common.sessionInWorkspace,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                    onTap: () {
+                      controller.unpark(id);
+                      if (controller.fullscreenSessionId != null) {
+                        controller.promoteToFullscreen(id);
+                      } else {
+                        controller.focus(id);
+                      }
+                      controller.setSessionTrayVisible(false);
+                    },
+                    trailing: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        IconButton(
+                          tooltip: returnLabel,
+                          visualDensity: VisualDensity.standard,
+                          icon: const Icon(Symbols.arrow_back_rounded),
+                          onPressed: () {
+                            controller.setSessionTrayVisible(false);
+                            controller.restore(id);
+                          },
+                        ),
+                        Semantics(
+                          hint: t.common.closeSessionHint,
+                          child: IconButton(
+                            tooltip: closeLabel,
+                            visualDensity: VisualDensity.standard,
+                            icon: const Icon(Symbols.close_rounded),
+                            onPressed: () => controller.close(id),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                },
               ),
           ],
         ),
@@ -690,43 +808,49 @@ class _ResizeHandle extends StatelessWidget {
     final tk = tokens(context);
     return Align(
       alignment: AlignmentDirectional.bottomEnd,
-      child: FocusableWrapper(
-        autoScroll: false,
-        borderRadius: tk.radiusSm,
-        disableScale: true,
-        excludeChildSemantics: false,
-        onKeyEvent: (node, event) {
-          if (event is! KeyDownEvent) return KeyEventResult.ignored;
-          final delta = switch (event.logicalKey) {
-            LogicalKeyboardKey.arrowLeft => const Offset(-20, 0),
-            LogicalKeyboardKey.arrowRight => const Offset(20, 0),
-            LogicalKeyboardKey.arrowUp => const Offset(0, -12),
-            LogicalKeyboardKey.arrowDown => const Offset(0, 12),
-            _ => null,
-          };
-          if (delta == null) return KeyEventResult.ignored;
-          onResize(delta);
-          return KeyEventResult.handled;
-        },
-        child: Semantics(
-          button: true,
-          label: t.common.edit,
-          onIncrease: () => onResize(const Offset(20, 12)),
-          onDecrease: () => onResize(const Offset(-20, -12)),
-          child: GestureDetector(
-            behavior: HitTestBehavior.opaque,
-            onPanUpdate: (details) => onResize(details.delta),
-            child: SizedBox(
-              width: 48,
-              height: 48,
-              child: Padding(
-                padding: EdgeInsetsDirectional.only(
-                  end: tk.space * 0.5,
-                  bottom: tk.space * 0.25,
-                  start: tk.space,
-                  top: tk.space * 0.25,
+      child: Tooltip(
+        message: t.common.resizeWindow,
+        child: FocusableWrapper(
+          autoScroll: false,
+          borderRadius: tk.radiusSm,
+          disableScale: true,
+          excludeChildSemantics: false,
+          onKeyEvent: (node, event) {
+            if (event is! KeyDownEvent) return KeyEventResult.ignored;
+            final delta = switch (event.logicalKey) {
+              LogicalKeyboardKey.arrowLeft => const Offset(-20, 0),
+              LogicalKeyboardKey.arrowRight => const Offset(20, 0),
+              LogicalKeyboardKey.arrowUp => const Offset(0, -12),
+              LogicalKeyboardKey.arrowDown => const Offset(0, 12),
+              _ => null,
+            };
+            if (delta == null) return KeyEventResult.ignored;
+            onResize(delta);
+            return KeyEventResult.handled;
+          },
+          child: Semantics(
+            label: t.common.resizeWindow,
+            hint: t.common.resizeWindowHint,
+            onIncrease: () => onResize(const Offset(20, 12)),
+            onDecrease: () => onResize(const Offset(-20, -12)),
+            child: GestureDetector(
+              behavior: HitTestBehavior.opaque,
+              onPanUpdate: (details) => onResize(details.delta),
+              child: SizedBox(
+                width: 48,
+                height: 48,
+                child: Padding(
+                  padding: EdgeInsetsDirectional.only(
+                    end: tk.space * 0.5,
+                    bottom: tk.space * 0.25,
+                    start: tk.space,
+                    top: tk.space * 0.25,
+                  ),
+                  child: Transform.rotate(
+                    angle: math.pi / 4,
+                    child: Icon(Symbols.drag_handle_rounded, size: 20, color: tk.textMuted),
+                  ),
                 ),
-                child: Icon(Symbols.drag_handle_rounded, size: 20, color: tk.textMuted),
               ),
             ),
           ),

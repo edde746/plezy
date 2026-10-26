@@ -319,6 +319,66 @@ class Translations$common$en {
 	/// en: 'Manage media sessions'
 	String get manageMediaSessions => 'Manage media sessions';
 
+	/// en: 'Hide media sessions'
+	String get hideMediaSessions => 'Hide media sessions';
+
+	/// en: 'Media sessions'
+	String get mediaSessions => 'Media sessions';
+
+	/// en: 'Select to bring a session forward. Park hides its window but keeps it open. Return opens it in full view; close ends it.'
+	String get mediaSessionsHint => 'Select to bring a session forward. Park hides its window but keeps it open. Return opens it in full view; close ends it.';
+
+	/// en: 'In workspace'
+	String get sessionInWorkspace => 'In workspace';
+
+	/// en: 'Parked'
+	String get sessionParked => 'Parked';
+
+	/// en: 'Full screen'
+	String get sessionFullscreen => 'Full screen';
+
+	/// en: 'Swap with next window'
+	String get switchToNextWindow => 'Swap with next window';
+
+	/// en: 'Move window'
+	String get moveWindow => 'Move window';
+
+	/// en: 'Finish moving window'
+	String get finishMovingWindow => 'Finish moving window';
+
+	/// en: 'Long-press and drag the window to move it. This control also enables arrow-key movement.'
+	String get moveWindowHint => 'Long-press and drag the window to move it. This control also enables arrow-key movement.';
+
+	/// en: 'Drag to move · Arrow keys adjust · Enter saves · Escape cancels'
+	String get movingWindowHelp => 'Drag to move · Arrow keys adjust · Enter saves · Escape cancels';
+
+	/// en: 'Resize window'
+	String get resizeWindow => 'Resize window';
+
+	/// en: 'Drag this handle or use the arrow keys to resize the window.'
+	String get resizeWindowHint => 'Drag this handle or use the arrow keys to resize the window.';
+
+	/// en: 'Use the move control or long-press and drag to move. Use the resize handle to resize.'
+	String get workspaceWindowHint => 'Use the move control or long-press and drag to move. Use the resize handle to resize.';
+
+	/// en: 'Select this pane to focus it. Use its fullscreen control to expand.'
+	String get workspacePaneHint => 'Select this pane to focus it. Use its fullscreen control to expand.';
+
+	/// en: 'Session window: ${title}'
+	String workspaceWindowLabel({required Object title}) => 'Session window: ${title}';
+
+	/// en: 'Select to focus. Drag the title bar to move; use the fullscreen button to expand.'
+	String get workspaceTitleHint => 'Select to focus. Drag the title bar to move; use the fullscreen button to expand.';
+
+	/// en: 'Move to session tray'
+	String get moveToSessionTray => 'Move to session tray';
+
+	/// en: 'Keeps this session available without showing its window.'
+	String get moveToSessionTrayHint => 'Keeps this session available without showing its window.';
+
+	/// en: 'Closes this window and ends its session.'
+	String get closeSessionHint => 'Closes this window and ends its session.';
+
 	/// en: 'Switch to side-by-side layout'
 	String get sideBySideLayout => 'Switch to side-by-side layout';
 
@@ -10826,6 +10886,26 @@ extension on Translations {
 			'common.closeWorkspaceWindow' => 'Close window',
 			'common.returnToFullView' => 'Return to full view',
 			'common.manageMediaSessions' => 'Manage media sessions',
+			'common.hideMediaSessions' => 'Hide media sessions',
+			'common.mediaSessions' => 'Media sessions',
+			'common.mediaSessionsHint' => 'Select to bring a session forward. Park hides its window but keeps it open. Return opens it in full view; close ends it.',
+			'common.sessionInWorkspace' => 'In workspace',
+			'common.sessionParked' => 'Parked',
+			'common.sessionFullscreen' => 'Full screen',
+			'common.switchToNextWindow' => 'Swap with next window',
+			'common.moveWindow' => 'Move window',
+			'common.finishMovingWindow' => 'Finish moving window',
+			'common.moveWindowHint' => 'Long-press and drag the window to move it. This control also enables arrow-key movement.',
+			'common.movingWindowHelp' => 'Drag to move · Arrow keys adjust · Enter saves · Escape cancels',
+			'common.resizeWindow' => 'Resize window',
+			'common.resizeWindowHint' => 'Drag this handle or use the arrow keys to resize the window.',
+			'common.workspaceWindowHint' => 'Use the move control or long-press and drag to move. Use the resize handle to resize.',
+			'common.workspacePaneHint' => 'Select this pane to focus it. Use its fullscreen control to expand.',
+			'common.workspaceWindowLabel' => ({required Object title}) => 'Session window: ${title}',
+			'common.workspaceTitleHint' => 'Select to focus. Drag the title bar to move; use the fullscreen button to expand.',
+			'common.moveToSessionTray' => 'Move to session tray',
+			'common.moveToSessionTrayHint' => 'Keeps this session available without showing its window.',
+			'common.closeSessionHint' => 'Closes this window and ends its session.',
 			'common.sideBySideLayout' => 'Switch to side-by-side layout',
 			'common.floatingWindows' => 'Switch to floating windows',
 			'common.clear' => 'Clear',
