@@ -1,42 +1,7 @@
 name: Games embedded engine
 
+# Runs only when selected from Actions.
 on:
-  pull_request:
-    paths:
-      - '.github/workflows/games-native.yml'
-      - 'android/**'
-      - 'native/games/**'
-      - 'scripts/games/**'
-      - 'games-native.lock.json'
-      - 'lib/games/**'
-      - 'lib/multiview/**'
-      - 'lib/screens/games/**'
-      - 'lib/screens/sources/**'
-      - 'lib/screens/video_player/**'
-      - 'lib/screens/video_player_screen.dart'
-      - 'lib/mpv/player/**'
-      - 'lib/services/playback_coordinator.dart'
-      - 'lib/services/video_volume_controller.dart'
-      - 'lib/services/music/**'
-      - 'lib/sources/source_playback.dart'
-      - 'test/games/**'
-      - 'test/multiview/**'
-      - 'test/services/gamepad_service_test.dart'
-      - 'test/services/playback_coordinator_test.dart'
-      - 'test/services/video_volume_controller_test.dart'
-      - 'test/services/music/music_playback_service_test.dart'
-      - 'test/sources/source_playback_test.dart'
-      - 'ios/Runner/AppDelegate.swift'
-      - 'ios/Runner/MpvPlayer/**'
-      - 'macos/Runner/MainFlutterWindow.swift'
-      - 'macos/Runner/MpvPlayer/**'
-      - 'linux/runner/my_application.cc'
-      - 'linux/runner/mpv/**'
-      - 'windows/runner/flutter_window.cpp'
-      - 'windows/runner/mpv/**'
-      - 'docs/games/**'
-      - 'docs/plezyng/multiview/**'
-      - 'pubspec.*'
   workflow_dispatch:
 
 permissions:
