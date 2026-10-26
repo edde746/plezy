@@ -74,11 +74,21 @@ class PlaybackInitializationOptions {
   final Duration? startPosition;
 
   /// Ask the server for a video encode when the selected source is identified
-  /// as Dolby Vision. Used by webOS, which lacks a local DV layer compositor,
-  /// and by the shared playback fallback after a native/local open fails. This
-  /// requests a compatible rendition; it does not qualify the server's color
-  /// conversion.
+  /// as Dolby Vision when its profile is not reported by the local native
+  /// playback path. This is decided before opening the video so a decoder that
+  /// accepts a stream but displays wrong colors cannot bypass compatibility
+  /// routing. The HLS output still needs server-side tone mapping.
   final bool requestCompatibleDolbyVisionRendition;
+
+  /// Exact Dolby Vision profiles the active platform path reports as
+  /// supported. An empty set is deliberately conservative and sends known DV
+  /// sources through the server's SDR compatibility route.
+  final Set<int> supportedNativeDolbyVisionProfiles;
+
+  /// Let an explicit Windows/Linux FEL experiment keep Profile 7 local. The
+  /// experiment remains opt-in and unqualified; production defaults use the
+  /// server rendition on those targets.
+  final bool allowExperimentalDolbyVisionProfile7;
 
   /// Keep a downloaded copy from intercepting an automatic server-rendition
   /// retry after the device-local DV route failed. Offline library mode still
@@ -88,6 +98,8 @@ class PlaybackInitializationOptions {
   bool requestsCompatibleDolbyVisionRendition(MediaSourceInfo? source) => shouldRequestCompatibleDolbyVisionRendition(
     requested: requestCompatibleDolbyVisionRendition,
     source: source?.displayCriteria,
+    supportedNativeProfiles: supportedNativeDolbyVisionProfiles,
+    allowExperimentalProfile7: allowExperimentalDolbyVisionProfile7,
   );
 
   const PlaybackInitializationOptions({
@@ -105,6 +117,8 @@ class PlaybackInitializationOptions {
     this.transcodeSessionId,
     this.startPosition,
     this.requestCompatibleDolbyVisionRendition = false,
+    this.supportedNativeDolbyVisionProfiles = const {},
+    this.allowExperimentalDolbyVisionProfile7 = false,
     this.forceServerPlayback = false,
   });
 }

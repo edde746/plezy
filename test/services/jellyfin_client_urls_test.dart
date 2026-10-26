@@ -5860,6 +5860,13 @@ void main() {
               ],
             });
           }
+          if (request.url.path == '/Videos/item-1/master.m3u8') {
+            return http.Response(
+              '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=5000000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2"\nstream.m3u8\n',
+              200,
+              headers: {'content-type': 'application/vnd.apple.mpegurl'},
+            );
+          }
           return http.Response('{}', 404);
         }),
       );

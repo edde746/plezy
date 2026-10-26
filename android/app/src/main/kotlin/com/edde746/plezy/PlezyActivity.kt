@@ -881,7 +881,16 @@ class PlezyActivity : FlutterActivity() {
         "getTvDetection" -> result.success(getAndroidTvDetection())
         "getDeviceName" -> result.success(getDeviceName())
         "getPerformanceSignals" -> result.success(getPerformanceSignals())
-        "getVideoDecodeCapabilities" -> result.success(MediaCodecQuery.hardwareVideoDecodeSupport())
+        "getVideoDecodeCapabilities" -> {
+          val capabilities = MediaCodecQuery.hardwareVideoDecodeSupport()
+          result.success(
+            mapOf(
+              "hevc" to (capabilities["hevc"] == true),
+              "av1" to (capabilities["av1"] == true),
+              "dolbyVisionProfiles" to com.edde746.plezy.exoplayer.DoviBridge.supportedDolbyVisionProfiles()
+            )
+          )
+        }
         "getBackgroundWorkSignals" -> result.success(
           BackgroundWorkClassifier.toMap(BackgroundWorkDiagnostics.read(this))
         )

@@ -135,7 +135,6 @@ extension _VideoPlayerErrorMethods on VideoPlayerScreenState {
         preferredSubtitleTrackOverride: SubtitlePreference.trackOrNull(
           _playbackSession?.subtitleSelection.primaryTrack,
         ),
-        requestCompatibleDolbyVisionRendition: true,
         forceServerPlayback: true,
         showErrorUi: false,
         reason: 'automatic Dolby Vision compatibility fallback',

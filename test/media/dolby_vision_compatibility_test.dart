@@ -10,8 +10,52 @@ void main() {
 
     expect(shouldRequestCompatibleDolbyVisionRendition(requested: false, source: dolbyVision), isFalse);
     expect(shouldRequestCompatibleDolbyVisionRendition(requested: true, source: dolbyVision), isTrue);
+    expect(
+      shouldRequestCompatibleDolbyVisionRendition(
+        requested: true,
+        source: dolbyVision,
+        supportedNativeProfiles: const {7},
+      ),
+      isFalse,
+    );
+    expect(
+      shouldRequestCompatibleDolbyVisionRendition(
+        requested: true,
+        source: dolbyVision,
+        allowExperimentalProfile7: true,
+      ),
+      isFalse,
+    );
+    expect(
+      shouldRequestCompatibleDolbyVisionRendition(
+        requested: true,
+        source: dolbyVision,
+        supportedNativeProfiles: const {5},
+      ),
+      isTrue,
+    );
     expect(shouldRequestCompatibleDolbyVisionRendition(requested: true, source: hdr10), isFalse);
     expect(shouldRequestCompatibleDolbyVisionRendition(requested: true, source: null), isFalse);
+  });
+
+  test('compatibility HLS output must explicitly declare SDR for every video variant', () {
+    const sdr = '''
+#EXTM3U
+#EXT-X-STREAM-INF:BANDWIDTH=5000000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2"
+stream.m3u8
+''';
+    const mixed = '''
+#EXTM3U
+#EXT-X-STREAM-INF:BANDWIDTH=5000000,VIDEO-RANGE=SDR,CODECS="avc1.640028"
+sdr.m3u8
+#EXT-X-STREAM-INF:BANDWIDTH=9000000,VIDEO-RANGE=PQ,CODECS="hvc1.2.4.L150"
+hdr.m3u8
+''';
+
+    expect(hlsMasterDeclaresSdrVideoOutput(sdr), isTrue);
+    expect(hlsMasterDeclaresSdrVideoOutput(mixed), isFalse);
+    expect(hlsMasterDeclaresSdrVideoOutput('#EXTM3U\n#EXTINF:4.0,\nsegment.ts'), isFalse);
+    expect(hlsMasterDeclaresSdrVideoOutput('#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=5000000\nstream.m3u8'), isFalse);
   });
 
   test('automatic fallback retries native/local Dolby Vision failures once', () {

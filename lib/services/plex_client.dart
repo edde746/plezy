@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import '../utils/isolate_helper.dart';
 import '../utils/json_utils.dart';
 import 'package:flutter/foundation.dart';
@@ -7,6 +8,7 @@ import 'package:uuid/uuid.dart';
 
 import '../media/artist_discography.dart';
 import '../media/download_resolution.dart';
+import '../media/dolby_vision_compatibility.dart';
 import '../media/episode_collection.dart';
 import '../media/library_filter_result.dart';
 import '../media/library_first_character.dart';
@@ -4015,6 +4017,9 @@ class PlexClient
             _selectedInternalSubtitleForHls(requestedSubtitleTrack) == null;
         if (!burnUndeliverable && result.outcome == TranscodeDecisionOutcome.transcodeOk && result.startPath != null) {
           final transcodeUrl = '${config.baseUrl}${result.startPath}'.withPlexToken(config.token);
+          if (forceCompatibleDolbyVisionTranscode) {
+            await _verifyDolbyVisionSdrManifest(transcodeUrl, options.transcodeSessionId!);
+          }
           final subtitleSidecars = _buildTranscodeSidecarSubtitles(data.mediaInfo);
           return PlaybackInitializationResult(
             availableVersions: data.availableVersions,
@@ -4047,6 +4052,38 @@ class PlexClient
     } catch (error, stackTrace) {
       if (error is PlaybackException) rethrow;
       Error.throwWithStackTrace(classifyPlaybackFailure(error), stackTrace);
+    }
+  }
+
+  /// A forced Plex video encode does not itself promise HDR-to-SDR conversion.
+  /// Require an explicit SDR declaration in the HLS master before calling it
+  /// a compatibility rendition, and stop the just-started session if the
+  /// output is missing that signal.
+  Future<void> _verifyDolbyVisionSdrManifest(String transcodeUrl, String transcodeSessionId) async {
+    try {
+      final bytes = await _http.getBytes(transcodeUrl, timeout: MediaServerTimeouts.plexProbe, maxBytes: 64 * 1024);
+      final manifest = utf8.decode(bytes, allowMalformed: false);
+      if (hlsMasterDeclaresSdrVideoOutput(manifest)) {
+        appLogger.i('Dolby Vision compatibility transcode declares SDR HLS output');
+        return;
+      }
+      appLogger.w('Plex Dolby Vision encode did not declare SDR output; refusing the unverified rendition');
+      throw PlaybackException(t.messages.playbackFailed, reason: PlaybackFailureReason.noPlayableSource);
+    } catch (error, stackTrace) {
+      try {
+        await _getWithFailover(
+          '/video/:/transcode/universal/stop',
+          queryParameters: {'session': transcodeSessionId},
+          timeout: MediaServerTimeouts.plexProbe,
+        );
+      } catch (stopError, stopStackTrace) {
+        appLogger.d(
+          'Failed to stop an unverified Plex Dolby Vision transcode',
+          error: stopError,
+          stackTrace: stopStackTrace,
+        );
+      }
+      Error.throwWithStackTrace(error, stackTrace);
     }
   }
 

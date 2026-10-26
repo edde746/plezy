@@ -2197,6 +2197,13 @@ void main() {
             headers: {'content-type': 'application/json'},
           );
         }
+        if (request.url.path == '/video/:/transcode/universal/start.m3u8') {
+          return http.Response(
+            '#EXTM3U\n#EXT-X-STREAM-INF:BANDWIDTH=5000000,VIDEO-RANGE=SDR,CODECS="avc1.640028,mp4a.40.2"\nstream.m3u8\n',
+            200,
+            headers: {'content-type': 'application/vnd.apple.mpegurl'},
+          );
+        }
         return http.Response('unexpected request', 500);
       });
       addTearDown(client.close);

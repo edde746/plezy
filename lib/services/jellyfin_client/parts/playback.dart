@@ -399,6 +399,14 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
         playSessionId = urlSessionId != null && urlSessionId.isNotEmpty
             ? urlSessionId
             : (negotiatedSessionId is String ? negotiatedSessionId : null);
+        if (forceCompatibleDolbyVisionTranscode) {
+          await _verifyDolbyVisionSdrManifest(
+            transcodingUrl,
+            itemId: metadata.id,
+            playSessionId: playSessionId,
+            position: options.startPosition ?? Duration.zero,
+          );
+        }
         videoUrl = _withApiKey(transcodingUrl);
         playMethod = 'Transcode';
         isTranscoding = true;
@@ -462,6 +470,43 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
       playMethod: playMethod,
       selectedMediaIndex: bundle.selectedSourceIndex,
     );
+  }
+
+  /// Verify the negotiated HLS output before a DV compatibility transcode is
+  /// exposed to the player. Jellyfin/Emby's PlaybackInfo response describes
+  /// the source, while the HLS master declares the actual output range.
+  Future<void> _verifyDolbyVisionSdrManifest(
+    String transcodingUrl, {
+    required String itemId,
+    required String? playSessionId,
+    required Duration position,
+  }) async {
+    try {
+      final bytes = await _http.getBytes(
+        _withApiKey(transcodingUrl),
+        timeout: MediaServerTimeouts.jellyfinProbe,
+        maxBytes: 64 * 1024,
+      );
+      final manifest = utf8.decode(bytes, allowMalformed: false);
+      if (!hlsMasterDeclaresSdrVideoOutput(manifest)) {
+        appLogger.w(
+          'Dolby Vision compatibility transcode did not declare SDR output; refusing the unverified rendition',
+        );
+        throw PlaybackException(t.messages.playbackFailed, reason: PlaybackFailureReason.noPlayableSource);
+      }
+      appLogger.i('Dolby Vision compatibility transcode declares SDR HLS output');
+    } catch (error, stackTrace) {
+      try {
+        await reportPlaybackStopped(itemId: itemId, position: position, playSessionId: playSessionId);
+      } catch (stopError, stopStackTrace) {
+        appLogger.d(
+          'Failed to stop an unverified Jellyfin Dolby Vision transcode',
+          error: stopError,
+          stackTrace: stopStackTrace,
+        );
+      }
+      Error.throwWithStackTrace(error, stackTrace);
+    }
   }
 
   /// [position] is ignored: a MediaBrowser item is never stacked across

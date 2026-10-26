@@ -39,13 +39,19 @@ void main() {
   });
 
   test('reports the decoders the platform found', () async {
-    stubProbe(<String, Object?>{'hevc': true, 'av1': false});
+    stubProbe(<String, Object?>{
+      'hevc': true,
+      'av1': false,
+      'dolbyVisionProfiles': [5, 7, 8],
+    });
 
     await VideoDecodeCapabilities.getInstance();
 
     expect(acceptsHevc(), isTrue);
     expect(acceptsAv1(), isFalse);
     expect(VideoDecodeCapabilities.describeSync(), 'hevc=hw av1=none');
+    expect(VideoDecodeCapabilities.supportedNativeDolbyVisionProfiles, {5, 7, 8});
+    expect(VideoDecodeCapabilities.describeDolbyVisionProfilesSync(), '5,7,8');
   });
 
   test('a missing codec entry counts as no hardware decoder', () async {
@@ -76,6 +82,17 @@ void main() {
     expect(acceptsHevc(), isTrue);
     expect(acceptsAv1(), isTrue);
     expect(VideoDecodeCapabilities.describeSync(), 'unprobed');
+    expect(VideoDecodeCapabilities.supportedNativeDolbyVisionProfiles, isEmpty);
+    expect(VideoDecodeCapabilities.describeDolbyVisionProfilesSync(), 'unreported');
+  });
+
+  test('an older native build with no Dolby Vision profile field fails closed', () async {
+    stubProbe(<String, Object?>{'hevc': true, 'av1': true});
+
+    await VideoDecodeCapabilities.getInstance();
+
+    expect(VideoDecodeCapabilities.supportedNativeDolbyVisionProfiles, isEmpty);
+    expect(VideoDecodeCapabilities.describeDolbyVisionProfilesSync(), 'unreported');
   });
 
   test('the probe runs once and is shared by concurrent callers', () async {

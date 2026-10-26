@@ -77,6 +77,7 @@ import '../services/player_sync_offsets.dart';
 import '../services/preferred_audio_device.dart';
 import '../services/scoped_player_prefs.dart';
 import '../services/settings_service.dart';
+import '../services/video_decode_capabilities.dart';
 import '../services/storage_service.dart';
 import '../services/sleep_timer_service.dart';
 import '../services/subtitle_preference.dart';
@@ -1876,7 +1877,16 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
             preferredSubtitleTrack: _preferredSubtitleTrack,
             sessionIdentifier: _playbackSessionIdentifier,
             transcodeSessionId: _playbackTranscodeSessionId,
-            requestCompatibleDolbyVisionRendition: PlatformDetector.isWebOSBuild(),
+            // The backend applies this only to identified DV whose exact
+            // profile is not reported by this platform's playback path. That
+            // makes the decision before local decoding can produce a valid
+            // open with invalid colors.
+            requestCompatibleDolbyVisionRendition: true,
+            supportedNativeDolbyVisionProfiles: VideoDecodeCapabilities.supportedNativeDolbyVisionProfiles,
+            allowExperimentalDolbyVisionProfile7:
+                (Platform.isWindows || Platform.isLinux) &&
+                !PlatformDetector.isWebOSBuild() &&
+                settingsService.read(SettingsService.experimentalDolbyVision),
             // The same resume the open will land on (see
             // _resolveOpenResumePosition): a stacked item opens the file
             // holding it.

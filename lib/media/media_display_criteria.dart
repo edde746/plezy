@@ -69,6 +69,7 @@ class MediaDisplayCriteria {
   final int? width;
   final int? height;
   final int? doviProfile;
+
   /// Positive Dolby Vision evidence without a reliable numeric profile.
   final bool dolbyVisionPresent;
   final int? doviLevel;
@@ -139,9 +140,11 @@ class MediaDisplayCriteria {
   /// Generic color tags alone cannot distinguish DV from HDR10/HLG.
   bool get hasDolbyVision => dolbyVisionPresent || (doviProfile ?? 0) > 0;
 
-  /// Whether the server said enough to describe a stream: a rate, or
-  /// dimensions plus color/DoVi tags.
-  bool get isUsable => hasFrameRate || (hasDimensions && hasDisplayMetadata);
+  /// Whether the server said enough to describe a stream. A positive Dolby
+  /// Vision marker is sufficient for compatibility routing even when a
+  /// server omitted dimensions and frame rate; other display classifications
+  /// still need a rate or dimensions plus color metadata.
+  bool get isUsable => hasDolbyVision || hasFrameRate || (hasDimensions && hasDisplayMetadata);
 
   MediaDisplayColorType get colorType => classifyMediaDisplayColor(
     isDolbyVision: hasDolbyVision,

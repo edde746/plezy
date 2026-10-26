@@ -1,5 +1,6 @@
 import CoreMedia
 import Flutter
+import AVKit
 import VideoToolbox
 
 /// Answers `com.plezy/device`'s `getVideoDecodeCapabilities` on iOS and tvOS.
@@ -23,6 +24,9 @@ class VideoDecodeCapabilitiesPlugin: NSObject, FlutterPlugin {
       result([
         "hevc": VTIsHardwareDecodeSupported(kCMVideoCodecType_HEVC),
         "av1": VTIsHardwareDecodeSupported(kCMVideoCodecType_AV1),
+        // This app's Apple sample-buffer path accepts the documented single-
+        // layer P5/P8 profiles when the active Apple output path reports DV.
+        "dolbyVisionProfiles": AVPlayer.availableHDRModes.contains(.dolbyVision) ? [5, 8] : [Int](),
       ])
     default:
       // The rest of `com.plezy/device` is Android-only.

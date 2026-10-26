@@ -1102,6 +1102,7 @@ Future<void> _logEnvironmentDiagnostics() async {
   );
   appLogger.i('Display: ${DevicePerformance.describeDisplay()}');
   appLogger.i('Video decoders: ${VideoDecodeCapabilities.describeSync()}');
+  appLogger.i('Dolby Vision decoder profiles: ${VideoDecodeCapabilities.describeDolbyVisionProfilesSync()}');
   if (Platform.isAndroid) {
     appLogger.i('Startup RSS: ${ProcessInfo.currentRss >> 20}MB');
   }

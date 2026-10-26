@@ -124,6 +124,13 @@ object DoviBridge {
       .also { Log.i(TAG, "Device advertises DV Profile 8 (DvheSt): $it") }
   }
 
+  /** Profiles backed by a registered device decoder, for pre-playback routing. */
+  fun supportedDolbyVisionProfiles(): List<Int> = buildList {
+    if (deviceAdvertisesDvProfile(MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheStn)) add(5)
+    if (deviceAdvertisesDvProfile(MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheDtb)) add(7)
+    if (deviceAdvertisesDvProfile(MediaCodecInfo.CodecProfileLevel.DolbyVisionProfileDvheSt, minApi = 27)) add(8)
+  }
+
   /**
    * Whether this device can render single-layer Dolby Vision Profile 5
    * (IPT-PQ-c2) through MediaCodec. P5 has no compatible base layer, so a

@@ -130,7 +130,7 @@ class PlaybackInitializationService {
     // strict match must stand: an explicitly requested non-downloaded version
     // streams from the server (issue #1440).
     final offlineOnly = client == null || requireOffline;
-    if (serverId != null && (preferOffline || client == null) && database != null) {
+    if (!options.forceServerPlayback && serverId != null && (preferOffline || client == null) && database != null) {
       offlineSource = await _resolveOfflineVideoSource(
         ServerId(serverId),
         metadata.id,
@@ -144,42 +144,54 @@ class PlaybackInitializationService {
     // preserves track labels where available; the local file is enough to play.
     if (offlineSource != null) {
       final mediaInfo = await _cachedMediaInfo(metadata, offlineSource.mediaIndex, position: options.startPosition);
-      var offlineVideoPath = offlineSource.path;
-      // A stacked item plays the downloaded file holding the start position.
-      final partIndex = mediaInfo?.partTimeline?.currentIndex ?? 0;
-      if (partIndex > 0) {
-        final partSource = await _resolveOfflineVideoSource(
-          ServerId(serverId!),
-          metadata.id,
-          mediaIndex: offlineSource.mediaIndex,
-          selectedMediaSourceId: offlineSource.mediaSourceId,
-          allowAnyDownloadedVersion: true,
-          partIndex: partIndex,
-        );
-        if (partSource == null) {
-          // A copy downloaded before stacked items were fetched whole holds
-          // only the first file: stream the rest when a server is there.
-          appLogger.w('Downloaded copy of ${metadata.id} has no file for part ${partIndex + 1}');
-          if (offlineOnly) {
-            throw const PlaybackException(
-              'The downloaded media file is unavailable.',
-              reason: PlaybackFailureReason.noPlayableSource,
-            );
-          }
-          offlineSource = null;
-        } else {
-          offlineVideoPath = partSource.path;
+      if (options.requestsCompatibleDolbyVisionRendition(mediaInfo)) {
+        // A local copy can still carry an unsupported DV profile. When the
+        // server is available, skip the download and negotiate its SDR
+        // rendition before opening a decoder that may render wrong colors.
+        appLogger.i('Skipping local Dolby Vision copy in favor of a compatible server rendition');
+        offlineSource = null;
+        if (requireOffline) {
+          throw PlaybackException(t.messages.playbackFailed, reason: PlaybackFailureReason.noPlayableSource);
         }
       }
       if (offlineSource != null) {
-        appLogger.d('Using offline playback for ${metadata.id}');
-        return _buildOfflineResult(
-          metadata: metadata,
-          offlineVideoPath: offlineVideoPath,
-          mediaInfo: mediaInfo,
-          selectedMediaIndex: offlineSource.mediaIndex,
-          selectedMediaSourceId: offlineSource.mediaSourceId,
-        );
+        var offlineVideoPath = offlineSource.path;
+        // A stacked item plays the downloaded file holding the start position.
+        final partIndex = mediaInfo?.partTimeline?.currentIndex ?? 0;
+        if (partIndex > 0) {
+          final partSource = await _resolveOfflineVideoSource(
+            ServerId(serverId!),
+            metadata.id,
+            mediaIndex: offlineSource.mediaIndex,
+            selectedMediaSourceId: offlineSource.mediaSourceId,
+            allowAnyDownloadedVersion: true,
+            partIndex: partIndex,
+          );
+          if (partSource == null) {
+            // A copy downloaded before stacked items were fetched whole holds
+            // only the first file: stream the rest when a server is there.
+            appLogger.w('Downloaded copy of ${metadata.id} has no file for part ${partIndex + 1}');
+            if (offlineOnly) {
+              throw const PlaybackException(
+                'The downloaded media file is unavailable.',
+                reason: PlaybackFailureReason.noPlayableSource,
+              );
+            }
+            offlineSource = null;
+          } else {
+            offlineVideoPath = partSource.path;
+          }
+        }
+        if (offlineSource != null) {
+          appLogger.d('Using offline playback for ${metadata.id}');
+          return _buildOfflineResult(
+            metadata: metadata,
+            offlineVideoPath: offlineVideoPath,
+            mediaInfo: mediaInfo,
+            selectedMediaIndex: offlineSource.mediaIndex,
+            selectedMediaSourceId: offlineSource.mediaSourceId,
+          );
+        }
       }
     }
     if (requireOffline) {

@@ -184,6 +184,12 @@ extension _VideoPlayerPlaybackStartMethods on VideoPlayerScreenState {
             sessionIdentifier: _playbackSessionIdentifier,
             transcodeSessionId: _playbackTranscodeSessionId,
             startPosition: startPosition,
+            requestCompatibleDolbyVisionRendition: true,
+            supportedNativeDolbyVisionProfiles: VideoDecodeCapabilities.supportedNativeDolbyVisionProfiles,
+            allowExperimentalDolbyVisionProfile7:
+                (Platform.isWindows || Platform.isLinux) &&
+                !PlatformDetector.isWebOSBuild() &&
+                (SettingsService.instanceOrNull?.read(SettingsService.experimentalDolbyVision) ?? false),
           ),
           offlineLibraryMode: true,
         );

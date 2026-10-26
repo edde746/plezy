@@ -213,6 +213,13 @@ void main() {
     }
   });
 
+  test('a positive Dolby Vision marker remains usable without display metrics', () {
+    final criteria = PlexMappers.displayCriteriaFromJson(null, {'DOVIPresent': 1});
+
+    expect(criteria?.hasDolbyVision, isTrue);
+    expect(criteria?.doviProfile, isNull);
+  });
+
   group('PlexMappers.mediaItem (movie)', () {
     test('maps a Plex movie with watch state, ratings, genres, and people', () {
       final json = {
