@@ -1,6 +1,6 @@
 # Multiview delivery ledger
 
-Status: **feature code complete; draft PR and automated validation pending.** This ledger is for `codex/multiview-workspace-20261026`; the branch is not to be merged to main before release review.
+Status: **feature code complete; draft PR #32 opened; CI and device validation pending.** This ledger is for `codex/multiview-workspace-20261026`; the PR remains draft and the branch is not to be merged to main before release review.
 
 Source baseline: PlezyNG main `62b2ed0f4dd8c287e026bcc356e65395366c6b4a`. The user requires this work to stay on `codex/multiview-workspace-20261026`, be tested thoroughly, and not be merged to main.
 
@@ -57,5 +57,5 @@ This is a code-path map, **not device qualification**. No target has been verifi
 - Native builds and device qualification: not run. No platform is marked verified.
 - Flutter verification is currently blocked in this workspace: the first-run Flutter CLI attempted to contact a link-local cloud metadata endpoint and automatic approval review rejected that access. I did not retry through Flutter, Dart, or another invocation path.
 - This continuation adds native player-channel isolation, reserved primary/companion slots, a retained Android Steam PlatformView, capability-gated game admission, game audio/input lease routing, source-video slot selection, Dart/JVM regression tests and CI coverage. The new tests and Android app build are authored but not executed locally; the earlier Flutter first-run auto-review rejection bars another Flutter/Dart or Gradle-triggered Flutter invocation here. The updated CI workflow will run the focused tests, Steam unit tests and Android app build on the draft PR.
-- Pull request: pending creation after this code-complete pass; it must remain draft until automated checks and device qualification are reviewed.
+- Pull request #32: https://github.com/snapetech-org/PlezyNG/pull/32. It must remain draft until automated checks and device qualification are reviewed.
 
