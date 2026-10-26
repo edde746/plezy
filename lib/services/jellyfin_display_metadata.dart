@@ -61,7 +61,9 @@ bool jellyfinVideoStreamIsDolbyVision(Map<String, dynamic> videoStream) {
     videoStream['DisplayTitle'],
   ].whereType<Object>().map((value) => value.toString().toLowerCase()).join(' ');
   final tokens = RegExp(r'[a-z0-9]+').allMatches(text).map((match) => match.group(0)!).toSet();
-  return tokens.contains('dovi') ||
+  final compact = text.replaceAll(RegExp(r'[^a-z0-9]'), '');
+  return compact.contains('dolbyvision') ||
+      tokens.contains('dovi') ||
       tokens.contains('dolbyvision') ||
       tokens.contains('dv') ||
       tokens.contains('dvhe') ||
