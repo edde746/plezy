@@ -94,15 +94,15 @@ class SourceTransport {
     return utf8.decode(bytes);
   }
 
+  Future<Object?> jsonValue(String method, Uri uri, {Map<String, String> headers = const {}, Object? body}) async =>
+      jsonDecode(await text(method, uri, headers: headers, body: body));
+
   Future<Map<String, dynamic>> json(
     String method,
     Uri uri, {
     Map<String, String> headers = const {},
     Object? body,
-  }) async => sourceMap(jsonDecode(await text(method, uri, headers: headers, body: body)));
-
-  Future<Object?> jsonValue(String method, Uri uri, {Map<String, String> headers = const {}, Object? body}) async =>
-      jsonDecode(await text(method, uri, headers: headers, body: body));
+  }) async => sourceMap(await jsonValue(method, uri, headers: headers, body: body));
 
   void close() {
     _closed = true;
