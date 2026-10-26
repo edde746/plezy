@@ -17,7 +17,7 @@ void main() {
     final stored = prefs.keys.where((key) => key.startsWith('companion_remote_pairing_'));
     expect(stored, hasLength(2));
     for (final key in stored) {
-      expect(prefs.getString(key), startsWith('enc:v2:'));
+      expect(CredentialVault.isProtected(prefs.getString(key)), isTrue);
       expect(prefs.getString(key), isNot(contains(first)));
     }
     final rotated = await RemotePairingStore.hostCode('profile-a', rotate: true);

@@ -1,5 +1,23 @@
 /// Preference keys whose stored values are credentials.
 ///
+/// `shared_preferences` is the most credential-dense artifact in a Plezy
+/// installation. On the desktop platforms it is a single plaintext JSON file
+/// next to the database, and it holds:
+///
+/// * [credentialVaultKeyPref] — the AES-256 key that `CredentialVault` uses to
+///   protect every server/profile token stored in the Drift
+///   `connections.config_json` and `profile_connections.user_token` columns.
+///   Losing it orphans every one of those ciphertexts permanently.
+/// * tracker sessions — `TrackerAccountStore` persists `TrackerSession.encode()`
+///   verbatim, so raw OAuth `access_token`/`refresh_token` pairs for MAL,
+///   AniList, Simkl, Trakt and MDBList live here in plaintext.
+/// * Seerr sessions — `SeerrSessionStore` persists a raw `connect.sid` cookie
+///   alongside a vault-protected password.
+/// * [legacyPlexTokenPref] — the pre-connection-registry Plex token slot. It is
+///   drained by the connection migration but can linger on old installs.
+/// * `companion_remote_pairing_*` — random pairing capabilities protected by
+///   `CredentialVault` and scoped to a profile and remote.
+///
 /// Current sessions and pairing capabilities are encrypted with OS-held keys.
 /// Older installations can still contain a plaintext vault key, tracker tokens
 /// and Seerr cookies until their lazy migration completes. All versions must

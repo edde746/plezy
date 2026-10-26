@@ -12491,6 +12491,8 @@ extension on Translations {
 			'performanceOverlay.memory' => 'Memory',
 			'performanceOverlay.uiFps' => 'UI FPS',
 			'performanceOverlay.fps' => 'FPS',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',
 			'performanceOverlay.decoderQualcommHw' => 'Qualcomm HW',

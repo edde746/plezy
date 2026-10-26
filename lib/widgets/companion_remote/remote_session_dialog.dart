@@ -12,6 +12,7 @@ import '../../theme/mono_tokens.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/error_message_utils.dart';
 import '../../focus/focusable_button.dart';
+import '../../focus/key_event_utils.dart';
 import '../dialog_action_button.dart';
 import '../app_icon.dart';
 
@@ -122,8 +123,11 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
 
   @override
   Widget build(BuildContext context) {
-    return Consumer<CompanionRemoteProvider>(
-      builder: (context, provider, child) {
+    return Focus(
+      canRequestFocus: false,
+      onKeyEvent: (node, event) => handleBackKeyNavigation(context, event),
+      child: Consumer<CompanionRemoteProvider>(
+        builder: (context, provider, child) {
         if (_isStarting) {
           return Dialog(
             child: Padding(
@@ -260,7 +264,8 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
             ),
           ),
         );
-      },
+        },
+      ),
     );
   }
 
