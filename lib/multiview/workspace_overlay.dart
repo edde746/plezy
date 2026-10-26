@@ -167,7 +167,7 @@ class _MultiviewOverlay extends StatelessWidget {
     // use fullscreen as their expand action instead.
     final hasRestoreAction = registration.descriptor.kind != MultiviewMediaKind.game;
     final titleBarActionCount =
-        (floating ? 4 : 3) + (registration.descriptor.hasAudio ? 1 : 0) + (hasRestoreAction ? 1 : 0);
+        4 + (registration.descriptor.hasAudio ? 1 : 0) + (hasRestoreAction ? 1 : 0);
     final minWidth = math.min(math.max(220.0, titleBarActionCount * 48.0 + 64.0), viewport.width);
     final width = (viewport.width * placement.width).clamp(minWidth, math.min(520.0, viewport.width)).toDouble();
     final height = (viewport.height * placement.height)
@@ -629,7 +629,8 @@ class _WorkspaceDock extends StatelessWidget {
     return Material(
       color: tk.surface.withValues(alpha: 0.96),
       borderRadius: BorderRadius.circular(tk.radiusLg),
-      elevation: 10,
+      elevation: 8,
+      shadowColor: Theme.of(context).colorScheme.shadow,
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
@@ -683,7 +684,8 @@ class _WorkspaceSessionTray extends StatelessWidget {
     return Material(
       color: tk.surface,
       borderRadius: BorderRadius.circular(tk.radiusLg),
-      elevation: 18,
+      elevation: 8,
+      shadowColor: Theme.of(context).colorScheme.shadow,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 340, maxHeight: 400),
         child: ListView(
