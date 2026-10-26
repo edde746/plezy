@@ -4,6 +4,7 @@
 
 - Add one-command native dependency refresh and all-platform private-JIT release orchestration.
 - Complete the 2.25.0 locale catalogs, record explicit fallbacks for new Steam account copy, fix release validation issues, and configure Gradle to use the private JIT runner's HTTPS proxy.
+- Keep settings import and reset feedback visible when root rebuilds for locale or TV-mode changes.
 
 ## [2.25.0] - 2026-10-27
 

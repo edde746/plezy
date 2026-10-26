@@ -112,6 +112,22 @@ void showGlobalErrorSnackBar(String message) {
   );
 }
 
+/// Shows a success snackbar through the root messenger, including after a
+/// settings update has disposed the screen that initiated it.
+void showGlobalSuccessSnackBar(String message) {
+  final messenger = rootScaffoldMessengerKey.currentState;
+  if (messenger == null) return;
+  messenger.showSnackBar(
+    _buildSnackBar(
+      messenger.context,
+      messenger,
+      content: Text(message),
+      backgroundColor: Colors.green,
+      duration: AppDurations.snackBarDefault,
+    ),
+  );
+}
+
 /// Shows an info snackbar through the main-screen messenger when available
 /// (so it floats above the mobile NavigationBar), falling back to the root
 /// messenger when the main screen is not mounted.
