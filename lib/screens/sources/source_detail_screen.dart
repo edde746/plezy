@@ -270,10 +270,15 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     final value = sharedId.text.trim();
     sharedId.dispose();
     if (save != true || !mounted) return;
-    await sourceAction(
-      context,
-      () => controller.setSharedEntryMapping(_entry, value.isEmpty ? null : value),
-    );
+    try {
+      await controller.setSharedEntryMapping(_entry, value.isEmpty ? null : value);
+    } on Object catch (error) {
+      if (!mounted) return;
+      final message = error is SourceException && error.reason == SourceFailure.conflict
+          ? t.sourceSetup.sharedEntryConflict
+          : sourceFailureText(error);
+      showErrorSnackBar(context, message);
+    }
   }
 
   Future<String?> _metadataSearchQuery() async {
