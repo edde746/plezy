@@ -411,11 +411,14 @@ class ContentLease {
     this.expiresAt,
     this.size,
     this.backgroundTransferSafe = false,
+    this.backgroundRefresh,
   });
   final Uri uri;
   final Map<String, String> headers;
   final DateTime? expiresAt;
   final int? size;
+  /// Provider renewal data is persisted only after the native task encrypts it.
+  final Map<String, dynamic>? backgroundRefresh;
 
   /// Only adapters that know a URL is a direct resource may opt it into a
   /// persistent native task. Never infer this from empty headers alone:
@@ -432,10 +435,31 @@ class ContentLease {
       !uri.hasFragment &&
       const {'http', 'https'}.contains(uri.scheme);
 
+  /// Time-limited provider URLs are persisted only as encrypted renewal recipes;
+  /// the plaintext expiring URL is never stored in the native task row.
+  bool get canPersistEncryptedRefreshForBackgroundTransfer {
+    final refresh = backgroundRefresh;
+    if (!backgroundTransferSafe ||
+        refresh == null ||
+        size == null ||
+        size! <= 0 ||
+        uri.scheme != 'https' ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasFragment ||
+        uri.toString().length > 8192 ||
+        !const {'s3', 'googleDrive', 'oneDrive', 'dropbox'}.contains(refresh['provider'])) {
+      return false;
+    }
+    try {
+      return jsonEncode(refresh).length <= 12000;
+    } on Object {
+      return false;
+    }
+  }
+
   /// Stable HTTPS requests may put authentication headers in a native task
   /// only after encrypting the entire descriptor with the OS credential vault.
-  /// Signed URLs remain excluded because their query credentials and expiry
-  /// require provider-specific renewal before they can resume safely.
   bool get canPersistEncryptedAuthForBackgroundTransfer {
     if (!backgroundTransferSafe ||
         expiresAt != null ||

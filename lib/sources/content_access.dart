@@ -11,16 +11,244 @@ import 'package:path/path.dart' as p;
 import '../services/credential_vault.dart';
 import 'source_database.dart';
 import 'source_models.dart';
+import 'adapters/s3_source.dart';
+import 'adapters/s3_source.dart';
 import 'source_oauth.dart';
 import 'source_transport.dart';
 
 const _encryptedLeaseTaskUrl = 'https://plezyng.invalid/native-download';
 
 /// Native task rows contain only this encrypted lease in [Task.metaData].
-/// Decryption and installation of request headers happen in the iOS
-/// background callback immediately before the request starts. The callback
-/// returns a secret-bearing task only in memory and strips its own Auth object
-/// so the downloader does not expand or serialize credential fields again.
+/// Decryption, provider renewal, and request-header installation happen in
+/// the headless callback immediately before a run.
+class _RenewedBackgroundLease {
+  const _RenewedBackgroundLease(this.uri, this.headers, {this.refreshDescriptor});
+  final Uri uri;
+  final Map<String, String> headers;
+  final Map<String, dynamic>? refreshDescriptor;
+}
+
+String? _renewalText(Map<String, dynamic> data, String key, {int maxLength = 4096}) {
+  final value = data[key];
+  if (value is! String || value.isEmpty || value.length > maxLength || RegExp(r'[\x00-\x1f\x7f]').hasMatch(value)) {
+    return null;
+  }
+  return value;
+}
+
+int? _renewalSize(Map<String, dynamic> data) {
+  final value = data['size'];
+  if (value is int) return value;
+  if (value is num && value.isFinite && value >= 0) return value.toInt();
+  if (value is String) return int.tryParse(value);
+  return null;
+}
+
+void _checkRenewedRepresentation(Map<String, dynamic> descriptor, String? revision, int? size) {
+  final expectedRevision = _renewalText(descriptor, 'revision', maxLength: 2048);
+  if (expectedRevision != null && expectedRevision != revision) {
+    throw const SourceException(SourceFailure.conflict);
+  }
+  final expectedSize = _renewalSize(descriptor);
+  if (expectedSize == null || size == null || expectedSize != size) {
+    throw const SourceException(SourceFailure.conflict);
+  }
+}
+
+Future<Map<String, dynamic>> _renewalJson(
+  Uri uri, {
+  String method = 'POST',
+  Map<String, String> headers = const {},
+  Map<String, String>? form,
+  Object? jsonBody,
+}) async {
+  if (uri.scheme != 'https' || uri.host.isEmpty || uri.userInfo.isNotEmpty || uri.hasFragment || uri.toString().length > 8192) {
+    throw const SourceException(SourceFailure.permission);
+  }
+  final client = HttpClient()..connectionTimeout = const Duration(seconds: 10);
+  try {
+    final request = await client.openUrl(method, uri).timeout(const Duration(seconds: 15));
+    request.followRedirects = false;
+    request.maxRedirects = 0;
+    headers.forEach((name, value) => request.headers.set(name, value));
+    if (form != null) {
+      request.headers.contentType = ContentType('application', 'x-www-form-urlencoded', charset: 'utf-8');
+      request.write(Uri(queryParameters: form).query);
+    } else if (jsonBody != null) {
+      request.headers.contentType = ContentType.json;
+      request.write(jsonEncode(jsonBody));
+    }
+    final response = await request.close().timeout(const Duration(seconds: 20));
+    if (response.statusCode != HttpStatus.ok) throw const SourceException(SourceFailure.unavailable);
+    final bytes = <int>[];
+    await for (final chunk in response.timeout(const Duration(seconds: 20))) {
+      if (bytes.length + chunk.length > 65536) throw const SourceException(SourceFailure.invalidData);
+      bytes.addAll(chunk);
+    }
+    final decoded = jsonDecode(utf8.decode(bytes));
+    if (decoded is! Map) throw const SourceException(SourceFailure.invalidData);
+    return Map<String, dynamic>.from(decoded);
+  } finally {
+    client.close(force: true);
+  }
+}
+
+Future<Map<String, dynamic>> _refreshProviderToken(Map<String, dynamic> descriptor) async {
+  final provider = _renewalText(descriptor, 'provider', maxLength: 32);
+  final clientId = _renewalText(descriptor, 'clientId');
+  final refreshToken = _renewalText(descriptor, 'refreshToken', maxLength: 8192);
+  if (clientId == null || refreshToken == null) throw const SourceException(SourceFailure.authentication);
+  final endpoint = switch (provider) {
+    'googleDrive' => Uri.https('oauth2.googleapis.com', '/token'),
+    'oneDrive' => Uri.https('login.microsoftonline.com', '/common/oauth2/v2.0/token'),
+    'dropbox' => Uri.https('api.dropboxapi.com', '/oauth2/token'),
+    _ => throw const SourceException(SourceFailure.unsupported),
+  };
+  final body = <String, String>{
+    'grant_type': 'refresh_token',
+    'refresh_token': refreshToken,
+    'client_id': clientId,
+    if (_renewalText(descriptor, 'clientSecret', maxLength: 4096) case final secret?) 'client_secret': secret,
+  };
+  final result = await _renewalJson(endpoint, form: body);
+  final accessToken = result['access_token'];
+  if (accessToken is! String || accessToken.isEmpty || accessToken.length > 16384) {
+    throw const SourceException(SourceFailure.authentication);
+  }
+  final rotated = result['refresh_token'];
+  return {
+    'accessToken': accessToken,
+    if (rotated is String && rotated.isNotEmpty && rotated.length <= 8192) 'refreshToken': rotated,
+  };
+}
+
+bool _hostMatchesDomain(String host, Iterable<String> domains) {
+  final normalized = host.toLowerCase();
+  return domains.any((domain) => normalized == domain || normalized.endsWith('.$domain'));
+}
+
+bool _safeProviderDownloadUri(Uri uri, Iterable<String> domains) =>
+    uri.scheme == 'https' &&
+    uri.host.isNotEmpty &&
+    uri.userInfo.isEmpty &&
+    !uri.hasFragment &&
+    (!uri.hasPort || uri.port == 443) &&
+    uri.toString().length <= 8192 &&
+    InternetAddress.tryParse(uri.host) == null &&
+    _hostMatchesDomain(uri.host, domains);
+
+Future<_RenewedBackgroundLease> _renewBackgroundLease(Map<String, dynamic> descriptor) async {
+  final provider = _renewalText(descriptor, 'provider', maxLength: 32);
+  if (provider == 's3') {
+    final rawUri = _renewalText(descriptor, 'uri', maxLength: 4096);
+    final uri = Uri.tryParse(rawUri ?? '');
+    final accessKey = _renewalText(descriptor, 'accessKey', maxLength: 512);
+    final secretKey = _renewalText(descriptor, 'secretKey', maxLength: 4096);
+    final region = _renewalText(descriptor, 'region', maxLength: 64);
+    final sessionToken = _renewalText(descriptor, 'sessionToken', maxLength: 8192);
+    final revision = _renewalText(descriptor, 'revision', maxLength: 2048);
+    if (uri == null || uri.scheme != 'https' || uri.host.isEmpty || uri.userInfo.isNotEmpty || uri.hasQuery || uri.hasFragment ||
+        accessKey == null || secretKey == null || region == null || !RegExp(r'^[a-z0-9-]+$').hasMatch(region)) {
+      throw const SourceException(SourceFailure.permission);
+    }
+    return _RenewedBackgroundLease(
+      S3SourceAdapter.sign(
+        uri: uri,
+        accessKey: accessKey,
+        secretKey: secretKey,
+        region: region,
+        sessionToken: sessionToken,
+        time: DateTime.now(),
+        expires: 900,
+      ),
+      {if (revision != null) 'If-Match': revision},
+    );
+  }
+  final token = await _refreshProviderToken(descriptor);
+  final accessToken = token['accessToken'] as String;
+  Map<String, dynamic> updatedDescriptor = descriptor;
+  final rotatedRefreshToken = token['refreshToken'];
+  if (rotatedRefreshToken is String && rotatedRefreshToken != descriptor['refreshToken']) {
+    updatedDescriptor = {...descriptor, 'refreshToken': rotatedRefreshToken};
+  }
+  if (provider == 'googleDrive') {
+    final fileId = _renewalText(descriptor, 'fileId', maxLength: 256);
+    if (fileId == null || !RegExp(r'^[A-Za-z0-9_-]+$').hasMatch(fileId)) {
+      throw const SourceException(SourceFailure.permission);
+    }
+    final metadata = await _renewalJson(
+      Uri.https('www.googleapis.com', '/drive/v3/files/$fileId', {
+        'fields': 'id,size,md5Checksum,version,modifiedTime',
+        'supportsAllDrives': 'true',
+      }),
+      method: 'GET',
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
+    final revision = (metadata['md5Checksum'] ?? metadata['version'] ?? metadata['modifiedTime'])?.toString();
+    _checkRenewedRepresentation(descriptor, revision, _renewalSize(metadata));
+    final resourceKey = _renewalText(descriptor, 'resourceKey', maxLength: 2048);
+    final headers = <String, String>{
+      'Authorization': 'Bearer $accessToken',
+      if (resourceKey != null) 'X-Goog-Drive-Resource-Keys': '$fileId/$resourceKey',
+    };
+    return _RenewedBackgroundLease(
+      Uri.https('www.googleapis.com', '/drive/v3/files/$fileId', {
+        'alt': 'media',
+        'supportsAllDrives': 'true',
+      }),
+      headers,
+      refreshDescriptor: updatedDescriptor,
+    );
+  }
+  if (provider == 'oneDrive') {
+    final fileId = _renewalText(descriptor, 'fileId', maxLength: 2048);
+    if (fileId == null) throw const SourceException(SourceFailure.permission);
+    final driveId = _renewalText(descriptor, 'driveId', maxLength: 2048);
+    final encodedFileId = Uri.encodeComponent(fileId);
+    final encodedDriveId = driveId == null ? null : Uri.encodeComponent(driveId);
+    final path = encodedDriveId == null
+        ? '/v1.0/me/drive/items/$encodedFileId'
+        : '/v1.0/drives/$encodedDriveId/items/$encodedFileId';
+    final metadata = await _renewalJson(
+      Uri.parse('https://graph.microsoft.com$path').replace(
+        queryParameters: const {'\$select': 'id,size,eTag,cTag,@microsoft.graph.downloadUrl'},
+      ),
+      method: 'GET',
+      headers: {'Authorization': 'Bearer $accessToken'},
+    );
+    final revision = (metadata['cTag'] ?? metadata['eTag']) as String?;
+    _checkRenewedRepresentation(descriptor, revision, _renewalSize(metadata));
+    final rawUrl = metadata['@microsoft.graph.downloadUrl'];
+    final uri = rawUrl is String ? Uri.tryParse(rawUrl) : null;
+    if (uri == null || !_safeProviderDownloadUri(uri, const [
+      'sharepoint.com', 'sharepointonline.com', 'sharepoint-df.com', '1drv.com', '1drv.ms',
+      'onedrive.live.com', 'livefilestore.com',
+    ])) throw const SourceException(SourceFailure.permission);
+    return _RenewedBackgroundLease(uri, const {}, refreshDescriptor: updatedDescriptor);
+  }
+  if (provider == 'dropbox') {
+    final fileId = _renewalText(descriptor, 'fileId', maxLength: 2048);
+    if (fileId == null) throw const SourceException(SourceFailure.permission);
+    final link = await _renewalJson(
+      Uri.https('api.dropboxapi.com', '/2/files/get_temporary_link'),
+      headers: {'Authorization': 'Bearer $accessToken'},
+      jsonBody: {'path': fileId},
+    );
+    final metadata = sourceMap(link['metadata']);
+    final revision = metadata['rev'] as String?;
+    _checkRenewedRepresentation(descriptor, revision, _renewalSize(metadata));
+    final rawUrl = link['link'];
+    final uri = rawUrl is String ? Uri.tryParse(rawUrl) : null;
+    if (uri == null || !_safeProviderDownloadUri(uri, const ['dropboxusercontent.com', 'dropbox.com'])) {
+      throw const SourceException(SourceFailure.permission);
+    }
+    return _RenewedBackgroundLease(uri, const {}, refreshDescriptor: updatedDescriptor);
+  }
+  throw const SourceException(SourceFailure.unsupported);
+}
+
+/// Native task rows contain only this encrypted lease in [Task.metaData].
+/// Decryption and lease renewal happen immediately before each transfer run.
 @pragma('vm:entry-point')
 Future<Task?> resolveEncryptedBackgroundLease(Task original) async {
   if ((!Platform.isIOS && !Platform.isAndroid) ||
@@ -36,17 +264,46 @@ Future<Task?> resolveEncryptedBackgroundLease(Task original) async {
     if (clear == null || clear.length > 12288) return null;
     final decoded = jsonDecode(clear);
     if (decoded is! Map) return null;
-    if (decoded['taskId'] != original.taskId) return null;
-    final uri = Uri.tryParse(decoded['uri'] as String? ?? '');
-    final rawHeaders = decoded['headers'];
-    if (uri == null || rawHeaders is! Map) return null;
+    final descriptor = Map<String, dynamic>.from(decoded);
+    if (descriptor['taskId'] != original.taskId) return null;
+    final refresh = descriptor['refresh'];
+    final Uri uri;
     final headers = <String, String>{};
-    for (final entry in rawHeaders.entries) {
-      if (entry.key is! String || entry.value is! String) return null;
-      headers[entry.key as String] = entry.value as String;
+    String metadata = original.metaData;
+    if (refresh is Map) {
+      final renewal = Map<String, dynamic>.from(refresh);
+      final renewed = await _renewBackgroundLease(renewal);
+      uri = renewed.uri;
+      headers.addAll(renewed.headers);
+      if (renewed.refreshDescriptor != null && jsonEncode(renewed.refreshDescriptor) != jsonEncode(refresh)) {
+        descriptor['refresh'] = renewed.refreshDescriptor;
+        metadata = await CredentialVault.protect(jsonEncode(descriptor));
+      }
+      final provider = renewal['provider'];
+      if (provider == 's3' &&
+          (uri.scheme != 'https' || uri.host.isEmpty || uri.userInfo.isNotEmpty || uri.hasFragment || !uri.hasQuery ||
+              headers.keys.any((key) => key.toLowerCase() != 'if-match'))) return null;
+      if (provider == 'googleDrive') {
+        if (uri.scheme != 'https' || uri.host != 'www.googleapis.com' || uri.pathSegments.length < 4 ||
+            headers.length > 2 || headers['Authorization']?.startsWith('Bearer ') != true) return null;
+        const allowed = {'authorization', 'x-goog-drive-resource-keys'};
+        if (headers.keys.any((key) => !allowed.contains(key.toLowerCase())) ||
+            headers.values.any((value) => value.length > 8192 || RegExp(r'[\x00-\x1f\x7f]').hasMatch(value))) return null;
+      } else if (provider != 's3' && headers.isNotEmpty) {
+        return null;
+      }
+    } else {
+      final rawUri = Uri.tryParse(descriptor['uri'] as String? ?? '');
+      final rawHeaders = descriptor['headers'];
+      if (rawUri == null || rawHeaders is! Map) return null;
+      uri = rawUri;
+      for (final entry in rawHeaders.entries) {
+        if (entry.key is! String || entry.value is! String) return null;
+        headers[entry.key as String] = entry.value as String;
+      }
+      final lease = ContentLease(uri, headers: headers, backgroundTransferSafe: true);
+      if (!lease.canPersistEncryptedAuthForBackgroundTransfer) return null;
     }
-    final lease = ContentLease(uri, headers: headers, backgroundTransferSafe: true);
-    if (!lease.canPersistEncryptedAuthForBackgroundTransfer) return null;
     final originalOptions = original.options;
     final safeOptions = originalOptions == null
         ? null
@@ -55,14 +312,10 @@ Future<Task?> resolveEncryptedBackgroundLease(Task original) async {
             onTaskStart: originalOptions.onTaskStartCallBack,
             onTaskFinished: originalOptions.onTaskFinishedCallBack,
           );
-    return original.copyWith(
-      url: uri.toString(),
-      headers: headers,
-      options: safeOptions,
-    );
+    return original.copyWith(url: uri.toString(), headers: headers, metaData: metadata, options: safeOptions);
   } on Object {
-    // Missing/locked vault keys or a corrupt descriptor fail closed. The
-    // downloader sees only the inert placeholder URL and empty headers.
+    // Missing/locked vault keys, expired credentials, invalid provider responses,
+    // or corrupt descriptors fail closed to the inert placeholder URL.
     return null;
   }
 }
@@ -197,13 +450,18 @@ class PublicationDownloads {
     required File validatorFile,
   }) async {
     final taskId = _nativeTaskId(task.profile, task.adapter.source.id, task.file);
-    final encryptedLease =
-        (Platform.isIOS || Platform.isAndroid) && lease.canPersistEncryptedAuthForBackgroundTransfer;
+    final encryptedLease = (Platform.isIOS || Platform.isAndroid) &&
+        (lease.canPersistEncryptedAuthForBackgroundTransfer || lease.canPersistEncryptedRefreshForBackgroundTransfer);
     final payloadHeaders = Map<String, String>.fromEntries(
       lease.headers.entries.toList()..sort((a, b) => a.key.toLowerCase().compareTo(b.key.toLowerCase())),
     );
     final leasePayload = encryptedLease
-        ? jsonEncode({'taskId': taskId, 'uri': lease.uri.toString(), 'headers': payloadHeaders})
+        ? jsonEncode({
+            'taskId': taskId,
+            'uri': lease.uri.toString(),
+            'headers': payloadHeaders,
+            'refresh': lease.backgroundRefresh,
+          })
         : null;
     var protectedLease = leasePayload == null ? '' : await CredentialVault.protect(leasePayload);
     final taskUrl = encryptedLease ? _encryptedLeaseTaskUrl : lease.uri.toString();
@@ -845,7 +1103,8 @@ class PublicationDownloads {
       cancel.check();
       final canUseNativeBackgroundTransfer = lease.canPersistForBackgroundTransfer ||
           ((Platform.isIOS || Platform.isAndroid) &&
-              lease.canPersistEncryptedAuthForBackgroundTransfer);
+              (lease.canPersistEncryptedAuthForBackgroundTransfer ||
+                  lease.canPersistEncryptedRefreshForBackgroundTransfer));
       if (_supportsNativeBackgroundDownloads &&
           canUseNativeBackgroundTransfer &&
           expectedSize != null &&

@@ -493,12 +493,13 @@ class SourceController extends ChangeNotifier {
         requireSession(epoch);
         return value;
       }
+      Future<Map<String, String>> backgroundCredentials() => credentials();
       return switch (source.kind) {
         FileSourceKind.local => LocalSourceAdapter(source, transport),
         FileSourceKind.webdav => WebDavSourceAdapter(source, transport, credentials),
-        FileSourceKind.googleDrive => GoogleDriveSourceAdapter(source, transport, token),
-        FileSourceKind.oneDrive => OneDriveSourceAdapter(source, transport, token),
-        FileSourceKind.dropbox => DropboxSourceAdapter(source, transport, token),
+        FileSourceKind.googleDrive => GoogleDriveSourceAdapter(source, transport, token, backgroundCredentials),
+        FileSourceKind.oneDrive => OneDriveSourceAdapter(source, transport, token, backgroundCredentials),
+        FileSourceKind.dropbox => DropboxSourceAdapter(source, transport, token, backgroundCredentials),
         FileSourceKind.s3 => S3SourceAdapter(source, transport, credentials),
         FileSourceKind.smb => SmbSourceAdapter(source, transport, credentials),
         FileSourceKind.ftp => FtpSourceAdapter(source, transport, credentials),
