@@ -494,21 +494,45 @@ class _SourcesScreenState extends State<SourcesScreen> {
                         'failed' => t.fileSources.downloadFailed,
                         _ => t.fileSources.downloadQueued,
                       }),
-                      trailing: IconButton(
-                        tooltip: job['state'] == 'failed' || job['state'] == 'paused' ? t.common.retry : t.common.cancel,
-                        icon: AppIcon(job['state'] == 'failed' || job['state'] == 'paused'
-                            ? Symbols.refresh_rounded
-                            : Symbols.close_rounded),
-                        onPressed: _loading
-                            ? null
-                            : () => sourceAction(context, () async {
-                                if (job['state'] == 'failed' || job['state'] == 'paused') {
-                                  await sources.retryDownload(job['key'] as String);
-                                } else {
-                                  await sources.cancelDownload(job['key'] as String);
-                                }
-                                if (mounted) await _load();
-                              }),
+                      trailing: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          IconButton(
+                            tooltip: job['state'] == 'failed' || job['state'] == 'paused' ? t.common.retry : t.common.cancel,
+                            icon: AppIcon(job['state'] == 'failed' || job['state'] == 'paused'
+                                ? Symbols.refresh_rounded
+                                : Symbols.close_rounded),
+                            onPressed: _loading
+                                ? null
+                                : () => sourceAction(context, () async {
+                                    if (job['state'] == 'failed' || job['state'] == 'paused') {
+                                      await sources.retryDownload(job['key'] as String);
+                                    } else {
+                                      await sources.cancelDownload(job['key'] as String);
+                                    }
+                                    if (mounted) await _load();
+                                  }),
+                          ),
+                          IconButton(
+                            tooltip: t.fileSources.removeDownload,
+                            icon: const AppIcon(Symbols.delete_outline_rounded),
+                            onPressed: _loading
+                                ? null
+                                : () => sourceAction(context, () async {
+                                    if (!await showConfirmDialog(
+                                      context,
+                                      title: t.fileSources.removeDownload,
+                                      message: t.fileSources.confirmDelete,
+                                      confirmText: t.fileSources.removeDownload,
+                                      isDestructive: true,
+                                    )) {
+                                      return;
+                                    }
+                                    await sources.removeDownloadJob(job['key'] as String);
+                                    if (mounted) await _load();
+                                  }),
+                          ),
+                        ],
                       ),
                     ),
                   const SizedBox(height: 12),
