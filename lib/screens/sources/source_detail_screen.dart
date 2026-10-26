@@ -625,7 +625,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                       },
                     ),
                     if (_busy)
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.symmetric(vertical: 24),
                         child: Semantics(
                           label: 'Loading video details',
@@ -634,7 +634,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                         ),
                       ),
                     if (_metadataLookupPending)
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.only(top: 4, bottom: 12),
                         child: Semantics(
                           label: 'Looking up online movie and TV details',
@@ -649,7 +649,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                         ),
                       ),
                     if (_entry.onlineMetadataProvider == 'trakt')
-                      const Padding(
+                      Padding(
                         padding: EdgeInsets.only(bottom: 12),
                         child: Semantics(
                           label: 'Online metadata from Trakt',
@@ -668,7 +668,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Semantics(
+                            Semantics(
                               liveRegion: true,
                               child: Text('No automatic title match was found. Search for the title to choose a match.'),
                             ),
@@ -686,7 +686,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                         child: Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
-                            const Semantics(
+                            Semantics(
                               liveRegion: true,
                               child: Text('Online metadata could not be loaded. Playback and local details are still available.'),
                             ),

@@ -144,7 +144,7 @@ class StandaloneVideoMetadataClient {
       if (query.year != null) 'year': query.year.toString(),
     });
     final response = await _transport
-        .json('GET', uri, headers: TraktConstants.headers())
+        .jsonValue('GET', uri, headers: TraktConstants.headers())
         .timeout(const Duration(seconds: 12));
     if (response is! List) return const [];
     return [for (final row in response.whereType<Map<String, dynamic>>()) TraktCatalogEntry.fromJson(row)];
@@ -158,7 +158,7 @@ class StandaloneVideoMetadataClient {
       {'extended': 'full,images', if (expectedType != null) 'type': expectedType, 'limit': '10'},
     );
     final response = await _transport
-        .json('GET', uri, headers: TraktConstants.headers())
+        .jsonValue('GET', uri, headers: TraktConstants.headers())
         .timeout(const Duration(seconds: 12));
     if (response is! List) return const [];
     return [for (final row in response.whereType<Map<String, dynamic>>()) TraktCatalogEntry.fromJson(row)];

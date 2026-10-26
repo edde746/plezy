@@ -41,7 +41,7 @@ class LicensesScreen extends StatelessWidget {
     licenseMap['AMSMB2'] = [
       LicenseEntryWithLineBreaks(
         ['AMSMB2'],
-        [...amsmb2Notice.split('\n'), ...amsmb2MitLicense.split('\n'), ...amsmb2License.split('\n')],
+        [amsmb2Notice, amsmb2MitLicense, amsmb2License].join('\n'),
       ),
     ];
     allPackageNames['AMSMB2'] = {'AMSMB2'};
@@ -51,7 +51,7 @@ class LicensesScreen extends StatelessWidget {
     licenseMap['libsmb2'] = [
       LicenseEntryWithLineBreaks(
         ['libsmb2'],
-        [...nativeNotice.split('\n'), ...nativeLicense.split('\n')],
+        [nativeNotice, nativeLicense].join('\n'),
       ),
     ];
     allPackageNames['libsmb2'] = {'libsmb2'};
