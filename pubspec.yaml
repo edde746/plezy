@@ -180,6 +180,8 @@ flutter:
     - assets/certificates/cacert.pem
     - assets/licenses/SpatialAudioBridge.txt
     - assets/licenses/dart_smb2_NOTICE.txt
+    - assets/licenses/AMSMB2_NOTICE.txt
+    - assets/licenses/AMSMB2_MIT_LICENSE.txt
     - assets/licenses/libsmb2-LGPL-2.1.txt
     - assets/plezy.png
     - assets/plex_chevron.svg

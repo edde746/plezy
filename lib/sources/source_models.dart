@@ -199,6 +199,7 @@ class SourceEntry {
     this.releaseYear,
     this.rating,
     this.genres = const [],
+    this.syncIdentity,
   });
   final String sourceId;
   final String id;
@@ -218,6 +219,7 @@ class SourceEntry {
   final int? releaseYear;
   final double? rating;
   final List<String> genres;
+  final String? syncIdentity;
 
   SourceEntry copyWith({
     String? title,
@@ -227,6 +229,7 @@ class SourceEntry {
     double? rating,
     List<String>? genres,
     Map<String, String>? identifiers,
+    String? syncIdentity,
   }) => SourceEntry(
     sourceId: sourceId,
     id: id,
@@ -246,6 +249,7 @@ class SourceEntry {
     releaseYear: releaseYear ?? this.releaseYear,
     rating: rating ?? this.rating,
     genres: genres ?? this.genres,
+    syncIdentity: syncIdentity ?? this.syncIdentity,
   );
 
   String get key => sourceKey(sourceId, id);
@@ -277,6 +281,7 @@ class SourceEntry {
     if (releaseYear != null) 'releaseYear': releaseYear,
     if (rating != null) 'rating': rating,
     if (genres.isNotEmpty) 'genres': genres,
+    if (syncIdentity != null) 'syncIdentity': syncIdentity,
   };
   factory SourceEntry.fromJson(Map<String, dynamic> j) => SourceEntry(
     sourceId: j['sourceId'] as String,
@@ -297,6 +302,7 @@ class SourceEntry {
     releaseYear: sourceInt(j['releaseYear']),
     rating: (j['rating'] as num?)?.toDouble(),
     genres: sourceList(j['genres']).whereType<String>().toList(),
+    syncIdentity: j['syncIdentity'] as String?,
   );
 }
 

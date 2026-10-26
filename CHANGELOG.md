@@ -4,8 +4,9 @@
 
 ### Added
 
-- Add SMB2/3 read-only NAS sources, a Videos library shelf, and resumable video watch progress.
-- Read offline Kodi/Jellyfin NFO sidecars and sibling posters to enrich SMB video titles, summaries, ratings, genres, years, and external IDs.
+- Add SMB2/3 read-only NAS sources on Android, iOS, macOS, Windows, Linux, and Apple TV, with a Videos library shelf and resumable video watch progress.
+- Read offline Kodi/Jellyfin NFO sidecars and sibling posters to enrich local and SMB video titles, summaries, ratings, genres, years, and external IDs.
+- Sync SMB and other file-source progress and notes across devices through one configured WebDAV state folder.
 - Replace PlezyNG branding across the app, launchers, TV, desktop packages and store artwork with the selected nested-play logo and lower-right NG badge; preserve existing alternate icon selections.
 - Add a review-first cleanup for orphaned tagged downloads in PlezyNG's default app-managed folders.
 - Add an automatically started seven-day full-app trial followed by a USD $2.99 one-time lifetime unlock for Apple, Google Play, and Amazon builds.

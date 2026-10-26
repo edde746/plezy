@@ -178,15 +178,25 @@ class SmbSourceAdapter extends SourceAdapter {
       String? poster;
       final posterNames = [
         '${stem.toLowerCase()}-poster.jpg',
+        '${stem.toLowerCase()}-poster.jpeg',
         '${stem.toLowerCase()}-poster.png',
+        '${stem.toLowerCase()}-poster.webp',
         '${stem.toLowerCase()}.jpg',
+        '${stem.toLowerCase()}.jpeg',
         '${stem.toLowerCase()}.png',
+        '${stem.toLowerCase()}.webp',
         'poster.jpg',
+        'poster.jpeg',
         'poster.png',
+        'poster.webp',
         'cover.jpg',
+        'cover.jpeg',
         'cover.png',
+        'cover.webp',
         'folder.jpg',
+        'folder.jpeg',
         'folder.png',
+        'folder.webp',
       ];
       for (final name in posterNames) {
         final row = siblings[name];

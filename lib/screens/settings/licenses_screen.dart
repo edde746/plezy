@@ -35,6 +35,17 @@ class LicensesScreen extends StatelessWidget {
       }
     }
 
+    final amsmb2Notice = await rootBundle.loadString('assets/licenses/AMSMB2_NOTICE.txt');
+    final amsmb2MitLicense = await rootBundle.loadString('assets/licenses/AMSMB2_MIT_LICENSE.txt');
+    final amsmb2License = await rootBundle.loadString('assets/licenses/libsmb2-LGPL-2.1.txt');
+    licenseMap['AMSMB2'] = [
+      LicenseEntryWithLineBreaks(
+        ['AMSMB2'],
+        [...amsmb2Notice.split('\n'), ...amsmb2MitLicense.split('\n'), ...amsmb2License.split('\n')],
+      ),
+    ];
+    allPackageNames['AMSMB2'] = {'AMSMB2'};
+
     final nativeNotice = await rootBundle.loadString('assets/licenses/dart_smb2_NOTICE.txt');
     final nativeLicense = await rootBundle.loadString('assets/licenses/libsmb2-LGPL-2.1.txt');
     licenseMap['libsmb2'] = [

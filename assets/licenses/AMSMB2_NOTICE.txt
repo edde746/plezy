@@ -1,0 +1,7 @@
+AMSMB2 3.0.0
+Source: https://github.com/amosavian/AMSMB2
+Pinned source revision: fbb1d37880b7e1d7504c6a6dc9371c10ff932bc9
+The upstream repository LICENSE contains the GNU Lesser General Public License,
+version 2.1. Source file headers also carry an MIT notice. The package links
+libsmb2 from its source submodule at revision dd26794c4d46387a9d2405a7c391dfe2ff2972f9.
+The Swift package declares its AMSMB2 product as a dynamic framework.

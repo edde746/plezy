@@ -154,8 +154,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                       decoration: InputDecoration(labelText: t.fileSources.source),
                       items: [
                         for (final kind in FileSourceKind.values)
-                          if ((kind != FileSourceKind.local || PlatformDetector.isDesktopOS()) &&
-                              (kind != FileSourceKind.smb || !PlatformDetector.isAppleTV() || widget.existing?.kind == FileSourceKind.smb))
+                          if ((kind != FileSourceKind.local || PlatformDetector.isDesktopOS()))
                             DropdownMenuItem(
                               value: kind,
                               child: Row(

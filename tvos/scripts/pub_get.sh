@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Resolve the shared Flutter app for tvOS with an SMB stub. dart_smb2's native
-# libsmb2 build assets target iOS/macOS, Android, Linux and Windows, not tvOS.
-# This keeps Apple TV builds working while the app hides/rejects SMB sources.
+# Resolve the shared Flutter app for tvOS with the tvOS MethodChannel bridge.
+# The upstream dart_smb2 native assets do not target tvOS; the bridge uses the
+# dynamically linked AMSMB2 SPM framework instead.
 set -euo pipefail
 
 ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
