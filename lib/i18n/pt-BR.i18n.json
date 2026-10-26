@@ -1,0 +1,523 @@
+{
+  "cast": {
+    "subtitle": "Legendas",
+    "castToDevice": "Transmitir para o dispositivo"
+  },
+  "appIcon": {
+    "defaultIcon": "Padrão"
+  },
+  "auth": {
+    "quickConnect": "Conexão rápida",
+    "useQuickConnect": "Usar Conexão Rápida",
+    "quickConnectCancel": "Cancelar"
+  },
+  "common": {
+    "cancel": "Cancelar",
+    "save": "Salvar",
+    "close": "Fechar",
+    "reset": "Resetar",
+    "submit": "Enviar",
+    "retry": "Retentar",
+    "unknown": "Desconhecido",
+    "refresh": "Atualizar",
+    "yes": "Sim",
+    "no": "Não",
+    "delete": "Excluir",
+    "edit": "Editar",
+    "shuffle": "Aleatório",
+    "connect": "Conectar",
+    "disconnect": "Desconectar",
+    "play": "Reproduzir",
+    "pause": "Pausar",
+    "resume": "Retomar",
+    "error": "Erro",
+    "search": "Busca",
+    "home": "Início",
+    "back": "Voltar",
+    "settings": "Configurações",
+    "mute": "Mudo",
+    "off": "Desligado",
+    "fullscreen": "Tela Cheia",
+    "mediaKind": {
+      "movie": "Filme",
+      "season": "Temporada",
+      "episode": "Episódio",
+      "artist": "Artista",
+      "album": "Álbum",
+      "track": "Faixa",
+      "collection": "Coleção",
+      "playlist": "Lista de Reprodução",
+      "clip": "Destaque",
+      "photo": "Fotos",
+      "folder": "Pasta"
+    }
+  },
+  "screens": {
+    "subtitleStyling": "Estilização da legenda",
+    "logs": "Registros"
+  },
+  "settings": {
+    "title": "Configurações",
+    "language": "Idioma",
+    "theme": "Tema",
+    "advanced": "Avançado",
+    "systemTheme": "Sistema",
+    "listView": "Lista",
+    "contentScreensaverAllLibraries": "Todas as bibliotecas",
+    "rowSizeLarge": "Grande",
+    "continueWatchingPlay": "Reproduzir",
+    "episodePlay": "Reproduzir",
+    "visualEffectsAuto": "Automático",
+    "playbackBufferLarge": "Grande",
+    "playbackBufferExtraLarge": "Extra Grande",
+    "musicQualityTitle": "Qualidade da Música",
+    "subtitleStyling": "Estilização da legenda",
+    "cloudBackupUsername": "Usuário",
+    "cloudBackupPassword": "Senha",
+    "skipMarkerModeOff": "Desligado",
+    "audioChannelLimit": "Canais de áudio",
+    "dvConversionAuto": "Automático",
+    "hdrSdrConversionAuto": "Automático",
+    "hdrSdrConversionDevice": "Dispositivo",
+    "hdrSdrConversionPlayer": "Reprodutor",
+    "deinterlaceOff": "Desligado",
+    "deinterlaceVideo": "Vídeo",
+    "general": "Geral",
+    "display": "Exibição",
+    "navigation": "Navegação",
+    "liveTv": "TV ao Vivo",
+    "player": "Reprodutor",
+    "audio": "Áudio",
+    "quality": "Qualidade",
+    "subtitles": "Legendas",
+    "controls": "Controles",
+    "scopePlaybackSpeed": "Velocidade de Reprodução",
+    "scopeAspectRatio": "Proporção da tela",
+    "secondsUnit(param=seconds)": {
+      "one": "${seconds: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} segundo",
+      "other": "${seconds: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} segundos",
+      "many": "${seconds: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} segundos"
+    },
+    "minutesUnit(param=minutes)": {
+      "one": "${minutes: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minuto",
+      "other": "${minutes: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minutos",
+      "many": "${minutes: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minutos"
+    }
+  },
+  "themeEditor": {
+    "custom": "Personalizado",
+    "preview": "Prévia",
+    "slots": {
+      "text": "Texto"
+    }
+  },
+  "search": {
+    "people": "Pessoas"
+  },
+  "hotkeys": {
+    "actions": {
+      "chapterNext": "Próximo capítulo",
+      "chapterPrevious": "Capítulo anterior",
+      "episodeNext": "Próximo episódio"
+    }
+  },
+  "fileInfo": {
+    "overview": "Sinopse",
+    "video": "Vídeo",
+    "audio": "Áudio",
+    "subtitles": "Legendas",
+    "lyrics": "Letras",
+    "file": "Arquivo",
+    "codecTag": "Marcador do codec",
+    "resolution": "Resolução",
+    "rotation": "Rotação",
+    "aspectRatio": "Proporção da tela",
+    "profile": "Perfil",
+    "level": "Nível",
+    "bitDepth": "Profundidade de bits",
+    "pixelFormat": "Formato de pixel",
+    "colorSpace": "Espaço de cores",
+    "colorPrimaries": "Cores primárias",
+    "colorTransfer": "Transferência de cor",
+    "interlaced": "Entrelaçado",
+    "anamorphic": "Anamórfico",
+    "language": "Idioma",
+    "channels": "Canais",
+    "sampleRate": "Taxa da amostra",
+    "path": "Local",
+    "size": "Tamanho",
+    "container": "Formato",
+    "duration": "Duração",
+    "protocol": "Protocolo",
+    "transcoding": "Transcodificação",
+    "subtitlesOff": "Desligado",
+    "flagDefault": "Padrão",
+    "flagForced": "Forçado",
+    "flagExternal": "Externa"
+  },
+  "mediaMenu": {
+    "deleteEpisodeConfirm": "Excluir episódio",
+    "rate": "Avaliação",
+    "playFromBeginning": "Reproduzir do início"
+  },
+  "rateSheet": {
+    "title": "Avaliação",
+    "server": "Servidor",
+    "favorite": "Favorito"
+  },
+  "accessibility": {
+    "mediaCardWatched": "Assistido",
+    "red": "Vermelho",
+    "green": "Verde",
+    "blue": "Azul"
+  },
+  "videoControls": {
+    "audioLabel": "Áudio",
+    "subtitlesLabel": "Legendas",
+    "stretch": "Esticar",
+    "playNext": "Reproduzir próximo",
+    "playButton": "Reproduzir",
+    "pauseButton": "Pausar",
+    "nextButton": "Próximo episódio",
+    "previousChapterButton": "Capítulo anterior",
+    "nextChapterButton": "Próximo capítulo",
+    "muteButton": "Mudo",
+    "unmuteButton": "Sair do Mudo",
+    "versionColumnHeader": "Versão",
+    "qualityColumnHeader": "Qualidade",
+    "aspectRatioButton": "Proporção da tela",
+    "language": "Idioma",
+    "nextEpisode": "Próximo episódio"
+  },
+  "messages": {
+    "noResultsFound": "Nenhum resultado encontrado."
+  },
+  "subtitlingStyling": {
+    "text": "Texto",
+    "textColor": "Cor do texto",
+    "bold": "Negrito",
+    "renderResolutionScreen": "Resolução de tela",
+    "renderResolutionVideo": "Resolução de vídeo"
+  },
+  "mpvConfig": {
+    "deletePreset": "Excluir"
+  },
+  "profiles": {
+    "delete": "Excluir",
+    "signOut": "Sair",
+    "removePin": "Remover",
+    "add": "Adicionar",
+    "connectionDefault": "Padrão",
+    "removeConnection": "Remover"
+  },
+  "accountPreferences": {
+    "preferredAudioLanguage": "Idioma preferido de áudio",
+    "preferredSubtitleLanguage": "Idioma de legendas preferido",
+    "watchedIndicatorOptions": {
+      "none": "Nunca"
+    }
+  },
+  "discover": {
+    "continueWatching": "Continuar assistindo",
+    "nextUp": "A seguir",
+    "recentlyAdded": "Recentes",
+    "overview": "Sinopse",
+    "studio": "Estudio",
+    "director": "Diretor",
+    "directors": "Diretores",
+    "movie": "Filme",
+    "moreLikeThis": "Mais Disso"
+  },
+  "libraries": {
+    "title": "Bibliotecas",
+    "scanLibrary": "Rastrear biblioteca",
+    "refreshMetadata": "Atualizar metadados",
+    "resetFilters": "Redefinir filtros",
+    "all": "Todos",
+    "sort": "Ordenar",
+    "sortBy": "Ordenar Por",
+    "filters": "Filtros",
+    "folders": "Pastas",
+    "tabs": {
+      "browse": "Navegar",
+      "collections": "Coleções",
+      "playlists": "Listas de Reprodução"
+    },
+    "groupings": {
+      "all": "Todos",
+      "movies": "Filmes",
+      "shows": "Séries",
+      "seasons": "Temporadas",
+      "episodes": "Episódios",
+      "artists": "Artistas",
+      "albums": "Álbuns",
+      "tracks": "Faixas",
+      "folders": "Pastas"
+    },
+    "filterCategories": {
+      "genre": "Gênero",
+      "year": "Ano",
+      "tag": "Marcador",
+      "unplayed": "Não reproduzido",
+      "favorites": "Favoritos"
+    },
+    "sortLabels": {
+      "title": "Título",
+      "dateAdded": "Data de adição",
+      "releaseDate": "Data do lançamento",
+      "communityRating": "Avaliação da comunidade",
+      "datePlayed": "Data de reprodução",
+      "playCount": "Número de Reproduções",
+      "runtime": "Duração",
+      "premiereDate": "Data da Estréia",
+      "airTime": "Horário da estreia",
+      "studio": "Estudio",
+      "random": "Aleatório",
+      "size": "Tamanho"
+    },
+    "advancedFilters": {
+      "yes": "Sim",
+      "no": "Não"
+    }
+  },
+  "hubDetail": {
+    "title": "Título",
+    "dateAdded": "Data de adição"
+  },
+  "navigation": {
+    "libraries": "Bibliotecas",
+    "liveTv": "TV ao Vivo"
+  },
+  "explore": {
+    "status": {
+      "ended": "Finalizada",
+      "upcoming": "A seguir"
+    },
+    "badge": {
+      "available": "Disponível"
+    },
+    "format": {
+      "movie": "Filme",
+      "music": "Música",
+      "other": "Outro"
+    },
+    "sourceMaterial": {
+      "novel": "Romance",
+      "musicRelease": "Música",
+      "otherMedia": "Outro"
+    },
+    "creditRole": {
+      "actor": "Ator",
+      "director": "Diretor",
+      "writer": "Escritor",
+      "producer": "Produtor",
+      "creator": "Criador",
+      "composer": "Compositor"
+    },
+    "detail": {
+      "originalTitle": "Título original",
+      "studios": "Estúdios",
+      "language": "Idioma",
+      "ended": "Finalizada",
+      "tags": "Etiquetas",
+      "schedule": "Programação"
+    }
+  },
+  "liveTv": {
+    "title": "TV ao Vivo",
+    "guide": "Guia",
+    "unknownHub": "Desconhecido",
+    "live": "Ao vivo",
+    "premiereBadge": "Novo",
+    "channelsSection": "Canais",
+    "programsSection": "Programas",
+    "favorites": "Favoritos",
+    "record": "Gravar",
+    "recordSeries": "Gravar série",
+    "recordings": "Gravações",
+    "manageRecording": "Gerenciar gravação",
+    "cancelRecording": "Cancelar gravação",
+    "recordingScheduled": "Gravação agendada.",
+    "editRuleAction": "Editar"
+  },
+  "collections": {
+    "title": "Coleções",
+    "collection": "Coleção",
+    "deleteCollection": "Excluir Coleção",
+    "removeFromCollection": "Remover da coleção"
+  },
+  "playlists": {
+    "title": "Listas de Reprodução",
+    "playlist": "Lista de Reprodução",
+    "delete": "Excluir Lista de Reprodução",
+    "removeItem": "Remover da lista de reprodução"
+  },
+  "music": {
+    "instantMix": "Mix Instantâneo",
+    "playNext": "Reproduzir próximo",
+    "clearQueue": "Limpar fila",
+    "lyrics": "Letras",
+    "stopPlayback": "Parar reprodução",
+    "previousTrack": "Faixa anterior",
+    "nextTrack": "Próxima faixa",
+    "repeat": "Repetir",
+    "repeatAll": "Repetir todos",
+    "repeatOne": "Repetir uma vez",
+    "discography": {
+      "live": "Ao vivo"
+    },
+    "sleepTimerMinutes": {
+      "one": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minuto",
+      "other": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minutos",
+      "many": "${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minutos"
+    }
+  },
+  "watchTogether": {
+    "removeRoom": "Remover",
+    "hostBadge": "Servidor",
+    "playerIdle": "Ocioso",
+    "remove": "Remover"
+  },
+  "downloads": {
+    "tvShows": "Séries",
+    "movies": "Filmes",
+    "music": "Música",
+    "downloadQueued": "Download enfileirado.",
+    "deleteAll": "Excluir tudo",
+    "allEpisodes": "Todos os episódios",
+    "syncRuleAvailable": "Disponível",
+    "groupings": {
+      "collections": "Coleções"
+    }
+  },
+  "companionRemote": {
+    "remote": {
+      "tabPlay": "Reproduzir",
+      "tabMore": "Mais",
+      "tabLibraries": "Bibliotecas",
+      "tabSearch": "Busca",
+      "tabSettings": "Configurações",
+      "previous": "Anterior",
+      "next": "Próximo",
+      "stop": "Parar",
+      "volumeDown": "Baixo",
+      "volumeUp": "Para cima",
+      "fullscreen": "Tela Cheia",
+      "subtitles": "Legendas",
+      "audio": "Áudio"
+    }
+  },
+  "videoSettings": {
+    "playbackSpeed": "Velocidade de Reprodução",
+    "zoom": "Ampliar",
+    "hdrToneMappingPlayer": "Reprodutor",
+    "audioEqualizerActive": "Personalizado"
+  },
+  "performanceOverlay": {
+    "performance": "Rendimento",
+    "app": "Aplicativo",
+    "rotation": "Rotação",
+    "sampleRate": "Taxa da amostra",
+    "player": "Reprodutor",
+    "playMethod": "Método de Reprodução"
+  },
+  "externalPlayer": {
+    "off": "Desligado"
+  },
+  "metadataEdit": {
+    "editMetadata": "Editar",
+    "screenTitle": "Editar metadados",
+    "title": "Título",
+    "sortTitle": "Ordenar por título",
+    "originalTitle": "Título original",
+    "releaseDate": "Data do lançamento",
+    "studio": "Estudio",
+    "tagline": "Slogan",
+    "poster": "Poster/Cartaz",
+    "allEpisodes": "Todos os episódios",
+    "never": "Nunca",
+    "seasons": "Temporadas",
+    "hide": "Ocultar",
+    "preferredAudioLanguage": "Idioma preferido de áudio",
+    "preferredSubtitleLanguage": "Idioma de legendas preferido",
+    "tags": "Etiquetas",
+    "genre": "Gênero",
+    "director": "Diretor",
+    "writer": "Escritor",
+    "producer": "Produtor",
+    "collection": "Coleção"
+  },
+  "matchScreen": {
+    "titleHint": "Título",
+    "yearHint": "Ano",
+    "search": "Busca"
+  },
+  "seerr": {
+    "seasons": "Temporadas",
+    "advancedOptions": "Avançado",
+    "tags": "Etiquetas",
+    "statusAvailable": "Disponível"
+  },
+  "services": {
+    "libraryFilter": {
+      "modeBlacklist": "Lista negra",
+      "modeWhitelist": "Lista branca",
+      "libraries": "Bibliotecas"
+    }
+  },
+  "addServer": {
+    "username": "Usuário",
+    "password": "Senha",
+    "signIn": "Entrar"
+  },
+  "watchLink": {
+    "copy": "cópia de"
+  },
+  "homeLayout": {
+    "home": "Início",
+    "continueWatching": "Continuar assistindo",
+    "recentlyAdded": "Recentes",
+    "hide": "Ocultar",
+    "remove": "Remover"
+  },
+  "fileSources": {
+    "source": "Fonte",
+    "name": "Nome",
+    "username": "Usuário",
+    "password": "Senha",
+    "connect": "Conectar",
+    "cancel": "Cancelar",
+    "save": "Salvar",
+    "close": "Fechar",
+    "refresh": "Atualizar",
+    "continueReading": "Continue lendo",
+    "continueListening": "Continuar Escutando",
+    "continueWatching": "Continuar assistindo",
+    "play": "Reproduzir",
+    "pause": "Pausar",
+    "stop": "Parar",
+    "delete": "Excluir",
+    "speed": "Velocidade de Reprodução",
+    "sleepOff": "Desligado",
+    "fontSize": "Tamanho do texto",
+    "audio": "Áudio",
+    "video": "Vídeo",
+    "all": "Todos",
+    "signIn": "Entrar",
+    "none": "Nenhum",
+    "fullscreen": "Tela cheia",
+    "audiobooks": "Livros de áudio",
+    "leftToRight": "Esquerda para direita",
+    "rightToLeft": "Direita para esquerda",
+    "zoom": "Ampliar",
+    "minutes(param=count)": {
+      "one": "${count: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minuto",
+      "other": "${count: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minutos",
+      "many": "${count: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minutos"
+    },
+    "googleDrive": "Google Drive"
+  },
+  "lending": {
+    "cancel": "Cancelar"
+  }
+}

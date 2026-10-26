@@ -265,7 +265,7 @@ class _CollectionDetailScreenState extends BaseMediaListDetailScreen<CollectionD
   /// narrower than the truth.
   String _metaLine() {
     final count = totalSize > 0 ? totalSize : (widget.collection.childCount ?? 0);
-    final parts = <String>[count == 1 ? t.playlists.oneItem : t.playlists.itemCount(count: count)];
+    final parts = <String>[t.playlists.itemCount(count: count)];
     if (totalSize > 0 && loadedItems.length == totalSize) {
       final years = loadedItems.values.map((i) => i.year).nonNulls.toList();
       if (years.isNotEmpty) {

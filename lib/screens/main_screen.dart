@@ -2503,10 +2503,10 @@ class _MainScreenState extends State<MainScreen>
                         clipBehavior: Clip.hardEdge,
                         children: [
                           Positioned.fill(child: ColoredBox(color: Theme.of(context).scaffoldBackgroundColor)),
-                          Positioned(
+                          PositionedDirectional(
                             top: 0,
                             bottom: 0,
-                            left: contentLayout.left,
+                            start: contentLayout.left,
                             width: contentLayout.width,
                             child: TweenAnimationBuilder<double>(
                               duration: SideNavigationRailState.expandDuration,
@@ -2523,7 +2523,11 @@ class _MainScreenState extends State<MainScreen>
                               // animation so all three track tick for tick.
                               builder: (context, contentLeftPadding, contentChild) {
                                 return Transform.translate(
-                                  offset: Offset(contentLeftPadding - targetContentOffset, 0),
+                                  offset: Offset(
+                                    (contentLeftPadding - targetContentOffset) *
+                                        (Directionality.of(context) == TextDirection.rtl ? -1 : 1),
+                                    0,
+                                  ),
                                   child: contentChild!,
                                 );
                               },
@@ -2542,10 +2546,10 @@ class _MainScreenState extends State<MainScreen>
                               ),
                             ),
                           ),
-                          Positioned(
+                          PositionedDirectional(
                             top: 0,
                             bottom: 0,
-                            left: 0,
+                            start: 0,
                             child: FocusScope(
                               node: _sidebarFocusScope,
                               child: SideNavigationRail(

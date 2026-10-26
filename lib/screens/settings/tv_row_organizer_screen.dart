@@ -278,10 +278,10 @@ class _TvRowOrganizerScreenState extends State<TvRowOrganizerScreen> {
       _setFocus(_row - 1, _clampColumn(_row - 1, _column));
     } else if (key.isDownKey && _row < _entries.length - 1) {
       _setFocus(_row + 1, _clampColumn(_row + 1, _column));
-    } else if (key.isLeftKey) {
+    } else if (key.isInlineStart(context)) {
       final c = _nextEnabledColumn(_column, -1);
       if (c != null) _setFocus(_row, c);
-    } else if (key.isRightKey) {
+    } else if (key.isInlineEnd(context)) {
       final c = _nextEnabledColumn(_column, 1);
       if (c != null) _setFocus(_row, c);
     }

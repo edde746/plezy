@@ -109,6 +109,7 @@ class _LiveTimelineBarState extends State<LiveTimelineBar> {
           children: [
             _buildSlider(timeline),
             Row(
+              textDirection: TextDirection.ltr,
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
                 Text(timeline.startEpoch == null ? '—' : _clock(timeline.startEpoch!), style: _timeStyle),

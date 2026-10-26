@@ -106,11 +106,11 @@ class FilterIncludeExcludeRow extends StatelessWidget {
       skipTraversal: true,
       onKeyEvent: (node, event) {
         if (!event.isActionable) return KeyEventResult.ignored;
-        if (event.logicalKey.isLeftKey) {
+        if (event.logicalKey.isInlineStart(context)) {
           _set(false);
           return KeyEventResult.handled;
         }
-        if (event.logicalKey.isRightKey) {
+        if (event.logicalKey.isInlineEnd(context)) {
           _set(true);
           return KeyEventResult.handled;
         }
@@ -186,11 +186,11 @@ class FilterBooleanRow extends StatelessWidget {
       skipTraversal: true,
       onKeyEvent: (node, event) {
         if (!event.isActionable) return KeyEventResult.ignored;
-        if (event.logicalKey.isLeftKey) {
+        if (event.logicalKey.isInlineStart(context)) {
           _step(-1);
           return KeyEventResult.handled;
         }
-        if (event.logicalKey.isRightKey) {
+        if (event.logicalKey.isInlineEnd(context)) {
           _step(1);
           return KeyEventResult.handled;
         }

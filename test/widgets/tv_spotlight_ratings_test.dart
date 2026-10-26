@@ -15,7 +15,7 @@ import '../test_helpers/prefs.dart';
 /// tab all render through [TvSpotlightBackground]) shows every score the hub
 /// listing already returned. Listings carry the scalar rating pair, so this is
 /// normally one or two entries — never a reason to re-fetch an item.
-Future<void> _pumpSpotlight(WidgetTester tester, MediaItem item) async {
+Future<void> _pumpSpotlight(WidgetTester tester, MediaItem item, {TextDirection direction = TextDirection.ltr}) async {
   await SettingsService.getInstance();
   tester.view.physicalSize = const Size(1920, 1080);
   tester.view.devicePixelRatio = 1;
@@ -25,6 +25,7 @@ Future<void> _pumpSpotlight(WidgetTester tester, MediaItem item) async {
   await tester.pumpWidget(
     TranslationProvider(
       child: MaterialApp(
+        builder: (_, child) => Directionality(textDirection: direction, child: child!),
         home: Scaffold(
           // TvSpotlightScaffold fills the screen with the background; a loose
           // Scaffold body would leave its bottom-anchored info block unbounded.
@@ -57,6 +58,16 @@ void main() {
   });
 
   tearDown(() => TvDetectionService.debugSetAppleTVOverride(null));
+
+  testWidgets('RTL spotlight positions its title in the leading right-hand band', (tester) async {
+    await _pumpSpotlight(
+      tester,
+      const MediaItem.plex(id: 'rtl', kind: MediaKind.movie, title: 'فيلم عربي'),
+      direction: TextDirection.rtl,
+    );
+    expect(tester.getCenter(find.text('فيلم عربي')).dx, greaterThan(960));
+    expect(tester.takeException(), isNull);
+  });
 
   testWidgets('dashboard spotlight badges every rating the listing carried', (tester) async {
     await _pumpSpotlight(

@@ -54,7 +54,7 @@ class QuickConnectCodePanel extends StatelessWidget {
             child: Padding(
               // letterSpacing adds a trailing gap after the last glyph;
               // matching left padding keeps the code optically centered.
-              padding: const EdgeInsets.only(left: 12),
+              padding: const EdgeInsetsDirectional.only(start: 12),
               child: Text(
                 code,
                 style: theme.textTheme.displayLarge?.copyWith(

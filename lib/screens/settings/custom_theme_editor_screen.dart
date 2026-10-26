@@ -1,3 +1,4 @@
+import 'package:plezy/i18n/presentation_formats.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -284,7 +285,7 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen>
         slivers: narrow
             ? [
                 SliverPadding(
-                  padding: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsetsDirectional.only(bottom: 16),
                   sliver: SliverList(delegate: SliverChildListDelegate(controls)),
                 ),
               ]
@@ -296,7 +297,7 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen>
                     children: [
                       Expanded(
                         child: SingleChildScrollView(
-                          padding: const EdgeInsets.only(bottom: 16),
+                          padding: const EdgeInsetsDirectional.only(bottom: 16),
                           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: controls),
                         ),
                       ),
@@ -403,7 +404,7 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen>
           _ChannelSlider(
             key: const ValueKey('custom_theme_hue'),
             label: t.accessibility.hue,
-            valueLabel: '${_hsv.hue.round()}°',
+            valueLabel: '${formatDecimal(_hsv.hue, maximumDecimals: 0)}°',
             value: _hsv.hue,
             max: 360,
             onChanged: (value) => _setHsv(_hsv.withHue(value)),
@@ -411,7 +412,7 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen>
           _ChannelSlider(
             key: const ValueKey('custom_theme_saturation'),
             label: t.accessibility.saturation,
-            valueLabel: '${(_hsv.saturation * 100).round()}%',
+            valueLabel: formatPercent(_hsv.saturation),
             value: _hsv.saturation,
             max: 1,
             onChanged: (value) => _setHsv(_hsv.withSaturation(value)),
@@ -419,7 +420,7 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen>
           _ChannelSlider(
             key: const ValueKey('custom_theme_value'),
             label: t.accessibility.brightness,
-            valueLabel: '${(_hsv.value * 100).round()}%',
+            valueLabel: formatPercent(_hsv.value),
             value: _hsv.value,
             max: 1,
             onChanged: (value) => _setHsv(_hsv.withValue(value)),
@@ -427,7 +428,7 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen>
           _ChannelSlider(
             key: const ValueKey('custom_theme_alpha'),
             label: t.themeEditor.opacity,
-            valueLabel: '${(_hsv.alpha * 100).round()}%',
+            valueLabel: formatPercent(_hsv.alpha),
             value: _hsv.alpha,
             max: 1,
             onChanged: (value) => _setHsv(_hsv.withAlpha(value)),
@@ -564,7 +565,7 @@ class _SlotTile extends StatelessWidget {
         children: [
           if (warning)
             Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsetsDirectional.only(end: 8),
               child: AppIcon(Symbols.warning_rounded, fill: 1, size: 20, color: scheme.error),
             ),
           AppIcon(
@@ -599,7 +600,7 @@ class _ChannelSlider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsetsDirectional.only(top: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -687,16 +688,17 @@ class _ContrastWarning extends StatelessWidget {
 
   /// Truncated, not rounded, so a pair just under the bar never reads as
   /// meeting it (4.46 shows 4.4, not 4.5).
-  static String _formatRatio(double value) => ((value * 10).floor() / 10).toStringAsFixed(1);
+  static String _formatRatio(double value) =>
+      formatDecimal((value * 10).floor() / 10, minimumDecimals: 1, maximumDecimals: 1);
 
   static String _formatMinimum(double value) =>
-      value == value.roundToDouble() ? value.toStringAsFixed(0) : value.toString();
+      value == value.roundToDouble() ? formatDecimal(value, minimumDecimals: 0, maximumDecimals: 0) : value.toString();
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(top: 6),
+      padding: const EdgeInsetsDirectional.only(top: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

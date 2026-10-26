@@ -9,9 +9,11 @@ import 'package:plezy/sources/publication_archive.dart';
 
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
-  for (final comic in [false, true]) {
+  for (final (comic, rtl) in [(false, false), (true, false), (true, true)]) {
     test(
-      comic
+      rtl
+          ? 'Arabic reader chrome accepts localized page digits and preserves book direction'
+          : comic
           ? 'real comic engine supports zoom, pan, fit width, RTL and page navigation'
           : 'real EPUB engine renders, navigates CFIs, searches and sanitizes publisher content',
       () async {
@@ -51,6 +53,9 @@ void main() {
               try {
                 await server.execute('open', {
                   'title': 'Reading fixture',
+                  'interfaceLocale': rtl ? 'ar' : 'en',
+                  'formattingLocale': rtl ? 'ar-EG' : 'en-US',
+                  'interfaceDirection': rtl ? 'rtl' : 'ltr',
                   'icons': {
                     'zoomIn': Symbols.zoom_in_rounded.codePoint,
                     'zoomOut': Symbols.zoom_out_rounded.codePoint,
@@ -95,6 +100,17 @@ void main() {
                     'settings': 'Reading settings',
                     'full': 'Fullscreen',
                     'speak': 'Read aloud',
+                    'page': rtl ? 'انتقل إلى الصفحة' : 'Go to page',
+                    'goToPage': rtl ? 'انتقل إلى الصفحة' : 'Go to page',
+                    'goToSection': rtl ? 'انتقل إلى الفصل' : 'Go to chapter',
+                    'pageRange': rtl ? 'أدخل رقمًا من ١ إلى {count}' : 'Enter a number from 1 to {count}',
+                    if (rtl) ...{
+                      'settings': 'إعدادات القراءة',
+                      'readingDirection': 'اتجاه القراءة',
+                      'pageLayout': 'تخطيط الصفحة',
+                      'zoom': 'تكبير',
+                      'close': 'إغلاق',
+                    },
                   },
                 });
               } catch (e) {
@@ -114,6 +130,7 @@ void main() {
             'test/sources/fixtures/reader_browser.cjs',
             url.toString(),
             comic ? 'comic' : 'epub',
+            rtl ? 'rtl' : 'ltr',
           ]);
           expect(result.exitCode, 0, reason: '${result.stderr}; bridge: $failure');
           expect(jsonDecode(result.stdout as String)['search'], greaterThan(0));

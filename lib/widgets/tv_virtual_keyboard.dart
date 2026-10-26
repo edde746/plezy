@@ -740,6 +740,7 @@ class _TvVirtualKeyboardDialogState extends State<_TvVirtualKeyboardDialog> {
 
   Widget _buildRow(BuildContext context, int row, _TvKeyboardMetrics metrics) {
     return Row(
+      textDirection: TextDirection.ltr,
       mainAxisAlignment: .center,
       children: [
         for (var column = 0; column < _rows[row].length; column++) ...[

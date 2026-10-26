@@ -8,7 +8,7 @@ import 'package:connectivity_plus/connectivity_plus.dart';
 import 'package:flutter/foundation.dart';
 
 import '../connection/connection.dart';
-import '../i18n/app_locale_utils.dart';
+import '../i18n/locale_preferences.dart';
 import '../media/media_server_client.dart';
 import '../exceptions/media_server_exceptions.dart';
 
@@ -25,7 +25,6 @@ import '../utils/future_extensions.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 
 import 'plex_auth_service.dart';
-import 'settings_service.dart';
 import 'storage_service.dart';
 
 typedef PlexClientFactory =
@@ -352,8 +351,7 @@ class MultiServerManager {
     }
   }
 
-  String? get _currentPlexLanguageCode =>
-      SettingsService.instanceOrNull?.read(SettingsService.appLocale).plexLanguageCode;
+  String? get _currentPlexLanguageCode => LocalePreferences.metadataLanguageCode;
 
   @visibleForTesting
   void debugRegisterJellyfinClientForTesting(JellyfinClient client, {bool online = true}) {

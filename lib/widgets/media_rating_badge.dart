@@ -53,6 +53,7 @@ double inlineRatingBadgeWidth(
   required TextStyle textStyle,
   required TextScaler textScaler,
   required TextDirection textDirection,
+  Locale? locale,
   double? iconSize,
   double? spacing,
 }) {
@@ -63,6 +64,7 @@ double inlineRatingBadgeWidth(
     style: textStyle,
     textScaler: textScaler,
     textDirection: textDirection,
+    locale: locale,
   ).width;
   return size * (info?.iconAspect ?? 1) + (spacing ?? 4) + labelWidth;
 }

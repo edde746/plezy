@@ -63,7 +63,7 @@ class _SearchInputFieldState extends State<SearchInputField> {
     return Padding(
       padding: const EdgeInsets.only(left: 16, right: 16, bottom: 16),
       child: Stack(
-        alignment: Alignment.centerRight,
+        alignment: AlignmentDirectional.centerEnd,
         children: [
           FocusableTextField(
             controller: widget.controller,

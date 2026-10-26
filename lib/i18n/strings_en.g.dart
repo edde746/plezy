@@ -100,6 +100,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$addServer$en addServer = Translations$addServer$en.internal(_root);
 	late final Translations$watchLink$en watchLink = Translations$watchLink$en.internal(_root);
 	late final Translations$homeLayout$en homeLayout = Translations$homeLayout$en.internal(_root);
+	late final Translations$platform$en platform = Translations$platform$en.internal(_root);
 	late final Translations$fileSources$en fileSources = Translations$fileSources$en.internal(_root);
 	late final Translations$lending$en lending = Translations$lending$en.internal(_root);
 }
@@ -973,14 +974,20 @@ class Translations$settings$en {
 	/// en: 'Rewind on Resume'
 	String get rewindOnResume => 'Rewind on Resume';
 
-	/// en: '${seconds} seconds'
-	String secondsUnit({required Object seconds}) => '${seconds} seconds';
+	/// en: '(other) {${seconds: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} seconds} (one) {${seconds: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} second}'
+	String secondsUnit({required num seconds}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(seconds,
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(seconds)} seconds',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(seconds)} second',
+	);
 
 	/// en: 'Default Sleep Timer'
 	String get defaultSleepTimer => 'Default Sleep Timer';
 
-	/// en: '${minutes} minutes'
-	String minutesUnit({required Object minutes}) => '${minutes} minutes';
+	/// en: '(other) {${minutes: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minutes} (one) {${minutes: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minute}'
+	String minutesUnit({required num minutes}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(minutes,
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(minutes)} minutes',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(minutes)} minute',
+	);
 
 	/// en: 'Remember track selections per show/movie'
 	String get rememberTrackSelections => 'Remember track selections per show/movie';
@@ -1836,6 +1843,24 @@ class Translations$settings$en {
 
 	/// en: 'Export PlezyNG settings'
 	String get exportDialogTitle => 'Export PlezyNG settings';
+
+	/// en: 'Follow system'
+	String get followSystem => 'Follow system';
+
+	/// en: 'Match interface language'
+	String get followAppLanguage => 'Match interface language';
+
+	/// en: 'Regional formats'
+	String get regionFormat => 'Regional formats';
+
+	/// en: 'Choose how dates, numbers and measurements appear.'
+	String get regionFormatDescription => 'Choose how dates, numbers and measurements appear.';
+
+	/// en: 'Metadata language'
+	String get metadataLanguage => 'Metadata language';
+
+	/// en: 'Preferred titles and descriptions where the server supports it. Audio and subtitle preferences stay separate.'
+	String get metadataLanguageDescription => 'Preferred titles and descriptions where the server supports it. Audio and subtitle preferences stay separate.';
 }
 
 // Path: themeEditor
@@ -2410,22 +2435,22 @@ class Translations$mediaMenu$en {
 	/// en: 'This includes all episodes and their files.'
 	String get deleteMultipleWarning => 'This includes all episodes and their files.';
 
-	/// en: '(one) {This deletes all ${n} episode in it, and its file.} (other) {This deletes all ${n} episodes in it, and their files.}'
+	/// en: '(one) {This deletes all ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} episode in it, and its file.} (other) {This deletes all ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} episodes in it, and their files.}'
 	String deleteEpisodeCountWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
-		one: 'This deletes all ${n} episode in it, and its file.',
-		other: 'This deletes all ${n} episodes in it, and their files.',
+		one: 'This deletes all ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episode in it, and its file.',
+		other: 'This deletes all ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episodes in it, and their files.',
 	);
 
-	/// en: '(one) {This item is stored as ${n} file, which will be deleted.} (other) {This item is stored across ${n} files, and all of them will be deleted.}'
+	/// en: '(one) {This item is stored as ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} file, which will be deleted.} (other) {This item is stored across ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} files, and all of them will be deleted.}'
 	String deleteMultiPartWarning({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
-		one: 'This item is stored as ${n} file, which will be deleted.',
-		other: 'This item is stored across ${n} files, and all of them will be deleted.',
+		one: 'This item is stored as ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} file, which will be deleted.',
+		other: 'This item is stored across ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} files, and all of them will be deleted.',
 	);
 
-	/// en: '(one) {${n} other episode is stored in the same file and will be deleted too:} (other) {${n} other episodes are stored in the same file and will be deleted too:}'
+	/// en: '(one) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} other episode is stored in the same file and will be deleted too:} (other) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} other episodes are stored in the same file and will be deleted too:}'
 	String deleteSharedFileHeading({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
-		one: '${n} other episode is stored in the same file and will be deleted too:',
-		other: '${n} other episodes are stored in the same file and will be deleted too:',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} other episode is stored in the same file and will be deleted too:',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} other episodes are stored in the same file and will be deleted too:',
 	);
 
 	/// en: 'PlezyNG could not check which files this will remove, so it may delete more than the item named above. Cancel and try again, or delete anyway.'
@@ -2680,10 +2705,10 @@ class Translations$videoControls$en {
 
 	// Translations
 
-	/// en: '(one) {${n} frame} (other) {${n} frames}'
+	/// en: '(one) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} frame} (other) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} frames}'
 	String frameCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
-		one: '${n} frame',
-		other: '${n} frames',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} frame',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} frames',
 	);
 
 	/// en: 'Audio'
@@ -2979,10 +3004,10 @@ class Translations$messages$en {
 	/// en: 'Auto-removed: ${title}'
 	String autoRemovedWatchedDownload({required Object title}) => 'Auto-removed: ${title}';
 
-	/// en: '(one) {Auto-removed ${n} watched download} (other) {Auto-removed ${n} watched downloads}'
+	/// en: '(one) {Auto-removed ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} watched download} (other) {Auto-removed ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} watched downloads}'
 	String autoRemovedWatchedDownloads({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
-		one: 'Auto-removed ${n} watched download',
-		other: 'Auto-removed ${n} watched downloads',
+		one: 'Auto-removed ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} watched download',
+		other: 'Auto-removed ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} watched downloads',
 	);
 
 	/// en: 'Removed from Continue Watching'
@@ -3785,10 +3810,10 @@ class Translations$discover$en {
 	/// en: 'More Like This'
 	String get moreLikeThis => 'More Like This';
 
-	/// en: '(one) {${n} title} (other) {${n} titles}'
+	/// en: '(one) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} title} (other) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} titles}'
 	String titleCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
-		one: '${n} title',
-		other: '${n} titles',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} title',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} titles',
 	);
 
 	late final Translations$discover$person$en person = Translations$discover$person$en.internal(_root);
@@ -4016,9 +4041,6 @@ class Translations$about$en {
 	/// en: 'About'
 	String get title => 'About';
 
-	/// en: 'Privacy Policy'
-	String get privacyPolicy => 'Privacy Policy';
-
 	/// en: 'Open Source Licenses'
 	String get openSourceLicenses => 'Open Source Licenses';
 
@@ -4030,6 +4052,9 @@ class Translations$about$en {
 
 	/// en: 'View licenses of third-party libraries'
 	String get viewLicensesDescription => 'View licenses of third-party libraries';
+
+	/// en: 'Privacy Policy'
+	String get privacyPolicy => 'Privacy Policy';
 }
 
 // Path: serverSelection
@@ -4272,10 +4297,10 @@ class Translations$explore$en {
 	late final Translations$explore$rows$en rows = Translations$explore$rows$en.internal(_root);
 	late final Translations$explore$status$en status = Translations$explore$status$en.internal(_root);
 
-	/// en: '(one) {${n} episode} (other) {${n} episodes}'
+	/// en: '(one) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} episode} (other) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} episodes}'
 	String episodeCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
-		one: '${n} episode',
-		other: '${n} episodes',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episode',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episodes',
 	);
 
 	/// en: 'Cast'
@@ -4311,10 +4336,10 @@ class Translations$explore$en {
 	/// en: 'Checking your library...'
 	String get checkingLibrary => 'Checking your library...';
 
-	/// en: '(one) {Couldn't check ${n} server} (other) {Couldn't check ${n} servers}'
+	/// en: '(one) {Couldn't check ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} server} (other) {Couldn't check ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} servers}'
 	String libraryCheckFailed({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
-		one: 'Couldn\'t check ${n} server',
-		other: 'Couldn\'t check ${n} servers',
+		one: 'Couldn\'t check ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} server',
+		other: 'Couldn\'t check ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} servers',
 	);
 
 	/// en: 'Nothing here yet'
@@ -4351,10 +4376,10 @@ class Translations$explore$en {
 
 	late final Translations$explore$detail$en detail = Translations$explore$detail$en.internal(_root);
 
-	/// en: '(one) {${n} result} (other) {${n} results}'
+	/// en: '(one) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} result} (other) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} results}'
 	String totalResults({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
-		one: '${n} result',
-		other: '${n} results',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} result',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} results',
 	);
 }
 
@@ -4746,11 +4771,11 @@ class Translations$playlists$en {
 	/// en: 'Smart Playlist'
 	String get smartPlaylist => 'Smart Playlist';
 
-	/// en: '${count} items'
-	String itemCount({required Object count}) => '${count} items';
-
-	/// en: '1 item'
-	String get oneItem => '1 item';
+	/// en: '(one) {${count: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} item} (other) {${count: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} items}'
+	String itemCount({required num count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(count,
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} item',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} items',
+	);
 
 	/// en: 'This playlist is empty'
 	String get emptyPlaylist => 'This playlist is empty';
@@ -4824,10 +4849,10 @@ class Translations$music$en {
 	/// en: 'Disc ${n}'
 	String discNumber({required Object n}) => 'Disc ${n}';
 
-	/// en: '(one) {${n} track} (other) {${n} tracks}'
+	/// en: '(one) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} track} (other) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} tracks}'
 	String trackCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
-		one: '${n} track',
-		other: '${n} tracks',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} track',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} tracks',
 	);
 
 	/// en: 'Now Playing'
@@ -4890,8 +4915,11 @@ class Translations$music$en {
 	/// en: 'End of track'
 	String get sleepTimerEndOfTrack => 'End of track';
 
-	/// en: '${n} minutes'
-	String sleepTimerMinutes({required Object n}) => '${n} minutes';
+	/// en: '(other) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minutes} (one) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minute}'
+	String sleepTimerMinutes({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} minutes',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} minute',
+	);
 
 	/// en: 'Stop playback'
 	String get stopPlayback => 'Stop playback';
@@ -5138,10 +5166,10 @@ class Translations$watchTogether$en {
 	/// en: 'Participants'
 	String get participants => 'Participants';
 
-	/// en: '(one) {${n} participant} (other) {${n} participants}'
+	/// en: '(one) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} participant} (other) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} participants}'
 	String participantCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
-		one: '${n} participant',
-		other: '${n} participants',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} participant',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} participants',
 	);
 
 	/// en: 'HOST'
@@ -5569,28 +5597,28 @@ class Translations$downloads$en {
 	/// en: 'Storage used: ${size}'
 	String storageUsed({required Object size}) => 'Storage used: ${size}';
 
-	/// en: '(one) {${n} download} (other) {${n} downloads}'
+	/// en: '(one) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} download} (other) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} downloads}'
 	String downloadCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
-		one: '${n} download',
-		other: '${n} downloads',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} download',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} downloads',
 	);
 
-	/// en: '(one) {${n} show} (other) {${n} shows}'
+	/// en: '(one) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} show} (other) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} shows}'
 	String showCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
-		one: '${n} show',
-		other: '${n} shows',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} show',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} shows',
 	);
 
-	/// en: '(one) {${n} movie} (other) {${n} movies}'
+	/// en: '(one) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} movie} (other) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} movies}'
 	String movieCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
-		one: '${n} movie',
-		other: '${n} movies',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} movie',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} movies',
 	);
 
-	/// en: '(one) {${n} album} (other) {${n} albums}'
+	/// en: '(one) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} album} (other) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} albums}'
 	String albumCount({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
-		one: '${n} album',
-		other: '${n} albums',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} album',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} albums',
 	);
 
 	/// en: 'File not found (404)'
@@ -7112,6 +7140,27 @@ class Translations$homeLayout$en {
 	String get resetHeroButtonDescription => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept.';
 }
 
+// Path: platform
+class Translations$platform$en {
+	Translations$platform$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'PlezyNG connects to your media servers and playback devices on your local network.'
+	String get localNetworkPermission => 'PlezyNG connects to your media servers and playback devices on your local network.';
+
+	/// en: 'PlezyNG uses location access when iOS requires it to detect your local network and connect to your media servers.'
+	String get locationPermission => 'PlezyNG uses location access when iOS requires it to detect your local network and connect to your media servers.';
+
+	/// en: 'Choose images from your photo library to use as media artwork.'
+	String get photoLibraryPermission => 'Choose images from your photo library to use as media artwork.';
+
+	/// en: 'Scan QR codes to pair a Companion Remote.'
+	String get cameraPermission => 'Scan QR codes to pair a Companion Remote.';
+}
+
 // Path: fileSources
 class Translations$fileSources$en {
 	Translations$fileSources$en.internal(this._root);
@@ -7134,9 +7183,6 @@ class Translations$fileSources$en {
 
 	/// en: 'On this device'
 	String get localFiles => 'On this device';
-
-	/// en: 'Google Drive'
-	String get googleDrive => 'Google Drive';
 
 	/// en: 'Source'
 	String get source => 'Source';
@@ -7336,8 +7382,11 @@ class Translations$fileSources$en {
 	/// en: 'End of chapter'
 	String get endChapter => 'End of chapter';
 
-	/// en: '${count} minutes'
-	String minutes({required Object count}) => '${count} minutes';
+	/// en: '(other) {${count: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minutes} (one) {${count: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} minute}'
+	String minutes({required num count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(count,
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} minutes',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} minute',
+	);
 
 	/// en: 'Skip back'
 	String get skipBack => 'Skip back';
@@ -7602,6 +7651,9 @@ class Translations$fileSources$en {
 
 	/// en: 'Cancel scan'
 	String get cancelScan => 'Cancel scan';
+
+	/// en: 'Google Drive'
+	String get googleDrive => 'Google Drive';
 }
 
 // Path: lending
@@ -8953,10 +9005,10 @@ class Translations$explore$stats$en {
 	/// en: '${percent} dropped it'
 	String dropRate({required Object percent}) => '${percent} dropped it';
 
-	/// en: '(one) {${n} comment} (other) {${n} comments}'
+	/// en: '(one) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} comment} (other) {${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} comments}'
 	String comments({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
-		one: '${n} comment',
-		other: '${n} comments',
+		one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} comment',
+		other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} comments',
 	);
 
 	/// en: '${n} votes'
@@ -9205,10 +9257,10 @@ class Translations$explore$detail$en {
 	/// en: 'Schedule'
 	String get schedule => 'Schedule';
 
-	/// en: '(one) {Recommended by ${n} user} (other) {Recommended by ${n} users}'
+	/// en: '(one) {Recommended by ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} user} (other) {Recommended by ${n: NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName)} users}'
 	String recommendedByUsers({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n,
-		one: 'Recommended by ${n} user',
-		other: 'Recommended by ${n} users',
+		one: 'Recommended by ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} user',
+		other: 'Recommended by ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} users',
 	);
 
 	/// en: 'Recommended by ${who}'
@@ -10240,9 +10292,9 @@ extension on Translations {
 			'settings.smallSkipDuration' => 'Small Skip Duration',
 			'settings.largeSkipDuration' => 'Large Skip Duration',
 			'settings.rewindOnResume' => 'Rewind on Resume',
-			'settings.secondsUnit' => ({required Object seconds}) => '${seconds} seconds',
+			'settings.secondsUnit' => ({required num seconds}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(seconds, other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(seconds)} seconds', one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(seconds)} second', ), 
 			'settings.defaultSleepTimer' => 'Default Sleep Timer',
-			'settings.minutesUnit' => ({required Object minutes}) => '${minutes} minutes',
+			'settings.minutesUnit' => ({required num minutes}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(minutes, other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(minutes)} minutes', one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(minutes)} minute', ), 
 			'settings.rememberTrackSelections' => 'Remember track selections per show/movie',
 			'settings.chooseTracksBeforePlayback' => 'Choose audio and subtitles before playback',
 			'settings.chooseTracksBeforePlaybackDescription' => 'Pick the source audio and subtitle tracks before each video starts.',
@@ -10530,6 +10582,12 @@ extension on Translations {
 			'settings.playerScopeLibrary' => 'Per library',
 			'settings.playerScopeTitle' => 'Per show or movie',
 			'settings.exportDialogTitle' => 'Export PlezyNG settings',
+			'settings.followSystem' => 'Follow system',
+			'settings.followAppLanguage' => 'Match interface language',
+			'settings.regionFormat' => 'Regional formats',
+			'settings.regionFormatDescription' => 'Choose how dates, numbers and measurements appear.',
+			'settings.metadataLanguage' => 'Metadata language',
+			'settings.metadataLanguageDescription' => 'Preferred titles and descriptions where the server supports it. Audio and subtitle preferences stay separate.',
 			'themeEditor.builtIn' => 'Built-in',
 			'themeEditor.presets' => 'Presets',
 			'themeEditor.custom' => 'Custom',
@@ -10746,9 +10804,9 @@ extension on Translations {
 			'mediaMenu.deleteAnyway' => 'Delete anyway',
 			'mediaMenu.confirmDeleteTarget' => ({required Object title}) => 'Permanently delete ${title} from your server?',
 			'mediaMenu.deleteMultipleWarning' => 'This includes all episodes and their files.',
-			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'This deletes all ${n} episode in it, and its file.', other: 'This deletes all ${n} episodes in it, and their files.', ), 
-			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'This item is stored as ${n} file, which will be deleted.', other: 'This item is stored across ${n} files, and all of them will be deleted.', ), 
-			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} other episode is stored in the same file and will be deleted too:', other: '${n} other episodes are stored in the same file and will be deleted too:', ), 
+			'mediaMenu.deleteEpisodeCountWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'This deletes all ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episode in it, and its file.', other: 'This deletes all ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episodes in it, and their files.', ), 
+			'mediaMenu.deleteMultiPartWarning' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'This item is stored as ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} file, which will be deleted.', other: 'This item is stored across ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} files, and all of them will be deleted.', ), 
+			'mediaMenu.deleteSharedFileHeading' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} other episode is stored in the same file and will be deleted too:', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} other episodes are stored in the same file and will be deleted too:', ), 
 			'mediaMenu.deleteScopeUnverifiedProbeFailed' => 'PlezyNG could not check which files this will remove, so it may delete more than the item named above. Cancel and try again, or delete anyway.',
 			'mediaMenu.deleteScopeUnverifiedNoFileInfo' => 'Your server did not provide file details for this item, so PlezyNG cannot check which files this will remove. It may delete more than the item named above.',
 			'mediaMenu.mediaDeletedSuccessfully' => 'Media item deleted successfully',
@@ -10818,7 +10876,7 @@ extension on Translations {
 			'tooltips.markAsWatched' => 'Mark as watched',
 			'tooltips.markAsUnwatched' => 'Mark as unwatched',
 			'audioTracks.track' => ({required Object n}) => 'Audio Track ${n}',
-			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} frame', other: '${n} frames', ), 
+			'videoControls.frameCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} frame', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} frames', ), 
 			'videoControls.audioLabel' => 'Audio',
 			'videoControls.subtitlesLabel' => 'Subtitles',
 			'videoControls.addTime' => ({required Object amount, required Object unit}) => '+${amount}${unit}',
@@ -10921,7 +10979,7 @@ extension on Translations {
 			'messages.markedAsWatchedOffline' => 'Marked as watched (will sync when online)',
 			'messages.markedAsUnwatchedOffline' => 'Marked as unwatched (will sync when online)',
 			'messages.autoRemovedWatchedDownload' => ({required Object title}) => 'Auto-removed: ${title}',
-			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Auto-removed ${n} watched download', other: 'Auto-removed ${n} watched downloads', ), 
+			'messages.autoRemovedWatchedDownloads' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Auto-removed ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} watched download', other: 'Auto-removed ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} watched downloads', ), 
 			'messages.removedFromContinueWatching' => 'Removed from Continue Watching',
 			'messages.errorLoading' => ({required Object error}) => 'Error: ${error}',
 			'messages.searchPartialResults' => 'Some media servers could not be searched. Showing available results.',
@@ -10957,14 +11015,14 @@ extension on Translations {
 			'messages.seasonsLoadFailed' => 'Couldn\'t load seasons',
 			'messages.noEpisodesFound' => 'No episodes found in first season',
 			'messages.noEpisodesFoundGeneral' => 'No episodes found',
+			_ => null,
+		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Couldn\'t load episodes',
 			'messages.noResultsFound' => 'No results found',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Sleep timer set for ${label}',
 			'messages.noItemsAvailable' => 'No items available',
 			'messages.failedToCreatePlayQueueNoItems' => 'Failed to create a play queue — no items',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Failed to ${action}: ${error}',
-			_ => null,
-		} ?? switch (path) {
 			'messages.switchingToCompatiblePlayer' => 'Switching to compatible player...',
 			'messages.serverLimitTitle' => 'Playback failed',
 			'messages.serverLimitBody' => 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.',
@@ -11236,7 +11294,7 @@ extension on Translations {
 			'discover.tvShow' => 'TV Show',
 			'discover.minutesLeft' => ({required Object minutes}) => '${minutes} min left',
 			'discover.moreLikeThis' => 'More Like This',
-			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} title', other: '${n} titles', ), 
+			'discover.titleCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} title', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} titles', ), 
 			'discover.person.born' => 'Born',
 			'discover.person.died' => 'Died',
 			'discover.person.birthplace' => 'Birthplace',
@@ -11384,11 +11442,11 @@ extension on Translations {
 			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => 'About',
-			'about.privacyPolicy' => 'Privacy Policy',
 			'about.openSourceLicenses' => 'Open Source Licenses',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
 			'about.appDescription' => 'A beautiful Plex, Jellyfin, and Emby client for Flutter',
 			'about.viewLicensesDescription' => 'View licenses of third-party libraries',
+			'about.privacyPolicy' => 'Privacy Policy',
 			'serverSelection.noServersFoundForAccount' => ({required Object username, required Object email}) => 'No servers found for ${username} (${email})',
 			'serverSelection.failedToLoadServers' => ({required Object error}) => 'Failed to load servers: ${error}',
 			'serverSelection.noValidServers' => 'No usable servers were found on this account',
@@ -11482,7 +11540,7 @@ extension on Translations {
 			'explore.status.ended' => 'Ended',
 			'explore.status.canceled' => 'Canceled',
 			'explore.status.upcoming' => 'Upcoming',
-			'explore.episodeCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} episode', other: '${n} episodes', ), 
+			'explore.episodeCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episode', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} episodes', ), 
 			'explore.cast' => 'Cast',
 			'explore.characters' => 'Characters',
 			'explore.addToWatchlist' => 'Add to Watchlist',
@@ -11494,7 +11552,7 @@ extension on Translations {
 			'explore.notInLibrary' => 'Not in your library',
 			'explore.inTheseLibraries' => 'In these libraries',
 			'explore.checkingLibrary' => 'Checking your library...',
-			'explore.libraryCheckFailed' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Couldn\'t check ${n} server', other: 'Couldn\'t check ${n} servers', ), 
+			'explore.libraryCheckFailed' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Couldn\'t check ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} server', other: 'Couldn\'t check ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} servers', ), 
 			'explore.emptyTitle' => 'Nothing here yet',
 			'explore.emptyMessage' => ({required Object source}) => 'Rows from ${source} will appear here once they have content.',
 			'explore.searchHint' => ({required Object source}) => 'Search ${source}',
@@ -11515,6 +11573,8 @@ extension on Translations {
 			'explore.badge.processing' => 'Processing',
 			'explore.badge.declined' => 'Declined',
 			'explore.badge.requestFailed' => 'Request failed',
+			_ => null,
+		} ?? switch (path) {
 			'explore.badge.requested4k' => '4K requested',
 			'explore.badge.seasonsAvailable' => ({required Object available, required Object total}) => '${available}/${total} seasons',
 			'explore.badge.nextEpisodeIn' => ({required Object episode, required Object duration}) => 'Ep ${episode} in ${duration}',
@@ -11531,7 +11591,7 @@ extension on Translations {
 			'explore.stats.planning' => ({required Object n}) => '${n} planning to watch',
 			'explore.stats.favorited' => ({required Object n}) => '${n} favorites',
 			'explore.stats.dropRate' => ({required Object percent}) => '${percent} dropped it',
-			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} comment', other: '${n} comments', ), 
+			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} comment', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} comments', ), 
 			'explore.stats.votes' => ({required Object n}) => '${n} votes',
 			'explore.stats.watching' => ({required Object n}) => '${n} watching it',
 			'explore.stats.completed' => ({required Object n}) => '${n} completed',
@@ -11598,14 +11658,14 @@ extension on Translations {
 			'explore.detail.crew' => 'Crew',
 			'explore.detail.ratings' => 'Ratings',
 			'explore.detail.schedule' => 'Schedule',
-			'explore.detail.recommendedByUsers' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Recommended by ${n} user', other: 'Recommended by ${n} users', ), 
+			'explore.detail.recommendedByUsers' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: 'Recommended by ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} user', other: 'Recommended by ${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} users', ), 
 			'explore.detail.recommendedBy' => ({required Object who}) => 'Recommended by ${who}',
 			'explore.detail.favoritedBy' => ({required Object who}) => 'Favorited by ${who}',
 			'explore.detail.unairedEpisodes' => ({required Object n}) => '${n} not aired yet',
 			'explore.detail.recommendedByPercent' => ({required Object percent}) => 'Recommended by ${percent} of viewers',
 			'explore.detail.relatedTitles' => 'Related titles',
 			'explore.detail.background' => 'Background',
-			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} result', other: '${n} results', ), 
+			'explore.totalResults' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} result', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} results', ), 
 			'liveTv.title' => 'Live TV',
 			'liveTv.guide' => 'Guide',
 			'liveTv.noChannels' => 'No channels available',
@@ -11734,8 +11794,7 @@ extension on Translations {
 			'playlists.delete' => 'Delete Playlist',
 			'playlists.removeItem' => 'Remove from Playlist',
 			'playlists.smartPlaylist' => 'Smart Playlist',
-			'playlists.itemCount' => ({required Object count}) => '${count} items',
-			'playlists.oneItem' => '1 item',
+			'playlists.itemCount' => ({required num count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(count, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} item', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} items', ), 
 			'playlists.emptyPlaylist' => 'This playlist is empty',
 			'playlists.deleteConfirm' => 'Delete Playlist?',
 			'playlists.deleteMessage' => ({required Object name}) => 'Are you sure you want to delete "${name}"?',
@@ -11757,7 +11816,7 @@ extension on Translations {
 			'music.playNext' => 'Play next',
 			'music.addToQueue' => 'Add to queue',
 			'music.discNumber' => ({required Object n}) => 'Disc ${n}',
-			'music.trackCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} track', other: '${n} tracks', ), 
+			'music.trackCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} track', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} tracks', ), 
 			'music.nowPlaying' => 'Now Playing',
 			'music.playingFrom' => ({required Object title}) => 'Playing from ${title}',
 			'music.queue' => 'Queue',
@@ -11778,7 +11837,7 @@ extension on Translations {
 			'music.noLyrics' => 'No lyrics available',
 			'music.sleepTimer' => 'Sleep timer',
 			'music.sleepTimerEndOfTrack' => 'End of track',
-			'music.sleepTimerMinutes' => ({required Object n}) => '${n} minutes',
+			'music.sleepTimerMinutes' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} minutes', one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} minute', ), 
 			'music.stopPlayback' => 'Stop playback',
 			'music.previousTrack' => 'Previous track',
 			'music.nextTrack' => 'Next track',
@@ -11860,7 +11919,7 @@ extension on Translations {
 			'watchTogether.offsetPlusTenth' => '+100 ms',
 			'watchTogether.offsetPlusSecond' => '+1 s',
 			'watchTogether.participants' => 'Participants',
-			'watchTogether.participantCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} participant', other: '${n} participants', ), 
+			'watchTogether.participantCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} participant', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} participants', ), 
 			'watchTogether.hostBadge' => 'HOST',
 			'watchTogether.nameYou' => ({required Object name}) => '${name} (You)',
 			'watchTogether.playerIdle' => 'Idle',
@@ -12030,6 +12089,8 @@ extension on Translations {
 			'downloads.syncUnwatchedItems' => 'Syncing unwatched items',
 			'downloads.syncRuleServerContext' => ({required Object server, required Object status}) => 'Server: ${server} • ${status}',
 			'downloads.syncRuleAvailable' => 'Available',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.syncRuleOffline' => 'Offline',
 			'downloads.syncRuleSignInRequired' => 'Sign in required',
 			'downloads.syncRuleAccessDenied' => 'Access denied',
@@ -12071,10 +12132,10 @@ extension on Translations {
 			'downloads.unknownAlbum' => 'Unknown Album',
 			'downloads.completedOfTotal' => ({required Object completed, required Object total}) => '${completed}/${total} completed',
 			'downloads.storageUsed' => ({required Object size}) => 'Storage used: ${size}',
-			'downloads.downloadCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} download', other: '${n} downloads', ), 
-			'downloads.showCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} show', other: '${n} shows', ), 
-			'downloads.movieCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} movie', other: '${n} movies', ), 
-			'downloads.albumCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} album', other: '${n} albums', ), 
+			'downloads.downloadCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} download', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} downloads', ), 
+			'downloads.showCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} show', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} shows', ), 
+			'downloads.movieCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} movie', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} movies', ), 
+			'downloads.albumCount' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} album', other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(n)} albums', ), 
 			'downloads.errorFileNotFound' => 'File not found (404)',
 			'downloads.errorDownloadNotAllowed' => 'Download not allowed by the server (403)',
 			'downloads.errorDownloadFailed' => 'Download failed',
@@ -12544,6 +12605,8 @@ extension on Translations {
 			'homeLayout.resetToast' => 'Home reset to the original Plezy hero layout',
 			'homeLayout.resetHeroTitle' => 'Reset hero layout to stock Plezy?',
 			'homeLayout.resetHeroBody' => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top of Home, like before hero rows existed. Row order and which rows are shown are not affected.',
+			_ => null,
+		} ?? switch (path) {
 			'homeLayout.removeRowTitle' => 'Remove Home row?',
 			'homeLayout.removeRowBody' => ({required Object title}) => '${title} will be deleted. This can\'t be undone.',
 			'homeLayout.sync' => 'Sync',
@@ -12636,12 +12699,15 @@ extension on Translations {
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
 			'homeLayout.on' => 'On',
 			'homeLayout.resetHeroButtonDescription' => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept.',
+			'platform.localNetworkPermission' => 'PlezyNG connects to your media servers and playback devices on your local network.',
+			'platform.locationPermission' => 'PlezyNG uses location access when iOS requires it to detect your local network and connect to your media servers.',
+			'platform.photoLibraryPermission' => 'Choose images from your photo library to use as media artwork.',
+			'platform.cameraPermission' => 'Scan QR codes to pair a Companion Remote.',
 			'fileSources.title' => 'Files and books',
 			'fileSources.subtitle' => 'Read, listen, and watch from your own files.',
 			'fileSources.add' => 'Add source',
 			'fileSources.importFiles' => 'Import files',
 			'fileSources.localFiles' => 'On this device',
-			'fileSources.googleDrive' => 'Google Drive',
 			'fileSources.source' => 'Source',
 			'fileSources.name' => 'Name',
 			'fileSources.endpoint' => 'Server URL',
@@ -12708,7 +12774,7 @@ extension on Translations {
 			'fileSources.sleep' => 'Sleep timer',
 			'fileSources.sleepOff' => 'Off',
 			'fileSources.endChapter' => 'End of chapter',
-			'fileSources.minutes' => ({required Object count}) => '${count} minutes',
+			'fileSources.minutes' => ({required num count}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(count, other: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} minutes', one: '${NumberFormat.decimalPattern(LocalePreferences.formattingLocaleName).format(count)} minute', ), 
 			'fileSources.skipBack' => 'Skip back',
 			'fileSources.skipForward' => 'Skip forward',
 			'fileSources.smartRewind' => 'Smart rewind after a pause',
@@ -12797,6 +12863,7 @@ extension on Translations {
 			'fileSources.zoom' => 'Zoom',
 			'fileSources.useFiles' => 'Use files and books',
 			'fileSources.cancelScan' => 'Cancel scan',
+			'fileSources.googleDrive' => 'Google Drive',
 			'lending.title' => 'Public libraries',
 			'lending.add' => 'Add a library',
 			'lending.other' => 'Another library',

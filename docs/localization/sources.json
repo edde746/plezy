@@ -1,0 +1,92 @@
+{
+  "updated": "2026-10-26",
+  "upstream": {
+    "repository": "jellyfin/jellyfin-web",
+    "license": "GPL-2.0-or-later",
+    "files": {
+      "en": {
+        "blob": "596b96f708af831178fc746da0e125300eaa9980",
+        "url": "https://github.com/jellyfin/jellyfin-web/blob/master/src/strings/en-us.json"
+      },
+      "ar": {
+        "blob": "b3df741fbf028a4f70537c556b00a0340abcc8b3",
+        "url": "https://github.com/jellyfin/jellyfin-web/blob/master/src/strings/ar.json"
+      },
+      "bn": {
+        "blob": "ed1e7795cc7df6b0469603db85c9edf97618476e",
+        "url": "https://github.com/jellyfin/jellyfin-web/blob/master/src/strings/bn_BD.json"
+      },
+      "cs": {
+        "blob": "164a6dda9dec43d4251aa8f5901b4289af77db2b",
+        "url": "https://github.com/jellyfin/jellyfin-web/blob/master/src/strings/cs.json"
+      },
+      "fa": {
+        "blob": "9d3fa5d660819ef18be005d499acc048e0cb4585",
+        "url": "https://github.com/jellyfin/jellyfin-web/blob/master/src/strings/fa.json"
+      },
+      "he": {
+        "blob": "5d38926286ace9bb06902c7b63bec800f79b0ca2",
+        "url": "https://github.com/jellyfin/jellyfin-web/blob/master/src/strings/he.json"
+      },
+      "hi": {
+        "blob": "8e60ffd41a6db5c2233f32c63da9f6d71d810472",
+        "url": "https://github.com/jellyfin/jellyfin-web/blob/master/src/strings/hi-in.json"
+      },
+      "id": {
+        "blob": "07ce6a03c70beec1bab8ffe664e357f6c8e10020",
+        "url": "https://github.com/jellyfin/jellyfin-web/blob/master/src/strings/id.json"
+      },
+      "ms": {
+        "blob": "f4bab3917cbb927ce5cd2193b567d50a82f2658b",
+        "url": "https://github.com/jellyfin/jellyfin-web/blob/master/src/strings/ms.json"
+      },
+      "th": {
+        "blob": "c0c5346cf5d6f764abeff5a7fc0d0ce505785dee",
+        "url": "https://github.com/jellyfin/jellyfin-web/blob/master/src/strings/th.json"
+      },
+      "uk": {
+        "blob": "c59550dd0f514436b10422783fb8f5871163b7e1",
+        "url": "https://github.com/jellyfin/jellyfin-web/blob/master/src/strings/uk.json"
+      },
+      "vi": {
+        "blob": "3587b3ca67acf91b2460dd939705640f37a61e11",
+        "url": "https://github.com/jellyfin/jellyfin-web/blob/master/src/strings/vi.json"
+      },
+      "es-419": {
+        "blob": "1783bf50b34f77680e6a1ea86e78df86b66c9a75",
+        "url": "https://github.com/jellyfin/jellyfin-web/blob/master/src/strings/es_419.json"
+      },
+      "fr-CA": {
+        "blob": "e0ffacbc4f9af34c271d3a0a3012d0e64eb01611",
+        "url": "https://github.com/jellyfin/jellyfin-web/blob/master/src/strings/fr-ca.json"
+      },
+      "pt-BR": {
+        "blob": "badd48bba1d4cc63a20d837eb57b7922f7840c70",
+        "url": "https://github.com/jellyfin/jellyfin-web/blob/master/src/strings/pt-br.json"
+      },
+      "pt-PT": {
+        "blob": "9bfb9eeffe7e66fb1fca1d0795e371fbed279dd6",
+        "url": "https://github.com/jellyfin/jellyfin-web/blob/master/src/strings/pt-pt.json"
+      }
+    }
+  },
+  "cldr": {
+    "generator": "scripts/codegen/generate_locale_names.mjs",
+    "license": "Unicode-3.0"
+  },
+  "draftModel": {
+    "name": "facebook/m2m100_418M",
+    "license": "MIT",
+    "conversion": "jncraton/m2m100_418M-ct2-int8",
+    "revision": "7c1b2620a4e58dacecbd8bf89cfd6da7eb9eb7b0",
+    "weightsIncluded": false
+  },
+  "reviewStatus": "Structural validation and targeted AI review only; no native-speaker approval is implied.",
+  "scriptConversion": {
+    "tool": "opencc-python-reimplemented",
+    "version": "0.1.7",
+    "configuration": "s2twp",
+    "appliedTo": "New Traditional Chinese drafts only; existing translations retained",
+    "toolingIncluded": false
+  }
+}

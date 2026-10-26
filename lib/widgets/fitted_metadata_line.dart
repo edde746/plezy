@@ -107,6 +107,7 @@ class FittedMetadataLine extends StatelessWidget {
           style: effectiveStyle,
           textScaler: textScaler,
           textDirection: textDirection,
+          locale: Localizations.maybeLocaleOf(context),
         ).width;
 
         // Units are the droppable atoms: a text part is one unit, a ratings
@@ -127,6 +128,7 @@ class FittedMetadataLine extends StatelessWidget {
                     textStyle: effectiveStyle,
                     textScaler: textScaler,
                     textDirection: textDirection,
+                    locale: Localizations.maybeLocaleOf(context),
                     iconSize: iconSize,
                     spacing: badgeGap,
                   ),

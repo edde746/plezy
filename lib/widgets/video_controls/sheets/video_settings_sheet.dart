@@ -1,3 +1,4 @@
+import 'package:plezy/i18n/presentation_formats.dart';
 import 'dart:async';
 import 'dart:io';
 
@@ -744,7 +745,7 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
     return t.videoSettings.sleepTimerActive(duration: formatDurationWithSeconds(remaining));
   }
 
-  String _formatZoomScale(double scale) => '${(scale * 100).round()}%';
+  String _formatZoomScale(double scale) => formatPercent(scale);
 
   void _setZoomScale(double scale) {
     final next = VideoFilterManager.normalizeZoomScale(scale);
@@ -1169,12 +1170,13 @@ class _VideoSettingsSheetState extends State<VideoSettingsSheet> {
               min: -12,
               max: 12,
               divisions: 24,
-              label: '${_audioEqualizerGains[index].toStringAsFixed(0)} dB',
-              semanticFormatterCallback: (value) => '${value.toStringAsFixed(0)} dB',
+              label: '${formatDecimal(_audioEqualizerGains[index], minimumDecimals: 0, maximumDecimals: 0)} dB',
+              semanticFormatterCallback: (value) =>
+                  '${formatDecimal(value, minimumDecimals: 0, maximumDecimals: 0)} dB',
               onChanged: (gain) => _setAudioEqualizerBand(index, gain),
               onChangeEnd: (gain) => unawaited(_persistAudioEqualizerBand(prefs[index], gain)),
             ),
-            trailing: Text('${_audioEqualizerGains[index].toStringAsFixed(0)} dB'),
+            trailing: Text('${formatDecimal(_audioEqualizerGains[index], minimumDecimals: 0, maximumDecimals: 0)} dB'),
           ),
         FocusableListTile(
           leading: AppIcon(Symbols.restart_alt_rounded, fill: 1, color: tokens(context).textMuted),

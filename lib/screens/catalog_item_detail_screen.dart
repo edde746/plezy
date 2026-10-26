@@ -1,3 +1,5 @@
+import 'package:plezy/i18n/presentation_formats.dart';
+import 'package:plezy/i18n/locale_preferences.dart';
 import 'dart:async';
 
 import 'package:collection/collection.dart';
@@ -13,7 +15,6 @@ import '../focus/focusable_button.dart';
 import '../focus/focusable_wrapper.dart';
 import '../focus/dpad_navigator.dart';
 import '../focus/locked_hub_controller.dart';
-import '../i18n/app_locale_utils.dart';
 import '../i18n/strings.g.dart';
 import '../media/media_hub.dart';
 import '../media/media_item.dart';
@@ -762,7 +763,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   /// release-shape facts that fit the established compact chip treatment.
   Widget? _buildStatsChips() {
     final item = _item;
-    final locale = LocaleSettings.currentLocale.intlLocaleName;
+    final locale = LocalePreferences.formattingLocaleName;
     final compact = NumberFormat.compact(locale: locale);
     final chips = <Widget>[];
     void add(String? label, {IconData? icon, Color? iconColor}) {
@@ -772,7 +773,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
     }
 
     if (item.rating case final rating?) {
-      var score = rating.toStringAsFixed(1);
+      var score = formatDecimal(rating, minimumDecimals: 1, maximumDecimals: 1);
       if (item.votes case final votes?) {
         score = '$score (${t.explore.stats.votes(n: compact.format(votes))})';
       }
@@ -843,13 +844,15 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   /// trackers' scores merged in as they arrive. Sources without a mark
   /// (`critic`, `audience`) keep their written label.
   Widget? _buildRatingsSection(ThemeData theme) {
-    final compact = NumberFormat.compact(locale: LocaleSettings.currentLocale.intlLocaleName);
+    final compact = NumberFormat.compact(locale: LocalePreferences.formattingLocaleName);
     final chips = <Widget>[];
     for (final rating in withCommunityRatings(_item.ratings ?? const [], _communityRatings)) {
       final source = ratingSourceLabel(rating.source);
       final badge = ratingInfoForSource(rating.source, rating.value);
       if (source == null && badge == null) continue;
-      var label = badge == null ? '$source ${rating.value.toStringAsFixed(1)}' : badge.formattedValue;
+      var label = badge == null
+          ? '$source ${formatDecimal(rating.value, minimumDecimals: 1, maximumDecimals: 1)}'
+          : badge.formattedValue;
       if (rating.votes case final votes?) {
         label = '$label (${t.explore.stats.votes(n: compact.format(votes))})';
       }
@@ -882,7 +885,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
   Widget? _buildScheduleSection(ThemeData theme) {
     final item = _item;
     final chips = <Widget>[];
-    final locale = LocaleSettings.currentLocale.intlLocaleName;
+    final locale = LocalePreferences.formattingLocaleName;
     final broadcast = item.broadcast;
     if (broadcast?.weekday case final weekday? when weekday >= DateTime.monday && weekday <= DateTime.sunday) {
       final time = broadcast!.time?.trim();
@@ -980,7 +983,7 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
 
   Widget? _buildFactsSection(ThemeData theme) {
     final item = _item;
-    final locale = LocaleSettings.currentLocale.intlLocaleName;
+    final locale = LocalePreferences.formattingLocaleName;
     final dateFormat = DateFormat.yMMMd(locale);
     final currency = NumberFormat.simpleCurrency(locale: locale, name: 'USD', decimalDigits: 0);
     final facts = <({String label, String value})>[];
@@ -998,7 +1001,9 @@ class _CatalogItemDetailScreenState extends State<CatalogItemDetailScreen> {
       add(t.explore.detail.physicalRelease, dateFormat.format(date.toLocal()));
     }
     if (item.endDate case final date?) add(t.explore.detail.ended, dateFormat.format(date.toLocal()));
-    if (item.userRating case final rating?) add(t.explore.detail.yourRating, rating.toStringAsFixed(1));
+    if (item.userRating case final rating?) {
+      add(t.explore.detail.yourRating, formatDecimal(rating, minimumDecimals: 1, maximumDecimals: 1));
+    }
     if (item.budget case final budget?) add(t.explore.detail.budget, currency.format(budget));
     if (item.revenue case final revenue?) add(t.explore.detail.revenue, currency.format(revenue));
     add(t.explore.detail.contentAdvisory, item.contentAdvisory);

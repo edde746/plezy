@@ -7,6 +7,8 @@ import 'package:uuid/uuid.dart';
 
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
+import '../../i18n/presentation_formats.dart';
+import '../../utils/formatters.dart';
 import '../../lending/lending_service.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
@@ -593,12 +595,12 @@ class _LibraryCatalogueScreenState extends State<LibraryCatalogueScreen> {
                     ),
                     if (book.due != null)
                       Text(
-                        t.lending.due(date: MaterialLocalizations.of(context).formatShortDate(book.due!.toLocal())),
+                        t.lending.due(date: formatAbbreviatedDate(book.due!.toLocal().toIso8601String())),
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                     if (book.queuePosition != null)
                       Text(
-                        t.lending.queue(position: book.queuePosition!),
+                        t.lending.queue(position: formatCount(book.queuePosition!)),
                         style: Theme.of(context).textTheme.bodySmall,
                       ),
                   ],
@@ -736,11 +738,9 @@ class _LendingDetailScreenState extends State<_LendingDetailScreen> {
                       Text(
                         expired
                             ? t.lending.expired
-                            : t.lending.due(
-                                date: MaterialLocalizations.of(context).formatFullDate(book.due!.toLocal()),
-                              ),
+                            : t.lending.due(date: formatFullDate(book.due!.toLocal().toIso8601String())),
                       ),
-                    if (book.queuePosition != null) Text(t.lending.queue(position: book.queuePosition!)),
+                    if (book.queuePosition != null) Text(t.lending.queue(position: formatCount(book.queuePosition!))),
                     if (_changed) Text(t.lending.updated),
                     const SizedBox(height: 16),
                     Wrap(

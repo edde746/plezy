@@ -1,7 +1,6 @@
-import 'package:duration/duration.dart';
-import 'package:duration/locale.dart';
 import 'package:intl/intl.dart';
-import '../i18n/app_locale_utils.dart';
+import '../i18n/locale_preferences.dart';
+import '../i18n/presentation_formats.dart';
 import '../i18n/strings.g.dart';
 
 /// Formats a number with a minimum number of digits using leading zeros.
@@ -14,38 +13,43 @@ String padNumber(int number, int width) {
 class ByteFormatter {
   ByteFormatter._();
 
+  // Preserve the established English symbols while other languages use CLDR.
+  static const _englishSymbols = {
+    'byte': 'B',
+    'kilobyte': 'KB',
+    'megabyte': 'MB',
+    'gigabyte': 'GB',
+    'byte-per-second': 'B/s',
+    'kilobyte-per-second': 'KB/s',
+    'megabyte-per-second': 'MB/s',
+    'kilobit-per-second': 'kbps',
+    'megabit-per-second': 'Mbps',
+  };
+  static String _dataUnit(num value, String unit, {int decimals = 0}) =>
+      LocaleSettings.currentLocale.languageCode == 'en'
+      ? '${formatDecimal(value, minimumDecimals: decimals, maximumDecimals: decimals)} ${_englishSymbols[unit]}'
+      : formatLocalizedUnit(value, unit, width: 'short', decimals: decimals);
+
   static const int _kb = 1024;
   static const int _mb = _kb * 1024;
   static const int _gb = _mb * 1024;
 
   /// Format bytes to human-readable string (e.g., "1.5 GB", "256.3 MB")
   static String formatBytes(int bytes, {int? decimals}) {
-    if (bytes < _kb) return '$bytes B';
-    if (bytes < _mb) {
-      return '${(bytes / _kb).toStringAsFixed(decimals ?? 1)} KB';
-    }
-    if (bytes < _gb) {
-      return '${(bytes / _mb).toStringAsFixed(decimals ?? 1)} MB';
-    }
-    return '${(bytes / _gb).toStringAsFixed(decimals ?? 2)} GB';
+    if (bytes < _kb) return _dataUnit(bytes, 'byte');
+    if (bytes < _mb) return _dataUnit(bytes / _kb, 'kilobyte', decimals: decimals ?? 1);
+    if (bytes < _gb) return _dataUnit(bytes / _mb, 'megabyte', decimals: decimals ?? 1);
+    return _dataUnit(bytes / _gb, 'gigabyte', decimals: decimals ?? 2);
   }
 
-  /// Format speed in bytes per second to human-readable string
   static String formatSpeed(double bytesPerSecond) {
-    if (bytesPerSecond < _kb) {
-      return '${bytesPerSecond.toStringAsFixed(0)} B/s';
-    }
-    if (bytesPerSecond < _mb) {
-      return '${(bytesPerSecond / _kb).toStringAsFixed(1)} KB/s';
-    }
-    return '${(bytesPerSecond / _mb).toStringAsFixed(1)} MB/s';
+    if (bytesPerSecond < _kb) return _dataUnit(bytesPerSecond, 'byte-per-second');
+    if (bytesPerSecond < _mb) return _dataUnit(bytesPerSecond / _kb, 'kilobyte-per-second', decimals: 1);
+    return _dataUnit(bytesPerSecond / _mb, 'megabyte-per-second', decimals: 1);
   }
 
-  /// Format bitrate in kbps to human-readable string
-  static String formatBitrate(int kbps) {
-    if (kbps < 1000) return '$kbps kbps';
-    return '${(kbps / 1000).toStringAsFixed(1)} Mbps';
-  }
+  static String formatBitrate(int kbps) =>
+      kbps < 1000 ? _dataUnit(kbps, 'kilobit-per-second') : _dataUnit(kbps / 1000, 'megabit-per-second', decimals: 1);
 }
 
 /// Formats a duration in human-readable textual format (e.g., "1h 23m" or "1 hour 23 minutes").
@@ -54,35 +58,26 @@ class ByteFormatter {
 ///
 /// Used for: media cards, media details, playlists.
 String formatDurationTextual(int milliseconds, {bool abbreviated = true}) {
-  final duration = Duration(milliseconds: milliseconds);
-
-  final durationLocale = _getDurationLocale();
-  return prettyDuration(
-    duration,
-    abbreviated: abbreviated,
-    locale: durationLocale,
-    delimiter: abbreviated ? ' ' : ', ',
-    spacer: '',
-    tersity: duration.inMinutes == 0 ? DurationTersity.second : DurationTersity.minute,
-  );
+  return _formatDurationUnits(Duration(milliseconds: milliseconds), abbreviated: abbreviated, includeSeconds: false);
 }
 
-/// Formats a duration in human-readable textual format with seconds (e.g., "1h 23m 45s").
-/// Uses localized unit names based on the current app locale.
-/// Shows hours, minutes, and seconds.
-///
-/// Used for: sleep timer countdown.
-String formatDurationWithSeconds(Duration duration) {
-  final durationLocale = _getDurationLocale();
+/// Localized duration with seconds for countdowns and sleep timers.
+String formatDurationWithSeconds(Duration duration) =>
+    _formatDurationUnits(duration, abbreviated: true, includeSeconds: true);
 
-  return prettyDuration(
-    duration,
-    abbreviated: true,
-    locale: durationLocale,
-    delimiter: ' ',
-    spacer: '',
-    tersity: DurationTersity.second,
-  );
+String _formatDurationUnits(Duration duration, {required bool abbreviated, required bool includeSeconds}) {
+  final positive = duration.abs();
+  final hours = positive.inHours;
+  final minutes = positive.inMinutes.remainder(60);
+  final seconds = positive.inSeconds.remainder(60);
+  final width = abbreviated ? 'narrow' : 'long';
+  final parts = <String>[
+    if (hours > 0) formatLocalizedUnit(hours, 'hour', width: width),
+    if (minutes > 0) formatLocalizedUnit(minutes, 'minute', width: width),
+    if ((includeSeconds && seconds > 0) || (hours == 0 && minutes == 0))
+      formatLocalizedUnit(seconds, 'second', width: width),
+  ];
+  return '${duration.isNegative ? '−' : ''}${formatUnitList(parts, abbreviated: abbreviated)}';
 }
 
 /// Formats a duration in timestamp format (e.g., "1:23:45" or "23:45").
@@ -112,37 +107,16 @@ String formatDurationTimestamp(Duration duration) {
 String formatSyncOffset(double offsetMs) {
   final sign = offsetMs >= 0 ? '+' : '-';
   final absMs = offsetMs.abs().round();
-  final durationLocale = _getDurationLocale();
-
   if (absMs >= 10_000) {
-    final seconds = (offsetMs.abs() / 1000).toStringAsFixed(1);
-    final unit = durationLocale.second(1, true);
-    return '$sign$seconds$unit';
+    return '$sign${formatLocalizedUnit(offsetMs.abs() / 1000, 'second', decimals: 1)}';
   }
-
-  final unit = durationLocale.millisecond(1, true);
-  return '$sign$absMs$unit';
-}
-
-/// Gets the duration package locale based on the current app locale.
-/// Falls back to English if the locale is not supported by the duration package.
-DurationLocale _getDurationLocale() {
-  final appLocale = LocaleSettings.currentLocale;
-
-  // Map supported locales to duration package locales
-  // The duration package supports many languages, but we'll focus on the ones
-  // that our app supports: en, de, it, nl, sv, zh
-  try {
-    return DurationLocale.fromLanguageCode(appLocale.durationLocaleName) ?? const EnglishDurationLocale();
-  } catch (e) {
-    return const EnglishDurationLocale();
-  }
+  return '$sign${formatLocalizedUnit(absMs, 'millisecond')}';
 }
 
 /// Formats a [DateTime] as a clock time string, respecting the system 24-hour preference.
 /// Optionally includes seconds for precise timeline hover and scrub positions.
 String formatClockTime(DateTime time, {required bool is24Hour, bool includeSeconds = false}) {
-  final locale = LocaleSettings.currentLocale.intlLocaleName;
+  final locale = LocalePreferences.formattingLocaleName;
   final formatter = is24Hour
       ? (includeSeconds ? DateFormat.Hms(locale) : DateFormat.Hm(locale))
       : (includeSeconds ? DateFormat.jms(locale) : DateFormat.jm(locale));
@@ -160,7 +134,7 @@ String formatRelativeDayLabel(DateTime date, {DateTime? now}) {
   return switch (diff) {
     0 => t.liveTv.today,
     1 => t.liveTv.tomorrow,
-    _ => DateFormat.E(LocaleSettings.currentLocale.intlLocaleName).format(date),
+    _ => DateFormat.E(LocalePreferences.formattingLocaleName).format(date),
   };
 }
 
@@ -170,20 +144,23 @@ String toBulletedString(List<String> parts) {
 
 String? formatSeasonEpisodeLabel(int? season, int? episode) {
   if (season == null || episode == null) return null;
-  return 'S$season E$episode';
+  return t.discover.playEpisode(
+    season: formatDecimal(season, maximumDecimals: 0),
+    episode: formatDecimal(episode, maximumDecimals: 0),
+  );
 }
 
-String formatRating(double value) =>
-    value == value.truncateToDouble() ? value.toInt().toString() : value.toStringAsFixed(1);
+String formatRating(double value) => formatDecimal(value, maximumDecimals: 1);
 
-final RegExp _trailingZeroPattern = RegExp(r'\.?0+$');
+String formatDateTime(DateTime value) =>
+    DateFormat.yMMMd(LocalePreferences.formattingLocaleName).add_jm().format(value.toLocal());
 
 /// Format a playback rate for display (e.g. 1.25 → "1.25x", 2.0 → "2x").
 /// When [normalAtOne] is true, 1.0 renders with the localized normal-speed
 /// label for menus; the in-player pill passes false to keep a numeric indicator.
 String formatPlaybackRate(double rate, {bool normalAtOne = false}) {
   if (normalAtOne && (rate - 1.0).abs() < 0.005) return t.videoSettings.normalSpeed;
-  return '${rate.toStringAsFixed(2).replaceFirst(_trailingZeroPattern, '')}x';
+  return '${formatDecimal(rate)}x';
 }
 
 /// Takes a date string in the format "YYYY-MM-DD" and returns a localized full date string
@@ -192,7 +169,7 @@ String formatFullDate(String dateString) {
   try {
     final date = DateTime.parse(dateString);
 
-    final formatter = DateFormat.yMMMMd(LocaleSettings.currentLocale.intlLocaleName);
+    final formatter = DateFormat.yMMMMd(LocalePreferences.formattingLocaleName);
 
     return formatter.format(date);
   } catch (e) {
@@ -207,7 +184,7 @@ String formatAbbreviatedDate(String dateString) {
   try {
     final date = DateTime.parse(dateString);
 
-    final formatter = DateFormat.yMMMd(LocaleSettings.currentLocale.intlLocaleName);
+    final formatter = DateFormat.yMMMd(LocalePreferences.formattingLocaleName);
 
     return formatter.format(date);
   } catch (e) {

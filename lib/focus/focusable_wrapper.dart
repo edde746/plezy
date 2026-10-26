@@ -96,9 +96,11 @@ class FocusableWrapper extends StatefulWidget {
   final VoidCallback? onNavigateDown;
 
   /// Called when the user presses LEFT and there's no focusable item to the left.
+  /// Previous item / leading edge in reading order (right in RTL).
   final VoidCallback? onNavigateLeft;
 
   /// Called when the user presses RIGHT and there's no focusable item to the right.
+  /// Next item / trailing edge in reading order (left in RTL).
   final VoidCallback? onNavigateRight;
 
   /// Called when the user presses BACK.
@@ -496,14 +498,14 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
 
     // LEFT arrow - if callback provided, navigate left (caller is responsible
     // for only providing this callback when the item is at the left edge)
-    if (key == LogicalKeyboardKey.arrowLeft && widget.onNavigateLeft != null) {
+    if (key.isInlineStart(context) && widget.onNavigateLeft != null) {
       widget.onNavigateLeft!();
       return finish(KeyEventResult.handled, 'onNavigateLeft');
     }
 
     // RIGHT arrow - if callback provided, navigate right (caller is responsible
     // for only providing this callback when the item is at the right edge)
-    if (key == LogicalKeyboardKey.arrowRight && widget.onNavigateRight != null) {
+    if (key.isInlineEnd(context) && widget.onNavigateRight != null) {
       widget.onNavigateRight!();
       return finish(KeyEventResult.handled, 'onNavigateRight');
     }

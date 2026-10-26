@@ -172,6 +172,19 @@ void main() {
     expect(seeks, [_start + 30, _start + 119]);
   });
 
+  testWidgets('RTL timeline keeps visual progress, time labels and scrubbing aligned', (tester) async {
+    final seeks = <double>[];
+    await _pump(tester, timeline: _timeline(), seeks: seeks, direction: TextDirection.rtl);
+    expect(Directionality.of(tester.element(find.byType(Slider))), TextDirection.ltr);
+    expect(
+      tester.getCenter(find.text(_clock(_start))).dx,
+      lessThan(tester.getCenter(find.text(_clock(_start + 120))).dx),
+    );
+    await _tapTrack(tester, 0);
+    await _tapTrack(tester, 1);
+    expect(seeks, [_start + 30, _start + 119]);
+  });
+
   testWidgets('Plex estimated source switches to previous program only after readiness and plays across the boundary', (
     tester,
   ) async {
@@ -571,6 +584,7 @@ Future<void> _pump(
   bool is24Hour = true,
   FocusNode? focus,
   KeyEventResult Function(FocusNode, KeyEvent)? onKey,
+  TextDirection direction = TextDirection.ltr,
 }) async {
   final activePlayer = player ?? FakeSyncPlayer(position: const Duration(seconds: 60));
   if (player == null) addTearDown(activePlayer.dispose);
@@ -581,6 +595,7 @@ Future<void> _pump(
       child: ChangeNotifierProvider<WatchTogetherProvider>.value(
         value: watchTogether,
         child: MaterialApp(
+          builder: (context, child) => Directionality(textDirection: direction, child: child!),
           theme: ThemeData(extensions: const [testMonoTokens]),
           home: MediaQuery(
             data: MediaQueryData(alwaysUse24HourFormat: is24Hour),

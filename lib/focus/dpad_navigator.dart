@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:ui' as ui;
 
 import 'package:flutter/services.dart';
+import 'package:flutter/widgets.dart';
 
 extension KeyEventActionable on KeyEvent {
   bool get isActionable => this is KeyDownEvent || this is KeyRepeatEvent;
@@ -64,6 +65,15 @@ extension DpadKeyExtension on LogicalKeyboardKey {
   /// made a plain Enter switch the whole app into keyboard mode.
   bool get isReservedControlKey =>
       isDpadDirection || isSelectKey || isBackKey || isContextMenuKey || this == LogicalKeyboardKey.tab;
+
+  /// Horizontal UI traversal follows reading order. Playback seek, volume and
+  /// other physical controls continue using isLeftKey/isRightKey explicitly.
+  bool isInlineStart(BuildContext context) =>
+      this ==
+      (Directionality.of(context) == TextDirection.rtl ? LogicalKeyboardKey.arrowRight : LogicalKeyboardKey.arrowLeft);
+  bool isInlineEnd(BuildContext context) =>
+      this ==
+      (Directionality.of(context) == TextDirection.rtl ? LogicalKeyboardKey.arrowLeft : LogicalKeyboardKey.arrowRight);
 
   bool get isLeftKey => this == LogicalKeyboardKey.arrowLeft;
   bool get isRightKey => this == LogicalKeyboardKey.arrowRight;

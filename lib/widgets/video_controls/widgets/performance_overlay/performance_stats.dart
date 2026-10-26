@@ -1,3 +1,4 @@
+import 'package:plezy/i18n/presentation_formats.dart';
 import '../../../../i18n/strings.g.dart';
 import '../../../../utils/codec_utils.dart';
 
@@ -162,7 +163,7 @@ class PerformanceStats {
   String get videoBitrateFormatted {
     if (videoBitrate == null || videoBitrate == 0) return t.common.notAvailable;
     final mbps = videoBitrate! / 1_000_000;
-    return '${mbps.toStringAsFixed(1)} Mbps';
+    return '${formatDecimal(mbps, minimumDecimals: 1, maximumDecimals: 1)} Mbps';
   }
 
   /// Both ExoPlayer read-ahead ceilings: the duration target and the hard byte cap.
@@ -179,13 +180,13 @@ class PerformanceStats {
   String get audioBitrateFormatted {
     if (audioBitrate == null || audioBitrate == 0) return t.common.notAvailable;
     final kbps = audioBitrate! / 1000;
-    return '${kbps.toStringAsFixed(0)} kbps';
+    return '${formatDecimal(kbps, minimumDecimals: 0, maximumDecimals: 0)} kbps';
   }
 
   String get sampleRateFormatted {
     if (audioSamplerate == null) return t.common.notAvailable;
     final khz = audioSamplerate! / 1000;
-    return '${khz.toStringAsFixed(1)} kHz';
+    return '${formatDecimal(khz, minimumDecimals: 1, maximumDecimals: 1)} kHz';
   }
 
   /// Whether audio is bitstreamed to the device instead of decoded locally.
@@ -202,13 +203,13 @@ class PerformanceStats {
   /// Format FPS with 2 decimal places.
   String get actualFpsFormatted {
     if (actualFps == null) return t.common.notAvailable;
-    return actualFps!.toStringAsFixed(2);
+    return formatDecimal(actualFps!, minimumDecimals: 2, maximumDecimals: 2);
   }
 
   /// Format source FPS with 2 decimal places.
   String get videoFpsFormatted {
     if (videoFps == null) return t.common.notAvailable;
-    return videoFps!.toStringAsFixed(2);
+    return formatDecimal(videoFps!, minimumDecimals: 2, maximumDecimals: 2);
   }
 
   /// Format A/V sync in milliseconds.
@@ -221,7 +222,7 @@ class PerformanceStats {
   String get cacheUsedFormatted {
     if (cacheUsed == null) return t.common.notAvailable;
     final mb = cacheUsed! / (1024 * 1024);
-    return '${mb.toStringAsFixed(1)} MB';
+    return '${formatDecimal(mb, minimumDecimals: 1, maximumDecimals: 1)} MB';
   }
 
   /// Format the resident cache ceiling in MB.
@@ -233,25 +234,25 @@ class PerformanceStats {
   String get cacheLimitFormatted {
     if (cacheLimit == null || cacheLimit! <= 0) return t.common.notAvailable;
     final mb = cacheLimit! / (1024 * 1024);
-    return '${mb.toStringAsFixed(1)} MB';
+    return '${formatDecimal(mb, minimumDecimals: 1, maximumDecimals: 1)} MB';
   }
 
   /// Format cache speed in MB/s.
   String get cacheSpeedFormatted {
     if (cacheSpeed == null) return t.common.notAvailable;
     final mbps = cacheSpeed! / (1024 * 1024);
-    return '${mbps.toStringAsFixed(1)} MB/s';
+    return '${formatDecimal(mbps, minimumDecimals: 1, maximumDecimals: 1)} MB/s';
   }
 
   /// Format cache duration in seconds.
   String get cacheDurationFormatted {
     if (cacheDuration == null) return t.common.notAvailable;
-    return '${cacheDuration!.toStringAsFixed(1)}s';
+    return '${formatDecimal(cacheDuration!, minimumDecimals: 1, maximumDecimals: 1)}s';
   }
 
   String get displayFpsFormatted {
     if (displayFps == null) return t.common.notAvailable;
-    return displayFps!.toStringAsFixed(0);
+    return formatDecimal(displayFps!, minimumDecimals: 0, maximumDecimals: 0);
   }
 
   /// Format dropped frames count.
@@ -353,13 +354,13 @@ class PerformanceStats {
   String get appMemoryFormatted {
     if (appMemoryBytes == null) return t.common.notAvailable;
     final mb = appMemoryBytes! / (1024 * 1024);
-    return '${mb.toStringAsFixed(1)} MB';
+    return '${formatDecimal(mb, minimumDecimals: 1, maximumDecimals: 1)} MB';
   }
 
   /// Format UI FPS with 1 decimal place.
   String get uiFpsFormatted {
     if (uiFps == null) return t.common.notAvailable;
-    return uiFps!.toStringAsFixed(1);
+    return formatDecimal(uiFps!, minimumDecimals: 1, maximumDecimals: 1);
   }
 
   /// Format rotation in degrees.
@@ -371,25 +372,25 @@ class PerformanceStats {
   /// Format luminance value in cd/m².
   String get maxLumaFormatted {
     if (maxLuma == null) return t.common.notAvailable;
-    return '${maxLuma!.toStringAsFixed(0)} cd/m²';
+    return '${formatDecimal(maxLuma!, minimumDecimals: 0, maximumDecimals: 0)} cd/m²';
   }
 
   /// Format minimum luminance value in cd/m².
   String get minLumaFormatted {
     if (minLuma == null) return t.common.notAvailable;
-    return '${minLuma!.toStringAsFixed(4)} cd/m²';
+    return '${formatDecimal(minLuma!, minimumDecimals: 4, maximumDecimals: 4)} cd/m²';
   }
 
   /// Format MaxCLL value in cd/m².
   String get maxCllFormatted {
     if (maxCll == null) return t.common.notAvailable;
-    return '${maxCll!.toStringAsFixed(0)} cd/m²';
+    return '${formatDecimal(maxCll!, minimumDecimals: 0, maximumDecimals: 0)} cd/m²';
   }
 
   /// Format MaxFALL value in cd/m².
   String get maxFallFormatted {
     if (maxFall == null) return t.common.notAvailable;
-    return '${maxFall!.toStringAsFixed(0)} cd/m²';
+    return '${formatDecimal(maxFall!, minimumDecimals: 0, maximumDecimals: 0)} cd/m²';
   }
 
   /// Check if HDR metadata is available.

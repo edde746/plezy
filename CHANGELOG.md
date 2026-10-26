@@ -5,6 +5,8 @@
 ### Added
 
 - Add Find your next, a profile-local swipe discovery deck across media libraries, Explore catalogs, live TV, file sources and completed downloads, with format/time filters, Saved picks, Undo and normal Plezy launch routes.
+- Add Arabic, Persian, Hebrew, Bengali, Hindi, Indonesian, Malay, Thai, Vietnamese, Czech and Ukrainian interfaces, with regional Spanish, French and Portuguese catalogs.
+- Add searchable language controls, independent regional formatting and metadata-language preferences, and Android system app-language synchronization.
 - Replace PlezyNG branding across the app, launchers, TV, desktop packages and store artwork with the selected nested-play logo and lower-right NG badge; preserve existing alternate icon selections.
 - Add experimental webOS TV support with OLED sign-in, OS-backed credentials, app-private artwork caching, and authenticated native media playback.
 - Add a review-first cleanup for orphaned tagged downloads in PlezyNG's default app-managed folders.
@@ -65,6 +67,7 @@
 ### Changed
 
 - Polish catalog, source, TV and cross-media discovery surfaces to match Plezy's Mono focus, artwork, responsive layout and localized error patterns.
+- Complete localization coverage across settings, playback, downloads and accessibility labels; improve right-to-left focus navigation, numeric input, localized units and native permission prompts.
 - Route the Google Drive source label through localization.
 - Keep both iOS SwiftPM lockfiles pinned to the same Google Cast SDK revision.
 - Explain the default behavior on the screensaver library selection page.

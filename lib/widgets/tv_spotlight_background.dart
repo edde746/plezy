@@ -92,11 +92,11 @@ class TvSpotlightBackground extends StatelessWidget {
           children: [
             if (showHomeBackdrop)
               RepaintBoundary(
-                child: cornerBackdrop ? _buildCornerBackdrop(backdropSize, backdrop) : blurArtwork(backdrop),
+                child: cornerBackdrop ? _buildCornerBackdrop(context, backdropSize, backdrop) : blurArtwork(backdrop),
               )
             else
               ColoredBox(color: bgColor),
-            _buildHorizontalScrim(bgColor),
+            _buildHorizontalScrim(context, bgColor),
             RasterizedGradient(
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
@@ -106,9 +106,9 @@ class TvSpotlightBackground extends StatelessWidget {
               ),
             ),
             if (media != null && showInfo)
-              Positioned(
-                left: contentLeft ?? TvLayoutConstants.horizontalInset,
-                right: MediaQuery.sizeOf(context).width * 0.43,
+              PositionedDirectional(
+                start: contentLeft ?? TvLayoutConstants.horizontalInset,
+                end: MediaQuery.sizeOf(context).width * 0.43,
                 top: contentTop,
                 bottom: contentBottom,
                 // The info block still cross-fades via AnimatedSwitcher, but its
@@ -126,14 +126,17 @@ class TvSpotlightBackground extends StatelessWidget {
                     child: LayoutBuilder(
                       builder: (context, constraints) {
                         if (!constraints.hasBoundedHeight || constraints.maxHeight <= 0 || constraints.maxWidth <= 0) {
-                          return Align(alignment: .bottomLeft, child: _buildInfo(context, media, constraints.maxWidth));
+                          return Align(
+                            alignment: AlignmentDirectional.bottomStart,
+                            child: _buildInfo(context, media, constraints.maxWidth),
+                          );
                         }
 
                         return Align(
-                          alignment: .bottomLeft,
+                          alignment: AlignmentDirectional.bottomStart,
                           child: FittedBox(
                             fit: BoxFit.scaleDown,
-                            alignment: .bottomLeft,
+                            alignment: AlignmentDirectional.bottomStart,
                             child: SizedBox(
                               width: constraints.maxWidth,
                               child: _buildInfo(context, media, constraints.maxWidth),
@@ -154,15 +157,19 @@ class TvSpotlightBackground extends StatelessWidget {
   /// Corner spotlight: artwork pinned to the top-right corner, left and
   /// bottom edges feathered into the scaffold background so the info block
   /// sits on a calm surface instead of the image.
-  Widget _buildCornerBackdrop(Size backdropSize, Widget backdrop) {
+  Widget _buildCornerBackdrop(BuildContext context, Size backdropSize, Widget backdrop) {
     return Align(
-      alignment: Alignment.topRight,
+      alignment: AlignmentDirectional.topEnd,
       child: SizedBox(
         width: backdropSize.width,
         height: backdropSize.height,
         child: ShaderMask(
-          shaderCallback: (rect) =>
-              const LinearGradient(colors: [Colors.transparent, Colors.white], stops: [0.0, 0.35]).createShader(rect),
+          shaderCallback: (rect) => LinearGradient(
+            begin: AlignmentDirectional.centerStart,
+            end: AlignmentDirectional.centerEnd,
+            colors: const [Colors.transparent, Colors.white],
+            stops: const [0.0, 0.35],
+          ).createShader(rect, textDirection: Directionality.of(context)),
           blendMode: BlendMode.dstIn,
           child: ShaderMask(
             shaderCallback: (rect) => const LinearGradient(
@@ -179,11 +186,11 @@ class TvSpotlightBackground extends StatelessWidget {
     );
   }
 
-  Widget _buildHorizontalScrim(Color bgColor) {
+  Widget _buildHorizontalScrim(BuildContext context, Color bgColor) {
     return RasterizedGradient(
       gradient: LinearGradient(
-        begin: Alignment.centerLeft,
-        end: Alignment.centerRight,
+        begin: AlignmentDirectional.centerStart.resolve(Directionality.of(context)),
+        end: AlignmentDirectional.centerEnd.resolve(Directionality.of(context)),
         colors: [bgColor.withValues(alpha: 0.86), bgColor.withValues(alpha: 0.32), Colors.transparent],
         stops: const [0.0, 0.56, 1.0],
       ),
@@ -270,7 +277,7 @@ class TvSpotlightBackground extends StatelessWidget {
         width: width,
         height: logoHeight,
         child: Align(
-          alignment: .centerLeft,
+          alignment: AlignmentDirectional.centerStart.resolve(Directionality.of(context)),
           child: blurArtwork(
             Image(
               image: logoToneTarget == null
@@ -280,7 +287,7 @@ class TvSpotlightBackground extends StatelessWidget {
               height: logoHeight,
               fit: BoxFit.contain,
               filterQuality: MediaImageHelper.artworkFilterQuality(context, ImageType.heroLogo),
-              alignment: .centerLeft,
+              alignment: AlignmentDirectional.centerStart.resolve(Directionality.of(context)),
               // Replaces the image under Align's loose constraints, so it
               // takes the whole title slot rather than the logo's.
               errorBuilder: (context, error, stackTrace) => SizedBox.expand(child: _buildTitle(context, title)),
@@ -298,6 +305,7 @@ class TvSpotlightBackground extends StatelessWidget {
       width: logoWidth,
       height: logoHeight,
       fallbackWidth: width,
+      alignment: AlignmentDirectional.centerStart.resolve(Directionality.of(context)),
       fadeInDuration: DevicePerformance.reducedDuration(const Duration(milliseconds: 200)),
       logoToneTarget: logoToneTarget,
       fallbackBuilder: (context) => _buildTitle(context, title),

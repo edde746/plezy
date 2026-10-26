@@ -62,12 +62,11 @@ class _FocusableSliderState extends State<FocusableSlider> {
         key == LogicalKeyboardKey.pageUp ||
         key == LogicalKeyboardKey.pageDown) {
       if (event.isActionable && widget.onChanged != null) {
-        final rtl = Directionality.of(context) == TextDirection.rtl;
         final delta = key == LogicalKeyboardKey.pageUp
             ? _step * 4
             : key == LogicalKeyboardKey.pageDown
             ? -_step * 4
-            : (key.isRightKey != rtl ? _step : -_step);
+            : (key.isInlineEnd(context) ? _step : -_step);
         final newValue = key == LogicalKeyboardKey.home
             ? widget.min
             : key == LogicalKeyboardKey.end

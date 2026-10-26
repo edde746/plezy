@@ -3193,7 +3193,7 @@ class PlexClient
     final decisionResponse = await _http.get(
       decisionEndpoint,
       queryParameters: allParams,
-      headers: const {'Accept-Language': 'en', 'Accept': 'application/json'},
+      headers: {'Accept-Language': config.languageCode ?? 'en', 'Accept': 'application/json'},
     );
 
     final decisionBody = decisionResponse.data?.toString() ?? '<empty>';
@@ -3323,13 +3323,13 @@ class PlexClient
       // caller's track at all.
       'subtitles': selectedInternalSubtitle != null ? 'burn' : 'none',
       if (audioStreamId != null) 'audioStreamID': audioStreamId.toString(),
-      'Accept-Language': 'en',
+      'Accept-Language': config.languageCode ?? 'en',
       'X-Plex-Session-Identifier': sessionIdentifier,
       'X-Plex-Client-Profile-Extra': clientProfileExtra,
       'X-Plex-Incomplete-Segments': '1',
       'X-Plex-Features': 'external-media,indirect-media',
       'X-Plex-Model': 'standalone',
-      'X-Plex-Language': 'en',
+      'X-Plex-Language': config.languageCode ?? 'en',
       'X-Plex-Client-Profile-Name': 'Generic',
       ..._transcodeClientParams(),
     };

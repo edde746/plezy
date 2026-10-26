@@ -38,6 +38,7 @@ double navigationLabelScaleFactor({
   required TextStyle style,
   required TextScaler textScaler,
   required TextDirection textDirection,
+  Locale? locale,
   double minFontSize = kNavigationLabelMinFontSize,
 }) {
   final fontSize = style.fontSize;
@@ -54,6 +55,7 @@ double navigationLabelScaleFactor({
       style: style,
       textScaler: clamped,
       textDirection: textDirection,
+      locale: locale,
     ).width;
     if (width > widest) widest = width;
   }
@@ -112,6 +114,7 @@ class NavigationLabelScale extends StatelessWidget {
       style: style,
       textScaler: MediaQuery.textScalerOf(context),
       textDirection: Directionality.of(context),
+      locale: Localizations.maybeLocaleOf(context),
     );
     return MediaQuery.withClampedTextScaling(maxScaleFactor: factor, child: child);
   }

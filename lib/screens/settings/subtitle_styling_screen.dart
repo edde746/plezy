@@ -1,3 +1,4 @@
+import '../../i18n/presentation_formats.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -54,7 +55,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
   String _formatPosition(int value) {
     if (value == 0) return t.subtitlingStyling.positionTop;
     if (value == 100) return t.subtitlingStyling.positionBottom;
-    return '$value%';
+    return formatPercent(value / 100);
   }
 
   String _renderResolutionLabel(SubtitleRenderResolution value) {
@@ -199,7 +200,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
               onPreviewEnd: () => setSubtitleStylePreviewOverride(SettingsService.subtitleBackgroundOpacity.key, null),
               icon: Symbols.opacity_rounded,
               title: t.subtitlingStyling.backgroundOpacity,
-              subtitleBuilder: (v) => '$v%',
+              subtitleBuilder: (v) => formatPercent(v / 100),
               labelText: t.subtitlingStyling.backgroundOpacity,
               suffixText: '%',
             ),

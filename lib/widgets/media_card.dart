@@ -1,3 +1,5 @@
+import '../i18n/presentation_formats.dart';
+import 'package:plezy/i18n/locale_preferences.dart';
 import 'dart:async';
 import 'dart:ui';
 import '../media/ids.dart';
@@ -9,7 +11,6 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import '../focus/card_focus_scope.dart';
 import '../focus/input_mode_tracker.dart';
-import '../i18n/app_locale_utils.dart';
 import '../media/catalog_item_ref.dart';
 import '../media/media_item.dart';
 import '../media/media_item_types.dart';
@@ -61,7 +62,7 @@ String? _percentNumberLocale;
 NumberFormat? _percentNumberFormatter;
 
 String _formatCompactCatalogNumber(num value) {
-  final locale = LocaleSettings.currentLocale.intlLocaleName;
+  final locale = LocalePreferences.formattingLocaleName;
   if (_compactNumberFormatter == null || _compactNumberLocale != locale) {
     _compactNumberLocale = locale;
     _compactNumberFormatter = NumberFormat.compact(locale: locale);
@@ -70,7 +71,7 @@ String _formatCompactCatalogNumber(num value) {
 }
 
 String _formatCatalogPercent(double value) {
-  final locale = LocaleSettings.currentLocale.intlLocaleName;
+  final locale = LocalePreferences.formattingLocaleName;
   if (_percentNumberFormatter == null || _percentNumberLocale != locale) {
     _percentNumberLocale = locale;
     _percentNumberFormatter = NumberFormat.percentPattern(locale);
@@ -926,7 +927,7 @@ class _MediaCardList extends StatelessWidget {
                     else
                       ExcludeSemantics(
                         child: Text(
-                          _displayTitle(),
+                          isolateDisplayText(_displayTitle()),
                           maxLines: 2,
                           overflow: .ellipsis,
                           style: TextStyle(fontWeight: .w600, fontSize: _titleFontSize, height: 1.2),
@@ -1528,7 +1529,7 @@ class _ClickableTextState extends State<_ClickableText> {
       onTap: widget.onTap,
       excludeSemantics: true,
       child: Text(
-        widget.text,
+        isolateDisplayText(widget.text),
         maxLines: 1,
         overflow: .ellipsis,
         style: isKeyboard

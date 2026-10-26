@@ -1,3 +1,4 @@
+import '../i18n/presentation_formats.dart';
 import 'package:flutter/material.dart';
 import '../models/download_models.dart';
 import '../i18n/strings.g.dart';
@@ -37,7 +38,7 @@ class DeletionProgressDialog extends StatelessWidget {
 
             const SizedBox(height: 8),
 
-            Text('${progress.progressPercentInt}%', style: Theme.of(context).textTheme.bodySmall),
+            Text(formatPercent(progress.progressPercentInt / 100), style: Theme.of(context).textTheme.bodySmall),
 
             if (progress.currentOperation != null) ...[
               const SizedBox(height: 8),

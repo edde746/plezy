@@ -66,7 +66,7 @@ class MainScreenFocusScope extends InheritedModel<MainScreenScopeAspect> {
     return _dependOn(context, MainScreenScopeAspect.offset)?.sideNavigationWidth ?? 0.0;
   }
 
-  /// Content box left edge. Changes per sidebar flip — depend on it only from
+  /// Content box leading edge (the legacy API name is retained). Changes per sidebar flip — depend on it only from
   /// small positioning builders.
   static double foregroundLeftOf(BuildContext context) {
     final left = _dependOn(context, MainScreenScopeAspect.offset)?.foregroundLeft;

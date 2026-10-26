@@ -4,20 +4,34 @@ const { chromium } = require(process.env.PLEZY_PLAYWRIGHT_PATH || 'playwright');
   const browser = await chromium.launch({executablePath: process.env.PLEZY_CHROME_PATH, headless:true, args:['--no-sandbox']});
   try {
     const page = await browser.newPage({viewport:{width:1280,height:900}});
-    const errors=[];
+    const errors=[];const rtl=process.argv[4]==='rtl';
     page.on('pageerror', e=>errors.push(e.message));
     await page.goto(process.argv[2]);
     await page.waitForFunction(()=>document.title.includes('Reading fixture'),{},{timeout:20000});
     await page.waitForFunction(()=>document.querySelector('foliate-view')?.lastLocation?.cfi,{},{timeout:20000});
     await page.evaluate(()=>document.fonts.ready);
     if(await page.locator('header .reader-icon').count()!==12)throw Error('Reader did not use the shared icon controls');
+    const labels=await page.evaluate(()=>window.readerOptions.labels);
     if(process.argv[3]==='comic') {
-      await page.getByRole('button',{name:'Reading settings',exact:true}).click();
-      await page.getByLabel('Page layout',{exact:true}).selectOption(JSON.stringify('single'));
-      await page.getByLabel('Reading direction',{exact:true}).selectOption(JSON.stringify('rtl'));
-      await page.getByLabel('Zoom',{exact:true}).selectOption(JSON.stringify('fit-width'));
+      await page.getByRole('button',{name:labels.settings,exact:true}).click();
+      await page.getByLabel(labels.pageLayout,{exact:true}).selectOption(JSON.stringify('single'));
+      await page.getByLabel(labels.readingDirection,{exact:true}).selectOption(JSON.stringify('rtl'));
+      await page.getByLabel(labels.zoom,{exact:true}).selectOption(JSON.stringify('fit-width'));
       await page.waitForFunction(()=>window.readerOptions.settings.direction==='rtl'&&window.readerOptions.settings.spread==='single'&&document.querySelector('foliate-view').renderer.getAttribute('zoom')==='fit-width');
-      await page.getByRole('button',{name:'Close',exact:true}).click();
+      await page.getByRole('button',{name:labels.close,exact:true}).click();
+    }
+    if(rtl){
+      if(await page.locator('html').getAttribute('lang')!=='ar'||await page.locator('html').getAttribute('dir')!=='rtl')throw Error('Reader chrome did not apply Arabic language and direction');
+      await page.getByRole('button',{name:labels.page,exact:true}).click();
+      const input=page.getByRole('textbox',{name:labels.goToPage,exact:true});
+      await input.fill('٢.٥');
+      await page.locator('dialog').getByRole('button',{name:labels.goToPage,exact:true}).click();
+      if(!await page.locator('dialog').isVisible())throw Error('Fractional page number was accepted');
+      await input.fill('٢');
+      await page.locator('dialog').getByRole('button',{name:labels.goToPage,exact:true}).click();
+      await page.waitForFunction(()=>document.querySelector('foliate-view').lastLocation.section.current===1);
+      if(await page.locator('dialog').isVisible())throw Error('Arabic page number was rejected');
+      await page.evaluate(()=>publication.page(1));
     }
     const result = await page.evaluate(async(comic)=>{
       const view=document.querySelector('foliate-view');

@@ -1,3 +1,4 @@
+import '../../../i18n/presentation_formats.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -58,7 +59,7 @@ class _InPlayerSubtitleStyleSheetState extends State<InPlayerSubtitleStyleSheet>
           anchorToScreen: settings.read(SettingsService.subtitleAnchorToScreen),
         );
       } else {
-        await widget.player.setProperty('sub-font-size', '$_fontSize');
+        await widget.player.setProperty('sub-font-size', formatDecimal(_fontSize, maximumDecimals: 0));
         await widget.player.setProperty('sub-pos', '$_position');
       }
     } catch (error, stackTrace) {
@@ -89,7 +90,7 @@ class _InPlayerSubtitleStyleSheetState extends State<InPlayerSubtitleStyleSheet>
                   _StyleSlider(
                     title: t.subtitlingStyling.fontSize,
                     value: _fontSize.toDouble(),
-                    label: '$_fontSize',
+                    label: formatDecimal(_fontSize, maximumDecimals: 0),
                     min: 12,
                     max: 72,
                     onChanged: (value) {
@@ -102,7 +103,7 @@ class _InPlayerSubtitleStyleSheetState extends State<InPlayerSubtitleStyleSheet>
                   _StyleSlider(
                     title: t.subtitlingStyling.position,
                     value: _position.toDouble(),
-                    label: '$_position%',
+                    label: formatPercent(_position / 100),
                     min: 0,
                     max: 150,
                     onChanged: (value) {

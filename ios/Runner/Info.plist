@@ -4,6 +4,46 @@
 <dict>
 	<key>CADisableMinimumFrameDurationOnPhone</key>
 	<true/>
+	<key>CFBundleLocalizations</key>
+	<array>
+		<string>ar</string>
+		<string>az</string>
+		<string>bg</string>
+		<string>bn</string>
+		<string>cs</string>
+		<string>da</string>
+		<string>de</string>
+		<string>en</string>
+		<string>es</string>
+		<string>es-419</string>
+		<string>fa</string>
+		<string>fr</string>
+		<string>fr-CA</string>
+		<string>he</string>
+		<string>hi</string>
+		<string>hu</string>
+		<string>id</string>
+		<string>it</string>
+		<string>ja</string>
+		<string>kk</string>
+		<string>ko</string>
+		<string>ms</string>
+		<string>nb</string>
+		<string>nl</string>
+		<string>pl</string>
+		<string>pt</string>
+		<string>pt-BR</string>
+		<string>pt-PT</string>
+		<string>ru</string>
+		<string>sv</string>
+		<string>th</string>
+		<string>tr</string>
+		<string>uk</string>
+		<string>uz</string>
+		<string>vi</string>
+		<string>zh</string>
+		<string>zh-Hant</string>
+	</array>
 	<key>CFBundleDevelopmentRegion</key>
 	<string>$(DEVELOPMENT_LANGUAGE)</string>
 	<key>CFBundleDisplayName</key>
@@ -57,7 +97,7 @@
 		<true/>
 	</dict>
 	<key>NSLocalNetworkUsageDescription</key>
-	<string>This app needs to connect to your media servers on your local network.</string>
+	<string>PlezyNG connects to your media servers and playback devices on your local network.</string>
 	<key>NSBonjourServices</key>
 	<array>
 		<string>_CC1AD845._googlecast._tcp</string>
@@ -66,9 +106,9 @@
 	<key>NSLocationWhenInUseUsageDescription</key>
 	<string>PlezyNG uses location access when iOS requires it to detect your local network and connect to your media servers.</string>
 	<key>NSPhotoLibraryUsageDescription</key>
-	<string>PlezyNG needs photo library access so you can choose images to upload as media artwork.</string>
+	<string>Choose images from your photo library to use as media artwork.</string>
 	<key>NSCameraUsageDescription</key>
-	<string>Camera is used to scan QR codes for Companion Remote pairing.</string>
+	<string>Scan QR codes to pair a Companion Remote.</string>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
 	<key>UIFileSharingEnabled</key>

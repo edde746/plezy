@@ -132,11 +132,11 @@ class _SortBottomSheetState extends State<SortBottomSheet> {
                 onKeyEvent: (node, event) {
                   if (!event.isActionable) return KeyEventResult.ignored;
                   if (!isSelected) return KeyEventResult.ignored;
-                  if (event.logicalKey.isLeftKey) {
+                  if (event.logicalKey.isInlineStart(context)) {
                     _handleDirectionChange(sort, false);
                     return KeyEventResult.handled;
                   }
-                  if (event.logicalKey.isRightKey) {
+                  if (event.logicalKey.isInlineEnd(context)) {
                     _handleDirectionChange(sort, true);
                     return KeyEventResult.handled;
                   }
