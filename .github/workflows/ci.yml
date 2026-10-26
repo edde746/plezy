@@ -1,19 +1,186 @@
 # ng-runner-policy: private-jit-only-v1
 name: CI - Sanity Checks
+run-name: >-
+  ${{ github.event_name == 'workflow_dispatch' && inputs.pr_number != '' &&
+      format('owner-pr:{0}:{1}:{2}', inputs.pr_number, inputs.pr_sha, inputs.target_run_id) ||
+      'PlezyNG CI' }}
 
 on:
-  # A main push is quiet. Validation runs against a pull request before merge.
-  pull_request:
+  push:
     branches:
       - main
+  pull_request_target:
+    branches:
+      - main
+    types: [opened, reopened, synchronize, ready_for_review]
+  workflow_dispatch:
+    inputs:
+      build_linux_packages:
+        description: Smoke-build Linux packages when changing linux/packaging.
+        default: false
+        type: boolean
+      pr_number:
+        description: Trusted owner PR number (set by the metadata dispatcher)
+        required: false
+        type: string
+      pr_sha:
+        description: Exact trusted owner PR head SHA
+        required: false
+        type: string
+      pr_base_sha:
+        description: Exact base SHA used to dispatch this validation
+        required: false
+        type: string
+      target_run_id:
+        description: Metadata-only pull_request_target run ID
+        required: false
+        type: string
 
 env:
   # Only place this workflow names the SDK; .github/actions/setup-flutter-git pins the same release.
   FLUTTER_VERSION: "3.47.1"
 
 jobs:
+  dispatch-owner-pr:
+    name: Dispatch trusted owner PR validation
+    if: >-
+      github.event_name == 'pull_request_target' &&
+      github.actor == 'snapetech' &&
+      github.event.pull_request.user.login == 'snapetech' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.repo.id == github.repository_id &&
+      github.event.pull_request.base.ref == 'main'
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-dispatch-owner-pr"]}}', github.run_id)) }}
+    permissions:
+      actions: write
+      contents: none
+    steps:
+      - name: Dispatch exact PR-head validation from main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+          PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          TARGET_RUN_ID: ${{ github.run_id }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          from urllib.request import Request, urlopen
+
+          repository = os.environ["GITHUB_REPOSITORY"]
+          number = os.environ["PR_NUMBER"]
+          sha = os.environ["PR_SHA"]
+          base_sha = os.environ["PR_BASE_SHA"]
+          target_run_id = os.environ["TARGET_RUN_ID"]
+          if repository != "snapetech-org/PlezyNG":
+              raise SystemExit("unexpected repository")
+          if not re.fullmatch(r"[1-9][0-9]*", number):
+              raise SystemExit("invalid pull request number")
+          if not re.fullmatch(r"[0-9a-f]{40}", sha):
+              raise SystemExit("invalid pull request head SHA")
+          if not re.fullmatch(r"[0-9a-f]{40}", base_sha):
+              raise SystemExit("invalid pull request base SHA")
+          if not re.fullmatch(r"[1-9][0-9]*", target_run_id):
+              raise SystemExit("invalid metadata run ID")
+
+          payload = json.dumps({
+              "ref": "main",
+              "inputs": {
+                  "pr_number": number,
+                  "pr_sha": sha,
+                  "pr_base_sha": base_sha,
+                  "target_run_id": target_run_id,
+              },
+          }).encode("utf-8")
+          request = Request(
+              "https://api.github.com/repos/snapetech-org/PlezyNG/actions/workflows/ci.yml/dispatches",
+              data=payload,
+              headers={
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                  "Content-Type": "application/json",
+                  "X-GitHub-Api-Version": "2022-11-28",
+              },
+              method="POST",
+          )
+          with urlopen(request, timeout=20) as response:
+              if response.status != 204:
+                  raise SystemExit(f"workflow dispatch returned HTTP {response.status}")
+          PY
+
+  verify-owner-pr:
+    name: Verify exact owner PR head
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' &&
+      inputs.pr_number != '' &&
+      (github.actor == 'snapetech' || github.actor == 'github-actions[bot]')
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-verify-owner-pr"]}}', github.run_id)) }}
+    permissions:
+      contents: none
+      pull-requests: read
+    steps:
+      - name: Confirm the exact PR head is still current
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          PR_SHA: ${{ inputs.pr_sha }}
+          PR_BASE_SHA: ${{ inputs.pr_base_sha }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          from urllib.request import Request, urlopen
+
+          repository = os.environ["GITHUB_REPOSITORY"]
+          number = os.environ["PR_NUMBER"]
+          sha = os.environ["PR_SHA"]
+          base_sha = os.environ["PR_BASE_SHA"]
+          if repository != "snapetech-org/PlezyNG":
+              raise SystemExit("unexpected repository")
+          if not re.fullmatch(r"[1-9][0-9]*", number):
+              raise SystemExit("invalid pull request number")
+          if not re.fullmatch(r"[0-9a-f]{40}", sha):
+              raise SystemExit("invalid pull request head SHA")
+          if not re.fullmatch(r"[0-9a-f]{40}", base_sha):
+              raise SystemExit("invalid pull request base SHA")
+          request = Request(
+              f"https://api.github.com/repos/{repository}/pulls/{number}",
+              headers={
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                  "X-GitHub-Api-Version": "2022-11-28",
+              },
+          )
+          with urlopen(request, timeout=20) as response:
+              pull = json.load(response)
+          base = pull.get("base") or {}
+          head = pull.get("head") or {}
+          base_repo = base.get("repo") or {}
+          head_repo = head.get("repo") or {}
+          if (pull.get("state") != "open"
+                  or (pull.get("user") or {}).get("login") != "snapetech"
+                  or base.get("ref") != "main"
+                  or base.get("sha") != base_sha
+                  or head.get("sha") != sha
+                  or base_repo.get("id") != head_repo.get("id")
+                  or (head_repo.get("full_name") or "").lower() != repository.lower()):
+              raise SystemExit("PR is no longer the exact trusted owner head")
+          PY
+
   analyze:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    needs: verify-owner-pr
+    if: >-
+      always() && !cancelled() &&
+      ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+       (github.event_name == 'workflow_dispatch' &&
+        ((inputs.pr_number == '' && github.ref == 'refs/heads/main') ||
+        (inputs.pr_number != '' && needs.verify-owner-pr.result == 'success'))))
     name: Code Analysis
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-analyze"]}}', github.run_id)) }}
     permissions:
@@ -22,14 +189,17 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ inputs.pr_sha || github.sha }}
           fetch-depth: 0
           persist-credentials: false
 
       - name: Validate changelog entry
-        if: github.event_name == 'pull_request' || github.event_name == 'push'
+        if: >-
+          github.event_name == 'push' ||
+          (github.event_name == 'workflow_dispatch' && inputs.pr_number != '')
         env:
-          CHANGELOG_BASE: ${{ github.event_name == 'pull_request' && github.event.pull_request.base.sha || github.event.before }}
-          CHANGELOG_HEAD: ${{ github.event_name == 'pull_request' && github.event.pull_request.head.sha || github.sha }}
+          CHANGELOG_BASE: ${{ inputs.pr_base_sha != '' && inputs.pr_base_sha || github.event.before }}
+          CHANGELOG_HEAD: ${{ inputs.pr_sha != '' && inputs.pr_sha || github.sha }}
         run: |
           if [[ -z "$CHANGELOG_BASE" || "$CHANGELOG_BASE" =~ ^0+$ ]]; then
             echo "No previous commit is available for changelog range validation."
@@ -42,10 +212,11 @@ jobs:
         with:
           channel: "stable"
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
+          cache: ${{ inputs.pr_number == '' }}
           pub-cache: false
 
       - name: Cache Pub dependencies
+        if: inputs.pr_number == ''
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
@@ -112,7 +283,13 @@ jobs:
           fi
 
   test:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    needs: verify-owner-pr
+    if: >-
+      always() && !cancelled() &&
+      ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+       (github.event_name == 'workflow_dispatch' &&
+        ((inputs.pr_number == '' && github.ref == 'refs/heads/main') ||
+        (inputs.pr_number != '' && needs.verify-owner-pr.result == 'success'))))
     name: Unit Tests
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-test"]}}', github.run_id)) }}
     permissions:
@@ -121,6 +298,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ inputs.pr_sha || github.sha }}
           persist-credentials: false
 
       - name: Setup Flutter
@@ -128,10 +306,11 @@ jobs:
         with:
           channel: "stable"
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
+          cache: ${{ inputs.pr_number == '' }}
           pub-cache: false
 
       - name: Cache Pub dependencies
+        if: inputs.pr_number == ''
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
@@ -172,7 +351,13 @@ jobs:
           done
 
   android-test:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    needs: verify-owner-pr
+    if: >-
+      always() && !cancelled() &&
+      ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+       (github.event_name == 'workflow_dispatch' &&
+        ((inputs.pr_number == '' && github.ref == 'refs/heads/main') ||
+        (inputs.pr_number != '' && needs.verify-owner-pr.result == 'success'))))
     name: Android JVM and Native Tests
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-android-test"]}}', github.run_id)) }}
     permissions:
@@ -181,6 +366,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ inputs.pr_sha || github.sha }}
           persist-credentials: false
 
       - name: Setup Java
@@ -194,10 +380,11 @@ jobs:
         with:
           channel: "stable"
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
+          cache: ${{ inputs.pr_number == '' }}
           pub-cache: false
 
       - name: Cache Pub dependencies
+        if: inputs.pr_number == ''
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
@@ -205,6 +392,7 @@ jobs:
           key: ${{ runner.os }}-pub-v3-${{ hashFiles('**/pubspec.yaml', '**/pubspec.lock') }}
 
       - name: Cache Gradle
+        if: inputs.pr_number == ''
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
@@ -242,7 +430,13 @@ jobs:
         run: ./gradlew :app:lintDebug
 
   native-format:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    needs: verify-owner-pr
+    if: >-
+      always() && !cancelled() &&
+      ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+       (github.event_name == 'workflow_dispatch' &&
+        ((inputs.pr_number == '' && github.ref == 'refs/heads/main') ||
+        (inputs.pr_number != '' && needs.verify-owner-pr.result == 'success'))))
     name: Native Formatting
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-native-format"]}}', github.run_id)) }}
     permissions:
@@ -251,6 +445,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ inputs.pr_sha || github.sha }}
           persist-credentials: false
 
       - name: Setup Java
@@ -263,7 +458,13 @@ jobs:
         run: scripts/format_native.sh --check
 
   linux-native-test:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    needs: verify-owner-pr
+    if: >-
+      always() && !cancelled() &&
+      ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+       (github.event_name == 'workflow_dispatch' &&
+        ((inputs.pr_number == '' && github.ref == 'refs/heads/main') ||
+        (inputs.pr_number != '' && needs.verify-owner-pr.result == 'success'))))
     name: Linux native reliability (${{ matrix.sanitizer }})
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-linux-native-test"]}}', github.run_id, strategy.job-index)) }}
     permissions:
@@ -280,6 +481,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ inputs.pr_sha || github.sha }}
           persist-credentials: false
 
       - name: Setup Flutter
@@ -287,7 +489,7 @@ jobs:
         with:
           channel: "stable"
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
+          cache: ${{ inputs.pr_number == '' }}
           pub-cache: false
 
       - name: Install Linux native test dependencies
@@ -335,7 +537,13 @@ jobs:
             --output-on-failure --no-tests=error
 
   apple-native-test:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    needs: verify-owner-pr
+    if: >-
+      always() && !cancelled() &&
+      ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+       (github.event_name == 'workflow_dispatch' &&
+        ((inputs.pr_number == '' && github.ref == 'refs/heads/main') ||
+        (inputs.pr_number != '' && needs.verify-owner-pr.result == 'success'))))
     name: Apple native reliability (${{ matrix.platform }})
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-apple-native-test"]}}', github.run_id, strategy.job-index)) }}
     permissions:
@@ -366,6 +574,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ inputs.pr_sha || github.sha }}
           persist-credentials: false
 
       - name: Setup Flutter
@@ -373,7 +582,7 @@ jobs:
         with:
           channel: "stable"
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
+          cache: ${{ inputs.pr_number == '' }}
           pub-cache: false
 
       - name: Install locked Dart dependencies
@@ -481,9 +690,15 @@ jobs:
           exit "$test_status"
 
   windows-native-test:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    needs: verify-owner-pr
+    if: >-
+      always() && !cancelled() &&
+      ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+       (github.event_name == 'workflow_dispatch' &&
+        ((inputs.pr_number == '' && github.ref == 'refs/heads/main') ||
+        (inputs.pr_number != '' && needs.verify-owner-pr.result == 'success'))))
     name: Windows native reliability (${{ matrix.arch }})
-    runs-on: ${{ matrix.runner == 'windows-latest' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) }}
+    runs-on: ${{ matrix.arch == 'x64' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) }}
     permissions:
       contents: read
     strategy:
@@ -491,15 +706,14 @@ jobs:
       matrix:
         include:
           - arch: x64
-            runner: windows-latest
             flutter_setup: action
           - arch: arm64
-            runner: windows-11-arm
             flutter_setup: git
     steps:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ inputs.pr_sha || github.sha }}
           persist-credentials: false
 
       - name: Install 7-Zip
@@ -513,7 +727,7 @@ jobs:
         with:
           channel: "stable"
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
+          cache: ${{ inputs.pr_number == '' }}
           pub-cache: false
 
       - name: Set up Flutter from its pinned commit
@@ -568,7 +782,13 @@ jobs:
           ctest --test-dir "$buildDir/runner" -C Debug --output-on-failure --no-tests=error
 
   dependency-check:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    needs: verify-owner-pr
+    if: >-
+      always() && !cancelled() &&
+      ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+       (github.event_name == 'workflow_dispatch' &&
+        ((inputs.pr_number == '' && github.ref == 'refs/heads/main') ||
+        (inputs.pr_number != '' && needs.verify-owner-pr.result == 'success'))))
     name: Dependency Validation
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-dependency-check"]}}', github.run_id)) }}
     permissions:
@@ -577,6 +797,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ inputs.pr_sha || github.sha }}
           persist-credentials: false
 
       - name: Setup Flutter
@@ -584,10 +805,11 @@ jobs:
         with:
           channel: "stable"
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
+          cache: ${{ inputs.pr_number == '' }}
           pub-cache: false
 
       - name: Cache Pub dependencies
+        if: inputs.pr_number == ''
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: |
@@ -601,7 +823,13 @@ jobs:
           flutter pub outdated
 
   server:
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    needs: verify-owner-pr
+    if: >-
+      always() && !cancelled() &&
+      ((github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+       (github.event_name == 'workflow_dispatch' &&
+        ((inputs.pr_number == '' && github.ref == 'refs/heads/main') ||
+        (inputs.pr_number != '' && needs.verify-owner-pr.result == 'success'))))
     name: Server checks
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-server"]}}', github.run_id)) }}
     permissions:
@@ -610,12 +838,14 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ inputs.pr_sha || github.sha }}
           persist-credentials: false
 
       - name: Setup Go
         uses: actions/setup-go@b7ad1dad31e06c5925ef5d2fc7ad053ef454303e # v7.0.0
         with:
           go-version-file: server/go.mod
+          cache: false
           cache-dependency-path: server/go.sum
 
       - name: Run server checks
@@ -633,7 +863,12 @@ jobs:
   # built by build.yml only when a version tag is pushed.
   linux-packages:
     name: Linux package smoke build
-    if: github.event.pull_request.head.repo.full_name == github.repository
+    needs: verify-owner-pr
+    if: >-
+      always() && !cancelled() &&
+      github.event_name == 'workflow_dispatch' &&
+      ((inputs.pr_number == '' && github.ref == 'refs/heads/main' && inputs.build_linux_packages) ||
+       (inputs.pr_number != '' && needs.verify-owner-pr.result == 'success'))
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-linux-packages"]}}', github.run_id)) }}
     permissions:
       contents: read
@@ -641,6 +876,7 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          ref: ${{ inputs.pr_sha || github.sha }}
           persist-credentials: false
 
       - name: Setup Flutter
@@ -648,7 +884,7 @@ jobs:
         with:
           channel: "stable"
           flutter-version: ${{ env.FLUTTER_VERSION }}
-          cache: true
+          cache: ${{ inputs.pr_number == '' }}
           pub-cache: false
 
       # The packaging deps, minus libmpv: that arrives prebuilt from mpv-build
@@ -672,6 +908,7 @@ jobs:
       # checksum, so editing the lock is what invalidates the cache.
       - name: Cache libmpv prefix
         id: libmpv-cache
+        if: inputs.pr_number == ''
         uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6
         with:
           path: libmpv-prefix
@@ -771,3 +1008,99 @@ jobs:
           path: ${{ github.workspace }}/packages/plezy-linux-x64.*
           if-no-files-found: error
           retention-days: 7
+
+  report-owner-pr-check:
+    name: Report trusted owner PR validation
+    needs:
+      - verify-owner-pr
+      - analyze
+      - test
+      - android-test
+      - native-format
+      - linux-native-test
+      - apple-native-test
+      - windows-native-test
+      - dependency-check
+      - server
+      - linux-packages
+    if: >-
+      always() &&
+      github.event_name == 'workflow_dispatch' &&
+      github.ref == 'refs/heads/main' &&
+      inputs.pr_number != '' &&
+      (github.actor == 'snapetech' || github.actor == 'github-actions[bot]')
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-report-owner-pr-check"]}}', github.run_id)) }}
+    permissions:
+      checks: write
+      contents: none
+    steps:
+      - name: Attach the CI result to the exact PR head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_SHA: ${{ inputs.pr_sha }}
+          TARGET_RUN_ID: ${{ inputs.target_run_id }}
+          VALIDATION_RUN_ID: ${{ github.run_id }}
+          VALIDATION_RESULT: ${{
+            needs.verify-owner-pr.result == 'success' &&
+            needs.analyze.result == 'success' &&
+            needs.test.result == 'success' &&
+            needs.android-test.result == 'success' &&
+            needs.native-format.result == 'success' &&
+            needs.linux-native-test.result == 'success' &&
+            needs.apple-native-test.result == 'success' &&
+            needs.windows-native-test.result == 'success' &&
+            needs.dependency-check.result == 'success' &&
+            needs.server.result == 'success' &&
+            needs.linux-packages.result == 'success' &&
+            'success' || 'failure'
+          }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          from urllib.request import Request, urlopen
+
+          sha = os.environ["PR_SHA"]
+          if not re.fullmatch(r"[0-9a-f]{40}", sha):
+              raise SystemExit("invalid pull request head SHA")
+          validation_run_id = os.environ["VALIDATION_RUN_ID"]
+          target_run_id = os.environ["TARGET_RUN_ID"]
+          if not re.fullmatch(r"[1-9][0-9]*", validation_run_id):
+              raise SystemExit("invalid validation run ID")
+          if not re.fullmatch(r"[1-9][0-9]*", target_run_id):
+              raise SystemExit("invalid metadata run ID")
+          conclusion = os.environ["VALIDATION_RESULT"]
+          if conclusion not in {"success", "failure"}:
+              raise SystemExit("invalid validation result")
+
+          payload = json.dumps({
+              "name": "PlezyNG CI",
+              "head_sha": sha,
+              "external_id": target_run_id,
+              "status": "completed",
+              "conclusion": conclusion,
+              "details_url": (
+                  "https://github.com/snapetech-org/PlezyNG/actions/runs/"
+                  + validation_run_id
+              ),
+              "output": {
+                  "title": "PlezyNG CI " + conclusion,
+                  "summary": "See the linked private JIT workflow run for exact-head validation.",
+              },
+          }).encode("utf-8")
+          request = Request(
+              "https://api.github.com/repos/snapetech-org/PlezyNG/check-runs",
+              data=payload,
+              headers={
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                  "Content-Type": "application/json",
+                  "X-GitHub-Api-Version": "2022-11-28",
+              },
+              method="POST",
+          )
+          with urlopen(request, timeout=20) as response:
+              if response.status not in {201, 202}:
+                  raise SystemExit(f"check creation returned HTTP {response.status}")
+          PY
