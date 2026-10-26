@@ -1,14 +1,9 @@
 # ng-runner-policy: private-jit-only-v1
 name: Experimental Dolby Vision engine
 
+# Runs only when selected from Actions.
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - 'codex/dv-experimental-*'
-    paths:
-      - 'tools/dv-engine/**'
-      - '.github/workflows/dv-experimental.yml'
 
 permissions:
   contents: read
