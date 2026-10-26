@@ -8358,7 +8358,7 @@ class Translations$sourceSetup$en {
 	/// en: 'Shared library ID (optional)'
 	String get sharedLibraryId => 'Shared library ID (optional)';
 
-	/// en: 'Use the same ID on devices that open the same library. This public ID helps carry reading progress and notes across different source connections; it is not a password.'
+	/// en: 'Use the same ID on devices that open the same library. This public ID helps carry reading progress and notes across different source connections; it is not a password. When providers use different item IDs, pair those items from their detail screens.'
 	String get sharedLibraryHelp => 'Use the same ID on devices that open the same library. This public ID helps carry reading progress and notes across different source connections; it is not a password.';
 
 	/// en: 'Use 8–100 letters, numbers, dots, underscores or hyphens.'
@@ -8370,7 +8370,7 @@ class Translations$sourceSetup$en {
 	/// en: 'Pair this item'
 	String get sharedEntryPair => 'Pair this item';
 
-	/// en: 'Enter the same ID for this item on each device. Use a stable shared identifier or generate one and copy it to the matching item. Blank removes this mapping.'
+	/// en: 'Enter the same ID for this item on each device. Use a stable shared identifier or generate one and copy it to the matching item. Progress pairs only when the edition file types, sizes, and order match. Blank removes this mapping.'
 	String get sharedEntryPairHelp => 'Enter the same ID for this item on each device. Use a stable shared identifier or generate one and copy it to the matching item. Blank removes this mapping.';
 
 	/// en: 'Shared item ID'
