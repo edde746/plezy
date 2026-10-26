@@ -161,7 +161,7 @@ class LocalSourceAdapter extends SourceAdapter {
       }
     }
     return _LocalDirectorySnapshot(
-      entries: List.unmodifiable(entries),
+      entries: entries,
       count: entries.length,
       modified: currentStamp,
       generation: generation,
@@ -257,6 +257,8 @@ class LocalSourceAdapter extends SourceAdapter {
   }
 
   void _rememberSnapshot(String snapshotKey, _LocalDirectorySnapshot snapshot) {
+    final previous = _snapshots[snapshotKey];
+    if (previous != null && !identical(previous, snapshot)) _discardSnapshot(snapshotKey);
     _touchSnapshot(snapshotKey, snapshot);
     int memoryEntries() => _snapshots.values
         .where((item) => item.spool == null)
