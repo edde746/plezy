@@ -5888,6 +5888,18 @@ void main() {
       expect(playbackInfoBody['EnableTranscoding'], isTrue);
       expect(playbackInfoBody['AllowVideoStreamCopy'], isFalse);
       expect(playbackInfoBody['AllowAudioStreamCopy'], isTrue);
+      final deviceProfile = playbackInfoBody['DeviceProfile'] as Map<String, dynamic>;
+      final codecProfiles = deviceProfile['CodecProfiles'] as List<dynamic>;
+      expect(codecProfiles, hasLength(1));
+      final sdrOutputProfile = codecProfiles.single as Map<String, dynamic>;
+      expect(sdrOutputProfile['Type'], 'Video');
+      expect(sdrOutputProfile['Codec'], isNotEmpty);
+      expect(sdrOutputProfile['ApplyConditions'], isEmpty);
+      final rangeCondition = (sdrOutputProfile['Conditions'] as List<dynamic>).single as Map<String, dynamic>;
+      expect(rangeCondition['Condition'], 'Equals');
+      expect(rangeCondition['Property'], 'VideoRangeType');
+      expect(rangeCondition['Value'], 'SDR');
+      expect(rangeCondition['IsRequired'], isTrue);
       expect(result.isTranscoding, isTrue);
       expect(result.playMethod, 'Transcode');
       expect(result.videoUrl, contains('/master.m3u8'));

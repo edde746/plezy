@@ -958,7 +958,24 @@ mixin _JellyfinPlaybackMethods on _JellyfinClientInternals {
         'DeviceProfile': <String, Object?>{
           'Name': 'PlezyNG',
           'MaxStreamingBitrate': ?maxStreamingBitrate,
-          'CodecProfiles': const <Map<String, Object?>>[],
+          // A compatibility transcode must land in SDR rather than simply
+          // re-encode the Dolby Vision signal with incompatible HDR metadata.
+          // Jellyfin's StreamBuilder applies these CodecProfile conditions to
+          // the selected output codec and forwards VideoRangeType as a
+          // transcode target constraint. The server still needs a working DV /
+          // HDR tone-mapping path for the selected source profile.
+          'CodecProfiles': forceVideoTranscode
+              ? <Map<String, Object?>>[
+                  {
+                    'Type': 'Video',
+                    'Codec': _jellyfinTranscodeVideoCodecs(dialect),
+                    'Conditions': <Map<String, Object?>>[
+                      {'Condition': 'Equals', 'Property': 'VideoRangeType', 'Value': 'SDR', 'IsRequired': true},
+                    ],
+                    'ApplyConditions': const <Map<String, Object?>>[],
+                  },
+                ]
+              : const <Map<String, Object?>>[],
           // fMP4 segments instead of MPEG-TS (#2131): ts cannot carry AV1,
           // so a server with an AV1 hardware encoder could never pick it.
           // Every mpv backend already consumes fMP4 HLS — the Plex VOD
