@@ -51,20 +51,22 @@ public final class SteamStreamView extends FrameLayout implements SurfaceHolder.
     surface = new SurfaceView(context);
     addView(surface, new FrameLayout.LayoutParams(-1, -1, Gravity.CENTER));
     surface.getHolder().addCallback(this);
-    controls = new SteamControls(context, Boolean.TRUE.equals(args.get("touchControls")), new SteamControls.Listener() {
-      @Override public void pad(short[] axes, int buttons) {
-        touch = axes;
-        touchButtons = buttons;
-        sendPad();
-      }
-      @Override public void mouse(float x, float y, int button, boolean down) {
-        long session = handle;
-        if (session == 0 || stopping) return;
-        float sx = (x * getWidth() - surface.getLeft()) / Math.max(1, surface.getWidth());
-        float sy = (y * getHeight() - surface.getTop()) / Math.max(1, surface.getHeight());
-        NativeSteam.mouse(session, sx, sy, button, down);
-      }
-    });
+    controls = new SteamControls(
+        context, Boolean.TRUE.equals(args.get("touchControls")), label("touchLabel", "On-screen controller"),
+        new SteamControls.Listener() {
+          @Override public void pad(short[] axes, int buttons) {
+            touch = axes;
+            touchButtons = buttons;
+            sendPad();
+          }
+          @Override public void mouse(float x, float y, int button, boolean down) {
+            long session = handle;
+            if (session == 0 || stopping) return;
+            float sx = (x * getWidth() - surface.getLeft()) / Math.max(1, surface.getWidth());
+            float sy = (y * getHeight() - surface.getTop()) / Math.max(1, surface.getHeight());
+            NativeSteam.mouse(session, sx, sy, button, down);
+          }
+        });
     controls.setEnabled(false);
     addView(controls, new FrameLayout.LayoutParams(-1, -1));
     status = new TextView(context);

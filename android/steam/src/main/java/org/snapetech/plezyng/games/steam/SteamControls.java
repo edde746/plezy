@@ -5,6 +5,7 @@ import android.content.Context;
 import android.graphics.Canvas;
 import android.graphics.Color;
 import android.graphics.Paint;
+import android.util.DisplayMetrics;
 import android.util.SparseArray;
 import android.view.MotionEvent;
 import android.view.View;
@@ -35,18 +36,23 @@ final class SteamControls extends View {
     float x, y;
   }
   private final Listener listener;
+  private final String accessibilityDescription;
+  private final float minimumHitRadius;
   private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
   private final List<Control> controls = new ArrayList<>();
   private final SparseArray<Finger> fingers = new SparseArray<>();
   private boolean enabled;
   private int mousePointer = -1;
   private float mouseX = .5f, mouseY = .5f;
-  SteamControls(Context context, boolean enabled, Listener listener) {
+  SteamControls(Context context, boolean enabled, String accessibilityDescription, Listener listener) {
     super(context);
     this.enabled = enabled;
     this.listener = listener;
+    this.accessibilityDescription = accessibilityDescription;
+    DisplayMetrics metrics = context.getResources().getDisplayMetrics();
+    minimumHitRadius = 24f * metrics.density;
     setFocusable(false);
-    setContentDescription("Game controller");
+    updateAccessibilityDescription();
   }
   void reset() {
     if (mousePointer != -1)
@@ -59,6 +65,7 @@ final class SteamControls extends View {
   void toggle() {
     reset();
     enabled = !enabled;
+    updateAccessibilityDescription();
     invalidate();
   }
   void setEnabled(boolean value) {
@@ -66,7 +73,15 @@ final class SteamControls extends View {
       return;
     reset();
     enabled = value;
+    updateAccessibilityDescription();
     invalidate();
+  }
+
+  private void updateAccessibilityDescription() {
+    setContentDescription(
+        enabled && accessibilityDescription != null && !accessibilityDescription.trim().isEmpty()
+            ? accessibilityDescription
+            : null);
   }
   @Override
   protected void onSizeChanged(int w, int h, int oldw, int oldh) {
@@ -96,6 +111,7 @@ final class SteamControls extends View {
     controls.add(new Control(w * .48f, h * .74f, r * .7f, "L3", 7, -1));
     controls.add(new Control(w * .55f, h * .74f, r * .7f, "R3", 8, -1));
     controls.add(new Control(w * .5f, h * .18f, r * .8f, "☰", 5, -1));
+    fitHitTargets(w, h);
   }
   @Override
   protected void onDraw(Canvas canvas) {
@@ -142,11 +158,7 @@ final class SteamControls extends View {
       f.x = event.getX(index);
       f.y = event.getY(index);
       if (enabled)
-        for (Control c : controls)
-          if (Math.hypot(f.x - c.x, f.y - c.y) <= c.radius * 1.3f) {
-            f.control = c;
-            break;
-          }
+        f.control = nearestControl(f.x, f.y);
       fingers.put(id, f);
       if (f.control == null && fingers.size() == 1) {
         mousePointer = id;
@@ -198,5 +210,35 @@ final class SteamControls extends View {
     listener.pad(axes, buttons);
     invalidate();
     return true;
+  }
+
+  private Control nearestControl(float x, float y) {
+    Control nearest = null;
+    double nearestDistanceSquared = Double.POSITIVE_INFINITY;
+    for (Control c : controls) {
+      float hitRadius = hitRadius(c);
+      double dx = x - c.x, dy = y - c.y;
+      double distanceSquared = dx * dx + dy * dy;
+      if (distanceSquared <= hitRadius * hitRadius && distanceSquared < nearestDistanceSquared) {
+        nearest = c;
+        nearestDistanceSquared = distanceSquared;
+      }
+    }
+    // Keep the earlier control in list order for exact-distance ties.
+    return nearest;
+  }
+
+  private float hitRadius(Control control) {
+    return Math.max(control.radius * 1.3f, minimumHitRadius);
+  }
+
+  private void fitHitTargets(int width, int height) {
+    for (Control c : controls) {
+      float radius = hitRadius(c);
+      float horizontalInset = Math.min(radius, width / 2f);
+      float verticalInset = Math.min(radius, height / 2f);
+      c.x = Math.max(horizontalInset, Math.min(width - horizontalInset, c.x));
+      c.y = Math.max(verticalInset, Math.min(height - verticalInset, c.y));
+    }
   }
 }
