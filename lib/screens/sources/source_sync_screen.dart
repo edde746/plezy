@@ -93,7 +93,7 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
     setState(() => _source ??= sources.lastOrNull?.id);
   }
 
-  Future<void> _confirmExclusiveSync(SourceController controller, PublicationSyncConfig config) async {
+  Future<void> _confirmSync(SourceController controller, PublicationSyncConfig config) async {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -249,7 +249,7 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                       FilledButton(
                         onPressed: _busy || selected == null
                             ? null
-                            : () => _confirmExclusiveSync(
+                            : () => _confirmSync(
                                 controller,
                                 PublicationSyncConfig(
                                   sourceId: selected.id,
