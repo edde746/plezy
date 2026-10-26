@@ -41,6 +41,7 @@ This is a code-path map, **not device qualification**. No target has been verifi
 ## Verification record
 
 - Flutter/Dart SDK: unavailable in the current workspace at the time of this update.
+- Tests authored but not run: workspace controller/persistence/ownership, playback coordinator retention, MPV/Exo rect channel contract, and Flutter video pane bounds on move.
 - Tests/builds: not run.
 - Device qualification: none.
 - Do not mark a package verified or create the draft PR until its required code and evidence are present.

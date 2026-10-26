@@ -6,13 +6,13 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../focus/focusable_slider.dart';
+import '../../focus/focusable_text_field.dart';
+import '../../i18n/strings.g.dart';
+import '../../mpv/mpv.dart';
 import '../../multiview/source_playback_workspace_surface.dart';
 import '../../multiview/workspace_controller.dart';
 import '../../multiview/workspace_models.dart';
-import '../../focus/focusable_text_field.dart';
-import '../../i18n/strings.g.dart';
 import '../../utils/formatters.dart';
-import '../../mpv/mpv.dart';
 import '../../services/open_subtitles_client.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
@@ -190,14 +190,20 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
       },
       onClose: () {
         unawaited(() async {
-          await playback.stop();
-          playback.fullPlayerVisible = false;
-          final route = sourceRoute;
-          if (!navigator.mounted || route?.isActive != true) return;
-          if (route!.isCurrent) {
-            navigator.pop();
-          } else {
-            navigator.removeRoute(route);
+          try {
+            await playback.stop();
+          } catch (error, stackTrace) {
+            debugPrint('Source workspace close failed: $error\n$stackTrace');
+          } finally {
+            playback.fullPlayerVisible = false;
+            final route = sourceRoute;
+            if (navigator.mounted && route?.isActive == true) {
+              if (route!.isCurrent) {
+                navigator.pop();
+              } else {
+                navigator.removeRoute(route);
+              }
+            }
           }
         }());
       },
@@ -212,6 +218,10 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
       _workspace = null;
       _workspaceSessionId = null;
       _workspaceDetached = false;
+      playback.fullPlayerVisible = false;
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
+        SnackBar(content: Text(t.videoControls.pipFailed)),
+      );
       return;
     }
     setState(() {});
@@ -226,7 +236,15 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
     if (id != null) _workspace?.unregister(id);
     if (playback != null) {
       playback.fullPlayerVisible = false;
-      if (playback.video) unawaited(playback.stop());
+      if (playback.video) {
+        unawaited(() async {
+          try {
+            await playback.stop();
+          } catch (error, stackTrace) {
+            debugPrint('Source player route close failed: $error\n$stackTrace');
+          }
+        }());
+      }
     }
     if (_full) unawaited(SystemChrome.setEnabledSystemUIMode(SystemUiMode.edgeToEdge));
     if (_fullscreen.scopeOwnsFullscreen) unawaited(_fullscreen.exitFullscreen());
