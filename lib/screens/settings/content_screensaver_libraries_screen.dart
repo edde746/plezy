@@ -20,10 +20,12 @@ class ContentScreensaverLibrariesScreen extends StatefulWidget {
   const ContentScreensaverLibrariesScreen({super.key});
 
   @override
-  State<ContentScreensaverLibrariesScreen> createState() => _ContentScreensaverLibrariesScreenState();
+  State<ContentScreensaverLibrariesScreen> createState() =>
+      _ContentScreensaverLibrariesScreenState();
 }
 
-class _ContentScreensaverLibrariesScreenState extends State<ContentScreensaverLibrariesScreen> {
+class _ContentScreensaverLibrariesScreenState
+    extends State<ContentScreensaverLibrariesScreen> {
   Future<List<MediaLibrary>>? _librariesFuture;
   List<MediaLibrary> _libraries = const [];
 
@@ -43,7 +45,11 @@ class _ContentScreensaverLibrariesScreenState extends State<ContentScreensaverLi
         libraries.addAll(await client.fetchLibraries());
       } catch (error, stackTrace) {
         // Other servers may still provide usable library options.
-        appLogger.w('Could not list screensaver libraries for $serverId', error: error, stackTrace: stackTrace);
+        appLogger.w(
+          'Could not list screensaver libraries for $serverId',
+          error: error,
+          stackTrace: stackTrace,
+        );
       }
     }
     libraries.sort((a, b) {
@@ -54,7 +60,11 @@ class _ContentScreensaverLibrariesScreenState extends State<ContentScreensaverLi
     return libraries;
   }
 
-  Future<void> _writeSelection(List<String> current, String libraryKey, bool selected) async {
+  Future<void> _writeSelection(
+    List<String> current,
+    String libraryKey,
+    bool selected,
+  ) async {
     final allKeys = _libraries.map((library) => library.globalKey).toSet();
     final selection = current.contains(_noScreensaverLibraries)
         ? <String>{}
@@ -74,7 +84,10 @@ class _ContentScreensaverLibrariesScreenState extends State<ContentScreensaverLi
     } else {
       next = selection.toList()..sort();
     }
-    await SettingsService.instance.write(SettingsService.contentScreensaverLibraryKeys, next);
+    await SettingsService.instance.write(
+      SettingsService.contentScreensaverLibraryKeys,
+      next,
+    );
   }
 
   Widget _description(BuildContext context) {
@@ -83,7 +96,9 @@ class _ContentScreensaverLibrariesScreenState extends State<ContentScreensaverLi
       padding: const EdgeInsets.fromLTRB(24, 12, 24, 16),
       child: Text(
         t.settings.contentScreensaverLibrariesDescription,
-        style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+        style: theme.textTheme.bodyMedium?.copyWith(
+          color: theme.colorScheme.onSurfaceVariant,
+        ),
       ),
     );
   }
@@ -98,7 +113,12 @@ class _ContentScreensaverLibrariesScreenState extends State<ContentScreensaverLi
             title: Text(t.settings.contentScreensaverLibraries),
             children: [
               _description(context),
-              const Center(child: Padding(padding: EdgeInsets.all(32), child: CircularProgressIndicator())),
+              const Center(
+                child: Padding(
+                  padding: EdgeInsets.all(32),
+                  child: CircularProgressIndicator(),
+                ),
+              ),
             ],
           );
         }
@@ -108,14 +128,22 @@ class _ContentScreensaverLibrariesScreenState extends State<ContentScreensaverLi
             title: Text(t.settings.contentScreensaverLibraries),
             children: [
               _description(context),
-              SettingsGroup(children: [FocusableListTile(title: Text(t.settings.contentScreensaverNoLibraries))]),
+              SettingsGroup(
+                children: [
+                  FocusableListTile(
+                    title: Text(t.settings.contentScreensaverNoLibraries),
+                  ),
+                ],
+              ),
             ],
           );
         }
 
         final groups = <String, List<MediaLibrary>>{};
         for (final library in libraries) {
-          groups.putIfAbsent(library.serverName ?? t.common.unknown, () => []).add(library);
+          groups
+              .putIfAbsent(library.serverName ?? t.common.unknown, () => [])
+              .add(library);
         }
         return SettingValueBuilder<List<String>>(
           pref: SettingsService.contentScreensaverLibraryKeys,
@@ -135,9 +163,17 @@ class _ContentScreensaverLibrariesScreenState extends State<ContentScreensaverLi
                         FocusableCheckboxListTile(
                           title: Text(library.title),
                           subtitle: Text(library.kind.label),
-                          value: allSelected || (!noneSelected && selected.contains(library.globalKey)),
-                          onChanged: (value) =>
-                              unawaited(_writeSelection(selectedKeys, library.globalKey, value ?? false)),
+                          value:
+                              allSelected ||
+                              (!noneSelected &&
+                                  selected.contains(library.globalKey)),
+                          onChanged: (value) => unawaited(
+                            _writeSelection(
+                              selectedKeys,
+                              library.globalKey,
+                              value ?? false,
+                            ),
+                          ),
                         ),
                     ],
                   ),
