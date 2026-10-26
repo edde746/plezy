@@ -190,6 +190,13 @@ if(PLEZY_BUILD_MPV_PROPERTY_CONTRACT_TESTS OR PLEZY_BUILD_MPV_RELIABILITY_TESTS)
 endif()
 
 if(PLEZY_BUILD_MPV_RELIABILITY_TESTS)
+  add_executable(experimental_render_api_test "mpv/experimental_render_api_test.cc")
+  apply_standard_settings(experimental_render_api_test)
+  target_compile_features(experimental_render_api_test PRIVATE cxx_std_14)
+  target_include_directories(experimental_render_api_test PRIVATE "mpv")
+  apply_mpv_reliability_sanitizer(experimental_render_api_test)
+  add_test(NAME experimental_render_api_test COMMAND experimental_render_api_test)
+
   add_executable(hdr_metadata_test
     "mpv/hdr_metadata_test.cc"
   )
