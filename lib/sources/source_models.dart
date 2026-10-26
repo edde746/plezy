@@ -364,6 +364,8 @@ class BookAnnotation {
     required this.mode,
     this.locator,
     this.positionMs,
+    this.fileIndex,
+    this.filePositionMs,
     this.quote = '',
     this.note = '',
     this.color = 'yellow',
@@ -376,6 +378,8 @@ class BookAnnotation {
   final PublicationMode mode;
   final ReadingLocator? locator;
   final int? positionMs;
+  final int? fileIndex;
+  final int? filePositionMs;
   final String quote;
   final String note;
   final String color;
@@ -388,6 +392,8 @@ class BookAnnotation {
     'mode': mode.name,
     'locator': locator?.toJson(),
     'positionMs': positionMs,
+    'fileIndex': fileIndex,
+    'filePositionMs': filePositionMs,
     'quote': quote,
     'note': note,
     'color': color,
@@ -401,6 +407,8 @@ class BookAnnotation {
     mode: PublicationMode.values.byName(j['mode'] as String),
     locator: j['locator'] == null ? null : ReadingLocator.fromJson(sourceMap(j['locator'])),
     positionMs: sourceInt(j['positionMs']),
+    fileIndex: sourceInt(j['fileIndex']),
+    filePositionMs: sourceInt(j['filePositionMs']),
     quote: j['quote'] as String? ?? '',
     note: j['note'] as String? ?? '',
     color: j['color'] as String? ?? 'yellow',

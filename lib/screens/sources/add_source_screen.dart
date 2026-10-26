@@ -90,6 +90,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
         endpoint: field('endpoint').text.trim(),
         root: field('root').text.trim(),
         options: {
+          ...?widget.existing?.options,
           'allowHttp': '$_allowHttp',
           'shelves': _shelves.map((s) => s.name).join(','),
           if (field('clientId').text.trim().isNotEmpty) 'clientId': field('clientId').text.trim(),

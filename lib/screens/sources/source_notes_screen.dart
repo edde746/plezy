@@ -63,6 +63,14 @@ class SourceNotesScreen extends StatefulWidget {
 
 class _SourceNotesScreenState extends State<SourceNotesScreen> {
   List<BookAnnotation> _notes = [];
+  String _positionLabel(BookAnnotation note) {
+    final index = note.fileIndex, position = note.filePositionMs;
+    if (index != null && position != null && index >= 0 && index < widget.entry.files.length) {
+      return '${widget.entry.files[index].name} · ${sourceTime(position)}';
+    }
+    return sourceTime(note.positionMs ?? 0);
+  }
+
   @override
   void initState() {
     super.initState();
@@ -149,10 +157,8 @@ class _SourceNotesScreenState extends State<SourceNotesScreen> {
                   ? note.note
                   : note.quote.isNotEmpty
                   ? note.quote
-                  : sourceTime(note.positionMs ?? 0),
-              subtitle: note.mode == PublicationMode.reading
-                  ? (note.locator?.href ?? '')
-                  : sourceTime(note.positionMs ?? 0),
+                  : _positionLabel(note),
+              subtitle: note.mode == PublicationMode.reading ? (note.locator?.href ?? '') : _positionLabel(note),
               icon: Symbols.bookmark_rounded,
               index: index,
               count: _notes.length,
