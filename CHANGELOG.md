@@ -2,7 +2,7 @@
 
 ## [Unreleased]
 
-- Keep Dolby Vision source-layer flags under the localized source label in the performance overlay.
+- Keep Dolby Vision source-layer flags under the localized source label and identify the experimental P7 FEL route as unqualified in the performance overlay.
 - Fit Find your next to the screen with persistent action buttons, mirrored swipe/TV direction cues, contextual help, and artwork that follows the current pick. Restore downloaded and alternate covers, distinguish artwork loading from missing images, and allow failed source covers to be retried.
 
 - Add experimental comic page streaming, Komga source integration and ComicInfo metadata support.

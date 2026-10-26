@@ -3,8 +3,8 @@ import '../../../../i18n/strings.g.dart';
 import '../../../../media/dolby_vision_playback.dart';
 import '../../../../utils/codec_utils.dart';
 
-/// What decodes a Dolby Vision file on Android mpv. Wire ids match the
-/// Kotlin `GpuVoPolicy.DvRoute`.
+/// Dolby Vision routes exposed by the player diagnostics.
+/// Android route ids match the Kotlin `GpuVoPolicy.DvRoute`.
 enum DvRoute {
   /// The Dolby Vision MediaCodec decoder takes the stream as it is.
   dvDecoder('dv-decoder'),
@@ -16,7 +16,10 @@ enum DvRoute {
   baseLayer('base-layer'),
 
   /// Software decode on gpu-next, which applies the RPU itself.
-  reshaped('reshaped');
+  reshaped('reshaped'),
+
+  /// The experimental P7 FEL filter is active; output pixels are unqualified.
+  felGraphActive('fel-graph-active');
 
   const DvRoute(this.id);
 
@@ -326,6 +329,7 @@ class PerformanceStats {
       DvRoute.dvDecoder => t.performanceOverlay.dvRouteDecoder,
       DvRoute.dvDecoderP81 => t.performanceOverlay.dvRouteDecoderP81,
       DvRoute.reshaped => t.performanceOverlay.dvRouteReshaped,
+      DvRoute.felGraphActive => t.performanceOverlay.dvRouteFelGraphActive,
       DvRoute.baseLayer => switch (gamma) {
         'pq' => t.performanceOverlay.dvRouteBaseLayerHdr10,
         'hlg' => t.performanceOverlay.dvRouteBaseLayerHlg,

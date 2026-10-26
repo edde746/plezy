@@ -5934,6 +5934,9 @@ class Translations$performanceOverlay$en {
 	/// en: 'RPU reshaped (gpu-next)'
 	String get dvRouteReshaped => 'RPU reshaped (gpu-next)';
 
+	/// en: 'Experimental P7 FEL graph (unqualified)'
+	String get dvRouteFelGraphActive => 'Experimental P7 FEL graph (unqualified)';
+
 	/// en: 'P7 Conv'
 	String get p7Conversion => 'P7 Conv';
 
@@ -12833,6 +12836,7 @@ extension on Translations {
 			'performanceOverlay.dvRouteBaseLayerHlg' => 'HLG base layer',
 			'performanceOverlay.dvRouteBaseLayerSdr' => 'SDR base layer',
 			'performanceOverlay.dvRouteReshaped' => 'RPU reshaped (gpu-next)',
+			'performanceOverlay.dvRouteFelGraphActive' => 'Experimental P7 FEL graph (unqualified)',
 			'performanceOverlay.p7Conversion' => 'P7 Conv',
 			'performanceOverlay.sampleRate' => 'Sample Rate',
 			'performanceOverlay.pixelFormat' => 'Pixel Fmt',

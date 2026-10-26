@@ -49,11 +49,12 @@ review, with generated Dart committed through the normal Slang workflow.
 The existing performance overlay adds P7 `BL / EL?` when residual use is unknown
 and `BL / EL−` for known Android EL-discarding routes. It now also carries the
 server-reported BL, EL and RPU presence flags into the overlay on every backend;
-these are source flags, separate from the renderer's layer-use verdict. Linux
-queries the synthetic `plezyng-dv-renderer` property to report the actual selected
-API/fallback. Neither `reshaped`, `opengl-next`, an HEVC decoder name nor the
-source DV profile means FEL is qualified. No new “full FEL” badge is inferred
-from those properties.
+these are source flags, separate from the renderer's layer-use verdict. When the
+experimental Android P7 FEL filter is active, the route reads “Experimental P7
+FEL graph (unqualified)”. Linux queries the synthetic `plezyng-dv-renderer`
+property to report the actual selected API/fallback. Neither `reshaped`,
+`opengl-next`, an HEVC decoder name nor the source DV profile means FEL is
+qualified. No new “full FEL” badge is inferred from those properties.
 
 ## Linux run and evidence
 
