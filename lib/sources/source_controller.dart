@@ -1008,8 +1008,8 @@ class SourceController extends ChangeNotifier {
     if (syncConfig != null) {
       final config = syncConfig!;
       final source = sources.where((s) => s.id == config.sourceId).firstOrNull;
-      if (source == null) throw const SourceException(SourceFailure.authentication);
       try {
+        if (source == null) throw const SourceException(SourceFailure.authentication);
         await cloudSync.run(
           profile: profile,
           sources: List.of(sources),
