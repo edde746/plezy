@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Add experimental comic page streaming, Komga source integration and ComicInfo metadata support.
+
 ### Added
 
 - Add SMB2/3 read-only NAS sources on Android, iOS, macOS, Windows, Linux, and Apple TV, with a Videos library shelf and resumable video watch progress.

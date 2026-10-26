@@ -13,6 +13,7 @@ import 'adapters/audiobookshelf_source.dart';
 import 'adapters/cloud_sources.dart';
 import 'adapters/dlna_source.dart';
 import 'adapters/ftp_source.dart';
+import 'adapters/komga_source.dart';
 import 'adapters/local_source.dart';
 import 'adapters/nfs_source.dart';
 import 'adapters/sftp_source.dart';
@@ -388,6 +389,7 @@ class SourceController extends ChangeNotifier {
         FileSourceKind.sftp => SftpSourceAdapter(source, transport, credentials),
         FileSourceKind.nfs => NfsSourceAdapter(source, transport, credentials),
         FileSourceKind.dlna => DlnaSourceAdapter(source, transport),
+        FileSourceKind.komga => KomgaSourceAdapter(source, transport, credentials),
         FileSourceKind.opds => OpdsSourceAdapter(source, transport, credentials),
         FileSourceKind.audiobookshelf => AudiobookshelfSourceAdapter(source, transport, credentials),
       };

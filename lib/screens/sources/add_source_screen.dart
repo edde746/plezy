@@ -372,6 +372,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                           : (kind) => setState(() {
                               _kind = kind!;
                               if (kind == FileSourceKind.dlna) _allowHttp = true;
+                              if (kind == FileSourceKind.komga) _shelves = {PublicationShelf.comics};
                             }),
                     ),
                     const SizedBox(height: 24),
@@ -424,13 +425,22 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                               },
                         child: Text(t.fileSources.localFolder),
                       ),
-                    ] else if (_kind != FileSourceKind.audiobookshelf && _kind != FileSourceKind.opds)
+                    ] else if (_kind != FileSourceKind.audiobookshelf &&
+                        _kind != FileSourceKind.opds &&
+                        _kind != FileSourceKind.komga)
                       input(
                         'root',
                         t.fileSources.root,
                         hint: _kind == FileSourceKind.dlna ? 'DLNA object ID; blank uses the device root.' : t.fileSources.folderHelp,
                       ),
-                    if (const {FileSourceKind.webdav, FileSourceKind.opds, FileSourceKind.smb, FileSourceKind.ftp, FileSourceKind.sftp}.contains(_kind)) ...[
+                    if (const {
+                      FileSourceKind.webdav,
+                      FileSourceKind.opds,
+                      FileSourceKind.komga,
+                      FileSourceKind.smb,
+                      FileSourceKind.ftp,
+                      FileSourceKind.sftp,
+                    }.contains(_kind)) ...[
                       input('username', t.fileSources.username, required: _kind == FileSourceKind.sftp && widget.existing == null),
                       input(
                         'password',

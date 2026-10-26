@@ -4,6 +4,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 
 import 'source_models.dart';
+import 'comic_document.dart';
 
 bool sameSourceOrigin(Uri a, Uri b) => a.scheme == b.scheme && a.host == b.host && a.port == b.port;
 
@@ -116,6 +117,7 @@ abstract class SourceAdapter {
   Future<ContentLease> resolve(PublicationFile file);
   Future<int?> contentSize(PublicationFile file) async => file.size;
   Future<SourceByteStream?> openContent(PublicationFile file, {required int offset, required int length}) async => null;
+  Future<ComicPageSource?> comicPages(PublicationFile file) async => null;
 
   Future<ContentLease?> cover(SourceEntry entry) async => null;
   Future<List<int>?> coverBytes(SourceEntry entry) async => null;

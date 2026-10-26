@@ -122,21 +122,17 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
         _profile!,
         widget.entry.key,
       )).where((a) => a.edition == widget.file.fingerprint && a.mode == PublicationMode.reading).toList();
-      _file = await sources.content(
-        widget.entry,
-        widget.file,
-        onProgress: (done, total) {
-          if (valid && mounted) setState(() => _transfer = total == null ? null : done / total);
-        },
-      );
+      final temp = await getTemporaryDirectory();
+      final cached = await sources.downloads.local(_profile!, widget.entry.sourceId, widget.file);
+      final pages = cached == null && sources.sources.any((s) => s.id == widget.entry.sourceId)
+          ? await sources.adapter(widget.entry.sourceId).comicPages(widget.file) : null;
       if (!valid) return;
-      if (!pdf) {
-        final temp = await getTemporaryDirectory();
-        final archive = await PublicationArchive.open(
-          _file!,
-          temp,
-          comic: p.extension(widget.file.name).toLowerCase() == '.cbz',
-        );
+      if (pages == null) _file = await sources.content(widget.entry, widget.file);
+      if (!valid) return;
+      if (!pdf || pages != null) {
+        final archive = pages != null
+            ? await PublicationArchive.stream(pages, temp)
+            : await PublicationArchive.open(_file!, temp, comic: widget.file.kind == SourceItemKind.comic);
         if (!valid) {
           await archive.close();
           return;

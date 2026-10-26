@@ -108,7 +108,7 @@ window.publication = {
         // names while resolving bytes against the exact archive paths; changing
         // case in the archive itself could collide on case-sensitive editions.
         const comicFiles=Object.keys(manifest.files)
-            .filter(name=>/\.(?:jpe?g|png|gif|bmp|webp|svg|jxl|avif)$/i.test(name))
+            .filter(name=>!name.split('/').some(part=>part.startsWith('.')||part==='__MACOSX') && /\.(?:jpe?g|png|gif|bmp|webp|svg|jxl|avif)$/i.test(name))
             .sort(new Intl.Collator([], {numeric:true}).compare);
         const aliases=new Map(comicFiles.map((name,index)=>[
             `${String(index+1).padStart(8,'0')}-${name.replace(/\.[^.]+$/,x=>x.toLowerCase())}`,name]));
@@ -117,7 +117,15 @@ window.publication = {
             loadBlob:name=>loadBlob(aliases.get(name)),getSize:name=>loader.getSize(aliases.get(name)),
         };
         book=manifest.comic ? makeComicBook(comicLoader,{name:options.title}) : await new EPUB(loader).init();
-        if(manifest.comic)book.toc.forEach(item=>{item.label=aliases.get(item.href);});
+        if(manifest.comic){
+            book.toc.forEach(item=>{item.label=aliases.get(item.href);});
+            const metadata=manifest.comicDocument;
+            if(metadata){
+                book.dir=metadata.direction;
+                book.metadata={...book.metadata,title:metadata.metadata?.Title||options.title,language:metadata.metadata?.LanguageISO||''};
+                book.toc.forEach((item,index)=>{if(metadata.pages[index]?.bookmark)item.label=metadata.pages[index].bookmark;});
+            }
+        }
         book.transformTarget?.addEventListener('data',e=>{e.detail.data=clean(e.detail.data,e.detail.type);});
         originalDirection=book.dir; originalSpread=book.rendition?.spread;
         await view.open(book);

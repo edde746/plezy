@@ -11,6 +11,8 @@ import 'package:path/path.dart' as p;
 import 'package:xml/xml.dart';
 
 import 'source_models.dart';
+import 'source_transport.dart';
+import 'comic_document.dart';
 
 /// Bounded output guards dishonest ZIP size fields as well as zip bombs.
 class _BoundedOutput extends OutputStream {
@@ -60,6 +62,17 @@ class PublicationArchive {
   final Directory directory;
   final Map<String, int> files;
   final bool comic;
+  ComicDocument? comicDocument;
+  ComicPageSource? pageSource;
+  static Future<PublicationArchive> stream(ComicPageSource pages, Directory temporary) async {
+    final count = pages.document.pages.length;
+    if (count < 1 || count > 10000) throw const SourceException(SourceFailure.invalidData);
+    final folder = await temporary.createTemp('comic-stream-');
+    return PublicationArchive._(folder, {for (final page in pages.document.pages) page.name: 0}, true)
+      ..comicDocument = pages.document
+      ..pageSource = pages;
+  }
+
   static String safePath(String value) {
     if (value.isEmpty ||
         value.startsWith('/') ||
@@ -76,7 +89,9 @@ class PublicationArchive {
     final folder = await temporary.createTemp('publication-');
     try {
       final files = await Isolate.run(() => extract(file.path, folder.path, comic: comic));
-      return PublicationArchive._(folder, files, comic);
+      final result = PublicationArchive._(folder, files, comic);
+      if (comic) result.comicDocument = await ComicDocument.fromArchive(folder, files);
+      return result;
     } catch (error) {
       await folder.delete(recursive: true);
       if (error is SourceException) rethrow;
@@ -295,12 +310,23 @@ class PublicationServer {
         if (request.method != 'HEAD') response.add(font.buffer.asUint8List(font.offsetInBytes, font.lengthInBytes));
       } else if (route == 'manifest.json') {
         response.headers.contentType = ContentType.json;
-        if (request.method != 'HEAD') response.write(jsonEncode({'files': archive.files, 'comic': archive.comic}));
+        if (request.method != 'HEAD')
+          response.write(
+            jsonEncode({
+              'files': archive.files,
+              'comic': archive.comic,
+              'comicDocument': archive.comicDocument?.toJson(),
+            }),
+          );
       } else if (route.startsWith('book/')) {
         final name = PublicationArchive.safePath(Uri.decodeComponent(route.substring(5)));
         final size = archive.files[name];
         if (size == null) {
           response.statusCode = 404;
+          return;
+        }
+        if (archive.pageSource != null) {
+          await _serveComicPage(name, response, head: request.method == 'HEAD');
           return;
         }
         final file = File(p.joinAll([archive.directory.path, ...name.split('/')]));
@@ -332,6 +358,56 @@ class PublicationServer {
       response.statusCode = 400;
     } finally {
       if (!upgraded) await response.close();
+    }
+  }
+
+  int _pageRequests = 0;
+  Future<void> _serveComicPage(String name, HttpResponse response, {required bool head}) async {
+    if (_pageRequests >= 6) {
+      response.statusCode = 429;
+      return;
+    }
+    final source = archive.pageSource!;
+    final index = source.document.pages.indexWhere((page) => page.name == name);
+    if (index < 0 || !valid()) {
+      response.statusCode = 403;
+      return;
+    }
+    _pageRequests++;
+    try {
+      final lease = await source.resolve(index);
+      if (!valid()) {
+        response.statusCode = 403;
+        return;
+      }
+      final upstream = await source.transport.send(
+        'GET',
+        lease.uri,
+        headers: {...lease.headers, 'Accept': 'image/jpeg,image/png,image/webp,image/gif'},
+        redirects: true,
+      );
+      SourceTransport.check(upstream.statusCode);
+      const limit = 32 * 1024 * 1024;
+      final type = upstream.headers['content-type']?.split(';').first.trim().toLowerCase();
+      if (!const {'image/jpeg', 'image/png', 'image/webp', 'image/gif', 'image/avif'}.contains(type) ||
+          (upstream.contentLength ?? 0) > limit) {
+        throw const SourceException(SourceFailure.invalidData);
+      }
+      // Buffer at most one bounded compressed page; never forward HTML error bodies.
+      final bytes = BytesBuilder(copy: false);
+      await for (final chunk in upstream.stream.timeout(const Duration(seconds: 30))) {
+        if (!valid() || bytes.length + chunk.length > limit) throw const SourceException(SourceFailure.cancelled);
+        bytes.add(chunk);
+      }
+      if (!valid()) {
+        response.statusCode = 403;
+        return;
+      }
+      response.headers.set('Content-Type', type!);
+      response.contentLength = bytes.length;
+      if (!head) response.add(bytes.takeBytes());
+    } finally {
+      _pageRequests--;
     }
   }
 
