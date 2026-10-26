@@ -21,11 +21,29 @@ def run(args, *, cwd=None, capture=False):
 
 
 def pin_map(data):
-    return {pin["identity"]: (pin["location"], pin["state"]["revision"]) for pin in data["pins"]}
+    pins = data.get("pins")
+    if not isinstance(pins, list):
+        raise ValueError("Swift dependency lock has no pin list")
+    result = {}
+    for pin in pins:
+        identity = pin.get("identity")
+        state = pin.get("state")
+        if (not isinstance(identity, str) or not identity or identity in result
+                or not isinstance(state, dict)):
+            raise ValueError("Swift dependency lock contains an invalid or duplicate pin")
+        result[identity] = (
+            pin.get("kind"), pin.get("location"), state.get("revision"), state.get("version"),
+        )
+    return result
 
 
-def verify_swift_pins(path: Path, expected: list):
-    if pin_map(json.loads(path.read_text())) != pin_map({"pins": expected}):
+def verify_swift_pins(path: Path, expected: list, *, required=()):
+    actual_pins = pin_map(json.loads(path.read_text()))
+    expected_pins = pin_map({"pins": expected})
+    required = set(required)
+    if (not actual_pins or not required.issubset(actual_pins)
+            or not actual_pins.keys() <= expected_pins.keys()
+            or any(actual_pins[name] != expected_pins[name] for name in actual_pins)):
         raise ValueError("Swift dependency resolution drifted; review and pin before compiling")
 
 
@@ -77,7 +95,8 @@ def main():
     try:
         checkout(source, spec)
         if name == "aether":
-            verify_swift_pins(source / "Package.resolved", spec["swift_pins"])
+            required_pins = spec.get("swift_required_pins", ())
+            verify_swift_pins(source / "Package.resolved", spec["swift_pins"], required=required_pins)
             host = work / "host"
             shutil.copytree(HERE.parent / "dv-apple" / "Host", host)
             shutil.copy2(source / "Package.resolved", host / "Package.resolved")
@@ -85,7 +104,7 @@ def main():
                 report["swift"] = run(["swift", "--version"], capture=True).strip()
                 report["xcode"] = run(["xcodebuild", "-version"], capture=True).strip()
                 run(["swift", "package", "resolve"], cwd=host)
-                verify_swift_pins(host / "Package.resolved", spec["swift_pins"])
+                verify_swift_pins(host / "Package.resolved", spec["swift_pins"], required=required_pins)
                 run(["swift", "build", "--force-resolved-versions", "--product", "PlezyNGDVExperiment"], cwd=host)
                 report["build"] = "passed"
                 if args.test:
@@ -93,9 +112,11 @@ def main():
                          "--filter", "Dovi|DualLayer"], cwd=source)
                     report["tests"] = "passed; real-file/GPU tests may report skips in the log"
         elif args.build:
-            # FelBaker contains VS headers and a pinned libdovi submodule.
-            # No VapourSynth runtime is needed to compile the plugin.
-            run(["meson", "setup", work / "build", source, "--wrap-mode=nofallback", "-Dcpu_tier=generic"])
+            # The plugin uses VS headers and a pinned libdovi submodule. The
+            # upstream Meson integration tests need FFMS2, which is unrelated
+            # to compiling this plugin, so keep them out of this source build.
+            run(["meson", "setup", work / "build", source, "--wrap-mode=nofallback",
+                 "-Dcpu_tier=generic", "-Dtests=false"])
             run(["meson", "compile", "-C", work / "build", "-j", "2"])
             report["build"] = "passed"
         report["source_lock_sha256"] = hashlib.sha256((HERE / "adapters.lock.json").read_bytes()).hexdigest()
