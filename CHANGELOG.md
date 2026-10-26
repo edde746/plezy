@@ -55,6 +55,7 @@
 - Keep both iOS SwiftPM lockfiles pinned to the same Google Cast SDK revision.
 - Explain the default behavior on the screensaver library selection page.
 - Format the download and screensaver library views with Flutter's configured Dart formatter.
+- Check iOS audio-output ordering while allowing the Spatial Audio driver on iOS 26.
 - Build Android app and plugin modules with SDK 37 and generate BuildConfig for current Android dependencies.
 - Brand default and alternate app icons, splash art, and TV launch graphics with the PlezyNG badge.
 - Refresh the release-channel guide with configured publishers and remaining credential requirements.

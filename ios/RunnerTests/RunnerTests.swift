@@ -231,7 +231,15 @@ final class MpvPlayerContractTests: XCTestCase {
       core.queue.sync {}
     }
 
-    XCTAssertEqual(try awaitGetProperty(core, name: "options/ao").get(), "avfoundation,audiounit")
+    let outputOrder = try awaitGetProperty(core, name: "options/ao").get().split(separator: ",")
+    guard
+      let avFoundationIndex = outputOrder.firstIndex(of: "avfoundation"),
+      let audioUnitIndex = outputOrder.firstIndex(of: "audiounit")
+    else {
+      XCTFail("Expected AVFoundation and AudioUnit outputs, got \(outputOrder)")
+      return
+    }
+    XCTAssertLessThan(avFoundationIndex, audioUnitIndex, "AVFoundation must precede AudioUnit")
   }
 
   func testPauseIntentUpdatesCacheBeforeAsyncWriteCompletes() {
