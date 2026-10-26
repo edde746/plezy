@@ -598,7 +598,7 @@ open class TaskRunner(
                     )
                     if (status != TaskStatus.failed || task.retriesRemaining == 0) {
                         // update only if not failed, or no retries remaining
-                        context.updateNotification(task, status)
+                        context.updateNotification(AuthTaskRegistry.persistable(task), status)
                     }
                     if (status != TaskStatus.canceled) {
                         // let the holdingQueue know this task is no longer active
@@ -932,7 +932,7 @@ open class TaskRunner(
             timeRemaining
         )
         context.updateNotification(
-            task,
+            AuthTaskRegistry.persistable(task),
             TaskStatus.running,
             progress, timeRemaining
         )
@@ -954,7 +954,7 @@ open class TaskRunner(
             Log.i(TAG, "TaskId ${task.taskId} will run in foreground")
             if (!wasRunInForeground) {
                 CoroutineScope(Dispatchers.Default).launch {
-                    context.updateNotification(task, TaskStatus.running)
+                    context.updateNotification(AuthTaskRegistry.persistable(task), TaskStatus.running)
                 }
             }
         }
