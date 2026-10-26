@@ -25,6 +25,7 @@ import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/settings_section.dart';
 import '../../widgets/setting_tile.dart';
+import '../libraries/state_messages.dart';
 import 'game_connection_dialogs.dart';
 import 'game_card.dart';
 
@@ -41,6 +42,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
   int? _sourceGeneration;
   int _epoch = 0;
   bool _loading = true;
+  bool _loadFailed = false;
   String _query = '';
 
   @override
@@ -81,11 +83,19 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
       controller.addListener(_changed);
       await controller.load();
       if (mounted && controller.current) {
-        setState(() => _loading = false);
+        setState(() {
+          _loading = false;
+          _loadFailed = false;
+        });
         unawaited(_scan());
       }
     } catch (_) {
-      if (mounted && epoch == _epoch) setState(() => _loading = false);
+      if (mounted && epoch == _epoch) {
+        setState(() {
+          _loading = false;
+          _loadFailed = true;
+        });
+      }
     }
   }
 
@@ -98,6 +108,19 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     _controller?.dispose();
     _controller = null;
     _loading = true;
+    _loadFailed = false;
+  }
+
+  void _retryLoad() {
+    final id = _profile;
+    if (!mounted || id == null) return;
+    _retire();
+    final epoch = ++_epoch;
+    setState(() {
+      _loading = true;
+      _loadFailed = false;
+    });
+    unawaited(_load(id, epoch));
   }
 
   @override
@@ -123,15 +146,16 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     if (mounted) setState(() {});
   }
 
-  Future<void> _run(Future<void> Function(GameLibraryController) work) async {
+  Future<bool> _run(Future<void> Function(GameLibraryController) work) async {
     final c = _controller;
-    if (c == null || !c.current || c.busy) return;
+    if (c == null || !c.current || c.busy) return false;
     try {
       await c.action(() => work(c));
+      return true;
     } catch (error) {
-      if (!mounted || !c.current) return;
+      if (!mounted || !c.current) return false;
       final failure = error is GameClientException ? error.failure : null;
-      if (failure == GameClientFailure.cancelled) return;
+      if (failure == GameClientFailure.cancelled) return false;
       showErrorSnackBar(
         context,
         failure == GameClientFailure.pairingRequired
@@ -140,6 +164,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
             ? t.games.timeout
             : t.games.unavailable,
       );
+      return false;
     }
   }
 
@@ -157,7 +182,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     final c = _controller;
     final host = await showDialog<GameHost>(context: context, builder: (_) => const AddGameComputerDialog());
     if (host == null || !mounted || c != _controller) return;
-    await _run((c) => c.saveHost(host));
+    if (!await _run((c) => c.saveHost(host))) return;
     if (mounted && c == _controller) await _connect(host);
   }
 
@@ -192,7 +217,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     );
     c.requireCurrent();
     if (paired == true) await c.refreshGames(selected);
-  });
+  }).then<void>((_) {});
   Future<void> _open(GameHost host, StreamGame game) => _run((c) async {
     final capability = await c.client.capabilities(host);
     c.requireCurrent();
@@ -215,7 +240,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     );
     c.requireCurrent();
     await c.opened(game);
-  });
+  }).then<void>((_) {});
   Future<void> _engineUnavailable(GameHost host) async {
     if (!mounted) return;
     await showDialog<void>(
@@ -350,114 +375,129 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
         ),
       ],
       slivers: [
-        SliverList(
-          delegate: SliverChildListDelegate([
-            Padding(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text(t.games.subtitle, style: Theme.of(context).textTheme.headlineSmall),
-                  const SizedBox(height: 16),
-                  Wrap(
-                    spacing: 12,
-                    runSpacing: 8,
-                    children: [
-                      FilledButton.icon(
-                        focusNode: filtered.isEmpty ? _firstFocus : null,
-                        onPressed: enabled ? _add : null,
-                        icon: const AppIcon(Symbols.add_rounded),
-                        label: Text(t.games.addComputer),
-                      ),
-                      OutlinedButton.icon(
-                        onPressed: enabled && c?.scanning == false ? _scan : null,
-                        icon: const AppIcon(Symbols.radar_rounded),
-                        label: Text(c?.scanning == true ? t.games.scanning : t.games.findComputers),
-                      ),
-                    ],
-                  ),
-                  if (state.games.isEmpty) ...[const SizedBox(height: 12), Text(t.games.scanHint)],
-                  if (_loading || c?.busy == true)
-                    const Padding(padding: EdgeInsets.only(top: 16), child: LinearProgressIndicator()),
-                ],
-              ),
+        if (_loadFailed)
+          SliverFillRemaining(
+            hasScrollBody: false,
+            child: ErrorStateWidget(
+              message: t.errors.unableToLoad(context: t.games.title),
+              onRetry: _retryLoad,
+              actionAutofocus: PlatformDetector.isTV(),
             ),
-            if (state.games.isNotEmpty)
+          ),
+        if (!_loadFailed)
+          SliverList(
+            delegate: SliverChildListDelegate([
               Padding(
-                padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                child: TextField(
-                  decoration: InputDecoration(
-                    labelText: t.games.search,
-                    prefixIcon: const AppIcon(Symbols.search_rounded),
-                  ),
-                  onChanged: (value) => setState(() => _query = value),
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(t.games.subtitle, style: Theme.of(context).textTheme.headlineSmall),
+                    const SizedBox(height: 16),
+                    Wrap(
+                      spacing: 12,
+                      runSpacing: 8,
+                      children: [
+                        FilledButton.icon(
+                          focusNode: filtered.isEmpty ? _firstFocus : null,
+                          onPressed: enabled ? _add : null,
+                          icon: const AppIcon(Symbols.add_rounded),
+                          label: Text(t.games.addComputer),
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: enabled && c?.scanning == false ? _scan : null,
+                          icon: const AppIcon(Symbols.radar_rounded),
+                          label: Text(c?.scanning == true ? t.games.scanning : t.games.findComputers),
+                        ),
+                      ],
+                    ),
+                    if (state.games.isEmpty) ...[const SizedBox(height: 12), Text(t.games.scanHint)],
+                    if (_loading || c?.busy == true)
+                      const Padding(padding: EdgeInsets.only(top: 16), child: LinearProgressIndicator()),
+                  ],
                 ),
               ),
-          ]),
-        ),
-        if (recent.isNotEmpty) ...[SliverToBoxAdapter(child: _heading(t.games.recent)), _grid(recent, first: true)],
-        if (favorites.isNotEmpty) ...[
+              if (state.games.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
+                  child: TextField(
+                    decoration: InputDecoration(
+                      labelText: t.games.search,
+                      prefixIcon: const AppIcon(Symbols.search_rounded),
+                    ),
+                    onChanged: (value) => setState(() => _query = value),
+                  ),
+                ),
+            ]),
+          ),
+        if (!_loadFailed && recent.isNotEmpty) ...[
+          SliverToBoxAdapter(child: _heading(t.games.recent)),
+          _grid(recent, first: true),
+        ],
+        if (!_loadFailed && favorites.isNotEmpty) ...[
           SliverToBoxAdapter(child: _heading(t.games.favorites)),
           _grid(favorites, first: recent.isEmpty),
         ],
-        if (filtered.isNotEmpty) ...[
+        if (!_loadFailed && filtered.isNotEmpty) ...[
           SliverToBoxAdapter(child: _heading(t.games.allGames)),
           _grid(filtered, first: recent.isEmpty && favorites.isEmpty),
-        ] else if (state.games.isNotEmpty)
+        ] else if (!_loadFailed && state.games.isNotEmpty)
           SliverToBoxAdapter(
             child: Padding(padding: const EdgeInsets.all(16), child: Text(t.games.noMatches)),
           ),
-        SliverList(
-          delegate: SliverChildListDelegate([
-            if (!_loading && state.hosts.isEmpty)
-              Padding(padding: const EdgeInsets.all(16), child: Text(t.games.empty)),
-            if (state.hosts.isNotEmpty) ...[
-              _heading(t.games.computers),
-              SettingsGroup(children: state.hosts.map(_host).toList()),
-              Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Text(t.games.libraryHint)),
-            ],
-            if (c != null && nearby.isNotEmpty) ...[
-              _heading(t.games.nearby),
-              SettingsGroup(
-                children: nearby
-                    .map(
-                      (host) => FocusableListTile(
-                        title: Text(host.name),
-                        subtitle: Text(
-                          '${host.address} · ${host.protocol == GameProtocol.steam ? t.games.steam : t.games.moonlight}',
+        if (!_loadFailed)
+          SliverList(
+            delegate: SliverChildListDelegate([
+              if (!_loading && state.hosts.isEmpty)
+                Padding(padding: const EdgeInsets.all(16), child: Text(t.games.empty)),
+              if (state.hosts.isNotEmpty) ...[
+                _heading(t.games.computers),
+                SettingsGroup(children: state.hosts.map(_host).toList()),
+                Padding(padding: const EdgeInsets.symmetric(horizontal: 16), child: Text(t.games.libraryHint)),
+              ],
+              if (c != null && nearby.isNotEmpty) ...[
+                _heading(t.games.nearby),
+                SettingsGroup(
+                  children: nearby
+                      .map(
+                        (host) => FocusableListTile(
+                          title: Text(host.name),
+                          subtitle: Text(
+                            '${host.address} · ${host.protocol == GameProtocol.steam ? t.games.steam : t.games.moonlight}',
+                          ),
+                          leading: const AppIcon(Symbols.computer_rounded),
+                          onTap: enabled
+                              ? () async {
+                                  final saved = await _run((c) => c.saveHost(host));
+                                  if (saved && mounted && c.current) await _connect(host);
+                                }
+                              : null,
                         ),
-                        leading: const AppIcon(Symbols.computer_rounded),
-                        onTap: enabled
-                            ? () async {
-                                await _run((c) => c.saveHost(host));
-                                if (mounted && c.current) await _connect(host);
-                              }
-                            : null,
-                      ),
-                    )
-                    .toList(),
-              ),
-            ] else if (!_loading && c?.scanning == false && state.hosts.isEmpty)
-              Padding(padding: const EdgeInsets.all(16), child: Text(t.games.noNearby)),
-          ]),
-        ),
-        SliverToBoxAdapter(
-          child: SettingsGroup(
-            children: [
-              Padding(padding: const EdgeInsets.all(16), child: Text(t.games.steamLibraryHint)),
-              if (_profile != null && defaultTargetPlatform == TargetPlatform.android)
-                SettingSwitchTile(
-                  pref: SettingsService.gamePyrowaveForProfile(_profile!),
-                  icon: Symbols.speed_rounded,
-                  title: t.games.steamBetaTitle,
-                  subtitle: t.games.steamBetaDescription,
-                )
-              else
-                Padding(padding: const EdgeInsets.all(16), child: Text(t.games.steamBetaDescription)),
-            ],
+                      )
+                      .toList(),
+                ),
+              ] else if (!_loading && c?.scanning == false && state.hosts.isEmpty)
+                Padding(padding: const EdgeInsets.all(16), child: Text(t.games.noNearby)),
+            ]),
           ),
-        ),
-        if (_profile != null)
+        if (!_loadFailed)
+          SliverToBoxAdapter(
+            child: SettingsGroup(
+              children: [
+                Padding(padding: const EdgeInsets.all(16), child: Text(t.games.steamLibraryHint)),
+                if (_profile != null && defaultTargetPlatform == TargetPlatform.android)
+                  SettingSwitchTile(
+                    pref: SettingsService.gamePyrowaveForProfile(_profile!),
+                    icon: Symbols.speed_rounded,
+                    title: t.games.steamBetaTitle,
+                    subtitle: t.games.steamBetaDescription,
+                  )
+                else
+                  Padding(padding: const EdgeInsets.all(16), child: Text(t.games.steamBetaDescription)),
+              ],
+            ),
+          ),
+        if (!_loadFailed && _profile != null)
           SliverToBoxAdapter(
             child: SettingsGroup(
               title: t.games.touchSetup,
@@ -472,7 +512,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
               ],
             ),
           ),
-        const SliverToBoxAdapter(child: SizedBox(height: 32)),
+        if (!_loadFailed) const SliverToBoxAdapter(child: SizedBox(height: 32)),
       ],
     );
   }
