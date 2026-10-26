@@ -125,7 +125,8 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
       final temp = await getTemporaryDirectory();
       final cached = await sources.downloads.local(_profile!, widget.entry.sourceId, widget.file);
       final pages = cached == null && sources.sources.any((s) => s.id == widget.entry.sourceId)
-          ? await sources.adapter(widget.entry.sourceId).comicPages(widget.file) : null;
+          ? await sources.adapter(widget.entry.sourceId).comicPages(widget.file)
+          : null;
       if (!valid) return;
       if (pages == null) _file = await sources.content(widget.entry, widget.file);
       if (!valid) return;

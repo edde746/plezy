@@ -28,6 +28,20 @@ internal class GamesChannel(private val activity: Activity) {
     }
   }
 
+  private val steamEngine: Class<*>? by lazy {
+    try {
+      Class.forName("org.snapetech.plezyng.games.steam.EmbeddedSteam")
+    } catch (_: ClassNotFoundException) {
+      null
+    }
+  }
+
+  private fun bridge(protocol: String?): Class<*>? = when (protocol) {
+    "gameStream" -> engine
+    "steam" -> steamEngine
+    else -> null
+  }
+
   fun attach(messenger: BinaryMessenger) {
     channel = MethodChannel(messenger, "com.plezy/games").also { it.setMethodCallHandler(::handle) }
   }
@@ -54,8 +68,9 @@ internal class GamesChannel(private val activity: Activity) {
         result.success(null)
       }
       "capabilities" -> {
-        val available = call.argument<String>("protocol") == "gameStream" && engine != null
-        result.success(mapOf("available" to available, "inlinePairing" to available, "library" to available))
+        val protocol = call.argument<String>("protocol")
+        val available = bridge(protocol) != null
+        result.success(mapOf("available" to available, "inlinePairing" to available, "library" to (available && protocol == "gameStream")))
       }
       "artwork" -> {
         val bridge = engine
@@ -84,8 +99,8 @@ internal class GamesChannel(private val activity: Activity) {
         }
       }
       "open", "pair", "games" -> {
-        val bridge = engine
-        if (bridge == null || call.argument<String>("protocol") != "gameStream") {
+        val bridge = bridge(call.argument<String>("protocol"))
+        if (bridge == null) {
           result.error("UNAVAILABLE", "No embedded engine for this service", null)
           return
         }
@@ -144,10 +159,12 @@ internal class GamesChannel(private val activity: Activity) {
     pending = null
     artworkResults.values.forEach { it.success(null) }
     artworkResults.clear()
-    try {
-      engine?.getMethod("cancel")?.invoke(null)
-    } catch (_: Exception) {
-      // A missing optional engine has nothing to cancel.
+    listOf(engine, steamEngine).forEach { bridge ->
+      try {
+        bridge?.getMethod("cancel")?.invoke(null)
+      } catch (_: Exception) {
+        // A failure in one optional engine must not prevent the other cancelling.
+      }
     }
   }
 

@@ -737,8 +737,8 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
             widget.isExpanded
                 ? Symbols.expand_more_rounded
                 : Directionality.of(context) == TextDirection.rtl
-                    ? Symbols.chevron_left_rounded
-                    : Symbols.chevron_right_rounded,
+                ? Symbols.chevron_left_rounded
+                : Symbols.chevron_right_rounded,
             fill: 1,
             size: 20,
           )

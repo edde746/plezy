@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 
 import '../../focus/focusable_wrapper.dart';
 import '../../i18n/strings.g.dart';
+import '../../i18n/presentation_formats.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_controller.dart';
 import '../../theme/mono_tokens.dart';
@@ -124,9 +125,10 @@ class SourceTile extends StatelessWidget {
                         ],
                         if (progress != null) ...[
                           const SizedBox(height: 8),
-                          Semantics(
-                            label: '${(progress!.clamp(0, 1) * 100).round()}% complete',
-                            child: LinearProgressIndicator(value: progress!.clamp(0, 1), minHeight: 2),
+                          LinearProgressIndicator(
+                            value: progress!.clamp(0, 1),
+                            semanticsValue: formatPercent(progress!.clamp(0, 1)),
+                            minHeight: 2,
                           ),
                         ],
                       ],
@@ -216,9 +218,10 @@ class SourcePosterCard extends StatelessWidget {
                 if (progress != null)
                   Align(
                     alignment: Alignment.bottomCenter,
-                    child: Semantics(
-                      label: '${(progress!.clamp(0, 1) * 100).round()}% complete',
-                      child: LinearProgressIndicator(value: progress!.clamp(0, 1), minHeight: 3),
+                    child: LinearProgressIndicator(
+                      value: progress!.clamp(0, 1),
+                      semanticsValue: formatPercent(progress!.clamp(0, 1)),
+                      minHeight: 3,
                     ),
                   ),
               ],

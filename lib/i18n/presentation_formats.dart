@@ -20,6 +20,12 @@ String formatDecimal(num value, {int minimumDecimals = 0, int maximumDecimals = 
 
 String formatCount(num value) => formatDecimal(value, maximumDecimals: 0, grouping: true);
 
+/// Localize digits embedded in translated display labels without changing
+/// their wording, punctuation or unit grammar. Never use for stored data.
+String localizeDecimalDigits(String text) => normalizeDecimalDigits(
+  text,
+).replaceAllMapped(RegExp('[0-9]'), (match) => formatDecimal(int.parse(match[0]!), maximumDecimals: 0));
+
 String formatPercent(num ratio, {int decimals = 0}) => _cachedFormat(
   'percent:$decimals',
   (locale) => NumberFormat.percentPattern(locale)

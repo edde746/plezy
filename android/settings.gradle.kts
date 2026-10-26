@@ -29,4 +29,5 @@ include(":libass")
 // Set -PplezyGamesEmbedded=false for a build without the native game engine.
 if (providers.gradleProperty("plezyGamesEmbedded").orNull != "false") {
   include(":moonlight")
+  include(":steam")
 }

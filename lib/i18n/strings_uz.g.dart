@@ -104,6 +104,7 @@ class TranslationsUz extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$uz fileSources = _Translations$fileSources$uz._(_root);
 	@override late final _Translations$lending$uz lending = _Translations$lending$uz._(_root);
 	@override late final _Translations$audiobook$uz audiobook = _Translations$audiobook$uz._(_root);
+	@override late final _Translations$sourceSetup$uz sourceSetup = _Translations$sourceSetup$uz._(_root);
 	@override late final _Translations$games$uz games = _Translations$games$uz._(_root);
 }
 
@@ -3065,6 +3066,12 @@ class _Translations$fileSources$uz extends Translations$fileSources$en {
 	@override String get useFiles => 'Fillar və kitablar kullanır.';
 	@override String get cancelScan => 'Sankcion';
 	@override String get googleDrive => 'Google Drive';
+	@override String get smbEndpointHint => 'Misol: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'SMB serveri va bitta umumiy jildni kiriting.';
+	@override String get smbFolderHelp => 'Butun umumiy jilddan foydalanish uchun bo‘sh qoldiring yoki uning ichidagi jildni kiriting.';
+	@override String get smbDomain => 'Domen (ixtiyoriy)';
+	@override String get smbEncryption => 'SMB3 ulanishini shifrlash';
+	@override String get smbEncryptionHint => 'NAS qo‘llab-quvvatlasa, SMB3 shifrlashdan foydalaning.';
 }
 
 // Path: lending
@@ -3146,9 +3153,9 @@ class _Translations$audiobook$uz extends Translations$audiobook$en {
 	@override String get saveSync => 'Save and synq.';
 	@override String get disableSync => 'Bu cihazda synchroniziziziziziz.';
 	@override String get syncSourceDisconnect => 'Bu kayndan qaytdan o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi.';
-	@override String get syncReconnect => 'Hesab bilan bilan bilan bilan bilan bilan';
+	@override String get syncReconnect => 'Saqlash xizmati hisobini qayta ulash';
 	@override String lastSynced({required Object time}) => '${time}\'da sonda sinqizdi';
-	@override String get syncPrivacy => 'Biz xifriyo bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan.';
+	@override String get syncPrivacy => 'Faqat o‘qish va tinglash qayergacha yetgani haqidagi ma’lumotlar hamda qaydlar shifrlangan holda saqlanadi. Audio va elektron kitob fayllari, hisob tokenlari hamda parollar serverga yuborilmaydi. Google Drive va OneDrive ilovaga ajratilgan saqlash joyidan, Dropbox esa PlezyNG Sync’dan foydalanadi. Sinxronlashni yoqish qo‘shimcha yozish ruxsatini talab qilishi mumkin. Sinxronlash yoqilganda, o‘qish va tinglash holati shu manzil orqali sinxronlanadi; serverdagi holat alohida qoladi. Sinxronlash o‘chirilganda ham mahalliy tarix va masofadagi holat saqlanadi.';
 	@override String get syncConflicts => 'Onda qaytarga qaytarga.';
 	@override String get conflictHelp => 'Bu modifikasyonlar bağımsızdan ko‘zadi. ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi';
 	@override String syncDevice({required Object device}) => '${device}';
@@ -3184,6 +3191,109 @@ class _Translations$audiobook$uz extends Translations$audiobook$en {
 	@override String get statusFinished => 'Konni';
 	@override String get goToTime => 'O‘zadi.';
 	@override String get timeHelp => 'Hours:minuts:seconds, o minutlar:seconds';
+}
+
+// Path: sourceSetup
+class _Translations$sourceSetup$uz extends Translations$sourceSetup$en {
+	_Translations$sourceSetup$uz._(TranslationsUz root) : this._root = root, super.internal(root);
+
+	final TranslationsUz _root; // ignore: unused_field
+
+	// Translations
+	@override String get savedCertificate => 'Saqlangan server sertifikati';
+	@override String get nfsEndpointInvalid => 'nfs://nas:2049/export kabi NFS URL manzilini kiriting.';
+	@override String get dlnaNone => 'DLNA serverlari topilmadi. Qurilma tavsifining URL manzilini qo‘lda kiriting.';
+	@override String get dlnaServers => 'DLNA media serverlari';
+	@override String get dlnaUnavailable => 'Bu tarmoqda DLNA qurilmalarini qidirish imkonsiz. Qurilma tavsifining URL manzilini qo‘lda kiriting.';
+	@override String get dlnaSearching => 'Mahalliy tarmoqda DLNA serverlari qidirilmoqda';
+	@override String get networkSearching => 'Mahalliy tarmoqda qidirilmoqda…';
+	@override String get dlnaDiscover => 'DLNA serverlarini topish';
+	@override String get dlnaHelp => 'Qidirish mahalliy tarmoqdagi multicast uzatishiga bog‘liq. Server ko‘rinmasa, yuqoriga uning qurilma tavsifi URL manzilini kiriting.';
+	@override String get dlnaRoot => 'DLNA obyekt ID-si; qurilmaning asosiy bo‘limini ishlatish uchun bo‘sh qoldiring.';
+	@override String get passwordOrKey => 'Parol kiriting yoki quyida maxfiy kalit qo‘shing.';
+	@override String get sshFingerprint => 'SSH host kalitining SHA256 izi';
+	@override String get sshFingerprintHelp => 'Server administratori bilan tekshiring. Serverda ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub buyrug‘ini bajaring va SHA256 qiymatidan foydalaning.';
+	@override String get sshFingerprintKeep => 'Joriy qat’iy belgilangan izni saqlash uchun bo‘sh qoldiring yoki serverning yangi izini kiriting.';
+	@override String get sshAuthentication => 'Ochiq kalit bilan SSH autentifikatsiyasi';
+	@override String get sshAuthenticationHelp => 'Ixtiyoriy; parol orqali autentifikatsiya ham qo‘llab-quvvatlanadi.';
+	@override String get privateKey => 'Maxfiy kalit (PEM yoki OpenSSH formati)';
+	@override String get privateKeyPassphrase => 'Maxfiy kalitning parol iborasi';
+	@override String get nfsMountPort => 'NFS ulash xizmatining TCP porti';
+	@override String get nfsMountPortHelp => 'Standart: 20048';
+	@override String get nfsUserId => 'NFS foydalanuvchi ID-si (AUTH_SYS)';
+	@override String get nfsUserIdHelp => 'Standart: 1000. NAS dagi NFS umumiy katalogi ruxsat bergan ID dan foydalaning.';
+	@override String get nfsGroupId => 'NFS guruh ID-si (AUTH_SYS)';
+	@override String get nfsGroupIdHelp => 'Standart: 1000. NAS dagi NFS umumiy katalogi ruxsat bergan guruh ID-sidan foydalaning.';
+	@override String get nfsEncryption => 'Shifrlangan NFS talab qilish (RPC-with-TLS)';
+	@override String get nfsEncryptionHelp => 'NFS va ulash xizmati uchun TLS 1.3 talab qilinadi. NAS buni qo‘llamasa, ulanish rad etiladi.';
+	@override String get nfsTrustCertificate => 'Maxsus NFS CA yoki server sertifikati (PEM, ixtiyoriy)';
+	@override String get nfsTrustHelp => 'Ushbu qurilma ishonadigan sertifikatlar uchun bo‘sh qoldiring. Zarur bo‘lsa, xususiy CA sertifikati yoki o‘zi imzolagan server sertifikatini qo‘shing; undagi nomlar NFS URL manzilidagi hostga mos kelishi kerak.';
+	@override String get nfsTrustInvalid => 'PEM formatidagi CA yoki server sertifikatidan foydalaning. Maxfiy kalitni qo‘shmang.';
+	@override String get addTrustCertificate => 'Maxsus ishonch sertifikatini qo‘shish';
+	@override String get replaceTrustCertificate => 'Saqlangan maxsus sertifikatni almashtirish';
+	@override String get nfsTlsHelp => 'RPC-with-TLS odatiy NFS va ulash xizmati portlaridan foydalanadi va NAS da RFC 9289 qo‘llab-quvvatlanishini talab qiladi. TLS 1.3 zarur. Host nomi yoki IP manzili sertifikatga mos kelishi kerak. Shifrlangan kanal ichida ham AUTH_SYS UID/GID amal qiladi.';
+	@override String get clientCertificate => 'Klient sertifikati (ixtiyoriy)';
+	@override String get clientCertificateHelp => 'NAS ga ushbu klientni autentifikatsiya qilish imkonini beradi; AUTH_SYS ID-lari baribir NAS dagi NFS umumiy katalogining qoidalariga bog‘liq.';
+	@override String get savedIdentity => 'Saqlangan klient identifikatsiya ma’lumotlari ishlatiladi.';
+	@override String get replaceIdentity => 'Saqlangan klient identifikatsiya ma’lumotlarini almashtirish';
+	@override String get chooseIdentity => 'PKCS#12 klient identifikatsiya ma’lumotlarini tanlash';
+	@override String get identityPassphrase => 'Klient identifikatsiya ma’lumotlarining parol iborasi';
+	@override String get identityPassphraseHelp => 'Faylda parol iborasi bo‘lmasa, bo‘sh qoldiring.';
+	@override String get removeIdentity => 'Saqlangan klient identifikatsiya ma’lumotlarini olib tashlash';
+	@override String get identityStorageHelp => 'Klient identifikatsiya ma’lumotlari manbaning shifrlangan kirish ma’lumotlari omborida saqlanadi. Saqlangan identifikatsiya ma’lumotlarini saqlab qolish uchun bu bo‘limni o‘zgartirmang.';
+	@override String get nfsLimitations => 'TCP orqali faqat o‘qish uchun NFSv3. RPC-with-TLS bo‘lmasa, NFS trafigi shifrlanmaydi. NAS tanlangan AUTH_SYS ID-lari va imtiyozsiz klient portlariga ruxsat berishi kerak (ko‘pincha “insecure” eksport parametri deyiladi). NFSv4 va UDP qo‘llab-quvvatlanmaydi.';
+	@override String get nfsSetupHelp => 'NFS sozlash bo‘yicha yordam';
+	@override String get nfsSetupHint => 'Ulanish o‘rnatilmasa, bu sozlamalarni tekshiring.';
+	@override String get nfsSetupDetails => 'TCP orqali NFSv3 umumiy katalogidan foydalaning. Shifrlash talab qilinsa, NFS xizmati ham, ulash xizmati ham RPC-with-TLS ni qo‘llashi kerak. Qurilma ishonadigan server sertifikati uchun maxsus sertifikat maydonini bo‘sh qoldiring yoki NAS ning CA sertifikati yoxud o‘zi imzolagan sertifikatini qo‘shing. Sertifikatdagi nom ulanish manzilidagi hostga mos kelishi kerak. NAS o‘zaro TLS talab qilsa, uning PKCS#12 klient identifikatsiya ma’lumotlarini qo‘shing. Oxirida umumiy katalog belgilangan AUTH_SYS UID/GID va klient portlari qoidalariga ruxsat berishini tekshiring.';
+	@override String get ftpHelp => 'FTP passiv rejimdan foydalanadi. Shifrlanmagan FTP uchun ftp://, TLS alohida buyruq bilan yoqiladigan rejim uchun ftpes:// yoki TLS uchun ftps:// dan foydalaning (990 portida TLS darhol boshlanadi; boshqa portlarda alohida buyruq bilan yoqiladi).';
+	@override String get openSubtitles => 'OpenSubtitles';
+	@override String get subtitleSetup => 'Alohida videolar uchun ixtiyoriy subtitr qidiruvi.';
+	@override String get apiKey => 'API kaliti';
+	@override String get optionalUsername => 'Hisob foydalanuvchi nomi (ixtiyoriy)';
+	@override String get optionalPassword => 'Hisob paroli (ixtiyoriy)';
+	@override String get subtitlePrivacy => 'opensubtitles.com saytidan API kalitini oling. Qidiruv video nomi va mavjud IMDb/TMDB ID-larini yuboradi, video faylini esa hech qachon yubormaydi. Kalit va ixtiyoriy hisobga kirish ma’lumotlari ushbu manba bilan birga shifrlanadi.';
+	@override String get automaticMetadata => 'Avtomatik onlayn video metama’lumotlari';
+	@override String get metadataPrivacy => 'Faqat fayl nomidagi nom/yil va qism raqamlari yoki NFO ID-sini yuboradi; media fayllari yoki kirish ma’lumotlarini hech qachon yubormaydi. NFO maydonlari ustuvor bo‘lib qoladi.';
+	@override String get nfsEncryptionFailure => 'Shifrlangan NFS uchun NAS ning ikkala xizmatida RFC 9289 va TLS 1.3 qo‘llanishini, sertifikat nomini hamda umumiy katalogning UID/GID qiymatlarini tekshiring. PlezyNG bu ulanishni shifrlashsiz qayta sinamaydi.';
+	@override String get sourceConnecting => 'Manbaga ulanmoqda';
+	@override String get metadataSearchPrivacy => 'Bu nom qidiruvi Trakt xizmatiga yuboriladi. Kiritgan nomingiz yuboriladi, video yoki manbaning kirish ma’lumotlari emas.';
+	@override String get chooseMatch => 'Mos natijani tanlash';
+	@override String get metadataMatchHelp => 'Tanlashdan oldin nomi va yilini tekshiring. Trakt qidirilayotgan nomni oladi; video o‘z manbasida qoladi.';
+	@override String get metadataNoMatches => 'Onlayn mos nom topilmadi. Boshqa nomni sinab ko‘ring.';
+	@override String get metadataSearch => 'Onlayn metama’lumotlarni qidirish';
+	@override String get metadataLoading => 'Onlayn film va serial tafsilotlari qidirilmoqda…';
+	@override String get metadataFromTrakt => 'Trakt xizmatidan onlayn metama’lumotlar';
+	@override String get metadataNoAutomaticMatch => 'Nomga avtomatik moslik topilmadi. Mos natijani tanlash uchun nomni qidiring.';
+	@override String get metadataFailed => 'Onlayn metama’lumotlarni yuklab bo‘lmadi. Ijro va mahalliy tafsilotlar hali ham mavjud.';
+	@override String get videoDetailsLoading => 'Video tafsilotlari yuklanmoqda';
+	@override String get subtitleKeyRequired => 'OpenSubtitles API kaliti zarur';
+	@override String get subtitleKeyHelp => 'Ushbu fayl manbasini tahrirlang va ixtiyoriy subtitr sozlamalariga OpenSubtitles API kalitini qo‘shing.';
+	@override String get subtitleSearchFailed => 'Subtitr qidiruvi bajarilmadi. API kaliti, ulanish va xizmatga kirish imkonini tekshiring.';
+	@override String get subtitleApplyFailed => 'Bu subtitrni yuklab yoki qo‘llab bo‘lmadi. Ulanishni tekshiring va boshqa natijani sinab ko‘ring.';
+	@override String get subtitleSearch => 'OpenSubtitles da qidirish';
+	@override String get subtitleSearchPrivacy => 'Qidiruv nom va mavjud IMDb/TMDB ID-laridan foydalanadi. Video fayli o‘z manbasida qoladi. Tanlashdan oldin tilni, majburiy subtitr yoki eshitish imkoniyati cheklanganlar uchun subtitr belgilarini va bahosini tekshiring.';
+	@override String get movieOrShow => 'Film yoki serial';
+	@override String get subtitleTitleHint => 'Natijalarni aniqlashtirish uchun nom kiriting';
+	@override String get subtitleLanguage => 'Subtitr tili';
+	@override String get subtitleSearching => 'OpenSubtitles da qidirilmoqda';
+	@override String get subtitleNoMatches => 'Mos subtitr topilmadi. Boshqa nom yoki tilni sinab ko‘ring.';
+	@override String get downloadSubtitle => 'Subtitrni yuklab olish';
+	@override String get subtitle => 'Subtitr';
+	@override String get nfsTlsRequired => 'RPC-with-TLS zarur';
+	@override String get nfsUnencrypted => 'Shifrlanmagan NFS';
+	@override String get tlsEncrypted => 'TLS bilan shifrlangan';
+	@override String get ftpPlain => 'Shifrlanmagan FTP';
+	@override String get sshPinned => 'SSH shifrlangan · host kaliti qat’iy belgilangan';
+	@override String get smbEncrypted => 'SMB3 shifrlashi yoqilgan';
+	@override String get smbUnencrypted => 'SMB3 shifrlashi o‘chirilgan';
+	@override String get httpUnencrypted => 'Transport shifrlashisiz HTTP';
+	@override String get checkEndpointSecurity => 'Ulanish manzili xavfsizligini tekshirish';
+	@override String fieldRequired({required Object label}) => 'Majburiy maydon: ${label}.';
+	@override String integerRange({required Object label, required Object min, required Object max}) => '${label} uchun ${min} dan ${max} gacha qiymat kiriting.';
+	@override String replaceFile({required Object name}) => '${name} almashtirish';
+	@override String selectedIdentity({required Object name}) => 'Tanlangan klient identifikatsiya ma’lumotlari: ${name}';
+	@override String subtitleRating({required Object rating}) => 'Baho ${rating}';
+	@override String subtitleDownloading({required Object title}) => 'Subtitr yuklanmoqda: ${title}';
 }
 
 // Path: games
@@ -3235,7 +3345,7 @@ class _Translations$games$uz extends Translations$games$en {
 	@override String get touchControls => 'On-screen controller';
 	@override String get touchDescription => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.';
 	@override String get touchSetup => 'On-screen controls';
-	@override String get touchSetupHint => 'In a stream, use the controller’s settings button to move controls and change opacity. A Bluetooth or USB controller also works.';
+	@override String get touchSetupHint => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.';
 	@override String get addGame => 'Add game shortcut';
 	@override String get gameName => 'Game name';
 	@override String get gameId => 'Host application ID';
@@ -3244,16 +3354,22 @@ class _Translations$games$uz extends Translations$games$en {
 	@override String get wakeSent => 'Wake request sent. The computer must support Wake-on-LAN on this network.';
 	@override String get mac => 'MAC address (optional)';
 	@override String get help => 'Games help';
-	@override String get helpBody => 'Enable Games for your profile, keep Sunshine or another compatible host running, then choose a discovered computer. Approve the first connection and choose a game. Pairing authorization belongs to this device; the saved library belongs to this PlezyNG profile.\n\nThe Android engine is bundled into PlezyNG and includes touch controls and gamepad support. Other native platforms and Steam playback are still being implemented. Steam discovery does not mean playback is available.\n\nSunshine, Apollo, Wolf and older GameStream hosts can expose different features. Pairing requires the host’s approval. QR codes open the Sunshine PIN page; they do not carry your credentials.\n\nFor access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nLeaving a stream keeps the game running on the computer. Stop it from the stream menu when you want to end the host session.';
+	@override String get helpBody => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Other native platforms and the Pyrowave decoder are still in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.';
 	@override String get cancel => 'Cancel';
 	@override String get scanning => 'Looking for computers…';
 	@override String get saveShortcut => 'Save shortcut';
 	@override String get manualHint => 'For Moonlight use the host’s GameStream HTTP port (usually 47989), not its web settings port. Steam normally advertises on 27036.';
 	@override String get engineUnavailable => 'In-app streaming is not available here yet';
 	@override String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
-	@override String get steamEnginePending => 'Steam computers can be discovered and saved. Embedded Steam pairing and playback are still in development, including the Pyrowave beta codec.';
+	@override String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Other platforms and Pyrowave remain under development.';
 	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
-	@override String get steamBetaDescription => 'Pyrowave support is planned for the embedded Steam engine. Discovery alone cannot tell whether a computer or this device can use it. Playback remains unavailable until the engine has been integrated and tested.';
+	@override String get steamBetaDescription => 'Steam’s Pyrowave beta is a GPU-decoded video codec. It is not enabled in this build: Steam packet framing and GPU presentation still need integration and host validation. The embedded Android Steam player currently requests H.264 or HEVC.';
+	@override String get steamLibrary => 'Steam library';
+	@override String get connecting => 'Connecting…';
+	@override String get disconnect => 'Disconnect';
+	@override String get streamControls => 'Stream controls';
+	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
+	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
 }
 
 // Path: appIcon.names
@@ -3507,48 +3623,48 @@ class _Translations$discover$findNext$uz extends Translations$discover$findNext$
 	final TranslationsUz _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Next sizga bulga';
-	@override String get open => 'Next sizga bulga';
-	@override String get anyTime => 'Her zaman';
-	@override String get timeAvailable => 'Siz o‘zʻzʻzʻzʻzʻzʻ?';
-	@override String get filters => 'O’qimni seçdi';
-	@override String get watch => 'Tadiq';
-	@override String get listen => 'Ulu';
-	@override String get read => 'Okuma';
-	@override String finishable({required Object duration}) => '${duration}\'da qaytadi';
-	@override String aboutDuration({required Object duration}) => '${duration} qxzq qxzq';
-	@override String nextUnit({required Object duration}) => 'Next post · ${duration}';
-	@override String totalDuration({required Object duration}) => '${duration} total';
-	@override String get timingVaries => 'Tarifimiz variadi';
-	@override String get notNow => 'Şimdi ko‘z';
+	@override String get title => 'Keyingi tanlovingizni toping';
+	@override String get open => 'Keyingi tanlovingizni toping';
+	@override String get anyTime => 'Vaqt cheklovisiz';
+	@override String get timeAvailable => 'Qancha vaqtingiz bor?';
+	@override String get filters => 'Shu lahzaga mosini tanlang';
+	@override String get watch => 'Tomosha qilish';
+	@override String get listen => 'Tinglash';
+	@override String get read => 'O‘qish';
+	@override String finishable({required Object duration}) => '${duration} ichida yakunlash mumkin';
+	@override String aboutDuration({required Object duration}) => 'Taxminan ${duration}';
+	@override String nextUnit({required Object duration}) => 'Keyingi bob · ${duration}';
+	@override String totalDuration({required Object duration}) => 'Jami ${duration}';
+	@override String get timingVaries => 'Davomiyligi farq qilishi mumkin';
+	@override String get notNow => 'Hozir emas';
 	@override String get swipeHint => 'Muqovani strelka tomon suring yoki quyidagi tugmalardan foydalaning.';
-	@override String get saved => 'Pikaqlar bilan';
-	@override String savedCount({required Object count}) => '${count}';
-	@override String get undo => 'O‘z';
-	@override String get details => 'Detaylar';
-	@override String get noPicks => 'U‘zari ko‘zari ko‘zari.';
-	@override String get noPicksHint => 'Bir kütüphan bağlayın ya da başlatmak için bir medya kaynaq qoşun.';
-	@override String get noMatches => 'Bir şey bu momni ko‘yadi.';
-	@override String get noMatchesHint => 'Bir formati ko‘di o‘di o‘di o‘di o‘di o‘di o‘di.';
-	@override String get allDone => 'Sizga hepsi yakadi.';
-	@override String get allDoneHint => 'Bu seçimler qaytarga qaytarga qaytarga qaytarga.';
-	@override String get refresh => 'Bir mix ko‘yadi.';
-	@override String sourceReason({required Object source}) => '${source} qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq';
-	@override String libraryReason({required Object library}) => '${library} qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq';
-	@override String get ownedReason => 'Bu librariyizdan';
-	@override String get liveNow => 'Onda';
-	@override String get watchLive => 'Live o‘zadi';
-	@override String get filterAnything => 'O‘yadi';
-	@override String get filterWatch => 'Tadiq';
-	@override String get filterListen => 'Ulu';
-	@override String get filterRead => 'Okuma';
-	@override String get twentyMinutes => '20 min';
-	@override String get fortyFiveMinutes => '45 min';
-	@override String get ninetyMinutes => '90 min';
-	@override String get apply => 'Diggadi';
-	@override String get openFailed => 'Bu seçenek artık kullanılmadi. refresh ko\'t check again.';
-	@override String get changeFailed => 'Bu cambiadi ko‘yadi. qaytarga ko‘yadi.';
-	@override String get savedLimit => 'U\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo.';
+	@override String get saved => 'Saqlangan tavsiyalar';
+	@override String savedCount({required Object count}) => 'Saqlangan tavsiyalar · ${count}';
+	@override String get undo => 'Oxirgi amalni bekor qilish';
+	@override String get details => 'Tafsilotlar';
+	@override String get noPicks => 'Hozircha tanlash uchun hech narsa yo‘q';
+	@override String get noPicksHint => 'Boshlash uchun kutubxonani ulang yoki media manbasini qo‘shing.';
+	@override String get noMatches => 'Hozirgi vaqtingizga mos variant yo‘q';
+	@override String get noMatchesHint => 'Boshqa media turini tanlang yoki ko‘proq vaqt ajrating.';
+	@override String get allDone => 'Barcha tavsiyalarni ko‘rib chiqdingiz';
+	@override String get allDoneHint => 'Bu variantlarni yana ko‘rish uchun yangi to‘plamni boshlang.';
+	@override String get refresh => 'Boshqa to‘plamni topish';
+	@override String sourceReason({required Object source}) => 'Manba: ${source}';
+	@override String libraryReason({required Object library}) => 'Kutubxona: ${library}';
+	@override String get ownedReason => 'Kutubxonangizdan';
+	@override String get liveNow => 'Hozir efirda';
+	@override String get watchLive => 'Jonli tomosha qilish';
+	@override String get filterAnything => 'Istalgan tur';
+	@override String get filterWatch => 'Tomosha qilish';
+	@override String get filterListen => 'Tinglash';
+	@override String get filterRead => 'O‘qish';
+	@override String get twentyMinutes => '20 daq';
+	@override String get fortyFiveMinutes => '45 daq';
+	@override String get ninetyMinutes => '90 daq';
+	@override String get apply => 'Qo‘llash';
+	@override String get openFailed => 'Bu variant endi mavjud emas. Qayta tekshirish uchun yangilang.';
+	@override String get changeFailed => 'O‘zgarishni saqlab bo‘lmadi. Qayta urinib ko‘ring.';
+	@override String get savedLimit => 'Saqlangan tavsiyalar ro‘yxati to‘lgan. Boshqasini saqlash uchun bitta tavsiyani olib tashlang.';
 	@override String get chooseHint => 'Asarni oching, keyinga saqlang yoki o‘tkazib yuboring.';
 	@override String get howItWorks => 'Foydalanish tartibi';
 	@override String get notNowHelp => 'Bu asarni hozircha o‘tkazib yuboring. U kutubxonangizda qoladi.';
@@ -5557,48 +5673,48 @@ extension on TranslationsUz {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'M${season}Q${episode}',
 			'discover.overview' => 'Tavsif',
 			'discover.cast' => 'Aktyorlar',
-			'discover.findNext.title' => 'Next sizga bulga',
-			'discover.findNext.open' => 'Next sizga bulga',
-			'discover.findNext.anyTime' => 'Her zaman',
-			'discover.findNext.timeAvailable' => 'Siz o‘zʻzʻzʻzʻzʻzʻ?',
-			'discover.findNext.filters' => 'O’qimni seçdi',
-			'discover.findNext.watch' => 'Tadiq',
-			'discover.findNext.listen' => 'Ulu',
-			'discover.findNext.read' => 'Okuma',
-			'discover.findNext.finishable' => ({required Object duration}) => '${duration}\'da qaytadi',
-			'discover.findNext.aboutDuration' => ({required Object duration}) => '${duration} qxzq qxzq',
-			'discover.findNext.nextUnit' => ({required Object duration}) => 'Next post · ${duration}',
-			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} total',
-			'discover.findNext.timingVaries' => 'Tarifimiz variadi',
-			'discover.findNext.notNow' => 'Şimdi ko‘z',
+			'discover.findNext.title' => 'Keyingi tanlovingizni toping',
+			'discover.findNext.open' => 'Keyingi tanlovingizni toping',
+			'discover.findNext.anyTime' => 'Vaqt cheklovisiz',
+			'discover.findNext.timeAvailable' => 'Qancha vaqtingiz bor?',
+			'discover.findNext.filters' => 'Shu lahzaga mosini tanlang',
+			'discover.findNext.watch' => 'Tomosha qilish',
+			'discover.findNext.listen' => 'Tinglash',
+			'discover.findNext.read' => 'O‘qish',
+			'discover.findNext.finishable' => ({required Object duration}) => '${duration} ichida yakunlash mumkin',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => 'Taxminan ${duration}',
+			'discover.findNext.nextUnit' => ({required Object duration}) => 'Keyingi bob · ${duration}',
+			'discover.findNext.totalDuration' => ({required Object duration}) => 'Jami ${duration}',
+			'discover.findNext.timingVaries' => 'Davomiyligi farq qilishi mumkin',
+			'discover.findNext.notNow' => 'Hozir emas',
 			'discover.findNext.swipeHint' => 'Muqovani strelka tomon suring yoki quyidagi tugmalardan foydalaning.',
-			'discover.findNext.saved' => 'Pikaqlar bilan',
-			'discover.findNext.savedCount' => ({required Object count}) => '${count}',
-			'discover.findNext.undo' => 'O‘z',
-			'discover.findNext.details' => 'Detaylar',
-			'discover.findNext.noPicks' => 'U‘zari ko‘zari ko‘zari.',
-			'discover.findNext.noPicksHint' => 'Bir kütüphan bağlayın ya da başlatmak için bir medya kaynaq qoşun.',
-			'discover.findNext.noMatches' => 'Bir şey bu momni ko‘yadi.',
-			'discover.findNext.noMatchesHint' => 'Bir formati ko‘di o‘di o‘di o‘di o‘di o‘di o‘di.',
-			'discover.findNext.allDone' => 'Sizga hepsi yakadi.',
-			'discover.findNext.allDoneHint' => 'Bu seçimler qaytarga qaytarga qaytarga qaytarga.',
-			'discover.findNext.refresh' => 'Bir mix ko‘yadi.',
-			'discover.findNext.sourceReason' => ({required Object source}) => '${source} qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq',
-			'discover.findNext.libraryReason' => ({required Object library}) => '${library} qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq qxzq',
-			'discover.findNext.ownedReason' => 'Bu librariyizdan',
-			'discover.findNext.liveNow' => 'Onda',
-			'discover.findNext.watchLive' => 'Live o‘zadi',
-			'discover.findNext.filterAnything' => 'O‘yadi',
-			'discover.findNext.filterWatch' => 'Tadiq',
-			'discover.findNext.filterListen' => 'Ulu',
-			'discover.findNext.filterRead' => 'Okuma',
-			'discover.findNext.twentyMinutes' => '20 min',
-			'discover.findNext.fortyFiveMinutes' => '45 min',
-			'discover.findNext.ninetyMinutes' => '90 min',
-			'discover.findNext.apply' => 'Diggadi',
-			'discover.findNext.openFailed' => 'Bu seçenek artık kullanılmadi. refresh ko\'t check again.',
-			'discover.findNext.changeFailed' => 'Bu cambiadi ko‘yadi. qaytarga ko‘yadi.',
-			'discover.findNext.savedLimit' => 'U\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo\'qizga bo.',
+			'discover.findNext.saved' => 'Saqlangan tavsiyalar',
+			'discover.findNext.savedCount' => ({required Object count}) => 'Saqlangan tavsiyalar · ${count}',
+			'discover.findNext.undo' => 'Oxirgi amalni bekor qilish',
+			'discover.findNext.details' => 'Tafsilotlar',
+			'discover.findNext.noPicks' => 'Hozircha tanlash uchun hech narsa yo‘q',
+			'discover.findNext.noPicksHint' => 'Boshlash uchun kutubxonani ulang yoki media manbasini qo‘shing.',
+			'discover.findNext.noMatches' => 'Hozirgi vaqtingizga mos variant yo‘q',
+			'discover.findNext.noMatchesHint' => 'Boshqa media turini tanlang yoki ko‘proq vaqt ajrating.',
+			'discover.findNext.allDone' => 'Barcha tavsiyalarni ko‘rib chiqdingiz',
+			'discover.findNext.allDoneHint' => 'Bu variantlarni yana ko‘rish uchun yangi to‘plamni boshlang.',
+			'discover.findNext.refresh' => 'Boshqa to‘plamni topish',
+			'discover.findNext.sourceReason' => ({required Object source}) => 'Manba: ${source}',
+			'discover.findNext.libraryReason' => ({required Object library}) => 'Kutubxona: ${library}',
+			'discover.findNext.ownedReason' => 'Kutubxonangizdan',
+			'discover.findNext.liveNow' => 'Hozir efirda',
+			'discover.findNext.watchLive' => 'Jonli tomosha qilish',
+			'discover.findNext.filterAnything' => 'Istalgan tur',
+			'discover.findNext.filterWatch' => 'Tomosha qilish',
+			'discover.findNext.filterListen' => 'Tinglash',
+			'discover.findNext.filterRead' => 'O‘qish',
+			'discover.findNext.twentyMinutes' => '20 daq',
+			'discover.findNext.fortyFiveMinutes' => '45 daq',
+			'discover.findNext.ninetyMinutes' => '90 daq',
+			'discover.findNext.apply' => 'Qo‘llash',
+			'discover.findNext.openFailed' => 'Bu variant endi mavjud emas. Qayta tekshirish uchun yangilang.',
+			'discover.findNext.changeFailed' => 'O‘zgarishni saqlab bo‘lmadi. Qayta urinib ko‘ring.',
+			'discover.findNext.savedLimit' => 'Saqlangan tavsiyalar ro‘yxati to‘lgan. Boshqasini saqlash uchun bitta tavsiyani olib tashlang.',
 			'discover.findNext.chooseHint' => 'Asarni oching, keyinga saqlang yoki o‘tkazib yuboring.',
 			'discover.findNext.howItWorks' => 'Foydalanish tartibi',
 			'discover.findNext.notNowHelp' => 'Bu asarni hozircha o‘tkazib yuboring. U kutubxonangizda qoladi.',
@@ -7184,6 +7300,12 @@ extension on TranslationsUz {
 			'fileSources.useFiles' => 'Fillar və kitablar kullanır.',
 			'fileSources.cancelScan' => 'Sankcion',
 			'fileSources.googleDrive' => 'Google Drive',
+			'fileSources.smbEndpointHint' => 'Misol: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'SMB serveri va bitta umumiy jildni kiriting.',
+			'fileSources.smbFolderHelp' => 'Butun umumiy jilddan foydalanish uchun bo‘sh qoldiring yoki uning ichidagi jildni kiriting.',
+			'fileSources.smbDomain' => 'Domen (ixtiyoriy)',
+			'fileSources.smbEncryption' => 'SMB3 ulanishini shifrlash',
+			'fileSources.smbEncryptionHint' => 'NAS qo‘llab-quvvatlasa, SMB3 shifrlashdan foydalaning.',
 			'lending.title' => 'Public librarlar',
 			'lending.add' => 'Bir kütüphan qo‘yadi',
 			'lending.other' => 'Bir librariyada',
@@ -7247,9 +7369,9 @@ extension on TranslationsUz {
 			'audiobook.saveSync' => 'Save and synq.',
 			'audiobook.disableSync' => 'Bu cihazda synchroniziziziziziz.',
 			'audiobook.syncSourceDisconnect' => 'Bu kayndan qaytdan o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi o‘yadi.',
-			'audiobook.syncReconnect' => 'Hesab bilan bilan bilan bilan bilan bilan',
+			'audiobook.syncReconnect' => 'Saqlash xizmati hisobini qayta ulash',
 			'audiobook.lastSynced' => ({required Object time}) => '${time}\'da sonda sinqizdi',
-			'audiobook.syncPrivacy' => 'Biz xifriyo bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan bilan.',
+			'audiobook.syncPrivacy' => 'Faqat o‘qish va tinglash qayergacha yetgani haqidagi ma’lumotlar hamda qaydlar shifrlangan holda saqlanadi. Audio va elektron kitob fayllari, hisob tokenlari hamda parollar serverga yuborilmaydi. Google Drive va OneDrive ilovaga ajratilgan saqlash joyidan, Dropbox esa PlezyNG Sync’dan foydalanadi. Sinxronlashni yoqish qo‘shimcha yozish ruxsatini talab qilishi mumkin. Sinxronlash yoqilganda, o‘qish va tinglash holati shu manzil orqali sinxronlanadi; serverdagi holat alohida qoladi. Sinxronlash o‘chirilganda ham mahalliy tarix va masofadagi holat saqlanadi.',
 			'audiobook.syncConflicts' => 'Onda qaytarga qaytarga.',
 			'audiobook.conflictHelp' => 'Bu modifikasyonlar bağımsızdan ko‘zadi. ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi ko‘zadi',
 			'audiobook.syncDevice' => ({required Object device}) => '${device}',
@@ -7285,6 +7407,102 @@ extension on TranslationsUz {
 			'audiobook.statusFinished' => 'Konni',
 			'audiobook.goToTime' => 'O‘zadi.',
 			'audiobook.timeHelp' => 'Hours:minuts:seconds, o minutlar:seconds',
+			'sourceSetup.savedCertificate' => 'Saqlangan server sertifikati',
+			'sourceSetup.nfsEndpointInvalid' => 'nfs://nas:2049/export kabi NFS URL manzilini kiriting.',
+			'sourceSetup.dlnaNone' => 'DLNA serverlari topilmadi. Qurilma tavsifining URL manzilini qo‘lda kiriting.',
+			'sourceSetup.dlnaServers' => 'DLNA media serverlari',
+			'sourceSetup.dlnaUnavailable' => 'Bu tarmoqda DLNA qurilmalarini qidirish imkonsiz. Qurilma tavsifining URL manzilini qo‘lda kiriting.',
+			'sourceSetup.dlnaSearching' => 'Mahalliy tarmoqda DLNA serverlari qidirilmoqda',
+			'sourceSetup.networkSearching' => 'Mahalliy tarmoqda qidirilmoqda…',
+			'sourceSetup.dlnaDiscover' => 'DLNA serverlarini topish',
+			'sourceSetup.dlnaHelp' => 'Qidirish mahalliy tarmoqdagi multicast uzatishiga bog‘liq. Server ko‘rinmasa, yuqoriga uning qurilma tavsifi URL manzilini kiriting.',
+			'sourceSetup.dlnaRoot' => 'DLNA obyekt ID-si; qurilmaning asosiy bo‘limini ishlatish uchun bo‘sh qoldiring.',
+			'sourceSetup.passwordOrKey' => 'Parol kiriting yoki quyida maxfiy kalit qo‘shing.',
+			'sourceSetup.sshFingerprint' => 'SSH host kalitining SHA256 izi',
+			'sourceSetup.sshFingerprintHelp' => 'Server administratori bilan tekshiring. Serverda ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub buyrug‘ini bajaring va SHA256 qiymatidan foydalaning.',
+			'sourceSetup.sshFingerprintKeep' => 'Joriy qat’iy belgilangan izni saqlash uchun bo‘sh qoldiring yoki serverning yangi izini kiriting.',
+			'sourceSetup.sshAuthentication' => 'Ochiq kalit bilan SSH autentifikatsiyasi',
+			'sourceSetup.sshAuthenticationHelp' => 'Ixtiyoriy; parol orqali autentifikatsiya ham qo‘llab-quvvatlanadi.',
+			'sourceSetup.privateKey' => 'Maxfiy kalit (PEM yoki OpenSSH formati)',
+			'sourceSetup.privateKeyPassphrase' => 'Maxfiy kalitning parol iborasi',
+			'sourceSetup.nfsMountPort' => 'NFS ulash xizmatining TCP porti',
+			'sourceSetup.nfsMountPortHelp' => 'Standart: 20048',
+			'sourceSetup.nfsUserId' => 'NFS foydalanuvchi ID-si (AUTH_SYS)',
+			'sourceSetup.nfsUserIdHelp' => 'Standart: 1000. NAS dagi NFS umumiy katalogi ruxsat bergan ID dan foydalaning.',
+			'sourceSetup.nfsGroupId' => 'NFS guruh ID-si (AUTH_SYS)',
+			'sourceSetup.nfsGroupIdHelp' => 'Standart: 1000. NAS dagi NFS umumiy katalogi ruxsat bergan guruh ID-sidan foydalaning.',
+			'sourceSetup.nfsEncryption' => 'Shifrlangan NFS talab qilish (RPC-with-TLS)',
+			'sourceSetup.nfsEncryptionHelp' => 'NFS va ulash xizmati uchun TLS 1.3 talab qilinadi. NAS buni qo‘llamasa, ulanish rad etiladi.',
+			'sourceSetup.nfsTrustCertificate' => 'Maxsus NFS CA yoki server sertifikati (PEM, ixtiyoriy)',
+			'sourceSetup.nfsTrustHelp' => 'Ushbu qurilma ishonadigan sertifikatlar uchun bo‘sh qoldiring. Zarur bo‘lsa, xususiy CA sertifikati yoki o‘zi imzolagan server sertifikatini qo‘shing; undagi nomlar NFS URL manzilidagi hostga mos kelishi kerak.',
+			'sourceSetup.nfsTrustInvalid' => 'PEM formatidagi CA yoki server sertifikatidan foydalaning. Maxfiy kalitni qo‘shmang.',
+			'sourceSetup.addTrustCertificate' => 'Maxsus ishonch sertifikatini qo‘shish',
+			'sourceSetup.replaceTrustCertificate' => 'Saqlangan maxsus sertifikatni almashtirish',
+			'sourceSetup.nfsTlsHelp' => 'RPC-with-TLS odatiy NFS va ulash xizmati portlaridan foydalanadi va NAS da RFC 9289 qo‘llab-quvvatlanishini talab qiladi. TLS 1.3 zarur. Host nomi yoki IP manzili sertifikatga mos kelishi kerak. Shifrlangan kanal ichida ham AUTH_SYS UID/GID amal qiladi.',
+			'sourceSetup.clientCertificate' => 'Klient sertifikati (ixtiyoriy)',
+			'sourceSetup.clientCertificateHelp' => 'NAS ga ushbu klientni autentifikatsiya qilish imkonini beradi; AUTH_SYS ID-lari baribir NAS dagi NFS umumiy katalogining qoidalariga bog‘liq.',
+			'sourceSetup.savedIdentity' => 'Saqlangan klient identifikatsiya ma’lumotlari ishlatiladi.',
+			'sourceSetup.replaceIdentity' => 'Saqlangan klient identifikatsiya ma’lumotlarini almashtirish',
+			'sourceSetup.chooseIdentity' => 'PKCS#12 klient identifikatsiya ma’lumotlarini tanlash',
+			'sourceSetup.identityPassphrase' => 'Klient identifikatsiya ma’lumotlarining parol iborasi',
+			'sourceSetup.identityPassphraseHelp' => 'Faylda parol iborasi bo‘lmasa, bo‘sh qoldiring.',
+			'sourceSetup.removeIdentity' => 'Saqlangan klient identifikatsiya ma’lumotlarini olib tashlash',
+			'sourceSetup.identityStorageHelp' => 'Klient identifikatsiya ma’lumotlari manbaning shifrlangan kirish ma’lumotlari omborida saqlanadi. Saqlangan identifikatsiya ma’lumotlarini saqlab qolish uchun bu bo‘limni o‘zgartirmang.',
+			'sourceSetup.nfsLimitations' => 'TCP orqali faqat o‘qish uchun NFSv3. RPC-with-TLS bo‘lmasa, NFS trafigi shifrlanmaydi. NAS tanlangan AUTH_SYS ID-lari va imtiyozsiz klient portlariga ruxsat berishi kerak (ko‘pincha “insecure” eksport parametri deyiladi). NFSv4 va UDP qo‘llab-quvvatlanmaydi.',
+			'sourceSetup.nfsSetupHelp' => 'NFS sozlash bo‘yicha yordam',
+			'sourceSetup.nfsSetupHint' => 'Ulanish o‘rnatilmasa, bu sozlamalarni tekshiring.',
+			'sourceSetup.nfsSetupDetails' => 'TCP orqali NFSv3 umumiy katalogidan foydalaning. Shifrlash talab qilinsa, NFS xizmati ham, ulash xizmati ham RPC-with-TLS ni qo‘llashi kerak. Qurilma ishonadigan server sertifikati uchun maxsus sertifikat maydonini bo‘sh qoldiring yoki NAS ning CA sertifikati yoxud o‘zi imzolagan sertifikatini qo‘shing. Sertifikatdagi nom ulanish manzilidagi hostga mos kelishi kerak. NAS o‘zaro TLS talab qilsa, uning PKCS#12 klient identifikatsiya ma’lumotlarini qo‘shing. Oxirida umumiy katalog belgilangan AUTH_SYS UID/GID va klient portlari qoidalariga ruxsat berishini tekshiring.',
+			'sourceSetup.ftpHelp' => 'FTP passiv rejimdan foydalanadi. Shifrlanmagan FTP uchun ftp://, TLS alohida buyruq bilan yoqiladigan rejim uchun ftpes:// yoki TLS uchun ftps:// dan foydalaning (990 portida TLS darhol boshlanadi; boshqa portlarda alohida buyruq bilan yoqiladi).',
+			'sourceSetup.openSubtitles' => 'OpenSubtitles',
+			'sourceSetup.subtitleSetup' => 'Alohida videolar uchun ixtiyoriy subtitr qidiruvi.',
+			'sourceSetup.apiKey' => 'API kaliti',
+			'sourceSetup.optionalUsername' => 'Hisob foydalanuvchi nomi (ixtiyoriy)',
+			'sourceSetup.optionalPassword' => 'Hisob paroli (ixtiyoriy)',
+			'sourceSetup.subtitlePrivacy' => 'opensubtitles.com saytidan API kalitini oling. Qidiruv video nomi va mavjud IMDb/TMDB ID-larini yuboradi, video faylini esa hech qachon yubormaydi. Kalit va ixtiyoriy hisobga kirish ma’lumotlari ushbu manba bilan birga shifrlanadi.',
+			'sourceSetup.automaticMetadata' => 'Avtomatik onlayn video metama’lumotlari',
+			'sourceSetup.metadataPrivacy' => 'Faqat fayl nomidagi nom/yil va qism raqamlari yoki NFO ID-sini yuboradi; media fayllari yoki kirish ma’lumotlarini hech qachon yubormaydi. NFO maydonlari ustuvor bo‘lib qoladi.',
+			'sourceSetup.nfsEncryptionFailure' => 'Shifrlangan NFS uchun NAS ning ikkala xizmatida RFC 9289 va TLS 1.3 qo‘llanishini, sertifikat nomini hamda umumiy katalogning UID/GID qiymatlarini tekshiring. PlezyNG bu ulanishni shifrlashsiz qayta sinamaydi.',
+			'sourceSetup.sourceConnecting' => 'Manbaga ulanmoqda',
+			'sourceSetup.metadataSearchPrivacy' => 'Bu nom qidiruvi Trakt xizmatiga yuboriladi. Kiritgan nomingiz yuboriladi, video yoki manbaning kirish ma’lumotlari emas.',
+			'sourceSetup.chooseMatch' => 'Mos natijani tanlash',
+			'sourceSetup.metadataMatchHelp' => 'Tanlashdan oldin nomi va yilini tekshiring. Trakt qidirilayotgan nomni oladi; video o‘z manbasida qoladi.',
+			'sourceSetup.metadataNoMatches' => 'Onlayn mos nom topilmadi. Boshqa nomni sinab ko‘ring.',
+			'sourceSetup.metadataSearch' => 'Onlayn metama’lumotlarni qidirish',
+			'sourceSetup.metadataLoading' => 'Onlayn film va serial tafsilotlari qidirilmoqda…',
+			'sourceSetup.metadataFromTrakt' => 'Trakt xizmatidan onlayn metama’lumotlar',
+			'sourceSetup.metadataNoAutomaticMatch' => 'Nomga avtomatik moslik topilmadi. Mos natijani tanlash uchun nomni qidiring.',
+			'sourceSetup.metadataFailed' => 'Onlayn metama’lumotlarni yuklab bo‘lmadi. Ijro va mahalliy tafsilotlar hali ham mavjud.',
+			'sourceSetup.videoDetailsLoading' => 'Video tafsilotlari yuklanmoqda',
+			'sourceSetup.subtitleKeyRequired' => 'OpenSubtitles API kaliti zarur',
+			'sourceSetup.subtitleKeyHelp' => 'Ushbu fayl manbasini tahrirlang va ixtiyoriy subtitr sozlamalariga OpenSubtitles API kalitini qo‘shing.',
+			'sourceSetup.subtitleSearchFailed' => 'Subtitr qidiruvi bajarilmadi. API kaliti, ulanish va xizmatga kirish imkonini tekshiring.',
+			'sourceSetup.subtitleApplyFailed' => 'Bu subtitrni yuklab yoki qo‘llab bo‘lmadi. Ulanishni tekshiring va boshqa natijani sinab ko‘ring.',
+			'sourceSetup.subtitleSearch' => 'OpenSubtitles da qidirish',
+			'sourceSetup.subtitleSearchPrivacy' => 'Qidiruv nom va mavjud IMDb/TMDB ID-laridan foydalanadi. Video fayli o‘z manbasida qoladi. Tanlashdan oldin tilni, majburiy subtitr yoki eshitish imkoniyati cheklanganlar uchun subtitr belgilarini va bahosini tekshiring.',
+			'sourceSetup.movieOrShow' => 'Film yoki serial',
+			'sourceSetup.subtitleTitleHint' => 'Natijalarni aniqlashtirish uchun nom kiriting',
+			'sourceSetup.subtitleLanguage' => 'Subtitr tili',
+			'sourceSetup.subtitleSearching' => 'OpenSubtitles da qidirilmoqda',
+			'sourceSetup.subtitleNoMatches' => 'Mos subtitr topilmadi. Boshqa nom yoki tilni sinab ko‘ring.',
+			'sourceSetup.downloadSubtitle' => 'Subtitrni yuklab olish',
+			'sourceSetup.subtitle' => 'Subtitr',
+			'sourceSetup.nfsTlsRequired' => 'RPC-with-TLS zarur',
+			'sourceSetup.nfsUnencrypted' => 'Shifrlanmagan NFS',
+			'sourceSetup.tlsEncrypted' => 'TLS bilan shifrlangan',
+			'sourceSetup.ftpPlain' => 'Shifrlanmagan FTP',
+			'sourceSetup.sshPinned' => 'SSH shifrlangan · host kaliti qat’iy belgilangan',
+			'sourceSetup.smbEncrypted' => 'SMB3 shifrlashi yoqilgan',
+			'sourceSetup.smbUnencrypted' => 'SMB3 shifrlashi o‘chirilgan',
+			'sourceSetup.httpUnencrypted' => 'Transport shifrlashisiz HTTP',
+			_ => null,
+		} ?? switch (path) {
+			'sourceSetup.checkEndpointSecurity' => 'Ulanish manzili xavfsizligini tekshirish',
+			'sourceSetup.fieldRequired' => ({required Object label}) => 'Majburiy maydon: ${label}.',
+			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => '${label} uchun ${min} dan ${max} gacha qiymat kiriting.',
+			'sourceSetup.replaceFile' => ({required Object name}) => '${name} almashtirish',
+			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Tanlangan klient identifikatsiya ma’lumotlari: ${name}',
+			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Baho ${rating}',
+			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Subtitr yuklanmoqda: ${title}',
 			'games.title' => 'Games',
 			'games.enable' => 'Show Games for this profile',
 			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
@@ -7327,7 +7545,7 @@ extension on TranslationsUz {
 			'games.touchControls' => 'On-screen controller',
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
-			'games.touchSetupHint' => 'In a stream, use the controller’s settings button to move controls and change opacity. A Bluetooth or USB controller also works.',
+			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
 			'games.addGame' => 'Add game shortcut',
 			'games.gameName' => 'Game name',
 			'games.gameId' => 'Host application ID',
@@ -7336,16 +7554,22 @@ extension on TranslationsUz {
 			'games.wakeSent' => 'Wake request sent. The computer must support Wake-on-LAN on this network.',
 			'games.mac' => 'MAC address (optional)',
 			'games.help' => 'Games help',
-			'games.helpBody' => 'Enable Games for your profile, keep Sunshine or another compatible host running, then choose a discovered computer. Approve the first connection and choose a game. Pairing authorization belongs to this device; the saved library belongs to this PlezyNG profile.\n\nThe Android engine is bundled into PlezyNG and includes touch controls and gamepad support. Other native platforms and Steam playback are still being implemented. Steam discovery does not mean playback is available.\n\nSunshine, Apollo, Wolf and older GameStream hosts can expose different features. Pairing requires the host’s approval. QR codes open the Sunshine PIN page; they do not carry your credentials.\n\nFor access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nLeaving a stream keeps the game running on the computer. Stop it from the stream menu when you want to end the host session.',
+			'games.helpBody' => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Other native platforms and the Pyrowave decoder are still in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.',
 			'games.cancel' => 'Cancel',
 			'games.scanning' => 'Looking for computers…',
 			'games.saveShortcut' => 'Save shortcut',
 			'games.manualHint' => 'For Moonlight use the host’s GameStream HTTP port (usually 47989), not its web settings port. Steam normally advertises on 27036.',
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
-			'games.steamEnginePending' => 'Steam computers can be discovered and saved. Embedded Steam pairing and playback are still in development, including the Pyrowave beta codec.',
+			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Other platforms and Pyrowave remain under development.',
 			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
-			'games.steamBetaDescription' => 'Pyrowave support is planned for the embedded Steam engine. Discovery alone cannot tell whether a computer or this device can use it. Playback remains unavailable until the engine has been integrated and tested.',
+			'games.steamBetaDescription' => 'Steam’s Pyrowave beta is a GPU-decoded video codec. It is not enabled in this build: Steam packet framing and GPU presentation still need integration and host validation. The embedded Android Steam player currently requests H.264 or HEVC.',
+			'games.steamLibrary' => 'Steam library',
+			'games.connecting' => 'Connecting…',
+			'games.disconnect' => 'Disconnect',
+			'games.streamControls' => 'Stream controls',
+			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
+			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
 			_ => null,
 		};
 	}

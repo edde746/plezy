@@ -103,4 +103,17 @@ void main() {
     await expectLater(controller.refreshGames(host), throwsA(isA<GameClientException>()));
     expect(controller.library.games.single.id, '1');
   });
+  test('Steam interface refresh preserves user shortcuts, favorites and recents', () async {
+    final steam = GameHost(id: '123', name: 'Steam PC', address: '192.168.1.2', protocol: GameProtocol.steam);
+    final shortcut = StreamGame(hostKey: steam.key, id: '620', name: 'Portal 2');
+    await controller.saveHost(steam);
+    await controller.saveGame(shortcut);
+    await controller.toggleFavorite(shortcut);
+    await controller.opened(shortcut);
+    client.waiting = Completer()..complete([StreamGame(hostKey: steam.key, id: '0', name: 'Steam Library')]);
+    await controller.refreshGames(steam);
+    expect(controller.library.games.map((g) => g.id), containsAll(['620', '0']));
+    expect(controller.library.favorites, contains(shortcut.key));
+    expect(controller.library.recent, contains(shortcut.key));
+  });
 }

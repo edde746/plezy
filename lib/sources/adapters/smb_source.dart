@@ -94,11 +94,7 @@ class SmbSourceAdapter extends SourceAdapter {
 
   Future<List<int>?> _readBounded(Smb2Pool pool, String path, int size, int limit) async {
     if (size < 0 || size > limit) return null;
-    final bytes = await pool.withFile(
-      path,
-      (file) => file.read(offset: 0, length: size),
-      knownSize: size,
-    );
+    final bytes = await pool.withFile(path, (file) => file.read(offset: 0, length: size), knownSize: size);
     return bytes.length == size ? bytes : null;
   }
 
@@ -139,11 +135,13 @@ class SmbSourceAdapter extends SourceAdapter {
           ),
         );
       }
-      entries.sort((a, b) => a.isFolder == b.isFolder
-          ? a.title.toLowerCase().compareTo(b.title.toLowerCase())
-          : a.isFolder
-          ? -1
-          : 1);
+      entries.sort(
+        (a, b) => a.isFolder == b.isFolder
+            ? a.title.toLowerCase().compareTo(b.title.toLowerCase())
+            : a.isFolder
+            ? -1
+            : 1,
+      );
       return SourcePage(entries);
     } on Smb2Exception catch (error) {
       throw _translate(error);
@@ -223,7 +221,7 @@ class SmbSourceAdapter extends SourceAdapter {
       final pool = await _connection();
       final stat = await pool.stat(path);
       if (!stat.isFile || stat.size <= 0 || stat.size > 8 * 1024 * 1024) return null;
-      return _readBounded(pool, path, stat.size, 8 * 1024 * 1024);
+      return await _readBounded(pool, path, stat.size, 8 * 1024 * 1024);
     } on Smb2Exception catch (error) {
       throw _translate(error);
     }
@@ -243,11 +241,7 @@ class SmbSourceAdapter extends SourceAdapter {
   }
 
   @override
-  Future<SourceByteStream?> openContent(
-    PublicationFile file, {
-    required int offset,
-    required int length,
-  }) async {
+  Future<SourceByteStream?> openContent(PublicationFile file, {required int offset, required int length}) async {
     final path = _sourcePath(file.id);
     try {
       final pool = await _connection();

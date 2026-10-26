@@ -9,7 +9,7 @@
 
 ### Added
 
-- Add an opt-in Games category with LAN discovery, artwork card grids, profile libraries, PIN/QR pairing, and an embedded Android Moonlight engine with touch controls. Steam and Pyrowave playback remain in development; Games never hands a stream to another app.
+- Add an opt-in Games category with LAN discovery, artwork card grids, profile libraries, PIN/QR pairing, and an embedded Android Moonlight engine with touch controls. Add an experimental embedded Android Steam PIN/streaming adapter with encrypted device trust, direct game-ID launch, H.264/HEVC/Opus and a mobile controller. Steam catalog import, Pyrowave and native ports remain in development; Games never hands a stream to another app.
 
 - Add device-local Dolby Vision experiment and compatibility switches, enhancement-layer diagnostics, pinned Apple/FelBaker experiments, and an offline HDR/SDR companion encoder; preserve Luna’s real P7 FEL graph evidence and remaining device qualification work.
 
@@ -106,6 +106,7 @@
 
 ### Fixed
 
+- Complete discovery, source-setup and subtitle-search translations; fix reviewed library and audiobook wording, add Arabic and Asian subtitle-language choices, and preserve regional numerals, mixed-direction titles and large-text layouts.
 - Use the localized sort and filter labels in the audiobook library menu.
 - Use CocoaPods for iOS and macOS builds until the pinned WebView plugin compiles with Xcode 26’s Swift Package Manager integration.
 - Let Xcode choose signing identities for iOS and tvOS archives instead of forcing one across all targets.

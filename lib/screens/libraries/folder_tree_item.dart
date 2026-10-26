@@ -217,8 +217,8 @@ class _FolderTreeItemState extends State<FolderTreeItem> with ContextMenuTapMixi
     final expandIcon = widget.isExpanded
         ? Symbols.keyboard_arrow_down_rounded
         : Directionality.of(context) == TextDirection.rtl
-            ? Symbols.keyboard_arrow_left_rounded
-            : Symbols.keyboard_arrow_right_rounded;
+        ? Symbols.keyboard_arrow_left_rounded
+        : Symbols.keyboard_arrow_right_rounded;
 
     return Container(
       padding: EdgeInsetsDirectional.only(start: 16.0 + indentation, end: 8.0, top: 8.0, bottom: 8.0),
@@ -253,8 +253,8 @@ class _FolderTreeItemState extends State<FolderTreeItem> with ContextMenuTapMixi
     final expandIcon = widget.isExpanded
         ? Symbols.keyboard_arrow_down_rounded
         : Directionality.of(context) == TextDirection.rtl
-            ? Symbols.keyboard_arrow_left_rounded
-            : Symbols.keyboard_arrow_right_rounded;
+        ? Symbols.keyboard_arrow_left_rounded
+        : Symbols.keyboard_arrow_right_rounded;
 
     final isWide = widget.item.usesWideAspectRatio(episodePosterMode);
     final thumbWidth = isWide ? 130.0 : 53.0;

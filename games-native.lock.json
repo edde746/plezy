@@ -8,12 +8,6 @@
     "license": "GPL-3.0-or-later"
   },
   "steamResearch": {
-    "ihslib": {
-      "repository": "https://github.com/scaronni/ihslib.git",
-      "revision": "f68de5f07e0c27ccea9f47f9f5e38fd92c99919e",
-      "license": "LGPL-3.0-or-later",
-      "status": "research; not linked into the application"
-    },
     "pyrowave": {
       "repository": "https://github.com/Themaister/pyrowave.git",
       "revision": "79a3232a2199281f33f7a2e2659fc4fac62b022a",
@@ -23,6 +17,36 @@
     "protocols": {
       "repository": "https://github.com/SteamTracking/Protobufs",
       "remoteplayBlob": "3dbd583ec985afd5b4f24556dfaa6925b3e76dc2"
+    },
+    "controllerReference": {
+      "repository": "https://github.com/jmelovich/Steam-Link-PS5.git",
+      "revision": "925eb0dfad7357d2a5f6c2c1e5202738de2475f7",
+      "license": "GPL-3.0-or-later"
+    }
+  },
+  "steamRuntime": {
+    "ihslib": {
+      "repository": "https://github.com/scaronni/ihslib.git",
+      "revision": "04688d19951c68bedc4370234cc1752043632cb3",
+      "license": "LGPL-3.0-or-later"
+    },
+    "mbedtls": {
+      "repository": "https://github.com/Mbed-TLS/mbedtls.git",
+      "revision": "e185d7fd85499c8ce5ca2a54f5cf8fe7dbe3f8df",
+      "version": "3.6.5",
+      "license": "Apache-2.0"
+    },
+    "protobuf-c": {
+      "repository": "https://github.com/protobuf-c/protobuf-c.git",
+      "revision": "4719fdd7760624388c2c5b9d6759eb6a47490626",
+      "version": "1.5.2",
+      "license": "BSD-2-Clause"
+    },
+    "opus": {
+      "repository": "https://github.com/xiph/opus.git",
+      "revision": "ddbe48383984d56acd9e1ab6a090c54ca6b735a6",
+      "version": "1.5.2",
+      "license": "BSD-3-Clause"
     }
   }
 }

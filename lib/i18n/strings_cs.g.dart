@@ -104,6 +104,7 @@ class TranslationsCs extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$cs fileSources = _Translations$fileSources$cs._(_root);
 	@override late final _Translations$lending$cs lending = _Translations$lending$cs._(_root);
 	@override late final _Translations$audiobook$cs audiobook = _Translations$audiobook$cs._(_root);
+	@override late final _Translations$sourceSetup$cs sourceSetup = _Translations$sourceSetup$cs._(_root);
 	@override late final _Translations$games$cs games = _Translations$games$cs._(_root);
 }
 
@@ -3101,6 +3102,12 @@ class _Translations$fileSources$cs extends Translations$fileSources$en {
 	@override String get useFiles => 'Použijte soubory a knihy';
 	@override String get cancelScan => 'Zrušit skenování';
 	@override String get googleDrive => 'Google Drive';
+	@override String get smbEndpointHint => 'Příklad: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Zadejte server SMB a jednu sdílenou složku.';
+	@override String get smbFolderHelp => 'Pro použití celé sdílené složky ponechte prázdné, nebo zadejte složku uvnitř ní.';
+	@override String get smbDomain => 'Doména (nepovinné)';
+	@override String get smbEncryption => 'Šifrovat připojení SMB3';
+	@override String get smbEncryptionHint => 'Použít šifrování SMB3, pokud ho NAS podporuje.';
 }
 
 // Path: lending
@@ -3222,6 +3229,109 @@ class _Translations$audiobook$cs extends Translations$audiobook$en {
 	@override String get timeHelp => 'Hodiny: minuty: sekundy nebo minuty: sekundy';
 }
 
+// Path: sourceSetup
+class _Translations$sourceSetup$cs extends Translations$sourceSetup$en {
+	_Translations$sourceSetup$cs._(TranslationsCs root) : this._root = root, super.internal(root);
+
+	final TranslationsCs _root; // ignore: unused_field
+
+	// Translations
+	@override String get savedCertificate => 'Uložený certifikát serveru';
+	@override String get nfsEndpointInvalid => 'Zadejte adresu NFS, například nfs://nas:2049/export.';
+	@override String get dlnaNone => 'Nenalezen žádný server DLNA. Zadejte adresu popisu zařízení ručně.';
+	@override String get dlnaServers => 'Mediální servery DLNA';
+	@override String get dlnaUnavailable => 'Vyhledávání DLNA není v této síti dostupné. Zadejte adresu popisu zařízení ručně.';
+	@override String get dlnaSearching => 'Hledání serverů DLNA v místní síti';
+	@override String get networkSearching => 'Prohledávání místní sítě…';
+	@override String get dlnaDiscover => 'Najít servery DLNA';
+	@override String get dlnaHelp => 'Vyhledávání závisí na multicastu v místní síti. Pokud se žádný server nezobrazí, zadejte výše adresu jeho popisu zařízení.';
+	@override String get dlnaRoot => 'ID objektu DLNA; ponechte prázdné pro kořen zařízení.';
+	@override String get passwordOrKey => 'Zadejte heslo nebo níže přidejte soukromý klíč.';
+	@override String get sshFingerprint => 'Otisk SHA256 hostitelského klíče SSH';
+	@override String get sshFingerprintHelp => 'Ověřte jej u správce serveru. Na serveru spusťte ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub a použijte hodnotu SHA256.';
+	@override String get sshFingerprintKeep => 'Ponechte prázdné pro zachování připnutého otisku nebo zadejte nový otisk serveru.';
+	@override String get sshAuthentication => 'Ověření SSH veřejným klíčem';
+	@override String get sshAuthenticationHelp => 'Nepovinné; podporováno je i ověření heslem.';
+	@override String get privateKey => 'Soukromý klíč (formát PEM nebo OpenSSH)';
+	@override String get privateKeyPassphrase => 'Heslová fráze soukromého klíče';
+	@override String get nfsMountPort => 'Port TCP služby připojení NFS';
+	@override String get nfsMountPortHelp => 'Výchozí: 20048';
+	@override String get nfsUserId => 'ID uživatele NFS (AUTH_SYS)';
+	@override String get nfsUserIdHelp => 'Výchozí: 1000. Použijte ID povolené exportem NFS na NAS.';
+	@override String get nfsGroupId => 'ID skupiny NFS (AUTH_SYS)';
+	@override String get nfsGroupIdHelp => 'Výchozí: 1000. Použijte ID skupiny povolené exportem NFS na NAS.';
+	@override String get nfsEncryption => 'Vyžadovat šifrované NFS (RPC-with-TLS)';
+	@override String get nfsEncryptionHelp => 'Vyžadovat TLS 1.3 pro NFS i službu připojení. Pokud jej NAS nepodporuje, spojení bude odmítnuto.';
+	@override String get nfsTrustCertificate => 'Vlastní CA NFS nebo certifikát serveru (PEM, nepovinné)';
+	@override String get nfsTrustHelp => 'Ponechte prázdné pro certifikáty, kterým toto zařízení důvěřuje. V případě potřeby přidejte certifikát soukromé CA nebo certifikát serveru podepsaný sebou samým; jeho názvy se musí shodovat s hostitelem v adrese NFS.';
+	@override String get nfsTrustInvalid => 'Použijte certifikát CA nebo serveru ve formátu PEM. Nevkládejte soukromý klíč.';
+	@override String get addTrustCertificate => 'Přidat vlastní důvěryhodný certifikát';
+	@override String get replaceTrustCertificate => 'Nahradit uložený vlastní certifikát';
+	@override String get nfsTlsHelp => 'RPC-with-TLS používá běžné porty NFS a služby připojení a vyžaduje podporu RFC 9289 na NAS. Je nutné TLS 1.3. Název hostitele nebo IP adresa musí odpovídat certifikátu. UID/GID AUTH_SYS nadále platí i v šifrovaném kanálu.';
+	@override String get clientCertificate => 'Klientský certifikát (nepovinné)';
+	@override String get clientCertificateHelp => 'Umožňuje NAS ověřit tohoto klienta; ID AUTH_SYS stále podléhají pravidlům exportu NFS na NAS.';
+	@override String get savedIdentity => 'Bude použita uložená identita klienta.';
+	@override String get replaceIdentity => 'Nahradit uloženou identitu klienta';
+	@override String get chooseIdentity => 'Vybrat identitu klienta PKCS#12';
+	@override String get identityPassphrase => 'Heslová fráze identity klienta';
+	@override String get identityPassphraseHelp => 'Ponechte prázdné, pokud soubor nemá heslovou frázi.';
+	@override String get removeIdentity => 'Odebrat případnou uloženou identitu klienta';
+	@override String get identityStorageHelp => 'Identity klienta se ukládají do šifrovaného úložiště přihlašovacích údajů zdroje. Pokud chcete uloženou identitu zachovat, tuto část neměňte.';
+	@override String get nfsLimitations => 'NFSv3 přes TCP, pouze pro čtení. Bez RPC-with-TLS není provoz NFS šifrovaný. NAS musí povolit vybraná ID AUTH_SYS a neprivilegované klientské porty (často volba exportu „insecure“). NFSv4 ani UDP nejsou podporovány.';
+	@override String get nfsSetupHelp => 'Nápověda k nastavení NFS';
+	@override String get nfsSetupHint => 'Pokud se připojení nenaváže, zkontrolujte tato nastavení.';
+	@override String get nfsSetupDetails => 'Použijte export NFSv3 přes TCP. Je-li vyžadováno šifrování, musí NFS i služba připojení podporovat RPC-with-TLS. Vlastní certifikát ponechte prázdný pro certifikát serveru, kterému toto zařízení důvěřuje, nebo přidejte certifikát CA NAS či certifikát podepsaný sebou samým. Název v certifikátu musí odpovídat hostiteli koncového bodu. Pokud NAS vyžaduje vzájemné TLS, přidejte jeho identitu klienta PKCS#12. Nakonec ověřte, že export povoluje nastavená UID/GID AUTH_SYS a pravidla klientských portů.';
+	@override String get ftpHelp => 'FTP používá pasivní režim. Použijte ftp:// pro nešifrované FTP, ftpes:// pro explicitní TLS nebo ftps:// pro TLS (implicitní na portu 990; explicitní na ostatních portech).';
+	@override String get openSubtitles => 'OpenSubtitles';
+	@override String get subtitleSetup => 'Volitelné hledání titulků pro samostatná videa.';
+	@override String get apiKey => 'Klíč API';
+	@override String get optionalUsername => 'Uživatelské jméno účtu (nepovinné)';
+	@override String get optionalPassword => 'Heslo účtu (nepovinné)';
+	@override String get subtitlePrivacy => 'Získejte klíč API na opensubtitles.com. Hledání odesílá název videa a dostupná ID IMDb/TMDB, nikdy videosoubor. Klíč a volitelné přihlašovací údaje účtu jsou šifrovány spolu s tímto zdrojem.';
+	@override String get automaticMetadata => 'Automatická online metadata videa';
+	@override String get metadataPrivacy => 'Odesílá pouze název/rok z názvu souboru a čísla epizod nebo ID NFO, nikdy média ani přihlašovací údaje. Pole NFO mají nadále přednost.';
+	@override String get nfsEncryptionFailure => 'U šifrovaného NFS ověřte podporu RFC 9289 a TLS 1.3 u obou služeb NAS, název v certifikátu a UID/GID exportu. PlezyNG se nepokusí toto spojení zopakovat bez šifrování.';
+	@override String get sourceConnecting => 'Připojování ke zdroji';
+	@override String get metadataSearchPrivacy => 'Toto hledání názvu se odesílá do Trakt. Odesílá zadaný název, nikoli video ani přihlašovací údaje zdroje.';
+	@override String get chooseMatch => 'Vybrat shodu';
+	@override String get metadataMatchHelp => 'Před výběrem zkontrolujte název a rok. Trakt obdrží hledaný název; video zůstává ve svém zdroji.';
+	@override String get metadataNoMatches => 'Online nebyl nalezen odpovídající název. Zkuste jiný název.';
+	@override String get metadataSearch => 'Hledat online metadata';
+	@override String get metadataLoading => 'Vyhledávání online informací o filmech a seriálech…';
+	@override String get metadataFromTrakt => 'Online metadata z Trakt';
+	@override String get metadataNoAutomaticMatch => 'Nebyla nalezena automatická shoda názvu. Vyhledejte název a vyberte shodu.';
+	@override String get metadataFailed => 'Online metadata se nepodařilo načíst. Přehrávání i místní informace jsou stále dostupné.';
+	@override String get videoDetailsLoading => 'Načítání informací o videu';
+	@override String get subtitleKeyRequired => 'Je vyžadován klíč API OpenSubtitles';
+	@override String get subtitleKeyHelp => 'Upravte tento souborový zdroj a přidejte klíč API OpenSubtitles do volitelných nastavení titulků.';
+	@override String get subtitleSearchFailed => 'Hledání titulků selhalo. Zkontrolujte klíč API, připojení a přístup ke službě.';
+	@override String get subtitleApplyFailed => 'Titulky se nepodařilo stáhnout nebo použít. Zkontrolujte připojení a zkuste jiný výsledek.';
+	@override String get subtitleSearch => 'Hledat na OpenSubtitles';
+	@override String get subtitleSearchPrivacy => 'Hledání používá název a dostupná ID IMDb/TMDB. Videosoubor zůstává ve svém zdroji. Před výběrem zkontrolujte jazyk, označení vynucených titulků či titulků pro sluchově postižené a hodnocení.';
+	@override String get movieOrShow => 'Film nebo seriál';
+	@override String get subtitleTitleHint => 'Zadejte název pro upřesnění výsledků';
+	@override String get subtitleLanguage => 'Jazyk titulků';
+	@override String get subtitleSearching => 'Hledání na OpenSubtitles';
+	@override String get subtitleNoMatches => 'Odpovídající titulky nebyly nalezeny. Zkuste jiný název nebo jazyk.';
+	@override String get downloadSubtitle => 'Stáhnout titulky';
+	@override String get subtitle => 'Titulky';
+	@override String get nfsTlsRequired => 'Vyžadováno RPC-with-TLS';
+	@override String get nfsUnencrypted => 'Nešifrované NFS';
+	@override String get tlsEncrypted => 'Šifrováno pomocí TLS';
+	@override String get ftpPlain => 'Nešifrované FTP';
+	@override String get sshPinned => 'Šifrované SSH · připnutý hostitelský klíč';
+	@override String get smbEncrypted => 'Šifrování SMB3 zapnuto';
+	@override String get smbUnencrypted => 'Šifrování SMB3 vypnuto';
+	@override String get httpUnencrypted => 'HTTP bez šifrování přenosu';
+	@override String get checkEndpointSecurity => 'Zkontrolovat zabezpečení koncového bodu';
+	@override String fieldRequired({required Object label}) => 'Povinné pole: ${label}.';
+	@override String integerRange({required Object label, required Object min, required Object max}) => 'Pro pole „${label}“ zadejte hodnotu od ${min} do ${max}.';
+	@override String replaceFile({required Object name}) => 'Nahradit ${name}';
+	@override String selectedIdentity({required Object name}) => 'Vybraná identita klienta: ${name}';
+	@override String subtitleRating({required Object rating}) => 'Hodnocení ${rating}';
+	@override String subtitleDownloading({required Object title}) => 'Stahování titulků: ${title}';
+}
+
 // Path: games
 class _Translations$games$cs extends Translations$games$en {
 	_Translations$games$cs._(TranslationsCs root) : this._root = root, super.internal(root);
@@ -3271,7 +3381,7 @@ class _Translations$games$cs extends Translations$games$en {
 	@override String get touchControls => 'On-screen controller';
 	@override String get touchDescription => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.';
 	@override String get touchSetup => 'On-screen controls';
-	@override String get touchSetupHint => 'In a stream, use the controller’s settings button to move controls and change opacity. A Bluetooth or USB controller also works.';
+	@override String get touchSetupHint => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.';
 	@override String get addGame => 'Add game shortcut';
 	@override String get gameName => 'Game name';
 	@override String get gameId => 'Host application ID';
@@ -3280,16 +3390,22 @@ class _Translations$games$cs extends Translations$games$en {
 	@override String get wakeSent => 'Wake request sent. The computer must support Wake-on-LAN on this network.';
 	@override String get mac => 'MAC address (optional)';
 	@override String get help => 'Games help';
-	@override String get helpBody => 'Enable Games for your profile, keep Sunshine or another compatible host running, then choose a discovered computer. Approve the first connection and choose a game. Pairing authorization belongs to this device; the saved library belongs to this PlezyNG profile.\n\nThe Android engine is bundled into PlezyNG and includes touch controls and gamepad support. Other native platforms and Steam playback are still being implemented. Steam discovery does not mean playback is available.\n\nSunshine, Apollo, Wolf and older GameStream hosts can expose different features. Pairing requires the host’s approval. QR codes open the Sunshine PIN page; they do not carry your credentials.\n\nFor access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nLeaving a stream keeps the game running on the computer. Stop it from the stream menu when you want to end the host session.';
+	@override String get helpBody => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Other native platforms and the Pyrowave decoder are still in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.';
 	@override String get cancel => 'Cancel';
 	@override String get scanning => 'Looking for computers…';
 	@override String get saveShortcut => 'Save shortcut';
 	@override String get manualHint => 'For Moonlight use the host’s GameStream HTTP port (usually 47989), not its web settings port. Steam normally advertises on 27036.';
 	@override String get engineUnavailable => 'In-app streaming is not available here yet';
 	@override String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
-	@override String get steamEnginePending => 'Steam computers can be discovered and saved. Embedded Steam pairing and playback are still in development, including the Pyrowave beta codec.';
+	@override String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Other platforms and Pyrowave remain under development.';
 	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
-	@override String get steamBetaDescription => 'Pyrowave support is planned for the embedded Steam engine. Discovery alone cannot tell whether a computer or this device can use it. Playback remains unavailable until the engine has been integrated and tested.';
+	@override String get steamBetaDescription => 'Steam’s Pyrowave beta is a GPU-decoded video codec. It is not enabled in this build: Steam packet framing and GPU presentation still need integration and host validation. The embedded Android Steam player currently requests H.264 or HEVC.';
+	@override String get steamLibrary => 'Steam library';
+	@override String get connecting => 'Connecting…';
+	@override String get disconnect => 'Disconnect';
+	@override String get streamControls => 'Stream controls';
+	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
+	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
 }
 
 // Path: appIcon.names
@@ -3543,48 +3659,48 @@ class _Translations$discover$findNext$cs extends Translations$discover$findNext$
 	final TranslationsCs _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Najděte si další';
-	@override String get open => 'Najděte si další';
-	@override String get anyTime => 'kdykoliv';
-	@override String get timeAvailable => 'Kolik času máte?';
-	@override String get filters => 'Vyberte okamžik';
-	@override String get watch => 'pozorovat';
-	@override String get listen => 'Slyšíme';
+	@override String get title => 'Najděte si něco dalšího';
+	@override String get open => 'Najděte si něco dalšího';
+	@override String get anyTime => 'Libovolně dlouho';
+	@override String get timeAvailable => 'Kolik máte času?';
+	@override String get filters => 'Vyberte si pro tuto chvíli';
+	@override String get watch => 'Sledovat';
+	@override String get listen => 'Poslouchat';
 	@override String get read => 'Číst';
-	@override String finishable({required Object duration}) => 'Konec v ${duration}';
-	@override String aboutDuration({required Object duration}) => 'O společnosti ${duration}';
-	@override String nextUnit({required Object duration}) => 'Následující Článek ${duration}';
-	@override String totalDuration({required Object duration}) => '${duration} Celkově';
-	@override String get timingVaries => 'Časový rozsah se liší';
-	@override String get notNow => 'Nyní ne';
+	@override String finishable({required Object duration}) => 'Doba do dokončení: ${duration}';
+	@override String aboutDuration({required Object duration}) => 'Přibližná délka: ${duration}';
+	@override String nextUnit({required Object duration}) => 'Další kapitola · ${duration}';
+	@override String totalDuration({required Object duration}) => 'Celkem ${duration}';
+	@override String get timingVaries => 'Délka se může lišit';
+	@override String get notNow => 'Teď ne';
 	@override String get swipeHint => 'Posuňte obal směrem k šipce nebo použijte tlačítka níže.';
-	@override String get saved => 'Zachráněné piky';
-	@override String savedCount({required Object count}) => 'Shromažďování · ${count}';
-	@override String get undo => 'Nebo';
-	@override String get details => 'detaily';
-	@override String get noPicks => 'Zatím není nic, co si vybrat';
-	@override String get noPicksHint => 'Připojte knihovnu nebo přidejte zdroj médií, abyste začali.';
-	@override String get noMatches => 'Nic se v tomto okamžiku nevyhovuje';
-	@override String get noMatchesHint => 'Vyzkoušejte jiný formát nebo si dát více času.';
-	@override String get allDone => 'Všichni jste zachyceni';
-	@override String get allDoneHint => 'Začněte čerstvou směs, abyste znovu viděli tyto možnosti.';
-	@override String get refresh => 'Najděte další mix';
-	@override String sourceReason({required Object source}) => 'od ${source}';
-	@override String libraryReason({required Object library}) => 'od ${library}';
+	@override String get saved => 'Uložené tipy';
+	@override String savedCount({required Object count}) => 'Uložené tipy · ${count}';
+	@override String get undo => 'Zpět';
+	@override String get details => 'Podrobnosti';
+	@override String get noPicks => 'Zatím není z čeho vybírat';
+	@override String get noPicksHint => 'Začněte připojením knihovny nebo přidáním zdroje médií.';
+	@override String get noMatches => 'Pro tuto chvíli nic nevyhovuje';
+	@override String get noMatchesHint => 'Zkuste jiný druh médií nebo si vyhraďte více času.';
+	@override String get allDone => 'Prošli jste všechny tipy';
+	@override String get allDoneHint => 'Vytvořte nový výběr a zobrazte si tyto tipy znovu.';
+	@override String get refresh => 'Najít další výběr';
+	@override String sourceReason({required Object source}) => 'Ze zdroje ${source}';
+	@override String libraryReason({required Object library}) => 'Z knihovny ${library}';
 	@override String get ownedReason => 'Z vaší knihovny';
-	@override String get liveNow => 'V současnosti';
-	@override String get watchLive => 'Podívejte se Live';
-	@override String get filterAnything => 'Všechno';
-	@override String get filterWatch => 'pozorovat';
-	@override String get filterListen => 'Slyšíme';
+	@override String get liveNow => 'Právě se vysílá';
+	@override String get watchLive => 'Sledovat živě';
+	@override String get filterAnything => 'Cokoli';
+	@override String get filterWatch => 'Sledovat';
+	@override String get filterListen => 'Poslouchat';
 	@override String get filterRead => 'Číst';
 	@override String get twentyMinutes => '20 min';
 	@override String get fortyFiveMinutes => '45 min';
 	@override String get ninetyMinutes => '90 min';
-	@override String get apply => 'aplikovat';
-	@override String get openFailed => 'Tato volba již není k dispozici. refresh to check again.';
-	@override String get changeFailed => 'Tuto změnu se nedá zachránit, zkuste to znovu.';
-	@override String get savedLimit => 'Ušetřené piky jsou plné. odstranit jeden výběr zachránit další.';
+	@override String get apply => 'Použít';
+	@override String get openFailed => 'Tato položka už není dostupná. Obnovte výběr a zkontrolujte to znovu.';
+	@override String get changeFailed => 'Změnu se nepodařilo uložit. Zkuste to znovu.';
+	@override String get savedLimit => 'Seznam uložených tipů je plný. Odeberte jeden tip, abyste mohli uložit další.';
 	@override String get chooseHint => 'Otevřete titul, uložte si ho na později nebo ho přeskočte.';
 	@override String get howItWorks => 'Jak to funguje';
 	@override String get notNowHelp => 'Tento titul zatím přeskočíte. Zůstane ve vaší knihovně.';
@@ -5595,48 +5711,48 @@ extension on TranslationsCs {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Přehled',
 			'discover.cast' => 'Castová',
-			'discover.findNext.title' => 'Najděte si další',
-			'discover.findNext.open' => 'Najděte si další',
-			'discover.findNext.anyTime' => 'kdykoliv',
-			'discover.findNext.timeAvailable' => 'Kolik času máte?',
-			'discover.findNext.filters' => 'Vyberte okamžik',
-			'discover.findNext.watch' => 'pozorovat',
-			'discover.findNext.listen' => 'Slyšíme',
+			'discover.findNext.title' => 'Najděte si něco dalšího',
+			'discover.findNext.open' => 'Najděte si něco dalšího',
+			'discover.findNext.anyTime' => 'Libovolně dlouho',
+			'discover.findNext.timeAvailable' => 'Kolik máte času?',
+			'discover.findNext.filters' => 'Vyberte si pro tuto chvíli',
+			'discover.findNext.watch' => 'Sledovat',
+			'discover.findNext.listen' => 'Poslouchat',
 			'discover.findNext.read' => 'Číst',
-			'discover.findNext.finishable' => ({required Object duration}) => 'Konec v ${duration}',
-			'discover.findNext.aboutDuration' => ({required Object duration}) => 'O společnosti ${duration}',
-			'discover.findNext.nextUnit' => ({required Object duration}) => 'Následující Článek ${duration}',
-			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} Celkově',
-			'discover.findNext.timingVaries' => 'Časový rozsah se liší',
-			'discover.findNext.notNow' => 'Nyní ne',
+			'discover.findNext.finishable' => ({required Object duration}) => 'Doba do dokončení: ${duration}',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => 'Přibližná délka: ${duration}',
+			'discover.findNext.nextUnit' => ({required Object duration}) => 'Další kapitola · ${duration}',
+			'discover.findNext.totalDuration' => ({required Object duration}) => 'Celkem ${duration}',
+			'discover.findNext.timingVaries' => 'Délka se může lišit',
+			'discover.findNext.notNow' => 'Teď ne',
 			'discover.findNext.swipeHint' => 'Posuňte obal směrem k šipce nebo použijte tlačítka níže.',
-			'discover.findNext.saved' => 'Zachráněné piky',
-			'discover.findNext.savedCount' => ({required Object count}) => 'Shromažďování · ${count}',
-			'discover.findNext.undo' => 'Nebo',
-			'discover.findNext.details' => 'detaily',
-			'discover.findNext.noPicks' => 'Zatím není nic, co si vybrat',
-			'discover.findNext.noPicksHint' => 'Připojte knihovnu nebo přidejte zdroj médií, abyste začali.',
-			'discover.findNext.noMatches' => 'Nic se v tomto okamžiku nevyhovuje',
-			'discover.findNext.noMatchesHint' => 'Vyzkoušejte jiný formát nebo si dát více času.',
-			'discover.findNext.allDone' => 'Všichni jste zachyceni',
-			'discover.findNext.allDoneHint' => 'Začněte čerstvou směs, abyste znovu viděli tyto možnosti.',
-			'discover.findNext.refresh' => 'Najděte další mix',
-			'discover.findNext.sourceReason' => ({required Object source}) => 'od ${source}',
-			'discover.findNext.libraryReason' => ({required Object library}) => 'od ${library}',
+			'discover.findNext.saved' => 'Uložené tipy',
+			'discover.findNext.savedCount' => ({required Object count}) => 'Uložené tipy · ${count}',
+			'discover.findNext.undo' => 'Zpět',
+			'discover.findNext.details' => 'Podrobnosti',
+			'discover.findNext.noPicks' => 'Zatím není z čeho vybírat',
+			'discover.findNext.noPicksHint' => 'Začněte připojením knihovny nebo přidáním zdroje médií.',
+			'discover.findNext.noMatches' => 'Pro tuto chvíli nic nevyhovuje',
+			'discover.findNext.noMatchesHint' => 'Zkuste jiný druh médií nebo si vyhraďte více času.',
+			'discover.findNext.allDone' => 'Prošli jste všechny tipy',
+			'discover.findNext.allDoneHint' => 'Vytvořte nový výběr a zobrazte si tyto tipy znovu.',
+			'discover.findNext.refresh' => 'Najít další výběr',
+			'discover.findNext.sourceReason' => ({required Object source}) => 'Ze zdroje ${source}',
+			'discover.findNext.libraryReason' => ({required Object library}) => 'Z knihovny ${library}',
 			'discover.findNext.ownedReason' => 'Z vaší knihovny',
-			'discover.findNext.liveNow' => 'V současnosti',
-			'discover.findNext.watchLive' => 'Podívejte se Live',
-			'discover.findNext.filterAnything' => 'Všechno',
-			'discover.findNext.filterWatch' => 'pozorovat',
-			'discover.findNext.filterListen' => 'Slyšíme',
+			'discover.findNext.liveNow' => 'Právě se vysílá',
+			'discover.findNext.watchLive' => 'Sledovat živě',
+			'discover.findNext.filterAnything' => 'Cokoli',
+			'discover.findNext.filterWatch' => 'Sledovat',
+			'discover.findNext.filterListen' => 'Poslouchat',
 			'discover.findNext.filterRead' => 'Číst',
 			'discover.findNext.twentyMinutes' => '20 min',
 			'discover.findNext.fortyFiveMinutes' => '45 min',
 			'discover.findNext.ninetyMinutes' => '90 min',
-			'discover.findNext.apply' => 'aplikovat',
-			'discover.findNext.openFailed' => 'Tato volba již není k dispozici. refresh to check again.',
-			'discover.findNext.changeFailed' => 'Tuto změnu se nedá zachránit, zkuste to znovu.',
-			'discover.findNext.savedLimit' => 'Ušetřené piky jsou plné. odstranit jeden výběr zachránit další.',
+			'discover.findNext.apply' => 'Použít',
+			'discover.findNext.openFailed' => 'Tato položka už není dostupná. Obnovte výběr a zkontrolujte to znovu.',
+			'discover.findNext.changeFailed' => 'Změnu se nepodařilo uložit. Zkuste to znovu.',
+			'discover.findNext.savedLimit' => 'Seznam uložených tipů je plný. Odeberte jeden tip, abyste mohli uložit další.',
 			'discover.findNext.chooseHint' => 'Otevřete titul, uložte si ho na později nebo ho přeskočte.',
 			'discover.findNext.howItWorks' => 'Jak to funguje',
 			'discover.findNext.notNowHelp' => 'Tento titul zatím přeskočíte. Zůstane ve vaší knihovně.',
@@ -7222,6 +7338,12 @@ extension on TranslationsCs {
 			'fileSources.useFiles' => 'Použijte soubory a knihy',
 			'fileSources.cancelScan' => 'Zrušit skenování',
 			'fileSources.googleDrive' => 'Google Drive',
+			'fileSources.smbEndpointHint' => 'Příklad: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Zadejte server SMB a jednu sdílenou složku.',
+			'fileSources.smbFolderHelp' => 'Pro použití celé sdílené složky ponechte prázdné, nebo zadejte složku uvnitř ní.',
+			'fileSources.smbDomain' => 'Doména (nepovinné)',
+			'fileSources.smbEncryption' => 'Šifrovat připojení SMB3',
+			'fileSources.smbEncryptionHint' => 'Použít šifrování SMB3, pokud ho NAS podporuje.',
 			'lending.title' => 'veřejné knihovny',
 			'lending.add' => 'Přidejte knihovnu',
 			'lending.other' => 'Další knihovna',
@@ -7323,6 +7445,102 @@ extension on TranslationsCs {
 			'audiobook.statusFinished' => 'Dokončené',
 			'audiobook.goToTime' => 'Jděte do času',
 			'audiobook.timeHelp' => 'Hodiny: minuty: sekundy nebo minuty: sekundy',
+			'sourceSetup.savedCertificate' => 'Uložený certifikát serveru',
+			'sourceSetup.nfsEndpointInvalid' => 'Zadejte adresu NFS, například nfs://nas:2049/export.',
+			'sourceSetup.dlnaNone' => 'Nenalezen žádný server DLNA. Zadejte adresu popisu zařízení ručně.',
+			'sourceSetup.dlnaServers' => 'Mediální servery DLNA',
+			'sourceSetup.dlnaUnavailable' => 'Vyhledávání DLNA není v této síti dostupné. Zadejte adresu popisu zařízení ručně.',
+			'sourceSetup.dlnaSearching' => 'Hledání serverů DLNA v místní síti',
+			'sourceSetup.networkSearching' => 'Prohledávání místní sítě…',
+			'sourceSetup.dlnaDiscover' => 'Najít servery DLNA',
+			'sourceSetup.dlnaHelp' => 'Vyhledávání závisí na multicastu v místní síti. Pokud se žádný server nezobrazí, zadejte výše adresu jeho popisu zařízení.',
+			'sourceSetup.dlnaRoot' => 'ID objektu DLNA; ponechte prázdné pro kořen zařízení.',
+			'sourceSetup.passwordOrKey' => 'Zadejte heslo nebo níže přidejte soukromý klíč.',
+			'sourceSetup.sshFingerprint' => 'Otisk SHA256 hostitelského klíče SSH',
+			'sourceSetup.sshFingerprintHelp' => 'Ověřte jej u správce serveru. Na serveru spusťte ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub a použijte hodnotu SHA256.',
+			'sourceSetup.sshFingerprintKeep' => 'Ponechte prázdné pro zachování připnutého otisku nebo zadejte nový otisk serveru.',
+			'sourceSetup.sshAuthentication' => 'Ověření SSH veřejným klíčem',
+			'sourceSetup.sshAuthenticationHelp' => 'Nepovinné; podporováno je i ověření heslem.',
+			'sourceSetup.privateKey' => 'Soukromý klíč (formát PEM nebo OpenSSH)',
+			'sourceSetup.privateKeyPassphrase' => 'Heslová fráze soukromého klíče',
+			'sourceSetup.nfsMountPort' => 'Port TCP služby připojení NFS',
+			'sourceSetup.nfsMountPortHelp' => 'Výchozí: 20048',
+			'sourceSetup.nfsUserId' => 'ID uživatele NFS (AUTH_SYS)',
+			'sourceSetup.nfsUserIdHelp' => 'Výchozí: 1000. Použijte ID povolené exportem NFS na NAS.',
+			'sourceSetup.nfsGroupId' => 'ID skupiny NFS (AUTH_SYS)',
+			'sourceSetup.nfsGroupIdHelp' => 'Výchozí: 1000. Použijte ID skupiny povolené exportem NFS na NAS.',
+			'sourceSetup.nfsEncryption' => 'Vyžadovat šifrované NFS (RPC-with-TLS)',
+			'sourceSetup.nfsEncryptionHelp' => 'Vyžadovat TLS 1.3 pro NFS i službu připojení. Pokud jej NAS nepodporuje, spojení bude odmítnuto.',
+			'sourceSetup.nfsTrustCertificate' => 'Vlastní CA NFS nebo certifikát serveru (PEM, nepovinné)',
+			'sourceSetup.nfsTrustHelp' => 'Ponechte prázdné pro certifikáty, kterým toto zařízení důvěřuje. V případě potřeby přidejte certifikát soukromé CA nebo certifikát serveru podepsaný sebou samým; jeho názvy se musí shodovat s hostitelem v adrese NFS.',
+			'sourceSetup.nfsTrustInvalid' => 'Použijte certifikát CA nebo serveru ve formátu PEM. Nevkládejte soukromý klíč.',
+			'sourceSetup.addTrustCertificate' => 'Přidat vlastní důvěryhodný certifikát',
+			'sourceSetup.replaceTrustCertificate' => 'Nahradit uložený vlastní certifikát',
+			'sourceSetup.nfsTlsHelp' => 'RPC-with-TLS používá běžné porty NFS a služby připojení a vyžaduje podporu RFC 9289 na NAS. Je nutné TLS 1.3. Název hostitele nebo IP adresa musí odpovídat certifikátu. UID/GID AUTH_SYS nadále platí i v šifrovaném kanálu.',
+			'sourceSetup.clientCertificate' => 'Klientský certifikát (nepovinné)',
+			'sourceSetup.clientCertificateHelp' => 'Umožňuje NAS ověřit tohoto klienta; ID AUTH_SYS stále podléhají pravidlům exportu NFS na NAS.',
+			'sourceSetup.savedIdentity' => 'Bude použita uložená identita klienta.',
+			'sourceSetup.replaceIdentity' => 'Nahradit uloženou identitu klienta',
+			'sourceSetup.chooseIdentity' => 'Vybrat identitu klienta PKCS#12',
+			'sourceSetup.identityPassphrase' => 'Heslová fráze identity klienta',
+			'sourceSetup.identityPassphraseHelp' => 'Ponechte prázdné, pokud soubor nemá heslovou frázi.',
+			'sourceSetup.removeIdentity' => 'Odebrat případnou uloženou identitu klienta',
+			'sourceSetup.identityStorageHelp' => 'Identity klienta se ukládají do šifrovaného úložiště přihlašovacích údajů zdroje. Pokud chcete uloženou identitu zachovat, tuto část neměňte.',
+			'sourceSetup.nfsLimitations' => 'NFSv3 přes TCP, pouze pro čtení. Bez RPC-with-TLS není provoz NFS šifrovaný. NAS musí povolit vybraná ID AUTH_SYS a neprivilegované klientské porty (často volba exportu „insecure“). NFSv4 ani UDP nejsou podporovány.',
+			'sourceSetup.nfsSetupHelp' => 'Nápověda k nastavení NFS',
+			'sourceSetup.nfsSetupHint' => 'Pokud se připojení nenaváže, zkontrolujte tato nastavení.',
+			'sourceSetup.nfsSetupDetails' => 'Použijte export NFSv3 přes TCP. Je-li vyžadováno šifrování, musí NFS i služba připojení podporovat RPC-with-TLS. Vlastní certifikát ponechte prázdný pro certifikát serveru, kterému toto zařízení důvěřuje, nebo přidejte certifikát CA NAS či certifikát podepsaný sebou samým. Název v certifikátu musí odpovídat hostiteli koncového bodu. Pokud NAS vyžaduje vzájemné TLS, přidejte jeho identitu klienta PKCS#12. Nakonec ověřte, že export povoluje nastavená UID/GID AUTH_SYS a pravidla klientských portů.',
+			'sourceSetup.ftpHelp' => 'FTP používá pasivní režim. Použijte ftp:// pro nešifrované FTP, ftpes:// pro explicitní TLS nebo ftps:// pro TLS (implicitní na portu 990; explicitní na ostatních portech).',
+			'sourceSetup.openSubtitles' => 'OpenSubtitles',
+			'sourceSetup.subtitleSetup' => 'Volitelné hledání titulků pro samostatná videa.',
+			'sourceSetup.apiKey' => 'Klíč API',
+			'sourceSetup.optionalUsername' => 'Uživatelské jméno účtu (nepovinné)',
+			'sourceSetup.optionalPassword' => 'Heslo účtu (nepovinné)',
+			'sourceSetup.subtitlePrivacy' => 'Získejte klíč API na opensubtitles.com. Hledání odesílá název videa a dostupná ID IMDb/TMDB, nikdy videosoubor. Klíč a volitelné přihlašovací údaje účtu jsou šifrovány spolu s tímto zdrojem.',
+			'sourceSetup.automaticMetadata' => 'Automatická online metadata videa',
+			'sourceSetup.metadataPrivacy' => 'Odesílá pouze název/rok z názvu souboru a čísla epizod nebo ID NFO, nikdy média ani přihlašovací údaje. Pole NFO mají nadále přednost.',
+			'sourceSetup.nfsEncryptionFailure' => 'U šifrovaného NFS ověřte podporu RFC 9289 a TLS 1.3 u obou služeb NAS, název v certifikátu a UID/GID exportu. PlezyNG se nepokusí toto spojení zopakovat bez šifrování.',
+			'sourceSetup.sourceConnecting' => 'Připojování ke zdroji',
+			'sourceSetup.metadataSearchPrivacy' => 'Toto hledání názvu se odesílá do Trakt. Odesílá zadaný název, nikoli video ani přihlašovací údaje zdroje.',
+			'sourceSetup.chooseMatch' => 'Vybrat shodu',
+			'sourceSetup.metadataMatchHelp' => 'Před výběrem zkontrolujte název a rok. Trakt obdrží hledaný název; video zůstává ve svém zdroji.',
+			'sourceSetup.metadataNoMatches' => 'Online nebyl nalezen odpovídající název. Zkuste jiný název.',
+			'sourceSetup.metadataSearch' => 'Hledat online metadata',
+			'sourceSetup.metadataLoading' => 'Vyhledávání online informací o filmech a seriálech…',
+			'sourceSetup.metadataFromTrakt' => 'Online metadata z Trakt',
+			'sourceSetup.metadataNoAutomaticMatch' => 'Nebyla nalezena automatická shoda názvu. Vyhledejte název a vyberte shodu.',
+			'sourceSetup.metadataFailed' => 'Online metadata se nepodařilo načíst. Přehrávání i místní informace jsou stále dostupné.',
+			'sourceSetup.videoDetailsLoading' => 'Načítání informací o videu',
+			'sourceSetup.subtitleKeyRequired' => 'Je vyžadován klíč API OpenSubtitles',
+			'sourceSetup.subtitleKeyHelp' => 'Upravte tento souborový zdroj a přidejte klíč API OpenSubtitles do volitelných nastavení titulků.',
+			'sourceSetup.subtitleSearchFailed' => 'Hledání titulků selhalo. Zkontrolujte klíč API, připojení a přístup ke službě.',
+			'sourceSetup.subtitleApplyFailed' => 'Titulky se nepodařilo stáhnout nebo použít. Zkontrolujte připojení a zkuste jiný výsledek.',
+			'sourceSetup.subtitleSearch' => 'Hledat na OpenSubtitles',
+			'sourceSetup.subtitleSearchPrivacy' => 'Hledání používá název a dostupná ID IMDb/TMDB. Videosoubor zůstává ve svém zdroji. Před výběrem zkontrolujte jazyk, označení vynucených titulků či titulků pro sluchově postižené a hodnocení.',
+			'sourceSetup.movieOrShow' => 'Film nebo seriál',
+			'sourceSetup.subtitleTitleHint' => 'Zadejte název pro upřesnění výsledků',
+			'sourceSetup.subtitleLanguage' => 'Jazyk titulků',
+			'sourceSetup.subtitleSearching' => 'Hledání na OpenSubtitles',
+			'sourceSetup.subtitleNoMatches' => 'Odpovídající titulky nebyly nalezeny. Zkuste jiný název nebo jazyk.',
+			'sourceSetup.downloadSubtitle' => 'Stáhnout titulky',
+			'sourceSetup.subtitle' => 'Titulky',
+			'sourceSetup.nfsTlsRequired' => 'Vyžadováno RPC-with-TLS',
+			'sourceSetup.nfsUnencrypted' => 'Nešifrované NFS',
+			'sourceSetup.tlsEncrypted' => 'Šifrováno pomocí TLS',
+			'sourceSetup.ftpPlain' => 'Nešifrované FTP',
+			'sourceSetup.sshPinned' => 'Šifrované SSH · připnutý hostitelský klíč',
+			'sourceSetup.smbEncrypted' => 'Šifrování SMB3 zapnuto',
+			'sourceSetup.smbUnencrypted' => 'Šifrování SMB3 vypnuto',
+			'sourceSetup.httpUnencrypted' => 'HTTP bez šifrování přenosu',
+			_ => null,
+		} ?? switch (path) {
+			'sourceSetup.checkEndpointSecurity' => 'Zkontrolovat zabezpečení koncového bodu',
+			'sourceSetup.fieldRequired' => ({required Object label}) => 'Povinné pole: ${label}.',
+			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Pro pole „${label}“ zadejte hodnotu od ${min} do ${max}.',
+			'sourceSetup.replaceFile' => ({required Object name}) => 'Nahradit ${name}',
+			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Vybraná identita klienta: ${name}',
+			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Hodnocení ${rating}',
+			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Stahování titulků: ${title}',
 			'games.title' => 'Games',
 			'games.enable' => 'Show Games for this profile',
 			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
@@ -7365,7 +7583,7 @@ extension on TranslationsCs {
 			'games.touchControls' => 'On-screen controller',
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
-			'games.touchSetupHint' => 'In a stream, use the controller’s settings button to move controls and change opacity. A Bluetooth or USB controller also works.',
+			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
 			'games.addGame' => 'Add game shortcut',
 			'games.gameName' => 'Game name',
 			'games.gameId' => 'Host application ID',
@@ -7374,16 +7592,22 @@ extension on TranslationsCs {
 			'games.wakeSent' => 'Wake request sent. The computer must support Wake-on-LAN on this network.',
 			'games.mac' => 'MAC address (optional)',
 			'games.help' => 'Games help',
-			'games.helpBody' => 'Enable Games for your profile, keep Sunshine or another compatible host running, then choose a discovered computer. Approve the first connection and choose a game. Pairing authorization belongs to this device; the saved library belongs to this PlezyNG profile.\n\nThe Android engine is bundled into PlezyNG and includes touch controls and gamepad support. Other native platforms and Steam playback are still being implemented. Steam discovery does not mean playback is available.\n\nSunshine, Apollo, Wolf and older GameStream hosts can expose different features. Pairing requires the host’s approval. QR codes open the Sunshine PIN page; they do not carry your credentials.\n\nFor access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nLeaving a stream keeps the game running on the computer. Stop it from the stream menu when you want to end the host session.',
+			'games.helpBody' => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Other native platforms and the Pyrowave decoder are still in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.',
 			'games.cancel' => 'Cancel',
 			'games.scanning' => 'Looking for computers…',
 			'games.saveShortcut' => 'Save shortcut',
 			'games.manualHint' => 'For Moonlight use the host’s GameStream HTTP port (usually 47989), not its web settings port. Steam normally advertises on 27036.',
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
-			'games.steamEnginePending' => 'Steam computers can be discovered and saved. Embedded Steam pairing and playback are still in development, including the Pyrowave beta codec.',
+			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Other platforms and Pyrowave remain under development.',
 			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
-			'games.steamBetaDescription' => 'Pyrowave support is planned for the embedded Steam engine. Discovery alone cannot tell whether a computer or this device can use it. Playback remains unavailable until the engine has been integrated and tested.',
+			'games.steamBetaDescription' => 'Steam’s Pyrowave beta is a GPU-decoded video codec. It is not enabled in this build: Steam packet framing and GPU presentation still need integration and host validation. The embedded Android Steam player currently requests H.264 or HEVC.',
+			'games.steamLibrary' => 'Steam library',
+			'games.connecting' => 'Connecting…',
+			'games.disconnect' => 'Disconnect',
+			'games.streamControls' => 'Stream controls',
+			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
+			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
 			_ => null,
 		};
 	}

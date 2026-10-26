@@ -35,7 +35,7 @@ class SteamDiscoveryCodec {
       final bodyLength = view.getUint32(12 + headerLength, Endian.little);
       if (16 + headerLength + bodyLength != packet.length) return null;
       final header = _Proto(packet.sublist(12, 12 + headerLength)).fields();
-      if (header[2] != BigInt.one || header[1] is! BigInt) return null;
+      if (header[2] != BigInt.one || header[1] is! BigInt || (header[1] as BigInt) == BigInt.zero) return null;
       final body = _Proto(packet.sublist(16 + headerLength)).fields();
       if (body[4] is! Uint8List) return null;
       final name = utf8.decode(body[4] as Uint8List);
@@ -46,7 +46,7 @@ class SteamDiscoveryCodec {
       return SteamAdvertisement(
         id: (header[1] as BigInt).toString(),
         name: name,
-        port: port,
+        connectPort: port,
         screenLocked: body[13] == BigInt.one,
         busy: body[14] == BigInt.one,
       );
@@ -75,12 +75,14 @@ class SteamAdvertisement {
   const SteamAdvertisement({
     required this.id,
     required this.name,
-    required this.port,
+    required this.connectPort,
     required this.screenLocked,
     required this.busy,
   });
   final String id, name;
-  final int port;
+
+  /// Steam-to-Steam TCP endpoint, never the device PIN/stream-launch UDP port.
+  final int connectPort;
   final bool screenLocked, busy;
 }
 

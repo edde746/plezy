@@ -170,34 +170,36 @@ class _PairGameComputerDialogState extends State<PairGameComputerDialog> {
         children: [
           Text(widget.host.name),
           const SizedBox(height: 12),
-          Text(t.games.pairInstructions),
+          Text(widget.host.protocol == GameProtocol.steam ? t.games.steamPairInstructions : t.games.pairInstructions),
           const SizedBox(height: 16),
           SelectableText(_pin, textDirection: TextDirection.ltr, style: Theme.of(context).textTheme.displayMedium),
           const SizedBox(height: 16),
-          Semantics(
-            label: t.games.qrHelp,
-            image: true,
-            child: SizedBox.square(
-              dimension: 180,
-              child: QrImageView(
-                data: widget.host.sunshinePairingPage.toString(),
-                size: 180,
-                backgroundColor: Colors.white,
+          if (widget.host.protocol == GameProtocol.gameStream) ...[
+            Semantics(
+              label: t.games.qrHelp,
+              image: true,
+              child: SizedBox.square(
+                dimension: 180,
+                child: QrImageView(
+                  data: widget.host.sunshinePairingPage.toString(),
+                  size: 180,
+                  backgroundColor: Colors.white,
+                ),
               ),
             ),
-          ),
-          Text(t.games.qrHelp),
-          TextButton(
-            onPressed: () async {
-              if (!widget.isCurrent()) return;
-              try {
-                await launchUrl(widget.host.sunshinePairingPage, mode: LaunchMode.externalApplication);
-              } catch (_) {
-                if (mounted) setState(() => _error = t.games.unavailable);
-              }
-            },
-            child: Text(t.games.openPairingPage),
-          ),
+            Text(t.games.qrHelp),
+            TextButton(
+              onPressed: () async {
+                if (!widget.isCurrent()) return;
+                try {
+                  await launchUrl(widget.host.sunshinePairingPage, mode: LaunchMode.externalApplication);
+                } catch (_) {
+                  if (mounted) setState(() => _error = t.games.unavailable);
+                }
+              },
+              child: Text(t.games.openPairingPage),
+            ),
+          ],
           if (_error == null)
             const LinearProgressIndicator()
           else

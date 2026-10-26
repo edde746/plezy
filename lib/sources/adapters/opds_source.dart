@@ -22,8 +22,9 @@ class OpdsSourceAdapter extends SourceAdapter {
         pages == null ||
         pages < 1 ||
         pages > 10000 ||
-        !const {'image/jpeg', 'image/png', 'image/gif'}.contains(type))
+        !const {'image/jpeg', 'image/png', 'image/gif'}.contains(type)) {
       return;
+    }
     final uri = catalog.resolve(href);
     transport.validate(uri);
     _streams[id] = (template: uri.toString(), count: pages);
@@ -236,7 +237,7 @@ class OpdsSourceAdapter extends SourceAdapter {
           id,
           uri,
           link.getAttribute('href'),
-          link.getAttribute('count', namespace: _pseNamespace),
+          link.getAttribute('count', namespaceUri: _pseNamespace),
           link.getAttribute('type') ?? '',
         );
       }

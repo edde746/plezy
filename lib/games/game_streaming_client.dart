@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/services.dart';
+import '../i18n/strings.g.dart';
 
 import 'game_models.dart';
 
@@ -82,7 +83,7 @@ class NativeGameStreamingClient implements GameStreamingClient {
   @override
   Future<List<StreamGame>> games(GameHost host) async {
     final rows = await _invoke<List<dynamic>>('games', _host(host), const Duration(seconds: 30));
-    return (rows ?? [])
+    final games = (rows ?? [])
         .take(2000)
         .map(
           (row) => StreamGame(
@@ -93,6 +94,10 @@ class NativeGameStreamingClient implements GameStreamingClient {
           ),
         )
         .toList();
+    if (host.protocol == GameProtocol.steam) {
+      games.insert(0, StreamGame(hostKey: host.key, id: '0', name: t.games.steamLibrary));
+    }
+    return games;
   }
 
   @override
@@ -104,6 +109,11 @@ class NativeGameStreamingClient implements GameStreamingClient {
       'appName': game.name,
       'touchControls': touchControls,
       'hdr': game.hdr,
+      'connecting': t.games.connecting,
+      'error': t.games.unavailable,
+      'disconnect': t.games.disconnect,
+      'menu': t.games.streamControls,
+      'touchLabel': t.games.touchControls,
     }, const Duration(seconds: 10));
     if (ok != true) throw const GameClientException(GameClientFailure.unavailable);
   }

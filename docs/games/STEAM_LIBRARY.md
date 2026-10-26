@@ -11,7 +11,7 @@ Research date: 2026-10-26. The desired interaction is **link computer/account on
 | Direct game launch in a device stream request | `CMsgRemoteDeviceStreamingRequest.gameid`, field 19 | High for the field. Requires an authenticated host, compatible request handling and an actual embedded playback engine |
 | Direct launch with progress and conflict results | `CMsgRemoteClientStartStream.app_id` and response launch-task/cloud-conflict fields | High for the schema. This is a separate control path; do not confuse it with device broadcast pairing |
 | Current ihslib device pairing | The pinned fork exposes host-specific secret keys and authorization callbacks | Moderate for portability: source and another project's working client exist; PlezyNG has not qualified it on hardware |
-| App-specific launch through the pinned ihslib C API | The upstream request struct lacked game ID even though generated protobuf types contain it | Adapter patch prepared and checked against the pinned sources; runtime unverified |
+| App-specific launch through the pinned ihslib C API | The pinned request struct includes game ID and the adapter supplies it | Compiled; a loopback test verifies serialized game ID 620 and non-desktop launch. Host launch remains unverified |
 
 The public metadata route can automatically use the Steam ID returned by a successful authorization where visibility allows it. A product-managed backend may supply a Web API credential; do not put a developer key in the app binary or require every ordinary user to obtain one. Steam OpenID establishes identity; it must not be treated as a grant to read a private library or start streams. Private/Family/non-Steam entries require a separately verified authenticated inventory route.
 
@@ -52,9 +52,13 @@ flowchart TD
 
 ## Concrete work in this change
 
-The profile-scoped game library, favorites, recent launches, native `games(host)` boundary and game-ID launch arguments are implemented. The Android GameStream adapter already fills this library from a paired host's app list. Steam remains capability-gated because its playback engine and authenticated library source are not connected yet.
+The profile-scoped library, favorites, recent launches, native `games(host)` boundary and game-ID launch arguments are implemented. The Android GameStream adapter fills the grid from a paired host's real app list and artwork.
 
-`scripts/games/patches/ihslib-game-id.patch` extends the pinned IHS request with a uint64 game ID and serializes the already-defined protobuf field. Zero preserves upstream Big Picture/Desktop behavior. It must be rebuilt with the library and its consumers: this changes the C struct ABI and is not safe to apply to a prebuilt binary. It is a reviewed preparation patch, not a claim that Steam launching works in this release.
+The experimental Android Steam adapter now performs device PIN pairing and saves a host-specific secret with Android Keystore encryption. The embedded stream supports a Steam Library/Big Picture card (game ID zero) and manually added game-ID shortcuts. It sends direct game IDs through the upstream request API and uses an in-process player. Refresh preserves these shortcuts. Neither device pairing nor the Big Picture card is described as an imported account catalog.
+
+**Automatic Steam catalog import is not implemented.** The pinned device library does not expose an authenticated game-inventory API. `library=false` therefore remains distinct from playback availability. Steam Guard/QR account login, a product Web API credential service, the Steam-to-Steam inventory channel, an optional host helper and account-backed internet rendezvous remain separate work. No account password or Web API key is requested by this implementation.
+
+The former game-ID preparation patch is unnecessary at the current runtime pin and has been removed. The native loopback regression test verifies that selecting a game serializes its ID without setting `stream_desktop`; this does not prove acceptance by every Steam host.
 
 ## Acceptance tests before enabling Steam library playback
 
@@ -73,7 +77,7 @@ The profile-scoped game library, favorites, recent launches, native `games(host)
 - [Valve authentication overview](https://partner.steamgames.com/doc/features/auth)
 - [Observed device discovery/stream request schema](https://github.com/SteamTracking/Protobufs/blob/master/steam/steammessages_remoteclient_discovery.proto)
 - [Observed remote-client inventory and launch schema](https://github.com/SteamTracking/Protobufs/blob/master/steam/steammessages_remoteclient.proto)
-- [Pinned ihslib client API](https://github.com/scaronni/ihslib/blob/f68de5f07e0c27ccea9f47f9f5e38fd92c99919e/include/ihslib/client.h)
-- [Pinned ihslib stream request serializer](https://github.com/scaronni/ihslib/blob/f68de5f07e0c27ccea9f47f9f5e38fd92c99919e/src/client/streaming.c)
+- [Pinned ihslib client API](https://github.com/scaronni/ihslib/blob/04688d19951c68bedc4370234cc1752043632cb3/include/ihslib/client.h)
+- [Pinned ihslib stream request serializer](https://github.com/scaronni/ihslib/blob/04688d19951c68bedc4370234cc1752043632cb3/src/client/streaming.c)
 
 The observed protobuf repositories are implementation evidence, not a Valve guarantee of a supported public API.

@@ -128,6 +128,17 @@ void main() {
     expect(isolateDisplayText('فيلم (2026)'), '\u2068فيلم (2026)\u2069');
   });
 
+  test('translated filter labels follow regional digits without changing their words', () async {
+    await settings.write(SettingsService.appLocale, AppLocale.ar);
+    await settings.write(SettingsService.formatLocale, 'ar-EG');
+    await LocalePreferences.apply();
+    expect(localizeDecimalDigits(t.discover.findNext.twentyMinutes), '٢٠ دقيقة');
+    expect(localizeDecimalDigits('২০ / ４５ / ۹۰'), '٢٠ / ٤٥ / ٩٠');
+    await settings.write(SettingsService.formatLocale, 'en-US');
+    await LocalePreferences.apply();
+    expect(localizeDecimalDigits('٢٠ دقيقة'), '20 دقيقة');
+  });
+
   test('numeric settings accept system keyboard digits without accepting ambiguous decimals', () {
     for (final digits in ['١٢٣', '۱۲۳', '१२३', '১২৩', '๑๒๓', '１２３', '123']) {
       expect(parseLocalizedInteger(digits), 123);

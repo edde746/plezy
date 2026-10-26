@@ -104,6 +104,7 @@ class TranslationsVi extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$vi fileSources = _Translations$fileSources$vi._(_root);
 	@override late final _Translations$lending$vi lending = _Translations$lending$vi._(_root);
 	@override late final _Translations$audiobook$vi audiobook = _Translations$audiobook$vi._(_root);
+	@override late final _Translations$sourceSetup$vi sourceSetup = _Translations$sourceSetup$vi._(_root);
 	@override late final _Translations$games$vi games = _Translations$games$vi._(_root);
 }
 
@@ -3045,6 +3046,12 @@ class _Translations$fileSources$vi extends Translations$fileSources$en {
 	@override String get useFiles => 'Sử dụng file và sách';
 	@override String get cancelScan => 'Đặt hủy scan';
 	@override String get googleDrive => 'Google Drive';
+	@override String get smbEndpointHint => 'Ví dụ: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Nhập một máy chủ SMB và một thư mục chia sẻ.';
+	@override String get smbFolderHelp => 'Để trống để dùng toàn bộ thư mục chia sẻ, hoặc nhập một thư mục bên trong.';
+	@override String get smbDomain => 'Miền (không bắt buộc)';
+	@override String get smbEncryption => 'Mã hóa kết nối SMB3';
+	@override String get smbEncryptionHint => 'Dùng mã hóa SMB3 khi NAS hỗ trợ.';
 }
 
 // Path: lending
@@ -3166,6 +3173,109 @@ class _Translations$audiobook$vi extends Translations$audiobook$en {
 	@override String get timeHelp => 'Thời gian: phút: giây, hoặc phút: giây';
 }
 
+// Path: sourceSetup
+class _Translations$sourceSetup$vi extends Translations$sourceSetup$en {
+	_Translations$sourceSetup$vi._(TranslationsVi root) : this._root = root, super.internal(root);
+
+	final TranslationsVi _root; // ignore: unused_field
+
+	// Translations
+	@override String get savedCertificate => 'Chứng chỉ máy chủ đã lưu';
+	@override String get nfsEndpointInvalid => 'Nhập URL NFS, chẳng hạn nfs://nas:2049/export.';
+	@override String get dlnaNone => 'Không tìm thấy máy chủ DLNA. Hãy nhập thủ công URL mô tả thiết bị.';
+	@override String get dlnaServers => 'Máy chủ đa phương tiện DLNA';
+	@override String get dlnaUnavailable => 'Không thể dò tìm DLNA trên mạng này. Hãy nhập thủ công URL mô tả thiết bị.';
+	@override String get dlnaSearching => 'Đang tìm máy chủ DLNA trên mạng cục bộ';
+	@override String get networkSearching => 'Đang tìm trên mạng cục bộ…';
+	@override String get dlnaDiscover => 'Dò tìm máy chủ DLNA';
+	@override String get dlnaHelp => 'Việc dò tìm phụ thuộc vào multicast trên mạng cục bộ. Nếu không thấy máy chủ, hãy nhập URL mô tả thiết bị của máy chủ đó ở trên.';
+	@override String get dlnaRoot => 'ID đối tượng DLNA; để trống để dùng thư mục gốc của thiết bị.';
+	@override String get passwordOrKey => 'Nhập mật khẩu hoặc thêm khóa riêng bên dưới.';
+	@override String get sshFingerprint => 'Dấu vân tay SHA256 của khóa máy chủ SSH';
+	@override String get sshFingerprintHelp => 'Xác minh với quản trị viên máy chủ. Trên máy chủ, chạy ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub và dùng giá trị SHA256.';
+	@override String get sshFingerprintKeep => 'Để trống để giữ dấu vân tay đang được ghim, hoặc nhập dấu vân tay máy chủ mới.';
+	@override String get sshAuthentication => 'Xác thực SSH bằng khóa công khai';
+	@override String get sshAuthenticationHelp => 'Không bắt buộc; cũng hỗ trợ xác thực bằng mật khẩu.';
+	@override String get privateKey => 'Khóa riêng (định dạng PEM hoặc OpenSSH)';
+	@override String get privateKeyPassphrase => 'Cụm mật khẩu của khóa riêng';
+	@override String get nfsMountPort => 'Cổng TCP của dịch vụ gắn kết NFS';
+	@override String get nfsMountPortHelp => 'Mặc định: 20048';
+	@override String get nfsUserId => 'ID người dùng NFS (AUTH_SYS)';
+	@override String get nfsUserIdHelp => 'Mặc định: 1000. Dùng ID được vùng chia sẻ NFS trên NAS cho phép.';
+	@override String get nfsGroupId => 'ID nhóm NFS (AUTH_SYS)';
+	@override String get nfsGroupIdHelp => 'Mặc định: 1000. Dùng ID nhóm được vùng chia sẻ NFS trên NAS cho phép.';
+	@override String get nfsEncryption => 'Bắt buộc mã hóa NFS (RPC-with-TLS)';
+	@override String get nfsEncryptionHelp => 'Bắt buộc dùng TLS 1.3 cho NFS và dịch vụ gắn kết. Nếu NAS không hỗ trợ, kết nối sẽ bị từ chối.';
+	@override String get nfsTrustCertificate => 'CA NFS tùy chỉnh hoặc chứng chỉ máy chủ (PEM, không bắt buộc)';
+	@override String get nfsTrustHelp => 'Để trống để dùng các chứng chỉ được thiết bị này tin cậy. Nếu cần, thêm chứng chỉ của CA riêng hoặc chứng chỉ máy chủ tự ký; các tên trong chứng chỉ phải khớp với máy chủ trong URL NFS.';
+	@override String get nfsTrustInvalid => 'Dùng chứng chỉ CA hoặc máy chủ ở định dạng PEM. Không kèm khóa riêng.';
+	@override String get addTrustCertificate => 'Thêm chứng chỉ tin cậy tùy chỉnh';
+	@override String get replaceTrustCertificate => 'Thay chứng chỉ tùy chỉnh đã lưu';
+	@override String get nfsTlsHelp => 'RPC-with-TLS dùng các cổng thông thường của NFS và dịch vụ gắn kết, đồng thời yêu cầu NAS hỗ trợ RFC 9289. Bắt buộc dùng TLS 1.3. Tên máy chủ hoặc địa chỉ IP phải khớp với chứng chỉ. AUTH_SYS UID/GID vẫn áp dụng trong kênh được mã hóa.';
+	@override String get clientCertificate => 'Chứng chỉ máy khách (không bắt buộc)';
+	@override String get clientCertificateHelp => 'Cho phép NAS xác thực máy khách này; ID AUTH_SYS vẫn phụ thuộc vào chính sách của vùng chia sẻ NFS trên NAS.';
+	@override String get savedIdentity => 'Sẽ dùng danh tính máy khách đã lưu.';
+	@override String get replaceIdentity => 'Thay danh tính máy khách đã lưu';
+	@override String get chooseIdentity => 'Chọn danh tính máy khách PKCS#12';
+	@override String get identityPassphrase => 'Cụm mật khẩu của danh tính máy khách';
+	@override String get identityPassphraseHelp => 'Để trống nếu tệp không có cụm mật khẩu.';
+	@override String get removeIdentity => 'Xóa danh tính máy khách đã lưu nếu có';
+	@override String get identityStorageHelp => 'Danh tính máy khách được lưu trong kho thông tin xác thực đã mã hóa của nguồn. Giữ nguyên phần này để giữ lại danh tính đã lưu.';
+	@override String get nfsLimitations => 'NFSv3 chỉ đọc qua TCP. Không có RPC-with-TLS thì lưu lượng NFS không được mã hóa. NAS phải cho phép các ID AUTH_SYS đã chọn và các cổng máy khách không cần đặc quyền (thường gọi là tùy chọn xuất “insecure”). Không hỗ trợ NFSv4 và UDP.';
+	@override String get nfsSetupHelp => 'Trợ giúp thiết lập NFS';
+	@override String get nfsSetupHint => 'Kiểm tra các thiết lập này nếu không mở được kết nối.';
+	@override String get nfsSetupDetails => 'Dùng vùng chia sẻ NFSv3 qua TCP. Khi bắt buộc mã hóa, cả dịch vụ NFS và dịch vụ gắn kết phải hỗ trợ RPC-with-TLS. Để trống chứng chỉ tùy chỉnh nếu chứng chỉ máy chủ được thiết bị này tin cậy, hoặc thêm chứng chỉ CA hay chứng chỉ tự ký của NAS. Tên trong chứng chỉ phải khớp với máy chủ của điểm cuối. Nếu NAS yêu cầu TLS hai chiều, hãy thêm danh tính máy khách PKCS#12 của nó. Cuối cùng, xác nhận vùng chia sẻ cho phép AUTH_SYS UID/GID đã cấu hình và chính sách cổng máy khách.';
+	@override String get ftpHelp => 'FTP dùng chế độ thụ động. Dùng ftp:// cho FTP không mã hóa, ftpes:// cho TLS tường minh, hoặc ftps:// cho TLS (ngầm định trên cổng 990; tường minh trên các cổng khác).';
+	@override String get openSubtitles => 'OpenSubtitles';
+	@override String get subtitleSetup => 'Tìm phụ đề tùy chọn cho các video riêng lẻ.';
+	@override String get apiKey => 'Khóa API';
+	@override String get optionalUsername => 'Tên người dùng của tài khoản (không bắt buộc)';
+	@override String get optionalPassword => 'Mật khẩu tài khoản (không bắt buộc)';
+	@override String get subtitlePrivacy => 'Lấy khóa API từ opensubtitles.com. Tìm kiếm gửi tiêu đề video và các ID IMDb/TMDB có sẵn, không bao giờ gửi tệp video. Khóa và thông tin xác thực tài khoản tùy chọn được mã hóa cùng nguồn này.';
+	@override String get automaticMetadata => 'Siêu dữ liệu video trực tuyến tự động';
+	@override String get metadataPrivacy => 'Chỉ gửi tiêu đề/năm từ tên tệp và số tập hoặc một ID NFO, không bao giờ gửi nội dung đa phương tiện hay thông tin xác thực. Các trường NFO vẫn được ưu tiên.';
+	@override String get nfsEncryptionFailure => 'Với NFS được mã hóa, kiểm tra hỗ trợ RFC 9289 và TLS 1.3 trên cả hai dịch vụ NAS, tên trong chứng chỉ và UID/GID của vùng chia sẻ. PlezyNG sẽ không thử lại kết nối này khi không mã hóa.';
+	@override String get sourceConnecting => 'Đang kết nối đến nguồn';
+	@override String get metadataSearchPrivacy => 'Lượt tìm tiêu đề này được gửi đến Trakt. Chỉ tiêu đề bạn nhập được gửi đi, không phải video hay thông tin xác thực của nguồn.';
+	@override String get chooseMatch => 'Chọn kết quả phù hợp';
+	@override String get metadataMatchHelp => 'Kiểm tra tiêu đề và năm trước khi chọn. Trakt nhận tiêu đề tìm kiếm; video vẫn ở nguồn của nó.';
+	@override String get metadataNoMatches => 'Không tìm thấy tiêu đề trực tuyến phù hợp. Hãy thử tiêu đề khác.';
+	@override String get metadataSearch => 'Tìm siêu dữ liệu trực tuyến';
+	@override String get metadataLoading => 'Đang tra cứu thông tin phim và chương trình TV trực tuyến…';
+	@override String get metadataFromTrakt => 'Siêu dữ liệu trực tuyến từ Trakt';
+	@override String get metadataNoAutomaticMatch => 'Không tự động tìm thấy tiêu đề phù hợp. Hãy tìm tiêu đề để chọn kết quả.';
+	@override String get metadataFailed => 'Không tải được siêu dữ liệu trực tuyến. Vẫn có thể phát và xem thông tin cục bộ.';
+	@override String get videoDetailsLoading => 'Đang tải thông tin video';
+	@override String get subtitleKeyRequired => 'Cần có khóa API OpenSubtitles';
+	@override String get subtitleKeyHelp => 'Chỉnh sửa nguồn tệp này và thêm khóa API OpenSubtitles trong phần cài đặt phụ đề tùy chọn.';
+	@override String get subtitleSearchFailed => 'Tìm phụ đề thất bại. Kiểm tra khóa API, kết nối và quyền truy cập dịch vụ.';
+	@override String get subtitleApplyFailed => 'Không thể tải xuống hoặc áp dụng phụ đề này. Kiểm tra kết nối và thử kết quả khác.';
+	@override String get subtitleSearch => 'Tìm trên OpenSubtitles';
+	@override String get subtitleSearchPrivacy => 'Tìm kiếm dùng tiêu đề và các ID IMDb/TMDB có sẵn. Tệp video vẫn ở nguồn của nó. Trước khi chọn, hãy kiểm tra ngôn ngữ, nhãn phụ đề bắt buộc hoặc dành cho người khiếm thính, và điểm đánh giá.';
+	@override String get movieOrShow => 'Phim hoặc chương trình TV';
+	@override String get subtitleTitleHint => 'Nhập tiêu đề để thu hẹp kết quả';
+	@override String get subtitleLanguage => 'Ngôn ngữ phụ đề';
+	@override String get subtitleSearching => 'Đang tìm trên OpenSubtitles';
+	@override String get subtitleNoMatches => 'Không tìm thấy phụ đề phù hợp. Thử tiêu đề hoặc ngôn ngữ khác.';
+	@override String get downloadSubtitle => 'Tải phụ đề';
+	@override String get subtitle => 'Phụ đề';
+	@override String get nfsTlsRequired => 'Bắt buộc có RPC-with-TLS';
+	@override String get nfsUnencrypted => 'NFS không mã hóa';
+	@override String get tlsEncrypted => 'Được mã hóa bằng TLS';
+	@override String get ftpPlain => 'FTP không mã hóa';
+	@override String get sshPinned => 'SSH được mã hóa · khóa máy chủ đã ghim';
+	@override String get smbEncrypted => 'Mã hóa SMB3 bật';
+	@override String get smbUnencrypted => 'Mã hóa SMB3 tắt';
+	@override String get httpUnencrypted => 'HTTP không mã hóa đường truyền';
+	@override String get checkEndpointSecurity => 'Kiểm tra bảo mật điểm cuối';
+	@override String fieldRequired({required Object label}) => '${label} là bắt buộc.';
+	@override String integerRange({required Object label, required Object min, required Object max}) => 'Nhập ${label} từ ${min} đến ${max}.';
+	@override String replaceFile({required Object name}) => 'Thay thế ${name}';
+	@override String selectedIdentity({required Object name}) => 'Danh tính máy khách đã chọn: ${name}';
+	@override String subtitleRating({required Object rating}) => 'Điểm đánh giá ${rating}';
+	@override String subtitleDownloading({required Object title}) => 'Đang tải phụ đề: ${title}';
+}
+
 // Path: games
 class _Translations$games$vi extends Translations$games$en {
 	_Translations$games$vi._(TranslationsVi root) : this._root = root, super.internal(root);
@@ -3215,7 +3325,7 @@ class _Translations$games$vi extends Translations$games$en {
 	@override String get touchControls => 'On-screen controller';
 	@override String get touchDescription => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.';
 	@override String get touchSetup => 'On-screen controls';
-	@override String get touchSetupHint => 'In a stream, use the controller’s settings button to move controls and change opacity. A Bluetooth or USB controller also works.';
+	@override String get touchSetupHint => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.';
 	@override String get addGame => 'Add game shortcut';
 	@override String get gameName => 'Game name';
 	@override String get gameId => 'Host application ID';
@@ -3224,16 +3334,22 @@ class _Translations$games$vi extends Translations$games$en {
 	@override String get wakeSent => 'Wake request sent. The computer must support Wake-on-LAN on this network.';
 	@override String get mac => 'MAC address (optional)';
 	@override String get help => 'Games help';
-	@override String get helpBody => 'Enable Games for your profile, keep Sunshine or another compatible host running, then choose a discovered computer. Approve the first connection and choose a game. Pairing authorization belongs to this device; the saved library belongs to this PlezyNG profile.\n\nThe Android engine is bundled into PlezyNG and includes touch controls and gamepad support. Other native platforms and Steam playback are still being implemented. Steam discovery does not mean playback is available.\n\nSunshine, Apollo, Wolf and older GameStream hosts can expose different features. Pairing requires the host’s approval. QR codes open the Sunshine PIN page; they do not carry your credentials.\n\nFor access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nLeaving a stream keeps the game running on the computer. Stop it from the stream menu when you want to end the host session.';
+	@override String get helpBody => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Other native platforms and the Pyrowave decoder are still in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.';
 	@override String get cancel => 'Cancel';
 	@override String get scanning => 'Looking for computers…';
 	@override String get saveShortcut => 'Save shortcut';
 	@override String get manualHint => 'For Moonlight use the host’s GameStream HTTP port (usually 47989), not its web settings port. Steam normally advertises on 27036.';
 	@override String get engineUnavailable => 'In-app streaming is not available here yet';
 	@override String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
-	@override String get steamEnginePending => 'Steam computers can be discovered and saved. Embedded Steam pairing and playback are still in development, including the Pyrowave beta codec.';
+	@override String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Other platforms and Pyrowave remain under development.';
 	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
-	@override String get steamBetaDescription => 'Pyrowave support is planned for the embedded Steam engine. Discovery alone cannot tell whether a computer or this device can use it. Playback remains unavailable until the engine has been integrated and tested.';
+	@override String get steamBetaDescription => 'Steam’s Pyrowave beta is a GPU-decoded video codec. It is not enabled in this build: Steam packet framing and GPU presentation still need integration and host validation. The embedded Android Steam player currently requests H.264 or HEVC.';
+	@override String get steamLibrary => 'Steam library';
+	@override String get connecting => 'Connecting…';
+	@override String get disconnect => 'Disconnect';
+	@override String get streamControls => 'Stream controls';
+	@override String get steamPairInstructions => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.';
+	@override String get steamLibraryHint => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.';
 }
 
 // Path: appIcon.names
@@ -3487,48 +3603,48 @@ class _Translations$discover$findNext$vi extends Translations$discover$findNext$
 	final TranslationsVi _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Tìm kế tiếp của bạn';
-	@override String get open => 'Tìm kế tiếp của bạn';
-	@override String get anyTime => 'Bất kỳ lúc nào';
+	@override String get title => 'Tìm lựa chọn tiếp theo';
+	@override String get open => 'Tìm lựa chọn tiếp theo';
+	@override String get anyTime => 'Không giới hạn thời gian';
 	@override String get timeAvailable => 'Bạn có bao nhiêu thời gian?';
-	@override String get filters => 'Chọn thời điểm';
-	@override String get watch => 'xem';
-	@override String get listen => 'Lắng nghe';
+	@override String get filters => 'Chọn điều phù hợp lúc này';
+	@override String get watch => 'Xem';
+	@override String get listen => 'Nghe';
 	@override String get read => 'Đọc';
-	@override String finishable({required Object duration}) => 'Kết thúc tại ${duration}';
-	@override String aboutDuration({required Object duration}) => 'Về ${duration}';
-	@override String nextUnit({required Object duration}) => 'Tiếp theo chương · ${duration}';
-	@override String totalDuration({required Object duration}) => '${duration} tổng số';
-	@override String get timingVaries => 'Thời gian khác nhau';
-	@override String get notNow => 'Không bây giờ';
+	@override String finishable({required Object duration}) => 'Có thể hoàn thành trong ${duration}';
+	@override String aboutDuration({required Object duration}) => 'Khoảng ${duration}';
+	@override String nextUnit({required Object duration}) => 'Chương tiếp theo · ${duration}';
+	@override String totalDuration({required Object duration}) => 'Tổng cộng ${duration}';
+	@override String get timingVaries => 'Thời lượng có thể thay đổi';
+	@override String get notNow => 'Để sau';
 	@override String get swipeHint => 'Vuốt ảnh bìa theo hướng mũi tên hoặc dùng các nút bên dưới.';
-	@override String get saved => 'Tiết kiệm picks';
-	@override String savedCount({required Object count}) => 'Tiết kiệm chi phí · ${count}';
-	@override String get undo => 'và';
-	@override String get details => 'chi tiết';
-	@override String get noPicks => 'Chưa có gì để chọn từ';
-	@override String get noPicksHint => 'Kết nối thư viện hoặc thêm một nguồn truyền thông để bắt đầu.';
-	@override String get noMatches => 'Không có gì phù hợp với khoảnh khắc này';
-	@override String get noMatchesHint => 'Hãy thử một định dạng khác hoặc cho mình thêm thời gian.';
-	@override String get allDone => 'Mọi người đều bị bắt';
-	@override String get allDoneHint => 'Bắt đầu một hỗn hợp mới để xem lại những lựa chọn này.';
-	@override String get refresh => 'Tìm thêm mix';
+	@override String get saved => 'Gợi ý đã lưu';
+	@override String savedCount({required Object count}) => 'Gợi ý đã lưu · ${count}';
+	@override String get undo => 'Hoàn tác';
+	@override String get details => 'Chi tiết';
+	@override String get noPicks => 'Chưa có nội dung để chọn';
+	@override String get noPicksHint => 'Kết nối thư viện hoặc thêm nguồn nội dung để bắt đầu.';
+	@override String get noMatches => 'Chưa có nội dung phù hợp lúc này';
+	@override String get noMatchesHint => 'Thử loại nội dung khác hoặc dành thêm thời gian.';
+	@override String get allDone => 'Bạn đã xem hết các gợi ý';
+	@override String get allDoneHint => 'Tạo nhóm gợi ý mới để xem lại những lựa chọn này.';
+	@override String get refresh => 'Tìm nhóm gợi ý khác';
 	@override String sourceReason({required Object source}) => 'Từ ${source}';
 	@override String libraryReason({required Object library}) => 'Từ ${library}';
 	@override String get ownedReason => 'Từ thư viện của bạn';
-	@override String get liveNow => 'tại bây giờ';
-	@override String get watchLive => 'Xem Live';
-	@override String get filterAnything => 'mọi thứ';
-	@override String get filterWatch => 'xem';
-	@override String get filterListen => 'Lắng nghe';
+	@override String get liveNow => 'Đang phát sóng';
+	@override String get watchLive => 'Xem trực tiếp';
+	@override String get filterAnything => 'Tất cả các loại';
+	@override String get filterWatch => 'Xem';
+	@override String get filterListen => 'Nghe';
 	@override String get filterRead => 'Đọc';
 	@override String get twentyMinutes => '20 phút';
 	@override String get fortyFiveMinutes => '45 phút';
 	@override String get ninetyMinutes => '90 phút';
-	@override String get apply => 'Ứng dụng';
-	@override String get openFailed => 'Lựa chọn này không còn sẵn dùng nữa.Xem lại để kiểm tra lại.';
-	@override String get changeFailed => 'Tôi không thể tiết kiệm được sự thay đổi đó, hãy thử lại.';
-	@override String get savedLimit => 'Tiết kiệm picks là đầy. loại bỏ một pick để tiết kiệm một khác.';
+	@override String get apply => 'Áp dụng';
+	@override String get openFailed => 'Lựa chọn này không còn khả dụng. Làm mới để kiểm tra lại.';
+	@override String get changeFailed => 'Không thể lưu thay đổi. Vui lòng thử lại.';
+	@override String get savedLimit => 'Danh sách gợi ý đã lưu đã đầy. Xóa một gợi ý để lưu gợi ý khác.';
 	@override String get chooseHint => 'Mở một tựa, lưu để xem sau hoặc bỏ qua.';
 	@override String get howItWorks => 'Cách sử dụng';
 	@override String get notNowHelp => 'Tạm bỏ qua tựa này. Tựa vẫn ở trong thư viện của bạn.';
@@ -5535,48 +5651,48 @@ extension on TranslationsVi {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'Mùa ${season} Tập ${episode}',
 			'discover.overview' => 'Tổng quan',
 			'discover.cast' => 'Diễn viên',
-			'discover.findNext.title' => 'Tìm kế tiếp của bạn',
-			'discover.findNext.open' => 'Tìm kế tiếp của bạn',
-			'discover.findNext.anyTime' => 'Bất kỳ lúc nào',
+			'discover.findNext.title' => 'Tìm lựa chọn tiếp theo',
+			'discover.findNext.open' => 'Tìm lựa chọn tiếp theo',
+			'discover.findNext.anyTime' => 'Không giới hạn thời gian',
 			'discover.findNext.timeAvailable' => 'Bạn có bao nhiêu thời gian?',
-			'discover.findNext.filters' => 'Chọn thời điểm',
-			'discover.findNext.watch' => 'xem',
-			'discover.findNext.listen' => 'Lắng nghe',
+			'discover.findNext.filters' => 'Chọn điều phù hợp lúc này',
+			'discover.findNext.watch' => 'Xem',
+			'discover.findNext.listen' => 'Nghe',
 			'discover.findNext.read' => 'Đọc',
-			'discover.findNext.finishable' => ({required Object duration}) => 'Kết thúc tại ${duration}',
-			'discover.findNext.aboutDuration' => ({required Object duration}) => 'Về ${duration}',
-			'discover.findNext.nextUnit' => ({required Object duration}) => 'Tiếp theo chương · ${duration}',
-			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} tổng số',
-			'discover.findNext.timingVaries' => 'Thời gian khác nhau',
-			'discover.findNext.notNow' => 'Không bây giờ',
+			'discover.findNext.finishable' => ({required Object duration}) => 'Có thể hoàn thành trong ${duration}',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => 'Khoảng ${duration}',
+			'discover.findNext.nextUnit' => ({required Object duration}) => 'Chương tiếp theo · ${duration}',
+			'discover.findNext.totalDuration' => ({required Object duration}) => 'Tổng cộng ${duration}',
+			'discover.findNext.timingVaries' => 'Thời lượng có thể thay đổi',
+			'discover.findNext.notNow' => 'Để sau',
 			'discover.findNext.swipeHint' => 'Vuốt ảnh bìa theo hướng mũi tên hoặc dùng các nút bên dưới.',
-			'discover.findNext.saved' => 'Tiết kiệm picks',
-			'discover.findNext.savedCount' => ({required Object count}) => 'Tiết kiệm chi phí · ${count}',
-			'discover.findNext.undo' => 'và',
-			'discover.findNext.details' => 'chi tiết',
-			'discover.findNext.noPicks' => 'Chưa có gì để chọn từ',
-			'discover.findNext.noPicksHint' => 'Kết nối thư viện hoặc thêm một nguồn truyền thông để bắt đầu.',
-			'discover.findNext.noMatches' => 'Không có gì phù hợp với khoảnh khắc này',
-			'discover.findNext.noMatchesHint' => 'Hãy thử một định dạng khác hoặc cho mình thêm thời gian.',
-			'discover.findNext.allDone' => 'Mọi người đều bị bắt',
-			'discover.findNext.allDoneHint' => 'Bắt đầu một hỗn hợp mới để xem lại những lựa chọn này.',
-			'discover.findNext.refresh' => 'Tìm thêm mix',
+			'discover.findNext.saved' => 'Gợi ý đã lưu',
+			'discover.findNext.savedCount' => ({required Object count}) => 'Gợi ý đã lưu · ${count}',
+			'discover.findNext.undo' => 'Hoàn tác',
+			'discover.findNext.details' => 'Chi tiết',
+			'discover.findNext.noPicks' => 'Chưa có nội dung để chọn',
+			'discover.findNext.noPicksHint' => 'Kết nối thư viện hoặc thêm nguồn nội dung để bắt đầu.',
+			'discover.findNext.noMatches' => 'Chưa có nội dung phù hợp lúc này',
+			'discover.findNext.noMatchesHint' => 'Thử loại nội dung khác hoặc dành thêm thời gian.',
+			'discover.findNext.allDone' => 'Bạn đã xem hết các gợi ý',
+			'discover.findNext.allDoneHint' => 'Tạo nhóm gợi ý mới để xem lại những lựa chọn này.',
+			'discover.findNext.refresh' => 'Tìm nhóm gợi ý khác',
 			'discover.findNext.sourceReason' => ({required Object source}) => 'Từ ${source}',
 			'discover.findNext.libraryReason' => ({required Object library}) => 'Từ ${library}',
 			'discover.findNext.ownedReason' => 'Từ thư viện của bạn',
-			'discover.findNext.liveNow' => 'tại bây giờ',
-			'discover.findNext.watchLive' => 'Xem Live',
-			'discover.findNext.filterAnything' => 'mọi thứ',
-			'discover.findNext.filterWatch' => 'xem',
-			'discover.findNext.filterListen' => 'Lắng nghe',
+			'discover.findNext.liveNow' => 'Đang phát sóng',
+			'discover.findNext.watchLive' => 'Xem trực tiếp',
+			'discover.findNext.filterAnything' => 'Tất cả các loại',
+			'discover.findNext.filterWatch' => 'Xem',
+			'discover.findNext.filterListen' => 'Nghe',
 			'discover.findNext.filterRead' => 'Đọc',
 			'discover.findNext.twentyMinutes' => '20 phút',
 			'discover.findNext.fortyFiveMinutes' => '45 phút',
 			'discover.findNext.ninetyMinutes' => '90 phút',
-			'discover.findNext.apply' => 'Ứng dụng',
-			'discover.findNext.openFailed' => 'Lựa chọn này không còn sẵn dùng nữa.Xem lại để kiểm tra lại.',
-			'discover.findNext.changeFailed' => 'Tôi không thể tiết kiệm được sự thay đổi đó, hãy thử lại.',
-			'discover.findNext.savedLimit' => 'Tiết kiệm picks là đầy. loại bỏ một pick để tiết kiệm một khác.',
+			'discover.findNext.apply' => 'Áp dụng',
+			'discover.findNext.openFailed' => 'Lựa chọn này không còn khả dụng. Làm mới để kiểm tra lại.',
+			'discover.findNext.changeFailed' => 'Không thể lưu thay đổi. Vui lòng thử lại.',
+			'discover.findNext.savedLimit' => 'Danh sách gợi ý đã lưu đã đầy. Xóa một gợi ý để lưu gợi ý khác.',
 			'discover.findNext.chooseHint' => 'Mở một tựa, lưu để xem sau hoặc bỏ qua.',
 			'discover.findNext.howItWorks' => 'Cách sử dụng',
 			'discover.findNext.notNowHelp' => 'Tạm bỏ qua tựa này. Tựa vẫn ở trong thư viện của bạn.',
@@ -7162,6 +7278,12 @@ extension on TranslationsVi {
 			'fileSources.useFiles' => 'Sử dụng file và sách',
 			'fileSources.cancelScan' => 'Đặt hủy scan',
 			'fileSources.googleDrive' => 'Google Drive',
+			'fileSources.smbEndpointHint' => 'Ví dụ: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Nhập một máy chủ SMB và một thư mục chia sẻ.',
+			'fileSources.smbFolderHelp' => 'Để trống để dùng toàn bộ thư mục chia sẻ, hoặc nhập một thư mục bên trong.',
+			'fileSources.smbDomain' => 'Miền (không bắt buộc)',
+			'fileSources.smbEncryption' => 'Mã hóa kết nối SMB3',
+			'fileSources.smbEncryptionHint' => 'Dùng mã hóa SMB3 khi NAS hỗ trợ.',
 			'lending.title' => 'Thư viện công cộng',
 			'lending.add' => 'Thêm một thư viện',
 			'lending.other' => 'Thư viện khác',
@@ -7263,6 +7385,102 @@ extension on TranslationsVi {
 			'audiobook.statusFinished' => 'Kết thúc',
 			'audiobook.goToTime' => 'Đi đến thời gian',
 			'audiobook.timeHelp' => 'Thời gian: phút: giây, hoặc phút: giây',
+			'sourceSetup.savedCertificate' => 'Chứng chỉ máy chủ đã lưu',
+			'sourceSetup.nfsEndpointInvalid' => 'Nhập URL NFS, chẳng hạn nfs://nas:2049/export.',
+			'sourceSetup.dlnaNone' => 'Không tìm thấy máy chủ DLNA. Hãy nhập thủ công URL mô tả thiết bị.',
+			'sourceSetup.dlnaServers' => 'Máy chủ đa phương tiện DLNA',
+			'sourceSetup.dlnaUnavailable' => 'Không thể dò tìm DLNA trên mạng này. Hãy nhập thủ công URL mô tả thiết bị.',
+			'sourceSetup.dlnaSearching' => 'Đang tìm máy chủ DLNA trên mạng cục bộ',
+			'sourceSetup.networkSearching' => 'Đang tìm trên mạng cục bộ…',
+			'sourceSetup.dlnaDiscover' => 'Dò tìm máy chủ DLNA',
+			'sourceSetup.dlnaHelp' => 'Việc dò tìm phụ thuộc vào multicast trên mạng cục bộ. Nếu không thấy máy chủ, hãy nhập URL mô tả thiết bị của máy chủ đó ở trên.',
+			'sourceSetup.dlnaRoot' => 'ID đối tượng DLNA; để trống để dùng thư mục gốc của thiết bị.',
+			'sourceSetup.passwordOrKey' => 'Nhập mật khẩu hoặc thêm khóa riêng bên dưới.',
+			'sourceSetup.sshFingerprint' => 'Dấu vân tay SHA256 của khóa máy chủ SSH',
+			'sourceSetup.sshFingerprintHelp' => 'Xác minh với quản trị viên máy chủ. Trên máy chủ, chạy ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub và dùng giá trị SHA256.',
+			'sourceSetup.sshFingerprintKeep' => 'Để trống để giữ dấu vân tay đang được ghim, hoặc nhập dấu vân tay máy chủ mới.',
+			'sourceSetup.sshAuthentication' => 'Xác thực SSH bằng khóa công khai',
+			'sourceSetup.sshAuthenticationHelp' => 'Không bắt buộc; cũng hỗ trợ xác thực bằng mật khẩu.',
+			'sourceSetup.privateKey' => 'Khóa riêng (định dạng PEM hoặc OpenSSH)',
+			'sourceSetup.privateKeyPassphrase' => 'Cụm mật khẩu của khóa riêng',
+			'sourceSetup.nfsMountPort' => 'Cổng TCP của dịch vụ gắn kết NFS',
+			'sourceSetup.nfsMountPortHelp' => 'Mặc định: 20048',
+			'sourceSetup.nfsUserId' => 'ID người dùng NFS (AUTH_SYS)',
+			'sourceSetup.nfsUserIdHelp' => 'Mặc định: 1000. Dùng ID được vùng chia sẻ NFS trên NAS cho phép.',
+			'sourceSetup.nfsGroupId' => 'ID nhóm NFS (AUTH_SYS)',
+			'sourceSetup.nfsGroupIdHelp' => 'Mặc định: 1000. Dùng ID nhóm được vùng chia sẻ NFS trên NAS cho phép.',
+			'sourceSetup.nfsEncryption' => 'Bắt buộc mã hóa NFS (RPC-with-TLS)',
+			'sourceSetup.nfsEncryptionHelp' => 'Bắt buộc dùng TLS 1.3 cho NFS và dịch vụ gắn kết. Nếu NAS không hỗ trợ, kết nối sẽ bị từ chối.',
+			'sourceSetup.nfsTrustCertificate' => 'CA NFS tùy chỉnh hoặc chứng chỉ máy chủ (PEM, không bắt buộc)',
+			'sourceSetup.nfsTrustHelp' => 'Để trống để dùng các chứng chỉ được thiết bị này tin cậy. Nếu cần, thêm chứng chỉ của CA riêng hoặc chứng chỉ máy chủ tự ký; các tên trong chứng chỉ phải khớp với máy chủ trong URL NFS.',
+			'sourceSetup.nfsTrustInvalid' => 'Dùng chứng chỉ CA hoặc máy chủ ở định dạng PEM. Không kèm khóa riêng.',
+			'sourceSetup.addTrustCertificate' => 'Thêm chứng chỉ tin cậy tùy chỉnh',
+			'sourceSetup.replaceTrustCertificate' => 'Thay chứng chỉ tùy chỉnh đã lưu',
+			'sourceSetup.nfsTlsHelp' => 'RPC-with-TLS dùng các cổng thông thường của NFS và dịch vụ gắn kết, đồng thời yêu cầu NAS hỗ trợ RFC 9289. Bắt buộc dùng TLS 1.3. Tên máy chủ hoặc địa chỉ IP phải khớp với chứng chỉ. AUTH_SYS UID/GID vẫn áp dụng trong kênh được mã hóa.',
+			'sourceSetup.clientCertificate' => 'Chứng chỉ máy khách (không bắt buộc)',
+			'sourceSetup.clientCertificateHelp' => 'Cho phép NAS xác thực máy khách này; ID AUTH_SYS vẫn phụ thuộc vào chính sách của vùng chia sẻ NFS trên NAS.',
+			'sourceSetup.savedIdentity' => 'Sẽ dùng danh tính máy khách đã lưu.',
+			'sourceSetup.replaceIdentity' => 'Thay danh tính máy khách đã lưu',
+			'sourceSetup.chooseIdentity' => 'Chọn danh tính máy khách PKCS#12',
+			'sourceSetup.identityPassphrase' => 'Cụm mật khẩu của danh tính máy khách',
+			'sourceSetup.identityPassphraseHelp' => 'Để trống nếu tệp không có cụm mật khẩu.',
+			'sourceSetup.removeIdentity' => 'Xóa danh tính máy khách đã lưu nếu có',
+			'sourceSetup.identityStorageHelp' => 'Danh tính máy khách được lưu trong kho thông tin xác thực đã mã hóa của nguồn. Giữ nguyên phần này để giữ lại danh tính đã lưu.',
+			'sourceSetup.nfsLimitations' => 'NFSv3 chỉ đọc qua TCP. Không có RPC-with-TLS thì lưu lượng NFS không được mã hóa. NAS phải cho phép các ID AUTH_SYS đã chọn và các cổng máy khách không cần đặc quyền (thường gọi là tùy chọn xuất “insecure”). Không hỗ trợ NFSv4 và UDP.',
+			'sourceSetup.nfsSetupHelp' => 'Trợ giúp thiết lập NFS',
+			'sourceSetup.nfsSetupHint' => 'Kiểm tra các thiết lập này nếu không mở được kết nối.',
+			'sourceSetup.nfsSetupDetails' => 'Dùng vùng chia sẻ NFSv3 qua TCP. Khi bắt buộc mã hóa, cả dịch vụ NFS và dịch vụ gắn kết phải hỗ trợ RPC-with-TLS. Để trống chứng chỉ tùy chỉnh nếu chứng chỉ máy chủ được thiết bị này tin cậy, hoặc thêm chứng chỉ CA hay chứng chỉ tự ký của NAS. Tên trong chứng chỉ phải khớp với máy chủ của điểm cuối. Nếu NAS yêu cầu TLS hai chiều, hãy thêm danh tính máy khách PKCS#12 của nó. Cuối cùng, xác nhận vùng chia sẻ cho phép AUTH_SYS UID/GID đã cấu hình và chính sách cổng máy khách.',
+			'sourceSetup.ftpHelp' => 'FTP dùng chế độ thụ động. Dùng ftp:// cho FTP không mã hóa, ftpes:// cho TLS tường minh, hoặc ftps:// cho TLS (ngầm định trên cổng 990; tường minh trên các cổng khác).',
+			'sourceSetup.openSubtitles' => 'OpenSubtitles',
+			'sourceSetup.subtitleSetup' => 'Tìm phụ đề tùy chọn cho các video riêng lẻ.',
+			'sourceSetup.apiKey' => 'Khóa API',
+			'sourceSetup.optionalUsername' => 'Tên người dùng của tài khoản (không bắt buộc)',
+			'sourceSetup.optionalPassword' => 'Mật khẩu tài khoản (không bắt buộc)',
+			'sourceSetup.subtitlePrivacy' => 'Lấy khóa API từ opensubtitles.com. Tìm kiếm gửi tiêu đề video và các ID IMDb/TMDB có sẵn, không bao giờ gửi tệp video. Khóa và thông tin xác thực tài khoản tùy chọn được mã hóa cùng nguồn này.',
+			'sourceSetup.automaticMetadata' => 'Siêu dữ liệu video trực tuyến tự động',
+			'sourceSetup.metadataPrivacy' => 'Chỉ gửi tiêu đề/năm từ tên tệp và số tập hoặc một ID NFO, không bao giờ gửi nội dung đa phương tiện hay thông tin xác thực. Các trường NFO vẫn được ưu tiên.',
+			'sourceSetup.nfsEncryptionFailure' => 'Với NFS được mã hóa, kiểm tra hỗ trợ RFC 9289 và TLS 1.3 trên cả hai dịch vụ NAS, tên trong chứng chỉ và UID/GID của vùng chia sẻ. PlezyNG sẽ không thử lại kết nối này khi không mã hóa.',
+			'sourceSetup.sourceConnecting' => 'Đang kết nối đến nguồn',
+			'sourceSetup.metadataSearchPrivacy' => 'Lượt tìm tiêu đề này được gửi đến Trakt. Chỉ tiêu đề bạn nhập được gửi đi, không phải video hay thông tin xác thực của nguồn.',
+			'sourceSetup.chooseMatch' => 'Chọn kết quả phù hợp',
+			'sourceSetup.metadataMatchHelp' => 'Kiểm tra tiêu đề và năm trước khi chọn. Trakt nhận tiêu đề tìm kiếm; video vẫn ở nguồn của nó.',
+			'sourceSetup.metadataNoMatches' => 'Không tìm thấy tiêu đề trực tuyến phù hợp. Hãy thử tiêu đề khác.',
+			'sourceSetup.metadataSearch' => 'Tìm siêu dữ liệu trực tuyến',
+			'sourceSetup.metadataLoading' => 'Đang tra cứu thông tin phim và chương trình TV trực tuyến…',
+			'sourceSetup.metadataFromTrakt' => 'Siêu dữ liệu trực tuyến từ Trakt',
+			'sourceSetup.metadataNoAutomaticMatch' => 'Không tự động tìm thấy tiêu đề phù hợp. Hãy tìm tiêu đề để chọn kết quả.',
+			'sourceSetup.metadataFailed' => 'Không tải được siêu dữ liệu trực tuyến. Vẫn có thể phát và xem thông tin cục bộ.',
+			'sourceSetup.videoDetailsLoading' => 'Đang tải thông tin video',
+			'sourceSetup.subtitleKeyRequired' => 'Cần có khóa API OpenSubtitles',
+			'sourceSetup.subtitleKeyHelp' => 'Chỉnh sửa nguồn tệp này và thêm khóa API OpenSubtitles trong phần cài đặt phụ đề tùy chọn.',
+			'sourceSetup.subtitleSearchFailed' => 'Tìm phụ đề thất bại. Kiểm tra khóa API, kết nối và quyền truy cập dịch vụ.',
+			'sourceSetup.subtitleApplyFailed' => 'Không thể tải xuống hoặc áp dụng phụ đề này. Kiểm tra kết nối và thử kết quả khác.',
+			'sourceSetup.subtitleSearch' => 'Tìm trên OpenSubtitles',
+			'sourceSetup.subtitleSearchPrivacy' => 'Tìm kiếm dùng tiêu đề và các ID IMDb/TMDB có sẵn. Tệp video vẫn ở nguồn của nó. Trước khi chọn, hãy kiểm tra ngôn ngữ, nhãn phụ đề bắt buộc hoặc dành cho người khiếm thính, và điểm đánh giá.',
+			'sourceSetup.movieOrShow' => 'Phim hoặc chương trình TV',
+			'sourceSetup.subtitleTitleHint' => 'Nhập tiêu đề để thu hẹp kết quả',
+			'sourceSetup.subtitleLanguage' => 'Ngôn ngữ phụ đề',
+			'sourceSetup.subtitleSearching' => 'Đang tìm trên OpenSubtitles',
+			'sourceSetup.subtitleNoMatches' => 'Không tìm thấy phụ đề phù hợp. Thử tiêu đề hoặc ngôn ngữ khác.',
+			'sourceSetup.downloadSubtitle' => 'Tải phụ đề',
+			'sourceSetup.subtitle' => 'Phụ đề',
+			'sourceSetup.nfsTlsRequired' => 'Bắt buộc có RPC-with-TLS',
+			'sourceSetup.nfsUnencrypted' => 'NFS không mã hóa',
+			'sourceSetup.tlsEncrypted' => 'Được mã hóa bằng TLS',
+			'sourceSetup.ftpPlain' => 'FTP không mã hóa',
+			'sourceSetup.sshPinned' => 'SSH được mã hóa · khóa máy chủ đã ghim',
+			'sourceSetup.smbEncrypted' => 'Mã hóa SMB3 bật',
+			'sourceSetup.smbUnencrypted' => 'Mã hóa SMB3 tắt',
+			'sourceSetup.httpUnencrypted' => 'HTTP không mã hóa đường truyền',
+			_ => null,
+		} ?? switch (path) {
+			'sourceSetup.checkEndpointSecurity' => 'Kiểm tra bảo mật điểm cuối',
+			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} là bắt buộc.',
+			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Nhập ${label} từ ${min} đến ${max}.',
+			'sourceSetup.replaceFile' => ({required Object name}) => 'Thay thế ${name}',
+			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Danh tính máy khách đã chọn: ${name}',
+			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Điểm đánh giá ${rating}',
+			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Đang tải phụ đề: ${title}',
 			'games.title' => 'Games',
 			'games.enable' => 'Show Games for this profile',
 			'games.enableDescription' => 'Discover your gaming computers and play with an embedded streaming engine.',
@@ -7305,7 +7523,7 @@ extension on TranslationsVi {
 			'games.touchControls' => 'On-screen controller',
 			'games.touchDescription' => 'Show the native controller during a stream. It supports multiple fingers, sticks, buttons and triggers.',
 			'games.touchSetup' => 'On-screen controls',
-			'games.touchSetupHint' => 'In a stream, use the controller’s settings button to move controls and change opacity. A Bluetooth or USB controller also works.',
+			'games.touchSetupHint' => 'Moonlight’s controller settings support position and opacity changes. During a Steam stream, open the stream menu to toggle its controller. Bluetooth or USB input is also supported.',
 			'games.addGame' => 'Add game shortcut',
 			'games.gameName' => 'Game name',
 			'games.gameId' => 'Host application ID',
@@ -7314,16 +7532,22 @@ extension on TranslationsVi {
 			'games.wakeSent' => 'Wake request sent. The computer must support Wake-on-LAN on this network.',
 			'games.mac' => 'MAC address (optional)',
 			'games.help' => 'Games help',
-			'games.helpBody' => 'Enable Games for your profile, keep Sunshine or another compatible host running, then choose a discovered computer. Approve the first connection and choose a game. Pairing authorization belongs to this device; the saved library belongs to this PlezyNG profile.\n\nThe Android engine is bundled into PlezyNG and includes touch controls and gamepad support. Other native platforms and Steam playback are still being implemented. Steam discovery does not mean playback is available.\n\nSunshine, Apollo, Wolf and older GameStream hosts can expose different features. Pairing requires the host’s approval. QR codes open the Sunshine PIN page; they do not carry your credentials.\n\nFor access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nLeaving a stream keeps the game running on the computer. Stop it from the stream menu when you want to end the host session.',
+			'games.helpBody' => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Other native platforms and the Pyrowave decoder are still in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.',
 			'games.cancel' => 'Cancel',
 			'games.scanning' => 'Looking for computers…',
 			'games.saveShortcut' => 'Save shortcut',
 			'games.manualHint' => 'For Moonlight use the host’s GameStream HTTP port (usually 47989), not its web settings port. Steam normally advertises on 27036.',
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
-			'games.steamEnginePending' => 'Steam computers can be discovered and saved. Embedded Steam pairing and playback are still in development, including the Pyrowave beta codec.',
+			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Other platforms and Pyrowave remain under development.',
 			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
-			'games.steamBetaDescription' => 'Pyrowave support is planned for the embedded Steam engine. Discovery alone cannot tell whether a computer or this device can use it. Playback remains unavailable until the engine has been integrated and tested.',
+			'games.steamBetaDescription' => 'Steam’s Pyrowave beta is a GPU-decoded video codec. It is not enabled in this build: Steam packet framing and GPU presentation still need integration and host validation. The embedded Android Steam player currently requests H.264 or HEVC.',
+			'games.steamLibrary' => 'Steam library',
+			'games.connecting' => 'Connecting…',
+			'games.disconnect' => 'Disconnect',
+			'games.streamControls' => 'Stream controls',
+			'games.steamPairInstructions' => 'Enter this code in Steam’s Remote Play pairing prompt on your computer. Keep this screen open until Steam approves.',
+			'games.steamLibraryHint' => 'Steam device pairing opens its library inside the stream. Add a shortcut with a Steam app ID for direct launch. Importing a private account library as game cards requires a separate authenticated catalog connection.',
 			_ => null,
 		};
 	}

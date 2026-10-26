@@ -163,11 +163,13 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
   Future<void> _connect(GameHost host, {bool forcePair = false}) => _run((c) async {
     final capability = await c.client.capabilities(host);
     c.requireCurrent();
-    if (!capability.available || !capability.library || !capability.inlinePairing) {
+    if (!capability.available || !capability.inlinePairing) {
       await _engineUnavailable(host);
       return;
     }
-    final selected = await identifyGameStreamHost(host);
+    final selected = host.protocol == GameProtocol.steam
+        ? await identifySteamHost(host)
+        : await identifyGameStreamHost(host);
     c.requireCurrent();
     if (selected.key != host.key) await c.removeHost(host);
     await c.saveHost(selected);
@@ -271,10 +273,8 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
       enabled: !_controller!.busy,
       entriesBuilder: (_) => [
         AppMenuItem(value: 'pair', label: t.games.pair, icon: Symbols.link_rounded),
-        if (host.protocol == GameProtocol.gameStream) ...[
-          AppMenuItem(value: 'refresh', label: t.games.refreshGames, icon: Symbols.refresh_rounded),
-          AppMenuItem(value: 'add', label: t.games.addGame, icon: Symbols.add_rounded),
-        ],
+        AppMenuItem(value: 'refresh', label: t.games.refreshGames, icon: Symbols.refresh_rounded),
+        AppMenuItem(value: 'add', label: t.games.addGame, icon: Symbols.add_rounded),
         if (host.mac != null) AppMenuItem(value: 'wake', label: t.games.wake, icon: Symbols.power_settings_new_rounded),
         AppMenuItem(value: 'forget', label: t.games.forget, icon: Symbols.delete_rounded, destructive: true),
       ],
@@ -440,7 +440,10 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
         SliverToBoxAdapter(
           child: SettingsGroup(
             title: t.games.steamBetaTitle,
-            children: [Padding(padding: const EdgeInsets.all(16), child: Text(t.games.steamBetaDescription))],
+            children: [
+              Padding(padding: const EdgeInsets.all(16), child: Text(t.games.steamLibraryHint)),
+              Padding(padding: const EdgeInsets.all(16), child: Text(t.games.steamBetaDescription)),
+            ],
           ),
         ),
         if (_profile != null)
