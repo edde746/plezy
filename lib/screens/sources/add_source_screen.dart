@@ -3,9 +3,11 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
+import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../i18n/presentation_formats.dart';
@@ -15,6 +17,7 @@ import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../sources/publication_shelf.dart';
 import '../../utils/platform_detector.dart';
+import '../../widgets/app_icon.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/provider_mark.dart';
@@ -511,10 +514,13 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                     ),
                     Align(
                       alignment: AlignmentDirectional.centerStart,
-                      child: TextButton.icon(
+                      child: FocusableButton(
                         onPressed: _busy ? null : () => setState(() => field('syncLibrary').text = const Uuid().v4()),
-                        icon: const Icon(Icons.key_rounded),
-                        label: Text(t.sourceSetup.generateSharedLibraryId),
+                        child: TextButton.icon(
+                          onPressed: _busy ? null : () => setState(() => field('syncLibrary').text = const Uuid().v4()),
+                          icon: const AppIcon(Symbols.key_rounded),
+                          label: Text(t.sourceSetup.generateSharedLibraryId),
+                        ),
                       ),
                     ),
                     if (const {

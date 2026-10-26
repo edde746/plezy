@@ -14,6 +14,7 @@ import '../../sources/publication_library.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/provider_mark.dart';
 import '../../widgets/music/mini_player.dart';
 import '../../widgets/app_menu.dart';
@@ -253,7 +254,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
     if (!mounted) return;
     final choices = [1, 2, 5, 10, 20, 50, 100, 250, 500, 1024].map((gb) => gb * 1024 * 1024 * 1024).toList();
     var selected = choices.reduce((a, b) => (a - current).abs() <= (b - current).abs() ? a : b);
-    final result = await showDialog<int>(
+    final result = await showScopedDialog<int>(
       context: context,
       builder: (dialogContext) => StatefulBuilder(
         builder: (context, setDialogState) => AlertDialog(
@@ -280,8 +281,12 @@ class _SourcesScreenState extends State<SourcesScreen> {
             ],
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
-            FilledButton(onPressed: () => Navigator.pop(dialogContext, selected), child: Text(t.common.save)),
+            DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
+            DialogActionButton(
+              onPressed: () => Navigator.pop(dialogContext, selected),
+              label: t.common.save,
+              isPrimary: true,
+            ),
           ],
         ),
       ),

@@ -700,14 +700,23 @@ class SourceController extends ChangeNotifier {
     requireSession();
     final epoch = generation, profile = profileId!;
     final row = await repository.download(profile, downloadKey);
+    requireSession(epoch);
     if (row == null) throw const SourceException(SourceFailure.invalidData);
     if (row['state'] == 'orphaned' || row['state'] == 'importing') {
       throw const SourceException(SourceFailure.unsupported);
     }
     final sourceId = row['source_id'] as String? ?? '';
     final file = PublicationFile.fromJson(sourceMap(jsonDecode(row['file_payload'] as String? ?? '{}')));
-    if (sourceId.isEmpty || file.fingerprint != row['fingerprint']) throw const SourceException(SourceFailure.invalidData);
-    await downloads.download(profile, adapter(sourceId), file, label: row['label'] as String? ?? '');
+    if (sourceId.isEmpty ||
+        file.fingerprint != row['fingerprint'] ||
+        sourceKey(sourceId, file.id) != downloadKey) {
+      throw const SourceException(SourceFailure.invalidData);
+    }
+    final source = sources.where((candidate) => candidate.id == sourceId).firstOrNull;
+    if (source == null || source.profileId != profile) throw const SourceException(SourceFailure.permission);
+    final sourceAdapter = adapter(sourceId);
+    requireSession(epoch);
+    await downloads.download(profile, sourceAdapter, file, label: row['label'] as String? ?? '');
     requireSession(epoch);
   }
 

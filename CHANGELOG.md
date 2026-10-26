@@ -3,7 +3,7 @@
 ## [Unreleased]
 
 - Restore shared focus navigation across source browsing and dialogs, announce source and sync errors accessibly, and explain shared-ID requirements before recovery imports.
-- Require an explicit confirmation before exclusive encrypted sync pauses Audiobookshelf progress and bookmark sync.
+- Confirm encrypted sync setup with a privacy summary and keep provider progress/bookmark writes on separate retry paths.
 - Isolate provider sync failures by source with bounded exponential retry backoff, retaining failed events while unrelated pending work proceeds.
 - Provision pinned Chromium and make the existing publication reader browser suite required in the private JIT CI job.
 - Reuse NFSv3 RPC/TLS sessions across calls and limit publication downloads to two active transfers, preserving durable records for partial recovery.
