@@ -29,6 +29,7 @@ AppStream summary, 30 characters:
 - The shared short description is used in Homebrew, Snap, Debian, RPM, AUR, AppImage, Chocolatey, WinGet, desktop entries, and the Microsoft Store package template.
 - Flatpak/AppStream uses its shorter summary and the full feature description.
 - Google Play, App Store Connect, and Amazon Appstore listing text is managed in their consoles. `publish-app-stores.yml` uploads binaries; it does not upload descriptions or screenshots. Use the copy above when editing those listings.
+- Google Play artwork is in `docs/maintainers/store-listing-assets/google-play/`: the 512×512 app icon, 1024×500 feature graphic, and four 1080×1920 phone screenshots. The phone set shows server selection, Discover, library browsing, and media details.
 - GitHub Release notes are generated from `CHANGELOG.md`, and Discord announcements use those notes. Keep both specific to each release instead of repeating the permanent store description.
 - The README and internal project-history text are separate from this release copy.
 
