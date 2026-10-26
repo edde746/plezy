@@ -27,6 +27,11 @@ import '../lending/public_libraries_screen.dart';
 String sourceTransportLabel(FileSource source) {
   final type = sourceKindName(source.kind);
   final scheme = Uri.tryParse(source.endpoint)?.scheme.toLowerCase();
+  final endpointSecurity = switch (scheme) {
+    'https' => 'HTTPS',
+    'http' => 'HTTP without transport encryption',
+    _ => 'Check endpoint security',
+  };
   return switch (source.kind) {
     FileSourceKind.nfs =>
       '$type · ${source.options['rpcTls'] == 'required' ? 'RPC-with-TLS required' : 'Unencrypted NFS'}',
@@ -34,10 +39,12 @@ String sourceTransportLabel(FileSource source) {
       '$type · ${scheme == 'ftpes' || scheme == 'ftps' ? 'TLS encrypted' : 'Plain FTP'}',
     FileSourceKind.sftp => '$type · SSH encrypted · host key pinned',
     FileSourceKind.smb =>
-      '$type · ${source.options['encryptSmb'] == 'true' ? 'SMB3 encryption on' : 'SMB3 encryption off'}',
-    FileSourceKind.webdav || FileSourceKind.opds || FileSourceKind.dlna =>
-      '$type · ${scheme == 'https' ? 'HTTPS' : scheme == 'http' ? 'HTTP without transport encryption' : 'Check endpoint security'}',
-    _ => type,
+      '$type · ${source.options['encryptSmb'] == 'true' ? 'SMB3 encryption requested' : 'SMB3 encryption not requested'}',
+    FileSourceKind.webdav || FileSourceKind.opds || FileSourceKind.dlna ||
+    FileSourceKind.s3 || FileSourceKind.audiobookshelf || FileSourceKind.komga => '$type · $endpointSecurity',
+    FileSourceKind.local => '$type · On this device',
+    FileSourceKind.googleDrive || FileSourceKind.oneDrive || FileSourceKind.dropbox =>
+      '$type · Provider sign-in',
   };
 }
 

@@ -8,13 +8,16 @@ import 'package:uuid/uuid.dart';
 
 import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
+import '../../providers/trackers_provider.dart';
 import '../../sources/dlna_discovery.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../sources/publication_shelf.dart';
 import '../../utils/platform_detector.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/provider_mark.dart';
+import '../settings/services_settings_screen.dart';
 import 'source_widgets.dart';
 
 class AddSourceScreen extends StatefulWidget {
@@ -217,7 +220,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                 child: Text('DLNA media servers', style: Theme.of(sheetContext).textTheme.titleLarge),
               ),
               for (final device in devices)
-                ListTile(
+                FocusableListTile(
                   title: Text(device.name),
                   subtitle: Text(device.location.toString(), maxLines: 2, overflow: TextOverflow.ellipsis),
                   onTap: () => Navigator.pop(sheetContext, device),
@@ -287,6 +290,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
           FileSourceKind.nfs => const ['nfsTlsClientIdentity', 'nfsTlsClientIdentityPassword'],
           FileSourceKind.s3 => const ['accessKey', 'secretKey', 'sessionToken'],
           FileSourceKind.audiobookshelf => const ['token'],
+          FileSourceKind.komga => const ['username', 'password', 'token'],
           _ => const <String>[],
         },
         'openSubtitlesApiKey',
@@ -388,6 +392,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                           FileSourceKind.sftp => 'sftp://nas:22',
                           FileSourceKind.nfs => 'nfs://nas:2049/export',
                           FileSourceKind.dlna => 'http://192.168.1.20:8200/rootDesc.xml',
+                          FileSourceKind.komga => 'https://komga.example.com',
                           _ => null,
                         },
                         validator: _kind == FileSourceKind.nfs ? _validateNfsEndpoint : null,
@@ -505,7 +510,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                           label: 'a GID',
                         ),
                       ),
-                      SwitchListTile(
+                      FocusableSwitchListTile(
                         contentPadding: EdgeInsets.zero,
                         title: const Text('Require encrypted NFS (RPC-with-TLS)'),
                         subtitle: const Text(
@@ -627,7 +632,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                           style: Theme.of(context).textTheme.bodySmall),
                       ),
                       if (_kind == FileSourceKind.smb)
-                        SwitchListTile(
+                        FocusableSwitchListTile(
                           contentPadding: EdgeInsets.zero,
                           title: Text(t.fileSources.smbEncryption),
                           subtitle: Text(t.fileSources.smbEncryptionHint),
@@ -637,13 +642,20 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                     ],
                     if (_kind == FileSourceKind.audiobookshelf)
                       input('token', t.fileSources.token, secret: true, required: widget.existing == null),
+                    if (_kind == FileSourceKind.komga)
+                      input(
+                        'token',
+                        t.fileSources.token,
+                        secret: true,
+                        hint: 'Komga API key. You can also use a username and password above.',
+                      ),
                     if (_kind == FileSourceKind.s3) ...[
                       input('region', t.fileSources.region),
                       input('accessKey', t.fileSources.accessKey, required: widget.existing == null),
                       input('secretKey', t.fileSources.secretKey, secret: true, required: widget.existing == null),
                       input('sessionToken', t.fileSources.sessionToken, secret: true),
                     ],
-                    if (_kind != FileSourceKind.opds && _kind != FileSourceKind.audiobookshelf)
+                    if (_kind != FileSourceKind.opds && _kind != FileSourceKind.audiobookshelf && _kind != FileSourceKind.komga)
                       ExpansionTile(
                         tilePadding: EdgeInsets.zero,
                         title: const Text('OpenSubtitles'),
@@ -671,16 +683,32 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                             input('clientSecret', t.fileSources.clientSecret, secret: true),
                         ],
                       ),
-                    if (_kind != FileSourceKind.opds && _kind != FileSourceKind.audiobookshelf)
-                      SwitchListTile(
+                    if (_kind != FileSourceKind.opds && _kind != FileSourceKind.audiobookshelf && _kind != FileSourceKind.komga)
+                      FocusableSwitchListTile(
                         contentPadding: EdgeInsets.zero,
-                        title: const Text('Automatic online video metadata'),
-                        subtitle: const Text('Sends only filename title/year and episode numbers or an NFO ID, never media or credentials. NFO fields stay authoritative.'),
+                        title: Text('Automatic ${t.trakt.title} video metadata'),
+                        subtitle: Text(
+                          context.watch<TrackersProvider>().traktCatalogClient != null
+                              ? 'Sends only filename title/year, episode numbers or an NFO ID, never media or credentials. NFO fields stay authoritative.'
+                              : 'Connect Trakt under Settings → Services to enable online lookups. Only filename title/year, episode numbers or an NFO ID are sent; never media or credentials.',
+                        ),
                         value: _onlineMetadata,
                         onChanged: _busy ? null : (v) => setState(() => _onlineMetadata = v),
                       ),
-                    if (const {FileSourceKind.webdav, FileSourceKind.opds, FileSourceKind.s3, FileSourceKind.audiobookshelf, FileSourceKind.dlna}.contains(_kind))
-                      SwitchListTile(
+                      if (context.watch<TrackersProvider>().traktCatalogClient == null)
+                        Align(
+                          alignment: Alignment.centerLeft,
+                          child: TextButton.icon(
+                            onPressed: () => Navigator.push(
+                              context,
+                              MaterialPageRoute(builder: (_) => const ServicesSettingsScreen()),
+                            ),
+                            icon: const Icon(Icons.link_rounded),
+                            label: Text('${t.common.connect} ${t.trakt.title}'),
+                          ),
+                        ),
+                    if (const {FileSourceKind.webdav, FileSourceKind.opds, FileSourceKind.s3, FileSourceKind.audiobookshelf, FileSourceKind.dlna, FileSourceKind.komga}.contains(_kind))
+                      FocusableSwitchListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(t.fileSources.allowHttp),
                         value: _allowHttp,

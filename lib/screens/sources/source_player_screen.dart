@@ -24,6 +24,7 @@ import '../../services/fullscreen_state_manager.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/music/mini_player.dart';
+import 'add_source_screen.dart';
 import 'source_notes_screen.dart';
 import 'standalone_subtitle_search_sheet.dart';
 import 'source_widgets.dart';
@@ -82,21 +83,33 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
     final key = credentials['openSubtitlesApiKey']?.trim() ?? '';
     if (key.isEmpty) {
       if (!mounted) return;
-      await showDialog<void>(
+      final editSource = await showScopedDialog<bool>(
         context: context,
         builder: (dialogContext) => AlertDialog(
           title: const Text('OpenSubtitles API key required'),
           content: const Text(
-            'Edit this file source and add an OpenSubtitles API key in its optional subtitle settings.',
+            'Add an OpenSubtitles API key in this source’s optional subtitle settings. Search sends the title and available IMDb/TMDB IDs, not the video file.',
           ),
           actions: [
-            TextButton(
-              onPressed: () => Navigator.pop(dialogContext),
-              child: Text(MaterialLocalizations.of(dialogContext).okButtonLabel),
+            DialogActionButton(
+              onPressed: () => Navigator.pop(dialogContext, false),
+              label: t.common.cancel,
+            ),
+            DialogActionButton(
+              onPressed: () => Navigator.pop(dialogContext, true),
+              label: '${t.common.edit} ${t.fileSources.source}',
+              isPrimary: true,
+              icon: const Icon(Icons.edit_rounded),
             ),
           ],
         ),
       );
+      if (editSource == true && mounted) {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => AddSourceScreen(existing: source)),
+        );
+      }
       return;
     }
     final client = OpenSubtitlesClient(

@@ -22,7 +22,9 @@ import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/app_menu.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../settings/services_settings_screen.dart';
 import 'publication_reader_screen.dart';
 import 'source_notes_screen.dart';
 import 'source_player_screen.dart';
@@ -214,7 +216,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                       final candidate = candidates[index];
                       final media = candidate.media!;
                       final title = media.title?.trim() ?? '';
-                      return ListTile(
+                      return FocusableListTile(
                         title: Text(
                           media.year == null ? title : '$title (${media.year})',
                           maxLines: 1,
@@ -478,6 +480,12 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context), tk = tokens(context), audio = _entry.audio;
     final hasTrakt = context.watch<TrackersProvider>().traktCatalogClient != null;
+    final source = context
+        .watch<SourceController>()
+        .sources
+        .where((item) => item.id == _entry.sourceId)
+        .firstOrNull;
+    final automaticMetadataEnabled = source?.options['onlineMetadata'] != 'false';
     return FocusedScrollScaffold(
       title: Text(_entry.displayTitle),
       focusableAppBarActions: true,
@@ -661,9 +669,9 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Semantics(
-                               liveRegion: true,
-                               child: Text('No automatic title match was found. Search for the title to choose a match.'),
-                             ),
+                              liveRegion: true,
+                              child: Text('No automatic title match was found. Search for the title to choose a match.'),
+                            ),
                             TextButton.icon(
                               onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
                               icon: const Icon(Icons.search_rounded),
@@ -679,13 +687,52 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
                             const Semantics(
-                               liveRegion: true,
-                               child: Text('Online metadata could not be loaded. Playback and local details are still available.'),
-                             ),
+                              liveRegion: true,
+                              child: Text('Online metadata could not be loaded. Playback and local details are still available.'),
+                            ),
                             TextButton.icon(
                               onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
                               icon: const Icon(Icons.search_rounded),
                               label: const Text('Search online metadata'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (_entry.kind == SourceItemKind.video && hasTrakt && !automaticMetadataEnabled)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Automatic metadata lookup is off for this source. You can still search for a title manually.',
+                              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                            ),
+                            TextButton.icon(
+                              onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
+                              icon: const Icon(Icons.search_rounded),
+                              label: const Text('Search online metadata'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (_entry.kind == SourceItemKind.video && !hasTrakt)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Connect Trakt in Settings → Services to enable online metadata, cast, artwork and trailer lookup. Searches send the title only; they never upload the video file.',
+                              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                            ),
+                            TextButton.icon(
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const ServicesSettingsScreen()),
+                              ),
+                              icon: const Icon(Icons.link_rounded),
+                              label: Text('${t.common.connect} ${t.trakt.title}'),
                             ),
                           ],
                         ),
