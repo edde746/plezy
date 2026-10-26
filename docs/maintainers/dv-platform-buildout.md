@@ -10,11 +10,11 @@ driver, EDID, kernel module or TV firmware is replaced automatically.
 | Platform/path | Implementation in this repository | Qualification boundary |
 | --- | --- | --- |
 | Linux app | Device-local Playback switches select `opengl-next`, permit one renderer-creation fallback, and enable player logging. Isolated FFmpeg/libplacebo/mpv build and launcher. Generated P7 video drives the embedded graph on software GLES and on `vaapi-copy` decode plus GPU EGL/GLES render; hardware readback differed from software by at most one 8-bit code. A real local clip also traversed the graph. | Full Plezy Wayland playback, zero-copy and independent pixel accuracy remain open. The synthetic result proves qualitative EL contribution only. The hardware residual capture produced three pending-RPU replacement warnings; its RPU/frame association is unqualified. |
-| macOS, iOS, tvOS | Separate SwiftUI research host and pinned AetherEngine `DualLayerDolbyVision` trait; opt-in load, surface, play/pause, seek, stop and engine-route readout. | Not integrated into production `MpvPlayerCore`. This evidence set has no Mac build or Apple-device result; a route label does not qualify pixels or output. |
+| macOS, iOS, tvOS | Production Apple playback uses AVFoundation's native DV route and exposes the P7 conversion mode, including P7→8.1 compatibility. A separate SwiftUI research host and pinned AetherEngine `DualLayerDolbyVision` trait provide opt-in load, surface, play/pause, seek, stop and engine-route readout. | Experimental FEL reconstruction is not integrated into production `MpvPlayerCore`. This evidence set has no Mac build or Apple-device result; a route label does not qualify pixels or output. |
 | Offline companion | Pinned FelBaker builder patches its VapourSynth output key and builds a tested RGB48 pipeline. A 48-frame generated P7 sample changed all 2,073,600 designed residual-patch pixels; both HDR10/PQ HEVC and SDR/BT.709 H.264 outputs encoded and passed `ffprobe` frame/color-tag checks. | These lossy files are derived compatibility versions, not native DV. FelBaker is a comparison implementation, not an independent Dolby reference; real-clip and playback-device checks remain open. |
 | Android | Existing native DV, P7→8.1 and base-layer routes remain available; diagnostics label known EL-discarding routes. In the mpv backend, explicit experimental opt-in forces every P7 file in `auto` mode through software decode and `gpu-next`, even if native DV is advertised. The app switches only after mpv accepts the FEL filter; unsupported engines retain their existing route. ExoPlayer remains outside this experiment. A separate experimental AAR passes a synthetic FEL-on versus EL-dropped pixel comparison through Android Surface readback. | The production AAR remains on mpv 0.41 and does not contain the FEL path, so the opt-in currently falls back on shipping builds. The experimental AAR compiled for four ABIs; runtime pixel evidence is one API 36 x86_64 emulator with synthetic media. Real-device playback, reference pixels and physical Dolby Vision output remain unqualified. Generic DV codec advertisement does not prove FEL. CoreELEC S5 remains a separate vendor/kernel project. |
 | webOS | Existing native and compatibility playback; use an ordinary companion-derived version where native fidelity is insufficient. | No BL/EL GPU composer is exposed by the current webOS app path. No root patch is installed. |
-| Windows | Existing mpv compatibility playback; portable route-policy and companion orchestration code. The existing private Packer x64 route is being restored. | No D3D11/Vulkan FEL adapter build or device result is claimed. The `packer-windows` group now exists, but it has no registered runner and does not yet authorize PlezyNG. |
+| Windows | Existing mpv `gpu-next` playback. Explicit opt-in now inspects the pending track in `on_preloaded`, switches P7 to software decode, and requests `format=enhancement-layer=yes`; it restores the user's decoder setting and keeps the existing route when the engine rejects the filter. | Filter acceptance is not proof of EL pixels. The pinned Windows engine's FEL components, D3D11 rendering, independent pixels and device output remain unqualified. No D3D11/Vulkan reference comparison or device result is claimed. The `packer-windows` group exists, but it does not authorize PlezyNG. |
 
 `tools/dv-engine/route_policy.py` is a tested adapter contract and standalone
 selector, **not yet the app-wide playback arbiter**. It accepts an inspected source
@@ -60,12 +60,11 @@ The matching builder change is in draft [mpv-build PR #9](https://github.com/edd
 Use **Settings → Playback → Video and display** (the existing settings tiles):
 
 1. **Experimental Dolby Vision** defaults off. On native Linux, it requests
-   `opengl-next` for the next video-player initialization. On Android's mpv
-   backend, it forces P7 `auto` playback through the software FEL graph when
-   the engine accepts the filter. The shipping AAR lacks that filter, so the
-   route fails closed to the existing compatibility behavior. ExoPlayer and
-   other platforms do not show the control because they do not have this
-   adapter.
+   `opengl-next` for the next video-player initialization. Android mpv and
+   Windows mpv force P7 `auto` playback through software decode and request
+   the FEL filter before the decoder starts. They keep the existing route if
+   the engine rejects it. The shipping Android AAR lacks the filter, so its
+   route currently falls back. ExoPlayer and webOS do not show the control.
 2. **Compatibility fallback** defaults on and appears when the Linux experiment
    is enabled. It retries `opengl` once if experimental render-context creation
    fails. It is **not** a retry for arbitrary mid-stream decode, pairing or shader

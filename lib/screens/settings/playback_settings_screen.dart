@@ -94,14 +94,18 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                 (svc.read(SettingsService.matchRefreshRate) || svc.read(SettingsService.matchDynamicRange))) ||
             (Platform.isAndroid &&
                 (svc.read(SettingsService.matchContentFrameRate) || svc.read(SettingsService.matchContentResolution)));
-        // Android mpv and Apple TV only: ExoPlayer is not taking new features, and
-        // elsewhere no Dolby Vision signal ever reaches the display.
+        // The DV output switch is limited to native Android mpv and Apple TV.
         final showDisableDolbyVision = (Platform.isAndroid && !exoActive) || PlatformDetector.isAppleTV();
         // With Dolby Vision disabled mpv strips every Profile 7 file, so the
         // conversion choices would change nothing.
-        final showDvConversionMode = Platform.isAndroid && (exoActive || !svc.read(SettingsService.disableDolbyVision));
+        final showDvConversionMode =
+            (Platform.isAndroid && (exoActive || !svc.read(SettingsService.disableDolbyVision))) ||
+            ((Platform.isIOS || Platform.isMacOS) &&
+                !(PlatformDetector.isAppleTV() && svc.read(SettingsService.disableDolbyVision)));
         final showExperimentalDolbyVision =
-            (Platform.isLinux && !PlatformDetector.isWebOSBuild()) || (Platform.isAndroid && !exoActive);
+            (Platform.isLinux && !PlatformDetector.isWebOSBuild()) ||
+            Platform.isWindows ||
+            (Platform.isAndroid && !exoActive);
 
         return SettingsPage(
           title: Text(t.settings.videoPlayback),

@@ -7,10 +7,13 @@
 
 #include <atomic>
 #include <chrono>
+#include <condition_variable>
 #include <cstdint>
+#include <deque>
 #include <functional>
 #include <memory>
 #include <mutex>
+#include <optional>
 #include <string>
 #include <thread>
 #include <vector>
@@ -42,6 +45,12 @@ class MpvPlayer {
   // same HWND. In audio-only mode |view| is ignored (pass nullptr) and no
   // window is created.
   bool Initialize(HWND view);
+
+  // Set before initialization. The P7 experiment is per-file and fails closed
+  // when this engine does not accept mpv's enhancement-layer filter.
+  void ConfigureDolbyVisionExperiment(bool enabled) {
+    if (!mpv_) experimental_dv_ = enabled;
+  }
 
   // Disposes mpv and the video window.
   void Dispose();
@@ -106,6 +115,12 @@ class MpvPlayer {
   void StartEventLoop();
   void StopEventLoop();
   void EventLoop();
+  void DolbyVisionHookLoop();
+  void StopDolbyVisionHookLoop();
+  void QueueDolbyVisionHook(uint64_t hook_id);
+  void ApplyDolbyVisionHook(uint64_t hook_id);
+  std::optional<int64_t> PendingDolbyVisionProfile();
+  void LogDolbyVisionRoute(const std::string& text);
   void HandleMpvEvent(mpv_event* event);
   void SendPropertyChange(const char* name, mpv_node* data);
   void SendActiveSourceEvent(const std::string& name);
@@ -127,6 +142,15 @@ class MpvPlayer {
 
   const bool audio_only_;
   mpv_handle* mpv_ = nullptr;
+  bool experimental_dv_ = false;
+  bool p7_fel_filter_active_ = false;
+  bool p7_fel_hwdec_overridden_ = false;
+  std::string p7_fel_restore_hwdec_;
+  std::mutex dv_hook_mutex_;
+  std::condition_variable dv_hook_condition_;
+  std::deque<uint64_t> dv_hook_ids_;
+  std::thread dv_hook_thread_;
+  bool dv_hook_stop_ = false;
   HWND hwnd_ = nullptr;
   HWND forward_target_view_ = nullptr;
   std::mutex inner_subclass_mutex_;

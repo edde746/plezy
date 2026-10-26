@@ -271,7 +271,7 @@ class PlayerNative extends PlayerBase {
       // ignore them.
       final result = await invoke<Object>('initialize', {
         if (!audioOnly) 'hardwareDecoding': _hardwareDecoding,
-        if (!audioOnly && (usesLinuxVideoPlane || Platform.isAndroid))
+        if (!audioOnly && (usesLinuxVideoPlane || Platform.isAndroid || Platform.isWindows))
           'experimentalDolbyVision':
               SettingsService.instanceOrNull?.read(SettingsService.experimentalDolbyVision) ?? false,
         if (!audioOnly && usesLinuxVideoPlane)

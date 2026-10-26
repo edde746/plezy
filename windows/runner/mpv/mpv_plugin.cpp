@@ -182,8 +182,20 @@ void MpvPlayerPlugin::HandleMethodCall(
     // core is windowless, so it gets no view at all.
     HWND view = audio_only_ ? nullptr : GetChildWindow();
 
+    bool experimental_dolby_vision = false;
+    const auto* initialization_arguments = method_call.arguments();
+    if (initialization_arguments &&
+        std::holds_alternative<flutter::EncodableMap>(*initialization_arguments)) {
+      const auto& arguments = std::get<flutter::EncodableMap>(*initialization_arguments);
+      const auto experimental = arguments.find(flutter::EncodableValue("experimentalDolbyVision"));
+      if (experimental != arguments.end() && std::holds_alternative<bool>(experimental->second)) {
+        experimental_dolby_vision = std::get<bool>(experimental->second);
+      }
+    }
+
     const uint64_t generation = player_generation_.fetch_add(1, std::memory_order_acq_rel) + 1;
     player_ = std::make_unique<MpvPlayer>(audio_only_);
+    player_->ConfigureDolbyVisionExperiment(experimental_dolby_vision);
     bool success = player_->Initialize(view);
 
     if (success) {

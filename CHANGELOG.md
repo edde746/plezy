@@ -6,6 +6,10 @@
 
 - With explicit opt-in, force Android mpv P7 playback through the experimental software FEL graph even when native DV is advertised; switch only after mpv accepts the filter, and keep the existing fallback on unsupported engines.
 
+- Add Windows' opt-in P7 FEL hook on the existing `gpu-next` path, with per-file software decode, fail-closed filter negotiation and decoder-setting restoration.
+
+- Expose the existing Apple P7 conversion controls in Playback settings for the AVFoundation route.
+
 - Record synthetic Android FEL Surface evidence and per-platform Dolby Vision playback/output qualification gates; the experimental engine remains separate from production builds.
 
 - Add experimental comic page streaming, Komga source integration and ComicInfo metadata support.
