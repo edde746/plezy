@@ -535,6 +535,19 @@ class PublicationDownloads {
       final validator = File('${p.withoutExtension(path)}.validator');
       if (await validator.exists() && p.isWithin(expected, validator.path)) await validator.delete();
     }
+    if (sourceId.isNotEmpty && row['file_payload'] is String && row['file_payload'] != '{}') {
+      PublicationFile? descriptor;
+      try {
+        descriptor = PublicationFile.fromJson(sourceMap(jsonDecode(row['file_payload'] as String)));
+        if (key(sourceId, descriptor) != downloadKey) descriptor = null;
+      } on Object {
+        // The row can be removed without touching a path from an invalid descriptor.
+      }
+      if (descriptor != null) {
+        final target = _target(profile, sourceId, descriptor);
+        if (target.path != path && p.isWithin(expected, target.path) && await target.exists()) await target.delete();
+      }
+    }
     await repository.forgetDownload(profile, downloadKey);
   }
 
