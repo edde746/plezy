@@ -398,8 +398,14 @@ class MainScreen extends StatefulWidget {
   /// resolved the launch profile prompt — skip the postFrame prompt that
   /// would otherwise re-fire it.
   final bool initialPromptHandled;
+  final bool initialSourceLibrary;
 
-  const MainScreen({super.key, this.isOfflineMode = false, this.initialPromptHandled = false});
+  const MainScreen({
+    super.key,
+    this.isOfflineMode = false,
+    this.initialPromptHandled = false,
+    this.initialSourceLibrary = false,
+  });
 
   @override
   State<MainScreen> createState() => _MainScreenState();
@@ -591,6 +597,14 @@ class _MainScreenState extends State<MainScreen>
     _pendingStartupTab = (!_isOffline && preferredStartup != null && preferredStartup != _currentTab)
         ? preferredStartup
         : null;
+    if (widget.initialSourceLibrary) {
+      _currentTab = NavigationTabId.libraries;
+      _pendingStartupTab = null;
+      _selectedLibraryGlobalKey = 'source:files';
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) _selectLibrary('source:files');
+      });
+    }
     _mountedTabs.add(_currentTab);
     _screens = _buildScreens(_isOffline);
 

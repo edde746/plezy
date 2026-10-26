@@ -26,11 +26,13 @@ class _EqualizerIconState extends State<EqualizerIcon> with SingleTickerProvider
     duration: const Duration(milliseconds: 900),
   );
 
-  bool get _shouldAnimate => widget.animate && !DevicePerformance.isReduced;
+  bool _disableAnimations = false;
+  bool get _shouldAnimate => widget.animate && !DevicePerformance.isReduced && !_disableAnimations;
 
   @override
-  void initState() {
-    super.initState();
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    _disableAnimations = MediaQuery.disableAnimationsOf(context);
     _syncAnimation();
   }
 

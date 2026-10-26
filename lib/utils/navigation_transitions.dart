@@ -11,7 +11,7 @@ Route<T> fadeRoute<T>(Widget page) {
     opaque: false,
     pageBuilder: (context, animation, secondaryAnimation) => page,
     transitionsBuilder: (context, animation, secondaryAnimation, child) =>
-        FadeTransition(opacity: animation, child: child),
+        MediaQuery.disableAnimationsOf(context) ? child : FadeTransition(opacity: animation, child: child),
     transitionDuration: DevicePerformance.reducedDuration(AppDurations.animSlow),
     reverseTransitionDuration: DevicePerformance.reducedDuration(AppDurations.animSlow),
   );

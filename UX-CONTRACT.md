@@ -35,3 +35,30 @@ No automatic retry occurs. Raw server errors never appear in UI feedback.
 Labels use Slang and existing English fallback. Widget tests cover desktop,
 narrow layouts, keyboard selection, confirmations, failures, and session
 replacement; physical TV and live-server validation are separate evidence.
+
+# Publications, cloud files and public libraries
+
+`SourceEntry`/`PublicationFile` own file-provider identities, independently of media-server items. Existing movies, shows and music remain in their original models. Reading, listening and watching each have edition-qualified progress; stale revisions cannot undo a newer session or explicit reset. Synced conflicts require a choice. Offline files become visible only after a validated complete download; disconnect retains those files/history, while deleting a profile removes its managed files and credentials.
+
+| Capability | Canonical owner | Source of truth | Verification |
+| --- | --- | --- | --- |
+| File and shelf navigation | SourcesScreen, publication_shelf, existing library/rail menus | Configured shelves and indexed publication kinds | source_screens_test.dart |
+| Provider marks | ProviderMark | Official unmodified assets and sources.json | source_screens_test.dart; artwork NOTICE |
+| Reading and fixed-page zoom | PublicationReaderScreen, Foliate adapter, pdfrx | Edition CFI/page, theme and explicit reader preferences | publication_browser_test.dart; publication_archive_test.dart |
+| Audiobook/media playback | SourcePlayback, PlaybackCoordinator, native Player | Source-time and file-time cursor; existing playback ownership | source_playback_test.dart |
+| Cloud transport/offline data | SourceTransport, PublicationDownloads, SourceStreamGateway | Scoped credentials, renewable leases, representation validators | source_adapters_test.dart; source_downloads_test.dart |
+| Lending | LendingService and public-library screens | Public catalogue APIs, provider-advertised circulation actions | lending_service_test.dart; gateway test_server.py |
+
+Connection and detail rows use existing grouped surfaces, typography, icons, menus and confirmations; covers carry the visual emphasis. Provider colours are not recoloured to the app accent. Generic protocol names do not borrow a vendor's logo. Ebooks/Audiobooks/Comics use the same library picker and sidebar selection flow; unconfigured empty shelves stay hidden. Setup can create a standard local profile without requiring a media-server account. Existing protected profiles still go through the standard profile picker.
+
+Cloud passwords/card PINs are entered only at a supported provider-hosted authorization surface. Native OverDrive circulation is compiled off and shown as Coming soon until approval and provider acceptance testing; ordinary service handoffs remain available. Holdings, due dates and fulfillment are not owned-file downloads. Native Hoopla/regional circulation is not invented from private endpoints.
+
+Archive content is untrusted: bounded extraction, no traversal/symlinks, no publication scripts or external network access. The reader and stream server bind to loopback and require session capabilities. A profile transition retires readers, authorization and streams; neither expired sessions nor deleted profiles may publish new state. Provider tokens never enter publication JavaScript, native player URLs or cross-origin artwork requests.
+
+# Accessibility across the app
+
+Settings → Appearance → Accessibility adds to operating-system preferences, never disables them. Additional text scaling preserves the platform's nonlinear text scaler. Bold text, stronger contrast and larger shared controls apply at the app shell, including inherited screens. Custom source/provider artwork stays unaltered.
+
+Reduced motion disables shared focus scaling, focus/TV scroll animation, Mono control transitions and page transitions; existing hero/visualizer consumers receive the same MediaQuery setting. Focus outlines and state feedback remain. Shared sliders retain screen-reader increase/decrease actions, respect RTL arrow direction, and support Home/End and Page Up/Down. Content, menus, dialogs and document navigation have keyboard alternatives to touch gestures.
+
+Reader zoom does not replace readable text reflow. Fixed pages expose fit/actual-size/zoom/pan and page entry; EPUB text exposes size, spacing, alignment and layout. Image-only pages are not described by invented alt text, and OCR is not implied. Automated semantics, narrow-screen/large-text and real-engine tests establish specific coverage; they are not a blanket accessibility certification or a substitute for physical screen-reader checks.

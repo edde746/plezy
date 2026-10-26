@@ -463,7 +463,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
   // hold-repeats — retarget the animation from the row's current offset, so a
   // sustained drag trails the focused index slightly and catches up in one
   // continuous glide on release.
-  static Duration get _navigationScrollDuration => FocusTheme.navigationScrollDuration();
+  Duration get _navigationScrollDuration => FocusTheme.navigationScrollDuration(context);
   static const _scrollCatchUpViewportDistance = 2.5;
   // Equivalent to the former whole-rail Opacity(0.6) without keeping a
   // full-viewport saveLayer alive.

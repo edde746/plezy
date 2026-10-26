@@ -160,6 +160,7 @@ class OverlaySheetController {
     try {
       return await showModalBottomSheet<T>(
         context: context,
+        sheetAnimationStyle: MediaQuery.disableAnimationsOf(context) ? AnimationStyle.noAnimation : null,
         // The host path insets its sheet by the bottom safe area; mirror that
         // here so the last row clears the home indicator / gesture nav bar.
         builder: (context) => SafeArea(top: false, child: builder(context)),
@@ -337,6 +338,19 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
       begin: 0,
       end: 0.5,
     ).animate(CurvedAnimation(parent: _animationController, curve: Curves.easeOutCubic));
+  }
+
+  @override
+  void didChangeDependencies() {
+    super.didChangeDependencies();
+    final reduceMotion = MediaQuery.disableAnimationsOf(context);
+    _animationController.duration = reduceMotion ? Duration.zero : const Duration(milliseconds: 250);
+    if (reduceMotion && _animationController.isAnimating) {
+      // Finish a pending close future before snapping; cancelling it would
+      // strand the sheet's completers and keep its session marked open.
+      _animationController.stop(canceled: false);
+      _animationController.value = _isClosing ? 0 : 1;
+    }
   }
 
   @override
@@ -804,7 +818,9 @@ class _OverlaySheetHostState extends State<OverlaySheetHost> with SingleTickerPr
                     // rather than stretched.
                     child: AnimatedSize(
                       key: ValueKey(_sheetSession),
-                      duration: const Duration(milliseconds: 180),
+                      duration: MediaQuery.disableAnimationsOf(context)
+                          ? Duration.zero
+                          : const Duration(milliseconds: 180),
                       curve: Curves.easeOutCubic,
                       alignment: isTop ? Alignment.topCenter : Alignment.bottomCenter,
                       child: ConstrainedBox(constraints: effectiveConstraints, child: sheetContent),

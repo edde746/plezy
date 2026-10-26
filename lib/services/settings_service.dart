@@ -704,6 +704,16 @@ class SettingsService extends BaseSharedPreferencesService {
   static const continueWatchingOnHome = BoolPref('continue_watching_on_home', defaultValue: true);
   static const nextUpOnHome = BoolPref('next_up_on_home', defaultValue: true);
   static const tvFullCardLayout = BoolPref('tv_full_card_layout', defaultValue: false);
+  static const accessibilityTextScale = DoublePref(
+    'accessibility_text_scale',
+    defaultValue: 1,
+    transform: _accessibilityScale,
+  );
+  static double _accessibilityScale(double value) => value.isFinite ? value.clamp(1.0, 2.0) : 1.0;
+  static const reduceMotion = BoolPref('reduce_motion');
+  static const highContrast = BoolPref('high_contrast');
+  static const boldInterfaceText = BoolPref('bold_interface_text');
+  static const largeTouchTargets = BoolPref('large_touch_targets');
   static const focusGlow = BoolPref('focus_glow', defaultValue: true);
   static const useGlobalHubs = BoolPref('use_global_hubs', defaultValue: true);
   static const showServerNameOnHubs = BoolPref('show_server_name_on_hubs');
@@ -1698,6 +1708,7 @@ class SettingsService extends BaseSharedPreferencesService {
   ///
   /// Group one: reset *and* exported — the ordinary case.
   static final List<Pref<Object?>> _resetAndPortablePrefs = [
+    accessibilityTextScale, reduceMotion, highContrast, boldInterfaceText, largeTouchTargets,
     enableDebugLogging,
     enableHardwareDecoding,
     enableHDR,

@@ -2,19 +2,19 @@ import 'dart:async';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
-import 'package:flutter_chrome_cast/flutter_chrome_cast.dart';
 import 'package:material_symbols_icons/symbols.dart';
+import 'package:flutter_chrome_cast/flutter_chrome_cast.dart';
 
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
 import '../media/media_server_client.dart';
 import '../mpv/models.dart';
+import '../widgets/app_icon.dart';
 import '../utils/app_logger.dart';
 import '../utils/platform_detector.dart';
 import '../utils/watch_state_notifier.dart';
 import 'playback_report_session.dart';
 import 'trackers/tracker_coordinator.dart';
-import '../widgets/app_icon.dart';
 
 /// Google Cast handoff for server-resolved streams.
 ///

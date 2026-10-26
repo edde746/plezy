@@ -25,7 +25,7 @@ class FocusTheme {
   static Duration getAnimationDuration(BuildContext context) {
     // Reduced tier: snap focus transitions (scale/border/glow) instead of
     // animating — each animation frame re-rasterizes the focused card.
-    if (DevicePerformance.isReduced) return Duration.zero;
+    if (DevicePerformance.isReduced || MediaQuery.disableAnimationsOf(context)) return Duration.zero;
     return Theme.of(context).extension<MonoTokens>()?.fast ?? const Duration(milliseconds: 150);
   }
 
@@ -39,8 +39,12 @@ class FocusTheme {
   /// focus border on every press and reads as input lag next to the launcher.
   /// Successive presses (including hold-repeats) retarget the animation from
   /// wherever the row currently is, so a fast series still glides continuously.
-  static Duration navigationScrollDuration() =>
-      PlatformDetector.isAppleTV() ? const Duration(milliseconds: 500) : const Duration(milliseconds: 150);
+  static Duration navigationScrollDuration([BuildContext? context]) =>
+      context != null && MediaQuery.disableAnimationsOf(context)
+      ? Duration.zero
+      : PlatformDetector.isAppleTV()
+      ? const Duration(milliseconds: 500)
+      : const Duration(milliseconds: 150);
 
   /// [radii] overrides [borderRadius] when per-corner radii are needed
   /// (M3E grouped cards: large outer / small inner corners).

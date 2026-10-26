@@ -1,3 +1,6 @@
+import '../screens/sources/source_navigation.dart';
+import '../sources/source_controller.dart';
+import '../sources/publication_shelf.dart';
 import 'dart:async';
 import 'dart:ui' show lerpDouble;
 import '../media/ids.dart';
@@ -772,6 +775,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
         // condition so a collapsed rail never targets a focus-excluded row.
         if (_librariesExpanded && !isCollapsed) ...[
           ..._focusKeysForLibraryRows(visibleRows),
+          for (final shelf in context.read<SourceController?>()?.shelves ?? <PublicationShelf>{})
+            'source:${shelf.name}',
           if (hasHiddenLibraries) ...[
             _kHiddenLibraries,
             if (_hiddenLibrariesExpanded) ..._focusKeysForLibraryRows(hiddenRows),
@@ -1283,7 +1288,8 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
     final librariesProvider = context.watch<LibrariesProvider>();
     final isLoading = librariesProvider.isLoading;
     final isLibrariesTabSelected = widget.selectedTab == NavigationTabId.libraries;
-    final allEmpty = visibleRows.isEmpty && hiddenLibraryCount == 0;
+    final sourceShelves = context.watch<SourceController?>()?.shelves ?? <PublicationShelf>{};
+    final allEmpty = visibleRows.isEmpty && hiddenLibraryCount == 0 && sourceShelves.isEmpty;
     final headerLabelColor = isLibrariesTabSelected ? t.text : t.textMuted;
 
     Widget buildChevron(double opacity) {
@@ -1363,6 +1369,24 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                   )
                 else ...[
                   if (visibleRows.isNotEmpty) _buildLibraryGroupedColumn(visibleRows, t),
+                  for (final shelf in sourceShelves)
+                    NavigationRailItem(
+                      icon: shelfIcon(shelf),
+                      selectedIcon: shelfIcon(shelf),
+                      label: Text(
+                        shelfLabel(shelf),
+                        style: TextStyle(fontSize: 13, color: t.textMuted),
+                        overflow: TextOverflow.ellipsis,
+                      ),
+                      isSelected:
+                          widget.selectedTab == NavigationTabId.libraries &&
+                          widget.selectedLibraryKey == 'source:${shelf.name}',
+                      iconSize: 18,
+                      expandedHeight: 40,
+                      focusNode: _focusTracker.get('source:${shelf.name}'),
+                      onTap: () => widget.onLibrarySelected('source:${shelf.name}'),
+                      onNavigateRight: widget.onNavigateToContent,
+                    ),
                   if (hiddenLibraryCount > 0) ...[
                     _buildHiddenLibrariesHeader(hiddenLibraryCount, t),
                     if (_hiddenLibrariesExpanded) _buildLibraryGroupedColumn(hiddenRows, t),

@@ -3,9 +3,12 @@
 #
 
 list(APPEND FLUTTER_PLUGIN_LIST
+  app_links
   auto_updater_windows
   connectivity_plus
+  flutter_inappwebview_windows
   flutter_secure_storage_windows
+  flutter_tts
   os_media_controls
   permission_handler_windows
   screen_retriever_windows

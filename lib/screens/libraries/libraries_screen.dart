@@ -36,6 +36,10 @@ import '../../mixins/refreshable.dart';
 import '../../i18n/strings.g.dart';
 import 'library_server_label.dart';
 import 'state_messages.dart';
+import '../sources/sources_screen.dart';
+import '../sources/source_navigation.dart';
+import '../../sources/publication_shelf.dart';
+import '../../sources/source_controller.dart';
 import 'tabs/library_browse_tab.dart';
 import 'tabs/library_recommended_tab.dart';
 import 'tabs/library_collections_tab.dart';
@@ -73,6 +77,7 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   final _browseTabKey = GlobalKey();
   final _collectionsTabKey = GlobalKey();
   final _playlistsTabKey = GlobalKey();
+  final _sourceFocus = FocusScopeNode(debugLabel: 'file-sources-library');
 
   String? _selectedLibraryGlobalKey;
   bool _isPreparingRandomPlay = false;
@@ -430,11 +435,17 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   @override
   void focusActiveTabIfReady() {
     if (_selectedLibraryGlobalKey == null) return;
+    if (_selectedLibraryGlobalKey!.startsWith('source:')) {
+      _sourceFocus.requestFocus();
+      if (_sourceFocus.focusedChild == null) _sourceFocus.nextFocus();
+      return;
+    }
     _focusCurrentTab(awaitLoad: true);
   }
 
   @override
   void dispose() {
+    _sourceFocus.dispose();
     _outerScrollController.dispose();
     for (final node in _tabFocusNodes) {
       node.dispose();
@@ -540,6 +551,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }
 
   Future<void> _loadLibraryContent(String libraryGlobalKey) async {
+    if (libraryGlobalKey.startsWith('source:')) {
+      _updateState(() => _selectedLibraryGlobalKey = libraryGlobalKey);
+      widget.onLibrarySelected?.call(libraryGlobalKey);
+      return;
+    }
     final librariesProvider = context.read<LibrariesProvider>();
     final allLibraries = librariesProvider.libraries;
 
@@ -739,13 +755,16 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     List<MediaLibrary> visibleLibraries, {
     required bool groupByServer,
   }) {
-    return buildLibraryServerEntries<AppMenuEntry<String>>(
-      visibleLibraries,
-      groupByServer: groupByServer,
-      buildHeader: _buildLibraryServerHeaderMenuItem,
-      buildItem: (library, {required bool showServerName}) =>
-          _buildLibraryMenuItem(library, showServerName: showServerName),
-    );
+    return [
+      ...buildLibraryServerEntries<AppMenuEntry<String>>(
+        visibleLibraries,
+        groupByServer: groupByServer,
+        buildHeader: _buildLibraryServerHeaderMenuItem,
+        buildItem: (library, {required bool showServerName}) =>
+            _buildLibraryMenuItem(library, showServerName: showServerName),
+      ),
+      ...sourceLibraryMenu(context),
+    ];
   }
 
   /// Build the app bar title - either dropdown on mobile or simple title on desktop
@@ -756,7 +775,16 @@ class _LibrariesScreenState extends State<LibrariesScreen>
   }) {
     // No selection at all, or visible list is empty AND we're not browsing a hidden library
     if (_selectedLibraryGlobalKey == null || (visibleLibraries.isEmpty && selectedLibrary == null)) {
-      return Text(t.libraries.title);
+      return AppMenuButton<String>(
+        tooltip: t.libraries.selectLibrary,
+        adaptiveSheet: true,
+        entriesBuilder: (_) => sourceLibraryMenu(context),
+        onSelected: _loadLibraryContent,
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [Text(t.libraries.title), const SizedBox(width: 8), const AppIcon(Symbols.expand_more_rounded)],
+        ),
+      );
     }
 
     // On desktop/TV with side nav, show tabs in app bar (library name is in side nav)
@@ -850,6 +878,32 @@ class _LibrariesScreenState extends State<LibrariesScreen>
 
     // Compute visible libraries (filtered from all libraries)
     final visibleLibraries = visibleMediaLibraries(allLibraries, hiddenKeys: hiddenKeys, hideEmpty: hideEmptyLibraries);
+    context.watch<SourceController?>();
+    if (_selectedLibraryGlobalKey?.startsWith('source:') == true) {
+      final shelf = PublicationShelf.values.where((s) => 'source:${s.name}' == _selectedLibraryGlobalKey).firstOrNull;
+      return FocusScope(
+        node: _sourceFocus,
+        child: SourcesScreen(
+          key: ValueKey(_selectedLibraryGlobalKey),
+          shelf: shelf,
+          embedded: true,
+          title: AppMenuButton<String>(
+            tooltip: t.libraries.selectLibrary,
+            adaptiveSheet: true,
+            entriesBuilder: (_) => _buildGroupedLibraryMenuItems(visibleLibraries, groupByServer: groupByServerSetting),
+            onSelected: _loadLibraryContent,
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(shelf == null ? t.fileSources.title : shelfLabel(shelf)),
+                const SizedBox(width: 8),
+                const AppIcon(Symbols.expand_more_rounded),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
 
     // Explicit navigation can select a hidden library; visibility filters
     // choose defaults, not the content of an already selected library.
@@ -878,6 +932,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     });
 
     List<FocusableAction> appBarActions() => [
+      FocusableAction(
+        icon: Symbols.folder_open_rounded,
+        tooltip: t.fileSources.title,
+        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => const SourcesScreen())),
+      ),
       if (selectedLibrary?.kind == MediaKind.movie)
         FocusableAction(
           icon: Symbols.casino_rounded,
