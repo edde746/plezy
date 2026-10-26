@@ -13,19 +13,27 @@ import json
 from pathlib import Path
 
 
-ROUTES = ("native-fel", "local-fel", "companion", "native", "p81", "base", "reshape")
+ROUTES = ("native-fel", "local-fel", "companion", "native", "p81", "reshape", "tone-map", "base")
 FEL_EVIDENCE = frozenset(("bl_decode", "el_decode", "residual", "pairing", "reference_pixels"))
 BASE_OUTPUTS = {"hdr10": "hdr10", "hlg": "hlg", "sdr": "sdr"}
 
 
 def choose(source: dict, adapters: list[dict], *, fingerprint: str,
-           mode: str = "auto", failed: tuple[str, ...] = ()) -> dict:
+           mode: str = "auto", failed: tuple[str, ...] = (),
+           display_outputs: tuple[str, ...] | None = None, target: str = "auto") -> dict:
     if mode not in ("auto", "compatibility", "experimental", "strict-fel"):
         raise ValueError("unknown playback mode")
     if not isinstance(source, dict) or not isinstance(adapters, list):
         raise ValueError("source must be an object and adapters a list")
     if not isinstance(fingerprint, str) or not fingerprint or len(adapters) > 64:
         raise ValueError("a current fingerprint and at most 64 adapters are required")
+    outputs = {"dolby-vision", "hdr10", "hlg", "edr", "scrgb", "sdr"}
+    if target not in ("auto", "hdr10", "sdr"):
+        raise ValueError("unknown output target")
+    if display_outputs is not None and (
+            not isinstance(display_outputs, (list, tuple)) or not display_outputs or
+            any(not isinstance(value, str) or value not in outputs for value in display_outputs)):
+        raise ValueError("display_outputs must contain recognized output formats")
     cfg = source.get("dv_configuration") or {}
     if not isinstance(cfg, dict):
         raise ValueError("dv_configuration must be an object")
@@ -33,7 +41,13 @@ def choose(source: dict, adapters: list[dict], *, fingerprint: str,
     if source.get("issues") or type(profile) is not int:
         return {"route": None, "reason": "source_requires_inspection", "rejected": []}
     base = source.get("base_layer_compatibility", "unknown")
-    valid_base = base in BASE_OUTPUTS
+    # A caller's incorrect compatibility label must never make P5 plain HDR10.
+    valid_base = base in BASE_OUTPUTS and profile != 5
+    if profile == 7:
+        valid_base = base == "hdr10"
+    if profile == 8 and "dv_bl_signal_compatibility_id" in cfg:
+        valid_base = base == {1: "hdr10", 2: "sdr", 4: "hlg"}.get(cfg["dv_bl_signal_compatibility_id"])
+
     accepted, rejected = [], []
     seen = set()
     for adapter in adapters:
@@ -53,8 +67,16 @@ def choose(source: dict, adapters: list[dict], *, fingerprint: str,
             reason = "stale_capability"
         elif adapter.get("available") is not True or profile not in adapter.get("profiles", []):
             reason = "unavailable_for_source"
-        elif adapter.get("output") not in ("dolby-vision", "hdr10", "hlg", "edr", "scrgb", "sdr"):
+        elif adapter.get("output") not in outputs:
             reason = "output_unspecified"
+        elif display_outputs is not None and adapter["output"] not in display_outputs:
+            reason = "display_output_unsupported"
+        elif target != "auto" and adapter["output"] != target:
+            reason = "requested_output_mismatch"
+        elif kind == "reshape" and (profile not in (5, 7, 8) or cfg.get("rpu_present_flag") != 1):
+            reason = "reshaping_requires_supported_profile_and_rpu"
+        elif kind == "tone-map" and (not valid_base or adapter.get("evidence", {}).get("color_conversion") is not True):
+            reason = "conversion_requires_compatible_base_and_renderer"
         elif kind == "p81" and (profile != 7 or base != "hdr10"):
             reason = "p81_requires_hdr10_compatible_p7"
         elif kind == "base" and (not valid_base or adapter["output"] != base):
@@ -89,7 +111,7 @@ def choose(source: dict, adapters: list[dict], *, fingerprint: str,
             "enhancement": "reconstructed" if full and qualified_fel else
                            "derived" if derived else
                            "experimental_unverified" if full else
-                           "discarded" if profile == 7 and kind in ("p81", "base") else "unknown",
+                           "discarded" if profile == 7 and kind in ("p81", "base", "tone-map", "reshape") else "unknown",
             "physical_dv_verified": adapter["output"] == "dolby-vision" and
                                     evidence.get("physical_dv") is True,
         }))
@@ -115,12 +137,14 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("report", type=Path, help="source, adapters and fingerprint JSON")
     parser.add_argument("--mode", choices=("auto", "compatibility", "experimental", "strict-fel"), default="auto")
+    parser.add_argument("--target", choices=("auto", "hdr10", "sdr"), default="auto")
     parser.add_argument("--failed", action="append", default=[])
     args = parser.parse_args()
     try:
         report = read_report(args.report)
         result = choose(report["source"], report["adapters"], fingerprint=report["fingerprint"],
-                        mode=args.mode, failed=tuple(args.failed))
+                        mode=args.mode, failed=tuple(args.failed),
+                        display_outputs=report.get("display_outputs"), target=args.target)
     except (KeyError, TypeError, ValueError) as error:
         parser.error(str(error))
     print(json.dumps(result, indent=2))
@@ -129,3 +153,4 @@ def main():
 
 if __name__ == "__main__":
     raise SystemExit(main())
+

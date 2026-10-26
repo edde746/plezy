@@ -131,3 +131,12 @@ also be resolvable; see the bundle's `provenance.json`.
 
 The detailed platform research and remaining integration work are in
 [`../../docs/plezyng/dolby-vision-research.md`](../../docs/plezyng/dolby-vision-research.md).
+
+
+## Real-time HDR / SDR output
+
+The standalone launcher accepts `--target auto`, `--target sdr`, or
+`--target hdr10`, plus an optional `--peak-nits` with explicit SDR/HDR targets.
+These render during playback and preserve source RPU/FEL data; they do not
+create a converted movie. See [client conversion](../../docs/maintainers/dv-client-conversion.md)
+for examples, device boundaries, and the distinction from offline companions.

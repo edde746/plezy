@@ -136,7 +136,7 @@ class GpuVoPolicyTest {
 
   private fun disabledDvOptions(mode: String, profile: Long?, p5Decoder: Boolean): GpuVoPolicy.DvDecoderOptions {
     val routing = GpuVoPolicy.dvRouting(mode, displaySupportsDv = true, dvOutputAllowed = false)
-    return GpuVoPolicy.dvDecoderOptions(routing.conversionMode, routing.displaySupportsDv, profile, canPlayP5Natively = p5Decoder)
+    return GpuVoPolicy.dvDecoderOptions(routing.conversionMode, routing.displaySupportsDv, profile, canPlayP5Natively = p5Decoder && routing.allowNativeP5)
   }
 
   @Test
@@ -163,8 +163,8 @@ class GpuVoPolicyTest {
   @Test
   fun `disabling Dolby Vision never strips P5, which has no base layer to fall back to`() {
     for (mode in GpuVoPolicy.DV_CONVERSION_MODES) {
-      // A converting decoder keeps P5 on the DV path.
-      assertTrue(mode, disabledDvOptions(mode, 5L, p5Decoder = true).dolbyVision)
+      // Even an advertised native decoder must not re-enable DV output.
+      assertFalse(mode, disabledDvOptions(mode, 5L, p5Decoder = true).dolbyVision)
       // Without one, software decode reshapes it, from the prediction and from
       // a decoder that landed in software anyway.
       val routing = GpuVoPolicy.dvRouting(mode, displaySupportsDv = true, dvOutputAllowed = false)
@@ -253,7 +253,11 @@ class GpuVoPolicyTest {
     // Base-layer-compatible profiles and explicit modes follow needsDvReshaping.
     assertFalse(GpuVoPolicy.softwareDecodeNeedsDvReshaping(8L, "auto", hwdecCurrent = "no"))
     assertFalse(GpuVoPolicy.softwareDecodeNeedsDvReshaping(null, "auto", hwdecCurrent = "no"))
-    assertFalse(GpuVoPolicy.softwareDecodeNeedsDvReshaping(5L, "native", hwdecCurrent = "no"))
+    for (mode in GpuVoPolicy.DV_CONVERSION_MODES) {
+      assertTrue(mode, GpuVoPolicy.softwareDecodeNeedsDvReshaping(5L, mode, hwdecCurrent = "no"))
+      assertTrue(mode, GpuVoPolicy.softwareDecodeNeedsDvReshaping(5L, mode, hwdecCurrent = "mediacodec-copy"))
+      assertFalse(mode, GpuVoPolicy.softwareDecodeNeedsDvReshaping(5L, mode, hwdecCurrent = "mediacodec"))
+    }
   }
 
   // The overlay's DV Path reports what FFmpeg's dolby_vision_override does
@@ -524,3 +528,4 @@ class GpuVoPolicyTest {
     )
   }
 }
+

@@ -369,6 +369,9 @@ class ExoPlayerPlugin :
         if (core.setDebugDvConversionMode(dvConversionMode) != true) {
           Log.w(TAG, "Invalid DV conversion mode during initialize: $dvConversionMode")
         }
+        // Replay output preferences accepted before the core existed.
+        core.setDolbyVisionOutputAllowed(pendingMpvProperties["dolby-vision-output"] != "no")
+        core.setHdrSdrConversionMode(pendingMpvProperties["hdr-sdr-conversion"] ?: "auto")
         // Seed from this device's persisted calibration, falling back to the Dart perf-tier proxy.
         core.seedAssVideoLatencyFrames(assVideoLatencyFrames)
         core.setVisible(false)
@@ -1258,8 +1261,20 @@ class ExoPlayerPlugin :
       return
     }
 
-    // Apply sync offsets to ExoPlayer when active
+    if ((name == "dolby-vision-output" && value !in setOf("yes", "no")) ||
+      (name == "hdr-sdr-conversion" && value !in setOf("auto", "device", "player"))
+    ) {
+      result.error("INVALID_ARGS", "Invalid color conversion property: $name", null)
+      return
+    }
+    // Queue BEFORE triggering a handoff: the replacement must inherit the
+    // preference that required it, including when fallback starts synchronously.
+    pendingMpvProperties[name] = value
+
+    // Apply preferences that ExoPlayer can honor or hand off to mpv.
     when (name) {
+      "dolby-vision-output" -> playerCore?.setDolbyVisionOutputAllowed(value == "yes")
+      "hdr-sdr-conversion" -> playerCore?.setHdrSdrConversionMode(value)
       "audio-delay" -> playerCore?.setAudioDelay(value.toDoubleOrNull() ?: 0.0)
       "sub-delay" -> playerCore?.setSubtitleDelay(value.toDoubleOrNull() ?: 0.0)
       // mpv semantics mirrored on the libass overlay: anchor non-positioned ASS
@@ -1269,7 +1284,6 @@ class ExoPlayerPlugin :
     }
 
     // Before fallback this is queue acceptance, not a completed MPV write.
-    pendingMpvProperties[name] = value
     result.success(null)
   }
 
@@ -1576,3 +1590,4 @@ class ExoPlayerPlugin :
     return true
   }
 }
+

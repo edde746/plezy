@@ -1600,9 +1600,9 @@ class MpvPlayerCore private constructor(
     val needs = GpuVoPolicy.needsDvReshaping(
       dvProfile = profile,
       conversionMode = mode,
-      canPlayP5Natively = p5Decoder != null
+      canPlayP5Natively = p5Decoder != null && routing.allowNativeP5
     )
-    val options = GpuVoPolicy.dvDecoderOptions(mode, routing.displaySupportsDv, profile, canPlayP5Natively = p5Decoder != null)
+    val options = GpuVoPolicy.dvDecoderOptions(mode, routing.displaySupportsDv, profile, canPlayP5Natively = p5Decoder != null && routing.allowNativeP5)
     writeDvDecoderOptions(options)
     if (profile != null) {
       // Unconditional for every DV file: this line is what a wrong-colour
@@ -1650,7 +1650,7 @@ class MpvPlayerCore private constructor(
     val profile = track?.takeIf { it.has("dolby-vision-profile") }?.getLong("dolby-vision-profile")
     pendingDvProfile = profile
     val mode = dvRouting().conversionMode
-    val needs = GpuVoPolicy.needsDvReshaping(profile, mode, canPlayP5Natively = false)
+    val needs = GpuVoPolicy.softwareDecodeNeedsDvReshaping(profile, mode, hwdecCurrent = "no")
     val output = if (needs) "gpu-next" else initialVideoOutput(hardwareDecoding = false)
     if (output == softwareVideoOutput) return
     val decision = "profile=$profile mode=$mode path=software decode, vo=$output"
@@ -2597,21 +2597,18 @@ class MpvPlayerCore private constructor(
   /** Writes the DV decoder options the current routing inputs give the loaded file. */
   private fun reapplyDvDecoderOptions(change: String, onComplete: ((Result<Unit>) -> Unit)?) {
     submitMpvOperation(writeOperations, "DV conversion", { onComplete?.invoke(it) }) {
-      val profile = pendingDvProfile
-      val routing = dvRouting()
-      val p5Decoder = GpuVoPolicy.nativeDvDecoder(dvDecoderCandidates, 5L)
-      val options = GpuVoPolicy.dvDecoderOptions(
-        routing.conversionMode,
-        routing.displaySupportsDv,
-        profile,
-        canPlayP5Natively = p5Decoder != null
-      )
-      Log.i(
-        TAG,
-        "$change (displayDV=$displayDvSupported dvOutput=${if (dvOutputAllowed) "yes" else "no"} profile=$profile " +
-          "p5Decoder=${p5Decoder ?: "none"}) -> dolby_vision=${if (options.dolbyVision) 1 else 0} dv_p7_mode=${options.p7Mode}"
-      )
-      writeDvDecoderOptions(options)
+      val p = player ?: throw CancellationException("MPV player unavailable")
+      val track = pendingVideoTrack(p)
+      emitLog("info", "dv-route", change)
+      // Decoder options alone are insufficient: disabling DV on P5 also
+      // needs a renderer that consumes RPU. Reuse the preloaded policy so
+      // a live change cannot leave plain IPT-PQ frames on the video plane.
+      if (usesMediaCodecVo) {
+        applyDvReshapePolicy(p, track)
+        applyFramedropPolicy()
+      } else if (!audioOnly) {
+        applySoftwareDvReshapeOutput(track)
+      }
     }
   }
 
@@ -3350,3 +3347,4 @@ class MpvPlayerCore private constructor(
     }
   }
 }
+

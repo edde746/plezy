@@ -32,6 +32,49 @@ import org.robolectric.Shadows.shadowOf
 class ExoPlayerPluginTest {
 
   @Test
+  fun outputPreferencesReachActiveExoCoreAndAreQueuedForHandoff() {
+    val activity = Robolectric.buildActivity(Activity::class.java).setup().get()
+    val core = ExoPlayerCore(activity)
+    val plugin = ExoPlayerPlugin()
+    setField(plugin, "playerCore", core)
+    for ((name, value) in listOf("dolby-vision-output" to "no", "hdr-sdr-conversion" to "player")) {
+      val result = RecordingResult()
+      plugin.onMethodCall(MethodCall("setMpvProperty", mapOf("name" to name, "value" to value)), result)
+      awaitCompletion(result)
+      assertNull(result.errorCode)
+      assertEquals(value, (getField(plugin, "pendingMpvProperties") as Map<*, *>)[name])
+    }
+    assertEquals(false, getField(core, "dolbyVisionOutputAllowed"))
+    assertEquals("player", getField(core, "hdrSdrConversionMode"))
+  }
+
+  @Test
+  fun invalidOutputPreferencesDoNotPoisonFallbackReplay() {
+    val plugin = ExoPlayerPlugin()
+    for (name in listOf("dolby-vision-output", "hdr-sdr-conversion")) {
+      val result = RecordingResult()
+      plugin.onMethodCall(MethodCall("setMpvProperty", mapOf("name" to name, "value" to "invalid")), result)
+      awaitCompletion(result)
+      assertEquals("INVALID_ARGS", result.errorCode)
+      assertFalse((getField(plugin, "pendingMpvProperties") as Map<*, *>).containsKey(name))
+    }
+  }
+
+  @Test
+  fun outputPreferencesReachAlreadyActiveMpvFallback() {
+    val writes = mutableListOf<Pair<String, String>>()
+    val plugin = fallbackPlugin { name, value -> writes += name to value }
+    for ((name, value) in listOf("dolby-vision-output" to "no", "hdr-sdr-conversion" to "player")) {
+      val result = RecordingResult()
+      plugin.onMethodCall(MethodCall("setMpvProperty", mapOf("name" to name, "value" to value)), result)
+      awaitCompletion(result)
+      assertNull(result.errorCode)
+    }
+    assertEquals(listOf("dolby-vision-output" to "no", "hdr-sdr-conversion" to "player"), writes)
+  }
+
+
+  @Test
   fun fallbackGetStatsCompletesAfterActivityDetach() {
     val plugin = ExoPlayerPlugin()
     plugin.javaClass.getDeclaredField("usingMpvFallback").apply {
@@ -1012,7 +1055,7 @@ class ExoPlayerPluginTest {
     }
   }
 
-  private fun getField(plugin: ExoPlayerPlugin, name: String): Any? = plugin.javaClass.getDeclaredField(name).run {
+  private fun getField(plugin: Any, name: String): Any? = plugin.javaClass.getDeclaredField(name).run {
     isAccessible = true
     get(plugin)
   }
@@ -1095,3 +1138,4 @@ class ExoPlayerPluginTest {
     override fun endOfStream() = Unit
   }
 }
+

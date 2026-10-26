@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Honor Android Dolby Vision output and player tone-mapping preferences through the in-app compatibility player; preserve Profile 5 reshaping on software fallback. Add display-constrained experimental routing and real-time HDR/SDR output targets to the isolated DV launcher.
+
 - Fit Find your next to the screen with persistent action buttons, mirrored swipe/TV direction cues, contextual help, and artwork that follows the current pick. Restore downloaded and alternate covers, distinguish artwork loading from missing images, and allow failed source covers to be retried.
 
 - Add experimental comic page streaming, Komga source integration and ComicInfo metadata support.
@@ -123,3 +125,4 @@
 ### Removed
 
 - Remove unused upstream website, legacy app-store and Sentry upload automation, and funding links.
+

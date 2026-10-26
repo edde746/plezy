@@ -159,11 +159,11 @@ internal object GpuVoPolicy {
    * (or another decoder failed to open), but `hwdec-current` says the
    * stream is not on MediaCodec at all, so nothing composites the RPU
    * unless gpu-next does. [dvProfile] is the pending video track's profile
-   * and [conversionMode] the session's; only `auto` routes, as in
-   * [needsDvReshaping]. Reacting to the outcome is what keeps a wrong
-   * prediction from scanning the base layer out as SDR BT.2020.
+   * and [conversionMode] the session's. Even explicit native/P7 modes
+   * cannot make software-decoded P5 into a compatible base layer. Reacting
+   * to the outcome is what keeps a wrong prediction from scanning the base layer out as SDR BT.2020.
    */
-  fun softwareDecodeNeedsDvReshaping(dvProfile: Long?, conversionMode: String, hwdecCurrent: String?): Boolean = needsSoftwareRender(hwdecCurrent) && dvProfile == 5L && conversionMode == "auto"
+  fun softwareDecodeNeedsDvReshaping(dvProfile: Long?, conversionMode: String, hwdecCurrent: String?): Boolean = needsSoftwareRender(hwdecCurrent) && dvProfile == 5L && conversionMode in DV_CONVERSION_MODES
 
   /** `dolby_vision` and `dv_p7_mode` for the bundled FFmpeg's `vd-lavc-o`. */
   data class DvDecoderOptions(val dolbyVision: Boolean, val p7Mode: String)
@@ -206,7 +206,7 @@ internal object GpuVoPolicy {
   }
 
   /** The conversion mode and display answer the DV routing decides with; see [dvRouting]. */
-  data class DvRouting(val conversionMode: String, val displaySupportsDv: Boolean)
+  data class DvRouting(val conversionMode: String, val displaySupportsDv: Boolean, val allowNativeP5: Boolean = true)
 
   /**
    * What [dvDecoderOptions], [needsDvReshaping] and
@@ -217,16 +217,15 @@ internal object GpuVoPolicy {
    * Dolby Vision, whatever [conversionMode] says: single-layer P8 decodes as
    * plain HEVC and P7 strips to its base layer, so the TV receives the HDR10
    * (or HLG) the file carries instead of a Dolby Vision signal. P5 has no
-   * compatible base layer and keeps that same route — the DV decoder when
-   * the device has one, which still drives a Dolby Vision TV in Dolby
-   * Vision, else software decode with gpu-next reshaping. Stripping P5
-   * instead is the wrong-colour result Kodi's equivalent switch produces
-   * (xbmc#26607).
+   * compatible base layer: disabling DV therefore requires gpu-next reshaping,
+   * even if a DV decoder exists. A native decoder can re-engage DV signaling
+   * despite the setting; it is not a guaranteed HDR10/SDR conversion path.
+   * Keep the embedded RPU for the software renderer; never strip P5.
    */
   fun dvRouting(conversionMode: String, displaySupportsDv: Boolean, dvOutputAllowed: Boolean): DvRouting = if (dvOutputAllowed) {
     DvRouting(conversionMode, displaySupportsDv)
   } else {
-    DvRouting("auto", displaySupportsDv = false)
+    DvRouting("auto", displaySupportsDv = false, allowNativeP5 = false)
   }
 
   /** `hdr-sdr-conversion` values: who converts HDR for a display without HDR output. */
@@ -391,3 +390,4 @@ internal object GpuVoPolicy {
   const val REASON_HDR_SDR = "hdr-sdr"
   const val REASON_CODEC_SW_DECODE = "codec-sw-decode"
 }
+

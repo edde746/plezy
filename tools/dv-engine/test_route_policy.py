@@ -41,7 +41,7 @@ class RoutePolicyTest(unittest.TestCase):
         self.assertIsNone(select(base, failed=("base",))["route"])
 
     def test_p5_never_becomes_plain_hdr10(self):
-        p5 = {"dv_configuration": {"dv_profile": 5}, "base_layer_compatibility": "none", "issues": []}
+        p5 = {"dv_configuration": {"dv_profile": 5, "rpu_present_flag": 1}, "base_layer_compatibility": "none", "issues": []}
         for route in ("base", "p81", "local-fel"):
             self.assertIsNone(select(adapter(route, profiles=[5]), source=p5, mode="experimental")["route"])
         self.assertEqual(select(adapter("reshape", profiles=[5], output="sdr"), source=p5)["route"], "reshape")
@@ -73,6 +73,52 @@ class RoutePolicyTest(unittest.TestCase):
         full = adapter("local-fel", experimental=True, evidence=dict.fromkeys(FEL_EVIDENCE, True))
         self.assertEqual(select(full, mode="strict-fel")["enhancement"], "reconstructed")
 
+    def test_display_constraints_and_forced_sdr(self):
+        hdr = adapter("base")
+        sdr = adapter("tone-map", output="sdr", evidence={"color_conversion": True})
+        for outputs, target in ((("sdr",), "auto"), (("hdr10", "sdr"), "sdr")):
+            result = choose(SOURCE, [hdr, sdr], fingerprint=hdr["fingerprint"],
+                            display_outputs=outputs, target=target)
+            self.assertEqual(result["output"], "sdr")
+            self.assertEqual(result["enhancement"], "discarded")
+        self.assertIsNone(choose(SOURCE, [hdr], fingerprint=hdr["fingerprint"],
+                                display_outputs=("sdr",))["route"])
+
+    def test_p5_mistagged_as_hdr10_is_not_a_base_layer(self):
+        source = {**SOURCE, "dv_configuration": {"dv_profile": 5}}
+        for kind in ("base", "tone-map", "reshape"):
+            candidate = adapter(kind, profiles=[5], evidence={"color_conversion": True})
+            self.assertIsNone(select(candidate, source=source)["route"])
+
+    def test_profile8_compatibility_and_hlg_to_sdr(self):
+        for ccid, base in ((1, "hdr10"), (2, "sdr"), (4, "hlg")):
+            source = {"dv_configuration": {"dv_profile": 8, "dv_bl_signal_compatibility_id": ccid},
+                      "base_layer_compatibility": base}
+            candidate = adapter("tone-map", profiles=[8], output="sdr", evidence={"color_conversion": True})
+            self.assertEqual(select(candidate, source=source)["output"], "sdr")
+            source["base_layer_compatibility"] = "unknown"
+            self.assertIsNone(select(candidate, source=source)["route"])
+
+    def test_fel_can_target_sdr_without_claiming_physical_dv(self):
+        full = adapter("local-fel", output="sdr", evidence=dict.fromkeys(FEL_EVIDENCE, True))
+        result = choose(SOURCE, [full], fingerprint=full["fingerprint"],
+                        display_outputs=("sdr",), target="sdr", mode="strict-fel")
+        self.assertEqual(result["enhancement"], "reconstructed")
+        self.assertFalse(result["physical_dv_verified"])
+
+    def test_reshape_does_not_claim_fel(self):
+        source = {**SOURCE, "dv_configuration": {**SOURCE["dv_configuration"], "rpu_present_flag": 1}}
+        self.assertEqual(select(adapter("reshape"), source=source)["enhancement"], "discarded")
+
+    def test_invalid_output_contracts(self):
+        for outputs in ([], "sdr", ["unknown"], [None]):
+            with self.assertRaises(ValueError):
+                choose(SOURCE, [], fingerprint="device", display_outputs=outputs)
+        with self.assertRaises(ValueError):
+            choose(SOURCE, [], fingerprint="device", target="dv")
+        self.assertIsNone(select(adapter("tone-map", output="sdr"))["route"])
+
 
 if __name__ == "__main__":
     unittest.main()
+
