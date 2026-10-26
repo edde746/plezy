@@ -973,7 +973,15 @@ jobs:
 
   package-windows:
     needs: build-windows
-    runs-on: windows-latest
+    runs-on:
+      group: packer-windows
+      labels:
+        - self-hosted
+        - Windows
+        - X64
+        - on-demand
+        - packer-windows
+        - PlezyNG
     permissions:
       id-token: write
       attestations: write
