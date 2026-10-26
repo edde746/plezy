@@ -1037,11 +1037,16 @@ class _PrerollItemPickerDialogState extends State<_PrerollItemPickerDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final mediaQuery = MediaQuery.of(context);
+    final availableHeight =
+        mediaQuery.size.height - mediaQuery.viewPadding.vertical - mediaQuery.viewInsets.bottom;
+    final pickerHeight = (availableHeight - 220).clamp(0.0, 560.0).toDouble();
     return AlertDialog(
+      scrollable: true,
       title: Text(t.settings.prerollItemPicker),
       content: SizedBox(
         width: double.maxFinite,
-        height: 560,
+        height: pickerHeight,
         child: _items == null
             ? Center(child: _error != null ? Text(_error!) : const CircularProgressIndicator())
             : ListView.builder(
