@@ -14,7 +14,7 @@ Required policy: all builds across `snapetech-org` must use private just-in-time
 
 Keep workflow authorization and trust boundaries explicit. Fork and untrusted pull-request builds must use an isolated private JIT route that cannot access trusted-main runner routes or secrets. If a workflow or platform has no suitable private JIT route, provision one and block that build until it is available; do not fall back to GitHub-hosted runners.
 
-Windows release jobs require the private Windows `packer` JIT runner to be restored. Until that route is available and authorized, Windows builds are blocked; `windows-latest` is not an alternative.
+Windows release jobs stay on the existing private Windows `packer` route and its trusted Windows runner labels. If Packer was retired, coordinate with its owner to restore the prior scope. The shared JIT migration applies only to the specified Linux jobs; do not route Windows jobs to GitHub-hosted runners or make an uncoordinated runner-policy change.
 
 Coordinate shared runner-group, broker, and workflow changes before cutover. Preserve active release work, drain existing JIT jobs, and make the coordinated policy change once. Do not remove repositories or workflow references to fit an outdated allowlist baseline.
 
