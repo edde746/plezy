@@ -3,6 +3,7 @@ import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
@@ -15,6 +16,7 @@ import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../sources/publication_shelf.dart';
 import '../../utils/platform_detector.dart';
+import '../../widgets/app_icon.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/provider_mark.dart';
@@ -438,7 +440,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 ),
                               )
-                            : const Icon(Icons.search_rounded),
+                            : const AppIcon(Symbols.search_rounded),
                         label: Text(_discoveringDlna ? t.sourceSetup.networkSearching : t.sourceSetup.dlnaDiscover),
                       ),
                       const SizedBox(height: 8),
@@ -559,7 +561,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                           ),
                           OutlinedButton.icon(
                             onPressed: _busy ? null : _pickNfsServerCertificate,
-                            icon: const Icon(Icons.upload_file_rounded),
+                            icon: const AppIcon(Symbols.upload_file_rounded),
                             label: Text(
                               _nfsServerCertificateFileName != null
                                   ? t.sourceSetup.replaceFile(name: isolateDisplayText(_nfsServerCertificateFileName!))
@@ -590,7 +592,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                                 ),
                               OutlinedButton.icon(
                                 onPressed: _busy ? null : _pickNfsClientIdentity,
-                                icon: const Icon(Icons.upload_file_rounded),
+                                icon: const AppIcon(Symbols.upload_file_rounded),
                                 label: Text(
                                   _nfsClientIdentityFileName != null
                                       ? t.sourceSetup.replaceFile(name: isolateDisplayText(_nfsClientIdentityFileName!))
@@ -615,7 +617,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                                         field('nfsTlsClientIdentity').clear();
                                         field('nfsTlsClientIdentityPassword').clear();
                                       }),
-                                icon: const Icon(Icons.delete_outline_rounded),
+                                icon: const AppIcon(Symbols.delete_outline_rounded),
                                 label: Text(t.sourceSetup.removeIdentity),
                               ),
                               Padding(
@@ -707,7 +709,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                             context,
                             MaterialPageRoute(builder: (_) => const ServicesSettingsScreen()),
                           ),
-                          icon: const Icon(Icons.link_rounded),
+                          icon: const AppIcon(Symbols.link_rounded),
                           label: Text('${t.common.connect} ${t.trakt.title}'),
                         ),
                       ),

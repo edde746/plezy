@@ -94,7 +94,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
               onPressed: () => Navigator.pop(dialogContext, true),
               label: '${t.common.edit} ${t.fileSources.source}',
               isPrimary: true,
-              icon: const Icon(Icons.edit_rounded),
+              icon: const AppIcon(Symbols.edit_rounded),
             ),
           ],
         ),

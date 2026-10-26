@@ -1,8 +1,10 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../../focus/focusable_text_field.dart';
+import '../../widgets/app_icon.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
@@ -196,7 +198,7 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
                     IconButton.filled(
                       tooltip: t.common.search,
                       onPressed: _searching ? null : _search,
-                      icon: Icon(Icons.search),
+                      icon: const AppIcon(Symbols.search_rounded),
                     ),
                   ],
                 ),
@@ -265,7 +267,10 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
                                         child: CircularProgressIndicator(strokeWidth: 2),
                                       ),
                                     )
-                                  : Icon(Icons.download_rounded, semanticLabel: t.sourceSetup.downloadSubtitle),
+                                  : AppIcon(
+                                      Symbols.download_rounded,
+                                      semanticLabel: t.sourceSetup.downloadSubtitle,
+                                    ),
                               onTap: _downloading == null ? () => _download(result) : null,
                             );
                           },
