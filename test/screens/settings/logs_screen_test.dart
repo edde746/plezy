@@ -53,7 +53,7 @@ void main() {
   });
 
   testWidgets('long upload capability displays and copies at narrow width', (tester) async {
-    const capability = 'abcdefghijklmnopqrstuvwxy';
+    const capability = '0123456789abcdefghjkmnpqrs';
     String? uploadedBody;
     http.Request? uploadedRequest;
     String? clipboardText;
