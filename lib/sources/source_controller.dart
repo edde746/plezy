@@ -960,8 +960,12 @@ class SourceController extends ChangeNotifier {
     requireSession();
     final epoch = generation, profile = profileId!;
     final defaultRoot = p.join(downloads.directory.path, sourceDigest(profile), 'imports');
-    final source =
-        sources.where((s) => s.kind == FileSourceKind.local && s.options['imported'] == 'true').firstOrNull ??
+    final existingSource =
+        sources.where((s) => s.kind == FileSourceKind.local && s.options['imported'] == 'true').firstOrNull;
+    if (existingSource != null && !p.equals(existingSource.root, defaultRoot)) {
+      throw const SourceException(SourceFailure.permission);
+    }
+    final source = existingSource ??
         FileSource(
           id: const Uuid().v4(),
           profileId: profile,
