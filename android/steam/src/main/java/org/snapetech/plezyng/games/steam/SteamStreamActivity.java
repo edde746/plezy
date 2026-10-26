@@ -238,7 +238,7 @@ public final class SteamStreamActivity extends Activity implements SurfaceHolder
       stop();
       new AlertDialog.Builder(this, R.style.PlezySteamDialog)
           .setMessage(label("error", "The stream could not start. Check pairing and the host."))
-          .setPositiveButton(android.R.string.ok, (d, w) -> finish())
+          .setPositiveButton(label("ok", "OK"), (d, w) -> finish())
           .setOnCancelListener(d -> finish())
           .show();
     });
@@ -296,7 +296,7 @@ public final class SteamStreamActivity extends Activity implements SurfaceHolder
                 finish();
               }
             })
-        .setNegativeButton(android.R.string.cancel, null)
+        .setNegativeButton(label("cancel", "Cancel"), null)
         .show();
   }
   private void releaseInput() {

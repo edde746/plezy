@@ -78,7 +78,10 @@ final class SteamControls extends View {
   protected void onSizeChanged(int w, int h, int oldw, int oldh) {
     reset();
     controls.clear();
-    float r = Math.min(h * .07f, w * .035f), stick = r * 1.65f;
+    float density = getResources().getDisplayMetrics().density;
+    // The hit slop below is 1.3× the drawn radius; keep it at least 48dp on
+    // compact landscape phones while letting larger screens scale naturally.
+    float r = Math.max(density * 18.5f, Math.min(h * .07f, w * .035f)), stick = r * 1.65f;
     controls.add(new Control(w * .16f, h * .69f, stick, "L", -1, 0));
     controls.add(new Control(w * .72f, h * .74f, stick, "R", -1, 2));
     float x = w * .88f, y = h * .67f, d = r * 2.1f;

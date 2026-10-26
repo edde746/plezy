@@ -7,6 +7,7 @@ import 'package:url_launcher/url_launcher.dart';
 
 import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
+import '../../focus/input_mode_tracker.dart';
 import '../../games/game_models.dart';
 import '../../games/game_streaming_client.dart';
 import '../../i18n/strings.g.dart';
@@ -65,6 +66,7 @@ class _AddGameComputerDialogState extends State<AddGameComputerDialog> {
           DropdownButtonFormField<GameProtocol>(
             initialValue: _protocol,
             isExpanded: true,
+            autofocus: InputModeTracker.isKeyboardMode(context, listen: false),
             decoration: InputDecoration(labelText: t.games.protocol),
             items: [
               DropdownMenuItem(value: GameProtocol.gameStream, child: Text(t.games.moonlight)),
@@ -81,6 +83,7 @@ class _AddGameComputerDialogState extends State<AddGameComputerDialog> {
           ),
           FocusableTextField(
             controller: _name,
+            textInputAction: TextInputAction.next,
             decoration: InputDecoration(labelText: t.games.name),
             maxLength: 256,
           ),
@@ -90,12 +93,14 @@ class _AddGameComputerDialogState extends State<AddGameComputerDialog> {
             autocorrect: false,
             enableSuggestions: false,
             textDirection: TextDirection.ltr,
+            textInputAction: TextInputAction.next,
           ),
           FocusableTextField(
             controller: _port,
             decoration: InputDecoration(labelText: t.games.port),
             keyboardType: TextInputType.number,
             inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+            textInputAction: TextInputAction.next,
           ),
           FocusableTextField(
             controller: _mac,
@@ -103,6 +108,7 @@ class _AddGameComputerDialogState extends State<AddGameComputerDialog> {
             autocorrect: false,
             enableSuggestions: false,
             textDirection: TextDirection.ltr,
+            textInputAction: TextInputAction.done,
           ),
           if (_error != null)
             Semantics(
@@ -199,8 +205,9 @@ class _PairGameComputerDialogState extends State<PairGameComputerDialog> {
                 ),
               ),
             ),
-            Text(t.games.qrHelp),
+            ExcludeSemantics(child: Text(t.games.qrHelp)),
             FocusableButton(
+              autofocus: InputModeTracker.isKeyboardMode(context, listen: false),
               onPressed: _openPairingPage,
               child: TextButton(onPressed: _openPairingPage, child: Text(t.games.openPairingPage)),
             ),
@@ -215,7 +222,14 @@ class _PairGameComputerDialogState extends State<PairGameComputerDialog> {
         ],
       ),
     ),
-    actions: [DialogActionButton(onPressed: () => Navigator.pop(context, false), label: t.games.cancel)],
+    actions: [
+      DialogActionButton(
+        autofocus:
+            InputModeTracker.isKeyboardMode(context, listen: false) && widget.host.protocol == GameProtocol.steam,
+        onPressed: () => Navigator.pop(context, false),
+        label: t.games.cancel,
+      ),
+    ],
   );
 }
 
@@ -245,6 +259,8 @@ class _AddGameShortcutDialogState extends State<AddGameShortcutDialog> {
       children: [
         FocusableTextField(
           controller: _name,
+          autofocus: InputModeTracker.isKeyboardMode(context, listen: false),
+          textInputAction: TextInputAction.next,
           maxLength: 256,
           decoration: InputDecoration(labelText: t.games.gameName),
         ),
@@ -252,6 +268,7 @@ class _AddGameShortcutDialogState extends State<AddGameShortcutDialog> {
           controller: _id,
           keyboardType: TextInputType.number,
           inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+          textInputAction: TextInputAction.done,
           decoration: InputDecoration(labelText: t.games.gameId),
         ),
         if (_invalid)

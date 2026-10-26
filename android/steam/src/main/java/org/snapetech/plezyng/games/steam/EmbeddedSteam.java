@@ -68,7 +68,9 @@ public final class EmbeddedSteam {
                         .putExtra("hostId", id(args))
                         .putExtra("game", game)
                         .putExtra("touch", Boolean.TRUE.equals(args.get("touchControls")));
-    for (String label : new String[] {"connecting", "error", "disconnect", "menu", "touchLabel", "touchDescription"}) {
+    for (String label : new String[] {
+      "connecting", "error", "disconnect", "menu", "touchLabel", "touchDescription", "ok", "cancel"
+    }) {
       Object value = args.get(label);
       if (value instanceof String)
         intent.putExtra(label, (String) value);
