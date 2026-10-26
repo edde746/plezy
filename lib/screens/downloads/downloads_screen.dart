@@ -50,6 +50,7 @@ import '../libraries/content_state_builder.dart';
 import 'downloads_options.dart';
 import '../../i18n/strings.g.dart';
 import 'sync_rules_screen.dart';
+import '../discovery/find_next_screen.dart';
 
 class DownloadsScreen extends StatefulWidget {
   const DownloadsScreen({super.key});
@@ -270,6 +271,13 @@ class DownloadsScreenState extends State<DownloadsScreen>
                     onNavigateLeft: () => getTabChipFocusNode(tabCount - 1).requestFocus(),
                     onNavigateDown: _focusCurrentTab,
                     actions: [
+                      FocusableAction(
+                        icon: Symbols.auto_awesome_rounded,
+                        tooltip: t.discover.findNext.open,
+                        debugLabel: 'downloads_find_next',
+                        onPressed: () =>
+                            Navigator.push<void>(context, MaterialPageRoute(builder: (_) => const FindNextScreen())),
+                      ),
                       if (hasFailedDownloads)
                         FocusableAction(
                           icon: Symbols.refresh_rounded,

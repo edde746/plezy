@@ -38,6 +38,7 @@ import 'library_server_label.dart';
 import 'state_messages.dart';
 import '../sources/sources_screen.dart';
 import '../sources/source_navigation.dart';
+import '../discovery/find_next_screen.dart';
 import '../../sources/publication_shelf.dart';
 import '../../sources/source_controller.dart';
 import 'tabs/library_browse_tab.dart';
@@ -932,6 +933,14 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     });
 
     List<FocusableAction> appBarActions() => [
+      FocusableAction(
+        icon: Symbols.auto_awesome_rounded,
+        tooltip: t.discover.findNext.open,
+        onPressed: () => Navigator.push(
+          context,
+          MaterialPageRoute(builder: (_) => FindNextScreen(libraryGlobalKey: selectedLibrary?.globalKey)),
+        ),
+      ),
       FocusableAction(
         icon: Symbols.folder_open_rounded,
         tooltip: t.fileSources.title,

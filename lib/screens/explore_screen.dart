@@ -39,6 +39,7 @@ import 'catalog_search_screen.dart';
 import 'hub_detail_screen.dart';
 import 'libraries/state_messages.dart';
 import 'settings/mdblist_explore_shelves_screen.dart';
+import 'discovery/find_next_screen.dart';
 
 /// The Explore tab: watchlist + discover rows from the active external
 /// catalog source (Trakt). Only mounted when a source is connected (the tab
@@ -317,6 +318,14 @@ class ExploreScreenState extends State<ExploreScreen>
           onNavigateDown: searchFocusNode.requestFocus,
           actions: [
             if (sources.activeSource?.id == CatalogSourceId.mdblist) _manageShelvesAction(),
+            FocusableAction(
+              icon: Symbols.auto_awesome_rounded,
+              tooltip: t.discover.findNext.open,
+              onPressed: () => Navigator.push(
+                context,
+                MaterialPageRoute<void>(builder: (_) => const FindNextScreen(includeCatalog: true)),
+              ),
+            ),
             FocusableAction(icon: Symbols.refresh_rounded, tooltip: t.common.refresh, onPressed: manualRefresh),
           ],
         ),
@@ -538,6 +547,14 @@ class ExploreScreenState extends State<ExploreScreen>
             spacing: 4,
             actions: [
               if (active?.id == CatalogSourceId.mdblist) _manageShelvesAction(),
+              FocusableAction(
+                icon: Symbols.auto_awesome_rounded,
+                tooltip: t.discover.findNext.open,
+                onPressed: () => Navigator.push(
+                  context,
+                  MaterialPageRoute<void>(builder: (_) => const FindNextScreen(includeCatalog: true)),
+                ),
+              ),
               if (active != null && sources.connectedSources.length > 1)
                 FocusableAction(
                   debugLabel: 'ExploreSourceSwitcher',
