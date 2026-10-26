@@ -48,6 +48,7 @@
 
 ### Security
 
+- Upgrade the branding asset generator to Pillow 13.0.0 to include upstream security fixes.
 - Clarify that the branding verifier parses only the checked-in Android launcher manifest.
 - Clarify that the publication reader's local WebSocket bridge is restricted to loopback and a per-session capability.
 - Restrict OAuth authorization redirects to configured provider hosts, preserve relay error status for log downloads, and remove the bundled Trakt client secret.

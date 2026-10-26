@@ -1,2 +1,2 @@
 # Pin encoders so generate_brand_assets.py --check is reproducible.
-Pillow==12.3.0
+Pillow==13.0.0
