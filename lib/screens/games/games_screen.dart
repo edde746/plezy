@@ -278,6 +278,45 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     c.requireCurrent();
     await c.opened(game);
   });
+  Future<void> _openCatalogGame(SteamCatalogGame catalogGame) async {
+    final c = _controller;
+    if (c == null || !c.current || c.busy) return;
+    final routes = <GameHost, StreamGame>{};
+    for (final host in c.library.hosts) {
+      if (host.protocol != GameProtocol.steam) continue;
+      for (final game in c.library.games) {
+        if (game.hostKey == host.key && game.id == catalogGame.key) {
+          routes[host] = game;
+          break;
+        }
+      }
+    }
+    if (routes.isEmpty) {
+      showErrorSnackBar(context, 'Connect a Steam computer and add this game as a shortcut before playing.');
+      return;
+    }
+    final GameHost? host;
+    if (routes.length == 1) {
+      host = routes.keys.first;
+    } else {
+      host = await showDialog<GameHost>(
+        context: context,
+        builder: (dialogContext) => SimpleDialog(
+          title: Text(t.games.computers),
+          children: [
+            for (final choice in routes.keys)
+              SimpleDialogOption(
+                onPressed: () => Navigator.pop(dialogContext, choice),
+                child: Text(choice.name),
+              ),
+          ],
+        ),
+      );
+    }
+    if (host == null || !mounted || !c.current) return;
+    await _open(host, routes[host]!);
+  }
+
   Future<void> _engineUnavailable(GameHost host) async {
     if (!mounted) return;
     await showDialog<void>(
@@ -514,6 +553,7 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
                     leading: const AppIcon(Symbols.sports_esports_rounded),
                     title: Text(game.name),
                     subtitle: Text('Steam App ID: ${game.appId}'),
+                    onTap: enabled ? () => _openCatalogGame(game) : null,
                   );
                 },
                 childCount: steamCatalog.length,
