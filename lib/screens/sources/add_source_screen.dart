@@ -7,15 +7,18 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../focus/focusable_text_field.dart';
-import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
+import '../../i18n/presentation_formats.dart';
+import '../../providers/trackers_provider.dart';
 import '../../sources/dlna_discovery.dart';
-import '../../sources/publication_shelf.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
+import '../../sources/publication_shelf.dart';
 import '../../utils/platform_detector.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/provider_mark.dart';
+import '../settings/services_settings_screen.dart';
 import 'source_widgets.dart';
 
 class AddSourceScreen extends StatefulWidget {
@@ -235,7 +238,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                 child: Text(t.sourceSetup.dlnaServers, style: Theme.of(sheetContext).textTheme.titleLarge),
               ),
               for (final device in devices)
-                ListTile(
+                FocusableListTile(
                   title: Text(device.name),
                   subtitle: Text(device.location.toString(), maxLines: 2, overflow: TextOverflow.ellipsis),
                   onTap: () => Navigator.pop(sheetContext, device),
@@ -311,6 +314,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
           FileSourceKind.nfs => const ['nfsTlsClientIdentity', 'nfsTlsClientIdentityPassword'],
           FileSourceKind.s3 => const ['accessKey', 'secretKey', 'sessionToken'],
           FileSourceKind.audiobookshelf => const ['token'],
+          FileSourceKind.komga => const ['username', 'password', 'token'],
           _ => const <String>[],
         },
         'openSubtitlesApiKey',
@@ -396,6 +400,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                           : (kind) => setState(() {
                               _kind = kind!;
                               if (kind == FileSourceKind.dlna) _allowHttp = true;
+                              if (kind == FileSourceKind.komga) _shelves = {PublicationShelf.comics};
                             }),
                     ),
                     const SizedBox(height: 24),
@@ -411,6 +416,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                           FileSourceKind.sftp => 'sftp://nas:22',
                           FileSourceKind.nfs => 'nfs://nas:2049/export',
                           FileSourceKind.dlna => 'http://192.168.1.20:8200/rootDesc.xml',
+                          FileSourceKind.komga => 'https://komga.example.com',
                           _ => null,
                         },
                         validator: _kind == FileSourceKind.nfs
@@ -432,7 +438,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 ),
                               )
-                            : Icon(Icons.search_rounded),
+                            : const Icon(Icons.search_rounded),
                         label: Text(_discoveringDlna ? t.sourceSetup.networkSearching : t.sourceSetup.dlnaDiscover),
                       ),
                       const SizedBox(height: 8),
@@ -449,7 +455,9 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                               },
                         child: Text(t.fileSources.localFolder),
                       ),
-                    ] else if (_kind != FileSourceKind.audiobookshelf && _kind != FileSourceKind.opds)
+                    ] else if (_kind != FileSourceKind.audiobookshelf &&
+                        _kind != FileSourceKind.opds &&
+                        _kind != FileSourceKind.komga)
                       input(
                         'root',
                         t.fileSources.root,
@@ -462,6 +470,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                     if (const {
                       FileSourceKind.webdav,
                       FileSourceKind.opds,
+                      FileSourceKind.komga,
                       FileSourceKind.smb,
                       FileSourceKind.ftp,
                       FileSourceKind.sftp,
@@ -526,7 +535,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                           validator: (value) =>
                               _validateNfsInteger(value, min: 0, max: 0xffffffff, label: t.sourceSetup.nfsGroupId),
                         ),
-                        SwitchListTile(
+                        FocusableSwitchListTile(
                           contentPadding: EdgeInsets.zero,
                           title: Text(t.sourceSetup.nfsEncryption),
                           subtitle: Text(t.sourceSetup.nfsEncryptionHelp),
@@ -550,7 +559,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                           ),
                           OutlinedButton.icon(
                             onPressed: _busy ? null : _pickNfsServerCertificate,
-                            icon: Icon(Icons.upload_file_rounded),
+                            icon: const Icon(Icons.upload_file_rounded),
                             label: Text(
                               _nfsServerCertificateFileName != null
                                   ? t.sourceSetup.replaceFile(name: isolateDisplayText(_nfsServerCertificateFileName!))
@@ -581,7 +590,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                                 ),
                               OutlinedButton.icon(
                                 onPressed: _busy ? null : _pickNfsClientIdentity,
-                                icon: Icon(Icons.upload_file_rounded),
+                                icon: const Icon(Icons.upload_file_rounded),
                                 label: Text(
                                   _nfsClientIdentityFileName != null
                                       ? t.sourceSetup.replaceFile(name: isolateDisplayText(_nfsClientIdentityFileName!))
@@ -606,7 +615,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                                         field('nfsTlsClientIdentity').clear();
                                         field('nfsTlsClientIdentityPassword').clear();
                                       }),
-                                icon: Icon(Icons.delete_outline_rounded),
+                                icon: const Icon(Icons.delete_outline_rounded),
                                 label: Text(t.sourceSetup.removeIdentity),
                               ),
                               Padding(
@@ -635,7 +644,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                           child: Text(t.sourceSetup.ftpHelp, style: Theme.of(context).textTheme.bodySmall),
                         ),
                       if (_kind == FileSourceKind.smb)
-                        SwitchListTile(
+                        FocusableSwitchListTile(
                           contentPadding: EdgeInsets.zero,
                           title: Text(t.fileSources.smbEncryption),
                           subtitle: Text(t.fileSources.smbEncryptionHint),
@@ -645,13 +654,17 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                     ],
                     if (_kind == FileSourceKind.audiobookshelf)
                       input('token', t.fileSources.token, secret: true, required: widget.existing == null),
+                    if (_kind == FileSourceKind.komga)
+                      input('token', t.fileSources.token, secret: true, hint: t.sourceSetup.sshAuthenticationHelp),
                     if (_kind == FileSourceKind.s3) ...[
                       input('region', t.fileSources.region),
                       input('accessKey', t.fileSources.accessKey, required: widget.existing == null),
                       input('secretKey', t.fileSources.secretKey, secret: true, required: widget.existing == null),
                       input('sessionToken', t.fileSources.sessionToken, secret: true),
                     ],
-                    if (_kind != FileSourceKind.opds && _kind != FileSourceKind.audiobookshelf)
+                    if (_kind != FileSourceKind.opds &&
+                        _kind != FileSourceKind.audiobookshelf &&
+                        _kind != FileSourceKind.komga)
                       ExpansionTile(
                         tilePadding: EdgeInsets.zero,
                         title: Text(t.sourceSetup.openSubtitles),
@@ -676,13 +689,27 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                             input('clientSecret', t.fileSources.clientSecret, secret: true),
                         ],
                       ),
-                    if (_kind != FileSourceKind.opds && _kind != FileSourceKind.audiobookshelf)
-                      SwitchListTile(
+                    if (_kind != FileSourceKind.opds &&
+                        _kind != FileSourceKind.audiobookshelf &&
+                        _kind != FileSourceKind.komga)
+                      FocusableSwitchListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(t.sourceSetup.automaticMetadata),
                         subtitle: Text(t.sourceSetup.metadataPrivacy),
                         value: _onlineMetadata,
                         onChanged: _busy ? null : (v) => setState(() => _onlineMetadata = v),
+                      ),
+                    if (context.watch<TrackersProvider?>()?.traktCatalogClient == null)
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: TextButton.icon(
+                          onPressed: () => Navigator.push(
+                            context,
+                            MaterialPageRoute(builder: (_) => const ServicesSettingsScreen()),
+                          ),
+                          icon: const Icon(Icons.link_rounded),
+                          label: Text('${t.common.connect} ${t.trakt.title}'),
+                        ),
                       ),
                     if (const {
                       FileSourceKind.webdav,
@@ -690,8 +717,9 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                       FileSourceKind.s3,
                       FileSourceKind.audiobookshelf,
                       FileSourceKind.dlna,
+                      FileSourceKind.komga,
                     }.contains(_kind))
-                      SwitchListTile(
+                      FocusableSwitchListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(t.fileSources.allowHttp),
                         value: _allowHttp,

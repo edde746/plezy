@@ -766,6 +766,13 @@ class _Translations$settings$cs extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Zvolte způsob zobrazení dat, čísel a měrných jednotek.';
 	@override String get metadataLanguage => 'Jazyk metadat';
 	@override String get metadataLanguageDescription => 'Upřednostňovaný jazyk názvů a popisů, pokud jej server podporuje. Předvolby zvuku a titulků se nastavují samostatně.';
+	@override String get experimentalDolbyVision => 'Experimentální Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Při příštím přehrávání použít experimentální renderer FEL. Vyžaduje samostatné sestavení enginu.';
+	@override String get dvExperimentUnavailableDescription => 'Tento experiment je zatím dostupný pouze na Linuxu.';
+	@override String get dvCompatibilityFallback => 'Záložní režim kompatibility';
+	@override String get dvCompatibilityFallbackDescription => 'Pokud experiment nelze spustit, použít standardní renderer. Data FEL mohou být ztracena.';
+	@override String get dvExperimentDiagnostics => 'Protokolování videoexperimentu';
+	@override String get dvExperimentDiagnosticsDescription => 'Při příštím přehrávání zapnout podrobné protokoly přehrávače.';
 }
 
 // Path: themeEditor
@@ -3589,7 +3596,7 @@ class _Translations$discover$findNext$cs extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => 'Celkem ${duration}';
 	@override String get timingVaries => 'Délka se může lišit';
 	@override String get notNow => 'Teď ne';
-	@override String get swipeHint => 'Přejeďte prstem nebo použijte tlačítka dole';
+	@override String get swipeHint => 'Posuňte obal směrem k šipce nebo použijte tlačítka níže.';
 	@override String get saved => 'Uložené tipy';
 	@override String savedCount({required Object count}) => 'Uložené tipy · ${count}';
 	@override String get undo => 'Zpět';
@@ -3617,6 +3624,18 @@ class _Translations$discover$findNext$cs extends Translations$discover$findNext$
 	@override String get openFailed => 'Tato položka už není dostupná. Obnovte výběr a zkontrolujte to znovu.';
 	@override String get changeFailed => 'Změnu se nepodařilo uložit. Zkuste to znovu.';
 	@override String get savedLimit => 'Seznam uložených tipů je plný. Odeberte jeden tip, abyste mohli uložit další.';
+	@override String get chooseHint => 'Otevřete titul, uložte si ho na později nebo ho přeskočte.';
+	@override String get howItWorks => 'Jak to funguje';
+	@override String get notNowHelp => 'Tento titul zatím přeskočíte. Zůstane ve vaší knihovně.';
+	@override String get saveHelp => 'Uložte ho mezi uložené tipy tohoto profilu na tomto zařízení. Uložení titul nestáhne.';
+	@override String get openHelp => 'Výběrem obalu zobrazíte podrobnosti. Hlavní akcí můžete titul přehrát, číst nebo otevřít.';
+	@override String get controlsHelp => 'Klávesnice nebo ovladač: vyberte tlačítko a stiskněte Enter nebo Vybrat. Zpět obnoví poslední volbu.';
+	@override String get artworkLoading => 'Načítání obrázku…';
+	@override String get artworkUnavailable => 'Obrázek není k dispozici';
+	@override String get savedFeedback => 'Přidáno mezi uložené tipy';
+	@override String get skippedFeedback => 'Zatím přeskočeno';
+	@override String get releaseToConfirm => 'Uvolněním potvrďte';
+	@override String get remoteHint => 'Vybraný obal: ← / → volba · Vybrat: podrobnosti · ↑ / ↓ přesun výběru';
 }
 
 // Path: discover.person
@@ -4953,6 +4972,13 @@ extension on TranslationsCs {
 			'settings.regionFormatDescription' => 'Zvolte způsob zobrazení dat, čísel a měrných jednotek.',
 			'settings.metadataLanguage' => 'Jazyk metadat',
 			'settings.metadataLanguageDescription' => 'Upřednostňovaný jazyk názvů a popisů, pokud jej server podporuje. Předvolby zvuku a titulků se nastavují samostatně.',
+			'settings.experimentalDolbyVision' => 'Experimentální Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Při příštím přehrávání použít experimentální renderer FEL. Vyžaduje samostatné sestavení enginu.',
+			'settings.dvExperimentUnavailableDescription' => 'Tento experiment je zatím dostupný pouze na Linuxu.',
+			'settings.dvCompatibilityFallback' => 'Záložní režim kompatibility',
+			'settings.dvCompatibilityFallbackDescription' => 'Pokud experiment nelze spustit, použít standardní renderer. Data FEL mohou být ztracena.',
+			'settings.dvExperimentDiagnostics' => 'Protokolování videoexperimentu',
+			'settings.dvExperimentDiagnosticsDescription' => 'Při příštím přehrávání zapnout podrobné protokoly přehrávače.',
 			'themeEditor.builtIn' => 'stavět-in',
 			'themeEditor.presets' => 'přednášky',
 			'themeEditor.custom' => 'Vlastní',
@@ -5373,6 +5399,8 @@ extension on TranslationsCs {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Skenování knihovny začíná pro "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Knihovna se neskončila: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Znovuzavírací metadata pro "${title}..."',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Aktualizace metadata začíná pro "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Nepodařilo se aktualizovat metadata: ${error}',
 			'messages.logoutConfirm' => 'Jste si jisti, že se chcete přihlásit?',
@@ -5380,8 +5408,6 @@ extension on TranslationsCs {
 			'messages.seasonsLoadFailed' => 'Nemohla by se stahovat sezóny',
 			'messages.noEpisodesFound' => 'V první sezoně nebyly nalezeny žádné epizody',
 			'messages.noEpisodesFoundGeneral' => 'Žádné epizody nenajdete',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Nemohl by se vyskytnout epizody',
 			'messages.noResultsFound' => 'Žádné výsledky.',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Časovač spánku nastavený pro ${label}',
@@ -5622,7 +5648,7 @@ extension on TranslationsCs {
 			'discover.findNext.totalDuration' => ({required Object duration}) => 'Celkem ${duration}',
 			'discover.findNext.timingVaries' => 'Délka se může lišit',
 			'discover.findNext.notNow' => 'Teď ne',
-			'discover.findNext.swipeHint' => 'Přejeďte prstem nebo použijte tlačítka dole',
+			'discover.findNext.swipeHint' => 'Posuňte obal směrem k šipce nebo použijte tlačítka níže.',
 			'discover.findNext.saved' => 'Uložené tipy',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Uložené tipy · ${count}',
 			'discover.findNext.undo' => 'Zpět',
@@ -5650,6 +5676,18 @@ extension on TranslationsCs {
 			'discover.findNext.openFailed' => 'Tato položka už není dostupná. Obnovte výběr a zkontrolujte to znovu.',
 			'discover.findNext.changeFailed' => 'Změnu se nepodařilo uložit. Zkuste to znovu.',
 			'discover.findNext.savedLimit' => 'Seznam uložených tipů je plný. Odeberte jeden tip, abyste mohli uložit další.',
+			'discover.findNext.chooseHint' => 'Otevřete titul, uložte si ho na později nebo ho přeskočte.',
+			'discover.findNext.howItWorks' => 'Jak to funguje',
+			'discover.findNext.notNowHelp' => 'Tento titul zatím přeskočíte. Zůstane ve vaší knihovně.',
+			'discover.findNext.saveHelp' => 'Uložte ho mezi uložené tipy tohoto profilu na tomto zařízení. Uložení titul nestáhne.',
+			'discover.findNext.openHelp' => 'Výběrem obalu zobrazíte podrobnosti. Hlavní akcí můžete titul přehrát, číst nebo otevřít.',
+			'discover.findNext.controlsHelp' => 'Klávesnice nebo ovladač: vyberte tlačítko a stiskněte Enter nebo Vybrat. Zpět obnoví poslední volbu.',
+			'discover.findNext.artworkLoading' => 'Načítání obrázku…',
+			'discover.findNext.artworkUnavailable' => 'Obrázek není k dispozici',
+			'discover.findNext.savedFeedback' => 'Přidáno mezi uložené tipy',
+			'discover.findNext.skippedFeedback' => 'Zatím přeskočeno',
+			'discover.findNext.releaseToConfirm' => 'Uvolněním potvrďte',
+			'discover.findNext.remoteHint' => 'Vybraný obal: ← / → volba · Vybrat: podrobnosti · ↑ / ↓ přesun výběru',
 			'discover.extras' => 'Trailery a extras',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Hodnocení',
@@ -5875,6 +5913,8 @@ extension on TranslationsCs {
 			'explore.mdblistShelves.nameHint' => 'Zanechte pryč, abyste použili název zdrojového seznamu.',
 			'explore.mdblistShelves.add' => 'Přidejte shelf',
 			'explore.mdblistShelves.save' => 'Záchranářská schůzka',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Přesun ${title} nahoru',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Stáhnout ${title} dolů',
 			'explore.mdblistShelves.unavailable' => 'Tento seznam není k dispozici. Odstranit nebo odstranit jeho šálek v nastavení.',
@@ -5894,8 +5934,6 @@ extension on TranslationsCs {
 			'explore.rows.popularShows' => 'Populární show',
 			'explore.rows.trendingAnime' => 'Trendy Anime',
 			'explore.rows.suggestedAnime' => 'Doporučené anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Nejlepší Airing Anime',
 			'explore.rows.popularAnime' => 'Nejpopulárnější anime',
 			'explore.rows.trending' => 'Trendy',
@@ -6389,6 +6427,8 @@ extension on TranslationsCs {
 			'downloads.resumeDownload' => 'Recenze download',
 			'downloads.cancelledDownload' => 'Zrušený download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (syncování ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Stáhnout ${file} - Klikněte pro dokončení',
 			'downloads.partialDownloadClickToComplete' => 'Částečně stáhnout - klikněte na dokončit',
 			'downloads.deleting' => 'Odstranění...',
@@ -6408,8 +6448,6 @@ extension on TranslationsCs {
 			'downloads.unwatchedOnly' => 'Pouze ignorované',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Další ${count} nepozorováno',
 			'downloads.customAmount' => 'Přizpůsobené množství...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Příslušná částka (v každém případě)',
 			'downloads.randomEpisodes' => 'Náhodné epizody',
 			'downloads.includeSpecials' => 'Zahrnuje speciály',
@@ -6903,6 +6941,8 @@ extension on TranslationsCs {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Nemohla se dostat na server: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Přihláška neúspěšná: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect selhalo: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Přihlaste se na číslo Plex',
 			'addServer.pinExpired' => 'PIN skončil před přihlášením, zkuste to znovu.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Účet se nezregistroval: ${error}',
@@ -6922,8 +6962,6 @@ extension on TranslationsCs {
 			'addServer.authResponseIncomplete' => 'Odpověď na sign-in ze serveru byla neúplná',
 			'addServer.quickConnectRejected' => 'Quick Connect byl odvolán serverem',
 			'addServer.quickConnectNotJson' => 'Odpověď Quick Connect nebyla platná JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Odpověď Quick Connect chybí kód nebo tajemství',
 			'addServer.quickConnectPollRejected' => 'Quick Connect zpráva byla odmítnuta serverem',
 			'addServer.serverTimedOut' => 'Server neodpovídá včas',
@@ -7417,6 +7455,8 @@ extension on TranslationsCs {
 			'sourceSetup.smbEncrypted' => 'Šifrování SMB3 zapnuto',
 			'sourceSetup.smbUnencrypted' => 'Šifrování SMB3 vypnuto',
 			'sourceSetup.httpUnencrypted' => 'HTTP bez šifrování přenosu',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Zkontrolovat zabezpečení koncového bodu',
 			'sourceSetup.fieldRequired' => ({required Object label}) => 'Povinné pole: ${label}.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Pro pole „${label}“ zadejte hodnotu od ${min} do ${max}.',

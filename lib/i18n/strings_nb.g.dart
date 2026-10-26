@@ -762,6 +762,13 @@ class _Translations$settings$nb extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Velg hvordan datoer, tall og måleenheter vises.';
 	@override String get metadataLanguage => 'Språk for metadata';
 	@override String get metadataLanguageDescription => 'Foretrukket språk for titler og beskrivelser når serveren støtter det. Lyd og undertekster stilles inn separat.';
+	@override String get experimentalDolbyVision => 'Eksperimentell Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Bruk den eksperimentelle FEL-rendereren ved neste avspilling. Krever en separat motorbygging.';
+	@override String get dvExperimentUnavailableDescription => 'Dette eksperimentet er foreløpig bare tilgjengelig på Linux.';
+	@override String get dvCompatibilityFallback => 'Kompatibilitetsreserve';
+	@override String get dvCompatibilityFallbackDescription => 'Bruk standardrendereren hvis eksperimentet ikke kan starte. FEL-data kan gå tapt.';
+	@override String get dvExperimentDiagnostics => 'Logging av videoeksperiment';
+	@override String get dvExperimentDiagnosticsDescription => 'Aktiver detaljerte spillerlogger ved neste avspilling.';
 }
 
 // Path: themeEditor
@@ -3553,7 +3560,7 @@ class _Translations$discover$findNext$nb extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} totalt';
 	@override String get timingVaries => 'Varigheten kan variere';
 	@override String get notNow => 'Ikke nå';
-	@override String get swipeHint => 'Sveip, eller bruk knappene nedenfor';
+	@override String get swipeHint => 'Sveip omslaget mot en pil, eller bruk knappene nedenfor.';
 	@override String get saved => 'Lagrede forslag';
 	@override String savedCount({required Object count}) => 'Lagrede forslag · ${count}';
 	@override String get undo => 'Angre';
@@ -3581,6 +3588,18 @@ class _Translations$discover$findNext$nb extends Translations$discover$findNext$
 	@override String get openFailed => 'Dette valget er ikke lenger tilgjengelig. Oppdater for å sjekke på nytt.';
 	@override String get changeFailed => 'Kunne ikke lagre endringen. Prøv igjen.';
 	@override String get savedLimit => 'Listen over lagrede forslag er full. Fjern et forslag for å lagre et nytt.';
+	@override String get chooseHint => 'Åpne en tittel, lagre den til senere eller hopp over den.';
+	@override String get howItWorks => 'Slik fungerer det';
+	@override String get notNowHelp => 'Hopp over denne tittelen foreløpig. Den blir i biblioteket ditt.';
+	@override String get saveHelp => 'Lagre den under lagrede valg for denne profilen på denne enheten. Lagring laster ikke ned tittelen.';
+	@override String get openHelp => 'Velg omslaget for detaljer. Bruk hovedhandlingen til å spille av, lese eller åpne tittelen.';
+	@override String get controlsHelp => 'Tastatur eller fjernkontroll: velg en knapp, og trykk Enter eller Velg. Angre gjenoppretter det siste valget ditt.';
+	@override String get artworkLoading => 'Laster bilde…';
+	@override String get artworkUnavailable => 'Bilde utilgjengelig';
+	@override String get savedFeedback => 'Lagt til i lagrede valg';
+	@override String get skippedFeedback => 'Hoppet over foreløpig';
+	@override String get releaseToConfirm => 'Slipp for å bekrefte';
+	@override String get remoteHint => 'Omslag i fokus: ← / → velg · Velg: detaljer · ↑ / ↓ flytt fokus';
 }
 
 // Path: discover.person
@@ -4915,6 +4934,13 @@ extension on TranslationsNb {
 			'settings.regionFormatDescription' => 'Velg hvordan datoer, tall og måleenheter vises.',
 			'settings.metadataLanguage' => 'Språk for metadata',
 			'settings.metadataLanguageDescription' => 'Foretrukket språk for titler og beskrivelser når serveren støtter det. Lyd og undertekster stilles inn separat.',
+			'settings.experimentalDolbyVision' => 'Eksperimentell Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Bruk den eksperimentelle FEL-rendereren ved neste avspilling. Krever en separat motorbygging.',
+			'settings.dvExperimentUnavailableDescription' => 'Dette eksperimentet er foreløpig bare tilgjengelig på Linux.',
+			'settings.dvCompatibilityFallback' => 'Kompatibilitetsreserve',
+			'settings.dvCompatibilityFallbackDescription' => 'Bruk standardrendereren hvis eksperimentet ikke kan starte. FEL-data kan gå tapt.',
+			'settings.dvExperimentDiagnostics' => 'Logging av videoeksperiment',
+			'settings.dvExperimentDiagnosticsDescription' => 'Aktiver detaljerte spillerlogger ved neste avspilling.',
 			'themeEditor.builtIn' => 'Innebygde',
 			'themeEditor.presets' => 'Forhåndsinnstillinger',
 			'themeEditor.custom' => 'Egendefinert',
@@ -5335,6 +5361,8 @@ extension on TranslationsNb {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Bibliotekkanning startet for "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Kunne ikke skanne bibliotek: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Oppdaterer metadata for "${title}"...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadataoppdatering startet for "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Kunne ikke oppdatere metadata: ${error}',
 			'messages.logoutConfirm' => 'Er du sikker på at du vil logge ut?',
@@ -5342,8 +5370,6 @@ extension on TranslationsNb {
 			'messages.seasonsLoadFailed' => 'Kunne ikke laste sesonger',
 			'messages.noEpisodesFound' => 'Ingen episoder funnet i første sesong',
 			'messages.noEpisodesFoundGeneral' => 'Ingen episoder funnet',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Kunne ikke laste episoder',
 			'messages.noResultsFound' => 'Ingen resultater funnet',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Innsovningstimer satt til ${label}',
@@ -5584,7 +5610,7 @@ extension on TranslationsNb {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} totalt',
 			'discover.findNext.timingVaries' => 'Varigheten kan variere',
 			'discover.findNext.notNow' => 'Ikke nå',
-			'discover.findNext.swipeHint' => 'Sveip, eller bruk knappene nedenfor',
+			'discover.findNext.swipeHint' => 'Sveip omslaget mot en pil, eller bruk knappene nedenfor.',
 			'discover.findNext.saved' => 'Lagrede forslag',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Lagrede forslag · ${count}',
 			'discover.findNext.undo' => 'Angre',
@@ -5612,6 +5638,18 @@ extension on TranslationsNb {
 			'discover.findNext.openFailed' => 'Dette valget er ikke lenger tilgjengelig. Oppdater for å sjekke på nytt.',
 			'discover.findNext.changeFailed' => 'Kunne ikke lagre endringen. Prøv igjen.',
 			'discover.findNext.savedLimit' => 'Listen over lagrede forslag er full. Fjern et forslag for å lagre et nytt.',
+			'discover.findNext.chooseHint' => 'Åpne en tittel, lagre den til senere eller hopp over den.',
+			'discover.findNext.howItWorks' => 'Slik fungerer det',
+			'discover.findNext.notNowHelp' => 'Hopp over denne tittelen foreløpig. Den blir i biblioteket ditt.',
+			'discover.findNext.saveHelp' => 'Lagre den under lagrede valg for denne profilen på denne enheten. Lagring laster ikke ned tittelen.',
+			'discover.findNext.openHelp' => 'Velg omslaget for detaljer. Bruk hovedhandlingen til å spille av, lese eller åpne tittelen.',
+			'discover.findNext.controlsHelp' => 'Tastatur eller fjernkontroll: velg en knapp, og trykk Enter eller Velg. Angre gjenoppretter det siste valget ditt.',
+			'discover.findNext.artworkLoading' => 'Laster bilde…',
+			'discover.findNext.artworkUnavailable' => 'Bilde utilgjengelig',
+			'discover.findNext.savedFeedback' => 'Lagt til i lagrede valg',
+			'discover.findNext.skippedFeedback' => 'Hoppet over foreløpig',
+			'discover.findNext.releaseToConfirm' => 'Slipp for å bekrefte',
+			'discover.findNext.remoteHint' => 'Omslag i fokus: ← / → velg · Velg: detaljer · ↑ / ↓ flytt fokus',
 			'discover.extras' => 'Trailere og ekstramateriale',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Vurdering',
@@ -5837,6 +5875,8 @@ extension on TranslationsNb {
 			'explore.mdblistShelves.nameHint' => 'La det være å bruke kildelistenavnet.',
 			'explore.mdblistShelves.add' => 'Legg til shelf',
 			'explore.mdblistShelves.save' => 'Sparer shelter',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Flytte ${title} opp',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Flytte ${title} ned',
 			'explore.mdblistShelves.unavailable' => 'Denne listen er ikke tilgjengelig. Retur eller fjerne skjoldet i innstillinger.',
@@ -5856,8 +5896,6 @@ extension on TranslationsNb {
 			'explore.rows.popularShows' => 'Populære serier',
 			'explore.rows.trendingAnime' => 'Populær anime nå',
 			'explore.rows.suggestedAnime' => 'Foreslått anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Topp pågående anime',
 			'explore.rows.popularAnime' => 'Mest populær anime',
 			'explore.rows.trending' => 'Populært nå',
@@ -6351,6 +6389,8 @@ extension on TranslationsNb {
 			'downloads.resumeDownload' => 'Gjenoppta nedlasting',
 			'downloads.cancelledDownload' => 'Avbrutt nedlasting',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (synkroniserer ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} lastet ned – klikk for å fullføre',
 			'downloads.partialDownloadClickToComplete' => 'Delvis lastet ned – klikk for å fullføre',
 			'downloads.deleting' => 'Sletter...',
@@ -6370,8 +6410,6 @@ extension on TranslationsNb {
 			'downloads.unwatchedOnly' => 'Kun usette',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Neste ${count} usette',
 			'downloads.customAmount' => 'Egendefinert antall...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Tilpasset beløp ( hvert år)',
 			'downloads.randomEpisodes' => 'Random episoder',
 			'downloads.includeSpecials' => 'Inkluder spesialepisoder',
@@ -6865,6 +6903,8 @@ extension on TranslationsNb {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Kunne ikke nå serveren: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Innlogging mislyktes: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect mislyktes: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Logg inn med Plex',
 			'addServer.pinExpired' => 'PIN-koden utløp før innloggingen var fullført. Prøv igjen.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Kunne ikke registrere kontoen: ${error}',
@@ -6884,8 +6924,6 @@ extension on TranslationsNb {
 			'addServer.authResponseIncomplete' => 'Påloggingssvaret fra serveren var ufullstendig',
 			'addServer.quickConnectRejected' => 'Quick Connect ble avvist av serveren',
 			'addServer.quickConnectNotJson' => 'Quick Connect-svaret var ikke gyldig JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect-svaret mangler en kode eller hemmelighet',
 			'addServer.quickConnectPollRejected' => 'Quick Connect-spørringen ble avvist av serveren',
 			'addServer.serverTimedOut' => 'Serveren svarte ikke i tide',
@@ -7379,6 +7417,8 @@ extension on TranslationsNb {
 			'sourceSetup.smbEncrypted' => 'SMB3-kryptering på',
 			'sourceSetup.smbUnencrypted' => 'SMB3-kryptering av',
 			'sourceSetup.httpUnencrypted' => 'HTTP uten transportkryptering',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Kontroller sikkerheten til endepunktet',
 			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} er påkrevd.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Angi ${label} fra ${min} til ${max}.',

@@ -762,6 +762,13 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Изберете как да се показват датите, числата и мерните единици.';
 	@override String get metadataLanguage => 'Език на метаданните';
 	@override String get metadataLanguageDescription => 'Предпочитан език за заглавия и описания, ако сървърът го поддържа. Предпочитанията за звук и субтитри се задават отделно.';
+	@override String get experimentalDolbyVision => 'Експериментален Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Използвайте експерименталния FEL рендерер при следващото възпроизвеждане. Изисква отделна компилация на енджина.';
+	@override String get dvExperimentUnavailableDescription => 'Този експеримент засега е достъпен само под Linux.';
+	@override String get dvCompatibilityFallback => 'Резервен режим за съвместимост';
+	@override String get dvCompatibilityFallbackDescription => 'Използвайте стандартния рендерер, ако експериментът не може да стартира. Данните FEL може да се загубят.';
+	@override String get dvExperimentDiagnostics => 'Дневник на видео експеримента';
+	@override String get dvExperimentDiagnosticsDescription => 'Включете подробни дневници на плейъра при следващото възпроизвеждане.';
 }
 
 // Path: themeEditor
@@ -3553,7 +3560,7 @@ class _Translations$discover$findNext$bg extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => 'Общо ${duration}';
 	@override String get timingVaries => 'Продължителността варира';
 	@override String get notNow => 'Не сега';
-	@override String get swipeHint => 'Плъзнете или използвайте бутоните отдолу';
+	@override String get swipeHint => 'Плъзнете корицата към стрелка или използвайте бутоните по-долу.';
 	@override String get saved => 'Запазени предложения';
 	@override String savedCount({required Object count}) => 'Запазени предложения · ${count}';
 	@override String get undo => 'Отмяна';
@@ -3581,6 +3588,18 @@ class _Translations$discover$findNext$bg extends Translations$discover$findNext$
 	@override String get openFailed => 'Това предложение вече не е налично. Обновете, за да проверите отново.';
 	@override String get changeFailed => 'Промяната не можа да бъде запазена. Опитайте отново.';
 	@override String get savedLimit => 'Списъкът със запазени предложения е пълен. Премахнете едно, за да запазите друго.';
+	@override String get chooseHint => 'Отворете заглавие, запазете го за по-късно или го пропуснете.';
+	@override String get howItWorks => 'Как работи';
+	@override String get notNowHelp => 'Пропуснете това заглавие засега. То остава в библиотеката ви.';
+	@override String get saveHelp => 'Запазете го сред запазените предложения за този профил на това устройство. Запазването не го изтегля.';
+	@override String get openHelp => 'Изберете корицата за подробности. Използвайте основното действие, за да пуснете, прочетете или отворите заглавието.';
+	@override String get controlsHelp => 'Клавиатура или дистанционно: изберете бутон и натиснете Enter или Избор. Отмяна възстановява последния ви избор.';
+	@override String get artworkLoading => 'Зареждане на изображение…';
+	@override String get artworkUnavailable => 'Изображението не е налично';
+	@override String get savedFeedback => 'Добавено към запазените предложения';
+	@override String get skippedFeedback => 'Пропуснато засега';
+	@override String get releaseToConfirm => 'Пуснете, за да потвърдите';
+	@override String get remoteHint => 'Избрана корица: ← / → избор · Избор: подробности · ↑ / ↓ премества фокуса';
 }
 
 // Path: discover.person
@@ -4915,6 +4934,13 @@ extension on TranslationsBg {
 			'settings.regionFormatDescription' => 'Изберете как да се показват датите, числата и мерните единици.',
 			'settings.metadataLanguage' => 'Език на метаданните',
 			'settings.metadataLanguageDescription' => 'Предпочитан език за заглавия и описания, ако сървърът го поддържа. Предпочитанията за звук и субтитри се задават отделно.',
+			'settings.experimentalDolbyVision' => 'Експериментален Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Използвайте експерименталния FEL рендерер при следващото възпроизвеждане. Изисква отделна компилация на енджина.',
+			'settings.dvExperimentUnavailableDescription' => 'Този експеримент засега е достъпен само под Linux.',
+			'settings.dvCompatibilityFallback' => 'Резервен режим за съвместимост',
+			'settings.dvCompatibilityFallbackDescription' => 'Използвайте стандартния рендерер, ако експериментът не може да стартира. Данните FEL може да се загубят.',
+			'settings.dvExperimentDiagnostics' => 'Дневник на видео експеримента',
+			'settings.dvExperimentDiagnosticsDescription' => 'Включете подробни дневници на плейъра при следващото възпроизвеждане.',
 			'themeEditor.builtIn' => 'Вградени',
 			'themeEditor.presets' => 'Готови теми',
 			'themeEditor.custom' => 'Персонализирана',
@@ -5335,6 +5361,8 @@ extension on TranslationsBg {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Сканирането на библиотеката е стартирано за "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Неуспешно сканиране на библиотеката: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Опресняване на метаданни за "${title}"...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Опресняването на метаданни е стартирано за "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Неуспешно опресняване на метаданни: ${error}',
 			'messages.logoutConfirm' => 'Сигурни ли сте, че искате да излезете?',
@@ -5342,8 +5370,6 @@ extension on TranslationsBg {
 			'messages.seasonsLoadFailed' => 'Неуспешно зареждане на сезони',
 			'messages.noEpisodesFound' => 'Не са намерени епизоди в първия сезон',
 			'messages.noEpisodesFoundGeneral' => 'Не са намерени епизоди',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Неуспешно зареждане на епизоди',
 			'messages.noResultsFound' => 'Няма намерени резултати',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Таймерът за заспиване е зададен за ${label}',
@@ -5584,7 +5610,7 @@ extension on TranslationsBg {
 			'discover.findNext.totalDuration' => ({required Object duration}) => 'Общо ${duration}',
 			'discover.findNext.timingVaries' => 'Продължителността варира',
 			'discover.findNext.notNow' => 'Не сега',
-			'discover.findNext.swipeHint' => 'Плъзнете или използвайте бутоните отдолу',
+			'discover.findNext.swipeHint' => 'Плъзнете корицата към стрелка или използвайте бутоните по-долу.',
 			'discover.findNext.saved' => 'Запазени предложения',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Запазени предложения · ${count}',
 			'discover.findNext.undo' => 'Отмяна',
@@ -5612,6 +5638,18 @@ extension on TranslationsBg {
 			'discover.findNext.openFailed' => 'Това предложение вече не е налично. Обновете, за да проверите отново.',
 			'discover.findNext.changeFailed' => 'Промяната не можа да бъде запазена. Опитайте отново.',
 			'discover.findNext.savedLimit' => 'Списъкът със запазени предложения е пълен. Премахнете едно, за да запазите друго.',
+			'discover.findNext.chooseHint' => 'Отворете заглавие, запазете го за по-късно или го пропуснете.',
+			'discover.findNext.howItWorks' => 'Как работи',
+			'discover.findNext.notNowHelp' => 'Пропуснете това заглавие засега. То остава в библиотеката ви.',
+			'discover.findNext.saveHelp' => 'Запазете го сред запазените предложения за този профил на това устройство. Запазването не го изтегля.',
+			'discover.findNext.openHelp' => 'Изберете корицата за подробности. Използвайте основното действие, за да пуснете, прочетете или отворите заглавието.',
+			'discover.findNext.controlsHelp' => 'Клавиатура или дистанционно: изберете бутон и натиснете Enter или Избор. Отмяна възстановява последния ви избор.',
+			'discover.findNext.artworkLoading' => 'Зареждане на изображение…',
+			'discover.findNext.artworkUnavailable' => 'Изображението не е налично',
+			'discover.findNext.savedFeedback' => 'Добавено към запазените предложения',
+			'discover.findNext.skippedFeedback' => 'Пропуснато засега',
+			'discover.findNext.releaseToConfirm' => 'Пуснете, за да потвърдите',
+			'discover.findNext.remoteHint' => 'Избрана корица: ← / → избор · Избор: подробности · ↑ / ↓ премества фокуса',
 			'discover.extras' => 'Трейлъри и екстри',
 			'discover.studio' => 'Студио',
 			'discover.rating' => 'Рейтинг',
@@ -5837,6 +5875,8 @@ extension on TranslationsBg {
 			'explore.mdblistShelves.nameHint' => 'Оставете бял, за да използвате името на източника.',
 			'explore.mdblistShelves.add' => 'Добавете шаф',
 			'explore.mdblistShelves.save' => 'Спасяване на леглата',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Изтегляне ${title} нагоре',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Изтегляне ${title} надолу',
 			'explore.mdblistShelves.unavailable' => 'Този списък не е наличен. Изтегляне или премахване на шейла в настройките.',
@@ -5856,8 +5896,6 @@ extension on TranslationsBg {
 			'explore.rows.popularShows' => 'Популярни сериали',
 			'explore.rows.trendingAnime' => 'Набиращи популярност аниме',
 			'explore.rows.suggestedAnime' => 'Препоръчани аниме',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Топ излъчвани аниме',
 			'explore.rows.popularAnime' => 'Най-популярни аниме',
 			'explore.rows.trending' => 'Набиращи популярност',
@@ -6351,6 +6389,8 @@ extension on TranslationsBg {
 			'downloads.resumeDownload' => 'Възобнови изтеглянето',
 			'downloads.cancelledDownload' => 'Отменено изтегляне',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (синхронизира се ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} е изтеглен — щракнете, за да завършите',
 			'downloads.partialDownloadClickToComplete' => 'Частично изтеглено — щракнете, за да завършите',
 			'downloads.deleting' => 'Изтриване...',
@@ -6370,8 +6410,6 @@ extension on TranslationsBg {
 			'downloads.unwatchedOnly' => 'Само негледани',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Следващите ${count} негледани',
 			'downloads.customAmount' => 'Друг брой...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Посочен размер (на всяка година)',
 			'downloads.randomEpisodes' => 'Рандомични епизоди',
 			'downloads.includeSpecials' => 'Включи специалните',
@@ -6865,6 +6903,8 @@ extension on TranslationsBg {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Сървърът не може да бъде достигнат: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Входът е неуспешен: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect не бе успешно: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Вход с Plex',
 			'addServer.pinExpired' => 'PIN-ът изтече преди вход. Моля, опитайте отново.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Неуспешна регистрация на акаунт: ${error}',
@@ -6884,8 +6924,6 @@ extension on TranslationsBg {
 			'addServer.authResponseIncomplete' => 'Отговорът за вход от сървъра беше непълен',
 			'addServer.quickConnectRejected' => 'Quick Connect беше отхвърлен от сървъра',
 			'addServer.quickConnectNotJson' => 'Отговорът на Quick Connect не беше валиден JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'В отговора на Quick Connect липсва код или таен ключ',
 			'addServer.quickConnectPollRejected' => 'Запитването на Quick Connect беше отхвърлено от сървъра',
 			'addServer.serverTimedOut' => 'Сървърът не отговори навреме',
@@ -7379,6 +7417,8 @@ extension on TranslationsBg {
 			'sourceSetup.smbEncrypted' => 'SMB3 шифроването е включено',
 			'sourceSetup.smbUnencrypted' => 'SMB3 шифроването е изключено',
 			'sourceSetup.httpUnencrypted' => 'HTTP без шифроване на преноса',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Проверка на сигурността на крайната точка',
 			'sourceSetup.fieldRequired' => ({required Object label}) => 'Задължително поле: ${label}.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'За „${label}“ въведете стойност от ${min} до ${max}.',

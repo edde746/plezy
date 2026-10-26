@@ -760,6 +760,13 @@ class _Translations$settings$vi extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Chọn cách hiển thị ngày, số và đơn vị đo.';
 	@override String get metadataLanguage => 'Ngôn ngữ siêu dữ liệu';
 	@override String get metadataLanguageDescription => 'Ngôn ngữ ưu tiên cho tiêu đề và mô tả khi máy chủ hỗ trợ. Tùy chọn âm thanh và phụ đề được thiết lập riêng.';
+	@override String get experimentalDolbyVision => 'Dolby Vision thử nghiệm';
+	@override String get experimentalDolbyVisionDescription => 'Dùng bộ kết xuất FEL thử nghiệm trong lần phát tiếp theo. Cần bản dựng bộ máy riêng.';
+	@override String get dvExperimentUnavailableDescription => 'Thử nghiệm này hiện chỉ có trên Linux.';
+	@override String get dvCompatibilityFallback => 'Phương án tương thích dự phòng';
+	@override String get dvCompatibilityFallbackDescription => 'Dùng bộ kết xuất tiêu chuẩn nếu không thể bắt đầu thử nghiệm. Dữ liệu FEL có thể bị mất.';
+	@override String get dvExperimentDiagnostics => 'Nhật ký thử nghiệm video';
+	@override String get dvExperimentDiagnosticsDescription => 'Bật nhật ký trình phát chi tiết trong lần phát tiếp theo.';
 }
 
 // Path: themeEditor
@@ -3533,7 +3540,7 @@ class _Translations$discover$findNext$vi extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => 'Tổng cộng ${duration}';
 	@override String get timingVaries => 'Thời lượng có thể thay đổi';
 	@override String get notNow => 'Để sau';
-	@override String get swipeHint => 'Vuốt hoặc dùng các nút bên dưới';
+	@override String get swipeHint => 'Vuốt ảnh bìa theo hướng mũi tên hoặc dùng các nút bên dưới.';
 	@override String get saved => 'Gợi ý đã lưu';
 	@override String savedCount({required Object count}) => 'Gợi ý đã lưu · ${count}';
 	@override String get undo => 'Hoàn tác';
@@ -3561,6 +3568,18 @@ class _Translations$discover$findNext$vi extends Translations$discover$findNext$
 	@override String get openFailed => 'Lựa chọn này không còn khả dụng. Làm mới để kiểm tra lại.';
 	@override String get changeFailed => 'Không thể lưu thay đổi. Vui lòng thử lại.';
 	@override String get savedLimit => 'Danh sách gợi ý đã lưu đã đầy. Xóa một gợi ý để lưu gợi ý khác.';
+	@override String get chooseHint => 'Mở một tựa, lưu để xem sau hoặc bỏ qua.';
+	@override String get howItWorks => 'Cách sử dụng';
+	@override String get notNowHelp => 'Tạm bỏ qua tựa này. Tựa vẫn ở trong thư viện của bạn.';
+	@override String get saveHelp => 'Lưu vào các lựa chọn đã lưu của hồ sơ này trên thiết bị này. Việc lưu không tải nội dung xuống.';
+	@override String get openHelp => 'Chọn ảnh bìa để xem chi tiết. Dùng nút chính để phát, đọc hoặc mở tựa.';
+	@override String get controlsHelp => 'Bàn phím hoặc điều khiển: chọn một nút rồi nhấn Enter hoặc nút Chọn. Hoàn tác khôi phục lựa chọn vừa rồi.';
+	@override String get artworkLoading => 'Đang tải ảnh…';
+	@override String get artworkUnavailable => 'Không có ảnh';
+	@override String get savedFeedback => 'Đã thêm vào các lựa chọn đã lưu';
+	@override String get skippedFeedback => 'Đã tạm bỏ qua';
+	@override String get releaseToConfirm => 'Thả để xác nhận';
+	@override String get remoteHint => 'Khi chọn ảnh bìa: ← / → chọn · Nút Chọn: chi tiết · ↑ / ↓ chuyển tiêu điểm';
 }
 
 // Path: discover.person
@@ -4893,6 +4912,13 @@ extension on TranslationsVi {
 			'settings.regionFormatDescription' => 'Chọn cách hiển thị ngày, số và đơn vị đo.',
 			'settings.metadataLanguage' => 'Ngôn ngữ siêu dữ liệu',
 			'settings.metadataLanguageDescription' => 'Ngôn ngữ ưu tiên cho tiêu đề và mô tả khi máy chủ hỗ trợ. Tùy chọn âm thanh và phụ đề được thiết lập riêng.',
+			'settings.experimentalDolbyVision' => 'Dolby Vision thử nghiệm',
+			'settings.experimentalDolbyVisionDescription' => 'Dùng bộ kết xuất FEL thử nghiệm trong lần phát tiếp theo. Cần bản dựng bộ máy riêng.',
+			'settings.dvExperimentUnavailableDescription' => 'Thử nghiệm này hiện chỉ có trên Linux.',
+			'settings.dvCompatibilityFallback' => 'Phương án tương thích dự phòng',
+			'settings.dvCompatibilityFallbackDescription' => 'Dùng bộ kết xuất tiêu chuẩn nếu không thể bắt đầu thử nghiệm. Dữ liệu FEL có thể bị mất.',
+			'settings.dvExperimentDiagnostics' => 'Nhật ký thử nghiệm video',
+			'settings.dvExperimentDiagnosticsDescription' => 'Bật nhật ký trình phát chi tiết trong lần phát tiếp theo.',
 			'themeEditor.builtIn' => 'xây dựng',
 			'themeEditor.presets' => 'Lời bài hát',
 			'themeEditor.custom' => 'Tùy chọn',
@@ -5313,6 +5339,8 @@ extension on TranslationsVi {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Thư viện quét bắt đầu cho "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Không thể quét thư viện: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Tải về các thông tin mới cho "${title}"',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadata update bắt đầu cho "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Không cập nhật dữ liệu siêu dữ liệu: ${error}',
 			'messages.logoutConfirm' => 'Bạn có chắc chắn bạn muốn đăng nhập không?',
@@ -5320,8 +5348,6 @@ extension on TranslationsVi {
 			'messages.seasonsLoadFailed' => 'Không thể tải mùa',
 			'messages.noEpisodesFound' => 'Không có sự kiện nào được tìm thấy trong mùa giải đầu tiên',
 			'messages.noEpisodesFoundGeneral' => 'Không tìm thấy sự kiện',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Không thể tải các sự kiện',
 			'messages.noResultsFound' => 'Không tìm thấy kết quả nào.',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Thời gian ngủ được thiết lập cho ${label}',
@@ -5562,7 +5588,7 @@ extension on TranslationsVi {
 			'discover.findNext.totalDuration' => ({required Object duration}) => 'Tổng cộng ${duration}',
 			'discover.findNext.timingVaries' => 'Thời lượng có thể thay đổi',
 			'discover.findNext.notNow' => 'Để sau',
-			'discover.findNext.swipeHint' => 'Vuốt hoặc dùng các nút bên dưới',
+			'discover.findNext.swipeHint' => 'Vuốt ảnh bìa theo hướng mũi tên hoặc dùng các nút bên dưới.',
 			'discover.findNext.saved' => 'Gợi ý đã lưu',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Gợi ý đã lưu · ${count}',
 			'discover.findNext.undo' => 'Hoàn tác',
@@ -5590,6 +5616,18 @@ extension on TranslationsVi {
 			'discover.findNext.openFailed' => 'Lựa chọn này không còn khả dụng. Làm mới để kiểm tra lại.',
 			'discover.findNext.changeFailed' => 'Không thể lưu thay đổi. Vui lòng thử lại.',
 			'discover.findNext.savedLimit' => 'Danh sách gợi ý đã lưu đã đầy. Xóa một gợi ý để lưu gợi ý khác.',
+			'discover.findNext.chooseHint' => 'Mở một tựa, lưu để xem sau hoặc bỏ qua.',
+			'discover.findNext.howItWorks' => 'Cách sử dụng',
+			'discover.findNext.notNowHelp' => 'Tạm bỏ qua tựa này. Tựa vẫn ở trong thư viện của bạn.',
+			'discover.findNext.saveHelp' => 'Lưu vào các lựa chọn đã lưu của hồ sơ này trên thiết bị này. Việc lưu không tải nội dung xuống.',
+			'discover.findNext.openHelp' => 'Chọn ảnh bìa để xem chi tiết. Dùng nút chính để phát, đọc hoặc mở tựa.',
+			'discover.findNext.controlsHelp' => 'Bàn phím hoặc điều khiển: chọn một nút rồi nhấn Enter hoặc nút Chọn. Hoàn tác khôi phục lựa chọn vừa rồi.',
+			'discover.findNext.artworkLoading' => 'Đang tải ảnh…',
+			'discover.findNext.artworkUnavailable' => 'Không có ảnh',
+			'discover.findNext.savedFeedback' => 'Đã thêm vào các lựa chọn đã lưu',
+			'discover.findNext.skippedFeedback' => 'Đã tạm bỏ qua',
+			'discover.findNext.releaseToConfirm' => 'Thả để xác nhận',
+			'discover.findNext.remoteHint' => 'Khi chọn ảnh bìa: ← / → chọn · Nút Chọn: chi tiết · ↑ / ↓ chuyển tiêu điểm',
 			'discover.extras' => 'Trailers và Extras',
 			'discover.studio' => 'Hãng phim',
 			'discover.rating' => 'Đánh giá',
@@ -5815,6 +5853,8 @@ extension on TranslationsVi {
 			'explore.mdblistShelves.nameHint' => 'Để lại màu trắng để sử dụng tên danh sách nguồn.',
 			'explore.mdblistShelves.add' => 'Thêm Shelf',
 			'explore.mdblistShelves.save' => 'Bảo vệ shelves',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Chuyển ${title} lên',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Chuyển ${title} xuống',
 			'explore.mdblistShelves.unavailable' => 'Danh sách này không sẵn dùng. rút hoặc xóa hộp trong cài đặt.',
@@ -5834,8 +5874,6 @@ extension on TranslationsVi {
 			'explore.rows.popularShows' => 'Ưu đãi phổ biến',
 			'explore.rows.trendingAnime' => 'Xu hướng Anime',
 			'explore.rows.suggestedAnime' => 'Anime đề xuất',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Lời bài hát: Top Airing Anime',
 			'explore.rows.popularAnime' => 'Anime phổ biến nhất',
 			'explore.rows.trending' => 'xu hướng',
@@ -6329,6 +6367,8 @@ extension on TranslationsVi {
 			'downloads.resumeDownload' => 'Đánh giá download',
 			'downloads.cancelledDownload' => 'Hủy download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (tính hợp ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Tải về ${file} - Click để hoàn thành',
 			'downloads.partialDownloadClickToComplete' => 'Tải về - Click to complete',
 			'downloads.deleting' => 'xóa...',
@@ -6348,8 +6388,6 @@ extension on TranslationsVi {
 			'downloads.unwatchedOnly' => 'Không chỉ quan sát',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Tiếp theo ${count} chưa được xem',
 			'downloads.customAmount' => 'Số lượng tùy chỉnh...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Số lượng (tất cả)',
 			'downloads.randomEpisodes' => 'Ngẫu thuật episodes',
 			'downloads.includeSpecials' => 'bao gồm đặc biệt',
@@ -6843,6 +6881,8 @@ extension on TranslationsVi {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Không thể truy cập máy chủ: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Đăng ký thất bại: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect thất bại: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Đăng ký với Plex',
 			'addServer.pinExpired' => 'PIN đã hết hạn trước khi đăng nhập. xin vui lòng thử lại.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Không đăng ký tài khoản: ${error}',
@@ -6862,8 +6902,6 @@ extension on TranslationsVi {
 			'addServer.authResponseIncomplete' => 'Trả lời đăng nhập từ máy chủ là không đầy đủ',
 			'addServer.quickConnectRejected' => 'Quick Connect đã bị từ chối bởi máy chủ',
 			'addServer.quickConnectNotJson' => 'Câu trả lời Quick Connect không đúng JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Câu trả lời Quick Connect thiếu mã hoặc bí mật',
 			'addServer.quickConnectPollRejected' => 'Quick Connect truy vấn đã bị từ chối bởi máy chủ',
 			'addServer.serverTimedOut' => 'Server không trả lời kịp thời',
@@ -7357,6 +7395,8 @@ extension on TranslationsVi {
 			'sourceSetup.smbEncrypted' => 'Mã hóa SMB3 bật',
 			'sourceSetup.smbUnencrypted' => 'Mã hóa SMB3 tắt',
 			'sourceSetup.httpUnencrypted' => 'HTTP không mã hóa đường truyền',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Kiểm tra bảo mật điểm cuối',
 			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} là bắt buộc.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Nhập ${label} từ ${min} đến ${max}.',

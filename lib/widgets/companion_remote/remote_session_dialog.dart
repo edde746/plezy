@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
@@ -11,6 +12,7 @@ import '../../services/settings_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/error_message_utils.dart';
+import '../../focus/dpad_navigator.dart';
 import '../../focus/focusable_button.dart';
 import '../dialog_action_button.dart';
 import '../app_icon.dart';
@@ -124,6 +126,11 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
   Widget build(BuildContext context) {
     return Focus(
       canRequestFocus: false,
+      onKeyEvent: (node, event) {
+        if (!event.logicalKey.isBackKey) return KeyEventResult.ignored;
+        if (event is KeyDownEvent) _close();
+        return KeyEventResult.handled;
+      },
       child: Consumer<CompanionRemoteProvider>(
         builder: (context, provider, child) {
           if (_isStarting) {

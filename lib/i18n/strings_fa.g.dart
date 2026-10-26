@@ -762,6 +762,13 @@ class _Translations$settings$fa extends Translations$settings$en {
 	@override String get regionFormatDescription => 'نحوهٔ نمایش تاریخ‌ها، اعداد و واحدهای اندازه‌گیری را انتخاب کنید.';
 	@override String get metadataLanguage => 'زبان فراداده';
 	@override String get metadataLanguageDescription => 'زبان دلخواه عنوان‌ها و توضیحات، در صورت پشتیبانی سرور. تنظیمات زبان صدا و زیرنویس مستقل هستند.';
+	@override String get experimentalDolbyVision => 'Dolby Vision آزمایشی';
+	@override String get experimentalDolbyVisionDescription => 'در پخش بعدی از رندرکنندهٔ آزمایشی FEL استفاده شود. به ساخت جداگانهٔ موتور نیاز دارد.';
+	@override String get dvExperimentUnavailableDescription => 'این آزمایش فعلاً فقط در Linux در دسترس است.';
+	@override String get dvCompatibilityFallback => 'گزینهٔ جایگزین سازگار';
+	@override String get dvCompatibilityFallbackDescription => 'اگر آزمایش شروع نشد، از رندرکنندهٔ استاندارد استفاده شود. ممکن است داده‌های FEL از دست بروند.';
+	@override String get dvExperimentDiagnostics => 'ثبت رویدادهای آزمایش ویدیو';
+	@override String get dvExperimentDiagnosticsDescription => 'در پخش بعدی گزارش‌های دقیق پخش‌کننده فعال شوند.';
 }
 
 // Path: themeEditor
@@ -3553,7 +3560,7 @@ class _Translations$discover$findNext$fa extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => 'در مجموع ${duration}';
 	@override String get timingVaries => 'مدت‌زمان متفاوت است';
 	@override String get notNow => 'الان نه';
-	@override String get swipeHint => 'انگشتتان را روی کارت بکشید یا از دکمه‌های زیر استفاده کنید';
+	@override String get swipeHint => 'جلد را به سمت یکی از پیکان‌ها بکشید یا از دکمه‌های زیر استفاده کنید.';
 	@override String get saved => 'پیشنهادهای ذخیره‌شده';
 	@override String savedCount({required Object count}) => 'پیشنهادهای ذخیره‌شده · ${count}';
 	@override String get undo => 'واگرد';
@@ -3581,6 +3588,18 @@ class _Translations$discover$findNext$fa extends Translations$discover$findNext$
 	@override String get openFailed => 'این گزینه دیگر در دسترس نیست. برای بررسی دوباره، تازه‌سازی کنید.';
 	@override String get changeFailed => 'این تغییر ذخیره نشد. دوباره تلاش کنید.';
 	@override String get savedLimit => 'فهرست پیشنهادهای ذخیره‌شده پر است. برای ذخیرهٔ پیشنهادی دیگر، یکی را حذف کنید.';
+	@override String get chooseHint => 'عنوانی را باز کنید، برای بعد ذخیره کنید یا از آن بگذرید.';
+	@override String get howItWorks => 'روش استفاده';
+	@override String get notNowHelp => 'فعلاً از این عنوان بگذرید. در کتابخانه شما باقی می‌ماند.';
+	@override String get saveHelp => 'آن را در انتخاب‌های ذخیره‌شده این نمایه روی این دستگاه نگه دارید. ذخیره کردن باعث دانلود نمی‌شود.';
+	@override String get openHelp => 'برای دیدن جزئیات، جلد را انتخاب کنید. از دکمه اصلی برای پخش، خواندن یا باز کردن عنوان استفاده کنید.';
+	@override String get controlsHelp => 'صفحه‌کلید یا کنترل: روی یک دکمه بروید و Enter یا دکمه انتخاب را بزنید. واگرد آخرین انتخاب شما را برمی‌گرداند.';
+	@override String get artworkLoading => 'در حال بارگیری تصویر…';
+	@override String get artworkUnavailable => 'تصویر در دسترس نیست';
+	@override String get savedFeedback => 'به انتخاب‌های ذخیره‌شده افزوده شد';
+	@override String get skippedFeedback => 'فعلاً رد شد';
+	@override String get releaseToConfirm => 'برای تأیید رها کنید';
+	@override String get remoteHint => 'با تمرکز روی جلد: ← / → انتخاب · دکمه انتخاب: جزئیات · ↑ / ↓ جابه‌جایی تمرکز';
 }
 
 // Path: discover.person
@@ -4915,6 +4934,13 @@ extension on TranslationsFa {
 			'settings.regionFormatDescription' => 'نحوهٔ نمایش تاریخ‌ها، اعداد و واحدهای اندازه‌گیری را انتخاب کنید.',
 			'settings.metadataLanguage' => 'زبان فراداده',
 			'settings.metadataLanguageDescription' => 'زبان دلخواه عنوان‌ها و توضیحات، در صورت پشتیبانی سرور. تنظیمات زبان صدا و زیرنویس مستقل هستند.',
+			'settings.experimentalDolbyVision' => 'Dolby Vision آزمایشی',
+			'settings.experimentalDolbyVisionDescription' => 'در پخش بعدی از رندرکنندهٔ آزمایشی FEL استفاده شود. به ساخت جداگانهٔ موتور نیاز دارد.',
+			'settings.dvExperimentUnavailableDescription' => 'این آزمایش فعلاً فقط در Linux در دسترس است.',
+			'settings.dvCompatibilityFallback' => 'گزینهٔ جایگزین سازگار',
+			'settings.dvCompatibilityFallbackDescription' => 'اگر آزمایش شروع نشد، از رندرکنندهٔ استاندارد استفاده شود. ممکن است داده‌های FEL از دست بروند.',
+			'settings.dvExperimentDiagnostics' => 'ثبت رویدادهای آزمایش ویدیو',
+			'settings.dvExperimentDiagnosticsDescription' => 'در پخش بعدی گزارش‌های دقیق پخش‌کننده فعال شوند.',
 			'themeEditor.builtIn' => 'ساخته شده',
 			'themeEditor.presets' => 'پیشگویی',
 			'themeEditor.custom' => 'سفارشی',
@@ -5335,6 +5361,8 @@ extension on TranslationsFa {
 			'messages.libraryScanStarted' => ({required Object title}) => 'کتابخانه اسکن برای "${title}" آغاز شد',
 			'messages.libraryScanFailed' => ({required Object error}) => 'کتابخانه را اسکن نکرد: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'فتوشاپ با «${title}»',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'بازسازی داده های متا برای "${title}" آغاز شد',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'عدم بازسازی داده های متا: ${error}',
 			'messages.logoutConfirm' => 'آیا مطمئن هستید که می خواهید خارج شوید؟',
@@ -5342,8 +5370,6 @@ extension on TranslationsFa {
 			'messages.seasonsLoadFailed' => 'نمی توان فصل ها را بارگذاری کرد',
 			'messages.noEpisodesFound' => 'هیچ قسمت در فصل اول یافت نشد',
 			'messages.noEpisodesFoundGeneral' => 'هیچ حوادث یافت نشد',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'نمی توانم قسمت ها را شارژ کنم',
 			'messages.noResultsFound' => 'نتیجه‌ای یافت نشد.',
 			'messages.sleepTimerSet' => ({required Object label}) => 'زمان خواب برای ${label} تنظیم شده است',
@@ -5584,7 +5610,7 @@ extension on TranslationsFa {
 			'discover.findNext.totalDuration' => ({required Object duration}) => 'در مجموع ${duration}',
 			'discover.findNext.timingVaries' => 'مدت‌زمان متفاوت است',
 			'discover.findNext.notNow' => 'الان نه',
-			'discover.findNext.swipeHint' => 'انگشتتان را روی کارت بکشید یا از دکمه‌های زیر استفاده کنید',
+			'discover.findNext.swipeHint' => 'جلد را به سمت یکی از پیکان‌ها بکشید یا از دکمه‌های زیر استفاده کنید.',
 			'discover.findNext.saved' => 'پیشنهادهای ذخیره‌شده',
 			'discover.findNext.savedCount' => ({required Object count}) => 'پیشنهادهای ذخیره‌شده · ${count}',
 			'discover.findNext.undo' => 'واگرد',
@@ -5612,6 +5638,18 @@ extension on TranslationsFa {
 			'discover.findNext.openFailed' => 'این گزینه دیگر در دسترس نیست. برای بررسی دوباره، تازه‌سازی کنید.',
 			'discover.findNext.changeFailed' => 'این تغییر ذخیره نشد. دوباره تلاش کنید.',
 			'discover.findNext.savedLimit' => 'فهرست پیشنهادهای ذخیره‌شده پر است. برای ذخیرهٔ پیشنهادی دیگر، یکی را حذف کنید.',
+			'discover.findNext.chooseHint' => 'عنوانی را باز کنید، برای بعد ذخیره کنید یا از آن بگذرید.',
+			'discover.findNext.howItWorks' => 'روش استفاده',
+			'discover.findNext.notNowHelp' => 'فعلاً از این عنوان بگذرید. در کتابخانه شما باقی می‌ماند.',
+			'discover.findNext.saveHelp' => 'آن را در انتخاب‌های ذخیره‌شده این نمایه روی این دستگاه نگه دارید. ذخیره کردن باعث دانلود نمی‌شود.',
+			'discover.findNext.openHelp' => 'برای دیدن جزئیات، جلد را انتخاب کنید. از دکمه اصلی برای پخش، خواندن یا باز کردن عنوان استفاده کنید.',
+			'discover.findNext.controlsHelp' => 'صفحه‌کلید یا کنترل: روی یک دکمه بروید و Enter یا دکمه انتخاب را بزنید. واگرد آخرین انتخاب شما را برمی‌گرداند.',
+			'discover.findNext.artworkLoading' => 'در حال بارگیری تصویر…',
+			'discover.findNext.artworkUnavailable' => 'تصویر در دسترس نیست',
+			'discover.findNext.savedFeedback' => 'به انتخاب‌های ذخیره‌شده افزوده شد',
+			'discover.findNext.skippedFeedback' => 'فعلاً رد شد',
+			'discover.findNext.releaseToConfirm' => 'برای تأیید رها کنید',
+			'discover.findNext.remoteHint' => 'با تمرکز روی جلد: ← / → انتخاب · دکمه انتخاب: جزئیات · ↑ / ↓ جابه‌جایی تمرکز',
 			'discover.extras' => 'تریلر و اضافی',
 			'discover.studio' => 'استودیو',
 			'discover.rating' => 'رتبه بندی',
@@ -5837,6 +5875,8 @@ extension on TranslationsFa {
 			'explore.mdblistShelves.nameHint' => 'اجازه دهید نام لیست منبع را خالی کنید.',
 			'explore.mdblistShelves.add' => 'اضافه کردن شیل',
 			'explore.mdblistShelves.save' => 'ذخیره شلوارها',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'حرکت ${title} بالا',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'حرکت ${title} به پایین',
 			'explore.mdblistShelves.unavailable' => 'این لیست در دسترس نیست.در تنظیمات، اسلاید خود را بازگردانید یا حذف کنید.',
@@ -5856,8 +5896,6 @@ extension on TranslationsFa {
 			'explore.rows.popularShows' => 'نمایش های محبوب',
 			'explore.rows.trendingAnime' => 'انیمه روند',
 			'explore.rows.suggestedAnime' => 'پیشنهاد انیمه',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'دانلود انیمیشن Airing Anime',
 			'explore.rows.popularAnime' => 'محبوب ترین انیمه ها',
 			'explore.rows.trending' => 'روند',
@@ -6351,6 +6389,8 @@ extension on TranslationsFa {
 			'downloads.resumeDownload' => 'دانلود مجدد',
 			'downloads.cancelledDownload' => 'دانلود لغو',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (تولید ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'دانلود شده ${file} - کلیک کنید برای تکمیل',
 			'downloads.partialDownloadClickToComplete' => 'دانلود جزئی - کلیک کنید برای تکمیل',
 			'downloads.deleting' => 'حذف...',
@@ -6370,8 +6410,6 @@ extension on TranslationsFa {
 			'downloads.unwatchedOnly' => 'فقط نادیده گرفته شده',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'بعدی ${count} ناشناخته',
 			'downloads.customAmount' => 'مقدار سفارشی...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'مقدار مشخصی (در هر...',
 			'downloads.randomEpisodes' => 'حوادث تصادفی',
 			'downloads.includeSpecials' => 'شامل ویژه ها',
@@ -6865,6 +6903,8 @@ extension on TranslationsFa {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'نمی توانم به سرور دسترسی داشته باشم: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'ثبت نام شکست خورده: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect شکست خورده: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'ثبت نام با شماره Plex',
 			'addServer.pinExpired' => 'PIN قبل از ثبت نام به پایان رسیده است لطفا دوباره امتحان کنید.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'عدم ثبت حساب: ${error}',
@@ -6884,8 +6924,6 @@ extension on TranslationsFa {
 			'addServer.authResponseIncomplete' => 'پاسخ ورود از سرور نامناسب بود.',
 			'addServer.quickConnectRejected' => 'Quick Connect توسط سرور رد شد',
 			'addServer.quickConnectNotJson' => 'پاسخ Quick Connect معتبر نبود JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'پاسخ Quick Connect یک کد یا راز را از دست می دهد',
 			'addServer.quickConnectPollRejected' => 'Quick Connect درخواست توسط سرور رد شد',
 			'addServer.serverTimedOut' => 'سرور به موقع پاسخ نمی دهد',
@@ -7379,6 +7417,8 @@ extension on TranslationsFa {
 			'sourceSetup.smbEncrypted' => 'رمزگذاری SMB3 روشن است',
 			'sourceSetup.smbUnencrypted' => 'رمزگذاری SMB3 خاموش است',
 			'sourceSetup.httpUnencrypted' => 'HTTP بدون رمزگذاری انتقال',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'امنیت نشانی اتصال را بررسی کنید',
 			'sourceSetup.fieldRequired' => ({required Object label}) => 'وارد کردن ${label} الزامی است.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => '${label} را بین ${min} و ${max} وارد کنید.',

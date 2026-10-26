@@ -762,6 +762,13 @@ class _Translations$settings$hi extends Translations$settings$en {
 	@override String get regionFormatDescription => 'तारीखें, संख्याएँ और माप दिखाने का तरीका चुनें।';
 	@override String get metadataLanguage => 'मीडिया विवरण की भाषा';
 	@override String get metadataLanguageDescription => 'सर्वर के समर्थन के अनुसार शीर्षकों और विवरणों की पसंदीदा भाषा। ऑडियो और उपशीर्षक की प्राथमिकताएँ अलग रहती हैं।';
+	@override String get experimentalDolbyVision => 'प्रायोगिक Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'अगले प्लेबैक में प्रायोगिक FEL रेंडरर का उपयोग करें। इसके लिए इंजन का अलग बिल्ड चाहिए।';
+	@override String get dvExperimentUnavailableDescription => 'यह प्रयोग फ़िलहाल केवल Linux पर उपलब्ध है।';
+	@override String get dvCompatibilityFallback => 'अनुकूलता विकल्प';
+	@override String get dvCompatibilityFallbackDescription => 'प्रयोग शुरू न हो पाए तो मानक रेंडरर का उपयोग करें। FEL डेटा खो सकता है।';
+	@override String get dvExperimentDiagnostics => 'वीडियो प्रयोग की लॉगिंग';
+	@override String get dvExperimentDiagnosticsDescription => 'अगले प्लेबैक में प्लेयर के विस्तृत लॉग सक्षम करें।';
 }
 
 // Path: themeEditor
@@ -3553,7 +3560,7 @@ class _Translations$discover$findNext$hi extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => 'कुल ${duration}';
 	@override String get timingVaries => 'समय अलग-अलग हो सकता है';
 	@override String get notNow => 'अभी नहीं';
-	@override String get swipeHint => 'स्वाइप करें या नीचे दिए बटन इस्तेमाल करें';
+	@override String get swipeHint => 'कवर को किसी तीर की दिशा में स्वाइप करें या नीचे दिए बटन इस्तेमाल करें।';
 	@override String get saved => 'सहेजे गए सुझाव';
 	@override String savedCount({required Object count}) => 'सहेजे गए सुझाव · ${count}';
 	@override String get undo => 'पिछली कार्रवाई वापस लें';
@@ -3581,6 +3588,18 @@ class _Translations$discover$findNext$hi extends Translations$discover$findNext$
 	@override String get openFailed => 'यह विकल्प अब उपलब्ध नहीं है। फिर जाँचने के लिए रीफ़्रेश करें।';
 	@override String get changeFailed => 'बदलाव सहेजा नहीं जा सका। फिर कोशिश करें।';
 	@override String get savedLimit => 'सहेजे गए सुझावों की सूची भर गई है। नया सुझाव सहेजने के लिए कोई पुराना सुझाव हटाएँ।';
+	@override String get chooseHint => 'कोई शीर्षक खोलें, बाद के लिए सहेजें या छोड़ दें।';
+	@override String get howItWorks => 'कैसे इस्तेमाल करें';
+	@override String get notNowHelp => 'इस शीर्षक को अभी छोड़ दें। यह आपकी लाइब्रेरी में रहेगा।';
+	@override String get saveHelp => 'इसे इस डिवाइस पर इस प्रोफ़ाइल के सहेजे गए विकल्पों में रखें। सहेजने से यह डाउनलोड नहीं होता।';
+	@override String get openHelp => 'जानकारी के लिए कवर चुनें। शीर्षक चलाने, पढ़ने या खोलने के लिए मुख्य बटन इस्तेमाल करें।';
+	@override String get controlsHelp => 'कीबोर्ड या रिमोट: किसी बटन पर जाएँ, फिर Enter या चयन बटन दबाएँ। पहले जैसा करें आपकी पिछली पसंद वापस लाता है।';
+	@override String get artworkLoading => 'चित्र लोड हो रहा है…';
+	@override String get artworkUnavailable => 'चित्र उपलब्ध नहीं है';
+	@override String get savedFeedback => 'सहेजे गए विकल्पों में जोड़ा गया';
+	@override String get skippedFeedback => 'अभी छोड़ दिया गया';
+	@override String get releaseToConfirm => 'पुष्टि के लिए छोड़ें';
+	@override String get remoteHint => 'कवर पर फ़ोकस: ← / → चुनें · चयन बटन: जानकारी · ↑ / ↓ फ़ोकस बदलें';
 }
 
 // Path: discover.person
@@ -4915,6 +4934,13 @@ extension on TranslationsHi {
 			'settings.regionFormatDescription' => 'तारीखें, संख्याएँ और माप दिखाने का तरीका चुनें।',
 			'settings.metadataLanguage' => 'मीडिया विवरण की भाषा',
 			'settings.metadataLanguageDescription' => 'सर्वर के समर्थन के अनुसार शीर्षकों और विवरणों की पसंदीदा भाषा। ऑडियो और उपशीर्षक की प्राथमिकताएँ अलग रहती हैं।',
+			'settings.experimentalDolbyVision' => 'प्रायोगिक Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'अगले प्लेबैक में प्रायोगिक FEL रेंडरर का उपयोग करें। इसके लिए इंजन का अलग बिल्ड चाहिए।',
+			'settings.dvExperimentUnavailableDescription' => 'यह प्रयोग फ़िलहाल केवल Linux पर उपलब्ध है।',
+			'settings.dvCompatibilityFallback' => 'अनुकूलता विकल्प',
+			'settings.dvCompatibilityFallbackDescription' => 'प्रयोग शुरू न हो पाए तो मानक रेंडरर का उपयोग करें। FEL डेटा खो सकता है।',
+			'settings.dvExperimentDiagnostics' => 'वीडियो प्रयोग की लॉगिंग',
+			'settings.dvExperimentDiagnosticsDescription' => 'अगले प्लेबैक में प्लेयर के विस्तृत लॉग सक्षम करें।',
 			'themeEditor.builtIn' => 'इमारत में',
 			'themeEditor.presets' => 'उपन्यास',
 			'themeEditor.custom' => 'कस्टम',
@@ -5335,6 +5361,8 @@ extension on TranslationsHi {
 			'messages.libraryScanStarted' => ({required Object title}) => 'पुस्तकालय स्कैन "${title}" के लिए शुरू हुआ',
 			'messages.libraryScanFailed' => ({required Object error}) => 'पुस्तकालय स्कैन करने में विफलता: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '"${title}" के लिए ताज़ा मेटाडेटा ...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}" के लिए मेटाडेटा रिफ्रेश शुरू हुआ',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'मेटाडेटा को पुनर्जीवित करने में विफलता: ${error}',
 			'messages.logoutConfirm' => 'क्या आप निश्चित हैं कि आप लॉग इन करना चाहते हैं?',
@@ -5342,8 +5370,6 @@ extension on TranslationsHi {
 			'messages.seasonsLoadFailed' => 'मौसम नहीं ले सकते',
 			'messages.noEpisodesFound' => 'पहली सीजन में कोई घटना नहीं मिली',
 			'messages.noEpisodesFoundGeneral' => 'कोई घटना नहीं मिली',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'घटनाओं को लोड नहीं किया जा सकता',
 			'messages.noResultsFound' => 'कोई परिणाम नहीं मिला',
 			'messages.sleepTimerSet' => ({required Object label}) => 'नींद टाइमर सेट ${label} के लिए',
@@ -5584,7 +5610,7 @@ extension on TranslationsHi {
 			'discover.findNext.totalDuration' => ({required Object duration}) => 'कुल ${duration}',
 			'discover.findNext.timingVaries' => 'समय अलग-अलग हो सकता है',
 			'discover.findNext.notNow' => 'अभी नहीं',
-			'discover.findNext.swipeHint' => 'स्वाइप करें या नीचे दिए बटन इस्तेमाल करें',
+			'discover.findNext.swipeHint' => 'कवर को किसी तीर की दिशा में स्वाइप करें या नीचे दिए बटन इस्तेमाल करें।',
 			'discover.findNext.saved' => 'सहेजे गए सुझाव',
 			'discover.findNext.savedCount' => ({required Object count}) => 'सहेजे गए सुझाव · ${count}',
 			'discover.findNext.undo' => 'पिछली कार्रवाई वापस लें',
@@ -5612,6 +5638,18 @@ extension on TranslationsHi {
 			'discover.findNext.openFailed' => 'यह विकल्प अब उपलब्ध नहीं है। फिर जाँचने के लिए रीफ़्रेश करें।',
 			'discover.findNext.changeFailed' => 'बदलाव सहेजा नहीं जा सका। फिर कोशिश करें।',
 			'discover.findNext.savedLimit' => 'सहेजे गए सुझावों की सूची भर गई है। नया सुझाव सहेजने के लिए कोई पुराना सुझाव हटाएँ।',
+			'discover.findNext.chooseHint' => 'कोई शीर्षक खोलें, बाद के लिए सहेजें या छोड़ दें।',
+			'discover.findNext.howItWorks' => 'कैसे इस्तेमाल करें',
+			'discover.findNext.notNowHelp' => 'इस शीर्षक को अभी छोड़ दें। यह आपकी लाइब्रेरी में रहेगा।',
+			'discover.findNext.saveHelp' => 'इसे इस डिवाइस पर इस प्रोफ़ाइल के सहेजे गए विकल्पों में रखें। सहेजने से यह डाउनलोड नहीं होता।',
+			'discover.findNext.openHelp' => 'जानकारी के लिए कवर चुनें। शीर्षक चलाने, पढ़ने या खोलने के लिए मुख्य बटन इस्तेमाल करें।',
+			'discover.findNext.controlsHelp' => 'कीबोर्ड या रिमोट: किसी बटन पर जाएँ, फिर Enter या चयन बटन दबाएँ। पहले जैसा करें आपकी पिछली पसंद वापस लाता है।',
+			'discover.findNext.artworkLoading' => 'चित्र लोड हो रहा है…',
+			'discover.findNext.artworkUnavailable' => 'चित्र उपलब्ध नहीं है',
+			'discover.findNext.savedFeedback' => 'सहेजे गए विकल्पों में जोड़ा गया',
+			'discover.findNext.skippedFeedback' => 'अभी छोड़ दिया गया',
+			'discover.findNext.releaseToConfirm' => 'पुष्टि के लिए छोड़ें',
+			'discover.findNext.remoteHint' => 'कवर पर फ़ोकस: ← / → चुनें · चयन बटन: जानकारी · ↑ / ↓ फ़ोकस बदलें',
 			'discover.extras' => 'ट्रेलर और अतिरिक्त',
 			'discover.studio' => 'स्टूडियो',
 			'discover.rating' => 'रेटिंग',
@@ -5837,6 +5875,8 @@ extension on TranslationsHi {
 			'explore.mdblistShelves.nameHint' => 'स्रोत सूची नाम का उपयोग करने के लिए सफेद छोड़ दें।',
 			'explore.mdblistShelves.add' => 'शेल को जोड़ें',
 			'explore.mdblistShelves.save' => 'सीटों को बचाएं',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => '${title} से ऊपर',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => '${title} नीचे जाने के लिए',
 			'explore.mdblistShelves.unavailable' => 'यह सूची उपलब्ध नहीं है. सेटिंग्स में अपने शेल्फ को वापस या हटा दें.',
@@ -5856,8 +5896,6 @@ extension on TranslationsHi {
 			'explore.rows.popularShows' => 'लोकप्रिय शो',
 			'explore.rows.trendingAnime' => 'एनिमेटेड ट्रेंड',
 			'explore.rows.suggestedAnime' => 'अनुशंसित एनीम',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'शीर्ष एनीमिया',
 			'explore.rows.popularAnime' => 'सबसे लोकप्रिय एनीमिया',
 			'explore.rows.trending' => 'रुझान',
@@ -6351,6 +6389,8 @@ extension on TranslationsHi {
 			'downloads.resumeDownload' => 'डाउनलोड करें',
 			'downloads.cancelledDownload' => 'डाउनलोड रद्द',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (सेंसिंग ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'डाउनलोड ${file} - पूरा करने के लिए क्लिक करें',
 			'downloads.partialDownloadClickToComplete' => 'डाउनलोड करें - पूरा करने के लिए क्लिक करें',
 			'downloads.deleting' => 'हटाने...',
@@ -6370,8 +6410,6 @@ extension on TranslationsHi {
 			'downloads.unwatchedOnly' => 'अनदेखा केवल',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'अगला ${count} अनदेखा किया गया',
 			'downloads.customAmount' => 'कस्टम राशि...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'प्रत्येक व्यक्ति की मात्रा (प्रत्येक व्यक्ति)',
 			'downloads.randomEpisodes' => 'यादृच्छिक घटनाएं',
 			'downloads.includeSpecials' => 'विशेषताएं शामिल हैं',
@@ -6865,6 +6903,8 @@ extension on TranslationsHi {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'सर्वर तक नहीं पहुंच सकता: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'हस्ताक्षर विफल: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect असफल: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Plex के साथ साइन इन करें',
 			'addServer.pinExpired' => 'पिन लॉग इन करने से पहले समाप्त हो गया है. कृपया फिर से कोशिश करें.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'अकाउंट रजिस्टर करने में विफल: ${error}',
@@ -6884,8 +6924,6 @@ extension on TranslationsHi {
 			'addServer.authResponseIncomplete' => 'सर्वर से साइन-इन प्रतिक्रिया अपूर्ण थी',
 			'addServer.quickConnectRejected' => 'Quick Connect सर्वर द्वारा अस्वीकार कर दिया गया था',
 			'addServer.quickConnectNotJson' => 'Quick Connect जवाब JSON वैध नहीं था',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect का जवाब एक कोड या रहस्य की कमी है',
 			'addServer.quickConnectPollRejected' => 'Quick Connect पूछताछ सर्वर द्वारा अस्वीकार कर दिया गया था',
 			'addServer.serverTimedOut' => 'सर्वर ने समय पर जवाब नहीं दिया',
@@ -7379,6 +7417,8 @@ extension on TranslationsHi {
 			'sourceSetup.smbEncrypted' => 'SMB3 एन्क्रिप्शन चालू',
 			'sourceSetup.smbUnencrypted' => 'SMB3 एन्क्रिप्शन बंद',
 			'sourceSetup.httpUnencrypted' => 'ट्रांसपोर्ट एन्क्रिप्शन के बिना HTTP',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'एंडपॉइंट की सुरक्षा जाँचें',
 			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} दर्ज करना ज़रूरी है।',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => '${label} का मान ${min} से ${max} के बीच दर्ज करें।',

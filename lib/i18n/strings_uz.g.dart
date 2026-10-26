@@ -762,6 +762,13 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Sana, sonlar va oʻlchov birliklari qanday koʻrsatilishini tanlang.';
 	@override String get metadataLanguage => 'Metamaʼlumotlar tili';
 	@override String get metadataLanguageDescription => 'Server qoʻllab-quvvatlasa, sarlavha va tavsiflar uchun afzal til. Audio va subtitr tili alohida sozlanadi.';
+	@override String get experimentalDolbyVision => 'Tajribaviy Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Keyingi ijroda tajribaviy FEL renderidan foydalaning. Dvigatelning alohida yig‘ilmasi talab qilinadi.';
+	@override String get dvExperimentUnavailableDescription => 'Bu tajriba hozircha faqat Linux tizimida mavjud.';
+	@override String get dvCompatibilityFallback => 'Moslik uchun zaxira rejim';
+	@override String get dvCompatibilityFallbackDescription => 'Tajriba boshlanmasa, standart renderdan foydalaning. FEL ma’lumotlari yo‘qolishi mumkin.';
+	@override String get dvExperimentDiagnostics => 'Video tajribasi jurnali';
+	@override String get dvExperimentDiagnosticsDescription => 'Keyingi ijroda pleyerning batafsil jurnallarini yoqing.';
 }
 
 // Path: themeEditor
@@ -3553,7 +3560,7 @@ class _Translations$discover$findNext$uz extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => 'Jami ${duration}';
 	@override String get timingVaries => 'Davomiyligi farq qilishi mumkin';
 	@override String get notNow => 'Hozir emas';
-	@override String get swipeHint => 'Surib o‘tkazing yoki quyidagi tugmalardan foydalaning';
+	@override String get swipeHint => 'Muqovani strelka tomon suring yoki quyidagi tugmalardan foydalaning.';
 	@override String get saved => 'Saqlangan tavsiyalar';
 	@override String savedCount({required Object count}) => 'Saqlangan tavsiyalar · ${count}';
 	@override String get undo => 'Oxirgi amalni bekor qilish';
@@ -3581,6 +3588,18 @@ class _Translations$discover$findNext$uz extends Translations$discover$findNext$
 	@override String get openFailed => 'Bu variant endi mavjud emas. Qayta tekshirish uchun yangilang.';
 	@override String get changeFailed => 'O‘zgarishni saqlab bo‘lmadi. Qayta urinib ko‘ring.';
 	@override String get savedLimit => 'Saqlangan tavsiyalar ro‘yxati to‘lgan. Boshqasini saqlash uchun bitta tavsiyani olib tashlang.';
+	@override String get chooseHint => 'Asarni oching, keyinga saqlang yoki o‘tkazib yuboring.';
+	@override String get howItWorks => 'Foydalanish tartibi';
+	@override String get notNowHelp => 'Bu asarni hozircha o‘tkazib yuboring. U kutubxonangizda qoladi.';
+	@override String get saveHelp => 'Uni shu qurilmadagi shu profilning saqlangan tanlovlariga qo‘shing. Saqlash kontentni yuklab olmaydi.';
+	@override String get openHelp => 'Tafsilotlar uchun muqovani tanlang. Asarni ijro etish, o‘qish yoki ochish uchun asosiy tugmadan foydalaning.';
+	@override String get controlsHelp => 'Klaviatura yoki pult: tugmani tanlang, so‘ng Enter yoki tanlash tugmasini bosing. Bekor qilish oxirgi tanlovingizni qaytaradi.';
+	@override String get artworkLoading => 'Rasm yuklanmoqda…';
+	@override String get artworkUnavailable => 'Rasm mavjud emas';
+	@override String get savedFeedback => 'Saqlangan tanlovlarga qo‘shildi';
+	@override String get skippedFeedback => 'Hozircha o‘tkazib yuborildi';
+	@override String get releaseToConfirm => 'Tasdiqlash uchun qo‘yib yuboring';
+	@override String get remoteHint => 'Muqova tanlanganda: ← / → tanlash · Tanlash tugmasi: tafsilotlar · ↑ / ↓ fokusni ko‘chirish';
 }
 
 // Path: discover.person
@@ -4915,6 +4934,13 @@ extension on TranslationsUz {
 			'settings.regionFormatDescription' => 'Sana, sonlar va oʻlchov birliklari qanday koʻrsatilishini tanlang.',
 			'settings.metadataLanguage' => 'Metamaʼlumotlar tili',
 			'settings.metadataLanguageDescription' => 'Server qoʻllab-quvvatlasa, sarlavha va tavsiflar uchun afzal til. Audio va subtitr tili alohida sozlanadi.',
+			'settings.experimentalDolbyVision' => 'Tajribaviy Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Keyingi ijroda tajribaviy FEL renderidan foydalaning. Dvigatelning alohida yig‘ilmasi talab qilinadi.',
+			'settings.dvExperimentUnavailableDescription' => 'Bu tajriba hozircha faqat Linux tizimida mavjud.',
+			'settings.dvCompatibilityFallback' => 'Moslik uchun zaxira rejim',
+			'settings.dvCompatibilityFallbackDescription' => 'Tajriba boshlanmasa, standart renderdan foydalaning. FEL ma’lumotlari yo‘qolishi mumkin.',
+			'settings.dvExperimentDiagnostics' => 'Video tajribasi jurnali',
+			'settings.dvExperimentDiagnosticsDescription' => 'Keyingi ijroda pleyerning batafsil jurnallarini yoqing.',
 			'themeEditor.builtIn' => 'Oʻrnatilgan',
 			'themeEditor.presets' => 'Tayyor mavzular',
 			'themeEditor.custom' => 'Shaxsiy',
@@ -5335,6 +5361,8 @@ extension on TranslationsUz {
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}" uchun skanerlash boshlandi',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Kutubxonani skanerlab boʻlmadi: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '"${title}" uchun metamaʼlumotlar yangilanmoqda...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}" uchun metamaʼlumotlarni yangilash boshlandi',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Metamaʼlumotlarni yangilab boʻlmadi: ${error}',
 			'messages.logoutConfirm' => 'Haqiqatan ham chiqmoqchimisiz?',
@@ -5342,8 +5370,6 @@ extension on TranslationsUz {
 			'messages.seasonsLoadFailed' => 'Mavsumlarni yuklab boʻlmadi',
 			'messages.noEpisodesFound' => 'Birinchi mavsumda qismlar topilmadi',
 			'messages.noEpisodesFoundGeneral' => 'Qismlar topilmadi',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Qismlarni yuklab boʻlmadi',
 			'messages.noResultsFound' => 'Natijalar topilmadi',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Uyqu taymeri ${label} vaqtiga oʻrnatildi',
@@ -5584,7 +5610,7 @@ extension on TranslationsUz {
 			'discover.findNext.totalDuration' => ({required Object duration}) => 'Jami ${duration}',
 			'discover.findNext.timingVaries' => 'Davomiyligi farq qilishi mumkin',
 			'discover.findNext.notNow' => 'Hozir emas',
-			'discover.findNext.swipeHint' => 'Surib o‘tkazing yoki quyidagi tugmalardan foydalaning',
+			'discover.findNext.swipeHint' => 'Muqovani strelka tomon suring yoki quyidagi tugmalardan foydalaning.',
 			'discover.findNext.saved' => 'Saqlangan tavsiyalar',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Saqlangan tavsiyalar · ${count}',
 			'discover.findNext.undo' => 'Oxirgi amalni bekor qilish',
@@ -5612,6 +5638,18 @@ extension on TranslationsUz {
 			'discover.findNext.openFailed' => 'Bu variant endi mavjud emas. Qayta tekshirish uchun yangilang.',
 			'discover.findNext.changeFailed' => 'O‘zgarishni saqlab bo‘lmadi. Qayta urinib ko‘ring.',
 			'discover.findNext.savedLimit' => 'Saqlangan tavsiyalar ro‘yxati to‘lgan. Boshqasini saqlash uchun bitta tavsiyani olib tashlang.',
+			'discover.findNext.chooseHint' => 'Asarni oching, keyinga saqlang yoki o‘tkazib yuboring.',
+			'discover.findNext.howItWorks' => 'Foydalanish tartibi',
+			'discover.findNext.notNowHelp' => 'Bu asarni hozircha o‘tkazib yuboring. U kutubxonangizda qoladi.',
+			'discover.findNext.saveHelp' => 'Uni shu qurilmadagi shu profilning saqlangan tanlovlariga qo‘shing. Saqlash kontentni yuklab olmaydi.',
+			'discover.findNext.openHelp' => 'Tafsilotlar uchun muqovani tanlang. Asarni ijro etish, o‘qish yoki ochish uchun asosiy tugmadan foydalaning.',
+			'discover.findNext.controlsHelp' => 'Klaviatura yoki pult: tugmani tanlang, so‘ng Enter yoki tanlash tugmasini bosing. Bekor qilish oxirgi tanlovingizni qaytaradi.',
+			'discover.findNext.artworkLoading' => 'Rasm yuklanmoqda…',
+			'discover.findNext.artworkUnavailable' => 'Rasm mavjud emas',
+			'discover.findNext.savedFeedback' => 'Saqlangan tanlovlarga qo‘shildi',
+			'discover.findNext.skippedFeedback' => 'Hozircha o‘tkazib yuborildi',
+			'discover.findNext.releaseToConfirm' => 'Tasdiqlash uchun qo‘yib yuboring',
+			'discover.findNext.remoteHint' => 'Muqova tanlanganda: ← / → tanlash · Tanlash tugmasi: tafsilotlar · ↑ / ↓ fokusni ko‘chirish',
 			'discover.extras' => 'Treylerlar va qoʻshimchalar',
 			'discover.studio' => 'Studiya',
 			'discover.rating' => 'Reyting',
@@ -5837,6 +5875,8 @@ extension on TranslationsUz {
 			'explore.mdblistShelves.nameHint' => 'U\'zayda kaynlar listni ismi kullanmaqdan qurt.',
 			'explore.mdblistShelves.add' => 'Shell ko‘z',
 			'explore.mdblistShelves.save' => 'Tadiqlarga saladi',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => '${title}ni yuqoriga ko‘chirish',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => '${title} qaytadi',
 			'explore.mdblistShelves.unavailable' => 'Bu list ishat. Bu listini qaytadi o\'zingiz.',
@@ -5856,8 +5896,6 @@ extension on TranslationsUz {
 			'explore.rows.popularShows' => 'Mashhur seriallar',
 			'explore.rows.trendingAnime' => 'Ommabop anime',
 			'explore.rows.suggestedAnime' => 'Tavsiya etilgan anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Efirga uzatilayotgan eng yaxshi anime',
 			'explore.rows.popularAnime' => 'Eng mashhur anime',
 			'explore.rows.trending' => 'Ommaboplar',
@@ -6351,6 +6389,8 @@ extension on TranslationsUz {
 			'downloads.resumeDownload' => 'Yuklashni davom ettirish',
 			'downloads.cancelledDownload' => 'Toʻxtatilgan yuklama',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} sinxronlanmoqda)',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Yuklab olindi ${file} - Yakunlash uchun bosing',
 			'downloads.partialDownloadClickToComplete' => 'Qisman yuklandi - Yakunlash uchun bosing',
 			'downloads.deleting' => 'Oʻchirilmoqda...',
@@ -6370,8 +6410,6 @@ extension on TranslationsUz {
 			'downloads.unwatchedOnly' => 'Faqat koʻrilmaganlar',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Keyingi ${count} koʻrilmagan',
 			'downloads.customAmount' => 'Boshqa miqdor...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Istalgan miqdorni kiriting…',
 			'downloads.randomEpisodes' => 'Reddimiyadi',
 			'downloads.includeSpecials' => 'Maxsus qismlarni qoʻshish',
@@ -6865,6 +6903,8 @@ extension on TranslationsUz {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Serverga ulanib boʻlmadi: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Kirish xatoligi: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Tezkor ulanish xatoligi: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Plex orqali kirish',
 			'addServer.pinExpired' => 'PIN kod vaqti tugadi.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Hisobni roʻyxatdan oʻtkazishda xatolik: ${error}',
@@ -6884,8 +6924,6 @@ extension on TranslationsUz {
 			'addServer.authResponseIncomplete' => 'Serverdan kelgan kirish javobi toʻliq emas',
 			'addServer.quickConnectRejected' => 'Quick Connect server tomonidan rad etildi',
 			'addServer.quickConnectNotJson' => 'Quick Connect javobi yaroqli JSON emas',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect javobida kod yoki maxfiy kalit yoʻq',
 			'addServer.quickConnectPollRejected' => 'Quick Connect soʻrovi server tomonidan rad etildi',
 			'addServer.serverTimedOut' => 'Server oʻz vaqtida javob bermadi',
@@ -7379,6 +7417,8 @@ extension on TranslationsUz {
 			'sourceSetup.smbEncrypted' => 'SMB3 shifrlashi yoqilgan',
 			'sourceSetup.smbUnencrypted' => 'SMB3 shifrlashi o‘chirilgan',
 			'sourceSetup.httpUnencrypted' => 'Transport shifrlashisiz HTTP',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Ulanish manzili xavfsizligini tekshirish',
 			'sourceSetup.fieldRequired' => ({required Object label}) => 'Majburiy maydon: ${label}.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => '${label} uchun ${min} dan ${max} gacha qiymat kiriting.',

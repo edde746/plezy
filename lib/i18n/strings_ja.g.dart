@@ -760,6 +760,13 @@ class _Translations$settings$ja extends Translations$settings$en {
 	@override String get regionFormatDescription => '日付、数値、単位の表示形式を選択します。';
 	@override String get metadataLanguage => 'メタデータの言語';
 	@override String get metadataLanguageDescription => 'サーバーが対応している場合に、タイトルと説明に使用する言語です。音声と字幕の言語は別に設定します。';
+	@override String get experimentalDolbyVision => '実験的なDolby Vision';
+	@override String get experimentalDolbyVisionDescription => '次の再生で実験的なFELレンダラーを使用します。別途ビルドしたエンジンが必要です。';
+	@override String get dvExperimentUnavailableDescription => 'この実験は現在Linuxでのみ利用できます。';
+	@override String get dvCompatibilityFallback => '互換性フォールバック';
+	@override String get dvCompatibilityFallbackDescription => '実験を開始できない場合は標準レンダラーを使用します。FELデータが失われる可能性があります。';
+	@override String get dvExperimentDiagnostics => '動画実験のログ記録';
+	@override String get dvExperimentDiagnosticsDescription => '次の再生でプレーヤーの詳細ログを有効にします。';
 }
 
 // Path: themeEditor
@@ -3548,7 +3555,7 @@ class _Translations$discover$findNext$ja extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '合計${duration}';
 	@override String get timingVaries => '所要時間は異なります';
 	@override String get notNow => '今はスキップ';
-	@override String get swipeHint => 'スワイプするか、下のボタンを使ってください';
+	@override String get swipeHint => '表紙を矢印の方向にスワイプするか、下のボタンを使ってください。';
 	@override String get saved => '保存した候補';
 	@override String savedCount({required Object count}) => '保存した候補 · ${count}';
 	@override String get undo => '元に戻す';
@@ -3576,6 +3583,18 @@ class _Translations$discover$findNext$ja extends Translations$discover$findNext$
 	@override String get openFailed => 'この候補は利用できなくなりました。更新してもう一度確認してください。';
 	@override String get changeFailed => '変更を保存できませんでした。もう一度お試しください。';
 	@override String get savedLimit => '保存した候補が上限に達しています。別の候補を保存するには、1件削除してください。';
+	@override String get chooseHint => '作品を開く、後で見るために保存する、またはスキップします。';
+	@override String get howItWorks => '使い方';
+	@override String get notNowHelp => 'この作品をいったんスキップします。ライブラリからは削除されません。';
+	@override String get saveHelp => 'この端末の、このプロフィールの保存済み候補に追加します。保存してもダウンロードはされません。';
+	@override String get openHelp => '表紙を選ぶと詳細が表示されます。メインボタンで再生、読書、または作品を開けます。';
+	@override String get controlsHelp => 'キーボードやリモコンでは、ボタンにフォーカスして Enter または決定を押します。元に戻すと直前の選択を取り消せます。';
+	@override String get artworkLoading => '画像を読み込み中…';
+	@override String get artworkUnavailable => '画像を表示できません';
+	@override String get savedFeedback => '保存済み候補に追加しました';
+	@override String get skippedFeedback => 'いったんスキップしました';
+	@override String get releaseToConfirm => '離して確定';
+	@override String get remoteHint => '表紙にフォーカス：← / → で選択・決定で詳細・↑ / ↓ でフォーカス移動';
 }
 
 // Path: discover.person
@@ -4910,6 +4929,13 @@ extension on TranslationsJa {
 			'settings.regionFormatDescription' => '日付、数値、単位の表示形式を選択します。',
 			'settings.metadataLanguage' => 'メタデータの言語',
 			'settings.metadataLanguageDescription' => 'サーバーが対応している場合に、タイトルと説明に使用する言語です。音声と字幕の言語は別に設定します。',
+			'settings.experimentalDolbyVision' => '実験的なDolby Vision',
+			'settings.experimentalDolbyVisionDescription' => '次の再生で実験的なFELレンダラーを使用します。別途ビルドしたエンジンが必要です。',
+			'settings.dvExperimentUnavailableDescription' => 'この実験は現在Linuxでのみ利用できます。',
+			'settings.dvCompatibilityFallback' => '互換性フォールバック',
+			'settings.dvCompatibilityFallbackDescription' => '実験を開始できない場合は標準レンダラーを使用します。FELデータが失われる可能性があります。',
+			'settings.dvExperimentDiagnostics' => '動画実験のログ記録',
+			'settings.dvExperimentDiagnosticsDescription' => '次の再生でプレーヤーの詳細ログを有効にします。',
 			'themeEditor.builtIn' => '標準',
 			'themeEditor.presets' => 'プリセット',
 			'themeEditor.custom' => 'カスタム',
@@ -5330,6 +5356,8 @@ extension on TranslationsJa {
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}"のライブラリスキャンを開始しました',
 			'messages.libraryScanFailed' => ({required Object error}) => 'ライブラリのスキャンに失敗しました: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '「${title}」のメタデータを更新中…',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}"のメタデータ更新を開始しました',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'メタデータの更新に失敗しました: ${error}',
 			'messages.logoutConfirm' => 'ログアウトしてもよろしいですか？',
@@ -5337,8 +5365,6 @@ extension on TranslationsJa {
 			'messages.seasonsLoadFailed' => 'シーズンを読み込めませんでした',
 			'messages.noEpisodesFound' => '最初のシーズンにエピソードが見つかりません',
 			'messages.noEpisodesFoundGeneral' => 'エピソードが見つかりません',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'エピソードを読み込めませんでした',
 			'messages.noResultsFound' => '結果が見つかりません',
 			'messages.sleepTimerSet' => ({required Object label}) => 'スリープタイマーを${label}に設定しました',
@@ -5579,7 +5605,7 @@ extension on TranslationsJa {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '合計${duration}',
 			'discover.findNext.timingVaries' => '所要時間は異なります',
 			'discover.findNext.notNow' => '今はスキップ',
-			'discover.findNext.swipeHint' => 'スワイプするか、下のボタンを使ってください',
+			'discover.findNext.swipeHint' => '表紙を矢印の方向にスワイプするか、下のボタンを使ってください。',
 			'discover.findNext.saved' => '保存した候補',
 			'discover.findNext.savedCount' => ({required Object count}) => '保存した候補 · ${count}',
 			'discover.findNext.undo' => '元に戻す',
@@ -5607,6 +5633,18 @@ extension on TranslationsJa {
 			'discover.findNext.openFailed' => 'この候補は利用できなくなりました。更新してもう一度確認してください。',
 			'discover.findNext.changeFailed' => '変更を保存できませんでした。もう一度お試しください。',
 			'discover.findNext.savedLimit' => '保存した候補が上限に達しています。別の候補を保存するには、1件削除してください。',
+			'discover.findNext.chooseHint' => '作品を開く、後で見るために保存する、またはスキップします。',
+			'discover.findNext.howItWorks' => '使い方',
+			'discover.findNext.notNowHelp' => 'この作品をいったんスキップします。ライブラリからは削除されません。',
+			'discover.findNext.saveHelp' => 'この端末の、このプロフィールの保存済み候補に追加します。保存してもダウンロードはされません。',
+			'discover.findNext.openHelp' => '表紙を選ぶと詳細が表示されます。メインボタンで再生、読書、または作品を開けます。',
+			'discover.findNext.controlsHelp' => 'キーボードやリモコンでは、ボタンにフォーカスして Enter または決定を押します。元に戻すと直前の選択を取り消せます。',
+			'discover.findNext.artworkLoading' => '画像を読み込み中…',
+			'discover.findNext.artworkUnavailable' => '画像を表示できません',
+			'discover.findNext.savedFeedback' => '保存済み候補に追加しました',
+			'discover.findNext.skippedFeedback' => 'いったんスキップしました',
+			'discover.findNext.releaseToConfirm' => '離して確定',
+			'discover.findNext.remoteHint' => '表紙にフォーカス：← / → で選択・決定で詳細・↑ / ↓ でフォーカス移動',
 			'discover.extras' => '予告編とエクストラ',
 			'discover.studio' => 'スタジオ',
 			'discover.rating' => '評価',
@@ -5832,6 +5870,8 @@ extension on TranslationsJa {
 			'explore.mdblistShelves.nameHint' => 'オリジナルリスト名を使用するために白いままにします。',
 			'explore.mdblistShelves.add' => 'シェルフを追加',
 			'explore.mdblistShelves.save' => 'シェルター保存',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => '移動 ${title} アップ',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'ダウンロード ${title}',
 			'explore.mdblistShelves.unavailable' => 'このリストは利用できません. 設定でそのシールを取り戻すか削除します。',
@@ -5851,8 +5891,6 @@ extension on TranslationsJa {
 			'explore.rows.popularShows' => '人気のテレビ番組',
 			'explore.rows.trendingAnime' => 'トレンドのアニメ',
 			'explore.rows.suggestedAnime' => 'おすすめのアニメ',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => '放送中の注目アニメ',
 			'explore.rows.popularAnime' => '人気のアニメ',
 			'explore.rows.trending' => 'トレンド',
@@ -6346,6 +6384,8 @@ extension on TranslationsJa {
 			'downloads.resumeDownload' => 'ダウンロードを再開',
 			'downloads.cancelledDownload' => 'キャンセル済みのダウンロード',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file}（${status}を同期中）',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file}をダウンロード済み — クリックして完了',
 			'downloads.partialDownloadClickToComplete' => '一部ダウンロード済み — クリックして完了',
 			'downloads.deleting' => '削除中…',
@@ -6365,8 +6405,6 @@ extension on TranslationsJa {
 			'downloads.unwatchedOnly' => '未視聴のみ',
 			'downloads.nextNUnwatched' => ({required Object count}) => '次の${count}件の未視聴',
 			'downloads.customAmount' => '数を指定…',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => '定量(毎回)',
 			'downloads.randomEpisodes' => 'ランダムエピソード',
 			'downloads.includeSpecials' => 'スペシャルを含める',
@@ -6860,6 +6898,8 @@ extension on TranslationsJa {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'サーバーに接続できませんでした: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'サインインに失敗しました: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connectに失敗しました: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Plexでサインイン',
 			'addServer.pinExpired' => 'サインイン前にPINの有効期限が切れました。もう一度お試しください。',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'アカウントの登録に失敗しました: ${error}',
@@ -6879,8 +6919,6 @@ extension on TranslationsJa {
 			'addServer.authResponseIncomplete' => 'サーバーからのサインイン応答が不完全です',
 			'addServer.quickConnectRejected' => 'Quick Connectがサーバーに拒否されました',
 			'addServer.quickConnectNotJson' => 'Quick Connectのレスポンスが有効なJSONではありません',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connectのレスポンスにコードまたはシークレットがありません',
 			'addServer.quickConnectPollRejected' => 'Quick Connectのポーリングがサーバーに拒否されました',
 			'addServer.serverTimedOut' => 'サーバーが時間内に応答しませんでした',
@@ -7374,6 +7412,8 @@ extension on TranslationsJa {
 			'sourceSetup.smbEncrypted' => 'SMB3 暗号化がオン',
 			'sourceSetup.smbUnencrypted' => 'SMB3 暗号化がオフ',
 			'sourceSetup.httpUnencrypted' => '転送が暗号化されていない HTTP',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => '接続先のセキュリティを確認',
 			'sourceSetup.fieldRequired' => ({required Object label}) => '${label}を入力してください。',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => '${label}を ${min} から ${max} の範囲で入力してください。',

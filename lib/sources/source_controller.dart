@@ -12,6 +12,7 @@ import 'adapters/audiobookshelf_source.dart';
 import 'adapters/cloud_sources.dart';
 import 'adapters/dlna_source.dart';
 import 'adapters/ftp_source.dart';
+import 'adapters/komga_source.dart';
 import 'adapters/local_source.dart';
 import 'adapters/nfs_source.dart';
 import 'adapters/sftp_source.dart';
@@ -387,6 +388,7 @@ class SourceController extends ChangeNotifier {
         FileSourceKind.sftp => SftpSourceAdapter(source, transport, credentials),
         FileSourceKind.nfs => NfsSourceAdapter(source, transport, credentials),
         FileSourceKind.dlna => DlnaSourceAdapter(source, transport),
+        FileSourceKind.komga => KomgaSourceAdapter(source, transport, credentials),
         FileSourceKind.opds => OpdsSourceAdapter(source, transport, credentials),
         FileSourceKind.audiobookshelf => AudiobookshelfSourceAdapter(source, transport, credentials),
       };
@@ -550,10 +552,12 @@ class SourceController extends ChangeNotifier {
     return result;
   }
 
-  Future<File?> cover(SourceEntry entry) {
+  Future<File?> cover(SourceEntry entry, {bool refresh = false}) {
     final profile = profileId;
     if (profile == null || blocked) return Future.value();
-    return _covers.putIfAbsent(sourceKey(profile, entry.key), () async {
+    final cacheKey = sourceKey(profile, entry.key);
+    if (refresh) _covers.remove(cacheKey);
+    return _covers.putIfAbsent(cacheKey, () async {
       await ready;
       final epoch = generation;
       final file = File(
@@ -564,7 +568,7 @@ class SourceController extends ChangeNotifier {
           '${sourceDigest(jsonEncode([entry.key, entry.coverId, entry.onlinePosterUrl]))}.png',
         ),
       );
-      if (await file.exists()) return file;
+      if (!refresh && await file.exists()) return file;
       if (!sources.any((s) => s.id == entry.sourceId)) return null;
       try {
         final provider = adapter(entry.sourceId);

@@ -19,10 +19,20 @@ untested hardware combinations and complete proprietary display-mapper equivalen
   passed the build, 17/17 mpv tests (including the pairing decision-helper test),
   16 libplacebo tests with one expected headless skip, software GLES render/readback,
   six synthetic residual vectors and fail-closed missing/invalid EL cases. The
-  helper test does not execute the mpv filter graph. No real FEL sample, trusted
-  reconstructed-pixel comparison, physical output or app playback has qualified.
-  See the [Luna handoff](../maintainers/dv-engine-luna-handoff.md) for artifacts
-  and acceptance gates.
+  helper test does not execute the mpv filter graph. Since that build, a community
+  P7 FEL test clip from Kodi's sample index has passed the actual single-track
+  graph in standalone `gpu-next` and embedded `libmpv` `opengl-next` readback on
+  an AMD RX 9070 XT. The FEL mark is visible in the full render and absent from
+  a same-source BL-only control. Embedded VA-API `vaapi-copy` decoding of both
+  layers produced an 8-bit FBO image within one code value of software decode.
+  The VA-API log also reports duplicate RPU warnings that still need investigation.
+  The Kodi page claims fair use for testing/evaluation/documentation, but has
+  no formal file-specific redistribution license; the sample stays local. This proves
+  the graph uses EL information qualitatively, not exact Dolby-reference pixel
+  accuracy. The Linux debug app builds, but full app/Wayland playback, zero-copy
+  hardware import and HDMI DV output remain unqualified. See the
+  [Luna handoff](../maintainers/dv-engine-luna-handoff.md) for the sample hash,
+  capture details, exact comparison and remaining gates.
 - `scripts/dv_lab.py` inspects local files with ffprobe or saved probe JSON,
   distinguishes profile-specific base-layer compatibility, preserves uncertainty
   about MEL/FEL and inventories an explicitly selected standalone mpv binary.
@@ -36,8 +46,11 @@ untested hardware combinations and complete proprietary display-mapper equivalen
 
 This is an experimental engine/integration branch, not a shipped universal DV decoder. The
 existing production engine lock is unchanged and does not implement this new
-render API. Production patch rebasing, successful engine qualification, physical DV playback, FEL pixel comparison,
-and the HDMI adapter described below remain implementation and qualification work.
+render API. Production patch rebasing, independent numerical FEL pixel
+qualification, full app/Wayland playback, zero-copy hardware import, physical DV
+output and the HDMI adapter described below remain implementation and
+qualification work. `vaapi-copy` decode is only proven through an embedded EGL
+harness on one AMD GPU.
 
 ## Verified starting point in PlezyNG
 

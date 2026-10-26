@@ -764,6 +764,13 @@ class _Translations$settings$he extends Translations$settings$en {
 	@override String get regionFormatDescription => 'בחירת אופן ההצגה של תאריכים, מספרים ויחידות מידה.';
 	@override String get metadataLanguage => 'שפת פרטי המדיה';
 	@override String get metadataLanguageDescription => 'השפה המועדפת לשמות ולתיאורים, כשהשרת תומך בה. העדפות השמע והכתוביות מוגדרות בנפרד.';
+	@override String get experimentalDolbyVision => 'Dolby Vision ניסיוני';
+	@override String get experimentalDolbyVisionDescription => 'שימוש במנוע הרינדור הניסיוני של FEL בהפעלה הבאה. נדרשת בנייה נפרדת של המנוע.';
+	@override String get dvExperimentUnavailableDescription => 'הניסוי הזה זמין כרגע רק ב-Linux.';
+	@override String get dvCompatibilityFallback => 'חלופת תאימות';
+	@override String get dvCompatibilityFallbackDescription => 'שימוש במנוע הרינדור הרגיל אם הניסוי לא מצליח להתחיל. נתוני FEL עלולים ללכת לאיבוד.';
+	@override String get dvExperimentDiagnostics => 'רישום יומן לניסוי הווידאו';
+	@override String get dvExperimentDiagnosticsDescription => 'הפעלת יומנים מפורטים של הנגן בהפעלה הבאה.';
 }
 
 // Path: themeEditor
@@ -3558,7 +3565,7 @@ class _Translations$discover$findNext$he extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} בסך הכול';
 	@override String get timingVaries => 'משך הזמן משתנה';
 	@override String get notNow => 'לא עכשיו';
-	@override String get swipeHint => 'החליקו או השתמשו בכפתורים שלמטה';
+	@override String get swipeHint => 'החליקו את העטיפה לכיוון אחד החצים או השתמשו בכפתורים למטה.';
 	@override String get saved => 'המלצות שמורות';
 	@override String savedCount({required Object count}) => 'המלצות שמורות · ${count}';
 	@override String get undo => 'ביטול הפעולה האחרונה';
@@ -3586,6 +3593,18 @@ class _Translations$discover$findNext$he extends Translations$discover$findNext$
 	@override String get openFailed => 'האפשרות הזו כבר לא זמינה. רעננו כדי לבדוק שוב.';
 	@override String get changeFailed => 'לא ניתן לשמור את השינוי. נסו שוב.';
 	@override String get savedLimit => 'רשימת ההמלצות השמורות מלאה. הסירו המלצה כדי לשמור אחרת.';
+	@override String get chooseHint => 'פתחו כותר, שמרו אותו להמשך או דלגו עליו.';
+	@override String get howItWorks => 'איך זה עובד';
+	@override String get notNowHelp => 'דלגו על הכותר הזה כרגע. הוא יישאר בספרייה שלכם.';
+	@override String get saveHelp => 'שמרו אותו בבחירות השמורות של הפרופיל הזה במכשיר הזה. השמירה אינה מורידה את התוכן.';
+	@override String get openHelp => 'בחרו בעטיפה להצגת פרטים. השתמשו בפעולה הראשית כדי לנגן, לקרוא או לפתוח את הכותר.';
+	@override String get controlsHelp => 'מקלדת או שלט: עברו לכפתור ולחצו על Enter או על בחירה. ביטול מחזיר את הבחירה האחרונה.';
+	@override String get artworkLoading => 'טוען תמונה…';
+	@override String get artworkUnavailable => 'התמונה אינה זמינה';
+	@override String get savedFeedback => 'נוסף לבחירות השמורות';
+	@override String get skippedFeedback => 'דולג לעת עתה';
+	@override String get releaseToConfirm => 'שחררו לאישור';
+	@override String get remoteHint => 'כשהעטיפה במיקוד: ← / → בחירה · לחצן בחירה: פרטים · ↑ / ↓ העברת מיקוד';
 }
 
 // Path: discover.person
@@ -4920,6 +4939,13 @@ extension on TranslationsHe {
 			'settings.regionFormatDescription' => 'בחירת אופן ההצגה של תאריכים, מספרים ויחידות מידה.',
 			'settings.metadataLanguage' => 'שפת פרטי המדיה',
 			'settings.metadataLanguageDescription' => 'השפה המועדפת לשמות ולתיאורים, כשהשרת תומך בה. העדפות השמע והכתוביות מוגדרות בנפרד.',
+			'settings.experimentalDolbyVision' => 'Dolby Vision ניסיוני',
+			'settings.experimentalDolbyVisionDescription' => 'שימוש במנוע הרינדור הניסיוני של FEL בהפעלה הבאה. נדרשת בנייה נפרדת של המנוע.',
+			'settings.dvExperimentUnavailableDescription' => 'הניסוי הזה זמין כרגע רק ב-Linux.',
+			'settings.dvCompatibilityFallback' => 'חלופת תאימות',
+			'settings.dvCompatibilityFallbackDescription' => 'שימוש במנוע הרינדור הרגיל אם הניסוי לא מצליח להתחיל. נתוני FEL עלולים ללכת לאיבוד.',
+			'settings.dvExperimentDiagnostics' => 'רישום יומן לניסוי הווידאו',
+			'settings.dvExperimentDiagnosticsDescription' => 'הפעלת יומנים מפורטים של הנגן בהפעלה הבאה.',
 			'themeEditor.builtIn' => 'בנוי',
 			'themeEditor.presets' => 'נציגים',
 			'themeEditor.custom' => 'מותאם אישית',
@@ -5340,6 +5366,8 @@ extension on TranslationsHe {
 			'messages.libraryScanStarted' => ({required Object title}) => 'סריקת הספרייה החלה עבור "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'לא הצליח לסרוק את הספרייה: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'נתונים מטא-נתונים עבור "${title}..."',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'מחדש נתונים מתחיל עבור "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'לא הצליח לשחזר נתונים מטאוגרפיים: ${error}',
 			'messages.logoutConfirm' => 'אתה בטוח שאתה רוצה להיכנס?',
@@ -5347,8 +5375,6 @@ extension on TranslationsHe {
 			'messages.seasonsLoadFailed' => 'לא יכול להיות עונות',
 			'messages.noEpisodesFound' => 'לא נמצאו פרקים בעונה הראשונה',
 			'messages.noEpisodesFoundGeneral' => 'לא נמצאו פרקים',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'אי אפשר להעלות את הפרקים',
 			'messages.noResultsFound' => 'לא נמצאו תוצאות.',
 			'messages.sleepTimerSet' => ({required Object label}) => 'זמן שינה מוגדר עבור ${label}',
@@ -5589,7 +5615,7 @@ extension on TranslationsHe {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} בסך הכול',
 			'discover.findNext.timingVaries' => 'משך הזמן משתנה',
 			'discover.findNext.notNow' => 'לא עכשיו',
-			'discover.findNext.swipeHint' => 'החליקו או השתמשו בכפתורים שלמטה',
+			'discover.findNext.swipeHint' => 'החליקו את העטיפה לכיוון אחד החצים או השתמשו בכפתורים למטה.',
 			'discover.findNext.saved' => 'המלצות שמורות',
 			'discover.findNext.savedCount' => ({required Object count}) => 'המלצות שמורות · ${count}',
 			'discover.findNext.undo' => 'ביטול הפעולה האחרונה',
@@ -5617,6 +5643,18 @@ extension on TranslationsHe {
 			'discover.findNext.openFailed' => 'האפשרות הזו כבר לא זמינה. רעננו כדי לבדוק שוב.',
 			'discover.findNext.changeFailed' => 'לא ניתן לשמור את השינוי. נסו שוב.',
 			'discover.findNext.savedLimit' => 'רשימת ההמלצות השמורות מלאה. הסירו המלצה כדי לשמור אחרת.',
+			'discover.findNext.chooseHint' => 'פתחו כותר, שמרו אותו להמשך או דלגו עליו.',
+			'discover.findNext.howItWorks' => 'איך זה עובד',
+			'discover.findNext.notNowHelp' => 'דלגו על הכותר הזה כרגע. הוא יישאר בספרייה שלכם.',
+			'discover.findNext.saveHelp' => 'שמרו אותו בבחירות השמורות של הפרופיל הזה במכשיר הזה. השמירה אינה מורידה את התוכן.',
+			'discover.findNext.openHelp' => 'בחרו בעטיפה להצגת פרטים. השתמשו בפעולה הראשית כדי לנגן, לקרוא או לפתוח את הכותר.',
+			'discover.findNext.controlsHelp' => 'מקלדת או שלט: עברו לכפתור ולחצו על Enter או על בחירה. ביטול מחזיר את הבחירה האחרונה.',
+			'discover.findNext.artworkLoading' => 'טוען תמונה…',
+			'discover.findNext.artworkUnavailable' => 'התמונה אינה זמינה',
+			'discover.findNext.savedFeedback' => 'נוסף לבחירות השמורות',
+			'discover.findNext.skippedFeedback' => 'דולג לעת עתה',
+			'discover.findNext.releaseToConfirm' => 'שחררו לאישור',
+			'discover.findNext.remoteHint' => 'כשהעטיפה במיקוד: ← / → בחירה · לחצן בחירה: פרטים · ↑ / ↓ העברת מיקוד',
 			'discover.extras' => 'טריילר & Extras',
 			'discover.studio' => 'סטודיו',
 			'discover.rating' => 'דירוג',
@@ -5842,6 +5880,8 @@ extension on TranslationsHe {
 			'explore.mdblistShelves.nameHint' => 'השאירו את השם ללימודי המקור.',
 			'explore.mdblistShelves.add' => 'להוסיף Shelf',
 			'explore.mdblistShelves.save' => 'הציל את המדרגות',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'זורק ${title} למעלה',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'מוריד ${title} למטה',
 			'explore.mdblistShelves.unavailable' => 'רשימה זו אינה זמינה.חזיר או להסיר את המאגר שלה בהגדרות.',
@@ -5861,8 +5901,6 @@ extension on TranslationsHe {
 			'explore.rows.popularShows' => 'הופעות פופולריות',
 			'explore.rows.trendingAnime' => 'אנמיה טרנד',
 			'explore.rows.suggestedAnime' => 'אנמיה מומלצת',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'האנימציה העליונה',
 			'explore.rows.popularAnime' => 'האנימציה הפופולרית ביותר',
 			'explore.rows.trending' => 'טרנד',
@@ -6356,6 +6394,8 @@ extension on TranslationsHe {
 			'downloads.resumeDownload' => 'תגית: download',
 			'downloads.cancelledDownload' => 'ביטול הורדות',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (סנצ\'ינג ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'הורד ${file} - לחצו כדי להשלים',
 			'downloads.partialDownloadClickToComplete' => 'הורדה חלקית - לחצו כדי להשלים',
 			'downloads.deleting' => 'הסרת...',
@@ -6375,8 +6415,6 @@ extension on TranslationsHe {
 			'downloads.unwatchedOnly' => 'לא נצפה רק',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'הבא ${count} לא נצפה',
 			'downloads.customAmount' => 'כמות מותאמת...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'כל סכום (כל סכום)',
 			'downloads.randomEpisodes' => 'אירועים אקראיים',
 			'downloads.includeSpecials' => 'כולל מיוחד',
@@ -6870,6 +6908,8 @@ extension on TranslationsHe {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'לא יכול להגיע לשרת: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'הצטרפות לא מוצלחת: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect נכשל: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'הצטרפו ל- Plex',
 			'addServer.pinExpired' => 'ה-PIN נגמר לפני ההרשמה, אנא נסה שוב.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'חשבונית לא נרשמה: ${error}',
@@ -6889,8 +6929,6 @@ extension on TranslationsHe {
 			'addServer.authResponseIncomplete' => 'התגובה של השרת הייתה לא שלמה.',
 			'addServer.quickConnectRejected' => 'Quick Connect נדחה על ידי השרת',
 			'addServer.quickConnectNotJson' => 'התשובה Quick Connect לא הייתה שווה JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'התשובה Quick Connect חסרה קוד או סוד',
 			'addServer.quickConnectPollRejected' => 'Quick Connect בקשה נדחתה על ידי השרת',
 			'addServer.serverTimedOut' => 'השרת לא הגיב בזמן',
@@ -7384,6 +7422,8 @@ extension on TranslationsHe {
 			'sourceSetup.smbEncrypted' => 'הצפנת SMB3 מופעלת',
 			'sourceSetup.smbUnencrypted' => 'הצפנת SMB3 כבויה',
 			'sourceSetup.httpUnencrypted' => 'HTTP ללא הצפנת תעבורה',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'יש לבדוק את אבטחת כתובת החיבור',
 			'sourceSetup.fieldRequired' => ({required Object label}) => 'חובה למלא את השדה ${label}.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'יש להזין עבור ${label} ערך בין ${min} ל־${max}.',

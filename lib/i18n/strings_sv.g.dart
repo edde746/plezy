@@ -762,6 +762,13 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Välj hur datum, tal och måttenheter visas.';
 	@override String get metadataLanguage => 'Språk för metadata';
 	@override String get metadataLanguageDescription => 'Föredraget språk för titlar och beskrivningar när servern stöder det. Ljud och undertexter ställs in separat.';
+	@override String get experimentalDolbyVision => 'Experimentell Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Använd den experimentella FEL-renderaren vid nästa uppspelning. Kräver en separat motorversion.';
+	@override String get dvExperimentUnavailableDescription => 'Det här experimentet är för närvarande endast tillgängligt på Linux.';
+	@override String get dvCompatibilityFallback => 'Kompatibilitetsreserv';
+	@override String get dvCompatibilityFallbackDescription => 'Använd standardrenderaren om experimentet inte kan starta. FEL-data kan gå förlorade.';
+	@override String get dvExperimentDiagnostics => 'Loggning av videoexperiment';
+	@override String get dvExperimentDiagnosticsDescription => 'Aktivera detaljerade spelarloggar vid nästa uppspelning.';
 }
 
 // Path: themeEditor
@@ -3553,7 +3560,7 @@ class _Translations$discover$findNext$sv extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} totalt';
 	@override String get timingVaries => 'Tidsåtgången kan variera';
 	@override String get notNow => 'Inte nu';
-	@override String get swipeHint => 'Svep eller använd knapparna nedan';
+	@override String get swipeHint => 'Svep omslaget mot en pil eller använd knapparna nedan.';
 	@override String get saved => 'Sparade förslag';
 	@override String savedCount({required Object count}) => 'Sparade förslag · ${count}';
 	@override String get undo => 'Ångra';
@@ -3581,6 +3588,18 @@ class _Translations$discover$findNext$sv extends Translations$discover$findNext$
 	@override String get openFailed => 'Det här valet är inte längre tillgängligt. Uppdatera för att kontrollera igen.';
 	@override String get changeFailed => 'Ändringen kunde inte sparas. Försök igen.';
 	@override String get savedLimit => 'Listan med sparade förslag är full. Ta bort ett förslag för att spara ett nytt.';
+	@override String get chooseHint => 'Öppna en titel, spara den till senare eller hoppa över den.';
+	@override String get howItWorks => 'Så fungerar det';
+	@override String get notNowHelp => 'Hoppa över den här titeln för tillfället. Den finns kvar i ditt bibliotek.';
+	@override String get saveHelp => 'Spara den bland sparade val för den här profilen på den här enheten. Att spara laddar inte ned titeln.';
+	@override String get openHelp => 'Välj omslaget för detaljer. Använd huvudåtgärden för att spela upp, läsa eller öppna titeln.';
+	@override String get controlsHelp => 'Tangentbord eller fjärrkontroll: välj en knapp och tryck på Enter eller Välj. Ångra återställer ditt senaste val.';
+	@override String get artworkLoading => 'Läser in bild…';
+	@override String get artworkUnavailable => 'Bild saknas';
+	@override String get savedFeedback => 'Tillagd bland sparade val';
+	@override String get skippedFeedback => 'Överhoppad för tillfället';
+	@override String get releaseToConfirm => 'Släpp för att bekräfta';
+	@override String get remoteHint => 'Omslag i fokus: ← / → välj · Välj: detaljer · ↑ / ↓ flytta fokus';
 }
 
 // Path: discover.person
@@ -4915,6 +4934,13 @@ extension on TranslationsSv {
 			'settings.regionFormatDescription' => 'Välj hur datum, tal och måttenheter visas.',
 			'settings.metadataLanguage' => 'Språk för metadata',
 			'settings.metadataLanguageDescription' => 'Föredraget språk för titlar och beskrivningar när servern stöder det. Ljud och undertexter ställs in separat.',
+			'settings.experimentalDolbyVision' => 'Experimentell Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Använd den experimentella FEL-renderaren vid nästa uppspelning. Kräver en separat motorversion.',
+			'settings.dvExperimentUnavailableDescription' => 'Det här experimentet är för närvarande endast tillgängligt på Linux.',
+			'settings.dvCompatibilityFallback' => 'Kompatibilitetsreserv',
+			'settings.dvCompatibilityFallbackDescription' => 'Använd standardrenderaren om experimentet inte kan starta. FEL-data kan gå förlorade.',
+			'settings.dvExperimentDiagnostics' => 'Loggning av videoexperiment',
+			'settings.dvExperimentDiagnosticsDescription' => 'Aktivera detaljerade spelarloggar vid nästa uppspelning.',
 			'themeEditor.builtIn' => 'Inbyggda',
 			'themeEditor.presets' => 'Förinställda',
 			'themeEditor.custom' => 'Anpassat',
@@ -5335,6 +5361,8 @@ extension on TranslationsSv {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Biblioteksskanningen har startat för "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Det gick inte att skanna biblioteket: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Uppdaterar metadata för "${title}"...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadatauppdateringen har startat för "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Det gick inte att uppdatera metadata: ${error}',
 			'messages.logoutConfirm' => 'Är du säker på att du vill logga ut?',
@@ -5342,8 +5370,6 @@ extension on TranslationsSv {
 			'messages.seasonsLoadFailed' => 'Det gick inte att läsa in säsonger',
 			'messages.noEpisodesFound' => 'Inga avsnitt hittades i första säsongen',
 			'messages.noEpisodesFoundGeneral' => 'Inga avsnitt hittades',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Det gick inte att läsa in avsnitt',
 			'messages.noResultsFound' => 'Inga resultat hittades',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Sovtimer inställd för ${label}',
@@ -5584,7 +5610,7 @@ extension on TranslationsSv {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} totalt',
 			'discover.findNext.timingVaries' => 'Tidsåtgången kan variera',
 			'discover.findNext.notNow' => 'Inte nu',
-			'discover.findNext.swipeHint' => 'Svep eller använd knapparna nedan',
+			'discover.findNext.swipeHint' => 'Svep omslaget mot en pil eller använd knapparna nedan.',
 			'discover.findNext.saved' => 'Sparade förslag',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Sparade förslag · ${count}',
 			'discover.findNext.undo' => 'Ångra',
@@ -5612,6 +5638,18 @@ extension on TranslationsSv {
 			'discover.findNext.openFailed' => 'Det här valet är inte längre tillgängligt. Uppdatera för att kontrollera igen.',
 			'discover.findNext.changeFailed' => 'Ändringen kunde inte sparas. Försök igen.',
 			'discover.findNext.savedLimit' => 'Listan med sparade förslag är full. Ta bort ett förslag för att spara ett nytt.',
+			'discover.findNext.chooseHint' => 'Öppna en titel, spara den till senare eller hoppa över den.',
+			'discover.findNext.howItWorks' => 'Så fungerar det',
+			'discover.findNext.notNowHelp' => 'Hoppa över den här titeln för tillfället. Den finns kvar i ditt bibliotek.',
+			'discover.findNext.saveHelp' => 'Spara den bland sparade val för den här profilen på den här enheten. Att spara laddar inte ned titeln.',
+			'discover.findNext.openHelp' => 'Välj omslaget för detaljer. Använd huvudåtgärden för att spela upp, läsa eller öppna titeln.',
+			'discover.findNext.controlsHelp' => 'Tangentbord eller fjärrkontroll: välj en knapp och tryck på Enter eller Välj. Ångra återställer ditt senaste val.',
+			'discover.findNext.artworkLoading' => 'Läser in bild…',
+			'discover.findNext.artworkUnavailable' => 'Bild saknas',
+			'discover.findNext.savedFeedback' => 'Tillagd bland sparade val',
+			'discover.findNext.skippedFeedback' => 'Överhoppad för tillfället',
+			'discover.findNext.releaseToConfirm' => 'Släpp för att bekräfta',
+			'discover.findNext.remoteHint' => 'Omslag i fokus: ← / → välj · Välj: detaljer · ↑ / ↓ flytta fokus',
 			'discover.extras' => 'Trailrar och extramaterial',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Betyg',
@@ -5837,6 +5875,8 @@ extension on TranslationsSv {
 			'explore.mdblistShelves.nameHint' => 'Låt blank använda källlista namn.',
 			'explore.mdblistShelves.add' => 'Lägg till shelf',
 			'explore.mdblistShelves.save' => 'Rädda shelter',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Flytta ${title} upp',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Flytta ${title} ner',
 			'explore.mdblistShelves.unavailable' => 'Denna lista är inte tillgänglig. ta bort eller ta bort dess sköld i inställningar.',
@@ -5856,8 +5896,6 @@ extension on TranslationsSv {
 			'explore.rows.popularShows' => 'Populära serier',
 			'explore.rows.trendingAnime' => 'Populär anime just nu',
 			'explore.rows.suggestedAnime' => 'Föreslagen anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Bästa anime som sänds nu',
 			'explore.rows.popularAnime' => 'Mest populära anime',
 			'explore.rows.trending' => 'Trendar nu',
@@ -6351,6 +6389,8 @@ extension on TranslationsSv {
 			'downloads.resumeDownload' => 'Återuppta nedladdning',
 			'downloads.cancelledDownload' => 'Avbruten nedladdning',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (synkroniserar ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} nedladdad – klicka för att slutföra',
 			'downloads.partialDownloadClickToComplete' => 'Delvis nedladdad – klicka för att slutföra',
 			'downloads.deleting' => 'Tar bort...',
@@ -6370,8 +6410,6 @@ extension on TranslationsSv {
 			'downloads.unwatchedOnly' => 'Endast osedda',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Nästa ${count} osedda',
 			'downloads.customAmount' => 'Ange antal...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Enligt varje kvantitet (...',
 			'downloads.randomEpisodes' => 'Random episoder',
 			'downloads.includeSpecials' => 'Inkludera specialavsnitt',
@@ -6865,6 +6903,8 @@ extension on TranslationsSv {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Kunde inte nå servern: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Det gick inte att logga in: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect misslyckades: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Logga in med Plex',
 			'addServer.pinExpired' => 'PIN-koden gick ut innan inloggning. Försök igen.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Kunde inte registrera kontot: ${error}',
@@ -6884,8 +6924,6 @@ extension on TranslationsSv {
 			'addServer.authResponseIncomplete' => 'Inloggningssvaret från servern var ofullständigt',
 			'addServer.quickConnectRejected' => 'Quick Connect avvisades av servern',
 			'addServer.quickConnectNotJson' => 'Quick Connect-svaret var inte ett giltigt JSON-svar',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect-svaret saknar en kod eller hemlig nyckel',
 			'addServer.quickConnectPollRejected' => 'Servern avvisade avsökningen för Quick Connect',
 			'addServer.serverTimedOut' => 'Servern svarade inte i tid',
@@ -7379,6 +7417,8 @@ extension on TranslationsSv {
 			'sourceSetup.smbEncrypted' => 'SMB3-kryptering på',
 			'sourceSetup.smbUnencrypted' => 'SMB3-kryptering av',
 			'sourceSetup.httpUnencrypted' => 'HTTP utan transportkryptering',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Kontrollera slutpunktens säkerhet',
 			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} krävs.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Ange ${label} från ${min} till ${max}.',

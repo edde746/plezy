@@ -424,6 +424,7 @@ class _Translations$discover$fr_CA extends Translations$discover$fr {
 	@override String get directors => 'Réalisateurs';
 	@override String get movie => 'Film';
 	@override String get moreLikeThis => 'Similaires';
+	@override late final _Translations$discover$findNext$fr_CA findNext = _Translations$discover$findNext$fr_CA._(_root);
 }
 
 // Path: libraries
@@ -832,6 +833,28 @@ class _Translations$accountPreferences$watchedIndicatorOptions$fr_CA extends Tra
 	@override String get none => 'Jamais';
 }
 
+// Path: discover.findNext
+class _Translations$discover$findNext$fr_CA extends Translations$discover$findNext$fr {
+	_Translations$discover$findNext$fr_CA._(TranslationsFrCa root) : this._root = root, super.internal(root);
+
+	final TranslationsFrCa _root; // ignore: unused_field
+
+	// Translations
+	@override String get chooseHint => 'Ouvrez un titre, gardez-le pour plus tard ou passez au suivant.';
+	@override String get howItWorks => 'Comment ça marche';
+	@override String get swipeHint => 'Faites glisser la couverture vers une flèche ou utilisez les boutons ci-dessous.';
+	@override String get notNowHelp => 'Passez ce titre pour le moment. Il reste dans votre bibliothèque.';
+	@override String get saveHelp => 'Gardez-le dans les sélections enregistrées de ce profil sur cet appareil. Cela ne le télécharge pas.';
+	@override String get openHelp => 'Sélectionnez la couverture pour afficher les détails. Utilisez l’action principale pour lancer, lire ou ouvrir le titre.';
+	@override String get controlsHelp => 'Clavier ou télécommande : sélectionnez un bouton, puis appuyez sur Entrée ou Sélectionner. Annuler rétablit votre dernier choix.';
+	@override String get artworkLoading => 'Chargement de l’illustration…';
+	@override String get artworkUnavailable => 'Illustration indisponible';
+	@override String get savedFeedback => 'Ajouté aux sélections enregistrées';
+	@override String get skippedFeedback => 'Ignoré pour le moment';
+	@override String get releaseToConfirm => 'Relâchez pour confirmer';
+	@override String get remoteHint => 'Couverture sélectionnée : ← / → choisir · Sélectionner : détails · ↑ / ↓ : déplacer la sélection';
+}
+
 // Path: libraries.tabs
 class _Translations$libraries$tabs$fr_CA extends Translations$libraries$tabs$fr {
 	_Translations$libraries$tabs$fr_CA._(TranslationsFrCa root) : this._root = root, super.internal(root);
@@ -1190,6 +1213,19 @@ extension on TranslationsFrCa {
 			'discover.directors' => 'Réalisateurs',
 			'discover.movie' => 'Film',
 			'discover.moreLikeThis' => 'Similaires',
+			'discover.findNext.chooseHint' => 'Ouvrez un titre, gardez-le pour plus tard ou passez au suivant.',
+			'discover.findNext.howItWorks' => 'Comment ça marche',
+			'discover.findNext.swipeHint' => 'Faites glisser la couverture vers une flèche ou utilisez les boutons ci-dessous.',
+			'discover.findNext.notNowHelp' => 'Passez ce titre pour le moment. Il reste dans votre bibliothèque.',
+			'discover.findNext.saveHelp' => 'Gardez-le dans les sélections enregistrées de ce profil sur cet appareil. Cela ne le télécharge pas.',
+			'discover.findNext.openHelp' => 'Sélectionnez la couverture pour afficher les détails. Utilisez l’action principale pour lancer, lire ou ouvrir le titre.',
+			'discover.findNext.controlsHelp' => 'Clavier ou télécommande : sélectionnez un bouton, puis appuyez sur Entrée ou Sélectionner. Annuler rétablit votre dernier choix.',
+			'discover.findNext.artworkLoading' => 'Chargement de l’illustration…',
+			'discover.findNext.artworkUnavailable' => 'Illustration indisponible',
+			'discover.findNext.savedFeedback' => 'Ajouté aux sélections enregistrées',
+			'discover.findNext.skippedFeedback' => 'Ignoré pour le moment',
+			'discover.findNext.releaseToConfirm' => 'Relâchez pour confirmer',
+			'discover.findNext.remoteHint' => 'Couverture sélectionnée : ← / → choisir · Sélectionner : détails · ↑ / ↓ : déplacer la sélection',
 			'libraries.title' => 'Médiathèques',
 			'libraries.scanLibrary' => 'Scanner la médiathèque',
 			'libraries.refreshMetadata' => 'Actualiser les métadonnées',

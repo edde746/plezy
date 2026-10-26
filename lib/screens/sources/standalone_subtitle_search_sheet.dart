@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 import '../../focus/focusable_text_field.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/subtitles/subtitle_search_result.dart';
@@ -250,7 +251,7 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
                                 t.sourceSetup.subtitleRating(rating: formatDecimal(result.score!, maximumDecimals: 1)),
                             ];
                             final active = _downloading == result.key;
-                            return ListTile(
+                            return FocusableListTile(
                               contentPadding: const EdgeInsets.symmetric(horizontal: 4, vertical: 2),
                               title: Text(isolateDisplayText(title), maxLines: 2, overflow: TextOverflow.ellipsis),
                               subtitle: tags.isEmpty ? null : Text(tags.join(' · ')),

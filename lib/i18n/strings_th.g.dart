@@ -760,6 +760,13 @@ class _Translations$settings$th extends Translations$settings$en {
 	@override String get regionFormatDescription => 'เลือกวิธีแสดงวันที่ ตัวเลข และหน่วยวัด';
 	@override String get metadataLanguage => 'ภาษาข้อมูลสื่อ';
 	@override String get metadataLanguageDescription => 'ภาษาที่ต้องการสำหรับชื่อและคำอธิบายเมื่อเซิร์ฟเวอร์รองรับ การตั้งค่าเสียงและคำบรรยายจะแยกจากกัน';
+	@override String get experimentalDolbyVision => 'Dolby Vision แบบทดลอง';
+	@override String get experimentalDolbyVisionDescription => 'ใช้ตัวเรนเดอร์ FEL แบบทดลองในการเล่นครั้งถัดไป ต้องใช้เอนจินที่บิลด์แยกต่างหาก';
+	@override String get dvExperimentUnavailableDescription => 'ขณะนี้การทดลองนี้ใช้ได้เฉพาะบน Linux';
+	@override String get dvCompatibilityFallback => 'ทางเลือกเพื่อความเข้ากันได้';
+	@override String get dvCompatibilityFallbackDescription => 'ใช้ตัวเรนเดอร์มาตรฐานหากเริ่มการทดลองไม่ได้ ข้อมูล FEL อาจสูญหาย';
+	@override String get dvExperimentDiagnostics => 'บันทึกการทดลองวิดีโอ';
+	@override String get dvExperimentDiagnosticsDescription => 'เปิดบันทึกข้อมูลเครื่องเล่นแบบละเอียดในการเล่นครั้งถัดไป';
 }
 
 // Path: themeEditor
@@ -3533,7 +3540,7 @@ class _Translations$discover$findNext$th extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => 'เวลารวม ${duration}';
 	@override String get timingVaries => 'ระยะเวลาอาจแตกต่างกัน';
 	@override String get notNow => 'ยังไม่ใช่ตอนนี้';
-	@override String get swipeHint => 'ปัดหรือใช้ปุ่มด้านล่าง';
+	@override String get swipeHint => 'ปัดภาพปกไปทางลูกศร หรือใช้ปุ่มด้านล่าง';
 	@override String get saved => 'คำแนะนำที่บันทึกไว้';
 	@override String savedCount({required Object count}) => 'คำแนะนำที่บันทึกไว้ · ${count}';
 	@override String get undo => 'เลิกทำ';
@@ -3561,6 +3568,18 @@ class _Translations$discover$findNext$th extends Translations$discover$findNext$
 	@override String get openFailed => 'ตัวเลือกนี้ไม่พร้อมใช้งานแล้ว รีเฟรชเพื่อตรวจสอบอีกครั้ง';
 	@override String get changeFailed => 'บันทึกการเปลี่ยนแปลงนี้ไม่ได้ ลองอีกครั้ง';
 	@override String get savedLimit => 'รายการคำแนะนำที่บันทึกไว้เต็มแล้ว นำคำแนะนำหนึ่งรายการออกเพื่อบันทึกรายการอื่น';
+	@override String get chooseHint => 'เปิดรายการ บันทึกไว้ดูภายหลัง หรือข้ามไป';
+	@override String get howItWorks => 'วิธีใช้งาน';
+	@override String get notNowHelp => 'ข้ามรายการนี้ไปก่อน รายการยังคงอยู่ในคลังของคุณ';
+	@override String get saveHelp => 'เก็บไว้ในรายการที่บันทึกของโปรไฟล์นี้บนอุปกรณ์นี้ การบันทึกจะไม่ดาวน์โหลดเนื้อหา';
+	@override String get openHelp => 'เลือกภาพปกเพื่อดูรายละเอียด ใช้ปุ่มหลักเพื่อเล่น อ่าน หรือเปิดรายการ';
+	@override String get controlsHelp => 'คีย์บอร์ดหรือรีโมต: เลื่อนโฟกัสไปที่ปุ่ม แล้วกด Enter หรือเลือก การเลิกทำจะคืนค่าตัวเลือกล่าสุด';
+	@override String get artworkLoading => 'กำลังโหลดภาพ…';
+	@override String get artworkUnavailable => 'ไม่มีภาพ';
+	@override String get savedFeedback => 'เพิ่มในรายการที่บันทึกแล้ว';
+	@override String get skippedFeedback => 'ข้ามไปก่อนแล้ว';
+	@override String get releaseToConfirm => 'ปล่อยเพื่อยืนยัน';
+	@override String get remoteHint => 'เมื่อโฟกัสภาพปก: ← / → เลือก · ปุ่มเลือก: รายละเอียด · ↑ / ↓ ย้ายโฟกัส';
 }
 
 // Path: discover.person
@@ -4893,6 +4912,13 @@ extension on TranslationsTh {
 			'settings.regionFormatDescription' => 'เลือกวิธีแสดงวันที่ ตัวเลข และหน่วยวัด',
 			'settings.metadataLanguage' => 'ภาษาข้อมูลสื่อ',
 			'settings.metadataLanguageDescription' => 'ภาษาที่ต้องการสำหรับชื่อและคำอธิบายเมื่อเซิร์ฟเวอร์รองรับ การตั้งค่าเสียงและคำบรรยายจะแยกจากกัน',
+			'settings.experimentalDolbyVision' => 'Dolby Vision แบบทดลอง',
+			'settings.experimentalDolbyVisionDescription' => 'ใช้ตัวเรนเดอร์ FEL แบบทดลองในการเล่นครั้งถัดไป ต้องใช้เอนจินที่บิลด์แยกต่างหาก',
+			'settings.dvExperimentUnavailableDescription' => 'ขณะนี้การทดลองนี้ใช้ได้เฉพาะบน Linux',
+			'settings.dvCompatibilityFallback' => 'ทางเลือกเพื่อความเข้ากันได้',
+			'settings.dvCompatibilityFallbackDescription' => 'ใช้ตัวเรนเดอร์มาตรฐานหากเริ่มการทดลองไม่ได้ ข้อมูล FEL อาจสูญหาย',
+			'settings.dvExperimentDiagnostics' => 'บันทึกการทดลองวิดีโอ',
+			'settings.dvExperimentDiagnosticsDescription' => 'เปิดบันทึกข้อมูลเครื่องเล่นแบบละเอียดในการเล่นครั้งถัดไป',
 			'themeEditor.builtIn' => 'โครงสร้าง',
 			'themeEditor.presets' => 'โพสต์',
 			'themeEditor.custom' => 'คู่มือ',
@@ -5313,6 +5339,8 @@ extension on TranslationsTh {
 			'messages.libraryScanStarted' => ({required Object title}) => 'การสแกนห้องสมุดเริ่มสําหรับ "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'ไม่สามารถสแกนห้องสมุดได้: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'ข้อมูลจําเพาะสําหรับ "${title}"',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'การฟื้นฟู Metadata เริ่มต้นสําหรับ "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'ไม่สามารถปรับปรุงข้อมูลโลหะได้: ${error}',
 			'messages.logoutConfirm' => 'คุณแน่ใจว่าคุณต้องการที่จะลงทะเบียนออกหรือไม่',
@@ -5320,8 +5348,6 @@ extension on TranslationsTh {
 			'messages.seasonsLoadFailed' => 'ไม่สามารถโหลดฤดูกาล',
 			'messages.noEpisodesFound' => 'ไม่พบ episodes ในฤดูกาลแรก',
 			'messages.noEpisodesFoundGeneral' => 'ไม่พบเหตุการณ์',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'ไม่สามารถโหลด episodes',
 			'messages.noResultsFound' => 'ไม่มีผลลัพธ์',
 			'messages.sleepTimerSet' => ({required Object label}) => 'เวลานอนตั้งค่าสําหรับ ${label}',
@@ -5562,7 +5588,7 @@ extension on TranslationsTh {
 			'discover.findNext.totalDuration' => ({required Object duration}) => 'เวลารวม ${duration}',
 			'discover.findNext.timingVaries' => 'ระยะเวลาอาจแตกต่างกัน',
 			'discover.findNext.notNow' => 'ยังไม่ใช่ตอนนี้',
-			'discover.findNext.swipeHint' => 'ปัดหรือใช้ปุ่มด้านล่าง',
+			'discover.findNext.swipeHint' => 'ปัดภาพปกไปทางลูกศร หรือใช้ปุ่มด้านล่าง',
 			'discover.findNext.saved' => 'คำแนะนำที่บันทึกไว้',
 			'discover.findNext.savedCount' => ({required Object count}) => 'คำแนะนำที่บันทึกไว้ · ${count}',
 			'discover.findNext.undo' => 'เลิกทำ',
@@ -5590,6 +5616,18 @@ extension on TranslationsTh {
 			'discover.findNext.openFailed' => 'ตัวเลือกนี้ไม่พร้อมใช้งานแล้ว รีเฟรชเพื่อตรวจสอบอีกครั้ง',
 			'discover.findNext.changeFailed' => 'บันทึกการเปลี่ยนแปลงนี้ไม่ได้ ลองอีกครั้ง',
 			'discover.findNext.savedLimit' => 'รายการคำแนะนำที่บันทึกไว้เต็มแล้ว นำคำแนะนำหนึ่งรายการออกเพื่อบันทึกรายการอื่น',
+			'discover.findNext.chooseHint' => 'เปิดรายการ บันทึกไว้ดูภายหลัง หรือข้ามไป',
+			'discover.findNext.howItWorks' => 'วิธีใช้งาน',
+			'discover.findNext.notNowHelp' => 'ข้ามรายการนี้ไปก่อน รายการยังคงอยู่ในคลังของคุณ',
+			'discover.findNext.saveHelp' => 'เก็บไว้ในรายการที่บันทึกของโปรไฟล์นี้บนอุปกรณ์นี้ การบันทึกจะไม่ดาวน์โหลดเนื้อหา',
+			'discover.findNext.openHelp' => 'เลือกภาพปกเพื่อดูรายละเอียด ใช้ปุ่มหลักเพื่อเล่น อ่าน หรือเปิดรายการ',
+			'discover.findNext.controlsHelp' => 'คีย์บอร์ดหรือรีโมต: เลื่อนโฟกัสไปที่ปุ่ม แล้วกด Enter หรือเลือก การเลิกทำจะคืนค่าตัวเลือกล่าสุด',
+			'discover.findNext.artworkLoading' => 'กำลังโหลดภาพ…',
+			'discover.findNext.artworkUnavailable' => 'ไม่มีภาพ',
+			'discover.findNext.savedFeedback' => 'เพิ่มในรายการที่บันทึกแล้ว',
+			'discover.findNext.skippedFeedback' => 'ข้ามไปก่อนแล้ว',
+			'discover.findNext.releaseToConfirm' => 'ปล่อยเพื่อยืนยัน',
+			'discover.findNext.remoteHint' => 'เมื่อโฟกัสภาพปก: ← / → เลือก · ปุ่มเลือก: รายละเอียด · ↑ / ↓ ย้ายโฟกัส',
 			'discover.extras' => 'Trailers และ Extras',
 			'discover.studio' => 'สตูดิโอ',
 			'discover.rating' => 'คะแนน',
@@ -5815,6 +5853,8 @@ extension on TranslationsTh {
 			'explore.mdblistShelves.nameHint' => 'ปล่อยให้เปิดเพื่อใช้ชื่อรายการแหล่งข้อมูล',
 			'explore.mdblistShelves.add' => 'เพิ่ม Shelf',
 			'explore.mdblistShelves.save' => 'เก็บเตียง',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'การเคลื่อนไหว ${title} ขึ้น',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'การเคลื่อนไหว ${title} ลง',
 			'explore.mdblistShelves.unavailable' => 'รายการนี้ไม่สามารถใช้ได้ ลบหรือลบตู้ของมันในตั้งค่า',
@@ -5834,8 +5874,6 @@ extension on TranslationsTh {
 			'explore.rows.popularShows' => 'แสดงยอดนิยม',
 			'explore.rows.trendingAnime' => 'มือสมัครเล่น',
 			'explore.rows.suggestedAnime' => 'แนะนํา Anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'ออนิเมะ',
 			'explore.rows.popularAnime' => 'มากที่สุด Anime',
 			'explore.rows.trending' => 'ทนทาน',
@@ -6329,6 +6367,8 @@ extension on TranslationsTh {
 			'downloads.resumeDownload' => 'ดาวน์โหลด',
 			'downloads.cancelledDownload' => 'ดาวน์โหลดยกเลิก',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (ซิงค์ ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'ดาวน์โหลด ${file} - คลิกเพื่อเสร็จสิ้น',
 			'downloads.partialDownloadClickToComplete' => 'ดาวน์โหลดส่วน - คลิกเพื่อเสร็จสิ้น',
 			'downloads.deleting' => 'การลบ...',
@@ -6348,8 +6388,6 @@ extension on TranslationsTh {
 			'downloads.unwatchedOnly' => 'เท่านั้นไม่สังเกต',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'ถัดไป ${count} ไม่ตรวจสอบ',
 			'downloads.customAmount' => 'จํานวนที่กําหนดเอง',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'จํานวนที่กําหนดเอง (ทุกปี)',
 			'downloads.randomEpisodes' => 'ฉากที่สุ่ม',
 			'downloads.includeSpecials' => 'รวมพิเศษ',
@@ -6843,6 +6881,8 @@ extension on TranslationsTh {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'ไม่สามารถเข้าถึงเซิร์ฟเวอร์: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'การลงทะเบียนที่ผิดพลาด: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect ความล้มเหลว: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'ลงทะเบียนกับ Plex',
 			'addServer.pinExpired' => 'PIN หมดอายุก่อนลงชื่อเข้าสู่ระบบ โปรดลองอีกครั้ง',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'บัญชีที่ไม่ได้ลงทะเบียน: ${error}',
@@ -6862,8 +6902,6 @@ extension on TranslationsTh {
 			'addServer.authResponseIncomplete' => 'การตอบสนองการลงชื่อเข้าจากเซิร์ฟเวอร์ไม่สมบูรณ์',
 			'addServer.quickConnectRejected' => 'Quick Connect ได้รับการปฏิเสธโดยเซิร์ฟเวอร์',
 			'addServer.quickConnectNotJson' => 'คําตอบ Quick Connect ไม่ถูกต้อง JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'คําตอบ Quick Connect ไม่มีรหัสหรือความลับ',
 			'addServer.quickConnectPollRejected' => 'Quick Connect การสอบถามถูกปฏิเสธโดยเซิร์ฟเวอร์',
 			'addServer.serverTimedOut' => 'เซิร์ฟเวอร์ไม่ตอบสนองในเวลา',
@@ -7357,6 +7395,8 @@ extension on TranslationsTh {
 			'sourceSetup.smbEncrypted' => 'เปิดการเข้ารหัส SMB3',
 			'sourceSetup.smbUnencrypted' => 'ปิดการเข้ารหัส SMB3',
 			'sourceSetup.httpUnencrypted' => 'HTTP ที่ไม่มีการเข้ารหัสการรับส่งข้อมูล',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'ตรวจสอบความปลอดภัยของปลายทาง',
 			'sourceSetup.fieldRequired' => ({required Object label}) => 'ต้องระบุ ${label}',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'ป้อน ${label} ตั้งแต่ ${min} ถึง ${max}',

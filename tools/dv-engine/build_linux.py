@@ -139,6 +139,8 @@ def build(work: Path, jobs: int):
     smoke = work / "render_smoke"
     flags = shlex.split(execute(["pkg-config", "--cflags", "--libs", "mpv", "libplacebo", "egl", "glesv2"], capture=True))
     execute(["cc", "-std=c11", "-Wall", "-Wextra", "-Werror", HERE / "render_smoke.c", HERE / "fel_smoke.c", "-o", smoke, *flags, "-lm"])
+    execute(["cc", "-std=c11", "-Wall", "-Wextra", "-Werror", HERE / "real_clip_smoke.c",
+             "-o", prefix / "bin/plezyng-dv-real-clip", *flags, "-lm"])
     env.update({"LIBGL_ALWAYS_SOFTWARE": "1", "EGL_PLATFORM": "surfaceless"})
     # The test asks for an ES context to match the application's surface family.
     # llvmpipe is a renderer integration check, not a real GPU/TV qualification.
@@ -170,7 +172,7 @@ def build(work: Path, jobs: int):
     shutil.copytree(HERE / "patches", prefix / "patches")
     integration_source = notices / "integration"
     integration_source.mkdir()
-    for name in ("Dockerfile", "build_linux.py", "engine_features.c", "fel_smoke.c", "render_smoke.c"):
+    for name in ("Dockerfile", "build_linux.py", "engine_features.c", "fel_smoke.c", "render_smoke.c", "real_clip_smoke.c"):
         shutil.copy2(HERE / name, integration_source / name)
     shutil.copy2(mpv_patcher, integration_source / mpv_patcher.name)
     (prefix / "provenance.json").write_text(json.dumps(provenance, indent=2) + "\n")

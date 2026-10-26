@@ -1,11 +1,33 @@
 # Localization validation — 2026-10-26
 
-The implementation covers 37 locale choices and 3,060 logical messages, including
+The implementation covers 37 locale choices and 3,079 logical messages, including
 discovery, books, cloud sources, lending, source setup and subtitle search.
-This follow-up uses main `027059a836f62dc6aab7212eef9d1935273188e8` as its fixed
-integration baseline.
+The initial follow-up used main `027059a836f62dc6aab7212eef9d1935273188e8`.
+Required PR merge-conflict resolution preserves the later main snapshot
+`9a17bbd0bff73071079c8b1bc4d85b77557b42fe`, including its 19 additional source paths.
 
-## Follow-up verification
+## Merge-resolution verification
+
+- Full Flutter analysis: no issues. Structural coverage, placeholders, source
+  checkpoint, hardcoded-English, native/quantity freshness and translation hygiene
+  checks pass for all 37 locales and 3,079 logical messages.
+- All 327 tests passed in the final single-worker run, including the newly merged
+  discovery and comic-source coverage plus the original locale, RTL, large-text,
+  reader, input and source suites. A cloud-setup dependency found in the first
+  merged run was fixed by treating the optional tracker provider as optional;
+  this complete rerun passes with that fix. All 33 Dart files changed relative
+  to the incoming main tree pass formatting.
+- The [merge QA overlay](LANGUAGE_QA_MERGE.md) verifies every current catalog hash,
+  all 36 physical swipe hints, the complete pre-merge review snapshot and the
+  original published-input hashes. All 1,300 existing catalog corrections remain
+  present. The Malay cover-image hint received one additional correction.
+- The 19 incoming source paths are retained with explicit main provenance and
+  remain outside this semantic review. Their presence does not expand the earlier
+  language review claims. The current complete scan covers 110,844 resolved
+  non-English pairs and finds no corruption, repeated words or checked opposite
+  label collisions; the same 23 short CJK cases remain adequately translated.
+
+## Initial follow-up verification
 
 - Full Flutter analysis: no issues.
 - Slang regenerated from the frozen catalogs. All 37 resolved catalogs contain

@@ -760,6 +760,13 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get regionFormatDescription => '날짜, 숫자, 측정 단위의 표시 형식을 선택하세요.';
 	@override String get metadataLanguage => '메타데이터 언어';
 	@override String get metadataLanguageDescription => '서버가 지원하는 경우 제목과 설명에 사용할 언어입니다. 오디오와 자막 언어는 별도로 설정합니다.';
+	@override String get experimentalDolbyVision => '실험적 Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => '다음 재생에서 실험적 FEL 렌더러를 사용합니다. 별도로 빌드한 엔진이 필요합니다.';
+	@override String get dvExperimentUnavailableDescription => '이 실험은 현재 Linux에서만 사용할 수 있습니다.';
+	@override String get dvCompatibilityFallback => '호환성 대체 모드';
+	@override String get dvCompatibilityFallbackDescription => '실험을 시작할 수 없으면 기본 렌더러를 사용합니다. FEL 데이터가 손실될 수 있습니다.';
+	@override String get dvExperimentDiagnostics => '비디오 실험 로그';
+	@override String get dvExperimentDiagnosticsDescription => '다음 재생에서 상세 플레이어 로그를 활성화합니다.';
 }
 
 // Path: themeEditor
@@ -3548,7 +3555,7 @@ class _Translations$discover$findNext$ko extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '총 ${duration}';
 	@override String get timingVaries => '소요 시간은 달라질 수 있습니다';
 	@override String get notNow => '지금은 건너뛰기';
-	@override String get swipeHint => '스와이프하거나 아래 버튼을 사용하세요';
+	@override String get swipeHint => '표지를 화살표 방향으로 밀거나 아래 버튼을 사용하세요.';
 	@override String get saved => '저장한 추천';
 	@override String savedCount({required Object count}) => '저장한 추천 · ${count}';
 	@override String get undo => '실행 취소';
@@ -3576,6 +3583,18 @@ class _Translations$discover$findNext$ko extends Translations$discover$findNext$
 	@override String get openFailed => '이 콘텐츠는 더 이상 이용할 수 없습니다. 새로고침하여 다시 확인하세요.';
 	@override String get changeFailed => '변경 사항을 저장할 수 없습니다. 다시 시도하세요.';
 	@override String get savedLimit => '저장한 추천 목록이 가득 찼습니다. 다른 추천을 저장하려면 하나를 삭제하세요.';
+	@override String get chooseHint => '작품을 열거나, 나중을 위해 저장하거나, 건너뛰세요.';
+	@override String get howItWorks => '사용 방법';
+	@override String get notNowHelp => '이 작품을 지금은 건너뜁니다. 라이브러리에는 그대로 남습니다.';
+	@override String get saveHelp => '이 기기의 현재 프로필에 저장된 추천으로 보관합니다. 저장해도 다운로드되지는 않습니다.';
+	@override String get openHelp => '표지를 선택하면 상세 정보를 볼 수 있습니다. 기본 버튼으로 재생하거나 읽거나 작품을 여세요.';
+	@override String get controlsHelp => '키보드나 리모컨: 버튼에 초점을 맞추고 Enter 또는 선택을 누르세요. 실행 취소는 마지막 선택을 되돌립니다.';
+	@override String get artworkLoading => '이미지 불러오는 중…';
+	@override String get artworkUnavailable => '이미지를 표시할 수 없음';
+	@override String get savedFeedback => '저장된 추천에 추가됨';
+	@override String get skippedFeedback => '지금은 건너뜀';
+	@override String get releaseToConfirm => '놓아서 확인';
+	@override String get remoteHint => '표지에 초점: ← / → 선택 · 선택 버튼: 상세 정보 · ↑ / ↓ 초점 이동';
 }
 
 // Path: discover.person
@@ -4910,6 +4929,13 @@ extension on TranslationsKo {
 			'settings.regionFormatDescription' => '날짜, 숫자, 측정 단위의 표시 형식을 선택하세요.',
 			'settings.metadataLanguage' => '메타데이터 언어',
 			'settings.metadataLanguageDescription' => '서버가 지원하는 경우 제목과 설명에 사용할 언어입니다. 오디오와 자막 언어는 별도로 설정합니다.',
+			'settings.experimentalDolbyVision' => '실험적 Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => '다음 재생에서 실험적 FEL 렌더러를 사용합니다. 별도로 빌드한 엔진이 필요합니다.',
+			'settings.dvExperimentUnavailableDescription' => '이 실험은 현재 Linux에서만 사용할 수 있습니다.',
+			'settings.dvCompatibilityFallback' => '호환성 대체 모드',
+			'settings.dvCompatibilityFallbackDescription' => '실험을 시작할 수 없으면 기본 렌더러를 사용합니다. FEL 데이터가 손실될 수 있습니다.',
+			'settings.dvExperimentDiagnostics' => '비디오 실험 로그',
+			'settings.dvExperimentDiagnosticsDescription' => '다음 재생에서 상세 플레이어 로그를 활성화합니다.',
 			'themeEditor.builtIn' => '기본 제공',
 			'themeEditor.presets' => '프리셋',
 			'themeEditor.custom' => '사용자 지정',
@@ -5330,6 +5356,8 @@ extension on TranslationsKo {
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}" 미디어 라이브러리 스캔 시작',
 			'messages.libraryScanFailed' => ({required Object error}) => '미디어 라이브러리 스캔 실패: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '"${title}" 메타데이터 새로고침 중...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}" 메타데이터 새로고침 시작됨',
 			'messages.metadataRefreshFailed' => ({required Object error}) => '메타데이터 새로고침 실패: ${error}',
 			'messages.logoutConfirm' => '로그아웃하시겠습니까?',
@@ -5337,8 +5365,6 @@ extension on TranslationsKo {
 			'messages.seasonsLoadFailed' => '시즌을 불러오지 못했습니다',
 			'messages.noEpisodesFound' => '시즌 1에서 에피소드를 찾을 수 없습니다',
 			'messages.noEpisodesFoundGeneral' => '에피소드를 찾을 수 없습니다',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => '에피소드를 불러오지 못했습니다',
 			'messages.noResultsFound' => '결과를 찾을 수 없습니다',
 			'messages.sleepTimerSet' => ({required Object label}) => '취침 타이머가 ${label}(으)로 설정되었습니다',
@@ -5579,7 +5605,7 @@ extension on TranslationsKo {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '총 ${duration}',
 			'discover.findNext.timingVaries' => '소요 시간은 달라질 수 있습니다',
 			'discover.findNext.notNow' => '지금은 건너뛰기',
-			'discover.findNext.swipeHint' => '스와이프하거나 아래 버튼을 사용하세요',
+			'discover.findNext.swipeHint' => '표지를 화살표 방향으로 밀거나 아래 버튼을 사용하세요.',
 			'discover.findNext.saved' => '저장한 추천',
 			'discover.findNext.savedCount' => ({required Object count}) => '저장한 추천 · ${count}',
 			'discover.findNext.undo' => '실행 취소',
@@ -5607,6 +5633,18 @@ extension on TranslationsKo {
 			'discover.findNext.openFailed' => '이 콘텐츠는 더 이상 이용할 수 없습니다. 새로고침하여 다시 확인하세요.',
 			'discover.findNext.changeFailed' => '변경 사항을 저장할 수 없습니다. 다시 시도하세요.',
 			'discover.findNext.savedLimit' => '저장한 추천 목록이 가득 찼습니다. 다른 추천을 저장하려면 하나를 삭제하세요.',
+			'discover.findNext.chooseHint' => '작품을 열거나, 나중을 위해 저장하거나, 건너뛰세요.',
+			'discover.findNext.howItWorks' => '사용 방법',
+			'discover.findNext.notNowHelp' => '이 작품을 지금은 건너뜁니다. 라이브러리에는 그대로 남습니다.',
+			'discover.findNext.saveHelp' => '이 기기의 현재 프로필에 저장된 추천으로 보관합니다. 저장해도 다운로드되지는 않습니다.',
+			'discover.findNext.openHelp' => '표지를 선택하면 상세 정보를 볼 수 있습니다. 기본 버튼으로 재생하거나 읽거나 작품을 여세요.',
+			'discover.findNext.controlsHelp' => '키보드나 리모컨: 버튼에 초점을 맞추고 Enter 또는 선택을 누르세요. 실행 취소는 마지막 선택을 되돌립니다.',
+			'discover.findNext.artworkLoading' => '이미지 불러오는 중…',
+			'discover.findNext.artworkUnavailable' => '이미지를 표시할 수 없음',
+			'discover.findNext.savedFeedback' => '저장된 추천에 추가됨',
+			'discover.findNext.skippedFeedback' => '지금은 건너뜀',
+			'discover.findNext.releaseToConfirm' => '놓아서 확인',
+			'discover.findNext.remoteHint' => '표지에 초점: ← / → 선택 · 선택 버튼: 상세 정보 · ↑ / ↓ 초점 이동',
 			'discover.extras' => '예고편 및 부가영상',
 			'discover.studio' => '제작사',
 			'discover.rating' => '연령 등급',
@@ -5832,6 +5870,8 @@ extension on TranslationsKo {
 			'explore.mdblistShelves.nameHint' => '출처 목록 이름을 사용하기 위해 빈을 남겨 두십시오.',
 			'explore.mdblistShelves.add' => '셰일프 추가',
 			'explore.mdblistShelves.save' => '좌석을 구하라',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => '이동 ${title} 위로',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => '이동 ${title} 아래로',
 			'explore.mdblistShelves.unavailable' => '이 목록은 사용할 수 없습니다. 설정에서 셰일을 제거하거나 제거합니다.',
@@ -5851,8 +5891,6 @@ extension on TranslationsKo {
 			'explore.rows.popularShows' => '인기 TV 프로그램',
 			'explore.rows.trendingAnime' => '지금 뜨는 애니메이션',
 			'explore.rows.suggestedAnime' => '추천 애니메이션',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => '방영 중인 인기 애니메이션',
 			'explore.rows.popularAnime' => '가장 인기 있는 애니메이션',
 			'explore.rows.trending' => '지금 뜨는 콘텐츠',
@@ -6346,6 +6384,8 @@ extension on TranslationsKo {
 			'downloads.resumeDownload' => '다운로드 재개',
 			'downloads.cancelledDownload' => '취소된 다운로드',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} 동기화 중)',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} 다운로드됨 — 클릭하여 완료',
 			'downloads.partialDownloadClickToComplete' => '부분 다운로드됨 — 클릭하여 완료',
 			'downloads.deleting' => '삭제 중...',
@@ -6365,8 +6405,6 @@ extension on TranslationsKo {
 			'downloads.unwatchedOnly' => '시청하지 않은 것만',
 			'downloads.nextNUnwatched' => ({required Object count}) => '다음 ${count}개 미시청',
 			'downloads.customAmount' => '직접 입력...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => '각각의 수량(일반적으로)',
 			'downloads.randomEpisodes' => '우연한 사건',
 			'downloads.includeSpecials' => '스페셜 포함',
@@ -6860,6 +6898,8 @@ extension on TranslationsKo {
 			'addServer.couldNotReachServer' => ({required Object error}) => '서버에 연결할 수 없습니다: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => '로그인 실패: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect 실패: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Plex로 로그인',
 			'addServer.pinExpired' => '로그인 전에 PIN이 만료되었습니다. 다시 시도하세요.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => '계정 등록 실패: ${error}',
@@ -6879,8 +6919,6 @@ extension on TranslationsKo {
 			'addServer.authResponseIncomplete' => '서버의 로그인 응답이 불완전합니다',
 			'addServer.quickConnectRejected' => '서버에서 Quick Connect를 거부했습니다',
 			'addServer.quickConnectNotJson' => 'Quick Connect 응답이 유효한 JSON이 아닙니다',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect 응답에 코드 또는 비밀 키가 없습니다',
 			'addServer.quickConnectPollRejected' => '서버에서 Quick Connect 폴링을 거부했습니다',
 			'addServer.serverTimedOut' => '서버가 제시간에 응답하지 않았습니다',
@@ -7374,6 +7412,8 @@ extension on TranslationsKo {
 			'sourceSetup.smbEncrypted' => 'SMB3 암호화 켜짐',
 			'sourceSetup.smbUnencrypted' => 'SMB3 암호화 꺼짐',
 			'sourceSetup.httpUnencrypted' => '전송 암호화 없는 HTTP',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => '엔드포인트 보안 확인',
 			'sourceSetup.fieldRequired' => ({required Object label}) => '필수 입력 항목: ${label}.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => '${label}: ${min}부터 ${max}까지의 값을 입력하세요.',

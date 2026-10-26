@@ -760,6 +760,13 @@ class Translations$settings$zh extends Translations$settings$en {
 	@override String get regionFormatDescription => '选择日期、数字和计量单位的显示方式。';
 	@override String get metadataLanguage => '元数据语言';
 	@override String get metadataLanguageDescription => '服务器支持时，优先使用此语言显示标题和简介。音频和字幕偏好单独设置。';
+	@override String get experimentalDolbyVision => '实验性 Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => '下次播放时使用实验性 FEL 渲染器。需要单独构建的播放引擎。';
+	@override String get dvExperimentUnavailableDescription => '此实验目前仅支持 Linux。';
+	@override String get dvCompatibilityFallback => '兼容性回退';
+	@override String get dvCompatibilityFallbackDescription => '如果实验无法启动，则使用标准渲染器。FEL 数据可能会丢失。';
+	@override String get dvExperimentDiagnostics => '视频实验日志';
+	@override String get dvExperimentDiagnosticsDescription => '在下次播放时启用详细的播放器日志。';
 }
 
 // Path: themeEditor
@@ -3548,7 +3555,7 @@ class Translations$discover$findNext$zh extends Translations$discover$findNext$e
 	@override String totalDuration({required Object duration}) => '共${duration}';
 	@override String get timingVaries => '时长可能有所不同';
 	@override String get notNow => '暂时跳过';
-	@override String get swipeHint => '滑动卡片，或使用下方按钮';
+	@override String get swipeHint => '朝箭头方向滑动封面，或使用下方按钮。';
 	@override String get saved => '已保存的推荐';
 	@override String savedCount({required Object count}) => '已保存的推荐 · ${count}';
 	@override String get undo => '撤销';
@@ -3576,6 +3583,18 @@ class Translations$discover$findNext$zh extends Translations$discover$findNext$e
 	@override String get openFailed => '此内容已不可用。刷新后再次查看。';
 	@override String get changeFailed => '无法保存此次更改，请重试。';
 	@override String get savedLimit => '已保存的推荐列表已满。请先移除一条推荐，再保存其他推荐。';
+	@override String get chooseHint => '打开作品、保存以便稍后查看，或跳过。';
+	@override String get howItWorks => '使用方法';
+	@override String get notNowHelp => '暂时跳过这部作品。它仍会保留在媒体库中。';
+	@override String get saveHelp => '保存到此设备上当前个人资料的已保存推荐中。保存不会下载作品。';
+	@override String get openHelp => '选择封面查看详情。使用主按钮播放、阅读或打开作品。';
+	@override String get controlsHelp => '键盘或遥控器：将焦点移到按钮，然后按 Enter 或选择键。撤销可恢复上一次选择。';
+	@override String get artworkLoading => '正在加载图片…';
+	@override String get artworkUnavailable => '图片不可用';
+	@override String get savedFeedback => '已加入保存的推荐';
+	@override String get skippedFeedback => '已暂时跳过';
+	@override String get releaseToConfirm => '松开以确认';
+	@override String get remoteHint => '封面获得焦点时：← / → 选择 · 选择键查看详情 · ↑ / ↓ 移动焦点';
 }
 
 // Path: discover.person
@@ -4910,6 +4929,13 @@ extension on TranslationsZh {
 			'settings.regionFormatDescription' => '选择日期、数字和计量单位的显示方式。',
 			'settings.metadataLanguage' => '元数据语言',
 			'settings.metadataLanguageDescription' => '服务器支持时，优先使用此语言显示标题和简介。音频和字幕偏好单独设置。',
+			'settings.experimentalDolbyVision' => '实验性 Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => '下次播放时使用实验性 FEL 渲染器。需要单独构建的播放引擎。',
+			'settings.dvExperimentUnavailableDescription' => '此实验目前仅支持 Linux。',
+			'settings.dvCompatibilityFallback' => '兼容性回退',
+			'settings.dvCompatibilityFallbackDescription' => '如果实验无法启动，则使用标准渲染器。FEL 数据可能会丢失。',
+			'settings.dvExperimentDiagnostics' => '视频实验日志',
+			'settings.dvExperimentDiagnosticsDescription' => '在下次播放时启用详细的播放器日志。',
 			'themeEditor.builtIn' => '内置',
 			'themeEditor.presets' => '预设',
 			'themeEditor.custom' => '自定义',
@@ -5330,6 +5356,8 @@ extension on TranslationsZh {
 			'messages.libraryScanStarted' => ({required Object title}) => '已开始扫描“${title}”媒体库',
 			'messages.libraryScanFailed' => ({required Object error}) => '无法扫描媒体库：${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '正在刷新“${title}”的元数据…',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '已开始刷新“${title}”的元数据',
 			'messages.metadataRefreshFailed' => ({required Object error}) => '无法刷新元数据：${error}',
 			'messages.logoutConfirm' => '确定要退出登录吗？',
@@ -5337,8 +5365,6 @@ extension on TranslationsZh {
 			'messages.seasonsLoadFailed' => '无法加载季',
 			'messages.noEpisodesFound' => '在第一季中未找到剧集',
 			'messages.noEpisodesFoundGeneral' => '未找到剧集',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => '无法加载剧集',
 			'messages.noResultsFound' => '未找到结果',
 			'messages.sleepTimerSet' => ({required Object label}) => '睡眠定时器已设置为 ${label}',
@@ -5579,7 +5605,7 @@ extension on TranslationsZh {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '共${duration}',
 			'discover.findNext.timingVaries' => '时长可能有所不同',
 			'discover.findNext.notNow' => '暂时跳过',
-			'discover.findNext.swipeHint' => '滑动卡片，或使用下方按钮',
+			'discover.findNext.swipeHint' => '朝箭头方向滑动封面，或使用下方按钮。',
 			'discover.findNext.saved' => '已保存的推荐',
 			'discover.findNext.savedCount' => ({required Object count}) => '已保存的推荐 · ${count}',
 			'discover.findNext.undo' => '撤销',
@@ -5607,6 +5633,18 @@ extension on TranslationsZh {
 			'discover.findNext.openFailed' => '此内容已不可用。刷新后再次查看。',
 			'discover.findNext.changeFailed' => '无法保存此次更改，请重试。',
 			'discover.findNext.savedLimit' => '已保存的推荐列表已满。请先移除一条推荐，再保存其他推荐。',
+			'discover.findNext.chooseHint' => '打开作品、保存以便稍后查看，或跳过。',
+			'discover.findNext.howItWorks' => '使用方法',
+			'discover.findNext.notNowHelp' => '暂时跳过这部作品。它仍会保留在媒体库中。',
+			'discover.findNext.saveHelp' => '保存到此设备上当前个人资料的已保存推荐中。保存不会下载作品。',
+			'discover.findNext.openHelp' => '选择封面查看详情。使用主按钮播放、阅读或打开作品。',
+			'discover.findNext.controlsHelp' => '键盘或遥控器：将焦点移到按钮，然后按 Enter 或选择键。撤销可恢复上一次选择。',
+			'discover.findNext.artworkLoading' => '正在加载图片…',
+			'discover.findNext.artworkUnavailable' => '图片不可用',
+			'discover.findNext.savedFeedback' => '已加入保存的推荐',
+			'discover.findNext.skippedFeedback' => '已暂时跳过',
+			'discover.findNext.releaseToConfirm' => '松开以确认',
+			'discover.findNext.remoteHint' => '封面获得焦点时：← / → 选择 · 选择键查看详情 · ↑ / ↓ 移动焦点',
 			'discover.extras' => '预告片与花絮',
 			'discover.studio' => '制作公司',
 			'discover.rating' => '年龄分级',
@@ -5832,6 +5870,8 @@ extension on TranslationsZh {
 			'explore.mdblistShelves.nameHint' => '请点击使用源名单名称。',
 			'explore.mdblistShelves.add' => '添加Shelf',
 			'explore.mdblistShelves.save' => '保存沙地',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => '移动 ${title} 升',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => '移动 ${title} 下载',
 			'explore.mdblistShelves.unavailable' => '此列表不可用 退出或在设置中删除其架子。',
@@ -5851,8 +5891,6 @@ extension on TranslationsZh {
 			'explore.rows.popularShows' => '人气剧集',
 			'explore.rows.trendingAnime' => '热门动画',
 			'explore.rows.suggestedAnime' => '推荐动画',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => '热门连载动画',
 			'explore.rows.popularAnime' => '最受欢迎动画',
 			'explore.rows.trending' => '近期热门',
@@ -6346,6 +6384,8 @@ extension on TranslationsZh {
 			'downloads.resumeDownload' => '继续下载',
 			'downloads.cancelledDownload' => '已取消的下载',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file}（正在同步 ${status}）',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '已下载 ${file} — 点击以完成',
 			'downloads.partialDownloadClickToComplete' => '已部分下载 — 点击以完成',
 			'downloads.deleting' => '正在删除…',
@@ -6365,8 +6405,6 @@ extension on TranslationsZh {
 			'downloads.unwatchedOnly' => '仅未观看',
 			'downloads.nextNUnwatched' => ({required Object count}) => '接下来 ${count} 集未观看',
 			'downloads.customAmount' => '自定义数量…',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => '每個數量(每個數...',
 			'downloads.randomEpisodes' => '随机事件',
 			'downloads.includeSpecials' => '包含特别篇',
@@ -6860,6 +6898,8 @@ extension on TranslationsZh {
 			'addServer.couldNotReachServer' => ({required Object error}) => '无法连接到服务器：${error}',
 			'addServer.signInFailed' => ({required Object error}) => '登录失败：${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect 失败：${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => '使用 Plex 登录',
 			'addServer.pinExpired' => 'PIN 在登录前已过期。请重试。',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => '注册账户失败：${error}',
@@ -6879,8 +6919,6 @@ extension on TranslationsZh {
 			'addServer.authResponseIncomplete' => '服务器返回的登录响应不完整',
 			'addServer.quickConnectRejected' => '服务器拒绝了 Quick Connect',
 			'addServer.quickConnectNotJson' => 'Quick Connect 响应不是有效的 JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect 响应中缺少代码或密钥',
 			'addServer.quickConnectPollRejected' => '服务器拒绝了 Quick Connect 轮询',
 			'addServer.serverTimedOut' => '服务器未及时响应',
@@ -7374,6 +7412,8 @@ extension on TranslationsZh {
 			'sourceSetup.smbEncrypted' => 'SMB3 加密已开启',
 			'sourceSetup.smbUnencrypted' => 'SMB3 加密已关闭',
 			'sourceSetup.httpUnencrypted' => 'HTTP 无传输加密',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => '请检查端点安全性',
 			'sourceSetup.fieldRequired' => ({required Object label}) => '请填写${label}。',
 			'sourceSetup.integerRange' => ({required Object min, required Object max, required Object label}) => '请输入 ${min} 至 ${max} 之间的${label}。',

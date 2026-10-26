@@ -762,6 +762,13 @@ class _Translations$settings$nl extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Kies hoe datums, getallen en maateenheden worden weergegeven.';
 	@override String get metadataLanguage => 'Taal van metadata';
 	@override String get metadataLanguageDescription => 'Voorkeurstaal voor titels en beschrijvingen wanneer de server dit ondersteunt. Voorkeuren voor audio en ondertitels worden apart ingesteld.';
+	@override String get experimentalDolbyVision => 'Experimentele Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Gebruik de experimentele FEL-renderer bij de volgende keer afspelen. Vereist een afzonderlijke enginebuild.';
+	@override String get dvExperimentUnavailableDescription => 'Dit experiment is momenteel alleen beschikbaar op Linux.';
+	@override String get dvCompatibilityFallback => 'Compatibiliteitsterugval';
+	@override String get dvCompatibilityFallbackDescription => 'Gebruik de standaardrenderer als het experiment niet kan starten. FEL-gegevens kunnen verloren gaan.';
+	@override String get dvExperimentDiagnostics => 'Logboek voor video-experiment';
+	@override String get dvExperimentDiagnosticsDescription => 'Schakel uitgebreide spelerlogboeken in bij de volgende keer afspelen.';
 }
 
 // Path: themeEditor
@@ -3553,7 +3560,7 @@ class _Translations$discover$findNext$nl extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} in totaal';
 	@override String get timingVaries => 'De duur kan variëren';
 	@override String get notNow => 'Niet nu';
-	@override String get swipeHint => 'Veeg of gebruik de knoppen hieronder';
+	@override String get swipeHint => 'Veeg de omslag naar een pijl of gebruik de knoppen hieronder.';
 	@override String get saved => 'Opgeslagen suggesties';
 	@override String savedCount({required Object count}) => 'Opgeslagen suggesties · ${count}';
 	@override String get undo => 'Ongedaan maken';
@@ -3581,6 +3588,18 @@ class _Translations$discover$findNext$nl extends Translations$discover$findNext$
 	@override String get openFailed => 'Deze optie is niet meer beschikbaar. Vernieuw om het opnieuw te controleren.';
 	@override String get changeFailed => 'De wijziging kon niet worden opgeslagen. Probeer het opnieuw.';
 	@override String get savedLimit => 'De lijst met opgeslagen suggesties is vol. Verwijder er één om een andere op te slaan.';
+	@override String get chooseHint => 'Open een titel, bewaar hem voor later of sla hem over.';
+	@override String get howItWorks => 'Zo werkt het';
+	@override String get notNowHelp => 'Sla deze titel voorlopig over. Hij blijft in je bibliotheek.';
+	@override String get saveHelp => 'Bewaar hem bij de opgeslagen keuzes van dit profiel op dit apparaat. Opslaan downloadt de titel niet.';
+	@override String get openHelp => 'Selecteer de omslag voor details. Gebruik de hoofdactie om de titel af te spelen, te lezen of te openen.';
+	@override String get controlsHelp => 'Toetsenbord of afstandsbediening: selecteer een knop en druk op Enter of Selecteren. Ongedaan maken herstelt je laatste keuze.';
+	@override String get artworkLoading => 'Afbeelding laden…';
+	@override String get artworkUnavailable => 'Afbeelding niet beschikbaar';
+	@override String get savedFeedback => 'Toegevoegd aan opgeslagen keuzes';
+	@override String get skippedFeedback => 'Voorlopig overgeslagen';
+	@override String get releaseToConfirm => 'Laat los om te bevestigen';
+	@override String get remoteHint => 'Omslag geselecteerd: ← / → kiezen · Selecteren: details · ↑ / ↓ focus verplaatsen';
 }
 
 // Path: discover.person
@@ -4915,6 +4934,13 @@ extension on TranslationsNl {
 			'settings.regionFormatDescription' => 'Kies hoe datums, getallen en maateenheden worden weergegeven.',
 			'settings.metadataLanguage' => 'Taal van metadata',
 			'settings.metadataLanguageDescription' => 'Voorkeurstaal voor titels en beschrijvingen wanneer de server dit ondersteunt. Voorkeuren voor audio en ondertitels worden apart ingesteld.',
+			'settings.experimentalDolbyVision' => 'Experimentele Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Gebruik de experimentele FEL-renderer bij de volgende keer afspelen. Vereist een afzonderlijke enginebuild.',
+			'settings.dvExperimentUnavailableDescription' => 'Dit experiment is momenteel alleen beschikbaar op Linux.',
+			'settings.dvCompatibilityFallback' => 'Compatibiliteitsterugval',
+			'settings.dvCompatibilityFallbackDescription' => 'Gebruik de standaardrenderer als het experiment niet kan starten. FEL-gegevens kunnen verloren gaan.',
+			'settings.dvExperimentDiagnostics' => 'Logboek voor video-experiment',
+			'settings.dvExperimentDiagnosticsDescription' => 'Schakel uitgebreide spelerlogboeken in bij de volgende keer afspelen.',
 			'themeEditor.builtIn' => 'Ingebouwd',
 			'themeEditor.presets' => 'Voorinstellingen',
 			'themeEditor.custom' => 'Aangepast',
@@ -5335,6 +5361,8 @@ extension on TranslationsNl {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Bibliotheekscan gestart voor "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Bibliotheek scannen mislukt: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Metadata voor "${title}" vernieuwen...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Vernieuwen van metadata gestart voor "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Metadata vernieuwen mislukt: ${error}',
 			'messages.logoutConfirm' => 'Weet je zeker dat je wilt uitloggen?',
@@ -5342,8 +5370,6 @@ extension on TranslationsNl {
 			'messages.seasonsLoadFailed' => 'Kan seizoenen niet laden',
 			'messages.noEpisodesFound' => 'Geen afleveringen gevonden in eerste seizoen',
 			'messages.noEpisodesFoundGeneral' => 'Geen afleveringen gevonden',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Kan afleveringen niet laden',
 			'messages.noResultsFound' => 'Geen resultaten gevonden',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Slaaptimer ingesteld op ${label}',
@@ -5584,7 +5610,7 @@ extension on TranslationsNl {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} in totaal',
 			'discover.findNext.timingVaries' => 'De duur kan variëren',
 			'discover.findNext.notNow' => 'Niet nu',
-			'discover.findNext.swipeHint' => 'Veeg of gebruik de knoppen hieronder',
+			'discover.findNext.swipeHint' => 'Veeg de omslag naar een pijl of gebruik de knoppen hieronder.',
 			'discover.findNext.saved' => 'Opgeslagen suggesties',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Opgeslagen suggesties · ${count}',
 			'discover.findNext.undo' => 'Ongedaan maken',
@@ -5612,6 +5638,18 @@ extension on TranslationsNl {
 			'discover.findNext.openFailed' => 'Deze optie is niet meer beschikbaar. Vernieuw om het opnieuw te controleren.',
 			'discover.findNext.changeFailed' => 'De wijziging kon niet worden opgeslagen. Probeer het opnieuw.',
 			'discover.findNext.savedLimit' => 'De lijst met opgeslagen suggesties is vol. Verwijder er één om een andere op te slaan.',
+			'discover.findNext.chooseHint' => 'Open een titel, bewaar hem voor later of sla hem over.',
+			'discover.findNext.howItWorks' => 'Zo werkt het',
+			'discover.findNext.notNowHelp' => 'Sla deze titel voorlopig over. Hij blijft in je bibliotheek.',
+			'discover.findNext.saveHelp' => 'Bewaar hem bij de opgeslagen keuzes van dit profiel op dit apparaat. Opslaan downloadt de titel niet.',
+			'discover.findNext.openHelp' => 'Selecteer de omslag voor details. Gebruik de hoofdactie om de titel af te spelen, te lezen of te openen.',
+			'discover.findNext.controlsHelp' => 'Toetsenbord of afstandsbediening: selecteer een knop en druk op Enter of Selecteren. Ongedaan maken herstelt je laatste keuze.',
+			'discover.findNext.artworkLoading' => 'Afbeelding laden…',
+			'discover.findNext.artworkUnavailable' => 'Afbeelding niet beschikbaar',
+			'discover.findNext.savedFeedback' => 'Toegevoegd aan opgeslagen keuzes',
+			'discover.findNext.skippedFeedback' => 'Voorlopig overgeslagen',
+			'discover.findNext.releaseToConfirm' => 'Laat los om te bevestigen',
+			'discover.findNext.remoteHint' => 'Omslag geselecteerd: ← / → kiezen · Selecteren: details · ↑ / ↓ focus verplaatsen',
 			'discover.extras' => 'Trailers en extra\'s',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Beoordeling',
@@ -5837,6 +5875,8 @@ extension on TranslationsNl {
 			'explore.mdblistShelves.nameHint' => 'Laat het blanke om de bronlijstnaam te gebruiken.',
 			'explore.mdblistShelves.add' => 'Voeg shelf toe',
 			'explore.mdblistShelves.save' => 'Save de shelves',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Verplaats ${title} naar boven',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Verplaats ${title} naar beneden',
 			'explore.mdblistShelves.unavailable' => 'Deze lijst is niet beschikbaar. verwijderen of verwijderen van de schelfs in instellingen.',
@@ -5856,8 +5896,6 @@ extension on TranslationsNl {
 			'explore.rows.popularShows' => 'Populaire series',
 			'explore.rows.trendingAnime' => 'Trending anime',
 			'explore.rows.suggestedAnime' => 'Aanbevolen anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Beste lopende anime',
 			'explore.rows.popularAnime' => 'Populairste anime',
 			'explore.rows.trending' => 'Trending',
@@ -6351,6 +6389,8 @@ extension on TranslationsNl {
 			'downloads.resumeDownload' => 'Download hervatten',
 			'downloads.cancelledDownload' => 'Geannuleerde download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} synchroniseren)',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} gedownload — klik om te voltooien',
 			'downloads.partialDownloadClickToComplete' => 'Gedeeltelijk gedownload — klik om te voltooien',
 			'downloads.deleting' => 'Verwijderen...',
@@ -6370,8 +6410,6 @@ extension on TranslationsNl {
 			'downloads.unwatchedOnly' => 'Alleen ongekeken afleveringen',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Volgende ${count} ongekeken afleveringen',
 			'downloads.customAmount' => 'Aangepast aantal...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Een aantal (de hoeveelheid) voor elk...',
 			'downloads.randomEpisodes' => 'Willekeurige afleveringen',
 			'downloads.includeSpecials' => 'Specials meenemen',
@@ -6865,6 +6903,8 @@ extension on TranslationsNl {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Kon de server niet bereiken: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Inloggen mislukt: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect mislukt: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Inloggen met Plex',
 			'addServer.pinExpired' => 'De pincode verliep voordat je kon inloggen. Probeer het opnieuw.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Account registreren mislukt: ${error}',
@@ -6884,8 +6924,6 @@ extension on TranslationsNl {
 			'addServer.authResponseIncomplete' => 'Het aanmeldingsantwoord van de server was onvolledig',
 			'addServer.quickConnectRejected' => 'Quick Connect is door de server geweigerd',
 			'addServer.quickConnectNotJson' => 'Het Quick Connect-antwoord was geen geldige JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'In het Quick Connect-antwoord ontbreekt een code of geheim',
 			'addServer.quickConnectPollRejected' => 'Quick Connect-polling is door de server geweigerd',
 			'addServer.serverTimedOut' => 'De server heeft niet op tijd gereageerd',
@@ -7379,6 +7417,8 @@ extension on TranslationsNl {
 			'sourceSetup.smbEncrypted' => 'SMB3-versleuteling aan',
 			'sourceSetup.smbUnencrypted' => 'SMB3-versleuteling uit',
 			'sourceSetup.httpUnencrypted' => 'HTTP zonder transportversleuteling',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Beveiliging van het eindpunt controleren',
 			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} is vereist.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Voer ${label} in tussen ${min} en ${max}.',

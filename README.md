@@ -7,6 +7,22 @@ A cross-platform media client for Plex, Jellyfin, and Emby, maintained as a fork
 
 See [Files, books and listening](docs/FILES_AND_BOOKS.md) for standard/cloud sources, readers and offline behavior, and [Public-library setup](docs/LENDING_SETUP.md) for the staged OverDrive integration.
 
+## Dolby Vision experiments
+
+PlezyNG is developing genuine Profile 7 FEL reconstruction alongside native and
+compatibility playback. The isolated Linux engine has rendered the FEL mark in a
+real P7 sample through standalone mpv and embedded libmpv; full app playback and
+independent reference-pixel accuracy still need qualification. Linux users can
+opt in under **Settings → Playback**, with a separate compatibility fallback and
+video experiment logging switch. A separate engine build is required.
+
+The repository also includes a pinned Apple dual-layer experiment host for
+macOS/iOS/tvOS, an offline FEL-to-HDR/SDR companion pipeline, and platform testing
+instructions. These are experimental paths, not a claim of universal or certified
+Dolby Vision support. P7→P8.1 compatibility discards EL and is labelled separately.
+See the [buildout, setup and Luna handoff](docs/maintainers/dv-platform-buildout.md)
+and [Linux engine evidence](docs/maintainers/dv-engine-luna-handoff.md).
+
 ## What PlezyNG has built
 
 PlezyNG builds on upstream Plezy with a broad set of features for Plex, Jellyfin, and Emby, wherever each server's APIs allow. The table below highlights what's been delivered, links related upstream work for context, and notes platform or server limitations.
@@ -18,6 +34,7 @@ PlezyNG builds on upstream Plezy with a broad set of features for Plex, Jellyfin
 | Downloads | Playlist downloads and watched-item cleanup (#1721, #2600, #1413, #2181); orphan cleanup | Playlist downloads and watched-item cleanup are implemented. The Downloads screen can review and remove orphaned tagged files in the default app-managed folders; custom/SAF roots, legacy files, shared artwork, and iOS Documents are left untouched. |
 | Profiles and privacy | PIN-gate download deletion, settings, and Explore; hide Explore per profile (#1924, #2514) | Local profile PIN gates Settings, download deletion, and entry to Explore; Explore can also be hidden per profile. Plex Home PINs remain server-owned. |
 | Audio and subtitles | Remember choices per show; choose tracks before playback; always-on subtitles and preferred-language fetching; per-item sync offsets (#84, #1758, #1956, #2116, #2182, #2346, #2382, #2792) | Per-show memory, optional pre-play selection, device-local preferred-language selection and opt-in provider downloads, and scoped sync offsets are implemented across Plex, Jellyfin, and Emby; explicit server-selected tracks, account Off, and local picks remain authoritative |
+| Files and books | Standalone file sources, metadata, subtitles, ebooks and audiobooks | SMB2/3, optional encrypted NFSv3 RPC-with-TLS, FTP-family, SFTP, DLNA, Komga, WebDAV, S3, OPDS, cloud drives and Audiobookshelf; local Kodi/Jellyfin NFO/posters, confidence-gated Trakt metadata/cast/artwork/trailers, and OpenSubtitles search (including SMB); EPUB/PDF/CBZ, multipart audiobook playback and progress sync. Availability varies by platform; see the [setup guide](docs/FILES_AND_BOOKS.md) for limits and security. |
 | Subtitle controls | Live styling preview (#2347); in-player size and position controls (#95, #689, #2174); load a local subtitle file (#1431) | Live preview, in-player size/position, and local subtitle loading are implemented; other style controls remain in Settings |
 | Playback | Swipe-to-seek (#2601), frame stepping (#1584), subtitle-delay hotkeys (#2824), remembered version across episodes (#2563), video playlist repeat (#1757/#1985) | Implemented in PlezyNG |
 | Playback | Plex cinema pre-rolls (#970/#2483); random local pre-rolls (#2271); theme music (#791/#2170/#2596) | Configured cinema intros work on Plex, Jellyfin, and Emby; local pre-rolls, detail-page theme songs, and home spotlight music are implemented |
@@ -55,7 +72,7 @@ PlezyNG builds are published on the [GitHub Releases page](https://github.com/sn
 | macOS | [DMG (x64, arm64)](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-macos.dmg) |
 | Linux x64 | [.deb](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.deb) · [.rpm](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.rpm) · [.pkg.tar.zst](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.pkg.tar.zst) · [.flatpak](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.flatpak) · [portable tar.gz](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.tar.gz) |
 | Linux arm64 | [.deb](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.deb) · [.rpm](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.rpm) · [.pkg.tar.zst](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.pkg.tar.zst) · [.flatpak](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.flatpak) · [portable tar.gz](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.tar.gz) |
-| webOS TV | Experimental ARM IPK runs on the LG C6. Plex sign-in, library artwork, and video playback are verified; broader playback validation and release packaging remain. See the [port status](docs/maintainers/webos-tv.md) |
+| webOS TV | Experimental ARM IPK installed and launched on one LG C6 (webOS 26). Login, artwork, and playback were confirmed on an earlier test build; this is not qualification across LG generations or a published package. See the [port status](docs/maintainers/webos-tv.md) |
 
 <details>
 <summary>Install with a package manager</summary>

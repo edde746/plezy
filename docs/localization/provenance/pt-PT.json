@@ -1,7 +1,7 @@
 {
   "locale": "pt-PT",
   "inherits": "pt",
-  "catalogSha256": "6ea239153865b21f596ab59bbbe2e3f5ca2db1fcc570a0b49375c51aa7889bb7",
+  "catalogSha256": "4c839d8fd629823d2d02626fda3b791ff264d62e01fa728b7d069c76ba9e6a2f",
   "nativeSpeakerReviewed": false,
   "messages": {
     "cast.subtitle": "jellyfin-web:Subtitles",
@@ -387,7 +387,23 @@
     "fileSources.rightToLeft": "jellyfin-web:ViewRightToLeft",
     "fileSources.minutes": "unicode-cldr-generated",
     "lending.cancel": "jellyfin-web:ButtonCancel",
-    "fileSources.googleDrive": "nonlinguistic"
+    "fileSources.googleDrive": "nonlinguistic",
+    "discover.findNext.chooseHint": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.howItWorks": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.swipeHint": "independent-ai-reviewed-main-swipe-hint",
+    "discover.findNext.notNowHelp": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.saveHelp": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.openHelp": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.controlsHelp": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.artworkLoading": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.artworkUnavailable": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.savedFeedback": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.skippedFeedback": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.releaseToConfirm": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.remoteHint": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe"
   },
-  "integrationAiQaReport": "../LANGUAGE_QA_INTEGRATION.md"
+  "integrationAiQaReport": "../LANGUAGE_QA_INTEGRATION.md",
+  "beforeMainMergeReview": {
+    "discover.findNext.swipeHint": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe"
+  }
 }

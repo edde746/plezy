@@ -1,7 +1,7 @@
 {
   "locale": "en",
   "inherits": null,
-  "catalogSha256": "884d3d71a150618fd870ede769fa12659ac53fac409f1452d31907bd00d8a411",
+  "catalogSha256": "56fd74283f64ae7becdae43fd800208bb035470c8b6e7374040484dca9da9b03",
   "nativeSpeakerReviewed": false,
   "messages": {
     "app.title": "source-english",
@@ -3063,7 +3063,26 @@
     "sourceSetup.replaceFile": "source-english",
     "sourceSetup.selectedIdentity": "source-english",
     "sourceSetup.subtitleRating": "source-english",
-    "sourceSetup.subtitleDownloading": "source-english"
+    "sourceSetup.subtitleDownloading": "source-english",
+    "settings.experimentalDolbyVision": "source-english",
+    "settings.experimentalDolbyVisionDescription": "source-english",
+    "settings.dvExperimentUnavailableDescription": "source-english",
+    "settings.dvCompatibilityFallback": "source-english",
+    "settings.dvCompatibilityFallbackDescription": "source-english",
+    "settings.dvExperimentDiagnostics": "source-english",
+    "settings.dvExperimentDiagnosticsDescription": "source-english",
+    "discover.findNext.chooseHint": "source-english",
+    "discover.findNext.howItWorks": "source-english",
+    "discover.findNext.notNowHelp": "source-english",
+    "discover.findNext.saveHelp": "source-english",
+    "discover.findNext.openHelp": "source-english",
+    "discover.findNext.controlsHelp": "source-english",
+    "discover.findNext.artworkLoading": "source-english",
+    "discover.findNext.artworkUnavailable": "source-english",
+    "discover.findNext.savedFeedback": "source-english",
+    "discover.findNext.skippedFeedback": "source-english",
+    "discover.findNext.releaseToConfirm": "source-english",
+    "discover.findNext.remoteHint": "source-english"
   },
   "beforeIndependentQaCorrection": {
     "mediaMenu.deleteEpisodeCountWarning": "source-english"

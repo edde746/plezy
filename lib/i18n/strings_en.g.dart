@@ -1606,6 +1606,27 @@ class Translations$settings$en {
 	/// en: 'Strip Dolby Vision RPU/EL layers and present plain HEVC'
 	String get dvConversionHevcStripDescription => 'Strip Dolby Vision RPU/EL layers and present plain HEVC';
 
+	/// en: 'Experimental Dolby Vision'
+	String get experimentalDolbyVision => 'Experimental Dolby Vision';
+
+	/// en: 'Use the experimental FEL renderer on the next playback. Requires a separate engine build.'
+	String get experimentalDolbyVisionDescription => 'Use the experimental FEL renderer on the next playback. Requires a separate engine build.';
+
+	/// en: 'This experiment is currently available on Linux only.'
+	String get dvExperimentUnavailableDescription => 'This experiment is currently available on Linux only.';
+
+	/// en: 'Compatibility fallback'
+	String get dvCompatibilityFallback => 'Compatibility fallback';
+
+	/// en: 'Use the standard renderer if the experiment cannot start. FEL data may be lost.'
+	String get dvCompatibilityFallbackDescription => 'Use the standard renderer if the experiment cannot start. FEL data may be lost.';
+
+	/// en: 'Video experiment logging'
+	String get dvExperimentDiagnostics => 'Video experiment logging';
+
+	/// en: 'Enable detailed player logs on the next playback.'
+	String get dvExperimentDiagnosticsDescription => 'Enable detailed player logs on the next playback.';
+
 	/// en: 'Disable Dolby Vision'
 	String get disableDolbyVision => 'Disable Dolby Vision';
 
@@ -8836,8 +8857,8 @@ class Translations$discover$findNext$en {
 	/// en: 'Not now'
 	String get notNow => 'Not now';
 
-	/// en: 'Swipe, or use the buttons below'
-	String get swipeHint => 'Swipe, or use the buttons below';
+	/// en: 'Swipe the cover toward an arrow, or use the buttons below.'
+	String get swipeHint => 'Swipe the cover toward an arrow, or use the buttons below.';
 
 	/// en: 'Saved picks'
 	String get saved => 'Saved picks';
@@ -8919,6 +8940,42 @@ class Translations$discover$findNext$en {
 
 	/// en: 'Saved picks is full. Remove a pick to save another.'
 	String get savedLimit => 'Saved picks is full. Remove a pick to save another.';
+
+	/// en: 'Open a pick, save it for later, or skip it.'
+	String get chooseHint => 'Open a pick, save it for later, or skip it.';
+
+	/// en: 'How it works'
+	String get howItWorks => 'How it works';
+
+	/// en: 'Skip this pick for now. It stays in your library.'
+	String get notNowHelp => 'Skip this pick for now. It stays in your library.';
+
+	/// en: 'Keep it in Saved picks for this profile on this device. Saving does not download it.'
+	String get saveHelp => 'Keep it in Saved picks for this profile on this device. Saving does not download it.';
+
+	/// en: 'Select the cover for details. Use the main action to play, read or open the title.'
+	String get openHelp => 'Select the cover for details. Use the main action to play, read or open the title.';
+
+	/// en: 'Keyboard or remote: focus a button, then press Enter or Select. Undo restores your last choice.'
+	String get controlsHelp => 'Keyboard or remote: focus a button, then press Enter or Select. Undo restores your last choice.';
+
+	/// en: 'Loading artwork…'
+	String get artworkLoading => 'Loading artwork…';
+
+	/// en: 'Artwork unavailable'
+	String get artworkUnavailable => 'Artwork unavailable';
+
+	/// en: 'Saved to Saved picks'
+	String get savedFeedback => 'Saved to Saved picks';
+
+	/// en: 'Skipped for now'
+	String get skippedFeedback => 'Skipped for now';
+
+	/// en: 'Release to confirm'
+	String get releaseToConfirm => 'Release to confirm';
+
+	/// en: 'Cover focused: ← / → choose · Select opens details · ↑ / ↓ moves focus'
+	String get remoteHint => 'Cover focused: ← / → choose · Select opens details · ↑ / ↓ moves focus';
 }
 
 // Path: discover.person
@@ -10973,9 +11030,16 @@ extension on Translations {
 			'settings.dvConversionNativeDescription' => 'Force native DV7 and suppress DV conversion retry',
 			'settings.dvConversionDv81Description' => 'Force inline RPU conversion to Dolby Vision profile 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Strip Dolby Vision RPU/EL layers and present plain HEVC',
-			'settings.disableDolbyVision' => 'Disable Dolby Vision',
+			'settings.experimentalDolbyVision' => 'Experimental Dolby Vision',
 			_ => null,
 		} ?? switch (path) {
+			'settings.experimentalDolbyVisionDescription' => 'Use the experimental FEL renderer on the next playback. Requires a separate engine build.',
+			'settings.dvExperimentUnavailableDescription' => 'This experiment is currently available on Linux only.',
+			'settings.dvCompatibilityFallback' => 'Compatibility fallback',
+			'settings.dvCompatibilityFallbackDescription' => 'Use the standard renderer if the experiment cannot start. FEL data may be lost.',
+			'settings.dvExperimentDiagnostics' => 'Video experiment logging',
+			'settings.dvExperimentDiagnosticsDescription' => 'Enable detailed player logs on the next playback.',
+			'settings.disableDolbyVision' => 'Disable Dolby Vision',
 			'settings.disableDolbyVisionDescription' => 'Play the file\'s HDR10 or HLG layer instead of Dolby Vision, when it has one',
 			'settings.hdrSdrConversion' => 'HDR to SDR Conversion',
 			'settings.hdrSdrConversionDescription' => 'Choose what converts HDR video when the display can\'t show HDR.',
@@ -11481,6 +11545,8 @@ extension on Translations {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Library scan started for "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Failed to scan library: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Refreshing metadata for "${title}"...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadata refresh started for "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Failed to refresh metadata: ${error}',
 			'messages.logoutConfirm' => 'Are you sure you want to log out?',
@@ -11488,8 +11554,6 @@ extension on Translations {
 			'messages.seasonsLoadFailed' => 'Couldn\'t load seasons',
 			'messages.noEpisodesFound' => 'No episodes found in first season',
 			'messages.noEpisodesFoundGeneral' => 'No episodes found',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Couldn\'t load episodes',
 			'messages.noResultsFound' => 'No results found',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Sleep timer set for ${label}',
@@ -11730,7 +11794,7 @@ extension on Translations {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} total',
 			'discover.findNext.timingVaries' => 'Timing varies',
 			'discover.findNext.notNow' => 'Not now',
-			'discover.findNext.swipeHint' => 'Swipe, or use the buttons below',
+			'discover.findNext.swipeHint' => 'Swipe the cover toward an arrow, or use the buttons below.',
 			'discover.findNext.saved' => 'Saved picks',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Saved picks · ${count}',
 			'discover.findNext.undo' => 'Undo',
@@ -11758,6 +11822,18 @@ extension on Translations {
 			'discover.findNext.openFailed' => 'This choice is no longer available. Refresh to check again.',
 			'discover.findNext.changeFailed' => 'Could not save that change. Try again.',
 			'discover.findNext.savedLimit' => 'Saved picks is full. Remove a pick to save another.',
+			'discover.findNext.chooseHint' => 'Open a pick, save it for later, or skip it.',
+			'discover.findNext.howItWorks' => 'How it works',
+			'discover.findNext.notNowHelp' => 'Skip this pick for now. It stays in your library.',
+			'discover.findNext.saveHelp' => 'Keep it in Saved picks for this profile on this device. Saving does not download it.',
+			'discover.findNext.openHelp' => 'Select the cover for details. Use the main action to play, read or open the title.',
+			'discover.findNext.controlsHelp' => 'Keyboard or remote: focus a button, then press Enter or Select. Undo restores your last choice.',
+			'discover.findNext.artworkLoading' => 'Loading artwork…',
+			'discover.findNext.artworkUnavailable' => 'Artwork unavailable',
+			'discover.findNext.savedFeedback' => 'Saved to Saved picks',
+			'discover.findNext.skippedFeedback' => 'Skipped for now',
+			'discover.findNext.releaseToConfirm' => 'Release to confirm',
+			'discover.findNext.remoteHint' => 'Cover focused: ← / → choose · Select opens details · ↑ / ↓ moves focus',
 			'discover.extras' => 'Trailers & Extras',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Rating',
@@ -11983,6 +12059,8 @@ extension on Translations {
 			'explore.mdblistShelves.nameHint' => 'Leave blank to use the source list name.',
 			'explore.mdblistShelves.add' => 'Add shelf',
 			'explore.mdblistShelves.save' => 'Save shelves',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Move ${title} up',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Move ${title} down',
 			'explore.mdblistShelves.unavailable' => 'This list is unavailable. Retry or remove its shelf in settings.',
@@ -12002,8 +12080,6 @@ extension on Translations {
 			'explore.rows.popularShows' => 'Popular Shows',
 			'explore.rows.trendingAnime' => 'Trending Anime',
 			'explore.rows.suggestedAnime' => 'Suggested Anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Top Airing Anime',
 			'explore.rows.popularAnime' => 'Most Popular Anime',
 			'explore.rows.trending' => 'Trending',
@@ -12497,6 +12573,8 @@ extension on Translations {
 			'downloads.resumeDownload' => 'Resume download',
 			'downloads.cancelledDownload' => 'Canceled download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (syncing ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Downloaded ${file} - Click to complete',
 			'downloads.partialDownloadClickToComplete' => 'Partially downloaded - Click to complete',
 			'downloads.deleting' => 'Deleting...',
@@ -12516,8 +12594,6 @@ extension on Translations {
 			'downloads.unwatchedOnly' => 'Unwatched only',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Next ${count} unwatched',
 			'downloads.customAmount' => 'Custom amount...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Custom amount (any)...',
 			'downloads.randomEpisodes' => 'Random episodes',
 			'downloads.includeSpecials' => 'Include Specials',
@@ -13011,6 +13087,8 @@ extension on Translations {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Could not reach the server: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Sign-in failed: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect failed: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Sign in with Plex',
 			'addServer.pinExpired' => 'PIN expired before sign-in. Please try again.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Failed to register account: ${error}',
@@ -13030,8 +13108,6 @@ extension on Translations {
 			'addServer.authResponseIncomplete' => 'The sign-in response from the server was incomplete',
 			'addServer.quickConnectRejected' => 'Quick Connect was rejected by the server',
 			'addServer.quickConnectNotJson' => 'The Quick Connect response was not valid JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'The Quick Connect response is missing a code or secret',
 			'addServer.quickConnectPollRejected' => 'Quick Connect polling was rejected by the server',
 			'addServer.serverTimedOut' => 'The server did not respond in time',
@@ -13525,6 +13601,8 @@ extension on Translations {
 			'sourceSetup.smbEncrypted' => 'SMB3 encryption on',
 			'sourceSetup.smbUnencrypted' => 'SMB3 encryption off',
 			'sourceSetup.httpUnencrypted' => 'HTTP without transport encryption',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Check endpoint security',
 			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} is required.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Enter ${label} from ${min} to ${max}.',

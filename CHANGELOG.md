@@ -2,7 +2,14 @@
 
 ## [Unreleased]
 
+- Fit Find your next to the screen with persistent action buttons, mirrored swipe/TV direction cues, contextual help, and artwork that follows the current pick. Restore downloaded and alternate covers, distinguish artwork loading from missing images, and allow failed source covers to be retried.
+
+- Add experimental comic page streaming, Komga source integration and ComicInfo metadata support.
+- Fix file-source metadata and listing edge cases, and validate the experimental webOS ARM build on an LG C6.
+
 ### Added
+
+- Add device-local Dolby Vision experiment and compatibility switches, enhancement-layer diagnostics, pinned Apple/FelBaker experiments, and an offline HDR/SDR companion encoder; preserve Luna’s real P7 FEL graph evidence and remaining device qualification work.
 
 - Add SMB2/3 read-only NAS sources on Android, iOS, macOS, Windows, Linux, and Apple TV, with a Videos library shelf and resumable video watch progress.
 - Add passive FTP/FTPES/FTPS, pinned-host-key SFTP, and read-only NFSv3 sources with byte-range playback; NFS can require TLS 1.3 RPC-with-TLS, custom trust certificates, or a PKCS#12 client identity. Add best-effort SSDP discovery for DLNA ContentDirectory servers with manual URL fallback.
@@ -103,7 +110,7 @@
 - Let Xcode choose signing identities for iOS and tvOS archives instead of forcing one across all targets.
 - Keep raw companion remote transport exceptions out of discovery and session messages.
 - Preserve existing TV and keyboard toolbar focus order when adding Find your next discovery actions.
-- Use Plezy's TV-aware text fields for standalone source setup and search, and show feedback when Trakt finds no metadata matches.
+- Localize standalone source setup and subtitle search, use shared icons and TV-aware text fields, and report when Trakt finds no metadata matches.
 - Keep entitlement-controlled themes and icons locked when store access is disabled in the build.
 - Remove stale SVG imports after switching the setup and app-icon previews back to raster artwork.
 - Localize the About screen privacy-policy link.

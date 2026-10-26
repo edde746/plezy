@@ -766,6 +766,13 @@ class _Translations$settings$uk extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Виберіть формат відображення дат, чисел і одиниць вимірювання.';
 	@override String get metadataLanguage => 'Мова метаданих';
 	@override String get metadataLanguageDescription => 'Бажана мова назв та описів, якщо сервер її підтримує. Налаштування звуку й субтитрів залишаються окремими.';
+	@override String get experimentalDolbyVision => 'Експериментальний Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Під час наступного відтворення використовувати експериментальний рендерер FEL. Потрібна окрема збірка рушія.';
+	@override String get dvExperimentUnavailableDescription => 'Цей експеримент наразі доступний лише в Linux.';
+	@override String get dvCompatibilityFallback => 'Резервний режим сумісності';
+	@override String get dvCompatibilityFallbackDescription => 'Використовувати стандартний рендерер, якщо експеримент не запускається. Дані FEL можуть бути втрачені.';
+	@override String get dvExperimentDiagnostics => 'Журнал відеоексперименту';
+	@override String get dvExperimentDiagnosticsDescription => 'Увімкнути докладні журнали програвача під час наступного відтворення.';
 }
 
 // Path: themeEditor
@@ -3589,7 +3596,7 @@ class _Translations$discover$findNext$uk extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => 'Загалом ${duration}';
 	@override String get timingVaries => 'Тривалість може відрізнятися';
 	@override String get notNow => 'Не зараз';
-	@override String get swipeHint => 'Змахніть картку або скористайтеся кнопками нижче';
+	@override String get swipeHint => 'Змахніть обкладинку в бік стрілки або скористайтеся кнопками нижче.';
 	@override String get saved => 'Збережені рекомендації';
 	@override String savedCount({required Object count}) => 'Збережені рекомендації · ${count}';
 	@override String get undo => 'Скасувати дію';
@@ -3617,6 +3624,18 @@ class _Translations$discover$findNext$uk extends Translations$discover$findNext$
 	@override String get openFailed => 'Цей варіант більше недоступний. Оновіть, щоб перевірити ще раз.';
 	@override String get changeFailed => 'Не вдалося зберегти зміну. Спробуйте ще раз.';
 	@override String get savedLimit => 'Список збережених рекомендацій заповнений. Вилучіть одну рекомендацію, щоб зберегти іншу.';
+	@override String get chooseHint => 'Відкрийте твір, збережіть на потім або пропустіть.';
+	@override String get howItWorks => 'Як це працює';
+	@override String get notNowHelp => 'Пропустіть цей твір наразі. Він залишиться у вашій бібліотеці.';
+	@override String get saveHelp => 'Додайте його до збережених добірок цього профілю на цьому пристрої. Збереження не завантажує твір.';
+	@override String get openHelp => 'Виберіть обкладинку для перегляду подробиць. Основна кнопка дає змогу відтворити, читати або відкрити твір.';
+	@override String get controlsHelp => 'Клавіатура або пульт: виберіть кнопку й натисніть Enter або кнопку вибору. Скасування відновлює останній вибір.';
+	@override String get artworkLoading => 'Завантаження обкладинки…';
+	@override String get artworkUnavailable => 'Обкладинка недоступна';
+	@override String get savedFeedback => 'Додано до збережених добірок';
+	@override String get skippedFeedback => 'Наразі пропущено';
+	@override String get releaseToConfirm => 'Відпустіть для підтвердження';
+	@override String get remoteHint => 'Фокус на обкладинці: ← / → вибір · Кнопка вибору: подробиці · ↑ / ↓ переміщення фокусу';
 }
 
 // Path: discover.person
@@ -4953,6 +4972,13 @@ extension on TranslationsUk {
 			'settings.regionFormatDescription' => 'Виберіть формат відображення дат, чисел і одиниць вимірювання.',
 			'settings.metadataLanguage' => 'Мова метаданих',
 			'settings.metadataLanguageDescription' => 'Бажана мова назв та описів, якщо сервер її підтримує. Налаштування звуку й субтитрів залишаються окремими.',
+			'settings.experimentalDolbyVision' => 'Експериментальний Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Під час наступного відтворення використовувати експериментальний рендерер FEL. Потрібна окрема збірка рушія.',
+			'settings.dvExperimentUnavailableDescription' => 'Цей експеримент наразі доступний лише в Linux.',
+			'settings.dvCompatibilityFallback' => 'Резервний режим сумісності',
+			'settings.dvCompatibilityFallbackDescription' => 'Використовувати стандартний рендерер, якщо експеримент не запускається. Дані FEL можуть бути втрачені.',
+			'settings.dvExperimentDiagnostics' => 'Журнал відеоексперименту',
+			'settings.dvExperimentDiagnosticsDescription' => 'Увімкнути докладні журнали програвача під час наступного відтворення.',
 			'themeEditor.builtIn' => 'Будівництво',
 			'themeEditor.presets' => 'Президи',
 			'themeEditor.custom' => 'Користувацький',
@@ -5373,6 +5399,8 @@ extension on TranslationsUk {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Сканування бібліотеки розпочато для «${title}»',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Не вдалося сканувати бібліотеку: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Повторні метадані для «${title}»',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Початок оновлення метаданів для «${title}»',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Не вдалося оновити метаданни: ${error}',
 			'messages.logoutConfirm' => 'Ви впевнені, що хочете вийти?',
@@ -5380,8 +5408,6 @@ extension on TranslationsUk {
 			'messages.seasonsLoadFailed' => 'Не можна завантажувати сезони',
 			'messages.noEpisodesFound' => 'У першому сезоні не знайдено жодних епізодів',
 			'messages.noEpisodesFoundGeneral' => 'Епізодів не знайдено',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Не можна завантажувати епізоди',
 			'messages.noResultsFound' => 'Нічого не знайдено.',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Співальний час встановлений для ${label}',
@@ -5622,7 +5648,7 @@ extension on TranslationsUk {
 			'discover.findNext.totalDuration' => ({required Object duration}) => 'Загалом ${duration}',
 			'discover.findNext.timingVaries' => 'Тривалість може відрізнятися',
 			'discover.findNext.notNow' => 'Не зараз',
-			'discover.findNext.swipeHint' => 'Змахніть картку або скористайтеся кнопками нижче',
+			'discover.findNext.swipeHint' => 'Змахніть обкладинку в бік стрілки або скористайтеся кнопками нижче.',
 			'discover.findNext.saved' => 'Збережені рекомендації',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Збережені рекомендації · ${count}',
 			'discover.findNext.undo' => 'Скасувати дію',
@@ -5650,6 +5676,18 @@ extension on TranslationsUk {
 			'discover.findNext.openFailed' => 'Цей варіант більше недоступний. Оновіть, щоб перевірити ще раз.',
 			'discover.findNext.changeFailed' => 'Не вдалося зберегти зміну. Спробуйте ще раз.',
 			'discover.findNext.savedLimit' => 'Список збережених рекомендацій заповнений. Вилучіть одну рекомендацію, щоб зберегти іншу.',
+			'discover.findNext.chooseHint' => 'Відкрийте твір, збережіть на потім або пропустіть.',
+			'discover.findNext.howItWorks' => 'Як це працює',
+			'discover.findNext.notNowHelp' => 'Пропустіть цей твір наразі. Він залишиться у вашій бібліотеці.',
+			'discover.findNext.saveHelp' => 'Додайте його до збережених добірок цього профілю на цьому пристрої. Збереження не завантажує твір.',
+			'discover.findNext.openHelp' => 'Виберіть обкладинку для перегляду подробиць. Основна кнопка дає змогу відтворити, читати або відкрити твір.',
+			'discover.findNext.controlsHelp' => 'Клавіатура або пульт: виберіть кнопку й натисніть Enter або кнопку вибору. Скасування відновлює останній вибір.',
+			'discover.findNext.artworkLoading' => 'Завантаження обкладинки…',
+			'discover.findNext.artworkUnavailable' => 'Обкладинка недоступна',
+			'discover.findNext.savedFeedback' => 'Додано до збережених добірок',
+			'discover.findNext.skippedFeedback' => 'Наразі пропущено',
+			'discover.findNext.releaseToConfirm' => 'Відпустіть для підтвердження',
+			'discover.findNext.remoteHint' => 'Фокус на обкладинці: ← / → вибір · Кнопка вибору: подробиці · ↑ / ↓ переміщення фокусу',
 			'discover.extras' => 'Трейлери та екстраси',
 			'discover.studio' => 'Студія',
 			'discover.rating' => 'Рейтинг',
@@ -5875,6 +5913,8 @@ extension on TranslationsUk {
 			'explore.mdblistShelves.nameHint' => 'Залишити білий, щоб використовувати назву джерело списку.',
 			'explore.mdblistShelves.add' => 'Додайте шаф',
 			'explore.mdblistShelves.save' => 'Зберегти шахи',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Повернутись ${title}',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Повернутись ${title} вниз',
 			'explore.mdblistShelves.unavailable' => 'Цей список недоступний. Витягніть або видаліть його шаф в налаштуваннях.',
@@ -5894,8 +5934,6 @@ extension on TranslationsUk {
 			'explore.rows.popularShows' => 'Популярні шоу',
 			'explore.rows.trendingAnime' => 'Трендовий аніме',
 			'explore.rows.suggestedAnime' => 'Пропонований аніме',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Анімаційний анімаційний',
 			'explore.rows.popularAnime' => 'Найпопулярніші аніме',
 			'explore.rows.trending' => 'Тенденції',
@@ -6389,6 +6427,8 @@ extension on TranslationsUk {
 			'downloads.resumeDownload' => 'Резюме завантаження',
 			'downloads.cancelledDownload' => 'скасовано Download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (синціонує ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Завантажено ${file} - Клікніть, щоб завершити',
 			'downloads.partialDownloadClickToComplete' => 'Частково завантажено - Клікніть, щоб завершити',
 			'downloads.deleting' => 'Зняти...',
@@ -6408,8 +6448,6 @@ extension on TranslationsUk {
 			'downloads.unwatchedOnly' => 'Не спостерігається тільки',
 			'downloads.nextNUnwatched' => ({required Object count}) => '${count} не перевірено',
 			'downloads.customAmount' => 'Кваліфікована сума...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Кількість витрат (за кожну...',
 			'downloads.randomEpisodes' => 'Різні епізоди',
 			'downloads.includeSpecials' => 'Включити спеціальності',
@@ -6903,6 +6941,8 @@ extension on TranslationsUk {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Не можна доступу до сервера: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Зареєструватися не вдалося: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect не вдалося: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Зареєструйтесь за адресою Plex',
 			'addServer.pinExpired' => 'PIN закінчився перед тим, як зареєструватися, будь ласка, спробуйте знову.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Зареєструватися не вдалося: ${error}',
@@ -6922,8 +6962,6 @@ extension on TranslationsUk {
 			'addServer.authResponseIncomplete' => 'Реакція сервера була неповною.',
 			'addServer.quickConnectRejected' => 'Quick Connect було відхилено сервером',
 			'addServer.quickConnectNotJson' => 'Відповідь Quick Connect не була дійсною JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Відповідь Quick Connect відсутня код або секрет',
 			'addServer.quickConnectPollRejected' => 'Quick Connect запит було відхилено сервером',
 			'addServer.serverTimedOut' => 'Сервер не відповідає вчасно',
@@ -7417,6 +7455,8 @@ extension on TranslationsUk {
 			'sourceSetup.smbEncrypted' => 'Шифрування SMB3 увімкнено',
 			'sourceSetup.smbUnencrypted' => 'Шифрування SMB3 вимкнено',
 			'sourceSetup.httpUnencrypted' => 'HTTP без шифрування транспорту',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Перевірити безпеку кінцевої точки',
 			'sourceSetup.fieldRequired' => ({required Object label}) => 'Обов’язкове поле: ${label}.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Для поля «${label}» введіть значення від ${min} до ${max}.',

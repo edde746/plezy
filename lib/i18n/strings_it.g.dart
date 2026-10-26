@@ -764,6 +764,13 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Scegli come visualizzare date, numeri e unità di misura.';
 	@override String get metadataLanguage => 'Lingua dei metadati';
 	@override String get metadataLanguageDescription => 'Lingua preferita per titoli e descrizioni, se supportata dal server. Le preferenze audio e sottotitoli si impostano separatamente.';
+	@override String get experimentalDolbyVision => 'Dolby Vision sperimentale';
+	@override String get experimentalDolbyVisionDescription => 'Usa il renderer FEL sperimentale alla prossima riproduzione. Richiede una compilazione separata del motore.';
+	@override String get dvExperimentUnavailableDescription => 'Questo esperimento è attualmente disponibile solo su Linux.';
+	@override String get dvCompatibilityFallback => 'Alternativa di compatibilità';
+	@override String get dvCompatibilityFallbackDescription => 'Usa il renderer standard se l’esperimento non si avvia. I dati FEL potrebbero andare persi.';
+	@override String get dvExperimentDiagnostics => 'Registro dell’esperimento video';
+	@override String get dvExperimentDiagnosticsDescription => 'Attiva i log dettagliati del lettore alla prossima riproduzione.';
 }
 
 // Path: themeEditor
@@ -3557,7 +3564,7 @@ class _Translations$discover$findNext$it extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} in totale';
 	@override String get timingVaries => 'La durata può variare';
 	@override String get notNow => 'Non ora';
-	@override String get swipeHint => 'Scorri oppure usa i pulsanti qui sotto';
+	@override String get swipeHint => 'Scorri la copertina verso una freccia oppure usa i pulsanti qui sotto.';
 	@override String get saved => 'Suggerimenti salvati';
 	@override String savedCount({required Object count}) => 'Suggerimenti salvati · ${count}';
 	@override String get undo => 'Annulla';
@@ -3585,6 +3592,18 @@ class _Translations$discover$findNext$it extends Translations$discover$findNext$
 	@override String get openFailed => 'Questa scelta non è più disponibile. Aggiorna per verificare di nuovo.';
 	@override String get changeFailed => 'Impossibile salvare la modifica. Riprova.';
 	@override String get savedLimit => 'L’elenco dei suggerimenti salvati è pieno. Rimuovine uno per salvarne un altro.';
+	@override String get chooseHint => 'Apri un titolo, salvalo per dopo o passa al successivo.';
+	@override String get howItWorks => 'Come funziona';
+	@override String get notNowHelp => 'Salta questo titolo per ora. Rimane nella tua libreria.';
+	@override String get saveHelp => 'Conservalo tra le scelte salvate di questo profilo su questo dispositivo. Il salvataggio non lo scarica.';
+	@override String get openHelp => 'Seleziona la copertina per i dettagli. Usa l’azione principale per riprodurre, leggere o aprire il titolo.';
+	@override String get controlsHelp => 'Tastiera o telecomando: seleziona un pulsante, poi premi Invio o Seleziona. Annulla ripristina la tua ultima scelta.';
+	@override String get artworkLoading => 'Caricamento immagine…';
+	@override String get artworkUnavailable => 'Immagine non disponibile';
+	@override String get savedFeedback => 'Aggiunto alle scelte salvate';
+	@override String get skippedFeedback => 'Saltato per ora';
+	@override String get releaseToConfirm => 'Rilascia per confermare';
+	@override String get remoteHint => 'Copertina selezionata: ← / → scegli · Seleziona: dettagli · ↑ / ↓ sposta il focus';
 }
 
 // Path: discover.person
@@ -4919,6 +4938,13 @@ extension on TranslationsIt {
 			'settings.regionFormatDescription' => 'Scegli come visualizzare date, numeri e unità di misura.',
 			'settings.metadataLanguage' => 'Lingua dei metadati',
 			'settings.metadataLanguageDescription' => 'Lingua preferita per titoli e descrizioni, se supportata dal server. Le preferenze audio e sottotitoli si impostano separatamente.',
+			'settings.experimentalDolbyVision' => 'Dolby Vision sperimentale',
+			'settings.experimentalDolbyVisionDescription' => 'Usa il renderer FEL sperimentale alla prossima riproduzione. Richiede una compilazione separata del motore.',
+			'settings.dvExperimentUnavailableDescription' => 'Questo esperimento è attualmente disponibile solo su Linux.',
+			'settings.dvCompatibilityFallback' => 'Alternativa di compatibilità',
+			'settings.dvCompatibilityFallbackDescription' => 'Usa il renderer standard se l’esperimento non si avvia. I dati FEL potrebbero andare persi.',
+			'settings.dvExperimentDiagnostics' => 'Registro dell’esperimento video',
+			'settings.dvExperimentDiagnosticsDescription' => 'Attiva i log dettagliati del lettore alla prossima riproduzione.',
 			'themeEditor.builtIn' => 'Integrati',
 			'themeEditor.presets' => 'Preimpostati',
 			'themeEditor.custom' => 'Personalizzato',
@@ -5339,6 +5365,8 @@ extension on TranslationsIt {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Scansione della libreria avviata per "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Impossibile eseguire la scansione della libreria: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Aggiornamento dei metadati di "${title}"...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Aggiornamento dei metadati avviato per "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Impossibile aggiornare i metadati: ${error}',
 			'messages.logoutConfirm' => 'Vuoi uscire dall\'account?',
@@ -5346,8 +5374,6 @@ extension on TranslationsIt {
 			'messages.seasonsLoadFailed' => 'Impossibile caricare le stagioni',
 			'messages.noEpisodesFound' => 'Nessun episodio trovato nella prima stagione',
 			'messages.noEpisodesFoundGeneral' => 'Nessun episodio trovato',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Impossibile caricare gli episodi',
 			'messages.noResultsFound' => 'Nessun risultato',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Timer di spegnimento impostato su ${label}',
@@ -5588,7 +5614,7 @@ extension on TranslationsIt {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} in totale',
 			'discover.findNext.timingVaries' => 'La durata può variare',
 			'discover.findNext.notNow' => 'Non ora',
-			'discover.findNext.swipeHint' => 'Scorri oppure usa i pulsanti qui sotto',
+			'discover.findNext.swipeHint' => 'Scorri la copertina verso una freccia oppure usa i pulsanti qui sotto.',
 			'discover.findNext.saved' => 'Suggerimenti salvati',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Suggerimenti salvati · ${count}',
 			'discover.findNext.undo' => 'Annulla',
@@ -5616,6 +5642,18 @@ extension on TranslationsIt {
 			'discover.findNext.openFailed' => 'Questa scelta non è più disponibile. Aggiorna per verificare di nuovo.',
 			'discover.findNext.changeFailed' => 'Impossibile salvare la modifica. Riprova.',
 			'discover.findNext.savedLimit' => 'L’elenco dei suggerimenti salvati è pieno. Rimuovine uno per salvarne un altro.',
+			'discover.findNext.chooseHint' => 'Apri un titolo, salvalo per dopo o passa al successivo.',
+			'discover.findNext.howItWorks' => 'Come funziona',
+			'discover.findNext.notNowHelp' => 'Salta questo titolo per ora. Rimane nella tua libreria.',
+			'discover.findNext.saveHelp' => 'Conservalo tra le scelte salvate di questo profilo su questo dispositivo. Il salvataggio non lo scarica.',
+			'discover.findNext.openHelp' => 'Seleziona la copertina per i dettagli. Usa l’azione principale per riprodurre, leggere o aprire il titolo.',
+			'discover.findNext.controlsHelp' => 'Tastiera o telecomando: seleziona un pulsante, poi premi Invio o Seleziona. Annulla ripristina la tua ultima scelta.',
+			'discover.findNext.artworkLoading' => 'Caricamento immagine…',
+			'discover.findNext.artworkUnavailable' => 'Immagine non disponibile',
+			'discover.findNext.savedFeedback' => 'Aggiunto alle scelte salvate',
+			'discover.findNext.skippedFeedback' => 'Saltato per ora',
+			'discover.findNext.releaseToConfirm' => 'Rilascia per confermare',
+			'discover.findNext.remoteHint' => 'Copertina selezionata: ← / → scegli · Seleziona: dettagli · ↑ / ↓ sposta il focus',
 			'discover.extras' => 'Trailer ed extra',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Valutazione',
@@ -5841,6 +5879,8 @@ extension on TranslationsIt {
 			'explore.mdblistShelves.nameHint' => 'Lascia la lista di fonti per utilizzare il nome della lista di fondi.',
 			'explore.mdblistShelves.add' => 'Aggiungi Shelf',
 			'explore.mdblistShelves.save' => 'Salva le scale',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Move ${title} in alto',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Rimuovere ${title}',
 			'explore.mdblistShelves.unavailable' => 'Questo elenco non è disponibile. rimuovere o rimuovere la sua scheda nelle impostazioni.',
@@ -5860,8 +5900,6 @@ extension on TranslationsIt {
 			'explore.rows.popularShows' => 'Serie TV popolari',
 			'explore.rows.trendingAnime' => 'Anime di tendenza',
 			'explore.rows.suggestedAnime' => 'Anime suggeriti',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Migliori anime in onda',
 			'explore.rows.popularAnime' => 'Anime più popolari',
 			'explore.rows.trending' => 'Di tendenza',
@@ -6355,6 +6393,8 @@ extension on TranslationsIt {
 			'downloads.resumeDownload' => 'Riprendi il download',
 			'downloads.cancelledDownload' => 'Download annullato',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (sincronizzazione ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} scaricato — fai clic per completare',
 			'downloads.partialDownloadClickToComplete' => 'Scaricato parzialmente — fai clic per completare',
 			'downloads.deleting' => 'Eliminazione...',
@@ -6374,8 +6414,6 @@ extension on TranslationsIt {
 			'downloads.unwatchedOnly' => 'Solo non visti',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Prossimi ${count} episodi non visti',
 			'downloads.customAmount' => 'Quantità personalizzata...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Quanti sono i vari (quanti sono i)',
 			'downloads.randomEpisodes' => 'Episodi casuali',
 			'downloads.includeSpecials' => 'Includi gli speciali',
@@ -6869,6 +6907,8 @@ extension on TranslationsIt {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Impossibile raggiungere il server: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Accesso non riuscito: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect non riuscito: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Accedi con Plex',
 			'addServer.pinExpired' => 'PIN scaduto prima dell\'accesso. Riprova.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Registrazione account non riuscita: ${error}',
@@ -6888,8 +6928,6 @@ extension on TranslationsIt {
 			'addServer.authResponseIncomplete' => 'La risposta di accesso del server era incompleta',
 			'addServer.quickConnectRejected' => 'Quick Connect è stato rifiutato dal server',
 			'addServer.quickConnectNotJson' => 'La risposta di Quick Connect non era un JSON valido',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Nella risposta di Quick Connect manca un codice o un segreto',
 			'addServer.quickConnectPollRejected' => 'Il polling di Quick Connect è stato rifiutato dal server',
 			'addServer.serverTimedOut' => 'Il server non ha risposto in tempo',
@@ -7383,6 +7421,8 @@ extension on TranslationsIt {
 			'sourceSetup.smbEncrypted' => 'Crittografia SMB3 attiva',
 			'sourceSetup.smbUnencrypted' => 'Crittografia SMB3 disattivata',
 			'sourceSetup.httpUnencrypted' => 'HTTP senza crittografia del trasporto',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Controlla la sicurezza dell’endpoint',
 			'sourceSetup.fieldRequired' => ({required Object label}) => 'Campo obbligatorio: ${label}.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Inserisci ${label} tra ${min} e ${max}.',

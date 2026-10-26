@@ -762,6 +762,13 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Válassza ki a dátumok, számok és mértékegységek megjelenítési módját.';
 	@override String get metadataLanguage => 'Metaadatok nyelve';
 	@override String get metadataLanguageDescription => 'A címek és leírások előnyben részesített nyelve, ha a kiszolgáló támogatja. A hang és a felirat nyelve külön állítható be.';
+	@override String get experimentalDolbyVision => 'Kísérleti Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'A következő lejátszáskor a kísérleti FEL-megjelenítő használata. Külön motorbuild szükséges.';
+	@override String get dvExperimentUnavailableDescription => 'Ez a kísérlet jelenleg csak Linuxon érhető el.';
+	@override String get dvCompatibilityFallback => 'Kompatibilitási tartalék mód';
+	@override String get dvCompatibilityFallbackDescription => 'Ha a kísérlet nem indul, a normál megjelenítő használata. A FEL-adatok elveszhetnek.';
+	@override String get dvExperimentDiagnostics => 'Videókísérlet naplózása';
+	@override String get dvExperimentDiagnosticsDescription => 'Részletes lejátszónaplók engedélyezése a következő lejátszáskor.';
 }
 
 // Path: themeEditor
@@ -3553,7 +3560,7 @@ class _Translations$discover$findNext$hu extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => 'Összesen ${duration}';
 	@override String get timingVaries => 'Az időtartam változó';
 	@override String get notNow => 'Most nem';
-	@override String get swipeHint => 'Húzd el a kártyát, vagy használd az alábbi gombokat';
+	@override String get swipeHint => 'Húzd a borítót valamelyik nyíl felé, vagy használd az alábbi gombokat.';
 	@override String get saved => 'Mentett ajánlások';
 	@override String savedCount({required Object count}) => 'Mentett ajánlások · ${count}';
 	@override String get undo => 'Visszavonás';
@@ -3581,6 +3588,18 @@ class _Translations$discover$findNext$hu extends Translations$discover$findNext$
 	@override String get openFailed => 'Ez a lehetőség már nem érhető el. Frissíts az újbóli ellenőrzéshez.';
 	@override String get changeFailed => 'A módosítást nem sikerült menteni. Próbáld újra.';
 	@override String get savedLimit => 'A mentett ajánlások listája megtelt. Távolíts el egyet, hogy másikat menthess.';
+	@override String get chooseHint => 'Nyiss meg egy címet, mentsd el későbbre, vagy hagyd ki.';
+	@override String get howItWorks => 'Így működik';
+	@override String get notNowHelp => 'Ezt a címet most kihagyod. A könyvtáradban megmarad.';
+	@override String get saveHelp => 'Mentsd a profil mentett ajánlatai közé ezen az eszközön. A mentés nem tölti le a címet.';
+	@override String get openHelp => 'A részletekhez válaszd ki a borítót. A fő művelettel lejátszhatod, olvashatod vagy megnyithatod a címet.';
+	@override String get controlsHelp => 'Billentyűzet vagy távirányító: válassz egy gombot, majd nyomd meg az Enter vagy a Kiválasztás gombot. A Visszavonás visszaállítja az utolsó választásodat.';
+	@override String get artworkLoading => 'Kép betöltése…';
+	@override String get artworkUnavailable => 'A kép nem érhető el';
+	@override String get savedFeedback => 'Hozzáadva a mentett ajánlatokhoz';
+	@override String get skippedFeedback => 'Most kihagyva';
+	@override String get releaseToConfirm => 'Engedd el a megerősítéshez';
+	@override String get remoteHint => 'Borító kijelölve: ← / → választás · Kiválasztás: részletek · ↑ / ↓ fókusz mozgatása';
 }
 
 // Path: discover.person
@@ -4915,6 +4934,13 @@ extension on TranslationsHu {
 			'settings.regionFormatDescription' => 'Válassza ki a dátumok, számok és mértékegységek megjelenítési módját.',
 			'settings.metadataLanguage' => 'Metaadatok nyelve',
 			'settings.metadataLanguageDescription' => 'A címek és leírások előnyben részesített nyelve, ha a kiszolgáló támogatja. A hang és a felirat nyelve külön állítható be.',
+			'settings.experimentalDolbyVision' => 'Kísérleti Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'A következő lejátszáskor a kísérleti FEL-megjelenítő használata. Külön motorbuild szükséges.',
+			'settings.dvExperimentUnavailableDescription' => 'Ez a kísérlet jelenleg csak Linuxon érhető el.',
+			'settings.dvCompatibilityFallback' => 'Kompatibilitási tartalék mód',
+			'settings.dvCompatibilityFallbackDescription' => 'Ha a kísérlet nem indul, a normál megjelenítő használata. A FEL-adatok elveszhetnek.',
+			'settings.dvExperimentDiagnostics' => 'Videókísérlet naplózása',
+			'settings.dvExperimentDiagnosticsDescription' => 'Részletes lejátszónaplók engedélyezése a következő lejátszáskor.',
 			'themeEditor.builtIn' => 'Beépített',
 			'themeEditor.presets' => 'Előre beállított',
 			'themeEditor.custom' => 'Egyéni',
@@ -5335,6 +5361,8 @@ extension on TranslationsHu {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Könyvtár beolvasása elindítva a következőhöz: "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Nem sikerült a könyvtár beolvasása: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Metaadatok frissítése a következőhöz: "${title}"...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metaadatok frissítése elindítva a következőhöz: "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Nem sikerült a metaadatok frissítése: ${error}',
 			'messages.logoutConfirm' => 'Biztosan ki szeretnél jelentkezni?',
@@ -5342,8 +5370,6 @@ extension on TranslationsHu {
 			'messages.seasonsLoadFailed' => 'Nem sikerült az évadok betöltése',
 			'messages.noEpisodesFound' => 'Nem találhatók epizódok az első évadban',
 			'messages.noEpisodesFoundGeneral' => 'Nem találhatók epizódok',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Nem sikerült az epizódok betöltése',
 			'messages.noResultsFound' => 'Nincs találat',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Elalvási időzítő beállítva: ${label}',
@@ -5584,7 +5610,7 @@ extension on TranslationsHu {
 			'discover.findNext.totalDuration' => ({required Object duration}) => 'Összesen ${duration}',
 			'discover.findNext.timingVaries' => 'Az időtartam változó',
 			'discover.findNext.notNow' => 'Most nem',
-			'discover.findNext.swipeHint' => 'Húzd el a kártyát, vagy használd az alábbi gombokat',
+			'discover.findNext.swipeHint' => 'Húzd a borítót valamelyik nyíl felé, vagy használd az alábbi gombokat.',
 			'discover.findNext.saved' => 'Mentett ajánlások',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Mentett ajánlások · ${count}',
 			'discover.findNext.undo' => 'Visszavonás',
@@ -5612,6 +5638,18 @@ extension on TranslationsHu {
 			'discover.findNext.openFailed' => 'Ez a lehetőség már nem érhető el. Frissíts az újbóli ellenőrzéshez.',
 			'discover.findNext.changeFailed' => 'A módosítást nem sikerült menteni. Próbáld újra.',
 			'discover.findNext.savedLimit' => 'A mentett ajánlások listája megtelt. Távolíts el egyet, hogy másikat menthess.',
+			'discover.findNext.chooseHint' => 'Nyiss meg egy címet, mentsd el későbbre, vagy hagyd ki.',
+			'discover.findNext.howItWorks' => 'Így működik',
+			'discover.findNext.notNowHelp' => 'Ezt a címet most kihagyod. A könyvtáradban megmarad.',
+			'discover.findNext.saveHelp' => 'Mentsd a profil mentett ajánlatai közé ezen az eszközön. A mentés nem tölti le a címet.',
+			'discover.findNext.openHelp' => 'A részletekhez válaszd ki a borítót. A fő művelettel lejátszhatod, olvashatod vagy megnyithatod a címet.',
+			'discover.findNext.controlsHelp' => 'Billentyűzet vagy távirányító: válassz egy gombot, majd nyomd meg az Enter vagy a Kiválasztás gombot. A Visszavonás visszaállítja az utolsó választásodat.',
+			'discover.findNext.artworkLoading' => 'Kép betöltése…',
+			'discover.findNext.artworkUnavailable' => 'A kép nem érhető el',
+			'discover.findNext.savedFeedback' => 'Hozzáadva a mentett ajánlatokhoz',
+			'discover.findNext.skippedFeedback' => 'Most kihagyva',
+			'discover.findNext.releaseToConfirm' => 'Engedd el a megerősítéshez',
+			'discover.findNext.remoteHint' => 'Borító kijelölve: ← / → választás · Kiválasztás: részletek · ↑ / ↓ fókusz mozgatása',
 			'discover.extras' => 'Előzetesek és extrák',
 			'discover.studio' => 'Stúdió',
 			'discover.rating' => 'Értékelés',
@@ -5837,6 +5875,8 @@ extension on TranslationsHu {
 			'explore.mdblistShelves.nameHint' => 'Hagyja a nyílt, hogy használja a forráslistát.',
 			'explore.mdblistShelves.add' => 'Add Shelf',
 			'explore.mdblistShelves.save' => 'mentse a tálcákat',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => '${title} felfelé',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => '${title} lefelé',
 			'explore.mdblistShelves.unavailable' => 'Ez a lista nem elérhető. visszavonja vagy távolítsa el a szekrényt a beállításokban.',
@@ -5856,8 +5896,6 @@ extension on TranslationsHu {
 			'explore.rows.popularShows' => 'Népszerű sorozatok',
 			'explore.rows.trendingAnime' => 'Felkapott animék',
 			'explore.rows.suggestedAnime' => 'Ajánlott animék',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Jelenleg futó top animék',
 			'explore.rows.popularAnime' => 'Legnépszerűbb animék',
 			'explore.rows.trending' => 'Felkapott',
@@ -6351,6 +6389,8 @@ extension on TranslationsHu {
 			'downloads.resumeDownload' => 'Letöltés folytatása',
 			'downloads.cancelledDownload' => 'Megszakított letöltés',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} szinkronizálása)',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Letöltve: ${file} - Kattints a befejezéshez',
 			'downloads.partialDownloadClickToComplete' => 'Részben letöltve - Kattints a befejezéshez',
 			'downloads.deleting' => 'Törlés...',
@@ -6370,8 +6410,6 @@ extension on TranslationsHu {
 			'downloads.unwatchedOnly' => 'Csak a nem látottak',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'A következő ${count} nem látott epizód',
 			'downloads.customAmount' => 'Egyéni mennyiség...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'A megadott összeg (minden)',
 			'downloads.randomEpisodes' => 'Rádió epizódok',
 			'downloads.includeSpecials' => 'Különkiadások is',
@@ -6865,6 +6903,8 @@ extension on TranslationsHu {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Nem sikerült elérni a szervert: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'A bejelentkezés nem sikerült: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'A Quick Connect használata nem sikerült: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Bejelentkezés Plexszel',
 			'addServer.pinExpired' => 'A PIN-kód a bejelentkezés előtt lejárt. Próbáld újra.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Nem sikerült a fiók regisztrálása: ${error}',
@@ -6884,8 +6924,6 @@ extension on TranslationsHu {
 			'addServer.authResponseIncomplete' => 'A szerver bejelentkezési válasza hiányos volt',
 			'addServer.quickConnectRejected' => 'A szerver elutasította a Quick Connect-kérést',
 			'addServer.quickConnectNotJson' => 'A Quick Connect válasza nem érvényes JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'A Quick Connect válaszából hiányzik a kód vagy a titkos kulcs',
 			'addServer.quickConnectPollRejected' => 'A szerver elutasította a Quick Connect lekérdezését',
 			'addServer.serverTimedOut' => 'A szerver nem válaszolt időben',
@@ -7379,6 +7417,8 @@ extension on TranslationsHu {
 			'sourceSetup.smbEncrypted' => 'SMB3-titkosítás bekapcsolva',
 			'sourceSetup.smbUnencrypted' => 'SMB3-titkosítás kikapcsolva',
 			'sourceSetup.httpUnencrypted' => 'HTTP átviteli titkosítás nélkül',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Végpont biztonságának ellenőrzése',
 			'sourceSetup.fieldRequired' => ({required Object label}) => 'Kötelező mező: ${label}.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'A(z) ${label} értéke ${min} és ${max} között legyen.',

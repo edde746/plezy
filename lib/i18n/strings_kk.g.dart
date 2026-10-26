@@ -762,6 +762,13 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Күндердің, сандардың және өлшем бірліктерінің көрсетілу пішімін таңдаңыз.';
 	@override String get metadataLanguage => 'Метадеректер тілі';
 	@override String get metadataLanguageDescription => 'Сервер қолдаса, атаулар мен сипаттамалар үшін қолданылатын тіл. Дыбыс пен субтитр тілі бөлек реттеледі.';
+	@override String get experimentalDolbyVision => 'Тәжірибелік Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Келесі ойнатуда тәжірибелік FEL рендерерін пайдалану. Қозғалтқыштың бөлек құрастырылымы қажет.';
+	@override String get dvExperimentUnavailableDescription => 'Бұл тәжірибе әзірге тек Linux жүйесінде қолжетімді.';
+	@override String get dvCompatibilityFallback => 'Үйлесімді қосалқы режим';
+	@override String get dvCompatibilityFallbackDescription => 'Тәжірибе басталмаса, стандартты рендерерді пайдалану. FEL деректері жоғалуы мүмкін.';
+	@override String get dvExperimentDiagnostics => 'Бейне тәжірибесін журналға жазу';
+	@override String get dvExperimentDiagnosticsDescription => 'Келесі ойнатуда ойнатқыштың егжей-тегжейлі журналдарын қосу.';
 }
 
 // Path: themeEditor
@@ -3553,7 +3560,7 @@ class _Translations$discover$findNext$kk extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => 'Барлығы ${duration}';
 	@override String get timingVaries => 'Ұзақтығы өзгеруі мүмкін';
 	@override String get notNow => 'Қазір емес';
-	@override String get swipeHint => 'Сырғытыңыз немесе төмендегі түймелерді пайдаланыңыз';
+	@override String get swipeHint => 'Мұқабаны көрсеткі бағытына сырғытыңыз немесе төмендегі түймелерді қолданыңыз.';
 	@override String get saved => 'Сақталған ұсыныстар';
 	@override String savedCount({required Object count}) => 'Сақталған ұсыныстар · ${count}';
 	@override String get undo => 'Соңғы әрекетті болдырмау';
@@ -3581,6 +3588,18 @@ class _Translations$discover$findNext$kk extends Translations$discover$findNext$
 	@override String get openFailed => 'Бұл нұсқа енді қолжетімді емес. Қайта тексеру үшін жаңартыңыз.';
 	@override String get changeFailed => 'Бұл өзгерісті сақтау мүмкін болмады. Қайталап көріңіз.';
 	@override String get savedLimit => 'Сақталған ұсыныстар тізімі толы. Басқасын сақтау үшін бір ұсынысты алып тастаңыз.';
+	@override String get chooseHint => 'Туындыны ашыңыз, кейінге сақтаңыз немесе өткізіп жіберіңіз.';
+	@override String get howItWorks => 'Қолдану жолы';
+	@override String get notNowHelp => 'Бұл туындыны әзірге өткізіп жіберіңіз. Ол кітапханаңызда қалады.';
+	@override String get saveHelp => 'Оны осы құрылғыдағы осы профильдің сақталған таңдауларына қосыңыз. Сақтау мазмұнды жүктеп алмайды.';
+	@override String get openHelp => 'Мәліметтер үшін мұқабаны таңдаңыз. Туындыны ойнату, оқу немесе ашу үшін негізгі түймені қолданыңыз.';
+	@override String get controlsHelp => 'Пернетақта не пульт: түймені таңдап, Enter немесе таңдау түймесін басыңыз. Болдырмау соңғы таңдауыңызды қайтарады.';
+	@override String get artworkLoading => 'Сурет жүктелуде…';
+	@override String get artworkUnavailable => 'Сурет қолжетімсіз';
+	@override String get savedFeedback => 'Сақталған таңдауларға қосылды';
+	@override String get skippedFeedback => 'Әзірге өткізіліп жіберілді';
+	@override String get releaseToConfirm => 'Растау үшін жіберіңіз';
+	@override String get remoteHint => 'Мұқаба таңдалғанда: ← / → таңдау · Таңдау түймесі: мәліметтер · ↑ / ↓ фокусты жылжыту';
 }
 
 // Path: discover.person
@@ -4915,6 +4934,13 @@ extension on TranslationsKk {
 			'settings.regionFormatDescription' => 'Күндердің, сандардың және өлшем бірліктерінің көрсетілу пішімін таңдаңыз.',
 			'settings.metadataLanguage' => 'Метадеректер тілі',
 			'settings.metadataLanguageDescription' => 'Сервер қолдаса, атаулар мен сипаттамалар үшін қолданылатын тіл. Дыбыс пен субтитр тілі бөлек реттеледі.',
+			'settings.experimentalDolbyVision' => 'Тәжірибелік Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Келесі ойнатуда тәжірибелік FEL рендерерін пайдалану. Қозғалтқыштың бөлек құрастырылымы қажет.',
+			'settings.dvExperimentUnavailableDescription' => 'Бұл тәжірибе әзірге тек Linux жүйесінде қолжетімді.',
+			'settings.dvCompatibilityFallback' => 'Үйлесімді қосалқы режим',
+			'settings.dvCompatibilityFallbackDescription' => 'Тәжірибе басталмаса, стандартты рендерерді пайдалану. FEL деректері жоғалуы мүмкін.',
+			'settings.dvExperimentDiagnostics' => 'Бейне тәжірибесін журналға жазу',
+			'settings.dvExperimentDiagnosticsDescription' => 'Келесі ойнатуда ойнатқыштың егжей-тегжейлі журналдарын қосу.',
 			'themeEditor.builtIn' => 'Кірістірілген',
 			'themeEditor.presets' => 'Дайын тақырыптар',
 			'themeEditor.custom' => 'Жеке',
@@ -5335,6 +5361,8 @@ extension on TranslationsKk {
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}" үшін сканерлеу басталды',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Кітапхананы сканерлеу мүмкін болмады: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '"${title}" үшін метадеректер жаңартылуда...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}" үшін метадеректерді жаңарту басталды',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Метадеректерді жаңарту мүмкін болмады: ${error}',
 			'messages.logoutConfirm' => 'Шынымен шыққыңыз келе ме?',
@@ -5342,8 +5370,6 @@ extension on TranslationsKk {
 			'messages.seasonsLoadFailed' => 'Маусымдарды жүктеу мүмкін болмады',
 			'messages.noEpisodesFound' => 'Бірінші маусымда бөлімдер табылмады',
 			'messages.noEpisodesFoundGeneral' => 'Бөлімдер табылмады',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Бөлімдерді жүктеу мүмкін болмады',
 			'messages.noResultsFound' => 'Нәтижелер табылмады',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Ұйқы таймері ${label} уақытына орнатылды',
@@ -5584,7 +5610,7 @@ extension on TranslationsKk {
 			'discover.findNext.totalDuration' => ({required Object duration}) => 'Барлығы ${duration}',
 			'discover.findNext.timingVaries' => 'Ұзақтығы өзгеруі мүмкін',
 			'discover.findNext.notNow' => 'Қазір емес',
-			'discover.findNext.swipeHint' => 'Сырғытыңыз немесе төмендегі түймелерді пайдаланыңыз',
+			'discover.findNext.swipeHint' => 'Мұқабаны көрсеткі бағытына сырғытыңыз немесе төмендегі түймелерді қолданыңыз.',
 			'discover.findNext.saved' => 'Сақталған ұсыныстар',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Сақталған ұсыныстар · ${count}',
 			'discover.findNext.undo' => 'Соңғы әрекетті болдырмау',
@@ -5612,6 +5638,18 @@ extension on TranslationsKk {
 			'discover.findNext.openFailed' => 'Бұл нұсқа енді қолжетімді емес. Қайта тексеру үшін жаңартыңыз.',
 			'discover.findNext.changeFailed' => 'Бұл өзгерісті сақтау мүмкін болмады. Қайталап көріңіз.',
 			'discover.findNext.savedLimit' => 'Сақталған ұсыныстар тізімі толы. Басқасын сақтау үшін бір ұсынысты алып тастаңыз.',
+			'discover.findNext.chooseHint' => 'Туындыны ашыңыз, кейінге сақтаңыз немесе өткізіп жіберіңіз.',
+			'discover.findNext.howItWorks' => 'Қолдану жолы',
+			'discover.findNext.notNowHelp' => 'Бұл туындыны әзірге өткізіп жіберіңіз. Ол кітапханаңызда қалады.',
+			'discover.findNext.saveHelp' => 'Оны осы құрылғыдағы осы профильдің сақталған таңдауларына қосыңыз. Сақтау мазмұнды жүктеп алмайды.',
+			'discover.findNext.openHelp' => 'Мәліметтер үшін мұқабаны таңдаңыз. Туындыны ойнату, оқу немесе ашу үшін негізгі түймені қолданыңыз.',
+			'discover.findNext.controlsHelp' => 'Пернетақта не пульт: түймені таңдап, Enter немесе таңдау түймесін басыңыз. Болдырмау соңғы таңдауыңызды қайтарады.',
+			'discover.findNext.artworkLoading' => 'Сурет жүктелуде…',
+			'discover.findNext.artworkUnavailable' => 'Сурет қолжетімсіз',
+			'discover.findNext.savedFeedback' => 'Сақталған таңдауларға қосылды',
+			'discover.findNext.skippedFeedback' => 'Әзірге өткізіліп жіберілді',
+			'discover.findNext.releaseToConfirm' => 'Растау үшін жіберіңіз',
+			'discover.findNext.remoteHint' => 'Мұқаба таңдалғанда: ← / → таңдау · Таңдау түймесі: мәліметтер · ↑ / ↓ фокусты жылжыту',
 			'discover.extras' => 'Трейлерлер мен қосымшалар',
 			'discover.studio' => 'Студия',
 			'discover.rating' => 'Рейтинг',
@@ -5837,6 +5875,8 @@ extension on TranslationsKk {
 			'explore.mdblistShelves.nameHint' => 'Бұл үшін бір-бірімен бір-бірін бір-бірин бір-біректің бір-біремен бір-биректің бір.',
 			'explore.mdblistShelves.add' => 'Шелгі',
 			'explore.mdblistShelves.save' => 'Қайталылық',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Қазіргі таңда ${title}',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Қазіргі таңда ${title}',
 			'explore.mdblistShelves.unavailable' => 'Бұл спиртқа не қосқан.Серіктің шағын немесе жүктеу.',
@@ -5856,8 +5896,6 @@ extension on TranslationsKk {
 			'explore.rows.popularShows' => 'Танымал сериалдар',
 			'explore.rows.trendingAnime' => 'Трендтегі аниме',
 			'explore.rows.suggestedAnime' => 'Ұсынылатын аниме',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Эфирдегі үздік аниме',
 			'explore.rows.popularAnime' => 'Ең танымал аниме',
 			'explore.rows.trending' => 'Трендтер',
@@ -6351,6 +6389,8 @@ extension on TranslationsKk {
 			'downloads.resumeDownload' => 'Жүктеуді жалғастыру',
 			'downloads.cancelledDownload' => 'Тоқтатылған жүктеу',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} синхрондалуда)',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Жүктелді ${file} - Аяқтау үшін түртіңіз',
 			'downloads.partialDownloadClickToComplete' => 'Жартылай жүктелді - Аяқтау үшін түртіңіз',
 			'downloads.deleting' => 'Өшірілуде...',
@@ -6370,8 +6410,6 @@ extension on TranslationsKk {
 			'downloads.unwatchedOnly' => 'Тек көрілмегендер',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Келесі ${count} көрілмеген',
 			'downloads.customAmount' => 'Арнайы мөлшер...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Өнімдер (ақықтық) және басқа да',
 			'downloads.randomEpisodes' => 'Ауызды',
 			'downloads.includeSpecials' => 'Арнайы бөлімдерді қосу',
@@ -6865,6 +6903,8 @@ extension on TranslationsKk {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Серверге қосылу мүмкін болмады: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Кіру қатесі: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Жылдам қосылу қатесі: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Plex арқылы кіру',
 			'addServer.pinExpired' => 'PIN код мерзімі өтті.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Тіркелгіні тіркеу қатесі: ${error}',
@@ -6884,8 +6924,6 @@ extension on TranslationsKk {
 			'addServer.authResponseIncomplete' => 'Сервердің кіру жауабы толық емес',
 			'addServer.quickConnectRejected' => 'Сервер Quick Connect сұрауын қабылдамады',
 			'addServer.quickConnectNotJson' => 'Quick Connect жауабы жарамды JSON болмады',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect жауабында код немесе құпия кілт жоқ',
 			'addServer.quickConnectPollRejected' => 'Сервер Quick Connect сұрауын тексеруді қабылдамады',
 			'addServer.serverTimedOut' => 'Сервер уақытында жауап бермеді',
@@ -7379,6 +7417,8 @@ extension on TranslationsKk {
 			'sourceSetup.smbEncrypted' => 'SMB3 шифрлауы қосулы',
 			'sourceSetup.smbUnencrypted' => 'SMB3 шифрлауы өшірулі',
 			'sourceSetup.httpUnencrypted' => 'Тасымалдау шифрлауы жоқ HTTP',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Қосылу нүктесінің қауіпсіздігін тексеру',
 			'sourceSetup.fieldRequired' => ({required Object label}) => 'Міндетті өріс: ${label}.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => '${label} үшін ${min} мен ${max} арасындағы мәнді енгізіңіз.',

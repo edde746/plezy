@@ -762,6 +762,13 @@ class _Translations$settings$tr extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Tarihlerin, sayıların ve ölçü birimlerinin nasıl gösterileceğini seçin.';
 	@override String get metadataLanguage => 'Meta veri dili';
 	@override String get metadataLanguageDescription => 'Sunucu destekliyorsa başlıklar ve açıklamalar için tercih edilen dil. Ses ve altyazı tercihleri ayrı olarak ayarlanır.';
+	@override String get experimentalDolbyVision => 'Deneysel Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Sonraki oynatmada deneysel FEL işleyicisini kullanın. Ayrı bir motor derlemesi gerektirir.';
+	@override String get dvExperimentUnavailableDescription => 'Bu deney şu anda yalnızca Linux üzerinde kullanılabilir.';
+	@override String get dvCompatibilityFallback => 'Uyumluluk yedeği';
+	@override String get dvCompatibilityFallbackDescription => 'Deney başlatılamazsa standart işleyiciyi kullanın. FEL verileri kaybolabilir.';
+	@override String get dvExperimentDiagnostics => 'Video deneyi günlükleri';
+	@override String get dvExperimentDiagnosticsDescription => 'Sonraki oynatmada ayrıntılı oynatıcı günlüklerini etkinleştirin.';
 }
 
 // Path: themeEditor
@@ -3553,7 +3560,7 @@ class _Translations$discover$findNext$tr extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => 'Toplam ${duration}';
 	@override String get timingVaries => 'Süre değişebilir';
 	@override String get notNow => 'Şimdi değil';
-	@override String get swipeHint => 'Kaydırın veya aşağıdaki düğmeleri kullanın';
+	@override String get swipeHint => 'Kapağı ok yönünde kaydırın veya aşağıdaki düğmeleri kullanın.';
 	@override String get saved => 'Kaydedilen öneriler';
 	@override String savedCount({required Object count}) => 'Kaydedilen öneriler · ${count}';
 	@override String get undo => 'Geri al';
@@ -3581,6 +3588,18 @@ class _Translations$discover$findNext$tr extends Translations$discover$findNext$
 	@override String get openFailed => 'Bu seçenek artık kullanılamıyor. Yeniden kontrol etmek için yenileyin.';
 	@override String get changeFailed => 'Değişiklik kaydedilemedi. Yeniden deneyin.';
 	@override String get savedLimit => 'Kaydedilen öneriler listesi dolu. Başka bir öneriyi kaydetmek için birini kaldırın.';
+	@override String get chooseHint => 'Bir başlığı açın, sonrası için kaydedin veya atlayın.';
+	@override String get howItWorks => 'Nasıl kullanılır';
+	@override String get notNowHelp => 'Bu başlığı şimdilik atlayın. Kitaplığınızda kalır.';
+	@override String get saveHelp => 'Bu cihazda bu profilin kayıtlı seçimlerine ekleyin. Kaydetmek içeriği indirmez.';
+	@override String get openHelp => 'Ayrıntılar için kapağı seçin. Başlığı oynatmak, okumak veya açmak için ana düğmeyi kullanın.';
+	@override String get controlsHelp => 'Klavye veya kumanda: bir düğmeye odaklanın, ardından Enter veya Seç tuşuna basın. Geri al son seçiminizi geri getirir.';
+	@override String get artworkLoading => 'Görsel yükleniyor…';
+	@override String get artworkUnavailable => 'Görsel kullanılamıyor';
+	@override String get savedFeedback => 'Kayıtlı seçimlere eklendi';
+	@override String get skippedFeedback => 'Şimdilik atlandı';
+	@override String get releaseToConfirm => 'Onaylamak için bırakın';
+	@override String get remoteHint => 'Kapak odakta: ← / → seç · Seç tuşu: ayrıntılar · ↑ / ↓ odağı taşı';
 }
 
 // Path: discover.person
@@ -4915,6 +4934,13 @@ extension on TranslationsTr {
 			'settings.regionFormatDescription' => 'Tarihlerin, sayıların ve ölçü birimlerinin nasıl gösterileceğini seçin.',
 			'settings.metadataLanguage' => 'Meta veri dili',
 			'settings.metadataLanguageDescription' => 'Sunucu destekliyorsa başlıklar ve açıklamalar için tercih edilen dil. Ses ve altyazı tercihleri ayrı olarak ayarlanır.',
+			'settings.experimentalDolbyVision' => 'Deneysel Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Sonraki oynatmada deneysel FEL işleyicisini kullanın. Ayrı bir motor derlemesi gerektirir.',
+			'settings.dvExperimentUnavailableDescription' => 'Bu deney şu anda yalnızca Linux üzerinde kullanılabilir.',
+			'settings.dvCompatibilityFallback' => 'Uyumluluk yedeği',
+			'settings.dvCompatibilityFallbackDescription' => 'Deney başlatılamazsa standart işleyiciyi kullanın. FEL verileri kaybolabilir.',
+			'settings.dvExperimentDiagnostics' => 'Video deneyi günlükleri',
+			'settings.dvExperimentDiagnosticsDescription' => 'Sonraki oynatmada ayrıntılı oynatıcı günlüklerini etkinleştirin.',
 			'themeEditor.builtIn' => 'Yerleşik',
 			'themeEditor.presets' => 'Hazır Temalar',
 			'themeEditor.custom' => 'Özel',
@@ -5335,6 +5361,8 @@ extension on TranslationsTr {
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}" için kitaplık taraması başladı',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Kitaplık taranamadı: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '"${title}" için meta veriler yenileniyor...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}" için meta veri yenilemesi başladı',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Meta veriler yenilenemedi: ${error}',
 			'messages.logoutConfirm' => 'Çıkış yapmak istediğinizden emin misiniz?',
@@ -5342,8 +5370,6 @@ extension on TranslationsTr {
 			'messages.seasonsLoadFailed' => 'Sezonlar yüklenemedi',
 			'messages.noEpisodesFound' => 'İlk sezonda bölüm bulunamadı',
 			'messages.noEpisodesFoundGeneral' => 'Bölüm bulunamadı',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Bölümler yüklenemedi',
 			'messages.noResultsFound' => 'Sonuç bulunamadı',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Uyku zamanlayıcısı ${label} için ayarlandı',
@@ -5584,7 +5610,7 @@ extension on TranslationsTr {
 			'discover.findNext.totalDuration' => ({required Object duration}) => 'Toplam ${duration}',
 			'discover.findNext.timingVaries' => 'Süre değişebilir',
 			'discover.findNext.notNow' => 'Şimdi değil',
-			'discover.findNext.swipeHint' => 'Kaydırın veya aşağıdaki düğmeleri kullanın',
+			'discover.findNext.swipeHint' => 'Kapağı ok yönünde kaydırın veya aşağıdaki düğmeleri kullanın.',
 			'discover.findNext.saved' => 'Kaydedilen öneriler',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Kaydedilen öneriler · ${count}',
 			'discover.findNext.undo' => 'Geri al',
@@ -5612,6 +5638,18 @@ extension on TranslationsTr {
 			'discover.findNext.openFailed' => 'Bu seçenek artık kullanılamıyor. Yeniden kontrol etmek için yenileyin.',
 			'discover.findNext.changeFailed' => 'Değişiklik kaydedilemedi. Yeniden deneyin.',
 			'discover.findNext.savedLimit' => 'Kaydedilen öneriler listesi dolu. Başka bir öneriyi kaydetmek için birini kaldırın.',
+			'discover.findNext.chooseHint' => 'Bir başlığı açın, sonrası için kaydedin veya atlayın.',
+			'discover.findNext.howItWorks' => 'Nasıl kullanılır',
+			'discover.findNext.notNowHelp' => 'Bu başlığı şimdilik atlayın. Kitaplığınızda kalır.',
+			'discover.findNext.saveHelp' => 'Bu cihazda bu profilin kayıtlı seçimlerine ekleyin. Kaydetmek içeriği indirmez.',
+			'discover.findNext.openHelp' => 'Ayrıntılar için kapağı seçin. Başlığı oynatmak, okumak veya açmak için ana düğmeyi kullanın.',
+			'discover.findNext.controlsHelp' => 'Klavye veya kumanda: bir düğmeye odaklanın, ardından Enter veya Seç tuşuna basın. Geri al son seçiminizi geri getirir.',
+			'discover.findNext.artworkLoading' => 'Görsel yükleniyor…',
+			'discover.findNext.artworkUnavailable' => 'Görsel kullanılamıyor',
+			'discover.findNext.savedFeedback' => 'Kayıtlı seçimlere eklendi',
+			'discover.findNext.skippedFeedback' => 'Şimdilik atlandı',
+			'discover.findNext.releaseToConfirm' => 'Onaylamak için bırakın',
+			'discover.findNext.remoteHint' => 'Kapak odakta: ← / → seç · Seç tuşu: ayrıntılar · ↑ / ↓ odağı taşı',
 			'discover.extras' => 'Fragmanlar ve Ekstralar',
 			'discover.studio' => 'Stüdyo',
 			'discover.rating' => 'Derecelendirme',
@@ -5837,6 +5875,8 @@ extension on TranslationsTr {
 			'explore.mdblistShelves.nameHint' => 'Kaynak listesi adını kullanmak için boş bırakın.',
 			'explore.mdblistShelves.add' => 'Şelale ekle',
 			'explore.mdblistShelves.save' => 'kurtarma şemaları',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Yürüyüş ${title} yukarı',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => '${title} aşağı hareket',
 			'explore.mdblistShelves.unavailable' => 'Bu liste mevcut değildir. ayarlarda şelalesi geri veya kaldırın.',
@@ -5856,8 +5896,6 @@ extension on TranslationsTr {
 			'explore.rows.popularShows' => 'Popüler Diziler',
 			'explore.rows.trendingAnime' => 'Trend Animeler',
 			'explore.rows.suggestedAnime' => 'Önerilen Animeler',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'En İyi Yayınlanan Animeler',
 			'explore.rows.popularAnime' => 'En Popüler Animeler',
 			'explore.rows.trending' => 'Trendler',
@@ -6351,6 +6389,8 @@ extension on TranslationsTr {
 			'downloads.resumeDownload' => 'İndirmeyi devam ettir',
 			'downloads.cancelledDownload' => 'İptal edilen indirme',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} eşitleniyor)',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'İndirildi ${file} - Tamamlamak için tıklayın',
 			'downloads.partialDownloadClickToComplete' => 'Kısmen indirildi - Tamamlamak için tıklayın',
 			'downloads.deleting' => 'Siliniyor...',
@@ -6370,8 +6410,6 @@ extension on TranslationsTr {
 			'downloads.unwatchedOnly' => 'Yalnızca izlenmeyenler',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Sonraki ${count} izlenmeyen',
 			'downloads.customAmount' => 'Özel miktar...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Özel miktar (her yıl)',
 			'downloads.randomEpisodes' => 'Random Olayları',
 			'downloads.includeSpecials' => 'Özel Bölümleri Dahil Et',
@@ -6865,6 +6903,8 @@ extension on TranslationsTr {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Sunucuya ulaşılamadı: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Giriş başarısız: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Hızlı Bağlantı başarısız: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Plex ile Giriş Yap',
 			'addServer.pinExpired' => 'Giriş yapmadan önce PIN süresi doldu. Lütfen tekrar deneyin.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Hesap kaydı başarısız oldu: ${error}',
@@ -6884,8 +6924,6 @@ extension on TranslationsTr {
 			'addServer.authResponseIncomplete' => 'Sunucudan gelen oturum açma yanıtı eksikti',
 			'addServer.quickConnectRejected' => 'Quick Connect sunucu tarafından reddedildi',
 			'addServer.quickConnectNotJson' => 'Quick Connect yanıtı geçerli bir JSON değildi',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect yanıtında kod veya gizli anahtar eksik',
 			'addServer.quickConnectPollRejected' => 'Quick Connect yoklaması sunucu tarafından reddedildi',
 			'addServer.serverTimedOut' => 'Sunucu zamanında yanıt vermedi',
@@ -7379,6 +7417,8 @@ extension on TranslationsTr {
 			'sourceSetup.smbEncrypted' => 'SMB3 şifrelemesi açık',
 			'sourceSetup.smbUnencrypted' => 'SMB3 şifrelemesi kapalı',
 			'sourceSetup.httpUnencrypted' => 'Aktarım şifrelemesi olmadan HTTP',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Uç nokta güvenliğini kontrol et',
 			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} gereklidir.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => '${label} için ${min} ile ${max} arasında bir değer girin.',

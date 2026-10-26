@@ -43,6 +43,7 @@ String sourceKindName(FileSourceKind kind) => switch (kind) {
   FileSourceKind.dlna => 'DLNA / UPnP',
   FileSourceKind.s3 => 'S3',
   FileSourceKind.opds => 'OPDS',
+  FileSourceKind.komga => 'Komga',
   FileSourceKind.audiobookshelf => 'Audiobookshelf',
 };
 IconData sourceItemIcon(SourceItemKind kind) => switch (kind) {

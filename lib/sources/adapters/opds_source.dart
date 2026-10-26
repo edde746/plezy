@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:xml/xml.dart';
 
 import '../source_models.dart';
+import '../comic_document.dart';
 import '../source_transport.dart';
 import 'webdav_source.dart';
 
@@ -11,6 +12,31 @@ class OpdsSourceAdapter extends SourceAdapter {
   final SourceCredentials credentials;
   final Map<String, Uri> _acquisitions = {};
   final Map<String, Uri> _covers = {};
+  final Map<String, ({String template, int count})> _streams = {};
+  static const _pse = 'http://vaemendis.net/opds-pse/stream';
+  static const _pseNamespace = 'http://vaemendis.net/opds-pse/ns';
+  void _stream(String id, Uri catalog, String? href, Object? count, String type) {
+    final pages = sourceInt(count);
+    if (href == null ||
+        !href.contains('{pageNumber}') ||
+        pages == null ||
+        pages < 1 ||
+        pages > 10000 ||
+        !const {'image/jpeg', 'image/png', 'image/gif'}.contains(type)) {
+      return;
+    }
+    final uri = catalog.resolve(href);
+    transport.validate(uri);
+    _streams[id] = (template: uri.toString(), count: pages);
+  }
+
+  PublicationFile _streamFile(Uri uri, String id, String title) => PublicationFile(
+    id: jsonEncode({'catalog': uri.toString(), 'entry': id, 'stream': true}),
+    name: '$title.cbz',
+    mimeType: 'application/vnd.comicbook+zip',
+    streamOnly: true,
+  );
+
   Uri _catalog(Uri uri) {
     validatePublicSourceUri(uri, allowHttp: transport.allowHttp);
     return uri;
@@ -126,6 +152,16 @@ class OpdsSourceAdapter extends SourceAdapter {
       final image = sourceList(j['images']).map(sourceMap).where((i) => i['href'] is String).firstOrNull;
       if (image != null) _covers[id] = uri.resolve(image['href'] as String);
       final files = <PublicationFile>[];
+      _streams.remove(id);
+      for (final link in links.where((l) => _rels(l).contains(_pse))) {
+        _stream(
+          id,
+          uri,
+          link['href'] as String?,
+          sourceMap(link['properties'])['numberOfItems'] ?? link['count'],
+          '${link['type'] ?? ''}',
+        );
+      }
       for (var index = 0; index < links.length; index++) {
         final link = links[index];
         if (!_rels(link).any((r) => _downloadable(r)) || link['href'] is! String) continue;
@@ -135,6 +171,7 @@ class OpdsSourceAdapter extends SourceAdapter {
         _acquisitions[ref] = uri.resolve(link['href'] as String);
         files.add(PublicationFile(id: ref, name: name, mimeType: mime, size: sourceInt(link['length'])));
       }
+      if (files.isEmpty && _streams.containsKey(id)) files.add(_streamFile(uri, id, _label(meta['title'])));
       if (files.isEmpty) continue;
       entries.add(
         SourceEntry(
@@ -194,6 +231,16 @@ class OpdsSourceAdapter extends SourceAdapter {
           ?.getAttribute('href');
       if (image != null) _covers[id] = uri.resolve(image);
       final files = <PublicationFile>[];
+      _streams.remove(id);
+      for (final link in links.where((l) => l.getAttribute('rel') == _pse)) {
+        _stream(
+          id,
+          uri,
+          link.getAttribute('href'),
+          link.getAttribute('count', namespaceUri: _pseNamespace),
+          link.getAttribute('type') ?? '',
+        );
+      }
       for (var index = 0; index < links.length; index++) {
         final link = links[index], href = link.getAttribute('href');
         if (href == null) continue;
@@ -215,6 +262,7 @@ class OpdsSourceAdapter extends SourceAdapter {
           );
         }
       }
+      if (files.isEmpty && _streams.containsKey(id)) files.add(_streamFile(uri, id, title));
       if (files.isNotEmpty) {
         result.add(
           SourceEntry(
@@ -241,6 +289,30 @@ class OpdsSourceAdapter extends SourceAdapter {
   }
 
   @override
+  Future<ComicPageSource?> comicPages(PublicationFile file) async {
+    if (file.kind != SourceItemKind.comic) return null;
+    final ref = sourceMap(jsonDecode(file.id));
+    await browse(parent: ref['catalog'] as String);
+    final stream = _streams[ref['entry']];
+    if (stream == null) return null;
+    return ComicPageSource(
+      document: ComicDocument([
+        for (var i = 0; i < stream.count; i++) ComicPage('page${i.toString().padLeft(6, '0')}.jpg'),
+      ]),
+      transport: transport,
+      resolve: (index) async {
+        if (index < 0 || index >= stream.count) throw const SourceException(SourceFailure.invalidData);
+        final uri = Uri.parse(
+          stream.template
+              .replaceAll(RegExp(r'%7BpageNumber%7D|\{pageNumber\}', caseSensitive: false), '$index')
+              .replaceAll(RegExp(r'%7BmaxWidth%7D|\{maxWidth\}', caseSensitive: false), '2560'),
+        );
+        return ContentLease(uri, headers: await _headers(uri));
+      },
+    );
+  }
+
+  @override
   Future<ContentLease?> cover(SourceEntry entry) async {
     if (!_covers.containsKey(entry.id) && entry.parentId != null) await browse(parent: entry.parentId);
     final uri = _covers[entry.id];
@@ -257,6 +329,7 @@ class OpdsSourceAdapter extends SourceAdapter {
   };
   @override
   Future<ContentLease> resolve(PublicationFile file) async {
+    if (file.streamOnly) throw const SourceException(SourceFailure.unsupported);
     final ref = sourceMap(jsonDecode(file.id));
     // Refresh acquisition links, including expired signed URLs, at every open.
     await browse(parent: ref['catalog'] as String);

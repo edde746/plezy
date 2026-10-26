@@ -34,13 +34,19 @@ String sourceTransportLabel(FileSource source) {
     FileSourceKind.sftp => t.sourceSetup.sshPinned,
     FileSourceKind.smb =>
       source.options['encryptSmb'] == 'true' ? t.sourceSetup.smbEncrypted : t.sourceSetup.smbUnencrypted,
-    FileSourceKind.webdav || FileSourceKind.opds || FileSourceKind.dlna =>
+    FileSourceKind.webdav ||
+    FileSourceKind.opds ||
+    FileSourceKind.dlna ||
+    FileSourceKind.s3 ||
+    FileSourceKind.audiobookshelf ||
+    FileSourceKind.komga =>
       scheme == 'https'
           ? 'HTTPS'
           : scheme == 'http'
           ? t.sourceSetup.httpUnencrypted
           : t.sourceSetup.checkEndpointSecurity,
-    _ => null,
+    FileSourceKind.local => null,
+    FileSourceKind.googleDrive || FileSourceKind.oneDrive || FileSourceKind.dropbox => t.fileSources.signIn,
   };
   return transport == null ? type : '$type · $transport';
 }

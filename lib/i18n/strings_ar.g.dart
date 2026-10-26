@@ -770,6 +770,13 @@ class _Translations$settings$ar extends Translations$settings$en {
 	@override String get regionFormatDescription => 'اختر طريقة عرض التواريخ والأرقام ووحدات القياس.';
 	@override String get metadataLanguage => 'لغة بيانات الوسائط';
 	@override String get metadataLanguageDescription => 'لغة العناوين والأوصاف المفضلة عندما يدعمها الخادم. تُضبط تفضيلات الصوت والترجمة بشكل مستقل.';
+	@override String get experimentalDolbyVision => 'Dolby Vision التجريبي';
+	@override String get experimentalDolbyVisionDescription => 'استخدم عارض FEL التجريبي عند التشغيل التالي. يتطلب إصدارًا منفصلًا من المحرك.';
+	@override String get dvExperimentUnavailableDescription => 'هذه التجربة متاحة حاليًا على Linux فقط.';
+	@override String get dvCompatibilityFallback => 'الرجوع للتوافق';
+	@override String get dvCompatibilityFallbackDescription => 'استخدم العارض القياسي إذا تعذر بدء التجربة. قد تُفقد بيانات FEL.';
+	@override String get dvExperimentDiagnostics => 'تسجيل تجربة الفيديو';
+	@override String get dvExperimentDiagnosticsDescription => 'فعّل سجلات المشغّل التفصيلية عند التشغيل التالي.';
 }
 
 // Path: themeEditor
@@ -3633,7 +3640,7 @@ class _Translations$discover$findNext$ar extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => '${duration} إجمالًا';
 	@override String get timingVaries => 'تختلف المدة';
 	@override String get notNow => 'ليس الآن';
-	@override String get swipeHint => 'اسحب، أو استخدم الأزرار أدناه';
+	@override String get swipeHint => 'اسحب الغلاف باتجاه أحد السهمين أو استخدم الأزرار أدناه.';
 	@override String get saved => 'الاختيارات المحفوظة';
 	@override String savedCount({required Object count}) => 'الاختيارات المحفوظة · ${count}';
 	@override String get undo => 'تراجع';
@@ -3661,6 +3668,18 @@ class _Translations$discover$findNext$ar extends Translations$discover$findNext$
 	@override String get openFailed => 'لم يعد هذا الاختيار متاحًا. حدّث للتحقق مجددًا.';
 	@override String get changeFailed => 'تعذّر حفظ هذا التغيير. حاول مجددًا.';
 	@override String get savedLimit => 'قائمة الاختيارات المحفوظة ممتلئة. أزل اختيارًا لحفظ آخر.';
+	@override String get chooseHint => 'افتح عنوانًا أو احفظه لوقت لاحق أو تخطّه.';
+	@override String get howItWorks => 'طريقة الاستخدام';
+	@override String get notNowHelp => 'تخطَّ هذا العنوان حاليًا. سيبقى في مكتبتك.';
+	@override String get saveHelp => 'احتفظ به ضمن الاختيارات المحفوظة لهذا الملف الشخصي على هذا الجهاز. الحفظ لا ينزّل المحتوى.';
+	@override String get openHelp => 'اختر الغلاف لعرض التفاصيل. استخدم الإجراء الرئيسي لتشغيل العنوان أو قراءته أو فتحه.';
+	@override String get controlsHelp => 'بلوحة المفاتيح أو جهاز التحكم: انتقل إلى زر ثم اضغط Enter أو زر التحديد. التراجع يعيد اختيارك الأخير.';
+	@override String get artworkLoading => 'جارٍ تحميل الصورة…';
+	@override String get artworkUnavailable => 'الصورة غير متاحة';
+	@override String get savedFeedback => 'أُضيف إلى الاختيارات المحفوظة';
+	@override String get skippedFeedback => 'تم التخطي حاليًا';
+	@override String get releaseToConfirm => 'أفلت للتأكيد';
+	@override String get remoteHint => 'عند تحديد الغلاف: ← / → للاختيار · زر التحديد للتفاصيل · ↑ / ↓ لنقل التركيز';
 }
 
 // Path: discover.person
@@ -5003,6 +5022,13 @@ extension on TranslationsAr {
 			'settings.regionFormatDescription' => 'اختر طريقة عرض التواريخ والأرقام ووحدات القياس.',
 			'settings.metadataLanguage' => 'لغة بيانات الوسائط',
 			'settings.metadataLanguageDescription' => 'لغة العناوين والأوصاف المفضلة عندما يدعمها الخادم. تُضبط تفضيلات الصوت والترجمة بشكل مستقل.',
+			'settings.experimentalDolbyVision' => 'Dolby Vision التجريبي',
+			'settings.experimentalDolbyVisionDescription' => 'استخدم عارض FEL التجريبي عند التشغيل التالي. يتطلب إصدارًا منفصلًا من المحرك.',
+			'settings.dvExperimentUnavailableDescription' => 'هذه التجربة متاحة حاليًا على Linux فقط.',
+			'settings.dvCompatibilityFallback' => 'الرجوع للتوافق',
+			'settings.dvCompatibilityFallbackDescription' => 'استخدم العارض القياسي إذا تعذر بدء التجربة. قد تُفقد بيانات FEL.',
+			'settings.dvExperimentDiagnostics' => 'تسجيل تجربة الفيديو',
+			'settings.dvExperimentDiagnosticsDescription' => 'فعّل سجلات المشغّل التفصيلية عند التشغيل التالي.',
 			'themeEditor.builtIn' => 'بناء في',
 			'themeEditor.presets' => 'الكهنوت',
 			'themeEditor.custom' => 'مخصص',
@@ -5423,6 +5449,8 @@ extension on TranslationsAr {
 			'messages.libraryScanStarted' => ({required Object title}) => 'بدأت فحص المكتبة لـ "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'فشل في فحص المكتبة: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'إعادة تدوير البيانات الميتاتية لـ "${title}" ...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'بدأ تحديث البيانات الميتة لـ "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'لا يمكن تحديث البيانات الميتا: ${error}',
 			'messages.logoutConfirm' => 'هل أنت متأكد من أنك تريد الانسحاب؟',
@@ -5430,8 +5458,6 @@ extension on TranslationsAr {
 			'messages.seasonsLoadFailed' => 'لا أستطيع تحميل الموسم',
 			'messages.noEpisodesFound' => 'لا توجد أحداث في الموسم الأول',
 			'messages.noEpisodesFoundGeneral' => 'لم يتم العثور على أحداث',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'لا يمكن تحميل الحوادث',
 			'messages.noResultsFound' => 'لم يتم العثور على نتائج.',
 			'messages.sleepTimerSet' => ({required Object label}) => 'ساعة النوم المحددة ${label}',
@@ -5672,7 +5698,7 @@ extension on TranslationsAr {
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} إجمالًا',
 			'discover.findNext.timingVaries' => 'تختلف المدة',
 			'discover.findNext.notNow' => 'ليس الآن',
-			'discover.findNext.swipeHint' => 'اسحب، أو استخدم الأزرار أدناه',
+			'discover.findNext.swipeHint' => 'اسحب الغلاف باتجاه أحد السهمين أو استخدم الأزرار أدناه.',
 			'discover.findNext.saved' => 'الاختيارات المحفوظة',
 			'discover.findNext.savedCount' => ({required Object count}) => 'الاختيارات المحفوظة · ${count}',
 			'discover.findNext.undo' => 'تراجع',
@@ -5700,6 +5726,18 @@ extension on TranslationsAr {
 			'discover.findNext.openFailed' => 'لم يعد هذا الاختيار متاحًا. حدّث للتحقق مجددًا.',
 			'discover.findNext.changeFailed' => 'تعذّر حفظ هذا التغيير. حاول مجددًا.',
 			'discover.findNext.savedLimit' => 'قائمة الاختيارات المحفوظة ممتلئة. أزل اختيارًا لحفظ آخر.',
+			'discover.findNext.chooseHint' => 'افتح عنوانًا أو احفظه لوقت لاحق أو تخطّه.',
+			'discover.findNext.howItWorks' => 'طريقة الاستخدام',
+			'discover.findNext.notNowHelp' => 'تخطَّ هذا العنوان حاليًا. سيبقى في مكتبتك.',
+			'discover.findNext.saveHelp' => 'احتفظ به ضمن الاختيارات المحفوظة لهذا الملف الشخصي على هذا الجهاز. الحفظ لا ينزّل المحتوى.',
+			'discover.findNext.openHelp' => 'اختر الغلاف لعرض التفاصيل. استخدم الإجراء الرئيسي لتشغيل العنوان أو قراءته أو فتحه.',
+			'discover.findNext.controlsHelp' => 'بلوحة المفاتيح أو جهاز التحكم: انتقل إلى زر ثم اضغط Enter أو زر التحديد. التراجع يعيد اختيارك الأخير.',
+			'discover.findNext.artworkLoading' => 'جارٍ تحميل الصورة…',
+			'discover.findNext.artworkUnavailable' => 'الصورة غير متاحة',
+			'discover.findNext.savedFeedback' => 'أُضيف إلى الاختيارات المحفوظة',
+			'discover.findNext.skippedFeedback' => 'تم التخطي حاليًا',
+			'discover.findNext.releaseToConfirm' => 'أفلت للتأكيد',
+			'discover.findNext.remoteHint' => 'عند تحديد الغلاف: ← / → للاختيار · زر التحديد للتفاصيل · ↑ / ↓ لنقل التركيز',
 			'discover.extras' => 'تريلر و إضافات',
 			'discover.studio' => 'الاستوديو',
 			'discover.rating' => 'تصنيف',
@@ -5925,6 +5963,8 @@ extension on TranslationsAr {
 			'explore.mdblistShelves.nameHint' => 'اترك فارغا لاستخدام اسم قائمة المصدر.',
 			'explore.mdblistShelves.add' => 'إضافة شيلف',
 			'explore.mdblistShelves.save' => 'احفظ السترات',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'تحريك ${title} إلى الأعلى',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'تحريك ${title} إلى أسفل',
 			'explore.mdblistShelves.unavailable' => 'هذه القائمة غير متوفرة.إزالة أو إزالة الستار في الإعدادات.',
@@ -5944,8 +5984,6 @@ extension on TranslationsAr {
 			'explore.rows.popularShows' => 'العروض الشعبية',
 			'explore.rows.trendingAnime' => 'انيمات الاتجاهات',
 			'explore.rows.suggestedAnime' => 'انيمو الموصى بها',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'أعلى الهواء Anime',
 			'explore.rows.popularAnime' => 'الأنيمي الأكثر شعبية',
 			'explore.rows.trending' => 'الاتجاهات',
@@ -6439,6 +6477,8 @@ extension on TranslationsAr {
 			'downloads.resumeDownload' => 'إعادة التدوير download',
 			'downloads.cancelledDownload' => 'إلغاء تحميل',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (مزامنة ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'تحميل ${file} - انقر للانتهاء',
 			'downloads.partialDownloadClickToComplete' => 'تحميل جزئي - Click to complete',
 			'downloads.deleting' => 'إلغاء...',
@@ -6458,8 +6498,6 @@ extension on TranslationsAr {
 			'downloads.unwatchedOnly' => 'غير ملاحظة فقط',
 			'downloads.nextNUnwatched' => ({required Object count}) => '${count} غير مسبوق',
 			'downloads.customAmount' => 'المبلغ المحدد ...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'المبلغ المحدد (كل ...',
 			'downloads.randomEpisodes' => 'الحوادث العشوائية',
 			'downloads.includeSpecials' => 'إدخال الخصائص',
@@ -6953,6 +6991,8 @@ extension on TranslationsAr {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'لا يمكن الوصول إلى الخادم: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'تسجيل الدخول فاشلة: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect فشل: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'تسجيل الدخول مع Plex',
 			'addServer.pinExpired' => 'انتهاء صلاحية PIN قبل تسجيل الدخول، يرجى المحاولة مرة أخرى.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'فشل في تسجيل الحساب: ${error}',
@@ -6972,8 +7012,6 @@ extension on TranslationsAr {
 			'addServer.authResponseIncomplete' => 'استجابة التسجيل من الخادم كانت غير كاملة',
 			'addServer.quickConnectRejected' => 'Quick Connect تم رفضها من قبل الخادم',
 			'addServer.quickConnectNotJson' => 'رد Quick Connect لم يكن صالحا JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'رد Quick Connect يفتقر إلى رمز أو سر',
 			'addServer.quickConnectPollRejected' => 'Quick Connect استجواب تم رفضه من قبل الخادم',
 			'addServer.serverTimedOut' => 'لم يستجيب الخادم في الوقت المناسب.',
@@ -7467,6 +7505,8 @@ extension on TranslationsAr {
 			'sourceSetup.smbEncrypted' => 'تشفير SMB3 مفعّل',
 			'sourceSetup.smbUnencrypted' => 'تشفير SMB3 معطّل',
 			'sourceSetup.httpUnencrypted' => 'HTTP دون تشفير للنقل',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'تحقّق من أمان عنوان الاتصال',
 			'sourceSetup.fieldRequired' => ({required Object label}) => 'يلزم إدخال ${label}.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'أدخل ${label} من ${min} إلى ${max}.',

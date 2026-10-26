@@ -292,6 +292,9 @@ class PerformanceStatsService {
         isAndroid ? Future.value(null) : player.getProperty('video-params/max-fall'), // 9
         player.getProperty('video-params/aspect-name'), // 10
         player.getProperty('video-params/rotate'), // 11
+        player.getProperty('current-tracks/video/dolby-vision-profile'), // 12
+        player.getProperty('current-vo'), // 13
+        Platform.isLinux ? player.getProperty('plezyng-dv-renderer') : Future.value(null), // 14
       ]);
     }
 
@@ -345,6 +348,8 @@ class PerformanceStatsService {
       maxFall: _parseDouble(videoResults?[9]),
       aspectName: videoResults?[10],
       rotate: _parseInt(videoResults?[11]),
+      dvSourceProfile: _parseInt(videoResults?[12]),
+      dvPlaybackPath: _parseInt(videoResults?[12]) == null ? null : (videoResults?[14] ?? videoResults?[13]),
       appMemoryBytes: appMemory,
       uiFps: _currentUiFps,
     );

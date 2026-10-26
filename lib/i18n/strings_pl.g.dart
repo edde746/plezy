@@ -766,6 +766,13 @@ class _Translations$settings$pl extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Wybierz sposób wyświetlania dat, liczb i jednostek miary.';
 	@override String get metadataLanguage => 'Język metadanych';
 	@override String get metadataLanguageDescription => 'Preferowany język tytułów i opisów, jeśli serwer go obsługuje. Preferencje dźwięku i napisów ustawia się osobno.';
+	@override String get experimentalDolbyVision => 'Eksperymentalny Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Użyj eksperymentalnego renderera FEL przy następnym odtwarzaniu. Wymaga osobnej kompilacji silnika.';
+	@override String get dvExperimentUnavailableDescription => 'Ten eksperyment jest obecnie dostępny tylko w systemie Linux.';
+	@override String get dvCompatibilityFallback => 'Tryb zgodności w razie błędu';
+	@override String get dvCompatibilityFallbackDescription => 'Użyj standardowego renderera, jeśli eksperyment nie może się uruchomić. Dane FEL mogą zostać utracone.';
+	@override String get dvExperimentDiagnostics => 'Rejestrowanie eksperymentu wideo';
+	@override String get dvExperimentDiagnosticsDescription => 'Włącz szczegółowe dzienniki odtwarzacza przy następnym odtwarzaniu.';
 }
 
 // Path: themeEditor
@@ -3593,7 +3600,7 @@ class _Translations$discover$findNext$pl extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => 'Łącznie ${duration}';
 	@override String get timingVaries => 'Czas może się różnić';
 	@override String get notNow => 'Nie teraz';
-	@override String get swipeHint => 'Przesuń palcem lub użyj przycisków poniżej';
+	@override String get swipeHint => 'Przesuń okładkę w stronę strzałki lub użyj przycisków poniżej.';
 	@override String get saved => 'Zapisane propozycje';
 	@override String savedCount({required Object count}) => 'Zapisane propozycje · ${count}';
 	@override String get undo => 'Cofnij';
@@ -3621,6 +3628,18 @@ class _Translations$discover$findNext$pl extends Translations$discover$findNext$
 	@override String get openFailed => 'Ta propozycja nie jest już dostępna. Odśwież, aby sprawdzić ponownie.';
 	@override String get changeFailed => 'Nie udało się zapisać zmiany. Spróbuj ponownie.';
 	@override String get savedLimit => 'Lista zapisanych propozycji jest pełna. Usuń jedną, aby zapisać kolejną.';
+	@override String get chooseHint => 'Otwórz tytuł, zapisz go na później lub pomiń.';
+	@override String get howItWorks => 'Jak to działa';
+	@override String get notNowHelp => 'Pomiń ten tytuł na razie. Pozostanie w Twojej bibliotece.';
+	@override String get saveHelp => 'Zachowaj go w zapisanych propozycjach tego profilu na tym urządzeniu. Zapisanie nie pobiera tytułu.';
+	@override String get openHelp => 'Wybierz okładkę, aby zobaczyć szczegóły. Główna akcja pozwala odtworzyć, przeczytać lub otworzyć tytuł.';
+	@override String get controlsHelp => 'Klawiatura lub pilot: wybierz przycisk i naciśnij Enter lub Wybierz. Cofnij przywraca ostatni wybór.';
+	@override String get artworkLoading => 'Ładowanie grafiki…';
+	@override String get artworkUnavailable => 'Grafika niedostępna';
+	@override String get savedFeedback => 'Dodano do zapisanych propozycji';
+	@override String get skippedFeedback => 'Na razie pominięto';
+	@override String get releaseToConfirm => 'Puść, aby potwierdzić';
+	@override String get remoteHint => 'Okładka zaznaczona: ← / → wybór · Wybierz: szczegóły · ↑ / ↓ zmiana fokusu';
 }
 
 // Path: discover.person
@@ -4959,6 +4978,13 @@ extension on TranslationsPl {
 			'settings.regionFormatDescription' => 'Wybierz sposób wyświetlania dat, liczb i jednostek miary.',
 			'settings.metadataLanguage' => 'Język metadanych',
 			'settings.metadataLanguageDescription' => 'Preferowany język tytułów i opisów, jeśli serwer go obsługuje. Preferencje dźwięku i napisów ustawia się osobno.',
+			'settings.experimentalDolbyVision' => 'Eksperymentalny Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Użyj eksperymentalnego renderera FEL przy następnym odtwarzaniu. Wymaga osobnej kompilacji silnika.',
+			'settings.dvExperimentUnavailableDescription' => 'Ten eksperyment jest obecnie dostępny tylko w systemie Linux.',
+			'settings.dvCompatibilityFallback' => 'Tryb zgodności w razie błędu',
+			'settings.dvCompatibilityFallbackDescription' => 'Użyj standardowego renderera, jeśli eksperyment nie może się uruchomić. Dane FEL mogą zostać utracone.',
+			'settings.dvExperimentDiagnostics' => 'Rejestrowanie eksperymentu wideo',
+			'settings.dvExperimentDiagnosticsDescription' => 'Włącz szczegółowe dzienniki odtwarzacza przy następnym odtwarzaniu.',
 			'themeEditor.builtIn' => 'Wbudowane',
 			'themeEditor.presets' => 'Gotowe motywy',
 			'themeEditor.custom' => 'Własny',
@@ -5379,6 +5405,8 @@ extension on TranslationsPl {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Rozpoczęto skanowanie biblioteki "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Nie udało się zeskanować biblioteki: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Odświeżanie metadanych "${title}"...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Rozpoczęto odświeżanie metadanych "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Nie udało się odświeżyć metadanych: ${error}',
 			'messages.logoutConfirm' => 'Czy na pewno chcesz się wylogować?',
@@ -5386,8 +5414,6 @@ extension on TranslationsPl {
 			'messages.seasonsLoadFailed' => 'Nie udało się załadować sezonów',
 			'messages.noEpisodesFound' => 'Nie znaleziono odcinków w pierwszym sezonie',
 			'messages.noEpisodesFoundGeneral' => 'Nie znaleziono odcinków',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Nie udało się załadować odcinków',
 			'messages.noResultsFound' => 'Nie znaleziono wyników',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Wyłącznik czasowy ustawiony na ${label}',
@@ -5628,7 +5654,7 @@ extension on TranslationsPl {
 			'discover.findNext.totalDuration' => ({required Object duration}) => 'Łącznie ${duration}',
 			'discover.findNext.timingVaries' => 'Czas może się różnić',
 			'discover.findNext.notNow' => 'Nie teraz',
-			'discover.findNext.swipeHint' => 'Przesuń palcem lub użyj przycisków poniżej',
+			'discover.findNext.swipeHint' => 'Przesuń okładkę w stronę strzałki lub użyj przycisków poniżej.',
 			'discover.findNext.saved' => 'Zapisane propozycje',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Zapisane propozycje · ${count}',
 			'discover.findNext.undo' => 'Cofnij',
@@ -5656,6 +5682,18 @@ extension on TranslationsPl {
 			'discover.findNext.openFailed' => 'Ta propozycja nie jest już dostępna. Odśwież, aby sprawdzić ponownie.',
 			'discover.findNext.changeFailed' => 'Nie udało się zapisać zmiany. Spróbuj ponownie.',
 			'discover.findNext.savedLimit' => 'Lista zapisanych propozycji jest pełna. Usuń jedną, aby zapisać kolejną.',
+			'discover.findNext.chooseHint' => 'Otwórz tytuł, zapisz go na później lub pomiń.',
+			'discover.findNext.howItWorks' => 'Jak to działa',
+			'discover.findNext.notNowHelp' => 'Pomiń ten tytuł na razie. Pozostanie w Twojej bibliotece.',
+			'discover.findNext.saveHelp' => 'Zachowaj go w zapisanych propozycjach tego profilu na tym urządzeniu. Zapisanie nie pobiera tytułu.',
+			'discover.findNext.openHelp' => 'Wybierz okładkę, aby zobaczyć szczegóły. Główna akcja pozwala odtworzyć, przeczytać lub otworzyć tytuł.',
+			'discover.findNext.controlsHelp' => 'Klawiatura lub pilot: wybierz przycisk i naciśnij Enter lub Wybierz. Cofnij przywraca ostatni wybór.',
+			'discover.findNext.artworkLoading' => 'Ładowanie grafiki…',
+			'discover.findNext.artworkUnavailable' => 'Grafika niedostępna',
+			'discover.findNext.savedFeedback' => 'Dodano do zapisanych propozycji',
+			'discover.findNext.skippedFeedback' => 'Na razie pominięto',
+			'discover.findNext.releaseToConfirm' => 'Puść, aby potwierdzić',
+			'discover.findNext.remoteHint' => 'Okładka zaznaczona: ← / → wybór · Wybierz: szczegóły · ↑ / ↓ zmiana fokusu',
 			'discover.extras' => 'Zwiastuny i dodatki',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Ocena',
@@ -5881,6 +5919,8 @@ extension on TranslationsPl {
 			'explore.mdblistShelves.nameHint' => 'Pozostaw biały, aby użyć nazwy listy źródłowej.',
 			'explore.mdblistShelves.add' => 'Dodaj Shelf',
 			'explore.mdblistShelves.save' => 'Zbawienie łóżek',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Przeprowadź ${title} w górę',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Przeprowadź ${title} w dół',
 			'explore.mdblistShelves.unavailable' => 'Ta lista nie jest dostępna. wycofać lub usunąć jej pudełko w ustawieniach.',
@@ -5900,8 +5940,6 @@ extension on TranslationsPl {
 			'explore.rows.popularShows' => 'Popularne seriale',
 			'explore.rows.trendingAnime' => 'Anime na czasie',
 			'explore.rows.suggestedAnime' => 'Sugerowane anime',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Najpopularniejsze emitowane anime',
 			'explore.rows.popularAnime' => 'Najpopularniejsze anime',
 			'explore.rows.trending' => 'Na czasie',
@@ -6395,6 +6433,8 @@ extension on TranslationsPl {
 			'downloads.resumeDownload' => 'Wznów pobieranie',
 			'downloads.cancelledDownload' => 'Anulowane pobieranie',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (synchronizowanie ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Pobrano ${file} — kliknij, aby dokończyć',
 			'downloads.partialDownloadClickToComplete' => 'Pobrano częściowo — kliknij, aby dokończyć',
 			'downloads.deleting' => 'Usuwanie...',
@@ -6414,8 +6454,6 @@ extension on TranslationsPl {
 			'downloads.unwatchedOnly' => 'Tylko nieobejrzane',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Następne ${count} nieobejrzanych',
 			'downloads.customAmount' => 'Własna liczba...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Wskaźnik (w każdym z nich)',
 			'downloads.randomEpisodes' => 'Randomowe epizody',
 			'downloads.includeSpecials' => 'Uwzględnij odcinki specjalne',
@@ -6909,6 +6947,8 @@ extension on TranslationsPl {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Nie udało się połączyć z serwerem: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Logowanie nie powiodło się: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect nie powiodło się: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Zaloguj się przez Plex',
 			'addServer.pinExpired' => 'PIN wygasł przed zalogowaniem. Spróbuj ponownie.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Nie udało się zarejestrować konta: ${error}',
@@ -6928,8 +6968,6 @@ extension on TranslationsPl {
 			'addServer.authResponseIncomplete' => 'Odpowiedź logowania z serwera była niekompletna',
 			'addServer.quickConnectRejected' => 'Quick Connect został odrzucony przez serwer',
 			'addServer.quickConnectNotJson' => 'Odpowiedź Quick Connect ma nieprawidłowy format JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'W odpowiedzi Quick Connect brakuje kodu lub sekretu',
 			'addServer.quickConnectPollRejected' => 'Odpytywanie Quick Connect zostało odrzucone przez serwer',
 			'addServer.serverTimedOut' => 'Serwer nie odpowiedział w wymaganym czasie',
@@ -7423,6 +7461,8 @@ extension on TranslationsPl {
 			'sourceSetup.smbEncrypted' => 'Szyfrowanie SMB3 włączone',
 			'sourceSetup.smbUnencrypted' => 'Szyfrowanie SMB3 wyłączone',
 			'sourceSetup.httpUnencrypted' => 'HTTP bez szyfrowania transportu',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Sprawdź bezpieczeństwo punktu końcowego',
 			'sourceSetup.fieldRequired' => ({required Object label}) => 'Pole wymagane: ${label}.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Dla pola „${label}” wprowadź wartość od ${min} do ${max}.',

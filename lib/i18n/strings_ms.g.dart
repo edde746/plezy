@@ -760,6 +760,13 @@ class _Translations$settings$ms extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Pilih cara tarikh, nombor dan unit ukuran dipaparkan.';
 	@override String get metadataLanguage => 'Bahasa metadata';
 	@override String get metadataLanguageDescription => 'Bahasa tajuk dan huraian pilihan jika disokong oleh pelayan. Pilihan audio dan sari kata ditetapkan secara berasingan.';
+	@override String get experimentalDolbyVision => 'Dolby Vision eksperimen';
+	@override String get experimentalDolbyVisionDescription => 'Gunakan pemapar FEL eksperimen pada main balik seterusnya. Memerlukan binaan enjin yang berasingan.';
+	@override String get dvExperimentUnavailableDescription => 'Eksperimen ini kini hanya tersedia pada Linux.';
+	@override String get dvCompatibilityFallback => 'Pilihan sandaran keserasian';
+	@override String get dvCompatibilityFallbackDescription => 'Gunakan pemapar standard jika eksperimen tidak dapat dimulakan. Data FEL mungkin hilang.';
+	@override String get dvExperimentDiagnostics => 'Pengelogan eksperimen video';
+	@override String get dvExperimentDiagnosticsDescription => 'Dayakan log pemain terperinci pada main balik seterusnya.';
 }
 
 // Path: themeEditor
@@ -3533,7 +3540,7 @@ class _Translations$discover$findNext$ms extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => 'Jumlah masa: ${duration}';
 	@override String get timingVaries => 'Tempoh mungkin berbeza';
 	@override String get notNow => 'Bukan sekarang';
-	@override String get swipeHint => 'Leret atau gunakan butang di bawah';
+	@override String get swipeHint => 'Leret imej muka depan ke arah anak panah atau gunakan butang di bawah.';
 	@override String get saved => 'Cadangan yang disimpan';
 	@override String savedCount({required Object count}) => 'Cadangan yang disimpan · ${count}';
 	@override String get undo => 'Buat asal';
@@ -3561,6 +3568,18 @@ class _Translations$discover$findNext$ms extends Translations$discover$findNext$
 	@override String get openFailed => 'Pilihan ini tidak lagi tersedia. Muat semula untuk menyemak lagi.';
 	@override String get changeFailed => 'Perubahan ini tidak dapat disimpan. Cuba lagi.';
 	@override String get savedLimit => 'Senarai cadangan yang disimpan sudah penuh. Alih keluar satu cadangan untuk menyimpan yang lain.';
+	@override String get chooseHint => 'Buka tajuk, simpan untuk kemudian atau langkau.';
+	@override String get howItWorks => 'Cara penggunaan';
+	@override String get notNowHelp => 'Langkau tajuk ini buat masa ini. Ia kekal dalam pustaka anda.';
+	@override String get saveHelp => 'Simpan dalam pilihan tersimpan profil ini pada peranti ini. Menyimpan tidak memuat turun tajuk.';
+	@override String get openHelp => 'Pilih kulit untuk melihat butiran. Gunakan tindakan utama untuk memainkan, membaca atau membuka tajuk.';
+	@override String get controlsHelp => 'Papan kekunci atau alat kawalan jauh: fokus pada butang, kemudian tekan Enter atau Pilih. Buat asal memulihkan pilihan terakhir anda.';
+	@override String get artworkLoading => 'Memuatkan imej…';
+	@override String get artworkUnavailable => 'Imej tidak tersedia';
+	@override String get savedFeedback => 'Ditambah ke pilihan tersimpan';
+	@override String get skippedFeedback => 'Dilangkau buat masa ini';
+	@override String get releaseToConfirm => 'Lepaskan untuk mengesahkan';
+	@override String get remoteHint => 'Kulit dalam fokus: ← / → pilih · Pilih: butiran · ↑ / ↓ alih fokus';
 }
 
 // Path: discover.person
@@ -4893,6 +4912,13 @@ extension on TranslationsMs {
 			'settings.regionFormatDescription' => 'Pilih cara tarikh, nombor dan unit ukuran dipaparkan.',
 			'settings.metadataLanguage' => 'Bahasa metadata',
 			'settings.metadataLanguageDescription' => 'Bahasa tajuk dan huraian pilihan jika disokong oleh pelayan. Pilihan audio dan sari kata ditetapkan secara berasingan.',
+			'settings.experimentalDolbyVision' => 'Dolby Vision eksperimen',
+			'settings.experimentalDolbyVisionDescription' => 'Gunakan pemapar FEL eksperimen pada main balik seterusnya. Memerlukan binaan enjin yang berasingan.',
+			'settings.dvExperimentUnavailableDescription' => 'Eksperimen ini kini hanya tersedia pada Linux.',
+			'settings.dvCompatibilityFallback' => 'Pilihan sandaran keserasian',
+			'settings.dvCompatibilityFallbackDescription' => 'Gunakan pemapar standard jika eksperimen tidak dapat dimulakan. Data FEL mungkin hilang.',
+			'settings.dvExperimentDiagnostics' => 'Pengelogan eksperimen video',
+			'settings.dvExperimentDiagnosticsDescription' => 'Dayakan log pemain terperinci pada main balik seterusnya.',
 			'themeEditor.builtIn' => 'dibina dalam',
 			'themeEditor.presets' => 'Persembahan',
 			'themeEditor.custom' => 'Khas',
@@ -5313,6 +5339,8 @@ extension on TranslationsMs {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Perpustakaan pemindaian bermula untuk "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Kegagalan untuk memindai perpustakaan: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Mengemaskini metadata untuk "${title}" ...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Metadata pembaharuan bermula untuk "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Tidak dapat memperbaharui metadata: ${error}',
 			'messages.logoutConfirm' => 'Adakah anda pasti anda mahu log keluar?',
@@ -5320,8 +5348,6 @@ extension on TranslationsMs {
 			'messages.seasonsLoadFailed' => 'Tidak boleh mengisi musim',
 			'messages.noEpisodesFound' => 'Tiada episod yang ditemui pada musim pertama',
 			'messages.noEpisodesFoundGeneral' => 'Tiada episod yang ditemui',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Tidak boleh memuatkan episod',
 			'messages.noResultsFound' => 'Tiada hasil yang ditemui',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Jam tidur set untuk ${label}',
@@ -5562,7 +5588,7 @@ extension on TranslationsMs {
 			'discover.findNext.totalDuration' => ({required Object duration}) => 'Jumlah masa: ${duration}',
 			'discover.findNext.timingVaries' => 'Tempoh mungkin berbeza',
 			'discover.findNext.notNow' => 'Bukan sekarang',
-			'discover.findNext.swipeHint' => 'Leret atau gunakan butang di bawah',
+			'discover.findNext.swipeHint' => 'Leret imej muka depan ke arah anak panah atau gunakan butang di bawah.',
 			'discover.findNext.saved' => 'Cadangan yang disimpan',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Cadangan yang disimpan · ${count}',
 			'discover.findNext.undo' => 'Buat asal',
@@ -5590,6 +5616,18 @@ extension on TranslationsMs {
 			'discover.findNext.openFailed' => 'Pilihan ini tidak lagi tersedia. Muat semula untuk menyemak lagi.',
 			'discover.findNext.changeFailed' => 'Perubahan ini tidak dapat disimpan. Cuba lagi.',
 			'discover.findNext.savedLimit' => 'Senarai cadangan yang disimpan sudah penuh. Alih keluar satu cadangan untuk menyimpan yang lain.',
+			'discover.findNext.chooseHint' => 'Buka tajuk, simpan untuk kemudian atau langkau.',
+			'discover.findNext.howItWorks' => 'Cara penggunaan',
+			'discover.findNext.notNowHelp' => 'Langkau tajuk ini buat masa ini. Ia kekal dalam pustaka anda.',
+			'discover.findNext.saveHelp' => 'Simpan dalam pilihan tersimpan profil ini pada peranti ini. Menyimpan tidak memuat turun tajuk.',
+			'discover.findNext.openHelp' => 'Pilih kulit untuk melihat butiran. Gunakan tindakan utama untuk memainkan, membaca atau membuka tajuk.',
+			'discover.findNext.controlsHelp' => 'Papan kekunci atau alat kawalan jauh: fokus pada butang, kemudian tekan Enter atau Pilih. Buat asal memulihkan pilihan terakhir anda.',
+			'discover.findNext.artworkLoading' => 'Memuatkan imej…',
+			'discover.findNext.artworkUnavailable' => 'Imej tidak tersedia',
+			'discover.findNext.savedFeedback' => 'Ditambah ke pilihan tersimpan',
+			'discover.findNext.skippedFeedback' => 'Dilangkau buat masa ini',
+			'discover.findNext.releaseToConfirm' => 'Lepaskan untuk mengesahkan',
+			'discover.findNext.remoteHint' => 'Kulit dalam fokus: ← / → pilih · Pilih: butiran · ↑ / ↓ alih fokus',
 			'discover.extras' => 'Pelancaran & Extra',
 			'discover.studio' => 'Pengajian',
 			'discover.rating' => 'Penilaian',
@@ -5815,6 +5853,8 @@ extension on TranslationsMs {
 			'explore.mdblistShelves.nameHint' => 'Tinggalkan kosong untuk menggunakan nama senarai sumber.',
 			'explore.mdblistShelves.add' => 'Tambah shelf',
 			'explore.mdblistShelves.save' => 'Menyelamatkan kerusi',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Pergerakan ${title} ke atas',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Pergerakan ${title} ke bawah',
 			'explore.mdblistShelves.unavailable' => 'Senarai ini tidak boleh didapati.Tarik balik atau keluarkan shell dalam tetapan.',
@@ -5834,8 +5874,6 @@ extension on TranslationsMs {
 			'explore.rows.popularShows' => 'Persembahan popular',
 			'explore.rows.trendingAnime' => 'Perbincangan Anime',
 			'explore.rows.suggestedAnime' => 'Anime yang disyorkan',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Anime teratas yang sedang ditayangkan',
 			'explore.rows.popularAnime' => 'Anime yang paling popular',
 			'explore.rows.trending' => 'Trend yang',
@@ -6329,6 +6367,8 @@ extension on TranslationsMs {
 			'downloads.resumeDownload' => 'Rujukan Download',
 			'downloads.cancelledDownload' => 'Pembatalan download',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (sinkronkan ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Dimuat turun ${file} - Klik untuk menyelesaikan',
 			'downloads.partialDownloadClickToComplete' => 'Bahagian muat turun - klik untuk menyelesaikan',
 			'downloads.deleting' => 'Menghapuskan ...',
@@ -6348,8 +6388,6 @@ extension on TranslationsMs {
 			'downloads.unwatchedOnly' => 'Hanya tidak diperhatikan',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Seterusnya ${count} tidak dilihat',
 			'downloads.customAmount' => 'Jumlah yang disesuaikan...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Jumlah yang disesuaikan (setiap tahun)',
 			'downloads.randomEpisodes' => 'Kejadian rawak',
 			'downloads.includeSpecials' => 'Termasuk spesial',
@@ -6843,6 +6881,8 @@ extension on TranslationsMs {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Tidak boleh mencapai pelayan: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Pendaftaran yang gagal: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect kegagalan: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Mendaftar dengan Plex',
 			'addServer.pinExpired' => 'PIN telah tamat sebelum log masuk.Sila cuba lagi.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Akaun yang gagal didaftarkan: ${error}',
@@ -6862,8 +6902,6 @@ extension on TranslationsMs {
 			'addServer.authResponseIncomplete' => 'Jawapan pendaftaran daripada pelayan tidak lengkap',
 			'addServer.quickConnectRejected' => 'Quick Connect telah ditolak oleh pelayan',
 			'addServer.quickConnectNotJson' => 'Jawapan Quick Connect tidak sah JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Jawapan Quick Connect kekurangan kod atau rahsia',
 			'addServer.quickConnectPollRejected' => 'Quick Connect pertanyaan telah ditolak oleh pelayan',
 			'addServer.serverTimedOut' => 'Pelayan tidak bertindak balas dalam masa',
@@ -7357,6 +7395,8 @@ extension on TranslationsMs {
 			'sourceSetup.smbEncrypted' => 'Penyulitan SMB3 dihidupkan',
 			'sourceSetup.smbUnencrypted' => 'Penyulitan SMB3 dimatikan',
 			'sourceSetup.httpUnencrypted' => 'HTTP tanpa penyulitan pengangkutan',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Semak keselamatan titik akhir',
 			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} diperlukan.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Masukkan ${label} antara ${min} dengan ${max}.',

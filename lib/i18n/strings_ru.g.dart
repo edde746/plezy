@@ -766,6 +766,13 @@ class _Translations$settings$ru extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Выберите формат отображения дат, чисел и единиц измерения.';
 	@override String get metadataLanguage => 'Язык метаданных';
 	@override String get metadataLanguageDescription => 'Предпочтительный язык названий и описаний, если сервер его поддерживает. Языки аудио и субтитров настраиваются отдельно.';
+	@override String get experimentalDolbyVision => 'Экспериментальный Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'При следующем воспроизведении использовать экспериментальный рендерер FEL. Нужна отдельная сборка движка.';
+	@override String get dvExperimentUnavailableDescription => 'Этот эксперимент пока доступен только в Linux.';
+	@override String get dvCompatibilityFallback => 'Резервный режим совместимости';
+	@override String get dvCompatibilityFallbackDescription => 'Использовать стандартный рендерер, если эксперимент не запускается. Данные FEL могут быть потеряны.';
+	@override String get dvExperimentDiagnostics => 'Журнал видеоэксперимента';
+	@override String get dvExperimentDiagnosticsDescription => 'Включить подробные журналы проигрывателя при следующем воспроизведении.';
 }
 
 // Path: themeEditor
@@ -3593,7 +3600,7 @@ class _Translations$discover$findNext$ru extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => 'Всего ${duration}';
 	@override String get timingVaries => 'Продолжительность может отличаться';
 	@override String get notNow => 'Не сейчас';
-	@override String get swipeHint => 'Смахните карточку или используйте кнопки ниже';
+	@override String get swipeHint => 'Смахните обложку в сторону стрелки или используйте кнопки ниже.';
 	@override String get saved => 'Сохранённые рекомендации';
 	@override String savedCount({required Object count}) => 'Сохранённые рекомендации · ${count}';
 	@override String get undo => 'Отменить действие';
@@ -3621,6 +3628,18 @@ class _Translations$discover$findNext$ru extends Translations$discover$findNext$
 	@override String get openFailed => 'Этот вариант больше недоступен. Обновите, чтобы проверить ещё раз.';
 	@override String get changeFailed => 'Не удалось сохранить изменение. Попробуйте снова.';
 	@override String get savedLimit => 'Список сохранённых рекомендаций заполнен. Удалите одну рекомендацию, чтобы сохранить другую.';
+	@override String get chooseHint => 'Откройте произведение, сохраните на потом или пропустите.';
+	@override String get howItWorks => 'Как это работает';
+	@override String get notNowHelp => 'Пропустите это произведение пока. Оно останется в вашей библиотеке.';
+	@override String get saveHelp => 'Добавьте его в сохранённые подборки этого профиля на этом устройстве. Сохранение не скачивает произведение.';
+	@override String get openHelp => 'Выберите обложку для просмотра подробностей. Основная кнопка позволяет воспроизвести, читать или открыть произведение.';
+	@override String get controlsHelp => 'Клавиатура или пульт: выберите кнопку и нажмите Enter или кнопку выбора. Отмена восстанавливает последний выбор.';
+	@override String get artworkLoading => 'Загрузка обложки…';
+	@override String get artworkUnavailable => 'Обложка недоступна';
+	@override String get savedFeedback => 'Добавлено в сохранённые подборки';
+	@override String get skippedFeedback => 'Пока пропущено';
+	@override String get releaseToConfirm => 'Отпустите для подтверждения';
+	@override String get remoteHint => 'Фокус на обложке: ← / → выбор · Кнопка выбора: подробности · ↑ / ↓ перемещение фокуса';
 }
 
 // Path: discover.person
@@ -4959,6 +4978,13 @@ extension on TranslationsRu {
 			'settings.regionFormatDescription' => 'Выберите формат отображения дат, чисел и единиц измерения.',
 			'settings.metadataLanguage' => 'Язык метаданных',
 			'settings.metadataLanguageDescription' => 'Предпочтительный язык названий и описаний, если сервер его поддерживает. Языки аудио и субтитров настраиваются отдельно.',
+			'settings.experimentalDolbyVision' => 'Экспериментальный Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'При следующем воспроизведении использовать экспериментальный рендерер FEL. Нужна отдельная сборка движка.',
+			'settings.dvExperimentUnavailableDescription' => 'Этот эксперимент пока доступен только в Linux.',
+			'settings.dvCompatibilityFallback' => 'Резервный режим совместимости',
+			'settings.dvCompatibilityFallbackDescription' => 'Использовать стандартный рендерер, если эксперимент не запускается. Данные FEL могут быть потеряны.',
+			'settings.dvExperimentDiagnostics' => 'Журнал видеоэксперимента',
+			'settings.dvExperimentDiagnosticsDescription' => 'Включить подробные журналы проигрывателя при следующем воспроизведении.',
 			'themeEditor.builtIn' => 'Встроенные',
 			'themeEditor.presets' => 'Готовые',
 			'themeEditor.custom' => 'Своя',
@@ -5379,6 +5405,8 @@ extension on TranslationsRu {
 			'messages.libraryScanStarted' => ({required Object title}) => 'Сканирование библиотеки начато для "${title}"',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Не удалось отсканировать библиотеку: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => 'Обновление метаданных "${title}"...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'Обновление метаданных начато для "${title}"',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Не удалось обновить метаданные: ${error}',
 			'messages.logoutConfirm' => 'Вы уверены, что хотите выйти?',
@@ -5386,8 +5414,6 @@ extension on TranslationsRu {
 			'messages.seasonsLoadFailed' => 'Не удалось загрузить сезоны',
 			'messages.noEpisodesFound' => 'Эпизоды в первом сезоне не найдены',
 			'messages.noEpisodesFoundGeneral' => 'Эпизоды не найдены',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Не удалось загрузить эпизоды',
 			'messages.noResultsFound' => 'Результаты не найдены',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Таймер сна установлен на ${label}',
@@ -5628,7 +5654,7 @@ extension on TranslationsRu {
 			'discover.findNext.totalDuration' => ({required Object duration}) => 'Всего ${duration}',
 			'discover.findNext.timingVaries' => 'Продолжительность может отличаться',
 			'discover.findNext.notNow' => 'Не сейчас',
-			'discover.findNext.swipeHint' => 'Смахните карточку или используйте кнопки ниже',
+			'discover.findNext.swipeHint' => 'Смахните обложку в сторону стрелки или используйте кнопки ниже.',
 			'discover.findNext.saved' => 'Сохранённые рекомендации',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Сохранённые рекомендации · ${count}',
 			'discover.findNext.undo' => 'Отменить действие',
@@ -5656,6 +5682,18 @@ extension on TranslationsRu {
 			'discover.findNext.openFailed' => 'Этот вариант больше недоступен. Обновите, чтобы проверить ещё раз.',
 			'discover.findNext.changeFailed' => 'Не удалось сохранить изменение. Попробуйте снова.',
 			'discover.findNext.savedLimit' => 'Список сохранённых рекомендаций заполнен. Удалите одну рекомендацию, чтобы сохранить другую.',
+			'discover.findNext.chooseHint' => 'Откройте произведение, сохраните на потом или пропустите.',
+			'discover.findNext.howItWorks' => 'Как это работает',
+			'discover.findNext.notNowHelp' => 'Пропустите это произведение пока. Оно останется в вашей библиотеке.',
+			'discover.findNext.saveHelp' => 'Добавьте его в сохранённые подборки этого профиля на этом устройстве. Сохранение не скачивает произведение.',
+			'discover.findNext.openHelp' => 'Выберите обложку для просмотра подробностей. Основная кнопка позволяет воспроизвести, читать или открыть произведение.',
+			'discover.findNext.controlsHelp' => 'Клавиатура или пульт: выберите кнопку и нажмите Enter или кнопку выбора. Отмена восстанавливает последний выбор.',
+			'discover.findNext.artworkLoading' => 'Загрузка обложки…',
+			'discover.findNext.artworkUnavailable' => 'Обложка недоступна',
+			'discover.findNext.savedFeedback' => 'Добавлено в сохранённые подборки',
+			'discover.findNext.skippedFeedback' => 'Пока пропущено',
+			'discover.findNext.releaseToConfirm' => 'Отпустите для подтверждения',
+			'discover.findNext.remoteHint' => 'Фокус на обложке: ← / → выбор · Кнопка выбора: подробности · ↑ / ↓ перемещение фокуса',
 			'discover.extras' => 'Трейлеры и доп. материалы',
 			'discover.studio' => 'Студия',
 			'discover.rating' => 'Рейтинг',
@@ -5881,6 +5919,8 @@ extension on TranslationsRu {
 			'explore.mdblistShelves.nameHint' => 'Оставьте белый, чтобы использовать название источника.',
 			'explore.mdblistShelves.add' => 'Добавить шейх',
 			'explore.mdblistShelves.save' => 'Спасти шары',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Погрузка ${title} вверх',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Погрузка ${title}',
 			'explore.mdblistShelves.unavailable' => 'Этот список недоступен. Отменить или удалить его шлюх в настройках.',
@@ -5900,8 +5940,6 @@ extension on TranslationsRu {
 			'explore.rows.popularShows' => 'Популярные сериалы',
 			'explore.rows.trendingAnime' => 'Аниме в тренде',
 			'explore.rows.suggestedAnime' => 'Рекомендуемые аниме',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Топ выходящих аниме',
 			'explore.rows.popularAnime' => 'Самые популярные аниме',
 			'explore.rows.trending' => 'В тренде',
@@ -6395,6 +6433,8 @@ extension on TranslationsRu {
 			'downloads.resumeDownload' => 'Возобновить загрузку',
 			'downloads.cancelledDownload' => 'Загрузка отменена',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (синхронизация ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} загружен — нажмите, чтобы завершить',
 			'downloads.partialDownloadClickToComplete' => 'Частично загружено — нажмите, чтобы завершить',
 			'downloads.deleting' => 'Удаление...',
@@ -6414,8 +6454,6 @@ extension on TranslationsRu {
 			'downloads.unwatchedOnly' => 'Только непросмотренные',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Следующие ${count} непросмотренных',
 			'downloads.customAmount' => 'Указать количество...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Показатель (каждый раз)',
 			'downloads.randomEpisodes' => 'Рандиальные эпизоды',
 			'downloads.includeSpecials' => 'Включить спецвыпуски',
@@ -6909,6 +6947,8 @@ extension on TranslationsRu {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Не удалось связаться с сервером: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Не удалось войти: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect не удался: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Войти через Plex',
 			'addServer.pinExpired' => 'Срок действия PIN истёк до входа. Попробуйте снова.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Не удалось зарегистрировать учётную запись: ${error}',
@@ -6928,8 +6968,6 @@ extension on TranslationsRu {
 			'addServer.authResponseIncomplete' => 'Ответ сервера при входе оказался неполным',
 			'addServer.quickConnectRejected' => 'Quick Connect был отклонён сервером',
 			'addServer.quickConnectNotJson' => 'Ответ Quick Connect не является допустимым JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'В ответе Quick Connect отсутствует код или секрет',
 			'addServer.quickConnectPollRejected' => 'Опрос Quick Connect был отклонён сервером',
 			'addServer.serverTimedOut' => 'Сервер не ответил вовремя',
@@ -7423,6 +7461,8 @@ extension on TranslationsRu {
 			'sourceSetup.smbEncrypted' => 'Шифрование SMB3 включено',
 			'sourceSetup.smbUnencrypted' => 'Шифрование SMB3 выключено',
 			'sourceSetup.httpUnencrypted' => 'HTTP без шифрования транспорта',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Проверить безопасность конечной точки',
 			'sourceSetup.fieldRequired' => ({required Object label}) => 'Обязательное поле: ${label}.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Поле «${label}»: введите значение от ${min} до ${max}.',

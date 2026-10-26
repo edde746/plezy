@@ -1,0 +1,57 @@
+{
+  "schema_version": 1,
+  "sources": {
+    "aether": {
+      "url": "https://github.com/superuser404notfound/AetherEngine.git",
+      "commit": "e6f785a96ab68336966f8d01305d289f87b59752",
+      "license": "LGPL-3.0 with upstream exceptions; keep LICENSE",
+      "swift_pins": [
+        {
+          "identity": "ffmpegbuild",
+          "kind": "remoteSourceControl",
+          "location": "https://github.com/superuser404notfound/FFmpegBuild",
+          "state": {
+            "revision": "28cd8757ff5338396326d9eea296c33e777b05cc",
+            "version": "3.10.0"
+          }
+        },
+        {
+          "identity": "libdovi",
+          "kind": "remoteSourceControl",
+          "location": "https://github.com/superuser404notfound/LibDovi",
+          "state": {
+            "revision": "0d7cce1d6836a30d13a3a2326e50a153af53f014",
+            "version": "2.1.0"
+          }
+        },
+        {
+          "identity": "libtruehd",
+          "kind": "remoteSourceControl",
+          "location": "https://github.com/superuser404notfound/LibTrueHD",
+          "state": {
+            "revision": "73bee84d7ac7b8619db570e36490b92761fe91a6",
+            "version": "3.1.0"
+          }
+        },
+        {
+          "identity": "smbclient",
+          "kind": "remoteSourceControl",
+          "location": "https://github.com/kishikawakatsumi/SMBClient",
+          "state": {
+            "revision": "e636c2b2458930770932a36d311ec9d478575b90",
+            "version": "0.3.1"
+          }
+        }
+      ]
+    },
+    "felbaker": {
+      "url": "https://github.com/bbeny123/felbaker.git",
+      "commit": "cae66302433578ec62afa8c5c5809e93d0405b2f",
+      "license": "GPL-3.0-or-later",
+      "submodules": {
+        "external/dovi_tool": "82384bc7652c6f88cb63f7f11e0315b624003fc3"
+      }
+    }
+  },
+  "qualification": "unqualified; compilation and upstream tests are not device evidence"
+}

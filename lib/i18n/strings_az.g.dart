@@ -762,6 +762,13 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Tarixlərin, rəqəmlərin və ölçü vahidlərinin göstərilmə qaydasını seçin.';
 	@override String get metadataLanguage => 'Metaməlumat dili';
 	@override String get metadataLanguageDescription => 'Server dəstəklədikdə başlıqlar və təsvirlər üçün üstün tutulan dil. Səs və altyazı seçimləri ayrıca tənzimlənir.';
+	@override String get experimentalDolbyVision => 'Eksperimental Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Növbəti oxutmada eksperimental FEL renderindən istifadə edin. Mühərrikin ayrıca yığılması tələb olunur.';
+	@override String get dvExperimentUnavailableDescription => 'Bu sınaq hazırda yalnız Linux-da mövcuddur.';
+	@override String get dvCompatibilityFallback => 'Uyğunluq üçün ehtiyat rejim';
+	@override String get dvCompatibilityFallbackDescription => 'Sınaq başlaya bilməsə, standart renderdən istifadə edin. FEL məlumatları itə bilər.';
+	@override String get dvExperimentDiagnostics => 'Video sınağının jurnalı';
+	@override String get dvExperimentDiagnosticsDescription => 'Növbəti oxutmada ətraflı pleyer jurnallarını aktivləşdirin.';
 }
 
 // Path: themeEditor
@@ -3553,7 +3560,7 @@ class _Translations$discover$findNext$az extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => 'Ümumi müddət: ${duration}';
 	@override String get timingVaries => 'Müddət dəyişə bilər';
 	@override String get notNow => 'İndi yox';
-	@override String get swipeHint => 'Sürüşdürün və ya aşağıdakı düymələrdən istifadə edin';
+	@override String get swipeHint => 'Üz qabığını ox istiqamətində sürüşdürün və ya aşağıdakı düymələrdən istifadə edin.';
 	@override String get saved => 'Yadda saxlanmış seçimlər';
 	@override String savedCount({required Object count}) => 'Yadda saxlanmış seçimlər · ${count}';
 	@override String get undo => 'Geri al';
@@ -3581,6 +3588,18 @@ class _Translations$discover$findNext$az extends Translations$discover$findNext$
 	@override String get openFailed => 'Bu seçim artıq mövcud deyil. Yenidən yoxlamaq üçün yeniləyin.';
 	@override String get changeFailed => 'Bu dəyişikliyi yadda saxlamaq mümkün olmadı. Yenidən cəhd edin.';
 	@override String get savedLimit => 'Yadda saxlanmış seçimlər siyahısı doludur. Başqa seçim saxlamaq üçün birini silin.';
+	@override String get chooseHint => 'Bir başlığı açın, sonraya saxlayın və ya keçin.';
+	@override String get howItWorks => 'İstifadə qaydası';
+	@override String get notNowHelp => 'Bu başlığı hələlik keçin. O, kitabxananızda qalacaq.';
+	@override String get saveHelp => 'Bu cihazda bu profilin saxlanmış seçimlərinə əlavə edin. Saxlamaq məzmunu endirmir.';
+	@override String get openHelp => 'Təfərrüatlar üçün üz qabığını seçin. Başlığı oynatmaq, oxumaq və ya açmaq üçün əsas düymədən istifadə edin.';
+	@override String get controlsHelp => 'Klaviatura və ya pult: düyməni seçin, sonra Enter və ya seçim düyməsini basın. Geri al son seçiminizi bərpa edir.';
+	@override String get artworkLoading => 'Şəkil yüklənir…';
+	@override String get artworkUnavailable => 'Şəkil mövcud deyil';
+	@override String get savedFeedback => 'Saxlanmış seçimlərə əlavə edildi';
+	@override String get skippedFeedback => 'Hələlik keçildi';
+	@override String get releaseToConfirm => 'Təsdiqləmək üçün buraxın';
+	@override String get remoteHint => 'Üz qabığı fokusda: ← / → seçin · Seçim düyməsi: təfərrüatlar · ↑ / ↓ fokusu dəyişin';
 }
 
 // Path: discover.person
@@ -4915,6 +4934,13 @@ extension on TranslationsAz {
 			'settings.regionFormatDescription' => 'Tarixlərin, rəqəmlərin və ölçü vahidlərinin göstərilmə qaydasını seçin.',
 			'settings.metadataLanguage' => 'Metaməlumat dili',
 			'settings.metadataLanguageDescription' => 'Server dəstəklədikdə başlıqlar və təsvirlər üçün üstün tutulan dil. Səs və altyazı seçimləri ayrıca tənzimlənir.',
+			'settings.experimentalDolbyVision' => 'Eksperimental Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'Növbəti oxutmada eksperimental FEL renderindən istifadə edin. Mühərrikin ayrıca yığılması tələb olunur.',
+			'settings.dvExperimentUnavailableDescription' => 'Bu sınaq hazırda yalnız Linux-da mövcuddur.',
+			'settings.dvCompatibilityFallback' => 'Uyğunluq üçün ehtiyat rejim',
+			'settings.dvCompatibilityFallbackDescription' => 'Sınaq başlaya bilməsə, standart renderdən istifadə edin. FEL məlumatları itə bilər.',
+			'settings.dvExperimentDiagnostics' => 'Video sınağının jurnalı',
+			'settings.dvExperimentDiagnosticsDescription' => 'Növbəti oxutmada ətraflı pleyer jurnallarını aktivləşdirin.',
 			'themeEditor.builtIn' => 'Daxili',
 			'themeEditor.presets' => 'Hazır mövzular',
 			'themeEditor.custom' => 'Xüsusi',
@@ -5335,6 +5361,8 @@ extension on TranslationsAz {
 			'messages.libraryScanStarted' => ({required Object title}) => '"${title}" üçün skan başladı',
 			'messages.libraryScanFailed' => ({required Object error}) => 'Kitabxana skan edilə bilmədi: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '"${title}" üçün meta-məlumatlar yenilənir...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => '"${title}" üçün meta-məlumat yenilənməsi başladı',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'Meta-məlumatlar yenilənə bilmədi: ${error}',
 			'messages.logoutConfirm' => 'Çıxış etmək istədiyinizdən əminsiniz?',
@@ -5342,8 +5370,6 @@ extension on TranslationsAz {
 			'messages.seasonsLoadFailed' => 'Mövsümlər yüklənə bilmədi',
 			'messages.noEpisodesFound' => 'Birinci mövsümdə seriya tapılmadı',
 			'messages.noEpisodesFoundGeneral' => 'Seriya tapılmadı',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'Seriyalar yüklənə bilmədi',
 			'messages.noResultsFound' => 'Nəticə tapılmadı',
 			'messages.sleepTimerSet' => ({required Object label}) => 'Yuxu taymeri ${label} üçün təyin edildi',
@@ -5584,7 +5610,7 @@ extension on TranslationsAz {
 			'discover.findNext.totalDuration' => ({required Object duration}) => 'Ümumi müddət: ${duration}',
 			'discover.findNext.timingVaries' => 'Müddət dəyişə bilər',
 			'discover.findNext.notNow' => 'İndi yox',
-			'discover.findNext.swipeHint' => 'Sürüşdürün və ya aşağıdakı düymələrdən istifadə edin',
+			'discover.findNext.swipeHint' => 'Üz qabığını ox istiqamətində sürüşdürün və ya aşağıdakı düymələrdən istifadə edin.',
 			'discover.findNext.saved' => 'Yadda saxlanmış seçimlər',
 			'discover.findNext.savedCount' => ({required Object count}) => 'Yadda saxlanmış seçimlər · ${count}',
 			'discover.findNext.undo' => 'Geri al',
@@ -5612,6 +5638,18 @@ extension on TranslationsAz {
 			'discover.findNext.openFailed' => 'Bu seçim artıq mövcud deyil. Yenidən yoxlamaq üçün yeniləyin.',
 			'discover.findNext.changeFailed' => 'Bu dəyişikliyi yadda saxlamaq mümkün olmadı. Yenidən cəhd edin.',
 			'discover.findNext.savedLimit' => 'Yadda saxlanmış seçimlər siyahısı doludur. Başqa seçim saxlamaq üçün birini silin.',
+			'discover.findNext.chooseHint' => 'Bir başlığı açın, sonraya saxlayın və ya keçin.',
+			'discover.findNext.howItWorks' => 'İstifadə qaydası',
+			'discover.findNext.notNowHelp' => 'Bu başlığı hələlik keçin. O, kitabxananızda qalacaq.',
+			'discover.findNext.saveHelp' => 'Bu cihazda bu profilin saxlanmış seçimlərinə əlavə edin. Saxlamaq məzmunu endirmir.',
+			'discover.findNext.openHelp' => 'Təfərrüatlar üçün üz qabığını seçin. Başlığı oynatmaq, oxumaq və ya açmaq üçün əsas düymədən istifadə edin.',
+			'discover.findNext.controlsHelp' => 'Klaviatura və ya pult: düyməni seçin, sonra Enter və ya seçim düyməsini basın. Geri al son seçiminizi bərpa edir.',
+			'discover.findNext.artworkLoading' => 'Şəkil yüklənir…',
+			'discover.findNext.artworkUnavailable' => 'Şəkil mövcud deyil',
+			'discover.findNext.savedFeedback' => 'Saxlanmış seçimlərə əlavə edildi',
+			'discover.findNext.skippedFeedback' => 'Hələlik keçildi',
+			'discover.findNext.releaseToConfirm' => 'Təsdiqləmək üçün buraxın',
+			'discover.findNext.remoteHint' => 'Üz qabığı fokusda: ← / → seçin · Seçim düyməsi: təfərrüatlar · ↑ / ↓ fokusu dəyişin',
 			'discover.extras' => 'Treylerlər və Əlavələr',
 			'discover.studio' => 'Studiya',
 			'discover.rating' => 'Reytinq',
@@ -5837,6 +5875,8 @@ extension on TranslationsAz {
 			'explore.mdblistShelves.nameHint' => 'Bu barədə “Müslər” adlı kitabın adı yazılır.',
 			'explore.mdblistShelves.add' => 'Şelətlər',
 			'explore.mdblistShelves.save' => 'Şahətlər',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Qəzaqə ${title}',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Qəzaqə ${title}',
 			'explore.mdblistShelves.unavailable' => 'Bu listə baxılmır. ayarlarda şelalini geri qaytarır və ya kaldırır.',
@@ -5856,8 +5896,6 @@ extension on TranslationsAz {
 			'explore.rows.popularShows' => 'Məşhur seriallar',
 			'explore.rows.trendingAnime' => 'Trend animelər',
 			'explore.rows.suggestedAnime' => 'Tövsiyə olunan animelər',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'Ən yaxşı yayımlanan animelər',
 			'explore.rows.popularAnime' => 'Ən məşhur animelər',
 			'explore.rows.trending' => 'Trendlər',
@@ -6351,6 +6389,8 @@ extension on TranslationsAz {
 			'downloads.resumeDownload' => 'Yükləməni davam etdir',
 			'downloads.cancelledDownload' => 'Ləğv edilmiş yükləmə',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (${status} eyniləşdirilir)',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'Yükləndi ${file} - Tamamlamaq üçün toxunun',
 			'downloads.partialDownloadClickToComplete' => 'Hissəvi yükləndi - Tamamlamaq üçün toxunun',
 			'downloads.deleting' => 'Silinir...',
@@ -6370,8 +6410,6 @@ extension on TranslationsAz {
 			'downloads.unwatchedOnly' => 'Yalnız baxılmayanlar',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'Növbəti ${count} baxılmayan',
 			'downloads.customAmount' => 'Xüsusi miqdar...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'Hər bir dəfə (yəni)',
 			'downloads.randomEpisodes' => 'Random epizodları',
 			'downloads.includeSpecials' => 'Xüsusi seriyaları daxil et',
@@ -6865,6 +6903,8 @@ extension on TranslationsAz {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Serverə çatmaq olmadı: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Daxil olma uğursuz oldu: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Sürətli Qoşulma uğursuz oldu: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Plex ilə daxil ol',
 			'addServer.pinExpired' => 'PIN-in vaxtı bitdi. Lütfən təzədən cəhd edin.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Hesab qeydiyyatı uğursuz oldu: ${error}',
@@ -6884,8 +6924,6 @@ extension on TranslationsAz {
 			'addServer.authResponseIncomplete' => 'Serverin giriş cavabı natamam idi',
 			'addServer.quickConnectRejected' => 'Quick Connect server tərəfindən rədd edildi',
 			'addServer.quickConnectNotJson' => 'Quick Connect cavabı etibarlı JSON deyildi',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'Quick Connect cavabında kod və ya məxfi açar yoxdur',
 			'addServer.quickConnectPollRejected' => 'Quick Connect sorğulaması server tərəfindən rədd edildi',
 			'addServer.serverTimedOut' => 'Server vaxtında cavab vermədi',
@@ -7379,6 +7417,8 @@ extension on TranslationsAz {
 			'sourceSetup.smbEncrypted' => 'SMB3 şifrələməsi aktivdir',
 			'sourceSetup.smbUnencrypted' => 'SMB3 şifrələməsi deaktivdir',
 			'sourceSetup.httpUnencrypted' => 'Nəqliyyat şifrələməsi olmayan HTTP',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'Bağlantı ünvanının təhlükəsizliyini yoxla',
 			'sourceSetup.fieldRequired' => ({required Object label}) => 'Tələb olunan sahə: ${label}.',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => '${label} üçün ${min} ilə ${max} arasında dəyər daxil edin.',

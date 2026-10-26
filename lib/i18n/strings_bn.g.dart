@@ -762,6 +762,13 @@ class _Translations$settings$bn extends Translations$settings$en {
 	@override String get regionFormatDescription => 'তারিখ, সংখ্যা ও পরিমাপ কীভাবে দেখানো হবে তা বেছে নিন।';
 	@override String get metadataLanguage => 'মিডিয়ার তথ্যের ভাষা';
 	@override String get metadataLanguageDescription => 'সার্ভার সমর্থন করলে শিরোনাম ও বিবরণের পছন্দের ভাষা। অডিও ও সাবটাইটেলের পছন্দ আলাদাভাবে নির্ধারিত হয়।';
+	@override String get experimentalDolbyVision => 'পরীক্ষামূলক Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'পরবর্তী প্লেব্যাকে পরীক্ষামূলক FEL রেন্ডারার ব্যবহার করুন। ইঞ্জিনের আলাদা বিল্ড প্রয়োজন।';
+	@override String get dvExperimentUnavailableDescription => 'এই পরীক্ষা বর্তমানে শুধু Linux-এ উপলব্ধ।';
+	@override String get dvCompatibilityFallback => 'সামঞ্জস্যপূর্ণ বিকল্প';
+	@override String get dvCompatibilityFallbackDescription => 'পরীক্ষা শুরু না হলে সাধারণ রেন্ডারার ব্যবহার করুন। FEL তথ্য হারিয়ে যেতে পারে।';
+	@override String get dvExperimentDiagnostics => 'ভিডিও পরীক্ষার লগ';
+	@override String get dvExperimentDiagnosticsDescription => 'পরবর্তী প্লেব্যাকে প্লেয়ারের বিস্তারিত লগ চালু করুন।';
 }
 
 // Path: themeEditor
@@ -3553,7 +3560,7 @@ class _Translations$discover$findNext$bn extends Translations$discover$findNext$
 	@override String totalDuration({required Object duration}) => 'মোট ${duration}';
 	@override String get timingVaries => 'সময় কমবেশি হতে পারে';
 	@override String get notNow => 'এখন নয়';
-	@override String get swipeHint => 'সোয়াইপ করুন অথবা নিচের বোতামগুলো ব্যবহার করুন';
+	@override String get swipeHint => 'প্রচ্ছদটি কোনো তিরের দিকে সোয়াইপ করুন বা নিচের বোতাম ব্যবহার করুন।';
 	@override String get saved => 'সংরক্ষিত পছন্দ';
 	@override String savedCount({required Object count}) => 'সংরক্ষিত পছন্দ · ${count}';
 	@override String get undo => 'পূর্বাবস্থায় ফেরান';
@@ -3581,6 +3588,18 @@ class _Translations$discover$findNext$bn extends Translations$discover$findNext$
 	@override String get openFailed => 'এই পছন্দটি আর পাওয়া যাচ্ছে না। আবার যাচাই করতে রিফ্রেশ করুন।';
 	@override String get changeFailed => 'পরিবর্তনটি সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।';
 	@override String get savedLimit => 'সংরক্ষিত পছন্দের তালিকা পূর্ণ। আরেকটি সংরক্ষণ করতে একটি পছন্দ সরিয়ে দিন।';
+	@override String get chooseHint => 'কোনো শিরোনাম খুলুন, পরের জন্য সংরক্ষণ করুন বা এড়িয়ে যান।';
+	@override String get howItWorks => 'ব্যবহারের নিয়ম';
+	@override String get notNowHelp => 'এই শিরোনামটি আপাতত এড়িয়ে যান। এটি আপনার লাইব্রেরিতে থাকবে।';
+	@override String get saveHelp => 'এই ডিভাইসে এই প্রোফাইলের সংরক্ষিত পছন্দে রাখুন। সংরক্ষণ করলে ডাউনলোড হয় না।';
+	@override String get openHelp => 'বিস্তারিত দেখতে প্রচ্ছদ নির্বাচন করুন। চালানো, পড়া বা খোলার জন্য প্রধান বোতাম ব্যবহার করুন।';
+	@override String get controlsHelp => 'কীবোর্ড বা রিমোট: একটি বোতামে যান, তারপর Enter বা নির্বাচন বোতাম চাপুন। পূর্বাবস্থায় ফেরালে শেষ পছন্দটি ফিরে আসে।';
+	@override String get artworkLoading => 'ছবি লোড হচ্ছে…';
+	@override String get artworkUnavailable => 'ছবি উপলব্ধ নয়';
+	@override String get savedFeedback => 'সংরক্ষিত পছন্দে যোগ করা হয়েছে';
+	@override String get skippedFeedback => 'আপাতত এড়িয়ে যাওয়া হয়েছে';
+	@override String get releaseToConfirm => 'নিশ্চিত করতে ছেড়ে দিন';
+	@override String get remoteHint => 'প্রচ্ছদে ফোকাস: ← / → বেছে নিন · নির্বাচন বোতাম: বিস্তারিত · ↑ / ↓ ফোকাস বদলান';
 }
 
 // Path: discover.person
@@ -4915,6 +4934,13 @@ extension on TranslationsBn {
 			'settings.regionFormatDescription' => 'তারিখ, সংখ্যা ও পরিমাপ কীভাবে দেখানো হবে তা বেছে নিন।',
 			'settings.metadataLanguage' => 'মিডিয়ার তথ্যের ভাষা',
 			'settings.metadataLanguageDescription' => 'সার্ভার সমর্থন করলে শিরোনাম ও বিবরণের পছন্দের ভাষা। অডিও ও সাবটাইটেলের পছন্দ আলাদাভাবে নির্ধারিত হয়।',
+			'settings.experimentalDolbyVision' => 'পরীক্ষামূলক Dolby Vision',
+			'settings.experimentalDolbyVisionDescription' => 'পরবর্তী প্লেব্যাকে পরীক্ষামূলক FEL রেন্ডারার ব্যবহার করুন। ইঞ্জিনের আলাদা বিল্ড প্রয়োজন।',
+			'settings.dvExperimentUnavailableDescription' => 'এই পরীক্ষা বর্তমানে শুধু Linux-এ উপলব্ধ।',
+			'settings.dvCompatibilityFallback' => 'সামঞ্জস্যপূর্ণ বিকল্প',
+			'settings.dvCompatibilityFallbackDescription' => 'পরীক্ষা শুরু না হলে সাধারণ রেন্ডারার ব্যবহার করুন। FEL তথ্য হারিয়ে যেতে পারে।',
+			'settings.dvExperimentDiagnostics' => 'ভিডিও পরীক্ষার লগ',
+			'settings.dvExperimentDiagnosticsDescription' => 'পরবর্তী প্লেব্যাকে প্লেয়ারের বিস্তারিত লগ চালু করুন।',
 			'themeEditor.builtIn' => 'ভিত্তিতে',
 			'themeEditor.presets' => 'প্রজাতন',
 			'themeEditor.custom' => 'কাস্টম',
@@ -5335,6 +5361,8 @@ extension on TranslationsBn {
 			'messages.libraryScanStarted' => ({required Object title}) => 'লাইব্রেরি স্ক্যান শুরু হয় "${title}" জন্য',
 			'messages.libraryScanFailed' => ({required Object error}) => 'স্ক্যান করতে পারিনি লাইব্রেরি: ${error}',
 			'messages.metadataRefreshing' => ({required Object title}) => '“${title}” এর জন্য ফ্রেসিং মেটাদেট...',
+			_ => null,
+		} ?? switch (path) {
 			'messages.metadataRefreshStarted' => ({required Object title}) => 'মেটা ডেটা ফ্রিজ শুরু হয় "${title}" জন্য',
 			'messages.metadataRefreshFailed' => ({required Object error}) => 'ম্যাটা ডেটা আপডেট করতে পারিনি: ${error}',
 			'messages.logoutConfirm' => 'আপনি কি নিশ্চিত যে আপনি ডাউনলোড করতে চান?',
@@ -5342,8 +5370,6 @@ extension on TranslationsBn {
 			'messages.seasonsLoadFailed' => 'সপ্তাহের লোড করতে পারবেন না',
 			'messages.noEpisodesFound' => 'প্রথম সপ্তাহে কোন ঘটনা পাওয়া যায়নি।',
 			'messages.noEpisodesFoundGeneral' => 'কোন ঘটনা পাওয়া যায়নি',
-			_ => null,
-		} ?? switch (path) {
 			'messages.episodesLoadFailed' => 'এজিসগুলি লোড করতে পারবেন না',
 			'messages.noResultsFound' => 'কোন ফলাফল পাওয়া যায় না',
 			'messages.sleepTimerSet' => ({required Object label}) => 'ঘুম টাইমার্ক ${label}',
@@ -5584,7 +5610,7 @@ extension on TranslationsBn {
 			'discover.findNext.totalDuration' => ({required Object duration}) => 'মোট ${duration}',
 			'discover.findNext.timingVaries' => 'সময় কমবেশি হতে পারে',
 			'discover.findNext.notNow' => 'এখন নয়',
-			'discover.findNext.swipeHint' => 'সোয়াইপ করুন অথবা নিচের বোতামগুলো ব্যবহার করুন',
+			'discover.findNext.swipeHint' => 'প্রচ্ছদটি কোনো তিরের দিকে সোয়াইপ করুন বা নিচের বোতাম ব্যবহার করুন।',
 			'discover.findNext.saved' => 'সংরক্ষিত পছন্দ',
 			'discover.findNext.savedCount' => ({required Object count}) => 'সংরক্ষিত পছন্দ · ${count}',
 			'discover.findNext.undo' => 'পূর্বাবস্থায় ফেরান',
@@ -5612,6 +5638,18 @@ extension on TranslationsBn {
 			'discover.findNext.openFailed' => 'এই পছন্দটি আর পাওয়া যাচ্ছে না। আবার যাচাই করতে রিফ্রেশ করুন।',
 			'discover.findNext.changeFailed' => 'পরিবর্তনটি সংরক্ষণ করা যায়নি। আবার চেষ্টা করুন।',
 			'discover.findNext.savedLimit' => 'সংরক্ষিত পছন্দের তালিকা পূর্ণ। আরেকটি সংরক্ষণ করতে একটি পছন্দ সরিয়ে দিন।',
+			'discover.findNext.chooseHint' => 'কোনো শিরোনাম খুলুন, পরের জন্য সংরক্ষণ করুন বা এড়িয়ে যান।',
+			'discover.findNext.howItWorks' => 'ব্যবহারের নিয়ম',
+			'discover.findNext.notNowHelp' => 'এই শিরোনামটি আপাতত এড়িয়ে যান। এটি আপনার লাইব্রেরিতে থাকবে।',
+			'discover.findNext.saveHelp' => 'এই ডিভাইসে এই প্রোফাইলের সংরক্ষিত পছন্দে রাখুন। সংরক্ষণ করলে ডাউনলোড হয় না।',
+			'discover.findNext.openHelp' => 'বিস্তারিত দেখতে প্রচ্ছদ নির্বাচন করুন। চালানো, পড়া বা খোলার জন্য প্রধান বোতাম ব্যবহার করুন।',
+			'discover.findNext.controlsHelp' => 'কীবোর্ড বা রিমোট: একটি বোতামে যান, তারপর Enter বা নির্বাচন বোতাম চাপুন। পূর্বাবস্থায় ফেরালে শেষ পছন্দটি ফিরে আসে।',
+			'discover.findNext.artworkLoading' => 'ছবি লোড হচ্ছে…',
+			'discover.findNext.artworkUnavailable' => 'ছবি উপলব্ধ নয়',
+			'discover.findNext.savedFeedback' => 'সংরক্ষিত পছন্দে যোগ করা হয়েছে',
+			'discover.findNext.skippedFeedback' => 'আপাতত এড়িয়ে যাওয়া হয়েছে',
+			'discover.findNext.releaseToConfirm' => 'নিশ্চিত করতে ছেড়ে দিন',
+			'discover.findNext.remoteHint' => 'প্রচ্ছদে ফোকাস: ← / → বেছে নিন · নির্বাচন বোতাম: বিস্তারিত · ↑ / ↓ ফোকাস বদলান',
 			'discover.extras' => 'ট্রাইলিং & অতিরিক্ত',
 			'discover.studio' => 'স্টুডিও',
 			'discover.rating' => 'রেটিং',
@@ -5837,6 +5875,8 @@ extension on TranslationsBn {
 			'explore.mdblistShelves.nameHint' => 'সূত্র তালিকা নাম ব্যবহার করার জন্য বাদ রাখুন।',
 			'explore.mdblistShelves.add' => 'শেলি যোগ করুন',
 			'explore.mdblistShelves.save' => 'শিগগির সংরক্ষণ',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'মোট ${title} আপ',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'ফাঁস করুন ${title}',
 			'explore.mdblistShelves.unavailable' => 'এই তালিকা পাওয়া যায় না. সেটিংসগুলিতে তার স্কেল ফেরত বা মুছে ফেলুন.',
@@ -5856,8 +5896,6 @@ extension on TranslationsBn {
 			'explore.rows.popularShows' => 'জনপ্রিয় প্রদর্শনী',
 			'explore.rows.trendingAnime' => 'ট্রেনিং অ্যানিম',
 			'explore.rows.suggestedAnime' => 'অ্যানিমের প্রস্তাব',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.airingAnime' => 'অ্যানিমেটিক অ্যানিমেটিক',
 			'explore.rows.popularAnime' => 'সবচেয়ে জনপ্রিয় অ্যানিম',
 			'explore.rows.trending' => 'ট্রেন্ডিং',
@@ -6351,6 +6389,8 @@ extension on TranslationsBn {
 			'downloads.resumeDownload' => 'ডাউনলোড করুন',
 			'downloads.cancelledDownload' => 'বাতিল ডাউনলোড',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (সিন্সিং ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'ডাউনলোড করা হয়েছে ${file} - সম্পূর্ণ করতে ক্লিক করুন',
 			'downloads.partialDownloadClickToComplete' => 'সম্পূর্ণভাবে ডাউনলোড - ক্লিক করুন',
 			'downloads.deleting' => 'মুছে ফেলা...',
@@ -6370,8 +6410,6 @@ extension on TranslationsBn {
 			'downloads.unwatchedOnly' => 'শুধুমাত্র চিন্তিত',
 			'downloads.nextNUnwatched' => ({required Object count}) => 'পরবর্তী ${count} অপেক্ষা',
 			'downloads.customAmount' => 'কাস্টম কমানো...',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.customAmountAny' => 'কাস্টম সংখ্যা (একটি)',
 			'downloads.randomEpisodes' => 'পরিস্থিতি',
 			'downloads.includeSpecials' => 'বিশেষ বিশেষ',
@@ -6865,6 +6903,8 @@ extension on TranslationsBn {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'সার্ভার পৌঁছাতে পারবেন না: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'অ্যাকাউন্ট ভুল: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect অসম্ভব: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'সাইন আপ করুন Plex',
 			'addServer.pinExpired' => 'PIN-টি অন্তর্ভুক্ত হওয়ার আগে শেষ হয়ে গেছে, আবারও চেষ্টা করুন।',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'অ্যাকাউন্ট নিবন্ধন করতে পারিনি: ${error}',
@@ -6884,8 +6924,6 @@ extension on TranslationsBn {
 			'addServer.authResponseIncomplete' => 'সার্ভার থেকে sign-in উত্তর অসম্পূর্ণ ছিল',
 			'addServer.quickConnectRejected' => 'Quick Connect সার্ভার দ্বারা বাতিল করা হয়',
 			'addServer.quickConnectNotJson' => 'Quick Connect উত্তরটি সঠিক ছিল না JSON',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.quickConnectMissingFields' => 'উত্তর Quick Connect একটি কোড বা গোপনতা অল্প',
 			'addServer.quickConnectPollRejected' => 'Quick Connect সার্ভার দ্বারা অনুরোধ করা হয়',
 			'addServer.serverTimedOut' => 'সার্ভার সঠিক সময়ে উত্তর দেয়নি।',
@@ -7379,6 +7417,8 @@ extension on TranslationsBn {
 			'sourceSetup.smbEncrypted' => 'SMB3 এনক্রিপশন চালু',
 			'sourceSetup.smbUnencrypted' => 'SMB3 এনক্রিপশন বন্ধ',
 			'sourceSetup.httpUnencrypted' => 'পরিবহন এনক্রিপশন ছাড়া HTTP',
+			_ => null,
+		} ?? switch (path) {
 			'sourceSetup.checkEndpointSecurity' => 'এন্ডপয়েন্টের নিরাপত্তা পরীক্ষা করুন',
 			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} লেখা আবশ্যক।',
 			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => '${label}-এর মান ${min} থেকে ${max}-এর মধ্যে লিখুন।',

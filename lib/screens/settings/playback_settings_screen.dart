@@ -79,6 +79,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         SettingsService.matchContentResolution,
         SettingsService.audioChannelLimit,
         SettingsService.disableDolbyVision,
+        SettingsService.experimentalDolbyVision,
       ],
       builder: (context) {
         final svc = SettingsService.instance;
@@ -134,6 +135,31 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
                 if (showDisplaySwitchDelay) _displaySwitchDelayTile(),
                 if (showDisableDolbyVision) _disableDolbyVisionTile(),
                 if (showDvConversionMode) _dvConversionModeTile(),
+                SettingSwitchTile(
+                  pref: SettingsService.experimentalDolbyVision,
+                  icon: Symbols.hdr_on_rounded,
+                  title: t.settings.experimentalDolbyVision,
+                  subtitle: Platform.isLinux && !PlatformDetector.isWebOSBuild()
+                      ? t.settings.experimentalDolbyVisionDescription
+                      : t.settings.dvExperimentUnavailableDescription,
+                  enabled: Platform.isLinux && !PlatformDetector.isWebOSBuild(),
+                ),
+                if (Platform.isLinux &&
+                    !PlatformDetector.isWebOSBuild() &&
+                    svc.read(SettingsService.experimentalDolbyVision))
+                  SettingSwitchTile(
+                    pref: SettingsService.dvCompatibilityFallback,
+                    icon: Symbols.hdr_off_rounded,
+                    title: t.settings.dvCompatibilityFallback,
+                    subtitle: t.settings.dvCompatibilityFallbackDescription,
+                  ),
+                SettingSwitchTile(
+                  pref: SettingsService.dvExperimentDiagnostics,
+                  icon: Symbols.info_rounded,
+                  title: t.settings.dvExperimentDiagnostics,
+                  subtitle: t.settings.dvExperimentDiagnosticsDescription,
+                  enabled: !PlatformDetector.isWebOSBuild(),
+                ),
                 // mpv-only: ExoPlayer always leaves the conversion to the device.
                 if (Platform.isAndroid && !exoActive) _hdrSdrConversionTile(),
                 // mpv-only (#2149): ExoPlayer has no filter chain, so the

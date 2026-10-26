@@ -20,9 +20,12 @@ import '../../theme/mono_tokens.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/formatters.dart';
 import '../../utils/platform_detector.dart';
+import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/app_menu.dart';
+import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
+import '../settings/services_settings_screen.dart';
 import 'publication_reader_screen.dart';
 import 'source_notes_screen.dart';
 import 'source_player_screen.dart';
@@ -216,7 +219,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                       final candidate = candidates[index];
                       final media = candidate.media!;
                       final title = media.title?.trim() ?? '';
-                      return ListTile(
+                      return FocusableListTile(
                         title: Text(
                           media.year == null
                               ? isolateDisplayText(title)
@@ -265,7 +268,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
           .take(25)
           .toList(growable: false);
       if (candidates.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.sourceSetup.metadataNoMatches)));
+        showAppSnackBar(context, t.sourceSetup.metadataNoMatches);
         return;
       }
       final selected = await _chooseMetadataMatch(candidates);
@@ -484,6 +487,8 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
   Widget build(BuildContext context) {
     final theme = Theme.of(context), tk = tokens(context), audio = _entry.audio;
     final hasTrakt = context.watch<TrackersProvider>().traktCatalogClient != null;
+    final source = context.watch<SourceController>().sources.where((item) => item.id == _entry.sourceId).firstOrNull;
+    final automaticMetadataEnabled = source?.options['onlineMetadata'] != 'false';
     return FocusedScrollScaffold(
       title: Text(_entry.displayTitle),
       focusableAppBarActions: true,
@@ -690,8 +695,47 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                             Semantics(liveRegion: true, child: Text(t.sourceSetup.metadataFailed)),
                             TextButton.icon(
                               onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
+                              icon: const Icon(Icons.search_rounded),
+                              label: Text(t.sourceSetup.metadataSearch),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (_entry.kind == SourceItemKind.video && hasTrakt && !automaticMetadataEnabled)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              '${t.sourceSetup.automaticMetadata} · ${t.common.off}',
+                              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                            ),
+                            TextButton.icon(
+                              onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
                               icon: Icon(Icons.search_rounded),
                               label: Text(t.sourceSetup.metadataSearch),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (_entry.kind == SourceItemKind.video && !hasTrakt)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              t.sourceSetup.metadataSearchPrivacy,
+                              style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
+                            ),
+                            TextButton.icon(
+                              onPressed: () => Navigator.push(
+                                context,
+                                MaterialPageRoute(builder: (_) => const ServicesSettingsScreen()),
+                              ),
+                              icon: const Icon(Icons.link_rounded),
+                              label: Text('${t.common.connect} ${t.trakt.title}'),
                             ),
                           ],
                         ),
@@ -798,7 +842,9 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                             onTap: (f.kind == SourceItemKind.ebook || f.kind == SourceItemKind.comic)
                                 ? () => sourceAction(context, () => _read(f))
                                 : () => sourceAction(context, () => _play([f])),
-                            trailing: _transfers.containsKey(f.id)
+                            trailing: f.streamOnly
+                                ? null
+                                : _transfers.containsKey(f.id)
                                 ? const SizedBox(
                                     width: 24,
                                     height: 24,

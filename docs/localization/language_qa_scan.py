@@ -47,7 +47,77 @@ def catalog_hash(value):
     return hashlib.sha256(serialized.encode()).hexdigest()
 
 
-def verify_integration_and_project(raw, tags, historical, integration):
+def verify_merge_overlay(raw, tags, overlay, integration):
+    """Verify the exact later merge and reconstruct the prior integration."""
+    for filename, field in [('language_qa_integration.json', 'preMergeIntegrationManifestSha256'),
+                            ('LANGUAGE_QA_INTEGRATION.md', 'preMergeIntegrationReportSha256')]:
+        if hashlib.sha256((DOCS / filename).read_bytes()).hexdigest() != overlay[field]:
+            raise SystemExit(f'Pre-merge audit artifact changed: {filename}')
+    if overlay['schemaVersion'] != 1 or set(overlay['catalogs']) != set(tags):
+        raise SystemExit('Unexpected merge-overlay inventory')
+    key = overlay['reviewedKey']
+    if key != 'discover.findNext.swipeHint' or overlay['knownUnaddressedFindings']:
+        raise SystemExit('Unexpected merge-overlay semantic scope')
+    source = messages(raw['en'])
+    if source[key] != overlay['reviewedEnglish']:
+        raise SystemExit('Reviewed merge-overlay English changed')
+    for added_key, value in overlay['unreviewedNewSourceMessages'].items():
+        if source.get(added_key) != value:
+            raise SystemExit(f'Unreviewed new-source inventory changed: {added_key}')
+    prior = deepcopy(raw)
+
+    def node_at(value, path):
+        for segment in path.split('.') if path else []:
+            value = value[next(k for k in value if message_key(k) == segment)]
+        return value
+
+    def remove(value, path):
+        parts = path.split('.')
+        node = node_at(value, '.'.join(parts[:-1]))
+        del node[next(k for k in node if message_key(k) == parts[-1])]
+
+    for tag in tags:
+        info = overlay['catalogs'][tag]
+        path = f'lib/i18n/{tag}.i18n.json'
+        if info['catalogPath'] != path or hashlib.sha256((ROOT / path).read_bytes()).hexdigest() != info['currentSha256']:
+            raise SystemExit(f'Merge-overlay catalog hash changed: {tag}')
+        flat = messages(raw[tag])
+        if tag != 'en' and flat.get(key) != overlay['reviewedTranslations'].get(tag):
+            raise SystemExit(f'Reviewed cover/arrow hint changed: {tag}')
+        for changed_key, values in info['changedValues'].items():
+            if changed_key != key or flat.get(changed_key) != values['after']:
+                raise SystemExit(f'Unexpected merge-overlay text change: {tag}.{changed_key}')
+            restore_message(prior[tag], changed_key, values['before'])
+        for added_key in info['addedPhysicalKeys']:
+            if added_key not in overlay['unreviewedNewSourceMessages'] and added_key != key:
+                raise SystemExit(f'Unenumerated merge-overlay addition: {tag}.{added_key}')
+            remove(prior[tag], added_key)
+        for container in info['addedContainerPaths']:
+            if node_at(prior[tag], container):
+                raise SystemExit(f'Added container still contains unenumerated values: {tag}.{container}')
+            remove(prior[tag], container)
+        for container, order in info['keyOrderRestorations'].items():
+            node = node_at(prior[tag], container)
+            if set(order) != set(node):
+                raise SystemExit(f'Unexpected pre-merge key order inventory: {tag}.{container}')
+            values = {item: node[item] for item in order}
+            node.clear()
+            node.update(values)
+        if (catalog_hash(prior[tag]) != info['preMergeSha256'] or
+                info['preMergeSha256'] != integration['catalogs'][tag]['currentSha256']):
+            raise SystemExit(f'Pre-merge integration hash differs: {tag}')
+        if sorted(set(flat) - set(messages(prior[tag]))) != info['addedPhysicalKeys']:
+            raise SystemExit(f'Merge-overlay added-key inventory differs: {tag}')
+    for tag, parent in overlay['regionalPhysicalOverrides'].items():
+        if overlay['reviewedTranslations'][tag] != overlay['reviewedTranslations'][parent]:
+            raise SystemExit(f'Regional cover/arrow hint no longer matches reviewed parent: {tag}')
+    for fix in overlay['corrections']:
+        if fix['original'] == fix['corrected'] or messages(raw[fix['locale']])[fix['key']] != fix['corrected']:
+            raise SystemExit('Invalid merge-overlay correction')
+    return prior
+
+
+def verify_integration_and_project(raw, tags, historical, integration, projected_input=False):
     """Verify the complete current snapshot, then derive the exact old layer."""
     if integration['schemaVersion'] != 2 or integration['knownUnaddressedFindings']:
         raise SystemExit('Unexpected or unfinished integration review')
@@ -89,7 +159,9 @@ def verify_integration_and_project(raw, tags, historical, integration):
         expected_path = f'lib/i18n/{tag}.i18n.json'
         if info['catalogPath'] != expected_path:
             raise SystemExit(f'Unexpected integration catalog path: {tag}')
-        if hashlib.sha256((ROOT / expected_path).read_bytes()).hexdigest() != info['currentSha256']:
+        actual_hash = (catalog_hash(raw[tag]) if projected_input else
+                       hashlib.sha256((ROOT / expected_path).read_bytes()).hexdigest())
+        if actual_hash != info['currentSha256']:
             raise SystemExit(f'Integrated output hash changed: {expected_path}')
         flat = messages(raw[tag])
         effective = messages(resolve(tag))
@@ -216,7 +288,10 @@ def main():
     raw = {tag: json.loads((ROOT / f'lib/i18n/{tag}.i18n.json').read_text()) for tag in tags}
     integration_path = DOCS / 'language_qa_integration.json'
     integration = json.loads(integration_path.read_text()) if integration_path.exists() else None
-    historical_raw = (verify_integration_and_project(raw, tags, manifest, integration)
+    overlay_path = DOCS / 'language_qa_merge_overlay.json'
+    overlay = json.loads(overlay_path.read_text()) if overlay_path.exists() else None
+    integration_raw = verify_merge_overlay(raw, tags, overlay, integration) if overlay else raw
+    historical_raw = (verify_integration_and_project(integration_raw, tags, manifest, integration, bool(overlay))
                       if integration else raw)
     fix_by_key = {(fix['locale'], fix['key']): fix for fix in fixes}
     if len(fix_by_key) != len(fixes):
@@ -224,11 +299,13 @@ def main():
     if args.check_reviewed_hashes:
         for tag, info in manifest['locales'].items():
             path = ROOT / info['catalogPath']
-            expected = integration['catalogs'][tag]['currentSha256'] if integration else info['afterSha256']
+            expected = (overlay['catalogs'][tag]['currentSha256'] if overlay else
+                        integration['catalogs'][tag]['currentSha256'] if integration else info['afterSha256'])
             if hashlib.sha256(path.read_bytes()).hexdigest() != expected:
                 raise SystemExit(f'Reviewed output hash changed: {path.relative_to(ROOT)}')
         source = ROOT / 'lib/i18n/en.i18n.json'
-        expected = (integration['catalogs']['en']['currentSha256'] if integration
+        expected = (overlay['catalogs']['en']['currentSha256'] if overlay else
+                    integration['catalogs']['en']['currentSha256'] if integration
                     else manifest['englishAfterSha256'])
         if hashlib.sha256(source.read_bytes()).hexdigest() != expected:
             raise SystemExit('Reviewed English source hash changed')
@@ -238,8 +315,12 @@ def main():
         print(f'Reviewed hashes and all {len(fixes)} correction records match.')
         if integration:
             count = integration['coverage']['integrationDirectUniqueLocaleMessages']
-            print(f'Current integration hashes and all {count} directly reviewed values match; '
+            layer = 'Pre-merge integration' if overlay else 'Current integration'
+            print(f'{layer} hashes and all {count} directly reviewed values reproduce; '
                   'all 37 historical reviewed hashes are reproduced by the exact key/order projection.')
+        if overlay:
+            print('Merge overlay: 36 reviewed physical cover/arrow hints match; 19 new source paths '
+                  'remain explicitly outside semantic review; all 37 pre-merge integration hashes reproduce.')
     if args.check_findings_resolved:
         if args.baseline:
             raise SystemExit('Check final findings separately from --baseline')
@@ -339,13 +420,15 @@ def main():
         by_locale[tag] = dict(sorted(counts.items()))
         summary.update(counts)
     result = {'snapshot': ('baseline' if args.baseline else
+                          'merge-overlay-output' if overlay else
                           'integrated-output' if integration else 'reviewed-output'),
               'resolvedNonEnglishMessages': len(english) * (len(tags) - 1),
               'candidateScalarComparisons': sum(isinstance(v, str) for v in english.values()) * (len(tags) - 1),
               'candidateCounts': dict(sorted(summary.items())), 'locales': by_locale}
     if args.baseline and dict(summary) != manifest['automatedBaseline']:
         raise SystemExit('Baseline candidate counts no longer match the review manifest')
-    expected_after = integration['automatedAfter'] if integration else manifest['automatedAfter']
+    expected_after = (overlay['automatedAfter'] if overlay else
+                      integration['automatedAfter'] if integration else manifest['automatedAfter'])
     if args.check_findings_resolved and dict(summary) != expected_after:
         raise SystemExit('Final candidate counts no longer match the review manifest')
     print(json.dumps(result, ensure_ascii=False, indent=2))

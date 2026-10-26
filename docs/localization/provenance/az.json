@@ -1,7 +1,7 @@
 {
   "locale": "az",
   "inherits": null,
-  "catalogSha256": "bf7d7a34f5b460712683efb2afc55e9a9152e7333d76fdc5af86a48e100190db",
+  "catalogSha256": "1fe9099ab1961c2bb548548b5bf15b7f06246b37c4591a5ae20d9152be851668",
   "nativeSpeakerReviewed": false,
   "messages": {
     "app.title": "nonlinguistic",
@@ -2885,7 +2885,7 @@
     "discover.findNext.totalDuration": "ai-authored-self-reviewed-discovery-translation",
     "discover.findNext.timingVaries": "ai-authored-self-reviewed-discovery-translation",
     "discover.findNext.notNow": "ai-authored-self-reviewed-discovery-translation",
-    "discover.findNext.swipeHint": "ai-authored-self-reviewed-discovery-translation",
+    "discover.findNext.swipeHint": "independent-ai-reviewed-main-swipe-hint",
     "discover.findNext.saved": "ai-authored-self-reviewed-discovery-translation",
     "discover.findNext.savedCount": "ai-authored-self-reviewed-discovery-translation",
     "discover.findNext.undo": "ai-authored-self-reviewed-discovery-translation",
@@ -3063,7 +3063,26 @@
     "sourceSetup.replaceFile": "ai-authored-self-reviewed-source-translation",
     "sourceSetup.selectedIdentity": "ai-authored-self-reviewed-source-translation",
     "sourceSetup.subtitleRating": "ai-authored-self-reviewed-source-translation",
-    "sourceSetup.subtitleDownloading": "ai-authored-self-reviewed-source-translation"
+    "sourceSetup.subtitleDownloading": "ai-authored-self-reviewed-source-translation",
+    "settings.experimentalDolbyVision": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "settings.experimentalDolbyVisionDescription": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "settings.dvExperimentUnavailableDescription": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "settings.dvCompatibilityFallback": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "settings.dvCompatibilityFallbackDescription": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "settings.dvExperimentDiagnostics": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "settings.dvExperimentDiagnosticsDescription": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.chooseHint": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.howItWorks": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.notNowHelp": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.saveHelp": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.openHelp": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.controlsHelp": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.artworkLoading": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.artworkUnavailable": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.savedFeedback": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.skippedFeedback": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.releaseToConfirm": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe",
+    "discover.findNext.remoteHint": "retained-main:9a17bbd0bff73071079c8b1bc4d85b77557b42fe"
   },
   "beforeIndependentQaCorrection": {
     "addServer.allowHttp": "m2m100-draft",
@@ -3102,5 +3121,8 @@
     "lending.resumeMessage": "m2m100-draft"
   },
   "independentAiQaReport": "../LANGUAGE_QA.md",
-  "integrationAiQaReport": "../LANGUAGE_QA_INTEGRATION.md"
+  "integrationAiQaReport": "../LANGUAGE_QA_INTEGRATION.md",
+  "beforeMainMergeReview": {
+    "discover.findNext.swipeHint": "ai-authored-self-reviewed-discovery-translation"
+  }
 }
