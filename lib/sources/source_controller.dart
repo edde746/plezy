@@ -178,6 +178,15 @@ class SourceController extends ChangeNotifier {
               sources = loadedSources.where((source) => source.profileId == id).toList(growable: false);
               cloudSync.resetStatus();
               syncConfig = config;
+              await downloads.restoreProfile(id, (sourceId) {
+                if (!current(epoch) || !sources.any((source) => source.id == sourceId)) return null;
+                try {
+                  return adapter(sourceId);
+                } on Object {
+                  return null;
+                }
+              });
+              if (!current(epoch)) return;
               await _shelves(id, epoch);
               scheduleSync();
             }
@@ -383,8 +392,21 @@ class SourceController extends ChangeNotifier {
     requireSession();
     if (source.profileId != profileId) throw const SourceException(SourceFailure.permission);
     final epoch = generation;
+    final oldSource = sources.where((candidate) => candidate.id == source.id).firstOrNull;
+    final identityChanged = oldSource != null && oldSource.options['syncLibrary'] != source.options['syncLibrary'];
+    final existingEntries = identityChanged ? await repository.entries(source.profileId, source: source.id) : const <SourceEntry>[];
+    requireSession(epoch);
     await repository.saveSource(source, credentials);
     requireSession(epoch);
+    if (identityChanged) {
+      await cloudSync.migrateSourceIdentity(
+        profile: source.profileId,
+        oldSource: oldSource!,
+        newSource: source,
+        entries: existingEntries,
+      );
+      requireSession(epoch);
+    }
     _sourceSyncSucceeded(source.id);
     await reload();
   }
@@ -402,7 +424,7 @@ class SourceController extends ChangeNotifier {
     await stopPlayback?.call();
     _adapters.remove(source.id)?.close();
     _sourceSyncSucceeded(source.id);
-    downloads.cancelAll();
+    downloads.cancelSource(profileId!, source.id);
     await repository.removeSource(profileId!, source.id);
     await reload();
   }
@@ -604,7 +626,52 @@ class SourceController extends ChangeNotifier {
     final epoch = generation;
     final local = await downloads.local(profileId!, entry.sourceId, file);
     if (local != null) return local;
-    final result = await downloads.download(profileId!, adapter(entry.sourceId), file, onProgress: onProgress);
+    final result = await downloads.download(
+      profileId!,
+      adapter(entry.sourceId),
+      file,
+      label: entry.displayTitle,
+      onProgress: onProgress,
+    );
+    requireSession(epoch);
+    return result;
+  }
+
+  Future<void> cancelDownload(String downloadKey) async {
+    await ready;
+    requireSession();
+    final profile = profileId!;
+    final row = await repository.download(profile, downloadKey);
+    if (row == null) return;
+    final sourceId = row['source_id'] as String? ?? '';
+    final file = PublicationFile.fromJson(sourceMap(jsonDecode(row['file_payload'] as String? ?? '{}')));
+    if (sourceId.isEmpty) throw const SourceException(SourceFailure.invalidData);
+    await downloads.cancelAndWait(profile, sourceId, file);
+  }
+
+  Future<void> retryDownload(String downloadKey) async {
+    await ready;
+    requireSession();
+    final epoch = generation, profile = profileId!;
+    final row = await repository.download(profile, downloadKey);
+    if (row == null) throw const SourceException(SourceFailure.invalidData);
+    final sourceId = row['source_id'] as String? ?? '';
+    final file = PublicationFile.fromJson(sourceMap(jsonDecode(row['file_payload'] as String? ?? '{}')));
+    if (sourceId.isEmpty || file.fingerprint != row['fingerprint']) throw const SourceException(SourceFailure.invalidData);
+    await downloads.download(profile, adapter(sourceId), file, label: row['label'] as String? ?? '');
+    requireSession(epoch);
+  }
+
+  Future<({int bytes, int elapsedMs, int requests, int readAhead, double mebibytesPerSecond})> qualifyNfsRead(
+    String sourceId,
+    PublicationFile file,
+  ) async {
+    await ready;
+    requireSession();
+    final source = adapter(sourceId);
+    if (source is! NfsSourceAdapter) throw const SourceException(SourceFailure.unsupported);
+    final epoch = generation;
+    final result = await source.qualifyRead(file);
     requireSession(epoch);
     return result;
   }
@@ -1069,6 +1136,27 @@ class SourceController extends ChangeNotifier {
     syncConfig = config;
     _notify();
     if (config != null) await sync();
+  }
+
+  Future<String> exportCloudSyncRecovery() async {
+    await ready;
+    requireSession();
+    return cloudSync.exportRecovery(profileId!);
+  }
+
+  Future<void> importCloudSyncRecovery(String text) async {
+    await ready;
+    requireSession();
+    final epoch = generation, profile = profileId!;
+    await cloudSync.importRecovery(
+      profile: profile,
+      text: text,
+      sources: List.of(sources),
+      activeKeys: activeProgressKeys,
+    );
+    requireSession(epoch);
+    _notify();
+    scheduleSync();
   }
 
   Future<void> resolveCloudConflict(String key, SyncVersion selected) {
