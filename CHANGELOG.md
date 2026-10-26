@@ -64,6 +64,7 @@
 
 ### Changed
 
+- Align audiobook sync conflicts, playback input dialogs and source menus with shared Mono rows, focus and compact overflow patterns.
 - Polish catalog, source, TV and cross-media discovery surfaces to match Plezy's Mono focus, artwork, responsive layout and localized error patterns.
 - Route the Google Drive source label through localization.
 - Keep both iOS SwiftPM lockfiles pinned to the same Google Cast SDK revision.

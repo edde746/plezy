@@ -29,6 +29,7 @@ import '../../widgets/app_icon.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import 'source_notes_screen.dart';
+import 'source_sync_screen.dart';
 import 'source_widgets.dart';
 
 class PublicationReaderScreen extends StatefulWidget {
@@ -55,6 +56,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
   Map<String, dynamic> _settings = {};
   List<Map<String, dynamic>> _toc = [], _overlays = [];
   bool _loading = true, _ready = false, _disposed = false, _speaking = false, _readAlong = false;
+  bool _cloudConflict = false;
   Object? _error;
   double? _transfer;
   String _chapter = '';
@@ -105,7 +107,10 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
         session: const Uuid().v4(),
       );
       _progress = await sources.openProgress(widget.entry, initial);
-      if (sources.cloudConflict(initial.key)) throw const SourceException(SourceFailure.conflict);
+      if (sources.cloudConflict(initial.key)) {
+        _cloudConflict = true;
+        throw const SourceException(SourceFailure.conflict);
+      }
       sources.holdProgress(initial.key);
       if (await sources.repository.remoteConflict(_profile!, initial.key) != null) {
         throw const SourceException(SourceFailure.conflict);
@@ -750,7 +755,26 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
   Widget build(BuildContext context) {
     final body = _error != null
         ? Center(
-            child: Padding(padding: const EdgeInsets.all(24), child: Text(sourceFailureText(_error!))),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Text(sourceFailureText(_error!), textAlign: TextAlign.center),
+                  if (_cloudConflict) ...[
+                    const SizedBox(height: 12),
+                    TextButton.icon(
+                      onPressed: () => Navigator.push(
+                        context,
+                        MaterialPageRoute(builder: (_) => const SourceSyncScreen()),
+                      ),
+                      icon: const AppIcon(Symbols.cloud_sync_rounded),
+                      label: Text(t.audiobook.syncTitle),
+                    ),
+                  ],
+                ],
+              ),
+            ),
           )
         : _loading
         ? Center(
