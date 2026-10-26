@@ -3172,7 +3172,7 @@
     "cancelScan": "Cancel scan",
     "googleDrive": "Google Drive",
     "offlineQuota": "Offline download limit",
-    "offlineQuotaHelp": "Set the maximum space used by offline copies and queued downloads. Lowering the limit does not remove existing copies.",
+    "offlineQuotaHelp": "Set the maximum space used by offline copies, imported files, and queued downloads. Lowering the limit does not remove existing copies.",
     "offlineStorageUsage": "Offline storage",
     "reservedStorage": "reserved",
     "downloadQueue": "Download queue",
@@ -3180,6 +3180,8 @@
     "downloadQueued": "Waiting",
     "downloadPaused": "Paused",
     "downloadFailed": "Needs retry",
+    "importing": "Importing",
+    "importInterrupted": "Import interrupted · remove to clear",
     "errorQuotaExceeded": "The offline storage limit was reached. Raise the limit or remove a downloaded copy."
   },
   "lending": {
