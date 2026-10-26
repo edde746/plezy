@@ -16,10 +16,18 @@ independent reference-pixel accuracy still need qualification. Linux users can
 opt in under **Settings → Playback**, with a separate compatibility fallback and
 video experiment logging switch. A separate engine build is required.
 
+An experimental Android AAR now passes a synthetic FEL-on versus explicit
+EL-dropped pixel comparison through mpv's real `gpu-next` Surface output on an
+API 36 x86_64 emulator. That proves the authored residual reaches Android
+output; it does not update the production AAR or qualify real-device playback,
+Dolby-reference pixels, or physical Dolby Vision output.
+
 The repository also includes a pinned Apple dual-layer experiment host for
 macOS/iOS/tvOS, an offline FEL-to-HDR/SDR companion pipeline, and platform testing
 instructions. These are experimental paths, not a claim of universal or certified
 Dolby Vision support. P7→P8.1 compatibility discards EL and is labelled separately.
+Cross-platform playback and native Dolby Vision output are qualified separately;
+native Dolby Vision signaling depends on the platform and connected display path.
 See the [buildout, setup and Luna handoff](docs/maintainers/dv-platform-buildout.md)
 and [Linux engine evidence](docs/maintainers/dv-engine-luna-handoff.md).
 

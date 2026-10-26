@@ -12,7 +12,7 @@ driver, EDID, kernel module or TV firmware is replaced automatically.
 | Linux app | Device-local Playback switches select `opengl-next`, permit one renderer-creation fallback, and enable player logging. Isolated FFmpeg/libplacebo/mpv build and launcher. Generated P7 video drives the embedded graph on software GLES and on `vaapi-copy` decode plus GPU EGL/GLES render; hardware readback differed from software by at most one 8-bit code. A real local clip also traversed the graph. | Full Plezy Wayland playback, zero-copy and independent pixel accuracy remain open. The synthetic result proves qualitative EL contribution only. The hardware residual capture produced three pending-RPU replacement warnings; its RPU/frame association is unqualified. |
 | macOS, iOS, tvOS | Separate SwiftUI research host and pinned AetherEngine `DualLayerDolbyVision` trait; opt-in load, surface, play/pause, seek, stop and engine-route readout. | Not integrated into production `MpvPlayerCore`. This evidence set has no Mac build or Apple-device result; a route label does not qualify pixels or output. |
 | Offline companion | Pinned FelBaker builder patches its VapourSynth output key and builds a tested RGB48 pipeline. A 48-frame generated P7 sample changed all 2,073,600 designed residual-patch pixels; both HDR10/PQ HEVC and SDR/BT.709 H.264 outputs encoded and passed `ffprobe` frame/color-tag checks. | These lossy files are derived compatibility versions, not native DV. FelBaker is a comparison implementation, not an independent Dolby reference; real-clip and playback-device checks remain open. |
-| Android | Existing native DV, P7→8.1 and base-layer routes remain available; diagnostics label known EL-discarding routes. The app requests the P7 FEL filter only when software output is required, verifies that mpv accepts it, switches to `gpu-next`, and retries the policy after a native decoder falls back to software. | The locked Android AAR is still mpv 0.41 and does not include `format=enhancement-layer=yes`, so current shipping binaries do not reconstruct FEL. Policy and fail-closed behavior pass local unit tests; no Android device render has run. Generic DV codec advertisement does not prove FEL. CoreELEC S5 remains a separate vendor/kernel project. |
+| Android | Existing native DV, P7→8.1 and base-layer routes remain available; diagnostics label known EL-discarding routes. The app requests the P7 FEL filter only when software output is required, verifies that mpv accepts it, switches to `gpu-next`, and retries the policy after a native decoder falls back to software. A separate experimental AAR passes a synthetic FEL-on versus EL-dropped pixel comparison through Android Surface readback. | The production AAR remains on mpv 0.41 and does not contain the FEL path. The experimental AAR compiled for four ABIs; runtime pixel evidence is one API 36 x86_64 emulator with synthetic media. Real-device playback, reference pixels and physical Dolby Vision output remain unqualified. Generic DV codec advertisement does not prove FEL. CoreELEC S5 remains a separate vendor/kernel project. |
 | webOS | Existing native and compatibility playback; use an ordinary companion-derived version where native fidelity is insufficient. | No BL/EL GPU composer is exposed by the current webOS app path. No root patch is installed. |
 | Windows | Existing mpv compatibility playback; portable route-policy and companion orchestration code. The existing private Packer x64 route is being restored. | No D3D11/Vulkan FEL adapter build or device result is claimed. The `packer-windows` group now exists, but it has no registered runner and does not yet authorize PlezyNG. |
 
@@ -24,6 +24,36 @@ adapters, never stalls on an unfinished companion, and distinguishes `reconstruc
 evidence flags are required for qualified FEL; physical DV output is separate.
 `strict-fel` refuses unqualified fallback. P5 cannot use plain base-layer or P7→8.1
 conversion. Reports are bounded to 1 MiB and adapter counts to 64.
+
+## Android experimental AAR Surface comparison
+
+The experimental AAR was built from exact mpv
+`99b4c12cccb4d8d3f72b41944cb6c640e2156650`, FFmpeg
+`246d0da2c1b1f1924c9ba3b585a1ff3582d0e3f1`, and libplacebo
+`275f7dea27924cdd34ab2e6c20e448b6bc4fab65` pins. All four Android ABIs built.
+The AAR SHA-256 is
+`01c1b7ca0828ae45ad76069df41550a422883d5dec5ae38e26db0aa4c59893f1`.
+
+`MpvPlayerDeviceTest.profile7FelFilterChangesResidualPatchPixelsThroughGpuNext`
+ran on the API 36 x86_64 emulator against the generated synthetic clip
+(`c25ea18f2933bd7d381b0830bbe68cde3d887ffac27256fa960d59660d9c9af9`). It
+read the rendered Android `Surface` with PixelCopy and compared the same clip
+with `format=enhancement-layer=yes` against an explicit
+`format=enhancement-layer=no` control. At 1280×720, center-patch mean absolute
+RGB delta was 16.4226; the outside control delta was 0.06665; all 57,600 pixels
+in the authored center patch changed by more than two RGB codes. The complete
+instrumentation class passed 4/4 tests. The Gradle log is
+`/tmp/plezy-dv-platforms-build-20261026/evidence/android-p7-pixel-test-explicit-control.log`.
+
+This proves that authored EL data affects pixels through this experimental
+Android mpv graph and Surface on one emulator. The EL was deliberately
+synthetic, not derived from a mastered source, so the comparison is not a
+Dolby-reference accuracy check. The test ran in the mpv Android library, not in
+the Plezy UI; the production AAR remains unchanged. It does not qualify a
+physical Android device, hardware decoder, display output, or Dolby Vision
+signaling.
+
+The matching builder change is in draft [mpv-build PR #9](https://github.com/edde746/mpv-build/pull/9). It has not been merged or released, so shipping Android builds still use the stable engine lock.
 
 ## App settings and diagnostics
 

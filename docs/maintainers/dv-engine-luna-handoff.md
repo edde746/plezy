@@ -8,7 +8,7 @@ Build bleeding-edge Dolby Vision playback, prioritizing genuine Profile 7 FEL: d
 
 Keep P7-to-P8.1 conversion that drops EL as a separate, explicitly reduced-fidelity compatibility route. Do not claim FEL reconstruction from profile detection, EL presence, a successful process exit or a TV's Dolby Vision badge. Decoding, reconstruction, HDR presentation, native DV signaling and Dolby-reference display mapping are distinct claims.
 
-The current implementation is an opt-in Linux experiment. It does not replace the production engine or qualify universal DV support. Linux, Windows, Apple (including iOS/tvOS), Android and webOS remain in scope according to actual API and device feasibility.
+The current work includes an opt-in Linux experiment and a separate experimental Android AAR. Neither replaces the production engine or qualifies universal DV support. Linux, Windows, Apple (including iOS/tvOS), Android and webOS remain in scope according to actual API and device feasibility.
 
 ## Validated checkpoint
 
@@ -297,6 +297,34 @@ no approved route for this branch, and no validation run was dispatched while
 that route gap remains. Use the reviewed isolated owner-PR dispatcher before
 adding workflow access; do not route this PR's code to a shared runner group.
 
+## Android synthetic Surface trial (2026-10-26)
+
+The experimental AAR was built from exact mpv
+`99b4c12cccb4d8d3f72b41944cb6c640e2156650`, FFmpeg
+`246d0da2c1b1f1924c9ba3b585a1ff3582d0e3f1`, and libplacebo
+`275f7dea27924cdd34ab2e6c20e448b6bc4fab65` pins. All four Android ABIs built.
+The AAR SHA-256 is
+`01c1b7ca0828ae45ad76069df41550a422883d5dec5ae38e26db0aa4c59893f1`.
+
+`MpvPlayerDeviceTest.profile7FelFilterChangesResidualPatchPixelsThroughGpuNext`
+ran on an API 36 x86_64 emulator against the generated synthetic clip
+(`c25ea18f2933bd7d381b0830bbe68cde3d887ffac27256fa960d59660d9c9af9`). It
+read the rendered Android `Surface` with PixelCopy and compared the same clip
+with `format=enhancement-layer=yes` against an explicit
+`format=enhancement-layer=no` control. At 1280×720, the center-patch mean
+absolute RGB delta was 16.4226, the outside control delta was 0.06665, and all
+57,600 pixels in the authored center patch changed by more than two RGB codes.
+The complete instrumentation class passed 4/4 tests. The Gradle log is
+`/tmp/plezy-dv-platforms-build-20261026/evidence/android-p7-pixel-test-explicit-control.log`.
+
+This proves that authored EL data affects pixels through this experimental
+Android mpv graph and Surface on one emulator. The EL was deliberately
+synthetic, not derived from a mastered source, so the comparison is not a
+Dolby-reference accuracy check. The test ran in the mpv Android library, not in
+the Plezy UI; the production AAR remains unchanged. It does not qualify a
+physical Android device, hardware decoder, display output, or Dolby Vision
+signaling. The builder source change is in draft [mpv-build PR #9](https://github.com/edde746/mpv-build/pull/9); it has not been merged or released, and the production engine lock remains unchanged.
+
 ## What remains unproven
 
 - The Kodi sample index claims fair use for testing, technical evaluation and documentation, but no formal file-specific redistribution license is published. Keep the clip local; do not commit it or use it in public CI.
@@ -305,8 +333,8 @@ adding workflow access; do not route this PR's code to a shared runner group.
 - Full PlezyNG playback on the Wayland video plane remains unqualified. The libmpv API was exercised through EGL/GLES in a native harness, and the Linux debug app builds, but the app was not launched with media.
 - Hardware qualification is limited to `vaapi-copy` decode through this harness. Zero-copy VA-API import and application Wayland presentation remain unqualified.
 - Native HDMI DV signaling, target-TV output and Dolby-reference display mapping are not qualified.
-- Android has an app build and routing-unit evidence only; no patched P7 FEL graph or Android device render is available. The experimental Apple host has no Mac/device run in this evidence set. The existing private Packer Windows route is being restored: `packer-windows` group 11 now exists but is Packer-only and has no runners, the broker has no Windows group binding, and owner-validation runs [40330520703](https://github.com/snapetech-org/packer/actions/runs/40330520703) and [40332285276](https://github.com/snapetech-org/packer/actions/runs/40332285276) remain queued. Preserve the owner's C0/slot and drain gates before authorizing PlezyNG. No D3D11/Vulkan adapter build or device result is available. webOS has no FEL compositor adapter or device result.
-- Production `mpv-build.lock.json` and its TLS/network, audio, subtitle, decoder, Apple and Android patches have not been rebased into this engine.
+- Android now has a patched P7 graph and synthetic Surface pixel evidence on one emulator, but no real-device or Plezy UI playback. The production AAR remains pinned to the older engine. The experimental Apple host has no Mac/device run in this evidence set. The existing private Packer Windows route is being restored: `packer-windows` group 11 now exists but is Packer-only and has no runners, the broker has no Windows group binding, and owner-validation runs [40330520703](https://github.com/snapetech-org/packer/actions/runs/40330520703) and [40332285276](https://github.com/snapetech-org/packer/actions/runs/40332285276) remain queued. Preserve the owner's C0/slot and drain gates before authorizing PlezyNG. No D3D11/Vulkan adapter build or device result is available. webOS has no FEL compositor adapter or device result.
+- Production `mpv-build.lock.json` and its TLS/network, audio, subtitle, decoder, Apple and non-Android patches have not been rebased into this engine. The Android experimental AAR uses separate local pins and is not shipped.
 
 ## Next work, in order
 
@@ -318,7 +346,7 @@ carried forward from Luna's `552af300eee0754698fb123b5e193428528f1c7f` checkpoin
 1. **Validate and extend the RPU-to-CCM pixel oracle.** Confirm the terminal-pivot rule against an independent Profile 7 implementation or trusted reference samples. Keep previous-RPU state out of the Profile 7 reference path: the pinned FFmpeg decoder rejects metadata compression for profiles below 8 in compliant mode and rejects previous-RPU reuse on uncompressed streams. Wire the required `dv_md_compression` argument to the actual demuxed container configuration and retain fail-closed coverage for every nonzero mode. Then implement BT.1886 handling and build frame-level BL/EL inputs whose expected code values can be derived independently from the equations. Cover residual-only and mapping-only controls, CM 2.9 and CM 4.0, preserve intermediate precision, and set a numeric error budget before recording a reference-pixel pass. ETSI GS CCM 001 V1.1.1 clause 5 defines generic BL inverse mapping, EL NLQ, residual addition and PQ conversion; it does not name P7. ETSI TS 103 572 separately specifies ST 2094-10 metadata carriage, not the composer. [ETSI GS CCM 001](https://www.etsi.org/deliver/etsi_gs/CCM/001_099/001/01.01.01_60/gs_ccm001v010101p.pdf) · [pinned FFmpeg RPU decoder](https://github.com/FFmpeg/FFmpeg/blob/46f23be8b1976ed4c8ec85584daabcf0e57a7b9/libavcodec/dovi_rpudec.c#L2583-L2644) · [dovi_tool RPU mapping parser](https://github.com/quietvoid/dovi_tool/blob/main/dolby_vision/src/rpu/rpu_data_mapping.rs) · [libplacebo reshape metadata](https://github.com/haasn/libplacebo/blob/master/src/include/libplacebo/colorspace.h) · [ETSI TS 103 572 scope](https://www.etsi.org/deliver/etsi_ts/103500_103599/103572/01.03.01_60/ts_103572v010301p.pdf).
 2. **Expand the generated graph fixture.** Add separately tracked layers, exact seek/flush/reorder boundaries, malformed/missing EL and RPU, scene changes, EOF, crop/chroma edges, stale-pair and queue-capacity faults. Keep the local Kodi sample out of the repository and public CI.
 3. **Qualify Linux app playback.** Rebase production mpv patches only after review. Run the app through PlezyNG's Wayland plane and test precision, range/PQ/HLG tags, tone-map ownership, VA-API import, seek/resize/teardown, subtitles, audio sync, suspend and output changes. Keep normal `opengl` as default and preserve recovery by removing `PLEZYNG_EXPERIMENTAL_RENDER_API`.
-4. **Build the Android engine path.** The current APK contains the production engine; add a platform adapter that exposes paired decoded BL/EL frames, carries RPU and PTS identity, composes before display mapping, and fails closed when either layer is missing. Validate with the generated fixture on a real supported Android device before advertising FEL.
+4. **Integrate and qualify Android.** The experimental AAR now builds and its synthetic EL-on/EL-off Surface comparison passes. Package that engine through the reviewed dependency-release path, then test the Plezy UI and the generated fixture on real Android hardware. Add independent reference-pixel comparison before advertising accurate FEL reconstruction.
 5. **Qualify Apple and Windows routes.** Build the pinned Apple host on its Xcode host, then test VideoToolbox/Metal output on iPhone/iPad and Apple TV. Restore and verify the retired private Windows runner route before building the candidate D3D11/Vulkan adapter; do not infer output qualification from a successful compile.
 6. **Resolve webOS feasibility on device.** Check whether the supported webOS APIs expose decoded BL/EL surfaces and RPU timing for composition. If not, keep native/compatibility playback and the offline derived route explicitly separate. Native DV signaling and reference display mapping remain separate transport/device tests on every platform.
 

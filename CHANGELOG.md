@@ -6,6 +6,8 @@
 
 - Request the experimental Android P7 FEL filter only when software rendering is needed, and report the route only after mpv accepts the filter; unsupported engine builds keep the existing fallback.
 
+- Record synthetic Android FEL Surface evidence and per-platform Dolby Vision playback/output qualification gates; the experimental engine remains separate from production builds.
+
 - Add experimental comic page streaming, Komga source integration and ComicInfo metadata support.
 - Fix file-source metadata and listing edge cases, and validate the experimental webOS ARM build on an LG C6.
 

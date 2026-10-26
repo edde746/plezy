@@ -80,22 +80,30 @@ untested hardware combinations and complete proprietary display-mapper equivalen
   provide standard HDR10 and SDR files for supported clients; client playback
   was not tested. They are not native DV, an app-integrated adapter, or an
   independent Dolby pixel reference.
-- The current Android arm64 debug app builds and its 46 focused Dolby routing
-  tests pass. That APK still contains the production Android engine; it does not
-  contain a Profile 7 FEL compositor or demonstrate Android FEL playback.
+- The Android production app builds and its 46 focused Dolby routing tests pass.
+  Separately, an experimental AAR built from mpv `99b4c12`, FFmpeg `246d0da2`
+  and libplacebo `275f7dea` compiled for all four Android ABIs. On an API 36
+  x86_64 emulator, the actual mpv `gpu-next` Surface output was read back and
+  compared for the same synthetic P7 clip with `enhancement-layer=yes` and an
+  explicit `enhancement-layer=no` control. The authored center patch changed by
+  16.42 average RGB codes; the outside control changed by 0.067, and all 57,600
+  center pixels changed by more than two codes. This proves synthetic EL
+  contribution through that Android render path. The app's production AAR is
+  still pinned to the older engine; the emulator result is not a Plezy UI
+  playback, real-device, reference-pixel, or physical-output qualification.
 - Linux accepts `PLEZYNG_EXPERIMENTAL_RENDER_API=opengl-next` on its existing
   Wayland video plane. This selects the API proposed in mpv PR #18607. Invalid
   values and an unavailable backend fail the experiment explicitly. The normal
   unset/`opengl` path retains the current backend.
 - Focused Python tests and a native backend-selection test cover those contracts.
 
-This is an experimental engine/integration branch, not a shipped universal DV decoder. The
-existing production engine lock is unchanged and does not implement this new
-render API. Production patch rebasing, independent numerical FEL pixel
-qualification, full app/Wayland playback, zero-copy hardware import, physical DV
-output and the HDMI adapter described below remain implementation and
-qualification work. `vaapi-copy` decode is only proven through an embedded EGL
-harness on one AMD GPU.
+This is an experimental engine/integration branch, not a shipped universal DV
+decoder. The existing production engine lock is unchanged; the Android AAR used
+for the emulator comparison is not in that lock. Independent numerical FEL
+pixel qualification, full app/Wayland playback, zero-copy hardware import,
+physical DV output and the HDMI adapter described below remain implementation
+and qualification work. `vaapi-copy` decode is only proven through an embedded
+EGL harness on one AMD GPU.
 
 ## Verified starting point in PlezyNG
 
@@ -105,7 +113,7 @@ and its locked `edde746/mpv-build` commit
 
 | Area | Existing implementation | Consequence |
 | --- | --- | --- |
-| Engine | `mpv-build.lock.json`; build manifest pins mpv 0.41.0 and FFmpeg 8.0.1 | The newly merged FEL work is absent from these upstream version pins. Rebase the application patches with all three media components together. |
+| Engine | `mpv-build.lock.json`; production app pins mpv 0.41.0 and FFmpeg 8.0.1. The separate Android experiment uses exact FEL commits for mpv, FFmpeg and libplacebo. | The experimental Android AAR is not in the production lock. The other app targets still use their existing stable engine pins; each needs its own adapter and qualification. |
 | Linux renderer | `linux/runner/mpv/mpv_player.cc`: `vo=libmpv`, OpenGL ES, legacy render API | Installing a newer libplacebo or setting `vo=gpu-next` in a config does not change this embedded render contract. |
 | Linux presentation | `wayland_video_surface.cc`, `hdr_metadata.h`, `video_params.h` | Already has a separate video plane and Wayland color-management handling. Preserve its surface lifetime, output negotiation and rollback. This is not a DV HDMI transport. |
 | Linux libplacebo | Build manifest pins 7.360.1 | The newer FEL API needs a coordinated library/build upgrade. |
