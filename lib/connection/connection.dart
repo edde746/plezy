@@ -5,6 +5,19 @@ import '../services/plex_auth_service.dart';
 import '../utils/json_utils.dart';
 import '../utils/url_utils.dart';
 
+/// Keeps HTTP only for the exact active endpoint the user approved. Every
+/// alternate endpoint can receive authenticated requests through failover, so
+/// only HTTPS alternates are safe to retain without separate consent.
+List<String> _filterUnconsentedHttpFallbacks(
+  String activeBaseUrl,
+  Iterable<String> urls,
+) {
+  final active = canonicalizeBaseUrl(activeBaseUrl);
+  return List.unmodifiable(
+    urls.where((url) => url == active || Uri.tryParse(url)?.scheme == 'https'),
+  );
+}
+
 /// A media server connection — a unit of authentication the user added.
 ///
 /// A `PlexAccountConnection` carries one Plex account + its discovered servers + an
@@ -178,9 +191,18 @@ class PlexAccountConnection extends PlexMediaConnection {
     final profileJson = json['activeProfile'];
     final activeProfile = profileJson is Map<String, dynamic> ? PlexHomeUser.fromJson(profileJson) : null;
     final serversJson = json['servers'];
-    final servers = serversJson is List
-        ? serversJson.whereType<Map<String, dynamic>>().map(PlexServer.fromJson).toList()
-        : <PlexServer>[];
+    final servers = <PlexServer>[];
+    if (serversJson is List) {
+      for (final serverJson in serversJson.whereType<Map<String, dynamic>>()) {
+        try {
+          servers.add(PlexServer.fromJson(serverJson));
+        } on FormatException {
+          // An unusable cached server (for example, HTTP-only) must not make
+          // the account connection itself disappear during config loading.
+          continue;
+        }
+      }
+    }
     return PlexAccountConnection(
       id: id,
       accountToken: json['accountToken'] as String? ?? '',
@@ -265,12 +287,13 @@ class JellyfinConnection extends Connection {
     this.lastAuthenticatedAt,
   }) : baseUrl = canonicalizeBaseUrl(baseUrl),
        // A TLS connection must never silently send its token over an HTTP
-       // fallback, including historic guesses saved by older versions.
-       baseUrls = _normalizeBaseUrls(baseUrl, baseUrls)
-           .where(
-             (url) => Uri.parse(canonicalizeBaseUrl(baseUrl)).scheme != 'https' || Uri.parse(url).scheme == 'https',
-           )
-           .toList(growable: false);
+       // fallback, including historic guesses saved by older versions. For an
+       // explicitly approved HTTP connection, only that active URL may remain
+       // cleartext; other HTTP URLs have not been consented to.
+       baseUrls = _filterUnconsentedHttpFallbacks(
+         baseUrl,
+         _normalizeBaseUrls(baseUrl, baseUrls),
+       );
 
   @override
   MediaBackend get kind => dialect.backend;
@@ -448,12 +471,13 @@ class PlexDirectConnection extends PlexMediaConnection {
     this.lastAuthenticatedAt,
   }) : baseUrl = canonicalizeBaseUrl(baseUrl),
        // A TLS connection must never silently send its token over an HTTP
-       // fallback, including historic guesses saved by older versions.
-       baseUrls = _normalizeBaseUrls(baseUrl, baseUrls)
-           .where(
-             (url) => Uri.parse(canonicalizeBaseUrl(baseUrl)).scheme != 'https' || Uri.parse(url).scheme == 'https',
-           )
-           .toList(growable: false);
+       // fallback, including historic guesses saved by older versions. For an
+       // explicitly approved HTTP connection, only that active URL may remain
+       // cleartext; other HTTP URLs have not been consented to.
+       baseUrls = _filterUnconsentedHttpFallbacks(
+         baseUrl,
+         _normalizeBaseUrls(baseUrl, baseUrls),
+       );
 
   @override
   MediaBackend get kind => MediaBackend.plex;

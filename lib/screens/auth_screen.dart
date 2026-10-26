@@ -243,7 +243,9 @@ class _AuthScreenState extends State<AuthScreen> {
       if (!mounted) return;
       setState(() {
         _isAuthenticating = false;
-        _errorMessage = t.serverSelection.failedToLoadServers(error: localizedErrorReason(e));
+        _errorMessage = e is ServerParsingException
+            ? e.display
+            : t.serverSelection.failedToLoadServers(error: localizedErrorReason(e));
       });
     }
   }
