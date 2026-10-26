@@ -293,20 +293,25 @@ Priority testing handoff:
    compare pre-encode RGB48 against a trusted source, and test missing RPU,
    unequal frame counts, broken EL, cancellation, disk exhaustion and audio sync.
    FelBaker is a comparison implementation, not an independent Dolby oracle.
-5. **Independent pixels:** use ETSI GS CCM 001 clause 5 as the public BL/EL
-   composer equation source; it defines inverse BL mapping, EL NLQ, residual
-   reconstruction and PQ conversion. First map P7 RPU syntax and profile-specific
-   rules, including CM 2.9/4.0 behavior, onto its composing metadata. Research
+5. **Independent pixels:** `tools/dv-engine/ccm_reference.py` implements
+   normalized integer BL polynomial/MMR mapping, EL NLQ, and residual
+   reconstruction from [ETSI GS CCM 001 clause 5](https://www.etsi.org/deliver/etsi_gs/CCM/001_099/001/01.01.01_60/gs_ccm001v010101p.pdf).
+   Hand-calculated unit vectors are added, but their suite has not run on an
+   approved private-JIT runner. The module does not parse an RPU or establish
+   Profile 7 equivalence. First map P7 RPU syntax and profile-specific rules,
+   including CM 2.9/4.0 behavior, onto its composing metadata. Dolby's
+   [UHD Blu-ray authoring guide](https://professional.dolby.com/siteassets/pdfs/dolby_vision_uhd_bluray_authoring_workflow.pdf)
+   confirms the Profile 7 EL residual role; the P7-to-CCM mapping still needs
+   independent validation. Research
    found HDR-Analyze's published account that it removed its earlier FEL
    compositor after real-disc comparisons exposed large chroma and luma errors.
    Its plan calls for specification-derived vectors and pinned cross-composer
    versions. Therefore FelBaker and libplacebo are comparison targets, not the
    oracle.
    ETSI TS 103 572 covers ST 2094-10 metadata carriage. Implement an independent
-   integer CPU reference, test basis vectors, bit depths, chroma siting, NLQ,
-   pivots, nonlinear mapping, clipping, filter edges and precision, then set
-   reference_pixels only after defining the error budget and validating the
-   P7-to-spec mapping.
+   test broader bit depths, chroma siting, NLQ, pivots, nonlinear mapping,
+   clipping, filter edges and precision, then set `reference_pixels` only after
+   defining the error budget and validating the P7-to-spec mapping.
 6. **Remaining adapters:** complete and verify restoration of the existing
    private Windows route before D3D11/Vulkan builds; Android vendor/native capability qualification and
    an optional portable compositor; webOS compatible native/companion versions;

@@ -161,6 +161,14 @@ The injected test vector parses as Profile 7 FEL, CM v2.9, with residual enabled
 vector's original mastering pixels, so the fixture tests residual use rather
 than known-correct reconstruction; CM v4.0 is not covered.
 
+`ccm_reference.py` implements integer sample-level polynomial/MMR BL mapping,
+NLQ inverse quantization and reconstruction rounding/clipping from ETSI GS CCM
+001 v1.1.1 clauses 5.4.2 and 5.4.3. `test_ccm_reference.py` contains
+hand-calculated vectors and is discovered by `scripts/test_dv_experiments.py`.
+The reference consumes normalized CCM values; it does not parse Dolby RPU data
+or prove that Profile 7 CM v2.9/v4.0 maps to this model. Its unit suite still
+needs execution on the approved private-JIT route.
+
 ### Verify the generated layers through FelBaker
 
 The pinned FelBaker source builder corrects its VapourSynth v4 output declaration

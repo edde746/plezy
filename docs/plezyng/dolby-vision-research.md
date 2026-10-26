@@ -212,6 +212,15 @@ using it as an accuracy oracle. [ETSI TS 103 572](https://www.etsi.org/deliver/e
 is the separate ST 2094-10 metadata-carriage specification. The public
 [libplacebo RPU API notes](https://github.com/haasn/libplacebo/blob/master/src/include/libplacebo/colorspace.h)
 help locate fields, but reusing its equations is not an independent cross-check.
+`tools/dv-engine/ccm_reference.py` now implements normalized sample-level
+polynomial/MMR mapping, NLQ inverse quantization and reconstruction
+rounding/clipping from clauses 5.4.2 and 5.4.3. Hand-calculated unit vectors
+are checked in, but the private-JIT test route has not run them. The reference
+does not parse P7 RPU data, implement the clause 5.5 transfer conversion, or
+validate the P7-to-CCM mapping; those remain explicit gates. The Dolby
+[UHD Blu-ray authoring guide](https://professional.dolby.com/siteassets/pdfs/dolby_vision_uhd_bluray_authoring_workflow.pdf)
+confirms that P7's EL carries residual picture data and dynamic metadata, but
+does not itself establish that mapping.
 With the mapping and error budget established, compare GPU output for reshaping,
 NLQ, filtering and clipping. FEL can change visible
 image values even when the final display is 10-bit. Record separately whether
