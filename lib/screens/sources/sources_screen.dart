@@ -76,9 +76,11 @@ class _SourcesScreenState extends State<SourcesScreen> {
   List<PublicationProgress> _progress = [];
   final Set<String> _offline = {};
   bool _loading = true;
+  bool _usingIndexFallback = false;
   Object? _error;
   String? _next;
   String _query = '';
+  Timer? _searchTimer;
   SourceItemKind? _filter;
   int _request = 0;
   PublicationSort _sort = PublicationSort.title;
@@ -103,7 +105,9 @@ class _SourcesScreenState extends State<SourcesScreen> {
   }
 
   Future<void> _load({bool more = false}) async {
+    if (!mounted) return;
     final controller = context.read<SourceController>(), request = ++_request;
+    if (!more && widget.source != null) _usingIndexFallback = false;
     setState(() {
       _loading = true;
       _error = null;
@@ -120,9 +124,18 @@ class _SourcesScreenState extends State<SourcesScreen> {
         _preferenceProfile = profile;
       }
       List<SourceEntry> items;
-      if (widget.source == null || widget.offlineOnly) {
-        items = await controller.repository.entries(profile);
-        _next = null;
+      if (widget.source == null || widget.offlineOnly || _usingIndexFallback) {
+        final page = await controller.repository.entriesPage(
+          profile,
+          source: widget.source?.id,
+          parent: widget.folder?.id,
+          filterParent: widget.source != null,
+          shelf: widget.shelf,
+          query: _query,
+          cursor: more ? _next : null,
+        );
+        items = more ? [..._entries, ...page.items] : page.items;
+        _next = page.cursor;
       } else {
         try {
           final page = await controller.browse(
@@ -134,18 +147,26 @@ class _SourcesScreenState extends State<SourcesScreen> {
           _next = page.next;
         } catch (e) {
           if (more) rethrow;
-          items = await controller.repository.entries(
+          _usingIndexFallback = true;
+          final page = await controller.repository.entriesPage(
             profile,
             source: widget.source!.id,
             parent: widget.folder?.id,
             filterParent: true,
+            shelf: widget.shelf,
+            query: _query,
           );
+          items = page.items;
+          _next = page.cursor;
           _error = e;
         }
       }
-      final progress = widget.source == null
-          ? await controller.repository.allProgress(profile)
-          : await controller.repository.progressForEntries(profile, items.map((entry) => entry.key));
+      if (widget.source == null && !widget.offlineOnly && widget.shelf == null && _query.isEmpty) {
+        final recent = await controller.repository.recentProgressEntries(profile);
+        items = [...items, ...recent.map((pair) => pair.$1)];
+      }
+      final uniqueItems = {for (final entry in items) entry.key: entry}.values.toList(growable: false);
+      final progress = await controller.repository.progressForEntries(profile, uniqueItems.map((entry) => entry.key));
       final downloads = await controller.repository.downloads(profile);
       controller.requireSession(epoch);
       if (!mounted || request != _request) return;
@@ -153,14 +174,25 @@ class _SourcesScreenState extends State<SourcesScreen> {
         ..clear()
         ..addAll(downloads.where((d) => d['complete'] == 1).map((d) => d['key'] as String));
       setState(() {
-        _entries = {for (final e in items) e.key: e}.values.toList();
+        _entries = uniqueItems;
         _progress = progress;
       });
     } catch (e) {
-      if (mounted && request == _request) setState(() => _error = e);
+      if (mounted && request == _request) {
+        setState(() {
+          _error = e;
+          if (more && e is SourceException && e.reason == SourceFailure.cancelled) _next = null;
+        });
+      }
     } finally {
       if (mounted && request == _request) setState(() => _loading = false);
     }
+  }
+
+  @override
+  void dispose() {
+    _searchTimer?.cancel();
+    super.dispose();
   }
 
   Future<void> _open(SourceEntry entry) async {
@@ -448,7 +480,13 @@ class _SourcesScreenState extends State<SourcesScreen> {
                     prefixIcon: const AppIcon(Symbols.search_rounded),
                     labelText: root ? t.fileSources.searchCached : t.fileSources.search,
                   ),
-                  onChanged: (v) => setState(() => _query = v),
+                  onChanged: (v) {
+                    setState(() => _query = v);
+                    if (widget.source == null || widget.offlineOnly || _usingIndexFallback) {
+                      _searchTimer?.cancel();
+                      _searchTimer = Timer(const Duration(milliseconds: 250), () => _load());
+                    }
+                  },
                 ),
                 const SizedBox(height: 12),
                 Wrap(
@@ -540,4 +578,5 @@ class _SourcesScreenState extends State<SourcesScreen> {
     );
   }
 }
+
 
