@@ -62,6 +62,8 @@ find_package(Threads REQUIRED)
 target_link_libraries(plezy_ihs PUBLIC plezy_protobuf_c mbedcrypto Threads::Threads m)
 
 add_library(plezy_steam_runtime STATIC steam_runtime.cpp steam_controller.cpp steam_pyrowave.cpp)
+target_include_directories(plezy_steam_runtime BEFORE PRIVATE
+  "${PYROWAVE_ROOT}/Granite/third_party/khronos/vulkan-headers/include")
 target_include_directories(plezy_steam_runtime PUBLIC "${CMAKE_CURRENT_SOURCE_DIR}" PRIVATE "${IHS_ROOT}/src")
 target_link_libraries(plezy_steam_runtime PUBLIC plezy_ihs opus PRIVATE plezy_pyrowave_capi)
 target_compile_options(plezy_steam_runtime PRIVATE -Wall -Wextra -Werror)
