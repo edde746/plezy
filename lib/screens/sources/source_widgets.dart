@@ -37,6 +37,7 @@ String sourceKindName(FileSourceKind kind) => switch (kind) {
   FileSourceKind.webdav => 'WebDAV / Nextcloud',
   FileSourceKind.s3 => 'S3',
   FileSourceKind.opds => 'OPDS',
+  FileSourceKind.komga => 'Komga',
   FileSourceKind.audiobookshelf => 'Audiobookshelf',
 };
 IconData sourceItemIcon(SourceItemKind kind) => switch (kind) {

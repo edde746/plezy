@@ -436,7 +436,9 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                             onTap: (f.kind == SourceItemKind.ebook || f.kind == SourceItemKind.comic)
                                 ? () => sourceAction(context, () => _read(f))
                                 : () => sourceAction(context, () => _play([f])),
-                            trailing: _transfers.containsKey(f.id)
+                            trailing: f.streamOnly
+                                ? null
+                                : _transfers.containsKey(f.id)
                                 ? const SizedBox(
                                     width: 24,
                                     height: 24,
