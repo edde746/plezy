@@ -54,6 +54,21 @@ class MediaControlsManager {
   }
 
   /// Update media metadata displayed in OS media controls
+  Future<void> updateFileMetadata({
+    required String title,
+    String? author,
+    String? album,
+    Duration? duration,
+    Uint8List? artwork,
+  }) async {
+    if (_updatesSuspended) return;
+    ++_metadataGeneration;
+    await OsMediaControls.setMetadata(
+      MediaMetadata(title: title, artist: author, album: album, duration: duration, artwork: artwork),
+    );
+  }
+
+  /// Update media metadata displayed in OS media controls
   ///
   /// This includes title, artist, artwork, and duration. Backend-neutral —
   /// the [MediaServerClient.thumbnailUrl] adapter handles per-backend URL

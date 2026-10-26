@@ -17,11 +17,16 @@ class MonoMotion {
   static const Curve standard = Curves.easeOutCubic;
 
   /// Shape morphs (segment square→pill, group corner changes).
-  static Duration shape(BuildContext context) => DevicePerformance.reducedDuration(tokens(context).expressive);
+  static Duration shape(BuildContext context) => MediaQuery.disableAnimationsOf(context)
+      ? Duration.zero
+      : DevicePerformance.reducedDuration(tokens(context).expressive);
 
   /// Fill/text color transitions.
-  static Duration fill(BuildContext context) => DevicePerformance.reducedDuration(tokens(context).normal);
+  static Duration fill(BuildContext context) => MediaQuery.disableAnimationsOf(context)
+      ? Duration.zero
+      : DevicePerformance.reducedDuration(tokens(context).normal);
 
   /// Press squish in/out.
-  static Duration press(BuildContext context) => DevicePerformance.reducedDuration(tokens(context).fast);
+  static Duration press(BuildContext context) =>
+      MediaQuery.disableAnimationsOf(context) ? Duration.zero : DevicePerformance.reducedDuration(tokens(context).fast);
 }

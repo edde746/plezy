@@ -4,6 +4,8 @@ analyzer:
   exclude:
     - "**/*.g.dart"
     - "**/*.freezed.dart"
+    # Unmodified upstream webview wrapper; see its PLEZY_PATCH.md.
+    - "packages/flutter_inappwebview/**"
     - "packages/**/test/**"
     - "packages/**/pigeons/**"
     - build/**

@@ -18,6 +18,7 @@ import '../../widgets/settings_page.dart';
 import '../../widgets/settings_builder.dart';
 import '../../widgets/settings_section.dart';
 import 'app_icon_setting.dart';
+import 'accessibility_settings_screen.dart';
 import 'home_layout_settings_screen.dart';
 import 'content_screensaver_libraries_screen.dart';
 import 'settings_utils.dart';
@@ -46,6 +47,12 @@ class AppearanceSettingsScreen extends StatelessWidget {
           children: [
             _themeSelector(),
             if (AppIconSetting.isShown(context)) const AppIconSetting(),
+            SettingNavigationTile(
+              icon: Symbols.accessibility_new_rounded,
+              title: t.accessibility.title,
+              subtitle: t.accessibility.summary,
+              destinationBuilder: (_) => const AccessibilitySettingsScreen(),
+            ),
             if (PlatformDetector.isAutomotive()) _displayScaleSelector(),
             if (Platform.isAndroid) _visualEffectsSelector(context),
           ],

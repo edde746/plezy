@@ -100,6 +100,8 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$addServer$en addServer = Translations$addServer$en.internal(_root);
 	late final Translations$watchLink$en watchLink = Translations$watchLink$en.internal(_root);
 	late final Translations$homeLayout$en homeLayout = Translations$homeLayout$en.internal(_root);
+	late final Translations$fileSources$en fileSources = Translations$fileSources$en.internal(_root);
+	late final Translations$lending$en lending = Translations$lending$en.internal(_root);
 }
 
 // Path: app
@@ -2590,6 +2592,51 @@ class Translations$accessibility$en {
 
 	/// en: 'RGB'
 	String get colorModeRgb => 'RGB';
+
+	/// en: 'Accessibility'
+	String get title => 'Accessibility';
+
+	/// en: 'Text, contrast, motion and controls'
+	String get summary => 'Text, contrast, motion and controls';
+
+	/// en: 'Your device’s accessibility settings always apply. These options add adjustments throughout PlezyNG.'
+	String get systemHint => 'Your device’s accessibility settings always apply. These options add adjustments throughout PlezyNG.';
+
+	/// en: 'Reading and visibility'
+	String get readability => 'Reading and visibility';
+
+	/// en: 'Additional text size'
+	String get textSize => 'Additional text size';
+
+	/// en: 'Find your next story. Read, listen and watch at your own pace.'
+	String get preview => 'Find your next story. Read, listen and watch at your own pace.';
+
+	/// en: 'Bold interface text'
+	String get boldText => 'Bold interface text';
+
+	/// en: 'High contrast'
+	String get highContrast => 'High contrast';
+
+	/// en: 'Stronger text, outlines and focus indicators on light or dark surfaces.'
+	String get highContrastHint => 'Stronger text, outlines and focus indicators on light or dark surfaces.';
+
+	/// en: 'Motion and interaction'
+	String get interaction => 'Motion and interaction';
+
+	/// en: 'Reduce motion'
+	String get reduceMotion => 'Reduce motion';
+
+	/// en: 'Keep focus, page transitions and decorative effects still.'
+	String get reduceMotionHint => 'Keep focus, page transitions and decorative effects still.';
+
+	/// en: 'Larger touch targets'
+	String get largeTargets => 'Larger touch targets';
+
+	/// en: 'Give shared controls more room for touch and assistive navigation.'
+	String get largeTargetsHint => 'Give shared controls more room for touch and assistive navigation.';
+
+	/// en: 'Use Tab and Shift+Tab to move between controls, Enter or Space to activate, and Escape or Back to close. Reader zoom and reading preferences are available while a book is open.'
+	String get navigationHint => 'Use Tab and Shift+Tab to move between controls, Enter or Space to activate, and Escape or Back to close. Reader zoom and reading preferences are available while a book is open.';
 }
 
 // Path: tooltips
@@ -7060,6 +7107,654 @@ class Translations$homeLayout$en {
 	String get resetHeroButtonDescription => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept.';
 }
 
+// Path: fileSources
+class Translations$fileSources$en {
+	Translations$fileSources$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Files and books'
+	String get title => 'Files and books';
+
+	/// en: 'Read, listen, and watch from your own files.'
+	String get subtitle => 'Read, listen, and watch from your own files.';
+
+	/// en: 'Add source'
+	String get add => 'Add source';
+
+	/// en: 'Import files'
+	String get importFiles => 'Import files';
+
+	/// en: 'On this device'
+	String get localFiles => 'On this device';
+
+	/// en: 'Source'
+	String get source => 'Source';
+
+	/// en: 'Name'
+	String get name => 'Name';
+
+	/// en: 'Server URL'
+	String get endpoint => 'Server URL';
+
+	/// en: 'Folder or prefix'
+	String get root => 'Folder or prefix';
+
+	/// en: 'Username'
+	String get username => 'Username';
+
+	/// en: 'Password'
+	String get password => 'Password';
+
+	/// en: 'API token'
+	String get token => 'API token';
+
+	/// en: 'Access key ID'
+	String get accessKey => 'Access key ID';
+
+	/// en: 'Secret access key'
+	String get secretKey => 'Secret access key';
+
+	/// en: 'Session token (optional)'
+	String get sessionToken => 'Session token (optional)';
+
+	/// en: 'Region'
+	String get region => 'Region';
+
+	/// en: 'OAuth client ID'
+	String get clientId => 'OAuth client ID';
+
+	/// en: 'OAuth client secret (desktop Google only)'
+	String get clientSecret => 'OAuth client secret (desktop Google only)';
+
+	/// en: 'Allow unencrypted HTTP on a trusted network'
+	String get allowHttp => 'Allow unencrypted HTTP on a trusted network';
+
+	/// en: 'Connect'
+	String get connect => 'Connect';
+
+	/// en: 'Cancel'
+	String get cancel => 'Cancel';
+
+	/// en: 'Save'
+	String get save => 'Save';
+
+	/// en: 'Close'
+	String get close => 'Close';
+
+	/// en: 'Disconnect source'
+	String get removeSource => 'Disconnect source';
+
+	/// en: 'Disconnect this source? Downloaded files and your reading and listening history will stay on this device.'
+	String get disconnectMessage => 'Disconnect this source? Downloaded files and your reading and listening history will stay on this device.';
+
+	/// en: 'Choose folder'
+	String get localFolder => 'Choose folder';
+
+	/// en: 'Nothing here yet'
+	String get empty => 'Nothing here yet';
+
+	/// en: 'Add a source or import a book, audiobook, music, or video.'
+	String get emptyHint => 'Add a source or import a book, audiobook, music, or video.';
+
+	/// en: 'Search this folder'
+	String get search => 'Search this folder';
+
+	/// en: 'Search saved library'
+	String get searchCached => 'Search saved library';
+
+	/// en: 'Refresh'
+	String get refresh => 'Refresh';
+
+	/// en: 'Load more'
+	String get loadMore => 'Load more';
+
+	/// en: 'Available offline'
+	String get offline => 'Available offline';
+
+	/// en: 'Keep offline'
+	String get download => 'Keep offline';
+
+	/// en: 'Remove offline copy'
+	String get removeDownload => 'Remove offline copy';
+
+	/// en: 'Continue reading'
+	String get continueReading => 'Continue reading';
+
+	/// en: 'Continue listening'
+	String get continueListening => 'Continue listening';
+
+	/// en: 'Continue watching'
+	String get continueWatching => 'Continue watching';
+
+	/// en: 'Read'
+	String get read => 'Read';
+
+	/// en: 'Listen'
+	String get listen => 'Listen';
+
+	/// en: 'Play'
+	String get play => 'Play';
+
+	/// en: 'Pause'
+	String get pause => 'Pause';
+
+	/// en: 'Stop'
+	String get stop => 'Stop';
+
+	/// en: 'Start over'
+	String get startOver => 'Start over';
+
+	/// en: 'Finished'
+	String get finished => 'Finished';
+
+	/// en: 'Mark finished'
+	String get markFinished => 'Mark finished';
+
+	/// en: 'Mark unfinished'
+	String get markUnfinished => 'Mark unfinished';
+
+	/// en: 'Editions and files'
+	String get editions => 'Editions and files';
+
+	/// en: 'Chapters'
+	String get chapters => 'Chapters';
+
+	/// en: 'Bookmarks and notes'
+	String get bookmarks => 'Bookmarks and notes';
+
+	/// en: 'Add bookmark'
+	String get bookmark => 'Add bookmark';
+
+	/// en: 'Highlight'
+	String get highlight => 'Highlight';
+
+	/// en: 'Note'
+	String get note => 'Note';
+
+	/// en: 'Delete'
+	String get delete => 'Delete';
+
+	/// en: 'Export notes'
+	String get export => 'Export notes';
+
+	/// en: 'Notes exported'
+	String get exported => 'Notes exported';
+
+	/// en: 'Sync progress'
+	String get sync => 'Sync progress';
+
+	/// en: 'Progress synced'
+	String get synced => 'Progress synced';
+
+	/// en: 'Another device has a different position. Choose where to continue.'
+	String get conflict => 'Another device has a different position. Choose where to continue.';
+
+	/// en: 'Use this device'
+	String get useLocal => 'Use this device';
+
+	/// en: 'Use other device'
+	String get useRemote => 'Use other device';
+
+	/// en: 'Position history'
+	String get history => 'Position history';
+
+	/// en: 'Listen as one audiobook'
+	String get groupAudio => 'Listen as one audiobook';
+
+	/// en: 'Combines the audio files currently loaded in this folder. Load all pages first.'
+	String get groupHint => 'Combines the audio files currently loaded in this folder. Load all pages first.';
+
+	/// en: 'File order'
+	String get order => 'File order';
+
+	/// en: 'Move up'
+	String get moveUp => 'Move up';
+
+	/// en: 'Move down'
+	String get moveDown => 'Move down';
+
+	/// en: 'Playback speed'
+	String get speed => 'Playback speed';
+
+	/// en: 'Sleep timer'
+	String get sleep => 'Sleep timer';
+
+	/// en: 'Off'
+	String get sleepOff => 'Off';
+
+	/// en: 'End of chapter'
+	String get endChapter => 'End of chapter';
+
+	/// en: '${count} minutes'
+	String minutes({required Object count}) => '${count} minutes';
+
+	/// en: 'Skip back'
+	String get skipBack => 'Skip back';
+
+	/// en: 'Skip forward'
+	String get skipForward => 'Skip forward';
+
+	/// en: 'Smart rewind after a pause'
+	String get smartRewind => 'Smart rewind after a pause';
+
+	/// en: 'Listening options'
+	String get playbackOptions => 'Listening options';
+
+	/// en: '${time} remaining'
+	String remaining({required Object time}) => '${time} remaining';
+
+	/// en: 'Contents'
+	String get contents => 'Contents';
+
+	/// en: 'Reading settings'
+	String get readerSettings => 'Reading settings';
+
+	/// en: 'Text size'
+	String get fontSize => 'Text size';
+
+	/// en: 'Line spacing'
+	String get lineHeight => 'Line spacing';
+
+	/// en: 'Margins'
+	String get margin => 'Margins';
+
+	/// en: 'Typeface'
+	String get font => 'Typeface';
+
+	/// en: 'Serif'
+	String get serif => 'Serif';
+
+	/// en: 'Sans serif'
+	String get sans => 'Sans serif';
+
+	/// en: 'Monospace'
+	String get mono => 'Monospace';
+
+	/// en: 'Columns'
+	String get columns => 'Columns';
+
+	/// en: 'Scroll vertically'
+	String get scroll => 'Scroll vertically';
+
+	/// en: 'Justify text'
+	String get justify => 'Justify text';
+
+	/// en: 'Page appearance'
+	String get readerTheme => 'Page appearance';
+
+	/// en: 'Follow app theme'
+	String get appTheme => 'Follow app theme';
+
+	/// en: 'Paper'
+	String get paper => 'Paper';
+
+	/// en: 'Sepia'
+	String get sepia => 'Sepia';
+
+	/// en: 'Night'
+	String get night => 'Night';
+
+	/// en: 'Read this page aloud'
+	String get readAloud => 'Read this page aloud';
+
+	/// en: 'Read along'
+	String get readAlong => 'Read along';
+
+	/// en: 'Stop narration'
+	String get stopReading => 'Stop narration';
+
+	/// en: 'Search in book'
+	String get searchBook => 'Search in book';
+
+	/// en: 'No matches'
+	String get noMatches => 'No matches';
+
+	/// en: 'Previous page'
+	String get previousPage => 'Previous page';
+
+	/// en: 'Next page'
+	String get nextPage => 'Next page';
+
+	/// en: 'Page ${number}'
+	String page({required Object number}) => 'Page ${number}';
+
+	/// en: 'External book links are disabled in the reader.'
+	String get externalBlocked => 'External book links are disabled in the reader.';
+
+	/// en: 'Opening…'
+	String get loading => 'Opening…';
+
+	/// en: 'Narrator'
+	String get narrator => 'Narrator';
+
+	/// en: 'Audio'
+	String get audio => 'Audio';
+
+	/// en: 'Video'
+	String get video => 'Video';
+
+	/// en: 'Ebooks'
+	String get ebooks => 'Ebooks';
+
+	/// en: 'All'
+	String get all => 'All';
+
+	/// en: 'Offline files'
+	String get downloads => 'Offline files';
+
+	/// en: 'Remove the selected offline copy? Your position and notes will stay.'
+	String get confirmDelete => 'Remove the selected offline copy? Your position and notes will stay.';
+
+	/// en: 'Sign in again to reconnect this source.'
+	String get errorAuthentication => 'Sign in again to reconnect this source.';
+
+	/// en: 'This source did not grant access to the requested file.'
+	String get errorPermission => 'This source did not grant access to the requested file.';
+
+	/// en: 'The source is unavailable. Try again, or open an offline copy.'
+	String get errorUnavailable => 'The source is unavailable. Try again, or open an offline copy.';
+
+	/// en: 'This format or connection is not supported on this device. Check the source setup guide.'
+	String get errorUnsupported => 'This format or connection is not supported on this device. Check the source setup guide.';
+
+	/// en: 'This file or server response could not be read safely.'
+	String get errorInvalidData => 'This file or server response could not be read safely.';
+
+	/// en: 'The operation was cancelled.'
+	String get errorCancelled => 'The operation was cancelled.';
+
+	/// en: 'The position changed in another session. Reopen the item to choose a position.'
+	String get errorConflict => 'The position changed in another session. Reopen the item to choose a position.';
+
+	/// en: 'Sign in'
+	String get signIn => 'Sign in';
+
+	/// en: 'Reconnect'
+	String get reconnect => 'Reconnect';
+
+	/// en: 'Leave blank to start at the source root. S3 URLs include the bucket.'
+	String get folderHelp => 'Leave blank to start at the source root. S3 URLs include the bucket.';
+
+	/// en: 'Preferences'
+	String get preferences => 'Preferences';
+
+	/// en: 'Position'
+	String get timePosition => 'Position';
+
+	/// en: 'Audio track'
+	String get audioTrack => 'Audio track';
+
+	/// en: 'Subtitle track'
+	String get subtitleTrack => 'Subtitle track';
+
+	/// en: 'None'
+	String get none => 'None';
+
+	/// en: 'Full screen'
+	String get fullscreen => 'Full screen';
+
+	/// en: 'Progress sync folder (optional)'
+	String get syncLocation => 'Progress sync folder (optional)';
+
+	/// en: 'A dedicated WebDAV folder for PlezyNG state. Uses conditional writes; media stays unchanged.'
+	String get syncLocationHint => 'A dedicated WebDAV folder for PlezyNG state. Uses conditional writes; media stays unchanged.';
+
+	/// en: 'Audiobooks'
+	String get audiobooks => 'Audiobooks';
+
+	/// en: 'Comics'
+	String get comics => 'Comics';
+
+	/// en: 'Scan for books and media'
+	String get scan => 'Scan for books and media';
+
+	/// en: 'Open reader'
+	String get browserReader => 'Open reader';
+
+	/// en: 'The reader is open in your browser. Keep PlezyNG open to save your place and notes.'
+	String get browserReaderHelp => 'The reader is open in your browser. Keep PlezyNG open to save your place and notes.';
+
+	/// en: 'On'
+	String get on => 'On';
+
+	/// en: 'App registration'
+	String get advancedSetup => 'App registration';
+
+	/// en: 'Sign in with Microsoft'
+	String get microsoftSignIn => 'Sign in with Microsoft';
+
+	/// en: 'Zoom in'
+	String get zoomIn => 'Zoom in';
+
+	/// en: 'Zoom out'
+	String get zoomOut => 'Zoom out';
+
+	/// en: 'Fit page'
+	String get fitPage => 'Fit page';
+
+	/// en: 'Fit width'
+	String get fitWidth => 'Fit width';
+
+	/// en: 'Actual size'
+	String get actualSize => 'Actual size';
+
+	/// en: 'Go to page'
+	String get goToPage => 'Go to page';
+
+	/// en: 'Go to chapter'
+	String get goToSection => 'Go to chapter';
+
+	/// en: 'Enter a number from 1 to $count'
+	String pageRange({required Object count}) => 'Enter a number from 1 to ${count}';
+
+	/// en: 'Page layout'
+	String get pageLayout => 'Page layout';
+
+	/// en: 'Automatic'
+	String get automatic => 'Automatic';
+
+	/// en: 'Single page'
+	String get singlePage => 'Single page';
+
+	/// en: 'Two pages'
+	String get twoPages => 'Two pages';
+
+	/// en: 'Reading direction'
+	String get readingDirection => 'Reading direction';
+
+	/// en: 'Left to right'
+	String get leftToRight => 'Left to right';
+
+	/// en: 'Right to left'
+	String get rightToLeft => 'Right to left';
+
+	/// en: 'Letter spacing'
+	String get letterSpacing => 'Letter spacing';
+
+	/// en: 'Word spacing'
+	String get wordSpacing => 'Word spacing';
+
+	/// en: 'Pinch or use zoom controls to enlarge pages. Drag to pan. Ctrl/⌘ + or − adjusts zoom; Ctrl/⌘ 0 resets it. Page Up and Page Down turn pages.'
+	String get readerControlsHelp => 'Pinch or use zoom controls to enlarge pages. Drag to pan. Ctrl/⌘ + or − adjusts zoom; Ctrl/⌘ 0 resets it. Page Up and Page Down turn pages.';
+
+	/// en: 'Comic page'
+	String get imagePage => 'Comic page';
+
+	/// en: 'Reset reading preferences'
+	String get resetReader => 'Reset reading preferences';
+
+	/// en: 'Zoom'
+	String get zoom => 'Zoom';
+
+	/// en: 'Use files and books'
+	String get useFiles => 'Use files and books';
+
+	/// en: 'Cancel scan'
+	String get cancelScan => 'Cancel scan';
+}
+
+// Path: lending
+class Translations$lending$en {
+	Translations$lending$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Public libraries'
+	String get title => 'Public libraries';
+
+	/// en: 'Add a library'
+	String get add => 'Add a library';
+
+	/// en: 'Another library'
+	String get other => 'Another library';
+
+	/// en: 'Library name'
+	String get libraryName => 'Library name';
+
+	/// en: 'Library website'
+	String get libraryUrl => 'Library website';
+
+	/// en: 'Use your library’s catalogue or sign-in page.'
+	String get libraryUrlHint => 'Use your library’s catalogue or sign-in page.';
+
+	/// en: 'Borrow from your library. Keep your books close.'
+	String get intro => 'Borrow from your library. Keep your books close.';
+
+	/// en: 'Sign in, borrow and read securely with your library’s own service.'
+	String get handoff => 'Sign in, borrow and read securely with your library’s own service.';
+
+	/// en: 'Open library'
+	String get openService => 'Open library';
+
+	/// en: 'Find a library'
+	String get findLibrary => 'Find a library';
+
+	/// en: 'Search books and authors'
+	String get search => 'Search books and authors';
+
+	/// en: 'Catalogue'
+	String get catalogue => 'Catalogue';
+
+	/// en: 'Loans'
+	String get loans => 'Loans';
+
+	/// en: 'Holds'
+	String get holds => 'Holds';
+
+	/// en: 'Sign in with your library'
+	String get signIn => 'Sign in with your library';
+
+	/// en: 'Finish signing in in your browser, then return here.'
+	String get waiting => 'Finish signing in in your browser, then return here.';
+
+	/// en: 'Cancel'
+	String get cancel => 'Cancel';
+
+	/// en: 'Remove library'
+	String get disconnect => 'Remove library';
+
+	/// en: 'Remove this library from this profile? Your loans and holds stay with your library.'
+	String get disconnectMessage => 'Remove this library from this profile? Your loans and holds stay with your library.';
+
+	/// en: 'Get book'
+	String get getBook => 'Get book';
+
+	/// en: 'Check availability'
+	String get checkAvailability => 'Check availability';
+
+	/// en: 'Available to borrow'
+	String get available => 'Available to borrow';
+
+	/// en: 'Currently unavailable'
+	String get unavailable => 'Currently unavailable';
+
+	/// en: 'Borrow'
+	String get borrow => 'Borrow';
+
+	/// en: 'Place hold'
+	String get placeHold => 'Place hold';
+
+	/// en: 'Return early'
+	String get returnBook => 'Return early';
+
+	/// en: 'Cancel hold'
+	String get cancelHold => 'Cancel hold';
+
+	/// en: 'Borrow this title from your library?'
+	String get confirmBorrow => 'Borrow this title from your library?';
+
+	/// en: 'Return this title now? You may need to borrow it again to continue.'
+	String get confirmReturn => 'Return this title now? You may need to borrow it again to continue.';
+
+	/// en: 'Remove your hold on this title?'
+	String get confirmCancelHold => 'Remove your hold on this title?';
+
+	/// en: 'Hold notification email'
+	String get email => 'Hold notification email';
+
+	/// en: 'Due $date'
+	String due({required Object date}) => 'Due ${date}';
+
+	/// en: 'Position $position in line'
+	String queue({required Object position}) => 'Position ${position} in line';
+
+	/// en: 'No titles here yet.'
+	String get empty => 'No titles here yet.';
+
+	/// en: 'Explore Open Library’s catalogue. Reading and borrowing options are shown on each title’s page.'
+	String get openLibraryNote => 'Explore Open Library’s catalogue. Reading and borrowing options are shown on each title’s page.';
+
+	/// en: 'Load more'
+	String get more => 'Load more';
+
+	/// en: 'Library sign-in service'
+	String get gateway => 'Library sign-in service';
+
+	/// en: 'Provided by your library or the PlezyNG administrator.'
+	String get gatewayHint => 'Provided by your library or the PlezyNG administrator.';
+
+	/// en: 'Library integration'
+	String get advanced => 'Library integration';
+
+	/// en: 'Choose your library'
+	String get loadLibraries => 'Choose your library';
+
+	/// en: 'This loan has expired.'
+	String get expired => 'This loan has expired.';
+
+	/// en: 'Library updated'
+	String get updated => 'Library updated';
+
+	/// en: 'Continue in service'
+	String get continueService => 'Continue in service';
+
+	/// en: 'In-app borrowing · Coming soon'
+	String get comingSoon => 'In-app borrowing · Coming soon';
+
+	/// en: 'Libby integration is on its way. You can use your library in Libby while we finish connecting it.'
+	String get comingSoonDescription => 'Libby integration is on its way. You can use your library in Libby while we finish connecting it.';
+
+	/// en: 'Suspend hold'
+	String get suspendHold => 'Suspend hold';
+
+	/// en: 'Resume hold'
+	String get resumeHold => 'Resume hold';
+
+	/// en: 'Keep your place in line and let the next reader borrow this copy? You can resume the hold later.'
+	String get suspendMessage => 'Keep your place in line and let the next reader borrow this copy? You can resume the hold later.';
+
+	/// en: 'Resume this hold so your library can offer you the next available copy?'
+	String get resumeMessage => 'Resume this hold so your library can offer you the next available copy?';
+
+	/// en: 'Change notification email'
+	String get editEmail => 'Change notification email';
+}
+
 // Path: appIcon.names
 class Translations$appIcon$names$en {
 	Translations$appIcon$names$en.internal(this._root);
@@ -9960,6 +10655,21 @@ extension on Translations {
 			'accessibility.blueShort' => 'B',
 			'accessibility.colorModeHsv' => 'HSV',
 			'accessibility.colorModeRgb' => 'RGB',
+			'accessibility.title' => 'Accessibility',
+			'accessibility.summary' => 'Text, contrast, motion and controls',
+			'accessibility.systemHint' => 'Your device’s accessibility settings always apply. These options add adjustments throughout PlezyNG.',
+			'accessibility.readability' => 'Reading and visibility',
+			'accessibility.textSize' => 'Additional text size',
+			'accessibility.preview' => 'Find your next story. Read, listen and watch at your own pace.',
+			'accessibility.boldText' => 'Bold interface text',
+			'accessibility.highContrast' => 'High contrast',
+			'accessibility.highContrastHint' => 'Stronger text, outlines and focus indicators on light or dark surfaces.',
+			'accessibility.interaction' => 'Motion and interaction',
+			'accessibility.reduceMotion' => 'Reduce motion',
+			'accessibility.reduceMotionHint' => 'Keep focus, page transitions and decorative effects still.',
+			'accessibility.largeTargets' => 'Larger touch targets',
+			'accessibility.largeTargetsHint' => 'Give shared controls more room for touch and assistive navigation.',
+			'accessibility.navigationHint' => 'Use Tab and Shift+Tab to move between controls, Enter or Space to activate, and Escape or Back to close. Reader zoom and reading preferences are available while a book is open.',
 			'tooltips.shufflePlay' => 'Shuffle play',
 			'tooltips.playTrailer' => 'Play trailer',
 			'tooltips.markAsWatched' => 'Mark as watched',
@@ -10110,6 +10820,8 @@ extension on Translations {
 			'messages.noItemsAvailable' => 'No items available',
 			'messages.failedToCreatePlayQueueNoItems' => 'Failed to create a play queue — no items',
 			'messages.failedPlayback' => ({required Object action, required Object error}) => 'Failed to ${action}: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'messages.switchingToCompatiblePlayer' => 'Switching to compatible player...',
 			'messages.serverLimitTitle' => 'Playback failed',
 			'messages.serverLimitBody' => 'Server error (HTTP 500). A bandwidth/transcoding limit likely rejected this session. Ask the owner to adjust it.',
@@ -10125,8 +10837,6 @@ extension on Translations {
 			'messages.burnedSubtitlesUseMenu' => 'Subtitles are burned into this stream. Change them from the subtitle menu.',
 			'messages.noVideoUrl' => 'No video URL available',
 			'messages.playbackNoMediaSources' => 'The server returned no playable media sources',
-			_ => null,
-		} ?? switch (path) {
 			'messages.playbackDataNotPrepared' => 'Playback was started before its data was ready',
 			'messages.streamSelectionUnavailable' => 'Stream selection is not available for this source',
 			'messages.streamSelectionFailed' => 'Could not apply the selected streams',
@@ -10624,6 +11334,8 @@ extension on Translations {
 			'explore.badge.episodesShort' => ({required Object n}) => '${n} eps',
 			'explore.badge.minutesPerEpisode' => ({required Object n}) => '${n} min/ep',
 			'explore.badge.adult' => '18+',
+			_ => null,
+		} ?? switch (path) {
 			'explore.stats.listed' => ({required Object n}) => '${n} listed',
 			'explore.stats.viewersDay' => ({required Object n}) => '${n} watched today',
 			'explore.stats.viewersWeek' => ({required Object n}) => '${n} watched this week',
@@ -10639,8 +11351,6 @@ extension on Translations {
 			'explore.stats.completed' => ({required Object n}) => '${n} completed',
 			'explore.stats.onHold' => ({required Object n}) => '${n} on hold',
 			'explore.stats.dropped' => ({required Object n}) => '${n} dropped',
-			_ => null,
-		} ?? switch (path) {
 			'explore.season.winter' => 'Winter',
 			'explore.season.spring' => 'Spring',
 			'explore.season.summer' => 'Summer',
@@ -11138,6 +11848,8 @@ extension on Translations {
 			'downloads.syncRuleNotAvailableForProfile' => 'Not available for current profile',
 			'downloads.syncRuleUnknownServer' => 'Unknown server',
 			'downloads.syncRuleListCreated' => 'Sync rule created',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.backgroundWarning.bannerBlocked' => 'Downloads will stop when you leave the app',
 			'downloads.backgroundWarning.bannerDegraded' => 'Background downloads may be limited',
 			'downloads.backgroundWarning.bannerAction' => 'Details',
@@ -11153,8 +11865,6 @@ extension on Translations {
 			'downloads.backgroundWarning.reasonOemUnknown' => 'Downloads repeatedly stopped while PlezyNG was in the background. Check PlezyNG\'s battery or background usage settings.',
 			'downloads.backgroundWarning.openSettings' => 'Open settings',
 			'downloads.backgroundWarning.stillNotWorking' => 'Device-specific help',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.backgroundWarning.stillNotWorkingDescription' => 'See steps for your device, or send a log from Settings › View Logs if the issue continues.',
 			'downloads.backgroundWarning.dialogTitle' => 'Downloads may not finish',
 			'downloads.backgroundWarning.dialogDownloadAnyway' => 'Download anyway',
@@ -11652,6 +12362,8 @@ extension on Translations {
 			'homeLayout.syncAccountTitle' => 'Sync layout with your Plex account',
 			'homeLayout.syncAccountOn' => 'On: this device shares row order, rows, Hero and Auto-slide with your other devices.',
 			'homeLayout.syncAccountOff' => 'Off: this device keeps its own layout.',
+			_ => null,
+		} ?? switch (path) {
 			'homeLayout.syncNow' => 'Sync now',
 			'homeLayout.plexHomeManager' => 'Plex Home manager',
 			'homeLayout.managePlexRows' => 'Manage Plex rows in Plezy',
@@ -11667,8 +12379,6 @@ extension on Translations {
 			'homeLayout.autoSlideDescription' => 'Also slides on its own every few seconds. Arrows (PC) and d-pad (TV) always work and restart the timer.',
 			'homeLayout.autoSlideEditDescription' => 'Also slides on its own every few seconds. Off: only moves when you click an arrow (PC) or press left/right on the remote (TV). Arrows and d-pad always work either way.',
 			'homeLayout.enableHeroFirst' => 'Enable Hero first',
-			_ => null,
-		} ?? switch (path) {
 			'homeLayout.showOnHome' => 'Show on Home screen',
 			'homeLayout.home' => 'Home',
 			'homeLayout.removeFromHome' => 'Remove from Home',
@@ -11740,6 +12450,216 @@ extension on Translations {
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
 			'homeLayout.on' => 'On',
 			'homeLayout.resetHeroButtonDescription' => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept.',
+			'fileSources.title' => 'Files and books',
+			'fileSources.subtitle' => 'Read, listen, and watch from your own files.',
+			'fileSources.add' => 'Add source',
+			'fileSources.importFiles' => 'Import files',
+			'fileSources.localFiles' => 'On this device',
+			'fileSources.source' => 'Source',
+			'fileSources.name' => 'Name',
+			'fileSources.endpoint' => 'Server URL',
+			'fileSources.root' => 'Folder or prefix',
+			'fileSources.username' => 'Username',
+			'fileSources.password' => 'Password',
+			'fileSources.token' => 'API token',
+			'fileSources.accessKey' => 'Access key ID',
+			'fileSources.secretKey' => 'Secret access key',
+			'fileSources.sessionToken' => 'Session token (optional)',
+			'fileSources.region' => 'Region',
+			'fileSources.clientId' => 'OAuth client ID',
+			'fileSources.clientSecret' => 'OAuth client secret (desktop Google only)',
+			'fileSources.allowHttp' => 'Allow unencrypted HTTP on a trusted network',
+			'fileSources.connect' => 'Connect',
+			'fileSources.cancel' => 'Cancel',
+			'fileSources.save' => 'Save',
+			'fileSources.close' => 'Close',
+			'fileSources.removeSource' => 'Disconnect source',
+			'fileSources.disconnectMessage' => 'Disconnect this source? Downloaded files and your reading and listening history will stay on this device.',
+			'fileSources.localFolder' => 'Choose folder',
+			'fileSources.empty' => 'Nothing here yet',
+			'fileSources.emptyHint' => 'Add a source or import a book, audiobook, music, or video.',
+			'fileSources.search' => 'Search this folder',
+			'fileSources.searchCached' => 'Search saved library',
+			'fileSources.refresh' => 'Refresh',
+			'fileSources.loadMore' => 'Load more',
+			'fileSources.offline' => 'Available offline',
+			'fileSources.download' => 'Keep offline',
+			'fileSources.removeDownload' => 'Remove offline copy',
+			'fileSources.continueReading' => 'Continue reading',
+			'fileSources.continueListening' => 'Continue listening',
+			'fileSources.continueWatching' => 'Continue watching',
+			'fileSources.read' => 'Read',
+			'fileSources.listen' => 'Listen',
+			'fileSources.play' => 'Play',
+			'fileSources.pause' => 'Pause',
+			'fileSources.stop' => 'Stop',
+			'fileSources.startOver' => 'Start over',
+			'fileSources.finished' => 'Finished',
+			'fileSources.markFinished' => 'Mark finished',
+			'fileSources.markUnfinished' => 'Mark unfinished',
+			'fileSources.editions' => 'Editions and files',
+			'fileSources.chapters' => 'Chapters',
+			'fileSources.bookmarks' => 'Bookmarks and notes',
+			'fileSources.bookmark' => 'Add bookmark',
+			'fileSources.highlight' => 'Highlight',
+			'fileSources.note' => 'Note',
+			'fileSources.delete' => 'Delete',
+			'fileSources.export' => 'Export notes',
+			'fileSources.exported' => 'Notes exported',
+			'fileSources.sync' => 'Sync progress',
+			'fileSources.synced' => 'Progress synced',
+			'fileSources.conflict' => 'Another device has a different position. Choose where to continue.',
+			'fileSources.useLocal' => 'Use this device',
+			'fileSources.useRemote' => 'Use other device',
+			'fileSources.history' => 'Position history',
+			'fileSources.groupAudio' => 'Listen as one audiobook',
+			'fileSources.groupHint' => 'Combines the audio files currently loaded in this folder. Load all pages first.',
+			'fileSources.order' => 'File order',
+			'fileSources.moveUp' => 'Move up',
+			'fileSources.moveDown' => 'Move down',
+			'fileSources.speed' => 'Playback speed',
+			'fileSources.sleep' => 'Sleep timer',
+			'fileSources.sleepOff' => 'Off',
+			'fileSources.endChapter' => 'End of chapter',
+			'fileSources.minutes' => ({required Object count}) => '${count} minutes',
+			'fileSources.skipBack' => 'Skip back',
+			'fileSources.skipForward' => 'Skip forward',
+			'fileSources.smartRewind' => 'Smart rewind after a pause',
+			'fileSources.playbackOptions' => 'Listening options',
+			'fileSources.remaining' => ({required Object time}) => '${time} remaining',
+			'fileSources.contents' => 'Contents',
+			'fileSources.readerSettings' => 'Reading settings',
+			'fileSources.fontSize' => 'Text size',
+			'fileSources.lineHeight' => 'Line spacing',
+			'fileSources.margin' => 'Margins',
+			'fileSources.font' => 'Typeface',
+			'fileSources.serif' => 'Serif',
+			'fileSources.sans' => 'Sans serif',
+			'fileSources.mono' => 'Monospace',
+			'fileSources.columns' => 'Columns',
+			'fileSources.scroll' => 'Scroll vertically',
+			'fileSources.justify' => 'Justify text',
+			'fileSources.readerTheme' => 'Page appearance',
+			'fileSources.appTheme' => 'Follow app theme',
+			'fileSources.paper' => 'Paper',
+			'fileSources.sepia' => 'Sepia',
+			'fileSources.night' => 'Night',
+			'fileSources.readAloud' => 'Read this page aloud',
+			'fileSources.readAlong' => 'Read along',
+			'fileSources.stopReading' => 'Stop narration',
+			'fileSources.searchBook' => 'Search in book',
+			'fileSources.noMatches' => 'No matches',
+			'fileSources.previousPage' => 'Previous page',
+			'fileSources.nextPage' => 'Next page',
+			'fileSources.page' => ({required Object number}) => 'Page ${number}',
+			'fileSources.externalBlocked' => 'External book links are disabled in the reader.',
+			'fileSources.loading' => 'Opening…',
+			'fileSources.narrator' => 'Narrator',
+			'fileSources.audio' => 'Audio',
+			'fileSources.video' => 'Video',
+			'fileSources.ebooks' => 'Ebooks',
+			'fileSources.all' => 'All',
+			'fileSources.downloads' => 'Offline files',
+			'fileSources.confirmDelete' => 'Remove the selected offline copy? Your position and notes will stay.',
+			'fileSources.errorAuthentication' => 'Sign in again to reconnect this source.',
+			'fileSources.errorPermission' => 'This source did not grant access to the requested file.',
+			'fileSources.errorUnavailable' => 'The source is unavailable. Try again, or open an offline copy.',
+			'fileSources.errorUnsupported' => 'This format or connection is not supported on this device. Check the source setup guide.',
+			'fileSources.errorInvalidData' => 'This file or server response could not be read safely.',
+			'fileSources.errorCancelled' => 'The operation was cancelled.',
+			'fileSources.errorConflict' => 'The position changed in another session. Reopen the item to choose a position.',
+			'fileSources.signIn' => 'Sign in',
+			'fileSources.reconnect' => 'Reconnect',
+			'fileSources.folderHelp' => 'Leave blank to start at the source root. S3 URLs include the bucket.',
+			'fileSources.preferences' => 'Preferences',
+			'fileSources.timePosition' => 'Position',
+			'fileSources.audioTrack' => 'Audio track',
+			'fileSources.subtitleTrack' => 'Subtitle track',
+			'fileSources.none' => 'None',
+			'fileSources.fullscreen' => 'Full screen',
+			'fileSources.syncLocation' => 'Progress sync folder (optional)',
+			'fileSources.syncLocationHint' => 'A dedicated WebDAV folder for PlezyNG state. Uses conditional writes; media stays unchanged.',
+			'fileSources.audiobooks' => 'Audiobooks',
+			'fileSources.comics' => 'Comics',
+			'fileSources.scan' => 'Scan for books and media',
+			'fileSources.browserReader' => 'Open reader',
+			'fileSources.browserReaderHelp' => 'The reader is open in your browser. Keep PlezyNG open to save your place and notes.',
+			'fileSources.on' => 'On',
+			'fileSources.advancedSetup' => 'App registration',
+			'fileSources.microsoftSignIn' => 'Sign in with Microsoft',
+			'fileSources.zoomIn' => 'Zoom in',
+			'fileSources.zoomOut' => 'Zoom out',
+			'fileSources.fitPage' => 'Fit page',
+			'fileSources.fitWidth' => 'Fit width',
+			'fileSources.actualSize' => 'Actual size',
+			'fileSources.goToPage' => 'Go to page',
+			'fileSources.goToSection' => 'Go to chapter',
+			'fileSources.pageRange' => ({required Object count}) => 'Enter a number from 1 to ${count}',
+			'fileSources.pageLayout' => 'Page layout',
+			'fileSources.automatic' => 'Automatic',
+			'fileSources.singlePage' => 'Single page',
+			'fileSources.twoPages' => 'Two pages',
+			'fileSources.readingDirection' => 'Reading direction',
+			'fileSources.leftToRight' => 'Left to right',
+			'fileSources.rightToLeft' => 'Right to left',
+			'fileSources.letterSpacing' => 'Letter spacing',
+			'fileSources.wordSpacing' => 'Word spacing',
+			'fileSources.readerControlsHelp' => 'Pinch or use zoom controls to enlarge pages. Drag to pan. Ctrl/⌘ + or − adjusts zoom; Ctrl/⌘ 0 resets it. Page Up and Page Down turn pages.',
+			'fileSources.imagePage' => 'Comic page',
+			'fileSources.resetReader' => 'Reset reading preferences',
+			'fileSources.zoom' => 'Zoom',
+			'fileSources.useFiles' => 'Use files and books',
+			'fileSources.cancelScan' => 'Cancel scan',
+			'lending.title' => 'Public libraries',
+			'lending.add' => 'Add a library',
+			'lending.other' => 'Another library',
+			'lending.libraryName' => 'Library name',
+			'lending.libraryUrl' => 'Library website',
+			'lending.libraryUrlHint' => 'Use your library’s catalogue or sign-in page.',
+			'lending.intro' => 'Borrow from your library. Keep your books close.',
+			'lending.handoff' => 'Sign in, borrow and read securely with your library’s own service.',
+			'lending.openService' => 'Open library',
+			'lending.findLibrary' => 'Find a library',
+			'lending.search' => 'Search books and authors',
+			'lending.catalogue' => 'Catalogue',
+			'lending.loans' => 'Loans',
+			'lending.holds' => 'Holds',
+			'lending.signIn' => 'Sign in with your library',
+			'lending.waiting' => 'Finish signing in in your browser, then return here.',
+			'lending.cancel' => 'Cancel',
+			'lending.disconnect' => 'Remove library',
+			'lending.disconnectMessage' => 'Remove this library from this profile? Your loans and holds stay with your library.',
+			'lending.getBook' => 'Get book',
+			'lending.checkAvailability' => 'Check availability',
+			'lending.available' => 'Available to borrow',
+			'lending.unavailable' => 'Currently unavailable',
+			'lending.borrow' => 'Borrow',
+			'lending.placeHold' => 'Place hold',
+			'lending.returnBook' => 'Return early',
+			'lending.cancelHold' => 'Cancel hold',
+			'lending.confirmBorrow' => 'Borrow this title from your library?',
+			'lending.confirmReturn' => 'Return this title now? You may need to borrow it again to continue.',
+			'lending.confirmCancelHold' => 'Remove your hold on this title?',
+			'lending.email' => 'Hold notification email',
+			'lending.due' => ({required Object date}) => 'Due ${date}',
+			'lending.queue' => ({required Object position}) => 'Position ${position} in line',
+			'lending.empty' => 'No titles here yet.',
+			'lending.openLibraryNote' => 'Explore Open Library’s catalogue. Reading and borrowing options are shown on each title’s page.',
+			'lending.more' => 'Load more',
+			'lending.gateway' => 'Library sign-in service',
+			'lending.gatewayHint' => 'Provided by your library or the PlezyNG administrator.',
+			'lending.advanced' => 'Library integration',
+			'lending.loadLibraries' => 'Choose your library',
+			'lending.expired' => 'This loan has expired.',
+			'lending.updated' => 'Library updated',
+			'lending.continueService' => 'Continue in service',
+			'lending.comingSoon' => 'In-app borrowing · Coming soon',
+			'lending.comingSoonDescription' => 'Libby integration is on its way. You can use your library in Libby while we finish connecting it.',
+			'lending.suspendHold' => 'Suspend hold',
+			'lending.resumeHold' => 'Resume hold',
+			'lending.suspendMessage' => 'Keep your place in line and let the next reader borrow this copy? You can resume the hold later.',
+			'lending.resumeMessage' => 'Resume this hold so your library can offer you the next available copy?',
+			'lending.editEmail' => 'Change notification email',
 			_ => null,
 		};
 	}

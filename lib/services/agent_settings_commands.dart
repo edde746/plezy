@@ -372,7 +372,9 @@ class AgentSettingsCommands {
   };
 
   static Map<String, dynamic> _descriptor(Pref<Object?> pref, BuildContext context) {
-    final bounds = pref == SettingsService.audioSyncOffset || pref == SettingsService.subtitleSyncOffset
+    final bounds = pref == SettingsService.accessibilityTextScale
+        ? (1.0, 2.0)
+        : pref == SettingsService.audioSyncOffset || pref == SettingsService.subtitleSyncOffset
         ? (ScopedPlayerPrefs.minimumSyncOffsetMs, ScopedPlayerPrefs.maximumSyncOffsetMs)
         : SettingsService.numericBounds(pref);
     final reason = unsupportedReason(pref.key, context);

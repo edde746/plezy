@@ -94,6 +94,8 @@ class HeroHubSectionState extends State<HeroHubSection> {
   Timer? _autoScrollTimer;
   Timer? _indicatorTimer;
   bool _isAutoScrollPaused = false;
+  bool _disableAnimations = false;
+  bool _accessibleNavigation = false;
 
   /// The scrollable this row lives in doesn't lazily unmount off-screen
   /// slivers (every hub is a plain SliverToBoxAdapter, always built), so
@@ -150,6 +152,12 @@ class HeroHubSectionState extends State<HeroHubSection> {
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
+    final media = MediaQuery.of(context);
+    if (_disableAnimations != media.disableAnimations || _accessibleNavigation != media.accessibleNavigation) {
+      _disableAnimations = media.disableAnimations;
+      _accessibleNavigation = media.accessibleNavigation;
+      _startAutoScroll();
+    }
     final newPosition = Scrollable.maybeOf(context)?.position;
     if (newPosition != _scrollPosition) {
       _scrollPosition?.removeListener(_onScrollChanged);
@@ -219,7 +227,7 @@ class HeroHubSectionState extends State<HeroHubSection> {
       Scrollable.ensureVisible(
         context,
         alignment: alignment,
-        duration: const Duration(milliseconds: 200),
+        duration: _disableAnimations ? Duration.zero : const Duration(milliseconds: 200),
         curve: Curves.easeOutCubic,
       );
     });
@@ -231,7 +239,7 @@ class HeroHubSectionState extends State<HeroHubSection> {
   /// page restarts the auto timer from zero rather than fighting it.
   void _startAutoScroll() {
     _autoScrollTimer?.cancel();
-    if (!widget.hub.heroAutoSlide || _items.length < 2) {
+    if (!widget.hub.heroAutoSlide || _items.length < 2 || _disableAnimations || _accessibleNavigation) {
       _indicatorTimer?.cancel();
       _indicatorProgress.value = 0.0;
       return;
@@ -259,7 +267,7 @@ class HeroHubSectionState extends State<HeroHubSection> {
     final current = _currentIndex.value.clamp(0, _items.length - 1);
     final raw = current + delta;
     final target = raw % _items.length;
-    if (raw < 0 || raw >= _items.length) {
+    if (raw < 0 || raw >= _items.length || _disableAnimations || duration == Duration.zero) {
       _pageController.jumpToPage(target);
     } else {
       _pageController.animateToPage(target, duration: duration, curve: Curves.easeInOut);
@@ -391,19 +399,16 @@ class HeroHubSectionState extends State<HeroHubSection> {
 
   Widget _buildArrowButton({required bool isLeft, required int currentIndex}) {
     // Always enabled: paging wraps around in both directions.
-    return ClickableCursor(
-      child: GestureDetector(
-        onTap: () => _pageBy(isLeft ? -1 : 1, tokens(context).slow),
-        child: Container(
-          width: 36,
-          height: 36,
-          decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.4), shape: BoxShape.circle),
-          child: AppIcon(
-            isLeft ? Symbols.chevron_left_rounded : Symbols.chevron_right_rounded,
-            color: Colors.white,
-            size: 22,
-          ),
-        ),
+    return IconButton(
+      tooltip: isLeft
+          ? MaterialLocalizations.of(context).previousPageTooltip
+          : MaterialLocalizations.of(context).nextPageTooltip,
+      onPressed: () => _pageBy(isLeft ? -1 : 1, tokens(context).slow),
+      style: IconButton.styleFrom(backgroundColor: Colors.black.withValues(alpha: 0.4)),
+      icon: AppIcon(
+        isLeft ? Symbols.chevron_left_rounded : Symbols.chevron_right_rounded,
+        color: Colors.white,
+        size: 22,
       ),
     );
   }
@@ -715,7 +720,7 @@ class HeroHubSectionState extends State<HeroHubSection> {
                   child: TweenAnimationBuilder<double>(
                     key: ValueKey(heroItem.globalKey),
                     tween: Tween(begin: 0.0, end: 1.0),
-                    duration: const Duration(milliseconds: 800),
+                    duration: _disableAnimations ? Duration.zero : const Duration(milliseconds: 800),
                     curve: Curves.easeOut,
                     builder: (context, value, child) {
                       return Transform.scale(

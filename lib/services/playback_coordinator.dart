@@ -23,6 +23,34 @@ class PlaybackCoordinator {
 
   Future<void> Function()? _stopMusicSession;
   Future<void> Function()? _stopThemeSession;
+  Future<void> Function()? _stopFileSession;
+  bool Function()? _isFileSessionActive;
+  bool get hasFileSession => _isFileSessionActive?.call() ?? false;
+  Future<void> Function()? _stopNarration;
+  void registerNarrationSession(Future<void> Function() stop) => _stopNarration = stop;
+  void unregisterNarrationSession(Future<void> Function() stop) {
+    if (_stopNarration == stop) _stopNarration = null;
+  }
+
+  void registerFileSession(Future<void> Function() stop, {bool Function()? isActive}) {
+    _stopFileSession = stop;
+    _isFileSessionActive = isActive;
+  }
+
+  void unregisterFileSession(Future<void> Function() stop) {
+    if (_stopFileSession == stop) {
+      _stopFileSession = null;
+      _isFileSessionActive = null;
+    }
+  }
+
+  /// File-backed audio, video and narration share the existing native channels.
+  Future<void> claimFiles() async {
+    await _stopNarration?.call();
+    await _stopTheme();
+    await _stopMusicSession?.call();
+    await shutdownVideo();
+  }
 
   /// Theme songs share the music channel, so both claims stop them first.
   void registerThemeSession(Future<void> Function() stop) => _stopThemeSession = stop;
@@ -146,6 +174,8 @@ class PlaybackCoordinator {
   /// Video playback is about to construct its native core: stop and dispose
   /// any live music session first. Completes once the audio core is gone.
   Future<void> claimVideo() async {
+    await _stopNarration?.call();
+    await _stopFileSession?.call();
     await _stopTheme();
     final stop = _stopMusicSession;
     if (stop == null) return;
@@ -174,5 +204,9 @@ class PlaybackCoordinator {
   /// — the one case where retirement outlives the route by more than a frame —
   /// the power to stop music from starting at all, which is the bricking the
   /// per-session native rework exists to prevent.
-  Future<void> claimMusic() => _stopTheme();
+  Future<void> claimMusic() async {
+    await _stopNarration?.call();
+    await _stopFileSession?.call();
+    await _stopTheme();
+  }
 }
