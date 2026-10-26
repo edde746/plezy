@@ -169,7 +169,7 @@ class _SettingsScreenState extends State<SettingsScreen> with FocusableTab, Moun
     }
   }
 
-  /// Focus key of the first tile: Supporter in purchasable builds, the
+  /// Focus key of the first tile: lifetime access in store builds, the
   /// Configured donation URL in donation builds (never both), else General.
   static String get _topTileKey => supporterBuildMode == SupporterMode.iap
       ? _kSupporter

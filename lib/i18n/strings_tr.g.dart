@@ -45,7 +45,6 @@ class TranslationsTr extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$common$tr common = _Translations$common$tr._(_root);
 	@override late final _Translations$screens$tr screens = _Translations$screens$tr._(_root);
 	@override late final _Translations$update$tr update = _Translations$update$tr._(_root);
-	@override late final _Translations$supporter$tr supporter = _Translations$supporter$tr._(_root);
 	@override late final _Translations$settings$tr settings = _Translations$settings$tr._(_root);
 	@override late final _Translations$themeEditor$tr themeEditor = _Translations$themeEditor$tr._(_root);
 	@override late final _Translations$search$tr search = _Translations$search$tr._(_root);
@@ -116,8 +115,6 @@ class _Translations$appIcon$tr extends Translations$appIcon$en {
 	@override String get title => 'Uygulama simgesi';
 	@override String get defaultIcon => 'Varsayılan';
 	@override String get current => 'Mevcut simge';
-	@override String get locked => 'Supporter avantajı';
-	@override String get lockedHint => 'Alternatif simgeler bir Supporter avantajıdır.';
 	@override String get changeFailed => 'Uygulama simgesi değiştirilemedi';
 	@override String get launcherHint => 'Yeni simge, PlezyNG\'den çıktığınızda ana ekranınızda görünür.';
 	@override String get tvLauncherHint => 'Yeni banner, PlezyNG\'den çıktığınızda görünür. Android TV, TV yeniden başlatılana kadar eskisini göstermeye devam edebilir.';
@@ -238,33 +235,6 @@ class _Translations$update$tr extends Translations$update$en {
 	@override String get viewRelease => 'Sürümü Görüntüle';
 	@override String get latestVersion => 'En son sürümü kullanıyorsunuz';
 	@override String get checkFailed => 'Güncellemeler kontrol edilemedi';
-}
-
-// Path: supporter
-class _Translations$supporter$tr extends Translations$supporter$en {
-	_Translations$supporter$tr._(TranslationsTr root) : this._root = root, super.internal(root);
-
-	final TranslationsTr _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'PlezyNG Supporter';
-	@override String get intro => 'PlezyNG\'nin geliştirilmesini destekleyen ve kozmetik ekstraların kilidini açan tek seferlik bir satın alım:';
-	@override String get presetThemes => 'Hazır temalar';
-	@override String get presetThemesDescription => 'Kor, Buzul, Orman, Erik ve Kâğıt';
-	@override String get customTheme => 'Özel tema';
-	@override String get customThemeDescription => 'Her rengi kendiniz seçin';
-	@override String get appIcons => 'Uygulama simgeleri';
-	@override String get appIconsDescription => 'Alternatif bir PlezyNG simgesi seçin';
-	@override String buy({required Object price}) => '${price} karşılığında satın al';
-	@override String get loadingPrice => 'Fiyat yükleniyor...';
-	@override String get restore => 'Satın Alımları Geri Yükle';
-	@override String get pending => 'Satın alımınız ödeme veya onay bekliyor. Mağaza işlemi tamamladığı anda ekstraların kilidi açılır.';
-	@override String get thankYouTitle => 'PlezyNG\'yi desteklediğiniz için teşekkürler';
-	@override String get thankYouBody => 'Supporter ekstralarınızın kilidi açıldı.';
-	@override String get tileSubtitle => 'Temaların ve uygulama simgelerinin kilidini tek seferlik bir satın alımla açın';
-	@override String get tileSubtitleThemesOnly => 'Temaların kilidini tek seferlik bir satın alımla açın';
-	@override String get tileUnlocked => 'Desteğiniz için teşekkürler';
-	@override late final _Translations$supporter$errors$tr errors = _Translations$supporter$errors$tr._(_root);
 }
 
 // Path: settings
@@ -625,8 +595,6 @@ class _Translations$themeEditor$tr extends Translations$themeEditor$en {
 	@override String get customEmpty => 'Henüz oluşturulmadı';
 	@override String get editCustom => 'Özel temayı düzenle';
 	@override String get editCustomDescription => 'Her rengi kendiniz seçin';
-	@override String get locked => 'Supporter ile kilidi açın';
-	@override String get savedLocked => 'Kaydedildi — Supporter ile kilidi açılır';
 	@override String get title => 'Özel Tema';
 	@override String get startFrom => 'Başlangıç teması';
 	@override String get startFromDescription => 'Tüm renkleri başka bir temadan kopyalayın';
@@ -2649,21 +2617,6 @@ class _Translations$common$mediaKind$tr extends Translations$common$mediaKind$en
 	@override String get folder => 'Klasör';
 }
 
-// Path: supporter.errors
-class _Translations$supporter$errors$tr extends Translations$supporter$errors$en {
-	_Translations$supporter$errors$tr._(TranslationsTr root) : this._root = root, super.internal(root);
-
-	final TranslationsTr _root; // ignore: unused_field
-
-	// Translations
-	@override String get storeUnavailable => 'Satın alımlar kullanılamıyor. Mağazada oturum açtığınızdan ve bu cihazda satın alımlara izin verildiğinden emin olun.';
-	@override String get productNotFound => 'Supporter satın alımı şu anda mağazanızda kullanılamıyor.';
-	@override String get productQueryFailed => 'Fiyat yüklenemedi. Bağlantınızı kontrol edip tekrar deneyin.';
-	@override String get purchaseFailed => 'Satın alım gerçekleşmedi. Tekrar deneyin.';
-	@override String get restoreFailed => 'Satın alımınızı geri yüklemek için mağazaya ulaşılamadı. Tekrar deneyin.';
-	@override String get nothingToRestore => 'Bu mağaza hesabı için Supporter satın alımı bulunamadı.';
-}
-
 // Path: themeEditor.slots
 class _Translations$themeEditor$slots$tr extends Translations$themeEditor$slots$en {
 	_Translations$themeEditor$slots$tr._(TranslationsTr root) : this._root = root, super.internal(root);
@@ -3534,8 +3487,6 @@ extension on TranslationsTr {
 			'appIcon.title' => 'Uygulama simgesi',
 			'appIcon.defaultIcon' => 'Varsayılan',
 			'appIcon.current' => 'Mevcut simge',
-			'appIcon.locked' => 'Supporter avantajı',
-			'appIcon.lockedHint' => 'Alternatif simgeler bir Supporter avantajıdır.',
 			'appIcon.changeFailed' => 'Uygulama simgesi değiştirilemedi',
 			'appIcon.launcherHint' => 'Yeni simge, PlezyNG\'den çıktığınızda ana ekranınızda görünür.',
 			'appIcon.tvLauncherHint' => 'Yeni banner, PlezyNG\'den çıktığınızda görünür. Android TV, TV yeniden başlatılana kadar eskisini göstermeye devam edebilir.',
@@ -3665,29 +3616,6 @@ extension on TranslationsTr {
 			'update.viewRelease' => 'Sürümü Görüntüle',
 			'update.latestVersion' => 'En son sürümü kullanıyorsunuz',
 			'update.checkFailed' => 'Güncellemeler kontrol edilemedi',
-			'supporter.title' => 'PlezyNG Supporter',
-			'supporter.intro' => 'PlezyNG\'nin geliştirilmesini destekleyen ve kozmetik ekstraların kilidini açan tek seferlik bir satın alım:',
-			'supporter.presetThemes' => 'Hazır temalar',
-			'supporter.presetThemesDescription' => 'Kor, Buzul, Orman, Erik ve Kâğıt',
-			'supporter.customTheme' => 'Özel tema',
-			'supporter.customThemeDescription' => 'Her rengi kendiniz seçin',
-			'supporter.appIcons' => 'Uygulama simgeleri',
-			'supporter.appIconsDescription' => 'Alternatif bir PlezyNG simgesi seçin',
-			'supporter.buy' => ({required Object price}) => '${price} karşılığında satın al',
-			'supporter.loadingPrice' => 'Fiyat yükleniyor...',
-			'supporter.restore' => 'Satın Alımları Geri Yükle',
-			'supporter.pending' => 'Satın alımınız ödeme veya onay bekliyor. Mağaza işlemi tamamladığı anda ekstraların kilidi açılır.',
-			'supporter.thankYouTitle' => 'PlezyNG\'yi desteklediğiniz için teşekkürler',
-			'supporter.thankYouBody' => 'Supporter ekstralarınızın kilidi açıldı.',
-			'supporter.tileSubtitle' => 'Temaların ve uygulama simgelerinin kilidini tek seferlik bir satın alımla açın',
-			'supporter.tileSubtitleThemesOnly' => 'Temaların kilidini tek seferlik bir satın alımla açın',
-			'supporter.tileUnlocked' => 'Desteğiniz için teşekkürler',
-			'supporter.errors.storeUnavailable' => 'Satın alımlar kullanılamıyor. Mağazada oturum açtığınızdan ve bu cihazda satın alımlara izin verildiğinden emin olun.',
-			'supporter.errors.productNotFound' => 'Supporter satın alımı şu anda mağazanızda kullanılamıyor.',
-			'supporter.errors.productQueryFailed' => 'Fiyat yüklenemedi. Bağlantınızı kontrol edip tekrar deneyin.',
-			'supporter.errors.purchaseFailed' => 'Satın alım gerçekleşmedi. Tekrar deneyin.',
-			'supporter.errors.restoreFailed' => 'Satın alımınızı geri yüklemek için mağazaya ulaşılamadı. Tekrar deneyin.',
-			'supporter.errors.nothingToRestore' => 'Bu mağaza hesabı için Supporter satın alımı bulunamadı.',
 			'settings.title' => 'Ayarlar',
 			'settings.supportDeveloper' => 'PlezyNG\'yi Destekleyin',
 			'settings.supportDeveloperDescription' => 'Geliştirmeyi desteklemek için bağış yapın',
@@ -4030,8 +3958,6 @@ extension on TranslationsTr {
 			'themeEditor.customEmpty' => 'Henüz oluşturulmadı',
 			'themeEditor.editCustom' => 'Özel temayı düzenle',
 			'themeEditor.editCustomDescription' => 'Her rengi kendiniz seçin',
-			'themeEditor.locked' => 'Supporter ile kilidi açın',
-			'themeEditor.savedLocked' => 'Kaydedildi — Supporter ile kilidi açılır',
 			'themeEditor.title' => 'Özel Tema',
 			'themeEditor.startFrom' => 'Başlangıç teması',
 			'themeEditor.startFromDescription' => 'Tüm renkleri başka bir temadan kopyalayın',
@@ -4042,8 +3968,6 @@ extension on TranslationsTr {
 			'themeEditor.slots.outline' => 'Kenarlık',
 			'themeEditor.slots.text' => 'Metin',
 			'themeEditor.slots.textMuted' => 'İkincil metin',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Vurgu',
 			'themeEditor.opacity' => 'Opaklık',
 			'themeEditor.hexHint' => '#RRGGBB veya #AARRGGBB',
@@ -4071,6 +3995,8 @@ extension on TranslationsTr {
 			'search.people' => 'Kişiler',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => '${actionName} için Kısayol Ayarla',
 			'hotkeys.clearShortcut' => 'Kısayolu temizle',
+			_ => null,
+		} ?? switch (path) {
 			'hotkeys.noShortcutSet' => 'Kısayol ayarlanmadı',
 			'hotkeys.currentShortcut' => 'Mevcut kısayol:',
 			'hotkeys.pressToRecord' => 'Kısayol kaydetmek için seçin',
@@ -4556,8 +4482,6 @@ extension on TranslationsTr {
 			'profiles.pinExplain' => 'Profiller arasında geçiş yapmak için 4 haneli PIN gereklidir.',
 			'profiles.continueButton' => 'Devam Et',
 			'profiles.pinsDontMatch' => 'PIN\'ler eşleşmiyor',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.tokenIdentityMismatch' => 'Plex profil belirtecinin beklenmeyen bir sunucuya ait olduğu belirlendi',
 			'connections.sectionTitle' => 'Bağlantılar',
 			'connections.addConnection' => 'Bağlantı ekle',
@@ -4585,6 +4509,8 @@ extension on TranslationsTr {
 			'accountPreferences.groups.libraryDisplay' => 'Kitaplık',
 			'accountPreferences.groups.personalMedia' => 'Kişisel medya',
 			'accountPreferences.preferredAudioLanguage' => 'Tercih Edilen Ses Dili',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.autoSelectAudio' => 'Sesi dile göre seç',
 			'accountPreferences.autoSelectAudioDescription' => 'Kapalıyken dosyanın varsayılan olarak işaretlediği ses parçası kullanılır.',
 			'accountPreferences.preferredSubtitleLanguage' => 'Tercih Edilen Altyazı Dili',
@@ -5070,8 +4996,6 @@ extension on TranslationsTr {
 			'liveTv.guideReloadFailed' => 'Rehber yenilenemedi',
 			'liveTv.rulesProcessRequested' => 'Kuralın yeniden değerlendirilmesi istendi',
 			'liveTv.rulesProcessFailed' => 'Kayıt kuralları yeniden değerlendirilemedi',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordShow' => 'Programı kaydet',
 			'liveTv.recordSettings.startEarly' => 'Erken başlat (saniye)',
 			'liveTv.recordSettings.endLate' => 'Geç bitir (saniye)',
@@ -5099,6 +5023,8 @@ extension on TranslationsTr {
 			'collections.selectCollection' => 'Koleksiyon Seç',
 			'collections.collectionName' => 'Koleksiyon Adı',
 			'collections.enterCollectionName' => 'Koleksiyon adını girin',
+			_ => null,
+		} ?? switch (path) {
 			'collections.addedToCollection' => 'Koleksiyona eklendi',
 			'collections.errorAddingToCollection' => 'Koleksiyona eklenemedi',
 			'collections.created' => 'Koleksiyon oluşturuldu',
@@ -5584,8 +5510,6 @@ extension on TranslationsTr {
 			'performanceOverlay.dvRpus' => 'DV RPU\'ları',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU Ort.',
 			'performanceOverlay.dvSampleAverage' => 'DV Örnek Ort.',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Maks Luma',
 			'performanceOverlay.minLuma' => 'Min Luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5613,6 +5537,8 @@ extension on TranslationsTr {
 			'externalPlayer.customPlayers' => 'Özel Oynatıcılar',
 			'externalPlayer.systemDefault' => 'Sistem Varsayılanı',
 			'externalPlayer.addCustomPlayer' => 'Özel Oynatıcı Ekle',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Oynatıcı Adı',
 			'externalPlayer.playerNameHint' => 'Oynatıcım',
 			'externalPlayer.playerCommand' => 'Komut',

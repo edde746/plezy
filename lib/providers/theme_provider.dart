@@ -75,7 +75,7 @@ class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin, W
 
   ThemeChoice _resolve() => resolve(_storedMode, _customPalette, unlocked: _supporter.isUnlocked);
 
-  /// Re-resolves after the stored choice or the Supporter entitlement changed.
+  /// Re-resolves after the stored choice or the lifetime access state changes.
   /// The stored choice is never rewritten: losing the entitlement only changes
   /// what paints, and regaining it brings the choice back.
   void _apply({bool pushSplash = false, bool forceNotify = false}) {
@@ -89,7 +89,7 @@ class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin, W
   }
 
   /// The effective theme: the stored choice, or the device's default theme
-  /// (see [resolve]) while that choice is a locked Supporter perk.
+  /// (see [resolve]) while that choice requires full app access.
   settings.ThemeMode get themeMode => _choice.mode;
 
   /// The palette on screen right now, with System resolved against the
@@ -99,7 +99,7 @@ class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin, W
   /// The saved Custom palette, whether or not Custom is selected or unlocked.
   MonoPalette? get customPalette => _customPalette;
 
-  /// The saved choice while only a missing Supporter entitlement keeps it off
+  /// The saved choice while only missing lifetime access keeps it off
   /// screen, so the picker can show it is still saved; null when the saved
   /// choice is what paints, or would not paint even if unlocked.
   settings.ThemeMode? get lockedStoredThemeMode {
@@ -107,7 +107,7 @@ class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin, W
     return ifUnlocked == _choice.mode ? null : ifUnlocked;
   }
 
-  /// What [stored] paints. A Supporter perk applies only while [unlocked], and
+  /// What [stored] paints. An access-controlled theme applies only while [unlocked], and
   /// Custom only once a palette is saved; otherwise the app paints the theme a
   /// fresh install gets on this device (System, OLED on TV), read from the
   /// pref's own default so the TV rule lives in one place.
@@ -116,7 +116,7 @@ class ThemeProvider extends ChangeNotifier with DisposableChangeNotifierMixin, W
   /// and never flashes a locked perk or the fallback for an unlocked one. It
   /// runs after TV detection there, like the pref default it reads.
   static ThemeChoice resolve(settings.ThemeMode stored, MonoPalette? customPalette, {required bool unlocked}) {
-    final locked = stored.isSupporterPerk && !unlocked;
+    final locked = stored.requiresFullAccess && !unlocked;
     final missingCustom = stored == settings.ThemeMode.custom && customPalette == null;
     final mode = locked || missingCustom ? settings.SettingsService.themeMode.resolvedDefault : stored;
     return (mode: mode, palette: paletteFor(mode, customPalette: customPalette));

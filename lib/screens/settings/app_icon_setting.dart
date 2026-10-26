@@ -29,7 +29,7 @@ import '../../widgets/supporter_sheet.dart';
 class AppIconSetting extends StatelessWidget {
   const AppIconSetting({super.key});
 
-  /// Whether this install offers alternate icons: the Supporter perks are not
+  /// Whether this install offers alternate icons: lifetime access is not
   /// hidden in this build and the device can switch its icon (iOS, iPadOS,
   /// tvOS, Android phones and Android TV). Rebuilds [context] when either
   /// changes.
@@ -55,11 +55,11 @@ class AppIconSetting extends StatelessWidget {
 }
 
 /// Grid of every app icon, default first, with the current one marked. Locked
-/// alternates open the Supporter sheet and apply only once it unlocks them.
+/// alternates open the lifetime access sheet and apply only after purchase.
 class AppIconPickerSheet extends StatefulWidget {
   const AppIconPickerSheet({super.key, @visibleForTesting this.openSupporterSheet = showSupporterSheet});
 
-  /// Opens the Supporter purchase sheet for a locked icon.
+  /// Opens the lifetime access sheet for a locked icon.
   final Future<void> Function(BuildContext context) openSupporterSheet;
 
   @override
@@ -81,7 +81,7 @@ class _AppIconPickerSheetState extends State<AppIconPickerSheet> {
     try {
       if (!option.isDefault && !supporter.isUnlocked) {
         await widget.openSupporterSheet(context);
-        // The Supporter sheet may have replaced this one, so the purchase
+        // The lifetime access sheet may have replaced this one, so the purchase
         // decides, not whether the picker is still on screen.
         if (!supporter.isUnlocked) return;
       }

@@ -46,7 +46,6 @@ class TranslationsZhHant extends TranslationsZh with BaseTranslations<AppLocale,
 	@override late final _Translations$common$zh_Hant common = _Translations$common$zh_Hant._(_root);
 	@override late final _Translations$screens$zh_Hant screens = _Translations$screens$zh_Hant._(_root);
 	@override late final _Translations$update$zh_Hant update = _Translations$update$zh_Hant._(_root);
-	@override late final _Translations$supporter$zh_Hant supporter = _Translations$supporter$zh_Hant._(_root);
 	@override late final _Translations$settings$zh_Hant settings = _Translations$settings$zh_Hant._(_root);
 	@override late final _Translations$themeEditor$zh_Hant themeEditor = _Translations$themeEditor$zh_Hant._(_root);
 	@override late final _Translations$search$zh_Hant search = _Translations$search$zh_Hant._(_root);
@@ -117,8 +116,6 @@ class _Translations$appIcon$zh_Hant extends Translations$appIcon$zh {
 	@override String get title => '應用程式圖示';
 	@override String get defaultIcon => '預設';
 	@override String get current => '目前圖示';
-	@override String get locked => 'Supporter 專屬';
-	@override String get lockedHint => '其他圖示為 Supporter 專屬福利。';
 	@override String get changeFailed => '無法變更應用程式圖示';
 	@override String get launcherHint => '離開 PlezyNG 後，新圖示就會出現在主畫面上。';
 	@override String get tvLauncherHint => '離開 PlezyNG 後就會顯示新橫幅。在電視重新啟動前，Android TV 可能仍會顯示舊橫幅。';
@@ -239,33 +236,6 @@ class _Translations$update$zh_Hant extends Translations$update$zh {
 	@override String get viewRelease => '查看版本詳情';
 	@override String get latestVersion => '已安裝的版本為最新版本';
 	@override String get checkFailed => '無法檢查更新';
-}
-
-// Path: supporter
-class _Translations$supporter$zh_Hant extends Translations$supporter$zh {
-	_Translations$supporter$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
-
-	final TranslationsZhHant _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'PlezyNG Supporter';
-	@override String get intro => '一次性購買，支持 PlezyNG 的開發並解鎖外觀加值項目：';
-	@override String get presetThemes => '精選主題';
-	@override String get presetThemesDescription => '餘燼、冰河、森林、李子與紙張';
-	@override String get customTheme => '自訂主題';
-	@override String get customThemeDescription => '自行挑選每一種顏色';
-	@override String get appIcons => '應用程式圖示';
-	@override String get appIconsDescription => '選擇其他 PlezyNG 圖示';
-	@override String buy({required Object price}) => '以 ${price} 購買';
-	@override String get loadingPrice => '正在載入價格…';
-	@override String get restore => '恢復購買';
-	@override String get pending => '您的購買正在等待付款或核准。商店完成交易後，加值項目就會立即解鎖。';
-	@override String get thankYouTitle => '感謝您支持 PlezyNG';
-	@override String get thankYouBody => '您的 Supporter 加值項目已解鎖。';
-	@override String get tileSubtitle => '一次性購買即可解鎖主題與應用程式圖示';
-	@override String get tileSubtitleThemesOnly => '一次性購買即可解鎖主題';
-	@override String get tileUnlocked => '感謝您的支持';
-	@override late final _Translations$supporter$errors$zh_Hant errors = _Translations$supporter$errors$zh_Hant._(_root);
 }
 
 // Path: settings
@@ -626,8 +596,6 @@ class _Translations$themeEditor$zh_Hant extends Translations$themeEditor$zh {
 	@override String get customEmpty => '尚未建立';
 	@override String get editCustom => '編輯自訂主題';
 	@override String get editCustomDescription => '自行選擇每一種顏色';
-	@override String get locked => '透過 Supporter 解鎖';
-	@override String get savedLocked => '已儲存 — 透過 Supporter 解鎖';
 	@override String get title => '自訂主題';
 	@override String get startFrom => '從現有主題開始';
 	@override String get startFromDescription => '從其他主題複製所有顏色';
@@ -2640,21 +2608,6 @@ class _Translations$common$mediaKind$zh_Hant extends Translations$common$mediaKi
 	@override String get folder => '資料夾';
 }
 
-// Path: supporter.errors
-class _Translations$supporter$errors$zh_Hant extends Translations$supporter$errors$zh {
-	_Translations$supporter$errors$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
-
-	final TranslationsZhHant _root; // ignore: unused_field
-
-	// Translations
-	@override String get storeUnavailable => '目前無法購買。請確認您已登入商店，且此裝置允許購買。';
-	@override String get productNotFound => '您的商店目前無法購買 Supporter。';
-	@override String get productQueryFailed => '無法載入價格。請檢查網路連線後重試。';
-	@override String get purchaseFailed => '購買未完成。請重試。';
-	@override String get restoreFailed => '無法連線至商店以恢復您的購買。請重試。';
-	@override String get nothingToRestore => '此商店帳號找不到 Supporter 購買紀錄。';
-}
-
 // Path: themeEditor.slots
 class _Translations$themeEditor$slots$zh_Hant extends Translations$themeEditor$slots$zh {
 	_Translations$themeEditor$slots$zh_Hant._(TranslationsZhHant root) : this._root = root, super.internal(root);
@@ -3523,8 +3476,6 @@ extension on TranslationsZhHant {
 			'appIcon.title' => '應用程式圖示',
 			'appIcon.defaultIcon' => '預設',
 			'appIcon.current' => '目前圖示',
-			'appIcon.locked' => 'Supporter 專屬',
-			'appIcon.lockedHint' => '其他圖示為 Supporter 專屬福利。',
 			'appIcon.changeFailed' => '無法變更應用程式圖示',
 			'appIcon.launcherHint' => '離開 PlezyNG 後，新圖示就會出現在主畫面上。',
 			'appIcon.tvLauncherHint' => '離開 PlezyNG 後就會顯示新橫幅。在電視重新啟動前，Android TV 可能仍會顯示舊橫幅。',
@@ -3654,29 +3605,6 @@ extension on TranslationsZhHant {
 			'update.viewRelease' => '查看版本詳情',
 			'update.latestVersion' => '已安裝的版本為最新版本',
 			'update.checkFailed' => '無法檢查更新',
-			'supporter.title' => 'PlezyNG Supporter',
-			'supporter.intro' => '一次性購買，支持 PlezyNG 的開發並解鎖外觀加值項目：',
-			'supporter.presetThemes' => '精選主題',
-			'supporter.presetThemesDescription' => '餘燼、冰河、森林、李子與紙張',
-			'supporter.customTheme' => '自訂主題',
-			'supporter.customThemeDescription' => '自行挑選每一種顏色',
-			'supporter.appIcons' => '應用程式圖示',
-			'supporter.appIconsDescription' => '選擇其他 PlezyNG 圖示',
-			'supporter.buy' => ({required Object price}) => '以 ${price} 購買',
-			'supporter.loadingPrice' => '正在載入價格…',
-			'supporter.restore' => '恢復購買',
-			'supporter.pending' => '您的購買正在等待付款或核准。商店完成交易後，加值項目就會立即解鎖。',
-			'supporter.thankYouTitle' => '感謝您支持 PlezyNG',
-			'supporter.thankYouBody' => '您的 Supporter 加值項目已解鎖。',
-			'supporter.tileSubtitle' => '一次性購買即可解鎖主題與應用程式圖示',
-			'supporter.tileSubtitleThemesOnly' => '一次性購買即可解鎖主題',
-			'supporter.tileUnlocked' => '感謝您的支持',
-			'supporter.errors.storeUnavailable' => '目前無法購買。請確認您已登入商店，且此裝置允許購買。',
-			'supporter.errors.productNotFound' => '您的商店目前無法購買 Supporter。',
-			'supporter.errors.productQueryFailed' => '無法載入價格。請檢查網路連線後重試。',
-			'supporter.errors.purchaseFailed' => '購買未完成。請重試。',
-			'supporter.errors.restoreFailed' => '無法連線至商店以恢復您的購買。請重試。',
-			'supporter.errors.nothingToRestore' => '此商店帳號找不到 Supporter 購買紀錄。',
 			'settings.title' => '設定',
 			'settings.supportDeveloper' => '贊助 PlezyNG',
 			'settings.supportDeveloperDescription' => '捐款支持開發',
@@ -4019,8 +3947,6 @@ extension on TranslationsZhHant {
 			'themeEditor.customEmpty' => '尚未建立',
 			'themeEditor.editCustom' => '編輯自訂主題',
 			'themeEditor.editCustomDescription' => '自行選擇每一種顏色',
-			'themeEditor.locked' => '透過 Supporter 解鎖',
-			'themeEditor.savedLocked' => '已儲存 — 透過 Supporter 解鎖',
 			'themeEditor.title' => '自訂主題',
 			'themeEditor.startFrom' => '從現有主題開始',
 			'themeEditor.startFromDescription' => '從其他主題複製所有顏色',
@@ -4031,8 +3957,6 @@ extension on TranslationsZhHant {
 			'themeEditor.slots.outline' => '外框',
 			'themeEditor.slots.text' => '文字',
 			'themeEditor.slots.textMuted' => '次要文字',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => '強調色',
 			'themeEditor.opacity' => '不透明度',
 			'themeEditor.hexHint' => '#RRGGBB 或 #AARRGGBB',
@@ -4060,6 +3984,8 @@ extension on TranslationsZhHant {
 			'search.people' => '人物',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => '為 ${actionName} 設定快速鍵',
 			'hotkeys.clearShortcut' => '清除快速鍵',
+			_ => null,
+		} ?? switch (path) {
 			'hotkeys.noShortcutSet' => '未設定快速鍵',
 			'hotkeys.currentShortcut' => '目前快速鍵：',
 			'hotkeys.pressToRecord' => '選擇以錄製快速鍵',
@@ -4545,8 +4471,6 @@ extension on TranslationsZhHant {
 			'profiles.pinExplain' => '切換至此使用者設定檔時需要 4 位數 PIN 碼。',
 			'profiles.continueButton' => '繼續',
 			'profiles.pinsDontMatch' => 'PIN 碼不符合',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.tokenIdentityMismatch' => 'Plex 使用者設定檔權杖解析到非預期的伺服器',
 			'connections.sectionTitle' => '連線',
 			'connections.addConnection' => '新增連線',
@@ -4574,6 +4498,8 @@ extension on TranslationsZhHant {
 			'accountPreferences.groups.libraryDisplay' => '媒體庫',
 			'accountPreferences.groups.personalMedia' => '個人媒體',
 			'accountPreferences.preferredAudioLanguage' => '偏好音訊語言',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.autoSelectAudio' => '依語言選擇音訊',
 			'accountPreferences.autoSelectAudioDescription' => '關閉時會使用檔案標記為預設的音訊軌。',
 			'accountPreferences.preferredSubtitleLanguage' => '偏好字幕語言',
@@ -5059,8 +4985,6 @@ extension on TranslationsZhHant {
 			'liveTv.guideReloadFailed' => '無法重新載入節目表指南',
 			'liveTv.rulesProcessRequested' => '已要求重新評估規則',
 			'liveTv.rulesProcessFailed' => '無法重新評估錄影規則',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordShow' => '錄製節目',
 			'liveTv.recordSettings.startEarly' => '提早開始（秒）',
 			'liveTv.recordSettings.endLate' => '延後結束（秒）',
@@ -5088,6 +5012,8 @@ extension on TranslationsZhHant {
 			'collections.selectCollection' => '選擇收藏集',
 			'collections.collectionName' => '收藏集名稱',
 			'collections.enterCollectionName' => '輸入收藏集名稱',
+			_ => null,
+		} ?? switch (path) {
 			'collections.addedToCollection' => '已新增至收藏集',
 			'collections.errorAddingToCollection' => '新增至收藏集失敗',
 			'collections.created' => '已建立收藏集',
@@ -5573,8 +5499,6 @@ extension on TranslationsZhHant {
 			'performanceOverlay.dvRpus' => 'DV RPU 數',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU 平均',
 			'performanceOverlay.dvSampleAverage' => 'DV 取樣平均',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => '最大亮度',
 			'performanceOverlay.minLuma' => '最小亮度',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5602,6 +5526,8 @@ extension on TranslationsZhHant {
 			'externalPlayer.customPlayers' => '自訂播放器',
 			'externalPlayer.systemDefault' => '系統預設',
 			'externalPlayer.addCustomPlayer' => '新增自訂播放器',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => '播放器名稱',
 			'externalPlayer.playerNameHint' => '我的播放器',
 			'externalPlayer.playerCommand' => '執行命令',

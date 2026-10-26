@@ -99,6 +99,7 @@ dependencies:
   openwatchparty: ^1.1.0
   flutter_chrome_cast: ^2.0.0
   flutter_local_notifications: ^22.3.3
+  flutter_inapp_purchase: ^11.1.0
 
 dev_dependencies:
   flutter_secure_storage_platform_interface: ^2.1.1

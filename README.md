@@ -118,6 +118,10 @@ sudo moss it plezy
 
 </details>
 
+## Android closed beta
+
+PlezyNG's Google Play closed test is being prepared. Once the test release is published, invited testers can opt in at [the PlezyNG Google Play test page](https://play.google.com/apps/testing/org.snapetech.plezyng). The link is inactive until then, and only accounts added to the test can join. Google Play requires at least 12 testers to stay opted in continuously for 14 days before production access.
+
 ## Features
 
 ### <img src="assets/readme_icons/browse.svg" height="20" alt="" align="center" /> Browse & Discover

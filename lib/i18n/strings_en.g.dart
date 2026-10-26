@@ -49,7 +49,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$common$en common = Translations$common$en.internal(_root);
 	late final Translations$screens$en screens = Translations$screens$en.internal(_root);
 	late final Translations$update$en update = Translations$update$en.internal(_root);
-	late final Translations$supporter$en supporter = Translations$supporter$en.internal(_root);
+	late final Translations$appAccess$en appAccess = Translations$appAccess$en.internal(_root);
 	late final Translations$settings$en settings = Translations$settings$en.internal(_root);
 	late final Translations$themeEditor$en themeEditor = Translations$themeEditor$en.internal(_root);
 	late final Translations$search$en search = Translations$search$en.internal(_root);
@@ -203,11 +203,11 @@ class Translations$appIcon$en {
 	/// en: 'Current icon'
 	String get current => 'Current icon';
 
-	/// en: 'Supporter perk'
-	String get locked => 'Supporter perk';
+	/// en: 'Lifetime access required'
+	String get locked => 'Lifetime access required';
 
-	/// en: 'Alternate icons are a Supporter perk.'
-	String get lockedHint => 'Alternate icons are a Supporter perk.';
+	/// en: 'Start your 7-day trial or unlock PlezyNG for life to use alternate icons.'
+	String get lockedHint => 'Start your 7-day trial or unlock PlezyNG for life to use alternate icons.';
 
 	/// en: 'Couldn't change the app icon'
 	String get changeFailed => 'Couldn\'t change the app icon';
@@ -498,66 +498,79 @@ class Translations$update$en {
 	String get checkFailed => 'Failed to check for updates';
 }
 
-// Path: supporter
-class Translations$supporter$en {
-	Translations$supporter$en.internal(this._root);
+// Path: appAccess
+class Translations$appAccess$en {
+	Translations$appAccess$en.internal(this._root);
 
 	final Translations _root; // ignore: unused_field
 
 	// Translations
 
-	/// en: 'PlezyNG Supporter'
-	String get title => 'PlezyNG Supporter';
+	/// en: 'Try every feature free for 7 days'
+	String get title => 'Try every feature free for 7 days';
 
-	/// en: 'A one-time purchase that supports PlezyNG's development and unlocks cosmetic extras:'
-	String get intro => 'A one-time purchase that supports PlezyNG\'s development and unlocks cosmetic extras:';
+	/// en: 'Start a seven-day trial with full access to every PlezyNG feature. There is no charge during the trial and no subscription. After the trial, one lifetime purchase at your store's price unlocks PlezyNG for life.'
+	String get description => 'Start a seven-day trial with full access to every PlezyNG feature. There is no charge during the trial and no subscription. After the trial, one lifetime purchase at your store\'s price unlocks PlezyNG for life.';
 
-	/// en: 'Preset themes'
-	String get presetThemes => 'Preset themes';
+	/// en: 'Unlock every feature in PlezyNG for life with one purchase at your store's price. There is no subscription.'
+	String get trialEndedDescription => 'Unlock every feature in PlezyNG for life with one purchase at your store\'s price. There is no subscription.';
 
-	/// en: 'Ember, Glacier, Forest, Plum and Paper'
-	String get presetThemesDescription => 'Ember, Glacier, Forest, Plum and Paper';
+	/// en: 'Start my 7-day free trial'
+	String get startTrial => 'Start my 7-day free trial';
 
-	/// en: 'Custom theme'
-	String get customTheme => 'Custom theme';
+	/// en: 'Your 7-day full-feature trial is active.'
+	String get trialActive => 'Your 7-day full-feature trial is active.';
 
-	/// en: 'Pick every color yourself'
-	String get customThemeDescription => 'Pick every color yourself';
+	/// en: 'Your 7-day trial has ended'
+	String get trialEnded => 'Your 7-day trial has ended';
 
-	/// en: 'App icons'
-	String get appIcons => 'App icons';
+	/// en: 'Couldn't save the trial on this device. Please try again.'
+	String get trialStartFailed => 'Couldn\'t save the trial on this device. Please try again.';
 
-	/// en: 'Choose an alternate PlezyNG icon'
-	String get appIconsDescription => 'Choose an alternate PlezyNG icon';
+	/// en: 'PlezyNG unlocked for life'
+	String get lifetimeTitle => 'PlezyNG unlocked for life';
 
-	/// en: 'Buy for ${price}'
-	String buy({required Object price}) => 'Buy for ${price}';
+	/// en: 'Thanks! You have lifetime access to every PlezyNG feature.'
+	String get lifetimeBody => 'Thanks! You have lifetime access to every PlezyNG feature.';
 
-	/// en: 'Loading price...'
-	String get loadingPrice => 'Loading price...';
+	/// en: 'PlezyNG lifetime access'
+	String get manageTitle => 'PlezyNG lifetime access';
 
-	/// en: 'Restore Purchases'
-	String get restore => 'Restore Purchases';
+	/// en: 'Try every feature free for 7 days, then unlock everything for life with one payment at your store's price.'
+	String get manageDescription => 'Try every feature free for 7 days, then unlock everything for life with one payment at your store\'s price.';
 
-	/// en: 'Your purchase is waiting for payment or approval. The extras unlock as soon as the store completes it.'
-	String get pending => 'Your purchase is waiting for payment or approval. The extras unlock as soon as the store completes it.';
+	/// en: 'Unlock every feature for ${price}'
+	String buy({required Object price}) => 'Unlock every feature for ${price}';
 
-	/// en: 'Thank you for supporting PlezyNG'
-	String get thankYouTitle => 'Thank you for supporting PlezyNG';
+	/// en: 'Loading store price...'
+	String get loadingPrice => 'Loading store price...';
 
-	/// en: 'Your Supporter extras are unlocked.'
-	String get thankYouBody => 'Your Supporter extras are unlocked.';
+	/// en: 'Retry price lookup'
+	String get retryPrice => 'Retry price lookup';
 
-	/// en: 'Unlock themes and app icons with a one-time purchase'
-	String get tileSubtitle => 'Unlock themes and app icons with a one-time purchase';
+	/// en: 'Restore lifetime purchase'
+	String get restore => 'Restore lifetime purchase';
 
-	/// en: 'Unlock themes with a one-time purchase'
-	String get tileSubtitleThemesOnly => 'Unlock themes with a one-time purchase';
+	/// en: 'Your purchase is waiting for payment or approval. Lifetime access unlocks as soon as the store completes it.'
+	String get pending => 'Your purchase is waiting for payment or approval. Lifetime access unlocks as soon as the store completes it.';
 
-	/// en: 'Thank you for your support'
-	String get tileUnlocked => 'Thank you for your support';
+	/// en: 'Purchases aren't available. Check that you're signed in to the store and purchases are allowed on this device.'
+	String get storeUnavailable => 'Purchases aren\'t available. Check that you\'re signed in to the store and purchases are allowed on this device.';
 
-	late final Translations$supporter$errors$en errors = Translations$supporter$errors$en.internal(_root);
+	/// en: 'The PlezyNG lifetime unlock isn't available in this store yet.'
+	String get productNotFound => 'The PlezyNG lifetime unlock isn\'t available in this store yet.';
+
+	/// en: 'Couldn't load the store price. Check your connection and try again.'
+	String get productQueryFailed => 'Couldn\'t load the store price. Check your connection and try again.';
+
+	/// en: 'The purchase didn't go through. Try again.'
+	String get purchaseFailed => 'The purchase didn\'t go through. Try again.';
+
+	/// en: 'Couldn't reach the store to restore your purchase. Try again.'
+	String get restoreFailed => 'Couldn\'t reach the store to restore your purchase. Try again.';
+
+	/// en: 'No PlezyNG lifetime purchase was found for this store account.'
+	String get nothingToRestore => 'No PlezyNG lifetime purchase was found for this store account.';
 }
 
 // Path: settings
@@ -576,6 +589,9 @@ class Translations$settings$en {
 
 	/// en: 'Donate to support development'
 	String get supportDeveloperDescription => 'Donate to support development';
+
+	/// en: 'PlezyNG lifetime access'
+	String get lifetimeAccess => 'PlezyNG lifetime access';
 
 	/// en: 'Language'
 	String get language => 'Language';
@@ -1846,11 +1862,11 @@ class Translations$themeEditor$en {
 	/// en: 'Choose every color yourself'
 	String get editCustomDescription => 'Choose every color yourself';
 
-	/// en: 'Unlock with Supporter'
-	String get locked => 'Unlock with Supporter';
+	/// en: 'Lifetime access required'
+	String get locked => 'Lifetime access required';
 
-	/// en: 'Saved — unlocks with Supporter'
-	String get savedLocked => 'Saved — unlocks with Supporter';
+	/// en: 'Saved — available with lifetime access'
+	String get savedLocked => 'Saved — available with lifetime access';
 
 	/// en: 'Custom Theme'
 	String get title => 'Custom Theme';
@@ -7215,33 +7231,6 @@ class Translations$common$mediaKind$en {
 	String get folder => 'Folder';
 }
 
-// Path: supporter.errors
-class Translations$supporter$errors$en {
-	Translations$supporter$errors$en.internal(this._root);
-
-	final Translations _root; // ignore: unused_field
-
-	// Translations
-
-	/// en: 'Purchases aren't available. Check that you're signed in to the store and purchases are allowed on this device.'
-	String get storeUnavailable => 'Purchases aren\'t available. Check that you\'re signed in to the store and purchases are allowed on this device.';
-
-	/// en: 'The Supporter purchase isn't available in your store right now.'
-	String get productNotFound => 'The Supporter purchase isn\'t available in your store right now.';
-
-	/// en: 'Couldn't load the price. Check your connection and try again.'
-	String get productQueryFailed => 'Couldn\'t load the price. Check your connection and try again.';
-
-	/// en: 'The purchase didn't go through. Try again.'
-	String get purchaseFailed => 'The purchase didn\'t go through. Try again.';
-
-	/// en: 'Couldn't reach the store to restore your purchase. Try again.'
-	String get restoreFailed => 'Couldn\'t reach the store to restore your purchase. Try again.';
-
-	/// en: 'No Supporter purchase was found for this store account.'
-	String get nothingToRestore => 'No Supporter purchase was found for this store account.';
-}
-
 // Path: themeEditor.slots
 class Translations$themeEditor$slots$en {
 	Translations$themeEditor$slots$en.internal(this._root);
@@ -9129,8 +9118,8 @@ extension on Translations {
 			'appIcon.title' => 'App icon',
 			'appIcon.defaultIcon' => 'Default',
 			'appIcon.current' => 'Current icon',
-			'appIcon.locked' => 'Supporter perk',
-			'appIcon.lockedHint' => 'Alternate icons are a Supporter perk.',
+			'appIcon.locked' => 'Lifetime access required',
+			'appIcon.lockedHint' => 'Start your 7-day trial or unlock PlezyNG for life to use alternate icons.',
 			'appIcon.changeFailed' => 'Couldn\'t change the app icon',
 			'appIcon.launcherHint' => 'The new icon appears on your home screen once you leave PlezyNG.',
 			'appIcon.tvLauncherHint' => 'The new banner appears once you leave PlezyNG. Android TV can keep showing the old one until the TV restarts.',
@@ -9261,32 +9250,32 @@ extension on Translations {
 			'update.viewRelease' => 'View Release',
 			'update.latestVersion' => 'You are on the latest version',
 			'update.checkFailed' => 'Failed to check for updates',
-			'supporter.title' => 'PlezyNG Supporter',
-			'supporter.intro' => 'A one-time purchase that supports PlezyNG\'s development and unlocks cosmetic extras:',
-			'supporter.presetThemes' => 'Preset themes',
-			'supporter.presetThemesDescription' => 'Ember, Glacier, Forest, Plum and Paper',
-			'supporter.customTheme' => 'Custom theme',
-			'supporter.customThemeDescription' => 'Pick every color yourself',
-			'supporter.appIcons' => 'App icons',
-			'supporter.appIconsDescription' => 'Choose an alternate PlezyNG icon',
-			'supporter.buy' => ({required Object price}) => 'Buy for ${price}',
-			'supporter.loadingPrice' => 'Loading price...',
-			'supporter.restore' => 'Restore Purchases',
-			'supporter.pending' => 'Your purchase is waiting for payment or approval. The extras unlock as soon as the store completes it.',
-			'supporter.thankYouTitle' => 'Thank you for supporting PlezyNG',
-			'supporter.thankYouBody' => 'Your Supporter extras are unlocked.',
-			'supporter.tileSubtitle' => 'Unlock themes and app icons with a one-time purchase',
-			'supporter.tileSubtitleThemesOnly' => 'Unlock themes with a one-time purchase',
-			'supporter.tileUnlocked' => 'Thank you for your support',
-			'supporter.errors.storeUnavailable' => 'Purchases aren\'t available. Check that you\'re signed in to the store and purchases are allowed on this device.',
-			'supporter.errors.productNotFound' => 'The Supporter purchase isn\'t available in your store right now.',
-			'supporter.errors.productQueryFailed' => 'Couldn\'t load the price. Check your connection and try again.',
-			'supporter.errors.purchaseFailed' => 'The purchase didn\'t go through. Try again.',
-			'supporter.errors.restoreFailed' => 'Couldn\'t reach the store to restore your purchase. Try again.',
-			'supporter.errors.nothingToRestore' => 'No Supporter purchase was found for this store account.',
+			'appAccess.title' => 'Try every feature free for 7 days',
+			'appAccess.description' => 'Start a seven-day trial with full access to every PlezyNG feature. There is no charge during the trial and no subscription. After the trial, one lifetime purchase at your store\'s price unlocks PlezyNG for life.',
+			'appAccess.trialEndedDescription' => 'Unlock every feature in PlezyNG for life with one purchase at your store\'s price. There is no subscription.',
+			'appAccess.startTrial' => 'Start my 7-day free trial',
+			'appAccess.trialActive' => 'Your 7-day full-feature trial is active.',
+			'appAccess.trialEnded' => 'Your 7-day trial has ended',
+			'appAccess.trialStartFailed' => 'Couldn\'t save the trial on this device. Please try again.',
+			'appAccess.lifetimeTitle' => 'PlezyNG unlocked for life',
+			'appAccess.lifetimeBody' => 'Thanks! You have lifetime access to every PlezyNG feature.',
+			'appAccess.manageTitle' => 'PlezyNG lifetime access',
+			'appAccess.manageDescription' => 'Try every feature free for 7 days, then unlock everything for life with one payment at your store\'s price.',
+			'appAccess.buy' => ({required Object price}) => 'Unlock every feature for ${price}',
+			'appAccess.loadingPrice' => 'Loading store price...',
+			'appAccess.retryPrice' => 'Retry price lookup',
+			'appAccess.restore' => 'Restore lifetime purchase',
+			'appAccess.pending' => 'Your purchase is waiting for payment or approval. Lifetime access unlocks as soon as the store completes it.',
+			'appAccess.storeUnavailable' => 'Purchases aren\'t available. Check that you\'re signed in to the store and purchases are allowed on this device.',
+			'appAccess.productNotFound' => 'The PlezyNG lifetime unlock isn\'t available in this store yet.',
+			'appAccess.productQueryFailed' => 'Couldn\'t load the store price. Check your connection and try again.',
+			'appAccess.purchaseFailed' => 'The purchase didn\'t go through. Try again.',
+			'appAccess.restoreFailed' => 'Couldn\'t reach the store to restore your purchase. Try again.',
+			'appAccess.nothingToRestore' => 'No PlezyNG lifetime purchase was found for this store account.',
 			'settings.title' => 'Settings',
 			'settings.supportDeveloper' => 'Support PlezyNG',
 			'settings.supportDeveloperDescription' => 'Donate to support development',
+			'settings.lifetimeAccess' => 'PlezyNG lifetime access',
 			'settings.language' => 'Language',
 			'settings.theme' => 'Theme',
 			'settings.appearance' => 'Appearance',
@@ -9709,8 +9698,8 @@ extension on Translations {
 			'themeEditor.customEmpty' => 'Not created yet',
 			'themeEditor.editCustom' => 'Edit custom theme',
 			'themeEditor.editCustomDescription' => 'Choose every color yourself',
-			'themeEditor.locked' => 'Unlock with Supporter',
-			'themeEditor.savedLocked' => 'Saved — unlocks with Supporter',
+			'themeEditor.locked' => 'Lifetime access required',
+			'themeEditor.savedLocked' => 'Saved — available with lifetime access',
 			'themeEditor.title' => 'Custom Theme',
 			'themeEditor.startFrom' => 'Start from',
 			'themeEditor.startFromDescription' => 'Copy all colors from another theme',

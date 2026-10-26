@@ -452,6 +452,14 @@ packages:
       url: "https://pub.dev"
     source: hosted
     version: "2.0.0"
+  flutter_inapp_purchase:
+    dependency: "direct main"
+    description:
+      name: flutter_inapp_purchase
+      sha256: b27a4e39d73651fe74262f37f853a3533915681d4c94e5decf6bfd5b14a2ab09
+      url: "https://pub.dev"
+    source: hosted
+    version: "11.2.0"
   flutter_lints:
     dependency: "direct dev"
     description:

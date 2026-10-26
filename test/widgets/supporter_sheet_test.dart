@@ -9,6 +9,7 @@ import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/screens/settings/supporter_settings_tile.dart';
 import 'package:plezy/services/supporter/supporter_mode.dart';
 import 'package:plezy/services/supporter/supporter_service.dart';
+import 'package:plezy/services/supporter/supporter_store.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:plezy/widgets/overlay_sheet.dart';
@@ -82,7 +83,7 @@ void main() {
     LocaleSettings.setLocaleSync(AppLocale.en);
   });
 
-  testWidgets('shows the perks and the store price, and Buy starts the purchase', (tester) async {
+  testWidgets('shows the lifetime offer and store price, and Buy starts the purchase', (tester) async {
     final harness = _Harness();
     addTearDown(harness.dispose);
     harness.platform.productQueryGate = Completer<void>();
@@ -90,35 +91,33 @@ void main() {
 
     await harness.open(tester, settle: false);
 
-    expect(find.text(t.supporter.title), findsOneWidget);
-    expect(find.text(t.supporter.presetThemes), findsOneWidget);
-    expect(find.text(t.supporter.customTheme), findsOneWidget);
-    expect(find.text(t.supporter.appIcons), findsOneWidget);
-    expect(_enabled(tester, t.supporter.loadingPrice), isFalse);
-    expect(_enabled(tester, t.supporter.restore), isTrue);
+    expect(find.text(t.appAccess.manageTitle), findsOneWidget);
+    expect(find.text(t.appAccess.manageDescription), findsOneWidget);
+    expect(_enabled(tester, t.appAccess.loadingPrice), isFalse);
+    expect(_enabled(tester, t.appAccess.restore), isTrue);
 
     harness.platform.productQueryGate!.complete();
     await tester.pumpAndSettle();
 
-    final buy = t.supporter.buy(price: r'$3.99');
+    final buy = t.appAccess.buy(price: r'$2.99');
     expect(_enabled(tester, buy), isTrue);
     await tester.tap(find.text(buy));
     await tester.pump();
 
-    expect(harness.platform.boughtProductIds, ['supporter']);
+    expect(harness.platform.boughtProductIds, [lifetimeUnlockProductId]);
     expect(_enabled(tester, buy), isFalse);
-    expect(_enabled(tester, t.supporter.restore), isFalse);
+    expect(_enabled(tester, t.appAccess.restore), isFalse);
   });
 
-  testWidgets('platforms without alternate app icons do not offer them', (tester) async {
+  testWidgets('platforms without alternate app icons still show the full app offer', (tester) async {
     final harness = _Harness();
     addTearDown(harness.dispose);
     await harness.pump(tester);
 
     await harness.open(tester);
 
-    expect(find.text(t.supporter.presetThemes), findsOneWidget);
-    expect(find.text(t.supporter.appIcons), findsNothing);
+    expect(find.text(t.appAccess.manageTitle), findsOneWidget);
+    expect(find.text(t.appAccess.manageDescription), findsOneWidget);
   }, variant: TargetPlatformVariant.only(TargetPlatform.windows));
 
   testWidgets('an unavailable price explains why and Retry loads it', (tester) async {
@@ -129,15 +128,15 @@ void main() {
 
     await harness.open(tester);
 
-    expect(find.text(t.supporter.errors.productQueryFailed), findsOneWidget);
-    expect(find.text(t.supporter.loadingPrice), findsNothing);
+    expect(find.text(t.appAccess.productQueryFailed), findsOneWidget);
+    expect(find.text(t.appAccess.loadingPrice), findsNothing);
 
     harness.platform.productQueryError = null;
     await tester.tap(find.text(t.common.retry));
     await tester.pumpAndSettle();
 
-    expect(find.text(t.supporter.errors.productQueryFailed), findsNothing);
-    expect(_enabled(tester, t.supporter.buy(price: r'$3.99')), isTrue);
+    expect(find.text(t.appAccess.productQueryFailed), findsNothing);
+    expect(_enabled(tester, t.appAccess.buy(price: r'$2.99')), isTrue);
   });
 
   testWidgets('a pending purchase says so and holds Buy until the store completes it', (tester) async {
@@ -145,22 +144,22 @@ void main() {
     addTearDown(harness.dispose);
     await harness.pump(tester);
     await harness.open(tester);
-    final buy = t.supporter.buy(price: r'$3.99');
+    final buy = t.appAccess.buy(price: r'$2.99');
 
     await tester.tap(find.text(buy));
     await tester.pump();
     harness.platform.deliver([playPurchase(state: PurchaseStateWrapper.pending)]);
     await tester.pumpAndSettle();
 
-    expect(find.text(t.supporter.pending), findsOneWidget);
+    expect(find.text(t.appAccess.pending), findsOneWidget);
     expect(_enabled(tester, buy), isFalse);
-    expect(_enabled(tester, t.supporter.restore), isTrue);
+    expect(_enabled(tester, t.appAccess.restore), isTrue);
 
     harness.platform.deliver([playPurchase()]);
     await tester.pumpAndSettle();
 
-    expect(find.text(t.supporter.thankYouTitle), findsOneWidget);
-    expect(find.text(t.supporter.pending), findsNothing);
+    expect(find.text(t.appAccess.lifetimeTitle), findsOneWidget);
+    expect(find.text(t.appAccess.pending), findsNothing);
   });
 
   testWidgets('a failed purchase shows the error and Buy works again', (tester) async {
@@ -169,19 +168,19 @@ void main() {
     harness.platform.launchesPurchase = false;
     await harness.pump(tester);
     await harness.open(tester);
-    final buy = t.supporter.buy(price: r'$3.99');
+    final buy = t.appAccess.buy(price: r'$2.99');
 
     await tester.tap(find.text(buy));
     await tester.pumpAndSettle();
 
-    expect(find.text(t.supporter.errors.purchaseFailed), findsOneWidget);
+    expect(find.text(t.appAccess.purchaseFailed), findsOneWidget);
     expect(_enabled(tester, buy), isTrue);
 
     harness.platform.launchesPurchase = true;
     await tester.tap(find.text(buy));
     await tester.pump();
 
-    expect(find.text(t.supporter.errors.purchaseFailed), findsNothing);
+    expect(find.text(t.appAccess.purchaseFailed), findsNothing);
     expect(harness.platform.boughtProductIds, hasLength(2));
   });
 
@@ -191,11 +190,11 @@ void main() {
     await harness.pump(tester);
     await harness.open(tester);
 
-    await tester.tap(find.text(t.supporter.restore));
+    await tester.tap(find.text(t.appAccess.restore));
     await tester.pumpAndSettle();
 
-    expect(find.text(t.supporter.errors.nothingToRestore), findsOneWidget);
-    expect(find.text(t.supporter.thankYouTitle), findsNothing);
+    expect(find.text(t.appAccess.nothingToRestore), findsOneWidget);
+    expect(find.text(t.appAccess.lifetimeTitle), findsNothing);
   });
 
   testWidgets('an error from an earlier visit is gone when the sheet opens again', (tester) async {
@@ -203,16 +202,16 @@ void main() {
     addTearDown(harness.dispose);
     await harness.pump(tester);
     await harness.open(tester);
-    await tester.tap(find.text(t.supporter.restore));
+    await tester.tap(find.text(t.appAccess.restore));
     await tester.pumpAndSettle();
-    expect(find.text(t.supporter.errors.nothingToRestore), findsOneWidget);
+    expect(find.text(t.appAccess.nothingToRestore), findsOneWidget);
 
     await tester.tap(find.byTooltip(t.common.close));
     await tester.pumpAndSettle();
     expect(find.byType(SupporterSheet), findsNothing);
     await harness.open(tester);
 
-    expect(find.text(t.supporter.errors.nothingToRestore), findsNothing);
+    expect(find.text(t.appAccess.nothingToRestore), findsNothing);
   });
 
   testWidgets('shows one notice at a time: the latest action\'s error replaces the price error', (tester) async {
@@ -221,13 +220,13 @@ void main() {
     harness.platform.productQueryError = Exception('offline');
     await harness.pump(tester);
     await harness.open(tester);
-    expect(find.text(t.supporter.errors.productQueryFailed), findsOneWidget);
+    expect(find.text(t.appAccess.productQueryFailed), findsOneWidget);
 
-    await tester.tap(find.text(t.supporter.restore));
+    await tester.tap(find.text(t.appAccess.restore));
     await tester.pumpAndSettle();
 
-    expect(find.text(t.supporter.errors.nothingToRestore), findsOneWidget);
-    expect(find.text(t.supporter.errors.productQueryFailed), findsNothing);
+    expect(find.text(t.appAccess.nothingToRestore), findsOneWidget);
+    expect(find.text(t.appAccess.productQueryFailed), findsNothing);
     expect(find.text(t.common.retry), findsOneWidget);
   });
 
@@ -237,8 +236,8 @@ void main() {
     await harness.pump(tester);
     await harness.open(tester);
 
-    expect(find.text(t.supporter.thankYouTitle), findsOneWidget);
-    expect(find.textContaining(t.supporter.buy(price: '')), findsNothing);
+    expect(find.text(t.appAccess.lifetimeTitle), findsOneWidget);
+    expect(find.textContaining(t.appAccess.buy(price: '')), findsNothing);
 
     await tester.tap(find.text(t.common.close));
     await tester.pumpAndSettle();
@@ -290,7 +289,7 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.select);
       await tester.pumpAndSettle();
       expect(harness.play.historyQueries, 1);
-      expect(find.text(t.supporter.errors.nothingToRestore), findsOneWidget);
+      expect(find.text(t.appAccess.nothingToRestore), findsOneWidget);
 
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
       await tester.pumpAndSettle();
@@ -298,12 +297,12 @@ void main() {
 
       await tester.sendKeyEvent(LogicalKeyboardKey.select);
       await tester.pump();
-      expect(harness.platform.boughtProductIds, ['supporter']);
+      expect(harness.platform.boughtProductIds, [lifetimeUnlockProductId]);
 
       // Unlocking swaps the buttons for the thank-you; focus follows to Close.
       harness.platform.deliver([playPurchase()]);
       await tester.pumpAndSettle();
-      expect(find.text(t.supporter.thankYouTitle), findsOneWidget);
+      expect(find.text(t.appAccess.lifetimeTitle), findsOneWidget);
       expect(_focusedLabel(), 'supporter_close');
 
       await tester.sendKeyEvent(LogicalKeyboardKey.select);
@@ -333,7 +332,7 @@ void main() {
         return rect.top >= viewport.top - 0.5 && rect.bottom <= viewport.bottom + 0.5;
       }
 
-      final intro = find.text(t.supporter.intro);
+      final intro = find.text(t.appAccess.manageDescription);
       final retry = _button(t.common.retry);
 
       // Opening by D-pad focuses Retry without scrolling the intro away.
@@ -344,7 +343,7 @@ void main() {
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowDown);
       await tester.pumpAndSettle();
       expect(_focusedLabel(), 'supporter_restore');
-      expect(inView(_button(t.supporter.restore)), isTrue);
+      expect(inView(_button(t.appAccess.restore)), isTrue);
 
       // A single UP returns to Retry with the intro back in view.
       await tester.sendKeyEvent(LogicalKeyboardKey.arrowUp);
@@ -372,20 +371,21 @@ void main() {
       addTearDown(harness.dispose);
       await harness.pump(tester, body: const SupporterSettingsTile());
 
-      expect(find.text(t.supporter.tileSubtitle), findsOneWidget);
-      await tester.tap(find.text(t.settings.supportDeveloper));
+      expect(find.text(t.settings.lifetimeAccess), findsOneWidget);
+      expect(find.text(t.appAccess.manageDescription), findsOneWidget);
+      await tester.tap(find.text(t.settings.lifetimeAccess));
       await tester.pumpAndSettle();
       expect(find.byType(SupporterSheet), findsOneWidget);
 
-      await tester.tap(find.text(t.supporter.buy(price: r'$3.99')));
+      await tester.tap(find.text(t.appAccess.buy(price: r'$2.99')));
       await tester.pump();
       harness.platform.deliver([playPurchase()]);
       await tester.pumpAndSettle();
       await tester.tap(find.text(t.common.close));
       await tester.pumpAndSettle();
 
-      expect(find.text(t.supporter.tileUnlocked), findsOneWidget);
-      expect(find.text(t.supporter.tileSubtitle), findsNothing);
+      expect(find.text(t.appAccess.lifetimeTitle), findsOneWidget);
+      expect(find.text(t.appAccess.lifetimeBody), findsOneWidget);
     });
   });
 }

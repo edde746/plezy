@@ -45,7 +45,6 @@ class TranslationsHu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$common$hu common = _Translations$common$hu._(_root);
 	@override late final _Translations$screens$hu screens = _Translations$screens$hu._(_root);
 	@override late final _Translations$update$hu update = _Translations$update$hu._(_root);
-	@override late final _Translations$supporter$hu supporter = _Translations$supporter$hu._(_root);
 	@override late final _Translations$settings$hu settings = _Translations$settings$hu._(_root);
 	@override late final _Translations$themeEditor$hu themeEditor = _Translations$themeEditor$hu._(_root);
 	@override late final _Translations$search$hu search = _Translations$search$hu._(_root);
@@ -116,8 +115,6 @@ class _Translations$appIcon$hu extends Translations$appIcon$en {
 	@override String get title => 'Alkalmazásikon';
 	@override String get defaultIcon => 'Alapértelmezett';
 	@override String get current => 'Jelenlegi ikon';
-	@override String get locked => 'Supporter-előny';
-	@override String get lockedHint => 'Az alternatív ikonok a Supporter-előnyök közé tartoznak.';
 	@override String get changeFailed => 'Nem sikerült módosítani az alkalmazásikont';
 	@override String get launcherHint => 'Az új ikon azután jelenik meg a kezdőképernyőn, hogy kiléptél a Plezyből.';
 	@override String get tvLauncherHint => 'Az új banner azután jelenik meg, hogy kiléptél a Plezyből. Az Android TV a TV újraindításáig még a régit is mutathatja.';
@@ -238,33 +235,6 @@ class _Translations$update$hu extends Translations$update$en {
 	@override String get viewRelease => 'Kiadási megjegyzések';
 	@override String get latestVersion => 'A legújabb verziót használod';
 	@override String get checkFailed => 'Nem sikerült az újabb frissítések ellenőrzése';
-}
-
-// Path: supporter
-class _Translations$supporter$hu extends Translations$supporter$en {
-	_Translations$supporter$hu._(TranslationsHu root) : this._root = root, super.internal(root);
-
-	final TranslationsHu _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'PlezyNG Supporter';
-	@override String get intro => 'Egyszeri vásárlás, amely a PlezyNG fejlesztését támogatja, és kozmetikai extrákat old fel:';
-	@override String get presetThemes => 'Előre beállított témák';
-	@override String get presetThemesDescription => 'Parázs, Gleccser, Erdő, Szilva és Papír';
-	@override String get customTheme => 'Egyéni téma';
-	@override String get customThemeDescription => 'Minden színt te választasz ki';
-	@override String get appIcons => 'Alkalmazásikonok';
-	@override String get appIconsDescription => 'Válassz egy alternatív PlezyNG-ikont';
-	@override String buy({required Object price}) => 'Megvásárlás: ${price}';
-	@override String get loadingPrice => 'Ár betöltése...';
-	@override String get restore => 'Vásárlások visszaállítása';
-	@override String get pending => 'A vásárlásod fizetésre vagy jóváhagyásra vár. Az extrák azonnal feloldódnak, amint az áruház lezárja a folyamatot.';
-	@override String get thankYouTitle => 'Köszönjük, hogy támogatod a Plezyt';
-	@override String get thankYouBody => 'A Supporter-extráid fel vannak oldva.';
-	@override String get tileSubtitle => 'Témák és alkalmazásikonok feloldása egyszeri vásárlással';
-	@override String get tileSubtitleThemesOnly => 'Témák feloldása egyszeri vásárlással';
-	@override String get tileUnlocked => 'Köszönjük a támogatásodat';
-	@override late final _Translations$supporter$errors$hu errors = _Translations$supporter$errors$hu._(_root);
 }
 
 // Path: settings
@@ -625,8 +595,6 @@ class _Translations$themeEditor$hu extends Translations$themeEditor$en {
 	@override String get customEmpty => 'Még nincs létrehozva';
 	@override String get editCustom => 'Egyéni téma szerkesztése';
 	@override String get editCustomDescription => 'Válaszd ki magad az összes színt';
-	@override String get locked => 'Supporterrel oldható fel';
-	@override String get savedLocked => 'Mentve — Supporterrel oldható fel';
 	@override String get title => 'Egyéni téma';
 	@override String get startFrom => 'Kiindulási téma';
 	@override String get startFromDescription => 'Az összes szín átmásolása egy másik témából';
@@ -2649,21 +2617,6 @@ class _Translations$common$mediaKind$hu extends Translations$common$mediaKind$en
 	@override String get folder => 'Mappa';
 }
 
-// Path: supporter.errors
-class _Translations$supporter$errors$hu extends Translations$supporter$errors$en {
-	_Translations$supporter$errors$hu._(TranslationsHu root) : this._root = root, super.internal(root);
-
-	final TranslationsHu _root; // ignore: unused_field
-
-	// Translations
-	@override String get storeUnavailable => 'A vásárlás nem érhető el. Ellenőrizd, hogy be vagy-e jelentkezve az áruházba, és engedélyezett-e a vásárlás ezen az eszközön.';
-	@override String get productNotFound => 'A Supporter-vásárlás jelenleg nem érhető el az áruházadban.';
-	@override String get productQueryFailed => 'Nem sikerült betölteni az árat. Ellenőrizd a kapcsolatot, majd próbáld újra.';
-	@override String get purchaseFailed => 'A vásárlás nem sikerült. Próbáld újra.';
-	@override String get restoreFailed => 'Nem sikerült elérni az áruházat a vásárlás visszaállításához. Próbáld újra.';
-	@override String get nothingToRestore => 'Ehhez az áruházfiókhoz nem található Supporter-vásárlás.';
-}
-
 // Path: themeEditor.slots
 class _Translations$themeEditor$slots$hu extends Translations$themeEditor$slots$en {
 	_Translations$themeEditor$slots$hu._(TranslationsHu root) : this._root = root, super.internal(root);
@@ -3534,8 +3487,6 @@ extension on TranslationsHu {
 			'appIcon.title' => 'Alkalmazásikon',
 			'appIcon.defaultIcon' => 'Alapértelmezett',
 			'appIcon.current' => 'Jelenlegi ikon',
-			'appIcon.locked' => 'Supporter-előny',
-			'appIcon.lockedHint' => 'Az alternatív ikonok a Supporter-előnyök közé tartoznak.',
 			'appIcon.changeFailed' => 'Nem sikerült módosítani az alkalmazásikont',
 			'appIcon.launcherHint' => 'Az új ikon azután jelenik meg a kezdőképernyőn, hogy kiléptél a Plezyből.',
 			'appIcon.tvLauncherHint' => 'Az új banner azután jelenik meg, hogy kiléptél a Plezyből. Az Android TV a TV újraindításáig még a régit is mutathatja.',
@@ -3665,29 +3616,6 @@ extension on TranslationsHu {
 			'update.viewRelease' => 'Kiadási megjegyzések',
 			'update.latestVersion' => 'A legújabb verziót használod',
 			'update.checkFailed' => 'Nem sikerült az újabb frissítések ellenőrzése',
-			'supporter.title' => 'PlezyNG Supporter',
-			'supporter.intro' => 'Egyszeri vásárlás, amely a PlezyNG fejlesztését támogatja, és kozmetikai extrákat old fel:',
-			'supporter.presetThemes' => 'Előre beállított témák',
-			'supporter.presetThemesDescription' => 'Parázs, Gleccser, Erdő, Szilva és Papír',
-			'supporter.customTheme' => 'Egyéni téma',
-			'supporter.customThemeDescription' => 'Minden színt te választasz ki',
-			'supporter.appIcons' => 'Alkalmazásikonok',
-			'supporter.appIconsDescription' => 'Válassz egy alternatív PlezyNG-ikont',
-			'supporter.buy' => ({required Object price}) => 'Megvásárlás: ${price}',
-			'supporter.loadingPrice' => 'Ár betöltése...',
-			'supporter.restore' => 'Vásárlások visszaállítása',
-			'supporter.pending' => 'A vásárlásod fizetésre vagy jóváhagyásra vár. Az extrák azonnal feloldódnak, amint az áruház lezárja a folyamatot.',
-			'supporter.thankYouTitle' => 'Köszönjük, hogy támogatod a Plezyt',
-			'supporter.thankYouBody' => 'A Supporter-extráid fel vannak oldva.',
-			'supporter.tileSubtitle' => 'Témák és alkalmazásikonok feloldása egyszeri vásárlással',
-			'supporter.tileSubtitleThemesOnly' => 'Témák feloldása egyszeri vásárlással',
-			'supporter.tileUnlocked' => 'Köszönjük a támogatásodat',
-			'supporter.errors.storeUnavailable' => 'A vásárlás nem érhető el. Ellenőrizd, hogy be vagy-e jelentkezve az áruházba, és engedélyezett-e a vásárlás ezen az eszközön.',
-			'supporter.errors.productNotFound' => 'A Supporter-vásárlás jelenleg nem érhető el az áruházadban.',
-			'supporter.errors.productQueryFailed' => 'Nem sikerült betölteni az árat. Ellenőrizd a kapcsolatot, majd próbáld újra.',
-			'supporter.errors.purchaseFailed' => 'A vásárlás nem sikerült. Próbáld újra.',
-			'supporter.errors.restoreFailed' => 'Nem sikerült elérni az áruházat a vásárlás visszaállításához. Próbáld újra.',
-			'supporter.errors.nothingToRestore' => 'Ehhez az áruházfiókhoz nem található Supporter-vásárlás.',
 			'settings.title' => 'Beállítások',
 			'settings.supportDeveloper' => 'PlezyNG támogatása',
 			'settings.supportDeveloperDescription' => 'Adománnyal támogassa a fejlesztést',
@@ -4030,8 +3958,6 @@ extension on TranslationsHu {
 			'themeEditor.customEmpty' => 'Még nincs létrehozva',
 			'themeEditor.editCustom' => 'Egyéni téma szerkesztése',
 			'themeEditor.editCustomDescription' => 'Válaszd ki magad az összes színt',
-			'themeEditor.locked' => 'Supporterrel oldható fel',
-			'themeEditor.savedLocked' => 'Mentve — Supporterrel oldható fel',
 			'themeEditor.title' => 'Egyéni téma',
 			'themeEditor.startFrom' => 'Kiindulási téma',
 			'themeEditor.startFromDescription' => 'Az összes szín átmásolása egy másik témából',
@@ -4042,8 +3968,6 @@ extension on TranslationsHu {
 			'themeEditor.slots.outline' => 'Körvonal',
 			'themeEditor.slots.text' => 'Szöveg',
 			'themeEditor.slots.textMuted' => 'Másodlagos szöveg',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Kiemelőszín',
 			'themeEditor.opacity' => 'Átlátszatlanság',
 			'themeEditor.hexHint' => '#RRGGBB vagy #AARRGGBB',
@@ -4071,6 +3995,8 @@ extension on TranslationsHu {
 			'search.people' => 'Személyek',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Billentyűparancs beállítása ehhez: ${actionName}',
 			'hotkeys.clearShortcut' => 'Billentyűparancs törlése',
+			_ => null,
+		} ?? switch (path) {
 			'hotkeys.noShortcutSet' => 'Nincs billentyűparancs beállítva',
 			'hotkeys.currentShortcut' => 'Jelenlegi billentyűparancs:',
 			'hotkeys.pressToRecord' => 'Válaszd ki a billentyűparancs rögzítéséhez',
@@ -4556,8 +4482,6 @@ extension on TranslationsHu {
 			'profiles.pinExplain' => '4 jegyű PIN-kód szükséges a profilváltáshoz.',
 			'profiles.continueButton' => 'Folytatás',
 			'profiles.pinsDontMatch' => 'A PIN-kódok nem egyeznek',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.tokenIdentityMismatch' => 'A Plex-profil tokenje nem a várt szerverhez tartozik',
 			'connections.sectionTitle' => 'Kapcsolatok',
 			'connections.addConnection' => 'Kapcsolat hozzáadása',
@@ -4585,6 +4509,8 @@ extension on TranslationsHu {
 			'accountPreferences.groups.libraryDisplay' => 'Könyvtár',
 			'accountPreferences.groups.personalMedia' => 'Személyes média',
 			'accountPreferences.preferredAudioLanguage' => 'Elsődleges hangnyelv',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.autoSelectAudio' => 'Hangsáv kiválasztása nyelv alapján',
 			'accountPreferences.autoSelectAudioDescription' => 'Ki kapcsolásnál a fájl által alapértelmezettként megjelölt hangsáv marad.',
 			'accountPreferences.preferredSubtitleLanguage' => 'Elsődleges feliratnyelv',
@@ -5070,8 +4996,6 @@ extension on TranslationsHu {
 			'liveTv.guideReloadFailed' => 'Nem sikerült frissíteni a műsorújságot',
 			'liveTv.rulesProcessRequested' => 'Szabályok újraértékelése kérve',
 			'liveTv.rulesProcessFailed' => 'Nem sikerült újra kiértékelni a felvételi szabályokat',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordShow' => 'Műsor rögzítése',
 			'liveTv.recordSettings.startEarly' => 'Korábbi kezdés (másodperc)',
 			'liveTv.recordSettings.endLate' => 'Későbbi befejezés (másodperc)',
@@ -5099,6 +5023,8 @@ extension on TranslationsHu {
 			'collections.selectCollection' => 'Gyűjtemény kiválasztása',
 			'collections.collectionName' => 'Gyűjtemény neve',
 			'collections.enterCollectionName' => 'Add meg a gyűjtemény nevét',
+			_ => null,
+		} ?? switch (path) {
 			'collections.addedToCollection' => 'Hozzáadva a gyűjteményhez',
 			'collections.errorAddingToCollection' => 'Nem sikerült a gyűjteményhez adni',
 			'collections.created' => 'Gyűjtemény létrehozva',
@@ -5584,8 +5510,6 @@ extension on TranslationsHu {
 			'performanceOverlay.dvRpus' => 'DV RPU-k',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU-átlag',
 			'performanceOverlay.dvSampleAverage' => 'DV-mintaátlag',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Maximális luma',
 			'performanceOverlay.minLuma' => 'Minimális luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5613,6 +5537,8 @@ extension on TranslationsHu {
 			'externalPlayer.customPlayers' => 'Egyéni lejátszók',
 			'externalPlayer.systemDefault' => 'Rendszer alapértelmezése',
 			'externalPlayer.addCustomPlayer' => 'Egyéni lejátszó hozzáadása',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Lejátszó neve',
 			'externalPlayer.playerNameHint' => 'Saját lejátszó',
 			'externalPlayer.playerCommand' => 'Parancs',

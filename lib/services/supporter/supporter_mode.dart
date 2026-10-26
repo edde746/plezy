@@ -1,16 +1,16 @@
-/// How this build offers the Supporter perks: preset and custom themes and
-/// alternate app icons.
+/// How this build offers PlezyNG's full-app access: a seven-day trial followed
+/// by a one-time lifetime unlock in store builds.
 ///
 /// Chosen per build with `--dart-define=SUPPORTER_MODE=<name>`. Leaving it unset
 /// compiles the perks out.
 enum SupporterMode {
-  /// Perks compiled out: the GitHub iOS IPA and Android APK, and local builds.
+  /// Store access is not compiled in: developer artifacts and local builds.
   off,
 
-  /// Perks unlock through the one-time Supporter purchase: App Store and Google Play.
+  /// Full access uses a seven-day trial and the one-time lifetime purchase.
   iap,
 
-  /// Perks are free in builds configured for free unlocks.
+  /// Full access is free in builds configured for free unlocks.
   unlocked,
 }
 
@@ -24,15 +24,15 @@ const SupporterMode supporterBuildMode = _supporterModeDefine == 'iap'
     ? SupporterMode.unlocked
     : SupporterMode.off;
 
-/// Whether this install shows the perks and how they unlock.
+/// Whether this install applies store access rules.
 enum SupporterAvailability {
-  /// No perk UI anywhere; a stored perk choice renders its default instead.
+  /// No store paywall; intended for developer artifacts and local builds.
   hidden,
 
-  /// Perks are usable without a purchase.
+  /// Access is free.
   free,
 
-  /// Perks unlock through the Supporter in-app purchase.
+  /// Access uses the trial and lifetime in-app purchase.
   purchasable,
 }
 

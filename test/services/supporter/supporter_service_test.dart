@@ -176,7 +176,7 @@ void main() {
       // Retrying after the store recovers prices the product.
       failingPlatform.productQueryError = null;
       await failing.loadProduct();
-      expect(failing.storeState.value.price, r'$3.99');
+      expect(failing.storeState.value.price, r'$2.99');
       expect(failing.storeState.value.productError, isNull);
     });
 
@@ -186,7 +186,7 @@ void main() {
       final notifications = _countNotifications(service);
 
       await service.purchase();
-      expect(platform.boughtProductIds, [supporterProductId]);
+      expect(platform.boughtProductIds, [lifetimeUnlockProductId]);
       expect(service.storeState.value.status, SupporterPurchaseStatus.purchasing);
 
       final purchase = playPurchase();

@@ -45,7 +45,6 @@ class TranslationsNl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$common$nl common = _Translations$common$nl._(_root);
 	@override late final _Translations$screens$nl screens = _Translations$screens$nl._(_root);
 	@override late final _Translations$update$nl update = _Translations$update$nl._(_root);
-	@override late final _Translations$supporter$nl supporter = _Translations$supporter$nl._(_root);
 	@override late final _Translations$settings$nl settings = _Translations$settings$nl._(_root);
 	@override late final _Translations$themeEditor$nl themeEditor = _Translations$themeEditor$nl._(_root);
 	@override late final _Translations$search$nl search = _Translations$search$nl._(_root);
@@ -116,8 +115,6 @@ class _Translations$appIcon$nl extends Translations$appIcon$en {
 	@override String get title => 'App-icoon';
 	@override String get defaultIcon => 'Standaard';
 	@override String get current => 'Huidig icoon';
-	@override String get locked => 'Supporter-voordeel';
-	@override String get lockedHint => 'Alternatieve iconen zijn een Supporter-voordeel.';
 	@override String get changeFailed => 'Het app-icoon kon niet worden gewijzigd';
 	@override String get launcherHint => 'Het nieuwe icoon verschijnt op je beginscherm zodra je PlezyNG verlaat.';
 	@override String get tvLauncherHint => 'De nieuwe banner verschijnt zodra je PlezyNG verlaat. Android TV kan de oude blijven tonen totdat de tv opnieuw is opgestart.';
@@ -238,33 +235,6 @@ class _Translations$update$nl extends Translations$update$en {
 	@override String get viewRelease => 'Bekijk release';
 	@override String get latestVersion => 'Je hebt de nieuwste versie';
 	@override String get checkFailed => 'Kon niet controleren op updates';
-}
-
-// Path: supporter
-class _Translations$supporter$nl extends Translations$supporter$en {
-	_Translations$supporter$nl._(TranslationsNl root) : this._root = root, super.internal(root);
-
-	final TranslationsNl _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'PlezyNG Supporter';
-	@override String get intro => 'Een eenmalige aankoop die de ontwikkeling van PlezyNG steunt en cosmetische extra\'s ontgrendelt:';
-	@override String get presetThemes => 'Kant-en-klare thema\'s';
-	@override String get presetThemesDescription => 'Sintel, Gletsjer, Woud, Pruim en Papier';
-	@override String get customTheme => 'Aangepast thema';
-	@override String get customThemeDescription => 'Kies elke kleur zelf';
-	@override String get appIcons => 'App-iconen';
-	@override String get appIconsDescription => 'Kies een alternatief PlezyNG-icoon';
-	@override String buy({required Object price}) => 'Kopen voor ${price}';
-	@override String get loadingPrice => 'Prijs laden...';
-	@override String get restore => 'Aankopen herstellen';
-	@override String get pending => 'Je aankoop wacht op betaling of goedkeuring. De extra\'s worden ontgrendeld zodra de store de aankoop afrondt.';
-	@override String get thankYouTitle => 'Bedankt dat je PlezyNG steunt';
-	@override String get thankYouBody => 'Je Supporter-extra\'s zijn ontgrendeld.';
-	@override String get tileSubtitle => 'Ontgrendel thema\'s en app-iconen met een eenmalige aankoop';
-	@override String get tileSubtitleThemesOnly => 'Ontgrendel thema\'s met een eenmalige aankoop';
-	@override String get tileUnlocked => 'Bedankt voor je steun';
-	@override late final _Translations$supporter$errors$nl errors = _Translations$supporter$errors$nl._(_root);
 }
 
 // Path: settings
@@ -625,8 +595,6 @@ class _Translations$themeEditor$nl extends Translations$themeEditor$en {
 	@override String get customEmpty => 'Nog niet gemaakt';
 	@override String get editCustom => 'Aangepast thema bewerken';
 	@override String get editCustomDescription => 'Kies elke kleur zelf';
-	@override String get locked => 'Ontgrendelen met Supporter';
-	@override String get savedLocked => 'Opgeslagen — wordt ontgrendeld met Supporter';
 	@override String get title => 'Aangepast thema';
 	@override String get startFrom => 'Beginnen vanaf';
 	@override String get startFromDescription => 'Kopieer alle kleuren van een ander thema';
@@ -2649,21 +2617,6 @@ class _Translations$common$mediaKind$nl extends Translations$common$mediaKind$en
 	@override String get folder => 'Map';
 }
 
-// Path: supporter.errors
-class _Translations$supporter$errors$nl extends Translations$supporter$errors$en {
-	_Translations$supporter$errors$nl._(TranslationsNl root) : this._root = root, super.internal(root);
-
-	final TranslationsNl _root; // ignore: unused_field
-
-	// Translations
-	@override String get storeUnavailable => 'Aankopen zijn niet beschikbaar. Controleer of je bent aangemeld bij de store en of aankopen op dit apparaat zijn toegestaan.';
-	@override String get productNotFound => 'De Supporter-aankoop is momenteel niet beschikbaar in jouw store.';
-	@override String get productQueryFailed => 'De prijs kon niet worden geladen. Controleer je verbinding en probeer het opnieuw.';
-	@override String get purchaseFailed => 'De aankoop is niet gelukt. Probeer het opnieuw.';
-	@override String get restoreFailed => 'De store kon niet worden bereikt om je aankoop te herstellen. Probeer het opnieuw.';
-	@override String get nothingToRestore => 'Er is geen Supporter-aankoop gevonden voor dit store-account.';
-}
-
 // Path: themeEditor.slots
 class _Translations$themeEditor$slots$nl extends Translations$themeEditor$slots$en {
 	_Translations$themeEditor$slots$nl._(TranslationsNl root) : this._root = root, super.internal(root);
@@ -3534,8 +3487,6 @@ extension on TranslationsNl {
 			'appIcon.title' => 'App-icoon',
 			'appIcon.defaultIcon' => 'Standaard',
 			'appIcon.current' => 'Huidig icoon',
-			'appIcon.locked' => 'Supporter-voordeel',
-			'appIcon.lockedHint' => 'Alternatieve iconen zijn een Supporter-voordeel.',
 			'appIcon.changeFailed' => 'Het app-icoon kon niet worden gewijzigd',
 			'appIcon.launcherHint' => 'Het nieuwe icoon verschijnt op je beginscherm zodra je PlezyNG verlaat.',
 			'appIcon.tvLauncherHint' => 'De nieuwe banner verschijnt zodra je PlezyNG verlaat. Android TV kan de oude blijven tonen totdat de tv opnieuw is opgestart.',
@@ -3665,29 +3616,6 @@ extension on TranslationsNl {
 			'update.viewRelease' => 'Bekijk release',
 			'update.latestVersion' => 'Je hebt de nieuwste versie',
 			'update.checkFailed' => 'Kon niet controleren op updates',
-			'supporter.title' => 'PlezyNG Supporter',
-			'supporter.intro' => 'Een eenmalige aankoop die de ontwikkeling van PlezyNG steunt en cosmetische extra\'s ontgrendelt:',
-			'supporter.presetThemes' => 'Kant-en-klare thema\'s',
-			'supporter.presetThemesDescription' => 'Sintel, Gletsjer, Woud, Pruim en Papier',
-			'supporter.customTheme' => 'Aangepast thema',
-			'supporter.customThemeDescription' => 'Kies elke kleur zelf',
-			'supporter.appIcons' => 'App-iconen',
-			'supporter.appIconsDescription' => 'Kies een alternatief PlezyNG-icoon',
-			'supporter.buy' => ({required Object price}) => 'Kopen voor ${price}',
-			'supporter.loadingPrice' => 'Prijs laden...',
-			'supporter.restore' => 'Aankopen herstellen',
-			'supporter.pending' => 'Je aankoop wacht op betaling of goedkeuring. De extra\'s worden ontgrendeld zodra de store de aankoop afrondt.',
-			'supporter.thankYouTitle' => 'Bedankt dat je PlezyNG steunt',
-			'supporter.thankYouBody' => 'Je Supporter-extra\'s zijn ontgrendeld.',
-			'supporter.tileSubtitle' => 'Ontgrendel thema\'s en app-iconen met een eenmalige aankoop',
-			'supporter.tileSubtitleThemesOnly' => 'Ontgrendel thema\'s met een eenmalige aankoop',
-			'supporter.tileUnlocked' => 'Bedankt voor je steun',
-			'supporter.errors.storeUnavailable' => 'Aankopen zijn niet beschikbaar. Controleer of je bent aangemeld bij de store en of aankopen op dit apparaat zijn toegestaan.',
-			'supporter.errors.productNotFound' => 'De Supporter-aankoop is momenteel niet beschikbaar in jouw store.',
-			'supporter.errors.productQueryFailed' => 'De prijs kon niet worden geladen. Controleer je verbinding en probeer het opnieuw.',
-			'supporter.errors.purchaseFailed' => 'De aankoop is niet gelukt. Probeer het opnieuw.',
-			'supporter.errors.restoreFailed' => 'De store kon niet worden bereikt om je aankoop te herstellen. Probeer het opnieuw.',
-			'supporter.errors.nothingToRestore' => 'Er is geen Supporter-aankoop gevonden voor dit store-account.',
 			'settings.title' => 'Instellingen',
 			'settings.supportDeveloper' => 'Steun PlezyNG',
 			'settings.supportDeveloperDescription' => 'Doneer om de ontwikkeling te steunen',
@@ -4030,8 +3958,6 @@ extension on TranslationsNl {
 			'themeEditor.customEmpty' => 'Nog niet gemaakt',
 			'themeEditor.editCustom' => 'Aangepast thema bewerken',
 			'themeEditor.editCustomDescription' => 'Kies elke kleur zelf',
-			'themeEditor.locked' => 'Ontgrendelen met Supporter',
-			'themeEditor.savedLocked' => 'Opgeslagen — wordt ontgrendeld met Supporter',
 			'themeEditor.title' => 'Aangepast thema',
 			'themeEditor.startFrom' => 'Beginnen vanaf',
 			'themeEditor.startFromDescription' => 'Kopieer alle kleuren van een ander thema',
@@ -4042,8 +3968,6 @@ extension on TranslationsNl {
 			'themeEditor.slots.outline' => 'Rand',
 			'themeEditor.slots.text' => 'Tekst',
 			'themeEditor.slots.textMuted' => 'Secundaire tekst',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Accent',
 			'themeEditor.opacity' => 'Dekking',
 			'themeEditor.hexHint' => '#RRGGBB of #AARRGGBB',
@@ -4071,6 +3995,8 @@ extension on TranslationsNl {
 			'search.people' => 'Personen',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Stel sneltoets in voor ${actionName}',
 			'hotkeys.clearShortcut' => 'Wis sneltoets',
+			_ => null,
+		} ?? switch (path) {
 			'hotkeys.noShortcutSet' => 'Geen sneltoets ingesteld',
 			'hotkeys.currentShortcut' => 'Huidige sneltoets:',
 			'hotkeys.pressToRecord' => 'Selecteer om een sneltoets op te nemen',
@@ -4556,8 +4482,6 @@ extension on TranslationsNl {
 			'profiles.pinExplain' => 'Een viercijferige pincode is vereist om van profiel te wisselen.',
 			'profiles.continueButton' => 'Doorgaan',
 			'profiles.pinsDontMatch' => 'De pincodes komen niet overeen',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.tokenIdentityMismatch' => 'Het token van het Plex-profiel bleek bij een onverwachte server te horen',
 			'connections.sectionTitle' => 'Verbindingen',
 			'connections.addConnection' => 'Verbinding toevoegen',
@@ -4585,6 +4509,8 @@ extension on TranslationsNl {
 			'accountPreferences.groups.libraryDisplay' => 'Bibliotheek',
 			'accountPreferences.groups.personalMedia' => 'Persoonlijke media',
 			'accountPreferences.preferredAudioLanguage' => 'Voorkeurstaal voor audio',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.autoSelectAudio' => 'Kies audio op taal',
 			'accountPreferences.autoSelectAudioDescription' => 'Bij \'Uit\' wordt de audiotrack gebruikt die het bestand als standaard markeert.',
 			'accountPreferences.preferredSubtitleLanguage' => 'Voorkeurstaal voor ondertitels',
@@ -5070,8 +4996,6 @@ extension on TranslationsNl {
 			'liveTv.guideReloadFailed' => 'Gids herladen mislukt',
 			'liveTv.rulesProcessRequested' => 'Nieuwe evaluatie van regels aangevraagd',
 			'liveTv.rulesProcessFailed' => 'Opnameregels opnieuw uitvoeren mislukt',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordShow' => 'Programma opnemen',
 			'liveTv.recordSettings.startEarly' => 'Eerder beginnen (seconden)',
 			'liveTv.recordSettings.endLate' => 'Later stoppen (seconden)',
@@ -5099,6 +5023,8 @@ extension on TranslationsNl {
 			'collections.selectCollection' => 'Collectie selecteren',
 			'collections.collectionName' => 'Collectienaam',
 			'collections.enterCollectionName' => 'Voer een collectienaam in',
+			_ => null,
+		} ?? switch (path) {
 			'collections.addedToCollection' => 'Toegevoegd aan collectie',
 			'collections.errorAddingToCollection' => 'Fout bij toevoegen aan collectie',
 			'collections.created' => 'Collectie gemaakt',
@@ -5584,8 +5510,6 @@ extension on TranslationsNl {
 			'performanceOverlay.dvRpus' => 'DV RPU’s',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU gem.',
 			'performanceOverlay.dvSampleAverage' => 'DV-sample gem.',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Max luma',
 			'performanceOverlay.minLuma' => 'Min luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5613,6 +5537,8 @@ extension on TranslationsNl {
 			'externalPlayer.customPlayers' => 'Aangepaste spelers',
 			'externalPlayer.systemDefault' => 'Systeemstandaard',
 			'externalPlayer.addCustomPlayer' => 'Aangepaste speler toevoegen',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Spelernaam',
 			'externalPlayer.playerNameHint' => 'Mijn speler',
 			'externalPlayer.playerCommand' => 'Commando',

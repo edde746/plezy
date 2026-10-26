@@ -24,7 +24,7 @@ class AppIconException implements Exception {
 
 /// The home-screen icon over `com.plezy/app_icon`: iOS, iPadOS and tvOS
 /// alternate icons, Android launcher aliases. Provided at the root scope
-/// because the icon belongs to the device, like the Supporter entitlement it
+/// because the icon belongs to the device, like the lifetime entitlement it
 /// follows.
 ///
 /// The platform persists the choice; this service only mirrors it. A confirmed
@@ -41,7 +41,7 @@ class AppIconService extends ChangeNotifier with DisposableChangeNotifierMixin {
   static const channel = MethodChannel('com.plezy/app_icon');
 
   /// Alternate icons ship on iOS/iPadOS, tvOS (reported as iOS) and Android,
-  /// and only in builds that offer the Supporter perks. The native side still
+  /// and only in store or unlocked builds. The native side still
   /// answers whether this device's launcher can switch.
   static bool get _defaultPlatformHasAlternateIcons =>
       supporterBuildMode != SupporterMode.off && (Platform.isIOS || Platform.isAndroid);

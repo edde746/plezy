@@ -45,7 +45,6 @@ class TranslationsKo extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$common$ko common = _Translations$common$ko._(_root);
 	@override late final _Translations$screens$ko screens = _Translations$screens$ko._(_root);
 	@override late final _Translations$update$ko update = _Translations$update$ko._(_root);
-	@override late final _Translations$supporter$ko supporter = _Translations$supporter$ko._(_root);
 	@override late final _Translations$settings$ko settings = _Translations$settings$ko._(_root);
 	@override late final _Translations$themeEditor$ko themeEditor = _Translations$themeEditor$ko._(_root);
 	@override late final _Translations$search$ko search = _Translations$search$ko._(_root);
@@ -116,8 +115,6 @@ class _Translations$appIcon$ko extends Translations$appIcon$en {
 	@override String get title => '앱 아이콘';
 	@override String get defaultIcon => '기본';
 	@override String get current => '현재 아이콘';
-	@override String get locked => 'Supporter 혜택';
-	@override String get lockedHint => '대체 아이콘은 Supporter 혜택입니다.';
 	@override String get changeFailed => '앱 아이콘을 변경하지 못했습니다';
 	@override String get launcherHint => 'Plezy를 나가면 홈 화면에 새 아이콘이 표시됩니다.';
 	@override String get tvLauncherHint => 'Plezy를 나가면 새 배너가 표시됩니다. Android TV에서는 TV를 다시 시작할 때까지 이전 배너가 계속 표시될 수 있습니다.';
@@ -238,33 +235,6 @@ class _Translations$update$ko extends Translations$update$en {
 	@override String get viewRelease => '릴리스 정보 보기';
 	@override String get latestVersion => '최신 버전을 사용 중입니다';
 	@override String get checkFailed => '업데이트 확인 실패';
-}
-
-// Path: supporter
-class _Translations$supporter$ko extends Translations$supporter$en {
-	_Translations$supporter$ko._(TranslationsKo root) : this._root = root, super.internal(root);
-
-	final TranslationsKo _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'PlezyNG Supporter';
-	@override String get intro => 'PlezyNG 개발을 후원하고 외형 꾸미기 기능을 잠금 해제하는 1회성 구매입니다:';
-	@override String get presetThemes => '프리셋 테마';
-	@override String get presetThemesDescription => '불씨, 빙하, 숲, 자두, 종이';
-	@override String get customTheme => '사용자 지정 테마';
-	@override String get customThemeDescription => '모든 색상을 직접 선택';
-	@override String get appIcons => '앱 아이콘';
-	@override String get appIconsDescription => '대체 PlezyNG 아이콘 선택';
-	@override String buy({required Object price}) => '${price}에 구매';
-	@override String get loadingPrice => '가격 불러오는 중...';
-	@override String get restore => '구매 복원';
-	@override String get pending => '구매가 결제 또는 승인 대기 중입니다. 스토어에서 처리가 완료되는 즉시 추가 기능이 잠금 해제됩니다.';
-	@override String get thankYouTitle => 'Plezy를 후원해 주셔서 감사합니다';
-	@override String get thankYouBody => 'Supporter 추가 기능이 잠금 해제되었습니다.';
-	@override String get tileSubtitle => '1회성 구매로 테마와 앱 아이콘 잠금 해제';
-	@override String get tileSubtitleThemesOnly => '1회성 구매로 테마 잠금 해제';
-	@override String get tileUnlocked => '후원해 주셔서 감사합니다';
-	@override late final _Translations$supporter$errors$ko errors = _Translations$supporter$errors$ko._(_root);
 }
 
 // Path: settings
@@ -625,8 +595,6 @@ class _Translations$themeEditor$ko extends Translations$themeEditor$en {
 	@override String get customEmpty => '아직 만들지 않음';
 	@override String get editCustom => '사용자 지정 테마 편집';
 	@override String get editCustomDescription => '모든 색상을 직접 선택';
-	@override String get locked => 'Supporter로 잠금 해제';
-	@override String get savedLocked => '저장됨 — Supporter로 잠금 해제';
 	@override String get title => '사용자 지정 테마';
 	@override String get startFrom => '기반 테마';
 	@override String get startFromDescription => '다른 테마의 모든 색상을 복사합니다';
@@ -2639,21 +2607,6 @@ class _Translations$common$mediaKind$ko extends Translations$common$mediaKind$en
 	@override String get folder => '폴더';
 }
 
-// Path: supporter.errors
-class _Translations$supporter$errors$ko extends Translations$supporter$errors$en {
-	_Translations$supporter$errors$ko._(TranslationsKo root) : this._root = root, super.internal(root);
-
-	final TranslationsKo _root; // ignore: unused_field
-
-	// Translations
-	@override String get storeUnavailable => '구매를 이용할 수 없습니다. 스토어에 로그인되어 있고 이 기기에서 구매가 허용되어 있는지 확인하세요.';
-	@override String get productNotFound => '현재 스토어에서 Supporter를 구매할 수 없습니다.';
-	@override String get productQueryFailed => '가격을 불러오지 못했습니다. 연결을 확인하고 다시 시도하세요.';
-	@override String get purchaseFailed => '구매가 완료되지 않았습니다. 다시 시도하세요.';
-	@override String get restoreFailed => '구매를 복원하기 위해 스토어에 연결하지 못했습니다. 다시 시도하세요.';
-	@override String get nothingToRestore => '이 스토어 계정에서 Supporter 구매 내역을 찾을 수 없습니다.';
-}
-
 // Path: themeEditor.slots
 class _Translations$themeEditor$slots$ko extends Translations$themeEditor$slots$en {
 	_Translations$themeEditor$slots$ko._(TranslationsKo root) : this._root = root, super.internal(root);
@@ -3522,8 +3475,6 @@ extension on TranslationsKo {
 			'appIcon.title' => '앱 아이콘',
 			'appIcon.defaultIcon' => '기본',
 			'appIcon.current' => '현재 아이콘',
-			'appIcon.locked' => 'Supporter 혜택',
-			'appIcon.lockedHint' => '대체 아이콘은 Supporter 혜택입니다.',
 			'appIcon.changeFailed' => '앱 아이콘을 변경하지 못했습니다',
 			'appIcon.launcherHint' => 'Plezy를 나가면 홈 화면에 새 아이콘이 표시됩니다.',
 			'appIcon.tvLauncherHint' => 'Plezy를 나가면 새 배너가 표시됩니다. Android TV에서는 TV를 다시 시작할 때까지 이전 배너가 계속 표시될 수 있습니다.',
@@ -3653,29 +3604,6 @@ extension on TranslationsKo {
 			'update.viewRelease' => '릴리스 정보 보기',
 			'update.latestVersion' => '최신 버전을 사용 중입니다',
 			'update.checkFailed' => '업데이트 확인 실패',
-			'supporter.title' => 'PlezyNG Supporter',
-			'supporter.intro' => 'PlezyNG 개발을 후원하고 외형 꾸미기 기능을 잠금 해제하는 1회성 구매입니다:',
-			'supporter.presetThemes' => '프리셋 테마',
-			'supporter.presetThemesDescription' => '불씨, 빙하, 숲, 자두, 종이',
-			'supporter.customTheme' => '사용자 지정 테마',
-			'supporter.customThemeDescription' => '모든 색상을 직접 선택',
-			'supporter.appIcons' => '앱 아이콘',
-			'supporter.appIconsDescription' => '대체 PlezyNG 아이콘 선택',
-			'supporter.buy' => ({required Object price}) => '${price}에 구매',
-			'supporter.loadingPrice' => '가격 불러오는 중...',
-			'supporter.restore' => '구매 복원',
-			'supporter.pending' => '구매가 결제 또는 승인 대기 중입니다. 스토어에서 처리가 완료되는 즉시 추가 기능이 잠금 해제됩니다.',
-			'supporter.thankYouTitle' => 'Plezy를 후원해 주셔서 감사합니다',
-			'supporter.thankYouBody' => 'Supporter 추가 기능이 잠금 해제되었습니다.',
-			'supporter.tileSubtitle' => '1회성 구매로 테마와 앱 아이콘 잠금 해제',
-			'supporter.tileSubtitleThemesOnly' => '1회성 구매로 테마 잠금 해제',
-			'supporter.tileUnlocked' => '후원해 주셔서 감사합니다',
-			'supporter.errors.storeUnavailable' => '구매를 이용할 수 없습니다. 스토어에 로그인되어 있고 이 기기에서 구매가 허용되어 있는지 확인하세요.',
-			'supporter.errors.productNotFound' => '현재 스토어에서 Supporter를 구매할 수 없습니다.',
-			'supporter.errors.productQueryFailed' => '가격을 불러오지 못했습니다. 연결을 확인하고 다시 시도하세요.',
-			'supporter.errors.purchaseFailed' => '구매가 완료되지 않았습니다. 다시 시도하세요.',
-			'supporter.errors.restoreFailed' => '구매를 복원하기 위해 스토어에 연결하지 못했습니다. 다시 시도하세요.',
-			'supporter.errors.nothingToRestore' => '이 스토어 계정에서 Supporter 구매 내역을 찾을 수 없습니다.',
 			'settings.title' => '설정',
 			'settings.supportDeveloper' => 'PlezyNG 후원하기',
 			'settings.supportDeveloperDescription' => '기부로 개발을 지원하세요',
@@ -4018,8 +3946,6 @@ extension on TranslationsKo {
 			'themeEditor.customEmpty' => '아직 만들지 않음',
 			'themeEditor.editCustom' => '사용자 지정 테마 편집',
 			'themeEditor.editCustomDescription' => '모든 색상을 직접 선택',
-			'themeEditor.locked' => 'Supporter로 잠금 해제',
-			'themeEditor.savedLocked' => '저장됨 — Supporter로 잠금 해제',
 			'themeEditor.title' => '사용자 지정 테마',
 			'themeEditor.startFrom' => '기반 테마',
 			'themeEditor.startFromDescription' => '다른 테마의 모든 색상을 복사합니다',
@@ -4030,8 +3956,6 @@ extension on TranslationsKo {
 			'themeEditor.slots.outline' => '윤곽선',
 			'themeEditor.slots.text' => '텍스트',
 			'themeEditor.slots.textMuted' => '보조 텍스트',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => '강조색',
 			'themeEditor.opacity' => '불투명도',
 			'themeEditor.hexHint' => '#RRGGBB 또는 #AARRGGBB',
@@ -4059,6 +3983,8 @@ extension on TranslationsKo {
 			'search.people' => '인물',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => '${actionName}에 대한 단축키 설정',
 			'hotkeys.clearShortcut' => '단축키 삭제',
+			_ => null,
+		} ?? switch (path) {
 			'hotkeys.noShortcutSet' => '설정된 단축키 없음',
 			'hotkeys.currentShortcut' => '현재 단축키:',
 			'hotkeys.pressToRecord' => '단축키를 기록하려면 선택',
@@ -4544,8 +4470,6 @@ extension on TranslationsKo {
 			'profiles.pinExplain' => '프로필 전환에는 4자리 PIN이 필요합니다.',
 			'profiles.continueButton' => '계속',
 			'profiles.pinsDontMatch' => 'PIN이 일치하지 않습니다',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.tokenIdentityMismatch' => 'Plex 프로필 토큰이 예상과 다른 서버로 확인되었습니다',
 			'connections.sectionTitle' => '연결',
 			'connections.addConnection' => '연결 추가',
@@ -4573,6 +4497,8 @@ extension on TranslationsKo {
 			'accountPreferences.groups.libraryDisplay' => '라이브러리',
 			'accountPreferences.groups.personalMedia' => '개인 미디어',
 			'accountPreferences.preferredAudioLanguage' => '선호 오디오 언어',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.autoSelectAudio' => '언어별로 오디오 선택',
 			'accountPreferences.autoSelectAudioDescription' => '끄면 파일이 기본으로 표시한 오디오 트랙을 유지합니다.',
 			'accountPreferences.preferredSubtitleLanguage' => '선호 자막 언어',
@@ -5058,8 +4984,6 @@ extension on TranslationsKo {
 			'liveTv.guideReloadFailed' => '편성표를 새로고침할 수 없습니다',
 			'liveTv.rulesProcessRequested' => '규칙 재평가 요청됨',
 			'liveTv.rulesProcessFailed' => '녹화 규칙을 다시 적용할 수 없습니다',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordShow' => '프로그램 녹화',
 			'liveTv.recordSettings.startEarly' => '일찍 시작 (초)',
 			'liveTv.recordSettings.endLate' => '늦게 종료 (초)',
@@ -5087,6 +5011,8 @@ extension on TranslationsKo {
 			'collections.selectCollection' => '컬렉션 선택',
 			'collections.collectionName' => '컬렉션 이름',
 			'collections.enterCollectionName' => '컬렉션 이름 입력',
+			_ => null,
+		} ?? switch (path) {
 			'collections.addedToCollection' => '컬렉션에 추가됨',
 			'collections.errorAddingToCollection' => '컬렉션에 추가 실패',
 			'collections.created' => '컬렉션 생성됨',
@@ -5572,8 +5498,6 @@ extension on TranslationsKo {
 			'performanceOverlay.dvRpus' => 'DV RPU',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU 평균',
 			'performanceOverlay.dvSampleAverage' => 'DV 샘플 평균',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => '최대 휘도',
 			'performanceOverlay.minLuma' => '최소 휘도',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5601,6 +5525,8 @@ extension on TranslationsKo {
 			'externalPlayer.customPlayers' => '사용자 정의 플레이어',
 			'externalPlayer.systemDefault' => '시스템 기본값',
 			'externalPlayer.addCustomPlayer' => '사용자 정의 플레이어 추가',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => '플레이어 이름',
 			'externalPlayer.playerNameHint' => '내 플레이어',
 			'externalPlayer.playerCommand' => '명령어',

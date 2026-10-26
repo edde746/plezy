@@ -45,7 +45,6 @@ class TranslationsDa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$common$da common = _Translations$common$da._(_root);
 	@override late final _Translations$screens$da screens = _Translations$screens$da._(_root);
 	@override late final _Translations$update$da update = _Translations$update$da._(_root);
-	@override late final _Translations$supporter$da supporter = _Translations$supporter$da._(_root);
 	@override late final _Translations$settings$da settings = _Translations$settings$da._(_root);
 	@override late final _Translations$themeEditor$da themeEditor = _Translations$themeEditor$da._(_root);
 	@override late final _Translations$search$da search = _Translations$search$da._(_root);
@@ -116,8 +115,6 @@ class _Translations$appIcon$da extends Translations$appIcon$en {
 	@override String get title => 'Appikon';
 	@override String get defaultIcon => 'Standard';
 	@override String get current => 'Nuværende ikon';
-	@override String get locked => 'Supporter-fordel';
-	@override String get lockedHint => 'Alternative ikoner er en Supporter-fordel.';
 	@override String get changeFailed => 'Kunne ikke ændre appikonet';
 	@override String get launcherHint => 'Det nye ikon vises på din startskærm, når du forlader PlezyNG.';
 	@override String get tvLauncherHint => 'Det nye banner vises, når du forlader PlezyNG. Android TV kan blive ved med at vise det gamle, indtil tv\'et genstartes.';
@@ -238,33 +235,6 @@ class _Translations$update$da extends Translations$update$en {
 	@override String get viewRelease => 'Vis udgivelse';
 	@override String get latestVersion => 'Du har den nyeste version';
 	@override String get checkFailed => 'Kunne ikke søge efter opdateringer';
-}
-
-// Path: supporter
-class _Translations$supporter$da extends Translations$supporter$en {
-	_Translations$supporter$da._(TranslationsDa root) : this._root = root, super.internal(root);
-
-	final TranslationsDa _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'PlezyNG Supporter';
-	@override String get intro => 'Et engangskøb, der støtter udviklingen af PlezyNG og låser op for kosmetiske tilføjelser:';
-	@override String get presetThemes => 'Forudindstillede temaer';
-	@override String get presetThemesDescription => 'Glød, Gletsjer, Skov, Blomme og Papir';
-	@override String get customTheme => 'Brugerdefineret tema';
-	@override String get customThemeDescription => 'Vælg selv alle farver';
-	@override String get appIcons => 'Appikoner';
-	@override String get appIconsDescription => 'Vælg et alternativt PlezyNG-ikon';
-	@override String buy({required Object price}) => 'Køb for ${price}';
-	@override String get loadingPrice => 'Indlæser pris...';
-	@override String get restore => 'Gendan køb';
-	@override String get pending => 'Dit køb afventer betaling eller godkendelse. Tilføjelserne låses op, så snart butikken har gennemført det.';
-	@override String get thankYouTitle => 'Tak for din støtte til PlezyNG';
-	@override String get thankYouBody => 'Dine Supporter-tilføjelser er låst op.';
-	@override String get tileSubtitle => 'Lås temaer og appikoner op med et engangskøb';
-	@override String get tileSubtitleThemesOnly => 'Lås temaer op med et engangskøb';
-	@override String get tileUnlocked => 'Tak for din støtte';
-	@override late final _Translations$supporter$errors$da errors = _Translations$supporter$errors$da._(_root);
 }
 
 // Path: settings
@@ -625,8 +595,6 @@ class _Translations$themeEditor$da extends Translations$themeEditor$en {
 	@override String get customEmpty => 'Ikke oprettet endnu';
 	@override String get editCustom => 'Rediger brugerdefineret tema';
 	@override String get editCustomDescription => 'Vælg selv alle farver';
-	@override String get locked => 'Lås op med Supporter';
-	@override String get savedLocked => 'Gemt — låses op med Supporter';
 	@override String get title => 'Brugerdefineret tema';
 	@override String get startFrom => 'Start fra';
 	@override String get startFromDescription => 'Kopiér alle farver fra et andet tema';
@@ -2649,21 +2617,6 @@ class _Translations$common$mediaKind$da extends Translations$common$mediaKind$en
 	@override String get folder => 'Mappe';
 }
 
-// Path: supporter.errors
-class _Translations$supporter$errors$da extends Translations$supporter$errors$en {
-	_Translations$supporter$errors$da._(TranslationsDa root) : this._root = root, super.internal(root);
-
-	final TranslationsDa _root; // ignore: unused_field
-
-	// Translations
-	@override String get storeUnavailable => 'Køb er ikke tilgængelige. Tjek, at du er logget ind i butikken, og at køb er tilladt på denne enhed.';
-	@override String get productNotFound => 'Supporter-købet er ikke tilgængeligt i din butik lige nu.';
-	@override String get productQueryFailed => 'Kunne ikke indlæse prisen. Tjek din forbindelse, og prøv igen.';
-	@override String get purchaseFailed => 'Købet blev ikke gennemført. Prøv igen.';
-	@override String get restoreFailed => 'Kunne ikke kontakte butikken for at gendanne dit køb. Prøv igen.';
-	@override String get nothingToRestore => 'Der blev ikke fundet noget Supporter-køb for denne butikskonto.';
-}
-
 // Path: themeEditor.slots
 class _Translations$themeEditor$slots$da extends Translations$themeEditor$slots$en {
 	_Translations$themeEditor$slots$da._(TranslationsDa root) : this._root = root, super.internal(root);
@@ -3534,8 +3487,6 @@ extension on TranslationsDa {
 			'appIcon.title' => 'Appikon',
 			'appIcon.defaultIcon' => 'Standard',
 			'appIcon.current' => 'Nuværende ikon',
-			'appIcon.locked' => 'Supporter-fordel',
-			'appIcon.lockedHint' => 'Alternative ikoner er en Supporter-fordel.',
 			'appIcon.changeFailed' => 'Kunne ikke ændre appikonet',
 			'appIcon.launcherHint' => 'Det nye ikon vises på din startskærm, når du forlader PlezyNG.',
 			'appIcon.tvLauncherHint' => 'Det nye banner vises, når du forlader PlezyNG. Android TV kan blive ved med at vise det gamle, indtil tv\'et genstartes.',
@@ -3665,29 +3616,6 @@ extension on TranslationsDa {
 			'update.viewRelease' => 'Vis udgivelse',
 			'update.latestVersion' => 'Du har den nyeste version',
 			'update.checkFailed' => 'Kunne ikke søge efter opdateringer',
-			'supporter.title' => 'PlezyNG Supporter',
-			'supporter.intro' => 'Et engangskøb, der støtter udviklingen af PlezyNG og låser op for kosmetiske tilføjelser:',
-			'supporter.presetThemes' => 'Forudindstillede temaer',
-			'supporter.presetThemesDescription' => 'Glød, Gletsjer, Skov, Blomme og Papir',
-			'supporter.customTheme' => 'Brugerdefineret tema',
-			'supporter.customThemeDescription' => 'Vælg selv alle farver',
-			'supporter.appIcons' => 'Appikoner',
-			'supporter.appIconsDescription' => 'Vælg et alternativt PlezyNG-ikon',
-			'supporter.buy' => ({required Object price}) => 'Køb for ${price}',
-			'supporter.loadingPrice' => 'Indlæser pris...',
-			'supporter.restore' => 'Gendan køb',
-			'supporter.pending' => 'Dit køb afventer betaling eller godkendelse. Tilføjelserne låses op, så snart butikken har gennemført det.',
-			'supporter.thankYouTitle' => 'Tak for din støtte til PlezyNG',
-			'supporter.thankYouBody' => 'Dine Supporter-tilføjelser er låst op.',
-			'supporter.tileSubtitle' => 'Lås temaer og appikoner op med et engangskøb',
-			'supporter.tileSubtitleThemesOnly' => 'Lås temaer op med et engangskøb',
-			'supporter.tileUnlocked' => 'Tak for din støtte',
-			'supporter.errors.storeUnavailable' => 'Køb er ikke tilgængelige. Tjek, at du er logget ind i butikken, og at køb er tilladt på denne enhed.',
-			'supporter.errors.productNotFound' => 'Supporter-købet er ikke tilgængeligt i din butik lige nu.',
-			'supporter.errors.productQueryFailed' => 'Kunne ikke indlæse prisen. Tjek din forbindelse, og prøv igen.',
-			'supporter.errors.purchaseFailed' => 'Købet blev ikke gennemført. Prøv igen.',
-			'supporter.errors.restoreFailed' => 'Kunne ikke kontakte butikken for at gendanne dit køb. Prøv igen.',
-			'supporter.errors.nothingToRestore' => 'Der blev ikke fundet noget Supporter-køb for denne butikskonto.',
 			'settings.title' => 'Indstillinger',
 			'settings.supportDeveloper' => 'Støt PlezyNG',
 			'settings.supportDeveloperDescription' => 'Donér for at støtte udviklingen',
@@ -4030,8 +3958,6 @@ extension on TranslationsDa {
 			'themeEditor.customEmpty' => 'Ikke oprettet endnu',
 			'themeEditor.editCustom' => 'Rediger brugerdefineret tema',
 			'themeEditor.editCustomDescription' => 'Vælg selv alle farver',
-			'themeEditor.locked' => 'Lås op med Supporter',
-			'themeEditor.savedLocked' => 'Gemt — låses op med Supporter',
 			'themeEditor.title' => 'Brugerdefineret tema',
 			'themeEditor.startFrom' => 'Start fra',
 			'themeEditor.startFromDescription' => 'Kopiér alle farver fra et andet tema',
@@ -4042,8 +3968,6 @@ extension on TranslationsDa {
 			'themeEditor.slots.outline' => 'Kontur',
 			'themeEditor.slots.text' => 'Tekst',
 			'themeEditor.slots.textMuted' => 'Sekundær tekst',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Accentfarve',
 			'themeEditor.opacity' => 'Opacitet',
 			'themeEditor.hexHint' => '#RRGGBB eller #AARRGGBB',
@@ -4071,6 +3995,8 @@ extension on TranslationsDa {
 			'search.people' => 'Personer',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Indstil genvej for ${actionName}',
 			'hotkeys.clearShortcut' => 'Ryd genvej',
+			_ => null,
+		} ?? switch (path) {
 			'hotkeys.noShortcutSet' => 'Ingen genvej angivet',
 			'hotkeys.currentShortcut' => 'Nuværende genvej:',
 			'hotkeys.pressToRecord' => 'Vælg for at registrere en genvej',
@@ -4556,8 +4482,6 @@ extension on TranslationsDa {
 			'profiles.pinExplain' => 'Der kræves en 4-cifret PIN-kode for at skifte profil.',
 			'profiles.continueButton' => 'Fortsæt',
 			'profiles.pinsDontMatch' => 'PIN-koderne matcher ikke',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.tokenIdentityMismatch' => 'Plex-profiltokenet blev knyttet til en uventet server',
 			'connections.sectionTitle' => 'Forbindelser',
 			'connections.addConnection' => 'Tilføj forbindelse',
@@ -4585,6 +4509,8 @@ extension on TranslationsDa {
 			'accountPreferences.groups.libraryDisplay' => 'Bibliotek',
 			'accountPreferences.groups.personalMedia' => 'Personlige medier',
 			'accountPreferences.preferredAudioLanguage' => 'Foretrukket lydsprog',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.autoSelectAudio' => 'Vælg lyd ud fra sprog',
 			'accountPreferences.autoSelectAudioDescription' => 'Fra beholder det lydspor, som filen markerer som standard.',
 			'accountPreferences.preferredSubtitleLanguage' => 'Foretrukket undertekstsprog',
@@ -5070,8 +4996,6 @@ extension on TranslationsDa {
 			'liveTv.guideReloadFailed' => 'Kunne ikke opdatere guiden',
 			'liveTv.rulesProcessRequested' => 'Der er anmodet om en ny evaluering af reglerne',
 			'liveTv.rulesProcessFailed' => 'Kunne ikke behandle optagelsesreglerne igen',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordShow' => 'Optag program',
 			'liveTv.recordSettings.startEarly' => 'Start tidligere (sekunder)',
 			'liveTv.recordSettings.endLate' => 'Slut senere (sekunder)',
@@ -5099,6 +5023,8 @@ extension on TranslationsDa {
 			'collections.selectCollection' => 'Vælg samling',
 			'collections.collectionName' => 'Samlingsnavn',
 			'collections.enterCollectionName' => 'Indtast samlingsnavn',
+			_ => null,
+		} ?? switch (path) {
 			'collections.addedToCollection' => 'Tilføjet til samling',
 			'collections.errorAddingToCollection' => 'Kunne ikke tilføje til samling',
 			'collections.created' => 'Samling oprettet',
@@ -5584,8 +5510,6 @@ extension on TranslationsDa {
 			'performanceOverlay.dvRpus' => 'DV RPU’er',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU gns.',
 			'performanceOverlay.dvSampleAverage' => 'DV-sample gns.',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Maks. luma',
 			'performanceOverlay.minLuma' => 'Min. luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5613,6 +5537,8 @@ extension on TranslationsDa {
 			'externalPlayer.customPlayers' => 'Brugerdefinerede afspillere',
 			'externalPlayer.systemDefault' => 'Systemstandard',
 			'externalPlayer.addCustomPlayer' => 'Tilføj brugerdefineret afspiller',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Afspillernavn',
 			'externalPlayer.playerNameHint' => 'Min afspiller',
 			'externalPlayer.playerCommand' => 'Kommando',

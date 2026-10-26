@@ -8,11 +8,11 @@ import 'package:in_app_purchase_platform_interface/in_app_purchase_platform_inte
 import 'package:in_app_purchase_storekit/in_app_purchase_storekit.dart';
 import 'package:in_app_purchase_storekit/store_kit_2_wrappers.dart';
 
-/// Product ID of the one-time Supporter purchase, the same on the App Store and
-/// Google Play.
-const String supporterProductId = 'supporter';
+/// Product ID of the one-time PlezyNG lifetime unlock, shared by Apple,
+/// Google Play, and Amazon Appstore listings.
+const String lifetimeUnlockProductId = 'plezyng_lifetime_unlock';
 
-/// What a store's purchase history says about the Supporter purchase on the
+/// What a store's purchase history says about the lifetime unlock on the
 /// signed-in store account.
 enum SupporterOwnership {
   /// A completed purchase that has not been refunded or revoked.
@@ -35,7 +35,7 @@ class SupporterHistory {
 
   final SupporterOwnership ownership;
 
-  /// Owned Supporter purchases the store still expects the app to complete.
+  /// Owned purchases the store still expects the app to complete.
   final List<PurchaseDetails> unfinished;
 }
 
@@ -50,7 +50,7 @@ class SupporterRestoreCancelled implements Exception {
   const SupporterRestoreCancelled();
 }
 
-/// The store calls behind the Supporter purchase.
+/// The store calls behind PlezyNG's one-time lifetime unlock.
 ///
 /// in_app_purchase's cross-store [platform] buys and reports transactions, but
 /// cannot say whether the account still owns a purchase. Each store answers
@@ -60,7 +60,7 @@ abstract class SupporterStore {
 
   final InAppPurchasePlatform platform;
 
-  /// Reads the account's Supporter purchase history from the store. Throws
+  /// Reads the account's lifetime unlock history from the store. Throws
   /// when the store cannot answer, [SupporterStoreUnavailable] when billing
   /// itself is unavailable; a failure never means "not owned".
   Future<SupporterHistory> queryHistory();
@@ -116,8 +116,8 @@ class PlaySupporterStore extends SupporterStore {
     if (error != null) {
       throw InAppPurchaseException(source: error.source, code: error.code, message: error.message);
     }
-    final supporter = response.pastPurchases.where((p) => p.productID == supporterProductId).toList();
-    final owned = supporter.where((p) => p.status == PurchaseStatus.purchased).toList();
+    final lifetimeUnlock = response.pastPurchases.where((p) => p.productID == lifetimeUnlockProductId).toList();
+    final owned = lifetimeUnlock.where((p) => p.status == PurchaseStatus.purchased).toList();
     if (owned.isNotEmpty) {
       return SupporterHistory(
         SupporterOwnership.owned,
@@ -127,7 +127,7 @@ class PlaySupporterStore extends SupporterStore {
         ],
       );
     }
-    if (supporter.any((p) => p.status == PurchaseStatus.pending)) {
+    if (lifetimeUnlock.any((p) => p.status == PurchaseStatus.pending)) {
       return const SupporterHistory(SupporterOwnership.pending);
     }
     // A successful query without the product: Play removed it, so it was
@@ -155,11 +155,14 @@ class AppStoreSupporterStore extends SupporterStore {
 
   @override
   Future<SupporterHistory> queryHistory() async {
-    final supporter = (await _transactions()).where((t) => t.productId == supporterProductId).toList();
+    final transactions = await _transactions();
+    final lifetimeUnlock = transactions.where((t) => t.productId == lifetimeUnlockProductId).toList();
     // No transaction is not a revocation: another Apple Account may be signed
     // in, or this device has not synced yet.
-    if (supporter.isEmpty) return const SupporterHistory(SupporterOwnership.unknown);
-    if (supporter.any((t) => !_jsonReportsRevocation(t.jsonRepresentation))) {
+    if (lifetimeUnlock.isEmpty) {
+      return const SupporterHistory(SupporterOwnership.unknown);
+    }
+    if (lifetimeUnlock.any((t) => !_jsonReportsRevocation(t.jsonRepresentation))) {
       return const SupporterHistory(SupporterOwnership.owned);
     }
     return const SupporterHistory(SupporterOwnership.revoked);

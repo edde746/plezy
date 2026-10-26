@@ -45,7 +45,6 @@ class TranslationsBg extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$common$bg common = _Translations$common$bg._(_root);
 	@override late final _Translations$screens$bg screens = _Translations$screens$bg._(_root);
 	@override late final _Translations$update$bg update = _Translations$update$bg._(_root);
-	@override late final _Translations$supporter$bg supporter = _Translations$supporter$bg._(_root);
 	@override late final _Translations$settings$bg settings = _Translations$settings$bg._(_root);
 	@override late final _Translations$themeEditor$bg themeEditor = _Translations$themeEditor$bg._(_root);
 	@override late final _Translations$search$bg search = _Translations$search$bg._(_root);
@@ -116,8 +115,6 @@ class _Translations$appIcon$bg extends Translations$appIcon$en {
 	@override String get title => 'Икона на приложението';
 	@override String get defaultIcon => 'По подразбиране';
 	@override String get current => 'Текуща икона';
-	@override String get locked => 'Бонус за Supporter';
-	@override String get lockedHint => 'Алтернативните икони са бонус за Supporter.';
 	@override String get changeFailed => 'Иконата на приложението не можа да бъде сменена';
 	@override String get launcherHint => 'Новата икона ще се появи на началния ви екран, след като излезете от PlezyNG.';
 	@override String get tvLauncherHint => 'Новият банер ще се появи, след като излезете от PlezyNG. Android TV може да продължи да показва стария, докато телевизорът не бъде рестартиран.';
@@ -238,33 +235,6 @@ class _Translations$update$bg extends Translations$update$en {
 	@override String get viewRelease => 'Виж версията';
 	@override String get latestVersion => 'Използвате най-новата версия';
 	@override String get checkFailed => 'Неуспешна проверка за актуализации';
-}
-
-// Path: supporter
-class _Translations$supporter$bg extends Translations$supporter$en {
-	_Translations$supporter$bg._(TranslationsBg root) : this._root = root, super.internal(root);
-
-	final TranslationsBg _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'PlezyNG Supporter';
-	@override String get intro => 'Еднократна покупка, която подкрепя разработката на PlezyNG и отключва козметични екстри:';
-	@override String get presetThemes => 'Готови теми';
-	@override String get presetThemesDescription => 'Жарава, Ледник, Гора, Слива и Хартия';
-	@override String get customTheme => 'Персонализирана тема';
-	@override String get customThemeDescription => 'Изберете всеки цвят сами';
-	@override String get appIcons => 'Икони на приложението';
-	@override String get appIconsDescription => 'Изберете алтернативна икона на PlezyNG';
-	@override String buy({required Object price}) => 'Купи за ${price}';
-	@override String get loadingPrice => 'Зареждане на цената...';
-	@override String get restore => 'Възстанови покупките';
-	@override String get pending => 'Покупката ви очаква плащане или одобрение. Екстрите ще се отключат веднага щом магазинът я обработи.';
-	@override String get thankYouTitle => 'Благодарим ви, че подкрепяте PlezyNG';
-	@override String get thankYouBody => 'Екстрите от Supporter са отключени.';
-	@override String get tileSubtitle => 'Отключете теми и икони на приложението с еднократна покупка';
-	@override String get tileSubtitleThemesOnly => 'Отключете теми с еднократна покупка';
-	@override String get tileUnlocked => 'Благодарим ви за подкрепата';
-	@override late final _Translations$supporter$errors$bg errors = _Translations$supporter$errors$bg._(_root);
 }
 
 // Path: settings
@@ -625,8 +595,6 @@ class _Translations$themeEditor$bg extends Translations$themeEditor$en {
 	@override String get customEmpty => 'Все още не е създадена';
 	@override String get editCustom => 'Редактирай персонализираната тема';
 	@override String get editCustomDescription => 'Изберете всеки цвят сами';
-	@override String get locked => 'Отключва се със Supporter';
-	@override String get savedLocked => 'Запазена — отключва се със Supporter';
 	@override String get title => 'Персонализирана тема';
 	@override String get startFrom => 'Започни от';
 	@override String get startFromDescription => 'Копирай всички цветове от друга тема';
@@ -2649,21 +2617,6 @@ class _Translations$common$mediaKind$bg extends Translations$common$mediaKind$en
 	@override String get folder => 'Папка';
 }
 
-// Path: supporter.errors
-class _Translations$supporter$errors$bg extends Translations$supporter$errors$en {
-	_Translations$supporter$errors$bg._(TranslationsBg root) : this._root = root, super.internal(root);
-
-	final TranslationsBg _root; // ignore: unused_field
-
-	// Translations
-	@override String get storeUnavailable => 'Покупките не са налични. Проверете дали сте влезли в магазина и дали покупките са разрешени на това устройство.';
-	@override String get productNotFound => 'Покупката Supporter в момента не е налична във вашия магазин.';
-	@override String get productQueryFailed => 'Цената не можа да бъде заредена. Проверете връзката си и опитайте отново.';
-	@override String get purchaseFailed => 'Покупката не беше осъществена. Опитайте отново.';
-	@override String get restoreFailed => 'Няма връзка с магазина и покупката ви не можа да бъде възстановена. Опитайте отново.';
-	@override String get nothingToRestore => 'Не е намерена покупка на Supporter за този акаунт в магазина.';
-}
-
 // Path: themeEditor.slots
 class _Translations$themeEditor$slots$bg extends Translations$themeEditor$slots$en {
 	_Translations$themeEditor$slots$bg._(TranslationsBg root) : this._root = root, super.internal(root);
@@ -3534,8 +3487,6 @@ extension on TranslationsBg {
 			'appIcon.title' => 'Икона на приложението',
 			'appIcon.defaultIcon' => 'По подразбиране',
 			'appIcon.current' => 'Текуща икона',
-			'appIcon.locked' => 'Бонус за Supporter',
-			'appIcon.lockedHint' => 'Алтернативните икони са бонус за Supporter.',
 			'appIcon.changeFailed' => 'Иконата на приложението не можа да бъде сменена',
 			'appIcon.launcherHint' => 'Новата икона ще се появи на началния ви екран, след като излезете от PlezyNG.',
 			'appIcon.tvLauncherHint' => 'Новият банер ще се появи, след като излезете от PlezyNG. Android TV може да продължи да показва стария, докато телевизорът не бъде рестартиран.',
@@ -3665,29 +3616,6 @@ extension on TranslationsBg {
 			'update.viewRelease' => 'Виж версията',
 			'update.latestVersion' => 'Използвате най-новата версия',
 			'update.checkFailed' => 'Неуспешна проверка за актуализации',
-			'supporter.title' => 'PlezyNG Supporter',
-			'supporter.intro' => 'Еднократна покупка, която подкрепя разработката на PlezyNG и отключва козметични екстри:',
-			'supporter.presetThemes' => 'Готови теми',
-			'supporter.presetThemesDescription' => 'Жарава, Ледник, Гора, Слива и Хартия',
-			'supporter.customTheme' => 'Персонализирана тема',
-			'supporter.customThemeDescription' => 'Изберете всеки цвят сами',
-			'supporter.appIcons' => 'Икони на приложението',
-			'supporter.appIconsDescription' => 'Изберете алтернативна икона на PlezyNG',
-			'supporter.buy' => ({required Object price}) => 'Купи за ${price}',
-			'supporter.loadingPrice' => 'Зареждане на цената...',
-			'supporter.restore' => 'Възстанови покупките',
-			'supporter.pending' => 'Покупката ви очаква плащане или одобрение. Екстрите ще се отключат веднага щом магазинът я обработи.',
-			'supporter.thankYouTitle' => 'Благодарим ви, че подкрепяте PlezyNG',
-			'supporter.thankYouBody' => 'Екстрите от Supporter са отключени.',
-			'supporter.tileSubtitle' => 'Отключете теми и икони на приложението с еднократна покупка',
-			'supporter.tileSubtitleThemesOnly' => 'Отключете теми с еднократна покупка',
-			'supporter.tileUnlocked' => 'Благодарим ви за подкрепата',
-			'supporter.errors.storeUnavailable' => 'Покупките не са налични. Проверете дали сте влезли в магазина и дали покупките са разрешени на това устройство.',
-			'supporter.errors.productNotFound' => 'Покупката Supporter в момента не е налична във вашия магазин.',
-			'supporter.errors.productQueryFailed' => 'Цената не можа да бъде заредена. Проверете връзката си и опитайте отново.',
-			'supporter.errors.purchaseFailed' => 'Покупката не беше осъществена. Опитайте отново.',
-			'supporter.errors.restoreFailed' => 'Няма връзка с магазина и покупката ви не можа да бъде възстановена. Опитайте отново.',
-			'supporter.errors.nothingToRestore' => 'Не е намерена покупка на Supporter за този акаунт в магазина.',
 			'settings.title' => 'Настройки',
 			'settings.supportDeveloper' => 'Подкрепи PlezyNG',
 			'settings.supportDeveloperDescription' => 'Направете дарение, за да подкрепите разработката',
@@ -4030,8 +3958,6 @@ extension on TranslationsBg {
 			'themeEditor.customEmpty' => 'Все още не е създадена',
 			'themeEditor.editCustom' => 'Редактирай персонализираната тема',
 			'themeEditor.editCustomDescription' => 'Изберете всеки цвят сами',
-			'themeEditor.locked' => 'Отключва се със Supporter',
-			'themeEditor.savedLocked' => 'Запазена — отключва се със Supporter',
 			'themeEditor.title' => 'Персонализирана тема',
 			'themeEditor.startFrom' => 'Започни от',
 			'themeEditor.startFromDescription' => 'Копирай всички цветове от друга тема',
@@ -4042,8 +3968,6 @@ extension on TranslationsBg {
 			'themeEditor.slots.outline' => 'Контур',
 			'themeEditor.slots.text' => 'Текст',
 			'themeEditor.slots.textMuted' => 'Вторичен текст',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Акцент',
 			'themeEditor.opacity' => 'Непрозрачност',
 			'themeEditor.hexHint' => '#RRGGBB или #AARRGGBB',
@@ -4071,6 +3995,8 @@ extension on TranslationsBg {
 			'search.people' => 'Хора',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Задай клавишна комбинация за ${actionName}',
 			'hotkeys.clearShortcut' => 'Изчисти клавишната комбинация',
+			_ => null,
+		} ?? switch (path) {
 			'hotkeys.noShortcutSet' => 'Няма зададена клавишна комбинация',
 			'hotkeys.currentShortcut' => 'Текуща комбинация:',
 			'hotkeys.pressToRecord' => 'Избери, за да запишеш клавишна комбинация',
@@ -4556,8 +4482,6 @@ extension on TranslationsBg {
 			'profiles.pinExplain' => 'Изисква се 4-цифрен PIN за смяна на профили.',
 			'profiles.continueButton' => 'Продължи',
 			'profiles.pinsDontMatch' => 'PIN кодовете не съвпадат',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.tokenIdentityMismatch' => 'Токенът на профила в Plex съответства на неочакван сървър',
 			'connections.sectionTitle' => 'Връзки',
 			'connections.addConnection' => 'Добави връзка',
@@ -4585,6 +4509,8 @@ extension on TranslationsBg {
 			'accountPreferences.groups.libraryDisplay' => 'Библиотека',
 			'accountPreferences.groups.personalMedia' => 'Лична медия',
 			'accountPreferences.preferredAudioLanguage' => 'Предпочитан аудио език',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.autoSelectAudio' => 'Избирай аудио по език',
 			'accountPreferences.autoSelectAudioDescription' => 'При изключено се запазва аудиопътечката, която файлът маркира като подразбираща се.',
 			'accountPreferences.preferredSubtitleLanguage' => 'Предпочитан език за субтитри',
@@ -5070,8 +4996,6 @@ extension on TranslationsBg {
 			'liveTv.guideReloadFailed' => 'ТВ програмата не можа да бъде презаредена',
 			'liveTv.rulesProcessRequested' => 'Заявена е преоценка на правилата',
 			'liveTv.rulesProcessFailed' => 'Правилата за записване не можаха да бъдат обработени отново',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordShow' => 'Запиши предаването',
 			'liveTv.recordSettings.startEarly' => 'Започване по-рано (секунди)',
 			'liveTv.recordSettings.endLate' => 'Приключване по-късно (секунди)',
@@ -5099,6 +5023,8 @@ extension on TranslationsBg {
 			'collections.selectCollection' => 'Избери колекция',
 			'collections.collectionName' => 'Име на колекция',
 			'collections.enterCollectionName' => 'Въведете име на колекция',
+			_ => null,
+		} ?? switch (path) {
 			'collections.addedToCollection' => 'Добавено към колекция',
 			'collections.errorAddingToCollection' => 'Неуспешно добавяне към колекция',
 			'collections.created' => 'Колекцията е създадена',
@@ -5584,8 +5510,6 @@ extension on TranslationsBg {
 			'performanceOverlay.dvRpus' => 'DV RPU',
 			'performanceOverlay.dvRpuAverage' => 'Средно DV RPU',
 			'performanceOverlay.dvSampleAverage' => 'Средно DV семпл',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Макс. яркост',
 			'performanceOverlay.minLuma' => 'Мин. яркост',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5613,6 +5537,8 @@ extension on TranslationsBg {
 			'externalPlayer.customPlayers' => 'Потребителски плейъри',
 			'externalPlayer.systemDefault' => 'Системен по подразбиране',
 			'externalPlayer.addCustomPlayer' => 'Добави потребителски плейър',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Име на плейъра',
 			'externalPlayer.playerNameHint' => 'Моят плеър',
 			'externalPlayer.playerCommand' => 'Команда',

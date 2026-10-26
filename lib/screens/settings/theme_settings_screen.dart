@@ -52,7 +52,7 @@ const _perksCompiled = supporterBuildMode != SupporterMode.off || !kReleaseMode;
 class ThemeSettingsScreen extends StatelessWidget {
   const ThemeSettingsScreen({super.key, this.openSupporterSheet = showSupporterSheet});
 
-  /// Offers the Supporter purchase for a locked perk and completes when the
+  /// Offers lifetime access for a locked theme and completes when the
   /// sheet closes.
   final Future<void> Function(BuildContext context) openSupporterSheet;
 
@@ -80,7 +80,7 @@ class ThemeSettingsScreen extends StatelessWidget {
       palette: ThemeProvider.paletteFor(mode, customPalette: customPalette),
       selected: current == mode,
       autofocus: focusSelected && current == mode,
-      locked: locked && mode.isSupporterPerk,
+      locked: locked && mode.requiresFullAccess,
       // The radio follows what paints; the saved-but-locked choice says it
       // is kept, so losing the entitlement doesn't read as losing the theme.
       subtitle: mode == lockedStored
@@ -140,7 +140,7 @@ class ThemeSettingsScreen extends StatelessWidget {
   /// Whether [mode] is usable now. A locked perk opens the Supporter sheet and
   /// answers from the entitlement once the sheet closes.
   Future<bool> _ensureUnlocked(BuildContext context, settings.ThemeMode mode) async {
-    if (!mode.isSupporterPerk) return true;
+    if (!mode.requiresFullAccess) return true;
     final supporter = context.read<SupporterService>();
     if (supporter.isUnlocked) return true;
     await openSupporterSheet(context);

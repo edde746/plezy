@@ -84,12 +84,12 @@ final class FakeInAppPurchasePlatform extends InAppPurchasePlatform {
   }
 }
 
-ProductDetails supporterProduct({String price = r'$3.99'}) => ProductDetails(
-  id: supporterProductId,
-  title: 'Supporter',
-  description: 'Cosmetic extras',
+ProductDetails supporterProduct({String price = r'$2.99'}) => ProductDetails(
+  id: lifetimeUnlockProductId,
+  title: 'PlezyNG Lifetime Unlock',
+  description: 'Lifetime access to every PlezyNG feature',
   price: price,
-  rawPrice: 3.99,
+  rawPrice: 2.99,
   currencyCode: 'USD',
 );
 
@@ -118,7 +118,7 @@ final class FakePlayStore {
 
 /// A Play Billing purchase as the plugin reports it.
 GooglePlayPurchaseDetails playPurchase({
-  String productId = supporterProductId,
+  String productId = lifetimeUnlockProductId,
   PurchaseStateWrapper state = PurchaseStateWrapper.purchased,
   bool acknowledged = false,
 }) => GooglePlayPurchaseDetails.fromPurchase(
@@ -170,19 +170,20 @@ String _transactionJson(String productId, {required bool revoked}) => jsonEncode
 });
 
 /// A verified StoreKit 2 transaction from `Transaction.all`.
-SK2Transaction appStoreTransaction({String productId = supporterProductId, bool revoked = false}) => SK2Transaction(
-  id: '2000000000000001',
-  originalId: '2000000000000001',
-  productId: productId,
-  purchaseDate: '2026-01-01T00:00:00Z',
-  appAccountToken: null,
-  jsonRepresentation: _transactionJson(productId, revoked: revoked),
-);
+SK2Transaction appStoreTransaction({String productId = lifetimeUnlockProductId, bool revoked = false}) =>
+    SK2Transaction(
+      id: '2000000000000001',
+      originalId: '2000000000000001',
+      productId: productId,
+      purchaseDate: '2026-01-01T00:00:00Z',
+      appAccountToken: null,
+      jsonRepresentation: _transactionJson(productId, revoked: revoked),
+    );
 
 /// A StoreKit 2 transaction on the purchase stream, as the plugin reports a
 /// purchase or a `Transaction.updates` refund.
 SK2PurchaseDetails appStorePurchase({
-  String productId = supporterProductId,
+  String productId = lifetimeUnlockProductId,
   PurchaseStatus status = PurchaseStatus.purchased,
   bool revoked = false,
 }) => SK2PurchaseDetails(

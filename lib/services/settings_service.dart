@@ -58,9 +58,9 @@ enum ThemeMode {
   paper,
   custom;
 
-  /// The presets and Custom are Supporter perks; the built-ins are free in
-  /// every build.
-  bool get isSupporterPerk => switch (this) {
+  /// The presets and Custom require full app access; the built-ins stay
+  /// available in every build.
+  bool get requiresFullAccess => switch (this) {
     system || light || dark || oled => false,
     ember || glacier || forest || plum || paper || custom => true,
   };
@@ -754,10 +754,14 @@ class SettingsService extends BaseSharedPreferencesService {
   static const subtitleAnchorToScreen = BoolPref('subtitle_anchor_to_screen');
   static const cleanedOldImageCache = BoolPref('cleaned_old_image_cache');
 
-  /// Last confirmed Supporter entitlement on this device. Runtime state owned
+  /// Last confirmed lifetime unlock on this device. Runtime state owned
   /// by `SupporterService`: never exported, never reset, and only cleared on a
-  /// confirmed revocation so an unreachable store cannot lock perks.
+  /// confirmed revocation so an unreachable store cannot lock app access.
   static const supporterEntitlementCached = BoolPref('supporter_entitlement_cached');
+
+  /// Start time for the PlezyNG seven-day, full-app trial. This is local
+  /// runtime state: it is not exported or cleared by Reset All Settings.
+  static const appAccessTrialStartedAtEpochMs = IntPref('app_access_trial_started_at_ms');
   static const rememberTrackSelections = BoolPref('remember_track_selections', defaultValue: true);
 
   /// Ask which source audio and subtitle tracks to use before opening a video.

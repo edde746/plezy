@@ -45,7 +45,6 @@ class TranslationsPt extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$common$pt common = _Translations$common$pt._(_root);
 	@override late final _Translations$screens$pt screens = _Translations$screens$pt._(_root);
 	@override late final _Translations$update$pt update = _Translations$update$pt._(_root);
-	@override late final _Translations$supporter$pt supporter = _Translations$supporter$pt._(_root);
 	@override late final _Translations$settings$pt settings = _Translations$settings$pt._(_root);
 	@override late final _Translations$themeEditor$pt themeEditor = _Translations$themeEditor$pt._(_root);
 	@override late final _Translations$search$pt search = _Translations$search$pt._(_root);
@@ -116,8 +115,6 @@ class _Translations$appIcon$pt extends Translations$appIcon$en {
 	@override String get title => 'Ícone do app';
 	@override String get defaultIcon => 'Padrão';
 	@override String get current => 'Ícone atual';
-	@override String get locked => 'Benefício do Supporter';
-	@override String get lockedHint => 'Os ícones alternativos são um benefício do Supporter.';
 	@override String get changeFailed => 'Não foi possível alterar o ícone do app';
 	@override String get launcherHint => 'O novo ícone aparece na tela inicial assim que você sair do PlezyNG.';
 	@override String get tvLauncherHint => 'O novo banner aparece assim que você sair do PlezyNG. O Android TV pode continuar mostrando o antigo até a TV ser reiniciada.';
@@ -238,33 +235,6 @@ class _Translations$update$pt extends Translations$update$en {
 	@override String get viewRelease => 'Ver Lançamento';
 	@override String get latestVersion => 'Você está na versão mais recente';
 	@override String get checkFailed => 'Falha ao verificar atualizações';
-}
-
-// Path: supporter
-class _Translations$supporter$pt extends Translations$supporter$en {
-	_Translations$supporter$pt._(TranslationsPt root) : this._root = root, super.internal(root);
-
-	final TranslationsPt _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'PlezyNG Supporter';
-	@override String get intro => 'Uma compra única que apoia o desenvolvimento do PlezyNG e desbloqueia extras visuais:';
-	@override String get presetThemes => 'Temas predefinidos';
-	@override String get presetThemesDescription => 'Brasa, Geleira, Floresta, Ameixa e Papel';
-	@override String get customTheme => 'Tema personalizado';
-	@override String get customThemeDescription => 'Escolha você mesmo cada cor';
-	@override String get appIcons => 'Ícones do app';
-	@override String get appIconsDescription => 'Escolha um ícone alternativo do PlezyNG';
-	@override String buy({required Object price}) => 'Comprar por ${price}';
-	@override String get loadingPrice => 'Carregando preço...';
-	@override String get restore => 'Restaurar compras';
-	@override String get pending => 'Sua compra está aguardando pagamento ou aprovação. Os extras serão desbloqueados assim que a loja concluí-la.';
-	@override String get thankYouTitle => 'Obrigado por apoiar o PlezyNG';
-	@override String get thankYouBody => 'Seus extras do Supporter estão desbloqueados.';
-	@override String get tileSubtitle => 'Desbloqueie temas e ícones do app com uma compra única';
-	@override String get tileSubtitleThemesOnly => 'Desbloqueie temas com uma compra única';
-	@override String get tileUnlocked => 'Obrigado pelo seu apoio';
-	@override late final _Translations$supporter$errors$pt errors = _Translations$supporter$errors$pt._(_root);
 }
 
 // Path: settings
@@ -625,8 +595,6 @@ class _Translations$themeEditor$pt extends Translations$themeEditor$en {
 	@override String get customEmpty => 'Ainda não criado';
 	@override String get editCustom => 'Editar tema personalizado';
 	@override String get editCustomDescription => 'Escolha você mesmo cada cor';
-	@override String get locked => 'Desbloqueie com o Supporter';
-	@override String get savedLocked => 'Salvo — desbloqueia com o Supporter';
 	@override String get title => 'Tema personalizado';
 	@override String get startFrom => 'Começar a partir de';
 	@override String get startFromDescription => 'Copiar todas as cores de outro tema';
@@ -2649,21 +2617,6 @@ class _Translations$common$mediaKind$pt extends Translations$common$mediaKind$en
 	@override String get folder => 'Pasta';
 }
 
-// Path: supporter.errors
-class _Translations$supporter$errors$pt extends Translations$supporter$errors$en {
-	_Translations$supporter$errors$pt._(TranslationsPt root) : this._root = root, super.internal(root);
-
-	final TranslationsPt _root; // ignore: unused_field
-
-	// Translations
-	@override String get storeUnavailable => 'As compras não estão disponíveis. Verifique se você entrou na sua conta da loja e se as compras são permitidas neste dispositivo.';
-	@override String get productNotFound => 'A compra do Supporter não está disponível na sua loja no momento.';
-	@override String get productQueryFailed => 'Não foi possível carregar o preço. Verifique sua conexão e tente novamente.';
-	@override String get purchaseFailed => 'A compra não foi concluída. Tente novamente.';
-	@override String get restoreFailed => 'Não foi possível acessar a loja para restaurar sua compra. Tente novamente.';
-	@override String get nothingToRestore => 'Nenhuma compra do Supporter foi encontrada para esta conta da loja.';
-}
-
 // Path: themeEditor.slots
 class _Translations$themeEditor$slots$pt extends Translations$themeEditor$slots$en {
 	_Translations$themeEditor$slots$pt._(TranslationsPt root) : this._root = root, super.internal(root);
@@ -3534,8 +3487,6 @@ extension on TranslationsPt {
 			'appIcon.title' => 'Ícone do app',
 			'appIcon.defaultIcon' => 'Padrão',
 			'appIcon.current' => 'Ícone atual',
-			'appIcon.locked' => 'Benefício do Supporter',
-			'appIcon.lockedHint' => 'Os ícones alternativos são um benefício do Supporter.',
 			'appIcon.changeFailed' => 'Não foi possível alterar o ícone do app',
 			'appIcon.launcherHint' => 'O novo ícone aparece na tela inicial assim que você sair do PlezyNG.',
 			'appIcon.tvLauncherHint' => 'O novo banner aparece assim que você sair do PlezyNG. O Android TV pode continuar mostrando o antigo até a TV ser reiniciada.',
@@ -3665,29 +3616,6 @@ extension on TranslationsPt {
 			'update.viewRelease' => 'Ver Lançamento',
 			'update.latestVersion' => 'Você está na versão mais recente',
 			'update.checkFailed' => 'Falha ao verificar atualizações',
-			'supporter.title' => 'PlezyNG Supporter',
-			'supporter.intro' => 'Uma compra única que apoia o desenvolvimento do PlezyNG e desbloqueia extras visuais:',
-			'supporter.presetThemes' => 'Temas predefinidos',
-			'supporter.presetThemesDescription' => 'Brasa, Geleira, Floresta, Ameixa e Papel',
-			'supporter.customTheme' => 'Tema personalizado',
-			'supporter.customThemeDescription' => 'Escolha você mesmo cada cor',
-			'supporter.appIcons' => 'Ícones do app',
-			'supporter.appIconsDescription' => 'Escolha um ícone alternativo do PlezyNG',
-			'supporter.buy' => ({required Object price}) => 'Comprar por ${price}',
-			'supporter.loadingPrice' => 'Carregando preço...',
-			'supporter.restore' => 'Restaurar compras',
-			'supporter.pending' => 'Sua compra está aguardando pagamento ou aprovação. Os extras serão desbloqueados assim que a loja concluí-la.',
-			'supporter.thankYouTitle' => 'Obrigado por apoiar o PlezyNG',
-			'supporter.thankYouBody' => 'Seus extras do Supporter estão desbloqueados.',
-			'supporter.tileSubtitle' => 'Desbloqueie temas e ícones do app com uma compra única',
-			'supporter.tileSubtitleThemesOnly' => 'Desbloqueie temas com uma compra única',
-			'supporter.tileUnlocked' => 'Obrigado pelo seu apoio',
-			'supporter.errors.storeUnavailable' => 'As compras não estão disponíveis. Verifique se você entrou na sua conta da loja e se as compras são permitidas neste dispositivo.',
-			'supporter.errors.productNotFound' => 'A compra do Supporter não está disponível na sua loja no momento.',
-			'supporter.errors.productQueryFailed' => 'Não foi possível carregar o preço. Verifique sua conexão e tente novamente.',
-			'supporter.errors.purchaseFailed' => 'A compra não foi concluída. Tente novamente.',
-			'supporter.errors.restoreFailed' => 'Não foi possível acessar a loja para restaurar sua compra. Tente novamente.',
-			'supporter.errors.nothingToRestore' => 'Nenhuma compra do Supporter foi encontrada para esta conta da loja.',
 			'settings.title' => 'Configurações',
 			'settings.supportDeveloper' => 'Apoie o PlezyNG',
 			'settings.supportDeveloperDescription' => 'Doe para apoiar o desenvolvimento',
@@ -4030,8 +3958,6 @@ extension on TranslationsPt {
 			'themeEditor.customEmpty' => 'Ainda não criado',
 			'themeEditor.editCustom' => 'Editar tema personalizado',
 			'themeEditor.editCustomDescription' => 'Escolha você mesmo cada cor',
-			'themeEditor.locked' => 'Desbloqueie com o Supporter',
-			'themeEditor.savedLocked' => 'Salvo — desbloqueia com o Supporter',
 			'themeEditor.title' => 'Tema personalizado',
 			'themeEditor.startFrom' => 'Começar a partir de',
 			'themeEditor.startFromDescription' => 'Copiar todas as cores de outro tema',
@@ -4042,8 +3968,6 @@ extension on TranslationsPt {
 			'themeEditor.slots.outline' => 'Contorno',
 			'themeEditor.slots.text' => 'Texto',
 			'themeEditor.slots.textMuted' => 'Texto secundário',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Destaque',
 			'themeEditor.opacity' => 'Opacidade',
 			'themeEditor.hexHint' => '#RRGGBB ou #AARRGGBB',
@@ -4071,6 +3995,8 @@ extension on TranslationsPt {
 			'search.people' => 'Pessoas',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Definir Atalho para ${actionName}',
 			'hotkeys.clearShortcut' => 'Limpar atalho',
+			_ => null,
+		} ?? switch (path) {
 			'hotkeys.noShortcutSet' => 'Nenhum atalho definido',
 			'hotkeys.currentShortcut' => 'Atalho atual:',
 			'hotkeys.pressToRecord' => 'Selecionar para gravar um atalho',
@@ -4556,8 +4482,6 @@ extension on TranslationsPt {
 			'profiles.pinExplain' => 'PIN de 4 dígitos necessário para trocar perfis.',
 			'profiles.continueButton' => 'Continuar',
 			'profiles.pinsDontMatch' => 'Os PINs não correspondem',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.tokenIdentityMismatch' => 'O token do perfil do Plex foi associado a um servidor inesperado',
 			'connections.sectionTitle' => 'Conexões',
 			'connections.addConnection' => 'Adicionar conexão',
@@ -4585,6 +4509,8 @@ extension on TranslationsPt {
 			'accountPreferences.groups.libraryDisplay' => 'Biblioteca',
 			'accountPreferences.groups.personalMedia' => 'Mídia pessoal',
 			'accountPreferences.preferredAudioLanguage' => 'Idioma de áudio preferido',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.autoSelectAudio' => 'Escolher áudio pelo idioma',
 			'accountPreferences.autoSelectAudioDescription' => 'Desativado mantém a faixa de áudio que o arquivo marca como padrão.',
 			'accountPreferences.preferredSubtitleLanguage' => 'Idioma de legenda preferido',
@@ -5070,8 +4996,6 @@ extension on TranslationsPt {
 			'liveTv.guideReloadFailed' => 'Não foi possível atualizar o guia',
 			'liveTv.rulesProcessRequested' => 'Reavaliação de regras solicitada',
 			'liveTv.rulesProcessFailed' => 'Não foi possível reavaliar as regras de gravação',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordShow' => 'Gravar programa',
 			'liveTv.recordSettings.startEarly' => 'Começar antes (segundos)',
 			'liveTv.recordSettings.endLate' => 'Terminar depois (segundos)',
@@ -5099,6 +5023,8 @@ extension on TranslationsPt {
 			'collections.selectCollection' => 'Selecionar Coleção',
 			'collections.collectionName' => 'Nome da Coleção',
 			'collections.enterCollectionName' => 'Insira o nome da coleção',
+			_ => null,
+		} ?? switch (path) {
 			'collections.addedToCollection' => 'Adicionado à coleção',
 			'collections.errorAddingToCollection' => 'Falha ao adicionar à coleção',
 			'collections.created' => 'Coleção criada',
@@ -5584,8 +5510,6 @@ extension on TranslationsPt {
 			'performanceOverlay.dvRpus' => 'DV RPUs',
 			'performanceOverlay.dvRpuAverage' => 'Média DV RPU',
 			'performanceOverlay.dvSampleAverage' => 'Média amostra DV',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Luma máx.',
 			'performanceOverlay.minLuma' => 'Luma mín.',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5613,6 +5537,8 @@ extension on TranslationsPt {
 			'externalPlayer.customPlayers' => 'Reprodutores personalizados',
 			'externalPlayer.systemDefault' => 'Padrão do sistema',
 			'externalPlayer.addCustomPlayer' => 'Adicionar reprodutor personalizado',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Nome do reprodutor',
 			'externalPlayer.playerNameHint' => 'Meu reprodutor',
 			'externalPlayer.playerCommand' => 'Comando',
