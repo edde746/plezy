@@ -9,6 +9,28 @@ void main() {
   final messenger = TestDefaultBinaryMessengerBinding.instance.defaultBinaryMessenger;
   final host = GameHost(id: 'pc', name: 'PC', address: '192.168.1.2', protocol: GameProtocol.gameStream);
   tearDown(() => messenger.setMockMethodCallHandler(NativeGameStreamingClient.channel, null));
+  test('Steam playback does not imply an imported account catalog', () async {
+    final steam = GameHost(id: '123', name: 'Steam PC', address: '192.168.1.2', protocol: GameProtocol.steam);
+    messenger.setMockMethodCallHandler(NativeGameStreamingClient.channel, (call) async {
+      if (call.method == 'capabilities') return {'available': true, 'inlinePairing': true, 'library': false};
+      if (call.method == 'games') return <dynamic>[];
+      return null;
+    });
+    final client = NativeGameStreamingClient();
+    final capabilities = await client.capabilities(steam);
+    expect(capabilities.available, isTrue);
+    expect(capabilities.library, isFalse);
+    final games = await client.games(steam);
+    expect(games.single.id, '0');
+    expect(games.single.hostKey, steam.key);
+    messenger.setMockMethodCallHandler(NativeGameStreamingClient.channel, (_) async {
+      throw PlatformException(code: 'PAIRING_REQUIRED');
+    });
+    await expectLater(
+      client.games(steam),
+      throwsA(isA<GameClientException>().having((e) => e.failure, 'failure', GameClientFailure.pairingRequired)),
+    );
+  });
   test('a missing native engine reports unavailable and never launches a URL', () async {
     final client = NativeGameStreamingClient();
     expect((await client.capabilities(host)).available, isFalse);

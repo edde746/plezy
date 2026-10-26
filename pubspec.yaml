@@ -222,6 +222,7 @@ flutter:
     - assets/certificates/cacert.pem
     - assets/licenses/Moonlight_GPL_3.txt
     - assets/licenses/Moonlight_NOTICE.txt
+    - assets/licenses/Steam_NATIVE.txt
     - assets/licenses/SpatialAudioBridge.txt
     - assets/licenses/dart_smb2_NOTICE.txt
     - assets/licenses/AMSMB2_NOTICE.txt

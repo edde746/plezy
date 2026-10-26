@@ -15,7 +15,7 @@ void main() {
     final peer = SteamDiscoveryCodec.decode(status())!;
     expect(peer.id, '42');
     expect(peer.name, 'Living room');
-    expect(peer.port, 27036);
+    expect(peer.connectPort, 27036);
   });
   test('current/future unknown fields preserve discovery without claiming a codec', () {
     // Unknown length-delimited field 99 and locked/busy fields 13/14.

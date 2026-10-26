@@ -122,7 +122,15 @@ class GameLibraryController extends ChangeNotifier {
       (state) => GameLibrary.fromJson(
         GameLibrary(
           hosts: state.hosts,
-          games: [...state.games.where((v) => v.hostKey != host.key), ...games],
+          // Device pairing cannot enumerate a private Steam account. Keep its
+          // explicit shortcuts while refreshing the embedded library entry.
+          games: [
+            ...state.games.where(
+              (v) =>
+                  v.hostKey != host.key || (host.protocol == GameProtocol.steam && !games.any((g) => g.key == v.key)),
+            ),
+            ...games,
+          ],
           recent: state.recent,
           favorites: state.favorites,
         ).toJson(),

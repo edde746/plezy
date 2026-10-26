@@ -42,6 +42,12 @@ class LicensesScreen extends StatelessWidget {
     ];
     allPackageNames['Moonlight'] = {'Moonlight'};
 
+    final steamLicense = await rootBundle.loadString('assets/licenses/Steam_NATIVE.txt');
+    licenseMap['Steam embedded engine'] = [
+      LicenseEntryWithLineBreaks(['Steam embedded engine'], steamLicense),
+    ];
+    allPackageNames['Steam embedded engine'] = {'Steam embedded engine'};
+
     final amsmb2Notice = await rootBundle.loadString('assets/licenses/AMSMB2_NOTICE.txt');
     final amsmb2MitLicense = await rootBundle.loadString('assets/licenses/AMSMB2_MIT_LICENSE.txt');
     final amsmb2License = await rootBundle.loadString('assets/licenses/libsmb2-LGPL-2.1.txt');

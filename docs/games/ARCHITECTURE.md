@@ -6,9 +6,11 @@ Status: implementation in progress, 2026-10-26. **No stream launches another app
 
 The optional Games category follows PlezyNG's profile preference, navigation rail, poster-card grid, monochrome themes, shared menus and dialogs. The grid shares the media browser’s density, spacing, corner tokens and poster-only TV focus outline, matching the direction discussed in the plezyng.app repository. Recent games, favorites and the full library use the same cards; computer management remains below the library. Authenticated host cover requests use a bounded memory cache and a themed missing-art fallback. It remains accessible when a media server is offline. Games never routes through the movie player. Android Automotive does not expose this category, matching the app's existing interaction restrictions.
 
-The library stores selected computers, host application IDs, favorites and recent launches in the existing profile-scoped repository. It discovers GameStream hosts over mDNS and Steam hosts over bounded UDP discovery. Discovered advertisements are suggestions: selecting one is required before persistence or pairing. Manual IPv4, IPv6 and DNS addresses cover VPNs and networks without multicast. Wake-on-LAN is an explicit action and needs a supplied MAC address.
+The library stores selected computers, host application IDs, favorites and recent launches in the existing profile-scoped repository. It discovers GameStream hosts over mDNS and Steam hosts over bounded UDP discovery. Discovered advertisements are suggestions: selecting one is required before persistence or pairing. Manual addresses cover VPNs and networks without multicast; the current Steam adapter resolves IPv4, while the GameStream address model also accepts IPv6. Steam identification uses the UDP source port, not the separately advertised TCP connect port. Wake-on-LAN is an explicit action and needs a supplied MAC address.
 
 Android builds include a **source-built Moonlight engine in PlezyNG's APK**. The adapter calls its actual pairing implementation, pins the resulting host certificate, retrieves the authorized application list, and starts its native streaming activity inside PlezyNG. Flutter owns the connection UI; the embedded engine owns low-latency video, audio, controller input and touch controls. Back returns to PlezyNG. It does not install an APK, open a package, launch Steam, invoke a URL scheme, or run a streaming subprocess.
+
+Android also includes an experimental **source-built Steam engine** using pinned ihslib, Mbed TLS, protobuf-C and Opus. It implements local PIN pairing, encrypted host-specific device trust, direct game-ID or Big Picture launch, H.264/HEVC video, stereo Opus, one physical/virtual controller and bounded decoder queues. The player is a private activity inside PlezyNG. Steam's automatic account catalog and Pyrowave are not implemented.
 
 The native source pin and preparation recipe are committed. Android hardware behavior is not certified by Dart tests. See [VALIDATION.md](VALIDATION.md) for the release gates.
 
@@ -18,7 +20,7 @@ The native source pin and preparation recipe are committed. Android hardware beh
 2. Open Games. Run one bounded local scan, without preventing manual entry.
 3. Choose a computer. An already authorized computer loads its games. Otherwise show a fresh four-digit PIN and the host-approval instructions.
 4. For Sunshine, optionally scan the QR on another device to open its PIN page. The code contains the host URL only. The user approves the connection on the host. Host credentials and PIN are not included in a QR or the profile library.
-5. The successful native handshake supplies the pinned certificate. Load the real app list. A future tap on a game starts the in-app stream.
+5. GameStream saves the approved certificate and loads the real app list. Steam saves its negotiated device secret and displays a Steam Library card plus user-added shortcuts. A future tap starts the in-app session; Steam inventory import is a separate capability.
 6. During a stream, use a physical controller or the native multi-touch controller. Disconnect leaves the host game running; quitting the host game is a separate explicit engine action.
 
 A failed handshake never marks the host as paired. A missing native engine produces an explanation, not an external-app launch. Discovery is not evidence that streaming, HDR, a codec, or authentication is supported.
@@ -53,8 +55,8 @@ Retiring a profile, disabling the category or disposing its controller cancels u
 
 | Platform | Games/library | In-app GameStream in this change | Steam / Pyrowave in this change | Next native integration |
 |---|---|---|---|---|
-| Android phones/tablets | Implemented | Source module, pairing, listing, native activity, touch controls | Discovery only; playback unavailable | Run native/device matrix; refine theme integration |
-| Android TV / Fire TV | Implemented | Same source engine; physical input; touch overlay off by default on TV | Discovery only | D-pad, back, 4K/refresh-rate and controller qualification |
+| Android phones/tablets | Implemented | Source module, pairing, listing, native activity, touch controls | Experimental PIN, in-app H.264/HEVC/Opus; Pyrowave unavailable | Run native/device matrix; refine theme integration |
+| Android TV / Fire TV | Implemented | Same source engine; physical input; touch overlay off by default on TV | Same experimental Steam adapter; Pyrowave unavailable | D-pad, back, 4K/refresh-rate and controller qualification |
 | Windows | Implemented | Unavailable | Discovery only | Moonlight common + native decode/presentation/input adapter |
 | Linux / SteamOS | Implemented | Unavailable | Discovery only | Moonlight common; VA-API/Vulkan/DRM paths and SDL input, then Steam engine |
 | macOS | Implemented | Unavailable | Discovery only | VideoToolbox/Metal/CoreAudio/GameController adapter |
@@ -69,15 +71,13 @@ Sunshine, Apollo, Wolf and legacy NVIDIA GameStream use the same broad protocol 
 
 The official Steam Link SDK is for applications running **on Steam Link hardware**. Steamworks `ISteamRemotePlay` is a game-side session API. Neither is a general-purpose embeddable Steam Link client. A UI webview or `steam://` command does not satisfy in-app streaming.
 
-An independent native implementation is feasible: **ihslib** implements discovery, authorization and streaming. A recent PS5 client reports real H.264/Opus playback using it and a fork implementing the 2026 PIN-masked X25519 handshake. That project also carries retransmission, packet-window and input fixes. Its observed success is useful evidence, not proof of compatibility with all Steam versions. The referenced fork's `auth` branch no longer resolved during research, but its exact pinned commit was retrievable; reproducible integration must use the commit and audit the patch set.
+The experimental adapter now builds **ihslib** at `04688d19951c68bedc4370234cc1752043632cb3`. That source includes current PIN-masked X25519 and legacy authorization paths, transaction/source validation, game-ID launch, HID state and tracked video frames. Its exact dependency revisions and build recipe are committed. The older standalone game-ID patch and separately imported PS5 patch set are no longer required. The PS5 client remains an attributed controller implementation reference.
 
-The next Steam stage is a library port, not a credential scraper:
+The POSIX transport has a portable C++ lifecycle wrapper and Android JNI frontend. It uses 85-second pairing and 30-second launch/session deadlines, cancellation that wakes waiters, bounded frames/audio and retained frame tickets completed at decoder output. The Android presentation callback means submission to the display surface, not measured screen scanout. Input and renderer callbacks arriving after teardown are ignored safely. Android Keystore encrypts the host secret; backups exclude it. Device trust is shared across app profiles; removing a profile's computer does not revoke the host's authorization.
 
-- Build the pinned ihslib implementation with its supported crypto provider and protobuf-C. Audit the current-auth changes and the PS5 client's transport fixes individually. Run malformed-packet tests with sanitizers before accepting LAN traffic inside the app process.
-- Keep the legacy PIN handshake and current X25519 exchange as versioned adapters. Choose from actual peer messages; never downgrade a failed authentication to “legacy” merely to make it connect.
-- Start with local PIN pairing and saved device trust. Steam account login/Steam Guard/QR account authorization are distinct flows; they are not supplied by generic OAuth or by a discovery packet. Remote account-backed rendezvous is a separate deliverable and needs verified protocol/API support.
-- Connect native decoded frames, audio and input to the same session interface. Expose Big Picture as a real remote session even when a direct app-list API is unavailable. Importing Steam games through Sunshine is useful but does not count as native Steam Remote Play support.
-- Qualify current stable, beta and representative older hosts. Record exact host/client builds. Refuse unsupported authentication or codec combinations with an actionable message.
+The adapter supports local device PIN pairing, not account login. Steam Guard/QR account authorization and internet rendezvous are distinct deliverables. A paired device gets an actual embedded Big Picture route even while catalog import is unavailable. User-added Steam AppID shortcuts send the selected game ID to the host. UI capability checks distinguish playback from inventory access.
+
+Conventional streaming is experimental until current stable, beta and representative older hosts are tested. Source compatibility and local regression tests cannot establish every host's handshake, launch or codec behavior. No host settings, firewall or account security controls are changed automatically.
 
 ## Pyrowave is a codec, not a replacement discovery protocol
 
@@ -97,13 +97,17 @@ The current observed protocol definitions contain:
 | fields 36 and 37 | Obsolete custom-bitrate fields; do not build new settings on these |
 | `CNegotiatedConfig.selected_video_codec` | Negotiated codec, unlike a saved user preference |
 
+The pinned decoder accepts concatenated codec packets in a single `push_packet` call. The v1 bitstream document is frozen at 2026-10-03; source remains authoritative. Aurora/Solarflare provide a separate GameStream integration, which does not establish compatibility with Steam's framing or codec fork.
+
 These definitions establish identifiers, not complete packet reassembly, FEC or decoder interoperability. Do not advertise codec 9 until the native decoder has passed a local capability probe and the stream adapter can handle the received framing. Do not show “Pyrowave active” until the negotiated session and decoder agree.
 
 Proposed policy: **Automatic**, **Compatibility**, **Prefer Pyrowave**. Automatic stays on validated conventional codecs by default. Prefer Pyrowave is an opt-in after host support, a successful Vulkan/Metal decoder probe, a local-network bandwidth test and compatible color/output capabilities. Fallback requires a clean reconnect with an explanation; it must not silently change the host's global Steam settings. HDR and 4:4:4 are separate negotiated capabilities. Hardware Steam Link and older clients must retain conventional codecs rather than receiving codec 9 unconditionally.
 
 ## Mobile controls and session quality
 
-The Android module reuses Moonlight's actual controller implementation rather than drawing buttons that never send input. It supports simultaneous touches, sticks/buttons/triggers, configurable layout/opacity, touchpad input and physical controllers. The PlezyNG profile setting controls whether that overlay is shown. TV devices default to physical input. The native controller owns neutralization and input teardown.
+The GameStream Android module reuses Moonlight's actual controller implementation rather than drawing buttons that never send input. It supports simultaneous touches, sticks/buttons/triggers, configurable layout/opacity, touchpad input and physical controllers. The PlezyNG profile setting controls whether that overlay is shown. TV devices default to physical input. The native controller owns neutralization and input teardown.
+
+The Steam adapter implements a separate simultaneous-touch overlay with two sticks, D-pad, face/shoulder/trigger buttons and menu controls, plus a single physical gamepad and basic USB-HID keyboard input. Its current layout and opacity are fixed. Rumble, gyro, multiple controller seats, full IME and physical mouse/wheel coverage are not implemented. It resets input on menu/background/disconnect.
 
 For subsequent ports, keep pointer IDs stable, release every button/axis on cancellation/focus loss, support simultaneous stick + button + trigger input, safe areas, handedness, scalable controls, and physical-controller hot-plug. Do not expose a generic overlay until its input backend actually works. Rumble, gyro, microphone, keyboard/IME and multi-controller seats need separate capability flags and tests.
 
@@ -114,7 +118,7 @@ Session statistics should report actual codec, hardware/software decode, resolut
 1. Review and qualify this Android embedded vertical slice; retain a build switch for constrained distributions.
 2. Extract reusable native session interfaces and bring up desktop GameStream adapters, preserving the existing UI and state model.
 3. Bring up Apple GameStream and webOS native adapters with platform-specific decoder/input tests.
-4. Integrate and harden ihslib for legacy/current local Steam pairing and H.264/Opus sessions.
+4. Qualify and harden the implemented ihslib adapter against legacy/current local Steam pairing and conventional-codec sessions.
 5. Add Pyrowave Vulkan and Metal wrappers, framing/FEC support, device probes and explicit fallback policy.
 6. Implement remote account-backed Steam connectivity only after its authentication and rendezvous requirements are demonstrated. Extend host artwork and integrated session diagnostics across engines.
 
@@ -122,4 +126,4 @@ No platform is marked ready simply because its library compiles. There is no ext
 
 ## Steam library and research evidence
 
-See [STEAM_LIBRARY.md](STEAM_LIBRARY.md) for host inventory versus cloud ownership, authenticated direct game-ID launch, and the pinned ihslib preparation patch. See [SOURCES.md](SOURCES.md) for the primary-source trail.
+See [STEAM_LIBRARY.md](STEAM_LIBRARY.md) for host inventory versus cloud ownership, authenticated direct game-ID launch, and the compiled native Steam adapter. See [SOURCES.md](SOURCES.md) for the primary-source trail.

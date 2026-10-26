@@ -2,41 +2,50 @@
 
 Recorded 2026-10-26. This is an experimental implementation, not a claim of certified streaming support.
 
-## Local evidence
+## Evidence
 
-- Flutter 3.47.1: **61 tests passed** across `test/games`, `test/navigation/navigation_tabs_test.dart` and `test/widgets/side_navigation_rail_test.dart`.
-- Targeted Dart analysis passed for all Games code, tests, navigation, main-screen/settings integration and the licenses screen.
-- Two Python tests passed for private embedded manifests and fail-closed cancellation patches.
-- The ihslib game-ID patch passes `git apply --check` against the exact pinned upstream files. This is patch applicability, not compiled or end-to-end Steam support.
-- Native Kotlin files were checked/formatted with ktlint 1.5.0. The adapter was formatted with clang-format 18.
+- GitHub Actions [run 40295331169](https://github.com/snapetech-org/PlezyNG/actions/runs/40295331169), commit `a948f57c74d3c908984c8b21d82c5d662e2414d3`: **Moonlight Android library/JNI/adapter build passed**. This run predates the new Steam module and does not validate it.
+- Flutter 3.47.1: **64 focused tests passed** on the combined Games/latest-main tree. Full Dart analysis reports no issues. Structural localization checks pass for 37 locales and 3,146 messages, with placeholders/source hashes verified; localized quantity generation is current.
+- Portable native Steam engine and adapter built with GCC, CMake and the exact source lock. **37 CTest tests passed**, including authorization, crypto, launch transactions, retransmission, HID, tracked-frame ownership, cancellation and late callbacks. The adapter builds with `-Wall -Wextra -Werror`.
+- The same **37 tests passed with AddressSanitizer and UndefinedBehaviorSanitizer**. Local LeakSanitizer cannot inspect `/proc` in this environment; only its leak scan was disabled for the local rerun. CI retains leak detection. This is not a claim of a clean leak scan.
+- All six Android Steam Java sources compile against Google's real Android API 36 stubs with Java 17; five expected compatibility deprecation warnings remain. This checks Java types, not the module's API-37/NDK APK build. Linux JNI syntax/type checking passed with strict warnings; an Android NDK build is still required.
+- Two Python tests passed for private embedded manifests and cancellation patches. Source preparation accepts the pinned Steam recipe. Native C/C++/Java formatting and Kotlin ktlint passed.
 
-Coverage includes bounded malformed Steam discovery packets, identifier validation, profile persistence and deletion, retired async operations, failed refresh preservation, missing-engine behavior, native launch arguments, artwork backpressure/cancellation, pairing-dialog cancellation, narrow screens with large RTL text in light/OLED themes, shared poster focus, D-pad activation, and existing rail navigation.
+The focused Flutter coverage includes malformed Steam discovery packets, the UDP-versus-TCP port distinction, manual host identification, profile persistence/deletion, retired async operations, failed refresh preservation, missing engines, structured native launch arguments, cover backpressure, PIN cancellation, large RTL text, shared poster focus and rail navigation. Additional Steam tests distinguish a Big Picture route from account inventory and preserve user-added shortcuts during refresh.
 
-Reproduce the focused suite:
+Reproduce:
 
 ```sh
 flutter pub get --enforce-lockfile
 flutter test test/games test/navigation/navigation_tabs_test.dart test/widgets/side_navigation_rail_test.dart
-dart analyze lib/games lib/screens/games lib/navigation/navigation_tabs.dart \
-  lib/screens/main_screen.dart lib/services/settings_service.dart \
-  lib/screens/settings/services_settings_screen.dart lib/screens/settings/licenses_screen.dart \
-  lib/widgets/side_navigation_rail.dart test/games test/navigation/navigation_tabs_test.dart
+flutter analyze
 python3 -m unittest discover -s scripts/games -p 'test_*.py'
+python3 scripts/games/prepare_steam.py
+cmake -S native/games/steam -B build/games-steam-tests -DPLEZY_STEAM_TESTS=ON -DCMAKE_BUILD_TYPE=Debug
+cmake --build build/games-steam-tests --parallel 2
+ctest --test-dir build/games-steam-tests --output-on-failure
+cd android
+./gradlew :moonlight:assembleDebug :steam:assembleDebug
 ```
 
-The local environment has no Android SDK/NDK or gaming host. No local Android APK build, native decoder test, PIN exchange against a host, controller-latency measurement or real stream was performed. `.github/workflows/games-native.yml` builds the pinned library, JNI and adapter independently; ordinary Android CI also compiles the application integration. CI is necessary but does not replace hardware qualification.
+`.github/workflows/games-native.yml` now builds both Android libraries and runs the portable transport tests with address/undefined-behavior sanitizers and leak detection. Ordinary Android CI must also compile the application integration and minified release. No local APK, live PIN exchange, actual hardware decode, controller-latency measurement, or real stream was performed: this environment has no gaming host, GPU device or full Android SDK/NDK.
 
-Localization bindings use the repository’s existing tooling. New Games messages are explicitly seeded with the reviewed English copy in other base locales; they are not claimed as translated or language-reviewed. Regional locales inherit their parent. The strict unused-key scan currently reports three unrelated `fileSources.smb*` keys on the source-compatibility baseline; no unused Games keys remain. The full localization check also reports pre-existing empty SMB messages; Games has complete nonempty fallback copy and matching source hashes. Do not treat this as a clean whole-repository lint result.
+New Games messages are seeded with reviewed English fallback copy in non-English base locales; they are **not language-reviewed translations**. Regional locales inherit their parent. Latest-main localization fixes are preserved independently of these new keys.
 
 ## Required before Android release
 
 1. Build debug and minified release APKs for supported ABIs. Verify manifest merging, app identity, backup exclusions, private components, merged resources and shrinker retention. Test with the embedded module enabled and with `-PplezyGamesEmbedded=false`.
 2. Sunshine stable/current, Apollo, Wolf and representative legacy GameStream hosts: discovery, manual address/custom port, correct/wrong/expired PIN, rejection, certificate change, reconnect and revoked trust. Confirm no host credentials or trust material enter logs, QR codes, profile exports or backups.
-3. Android phone/tablet, Android TV and Fire TV: H.264, supported HEVC/AV1 paths, supported HDR, refresh-rate switching, audio routing, physical controllers, multi-touch controller, mouse/keyboard, vibration and Back. Record exact hardware and host/client versions.
+3. Android phone/tablet, Android TV and Fire TV: qualify GameStream codecs/HDR/refresh/input features independently from Steam. Steam currently negotiates at most 1080p60 H.264/HEVC and stereo Opus, with one controller, fixed touch overlay and basic keyboard. Test decoder reconfiguration, partial audio writes, pause/resume teardown and first-frame timeout. Rumble, gyro, full IME, multiple pads, AV1/HDR and Pyrowave are not claimed for Steam. Record exact hardware and host/client versions.
 4. Rotate/background/suspend, change profiles or disable Games during pairing/library/art requests, disconnect the network, and reopen repeatedly. Confirm cancellation, multicast-lock release, one active session, no late launches, and sane media/audio restoration.
 5. Missing, malformed, oversized and slow cover art; large libraries; empty app list; offline refresh; multiple computers with duplicate game names. Confirm cards remain usable without artwork.
-6. Package the pinned modified engine's complete corresponding source, build instructions, dependencies and required license notices with each distribution. Review all third-party components and distribution-channel compatibility. The two Moonlight notice assets alone are not a complete release compliance bundle.
+6. Package the pinned modified engine's complete corresponding source, build instructions, dependencies and required license notices with each distribution. Review all third-party components and distribution-channel compatibility. The Moonlight and Steam notice assets alone are not a complete corresponding-source release bundle.
 
-## Required before Steam or another platform is enabled
+## Remaining gates
 
-Follow the platform matrix in [ARCHITECTURE.md](ARCHITECTURE.md) and the inventory/authentication gates in [STEAM_LIBRARY.md](STEAM_LIBRARY.md). Steam discovery, observed protobuf fields and the game-ID preparation patch do not constitute a working Steam engine. Pyrowave requires its codec, transport/framing, GPU path and actual negotiation to be integrated and tested. Unsupported capabilities remain unavailable in the UI; there is no external streaming handoff.
+- **Steam interoperability:** current stable/beta and representative older hosts, correct/wrong/expired PIN, host rejection, revoked trust, selected-game launch, input and decoder behavior. A compiled independent protocol implementation is not host certification.
+- **Steam catalog:** follow [STEAM_LIBRARY.md](STEAM_LIBRARY.md). Device PIN pairing is implemented; automatic owned/installed-library import and Steam Guard/account QR login are not. The Steam Library card opens an embedded Big Picture session, not an imported grid.
+- **Pyrowave:** integrate and test negotiated codec 9, Steam framing, the pinned decoder, Vulkan/Metal output and conventional-codec fallback. Concatenated codec packets are accepted by upstream, but this alone does not prove Steam interoperability. The capability remains unavailable.
+- **Platform ports:** only Android has native playback adapters in this change. The shared Games UI and Linux-tested portable Steam core do not provide desktop/Apple/webOS playback. See [ARCHITECTURE.md](ARCHITECTURE.md).
+
+No external streaming-app handoff is used.
