@@ -209,10 +209,10 @@ dependency_overrides:
   shared_preferences_linux:
     path: packages/shared_preferences_linux
 flutter:
+  uses-material-design: true
   config:
     # flutter_inappwebview_macos 1.2.0-beta.3 fails SwiftPM builds on Xcode 26.
     enable-swift-package-manager: false
-  uses-material-design: true
   assets:
     - assets/reader/
     - assets/provider_marks/

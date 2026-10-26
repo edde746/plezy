@@ -2,7 +2,6 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-import '../../focus/focusable_text_field.dart';
 import '../../models/subtitles/subtitle_search_result.dart';
 import '../../services/open_subtitles_client.dart';
 
@@ -47,6 +46,7 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
   bool _languageInitialized = false;
   List<SubtitleSearchResult> _results = const [];
   bool _searching = false;
+  bool _hasSearched = false;
   String? _error;
   String? _downloading;
   int _generation = 0;
@@ -80,6 +80,8 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
     final generation = ++_generation;
     setState(() {
       _searching = true;
+      _hasSearched = true;
+      _results = const [];
       _error = null;
     });
     try {
@@ -98,8 +100,9 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
     } catch (_) {
       if (!mounted || generation != _generation) return;
       setState(() {
-        _error = 'Subtitle search failed. Check the API key and connection.';
+        _error = 'Subtitle search failed. Check the API key, connection, and service access.';
         _searching = false;
+        _hasSearched = true;
       });
     }
   }
@@ -118,7 +121,7 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
       if (mounted) {
         setState(() {
           _downloading = null;
-          _error = 'Could not download or apply this subtitle.';
+          _error = 'Could not download or apply this subtitle. Check your connection and try another result.';
         });
       }
     }
@@ -135,17 +138,28 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              Text('Search subtitles', style: Theme.of(context).textTheme.titleLarge),
+              Semantics(
+                header: true,
+                child: Text('Search OpenSubtitles', style: Theme.of(context).textTheme.titleLarge),
+              ),
+              const SizedBox(height: 4),
+              const Text(
+                'Search uses the title and available IMDb/TMDB IDs. The video file stays on its source. Check language, forced or hearing-impaired flags, and rating before choosing.',
+              ),
               const SizedBox(height: 12),
               Row(
                 children: [
                   Expanded(
-                    child: FocusableTextField(
+                    child: TextField(
                       controller: _query,
                       autofocus: true,
                       textInputAction: TextInputAction.search,
                       onSubmitted: (_) => _search(),
-                      decoration: const InputDecoration(labelText: 'Movie or show', border: OutlineInputBorder()),
+                      decoration: const InputDecoration(
+                        labelText: 'Movie or show',
+                        hintText: 'Enter a title to refine results',
+                        border: OutlineInputBorder(),
+                      ),
                     ),
                   ),
                   const SizedBox(width: 8),
@@ -161,7 +175,8 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
                 initialValue: _language,
                 decoration: const InputDecoration(labelText: 'Subtitle language', border: OutlineInputBorder()),
                 items: [
-                  for (final item in _languages.entries) DropdownMenuItem(value: item.key, child: Text(item.value)),
+                  for (final item in _languages.entries)
+                    DropdownMenuItem(value: item.key, child: Text(item.value)),
                 ],
                 onChanged: (value) {
                   if (value == null) return;
@@ -169,16 +184,27 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
                   unawaited(_search());
                 },
               ),
-              if (_searching) const LinearProgressIndicator(),
+              if (_searching)
+                const Semantics(
+                  label: 'Searching OpenSubtitles',
+                  liveRegion: true,
+                  child: LinearProgressIndicator(),
+                ),
               if (_error != null)
                 Padding(
                   padding: const EdgeInsets.symmetric(vertical: 8),
-                  child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                  child: Semantics(
+                    liveRegion: true,
+                    child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+                  ),
                 ),
               const SizedBox(height: 8),
               Expanded(
-                child: _results.isEmpty && !_searching && _error == null
-                    ? const Center(child: Text('No matching subtitles found.'))
+                child: _hasSearched && _results.isEmpty && !_searching && _error == null
+                    ? const Semantics(
+                        liveRegion: true,
+                        child: Center(child: Text('No matching subtitles found. Try a different title or language.')),
+                      )
                     : ListView.separated(
                         itemCount: _results.length,
                         separatorBuilder: (_, _) => const Divider(height: 1),
@@ -190,9 +216,9 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
                           final tags = <String>[
                             if (result.language?.isNotEmpty == true) result.language!,
                             if (result.codec?.isNotEmpty == true) result.codec!.toUpperCase(),
-                            if (result.hearingImpaired) 'HI',
+                            if (result.hearingImpaired) 'Hearing impaired',
                             if (result.forced) 'Forced',
-                            if (result.score != null) '★ ${result.score!.toStringAsFixed(1)}',
+                            if (result.score != null) 'Rating ${result.score!.toStringAsFixed(1)}',
                           ];
                           final active = _downloading == result.key;
                           return ListTile(
@@ -200,12 +226,16 @@ class _StandaloneSubtitleSearchSheetState extends State<StandaloneSubtitleSearch
                             title: Text(title, maxLines: 2, overflow: TextOverflow.ellipsis),
                             subtitle: tags.isEmpty ? null : Text(tags.join(' · ')),
                             trailing: active
-                                ? const SizedBox(
-                                    width: 24,
-                                    height: 24,
-                                    child: CircularProgressIndicator(strokeWidth: 2),
+                                ? Semantics(
+                                    label: 'Downloading subtitle: $title',
+                                    liveRegion: true,
+                                    child: const SizedBox(
+                                      width: 24,
+                                      height: 24,
+                                      child: CircularProgressIndicator(strokeWidth: 2),
+                                    ),
                                   )
-                                : const Icon(Icons.download_rounded),
+                                : const Icon(Icons.download_rounded, semanticLabel: 'Download subtitle'),
                             onTap: _downloading == null ? () => _download(result) : null,
                           );
                         },

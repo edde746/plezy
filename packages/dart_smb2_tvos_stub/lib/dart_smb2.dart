@@ -1,3 +1,5 @@
+import 'dart:typed_data';
+
 import 'package:flutter/services.dart';
 
 const MethodChannel _smbChannel = MethodChannel('org.snapetech.plezyng/smb2');

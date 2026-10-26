@@ -12,22 +12,21 @@ import '../../i18n/strings.g.dart';
 import '../../models/trakt/trakt_catalog_entry.dart';
 import '../../providers/trackers_provider.dart';
 import '../../services/trackers/trakt/trakt_constants.dart';
-import '../../utils/formatters.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/dialogs.dart';
+import '../../utils/formatters.dart';
 import '../../utils/platform_detector.dart';
-import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import 'publication_reader_screen.dart';
 import 'source_notes_screen.dart';
 import 'source_player_screen.dart';
-import 'source_widgets.dart';
 import 'source_sync_screen.dart';
+import 'source_widgets.dart';
 
 class SourceDetailScreen extends StatefulWidget {
   const SourceDetailScreen({super.key, required this.entry});
@@ -39,6 +38,9 @@ class SourceDetailScreen extends StatefulWidget {
 class _SourceDetailScreenState extends State<SourceDetailScreen> {
   late SourceEntry _entry = widget.entry;
   bool _busy = false;
+  bool _metadataLookupPending = false;
+  bool _metadataLookupFailed = false;
+  bool _metadataNoMatch = false;
   Object? _error;
   List<PublicationProgress> _progress = [];
   final Map<String, PublicationProgress> _conflicts = {};
@@ -116,13 +118,31 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
 
   Future<void> _identifyStandaloneMetadata(SourceController sources, int epoch) async {
     if (_entry.kind != SourceItemKind.video) return;
+    final source = sources.sources.where((item) => item.id == _entry.sourceId).firstOrNull;
+    if (source == null || source.options['onlineMetadata'] == 'false') return;
     final entryKey = _entry.key;
+    setState(() {
+      _metadataLookupPending = true;
+      _metadataLookupFailed = false;
+      _metadataNoMatch = false;
+    });
     try {
       final matched = await sources.identifyOnlineMetadata(_entry);
       if (!mounted || sources.generation != epoch || _entry.key != entryKey) return;
-      setState(() => _entry = matched);
+      setState(() {
+        _entry = matched;
+        _metadataLookupPending = false;
+        _metadataNoMatch = matched.onlineMetadataProvider == null && matched.onlineMetadataCheckedAt != null;
+        _metadataLookupFailed = matched.onlineMetadataProvider == null && matched.onlineMetadataCheckedAt == null;
+      });
     } on Object {
       // Online metadata is an enhancement; offline details stay usable.
+      if (mounted && sources.generation == epoch && _entry.key == entryKey) {
+        setState(() {
+          _metadataLookupPending = false;
+          _metadataLookupFailed = true;
+        });
+      }
     }
   }
 
@@ -132,12 +152,20 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(t.common.search),
-        content: FocusableTextField(
-          controller: controller,
-          autofocus: true,
-          textInputAction: TextInputAction.search,
-          decoration: InputDecoration(hintText: t.search.hint),
-          onSubmitted: (_) => Navigator.pop(dialogContext, controller.text.trim()),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Text('This title search goes to Trakt. It sends the title you enter, not the video or source credentials.'),
+            const SizedBox(height: 12),
+            FocusableTextField(
+              controller: controller,
+              autofocus: true,
+              textInputAction: TextInputAction.search,
+              decoration: InputDecoration(labelText: 'Title', hintText: t.search.hint),
+              onSubmitted: (_) => Navigator.pop(dialogContext, controller.text.trim()),
+            ),
+          ],
         ),
         actions: [
           TextButton(
@@ -166,7 +194,17 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
               children: [
                 Padding(
                   padding: const EdgeInsets.all(20),
-                  child: Text(t.common.search, style: Theme.of(sheetContext).textTheme.titleLarge),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Semantics(
+                        header: true,
+                        child: Text('Choose a match', style: Theme.of(sheetContext).textTheme.titleLarge),
+                      ),
+                      const SizedBox(height: 4),
+                      const Text('Review the title and year before choosing. Trakt receives the search title; the video stays on its source.'),
+                    ],
+                  ),
                 ),
                 Expanded(
                   child: ListView.builder(
@@ -184,7 +222,14 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                         subtitle: media.overview?.trim().isNotEmpty == true
                             ? Text(media.overview!, maxLines: 2, overflow: TextOverflow.ellipsis)
                             : null,
-                        trailing: media.rating == null ? null : Text('★ ${media.rating!.toStringAsFixed(1)}'),
+                        trailing: media.rating == null
+                            ? null
+                            : Semantics(
+                                label: 'Rating ${media.rating!.toStringAsFixed(1)} out of 10',
+                                child: ExcludeSemantics(
+                                  child: Text('★ ${media.rating!.toStringAsFixed(1)}'),
+                                ),
+                              ),
                         onTap: () => Navigator.pop(sheetContext, candidate),
                       );
                     },
@@ -197,7 +242,6 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
       );
 
   Future<void> _searchOnlineMetadata() async {
-    final sourceController = context.read<SourceController>();
     final client = context.read<TrackersProvider>().traktCatalogClient;
     if (client == null) return;
     final query = await _metadataSearchQuery();
@@ -214,7 +258,9 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
           .take(25)
           .toList(growable: false);
       if (candidates.isEmpty) {
-        showAppSnackBar(context, t.messages.noResultsFound);
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No online title matches were found. Try a different title.')),
+        );
         return;
       }
       final selected = await _chooseMetadataMatch(candidates);
@@ -245,8 +291,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
         if (media.ids.imdb != null) 'imdb': media.ids.imdb!,
         if (media.ids.tvdb != null) 'tvdb': media.ids.tvdb.toString(),
       };
-      if (!mounted) return;
-      await sourceController.saveOnlineMetadata(
+      await context.read<SourceController>().saveOnlineMetadata(
         _entry,
         title: media.title ?? _entry.displayTitle,
         overview: media.overview,
@@ -439,7 +484,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
       actions: [
         if (_entry.kind == SourceItemKind.video && hasTrakt)
           IconButton(
-            tooltip: t.common.search,
+            tooltip: 'Search online metadata',
             onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
             icon: const AppIcon(Symbols.search_rounded),
           ),
@@ -572,11 +617,86 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                       },
                     ),
                     if (_busy)
-                      const Padding(padding: EdgeInsets.symmetric(vertical: 24), child: LinearProgressIndicator()),
+                      const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 24),
+                        child: Semantics(
+                          label: 'Loading video details',
+                          liveRegion: true,
+                          child: LinearProgressIndicator(),
+                        ),
+                      ),
+                    if (_metadataLookupPending)
+                      const Padding(
+                        padding: EdgeInsets.only(top: 4, bottom: 12),
+                        child: Semantics(
+                          label: 'Looking up online movie and TV details',
+                          liveRegion: true,
+                          child: Row(
+                            children: [
+                              SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)),
+                              SizedBox(width: 12),
+                              Expanded(child: Text('Looking up online movie and TV details…')),
+                            ],
+                          ),
+                        ),
+                      ),
+                    if (_entry.onlineMetadataProvider == 'trakt')
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 12),
+                        child: Semantics(
+                          label: 'Online metadata from Trakt',
+                          child: Align(
+                            alignment: Alignment.centerLeft,
+                            child: Chip(
+                              avatar: Icon(Icons.public_rounded, size: 18),
+                              label: Text('Online metadata from Trakt'),
+                            ),
+                          ),
+                        ),
+                      ),
+                    if (_metadataNoMatch && hasTrakt)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Semantics(
+                               liveRegion: true,
+                               child: Text('No automatic title match was found. Search for the title to choose a match.'),
+                             ),
+                            TextButton.icon(
+                              onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
+                              icon: const Icon(Icons.search_rounded),
+                              label: const Text('Search online metadata'),
+                            ),
+                          ],
+                        ),
+                      ),
+                    if (_metadataLookupFailed && hasTrakt)
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const Semantics(
+                               liveRegion: true,
+                               child: Text('Online metadata could not be loaded. Playback and local details are still available.'),
+                             ),
+                            TextButton.icon(
+                              onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
+                              icon: const Icon(Icons.search_rounded),
+                              label: const Text('Search online metadata'),
+                            ),
+                          ],
+                        ),
+                      ),
                     if (_error != null)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: Text(sourceFailureText(_error!)),
+                        child: Semantics(
+                          liveRegion: true,
+                          child: Text(sourceFailureText(_error!)),
+                        ),
                       ),
                     if (_entry.description.isNotEmpty)
                       Padding(
@@ -584,7 +704,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                         child: Text(_entry.description, style: theme.textTheme.bodyLarge),
                       ),
                     if (_entry.cast.isNotEmpty) ...[
-                      Text(t.discover.cast, style: theme.textTheme.titleMedium),
+                      Semantics(header: true, child: Text(t.discover.cast, style: theme.textTheme.titleMedium)),
                       const SizedBox(height: 8),
                       Text(_entry.cast.join(', '), style: theme.textTheme.bodyMedium),
                     ],

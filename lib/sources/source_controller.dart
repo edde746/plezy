@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -385,7 +386,7 @@ class SourceController extends ChangeNotifier {
         FileSourceKind.smb => SmbSourceAdapter(source, transport, credentials),
         FileSourceKind.ftp => FtpSourceAdapter(source, transport, credentials),
         FileSourceKind.sftp => SftpSourceAdapter(source, transport, credentials),
-        FileSourceKind.nfs => NfsSourceAdapter(source, transport),
+        FileSourceKind.nfs => NfsSourceAdapter(source, transport, credentials),
         FileSourceKind.dlna => DlnaSourceAdapter(source, transport),
         FileSourceKind.opds => OpdsSourceAdapter(source, transport, credentials),
         FileSourceKind.audiobookshelf => AudiobookshelfSourceAdapter(source, transport, credentials),

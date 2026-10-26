@@ -123,7 +123,10 @@ class SourceTile extends StatelessWidget {
                         ],
                         if (progress != null) ...[
                           const SizedBox(height: 8),
-                          LinearProgressIndicator(value: progress!.clamp(0, 1), minHeight: 2),
+                          Semantics(
+                            label: '${(progress!.clamp(0, 1) * 100).round()}% complete',
+                            child: LinearProgressIndicator(value: progress!.clamp(0, 1), minHeight: 2),
+                          ),
                         ],
                       ],
                     ),
@@ -212,7 +215,10 @@ class SourcePosterCard extends StatelessWidget {
                 if (progress != null)
                   Align(
                     alignment: Alignment.bottomCenter,
-                    child: LinearProgressIndicator(value: progress!.clamp(0, 1), minHeight: 3),
+                    child: Semantics(
+                      label: '${(progress!.clamp(0, 1) * 100).round()}% complete',
+                      child: LinearProgressIndicator(value: progress!.clamp(0, 1), minHeight: 3),
+                    ),
                   ),
               ],
             ),

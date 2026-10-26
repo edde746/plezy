@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math' as math;
 import 'dart:typed_data';
 
+import 'package:crypto/crypto.dart' show sha256;
 import 'package:mime/mime.dart';
 import 'package:path/path.dart' as p;
 
@@ -12,10 +13,66 @@ import '../source_transport.dart';
 import '../video_nfo.dart';
 
 /// Read-only NFSv3 over TCP. Implements MOUNT v3, LOOKUP, READDIRPLUS,
-/// GETATTR, and READ with AUTH_SYS credentials. No filesystem write procedure
-/// is exposed by this adapter.
+/// GETATTR, and READ with AUTH_SYS credentials. RPC-with-TLS can be required
+/// for every NFS and mountd connection. No filesystem write procedure is exposed.
 class NfsSourceAdapter extends SourceAdapter {
-  NfsSourceAdapter(super.source, super.transport);
+  NfsSourceAdapter(super.source, super.transport, this._loadCredentials);
+
+  final Future<Map<String, String>> Function() _loadCredentials;
+  Future<SecurityContext>? _rpcTlsSecurityContext;
+
+  bool get _requiresRpcTls => source.options['rpcTls'] == 'required';
+
+  Future<SecurityContext> _secureRpcContext() => _rpcTlsSecurityContext ??= _createRpcTlsContext();
+
+  Future<SecurityContext> _createRpcTlsContext() async {
+    final certificatePem = source.options['rpcTlsServerCertificatePem']?.trim() ?? '';
+    final context = SecurityContext(withTrustedRoots: true)
+      ..minimumTlsProtocolVersion = TlsProtocolVersion.tls1_3;
+    try {
+      if (certificatePem.isNotEmpty) {
+        if (!certificatePem.contains('-----BEGIN CERTIFICATE-----') ||
+            certificatePem.contains('PRIVATE KEY')) {
+          throw const SourceException(SourceFailure.invalidData);
+        }
+
+        if (Platform.isIOS) {
+          // Dart's iOS SecurityContext accepts custom trust anchors as DER,
+          // while other targets accept PEM. Convert each PEM certificate so
+          // the same source configuration works on Apple mobile and tvOS.
+          final certificates = RegExp(
+            r'-----BEGIN CERTIFICATE-----([\s\S]*?)-----END CERTIFICATE-----',
+          ).allMatches(certificatePem);
+          if (certificates.isEmpty) {
+            throw const SourceException(SourceFailure.invalidData);
+          }
+          for (final certificate in certificates) {
+            final encoded = certificate.group(1)!.replaceAll(RegExp(r'\s'), '');
+            if (encoded.isEmpty) throw const SourceException(SourceFailure.invalidData);
+            context.setTrustedCertificatesBytes(base64Decode(encoded));
+          }
+        } else {
+          context.setTrustedCertificatesBytes(utf8.encode(certificatePem));
+        }
+      }
+
+      final credentials = await _loadCredentials();
+      final identity = credentials['nfsTlsClientIdentity']?.trim();
+      if (identity?.isNotEmpty == true) {
+        final bytes = base64Decode(identity!);
+        final password = credentials['nfsTlsClientIdentityPassword'];
+        // A PKCS#12 bundle carries the certificate chain and key together;
+        // this format is also required by Dart's iOS TLS implementation.
+        context.useCertificateChainBytes(bytes, password: password);
+        context.usePrivateKeyBytes(bytes, password: password);
+      }
+    } on SourceException {
+      rethrow;
+    } on Object {
+      throw const SourceException(SourceFailure.invalidData);
+    }
+    return context;
+  }
 
   static const int _nfsProgram = 100003;
   static const int _mountProgram = 100005;
@@ -153,9 +210,19 @@ class NfsSourceAdapter extends SourceAdapter {
   ) async {
     if (_closed) throw const SourceException(SourceFailure.cancelled);
     Socket? socket;
-    StreamIterator<List<int>>? iterator;
+    _RpcWireReader? wire;
     try {
+      final securityContext = _requiresRpcTls ? await _secureRpcContext() : null;
       socket = await Socket.connect(host, port, timeout: const Duration(seconds: 15));
+      if (securityContext != null) {
+        socket = await _upgradeRpcTls(
+          socket,
+          host,
+          program,
+          version,
+          securityContext,
+        );
+      }
       final random = math.Random.secure();
       final xid = random.nextInt(0xffffffff);
       final auth = _XdrWriter()
@@ -183,8 +250,7 @@ class NfsSourceAdapter extends SourceAdapter {
       record.setRange(4, record.length, payload);
       socket.add(record);
       await socket.flush().timeout(const Duration(seconds: 15));
-      iterator = StreamIterator<List<int>>(socket);
-      final wire = _RpcWireReader(iterator);
+      wire = _RpcWireReader(socket);
       final responseBytes = await wire.record();
       final response = _XdrReader(responseBytes);
       if (response.uint32() != xid || response.uint32() != 1) {
@@ -202,8 +268,70 @@ class NfsSourceAdapter extends SourceAdapter {
     } on Object {
       throw const SourceException(SourceFailure.unavailable);
     } finally {
-      await iterator?.cancel();
+      await wire?.cancel();
       socket?.destroy();
+    }
+  }
+
+  Future<Socket> _upgradeRpcTls(
+    Socket socket,
+    String host,
+    int program,
+    int version,
+    SecurityContext context,
+  ) async {
+    final xid = math.Random.secure().nextInt(0xffffffff);
+    final probe = _XdrWriter()
+      ..uint32(xid)
+      ..uint32(0)
+      ..uint32(_rpcVersion)
+      ..uint32(program)
+      ..uint32(version)
+      ..uint32(0)
+      ..uint32(7)
+      ..opaque(const <int>[])
+      ..uint32(0)
+      ..opaque(const <int>[]);
+    final payload = probe.take();
+    final record = Uint8List(payload.length + 4);
+    ByteData.sublistView(record).setUint32(0, 0x80000000 | payload.length, Endian.big);
+    record.setRange(4, record.length, payload);
+    socket.add(record);
+    await socket.flush().timeout(const Duration(seconds: 15));
+
+    final probeWire = _RpcWireReader(socket);
+    var transferredToTls = false;
+    try {
+      final bytes = await probeWire.record();
+      final reply = _XdrReader(bytes);
+      if (reply.uint32() != xid || reply.uint32() != 1) {
+        throw const SourceException(SourceFailure.invalidData);
+      }
+      if (reply.uint32() != 0) throw const SourceException(SourceFailure.unsupported);
+      final verifierFlavor = reply.uint32();
+      final verifier = reply.opaque(maxLength: 400);
+      if (verifierFlavor != 0 || utf8.decode(verifier, allowMalformed: true) != 'STARTTLS') {
+        throw const SourceException(SourceFailure.unsupported);
+      }
+      // RFC 9289 permits starting TLS even when the NULL procedure itself is
+      // rejected after the server has signaled STARTTLS in its verifier.
+      reply.uint32();
+      // Pause the stream before detaching the raw socket so no TLS handshake
+      // bytes are consumed as if they were additional RPC records.
+      probeWire.pause();
+      // SecureSocket.secure takes ownership of the paused subscription.
+      // Cancelling it afterwards would also stop reads from the TLS socket.
+      transferredToTls = true;
+      try {
+        return await SecureSocket.secure(socket, host: host, context: context)
+            .timeout(const Duration(seconds: 15));
+      } on SourceException {
+        rethrow;
+      } on Object {
+        throw const SourceException(SourceFailure.unavailable);
+      }
+    } finally {
+      if (!transferredToTls) await probeWire.cancel();
     }
   }
 
@@ -695,19 +823,60 @@ class _XdrReader {
 }
 
 class _RpcWireReader {
-  _RpcWireReader(this._iterator);
-  final StreamIterator<List<int>> _iterator;
+  _RpcWireReader(Stream<List<int>> stream) {
+    _subscription = stream.listen(
+      _onData,
+      onError: (Object error, StackTrace stackTrace) {
+        _error = error;
+        _signal();
+      },
+      onDone: () {
+        _done = true;
+        _signal();
+      },
+    );
+  }
+
+  StreamSubscription<List<int>>? _subscription;
   List<int> _buffer = [];
   int _offset = 0;
+  Object? _error;
+  bool _done = false;
+  Completer<void>? _changed;
+
+  void _onData(List<int> chunk) {
+    if (chunk.isEmpty) return;
+    final rest = _buffer.sublist(_offset);
+    _buffer = [...rest, ...chunk];
+    _offset = 0;
+    _signal();
+  }
+
+  void _signal() {
+    final changed = _changed;
+    _changed = null;
+    if (changed != null && !changed.isCompleted) changed.complete();
+  }
+
+  void pause() => _subscription?.pause();
+
+  Future<void> cancel() async {
+    final subscription = _subscription;
+    _subscription = null;
+    await subscription?.cancel();
+  }
 
   Future<Uint8List> _readExact(int length) async {
     while (_buffer.length - _offset < length) {
-      if (!await _iterator.moveNext().timeout(const Duration(seconds: 20))) {
+      final error = _error;
+      if (error != null) throw SourceException(SourceFailure.unavailable);
+      if (_done) throw const SourceException(SourceFailure.unavailable);
+      final changed = _changed ??= Completer<void>();
+      try {
+        await changed.future.timeout(const Duration(seconds: 20));
+      } on TimeoutException {
         throw const SourceException(SourceFailure.unavailable);
       }
-      final rest = _buffer.sublist(_offset);
-      _buffer = [...rest, ..._iterator.current];
-      _offset = 0;
     }
     final result = Uint8List.fromList(_buffer.sublist(_offset, _offset + length));
     _offset += length;

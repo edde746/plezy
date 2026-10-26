@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
@@ -5,7 +6,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
-import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../sources/dlna_discovery.dart';
 import '../../sources/source_controller.dart';
@@ -29,13 +29,17 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
   FileSourceKind _kind = FileSourceKind.webdav;
   bool _busy = false, _allowHttp = false, _encryptSmb = false, _onlineMetadata = true;
   bool _discoveringDlna = false;
-  Set<PublicationShelf> _shelves = defaultPublicationShelves(FileSourceKind.webdav);
-  bool _shelvesCustomized = false;
+  bool _nfsRpcTls = false;
+  bool _nfsTlsIdentitySelected = false;
+  bool _clearNfsTlsIdentity = false;
+  bool _nfsTlsIdentitySaved = false;
+  String? _nfsServerCertificateFileName;
+  String? _nfsClientIdentityFileName;
+  Set<PublicationShelf> _shelves = {PublicationShelf.ebooks, PublicationShelf.audiobooks, PublicationShelf.videos};
   Object? _error;
   SourceController? _connecting;
   TextEditingController field(String key) => _fields.putIfAbsent(key, TextEditingController.new);
   bool get oauth => const {FileSourceKind.googleDrive, FileSourceKind.oneDrive, FileSourceKind.dropbox}.contains(_kind);
-
   @override
   void initState() {
     super.initState();
@@ -49,12 +53,32 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
       _allowHttp = old.options['allowHttp'] == 'true';
       _encryptSmb = old.options['encryptSmb'] == 'true';
       _onlineMetadata = old.options['onlineMetadata'] != 'false';
-      final defaultShelves = defaultPublicationShelves(old.kind).map((s) => s.name).join(',');
+      _nfsRpcTls = old.options['rpcTls'] == 'required';
+      field('rpcTlsServerCertificatePem').text = old.options['rpcTlsServerCertificatePem'] ?? '';
+      if (old.kind == FileSourceKind.nfs) {
+        if (field('rpcTlsServerCertificatePem').text.isNotEmpty) {
+          _nfsServerCertificateFileName = 'Saved server certificate';
+        }
+        WidgetsBinding.instance.addPostFrameCallback((_) => _loadSavedNfsTlsIdentity(old));
+      }
       _shelves = PublicationShelf.values
-          .where((s) => (old.options['shelves'] ?? defaultShelves).split(',').contains(s.name))
+          .where((s) => (old.options['shelves'] ?? 'ebooks,audiobooks,videos').split(',').contains(s.name))
           .toSet();
       field('syncRoot').text = old.options['syncRoot'] ?? '';
       field('region').text = old.options['region'] ?? '';
+    }
+  }
+
+  Future<void> _loadSavedNfsTlsIdentity(FileSource source) async {
+    try {
+      final controller = context.read<SourceController>();
+      await controller.ready;
+      final credentials = await controller.repository.credentials(source);
+      if (mounted) {
+        setState(() => _nfsTlsIdentitySaved = credentials['nfsTlsClientIdentity']?.isNotEmpty == true);
+      }
+    } on Object {
+      // Credential state is optional UI context; the saved source still works.
     }
   }
 
@@ -74,19 +98,101 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
     bool required = false,
     String? hint,
     int maxLines = 1,
-    String? Function(String?)? validator,
+    TextInputType? keyboardType,
+    TextCapitalization textCapitalization = TextCapitalization.none,
+    FormFieldValidator<String>? validator,
   }) => Padding(
     padding: const EdgeInsets.only(bottom: 16),
-    child: FocusableTextFormField(
+    child: TextFormField(
       controller: field(key),
       obscureText: secret,
       maxLines: maxLines,
+      keyboardType: keyboardType,
+      textCapitalization: textCapitalization,
       autocorrect: false,
       enableSuggestions: !secret,
       decoration: InputDecoration(labelText: label, helperText: hint),
-      validator: validator ?? (required ? (value) => value?.trim().isNotEmpty == true ? null : label : null),
+      validator: validator ?? (required ? (value) => value?.trim().isNotEmpty == true ? null : '$label is required.' : null),
     ),
   );
+
+  String? _validateNfsEndpoint(String? value) {
+    final uri = Uri.tryParse(value?.trim() ?? '');
+    if (uri == null ||
+        uri.scheme != 'nfs' ||
+        uri.host.isEmpty ||
+        uri.userInfo.isNotEmpty ||
+        uri.hasQuery ||
+        uri.hasFragment ||
+        uri.hasPort && (uri.port < 1 || uri.port > 65535) ||
+        uri.pathSegments.any((part) => part == '.' || part == '..' || part.contains(String.fromCharCode(0)))) {
+      return 'Enter an NFS URL such as nfs://nas:2049/export.';
+    }
+    return null;
+  }
+
+  String? _validateNfsInteger(String? value, {required int min, required int max, required String label}) {
+    if (value?.trim().isEmpty != false) return null;
+    final parsed = int.tryParse(value!.trim());
+    if (parsed == null || parsed < min || parsed > max) {
+      return 'Enter $label from $min to $max.';
+    }
+    return null;
+  }
+
+  Future<void> _pickNfsServerCertificate() async {
+    try {
+      final selection = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['pem', 'crt', 'cer'],
+        withData: true,
+      );
+      final file = selection?.files.single;
+      if (file == null) return;
+      final bytes = file.bytes;
+      if (bytes == null || bytes.length > 256 * 1024) {
+        throw const SourceException(SourceFailure.invalidData);
+      }
+      final pem = utf8.decode(bytes).trim();
+      if (!pem.contains('-----BEGIN CERTIFICATE-----') || pem.contains('PRIVATE KEY')) {
+        throw const SourceException(SourceFailure.invalidData);
+      }
+      if (!mounted) return;
+      setState(() {
+        field('rpcTlsServerCertificatePem').text = pem;
+        _nfsServerCertificateFileName = file.name;
+        _error = null;
+      });
+    } on Object {
+      if (mounted) setState(() => _error = const SourceException(SourceFailure.invalidData));
+    }
+  }
+
+  Future<void> _pickNfsClientIdentity() async {
+    try {
+      final selection = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['p12', 'pfx'],
+        withData: true,
+      );
+      final file = selection?.files.single;
+      if (file == null) return;
+      final bytes = file.bytes;
+      if (bytes == null || bytes.isEmpty || bytes.length > 1024 * 1024) {
+        throw const SourceException(SourceFailure.invalidData);
+      }
+      if (!mounted) return;
+      setState(() {
+        field('nfsTlsClientIdentity').text = base64Encode(bytes);
+        _nfsClientIdentityFileName = file.name;
+        _nfsTlsIdentitySelected = true;
+        _clearNfsTlsIdentity = false;
+        _error = null;
+      });
+    } on Object {
+      if (mounted) setState(() => _error = const SourceException(SourceFailure.invalidData));
+    }
+  }
   Future<void> _discoverDlna() async {
     setState(() => _discoveringDlna = true);
     try {
@@ -153,7 +259,6 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
         endpoint: field('endpoint').text.trim(),
         root: field('root').text.trim(),
         options: {
-          ...?widget.existing?.options,
           'allowHttp': '${_kind != FileSourceKind.smb && _allowHttp}',
           if (_kind == FileSourceKind.smb) 'encryptSmb': '$_encryptSmb',
           'shelves': _shelves.map((s) => s.name).join(','),
@@ -162,6 +267,10 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
             'mountPort': field('mountPort').text.trim(),
           if (_kind == FileSourceKind.nfs && field('uid').text.trim().isNotEmpty) 'uid': field('uid').text.trim(),
           if (_kind == FileSourceKind.nfs && field('gid').text.trim().isNotEmpty) 'gid': field('gid').text.trim(),
+          if (_kind == FileSourceKind.nfs && _nfsRpcTls) ...{
+            'rpcTls': 'required',
+            'rpcTlsServerCertificatePem': field('rpcTlsServerCertificatePem').text.trim(),
+          },
           if (field('clientId').text.trim().isNotEmpty) 'clientId': field('clientId').text.trim(),
           if (_kind == FileSourceKind.s3)
             'region': field('region').text.trim().isEmpty ? 'us-east-1' : field('region').text.trim(),
@@ -174,6 +283,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
           FileSourceKind.webdav || FileSourceKind.opds => const ['username', 'password'],
           FileSourceKind.smb || FileSourceKind.ftp => const ['username', 'password'],
           FileSourceKind.sftp => const ['username', 'password', 'hostKeyFingerprint', 'privateKey', 'privateKeyPassphrase'],
+          FileSourceKind.nfs => const ['nfsTlsClientIdentity', 'nfsTlsClientIdentityPassword'],
           FileSourceKind.s3 => const ['accessKey', 'secretKey', 'sessionToken'],
           FileSourceKind.audiobookshelf => const ['token'],
           _ => const <String>[],
@@ -199,6 +309,13 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
           for (final key in credentialKeys)
             if (field(key).text.isNotEmpty) key: field(key).text,
         };
+      }
+      if (_clearNfsTlsIdentity) {
+        credentials.remove('nfsTlsClientIdentity');
+        credentials.remove('nfsTlsClientIdentityPassword');
+      }
+      if (_nfsTlsIdentitySelected && field('nfsTlsClientIdentityPassword').text.trim().isEmpty) {
+        credentials.remove('nfsTlsClientIdentityPassword');
       }
       controller.requireSession(epoch);
       if (!mounted) return;
@@ -254,7 +371,6 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                           : (kind) => setState(() {
                               _kind = kind!;
                               if (kind == FileSourceKind.dlna) _allowHttp = true;
-                              if (!_shelvesCustomized) _shelves = defaultPublicationShelves(_kind);
                             }),
                     ),
                     const SizedBox(height: 24),
@@ -265,30 +381,28 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                         t.fileSources.endpoint,
                         required: true,
                         hint: switch (_kind) {
-                          FileSourceKind.smb => t.fileSources.smbEndpointHint,
+                          FileSourceKind.smb => 'smb://nas/Movies',
                           FileSourceKind.ftp => 'ftp://nas:21',
                           FileSourceKind.sftp => 'sftp://nas:22',
                           FileSourceKind.nfs => 'nfs://nas:2049/export',
                           FileSourceKind.dlna => 'http://192.168.1.20:8200/rootDesc.xml',
                           _ => null,
                         },
-                        validator: _kind == FileSourceKind.smb
-                            ? (value) {
-                                if (value?.trim().isNotEmpty != true) return t.fileSources.endpoint;
-                                try {
-                                  validateSmbSourceEndpoint(value!.trim());
-                                  return null;
-                                } on SourceException {
-                                  return t.fileSources.smbEndpointInvalid;
-                                }
-                              }
-                            : null,
+                        validator: _kind == FileSourceKind.nfs ? _validateNfsEndpoint : null,
                       ),
                     if (_kind == FileSourceKind.dlna) ...[
                       OutlinedButton.icon(
                         onPressed: _busy || _discoveringDlna ? null : _discoverDlna,
                         icon: _discoveringDlna
-                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                            ? Semantics(
+                                label: 'Searching local network for DLNA servers',
+                                liveRegion: true,
+                                child: const SizedBox(
+                                  width: 18,
+                                  height: 18,
+                                  child: CircularProgressIndicator(strokeWidth: 2),
+                                ),
+                              )
                             : const Icon(Icons.search_rounded),
                         label: Text(_discoveringDlna ? 'Searching local network…' : 'Discover DLNA servers'),
                       ),
@@ -313,19 +427,9 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                       input(
                         'root',
                         t.fileSources.root,
-                        hint: switch (_kind) {
-                          FileSourceKind.dlna => 'DLNA object ID; blank uses the device root.',
-                          FileSourceKind.smb => t.fileSources.smbFolderHelp,
-                          _ => t.fileSources.folderHelp,
-                        },
+                        hint: _kind == FileSourceKind.dlna ? 'DLNA object ID; blank uses the device root.' : t.fileSources.folderHelp,
                       ),
-                    if (const {
-                      FileSourceKind.webdav,
-                      FileSourceKind.opds,
-                      FileSourceKind.smb,
-                      FileSourceKind.ftp,
-                      FileSourceKind.sftp,
-                    }.contains(_kind)) ...[
+                    if (const {FileSourceKind.webdav, FileSourceKind.opds, FileSourceKind.smb, FileSourceKind.ftp, FileSourceKind.sftp}.contains(_kind)) ...[
                       input('username', t.fileSources.username, required: _kind == FileSourceKind.sftp && widget.existing == null),
                       input(
                         'password',
@@ -341,7 +445,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                     if (_kind == FileSourceKind.sftp) ...[
                       input('hostKeyFingerprint', 'SSH host key SHA256 fingerprint', required: widget.existing == null,
                         hint: widget.existing == null
-                            ? 'Pin the server key before connecting; retrieve it from the server administrator.'
+                            ? 'Verify with the server administrator. On the server, run ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub and use its SHA256 value.'
                             : 'Leave blank to keep the current pin, or enter a new server fingerprint.'),
                       ExpansionTile(
                         tilePadding: EdgeInsets.zero,
@@ -354,13 +458,155 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                       ),
                     ],
                     if (_kind == FileSourceKind.nfs) ...[
-                      input('mountPort', 'NFS mount service TCP port', hint: '20048'),
-                      input('uid', 'NFS user ID (AUTH_SYS)', hint: '1000'),
-                      input('gid', 'NFS group ID (AUTH_SYS)', hint: '1000'),
-                      Padding(
-                        padding: const EdgeInsets.only(bottom: 12),
-                        child: Text('Read-only NFSv3 over TCP. The NAS must allow the selected AUTH_SYS IDs and unprivileged client ports (often the “insecure” export option). NFSv3 traffic is not encrypted.',
-                          style: Theme.of(context).textTheme.bodySmall),
+                      input(
+                        'mountPort',
+                        'NFS mount service TCP port',
+                        hint: 'Default: 20048',
+                        keyboardType: TextInputType.number,
+                        validator: (value) => _validateNfsInteger(
+                          value,
+                          min: 1,
+                          max: 65535,
+                          label: 'a TCP port',
+                        ),
+                      ),
+                      input(
+                        'uid',
+                        'NFS user ID (AUTH_SYS)',
+                        hint: 'Default: 1000. Use the ID the NAS export allows.',
+                        keyboardType: TextInputType.number,
+                        validator: (value) => _validateNfsInteger(
+                          value,
+                          min: 0,
+                          max: 0xffffffff,
+                          label: 'a UID',
+                        ),
+                      ),
+                      input(
+                        'gid',
+                        'NFS group ID (AUTH_SYS)',
+                        hint: 'Default: 1000. Use the group ID the NAS export allows.',
+                        keyboardType: TextInputType.number,
+                        validator: (value) => _validateNfsInteger(
+                          value,
+                          min: 0,
+                          max: 0xffffffff,
+                          label: 'a GID',
+                        ),
+                      ),
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Require encrypted NFS (RPC-with-TLS)'),
+                        subtitle: const Text(
+                          'Require TLS 1.3 for NFS and the mount service. Connections fail closed if the NAS does not support it.',
+                        ),
+                        value: _nfsRpcTls,
+                        onChanged: _busy ? null : (value) => setState(() => _nfsRpcTls = value),
+                      ),
+                      if (_nfsRpcTls) ...[
+                        input(
+                          'rpcTlsServerCertificatePem',
+                          'Custom NFS CA or server certificate (PEM, optional)',
+                          maxLines: 6,
+                          hint: 'Leave blank for certificates trusted by this device. Add a private CA or self-signed server certificate when needed; its names must match the NFS URL host.',
+                          validator: (value) {
+                            final pem = value?.trim() ?? '';
+                            if (pem.isNotEmpty &&
+                                (!pem.contains('-----BEGIN CERTIFICATE-----') || pem.contains('PRIVATE KEY'))) {
+                              return 'Use a CA or server certificate in PEM format. Do not include a private key.';
+                            }
+                            return null;
+                          },
+                        ),
+                        OutlinedButton.icon(
+                          onPressed: _busy ? null : _pickNfsServerCertificate,
+                          icon: const Icon(Icons.upload_file_rounded),
+                          label: Text(
+                            _nfsServerCertificateFileName != null
+                                ? 'Replace ${_nfsServerCertificateFileName!}'
+                                : field('rpcTlsServerCertificatePem').text.trim().isEmpty
+                                    ? 'Add custom trust certificate'
+                                    : 'Replace saved custom certificate',
+                          ),
+                        ),
+                        const Padding(
+                          padding: EdgeInsets.only(top: 8, bottom: 12),
+                          child: Text(
+                            'RPC-with-TLS uses the usual NFS and mount service ports and requires NAS support for RFC 9289. TLS 1.3 is required. The host name or IP must match the certificate. AUTH_SYS UID/GID still apply inside the encrypted channel.',
+                          ),
+                        ),
+                        ExpansionTile(
+                          tilePadding: EdgeInsets.zero,
+                          title: const Text('Client certificate (optional)'),
+                          subtitle: const Text('Lets the NAS authenticate this client; AUTH_SYS IDs still depend on NAS export policy.'),
+                          children: [
+                            if (_nfsClientIdentityFileName != null)
+                              Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text('Selected client identity: ${_nfsClientIdentityFileName!}'),
+                              )
+                            else if (_nfsTlsIdentitySaved && !_clearNfsTlsIdentity)
+                              const Align(
+                                alignment: Alignment.centerLeft,
+                                child: Text('A saved client identity will be used.'),
+                              ),
+                            OutlinedButton.icon(
+                              onPressed: _busy ? null : _pickNfsClientIdentity,
+                              icon: const Icon(Icons.upload_file_rounded),
+                              label: Text(
+                                _nfsClientIdentityFileName != null
+                                    ? 'Replace ${_nfsClientIdentityFileName!}'
+                                    : _nfsTlsIdentitySaved && !_clearNfsTlsIdentity
+                                        ? 'Replace saved client identity'
+                                        : 'Choose PKCS#12 client identity',
+                              ),
+                            ),
+                            input(
+                              'nfsTlsClientIdentityPassword',
+                              'Client identity passphrase',
+                              secret: true,
+                              hint: 'Leave blank if the file has no passphrase.',
+                            ),
+                            TextButton.icon(
+                              onPressed: _busy
+                                  ? null
+                                  : () => setState(() {
+                                      _clearNfsTlsIdentity = true;
+                                      _nfsTlsIdentitySelected = false;
+                                      _nfsClientIdentityFileName = null;
+                                      field('nfsTlsClientIdentity').clear();
+                                      field('nfsTlsClientIdentityPassword').clear();
+                                    }),
+                              icon: const Icon(Icons.delete_outline_rounded),
+                              label: const Text('Remove any saved client identity'),
+                            ),
+                            const Padding(
+                              padding: EdgeInsets.only(bottom: 12),
+                              child: Text(
+                                'Client identities are saved in the encrypted source credential store. Leave this section unchanged to keep the saved identity.',
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                      const Padding(
+                        padding: EdgeInsets.only(top: 8, bottom: 12),
+                        child: Text(
+                          'Read-only NFSv3 over TCP. Without RPC-with-TLS, NFS traffic is unencrypted. The NAS must allow the selected AUTH_SYS IDs and unprivileged client ports (often called the “insecure” export option). NFSv4 and UDP are not supported.',
+                        ),
+                      ),
+                      ExpansionTile(
+                        tilePadding: EdgeInsets.zero,
+                        title: const Text('NFS setup help'),
+                        subtitle: const Text('Check these settings if the connection does not open.'),
+                        children: [
+                          const Padding(
+                            padding: EdgeInsets.only(bottom: 12),
+                            child: Text(
+                              'Use an NFSv3 TCP export. The NFS service and mount service must both support RPC-with-TLS when encryption is required. Leave the custom certificate blank for a server certificate trusted by this device, or add the NAS CA/self-signed certificate. The certificate name must match the host in the endpoint. If the NAS asks for mutual TLS, add its PKCS#12 client identity. Finally, confirm the export allows the configured AUTH_SYS UID/GID and the client port policy.',
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                     if (_kind == FileSourceKind.ftp)
@@ -398,7 +644,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                           Padding(
                             padding: const EdgeInsets.only(bottom: 12),
                             child: Text(
-                              'Get an API key from opensubtitles.com. The key and optional account credentials are encrypted with this source.',
+                              'Get an API key from opensubtitles.com. Search sends the video title and available IMDb/TMDB IDs, never the video file. The key and optional account credentials are encrypted with this source.',
                               style: Theme.of(context).textTheme.bodySmall,
                             ),
                           ),
@@ -422,13 +668,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                         value: _onlineMetadata,
                         onChanged: _busy ? null : (v) => setState(() => _onlineMetadata = v),
                       ),
-                    if (const {
-                      FileSourceKind.webdav,
-                      FileSourceKind.opds,
-                      FileSourceKind.s3,
-                      FileSourceKind.audiobookshelf,
-                      FileSourceKind.dlna,
-                    }.contains(_kind))
+                    if (const {FileSourceKind.webdav, FileSourceKind.opds, FileSourceKind.s3, FileSourceKind.audiobookshelf, FileSourceKind.dlna}.contains(_kind))
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(t.fileSources.allowHttp),
@@ -440,9 +680,19 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                     if (_error != null)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16),
+                        child: Semantics(
+                          liveRegion: true,
+                          child: Text(
+                            sourceFailureText(_error!),
+                            style: TextStyle(color: Theme.of(context).colorScheme.error),
+                          ),
+                        ),
+                      ),
+                    if (_error != null && _kind == FileSourceKind.nfs && _nfsRpcTls)
+                      const Padding(
+                        padding: EdgeInsets.only(bottom: 12),
                         child: Text(
-                          sourceFailureText(_error!),
-                          style: TextStyle(color: Theme.of(context).colorScheme.error),
+                          'For encrypted NFS, check RFC 9289 and TLS 1.3 support on both NAS services, the certificate name, and the export UID/GID. PlezyNG will not retry this connection without encryption.',
                         ),
                       ),
                     const SizedBox(height: 16),
@@ -462,7 +712,6 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                             onSelected: _busy
                                 ? null
                                 : (selected) => setState(() {
-                                    _shelvesCustomized = true;
                                     selected ? _shelves.add(shelf) : _shelves.remove(shelf);
                                   }),
                           ),
@@ -472,7 +721,11 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                     FilledButton(
                       onPressed: _busy ? null : connect,
                       child: _busy
-                          ? const SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2))
+                          ? const Semantics(
+                              label: 'Connecting to source',
+                              liveRegion: true,
+                              child: SizedBox(width: 20, height: 20, child: CircularProgressIndicator(strokeWidth: 2)),
+                            )
                           : _kind == FileSourceKind.oneDrive
                           ? Row(
                               mainAxisSize: MainAxisSize.min,

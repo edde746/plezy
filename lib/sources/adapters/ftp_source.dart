@@ -4,6 +4,7 @@ import 'dart:io';
 import 'dart:math' as math;
 
 import 'package:mime/mime.dart';
+import 'package:path/path.dart' as p;
 
 import '../source_models.dart';
 import '../source_transport.dart';
@@ -156,7 +157,9 @@ class FtpSourceAdapter extends SourceAdapter {
       if (query != null && !row.name.toLowerCase().contains(query.toLowerCase())) continue;
       if (!row.directory && row.size == null) continue;
       final id = _child(directory, row.name);
-      final kind = row.directory ? SourceItemKind.folder : classifySourceFile(row.name, lookupMimeType(row.name) ?? '');
+      final kind = row.directory
+          ? SourceItemKind.folder
+          : classifySourceFile(row.name, lookupMimeType(row.name) ?? '');
       if (kind == SourceItemKind.unknown) continue;
       final mime = row.directory ? '' : lookupMimeType(row.name) ?? '';
       entries.add(
@@ -180,13 +183,11 @@ class FtpSourceAdapter extends SourceAdapter {
         ),
       );
     }
-    entries.sort(
-      (a, b) => a.isFolder == b.isFolder
-          ? a.title.toLowerCase().compareTo(b.title.toLowerCase())
-          : a.isFolder
-          ? -1
-          : 1,
-    );
+    entries.sort((a, b) => a.isFolder == b.isFolder
+        ? a.title.toLowerCase().compareTo(b.title.toLowerCase())
+        : a.isFolder
+        ? -1
+        : 1);
     return SourcePage(entries);
   }
 
@@ -202,34 +203,46 @@ class FtpSourceAdapter extends SourceAdapter {
     final type = fields['type']?.toLowerCase();
     if (type == null || const {'cdir', 'pdir'}.contains(type)) return null;
     if (type != 'file' && type != 'dir' && type != 'directory') return null;
-    return (name: name, directory: type != 'file', size: int.tryParse(fields['size'] ?? ''), modify: fields['modify']);
+    return (
+      name: name,
+      directory: type != 'file',
+      size: int.tryParse(fields['size'] ?? ''),
+      modify: fields['modify'],
+    );
   }
 
   ({String name, bool directory, int? size, String? modify})? _parseList(String line) {
-    final unix = RegExp(
-      r'^([bcdlps-][rwxStTs-]{9})\s+\d+\s+\S+\s+\S+\s+(\d+)\s+\w{3}\s+\d{1,2}\s+\S+\s+(.+)$',
-    ).firstMatch(line);
+    final unix = RegExp(r'^([bcdlps-][rwxStTs-]{9})\s+\d+\s+\S+\s+\S+\s+(\d+)\s+\w{3}\s+\d{1,2}\s+\S+\s+(.+)$')
+        .firstMatch(line);
     if (unix != null) {
       final mode = unix[1]!;
       if (mode.startsWith('l')) return null;
       return (name: unix[3]!, directory: mode.startsWith('d'), size: int.tryParse(unix[2]!), modify: null);
     }
-    final dos = RegExp(
-      r'^(\d{2}-\d{2}-\d{2,4}\s+\d{1,2}:\d{2}[AP]M)\s+(<DIR>|\d+)\s+(.+)$',
-      caseSensitive: false,
-    ).firstMatch(line);
+    final dos = RegExp(r'^(\d{2}-\d{2}-\d{2,4}\s+\d{1,2}:\d{2}[AP]M)\s+(<DIR>|\d+)\s+(.+)$', caseSensitive: false)
+        .firstMatch(line);
     if (dos == null) return null;
-    return (name: dos[3]!, directory: dos[2]!.toUpperCase() == '<DIR>', size: int.tryParse(dos[2]!), modify: dos[1]);
+    return (
+      name: dos[3]!,
+      directory: dos[2]!.toUpperCase() == '<DIR>',
+      size: int.tryParse(dos[2]!),
+      modify: dos[1],
+    );
   }
 
   @override
   Future<int?> contentSize(PublicationFile file) async => file.size ?? (await _stat(file.id)).size;
 
   @override
-  Future<ContentLease> resolve(PublicationFile file) async => throw const SourceException(SourceFailure.unsupported);
+  Future<ContentLease> resolve(PublicationFile file) async =>
+      throw const SourceException(SourceFailure.unsupported);
 
   @override
-  Future<SourceByteStream?> openContent(PublicationFile file, {required int offset, required int length}) async {
+  Future<SourceByteStream?> openContent(
+    PublicationFile file, {
+    required int offset,
+    required int length,
+  }) async {
     final current = await _stat(file.id);
     if (file.size != null && current.size != file.size ||
         file.revision != null && current.revision != null && file.revision != current.revision) {
@@ -261,18 +274,14 @@ class FtpSourceAdapter extends SourceAdapter {
       }
       final data = await session.openData('RETR $path');
       var remaining = length;
-      try {
-        await for (final chunk in data.timeout(const Duration(seconds: 45))) {
-          if (remaining <= 0) break;
-          final take = math.min(remaining, chunk.length).toInt();
-          if (take > 0) {
-            yield take == chunk.length ? chunk : chunk.sublist(0, take);
-            remaining -= take;
-          }
-          if (remaining == 0) break;
+      await for (final chunk in data.timeout(const Duration(seconds: 45))) {
+        if (remaining <= 0) break;
+        final take = math.min(remaining, chunk.length).toInt();
+        if (take > 0) {
+          yield take == chunk.length ? chunk : chunk.sublist(0, take);
+          remaining -= take;
         }
-      } finally {
-        await data.close();
+        if (remaining == 0) break;
       }
       if (remaining != 0) throw const SourceException(SourceFailure.invalidData);
     } finally {
@@ -344,7 +353,9 @@ class _FtpSession {
       if (prot.code != 200) throw failure(prot);
     }
 
-    final username = credentials['username']?.trim().isNotEmpty == true ? credentials['username']!.trim() : 'anonymous';
+    final username = credentials['username']?.trim().isNotEmpty == true
+        ? credentials['username']!.trim()
+        : 'anonymous';
     final password = credentials['password'] ?? (username == 'anonymous' ? 'anonymous@' : '');
     final user = await command('USER $username');
     if (user.code == 331 || user.code == 332) {
@@ -358,7 +369,7 @@ class _FtpSession {
   }
 
   StreamIterator<String> _lineReader(Socket socket) =>
-      StreamIterator<String>(socket.cast<List<int>>().transform(utf8.decoder).transform(const LineSplitter()));
+      StreamIterator<String>(socket.transform(utf8.decoder).transform(const LineSplitter()));
 
   Future<String> _nextLine() async {
     final lines = _lines;
@@ -399,13 +410,16 @@ class _FtpSession {
     return _reply();
   }
 
-  SourceException failure(_FtpReply reply) => SourceException(switch (reply.code) {
-    530 || 532 => SourceFailure.authentication,
-    550 || 553 => SourceFailure.permission,
-    500 || 501 || 502 || 504 => SourceFailure.unsupported,
-    421 || 425 || 426 => SourceFailure.unavailable,
-    _ => SourceFailure.unavailable,
-  }, status: reply.code);
+  SourceException failure(_FtpReply reply) => SourceException(
+    switch (reply.code) {
+      530 || 532 => SourceFailure.authentication,
+      550 || 553 => SourceFailure.permission,
+      500 || 501 || 502 || 504 => SourceFailure.unsupported,
+      421 || 425 || 426 => SourceFailure.unavailable,
+      _ => SourceFailure.unavailable,
+    },
+    status: reply.code,
+  );
 
   Future<Socket> _passiveSocket() async {
     final extended = await command('EPSV');
@@ -446,17 +460,17 @@ class _FtpSession {
 
   Future<String> readTransfer(String commandText, {required int limit}) async {
     final data = await openData(commandText);
-    final bytes = <int>[];
+    final bytes = BytesBuilder(copy: false);
     var total = 0;
     try {
       await for (final chunk in data.timeout(const Duration(seconds: 45))) {
         total += chunk.length;
         if (total > limit) throw const SourceException(SourceFailure.invalidData);
-        bytes.addAll(chunk);
+        bytes.add(chunk);
       }
       final finalReply = await _reply();
       if (finalReply.code != 226 && finalReply.code != 250) throw failure(finalReply);
-      return utf8.decode(bytes, allowMalformed: true);
+      return utf8.decode(bytes.takeBytes(), allowMalformed: true);
     } finally {
       _data = null;
       await data.close();
