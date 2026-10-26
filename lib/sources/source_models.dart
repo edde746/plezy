@@ -196,6 +196,9 @@ class SourceEntry {
     this.files = const [],
     this.chapters = const [],
     this.identifiers = const {},
+    this.releaseYear,
+    this.rating,
+    this.genres = const [],
   });
   final String sourceId;
   final String id;
@@ -212,6 +215,39 @@ class SourceEntry {
   final List<PublicationFile> files;
   final List<BookChapter> chapters;
   final Map<String, String> identifiers;
+  final int? releaseYear;
+  final double? rating;
+  final List<String> genres;
+
+  SourceEntry copyWith({
+    String? title,
+    String? description,
+    String? coverId,
+    int? releaseYear,
+    double? rating,
+    List<String>? genres,
+    Map<String, String>? identifiers,
+  }) => SourceEntry(
+    sourceId: sourceId,
+    id: id,
+    title: title ?? this.title,
+    kind: kind,
+    parentId: parentId,
+    author: author,
+    narrator: narrator,
+    series: series,
+    seriesOrder: seriesOrder,
+    description: description ?? this.description,
+    language: language,
+    coverId: coverId ?? this.coverId,
+    files: files,
+    chapters: chapters,
+    identifiers: identifiers ?? this.identifiers,
+    releaseYear: releaseYear ?? this.releaseYear,
+    rating: rating ?? this.rating,
+    genres: genres ?? this.genres,
+  );
+
   String get key => sourceKey(sourceId, id);
   bool get isFolder => kind == SourceItemKind.folder;
 
@@ -238,6 +274,9 @@ class SourceEntry {
     'files': files.map((f) => f.toJson()).toList(),
     'chapters': chapters.map((c) => c.toJson()).toList(),
     'identifiers': identifiers,
+    if (releaseYear != null) 'releaseYear': releaseYear,
+    if (rating != null) 'rating': rating,
+    if (genres.isNotEmpty) 'genres': genres,
   };
   factory SourceEntry.fromJson(Map<String, dynamic> j) => SourceEntry(
     sourceId: j['sourceId'] as String,
@@ -255,6 +294,9 @@ class SourceEntry {
     files: sourceList(j['files']).map((f) => PublicationFile.fromJson(sourceMap(f))).toList(),
     chapters: sourceList(j['chapters']).map((c) => BookChapter.fromJson(sourceMap(c))).toList(),
     identifiers: sourceMap(j['identifiers']).map((k, v) => MapEntry(k, '$v')),
+    releaseYear: sourceInt(j['releaseYear']),
+    rating: (j['rating'] as num?)?.toDouble(),
+    genres: sourceList(j['genres']).whereType<String>().toList(),
   );
 }
 

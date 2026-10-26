@@ -122,6 +122,7 @@ abstract class SourceAdapter {
   }) async => null;
 
   Future<ContentLease?> cover(SourceEntry entry) async => null;
+  Future<List<int>?> coverBytes(SourceEntry entry) async => null;
   Future<void> refreshAuthorization() async {}
   bool supportsProgress(SourceEntry entry, PublicationProgress progress) =>
       progress.mode == PublicationMode.reading ? capabilities.readingProgress : capabilities.audioProgress;

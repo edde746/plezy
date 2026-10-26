@@ -301,6 +301,25 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                                 padding: const EdgeInsets.only(top: 8),
                                 child: Text(_entry.series, style: theme.textTheme.bodyMedium),
                               ),
+                            if (_entry.releaseYear != null || _entry.rating != null)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 10),
+                                child: Text(
+                                  [
+                                    if (_entry.releaseYear != null) '${_entry.releaseYear}',
+                                    if (_entry.rating != null) '★ ${_entry.rating!.toStringAsFixed(1)}/10',
+                                  ].join(' · '),
+                                  style: theme.textTheme.bodyMedium?.copyWith(color: tk.textMuted),
+                                ),
+                              ),
+                            if (_entry.genres.isNotEmpty)
+                              Padding(
+                                padding: const EdgeInsets.only(top: 8),
+                                child: Text(
+                                  _entry.genres.join(' · '),
+                                  style: theme.textTheme.bodyMedium?.copyWith(color: tk.textMuted),
+                                ),
+                              ),
                             const SizedBox(height: 24),
                             Wrap(
                               spacing: 12,

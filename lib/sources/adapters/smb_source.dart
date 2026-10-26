@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:convert';
 import 'dart:math' as math;
 
 import 'package:dart_smb2/dart_smb2.dart';
@@ -6,6 +7,7 @@ import 'package:mime/mime.dart';
 
 import '../source_models.dart';
 import '../source_transport.dart';
+import '../video_nfo.dart';
 
 class SmbSourceAdapter extends SourceAdapter {
   SmbSourceAdapter(super.source, super.transport, this.credentials);
@@ -90,6 +92,16 @@ class SmbSourceAdapter extends SourceAdapter {
 
   String _revision(Smb2Stat stat) => '${stat.size}:${stat.modified.microsecondsSinceEpoch}';
 
+  Future<List<int>?> _readBounded(Smb2Pool pool, String path, int size, int limit) async {
+    if (size < 0 || size > limit) return null;
+    final bytes = await pool.withFile(
+      path,
+      (file) => file.read(offset: 0, length: size),
+      knownSize: size,
+    );
+    return bytes.length == size ? bytes : null;
+  }
+
   @override
   Future<SourcePage> browse({String? parent, String? cursor, String? query}) async {
     try {
@@ -133,6 +145,75 @@ class SmbSourceAdapter extends SourceAdapter {
           ? -1
           : 1);
       return SourcePage(entries);
+    } on Smb2Exception catch (error) {
+      throw _translate(error);
+    }
+  }
+
+  @override
+  Future<SourceEntry> hydrate(SourceEntry entry) async {
+    if (entry.kind != SourceItemKind.video) return entry;
+    try {
+      final path = _sourcePath(entry.id);
+      final slash = path.lastIndexOf('/');
+      final directory = slash < 0 ? '' : path.substring(0, slash);
+      final filename = slash < 0 ? path : path.substring(slash + 1);
+      final dot = filename.lastIndexOf('.');
+      final stem = dot > 0 ? filename.substring(0, dot) : filename;
+      final pool = await _connection();
+      final rows = await pool.listDirectory(directory);
+      final siblings = {for (final row in rows) row.name.toLowerCase(): row};
+      final sidecarNames = ['${stem.toLowerCase()}.nfo', '${filename.toLowerCase()}.nfo'];
+      VideoNfoMetadata? metadata;
+      for (final name in sidecarNames) {
+        final row = siblings[name];
+        if (row == null || !row.isFile || row.size > 1024 * 1024) continue;
+        final sidecarPath = _join(directory, row.name);
+        final bytes = await _readBounded(pool, sidecarPath, row.size, 1024 * 1024);
+        if (bytes == null) continue;
+        metadata = parseVideoNfo(utf8.decode(bytes, allowMalformed: true));
+        if (metadata != null) break;
+      }
+
+      String? poster;
+      final posterNames = [
+        '${stem.toLowerCase()}-poster.jpg',
+        '${stem.toLowerCase()}-poster.png',
+        '${stem.toLowerCase()}.jpg',
+        '${stem.toLowerCase()}.png',
+        'poster.jpg',
+        'poster.png',
+        'cover.jpg',
+        'cover.png',
+        'folder.jpg',
+        'folder.png',
+      ];
+      for (final name in posterNames) {
+        final row = siblings[name];
+        if (row == null || !row.isFile || row.size <= 0 || row.size > 8 * 1024 * 1024) continue;
+        poster = _join(directory, row.name);
+        break;
+      }
+
+      var hydrated = metadata?.applyTo(entry) ?? entry;
+      if (poster != null) hydrated = hydrated.copyWith(coverId: poster);
+      return hydrated;
+    } on Smb2Exception {
+      // Video metadata is an enhancement; a NAS hiccup must not hide a playable file.
+      return entry;
+    }
+  }
+
+  @override
+  Future<List<int>?> coverBytes(SourceEntry entry) async {
+    final cover = entry.coverId;
+    if (cover == null) return null;
+    try {
+      final path = _sourcePath(cover);
+      final pool = await _connection();
+      final stat = await pool.stat(path);
+      if (!stat.isFile || stat.size <= 0 || stat.size > 8 * 1024 * 1024) return null;
+      return _readBounded(pool, path, stat.size, 8 * 1024 * 1024);
     } on Smb2Exception catch (error) {
       throw _translate(error);
     }

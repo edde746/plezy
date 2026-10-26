@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
+import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -295,12 +296,18 @@ class SourceController extends ChangeNotifier {
       await ready;
       final epoch = generation;
       final file = File(
-        p.join(downloads.directory.path, sourceDigest(profile), 'covers', '${sourceDigest(entry.key)}.png'),
+        p.join(downloads.directory.path, sourceDigest(profile), 'covers', '${sourceDigest('${entry.key}:${entry.coverId ?? ''}')}.png'),
       );
       if (await file.exists()) return file;
       if (!sources.any((s) => s.id == entry.sourceId)) return null;
       try {
-        final provider = adapter(entry.sourceId), lease = await adapter(entry.sourceId).cover(entry);
+        final provider = adapter(entry.sourceId);
+        final directBytes = await provider.coverBytes(entry);
+        if (directBytes != null) {
+          requireSession(epoch);
+          return await saveCover(entry, Uint8List.fromList(directBytes), profile: profile);
+        }
+        final lease = await provider.cover(entry);
         if (lease == null) return null;
         final response = await provider.transport.send('GET', lease.uri, headers: lease.headers, redirects: true);
         SourceTransport.check(response.statusCode);

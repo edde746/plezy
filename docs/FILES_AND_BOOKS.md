@@ -10,7 +10,7 @@ The screens use PlezyNG's Mono theme, connected settings rows, cover grids, shar
 | --- | --- | --- |
 | Local files | Import using the system picker; desktop users can connect a folder | Imports are copied into profile-owned storage. Connected folders remain read-only. |
 | OPDS 1/2 | Atom or JSON catalogue URL; optional Basic credentials | Standard direct, open-access and sample acquisitions; navigation and pagination; catalogue covers. Borrow/purchase links are never treated as files. |
-| SMB2/3 | `smb://server/share`, optional account, folder, and SMB3 encryption | Read-only NAS browsing with range-based streaming on Android, iOS, macOS, Windows and Linux. SMB is not exposed on tvOS. |
+| SMB2/3 | `smb://server/share`, optional account, folder, and SMB3 encryption | Read-only NAS browsing with range-based streaming on Android, iOS, macOS, Windows and Linux. Kodi/Jellyfin `.nfo` sidecars and sibling poster images enrich details offline. SMB is not exposed on tvOS. |
 | Audiobookshelf | Server URL and the user's API token | Libraries, books, primary/secondary ebooks, multipart tracks, chapters, covers, reading/listening progress and audio bookmarks. |
 | Google Drive | Hosted Google authorization | Read-only folder browsing, shared-drive items/resource keys, fresh download authorization. |
 | OneDrive | Hosted Microsoft authorization | Read-only Microsoft Graph browsing and fresh download URLs. |
