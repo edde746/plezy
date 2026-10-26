@@ -344,7 +344,11 @@ class PublicationSync {
         )
         .get();
     if (cacheRows.isEmpty) return;
-    final device = (await repository.preference(profile, 'publication-sync-device-v1'))['id'] as String?;
+    final devicePreference = await repository.preference(profile, 'publication-sync-device-v1');
+    final device = devicePreference['id'] as String? ?? const Uuid().v4().replaceAll('-', '');
+    if (devicePreference['id'] != device) {
+      await repository.savePreference(profile, 'publication-sync-device-v1', {'id': device});
+    }
     for (final cacheRow in cacheRows) {
       final cacheKey = cacheRow.read<String>('key');
       final cache = _SyncCache(sourceMap(jsonDecode(cacheRow.read<String>('payload'))));
