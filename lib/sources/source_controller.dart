@@ -301,17 +301,17 @@ class SourceController extends ChangeNotifier {
   }
 
   Future<void> _shelves(String profile, int epoch) async {
-    final entries = await repository.entries(profile);
+    final cached = await Future.wait(PublicationShelf.values.map((shelf) => repository.hasShelfEntries(profile, shelf)));
     if (!current(epoch)) return;
     shelves = {
-      for (final shelf in PublicationShelf.values)
-        if (entries.any(shelf.includes) ||
+      for (var index = 0; index < PublicationShelf.values.length; index++)
+        if (cached[index] ||
             sources.any((source) {
               final configured = source.options['shelves']?.split(',');
               final enabled = configured ?? defaultPublicationShelves(source.kind).map((s) => s.name).toList();
-              return enabled.contains(shelf.name);
+              return enabled.contains(PublicationShelf.values[index].name);
             }))
-          shelf,
+          PublicationShelf.values[index],
     };
   }
 
@@ -896,10 +896,13 @@ class SourceController extends ChangeNotifier {
       }
       return;
     }
-    final entries = await repository.entries(profile);
-    final entriesByKey = <String, SourceEntry>{};
-    for (final entry in entries) {
-      entriesByKey.putIfAbsent(entry.key, () => entry);
+    final entriesByKey = <String, SourceEntry?>{};
+    Future<SourceEntry?> entryFor(String key) async {
+      if (entriesByKey.containsKey(key)) return entriesByKey[key];
+      final entry = await repository.entryByKey(profile, key);
+      requireSession(epoch);
+      entriesByKey[key] = entry;
+      return entry;
     }
     final sourcesById = <String, FileSource>{for (final source in sources) source.id: source};
     final events = await repository.pendingEvents(profile);
@@ -927,7 +930,7 @@ class SourceController extends ChangeNotifier {
         continue;
       }
       if (onlyKey != null && progress.key != onlyKey) continue;
-      final storedEntry = entriesByKey[progress.entryKey];
+      final storedEntry = await entryFor(progress.entryKey);
       if (storedEntry == null) continue;
       final owner = sourcesById[storedEntry.sourceId];
       if (owner == null) continue;
@@ -986,7 +989,7 @@ class SourceController extends ChangeNotifier {
         firstFailureStack ??= stackTrace;
         continue;
       }
-      final storedEntry = entriesByKey[annotation.entryKey];
+      final storedEntry = await entryFor(annotation.entryKey);
       if (storedEntry == null) continue;
       final owner = sourcesById[storedEntry.sourceId];
       if (owner == null) continue;
@@ -1112,4 +1115,5 @@ class SourceController extends ChangeNotifier {
     super.dispose();
   }
 }
+
 
