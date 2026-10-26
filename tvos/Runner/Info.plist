@@ -125,5 +125,7 @@
 	<array>
 		<string>arm64</string>
 	</array>
+	<key>NSLocalNetworkUsageDescription</key>
+	<string>Connect to your SMB shares to browse and play videos from your home network.</string>
 </dict>
 </plist>

@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		A14B3C5D6E7F8091A2B3C4D /* AMSMB2 in Frameworks */ = {isa = PBXBuildFile; productRef = B14B3C5D6E7F8091A2B3C4D /* AMSMB2 */; };
 		0092CB48B2682E3D69B1A09F /* TopShelfFetchContractTests.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5D44F4361594F517C002DC45 /* TopShelfFetchContractTests.swift */; };
 		013E913372C9904E64697D05 /* ShelfItemMapper.swift in Sources */ = {isa = PBXBuildFile; fileRef = C339C20E52A6F6F6725EF31F /* ShelfItemMapper.swift */; };
 		055E465F9095D0B6E9B91D46 /* PathProviderPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = D41AA251EF365516E2AC5287 /* PathProviderPlugin.swift */; };
@@ -189,6 +190,7 @@
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				A14B3C5D6E7F8091A2B3C4D /* AMSMB2 in Frameworks */,
 				EA0F4264E7B912702C490109 /* MPVKit in Frameworks */,
 				C6A15611158B29B0FF43A960 /* Pods_Runner.framework in Frameworks */,
 			);
@@ -445,6 +447,7 @@
 			);
 			name = Runner;
 			packageProductDependencies = (
+				B14B3C5D6E7F8091A2B3C4D /* AMSMB2 */,
 				EA0F4263E7B912702C490108 /* MPVKit */,
 			);
 			productName = Runner;
@@ -495,6 +498,7 @@
 			);
 			mainGroup = 97C146E51CF9000F007C117D;
 			packageReferences = (
+				A24B3C5D6E7F8091A2B3C4D /* XCRemoteSwiftPackageReference "AMSMB2" */,
 				CEE842A5A25923620300AB90 /* XCRemoteSwiftPackageReference "mpv-build" */,
 			);
 			productRefGroup = 97C146EF1CF9000F007C117D /* Products */;
@@ -1202,6 +1206,14 @@
 /* End XCConfigurationList section */
 
 /* Begin XCRemoteSwiftPackageReference section */
+		A24B3C5D6E7F8091A2B3C4D /* XCRemoteSwiftPackageReference "AMSMB2" */ = {
+			isa = XCRemoteSwiftPackageReference;
+			repositoryURL = "https://github.com/amosavian/AMSMB2";
+			requirement = {
+				kind = upToNextMinorVersion;
+				minimumVersion = 3.0.0;
+			};
+		};
 		CEE842A5A25923620300AB90 /* XCRemoteSwiftPackageReference "mpv-build" */ = {
 			isa = XCRemoteSwiftPackageReference;
 			repositoryURL = "https://github.com/edde746/mpv-build";
@@ -1213,6 +1225,11 @@
 /* End XCRemoteSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		B14B3C5D6E7F8091A2B3C4D /* AMSMB2 */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = A24B3C5D6E7F8091A2B3C4D /* XCRemoteSwiftPackageReference "AMSMB2" */;
+			productName = AMSMB2;
+		};
 		EA0F4263E7B912702C490108 /* MPVKit */ = {
 			isa = XCSwiftPackageProductDependency;
 			package = CEE842A5A25923620300AB90 /* XCRemoteSwiftPackageReference "mpv-build" */;

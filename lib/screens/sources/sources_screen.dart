@@ -159,7 +159,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
   bool downloaded(SourceEntry e) => e.files.any((f) => _offline.contains(sourceKey(e.sourceId, f.id)));
   Widget itemTile(SourceEntry e, int index, int count, {PublicationProgress? progress}) => SourceTile(
     key: ValueKey('${e.key}:${progress?.mode.name ?? ''}'),
-    title: e.title,
+    title: e.displayTitle,
     subtitle: [e.author, e.series, if (downloaded(e)) t.fileSources.offline].where((s) => s.isNotEmpty).join(' · '),
     icon: sourceItemIcon(e.kind),
     onTap: () => _open(e),

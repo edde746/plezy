@@ -25,12 +25,20 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
   final _form = GlobalKey<FormState>();
   final _fields = <String, TextEditingController>{};
   FileSourceKind _kind = FileSourceKind.webdav;
-  bool _busy = false, _allowHttp = false;
-  Set<PublicationShelf> _shelves = {PublicationShelf.ebooks, PublicationShelf.audiobooks};
+  bool _busy = false, _allowHttp = false, _encryptSmb = false;
+  Set<PublicationShelf> _shelves = _defaultShelves(FileSourceKind.webdav);
+  bool _shelvesCustomized = false;
   Object? _error;
   SourceController? _connecting;
   TextEditingController field(String key) => _fields.putIfAbsent(key, TextEditingController.new);
   bool get oauth => const {FileSourceKind.googleDrive, FileSourceKind.oneDrive, FileSourceKind.dropbox}.contains(_kind);
+
+  static Set<PublicationShelf> _defaultShelves(FileSourceKind kind) => {
+    PublicationShelf.ebooks,
+    PublicationShelf.audiobooks,
+    if (kind == FileSourceKind.local || kind == FileSourceKind.smb) PublicationShelf.videos,
+  };
+
   @override
   void initState() {
     super.initState();
@@ -42,8 +50,10 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
       field('root').text = old.root;
       field('clientId').text = old.options['clientId'] ?? '';
       _allowHttp = old.options['allowHttp'] == 'true';
+      _encryptSmb = old.options['encryptSmb'] == 'true';
+      final defaultShelves = _defaultShelves(old.kind).map((s) => s.name).join(',');
       _shelves = PublicationShelf.values
-          .where((s) => (old.options['shelves'] ?? 'ebooks,audiobooks').split(',').contains(s.name))
+          .where((s) => (old.options['shelves'] ?? defaultShelves).split(',').contains(s.name))
           .toSet();
       field('syncRoot').text = old.options['syncRoot'] ?? '';
       field('region').text = old.options['region'] ?? '';
@@ -59,7 +69,14 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
     super.dispose();
   }
 
-  Widget input(String key, String label, {bool secret = false, bool required = false, String? hint}) => Padding(
+  Widget input(
+    String key,
+    String label, {
+    bool secret = false,
+    bool required = false,
+    String? hint,
+    String? Function(String?)? validator,
+  }) => Padding(
     padding: const EdgeInsets.only(bottom: 16),
     child: TextFormField(
       controller: field(key),
@@ -67,7 +84,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
       autocorrect: false,
       enableSuggestions: !secret,
       decoration: InputDecoration(labelText: label, helperText: hint),
-      validator: required ? (value) => value?.trim().isNotEmpty == true ? null : label : null,
+      validator: validator ?? (required ? (value) => value?.trim().isNotEmpty == true ? null : label : null),
     ),
   );
   Future<void> connect() async {
@@ -90,7 +107,8 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
         endpoint: field('endpoint').text.trim(),
         root: field('root').text.trim(),
         options: {
-          'allowHttp': '$_allowHttp',
+          'allowHttp': '${_kind != FileSourceKind.smb && _allowHttp}',
+          if (_kind == FileSourceKind.smb) 'encryptSmb': '$_encryptSmb',
           'shelves': _shelves.map((s) => s.name).join(','),
           if (field('clientId').text.trim().isNotEmpty) 'clientId': field('clientId').text.trim(),
           if (_kind == FileSourceKind.s3)
@@ -99,13 +117,20 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
             'syncRoot': field('syncRoot').text.trim(),
         },
       );
+      final credentialKeys = switch (_kind) {
+        FileSourceKind.webdav || FileSourceKind.opds => const ['username', 'password'],
+        FileSourceKind.smb => const ['username', 'password', 'domain'],
+        FileSourceKind.s3 => const ['accessKey', 'secretKey', 'sessionToken'],
+        FileSourceKind.audiobookshelf => const ['token'],
+        _ => const <String>[],
+      };
       Map<String, String> credentials;
       if (oauth) {
         credentials = await controller.oauth.authorize(source, clientSecret: field('clientSecret').text);
       } else {
         credentials = {
           if (widget.existing != null) ...await controller.repository.credentials(widget.existing!),
-          for (final key in ['username', 'password', 'token', 'accessKey', 'secretKey', 'sessionToken'])
+          for (final key in credentialKeys)
             if (field(key).text.isNotEmpty) key: field(key).text,
         };
       }
@@ -145,7 +170,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                       decoration: InputDecoration(labelText: t.fileSources.source),
                       items: [
                         for (final kind in FileSourceKind.values)
-                          if (kind != FileSourceKind.local || PlatformDetector.isDesktopOS())
+                          if ((kind != FileSourceKind.local || PlatformDetector.isDesktopOS()))
                             DropdownMenuItem(
                               value: kind,
                               child: Row(
@@ -158,12 +183,33 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                               ),
                             ),
                       ],
-                      onChanged: _busy || widget.existing != null ? null : (kind) => setState(() => _kind = kind!),
+                      onChanged: _busy || widget.existing != null
+                          ? null
+                          : (kind) => setState(() {
+                              _kind = kind!;
+                              if (!_shelvesCustomized) _shelves = _defaultShelves(_kind);
+                            }),
                     ),
                     const SizedBox(height: 24),
                     input('name', t.fileSources.name),
                     if (!oauth && _kind != FileSourceKind.local)
-                      input('endpoint', t.fileSources.endpoint, required: true),
+                      input(
+                        'endpoint',
+                        t.fileSources.endpoint,
+                        required: true,
+                        hint: _kind == FileSourceKind.smb ? t.fileSources.smbEndpointHint : null,
+                        validator: _kind == FileSourceKind.smb
+                            ? (value) {
+                                if (value?.trim().isNotEmpty != true) return t.fileSources.endpoint;
+                                try {
+                                  validateSmbSourceEndpoint(value!.trim());
+                                  return null;
+                                } on SourceException {
+                                  return t.fileSources.smbEndpointInvalid;
+                                }
+                              }
+                            : null,
+                      ),
                     if (_kind == FileSourceKind.local) ...[
                       input('root', t.fileSources.root, required: true),
                       OutlinedButton(
@@ -176,10 +222,23 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                         child: Text(t.fileSources.localFolder),
                       ),
                     ] else if (_kind != FileSourceKind.audiobookshelf && _kind != FileSourceKind.opds)
-                      input('root', t.fileSources.root, hint: t.fileSources.folderHelp),
-                    if (const {FileSourceKind.webdav, FileSourceKind.opds}.contains(_kind)) ...[
+                      input(
+                        'root',
+                        t.fileSources.root,
+                        hint: _kind == FileSourceKind.smb ? t.fileSources.smbFolderHelp : t.fileSources.folderHelp,
+                      ),
+                    if (const {FileSourceKind.webdav, FileSourceKind.opds, FileSourceKind.smb}.contains(_kind)) ...[
                       input('username', t.fileSources.username),
                       input('password', t.fileSources.password, secret: true),
+                      if (_kind == FileSourceKind.smb) input('domain', t.fileSources.smbDomain),
+                      if (_kind == FileSourceKind.smb)
+                        SwitchListTile(
+                          contentPadding: EdgeInsets.zero,
+                          title: Text(t.fileSources.smbEncryption),
+                          subtitle: Text(t.fileSources.smbEncryptionHint),
+                          value: _encryptSmb,
+                          onChanged: _busy ? null : (value) => setState(() => _encryptSmb = value),
+                        ),
                     ],
                     if (_kind == FileSourceKind.audiobookshelf)
                       input('token', t.fileSources.token, secret: true, required: widget.existing == null),
@@ -199,7 +258,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                             input('clientSecret', t.fileSources.clientSecret, secret: true),
                         ],
                       ),
-                    if (!oauth && _kind != FileSourceKind.local)
+                    if (!oauth && _kind != FileSourceKind.local && _kind != FileSourceKind.smb)
                       SwitchListTile(
                         contentPadding: EdgeInsets.zero,
                         title: Text(t.fileSources.allowHttp),
@@ -227,11 +286,13 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                               PublicationShelf.ebooks => t.fileSources.ebooks,
                               PublicationShelf.audiobooks => t.fileSources.audiobooks,
                               PublicationShelf.comics => t.fileSources.comics,
+                              PublicationShelf.videos => t.fileSources.video,
                             }),
                             selected: _shelves.contains(shelf),
                             onSelected: _busy
                                 ? null
                                 : (selected) => setState(() {
+                                    _shelvesCustomized = true;
                                     selected ? _shelves.add(shelf) : _shelves.remove(shelf);
                                   }),
                           ),

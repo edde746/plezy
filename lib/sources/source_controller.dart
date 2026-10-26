@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:ui' as ui;
+import 'dart:typed_data';
 
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -14,6 +15,7 @@ import 'adapters/cloud_sources.dart';
 import 'adapters/local_source.dart';
 import 'adapters/opds_source.dart';
 import 'adapters/s3_source.dart';
+import 'adapters/smb_source.dart';
 import 'adapters/webdav_source.dart';
 import 'content_access.dart';
 import 'source_database.dart';
@@ -111,6 +113,57 @@ class SourceController extends ChangeNotifier {
   }
 
   bool current(int epoch) => !_disposed && generation == epoch;
+
+  SourceEntry _withSyncIdentity(FileSource source, SourceEntry entry) {
+    if (source.kind == FileSourceKind.webdav) {
+      // Preserve existing WebDAV state-file names for its own content.
+      return entry.copyWith(syncIdentity: entry.id);
+    }
+    final endpoint = Uri.tryParse(source.endpoint);
+    final normalizedEndpoint = endpoint == null
+        ? source.endpoint.trim()
+        : endpoint
+            .replace(
+              scheme: endpoint.scheme.toLowerCase(),
+              host: endpoint.host.toLowerCase(),
+              path: endpoint.path.replaceAll(RegExp(r'/+$'), ''),
+              port: endpoint.scheme == 'smb' && endpoint.hasPort && endpoint.port == 445
+                  ? null
+                  : endpoint.port,
+            )
+            .toString();
+    final normalizedRoot = source.root.replaceAll('\\', '/').replaceAll(RegExp(r'/+$'), '');
+    final normalizedEntryId = entry.id.replaceAll('\\', '/');
+    final identity = sourceDigest(
+      jsonEncode([
+        source.kind.name,
+        if (source.kind != FileSourceKind.smb) source.name,
+        normalizedEndpoint,
+        normalizedRoot,
+        normalizedEntryId,
+      ]),
+    );
+    return entry.copyWith(syncIdentity: identity);
+  }
+
+  SourceAdapter? _stateAdapter(SourceEntry entry, PublicationProgress progress) {
+    final owner = sources.where((source) => source.id == entry.sourceId).firstOrNull;
+    if (owner != null) {
+      final local = adapter(owner.id);
+      if (local.supportsProgress(entry, progress)) return local;
+    }
+    // A single configured WebDAV state folder can synchronize other sources.
+    // If more than one is configured, leave cross-source progress local.
+    final targets = sources.where(
+      (source) =>
+          source.kind == FileSourceKind.webdav &&
+          (source.options['syncRoot']?.trim().isNotEmpty ?? false),
+    ).toList();
+    if (targets.length != 1) return null;
+    final target = adapter(targets.single.id);
+    return target.supportsProgress(entry, progress) ? target : null;
+  }
+
   void requireSession([int? epoch]) {
     if (_disposed || blocked || profileId == null || (epoch != null && !current(epoch))) {
       throw const SourceException(SourceFailure.cancelled);
@@ -149,7 +202,7 @@ class SourceController extends ChangeNotifier {
     shelves = {
       for (final shelf in PublicationShelf.values)
         if (entries.any(shelf.includes) ||
-            sources.any((s) => (s.options['shelves'] ?? 'ebooks,audiobooks').split(',').contains(shelf.name)))
+            sources.any((s) => (s.options['shelves'] ?? 'ebooks,audiobooks,videos').split(',').contains(shelf.name)))
           shelf,
     };
   }
@@ -244,6 +297,7 @@ class SourceController extends ChangeNotifier {
         FileSourceKind.oneDrive => OneDriveSourceAdapter(source, transport, token),
         FileSourceKind.dropbox => DropboxSourceAdapter(source, transport, token),
         FileSourceKind.s3 => S3SourceAdapter(source, transport, credentials),
+        FileSourceKind.smb => SmbSourceAdapter(source, transport, credentials),
         FileSourceKind.opds => OpdsSourceAdapter(source, transport, credentials),
         FileSourceKind.audiobookshelf => AudiobookshelfSourceAdapter(source, transport, credentials),
       };
@@ -254,18 +308,23 @@ class SourceController extends ChangeNotifier {
     await ready;
     requireSession();
     final epoch = generation, profile = profileId!;
+    final fileSource = sources.where((item) => item.id == source).firstOrNull;
+    if (fileSource == null) throw const SourceException(SourceFailure.authentication);
     final page = await adapter(source).browse(parent: parent, cursor: cursor, query: query);
     requireSession(epoch);
-    await repository.cacheEntries(profile, page.entries);
-    shelves.addAll(PublicationShelf.values.where((s) => page.entries.any(s.includes)));
+    final entries = page.entries.map((entry) => _withSyncIdentity(fileSource, entry)).toList();
+    await repository.cacheEntries(profile, entries);
+    shelves.addAll(PublicationShelf.values.where((s) => entries.any(s.includes)));
     _notify();
-    return page;
+    return SourcePage(entries, next: page.next, title: page.title);
   }
 
   Future<SourceEntry> hydrate(SourceEntry entry) async {
     requireSession();
     final epoch = generation, profile = profileId!;
-    final result = await adapter(entry.sourceId).hydrate(entry);
+    final fileSource = sources.where((item) => item.id == entry.sourceId).firstOrNull;
+    if (fileSource == null) throw const SourceException(SourceFailure.authentication);
+    final result = _withSyncIdentity(fileSource, await adapter(entry.sourceId).hydrate(entry));
     requireSession(epoch);
     await repository.cacheEntries(profile, [result]);
     return result;
@@ -289,12 +348,18 @@ class SourceController extends ChangeNotifier {
       await ready;
       final epoch = generation;
       final file = File(
-        p.join(downloads.directory.path, sourceDigest(profile), 'covers', '${sourceDigest(entry.key)}.png'),
+        p.join(downloads.directory.path, sourceDigest(profile), 'covers', '${sourceDigest('${entry.key}:${entry.coverId ?? ''}')}.png'),
       );
       if (await file.exists()) return file;
       if (!sources.any((s) => s.id == entry.sourceId)) return null;
       try {
-        final provider = adapter(entry.sourceId), lease = await adapter(entry.sourceId).cover(entry);
+        final provider = adapter(entry.sourceId);
+        final directBytes = await provider.coverBytes(entry);
+        if (directBytes != null) {
+          requireSession(epoch);
+          return await saveCover(entry, Uint8List.fromList(directBytes), profile: profile);
+        }
+        final lease = await provider.cover(entry);
         if (lease == null) return null;
         final response = await provider.transport.send('GET', lease.uri, headers: lease.headers, redirects: true);
         SourceTransport.check(response.statusCode);
@@ -359,11 +424,13 @@ class SourceController extends ChangeNotifier {
     requireSession();
     final epoch = generation, profile = profileId!;
     var local = await repository.progress(profile, initial.key);
-    if (sources.any((s) => s.id == entry.sourceId)) {
-      final provider = adapter(entry.sourceId);
-      if (provider.supportsProgress(entry, initial)) {
+    final owner = sources.where((s) => s.id == entry.sourceId).firstOrNull;
+    final syncEntry = owner == null ? entry : _withSyncIdentity(owner, entry);
+    if (owner != null) {
+      final provider = _stateAdapter(syncEntry, initial);
+      if (provider != null) {
         try {
-          final remote = await provider.readProgress(entry, local ?? initial);
+          final remote = await provider.readProgress(syncEntry, local ?? initial);
           requireSession(epoch);
           if (remote != null) {
             if (local == null || !await repository.isPending(profile, initial.key)) {
@@ -380,7 +447,7 @@ class SourceController extends ChangeNotifier {
           } else if (local == null) {
             await _baseline(profile, initial);
           }
-          final notes = await provider.readAnnotations(entry, local ?? initial);
+          final notes = await provider.readAnnotations(syncEntry, local ?? initial);
           requireSession(epoch);
           final existing = await repository.annotations(profile, entry.key);
           for (final note in notes) {
@@ -530,10 +597,13 @@ class SourceController extends ChangeNotifier {
       requireSession(epoch);
       final progress = PublicationProgress.fromJson(sourceMap(jsonDecode(event['payload'] as String)));
       if (onlyKey != null && progress.key != onlyKey) continue;
-      final entry = entries.where((e) => e.key == progress.entryKey).firstOrNull;
-      if (entry == null || !sources.any((s) => s.id == entry.sourceId)) continue;
-      final source = adapter(entry.sourceId);
-      if (!source.supportsProgress(entry, progress)) continue;
+      final storedEntry = entries.where((e) => e.key == progress.entryKey).firstOrNull;
+      if (storedEntry == null) continue;
+      final owner = sources.where((s) => s.id == storedEntry.sourceId).firstOrNull;
+      if (owner == null) continue;
+      final entry = _withSyncIdentity(owner, storedEntry);
+      final source = _stateAdapter(entry, progress);
+      if (source == null) continue;
       PublicationProgress? remote;
       try {
         remote = await source.readProgress(entry, progress);
@@ -560,10 +630,19 @@ class SourceController extends ChangeNotifier {
     for (final event in events.where((e) => e['kind'] == 'annotation')) {
       requireSession(epoch);
       final annotation = BookAnnotation.fromJson(sourceMap(jsonDecode(event['payload'] as String)));
-      final entry = entries.where((e) => e.key == annotation.entryKey).firstOrNull;
-      if (entry == null || !sources.any((s) => s.id == entry.sourceId)) continue;
-      final source = adapter(entry.sourceId);
-      if (!source.capabilities.annotations ||
+      final storedEntry = entries.where((e) => e.key == annotation.entryKey).firstOrNull;
+      if (storedEntry == null) continue;
+      final owner = sources.where((s) => s.id == storedEntry.sourceId).firstOrNull;
+      if (owner == null) continue;
+      final entry = _withSyncIdentity(owner, storedEntry);
+      final annotationProgress = PublicationProgress(
+        entryKey: annotation.entryKey,
+        edition: annotation.edition,
+        mode: annotation.mode,
+        session: '',
+      );
+      final source = _stateAdapter(entry, annotationProgress);
+      if (source == null || !source.capabilities.annotations ||
           (source.source.kind == FileSourceKind.audiobookshelf && annotation.mode != PublicationMode.listening)) {
         continue;
       }

@@ -1,6 +1,6 @@
 # Files, books and listening
 
-Choose **Use files and books** on the sign-in screen to start with a local profile and no media server. Existing profile PINs still apply. Open **Libraries → Files and books** to connect a source or import a file. Choose which shelves a connection contributes to: **Ebooks**, **Audiobooks**, and **Comics** appear in the same library picker and navigation rail as existing media libraries. A discovered comic also makes its shelf available. Public libraries are linked from the Files and books screen; their loans remain separate from files you own.
+Choose **Use files and books** on the sign-in screen to start with a local profile and no media server. Existing profile PINs still apply. Open **Libraries → Files and books** to connect a source or import a file. Choose which shelves a connection contributes to: **Ebooks**, **Audiobooks**, **Comics**, and **Videos** appear in the same library picker and navigation rail as existing media libraries. A discovered comic also makes its shelf available. Public libraries are linked from the Files and books screen; their loans remain separate from files you own.
 
 The screens use PlezyNG's Mono theme, connected settings rows, cover grids, shared menus, focus controls and confirmation dialogs. Provider marks retain their official colours and proportions. Settings → Appearance → Accessibility applies across the existing app as well as these screens.
 
@@ -8,13 +8,14 @@ The screens use PlezyNG's Mono theme, connected settings rows, cover grids, shar
 
 | Source | Connection | Content and state |
 | --- | --- | --- |
-| Local files | Import using the system picker; desktop users can connect a folder | Imports are copied into profile-owned storage. Connected folders remain read-only. |
+| Local files | Import using the system picker; desktop users can connect a folder | Imports are copied into profile-owned storage. Connected folders remain read-only. Kodi/Jellyfin `.nfo` metadata and sibling poster images enrich local video details offline. |
 | OPDS 1/2 | Atom or JSON catalogue URL; optional Basic credentials | Standard direct, open-access and sample acquisitions; navigation and pagination; catalogue covers. Borrow/purchase links are never treated as files. |
+| SMB2/3 | `smb://server/share`, optional account, folder, and SMB3 encryption | Read-only NAS browsing with range-based streaming on Android, iOS, macOS, Windows, Linux, and tvOS. Kodi/Jellyfin `.nfo` sidecars and sibling poster images enrich details offline. |
 | Audiobookshelf | Server URL and the user's API token | Libraries, books, primary/secondary ebooks, multipart tracks, chapters, covers, reading/listening progress and audio bookmarks. |
 | Google Drive | Hosted Google authorization | Read-only folder browsing, shared-drive items/resource keys, fresh download authorization. |
 | OneDrive | Hosted Microsoft authorization | Read-only Microsoft Graph browsing and fresh download URLs. |
 | Dropbox | Hosted Dropbox authorization | Metadata/content read scopes and short-lived content URLs. |
-| WebDAV / Nextcloud | HTTPS endpoint, folder and optional account/app password | Read-only file browsing; optional state sync to a separate existing WebDAV folder. |
+| WebDAV / Nextcloud | HTTPS endpoint, folder and optional account/app password | Read-only NAS/cloud file browsing; optional state sync to a separate existing WebDAV folder. |
 | S3-compatible storage | Bucket endpoint, prefix, region and restricted access credentials | List and signed GET requests; no upload, delete or bucket-management operations. |
 
 An indexer/organizer such as Chaptarr does not need an NG fork. Expose its organized files through a supported standard service or point Audiobookshelf/OPDS at the library. No private Chaptarr endpoint or dependency is required. S3-compatible storage is a protocol, so its row deliberately uses a generic cloud symbol rather than an AWS endorsement.
@@ -34,7 +35,7 @@ On Android, iOS, macOS and Windows, EPUB/CBZ use an embedded webview. Linux open
 
 ## Listening and ordinary media
 
-The file player reuses PlezyNG's native mpv/OS media-control stack without manufacturing Plex items. It supports multipart source-time resume, chapter navigation, adjustable speed/skips, smart rewind, a sleep timer/end-of-chapter stop, bookmarks, headphone/interruption handling, a mini-player, and audio/subtitle selection for video. It claims playback through the existing coordinator so video, music, narration and books do not overlap. Vehicle playback restrictions also apply.
+The Videos shelf indexes supported video files during a source scan and opens their original bytes through PlezyNG's native player path, without manufacturing Plex items. Files can keep an offline copy. Local and SMB video details can use Kodi/Jellyfin `.nfo` metadata and local poster sidecars; PlezyNG does not yet perform online TMDB matching or fetch trailers for these files. Video watch progress is profile-scoped and durable on-device. A single configured WebDAV state folder can sync progress and notes for SMB and other file sources across devices when each device uses the same source identity. SMB remains read-only. It supports multipart source-time resume, chapter navigation, adjustable speed/skips, smart rewind, a sleep timer/end-of-chapter stop, bookmarks, headphone/interruption handling, a mini-player, and audio/subtitle selection for video. It claims playback through the existing coordinator so video, music, narration and books do not overlap. Vehicle playback restrictions also apply.
 
 Reading, listening and watching have independent progress and edition identities. Reset/finish are explicit history events. A delayed screen/player write cannot overwrite a newer revision. Remote conflicts offer a choice rather than silently choosing the furthest percentage. Audiobookshelf sync only applies to the exact compatible primary ebook/audio edition; device-local history for other editions remains useful.
 
@@ -42,7 +43,7 @@ Reading, listening and watching have independent progress and edition identities
 
 Download editions explicitly from the detail screen. Completed files publish atomically after validation; interrupted HTTP transfers only append with a matching representation validator. Provider URLs are renewed on open; bearer tokens never reach the player, EPUB JavaScript, artwork cache, logs or cross-origin redirects. A session-owned localhost gateway handles streaming and range requests. Only complete, fingerprint-matching, profile-owned files count as offline.
 
-Progress/notes are durable locally. Sync coalesces recent changes and retries pending state when the owning profile is active. Optional WebDAV state sync uses per-edition files and strong ETags/conditional writes; the user chooses a separate existing folder. It never changes source books. Audiobookshelf progress/bookmarks use its existing APIs. Cloud-drive accounts are read-only and do not receive hidden state files.
+Progress/notes are durable locally. Sync coalesces recent changes and retries pending state when the owning profile is active. A single configured WebDAV state folder can sync progress and notes for WebDAV, SMB, and other file sources across devices; it uses per-source/per-edition files and strong ETags/conditional writes. Configure the same SMB endpoint and root on each device. For other sources, keep the source name, endpoint, and root consistent too. When multiple WebDAV state folders are configured, cross-source sync stays local until the target is unambiguous. The user chooses a separate existing folder. It never changes media files. Audiobookshelf progress/bookmarks use its existing APIs. Cloud-drive accounts are read-only and do not receive hidden state files.
 
 Disconnect removes credentials and keeps local history/completed downloads. Deleting a profile removes its source/lending credentials, state and managed publication files. Switching or locking a profile retires readers, authorization attempts, downloads, stream capabilities and audio sessions. Credentials use the existing CredentialVault, separate from public source configuration.
 
