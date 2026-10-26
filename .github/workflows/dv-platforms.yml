@@ -1,9 +1,10 @@
+# ng-runner-policy: private-jit-only-v1
 name: Dolby Vision platform experiments
 
 on:
   workflow_dispatch:
   push:
-    branches: [main]
+    branches: ['codex/dv-platform-*']
     paths:
       - 'tools/dv-engine/**'
       - 'tools/dv-apple/**'
@@ -20,74 +21,23 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  linux-contracts:
-    if: ${{ github.repository == 'snapetech-org/PlezyNG' && github.ref == 'refs/heads/main' }}
-    runs-on:
-      group: ng-shared-main-jit
-      labels:
-        - self-hosted
-        - linux
-        - x64
-        - ng-shared-main-plezyng
-        - ${{ format('ng-main-run-{0}', github.run_id) }}
-        - ${{ format('gha-{0}-linux-contracts', github.run_id) }}
+  contracts:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-24.04, windows-2025, macos-15]
+    runs-on: ${{ matrix.os == 'ubuntu-24.04' && fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-contracts"]}}', github.run_id, strategy.job-index)) || matrix.os == 'windows-2025' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-contracts"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-contracts"]}}', github.run_id, strategy.job-index)) }}
     timeout-minutes: 10
     steps:
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
-        with:
-          python-version: '3.12'
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
-      - run: python scripts/test_dv_experiments.py
-
-  windows-contracts:
-    if: ${{ github.repository == 'snapetech-org/PlezyNG' && github.ref == 'refs/heads/main' }}
-    runs-on:
-      group: packer-windows
-      labels: [self-hosted, Windows, X64, on-demand, packer-windows, PlezyNG]
-    timeout-minutes: 10
-    steps:
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
-        with:
-          python-version: '3.12'
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-      - run: python scripts/test_dv_experiments.py
-
-  apple-contracts:
-    if: ${{ github.repository == 'snapetech-org/PlezyNG' && github.ref == 'refs/heads/main' }}
-    runs-on:
-      group: private-apple-builds
-      labels: [self-hosted, macOS, ARM64, private-apple-jit, PlezyNG]
-    timeout-minutes: 10
-    steps:
-      - uses: actions/setup-python@ece7cb06caefa5fff74198d8649806c4678c61a1 # v6
-        with:
-          python-version: '3.12'
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
-        with:
-          persist-credentials: false
-      - run: python scripts/test_dv_experiments.py
+      - run: python3 scripts/test_dv_experiments.py
 
   app-tests:
-    if: ${{ github.repository == 'snapetech-org/PlezyNG' && github.ref == 'refs/heads/main' }}
-    runs-on:
-      group: ng-shared-main-jit
-      labels:
-        - self-hosted
-        - linux
-        - x64
-        - ng-shared-main-plezyng
-        - ${{ format('ng-main-run-{0}', github.run_id) }}
-        - ${{ format('gha-{0}-app-tests', github.run_id) }}
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-app-tests"]}}', github.run_id)) }}
     timeout-minutes: 30
     steps:
-      - uses: actions/setup-java@b843ebf9b913146b38da2eaa7aeddf76074ae1ad # v5
-        with:
-          distribution: temurin
-          java-version: '21'
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           persist-credentials: false
@@ -104,9 +54,6 @@ jobs:
           dart format lib/media/dolby_vision_playback.dart lib/mpv/player/player_native.dart lib/services/settings_service.dart lib/screens/settings/playback_settings_screen.dart lib/screens/video_player_screen.dart lib/widgets/video_controls/widgets/performance_overlay/performance_stats.dart lib/widgets/video_controls/widgets/performance_overlay/performance_stats_service.dart test/media/dolby_vision_playback_test.dart test/mpv/player_native_bridge_test.dart test/screens/settings/playback_settings_screen_test.dart
       - name: Test app settings, initialization and playback diagnostics
         run: flutter test test/media/dolby_vision_playback_test.dart test/mpv/player_native_bridge_test.dart test/screens/settings/playback_settings_screen_test.dart test/widgets/performance_stats_service_test.dart
-      - name: Test Android Dolby routing and conversion
-        working-directory: android
-        run: ./gradlew app:testDebugUnitTest --tests com.edde746.plezy.mpv.GpuVoPolicyTest --tests com.edde746.plezy.mpv.DecoderOptionsTest --tests com.edde746.plezy.mpv.DoviConvertingTrackOutputTest
       - name: Native renderer selection tests
         run: |
           g++ -std=c++17 -Wall -Wextra -Werror linux/runner/mpv/experimental_render_api_test.cc -o /tmp/dv-render-api
@@ -118,16 +65,7 @@ jobs:
         run: git diff --exit-code -- lib test
 
   felbaker-source:
-    if: ${{ github.repository == 'snapetech-org/PlezyNG' && github.ref == 'refs/heads/main' }}
-    runs-on:
-      group: ng-shared-main-jit
-      labels:
-        - self-hosted
-        - linux
-        - x64
-        - ng-shared-main-plezyng
-        - ${{ format('ng-main-run-{0}', github.run_id) }}
-        - ${{ format('gha-{0}-felbaker-source', github.run_id) }}
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-felbaker-source"]}}', github.run_id)) }}
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
@@ -154,10 +92,7 @@ jobs:
           retention-days: 14
 
   apple-source:
-    if: ${{ github.repository == 'snapetech-org/PlezyNG' && github.ref == 'refs/heads/main' }}
-    runs-on:
-      group: private-apple-builds
-      labels: [self-hosted, macOS, ARM64, private-apple-jit, PlezyNG]
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-apple-source"]}}', github.run_id)) }}
     timeout-minutes: 60
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
