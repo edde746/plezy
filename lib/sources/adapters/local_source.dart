@@ -44,8 +44,12 @@ class LocalSourceAdapter extends SourceAdapter {
       final generation = int.tryParse(cursorParts[0].substring(1));
       final offset = int.tryParse(cursorParts[2]);
       snapshot = _snapshots[snapshotKey];
-      if (generation == null || offset == null || cursorParts[1] != queryKey ||
-          snapshot == null || snapshot.generation != generation || snapshot.modified != stamp ||
+      if (generation == null ||
+          offset == null ||
+          cursorParts[1] != queryKey ||
+          snapshot == null ||
+          snapshot.generation != generation ||
+          snapshot.modified != stamp ||
           DateTime.now().difference(snapshot.createdAt) > _snapshotLifetime) {
         _snapshots.remove(snapshotKey);
         throw const SourceException(SourceFailure.cancelled);
