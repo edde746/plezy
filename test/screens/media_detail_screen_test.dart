@@ -6,6 +6,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:intl/date_symbol_data_local.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:plezy/database/app_database.dart';
@@ -71,6 +72,7 @@ import '../test_helpers/media_items.dart';
 import '../test_helpers/multi_server_fixtures.dart';
 
 void main() {
+  setUpAll(() => initializeDateFormatting('en'));
   TestWidgetsFlutterBinding.ensureInitialized();
 
   setUp(() {
@@ -2303,7 +2305,10 @@ void main() {
       expectChips(present: ['2017', 'PG-13', '1h 46min', '1080p', '9.2', '7.4', '6.4', rate], absent: []);
 
       // The scores pill sheds badges from the end before anything else.
-      await resizeTo(660);
+      // The estimated end-time chip added to the strip needs its own width.
+      final endsAt = find.textContaining(t.detail.endsAt(time: ''));
+      final endTimeWidth = tester.getSize(endsAt).width + 28;
+      await resizeTo(660 + endTimeWidth);
       expectChips(present: ['2017', 'PG-13', '1h 46min', '1080p', '9.2', rate], absent: ['7.4', '6.4']);
 
       void expectScoresRow(List<String> scores) {

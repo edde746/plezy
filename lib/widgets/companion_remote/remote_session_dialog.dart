@@ -6,6 +6,7 @@ import '../../i18n/strings.g.dart';
 import '../../mixins/mounted_set_state_mixin.dart';
 import '../../providers/companion_remote_provider.dart';
 import '../../services/companion_remote/companion_remote_host_controller.dart';
+import '../../services/companion_remote/remote_pairing_store.dart';
 import '../../services/settings_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/dialogs.dart';
@@ -90,6 +91,32 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
 
   void _close() => Navigator.of(context).pop();
 
+  Future<void> _resetPairing() async {
+    final confirmed = await showScopedDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(t.companionRemote.pairing.resetCode),
+        content: Text(t.companionRemote.pairing.resetDescription),
+        actions: [
+          DialogActionButton(onPressed: () => Navigator.of(context).pop(false), label: t.common.cancel),
+          DialogActionButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            label: t.companionRemote.pairing.resetCode,
+          ),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    setState(() => _isStarting = true);
+    try {
+      await context.read<CompanionRemoteProvider>().resetHostPairing();
+    } catch (error) {
+      setStateIfMounted(() => _errorMessage = t.companionRemote.errors.serverStartFailed(error: error.toString()));
+    } finally {
+      setStateIfMounted(() => _isStarting = false);
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     return Consumer<CompanionRemoteProvider>(
@@ -172,6 +199,17 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
                   const SizedBox(height: 24),
 
                   _buildServerStatus(context, provider),
+
+                  if (provider.isHostServerRunning && provider.hostPairingCode != null) ...[
+                    const SizedBox(height: 16),
+                    Text(t.companionRemote.pairing.codeTitle, style: Theme.of(context).textTheme.titleMedium),
+                    SelectableText(
+                      RemotePairingStore.displayCode(provider.hostPairingCode!),
+                      style: const TextStyle(fontFamily: 'monospace'),
+                    ),
+                    Text(t.companionRemote.pairing.hostDescription),
+                    DialogActionButton(onPressed: _resetPairing, label: t.companionRemote.pairing.resetCode),
+                  ],
 
                   if (provider.connectedDevice != null) ...[
                     const SizedBox(height: 16),

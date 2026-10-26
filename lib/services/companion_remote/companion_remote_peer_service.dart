@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
+import '../../utils/bounded_web_socket.dart';
 import 'dart:math';
 
 import 'package:web_socket_channel/io.dart';
@@ -244,7 +245,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
       throw StateError('CompanionRemotePeerService is disposed');
     }
 
-    if (authContexts.isEmpty) {
+    if (authContexts.isEmpty || authContexts.any((context) => !context.isPaired)) {
       throw RemotePeerError(
         type: RemotePeerErrorType.authFailed,
         message: t.companionRemote.errors.authenticationFailed,
@@ -329,7 +330,13 @@ class CompanionRemotePeerService with KeepaliveMixin {
     try {
       // Ownership transfers to the admission immediately after upgrade.
       // ignore: close_sinks
-      final socket = await WebSocketTransformer.upgrade(request, compression: CompressionOptions.compressionOff);
+      final socket = await upgradeBoundedWebSocket(
+        request,
+        // Include bounded framing overhead; every continuation/control byte
+        // counts, so fragmentation cannot evade the pre-auth memory budget.
+        maxUnauthenticatedBytes: _maxPreAuthMessageBytes + 4096,
+        isAuthenticated: () => admission.phase == _HostAdmissionPhase.authenticated,
+      );
       admission.socket = socket;
       admission.completeUpgrade();
       _afterHostUpgrade?.call();
@@ -412,6 +419,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
       socket.add(
         jsonEncode({
           'type': 'challenge',
+          'protocolVersion': RemoteAuthService.protocolVersion,
           'nonce': base64Encode(hostNonce),
           'hostClientId': primaryContext.clientIdentifier,
           'authContexts': [
@@ -493,8 +501,8 @@ class CompanionRemotePeerService with KeepaliveMixin {
     List<RemoteAuthContext> authContexts,
     RemoteAuthContext primaryContext,
   ) async {
-    // dart:io delivers an assembled WebSocket message. This bounds application
-    // parsing and allocation after delivery, not the runtime's frame buffer.
+    // The upgrade bounds transport buffering before delivery, including
+    // fragmented messages. Keep this separate JSON/application limit too.
     if (data is! String || data.length > _maxPreAuthMessageBytes) {
       _rejectHostAuthentication(admission);
       return;
@@ -519,6 +527,10 @@ class CompanionRemotePeerService with KeepaliveMixin {
 
     if (message['type'] != 'auth') {
       _rejectHostAuthentication(admission, closeCode: 4002, closeReason: 'Authentication required');
+      return;
+    }
+    if (message['protocolVersion'] != RemoteAuthService.protocolVersion) {
+      _rejectHostAuthentication(admission);
       return;
     }
 
@@ -810,7 +822,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
     String? authContextId,
     String expectedHostClientId = '',
   }) async {
-    if (authContexts.isEmpty) {
+    if (authContexts.isEmpty || authContexts.any((context) => !context.isPaired)) {
       throw RemotePeerError(
         type: RemotePeerErrorType.authFailed,
         message: t.companionRemote.errors.authenticationFailed,
@@ -904,7 +916,14 @@ class CompanionRemotePeerService with KeepaliveMixin {
               final messageType = json['type'] as String?;
 
               if (messageType == 'challenge') {
+                if (json['protocolVersion'] != RemoteAuthService.protocolVersion) {
+                  throw RemotePeerError(
+                    type: RemotePeerErrorType.authFailed,
+                    message: t.companionRemote.pairing.updateRequired,
+                  );
+                }
                 hostNonce = base64Decode(json['nonce'] as String);
+                if (hostNonce!.length != 32) throw const FormatException('Invalid host nonce');
                 final legacyHostClientId = json['hostClientId'] as String? ?? '';
                 final challengeContextHostIds = <String, String>{};
                 final challengeContexts = json['authContexts'] as List<dynamic>? ?? const [];
@@ -982,6 +1001,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
                 channel.sink.add(
                   jsonEncode({
                     'type': 'auth',
+                    'protocolVersion': RemoteAuthService.protocolVersion,
                     'authContextId': selectedContext.id,
                     'clientNonce': base64Encode(clientNonce!),
                     'userUUID': selectedContext.userUuid,

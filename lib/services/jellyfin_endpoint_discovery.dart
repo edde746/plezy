@@ -252,6 +252,15 @@ class JellyfinEndpointDiscovery {
     // fallbacks proved the expected machine identity.
     await Future.wait(phaseOneIdentityProbes);
 
+    // Phase one can finish after the latency race. Include all successful
+    // bounded probes before selecting; otherwise a fast HTTP response wins
+    // before a slower, authenticated HTTPS endpoint has a chance.
+    final completedResults = <JellyfinEndpointCandidate, JellyfinEndpointProbeResult>{
+      ...?firstSelection?.successfulResults,
+      ...?bestSelection?.successfulResults,
+      for (final entry in identityResults.entries)
+        if (entry.value.success) entry.key: entry.value,
+    };
     final selected = bestSelection ?? firstSelection;
     if (selected == null || selected.result.serverInfo == null) {
       throw MediaServerUrlException(
@@ -260,10 +269,9 @@ class JellyfinEndpointDiscovery {
       );
     }
 
-    final Map<JellyfinEndpointCandidate, JellyfinEndpointProbeResult> successfulResults =
-        bestSelection?.successfulResults ?? firstSelection?.successfulResults ?? const {};
-    var selectedCandidate = selected.candidate;
-    var selectedResult = selected.result;
+    final Map<JellyfinEndpointCandidate, JellyfinEndpointProbeResult> successfulResults = completedResults;
+    var selectedCandidate = _selectLowestLatencyCandidate(successfulResults) ?? selected.candidate;
+    var selectedResult = successfulResults[selectedCandidate] ?? selected.result;
 
     final expectedMachineIdTrimmed = expectedMachineId?.trim();
     final hasExpectedMachineId = expectedMachineIdTrimmed?.isNotEmpty == true;
@@ -341,7 +349,9 @@ class JellyfinEndpointDiscovery {
     effectiveUrls[selectedCandidate.url] = activeBaseUrl;
     final persistedUrls = [
       for (final url in persistUrls)
-        if (!machineMismatchBaseUrls.contains(url)) effectiveUrls[url] ?? url,
+        if (!machineMismatchBaseUrls.contains(url) &&
+            (Uri.parse(activeBaseUrl).scheme != 'https' || Uri.parse(effectiveUrls[url] ?? url).scheme == 'https'))
+          effectiveUrls[url] ?? url,
     ];
 
     return JellyfinEndpointRaceResult._(
@@ -408,6 +418,9 @@ class JellyfinEndpointDiscovery {
     if (results.isEmpty) return null;
     final entries = results.entries.toList()
       ..sort((a, b) {
+        final aSecure = Uri.parse(a.value.effectiveBaseUrl ?? a.key.url).scheme == 'https';
+        final bSecure = Uri.parse(b.value.effectiveBaseUrl ?? b.key.url).scheme == 'https';
+        if (aSecure != bSecure) return aSecure ? -1 : 1;
         final latency = a.value.latencyMs.compareTo(b.value.latencyMs);
         if (latency != 0) return latency;
         return a.key.index.compareTo(b.key.index);

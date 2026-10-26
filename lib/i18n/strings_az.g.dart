@@ -316,6 +316,7 @@ class _Translations$settings$az extends Translations$settings$en {
 	@override String get gridView => 'Tor';
 	@override String get listView => 'Siyahı';
 	@override String get showHeroSection => 'Xüsusi bölməni göstər';
+	@override String get contentScreensaverLibrariesDescription => 'Ekran qoruyucusu üçün təsvirləri hansı kitabxanaların təmin edəcəyini seçin. Heç biri seçilməsə, bütün kitabxanaların təsvirləri istifadə olunur.';
 	@override String get continueWatchingAction => 'İzləməyə davam et əməliyyatı';
 	@override String get continueWatchingPlay => 'Oynat';
 	@override String get continueWatchingDetails => 'Ətraflı aç';
@@ -1988,6 +1989,15 @@ class _Translations$downloads$az extends Translations$downloads$en {
 	@override String get syncRuleCleanupUnavailable => 'Əlaqəli yükləmələr təhlükəsiz şəkildə müəyyən edilə bilmədi. Serverə yenidən qoşulub cəhd edin və ya qaydanı yükləmələri silmədən silin.';
 	@override String syncedNewEpisodes({required Object title, required Object count}) => '${title} üçün ${count} yeni seriya eyniləşdirildi';
 	@override String get activeSyncRules => 'Eyniləşdirmə qaydaları';
+	@override String get reviewOrphanFiles => 'Yetim qalmış endirmələri nəzərdən keçir';
+	@override String get orphanReviewTitle => 'Yetim qalmış endirmələri nəzərdən keçir';
+	@override String get orphanReviewDescription => 'Bu teqlənmiş fayllar PlezyNG-nin tətbiq tərəfindən idarə olunan standart endirmə qovluqlarındadır və onlara uyğun endirmə qeydi və ya aktiv tapşırıq yoxdur. Silməzdən əvvəl siyahını yoxlayın.';
+	@override String orphanReviewCount({required Object count, required Object size}) => '${count} fayl · ${size}';
+	@override String orphanDeleteFiles({required Object count}) => '${count} faylı sil';
+	@override String get orphanCleanupNone => 'Yetim qalmış endirmə faylı tapılmadı';
+	@override String get orphanCleanupFailed => 'PlezyNG idarə olunan endirmələr qovluğunu təhlükəsiz şəkildə skan edə bilmədi. Heç bir fayl silinmədi.';
+	@override String get orphanCleanupChanged => 'Nəzərdən keçirmə zamanı endirmə siyahısı dəyişdi. Təmizləməzdən əvvəl faylları yenidən nəzərdən keçirin.';
+	@override String orphanCleanupComplete({required Object count, required Object size}) => '${count} yetim endirmə faylı silindi · ${size} yer boşaldıldı';
 	@override String get noSyncRules => 'Eyniləşdirmə qaydası yoxdur';
 	@override String get manageSyncRule => 'Eyniləşdirməni idarə et';
 	@override String get editEpisodeCount => 'Seriya sayı';
@@ -3720,6 +3730,7 @@ extension on TranslationsAz {
 			'settings.gridView' => 'Tor',
 			'settings.listView' => 'Siyahı',
 			'settings.showHeroSection' => 'Xüsusi bölməni göstər',
+			'settings.contentScreensaverLibrariesDescription' => 'Ekran qoruyucusu üçün təsvirləri hansı kitabxanaların təmin edəcəyini seçin. Heç biri seçilməsə, bütün kitabxanaların təsvirləri istifadə olunur.',
 			'settings.continueWatchingAction' => 'İzləməyə davam et əməliyyatı',
 			'settings.continueWatchingPlay' => 'Oynat',
 			'settings.continueWatchingDetails' => 'Ətraflı aç',
@@ -4031,9 +4042,9 @@ extension on TranslationsAz {
 			'themeEditor.slots.outline' => 'Kontur',
 			'themeEditor.slots.text' => 'Mətn',
 			'themeEditor.slots.textMuted' => 'Köməkçi mətn',
-			'themeEditor.slots.accent' => 'Vurğu',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => 'Vurğu',
 			'themeEditor.opacity' => 'Şəffaflıq',
 			'themeEditor.hexHint' => '#RRGGBB və ya #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Digər mövzulardan',
@@ -4545,9 +4556,9 @@ extension on TranslationsAz {
 			'profiles.pinExplain' => 'Profillər arası keçid üçün 4 rəqəmli PIN tələb olunur.',
 			'profiles.continueButton' => 'Davam et',
 			'profiles.pinsDontMatch' => 'PIN-lər uyğun gəlmir',
-			'profiles.tokenIdentityMismatch' => 'Plex profil tokeni gözlənilməyən serveri müəyyən etdi',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'Plex profil tokeni gözlənilməyən serveri müəyyən etdi',
 			'connections.sectionTitle' => 'Qoşulmalar',
 			'connections.addConnection' => 'Qoşulma əlavə et',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex ilə daxil olun və ya Jellyfin yaxud Emby serverinə qoşulun',
@@ -5059,9 +5070,9 @@ extension on TranslationsAz {
 			'liveTv.guideReloadFailed' => 'Bələdçi yenilənmədi',
 			'liveTv.rulesProcessRequested' => 'Qaydaların yenidən qiymətləndirilməsi tələb olundu',
 			'liveTv.rulesProcessFailed' => 'Yazı qaydaları yenidən qiymətləndirilmədi',
-			'liveTv.recordShow' => 'Şounu yaz',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordShow' => 'Şounu yaz',
 			'liveTv.recordSettings.startEarly' => 'Erkən başla (saniyə)',
 			'liveTv.recordSettings.endLate' => 'Gec bitir (saniyə)',
 			'liveTv.recordSettings.newOnly' => 'Yalnız yeni epizodlar',
@@ -5366,6 +5377,15 @@ extension on TranslationsAz {
 			'downloads.syncRuleCleanupUnavailable' => 'Əlaqəli yükləmələr təhlükəsiz şəkildə müəyyən edilə bilmədi. Serverə yenidən qoşulub cəhd edin və ya qaydanı yükləmələri silmədən silin.',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title} üçün ${count} yeni seriya eyniləşdirildi',
 			'downloads.activeSyncRules' => 'Eyniləşdirmə qaydaları',
+			'downloads.reviewOrphanFiles' => 'Yetim qalmış endirmələri nəzərdən keçir',
+			'downloads.orphanReviewTitle' => 'Yetim qalmış endirmələri nəzərdən keçir',
+			'downloads.orphanReviewDescription' => 'Bu teqlənmiş fayllar PlezyNG-nin tətbiq tərəfindən idarə olunan standart endirmə qovluqlarındadır və onlara uyğun endirmə qeydi və ya aktiv tapşırıq yoxdur. Silməzdən əvvəl siyahını yoxlayın.',
+			'downloads.orphanReviewCount' => ({required Object count, required Object size}) => '${count} fayl · ${size}',
+			'downloads.orphanDeleteFiles' => ({required Object count}) => '${count} faylı sil',
+			'downloads.orphanCleanupNone' => 'Yetim qalmış endirmə faylı tapılmadı',
+			'downloads.orphanCleanupFailed' => 'PlezyNG idarə olunan endirmələr qovluğunu təhlükəsiz şəkildə skan edə bilmədi. Heç bir fayl silinmədi.',
+			'downloads.orphanCleanupChanged' => 'Nəzərdən keçirmə zamanı endirmə siyahısı dəyişdi. Təmizləməzdən əvvəl faylları yenidən nəzərdən keçirin.',
+			'downloads.orphanCleanupComplete' => ({required Object count, required Object size}) => '${count} yetim endirmə faylı silindi · ${size} yer boşaldıldı',
 			'downloads.noSyncRules' => 'Eyniləşdirmə qaydası yoxdur',
 			'downloads.manageSyncRule' => 'Eyniləşdirməni idarə et',
 			'downloads.editEpisodeCount' => 'Seriya sayı',
@@ -5564,6 +5584,8 @@ extension on TranslationsAz {
 			'performanceOverlay.dvRpus' => 'DV RPU-ları',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU Ort.',
 			'performanceOverlay.dvSampleAverage' => 'DV Nümunə Ort.',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Maks Luma',
 			'performanceOverlay.minLuma' => 'Min Luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5574,8 +5596,6 @@ extension on TranslationsAz {
 			'performanceOverlay.player' => 'Oynadıcı',
 			'performanceOverlay.memory' => 'Yaddaş',
 			'performanceOverlay.uiFps' => 'Arayüz (UI) FPS-i',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',

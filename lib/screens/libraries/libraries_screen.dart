@@ -851,9 +851,11 @@ class _LibrariesScreenState extends State<LibrariesScreen>
     // Compute visible libraries (filtered from all libraries)
     final visibleLibraries = visibleMediaLibraries(allLibraries, hiddenKeys: hiddenKeys, hideEmpty: hideEmptyLibraries);
 
-    // Resolve selected library defensively — may be null if server temporarily dropped during refresh
+    // Explicit navigation can select a hidden library; visibility filters
+    // choose defaults, not the content of an already selected library.
+    // The server may temporarily disappear during refresh.
     final selectedLibrary = _selectedLibraryGlobalKey != null
-        ? visibleLibraries.where((lib) => lib.globalKey == _selectedLibraryGlobalKey).firstOrNull
+        ? allLibraries.where((lib) => lib.globalKey == _selectedLibraryGlobalKey).firstOrNull
         : null;
 
     final useSideNavigation = PlatformDetector.shouldUseSideNavigation(context);

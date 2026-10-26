@@ -316,6 +316,7 @@ class _Translations$settings$it extends Translations$settings$en {
 	@override String get gridView => 'Griglia';
 	@override String get listView => 'Elenco';
 	@override String get showHeroSection => 'Mostra sezione in evidenza';
+	@override String get contentScreensaverLibrariesDescription => 'Scegli quali librerie forniscono le immagini per lo screensaver. Se non ne selezioni nessuna, verranno usate le immagini di tutte le librerie.';
 	@override String get continueWatchingAction => 'Azione per Continua a guardare';
 	@override String get continueWatchingPlay => 'Riproduci';
 	@override String get continueWatchingDetails => 'Apri dettagli';
@@ -1988,6 +1989,15 @@ class _Translations$downloads$it extends Translations$downloads$en {
 	@override String get syncRuleCleanupUnavailable => 'Non è stato possibile identificare in sicurezza i download associati. Riconnetti il server e riprova, oppure rimuovi la regola senza eliminare i download.';
 	@override String syncedNewEpisodes({required Object count, required Object title}) => '${count} nuovi episodi sincronizzati per ${title}';
 	@override String get activeSyncRules => 'Regole di sincronizzazione';
+	@override String get reviewOrphanFiles => 'Rivedi i download orfani';
+	@override String get orphanReviewTitle => 'Rivedi i download orfani';
+	@override String get orphanReviewDescription => 'Questi file contrassegnati si trovano nelle cartelle di download predefinite gestite da PlezyNG e non hanno una voce di download corrispondente né un’attività in corso. Controlla l’elenco prima di eliminarli.';
+	@override String orphanReviewCount({required Object count, required Object size}) => '${count} file · ${size}';
+	@override String orphanDeleteFiles({required Object count}) => 'Elimina ${count} file';
+	@override String get orphanCleanupNone => 'Nessun file di download orfano trovato';
+	@override String get orphanCleanupFailed => 'PlezyNG non è riuscito a eseguire una scansione sicura della cartella di download gestita. Non è stato eliminato alcun file.';
+	@override String get orphanCleanupChanged => 'L’elenco dei download è cambiato durante la revisione. Controlla di nuovo i file prima di ripulire.';
+	@override String orphanCleanupComplete({required Object count, required Object size}) => 'Eliminati ${count} file di download orfani · liberati ${size}';
 	@override String get noSyncRules => 'Nessuna regola di sincronizzazione';
 	@override String get manageSyncRule => 'Gestisci sincronizzazione';
 	@override String get editEpisodeCount => 'Numero di episodi';
@@ -3720,6 +3730,7 @@ extension on TranslationsIt {
 			'settings.gridView' => 'Griglia',
 			'settings.listView' => 'Elenco',
 			'settings.showHeroSection' => 'Mostra sezione in evidenza',
+			'settings.contentScreensaverLibrariesDescription' => 'Scegli quali librerie forniscono le immagini per lo screensaver. Se non ne selezioni nessuna, verranno usate le immagini di tutte le librerie.',
 			'settings.continueWatchingAction' => 'Azione per Continua a guardare',
 			'settings.continueWatchingPlay' => 'Riproduci',
 			'settings.continueWatchingDetails' => 'Apri dettagli',
@@ -4031,9 +4042,9 @@ extension on TranslationsIt {
 			'themeEditor.slots.outline' => 'Contorno',
 			'themeEditor.slots.text' => 'Testo',
 			'themeEditor.slots.textMuted' => 'Testo secondario',
-			'themeEditor.slots.accent' => 'Accento',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => 'Accento',
 			'themeEditor.opacity' => 'Opacità',
 			'themeEditor.hexHint' => '#RRGGBB o #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Da altri temi',
@@ -4545,9 +4556,9 @@ extension on TranslationsIt {
 			'profiles.pinExplain' => 'PIN a 4 cifre richiesto per cambiare profilo.',
 			'profiles.continueButton' => 'Continua',
 			'profiles.pinsDontMatch' => 'I PIN non corrispondono',
-			'profiles.tokenIdentityMismatch' => 'Il token del profilo Plex è stato associato a un server imprevisto',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'Il token del profilo Plex è stato associato a un server imprevisto',
 			'connections.sectionTitle' => 'Connessioni',
 			'connections.addConnection' => 'Aggiungi connessione',
 			'connections.addConnectionSubtitleNoProfile' => 'Accedi con Plex o collega un server Jellyfin o Emby',
@@ -5059,9 +5070,9 @@ extension on TranslationsIt {
 			'liveTv.guideReloadFailed' => 'Impossibile aggiornare la guida',
 			'liveTv.rulesProcessRequested' => 'Rielaborazione delle regole richiesta',
 			'liveTv.rulesProcessFailed' => 'Impossibile rielaborare le regole di registrazione',
-			'liveTv.recordShow' => 'Registra programma',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordShow' => 'Registra programma',
 			'liveTv.recordSettings.startEarly' => 'Inizia in anticipo (secondi)',
 			'liveTv.recordSettings.endLate' => 'Termina in ritardo (secondi)',
 			'liveTv.recordSettings.newOnly' => 'Solo nuovi episodi',
@@ -5366,6 +5377,15 @@ extension on TranslationsIt {
 			'downloads.syncRuleCleanupUnavailable' => 'Non è stato possibile identificare in sicurezza i download associati. Riconnetti il server e riprova, oppure rimuovi la regola senza eliminare i download.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} nuovi episodi sincronizzati per ${title}',
 			'downloads.activeSyncRules' => 'Regole di sincronizzazione',
+			'downloads.reviewOrphanFiles' => 'Rivedi i download orfani',
+			'downloads.orphanReviewTitle' => 'Rivedi i download orfani',
+			'downloads.orphanReviewDescription' => 'Questi file contrassegnati si trovano nelle cartelle di download predefinite gestite da PlezyNG e non hanno una voce di download corrispondente né un’attività in corso. Controlla l’elenco prima di eliminarli.',
+			'downloads.orphanReviewCount' => ({required Object count, required Object size}) => '${count} file · ${size}',
+			'downloads.orphanDeleteFiles' => ({required Object count}) => 'Elimina ${count} file',
+			'downloads.orphanCleanupNone' => 'Nessun file di download orfano trovato',
+			'downloads.orphanCleanupFailed' => 'PlezyNG non è riuscito a eseguire una scansione sicura della cartella di download gestita. Non è stato eliminato alcun file.',
+			'downloads.orphanCleanupChanged' => 'L’elenco dei download è cambiato durante la revisione. Controlla di nuovo i file prima di ripulire.',
+			'downloads.orphanCleanupComplete' => ({required Object count, required Object size}) => 'Eliminati ${count} file di download orfani · liberati ${size}',
 			'downloads.noSyncRules' => 'Nessuna regola di sincronizzazione',
 			'downloads.manageSyncRule' => 'Gestisci sincronizzazione',
 			'downloads.editEpisodeCount' => 'Numero di episodi',
@@ -5564,6 +5584,8 @@ extension on TranslationsIt {
 			'performanceOverlay.dvRpus' => 'DV RPU',
 			'performanceOverlay.dvRpuAverage' => 'Media DV RPU',
 			'performanceOverlay.dvSampleAverage' => 'Media camp. DV',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Luma max',
 			'performanceOverlay.minLuma' => 'Luma min',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5574,8 +5596,6 @@ extension on TranslationsIt {
 			'performanceOverlay.player' => 'Lettore',
 			'performanceOverlay.memory' => 'Memoria',
 			'performanceOverlay.uiFps' => 'FPS UI',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',

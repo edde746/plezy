@@ -18,6 +18,7 @@ import 'package:plezy/services/data_aggregation_service.dart';
 import 'package:plezy/services/jellyfin_api_cache.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_auth_service.dart';
+import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
 
 import '../../test_helpers/backend_client_fixtures.dart';
@@ -108,6 +109,7 @@ PlexAccountConnection _clientlessAccount(String serverId, String baseUrl) => Ple
 void main() {
   test('clientless A registrations do not contaminate B, but expected clientless B servers stay unchecked', () async {
     resetSharedPreferencesForTest();
+    await SettingsService.getInstance();
     final previousHttpOverrides = HttpOverrides.current;
     HttpOverrides.global = null;
     addTearDown(() => HttpOverrides.global = previousHttpOverrides);

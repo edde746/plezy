@@ -264,7 +264,13 @@ class JellyfinConnection extends Connection {
     required this.createdAt,
     this.lastAuthenticatedAt,
   }) : baseUrl = canonicalizeBaseUrl(baseUrl),
-       baseUrls = _normalizeBaseUrls(baseUrl, baseUrls);
+       // A TLS connection must never silently send its token over an HTTP
+       // fallback, including historic guesses saved by older versions.
+       baseUrls = _normalizeBaseUrls(baseUrl, baseUrls)
+           .where(
+             (url) => Uri.parse(canonicalizeBaseUrl(baseUrl)).scheme != 'https' || Uri.parse(url).scheme == 'https',
+           )
+           .toList(growable: false);
 
   @override
   MediaBackend get kind => dialect.backend;
@@ -441,7 +447,13 @@ class PlexDirectConnection extends PlexMediaConnection {
     required this.createdAt,
     this.lastAuthenticatedAt,
   }) : baseUrl = canonicalizeBaseUrl(baseUrl),
-       baseUrls = _normalizeBaseUrls(baseUrl, baseUrls);
+       // A TLS connection must never silently send its token over an HTTP
+       // fallback, including historic guesses saved by older versions.
+       baseUrls = _normalizeBaseUrls(baseUrl, baseUrls)
+           .where(
+             (url) => Uri.parse(canonicalizeBaseUrl(baseUrl)).scheme != 'https' || Uri.parse(url).scheme == 'https',
+           )
+           .toList(growable: false);
 
   @override
   MediaBackend get kind => MediaBackend.plex;

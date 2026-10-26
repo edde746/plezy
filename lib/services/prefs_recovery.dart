@@ -586,6 +586,16 @@ abstract final class PrefsRecovery {
   /// harvest them while they are in scope.
   static bool _validateAndRegisterSession(String key, String encoded) {
     try {
+      // Recovery is synchronous and may run while the OS keychain is locked.
+      // Preserve structurally valid ciphertext without decrypting or resetting it.
+      if (encoded.startsWith('enc:v2:')) {
+        final payload = jsonDecode(encoded.substring(7)) as Map<String, dynamic>;
+        return payload['k'] is String &&
+            RegExp(r'^(?:v2-[0-9a-f]{32}|v1-[0-9a-f]{64})$').hasMatch(payload['k'] as String) &&
+            base64Decode(payload['n'] as String).length == 12 &&
+            base64Decode(payload['c'] as String).isNotEmpty &&
+            base64Decode(payload['m'] as String).length == 16;
+      }
       if (isSeerrSessionPrefKey(key)) {
         final session = SeerrSession.decode(encoded);
         LogRedactionManager.registerToken(session.cookie);

@@ -37,6 +37,7 @@ class UpdateService {
   /// True on macOS (non-Homebrew) and installed Windows (has uninstaller).
   static bool get useNativeUpdater {
     if (!isUpdateCheckAvailable) return false;
+    if (!const bool.fromEnvironment('NATIVE_UPDATER_CONFIGURED')) return false;
     if (Platform.isMacOS) return !_isHomebrewInstall();
     if (Platform.isWindows) return _isInstalledApp();
     return false;
@@ -45,6 +46,7 @@ class UpdateService {
   /// Initialize the native auto_updater (Sparkle/WinSparkle).
   /// Call once at startup if [useNativeUpdater] is true.
   static Future<void> initNativeUpdater() async {
+    if (!useNativeUpdater) return;
     if (_nativeUpdaterInitialized) return;
 
     try {

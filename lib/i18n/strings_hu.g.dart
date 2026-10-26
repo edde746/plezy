@@ -316,6 +316,7 @@ class _Translations$settings$hu extends Translations$settings$en {
 	@override String get gridView => 'Rács';
 	@override String get listView => 'Lista';
 	@override String get showHeroSection => 'Kiemelt sáv megjelenítése';
+	@override String get contentScreensaverLibrariesDescription => 'Válassza ki, mely könyvtárak biztosítsák a képernyővédő képeit. Ha egyet sem választ ki, az összes könyvtár képeit használjuk.';
 	@override String get continueWatchingAction => 'A „Folytatás” művelete';
 	@override String get continueWatchingPlay => 'Lejátszás';
 	@override String get continueWatchingDetails => 'Részletek megnyitása';
@@ -1988,6 +1989,15 @@ class _Translations$downloads$hu extends Translations$downloads$en {
 	@override String get syncRuleCleanupUnavailable => 'A kapcsolódó letöltések nem azonosíthatók biztonságosan. Csatlakoztassa újra a szervert, és próbálja újra, vagy távolítsa el a szabályt a letöltések törlése nélkül.';
 	@override String syncedNewEpisodes({required Object count, required Object title}) => '${count} új epizód szinkronizálva a következőhöz: ${title}';
 	@override String get activeSyncRules => 'Szinkronizálási szabályok';
+	@override String get reviewOrphanFiles => 'Árva letöltések áttekintése';
+	@override String get orphanReviewTitle => 'Árva letöltések áttekintése';
+	@override String get orphanReviewDescription => 'Ezek a címkézett fájlok a PlezyNG által kezelt alapértelmezett letöltési mappákban találhatók, és nincs hozzájuk tartozó letöltési rekord vagy aktív feladat. Törlés előtt ellenőrizze a listát.';
+	@override String orphanReviewCount({required Object count, required Object size}) => '${count} fájl · ${size}';
+	@override String orphanDeleteFiles({required Object count}) => '${count} fájl törlése';
+	@override String get orphanCleanupNone => 'Nem található árva letöltési fájl';
+	@override String get orphanCleanupFailed => 'A PlezyNG nem tudta biztonságosan átvizsgálni a kezelt letöltési mappát. Nem töröltünk fájlokat.';
+	@override String get orphanCleanupChanged => 'A letöltési lista az áttekintés közben megváltozott. Tisztítás előtt tekintse át újra a fájlokat.';
+	@override String orphanCleanupComplete({required Object count, required Object size}) => '${count} árva letöltési fájl törölve · ${size} tárhely felszabadítva';
 	@override String get noSyncRules => 'Nincsenek szinkronizálási szabályok';
 	@override String get manageSyncRule => 'Szinkronizálás kezelése';
 	@override String get editEpisodeCount => 'Epizódszám';
@@ -3720,6 +3730,7 @@ extension on TranslationsHu {
 			'settings.gridView' => 'Rács',
 			'settings.listView' => 'Lista',
 			'settings.showHeroSection' => 'Kiemelt sáv megjelenítése',
+			'settings.contentScreensaverLibrariesDescription' => 'Válassza ki, mely könyvtárak biztosítsák a képernyővédő képeit. Ha egyet sem választ ki, az összes könyvtár képeit használjuk.',
 			'settings.continueWatchingAction' => 'A „Folytatás” művelete',
 			'settings.continueWatchingPlay' => 'Lejátszás',
 			'settings.continueWatchingDetails' => 'Részletek megnyitása',
@@ -4031,9 +4042,9 @@ extension on TranslationsHu {
 			'themeEditor.slots.outline' => 'Körvonal',
 			'themeEditor.slots.text' => 'Szöveg',
 			'themeEditor.slots.textMuted' => 'Másodlagos szöveg',
-			'themeEditor.slots.accent' => 'Kiemelőszín',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => 'Kiemelőszín',
 			'themeEditor.opacity' => 'Átlátszatlanság',
 			'themeEditor.hexHint' => '#RRGGBB vagy #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Más témákból',
@@ -4545,9 +4556,9 @@ extension on TranslationsHu {
 			'profiles.pinExplain' => '4 jegyű PIN-kód szükséges a profilváltáshoz.',
 			'profiles.continueButton' => 'Folytatás',
 			'profiles.pinsDontMatch' => 'A PIN-kódok nem egyeznek',
-			'profiles.tokenIdentityMismatch' => 'A Plex-profil tokenje nem a várt szerverhez tartozik',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'A Plex-profil tokenje nem a várt szerverhez tartozik',
 			'connections.sectionTitle' => 'Kapcsolatok',
 			'connections.addConnection' => 'Kapcsolat hozzáadása',
 			'connections.addConnectionSubtitleNoProfile' => 'Jelentkezz be Plexszel, vagy csatlakoztass egy Jellyfin- vagy Emby-szervert',
@@ -5059,9 +5070,9 @@ extension on TranslationsHu {
 			'liveTv.guideReloadFailed' => 'Nem sikerült frissíteni a műsorújságot',
 			'liveTv.rulesProcessRequested' => 'Szabályok újraértékelése kérve',
 			'liveTv.rulesProcessFailed' => 'Nem sikerült újra kiértékelni a felvételi szabályokat',
-			'liveTv.recordShow' => 'Műsor rögzítése',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordShow' => 'Műsor rögzítése',
 			'liveTv.recordSettings.startEarly' => 'Korábbi kezdés (másodperc)',
 			'liveTv.recordSettings.endLate' => 'Későbbi befejezés (másodperc)',
 			'liveTv.recordSettings.newOnly' => 'Csak új epizódok',
@@ -5366,6 +5377,15 @@ extension on TranslationsHu {
 			'downloads.syncRuleCleanupUnavailable' => 'A kapcsolódó letöltések nem azonosíthatók biztonságosan. Csatlakoztassa újra a szervert, és próbálja újra, vagy távolítsa el a szabályt a letöltések törlése nélkül.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => '${count} új epizód szinkronizálva a következőhöz: ${title}',
 			'downloads.activeSyncRules' => 'Szinkronizálási szabályok',
+			'downloads.reviewOrphanFiles' => 'Árva letöltések áttekintése',
+			'downloads.orphanReviewTitle' => 'Árva letöltések áttekintése',
+			'downloads.orphanReviewDescription' => 'Ezek a címkézett fájlok a PlezyNG által kezelt alapértelmezett letöltési mappákban találhatók, és nincs hozzájuk tartozó letöltési rekord vagy aktív feladat. Törlés előtt ellenőrizze a listát.',
+			'downloads.orphanReviewCount' => ({required Object count, required Object size}) => '${count} fájl · ${size}',
+			'downloads.orphanDeleteFiles' => ({required Object count}) => '${count} fájl törlése',
+			'downloads.orphanCleanupNone' => 'Nem található árva letöltési fájl',
+			'downloads.orphanCleanupFailed' => 'A PlezyNG nem tudta biztonságosan átvizsgálni a kezelt letöltési mappát. Nem töröltünk fájlokat.',
+			'downloads.orphanCleanupChanged' => 'A letöltési lista az áttekintés közben megváltozott. Tisztítás előtt tekintse át újra a fájlokat.',
+			'downloads.orphanCleanupComplete' => ({required Object count, required Object size}) => '${count} árva letöltési fájl törölve · ${size} tárhely felszabadítva',
 			'downloads.noSyncRules' => 'Nincsenek szinkronizálási szabályok',
 			'downloads.manageSyncRule' => 'Szinkronizálás kezelése',
 			'downloads.editEpisodeCount' => 'Epizódszám',
@@ -5564,6 +5584,8 @@ extension on TranslationsHu {
 			'performanceOverlay.dvRpus' => 'DV RPU-k',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU-átlag',
 			'performanceOverlay.dvSampleAverage' => 'DV-mintaátlag',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Maximális luma',
 			'performanceOverlay.minLuma' => 'Minimális luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5574,8 +5596,6 @@ extension on TranslationsHu {
 			'performanceOverlay.player' => 'Lejátszó',
 			'performanceOverlay.memory' => 'Memória',
 			'performanceOverlay.uiFps' => 'Felület-FPS',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',

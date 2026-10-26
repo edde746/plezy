@@ -316,6 +316,7 @@ class _Translations$settings$ko extends Translations$settings$en {
 	@override String get gridView => '그리드 보기';
 	@override String get listView => '목록 보기';
 	@override String get showHeroSection => '주요 추천 영역 표시';
+	@override String get contentScreensaverLibrariesDescription => '화면 보호기 이미지에 사용할 라이브러리를 선택하세요. 아무것도 선택하지 않으면 모든 라이브러리의 이미지가 사용됩니다.';
 	@override String get continueWatchingAction => '계속 보기 동작';
 	@override String get continueWatchingPlay => '재생';
 	@override String get continueWatchingDetails => '상세 정보 열기';
@@ -1978,6 +1979,15 @@ class _Translations$downloads$ko extends Translations$downloads$en {
 	@override String get syncRuleCleanupUnavailable => '연결된 다운로드를 안전하게 확인할 수 없습니다. 서버에 다시 연결한 후 시도하거나, 다운로드를 삭제하지 않고 규칙만 제거하세요.';
 	@override String syncedNewEpisodes({required Object title, required Object count}) => '${title}의 새 에피소드 ${count}개 동기화됨';
 	@override String get activeSyncRules => '동기화 규칙';
+	@override String get reviewOrphanFiles => '기록이 없는 다운로드 검토';
+	@override String get orphanReviewTitle => '기록이 없는 다운로드 검토';
+	@override String get orphanReviewDescription => '이 태그가 지정된 파일은 PlezyNG가 관리하는 기본 다운로드 폴더에 있지만, 일치하는 다운로드 기록이나 활성 작업이 없습니다. 삭제하기 전에 목록을 확인하세요.';
+	@override String orphanReviewCount({required Object count, required Object size}) => '${count}개 파일 · ${size}';
+	@override String orphanDeleteFiles({required Object count}) => '${count}개 파일 삭제';
+	@override String get orphanCleanupNone => '기록이 없는 다운로드 파일을 찾지 못했습니다';
+	@override String get orphanCleanupFailed => 'PlezyNG에서 관리되는 다운로드 폴더를 안전하게 검색할 수 없습니다. 파일은 삭제되지 않았습니다.';
+	@override String get orphanCleanupChanged => '검토 중 다운로드 목록이 변경되었습니다. 정리하기 전에 파일을 다시 확인하세요.';
+	@override String orphanCleanupComplete({required Object count, required Object size}) => '${count}개 기록 없는 파일 삭제됨 · ${size} 확보';
 	@override String get noSyncRules => '동기화 규칙 없음';
 	@override String get manageSyncRule => '동기화 관리';
 	@override String get editEpisodeCount => '에피소드 수';
@@ -3708,6 +3718,7 @@ extension on TranslationsKo {
 			'settings.gridView' => '그리드 보기',
 			'settings.listView' => '목록 보기',
 			'settings.showHeroSection' => '주요 추천 영역 표시',
+			'settings.contentScreensaverLibrariesDescription' => '화면 보호기 이미지에 사용할 라이브러리를 선택하세요. 아무것도 선택하지 않으면 모든 라이브러리의 이미지가 사용됩니다.',
 			'settings.continueWatchingAction' => '계속 보기 동작',
 			'settings.continueWatchingPlay' => '재생',
 			'settings.continueWatchingDetails' => '상세 정보 열기',
@@ -4019,9 +4030,9 @@ extension on TranslationsKo {
 			'themeEditor.slots.outline' => '윤곽선',
 			'themeEditor.slots.text' => '텍스트',
 			'themeEditor.slots.textMuted' => '보조 텍스트',
-			'themeEditor.slots.accent' => '강조색',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => '강조색',
 			'themeEditor.opacity' => '불투명도',
 			'themeEditor.hexHint' => '#RRGGBB 또는 #AARRGGBB',
 			'themeEditor.fromOtherThemes' => '다른 테마에서',
@@ -4533,9 +4544,9 @@ extension on TranslationsKo {
 			'profiles.pinExplain' => '프로필 전환에는 4자리 PIN이 필요합니다.',
 			'profiles.continueButton' => '계속',
 			'profiles.pinsDontMatch' => 'PIN이 일치하지 않습니다',
-			'profiles.tokenIdentityMismatch' => 'Plex 프로필 토큰이 예상과 다른 서버로 확인되었습니다',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'Plex 프로필 토큰이 예상과 다른 서버로 확인되었습니다',
 			'connections.sectionTitle' => '연결',
 			'connections.addConnection' => '연결 추가',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex로 로그인하거나 Jellyfin 또는 Emby 서버에 연결',
@@ -5047,9 +5058,9 @@ extension on TranslationsKo {
 			'liveTv.guideReloadFailed' => '편성표를 새로고침할 수 없습니다',
 			'liveTv.rulesProcessRequested' => '규칙 재평가 요청됨',
 			'liveTv.rulesProcessFailed' => '녹화 규칙을 다시 적용할 수 없습니다',
-			'liveTv.recordShow' => '프로그램 녹화',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordShow' => '프로그램 녹화',
 			'liveTv.recordSettings.startEarly' => '일찍 시작 (초)',
 			'liveTv.recordSettings.endLate' => '늦게 종료 (초)',
 			'liveTv.recordSettings.newOnly' => '새 에피소드만',
@@ -5354,6 +5365,15 @@ extension on TranslationsKo {
 			'downloads.syncRuleCleanupUnavailable' => '연결된 다운로드를 안전하게 확인할 수 없습니다. 서버에 다시 연결한 후 시도하거나, 다운로드를 삭제하지 않고 규칙만 제거하세요.',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title}의 새 에피소드 ${count}개 동기화됨',
 			'downloads.activeSyncRules' => '동기화 규칙',
+			'downloads.reviewOrphanFiles' => '기록이 없는 다운로드 검토',
+			'downloads.orphanReviewTitle' => '기록이 없는 다운로드 검토',
+			'downloads.orphanReviewDescription' => '이 태그가 지정된 파일은 PlezyNG가 관리하는 기본 다운로드 폴더에 있지만, 일치하는 다운로드 기록이나 활성 작업이 없습니다. 삭제하기 전에 목록을 확인하세요.',
+			'downloads.orphanReviewCount' => ({required Object count, required Object size}) => '${count}개 파일 · ${size}',
+			'downloads.orphanDeleteFiles' => ({required Object count}) => '${count}개 파일 삭제',
+			'downloads.orphanCleanupNone' => '기록이 없는 다운로드 파일을 찾지 못했습니다',
+			'downloads.orphanCleanupFailed' => 'PlezyNG에서 관리되는 다운로드 폴더를 안전하게 검색할 수 없습니다. 파일은 삭제되지 않았습니다.',
+			'downloads.orphanCleanupChanged' => '검토 중 다운로드 목록이 변경되었습니다. 정리하기 전에 파일을 다시 확인하세요.',
+			'downloads.orphanCleanupComplete' => ({required Object count, required Object size}) => '${count}개 기록 없는 파일 삭제됨 · ${size} 확보',
 			'downloads.noSyncRules' => '동기화 규칙 없음',
 			'downloads.manageSyncRule' => '동기화 관리',
 			'downloads.editEpisodeCount' => '에피소드 수',
@@ -5552,6 +5572,8 @@ extension on TranslationsKo {
 			'performanceOverlay.dvRpus' => 'DV RPU',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU 평균',
 			'performanceOverlay.dvSampleAverage' => 'DV 샘플 평균',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => '최대 휘도',
 			'performanceOverlay.minLuma' => '최소 휘도',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5562,8 +5584,6 @@ extension on TranslationsKo {
 			'performanceOverlay.player' => '플레이어',
 			'performanceOverlay.memory' => '메모리',
 			'performanceOverlay.uiFps' => 'UI FPS',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',

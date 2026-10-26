@@ -254,7 +254,7 @@
     "contentScreensaverEnabledDescription": "Show full-screen artwork after the app has been idle",
     "contentScreensaverDelay": "Start screensaver after",
     "contentScreensaverLibraries": "Screensaver libraries",
-    "contentScreensaverLibrariesDescription": "Choose which libraries supply artwork. No selection includes every library.",
+    "contentScreensaverLibrariesDescription": "Choose which libraries provide screensaver artwork. If none are selected, artwork from all libraries is used.",
     "contentScreensaverAllLibraries": "All libraries",
     "contentScreensaverSelectedLibraries": "${count} libraries selected",
     "contentScreensaverNoLibraries": "No connected media libraries are available.",
@@ -575,8 +575,6 @@
     "preferredServerAutomatic": "Automatic",
     "showExploreTab": "Show Explore Tab",
     "showExploreTabDescription": "Display the Explore tab with content from Plex Discover and connected trackers",
-    "hideEmptyLibraries": "Hide empty libraries",
-    "hideEmptyLibrariesDescription": "Remove libraries with a server-reported item count of zero from navigation.",
     "hideEmptyLibraries": "Hide empty libraries",
     "hideEmptyLibrariesDescription": "Remove libraries with a server-reported item count of zero from navigation.",
     "liveTvDefaultFavorites": "Default to Favorite Channels",
@@ -2359,7 +2357,14 @@
       "connectionTimedOut": "Connection timed out. Use the same network on both devices.",
       "sessionNotFound": "Device not found. Make sure PlezyNG is running on the host.",
       "authFailed": "Authentication failed. Both devices need the same Plex account.",
-      "failedToConnect": "Failed to connect: ${error}"
+      "failedToConnect": "Failed to connect: ${error}",
+      "codeTitle": "Pairing code",
+      "codeDescription": "Enter the code shown in Companion Remote on the host device. Both devices must use a version that supports secure pairing.",
+      "codeInvalid": "Enter all 32 letters and numbers from the host code.",
+      "updateRequired": "Update both devices to a version that supports secure pairing.",
+      "hostDescription": "Enter this code once on each remote. Keep it private: it grants control of this profile.",
+      "resetCode": "Reset pairing code",
+      "resetDescription": "Disconnect all remotes and create a new code. Every remote will need to pair again."
     },
     "remote": {
       "disconnectConfirm": "Do you want to disconnect from the remote session?",
@@ -2778,7 +2783,11 @@
     "plexTokenRequired": "Authentication required. Please enter your Plex token (X-Plex-Token).",
     "connectDirectPlexCard": "Plex Media Server (Direct / Local)",
     "connectDirectPlexCardSubtitle": "Connect directly using local IP or URL without plex.tv account.",
-    "connectDirectPlexCardSubtitleScoped": "Connect directly using local IP or URL. Binds to ${name}."
+    "connectDirectPlexCardSubtitleScoped": "Connect directly using local IP or URL. Binds to ${name}.",
+    "insecureTitle": "Unencrypted connection",
+    "insecureDescription": "$url uses HTTP. People on the network may read or change your password, tokens and media. Use HTTPS when available. Only continue if you trust this network and accept the risk.",
+    "allowHttp": "Allow HTTP",
+    "httpsRequired": "Use HTTPS or explicitly allow an unencrypted connection."
   },
   "watchLink": {
     "serverUnavailable": "Couldn't reach a Plex server for this link.",

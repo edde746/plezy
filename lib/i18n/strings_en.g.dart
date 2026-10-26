@@ -724,8 +724,8 @@ class Translations$settings$en {
 	/// en: 'Screensaver libraries'
 	String get contentScreensaverLibraries => 'Screensaver libraries';
 
-	/// en: 'Choose which libraries supply artwork. No selection includes every library.'
-	String get contentScreensaverLibrariesDescription => 'Choose which libraries supply artwork. No selection includes every library.';
+	/// en: 'Choose which libraries provide screensaver artwork. If none are selected, artwork from all libraries is used.'
+	String get contentScreensaverLibrariesDescription => 'Choose which libraries provide screensaver artwork. If none are selected, artwork from all libraries is used.';
 
 	/// en: 'All libraries'
 	String get contentScreensaverAllLibraries => 'All libraries';
@@ -6691,6 +6691,18 @@ class Translations$addServer$en {
 
 	/// en: 'Connect directly using local IP or URL. Binds to ${name}.'
 	String connectDirectPlexCardSubtitleScoped({required Object name}) => 'Connect directly using local IP or URL. Binds to ${name}.';
+
+	/// en: 'Unencrypted connection'
+	String get insecureTitle => 'Unencrypted connection';
+
+	/// en: '$url uses HTTP. People on the network may read or change your password, tokens and media. Use HTTPS when available. Only continue if you trust this network and accept the risk.'
+	String insecureDescription({required Object url}) => '${url} uses HTTP. People on the network may read or change your password, tokens and media. Use HTTPS when available. Only continue if you trust this network and accept the risk.';
+
+	/// en: 'Allow HTTP'
+	String get allowHttp => 'Allow HTTP';
+
+	/// en: 'Use HTTPS or explicitly allow an unencrypted connection.'
+	String get httpsRequired => 'Use HTTPS or explicitly allow an unencrypted connection.';
 }
 
 // Path: watchLink
@@ -8800,6 +8812,27 @@ class Translations$companionRemote$pairing$en {
 
 	/// en: 'Failed to connect: ${error}'
 	String failedToConnect({required Object error}) => 'Failed to connect: ${error}';
+
+	/// en: 'Pairing code'
+	String get codeTitle => 'Pairing code';
+
+	/// en: 'Enter the code shown in Companion Remote on the host device. Both devices must use a version that supports secure pairing.'
+	String get codeDescription => 'Enter the code shown in Companion Remote on the host device. Both devices must use a version that supports secure pairing.';
+
+	/// en: 'Enter all 32 letters and numbers from the host code.'
+	String get codeInvalid => 'Enter all 32 letters and numbers from the host code.';
+
+	/// en: 'Update both devices to a version that supports secure pairing.'
+	String get updateRequired => 'Update both devices to a version that supports secure pairing.';
+
+	/// en: 'Enter this code once on each remote. Keep it private: it grants control of this profile.'
+	String get hostDescription => 'Enter this code once on each remote. Keep it private: it grants control of this profile.';
+
+	/// en: 'Reset pairing code'
+	String get resetCode => 'Reset pairing code';
+
+	/// en: 'Disconnect all remotes and create a new code. Every remote will need to pair again.'
+	String get resetDescription => 'Disconnect all remotes and create a new code. Every remote will need to pair again.';
 }
 
 // Path: companionRemote.remote
@@ -9303,7 +9336,7 @@ extension on Translations {
 			'settings.contentScreensaverEnabledDescription' => 'Show full-screen artwork after the app has been idle',
 			'settings.contentScreensaverDelay' => 'Start screensaver after',
 			'settings.contentScreensaverLibraries' => 'Screensaver libraries',
-			'settings.contentScreensaverLibrariesDescription' => 'Choose which libraries supply artwork. No selection includes every library.',
+			'settings.contentScreensaverLibrariesDescription' => 'Choose which libraries provide screensaver artwork. If none are selected, artwork from all libraries is used.',
 			'settings.contentScreensaverAllLibraries' => 'All libraries',
 			'settings.contentScreensaverSelectedLibraries' => ({required Object count}) => '${count} libraries selected',
 			'settings.contentScreensaverNoLibraries' => 'No connected media libraries are available.',
@@ -11216,6 +11249,13 @@ extension on Translations {
 			'companionRemote.pairing.sessionNotFound' => 'Device not found. Make sure PlezyNG is running on the host.',
 			'companionRemote.pairing.authFailed' => 'Authentication failed. Both devices need the same Plex account.',
 			'companionRemote.pairing.failedToConnect' => ({required Object error}) => 'Failed to connect: ${error}',
+			'companionRemote.pairing.codeTitle' => 'Pairing code',
+			'companionRemote.pairing.codeDescription' => 'Enter the code shown in Companion Remote on the host device. Both devices must use a version that supports secure pairing.',
+			'companionRemote.pairing.codeInvalid' => 'Enter all 32 letters and numbers from the host code.',
+			'companionRemote.pairing.updateRequired' => 'Update both devices to a version that supports secure pairing.',
+			'companionRemote.pairing.hostDescription' => 'Enter this code once on each remote. Keep it private: it grants control of this profile.',
+			'companionRemote.pairing.resetCode' => 'Reset pairing code',
+			'companionRemote.pairing.resetDescription' => 'Disconnect all remotes and create a new code. Every remote will need to pair again.',
 			'companionRemote.remote.disconnectConfirm' => 'Do you want to disconnect from the remote session?',
 			'companionRemote.remote.reconnecting' => 'Reconnecting...',
 			'companionRemote.remote.attemptOf' => ({required Object current}) => 'Attempt ${current} of 5',
@@ -11598,6 +11638,10 @@ extension on Translations {
 			'addServer.connectDirectPlexCard' => 'Plex Media Server (Direct / Local)',
 			'addServer.connectDirectPlexCardSubtitle' => 'Connect directly using local IP or URL without plex.tv account.',
 			'addServer.connectDirectPlexCardSubtitleScoped' => ({required Object name}) => 'Connect directly using local IP or URL. Binds to ${name}.',
+			'addServer.insecureTitle' => 'Unencrypted connection',
+			'addServer.insecureDescription' => ({required Object url}) => '${url} uses HTTP. People on the network may read or change your password, tokens and media. Use HTTPS when available. Only continue if you trust this network and accept the risk.',
+			'addServer.allowHttp' => 'Allow HTTP',
+			'addServer.httpsRequired' => 'Use HTTPS or explicitly allow an unencrypted connection.',
 			'watchLink.serverUnavailable' => 'Couldn\'t reach a Plex server for this link.',
 			'watchLink.notFound' => 'Couldn\'t find this show or movie on your Plex servers.',
 			'watchLink.ambiguous' => 'This link matches items on more than one server. Add a server to the link.',
@@ -11634,6 +11678,8 @@ extension on Translations {
 			'homeLayout.autoSlideDescription' => 'Also slides on its own every few seconds. Arrows (PC) and d-pad (TV) always work and restart the timer.',
 			'homeLayout.autoSlideEditDescription' => 'Also slides on its own every few seconds. Off: only moves when you click an arrow (PC) or press left/right on the remote (TV). Arrows and d-pad always work either way.',
 			'homeLayout.enableHeroFirst' => 'Enable Hero first',
+			_ => null,
+		} ?? switch (path) {
 			'homeLayout.showOnHome' => 'Show on Home screen',
 			'homeLayout.home' => 'Home',
 			'homeLayout.removeFromHome' => 'Remove from Home',
@@ -11645,8 +11691,6 @@ extension on Translations {
 			'homeLayout.nextUpHomeDescription' => 'The next unwatched episode row shown separately on Home',
 			'homeLayout.library' => 'Library',
 			'homeLayout.showInRecommended' => 'Show in Library Recommended',
-			_ => null,
-		} ?? switch (path) {
 			'homeLayout.customPlexRow' => 'Custom Plex row',
 			'homeLayout.heroNeedsLibrary' => 'Check Library first — Hero needs somewhere to show',
 			'homeLayout.heroNeedsSurface' => 'Check Library or Home first — Hero needs somewhere to show',

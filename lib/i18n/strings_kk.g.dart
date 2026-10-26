@@ -316,6 +316,7 @@ class _Translations$settings$kk extends Translations$settings$en {
 	@override String get gridView => 'Тор';
 	@override String get listView => 'Тізім';
 	@override String get showHeroSection => 'Басты бөлімді көрсету';
+	@override String get contentScreensaverLibrariesDescription => 'Экран сақтағышы үшін суреттер алынатын кітапханаларды таңдаңыз. Ешқайсысы таңдалмаса, барлық кітапхананың суреттері пайдаланылады.';
 	@override String get continueWatchingAction => '"Көруді жалғастыру" әрекеті';
 	@override String get continueWatchingPlay => 'Ойнату';
 	@override String get continueWatchingDetails => 'Толығырақ ашу';
@@ -1988,6 +1989,15 @@ class _Translations$downloads$kk extends Translations$downloads$en {
 	@override String get syncRuleCleanupUnavailable => 'Байланысты жүктеулерді қауіпсіз анықтау мүмкін болмады. Серверге қайта қосылып көріңіз немесе ережені жүктеулерді жоймай өшіріңіз.';
 	@override String syncedNewEpisodes({required Object title, required Object count}) => '${title} үшін ${count} жаңа бөлім синхрондалды';
 	@override String get activeSyncRules => 'Белсенді синхрондау ережелері';
+	@override String get reviewOrphanFiles => 'Жазбасы жоқ жүктеулерді тексеру';
+	@override String get orphanReviewTitle => 'Жазбасы жоқ жүктеулерді тексеру';
+	@override String get orphanReviewDescription => 'Бұл тегтелген файлдар PlezyNG қолданбасы басқаратын әдепкі жүктеп алу қалталарында орналасқан, бірақ оларға сәйкес жүктеп алу жазбасы не белсенді тапсырма жоқ. Жоймас бұрын тізімді тексеріңіз.';
+	@override String orphanReviewCount({required Object count, required Object size}) => '${count} файл · ${size}';
+	@override String orphanDeleteFiles({required Object count}) => '${count} файлды жою';
+	@override String get orphanCleanupNone => 'Жазбасы жоқ жүктеп алынған файлдар табылмады';
+	@override String get orphanCleanupFailed => 'PlezyNG басқарылатын жүктеп алу қалтасын қауіпсіз сканерлей алмады. Ешбір файл жойылған жоқ.';
+	@override String get orphanCleanupChanged => 'Тексеру кезінде жүктеулер тізімі өзгерді. Тазаламас бұрын файлдарды қайта қарап шығыңыз.';
+	@override String orphanCleanupComplete({required Object count, required Object size}) => '${count} жазбасы жоқ файл жойылды · ${size} орын босатылды';
 	@override String get noSyncRules => 'Синхрондау ережелері жоқ';
 	@override String get manageSyncRule => 'Синхрондауды басқару';
 	@override String get editEpisodeCount => 'Бөлімдер саны';
@@ -3720,6 +3730,7 @@ extension on TranslationsKk {
 			'settings.gridView' => 'Тор',
 			'settings.listView' => 'Тізім',
 			'settings.showHeroSection' => 'Басты бөлімді көрсету',
+			'settings.contentScreensaverLibrariesDescription' => 'Экран сақтағышы үшін суреттер алынатын кітапханаларды таңдаңыз. Ешқайсысы таңдалмаса, барлық кітапхананың суреттері пайдаланылады.',
 			'settings.continueWatchingAction' => '"Көруді жалғастыру" әрекеті',
 			'settings.continueWatchingPlay' => 'Ойнату',
 			'settings.continueWatchingDetails' => 'Толығырақ ашу',
@@ -4031,9 +4042,9 @@ extension on TranslationsKk {
 			'themeEditor.slots.outline' => 'Контур',
 			'themeEditor.slots.text' => 'Мәтін',
 			'themeEditor.slots.textMuted' => 'Қосалқы мәтін',
-			'themeEditor.slots.accent' => 'Акцент',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => 'Акцент',
 			'themeEditor.opacity' => 'Мөлдірлік',
 			'themeEditor.hexHint' => '#RRGGBB немесе #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Басқа тақырыптардан',
@@ -4545,9 +4556,9 @@ extension on TranslationsKk {
 			'profiles.pinExplain' => 'Профильдер арасында ауысу үшін 4 таңбалы PIN код қажет.',
 			'profiles.continueButton' => 'Жалғастыру',
 			'profiles.pinsDontMatch' => 'PIN кодтар сәйкес келмейді',
-			'profiles.tokenIdentityMismatch' => 'Plex профилінің токені күтілмеген серверді анықтады',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'Plex профилінің токені күтілмеген серверді анықтады',
 			'connections.sectionTitle' => 'Қосылымдар',
 			'connections.addConnection' => 'Қосылым қосу',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex арқылы кіріңіз немесе Jellyfin не Emby серверіне қосылыңыз',
@@ -5059,9 +5070,9 @@ extension on TranslationsKk {
 			'liveTv.guideReloadFailed' => 'Телебағдарламаны жаңарту мүмкін болмады',
 			'liveTv.rulesProcessRequested' => 'Ережелерді қайта бағалау сұралды',
 			'liveTv.rulesProcessFailed' => 'Жазу ережелерін қайта тексеру мүмкін болмады',
-			'liveTv.recordShow' => 'Шоуды жазу',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordShow' => 'Шоуды жазу',
 			'liveTv.recordSettings.startEarly' => 'Ертерек бастау (секунд)',
 			'liveTv.recordSettings.endLate' => 'Кешірек аяқтау (секунд)',
 			'liveTv.recordSettings.newOnly' => 'Тек жаңа эпизодтар',
@@ -5366,6 +5377,15 @@ extension on TranslationsKk {
 			'downloads.syncRuleCleanupUnavailable' => 'Байланысты жүктеулерді қауіпсіз анықтау мүмкін болмады. Серверге қайта қосылып көріңіз немесе ережені жүктеулерді жоймай өшіріңіз.',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title} үшін ${count} жаңа бөлім синхрондалды',
 			'downloads.activeSyncRules' => 'Белсенді синхрондау ережелері',
+			'downloads.reviewOrphanFiles' => 'Жазбасы жоқ жүктеулерді тексеру',
+			'downloads.orphanReviewTitle' => 'Жазбасы жоқ жүктеулерді тексеру',
+			'downloads.orphanReviewDescription' => 'Бұл тегтелген файлдар PlezyNG қолданбасы басқаратын әдепкі жүктеп алу қалталарында орналасқан, бірақ оларға сәйкес жүктеп алу жазбасы не белсенді тапсырма жоқ. Жоймас бұрын тізімді тексеріңіз.',
+			'downloads.orphanReviewCount' => ({required Object count, required Object size}) => '${count} файл · ${size}',
+			'downloads.orphanDeleteFiles' => ({required Object count}) => '${count} файлды жою',
+			'downloads.orphanCleanupNone' => 'Жазбасы жоқ жүктеп алынған файлдар табылмады',
+			'downloads.orphanCleanupFailed' => 'PlezyNG басқарылатын жүктеп алу қалтасын қауіпсіз сканерлей алмады. Ешбір файл жойылған жоқ.',
+			'downloads.orphanCleanupChanged' => 'Тексеру кезінде жүктеулер тізімі өзгерді. Тазаламас бұрын файлдарды қайта қарап шығыңыз.',
+			'downloads.orphanCleanupComplete' => ({required Object count, required Object size}) => '${count} жазбасы жоқ файл жойылды · ${size} орын босатылды',
 			'downloads.noSyncRules' => 'Синхрондау ережелері жоқ',
 			'downloads.manageSyncRule' => 'Синхрондауды басқару',
 			'downloads.editEpisodeCount' => 'Бөлімдер саны',
@@ -5564,6 +5584,8 @@ extension on TranslationsKk {
 			'performanceOverlay.dvRpus' => 'DV RPU-лар',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU Орт.',
 			'performanceOverlay.dvSampleAverage' => 'DV Үлгі Орт.',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Макс Luma',
 			'performanceOverlay.minLuma' => 'Мин Luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5574,8 +5596,6 @@ extension on TranslationsKk {
 			'performanceOverlay.player' => 'Ойнатқыш',
 			'performanceOverlay.memory' => 'Жады',
 			'performanceOverlay.uiFps' => 'Интерфейс (UI) FPS',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',

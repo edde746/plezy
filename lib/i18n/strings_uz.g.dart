@@ -316,6 +316,7 @@ class _Translations$settings$uz extends Translations$settings$en {
 	@override String get gridView => 'Toʻrsimon';
 	@override String get listView => 'Roʻyxat';
 	@override String get showHeroSection => 'Asosiy boʻlimni koʻrsatish';
+	@override String get contentScreensaverLibrariesDescription => 'Ekran saqlagichi uchun rasmlar olinadigan kutubxonalarni tanlang. Hech biri tanlanmasa, barcha kutubxonalardagi rasmlar ishlatiladi.';
 	@override String get continueWatchingAction => '"Tomoshani davom ettirish" harakati';
 	@override String get continueWatchingPlay => 'Ijro etish';
 	@override String get continueWatchingDetails => 'Tafsilotlarni ochish';
@@ -1988,6 +1989,15 @@ class _Translations$downloads$uz extends Translations$downloads$en {
 	@override String get syncRuleCleanupUnavailable => 'Bogʻliq yuklamalarni xavfsiz aniqlab boʻlmadi. Serverga qayta ulanib koʻring yoki yuklamalarni oʻchirmasdan qoidani olib tashlang.';
 	@override String syncedNewEpisodes({required Object title, required Object count}) => '${title} uchun ${count} yangi qism sinxronlandi';
 	@override String get activeSyncRules => 'Faol sinxronlash qoidalari';
+	@override String get reviewOrphanFiles => 'Yozuvi yo‘q yuklamalarni ko‘rib chiqish';
+	@override String get orphanReviewTitle => 'Yozuvi yo‘q yuklamalarni ko‘rib chiqish';
+	@override String get orphanReviewDescription => 'Bu belgilangan fayllar PlezyNG boshqaradigan standart yuklab olish papkalarida joylashgan, ammo ularga mos yuklab olish yozuvi yoki faol vazifa yo‘q. O‘chirishdan oldin ro‘yxatni tekshiring.';
+	@override String orphanReviewCount({required Object count, required Object size}) => '${count} ta fayl · ${size}';
+	@override String orphanDeleteFiles({required Object count}) => '${count} ta faylni o‘chirish';
+	@override String get orphanCleanupNone => 'Yozuvi yo‘q yuklab olingan fayllar topilmadi';
+	@override String get orphanCleanupFailed => 'PlezyNG boshqariladigan yuklab olish papkasini xavfsiz tarzda tekshira olmadi. Hech qanday fayl o‘chirilmadi.';
+	@override String get orphanCleanupChanged => 'Ko‘rib chiqish paytida yuklab olishlar ro‘yxati o‘zgardi. Tozalashdan oldin fayllarni qayta ko‘rib chiqing.';
+	@override String orphanCleanupComplete({required Object count, required Object size}) => '${count} ta yozuvi yo‘q fayl o‘chirildi · ${size} joy bo‘shatildi';
 	@override String get noSyncRules => 'Sinxronlash qoidalari yoʻq';
 	@override String get manageSyncRule => 'Sinxronlashni boshqarish';
 	@override String get editEpisodeCount => 'Qismlar soni';
@@ -3720,6 +3730,7 @@ extension on TranslationsUz {
 			'settings.gridView' => 'Toʻrsimon',
 			'settings.listView' => 'Roʻyxat',
 			'settings.showHeroSection' => 'Asosiy boʻlimni koʻrsatish',
+			'settings.contentScreensaverLibrariesDescription' => 'Ekran saqlagichi uchun rasmlar olinadigan kutubxonalarni tanlang. Hech biri tanlanmasa, barcha kutubxonalardagi rasmlar ishlatiladi.',
 			'settings.continueWatchingAction' => '"Tomoshani davom ettirish" harakati',
 			'settings.continueWatchingPlay' => 'Ijro etish',
 			'settings.continueWatchingDetails' => 'Tafsilotlarni ochish',
@@ -4031,9 +4042,9 @@ extension on TranslationsUz {
 			'themeEditor.slots.outline' => 'Kontur',
 			'themeEditor.slots.text' => 'Matn',
 			'themeEditor.slots.textMuted' => 'Ikkilamchi matn',
-			'themeEditor.slots.accent' => 'Urgʻu rangi',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => 'Urgʻu rangi',
 			'themeEditor.opacity' => 'Noshaffoflik',
 			'themeEditor.hexHint' => '#RRGGBB yoki #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'Boshqa mavzulardan',
@@ -4545,9 +4556,9 @@ extension on TranslationsUz {
 			'profiles.pinExplain' => 'Profillar orasida oʻtish uchun 4 xonali PIN kod talab qilinadi.',
 			'profiles.continueButton' => 'Davom ettirish',
 			'profiles.pinsDontMatch' => 'PIN kodlar mos kelmadi',
-			'profiles.tokenIdentityMismatch' => 'Plex profil tokeni kutilmagan serverga tegishli boʻlib chiqdi',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'Plex profil tokeni kutilmagan serverga tegishli boʻlib chiqdi',
 			'connections.sectionTitle' => 'Ulanishlar',
 			'connections.addConnection' => 'Ulanish qoʻshish',
 			'connections.addConnectionSubtitleNoProfile' => 'Plex orqali kiring yoki Jellyfin yoki Emby serveriga ulaning',
@@ -5059,9 +5070,9 @@ extension on TranslationsUz {
 			'liveTv.guideReloadFailed' => 'Dasturlar jadvalini yangilab boʻlmadi',
 			'liveTv.rulesProcessRequested' => 'Qoidalarni qayta baholash soʻraldi',
 			'liveTv.rulesProcessFailed' => 'Yozib olish qoidalarini qayta baholab boʻlmadi',
-			'liveTv.recordShow' => 'Shouni yozib olish',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordShow' => 'Shouni yozib olish',
 			'liveTv.recordSettings.startEarly' => 'Erta boshlash (soniya)',
 			'liveTv.recordSettings.endLate' => 'Kech tugatish (soniya)',
 			'liveTv.recordSettings.newOnly' => 'Faqat yangi epizodlar',
@@ -5366,6 +5377,15 @@ extension on TranslationsUz {
 			'downloads.syncRuleCleanupUnavailable' => 'Bogʻliq yuklamalarni xavfsiz aniqlab boʻlmadi. Serverga qayta ulanib koʻring yoki yuklamalarni oʻchirmasdan qoidani olib tashlang.',
 			'downloads.syncedNewEpisodes' => ({required Object title, required Object count}) => '${title} uchun ${count} yangi qism sinxronlandi',
 			'downloads.activeSyncRules' => 'Faol sinxronlash qoidalari',
+			'downloads.reviewOrphanFiles' => 'Yozuvi yo‘q yuklamalarni ko‘rib chiqish',
+			'downloads.orphanReviewTitle' => 'Yozuvi yo‘q yuklamalarni ko‘rib chiqish',
+			'downloads.orphanReviewDescription' => 'Bu belgilangan fayllar PlezyNG boshqaradigan standart yuklab olish papkalarida joylashgan, ammo ularga mos yuklab olish yozuvi yoki faol vazifa yo‘q. O‘chirishdan oldin ro‘yxatni tekshiring.',
+			'downloads.orphanReviewCount' => ({required Object count, required Object size}) => '${count} ta fayl · ${size}',
+			'downloads.orphanDeleteFiles' => ({required Object count}) => '${count} ta faylni o‘chirish',
+			'downloads.orphanCleanupNone' => 'Yozuvi yo‘q yuklab olingan fayllar topilmadi',
+			'downloads.orphanCleanupFailed' => 'PlezyNG boshqariladigan yuklab olish papkasini xavfsiz tarzda tekshira olmadi. Hech qanday fayl o‘chirilmadi.',
+			'downloads.orphanCleanupChanged' => 'Ko‘rib chiqish paytida yuklab olishlar ro‘yxati o‘zgardi. Tozalashdan oldin fayllarni qayta ko‘rib chiqing.',
+			'downloads.orphanCleanupComplete' => ({required Object count, required Object size}) => '${count} ta yozuvi yo‘q fayl o‘chirildi · ${size} joy bo‘shatildi',
 			'downloads.noSyncRules' => 'Sinxronlash qoidalari yoʻq',
 			'downloads.manageSyncRule' => 'Sinxronlashni boshqarish',
 			'downloads.editEpisodeCount' => 'Qismlar soni',
@@ -5564,6 +5584,8 @@ extension on TranslationsUz {
 			'performanceOverlay.dvRpus' => 'DV RPU-lar',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU Oʻrt.',
 			'performanceOverlay.dvSampleAverage' => 'DV Namuna Oʻrt.',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Maks Luma',
 			'performanceOverlay.minLuma' => 'Min Luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5574,8 +5596,6 @@ extension on TranslationsUz {
 			'performanceOverlay.player' => 'Pleyer',
 			'performanceOverlay.memory' => 'Xotira',
 			'performanceOverlay.uiFps' => 'Interfeys (UI) FPS',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',

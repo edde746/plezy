@@ -41,7 +41,8 @@ const (
 	pingInterval                   = 30 * time.Second
 	maxLogSize                     = 1 * 1024 * 1024
 	logMaxAge                      = 3 * 24 * time.Hour
-	logIDLength                    = 6
+	logIDLength                    = 26 // 130 random bits: the ID is a read capability
+	legacyCrockfordLogIDLength     = 6  // existing links remain valid only until their original expiry
 	legacyLogIDLength              = 10 // pre-logIDChars; served until expiry
 	legacyShortLogIDLength         = 5  // pre-logIDChars; served until expiry
 	logRateInterval                = 1 * time.Minute
@@ -570,21 +571,21 @@ func generateLogID() string {
 	return generateID(logIDChars, logIDLength)
 }
 
-// canonicalLogID resolves a Log ID as typed to its stored spelling. Current
-// IDs are short enough to transcribe, so they match case-insensitively with
-// i/l read as 1 and o as 0. They are still bearer capabilities for uploads
-// that can hold account identifiers, and only the per-source lookup budget
-// (allowLookup) slows guessing. Legacy IDs match exactly.
+// canonicalLogID resolves a Log ID to its stored spelling. New IDs carry 130
+// random bits; throttling is defense in depth, not their authentication secret.
+// Keep the old Crockford spelling rules for both lengths so already-shared
+// links survive an upgrade until their original three-day expiry. No new short
+// IDs are issued. Older non-Crockford IDs continue to match exactly.
 func canonicalLogID(id string) (string, bool) {
-	if len(id) != logIDLength {
+	if len(id) != logIDLength && len(id) != legacyCrockfordLogIDLength {
 		if validID(id, legacyLogIDLength) || validID(id, legacyShortLogIDLength) {
 			return id, true
 		}
 		return "", false
 	}
-	var canonical [logIDLength]byte
+	canonical := make([]byte, len(id))
 	changed := false
-	for i := range logIDLength {
+	for i := range len(id) {
 		c := id[i]
 		switch c {
 		case 'I', 'i', 'L', 'l':
@@ -605,7 +606,7 @@ func canonicalLogID(id string) (string, bool) {
 	if !changed {
 		return id, true
 	}
-	return string(canonical[:]), true
+	return string(canonical), true
 }
 
 // logIDFromFilename accepts only stored spellings; lookups resolve

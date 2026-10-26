@@ -316,6 +316,7 @@ class _Translations$settings$bg extends Translations$settings$en {
 	@override String get gridView => 'Мрежа';
 	@override String get listView => 'Списък';
 	@override String get showHeroSection => 'Показвай водеща секция';
+	@override String get contentScreensaverLibrariesDescription => 'Изберете кои библиотеки да предоставят изображения за скрийнсейвъра. Ако не изберете нито една, ще се използват изображения от всички библиотеки.';
 	@override String get continueWatchingAction => 'Действие за продължаване на гледането';
 	@override String get continueWatchingPlay => 'Пусни';
 	@override String get continueWatchingDetails => 'Отвори подробности';
@@ -1988,6 +1989,15 @@ class _Translations$downloads$bg extends Translations$downloads$en {
 	@override String get syncRuleCleanupUnavailable => 'Свързаните изтегляния не можаха да бъдат идентифицирани безопасно. Свържете се отново със сървъра и опитайте отново, или премахнете правилото, без да изтривате изтеглянията.';
 	@override String syncedNewEpisodes({required Object count, required Object title}) => 'Синхронизирани са ${count} нови епизода за ${title}';
 	@override String get activeSyncRules => 'Правила за синхронизация';
+	@override String get reviewOrphanFiles => 'Преглед на осиротелите изтегляния';
+	@override String get orphanReviewTitle => 'Преглед на осиротелите изтегляния';
+	@override String get orphanReviewDescription => 'Тези файлове с таг се намират в стандартните папки за изтегляния, управлявани от PlezyNG, и нямат съответен запис за изтегляне или активна задача. Проверете списъка, преди да ги изтриете.';
+	@override String orphanReviewCount({required Object count, required Object size}) => '${count} файла · ${size}';
+	@override String orphanDeleteFiles({required Object count}) => 'Изтриване на ${count} файла';
+	@override String get orphanCleanupNone => 'Не са намерени осиротели файлове за изтегляне';
+	@override String get orphanCleanupFailed => 'PlezyNG не успя да сканира безопасно управляваната папка за изтегляния. Няма изтрити файлове.';
+	@override String get orphanCleanupChanged => 'Списъкът с изтегляния се промени по време на прегледа. Прегледайте файловете отново, преди да почистите.';
+	@override String orphanCleanupComplete({required Object count, required Object size}) => 'Изтрити са ${count} осиротели файла · освободени са ${size}';
 	@override String get noSyncRules => 'Няма правила за синхронизация';
 	@override String get manageSyncRule => 'Управление на синхронизацията';
 	@override String get editEpisodeCount => 'Брой епизоди';
@@ -3720,6 +3730,7 @@ extension on TranslationsBg {
 			'settings.gridView' => 'Мрежа',
 			'settings.listView' => 'Списък',
 			'settings.showHeroSection' => 'Показвай водеща секция',
+			'settings.contentScreensaverLibrariesDescription' => 'Изберете кои библиотеки да предоставят изображения за скрийнсейвъра. Ако не изберете нито една, ще се използват изображения от всички библиотеки.',
 			'settings.continueWatchingAction' => 'Действие за продължаване на гледането',
 			'settings.continueWatchingPlay' => 'Пусни',
 			'settings.continueWatchingDetails' => 'Отвори подробности',
@@ -4031,9 +4042,9 @@ extension on TranslationsBg {
 			'themeEditor.slots.outline' => 'Контур',
 			'themeEditor.slots.text' => 'Текст',
 			'themeEditor.slots.textMuted' => 'Вторичен текст',
-			'themeEditor.slots.accent' => 'Акцент',
 			_ => null,
 		} ?? switch (path) {
+			'themeEditor.slots.accent' => 'Акцент',
 			'themeEditor.opacity' => 'Непрозрачност',
 			'themeEditor.hexHint' => '#RRGGBB или #AARRGGBB',
 			'themeEditor.fromOtherThemes' => 'От други теми',
@@ -4545,9 +4556,9 @@ extension on TranslationsBg {
 			'profiles.pinExplain' => 'Изисква се 4-цифрен PIN за смяна на профили.',
 			'profiles.continueButton' => 'Продължи',
 			'profiles.pinsDontMatch' => 'PIN кодовете не съвпадат',
-			'profiles.tokenIdentityMismatch' => 'Токенът на профила в Plex съответства на неочакван сървър',
 			_ => null,
 		} ?? switch (path) {
+			'profiles.tokenIdentityMismatch' => 'Токенът на профила в Plex съответства на неочакван сървър',
 			'connections.sectionTitle' => 'Връзки',
 			'connections.addConnection' => 'Добави връзка',
 			'connections.addConnectionSubtitleNoProfile' => 'Влезте с Plex или свържете Jellyfin или Emby сървър',
@@ -5059,9 +5070,9 @@ extension on TranslationsBg {
 			'liveTv.guideReloadFailed' => 'ТВ програмата не можа да бъде презаредена',
 			'liveTv.rulesProcessRequested' => 'Заявена е преоценка на правилата',
 			'liveTv.rulesProcessFailed' => 'Правилата за записване не можаха да бъдат обработени отново',
-			'liveTv.recordShow' => 'Запиши предаването',
 			_ => null,
 		} ?? switch (path) {
+			'liveTv.recordShow' => 'Запиши предаването',
 			'liveTv.recordSettings.startEarly' => 'Започване по-рано (секунди)',
 			'liveTv.recordSettings.endLate' => 'Приключване по-късно (секунди)',
 			'liveTv.recordSettings.newOnly' => 'Само нови епизоди',
@@ -5366,6 +5377,15 @@ extension on TranslationsBg {
 			'downloads.syncRuleCleanupUnavailable' => 'Свързаните изтегляния не можаха да бъдат идентифицирани безопасно. Свържете се отново със сървъра и опитайте отново, или премахнете правилото, без да изтривате изтеглянията.',
 			'downloads.syncedNewEpisodes' => ({required Object count, required Object title}) => 'Синхронизирани са ${count} нови епизода за ${title}',
 			'downloads.activeSyncRules' => 'Правила за синхронизация',
+			'downloads.reviewOrphanFiles' => 'Преглед на осиротелите изтегляния',
+			'downloads.orphanReviewTitle' => 'Преглед на осиротелите изтегляния',
+			'downloads.orphanReviewDescription' => 'Тези файлове с таг се намират в стандартните папки за изтегляния, управлявани от PlezyNG, и нямат съответен запис за изтегляне или активна задача. Проверете списъка, преди да ги изтриете.',
+			'downloads.orphanReviewCount' => ({required Object count, required Object size}) => '${count} файла · ${size}',
+			'downloads.orphanDeleteFiles' => ({required Object count}) => 'Изтриване на ${count} файла',
+			'downloads.orphanCleanupNone' => 'Не са намерени осиротели файлове за изтегляне',
+			'downloads.orphanCleanupFailed' => 'PlezyNG не успя да сканира безопасно управляваната папка за изтегляния. Няма изтрити файлове.',
+			'downloads.orphanCleanupChanged' => 'Списъкът с изтегляния се промени по време на прегледа. Прегледайте файловете отново, преди да почистите.',
+			'downloads.orphanCleanupComplete' => ({required Object count, required Object size}) => 'Изтрити са ${count} осиротели файла · освободени са ${size}',
 			'downloads.noSyncRules' => 'Няма правила за синхронизация',
 			'downloads.manageSyncRule' => 'Управление на синхронизацията',
 			'downloads.editEpisodeCount' => 'Брой епизоди',
@@ -5564,6 +5584,8 @@ extension on TranslationsBg {
 			'performanceOverlay.dvRpus' => 'DV RPU',
 			'performanceOverlay.dvRpuAverage' => 'Средно DV RPU',
 			'performanceOverlay.dvSampleAverage' => 'Средно DV семпл',
+			_ => null,
+		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Макс. яркост',
 			'performanceOverlay.minLuma' => 'Мин. яркост',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5574,8 +5596,6 @@ extension on TranslationsBg {
 			'performanceOverlay.player' => 'Плеър',
 			'performanceOverlay.memory' => 'Памет',
 			'performanceOverlay.uiFps' => 'FPS на интерфейса',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.fps' => 'FPS',
 			'performanceOverlay.decoderAndroidHw' => 'Android HW',
 			'performanceOverlay.decoderNvidiaHw' => 'NVIDIA HW',

@@ -16,6 +16,7 @@ import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/screens/profile/profile_detail_screen.dart';
 import 'package:plezy/services/storage_service.dart';
+import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/utils/platform_detector.dart';
 import 'package:provider/provider.dart';
 
@@ -24,8 +25,10 @@ import '../../test_helpers/prefs.dart';
 void main() {
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUp(() {
+  setUp(() async {
     resetSharedPreferencesForTest();
+    await SettingsService.getInstance();
+    await StorageService.getInstance();
     TvDetectionService.debugSetAppleTVOverride(null);
     LocaleSettings.setLocaleSync(AppLocale.en);
   });

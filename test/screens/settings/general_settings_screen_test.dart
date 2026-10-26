@@ -13,6 +13,8 @@ import 'package:plezy/screens/settings/general_settings_screen.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:provider/provider.dart';
+import 'package:plezy/providers/multi_server_provider.dart';
+import '../../test_helpers/multi_server_fixtures.dart';
 
 import '../../test_helpers/prefs.dart';
 
@@ -50,8 +52,11 @@ void main() {
     );
 
     await tester.pumpWidget(
-      ChangeNotifierProvider<ActiveProfileProvider>.value(
-        value: activeProfile,
+      MultiProvider(
+        providers: [
+          ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
+          ChangeNotifierProvider<MultiServerProvider>.value(value: testMultiServer().provider),
+        ],
         child: MaterialApp(theme: monoTheme(MonoPalette.dark), home: const GeneralSettingsScreen()),
       ),
     );
