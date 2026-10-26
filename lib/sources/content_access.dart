@@ -97,7 +97,7 @@ class PublicationDownloads {
         ? update.expectedFileSize
         : context.expectedSize;
     if (total <= 0) return;
-    final bytes = (total * update.progress.clamp(0.0, 1.0)).round().clamp(0, total);
+    final bytes = (total * update.progress.clamp(0.0, 1.0)).round().clamp(0, total).toInt();
     if (bytes == context.bytes && bytes < total) return;
     context.bytes = bytes;
     context.task.onProgress?.call(bytes, total);
@@ -106,7 +106,7 @@ class PublicationDownloads {
 
   Future<void> _persistNativeProgress(_NativeDownloadContext context, int bytes) async {
     final task = context.task;
-    final safeBytes = bytes.clamp(0, context.expectedSize);
+    final safeBytes = bytes.clamp(0, context.expectedSize).toInt();
     await repository.reserveDownload(
       profile: task.profile,
       key: key(task.adapter.source.id, task.file),
@@ -982,8 +982,11 @@ class PublicationDownloads {
   }
 
   void cancelAll() {
-    for (final cancellation in _cancellations.values) {
-      cancellation.cancel();
+    for (final task in _tasks.values) {
+      task.cancellation.cancel();
+      if (_supportsNativeBackgroundDownloads) {
+        unawaited(_pauseNativeTask(_nativeTaskId(task.profile, task.adapter.source.id, task.file)));
+      }
     }
     while (_queue.isNotEmpty) {
       final task = _queue.removeFirst();
@@ -1095,6 +1098,9 @@ class PublicationDownloads {
     final transferKeys = tasks.map((task) => task.transferKey).toList(growable: false);
     for (final task in tasks) {
       task.cancellation.cancel();
+      if (_supportsNativeBackgroundDownloads) {
+        unawaited(_pauseNativeTask(_nativeTaskId(profile, sourceId, task.file)));
+      }
       if (_queue.remove(task)) {
         unawaited(repository.setDownloadState(profile, key(sourceId, task.file), 'paused').catchError((_) {}));
         if (!task.completer.isCompleted) task.completer.completeError(const SourceException(SourceFailure.cancelled));
