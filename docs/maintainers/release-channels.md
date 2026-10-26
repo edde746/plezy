@@ -81,7 +81,19 @@ For iOS, the base64 export-options plist must declare `method` as `app-store-con
 | Launchpad PPA | `GPG_PRIVATE_KEY`; repository variable `LAUNCHPAD_PPA` in `ppa:<owner>/<archive>` format |
 | Relay Docker Hub mirror | `DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN` |
 
-GHCR uses the workflow's `GITHUB_TOKEN`; make the first package public in GitHub Packages settings if anonymous pulls are intended. The Discord publisher uses `DISCORD_RELEASE_WEBHOOK`. At the 2026-10-25 settings check, that was the only configured Actions secret and there were no repository variables; add the channel-specific values above before expecting publisher workflows to submit packages.
+GHCR uses the workflow's `GITHUB_TOKEN`; make the first package public in GitHub Packages settings if anonymous pulls are intended. The Discord publisher uses `DISCORD_RELEASE_WEBHOOK`.
+
+At the 2026-10-25 readiness check, these repository secrets were configured: `AUR_SSH_KEY`,
+`CHOCO_API_KEY`, `COPR_LOGIN`, `COPR_USERNAME`, `COPR_TOKEN`, `DISCORD_RELEASE_WEBHOOK`,
+`DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `GPG_PRIVATE_KEY`, `SNAPCRAFT_STORE_CREDENTIALS`, and
+`WINGET_CREATE_GITHUB_TOKEN`. The `AUR_PACKAGE_NAME`, `COPR_PROJECT`, and `LAUNCHPAD_PPA`
+variables were also configured. The `ppa:keefshape/plezyng` archive is active and empty. COPR
+project `slskdn/plezyng` is active for Fedora 43–45 and Rawhide on x86_64 and aarch64, with no
+builds yet. The Snap credential lacks the `package_register` permission needed to register the
+initial `plezyng` name; preserve it and register the name through Ubuntu One or a newly exported
+credential with that permission. Android signing, Apple signing and submission, Sparkle signing,
+Google Play, Amazon Appstore, Windows installer signing, and Microsoft Store identity credentials
+remain unconfigured. Do not reuse signing keys or store identities from another project.
 
 ## Relay containers
 

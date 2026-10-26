@@ -53,6 +53,7 @@
 
 - Explain the default behavior on the screensaver library selection page.
 - Build Android app and plugin modules with SDK 37 and generate BuildConfig for current Android dependencies.
+- Refresh the release-channel guide with configured publishers and remaining credential requirements.
 - Declare Bash explicitly when naming the Snap release artifact.
 - Update remaining app and OAuth messages to PlezyNG and make donation copy provider-neutral.
 - Keep Android signing material until all signed store builds finish, and clean it up afterward.
