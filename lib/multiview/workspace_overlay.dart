@@ -152,9 +152,17 @@ class _MultiviewOverlay extends StatelessWidget {
                 offstage: true,
                 child: SizedBox(width: 320, height: 180, child: registration.buildSurface(context)),
               ),
-            PositionedDirectional(end: 12, bottom: 12, child: _WorkspaceDock(controller: controller)),
+            PositionedDirectional(
+              end: 12,
+              bottom: 12,
+              child: SafeArea(top: false, child: _WorkspaceDock(controller: controller)),
+            ),
             if (controller.sessionTrayVisible)
-              PositionedDirectional(end: 12, bottom: 68, child: _WorkspaceSessionTray(controller: controller)),
+              PositionedDirectional(
+                end: 12,
+                bottom: 68,
+                child: SafeArea(top: false, child: _WorkspaceSessionTray(controller: controller)),
+              ),
           ],
         );
       },

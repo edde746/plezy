@@ -48,6 +48,7 @@ class SteamGameWorkspaceSession {
     'appId': game.id,
     'appName': game.name,
     'touchControls': touchControls,
+    'touchLabel': t.games.touchControls,
     'connecting': t.games.connecting,
     'error': t.games.unavailable,
   };

@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Increase Multiview title-bar, session-tray, and resize controls to consistent 48dp focus targets.
+- Keep the Multiview dock and session tray clear of display cutouts; give the Steam touch controller usable 48dp targets, nearest-control overlap handling, and a localized description while active.
 - Add an app-owned Multiview workspace for retained video, music, source playback and publication surfaces, with floating/split layouts, shared audio and input ownership, and independent native channels for two simultaneous video sessions.
 - Add a retained Android Steam game surface to Multiview with workspace audio ownership and exclusive gamepad input; other game engines remain on their existing launch paths.
 
