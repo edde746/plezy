@@ -28,6 +28,15 @@
       }
     },
     {
+      "identity" : "google-cast-sdk",
+      "kind" : "remoteSourceControl",
+      "location" : "https://github.com/SRGSSR/google-cast-sdk.git",
+      "state" : {
+        "revision" : "516f7111116bc412230309636842d3bbf77efdd8",
+        "version" : "4.8.4"
+      }
+    },
+    {
       "identity" : "mpv-build",
       "kind" : "remoteSourceControl",
       "location" : "https://github.com/edde746/mpv-build",
