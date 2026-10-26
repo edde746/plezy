@@ -1,3 +1,4 @@
+import '../../i18n/strings.g.dart';
 import '../../media/library_first_character.dart';
 import '../../media/media_backend.dart';
 import '../../services/plex_client.dart';
@@ -11,7 +12,7 @@ import 'alpha_jump_helper.dart';
 /// the highlighted letter follows the visible row.
 ///
 /// MediaBrowser libraries have no per-letter count endpoint. The bar
-/// synthesises the 27-letter alphabet (`#`, `A`–`Z`) and acts as a name-prefix
+/// offers a script-appropriate alphabet and acts as a name-prefix
 /// filter that refetches the page when the user picks a letter (matching the
 /// server web clients' UX).
 abstract class LibraryAlphaBarStrategy {
@@ -133,38 +134,30 @@ class PlexAlphaBarStrategy implements LibraryAlphaBarStrategy {
   }
 }
 
-/// MediaBrowser strategy — synthesises the 27-letter alphabet locally and
+/// MediaBrowser strategy — supplies an alphabet where prefixes are meaningful and
 /// uses the bar as a `NameStartsWith` filter.
 class MediaBrowserAlphaBarStrategy implements LibraryAlphaBarStrategy {
-  static const _letters = [
-    '#',
-    'A',
-    'B',
-    'C',
-    'D',
-    'E',
-    'F',
-    'G',
-    'H',
-    'I',
-    'J',
-    'K',
-    'L',
-    'M',
-    'N',
-    'O',
-    'P',
-    'Q',
-    'R',
-    'S',
-    'T',
-    'U',
-    'V',
-    'W',
-    'X',
-    'Y',
-    'Z',
-  ];
+  // A NameStartsWith endpoint matches actual characters, not pinyin, kana
+  // readings or Hangul initials. For those scripts keep full Unicode search
+  // instead of presenting an A–Z rail that cannot reach their titles.
+  static const _searchOnlyLanguages = {'zh', 'ja', 'ko', 'hi', 'bn', 'th'};
+  static const _nativeAlphabets = {
+    'ar': 'اأإآبتثجحخدذرزسشصضطظعغفقكلمنهوي',
+    'fa': 'اآبپتثجچحخدذرزژسشصضطظعغفقکگلمنوهی',
+    'he': 'אבגדהוזחטיכלמנסעפצקרשת',
+    'ru': 'АБВГДЕЁЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЫЬЭЮЯ',
+    'uk': 'АБВГҐДЕЄЖЗИІЇЙКЛМНОПРСТУФХЦЧШЩЬЮЯ',
+    'bg': 'АБВГДЕЖЗИЙКЛМНОПРСТУФХЦЧШЩЪЬЮЯ',
+    'kk': 'АӘБВГҒДЕЁЖЗИЙКҚЛМНҢОӨПРСТУҰҮФХҺЦЧШЩЪЫІЬЭЮЯ',
+  };
+  static List<String> get _letters {
+    final language = LocaleSettings.currentLocale.languageCode;
+    if (_searchOnlyLanguages.contains(language)) return const [];
+    final native = _nativeAlphabets[language];
+    // The # sentinel means NameLessThan=A on MediaBrowser, so it must not
+    // pretend to be a non-letter bucket under a different alphabet.
+    return native == null ? ['#', ...'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('')] : native.split('');
+  }
 
   const MediaBrowserAlphaBarStrategy();
 

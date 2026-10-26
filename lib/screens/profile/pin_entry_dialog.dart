@@ -498,6 +498,7 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
         for (int row = 0; row < _rows.length; row++) ...[
           if (row > 0) const SizedBox(height: _rowGap),
           Row(
+            textDirection: TextDirection.ltr,
             mainAxisAlignment: .center,
             mainAxisSize: .min,
             children: [
@@ -558,6 +559,7 @@ class _TvPinInputState extends State<_TvPinInput> with ControllerDisposerMixin {
 
   Widget _buildDigitRow(BuildContext _) {
     return Row(
+      textDirection: TextDirection.ltr,
       mainAxisSize: .min,
       mainAxisAlignment: .center,
       children: [

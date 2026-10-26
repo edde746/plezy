@@ -138,10 +138,10 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> with KeyRepeatHelper<
         widget.onConfirm!();
         return KeyEventResult.handled;
       }
-      if ((vertical && key.isUpKey) || key.isRightKey) {
+      if ((vertical && key.isUpKey) || key.isInlineEnd(context)) {
         startRepeat(_increment);
         return KeyEventResult.handled;
-      } else if ((vertical && key.isDownKey) || key.isLeftKey) {
+      } else if ((vertical && key.isDownKey) || key.isInlineStart(context)) {
         startRepeat(_decrement);
         return KeyEventResult.handled;
       }
@@ -149,11 +149,11 @@ class _TvNumberSpinnerState extends State<TvNumberSpinner> with KeyRepeatHelper<
       // The repeat timer from KeyDown already handles value repetition, so
       // swallow the OS repeats that would otherwise traverse focus. Only
       // needed when UP/DOWN traverse — otherwise no direction escapes.
-      if (!vertical && (key.isRightKey || key.isLeftKey)) {
+      if (!vertical && (key.isInlineEnd(context) || key.isInlineStart(context))) {
         return KeyEventResult.handled;
       }
     } else if (event is KeyUpEvent) {
-      if ((vertical && (key.isUpKey || key.isDownKey)) || key.isRightKey || key.isLeftKey) {
+      if ((vertical && (key.isUpKey || key.isDownKey)) || key.isInlineEnd(context) || key.isInlineStart(context)) {
         stopRepeat();
         return KeyEventResult.handled;
       }

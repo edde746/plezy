@@ -40,7 +40,7 @@ class QueueSheet extends StatelessWidget {
         mainAxisSize: .min,
         children: [
           Padding(
-            padding: const EdgeInsets.only(right: 4),
+            padding: const EdgeInsetsDirectional.only(end: 4),
             child: Text(
               t.music.trackCount(n: service.queue.length),
               style: TextStyle(fontSize: 13, color: tk.textMuted),
@@ -225,7 +225,7 @@ class _QueueListState extends State<QueueList> {
             direction: DismissDirection.endToStart,
             background: Container(
               alignment: .centerRight,
-              padding: const EdgeInsets.only(right: 20),
+              padding: const EdgeInsetsDirectional.only(end: 20),
               color: Colors.red,
               child: const AppIcon(Symbols.delete_rounded, fill: 1, color: Colors.white, size: 20),
             ),
@@ -236,7 +236,7 @@ class _QueueListState extends State<QueueList> {
 
         return Padding(
           key: ValueKey(itemKeys[index]),
-          padding: EdgeInsets.only(top: index == 0 ? 0 : tk.groupGap),
+          padding: EdgeInsetsDirectional.only(top: index == 0 ? 0 : tk.groupGap),
           child: row,
         );
       },

@@ -1,3 +1,4 @@
+import 'package:plezy/i18n/presentation_formats.dart';
 import 'package:flutter/widgets.dart';
 
 import '../i18n/strings.g.dart';
@@ -27,9 +28,9 @@ String qualityPresetLabel(TranscodeQualityPreset preset, {int? sourceBitrateKbps
 
 String _formatBitrate(int kbps) {
   final mbps = kbps / 1000.0;
-  if (mbps >= 10) return mbps.toStringAsFixed(0);
-  if (mbps == mbps.roundToDouble()) return mbps.toStringAsFixed(0);
-  return mbps.toStringAsFixed(1);
+  if (mbps >= 10) return formatDecimal(mbps, minimumDecimals: 0, maximumDecimals: 0);
+  if (mbps == mbps.roundToDouble()) return formatDecimal(mbps, minimumDecimals: 0, maximumDecimals: 0);
+  return formatDecimal(mbps, minimumDecimals: 1, maximumDecimals: 1);
 }
 
 /// File-size hint for a quality row, e.g. `3.6 GB (45%)`. Transcode presets
@@ -72,7 +73,7 @@ String? qualityPresetSizeEstimate({
   }
   if (sourceBytes != null && sourceBytes > 0) {
     final pct = (estimatedBytes * 100 / sourceBytes).round();
-    return '$size ($pct%)';
+    return '$size (${formatPercent(pct / 100)})';
   }
   return size;
 }

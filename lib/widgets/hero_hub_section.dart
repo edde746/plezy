@@ -312,7 +312,7 @@ class HeroHubSectionState extends State<HeroHubSection> {
 
     if (!event.isActionable) return KeyEventResult.ignored;
 
-    if (key.isLeftKey) {
+    if (key.isInlineStart(context)) {
       if (_playButtonFocused) setState(() => _playButtonFocused = false);
       // Never wraps on TV: the first card hands Left to the sidebar so it
       // stays reachable from a hero row.
@@ -323,7 +323,7 @@ class HeroHubSectionState extends State<HeroHubSection> {
       }
       return KeyEventResult.handled;
     }
-    if (key.isRightKey) {
+    if (key.isInlineEnd(context)) {
       if (_playButtonFocused) setState(() => _playButtonFocused = false);
       final atEnd = _currentIndex.value >= _items.length - 1;
       if (!atEnd || SettingsService.instance.read(SettingsService.tvHeroWrapAround)) {

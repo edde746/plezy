@@ -3,8 +3,15 @@ import 'dart:io' show Platform;
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
+import 'package:intl/intl.dart';
+import 'package:intl/number_symbols_data.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../i18n/app_locale_utils.dart';
+import '../../i18n/locale_preferences.dart';
+import '../../i18n/locale_names.g.dart';
+import '../../i18n/presentation_formats.dart';
+import '../../utils/language_codes.dart';
 import '../../media/ids.dart';
 import '../../navigation/navigation_tabs.dart';
 import '../../profiles/active_profile_provider.dart';
@@ -35,7 +42,7 @@ class GeneralSettingsScreen extends StatelessWidget {
     return SettingsPage(
       title: Text(t.settings.general),
       children: [
-        SettingsGroup(title: t.settings.languageAndRegion, children: [_languageSelector(context)]),
+        SettingsGroup(title: t.settings.languageAndRegion, children: [_languageSelector(context), _formatSelector(context), _metadataSelector(context)]),
 
         SettingsGroup(
           title: t.settings.startup,
@@ -82,29 +89,82 @@ class GeneralSettingsScreen extends StatelessWidget {
   }
 
   Widget _languageSelector(BuildContext context) {
+    final followsSystem = LocalePreferences.followsSystem;
     return FocusableListTile(
       leading: const AppIcon(Symbols.language_rounded, fill: 1),
       title: Text(t.settings.language),
-      subtitle: Text(_getLanguageDisplayName(LocaleSettings.currentLocale)),
+      subtitle: Text(followsSystem
+          ? '${t.settings.followSystem} · ${LocaleSettings.currentLocale.nativeName}'
+          : LocaleSettings.currentLocale.nativeName),
       trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
       onTap: () async {
-        final picked = await showSelectionDialog<AppLocale>(
+        final picked = await showSelectionDialog<String>(
           context: context,
           title: t.settings.language,
-          options: AppLocale.values
-              .map((locale) => DialogOption(value: locale, title: _getLanguageDisplayName(locale)))
-              .toList(),
-          currentValue: LocaleSettings.currentLocale,
+          searchable: true,
+          options: [
+            DialogOption(value: '', title: t.settings.followSystem),
+            for (final locale in AppLocale.values)
+              DialogOption(value: locale.name, title: locale.nativeName,
+                subtitle: '${LanguageCodes.getDisplayName(locale.languageTag)} · ${locale.languageTag}'),
+          ],
+          currentValue: followsSystem ? '' : LocaleSettings.currentLocale.name,
         );
-        if (picked != null) {
-          final value = picked.value;
-          if (context.mounted) {
-            await const SettingsMutationService().write(context, SettingsService.appLocale, value);
-          }
+        if (picked != null && context.mounted) {
+          final locale = picked.value.isEmpty ? LocaleSettings.currentLocale
+              : AppLocale.values.byName(picked.value);
+          await const SettingsMutationService().write(context, SettingsService.appLocale, locale,
+            reset: picked.value.isEmpty);
         }
       },
     );
   }
+
+  Widget _formatSelector(BuildContext context) => FocusableListTile(
+    leading: const AppIcon(Symbols.public_rounded),
+    title: Text(t.settings.regionFormat),
+    subtitle: Text('${t.settings.regionFormatDescription} ${isolateDisplayText(formatDecimal(12345.67, grouping: true))}'),
+    trailing: const AppIcon(Symbols.chevron_right_rounded),
+    onTap: () async {
+      final current = SettingsService.instance.read(SettingsService.formatLocale);
+      final locales = numberFormatSymbols.keys.toList()..sort();
+      final picked = await showSelectionDialog<String>(
+        context: context, title: t.settings.regionFormat, currentValue: current, searchable: true,
+        options: [
+          DialogOption(value: 'app', title: t.settings.followAppLanguage),
+          DialogOption(value: 'system', title: t.settings.followSystem),
+          for (final code in locales)
+            DialogOption(value: code.replaceAll('_', '-'), title: LanguageCodes.getDisplayName(code),
+              subtitle: '${code.replaceAll('_', '-')} · ${isolateDisplayText(NumberFormat.decimalPattern(code).format(12345.67))}'),
+        ],
+      );
+      if (picked != null && context.mounted) {
+        await const SettingsMutationService().write(context, SettingsService.formatLocale, picked.value);
+      }
+    },
+  );
+
+  Widget _metadataSelector(BuildContext context) => FocusableListTile(
+    leading: const AppIcon(Symbols.translate_rounded),
+    title: Text(t.settings.metadataLanguage),
+    subtitle: Text(t.settings.metadataLanguageDescription),
+    trailing: const AppIcon(Symbols.chevron_right_rounded),
+    onTap: () async {
+      final picked = await showSelectionDialog<String>(
+        context: context, title: t.settings.metadataLanguage,
+        currentValue: SettingsService.instance.read(SettingsService.metadataLocale), searchable: true,
+        options: [
+          DialogOption(value: '', title: t.settings.followAppLanguage),
+          for (final language in LanguageCodes.getAllLanguages())
+            DialogOption(value: language.code, title: language.name,
+              subtitle: localizedLanguageNames['en']![language.code]),
+        ],
+      );
+      if (picked != null && context.mounted) {
+        await const SettingsMutationService().write(context, SettingsService.metadataLocale, picked.value);
+      }
+    },
+  );
 
   // Sections offered as a startup destination, in display order. Live TV is
   // always listed; if no server provides it, startup falls back to Home.
@@ -125,54 +185,6 @@ class GeneralSettingsScreen extends StatelessWidget {
     options: _startupSectionOptions.map((id) => DialogOption(value: id, title: _startupSectionLabel(id))).toList(),
   );
 
-  String _getLanguageDisplayName(AppLocale locale) {
-    switch (locale) {
-      case AppLocale.en:
-        return 'English';
-      case AppLocale.sv:
-        return 'Svenska';
-      case AppLocale.fr:
-        return 'Français';
-      case AppLocale.it:
-        return 'Italiano';
-      case AppLocale.nl:
-        return 'Nederlands';
-      case AppLocale.de:
-        return 'Deutsch';
-      case AppLocale.hu:
-        return 'Magyar';
-      case AppLocale.zh:
-        return '简体中文';
-      case AppLocale.zhHant:
-        return '繁體中文';
-      case AppLocale.ko:
-        return '한국어';
-      case AppLocale.es:
-        return 'Español';
-      case AppLocale.pt:
-        return 'Português';
-      case AppLocale.ja:
-        return '日本語';
-      case AppLocale.ru:
-        return 'Русский';
-      case AppLocale.pl:
-        return 'Polski';
-      case AppLocale.da:
-        return 'Dansk';
-      case AppLocale.nb:
-        return 'Norsk bokmål';
-      case AppLocale.bg:
-        return 'Български';
-      case AppLocale.tr:
-        return 'Türkçe';
-      case AppLocale.az:
-        return 'Azərbaycanca';
-      case AppLocale.kk:
-        return 'Қазақша';
-      case AppLocale.uz:
-        return 'Oʻzbekcha';
-    }
-  }
 }
 
 class _PreferredServerTile extends StatelessWidget {

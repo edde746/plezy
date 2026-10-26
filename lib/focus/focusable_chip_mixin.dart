@@ -162,7 +162,7 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
       return KeyEventResult.ignored;
     }
 
-    if (key.isLeftKey) {
+    if (key.isInlineStart(context)) {
       if (callbacks.onNavigateLeft != null) {
         callbacks.onNavigateLeft!();
         return KeyEventResult.handled;
@@ -171,7 +171,7 @@ mixin FocusableChipStateMixin<T extends StatefulWidget> on State<T> {
       return KeyEventResult.ignored;
     }
 
-    if (key.isRightKey) {
+    if (key.isInlineEnd(context)) {
       if (callbacks.onNavigateRight != null) {
         callbacks.onNavigateRight!();
       }

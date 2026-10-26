@@ -4,6 +4,7 @@ import '../media/playback_rate.dart';
 import '../media/media_version_preference.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart';
+import 'package:intl/intl.dart';
 import 'package:flutter/painting.dart';
 import 'package:flutter/services.dart';
 import '../models/hotkey_model.dart';
@@ -442,11 +443,49 @@ class _SkipMarkerModePref extends LegacyBoolEnumPref<SkipMarkerMode> {
       );
 }
 
+class _LocalePreference extends StringPref {
+  final bool formatting;
+  const _LocalePreference(super.key, {super.defaultValue = '', this.formatting = false});
+
+  String normalize(String value) {
+    if (formatting && (value == 'app' || value == 'system')) return value;
+    if (!formatting && value.isEmpty) return value;
+    final parts = value.trim().replaceAll('_', '-').split('-');
+    final tag = [parts.first.toLowerCase(), ...parts.skip(1).map((part) => part.length == 4
+        ? '${part[0].toUpperCase()}${part.substring(1).toLowerCase()}' : part.toUpperCase())].join('-');
+    if (!RegExp(r'^[a-zA-Z]{2,3}(?:-[a-zA-Z]{4})?(?:-(?:[a-zA-Z]{2}|[0-9]{3}))?$').hasMatch(tag)) {
+      throw const FormatException('Invalid locale identifier');
+    }
+    if (formatting && Intl.verifiedLocale(tag.replaceAll('-', '_'), NumberFormat.localeExists, onFailure: (_) => null) == null) {
+      throw const FormatException('Unsupported regional format');
+    }
+    if (!formatting && LanguageCodes.getIso6391Code(tag) == null) {
+      throw const FormatException('Unsupported metadata language');
+    }
+    return tag;
+  }
+
+  @override
+  String fromJson(Object? value) {
+    if (value is! String) throw const FormatException('Locale must be a string');
+    return normalize(value);
+  }
+
+  @override
+  String readFrom(BaseSharedPreferencesService svc) {
+    try { return normalize(super.readFrom(svc)); }
+    on FormatException { return defaultValue; }
+  }
+
+  @override
+  Future<void> writeTo(BaseSharedPreferencesService svc, String value) => super.writeTo(svc, normalize(value));
+}
+
 /// Stored as the locale enum name; null/empty falls back to the device locale.
 class _AppLocalePref extends Pref<AppLocale> {
   const _AppLocalePref() : super('app_locale');
   @override
-  AppLocale get resolvedDefault => resolvePreferredAppLocale(PlatformDispatcher.instance.locales);
+  AppLocale get resolvedDefault => resolvePreferredAppLocale(AppLocaleEnvironment.deviceLocales);
   @override
   AppLocale fromJson(Object? value) => AppLocale.values.firstWhere((v) => v.name == value);
   @override
@@ -1052,6 +1091,12 @@ class SettingsService extends BaseSharedPreferencesService {
   static const matchRefreshRate = BoolPref('match_refresh_rate');
   static const matchDynamicRange = BoolPref('match_dynamic_range');
   static const appLocale = _AppLocalePref();
+  /// 'app' follows the interface; 'system' follows the device region; a BCP-47
+  /// locale explicitly overrides only display formats.
+  static const formatLocale = _LocalePreference('format_locale', defaultValue: 'app', formatting: true);
+  /// Empty uses the interface language. Audio/subtitle preferences remain server
+  /// owned and are never changed by this metadata preference.
+  static const metadataLocale = _LocalePreference('metadata_locale');
   static const autoPip = _AutoPipPref();
   static const customDownloadPath = NullableStringPref('custom_download_path');
 
@@ -1788,6 +1833,8 @@ class SettingsService extends BaseSharedPreferencesService {
     audioChannelLimit,
     audioDownmixNormalize,
     appLocale,
+    formatLocale,
+    metadataLocale,
     autoPip,
     maxVolume,
     downmixCenterBoost,
@@ -1941,6 +1988,7 @@ class SettingsService extends BaseSharedPreferencesService {
   }
 
   static void validateEditableValue(Pref<Object?> pref, Object? value) {
+    if (pref is _LocalePreference) pref.fromJson(value);
     final bounds = numericBounds(pref);
     if (value is num && (!value.isFinite || (bounds != null && (value < bounds.$1 || value > bounds.$2)))) {
       throw const FormatException('Value is outside the supported range');

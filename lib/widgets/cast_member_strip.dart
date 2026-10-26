@@ -142,11 +142,11 @@ class CastMemberStripState extends State<CastMemberStrip> {
     }
     if (!event.isActionable) return KeyEventResult.ignored;
 
-    if (key.isLeftKey) {
+    if (key.isInlineStart(context)) {
       _moveFocus(-1);
       return KeyEventResult.handled;
     }
-    if (key.isRightKey) {
+    if (key.isInlineEnd(context)) {
       _moveFocus(1);
       return KeyEventResult.handled;
     }
@@ -190,7 +190,7 @@ class CastMemberStripState extends State<CastMemberStrip> {
               final member = widget.members[index];
 
               return Padding(
-                padding: const EdgeInsets.only(right: 4),
+                padding: const EdgeInsetsDirectional.only(end: 4),
                 child: FocusBuilders.buildLockedFocusWrapper(
                   context: context,
                   isFocused: _focusNode.hasFocus && index == _focusedIndex,

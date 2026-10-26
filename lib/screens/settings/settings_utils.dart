@@ -1,3 +1,4 @@
+import 'package:unorm_dart/unorm_dart.dart' as unicode;
 import 'dart:async';
 import 'dart:io';
 
@@ -190,7 +191,12 @@ Future<DialogOption<T>?> showSelectionDialog<T>({
   required String title,
   required List<DialogOption<T>> options,
   required T currentValue,
+  bool searchable = false,
 }) {
+  if (searchable) {
+    return showScopedDialog<DialogOption<T>>(context: context,
+      builder: (_) => _SearchableSelectionDialog<T>(title: title, options: options, currentValue: currentValue));
+  }
   final focusFirstItem = InputModeTracker.isKeyboardMode(context, listen: false);
   return showScopedDialog<DialogOption<T>>(
     context: context,
@@ -221,6 +227,62 @@ Future<DialogOption<T>?> showSelectionDialog<T>({
       ),
     ),
   );
+}
+
+class _SearchableSelectionDialog<T> extends StatefulWidget {
+  final String title;
+  final List<DialogOption<T>> options;
+  final T currentValue;
+  const _SearchableSelectionDialog({required this.title, required this.options, required this.currentValue});
+  @override
+  State<_SearchableSelectionDialog<T>> createState() => _SearchableSelectionDialogState<T>();
+}
+
+class _SearchableSelectionDialogState<T> extends State<_SearchableSelectionDialog<T>> {
+  String _query = '';
+  final _controller = TextEditingController();
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+  @override
+  Widget build(BuildContext context) {
+    final filtered = widget.options.where((option) =>
+      _normalizeOptionSearch('${option.title} ${option.subtitle ?? ''} ${option.value}').contains(_query)).toList();
+    return AlertDialog(
+      title: Text(widget.title),
+      content: SizedBox(
+        width: 440,
+        height: (MediaQuery.sizeOf(context).height - MediaQuery.viewInsetsOf(context).bottom) * 0.6,
+        child: Column(children: [
+          FocusableTextField(
+            controller: _controller,
+            onChanged: (value) => setState(() => _query = _normalizeOptionSearch(value)),
+            decoration: InputDecoration(labelText: t.common.search, prefixIcon: const AppIcon(Symbols.search_rounded)),
+          ),
+          const SizedBox(height: 12),
+          Expanded(child: filtered.isEmpty
+            ? Center(child: Text(t.messages.noResultsFound, textAlign: TextAlign.center))
+            : ScrollInkBoundary(child: ListView.builder(
+            itemCount: filtered.length,
+            itemBuilder: (context, index) {
+              final option = filtered[index];
+              final selected = option.value == widget.currentValue;
+              return FocusableListTile(
+                key: ValueKey(option.value),
+                leading: AppIcon(selected ? Symbols.radio_button_checked_rounded : Symbols.radio_button_unchecked_rounded),
+                title: Text(option.title), subtitle: option.subtitle == null ? null : Text(option.subtitle!),
+                selected: selected,
+                onTap: () => _popDialogIfCurrent(context, option),
+              );
+            },
+          ))),
+        ]),
+      ),
+      actions: [TextButton(onPressed: () => _popDialogIfCurrent<DialogOption<T>>(context), child: Text(t.common.cancel))],
+    );
+  }
 }
 
 /// Shows a checkbox dialog with focusable rows and Save/Cancel. [onSave]
@@ -621,3 +683,6 @@ void showRegexInputDialog({
     onDispose: controller.dispose,
   );
 }
+
+String _normalizeOptionSearch(String value) => unicode.nfkd(value.trim().toLowerCase())
+    .replaceAll(RegExp(r'[\u0300-\u036f]'), '');

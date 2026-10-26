@@ -130,11 +130,11 @@ mixin DpadReorderListMixin<E, W extends StatefulWidget> on State<W> {
         ensureFocusedVisible();
         return KeyEventResult.handled;
       }
-      if (key.isLeftKey && focusedColumn > 0) {
+      if (key.isInlineStart(context) && focusedColumn > 0) {
         setState(() => focusedColumn--);
         return KeyEventResult.handled;
       }
-      if (key.isRightKey && focusedColumn < lastReorderColumn) {
+      if (key.isInlineEnd(context) && focusedColumn < lastReorderColumn) {
         setState(() => focusedColumn++);
         return KeyEventResult.handled;
       }

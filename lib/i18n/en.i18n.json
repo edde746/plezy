@@ -616,7 +616,13 @@
     "playerScopeGlobal": "Everywhere",
     "playerScopeLibrary": "Per library",
     "playerScopeTitle": "Per show or movie",
-    "exportDialogTitle": "Export PlezyNG settings"
+    "exportDialogTitle": "Export PlezyNG settings",
+    "followSystem": "Follow system",
+    "followAppLanguage": "Match interface language",
+    "regionFormat": "Regional formats",
+    "regionFormatDescription": "Choose how dates, numbers and measurements appear.",
+    "metadataLanguage": "Metadata language",
+    "metadataLanguageDescription": "Preferred titles and descriptions where the server supports it. Audio and subtitle preferences stay separate."
   },
   "themeEditor": {
     "builtIn": "Built-in",
@@ -2897,5 +2903,11 @@
     "actionState": "${action}: ${state}",
     "on": "On",
     "resetHeroButtonDescription": "Turns off every row's hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept."
+  },
+  "platform": {
+    "localNetworkPermission": "PlezyNG connects to your media servers and playback devices on your local network.",
+    "locationPermission": "PlezyNG uses location access when iOS requires it to detect your local network and connect to your media servers.",
+    "photoLibraryPermission": "Choose images from your photo library to use as media artwork.",
+    "cameraPermission": "Scan QR codes to pair a Companion Remote."
   }
 }

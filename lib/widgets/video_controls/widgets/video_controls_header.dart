@@ -72,7 +72,7 @@ class VideoControlsHeader extends StatelessWidget {
           builder: (context, inSession, child) {
             if (!inSession) return const SizedBox.shrink();
             return Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsetsDirectional.only(end: 8),
               child: WatchTogetherSessionIndicator(
                 onCancelAutoHide: onCancelAutoHide,
                 onStartAutoHide: onStartAutoHide,
@@ -82,7 +82,7 @@ class VideoControlsHeader extends StatelessWidget {
         ),
         if (showClock)
           const Padding(
-            padding: EdgeInsets.only(right: 8),
+            padding: EdgeInsetsDirectional.only(end: 8),
             child: SystemClock(
               style: TextStyle(color: Colors.white70, fontSize: 14, fontWeight: .w500),
             ),

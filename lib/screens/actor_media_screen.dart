@@ -1,3 +1,4 @@
+import 'package:plezy/i18n/locale_preferences.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -20,7 +21,6 @@ import '../widgets/collapsible_text.dart';
 import '../widgets/desktop_app_bar.dart';
 import '../widgets/optimized_media_image.dart';
 import '../utils/media_image_helper.dart';
-import '../i18n/app_locale_utils.dart';
 import '../i18n/strings.g.dart';
 import 'base_media_list_detail_screen.dart';
 import 'focusable_detail_screen_mixin.dart';
@@ -131,7 +131,7 @@ class _ActorMediaScreenState extends BaseMediaListDetailScreen<ActorMediaScreen>
   /// someone who has died, and with the birth date otherwise.
   List<({String label, String value})> _personFacts() {
     final details = _details;
-    final locale = LocaleSettings.currentLocale.intlLocaleName;
+    final locale = LocalePreferences.formattingLocaleName;
     String format(DateTime date) => DateFormat.yMMMMd(locale).format(date);
     final age = details.ageOn(DateTime.now());
     final strings = t.discover.person;

@@ -339,7 +339,7 @@ class WatchMediaSection extends StatelessWidget {
             Text(t.watchTogether.joinCurrentPlaybackDescription, style: _muted(context, theme.textTheme.bodySmall)),
             const SizedBox(height: 8),
             Align(
-              alignment: Alignment.centerLeft,
+              alignment: AlignmentDirectional.centerStart,
               child: WatchButton(
                 label: t.watchTogether.joinCurrentPlayback,
                 icon: Symbols.play_arrow_rounded,
@@ -351,7 +351,7 @@ class WatchMediaSection extends StatelessWidget {
           if (provider.isHost) ...[
             const SizedBox(height: 12),
             Align(
-              alignment: Alignment.centerLeft,
+              alignment: AlignmentDirectional.centerStart,
               child: WatchButton(
                 label: t.watchTogether.stopMedia,
                 icon: Symbols.stop_rounded,
@@ -673,7 +673,7 @@ class WatchOffsetSection extends StatelessWidget {
           ),
           const SizedBox(height: 4),
           Align(
-            alignment: Alignment.centerLeft,
+            alignment: AlignmentDirectional.centerStart,
             child: WatchButton(
               label: t.watchTogether.applyDifference(offset: watchOffsetText(hint)),
               icon: Symbols.tune_rounded,

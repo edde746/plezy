@@ -4,7 +4,7 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/widgets.dart';
 import 'package:provider/provider.dart';
 
-import '../i18n/app_locale_utils.dart';
+import '../i18n/locale_preferences.dart';
 import '../i18n/strings.g.dart';
 import '../profiles/active_profile_provider.dart';
 import '../providers/companion_remote_provider.dart';
@@ -68,6 +68,8 @@ class SettingsMutationService {
   /// them. Prefs without an entry are plain stored values.
   static final List<_SettingsEffect> _effects = [
     _SettingsEffect(SettingsService.appLocale, _applyAppLocale, rebuildsRoot: true),
+    _SettingsEffect(SettingsService.formatLocale, _applyAppLocale, rebuildsRoot: true),
+    _SettingsEffect(SettingsService.metadataLocale, _applyAppLocale, rebuildsRoot: true),
     _SettingsEffect(
       SettingsService.forceTvMode,
       (_, settings, _) async => TvDetectionService.setForceTVSync(settings.read(SettingsService.forceTvMode)),
@@ -133,11 +135,10 @@ class SettingsMutationService {
     SettingsService settings,
     void Function()? checkCurrent,
   ) async {
-    final locale = settings.read(SettingsService.appLocale);
-    await LocaleSettings.setLocale(locale);
+    await LocalePreferences.apply();
     checkCurrent?.call();
     if (context.mounted) {
-      context.read<MultiServerProvider?>()?.serverManager.updatePlexLanguage(locale.plexLanguageCode);
+      context.read<MultiServerProvider?>()?.serverManager.updatePlexLanguage(LocalePreferences.metadataLanguageCode);
     }
   }
 

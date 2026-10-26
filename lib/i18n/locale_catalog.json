@@ -1,0 +1,60 @@
+{
+  "base": "en",
+  "locales": [
+    "ar",
+    "az",
+    "bg",
+    "bn",
+    "cs",
+    "da",
+    "de",
+    "en",
+    "es",
+    "es-419",
+    "fa",
+    "fr",
+    "fr-CA",
+    "he",
+    "hi",
+    "hu",
+    "id",
+    "it",
+    "ja",
+    "kk",
+    "ko",
+    "ms",
+    "nb",
+    "nl",
+    "pl",
+    "pt",
+    "pt-BR",
+    "pt-PT",
+    "ru",
+    "sv",
+    "th",
+    "tr",
+    "uk",
+    "uz",
+    "vi",
+    "zh",
+    "zh-Hant"
+  ],
+  "regionalParents": {
+    "es-419": "es",
+    "fr-CA": "fr",
+    "pt-BR": "pt",
+    "pt-PT": "pt"
+  },
+  "rtl": [
+    "ar",
+    "fa",
+    "he"
+  ],
+  "nonTranslatable": [
+    "app.title",
+    "appIcon.names.oled",
+    "appIcon.names.crt",
+    "appIcon.names.vhs",
+    "fileInfo.codecs.*"
+  ]
+}

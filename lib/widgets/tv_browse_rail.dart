@@ -863,7 +863,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
     // Left never wraps on TV: the first card (hero or not) hands Left to the
     // sidebar, otherwise the sidebar would be unreachable from a hero row.
     // Right wraps on hero rows unless the user turned that off.
-    if (key.isLeftKey) {
+    if (key.isInlineStart(context)) {
       if (_itemIndex > 0) {
         _moveItem(-1);
       } else {
@@ -872,7 +872,7 @@ class TvBrowseRailState extends State<TvBrowseRail> with TickerProviderStateMixi
       return KeyEventResult.handled;
     }
 
-    if (key.isRightKey) {
+    if (key.isInlineEnd(context)) {
       if (_isPageableHero(hub) && SettingsService.instance.read(SettingsService.tvHeroWrapAround)) {
         _moveItem(1, wrap: true);
       } else if (_itemIndex < _totalItemCount(hub) - 1) {

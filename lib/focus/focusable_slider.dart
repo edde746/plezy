@@ -53,7 +53,7 @@ class _FocusableSliderState extends State<FocusableSlider> {
     final key = event.logicalKey;
     if (key.isLeftKey || key.isRightKey) {
       if (event.isActionable && widget.onChanged != null) {
-        final delta = key.isRightKey ? _step : -_step;
+        final delta = key.isInlineEnd(context) ? _step : -_step;
         final newValue = (widget.value + delta).clamp(widget.min, widget.max);
         widget.onChangeStart?.call(widget.value);
         widget.onChanged!(newValue);

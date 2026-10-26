@@ -91,7 +91,10 @@ def normalize(en_node, loc_node, path: str, stats: dict, plural_categories: tupl
                 print(f"  WARN type mismatch at '{path}' — replacing with empty plural map")
             loc_node = {}
         result = {}
-        for category in plural_categories:
+        # A message may deliberately omit a category whose grammar equals
+        # `other`; do not manufacture empty forms across the entire locale.
+        categories = tuple(c for c in PLURAL_CATEGORIES if c in loc_node) or plural_categories
+        for category in categories:
             value = loc_node.get(category, _MISSING)
             if value is _MISSING or isinstance(value, dict):
                 stats["added"] += 1
@@ -147,7 +150,8 @@ def flatten(node, prefix: str = "") -> list[str]:
     out: list[str] = []
     if isinstance(node, dict):
         for k, v in node.items():
-            key = f"{prefix}.{k}" if prefix else k
+            plain_key = re.sub(r"\([^)]*\)$", "", k)
+            key = f"{prefix}.{plain_key}" if prefix else plain_key
             out.extend(flatten(v, key))
     else:
         out.append(prefix)
@@ -163,10 +167,16 @@ def clean_pass(check_only: bool) -> bool:
     locale_files = sorted(
         p for p in I18N_DIR.glob("*.i18n.json") if p.name != f"{SOURCE_LOCALE}.i18n.json"
     )
+    catalog_path = I18N_DIR / 'locale_catalog.json'
+    regional = load_json(catalog_path).get('regionalParents', {}) if catalog_path.exists() else {}
     for path in locale_files:
         locale = path.name.split(".")[0]
         print(f"[{locale}]")
         loc = load_json(path)
+        if locale in regional:
+            # Completeness is checked after inheritance by check_localizations.py.
+            print('  regional override — inherits ' + regional[locale])
+            continue
         stats = {"added": 0, "removed": 0, "type_fixed": 0, "unchanged": 0}
         plural_categories = locale_plural_categories(en, loc)
         normalized = normalize(en, loc, "", stats, plural_categories)
@@ -196,7 +206,7 @@ def clean_pass(check_only: bool) -> bool:
 
 
 def collect_references() -> set[str]:
-    refs: set[str] = set()
+    refs: set[str] = {'platform'}  # scripts/codegen/generate_platform_locales.py
     for dart_file in LIB_DIR.rglob("*.dart"):
         # Skip i18n sources and generated files.
         try:

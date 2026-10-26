@@ -1,3 +1,4 @@
+import 'package:plezy/i18n/presentation_formats.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -284,7 +285,7 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen>
         slivers: narrow
             ? [
                 SliverPadding(
-                  padding: const EdgeInsets.only(bottom: 16),
+                  padding: const EdgeInsetsDirectional.only(bottom: 16),
                   sliver: SliverList(delegate: SliverChildListDelegate(controls)),
                 ),
               ]
@@ -296,7 +297,7 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen>
                     children: [
                       Expanded(
                         child: SingleChildScrollView(
-                          padding: const EdgeInsets.only(bottom: 16),
+                          padding: const EdgeInsetsDirectional.only(bottom: 16),
                           child: Column(crossAxisAlignment: CrossAxisAlignment.stretch, children: controls),
                         ),
                       ),
@@ -564,7 +565,7 @@ class _SlotTile extends StatelessWidget {
         children: [
           if (warning)
             Padding(
-              padding: const EdgeInsets.only(right: 8),
+              padding: const EdgeInsetsDirectional.only(end: 8),
               child: AppIcon(Symbols.warning_rounded, fill: 1, size: 20, color: scheme.error),
             ),
           AppIcon(
@@ -599,7 +600,7 @@ class _ChannelSlider extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Padding(
-      padding: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsetsDirectional.only(top: 8),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
@@ -690,13 +691,13 @@ class _ContrastWarning extends StatelessWidget {
   static String _formatRatio(double value) => ((value * 10).floor() / 10).toStringAsFixed(1);
 
   static String _formatMinimum(double value) =>
-      value == value.roundToDouble() ? value.toStringAsFixed(0) : value.toString();
+      value == value.roundToDouble() ? formatDecimal(value, minimumDecimals: 0, maximumDecimals: 0) : value.toString();
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
     return Padding(
-      padding: const EdgeInsets.only(top: 6),
+      padding: const EdgeInsetsDirectional.only(top: 6),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [

@@ -58,13 +58,13 @@ final class _LibraryItemRow extends _LibraryNavRow {
 }
 
 /// SELECT activates the rail row, RIGHT hands off to the content area.
-KeyEventResult _handleRailItemKey(KeyEvent event, {required VoidCallback onSelect, VoidCallback? onNavigateRight}) {
+KeyEventResult _handleRailItemKey(BuildContext context, KeyEvent event, {required VoidCallback onSelect, VoidCallback? onNavigateRight}) {
   if (event is! KeyDownEvent) return KeyEventResult.ignored;
   if (event.logicalKey.isSelectKey) {
     onSelect();
     return KeyEventResult.handled;
   }
-  if (event.logicalKey == LogicalKeyboardKey.arrowRight && onNavigateRight != null) {
+  if (event.logicalKey.isInlineEnd(context) && onNavigateRight != null) {
     onNavigateRight();
     return KeyEventResult.handled;
   }
@@ -366,7 +366,7 @@ class NavigationRailItem extends StatelessWidget {
         return Focus(
           focusNode: focusNode,
           autofocus: autofocus,
-          onKeyEvent: (node, event) => _handleRailItemKey(event, onSelect: onTap, onNavigateRight: onNavigateRight),
+          onKeyEvent: (node, event) => _handleRailItemKey(context, event, onSelect: onTap, onNavigateRight: onNavigateRight),
           child: Material(
             color: Colors.transparent,
             child: InkWell(
@@ -1470,7 +1470,7 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
       builder: (context, _) => Focus(
         focusNode: focusNode,
         onKeyEvent: (node, event) =>
-            _handleRailItemKey(event, onSelect: onToggle, onNavigateRight: widget.onNavigateToContent),
+            _handleRailItemKey(context, event, onSelect: onToggle, onNavigateRight: widget.onNavigateToContent),
         child: Material(
           color: Colors.transparent,
           child: InkWell(

@@ -1084,7 +1084,7 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                           itemCount: 5,
                           itemBuilder: (context, index) {
                             return Container(
-                              margin: const EdgeInsets.only(right: 12),
+                              margin: const EdgeInsetsDirectional.only(end: 12),
                               width: 140,
                               decoration: BoxDecoration(
                                 color: Theme.of(context).colorScheme.surfaceContainerHighest,

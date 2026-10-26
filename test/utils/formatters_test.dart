@@ -130,10 +130,10 @@ void main() {
       const duration = Duration(hours: 1, minutes: 2);
 
       await LocaleSettings.setLocale(AppLocale.zh);
-      expect(formatDurationTextual(duration.inMilliseconds), '1小时 2分');
+      expect(formatDurationTextual(duration.inMilliseconds), '1小时 2分钟');
 
       await LocaleSettings.setLocale(AppLocale.zhHant);
-      expect(formatDurationTextual(duration.inMilliseconds), '1小時 2分鐘');
+      expect(formatDurationTextual(duration.inMilliseconds), '1 小時 2 分鐘');
     });
   });
 

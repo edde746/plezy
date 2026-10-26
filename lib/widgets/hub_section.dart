@@ -349,7 +349,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
     if (totalCount == 0) return KeyEventResult.ignored;
 
     // Left: move to previous item, or navigate to sidebar at left edge
-    if (key.isLeftKey) {
+    if (key.isInlineStart(context)) {
       if (_focusedIndex > 0) {
         setState(() {
           _focusedIndex--;
@@ -366,7 +366,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
     }
 
     // Right: move to next item, ALWAYS consume to prevent escape
-    if (key.isRightKey) {
+    if (key.isInlineEnd(context)) {
       if (_focusedIndex < totalCount - 1) {
         setState(() {
           _focusedIndex++;
@@ -653,7 +653,7 @@ class HubSectionState extends State<HubSection> with MountedSetStateMixin, Skele
                     // wider settings render exactly the grid gutter (#2226).
                     final cardGap = math.max(4.0, gridGap);
                     final cardPadding = widget.inset
-                        ? EdgeInsets.only(right: cardGap)
+                        ? EdgeInsetsDirectional.only(end: cardGap)
                         : EdgeInsets.symmetric(horizontal: cardGap / 2);
 
                     final containerHeight = posterHeight + (isTv ? 48 : 33);

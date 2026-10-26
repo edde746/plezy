@@ -100,6 +100,7 @@ class Translations with BaseTranslations<AppLocale, Translations> {
 	late final Translations$addServer$en addServer = Translations$addServer$en.internal(_root);
 	late final Translations$watchLink$en watchLink = Translations$watchLink$en.internal(_root);
 	late final Translations$homeLayout$en homeLayout = Translations$homeLayout$en.internal(_root);
+	late final Translations$platform$en platform = Translations$platform$en.internal(_root);
 }
 
 // Path: app
@@ -1834,6 +1835,24 @@ class Translations$settings$en {
 
 	/// en: 'Export PlezyNG settings'
 	String get exportDialogTitle => 'Export PlezyNG settings';
+
+	/// en: 'Follow system'
+	String get followSystem => 'Follow system';
+
+	/// en: 'Match interface language'
+	String get followAppLanguage => 'Match interface language';
+
+	/// en: 'Regional formats'
+	String get regionFormat => 'Regional formats';
+
+	/// en: 'Choose how dates, numbers and measurements appear.'
+	String get regionFormatDescription => 'Choose how dates, numbers and measurements appear.';
+
+	/// en: 'Metadata language'
+	String get metadataLanguage => 'Metadata language';
+
+	/// en: 'Preferred titles and descriptions where the server supports it. Audio and subtitle preferences stay separate.'
+	String get metadataLanguageDescription => 'Preferred titles and descriptions where the server supports it. Audio and subtitle preferences stay separate.';
 }
 
 // Path: themeEditor
@@ -7060,6 +7079,27 @@ class Translations$homeLayout$en {
 	String get resetHeroButtonDescription => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept.';
 }
 
+// Path: platform
+class Translations$platform$en {
+	Translations$platform$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'PlezyNG connects to your media servers and playback devices on your local network.'
+	String get localNetworkPermission => 'PlezyNG connects to your media servers and playback devices on your local network.';
+
+	/// en: 'PlezyNG uses location access when iOS requires it to detect your local network and connect to your media servers.'
+	String get locationPermission => 'PlezyNG uses location access when iOS requires it to detect your local network and connect to your media servers.';
+
+	/// en: 'Choose images from your photo library to use as media artwork.'
+	String get photoLibraryPermission => 'Choose images from your photo library to use as media artwork.';
+
+	/// en: 'Scan QR codes to pair a Companion Remote.'
+	String get cameraPermission => 'Scan QR codes to pair a Companion Remote.';
+}
+
 // Path: appIcon.names
 class Translations$appIcon$names$en {
 	Translations$appIcon$names$en.internal(this._root);
@@ -9692,6 +9732,12 @@ extension on Translations {
 			'settings.playerScopeLibrary' => 'Per library',
 			'settings.playerScopeTitle' => 'Per show or movie',
 			'settings.exportDialogTitle' => 'Export PlezyNG settings',
+			'settings.followSystem' => 'Follow system',
+			'settings.followAppLanguage' => 'Match interface language',
+			'settings.regionFormat' => 'Regional formats',
+			'settings.regionFormatDescription' => 'Choose how dates, numbers and measurements appear.',
+			'settings.metadataLanguage' => 'Metadata language',
+			'settings.metadataLanguageDescription' => 'Preferred titles and descriptions where the server supports it. Audio and subtitle preferences stay separate.',
 			'themeEditor.builtIn' => 'Built-in',
 			'themeEditor.presets' => 'Presets',
 			'themeEditor.custom' => 'Custom',
@@ -10119,14 +10165,14 @@ extension on Translations {
 			'messages.serverBusyBody' => 'The server kept refusing to stream this file (HTTP 503). It may be restarting, busy, or the file\'s storage may be offline. Try again in a moment — if it keeps happening, ask the server owner to check the server and the file\'s storage.',
 			'messages.playbackNotAllowedTitle' => 'Playback not allowed',
 			'messages.playbackNotAllowedBody' => 'The server refused to stream this item (HTTP 403). Your account may not have permission to play it, or the server may only allow playback on its local network.',
+			_ => null,
+		} ?? switch (path) {
 			'messages.logsUploaded' => 'Logs uploaded',
 			'messages.logsUploadFailed' => 'Failed to upload logs',
 			'messages.logId' => 'Log ID',
 			'messages.burnedSubtitlesUseMenu' => 'Subtitles are burned into this stream. Change them from the subtitle menu.',
 			'messages.noVideoUrl' => 'No video URL available',
 			'messages.playbackNoMediaSources' => 'The server returned no playable media sources',
-			_ => null,
-		} ?? switch (path) {
 			'messages.playbackDataNotPrepared' => 'Playback was started before its data was ready',
 			'messages.streamSelectionUnavailable' => 'Stream selection is not available for this source',
 			'messages.streamSelectionFailed' => 'Could not apply the selected streams',
@@ -10633,14 +10679,14 @@ extension on Translations {
 			'explore.stats.planning' => ({required Object n}) => '${n} planning to watch',
 			'explore.stats.favorited' => ({required Object n}) => '${n} favorites',
 			'explore.stats.dropRate' => ({required Object percent}) => '${percent} dropped it',
+			_ => null,
+		} ?? switch (path) {
 			'explore.stats.comments' => ({required num n}) => (_root.$meta.cardinalResolver ?? PluralResolvers.cardinal('en'))(n, one: '${n} comment', other: '${n} comments', ), 
 			'explore.stats.votes' => ({required Object n}) => '${n} votes',
 			'explore.stats.watching' => ({required Object n}) => '${n} watching it',
 			'explore.stats.completed' => ({required Object n}) => '${n} completed',
 			'explore.stats.onHold' => ({required Object n}) => '${n} on hold',
 			'explore.stats.dropped' => ({required Object n}) => '${n} dropped',
-			_ => null,
-		} ?? switch (path) {
 			'explore.season.winter' => 'Winter',
 			'explore.season.spring' => 'Spring',
 			'explore.season.summer' => 'Summer',
@@ -11147,14 +11193,14 @@ extension on Translations {
 			'downloads.backgroundWarning.sheetIntroDegraded' => 'Your device is limiting when PlezyNG can download in the background.',
 			'downloads.backgroundWarning.reasonBackgroundRestricted' => 'PlezyNG\'s background usage is restricted. Set its battery or background usage to "Unrestricted".',
 			'downloads.backgroundWarning.reasonStandbyRestricted' => 'Android has put PlezyNG in a restricted standby state. Set its battery usage to "Unrestricted".',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.backgroundWarning.reasonDownloadChannelBlocked' => 'Download notifications are turned off, so progress and controls may be unavailable.',
 			'downloads.backgroundWarning.reasonNotificationsDisabled' => 'Notifications are turned off. On Android 13 or newer, they are required for long background downloads.',
 			'downloads.backgroundWarning.reasonDataSaver' => 'Data Saver is on, which blocks background downloads on mobile data. Downloads should still run on Wi-Fi.',
 			'downloads.backgroundWarning.reasonOemUnknown' => 'Downloads repeatedly stopped while PlezyNG was in the background. Check PlezyNG\'s battery or background usage settings.',
 			'downloads.backgroundWarning.openSettings' => 'Open settings',
 			'downloads.backgroundWarning.stillNotWorking' => 'Device-specific help',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.backgroundWarning.stillNotWorkingDescription' => 'See steps for your device, or send a log from Settings › View Logs if the issue continues.',
 			'downloads.backgroundWarning.dialogTitle' => 'Downloads may not finish',
 			'downloads.backgroundWarning.dialogDownloadAnyway' => 'Download anyway',
@@ -11661,14 +11707,14 @@ extension on Translations {
 			'homeLayout.organizeLibraryRows' => ({required Object library}) => 'Organize ${library} rows',
 			'homeLayout.organizeLibraryRowsDescription' => ({required Object n}) => 'Continue Watching + ${n} rows: move, Library, Home, Hero, Auto-slide',
 			'homeLayout.renderAsHero' => 'Render as a hero card',
+			_ => null,
+		} ?? switch (path) {
 			'homeLayout.heroOnlySingleCollection' => 'Only available when this row resolves to a single collection\'s actual titles',
 			'homeLayout.hero' => 'Hero',
 			'homeLayout.autoSlide' => 'Auto-slide',
 			'homeLayout.autoSlideDescription' => 'Also slides on its own every few seconds. Arrows (PC) and d-pad (TV) always work and restart the timer.',
 			'homeLayout.autoSlideEditDescription' => 'Also slides on its own every few seconds. Off: only moves when you click an arrow (PC) or press left/right on the remote (TV). Arrows and d-pad always work either way.',
 			'homeLayout.enableHeroFirst' => 'Enable Hero first',
-			_ => null,
-		} ?? switch (path) {
 			'homeLayout.showOnHome' => 'Show on Home screen',
 			'homeLayout.home' => 'Home',
 			'homeLayout.removeFromHome' => 'Remove from Home',
@@ -11740,6 +11786,10 @@ extension on Translations {
 			'homeLayout.actionState' => ({required Object action, required Object state}) => '${action}: ${state}',
 			'homeLayout.on' => 'On',
 			'homeLayout.resetHeroButtonDescription' => 'Turns off every row\'s hero setting and brings back the single rotating banner at the top, like before hero rows existed. Row order is kept.',
+			'platform.localNetworkPermission' => 'PlezyNG connects to your media servers and playback devices on your local network.',
+			'platform.locationPermission' => 'PlezyNG uses location access when iOS requires it to detect your local network and connect to your media servers.',
+			'platform.photoLibraryPermission' => 'Choose images from your photo library to use as media artwork.',
+			'platform.cameraPermission' => 'Scan QR codes to pair a Companion Remote.',
 			_ => null,
 		};
 	}

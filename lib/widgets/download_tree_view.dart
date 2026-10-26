@@ -1,3 +1,4 @@
+import 'package:plezy/i18n/presentation_formats.dart';
 import 'package:flutter/material.dart';
 import '../media/ids.dart';
 import 'package:plezy/widgets/app_icon.dart';
@@ -775,7 +776,7 @@ class _DownloadTreeItemState extends State<_DownloadTreeItem> {
                   const SizedBox(height: 4),
                   Text(
                     _serverConversionLabel(widget.node.downloadProgress!) ??
-                        '${(widget.node.progress * 100).toStringAsFixed(1)}% - ${widget.node.downloadProgress!.speedFormatted}',
+                        '${formatPercent(widget.node.progress, decimals: 1)} - ${widget.node.downloadProgress!.speedFormatted}',
                     style: theme.textTheme.bodySmall?.copyWith(
                       color: theme.colorScheme.onSurface.withValues(alpha: 0.6),
                     ),

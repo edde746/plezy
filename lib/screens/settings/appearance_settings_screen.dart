@@ -1,3 +1,4 @@
+import 'package:plezy/i18n/presentation_formats.dart';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
@@ -350,7 +351,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
                   const SizedBox(width: 16),
                   Text(t.settings.displayScale, style: settingsOptionTitleStyle(context)),
                   const Spacer(),
-                  Text('${scale.toStringAsFixed(2)}×', style: Theme.of(context).textTheme.bodyMedium),
+                  Text('${formatDecimal(scale, minimumDecimals: 2, maximumDecimals: 2)}×', style: Theme.of(context).textTheme.bodyMedium),
                 ],
               ),
               const SizedBox(height: 12),

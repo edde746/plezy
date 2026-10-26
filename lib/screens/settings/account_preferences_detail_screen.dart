@@ -28,26 +28,7 @@ import 'settings_utils.dart';
 /// that is what the transports read as "clear this".
 const _noLanguage = '';
 
-/// Every ISO 639-1 language as a picker option, built once: both language rows
-/// share the list, [LanguageCodes.getAllLanguages] allocates and sorts a fresh
-/// copy per call, and the body rebuilds after every write. The names come from
-/// the generated ISO table rather than translations, so caching is safe across
-/// a locale change.
-final _languageOptions = <DialogOption<String>>[
-  for (final language in LanguageCodes.getAllLanguages()) DialogOption(value: language.code, title: language.name),
-];
 
-/// One account's server-stored preferences.
-///
-/// Nothing on this screen is a device setting. Every row reads and writes the
-/// account's own record — Jellyfin/Emby `UserConfiguration`, plex.tv
-/// `/api/v2/user/profile` — so a change here follows the account into every
-/// Plezy install and into the server's own apps.
-///
-/// The audio and subtitle rows in particular are *applied by the server* when
-/// it answers a query (see [AccountPreferenceKey.appliedByServer]): storing the
-/// value is the whole job. Do not add client-side enforcement on top of them,
-/// or the preference gets applied twice.
 class AccountPreferencesDetailScreen extends StatelessWidget {
   final AccountPreferenceTarget target;
 
@@ -224,7 +205,8 @@ class _AccountPreferencesBodyState extends State<AccountPreferencesBody> {
     // prepended per build because its label is translated.
     final languageOptions = <DialogOption<String>>[
       DialogOption(value: _noLanguage, title: t.accountPreferences.noPreference),
-      ..._languageOptions,
+      for (final language in LanguageCodes.getAllLanguages())
+        DialogOption(value: language.code, title: language.name),
     ];
 
     return [

@@ -222,7 +222,7 @@ class _TrackRowState extends State<TrackRow> with ContextMenuTapMixin<TrackRow>,
               borderRadius: radii,
               color: showFocus && _focusedColumn == 0 ? tk.text.withValues(alpha: 0.12) : Colors.transparent,
             ),
-            padding: const EdgeInsets.only(left: 12, right: 4),
+            padding: const EdgeInsetsDirectional.only(start: 12, end: 4),
             child: Row(
               children: [
                 SizedBox(
@@ -339,7 +339,7 @@ class _TrackDownloadStatus extends StatelessWidget {
         }
 
         if (icon == null) return const SizedBox.shrink();
-        return Padding(padding: const EdgeInsets.only(left: 8), child: icon);
+        return Padding(padding: const EdgeInsetsDirectional.only(start: 8), child: icon);
       },
     );
   }

@@ -168,6 +168,8 @@ flutter:
   assets:
     - assets/certificates/cacert.pem
     - assets/licenses/SpatialAudioBridge.txt
+    - assets/licenses/Unicode.txt
+    - assets/licenses/JellyfinWebTranslations.txt
     - assets/plezy.png
     - assets/plezy_adaptive_foreground.svg
     - assets/plex_chevron.svg

@@ -94,6 +94,7 @@ import 'utils/orientation_helper.dart';
 import 'utils/watch_state_notifier.dart';
 import 'utils/content_utils.dart';
 import 'i18n/app_locale_utils.dart';
+import 'i18n/locale_preferences.dart';
 import 'i18n/strings.g.dart';
 import 'widgets/app_icon.dart';
 import 'focus/input_mode_tracker.dart';
@@ -954,8 +955,7 @@ Future<_StartupDependencies> _initializeStartup(SettingsService settings) async 
     // Slang builds the base locale eagerly, so `t` already resolves before
     // this runs; a failure here degrades to English rather than no app.
     await _optionalGatePhase(StartupPhase.locale, () async {
-      final savedLocale = settings.read(SettingsService.appLocale);
-      await LocaleSettings.setLocale(savedLocale);
+      await LocalePreferences.apply();
     });
     markStartupPhase('locale');
 
@@ -1210,6 +1210,12 @@ FutureOr<SentryEvent?> _beforeSend(SentryEvent event, Hint _) {
 /// them here loads nothing until a reader runs.
 void _registerAppLicenses() {
   _registerShaderLicenses();
+  LicenseRegistry.addLicense(() async* {
+    yield LicenseEntryWithLineBreaks(const ['Unicode CLDR'],
+      await rootBundle.loadString('assets/licenses/Unicode.txt'));
+    yield LicenseEntryWithLineBreaks(const ['Jellyfin Web translations'],
+      await rootBundle.loadString('assets/licenses/JellyfinWebTranslations.txt'));
+  });
   // iOS covers iPhone, iPad, and Apple TV; mpv-build links SpatialAudioBridge
   // into libmpv there and not on macOS.
   if (Platform.isIOS) _registerSpatialAudioLicenses();
@@ -1493,6 +1499,20 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
     }
     WidgetsBinding.instance.removeObserver(this);
     super.dispose();
+  }
+
+  @override
+  void didChangeLocales(List<Locale>? locales) {
+    unawaited(() async {
+      try {
+        await LocalePreferences.apply();
+        if (!mounted) return;
+        _serverManager.updatePlexLanguage(LocalePreferences.metadataLanguageCode);
+        setState(() {});
+      } catch (error, stackTrace) {
+        appLogger.e('Could not apply the changed system locale', error: error, stackTrace: stackTrace);
+      }
+    }());
   }
 
   @override
