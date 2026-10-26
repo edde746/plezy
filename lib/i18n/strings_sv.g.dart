@@ -45,7 +45,6 @@ class TranslationsSv extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$common$sv common = _Translations$common$sv._(_root);
 	@override late final _Translations$screens$sv screens = _Translations$screens$sv._(_root);
 	@override late final _Translations$update$sv update = _Translations$update$sv._(_root);
-	@override late final _Translations$supporter$sv supporter = _Translations$supporter$sv._(_root);
 	@override late final _Translations$settings$sv settings = _Translations$settings$sv._(_root);
 	@override late final _Translations$themeEditor$sv themeEditor = _Translations$themeEditor$sv._(_root);
 	@override late final _Translations$search$sv search = _Translations$search$sv._(_root);
@@ -116,8 +115,6 @@ class _Translations$appIcon$sv extends Translations$appIcon$en {
 	@override String get title => 'Appikon';
 	@override String get defaultIcon => 'Standard';
 	@override String get current => 'Aktuell ikon';
-	@override String get locked => 'Supporter-förmån';
-	@override String get lockedHint => 'Alternativa ikoner är en Supporter-förmån.';
 	@override String get changeFailed => 'Kunde inte byta appikon';
 	@override String get launcherHint => 'Den nya ikonen visas på hemskärmen när du lämnar PlezyNG.';
 	@override String get tvLauncherHint => 'Den nya bannern visas när du lämnar PlezyNG. Android TV kan fortsätta visa den gamla tills TV:n startas om.';
@@ -238,33 +235,6 @@ class _Translations$update$sv extends Translations$update$en {
 	@override String get viewRelease => 'Visa versionsinformation';
 	@override String get latestVersion => 'Du har den senaste versionen';
 	@override String get checkFailed => 'Det gick inte att söka efter uppdateringar';
-}
-
-// Path: supporter
-class _Translations$supporter$sv extends Translations$supporter$en {
-	_Translations$supporter$sv._(TranslationsSv root) : this._root = root, super.internal(root);
-
-	final TranslationsSv _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'PlezyNG Supporter';
-	@override String get intro => 'Ett engångsköp som stöder utvecklingen av PlezyNG och låser upp kosmetiska extrafunktioner:';
-	@override String get presetThemes => 'Förinställda teman';
-	@override String get presetThemesDescription => 'Glöd, Glaciär, Skog, Plommon och Papper';
-	@override String get customTheme => 'Anpassat tema';
-	@override String get customThemeDescription => 'Välj alla färger själv';
-	@override String get appIcons => 'Appikoner';
-	@override String get appIconsDescription => 'Välj en alternativ PlezyNG-ikon';
-	@override String buy({required Object price}) => 'Köp för ${price}';
-	@override String get loadingPrice => 'Hämtar pris...';
-	@override String get restore => 'Återställ köp';
-	@override String get pending => 'Ditt köp väntar på betalning eller godkännande. Extrafunktionerna låses upp så snart butiken har slutfört det.';
-	@override String get thankYouTitle => 'Tack för att du stöder PlezyNG';
-	@override String get thankYouBody => 'Dina Supporter-extrafunktioner är upplåsta.';
-	@override String get tileSubtitle => 'Lås upp teman och appikoner med ett engångsköp';
-	@override String get tileSubtitleThemesOnly => 'Lås upp teman med ett engångsköp';
-	@override String get tileUnlocked => 'Tack för ditt stöd';
-	@override late final _Translations$supporter$errors$sv errors = _Translations$supporter$errors$sv._(_root);
 }
 
 // Path: settings
@@ -625,8 +595,6 @@ class _Translations$themeEditor$sv extends Translations$themeEditor$en {
 	@override String get customEmpty => 'Inte skapat ännu';
 	@override String get editCustom => 'Redigera anpassat tema';
 	@override String get editCustomDescription => 'Välj alla färger själv';
-	@override String get locked => 'Lås upp med Supporter';
-	@override String get savedLocked => 'Sparat — låses upp med Supporter';
 	@override String get title => 'Anpassat tema';
 	@override String get startFrom => 'Utgå från';
 	@override String get startFromDescription => 'Kopiera alla färger från ett annat tema';
@@ -2649,21 +2617,6 @@ class _Translations$common$mediaKind$sv extends Translations$common$mediaKind$en
 	@override String get folder => 'Mapp';
 }
 
-// Path: supporter.errors
-class _Translations$supporter$errors$sv extends Translations$supporter$errors$en {
-	_Translations$supporter$errors$sv._(TranslationsSv root) : this._root = root, super.internal(root);
-
-	final TranslationsSv _root; // ignore: unused_field
-
-	// Translations
-	@override String get storeUnavailable => 'Köp är inte tillgängliga. Kontrollera att du är inloggad i butiken och att köp är tillåtna på den här enheten.';
-	@override String get productNotFound => 'Supporter-köpet är inte tillgängligt i din butik just nu.';
-	@override String get productQueryFailed => 'Kunde inte hämta priset. Kontrollera anslutningen och försök igen.';
-	@override String get purchaseFailed => 'Köpet gick inte igenom. Försök igen.';
-	@override String get restoreFailed => 'Kunde inte nå butiken för att återställa ditt köp. Försök igen.';
-	@override String get nothingToRestore => 'Inget Supporter-köp hittades för det här butikskontot.';
-}
-
 // Path: themeEditor.slots
 class _Translations$themeEditor$slots$sv extends Translations$themeEditor$slots$en {
 	_Translations$themeEditor$slots$sv._(TranslationsSv root) : this._root = root, super.internal(root);
@@ -3534,8 +3487,6 @@ extension on TranslationsSv {
 			'appIcon.title' => 'Appikon',
 			'appIcon.defaultIcon' => 'Standard',
 			'appIcon.current' => 'Aktuell ikon',
-			'appIcon.locked' => 'Supporter-förmån',
-			'appIcon.lockedHint' => 'Alternativa ikoner är en Supporter-förmån.',
 			'appIcon.changeFailed' => 'Kunde inte byta appikon',
 			'appIcon.launcherHint' => 'Den nya ikonen visas på hemskärmen när du lämnar PlezyNG.',
 			'appIcon.tvLauncherHint' => 'Den nya bannern visas när du lämnar PlezyNG. Android TV kan fortsätta visa den gamla tills TV:n startas om.',
@@ -3665,29 +3616,6 @@ extension on TranslationsSv {
 			'update.viewRelease' => 'Visa versionsinformation',
 			'update.latestVersion' => 'Du har den senaste versionen',
 			'update.checkFailed' => 'Det gick inte att söka efter uppdateringar',
-			'supporter.title' => 'PlezyNG Supporter',
-			'supporter.intro' => 'Ett engångsköp som stöder utvecklingen av PlezyNG och låser upp kosmetiska extrafunktioner:',
-			'supporter.presetThemes' => 'Förinställda teman',
-			'supporter.presetThemesDescription' => 'Glöd, Glaciär, Skog, Plommon och Papper',
-			'supporter.customTheme' => 'Anpassat tema',
-			'supporter.customThemeDescription' => 'Välj alla färger själv',
-			'supporter.appIcons' => 'Appikoner',
-			'supporter.appIconsDescription' => 'Välj en alternativ PlezyNG-ikon',
-			'supporter.buy' => ({required Object price}) => 'Köp för ${price}',
-			'supporter.loadingPrice' => 'Hämtar pris...',
-			'supporter.restore' => 'Återställ köp',
-			'supporter.pending' => 'Ditt köp väntar på betalning eller godkännande. Extrafunktionerna låses upp så snart butiken har slutfört det.',
-			'supporter.thankYouTitle' => 'Tack för att du stöder PlezyNG',
-			'supporter.thankYouBody' => 'Dina Supporter-extrafunktioner är upplåsta.',
-			'supporter.tileSubtitle' => 'Lås upp teman och appikoner med ett engångsköp',
-			'supporter.tileSubtitleThemesOnly' => 'Lås upp teman med ett engångsköp',
-			'supporter.tileUnlocked' => 'Tack för ditt stöd',
-			'supporter.errors.storeUnavailable' => 'Köp är inte tillgängliga. Kontrollera att du är inloggad i butiken och att köp är tillåtna på den här enheten.',
-			'supporter.errors.productNotFound' => 'Supporter-köpet är inte tillgängligt i din butik just nu.',
-			'supporter.errors.productQueryFailed' => 'Kunde inte hämta priset. Kontrollera anslutningen och försök igen.',
-			'supporter.errors.purchaseFailed' => 'Köpet gick inte igenom. Försök igen.',
-			'supporter.errors.restoreFailed' => 'Kunde inte nå butiken för att återställa ditt köp. Försök igen.',
-			'supporter.errors.nothingToRestore' => 'Inget Supporter-köp hittades för det här butikskontot.',
 			'settings.title' => 'Inställningar',
 			'settings.supportDeveloper' => 'Stöd PlezyNG',
 			'settings.supportDeveloperDescription' => 'Donera för att stödja utvecklingen',
@@ -4030,8 +3958,6 @@ extension on TranslationsSv {
 			'themeEditor.customEmpty' => 'Inte skapat ännu',
 			'themeEditor.editCustom' => 'Redigera anpassat tema',
 			'themeEditor.editCustomDescription' => 'Välj alla färger själv',
-			'themeEditor.locked' => 'Lås upp med Supporter',
-			'themeEditor.savedLocked' => 'Sparat — låses upp med Supporter',
 			'themeEditor.title' => 'Anpassat tema',
 			'themeEditor.startFrom' => 'Utgå från',
 			'themeEditor.startFromDescription' => 'Kopiera alla färger från ett annat tema',
@@ -4042,8 +3968,6 @@ extension on TranslationsSv {
 			'themeEditor.slots.outline' => 'Kontur',
 			'themeEditor.slots.text' => 'Text',
 			'themeEditor.slots.textMuted' => 'Sekundär text',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Accentfärg',
 			'themeEditor.opacity' => 'Opacitet',
 			'themeEditor.hexHint' => '#RRGGBB eller #AARRGGBB',
@@ -4071,6 +3995,8 @@ extension on TranslationsSv {
 			'search.people' => 'Personer',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Sätt genväg för ${actionName}',
 			'hotkeys.clearShortcut' => 'Rensa genväg',
+			_ => null,
+		} ?? switch (path) {
 			'hotkeys.noShortcutSet' => 'Ingen genväg angiven',
 			'hotkeys.currentShortcut' => 'Aktuell genväg:',
 			'hotkeys.pressToRecord' => 'Välj för att registrera en genväg',
@@ -4556,8 +4482,6 @@ extension on TranslationsSv {
 			'profiles.pinExplain' => 'En fyrsiffrig PIN-kod krävs för att byta profil.',
 			'profiles.continueButton' => 'Fortsätt',
 			'profiles.pinsDontMatch' => 'PIN-koderna stämmer inte överens',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.tokenIdentityMismatch' => 'Plex-profiltoken kopplades till en oväntad server',
 			'connections.sectionTitle' => 'Anslutningar',
 			'connections.addConnection' => 'Lägg till anslutning',
@@ -4585,6 +4509,8 @@ extension on TranslationsSv {
 			'accountPreferences.groups.libraryDisplay' => 'Bibliotek',
 			'accountPreferences.groups.personalMedia' => 'Personliga media',
 			'accountPreferences.preferredAudioLanguage' => 'Föredraget ljudspråk',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.autoSelectAudio' => 'Välj ljud efter språk',
 			'accountPreferences.autoSelectAudioDescription' => 'Av behåller det ljudspår som filen markerar som standard.',
 			'accountPreferences.preferredSubtitleLanguage' => 'Föredraget undertextspråk',
@@ -5070,8 +4996,6 @@ extension on TranslationsSv {
 			'liveTv.guideReloadFailed' => 'Programguiden kunde inte uppdateras',
 			'liveTv.rulesProcessRequested' => 'Ny regelutvärdering har begärts',
 			'liveTv.rulesProcessFailed' => 'Inspelningsreglerna kunde inte köras om',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordShow' => 'Spela in program',
 			'liveTv.recordSettings.startEarly' => 'Börja tidigare (sekunder)',
 			'liveTv.recordSettings.endLate' => 'Sluta senare (sekunder)',
@@ -5099,6 +5023,8 @@ extension on TranslationsSv {
 			'collections.selectCollection' => 'Välj samling',
 			'collections.collectionName' => 'Samlingsnamn',
 			'collections.enterCollectionName' => 'Ange samlingsnamn',
+			_ => null,
+		} ?? switch (path) {
 			'collections.addedToCollection' => 'Objektet har lagts till i samlingen',
 			'collections.errorAddingToCollection' => 'Det gick inte att lägga till objektet i samlingen',
 			'collections.created' => 'Samlingen har skapats',
@@ -5584,8 +5510,6 @@ extension on TranslationsSv {
 			'performanceOverlay.dvRpus' => 'DV-RPU:er',
 			'performanceOverlay.dvRpuAverage' => 'DV-RPU, genomsnitt',
 			'performanceOverlay.dvSampleAverage' => 'DV-sampling, genomsnitt',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Max luma',
 			'performanceOverlay.minLuma' => 'Min luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5613,6 +5537,8 @@ extension on TranslationsSv {
 			'externalPlayer.customPlayers' => 'Anpassade spelare',
 			'externalPlayer.systemDefault' => 'Systemstandard',
 			'externalPlayer.addCustomPlayer' => 'Lägg till anpassad spelare',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Spelarnamn',
 			'externalPlayer.playerNameHint' => 'Min spelare',
 			'externalPlayer.playerCommand' => 'Kommando',

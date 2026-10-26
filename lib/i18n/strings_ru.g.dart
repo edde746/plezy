@@ -45,7 +45,6 @@ class TranslationsRu extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$common$ru common = _Translations$common$ru._(_root);
 	@override late final _Translations$screens$ru screens = _Translations$screens$ru._(_root);
 	@override late final _Translations$update$ru update = _Translations$update$ru._(_root);
-	@override late final _Translations$supporter$ru supporter = _Translations$supporter$ru._(_root);
 	@override late final _Translations$settings$ru settings = _Translations$settings$ru._(_root);
 	@override late final _Translations$themeEditor$ru themeEditor = _Translations$themeEditor$ru._(_root);
 	@override late final _Translations$search$ru search = _Translations$search$ru._(_root);
@@ -116,8 +115,6 @@ class _Translations$appIcon$ru extends Translations$appIcon$en {
 	@override String get title => 'Значок приложения';
 	@override String get defaultIcon => 'Стандартный';
 	@override String get current => 'Текущий значок';
-	@override String get locked => 'Бонус Supporter';
-	@override String get lockedHint => 'Альтернативные значки — бонус Supporter.';
 	@override String get changeFailed => 'Не удалось сменить значок приложения';
 	@override String get launcherHint => 'Новый значок появится на главном экране, когда вы выйдете из PlezyNG.';
 	@override String get tvLauncherHint => 'Новый баннер появится, когда вы выйдете из PlezyNG. Android TV может показывать старый до перезапуска телевизора.';
@@ -238,33 +235,6 @@ class _Translations$update$ru extends Translations$update$en {
 	@override String get viewRelease => 'Посмотреть релиз';
 	@override String get latestVersion => 'У вас последняя версия';
 	@override String get checkFailed => 'Не удалось проверить обновления';
-}
-
-// Path: supporter
-class _Translations$supporter$ru extends Translations$supporter$en {
-	_Translations$supporter$ru._(TranslationsRu root) : this._root = root, super.internal(root);
-
-	final TranslationsRu _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'PlezyNG Supporter';
-	@override String get intro => 'Разовая покупка, которая поддерживает разработку PlezyNG и открывает косметические дополнения:';
-	@override String get presetThemes => 'Готовые темы';
-	@override String get presetThemesDescription => 'Уголёк, Ледник, Лес, Слива и Бумага';
-	@override String get customTheme => 'Своя тема';
-	@override String get customThemeDescription => 'Выберите каждый цвет сами';
-	@override String get appIcons => 'Значки приложения';
-	@override String get appIconsDescription => 'Выберите альтернативный значок PlezyNG';
-	@override String buy({required Object price}) => 'Купить за ${price}';
-	@override String get loadingPrice => 'Загрузка цены...';
-	@override String get restore => 'Восстановить покупки';
-	@override String get pending => 'Покупка ожидает оплаты или подтверждения. Дополнения откроются, как только магазин её завершит.';
-	@override String get thankYouTitle => 'Спасибо за поддержку PlezyNG';
-	@override String get thankYouBody => 'Дополнения Supporter разблокированы.';
-	@override String get tileSubtitle => 'Откройте темы и значки приложения разовой покупкой';
-	@override String get tileSubtitleThemesOnly => 'Откройте темы разовой покупкой';
-	@override String get tileUnlocked => 'Спасибо за вашу поддержку';
-	@override late final _Translations$supporter$errors$ru errors = _Translations$supporter$errors$ru._(_root);
 }
 
 // Path: settings
@@ -625,8 +595,6 @@ class _Translations$themeEditor$ru extends Translations$themeEditor$en {
 	@override String get customEmpty => 'Ещё не создана';
 	@override String get editCustom => 'Изменить свою тему';
 	@override String get editCustomDescription => 'Выберите каждый цвет сами';
-	@override String get locked => 'Доступно с Supporter';
-	@override String get savedLocked => 'Сохранено — станет доступно с Supporter';
 	@override String get title => 'Своя тема';
 	@override String get startFrom => 'Взять за основу';
 	@override String get startFromDescription => 'Скопировать все цвета из другой темы';
@@ -2669,21 +2637,6 @@ class _Translations$common$mediaKind$ru extends Translations$common$mediaKind$en
 	@override String get folder => 'Папка';
 }
 
-// Path: supporter.errors
-class _Translations$supporter$errors$ru extends Translations$supporter$errors$en {
-	_Translations$supporter$errors$ru._(TranslationsRu root) : this._root = root, super.internal(root);
-
-	final TranslationsRu _root; // ignore: unused_field
-
-	// Translations
-	@override String get storeUnavailable => 'Покупки недоступны. Убедитесь, что вы вошли в магазин и покупки разрешены на этом устройстве.';
-	@override String get productNotFound => 'Покупка Supporter сейчас недоступна в вашем магазине.';
-	@override String get productQueryFailed => 'Не удалось загрузить цену. Проверьте подключение и попробуйте снова.';
-	@override String get purchaseFailed => 'Покупка не прошла. Попробуйте снова.';
-	@override String get restoreFailed => 'Не удалось связаться с магазином для восстановления покупки. Попробуйте снова.';
-	@override String get nothingToRestore => 'Для этой учётной записи магазина покупка Supporter не найдена.';
-}
-
 // Path: themeEditor.slots
 class _Translations$themeEditor$slots$ru extends Translations$themeEditor$slots$en {
 	_Translations$themeEditor$slots$ru._(TranslationsRu root) : this._root = root, super.internal(root);
@@ -3558,8 +3511,6 @@ extension on TranslationsRu {
 			'appIcon.title' => 'Значок приложения',
 			'appIcon.defaultIcon' => 'Стандартный',
 			'appIcon.current' => 'Текущий значок',
-			'appIcon.locked' => 'Бонус Supporter',
-			'appIcon.lockedHint' => 'Альтернативные значки — бонус Supporter.',
 			'appIcon.changeFailed' => 'Не удалось сменить значок приложения',
 			'appIcon.launcherHint' => 'Новый значок появится на главном экране, когда вы выйдете из PlezyNG.',
 			'appIcon.tvLauncherHint' => 'Новый баннер появится, когда вы выйдете из PlezyNG. Android TV может показывать старый до перезапуска телевизора.',
@@ -3689,29 +3640,6 @@ extension on TranslationsRu {
 			'update.viewRelease' => 'Посмотреть релиз',
 			'update.latestVersion' => 'У вас последняя версия',
 			'update.checkFailed' => 'Не удалось проверить обновления',
-			'supporter.title' => 'PlezyNG Supporter',
-			'supporter.intro' => 'Разовая покупка, которая поддерживает разработку PlezyNG и открывает косметические дополнения:',
-			'supporter.presetThemes' => 'Готовые темы',
-			'supporter.presetThemesDescription' => 'Уголёк, Ледник, Лес, Слива и Бумага',
-			'supporter.customTheme' => 'Своя тема',
-			'supporter.customThemeDescription' => 'Выберите каждый цвет сами',
-			'supporter.appIcons' => 'Значки приложения',
-			'supporter.appIconsDescription' => 'Выберите альтернативный значок PlezyNG',
-			'supporter.buy' => ({required Object price}) => 'Купить за ${price}',
-			'supporter.loadingPrice' => 'Загрузка цены...',
-			'supporter.restore' => 'Восстановить покупки',
-			'supporter.pending' => 'Покупка ожидает оплаты или подтверждения. Дополнения откроются, как только магазин её завершит.',
-			'supporter.thankYouTitle' => 'Спасибо за поддержку PlezyNG',
-			'supporter.thankYouBody' => 'Дополнения Supporter разблокированы.',
-			'supporter.tileSubtitle' => 'Откройте темы и значки приложения разовой покупкой',
-			'supporter.tileSubtitleThemesOnly' => 'Откройте темы разовой покупкой',
-			'supporter.tileUnlocked' => 'Спасибо за вашу поддержку',
-			'supporter.errors.storeUnavailable' => 'Покупки недоступны. Убедитесь, что вы вошли в магазин и покупки разрешены на этом устройстве.',
-			'supporter.errors.productNotFound' => 'Покупка Supporter сейчас недоступна в вашем магазине.',
-			'supporter.errors.productQueryFailed' => 'Не удалось загрузить цену. Проверьте подключение и попробуйте снова.',
-			'supporter.errors.purchaseFailed' => 'Покупка не прошла. Попробуйте снова.',
-			'supporter.errors.restoreFailed' => 'Не удалось связаться с магазином для восстановления покупки. Попробуйте снова.',
-			'supporter.errors.nothingToRestore' => 'Для этой учётной записи магазина покупка Supporter не найдена.',
 			'settings.title' => 'Настройки',
 			'settings.supportDeveloper' => 'Поддержать PlezyNG',
 			'settings.supportDeveloperDescription' => 'Поддержите разработку пожертвованием',
@@ -4054,8 +3982,6 @@ extension on TranslationsRu {
 			'themeEditor.customEmpty' => 'Ещё не создана',
 			'themeEditor.editCustom' => 'Изменить свою тему',
 			'themeEditor.editCustomDescription' => 'Выберите каждый цвет сами',
-			'themeEditor.locked' => 'Доступно с Supporter',
-			'themeEditor.savedLocked' => 'Сохранено — станет доступно с Supporter',
 			'themeEditor.title' => 'Своя тема',
 			'themeEditor.startFrom' => 'Взять за основу',
 			'themeEditor.startFromDescription' => 'Скопировать все цвета из другой темы',
@@ -4066,8 +3992,6 @@ extension on TranslationsRu {
 			'themeEditor.slots.outline' => 'Обводка',
 			'themeEditor.slots.text' => 'Текст',
 			'themeEditor.slots.textMuted' => 'Второстепенный текст',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Акцент',
 			'themeEditor.opacity' => 'Непрозрачность',
 			'themeEditor.hexHint' => '#RRGGBB или #AARRGGBB',
@@ -4095,6 +4019,8 @@ extension on TranslationsRu {
 			'search.people' => 'Люди',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Назначить клавишу для ${actionName}',
 			'hotkeys.clearShortcut' => 'Очистить клавишу',
+			_ => null,
+		} ?? switch (path) {
 			'hotkeys.noShortcutSet' => 'Сочетание не задано',
 			'hotkeys.currentShortcut' => 'Текущее сочетание:',
 			'hotkeys.pressToRecord' => 'Выберите, чтобы записать сочетание клавиш',
@@ -4580,8 +4506,6 @@ extension on TranslationsRu {
 			'profiles.pinExplain' => 'Для переключения профилей нужен 4-значный PIN.',
 			'profiles.continueButton' => 'Продолжить',
 			'profiles.pinsDontMatch' => 'PIN-коды не совпадают',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.tokenIdentityMismatch' => 'Токен профиля Plex указал на неожиданный сервер',
 			'connections.sectionTitle' => 'Подключения',
 			'connections.addConnection' => 'Добавить подключение',
@@ -4609,6 +4533,8 @@ extension on TranslationsRu {
 			'accountPreferences.groups.libraryDisplay' => 'Библиотека',
 			'accountPreferences.groups.personalMedia' => 'Личные медиа',
 			'accountPreferences.preferredAudioLanguage' => 'Предпочитаемый язык аудио',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.autoSelectAudio' => 'Выбирать аудиодорожку по языку',
 			'accountPreferences.autoSelectAudioDescription' => 'В выключенном состоянии используется аудиодорожка, помеченная в файле как дорожка по умолчанию.',
 			'accountPreferences.preferredSubtitleLanguage' => 'Предпочитаемый язык субтитров',
@@ -5094,8 +5020,6 @@ extension on TranslationsRu {
 			'liveTv.guideReloadFailed' => 'Не удалось обновить программу',
 			'liveTv.rulesProcessRequested' => 'Запрошен пересчёт правил',
 			'liveTv.rulesProcessFailed' => 'Не удалось повторно применить правила записи',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordShow' => 'Записать передачу',
 			'liveTv.recordSettings.startEarly' => 'Начинать раньше (секунды)',
 			'liveTv.recordSettings.endLate' => 'Заканчивать позже (секунды)',
@@ -5123,6 +5047,8 @@ extension on TranslationsRu {
 			'collections.selectCollection' => 'Выбрать коллекцию',
 			'collections.collectionName' => 'Название коллекции',
 			'collections.enterCollectionName' => 'Введите название коллекции',
+			_ => null,
+		} ?? switch (path) {
 			'collections.addedToCollection' => 'Добавлено в коллекцию',
 			'collections.errorAddingToCollection' => 'Не удалось добавить в коллекцию',
 			'collections.created' => 'Коллекция создана',
@@ -5608,8 +5534,6 @@ extension on TranslationsRu {
 			'performanceOverlay.dvRpus' => 'DV RPU',
 			'performanceOverlay.dvRpuAverage' => 'Сред. DV RPU',
 			'performanceOverlay.dvSampleAverage' => 'Сред. сэмпл DV',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Макс. яркость',
 			'performanceOverlay.minLuma' => 'Мин. яркость',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5637,6 +5561,8 @@ extension on TranslationsRu {
 			'externalPlayer.customPlayers' => 'Свои плееры',
 			'externalPlayer.systemDefault' => 'Системный по умолчанию',
 			'externalPlayer.addCustomPlayer' => 'Добавить свой плеер',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Название плеера',
 			'externalPlayer.playerNameHint' => 'Мой плеер',
 			'externalPlayer.playerCommand' => 'Команда',

@@ -45,7 +45,6 @@ class TranslationsKk extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$common$kk common = _Translations$common$kk._(_root);
 	@override late final _Translations$screens$kk screens = _Translations$screens$kk._(_root);
 	@override late final _Translations$update$kk update = _Translations$update$kk._(_root);
-	@override late final _Translations$supporter$kk supporter = _Translations$supporter$kk._(_root);
 	@override late final _Translations$settings$kk settings = _Translations$settings$kk._(_root);
 	@override late final _Translations$themeEditor$kk themeEditor = _Translations$themeEditor$kk._(_root);
 	@override late final _Translations$search$kk search = _Translations$search$kk._(_root);
@@ -116,8 +115,6 @@ class _Translations$appIcon$kk extends Translations$appIcon$en {
 	@override String get title => 'Қолданба белгішесі';
 	@override String get defaultIcon => 'Әдепкі';
 	@override String get current => 'Ағымдағы белгіше';
-	@override String get locked => 'Supporter артықшылығы';
-	@override String get lockedHint => 'Балама белгішелер — Supporter артықшылығы.';
 	@override String get changeFailed => 'Қолданба белгішесін өзгерту мүмкін болмады';
 	@override String get launcherHint => 'PlezyNG-ден шыққаннан кейін жаңа белгіше басты экранда пайда болады.';
 	@override String get tvLauncherHint => 'PlezyNG-ден шыққаннан кейін жаңа баннер пайда болады. Android TV теледидар қайта іске қосылғанша ескісін көрсете беруі мүмкін.';
@@ -238,33 +235,6 @@ class _Translations$update$kk extends Translations$update$en {
 	@override String get viewRelease => 'Релизді көру';
 	@override String get latestVersion => 'Сізде ең соңғы нұсқа орнатылған';
 	@override String get checkFailed => 'Жаңартуларды тексеру мүмкін болмады';
-}
-
-// Path: supporter
-class _Translations$supporter$kk extends Translations$supporter$en {
-	_Translations$supporter$kk._(TranslationsKk root) : this._root = root, super.internal(root);
-
-	final TranslationsKk _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'PlezyNG Supporter';
-	@override String get intro => 'PlezyNG-дің дамуына қолдау көрсетіп, безендіру мүмкіндіктерін ашатын бір реттік сатып алу:';
-	@override String get presetThemes => 'Дайын тақырыптар';
-	@override String get presetThemesDescription => 'Шоқ, Мұздық, Орман, Алхоры және Қағаз';
-	@override String get customTheme => 'Жеке тақырып';
-	@override String get customThemeDescription => 'Әр түсті өзіңіз таңдаңыз';
-	@override String get appIcons => 'Қолданба белгішелері';
-	@override String get appIconsDescription => 'PlezyNG-дің балама белгішесін таңдаңыз';
-	@override String buy({required Object price}) => '${price} бағасына сатып алу';
-	@override String get loadingPrice => 'Баға жүктелуде...';
-	@override String get restore => 'Сатып алуларды қалпына келтіру';
-	@override String get pending => 'Сатып алуыңыз төлемді немесе растауды күтуде. Дүкен оны аяқтаған бойда қосымша мүмкіндіктер ашылады.';
-	@override String get thankYouTitle => 'PlezyNG-ді қолдағаныңыз үшін рахмет';
-	@override String get thankYouBody => 'Supporter мүмкіндіктеріңіз ашылды.';
-	@override String get tileSubtitle => 'Тақырыптар мен қолданба белгішелерін бір реттік сатып алумен ашыңыз';
-	@override String get tileSubtitleThemesOnly => 'Тақырыптарды бір реттік сатып алумен ашыңыз';
-	@override String get tileUnlocked => 'Қолдауыңыз үшін рахмет';
-	@override late final _Translations$supporter$errors$kk errors = _Translations$supporter$errors$kk._(_root);
 }
 
 // Path: settings
@@ -625,8 +595,6 @@ class _Translations$themeEditor$kk extends Translations$themeEditor$en {
 	@override String get customEmpty => 'Әлі жасалмаған';
 	@override String get editCustom => 'Жеке тақырыпты өңдеу';
 	@override String get editCustomDescription => 'Әр түсті өзіңіз таңдаңыз';
-	@override String get locked => 'Supporter арқылы ашу';
-	@override String get savedLocked => 'Сақталды — Supporter арқылы ашылады';
 	@override String get title => 'Жеке тақырып';
 	@override String get startFrom => 'Негізге алу';
 	@override String get startFromDescription => 'Барлық түстерді басқа тақырыптан көшіру';
@@ -2649,21 +2617,6 @@ class _Translations$common$mediaKind$kk extends Translations$common$mediaKind$en
 	@override String get folder => 'Қалта';
 }
 
-// Path: supporter.errors
-class _Translations$supporter$errors$kk extends Translations$supporter$errors$en {
-	_Translations$supporter$errors$kk._(TranslationsKk root) : this._root = root, super.internal(root);
-
-	final TranslationsKk _root; // ignore: unused_field
-
-	// Translations
-	@override String get storeUnavailable => 'Сатып алу қолжетімсіз. Дүкенге кіргеніңізді және осы құрылғыда сатып алуға рұқсат етілгенін тексеріңіз.';
-	@override String get productNotFound => 'Supporter сатып алуы қазір дүкеніңізде қолжетімсіз.';
-	@override String get productQueryFailed => 'Бағаны жүктеу мүмкін болмады. Қосылымды тексеріп, қайтадан байқап көріңіз.';
-	@override String get purchaseFailed => 'Сатып алу орындалмады. Қайтадан байқап көріңіз.';
-	@override String get restoreFailed => 'Сатып алуды қалпына келтіру үшін дүкенге қосылу мүмкін болмады. Қайтадан байқап көріңіз.';
-	@override String get nothingToRestore => 'Осы дүкен тіркелгісінде Supporter сатып алуы табылмады.';
-}
-
 // Path: themeEditor.slots
 class _Translations$themeEditor$slots$kk extends Translations$themeEditor$slots$en {
 	_Translations$themeEditor$slots$kk._(TranslationsKk root) : this._root = root, super.internal(root);
@@ -3534,8 +3487,6 @@ extension on TranslationsKk {
 			'appIcon.title' => 'Қолданба белгішесі',
 			'appIcon.defaultIcon' => 'Әдепкі',
 			'appIcon.current' => 'Ағымдағы белгіше',
-			'appIcon.locked' => 'Supporter артықшылығы',
-			'appIcon.lockedHint' => 'Балама белгішелер — Supporter артықшылығы.',
 			'appIcon.changeFailed' => 'Қолданба белгішесін өзгерту мүмкін болмады',
 			'appIcon.launcherHint' => 'PlezyNG-ден шыққаннан кейін жаңа белгіше басты экранда пайда болады.',
 			'appIcon.tvLauncherHint' => 'PlezyNG-ден шыққаннан кейін жаңа баннер пайда болады. Android TV теледидар қайта іске қосылғанша ескісін көрсете беруі мүмкін.',
@@ -3665,29 +3616,6 @@ extension on TranslationsKk {
 			'update.viewRelease' => 'Релизді көру',
 			'update.latestVersion' => 'Сізде ең соңғы нұсқа орнатылған',
 			'update.checkFailed' => 'Жаңартуларды тексеру мүмкін болмады',
-			'supporter.title' => 'PlezyNG Supporter',
-			'supporter.intro' => 'PlezyNG-дің дамуына қолдау көрсетіп, безендіру мүмкіндіктерін ашатын бір реттік сатып алу:',
-			'supporter.presetThemes' => 'Дайын тақырыптар',
-			'supporter.presetThemesDescription' => 'Шоқ, Мұздық, Орман, Алхоры және Қағаз',
-			'supporter.customTheme' => 'Жеке тақырып',
-			'supporter.customThemeDescription' => 'Әр түсті өзіңіз таңдаңыз',
-			'supporter.appIcons' => 'Қолданба белгішелері',
-			'supporter.appIconsDescription' => 'PlezyNG-дің балама белгішесін таңдаңыз',
-			'supporter.buy' => ({required Object price}) => '${price} бағасына сатып алу',
-			'supporter.loadingPrice' => 'Баға жүктелуде...',
-			'supporter.restore' => 'Сатып алуларды қалпына келтіру',
-			'supporter.pending' => 'Сатып алуыңыз төлемді немесе растауды күтуде. Дүкен оны аяқтаған бойда қосымша мүмкіндіктер ашылады.',
-			'supporter.thankYouTitle' => 'PlezyNG-ді қолдағаныңыз үшін рахмет',
-			'supporter.thankYouBody' => 'Supporter мүмкіндіктеріңіз ашылды.',
-			'supporter.tileSubtitle' => 'Тақырыптар мен қолданба белгішелерін бір реттік сатып алумен ашыңыз',
-			'supporter.tileSubtitleThemesOnly' => 'Тақырыптарды бір реттік сатып алумен ашыңыз',
-			'supporter.tileUnlocked' => 'Қолдауыңыз үшін рахмет',
-			'supporter.errors.storeUnavailable' => 'Сатып алу қолжетімсіз. Дүкенге кіргеніңізді және осы құрылғыда сатып алуға рұқсат етілгенін тексеріңіз.',
-			'supporter.errors.productNotFound' => 'Supporter сатып алуы қазір дүкеніңізде қолжетімсіз.',
-			'supporter.errors.productQueryFailed' => 'Бағаны жүктеу мүмкін болмады. Қосылымды тексеріп, қайтадан байқап көріңіз.',
-			'supporter.errors.purchaseFailed' => 'Сатып алу орындалмады. Қайтадан байқап көріңіз.',
-			'supporter.errors.restoreFailed' => 'Сатып алуды қалпына келтіру үшін дүкенге қосылу мүмкін болмады. Қайтадан байқап көріңіз.',
-			'supporter.errors.nothingToRestore' => 'Осы дүкен тіркелгісінде Supporter сатып алуы табылмады.',
 			'settings.title' => 'Баптаулар',
 			'settings.supportDeveloper' => 'PlezyNG жобасын қолдау',
 			'settings.supportDeveloperDescription' => 'Әзірлеуді қолдау үшін қайырымдылық жасаңыз',
@@ -4030,8 +3958,6 @@ extension on TranslationsKk {
 			'themeEditor.customEmpty' => 'Әлі жасалмаған',
 			'themeEditor.editCustom' => 'Жеке тақырыпты өңдеу',
 			'themeEditor.editCustomDescription' => 'Әр түсті өзіңіз таңдаңыз',
-			'themeEditor.locked' => 'Supporter арқылы ашу',
-			'themeEditor.savedLocked' => 'Сақталды — Supporter арқылы ашылады',
 			'themeEditor.title' => 'Жеке тақырып',
 			'themeEditor.startFrom' => 'Негізге алу',
 			'themeEditor.startFromDescription' => 'Барлық түстерді басқа тақырыптан көшіру',
@@ -4042,8 +3968,6 @@ extension on TranslationsKk {
 			'themeEditor.slots.outline' => 'Контур',
 			'themeEditor.slots.text' => 'Мәтін',
 			'themeEditor.slots.textMuted' => 'Қосалқы мәтін',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Акцент',
 			'themeEditor.opacity' => 'Мөлдірлік',
 			'themeEditor.hexHint' => '#RRGGBB немесе #AARRGGBB',
@@ -4071,6 +3995,8 @@ extension on TranslationsKk {
 			'search.people' => 'Адамдар',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => '${actionName} үшін пернелер тіркесін орнату',
 			'hotkeys.clearShortcut' => 'Тіркесті тазалау',
+			_ => null,
+		} ?? switch (path) {
 			'hotkeys.noShortcutSet' => 'Пернелер тіркесі орнатылмаған',
 			'hotkeys.currentShortcut' => 'Ағымдағы тіркес:',
 			'hotkeys.pressToRecord' => 'Тіркесті жазу үшін басыңыз',
@@ -4556,8 +4482,6 @@ extension on TranslationsKk {
 			'profiles.pinExplain' => 'Профильдер арасында ауысу үшін 4 таңбалы PIN код қажет.',
 			'profiles.continueButton' => 'Жалғастыру',
 			'profiles.pinsDontMatch' => 'PIN кодтар сәйкес келмейді',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.tokenIdentityMismatch' => 'Plex профилінің токені күтілмеген серверді анықтады',
 			'connections.sectionTitle' => 'Қосылымдар',
 			'connections.addConnection' => 'Қосылым қосу',
@@ -4585,6 +4509,8 @@ extension on TranslationsKk {
 			'accountPreferences.groups.libraryDisplay' => 'Кітапхана',
 			'accountPreferences.groups.personalMedia' => 'Жеке медиа',
 			'accountPreferences.preferredAudioLanguage' => 'Қалаулы аудио тілі',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.autoSelectAudio' => 'Аудионы тілі бойынша таңдау',
 			'accountPreferences.autoSelectAudioDescription' => 'Өшірулі күйде файл әдепкі деп белгілеген аудио трек қолданылады.',
 			'accountPreferences.preferredSubtitleLanguage' => 'Қалаулы субтитр тілі',
@@ -5070,8 +4996,6 @@ extension on TranslationsKk {
 			'liveTv.guideReloadFailed' => 'Телебағдарламаны жаңарту мүмкін болмады',
 			'liveTv.rulesProcessRequested' => 'Ережелерді қайта бағалау сұралды',
 			'liveTv.rulesProcessFailed' => 'Жазу ережелерін қайта тексеру мүмкін болмады',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordShow' => 'Шоуды жазу',
 			'liveTv.recordSettings.startEarly' => 'Ертерек бастау (секунд)',
 			'liveTv.recordSettings.endLate' => 'Кешірек аяқтау (секунд)',
@@ -5099,6 +5023,8 @@ extension on TranslationsKk {
 			'collections.selectCollection' => 'Топтаманы таңдау',
 			'collections.collectionName' => 'Топтама атауы',
 			'collections.enterCollectionName' => 'Топтама атауын енгізіңіз',
+			_ => null,
+		} ?? switch (path) {
 			'collections.addedToCollection' => 'Топтамаға қосылды',
 			'collections.errorAddingToCollection' => 'Топтамаға қосу мүмкін болмады',
 			'collections.created' => 'Топтама жасалды',
@@ -5584,8 +5510,6 @@ extension on TranslationsKk {
 			'performanceOverlay.dvRpus' => 'DV RPU-лар',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU Орт.',
 			'performanceOverlay.dvSampleAverage' => 'DV Үлгі Орт.',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Макс Luma',
 			'performanceOverlay.minLuma' => 'Мин Luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5613,6 +5537,8 @@ extension on TranslationsKk {
 			'externalPlayer.customPlayers' => 'Арнайы ойнатқыштар',
 			'externalPlayer.systemDefault' => 'Жүйелік әдепкі',
 			'externalPlayer.addCustomPlayer' => 'Арнайы ойнатқыш қосу',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Ойнатқыш атауы',
 			'externalPlayer.playerNameHint' => 'Менің ойнатқышым',
 			'externalPlayer.playerCommand' => 'Пәрмен',

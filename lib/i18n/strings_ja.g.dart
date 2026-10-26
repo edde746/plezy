@@ -45,7 +45,6 @@ class TranslationsJa extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$common$ja common = _Translations$common$ja._(_root);
 	@override late final _Translations$screens$ja screens = _Translations$screens$ja._(_root);
 	@override late final _Translations$update$ja update = _Translations$update$ja._(_root);
-	@override late final _Translations$supporter$ja supporter = _Translations$supporter$ja._(_root);
 	@override late final _Translations$settings$ja settings = _Translations$settings$ja._(_root);
 	@override late final _Translations$themeEditor$ja themeEditor = _Translations$themeEditor$ja._(_root);
 	@override late final _Translations$search$ja search = _Translations$search$ja._(_root);
@@ -116,8 +115,6 @@ class _Translations$appIcon$ja extends Translations$appIcon$en {
 	@override String get title => 'アプリアイコン';
 	@override String get defaultIcon => 'デフォルト';
 	@override String get current => '現在のアイコン';
-	@override String get locked => 'Supporter特典';
-	@override String get lockedHint => '別のアイコンはSupporter特典です。';
 	@override String get changeFailed => 'アプリアイコンを変更できませんでした';
 	@override String get launcherHint => 'Plezyを離れると、ホーム画面に新しいアイコンが表示されます。';
 	@override String get tvLauncherHint => 'Plezyを離れると、新しいバナーが表示されます。Android TVでは、テレビを再起動するまで古いバナーが表示され続ける場合があります。';
@@ -238,33 +235,6 @@ class _Translations$update$ja extends Translations$update$en {
 	@override String get viewRelease => 'リリースを表示';
 	@override String get latestVersion => '最新バージョンです';
 	@override String get checkFailed => 'アップデートの確認に失敗しました';
-}
-
-// Path: supporter
-class _Translations$supporter$ja extends Translations$supporter$en {
-	_Translations$supporter$ja._(TranslationsJa root) : this._root = root, super.internal(root);
-
-	final TranslationsJa _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'PlezyNG Supporter';
-	@override String get intro => '1回限りの購入でPlezyの開発を支援し、次の見た目の特典をご利用いただけます：';
-	@override String get presetThemes => 'プリセットテーマ';
-	@override String get presetThemesDescription => '残り火、氷河、森、プラム、ペーパー';
-	@override String get customTheme => 'カスタムテーマ';
-	@override String get customThemeDescription => 'すべての色を自分で選択';
-	@override String get appIcons => 'アプリアイコン';
-	@override String get appIconsDescription => 'Plezyの別のアイコンを選択';
-	@override String buy({required Object price}) => '${price}で購入';
-	@override String get loadingPrice => '価格を読み込み中…';
-	@override String get restore => '購入を復元';
-	@override String get pending => '購入は支払いまたは承認を待っています。ストアでの処理が完了すると、すぐに特典のロックが解除されます。';
-	@override String get thankYouTitle => 'Plezyをご支援いただきありがとうございます';
-	@override String get thankYouBody => 'Supporter特典のロックが解除されました。';
-	@override String get tileSubtitle => '1回限りの購入でテーマとアプリアイコンのロックを解除';
-	@override String get tileSubtitleThemesOnly => '1回限りの購入でテーマのロックを解除';
-	@override String get tileUnlocked => 'ご支援ありがとうございます';
-	@override late final _Translations$supporter$errors$ja errors = _Translations$supporter$errors$ja._(_root);
 }
 
 // Path: settings
@@ -625,8 +595,6 @@ class _Translations$themeEditor$ja extends Translations$themeEditor$en {
 	@override String get customEmpty => '未作成';
 	@override String get editCustom => 'カスタムテーマを編集';
 	@override String get editCustomDescription => 'すべての色を自分で選択';
-	@override String get locked => 'Supporterでロック解除';
-	@override String get savedLocked => '保存済み — Supporterでロック解除';
 	@override String get title => 'カスタムテーマ';
 	@override String get startFrom => '元にするテーマ';
 	@override String get startFromDescription => '別のテーマからすべての色をコピー';
@@ -2639,21 +2607,6 @@ class _Translations$common$mediaKind$ja extends Translations$common$mediaKind$en
 	@override String get folder => 'フォルダ';
 }
 
-// Path: supporter.errors
-class _Translations$supporter$errors$ja extends Translations$supporter$errors$en {
-	_Translations$supporter$errors$ja._(TranslationsJa root) : this._root = root, super.internal(root);
-
-	final TranslationsJa _root; // ignore: unused_field
-
-	// Translations
-	@override String get storeUnavailable => '購入を利用できません。ストアにサインインしていること、およびこのデバイスで購入が許可されていることを確認してください。';
-	@override String get productNotFound => '現在、お使いのストアではSupporterを購入できません。';
-	@override String get productQueryFailed => '価格を読み込めませんでした。接続を確認してもう一度お試しください。';
-	@override String get purchaseFailed => '購入を完了できませんでした。もう一度お試しください。';
-	@override String get restoreFailed => '購入を復元するためにストアに接続できませんでした。もう一度お試しください。';
-	@override String get nothingToRestore => 'このストアアカウントではSupporterの購入が見つかりませんでした。';
-}
-
 // Path: themeEditor.slots
 class _Translations$themeEditor$slots$ja extends Translations$themeEditor$slots$en {
 	_Translations$themeEditor$slots$ja._(TranslationsJa root) : this._root = root, super.internal(root);
@@ -3522,8 +3475,6 @@ extension on TranslationsJa {
 			'appIcon.title' => 'アプリアイコン',
 			'appIcon.defaultIcon' => 'デフォルト',
 			'appIcon.current' => '現在のアイコン',
-			'appIcon.locked' => 'Supporter特典',
-			'appIcon.lockedHint' => '別のアイコンはSupporter特典です。',
 			'appIcon.changeFailed' => 'アプリアイコンを変更できませんでした',
 			'appIcon.launcherHint' => 'Plezyを離れると、ホーム画面に新しいアイコンが表示されます。',
 			'appIcon.tvLauncherHint' => 'Plezyを離れると、新しいバナーが表示されます。Android TVでは、テレビを再起動するまで古いバナーが表示され続ける場合があります。',
@@ -3653,29 +3604,6 @@ extension on TranslationsJa {
 			'update.viewRelease' => 'リリースを表示',
 			'update.latestVersion' => '最新バージョンです',
 			'update.checkFailed' => 'アップデートの確認に失敗しました',
-			'supporter.title' => 'PlezyNG Supporter',
-			'supporter.intro' => '1回限りの購入でPlezyの開発を支援し、次の見た目の特典をご利用いただけます：',
-			'supporter.presetThemes' => 'プリセットテーマ',
-			'supporter.presetThemesDescription' => '残り火、氷河、森、プラム、ペーパー',
-			'supporter.customTheme' => 'カスタムテーマ',
-			'supporter.customThemeDescription' => 'すべての色を自分で選択',
-			'supporter.appIcons' => 'アプリアイコン',
-			'supporter.appIconsDescription' => 'Plezyの別のアイコンを選択',
-			'supporter.buy' => ({required Object price}) => '${price}で購入',
-			'supporter.loadingPrice' => '価格を読み込み中…',
-			'supporter.restore' => '購入を復元',
-			'supporter.pending' => '購入は支払いまたは承認を待っています。ストアでの処理が完了すると、すぐに特典のロックが解除されます。',
-			'supporter.thankYouTitle' => 'Plezyをご支援いただきありがとうございます',
-			'supporter.thankYouBody' => 'Supporter特典のロックが解除されました。',
-			'supporter.tileSubtitle' => '1回限りの購入でテーマとアプリアイコンのロックを解除',
-			'supporter.tileSubtitleThemesOnly' => '1回限りの購入でテーマのロックを解除',
-			'supporter.tileUnlocked' => 'ご支援ありがとうございます',
-			'supporter.errors.storeUnavailable' => '購入を利用できません。ストアにサインインしていること、およびこのデバイスで購入が許可されていることを確認してください。',
-			'supporter.errors.productNotFound' => '現在、お使いのストアではSupporterを購入できません。',
-			'supporter.errors.productQueryFailed' => '価格を読み込めませんでした。接続を確認してもう一度お試しください。',
-			'supporter.errors.purchaseFailed' => '購入を完了できませんでした。もう一度お試しください。',
-			'supporter.errors.restoreFailed' => '購入を復元するためにストアに接続できませんでした。もう一度お試しください。',
-			'supporter.errors.nothingToRestore' => 'このストアアカウントではSupporterの購入が見つかりませんでした。',
 			'settings.title' => '設定',
 			'settings.supportDeveloper' => 'Plezyを支援',
 			'settings.supportDeveloperDescription' => '寄付で開発を支援',
@@ -4018,8 +3946,6 @@ extension on TranslationsJa {
 			'themeEditor.customEmpty' => '未作成',
 			'themeEditor.editCustom' => 'カスタムテーマを編集',
 			'themeEditor.editCustomDescription' => 'すべての色を自分で選択',
-			'themeEditor.locked' => 'Supporterでロック解除',
-			'themeEditor.savedLocked' => '保存済み — Supporterでロック解除',
 			'themeEditor.title' => 'カスタムテーマ',
 			'themeEditor.startFrom' => '元にするテーマ',
 			'themeEditor.startFromDescription' => '別のテーマからすべての色をコピー',
@@ -4030,8 +3956,6 @@ extension on TranslationsJa {
 			'themeEditor.slots.outline' => '枠線',
 			'themeEditor.slots.text' => 'テキスト',
 			'themeEditor.slots.textMuted' => '補助テキスト',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'アクセント',
 			'themeEditor.opacity' => '不透明度',
 			'themeEditor.hexHint' => '#RRGGBB または #AARRGGBB',
@@ -4059,6 +3983,8 @@ extension on TranslationsJa {
 			'search.people' => '人物',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => '${actionName}のショートカットを設定',
 			'hotkeys.clearShortcut' => 'ショートカットをクリア',
+			_ => null,
+		} ?? switch (path) {
 			'hotkeys.noShortcutSet' => 'ショートカット未設定',
 			'hotkeys.currentShortcut' => '現在のショートカット:',
 			'hotkeys.pressToRecord' => '選択してショートカットを記録',
@@ -4544,8 +4470,6 @@ extension on TranslationsJa {
 			'profiles.pinExplain' => 'プロフィール切り替えには4桁のPINが必要です。',
 			'profiles.continueButton' => '続ける',
 			'profiles.pinsDontMatch' => 'PINが一致しません',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.tokenIdentityMismatch' => 'Plexプロフィールのトークンから予期しないサーバーが特定されました',
 			'connections.sectionTitle' => '接続',
 			'connections.addConnection' => '接続を追加',
@@ -4573,6 +4497,8 @@ extension on TranslationsJa {
 			'accountPreferences.groups.libraryDisplay' => 'ライブラリ',
 			'accountPreferences.groups.personalMedia' => '個人メディア',
 			'accountPreferences.preferredAudioLanguage' => '優先音声言語',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.autoSelectAudio' => '言語で音声を選択',
 			'accountPreferences.autoSelectAudioDescription' => 'オフにすると、ファイルでデフォルトとマークされた音声トラックがそのまま使われます。',
 			'accountPreferences.preferredSubtitleLanguage' => '優先字幕言語',
@@ -5058,8 +4984,6 @@ extension on TranslationsJa {
 			'liveTv.guideReloadFailed' => '番組表を再読み込みできませんでした',
 			'liveTv.rulesProcessRequested' => '録画ルールの再評価をリクエストしました',
 			'liveTv.rulesProcessFailed' => '録画ルールを再適用できませんでした',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordShow' => '番組を録画',
 			'liveTv.recordSettings.startEarly' => '早めに開始（秒）',
 			'liveTv.recordSettings.endLate' => '遅めに終了（秒）',
@@ -5087,6 +5011,8 @@ extension on TranslationsJa {
 			'collections.selectCollection' => 'コレクションを選択',
 			'collections.collectionName' => 'コレクション名',
 			'collections.enterCollectionName' => 'コレクション名を入力',
+			_ => null,
+		} ?? switch (path) {
 			'collections.addedToCollection' => 'コレクションに追加しました',
 			'collections.errorAddingToCollection' => 'コレクションへの追加に失敗しました',
 			'collections.created' => 'コレクションを作成しました',
@@ -5572,8 +5498,6 @@ extension on TranslationsJa {
 			'performanceOverlay.dvRpus' => 'DV RPU',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU 平均',
 			'performanceOverlay.dvSampleAverage' => 'DV サンプル平均',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => '最大輝度',
 			'performanceOverlay.minLuma' => '最小輝度',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5601,6 +5525,8 @@ extension on TranslationsJa {
 			'externalPlayer.customPlayers' => 'カスタムプレーヤー',
 			'externalPlayer.systemDefault' => 'システム既定',
 			'externalPlayer.addCustomPlayer' => 'カスタムプレーヤーを追加',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'プレーヤー名',
 			'externalPlayer.playerNameHint' => 'マイプレーヤー',
 			'externalPlayer.playerCommand' => 'コマンド',

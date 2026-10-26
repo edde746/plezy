@@ -62,6 +62,7 @@ import 'services/account_preferences_repository.dart';
 import 'providers/multi_server_provider.dart';
 import 'providers/theme_provider.dart';
 import 'services/supporter/supporter_service.dart';
+import 'widgets/app_access_gate.dart';
 import 'providers/download_provider.dart';
 import 'providers/offline_mode_provider.dart';
 import 'providers/offline_watch_provider.dart';
@@ -145,7 +146,7 @@ void _registerTvosPlatformPlugins() {
   SharedPreferencesFoundation.registerWith();
   // in_app_purchase needs no entry here: `InAppPurchase.instance` registers
   // its StoreKit platform on first use (tvOS reports iOS), which
-  // SupporterService reaches only in SUPPORTER_MODE=iap builds.
+  // Store-backed access and lifetime purchases reach only in SUPPORTER_MODE=iap builds.
 }
 
 void main() {
@@ -215,9 +216,9 @@ void _bootstrapApp() {
 /// [TvDetectionService.isTVSync] answers false until its singleton exists,
 /// which would make a fresh Android TV install resolve the light theme.
 ///
-/// A stored Supporter perk is gated by the cached entitlement, the same rule
-/// [ThemeProvider] applies, so a locked perk never flashes and an unlocked one
-/// never flashes the fallback. That fallback is the same TV-aware default.
+/// Entitlement-controlled presentation uses the lifetime purchase or active
+/// full-app trial, the same rule [ThemeProvider] applies, so a locked choice
+/// never flashes and an available choice never flashes the fallback.
 Future<StartupThemeResolution> _resolveStartupTheme() async {
   final settings = await SettingsService.getInstance();
   await TvDetectionService.getInstance(forceTv: settings.read(SettingsService.forceTvMode));
@@ -1913,8 +1914,8 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         ProxyProvider<AccountPreferencesController, AccountPreferencesRepository>(
           update: (_, controller, _) => controller.repository,
         ),
-        // App-global: a Supporter purchase belongs to the store account on this
-        // device, not to a profile.
+        // App-global: the lifetime purchase belongs to the store account on
+        // this device; the seven-day trial is device-local, not profile-scoped.
         ChangeNotifierProvider(
           create: (context) {
             final supporter = SupporterService();
@@ -1926,7 +1927,7 @@ class _MainAppState extends State<MainApp> with WidgetsBindingObserver {
         // Shader presets are app-global — deliberately outside the
         // profile-scoped session in ProfileSessionScreen.
         ChangeNotifierProvider(create: (context) => ShaderProvider()),
-        // Created eagerly: it must be listening when a Supporter refund is
+        // Created eagerly: it must be listening when a lifetime purchase is
         // confirmed, so the default app icon comes back even with Settings closed.
         ChangeNotifierProvider(
           lazy: false,
@@ -2001,9 +2002,11 @@ class _AppShell extends StatelessWidget {
                       const SingleActivator(LogicalKeyboardKey.gameButtonA): const ActivateIntent(),
                     },
                     builder: (context, child) {
-                      final shell = rootShell(
-                        NavigatorBackHandler(navigatorKey: rootNavigatorKey, child: child ?? const SizedBox.shrink()),
+                      final gatedChild = AppAccessGate(
+                        service: context.watch<SupporterService>(),
+                        child: child ?? const SizedBox.shrink(),
                       );
+                      final shell = rootShell(NavigatorBackHandler(navigatorKey: rootNavigatorKey, child: gatedChild));
                       if (!agentControlEnabled) return shell;
                       return AgentControlScope(
                         commandContext: () => rootNavigatorKey.currentState?.overlay?.context,

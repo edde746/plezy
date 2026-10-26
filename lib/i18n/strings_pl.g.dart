@@ -45,7 +45,6 @@ class TranslationsPl extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$common$pl common = _Translations$common$pl._(_root);
 	@override late final _Translations$screens$pl screens = _Translations$screens$pl._(_root);
 	@override late final _Translations$update$pl update = _Translations$update$pl._(_root);
-	@override late final _Translations$supporter$pl supporter = _Translations$supporter$pl._(_root);
 	@override late final _Translations$settings$pl settings = _Translations$settings$pl._(_root);
 	@override late final _Translations$themeEditor$pl themeEditor = _Translations$themeEditor$pl._(_root);
 	@override late final _Translations$search$pl search = _Translations$search$pl._(_root);
@@ -116,8 +115,6 @@ class _Translations$appIcon$pl extends Translations$appIcon$en {
 	@override String get title => 'Ikona aplikacji';
 	@override String get defaultIcon => 'Domyślna';
 	@override String get current => 'Bieżąca ikona';
-	@override String get locked => 'W pakiecie Supporter';
-	@override String get lockedHint => 'Alternatywne ikony są dostępne w pakiecie Supporter.';
 	@override String get changeFailed => 'Nie udało się zmienić ikony aplikacji';
 	@override String get launcherHint => 'Nowa ikona pojawi się na ekranie głównym po opuszczeniu PlezyNG.';
 	@override String get tvLauncherHint => 'Nowy baner pojawi się po opuszczeniu PlezyNG. Android TV może wyświetlać stary baner, dopóki telewizor nie zostanie uruchomiony ponownie.';
@@ -238,33 +235,6 @@ class _Translations$update$pl extends Translations$update$en {
 	@override String get viewRelease => 'Zobacz wydanie';
 	@override String get latestVersion => 'Masz najnowszą wersję';
 	@override String get checkFailed => 'Nie udało się sprawdzić aktualizacji';
-}
-
-// Path: supporter
-class _Translations$supporter$pl extends Translations$supporter$en {
-	_Translations$supporter$pl._(TranslationsPl root) : this._root = root, super.internal(root);
-
-	final TranslationsPl _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'PlezyNG Supporter';
-	@override String get intro => 'Jednorazowy zakup, który wspiera rozwój PlezyNG i odblokowuje dodatki wizualne:';
-	@override String get presetThemes => 'Gotowe motywy';
-	@override String get presetThemesDescription => 'Żar, Lodowiec, Las, Śliwka i Papier';
-	@override String get customTheme => 'Własny motyw';
-	@override String get customThemeDescription => 'Wybierz każdy kolor samodzielnie';
-	@override String get appIcons => 'Ikony aplikacji';
-	@override String get appIconsDescription => 'Wybierz alternatywną ikonę PlezyNG';
-	@override String buy({required Object price}) => 'Kup za ${price}';
-	@override String get loadingPrice => 'Ładowanie ceny...';
-	@override String get restore => 'Przywróć zakupy';
-	@override String get pending => 'Twój zakup oczekuje na płatność lub zatwierdzenie. Dodatki zostaną odblokowane, gdy tylko sklep go sfinalizuje.';
-	@override String get thankYouTitle => 'Dziękujemy za wspieranie PlezyNG';
-	@override String get thankYouBody => 'Dodatki z pakietu Supporter zostały odblokowane.';
-	@override String get tileSubtitle => 'Odblokuj motywy i ikony aplikacji jednorazowym zakupem';
-	@override String get tileSubtitleThemesOnly => 'Odblokuj motywy jednorazowym zakupem';
-	@override String get tileUnlocked => 'Dziękujemy za wsparcie';
-	@override late final _Translations$supporter$errors$pl errors = _Translations$supporter$errors$pl._(_root);
 }
 
 // Path: settings
@@ -625,8 +595,6 @@ class _Translations$themeEditor$pl extends Translations$themeEditor$en {
 	@override String get customEmpty => 'Jeszcze nie utworzono';
 	@override String get editCustom => 'Edytuj własny motyw';
 	@override String get editCustomDescription => 'Wybierz każdy kolor samodzielnie';
-	@override String get locked => 'Odblokuj z pakietem Supporter';
-	@override String get savedLocked => 'Zapisany — wymaga pakietu Supporter';
 	@override String get title => 'Własny motyw';
 	@override String get startFrom => 'Zacznij od';
 	@override String get startFromDescription => 'Skopiuj wszystkie kolory z innego motywu';
@@ -2669,21 +2637,6 @@ class _Translations$common$mediaKind$pl extends Translations$common$mediaKind$en
 	@override String get folder => 'Folder';
 }
 
-// Path: supporter.errors
-class _Translations$supporter$errors$pl extends Translations$supporter$errors$en {
-	_Translations$supporter$errors$pl._(TranslationsPl root) : this._root = root, super.internal(root);
-
-	final TranslationsPl _root; // ignore: unused_field
-
-	// Translations
-	@override String get storeUnavailable => 'Zakupy są niedostępne. Sprawdź, czy zalogowano się do sklepu i czy zakupy są dozwolone na tym urządzeniu.';
-	@override String get productNotFound => 'Pakiet Supporter jest obecnie niedostępny w Twoim sklepie.';
-	@override String get productQueryFailed => 'Nie udało się wczytać ceny. Sprawdź połączenie i spróbuj ponownie.';
-	@override String get purchaseFailed => 'Zakup nie powiódł się. Spróbuj ponownie.';
-	@override String get restoreFailed => 'Nie udało się połączyć ze sklepem, aby przywrócić zakup. Spróbuj ponownie.';
-	@override String get nothingToRestore => 'Nie znaleziono zakupu pakietu Supporter dla tego konta sklepu.';
-}
-
 // Path: themeEditor.slots
 class _Translations$themeEditor$slots$pl extends Translations$themeEditor$slots$en {
 	_Translations$themeEditor$slots$pl._(TranslationsPl root) : this._root = root, super.internal(root);
@@ -3558,8 +3511,6 @@ extension on TranslationsPl {
 			'appIcon.title' => 'Ikona aplikacji',
 			'appIcon.defaultIcon' => 'Domyślna',
 			'appIcon.current' => 'Bieżąca ikona',
-			'appIcon.locked' => 'W pakiecie Supporter',
-			'appIcon.lockedHint' => 'Alternatywne ikony są dostępne w pakiecie Supporter.',
 			'appIcon.changeFailed' => 'Nie udało się zmienić ikony aplikacji',
 			'appIcon.launcherHint' => 'Nowa ikona pojawi się na ekranie głównym po opuszczeniu PlezyNG.',
 			'appIcon.tvLauncherHint' => 'Nowy baner pojawi się po opuszczeniu PlezyNG. Android TV może wyświetlać stary baner, dopóki telewizor nie zostanie uruchomiony ponownie.',
@@ -3689,29 +3640,6 @@ extension on TranslationsPl {
 			'update.viewRelease' => 'Zobacz wydanie',
 			'update.latestVersion' => 'Masz najnowszą wersję',
 			'update.checkFailed' => 'Nie udało się sprawdzić aktualizacji',
-			'supporter.title' => 'PlezyNG Supporter',
-			'supporter.intro' => 'Jednorazowy zakup, który wspiera rozwój PlezyNG i odblokowuje dodatki wizualne:',
-			'supporter.presetThemes' => 'Gotowe motywy',
-			'supporter.presetThemesDescription' => 'Żar, Lodowiec, Las, Śliwka i Papier',
-			'supporter.customTheme' => 'Własny motyw',
-			'supporter.customThemeDescription' => 'Wybierz każdy kolor samodzielnie',
-			'supporter.appIcons' => 'Ikony aplikacji',
-			'supporter.appIconsDescription' => 'Wybierz alternatywną ikonę PlezyNG',
-			'supporter.buy' => ({required Object price}) => 'Kup za ${price}',
-			'supporter.loadingPrice' => 'Ładowanie ceny...',
-			'supporter.restore' => 'Przywróć zakupy',
-			'supporter.pending' => 'Twój zakup oczekuje na płatność lub zatwierdzenie. Dodatki zostaną odblokowane, gdy tylko sklep go sfinalizuje.',
-			'supporter.thankYouTitle' => 'Dziękujemy za wspieranie PlezyNG',
-			'supporter.thankYouBody' => 'Dodatki z pakietu Supporter zostały odblokowane.',
-			'supporter.tileSubtitle' => 'Odblokuj motywy i ikony aplikacji jednorazowym zakupem',
-			'supporter.tileSubtitleThemesOnly' => 'Odblokuj motywy jednorazowym zakupem',
-			'supporter.tileUnlocked' => 'Dziękujemy za wsparcie',
-			'supporter.errors.storeUnavailable' => 'Zakupy są niedostępne. Sprawdź, czy zalogowano się do sklepu i czy zakupy są dozwolone na tym urządzeniu.',
-			'supporter.errors.productNotFound' => 'Pakiet Supporter jest obecnie niedostępny w Twoim sklepie.',
-			'supporter.errors.productQueryFailed' => 'Nie udało się wczytać ceny. Sprawdź połączenie i spróbuj ponownie.',
-			'supporter.errors.purchaseFailed' => 'Zakup nie powiódł się. Spróbuj ponownie.',
-			'supporter.errors.restoreFailed' => 'Nie udało się połączyć ze sklepem, aby przywrócić zakup. Spróbuj ponownie.',
-			'supporter.errors.nothingToRestore' => 'Nie znaleziono zakupu pakietu Supporter dla tego konta sklepu.',
 			'settings.title' => 'Ustawienia',
 			'settings.supportDeveloper' => 'Wesprzyj PlezyNG',
 			'settings.supportDeveloperDescription' => 'Wspomóż rozwój darowizną',
@@ -4054,8 +3982,6 @@ extension on TranslationsPl {
 			'themeEditor.customEmpty' => 'Jeszcze nie utworzono',
 			'themeEditor.editCustom' => 'Edytuj własny motyw',
 			'themeEditor.editCustomDescription' => 'Wybierz każdy kolor samodzielnie',
-			'themeEditor.locked' => 'Odblokuj z pakietem Supporter',
-			'themeEditor.savedLocked' => 'Zapisany — wymaga pakietu Supporter',
 			'themeEditor.title' => 'Własny motyw',
 			'themeEditor.startFrom' => 'Zacznij od',
 			'themeEditor.startFromDescription' => 'Skopiuj wszystkie kolory z innego motywu',
@@ -4066,8 +3992,6 @@ extension on TranslationsPl {
 			'themeEditor.slots.outline' => 'Kontur',
 			'themeEditor.slots.text' => 'Tekst',
 			'themeEditor.slots.textMuted' => 'Tekst drugorzędny',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Akcent',
 			'themeEditor.opacity' => 'Krycie',
 			'themeEditor.hexHint' => '#RRGGBB lub #AARRGGBB',
@@ -4095,6 +4019,8 @@ extension on TranslationsPl {
 			'search.people' => 'Osoby',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Ustaw skrót dla ${actionName}',
 			'hotkeys.clearShortcut' => 'Wyczyść skrót',
+			_ => null,
+		} ?? switch (path) {
 			'hotkeys.noShortcutSet' => 'Brak ustawionego skrótu',
 			'hotkeys.currentShortcut' => 'Bieżący skrót:',
 			'hotkeys.pressToRecord' => 'Wybierz, aby zapisać skrót klawiszowy',
@@ -4580,8 +4506,6 @@ extension on TranslationsPl {
 			'profiles.pinExplain' => 'Do przełączania profili wymagany jest 4-cyfrowy PIN.',
 			'profiles.continueButton' => 'Kontynuuj',
 			'profiles.pinsDontMatch' => 'PIN-y nie pasują',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.tokenIdentityMismatch' => 'Token profilu Plex został powiązany z nieoczekiwanym serwerem',
 			'connections.sectionTitle' => 'Połączenia',
 			'connections.addConnection' => 'Dodaj połączenie',
@@ -4609,6 +4533,8 @@ extension on TranslationsPl {
 			'accountPreferences.groups.libraryDisplay' => 'Biblioteka',
 			'accountPreferences.groups.personalMedia' => 'Osobiste multimedia',
 			'accountPreferences.preferredAudioLanguage' => 'Preferowany język audio',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.autoSelectAudio' => 'Wybieraj audio według języka',
 			'accountPreferences.autoSelectAudioDescription' => 'Ustawienie „Wył.” pozostawia ścieżkę audio, którą plik oznacza jako domyślną.',
 			'accountPreferences.preferredSubtitleLanguage' => 'Preferowany język napisów',
@@ -5094,8 +5020,6 @@ extension on TranslationsPl {
 			'liveTv.guideReloadFailed' => 'Nie udało się odświeżyć przewodnika',
 			'liveTv.rulesProcessRequested' => 'Zażądano ponownej oceny reguł',
 			'liveTv.rulesProcessFailed' => 'Nie udało się ponownie przetworzyć reguł nagrywania',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordShow' => 'Nagraj program',
 			'liveTv.recordSettings.startEarly' => 'Zacznij wcześniej (sekundy)',
 			'liveTv.recordSettings.endLate' => 'Zakończ później (sekundy)',
@@ -5123,6 +5047,8 @@ extension on TranslationsPl {
 			'collections.selectCollection' => 'Wybierz kolekcję',
 			'collections.collectionName' => 'Nazwa kolekcji',
 			'collections.enterCollectionName' => 'Wprowadź nazwę kolekcji',
+			_ => null,
+		} ?? switch (path) {
 			'collections.addedToCollection' => 'Dodano do kolekcji',
 			'collections.errorAddingToCollection' => 'Nie udało się dodać do kolekcji',
 			'collections.created' => 'Kolekcja utworzona',
@@ -5608,8 +5534,6 @@ extension on TranslationsPl {
 			'performanceOverlay.dvRpus' => 'DV RPU',
 			'performanceOverlay.dvRpuAverage' => 'Śr. DV RPU',
 			'performanceOverlay.dvSampleAverage' => 'Śr. próbki DV',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Maks. luma',
 			'performanceOverlay.minLuma' => 'Min. luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5637,6 +5561,8 @@ extension on TranslationsPl {
 			'externalPlayer.customPlayers' => 'Niestandardowe odtwarzacze',
 			'externalPlayer.systemDefault' => 'Domyślny systemowy',
 			'externalPlayer.addCustomPlayer' => 'Dodaj niestandardowy odtwarzacz',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Nazwa odtwarzacza',
 			'externalPlayer.playerNameHint' => 'Mój odtwarzacz',
 			'externalPlayer.playerCommand' => 'Polecenie',

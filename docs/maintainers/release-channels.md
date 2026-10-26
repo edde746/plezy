@@ -40,18 +40,20 @@ Changing the install IDs means an install signed under upstream's identity canno
 | WinGet | Wired, credential-gated | `publish-winget.yml` submits fork-specific manifests as a pull request. Microsoft review and merge are still required. |
 | Chocolatey | Wired, credential-gated | `publish-chocolatey.yml` publishes the fork-specific package after a release. Chocolatey moderation may be required. |
 | Microsoft Store | Package prepared, listing identity required | Set the repository variables below to build `plezyng-windows.msixbundle`; submit it through PlezyNG's Partner Center listing. The optional signed Inno Setup installer is also retained for manual EXE/MSI listing workflows. No automated Partner Center submission is configured. |
-| Google Play | Wired, credential-gated | `publish-app-stores.yml` uploads the signed AAB to the selected track. It defaults to `internal` and `draft`; review and promotion happen in Play Console. |
-| Amazon Appstore / Fire TV | Wired, credential-gated | The same manual workflow uploads the signed APK to Amazon. The upload is left pending review in the Appstore Console. |
-| Apple App Store (iOS) | Wired, credential-gated | The manual workflow uploads the signed IPA to App Store Connect without submitting it to App Review. |
-| Apple App Store (tvOS) | Wired, credential-gated | The manual workflow uploads the signed tvOS IPA to App Store Connect without submitting it to App Review. |
+| Google Play | App record created, test setup incomplete | `publish-app-stores.yml` uploads the signed AAB to the selected track. Play will allow one-time product creation after a billing-enabled APK/AAB is uploaded. The new developer account also needs 12 closed-test participants opted in for 14 days before production access. |
+| Amazon Appstore / Fire TV | App record and lifetime IAP created; Test submission incomplete | `plezyng_lifetime_unlock` is saved at CAD $2.99, and the Amazon public key is in the Android assets. A new Amazon security profile is mapped to App Submission API and its credentials are configured in GitHub Actions. Amazon still returns a generic error when the IAP is submitted to Test; app release metadata is incomplete. |
+| Apple App Store (iOS) | App record and lifetime IAP created; submission setup incomplete | `plezyng_lifetime_unlock` is a non-consumable with a CAD $2.99 base price, all 175 regions selected, and English (Canada) copy. It remains Prepare for Submission and must be submitted with an app version. The manual workflow uploads a signed IPA without submitting it to App Review. |
+| Apple App Store (tvOS) | App record created, signing and submission credentials incomplete | The manual workflow uploads the signed tvOS IPA to App Store Connect without submitting it to App Review. The iOS app's lifetime IAP record is shared by the PlezyNG app record. |
 | Mac App Store | Not a Plezy upstream channel | Plezy distributes macOS through a direct DMG and Homebrew. |
-| Snap Store | Wired, credential-gated | `publish-snap.yml` uploads the matching architecture package to `stable` after a published release. The Snap name must be registered, and `SNAPCRAFT_STORE_CREDENTIALS` must be scoped to that name. Manual dispatch can publish an existing release to `edge`, `beta`, `candidate`, or `stable`. |
+| Snap Store | Name registered, credential scope needs verification | `publish-snap.yml` uploads the matching architecture package to `stable` after a published release. `SNAPCRAFT_STORE_CREDENTIALS` must authorize the registered `plezyng` snap and required channels. Manual dispatch can publish an existing release to `edge`, `beta`, `candidate`, or `stable`. |
 | AUR | Wired, package and credential-gated | `publish-aur.yml` updates the binary package recipe after a published release. Register the selected package name first, then set `AUR_PACKAGE_NAME` and `AUR_SSH_KEY`. |
 | Fedora COPR | Wired, project and credential-gated | `publish-copr.yml` builds an SRPM from the checked release bundles and submits it to `COPR_PROJECT`. The COPR project must include x86_64 and aarch64 chroots. |
 | Launchpad PPA | Wired, archive and credential-gated | `publish-ppa.yml` signs and uploads source packages for Jammy and Noble after a published release. Set `LAUNCHPAD_PPA` and a Launchpad-registered `GPG_PRIVATE_KEY`. |
 | Flathub | Not submitted | The attached Flatpak bundles use the prebuilt Linux bundle. Flathub requires its own source-built manifest submission and reviewer approval; it is not an automatic upload channel. |
 
-The app-store workflow only accepts an already-published stable GitHub Release and does not build packages. Run it from `main`, select the release tag, then choose a target channel. Create PlezyNG's own app records/listings and reserve the fork bundle IDs before enabling these uploads; the workflow sends binaries only, with no listing metadata, screenshots, or review submission. There are no PlezyNG store listings yet; store packages appear only after the required signing credentials are configured.
+The app-store workflow only accepts an already-published stable GitHub Release and does not build packages. Run it from `main`, select the release tag, then choose a target channel. PlezyNG app records now exist in Google Play, App Store Connect (iOS and tvOS), and Amazon Appstore. The workflow sends binaries only, with no listing metadata, screenshots, or review submission; remaining account, signing, testing, product-catalog, and review tasks are listed below.
+
+Store builds apply the same access rule on Google Play, Apple App Store, and Amazon Appstore: the app automatically starts a device-local seven-day full-access trial on first launch, then requires one one-time lifetime purchase. Each store sells only the lifetime unlock; CAD $2.99 is the configured base price where a product exists, and the app displays the store's localized price.
 
 The upstream [Plezy download guide](https://github.com/edde746/plezy#download) also lists Arch, Fedora/RHEL, Nix, and aerynOS channels. PlezyNG now publishes to AUR, COPR, and Launchpad PPA when their accounts are configured. Nix and aerynOS remain community-maintained package channels; Flatpak remains a GitHub bundle until a source-built Flathub submission is accepted.
 
@@ -83,17 +85,24 @@ For iOS, the base64 export-options plist must declare `method` as `app-store-con
 
 GHCR uses the workflow's `GITHUB_TOKEN`; make the first package public in GitHub Packages settings if anonymous pulls are intended. The Discord publisher uses `DISCORD_RELEASE_WEBHOOK`.
 
-At the 2026-10-25 readiness check, these repository secrets were configured: `AUR_SSH_KEY`,
-`CHOCO_API_KEY`, `COPR_LOGIN`, `COPR_USERNAME`, `COPR_TOKEN`, `DISCORD_RELEASE_WEBHOOK`,
-`DOCKERHUB_USERNAME`, `DOCKERHUB_TOKEN`, `GPG_PRIVATE_KEY`, `SNAPCRAFT_STORE_CREDENTIALS`, and
-`WINGET_CREATE_GITHUB_TOKEN`. The `AUR_PACKAGE_NAME`, `COPR_PROJECT`, and `LAUNCHPAD_PPA`
-variables were also configured. The `ppa:keefshape/plezyng` archive is active and empty. COPR
-project `slskdn/plezyng` is active for Fedora 43–45 and Rawhide on x86_64 and aarch64, with no
-builds yet. The Snap credential lacks the `package_register` permission needed to register the
-initial `plezyng` name; preserve it and register the name through Ubuntu One or a newly exported
-credential with that permission. Android signing, Apple signing and submission, Sparkle signing,
-Google Play, Amazon Appstore, Windows installer signing, and Microsoft Store identity credentials
-remain unconfigured. Do not reuse signing keys or store identities from another project.
+At the 2026-10-25 readiness check, repository secrets are configured for Android signing, Amazon
+Appstore, AUR, Chocolatey, COPR, Discord, Docker Hub, Launchpad signing, Snap, and WinGet. The `AUR_PACKAGE_NAME`,
+`COPR_PROJECT`, and `LAUNCHPAD_PPA` variables are also configured. The `ppa:keefshape/plezyng`
+archive is active and empty. COPR project `slskdn/plezyng` is active for Fedora 43–45 and Rawhide
+on x86_64 and aarch64, with no builds yet. The `plezyng` Snap name is registered; verify that the
+existing Snap credential has the package and channel scope required by the publisher. The Amazon
+developer account has passed ID verification and a PlezyNG app record exists. Its
+`plezyng_lifetime_unlock` entitlement is saved at CAD $2.99 and the security profile is mapped to App
+Submission API; GitHub secrets `AMAZON_APPSTORE_CLIENT_ID` and `AMAZON_APPSTORE_CLIENT_SECRET` are
+configured. The IAP remains Ready to Submit after a generic Test-submission error, and the app
+release metadata is incomplete. Google Play has a PlezyNG draft record; one-time product creation
+is gated on an uploaded billing-enabled APK/AAB, and production access still needs 12 closed-test
+participants for 14 days. Apple has iOS and tvOS records; its non-consumable lifetime IAP is
+configured for CAD $2.99 with all current regions selected, but remains Prepare for Submission.
+Google Play service-account access, Apple signing and submission credentials, Sparkle signing,
+Windows installer signing, and Microsoft Store identity values are not configured. Keep existing
+credentials intact when adding replacements; do not reuse signing keys or store identities from
+another project.
 
 ## Relay containers
 

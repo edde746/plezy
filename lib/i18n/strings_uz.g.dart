@@ -45,7 +45,6 @@ class TranslationsUz extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$common$uz common = _Translations$common$uz._(_root);
 	@override late final _Translations$screens$uz screens = _Translations$screens$uz._(_root);
 	@override late final _Translations$update$uz update = _Translations$update$uz._(_root);
-	@override late final _Translations$supporter$uz supporter = _Translations$supporter$uz._(_root);
 	@override late final _Translations$settings$uz settings = _Translations$settings$uz._(_root);
 	@override late final _Translations$themeEditor$uz themeEditor = _Translations$themeEditor$uz._(_root);
 	@override late final _Translations$search$uz search = _Translations$search$uz._(_root);
@@ -116,8 +115,6 @@ class _Translations$appIcon$uz extends Translations$appIcon$en {
 	@override String get title => 'Ilova belgisi';
 	@override String get defaultIcon => 'Standart';
 	@override String get current => 'Joriy belgi';
-	@override String get locked => 'Supporter imtiyozi';
-	@override String get lockedHint => 'Muqobil belgilar — Supporter imtiyozi.';
 	@override String get changeFailed => 'Ilova belgisini oʻzgartirib boʻlmadi';
 	@override String get launcherHint => 'Yangi belgi PlezyNG-dan chiqqaningizdan soʻng bosh ekranda paydo boʻladi.';
 	@override String get tvLauncherHint => 'Yangi banner PlezyNG-dan chiqqaningizdan soʻng paydo boʻladi. Android TV televizor qayta ishga tushirilmaguncha eskisini koʻrsatishda davom etishi mumkin.';
@@ -238,33 +235,6 @@ class _Translations$update$uz extends Translations$update$en {
 	@override String get viewRelease => 'Tafsilotlarni koʻrish';
 	@override String get latestVersion => 'Sizda eng soʻnggi versiya oʻrnatilgan';
 	@override String get checkFailed => 'Yangilanishlarni tekshirish imkoni boʻlmadi';
-}
-
-// Path: supporter
-class _Translations$supporter$uz extends Translations$supporter$en {
-	_Translations$supporter$uz._(TranslationsUz root) : this._root = root, super.internal(root);
-
-	final TranslationsUz _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'PlezyNG Supporter';
-	@override String get intro => 'PlezyNG rivojini qoʻllab-quvvatlaydigan va tashqi koʻrinish uchun qoʻshimcha imkoniyatlarni ochadigan bir martalik xarid:';
-	@override String get presetThemes => 'Tayyor mavzular';
-	@override String get presetThemesDescription => 'Choʻgʻ, Muzlik, Oʻrmon, Olxoʻri va Qogʻoz';
-	@override String get customTheme => 'Shaxsiy mavzu';
-	@override String get customThemeDescription => 'Har bir rangni oʻzingiz tanlang';
-	@override String get appIcons => 'Ilova belgilari';
-	@override String get appIconsDescription => 'Muqobil PlezyNG belgisini tanlang';
-	@override String buy({required Object price}) => '${price} evaziga sotib olish';
-	@override String get loadingPrice => 'Narx yuklanmoqda...';
-	@override String get restore => 'Xaridlarni tiklash';
-	@override String get pending => 'Xaridingiz toʻlov yoki tasdiqlashni kutmoqda. Doʻkon uni yakunlashi bilanoq qoʻshimchalar ochiladi.';
-	@override String get thankYouTitle => 'PlezyNG-ni qoʻllab-quvvatlaganingiz uchun rahmat';
-	@override String get thankYouBody => 'Supporter qoʻshimchalaringiz ochildi.';
-	@override String get tileSubtitle => 'Bir martalik xarid bilan mavzular va ilova belgilarini oching';
-	@override String get tileSubtitleThemesOnly => 'Bir martalik xarid bilan mavzularni oching';
-	@override String get tileUnlocked => 'Qoʻllab-quvvatlaganingiz uchun rahmat';
-	@override late final _Translations$supporter$errors$uz errors = _Translations$supporter$errors$uz._(_root);
 }
 
 // Path: settings
@@ -625,8 +595,6 @@ class _Translations$themeEditor$uz extends Translations$themeEditor$en {
 	@override String get customEmpty => 'Hali yaratilmagan';
 	@override String get editCustom => 'Shaxsiy mavzuni tahrirlash';
 	@override String get editCustomDescription => 'Har bir rangni oʻzingiz tanlang';
-	@override String get locked => 'Supporter bilan ochiladi';
-	@override String get savedLocked => 'Saqlangan — Supporter bilan ochiladi';
 	@override String get title => 'Shaxsiy mavzu';
 	@override String get startFrom => 'Asos qilib olish';
 	@override String get startFromDescription => 'Boshqa mavzudan barcha ranglarni nusxalash';
@@ -2649,21 +2617,6 @@ class _Translations$common$mediaKind$uz extends Translations$common$mediaKind$en
 	@override String get folder => 'Papka';
 }
 
-// Path: supporter.errors
-class _Translations$supporter$errors$uz extends Translations$supporter$errors$en {
-	_Translations$supporter$errors$uz._(TranslationsUz root) : this._root = root, super.internal(root);
-
-	final TranslationsUz _root; // ignore: unused_field
-
-	// Translations
-	@override String get storeUnavailable => 'Xaridlar mavjud emas. Doʻkonga kirganingizni va bu qurilmada xaridlarga ruxsat berilganini tekshiring.';
-	@override String get productNotFound => 'Supporter xaridi hozircha doʻkoningizda mavjud emas.';
-	@override String get productQueryFailed => 'Narxni yuklab boʻlmadi. Ulanishni tekshirib, qaytadan urinib koʻring.';
-	@override String get purchaseFailed => 'Xarid amalga oshmadi. Qaytadan urinib koʻring.';
-	@override String get restoreFailed => 'Xaridni tiklash uchun doʻkonga ulanib boʻlmadi. Qaytadan urinib koʻring.';
-	@override String get nothingToRestore => 'Ushbu doʻkon hisobi uchun Supporter xaridi topilmadi.';
-}
-
 // Path: themeEditor.slots
 class _Translations$themeEditor$slots$uz extends Translations$themeEditor$slots$en {
 	_Translations$themeEditor$slots$uz._(TranslationsUz root) : this._root = root, super.internal(root);
@@ -3534,8 +3487,6 @@ extension on TranslationsUz {
 			'appIcon.title' => 'Ilova belgisi',
 			'appIcon.defaultIcon' => 'Standart',
 			'appIcon.current' => 'Joriy belgi',
-			'appIcon.locked' => 'Supporter imtiyozi',
-			'appIcon.lockedHint' => 'Muqobil belgilar — Supporter imtiyozi.',
 			'appIcon.changeFailed' => 'Ilova belgisini oʻzgartirib boʻlmadi',
 			'appIcon.launcherHint' => 'Yangi belgi PlezyNG-dan chiqqaningizdan soʻng bosh ekranda paydo boʻladi.',
 			'appIcon.tvLauncherHint' => 'Yangi banner PlezyNG-dan chiqqaningizdan soʻng paydo boʻladi. Android TV televizor qayta ishga tushirilmaguncha eskisini koʻrsatishda davom etishi mumkin.',
@@ -3665,29 +3616,6 @@ extension on TranslationsUz {
 			'update.viewRelease' => 'Tafsilotlarni koʻrish',
 			'update.latestVersion' => 'Sizda eng soʻnggi versiya oʻrnatilgan',
 			'update.checkFailed' => 'Yangilanishlarni tekshirish imkoni boʻlmadi',
-			'supporter.title' => 'PlezyNG Supporter',
-			'supporter.intro' => 'PlezyNG rivojini qoʻllab-quvvatlaydigan va tashqi koʻrinish uchun qoʻshimcha imkoniyatlarni ochadigan bir martalik xarid:',
-			'supporter.presetThemes' => 'Tayyor mavzular',
-			'supporter.presetThemesDescription' => 'Choʻgʻ, Muzlik, Oʻrmon, Olxoʻri va Qogʻoz',
-			'supporter.customTheme' => 'Shaxsiy mavzu',
-			'supporter.customThemeDescription' => 'Har bir rangni oʻzingiz tanlang',
-			'supporter.appIcons' => 'Ilova belgilari',
-			'supporter.appIconsDescription' => 'Muqobil PlezyNG belgisini tanlang',
-			'supporter.buy' => ({required Object price}) => '${price} evaziga sotib olish',
-			'supporter.loadingPrice' => 'Narx yuklanmoqda...',
-			'supporter.restore' => 'Xaridlarni tiklash',
-			'supporter.pending' => 'Xaridingiz toʻlov yoki tasdiqlashni kutmoqda. Doʻkon uni yakunlashi bilanoq qoʻshimchalar ochiladi.',
-			'supporter.thankYouTitle' => 'PlezyNG-ni qoʻllab-quvvatlaganingiz uchun rahmat',
-			'supporter.thankYouBody' => 'Supporter qoʻshimchalaringiz ochildi.',
-			'supporter.tileSubtitle' => 'Bir martalik xarid bilan mavzular va ilova belgilarini oching',
-			'supporter.tileSubtitleThemesOnly' => 'Bir martalik xarid bilan mavzularni oching',
-			'supporter.tileUnlocked' => 'Qoʻllab-quvvatlaganingiz uchun rahmat',
-			'supporter.errors.storeUnavailable' => 'Xaridlar mavjud emas. Doʻkonga kirganingizni va bu qurilmada xaridlarga ruxsat berilganini tekshiring.',
-			'supporter.errors.productNotFound' => 'Supporter xaridi hozircha doʻkoningizda mavjud emas.',
-			'supporter.errors.productQueryFailed' => 'Narxni yuklab boʻlmadi. Ulanishni tekshirib, qaytadan urinib koʻring.',
-			'supporter.errors.purchaseFailed' => 'Xarid amalga oshmadi. Qaytadan urinib koʻring.',
-			'supporter.errors.restoreFailed' => 'Xaridni tiklash uchun doʻkonga ulanib boʻlmadi. Qaytadan urinib koʻring.',
-			'supporter.errors.nothingToRestore' => 'Ushbu doʻkon hisobi uchun Supporter xaridi topilmadi.',
 			'settings.title' => 'Sozlamalar',
 			'settings.supportDeveloper' => 'PlezyNG-ni qoʻllab-quvvatlash',
 			'settings.supportDeveloperDescription' => 'Rivojlanishni qoʻllab-quvvatlash uchun xayriya qiling',
@@ -4030,8 +3958,6 @@ extension on TranslationsUz {
 			'themeEditor.customEmpty' => 'Hali yaratilmagan',
 			'themeEditor.editCustom' => 'Shaxsiy mavzuni tahrirlash',
 			'themeEditor.editCustomDescription' => 'Har bir rangni oʻzingiz tanlang',
-			'themeEditor.locked' => 'Supporter bilan ochiladi',
-			'themeEditor.savedLocked' => 'Saqlangan — Supporter bilan ochiladi',
 			'themeEditor.title' => 'Shaxsiy mavzu',
 			'themeEditor.startFrom' => 'Asos qilib olish',
 			'themeEditor.startFromDescription' => 'Boshqa mavzudan barcha ranglarni nusxalash',
@@ -4042,8 +3968,6 @@ extension on TranslationsUz {
 			'themeEditor.slots.outline' => 'Kontur',
 			'themeEditor.slots.text' => 'Matn',
 			'themeEditor.slots.textMuted' => 'Ikkilamchi matn',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Urgʻu rangi',
 			'themeEditor.opacity' => 'Noshaffoflik',
 			'themeEditor.hexHint' => '#RRGGBB yoki #AARRGGBB',
@@ -4071,6 +3995,8 @@ extension on TranslationsUz {
 			'search.people' => 'Odamlar',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => '${actionName} uchun tugmalar birlashmasini oʻrnatish',
 			'hotkeys.clearShortcut' => 'Birlashmani tozalash',
+			_ => null,
+		} ?? switch (path) {
 			'hotkeys.noShortcutSet' => 'Tugmalar birlashmasi oʻrnatilmagan',
 			'hotkeys.currentShortcut' => 'Joriy birlashma:',
 			'hotkeys.pressToRecord' => 'Birlashmani yozib olish uchun bosing',
@@ -4556,8 +4482,6 @@ extension on TranslationsUz {
 			'profiles.pinExplain' => 'Profillar orasida oʻtish uchun 4 xonali PIN kod talab qilinadi.',
 			'profiles.continueButton' => 'Davom ettirish',
 			'profiles.pinsDontMatch' => 'PIN kodlar mos kelmadi',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.tokenIdentityMismatch' => 'Plex profil tokeni kutilmagan serverga tegishli boʻlib chiqdi',
 			'connections.sectionTitle' => 'Ulanishlar',
 			'connections.addConnection' => 'Ulanish qoʻshish',
@@ -4585,6 +4509,8 @@ extension on TranslationsUz {
 			'accountPreferences.groups.libraryDisplay' => 'Kutubxona',
 			'accountPreferences.groups.personalMedia' => 'Shaxsiy media',
 			'accountPreferences.preferredAudioLanguage' => 'Afzal koʻrilgan audio tili',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.autoSelectAudio' => 'Audioni til boʻyicha tanlash',
 			'accountPreferences.autoSelectAudioDescription' => 'Oʻchirilgan holatda faylda standart deb belgilangan audio trek ishlatiladi.',
 			'accountPreferences.preferredSubtitleLanguage' => 'Afzal koʻrilgan subtitr tili',
@@ -5070,8 +4996,6 @@ extension on TranslationsUz {
 			'liveTv.guideReloadFailed' => 'Dasturlar jadvalini yangilab boʻlmadi',
 			'liveTv.rulesProcessRequested' => 'Qoidalarni qayta baholash soʻraldi',
 			'liveTv.rulesProcessFailed' => 'Yozib olish qoidalarini qayta baholab boʻlmadi',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordShow' => 'Shouni yozib olish',
 			'liveTv.recordSettings.startEarly' => 'Erta boshlash (soniya)',
 			'liveTv.recordSettings.endLate' => 'Kech tugatish (soniya)',
@@ -5099,6 +5023,8 @@ extension on TranslationsUz {
 			'collections.selectCollection' => 'Toʻplamni tanlash',
 			'collections.collectionName' => 'Toʻplam nomi',
 			'collections.enterCollectionName' => 'Toʻplam nomini kiriting',
+			_ => null,
+		} ?? switch (path) {
 			'collections.addedToCollection' => 'Toʻplamga qoʻshildi',
 			'collections.errorAddingToCollection' => 'Toʻplamga qoʻshib boʻlmadi',
 			'collections.created' => 'Toʻplam yaratildi',
@@ -5584,8 +5510,6 @@ extension on TranslationsUz {
 			'performanceOverlay.dvRpus' => 'DV RPU-lar',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU Oʻrt.',
 			'performanceOverlay.dvSampleAverage' => 'DV Namuna Oʻrt.',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Maks Luma',
 			'performanceOverlay.minLuma' => 'Min Luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5613,6 +5537,8 @@ extension on TranslationsUz {
 			'externalPlayer.customPlayers' => 'Maxsus pleyerlar',
 			'externalPlayer.systemDefault' => 'Tizim standarti',
 			'externalPlayer.addCustomPlayer' => 'Maxsus pleyer qoʻshish',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Pleyer nomi',
 			'externalPlayer.playerNameHint' => 'Mening pleyerim',
 			'externalPlayer.playerCommand' => 'Buyruq',

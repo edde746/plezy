@@ -155,7 +155,7 @@ jobs:
       - name: Build signed Amazon Appstore APK
         if: steps.android-signing.outputs.configured == 'true'
         run: |
-          AMAZON=1 flutter build apk --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SUPPORTER_MODE=unlocked --obfuscate --split-debug-info=debug-info/android-amazon
+          AMAZON=1 ORG_GRADLE_PROJECT_openiapStore=amazon flutter build apk --release ${{ env.RELEASE_DART_DEFINES }} --dart-define=SUPPORTER_MODE=iap --dart-define=AMAZON_STORE=true --obfuscate --split-debug-info=debug-info/android-amazon
           cp build/app/outputs/flutter-apk/app-release.apk plezyng-amazon-firetv.apk
 
       - name: Clean up keystore

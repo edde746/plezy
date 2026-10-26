@@ -45,7 +45,6 @@ class TranslationsAz extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$common$az common = _Translations$common$az._(_root);
 	@override late final _Translations$screens$az screens = _Translations$screens$az._(_root);
 	@override late final _Translations$update$az update = _Translations$update$az._(_root);
-	@override late final _Translations$supporter$az supporter = _Translations$supporter$az._(_root);
 	@override late final _Translations$settings$az settings = _Translations$settings$az._(_root);
 	@override late final _Translations$themeEditor$az themeEditor = _Translations$themeEditor$az._(_root);
 	@override late final _Translations$search$az search = _Translations$search$az._(_root);
@@ -116,8 +115,6 @@ class _Translations$appIcon$az extends Translations$appIcon$en {
 	@override String get title => 'Tətbiq ikonu';
 	@override String get defaultIcon => 'Defolt';
 	@override String get current => 'Cari ikon';
-	@override String get locked => 'Supporter imtiyazı';
-	@override String get lockedHint => 'Alternativ ikonlar Supporter imtiyazıdır.';
 	@override String get changeFailed => 'Tətbiq ikonu dəyişdirilə bilmədi';
 	@override String get launcherHint => 'PlezyNG-dən çıxdıqdan sonra yeni ikon ana ekranınızda görünəcək.';
 	@override String get tvLauncherHint => 'PlezyNG-dən çıxdıqdan sonra yeni banner görünəcək. Android TV televizor yenidən başladılana qədər köhnəsini göstərə bilər.';
@@ -238,33 +235,6 @@ class _Translations$update$az extends Translations$update$en {
 	@override String get viewRelease => 'Buraxılışa bax';
 	@override String get latestVersion => 'Siz ən son versiyadasınız';
 	@override String get checkFailed => 'Yenilənmələr yoxlanıla bilmədi';
-}
-
-// Path: supporter
-class _Translations$supporter$az extends Translations$supporter$en {
-	_Translations$supporter$az._(TranslationsAz root) : this._root = root, super.internal(root);
-
-	final TranslationsAz _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'PlezyNG Supporter';
-	@override String get intro => 'PlezyNG-nin inkişafını dəstəkləyən və kosmetik əlavələri açan birdəfəlik alış:';
-	@override String get presetThemes => 'Hazır mövzular';
-	@override String get presetThemesDescription => 'Köz, Buzlaq, Meşə, Gavalı və Kağız';
-	@override String get customTheme => 'Xüsusi mövzu';
-	@override String get customThemeDescription => 'Bütün rəngləri özünüz seçin';
-	@override String get appIcons => 'Tətbiq ikonları';
-	@override String get appIconsDescription => 'Alternativ PlezyNG ikonu seçin';
-	@override String buy({required Object price}) => '${price} qiymətinə al';
-	@override String get loadingPrice => 'Qiymət yüklənir...';
-	@override String get restore => 'Alışları bərpa et';
-	@override String get pending => 'Alışınız ödəniş və ya təsdiq gözləyir. Mağaza onu tamamlayan kimi əlavələr açılacaq.';
-	@override String get thankYouTitle => 'PlezyNG-ni dəstəklədiyiniz üçün təşəkkür edirik';
-	@override String get thankYouBody => 'Supporter əlavələriniz açıldı.';
-	@override String get tileSubtitle => 'Mövzuları və tətbiq ikonlarını birdəfəlik alışla açın';
-	@override String get tileSubtitleThemesOnly => 'Mövzuları birdəfəlik alışla açın';
-	@override String get tileUnlocked => 'Dəstəyiniz üçün təşəkkür edirik';
-	@override late final _Translations$supporter$errors$az errors = _Translations$supporter$errors$az._(_root);
 }
 
 // Path: settings
@@ -625,8 +595,6 @@ class _Translations$themeEditor$az extends Translations$themeEditor$en {
 	@override String get customEmpty => 'Hələ yaradılmayıb';
 	@override String get editCustom => 'Xüsusi mövzuya düzəliş et';
 	@override String get editCustomDescription => 'Bütün rəngləri özünüz seçin';
-	@override String get locked => 'Supporter ilə açın';
-	@override String get savedLocked => 'Yadda saxlanılıb — Supporter ilə açılır';
 	@override String get title => 'Xüsusi mövzu';
 	@override String get startFrom => 'Başlanğıc mövzu';
 	@override String get startFromDescription => 'Bütün rəngləri başqa mövzudan kopyala';
@@ -2649,21 +2617,6 @@ class _Translations$common$mediaKind$az extends Translations$common$mediaKind$en
 	@override String get folder => 'Qovluq';
 }
 
-// Path: supporter.errors
-class _Translations$supporter$errors$az extends Translations$supporter$errors$en {
-	_Translations$supporter$errors$az._(TranslationsAz root) : this._root = root, super.internal(root);
-
-	final TranslationsAz _root; // ignore: unused_field
-
-	// Translations
-	@override String get storeUnavailable => 'Alışlar əlçatan deyil. Mağazaya daxil olduğunuzu və bu cihazda alışlara icazə verildiyini yoxlayın.';
-	@override String get productNotFound => 'Supporter alışı hazırda mağazanızda əlçatan deyil.';
-	@override String get productQueryFailed => 'Qiymət yüklənə bilmədi. Bağlantınızı yoxlayın və yenidən cəhd edin.';
-	@override String get purchaseFailed => 'Alış baş tutmadı. Yenidən cəhd edin.';
-	@override String get restoreFailed => 'Alışınızı bərpa etmək üçün mağazaya qoşulmaq mümkün olmadı. Yenidən cəhd edin.';
-	@override String get nothingToRestore => 'Bu mağaza hesabı üçün Supporter alışı tapılmadı.';
-}
-
 // Path: themeEditor.slots
 class _Translations$themeEditor$slots$az extends Translations$themeEditor$slots$en {
 	_Translations$themeEditor$slots$az._(TranslationsAz root) : this._root = root, super.internal(root);
@@ -3534,8 +3487,6 @@ extension on TranslationsAz {
 			'appIcon.title' => 'Tətbiq ikonu',
 			'appIcon.defaultIcon' => 'Defolt',
 			'appIcon.current' => 'Cari ikon',
-			'appIcon.locked' => 'Supporter imtiyazı',
-			'appIcon.lockedHint' => 'Alternativ ikonlar Supporter imtiyazıdır.',
 			'appIcon.changeFailed' => 'Tətbiq ikonu dəyişdirilə bilmədi',
 			'appIcon.launcherHint' => 'PlezyNG-dən çıxdıqdan sonra yeni ikon ana ekranınızda görünəcək.',
 			'appIcon.tvLauncherHint' => 'PlezyNG-dən çıxdıqdan sonra yeni banner görünəcək. Android TV televizor yenidən başladılana qədər köhnəsini göstərə bilər.',
@@ -3665,29 +3616,6 @@ extension on TranslationsAz {
 			'update.viewRelease' => 'Buraxılışa bax',
 			'update.latestVersion' => 'Siz ən son versiyadasınız',
 			'update.checkFailed' => 'Yenilənmələr yoxlanıla bilmədi',
-			'supporter.title' => 'PlezyNG Supporter',
-			'supporter.intro' => 'PlezyNG-nin inkişafını dəstəkləyən və kosmetik əlavələri açan birdəfəlik alış:',
-			'supporter.presetThemes' => 'Hazır mövzular',
-			'supporter.presetThemesDescription' => 'Köz, Buzlaq, Meşə, Gavalı və Kağız',
-			'supporter.customTheme' => 'Xüsusi mövzu',
-			'supporter.customThemeDescription' => 'Bütün rəngləri özünüz seçin',
-			'supporter.appIcons' => 'Tətbiq ikonları',
-			'supporter.appIconsDescription' => 'Alternativ PlezyNG ikonu seçin',
-			'supporter.buy' => ({required Object price}) => '${price} qiymətinə al',
-			'supporter.loadingPrice' => 'Qiymət yüklənir...',
-			'supporter.restore' => 'Alışları bərpa et',
-			'supporter.pending' => 'Alışınız ödəniş və ya təsdiq gözləyir. Mağaza onu tamamlayan kimi əlavələr açılacaq.',
-			'supporter.thankYouTitle' => 'PlezyNG-ni dəstəklədiyiniz üçün təşəkkür edirik',
-			'supporter.thankYouBody' => 'Supporter əlavələriniz açıldı.',
-			'supporter.tileSubtitle' => 'Mövzuları və tətbiq ikonlarını birdəfəlik alışla açın',
-			'supporter.tileSubtitleThemesOnly' => 'Mövzuları birdəfəlik alışla açın',
-			'supporter.tileUnlocked' => 'Dəstəyiniz üçün təşəkkür edirik',
-			'supporter.errors.storeUnavailable' => 'Alışlar əlçatan deyil. Mağazaya daxil olduğunuzu və bu cihazda alışlara icazə verildiyini yoxlayın.',
-			'supporter.errors.productNotFound' => 'Supporter alışı hazırda mağazanızda əlçatan deyil.',
-			'supporter.errors.productQueryFailed' => 'Qiymət yüklənə bilmədi. Bağlantınızı yoxlayın və yenidən cəhd edin.',
-			'supporter.errors.purchaseFailed' => 'Alış baş tutmadı. Yenidən cəhd edin.',
-			'supporter.errors.restoreFailed' => 'Alışınızı bərpa etmək üçün mağazaya qoşulmaq mümkün olmadı. Yenidən cəhd edin.',
-			'supporter.errors.nothingToRestore' => 'Bu mağaza hesabı üçün Supporter alışı tapılmadı.',
 			'settings.title' => 'Tənzimləmələr',
 			'settings.supportDeveloper' => 'PlezyNG-yə dəstək ol',
 			'settings.supportDeveloperDescription' => 'İnkişafı dəstəkləmək üçün ianə edin',
@@ -4030,8 +3958,6 @@ extension on TranslationsAz {
 			'themeEditor.customEmpty' => 'Hələ yaradılmayıb',
 			'themeEditor.editCustom' => 'Xüsusi mövzuya düzəliş et',
 			'themeEditor.editCustomDescription' => 'Bütün rəngləri özünüz seçin',
-			'themeEditor.locked' => 'Supporter ilə açın',
-			'themeEditor.savedLocked' => 'Yadda saxlanılıb — Supporter ilə açılır',
 			'themeEditor.title' => 'Xüsusi mövzu',
 			'themeEditor.startFrom' => 'Başlanğıc mövzu',
 			'themeEditor.startFromDescription' => 'Bütün rəngləri başqa mövzudan kopyala',
@@ -4042,8 +3968,6 @@ extension on TranslationsAz {
 			'themeEditor.slots.outline' => 'Kontur',
 			'themeEditor.slots.text' => 'Mətn',
 			'themeEditor.slots.textMuted' => 'Köməkçi mətn',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Vurğu',
 			'themeEditor.opacity' => 'Şəffaflıq',
 			'themeEditor.hexHint' => '#RRGGBB və ya #AARRGGBB',
@@ -4071,6 +3995,8 @@ extension on TranslationsAz {
 			'search.people' => 'Şəxslər',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => '${actionName} üçün qısayol təyin et',
 			'hotkeys.clearShortcut' => 'Qısayolu təmizlə',
+			_ => null,
+		} ?? switch (path) {
 			'hotkeys.noShortcutSet' => 'Qısayol təyin edilməyib',
 			'hotkeys.currentShortcut' => 'Cari qısayol:',
 			'hotkeys.pressToRecord' => 'Qısayol yazmaq üçün seçin',
@@ -4556,8 +4482,6 @@ extension on TranslationsAz {
 			'profiles.pinExplain' => 'Profillər arası keçid üçün 4 rəqəmli PIN tələb olunur.',
 			'profiles.continueButton' => 'Davam et',
 			'profiles.pinsDontMatch' => 'PIN-lər uyğun gəlmir',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.tokenIdentityMismatch' => 'Plex profil tokeni gözlənilməyən serveri müəyyən etdi',
 			'connections.sectionTitle' => 'Qoşulmalar',
 			'connections.addConnection' => 'Qoşulma əlavə et',
@@ -4585,6 +4509,8 @@ extension on TranslationsAz {
 			'accountPreferences.groups.libraryDisplay' => 'Kitabxana',
 			'accountPreferences.groups.personalMedia' => 'Şəxsi media',
 			'accountPreferences.preferredAudioLanguage' => 'Üstünlük verilən səs dili',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.autoSelectAudio' => 'Səsi dilə görə seç',
 			'accountPreferences.autoSelectAudioDescription' => 'Söndürüldükdə faylın defolt olaraq işarələdiyi səs treki istifadə olunur.',
 			'accountPreferences.preferredSubtitleLanguage' => 'Üstünlük verilən altyazı dili',
@@ -5070,8 +4996,6 @@ extension on TranslationsAz {
 			'liveTv.guideReloadFailed' => 'Bələdçi yenilənmədi',
 			'liveTv.rulesProcessRequested' => 'Qaydaların yenidən qiymətləndirilməsi tələb olundu',
 			'liveTv.rulesProcessFailed' => 'Yazı qaydaları yenidən qiymətləndirilmədi',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordShow' => 'Şounu yaz',
 			'liveTv.recordSettings.startEarly' => 'Erkən başla (saniyə)',
 			'liveTv.recordSettings.endLate' => 'Gec bitir (saniyə)',
@@ -5099,6 +5023,8 @@ extension on TranslationsAz {
 			'collections.selectCollection' => 'Kolleksiya seç',
 			'collections.collectionName' => 'Kolleksiya adı',
 			'collections.enterCollectionName' => 'Kolleksiya adını daxil edin',
+			_ => null,
+		} ?? switch (path) {
 			'collections.addedToCollection' => 'Kolleksiyaya əlavə edildi',
 			'collections.errorAddingToCollection' => 'Kolleksiyaya əlavə edilə bilmədi',
 			'collections.created' => 'Kolleksiya yaradıldı',
@@ -5584,8 +5510,6 @@ extension on TranslationsAz {
 			'performanceOverlay.dvRpus' => 'DV RPU-ları',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU Ort.',
 			'performanceOverlay.dvSampleAverage' => 'DV Nümunə Ort.',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Maks Luma',
 			'performanceOverlay.minLuma' => 'Min Luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5613,6 +5537,8 @@ extension on TranslationsAz {
 			'externalPlayer.customPlayers' => 'Xüsusi oynadıcılar',
 			'externalPlayer.systemDefault' => 'Sistem defoltu',
 			'externalPlayer.addCustomPlayer' => 'Xüsusi oynadıcı əlavə et',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Oynadıcı adı',
 			'externalPlayer.playerNameHint' => 'Mənim oynadıcım',
 			'externalPlayer.playerCommand' => 'Əmr',

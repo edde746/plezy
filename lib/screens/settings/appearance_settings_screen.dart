@@ -28,7 +28,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Hosts the App icon picker and the Supporter sheet it opens. Content
+    // Hosts the App icon picker and the lifetime access sheet it opens. Content
     // builds below the host so they find it instead of falling back to a
     // modal route, which keeps its drag handle and gives no D-pad focus on TV.
     return OverlaySheetHost(canPop: true, child: Builder(builder: _buildContent));
@@ -279,7 +279,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
   }
 
   // Opens the theme picker; the subtitle and icon follow the theme on screen,
-  // which is the device's default theme while a stored Supporter theme is
+  // which is the device's default theme while a stored lifetime theme is
   // locked.
   Widget _themeSelector() {
     return Consumer<ThemeProvider>(

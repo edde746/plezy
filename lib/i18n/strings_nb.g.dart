@@ -45,7 +45,6 @@ class TranslationsNb extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$common$nb common = _Translations$common$nb._(_root);
 	@override late final _Translations$screens$nb screens = _Translations$screens$nb._(_root);
 	@override late final _Translations$update$nb update = _Translations$update$nb._(_root);
-	@override late final _Translations$supporter$nb supporter = _Translations$supporter$nb._(_root);
 	@override late final _Translations$settings$nb settings = _Translations$settings$nb._(_root);
 	@override late final _Translations$themeEditor$nb themeEditor = _Translations$themeEditor$nb._(_root);
 	@override late final _Translations$search$nb search = _Translations$search$nb._(_root);
@@ -116,8 +115,6 @@ class _Translations$appIcon$nb extends Translations$appIcon$en {
 	@override String get title => 'Appikon';
 	@override String get defaultIcon => 'Standard';
 	@override String get current => 'Gjeldende ikon';
-	@override String get locked => 'Supporter-fordel';
-	@override String get lockedHint => 'Alternative ikoner er en Supporter-fordel.';
 	@override String get changeFailed => 'Kunne ikke endre appikonet';
 	@override String get launcherHint => 'Det nye ikonet vises på startskjermen når du forlater PlezyNG.';
 	@override String get tvLauncherHint => 'Det nye banneret vises når du forlater PlezyNG. Android TV kan fortsette å vise det gamle til TV-en startes på nytt.';
@@ -238,33 +235,6 @@ class _Translations$update$nb extends Translations$update$en {
 	@override String get viewRelease => 'Vis utgivelse';
 	@override String get latestVersion => 'Du har den nyeste versjonen';
 	@override String get checkFailed => 'Kunne ikke se etter oppdateringer';
-}
-
-// Path: supporter
-class _Translations$supporter$nb extends Translations$supporter$en {
-	_Translations$supporter$nb._(TranslationsNb root) : this._root = root, super.internal(root);
-
-	final TranslationsNb _root; // ignore: unused_field
-
-	// Translations
-	@override String get title => 'PlezyNG Supporter';
-	@override String get intro => 'Et engangskjøp som støtter utviklingen av PlezyNG og låser opp kosmetiske tillegg:';
-	@override String get presetThemes => 'Forhåndsinnstilte temaer';
-	@override String get presetThemesDescription => 'Glød, Isbre, Skog, Plomme og Papir';
-	@override String get customTheme => 'Egendefinert tema';
-	@override String get customThemeDescription => 'Velg alle fargene selv';
-	@override String get appIcons => 'Appikoner';
-	@override String get appIconsDescription => 'Velg et alternativt PlezyNG-ikon';
-	@override String buy({required Object price}) => 'Kjøp for ${price}';
-	@override String get loadingPrice => 'Laster pris...';
-	@override String get restore => 'Gjenopprett kjøp';
-	@override String get pending => 'Kjøpet ditt venter på betaling eller godkjenning. Tilleggene låses opp så snart butikken har fullført kjøpet.';
-	@override String get thankYouTitle => 'Takk for at du støtter PlezyNG';
-	@override String get thankYouBody => 'Supporter-tilleggene dine er låst opp.';
-	@override String get tileSubtitle => 'Lås opp temaer og appikoner med et engangskjøp';
-	@override String get tileSubtitleThemesOnly => 'Lås opp temaer med et engangskjøp';
-	@override String get tileUnlocked => 'Takk for støtten';
-	@override late final _Translations$supporter$errors$nb errors = _Translations$supporter$errors$nb._(_root);
 }
 
 // Path: settings
@@ -625,8 +595,6 @@ class _Translations$themeEditor$nb extends Translations$themeEditor$en {
 	@override String get customEmpty => 'Ikke opprettet ennå';
 	@override String get editCustom => 'Rediger egendefinert tema';
 	@override String get editCustomDescription => 'Velg alle fargene selv';
-	@override String get locked => 'Lås opp med Supporter';
-	@override String get savedLocked => 'Lagret – låses opp med Supporter';
 	@override String get title => 'Egendefinert tema';
 	@override String get startFrom => 'Start fra';
 	@override String get startFromDescription => 'Kopier alle fargene fra et annet tema';
@@ -2649,21 +2617,6 @@ class _Translations$common$mediaKind$nb extends Translations$common$mediaKind$en
 	@override String get folder => 'Mappe';
 }
 
-// Path: supporter.errors
-class _Translations$supporter$errors$nb extends Translations$supporter$errors$en {
-	_Translations$supporter$errors$nb._(TranslationsNb root) : this._root = root, super.internal(root);
-
-	final TranslationsNb _root; // ignore: unused_field
-
-	// Translations
-	@override String get storeUnavailable => 'Kjøp er ikke tilgjengelig. Sjekk at du er logget inn i butikken, og at kjøp er tillatt på denne enheten.';
-	@override String get productNotFound => 'Supporter-kjøpet er ikke tilgjengelig i butikken din akkurat nå.';
-	@override String get productQueryFailed => 'Kunne ikke laste inn prisen. Sjekk tilkoblingen og prøv igjen.';
-	@override String get purchaseFailed => 'Kjøpet gikk ikke gjennom. Prøv igjen.';
-	@override String get restoreFailed => 'Kunne ikke nå butikken for å gjenopprette kjøpet. Prøv igjen.';
-	@override String get nothingToRestore => 'Fant ikke noe Supporter-kjøp for denne butikkontoen.';
-}
-
 // Path: themeEditor.slots
 class _Translations$themeEditor$slots$nb extends Translations$themeEditor$slots$en {
 	_Translations$themeEditor$slots$nb._(TranslationsNb root) : this._root = root, super.internal(root);
@@ -3534,8 +3487,6 @@ extension on TranslationsNb {
 			'appIcon.title' => 'Appikon',
 			'appIcon.defaultIcon' => 'Standard',
 			'appIcon.current' => 'Gjeldende ikon',
-			'appIcon.locked' => 'Supporter-fordel',
-			'appIcon.lockedHint' => 'Alternative ikoner er en Supporter-fordel.',
 			'appIcon.changeFailed' => 'Kunne ikke endre appikonet',
 			'appIcon.launcherHint' => 'Det nye ikonet vises på startskjermen når du forlater PlezyNG.',
 			'appIcon.tvLauncherHint' => 'Det nye banneret vises når du forlater PlezyNG. Android TV kan fortsette å vise det gamle til TV-en startes på nytt.',
@@ -3665,29 +3616,6 @@ extension on TranslationsNb {
 			'update.viewRelease' => 'Vis utgivelse',
 			'update.latestVersion' => 'Du har den nyeste versjonen',
 			'update.checkFailed' => 'Kunne ikke se etter oppdateringer',
-			'supporter.title' => 'PlezyNG Supporter',
-			'supporter.intro' => 'Et engangskjøp som støtter utviklingen av PlezyNG og låser opp kosmetiske tillegg:',
-			'supporter.presetThemes' => 'Forhåndsinnstilte temaer',
-			'supporter.presetThemesDescription' => 'Glød, Isbre, Skog, Plomme og Papir',
-			'supporter.customTheme' => 'Egendefinert tema',
-			'supporter.customThemeDescription' => 'Velg alle fargene selv',
-			'supporter.appIcons' => 'Appikoner',
-			'supporter.appIconsDescription' => 'Velg et alternativt PlezyNG-ikon',
-			'supporter.buy' => ({required Object price}) => 'Kjøp for ${price}',
-			'supporter.loadingPrice' => 'Laster pris...',
-			'supporter.restore' => 'Gjenopprett kjøp',
-			'supporter.pending' => 'Kjøpet ditt venter på betaling eller godkjenning. Tilleggene låses opp så snart butikken har fullført kjøpet.',
-			'supporter.thankYouTitle' => 'Takk for at du støtter PlezyNG',
-			'supporter.thankYouBody' => 'Supporter-tilleggene dine er låst opp.',
-			'supporter.tileSubtitle' => 'Lås opp temaer og appikoner med et engangskjøp',
-			'supporter.tileSubtitleThemesOnly' => 'Lås opp temaer med et engangskjøp',
-			'supporter.tileUnlocked' => 'Takk for støtten',
-			'supporter.errors.storeUnavailable' => 'Kjøp er ikke tilgjengelig. Sjekk at du er logget inn i butikken, og at kjøp er tillatt på denne enheten.',
-			'supporter.errors.productNotFound' => 'Supporter-kjøpet er ikke tilgjengelig i butikken din akkurat nå.',
-			'supporter.errors.productQueryFailed' => 'Kunne ikke laste inn prisen. Sjekk tilkoblingen og prøv igjen.',
-			'supporter.errors.purchaseFailed' => 'Kjøpet gikk ikke gjennom. Prøv igjen.',
-			'supporter.errors.restoreFailed' => 'Kunne ikke nå butikken for å gjenopprette kjøpet. Prøv igjen.',
-			'supporter.errors.nothingToRestore' => 'Fant ikke noe Supporter-kjøp for denne butikkontoen.',
 			'settings.title' => 'Innstillinger',
 			'settings.supportDeveloper' => 'Støtt PlezyNG',
 			'settings.supportDeveloperDescription' => 'Doner for å støtte utviklingen',
@@ -4030,8 +3958,6 @@ extension on TranslationsNb {
 			'themeEditor.customEmpty' => 'Ikke opprettet ennå',
 			'themeEditor.editCustom' => 'Rediger egendefinert tema',
 			'themeEditor.editCustomDescription' => 'Velg alle fargene selv',
-			'themeEditor.locked' => 'Lås opp med Supporter',
-			'themeEditor.savedLocked' => 'Lagret – låses opp med Supporter',
 			'themeEditor.title' => 'Egendefinert tema',
 			'themeEditor.startFrom' => 'Start fra',
 			'themeEditor.startFromDescription' => 'Kopier alle fargene fra et annet tema',
@@ -4042,8 +3968,6 @@ extension on TranslationsNb {
 			'themeEditor.slots.outline' => 'Kontur',
 			'themeEditor.slots.text' => 'Tekst',
 			'themeEditor.slots.textMuted' => 'Sekundærtekst',
-			_ => null,
-		} ?? switch (path) {
 			'themeEditor.slots.accent' => 'Aksent',
 			'themeEditor.opacity' => 'Opasitet',
 			'themeEditor.hexHint' => '#RRGGBB eller #AARRGGBB',
@@ -4071,6 +3995,8 @@ extension on TranslationsNb {
 			'search.people' => 'Personer',
 			'hotkeys.setShortcutFor' => ({required Object actionName}) => 'Angi snarvei for ${actionName}',
 			'hotkeys.clearShortcut' => 'Fjern snarvei',
+			_ => null,
+		} ?? switch (path) {
 			'hotkeys.noShortcutSet' => 'Ingen snarvei satt',
 			'hotkeys.currentShortcut' => 'Gjeldende snarvei:',
 			'hotkeys.pressToRecord' => 'Velg for å registrere en snarvei',
@@ -4556,8 +4482,6 @@ extension on TranslationsNb {
 			'profiles.pinExplain' => '4-sifret PIN kreves for å bytte profiler.',
 			'profiles.continueButton' => 'Fortsett',
 			'profiles.pinsDontMatch' => 'PIN-ene samsvarer ikke',
-			_ => null,
-		} ?? switch (path) {
 			'profiles.tokenIdentityMismatch' => 'Plex-profiltokenet ble knyttet til en uventet server',
 			'connections.sectionTitle' => 'Tilkoblinger',
 			'connections.addConnection' => 'Legg til tilkobling',
@@ -4585,6 +4509,8 @@ extension on TranslationsNb {
 			'accountPreferences.groups.libraryDisplay' => 'Bibliotek',
 			'accountPreferences.groups.personalMedia' => 'Personlige medier',
 			'accountPreferences.preferredAudioLanguage' => 'Foretrukket lydspråk',
+			_ => null,
+		} ?? switch (path) {
 			'accountPreferences.autoSelectAudio' => 'Velg lyd etter språk',
 			'accountPreferences.autoSelectAudioDescription' => 'Av beholder det lydsporet filen markerer som standard.',
 			'accountPreferences.preferredSubtitleLanguage' => 'Foretrukket undertekstspråk',
@@ -5070,8 +4996,6 @@ extension on TranslationsNb {
 			'liveTv.guideReloadFailed' => 'Kunne ikke oppdatere programguiden',
 			'liveTv.rulesProcessRequested' => 'Ny vurdering av reglene er forespurt',
 			'liveTv.rulesProcessFailed' => 'Kunne ikke kjøre opptaksreglene på nytt',
-			_ => null,
-		} ?? switch (path) {
 			'liveTv.recordShow' => 'Ta opp program',
 			'liveTv.recordSettings.startEarly' => 'Start tidligere (sekunder)',
 			'liveTv.recordSettings.endLate' => 'Slutt senere (sekunder)',
@@ -5099,6 +5023,8 @@ extension on TranslationsNb {
 			'collections.selectCollection' => 'Velg samling',
 			'collections.collectionName' => 'Samlingsnavn',
 			'collections.enterCollectionName' => 'Skriv inn samlingsnavn',
+			_ => null,
+		} ?? switch (path) {
 			'collections.addedToCollection' => 'Lagt til i samling',
 			'collections.errorAddingToCollection' => 'Kunne ikke legge til i samling',
 			'collections.created' => 'Samling opprettet',
@@ -5584,8 +5510,6 @@ extension on TranslationsNb {
 			'performanceOverlay.dvRpus' => 'DV RPU-er',
 			'performanceOverlay.dvRpuAverage' => 'DV RPU snitt',
 			'performanceOverlay.dvSampleAverage' => 'DV-sample snitt',
-			_ => null,
-		} ?? switch (path) {
 			'performanceOverlay.maxLuma' => 'Maks luma',
 			'performanceOverlay.minLuma' => 'Min luma',
 			'performanceOverlay.maxCll' => 'MaxCLL',
@@ -5613,6 +5537,8 @@ extension on TranslationsNb {
 			'externalPlayer.customPlayers' => 'Egendefinerte spillere',
 			'externalPlayer.systemDefault' => 'Systemstandard',
 			'externalPlayer.addCustomPlayer' => 'Legg til egendefinert spiller',
+			_ => null,
+		} ?? switch (path) {
 			'externalPlayer.playerName' => 'Spillernavn',
 			'externalPlayer.playerNameHint' => 'Min spiller',
 			'externalPlayer.playerCommand' => 'Kommando',

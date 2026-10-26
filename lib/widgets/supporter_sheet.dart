@@ -1,6 +1,5 @@
 import 'dart:async';
 
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -15,13 +14,12 @@ import 'bottom_sheet_header.dart';
 import 'loading_indicator_box.dart';
 import 'overlay_sheet.dart';
 
-/// Opens the Supporter purchase sheet: perks, price, Buy and Restore Purchases.
+/// Opens the lifetime access sheet: price, Buy and Restore Purchases.
 ///
-/// Callers use this from every locked perk (a preset or custom theme, an app
-/// icon) and from the Settings "Support PlezyNG" tile in purchasable builds.
+/// Called from Settings in purchasable builds to buy or restore lifetime access.
 /// Completes when the sheet closes; read `SupporterService.isUnlocked` after
-/// it to see whether the user unlocked. Shows nothing unless the perks are
-/// purchasable in this build.
+/// it to see whether the lifetime unlock succeeded. Shows nothing unless
+/// store access is enabled in this build.
 Future<void> showSupporterSheet(BuildContext context) async {
   final supporter = context.read<SupporterService>();
   if (supporter.availability != SupporterAvailability.purchasable) return;
@@ -34,11 +32,6 @@ Future<void> showSupporterSheet(BuildContext context) async {
     builder: (_) => SupporterSheet(supporter: supporter),
   );
 }
-
-/// Whether this platform ships the alternate app icons perk: iOS, iPadOS and
-/// tvOS (which reports iOS) and Android.
-bool supporterOffersAppIcons() =>
-    defaultTargetPlatform == TargetPlatform.iOS || defaultTargetPlatform == TargetPlatform.android;
 
 class SupporterSheet extends StatefulWidget {
   const SupporterSheet({super.key, required this.supporter});
@@ -56,7 +49,7 @@ class _SupporterSheetState extends State<SupporterSheet> {
   final ScrollController _scrollController = ScrollController();
 
   late SupporterStoreState _state = widget.supporter.storeState.value;
-  late bool _unlocked = widget.supporter.isUnlocked;
+  late bool _unlocked = widget.supporter.hasLifetimeUnlock;
 
   SupporterService get _supporter => widget.supporter;
 
@@ -117,7 +110,7 @@ class _SupporterSheetState extends State<SupporterSheet> {
 
   void _handleChange() {
     final next = _supporter.storeState.value;
-    final unlocked = _supporter.isUnlocked;
+    final unlocked = _supporter.hasLifetimeUnlock;
     final priceArrived = _state.price == null && next.price != null;
     final becameUnlocked = unlocked && !_unlocked;
     setState(() {
@@ -178,7 +171,7 @@ class _SupporterSheetState extends State<SupporterSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        BottomSheetHeader(title: t.supporter.title),
+        BottomSheetHeader(title: t.appAccess.manageTitle),
         Flexible(
           child: SingleChildScrollView(
             controller: _scrollController,
@@ -198,10 +191,10 @@ class _SupporterSheetState extends State<SupporterSheet> {
       children: [
         AppIcon(Symbols.favorite_rounded, fill: 1, size: 48, color: theme.colorScheme.primary),
         const SizedBox(height: 12),
-        Text(t.supporter.thankYouTitle, style: theme.textTheme.titleMedium, textAlign: TextAlign.center),
+        Text(t.appAccess.lifetimeTitle, style: theme.textTheme.titleMedium, textAlign: TextAlign.center),
         const SizedBox(height: 4),
         Text(
-          t.supporter.thankYouBody,
+          t.appAccess.lifetimeBody,
           style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
           textAlign: TextAlign.center,
         ),
@@ -226,27 +219,21 @@ class _SupporterSheetState extends State<SupporterSheet> {
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
-        Text(t.supporter.intro, style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant)),
-        const SizedBox(height: 12),
-        _Perk(
-          icon: Symbols.palette_rounded,
-          title: t.supporter.presetThemes,
-          description: t.supporter.presetThemesDescription,
+        Text(
+          t.appAccess.manageDescription,
+          style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurfaceVariant),
         ),
-        _Perk(
-          icon: Symbols.colorize_rounded,
-          title: t.supporter.customTheme,
-          description: t.supporter.customThemeDescription,
-        ),
-        if (supporterOffersAppIcons())
-          _Perk(icon: Symbols.apps_rounded, title: t.supporter.appIcons, description: t.supporter.appIconsDescription),
+        if (_supporter.isTrialActive) ...[
+          const SizedBox(height: 12),
+          Text(t.appAccess.trialActive, style: theme.textTheme.titleSmall),
+        ],
         const SizedBox(height: 12),
         // One notice at a time: the latest action's error, else why the price
         // is missing, else the pending purchase.
         if (state.error ?? productError case final error?)
           _Notice.error(error)
         else if (state.status == SupporterPurchaseStatus.pending)
-          _Notice(icon: Symbols.hourglass_top_rounded, message: t.supporter.pending, isFailure: false),
+          _Notice(icon: Symbols.hourglass_top_rounded, message: t.appAccess.pending, isFailure: false),
         const SizedBox(height: 4),
         if (productError != null) _buildRetryButton() else _buildBuyButton(state),
         const SizedBox(height: 8),
@@ -268,7 +255,7 @@ class _SupporterSheetState extends State<SupporterSheet> {
       child: FilledButton.icon(
         onPressed: onBuy,
         icon: showSpinner ? const LoadingIndicatorBox() : const AppIcon(Symbols.favorite_rounded, fill: 1),
-        label: Text(price != null ? t.supporter.buy(price: price) : t.supporter.loadingPrice),
+        label: Text(price != null ? t.appAccess.buy(price: price) : t.appAccess.loadingPrice),
       ),
     );
   }
@@ -299,41 +286,7 @@ class _SupporterSheetState extends State<SupporterSheet> {
         icon: state.status == SupporterPurchaseStatus.restoring
             ? const LoadingIndicatorBox()
             : const AppIcon(Symbols.restore_rounded, fill: 1),
-        label: Text(t.supporter.restore),
-      ),
-    );
-  }
-}
-
-class _Perk extends StatelessWidget {
-  const _Perk({required this.icon, required this.title, required this.description});
-
-  final IconData icon;
-  final String title;
-  final String description;
-
-  @override
-  Widget build(BuildContext context) {
-    final theme = Theme.of(context);
-    return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
-      child: Row(
-        children: [
-          AppIcon(icon, fill: 1, color: theme.colorScheme.primary),
-          const SizedBox(width: 16),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(title, style: theme.textTheme.titleSmall),
-                Text(
-                  description,
-                  style: theme.textTheme.bodySmall?.copyWith(color: theme.colorScheme.onSurfaceVariant),
-                ),
-              ],
-            ),
-          ),
-        ],
+        label: Text(t.appAccess.restore),
       ),
     );
   }
@@ -348,12 +301,12 @@ class _Notice extends StatelessWidget {
     : this(
         icon: error == SupporterError.nothingToRestore ? Symbols.info_rounded : Symbols.error_rounded,
         message: switch (error) {
-          SupporterError.storeUnavailable => t.supporter.errors.storeUnavailable,
-          SupporterError.productNotFound => t.supporter.errors.productNotFound,
-          SupporterError.productQueryFailed => t.supporter.errors.productQueryFailed,
-          SupporterError.purchaseFailed => t.supporter.errors.purchaseFailed,
-          SupporterError.restoreFailed => t.supporter.errors.restoreFailed,
-          SupporterError.nothingToRestore => t.supporter.errors.nothingToRestore,
+          SupporterError.storeUnavailable => t.appAccess.storeUnavailable,
+          SupporterError.productNotFound => t.appAccess.productNotFound,
+          SupporterError.productQueryFailed => t.appAccess.productQueryFailed,
+          SupporterError.purchaseFailed => t.appAccess.purchaseFailed,
+          SupporterError.restoreFailed => t.appAccess.restoreFailed,
+          SupporterError.nothingToRestore => t.appAccess.nothingToRestore,
         },
         isFailure: error != SupporterError.nothingToRestore,
       );
