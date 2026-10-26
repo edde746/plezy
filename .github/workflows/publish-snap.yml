@@ -1,3 +1,4 @@
+# ng-runner-policy: private-jit-only-v1
 name: Publish Snap Store packages
 
 on:
@@ -26,7 +27,7 @@ permissions:
 jobs:
   resolve-release:
     name: Resolve published release
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-resolve-release"]}}', github.run_id)) }}
     if: github.event_name != 'release' || github.event.release.prerelease == false
     permissions:
       contents: read
@@ -87,7 +88,7 @@ jobs:
   publish:
     name: Publish ${{ matrix.arch }} package
     needs: resolve-release
-    runs-on: ubuntu-latest
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-publish"]}}', github.run_id, strategy.job-index)) }}
     strategy:
       fail-fast: false
       matrix:

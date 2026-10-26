@@ -11,6 +11,8 @@
 
 - Add an opt-in Games category with LAN discovery, artwork card grids, profile libraries, PIN/QR pairing, and an embedded Android Moonlight engine with touch controls. Add an experimental embedded Android Steam PIN/streaming adapter with encrypted device trust, direct game-ID launch, H.264/HEVC/Opus and a mobile controller. Steam account catalog import and native streaming ports remain in development; Pyrowave is opt-in experimental Android support and still needs real-host and device performance qualification; Games never hands a stream to another app.
 
+- Route every GitHub Actions workflow through compatible private JIT capacity, with no GitHub-hosted fallback.
+
 - Add device-local Dolby Vision experiment and compatibility switches, enhancement-layer diagnostics, pinned Apple/FelBaker experiments, and an offline HDR/SDR companion encoder; preserve Luna’s real P7 FEL graph evidence and remaining device qualification work.
 
 - Add SMB2/3 read-only NAS sources on Android, iOS, macOS, Windows, Linux, and Apple TV, with a Videos library shelf and resumable video watch progress.
@@ -96,6 +98,7 @@
 - Check iOS audio-output ordering while allowing the Spatial Audio driver on iOS 26.
 - Build Android app and plugin modules with SDK 37 and generate BuildConfig for current Android dependencies.
 - Brand default and alternate app icons, splash art, and TV launch graphics with the PlezyNG badge.
+- Keep the webOS TV package icon generated from the approved NG-badged logo.
 - Refresh package and store descriptions to explain PlezyNG's Plex client features.
 - Refresh the release-channel guide with configured publishers and remaining credential requirements.
 - Record the current Google Play foreground-service demo links and release-run results in the channel guide.
