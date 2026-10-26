@@ -11,9 +11,10 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"html"
+	"html/template"
 	"io"
 	"log"
+	"net"
 	"net/http"
 	"net/url"
 	"os"
@@ -290,6 +291,11 @@ func (p *oauthProxy) handleAuthorize(w http.ResponseWriter, r *http.Request, ser
 		renderErrorPage(w, http.StatusNotFound, "This sign-in link is no longer valid. Start again from PlezyNG.")
 		return
 	}
+	authorizeURL, err := validatedOAuthAuthorizeURL(service, cfg.AuthorizeURL)
+	if err != nil {
+		renderErrorPage(w, http.StatusInternalServerError, "OAuth provider configuration is invalid.")
+		return
+	}
 
 	q := url.Values{
 		"response_type": {"code"},
@@ -304,7 +310,39 @@ func (p *oauthProxy) handleAuthorize(w http.ResponseWriter, r *http.Request, ser
 		q.Set("code_challenge", sess.pkceVerifier()) // plain method ⇒ challenge == verifier
 		q.Set("code_challenge_method", cfg.PKCEMethod)
 	}
-	http.Redirect(w, r, cfg.AuthorizeURL+"?"+q.Encode(), http.StatusFound)
+	// nosemgrep: go.lang.security.injection.open-redirect.open-redirect -- authorizeURL is reconstructed only from the provider-host allowlist below.
+	http.Redirect(w, r, authorizeURL+"?"+q.Encode(), http.StatusFound)
+}
+
+func validatedOAuthAuthorizeURL(service, configured string) (string, error) {
+	target, err := url.Parse(configured)
+	if err != nil || target.User != nil || target.RawQuery != "" || target.Fragment != "" {
+		return "", errors.New("invalid OAuth authorize URL")
+	}
+
+	host := strings.ToLower(target.Hostname())
+	loopback := host == "localhost"
+	if address := net.ParseIP(host); address != nil && address.IsLoopback() {
+		loopback = true
+	}
+	if target.Scheme == "http" && loopback && target.Port() != "" {
+		return target.String(), nil
+	}
+	if target.Scheme != "https" || (target.Port() != "" && target.Port() != "443") {
+		return "", errors.New("OAuth authorize URL must use HTTPS")
+	}
+
+	allowedHost := ""
+	switch service {
+	case "mal":
+		allowedHost = "myanimelist.net"
+	case "anilist":
+		allowedHost = "anilist.co"
+	}
+	if host != allowedHost || allowedHost == "" {
+		return "", errors.New("OAuth authorize URL host is not allowlisted")
+	}
+	return target.String(), nil
 }
 
 // GET /auth/:service/callback exchanges the code and renders a result page.
@@ -574,21 +612,21 @@ func (p *oauthProxy) chargeIP(buckets map[string]*rateLimiter, ip string, burst,
 const successPageHTML = `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Signed in</title><style>html,body{margin:0;height:100%}body{display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:-apple-system,system-ui,sans-serif;background:#fff;color:#1a1a1a;text-align:center;padding:1em;box-sizing:border-box}@media(prefers-color-scheme:dark){body{background:#0f0f0f;color:#f5f5f5}}.check{width:72px;height:72px;margin-bottom:20px}h2{margin:0 0 8px;font-weight:600;font-size:1.25rem}p{margin:0;opacity:.7;font-size:.95rem}</style><body><svg class="check" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#22c55e"/><path d="M7 12.5l3 3 7-7" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg><h2>Signed in to PlezyNG</h2><p>You can close this tab and return to the app.</p></body>`
 
 // Keep CSS percent literals outside Fprintf's format string.
-const errorPagePrefix = `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sign-in failed</title><style>html,body{margin:0;height:100%}body{display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:-apple-system,system-ui,sans-serif;background:#fff;color:#1a1a1a;text-align:center;padding:1em;box-sizing:border-box}@media(prefers-color-scheme:dark){body{background:#0f0f0f;color:#f5f5f5}}.x{width:72px;height:72px;margin-bottom:20px}h2{margin:0 0 8px;font-weight:600;font-size:1.25rem}p{margin:0;opacity:.7;font-size:.95rem}</style><body><svg class="x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#ef4444"/><path d="M8 8l8 8M16 8l-8 8" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg><h2>Sign-in failed</h2><p>`
-const errorPageSuffix = `</p></body>`
+const errorPageHTML = `<!doctype html><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Sign-in failed</title><style>html,body{margin:0;height:100%}body{display:flex;flex-direction:column;align-items:center;justify-content:center;font-family:-apple-system,system-ui,sans-serif;background:#fff;color:#1a1a1a;text-align:center;padding:1em;box-sizing:border-box}@media(prefers-color-scheme:dark){body{background:#0f0f0f;color:#f5f5f5}}.x{width:72px;height:72px;margin-bottom:20px}h2{margin:0 0 8px;font-weight:600;font-size:1.25rem}p{margin:0;opacity:.7;font-size:.95rem}</style><body><svg class="x" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#ef4444"/><path d="M8 8l8 8M16 8l-8 8" stroke="#fff" stroke-width="2" fill="none" stroke-linecap="round"/></svg><h2>Sign-in failed</h2><p>{{.}}</p></body>`
+
+var successPageTemplate = template.Must(template.New("oauth-success").Parse(successPageHTML))
+var errorPageTemplate = template.Must(template.New("oauth-error").Parse(errorPageHTML))
 
 func renderSuccessPage(w http.ResponseWriter) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(http.StatusOK)
-	io.WriteString(w, successPageHTML)
+	_ = successPageTemplate.Execute(w, nil)
 }
 
 func renderErrorPage(w http.ResponseWriter, status int, message string) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.WriteHeader(status)
-	io.WriteString(w, errorPagePrefix)
-	io.WriteString(w, html.EscapeString(message))
-	io.WriteString(w, errorPageSuffix)
+	_ = errorPageTemplate.Execute(w, message)
 }
 
 func writeJSON(w http.ResponseWriter, status int, v any) {

@@ -203,7 +203,10 @@ class TvBrowseRailLayout {
     final posterHeight = (isPersonHub || isSquareHub)
         ? posterWidth
         : (useWideLayout ? posterWidth * 9 / 16 : posterWidth * 1.5);
-    final labelHeight = fullCardLayout ? 0.0 : ((isPersonHub ? 52 : 36) * scale);
+    // Standard MediaCards reserve two text rows beneath the poster (title and
+    // metadata), plus their top and bottom insets. Leave enough room for both
+    // rows so longer episode labels do not overflow the rail viewport.
+    final labelHeight = fullCardLayout ? 0.0 : ((isPersonHub ? 52 : 44) * scale);
     // A Hero hub is represented entirely by the spotlight banner above the
     // rail (see TvSpotlightScaffold) — its own poster strip would just be a
     // duplicate of whatever the banner is already showing (per user request
@@ -214,7 +217,10 @@ class TvBrowseRailLayout {
     // it instead of leaving a dead gap.
     final collapsed = hub.heroStyle;
     final containerHeight = collapsed ? 0.0 : (posterHeight + labelHeight).ceilToDouble();
-    final height = collapsed ? 0.0 : containerHeight + focusExtra + (10 * scale);
+    // The horizontal sliver adds 2*scale above and 18*scale below each card.
+    // Reserve that full cross-axis inset here so the viewport does not squeeze
+    // the poster itself; focus overflow is handled by the rail clipper.
+    final height = collapsed ? 0.0 : containerHeight + (20 * scale);
 
     return TvBrowseRailLayoutMetrics(
       isPersonHub: isPersonHub,

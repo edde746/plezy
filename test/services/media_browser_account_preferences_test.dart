@@ -299,7 +299,8 @@ void main() {
       expect(posts, hasLength(1));
       final post = posts.single;
       expect(post.url.path, '/DisplayPreferences/usersettings');
-      // Keep the existing server-side preferences namespace across the fork.
+      // Preserve the server-side per-client preference key across the fork
+      // rename so existing Plezy account choices continue to apply.
       expect(post.url.queryParameters['client'], 'Plezy');
       expect(post.url.queryParameters['userId'], 'user-1');
       final body = jsonDecode(post.body) as Map<String, dynamic>;

@@ -1663,6 +1663,8 @@ jobs:
 
       - name: Collect release files
         id: release-files
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
           {
             echo 'files<<EOF'
@@ -1685,7 +1687,7 @@ jobs:
               echo artifacts/windows-msix/plezyng-windows.msixbundle
             fi
             echo artifacts/windows-chocolatey/plezyng.*.nupkg
-            echo artifacts/plezyng-winget-manifests-${{ inputs.release_tag }}.zip
+            echo "artifacts/plezyng-winget-manifests-${RELEASE_TAG}.zip"
             if [ -f artifacts/android-apk/plezyng-android-play.aab ]; then
               echo artifacts/android-apk/plezyng-android-play.aab
             fi

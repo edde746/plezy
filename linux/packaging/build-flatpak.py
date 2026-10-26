@@ -60,6 +60,8 @@ def main():
             shutil.copy2(template / name, stage / name)
         desktop = (SCRIPT_DIR / f"{APP_ID}.desktop").read_text()
         (stage / f"{APP_ID}.desktop").write_text(desktop.replace("Icon=plezy", f"Icon={APP_ID}"))
+        # This is a checked-in packaging template, not user or network input.
+        # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse
         metadata = ET.parse(template / f"{APP_ID}.metainfo.xml")
         releases = ET.SubElement(metadata.getroot(), "releases")
         ET.SubElement(releases, "release", version=version.split("+", 1)[0],

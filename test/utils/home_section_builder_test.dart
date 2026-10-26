@@ -20,6 +20,35 @@ HomeSectionConfig _section(HomeSectionKind kind) =>
     HomeSectionConfig(id: 'merged', title: 'Merged', kind: kind, showOnHome: true);
 
 void main() {
+  group('orderManagedHubs', () {
+    test('applies the saved order only to managed rows and preserves server rows', () {
+      final hubs = [
+        _hub('home.continue', [testMediaItem(id: 'continue')]),
+        _hub('library.1.recentlyAdded', [testMediaItem(id: 'recent')]),
+        _hub('custom.a', [testMediaItem(id: 'a')]),
+        _hub('custom.b', [testMediaItem(id: 'b')]),
+      ];
+
+      final ordered = orderManagedHubs(hubs, const ['custom.b', 'custom.a']);
+
+      expect(ordered.map((hub) => hub.identifier), [
+        'home.continue',
+        'library.1.recentlyAdded',
+        'custom.b',
+        'custom.a',
+      ]);
+    });
+
+    test('matches content identifiers that extend a saved management identifier', () {
+      final hubs = [
+        _hub('managed.one', [testMediaItem(id: 'one')]),
+        _hub('managed.two', [testMediaItem(id: 'two')]),
+      ];
+
+      expect(orderManagedHubs(hubs, const ['managed.two', 'managed.one']), [hubs[1], hubs[0]]);
+    });
+  });
+
   group('withoutWatchedItems (#2159)', () {
     test('drops fully watched titles and keeps unwatched and in-progress ones', () {
       final result = withoutWatchedItems([

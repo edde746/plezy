@@ -309,6 +309,8 @@ class SetNativeRevisionTest(unittest.TestCase):
 
     def _components(self) -> list[tuple[str, str, str]]:
         """(version, artifact, sha256) of every component Gradle verifies."""
+        # VERIFICATION is a repository-controlled fixture created by this test.
+        # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse
         root = ElementTree.parse(self.root / VERIFICATION).getroot()
         return [
             (component.get("version"), artifact.get("name"), sha256.get("value"))

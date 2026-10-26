@@ -341,7 +341,9 @@ def _adaptive_icon_xml(icon: str) -> str:
 
 
 def _alias_xml(icon: str) -> str:
-    return f"""        <activity-alias
+    return f"""        <!-- This exported entry is required for the selectable Android phone and TV launcher icon. -->
+        <!-- nosemgrep: java.android.security.exported_activity.exported_activity -->
+        <activity-alias
             android:name=".appicon.{icon}"
             android:enabled="false"
             android:exported="true"

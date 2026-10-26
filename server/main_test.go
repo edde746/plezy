@@ -7254,8 +7254,14 @@ func TestLogsRoundTrip(t *testing.T) {
 	if !bytes.Equal(got, payload) {
 		t.Fatalf("round-tripped bytes mismatch: got %q want %q", got, payload)
 	}
-	if ct := getResp.Header.Get("Content-Type"); !strings.HasPrefix(ct, "text/plain") {
+	if ct := getResp.Header.Get("Content-Type"); !strings.HasPrefix(ct, "application/octet-stream") {
 		t.Errorf("Content-Type=%q", ct)
+	}
+	if disposition := getResp.Header.Get("Content-Disposition"); !strings.Contains(disposition, "attachment") {
+		t.Errorf("Content-Disposition=%q", disposition)
+	}
+	if got := getResp.Header.Get("X-Content-Type-Options"); got != "nosniff" {
+		t.Errorf("X-Content-Type-Options=%q", got)
 	}
 }
 

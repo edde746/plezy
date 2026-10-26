@@ -610,7 +610,7 @@ void main() {
     );
     await tester.pump();
     expect(provider.onDeck.map((item) => item.globalKey), ['server_2:episode', 'server_1:survivor']);
-    expect(provider.hubs.where((h) => !h.isContinueWatchingHub).single.items.map((item) => item.id), ['survivor']);
+    expect(provider.hubs.where((h) => h.id == 'hub').single.items.map((item) => item.id), ['survivor']);
     expect(aggregation.onDeckCalls, 1, reason: 'the deletion fan-out must not bypass the coarse cooldown');
     expect(aggregation.hubCalls, 1);
     await tester.pump(const Duration(seconds: 4));
@@ -628,7 +628,7 @@ void main() {
     expect(aggregation.onDeckCalls, 2);
     expect(aggregation.hubCalls, 2);
     expect(provider.onDeck.single.id, 'replacement');
-    expect(provider.hubs.where((h) => !h.isContinueWatchingHub).single.id, 'reconciled');
+    expect(provider.hubs.where((h) => h.id == 'reconciled').single.id, 'reconciled');
     await tester.pump(const Duration(minutes: 3));
     expect(aggregation.onDeckCalls, 2, reason: 'one coalesced reconciliation, not a second deletion follow-up');
   });
@@ -713,7 +713,7 @@ void main() {
     await pumpEventQueue();
 
     expect(provider.onDeck.map((i) => i.serverId), ['server_1']);
-    expect(provider.hubs.where((h) => !h.isContinueWatchingHub).single.items.map((i) => i.serverId), ['server_1']);
+    expect(provider.hubs.where((h) => h.id == 'hub-1').single.items.map((i) => i.serverId), ['server_1']);
   });
 
   test('a watched event evicts only the emitting server\'s copy of a colliding id', () async {
@@ -828,7 +828,7 @@ void main() {
     await provider.load();
 
     expect(provider.onDeck.map((i) => i.id), ['rebound']);
-    expect(provider.hubs.where((h) => !h.isContinueWatchingHub).map((h) => h.id), ['rebound-hub']);
+    expect(provider.hubs.map((h) => h.id), ['continue_watching', 'rebound-hub']);
   });
 
   test('a rebind of the active profile keeps loaded content on screen', () async {
@@ -845,7 +845,7 @@ void main() {
     expect(provider.isLoading, isFalse);
     expect(provider.areHubsLoading, isFalse);
     expect(provider.onDeck.map((i) => i.id), ['a']);
-    expect(provider.hubs.where((h) => !h.isContinueWatchingHub).map((h) => h.id), ['hub-1']);
+    expect(provider.hubs.map((h) => h.id), ['continue_watching', 'hub-1']);
   });
 
   // A pass in which zero servers succeeded is never authoritative: it must

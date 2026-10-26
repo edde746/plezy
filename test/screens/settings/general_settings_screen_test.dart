@@ -10,13 +10,14 @@ import 'package:plezy/profiles/plex_home_service.dart';
 import 'package:plezy/profiles/profile_connection_registry.dart';
 import 'package:plezy/profiles/profile_registry.dart';
 import 'package:plezy/screens/settings/general_settings_screen.dart';
+import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/theme/mono_theme.dart';
 import 'package:provider/provider.dart';
 import 'package:plezy/providers/multi_server_provider.dart';
-import '../../test_helpers/multi_server_fixtures.dart';
 
 import '../../test_helpers/prefs.dart';
+import '../../test_helpers/multi_server_fixtures.dart';
 
 void main() {
   setUp(() async {
@@ -50,12 +51,18 @@ void main() {
       connections: connections,
       profileConnections: profileConnections,
     );
+    final manager = MultiServerManager();
+    final multiServerProvider = testMultiServerProvider(manager);
+    addTearDown(() {
+      multiServerProvider.dispose();
+      manager.dispose();
+    });
 
     await tester.pumpWidget(
       MultiProvider(
         providers: [
           ChangeNotifierProvider<ActiveProfileProvider>.value(value: activeProfile),
-          ChangeNotifierProvider<MultiServerProvider>.value(value: testMultiServer().provider),
+          ChangeNotifierProvider<MultiServerProvider>.value(value: multiServerProvider),
         ],
         child: MaterialApp(theme: monoTheme(MonoPalette.dark), home: const GeneralSettingsScreen()),
       ),

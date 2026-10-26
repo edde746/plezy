@@ -22,8 +22,8 @@ import 'package:plezy/providers/multi_server_provider.dart';
 import 'package:plezy/services/multi_server_manager.dart';
 import 'package:plezy/services/plex_api_cache.dart';
 import 'package:plezy/services/plex_auth_service.dart';
-import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/plex_client.dart';
+import 'package:plezy/services/settings_service.dart';
 import 'package:plezy/services/storage_service.dart';
 import 'package:plezy/utils/device_identity.dart';
 import 'package:plezy/utils/media_server_http_client.dart';
@@ -60,6 +60,7 @@ void main() {
 
   setUp(() async {
     resetSharedPreferencesForTest();
+    SettingsService.resetForTesting();
     await SettingsService.getInstance();
     db = AppDatabase.forTesting(NativeDatabase.memory());
     connections = ConnectionRegistry(db);

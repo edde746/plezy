@@ -3,6 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../i18n/strings.g.dart';
 import '../../services/cloud_settings_backup_service.dart';
+import '../../widgets/app_icon.dart';
 import '../../widgets/dialog_action_button.dart';
 
 class CloudSettingsBackupDialog extends StatefulWidget {
@@ -125,8 +126,7 @@ class _CloudSettingsBackupDialogState extends State<CloudSettingsBackupDialog> {
                     keyboardType: TextInputType.url,
                     decoration: InputDecoration(
                       labelText: t.settings.cloudBackupUrl,
-                      hintText: 'https://cloud.example/dav/plezy-settings.json',
-                      prefixIcon: const Icon(Symbols.link_rounded),
+                      prefixIcon: const AppIcon(Symbols.link_rounded),
                     ),
                   ),
                   TextField(

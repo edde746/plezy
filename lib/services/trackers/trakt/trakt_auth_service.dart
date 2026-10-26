@@ -60,11 +60,7 @@ class TraktAuthService extends DeviceCodeAuthServiceBase {
         'POST',
         tokenUri,
         headers: TraktConstants.headers(),
-        body: json.encode({
-          'code': code.deviceCode,
-          'client_id': TraktConstants.clientId,
-          'client_secret': TraktConstants.clientSecret,
-        }),
+        body: json.encode({'code': code.deviceCode, 'client_id': TraktConstants.clientId}),
         timeout: TrackerConstants.authRequestTimeout,
         operation: 'Trakt device token poll',
       );

@@ -1,4 +1,6 @@
 import hashlib
+from functools import partial
+from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 import json
 import os
 import platform
@@ -6,6 +8,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from threading import Thread
 import unittest
 from pathlib import Path
 
@@ -20,6 +23,16 @@ class FetchLinuxLibmpvTest(unittest.TestCase):
         self.root = Path(self._directory.name)
         self.dest = self.root / "prefix"
         self.asset = self._build_asset()
+        self.server = ThreadingHTTPServer(
+            ("127.0.0.1", 0),
+            partial(SimpleHTTPRequestHandler, directory=str(self.root)),
+        )
+        self.server_thread = Thread(target=self.server.serve_forever, daemon=True)
+        self.addCleanup(self.server_thread.join)
+        self.addCleanup(self.server.server_close)
+        self.addCleanup(self.server.shutdown)
+        self.server_thread.start()
+        self.asset_base = f"http://127.0.0.1:{self.server.server_port}"
 
     def _build_asset(self) -> Path:
         """A tiny prefix tree packed the way mpv-build publishes it."""
@@ -43,7 +56,7 @@ class FetchLinuxLibmpvTest(unittest.TestCase):
                 {
                     "artifacts": {
                         "linux": {
-                            "assetBase": self.root.as_uri(),
+                            "assetBase": self.asset_base,
                             "assets": {machine: {"asset": self.asset.name, "checksum": checksum}},
                         }
                     }

@@ -242,6 +242,37 @@ bool hubIdentifierMatches(MediaHub hub, String wantedIdentifier) {
   return actual == wantedIdentifier || actual.startsWith('$wantedIdentifier.');
 }
 
+/// Applies a library's saved order to its managed hubs while leaving
+/// server-generated rows in their original positions. A management API ID can
+/// be a prefix of the content API ID returned by the library hubs endpoint.
+List<MediaHub> orderManagedHubs(List<MediaHub> hubs, List<String>? savedOrder) {
+  if (savedOrder == null || savedOrder.isEmpty) return hubs;
+
+  final managedSlots = <int>[];
+  final managed = <MediaHub>[];
+  for (var index = 0; index < hubs.length; index++) {
+    final hub = hubs[index];
+    if (savedOrder.any((identifier) => hubIdentifierMatches(hub, identifier))) {
+      managedSlots.add(index);
+      managed.add(hub);
+    }
+  }
+  if (managedSlots.length < 2) return hubs;
+
+  final ordered = <MediaHub>[];
+  for (final identifier in savedOrder) {
+    final matchIndex = managed.indexWhere((hub) => hubIdentifierMatches(hub, identifier));
+    if (matchIndex != -1) ordered.add(managed.removeAt(matchIndex));
+  }
+  ordered.addAll(managed);
+
+  final result = List<MediaHub>.of(hubs);
+  for (var index = 0; index < managedSlots.length; index++) {
+    result[managedSlots[index]] = ordered[index];
+  }
+  return result;
+}
+
 MediaHub withResolvedHeroOverride(MediaHub hub, Map<String, ManagedHubHeroOverride> overrides) {
   if (overrides.isEmpty) return hub;
   final libraryGlobalKey = _hubLibraryGlobalKey(hub);

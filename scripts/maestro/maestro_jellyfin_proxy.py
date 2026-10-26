@@ -15,6 +15,13 @@ import urllib.error
 import urllib.parse
 import urllib.request
 
+try:
+    import safe_http
+    from safe_http import safe_urlopen
+except ModuleNotFoundError:
+    from scripts.maestro import safe_http
+    from scripts.maestro.safe_http import safe_urlopen
+
 _FAULT_PATHS = {
     "music-failure": lambda path: path.startswith("/Artists/AlbumArtists"),
     "recovery": lambda path: path.startswith("/Videos/") and "/stream" in path,
@@ -46,6 +53,7 @@ _RESPONSE_HEADERS = {
 
 class ProxyState:
     def __init__(self, upstream: str, fault: str | None, journal: Path | None) -> None:
+        safe_http.validate_http_url(upstream)
         self.upstream = upstream.rstrip("/")
         self.fault = fault
         self.journal = journal
@@ -159,7 +167,7 @@ class JellyfinProxyHandler(BaseHTTPRequestHandler):
             headers=headers,
         )
         try:
-            with urllib.request.urlopen(request, timeout=60) as response:
+            with safe_urlopen(request, timeout=60) as response:
                 status = response.status
                 response_headers = response.headers
                 payload = response.read()

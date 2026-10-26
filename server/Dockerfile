@@ -5,7 +5,10 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY *.go .
+COPY cmd/healthcheck ./cmd/healthcheck
+RUN mkdir /data && chown 65532:65532 /data
 RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /relay .
+RUN CGO_ENABLED=0 go build -ldflags="-s -w" -o /healthcheck ./cmd/healthcheck
 
 FROM scratch
 ARG VERSION=dev
@@ -13,6 +16,8 @@ ARG REVISION=unknown
 ARG BUILD_DATE=unknown
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 COPY --from=build /relay /relay
+COPY --from=build /healthcheck /healthcheck
+COPY --from=build --chown=65532:65532 /data /data
 LABEL org.opencontainers.image.title="PlezyNG Relay" \
       org.opencontainers.image.description="PlezyNG authentication and artifact relay service" \
       org.opencontainers.image.source="https://github.com/snapetech-org/PlezyNG" \
@@ -23,4 +28,6 @@ LABEL org.opencontainers.image.title="PlezyNG Relay" \
 VOLUME /data
 EXPOSE 8080
 ENV GOMEMLIMIT=64MiB
+USER 65532:65532
 ENTRYPOINT ["/relay"]
+HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 CMD ["/healthcheck"]

@@ -292,13 +292,16 @@ async function settingValue(parsed, deadline) {
     }
     let target = document;
     for (const key of path.slice(0, -1)) {
-      if (!Object.hasOwn(target, key)) target[key] = {};
+      if (!Object.hasOwn(target, key)) {
+        Object.defineProperty(target, key, { value: {}, writable: true, enumerable: true, configurable: true });
+      }
       if (!isObject(target[key])) invalid("--value-field must traverse objects, not scalar values or arrays.");
+      // nosemgrep: javascript.lang.security.audit.prototype-pollution.prototype-pollution-loop.prototype-pollution-loop -- path keys are validated against prototype-reserved names before this own-property traversal.
       target = target[key];
     }
     const key = path.at(-1);
     if (Object.hasOwn(target, key)) invalid("--value-field would overwrite an existing domain value.");
-    target[key] = value;
+    Object.defineProperty(target, key, { value, writable: true, enumerable: true, configurable: true });
     value = document;
   }
   return value;

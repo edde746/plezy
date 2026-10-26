@@ -13,6 +13,15 @@ import '../../test_helpers/prefs.dart';
 import 'package:provider/provider.dart';
 import 'package:plezy/providers/libraries_provider.dart';
 
+Future<void> _pumpPlaybackSettings(WidgetTester tester) async {
+  await tester.pumpWidget(
+    ChangeNotifierProvider<LibrariesProvider>(
+      create: (_) => LibrariesProvider(),
+      child: MaterialApp(theme: monoTheme(MonoPalette.dark), home: const PlaybackSettingsScreen()),
+    ),
+  );
+}
+
 void main() {
   setUp(() async {
     resetSharedPreferencesForTest(initialAsync: {'music_quality_preset': 'medium'});
@@ -27,12 +36,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: monoTheme(MonoPalette.dark),
-        home: ChangeNotifierProvider(create: (_) => LibrariesProvider(), child: const PlaybackSettingsScreen()),
-      ),
-    );
+    await _pumpPlaybackSettings(tester);
     await tester.pumpAndSettle();
 
     final title = find.text('Music Quality');
@@ -58,12 +62,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: monoTheme(MonoPalette.dark),
-        home: ChangeNotifierProvider(create: (_) => LibrariesProvider(), child: const PlaybackSettingsScreen()),
-      ),
-    );
+    await _pumpPlaybackSettings(tester);
     await tester.pumpAndSettle();
 
     final adsTitle = find.text('Skip Ads');
@@ -91,12 +90,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: monoTheme(MonoPalette.dark),
-        home: ChangeNotifierProvider(create: (_) => LibrariesProvider(), child: const PlaybackSettingsScreen()),
-      ),
-    );
+    await _pumpPlaybackSettings(tester);
     await tester.pumpAndSettle();
 
     final title = find.text('Shader Preset');
@@ -124,12 +118,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: monoTheme(MonoPalette.dark),
-        home: ChangeNotifierProvider(create: (_) => LibrariesProvider(), child: const PlaybackSettingsScreen()),
-      ),
-    );
+    await _pumpPlaybackSettings(tester);
     await tester.pumpAndSettle();
 
     final title = find.text('Play Next Countdown');
@@ -155,12 +144,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: monoTheme(MonoPalette.dark),
-        home: ChangeNotifierProvider(create: (_) => LibrariesProvider(), child: const PlaybackSettingsScreen()),
-      ),
-    );
+    await _pumpPlaybackSettings(tester);
     await tester.pumpAndSettle();
 
     final title = find.text('Buffer Size');
@@ -197,12 +181,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: monoTheme(MonoPalette.dark),
-        home: ChangeNotifierProvider(create: (_) => LibrariesProvider(), child: const PlaybackSettingsScreen()),
-      ),
-    );
+    await _pumpPlaybackSettings(tester);
     await tester.pumpAndSettle();
 
     final title = find.text('Deinterlacing');
@@ -235,12 +214,7 @@ void main() {
     await settings.write(SettingsService.audioNormalization, true);
     expect(settings.read(SettingsService.audioPassthrough), isTrue);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: monoTheme(MonoPalette.dark),
-        home: ChangeNotifierProvider(create: (_) => LibrariesProvider(), child: const PlaybackSettingsScreen()),
-      ),
-    );
+    await _pumpPlaybackSettings(tester);
     await tester.pumpAndSettle();
 
     final title = find.text('Audio Passthrough');
@@ -269,12 +243,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: monoTheme(MonoPalette.dark),
-        home: ChangeNotifierProvider(create: (_) => LibrariesProvider(), child: const PlaybackSettingsScreen()),
-      ),
-    );
+    await _pumpPlaybackSettings(tester);
     await tester.pumpAndSettle();
 
     final title = find.text('Audio Channels');
@@ -307,12 +276,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: monoTheme(MonoPalette.dark),
-        home: ChangeNotifierProvider(create: (_) => LibrariesProvider(), child: const PlaybackSettingsScreen()),
-      ),
-    );
+    await _pumpPlaybackSettings(tester);
     await tester.pumpAndSettle();
 
     final title = find.text('Play Smaller Videos at Original Quality');
@@ -334,9 +298,12 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
 
     await tester.pumpWidget(
-      MaterialApp(
-        theme: monoTheme(MonoPalette.dark).copyWith(platform: TargetPlatform.android),
-        home: ChangeNotifierProvider(create: (_) => LibrariesProvider(), child: const PlaybackSettingsScreen()),
+      ChangeNotifierProvider<LibrariesProvider>(
+        create: (_) => LibrariesProvider(),
+        child: MaterialApp(
+          theme: monoTheme(MonoPalette.dark).copyWith(platform: TargetPlatform.android),
+          home: const PlaybackSettingsScreen(),
+        ),
       ),
     );
     await tester.pumpAndSettle();
@@ -360,12 +327,7 @@ void main() {
     addTearDown(tester.view.resetDevicePixelRatio);
     addTearDown(tester.view.resetPhysicalSize);
 
-    await tester.pumpWidget(
-      MaterialApp(
-        theme: monoTheme(MonoPalette.dark),
-        home: ChangeNotifierProvider(create: (_) => LibrariesProvider(), child: const PlaybackSettingsScreen()),
-      ),
-    );
+    await _pumpPlaybackSettings(tester);
     await tester.pumpAndSettle();
 
     final title = find.text('Shuffle Starts at Beginning');
@@ -386,9 +348,12 @@ void main() {
     addTearDown(tester.view.resetPhysicalSize);
 
     await tester.pumpWidget(
-      MaterialApp(
-        theme: monoTheme(MonoPalette.dark).copyWith(platform: TargetPlatform.macOS),
-        home: ChangeNotifierProvider(create: (_) => LibrariesProvider(), child: const PlaybackSettingsScreen()),
+      ChangeNotifierProvider<LibrariesProvider>(
+        create: (_) => LibrariesProvider(),
+        child: MaterialApp(
+          theme: monoTheme(MonoPalette.dark).copyWith(platform: TargetPlatform.macOS),
+          home: const PlaybackSettingsScreen(),
+        ),
       ),
     );
     await tester.pumpAndSettle();

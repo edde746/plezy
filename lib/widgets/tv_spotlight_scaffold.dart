@@ -25,6 +25,7 @@ import '../utils/formatters.dart';
 import 'cast_member_strip.dart';
 import 'tv_browse_rail.dart';
 import 'tv_spotlight_background.dart';
+import 'app_icon.dart';
 
 class TvSpotlightController extends ValueNotifier<MediaItem?> {
   TvSpotlightController({Duration settleDelay = const Duration(milliseconds: 150)})
@@ -389,7 +390,7 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
           width: size,
           height: size,
           decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.38), shape: BoxShape.circle),
-          child: Icon(icon, color: Colors.white, size: size * 0.68),
+          child: AppIcon(icon, color: Colors.white, size: size * 0.68),
         ),
       ),
     );
@@ -437,8 +438,9 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
             child: _HeroCastRow(item: widget.item!, client: widget.client),
           ),
         if (widget.hasPrevious)
-          _buildChevron(context, alignment: Alignment.centerLeft, icon: Icons.chevron_left_rounded),
-        if (widget.hasNext) _buildChevron(context, alignment: Alignment.centerRight, icon: Icons.chevron_right_rounded),
+          _buildChevron(context, alignment: Alignment.centerLeft, icon: Symbols.chevron_left_rounded),
+        if (widget.hasNext)
+          _buildChevron(context, alignment: Alignment.centerRight, icon: Symbols.chevron_right_rounded),
       ],
     );
   }
@@ -530,7 +532,7 @@ class _HeroCastRowState extends State<_HeroCastRow> {
                   children: [
                     Row(
                       children: [
-                        Icon(Symbols.group_rounded, size: 20 * scale, color: theme.colorScheme.onSurface),
+                        AppIcon(Symbols.group_rounded, size: 20 * scale, color: theme.colorScheme.onSurface),
                         SizedBox(width: 8 * scale),
                         Text(
                           t.discover.cast,

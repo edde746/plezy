@@ -15,6 +15,43 @@ import (
 	"time"
 )
 
+func TestValidatedOAuthAuthorizeURL(t *testing.T) {
+	tests := []struct {
+		service string
+		value   string
+		valid   bool
+	}{
+		{"mal", "https://myanimelist.net/v1/oauth2/authorize", true},
+		{"anilist", "https://anilist.co/api/v2/oauth/authorize", true},
+		{"mal", "http://127.0.0.1:1234/oauth/authorize", true},
+		{"mal", "https://attacker.example/authorize", false},
+		{"anilist", "https://anilist.co.attacker.example/authorize", false},
+		{"mal", "http://attacker.example/authorize", false},
+		{"unknown", "https://attacker.example/authorize", false},
+		{"mal", "https://user@myanimelist.net/authorize", false},
+		{"mal", "https://myanimelist.net/authorize?next=https://attacker.example", false},
+	}
+	for _, test := range tests {
+		t.Run(test.service+"/"+test.value, func(t *testing.T) {
+			_, err := validatedOAuthAuthorizeURL(test.service, test.value)
+			if (err == nil) != test.valid {
+				t.Fatalf("validatedOAuthAuthorizeURL(%q, %q) err=%v, valid=%v", test.service, test.value, err, test.valid)
+			}
+		})
+	}
+}
+
+func TestRenderErrorPageEscapesMessage(t *testing.T) {
+	response := httptest.NewRecorder()
+	renderErrorPage(response, http.StatusBadRequest, `<script>alert("x")</script>`)
+	if strings.Contains(response.Body.String(), "<script>") {
+		t.Fatalf("rendered unescaped HTML: %s", response.Body.String())
+	}
+	if !strings.Contains(response.Body.String(), "&lt;script&gt;") {
+		t.Fatalf("rendered page did not include escaped message: %s", response.Body.String())
+	}
+}
+
 // mockUpstream records token exchanges and returns a canned response.
 type mockUpstream struct {
 	srv        *httptest.Server

@@ -13,6 +13,7 @@ import urllib.request
 sys.path.insert(0, str(Path(__file__).resolve().parent))
 
 from maestro_jellyfin_proxy import JellyfinProxyHandler, ProxyState  # noqa: E402
+from safe_http import safe_urlopen  # noqa: E402
 
 
 class _UpstreamHandler(BaseHTTPRequestHandler):
@@ -101,7 +102,7 @@ class JellyfinProxyTests(unittest.TestCase):
                     "Accept-Encoding": "gzip",
                 },
             )
-            with urllib.request.urlopen(request) as response:
+            with safe_urlopen(request) as response:
                 self.assertEqual(response.status, 206)
                 self.assertEqual(response.headers["Accept-Ranges"], "bytes")
                 self.assertEqual(response.read(), b"real jellyfin response")
@@ -116,10 +117,10 @@ class JellyfinProxyTests(unittest.TestCase):
         proxy, thread, base_url, journal = self._start_proxy("recovery")
         try:
             with self.assertRaises(urllib.error.HTTPError) as first:
-                urllib.request.urlopen(base_url + "/Videos/movie/stream.mp4?Static=true")
+                safe_urlopen(base_url + "/Videos/movie/stream.mp4?Static=true")
             self.assertEqual(first.exception.code, 503)
             first.exception.close()
-            with urllib.request.urlopen(base_url + "/Videos/movie/stream.mp4?Static=true") as second:
+            with safe_urlopen(base_url + "/Videos/movie/stream.mp4?Static=true") as second:
                 self.assertEqual(second.status, 200)
             self.assertEqual(len(_UpstreamHandler.requests), 1)
             events = [json.loads(line) for line in journal.read_text(encoding="utf-8").splitlines()]
@@ -140,11 +141,11 @@ class JellyfinProxyTests(unittest.TestCase):
                 method="POST",
                 headers={"Content-Type": "application/json"},
             )
-            with urllib.request.urlopen(enable) as response:
+            with safe_urlopen(enable) as response:
                 self.assertEqual(response.status, 204)
 
             with self.assertRaises(urllib.error.HTTPError) as failure:
-                urllib.request.urlopen(base_url + "/Items")
+                safe_urlopen(base_url + "/Items")
             self.assertEqual(failure.exception.code, 503)
             failure.exception.close()
             self.assertEqual(_UpstreamHandler.requests, [])
@@ -155,9 +156,9 @@ class JellyfinProxyTests(unittest.TestCase):
                 method="POST",
                 headers={"Content-Type": "application/json"},
             )
-            with urllib.request.urlopen(disable) as response:
+            with safe_urlopen(disable) as response:
                 self.assertEqual(response.status, 204)
-            with urllib.request.urlopen(base_url + "/Items") as response:
+            with safe_urlopen(base_url + "/Items") as response:
                 self.assertEqual(response.status, 200)
 
             events = [json.loads(line) for line in journal.read_text(encoding="utf-8").splitlines()]
@@ -168,13 +169,13 @@ class JellyfinProxyTests(unittest.TestCase):
     def test_music_fault_does_not_affect_other_requests(self) -> None:
         proxy, thread, base_url, _ = self._start_proxy("music-failure")
         try:
-            with urllib.request.urlopen(base_url + "/Items") as response:
+            with safe_urlopen(base_url + "/Items") as response:
                 self.assertEqual(response.status, 200)
             with self.assertRaises(urllib.error.HTTPError) as failure:
-                urllib.request.urlopen(base_url + "/Artists/AlbumArtists?UserId=user")
+                safe_urlopen(base_url + "/Artists/AlbumArtists?UserId=user")
             self.assertEqual(failure.exception.code, 503)
             failure.exception.close()
-            with urllib.request.urlopen(base_url + "/Artists/AlbumArtists?UserId=user") as recovered:
+            with safe_urlopen(base_url + "/Artists/AlbumArtists?UserId=user") as recovered:
                 self.assertEqual(recovered.status, 200)
         finally:
             self._stop_proxy(proxy, thread)

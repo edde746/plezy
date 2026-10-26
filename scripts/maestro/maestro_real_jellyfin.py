@@ -17,6 +17,13 @@ import urllib.parse
 import urllib.request
 import xml.etree.ElementTree as ET
 
+try:
+    import safe_http
+    from safe_http import safe_urlopen
+except ModuleNotFoundError:
+    from scripts.maestro import safe_http
+    from scripts.maestro.safe_http import safe_urlopen
+
 from maestro_fixtures import MEDIA_FIXTURE_SPECS, _AUDIO, _VIDEO
 
 USERNAME = "maestro"
@@ -179,6 +186,7 @@ def _valid_codec_file(path: Path, expected_size: int, expected_sha256: str) -> b
 
 
 def download_codec_media(output_dir: Path, base_url: str = DEFAULT_CODEC_BASE_URL) -> list[str]:
+    safe_http.validate_http_url(base_url)
     output = output_dir.expanduser().resolve()
     output.mkdir(parents=True, exist_ok=True)
     normalized_base_url = base_url.rstrip("/") + "/"
@@ -197,7 +205,7 @@ def download_codec_media(output_dir: Path, base_url: str = DEFAULT_CODEC_BASE_UR
             headers={"User-Agent": "plezy-jellyfin-demo-builder"},
         )
         try:
-            with urllib.request.urlopen(request, timeout=60) as response:
+            with safe_urlopen(request, timeout=60) as response:
                 raw_length = response.headers.get("Content-Length")
                 if raw_length is not None and int(raw_length) != spec.size_bytes:
                     raise ValueError(
@@ -326,6 +334,7 @@ def prepare_media(output_dir: Path, codec_source_dir: Path | None, include_codec
 
 class JellyfinApi:
     def __init__(self, base_url: str) -> None:
+        safe_http.validate_http_url(base_url)
         self.base_url = base_url.rstrip("/")
 
     def request(
@@ -349,7 +358,7 @@ class JellyfinApi:
             request_headers["X-Emby-Token"] = token
         request = urllib.request.Request(self.base_url + path, data=data, method=method, headers=request_headers)
         try:
-            with urllib.request.urlopen(request, timeout=timeout) as response:
+            with safe_urlopen(request, timeout=timeout) as response:
                 return response.status, response.read()
         except urllib.error.HTTPError as error:
             return error.code, error.read()

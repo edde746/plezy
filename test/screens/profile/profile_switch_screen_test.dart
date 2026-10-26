@@ -34,6 +34,7 @@ void main() {
 
   setUp(() async {
     resetSharedPreferencesForTest();
+    SettingsService.resetForTesting();
     await SettingsService.getInstance();
     await StorageService.getInstance();
     LocaleSettings.setLocaleSync(AppLocale.en);
@@ -55,7 +56,7 @@ void main() {
     expect(FocusManager.instance.primaryFocus?.debugLabel, 'ProfileActions:local-owner');
 
     await tester.sendKeyEvent(LogicalKeyboardKey.enter);
-    await tester.pumpAndSettle();
+    await _pumpBounded(tester);
 
     expect(find.text(t.profiles.manage), findsOneWidget);
     expect(find.text(t.profiles.delete), findsOneWidget);
@@ -209,7 +210,7 @@ void main() {
         ),
       ),
     );
-    await tester.pumpAndSettle();
+    await _pumpBounded(tester);
 
     expect(_visibleProfileNames(tester), ['Owner', 'Kids']);
     final focused = FocusManager.instance.primaryFocus;
@@ -228,7 +229,7 @@ void main() {
         lastUsedAt: DateTime(2026, 1, 3),
       ),
     ]);
-    await tester.pumpAndSettle();
+    await _pumpBounded(tester);
 
     expect(_visibleProfileNames(tester), ['Kids', 'Owner'], reason: 'the emission should have re-sorted the list');
     expect(FocusManager.instance.primaryFocus, same(focused), reason: 'the reorder must not move focus off the tile');
@@ -555,7 +556,9 @@ Future<void> _pumpPicker(
       ),
     ),
   );
-  if (settle) await tester.pumpAndSettle();
+  if (settle) {
+    await _pumpBounded(tester);
+  }
 }
 
 PlexAccountConnection _plexAccount(String accountLabel) {
@@ -590,7 +593,7 @@ Finder _tileFor(String displayName) {
 /// Opens the actions menu on the tile named [name] via its trailing button.
 Future<void> _openTileMenu(WidgetTester tester, String name) async {
   await tester.tap(find.descendant(of: _tileFor(name), matching: find.byTooltip(t.profiles.manage)));
-  await tester.pumpAndSettle();
+  await _pumpBounded(tester);
 }
 
 /// The single chip label inside [tile] that names both [first] and [second].

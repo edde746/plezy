@@ -48,7 +48,9 @@ void main() {
         httpClient: MockClient((request) async {
           requests.add(request);
           if (request.url.path == '/oauth/token') {
-            expect(json.decode(request.body), containsPair('refresh_token', 'refresh-old'));
+            final body = json.decode(request.body) as Map<String, dynamic>;
+            expect(body, containsPair('refresh_token', 'refresh-old'));
+            expect(body, isNot(contains('client_secret')));
             return http.Response(_tokenBody(), 200);
           }
           if (request.url.path == '/users/settings') {
@@ -139,5 +141,27 @@ void main() {
 
       client.dispose();
     });
+  });
+
+  test('revokes the token with the public client ID and no client secret', () async {
+    http.Request? captured;
+    final client = TraktClient(
+      _session(),
+      onSessionInvalidated: () {},
+      onSessionUpdated: (_) {},
+      httpClient: MockClient((request) async {
+        captured = request;
+        return http.Response('', 200);
+      }),
+    );
+
+    await client.revoke();
+
+    expect(captured?.url.path, '/oauth/revoke');
+    expect(json.decode(captured!.body), {
+      'token': 'access-old',
+      'client_id': '9861e686e95c13409dd321736f903973cb9b8e5c6abd0634bec8962f52ea30f4',
+    });
+    client.dispose();
   });
 }

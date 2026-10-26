@@ -3,6 +3,7 @@ import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:flutter_chrome_cast/flutter_chrome_cast.dart';
+import 'package:material_symbols_icons/symbols.dart';
 
 import '../i18n/strings.g.dart';
 import '../media/media_item.dart';
@@ -13,6 +14,7 @@ import '../utils/platform_detector.dart';
 import '../utils/watch_state_notifier.dart';
 import 'playback_report_session.dart';
 import 'trackers/tracker_coordinator.dart';
+import '../widgets/app_icon.dart';
 
 /// Google Cast handoff for server-resolved streams.
 ///
@@ -142,7 +144,7 @@ class CastMediaService extends ChangeNotifier {
                         itemBuilder: (context, index) {
                           final device = devices[index];
                           return ListTile(
-                            leading: const Icon(Icons.cast),
+                            leading: const AppIcon(Symbols.cast_rounded),
                             title: Text(device.friendlyName),
                             subtitle: device.modelName == null ? null : Text(device.modelName!),
                             onTap: () => Navigator.of(context).pop(device),
@@ -468,7 +470,7 @@ class CastMediaService extends ChangeNotifier {
                         onPressed: !isPaused && !isPlaying
                             ? null
                             : () => unawaited(isPaused ? _remote.play() : _remote.pause()),
-                        icon: Icon(isPaused ? Icons.play_arrow_rounded : Icons.pause_rounded),
+                        icon: AppIcon(isPaused ? Symbols.play_arrow_rounded : Symbols.pause_rounded),
                       ),
                       const SizedBox(width: 8),
                       IconButton.filledTonal(
@@ -478,7 +480,7 @@ class CastMediaService extends ChangeNotifier {
                           await _sessions.endSessionAndStopCasting();
                           if (sheetContext.mounted) Navigator.of(sheetContext).pop();
                         },
-                        icon: const Icon(Icons.stop_rounded),
+                        icon: const AppIcon(Symbols.stop_rounded),
                       ),
                     ],
                   ),

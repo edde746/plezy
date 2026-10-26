@@ -498,8 +498,8 @@ void main() {
       backend: MediaBackend.plex,
       kind: MediaKind.movie,
       title: 'Continue Watching',
-      viewOffsetMs: 1000,
-      durationMs: 10000,
+      durationMs: 120_000,
+      viewOffsetMs: 30_000,
       serverId: 'server_1',
       serverName: 'Server',
     );
@@ -1092,6 +1092,9 @@ class _FakeMediaServerClient implements MediaServerClient {
   @override
   Future<List<MediaItem>> fetchContinueWatching({int? count = 20, Set<String> excludedLibraryIds = const {}}) async =>
       continueWatching;
+
+  @override
+  Future<List<MediaLibrary>> fetchLibraries() async => const [];
 
   @override
   Future<List<MediaHub>> fetchGlobalHubs({
