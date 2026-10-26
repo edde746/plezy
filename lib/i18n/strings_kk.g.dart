@@ -1407,7 +1407,6 @@ class _Translations$about$kk extends Translations$about$en {
 
 	// Translations
 	@override String get title => 'Қолданба туралы';
-	@override String get privacyPolicy => 'Құпиялылық саясаты';
 	@override String get openSourceLicenses => 'Ашық бастапқы код лицензиялары';
 	@override String versionLabel({required Object version}) => 'Нұсқа ${version}';
 	@override String get appDescription => 'Flutter негізіндегі ыңғайлы Plex, Jellyfin және Emby клиенті';
@@ -4724,7 +4723,6 @@ extension on TranslationsKk {
 			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => 'Қолданба туралы',
-			'about.privacyPolicy' => 'Құпиялылық саясаты',
 			'about.openSourceLicenses' => 'Ашық бастапқы код лицензиялары',
 			'about.versionLabel' => ({required Object version}) => 'Нұсқа ${version}',
 			'about.appDescription' => 'Flutter негізіндегі ыңғайлы Plex, Jellyfin және Emby клиенті',
@@ -5024,9 +5022,9 @@ extension on TranslationsKk {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Топтаманы өшіру қатесі: ${error}',
 			'collections.selectCollection' => 'Топтаманы таңдау',
 			'collections.collectionName' => 'Топтама атауы',
+			'collections.enterCollectionName' => 'Топтама атауын енгізіңіз',
 			_ => null,
 		} ?? switch (path) {
-			'collections.enterCollectionName' => 'Топтама атауын енгізіңіз',
 			'collections.addedToCollection' => 'Топтамаға қосылды',
 			'collections.errorAddingToCollection' => 'Топтамаға қосу мүмкін болмады',
 			'collections.created' => 'Топтама жасалды',
@@ -5538,9 +5536,9 @@ extension on TranslationsKk {
 			'externalPlayer.selectPlayer' => 'Ойнатқышты таңдау',
 			'externalPlayer.customPlayers' => 'Арнайы ойнатқыштар',
 			'externalPlayer.systemDefault' => 'Жүйелік әдепкі',
+			'externalPlayer.addCustomPlayer' => 'Арнайы ойнатқыш қосу',
 			_ => null,
 		} ?? switch (path) {
-			'externalPlayer.addCustomPlayer' => 'Арнайы ойнатқыш қосу',
 			'externalPlayer.playerName' => 'Ойнатқыш атауы',
 			'externalPlayer.playerNameHint' => 'Менің ойнатқышым',
 			'externalPlayer.playerCommand' => 'Пәрмен',

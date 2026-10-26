@@ -1407,7 +1407,6 @@ class _Translations$about$bg extends Translations$about$en {
 
 	// Translations
 	@override String get title => 'Относно';
-	@override String get privacyPolicy => 'Политика за поверителност';
 	@override String get openSourceLicenses => 'Лицензи с отворен код';
 	@override String versionLabel({required Object version}) => 'Версия ${version}';
 	@override String get appDescription => 'Красив клиент за Plex, Jellyfin и Emby, създаден с Flutter';
@@ -4724,7 +4723,6 @@ extension on TranslationsBg {
 			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => 'Относно',
-			'about.privacyPolicy' => 'Политика за поверителност',
 			'about.openSourceLicenses' => 'Лицензи с отворен код',
 			'about.versionLabel' => ({required Object version}) => 'Версия ${version}',
 			'about.appDescription' => 'Красив клиент за Plex, Jellyfin и Emby, създаден с Flutter',
@@ -5024,9 +5022,9 @@ extension on TranslationsBg {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Неуспешно изтриване на колекция: ${error}',
 			'collections.selectCollection' => 'Избери колекция',
 			'collections.collectionName' => 'Име на колекция',
+			'collections.enterCollectionName' => 'Въведете име на колекция',
 			_ => null,
 		} ?? switch (path) {
-			'collections.enterCollectionName' => 'Въведете име на колекция',
 			'collections.addedToCollection' => 'Добавено към колекция',
 			'collections.errorAddingToCollection' => 'Неуспешно добавяне към колекция',
 			'collections.created' => 'Колекцията е създадена',
@@ -5538,9 +5536,9 @@ extension on TranslationsBg {
 			'externalPlayer.selectPlayer' => 'Избери плейър',
 			'externalPlayer.customPlayers' => 'Потребителски плейъри',
 			'externalPlayer.systemDefault' => 'Системен по подразбиране',
+			'externalPlayer.addCustomPlayer' => 'Добави потребителски плейър',
 			_ => null,
 		} ?? switch (path) {
-			'externalPlayer.addCustomPlayer' => 'Добави потребителски плейър',
 			'externalPlayer.playerName' => 'Име на плейъра',
 			'externalPlayer.playerNameHint' => 'Моят плеър',
 			'externalPlayer.playerCommand' => 'Команда',

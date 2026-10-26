@@ -1407,7 +1407,6 @@ class _Translations$about$sv extends Translations$about$en {
 
 	// Translations
 	@override String get title => 'Om';
-	@override String get privacyPolicy => 'Integritetspolicy';
 	@override String get openSourceLicenses => 'Licenser för öppen källkod';
 	@override String versionLabel({required Object version}) => 'Version ${version}';
 	@override String get appDescription => 'En vacker Plex-, Jellyfin- och Emby-klient för Flutter';
@@ -4724,7 +4723,6 @@ extension on TranslationsSv {
 			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => 'Om',
-			'about.privacyPolicy' => 'Integritetspolicy',
 			'about.openSourceLicenses' => 'Licenser för öppen källkod',
 			'about.versionLabel' => ({required Object version}) => 'Version ${version}',
 			'about.appDescription' => 'En vacker Plex-, Jellyfin- och Emby-klient för Flutter',
@@ -5024,9 +5022,9 @@ extension on TranslationsSv {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Det gick inte att ta bort samlingen: ${error}',
 			'collections.selectCollection' => 'Välj samling',
 			'collections.collectionName' => 'Samlingsnamn',
+			'collections.enterCollectionName' => 'Ange samlingsnamn',
 			_ => null,
 		} ?? switch (path) {
-			'collections.enterCollectionName' => 'Ange samlingsnamn',
 			'collections.addedToCollection' => 'Objektet har lagts till i samlingen',
 			'collections.errorAddingToCollection' => 'Det gick inte att lägga till objektet i samlingen',
 			'collections.created' => 'Samlingen har skapats',
@@ -5538,9 +5536,9 @@ extension on TranslationsSv {
 			'externalPlayer.selectPlayer' => 'Välj spelare',
 			'externalPlayer.customPlayers' => 'Anpassade spelare',
 			'externalPlayer.systemDefault' => 'Systemstandard',
+			'externalPlayer.addCustomPlayer' => 'Lägg till anpassad spelare',
 			_ => null,
 		} ?? switch (path) {
-			'externalPlayer.addCustomPlayer' => 'Lägg till anpassad spelare',
 			'externalPlayer.playerName' => 'Spelarnamn',
 			'externalPlayer.playerNameHint' => 'Min spelare',
 			'externalPlayer.playerCommand' => 'Kommando',

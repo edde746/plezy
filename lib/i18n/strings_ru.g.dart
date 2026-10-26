@@ -1417,7 +1417,6 @@ class _Translations$about$ru extends Translations$about$en {
 
 	// Translations
 	@override String get title => 'О приложении';
-	@override String get privacyPolicy => 'Политика конфиденциальности';
 	@override String get openSourceLicenses => 'Лицензии открытого ПО';
 	@override String versionLabel({required Object version}) => 'Версия ${version}';
 	@override String get appDescription => 'Красивый клиент Plex, Jellyfin и Emby на Flutter';
@@ -4748,7 +4747,6 @@ extension on TranslationsRu {
 			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => 'О приложении',
-			'about.privacyPolicy' => 'Политика конфиденциальности',
 			'about.openSourceLicenses' => 'Лицензии открытого ПО',
 			'about.versionLabel' => ({required Object version}) => 'Версия ${version}',
 			'about.appDescription' => 'Красивый клиент Plex, Jellyfin и Emby на Flutter',
@@ -5048,9 +5046,9 @@ extension on TranslationsRu {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Не удалось удалить коллекцию: ${error}',
 			'collections.selectCollection' => 'Выбрать коллекцию',
 			'collections.collectionName' => 'Название коллекции',
+			'collections.enterCollectionName' => 'Введите название коллекции',
 			_ => null,
 		} ?? switch (path) {
-			'collections.enterCollectionName' => 'Введите название коллекции',
 			'collections.addedToCollection' => 'Добавлено в коллекцию',
 			'collections.errorAddingToCollection' => 'Не удалось добавить в коллекцию',
 			'collections.created' => 'Коллекция создана',
@@ -5562,9 +5560,9 @@ extension on TranslationsRu {
 			'externalPlayer.selectPlayer' => 'Выбрать плеер',
 			'externalPlayer.customPlayers' => 'Свои плееры',
 			'externalPlayer.systemDefault' => 'Системный по умолчанию',
+			'externalPlayer.addCustomPlayer' => 'Добавить свой плеер',
 			_ => null,
 		} ?? switch (path) {
-			'externalPlayer.addCustomPlayer' => 'Добавить свой плеер',
 			'externalPlayer.playerName' => 'Название плеера',
 			'externalPlayer.playerNameHint' => 'Мой плеер',
 			'externalPlayer.playerCommand' => 'Команда',

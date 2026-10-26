@@ -1407,7 +1407,6 @@ class _Translations$about$az extends Translations$about$en {
 
 	// Translations
 	@override String get title => 'Haqqında';
-	@override String get privacyPolicy => 'Məxfilik Siyasəti';
 	@override String get openSourceLicenses => 'Açıq mənbə lisenziyaları';
 	@override String versionLabel({required Object version}) => 'Versiya ${version}';
 	@override String get appDescription => 'Flutter üçün gözəl bir Plex, Jellyfin və Emby klienti';
@@ -4724,7 +4723,6 @@ extension on TranslationsAz {
 			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => 'Haqqında',
-			'about.privacyPolicy' => 'Məxfilik Siyasəti',
 			'about.openSourceLicenses' => 'Açıq mənbə lisenziyaları',
 			'about.versionLabel' => ({required Object version}) => 'Versiya ${version}',
 			'about.appDescription' => 'Flutter üçün gözəl bir Plex, Jellyfin və Emby klienti',
@@ -5024,9 +5022,9 @@ extension on TranslationsAz {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'Kolleksiya silinə bilmədi: ${error}',
 			'collections.selectCollection' => 'Kolleksiya seç',
 			'collections.collectionName' => 'Kolleksiya adı',
+			'collections.enterCollectionName' => 'Kolleksiya adını daxil edin',
 			_ => null,
 		} ?? switch (path) {
-			'collections.enterCollectionName' => 'Kolleksiya adını daxil edin',
 			'collections.addedToCollection' => 'Kolleksiyaya əlavə edildi',
 			'collections.errorAddingToCollection' => 'Kolleksiyaya əlavə edilə bilmədi',
 			'collections.created' => 'Kolleksiya yaradıldı',
@@ -5538,9 +5536,9 @@ extension on TranslationsAz {
 			'externalPlayer.selectPlayer' => 'Oynadıcı seç',
 			'externalPlayer.customPlayers' => 'Xüsusi oynadıcılar',
 			'externalPlayer.systemDefault' => 'Sistem defoltu',
+			'externalPlayer.addCustomPlayer' => 'Xüsusi oynadıcı əlavə et',
 			_ => null,
 		} ?? switch (path) {
-			'externalPlayer.addCustomPlayer' => 'Xüsusi oynadıcı əlavə et',
 			'externalPlayer.playerName' => 'Oynadıcı adı',
 			'externalPlayer.playerNameHint' => 'Mənim oynadıcım',
 			'externalPlayer.playerCommand' => 'Əmr',

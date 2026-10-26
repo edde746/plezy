@@ -1402,7 +1402,6 @@ class _Translations$about$ja extends Translations$about$en {
 
 	// Translations
 	@override String get title => 'アプリについて';
-	@override String get privacyPolicy => 'プライバシーポリシー';
 	@override String get openSourceLicenses => 'オープンソースライセンス';
 	@override String versionLabel({required Object version}) => 'バージョン ${version}';
 	@override String get appDescription => 'Flutter製の美しいPlex・Jellyfin・Embyクライアント';
@@ -4712,7 +4711,6 @@ extension on TranslationsJa {
 			'libraries.selection.completed' => ({required Object count}) => 'Items updated: ${count}.',
 			'libraries.selection.partialFailure' => ({required Object succeeded, required Object failed}) => 'Updated ${succeeded}; failed ${failed}. Failed items remain selected.',
 			'about.title' => 'アプリについて',
-			'about.privacyPolicy' => 'プライバシーポリシー',
 			'about.openSourceLicenses' => 'オープンソースライセンス',
 			'about.versionLabel' => ({required Object version}) => 'バージョン ${version}',
 			'about.appDescription' => 'Flutter製の美しいPlex・Jellyfin・Embyクライアント',
@@ -5012,9 +5010,9 @@ extension on TranslationsJa {
 			'collections.deleteFailedWithError' => ({required Object error}) => 'コレクションの削除に失敗しました: ${error}',
 			'collections.selectCollection' => 'コレクションを選択',
 			'collections.collectionName' => 'コレクション名',
+			'collections.enterCollectionName' => 'コレクション名を入力',
 			_ => null,
 		} ?? switch (path) {
-			'collections.enterCollectionName' => 'コレクション名を入力',
 			'collections.addedToCollection' => 'コレクションに追加しました',
 			'collections.errorAddingToCollection' => 'コレクションへの追加に失敗しました',
 			'collections.created' => 'コレクションを作成しました',
@@ -5526,9 +5524,9 @@ extension on TranslationsJa {
 			'externalPlayer.selectPlayer' => 'プレーヤーを選択',
 			'externalPlayer.customPlayers' => 'カスタムプレーヤー',
 			'externalPlayer.systemDefault' => 'システム既定',
+			'externalPlayer.addCustomPlayer' => 'カスタムプレーヤーを追加',
 			_ => null,
 		} ?? switch (path) {
-			'externalPlayer.addCustomPlayer' => 'カスタムプレーヤーを追加',
 			'externalPlayer.playerName' => 'プレーヤー名',
 			'externalPlayer.playerNameHint' => 'マイプレーヤー',
 			'externalPlayer.playerCommand' => 'コマンド',
