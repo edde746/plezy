@@ -18,7 +18,7 @@ void main() {
     transport.close();
   });
 
-  test('stream-only publication files round-trip without changing archived identity', () {
+  test('stream-only publication files round-trip without changing identity', () {
     const streamed = PublicationFile(
       id: 'stable-id',
       name: 'book.cbz',
@@ -37,7 +37,7 @@ void main() {
 
     final restored = PublicationFile.fromJson(streamed.toJson());
     expect(restored.streamOnly, isTrue);
-    expect(restored.fingerprint, isNot(archived.fingerprint));
+    expect(restored.fingerprint, archived.fingerprint);
     expect(PublicationFile.fromJson(archived.toJson()).streamOnly, isFalse);
     expect(archived.fingerprint, '7aa359edddc5b08b8c0bfc311d9c7e605c5a277f17db26c1c9b5d0827a0f226a');
   });

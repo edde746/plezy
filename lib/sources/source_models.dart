@@ -189,9 +189,9 @@ class PublicationFile {
   final bool primary;
   final bool streamOnly;
   SourceItemKind get kind => classifySourceFile(name, mimeType);
-  // Preserve the historical identity for archived files; only stream-only
-  // representations need the extra discriminator.
-  String get fingerprint => sourceDigest(jsonEncode([id, revision, size, if (streamOnly) true]));
+  // Availability affects how a file is opened, not the identity used for
+  // persisted reading progress and downloads.
+  String get fingerprint => sourceDigest(jsonEncode([id, revision, size]));
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
