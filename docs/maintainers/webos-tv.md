@@ -133,6 +133,12 @@ The PlezyNG credential vault encrypts server tokens with AES-GCM. The vault key 
 
 The native package carries LG's `OSSNotice-16409_Flutter SDK_3.38.10_260626.txt` verbatim as an app asset and registers it in PlezyNG's Open Source Licenses screen only for the webOS build. The app-specific ACGs stay limited to `network.query` and `securitykey.operation`; the package validator checks the SDK-added groups explicitly and rejects wildcard or unexpected ACG entries. LG enables ACG enforcement on webOS 26 Re:New. The `requiredACG` field becomes mandatory for every app on webOS 27+, and LG's compliance notice schedules CLI packaging and Seller Lounge submission blocks for March 2027 ([ACG requirements](https://webostv.developer.lge.com/develop/guides/acg-guide)).
 
+## LG runtime redistribution review
+
+The official [`flutter-webos` source repository](https://github.com/lg-flutter-webos/flutter-webos/blob/main/LICENSE) publishes a BSD-3-Clause license, which permits source and binary redistribution subject to its notice, disclaimer, and non-endorsement terms. The separate [prebuilt artifacts repository](https://github.com/lg-flutter-webos/artifacts) describes its outputs as Flutter-webOS engine/toolchain binaries and points to a `LICENSES/` directory. That directory currently contains only `OSSNotice-16409_Flutter SDK_3.38.10_260626.txt`; GitHub reports no repository SPDX license for the artifacts repo. The OSS notice is bundled in the IPK and verified, but it does not name `libflutter_common.so` or `libflutter_webos_media.so` or state an explicit license for rehosting the vendor artifact bundle as a whole.
+
+This leaves the license scope of those two LG-provided runtime libraries unclear from the public files reviewed. Before publishing the IPK to GitHub Releases, Homebrew, or another mirror, obtain LG confirmation that redistribution of those libraries inside a third-party app package is allowed and that the included notice satisfies the required terms. This is a distribution gate, not a reason to skip local qualification; do not treat the source repository's BSD license or the OSS notice by itself as confirmation for every binary in the IPK.
+
 ## Remaining device validation
 
 - Verify that the Plex account and server tokens persist across app restarts.
