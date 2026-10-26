@@ -7315,6 +7315,9 @@ class Translations$fileSources$en {
 	/// en: 'Remove offline copy'
 	String get removeDownload => 'Remove offline copy';
 
+	/// en: 'Remove download'
+	String get removeDownloadJob => 'Remove download';
+
 	/// en: 'Continue reading'
 	String get continueReading => 'Continue reading';
 
@@ -7545,6 +7548,9 @@ class Translations$fileSources$en {
 
 	/// en: 'Remove the selected offline copy? Your position and notes will stay.'
 	String get confirmDelete => 'Remove the selected offline copy? Your position and notes will stay.';
+
+	/// en: 'Remove this download and discard any partially downloaded data? Your position and notes will stay.'
+	String get confirmRemoveDownloadJob => 'Remove this download and discard any partially downloaded data? Your position and notes will stay.';
 
 	/// en: 'Sign in again to reconnect this source.'
 	String get errorAuthentication => 'Sign in again to reconnect this source.';
@@ -13383,6 +13389,7 @@ extension on Translations {
 			'fileSources.offline' => 'Available offline',
 			'fileSources.download' => 'Keep offline',
 			'fileSources.removeDownload' => 'Remove offline copy',
+			'fileSources.removeDownloadJob' => 'Remove download',
 			'fileSources.continueReading' => 'Continue reading',
 			'fileSources.continueListening' => 'Continue listening',
 			'fileSources.continueWatching' => 'Continue watching',
@@ -13458,6 +13465,7 @@ extension on Translations {
 			'fileSources.ebooks' => 'Ebooks',
 			'fileSources.all' => 'All',
 			'fileSources.downloads' => 'Offline files',
+			'fileSources.confirmRemoveDownloadJob' => 'Remove this download and discard any partially downloaded data? Your position and notes will stay.',
 			'fileSources.confirmDelete' => 'Remove the selected offline copy? Your position and notes will stay.',
 			'fileSources.errorAuthentication' => 'Sign in again to reconnect this source.',
 			'fileSources.errorPermission' => 'This source did not grant access to the requested file.',
