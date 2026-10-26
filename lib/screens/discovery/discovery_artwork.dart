@@ -93,9 +93,13 @@ class _DiscoveryArtworkState extends State<DiscoveryArtwork> {
                   )
                 : Tooltip(
                     message: t.discover.findNext.artworkUnavailable,
-                    child: TextButton(
+                    child: FocusableButton(
                       onPressed: _retry,
-                      child: Text(t.common.retry, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      autoScroll: false,
+                      child: TextButton(
+                        onPressed: _retry,
+                        child: Text(t.common.retry, maxLines: 1, overflow: TextOverflow.ellipsis),
+                      ),
                     ),
                   ),
           );
