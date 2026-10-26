@@ -13,6 +13,7 @@ import 'adapters/audiobookshelf_source.dart';
 import 'adapters/cloud_sources.dart';
 import 'adapters/local_source.dart';
 import 'adapters/opds_source.dart';
+import 'adapters/komga_source.dart';
 import 'adapters/s3_source.dart';
 import 'adapters/webdav_source.dart';
 import 'content_access.dart';
@@ -244,6 +245,7 @@ class SourceController extends ChangeNotifier {
         FileSourceKind.oneDrive => OneDriveSourceAdapter(source, transport, token),
         FileSourceKind.dropbox => DropboxSourceAdapter(source, transport, token),
         FileSourceKind.s3 => S3SourceAdapter(source, transport, credentials),
+        FileSourceKind.komga => KomgaSourceAdapter(source, transport, credentials),
         FileSourceKind.opds => OpdsSourceAdapter(source, transport, credentials),
         FileSourceKind.audiobookshelf => AudiobookshelfSourceAdapter(source, transport, credentials),
       };

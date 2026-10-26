@@ -158,7 +158,12 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                               ),
                             ),
                       ],
-                      onChanged: _busy || widget.existing != null ? null : (kind) => setState(() => _kind = kind!),
+                      onChanged: _busy || widget.existing != null
+                          ? null
+                          : (kind) => setState(() {
+                              _kind = kind!;
+                              if (kind == FileSourceKind.komga) _shelves = {PublicationShelf.comics};
+                            }),
                     ),
                     const SizedBox(height: 24),
                     input('name', t.fileSources.name),
@@ -175,9 +180,11 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                               },
                         child: Text(t.fileSources.localFolder),
                       ),
-                    ] else if (_kind != FileSourceKind.audiobookshelf && _kind != FileSourceKind.opds)
+                    ] else if (_kind != FileSourceKind.audiobookshelf &&
+                        _kind != FileSourceKind.opds &&
+                        _kind != FileSourceKind.komga)
                       input('root', t.fileSources.root, hint: t.fileSources.folderHelp),
-                    if (const {FileSourceKind.webdav, FileSourceKind.opds}.contains(_kind)) ...[
+                    if (const {FileSourceKind.webdav, FileSourceKind.opds, FileSourceKind.komga}.contains(_kind)) ...[
                       input('username', t.fileSources.username),
                       input('password', t.fileSources.password, secret: true),
                     ],

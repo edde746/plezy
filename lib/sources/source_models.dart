@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 
-enum FileSourceKind { local, webdav, googleDrive, oneDrive, dropbox, s3, opds, audiobookshelf }
+enum FileSourceKind { local, webdav, googleDrive, oneDrive, dropbox, s3, opds, audiobookshelf, komga }
 
 enum SourceItemKind { folder, ebook, audiobook, comic, music, video, unknown }
 
@@ -110,6 +110,7 @@ class PublicationFile {
     this.revision,
     this.durationMs,
     this.primary = true,
+    this.streamOnly = false,
   });
   final String id;
   final String name;
@@ -118,6 +119,7 @@ class PublicationFile {
   final String? revision;
   final int? durationMs;
   final bool primary;
+  final bool streamOnly;
   SourceItemKind get kind => classifySourceFile(name, mimeType);
   String get fingerprint => sourceDigest(jsonEncode([id, revision, size]));
   Map<String, dynamic> toJson() => {
@@ -128,6 +130,7 @@ class PublicationFile {
     'revision': revision,
     'durationMs': durationMs,
     'primary': primary,
+    'streamOnly': streamOnly,
   };
   factory PublicationFile.fromJson(Map<String, dynamic> j) => PublicationFile(
     id: j['id'] as String,
@@ -137,6 +140,7 @@ class PublicationFile {
     revision: j['revision'] as String?,
     durationMs: sourceInt(j['durationMs']),
     primary: j['primary'] as bool? ?? true,
+    streamOnly: j['streamOnly'] == true,
   );
 }
 

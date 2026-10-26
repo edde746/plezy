@@ -2,6 +2,8 @@
 
 ## [Unreleased]
 
+- Add experimental comic page streaming, Komga source integration and ComicInfo metadata support.
+
 ### Added
 
 - Add an isolated experimental Dolby Vision engine build with a Linux gpu-next embedding option and profile inspection lab; full FEL and device output qualification remain pending.
@@ -93,3 +95,4 @@
 ### Removed
 
 - Remove unused upstream website, legacy app-store and Sentry upload automation, and funding links.
+

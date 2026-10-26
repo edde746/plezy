@@ -39,7 +39,7 @@ class FileSourceMark extends StatelessWidget {
     FileSourceKind.oneDrive => ProviderMark('onedrive.svg', size: size, label: 'OneDrive'),
     FileSourceKind.dropbox => ProviderMark('dropbox.png', size: size, label: 'Dropbox'),
     FileSourceKind.local => AppIcon(Symbols.folder_open_rounded, size: size),
-    FileSourceKind.opds => AppIcon(Symbols.auto_stories_rounded, size: size),
+    FileSourceKind.opds || FileSourceKind.komga => AppIcon(Symbols.auto_stories_rounded, size: size),
     FileSourceKind.audiobookshelf => AppIcon(Symbols.headphones_rounded, size: size),
     FileSourceKind.webdav || FileSourceKind.s3 => AppIcon(Symbols.cloud_queue_rounded, size: size),
   };
