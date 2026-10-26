@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 
-enum FileSourceKind { local, webdav, smb, googleDrive, oneDrive, dropbox, s3, opds, audiobookshelf }
+enum FileSourceKind { local, webdav, smb, ftp, dlna, googleDrive, oneDrive, dropbox, s3, opds, audiobookshelf }
 
 enum SourceItemKind { folder, ebook, audiobook, comic, music, video, unknown }
 
@@ -200,6 +200,11 @@ class SourceEntry {
     this.rating,
     this.genres = const [],
     this.syncIdentity,
+    this.onlineTitle,
+    this.onlinePosterUrl,
+    this.trailerUrl,
+    this.cast = const [],
+    this.onlineMetadataProvider,
   });
   final String sourceId;
   final String id;
@@ -220,8 +225,14 @@ class SourceEntry {
   final double? rating;
   final List<String> genres;
   final String? syncIdentity;
+  final String? onlineTitle;
+  final String? onlinePosterUrl;
+  final String? trailerUrl;
+  final List<String> cast;
+  final String? onlineMetadataProvider;
 
   SourceEntry copyWith({
+    String? parentId,
     String? title,
     String? description,
     String? coverId,
@@ -230,12 +241,17 @@ class SourceEntry {
     List<String>? genres,
     Map<String, String>? identifiers,
     String? syncIdentity,
+    String? onlineTitle,
+    String? onlinePosterUrl,
+    String? trailerUrl,
+    List<String>? cast,
+    String? onlineMetadataProvider,
   }) => SourceEntry(
     sourceId: sourceId,
     id: id,
     title: title ?? this.title,
     kind: kind,
-    parentId: parentId,
+    parentId: parentId ?? this.parentId,
     author: author,
     narrator: narrator,
     series: series,
@@ -250,6 +266,11 @@ class SourceEntry {
     rating: rating ?? this.rating,
     genres: genres ?? this.genres,
     syncIdentity: syncIdentity ?? this.syncIdentity,
+    onlineTitle: onlineTitle ?? this.onlineTitle,
+    onlinePosterUrl: onlinePosterUrl ?? this.onlinePosterUrl,
+    trailerUrl: trailerUrl ?? this.trailerUrl,
+    cast: cast ?? this.cast,
+    onlineMetadataProvider: onlineMetadataProvider ?? this.onlineMetadataProvider,
   );
 
   String get key => sourceKey(sourceId, id);
@@ -257,7 +278,16 @@ class SourceEntry {
 
   /// Video source names begin as filenames. Keep their descriptive stem while
   /// omitting only the container extension in user-facing titles.
-  String get displayTitle => kind == SourceItemKind.video ? p.withoutExtension(title) : title;
+  String get displayTitle {
+    if (kind != SourceItemKind.video) return title;
+    // Offline NFO titles stay authoritative; online matching only replaces the
+    // original filename stem when no richer local title was supplied.
+    final filename = files.firstOrNull?.name;
+    final isFilename = filename == null || filename == title;
+    final matched = onlineTitle?.trim();
+    if (isFilename && matched?.isNotEmpty == true) return matched!;
+    return isFilename ? p.withoutExtension(title) : title;
+  }
   List<PublicationFile> get ebooks =>
       files.where((f) => (f.kind == SourceItemKind.ebook || f.kind == SourceItemKind.comic)).toList();
   List<PublicationFile> get audio =>
@@ -282,6 +312,11 @@ class SourceEntry {
     if (rating != null) 'rating': rating,
     if (genres.isNotEmpty) 'genres': genres,
     if (syncIdentity != null) 'syncIdentity': syncIdentity,
+    if (onlineTitle != null) 'onlineTitle': onlineTitle,
+    if (onlinePosterUrl != null) 'onlinePosterUrl': onlinePosterUrl,
+    if (trailerUrl != null) 'trailerUrl': trailerUrl,
+    if (cast.isNotEmpty) 'cast': cast,
+    if (onlineMetadataProvider != null) 'onlineMetadataProvider': onlineMetadataProvider,
   };
   factory SourceEntry.fromJson(Map<String, dynamic> j) => SourceEntry(
     sourceId: j['sourceId'] as String,
@@ -303,6 +338,11 @@ class SourceEntry {
     rating: (j['rating'] as num?)?.toDouble(),
     genres: sourceList(j['genres']).whereType<String>().toList(),
     syncIdentity: j['syncIdentity'] as String?,
+    onlineTitle: j['onlineTitle'] as String?,
+    onlinePosterUrl: j['onlinePosterUrl'] as String?,
+    trailerUrl: j['trailerUrl'] as String?,
+    cast: sourceList(j['cast']).whereType<String>().toList(),
+    onlineMetadataProvider: j['onlineMetadataProvider'] as String?,
   );
 }
 

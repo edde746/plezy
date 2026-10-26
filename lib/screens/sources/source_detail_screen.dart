@@ -4,8 +4,12 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../models/trakt/trakt_catalog_entry.dart';
+import '../../providers/trackers_provider.dart';
+import '../../services/trackers/trakt/trakt_constants.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
@@ -100,6 +104,159 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     } finally {
       if (mounted) setState(() => _busy = false);
     }
+  }
+
+  Future<String?> _metadataSearchQuery() async {
+    final controller = TextEditingController(text: _entry.displayTitle);
+    final query = await showDialog<String>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: Text(t.common.search),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          textInputAction: TextInputAction.search,
+          decoration: InputDecoration(hintText: t.search.hint),
+          onSubmitted: (_) => Navigator.pop(dialogContext, controller.text.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            child: Text(MaterialLocalizations.of(dialogContext).cancelButtonLabel),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, controller.text.trim()),
+            child: Text(t.common.search),
+          ),
+        ],
+      ),
+    );
+    controller.dispose();
+    return query;
+  }
+
+  Future<TraktCatalogEntry?> _chooseMetadataMatch(List<TraktCatalogEntry> candidates) =>
+      showModalBottomSheet<TraktCatalogEntry>(
+        context: context,
+        isScrollControlled: true,
+        builder: (sheetContext) => SafeArea(
+          child: SizedBox(
+            height: MediaQuery.sizeOf(sheetContext).height * .72,
+            child: Column(
+              children: [
+                Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Text(t.common.search, style: Theme.of(sheetContext).textTheme.titleLarge),
+                ),
+                Expanded(
+                  child: ListView.builder(
+                    itemCount: candidates.length,
+                    itemBuilder: (context, index) {
+                      final candidate = candidates[index];
+                      final media = candidate.media!;
+                      final title = media.title?.trim() ?? '';
+                      return ListTile(
+                        title: Text(
+                          media.year == null ? title : '$title (${media.year})',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                        subtitle: media.overview?.trim().isNotEmpty == true
+                            ? Text(media.overview!, maxLines: 2, overflow: TextOverflow.ellipsis)
+                            : null,
+                        trailing: media.rating == null ? null : Text('★ ${media.rating!.toStringAsFixed(1)}'),
+                        onTap: () => Navigator.pop(sheetContext, candidate),
+                      );
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+
+  Future<void> _searchOnlineMetadata() async {
+    final client = context.read<TrackersProvider>().traktCatalogClient;
+    if (client == null) return;
+    final query = await _metadataSearchQuery();
+    if (query == null || query.trim().isEmpty || !mounted) return;
+    setState(() {
+      _busy = true;
+      _error = null;
+    });
+    try {
+      final page = await client.searchCatalog(query.trim(), limit: 25);
+      if (!mounted) return;
+      final candidates = page.items
+          .where((entry) => entry.media?.title?.trim().isNotEmpty == true)
+          .take(25)
+          .toList(growable: false);
+      if (candidates.isEmpty) return;
+      final selected = await _chooseMetadataMatch(candidates);
+      if (selected == null || !mounted) return;
+      final media = selected.media;
+      final traktId = media?.ids.trakt;
+      if (media == null || traktId == null) return;
+      final type = selected.show != null ? TraktCatalogType.shows : TraktCatalogType.movies;
+      var cast = <String>[];
+      try {
+        final people = await client.getPeople(type, traktId.toString());
+        cast = people.cast
+            .map((credit) {
+              final name = credit.person?.name?.trim();
+              if (name == null || name.isEmpty) return null;
+              final character = credit.characters?.isNotEmpty == true ? credit.characters!.first.trim() : '';
+              return character.isEmpty ? name : '$name — $character';
+            })
+            .whereType<String>()
+            .take(12)
+            .toList(growable: false);
+      } catch (_) {
+        /* Catalog metadata remains useful when Trakt has no people credits. */
+      }
+      final identifiers = <String, String>{
+        'trakt': traktId.toString(),
+        if (media.ids.tmdb != null) 'tmdb': media.ids.tmdb.toString(),
+        if (media.ids.imdb != null) 'imdb': media.ids.imdb!,
+        if (media.ids.tvdb != null) 'tvdb': media.ids.tvdb.toString(),
+      };
+      await context.read<SourceController>().saveOnlineMetadata(
+        _entry,
+        title: media.title ?? _entry.displayTitle,
+        overview: media.overview,
+        releaseYear: media.year,
+        rating: media.rating,
+        genres: media.genres ?? const [],
+        identifiers: identifiers,
+        posterUrl: media.images?.primaryPoster,
+        trailerUrl: media.trailer,
+        cast: cast,
+        provider: 'trakt',
+      );
+      if (mounted) await _load();
+    } finally {
+      if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Uri? get _trailerUri {
+    final uri = Uri.tryParse(_entry.trailerUrl ?? '');
+    final host = uri?.host.toLowerCase();
+    if (uri == null || uri.scheme != 'https' || host == null || uri.userInfo.isNotEmpty) return null;
+    if (host == 'youtu.be' ||
+        host == 'youtube.com' ||
+        host.endsWith('.youtube.com') ||
+        host == 'vimeo.com' ||
+        host.endsWith('.vimeo.com')) {
+      return uri;
+    }
+    return null;
+  }
+
+  Future<void> _openTrailer() async {
+    final uri = _trailerUri;
+    if (uri != null) await launchUrl(uri, mode: LaunchMode.externalApplication);
   }
 
   Future<void> _play(List<PublicationFile> files) async {
@@ -250,10 +407,17 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context), tk = tokens(context), audio = _entry.audio;
+    final hasTrakt = context.watch<TrackersProvider>().traktCatalogClient != null;
     return FocusedScrollScaffold(
       title: Text(_entry.displayTitle),
       focusableAppBarActions: true,
       actions: [
+        if (_entry.kind == SourceItemKind.video && hasTrakt)
+          IconButton(
+            tooltip: t.common.search,
+            onPressed: _busy ? null : () => sourceAction(context, _searchOnlineMetadata),
+            icon: const AppIcon(Symbols.search_rounded),
+          ),
         IconButton(
           tooltip: t.fileSources.bookmarks,
           onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (_) => SourceNotesScreen(entry: _entry))),
@@ -345,6 +509,12 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                                     icon: const AppIcon(Symbols.play_arrow_rounded, fill: 1),
                                     label: Text(t.fileSources.play),
                                   ),
+                                if (_trailerUri != null)
+                                  OutlinedButton.icon(
+                                    onPressed: () => sourceAction(context, _openTrailer),
+                                    icon: const AppIcon(Symbols.movie_rounded),
+                                    label: Text(t.tooltips.playTrailer),
+                                  ),
                               ],
                             ),
                           ],
@@ -380,6 +550,11 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 24),
                         child: Text(_entry.description, style: theme.textTheme.bodyLarge),
                       ),
+                    if (_entry.cast.isNotEmpty) ...[
+                      Text(t.discover.cast, style: theme.textTheme.titleMedium),
+                      const SizedBox(height: 8),
+                      Text(_entry.cast.join(', '), style: theme.textTheme.bodyMedium),
+                    ],
                     for (final progress in _progress) ...[
                       if (_conflicts.containsKey(progress.key))
                         Padding(
