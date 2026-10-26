@@ -6,6 +6,7 @@
 
 - Add experimental comic page streaming, Komga source integration and ComicInfo metadata support.
 - Fix file-source metadata and listing edge cases, and validate the experimental webOS ARM build on an LG C6.
+- Preserve existing file-source progress and download identities when stream-only metadata is added.
 
 ### Added
 
