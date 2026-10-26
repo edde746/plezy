@@ -1,8 +1,15 @@
+import os
 import tempfile
 import unittest
 from pathlib import Path
 
-from verify_synthetic_render import capture_seconds, compare_pixels, read_ppm
+from verify_synthetic_render import (
+    capture_environment,
+    capture_seconds,
+    compare_pixels,
+    read_ppm,
+    rpu_replacement_warning_count,
+)
 
 
 class SyntheticRenderVerificationTest(unittest.TestCase):
@@ -19,6 +26,29 @@ class SyntheticRenderVerificationTest(unittest.TestCase):
         self.assertEqual(capture_seconds("Embedded opengl-next rendered and read back at 0.542208 s"), 0.542208)
         with self.assertRaises(RuntimeError):
             capture_seconds("render failed")
+
+    def test_capture_environment_prioritizes_engine_libraries_and_preserves_system_path(self):
+        environment = capture_environment(
+            [Path("/engine/lib"), Path("/runtime/lib")],
+            software_gles=True,
+            base_environment={"LD_LIBRARY_PATH": "/system/lib", "LIBGL_ALWAYS_SOFTWARE": "0"},
+        )
+        self.assertEqual(
+            environment["LD_LIBRARY_PATH"],
+            os.pathsep.join(("/engine/lib", "/runtime/lib", "/system/lib")),
+        )
+        self.assertEqual(environment["EGL_PLATFORM"], "surfaceless")
+        self.assertEqual(environment["LIBGL_ALWAYS_SOFTWARE"], "1")
+
+    def test_gpu_egl_mode_does_not_inherit_a_software_override(self):
+        environment = capture_environment(
+            [], software_gles=False, base_environment={"LIBGL_ALWAYS_SOFTWARE": "1"}
+        )
+        self.assertNotIn("LIBGL_ALWAYS_SOFTWARE", environment)
+
+    def test_counts_rpu_replacement_warnings_by_access_unit(self):
+        warning = "Multiple Dolby Vision RPUs found in one AU. Skipping previous."
+        self.assertEqual(rpu_replacement_warning_count(f"{warning}\nquiet\n{warning}"), 2)
 
     def test_requires_the_center_fel_patch_to_dominate_the_delta(self):
         width = height = 8

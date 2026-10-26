@@ -10,6 +10,7 @@ from __future__ import annotations
 import argparse
 import json
 import math
+import os
 from pathlib import Path
 import re
 import subprocess
@@ -17,6 +18,29 @@ import subprocess
 
 PHASE_BOUNDARY_SECONDS = 24 * 1001 / 24000
 CAPTURE_LINE = re.compile(r"rendered and read back at ([0-9]+(?:\.[0-9]+)?) s")
+RPU_REPLACEMENT_WARNING = "Multiple Dolby Vision RPUs found in one AU. Skipping previous."
+
+
+def rpu_replacement_warning_count(log_text: str) -> int:
+    return log_text.count(RPU_REPLACEMENT_WARNING)
+
+
+def capture_environment(
+    library_paths: list[Path], *, software_gles: bool, base_environment=None
+) -> dict[str, str]:
+    """Build a process-local EGL environment with explicit engine library paths."""
+    environment = dict(os.environ if base_environment is None else base_environment)
+    environment["EGL_PLATFORM"] = "surfaceless"
+    if software_gles:
+        environment["LIBGL_ALWAYS_SOFTWARE"] = "1"
+    else:
+        environment.pop("LIBGL_ALWAYS_SOFTWARE", None)
+    paths = [str(path) for path in library_paths]
+    if environment.get("LD_LIBRARY_PATH"):
+        paths.append(environment["LD_LIBRARY_PATH"])
+    if paths:
+        environment["LD_LIBRARY_PATH"] = os.pathsep.join(paths)
+    return environment
 
 
 def read_ppm(path: Path) -> tuple[int, int, bytes]:
@@ -98,20 +122,27 @@ def verify(args) -> dict:
     for label, path in (("render helper", args.runner), ("input MP4", args.input)):
         if not path.is_file():
             raise ValueError(f"{label} does not exist: {path}")
+    library_paths = list(args.library_path)
+    bundled_library_directory = args.runner.resolve().parent.parent / "lib"
+    if bundled_library_directory.is_dir() and bundled_library_directory not in library_paths:
+        library_paths.insert(0, bundled_library_directory)
+    for path in library_paths:
+        if not path.is_dir():
+            raise ValueError(f"library path is not a directory: {path}")
     if args.out_dir.exists() and any(args.out_dir.iterdir()):
         raise ValueError("use a new, empty output directory")
     args.out_dir.mkdir(parents=True, exist_ok=True)
 
-    import os
-
-    environment = os.environ.copy()
-    environment["EGL_PLATFORM"] = "surfaceless"
-    environment["LIBGL_ALWAYS_SOFTWARE"] = "1"
+    environment = capture_environment(library_paths, software_gles=not args.egl_gpu)
     captures = []
+    warning_count = 0
     for phase, timestamp in (("neutral", args.capture_neutral), ("residual", args.capture_residual)):
         ppm = args.out_dir / f"{phase}.ppm"
         log = args.out_dir / f"{phase}.mpv.log"
-        command = [str(args.runner), str(args.input), str(ppm), str(log), str(timestamp), "no"]
+        command = [
+            str(args.runner), str(args.input), str(ppm), str(log),
+            str(timestamp), args.hwdec,
+        ]
         result = subprocess.run(command, capture_output=True, text=True, env=environment, check=False)
         (args.out_dir / f"{phase}.stdout.log").write_text(result.stdout + result.stderr)
         if result.returncode:
@@ -125,12 +156,20 @@ def verify(args) -> dict:
         )
         if any(marker not in log_text for marker in required):
             raise RuntimeError(f"mpv did not confirm the full P7 FEL graph for {phase}; see {log}")
+        phase_warning_count = rpu_replacement_warning_count(log_text)
+        warning_count += phase_warning_count
         actual = capture_seconds(result.stdout)
         if phase == "neutral" and actual >= args.phase_boundary:
             raise RuntimeError("neutral capture landed after the designed EL residual begins")
         if phase == "residual" and actual < args.phase_boundary:
             raise RuntimeError("residual capture landed before the designed EL residual begins")
-        captures.append({"phase": phase, "requested_seconds": timestamp, "captured_seconds": actual})
+        captures.append({
+            "phase": phase,
+            "requested_seconds": timestamp,
+            "captured_seconds": actual,
+            "hwdec": args.hwdec,
+            "rpu_replacement_warnings": phase_warning_count,
+        })
 
     width, height, neutral = read_ppm(args.out_dir / "neutral.ppm")
     residual_width, residual_height, residual = read_ppm(args.out_dir / "residual.ppm")
@@ -143,11 +182,16 @@ def verify(args) -> dict:
     report = {
         "schema_version": 1,
         "input": str(args.input),
-        "renderer": "embedded libmpv opengl-next via software GLES",
+        "renderer": (
+            "embedded libmpv opengl-next via GPU EGL/GLES"
+            if args.egl_gpu
+            else "embedded libmpv opengl-next via software GLES"
+        ),
         "captures": captures,
         "mpv_graph": "Profile 7 splitter, [el_pair], and sh_dovi_compose_nlq confirmed in both logs",
         "pixel_comparison": comparison,
-        "qualification": "synthetic FEL graph/pixel-path evidence only; not an independent Dolby pixel reference, hardware, or physical output qualification",
+        "rpu_replacement_warning_count": warning_count,
+        "qualification": "synthetic FEL graph/pixel-path evidence only; not an independent Dolby pixel reference, zero-copy hardware, or physical output qualification",
     }
     (args.out_dir / "render-report.json").write_text(json.dumps(report, indent=2) + "\n")
     return report
@@ -158,6 +202,11 @@ def main() -> None:
     parser.add_argument("--runner", type=Path, required=True, help="compiled tools/dv-engine/real_clip_smoke.c helper")
     parser.add_argument("--input", type=Path, required=True, help="synthetic-p7-fel.mp4 from generate_synthetic_p7.py")
     parser.add_argument("--out-dir", type=Path, required=True)
+    parser.add_argument("--hwdec", choices=("no", "vaapi-copy"), default="no")
+    parser.add_argument("--egl-gpu", action="store_true",
+                        help="use the system EGL/GLES device instead of forcing software rendering")
+    parser.add_argument("--library-path", type=Path, action="append", default=[],
+                        help="directory added before existing LD_LIBRARY_PATH; repeat as needed")
     parser.add_argument("--phase-boundary", type=float, default=PHASE_BOUNDARY_SECONDS)
     parser.add_argument("--capture-neutral", type=float, default=0.5)
     parser.add_argument("--capture-residual", type=float, default=1.4)

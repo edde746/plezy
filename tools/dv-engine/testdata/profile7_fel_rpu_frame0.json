@@ -1,0 +1,68 @@
+{
+  "dovi_profile": 7,
+  "el_type": "FEL",
+  "header": {
+    "rpu_type": 2,
+    "rpu_format": 18,
+    "vdr_rpu_profile": 1,
+    "vdr_rpu_level": 0,
+    "coefficient_data_type": 0,
+    "coefficient_log2_denom": 23,
+    "coefficient_log2_denom_length": 23,
+    "bl_bit_depth_minus8": 2,
+    "el_bit_depth_minus8": 2,
+    "vdr_bit_depth_minus8": 4,
+    "el_spatial_resampling_filter_flag": true,
+    "disable_residual_flag": false,
+    "use_prev_vdr_rpu_flag": false
+  },
+  "rpu_data_mapping": {
+    "mapping_color_space": 0,
+    "mapping_chroma_format_idc": 0,
+    "num_x_partitions_minus1": 0,
+    "num_y_partitions_minus1": 0,
+    "curves": [
+      {
+        "num_pivots_minus2": 7,
+        "pivots": [0, 128, 128, 128, 128, 128, 128, 128, 127],
+        "mapping_idc": "Polynomial",
+        "poly_order_minus1": [0, 0, 0, 0, 0, 0, 0, 0],
+        "linear_interp_flag": [false, false, false, false, false, false, false, false],
+        "poly_coef_int": [[0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1], [0, 1]],
+        "poly_coef": [[0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0], [0, 0]]
+      },
+      {
+        "num_pivots_minus2": 0,
+        "pivots": [0, 1023],
+        "mapping_idc": "MMR",
+        "mmr_order_minus1": [2],
+        "mmr_constant_int": [0],
+        "mmr_constant": [448998],
+        "mmr_coef_int": [[[-1, 0, -1, 0, 0, -1, -1], [0, 0, 0, -1, -1, -1, 0], [-1, -1, -1, -1, 0, 0, 0]]],
+        "mmr_coef": [[[7126552, 8122466, 6685342, 1622123, 808554, 7559139, 8375149], [801251, 694657, 3697830, 6569217, 7615691, 7734183, 78034], [8207287, 8063797, 6175252, 7672578, 761880, 365184, 2545494]]]
+      },
+      {
+        "num_pivots_minus2": 0,
+        "pivots": [0, 1023],
+        "mapping_idc": "MMR",
+        "mmr_order_minus1": [2],
+        "mmr_constant_int": [0],
+        "mmr_constant": [30364],
+        "mmr_coef_int": [[[-1, 0, 1, -1, 0, -1, 0], [0, 0, -1, -1, -1, -1, 0], [0, -1, 0, 0, -1, 0, 0]]],
+        "mmr_coef": [[[7018637, 645159, 666646, 8282182, 2546351, 6141728, 672220], [1356576, 1789054, 5077091, 7016573, 3834039, 7840545, 722319], [57239, 6258260, 3956345, 1480062, 6692033, 3919674, 3414157]]]
+      }
+    ],
+    "nlq_method_idc": "LinearDeadzone",
+    "nlq_num_pivots_minus2": 0,
+    "nlq_pred_pivot_value": [0, 1023],
+    "nlq": {
+      "nlq_offset": [512, 512, 512],
+      "vdr_in_max_int": [0, 0, 0],
+      "vdr_in_max": [1048576, 1048576, 1048576],
+      "linear_deadzone_slope_int": [0, 0, 0],
+      "linear_deadzone_slope": [2048, 2048, 2048],
+      "linear_deadzone_threshold_int": [0, 0, 0],
+      "linear_deadzone_threshold": [0, 0, 0]
+    }
+  }
+}

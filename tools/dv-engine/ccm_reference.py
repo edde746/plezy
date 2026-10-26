@@ -40,7 +40,10 @@ def derive_pivots(predicted_values: Sequence[int], bit_depth: int) -> tuple[int,
     pivots = []
     for index, value in enumerate(predicted_values):
         value = _integer(f"predicted_values[{index}]", value, 0, maximum)
-        pivots.append(value if index == 0 else pivots[-1] + value)
+        pivot = value if index == 0 else pivots[-1] + value
+        if pivot > maximum:
+            raise ValueError("cumulative pivot exceeds the BL bit depth")
+        pivots.append(pivot)
     return tuple(pivots)
 
 
@@ -59,6 +62,34 @@ def pivot_index(sample: int, pivots: Sequence[int]) -> int:
     return len(pivots) - 1
 
 
+def rpu_mapping_piece_index(
+    sample: int, pivots: Sequence[int], mapping_piece_count: int
+) -> int:
+    """Select a Dolby RPU piece, including its saturated upper endpoint.
+
+    A Profile 7 RPU carries one mapping piece for each adjacent pivot pair.
+    ETSI's generic pivot-index process returns a terminal sentinel for a sample
+    at or above the final pivot. RPU renderers clamp that signal to the final
+    encoded interval, so the adapter maps that sentinel to the last RPU piece.
+    """
+    if not isinstance(pivots, Sequence) or len(pivots) < 2:
+        raise ValueError("pivots must contain at least two values")
+    mapping_piece_count = _integer(
+        "mapping_piece_count", mapping_piece_count, 1, len(pivots) - 1
+    )
+    if mapping_piece_count != len(pivots) - 1:
+        raise ValueError("RPU mapping piece count must equal pivot intervals")
+    return min(pivot_index(sample, pivots), mapping_piece_count - 1)
+
+
+def _selected_mapping_piece(
+    sample: int, pivots: Sequence[int], mapping_piece_count: int | None
+) -> int:
+    if mapping_piece_count is None:
+        return pivot_index(sample, pivots)
+    return rpu_mapping_piece_index(sample, pivots, mapping_piece_count)
+
+
 def polynomial_map_sample(
     sample: int,
     pivots: Sequence[int],
@@ -68,13 +99,21 @@ def polynomial_map_sample(
     el_bit_depth: int,
     coefficient_log2_denom: int,
     mapping_index: int = 0,
+    mapping_piece_count: int | None = None,
 ) -> int:
     """Map one BL sample using normalized fixed-point polynomial coefficients."""
     _bit_depth("BL bit depth", bl_bit_depth)
     _validate_coefficient_header(el_bit_depth, coefficient_log2_denom)
     _integer("sample", sample, 0, (1 << bl_bit_depth) - 1)
-    mapping_index = _integer("mapping_index", mapping_index, 0, len(pivots) - 1)
-    selected_index = pivot_index(sample, pivots)
+    if mapping_piece_count is None:
+        maximum_mapping_index = len(pivots) - 1
+    else:
+        mapping_piece_count = _integer(
+            "mapping_piece_count", mapping_piece_count, 1, len(pivots) - 1
+        )
+        maximum_mapping_index = mapping_piece_count - 1
+    mapping_index = _integer("mapping_index", mapping_index, 0, maximum_mapping_index)
+    selected_index = _selected_mapping_piece(sample, pivots, mapping_piece_count)
     if mapping_index != selected_index:
         raise ValueError("mapping_index does not match the sample's pivot index")
     if not isinstance(coefficients, Sequence) or len(coefficients) not in (2, 3):
@@ -107,6 +146,7 @@ def mmr_map_chroma_sample(
     bl_bit_depth: int,
     el_bit_depth: int,
     coefficient_log2_denom: int,
+    mapping_piece_count: int | None = None,
 ) -> int:
     """Map one aligned chroma sample using normalized MMR coefficients.
 
@@ -134,8 +174,21 @@ def mmr_map_chroma_sample(
         if any(left > right for left, right in zip(pivots, pivots[1:])):
             raise ValueError("pivot ranges must be nondecreasing")
         bounded.append(min(max(sample, pivots[0]), pivots[-1]))
-    mapping_index = _integer("mapping_index", mapping_index, 0, len(pivot_ranges[component_index]) - 1)
-    if mapping_index != pivot_index(samples[component_index], pivot_ranges[component_index]):
+    if mapping_piece_count is None:
+        maximum_mapping_index = len(pivot_ranges[component_index]) - 1
+    else:
+        mapping_piece_count = _integer(
+            "mapping_piece_count",
+            mapping_piece_count,
+            1,
+            len(pivot_ranges[component_index]) - 1,
+        )
+        maximum_mapping_index = mapping_piece_count - 1
+    mapping_index = _integer("mapping_index", mapping_index, 0, maximum_mapping_index)
+    selected_index = _selected_mapping_piece(
+        samples[component_index], pivot_ranges[component_index], mapping_piece_count
+    )
+    if mapping_index != selected_index:
         raise ValueError("mapping_index does not match the mapped chroma sample's pivot index")
     if not isinstance(coefficients, Sequence) or not 1 <= len(coefficients) <= 3:
         raise ValueError("MMR coefficients must contain one to three order rows")

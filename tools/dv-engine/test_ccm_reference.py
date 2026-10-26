@@ -7,6 +7,7 @@ from ccm_reference import (
     polynomial_map_sample,
     pivot_index,
     reconstruct_sample,
+    rpu_mapping_piece_index,
 )
 
 
@@ -17,6 +18,16 @@ class CcmReferenceTest(unittest.TestCase):
         self.assertEqual(pivot_index(11, pivots), 0)
         self.assertEqual(pivot_index(42, pivots), 1)
         self.assertEqual(pivot_index(142, pivots), 2)
+        self.assertEqual(rpu_mapping_piece_index(142, pivots, 2), 1)
+
+    def test_cumulative_pivots_cannot_exceed_the_bl_code_range(self):
+        with self.assertRaises(ValueError):
+            derive_pivots((200, 100), 8)
+
+    def test_rpu_curve_saturates_the_top_code_into_its_last_encoded_piece(self):
+        self.assertEqual(rpu_mapping_piece_index(255, (0, 255), 1), 0)
+        with self.assertRaises(ValueError):
+            rpu_mapping_piece_index(255, (0, 255), 2)
 
     def test_polynomial_mapping_clamps_and_produces_hand_calculated_8_to_16_bit_ramp(self):
         coefficients = (0, 32_896)  # 257x scale after the normative fixed-point shifts.

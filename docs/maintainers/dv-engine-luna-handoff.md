@@ -90,6 +90,76 @@ manifest are in `/tmp/plezy-dv-platforms-build-20261026/aether-pulse-final/`.
 The generator and verifier commands are in the
 [engine README](../../tools/dv-engine/README.md).
 
+### Local graph rerun (2026-10-26)
+
+The checked-in verifier reran both the synthetic clip and graph on `kspld0`.
+Software GLES (llvmpipe) again changed all 230,400 center-patch pixels by more
+than two codes, with a 16.1666/255 center mean and 0.00517/255 outside mean.
+The second pass used `vaapi-copy` to decode both layers on the RX 9070 XT and
+the integrated Radeon 610M for EGL/GLES rendering. The hardware-path captures
+also changed all 230,400 center pixels; against the software captures the
+maximum difference was one 8-bit code (mean channel delta 0.00853 neutral and
+0.01230 residual).
+
+The hardware neutral capture had no RPU replacement warning. Its residual
+capture emitted three `Multiple Dolby Vision RPUs found in one AU. Skipping
+previous.` warnings. The synthetic graph still produces EL-dependent pixels,
+but those warnings leave RPU/frame association open. The software captures had
+no such warnings. Reports, PPMs and raw logs are retained under
+`/home/keith/Documents/plezyng-dv-local-evidence-20261026/` in
+`synthetic-graph-software-rerun/` and `synthetic-graph-vaapi-gpu-rerun/`.
+The local rerun does not establish reference-pixel accuracy, zero-copy import,
+app presentation or physical Dolby Vision output.
+
+## Profile 7 RPU-to-CCM sample reference
+
+`tools/dv-engine/profile7_fel_rpu_adapter.py` maps one `dovi_tool info`
+Profile 7 FEL JSON object into the integer CCM equations in
+`tools/dv-engine/ccm_reference.py`. The test fixture contains only the parsed
+header, mapping curves and NLQ fields from frame 0 of the pinned 384-byte MIT
+test RPU; it contains no decoded video.
+
+The hand-calculated Y vector is BL 512 → mapped 32768, EL 513 → inverse-
+quantized residual 8, and 12-bit reconstruction 2049. The adapter also converts
+the real eight-piece luma polynomial and both chroma MMR curves, including
+integer-plus-fraction coefficient fields. It handles coefficient type 1 as
+fraction-only 32-bit fixed point and rejects unsupported RPU shapes.
+
+The bounded adapter was run locally on `kspld0` on 2026-10-26, outside GitHub
+runners. It handles a single RPU with its mapping present, 10-bit BL/EL, 12-bit
+VDR, one mapping partition, and `LinearDeadzone` NLQ. It does not resolve
+previous-RPU state, spatially resample EL/chroma, convert BT.1886 to PQ, apply
+Dolby display management, compose a frame, or compare a frame to an independent
+reference. The sample vector checks pre-display code values only. The final
+pivot endpoint is assigned to the final RPU piece to reconcile the RPU's
+one-piece-per-pivot-interval payload with the generic CCM terminal-index
+sentinel. This matches [libplacebo's public reshape shader](https://github.com/haasn/libplacebo/blob/master/src/shaders/colorspace.c#L141-L260): it clamps to the component pivot range and selects coefficients with `>=` tests, so the upper endpoint reaches the final encoded piece. That confirms renderer behavior, not Dolby correctness; a trusted P7 sample-level oracle is still needed.
+
+### Local validation (2026-10-26)
+
+All checks below ran directly on `kspld0`; no GitHub Actions or JIT job was
+started for this pass. These local results are useful experiment evidence, but
+they do not replace the private-JIT checks required before merge.
+
+- CCM and Profile 7 adapter tests: **14/14**; `tools/dv-engine` Python suite:
+  **57/57**; platform DV Python suite: **47/47**; targeted Flutter
+  playback/settings tests: **111/111**.
+- Linux app target and native reliability suite built locally; **8/8** native
+  tests passed with AddressSanitizer and UndefinedBehaviorSanitizer enabled.
+  The imported engine artifact used a test-only linker allowance for symbols
+  resolved by its recorded Ubuntu runtime libraries.
+- Android host C++ tests: **2/2**. Targeted Android DV route tests:
+  **112/112** across `GpuVoPolicyTest`, `DecoderOptionsTest` and
+  `MpvPlayerPluginTest`, using `-PplezyGamesEmbedded=false` to omit optional
+  game modules.
+- The complete Android app JVM suite ran **643 tests**; **641 passed** and two
+  `ZlibInflatingTrackOutputTest` boundary assertions failed. Those failures are
+  outside the Dolby Vision playback tests.
+- The synthetic Profile 7 graph/readback results above were reproduced using
+  the actual embedded mpv graph on software GLES. Raw logs and rendered frames
+  are retained under
+  `/home/keith/Documents/plezyng-dv-local-evidence-20261026/`.
+
 ## Android and companion build checks (2026-10-26)
 
 The Android arm64 debug APK built with Flutter 3.47.1. Package identity is
@@ -153,7 +223,7 @@ strengthened verifier.
 ## What remains unproven
 
 - The Kodi sample index claims fair use for testing, technical evaluation and documentation, but no formal file-specific redistribution license is published. Keep the clip local; do not commit it or use it in public CI.
-- No independent numerical pixel comparison has run. The real-clip mark and both generated center-patch deltas are qualitative EL-use evidence; the six synthetic composer vectors check explicit residual cases but are not reference comparisons.
+- No full-frame independent numerical pixel comparison has run. The new RPU-to-CCM adapter has a hand-calculated single-sample vector but is not yet JIT-tested or cross-checked against a trusted P7 composer. The real-clip mark and generated center-patch deltas remain qualitative EL-use evidence; the six synthetic composer vectors check residual cases but are not reference comparisons.
 - The graph trials cover a single-track dual-layer file. Separate-track sources, exact seek/flush/reorder boundaries, malformed RPU/EL, scene changes and queue faults still need graph-level tests. Investigate the two duplicate-RPU warnings emitted during VA-API-copy decoding before expanding hardware claims.
 - Full PlezyNG playback on the Wayland video plane remains unqualified. The libmpv API was exercised through EGL/GLES in a native harness, and the Linux debug app builds, but the app was not launched with media.
 - Hardware qualification is limited to `vaapi-copy` decode through this harness. Zero-copy VA-API import and application Wayland presentation remain unqualified.
@@ -168,7 +238,7 @@ switches, launcher behavior, Apple and companion build commands, and the remaini
 cross-platform integration tasks. The real-clip helper and this evidence were
 carried forward from Luna's `552af300eee0754698fb123b5e193428528f1c7f` checkpoint.
 
-1. **Build the pixel oracle from the public composer specification.** ETSI GS CCM 001 V1.1.1 clause 5 defines BL inverse mapping, EL non-linear inverse quantization, residual addition and PQ conversion. It does not name Profile 7 or Dolby Vision in the text, so first map P7 RPU fields and profile-specific rules, including CM 2.9/4.0 behavior, onto its composing metadata. HDR-Analyze's own FEL plan says its earlier compositor was removed after real-disc comparisons found large chroma and luma errors; it calls for specification-derived vectors and treats libplacebo and DoViBaker as cross-check targets rather than independent truth. Use that caution when building our integer reference. ETSI TS 103 572 separately specifies ST 2094-10 metadata carriage. Compare residual-only and metadata-only controls, preserve intermediate precision, and define the error budget before setting reference_pixels. [ETSI GS CCM 001](https://www.etsi.org/deliver/etsi_gs/CCM/001_099/001/01.01.01_60/gs_ccm001v010101p.pdf) · [HDR-Analyze FEL plan](https://github.com/tinof/hdr-analyze/blob/main/docs/FEL_PLAN.md) · [ETSI TS 103 572 scope](https://www.etsi.org/deliver/etsi_ts/103500_103599/103572/01.03.01_60/ts_103572v010301p.pdf).
+1. **Validate and extend the RPU-to-CCM pixel oracle.** Confirm the terminal-pivot rule against an independent Profile 7 implementation or trusted reference samples, add previous-RPU state and BT.1886 handling, then build frame-level BL/EL inputs whose expected code values can be derived independently from the equations. Cover residual-only and mapping-only controls, CM 2.9 and CM 4.0, preserve intermediate precision, and set a numeric error budget before recording a reference-pixel pass. ETSI GS CCM 001 V1.1.1 clause 5 defines generic BL inverse mapping, EL NLQ, residual addition and PQ conversion; it does not name P7. ETSI TS 103 572 separately specifies ST 2094-10 metadata carriage, not the composer. [ETSI GS CCM 001](https://www.etsi.org/deliver/etsi_gs/CCM/001_099/001/01.01.01_60/gs_ccm001v010101p.pdf) · [dovi_tool RPU mapping parser](https://github.com/quietvoid/dovi_tool/blob/main/dolby_vision/src/rpu/rpu_data_mapping.rs) · [libplacebo reshape metadata](https://github.com/haasn/libplacebo/blob/master/src/include/libplacebo/colorspace.h) · [ETSI TS 103 572 scope](https://www.etsi.org/deliver/etsi_ts/103500_103599/103572/01.03.01_60/ts_103572v010301p.pdf).
 2. **Expand the generated graph fixture.** Add separately tracked layers, exact seek/flush/reorder boundaries, malformed/missing EL and RPU, scene changes, EOF, crop/chroma edges, stale-pair and queue-capacity faults. Keep the local Kodi sample out of the repository and public CI.
 3. **Qualify Linux app playback.** Rebase production mpv patches only after review. Run the app through PlezyNG's Wayland plane and test precision, range/PQ/HLG tags, tone-map ownership, VA-API import, seek/resize/teardown, subtitles, audio sync, suspend and output changes. Keep normal `opengl` as default and preserve recovery by removing `PLEZYNG_EXPERIMENTAL_RENDER_API`.
 4. **Build the Android engine path.** The current APK contains the production engine; add a platform adapter that exposes paired decoded BL/EL frames, carries RPU and PTS identity, composes before display mapping, and fails closed when either layer is missing. Validate with the generated fixture on a real supported Android device before advertising FEL.

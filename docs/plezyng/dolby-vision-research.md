@@ -48,6 +48,22 @@ untested hardware combinations and complete proprietary display-mapper equivalen
   RPU parses as P7 FEL/CM v2.9 with residual enabled; the authored EL pattern is
   not a matching mastered image and the fixture does not cover CM v4.0. Exact
   metrics and hashes are in the [engine handoff](../maintainers/dv-engine-luna-handoff.md).
+  A local hardware rerun decoded BL and EL through `vaapi-copy` on the RX 9070 XT
+  and rendered with the integrated Radeon 610M; its output differed from the
+  llvmpipe captures by at most one 8-bit code. Three duplicate-RPU replacement
+  warnings appeared in the residual hardware log, so RPU/frame association is
+  still open. This does not qualify zero-copy or app presentation.
+- `tools/dv-engine/profile7_fel_rpu_adapter.py` now maps one parsed
+  `dovi_tool` Profile 7 FEL RPU into the sample-level CCM reference. A minimized
+  frame-0 fixture from the pinned MIT RPU covers the real polynomial/MMR and
+  NLQ JSON shape; its hand-calculated Y vector is BL 512 → 32768, EL 513 → 8,
+  reconstructed 12-bit code 2049. Local host tests passed 14/14; the complete
+  `tools/dv-engine` Python suite passed 57/57 and the platform DV Python suite
+  passed 47/47. This adapter is not an independent
+  full-frame or Dolby display-mapper reference. It fails closed on
+  previous-RPU state, extended mapping, multiple partitions, linear
+  interpolation, and other unsupported forms. Its upper-pivot handling follows
+  [libplacebo's public reshape shader](https://github.com/haasn/libplacebo/blob/master/src/shaders/colorspace.c#L141-L260), which clamps to the pivot range and selects coefficients with `>=`. That confirms renderer behavior, not Dolby correctness, and still needs an independent sample-level oracle.
 - The pinned offline FelBaker companion path now runs that generated BL/EL/RPU
   fixture through FFMS2 5.0 and produces residual-dependent RGB48 output. Every
   authored center-patch pixel changed; HDR10/PQ HEVC and SDR/BT.709 H.264 outputs
@@ -212,15 +228,17 @@ using it as an accuracy oracle. [ETSI TS 103 572](https://www.etsi.org/deliver/e
 is the separate ST 2094-10 metadata-carriage specification. The public
 [libplacebo RPU API notes](https://github.com/haasn/libplacebo/blob/master/src/include/libplacebo/colorspace.h)
 help locate fields, but reusing its equations is not an independent cross-check.
-`tools/dv-engine/ccm_reference.py` now implements normalized sample-level
-polynomial/MMR mapping, NLQ inverse quantization and reconstruction
-rounding/clipping from clauses 5.4.2 and 5.4.3. Hand-calculated unit vectors
-are checked in, but the private-JIT test route has not run them. The reference
-does not parse P7 RPU data, implement the clause 5.5 transfer conversion, or
-validate the P7-to-CCM mapping; those remain explicit gates. The Dolby
-[UHD Blu-ray authoring guide](https://professional.dolby.com/siteassets/pdfs/dolby_vision_uhd_bluray_authoring_workflow.pdf)
-confirms that P7's EL carries residual picture data and dynamic metadata, but
-does not itself establish that mapping.
+The first bounded adapter now normalizes a single `dovi_tool` RPU's three
+curves and NLQ values into those equations; it does not resolve previous-RPU
+state or implement BT.1886 conversion and Dolby display management. Its sample
+tests passed locally on `kspld0` outside runners on 2026-10-26. The final RPU
+pivot is assigned to the last encoded interval to reconcile the RPU's one-piece-
+per-interval payload with the generic CCM terminal sentinel. This matches the
+[public libplacebo shader](https://github.com/haasn/libplacebo/blob/master/src/shaders/colorspace.c#L141-L260) pivot clamp and `>=` coefficient selection, but it is not an independent Dolby reference. The rule still needs a trusted Profile 7 sample-level oracle. The synthetic graph also passed locally
+through embedded mpv and software GLES, but its pixel delta only proves the
+authored EL reaches the graph output, not that the output matches Dolby's
+composer. Current organization policy still requires private-JIT checks before
+merge.
 With the mapping and error budget established, compare GPU output for reshaping,
 NLQ, filtering and clipping. FEL can change visible
 image values even when the final display is 10-bit. Record separately whether

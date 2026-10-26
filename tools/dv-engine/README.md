@@ -147,6 +147,15 @@ dominates the output delta. It verifies EL-dependent pixels in this graph; it
 does not compare those pixels against Dolby's reference composer or qualify
 hardware, app presentation, or physical output.
 
+The verifier accepts `--hwdec no` (default) or `--hwdec vaapi-copy`, and
+`--egl-gpu` selects the host EGL/GLES device instead of llvmpipe. It adds a
+neighboring engine bundle's `lib/` automatically. Pass `--library-path DIR`
+for each additional directory needed by the bundle's system dependencies; the
+paths are prepended to the existing `LD_LIBRARY_PATH` for the helper process.
+For example, add `--hwdec vaapi-copy --egl-gpu` to repeat the hardware-decode
+and GPU-render experiment. The JSON report records decode mode and duplicate
+RPU replacement warnings.
+
 The 2026-10-26 software-GLES run used llvmpipe at 1280x720. All 230,400 pixels
 in the designed center patch changed by more than two 8-bit output codes between
 the neutral and residual phases; its mean absolute channel delta was 16.1666.
@@ -156,18 +165,51 @@ than two codes. The generated MP4 SHA-256 was
 render report SHA-256 was
 `f3efad42a6deb53be1cfe8280a3969c1e58cc4a50fabff6b81f62af168dccf5f`.
 
+A 2026-10-26 local rerun also decoded the generated BL and EL with AMD
+`vaapi-copy` on the RX 9070 XT and rendered through the integrated Radeon 610M
+EGL/GLES device. Both captures confirmed the complete graph and all 230,400
+center-patch pixels changed by more than two codes. Compared with the llvmpipe
+captures, the hardware-decode/GPU-render output differed by at most one 8-bit
+code (mean channel delta 0.00853 neutral, 0.01230 residual). The residual log
+contains three `Multiple Dolby Vision RPUs found in one AU. Skipping previous.`
+warnings; the neutral and software runs contain none. Keep this warning open:
+the result does not qualify RPU/frame association, zero-copy import or app
+presentation. Raw reports, images and logs are retained under
+`/home/keith/Documents/plezyng-dv-local-evidence-20261026/`.
+
 The injected test vector parses as Profile 7 FEL, CM v2.9, with residual enabled,
 10-bit BL/EL and a 12-bit VDR signal. The EL is authored independently of the
 vector's original mastering pixels, so the fixture tests residual use rather
 than known-correct reconstruction; CM v4.0 is not covered.
 
-`ccm_reference.py` implements integer sample-level polynomial/MMR BL mapping,
-NLQ inverse quantization and reconstruction rounding/clipping from ETSI GS CCM
-001 v1.1.1 clauses 5.4.2 and 5.4.3. `test_ccm_reference.py` contains
-hand-calculated vectors and is discovered by `scripts/test_dv_experiments.py`.
-The reference consumes normalized CCM values; it does not parse Dolby RPU data
-or prove that Profile 7 CM v2.9/v4.0 maps to this model. Its unit suite still
-needs execution on the approved private-JIT route.
+### Map a parsed Profile 7 FEL RPU into the CCM reference
+
+`profile7_fel_rpu_adapter.py` accepts one parsed `dovi_tool info` JSON object
+and normalizes its BL pivots, polynomial/MMR coefficient pairs and NLQ values
+for `ccm_reference.py`. The committed frame-0 fixture is reduced from the
+384-byte MIT-licensed RPU vector pinned above. It includes the actual parser
+shape and coefficients but no video frames or Dolby display metadata.
+
+The adapter has a hand-calculated Y sample vector: BL code 512 maps to 32768;
+EL code 513 inverse-quantizes to residual 8; reconstruction rounds to 12-bit
+code 2049. The frame fixture also checks all eight luma pieces, both chroma MMR
+curves, and fractional-only Q0.32 coefficient representation. The focused
+CCM/adapter suite passed 14/14 locally on `kspld0` on 2026-10-26, outside
+GitHub runners. The complete `tools/dv-engine` Python suite passed 57/57 after
+the local verifier changes. This remains an equation-level sample check, not a
+full-frame Dolby-reference comparison.
+
+The scope is one RPU with an in-band mapping, 10-bit BL/EL, 12-bit VDR, one
+partition, polynomial or MMR curves, and `LinearDeadzone` NLQ. Previous-RPU
+state, extended mapping, linear-interpolation curves, BT.1886-to-PQ conversion,
+Dolby display management, spatial resampling, frame pairing and rendering are
+not implemented here; unsupported RPU forms fail closed. MMR callers must pass
+already aligned Y/Cb/Cr samples. The final RPU pivot is assigned to its last
+encoded piece because the RPU carries one piece per adjacent pivot interval;
+ETSI's generic terminal-index pseudocode leaves that single endpoint outside
+the encoded piece array. This matches [libplacebo's public reshape shader](https://github.com/haasn/libplacebo/blob/master/src/shaders/colorspace.c#L141-L260) pivot clamp and `>=` coefficient selection, which selects the final encoded piece at the upper endpoint. That confirms renderer behavior, not Dolby correctness; an independent P7 reference is still needed.
+This is a single-sample equation reference, not a full Dolby-reference pixel
+oracle.
 
 ### Verify the generated layers through FelBaker
 
@@ -204,11 +246,13 @@ and no Dolby Vision metadata or physical DV output claim.
 
 ## Acceptance still required
 
-- An independent numerical reference for reconstructed pixels, based on ETSI
-  GS CCM 001 clause 5. That document defines generic BL mapping, EL NLQ,
-  residual addition and PQ conversion; map Profile 7 RPU fields and CM 2.9/4.0
-  rules to its composing metadata before calling it a P7 oracle. The current
-  real-clip mark proves EL contribution qualitatively, not exact pixel accuracy.
+- A frame-level numeric comparison against an independent composer reference.
+  The local 14-test adapter suite and 47-test DV Python suite pass. The current
+  adapter covers the CCM mapping/NLQ/reconstruction equations for a bounded
+  single-RPU P7 subset; it does not implement BT.1886 conversion or Dolby
+  display management, and its endpoint adaptation still needs independent
+  confirmation. CM 2.9/4.0 behavior and the real-clip mark remain unqualified
+  against reference pixels. Private-JIT checks remain required before merge.
 - Expand the generated single-track graph fixture with separate-track input,
   PTS pairing and reorder, seek/flush, broken metadata/RPU, CM2.9/CM4 cases,
   scene changes, active area, malformed or missing EL, crop/chroma edges,
