@@ -604,7 +604,7 @@ def main() -> None:
     apply(args.mpv_source)
 
     replace_once(
-        root, "test/meson.build",
+        args.mpv_source.resolve(strict=True), "test/meson.build",
         "# Supported libavutil versions that work with these tests.\n",
         """fel_pair_state = executable('fel-pair-state', 'fel_pair_state.c',
                              include_directories: incdir)
