@@ -38,6 +38,26 @@ untested hardware combinations and complete proprietary display-mapper equivalen
   about MEL/FEL and inventories an explicitly selected standalone mpv binary.
   It can execute a bounded gpu-next playback trial. Its reports never turn a
   process exit or a container flag into an FEL/output qualification.
+- `tools/dv-engine/generate_synthetic_p7.py` now produces an authored,
+  reproducible single-track Profile 7 BL+EL+RPU graph fixture using a pinned
+  MIT RPU test vector. The embedded `libmpv` software-GLES test confirms
+  the patched P7 splitter, paired-frame filter and libplacebo composer execute,
+  and confirms that the designed EL residual changes the corresponding output
+  pixels. It remains qualitative: no Dolby-reference pixel comparison,
+  hardware/app-surface qualification, or physical output is implied. The injected
+  RPU parses as P7 FEL/CM v2.9 with residual enabled; the authored EL pattern is
+  not a matching mastered image and the fixture does not cover CM v4.0. Exact
+  metrics and hashes are in the [engine handoff](../maintainers/dv-engine-luna-handoff.md).
+- The pinned offline FelBaker companion path now runs that generated BL/EL/RPU
+  fixture through FFMS2 5.0 and produces residual-dependent RGB48 output. Every
+  authored center-patch pixel changed; HDR10/PQ HEVC and SDR/BT.709 H.264 outputs
+  both passed frame-count and color-tag probes. These lossy alternate versions
+  provide standard HDR10 and SDR files for supported clients; client playback
+  was not tested. They are not native DV, an app-integrated adapter, or an
+  independent Dolby pixel reference.
+- The current Android arm64 debug app builds and its 46 focused Dolby routing
+  tests pass. That APK still contains the production Android engine; it does not
+  contain a Profile 7 FEL compositor or demonstrate Android FEL playback.
 - Linux accepts `PLEZYNG_EXPERIMENTAL_RENDER_API=opengl-next` on its existing
   Wayland video plane. This selects the API proposed in mpv PR #18607. Invalid
   values and an unavailable backend fail the experiment explicitly. The normal
@@ -93,10 +113,14 @@ visual styling through the renderer changes.
    P5/P7 MEL/P7 FEL/P8/P10 and TV-led output, with Intel/AMD integrated GPU routes
    and experimental discrete GPU support. It explicitly excludes P9, legacy
    profiles and P20. These are project claims, not PlezyNG hardware results.
-4. **Public reconstruction specifications exist.**
+4. **A public composer specification exists.**
    [ETSI GS CCM 001](https://www.etsi.org/deliver/etsi_gs/CCM/001_099/001/01.01.01_60/gs_ccm001v010101p.pdf)
-   describes the composer, inverse mapping and residual reconstruction. It is a
-   basis for an independent numerical oracle and missing interoperability code.
+   clause 5 defines BL inverse mapping, EL NLQ, residual reconstruction and PQ
+   conversion. Dolby lists it among standards relevant to Dolby Vision
+   documentation, and ETSI lists Dolby Laboratories among the supporting
+   organizations. The document describes generic Compound Content Management;
+   it does not explicitly name P7 or Dolby Vision. Map P7 RPU syntax and profile
+   rules to its composing metadata before treating it as a P7 accuracy oracle.
    It does not specify every proprietary display-mapping decision.
 
 CB1's [Master Reference contract](https://github.com/CroqueMr/libreelec-x86-DV/blob/5e63e16df862bc3acb658f42a3c2bbb5154880e0/CB1/docs/MASTER-REFERENCE.md)
@@ -178,13 +202,23 @@ rasters, chroma siting and scene transitions. Do not pair layers merely because
 their frame counts or stream ordering look similar. Flush all paired state on
 timeline generation changes; bound queue depth and memory.
 
-Build a CPU numerical reference from the public composer specification and
-compare GPU results for polynomial/MMR reshaping, NLQ, filtering and clipping.
-FEL can change visible image values even when the final display is 10-bit.
-Record separately whether the residual was available, decoded, composed and
-presented. Handle CM2.9 and CM4 presence/default rules, selected target trims,
-active-area metadata and scene resets explicitly. Preserve unknown raw metadata
-when forwarding it, but do not claim an unimplemented control was applied.
+Use [ETSI GS CCM 001 clause 5](https://www.etsi.org/deliver/etsi_gs/CCM/001_099/001/01.01.01_60/gs_ccm001v010101p.pdf)
+as the public composer equation source: it specifies BL inverse mapping,
+polynomial/MMR reshaping, EL non-linear inverse quantization, residual addition
+and PQ conversion. Dolby lists this standard among references relevant to its
+Dolby Vision documentation, but the ETSI text describes generic CCM and does not
+name P7. Map actual P7 RPU syntax and profile rules to CCM parameters before
+using it as an accuracy oracle. [ETSI TS 103 572](https://www.etsi.org/deliver/etsi_ts/103500_103599/103572/01.03.01_60/ts_103572v010301p.pdf)
+is the separate ST 2094-10 metadata-carriage specification. The public
+[libplacebo RPU API notes](https://github.com/haasn/libplacebo/blob/master/src/include/libplacebo/colorspace.h)
+help locate fields, but reusing its equations is not an independent cross-check.
+With the mapping and error budget established, compare GPU output for reshaping,
+NLQ, filtering and clipping. FEL can change visible
+image values even when the final display is 10-bit. Record separately whether
+the residual was available, decoded, composed and presented. Handle CM2.9 and
+CM4 presence/default rules, selected target trims, active-area metadata and
+scene resets explicitly. Preserve unknown raw metadata when forwarding it, but
+do not claim an unimplemented control was applied.
 
 ### DV04: Linux TV-led and player-led HDMI transport
 

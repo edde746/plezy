@@ -9,12 +9,12 @@ driver, EDID, kernel module or TV firmware is replaced automatically.
 
 | Platform/path | Implementation in this repository | Qualification boundary |
 | --- | --- | --- |
-| Linux app | Device-local Playback switches select `opengl-next`, permit one renderer-creation fallback, and enable player logging. Isolated FFmpeg/libplacebo/mpv build and launcher. | Luna proved a real FEL mark through standalone and embedded libmpv. Full app Wayland playback, zero-copy and independent pixel accuracy remain open. |
-| macOS, iOS, tvOS | Separate SwiftUI host builds pinned AetherEngine with its `DualLayerDolbyVision` trait; opt-in load, surface, play/pause, seek, stop and actual engine-route readout. | Separate research app, not integrated into production `MpvPlayerCore`. Compile and device results must be recorded; route selection does not qualify pixels or output. |
-| Offline companion | Pinned FelBaker source builder; explicit BL/EL → VapourSynth RGB48 → HDR10-compatible HEVC/PQ or SDR AVC/BT.709 MKV pipeline. | Real FFmpeg output encoding tested with synthetic RGB. Full FelBaker media pipeline and reference accuracy still require local media and plugins. Outputs are lossy derived versions, not native DV. |
-| Android | Existing native DV, P7→8.1 and base-layer routes remain available; new diagnostics label known EL-discarding routes. | Generic Android DV codec advertisement does not prove P7 FEL. CoreELEC S5 integration is a separate vendor/kernel project. |
+| Linux app | Device-local Playback switches select `opengl-next`, permit one renderer-creation fallback, and enable player logging. Isolated FFmpeg/libplacebo/mpv build and launcher. Generated P7 video now drives the actual embedded graph and changes the expected center-patch pixels on software GLES; a real local clip also traversed the graph. | Full Plezy Wayland playback, zero-copy and independent pixel accuracy remain open. The synthetic result proves qualitative EL contribution only. |
+| macOS, iOS, tvOS | Separate SwiftUI research host and pinned AetherEngine `DualLayerDolbyVision` trait; opt-in load, surface, play/pause, seek, stop and engine-route readout. | Not integrated into production `MpvPlayerCore`. This evidence set has no Mac build or Apple-device result; a route label does not qualify pixels or output. |
+| Offline companion | Pinned FelBaker builder patches its VapourSynth output key and builds a tested RGB48 pipeline. A 48-frame generated P7 sample changed all 2,073,600 designed residual-patch pixels; both HDR10/PQ HEVC and SDR/BT.709 H.264 outputs encoded and passed `ffprobe` frame/color-tag checks. | These lossy files are derived compatibility versions, not native DV. FelBaker is a comparison implementation, not an independent Dolby reference; real-clip and playback-device checks remain open. |
+| Android | Existing native DV, P7→8.1 and base-layer routes remain available; diagnostics label known EL-discarding routes. An arm64 debug APK built and 46 Dolby-related unit tests passed. | No experimental P7 FEL graph is packaged and no Android device render was run. Generic DV codec advertisement does not prove FEL. CoreELEC S5 remains a separate vendor/kernel project. |
 | webOS | Existing native and compatibility playback; use an ordinary companion-derived version where native fidelity is insufficient. | No BL/EL GPU composer is exposed by the current webOS app path. No root patch is installed. |
-| Windows | Existing mpv compatibility playback; portable route-policy and companion orchestration code. | No new D3D11/Vulkan FEL app adapter is claimed. A Windows plugin/toolchain and device run are still needed. |
+| Windows | Existing mpv compatibility playback; portable route-policy and companion orchestration code. The approved private Windows build route remains Packer. | No Packer canary, D3D11/Vulkan FEL adapter build or device result is claimed here. Preserve Packer and qualify output separately. |
 
 `tools/dv-engine/route_policy.py` is a tested adapter contract and standalone
 selector, **not yet the app-wide playback arbiter**. It accepts an inspected source
@@ -134,6 +134,26 @@ operation for a single-track interleaved source; a dual-track source needs the
 correct two tracks extracted. Verify frame counts and original rational frame
 rate. Do **not** use a P7→8.1 converter or strip RPU as preparation.
 
+For a generated single-track P7 fixture, run `generate_synthetic_p7.py` first,
+then validate the actual FFMS2/FelBaker graph before encoding:
+
+```bash
+python3 tools/dv-engine/generate_synthetic_p7.py --out-dir build/dv-synthetic-p7
+python3 tools/dv-engine/verify_felbaker_synthetic.py \
+  --ffms-plugin /plugins/libffms2.so \
+  --felbaker-plugin build/dv-felbaker/build/libfelbaker.so \
+  --bl build/dv-synthetic-p7/demuxed-base.hevc \
+  --el build/dv-synthetic-p7/demuxed-enhancement.hevc \
+  --report build/dv-synthetic-p7/felbaker-report.json
+```
+
+This verifier reads complete RGB48 planes with their row strides and compares
+neutral frame 8 with residual frame 40. The 2026-10-26 run showed a 2392.4089
+code mean absolute delta across the authored patch; all 2,073,600 patch pixels
+changed by more than two codes, while the outside control mean was 0.000289.
+The pinned plugin builder corrects its VapourSynth v4 return map key and records
+the patched source hash in `adapter-report.json`.
+
 ```bash
 python3 tools/dv-engine/companion.py \
   --bl /media/BL.hevc --el /media/EL.hevc \
@@ -222,15 +242,22 @@ Priority testing handoff:
    profile/FEL classification, both decoders, compositor route, output format,
    device/OS/display/engine fingerprint, performance and thermal behavior. Compare
    residual-only and metadata-only controls, not only the display's DV badge.
-4. **Companion:** run FelBaker on the same lawful local sample and a deliberately
-   residual-bearing pattern, then compare pre-encode RGB48 and derived output.
-   Missing RPU, unequal frame counts, broken EL, cancellation, disk exhaustion and
-   audio duration/sync need full-pipeline trials. FelBaker shares prior composer
-   lineage and is a comparison implementation, not automatically an independent oracle.
-5. **Independent pixels:** build a CPU reference from the public composer equations
-   with separately derived test vectors; cover bit depths, chroma siting, NLQ,
-   pivots, nonlinear mapping, clipping, filter edges and precision. Establish
-   error budgets before using the route policy's `reference_pixels` evidence flag.
+4. **Companion:** the generated 48-frame BL/EL/RPU path now passes FFMS2 plus
+   FelBaker and both HDR10 and SDR encodes pass frame/color-tag probes. Next run a
+   lawful local real sample, compare pre-encode RGB48 against a trusted source,
+   and test missing RPU, unequal frame counts, broken EL, cancellation, disk
+   exhaustion and audio sync. FelBaker is a comparison implementation, not an
+   independent Dolby oracle.
+5. **Independent pixels:** use ETSI GS CCM 001 clause 5 as the public BL/EL
+   composer equation source; it defines inverse BL mapping, EL NLQ, residual
+   reconstruction and PQ conversion. Dolby lists it among standards relevant to
+   Dolby Vision documentation, and ETSI lists Dolby among the supporting
+   organizations. First map P7 RPU syntax and profile-specific rules, including
+   CM 2.9/4.0 behavior, onto its composing metadata. ETSI TS 103 572 is the
+   separate ST 2094-10 carriage specification. Implement the CPU path
+   independently, cover bit depths, chroma siting, NLQ, pivots, nonlinear
+   mapping, clipping, filter edges and precision, then set `reference_pixels`
+   only after defining the error budget and validating the mapping.
 6. **Remaining adapters:** Windows D3D11/Vulkan integration; Android vendor/native
    capability qualification and an optional portable compositor; webOS compatible
    native/companion versions; Linux CB1 output experiments only on exact supported
