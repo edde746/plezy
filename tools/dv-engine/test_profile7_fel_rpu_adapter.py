@@ -13,9 +13,16 @@ def load_fixture():
     return json.loads(FIXTURE.read_text(encoding="utf-8"))
 
 
+def parse_fixture(rpu=None):
+    return parse_profile7_fel_rpu(
+        load_fixture() if rpu is None else rpu,
+        container_dv_md_compression=0,
+    )
+
+
 class Profile7FelRpuAdapterTest(unittest.TestCase):
     def test_mit_dovi_tool_frame_maps_into_the_ccm_model(self):
-        metadata = parse_profile7_fel_rpu(load_fixture())
+        metadata = parse_fixture()
 
         self.assertEqual((metadata.bl_bit_depth, metadata.el_bit_depth), (10, 10))
         self.assertEqual((metadata.vdr_bit_depth, metadata.coefficient_log2_denom), (12, 23))
@@ -31,14 +38,14 @@ class Profile7FelRpuAdapterTest(unittest.TestCase):
         self.assertEqual(metadata.nlq[0].linear_deadzone_slope, 2048)
 
     def test_p7_luma_sample_runs_mapping_nlq_and_reconstruction_equations(self):
-        metadata = parse_profile7_fel_rpu(load_fixture())
+        metadata = parse_fixture()
 
         self.assertEqual(metadata.map_bl_sample(0, 512), 32768)
         self.assertEqual(metadata.inverse_quantize_el_sample(0, 513), 8)
         self.assertEqual(metadata.reconstruct_sample(0, 512, 513), 2049)
 
     def test_top_bl_code_selects_the_last_rpu_piece(self):
-        metadata = parse_profile7_fel_rpu(load_fixture())
+        metadata = parse_fixture()
         curve = metadata.curves[0]
 
         self.assertEqual(curve.piece_index(1023), 7)
@@ -52,7 +59,7 @@ class Profile7FelRpuAdapterTest(unittest.TestCase):
         cb["mmr_constant"] = [1 << 22]
         cb["mmr_coef_int"] = [[[0] * 7]]
         cb["mmr_coef"] = [[[0] * 7]]
-        metadata = parse_profile7_fel_rpu(rpu)
+        metadata = parse_fixture(rpu)
 
         self.assertEqual(
             metadata.map_bl_sample(1, 500, aligned_bl_samples=(512, 500, 400)),
@@ -84,7 +91,7 @@ class Profile7FelRpuAdapterTest(unittest.TestCase):
         nlq["linear_deadzone_threshold_int"] = [0, 0, 0]
         nlq["linear_deadzone_threshold"] = [0, 0, 0]
 
-        metadata = parse_profile7_fel_rpu(rpu)
+        metadata = parse_fixture(rpu)
 
         self.assertEqual(metadata.coefficient_log2_denom, 32)
         self.assertEqual(
@@ -99,27 +106,39 @@ class Profile7FelRpuAdapterTest(unittest.TestCase):
         rpu = load_fixture()
         rpu["header"]["disable_residual_flag"] = True
         with self.assertRaises(ValueError):
-            parse_profile7_fel_rpu(rpu)
+            parse_fixture(rpu)
 
         rpu = load_fixture()
         rpu["header"]["use_prev_vdr_rpu_flag"] = True
         with self.assertRaises(ValueError):
-            parse_profile7_fel_rpu(rpu)
+            parse_fixture(rpu)
 
         rpu = load_fixture()
         rpu["header"]["reserved_zero_3bits"] = 1
         with self.assertRaisesRegex(ValueError, "compressed dynamic metadata"):
-            parse_profile7_fel_rpu(rpu)
+            parse_fixture(rpu)
 
         rpu = load_fixture()
         rpu["rpu_data_mapping"]["curves"][0]["pivots"][-1] = 128
         with self.assertRaises(ValueError):
-            parse_profile7_fel_rpu(rpu)
+            parse_fixture(rpu)
 
         rpu = load_fixture()
         rpu["rpu_data_mapping"]["curves"][0]["poly_coef"][0][1] = 1 << 23
         with self.assertRaises(ValueError):
-            parse_profile7_fel_rpu(rpu)
+            parse_fixture(rpu)
+
+    def test_container_metadata_compression_fails_closed(self):
+        with self.assertRaises(TypeError):
+            parse_profile7_fel_rpu(load_fixture())
+
+        for compression in (1, 2, 3):
+            with self.subTest(compression=compression):
+                with self.assertRaisesRegex(ValueError, "container metadata compression"):
+                    parse_profile7_fel_rpu(
+                        load_fixture(),
+                        container_dv_md_compression=compression,
+                    )
 
 
 if __name__ == "__main__":

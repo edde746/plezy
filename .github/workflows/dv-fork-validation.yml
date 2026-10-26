@@ -1,6 +1,18 @@
+# ng-runner-policy: private-jit-only-v1
 name: Dolby Vision fork validation
 
 on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'codex/dv-all-platforms-*'
+    paths:
+      - 'tools/dv-engine/**'
+      - 'tools/dv-apple/**'
+      - 'lib/**'
+      - 'test/**'
+      - 'linux/runner/mpv/**'
+      - '.github/workflows/dv-*.yml'
   pull_request_target:
     branches: [main]
     types: [opened, synchronize, reopened, ready_for_review]
@@ -16,7 +28,7 @@ permissions:
   contents: read
 
 concurrency:
-  group: dv-fork-validation-${{ github.event.pull_request.number }}
+  group: dv-fork-validation-${{ github.event.pull_request.number || github.ref }}
   cancel-in-progress: true
 
 jobs:
@@ -27,10 +39,19 @@ jobs:
       labels: gvisor-sandbox
     timeout-minutes: 45
     steps:
-      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+      - name: Checkout pull request source
+        if: ${{ github.event_name == 'pull_request_target' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           repository: ${{ github.event.pull_request.head.repo.full_name }}
           ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Checkout pushed or dispatched revision
+        if: ${{ github.event_name != 'pull_request_target' }}
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: ${{ github.repository }}
+          ref: ${{ github.sha }}
           persist-credentials: false
       - name: Run Dolby experiment contracts in the isolated sandbox
         run: python3 scripts/test_dv_experiments.py

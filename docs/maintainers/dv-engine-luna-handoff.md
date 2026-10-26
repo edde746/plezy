@@ -135,10 +135,14 @@ app presentation or physical Dolby Vision output.
 ## Profile 7 RPU-to-CCM sample reference
 
 `tools/dv-engine/profile7_fel_rpu_adapter.py` maps one `dovi_tool info`
-Profile 7 FEL JSON object into the integer CCM equations in
-`tools/dv-engine/ccm_reference.py`. The test fixture contains only the parsed
-header, mapping curves and NLQ fields from frame 0 of the pinned 384-byte MIT
-test RPU; it contains no decoded video.
+Profile 7 FEL JSON object plus the demuxed container's `dv_md_compression`
+value into the integer CCM equations in `tools/dv-engine/ccm_reference.py`.
+That container value is required by the API and must be `0` (`none`). FFmpeg's
+configuration record uses `dv_md_compression` values 0 through 3 ([enum and
+record](https://github.com/FFmpeg/FFmpeg/blob/46f23be8b1976ed4c8ec85584daabcf0e57a7b9e/libavutil/dovi_meta.h#L1054-L1122),
+[container parser](https://github.com/FFmpeg/FFmpeg/blob/46f23be8b1976ed4c8ec85584daabcf0e57a7b9e/libavformat/dovi_isom.c#L527-L546)). The test fixture contains only the parsed header, mapping
+curves and NLQ fields from frame 0 of the pinned 384-byte MIT test RPU; it
+contains no decoded video.
 
 The hand-calculated Y vector is BL 512 → mapped 32768, EL 513 → inverse-
 quantized residual 8, and 12-bit reconstruction 2049. The adapter also converts
@@ -147,13 +151,15 @@ integer-plus-fraction coefficient fields. It handles coefficient type 1 as
 fraction-only 32-bit fixed point and rejects unsupported RPU shapes.
 
 The bounded adapter handles a single RPU with its mapping present, 10-bit BL/EL,
-12-bit VDR, one mapping partition, and `LinearDeadzone` NLQ. It now rejects
-nonzero `reserved_zero_3bits` and previous-RPU reuse explicitly. The pinned
+12-bit VDR, one mapping partition, and `LinearDeadzone` NLQ. It now requires
+the demuxed container's `dv_md_compression` value to be supplied and rejects
+every nonzero mode. It also rejects nonzero `reserved_zero_3bits` and previous-
+RPU reuse explicitly. The pinned
 FFmpeg parser reads those three bits as `dm_compression`; its compliant-mode
 checks reject metadata compression for profiles below 8 and previous-RPU reuse
 on uncompressed RPUs ([source](https://github.com/FFmpeg/FFmpeg/blob/46f23be8b1976ed4c8ec85584daabcf0e57a7b9e/libavcodec/dovi_rpudec.c#L2583-L2610)).
-The adapter consumes parsed RPU JSON without container metadata, so container-
-level metadata-compression flags still need a separate input check. It does not
+The adapter does not parse the container record itself; callers must obtain
+`dv_md_compression` from the demuxer and pass it with the RPU JSON. It does not
 spatially resample EL/chroma, convert BT.1886 to PQ, apply Dolby display
 management, compose a frame, or compare a frame to an independent reference.
 The sample vector checks pre-display code values only. The final
@@ -270,7 +276,7 @@ switches, launcher behavior, Apple and companion build commands, and the remaini
 cross-platform integration tasks. The real-clip helper and this evidence were
 carried forward from Luna's `552af300eee0754698fb123b5e193428528f1c7f` checkpoint.
 
-1. **Validate and extend the RPU-to-CCM pixel oracle.** Confirm the terminal-pivot rule against an independent Profile 7 implementation or trusted reference samples. Keep previous-RPU state out of the Profile 7 reference path: the pinned FFmpeg decoder rejects metadata compression for profiles below 8 in compliant mode and rejects previous-RPU reuse on uncompressed streams. Add a separate container-metadata input check so the adapter can fail closed when metadata-compression configuration is present. Then implement BT.1886 handling and build frame-level BL/EL inputs whose expected code values can be derived independently from the equations. Cover residual-only and mapping-only controls, CM 2.9 and CM 4.0, preserve intermediate precision, and set a numeric error budget before recording a reference-pixel pass. ETSI GS CCM 001 V1.1.1 clause 5 defines generic BL inverse mapping, EL NLQ, residual addition and PQ conversion; it does not name P7. ETSI TS 103 572 separately specifies ST 2094-10 metadata carriage, not the composer. [ETSI GS CCM 001](https://www.etsi.org/deliver/etsi_gs/CCM/001_099/001/01.01.01_60/gs_ccm001v010101p.pdf) · [pinned FFmpeg RPU decoder](https://github.com/FFmpeg/FFmpeg/blob/46f23be8b1976ed4c8ec85584daabcf0e57a7b9/libavcodec/dovi_rpudec.c#L2583-L2644) · [dovi_tool RPU mapping parser](https://github.com/quietvoid/dovi_tool/blob/main/dolby_vision/src/rpu/rpu_data_mapping.rs) · [libplacebo reshape metadata](https://github.com/haasn/libplacebo/blob/master/src/include/libplacebo/colorspace.h) · [ETSI TS 103 572 scope](https://www.etsi.org/deliver/etsi_ts/103500_103599/103572/01.03.01_60/ts_103572v010301p.pdf).
+1. **Validate and extend the RPU-to-CCM pixel oracle.** Confirm the terminal-pivot rule against an independent Profile 7 implementation or trusted reference samples. Keep previous-RPU state out of the Profile 7 reference path: the pinned FFmpeg decoder rejects metadata compression for profiles below 8 in compliant mode and rejects previous-RPU reuse on uncompressed streams. Wire the required `dv_md_compression` argument to the actual demuxed container configuration and retain fail-closed coverage for every nonzero mode. Then implement BT.1886 handling and build frame-level BL/EL inputs whose expected code values can be derived independently from the equations. Cover residual-only and mapping-only controls, CM 2.9 and CM 4.0, preserve intermediate precision, and set a numeric error budget before recording a reference-pixel pass. ETSI GS CCM 001 V1.1.1 clause 5 defines generic BL inverse mapping, EL NLQ, residual addition and PQ conversion; it does not name P7. ETSI TS 103 572 separately specifies ST 2094-10 metadata carriage, not the composer. [ETSI GS CCM 001](https://www.etsi.org/deliver/etsi_gs/CCM/001_099/001/01.01.01_60/gs_ccm001v010101p.pdf) · [pinned FFmpeg RPU decoder](https://github.com/FFmpeg/FFmpeg/blob/46f23be8b1976ed4c8ec85584daabcf0e57a7b9/libavcodec/dovi_rpudec.c#L2583-L2644) · [dovi_tool RPU mapping parser](https://github.com/quietvoid/dovi_tool/blob/main/dolby_vision/src/rpu/rpu_data_mapping.rs) · [libplacebo reshape metadata](https://github.com/haasn/libplacebo/blob/master/src/include/libplacebo/colorspace.h) · [ETSI TS 103 572 scope](https://www.etsi.org/deliver/etsi_ts/103500_103599/103572/01.03.01_60/ts_103572v010301p.pdf).
 2. **Expand the generated graph fixture.** Add separately tracked layers, exact seek/flush/reorder boundaries, malformed/missing EL and RPU, scene changes, EOF, crop/chroma edges, stale-pair and queue-capacity faults. Keep the local Kodi sample out of the repository and public CI.
 3. **Qualify Linux app playback.** Rebase production mpv patches only after review. Run the app through PlezyNG's Wayland plane and test precision, range/PQ/HLG tags, tone-map ownership, VA-API import, seek/resize/teardown, subtitles, audio sync, suspend and output changes. Keep normal `opengl` as default and preserve recovery by removing `PLEZYNG_EXPERIMENTAL_RENDER_API`.
 4. **Build the Android engine path.** The current APK contains the production engine; add a platform adapter that exposes paired decoded BL/EL frames, carries RPU and PTS identity, composes before display mapping, and fails closed when either layer is missing. Validate with the generated fixture on a real supported Android device before advertising FEL.

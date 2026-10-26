@@ -349,8 +349,20 @@ def _parse_curve(
     raise ValueError(f"curves[{component_index}].mapping_idc is unsupported")
 
 
-def parse_profile7_fel_rpu(rpu: Mapping[str, object]) -> Profile7FelCcm:
-    """Parse a single full dovi_tool JSON RPU object; state reuse fails closed."""
+def parse_profile7_fel_rpu(
+    rpu: Mapping[str, object], *, container_dv_md_compression: int
+) -> Profile7FelCcm:
+    """Parse one dovi_tool RPU with its demuxed container compression mode.
+
+    The container mode is required because it is not part of RPU JSON. The
+    sample reference accepts only uncompressed Profile 7 metadata.
+    """
+    container_dv_md_compression = _integer(
+        "container.dv_md_compression", container_dv_md_compression, 0, 3
+    )
+    if container_dv_md_compression != 0:
+        raise ValueError("container metadata compression is unsupported for Profile 7 FEL")
+
     rpu = _mapping("RPU", rpu)
     _integer("dovi_profile", rpu.get("dovi_profile"), 7, 7)
     if rpu.get("el_type") != "FEL":

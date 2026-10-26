@@ -210,11 +210,14 @@ local runs are historical evidence, not the current merge gate. This remains an
 equation-level sample check, not a full-frame Dolby-reference comparison.
 
 The scope is one RPU with an in-band mapping, 10-bit BL/EL, 12-bit VDR, one
-partition, polynomial or MMR curves, and `LinearDeadzone` NLQ. Nonzero
-`reserved_zero_3bits` (the field name retained by [the pinned dovi_tool parser](https://github.com/quietvoid/dovi_tool/blob/ef85991cfc31e26bc3ffed76364965f29f9fd281/dolby_vision/src/rpu/rpu_data_header.rs), which [pinned FFmpeg parses as `dm_compression`](https://github.com/FFmpeg/FFmpeg/blob/46f23be8b1976ed4c8ec85584daabcf0e57a7b9/libavcodec/dovi_rpudec.c#L2487-L2523)),
+partition, polynomial or MMR curves, and `LinearDeadzone` NLQ. Callers must
+pass `container_dv_md_compression` from the demuxer's Dolby Vision configuration
+record; FFmpeg exposes this field as `dv_md_compression` with values `0` none,
+`1` limited, `2` reserved and `3` extended ([configuration type](https://github.com/FFmpeg/FFmpeg/blob/46f23be8b1976ed4c8ec85584daabcf0e57a7b9e/libavutil/dovi_meta.h#L1054-L1122), [container parser](https://github.com/FFmpeg/FFmpeg/blob/46f23be8b1976ed4c8ec85584daabcf0e57a7b9e/libavformat/dovi_isom.c#L527-L546)). The adapter requires it and accepts only `0` (`none`). Nonzero
+`reserved_zero_3bits` (the field name retained by [the pinned dovi_tool parser](https://github.com/quietvoid/dovi_tool/blob/ef85991cfc31e26bc3ffed76364965f29f9fd281/dolby_vision/src/rpu/rpu_data_header.rs), which [pinned FFmpeg parses as `dm_compression`](https://github.com/FFmpeg/FFmpeg/blob/46f23be8b1976ed4c8ec85584daabcf0e57a7b9e/libavcodec/dovi_rpudec.c#L2487-L2523)),
 previous-RPU reuse, extended mapping, and linear-interpolation curves fail
-closed. The adapter receives parsed RPU JSON rather than container metadata, so
-it cannot independently validate a container-level metadata-compression flag.
+closed. The adapter does not parse the container record itself; the caller must
+source and pass that value alongside the RPU JSON.
 BT.1886-to-PQ conversion, Dolby display management, spatial resampling, frame
 pairing and rendering are not implemented here. The pinned FFmpeg decoder's
 compliant-mode checks reject metadata compression for profiles below 8 and

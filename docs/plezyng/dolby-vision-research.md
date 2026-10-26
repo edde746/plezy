@@ -69,9 +69,9 @@ untested hardware combinations and complete proprietary display-mapper equivalen
   nonzero `reserved_zero_3bits`, previous-RPU reuse, extended mapping, multiple
   partitions, linear interpolation, and other unsupported forms. FFmpeg's
   pinned compliant-mode parser disallows metadata compression for profiles
-  below 8 and previous-RPU reuse on uncompressed RPUs. The adapter consumes RPU
-  JSON without container metadata, so container-level compression still needs
-  a separate input check. Its upper-pivot handling follows
+  below 8 and previous-RPU reuse on uncompressed RPUs. The adapter now requires
+  the demuxer's `dv_md_compression` value and accepts only `0` (`none`); raw RPU
+  JSON alone is not sufficient input. Its upper-pivot handling follows
   [libplacebo's public reshape shader](https://github.com/haasn/libplacebo/blob/master/src/shaders/colorspace.c#L141-L260), which clamps to the pivot range and selects coefficients with `>=`. That confirms renderer behavior, not Dolby correctness, and still needs an independent sample-level oracle.
 - The pinned offline FelBaker companion path now runs that generated BL/EL/RPU
   fixture through FFMS2 5.0 and produces residual-dependent RGB48 output. Every
@@ -242,9 +242,10 @@ is the separate ST 2094-10 metadata-carriage specification. The public
 help locate fields, but reusing its equations is not an independent cross-check.
 The first bounded adapter now normalizes a single `dovi_tool` RPU's three
 curves and NLQ values into those equations; it rejects previous-RPU reuse and
-nonzero `reserved_zero_3bits`, and it does not receive container metadata with
-which to validate container-level compression. It also does not implement
-BT.1886 conversion or Dolby display management. Historical sample tests passed
+nonzero `reserved_zero_3bits`. It also requires the demuxer's container-level
+`dv_md_compression` value and accepts only `0` (`none`); raw RPU JSON alone is
+not sufficient input. It does not implement BT.1886 conversion or Dolby
+display management. Historical sample tests passed
 locally on `kspld0` on 2026-10-26; new tests must use the approved private-JIT
 route. The final RPU
 pivot is assigned to the last encoded interval to reconcile the RPU's one-piece-
