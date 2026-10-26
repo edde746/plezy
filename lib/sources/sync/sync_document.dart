@@ -117,27 +117,25 @@ class SyncDocument {
   /// Coalesces equal concurrent versions and strips deleted annotation text
   /// while retaining its causal tombstone. Both operations preserve the
   /// information needed to reject stale writes from offline devices.
-  bool compactSafe() {
+  bool compactSafe({String? actor}) {
     var changed = false;
     for (final values in records.values) {
       changed = _compactEqualValues(values) || changed;
-      for (var index = 0; index < values.length; index++) {
-        final version = values[index];
-        if (version.value['type'] != 'annotation') continue;
-        final data = sourceMap(version.value['data']);
-        if (data['deleted'] != true) continue;
-        final minimalData = {
-          if (data['id'] is String) 'id': data['id'],
-          if (data['edition'] is String) 'edition': data['edition'],
-          if (data['mode'] is String) 'mode': data['mode'],
-          'deleted': true,
-        };
-        if (canonicalSyncJson(data) != canonicalSyncJson(minimalData)) {
-          values[index] = SyncVersion(
-            version.clock,
-            {...version.value, 'data': minimalData},
-            actor: version.actor,
-          );
+      if (actor != null && RegExp(r'^[a-f0-9]{32}$').hasMatch(actor)) {
+        final tombstones = values.where((version) {
+          final data = sourceMap(version.value['data']);
+          return version.value['type'] == 'annotation' && data['deleted'] == true;
+        }).toList();
+        final compressedTombstone = tombstones.length == 1 &&
+            canonicalSyncJson(tombstones.single.value) == canonicalSyncJson(_semanticSyncValue(tombstones.single.value));
+        if (tombstones.isNotEmpty && !compressedTombstone) {
+          final clock = joinedClock(tombstones);
+          final next = (clock[actor] ?? 0) + 1;
+          if (next > 9007199254740991) throw const SourceException(SourceFailure.invalidData);
+          clock[actor] = next;
+          final value = _semanticSyncValue(tombstones.first.value);
+          values.removeWhere((version) => tombstones.contains(version));
+          values.add(SyncVersion(clock, value, actor: actor));
           changed = true;
         }
       }
