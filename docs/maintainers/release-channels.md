@@ -40,10 +40,10 @@ Changing the install IDs means an install signed under upstream's identity canno
 | WinGet | Wired, credential-gated | `publish-winget.yml` submits fork-specific manifests as a pull request. Microsoft review and merge are still required. |
 | Chocolatey | Wired, credential-gated | `publish-chocolatey.yml` publishes the fork-specific package after a release. Chocolatey moderation may be required. |
 | Microsoft Store | Package prepared, listing identity required | Set the repository variables below to build `plezyng-windows.msixbundle`; submit it through PlezyNG's Partner Center listing. The optional signed Inno Setup installer is also retained for manual EXE/MSI listing workflows. No automated Partner Center submission is configured. |
-| Google Play | Draft app record; no closed-test release published; Play Console reports 0 opted-in testers | The current 2.24.1 GitHub draft contains `plezyng-android-play.aab`, but it has not been uploaded to Play. The foreground-service declaration now has separate viewer links for user-initiated data sync and media playback. Play Console still needs the Data safety declaration and remaining app setup before a closed test can be released. `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` is missing, so automated Play uploads are not configured; a manual Console upload remains possible. The opt-in URL in the README is inactive until publication. At least 12 testers must remain opted in continuously for 14 days before production access. |
+| Google Play | Draft app record; no closed-test release published; Play Console reports 0 opted-in testers | The current 2.24.1 GitHub draft contains `plezyng-android-play.aab`, but it has not been uploaded to Play. Foreground-service demo links are saved in Play Console and listed below. Play Console still needs the Data safety declaration and remaining app setup before a closed test can be released. `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` is missing, so automated Play uploads are not configured; a manual Console upload remains possible. The opt-in URL in the README is inactive until publication. At least 12 testers must remain opted in continuously for 14 days before production access. |
 | Amazon Appstore / Fire TV | App record and lifetime IAP created; Test submission incomplete | `plezyng_lifetime_unlock` is saved at a USD $2.99 base price; Amazon calculates local-market equivalents. The Amazon public key is in the Android assets. A new Amazon security profile is mapped to App Submission API and its credentials are configured in GitHub Actions. Amazon still returns a generic error when the IAP is submitted to Test; app release metadata is incomplete. |
-| Apple App Store (iOS) | App record and lifetime IAP created; signing inputs are configured but the latest build did not validate them; TestFlight setup incomplete | `plezyng_lifetime_unlock` is a non-consumable with a USD $2.99 base price and a price schedule for 175 regions. English (Canada) copy is present. It remains Prepare for Submission. The current 2.24.1 workflow failed while configuring App Store signing, and the draft contains only an unsigned developer IPA. Resolve the signing-input error and upload a signed IPA before distributing through TestFlight or submitting an app version. |
-| Apple App Store (tvOS) | App record created; signing inputs are configured but the latest build did not validate them | The app's iOS and tvOS platforms can share the lifetime IAP. The current 2.24.1 workflow failed while configuring tvOS signing, and the draft contains only an unsigned developer IPA. Resolve the signing-input error before uploading a signed tvOS IPA to App Store Connect. |
+| Apple App Store (iOS) | App record and lifetime IAP created; the current certificate/password pair fails import; TestFlight setup incomplete | `plezyng_lifetime_unlock` is a non-consumable with a USD $2.99 base price and a price schedule for 175 regions. English (Canada) copy is present. It remains Prepare for Submission. The 2.24.1 workflow's PKCS#12 import failed MAC verification, and the draft contains only an unsigned developer IPA. Check the certificate/password pair or replace it without revoking the existing certificate, then upload a signed IPA before distributing through TestFlight or submitting an app version. |
+| Apple App Store (tvOS) | App record created; the current certificate/password pair fails import | The app's iOS and tvOS platforms can share the lifetime IAP. The 2.24.1 workflow's PKCS#12 import failed MAC verification, and the draft contains only an unsigned developer IPA. Check the certificate/password pair or replace it without revoking the existing certificate before uploading a signed tvOS IPA to App Store Connect. |
 | Mac App Store | Not a Plezy upstream channel | Plezy distributes macOS through a direct DMG and Homebrew. |
 | Snap Store | Name registered, credential scope needs verification | `publish-snap.yml` uploads the matching architecture package to `stable` after a published release. `SNAPCRAFT_STORE_CREDENTIALS` must authorize the registered `plezyng` snap and required channels. Manual dispatch can publish an existing release to `edge`, `beta`, `candidate`, or `stable`. |
 | AUR | Wired, package and credential-gated | `publish-aur.yml` updates the binary package recipe after a published release. Register the selected package name first, then set `AUR_PACKAGE_NAME` and `AUR_SSH_KEY`. |
@@ -54,6 +54,8 @@ Changing the install IDs means an install signed under upstream's identity canno
 The app-store workflow only accepts an already-published stable GitHub Release and does not build packages. Run it from `main`, select the release tag, then choose a target channel. PlezyNG app records now exist in Google Play, App Store Connect (iOS and tvOS), and Amazon Appstore. The workflow sends binaries only, with no listing metadata, screenshots, or review submission; remaining account, signing, testing, product-catalog, and review tasks are listed below.
 
 For Google Play testing, upload the signed AAB to an internal or closed testing track first. Play Console currently requires a processed AAB that includes Play Billing before it enables one-time product setup; this is an upload to a test track, not a production release. Configure the lifetime product before the closed-test build reaches testers. Publish the closed test and add tester accounts or a Google Group. The tester opt-in URL is `https://play.google.com/apps/testing/org.snapetech.plezyng`; it becomes available after the test is published and only invited accounts can join. Keep at least 12 testers opted in for 14 continuous days before applying for production access. The README contains the opt-in URL and states that the test is not live yet.
+
+Google Play's foreground-service declaration has separate app-use videos: [user-initiated data sync](https://drive.google.com/file/d/1UEftKbXx23gz0tCdySJ8ceySXHX655_M/view?usp=drive_link) and [user-started media playback](https://drive.google.com/file/d/14CIjy5f6Xd528IOdrE30Ln2fmGj-hr3Z/view?usp=drive_link). They are silent recordings of the app on an Android device, with no narration or slides. Google's [foreground-service guidance](https://support.google.com/googleplay/android-developer/answer/13392821?hl=en) asks each video to demonstrate the in-app steps that trigger its declared feature.
 
 For Apple testing, create the required distribution certificate and provisioning profiles, add them and an App Store Connect API key to GitHub Actions, then upload the signed iOS and tvOS builds. App Store Connect processes uploaded builds before they become available for testing. Create TestFlight groups and provide beta test information; internal testers can then receive invitations. The first external TestFlight build must be approved by TestFlight App Review before external testing starts. Add a public TestFlight link to the README when the external group is ready. The existing store workflow uploads signed IPAs but does not submit them for App Review or configure TestFlight groups. See Apple's [TestFlight overview](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview/), [API key setup](https://developer.apple.com/help/app-store-connect/get-started/app-store-connect-api/), and [App Store provisioning profiles](https://developer.apple.com/help/account/provisioning-profiles/create-an-app-store-provisioning-profile/).
 
@@ -93,10 +95,12 @@ At the 2026-10-26 readiness check, repository secrets are configured for Android
 Appstore, AUR, Apple App Store Connect API, iOS/tvOS App Store signing, Chocolatey, COPR, Discord,
 Docker Hub, Launchpad signing, Snap, and WinGet. The `AUR_PACKAGE_NAME`, `COPR_PROJECT`, and
 `LAUNCHPAD_PPA` variables are also configured. `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` is missing, so
-the app-store workflow cannot upload to Google Play. Apple secret names are present, but the signed
-iOS/tvOS build steps have not passed; do not treat the Apple store channels as ready for upload
-until those input errors are resolved. `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, macOS Developer ID
-signing secrets, and `SPARKLE_PRIVATE_KEY` are missing; `APPLE_TEAM_ID` is shared with the mobile
+the app-store workflow cannot upload to Google Play. Apple secret names are present, but the 2.24.1
+iOS/tvOS signing jobs failed during PKCS#12 import with MAC verification errors. Check the
+certificate/password pair or replace it without revoking the existing certificate. Do not treat
+the Apple store channels as ready for upload until this input error is resolved. `APPLE_ID`,
+`APPLE_APP_SPECIFIC_PASSWORD`, macOS Developer ID signing secrets, and `SPARKLE_PRIVATE_KEY` are
+missing; `APPLE_TEAM_ID` is shared with the mobile
 jobs and is not sufficient for macOS notarization. The Windows installer signing secrets and
 Microsoft Store identity variables are also missing. Keep existing credentials intact when adding
 replacements; do not reuse signing keys or store identities from another project.
@@ -110,14 +114,16 @@ profile is mapped to App Submission API; GitHub secrets `AMAZON_APPSTORE_CLIENT_
 `AMAZON_APPSTORE_CLIENT_SECRET` are configured. The IAP remains Ready to Submit after a generic
 Test-submission error, and the app release metadata is incomplete. Google Play has a PlezyNG draft
 record, but no closed-test release is published and Play Console reports 0 opted-in testers. The
-current GitHub draft contains a signed Play AAB and Fire TV APK; the latest 2.24.1 release workflow
-is still running, and store uploads have not started. The README contains the opt-in URL, which is
-not live yet. Production access still needs 12 closed-test participants to remain opted in for 14
+current GitHub draft contains a signed Play AAB and Fire TV APK. The latest 2.24.1 release workflow
+completed with failure: Linux, Windows, Android and package artifacts completed, macOS stopped at
+the notarization check, and iOS/tvOS stopped at the PKCS#12 import. The macOS check is corrected on
+`main`; store uploads have not started. The README contains the opt-in URL, which is not live yet.
+Production access still needs 12 closed-test participants to remain opted in for 14
 days after publication. Apple has iOS and tvOS records; its non-consumable lifetime IAP is
 configured with a USD $2.99 base price and a 175-region schedule; it remains Prepare for
 Submission. App Store Connect and mobile signing secret names are configured, but current iOS/tvOS
-signing jobs failed during configuration, and the release draft has only unsigned developer IPAs.
-Diagnose these errors before claiming the Apple store channels are ready.
+signing jobs failed during PKCS#12 import, and the release draft has only unsigned developer IPAs.
+Resolve the certificate/password mismatch before claiming the Apple store channels are ready.
 
 ## Relay containers
 
