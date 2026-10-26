@@ -1,18 +1,9 @@
 # ng-runner-policy: private-jit-only-v1
 name: Dolby Vision platform experiments
 
+# Runs only when selected from Actions.
 on:
   workflow_dispatch:
-  push:
-    branches: ['codex/dv-platform-*', 'codex/dv-client-*']
-    paths:
-      - 'tools/dv-engine/**'
-      - 'tools/dv-apple/**'
-      - 'lib/**'
-      - 'test/**'
-      - 'linux/runner/mpv/**'
-      - 'windows/**'
-      - '.github/workflows/dv-platforms.yml'
 
 permissions:
   contents: read
