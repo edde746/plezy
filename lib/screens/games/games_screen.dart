@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_button.dart';
+import '../../focus/focusable_text_field.dart';
 import '../../games/game_discovery.dart';
 import '../../games/game_library_controller.dart';
 import '../../games/game_models.dart';
@@ -21,6 +23,7 @@ import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/app_menu.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/settings_section.dart';
@@ -36,7 +39,10 @@ class GamesScreen extends StatefulWidget {
 
 class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibilityAware {
   GameLibraryController? _controller;
-  final _firstFocus = FocusNode();
+  final _firstFocus = FocusNode(debugLabel: 'First Games action');
+  final _addFocus = FocusNode(debugLabel: 'Add gaming computer');
+  final _scanFocus = FocusNode(debugLabel: 'Find gaming computers');
+  final _searchController = TextEditingController();
   String? _profile;
   int? _sourceGeneration;
   int _epoch = 0;
@@ -105,6 +111,9 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
     _epoch++;
     _retire();
     _firstFocus.dispose();
+    _addFocus.dispose();
+    _scanFocus.dispose();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -224,7 +233,9 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
         title: Text(t.games.engineUnavailable),
         scrollable: true,
         content: Text(host.protocol == GameProtocol.steam ? t.games.steamEnginePending : t.games.nativeEnginePending),
-        actions: [TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.ok))],
+        actions: [
+          DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.ok, autofocus: true),
+        ],
       ),
     );
   }
@@ -344,7 +355,9 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
               title: Text(t.games.help),
               scrollable: true,
               content: Text(t.games.helpBody),
-              actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.ok))],
+              actions: [
+                DialogActionButton(onPressed: () => Navigator.pop(context), label: t.common.ok, autofocus: true),
+              ],
             ),
           ),
         ),
@@ -363,16 +376,25 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
                     spacing: 12,
                     runSpacing: 8,
                     children: [
-                      FilledButton.icon(
-                        focusNode: filtered.isEmpty ? _firstFocus : null,
+                      FocusableButton(
+                        focusNode: filtered.isEmpty ? _firstFocus : _addFocus,
                         onPressed: enabled ? _add : null,
-                        icon: const AppIcon(Symbols.add_rounded),
-                        label: Text(t.games.addComputer),
+                        onNavigateRight: enabled && c?.scanning == false ? _scanFocus.requestFocus : null,
+                        child: FilledButton.icon(
+                          onPressed: enabled ? _add : null,
+                          icon: const AppIcon(Symbols.add_rounded),
+                          label: Text(t.games.addComputer),
+                        ),
                       ),
-                      OutlinedButton.icon(
+                      FocusableButton(
+                        focusNode: _scanFocus,
                         onPressed: enabled && c?.scanning == false ? _scan : null,
-                        icon: const AppIcon(Symbols.radar_rounded),
-                        label: Text(c?.scanning == true ? t.games.scanning : t.games.findComputers),
+                        onNavigateLeft: () => (filtered.isEmpty ? _firstFocus : _addFocus).requestFocus(),
+                        child: OutlinedButton.icon(
+                          onPressed: enabled && c?.scanning == false ? _scan : null,
+                          icon: const AppIcon(Symbols.radar_rounded),
+                          label: Text(c?.scanning == true ? t.games.scanning : t.games.findComputers),
+                        ),
                       ),
                     ],
                   ),
@@ -385,12 +407,16 @@ class _GamesScreenState extends State<GamesScreen> with FocusableTab, TabVisibil
             if (state.games.isNotEmpty)
               Padding(
                 padding: const EdgeInsets.fromLTRB(16, 0, 16, 0),
-                child: TextField(
+                child: FocusableTextField(
+                  controller: _searchController,
+                  textInputAction: TextInputAction.search,
                   decoration: InputDecoration(
                     labelText: t.games.search,
                     prefixIcon: const AppIcon(Symbols.search_rounded),
                   ),
                   onChanged: (value) => setState(() => _query = value),
+                  onSubmitted: (_) => _firstFocus.requestFocus(),
+                  onNavigateDown: _firstFocus.requestFocus,
                 ),
               ),
           ]),
