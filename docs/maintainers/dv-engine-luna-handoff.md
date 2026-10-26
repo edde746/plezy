@@ -23,43 +23,61 @@ are needed. Do not merge or ship an unqualified engine as the production default
 
 ## Exact checkpoint
 
-- Branch base: `502ac651da234e024970a6908a3f8988e7845e7c` (newer `main` changes
-  were preserved, including Apple CI result-bundle diagnostics and changelog).
-- Experimental work is in draft PR [#16](https://github.com/snapetech-org/PlezyNG/pull/16)
-  on `codex/dv-experimental-engine`. Keep it draft and separate from production.
-- First build: [Actions run 40269374234](https://github.com/snapetech-org/PlezyNG/actions/runs/40269374234),
-  job `121398660530`, completed **failure**. Source fetch, FFmpeg/libplacebo/mpv
-  compilation, feature probe and GLES `opengl-next` red-frame decode/render/readback
-  all passed. 14/16 mpv tests passed. The two failures both loaded mpv's PNG fixture;
-  the build had omitted the PNG decoder. The script stopped before libplacebo's
-  test suite and artifact packaging. Logs: [job logs](https://github.com/snapetech-org/PlezyNG/actions/runs/40269374234).
-- Commit `f6624522f29f7cc3a306031a3393a8e6a2d75d75` added the Linux app selector,
-  lab, synthetic FEL vectors and compositor failure patch with `[skip ci]` to
-  preserve the first run. **That failed run did not test those later additions.**
-- Second engine run: [Actions run 40270407661](https://github.com/snapetech-org/PlezyNG/actions/runs/40270407661),
-  job `121401804394`, completed **failure**. FFmpeg, libplacebo and mpv built;
-  feature probe and GLES `opengl-next` red-frame readback passed. Six synthetic
-  LINEAR_DZ vectors matched their independent expected pixels with zero reported
-  error; every nonzero residual changed pixels. Invalid EL texture injection was
-  rejected. mpv tests were 14/16: both failures need PNG, which FFmpeg disabled
-  because `inflate_wrapper` lacked zlib under `--disable-autodetect`. All 16
-  runnable libplacebo tests passed; one surfaceless test was skipped. No artifact
-  was packaged.
-- The follow-on patch set adds `zlib1g-dev` and `--enable-zlib`, rejects FEL metadata
-  without an EL frame pointer, and applies a pinned-source mpv patch that fails
-  closed on missing/invalid EL, decoder setup errors, unknown/unmatched PTS, and
-  GPU import errors. It also rejects ambiguous existing BL metadata rather than
-  replacing an owned buffer. This code **has not yet gone through the pinned mpv
-  build**. Run the workflow on the updated tree and inspect the compile and tests
-  before claiming the integration works.
-- The general PR checks in [Actions run 40270533737](https://github.com/snapetech-org/PlezyNG/actions/runs/40270533737)
-  are separate from the engine build; at last inspection, they were still running.
-- Local checks currently pass: Python byte-compilation, 13 DV-lab tests, and the
-  C++ selector test under ASan/UBSan (`detect_leaks=0` because this host blocks
-  LeakSanitizer process inspection).
-- No real P7 FEL sample, physical GPU/Wayland run, native DV output test, merge,
-  release, system driver change, or device test has occurred. Production
-  `mpv-build.lock.json` remains unchanged.
+- PR [#16](https://github.com/snapetech-org/PlezyNG/pull/16) remains **draft** on
+  `codex/dv-experimental-engine`; current base is `1d1ba3bbc1156a0a1a8cfef6bf7144d830f6ddb8`.
+  The FEL pairing/fail-closed code tested below is commit
+  `4534003a81bc8e2712c310c2efd28771a777498a`; the follow-up native formatting
+  correction is `52ff2b5c415d17489b1b2a2aed88304eee14bc46`.
+- Isolated Linux engine run
+  [40273432959](https://github.com/snapetech-org/PlezyNG/actions/runs/40273432959)
+  completed **successfully** on 2026-10-26. The pinned FFmpeg, libplacebo and
+  patched mpv/libmpv build completed; the exact-commit mpv fail-closed patcher
+  applied. FFmpeg was configured with zlib and `dovi_split`, and the split
+  bitstream filter compiled.
+- Evidence from that run:
+  - EGL/GLES `opengl-next` decoded, rendered and read back the red FBO smoke
+    frame.
+  - Six synthetic LINEAR_DZ vectors matched their independent expected pixels
+    with zero reported error; every nonzero residual changed pixels.
+  - Active FEL without an EL frame pointer and an invalid EL surface were
+    rejected instead of rendering BL-only.
+  - mpv/libmpv upstream suite: **16/16 passed**. libplacebo: **16 passed, 1
+    headless surfaceless test skipped, 0 failed**.
+  - It packaged Linux x86_64 artifact
+    [plezyng-dv-experimental-linux-x86_64](https://github.com/snapetech-org/PlezyNG/actions/runs/40273432959/artifacts/12630225461)
+    (42,080,393 bytes; SHA-256
+    `fa5067f078fccee02f163807bc2efed3092798e1020112d8229e043541132e8f`) and
+    diagnostics artifact
+    [dv-engine-linux-diagnostics](https://github.com/snapetech-org/PlezyNG/actions/runs/40273432959/artifacts/12629233396).
+    Artifacts expire after 14 days.
+- **What this does not prove:** a real Profile 7 stream was not decoded through
+  both HEVC layers, paired by PTS/seek epoch, composed, or compared against a
+  trusted reference. The mpv patch compiled but has no focused end-to-end FEL
+  pairing test. There was no physical GPU/display, PlezyNG app, device, or native
+  Dolby Vision HDMI test. This artifact is an experimental Linux x86_64/OpenGL
+  build, not universal DV support.
+- Fresh app/repository CI run
+  [40273687164](https://github.com/snapetech-org/PlezyNG/actions/runs/40273687164)
+  was still queued when last checked on 2026-10-26. Check its live status before
+  reporting app CI; Linux package smoke is skipped in this PR workflow. It
+  contains the formatting fix after earlier Native Formatting feedback.
+- Local checks recorded for this branch: 13 DV-lab tests, Python byte-compilation,
+  the exact-pinned mpv patcher syntax/template validation, and the Linux render
+  selector under ASan/UBSan passed. LeakSanitizer remained disabled because the
+  host rejects its process inspection. No full PlezyNG native or Flutter build
+  is claimed.
+- Real-stream fixture search is still blocked on provenance. The
+  [Kodi sample list](https://kodi.wiki/view/Samples) labels its FEL samples with
+  a “fair use” claim, not a clear redistribution grant. The
+  [FelBaker tests](https://github.com/bbeny123/felbaker/tree/main/test) contain
+  paired `BL-150.hevc`/`EL-150.hevc` fixtures, but do not state the media
+  source/license; the code project is GPL-3.0. Do not copy these assets or
+  FelBaker code into PlezyNG/public CI. FelBaker may be a private reference
+  oracle only after sample rights and GPL integration boundaries are resolved.
+  Prefer a user-provided or explicitly licensed clip, keep it out of git/artifacts,
+  and record its provenance and SHA-256.
+- Production `mpv-build.lock.json` is unchanged. Keep PR #16 draft and do not
+  ship the experiment as the production default.
 
 ## What is written
 
@@ -69,10 +87,10 @@ are needed. Do not merge or ship an unqualified engine as the production default
 | `tools/dv-engine/Dockerfile`, `build_linux.py` | Isolated native Linux build of FFmpeg, libplacebo, standalone mpv and libmpv. OpenGL first; no Vulkan/D3D11 in this recipe. Writes source archives, provenance, checksums and feature report. Apt versions are recorded, not frozen. |
 | `.github/workflows/dv-experimental.yml` | Read-only, SHA-pinned Actions; Ubuntu 24.04 x86_64 Docker build; artifacts retained 14 days. Runs on changes under `tools/dv-engine/**` on `codex/dv-experimental-*`, or manual dispatch. |
 | `engine_features.c` | Compile/runtime checks for `dovi_split`, DV stream groups, enhancement-frame/NLQ interfaces and `opengl-next`. These are feature checks, not playback proof. |
-| `render_smoke.c` | Writes a red PPM, decodes through libmpv, renders through `opengl-next` into an ES FBO, reads pixels back. Uses surfaceless software Mesa in CI. **Compiled and passed in engine run 40270407661.** |
-| `fel_smoke.c` | Six explicit synthetic LINEAR_DZ residual vectors: zero, signs, threshold and clamping, with a half-size EL. The six vectors passed in run 40270407661. A new active-FEL-with-no-frame-pointer fault check was added afterward and still needs CI. None of these tests decode HEVC or establish all composer math. |
-| `patches/libplacebo-reject-failed-fel.patch` | Rejects active FEL metadata without an EL pointer and EL sampling failures. The latter was compiled and invalid-texture fault-tested in run 40270407661; the missing-pointer guard was added afterward and still needs CI. |
-| `patches/apply_mpv_fel_failclosed.py` | Exact-commit-guarded patcher for mpv pairing, required EL stream state, metadata checks, and fail-closed output on decoder, PTS, or GPU import errors. **Added after the last engine run; compilation is the next gate.** |
+| `render_smoke.c` | Writes a red PPM, decodes through libmpv, renders through `opengl-next` into an ES FBO, reads pixels back. Uses surfaceless software Mesa in CI. **Passed in engine run 40273432959.** |
+| `fel_smoke.c` | Six explicit synthetic LINEAR_DZ residual vectors: zero, signs, threshold and clamping, with a half-size EL. All six vectors and the active-FEL-with-no-frame-pointer fault check passed in run 40273432959. These do not decode HEVC or establish all composer math. |
+| `patches/libplacebo-reject-failed-fel.patch` | Rejects active FEL metadata without an EL pointer and EL sampling failures. Both guards compiled and were fault-tested in run 40273432959. |
+| `patches/apply_mpv_fel_failclosed.py` | Exact-commit-guarded patcher for mpv pairing, required EL stream state, metadata checks, and fail-closed output on decoder, PTS, or GPU import errors. Applied and compiled with pinned mpv/libmpv in run 40273432959; real-stream pairing remains untested. |
 | `run.py` | Process-scoped engine selection; standalone tools or a matching PlezyNG app. App mode preloads the selected libmpv and requests `opengl-next`. No production engine files are overwritten. |
 | `linux/runner/mpv/experimental_render_api.h`, `_test.cc` | Strict opt-in API selector. Unset/`opengl` keeps legacy; only `opengl-next` selects RFC backend; invalid values fail. Test passes. |
 | `linux/runner/mpv/mpv_player.cc` | Uses selector on existing Wayland/EGL video plane, logs chosen API, fails if experimental API is unavailable. Full app build/runtime still pending. |
@@ -124,36 +142,38 @@ Experimental pins:
 
 ## Do next, in order
 
-1. Build the updated branch with the zlib and fail-closed patches. The pinned
-   source fetch and earlier engine components compiled, but the new mpv patcher
-   has not yet been compiled. Rerunning either old engine run rebuilds old source.
-2. Validate source fetching, both patch applications, FFmpeg BSF availability,
-   library linking, runtime loader paths, ES context creation and both upstream
-   test suites. The zlib change specifically targets the two PNG fixture failures.
-3. Never relax a failed pixel assertion merely to make CI green. Check input
-   normalization, matrix metadata, target inference and precision first.
-4. Inspect the mpv patch's compiled pairing and output paths. Keep unknown PTS,
-   missing EL, invalid metadata, decoder setup failure and GPU import failure
-   fail-closed. Add focused filter-level tests if the pinned build supports a
-   maintainable harness.
-5. Add a real, provenance-recorded P7 FEL sample test. Verify both layers decode,
-   pair by timestamp/epoch and reach composition. Compare reconstructed pixels
-   with a trusted reference and BL-only output. No such sample was available in
-   this workspace. Synthetic vectors are not a substitute for this step.
-6. Format native files with the repository toolchain and run the normal Flutter,
-   Linux native/sanitizer and workflow checks. Keep PR #16 in draft while the
-   sample and device gates remain open. Identify AI assistance as OpenAI Codex
-   (GPT-6 Luna). `CONTRIBUTING.md` requires checks to pass before merge.
-7. Test embedded playback on real Wayland/GPU hardware: FBO precision, PQ/HLG and
-   range, tone-map ownership, zero-copy imports, resize/seek/flush, subtitles,
-   audio sync, suspend/output changes and teardown. The launcher requires this
-   branch's app selector and no already-running normal app instance.
-8. Rebase the production mpv-build patches individually before treating the new
-   engine as a normal replacement. TLS/HTTP, subtitles, audio, decoder fallback,
-   Apple output and Android timing patches have **not** been ported here.
-9. Expand adapters in the platform order below. Keep native DV signaling separate
-   from FEL reconstructed to HDR10/EDR/SDR. Expose actual layers used and fallback
-   reasons; never let a DV badge or advertised profile certify FEL.
+1. Preserve engine run [40273432959](https://github.com/snapetech-org/PlezyNG/actions/runs/40273432959)
+   as the first successful pinned build of this fail-closed patch set. The 14-day
+   Linux x86_64 artifact is experimental and contains no real-stream qualification.
+2. Check the latest general PR workflow
+   [40273687164](https://github.com/snapetech-org/PlezyNG/actions/runs/40273687164)
+   live. Resolve any failures, especially Native Formatting, Linux app compilation,
+   Android native checks and Apple dependency resolution. Do not confuse those
+   app-level checks with engine run 40273432959.
+3. Add focused tests for the mpv pairing state machine: simultaneous BL/EL
+   decode, reordered/delayed PTS, duplicate/missing frames, seek/flush epochs,
+   metadata ownership, decoder setup failure, queue bounds and teardown. The
+   current patch compiles, but these paths have not yet been executed end-to-end.
+4. Obtain a real P7 FEL sample with explicit test/redistribution permission or
+   have the user provide a local clip they are authorized to test. Keep media
+   outside source control and CI artifacts. Record the source, rights, SHA-256,
+   stream layout and expected output. Verify both HEVC layers decode, RPU metadata
+   attaches to the matching BL frame, EL residual reaches composition, and
+   reconstructed output differs from BL-only while matching a trusted reference.
+   Synthetic vectors are not a substitute.
+5. Launch the artifact against the actual PlezyNG Linux runner using `run.py`
+   on Wayland/GPU hardware. Test FBO precision, PQ/HLG and range, tone-map
+   ownership, zero-copy imports, resize/seek/flush, subtitles, audio sync,
+   suspend/output changes and teardown. The CI GLES smoke uses software Mesa.
+6. Keep PR #16 draft until the real-stream, app integration and device gates
+   pass. Run normal Flutter/Linux native/sanitizer/workflow checks and follow
+   `CONTRIBUTING.md` before any merge.
+7. Rebase production mpv-build patches individually before considering a normal
+   replacement. TLS/HTTP, subtitles, audio, decoder fallback, Apple output and
+   Android timing patches have not been ported.
+8. Expand adapters by platform. Keep native DV signaling separate from FEL
+   reconstructed to HDR10/EDR/SDR. Expose actual layers used and fallback
+   reasons; a DV badge/profile flag must never certify FEL.
 
 Build/launch commands are in [`../../tools/dv-engine/README.md`](../../tools/dv-engine/README.md).
 Focused checks:
