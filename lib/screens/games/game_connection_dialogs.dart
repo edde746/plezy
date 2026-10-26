@@ -9,6 +9,7 @@ import '../../focus/focusable_text_field.dart';
 import '../../games/game_models.dart';
 import '../../games/game_streaming_client.dart';
 import '../../i18n/strings.g.dart';
+import '../../widgets/dialog_action_button.dart';
 
 class AddGameComputerDialog extends StatefulWidget {
   const AddGameComputerDialog({super.key});
@@ -26,6 +27,7 @@ class _AddGameComputerDialogState extends State<AddGameComputerDialog> {
   final _portFocus = FocusNode(debugLabel: 'Game host port');
   final _macFocus = FocusNode(debugLabel: 'Game host MAC address');
   final _saveFocus = FocusNode(debugLabel: 'Save game host');
+  final _cancelFocus = FocusNode(debugLabel: 'Cancel adding game host');
   GameProtocol _protocol = GameProtocol.gameStream;
   String? _error;
   @override
@@ -33,7 +35,14 @@ class _AddGameComputerDialogState extends State<AddGameComputerDialog> {
     for (final c in [_name, _address, _port, _mac]) {
       c.dispose();
     }
-    for (final node in [_nameFocus, _addressFocus, _portFocus, _macFocus, _saveFocus]) {
+    for (final node in [
+      _nameFocus,
+      _addressFocus,
+      _portFocus,
+      _macFocus,
+      _saveFocus,
+      _cancelFocus,
+    ]) {
       node.dispose();
     }
     super.dispose();
@@ -73,8 +82,14 @@ class _AddGameComputerDialogState extends State<AddGameComputerDialog> {
             isExpanded: true,
             decoration: InputDecoration(labelText: t.games.protocol),
             items: [
-              DropdownMenuItem(value: GameProtocol.gameStream, child: Text(t.games.moonlight)),
-              DropdownMenuItem(value: GameProtocol.steam, child: Text(t.games.steam)),
+              DropdownMenuItem(
+                value: GameProtocol.gameStream,
+                child: Text(t.games.moonlight),
+              ),
+              DropdownMenuItem(
+                value: GameProtocol.steam,
+                child: Text(t.games.steam),
+              ),
             ],
             onChanged: (value) {
               if (value != null) {
@@ -129,20 +144,41 @@ class _AddGameComputerDialogState extends State<AddGameComputerDialog> {
           if (_error != null)
             Semantics(
               liveRegion: true,
-              child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              child: Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
             ),
         ],
       ),
     ),
     actions: [
-      TextButton(onPressed: () => Navigator.pop(context), child: Text(t.games.cancel)),
-      FilledButton(focusNode: _saveFocus, onPressed: _save, child: Text(t.games.save)),
+      DialogActionButton(
+        focusNode: _cancelFocus,
+        onPressed: () => Navigator.pop(context),
+        label: t.games.cancel,
+        onNavigateUp: _macFocus.requestFocus,
+        onNavigateRight: _saveFocus.requestFocus,
+      ),
+      DialogActionButton(
+        focusNode: _saveFocus,
+        onPressed: _save,
+        label: t.games.save,
+        isPrimary: true,
+        onNavigateUp: _macFocus.requestFocus,
+        onNavigateLeft: _cancelFocus.requestFocus,
+      ),
     ],
   );
 }
 
 class PairGameComputerDialog extends StatefulWidget {
-  const PairGameComputerDialog({super.key, required this.host, required this.client, required this.isCurrent});
+  const PairGameComputerDialog({
+    super.key,
+    required this.host,
+    required this.client,
+    required this.isCurrent,
+  });
   final GameHost host;
   final GameStreamingClient client;
   final bool Function() isCurrent;
@@ -151,9 +187,14 @@ class PairGameComputerDialog extends StatefulWidget {
 }
 
 class _PairGameComputerDialogState extends State<PairGameComputerDialog> {
-  late final String _pin = Random.secure().nextInt(10000).toString().padLeft(4, '0');
+  late final String _pin = Random.secure()
+      .nextInt(10000)
+      .toString()
+      .padLeft(4, '0');
   String? _error;
   bool _complete = false;
+  final _openPairingFocus = FocusNode(debugLabel: 'Open Sunshine PIN page');
+  final _cancelFocus = FocusNode(debugLabel: 'Cancel game pairing');
   @override
   void initState() {
     super.initState();
@@ -170,7 +211,9 @@ class _PairGameComputerDialogState extends State<PairGameComputerDialog> {
     } catch (error) {
       if (mounted) {
         setState(
-          () => _error = error is GameClientException && error.failure == GameClientFailure.timedOut
+          () => _error =
+              error is GameClientException &&
+                  error.failure == GameClientFailure.timedOut
               ? t.games.timeout
               : t.games.unavailable,
         );
@@ -181,6 +224,8 @@ class _PairGameComputerDialogState extends State<PairGameComputerDialog> {
   @override
   void dispose() {
     if (!_complete) widget.client.cancel();
+    _openPairingFocus.dispose();
+    _cancelFocus.dispose();
     super.dispose();
   }
 
@@ -195,9 +240,17 @@ class _PairGameComputerDialogState extends State<PairGameComputerDialog> {
         children: [
           Text(widget.host.name),
           const SizedBox(height: 12),
-          Text(widget.host.protocol == GameProtocol.steam ? t.games.steamPairInstructions : t.games.pairInstructions),
+          Text(
+            widget.host.protocol == GameProtocol.steam
+                ? t.games.steamPairInstructions
+                : t.games.pairInstructions,
+          ),
           const SizedBox(height: 16),
-          SelectableText(_pin, textDirection: TextDirection.ltr, style: Theme.of(context).textTheme.displayMedium),
+          SelectableText(
+            _pin,
+            textDirection: TextDirection.ltr,
+            style: Theme.of(context).textTheme.displayMedium,
+          ),
           const SizedBox(height: 16),
           if (widget.host.protocol == GameProtocol.gameStream) ...[
             Semantics(
@@ -213,16 +266,22 @@ class _PairGameComputerDialogState extends State<PairGameComputerDialog> {
               ),
             ),
             Text(t.games.qrHelp),
-            TextButton(
+            DialogActionButton(
+              focusNode: _openPairingFocus,
+              autofocus: true,
               onPressed: () async {
                 if (!widget.isCurrent()) return;
                 try {
-                  await launchUrl(widget.host.sunshinePairingPage, mode: LaunchMode.externalApplication);
+                  await launchUrl(
+                    widget.host.sunshinePairingPage,
+                    mode: LaunchMode.externalApplication,
+                  );
                 } catch (_) {
                   if (mounted) setState(() => _error = t.games.unavailable);
                 }
               },
-              child: Text(t.games.openPairingPage),
+              label: t.games.openPairingPage,
+              onNavigateDown: _cancelFocus.requestFocus,
             ),
           ],
           if (_error == null)
@@ -230,12 +289,25 @@ class _PairGameComputerDialogState extends State<PairGameComputerDialog> {
           else
             Semantics(
               liveRegion: true,
-              child: Text(_error!, style: TextStyle(color: Theme.of(context).colorScheme.error)),
+              child: Text(
+                _error!,
+                style: TextStyle(color: Theme.of(context).colorScheme.error),
+              ),
             ),
         ],
       ),
     ),
-    actions: [TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.games.cancel))],
+    actions: [
+      DialogActionButton(
+        focusNode: _cancelFocus,
+        autofocus: widget.host.protocol != GameProtocol.gameStream,
+        onPressed: () => Navigator.pop(context, false),
+        label: t.games.cancel,
+        onNavigateUp: widget.host.protocol == GameProtocol.gameStream
+            ? _openPairingFocus.requestFocus
+            : null,
+      ),
+    ],
   );
 }
 
@@ -251,6 +323,7 @@ class _AddGameShortcutDialogState extends State<AddGameShortcutDialog> {
   final _nameFocus = FocusNode(debugLabel: 'Game shortcut name');
   final _idFocus = FocusNode(debugLabel: 'Game shortcut ID');
   final _saveFocus = FocusNode(debugLabel: 'Save game shortcut');
+  final _cancelFocus = FocusNode(debugLabel: 'Cancel game shortcut');
   bool _invalid = false;
 
   @override
@@ -260,6 +333,7 @@ class _AddGameShortcutDialogState extends State<AddGameShortcutDialog> {
     _nameFocus.dispose();
     _idFocus.dispose();
     _saveFocus.dispose();
+    _cancelFocus.dispose();
     super.dispose();
   }
 
@@ -269,7 +343,10 @@ class _AddGameShortcutDialogState extends State<AddGameShortcutDialog> {
       setState(() => _invalid = true);
       return;
     }
-    Navigator.pop(context, StreamGame(hostKey: widget.host.key, id: '$id', name: _name.text.trim()));
+    Navigator.pop(
+      context,
+      StreamGame(hostKey: widget.host.key, id: '$id', name: _name.text.trim()),
+    );
   }
 
   @override
@@ -302,8 +379,21 @@ class _AddGameShortcutDialogState extends State<AddGameShortcutDialog> {
       ],
     ),
     actions: [
-      TextButton(onPressed: () => Navigator.pop(context), child: Text(t.games.cancel)),
-      FilledButton(focusNode: _saveFocus, onPressed: _save, child: Text(t.games.saveShortcut)),
+      DialogActionButton(
+        focusNode: _cancelFocus,
+        onPressed: () => Navigator.pop(context),
+        label: t.games.cancel,
+        onNavigateUp: _idFocus.requestFocus,
+        onNavigateRight: _saveFocus.requestFocus,
+      ),
+      DialogActionButton(
+        focusNode: _saveFocus,
+        onPressed: _save,
+        label: t.games.saveShortcut,
+        isPrimary: true,
+        onNavigateUp: _idFocus.requestFocus,
+        onNavigateLeft: _cancelFocus.requestFocus,
+      ),
     ],
   );
 }
