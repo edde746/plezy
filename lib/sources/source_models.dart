@@ -402,8 +402,8 @@ class SourcePage {
 }
 
 /// Transient by default; never cached in catalogue records or sent to OS
-/// media metadata. Native background tasks may only persist an adapter-attested
-/// direct URL or an OS-vault-encrypted descriptor for a stable HTTPS request.
+/// media metadata. Native background tasks may persist an adapter-attested
+/// direct URL, stable HTTPS request, or encrypted provider renewal recipe.
 class ContentLease {
   const ContentLease(
     this.uri, {
@@ -453,7 +453,7 @@ class ContentLease {
       return false;
     }
     try {
-      return jsonEncode(refresh).length <= 12000;
+      return jsonEncode(refresh).length <= 10000;
     } on Object {
       return false;
     }

@@ -287,7 +287,7 @@ Future<Task?> resolveEncryptedBackgroundLease(Task original) async {
       if (provider == 's3' &&
           (uri.scheme != 'https' || uri.host.isEmpty || uri.userInfo.isNotEmpty || uri.hasFragment || !uri.hasQuery ||
               headers.keys.any((key) => key.toLowerCase() != 'if-match') ||
-              headers.values.any((value) => value.length > 2048 || RegExp(r'[\\x00-\\x1f\\x7f]').hasMatch(value)))) return null;
+              headers.values.any((value) => value.length > 2048 || RegExp(r'[\x00-\x1f\x7f]').hasMatch(value)))) return null;
       if (provider == 'googleDrive') {
         if (uri.scheme != 'https' || uri.host != 'www.googleapis.com' || uri.pathSegments.length < 4 ||
             headers.length > 2 || headers['Authorization']?.startsWith('Bearer ') != true) return null;

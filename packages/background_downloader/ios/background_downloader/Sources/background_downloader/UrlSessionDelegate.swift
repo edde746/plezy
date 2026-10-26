@@ -115,6 +115,19 @@ public class UrlSessionDelegate : NSObject, URLSessionDelegate, URLSessionDownlo
             return (.continueLoading, nil)
         }
         let (newTask, taskWasModified) = await getModifiedTask(task: bgdTask) // processes both onStart and onAuth
+        if newTask.taskId == bgdTask.taskId &&
+            newTask.metaData != bgdTask.metaData &&
+            newTask.metaData.hasPrefix("enc:v2:") &&
+            newTask.metaData.utf8.count <= 16384 {
+            // Keep the rotated provider credential encrypted in the OS task
+            // descriptor; the decrypted request URL and headers stay transient.
+            let durableTask = bgdTask.copyWith(metaData: newTask.metaData)
+            storeModifiedTask(task: durableTask)
+            if let data = try? JSONEncoder().encode(durableTask),
+                let taskDescription = String(data: data, encoding: .utf8) {
+                task.taskDescription = taskDescription
+            }
+        }
         if !taskWasModified {
             return (.continueLoading, nil)
         }
