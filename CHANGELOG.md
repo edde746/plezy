@@ -122,6 +122,7 @@ This release gathers PlezyNG’s feature work since the fork, platform expansion
 - Keep compact Find Next artwork retries in the focus order and isolate recommendation summaries for mixed-direction text.
 - Use shared focus-aware fields and viewport-sized dialogs for cloud backup, custom players, MDBList shelf editing, searchable settings, and Home Layout.
 - Keep Games search scoped to the active profile, size pairing dialogs and QR codes for the available viewport, and report when the Sunshine PIN page cannot be opened.
+- Restore navigator-managed Back handling in the companion remote dialog, use valid directional insets in RTL trees, and resolve the Flutter/intl `TextDirection` import collision.
 - Complete discovery, source-setup and subtitle-search translations; fix reviewed library and audiobook wording, add Arabic and Asian subtitle-language choices, and preserve regional numerals, mixed-direction titles and large-text layouts.
 - Use the localized sort and filter labels in the audiobook library menu.
 - Use CocoaPods for iOS and macOS builds until the pinned WebView plugin compiles with Xcode 26’s Swift Package Manager integration.

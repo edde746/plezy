@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
@@ -12,7 +11,6 @@ import '../../services/settings_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/error_message_utils.dart';
-import '../../focus/dpad_navigator.dart';
 import '../../focus/focusable_button.dart';
 import '../dialog_action_button.dart';
 import '../app_icon.dart';
@@ -32,14 +30,21 @@ class RemoteSessionDialog extends StatefulWidget {
   }
 }
 
-class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedSetStateMixin {
+class _RemoteSessionDialogState extends State<RemoteSessionDialog>
+    with MountedSetStateMixin {
   bool _isStarting = false;
   String? _errorMessage;
   final _closeFocusNode = FocusNode(debugLabel: 'RemoteSessionDialog.close');
   final _toggleFocusNode = FocusNode(debugLabel: 'RemoteSessionDialog.toggle');
-  final _minimizeFocusNode = FocusNode(debugLabel: 'RemoteSessionDialog.minimize');
-  final _errorCloseFocusNode = FocusNode(debugLabel: 'RemoteSessionDialog.errorClose');
-  final _errorRetryFocusNode = FocusNode(debugLabel: 'RemoteSessionDialog.errorRetry');
+  final _minimizeFocusNode = FocusNode(
+    debugLabel: 'RemoteSessionDialog.minimize',
+  );
+  final _errorCloseFocusNode = FocusNode(
+    debugLabel: 'RemoteSessionDialog.errorClose',
+  );
+  final _errorRetryFocusNode = FocusNode(
+    debugLabel: 'RemoteSessionDialog.errorRetry',
+  );
 
   @override
   void dispose() {
@@ -66,12 +71,17 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
       final provider = context.read<CompanionRemoteProvider>();
       setState(() {
         _isStarting = false;
-        _errorMessage = started ? null : provider.session?.errorMessage ?? t.companionRemote.pairing.cryptoInitFailed;
+        _errorMessage = started
+            ? null
+            : provider.session?.errorMessage ??
+                  t.companionRemote.pairing.cryptoInitFailed;
       });
     } catch (e) {
       setStateIfMounted(() {
         _isStarting = false;
-        _errorMessage = t.companionRemote.errors.serverStartFailed(error: localizedErrorReason(e));
+        _errorMessage = t.companionRemote.errors.serverStartFailed(
+          error: localizedErrorReason(e),
+        );
       });
     }
   }
@@ -101,7 +111,10 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
         title: Text(t.companionRemote.pairing.resetCode),
         content: Text(t.companionRemote.pairing.resetDescription),
         actions: [
-          DialogActionButton(onPressed: () => Navigator.of(context).pop(false), label: t.common.cancel),
+          DialogActionButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            label: t.common.cancel,
+          ),
           DialogActionButton(
             onPressed: () => Navigator.of(context).pop(true),
             label: t.companionRemote.pairing.resetCode,
@@ -115,7 +128,9 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
       await context.read<CompanionRemoteProvider>().resetHostPairing();
     } catch (error) {
       setStateIfMounted(
-        () => _errorMessage = t.companionRemote.errors.serverStartFailed(error: localizedErrorReason(error)),
+        () => _errorMessage = t.companionRemote.errors.serverStartFailed(
+          error: localizedErrorReason(error),
+        ),
       );
     } finally {
       setStateIfMounted(() => _isStarting = false);
@@ -124,176 +139,199 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
 
   @override
   Widget build(BuildContext context) {
-    return Focus(
-      canRequestFocus: false,
-      onKeyEvent: (node, event) {
-        if (!event.logicalKey.isBackKey) return KeyEventResult.ignored;
-        if (event is KeyDownEvent) _close();
-        return KeyEventResult.handled;
-      },
-      child: Consumer<CompanionRemoteProvider>(
-        builder: (context, provider, child) {
-          if (_isStarting) {
-            return Dialog(
-              child: Padding(
-                padding: const EdgeInsets.all(32.0),
-                child: Column(
-                  mainAxisSize: .min,
-                  children: [
-                    const CircularProgressIndicator(),
-                    const SizedBox(height: 16),
-                    Text(t.companionRemote.session.startingServer, style: Theme.of(context).textTheme.titleMedium),
-                  ],
-                ),
-              ),
-            );
-          }
-
-          if (_errorMessage != null) {
-            return AlertDialog(
-              title: Text(t.common.error),
-              content: Text(_errorMessage!),
-              actions: [
-                DialogActionButton(
-                  autofocus: true,
-                  focusNode: _errorCloseFocusNode,
-                  onPressed: _close,
-                  onBack: _close,
-                  onNavigateRight: () => _errorRetryFocusNode.requestFocus(),
-                  useBackgroundFocus: true,
-                  label: t.common.close,
-                ),
-                DialogActionButton(
-                  focusNode: _errorRetryFocusNode,
-                  onPressed: _startServer,
-                  onBack: _close,
-                  onNavigateLeft: () => _errorCloseFocusNode.requestFocus(),
-                  useBackgroundFocus: true,
-                  label: t.common.retry,
-                ),
-              ],
-            );
-          }
-
+    return Consumer<CompanionRemoteProvider>(
+      builder: (context, provider, child) {
+        if (_isStarting) {
           return Dialog(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 500),
-              child: SingleChildScrollView(
-                padding: const EdgeInsets.all(24.0),
-                child: Column(
-                  mainAxisSize: .min,
-                  crossAxisAlignment: .stretch,
-                  children: [
-                    Row(
-                      children: [
-                        const AppIcon(Symbols.phone_android_rounded, size: 32),
-                        const SizedBox(width: 16),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: .start,
-                            children: [
-                              Text(t.companionRemote.title, style: Theme.of(context).textTheme.headlineSmall),
-                              const SizedBox(height: 4),
-                              _buildStatusLine(context, provider),
-                            ],
-                          ),
-                        ),
-                        FocusableButton(
-                          focusNode: _closeFocusNode,
-                          onPressed: _close,
-                          onBack: _close,
-                          onNavigateDown: () => _toggleFocusNode.requestFocus(),
-                          useBackgroundFocus: true,
-                          child: IconButton(icon: const AppIcon(Symbols.close_rounded), onPressed: _close),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 24),
-
-                    _buildServerStatus(context, provider),
-
-                    if (provider.isHostServerRunning && provider.hostPairingCode != null) ...[
-                      const SizedBox(height: 16),
-                      Text(t.companionRemote.pairing.codeTitle, style: Theme.of(context).textTheme.titleMedium),
-                      SelectableText(
-                        RemotePairingStore.displayCode(provider.hostPairingCode!),
-                        style: const TextStyle(fontFamily: 'monospace'),
-                      ),
-                      Text(t.companionRemote.pairing.hostDescription),
-                      DialogActionButton(onPressed: _resetPairing, label: t.companionRemote.pairing.resetCode),
-                    ],
-
-                    if (provider.connectedDevice != null) ...[
-                      const SizedBox(height: 16),
-                      _buildConnectedDevice(context, provider),
-                    ],
-
-                    const SizedBox(height: 24),
-                    Row(
-                      mainAxisAlignment: .end,
-                      children: [
-                        FocusableButton(
-                          autofocus: true,
-                          focusNode: _toggleFocusNode,
-                          onPressed: _toggleServer,
-                          onBack: _close,
-                          onNavigateUp: () => _closeFocusNode.requestFocus(),
-                          onNavigateRight: () => _minimizeFocusNode.requestFocus(),
-                          useBackgroundFocus: true,
-                          child: TextButton.icon(
-                            onPressed: _toggleServer,
-                            icon: AppIcon(
-                              provider.isHostServerRunning ? Symbols.stop_rounded : Symbols.play_arrow_rounded,
-                            ),
-                            label: Text(
-                              provider.isHostServerRunning
-                                  ? t.companionRemote.session.stopServer
-                                  : t.companionRemote.session.startServer,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        FocusableButton(
-                          focusNode: _minimizeFocusNode,
-                          onPressed: _close,
-                          onBack: _close,
-                          onNavigateUp: () => _closeFocusNode.requestFocus(),
-                          onNavigateLeft: () => _toggleFocusNode.requestFocus(),
-                          useBackgroundFocus: true,
-                          child: FilledButton(onPressed: _close, child: Text(t.companionRemote.session.minimize)),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+            child: Padding(
+              padding: const EdgeInsets.all(32.0),
+              child: Column(
+                mainAxisSize: .min,
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(height: 16),
+                  Text(
+                    t.companionRemote.session.startingServer,
+                    style: Theme.of(context).textTheme.titleMedium,
+                  ),
+                ],
               ),
             ),
           );
-        },
-      ),
+        }
+
+        if (_errorMessage != null) {
+          return AlertDialog(
+            title: Text(t.common.error),
+            content: Text(_errorMessage!),
+            actions: [
+              DialogActionButton(
+                autofocus: true,
+                focusNode: _errorCloseFocusNode,
+                onPressed: _close,
+                onBack: _close,
+                onNavigateRight: () => _errorRetryFocusNode.requestFocus(),
+                useBackgroundFocus: true,
+                label: t.common.close,
+              ),
+              DialogActionButton(
+                focusNode: _errorRetryFocusNode,
+                onPressed: _startServer,
+                onBack: _close,
+                onNavigateLeft: () => _errorCloseFocusNode.requestFocus(),
+                useBackgroundFocus: true,
+                label: t.common.retry,
+              ),
+            ],
+          );
+        }
+
+        return Dialog(
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 500),
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisSize: .min,
+                crossAxisAlignment: .stretch,
+                children: [
+                  Row(
+                    children: [
+                      const AppIcon(Symbols.phone_android_rounded, size: 32),
+                      const SizedBox(width: 16),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: .start,
+                          children: [
+                            Text(
+                              t.companionRemote.title,
+                              style: Theme.of(context).textTheme.headlineSmall,
+                            ),
+                            const SizedBox(height: 4),
+                            _buildStatusLine(context, provider),
+                          ],
+                        ),
+                      ),
+                      FocusableButton(
+                        focusNode: _closeFocusNode,
+                        onPressed: _close,
+                        onBack: _close,
+                        onNavigateDown: () => _toggleFocusNode.requestFocus(),
+                        useBackgroundFocus: true,
+                        child: IconButton(
+                          icon: const AppIcon(Symbols.close_rounded),
+                          onPressed: _close,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 24),
+
+                  _buildServerStatus(context, provider),
+
+                  if (provider.isHostServerRunning &&
+                      provider.hostPairingCode != null) ...[
+                    const SizedBox(height: 16),
+                    Text(
+                      t.companionRemote.pairing.codeTitle,
+                      style: Theme.of(context).textTheme.titleMedium,
+                    ),
+                    SelectableText(
+                      RemotePairingStore.displayCode(provider.hostPairingCode!),
+                      style: const TextStyle(fontFamily: 'monospace'),
+                    ),
+                    Text(t.companionRemote.pairing.hostDescription),
+                    DialogActionButton(
+                      onPressed: _resetPairing,
+                      label: t.companionRemote.pairing.resetCode,
+                    ),
+                  ],
+
+                  if (provider.connectedDevice != null) ...[
+                    const SizedBox(height: 16),
+                    _buildConnectedDevice(context, provider),
+                  ],
+
+                  const SizedBox(height: 24),
+                  Row(
+                    mainAxisAlignment: .end,
+                    children: [
+                      FocusableButton(
+                        autofocus: true,
+                        focusNode: _toggleFocusNode,
+                        onPressed: _toggleServer,
+                        onBack: _close,
+                        onNavigateUp: () => _closeFocusNode.requestFocus(),
+                        onNavigateRight: () =>
+                            _minimizeFocusNode.requestFocus(),
+                        useBackgroundFocus: true,
+                        child: TextButton.icon(
+                          onPressed: _toggleServer,
+                          icon: AppIcon(
+                            provider.isHostServerRunning
+                                ? Symbols.stop_rounded
+                                : Symbols.play_arrow_rounded,
+                          ),
+                          label: Text(
+                            provider.isHostServerRunning
+                                ? t.companionRemote.session.stopServer
+                                : t.companionRemote.session.startServer,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      FocusableButton(
+                        focusNode: _minimizeFocusNode,
+                        onPressed: _close,
+                        onBack: _close,
+                        onNavigateUp: () => _closeFocusNode.requestFocus(),
+                        onNavigateLeft: () => _toggleFocusNode.requestFocus(),
+                        useBackgroundFocus: true,
+                        child: FilledButton(
+                          onPressed: _close,
+                          child: Text(t.companionRemote.session.minimize),
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+          ),
+        );
+      },
     );
   }
 
-  Widget _buildStatusLine(BuildContext context, CompanionRemoteProvider provider) {
+  Widget _buildStatusLine(
+    BuildContext context,
+    CompanionRemoteProvider provider,
+  ) {
     if (provider.connectedDevice != null) {
       return Text(
         t.companionRemote.connectedTo(name: provider.connectedDevice!.name),
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.green),
+        style: Theme.of(context).textTheme.bodyMedium
+            ?.copyWith(color: Colors.green),
       );
     }
     if (provider.isHostServerRunning) {
       return Text(
         t.companionRemote.session.serverRunning,
-        style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: tokens(context).textMuted),
+        style: Theme.of(context).textTheme.bodyMedium
+            ?.copyWith(color: tokens(context).textMuted),
       );
     }
     return Text(
       t.companionRemote.session.serverStopped,
-      style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: tokens(context).textMuted),
+      style: Theme.of(context).textTheme.bodyMedium
+          ?.copyWith(color: tokens(context).textMuted),
     );
   }
 
-  Widget _buildServerStatus(BuildContext context, CompanionRemoteProvider provider) {
+  Widget _buildServerStatus(
+    BuildContext context,
+    CompanionRemoteProvider provider,
+  ) {
     final isRunning = provider.isHostServerRunning;
 
     return Card(
@@ -315,7 +353,9 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
                 crossAxisAlignment: .start,
                 children: [
                   Text(
-                    isRunning ? t.companionRemote.session.serverRunning : t.companionRemote.session.serverStopped,
+                    isRunning
+                        ? t.companionRemote.session.serverRunning
+                        : t.companionRemote.session.serverStopped,
                     style: Theme.of(context).textTheme.titleMedium,
                   ),
                   const SizedBox(height: 4),
@@ -327,11 +367,15 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
                   ),
                   if (isRunning && provider.hostServerAddresses.isNotEmpty) ...[
                     const SizedBox(height: 8),
-                    Text(t.companionRemote.session.manualAddressHint, style: Theme.of(context).textTheme.bodySmall),
+                    Text(
+                      t.companionRemote.session.manualAddressHint,
+                      style: Theme.of(context).textTheme.bodySmall,
+                    ),
                     const SizedBox(height: 2),
                     Text(
                       provider.hostServerAddresses.join('\n'),
-                      style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted),
+                      style: Theme.of(context).textTheme.bodySmall
+                          ?.copyWith(color: tokens(context).textMuted),
                     ),
                   ],
                 ],
@@ -343,16 +387,26 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
     );
   }
 
-  Widget _buildConnectedDevice(BuildContext context, CompanionRemoteProvider provider) {
+  Widget _buildConnectedDevice(
+    BuildContext context,
+    CompanionRemoteProvider provider,
+  ) {
     final device = provider.connectedDevice!;
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Column(
           children: [
-            const AppIcon(Symbols.check_circle_rounded, color: Colors.green, size: 48),
+            const AppIcon(
+              Symbols.check_circle_rounded,
+              color: Colors.green,
+              size: 48,
+            ),
             const SizedBox(height: 8),
-            Text(t.companionRemote.session.connected, style: Theme.of(context).textTheme.titleLarge),
+            Text(
+              t.companionRemote.session.connected,
+              style: Theme.of(context).textTheme.titleLarge,
+            ),
             const SizedBox(height: 8),
             Text(device.name, style: Theme.of(context).textTheme.bodyLarge),
             Text(device.platform, style: Theme.of(context).textTheme.bodySmall),
