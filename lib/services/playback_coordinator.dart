@@ -7,6 +7,15 @@ import '../utils/app_logger.dart';
 
 enum VideoAutomationCommand { play, pause, toggle }
 
+/// The current native video channel can host one retained video owner. Refuse
+/// a second open until the per-instance backend/compositor package is complete.
+class WorkspaceVideoCapacityException implements Exception {
+  const WorkspaceVideoCapacityException();
+
+  @override
+  String toString() => 'The workspace already has a video session. Close or restore it before opening another video.';
+}
+
 /// Stops a playing music session before the video player builds its core.
 ///
 /// The music service's audio `Player` lives across screens; the video core is
@@ -44,6 +53,7 @@ class PlaybackCoordinator {
   void setWorkspaceHasCompetingAudioOwner(bool hasCompetingOwner) {
     _workspaceHasCompetingAudioOwner = hasCompetingOwner;
   }
+
   Future<void> Function()? _stopThemeSession;
   Future<void> Function()? _stopFileSession;
   bool Function()? _isFileSessionActive;
@@ -196,6 +206,10 @@ class PlaybackCoordinator {
   /// Video playback is about to construct its native core: stop and dispose
   /// any live music session first. Completes once the audio core is gone.
   Future<void> claimVideo() async {
+    // The existing native video channels still have one core/event owner.
+    // Preserve the current pane intact rather than letting a second route
+    // silently take over its media and event stream.
+    if (_workspaceRetainsVideo) throw const WorkspaceVideoCapacityException();
     await _stopNarration?.call();
     await _stopFileSession?.call();
     await _stopTheme();

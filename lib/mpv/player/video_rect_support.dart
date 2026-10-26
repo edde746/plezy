@@ -1,3 +1,5 @@
+import '../models.dart';
+
 /// Players whose video is hosted in a native surface behind the Flutter
 /// window and must follow the visible viewport reported by Flutter.
 ///
@@ -12,4 +14,8 @@ abstract interface class VideoRectSupport {
     required int bottom,
     required double devicePixelRatio,
   });
+
+  /// Publishes a native video-geometry failure through the owning player's
+  /// regular error stream so the UI and diagnostics see the same failure.
+  void reportVideoRectError(PlayerError error);
 }

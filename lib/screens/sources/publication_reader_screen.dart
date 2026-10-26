@@ -123,10 +123,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
     _autoJoinScheduled = true;
     WidgetsBinding.instance.addPostFrameCallback((_) {
       _autoJoinScheduled = false;
-      if (mounted &&
-          _ready &&
-          _workspaceSessionId == null &&
-          (_observedWorkspaceController?.sessionCount ?? 0) > 0) {
+      if (mounted && _ready && _workspaceSessionId == null && (_observedWorkspaceController?.sessionCount ?? 0) > 0) {
         _toggleReaderWorkspace();
       }
     });
@@ -166,9 +163,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
     _workspaceDetached = true;
     final descriptor = WorkspaceSessionDescriptor(
       id: id,
-      kind: widget.file.kind == SourceItemKind.comic
-          ? MultiviewMediaKind.comic
-          : MultiviewMediaKind.publication,
+      kind: widget.file.kind == SourceItemKind.comic ? MultiviewMediaKind.comic : MultiviewMediaKind.publication,
       title: widget.entry.title.trim().isEmpty ? t.common.unknown : widget.entry.title,
       subtitle: widget.file.name,
       mediaKey: idSeed,
@@ -218,9 +213,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
     if (id == null || controller == null) return;
     final registration = controller.session(id);
     if (registration == null) return;
-    controller.updateDescriptor(
-      registration.descriptor.copyWith(hasAudio: _speaking || _readAlong),
-    );
+    controller.updateDescriptor(registration.descriptor.copyWith(hasAudio: _speaking || _readAlong));
   }
 
   Future<void> _onReaderAudioOwnershipChanged(bool enabled) async {
@@ -894,8 +887,6 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
     _sources?.removeListener(_profileChanged);
     _observedWorkspaceController?.removeListener(_scheduleWorkspaceAutoJoin);
     _playback?.removeListener(_followAudio);
-    final workspaceSessionId = _workspaceSessionId;
-    if (workspaceSessionId != null) _workspaceController?.unregister(workspaceSessionId);
     PlaybackCoordinator.instance.unregisterNarrationSession(_stopSpeech);
     _saveTimer?.cancel();
     unawaited(_stopSpeech());

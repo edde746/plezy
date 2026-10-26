@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/mpv/models.dart';
 import 'package:plezy/mpv/player/player_native.dart';
@@ -69,7 +68,9 @@ void main() {
         expect(rectCalls, hasLength(2));
         expect(rectCalls.first, {'left': 0, 'top': 0, 'right': 600, 'bottom': 400, 'devicePixelRatio': 2.0});
         expect(rectCalls.last, {'left': 40, 'top': 20, 'right': 640, 'bottom': 420, 'devicePixelRatio': 2.0});
-        await player.dispose();
+        await tester.pumpWidget(const SizedBox.shrink());
+        await tester.pump();
+        await tester.runAsync(() => player.dispose());
       },
     );
   });

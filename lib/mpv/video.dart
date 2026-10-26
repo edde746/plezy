@@ -223,9 +223,7 @@ class _VideoState extends State<Video> {
           _sentDevicePixelRatio == dpr) {
         _hasSentRect = false;
       }
-      if (!player.errorController.isClosed) {
-        player.errorController.add(PlayerError('Failed to set video rect: $e'));
-      }
+      player.reportVideoRectError(PlayerError('Failed to set video rect: $e'));
     });
   }
 }

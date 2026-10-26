@@ -124,6 +124,7 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
     if (native == null || native.disposed) return;
     await native.setVolume(enabled ? 100 : 0);
   }
+
   double get speed => progress?.speed ?? 1;
   int get fileIndex => _fileIndex;
   int get _offset => List.generate(_fileIndex, (i) => _durations[i] ?? 0).fold(0, (a, b) => a + b);
@@ -160,24 +161,22 @@ class SourcePlayback extends ChangeNotifier with WidgetsBindingObserver {
       if (selected.isEmpty) throw const SourceException(SourceFailure.unsupported);
       if (PlatformDetector.isAutomotive()) await CarUxRestrictionsService.instance.ensureResolved();
       final requestedMode =
-          playbackMode ??
-          (item.kind == SourceItemKind.video ? PublicationMode.watching : PublicationMode.listening);
+          playbackMode ?? (item.kind == SourceItemKind.video ? PublicationMode.watching : PublicationMode.listening);
       final coordinator = PlaybackCoordinator.instance;
+      if (requestedMode == PublicationMode.watching && coordinator.workspaceRetainsVideo) {
+        throw const SourceException(SourceFailure.unsupported);
+      }
       if (requestedMode == PublicationMode.watching &&
           coordinator.workspaceRetainsMusic &&
           !coordinator.workspaceRetainsVideo) {
         await coordinator.claimVideo();
       } else {
-        await coordinator.claimFiles(
-          preserveWorkspaceVideo: true,
-          preserveWorkspaceMusic: true,
-        );
+        await coordinator.claimFiles(preserveWorkspaceVideo: true, preserveWorkspaceMusic: true);
       }
       // A retained music pane is the default audible surface until the user
       // selects this source session. Start muted before opening the native
       // player so registration cannot race an audible burst.
-      _workspaceAudioEnabled =
-          !coordinator.workspaceHasCompetingAudioOwner && !coordinator.workspaceRetainsMusic;
+      _workspaceAudioEnabled = !coordinator.workspaceHasCompetingAudioOwner && !coordinator.workspaceRetainsMusic;
       sources.requireSession();
       _profile = sources.profileId;
       _profileGeneration = sources.generation;

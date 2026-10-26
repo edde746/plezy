@@ -11,16 +11,10 @@ import '../widgets/app_icon.dart';
 import '../widgets/music/music_visualizer.dart';
 import '../utils/formatters.dart';
 import 'workspace_controller.dart';
-import 'workspace_models.dart';
 
 /// Compact music adapter backed by Plezy's existing queue and playback owner.
 class MusicWorkspaceSurface extends StatefulWidget {
-  const MusicWorkspaceSurface({
-    super.key,
-    required this.service,
-    required this.controller,
-    required this.sessionId,
-  });
+  const MusicWorkspaceSurface({super.key, required this.service, required this.controller, required this.sessionId});
 
   final MusicPlaybackService service;
   final MultiviewWorkspaceController controller;
@@ -98,12 +92,12 @@ class _MusicWorkspaceTrack extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = tokens(context);
+    final tk = tokens(context);
     final artist = track.trackArtistTitle;
     final duration = service.duration ?? Duration.zero;
 
     return Material(
-      color: t.bg,
+      color: tk.bg,
       child: ClipRect(
         child: Stack(
           fit: StackFit.expand,
@@ -125,7 +119,7 @@ class _MusicWorkspaceTrack extends StatelessWidget {
               ),
             ),
             Padding(
-              padding: EdgeInsets.all(t.space),
+              padding: EdgeInsets.all(tk.space),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -134,13 +128,12 @@ class _MusicWorkspaceTrack extends StatelessWidget {
                     track.title ?? t.common.unknown,
                     maxLines: 2,
                     overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                          color: Colors.white,
-                          fontWeight: FontWeight.w700,
-                        ),
+                    style: Theme.of(
+                      context,
+                    ).textTheme.titleMedium?.copyWith(color: Colors.white, fontWeight: FontWeight.w700),
                   ),
                   if (artist != null && artist.isNotEmpty) ...[
-                    SizedBox(height: t.space * 0.25),
+                    SizedBox(height: tk.space * 0.25),
                     Text(
                       artist,
                       maxLines: 1,
@@ -148,9 +141,9 @@ class _MusicWorkspaceTrack extends StatelessWidget {
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(color: Colors.white70),
                     ),
                   ],
-                  SizedBox(height: t.space * 0.7),
+                  SizedBox(height: tk.space * 0.7),
                   _MusicProgress(service: service, duration: duration),
-                  SizedBox(height: t.space * 0.45),
+                  SizedBox(height: tk.space * 0.45),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: [
@@ -213,8 +206,14 @@ class _MusicProgress extends StatelessWidget {
             Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                Text(formatDurationTimestamp(position), style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white70)),
-                Text(formatDurationTimestamp(duration), style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white70)),
+                Text(
+                  formatDurationTimestamp(position),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white70),
+                ),
+                Text(
+                  formatDurationTimestamp(duration),
+                  style: Theme.of(context).textTheme.labelSmall?.copyWith(color: Colors.white70),
+                ),
               ],
             ),
           ],

@@ -1935,9 +1935,7 @@ class VideoPlayerScreenState extends State<VideoPlayerScreen>
         // Standalone player tests and embedders may not mount the profile shell.
       }
       final retainsMusic = workspace?.hasSessionOfKind(MultiviewMediaKind.music) ?? false;
-      if (widget.launchObserver != null &&
-          context.read<MusicPlaybackService>().currentTrack != null &&
-          !retainsMusic) {
+      if (widget.launchObserver != null && context.read<MusicPlaybackService>().currentTrack != null && !retainsMusic) {
         widget.launchObserver?.mark('blocked', blocker: 'playbackActive');
         return;
       }

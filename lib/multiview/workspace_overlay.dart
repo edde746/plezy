@@ -16,11 +16,7 @@ import 'workspace_models.dart';
 /// that owner's widget into a window and keeps profile-scoped state alive while
 /// the Navigator changes routes.
 class MultiviewOverlayHost extends StatefulWidget {
-  const MultiviewOverlayHost({
-    super.key,
-    required this.controller,
-    required this.overlayKey,
-  });
+  const MultiviewOverlayHost({super.key, required this.controller, required this.overlayKey});
 
   final MultiviewWorkspaceController controller;
   final GlobalKey<OverlayState> overlayKey;
@@ -73,9 +69,7 @@ class _MultiviewOverlayHostState extends State<MultiviewOverlayHost> {
       if (!mounted || !widget.controller.hasVisibleSessions || _entry != null) return;
       final overlay = widget.overlayKey.currentState;
       if (overlay == null) return;
-      final entry = OverlayEntry(
-        builder: (context) => _MultiviewOverlay(controller: widget.controller),
-      );
+      final entry = OverlayEntry(builder: (context) => _MultiviewOverlay(controller: widget.controller));
       _entry = entry;
       overlay.insert(entry);
     });
@@ -129,10 +123,7 @@ class _MultiviewOverlay extends StatelessWidget {
                     final viewport = Size(constraints.maxWidth, constraints.maxHeight);
                     return Stack(
                       clipBehavior: Clip.none,
-                      children: [
-                        for (final registration in visible)
-                          _floatingWindow(context, registration, viewport),
-                      ],
+                      children: [for (final registration in visible) _floatingWindow(context, registration, viewport)],
                     );
                   },
                 ),
@@ -142,43 +133,26 @@ class _MultiviewOverlay extends StatelessWidget {
           fit: StackFit.expand,
           children: [
             Positioned.fill(child: content),
-            PositionedDirectional(
-              end: 12,
-              bottom: 12,
-              child: _WorkspaceDock(controller: controller),
-            ),
+            PositionedDirectional(end: 12, bottom: 12, child: _WorkspaceDock(controller: controller)),
             if (controller.sessionTrayVisible)
-              PositionedDirectional(
-                end: 12,
-                bottom: 68,
-                child: _WorkspaceSessionTray(controller: controller),
-              ),
+              PositionedDirectional(end: 12, bottom: 68, child: _WorkspaceSessionTray(controller: controller)),
           ],
         );
       },
     );
   }
 
-  Widget _floatingWindow(
-    BuildContext context,
-    WorkspaceSurfaceRegistration registration,
-    Size viewport,
-  ) {
+  Widget _floatingWindow(BuildContext context, WorkspaceSurfaceRegistration registration, Size viewport) {
     final id = registration.descriptor.id;
     final placement = controller.placementFor(id);
     final minWidth = math.min(220.0, viewport.width);
-    final width = (viewport.width * placement.width)
-        .clamp(minWidth, math.min(520.0, viewport.width))
-        .toDouble();
+    final width = (viewport.width * placement.width).clamp(minWidth, math.min(520.0, viewport.width)).toDouble();
     final height = (viewport.height * placement.height)
         .clamp(math.min(150.0, viewport.height), math.min(420.0, viewport.height))
         .toDouble();
-    final left = ((viewport.width - width) * placement.left)
-        .clamp(0.0, viewport.width - width)
-        .toDouble();
-    final top = ((viewport.height - height) * placement.top)
-        .clamp(0.0, viewport.height - height)
-        .toDouble();
+    final position = placement.resolveTopLeft(viewport, windowWidth: width, windowHeight: height);
+    final left = position.dx;
+    final top = position.dy;
 
     return AnimatedPositioned(
       duration: MonoMotion.shape(context),
@@ -193,37 +167,35 @@ class _MultiviewOverlay extends StatelessWidget {
         registration: registration,
         viewport: viewport,
         floating: true,
+        paneSize: Size(width, height),
       ),
     );
   }
 }
 
 class _SplitWorkspace extends StatelessWidget {
-  const _SplitWorkspace({
-    required this.controller,
-    required this.sessions,
-  });
+  const _SplitWorkspace({required this.controller, required this.sessions});
 
   final MultiviewWorkspaceController controller;
   final List<WorkspaceSurfaceRegistration> sessions;
 
   @override
   Widget build(BuildContext context) {
-    final t = tokens(context);
+    final tk = tokens(context);
     final columns = math.sqrt(sessions.length).ceil().clamp(1, sessions.length).toInt();
     return ColoredBox(
-      color: t.bg,
+      color: tk.bg,
       child: SafeArea(
         child: LayoutBuilder(
           builder: (context, constraints) {
             final horizontal = constraints.maxWidth >= 760;
             final crossAxisCount = horizontal ? columns : 1;
             return GridView.builder(
-              padding: EdgeInsets.all(t.space),
+              padding: EdgeInsets.all(tk.space),
               gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: crossAxisCount,
-                crossAxisSpacing: t.groupGap,
-                mainAxisSpacing: t.groupGap,
+                crossAxisSpacing: tk.groupGap,
+                mainAxisSpacing: tk.groupGap,
                 childAspectRatio: horizontal ? 1.45 : 1.65,
               ),
               itemCount: sessions.length,
@@ -249,6 +221,7 @@ class _WorkspaceWindow extends StatefulWidget {
     required this.registration,
     required this.viewport,
     required this.floating,
+    this.paneSize,
     this.fullscreen = false,
   });
 
@@ -256,6 +229,7 @@ class _WorkspaceWindow extends StatefulWidget {
   final WorkspaceSurfaceRegistration registration;
   final Size viewport;
   final bool floating;
+  final Size? paneSize;
   final bool fullscreen;
 
   @override
@@ -266,21 +240,67 @@ class _WorkspaceWindowState extends State<_WorkspaceWindow> {
   final FocusNode _focusNode = FocusNode(debugLabel: 'multiview_window');
   Offset _lastLongPressOffset = Offset.zero;
 
+  bool get _supportsDirectLongPressMove => switch (widget.registration.descriptor.kind) {
+    MultiviewMediaKind.video ||
+    MultiviewMediaKind.liveTv ||
+    MultiviewMediaKind.music ||
+    MultiviewMediaKind.audiobook => true,
+    MultiviewMediaKind.publication || MultiviewMediaKind.comic || MultiviewMediaKind.game => false,
+  };
+
   @override
   void dispose() {
     _focusNode.dispose();
     super.dispose();
   }
 
+  Widget _buildSurfaceWithMoveGestures(BuildContext context, String id, WorkspaceSurfaceRegistration registration) {
+    final surface = registration.buildSurface(context);
+    if (!widget.floating) return surface;
+
+    if (controller.positioningSessionId == id) {
+      return GestureDetector(
+        behavior: HitTestBehavior.translucent,
+        onPanUpdate: (details) =>
+            controller.movePositionedByPixels(id, details.delta, widget.viewport, paneSize: widget.paneSize),
+        onPanEnd: (_) => controller.finishPositioning(),
+        onPanCancel: () => controller.finishPositioning(),
+        child: surface,
+      );
+    }
+    if (!_supportsDirectLongPressMove) return surface;
+
+    return GestureDetector(
+      behavior: HitTestBehavior.translucent,
+      onLongPressStart: (_) {
+        _lastLongPressOffset = Offset.zero;
+        controller.focus(id);
+        HapticFeedback.selectionClick();
+      },
+      onLongPressMoveUpdate: (details) {
+        final nextOffset = details.offsetFromOrigin;
+        final delta = nextOffset - _lastLongPressOffset;
+        _lastLongPressOffset = nextOffset;
+        if (delta != Offset.zero) {
+          controller.moveByPixels(id, delta, widget.viewport, paneSize: widget.paneSize);
+        }
+      },
+      child: surface,
+    );
+  }
+
+  MultiviewWorkspaceController get controller => widget.controller;
+
   @override
   Widget build(BuildContext context) {
-    final t = tokens(context);
+    final tk = tokens(context);
     final registration = widget.registration;
     final controller = widget.controller;
     final id = registration.descriptor.id;
     final selected = controller.focusedSessionId == id;
-    final borderColor = selected ? t.accent : t.outline;
-    final radius = widget.fullscreen ? 0.0 : t.radiusLg;
+    final moving = controller.positioningSessionId == id;
+    final borderColor = selected ? tk.accent : tk.outline;
+    final radius = widget.fullscreen ? 0.0 : tk.radiusLg;
     if (selected && !_focusNode.hasFocus) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
         if (mounted && selected && !_focusNode.hasFocus) _focusNode.requestFocus();
@@ -314,7 +334,7 @@ class _WorkspaceWindowState extends State<_WorkspaceWindow> {
             _ => null,
           };
           if (delta != null) {
-            controller.movePositionedByPixels(id, delta, widget.viewport);
+            controller.movePositionedByPixels(id, delta, widget.viewport, paneSize: widget.paneSize);
             return KeyEventResult.handled;
           }
           if (event.logicalKey == LogicalKeyboardKey.enter ||
@@ -329,21 +349,17 @@ class _WorkspaceWindowState extends State<_WorkspaceWindow> {
       child: Semantics(
         container: true,
         label: registration.descriptor.title,
-        onIncrease: () => controller.resizeByPixels(id, const Offset(20, 12), widget.viewport),
-        onDecrease: () => controller.resizeByPixels(id, const Offset(-20, -12), widget.viewport),
+        onIncrease: () =>
+            controller.resizeByPixels(id, const Offset(20, 12), widget.viewport, paneSize: widget.paneSize),
+        onDecrease: () =>
+            controller.resizeByPixels(id, const Offset(-20, -12), widget.viewport, paneSize: widget.paneSize),
         child: DecoratedBox(
           decoration: BoxDecoration(
-            color: t.surface,
+            color: tk.surface,
             borderRadius: BorderRadius.circular(radius),
             border: Border.all(color: borderColor, width: selected ? 1.5 : 1),
             boxShadow: widget.floating
-                ? [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.38),
-                      blurRadius: 26,
-                      offset: const Offset(0, 12),
-                    ),
-                  ]
+                ? [BoxShadow(color: Colors.black.withValues(alpha: 0.38), blurRadius: 26, offset: const Offset(0, 12))]
                 : null,
           ),
           child: ClipRRect(
@@ -355,8 +371,9 @@ class _WorkspaceWindowState extends State<_WorkspaceWindow> {
                   registration: registration,
                   viewport: widget.viewport,
                   floating: widget.floating,
+                  paneSize: widget.paneSize,
                   fullscreen: widget.fullscreen,
-                  moving: controller.positioningSessionId == id,
+                  moving: moving,
                   onMoveToggle: () {
                     if (controller.positioningSessionId == id) {
                       controller.finishPositioning();
@@ -366,36 +383,17 @@ class _WorkspaceWindowState extends State<_WorkspaceWindow> {
                   },
                 ),
                 Expanded(
-                  child: Listener(
-                    onPointerDown: (_) => controller.focus(id),
-                    child: registration.descriptor.kind == MultiviewMediaKind.video ||
-                            registration.descriptor.kind == MultiviewMediaKind.liveTv
-                        ? GestureDetector(
-                            behavior: HitTestBehavior.translucent,
-                            onLongPressStart: (_) {
-                              if (!widget.floating) return;
-                              _lastLongPressOffset = Offset.zero;
-                              controller.focus(id);
-                              HapticFeedback.selectionClick();
-                            },
-                            onLongPressMoveUpdate: widget.floating
-                                ? (details) {
-                                    final nextOffset = details.offsetFromOrigin;
-                                    final delta = nextOffset - _lastLongPressOffset;
-                                    _lastLongPressOffset = nextOffset;
-                                    if (delta != Offset.zero) {
-                                      controller.moveByPixels(id, delta, widget.viewport);
-                                    }
-                                  }
-                                : null,
-                            child: registration.buildSurface(context),
-                          )
-                        : registration.buildSurface(context),
+                  child: SizedBox.expand(
+                    child: Listener(
+                      onPointerDown: (_) => controller.focus(id),
+                      child: _buildSurfaceWithMoveGestures(context, id, registration),
+                    ),
                   ),
                 ),
                 if (widget.floating && !widget.fullscreen)
                   _ResizeHandle(
-                    onResize: (delta) => controller.resizeByPixels(id, delta, widget.viewport),
+                    onResize: (delta) =>
+                        controller.resizeByPixels(id, delta, widget.viewport, paneSize: widget.paneSize),
                   ),
               ],
             ),
@@ -412,6 +410,7 @@ class _WorkspaceTitleBar extends StatelessWidget {
     required this.registration,
     required this.viewport,
     required this.floating,
+    this.paneSize,
     required this.fullscreen,
     required this.moving,
     required this.onMoveToggle,
@@ -421,16 +420,17 @@ class _WorkspaceTitleBar extends StatelessWidget {
   final WorkspaceSurfaceRegistration registration;
   final Size viewport;
   final bool floating;
+  final Size? paneSize;
   final bool fullscreen;
   final bool moving;
   final VoidCallback onMoveToggle;
 
   @override
   Widget build(BuildContext context) {
-    final t = tokens(context);
+    final tk = tokens(context);
     final id = registration.descriptor.id;
     return Material(
-      color: t.surface,
+      color: tk.surface,
       child: SizedBox(
         height: 42,
         child: Row(
@@ -439,7 +439,7 @@ class _WorkspaceTitleBar extends StatelessWidget {
               child: GestureDetector(
                 behavior: HitTestBehavior.opaque,
                 onPanUpdate: floating
-                    ? (details) => controller.moveByPixels(id, details.delta, viewport)
+                    ? (details) => controller.moveByPixels(id, details.delta, viewport, paneSize: paneSize)
                     : null,
                 onTap: () => controller.focus(id),
                 onDoubleTap: () {
@@ -450,17 +450,16 @@ class _WorkspaceTitleBar extends StatelessWidget {
                   }
                 },
                 child: Padding(
-                  padding: EdgeInsetsDirectional.only(start: t.space * 1.4),
+                  padding: EdgeInsetsDirectional.only(start: tk.space * 1.4),
                   child: Align(
                     alignment: AlignmentDirectional.centerStart,
                     child: Text(
                       registration.descriptor.title,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
-                      style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                            color: t.text,
-                            fontWeight: FontWeight.w600,
-                          ),
+                      style: Theme.of(
+                        context,
+                      ).textTheme.labelLarge?.copyWith(color: tk.text, fontWeight: FontWeight.w600),
                     ),
                   ),
                 ),
@@ -476,19 +475,11 @@ class _WorkspaceTitleBar extends StatelessWidget {
               ),
             if (registration.descriptor.hasAudio)
               IconButton(
-                tooltip: controller.audibleSessionId == id
-                    ? t.videoControls.muteButton
-                    : t.videoControls.unmuteButton,
+                tooltip: controller.audibleSessionId == id ? t.videoControls.muteButton : t.videoControls.unmuteButton,
                 visualDensity: VisualDensity.compact,
                 iconSize: 19,
-                onPressed: () => controller.setAudibleSession(
-                  controller.audibleSessionId == id ? null : id,
-                ),
-                icon: Icon(
-                  controller.audibleSessionId == id
-                      ? Symbols.volume_up_rounded
-                      : Symbols.volume_off_rounded,
-                ),
+                onPressed: () => controller.setAudibleSession(controller.audibleSessionId == id ? null : id),
+                icon: Icon(controller.audibleSessionId == id ? Symbols.volume_up_rounded : Symbols.volume_off_rounded),
               ),
             IconButton(
               tooltip: fullscreen ? t.common.exitFullscreen : t.common.fullscreen,
@@ -524,12 +515,12 @@ class _WorkspaceDock extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = tokens(context);
+    final tk = tokens(context);
     final fullscreen = controller.fullscreenSessionId != null;
     final mode = controller.layoutMode;
     return Material(
-      color: t.surface.withValues(alpha: 0.96),
-      borderRadius: BorderRadius.circular(t.radiusLg),
+      color: tk.surface.withValues(alpha: 0.96),
+      borderRadius: BorderRadius.circular(tk.radiusLg),
       elevation: 10,
       child: Row(
         mainAxisSize: MainAxisSize.min,
@@ -548,13 +539,9 @@ class _WorkspaceDock extends StatelessWidget {
             )
           else
             IconButton(
-              tooltip: mode == MultiviewLayoutMode.floating
-                  ? t.common.viewAll
-                  : t.videoControls.pipButton,
+              tooltip: mode == MultiviewLayoutMode.floating ? t.common.viewAll : t.videoControls.pipButton,
               onPressed: () => controller.setLayoutMode(
-                mode == MultiviewLayoutMode.floating
-                    ? MultiviewLayoutMode.sideBySide
-                    : MultiviewLayoutMode.floating,
+                mode == MultiviewLayoutMode.floating ? MultiviewLayoutMode.sideBySide : MultiviewLayoutMode.floating,
               ),
               icon: Icon(
                 mode == MultiviewLayoutMode.floating
@@ -580,17 +567,17 @@ class _WorkspaceSessionTray extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = tokens(context);
+    final tk = tokens(context);
     final sessions = controller.sessions.where((s) => !controller.isRestored(s.descriptor.id)).toList(growable: false);
     return Material(
-      color: t.surface,
-      borderRadius: BorderRadius.circular(t.radiusLg),
+      color: tk.surface,
+      borderRadius: BorderRadius.circular(tk.radiusLg),
       elevation: 18,
       child: ConstrainedBox(
         constraints: const BoxConstraints(maxWidth: 320, maxHeight: 360),
         child: ListView(
           shrinkWrap: true,
-          padding: EdgeInsets.all(t.space * 0.5),
+          padding: EdgeInsets.all(tk.space * 0.5),
           children: [
             for (final registration in sessions)
               ListTile(
@@ -599,13 +586,9 @@ class _WorkspaceSessionTray extends StatelessWidget {
                 leading: Icon(
                   controller.parkedSessions.any((s) => s.descriptor.id == registration.descriptor.id)
                       ? Symbols.pause_circle_outline_rounded
-                      : Symbols.play_circle_outline_rounded,
+                      : Symbols.play_circle_rounded,
                 ),
-                title: Text(
-                  registration.descriptor.title,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                ),
+                title: Text(registration.descriptor.title, maxLines: 1, overflow: TextOverflow.ellipsis),
                 onTap: () {
                   final id = registration.descriptor.id;
                   controller.unpark(id);
@@ -616,6 +599,15 @@ class _WorkspaceSessionTray extends StatelessWidget {
                   }
                   controller.setSessionTrayVisible(false);
                 },
+                trailing: IconButton(
+                  tooltip: t.common.back,
+                  visualDensity: VisualDensity.compact,
+                  icon: const Icon(Symbols.arrow_back_rounded),
+                  onPressed: () {
+                    controller.setSessionTrayVisible(false);
+                    controller.restore(registration.descriptor.id);
+                  },
+                ),
               ),
           ],
         ),
@@ -631,7 +623,7 @@ class _ResizeHandle extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final t = tokens(context);
+    final tk = tokens(context);
     return Align(
       alignment: AlignmentDirectional.bottomEnd,
       child: Focus(
@@ -661,16 +653,12 @@ class _ResizeHandle extends StatelessWidget {
               height: 36,
               child: Padding(
                 padding: EdgeInsetsDirectional.only(
-                  end: t.space * 0.5,
-                  bottom: t.space * 0.25,
-                  start: t.space,
-                  top: t.space * 0.25,
+                  end: tk.space * 0.5,
+                  bottom: tk.space * 0.25,
+                  start: tk.space,
+                  top: tk.space * 0.25,
                 ),
-                child: Icon(
-                  Symbols.drag_handle_rounded,
-                  size: 20,
-                  color: t.textMuted,
-                ),
+                child: Icon(Symbols.drag_handle_rounded, size: 20, color: tk.textMuted),
               ),
             ),
           ),

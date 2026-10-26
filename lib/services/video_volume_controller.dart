@@ -155,11 +155,7 @@ final class VideoVolumeController implements ValueListenable<double> {
         active.persistedVolume == persisted) {
       return;
     }
-    _pending = _VolumeTransition(
-      logicalVolume: desired,
-      playerVolume: outputVolume,
-      persistedVolume: persisted,
-    );
+    _pending = _VolumeTransition(logicalVolume: desired, playerVolume: outputVolume, persistedVolume: persisted);
     if (_draining) return;
 
     _draining = true;
@@ -252,11 +248,7 @@ final class VideoVolumeController implements ValueListenable<double> {
 }
 
 final class _VolumeTransition {
-  const _VolumeTransition({
-    required this.logicalVolume,
-    required this.playerVolume,
-    required this.persistedVolume,
-  });
+  const _VolumeTransition({required this.logicalVolume, required this.playerVolume, required this.persistedVolume});
 
   final double logicalVolume;
   final double playerVolume;

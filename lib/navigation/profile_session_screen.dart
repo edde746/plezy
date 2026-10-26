@@ -448,10 +448,7 @@ class _ProfileSessionNavigatorState extends State<_ProfileSessionNavigator> {
                         },
                       ),
                     ),
-                    Overlay(
-                      key: _workspaceOverlayKey,
-                      initialEntries: const [],
-                    ),
+                    Overlay(key: _workspaceOverlayKey, initialEntries: const []),
                     MultiviewOverlayHost(
                       controller: context.read<MultiviewWorkspaceController>(),
                       overlayKey: _workspaceOverlayKey,

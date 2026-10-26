@@ -1,15 +1,9 @@
+import 'dart:ui' show Offset, Size;
+
 import 'package:flutter/foundation.dart';
 
 /// The content families a workspace can retain independently of their route.
-enum MultiviewMediaKind {
-  video,
-  liveTv,
-  music,
-  audiobook,
-  publication,
-  comic,
-  game,
-}
+enum MultiviewMediaKind { video, liveTv, music, audiobook, publication, comic, game }
 
 enum MultiviewLayoutMode { floating, sideBySide }
 
@@ -17,33 +11,20 @@ enum MultiviewLayoutMode { floating, sideBySide }
 /// window resize and display scale changes.
 @immutable
 class WorkspacePlacement {
-  const WorkspacePlacement({
-    required this.left,
-    required this.top,
-    required this.width,
-    required this.height,
-  }) : assert(left >= 0 && left <= 1),
-       assert(top >= 0 && top <= 1),
-       assert(width > 0 && width <= 1),
-       assert(height > 0 && height <= 1);
+  const WorkspacePlacement({required this.left, required this.top, required this.width, required this.height})
+    : assert(left >= 0 && left <= 1),
+      assert(top >= 0 && top <= 1),
+      assert(width > 0 && width <= 1),
+      assert(height > 0 && height <= 1);
 
-  const WorkspacePlacement.initial()
-    : left = 0.54,
-      top = 0.58,
-      width = 0.44,
-      height = 0.34;
+  const WorkspacePlacement.initial() : left = 0.54, top = 0.58, width = 0.44, height = 0.34;
 
   final double left;
   final double top;
   final double width;
   final double height;
 
-  WorkspacePlacement withDelta({
-    double? left,
-    double? top,
-    double? width,
-    double? height,
-  }) {
+  WorkspacePlacement withDelta({double? left, double? top, double? width, double? height}) {
     final nextWidth = (width ?? this.width).clamp(0.2, 1.0).toDouble();
     final nextHeight = (height ?? this.height).clamp(0.18, 1.0).toDouble();
     return WorkspacePlacement(
@@ -54,12 +35,42 @@ class WorkspacePlacement {
     );
   }
 
-  Map<String, Object> toJson() => {
-    'left': left,
-    'top': top,
-    'width': width,
-    'height': height,
-  };
+  /// Converts normalized top-left placement into viewport pixels.
+  ///
+  /// [left] and [top] are fractions of the full viewport, while the bounds
+  /// clamp the top-left point to keep the complete pane on screen.
+  Offset resolveTopLeft(Size viewport, {required double windowWidth, required double windowHeight}) {
+    if (viewport.width <= 0 || viewport.height <= 0) return Offset.zero;
+    final maxLeft = (viewport.width - windowWidth).clamp(0.0, viewport.width).toDouble();
+    final maxTop = (viewport.height - windowHeight).clamp(0.0, viewport.height).toDouble();
+    return Offset(
+      (viewport.width * left).clamp(0.0, maxLeft).toDouble(),
+      (viewport.height * top).clamp(0.0, maxTop).toDouble(),
+    );
+  }
+
+  /// Moves a pane using the visible window size for this viewport.
+  ///
+  /// Layouts with a platform minimum or maximum window size can differ from
+  /// the saved normalized size. This keeps movement smooth on the current
+  /// viewport without rewriting the user's saved size.
+  WorkspacePlacement withPosition({
+    required double left,
+    required double top,
+    double? maximumLeft,
+    double? maximumTop,
+  }) {
+    final leftLimit = (maximumLeft ?? 1.0 - width).clamp(0.0, 1.0).toDouble();
+    final topLimit = (maximumTop ?? 1.0 - height).clamp(0.0, 1.0).toDouble();
+    return WorkspacePlacement(
+      left: left.clamp(0.0, leftLimit).toDouble(),
+      top: top.clamp(0.0, topLimit).toDouble(),
+      width: width,
+      height: height,
+    );
+  }
+
+  Map<String, Object> toJson() => {'left': left, 'top': top, 'width': width, 'height': height};
 
   factory WorkspacePlacement.fromJson(Map<String, Object?> json) {
     double number(String key) {
@@ -117,6 +128,7 @@ class WorkspaceSessionDescriptor {
   final DateTime openedAt;
 
   WorkspaceSessionDescriptor copyWith({
+    MultiviewMediaKind? kind,
     String? title,
     String? subtitle,
     bool clearSubtitle = false,
@@ -127,7 +139,7 @@ class WorkspaceSessionDescriptor {
     bool? acceptsInput,
   }) => WorkspaceSessionDescriptor(
     id: id,
-    kind: kind,
+    kind: kind ?? this.kind,
     title: title ?? this.title,
     subtitle: clearSubtitle ? null : (subtitle ?? this.subtitle),
     mediaKey: mediaKey ?? this.mediaKey,
@@ -229,9 +241,7 @@ class WorkspaceSnapshot {
   Map<String, Object?> toJson() => {
     'schemaVersion': schemaVersion,
     'sessions': sessions.map((session) => session.toJson()).toList(growable: false),
-    'placements': {
-      for (final entry in placements.entries) entry.key: entry.value.toJson(),
-    },
+    'placements': {for (final entry in placements.entries) entry.key: entry.value.toJson()},
     'layoutMode': layoutMode.name,
     if (focusedSessionId != null) 'focusedSessionId': focusedSessionId,
     if (audibleSessionId != null) 'audibleSessionId': audibleSessionId,
@@ -247,10 +257,12 @@ class WorkspaceSnapshot {
 
     final rawSessions = json['sessions'];
     if (rawSessions is! List) throw const FormatException('Invalid workspace sessions');
-    final sessions = rawSessions.map((value) {
-      if (value is! Map) throw const FormatException('Invalid workspace session');
-      return WorkspaceSessionDescriptor.fromJson(Map<String, Object?>.from(value));
-    }).toList(growable: false);
+    final sessions = rawSessions
+        .map((value) {
+          if (value is! Map) throw const FormatException('Invalid workspace session');
+          return WorkspaceSessionDescriptor.fromJson(Map<String, Object?>.from(value));
+        })
+        .toList(growable: false);
 
     final ids = sessions.map((session) => session.id).toSet();
     if (ids.length != sessions.length) throw const FormatException('Duplicate workspace session id');

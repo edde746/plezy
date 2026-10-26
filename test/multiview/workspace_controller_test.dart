@@ -1,3 +1,5 @@
+import 'package:flutter/widgets.dart';
+
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/multiview/workspace_controller.dart';
 import 'package:plezy/multiview/workspace_models.dart';
@@ -23,9 +25,10 @@ WorkspaceSessionDescriptor _descriptor(
   bool hasAudio = false,
   bool hasVideo = false,
   bool acceptsInput = false,
+  MultiviewMediaKind? kind,
 }) => WorkspaceSessionDescriptor(
   id: id,
-  kind: hasVideo ? MultiviewMediaKind.video : MultiviewMediaKind.publication,
+  kind: kind ?? (hasVideo ? MultiviewMediaKind.video : MultiviewMediaKind.publication),
   title: id,
   hasAudio: hasAudio,
   hasVideo: hasVideo,
@@ -44,26 +47,35 @@ WorkspaceSurfaceRegistration _registration(
   buildSurface: (_) => const SizedBox.shrink(),
   onRestore: onRestore ?? () {},
   onClose: onClose,
-  onAudioOwnershipChanged:
-      onAudioOwnershipChanged ?? (descriptor.hasAudio ? (_) {} : null),
-  onInputOwnershipChanged:
-      onInputOwnershipChanged ?? (descriptor.acceptsInput ? (_) {} : null),
+  onAudioOwnershipChanged: onAudioOwnershipChanged ?? (descriptor.hasAudio ? (_) {} : null),
+  onInputOwnershipChanged: onInputOwnershipChanged ?? (descriptor.acceptsInput ? (_) {} : null),
 );
 
 void main() {
   group('WorkspacePlacement', () {
     test('clamps movement and resize into the normalized viewport', () {
-      final placement = const WorkspacePlacement.initial().withDelta(
-        left: 0.95,
-        top: 0.95,
-        width: 0.9,
-        height: 0.9,
-      );
+      final placement = const WorkspacePlacement.initial().withDelta(left: 0.95, top: 0.95, width: 0.9, height: 0.9);
 
       expect(placement.left, closeTo(0.1, 0.0001));
       expect(placement.top, closeTo(0.1, 0.0001));
       expect(placement.width, 0.9);
       expect(placement.height, 0.9);
+    });
+
+    test('resolves normalized placement directly against the viewport', () {
+      expect(
+        const WorkspacePlacement.initial().resolveTopLeft(const Size(800, 600), windowWidth: 352, windowHeight: 204),
+        const Offset(432, 348),
+      );
+      expect(
+        const WorkspacePlacement(
+          left: 0.9,
+          top: 0.9,
+          width: 0.5,
+          height: 0.5,
+        ).resolveTopLeft(const Size(800, 600), windowWidth: 400, windowHeight: 300),
+        const Offset(400, 300),
+      );
     });
 
     test('round trips a versioned snapshot without runtime surfaces', () {
@@ -108,10 +120,7 @@ void main() {
         layoutMode: MultiviewLayoutMode.floating,
         audioSelectionExplicit: true,
       );
-      expect(
-        WorkspaceSnapshot.fromJson(muted.toJson()).audioSelectionExplicit,
-        isTrue,
-      );
+      expect(WorkspaceSnapshot.fromJson(muted.toJson()).audioSelectionExplicit, isTrue);
     });
 
     test('keeps geometry history for sessions that are not reopened automatically', () {
@@ -137,36 +146,35 @@ void main() {
         layoutMode: MultiviewLayoutMode.floating,
       );
 
-      expect(
-        () => WorkspaceSnapshot.fromJson(duplicate.toJson()),
-        throwsFormatException,
-      );
-      expect(
-        () => WorkspaceSnapshot.fromJson({'schemaVersion': 99}),
-        throwsFormatException,
-      );
+      expect(() => WorkspaceSnapshot.fromJson(duplicate.toJson()), throwsFormatException);
+      expect(() => WorkspaceSnapshot.fromJson({'schemaVersion': 99}), throwsFormatException);
     });
   });
 
   group('MultiviewWorkspaceController', () {
+    test('descriptor copyWith updates the media kind', () {
+      final descriptor = _descriptor('reader', hasAudio: true, kind: MultiviewMediaKind.audiobook);
+
+      final updated = descriptor.copyWith(kind: MultiviewMediaKind.video, hasVideo: true);
+
+      expect(updated.kind, MultiviewMediaKind.video);
+      expect(updated.hasVideo, isTrue);
+      expect(updated.id, 'reader');
+    });
+
     test('hydrates profile layout before matching live sessions and saves changes', () async {
       final persistence = _MemoryWorkspacePersistence()
         ..snapshot = WorkspaceSnapshot(
-          sessions: [_descriptor('music', hasAudio: true)],
-          placements: const {
-            'music': WorkspacePlacement(left: 0.1, top: 0.2, width: 0.5, height: 0.3),
-          },
+          sessions: [_descriptor('music', hasAudio: true, kind: MultiviewMediaKind.music)],
+          placements: const {'music': WorkspacePlacement(left: 0.1, top: 0.2, width: 0.5, height: 0.3)},
           layoutMode: MultiviewLayoutMode.sideBySide,
           focusedSessionId: 'music',
           audioSelectionExplicit: true,
         );
-      final controller = MultiviewWorkspaceController(
-        persistence: persistence,
-        profileId: 'profile-a',
-      );
+      final controller = MultiviewWorkspaceController(persistence: persistence, profileId: 'profile-a');
 
       await controller.hydrate();
-      controller.register(_registration(_descriptor('music', hasAudio: true)));
+      controller.register(_registration(_descriptor('music', hasAudio: true, kind: MultiviewMediaKind.music)));
       await Future<void>.delayed(Duration.zero);
 
       expect(controller.layoutMode, MultiviewLayoutMode.sideBySide);
@@ -189,7 +197,7 @@ void main() {
         onRestore: () {},
       );
       final inputWithoutOwner = WorkspaceSurfaceRegistration(
-        descriptor: _descriptor('game', acceptsInput: true),
+        descriptor: _descriptor('game', acceptsInput: true, kind: MultiviewMediaKind.game),
         buildSurface: (_) => const SizedBox.shrink(),
         onRestore: () {},
       );
@@ -206,14 +214,8 @@ void main() {
       var secondRestores = 0;
       final descriptor = _descriptor('same');
 
-      expect(
-        controller.register(_registration(descriptor, onRestore: () => firstRestores++)),
-        isTrue,
-      );
-      expect(
-        controller.register(_registration(descriptor, onRestore: () => secondRestores++)),
-        isFalse,
-      );
+      expect(controller.register(_registration(descriptor, onRestore: () => firstRestores++)), isTrue);
+      expect(controller.register(_registration(descriptor, onRestore: () => secondRestores++)), isFalse);
 
       controller.restore('same');
 
@@ -241,7 +243,7 @@ void main() {
     test('publishes the selected audio owner to playback claims', () async {
       final controller = MultiviewWorkspaceController();
       controller.register(_registration(_descriptor('video', hasAudio: true, hasVideo: true)));
-      controller.register(_registration(_descriptor('music', hasAudio: true)));
+      controller.register(_registration(_descriptor('music', hasAudio: true, kind: MultiviewMediaKind.music)));
       await Future<void>.delayed(Duration.zero);
 
       expect(PlaybackCoordinator.instance.workspaceHasCompetingAudioOwner, isTrue);
@@ -257,10 +259,9 @@ void main() {
     test('only the focused game receives workspace input', () async {
       final controller = MultiviewWorkspaceController();
       final gameInput = <bool>[];
-      controller.register(_registration(
-        _descriptor('game', acceptsInput: true),
-        onInputOwnershipChanged: gameInput.add,
-      ));
+      controller.register(
+        _registration(_descriptor('game', acceptsInput: true), onInputOwnershipChanged: gameInput.add),
+      );
       await controller.setInputSession('game');
       controller.register(_registration(_descriptor('video')));
       await Future<void>.delayed(Duration.zero);
@@ -273,7 +274,7 @@ void main() {
       controller.focus('game');
       await Future<void>.delayed(Duration.zero);
       expect(controller.inputSessionId, 'game');
-      expect(gameInput, [false, true, false, true]);
+      expect(gameInput, [true, false, true]);
 
       controller.dispose();
     });
@@ -299,9 +300,7 @@ void main() {
     test('restore returns the exact session and removes its overlay entry', () {
       final controller = MultiviewWorkspaceController();
       var restored = 0;
-      controller.register(
-        _registration(_descriptor('movie', hasVideo: true), onRestore: () => restored++),
-      );
+      controller.register(_registration(_descriptor('movie', hasVideo: true), onRestore: () => restored++));
 
       expect(controller.hasVisibleSessions, isTrue);
       expect(controller.restore('movie'), isTrue);
@@ -316,12 +315,7 @@ void main() {
       final controller = MultiviewWorkspaceController();
       var closes = 0;
       controller.register(_registration(_descriptor('music', hasAudio: true)));
-      controller.register(
-        _registration(
-          _descriptor('book'),
-          onClose: () => closes++,
-        ),
-      );
+      controller.register(_registration(_descriptor('book'), onClose: () => closes++));
       await controller.setAudibleSession('music');
 
       expect(await controller.setAudibleSession('book'), isFalse); // The book has no audio.
@@ -357,10 +351,7 @@ void main() {
 
       expect(controller.beginPositioning('movie'), isTrue);
       expect(controller.isPositioning, isTrue);
-      expect(
-        controller.movePositionedByPixels('movie', const Offset(48, 24), const Size(800, 600)),
-        isTrue,
-      );
+      expect(controller.movePositionedByPixels('movie', const Offset(48, 24), const Size(800, 600)), isTrue);
       expect(controller.placementFor('movie'), isNot(initial));
       expect(controller.finishPositioning(cancel: true), isTrue);
       expect(controller.placementFor('movie'), initial);
@@ -394,16 +385,10 @@ void main() {
       final controller = MultiviewWorkspaceController();
       final calls = <String>[];
       controller.register(
-        _registration(
-          _descriptor('a', hasAudio: true),
-          onAudioOwnershipChanged: (enabled) => calls.add('a:$enabled'),
-        ),
+        _registration(_descriptor('a', hasAudio: true), onAudioOwnershipChanged: (enabled) => calls.add('a:$enabled')),
       );
       controller.register(
-        _registration(
-          _descriptor('b', hasAudio: true),
-          onAudioOwnershipChanged: (enabled) => calls.add('b:$enabled'),
-        ),
+        _registration(_descriptor('b', hasAudio: true), onAudioOwnershipChanged: (enabled) => calls.add('b:$enabled')),
       );
       await Future<void>.delayed(Duration.zero);
       expect(calls, ['a:true', 'b:false']);
@@ -418,11 +403,13 @@ void main() {
       final controller = MultiviewWorkspaceController();
       final audio = <bool>[];
       final input = <bool>[];
-      controller.register(_registration(
-        _descriptor('media', hasAudio: true, acceptsInput: true),
-        onAudioOwnershipChanged: audio.add,
-        onInputOwnershipChanged: input.add,
-      ));
+      controller.register(
+        _registration(
+          _descriptor('media', hasAudio: true, acceptsInput: true),
+          onAudioOwnershipChanged: audio.add,
+          onInputOwnershipChanged: input.add,
+        ),
+      );
       await controller.setInputSession('media');
       await Future<void>.delayed(Duration.zero);
 
@@ -434,7 +421,7 @@ void main() {
       expect(controller.audibleSessionId, isNull);
       expect(controller.inputSessionId, isNull);
       expect(audio, [true, false]);
-      expect(input, [false, true, false]);
+      expect(input, [true, false]);
       controller.dispose();
     });
 
@@ -442,10 +429,7 @@ void main() {
       final controller = MultiviewWorkspaceController();
       var firstEnabled = false;
       controller.register(
-        _registration(
-          _descriptor('a', hasAudio: true),
-          onAudioOwnershipChanged: (enabled) => firstEnabled = enabled,
-        ),
+        _registration(_descriptor('a', hasAudio: true), onAudioOwnershipChanged: (enabled) => firstEnabled = enabled),
       );
       controller.register(
         _registration(
@@ -461,6 +445,24 @@ void main() {
       await Future<void>.delayed(Duration.zero);
       expect(controller.audibleSessionId, 'a');
       expect(firstEnabled, isTrue);
+      controller.dispose();
+    });
+
+    test('uses the rendered pane size for pixel movement and resize', () {
+      final controller = MultiviewWorkspaceController();
+      controller.register(_registration(_descriptor('video', hasVideo: true)));
+
+      controller.moveByPixels('video', const Offset(300, 0), const Size(1920, 1080), paneSize: const Size(520, 367.2));
+      expect(controller.placementFor('video').left, closeTo(0.69625, 0.0001));
+
+      controller.resizeByPixels(
+        'video',
+        const Offset(-20, 0),
+        const Size(1920, 1080),
+        paneSize: const Size(520, 367.2),
+      );
+      expect(controller.placementFor('video').width, closeTo(500 / 1920, 0.0001));
+      expect(controller.placementFor('video').height, closeTo(0.34, 0.0001));
       controller.dispose();
     });
 

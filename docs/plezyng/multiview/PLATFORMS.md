@@ -1,6 +1,6 @@
 # Adapter work and integration map
 
-App-owned PiP is the default on every current target. Implement the common compositor/session contract first. Native PiP and detached OS windows extend that experience; they do not define feature availability.
+App-owned in-app PiP is the shared product target across current targets, with one Flutter interaction model and platform-specific media-surface adapters. Native PiP and detached OS windows extend that experience; they do not define feature availability. Target paths remain unqualified until native builds and device validation pass.
 
 ## Shared files to modify carefully
 

@@ -82,10 +82,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
     return "source:${sourceDigest('${progress.key}:${playback.mode.name}')}";
   }
 
-  void _attachToExistingWorkspaceSession(
-    SourcePlayback playback,
-    MultiviewWorkspaceController workspace,
-  ) {
+  void _attachToExistingWorkspaceSession(SourcePlayback playback, MultiviewWorkspaceController workspace) {
     final id = _stableWorkspaceSessionId(playback);
     if (id == null || _workspaceSessionId != null || workspace.session(id) == null) return;
     _workspace = workspace;
@@ -165,19 +162,14 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
         id: id,
         kind: playback.video ? MultiviewMediaKind.video : MultiviewMediaKind.audiobook,
         title: entry.displayTitle.trim().isEmpty ? t.common.unknown : entry.displayTitle,
-        subtitle: playback.currentChapter?.title ??
-            (entry.narrator.isNotEmpty ? entry.narrator : entry.author),
+        subtitle: playback.currentChapter?.title ?? (entry.narrator.isNotEmpty ? entry.narrator : entry.author),
         mediaKey: playback.progress?.key,
         progressOwner: playback.progress?.key,
         hasAudio: true,
         hasVideo: playback.video,
         openedAt: DateTime.now(),
       ),
-      buildSurface: (_) => SourcePlaybackWorkspaceSurface(
-        playback: playback,
-        controller: controller,
-        sessionId: id,
-      ),
+      buildSurface: (_) => SourcePlaybackWorkspaceSurface(playback: playback, controller: controller, sessionId: id),
       onRestore: () {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           if (!mounted || _workspaceSessionId != id) return;
@@ -219,9 +211,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
       _workspaceSessionId = null;
       _workspaceDetached = false;
       playback.fullPlayerVisible = false;
-      ScaffoldMessenger.maybeOf(context)?.showSnackBar(
-        SnackBar(content: Text(t.videoControls.pipFailed)),
-      );
+      ScaffoldMessenger.maybeOf(context)?.showSnackBar(SnackBar(content: Text(t.videoControls.pipFailed)));
       return;
     }
     setState(() {});
@@ -622,26 +612,26 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
     final core = s.player;
     final video = s.video && core != null
         ? _workspaceDetached
-            ? AspectRatio(
-                aspectRatio: 16 / 9,
-                child: ColoredBox(
-                  color: Colors.black,
-                  child: Center(
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const AppIcon(Symbols.picture_in_picture_alt_rounded, size: 36, color: Colors.white),
-                        const SizedBox(height: 8),
-                        Text(t.videoControls.pipButton, style: const TextStyle(color: Colors.white)),
-                      ],
+              ? AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: ColoredBox(
+                    color: Colors.black,
+                    child: Center(
+                      child: Column(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const AppIcon(Symbols.picture_in_picture_alt_rounded, size: 36, color: Colors.white),
+                          const SizedBox(height: 8),
+                          Text(t.videoControls.pipButton, style: const TextStyle(color: Colors.white)),
+                        ],
+                      ),
                     ),
                   ),
-                ),
-              )
-            : AspectRatio(
-                aspectRatio: 16 / 9,
-                child: Video(player: core),
-              )
+                )
+              : AspectRatio(
+                  aspectRatio: 16 / 9,
+                  child: Video(player: core),
+                )
         : null;
     return Focus(
       onKeyEvent: (_, e) {

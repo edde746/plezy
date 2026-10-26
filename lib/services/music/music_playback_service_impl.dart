@@ -1337,8 +1337,7 @@ class MusicPlaybackServiceImpl extends MusicPlaybackService
     _musicGain = normalized;
     final player = _player;
     if (player == null || player.disposed) return;
-    final effectiveVolume = (_volume * normalized * (_workspaceAudioEnabled ? 1.0 : 0.0))
-        .clamp(0.0, 100.0).toDouble();
+    final effectiveVolume = (_volume * normalized * (_workspaceAudioEnabled ? 1.0 : 0.0)).clamp(0.0, 100.0).toDouble();
     unawaited(
       player.setVolume(effectiveVolume).catchError((Object _) {
         appLogger.d('Music fade volume update failed');

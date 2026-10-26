@@ -34,6 +34,7 @@ void main() {
       testBody: () async {
         final player = PlayerNative();
         try {
+          await player.setVideoRect(left: 2, top: 4, right: 202, bottom: 104, devicePixelRatio: 2.0);
           await player.setVideoRect(left: 21, top: 34, right: 721, bottom: 428, devicePixelRatio: 2.0);
           await player.open(Media('https://example.test/video.mp4'), play: false);
         } finally {
@@ -43,13 +44,7 @@ void main() {
     );
 
     expect(rectCall?.method, 'setVideoRect');
-    expect(_rectArguments(rectCall!), {
-      'left': 21,
-      'top': 34,
-      'right': 721,
-      'bottom': 428,
-      'devicePixelRatio': 2.0,
-    });
+    expect(_rectArguments(rectCall!), {'left': 21, 'top': 34, 'right': 721, 'bottom': 428, 'devicePixelRatio': 2.0});
   });
 
   test('ExoPlayer applies the latest physical workspace bounds after native initialization', () async {
@@ -65,6 +60,7 @@ void main() {
       testBody: () async {
         final player = PlayerAndroid();
         try {
+          await player.setVideoRect(left: 0, top: 12, right: 300, bottom: 212, devicePixelRatio: 1.5);
           await player.setVideoRect(left: 0, top: 48, right: 1184, bottom: 712, devicePixelRatio: 1.5);
           await player.open(Media('https://example.test/video.mp4'), play: false);
         } finally {
@@ -74,12 +70,6 @@ void main() {
     );
 
     expect(rectCall?.method, 'setVideoRect');
-    expect(_rectArguments(rectCall!), {
-      'left': 0,
-      'top': 48,
-      'right': 1184,
-      'bottom': 712,
-      'devicePixelRatio': 1.5,
-    });
+    expect(_rectArguments(rectCall!), {'left': 0, 'top': 48, 'right': 1184, 'bottom': 712, 'devicePixelRatio': 1.5});
   });
 }

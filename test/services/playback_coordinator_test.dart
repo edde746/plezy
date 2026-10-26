@@ -62,6 +62,28 @@ void main() {
     expect(musicStops, 1);
   });
 
+  test('a retained workspace video cannot be displaced by a second video claim', () async {
+    final coordinator = PlaybackCoordinator.instance;
+    var musicStops = 0;
+    var videoStops = 0;
+    Future<void> musicOwner() async => musicStops++;
+    Future<void> videoOwner() async => videoStops++;
+    coordinator.registerMusicSession(stopAndDispose: musicOwner);
+    coordinator.registerVideoSession(shutdown: videoOwner);
+    coordinator.setWorkspaceRetainsVideo(true);
+    addTearDown(() {
+      coordinator.setWorkspaceRetainsVideo(false);
+      coordinator.unregisterMusicSession(musicOwner);
+      coordinator.unregisterVideoSession(videoOwner);
+    });
+
+    await expectLater(coordinator.claimVideo(), throwsA(isA<WorkspaceVideoCapacityException>()));
+
+    expect(musicStops, 0);
+    expect(videoStops, 0);
+    expect(coordinator.hasVideoSession, isTrue);
+  });
+
   test('workspace retained music survives a new video claim', () async {
     final coordinator = PlaybackCoordinator.instance;
     var musicStops = 0;

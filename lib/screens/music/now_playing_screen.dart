@@ -215,7 +215,6 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
     setState(() => _visualizerPreset = preset);
   }
 
-
   Future<void> _openMusicInWorkspace(MusicPlaybackService service, MediaItem track) async {
     final controller = context.read<MultiviewWorkspaceController>();
     const sessionId = 'music:active';
@@ -239,17 +238,13 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
       mediaKey: track.globalKey,
       progressOwner: 'music-session:$sessionId',
       hasAudio: true,
-      hasVideo: true,
+      hasVideo: false,
       openedAt: DateTime.now(),
     );
     final registered = controller.register(
       WorkspaceSurfaceRegistration(
         descriptor: descriptor,
-        buildSurface: (_) => MusicWorkspaceSurface(
-          service: service,
-          controller: controller,
-          sessionId: sessionId,
-        ),
+        buildSurface: (_) => MusicWorkspaceSurface(service: service, controller: controller, sessionId: sessionId),
         onRestore: () {
           WidgetsBinding.instance.addPostFrameCallback((_) {
             if (navigator.mounted) unawaited(openNowPlaying(navigator.context));
@@ -439,7 +434,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
   Widget _buildPortraitLayout(MusicPlaybackService service, MediaItem track, MediaServerClient? client) {
     Widget upper = Column(
       children: [
-        _buildTopBar(track, service.playContext),
+        _buildTopBar(service, track, service.playContext),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 8),
@@ -477,7 +472,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
     final tk = tokens(context);
     return Column(
       children: [
-        _buildTopBar(track, service.playContext),
+        _buildTopBar(service, track, service.playContext),
         Expanded(
           child: Padding(
             padding: const EdgeInsets.fromLTRB(24, 0, 24, 20),
@@ -585,7 +580,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
   /// [playContext] is passed in (not selected) because this builds
   /// inside the layout-phase LayoutBuilder, where `context.select` on the
   /// screen's element asserts; the screen already watches the service.
-  Widget _buildTopBar(MediaItem track, MusicPlayContext? playContext) {
+  Widget _buildTopBar(MusicPlaybackService service, MediaItem track, MusicPlayContext? playContext) {
     final tk = tokens(context);
     final sourceTitle = _playingFromTitle(track, playContext);
     // macOS pins the traffic lights at y=21 (16pt buttons → center 29, see

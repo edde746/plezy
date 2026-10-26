@@ -50,6 +50,11 @@ abstract class PlayerBase with PlayerStreamControllersMixin implements Player, A
   @override
   PlayerStreams get streams => _streams;
 
+  /// Reports errors produced by [VideoRectSupport] surface layout.
+  void reportVideoRectError(PlayerError error) {
+    if (!errorController.isClosed) errorController.add(error);
+  }
+
   StreamSubscription? _eventSubscription;
   StreamSubscription? _logSubscription;
   final bool _listenToNativeEvents;

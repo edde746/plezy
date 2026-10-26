@@ -112,11 +112,11 @@ class _SourcePlaybackWorkspaceSurfaceState extends State<SourcePlaybackWorkspace
             ),
           );
         }
-        final t = tokens(context);
+        final tk = tokens(context);
         final core = playback.player;
         if (playback.video && core != null) {
           return Material(
-            color: t.bg,
+            color: tk.bg,
             child: Column(
               children: [
                 Expanded(child: Video(player: core)),
@@ -126,19 +126,19 @@ class _SourcePlaybackWorkspaceSurfaceState extends State<SourcePlaybackWorkspace
           );
         }
         return Material(
-          color: t.bg,
+          color: tk.bg,
           child: Padding(
-            padding: EdgeInsets.all(t.space * 0.75),
+            padding: EdgeInsets.all(tk.space * 0.75),
             child: Row(
               children: [
                 AspectRatio(
                   aspectRatio: 1,
                   child: ClipRRect(
-                    borderRadius: BorderRadius.circular(t.radiusMd),
+                    borderRadius: BorderRadius.circular(tk.radiusMd),
                     child: SourceCover(entry: entry),
                   ),
                 ),
-                SizedBox(width: t.space * 0.75),
+                SizedBox(width: tk.space * 0.75),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -147,19 +147,18 @@ class _SourcePlaybackWorkspaceSurfaceState extends State<SourcePlaybackWorkspace
                         entry.displayTitle,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
-                        style: Theme.of(context).textTheme.titleSmall?.copyWith(
-                              color: t.text,
-                              fontWeight: FontWeight.w700,
-                            ),
+                        style: Theme.of(
+                          context,
+                        ).textTheme.titleSmall?.copyWith(color: tk.text, fontWeight: FontWeight.w700),
                       ),
                       if (playback.currentChapter != null)
                         Padding(
-                          padding: EdgeInsets.only(top: t.space * 0.2),
+                          padding: EdgeInsets.only(top: tk.space * 0.2),
                           child: Text(
                             playback.currentChapter!.title,
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: t.textMuted),
+                            style: Theme.of(context).textTheme.bodySmall?.copyWith(color: tk.textMuted),
                           ),
                         ),
                       const Spacer(),
@@ -176,29 +175,33 @@ class _SourcePlaybackWorkspaceSurfaceState extends State<SourcePlaybackWorkspace
   }
 
   Widget _transport(BuildContext context, SourcePlayback playback) {
-    final t = tokens(context);
+    final tk = tokens(context);
     final start = playback.timelineStartMs;
     final end = playback.timelineEndMs;
     final canSeek = end > start;
-    final position = (_seekValue ?? playback.positionMs.toDouble())
-        .clamp(start.toDouble(), canSeek ? end.toDouble() : start + 1.0);
+    final position = (_seekValue ?? playback.positionMs.toDouble()).clamp(
+      start.toDouble(),
+      canSeek ? end.toDouble() : start + 1.0,
+    );
     return Padding(
-      padding: EdgeInsets.symmetric(horizontal: t.space * 0.5, vertical: t.space * 0.2),
+      padding: EdgeInsets.symmetric(horizontal: tk.space * 0.5, vertical: tk.space * 0.2),
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Slider(
-            value: position,
-            min: start.toDouble(),
-            max: canSeek ? end.toDouble() : start + 1.0,
-            semanticLabel: t.fileSources.timePosition,
-            onChanged: canSeek ? (value) => setState(() => _seekValue = value) : null,
-            onChangeEnd: canSeek
-                ? (value) {
-                    setState(() => _seekValue = null);
-                    unawaited(playback.seek(value.round()));
-                  }
-                : null,
+          Semantics(
+            label: t.fileSources.timePosition,
+            child: Slider(
+              value: position,
+              min: start.toDouble(),
+              max: canSeek ? end.toDouble() : start + 1.0,
+              onChanged: canSeek ? (value) => setState(() => _seekValue = value) : null,
+              onChangeEnd: canSeek
+                  ? (value) {
+                      setState(() => _seekValue = null);
+                      unawaited(playback.seek(value.round()));
+                    }
+                  : null,
+            ),
           ),
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceEvenly,
@@ -238,8 +241,14 @@ class _SourcePlaybackWorkspaceSurfaceState extends State<SourcePlaybackWorkspace
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(formatDurationTimestamp(playback.positionMs), style: Theme.of(context).textTheme.labelSmall),
-              Text(formatDurationTimestamp(playback.timelineEndMs), style: Theme.of(context).textTheme.labelSmall),
+              Text(
+                formatDurationTimestamp(Duration(milliseconds: playback.positionMs)),
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
+              Text(
+                formatDurationTimestamp(Duration(milliseconds: playback.timelineEndMs)),
+                style: Theme.of(context).textTheme.labelSmall,
+              ),
             ],
           ),
         ],

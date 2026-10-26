@@ -39,13 +39,7 @@ class PlayerNative extends PlayerBase implements VideoRectSupport {
     required double devicePixelRatio,
   }) async {
     if (audioOnly || _nativeCoreUnavailable) return;
-    _pendingVideoRect = (
-      left: left,
-      top: top,
-      right: right,
-      bottom: bottom,
-      devicePixelRatio: devicePixelRatio,
-    );
+    _pendingVideoRect = (left: left, top: top, right: right, bottom: bottom, devicePixelRatio: devicePixelRatio);
     if (initialized) await _applyPendingVideoRect();
   }
 
