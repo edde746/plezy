@@ -68,6 +68,7 @@ jobs:
         env:
           RELEASE_TAG: ${{ inputs.release_tag }}
           CHANNEL: ${{ inputs.channel }}
+          PLAY_TRACK: ${{ inputs.play_track }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
@@ -76,8 +77,27 @@ jobs:
             exit 1
           fi
           release_json=$(gh api "repos/$GITHUB_REPOSITORY/releases/tags/$RELEASE_TAG")
-          if [[ "$(jq -r '.draft' <<< "$release_json")" != "false" || "$(jq -r '.prerelease' <<< "$release_json")" != "false" ]]; then
-            echo "Store submissions require a published stable GitHub release." >&2
+          is_draft=$(jq -r '.draft' <<< "$release_json")
+          is_prerelease=$(jq -r '.prerelease' <<< "$release_json")
+          if [[ "$is_prerelease" != "false" ]]; then
+            echo "Store uploads do not accept GitHub prereleases." >&2
+            exit 1
+          fi
+          if [[ "$is_draft" == "true" ]]; then
+            case "$CHANNEL" in
+              google-play)
+                if [[ "$PLAY_TRACK" == "production" ]]; then
+                  echo "Draft GitHub releases may only upload to non-production Google Play tracks." >&2
+                  exit 1
+                fi
+                ;;
+              amazon-appstore|app-store-ios|app-store-tvos)
+                # These lanes upload binaries without submitting them for store review.
+                ;;
+              *) echo "Draft GitHub releases are only allowed for non-production store uploads." >&2; exit 1 ;;
+            esac
+          elif [[ "$is_draft" != "false" ]]; then
+            echo "Unexpected GitHub release draft state: $is_draft" >&2
             exit 1
           fi
           case "$CHANNEL" in
