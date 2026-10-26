@@ -119,6 +119,7 @@
 - Localize standalone source setup and subtitle search, use shared icons and TV-aware text fields, and report when Trakt finds no metadata matches.
 - Show NFS mount, identity, and RPC-with-TLS controls in its source setup, persist OPDS stream-only file flags, and handle standalone metadata arrays and missing DLNA totals.
 - Fix FTP/SFTP stream typing and the SMB license text constructor for current Dart/Flutter APIs.
+- Observe failures from shared online metadata lookups during cleanup.
 - Keep entitlement-controlled themes and icons locked when store access is disabled in the build.
 - Remove stale SVG imports after switching the setup and app-icon previews back to raster artwork.
 - Localize the About screen privacy-policy link.

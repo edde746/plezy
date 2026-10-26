@@ -490,7 +490,9 @@ class SourceController extends ChangeNotifier {
     try {
       return await task;
     } finally {
-      if (identical(_onlineLookups[key], task)) unawaited(_onlineLookups.remove(key));
+      if (identical(_onlineLookups[key], task)) {
+        unawaited(_onlineLookups.remove(key)?.then<void>((_) {}, onError: (_) {}));
+      }
     }
   }
 
