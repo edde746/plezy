@@ -171,6 +171,28 @@ automatic server upload or on-demand companion service in this change.
 
 ## Validation and Luna's next tasks
 
+Checkpoint for source commit `9c0fb9693ad7b705e737a1829d10bfd70c6ce17e`
+([PR #24](https://github.com/snapetech-org/PlezyNG/pull/24)):
+
+- [Platform CI run 40289796275](https://github.com/snapetech-org/PlezyNG/actions/runs/40289796275)
+  passed all **111 targeted Flutter tests**, native renderer-selection tests and
+  Slang/format freshness; the generated diff was empty.
+- Windows contract CI passed 13 tests and skipped the real encoder test because
+  FFmpeg was not installed. Local Linux ran all **14 Python tests**, including
+  actual HDR/SDR encoding. Separate short/long-audio trials produced a 0.127-second
+  output from three 24-fps frames with both 0.04-second and 1-second input audio.
+- Changed-file Dart analysis passed. The two changed native player/plugin C++
+  translation units passed Clang syntax/type checks with the app's configured
+  Linux headers. This is not a linked app, sanitizer or Wayland playback test.
+- Workflow security and action-pin guards passed. The full repository's
+  localization/hardcoded-string checks still report existing SMB/source-screen
+  issues on base `b32e396c`; no new DV-key localization errors were reported.
+- Apple/FelBaker source builds and macOS/Linux contract jobs were **queued** at
+  handoff. Check the run above and fix any build errors before using those artifacts.
+  They are not reported as passing or qualified here. The broader PR sanity run
+  [40289801404](https://github.com/snapetech-org/PlezyNG/actions/runs/40289801404)
+  also remained queued. No required check or branch protection was disabled.
+
 Local runnable checks:
 
 ```bash
