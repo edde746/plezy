@@ -7327,6 +7327,9 @@ class Translations$fileSources$en {
 	/// en: 'Continue watching'
 	String get continueWatching => 'Continue watching';
 
+	/// en: 'This download finished before it could be removed. The item is now available offline.'
+	String get downloadAlreadyComplete => 'This download finished before it could be removed. The item is now available offline.';
+
 	/// en: 'Read'
 	String get read => 'Read';
 
@@ -8365,7 +8368,7 @@ class Translations$sourceSetup$en {
 	String get sharedLibraryId => 'Shared library ID (optional)';
 
 	/// en: 'Use the same ID on devices that open the same library. This public ID helps carry reading progress and notes across different source connections; it is not a password. When providers use different item IDs, pair those items from their detail screens.'
-	String get sharedLibraryHelp => 'Use the same ID on devices that open the same library. This public ID helps carry reading progress and notes across different source connections; it is not a password.';
+	String get sharedLibraryHelp => 'Use the same ID on devices that open the same library. This public ID helps carry reading progress and notes across different source connections; it is not a password. When providers use different item IDs, pair those items from their detail screens.';
 
 	/// en: 'Use 8–100 letters, numbers, dots, underscores or hyphens.'
 	String get sharedLibraryInvalid => 'Use 8–100 letters, numbers, dots, underscores or hyphens.';
@@ -8377,7 +8380,7 @@ class Translations$sourceSetup$en {
 	String get sharedEntryPair => 'Pair this item';
 
 	/// en: 'Enter the same ID for this item on each device. Use a stable shared identifier or generate one and copy it to the matching item. Progress pairs only when the edition file types, sizes, and order match. Blank removes this mapping.'
-	String get sharedEntryPairHelp => 'Enter the same ID for this item on each device. Use a stable shared identifier or generate one and copy it to the matching item. Blank removes this mapping.';
+	String get sharedEntryPairHelp => 'Enter the same ID for this item on each device. Use a stable shared identifier or generate one and copy it to the matching item. Progress pairs only when the edition file types, sizes, and order match. Blank removes this mapping.';
 
 	/// en: 'This shared item ID is already paired with another item in this library. Choose a different ID.'
 	String get sharedEntryConflict => 'This shared item ID is already paired with another item in this library. Choose a different ID.';
@@ -13396,6 +13399,7 @@ extension on Translations {
 			'fileSources.continueReading' => 'Continue reading',
 			'fileSources.continueListening' => 'Continue listening',
 			'fileSources.continueWatching' => 'Continue watching',
+			'fileSources.downloadAlreadyComplete' => 'This download finished before it could be removed. The item is now available offline.',
 			'fileSources.read' => 'Read',
 			'fileSources.listen' => 'Listen',
 			'fileSources.play' => 'Play',

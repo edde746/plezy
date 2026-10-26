@@ -352,7 +352,13 @@ class _SourcesScreenState extends State<SourcesScreen> {
                     )) {
                       return;
                     }
-                    await sources.removeDownloadJob(key);
+                    try {
+                      await sources.removeDownloadJob(key);
+                    } on SourceException catch (error) {
+                      if (error.reason != SourceFailure.conflict) rethrow;
+                      if (!context.mounted) return;
+                      showSnackBar(context, t.fileSources.downloadAlreadyComplete);
+                    }
                     if (mounted) await _load();
                   }),
           ),
