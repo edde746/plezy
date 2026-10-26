@@ -16,6 +16,7 @@ import '../../profiles/profile_connection_cleanup.dart';
 import '../../profiles/profile_connection_registry.dart';
 import '../../services/storage_service.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/error_message_utils.dart';
 import '../../media/media_backend.dart';
 import '../../widgets/backend_badge.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
@@ -106,7 +107,7 @@ class _AddPlexAccountScreenState extends State<AddPlexAccountScreen> with AsyncF
       },
       errorMapper: (e) {
         appLogger.e('Failed to register Plex account', error: e);
-        return t.addServer.failedToRegisterAccount(error: e.toString());
+        return t.addServer.failedToRegisterAccount(error: localizedErrorReason(e));
       },
     );
   }

@@ -138,7 +138,10 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                 AppMenuItem(value: rate, label: '$rate×', selected: rate == s.speed),
             ],
             onSelected: (rate) => sourceAction(context, () => s.setSpeed(rate)),
-            child: TextButton(onPressed: null, child: Text('${s.speed}×')),
+            child: Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              child: Text('${s.speed}×', style: Theme.of(context).textTheme.labelLarge),
+            ),
           ),
           AppMenuButton<int>(
             icon: AppIcon(s.sleepEnabled ? Symbols.bedtime_rounded : Symbols.bedtime_off_rounded),

@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../utils/app_logger.dart';
+import '../../utils/error_message_utils.dart';
 
 /// Mixin for stateful screens that wrap their async work in a busy + error
 /// scaffolding. Exposes [busy] and [errorText] state plus a [runAsync] helper
@@ -65,7 +66,8 @@ mixin AsyncFormStateMixin<T extends StatefulWidget> on State<T> {
 
   /// Run [body] surrounded by busy/error scaffolding. Returns the body's
   /// value, or `null` if the widget unmounted, the body threw, or the
-  /// errorMapper translated the exception.
+  /// errorMapper translated the exception. Without a mapper, the form shows a
+  /// localized safe reason and keeps exception detail in the app log.
   Future<R?> runAsync<R>(
     Future<R> Function() body, {
     String Function(Object error)? errorMapper,
@@ -90,9 +92,12 @@ mixin AsyncFormStateMixin<T extends StatefulWidget> on State<T> {
     });
     try {
       return await body();
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (canApplyState()) {
-        setState(() => _errorText = errorMapper?.call(e) ?? e.toString());
+        if (errorMapper == null) {
+          appLogger.e('Settings form operation failed', error: e, stackTrace: stackTrace);
+        }
+        setState(() => _errorText = errorMapper?.call(e) ?? localizedErrorReason(e));
       }
       return null;
     } finally {

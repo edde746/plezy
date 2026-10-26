@@ -20,6 +20,7 @@ import '../providers/account_preferences_controller.dart';
 import '../i18n/strings.g.dart';
 import '../utils/app_logger.dart';
 import '../utils/dialogs.dart';
+import '../utils/error_message_utils.dart';
 import '../utils/platform_detector.dart';
 import '../focus/focusable_button.dart';
 import '../focus/focusable_text_field.dart';
@@ -241,7 +242,7 @@ class _AuthScreenState extends State<AuthScreen> {
       if (!mounted) return;
       setState(() {
         _isAuthenticating = false;
-        _errorMessage = t.serverSelection.failedToLoadServers(error: e);
+        _errorMessage = t.serverSelection.failedToLoadServers(error: localizedErrorReason(e));
       });
     }
   }

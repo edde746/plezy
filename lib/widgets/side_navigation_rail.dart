@@ -1370,22 +1370,31 @@ class SideNavigationRailState extends State<SideNavigationRail> with MountedSetS
                 else ...[
                   if (visibleRows.isNotEmpty) _buildLibraryGroupedColumn(visibleRows, t),
                   for (final shelf in sourceShelves)
-                    NavigationRailItem(
-                      icon: shelfIcon(shelf),
-                      selectedIcon: shelfIcon(shelf),
-                      label: Text(
-                        shelfLabel(shelf),
-                        style: TextStyle(fontSize: 13, color: t.textMuted),
-                        overflow: TextOverflow.ellipsis,
-                      ),
-                      isSelected:
-                          widget.selectedTab == NavigationTabId.libraries &&
-                          widget.selectedLibraryKey == 'source:${shelf.name}',
-                      iconSize: 18,
-                      expandedHeight: 40,
-                      focusNode: _focusTracker.get('source:${shelf.name}'),
-                      onTap: () => widget.onLibrarySelected('source:${shelf.name}'),
-                      onNavigateRight: widget.onNavigateToContent,
+                    Builder(
+                      builder: (context) {
+                        final isSelected =
+                            widget.selectedTab == NavigationTabId.libraries &&
+                            widget.selectedLibraryKey == 'source:${shelf.name}';
+                        return NavigationRailItem(
+                          icon: shelfIcon(shelf),
+                          selectedIcon: shelfIcon(shelf),
+                          label: Text(
+                            shelfLabel(shelf),
+                            style: TextStyle(
+                              fontSize: 13,
+                              fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                              color: isSelected ? t.text : t.textMuted,
+                            ),
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          isSelected: isSelected,
+                          iconSize: 18,
+                          expandedHeight: 40,
+                          focusNode: _focusTracker.get('source:${shelf.name}'),
+                          onTap: () => widget.onLibrarySelected('source:${shelf.name}'),
+                          onNavigateRight: widget.onNavigateToContent,
+                        );
+                      },
                     ),
                   if (hiddenLibraryCount > 0) ...[
                     _buildHiddenLibrariesHeader(hiddenLibraryCount, t),

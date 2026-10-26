@@ -359,16 +359,19 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
     final title = widget.hubTitle;
     if (title == null || title.isEmpty) return const SizedBox.shrink();
     final scale = TvLayoutConstants.scaleOf(context);
+    final theme = Theme.of(context);
     return Positioned(
       left: widget.contentLeft,
+      right: 24 * scale,
       top: widget.labelTop ?? widget.contentTop,
       child: Text(
-        title.toUpperCase(),
-        style: TextStyle(
-          color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.85),
-          fontWeight: FontWeight.w800,
+        title,
+        maxLines: 1,
+        overflow: TextOverflow.ellipsis,
+        style: theme.textTheme.titleSmall?.copyWith(
+          color: theme.colorScheme.onSurface.withValues(alpha: 0.85),
+          fontWeight: FontWeight.w600,
           fontSize: 15 * scale,
-          letterSpacing: 1.1,
         ),
       ),
     );

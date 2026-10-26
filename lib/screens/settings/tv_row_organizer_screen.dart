@@ -8,6 +8,8 @@ import '../../i18n/strings.g.dart';
 import '../../focus/back_press.dart';
 import '../../focus/dpad_navigator.dart';
 import '../../focus/dpad_select_long_press_controller.dart';
+import '../../focus/focus_theme.dart';
+import '../../theme/mono_tokens.dart';
 
 /// One inline button on a [TvRowOrganizerScreen] row (a toggle such as Hero,
 /// or a one-shot action such as Remove).
@@ -123,7 +125,7 @@ class _TvRowOrganizerScreenState extends State<TvRowOrganizerScreen> {
     Scrollable.ensureVisible(
       context,
       alignment: 0.35,
-      duration: const Duration(milliseconds: 150),
+      duration: FocusTheme.navigationScrollDuration(this.context),
       curve: Curves.easeOut,
     );
   }
@@ -357,26 +359,48 @@ class _TvRowOrganizerScreenState extends State<TvRowOrganizerScreen> {
       key: _rowKeys.putIfAbsent(entry.key, GlobalKey.new),
       padding: const EdgeInsets.symmetric(vertical: 3),
       child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
+        duration: FocusTheme.getAnimationDuration(context),
         padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
         decoration: BoxDecoration(
           color: background,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: rowFocused || moving ? scheme.primary : Colors.transparent, width: 2),
+          border: Border.all(
+            color: rowFocused || moving ? FocusTheme.getFocusBorderColor(context) : Colors.transparent,
+            width: FocusTheme.focusBorderWidth,
+          ),
         ),
         child: Row(
           children: [
-            GestureDetector(
-              onTap: () {
-                _setFocus(index, 0);
-                _startMove();
-              },
-              child: Icon(
-                moving ? Symbols.swap_vert_rounded : Symbols.drag_indicator_rounded,
-                color: moving ? scheme.primary : (entry.movable ? scheme.onSurfaceVariant : scheme.outlineVariant),
+            Semantics(
+              button: true,
+              enabled: entry.movable && widget.onReorder != null,
+              label: entry.title,
+              hint: t.homeLayout.organizeRowsHint,
+              onTap: entry.movable && widget.onReorder != null
+                  ? () {
+                      _setFocus(index, 0);
+                      _startMove();
+                    }
+                  : null,
+              child: ExcludeSemantics(
+                child: ExcludeFocus(
+                  child: IconButton(
+                    onPressed: entry.movable && widget.onReorder != null
+                        ? () {
+                            _setFocus(index, 0);
+                            _startMove();
+                          }
+                        : null,
+                    icon: Icon(
+                      moving ? Symbols.swap_vert_rounded : Symbols.drag_indicator_rounded,
+                      color: moving
+                          ? scheme.primary
+                          : (entry.movable ? scheme.onSurfaceVariant : scheme.outlineVariant),
+                    ),
+                  ),
+                ),
               ),
             ),
-            const SizedBox(width: 12),
             Expanded(
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
@@ -404,7 +428,8 @@ class _TvRowOrganizerScreenState extends State<TvRowOrganizerScreen> {
   }
 
   Widget _buildAction(BuildContext context, TvOrganizerEntry entry, int row, int column, TvOrganizerAction action) {
-    final scheme = Theme.of(context).colorScheme;
+    final theme = Theme.of(context);
+    final scheme = theme.colorScheme;
     final focused = row == _row && column == _column && _moving == null;
     final armed = _armedKey == '${entry.key}#$column';
     final on = action.value == true;
@@ -420,8 +445,11 @@ class _TvRowOrganizerScreenState extends State<TvRowOrganizerScreen> {
     } else if (on) {
       fill = scheme.secondaryContainer;
       fg = scheme.onSecondaryContainer;
+    } else if (focused) {
+      fill = tokens(context).text.withValues(alpha: 0.12);
+      fg = action.destructive ? scheme.error : scheme.primary;
     } else {
-      fill = scheme.surfaceContainerHigh;
+      fill = Colors.transparent;
       fg = action.destructive ? scheme.error : scheme.onSurfaceVariant;
     }
 
@@ -431,32 +459,55 @@ class _TvRowOrganizerScreenState extends State<TvRowOrganizerScreen> {
         ? action.label
         : t.homeLayout.actionState(action: action.label, state: on ? t.homeLayout.on : t.common.off);
 
-    return GestureDetector(
-      onTap: () {
-        _setFocus(row, column);
-        unawaited(_activate(row, column));
-      },
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 120),
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-        decoration: BoxDecoration(
-          color: fill,
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: focused ? scheme.primary : scheme.outlineVariant.withValues(alpha: action.enabled ? 1 : 0.4),
-            width: focused ? 2.5 : 1,
-          ),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Icon(action.value == true ? Symbols.check_rounded : action.icon, size: 18, color: fg),
-            const SizedBox(width: 6),
-            Text(
-              label,
-              style: TextStyle(color: fg, fontWeight: focused ? FontWeight.w600 : FontWeight.w400),
+    void activate() {
+      if (!action.enabled) return;
+      _setFocus(row, column);
+      unawaited(_activate(row, column));
+    }
+
+    return Semantics(
+      button: true,
+      selected: action.value,
+      enabled: action.enabled,
+      focused: focused,
+      label: label,
+      onTap: action.enabled ? activate : null,
+      child: ExcludeSemantics(
+        child: Material(
+          type: MaterialType.transparency,
+          shape: const StadiumBorder(),
+          clipBehavior: Clip.antiAlias,
+          child: AnimatedContainer(
+            duration: FocusTheme.getAnimationDuration(context),
+            decoration: BoxDecoration(
+              color: fill,
+              borderRadius: BorderRadius.circular(MonoTokens.radiusFull),
+              border: focused
+                  ? Border.all(color: FocusTheme.getFocusBorderColor(context), width: FocusTheme.focusBorderWidth)
+                  : null,
             ),
-          ],
+            child: InkWell(
+              onTap: action.enabled ? activate : null,
+              customBorder: const StadiumBorder(),
+              child: Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(action.value == true ? Symbols.check_rounded : action.icon, size: 18, color: fg),
+                    const SizedBox(width: 6),
+                    Text(
+                      label,
+                      style: theme.textTheme.labelMedium?.copyWith(
+                        color: fg,
+                        fontWeight: focused ? FontWeight.w600 : FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
         ),
       ),
     );

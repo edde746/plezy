@@ -10,6 +10,7 @@ import '../../services/companion_remote/remote_pairing_store.dart';
 import '../../services/settings_service.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/dialogs.dart';
+import '../../utils/error_message_utils.dart';
 import '../../focus/focusable_button.dart';
 import '../dialog_action_button.dart';
 import '../app_icon.dart';
@@ -68,7 +69,7 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
     } catch (e) {
       setStateIfMounted(() {
         _isStarting = false;
-        _errorMessage = t.companionRemote.errors.serverStartFailed(error: e.toString().replaceFirst('Exception: ', ''));
+        _errorMessage = t.companionRemote.errors.serverStartFailed(error: localizedErrorReason(e));
       });
     }
   }
@@ -111,7 +112,9 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
     try {
       await context.read<CompanionRemoteProvider>().resetHostPairing();
     } catch (error) {
-      setStateIfMounted(() => _errorMessage = t.companionRemote.errors.serverStartFailed(error: error.toString()));
+      setStateIfMounted(
+        () => _errorMessage = t.companionRemote.errors.serverStartFailed(error: localizedErrorReason(error)),
+      );
     } finally {
       setStateIfMounted(() => _isStarting = false);
     }
@@ -140,7 +143,7 @@ class _RemoteSessionDialogState extends State<RemoteSessionDialog> with MountedS
         if (_errorMessage != null) {
           return AlertDialog(
             title: Text(t.common.error),
-            content: Text(_errorMessage!, style: const TextStyle(fontFamily: 'monospace')),
+            content: Text(_errorMessage!),
             actions: [
               DialogActionButton(
                 autofocus: true,

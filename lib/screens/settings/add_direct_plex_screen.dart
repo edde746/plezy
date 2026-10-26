@@ -15,6 +15,7 @@ import '../../services/plex_direct_service.dart';
 import '../../services/plex_gdm_discovery_service.dart';
 import '../../services/storage_service.dart';
 import '../../utils/app_logger.dart';
+import '../../utils/error_message_utils.dart';
 import '../../utils/url_utils.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/backend_badge.dart';
@@ -157,7 +158,7 @@ class _AddDirectPlexScreenState extends State<AddDirectPlexScreen>
       },
       errorMapper: (e) {
         appLogger.w('Direct Plex probe failed', error: e);
-        return t.addServer.couldNotReachServer(error: e.toString());
+        return t.addServer.couldNotReachServer(error: localizedErrorReason(e));
       },
     );
   }
@@ -210,7 +211,7 @@ class _AddDirectPlexScreenState extends State<AddDirectPlexScreen>
       },
       errorMapper: (e) {
         appLogger.e('Direct Plex connect failed', error: e);
-        return t.addServer.signInFailed(error: e.toString());
+        return t.addServer.signInFailed(error: localizedErrorReason(e));
       },
     );
   }

@@ -3,6 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../i18n/strings.g.dart';
 import '../../services/cloud_settings_backup_service.dart';
+import '../../utils/app_logger.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/dialog_action_button.dart';
 
@@ -47,8 +48,9 @@ class _CloudSettingsBackupDialogState extends State<CloudSettingsBackupDialog> {
       _url.text = configuration.url;
       _username.text = configuration.username;
       _password.text = configuration.password;
-    } catch (error) {
-      if (mounted) setState(() => _message = error.toString());
+    } catch (error, stackTrace) {
+      appLogger.e('Failed to load cloud settings backup configuration', error: error, stackTrace: stackTrace);
+      if (mounted) setState(() => _message = t.errors.unableToLoad(context: t.settings.cloudBackup));
     } finally {
       if (mounted) setState(() => _loading = false);
     }
@@ -100,8 +102,12 @@ class _CloudSettingsBackupDialogState extends State<CloudSettingsBackupDialog> {
     try {
       final message = await operation();
       if (mounted) setState(() => _message = message);
-    } catch (error) {
-      if (mounted) setState(() => _message = error.toString().replaceFirst('CloudSettingsBackupException: ', ''));
+    } catch (error, stackTrace) {
+      appLogger.e('Cloud settings backup action failed', error: error, stackTrace: stackTrace);
+      final message = error is CloudSettingsBackupException
+          ? error.message
+          : t.errors.unableToLoad(context: t.settings.cloudBackup);
+      if (mounted) setState(() => _message = message);
     } finally {
       if (mounted) setState(() => _working = false);
     }
