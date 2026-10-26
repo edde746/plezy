@@ -31,6 +31,7 @@ class CcmReferenceTest(unittest.TestCase):
         result = mmr_map_chroma_sample(
             (127, 42, 99), ((0, 255), (0, 255), (0, 255)), 0,
             ((0, 1 << 15, 0, 0, 0, 0, 0),),
+            component_index=1, mapping_index=0,
             bl_bit_depth=8, el_bit_depth=10, coefficient_log2_denom=15,
         )
         self.assertEqual(result, 32_512)
@@ -38,6 +39,7 @@ class CcmReferenceTest(unittest.TestCase):
         cubic = mmr_map_chroma_sample(
             (127, 3, 2), ((0, 255), (0, 255), (0, 255)), 0,
             ((0, 0, 0, 0, 0, 0, 1 << 15),),
+            component_index=1, mapping_index=0,
             bl_bit_depth=8, el_bit_depth=10, coefficient_log2_denom=15,
         )
         self.assertEqual(cubic, 2)
@@ -65,6 +67,11 @@ class CcmReferenceTest(unittest.TestCase):
             polynomial_map_sample(
                 1, (0, 255), (0, 1), bl_bit_depth=8, el_bit_depth=10,
                 coefficient_log2_denom=14,
+            )
+        with self.assertRaises(ValueError):
+            polynomial_map_sample(
+                255, pivots=(0, 255), coefficients=(0, 32_896),
+                bl_bit_depth=8, el_bit_depth=10, coefficient_log2_denom=15,
             )
         with self.assertRaises(ValueError):
             reconstruct_sample(1, 0, disable_residual=1, output_bit_depth=12)

@@ -73,8 +73,10 @@ def polynomial_map_sample(
     _bit_depth("BL bit depth", bl_bit_depth)
     _validate_coefficient_header(el_bit_depth, coefficient_log2_denom)
     _integer("sample", sample, 0, (1 << bl_bit_depth) - 1)
-    pivot_index(sample, pivots)
     mapping_index = _integer("mapping_index", mapping_index, 0, len(pivots) - 1)
+    selected_index = pivot_index(sample, pivots)
+    if mapping_index != selected_index:
+        raise ValueError("mapping_index does not match the sample's pivot index")
     if not isinstance(coefficients, Sequence) or len(coefficients) not in (2, 3):
         raise ValueError("polynomial coefficients must describe degree one or two")
     if any(isinstance(c, bool) or not isinstance(c, int) for c in coefficients):
@@ -100,6 +102,8 @@ def mmr_map_chroma_sample(
     constant: int,
     coefficients: Sequence[Sequence[int]],
     *,
+    component_index: int,
+    mapping_index: int,
     bl_bit_depth: int,
     el_bit_depth: int,
     coefficient_log2_denom: int,
@@ -110,6 +114,8 @@ def mmr_map_chroma_sample(
     resampling is intentionally outside this per-sample arithmetic function.
     Each pivot sequence covers the full input range for its component; the
     caller selects the coefficients for the sample's pivot index first.
+    `component_index` identifies the output chroma plane (1 or 2), and its
+    derived pivot index must match `mapping_index`.
     Coefficient rows correspond to MMR orders 1..3, with seven terms per row.
     """
     _bit_depth("BL bit depth", bl_bit_depth)
@@ -118,6 +124,7 @@ def mmr_map_chroma_sample(
         raise ValueError("MMR samples and pivot ranges must be sequences")
     if len(samples) != 3 or len(pivot_ranges) != 3:
         raise ValueError("MMR mapping requires three samples and three pivot ranges")
+    component_index = _integer("component_index", component_index, 1, 2)
     maximum = (1 << bl_bit_depth) - 1
     bounded = []
     for index, (sample, pivots) in enumerate(zip(samples, pivot_ranges)):
@@ -127,6 +134,9 @@ def mmr_map_chroma_sample(
         if any(left > right for left, right in zip(pivots, pivots[1:])):
             raise ValueError("pivot ranges must be nondecreasing")
         bounded.append(min(max(sample, pivots[0]), pivots[-1]))
+    mapping_index = _integer("mapping_index", mapping_index, 0, len(pivot_ranges[component_index]) - 1)
+    if mapping_index != pivot_index(samples[component_index], pivot_ranges[component_index]):
+        raise ValueError("mapping_index does not match the mapped chroma sample's pivot index")
     if not isinstance(coefficients, Sequence) or not 1 <= len(coefficients) <= 3:
         raise ValueError("MMR coefficients must contain one to three order rows")
     if any(len(row) != 7 for row in coefficients):
