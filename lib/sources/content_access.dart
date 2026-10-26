@@ -844,7 +844,8 @@ class PublicationDownloads {
       expectedSize ??= lease.size;
       cancel.check();
       final canUseNativeBackgroundTransfer = lease.canPersistForBackgroundTransfer ||
-          (Platform.isIOS && lease.canPersistEncryptedAuthForBackgroundTransfer);
+          ((Platform.isIOS || Platform.isAndroid) &&
+              lease.canPersistEncryptedAuthForBackgroundTransfer);
       if (_supportsNativeBackgroundDownloads &&
           canUseNativeBackgroundTransfer &&
           expectedSize != null &&
