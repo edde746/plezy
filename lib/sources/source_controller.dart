@@ -14,6 +14,7 @@ import 'adapters/cloud_sources.dart';
 import 'adapters/local_source.dart';
 import 'adapters/opds_source.dart';
 import 'adapters/s3_source.dart';
+import 'adapters/smb_source.dart';
 import 'adapters/webdav_source.dart';
 import 'content_access.dart';
 import 'source_database.dart';
@@ -21,6 +22,7 @@ import 'source_models.dart';
 import 'source_oauth.dart';
 import 'source_transport.dart';
 import 'publication_shelf.dart';
+import '../utils/platform_detector.dart';
 
 class SourceController extends ChangeNotifier {
   SourceController({SourceRepository? repository}) {
@@ -149,7 +151,7 @@ class SourceController extends ChangeNotifier {
     shelves = {
       for (final shelf in PublicationShelf.values)
         if (entries.any(shelf.includes) ||
-            sources.any((s) => (s.options['shelves'] ?? 'ebooks,audiobooks').split(',').contains(shelf.name)))
+            sources.any((s) => (s.options['shelves'] ?? 'ebooks,audiobooks,videos').split(',').contains(shelf.name)))
           shelf,
     };
   }
@@ -234,6 +236,9 @@ class SourceController extends ChangeNotifier {
     return _adapters.putIfAbsent(id, () {
       final source = sources.where((s) => s.id == id).firstOrNull;
       if (source == null) throw const SourceException(SourceFailure.authentication);
+      if (source.kind == FileSourceKind.smb && PlatformDetector.isAppleTV()) {
+        throw const SourceException(SourceFailure.unsupported);
+      }
       final transport = SourceTransport(allowHttp: source.options['allowHttp'] == 'true');
       Future<Map<String, String>> credentials() => repository.credentials(source);
       Future<String> token({bool refresh = false}) => oauth.accessToken(source, refresh: refresh);
@@ -244,6 +249,7 @@ class SourceController extends ChangeNotifier {
         FileSourceKind.oneDrive => OneDriveSourceAdapter(source, transport, token),
         FileSourceKind.dropbox => DropboxSourceAdapter(source, transport, token),
         FileSourceKind.s3 => S3SourceAdapter(source, transport, credentials),
+        FileSourceKind.smb => SmbSourceAdapter(source, transport, credentials),
         FileSourceKind.opds => OpdsSourceAdapter(source, transport, credentials),
         FileSourceKind.audiobookshelf => AudiobookshelfSourceAdapter(source, transport, credentials),
       };

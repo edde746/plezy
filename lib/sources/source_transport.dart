@@ -114,6 +114,13 @@ abstract class SourceAdapter {
   Future<SourcePage> browse({String? parent, String? cursor, String? query});
   Future<SourceEntry> hydrate(SourceEntry entry) async => entry;
   Future<ContentLease> resolve(PublicationFile file);
+  Future<int?> contentSize(PublicationFile file) async => file.size;
+  Future<SourceByteStream?> openContent(
+    PublicationFile file, {
+    required int offset,
+    required int length,
+  }) async => null;
+
   Future<ContentLease?> cover(SourceEntry entry) async => null;
   Future<void> refreshAuthorization() async {}
   bool supportsProgress(SourceEntry entry, PublicationProgress progress) =>

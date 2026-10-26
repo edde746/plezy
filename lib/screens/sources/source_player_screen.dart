@@ -294,7 +294,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                                   ),
                                   const SizedBox(height: 24),
                                   Text(
-                                    s.entry!.title,
+                                    s.entry!.displayTitle,
                                     style: Theme.of(context).textTheme.headlineSmall,
                                     textAlign: TextAlign.center,
                                   ),

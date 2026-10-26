@@ -107,6 +107,7 @@ dependencies:
   google_sign_in: ^7.2.0
   mime: ^2.0.0
   archive: ^4.5.2
+  dart_smb2: ^0.2.3
   flutter_tts: ^4.2.5
 
 dev_dependencies:
@@ -178,8 +179,9 @@ flutter:
     - assets/reader/foliate/
     - assets/certificates/cacert.pem
     - assets/licenses/SpatialAudioBridge.txt
+    - assets/licenses/dart_smb2_NOTICE.txt
+    - assets/licenses/libsmb2-LGPL-2.1.txt
     - assets/plezy.png
-    - assets/plezy_adaptive_foreground.png
     - assets/plex_chevron.svg
     - assets/jellyfin_icon.svg
     - assets/emby_icon.svg

@@ -73,7 +73,9 @@ class SourceRepository {
           .toList();
 
   Future<void> saveSource(FileSource source, Map<String, String> credentials) async {
-    if (const {
+    if (source.kind == FileSourceKind.smb) {
+      validateSmbSourceEndpoint(source.endpoint);
+    } else if (const {
       FileSourceKind.webdav,
       FileSourceKind.opds,
       FileSourceKind.s3,

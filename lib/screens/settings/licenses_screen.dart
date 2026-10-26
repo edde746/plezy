@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show rootBundle;
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
@@ -33,6 +34,16 @@ class LicensesScreen extends StatelessWidget {
         allPackageNames[packageName]!.addAll(license.packages);
       }
     }
+
+    final nativeNotice = await rootBundle.loadString('assets/licenses/dart_smb2_NOTICE.txt');
+    final nativeLicense = await rootBundle.loadString('assets/licenses/libsmb2-LGPL-2.1.txt');
+    licenseMap['libsmb2'] = [
+      LicenseEntryWithLineBreaks(
+        ['libsmb2'],
+        [...nativeNotice.split('\n'), ...nativeLicense.split('\n')],
+      ),
+    ];
+    allPackageNames['libsmb2'] = {'libsmb2'};
 
     final mergedLicenses = licenseMap.entries.map((entry) {
       return MergedLicenseEntry(

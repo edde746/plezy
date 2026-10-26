@@ -1,0 +1,3 @@
+dependency_overrides:
+  dart_smb2:
+    path: packages/dart_smb2_tvos_stub

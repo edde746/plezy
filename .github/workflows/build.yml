@@ -403,8 +403,8 @@ jobs:
           path: ~/.cache/flutter-tvos-engine
           key: ${{ env.TRUSTED_BUILD_CACHE_VERSION }}-tvos-engine-${{ hashFiles('tvos/engine.version', 'tvos/engine.sha256') }}
 
-      - name: Install locked Dart dependencies
-        run: flutter pub get --enforce-lockfile --no-example
+      - name: Install tvOS dependencies with the unsupported SMB native asset stub
+        run: tvos/scripts/pub_get.sh
 
       - name: Fetch the checksum-pinned tvOS Flutter engine
         run: tvos/scripts/fetch_engine.sh

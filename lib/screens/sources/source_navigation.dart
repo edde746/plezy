@@ -11,11 +11,13 @@ String shelfLabel(PublicationShelf shelf) => switch (shelf) {
   PublicationShelf.ebooks => t.fileSources.ebooks,
   PublicationShelf.audiobooks => t.fileSources.audiobooks,
   PublicationShelf.comics => t.fileSources.comics,
+  PublicationShelf.videos => t.fileSources.video,
 };
 IconData shelfIcon(PublicationShelf shelf) => switch (shelf) {
   PublicationShelf.ebooks => Symbols.menu_book_rounded,
   PublicationShelf.audiobooks => Symbols.headphones_rounded,
   PublicationShelf.comics => Symbols.auto_stories_rounded,
+  PublicationShelf.videos => Symbols.movie_rounded,
 };
 List<AppMenuEntry<String>> sourceLibraryMenu(BuildContext context) => [
   for (final shelf in context.read<SourceController?>()?.shelves ?? <PublicationShelf>{})

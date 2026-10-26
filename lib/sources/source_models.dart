@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 
-enum FileSourceKind { local, webdav, googleDrive, oneDrive, dropbox, s3, opds, audiobookshelf }
+enum FileSourceKind { local, webdav, smb, googleDrive, oneDrive, dropbox, s3, opds, audiobookshelf }
 
 enum SourceItemKind { folder, ebook, audiobook, comic, music, video, unknown }
 
@@ -42,6 +42,30 @@ void validatePublicSourceUri(Uri uri, {bool allowHttp = false}) {
       uri.queryParameters.keys.any(sourceCredentialParameter.hasMatch)) {
     throw const SourceException(SourceFailure.permission);
   }
+}
+
+/// SMB endpoints identify one server share. Credentials stay in the encrypted
+/// vault, and the default port is enforced until custom ports are supported.
+Uri validateSmbSourceEndpoint(String value) {
+  final uri = Uri.tryParse(value);
+  final shares = uri?.pathSegments.where((segment) => segment.isNotEmpty).toList() ?? const <String>[];
+  if (uri == null ||
+      uri.scheme != 'smb' ||
+      uri.host.isEmpty ||
+      uri.userInfo.isNotEmpty ||
+      uri.hasQuery ||
+      uri.hasFragment ||
+      (uri.hasPort && uri.port != 445) ||
+      shares.length != 1 ||
+      shares.any((segment) =>
+          segment == '.' ||
+          segment == '..' ||
+          segment.contains('/') ||
+          segment.contains('\\') ||
+          segment.contains('\u0000'))) {
+    throw const SourceException(SourceFailure.permission);
+  }
+  return uri;
 }
 
 class FileSource {
@@ -190,6 +214,10 @@ class SourceEntry {
   final Map<String, String> identifiers;
   String get key => sourceKey(sourceId, id);
   bool get isFolder => kind == SourceItemKind.folder;
+
+  /// Video source names begin as filenames. Keep their descriptive stem while
+  /// omitting only the container extension in user-facing titles.
+  String get displayTitle => kind == SourceItemKind.video ? p.withoutExtension(title) : title;
   List<PublicationFile> get ebooks =>
       files.where((f) => (f.kind == SourceItemKind.ebook || f.kind == SourceItemKind.comic)).toList();
   List<PublicationFile> get audio =>
@@ -245,6 +273,20 @@ class ContentLease {
   final Map<String, String> headers;
   final DateTime? expiresAt;
   final int? size;
+}
+
+/// Provider-native byte stream for sources without an HTTP media URL.
+class SourceByteStream {
+  const SourceByteStream({
+    required this.stream,
+    required this.size,
+    required this.offset,
+    required this.length,
+  });
+  final Stream<List<int>> stream;
+  final int size;
+  final int offset;
+  final int length;
 }
 
 class ReadingLocator {
