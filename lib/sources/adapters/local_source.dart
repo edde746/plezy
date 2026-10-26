@@ -61,10 +61,30 @@ class LocalSourceAdapter extends SourceAdapter {
       }
       start = offset;
       _touchSnapshot(snapshotKey, snapshot);
-    } else {
-      start = int.tryParse(cursor ?? '') ?? 0;
+    } else if (cursorParts.length == 4 && cursorParts[0].startsWith('u')) {
+      // An over-budget snapshot is re-enumerated rather than retained, but its
+      // continuation still has to observe the exact directory/query it began
+      // with. Reject stale pages instead of mixing two sorted listings.
+      final expectedStamp = int.tryParse(cursorParts[0].substring(1));
+      final directoryKey = sourceDigest('${source.id}\\u0000$directory').substring(0, 12);
+      final offset = int.tryParse(cursorParts[3]);
+      if (expectedStamp == null ||
+          offset == null ||
+          cursorParts[1] != directoryKey ||
+          cursorParts[2] != queryKey ||
+          expectedStamp != stamp) {
+        _discardSnapshot(snapshotKey);
+        throw const SourceException(SourceFailure.cancelled);
+      }
+      start = offset;
+      _discardSnapshot(snapshotKey);
+      snapshot = await _enumerate(directory, root, relative, expectedStamp, snapshotKey, normalizedQuery);
+    } else if (cursor == null) {
+      start = 0;
       _discardSnapshot(snapshotKey);
       snapshot = await _enumerate(directory, root, relative, stamp, snapshotKey, normalizedQuery);
+    } else {
+      throw const SourceException(SourceFailure.cancelled);
     }
 
     if (start < 0 || start > snapshot.count) throw const SourceException(SourceFailure.invalidData);
@@ -73,7 +93,7 @@ class LocalSourceAdapter extends SourceAdapter {
     final next = end < snapshot.count
         ? snapshot.cached
             ? 's${snapshot.generation}:$queryKey:$end'
-            : '$end'
+            : 'u${snapshot.modified}:${sourceDigest('${source.id}\\u0000$directory').substring(0, 12)}:$queryKey:$end'
         : null;
     return SourcePage(entries, next: next);
   }
