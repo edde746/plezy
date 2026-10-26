@@ -3250,7 +3250,7 @@
     "syncSourceDisconnect": "Removing this source will turn off reading and listening sync here. Encrypted sync files will remain in the provider.",
     "syncReconnect": "Reconnect storage account",
     "lastSynced": "Last synced at $time",
-    "syncPrivacy": "Only encrypted progress and notes are stored. Audio and ebook files, account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync. Enabling sync may request additional write access. While enabled, this destination owns progress sync; server progress remains separate. Turning sync off keeps local history and remote state.",
+    "syncPrivacy": "Only encrypted progress and notes are stored. Audio and ebook files, account tokens and passwords are not uploaded. Google Drive and OneDrive use app storage; Dropbox uses PlezyNG Sync. Enabling sync may request additional write access. Cloud sync and compatible server progress and bookmark sync run independently, with separate retries. Conflicting reading positions are shown for resolution. Turning sync off keeps local history and remote state.",
     "syncConflicts": "Choose where to resume",
     "conflictHelp": "These changes were made independently. Choose the position or bookmark version to keep. A later timestamp or a higher percentage does not automatically win.",
     "syncDevice": "Device $device",
