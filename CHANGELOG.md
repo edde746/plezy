@@ -6,7 +6,8 @@
 - Isolate provider sync failures by source with bounded exponential retry backoff, retaining failed events while unrelated pending work proceeds.
 - Provision pinned Chromium and make the existing publication reader browser suite required in the private JIT CI job.
 - Reuse NFSv3 RPC/TLS sessions across calls and limit publication downloads to two active transfers, preserving durable records for partial recovery.
-- Harden file-source profile isolation, option-preserving edits, scan reconciliation, discovery Undo retention, and bounded folder/progress queries.
+- Harden file-source profile isolation, option-preserving edits, scan reconciliation, discovery Undo retention, and bounded SQLite shelf/search/progress queries.
+- Page cached source and shelf browsing in SQLite, use trigram FTS when supported, fetch progress only for visible entries, and reuse bounded local directory snapshots across pages.
 - Bind cloud settings backups and restore writes to the initiating profile, enforce a 4 MiB download bound, and roll back an import if ownership changes.
 - Require successful CI for the exact release commit while keeping release validation on private JIT runners.
 - Corroborate StoreKit purchase events against verified transaction history and resume eligible direct-source downloads.
