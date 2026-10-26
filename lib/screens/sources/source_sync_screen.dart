@@ -1,3 +1,7 @@
+import 'dart:convert';
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
@@ -103,6 +107,50 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
     );
     if (confirmed != true || !mounted) return;
     await _action(() => controller.configureCloudSync(config));
+  }
+
+  Future<void> _exportRecovery(SourceController controller) async {
+    await _action(() async {
+      final content = await controller.exportCloudSyncRecovery();
+      final saved = await FilePicker.platform.saveFile(
+        dialogTitle: t.audiobook.recoveryExport,
+        fileName: 'plezyng-recovery.json',
+        type: FileType.custom,
+        allowedExtensions: const ['json'],
+        bytes: Uint8List.fromList(utf8.encode(content)),
+      );
+      if (saved != null && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.audiobook.recoveryExported)));
+      }
+    });
+  }
+
+  Future<void> _importRecovery(SourceController controller) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(t.audiobook.recoveryImport),
+        content: Text(t.audiobook.recoveryImportConfirm),
+        actions: [
+          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
+          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(t.audiobook.recoveryImport)),
+        ],
+      ),
+    );
+    if (confirmed != true || !mounted) return;
+    await _action(() async {
+      final selection = await FilePicker.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: const ['json'],
+        withData: true,
+      );
+      final bytes = selection?.files.single.bytes;
+      if (bytes == null || bytes.length > 6 * 1024 * 1024) {
+        throw const SourceException(SourceFailure.invalidData);
+      }
+      await controller.importCloudSyncRecovery(utf8.decode(bytes));
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(t.audiobook.recoveryImported)));
+    });
   }
 
   @override
@@ -223,6 +271,18 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                         onPressed: _busy ? null : () => _action(() => controller.configureCloudSync(null)),
                         child: Text(t.audiobook.disableSync),
                       ),
+                      const SizedBox(height: 8),
+                      Text(t.audiobook.recoveryHelp, style: Theme.of(context).textTheme.bodySmall),
+                      OutlinedButton.icon(
+                        onPressed: _busy ? null : () => _exportRecovery(controller),
+                        icon: const AppIcon(Symbols.file_upload_outlined),
+                        label: Text(t.audiobook.recoveryExport),
+                      ),
+                      OutlinedButton.icon(
+                        onPressed: _busy ? null : () => _importRecovery(controller),
+                        icon: const AppIcon(Symbols.file_download_outlined),
+                        label: Text(t.audiobook.recoveryImport),
+                      ),
                     ],
                     if (_busy || sync.running) const LinearProgressIndicator(),
                     if (configured &&
@@ -300,4 +360,5 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
     );
   }
 }
+
 
