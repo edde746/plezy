@@ -3,7 +3,7 @@ import 'dart:convert';
 import 'package:crypto/crypto.dart';
 import 'package:path/path.dart' as p;
 
-enum FileSourceKind { local, webdav, smb, ftp, dlna, googleDrive, oneDrive, dropbox, s3, opds, audiobookshelf }
+enum FileSourceKind { local, webdav, smb, ftp, sftp, nfs, dlna, googleDrive, oneDrive, dropbox, s3, opds, audiobookshelf }
 
 enum SourceItemKind { folder, ebook, audiobook, comic, music, video, unknown }
 
@@ -205,6 +205,7 @@ class SourceEntry {
     this.trailerUrl,
     this.cast = const [],
     this.onlineMetadataProvider,
+    this.onlineMetadataCheckedAt,
   });
   final String sourceId;
   final String id;
@@ -230,6 +231,7 @@ class SourceEntry {
   final String? trailerUrl;
   final List<String> cast;
   final String? onlineMetadataProvider;
+  final int? onlineMetadataCheckedAt;
 
   SourceEntry copyWith({
     String? parentId,
@@ -246,6 +248,7 @@ class SourceEntry {
     String? trailerUrl,
     List<String>? cast,
     String? onlineMetadataProvider,
+    int? onlineMetadataCheckedAt,
   }) => SourceEntry(
     sourceId: sourceId,
     id: id,
@@ -271,6 +274,7 @@ class SourceEntry {
     trailerUrl: trailerUrl ?? this.trailerUrl,
     cast: cast ?? this.cast,
     onlineMetadataProvider: onlineMetadataProvider ?? this.onlineMetadataProvider,
+    onlineMetadataCheckedAt: onlineMetadataCheckedAt ?? this.onlineMetadataCheckedAt,
   );
 
   String get key => sourceKey(sourceId, id);
@@ -317,6 +321,7 @@ class SourceEntry {
     if (trailerUrl != null) 'trailerUrl': trailerUrl,
     if (cast.isNotEmpty) 'cast': cast,
     if (onlineMetadataProvider != null) 'onlineMetadataProvider': onlineMetadataProvider,
+    if (onlineMetadataCheckedAt != null) 'onlineMetadataCheckedAt': onlineMetadataCheckedAt,
   };
   factory SourceEntry.fromJson(Map<String, dynamic> j) => SourceEntry(
     sourceId: j['sourceId'] as String,
@@ -343,6 +348,7 @@ class SourceEntry {
     trailerUrl: j['trailerUrl'] as String?,
     cast: sourceList(j['cast']).whereType<String>().toList(),
     onlineMetadataProvider: j['onlineMetadataProvider'] as String?,
+    onlineMetadataCheckedAt: sourceInt(j['onlineMetadataCheckedAt']),
   );
 }
 

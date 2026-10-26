@@ -5,9 +5,9 @@
 ### Added
 
 - Add SMB2/3 read-only NAS sources on Android, iOS, macOS, Windows, Linux, and Apple TV, with a Videos library shelf and resumable video watch progress.
-- Add passive FTP/explicit-FTPS sources with byte-range playback and manual DLNA ContentDirectory sources.
-- Add user-initiated Trakt metadata matching for standalone videos, including online posters, cast, ratings and safe trailer links.
-- Search and download OpenSubtitles for standalone videos using source-scoped, encrypted API credentials.
+- Add passive FTP/FTPES/FTPS, pinned-host-key SFTP, and read-only NFSv3 sources with byte-range playback; add best-effort SSDP discovery for DLNA ContentDirectory servers with manual URL fallback.
+- Automatically match standalone video filenames against Trakt with confidence and ambiguity checks; add online posters, cast, ratings, IDs, and validated trailer links. Manual matching remains available.
+- Search and download OpenSubtitles for standalone videos, including SMB files, using source-scoped encrypted API credentials.
 - Read offline Kodi/Jellyfin NFO sidecars and sibling posters to enrich local and SMB video titles, summaries, ratings, genres, years, and external IDs.
 - Sync SMB and other file-source progress and notes across devices through one configured WebDAV state folder.
 - Add Find your next, a profile-local swipe discovery deck across media libraries, Explore catalogs, live TV, file sources and completed downloads, with format/time filters, Saved picks, Undo and normal Plezy launch routes.

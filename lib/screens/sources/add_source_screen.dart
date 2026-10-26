@@ -6,6 +6,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 
 import '../../i18n/strings.g.dart';
+import '../../sources/dlna_discovery.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
 import '../../sources/publication_shelf.dart';
@@ -25,7 +26,8 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
   final _form = GlobalKey<FormState>();
   final _fields = <String, TextEditingController>{};
   FileSourceKind _kind = FileSourceKind.webdav;
-  bool _busy = false, _allowHttp = false, _encryptSmb = false;
+  bool _busy = false, _allowHttp = false, _encryptSmb = false, _onlineMetadata = true;
+  bool _discoveringDlna = false;
   Set<PublicationShelf> _shelves = {PublicationShelf.ebooks, PublicationShelf.audiobooks, PublicationShelf.videos};
   Object? _error;
   SourceController? _connecting;
@@ -43,6 +45,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
       field('clientId').text = old.options['clientId'] ?? '';
       _allowHttp = old.options['allowHttp'] == 'true';
       _encryptSmb = old.options['encryptSmb'] == 'true';
+      _onlineMetadata = old.options['onlineMetadata'] != 'false';
       _shelves = PublicationShelf.values
           .where((s) => (old.options['shelves'] ?? 'ebooks,audiobooks,videos').split(',').contains(s.name))
           .toSet();
@@ -60,17 +63,64 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
     super.dispose();
   }
 
-  Widget input(String key, String label, {bool secret = false, bool required = false, String? hint}) => Padding(
+  Widget input(String key, String label, {bool secret = false, bool required = false, String? hint, int maxLines = 1, FormFieldValidator<String>? validator}) => Padding(
     padding: const EdgeInsets.only(bottom: 16),
     child: TextFormField(
       controller: field(key),
       obscureText: secret,
+      maxLines: maxLines,
       autocorrect: false,
       enableSuggestions: !secret,
       decoration: InputDecoration(labelText: label, helperText: hint),
-      validator: required ? (value) => value?.trim().isNotEmpty == true ? null : label : null,
+      validator: validator ?? (required ? (value) => value?.trim().isNotEmpty == true ? null : label : null),
     ),
   );
+  Future<void> _discoverDlna() async {
+    setState(() => _discoveringDlna = true);
+    try {
+      final devices = await DlnaDiscovery().discover();
+      if (!mounted) return;
+      if (devices.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('No DLNA servers found. Enter the device description URL manually.')),
+        );
+        return;
+      }
+      final selected = await showModalBottomSheet<DlnaDiscoveredDevice>(
+        context: context,
+        isScrollControlled: true,
+        builder: (sheetContext) => SafeArea(
+          child: ListView(
+            shrinkWrap: true,
+            children: [
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: Text('DLNA media servers', style: Theme.of(sheetContext).textTheme.titleLarge),
+              ),
+              for (final device in devices)
+                ListTile(
+                  title: Text(device.name),
+                  subtitle: Text(device.location.toString(), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  onTap: () => Navigator.pop(sheetContext, device),
+                ),
+            ],
+          ),
+        ),
+      );
+      if (selected == null || !mounted) return;
+      field('endpoint').text = selected.location.toString();
+      setState(() => _allowHttp = selected.location.scheme == 'http');
+    } on Object {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('DLNA discovery is unavailable on this network. Enter the device description URL manually.')),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _discoveringDlna = false);
+    }
+  }
+
   Future<void> connect() async {
     if (!_form.currentState!.validate()) return;
     setState(() {
@@ -94,6 +144,11 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
           'allowHttp': '${_kind != FileSourceKind.smb && _allowHttp}',
           if (_kind == FileSourceKind.smb) 'encryptSmb': '$_encryptSmb',
           'shelves': _shelves.map((s) => s.name).join(','),
+          'onlineMetadata': '$_onlineMetadata',
+          if (_kind == FileSourceKind.nfs && field('mountPort').text.trim().isNotEmpty)
+            'mountPort': field('mountPort').text.trim(),
+          if (_kind == FileSourceKind.nfs && field('uid').text.trim().isNotEmpty) 'uid': field('uid').text.trim(),
+          if (_kind == FileSourceKind.nfs && field('gid').text.trim().isNotEmpty) 'gid': field('gid').text.trim(),
           if (field('clientId').text.trim().isNotEmpty) 'clientId': field('clientId').text.trim(),
           if (_kind == FileSourceKind.s3)
             'region': field('region').text.trim().isEmpty ? 'us-east-1' : field('region').text.trim(),
@@ -105,6 +160,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
         ...switch (_kind) {
           FileSourceKind.webdav || FileSourceKind.opds => const ['username', 'password'],
           FileSourceKind.smb || FileSourceKind.ftp => const ['username', 'password'],
+          FileSourceKind.sftp => const ['username', 'password', 'hostKeyFingerprint', 'privateKey', 'privateKeyPassphrase'],
           FileSourceKind.s3 => const ['accessKey', 'secretKey', 'sessionToken'],
           FileSourceKind.audiobookshelf => const ['token'],
           _ => const <String>[],
@@ -193,9 +249,25 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                       input('endpoint', t.fileSources.endpoint, required: true, hint: switch (_kind) {
                         FileSourceKind.smb => 'smb://nas/Movies',
                         FileSourceKind.ftp => 'ftp://nas:21',
+                        FileSourceKind.sftp => 'sftp://nas:22',
+                        FileSourceKind.nfs => 'nfs://nas:2049/export',
                         FileSourceKind.dlna => 'http://192.168.1.20:8200/rootDesc.xml',
                         _ => null,
                       }),
+                    if (_kind == FileSourceKind.dlna) ...[
+                      OutlinedButton.icon(
+                        onPressed: _busy || _discoveringDlna ? null : _discoverDlna,
+                        icon: _discoveringDlna
+                            ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2))
+                            : const Icon(Icons.search_rounded),
+                        label: Text(_discoveringDlna ? 'Searching local network…' : 'Discover DLNA servers'),
+                      ),
+                      const SizedBox(height: 8),
+                      Text(
+                        'Discovery depends on local-network multicast. If no server appears, enter its device description URL above.',
+                        style: Theme.of(context).textTheme.bodySmall,
+                      ),
+                    ],
                     if (_kind == FileSourceKind.local) ...[
                       input('root', t.fileSources.root, required: true),
                       OutlinedButton(
@@ -213,14 +285,48 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                         t.fileSources.root,
                         hint: _kind == FileSourceKind.dlna ? 'DLNA object ID; blank uses the device root.' : t.fileSources.folderHelp,
                       ),
-                    if (const {FileSourceKind.webdav, FileSourceKind.opds, FileSourceKind.smb, FileSourceKind.ftp}.contains(_kind)) ...[
-                      input('username', t.fileSources.username),
-                      input('password', t.fileSources.password, secret: true),
+                    if (const {FileSourceKind.webdav, FileSourceKind.opds, FileSourceKind.smb, FileSourceKind.ftp, FileSourceKind.sftp}.contains(_kind)) ...[
+                      input('username', t.fileSources.username, required: _kind == FileSourceKind.sftp && widget.existing == null),
+                      input(
+                        'password',
+                        t.fileSources.password,
+                        secret: true,
+                        validator: _kind == FileSourceKind.sftp && widget.existing == null
+                            ? (value) => value?.isNotEmpty == true || field('privateKey').text.trim().isNotEmpty
+                                  ? null
+                                  : 'Enter a password or add a private key below.'
+                            : null,
+                      ),
                       if (_kind == FileSourceKind.smb) input('domain', 'Domain (optional)'),
+                    if (_kind == FileSourceKind.sftp) ...[
+                      input('hostKeyFingerprint', 'SSH host key SHA256 fingerprint', required: widget.existing == null,
+                        hint: widget.existing == null
+                            ? 'Pin the server key before connecting; retrieve it from the server administrator.'
+                            : 'Leave blank to keep the current pin, or enter a new server fingerprint.'),
+                      ExpansionTile(
+                        tilePadding: EdgeInsets.zero,
+                        title: const Text('SSH public key authentication'),
+                        subtitle: const Text('Optional; password authentication is also supported.'),
+                        children: [
+                          input('privateKey', 'Private key (PEM or OpenSSH format)', maxLines: 5),
+                          input('privateKeyPassphrase', 'Private key passphrase', secret: true),
+                        ],
+                      ),
+                    ],
+                    if (_kind == FileSourceKind.nfs) ...[
+                      input('mountPort', 'NFS mount service TCP port', hint: '20048'),
+                      input('uid', 'NFS user ID (AUTH_SYS)', hint: '1000'),
+                      input('gid', 'NFS group ID (AUTH_SYS)', hint: '1000'),
+                      Padding(
+                        padding: const EdgeInsets.only(bottom: 12),
+                        child: Text('Read-only NFSv3 over TCP. The NAS must allow the selected AUTH_SYS IDs and unprivileged client ports (often the “insecure” export option). NFSv3 traffic is not encrypted.',
+                          style: Theme.of(context).textTheme.bodySmall),
+                      ),
+                    ],
                     if (_kind == FileSourceKind.ftp)
                       Padding(
                         padding: const EdgeInsets.only(bottom: 12),
-                        child: Text('FTP uses passive mode. Use ftp:// for plain FTP or ftps:// for TLS (implicit on port 990).',
+                        child: Text('FTP uses passive mode. Use ftp:// for plain FTP, ftpes:// for explicit TLS, or ftps:// for TLS (implicit on port 990; explicit on other ports).',
                           style: Theme.of(context).textTheme.bodySmall),
                       ),
                       if (_kind == FileSourceKind.smb)
@@ -267,6 +373,14 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                           if (_kind == FileSourceKind.googleDrive && !Platform.isAndroid && !Platform.isIOS)
                             input('clientSecret', t.fileSources.clientSecret, secret: true),
                         ],
+                      ),
+                    if (_kind != FileSourceKind.opds && _kind != FileSourceKind.audiobookshelf)
+                      SwitchListTile(
+                        contentPadding: EdgeInsets.zero,
+                        title: const Text('Automatic online video metadata'),
+                        subtitle: const Text('Sends only filename title/year and episode numbers or an NFO ID, never media or credentials. NFO fields stay authoritative.'),
+                        value: _onlineMetadata,
+                        onChanged: _busy ? null : (v) => setState(() => _onlineMetadata = v),
                       ),
                     if (const {FileSourceKind.webdav, FileSourceKind.opds, FileSourceKind.s3, FileSourceKind.audiobookshelf, FileSourceKind.dlna}.contains(_kind))
                       SwitchListTile(

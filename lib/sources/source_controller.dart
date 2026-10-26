@@ -15,6 +15,8 @@ import 'adapters/cloud_sources.dart';
 import 'adapters/dlna_source.dart';
 import 'adapters/ftp_source.dart';
 import 'adapters/local_source.dart';
+import 'adapters/nfs_source.dart';
+import 'adapters/sftp_source.dart';
 import 'adapters/opds_source.dart';
 import 'adapters/s3_source.dart';
 import 'adapters/smb_source.dart';
@@ -23,6 +25,7 @@ import 'content_access.dart';
 import 'source_database.dart';
 import 'source_models.dart';
 import 'source_oauth.dart';
+import '../services/standalone_video_metadata_client.dart';
 import 'source_transport.dart';
 import 'publication_shelf.dart';
 
@@ -62,6 +65,8 @@ class SourceController extends ChangeNotifier {
   late SourceOAuthService oauth;
   late PublicationDownloads downloads;
   final Map<String, Future<File?>> _covers = {};
+  final Map<String, Future<SourceEntry>> _onlineLookups = {};
+  final StandaloneVideoMetadataClient _videoMetadata = StandaloneVideoMetadataClient();
   final Map<String, SourceAdapter> _adapters = {};
   List<FileSource> sources = const [];
   Set<PublicationShelf> shelves = {};
@@ -176,9 +181,7 @@ class SourceController extends ChangeNotifier {
   }
 
   SourceEntry _applyCachedOnlineMetadata(SourceEntry fresh, SourceEntry? cached) {
-    if (fresh.kind != SourceItemKind.video ||
-        cached?.kind != SourceItemKind.video ||
-        cached?.onlineMetadataProvider == null) {
+    if (fresh.kind != SourceItemKind.video || cached?.kind != SourceItemKind.video) {
       return fresh;
     }
     return fresh.copyWith(
@@ -192,6 +195,7 @@ class SourceController extends ChangeNotifier {
       trailerUrl: cached.trailerUrl,
       cast: cached.cast,
       onlineMetadataProvider: cached.onlineMetadataProvider,
+      onlineMetadataCheckedAt: cached.onlineMetadataCheckedAt,
     );
   }
 
@@ -348,6 +352,8 @@ class SourceController extends ChangeNotifier {
         FileSourceKind.s3 => S3SourceAdapter(source, transport, credentials),
         FileSourceKind.smb => SmbSourceAdapter(source, transport, credentials),
         FileSourceKind.ftp => FtpSourceAdapter(source, transport, credentials),
+        FileSourceKind.sftp => SftpSourceAdapter(source, transport, credentials),
+        FileSourceKind.nfs => NfsSourceAdapter(source, transport),
         FileSourceKind.dlna => DlnaSourceAdapter(source, transport),
         FileSourceKind.opds => OpdsSourceAdapter(source, transport, credentials),
         FileSourceKind.audiobookshelf => AudiobookshelfSourceAdapter(source, transport, credentials),
@@ -428,12 +434,76 @@ class SourceController extends ChangeNotifier {
         trailerUrl: trailer,
         cast: cast.take(20).toList(growable: false),
         onlineMetadataProvider: provider,
+        onlineMetadataCheckedAt: DateTime.now().millisecondsSinceEpoch,
       ),
     );
     await repository.cacheEntries(profile, [matched]);
     requireSession(epoch);
     _covers.remove(sourceKey(profile, entry.key));
     _notify();
+  }
+
+  Future<SourceEntry> identifyOnlineMetadata(SourceEntry entry, {bool force = false}) async {
+    await ready;
+    requireSession();
+    if (entry.kind != SourceItemKind.video) return entry;
+    final profile = profileId!;
+    final source = sources.where((item) => item.id == entry.sourceId).firstOrNull;
+    if (source == null || source.options['onlineMetadata'] == 'false') return entry;
+    final key = sourceKey(profile, entry.key);
+    final cachedLookup = _onlineLookups[key];
+    if (cachedLookup != null) return cachedLookup;
+    final task = _identifyOnlineMetadata(entry, source, profile, generation, force);
+    _onlineLookups[key] = task;
+    try {
+      return await task;
+    } finally {
+      if (identical(_onlineLookups[key], task)) _onlineLookups.remove(key);
+    }
+  }
+
+  Future<SourceEntry> _identifyOnlineMetadata(
+    SourceEntry entry,
+    FileSource source,
+    String profile,
+    int epoch,
+    bool force,
+  ) async {
+    final cached = await repository.entryById(profile, source.id, entry.id);
+    final current = _applyCachedOnlineMetadata(entry, cached);
+    if (!force && (current.onlineMetadataProvider != null ||
+        current.onlineMetadataCheckedAt != null &&
+            DateTime.now().millisecondsSinceEpoch - current.onlineMetadataCheckedAt! < const Duration(days: 30).inMilliseconds)) {
+      return current;
+    }
+    try {
+      final metadata = await _videoMetadata.identify(current);
+      requireSession(epoch);
+      if (metadata == null) {
+        final checked = _withSyncIdentity(source, current.copyWith(
+          onlineMetadataCheckedAt: DateTime.now().millisecondsSinceEpoch,
+        ));
+        await repository.cacheEntries(profile, [checked]);
+        return checked;
+      }
+      await saveOnlineMetadata(
+        current,
+        title: metadata.title,
+        overview: metadata.overview,
+        releaseYear: metadata.year,
+        rating: metadata.rating,
+        genres: metadata.genres,
+        identifiers: metadata.identifiers,
+        posterUrl: metadata.posterUrl,
+        trailerUrl: metadata.trailerUrl,
+        cast: metadata.cast,
+        provider: metadata.provider,
+      );
+      requireSession(epoch);
+      return await repository.entryById(profile, source.id, entry.id) ?? current;
+    } on Object {
+      return current;
+    }
   }
 
   Future<File> content(SourceEntry entry, PublicationFile file, {void Function(int, int?)? onProgress}) async {
@@ -784,6 +854,7 @@ class SourceController extends ChangeNotifier {
       adapter.close();
     }
     _adapters.clear();
+    _videoMetadata.close();
     unawaited(
       ready.then((_) async {
         oauth.dispose();

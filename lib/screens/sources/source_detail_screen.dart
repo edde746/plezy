@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -99,10 +100,25 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
       }
       sources.requireSession(epoch);
       if (mounted) setState(() => _progress = progresses);
+      if (mounted && _entry.kind == SourceItemKind.video) {
+        unawaited(_identifyStandaloneMetadata(sources, epoch));
+      }
     } catch (e) {
       if (mounted) setState(() => _error = e);
     } finally {
       if (mounted) setState(() => _busy = false);
+    }
+  }
+
+  Future<void> _identifyStandaloneMetadata(SourceController sources, int epoch) async {
+    if (_entry.kind != SourceItemKind.video) return;
+    final entryKey = _entry.key;
+    try {
+      final matched = await sources.identifyOnlineMetadata(_entry);
+      if (!mounted || sources.generation != epoch || _entry.key != entryKey) return;
+      setState(() => _entry = matched);
+    } on Object {
+      // Online metadata is an enhancement; offline details stay usable.
     }
   }
 

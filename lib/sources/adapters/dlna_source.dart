@@ -4,9 +4,9 @@ import 'package:xml/xml.dart';
 import '../source_models.dart';
 import '../source_transport.dart';
 
-/// Manual UPnP/DLNA ContentDirectory source. The configured endpoint is the
-/// device description URL; multicast SSDP discovery is intentionally left to
-/// a later platform-specific layer, while direct entry works across platforms.
+/// UPnP/DLNA ContentDirectory source. The configured endpoint is the device
+/// description URL; SSDP discovery is best effort, with direct entry available
+/// on platforms or networks that block multicast.
 class DlnaSourceAdapter extends SourceAdapter {
   DlnaSourceAdapter(super.source, super.transport);
 

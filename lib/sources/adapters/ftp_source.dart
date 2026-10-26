@@ -25,7 +25,7 @@ class FtpSourceAdapter extends SourceAdapter {
   Uri get _endpoint {
     final uri = Uri.tryParse(source.endpoint.trim());
     if (uri == null ||
-        !const {'ftp', 'ftps'}.contains(uri.scheme) ||
+        !const {'ftp', 'ftpes', 'ftps'}.contains(uri.scheme) ||
         uri.host.isEmpty ||
         uri.userInfo.isNotEmpty ||
         uri.hasQuery ||
@@ -89,7 +89,7 @@ class FtpSourceAdapter extends SourceAdapter {
     final session = _FtpSession(
       host: endpoint.host,
       port: _port,
-      tls: endpoint.scheme == 'ftps',
+      tls: endpoint.scheme != 'ftp',
       implicitTls: endpoint.scheme == 'ftps' && _port == 990,
     );
     _sessions.add(session);
