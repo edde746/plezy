@@ -7,24 +7,22 @@ A cross-platform media client for Plex, Jellyfin, and Emby, maintained as a fork
 
 See [Files, books and listening](docs/FILES_AND_BOOKS.md) for standard/cloud sources, readers and offline behavior, and [Public-library setup](docs/LENDING_SETUP.md) for the staged OverDrive integration.
 
-## Fork scope and convergence
+## What PlezyNG has built
 
-PlezyNG is a enhanced fork for requested features that Plezy upstream has declined or has not shipped, combined with unique new features added by the SnapeTech team. The implementation targets upstream compatibility and supports Plex, Jellyfin, and Emby wherever their APIs allow.
+PlezyNG builds on upstream Plezy with a broad set of features for Plex, Jellyfin, and Emby, wherever each server's APIs allow. The table below highlights what's been delivered, links related upstream work for context, and notes platform or server limitations.
 
-Each row below is an upstream convergence target. When Plezy upstream provides equivalent behavior, PlezyNG should adopt that implementation and remove its duplicate. If the listed capabilities converge upstream, the fork-specific maintenance burden ends and PlezyNG should be retired in favor of upstream Plezy.
-
-| Area | Feature requests and upstream work | PlezyNG status |
+| Area | Related upstream work | PlezyNG status |
 | --- | --- | --- |
 | Downloads | Converted download quality; per-rule quality; auto-download Continue Watching items and remove them when they leave the shelf (#1145, #1413, #1847, #1978, #2181, #2206) | Implemented for Plex, Jellyfin, and Emby |
-| Downloads | Local Plex connections (#1447/#2248); download size and storage usage (#2376); manual sync and random episode selection (#1197, #1199) | Implemented in the fork; upstream convergence pending |
+| Downloads | Local Plex connections (#1447/#2248); download size and storage usage (#2376); manual sync and random episode selection (#1197, #1199) | Implemented in PlezyNG |
 | Downloads | Playlist downloads and watched-item cleanup (#1721, #2600, #1413, #2181); orphan cleanup | Playlist downloads and watched-item cleanup are implemented. The Downloads screen can review and remove orphaned tagged files in the default app-managed folders; custom/SAF roots, legacy files, shared artwork, and iOS Documents are left untouched. |
 | Profiles and privacy | PIN-gate download deletion, settings, and Explore; hide Explore per profile (#1924, #2514) | Local profile PIN gates Settings, download deletion, and entry to Explore; Explore can also be hidden per profile. Plex Home PINs remain server-owned. |
 | Audio and subtitles | Remember choices per show; choose tracks before playback; always-on subtitles and preferred-language fetching; per-item sync offsets (#84, #1758, #1956, #2116, #2182, #2346, #2382, #2792) | Per-show memory, optional pre-play selection, device-local preferred-language selection and opt-in provider downloads, and scoped sync offsets are implemented across Plex, Jellyfin, and Emby; explicit server-selected tracks, account Off, and local picks remain authoritative |
 | Subtitle controls | Live styling preview (#2347); in-player size and position controls (#95, #689, #2174); load a local subtitle file (#1431) | Live preview, in-player size/position, and local subtitle loading are implemented; other style controls remain in Settings |
-| Playback | Swipe-to-seek (#2601), frame stepping (#1584), subtitle-delay hotkeys (#2824), remembered version across episodes (#2563), video playlist repeat (#1757/#1985) | Implemented in the fork; upstream convergence pending |
+| Playback | Swipe-to-seek (#2601), frame stepping (#1584), subtitle-delay hotkeys (#2824), remembered version across episodes (#2563), video playlist repeat (#1757/#1985) | Implemented in PlezyNG |
 | Playback | Plex cinema pre-rolls (#970/#2483); random local pre-rolls (#2271); theme music (#791/#2170/#2596) | Configured cinema intros work on Plex, Jellyfin, and Emby; local pre-rolls, detail-page theme songs, and home spotlight music are implemented |
 | Playback | Background video/audio-only mode (#367), mpv equalizer (#2292), local/remote quality presets (#2064), opt-in TheIntroDB fallback (#389, #1110, #1886) | Optional audio-only background playback is implemented on handheld Android and iOS; Android uses the OS media playback service. A five-band device-local equalizer is available in mpv, and opt-in intro fallback is implemented. |
-| Browsing | Director links (#2762), library item counts (#1516), Watchlist filters (#2725), MDBList Explore lists (#2740), Seerr search results (#2811) | Implemented in the fork; upstream convergence pending |
+| Browsing | Director links (#2762), library item counts (#1516), Watchlist filters (#2725), MDBList Explore lists (#2740), Seerr search results (#2811) | Implemented in PlezyNG |
 | Browsing | Search by actor or director (#1517, #2368); random movie or library shuffle (#1561, #2741, #2757); show end time on detail pages (#2671) | People search, random movie selection, and shuffled playback of movie and TV libraries are implemented across connected servers; detail-page finish time is shown on media details |
 | Home screen | Configurable rows, merged library and collection rows, organizer controls, and Plex account layout sync (#1652/#2203) | Implemented; Plex account sync applies to Plex profiles. Custom rows can combine selected libraries across connected servers |
 | Home screen | Separate Next Up; hide empty libraries or backdrop art; Continue Watching row sizing (#2498, #2690, #2701, #2723, #2784) | Continue Watching and Next Up now have separate Home rows and independent visibility/order; empty-library filtering, backdrop visibility, and row sizing are implemented. The legacy hero banner visibility setting and TV clock already exist. |
@@ -34,9 +32,7 @@ Each row below is an upstream convergence target. When Plezy upstream provides e
 | Automation | Home Assistant control and Android automation intents (#823, #1996) | Android `ACTION_VIEW` links can open cross-server `plezy://watch` media, select an existing profile with `plezy://profile?id=…`, and control the active video session with `plezy://control?command=play|pause|toggle|stop`. Home Assistant can invoke these through an Android intent bridge; this does not expose Plezy as a native Plex Companion player in Home Assistant. See the [Android automation guide](docs/plezyng/android-automation.md). |
 | Settings and diagnostics | Save logs to a file (#2496); cloud settings backup (#1795) | Log export is implemented; cloud settings backup uploads and restores the portable settings export through an HTTPS WebDAV file endpoint |
 
-The list records the fork's active scope. “Implemented in the fork” means PlezyNG carries the behavior while upstream convergence remains pending; platform and server limitations are called out in the feature documentation.
-
-> PlezyNG exists to maintain these upstream gaps. As Plezy adopts each capability, the corresponding fork delta should be removed. When the table has converged, PlezyNG should be retired and upstream Plezy should be the sole maintained implementation.
+This table is a snapshot of what PlezyNG has delivered and the limits that still apply. The upstream links give context for related work. As Plezy evolves, equivalent features can be reviewed and adopted where they fit.
 
 <p>
   <a href="https://github.com/edde746/plezy">Upstream Plezy</a> ·
