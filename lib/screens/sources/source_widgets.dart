@@ -21,6 +21,7 @@ String sourceFailureText(Object error) => switch (error is SourceException ? err
   SourceFailure.invalidData => t.fileSources.errorInvalidData,
   SourceFailure.cancelled => t.fileSources.errorCancelled,
   SourceFailure.conflict => t.fileSources.errorConflict,
+  SourceFailure.quotaExceeded => t.fileSources.errorQuotaExceeded,
 };
 Future<void> sourceAction(BuildContext context, Future<void> Function() action) async {
   try {
