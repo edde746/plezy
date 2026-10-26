@@ -70,6 +70,15 @@
 - Update remaining app and OAuth messages to PlezyNG and make donation copy provider-neutral.
 - Keep Android signing material until all signed store builds finish, and clean it up afterward.
 - Fix music fade gain handling across track transitions and avoid visualizer profile requests before the active track is ready.
+- Record the current Google Play foreground-service demo links and release-run results in the channel guide.
+
+### Fixed
+
+- Keep entitlement-controlled themes and icons locked when store access is disabled in the build.
+- Remove stale SVG imports after switching the setup and app-icon previews back to raster artwork.
+- Localize the About screen privacy-policy link.
+- Cover AVFoundation speed flush ordering deterministically when simulator audio is unavailable.
+- Keep unsigned macOS release builds available when only the shared mobile Apple team ID is configured.
 
 ### Removed
 
