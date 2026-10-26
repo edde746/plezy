@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_button.dart';
+import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
@@ -72,6 +74,7 @@ class SourcesScreen extends StatefulWidget {
 }
 
 class _SourcesScreenState extends State<SourcesScreen> {
+  final TextEditingController _searchController = TextEditingController();
   List<SourceEntry> _entries = [];
   List<PublicationProgress> _progress = [];
   final Set<String> _offline = {};
@@ -200,6 +203,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
   @override
   void dispose() {
     _searchTimer?.cancel();
+    _searchController.dispose();
     super.dispose();
   }
 
@@ -607,7 +611,8 @@ class _SourcesScreenState extends State<SourcesScreen> {
                     ],
                   const SizedBox(height: 16),
                 ],
-                TextField(
+                FocusableTextField(
+                  controller: _searchController,
                   decoration: InputDecoration(
                     prefixIcon: const AppIcon(Symbols.search_rounded),
                     labelText: root ? t.fileSources.searchCached : t.fileSources.search,
@@ -640,7 +645,16 @@ class _SourcesScreenState extends State<SourcesScreen> {
                   ],
                 ),
                 if (_error != null)
-                  Padding(padding: const EdgeInsets.symmetric(vertical: 16), child: Text(sourceFailureText(_error!))),
+                  Padding(
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    child: Semantics(
+                      liveRegion: true,
+                      child: Text(
+                        sourceFailureText(_error!),
+                        style: TextStyle(color: Theme.of(context).colorScheme.error),
+                      ),
+                    ),
+                  ),
                 if (_loading)
                   const Padding(padding: EdgeInsets.symmetric(vertical: 12), child: LinearProgressIndicator()),
                 if (entries.isEmpty && !_loading)
@@ -697,9 +711,12 @@ class _SourcesScreenState extends State<SourcesScreen> {
             child: Column(
               children: [
                 if (_next != null)
-                  OutlinedButton(
+                  FocusableButton(
                     onPressed: _loading ? null : () => _load(more: true),
-                    child: Text(t.fileSources.loadMore),
+                    child: OutlinedButton(
+                      onPressed: _loading ? null : () => _load(more: true),
+                      child: Text(t.fileSources.loadMore),
+                    ),
                   ),
                 if (widget.folder != null && _next != null) Text(t.fileSources.groupHint),
               ],

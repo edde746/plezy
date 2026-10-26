@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../focus/focusable_button.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../i18n/presentation_formats.dart';
@@ -23,6 +24,7 @@ import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/app_menu.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../settings/services_settings_screen.dart';
@@ -158,22 +160,38 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     try {
       final result = await controller.qualifyNfsRead(_entry.sourceId, file);
       if (!mounted) return;
-      await showDialog<void>(
+      await showScopedDialog<void>(
         context: context,
-        builder: (context) => AlertDialog(
+        builder: (dialogContext) => AlertDialog(
           title: Text(t.sourceSetup.nfsQualificationResult),
+          scrollable: true,
           content: Column(
             mainAxisSize: MainAxisSize.min,
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               Text(t.sourceSetup.nfsReadTestHelp),
               const SizedBox(height: 12),
-              Text('${t.sourceSetup.nfsReadBytes}: ${(result.bytes / (1024 * 1024)).toStringAsFixed(1)} MiB'),
-              Text('${t.sourceSetup.nfsReadSpeed}: ${result.mebibytesPerSecond.toStringAsFixed(2)} MiB/s'),
-              Text('${t.sourceSetup.nfsReadRequests}: ${result.requests} · ${t.sourceSetup.nfsReadAhead}: ${result.readAhead}'),
+              Text(
+                '${t.sourceSetup.nfsReadBytes}: '
+                '${formatDecimal(result.bytes / (1024 * 1024), minimumDecimals: 1, maximumDecimals: 1)} MiB',
+              ),
+              Text(
+                '${t.sourceSetup.nfsReadSpeed}: '
+                '${formatDecimal(result.mebibytesPerSecond, minimumDecimals: 2, maximumDecimals: 2)} MiB/s',
+              ),
+              Text(
+                '${t.sourceSetup.nfsReadRequests}: ${formatCount(result.requests)} · '
+                '${t.sourceSetup.nfsReadAhead}: ${formatCount(result.readAhead)}',
+              ),
             ],
           ),
-          actions: [TextButton(onPressed: () => Navigator.pop(context), child: Text(t.common.close))],
+          actions: [
+            DialogActionButton(
+              autofocus: true,
+              onPressed: () => Navigator.pop(dialogContext),
+              label: t.common.close,
+            ),
+          ],
         ),
       );
     } finally {
@@ -186,35 +204,44 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     final current = await controller.sharedEntryMapping(_entry);
     if (!mounted) return;
     final sharedId = TextEditingController(text: current ?? '');
-    final save = await showDialog<bool>(
+    final save = await showScopedDialog<bool>(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        scrollable: true,
         title: Text(t.sourceSetup.sharedEntryPair),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(t.sourceSetup.sharedEntryPairHelp),
-              const SizedBox(height: 12),
-              FocusableTextField(
-                controller: sharedId,
-                autofocus: true,
-                decoration: InputDecoration(labelText: t.sourceSetup.sharedEntryId),
-              ),
-              Align(
-                alignment: Alignment.centerRight,
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(t.sourceSetup.sharedEntryPairHelp),
+            const SizedBox(height: 12),
+            FocusableTextField(
+              controller: sharedId,
+              autofocus: true,
+              decoration: InputDecoration(labelText: t.sourceSetup.sharedEntryId),
+            ),
+            Align(
+              alignment: AlignmentDirectional.centerEnd,
+              child: FocusableButton(
+                onPressed: () => sharedId.text = const Uuid().v4(),
                 child: TextButton(
                   onPressed: () => sharedId.text = const Uuid().v4(),
                   child: Text(t.sourceSetup.generateSharedEntryId),
                 ),
               ),
-            ],
-          ),
+            ),
+          ],
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
-          FilledButton(onPressed: () => Navigator.pop(dialogContext, true), child: Text(t.common.save)),
+          DialogActionButton(
+            onPressed: () => Navigator.pop(dialogContext),
+            label: t.common.cancel,
+          ),
+          DialogActionButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            label: t.common.save,
+            isPrimary: true,
+          ),
         ],
       ),
     );
@@ -229,35 +256,35 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
 
   Future<String?> _metadataSearchQuery() async {
     final controller = TextEditingController(text: _entry.displayTitle);
-    final query = await showDialog<String>(
+    final query = await showScopedDialog<String>(
       context: context,
       builder: (dialogContext) => AlertDialog(
+        scrollable: true,
         title: Text(t.common.search),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(t.sourceSetup.metadataSearchPrivacy),
-              const SizedBox(height: 12),
-              FocusableTextField(
-                controller: controller,
-                autofocus: true,
-                textInputAction: TextInputAction.search,
-                decoration: InputDecoration(labelText: t.metadataEdit.title, hintText: t.search.hint),
-                onSubmitted: (_) => Navigator.pop(dialogContext, controller.text.trim()),
-              ),
-            ],
-          ),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Text(t.sourceSetup.metadataSearchPrivacy),
+            const SizedBox(height: 12),
+            FocusableTextField(
+              controller: controller,
+              autofocus: true,
+              textInputAction: TextInputAction.search,
+              decoration: InputDecoration(labelText: t.metadataEdit.title, hintText: t.search.hint),
+              onSubmitted: (_) => Navigator.pop(dialogContext, controller.text.trim()),
+            ),
+          ],
         ),
         actions: [
-          TextButton(
+          DialogActionButton(
             onPressed: () => Navigator.pop(dialogContext),
-            child: Text(MaterialLocalizations.of(dialogContext).cancelButtonLabel),
+            label: MaterialLocalizations.of(dialogContext).cancelButtonLabel,
           ),
-          FilledButton(
+          DialogActionButton(
             onPressed: () => Navigator.pop(dialogContext, controller.text.trim()),
-            child: Text(t.common.search),
+            label: t.common.search,
+            isPrimary: true,
           ),
         ],
       ),
@@ -832,7 +859,13 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
                     if (_error != null)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: Semantics(liveRegion: true, child: Text(sourceFailureText(_error!))),
+                        child: Semantics(
+                          liveRegion: true,
+                          child: Text(
+                            sourceFailureText(_error!),
+                            style: TextStyle(color: theme.colorScheme.error),
+                          ),
+                        ),
                       ),
                     if (_entry.description.isNotEmpty)
                       Padding(

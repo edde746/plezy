@@ -3289,7 +3289,7 @@
     "recoveryHelp": "Export a recent encrypted copy before moving or repairing sync data. Imports merge with current state; they never replace local sync history. Keep the sync code separately.",
     "recoveryExport": "Export encrypted recovery file",
     "recoveryImport": "Import encrypted recovery file",
-    "recoveryImportConfirm": "Merge this encrypted recovery file with current reading positions and notes? Existing history will be retained.",
+    "recoveryImportConfirm": "Merge this encrypted recovery file with current reading positions and notes? Existing history will be retained. Shared library and item IDs are not included; set matching IDs on every device before importing.",
     "recoveryExported": "Encrypted recovery file saved.",
     "recoveryImported": "Recovery data merged."
   },
@@ -3401,7 +3401,7 @@
     "nfsReadTest": "Measure NFS read performance",
     "nfsReadTestHelp": "Reads up to 64 MiB from the largest file to measure this NAS connection. This uses network bandwidth.",
     "nfsQualificationResult": "NFS read measurement",
-    "nfsReadBytes": "Bytes read",
+    "nfsReadBytes": "Data read",
     "nfsReadSpeed": "Measured speed",
     "nfsReadRequests": "Read requests"
   }

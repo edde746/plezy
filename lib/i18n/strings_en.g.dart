@@ -8055,8 +8055,8 @@ class Translations$audiobook$en {
 	/// en: 'Import encrypted recovery file'
 	String get recoveryImport => 'Import encrypted recovery file';
 
-	/// en: 'Merge this encrypted recovery file with current reading positions and notes? Existing history will be retained.'
-	String get recoveryImportConfirm => 'Merge this encrypted recovery file with current reading positions and notes? Existing history will be retained.';
+	/// en: 'Merge this encrypted recovery file with current reading positions and notes? Existing history will be retained. Shared library and item IDs are not included; set matching IDs on every device before importing.'
+	String get recoveryImportConfirm => 'Merge this encrypted recovery file with current reading positions and notes? Existing history will be retained. Shared library and item IDs are not included; set matching IDs on every device before importing.';
 
 	/// en: 'Encrypted recovery file saved.'
 	String get recoveryExported => 'Encrypted recovery file saved.';
@@ -8394,8 +8394,8 @@ class Translations$sourceSetup$en {
 	/// en: 'NFS read measurement'
 	String get nfsQualificationResult => 'NFS read measurement';
 
-	/// en: 'Bytes read'
-	String get nfsReadBytes => 'Bytes read';
+	/// en: 'Data read'
+	String get nfsReadBytes => 'Data read';
 
 	/// en: 'Measured speed'
 	String get nfsReadSpeed => 'Measured speed';

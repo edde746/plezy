@@ -13,7 +13,9 @@ import '../../sources/source_models.dart';
 import '../../sources/sync/publication_sync.dart';
 import '../../sources/sync/sync_document.dart';
 import '../../sources/sync/sync_store.dart';
+import '../../utils/dialogs.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import 'add_source_screen.dart';
 import 'source_widgets.dart';
@@ -94,14 +96,23 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
   }
 
   Future<void> _confirmSync(SourceController controller, PublicationSyncConfig config) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showScopedDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
+        scrollable: true,
         title: Text(t.audiobook.syncTitle),
         content: Text(t.audiobook.syncPrivacy),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(t.audiobook.saveSync)),
+          DialogActionButton(
+            autofocus: true,
+            onPressed: () => Navigator.pop(dialogContext, false),
+            label: t.common.cancel,
+          ),
+          DialogActionButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            label: t.audiobook.saveSync,
+            isPrimary: true,
+          ),
         ],
       ),
     );
@@ -126,14 +137,23 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
   }
 
   Future<void> _importRecovery(SourceController controller) async {
-    final confirmed = await showDialog<bool>(
+    final confirmed = await showScopedDialog<bool>(
       context: context,
-      builder: (context) => AlertDialog(
+      builder: (dialogContext) => AlertDialog(
+        scrollable: true,
         title: Text(t.audiobook.recoveryImport),
         content: Text(t.audiobook.recoveryImportConfirm),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context, false), child: Text(t.common.cancel)),
-          FilledButton(onPressed: () => Navigator.pop(context, true), child: Text(t.audiobook.recoveryImport)),
+          DialogActionButton(
+            autofocus: true,
+            onPressed: () => Navigator.pop(dialogContext, false),
+            label: t.common.cancel,
+          ),
+          DialogActionButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            label: t.audiobook.recoveryImport,
+            isPrimary: true,
+          ),
         ],
       ),
     );
@@ -306,7 +326,13 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                     if (_error != null || sync.failure != null)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: Text(sourceFailureText(_error ?? SourceException(sync.failure!))),
+                        child: Semantics(
+                          liveRegion: true,
+                          child: Text(
+                            sourceFailureText(_error ?? SourceException(sync.failure!)),
+                            style: TextStyle(color: Theme.of(context).colorScheme.error),
+                          ),
+                        ),
                       ),
                     if (sync.lastSuccess != null)
                       Padding(
