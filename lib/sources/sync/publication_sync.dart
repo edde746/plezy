@@ -601,12 +601,11 @@ class PublicationSync {
         }
         if (activeKeys.contains(value.key)) continue;
         final current = await repository.progress(profile, value.key);
-        final saved = await repository.saveProgress(
+        await repository.saveProgress(
           profile,
           value.copyWith(revision: current?.revision ?? 0),
           kind: 'cloud',
         );
-        await repository.acknowledge(profile, saved.key, saved.revision);
       } else if (first['type'] == 'annotation') {
         final a = BookAnnotation.fromJson({
           ...localData,
@@ -629,12 +628,7 @@ class PublicationSync {
             invalidFileCursor) {
           throw const SourceException(SourceFailure.invalidData);
         }
-        await repository.database.customStatement('INSERT OR REPLACE INTO annotations VALUES (?,?,?,?)', [
-          profile,
-          a.id,
-          a.entryKey,
-          jsonEncode(a.toJson()),
-        ]);
+        await repository.importSyncedAnnotation(profile, a);
       } else {
         throw const SourceException(SourceFailure.invalidData);
       }
@@ -727,18 +721,9 @@ class PublicationSync {
         }
       }
       check();
-      // The encrypted generation is the cloud backup for these durable local
-      // snapshots. Clear only the exact revisions/payloads represented here,
-      // so a concurrent edit remains pending for the next run.
-      for (final value in publishedLocals.values) {
-        check();
-        if (value.progress case final progress?) {
-          await repository.acknowledge(profile, progress.key, progress.revision);
-        }
-        if (value.annotation case final annotation?) {
-          await repository.acknowledgeAnnotation(profile, annotation);
-        }
-      }
+      // The encrypted generation has its own durable publication baseline.
+      // Provider event acknowledgements stay independent so a successful
+      // cloud write cannot erase a provider write that still needs retrying.
       lastSuccess = DateTime.now();
     } on SourceException catch (e) {
       failure = e.reason;
