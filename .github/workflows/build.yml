@@ -319,7 +319,6 @@ jobs:
             -authenticationKeyID "$APPLE_API_KEY_ID" \
             -authenticationKeyIssuerID "$APPLE_API_ISSUER_ID" \
             CODE_SIGN_STYLE=Automatic \
-            CODE_SIGN_IDENTITY='Apple Distribution' \
             DEVELOPMENT_TEAM="$DEVELOPMENT_TEAM" \
             COMPILER_INDEX_STORE_ENABLE=NO \
             archive
@@ -514,7 +513,6 @@ jobs:
             -authenticationKeyIssuerID "$APPLE_API_ISSUER_ID" \
             ARCHS=arm64 \
             CODE_SIGN_STYLE=Automatic \
-            CODE_SIGN_IDENTITY='Apple Distribution' \
             DEVELOPMENT_TEAM="$APPLE_TEAM_ID" \
             COMPILER_INDEX_STORE_ENABLE=NO
           xcodebuild -exportArchive \
