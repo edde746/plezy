@@ -327,6 +327,7 @@ jobs:
             hdr_metadata_test \
             plane_geometry_test \
             video_params_test \
+            experimental_render_api_test \
             plane_render_executor_test
 
       - name: Run Linux native reliability tests

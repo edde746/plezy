@@ -1,0 +1,55 @@
+name: Experimental Dolby Vision engine
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - 'codex/dv-experimental-*'
+    paths:
+      - 'tools/dv-engine/**'
+      - '.github/workflows/dv-experimental.yml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dv-experimental-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  linux-engine:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+      - name: Build isolated toolchain container
+        run: docker build -t plezyng-dv-builder tools/dv-engine
+      - name: Build and check the experimental engine
+        run: |
+          mkdir -p build/dv-engine-output
+          set -o pipefail
+          docker run --rm --user "$(id -u):$(id -g)" \
+            -v "$PWD:/src:ro" -v "$PWD/build/dv-engine-output:/work" \
+            plezyng-dv-builder --work-dir /work/build --jobs 2 \
+            2>&1 | tee build/dv-engine-output/build.log
+      - name: Retain build and test diagnostics
+        if: always()
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: dv-engine-linux-diagnostics
+          path: |
+            build/dv-engine-output/build.log
+            build/dv-engine-output/build/*-build/meson-logs/
+            build/dv-engine-output/build/ffmpeg-build/ffbuild/config.log
+          retention-days: 14
+      - name: Retain experimental engine and corresponding source
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7
+        with:
+          name: plezyng-dv-experimental-linux-x86_64
+          path: |
+            build/dv-engine-output/build/plezyng-dv-experimental-*.tar.xz
+            build/dv-engine-output/build/plezyng-dv-experimental-*.tar.xz.sha256
+          if-no-files-found: error
+          retention-days: 14
