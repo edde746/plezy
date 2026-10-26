@@ -219,7 +219,22 @@
     "studio": "Estudio",
     "directors": "Directores",
     "movie": "Película",
-    "moreLikeThis": "Más como esto"
+    "moreLikeThis": "Más como esto",
+    "findNext": {
+      "chooseHint": "Abre un título, guárdalo para después o pasa al siguiente.",
+      "howItWorks": "Cómo funciona",
+      "swipeHint": "Desliza la portada hacia una flecha o usa los botones de abajo.",
+      "notNowHelp": "Omite este título por ahora. Seguirá en tu biblioteca.",
+      "saveHelp": "Guárdalo en las selecciones guardadas de este perfil en este dispositivo. Guardarlo no lo descarga.",
+      "openHelp": "Selecciona la portada para ver los detalles. Usa la acción principal para reproducir, leer o abrir el título.",
+      "controlsHelp": "Teclado o mando: enfoca un botón y pulsa Intro o Seleccionar. Deshacer restaura tu última elección.",
+      "artworkLoading": "Cargando imagen…",
+      "artworkUnavailable": "Imagen no disponible",
+      "savedFeedback": "Añadido a las selecciones guardadas",
+      "skippedFeedback": "Omitido por ahora",
+      "releaseToConfirm": "Suelta para confirmar",
+      "remoteHint": "Portada enfocada: ← / → elegir · Seleccionar: detalles · ↑ / ↓ mover el foco"
+    }
   },
   "libraries": {
     "title": "Bibliotecas",

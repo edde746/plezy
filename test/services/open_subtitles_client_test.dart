@@ -9,6 +9,24 @@ import 'package:plezy/sources/source_models.dart';
 import 'package:plezy/sources/source_transport.dart';
 
 void main() {
+  test('OpenSubtitles preserves regional scripts and resolves full ISO language aliases', () async {
+    final seen = <String>[];
+    final client = OpenSubtitlesClient(
+      apiKey: 'test-api-key',
+      transport: SourceTransport(
+        client: MockClient((request) async {
+          seen.add(request.url.queryParameters['languages']!);
+          return http.Response(jsonEncode({'data': []}), 200);
+        }),
+      ),
+    );
+    for (final code in ['ara', 'jpn', 'kor', 'zh-Hant', 'zh_CN', 'pt-BR', 'pt-PT', 'nb', 'unknown']) {
+      await client.search(query: 'A title', languageCode: code);
+    }
+    expect(seen, ['ar', 'ja', 'ko', 'zh-tw', 'zh-cn', 'pt-br', 'pt-pt', 'no', 'en']);
+    client.close();
+  });
+
   test('OpenSubtitles bounds search and keeps the API key off the download host', () async {
     final requests = <http.Request>[];
     final client = OpenSubtitlesClient(

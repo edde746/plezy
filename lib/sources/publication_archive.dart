@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'dart:io';
 import 'dart:isolate';
 import 'dart:math';
+import 'dart:typed_data';
 
 import 'package:archive/archive_io.dart';
 import 'package:flutter/services.dart';
@@ -310,7 +311,7 @@ class PublicationServer {
         if (request.method != 'HEAD') response.add(font.buffer.asUint8List(font.offsetInBytes, font.lengthInBytes));
       } else if (route == 'manifest.json') {
         response.headers.contentType = ContentType.json;
-        if (request.method != 'HEAD')
+        if (request.method != 'HEAD') {
           response.write(
             jsonEncode({
               'files': archive.files,
@@ -318,6 +319,7 @@ class PublicationServer {
               'comicDocument': archive.comicDocument?.toJson(),
             }),
           );
+        }
       } else if (route.startsWith('book/')) {
         final name = PublicationArchive.safePath(Uri.decodeComponent(route.substring(5)));
         final size = archive.files[name];

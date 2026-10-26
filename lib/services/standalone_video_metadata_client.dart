@@ -58,11 +58,13 @@ class StandaloneVideoMetadataClient {
     final idValue = idType == null ? null : ids[idType];
     if (idType != null && idValue?.isNotEmpty == true) {
       try {
-        candidates.addAll((await _searchById(
-          idType,
-          idValue!,
-          query.season == null ? null : 'show',
-        )).map((entry) => _Candidate(entry, 1)));
+        candidates.addAll(
+          (await _searchById(
+            idType,
+            idValue!,
+            query.season == null ? null : 'show',
+          )).map((entry) => _Candidate(entry, 1)),
+        );
       } on Object {
         // A stale or unavailable external-ID lookup can still fall back to title.
       }
@@ -102,11 +104,10 @@ class StandaloneVideoMetadataClient {
 
     if (isShow && query.season != null && query.episode != null) {
       final episode = await _episode(traktId, query.season!, query.episode!);
-      final episodeCode = 'S' + query.season!.toString().padLeft(2, '0') +
-          'E' + query.episode!.toString().padLeft(2, '0');
+      final episodeCode = 'S${query.season!.toString().padLeft(2, '0')}E${query.episode!.toString().padLeft(2, '0')}';
       if (episode != null) {
         final episodeTitle = _string(episode['title']).trim();
-        title = title + ' — ' + episodeCode + (episodeTitle.isEmpty ? '' : ' · ' + episodeTitle);
+        title = '$title — $episodeCode${episodeTitle.isEmpty ? '' : ' · $episodeTitle'}';
         final episodeOverview = _string(episode['overview']).trim();
         if (episodeOverview.isNotEmpty) overview = episodeOverview;
         final firstAired = _string(episode['first_aired']);
@@ -118,7 +119,7 @@ class StandaloneVideoMetadataClient {
         if (episodeIds['trakt'] != null) identifiers['episode_trakt'] = episodeIds['trakt'].toString();
         if (episodeIds['tmdb'] != null) identifiers['episode_tmdb'] = episodeIds['tmdb'].toString();
       } else {
-        title = title + ' — ' + episodeCode;
+        title = '$title — $episodeCode';
       }
     }
 
@@ -154,8 +155,8 @@ class StandaloneVideoMetadataClient {
     if (id.length > 80 || id.contains('/') || id.contains('?') || id.contains('#')) return const [];
     final uri = Uri.https(
       TraktConstants.apiBase.replaceFirst('https://', ''),
-      '/search/' + type + '/' + Uri.encodeComponent(id),
-      {'extended': 'full,images', if (expectedType != null) 'type': expectedType, 'limit': '10'},
+      '/search/$type/${Uri.encodeComponent(id)}',
+      {'extended': 'full,images', 'type': ?expectedType, 'limit': '10'},
     );
     final response = await _transport
         .jsonValue('GET', uri, headers: TraktConstants.headers())
@@ -167,24 +168,20 @@ class StandaloneVideoMetadataClient {
   Future<Map<String, dynamic>?> _episode(int showId, int season, int episode) async {
     final uri = Uri.https(
       TraktConstants.apiBase.replaceFirst('https://', ''),
-      '/shows/' + showId.toString() + '/seasons/' + season.toString() + '/episodes/' + episode.toString(),
+      '/shows/$showId/seasons/$season/episodes/$episode',
       {'extended': 'full,images'},
     );
     try {
-      return await _transport
-          .json('GET', uri, headers: TraktConstants.headers())
-          .timeout(const Duration(seconds: 12));
+      return await _transport.json('GET', uri, headers: TraktConstants.headers()).timeout(const Duration(seconds: 12));
     } on Object {
       return null;
     }
   }
 
   Future<List<String>> _cast(String type, int traktId) async {
-    final uri = Uri.https(
-      TraktConstants.apiBase.replaceFirst('https://', ''),
-      '/' + type + '/' + traktId.toString() + '/people',
-      {'extended': 'full,images,guest_stars'},
-    );
+    final uri = Uri.https(TraktConstants.apiBase.replaceFirst('https://', ''), '/$type/$traktId/people', {
+      'extended': 'full,images,guest_stars',
+    });
     try {
       final response = await _transport
           .json('GET', uri, headers: TraktConstants.headers())
@@ -197,7 +194,7 @@ class StandaloneVideoMetadataClient {
         if (name.isEmpty) continue;
         final characters = sourceList(row['characters']).whereType<String>();
         final character = characters.isEmpty ? '' : characters.first.trim();
-        output.add(character.isEmpty ? name : name + ' — ' + character);
+        output.add(character.isEmpty ? name : '$name — $character');
         if (output.length >= 12) break;
       }
       return output;
@@ -257,11 +254,7 @@ class StandaloneVideoMetadataClient {
       current[0] = i + 1;
       for (var j = 0; j < b.length; j++) {
         final cost = a.codeUnitAt(i) == b.codeUnitAt(j) ? 0 : 1;
-        current[j + 1] = [
-          current[j] + 1,
-          previous[j + 1] + 1,
-          previous[j] + cost,
-        ].reduce((x, y) => x < y ? x : y);
+        current[j + 1] = [current[j] + 1, previous[j + 1] + 1, previous[j] + cost].reduce((x, y) => x < y ? x : y);
       }
       previous = current;
     }
@@ -275,10 +268,8 @@ class StandaloneVideoMetadataClient {
     return edit > intersection ? edit : intersection;
   }
 
-  static String _normalize(String value) => value.toLowerCase()
-      .replaceAll(RegExp(r'[\s._\-:;,!?()\[\]{}]+'), ' ')
-      .replaceAll(RegExp(r'\s+'), ' ')
-      .trim();
+  static String _normalize(String value) =>
+      value.toLowerCase().replaceAll(RegExp(r'[\s._\-:;,!?()\[\]{}]+'), ' ').replaceAll(RegExp(r'\s+'), ' ').trim();
 
   static String _string(Object? value) => value == null ? '' : '$value';
   static double? _double(Object? value) => value is num ? value.toDouble() : double.tryParse('$value');

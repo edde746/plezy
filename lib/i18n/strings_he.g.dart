@@ -104,6 +104,7 @@ class TranslationsHe extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$he fileSources = _Translations$fileSources$he._(_root);
 	@override late final _Translations$lending$he lending = _Translations$lending$he._(_root);
 	@override late final _Translations$audiobook$he audiobook = _Translations$audiobook$he._(_root);
+	@override late final _Translations$sourceSetup$he sourceSetup = _Translations$sourceSetup$he._(_root);
 }
 
 // Path: app
@@ -3069,6 +3070,12 @@ class _Translations$fileSources$he extends Translations$fileSources$en {
 	@override String get useFiles => 'שימוש בקבצים ובספרים';
 	@override String get cancelScan => 'ביטול סריקה';
 	@override String get googleDrive => 'Google Drive';
+	@override String get smbEndpointHint => 'לדוגמה: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'יש להזין שרת SMB ותיקייה משותפת אחת.';
+	@override String get smbFolderHelp => 'יש להשאיר ריק כדי להשתמש בכל התיקייה המשותפת, או להזין תיקייה בתוכה.';
+	@override String get smbDomain => 'תחום (רשות)';
+	@override String get smbEncryption => 'הצפנת חיבור SMB3';
+	@override String get smbEncryptionHint => 'שימוש בהצפנת SMB3 כאשר התקן ה־NAS תומך בכך.';
 }
 
 // Path: lending
@@ -3188,6 +3195,109 @@ class _Translations$audiobook$he extends Translations$audiobook$en {
 	@override String get statusFinished => 'הסתיימה';
 	@override String get goToTime => 'ללכת בזמן';
 	@override String get timeHelp => 'שעות: דקות: שניות או דקות: שניות';
+}
+
+// Path: sourceSetup
+class _Translations$sourceSetup$he extends Translations$sourceSetup$en {
+	_Translations$sourceSetup$he._(TranslationsHe root) : this._root = root, super.internal(root);
+
+	final TranslationsHe _root; // ignore: unused_field
+
+	// Translations
+	@override String get savedCertificate => 'אישור השרת השמור';
+	@override String get nfsEndpointInvalid => 'יש להזין כתובת NFS, למשל nfs://nas:2049/export.';
+	@override String get dlnaNone => 'לא נמצאו שרתי DLNA. יש להזין ידנית את כתובת תיאור ההתקן.';
+	@override String get dlnaServers => 'שרתי מדיה של DLNA';
+	@override String get dlnaUnavailable => 'גילוי DLNA אינו זמין ברשת הזו. יש להזין ידנית את כתובת תיאור ההתקן.';
+	@override String get dlnaSearching => 'מתבצע חיפוש שרתי DLNA ברשת המקומית';
+	@override String get networkSearching => 'מתבצע חיפוש ברשת המקומית…';
+	@override String get dlnaDiscover => 'גילוי שרתי DLNA';
+	@override String get dlnaHelp => 'הגילוי תלוי בשידור מרובה יעדים ברשת המקומית. אם לא מופיע שרת, יש להזין למעלה את כתובת תיאור ההתקן שלו.';
+	@override String get dlnaRoot => 'מזהה אובייקט DLNA; יש להשאיר ריק כדי להשתמש בתיקיית השורש של ההתקן.';
+	@override String get passwordOrKey => 'יש להזין סיסמה או להוסיף מפתח פרטי למטה.';
+	@override String get sshFingerprint => 'טביעת אצבע SHA256 של מפתח מארח SSH';
+	@override String get sshFingerprintHelp => 'יש לאמת מול מנהל השרת. בשרת, יש להריץ ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub ולהשתמש בערך SHA256 שמתקבל.';
+	@override String get sshFingerprintKeep => 'יש להשאיר ריק כדי לשמור על טביעת האצבע המקובעת הנוכחית, או להזין טביעת אצבע חדשה של השרת.';
+	@override String get sshAuthentication => 'אימות באמצעות מפתח ציבורי של SSH';
+	@override String get sshAuthenticationHelp => 'לא חובה; אפשר גם לבצע אימות באמצעות סיסמה.';
+	@override String get privateKey => 'מפתח פרטי (בפורמט PEM או OpenSSH)';
+	@override String get privateKeyPassphrase => 'סיסמה להגנת המפתח הפרטי';
+	@override String get nfsMountPort => 'יציאת TCP של שירות העיגון של NFS';
+	@override String get nfsMountPortHelp => 'ברירת מחדל: 20048';
+	@override String get nfsUserId => 'מזהה משתמש NFS ‏(AUTH_SYS)';
+	@override String get nfsUserIdHelp => 'ברירת מחדל: 1000. יש להשתמש במזהה המותר בהגדרות ייצוא NFS של ה־NAS.';
+	@override String get nfsGroupId => 'מזהה קבוצת NFS ‏(AUTH_SYS)';
+	@override String get nfsGroupIdHelp => 'ברירת מחדל: 1000. יש להשתמש במזהה הקבוצה המותר בהגדרות ייצוא NFS של ה־NAS.';
+	@override String get nfsEncryption => 'דרישת NFS מוצפן (RPC-with-TLS)';
+	@override String get nfsEncryptionHelp => 'מחייב TLS 1.3 עבור NFS ושירות העיגון. אם ה־NAS אינו תומך בכך, החיבור יידחה.';
+	@override String get nfsTrustCertificate => 'אישור CA או שרת NFS מותאם אישית (PEM, רשות)';
+	@override String get nfsTrustHelp => 'יש להשאיר ריק לאישורים שהתקן זה נותן בהם אמון. לפי הצורך, אפשר להוסיף אישור CA פרטי או אישור שרת בחתימה עצמית; השמות בו חייבים להתאים למארח שבכתובת NFS.';
+	@override String get nfsTrustInvalid => 'יש להשתמש באישור CA או שרת בפורמט PEM. אין לכלול מפתח פרטי.';
+	@override String get addTrustCertificate => 'הוספת אישור אמון מותאם אישית';
+	@override String get replaceTrustCertificate => 'החלפת האישור המותאם אישית השמור';
+	@override String get nfsTlsHelp => 'RPC-with-TLS משתמש ביציאות הרגילות של NFS ושירות העיגון, ודורש תמיכה ב־RFC 9289 מצד ה־NAS. נדרש TLS 1.3. שם המארח או כתובת ה־IP חייבים להתאים לאישור. מזהי AUTH_SYS UID/GID עדיין חלים בתוך הערוץ המוצפן.';
+	@override String get clientCertificate => 'אישור לקוח (רשות)';
+	@override String get clientCertificateHelp => 'מאפשר ל־NAS לאמת את הלקוח הזה; מזהי AUTH_SYS עדיין כפופים למדיניות הייצוא של ה־NAS.';
+	@override String get savedIdentity => 'ייעשה שימוש בפרטי הזיהוי השמורים של הלקוח.';
+	@override String get replaceIdentity => 'החלפת פרטי הזיהוי השמורים של הלקוח';
+	@override String get chooseIdentity => 'בחירת פרטי זיהוי לקוח בפורמט PKCS#12';
+	@override String get identityPassphrase => 'סיסמה להגנת פרטי הזיהוי של הלקוח';
+	@override String get identityPassphraseHelp => 'יש להשאיר ריק אם לקובץ אין סיסמה.';
+	@override String get removeIdentity => 'הסרת פרטי זיהוי לקוח שמורים';
+	@override String get identityStorageHelp => 'פרטי הזיהוי של הלקוחות נשמרים במאגר המוצפן של פרטי הגישה למקורות. כדי לשמור על פרטי הזיהוי הקיימים, יש להשאיר את הסעיף הזה ללא שינוי.';
+	@override String get nfsLimitations => 'NFSv3 לקריאה בלבד דרך TCP. ללא RPC-with-TLS, תעבורת NFS אינה מוצפנת. ה־NAS חייב לאפשר את מזהי AUTH_SYS שנבחרו ואת יציאות הלקוח שאינן דורשות הרשאות מיוחדות (אפשרות ייצוא שנקראת בדרך כלל “insecure”). אין תמיכה ב־NFSv4 וב־UDP.';
+	@override String get nfsSetupHelp => 'עזרה בהגדרת NFS';
+	@override String get nfsSetupHint => 'אם החיבור לא נפתח, כדאי לבדוק את ההגדרות האלה.';
+	@override String get nfsSetupDetails => 'יש להשתמש בייצוא NFSv3 דרך TCP. כשנדרשת הצפנה, גם שירות NFS וגם שירות העיגון חייבים לתמוך ב־RPC-with-TLS. אם התקן זה נותן אמון באישור השרת, יש להשאיר את האישור המותאם אישית ריק; אחרת, יש להוסיף אישור CA או אישור בחתימה עצמית של ה־NAS. שם האישור חייב להתאים למארח שבכתובת החיבור. אם ה־NAS דורש TLS הדדי, יש להוסיף את פרטי זיהוי הלקוח שלו בפורמט PKCS#12. לבסוף, יש לוודא שהייצוא מאפשר את מזהי AUTH_SYS UID/GID שהוגדרו ואת מדיניות יציאות הלקוח.';
+	@override String get ftpHelp => 'FTP משתמש במצב פסיבי. עבור FTP ללא הצפנה יש להשתמש ב־ftp://, להפעלת TLS באמצעות פקודה נפרדת ב־ftpes://, או ב־ftps:// עבור TLS (ביציאה 990, TLS מתחיל מיד; ביציאות אחרות הוא מופעל באמצעות פקודה נפרדת).';
+	@override String get openSubtitles => 'OpenSubtitles';
+	@override String get subtitleSetup => 'חיפוש כתוביות אופציונלי לקובצי וידאו עצמאיים.';
+	@override String get apiKey => 'מפתח API';
+	@override String get optionalUsername => 'שם המשתמש בחשבון (רשות)';
+	@override String get optionalPassword => 'סיסמת החשבון (רשות)';
+	@override String get subtitlePrivacy => 'אפשר לקבל מפתח API מ־opensubtitles.com. החיפוש שולח את שם הווידאו ואת מזהי IMDb/TMDB הזמינים, ולעולם לא את קובץ הווידאו. המפתח ופרטי החשבון האופציונליים נשמרים בהצפנה עם המקור הזה.';
+	@override String get automaticMetadata => 'אחזור אוטומטי של מטא־נתוני וידאו מקוונים';
+	@override String get metadataPrivacy => 'נשלחים רק שם היצירה, השנה ומספרי הפרקים מתוך שם הקובץ, או מזהה NFO. מדיה ופרטי גישה לעולם אינם נשלחים. לשדות NFO נשמרת עדיפות.';
+	@override String get nfsEncryptionFailure => 'עבור NFS מוצפן, יש לבדוק תמיכה ב־RFC 9289 וב־TLS 1.3 בשני שירותי ה־NAS, את שם האישור ואת מזהי UID/GID של הייצוא. PlezyNG לא ינסה שוב את החיבור הזה ללא הצפנה.';
+	@override String get sourceConnecting => 'מתבצע חיבור למקור';
+	@override String get metadataSearchPrivacy => 'חיפוש השם הזה נשלח ל־Trakt. נשלח רק השם שהוזן, ולא הווידאו או פרטי הגישה למקור.';
+	@override String get chooseMatch => 'בחירת תוצאה תואמת';
+	@override String get metadataMatchHelp => 'לפני הבחירה, יש לבדוק את השם והשנה. Trakt מקבל את שם החיפוש; הווידאו נשאר במקור שלו.';
+	@override String get metadataNoMatches => 'לא נמצאו שמות תואמים בחיפוש המקוון. כדאי לנסות שם אחר.';
+	@override String get metadataSearch => 'חיפוש מטא־נתונים מקוונים';
+	@override String get metadataLoading => 'מתבצע חיפוש מקוון של פרטי סרטים וסדרות…';
+	@override String get metadataFromTrakt => 'מטא־נתונים מקוונים מ־Trakt';
+	@override String get metadataNoAutomaticMatch => 'לא נמצאה התאמה אוטומטית לשם. יש לחפש את השם כדי לבחור תוצאה תואמת.';
+	@override String get metadataFailed => 'לא ניתן לטעון מטא־נתונים מקוונים. ההפעלה והפרטים המקומיים עדיין זמינים.';
+	@override String get videoDetailsLoading => 'פרטי הווידאו נטענים';
+	@override String get subtitleKeyRequired => 'נדרש מפתח API של OpenSubtitles';
+	@override String get subtitleKeyHelp => 'יש לערוך את מקור הקבצים הזה ולהוסיף מפתח API של OpenSubtitles בהגדרות הכתוביות האופציונליות שלו.';
+	@override String get subtitleSearchFailed => 'חיפוש הכתוביות נכשל. יש לבדוק את מפתח ה־API, את החיבור ואת הגישה לשירות.';
+	@override String get subtitleApplyFailed => 'לא ניתן להוריד או להחיל את הכתוביות האלה. יש לבדוק את החיבור ולנסות תוצאה אחרת.';
+	@override String get subtitleSearch => 'חיפוש ב־OpenSubtitles';
+	@override String get subtitleSearchPrivacy => 'החיפוש משתמש בשם ובמזהי IMDb/TMDB הזמינים. קובץ הווידאו נשאר במקור שלו. לפני הבחירה, יש לבדוק את השפה, את סימוני הכתוביות הכפויות או המותאמות לכבדי שמיעה, ואת הדירוג.';
+	@override String get movieOrShow => 'סרט או סדרה';
+	@override String get subtitleTitleHint => 'יש להזין שם כדי לצמצם את התוצאות';
+	@override String get subtitleLanguage => 'שפת הכתוביות';
+	@override String get subtitleSearching => 'מתבצע חיפוש ב־OpenSubtitles';
+	@override String get subtitleNoMatches => 'לא נמצאו כתוביות תואמות. כדאי לנסות שם או שפה אחרים.';
+	@override String get downloadSubtitle => 'הורדת כתוביות';
+	@override String get subtitle => 'כתוביות';
+	@override String get nfsTlsRequired => 'נדרש RPC-with-TLS';
+	@override String get nfsUnencrypted => 'NFS לא מוצפן';
+	@override String get tlsEncrypted => 'מוצפן באמצעות TLS';
+	@override String get ftpPlain => 'FTP לא מוצפן';
+	@override String get sshPinned => 'הצפנת SSH · מפתח המארח מקובע';
+	@override String get smbEncrypted => 'הצפנת SMB3 מופעלת';
+	@override String get smbUnencrypted => 'הצפנת SMB3 כבויה';
+	@override String get httpUnencrypted => 'HTTP ללא הצפנת תעבורה';
+	@override String get checkEndpointSecurity => 'יש לבדוק את אבטחת כתובת החיבור';
+	@override String fieldRequired({required Object label}) => 'חובה למלא את השדה ${label}.';
+	@override String integerRange({required Object label, required Object min, required Object max}) => 'יש להזין עבור ${label} ערך בין ${min} ל־${max}.';
+	@override String replaceFile({required Object name}) => 'החלפת ${name}';
+	@override String selectedIdentity({required Object name}) => 'פרטי זיהוי הלקוח שנבחרו: ${name}';
+	@override String subtitleRating({required Object rating}) => 'דירוג ${rating}';
+	@override String subtitleDownloading({required Object title}) => 'הכתוביות בהורדה: ${title}';
 }
 
 // Path: appIcon.names
@@ -3441,48 +3551,60 @@ class _Translations$discover$findNext$he extends Translations$discover$findNext$
 	final TranslationsHe _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'מצא את הבא שלך';
-	@override String get open => 'מצא את הבא שלך';
-	@override String get anyTime => 'בכל עת';
-	@override String get timeAvailable => 'כמה זמן יש לך?';
-	@override String get filters => 'בחר את הרגע';
-	@override String get watch => 'צפו';
-	@override String get listen => 'לשמוע';
-	@override String get read => 'קראו';
-	@override String finishable({required Object duration}) => 'תגית: ${duration}';
-	@override String aboutDuration({required Object duration}) => 'אודות ${duration}';
-	@override String nextUnit({required Object duration}) => 'פרק הבא · ${duration}';
-	@override String totalDuration({required Object duration}) => '${duration} סך הכל';
-	@override String get timingVaries => 'הזמן משתנה';
+	@override String get title => 'מצאו את הבחירה הבאה שלכם';
+	@override String get open => 'מצאו את הבחירה הבאה שלכם';
+	@override String get anyTime => 'ללא הגבלת זמן';
+	@override String get timeAvailable => 'כמה זמן יש לכם?';
+	@override String get filters => 'בחרו מה מתאים לרגע הזה';
+	@override String get watch => 'צפייה';
+	@override String get listen => 'האזנה';
+	@override String get read => 'קריאה';
+	@override String finishable({required Object duration}) => 'אפשר לסיים בתוך ${duration}';
+	@override String aboutDuration({required Object duration}) => 'כ־${duration}';
+	@override String nextUnit({required Object duration}) => 'הפרק הבא · ${duration}';
+	@override String totalDuration({required Object duration}) => '${duration} בסך הכול';
+	@override String get timingVaries => 'משך הזמן משתנה';
 	@override String get notNow => 'לא עכשיו';
-	@override String get swipeHint => 'סובב, או להשתמש בכפתורים למטה';
-	@override String get saved => 'הצלחה פיקס';
-	@override String savedCount({required Object count}) => 'תגיות קשורות ${count}';
-	@override String get undo => 'ונו';
+	@override String get swipeHint => 'החליקו את העטיפה לכיוון אחד החצים או השתמשו בכפתורים למטה.';
+	@override String get saved => 'המלצות שמורות';
+	@override String savedCount({required Object count}) => 'המלצות שמורות · ${count}';
+	@override String get undo => 'ביטול הפעולה האחרונה';
 	@override String get details => 'פרטים';
-	@override String get noPicks => 'עדיין אין מה לבחור';
-	@override String get noPicksHint => 'לחבר ספרייה או להוסיף מקור מדיה כדי להתחיל.';
-	@override String get noMatches => 'שום דבר לא מתאים לרגע הזה';
-	@override String get noMatchesHint => 'נסה פורמט אחר או תן לעצמך יותר זמן.';
-	@override String get allDone => 'כולכם נתפסו';
-	@override String get allDoneHint => 'התחל את התערובת החדשה כדי לראות את הבחירות האלה שוב.';
-	@override String get refresh => 'מצא עוד מיקס';
+	@override String get noPicks => 'עדיין אין אפשרויות לבחירה';
+	@override String get noPicksHint => 'חברו ספרייה או הוסיפו מקור מדיה כדי להתחיל.';
+	@override String get noMatches => 'אין כרגע משהו שמתאים';
+	@override String get noMatchesHint => 'נסו סוג מדיה אחר או הקצו לעצמכם יותר זמן.';
+	@override String get allDone => 'עברתם על כל ההמלצות';
+	@override String get allDoneHint => 'התחילו מקבץ חדש כדי לראות את האפשרויות האלה שוב.';
+	@override String get refresh => 'מצאו מקבץ אחר';
 	@override String sourceReason({required Object source}) => 'מתוך ${source}';
 	@override String libraryReason({required Object library}) => 'מתוך ${library}';
-	@override String get ownedReason => 'מתוך הספרייה שלך';
-	@override String get liveNow => 'על עכשיו';
-	@override String get watchLive => 'צפו בחיים';
-	@override String get filterAnything => 'כל דבר';
-	@override String get filterWatch => 'צפו';
-	@override String get filterListen => 'לשמוע';
-	@override String get filterRead => 'קראו';
+	@override String get ownedReason => 'מהספרייה שלכם';
+	@override String get liveNow => 'משודר עכשיו';
+	@override String get watchLive => 'צפייה בשידור חי';
+	@override String get filterAnything => 'כל סוג';
+	@override String get filterWatch => 'צפייה';
+	@override String get filterListen => 'האזנה';
+	@override String get filterRead => 'קריאה';
 	@override String get twentyMinutes => '20 דקות';
 	@override String get fortyFiveMinutes => '45 דקות';
 	@override String get ninetyMinutes => '90 דקות';
-	@override String get apply => 'יישום';
-	@override String get openFailed => 'הבחירה הזאת כבר לא זמינה; לחדש כדי לבדוק שוב.';
-	@override String get changeFailed => 'לא הצלחתי לשמור את השינוי הזה, ניסיתי שוב.';
-	@override String get savedLimit => 'הפקודות שנשמרו מלאות.סיר את הפקודה אחת כדי לחסוך אחרת.';
+	@override String get apply => 'החלה';
+	@override String get openFailed => 'האפשרות הזו כבר לא זמינה. רעננו כדי לבדוק שוב.';
+	@override String get changeFailed => 'לא ניתן לשמור את השינוי. נסו שוב.';
+	@override String get savedLimit => 'רשימת ההמלצות השמורות מלאה. הסירו המלצה כדי לשמור אחרת.';
+	@override String get chooseHint => 'פתחו כותר, שמרו אותו להמשך או דלגו עליו.';
+	@override String get howItWorks => 'איך זה עובד';
+	@override String get notNowHelp => 'דלגו על הכותר הזה כרגע. הוא יישאר בספרייה שלכם.';
+	@override String get saveHelp => 'שמרו אותו בבחירות השמורות של הפרופיל הזה במכשיר הזה. השמירה אינה מורידה את התוכן.';
+	@override String get openHelp => 'בחרו בעטיפה להצגת פרטים. השתמשו בפעולה הראשית כדי לנגן, לקרוא או לפתוח את הכותר.';
+	@override String get controlsHelp => 'מקלדת או שלט: עברו לכפתור ולחצו על Enter או על בחירה. ביטול מחזיר את הבחירה האחרונה.';
+	@override String get artworkLoading => 'טוען תמונה…';
+	@override String get artworkUnavailable => 'התמונה אינה זמינה';
+	@override String get savedFeedback => 'נוסף לבחירות השמורות';
+	@override String get skippedFeedback => 'דולג לעת עתה';
+	@override String get releaseToConfirm => 'שחררו לאישור';
+	@override String get remoteHint => 'כשהעטיפה במיקוד: ← / → בחירה · לחצן בחירה: פרטים · ↑ / ↓ העברת מיקוד';
 }
 
 // Path: discover.person
@@ -5479,48 +5601,60 @@ extension on TranslationsHe {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'ע${season} פ${episode}',
 			'discover.overview' => 'סקירה כללית',
 			'discover.cast' => 'קסט',
-			'discover.findNext.title' => 'מצא את הבא שלך',
-			'discover.findNext.open' => 'מצא את הבא שלך',
-			'discover.findNext.anyTime' => 'בכל עת',
-			'discover.findNext.timeAvailable' => 'כמה זמן יש לך?',
-			'discover.findNext.filters' => 'בחר את הרגע',
-			'discover.findNext.watch' => 'צפו',
-			'discover.findNext.listen' => 'לשמוע',
-			'discover.findNext.read' => 'קראו',
-			'discover.findNext.finishable' => ({required Object duration}) => 'תגית: ${duration}',
-			'discover.findNext.aboutDuration' => ({required Object duration}) => 'אודות ${duration}',
-			'discover.findNext.nextUnit' => ({required Object duration}) => 'פרק הבא · ${duration}',
-			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} סך הכל',
-			'discover.findNext.timingVaries' => 'הזמן משתנה',
+			'discover.findNext.title' => 'מצאו את הבחירה הבאה שלכם',
+			'discover.findNext.open' => 'מצאו את הבחירה הבאה שלכם',
+			'discover.findNext.anyTime' => 'ללא הגבלת זמן',
+			'discover.findNext.timeAvailable' => 'כמה זמן יש לכם?',
+			'discover.findNext.filters' => 'בחרו מה מתאים לרגע הזה',
+			'discover.findNext.watch' => 'צפייה',
+			'discover.findNext.listen' => 'האזנה',
+			'discover.findNext.read' => 'קריאה',
+			'discover.findNext.finishable' => ({required Object duration}) => 'אפשר לסיים בתוך ${duration}',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => 'כ־${duration}',
+			'discover.findNext.nextUnit' => ({required Object duration}) => 'הפרק הבא · ${duration}',
+			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} בסך הכול',
+			'discover.findNext.timingVaries' => 'משך הזמן משתנה',
 			'discover.findNext.notNow' => 'לא עכשיו',
-			'discover.findNext.swipeHint' => 'סובב, או להשתמש בכפתורים למטה',
-			'discover.findNext.saved' => 'הצלחה פיקס',
-			'discover.findNext.savedCount' => ({required Object count}) => 'תגיות קשורות ${count}',
-			'discover.findNext.undo' => 'ונו',
+			'discover.findNext.swipeHint' => 'החליקו את העטיפה לכיוון אחד החצים או השתמשו בכפתורים למטה.',
+			'discover.findNext.saved' => 'המלצות שמורות',
+			'discover.findNext.savedCount' => ({required Object count}) => 'המלצות שמורות · ${count}',
+			'discover.findNext.undo' => 'ביטול הפעולה האחרונה',
 			'discover.findNext.details' => 'פרטים',
-			'discover.findNext.noPicks' => 'עדיין אין מה לבחור',
-			'discover.findNext.noPicksHint' => 'לחבר ספרייה או להוסיף מקור מדיה כדי להתחיל.',
-			'discover.findNext.noMatches' => 'שום דבר לא מתאים לרגע הזה',
-			'discover.findNext.noMatchesHint' => 'נסה פורמט אחר או תן לעצמך יותר זמן.',
-			'discover.findNext.allDone' => 'כולכם נתפסו',
-			'discover.findNext.allDoneHint' => 'התחל את התערובת החדשה כדי לראות את הבחירות האלה שוב.',
-			'discover.findNext.refresh' => 'מצא עוד מיקס',
+			'discover.findNext.noPicks' => 'עדיין אין אפשרויות לבחירה',
+			'discover.findNext.noPicksHint' => 'חברו ספרייה או הוסיפו מקור מדיה כדי להתחיל.',
+			'discover.findNext.noMatches' => 'אין כרגע משהו שמתאים',
+			'discover.findNext.noMatchesHint' => 'נסו סוג מדיה אחר או הקצו לעצמכם יותר זמן.',
+			'discover.findNext.allDone' => 'עברתם על כל ההמלצות',
+			'discover.findNext.allDoneHint' => 'התחילו מקבץ חדש כדי לראות את האפשרויות האלה שוב.',
+			'discover.findNext.refresh' => 'מצאו מקבץ אחר',
 			'discover.findNext.sourceReason' => ({required Object source}) => 'מתוך ${source}',
 			'discover.findNext.libraryReason' => ({required Object library}) => 'מתוך ${library}',
-			'discover.findNext.ownedReason' => 'מתוך הספרייה שלך',
-			'discover.findNext.liveNow' => 'על עכשיו',
-			'discover.findNext.watchLive' => 'צפו בחיים',
-			'discover.findNext.filterAnything' => 'כל דבר',
-			'discover.findNext.filterWatch' => 'צפו',
-			'discover.findNext.filterListen' => 'לשמוע',
-			'discover.findNext.filterRead' => 'קראו',
+			'discover.findNext.ownedReason' => 'מהספרייה שלכם',
+			'discover.findNext.liveNow' => 'משודר עכשיו',
+			'discover.findNext.watchLive' => 'צפייה בשידור חי',
+			'discover.findNext.filterAnything' => 'כל סוג',
+			'discover.findNext.filterWatch' => 'צפייה',
+			'discover.findNext.filterListen' => 'האזנה',
+			'discover.findNext.filterRead' => 'קריאה',
 			'discover.findNext.twentyMinutes' => '20 דקות',
 			'discover.findNext.fortyFiveMinutes' => '45 דקות',
 			'discover.findNext.ninetyMinutes' => '90 דקות',
-			'discover.findNext.apply' => 'יישום',
-			'discover.findNext.openFailed' => 'הבחירה הזאת כבר לא זמינה; לחדש כדי לבדוק שוב.',
-			'discover.findNext.changeFailed' => 'לא הצלחתי לשמור את השינוי הזה, ניסיתי שוב.',
-			'discover.findNext.savedLimit' => 'הפקודות שנשמרו מלאות.סיר את הפקודה אחת כדי לחסוך אחרת.',
+			'discover.findNext.apply' => 'החלה',
+			'discover.findNext.openFailed' => 'האפשרות הזו כבר לא זמינה. רעננו כדי לבדוק שוב.',
+			'discover.findNext.changeFailed' => 'לא ניתן לשמור את השינוי. נסו שוב.',
+			'discover.findNext.savedLimit' => 'רשימת ההמלצות השמורות מלאה. הסירו המלצה כדי לשמור אחרת.',
+			'discover.findNext.chooseHint' => 'פתחו כותר, שמרו אותו להמשך או דלגו עליו.',
+			'discover.findNext.howItWorks' => 'איך זה עובד',
+			'discover.findNext.notNowHelp' => 'דלגו על הכותר הזה כרגע. הוא יישאר בספרייה שלכם.',
+			'discover.findNext.saveHelp' => 'שמרו אותו בבחירות השמורות של הפרופיל הזה במכשיר הזה. השמירה אינה מורידה את התוכן.',
+			'discover.findNext.openHelp' => 'בחרו בעטיפה להצגת פרטים. השתמשו בפעולה הראשית כדי לנגן, לקרוא או לפתוח את הכותר.',
+			'discover.findNext.controlsHelp' => 'מקלדת או שלט: עברו לכפתור ולחצו על Enter או על בחירה. ביטול מחזיר את הבחירה האחרונה.',
+			'discover.findNext.artworkLoading' => 'טוען תמונה…',
+			'discover.findNext.artworkUnavailable' => 'התמונה אינה זמינה',
+			'discover.findNext.savedFeedback' => 'נוסף לבחירות השמורות',
+			'discover.findNext.skippedFeedback' => 'דולג לעת עתה',
+			'discover.findNext.releaseToConfirm' => 'שחררו לאישור',
+			'discover.findNext.remoteHint' => 'כשהעטיפה במיקוד: ← / → בחירה · לחצן בחירה: פרטים · ↑ / ↓ העברת מיקוד',
 			'discover.extras' => 'טריילר & Extras',
 			'discover.studio' => 'סטודיו',
 			'discover.rating' => 'דירוג',
@@ -5746,6 +5880,8 @@ extension on TranslationsHe {
 			'explore.mdblistShelves.nameHint' => 'השאירו את השם ללימודי המקור.',
 			'explore.mdblistShelves.add' => 'להוסיף Shelf',
 			'explore.mdblistShelves.save' => 'הציל את המדרגות',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'זורק ${title} למעלה',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'מוריד ${title} למטה',
 			'explore.mdblistShelves.unavailable' => 'רשימה זו אינה זמינה.חזיר או להסיר את המאגר שלה בהגדרות.',
@@ -5758,8 +5894,6 @@ extension on TranslationsHe {
 			'explore.selectSource' => 'בחר מקור',
 			'explore.rows.watchlist' => 'שומרים',
 			'explore.rows.recommendedMovies' => 'סרטים מומלצים',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'הצגות מומלצות',
 			'explore.rows.trendingMovies' => 'סרטים טרנדים',
 			'explore.rows.trendingShows' => 'תצוגות טרנד',
@@ -6260,6 +6394,8 @@ extension on TranslationsHe {
 			'downloads.resumeDownload' => 'תגית: download',
 			'downloads.cancelledDownload' => 'ביטול הורדות',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (סנצ\'ינג ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => 'הורד ${file} - לחצו כדי להשלים',
 			'downloads.partialDownloadClickToComplete' => 'הורדה חלקית - לחצו כדי להשלים',
 			'downloads.deleting' => 'הסרת...',
@@ -6272,8 +6408,6 @@ extension on TranslationsHe {
 			'downloads.pauseAll' => 'הפסקה הכול',
 			'downloads.resumeAll' => 'סיכום הכול',
 			'downloads.retryAll' => 'להחזיר את כולם',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'הורדות נכשלות',
 			'downloads.deleteAll' => 'מחק הכל',
 			'downloads.selectVersion' => 'בחר גרסה',
@@ -6774,6 +6908,8 @@ extension on TranslationsHe {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'לא יכול להגיע לשרת: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'הצטרפות לא מוצלחת: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect נכשל: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'הצטרפו ל- Plex',
 			'addServer.pinExpired' => 'ה-PIN נגמר לפני ההרשמה, אנא נסה שוב.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'חשבונית לא נרשמה: ${error}',
@@ -6786,8 +6922,6 @@ extension on TranslationsHe {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'חיבור ל- ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'הקלד את כתובת ה-URL, שם המשתמש ואת הסיסמה שלך.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'הצטרפו לשרת ${product}.חברים ל- ${name}.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'הלוואה מפרט אחר',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'השתמש מחדש בקשר של פרופיל אחר.פרופילים מוגנים ב-PIN דורשים PIN.',
 			'addServer.invalidCredentials' => 'שם משתמש או סיסמה בלתי חוקיים',
@@ -7094,6 +7228,12 @@ extension on TranslationsHe {
 			'fileSources.useFiles' => 'שימוש בקבצים ובספרים',
 			'fileSources.cancelScan' => 'ביטול סריקה',
 			'fileSources.googleDrive' => 'Google Drive',
+			'fileSources.smbEndpointHint' => 'לדוגמה: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'יש להזין שרת SMB ותיקייה משותפת אחת.',
+			'fileSources.smbFolderHelp' => 'יש להשאיר ריק כדי להשתמש בכל התיקייה המשותפת, או להזין תיקייה בתוכה.',
+			'fileSources.smbDomain' => 'תחום (רשות)',
+			'fileSources.smbEncryption' => 'הצפנת חיבור SMB3',
+			'fileSources.smbEncryptionHint' => 'שימוש בהצפנת SMB3 כאשר התקן ה־NAS תומך בכך.',
 			'lending.title' => 'ספרייה ציבורית',
 			'lending.add' => 'הוסף ספרייה',
 			'lending.other' => 'ספרייה נוספת',
@@ -7195,6 +7335,102 @@ extension on TranslationsHe {
 			'audiobook.statusFinished' => 'הסתיימה',
 			'audiobook.goToTime' => 'ללכת בזמן',
 			'audiobook.timeHelp' => 'שעות: דקות: שניות או דקות: שניות',
+			'sourceSetup.savedCertificate' => 'אישור השרת השמור',
+			'sourceSetup.nfsEndpointInvalid' => 'יש להזין כתובת NFS, למשל nfs://nas:2049/export.',
+			'sourceSetup.dlnaNone' => 'לא נמצאו שרתי DLNA. יש להזין ידנית את כתובת תיאור ההתקן.',
+			'sourceSetup.dlnaServers' => 'שרתי מדיה של DLNA',
+			'sourceSetup.dlnaUnavailable' => 'גילוי DLNA אינו זמין ברשת הזו. יש להזין ידנית את כתובת תיאור ההתקן.',
+			'sourceSetup.dlnaSearching' => 'מתבצע חיפוש שרתי DLNA ברשת המקומית',
+			'sourceSetup.networkSearching' => 'מתבצע חיפוש ברשת המקומית…',
+			'sourceSetup.dlnaDiscover' => 'גילוי שרתי DLNA',
+			'sourceSetup.dlnaHelp' => 'הגילוי תלוי בשידור מרובה יעדים ברשת המקומית. אם לא מופיע שרת, יש להזין למעלה את כתובת תיאור ההתקן שלו.',
+			'sourceSetup.dlnaRoot' => 'מזהה אובייקט DLNA; יש להשאיר ריק כדי להשתמש בתיקיית השורש של ההתקן.',
+			'sourceSetup.passwordOrKey' => 'יש להזין סיסמה או להוסיף מפתח פרטי למטה.',
+			'sourceSetup.sshFingerprint' => 'טביעת אצבע SHA256 של מפתח מארח SSH',
+			'sourceSetup.sshFingerprintHelp' => 'יש לאמת מול מנהל השרת. בשרת, יש להריץ ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub ולהשתמש בערך SHA256 שמתקבל.',
+			'sourceSetup.sshFingerprintKeep' => 'יש להשאיר ריק כדי לשמור על טביעת האצבע המקובעת הנוכחית, או להזין טביעת אצבע חדשה של השרת.',
+			'sourceSetup.sshAuthentication' => 'אימות באמצעות מפתח ציבורי של SSH',
+			'sourceSetup.sshAuthenticationHelp' => 'לא חובה; אפשר גם לבצע אימות באמצעות סיסמה.',
+			'sourceSetup.privateKey' => 'מפתח פרטי (בפורמט PEM או OpenSSH)',
+			'sourceSetup.privateKeyPassphrase' => 'סיסמה להגנת המפתח הפרטי',
+			'sourceSetup.nfsMountPort' => 'יציאת TCP של שירות העיגון של NFS',
+			'sourceSetup.nfsMountPortHelp' => 'ברירת מחדל: 20048',
+			'sourceSetup.nfsUserId' => 'מזהה משתמש NFS ‏(AUTH_SYS)',
+			'sourceSetup.nfsUserIdHelp' => 'ברירת מחדל: 1000. יש להשתמש במזהה המותר בהגדרות ייצוא NFS של ה־NAS.',
+			'sourceSetup.nfsGroupId' => 'מזהה קבוצת NFS ‏(AUTH_SYS)',
+			'sourceSetup.nfsGroupIdHelp' => 'ברירת מחדל: 1000. יש להשתמש במזהה הקבוצה המותר בהגדרות ייצוא NFS של ה־NAS.',
+			'sourceSetup.nfsEncryption' => 'דרישת NFS מוצפן (RPC-with-TLS)',
+			'sourceSetup.nfsEncryptionHelp' => 'מחייב TLS 1.3 עבור NFS ושירות העיגון. אם ה־NAS אינו תומך בכך, החיבור יידחה.',
+			'sourceSetup.nfsTrustCertificate' => 'אישור CA או שרת NFS מותאם אישית (PEM, רשות)',
+			'sourceSetup.nfsTrustHelp' => 'יש להשאיר ריק לאישורים שהתקן זה נותן בהם אמון. לפי הצורך, אפשר להוסיף אישור CA פרטי או אישור שרת בחתימה עצמית; השמות בו חייבים להתאים למארח שבכתובת NFS.',
+			'sourceSetup.nfsTrustInvalid' => 'יש להשתמש באישור CA או שרת בפורמט PEM. אין לכלול מפתח פרטי.',
+			'sourceSetup.addTrustCertificate' => 'הוספת אישור אמון מותאם אישית',
+			'sourceSetup.replaceTrustCertificate' => 'החלפת האישור המותאם אישית השמור',
+			'sourceSetup.nfsTlsHelp' => 'RPC-with-TLS משתמש ביציאות הרגילות של NFS ושירות העיגון, ודורש תמיכה ב־RFC 9289 מצד ה־NAS. נדרש TLS 1.3. שם המארח או כתובת ה־IP חייבים להתאים לאישור. מזהי AUTH_SYS UID/GID עדיין חלים בתוך הערוץ המוצפן.',
+			'sourceSetup.clientCertificate' => 'אישור לקוח (רשות)',
+			'sourceSetup.clientCertificateHelp' => 'מאפשר ל־NAS לאמת את הלקוח הזה; מזהי AUTH_SYS עדיין כפופים למדיניות הייצוא של ה־NAS.',
+			'sourceSetup.savedIdentity' => 'ייעשה שימוש בפרטי הזיהוי השמורים של הלקוח.',
+			'sourceSetup.replaceIdentity' => 'החלפת פרטי הזיהוי השמורים של הלקוח',
+			'sourceSetup.chooseIdentity' => 'בחירת פרטי זיהוי לקוח בפורמט PKCS#12',
+			'sourceSetup.identityPassphrase' => 'סיסמה להגנת פרטי הזיהוי של הלקוח',
+			'sourceSetup.identityPassphraseHelp' => 'יש להשאיר ריק אם לקובץ אין סיסמה.',
+			'sourceSetup.removeIdentity' => 'הסרת פרטי זיהוי לקוח שמורים',
+			'sourceSetup.identityStorageHelp' => 'פרטי הזיהוי של הלקוחות נשמרים במאגר המוצפן של פרטי הגישה למקורות. כדי לשמור על פרטי הזיהוי הקיימים, יש להשאיר את הסעיף הזה ללא שינוי.',
+			'sourceSetup.nfsLimitations' => 'NFSv3 לקריאה בלבד דרך TCP. ללא RPC-with-TLS, תעבורת NFS אינה מוצפנת. ה־NAS חייב לאפשר את מזהי AUTH_SYS שנבחרו ואת יציאות הלקוח שאינן דורשות הרשאות מיוחדות (אפשרות ייצוא שנקראת בדרך כלל “insecure”). אין תמיכה ב־NFSv4 וב־UDP.',
+			'sourceSetup.nfsSetupHelp' => 'עזרה בהגדרת NFS',
+			'sourceSetup.nfsSetupHint' => 'אם החיבור לא נפתח, כדאי לבדוק את ההגדרות האלה.',
+			'sourceSetup.nfsSetupDetails' => 'יש להשתמש בייצוא NFSv3 דרך TCP. כשנדרשת הצפנה, גם שירות NFS וגם שירות העיגון חייבים לתמוך ב־RPC-with-TLS. אם התקן זה נותן אמון באישור השרת, יש להשאיר את האישור המותאם אישית ריק; אחרת, יש להוסיף אישור CA או אישור בחתימה עצמית של ה־NAS. שם האישור חייב להתאים למארח שבכתובת החיבור. אם ה־NAS דורש TLS הדדי, יש להוסיף את פרטי זיהוי הלקוח שלו בפורמט PKCS#12. לבסוף, יש לוודא שהייצוא מאפשר את מזהי AUTH_SYS UID/GID שהוגדרו ואת מדיניות יציאות הלקוח.',
+			'sourceSetup.ftpHelp' => 'FTP משתמש במצב פסיבי. עבור FTP ללא הצפנה יש להשתמש ב־ftp://, להפעלת TLS באמצעות פקודה נפרדת ב־ftpes://, או ב־ftps:// עבור TLS (ביציאה 990, TLS מתחיל מיד; ביציאות אחרות הוא מופעל באמצעות פקודה נפרדת).',
+			'sourceSetup.openSubtitles' => 'OpenSubtitles',
+			'sourceSetup.subtitleSetup' => 'חיפוש כתוביות אופציונלי לקובצי וידאו עצמאיים.',
+			'sourceSetup.apiKey' => 'מפתח API',
+			'sourceSetup.optionalUsername' => 'שם המשתמש בחשבון (רשות)',
+			'sourceSetup.optionalPassword' => 'סיסמת החשבון (רשות)',
+			'sourceSetup.subtitlePrivacy' => 'אפשר לקבל מפתח API מ־opensubtitles.com. החיפוש שולח את שם הווידאו ואת מזהי IMDb/TMDB הזמינים, ולעולם לא את קובץ הווידאו. המפתח ופרטי החשבון האופציונליים נשמרים בהצפנה עם המקור הזה.',
+			'sourceSetup.automaticMetadata' => 'אחזור אוטומטי של מטא־נתוני וידאו מקוונים',
+			'sourceSetup.metadataPrivacy' => 'נשלחים רק שם היצירה, השנה ומספרי הפרקים מתוך שם הקובץ, או מזהה NFO. מדיה ופרטי גישה לעולם אינם נשלחים. לשדות NFO נשמרת עדיפות.',
+			'sourceSetup.nfsEncryptionFailure' => 'עבור NFS מוצפן, יש לבדוק תמיכה ב־RFC 9289 וב־TLS 1.3 בשני שירותי ה־NAS, את שם האישור ואת מזהי UID/GID של הייצוא. PlezyNG לא ינסה שוב את החיבור הזה ללא הצפנה.',
+			'sourceSetup.sourceConnecting' => 'מתבצע חיבור למקור',
+			'sourceSetup.metadataSearchPrivacy' => 'חיפוש השם הזה נשלח ל־Trakt. נשלח רק השם שהוזן, ולא הווידאו או פרטי הגישה למקור.',
+			'sourceSetup.chooseMatch' => 'בחירת תוצאה תואמת',
+			'sourceSetup.metadataMatchHelp' => 'לפני הבחירה, יש לבדוק את השם והשנה. Trakt מקבל את שם החיפוש; הווידאו נשאר במקור שלו.',
+			'sourceSetup.metadataNoMatches' => 'לא נמצאו שמות תואמים בחיפוש המקוון. כדאי לנסות שם אחר.',
+			'sourceSetup.metadataSearch' => 'חיפוש מטא־נתונים מקוונים',
+			'sourceSetup.metadataLoading' => 'מתבצע חיפוש מקוון של פרטי סרטים וסדרות…',
+			'sourceSetup.metadataFromTrakt' => 'מטא־נתונים מקוונים מ־Trakt',
+			'sourceSetup.metadataNoAutomaticMatch' => 'לא נמצאה התאמה אוטומטית לשם. יש לחפש את השם כדי לבחור תוצאה תואמת.',
+			'sourceSetup.metadataFailed' => 'לא ניתן לטעון מטא־נתונים מקוונים. ההפעלה והפרטים המקומיים עדיין זמינים.',
+			'sourceSetup.videoDetailsLoading' => 'פרטי הווידאו נטענים',
+			'sourceSetup.subtitleKeyRequired' => 'נדרש מפתח API של OpenSubtitles',
+			'sourceSetup.subtitleKeyHelp' => 'יש לערוך את מקור הקבצים הזה ולהוסיף מפתח API של OpenSubtitles בהגדרות הכתוביות האופציונליות שלו.',
+			'sourceSetup.subtitleSearchFailed' => 'חיפוש הכתוביות נכשל. יש לבדוק את מפתח ה־API, את החיבור ואת הגישה לשירות.',
+			'sourceSetup.subtitleApplyFailed' => 'לא ניתן להוריד או להחיל את הכתוביות האלה. יש לבדוק את החיבור ולנסות תוצאה אחרת.',
+			'sourceSetup.subtitleSearch' => 'חיפוש ב־OpenSubtitles',
+			'sourceSetup.subtitleSearchPrivacy' => 'החיפוש משתמש בשם ובמזהי IMDb/TMDB הזמינים. קובץ הווידאו נשאר במקור שלו. לפני הבחירה, יש לבדוק את השפה, את סימוני הכתוביות הכפויות או המותאמות לכבדי שמיעה, ואת הדירוג.',
+			'sourceSetup.movieOrShow' => 'סרט או סדרה',
+			'sourceSetup.subtitleTitleHint' => 'יש להזין שם כדי לצמצם את התוצאות',
+			'sourceSetup.subtitleLanguage' => 'שפת הכתוביות',
+			'sourceSetup.subtitleSearching' => 'מתבצע חיפוש ב־OpenSubtitles',
+			'sourceSetup.subtitleNoMatches' => 'לא נמצאו כתוביות תואמות. כדאי לנסות שם או שפה אחרים.',
+			'sourceSetup.downloadSubtitle' => 'הורדת כתוביות',
+			'sourceSetup.subtitle' => 'כתוביות',
+			'sourceSetup.nfsTlsRequired' => 'נדרש RPC-with-TLS',
+			'sourceSetup.nfsUnencrypted' => 'NFS לא מוצפן',
+			'sourceSetup.tlsEncrypted' => 'מוצפן באמצעות TLS',
+			'sourceSetup.ftpPlain' => 'FTP לא מוצפן',
+			'sourceSetup.sshPinned' => 'הצפנת SSH · מפתח המארח מקובע',
+			'sourceSetup.smbEncrypted' => 'הצפנת SMB3 מופעלת',
+			'sourceSetup.smbUnencrypted' => 'הצפנת SMB3 כבויה',
+			'sourceSetup.httpUnencrypted' => 'HTTP ללא הצפנת תעבורה',
+			_ => null,
+		} ?? switch (path) {
+			'sourceSetup.checkEndpointSecurity' => 'יש לבדוק את אבטחת כתובת החיבור',
+			'sourceSetup.fieldRequired' => ({required Object label}) => 'חובה למלא את השדה ${label}.',
+			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'יש להזין עבור ${label} ערך בין ${min} ל־${max}.',
+			'sourceSetup.replaceFile' => ({required Object name}) => 'החלפת ${name}',
+			'sourceSetup.selectedIdentity' => ({required Object name}) => 'פרטי זיהוי הלקוח שנבחרו: ${name}',
+			'sourceSetup.subtitleRating' => ({required Object rating}) => 'דירוג ${rating}',
+			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'הכתוביות בהורדה: ${title}',
 			_ => null,
 		};
 	}

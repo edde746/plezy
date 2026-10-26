@@ -44,7 +44,7 @@ class SftpSourceAdapter extends SourceAdapter {
       throw const SourceException(SourceFailure.permission);
     }
     if (configured.split('/').contains('..')) throw const SourceException(SourceFailure.permission);
-    final normalized = p.posix.normalize(configured.startsWith('/') ? configured : '/' + configured);
+    final normalized = p.posix.normalize(configured.startsWith('/') ? configured : '/$configured');
     if (normalized.split('/').contains('..')) throw const SourceException(SourceFailure.permission);
     return normalized == '.' ? '/' : normalized;
   }
@@ -57,15 +57,20 @@ class SftpSourceAdapter extends SourceAdapter {
     if (raw.split('/').contains('..')) throw const SourceException(SourceFailure.permission);
     final normalized = p.posix.normalize(raw);
     final root = _root;
-    if (root != '/' && normalized != root && !normalized.startsWith(root.endsWith('/') ? root : root + '/')) {
+    if (root != '/' && normalized != root && !normalized.startsWith(root.endsWith('/') ? root : '$root/')) {
       throw const SourceException(SourceFailure.permission);
     }
     return normalized;
   }
 
   String _child(String parent, String name) {
-    if (name.isEmpty || name == '.' || name == '..' || name.contains('/') ||
-        name.contains('\u0000') || name.contains('\r') || name.contains('\n')) {
+    if (name.isEmpty ||
+        name == '.' ||
+        name == '..' ||
+        name.contains('/') ||
+        name.contains('\u0000') ||
+        name.contains('\r') ||
+        name.contains('\n')) {
       throw const SourceException(SourceFailure.permission);
     }
     return _path(p.posix.join(_path(parent), name));
@@ -148,26 +153,36 @@ class SftpSourceAdapter extends SourceAdapter {
         if (kind == SourceItemKind.unknown) continue;
         final size = row.attr.size;
         final modified = row.attr.modifyTime;
-        entries.add(SourceEntry(
-          sourceId: source.id,
-          id: path,
-          title: name,
-          kind: kind,
-          parentId: directory,
-          files: isDirectory ? const [] : [
-            PublicationFile(
-              id: path,
-              name: name,
-              mimeType: lookupMimeType(name) ?? '',
-              size: size,
-              revision: size == null && modified == null ? null : (size?.toString() ?? '') + ':' + (modified?.toString() ?? ''),
-            ),
-          ],
-        ));
+        entries.add(
+          SourceEntry(
+            sourceId: source.id,
+            id: path,
+            title: name,
+            kind: kind,
+            parentId: directory,
+            files: isDirectory
+                ? const []
+                : [
+                    PublicationFile(
+                      id: path,
+                      name: name,
+                      mimeType: lookupMimeType(name) ?? '',
+                      size: size,
+                      revision: size == null && modified == null
+                          ? null
+                          : '${size?.toString() ?? ''}:${modified?.toString() ?? ''}',
+                    ),
+                  ],
+          ),
+        );
       }
-      entries.sort((a, b) => a.isFolder == b.isFolder
-          ? a.title.toLowerCase().compareTo(b.title.toLowerCase())
-          : a.isFolder ? -1 : 1);
+      entries.sort(
+        (a, b) => a.isFolder == b.isFolder
+            ? a.title.toLowerCase().compareTo(b.title.toLowerCase())
+            : a.isFolder
+            ? -1
+            : 1,
+      );
       return SourcePage(entries);
     } on SourceException {
       rethrow;
@@ -199,7 +214,7 @@ class SftpSourceAdapter extends SourceAdapter {
       final rows = await sftp.listdir(directory);
       final siblings = {for (final row in rows) row.filename.toLowerCase(): row};
       VideoNfoMetadata? metadata;
-      for (final name in [stem.toLowerCase() + '.nfo', filename.toLowerCase() + '.nfo']) {
+      for (final name in ['${stem.toLowerCase()}.nfo', '${filename.toLowerCase()}.nfo']) {
         final row = siblings[name];
         if (row == null || !row.attr.isFile) continue;
         final bytes = await _readBounded(sftp, _child(directory, row.filename), row.attr.size, 1024 * 1024);
@@ -210,11 +225,11 @@ class SftpSourceAdapter extends SourceAdapter {
       String? poster;
       const extensions = ['jpg', 'jpeg', 'png', 'webp'];
       final names = <String>[
-        for (final ext in extensions) stem.toLowerCase() + '-poster.' + ext,
-        for (final ext in extensions) stem.toLowerCase() + '.' + ext,
-        for (final ext in extensions) 'poster.' + ext,
-        for (final ext in extensions) 'cover.' + ext,
-        for (final ext in extensions) 'folder.' + ext,
+        for (final ext in extensions) '${stem.toLowerCase()}-poster.$ext',
+        for (final ext in extensions) '${stem.toLowerCase()}.$ext',
+        for (final ext in extensions) 'poster.$ext',
+        for (final ext in extensions) 'cover.$ext',
+        for (final ext in extensions) 'folder.$ext',
       ];
       for (final name in names) {
         final row = siblings[name];
@@ -241,8 +256,7 @@ class SftpSourceAdapter extends SourceAdapter {
   }
 
   @override
-  Future<ContentLease> resolve(PublicationFile file) async =>
-      throw const SourceException(SourceFailure.unsupported);
+  Future<ContentLease> resolve(PublicationFile file) async => throw const SourceException(SourceFailure.unsupported);
 
   @override
   Future<int?> contentSize(PublicationFile file) async {
@@ -251,11 +265,7 @@ class SftpSourceAdapter extends SourceAdapter {
   }
 
   @override
-  Future<SourceByteStream?> openContent(
-    PublicationFile file, {
-    required int offset,
-    required int length,
-  }) async {
+  Future<SourceByteStream?> openContent(PublicationFile file, {required int offset, required int length}) async {
     final sftp = await _connection();
     final path = _path(file.id);
     final attrs = await sftp.stat(path);
@@ -272,6 +282,7 @@ class SftpSourceAdapter extends SourceAdapter {
         await remote.close();
       }
     }
+
     return SourceByteStream(stream: readRange(), size: size, offset: offset, length: actualLength);
   }
 

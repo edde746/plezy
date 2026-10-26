@@ -27,25 +27,28 @@ import '../lending/public_libraries_screen.dart';
 String sourceTransportLabel(FileSource source) {
   final type = sourceKindName(source.kind);
   final scheme = Uri.tryParse(source.endpoint)?.scheme.toLowerCase();
-  final endpointSecurity = switch (scheme) {
-    'https' => 'HTTPS',
-    'http' => 'HTTP without transport encryption',
-    _ => 'Check endpoint security',
-  };
-  return switch (source.kind) {
+  final transport = switch (source.kind) {
     FileSourceKind.nfs =>
-      '$type · ${source.options['rpcTls'] == 'required' ? 'RPC-with-TLS required' : 'Unencrypted NFS'}',
-    FileSourceKind.ftp =>
-      '$type · ${scheme == 'ftpes' || scheme == 'ftps' ? 'TLS encrypted' : 'Plain FTP'}',
-    FileSourceKind.sftp => '$type · SSH encrypted · host key pinned',
+      source.options['rpcTls'] == 'required' ? t.sourceSetup.nfsTlsRequired : t.sourceSetup.nfsUnencrypted,
+    FileSourceKind.ftp => scheme == 'ftpes' || scheme == 'ftps' ? t.sourceSetup.tlsEncrypted : t.sourceSetup.ftpPlain,
+    FileSourceKind.sftp => t.sourceSetup.sshPinned,
     FileSourceKind.smb =>
-      '$type · ${source.options['encryptSmb'] == 'true' ? 'SMB3 encryption requested' : 'SMB3 encryption not requested'}',
-    FileSourceKind.webdav || FileSourceKind.opds || FileSourceKind.dlna ||
-    FileSourceKind.s3 || FileSourceKind.audiobookshelf || FileSourceKind.komga => '$type · $endpointSecurity',
-    FileSourceKind.local => '$type · On this device',
-    FileSourceKind.googleDrive || FileSourceKind.oneDrive || FileSourceKind.dropbox =>
-      '$type · Provider sign-in',
+      source.options['encryptSmb'] == 'true' ? t.sourceSetup.smbEncrypted : t.sourceSetup.smbUnencrypted,
+    FileSourceKind.webdav ||
+    FileSourceKind.opds ||
+    FileSourceKind.dlna ||
+    FileSourceKind.s3 ||
+    FileSourceKind.audiobookshelf ||
+    FileSourceKind.komga =>
+      scheme == 'https'
+          ? 'HTTPS'
+          : scheme == 'http'
+          ? t.sourceSetup.httpUnencrypted
+          : t.sourceSetup.checkEndpointSecurity,
+    FileSourceKind.local => null,
+    FileSourceKind.googleDrive || FileSourceKind.oneDrive || FileSourceKind.dropbox => t.fileSources.signIn,
   };
+  return transport == null ? type : '$type · $transport';
 }
 
 class SourcesScreen extends StatefulWidget {

@@ -1,7 +1,6 @@
 import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
-import 'dart:typed_data';
 import 'dart:ui' as ui;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -491,7 +490,7 @@ class SourceController extends ChangeNotifier {
     try {
       return await task;
     } finally {
-      if (identical(_onlineLookups[key], task)) _onlineLookups.remove(key);
+      if (identical(_onlineLookups[key], task)) unawaited(_onlineLookups.remove(key));
     }
   }
 
@@ -504,18 +503,21 @@ class SourceController extends ChangeNotifier {
   ) async {
     final cached = await repository.entryById(profile, source.id, entry.id);
     final current = _applyCachedOnlineMetadata(entry, cached);
-    if (!force && (current.onlineMetadataProvider != null ||
-        current.onlineMetadataCheckedAt != null &&
-            DateTime.now().millisecondsSinceEpoch - current.onlineMetadataCheckedAt! < const Duration(days: 30).inMilliseconds)) {
+    if (!force &&
+        (current.onlineMetadataProvider != null ||
+            current.onlineMetadataCheckedAt != null &&
+                DateTime.now().millisecondsSinceEpoch - current.onlineMetadataCheckedAt! <
+                    const Duration(days: 30).inMilliseconds)) {
       return current;
     }
     try {
       final metadata = await _videoMetadata.identify(current);
       requireSession(epoch);
       if (metadata == null) {
-        final checked = _withSyncIdentity(source, current.copyWith(
-          onlineMetadataCheckedAt: DateTime.now().millisecondsSinceEpoch,
-        ));
+        final checked = _withSyncIdentity(
+          source,
+          current.copyWith(onlineMetadataCheckedAt: DateTime.now().millisecondsSinceEpoch),
+        );
         await repository.cacheEntries(profile, [checked]);
         return checked;
       }
@@ -550,10 +552,12 @@ class SourceController extends ChangeNotifier {
     return result;
   }
 
-  Future<File?> cover(SourceEntry entry) {
+  Future<File?> cover(SourceEntry entry, {bool refresh = false}) {
     final profile = profileId;
     if (profile == null || blocked) return Future.value();
-    return _covers.putIfAbsent(sourceKey(profile, entry.key), () async {
+    final cacheKey = sourceKey(profile, entry.key);
+    if (refresh) _covers.remove(cacheKey);
+    return _covers.putIfAbsent(cacheKey, () async {
       await ready;
       final epoch = generation;
       final file = File(
@@ -564,7 +568,7 @@ class SourceController extends ChangeNotifier {
           '${sourceDigest(jsonEncode([entry.key, entry.coverId, entry.onlinePosterUrl]))}.png',
         ),
       );
-      if (await file.exists()) return file;
+      if (!refresh && await file.exists()) return file;
       if (!sources.any((s) => s.id == entry.sourceId)) return null;
       try {
         final provider = adapter(entry.sourceId);

@@ -23,9 +23,7 @@ class DlnaDiscovery {
     'urn:schemas-upnp-org:service:ContentDirectory:1',
   ];
 
-  Future<List<DlnaDiscoveredDevice>> discover({
-    Duration timeout = const Duration(seconds: 4),
-  }) async {
+  Future<List<DlnaDiscoveredDevice>> discover({Duration timeout = const Duration(seconds: 4)}) async {
     RawDatagramSocket? socket;
     StreamSubscription<RawSocketEvent>? subscription;
     final locations = <String, ({Uri location, String responder})>{};
@@ -49,7 +47,7 @@ class DlnaDiscovery {
                 location.hasFragment) {
               continue;
             }
-            locations[location.toString()] = (location: location, responder: datagram!.address.address);
+            locations[location.toString()] = (location: location, responder: datagram.address.address);
           }
         }
       }, onError: (_) {});
@@ -59,7 +57,7 @@ class DlnaDiscovery {
           'HOST: $_group:$_port',
           'MAN: "ssdp:discover"',
           'MX: 2',
-          'ST: ' + target,
+          'ST: $target',
           '',
           '',
         ].join('\r\n');
@@ -76,8 +74,7 @@ class DlnaDiscovery {
     final transport = SourceTransport(allowHttp: true);
     try {
       final found = await Future.wait(
-        locations.values.take(24).map((candidate) =>
-            _describe(candidate.location, candidate.responder, transport)),
+        locations.values.take(24).map((candidate) => _describe(candidate.location, candidate.responder, transport)),
       );
       final devices = found.whereType<DlnaDiscoveredDevice>().toList()
         ..sort((a, b) => a.name.toLowerCase().compareTo(b.name.toLowerCase()));
@@ -87,21 +84,18 @@ class DlnaDiscovery {
     }
   }
 
-  Future<DlnaDiscoveredDevice?> _describe(
-    Uri location,
-    String responder,
-    SourceTransport transport,
-  ) async {
+  Future<DlnaDiscoveredDevice?> _describe(Uri location, String responder, SourceTransport transport) async {
     try {
       final addresses = await InternetAddress.lookup(location.host).timeout(const Duration(seconds: 2));
       if (!addresses.any((address) => address.address == responder)) return null;
-      final xml = await transport.text('GET', location, limit: 2 * 1024 * 1024)
-          .timeout(const Duration(seconds: 4));
+      final xml = await transport.text('GET', location, limit: 2 * 1024 * 1024).timeout(const Duration(seconds: 4));
       final document = XmlDocument.parse(xml);
       final elements = _descendants(document).toList();
-      final supportsDirectory = elements.any((element) =>
-          element.name.local == 'service' &&
-          _childText(element, 'serviceType')?.contains(':ContentDirectory:') == true);
+      final supportsDirectory = elements.any(
+        (element) =>
+            element.name.local == 'service' &&
+            _childText(element, 'serviceType')?.contains(':ContentDirectory:') == true,
+      );
       if (!supportsDirectory) return null;
       final name = elements
           .where((element) => element.name.local == 'friendlyName')

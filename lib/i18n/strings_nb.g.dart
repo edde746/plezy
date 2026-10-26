@@ -104,6 +104,7 @@ class TranslationsNb extends Translations with BaseTranslations<AppLocale, Trans
 	@override late final _Translations$fileSources$nb fileSources = _Translations$fileSources$nb._(_root);
 	@override late final _Translations$lending$nb lending = _Translations$lending$nb._(_root);
 	@override late final _Translations$audiobook$nb audiobook = _Translations$audiobook$nb._(_root);
+	@override late final _Translations$sourceSetup$nb sourceSetup = _Translations$sourceSetup$nb._(_root);
 }
 
 // Path: app
@@ -3064,6 +3065,12 @@ class _Translations$fileSources$nb extends Translations$fileSources$en {
 	@override String get useFiles => 'Bruk filer og bøker';
 	@override String get cancelScan => 'Avbestill skanningen';
 	@override String get googleDrive => 'Google Drive';
+	@override String get smbEndpointHint => 'Eksempel: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Angi en SMB-server og én delt mappe.';
+	@override String get smbFolderHelp => 'La feltet stå tomt for å bruke hele den delte mappen, eller angi en mappe i den.';
+	@override String get smbDomain => 'Domene (valgfritt)';
+	@override String get smbEncryption => 'Krypter SMB3-tilkoblingen';
+	@override String get smbEncryptionHint => 'Bruk SMB3-kryptering når NAS-en støtter det.';
 }
 
 // Path: lending
@@ -3183,6 +3190,109 @@ class _Translations$audiobook$nb extends Translations$audiobook$en {
 	@override String get statusFinished => 'Avslutter';
 	@override String get goToTime => 'Gå til tid';
 	@override String get timeHelp => 'Tider: minutter: sekunder eller minutter: sekunder';
+}
+
+// Path: sourceSetup
+class _Translations$sourceSetup$nb extends Translations$sourceSetup$en {
+	_Translations$sourceSetup$nb._(TranslationsNb root) : this._root = root, super.internal(root);
+
+	final TranslationsNb _root; // ignore: unused_field
+
+	// Translations
+	@override String get savedCertificate => 'Lagret serversertifikat';
+	@override String get nfsEndpointInvalid => 'Angi en NFS-URL, for eksempel nfs://nas:2049/export.';
+	@override String get dlnaNone => 'Ingen DLNA-servere funnet. Angi URL-en til enhetsbeskrivelsen manuelt.';
+	@override String get dlnaServers => 'DLNA-medieservere';
+	@override String get dlnaUnavailable => 'DLNA-oppdagelse er ikke tilgjengelig på dette nettverket. Angi URL-en til enhetsbeskrivelsen manuelt.';
+	@override String get dlnaSearching => 'Søker etter DLNA-servere på lokalnettet';
+	@override String get networkSearching => 'Søker på lokalnettet…';
+	@override String get dlnaDiscover => 'Finn DLNA-servere';
+	@override String get dlnaHelp => 'Oppdagelse avhenger av multicast på lokalnettet. Hvis ingen server vises, angir du URL-en til enhetsbeskrivelsen ovenfor.';
+	@override String get dlnaRoot => 'DLNA-objekt-ID; la stå tomt for å bruke enhetens rot.';
+	@override String get passwordOrKey => 'Angi et passord eller legg til en privat nøkkel nedenfor.';
+	@override String get sshFingerprint => 'SHA256-fingeravtrykk for SSH-vertsnøkkel';
+	@override String get sshFingerprintHelp => 'Kontroller det med serveradministratoren. Kjør ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub på serveren og bruk SHA256-verdien.';
+	@override String get sshFingerprintKeep => 'La stå tomt for å beholde det fastlåste fingeravtrykket, eller angi et nytt serverfingeravtrykk.';
+	@override String get sshAuthentication => 'SSH-autentisering med offentlig nøkkel';
+	@override String get sshAuthenticationHelp => 'Valgfritt; autentisering med passord støttes også.';
+	@override String get privateKey => 'Privat nøkkel (PEM- eller OpenSSH-format)';
+	@override String get privateKeyPassphrase => 'Passfrase for privat nøkkel';
+	@override String get nfsMountPort => 'TCP-port for NFS-monteringstjenesten';
+	@override String get nfsMountPortHelp => 'Standard: 20048';
+	@override String get nfsUserId => 'NFS-bruker-ID (AUTH_SYS)';
+	@override String get nfsUserIdHelp => 'Standard: 1000. Bruk ID-en som NAS-enhetens NFS-deling tillater.';
+	@override String get nfsGroupId => 'NFS-gruppe-ID (AUTH_SYS)';
+	@override String get nfsGroupIdHelp => 'Standard: 1000. Bruk gruppe-ID-en som NAS-enhetens NFS-deling tillater.';
+	@override String get nfsEncryption => 'Krev kryptert NFS (RPC-with-TLS)';
+	@override String get nfsEncryptionHelp => 'Krev TLS 1.3 for NFS og monteringstjenesten. Hvis NAS-enheten ikke støtter dette, avvises tilkoblingen.';
+	@override String get nfsTrustCertificate => 'Egendefinert NFS-CA eller serversertifikat (PEM, valgfritt)';
+	@override String get nfsTrustHelp => 'La stå tomt for sertifikater denne enheten stoler på. Legg ved behov til et sertifikat fra en privat CA eller et selvsignert serversertifikat; navnene må samsvare med verten i NFS-URL-en.';
+	@override String get nfsTrustInvalid => 'Bruk et CA- eller serversertifikat i PEM-format. Ikke ta med en privat nøkkel.';
+	@override String get addTrustCertificate => 'Legg til egendefinert tillitssertifikat';
+	@override String get replaceTrustCertificate => 'Erstatt lagret egendefinert sertifikat';
+	@override String get nfsTlsHelp => 'RPC-with-TLS bruker de vanlige portene for NFS og monteringstjenesten og krever RFC 9289-støtte på NAS-enheten. TLS 1.3 er påkrevd. Vertsnavnet eller IP-adressen må samsvare med sertifikatet. AUTH_SYS UID/GID gjelder fortsatt i den krypterte kanalen.';
+	@override String get clientCertificate => 'Klientsertifikat (valgfritt)';
+	@override String get clientCertificateHelp => 'Lar NAS-enheten autentisere denne klienten; AUTH_SYS-ID-er avhenger fortsatt av reglene for NAS-enhetens NFS-deling.';
+	@override String get savedIdentity => 'En lagret klientidentitet vil bli brukt.';
+	@override String get replaceIdentity => 'Erstatt lagret klientidentitet';
+	@override String get chooseIdentity => 'Velg PKCS#12-klientidentitet';
+	@override String get identityPassphrase => 'Passfrase for klientidentitet';
+	@override String get identityPassphraseHelp => 'La stå tomt hvis filen ikke har en passfrase.';
+	@override String get removeIdentity => 'Fjern eventuell lagret klientidentitet';
+	@override String get identityStorageHelp => 'Klientidentiteter lagres i kildens krypterte lager for påloggingsinformasjon. La denne delen være uendret for å beholde den lagrede identiteten.';
+	@override String get nfsLimitations => 'Skrivebeskyttet NFSv3 over TCP. Uten RPC-with-TLS er NFS-trafikken ukryptert. NAS-enheten må tillate de valgte AUTH_SYS-ID-ene og uprivilegerte klientporter (ofte kalt eksportvalget «insecure»). NFSv4 og UDP støttes ikke.';
+	@override String get nfsSetupHelp => 'Hjelp med NFS-oppsett';
+	@override String get nfsSetupHint => 'Kontroller disse innstillingene hvis tilkoblingen ikke opprettes.';
+	@override String get nfsSetupDetails => 'Bruk en NFSv3-deling over TCP. Når kryptering kreves, må både NFS-tjenesten og monteringstjenesten støtte RPC-with-TLS. La det egendefinerte sertifikatet stå tomt for et serversertifikat denne enheten stoler på, eller legg til NAS-enhetens CA- eller selvsignerte sertifikat. Sertifikatnavnet må samsvare med verten i endepunktet. Hvis NAS-enheten krever gjensidig TLS, legger du til dens PKCS#12-klientidentitet. Bekreft til slutt at delingen tillater konfigurerte AUTH_SYS UID/GID og reglene for klientporter.';
+	@override String get ftpHelp => 'FTP bruker passiv modus. Bruk ftp:// for ukryptert FTP, ftpes:// for eksplisitt TLS eller ftps:// for TLS (implisitt på port 990; eksplisitt på andre porter).';
+	@override String get openSubtitles => 'OpenSubtitles';
+	@override String get subtitleSetup => 'Valgfritt søk etter undertekster for frittstående videoer.';
+	@override String get apiKey => 'API-nøkkel';
+	@override String get optionalUsername => 'Kontoens brukernavn (valgfritt)';
+	@override String get optionalPassword => 'Kontoens passord (valgfritt)';
+	@override String get subtitlePrivacy => 'Hent en API-nøkkel fra opensubtitles.com. Søk sender videotittelen og tilgjengelige IMDb/TMDB-ID-er, aldri videofilen. Nøkkelen og valgfri kontoinformasjon krypteres sammen med denne kilden.';
+	@override String get automaticMetadata => 'Automatiske videometadata fra nettet';
+	@override String get metadataPrivacy => 'Sender bare tittel/år fra filnavnet og episodenumre eller en NFO-ID, aldri medier eller påloggingsinformasjon. NFO-feltene beholder forrang.';
+	@override String get nfsEncryptionFailure => 'For kryptert NFS må du kontrollere støtte for RFC 9289 og TLS 1.3 på begge NAS-tjenestene, sertifikatnavnet og delingens UID/GID. PlezyNG prøver ikke denne tilkoblingen på nytt uten kryptering.';
+	@override String get sourceConnecting => 'Kobler til kilde';
+	@override String get metadataSearchPrivacy => 'Dette tittelsøket sendes til Trakt. Det sender tittelen du oppgir, ikke videoen eller kildens påloggingsinformasjon.';
+	@override String get chooseMatch => 'Velg et treff';
+	@override String get metadataMatchHelp => 'Kontroller tittel og år før du velger. Trakt mottar søketittelen; videoen blir på kilden sin.';
+	@override String get metadataNoMatches => 'Ingen samsvarende titler funnet på nettet. Prøv en annen tittel.';
+	@override String get metadataSearch => 'Søk etter metadata på nettet';
+	@override String get metadataLoading => 'Søker etter film- og serieinformasjon på nettet…';
+	@override String get metadataFromTrakt => 'Metadata fra Trakt på nettet';
+	@override String get metadataNoAutomaticMatch => 'Fant ikke et automatisk titteltreff. Søk etter tittelen for å velge et treff.';
+	@override String get metadataFailed => 'Kunne ikke laste metadata fra nettet. Avspilling og lokal informasjon er fortsatt tilgjengelig.';
+	@override String get videoDetailsLoading => 'Laster videoinformasjon';
+	@override String get subtitleKeyRequired => 'OpenSubtitles-API-nøkkel kreves';
+	@override String get subtitleKeyHelp => 'Rediger denne filkilden og legg til en OpenSubtitles-API-nøkkel i de valgfrie undertekstinnstillingene.';
+	@override String get subtitleSearchFailed => 'Undertekstsøket mislyktes. Kontroller API-nøkkelen, tilkoblingen og tilgangen til tjenesten.';
+	@override String get subtitleApplyFailed => 'Kunne ikke laste ned eller bruke denne underteksten. Kontroller tilkoblingen og prøv et annet resultat.';
+	@override String get subtitleSearch => 'Søk på OpenSubtitles';
+	@override String get subtitleSearchPrivacy => 'Søket bruker tittelen og tilgjengelige IMDb/TMDB-ID-er. Videofilen blir på kilden sin. Kontroller språk, merking for tvungne undertekster eller undertekster for hørselshemmede og vurdering før du velger.';
+	@override String get movieOrShow => 'Film eller serie';
+	@override String get subtitleTitleHint => 'Angi en tittel for å avgrense resultatene';
+	@override String get subtitleLanguage => 'Undertekstspråk';
+	@override String get subtitleSearching => 'Søker på OpenSubtitles';
+	@override String get subtitleNoMatches => 'Ingen samsvarende undertekster funnet. Prøv en annen tittel eller et annet språk.';
+	@override String get downloadSubtitle => 'Last ned undertekst';
+	@override String get subtitle => 'Undertekst';
+	@override String get nfsTlsRequired => 'RPC-with-TLS kreves';
+	@override String get nfsUnencrypted => 'Ukryptert NFS';
+	@override String get tlsEncrypted => 'TLS-kryptert';
+	@override String get ftpPlain => 'Ukryptert FTP';
+	@override String get sshPinned => 'SSH-kryptert · vertsnøkkel fastlåst';
+	@override String get smbEncrypted => 'SMB3-kryptering på';
+	@override String get smbUnencrypted => 'SMB3-kryptering av';
+	@override String get httpUnencrypted => 'HTTP uten transportkryptering';
+	@override String get checkEndpointSecurity => 'Kontroller sikkerheten til endepunktet';
+	@override String fieldRequired({required Object label}) => '${label} er påkrevd.';
+	@override String integerRange({required Object label, required Object min, required Object max}) => 'Angi ${label} fra ${min} til ${max}.';
+	@override String replaceFile({required Object name}) => 'Erstatt ${name}';
+	@override String selectedIdentity({required Object name}) => 'Valgt klientidentitet: ${name}';
+	@override String subtitleRating({required Object rating}) => 'Vurdering ${rating}';
+	@override String subtitleDownloading({required Object title}) => 'Laster ned undertekst: ${title}';
 }
 
 // Path: appIcon.names
@@ -3436,48 +3546,60 @@ class _Translations$discover$findNext$nb extends Translations$discover$findNext$
 	final TranslationsNb _root; // ignore: unused_field
 
 	// Translations
-	@override String get title => 'Finn din neste';
-	@override String get open => 'Finn din neste';
-	@override String get anyTime => 'Når som helst';
+	@override String get title => 'Finn din neste favoritt';
+	@override String get open => 'Finn din neste favoritt';
+	@override String get anyTime => 'Uansett varighet';
 	@override String get timeAvailable => 'Hvor mye tid har du?';
-	@override String get filters => 'Velg øyeblikket';
-	@override String get watch => 'Se på';
-	@override String get listen => 'Lytt til';
-	@override String get read => 'Lesing';
-	@override String finishable({required Object duration}) => 'Avslutter i ${duration}';
-	@override String aboutDuration({required Object duration}) => 'Om ${duration}';
+	@override String get filters => 'Velg det som passer nå';
+	@override String get watch => 'Se';
+	@override String get listen => 'Lytt';
+	@override String get read => 'Les';
+	@override String finishable({required Object duration}) => 'Kan fullføres på ${duration}';
+	@override String aboutDuration({required Object duration}) => 'Omtrent ${duration}';
 	@override String nextUnit({required Object duration}) => 'Neste kapittel · ${duration}';
 	@override String totalDuration({required Object duration}) => '${duration} totalt';
-	@override String get timingVaries => 'Timing varierer';
+	@override String get timingVaries => 'Varigheten kan variere';
 	@override String get notNow => 'Ikke nå';
-	@override String get swipeHint => 'Skift, eller bruk knappene nedenfor';
-	@override String get saved => 'Sparte piker';
-	@override String savedCount({required Object count}) => 'Sparte piker · ${count}';
-	@override String get undo => 'Undo';
-	@override String get details => 'detaljer';
-	@override String get noPicks => 'Ingenting å velge fra ennå';
-	@override String get noPicksHint => 'Koble til et bibliotek eller legg til en media kilde for å starte.';
-	@override String get noMatches => 'Ingenting passer til dette øyeblikket';
-	@override String get noMatchesHint => 'Prøv et annet format eller gi deg mer tid.';
-	@override String get allDone => 'Du er alle fanget opp';
-	@override String get allDoneHint => 'Start en fersk blanding for å se disse valgene igjen.';
-	@override String get refresh => 'Finn en annen blanding';
+	@override String get swipeHint => 'Sveip omslaget mot en pil, eller bruk knappene nedenfor.';
+	@override String get saved => 'Lagrede forslag';
+	@override String savedCount({required Object count}) => 'Lagrede forslag · ${count}';
+	@override String get undo => 'Angre';
+	@override String get details => 'Detaljer';
+	@override String get noPicks => 'Det er ikke noe å velge mellom ennå';
+	@override String get noPicksHint => 'Koble til et bibliotek eller legg til en mediekilde for å komme i gang.';
+	@override String get noMatches => 'Ingenting passer akkurat nå';
+	@override String get noMatchesHint => 'Prøv en annen medietype, eller sett av mer tid.';
+	@override String get allDone => 'Du har sett alle forslagene';
+	@override String get allDoneHint => 'Start et nytt utvalg for å se disse forslagene igjen.';
+	@override String get refresh => 'Finn et nytt utvalg';
 	@override String sourceReason({required Object source}) => 'Fra ${source}';
 	@override String libraryReason({required Object library}) => 'Fra ${library}';
 	@override String get ownedReason => 'Fra biblioteket ditt';
-	@override String get liveNow => 'På nåtid';
-	@override String get watchLive => 'Se live';
-	@override String get filterAnything => 'Alt';
-	@override String get filterWatch => 'Se på';
-	@override String get filterListen => 'Lytt til';
-	@override String get filterRead => 'Lesing';
+	@override String get liveNow => 'Sendes nå';
+	@override String get watchLive => 'Se direkte';
+	@override String get filterAnything => 'Hva som helst';
+	@override String get filterWatch => 'Se';
+	@override String get filterListen => 'Lytt';
+	@override String get filterRead => 'Les';
 	@override String get twentyMinutes => '20 min';
-	@override String get fortyFiveMinutes => '45 minutter';
+	@override String get fortyFiveMinutes => '45 min';
 	@override String get ninetyMinutes => '90 min';
-	@override String get apply => 'Anvendt';
-	@override String get openFailed => 'Dette alternativet er ikke lenger tilgjengelig. refresh for å sjekke igjen.';
-	@override String get changeFailed => 'Du kan ikke redde denne endringen. prøv igjen.';
-	@override String get savedLimit => 'Sparte pikker er fulle. fjerne et utvalg for å spare en annen.';
+	@override String get apply => 'Bruk';
+	@override String get openFailed => 'Dette valget er ikke lenger tilgjengelig. Oppdater for å sjekke på nytt.';
+	@override String get changeFailed => 'Kunne ikke lagre endringen. Prøv igjen.';
+	@override String get savedLimit => 'Listen over lagrede forslag er full. Fjern et forslag for å lagre et nytt.';
+	@override String get chooseHint => 'Åpne en tittel, lagre den til senere eller hopp over den.';
+	@override String get howItWorks => 'Slik fungerer det';
+	@override String get notNowHelp => 'Hopp over denne tittelen foreløpig. Den blir i biblioteket ditt.';
+	@override String get saveHelp => 'Lagre den under lagrede valg for denne profilen på denne enheten. Lagring laster ikke ned tittelen.';
+	@override String get openHelp => 'Velg omslaget for detaljer. Bruk hovedhandlingen til å spille av, lese eller åpne tittelen.';
+	@override String get controlsHelp => 'Tastatur eller fjernkontroll: velg en knapp, og trykk Enter eller Velg. Angre gjenoppretter det siste valget ditt.';
+	@override String get artworkLoading => 'Laster bilde…';
+	@override String get artworkUnavailable => 'Bilde utilgjengelig';
+	@override String get savedFeedback => 'Lagt til i lagrede valg';
+	@override String get skippedFeedback => 'Hoppet over foreløpig';
+	@override String get releaseToConfirm => 'Slipp for å bekrefte';
+	@override String get remoteHint => 'Omslag i fokus: ← / → velg · Velg: detaljer · ↑ / ↓ flytt fokus';
 }
 
 // Path: discover.person
@@ -5474,48 +5596,60 @@ extension on TranslationsNb {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Oversikt',
 			'discover.cast' => 'Skuespillere',
-			'discover.findNext.title' => 'Finn din neste',
-			'discover.findNext.open' => 'Finn din neste',
-			'discover.findNext.anyTime' => 'Når som helst',
+			'discover.findNext.title' => 'Finn din neste favoritt',
+			'discover.findNext.open' => 'Finn din neste favoritt',
+			'discover.findNext.anyTime' => 'Uansett varighet',
 			'discover.findNext.timeAvailable' => 'Hvor mye tid har du?',
-			'discover.findNext.filters' => 'Velg øyeblikket',
-			'discover.findNext.watch' => 'Se på',
-			'discover.findNext.listen' => 'Lytt til',
-			'discover.findNext.read' => 'Lesing',
-			'discover.findNext.finishable' => ({required Object duration}) => 'Avslutter i ${duration}',
-			'discover.findNext.aboutDuration' => ({required Object duration}) => 'Om ${duration}',
+			'discover.findNext.filters' => 'Velg det som passer nå',
+			'discover.findNext.watch' => 'Se',
+			'discover.findNext.listen' => 'Lytt',
+			'discover.findNext.read' => 'Les',
+			'discover.findNext.finishable' => ({required Object duration}) => 'Kan fullføres på ${duration}',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => 'Omtrent ${duration}',
 			'discover.findNext.nextUnit' => ({required Object duration}) => 'Neste kapittel · ${duration}',
 			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} totalt',
-			'discover.findNext.timingVaries' => 'Timing varierer',
+			'discover.findNext.timingVaries' => 'Varigheten kan variere',
 			'discover.findNext.notNow' => 'Ikke nå',
-			'discover.findNext.swipeHint' => 'Skift, eller bruk knappene nedenfor',
-			'discover.findNext.saved' => 'Sparte piker',
-			'discover.findNext.savedCount' => ({required Object count}) => 'Sparte piker · ${count}',
-			'discover.findNext.undo' => 'Undo',
-			'discover.findNext.details' => 'detaljer',
-			'discover.findNext.noPicks' => 'Ingenting å velge fra ennå',
-			'discover.findNext.noPicksHint' => 'Koble til et bibliotek eller legg til en media kilde for å starte.',
-			'discover.findNext.noMatches' => 'Ingenting passer til dette øyeblikket',
-			'discover.findNext.noMatchesHint' => 'Prøv et annet format eller gi deg mer tid.',
-			'discover.findNext.allDone' => 'Du er alle fanget opp',
-			'discover.findNext.allDoneHint' => 'Start en fersk blanding for å se disse valgene igjen.',
-			'discover.findNext.refresh' => 'Finn en annen blanding',
+			'discover.findNext.swipeHint' => 'Sveip omslaget mot en pil, eller bruk knappene nedenfor.',
+			'discover.findNext.saved' => 'Lagrede forslag',
+			'discover.findNext.savedCount' => ({required Object count}) => 'Lagrede forslag · ${count}',
+			'discover.findNext.undo' => 'Angre',
+			'discover.findNext.details' => 'Detaljer',
+			'discover.findNext.noPicks' => 'Det er ikke noe å velge mellom ennå',
+			'discover.findNext.noPicksHint' => 'Koble til et bibliotek eller legg til en mediekilde for å komme i gang.',
+			'discover.findNext.noMatches' => 'Ingenting passer akkurat nå',
+			'discover.findNext.noMatchesHint' => 'Prøv en annen medietype, eller sett av mer tid.',
+			'discover.findNext.allDone' => 'Du har sett alle forslagene',
+			'discover.findNext.allDoneHint' => 'Start et nytt utvalg for å se disse forslagene igjen.',
+			'discover.findNext.refresh' => 'Finn et nytt utvalg',
 			'discover.findNext.sourceReason' => ({required Object source}) => 'Fra ${source}',
 			'discover.findNext.libraryReason' => ({required Object library}) => 'Fra ${library}',
 			'discover.findNext.ownedReason' => 'Fra biblioteket ditt',
-			'discover.findNext.liveNow' => 'På nåtid',
-			'discover.findNext.watchLive' => 'Se live',
-			'discover.findNext.filterAnything' => 'Alt',
-			'discover.findNext.filterWatch' => 'Se på',
-			'discover.findNext.filterListen' => 'Lytt til',
-			'discover.findNext.filterRead' => 'Lesing',
+			'discover.findNext.liveNow' => 'Sendes nå',
+			'discover.findNext.watchLive' => 'Se direkte',
+			'discover.findNext.filterAnything' => 'Hva som helst',
+			'discover.findNext.filterWatch' => 'Se',
+			'discover.findNext.filterListen' => 'Lytt',
+			'discover.findNext.filterRead' => 'Les',
 			'discover.findNext.twentyMinutes' => '20 min',
-			'discover.findNext.fortyFiveMinutes' => '45 minutter',
+			'discover.findNext.fortyFiveMinutes' => '45 min',
 			'discover.findNext.ninetyMinutes' => '90 min',
-			'discover.findNext.apply' => 'Anvendt',
-			'discover.findNext.openFailed' => 'Dette alternativet er ikke lenger tilgjengelig. refresh for å sjekke igjen.',
-			'discover.findNext.changeFailed' => 'Du kan ikke redde denne endringen. prøv igjen.',
-			'discover.findNext.savedLimit' => 'Sparte pikker er fulle. fjerne et utvalg for å spare en annen.',
+			'discover.findNext.apply' => 'Bruk',
+			'discover.findNext.openFailed' => 'Dette valget er ikke lenger tilgjengelig. Oppdater for å sjekke på nytt.',
+			'discover.findNext.changeFailed' => 'Kunne ikke lagre endringen. Prøv igjen.',
+			'discover.findNext.savedLimit' => 'Listen over lagrede forslag er full. Fjern et forslag for å lagre et nytt.',
+			'discover.findNext.chooseHint' => 'Åpne en tittel, lagre den til senere eller hopp over den.',
+			'discover.findNext.howItWorks' => 'Slik fungerer det',
+			'discover.findNext.notNowHelp' => 'Hopp over denne tittelen foreløpig. Den blir i biblioteket ditt.',
+			'discover.findNext.saveHelp' => 'Lagre den under lagrede valg for denne profilen på denne enheten. Lagring laster ikke ned tittelen.',
+			'discover.findNext.openHelp' => 'Velg omslaget for detaljer. Bruk hovedhandlingen til å spille av, lese eller åpne tittelen.',
+			'discover.findNext.controlsHelp' => 'Tastatur eller fjernkontroll: velg en knapp, og trykk Enter eller Velg. Angre gjenoppretter det siste valget ditt.',
+			'discover.findNext.artworkLoading' => 'Laster bilde…',
+			'discover.findNext.artworkUnavailable' => 'Bilde utilgjengelig',
+			'discover.findNext.savedFeedback' => 'Lagt til i lagrede valg',
+			'discover.findNext.skippedFeedback' => 'Hoppet over foreløpig',
+			'discover.findNext.releaseToConfirm' => 'Slipp for å bekrefte',
+			'discover.findNext.remoteHint' => 'Omslag i fokus: ← / → velg · Velg: detaljer · ↑ / ↓ flytt fokus',
 			'discover.extras' => 'Trailere og ekstramateriale',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Vurdering',
@@ -5741,6 +5875,8 @@ extension on TranslationsNb {
 			'explore.mdblistShelves.nameHint' => 'La det være å bruke kildelistenavnet.',
 			'explore.mdblistShelves.add' => 'Legg til shelf',
 			'explore.mdblistShelves.save' => 'Sparer shelter',
+			_ => null,
+		} ?? switch (path) {
 			'explore.mdblistShelves.moveUp' => ({required Object title}) => 'Flytte ${title} opp',
 			'explore.mdblistShelves.moveDown' => ({required Object title}) => 'Flytte ${title} ned',
 			'explore.mdblistShelves.unavailable' => 'Denne listen er ikke tilgjengelig. Retur eller fjerne skjoldet i innstillinger.',
@@ -5753,8 +5889,6 @@ extension on TranslationsNb {
 			'explore.selectSource' => 'Velg kilde',
 			'explore.rows.watchlist' => 'Ønskeliste',
 			'explore.rows.recommendedMovies' => 'Anbefalte filmer',
-			_ => null,
-		} ?? switch (path) {
 			'explore.rows.recommendedShows' => 'Anbefalte serier',
 			'explore.rows.trendingMovies' => 'Populære filmer nå',
 			'explore.rows.trendingShows' => 'Populære serier nå',
@@ -6255,6 +6389,8 @@ extension on TranslationsNb {
 			'downloads.resumeDownload' => 'Gjenoppta nedlasting',
 			'downloads.cancelledDownload' => 'Avbrutt nedlasting',
 			'downloads.syncingFile' => ({required Object file, required Object status}) => '${file} (synkroniserer ${status})',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.downloadedFileClickToComplete' => ({required Object file}) => '${file} lastet ned – klikk for å fullføre',
 			'downloads.partialDownloadClickToComplete' => 'Delvis lastet ned – klikk for å fullføre',
 			'downloads.deleting' => 'Sletter...',
@@ -6267,8 +6403,6 @@ extension on TranslationsNb {
 			'downloads.pauseAll' => 'Pause alle',
 			'downloads.resumeAll' => 'Gjenoppta alle',
 			'downloads.retryAll' => 'Prøv alle på nytt',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.retryFailed' => 'Prøv mislykkede nedlastinger på nytt',
 			'downloads.deleteAll' => 'Slett alle',
 			'downloads.selectVersion' => 'Velg versjon',
@@ -6769,6 +6903,8 @@ extension on TranslationsNb {
 			'addServer.couldNotReachServer' => ({required Object error}) => 'Kunne ikke nå serveren: ${error}',
 			'addServer.signInFailed' => ({required Object error}) => 'Innlogging mislyktes: ${error}',
 			'addServer.quickConnectFailed' => ({required Object error}) => 'Quick Connect mislyktes: ${error}',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.addPlexTitle' => 'Logg inn med Plex',
 			'addServer.pinExpired' => 'PIN-koden utløp før innloggingen var fullført. Prøv igjen.',
 			'addServer.failedToRegisterAccount' => ({required Object error}) => 'Kunne ikke registrere kontoen: ${error}',
@@ -6781,8 +6917,6 @@ extension on TranslationsNb {
 			'addServer.connectToMediaBrowserCard' => ({required Object product}) => 'Koble til ${product}',
 			'addServer.connectToMediaBrowserCardSubtitle' => 'Skriv inn server-URL-en, brukernavnet og passordet ditt.',
 			'addServer.connectToMediaBrowserCardSubtitleScoped' => ({required Object product, required Object name}) => 'Logg på ${product}-serveren din. Knyttes til ${name}.',
-			_ => null,
-		} ?? switch (path) {
 			'addServer.borrowFromAnotherProfile' => 'Lån fra en annen profil',
 			'addServer.borrowFromAnotherProfileSubtitle' => 'Gjenbruk en annen profils tilkobling. PIN-beskyttede profiler krever PIN.',
 			'addServer.invalidCredentials' => 'Ugyldig brukernavn eller passord',
@@ -7089,6 +7223,12 @@ extension on TranslationsNb {
 			'fileSources.useFiles' => 'Bruk filer og bøker',
 			'fileSources.cancelScan' => 'Avbestill skanningen',
 			'fileSources.googleDrive' => 'Google Drive',
+			'fileSources.smbEndpointHint' => 'Eksempel: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Angi en SMB-server og én delt mappe.',
+			'fileSources.smbFolderHelp' => 'La feltet stå tomt for å bruke hele den delte mappen, eller angi en mappe i den.',
+			'fileSources.smbDomain' => 'Domene (valgfritt)',
+			'fileSources.smbEncryption' => 'Krypter SMB3-tilkoblingen',
+			'fileSources.smbEncryptionHint' => 'Bruk SMB3-kryptering når NAS-en støtter det.',
 			'lending.title' => 'Offentlige bibliotek',
 			'lending.add' => 'Legg til biblioteket',
 			'lending.other' => 'En annen bibliotek',
@@ -7190,6 +7330,102 @@ extension on TranslationsNb {
 			'audiobook.statusFinished' => 'Avslutter',
 			'audiobook.goToTime' => 'Gå til tid',
 			'audiobook.timeHelp' => 'Tider: minutter: sekunder eller minutter: sekunder',
+			'sourceSetup.savedCertificate' => 'Lagret serversertifikat',
+			'sourceSetup.nfsEndpointInvalid' => 'Angi en NFS-URL, for eksempel nfs://nas:2049/export.',
+			'sourceSetup.dlnaNone' => 'Ingen DLNA-servere funnet. Angi URL-en til enhetsbeskrivelsen manuelt.',
+			'sourceSetup.dlnaServers' => 'DLNA-medieservere',
+			'sourceSetup.dlnaUnavailable' => 'DLNA-oppdagelse er ikke tilgjengelig på dette nettverket. Angi URL-en til enhetsbeskrivelsen manuelt.',
+			'sourceSetup.dlnaSearching' => 'Søker etter DLNA-servere på lokalnettet',
+			'sourceSetup.networkSearching' => 'Søker på lokalnettet…',
+			'sourceSetup.dlnaDiscover' => 'Finn DLNA-servere',
+			'sourceSetup.dlnaHelp' => 'Oppdagelse avhenger av multicast på lokalnettet. Hvis ingen server vises, angir du URL-en til enhetsbeskrivelsen ovenfor.',
+			'sourceSetup.dlnaRoot' => 'DLNA-objekt-ID; la stå tomt for å bruke enhetens rot.',
+			'sourceSetup.passwordOrKey' => 'Angi et passord eller legg til en privat nøkkel nedenfor.',
+			'sourceSetup.sshFingerprint' => 'SHA256-fingeravtrykk for SSH-vertsnøkkel',
+			'sourceSetup.sshFingerprintHelp' => 'Kontroller det med serveradministratoren. Kjør ssh-keygen -lf /path/to/ssh_host_ed25519_key.pub på serveren og bruk SHA256-verdien.',
+			'sourceSetup.sshFingerprintKeep' => 'La stå tomt for å beholde det fastlåste fingeravtrykket, eller angi et nytt serverfingeravtrykk.',
+			'sourceSetup.sshAuthentication' => 'SSH-autentisering med offentlig nøkkel',
+			'sourceSetup.sshAuthenticationHelp' => 'Valgfritt; autentisering med passord støttes også.',
+			'sourceSetup.privateKey' => 'Privat nøkkel (PEM- eller OpenSSH-format)',
+			'sourceSetup.privateKeyPassphrase' => 'Passfrase for privat nøkkel',
+			'sourceSetup.nfsMountPort' => 'TCP-port for NFS-monteringstjenesten',
+			'sourceSetup.nfsMountPortHelp' => 'Standard: 20048',
+			'sourceSetup.nfsUserId' => 'NFS-bruker-ID (AUTH_SYS)',
+			'sourceSetup.nfsUserIdHelp' => 'Standard: 1000. Bruk ID-en som NAS-enhetens NFS-deling tillater.',
+			'sourceSetup.nfsGroupId' => 'NFS-gruppe-ID (AUTH_SYS)',
+			'sourceSetup.nfsGroupIdHelp' => 'Standard: 1000. Bruk gruppe-ID-en som NAS-enhetens NFS-deling tillater.',
+			'sourceSetup.nfsEncryption' => 'Krev kryptert NFS (RPC-with-TLS)',
+			'sourceSetup.nfsEncryptionHelp' => 'Krev TLS 1.3 for NFS og monteringstjenesten. Hvis NAS-enheten ikke støtter dette, avvises tilkoblingen.',
+			'sourceSetup.nfsTrustCertificate' => 'Egendefinert NFS-CA eller serversertifikat (PEM, valgfritt)',
+			'sourceSetup.nfsTrustHelp' => 'La stå tomt for sertifikater denne enheten stoler på. Legg ved behov til et sertifikat fra en privat CA eller et selvsignert serversertifikat; navnene må samsvare med verten i NFS-URL-en.',
+			'sourceSetup.nfsTrustInvalid' => 'Bruk et CA- eller serversertifikat i PEM-format. Ikke ta med en privat nøkkel.',
+			'sourceSetup.addTrustCertificate' => 'Legg til egendefinert tillitssertifikat',
+			'sourceSetup.replaceTrustCertificate' => 'Erstatt lagret egendefinert sertifikat',
+			'sourceSetup.nfsTlsHelp' => 'RPC-with-TLS bruker de vanlige portene for NFS og monteringstjenesten og krever RFC 9289-støtte på NAS-enheten. TLS 1.3 er påkrevd. Vertsnavnet eller IP-adressen må samsvare med sertifikatet. AUTH_SYS UID/GID gjelder fortsatt i den krypterte kanalen.',
+			'sourceSetup.clientCertificate' => 'Klientsertifikat (valgfritt)',
+			'sourceSetup.clientCertificateHelp' => 'Lar NAS-enheten autentisere denne klienten; AUTH_SYS-ID-er avhenger fortsatt av reglene for NAS-enhetens NFS-deling.',
+			'sourceSetup.savedIdentity' => 'En lagret klientidentitet vil bli brukt.',
+			'sourceSetup.replaceIdentity' => 'Erstatt lagret klientidentitet',
+			'sourceSetup.chooseIdentity' => 'Velg PKCS#12-klientidentitet',
+			'sourceSetup.identityPassphrase' => 'Passfrase for klientidentitet',
+			'sourceSetup.identityPassphraseHelp' => 'La stå tomt hvis filen ikke har en passfrase.',
+			'sourceSetup.removeIdentity' => 'Fjern eventuell lagret klientidentitet',
+			'sourceSetup.identityStorageHelp' => 'Klientidentiteter lagres i kildens krypterte lager for påloggingsinformasjon. La denne delen være uendret for å beholde den lagrede identiteten.',
+			'sourceSetup.nfsLimitations' => 'Skrivebeskyttet NFSv3 over TCP. Uten RPC-with-TLS er NFS-trafikken ukryptert. NAS-enheten må tillate de valgte AUTH_SYS-ID-ene og uprivilegerte klientporter (ofte kalt eksportvalget «insecure»). NFSv4 og UDP støttes ikke.',
+			'sourceSetup.nfsSetupHelp' => 'Hjelp med NFS-oppsett',
+			'sourceSetup.nfsSetupHint' => 'Kontroller disse innstillingene hvis tilkoblingen ikke opprettes.',
+			'sourceSetup.nfsSetupDetails' => 'Bruk en NFSv3-deling over TCP. Når kryptering kreves, må både NFS-tjenesten og monteringstjenesten støtte RPC-with-TLS. La det egendefinerte sertifikatet stå tomt for et serversertifikat denne enheten stoler på, eller legg til NAS-enhetens CA- eller selvsignerte sertifikat. Sertifikatnavnet må samsvare med verten i endepunktet. Hvis NAS-enheten krever gjensidig TLS, legger du til dens PKCS#12-klientidentitet. Bekreft til slutt at delingen tillater konfigurerte AUTH_SYS UID/GID og reglene for klientporter.',
+			'sourceSetup.ftpHelp' => 'FTP bruker passiv modus. Bruk ftp:// for ukryptert FTP, ftpes:// for eksplisitt TLS eller ftps:// for TLS (implisitt på port 990; eksplisitt på andre porter).',
+			'sourceSetup.openSubtitles' => 'OpenSubtitles',
+			'sourceSetup.subtitleSetup' => 'Valgfritt søk etter undertekster for frittstående videoer.',
+			'sourceSetup.apiKey' => 'API-nøkkel',
+			'sourceSetup.optionalUsername' => 'Kontoens brukernavn (valgfritt)',
+			'sourceSetup.optionalPassword' => 'Kontoens passord (valgfritt)',
+			'sourceSetup.subtitlePrivacy' => 'Hent en API-nøkkel fra opensubtitles.com. Søk sender videotittelen og tilgjengelige IMDb/TMDB-ID-er, aldri videofilen. Nøkkelen og valgfri kontoinformasjon krypteres sammen med denne kilden.',
+			'sourceSetup.automaticMetadata' => 'Automatiske videometadata fra nettet',
+			'sourceSetup.metadataPrivacy' => 'Sender bare tittel/år fra filnavnet og episodenumre eller en NFO-ID, aldri medier eller påloggingsinformasjon. NFO-feltene beholder forrang.',
+			'sourceSetup.nfsEncryptionFailure' => 'For kryptert NFS må du kontrollere støtte for RFC 9289 og TLS 1.3 på begge NAS-tjenestene, sertifikatnavnet og delingens UID/GID. PlezyNG prøver ikke denne tilkoblingen på nytt uten kryptering.',
+			'sourceSetup.sourceConnecting' => 'Kobler til kilde',
+			'sourceSetup.metadataSearchPrivacy' => 'Dette tittelsøket sendes til Trakt. Det sender tittelen du oppgir, ikke videoen eller kildens påloggingsinformasjon.',
+			'sourceSetup.chooseMatch' => 'Velg et treff',
+			'sourceSetup.metadataMatchHelp' => 'Kontroller tittel og år før du velger. Trakt mottar søketittelen; videoen blir på kilden sin.',
+			'sourceSetup.metadataNoMatches' => 'Ingen samsvarende titler funnet på nettet. Prøv en annen tittel.',
+			'sourceSetup.metadataSearch' => 'Søk etter metadata på nettet',
+			'sourceSetup.metadataLoading' => 'Søker etter film- og serieinformasjon på nettet…',
+			'sourceSetup.metadataFromTrakt' => 'Metadata fra Trakt på nettet',
+			'sourceSetup.metadataNoAutomaticMatch' => 'Fant ikke et automatisk titteltreff. Søk etter tittelen for å velge et treff.',
+			'sourceSetup.metadataFailed' => 'Kunne ikke laste metadata fra nettet. Avspilling og lokal informasjon er fortsatt tilgjengelig.',
+			'sourceSetup.videoDetailsLoading' => 'Laster videoinformasjon',
+			'sourceSetup.subtitleKeyRequired' => 'OpenSubtitles-API-nøkkel kreves',
+			'sourceSetup.subtitleKeyHelp' => 'Rediger denne filkilden og legg til en OpenSubtitles-API-nøkkel i de valgfrie undertekstinnstillingene.',
+			'sourceSetup.subtitleSearchFailed' => 'Undertekstsøket mislyktes. Kontroller API-nøkkelen, tilkoblingen og tilgangen til tjenesten.',
+			'sourceSetup.subtitleApplyFailed' => 'Kunne ikke laste ned eller bruke denne underteksten. Kontroller tilkoblingen og prøv et annet resultat.',
+			'sourceSetup.subtitleSearch' => 'Søk på OpenSubtitles',
+			'sourceSetup.subtitleSearchPrivacy' => 'Søket bruker tittelen og tilgjengelige IMDb/TMDB-ID-er. Videofilen blir på kilden sin. Kontroller språk, merking for tvungne undertekster eller undertekster for hørselshemmede og vurdering før du velger.',
+			'sourceSetup.movieOrShow' => 'Film eller serie',
+			'sourceSetup.subtitleTitleHint' => 'Angi en tittel for å avgrense resultatene',
+			'sourceSetup.subtitleLanguage' => 'Undertekstspråk',
+			'sourceSetup.subtitleSearching' => 'Søker på OpenSubtitles',
+			'sourceSetup.subtitleNoMatches' => 'Ingen samsvarende undertekster funnet. Prøv en annen tittel eller et annet språk.',
+			'sourceSetup.downloadSubtitle' => 'Last ned undertekst',
+			'sourceSetup.subtitle' => 'Undertekst',
+			'sourceSetup.nfsTlsRequired' => 'RPC-with-TLS kreves',
+			'sourceSetup.nfsUnencrypted' => 'Ukryptert NFS',
+			'sourceSetup.tlsEncrypted' => 'TLS-kryptert',
+			'sourceSetup.ftpPlain' => 'Ukryptert FTP',
+			'sourceSetup.sshPinned' => 'SSH-kryptert · vertsnøkkel fastlåst',
+			'sourceSetup.smbEncrypted' => 'SMB3-kryptering på',
+			'sourceSetup.smbUnencrypted' => 'SMB3-kryptering av',
+			'sourceSetup.httpUnencrypted' => 'HTTP uten transportkryptering',
+			_ => null,
+		} ?? switch (path) {
+			'sourceSetup.checkEndpointSecurity' => 'Kontroller sikkerheten til endepunktet',
+			'sourceSetup.fieldRequired' => ({required Object label}) => '${label} er påkrevd.',
+			'sourceSetup.integerRange' => ({required Object label, required Object min, required Object max}) => 'Angi ${label} fra ${min} til ${max}.',
+			'sourceSetup.replaceFile' => ({required Object name}) => 'Erstatt ${name}',
+			'sourceSetup.selectedIdentity' => ({required Object name}) => 'Valgt klientidentitet: ${name}',
+			'sourceSetup.subtitleRating' => ({required Object rating}) => 'Vurdering ${rating}',
+			'sourceSetup.subtitleDownloading' => ({required Object title}) => 'Laster ned undertekst: ${title}',
 			_ => null,
 		};
 	}

@@ -436,6 +436,7 @@ class Translations$discover$pt_PT extends Translations$discover$pt {
 	@override String get directors => 'Realizadores';
 	@override String get movie => 'Filme';
 	@override String get moreLikeThis => 'Títulos semelhantes';
+	@override late final Translations$discover$findNext$pt_PT findNext = Translations$discover$findNext$pt_PT.internal(_root);
 }
 
 // Path: libraries
@@ -858,6 +859,28 @@ class Translations$accountPreferences$watchedIndicatorOptions$pt_PT extends Tran
 	@override String get none => 'Nunca';
 }
 
+// Path: discover.findNext
+class Translations$discover$findNext$pt_PT extends Translations$discover$findNext$pt {
+	Translations$discover$findNext$pt_PT.internal(TranslationsPtPt root) : this._root = root, super.internal(root);
+
+	final TranslationsPtPt _root; // ignore: unused_field
+
+	// Translations
+	@override String get chooseHint => 'Abra um título, guarde-o para mais tarde ou passe ao seguinte.';
+	@override String get howItWorks => 'Como funciona';
+	@override String get swipeHint => 'Deslize a capa na direção de uma seta ou use os botões abaixo.';
+	@override String get notNowHelp => 'Ignore este título por agora. Ele continua na sua biblioteca.';
+	@override String get saveHelp => 'Guarde-o nas escolhas guardadas deste perfil neste dispositivo. Guardar não inicia uma transferência.';
+	@override String get openHelp => 'Selecione a capa para ver os detalhes. Use a ação principal para reproduzir, ler ou abrir o título.';
+	@override String get controlsHelp => 'Teclado ou comando: selecione um botão e prima Enter ou Selecionar. Anular restaura a sua última escolha.';
+	@override String get artworkLoading => 'A carregar a imagem…';
+	@override String get artworkUnavailable => 'Imagem indisponível';
+	@override String get savedFeedback => 'Adicionado às escolhas guardadas';
+	@override String get skippedFeedback => 'Ignorado por agora';
+	@override String get releaseToConfirm => 'Solte para confirmar';
+	@override String get remoteHint => 'Capa em foco: ← / → escolher · Selecionar: detalhes · ↑ / ↓ mover o foco';
+}
+
 // Path: libraries.tabs
 class Translations$libraries$tabs$pt_PT extends Translations$libraries$tabs$pt {
 	Translations$libraries$tabs$pt_PT.internal(TranslationsPtPt root) : this._root = root, super.internal(root);
@@ -1246,6 +1269,19 @@ extension on TranslationsPtPt {
 			'discover.directors' => 'Realizadores',
 			'discover.movie' => 'Filme',
 			'discover.moreLikeThis' => 'Títulos semelhantes',
+			'discover.findNext.chooseHint' => 'Abra um título, guarde-o para mais tarde ou passe ao seguinte.',
+			'discover.findNext.howItWorks' => 'Como funciona',
+			'discover.findNext.swipeHint' => 'Deslize a capa na direção de uma seta ou use os botões abaixo.',
+			'discover.findNext.notNowHelp' => 'Ignore este título por agora. Ele continua na sua biblioteca.',
+			'discover.findNext.saveHelp' => 'Guarde-o nas escolhas guardadas deste perfil neste dispositivo. Guardar não inicia uma transferência.',
+			'discover.findNext.openHelp' => 'Selecione a capa para ver os detalhes. Use a ação principal para reproduzir, ler ou abrir o título.',
+			'discover.findNext.controlsHelp' => 'Teclado ou comando: selecione um botão e prima Enter ou Selecionar. Anular restaura a sua última escolha.',
+			'discover.findNext.artworkLoading' => 'A carregar a imagem…',
+			'discover.findNext.artworkUnavailable' => 'Imagem indisponível',
+			'discover.findNext.savedFeedback' => 'Adicionado às escolhas guardadas',
+			'discover.findNext.skippedFeedback' => 'Ignorado por agora',
+			'discover.findNext.releaseToConfirm' => 'Solte para confirmar',
+			'discover.findNext.remoteHint' => 'Capa em foco: ← / → escolher · Selecionar: detalhes · ↑ / ↓ mover o foco',
 			'libraries.title' => 'Bibliotecas',
 			'libraries.scanLibrary' => 'Analisar biblioteca',
 			'libraries.refreshMetadata' => 'Atualizar metadados',
