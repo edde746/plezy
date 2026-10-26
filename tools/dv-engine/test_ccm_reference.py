@@ -30,7 +30,7 @@ class CcmReferenceTest(unittest.TestCase):
     def test_mmr_order_one_maps_the_aligned_luma_term(self):
         result = mmr_map_chroma_sample(
             (127, 42, 99), ((0, 255), (0, 255), (0, 255)), 0,
-            ((0, 1 << 15, 0, 0, 0, 0, 0),),
+            ((1 << 15, 0, 0, 0, 0, 0, 0),),
             component_index=1, mapping_index=0,
             bl_bit_depth=8, el_bit_depth=10, coefficient_log2_denom=15,
         )
