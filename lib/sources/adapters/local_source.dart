@@ -12,6 +12,13 @@ class LocalSourceAdapter extends SourceAdapter {
   @override
   SourceCapabilities get capabilities => const SourceCapabilities();
 
+  static const _pageSize = 200;
+  static const _maxCachedEntries = 20000;
+  static const _maxCachedDirectories = 32;
+  static const _snapshotLifetime = Duration(minutes: 1);
+  final Map<String, _LocalDirectorySnapshot> _snapshots = {};
+  int _nextSnapshotId = 0;
+
   Future<String> _contained(String value) async {
     final root = await Directory(source.root).resolveSymbolicLinks();
     final path = p.normalize(p.join(root, value));
@@ -26,6 +33,52 @@ class LocalSourceAdapter extends SourceAdapter {
     final relative = parent ?? '';
     final root = await Directory(source.root).resolveSymbolicLinks();
     final directory = await _contained(relative);
+    final stamp = (await Directory(directory).stat()).modified.microsecondsSinceEpoch;
+    final normalizedQuery = query?.trim().toLowerCase() ?? '';
+    final queryKey = sourceDigest(normalizedQuery).substring(0, 12);
+    final snapshotKey = '$directory\u0000$queryKey';
+    _LocalDirectorySnapshot? snapshot;
+    var start = 0;
+    final cursorParts = cursor?.split(':') ?? const <String>[];
+    if (cursorParts.length == 3 && cursorParts[0].startsWith('s')) {
+      final generation = int.tryParse(cursorParts[0].substring(1));
+      final offset = int.tryParse(cursorParts[2]);
+      snapshot = _snapshots[snapshotKey];
+      if (generation == null || offset == null || cursorParts[1] != queryKey ||
+          snapshot == null || snapshot.generation != generation || snapshot.modified != stamp ||
+          DateTime.now().difference(snapshot.createdAt) > _snapshotLifetime) {
+        _snapshots.remove(snapshotKey);
+        throw const SourceException(SourceFailure.cancelled);
+      }
+      start = offset;
+      _touchSnapshot(snapshotKey, snapshot);
+    } else {
+      start = int.tryParse(cursor ?? '') ?? 0;
+      _snapshots.remove(snapshotKey);
+      snapshot = await _enumerate(directory, root, relative, stamp, snapshotKey);
+    }
+
+    final allEntries = snapshot.entries;
+    final entries = normalizedQuery.isEmpty
+        ? allEntries
+        : allEntries.where((entry) => entry.title.toLowerCase().contains(normalizedQuery)).toList(growable: false);
+    if (start < 0 || start > entries.length) throw const SourceException(SourceFailure.invalidData);
+    final end = (start + _pageSize).clamp(0, entries.length);
+    final next = end < entries.length
+        ? snapshot.cached
+            ? 's${snapshot.generation}:$queryKey:$end'
+            : '$end'
+        : null;
+    return SourcePage(entries.sublist(start, end), next: next);
+  }
+
+  Future<_LocalDirectorySnapshot> _enumerate(
+    String directory,
+    String root,
+    String relative,
+    int initialStamp,
+    String snapshotKey,
+  ) async {
     final entries = <SourceEntry>[];
     await for (final entity in Directory(directory).list(followLinks: false)) {
       if (entity is Link) continue;
@@ -35,7 +88,7 @@ class LocalSourceAdapter extends SourceAdapter {
       final folder = entity is Directory;
       final kind = folder ? SourceItemKind.folder : classifySourceFile(name);
       if (kind == SourceItemKind.unknown) continue;
-      if (query != null && !name.toLowerCase().contains(query.toLowerCase())) continue;
+      if (entries.length >= 100000) throw const SourceException(SourceFailure.invalidData);
       final stat = await entity.stat();
       entries.add(
         SourceEntry(
@@ -62,10 +115,38 @@ class LocalSourceAdapter extends SourceAdapter {
       (a, b) =>
           a.isFolder == b.isFolder ? a.title.toLowerCase().compareTo(b.title.toLowerCase()) : (a.isFolder ? -1 : 1),
     );
-    final start = int.tryParse(cursor ?? '') ?? 0;
-    if (start < 0 || start > entries.length) throw const SourceException(SourceFailure.invalidData);
-    final end = (start + 200).clamp(0, entries.length);
-    return SourcePage(entries.sublist(start, end), next: end < entries.length ? '$end' : null);
+    final currentStamp = (await Directory(directory).stat()).modified.microsecondsSinceEpoch;
+    if (currentStamp != initialStamp) throw const SourceException(SourceFailure.cancelled);
+    final cached = entries.length <= _maxCachedEntries;
+    final result = _LocalDirectorySnapshot(
+      entries: List.unmodifiable(entries),
+      modified: currentStamp,
+      generation: ++_nextSnapshotId,
+      createdAt: DateTime.now(),
+      cached: cached,
+    );
+    if (cached) _rememberSnapshot(snapshotKey, result);
+    return result;
+  }
+
+  void _touchSnapshot(String snapshotKey, _LocalDirectorySnapshot snapshot) {
+    _snapshots.remove(snapshotKey);
+    _snapshots[snapshotKey] = snapshot;
+  }
+
+  void _rememberSnapshot(String snapshotKey, _LocalDirectorySnapshot snapshot) {
+    _touchSnapshot(snapshotKey, snapshot);
+    var count = _snapshots.values.fold<int>(0, (sum, item) => sum + item.entries.length);
+    while (_snapshots.length > _maxCachedDirectories || count > _maxCachedEntries) {
+      final oldest = _snapshots.keys.first;
+      count -= _snapshots.remove(oldest)!.entries.length;
+    }
+  }
+
+  @override
+  void close() {
+    _snapshots.clear();
+    super.close();
   }
 
   Future<List<int>?> _readBounded(File file, int limit) async {
@@ -166,4 +247,20 @@ class LocalSourceAdapter extends SourceAdapter {
   @override
   Future<ContentLease> resolve(PublicationFile file) async =>
       ContentLease(Uri.file(await _contained(file.id)), size: file.size);
+}
+
+class _LocalDirectorySnapshot {
+  const _LocalDirectorySnapshot({
+    required this.entries,
+    required this.modified,
+    required this.generation,
+    required this.createdAt,
+    required this.cached,
+  });
+
+  final List<SourceEntry> entries;
+  final int modified;
+  final int generation;
+  final DateTime createdAt;
+  final bool cached;
 }
