@@ -10,7 +10,7 @@ The per-profile cap defaults to 10 GiB and can be changed from the Files & books
 
 ## Shared library identity
 
-A source can be assigned a public shared-library ID. Devices using the same ID derive the sync identity from that ID and the source entry ID. Editing the ID re-keys cached progress and annotation versions while retaining the old cloud records so offline devices can still merge their writes.
+A source can be assigned a public shared-library ID. Devices using the same ID derive the sync identity from that ID and the source entry ID. Editing the ID re-keys cached progress and annotation versions while retaining old cloud records as history. Every participating device must set the matching IDs before it can join the paired identity.
 
 When providers assign different entry IDs to the same publication, the item detail screen accepts an explicit shared item ID. Setting or changing that mapping migrates cached progress and annotation records, including their edition keys, in the same transaction as the mapping preference. Edition progress is paired only when the edition's file types, MIME types, sizes, and positions in the entry file list match uniquely on both sources. Ambiguous or different file sets remain unapplied locally; they are never joined by title or file contents. Recovery files do not contain the mapping preference, so set the same shared-library and item IDs on each device before importing.
 
