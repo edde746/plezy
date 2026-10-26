@@ -271,13 +271,6 @@ class DownloadsScreenState extends State<DownloadsScreen>
                     onNavigateLeft: () => getTabChipFocusNode(tabCount - 1).requestFocus(),
                     onNavigateDown: _focusCurrentTab,
                     actions: [
-                      FocusableAction(
-                        icon: Symbols.auto_awesome_rounded,
-                        tooltip: t.discover.findNext.open,
-                        debugLabel: 'downloads_find_next',
-                        onPressed: () =>
-                            Navigator.push<void>(context, MaterialPageRoute(builder: (_) => const FindNextScreen())),
-                      ),
                       if (hasFailedDownloads)
                         FocusableAction(
                           icon: Symbols.refresh_rounded,
@@ -329,6 +322,14 @@ class DownloadsScreenState extends State<DownloadsScreen>
                           debugLabel: 'downloads_options',
                           onPressed: () => _activeOptionsTab()?.showOptionsSheet(),
                         ),
+                      // Append this action so existing TV action positions stay stable.
+                      FocusableAction(
+                        icon: Symbols.auto_awesome_rounded,
+                        tooltip: t.discover.findNext.open,
+                        debugLabel: 'downloads_find_next',
+                        onPressed: () =>
+                            Navigator.push<void>(context, MaterialPageRoute(builder: (_) => const FindNextScreen())),
+                      ),
                     ],
                   );
                 },

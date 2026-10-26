@@ -81,6 +81,7 @@
 
 ### Fixed
 
+- Preserve existing TV and keyboard toolbar focus order when adding Find your next discovery actions.
 - Keep entitlement-controlled themes and icons locked when store access is disabled in the build.
 - Remove stale SVG imports after switching the setup and app-icon previews back to raster artwork.
 - Localize the About screen privacy-policy link.
