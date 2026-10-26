@@ -231,8 +231,15 @@ final class MpvPlayerContractTests: XCTestCase {
       core.queue.sync {}
     }
 
-    guard let rawOutputOrder = try awaitGetProperty(core, name: "options/ao").get() else {
+    let rawOutputOrder: String
+    switch awaitGetProperty(core, name: "options/ao") {
+    case .success(let value?):
+      rawOutputOrder = value
+    case .success(nil):
       XCTFail("Expected an audio output order to be configured")
+      return
+    case .failure:
+      XCTFail("Could not read the audio output order")
       return
     }
     let outputOrder = rawOutputOrder.split(separator: ",")
