@@ -14,7 +14,7 @@ driver, EDID, kernel module or TV firmware is replaced automatically.
 | Offline companion | Pinned FelBaker builder patches its VapourSynth output key and builds a tested RGB48 pipeline. A 48-frame generated P7 sample changed all 2,073,600 designed residual-patch pixels; both HDR10/PQ HEVC and SDR/BT.709 H.264 outputs encoded and passed `ffprobe` frame/color-tag checks. | These lossy files are derived compatibility versions, not native DV. FelBaker is a comparison implementation, not an independent Dolby reference; real-clip and playback-device checks remain open. |
 | Android | Existing native DV, P7→8.1 and base-layer routes remain available; diagnostics label known EL-discarding routes. An arm64 debug APK built and 46 Dolby-related unit tests passed. | No experimental P7 FEL graph is packaged and no Android device render was run. Generic DV codec advertisement does not prove FEL. CoreELEC S5 remains a separate vendor/kernel project. |
 | webOS | Existing native and compatibility playback; use an ordinary companion-derived version where native fidelity is insufficient. | No BL/EL GPU composer is exposed by the current webOS app path. No root patch is installed. |
-| Windows | Existing mpv compatibility playback; portable route-policy and companion orchestration code. The approved private Windows build route remains Packer. | No Packer canary, D3D11/Vulkan FEL adapter build or device result is claimed here. Preserve Packer and qualify output separately. |
+| Windows | Existing mpv compatibility playback; portable route-policy and companion orchestration code. | No D3D11/Vulkan FEL adapter build or device result is claimed. The former private Packer route is retired and must be restored and verified before Windows builds can run. |
 
 `tools/dv-engine/route_policy.py` is a tested adapter contract and standalone
 selector, **not yet the app-wide playback arbiter**. It accepts an inspected source
@@ -194,26 +194,22 @@ automatic server upload or on-demand companion service in this change.
 Checkpoint for source commit `9c0fb9693ad7b705e737a1829d10bfd70c6ce17e`
 ([PR #24](https://github.com/snapetech-org/PlezyNG/pull/24)):
 
-- [Platform CI run 40289796275](https://github.com/snapetech-org/PlezyNG/actions/runs/40289796275)
-  passed all **111 targeted Flutter tests**, native renderer-selection tests and
-  Slang/format freshness; the generated diff was empty.
-- Windows contract CI passed 13 tests and skipped the real encoder test because
-  FFmpeg was not installed. Local Linux ran all **14 Python tests**, including
-  actual HDR/SDR encoding. Separate short/long-audio trials produced a 0.127-second
-  output from three 24-fps frames with both 0.04-second and 1-second input audio.
-- Changed-file Dart analysis passed. The two changed native player/plugin C++
-  translation units passed Clang syntax/type checks with the app's configured
-  Linux headers. This is not a linked app, sanitizer or Wayland playback test.
-- Workflow security and action-pin guards passed. The full repository's
-  localization/hardcoded-string checks still report existing SMB/source-screen
-  issues on base `b32e396c`; no new DV-key localization errors were reported.
-- Apple/FelBaker source builds and macOS/Linux contract jobs were **queued** at
-  handoff. Check the run above and fix any build errors before using those artifacts.
-  They are not reported as passing or qualified here. The broader PR sanity run
-  [40289801404](https://github.com/snapetech-org/PlezyNG/actions/runs/40289801404)
-  also remained queued. No required check or branch protection was disabled.
+- [Platform workflow run 40289796275](https://github.com/snapetech-org/PlezyNG/actions/runs/40289796275)
+  finished **failed**. The 111 targeted Flutter tests, native renderer-selection
+  tests, Slang/format freshness, and Linux/Windows/macOS contract jobs passed.
+  The workflow was not green.
+- Two source jobs failed. FelBaker enabled optional Meson tests that require
+  FFMS2, which the job had not installed; the branch now builds with the optional
+  upstream tests disabled and tests the generated graph separately. The Apple pin
+  check required every optional package even though SwiftPM resolved only the
+  selected ffmpegbuild, libdovi, and smbclient dependencies; the branch now
+  accepts a valid subset while requiring the core pins and rejecting drift.
+- These two corrections have not had a private-JIT rerun. The historical workflow
+  used GitHub-hosted runners and cannot be repeated until an approved private JIT
+  route is provisioned and authorized for this workflow. Do not dispatch the
+  hosted workflow or treat its earlier passing jobs as an overall pass.
 
-Local runnable checks:
+Private-JIT validation checks (blocked until route provisioning):
 
 ```bash
 python3 scripts/test_dv_experiments.py
@@ -222,11 +218,14 @@ g++ -std=c++17 -Wall -Wextra -Werror linux/runner/mpv/experimental_render_api_te
 flutter test test/media/dolby_vision_playback_test.dart test/mpv/player_native_bridge_test.dart test/screens/settings/playback_settings_screen_test.dart test/widgets/performance_stats_service_test.dart
 ```
 
-The dedicated `dv-platforms.yml` workflow builds the Apple host and FelBaker source,
-runs contract checks on Linux/Windows/macOS, and checks the app tests and codegen.
+Run the commands below only from an approved private-JIT job after its workflow
+access is verified. The dedicated dv-platforms.yml workflow builds the Apple host
+and FelBaker source, runs contract checks on Linux/Windows/macOS, and checks app
+tests and codegen.
 It uses read-only repository permissions and no signing secrets. It does not fetch
-test media. Retain build diagnostics; never turn a missing tool/media/GPU skip
-into a playback qualification.
+test media. Its current runner definitions are GitHub-hosted, so do not dispatch
+it until the private-JIT workflow route is provisioned and verified. Retain build
+diagnostics; never turn a missing tool/media/GPU skip into a playback qualification.
 
 Priority testing handoff:
 
@@ -242,25 +241,32 @@ Priority testing handoff:
    profile/FEL classification, both decoders, compositor route, output format,
    device/OS/display/engine fingerprint, performance and thermal behavior. Compare
    residual-only and metadata-only controls, not only the display's DV badge.
-4. **Companion:** the generated 48-frame BL/EL/RPU path now passes FFMS2 plus
-   FelBaker and both HDR10 and SDR encodes pass frame/color-tag probes. Next run a
-   lawful local real sample, compare pre-encode RGB48 against a trusted source,
-   and test missing RPU, unequal frame counts, broken EL, cancellation, disk
-   exhaustion and audio sync. FelBaker is a comparison implementation, not an
-   independent Dolby oracle.
+4. **Companion:** the generated 48-frame BL/EL/RPU path previously passed FFMS2
+   plus FelBaker and both HDR10 and SDR encodes passed frame/color-tag probes.
+   The verifier has since gained explicit rate, dimensions, frame-count, sampled
+   BL/RPU identity and authored EL-code gates; the old report predates those
+   assertions and must be regenerated on the approved private-JIT route. Then
+   compare pre-encode RGB48 against a trusted source, and test missing RPU,
+   unequal frame counts, broken EL, cancellation, disk exhaustion and audio sync.
+   FelBaker is a comparison implementation, not an independent Dolby oracle.
 5. **Independent pixels:** use ETSI GS CCM 001 clause 5 as the public BL/EL
    composer equation source; it defines inverse BL mapping, EL NLQ, residual
-   reconstruction and PQ conversion. Dolby lists it among standards relevant to
-   Dolby Vision documentation, and ETSI lists Dolby among the supporting
-   organizations. First map P7 RPU syntax and profile-specific rules, including
-   CM 2.9/4.0 behavior, onto its composing metadata. ETSI TS 103 572 is the
-   separate ST 2094-10 carriage specification. Implement the CPU path
-   independently, cover bit depths, chroma siting, NLQ, pivots, nonlinear
-   mapping, clipping, filter edges and precision, then set `reference_pixels`
-   only after defining the error budget and validating the mapping.
-6. **Remaining adapters:** Windows D3D11/Vulkan integration; Android vendor/native
-   capability qualification and an optional portable compositor; webOS compatible
-   native/companion versions; Linux CB1 output experiments only on exact supported
+   reconstruction and PQ conversion. First map P7 RPU syntax and profile-specific
+   rules, including CM 2.9/4.0 behavior, onto its composing metadata. Research
+   found HDR-Analyze's published account that it removed its earlier FEL
+   compositor after real-disc comparisons exposed large chroma and luma errors.
+   Its plan calls for specification-derived vectors and pinned cross-composer
+   versions. Therefore FelBaker and libplacebo are comparison targets, not the
+   oracle.
+   ETSI TS 103 572 covers ST 2094-10 metadata carriage. Implement an independent
+   integer CPU reference, test basis vectors, bit depths, chroma siting, NLQ,
+   pivots, nonlinear mapping, clipping, filter edges and precision, then set
+   reference_pixels only after defining the error budget and validating the
+   P7-to-spec mapping.
+6. **Remaining adapters:** restore and verify the retired private Windows route
+   before D3D11/Vulkan builds; Android vendor/native capability qualification and
+   an optional portable compositor; webOS compatible native/companion versions;
+   Linux CB1 output experiments only on exact supported
    DRM/driver/HDMI paths. Native DV signaling and reference display mapping each
    require their own measurements. Do not root a TV or install kernel patches as
    part of app startup.

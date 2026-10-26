@@ -142,6 +142,14 @@ sidecars remain in
 derived versions, the sidecars retain `fel_qualified: false`, and the synthetic
 result is not an independent Dolby reference or display-output qualification.
 
+The verifier now rejects mismatched 24000/1001 rates, unexpected dimensions or
+frame counts, different decoded BL samples or sampled RPU payloads, and any EL
+luma delta outside the exact authored patch; it also requires unchanged EL
+chroma. The JSON report records these assertions. The historical report above
+predates the gates and has not been rerun because this workflow has no approved
+private-JIT route. Do not describe the old measurement as having passed the
+strengthened verifier.
+
 ## What remains unproven
 
 - The Kodi sample index claims fair use for testing, technical evaluation and documentation, but no formal file-specific redistribution license is published. Keep the clip local; do not commit it or use it in public CI.
@@ -150,7 +158,7 @@ result is not an independent Dolby reference or display-output qualification.
 - Full PlezyNG playback on the Wayland video plane remains unqualified. The libmpv API was exercised through EGL/GLES in a native harness, and the Linux debug app builds, but the app was not launched with media.
 - Hardware qualification is limited to `vaapi-copy` decode through this harness. Zero-copy VA-API import and application Wayland presentation remain unqualified.
 - Native HDMI DV signaling, target-TV output and Dolby-reference display mapping are not qualified.
-- Android has an app build and routing-unit evidence only; no patched P7 FEL graph or Android device render is available. The experimental Apple host has no Mac/device run in this evidence set. Windows retains the approved private Packer route; no Packer canary, engine build or device result is in this evidence set. webOS has no FEL compositor adapter or device result.
+- Android has an app build and routing-unit evidence only; no patched P7 FEL graph or Android device render is available. The experimental Apple host has no Mac/device run in this evidence set. The former private Packer route is retired; restoration and verification are required before Windows builds can run. No D3D11/Vulkan adapter build or device result is available. webOS has no FEL compositor adapter or device result.
 - Production `mpv-build.lock.json` and its TLS/network, audio, subtitle, decoder, Apple and Android patches have not been rebased into this engine.
 
 ## Next work, in order
@@ -160,11 +168,11 @@ switches, launcher behavior, Apple and companion build commands, and the remaini
 cross-platform integration tasks. The real-clip helper and this evidence were
 carried forward from Luna's `552af300eee0754698fb123b5e193428528f1c7f` checkpoint.
 
-1. **Build the pixel oracle from the public composer specification.** ETSI GS CCM 001 V1.1.1 clause 5 defines BL inverse mapping, EL non-linear inverse quantization, residual addition and PQ conversion. Dolby lists it among standards relevant to its Dolby Vision documentation, and ETSI lists Dolby Laboratories among the supporting organizations. It does not name Profile 7 or Dolby Vision in the text, so first map the P7 RPU fields and profile-specific rules to its composing metadata, including CM 2.9/4.0 behavior, before treating a comparison as profile-accurate. ETSI TS 103 572 separately specifies ST 2094-10 metadata carriage, not the composer. Implement the equation path independently, compare residual-only and metadata-only controls, preserve intermediate precision, and define the error budget before setting `reference_pixels`. [ETSI GS CCM 001](https://www.etsi.org/deliver/etsi_gs/CCM/001_099/001/01.01.01_60/gs_ccm001v010101p.pdf) · [Dolby standards list](https://ott.dolby.com/OnDelKits/Dolby_Vision_Online_Delivery_Kit/v1/Documentation/Specs/Visio_Profiles/help_files/topics/r_standards_pub.html) · [ETSI TS 103 572 scope](https://www.etsi.org/deliver/etsi_ts/103500_103599/103572/01.03.01_60/ts_103572v010301p.pdf).
+1. **Build the pixel oracle from the public composer specification.** ETSI GS CCM 001 V1.1.1 clause 5 defines BL inverse mapping, EL non-linear inverse quantization, residual addition and PQ conversion. It does not name Profile 7 or Dolby Vision in the text, so first map P7 RPU fields and profile-specific rules, including CM 2.9/4.0 behavior, onto its composing metadata. HDR-Analyze's own FEL plan says its earlier compositor was removed after real-disc comparisons found large chroma and luma errors; it calls for specification-derived vectors and treats libplacebo and DoViBaker as cross-check targets rather than independent truth. Use that caution when building our integer reference. ETSI TS 103 572 separately specifies ST 2094-10 metadata carriage. Compare residual-only and metadata-only controls, preserve intermediate precision, and define the error budget before setting reference_pixels. [ETSI GS CCM 001](https://www.etsi.org/deliver/etsi_gs/CCM/001_099/001/01.01.01_60/gs_ccm001v010101p.pdf) · [HDR-Analyze FEL plan](https://github.com/tinof/hdr-analyze/blob/main/docs/FEL_PLAN.md) · [ETSI TS 103 572 scope](https://www.etsi.org/deliver/etsi_ts/103500_103599/103572/01.03.01_60/ts_103572v010301p.pdf).
 2. **Expand the generated graph fixture.** Add separately tracked layers, exact seek/flush/reorder boundaries, malformed/missing EL and RPU, scene changes, EOF, crop/chroma edges, stale-pair and queue-capacity faults. Keep the local Kodi sample out of the repository and public CI.
 3. **Qualify Linux app playback.** Rebase production mpv patches only after review. Run the app through PlezyNG's Wayland plane and test precision, range/PQ/HLG tags, tone-map ownership, VA-API import, seek/resize/teardown, subtitles, audio sync, suspend and output changes. Keep normal `opengl` as default and preserve recovery by removing `PLEZYNG_EXPERIMENTAL_RENDER_API`.
 4. **Build the Android engine path.** The current APK contains the production engine; add a platform adapter that exposes paired decoded BL/EL frames, carries RPU and PTS identity, composes before display mapping, and fails closed when either layer is missing. Validate with the generated fixture on a real supported Android device before advertising FEL.
-5. **Qualify Apple and Windows routes.** Build the pinned Apple host on its Xcode host, then test VideoToolbox/Metal output on iPhone/iPad and Apple TV. Use the existing Packer Windows route to build the candidate D3D11/Vulkan adapter; do not infer output qualification from a successful compile.
+5. **Qualify Apple and Windows routes.** Build the pinned Apple host on its Xcode host, then test VideoToolbox/Metal output on iPhone/iPad and Apple TV. Restore and verify the retired private Windows runner route before building the candidate D3D11/Vulkan adapter; do not infer output qualification from a successful compile.
 6. **Resolve webOS feasibility on device.** Check whether the supported webOS APIs expose decoded BL/EL surfaces and RPU timing for composition. If not, keep native/compatibility playback and the offline derived route explicitly separate. Native DV signaling and reference display mapping remain separate transport/device tests on every platform.
 
 ## Security and release boundary
