@@ -102,7 +102,7 @@
 - Let Xcode choose signing identities for iOS and tvOS archives instead of forcing one across all targets.
 - Keep raw companion remote transport exceptions out of discovery and session messages.
 - Preserve existing TV and keyboard toolbar focus order when adding Find your next discovery actions.
-- Use Plezy's TV-aware text fields for standalone source setup and search, and show feedback when Trakt finds no metadata matches.
+- Localize standalone source setup and subtitle search, use shared icons and TV-aware text fields, and report when Trakt finds no metadata matches.
 - Keep entitlement-controlled themes and icons locked when store access is disabled in the build.
 - Remove stale SVG imports after switching the setup and app-icon previews back to raster artwork.
 - Localize the About screen privacy-policy link.

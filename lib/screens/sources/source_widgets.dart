@@ -31,7 +31,7 @@ Future<void> sourceAction(BuildContext context, Future<void> Function() action) 
 
 String sourceKindName(FileSourceKind kind) => switch (kind) {
   FileSourceKind.local => t.fileSources.localFiles,
-  FileSourceKind.googleDrive => 'Google Drive',
+  FileSourceKind.googleDrive => t.fileSources.googleDrive,
   FileSourceKind.oneDrive => 'OneDrive',
   FileSourceKind.dropbox => 'Dropbox',
   FileSourceKind.webdav => 'WebDAV / Nextcloud',

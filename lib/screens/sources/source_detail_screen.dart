@@ -290,6 +290,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
         if (media.ids.imdb != null) 'imdb': media.ids.imdb!,
         if (media.ids.tvdb != null) 'tvdb': media.ids.tvdb.toString(),
       };
+      if (!mounted) return;
       await context.read<SourceController>().saveOnlineMetadata(
         _entry,
         title: media.title ?? _entry.displayTitle,
