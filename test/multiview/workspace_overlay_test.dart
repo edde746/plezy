@@ -10,6 +10,7 @@ WorkspaceSurfaceRegistration _registration({
   required String id,
   required String title,
   required MultiviewMediaKind kind,
+  VoidCallback? onRestore,
   bool acceptsInput = false,
   WorkspaceOwnershipHandler? onInputOwnershipChanged,
 }) => WorkspaceSurfaceRegistration(
@@ -22,7 +23,7 @@ WorkspaceSurfaceRegistration _registration({
     openedAt: DateTime.utc(2026, 1, 1),
   ),
   buildSurface: (_) => const ColoredBox(key: ValueKey('workspace_surface'), color: Colors.black),
-  onRestore: () {},
+  onRestore: onRestore ?? () {},
   onInputOwnershipChanged: onInputOwnershipChanged ?? (acceptsInput ? (_) {} : null),
 );
 
@@ -120,6 +121,37 @@ void main() {
 
     await tester.pumpWidget(const SizedBox.shrink());
     controller.dispose();
+  });
+
+  testWidgets('floating media windows expose a direct, accessible return action', (tester) async {
+    for (final (id, kind, returnLabel, closeLabel) in [
+      ('video', MultiviewMediaKind.video, 'Return to full player', 'Close mini player'),
+      ('music', MultiviewMediaKind.music, 'Return to full view', 'Close window'),
+    ]) {
+      var restored = 0;
+      final controller = MultiviewWorkspaceController();
+      controller.register(
+        _registration(
+          id: id,
+          title: id,
+          kind: kind,
+          onRestore: () => restored++,
+        ),
+      );
+      await _mount(tester, controller);
+
+      final returnButton = find.byTooltip(returnLabel);
+      expect(returnButton, findsOneWidget, reason: '$kind return action');
+      expect(find.byTooltip(closeLabel), findsOneWidget, reason: '$kind close action');
+      await tester.tap(returnButton);
+      await tester.pumpAndSettle();
+
+      expect(restored, 1, reason: '$kind restored callback');
+      expect(controller.isRestored(id), isTrue, reason: '$kind restored state');
+
+      await tester.pumpWidget(const SizedBox.shrink());
+      controller.dispose();
+    }
   });
 
   testWidgets('a hidden game surface stays mounted while another pane is fullscreen', (tester) async {

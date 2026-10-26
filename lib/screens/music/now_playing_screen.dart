@@ -113,9 +113,9 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
     super.didChangeDependencies();
     final workspace = context.read<MultiviewWorkspaceController>();
     if (workspace != _workspace) {
-      _workspace?.removeListener(_scheduleAutoJoinWorkspace);
+      _workspace?.removeListener(_onWorkspaceChanged);
       _workspace = workspace;
-      workspace.addListener(_scheduleAutoJoinWorkspace);
+      workspace.addListener(_onWorkspaceChanged);
     }
 
     final service = context.read<MusicPlaybackService>();
@@ -170,11 +170,16 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
     });
   }
 
+  void _onWorkspaceChanged() {
+    if (mounted) setState(() {});
+    _scheduleAutoJoinWorkspace();
+  }
+
   @override
   void dispose() {
     _errorsSub?.cancel();
     _service?.removeListener(_scheduleAutoJoinWorkspace);
-    _workspace?.removeListener(_scheduleAutoJoinWorkspace);
+    _workspace?.removeListener(_onWorkspaceChanged);
     _dismissSettle.dispose();
     _dismissDrag.dispose();
     _seekFocusNode.dispose();
@@ -221,15 +226,16 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
     final existing = controller.session(sessionId);
     if (existing != null) {
       if (controller.isRestored(sessionId) || controller.parkedSessions.any((s) => s.descriptor.id == sessionId)) {
-        controller.showSessionInWorkspace(sessionId, fullscreen: true);
+        controller.showSessionInWorkspace(sessionId);
+        if (mounted) Navigator.of(context).pop();
       } else {
-        controller.promoteToFullscreen(sessionId);
+        controller.restore(sessionId);
       }
-      if (mounted) Navigator.of(context).pop();
       return;
     }
 
     final navigator = Navigator.of(context);
+    final nowPlayingRoute = ModalRoute.of(context);
     final descriptor = WorkspaceSessionDescriptor(
       id: sessionId,
       kind: MultiviewMediaKind.music,
@@ -247,7 +253,12 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
         buildSurface: (_) => MusicWorkspaceSurface(service: service, controller: controller, sessionId: sessionId),
         onRestore: () {
           WidgetsBinding.instance.addPostFrameCallback((_) {
-            if (navigator.mounted) unawaited(openNowPlaying(navigator.context));
+            if (!navigator.mounted) return;
+            if (nowPlayingRoute?.isActive == true) {
+              navigator.popUntil((candidate) => identical(candidate, nowPlayingRoute));
+            } else {
+              unawaited(openNowPlaying(navigator.context));
+            }
           });
         },
         onClose: () => unawaited(service.stop()),
@@ -619,7 +630,7 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
                     ),
             ),
             IconButton(
-              tooltip: t.videoControls.pipButton,
+              tooltip: _musicWorkspaceActionLabel(),
               onPressed: () => unawaited(_openMusicInWorkspace(service, track)),
               icon: AppIcon(Symbols.picture_in_picture_alt_rounded, fill: 1, color: tk.text),
             ),
@@ -641,6 +652,16 @@ class _NowPlayingScreenState extends State<NowPlayingScreen>
     final title = (followsCurrentAlbum ? track.albumTitle : playContext.title)?.trim();
     if (title == null || title.isEmpty) return null;
     return toBulletedString([title, if (followsCurrentAlbum && track.albumYear != null) '${track.albumYear}']);
+  }
+
+  String _musicWorkspaceActionLabel() {
+    final controller = _workspace;
+    const sessionId = 'music:active';
+    if (controller == null || controller.session(sessionId) == null) return t.videoControls.openMiniPlayer;
+    final isParked = controller.parkedSessions.any((session) => session.descriptor.id == sessionId);
+    return controller.isRestored(sessionId) || isParked
+        ? t.videoControls.openMiniPlayer
+        : t.videoControls.returnToFullPlayer;
   }
 
   /// Wide-layout control band: the transport row stays exactly centered

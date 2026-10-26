@@ -110,7 +110,7 @@ class _GameCardState extends State<GameCard> {
         if (widget.onPlayInWorkspace != null)
           AppMenuItem(
             value: 'play_in_workspace',
-            label: t.videoControls.pipButton,
+            label: t.videoControls.openMiniPlayer,
             icon: Symbols.picture_in_picture_alt_rounded,
           ),
         AppMenuItem(

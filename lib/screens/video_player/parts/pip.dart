@@ -73,7 +73,10 @@ extension _VideoPlayerPipMethods on VideoPlayerScreenState {
           existingController.showSessionInWorkspace(existingId);
           _setPlayerState(() => _workspaceSurfaceDetached = true);
         } else {
-          existingController.promoteToFullscreen(existingId);
+          // The PiP control is an on/off toggle: restore this player to its
+          // original route while keeping playback alive. The workspace title
+          // bar owns the separate fullscreen action.
+          existingController.restore(existingId);
         }
       } else if (existingController.showSessionInWorkspace(existingId)) {
         _setPlayerState(() => _workspaceSurfaceDetached = true);
@@ -243,12 +246,16 @@ extension _VideoPlayerPipMethods on VideoPlayerScreenState {
     _setAndroidAutoPipTransitionInFlight(false, reason: 'pip_state_changed');
     _recordLifecycleState('pip_state_changed', action: isInPip ? 'entered' : 'exited');
 
-    if (!_pipInitialized || _videoFilterManager == null) return;
+    if (!_pipInitialized || _videoFilterManager == null) {
+      _setPlayerState(() {});
+      return;
+    }
 
     if (isInPip) {
       _preparePipFiltersForEntry();
     } else {
       _restorePipFiltersAfterExit();
     }
+    _setPlayerState(() {});
   }
 }

@@ -146,7 +146,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
           controller.showSessionInWorkspace(existingId);
           setState(() => _workspaceDetached = true);
         } else {
-          controller.promoteToFullscreen(existingId);
+          controller.restore(existingId);
         }
       } else if (controller.showSessionInWorkspace(existingId)) {
         setState(() => _workspaceDetached = true);
@@ -1066,7 +1066,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
         title: Text(widget.entry.title, maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
           IconButton(
-            tooltip: t.videoControls.pipButton,
+            tooltip: _workspaceDetached ? t.common.returnToFullView : t.videoControls.openMiniPlayer,
             onPressed: _ready ? _toggleReaderWorkspace : null,
             icon: const AppIcon(Symbols.picture_in_picture_alt_rounded),
           ),

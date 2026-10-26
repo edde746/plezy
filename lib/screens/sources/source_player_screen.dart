@@ -144,7 +144,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
           controller.showSessionInWorkspace(existingId);
           setState(() => _workspaceDetached = true);
         } else {
-          controller.promoteToFullscreen(existingId);
+          controller.restore(existingId);
         }
       } else if (controller.showSessionInWorkspace(existingId)) {
         setState(() => _workspaceDetached = true);
@@ -548,6 +548,12 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
               },
               icon: const AppIcon(Symbols.fullscreen_rounded),
             ),
+          if (s.video && _full)
+            IconButton(
+              tooltip: _workspaceDetached ? t.videoControls.returnToFullPlayer : t.videoControls.openMiniPlayer,
+              onPressed: _toggleSourceWorkspace,
+              icon: const AppIcon(Symbols.picture_in_picture_alt_rounded),
+            ),
         ],
       ),
       if (s.failure != null)
@@ -666,7 +672,9 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
               focusableAppBarActions: true,
               actions: [
                 IconButton(
-                  tooltip: t.videoControls.pipButton,
+                  tooltip: _workspaceDetached
+                      ? (s.video ? t.videoControls.returnToFullPlayer : t.common.returnToFullView)
+                      : t.videoControls.openMiniPlayer,
                   onPressed: _toggleSourceWorkspace,
                   icon: const AppIcon(Symbols.picture_in_picture_alt_rounded),
                 ),

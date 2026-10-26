@@ -307,6 +307,24 @@ class Translations$common$en {
 	/// en: 'Close'
 	String get close => 'Close';
 
+	/// en: 'Close mini player'
+	String get closeMiniPlayer => 'Close mini player';
+
+	/// en: 'Close window'
+	String get closeWorkspaceWindow => 'Close window';
+
+	/// en: 'Return to full view'
+	String get returnToFullView => 'Return to full view';
+
+	/// en: 'Manage media sessions'
+	String get manageMediaSessions => 'Manage media sessions';
+
+	/// en: 'Switch to side-by-side layout'
+	String get sideBySideLayout => 'Switch to side-by-side layout';
+
+	/// en: 'Switch to floating windows'
+	String get floatingWindows => 'Switch to floating windows';
+
 	/// en: 'Clear'
 	String get clear => 'Clear';
 
@@ -2875,6 +2893,12 @@ class Translations$videoControls$en {
 
 	/// en: 'Picture-in-Picture mode'
 	String get pipButton => 'Picture-in-Picture mode';
+
+	/// en: 'Open mini player'
+	String get openMiniPlayer => 'Open mini player';
+
+	/// en: 'Return to full player'
+	String get returnToFullPlayer => 'Return to full player';
 
 	/// en: 'Aspect ratio'
 	String get aspectRatioButton => 'Aspect ratio';
@@ -10798,6 +10822,12 @@ extension on Translations {
 			'common.cancel' => 'Cancel',
 			'common.save' => 'Save',
 			'common.close' => 'Close',
+			'common.closeMiniPlayer' => 'Close mini player',
+			'common.closeWorkspaceWindow' => 'Close window',
+			'common.returnToFullView' => 'Return to full view',
+			'common.manageMediaSessions' => 'Manage media sessions',
+			'common.sideBySideLayout' => 'Switch to side-by-side layout',
+			'common.floatingWindows' => 'Switch to floating windows',
 			'common.clear' => 'Clear',
 			'common.reset' => 'Reset',
 			'common.later' => 'Later',
@@ -11672,6 +11702,8 @@ extension on Translations {
 			'videoControls.transcodeUnavailableFallback' => 'Transcoding unavailable — playing original quality',
 			'videoControls.subtitleUnavailableFallback' => 'Selected subtitles could not be loaded — continuing without subtitles',
 			'videoControls.pipButton' => 'Picture-in-Picture mode',
+			'videoControls.openMiniPlayer' => 'Open mini player',
+			'videoControls.returnToFullPlayer' => 'Return to full player',
 			'videoControls.aspectRatioButton' => 'Aspect ratio',
 			'videoControls.ambientLighting' => 'Ambient lighting',
 			'videoControls.fullscreenButton' => 'Enter fullscreen',

@@ -162,8 +162,11 @@ class _MultiviewOverlay extends StatelessWidget {
   Widget _floatingWindow(BuildContext context, WorkspaceSurfaceRegistration registration, Size viewport) {
     final id = registration.descriptor.id;
     final placement = controller.placementFor(id);
-    // Reserve room for the 48dp action targets and a readable title.
-    final titleBarActionCount = 3 + (registration.descriptor.hasAudio ? 1 : 0);
+    // Reserve room for the 48dp action targets and a readable title. Restorable
+    // media surfaces get their own one-tap exit from the mini window; games
+    // use fullscreen as their expand action instead.
+    final hasRestoreAction = registration.descriptor.kind != MultiviewMediaKind.game;
+    final titleBarActionCount = 3 + (registration.descriptor.hasAudio ? 1 : 0) + (hasRestoreAction ? 1 : 0);
     final minWidth = math.min(math.max(220.0, titleBarActionCount * 48.0 + 64.0), viewport.width);
     final width = (viewport.width * placement.width).clamp(minWidth, math.min(520.0, viewport.width)).toDouble();
     final height = (viewport.height * placement.height)
@@ -524,6 +527,17 @@ class _WorkspaceTitleBar extends StatelessWidget {
                 onPressed: () => controller.setAudibleSession(controller.audibleSessionId == id ? null : id),
                 icon: Icon(controller.audibleSessionId == id ? Symbols.volume_up_rounded : Symbols.volume_off_rounded),
               ),
+            if (registration.descriptor.kind != MultiviewMediaKind.game)
+              IconButton(
+                tooltip: registration.descriptor.kind == MultiviewMediaKind.video ||
+                        registration.descriptor.kind == MultiviewMediaKind.liveTv
+                    ? t.videoControls.returnToFullPlayer
+                    : t.common.returnToFullView,
+                visualDensity: VisualDensity.standard,
+                iconSize: 19,
+                onPressed: () => controller.restore(id),
+                icon: const Icon(Symbols.picture_in_picture_alt_rounded),
+              ),
             IconButton(
               tooltip: fullscreen ? t.common.exitFullscreen : t.common.fullscreen,
               visualDensity: VisualDensity.standard,
@@ -538,7 +552,10 @@ class _WorkspaceTitleBar extends StatelessWidget {
               },
             ),
             IconButton(
-              tooltip: t.common.close,
+              tooltip: registration.descriptor.kind == MultiviewMediaKind.video ||
+                      registration.descriptor.kind == MultiviewMediaKind.liveTv
+                  ? t.common.closeMiniPlayer
+                  : t.common.closeWorkspaceWindow,
               visualDensity: VisualDensity.standard,
               iconSize: 19,
               onPressed: () => controller.close(id),
@@ -582,7 +599,7 @@ class _WorkspaceDock extends StatelessWidget {
             )
           else
             IconButton(
-              tooltip: mode == MultiviewLayoutMode.floating ? t.common.viewAll : t.videoControls.pipButton,
+              tooltip: mode == MultiviewLayoutMode.floating ? t.common.sideBySideLayout : t.common.floatingWindows,
               onPressed: () => controller.setLayoutMode(
                 mode == MultiviewLayoutMode.floating ? MultiviewLayoutMode.sideBySide : MultiviewLayoutMode.floating,
               ),
@@ -593,7 +610,7 @@ class _WorkspaceDock extends StatelessWidget {
               ),
             ),
           IconButton(
-            tooltip: t.common.options,
+            tooltip: t.common.manageMediaSessions,
             onPressed: controller.toggleSessionTray,
             icon: const Icon(Symbols.dashboard_customize_rounded),
           ),
@@ -644,7 +661,10 @@ class _WorkspaceSessionTray extends StatelessWidget {
                   controller.setSessionTrayVisible(false);
                 },
                 trailing: IconButton(
-                  tooltip: t.common.back,
+                  tooltip: registration.descriptor.kind == MultiviewMediaKind.video ||
+                          registration.descriptor.kind == MultiviewMediaKind.liveTv
+                      ? t.videoControls.returnToFullPlayer
+                      : t.common.returnToFullView,
                   visualDensity: VisualDensity.standard,
                   icon: const Icon(Symbols.arrow_back_rounded),
                   onPressed: () {

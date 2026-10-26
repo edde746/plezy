@@ -308,6 +308,9 @@ extension _VideoPlayerBuildMethods on VideoPlayerScreenState {
                         sourcePartId: _currentMediaInfo?.partId,
                         onPlaybackSourceChanged: _switchPlaybackSource,
                         onTogglePIPMode: _togglePIPMode,
+                        pipActionLabel: _workspaceSurfaceDetached || PipService().isPipActive.value
+                            ? t.videoControls.returnToFullPlayer
+                            : t.videoControls.openMiniPlayer,
                         boxFitMode: _videoFilterManager?.boxFitMode ?? 0,
                         videoZoomScale: _videoFilterManager?.zoomScale ?? 1.0,
                         onCycleBoxFitMode: _visualEffects.cycleBoxFitMode,
