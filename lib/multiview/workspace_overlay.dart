@@ -4,9 +4,11 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../focus/focusable_wrapper.dart';
 import '../i18n/strings.g.dart';
 import '../theme/mono_motion.dart';
 import '../theme/mono_tokens.dart';
+import '../widgets/focusable_list_tile.dart';
 import 'workspace_controller.dart';
 import 'workspace_models.dart';
 
@@ -145,7 +147,9 @@ class _MultiviewOverlay extends StatelessWidget {
   Widget _floatingWindow(BuildContext context, WorkspaceSurfaceRegistration registration, Size viewport) {
     final id = registration.descriptor.id;
     final placement = controller.placementFor(id);
-    final minWidth = math.min(220.0, viewport.width);
+    // Reserve room for the 48dp action targets and a readable title.
+    final titleBarActionCount = 3 + (registration.descriptor.hasAudio ? 1 : 0);
+    final minWidth = math.min(math.max(220.0, titleBarActionCount * 48.0 + 64.0), viewport.width);
     final width = (viewport.width * placement.width).clamp(minWidth, math.min(520.0, viewport.width)).toDouble();
     final height = (viewport.height * placement.height)
         .clamp(math.min(150.0, viewport.height), math.min(420.0, viewport.height))
@@ -466,7 +470,7 @@ class _WorkspaceTitleBar extends StatelessWidget {
     return Material(
       color: tk.surface,
       child: SizedBox(
-        height: 42,
+        height: 48,
         child: Row(
           children: [
             Expanded(
@@ -502,7 +506,7 @@ class _WorkspaceTitleBar extends StatelessWidget {
             if (floating && !fullscreen)
               IconButton(
                 tooltip: moving ? t.common.save : t.common.edit,
-                visualDensity: VisualDensity.compact,
+                visualDensity: VisualDensity.standard,
                 iconSize: 19,
                 onPressed: onMoveToggle,
                 icon: Icon(moving ? Symbols.check_rounded : Symbols.drag_handle_rounded),
@@ -510,14 +514,14 @@ class _WorkspaceTitleBar extends StatelessWidget {
             if (registration.descriptor.hasAudio)
               IconButton(
                 tooltip: controller.audibleSessionId == id ? t.videoControls.muteButton : t.videoControls.unmuteButton,
-                visualDensity: VisualDensity.compact,
+                visualDensity: VisualDensity.standard,
                 iconSize: 19,
                 onPressed: () => controller.setAudibleSession(controller.audibleSessionId == id ? null : id),
                 icon: Icon(controller.audibleSessionId == id ? Symbols.volume_up_rounded : Symbols.volume_off_rounded),
               ),
             IconButton(
               tooltip: fullscreen ? t.common.exitFullscreen : t.common.fullscreen,
-              visualDensity: VisualDensity.compact,
+              visualDensity: VisualDensity.standard,
               iconSize: 19,
               icon: Icon(fullscreen ? Symbols.fullscreen_exit_rounded : Symbols.open_in_full_rounded),
               onPressed: () {
@@ -530,7 +534,7 @@ class _WorkspaceTitleBar extends StatelessWidget {
             ),
             IconButton(
               tooltip: t.common.close,
-              visualDensity: VisualDensity.compact,
+              visualDensity: VisualDensity.standard,
               iconSize: 19,
               onPressed: () => controller.close(id),
               icon: const Icon(Symbols.close_rounded),
@@ -614,8 +618,9 @@ class _WorkspaceSessionTray extends StatelessWidget {
           padding: EdgeInsets.all(tk.space * 0.5),
           children: [
             for (final registration in sessions)
-              ListTile(
-                dense: true,
+              FocusableListTile(
+                dense: false,
+                visualDensity: VisualDensity.standard,
                 selected: controller.focusedSessionId == registration.descriptor.id,
                 leading: Icon(
                   controller.parkedSessions.any((s) => s.descriptor.id == registration.descriptor.id)
@@ -635,7 +640,7 @@ class _WorkspaceSessionTray extends StatelessWidget {
                 },
                 trailing: IconButton(
                   tooltip: t.common.back,
-                  visualDensity: VisualDensity.compact,
+                  visualDensity: VisualDensity.standard,
                   icon: const Icon(Symbols.arrow_back_rounded),
                   onPressed: () {
                     controller.setSessionTrayVisible(false);
@@ -660,7 +665,11 @@ class _ResizeHandle extends StatelessWidget {
     final tk = tokens(context);
     return Align(
       alignment: AlignmentDirectional.bottomEnd,
-      child: Focus(
+      child: FocusableWrapper(
+        autoScroll: false,
+        borderRadius: tk.radiusSm,
+        disableScale: true,
+        excludeChildSemantics: false,
         onKeyEvent: (node, event) {
           if (event is! KeyDownEvent) return KeyEventResult.ignored;
           final delta = switch (event.logicalKey) {
@@ -683,8 +692,8 @@ class _ResizeHandle extends StatelessWidget {
             behavior: HitTestBehavior.opaque,
             onPanUpdate: (details) => onResize(details.delta),
             child: SizedBox(
-              width: 44,
-              height: 36,
+              width: 48,
+              height: 48,
               child: Padding(
                 padding: EdgeInsetsDirectional.only(
                   end: tk.space * 0.5,
