@@ -99,6 +99,7 @@
 
 - Use CocoaPods for iOS and macOS builds until the pinned WebView plugin compiles with Xcode 26’s Swift Package Manager integration.
 - Let Xcode choose signing identities for iOS and tvOS archives instead of forcing one across all targets.
+- Keep raw companion remote transport exceptions out of discovery and session messages.
 - Preserve existing TV and keyboard toolbar focus order when adding Find your next discovery actions.
 - Use Plezy's TV-aware text fields for standalone source setup and search, and show feedback when Trakt finds no metadata matches.
 - Keep entitlement-controlled themes and icons locked when store access is disabled in the build.

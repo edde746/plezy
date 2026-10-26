@@ -20,6 +20,7 @@ import '../services/companion_remote/remote_auth_service.dart';
 import '../services/companion_remote/remote_pairing_store.dart';
 import '../utils/app_logger.dart';
 import '../utils/device_identity.dart';
+import '../utils/error_message_utils.dart';
 import '../utils/serial_future_queue.dart';
 import '../mixins/disposable_change_notifier_mixin.dart';
 
@@ -31,8 +32,14 @@ typedef CompanionRemotePeerServiceFactory = CompanionRemotePeerService Function(
 typedef LanDiscoveryServiceFactory = LanDiscoveryService Function();
 
 String _localizedRemoteError(Object error, String Function(String details) fallback) {
-  if (error is RemotePeerError) return error.message;
-  return fallback(error.toString().replaceFirst('Exception: ', ''));
+  if (error is RemotePeerError) {
+    final originalError = error.originalError;
+    // Peer messages are localized when no transport exception was attached.
+    // Otherwise the service may already have interpolated the raw exception.
+    if (originalError == null) return error.message;
+    return fallback(localizedErrorReason(originalError));
+  }
+  return fallback(localizedErrorReason(error));
 }
 
 class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin, WidgetsBindingObserver {
@@ -994,7 +1001,13 @@ class CompanionRemoteProvider with ChangeNotifier, DisposableChangeNotifierMixin
         // from the dying socket must not end the cycle.
         return;
       }
-      _session = _session?.copyWith(status: RemoteSessionStatus.error, errorMessage: error.message);
+      _session = _session?.copyWith(
+        status: RemoteSessionStatus.error,
+        errorMessage: _localizedRemoteError(
+          error,
+          (details) => t.companionRemote.pairing.failedToConnect(error: details),
+        ),
+      );
       safeNotifyListeners();
     });
 
