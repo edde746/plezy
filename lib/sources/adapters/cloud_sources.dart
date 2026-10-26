@@ -1,5 +1,7 @@
 import 'dart:convert';
 
+import 'package:crypto/crypto.dart';
+
 import '../source_models.dart';
 import '../source_oauth.dart';
 import '../source_transport.dart';
@@ -20,6 +22,7 @@ abstract class OAuthSourceAdapter extends SourceAdapter {
       'provider': provider,
       'clientId': clientId,
       'refreshToken': refreshToken,
+      'credentialVersion': sha256.convert(utf8.encode(refreshToken!)).toString(),
       if (credentials['clientSecret']?.isNotEmpty == true) 'clientSecret': credentials['clientSecret'],
       ...values,
     };
@@ -148,7 +151,7 @@ class GoogleDriveSourceAdapter extends OAuthSourceAdapter {
     final refresh = await _backgroundRefresh('googleDrive', refreshCredentials, {
       'fileId': id,
       'revision': revision,
-      'size': size,
+      if (size != null) 'size': size,
       if (ref['resourceKey'] is String) 'resourceKey': ref['resourceKey'] as String,
     });
     return ContentLease(

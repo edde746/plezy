@@ -441,6 +441,7 @@ class ContentLease {
     final refresh = backgroundRefresh;
     if (!backgroundTransferSafe ||
         refresh == null ||
+        expiresAt == null ||
         size == null ||
         size! <= 0 ||
         uri.scheme != 'https' ||

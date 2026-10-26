@@ -12,7 +12,6 @@ import '../services/credential_vault.dart';
 import 'source_database.dart';
 import 'source_models.dart';
 import 'adapters/s3_source.dart';
-import 'adapters/s3_source.dart';
 import 'source_oauth.dart';
 import 'source_transport.dart';
 
@@ -182,7 +181,11 @@ Future<_RenewedBackgroundLease> _renewBackgroundLease(Map<String, dynamic> descr
         'supportsAllDrives': 'true',
       }),
       method: 'GET',
-      headers: {'Authorization': 'Bearer $accessToken'},
+      headers: {
+        'Authorization': 'Bearer $accessToken',
+        if (_renewalText(descriptor, 'resourceKey', maxLength: 2048) case final resourceKey?)
+          'X-Goog-Drive-Resource-Keys': '$fileId/$resourceKey',
+      },
     );
     final revision = (metadata['md5Checksum'] ?? metadata['version'] ?? metadata['modifiedTime'])?.toString();
     _checkRenewedRepresentation(descriptor, revision, _renewalSize(metadata));
@@ -267,6 +270,7 @@ Future<Task?> resolveEncryptedBackgroundLease(Task original) async {
     final descriptor = Map<String, dynamic>.from(decoded);
     if (descriptor['taskId'] != original.taskId) return null;
     final refresh = descriptor['refresh'];
+    if (refresh is Map && descriptor['uri'] != _encryptedLeaseTaskUrl) return null;
     final Uri uri;
     final headers = <String, String>{};
     String metadata = original.metaData;
@@ -282,7 +286,8 @@ Future<Task?> resolveEncryptedBackgroundLease(Task original) async {
       final provider = renewal['provider'];
       if (provider == 's3' &&
           (uri.scheme != 'https' || uri.host.isEmpty || uri.userInfo.isNotEmpty || uri.hasFragment || !uri.hasQuery ||
-              headers.keys.any((key) => key.toLowerCase() != 'if-match'))) return null;
+              headers.keys.any((key) => key.toLowerCase() != 'if-match') ||
+              headers.values.any((value) => value.length > 2048 || RegExp(r'[\\x00-\\x1f\\x7f]').hasMatch(value)))) return null;
       if (provider == 'googleDrive') {
         if (uri.scheme != 'https' || uri.host != 'www.googleapis.com' || uri.pathSegments.length < 4 ||
             headers.length > 2 || headers['Authorization']?.startsWith('Bearer ') != true) return null;
@@ -442,7 +447,32 @@ class PublicationDownloads {
     return stat.type == FileSystemEntityType.file && stat.size > 0 && stat.size == expectedSize;
   }
 
-  Future<void> _runNativeDownload({
+  bool _sameEncryptedRefreshRequest(String savedPayload, String currentPayload) {
+  try {
+    final saved = jsonDecode(savedPayload);
+    final current = jsonDecode(currentPayload);
+    if (saved is! Map || current is! Map ||
+        saved['taskId'] != current['taskId'] ||
+        saved['uri'] != _encryptedLeaseTaskUrl || current['uri'] != _encryptedLeaseTaskUrl ||
+        saved['headers'] is! Map || current['headers'] is! Map ||
+        (saved['headers'] as Map).isNotEmpty || (current['headers'] as Map).isNotEmpty ||
+        saved['refresh'] is! Map || current['refresh'] is! Map) return false;
+    final oldRefresh = Map<String, dynamic>.from(saved['refresh'] as Map);
+    final newRefresh = Map<String, dynamic>.from(current['refresh'] as Map);
+    if (oldRefresh['provider'] != newRefresh['provider'] ||
+        oldRefresh['credentialVersion'] != newRefresh['credentialVersion']) return false;
+    oldRefresh.remove('refreshToken');
+    newRefresh.remove('refreshToken');
+    String canonical(Map<String, dynamic> map) => jsonEncode(
+      Map.fromEntries(map.entries.toList()..sort((a, b) => a.key.compareTo(b.key))),
+    );
+    return canonical(oldRefresh) == canonical(newRefresh);
+  } on Object {
+    return false;
+  }
+}
+
+Future<void> _runNativeDownload({
     required _DownloadTask task,
     required ContentLease lease,
     required int expectedSize,
@@ -450,17 +480,19 @@ class PublicationDownloads {
     required File validatorFile,
   }) async {
     final taskId = _nativeTaskId(task.profile, task.adapter.source.id, task.file);
+    final renewableLease = (Platform.isIOS || Platform.isAndroid) &&
+        lease.canPersistEncryptedRefreshForBackgroundTransfer;
     final encryptedLease = (Platform.isIOS || Platform.isAndroid) &&
-        (lease.canPersistEncryptedAuthForBackgroundTransfer || lease.canPersistEncryptedRefreshForBackgroundTransfer);
+        (lease.canPersistEncryptedAuthForBackgroundTransfer || renewableLease);
     final payloadHeaders = Map<String, String>.fromEntries(
       lease.headers.entries.toList()..sort((a, b) => a.key.toLowerCase().compareTo(b.key.toLowerCase())),
     );
     final leasePayload = encryptedLease
         ? jsonEncode({
             'taskId': taskId,
-            'uri': lease.uri.toString(),
-            'headers': payloadHeaders,
-            'refresh': lease.backgroundRefresh,
+            'uri': renewableLease ? _encryptedLeaseTaskUrl : lease.uri.toString(),
+            'headers': renewableLease ? const <String, String>{} : payloadHeaders,
+            'refresh': renewableLease ? lease.backgroundRefresh : null,
           })
         : null;
     var protectedLease = leasePayload == null ? '' : await CredentialVault.protect(leasePayload);
@@ -485,7 +517,9 @@ class PublicationDownloads {
         final savedPayload = CredentialVault.isProtected(savedLease)
             ? await CredentialVault.reveal(savedLease)
             : null;
-        sameRequest = sameRequest && savedPayload == leasePayload;
+        sameRequest = sameRequest &&
+            (savedPayload == leasePayload ||
+                (savedPayload != null && leasePayload != null && _sameEncryptedRefreshRequest(savedPayload, leasePayload)));
         if (sameRequest) protectedLease = savedLease;
       } else if (record != null) {
         sameRequest = sameRequest &&

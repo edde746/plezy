@@ -135,7 +135,7 @@ class S3SourceAdapter extends SourceAdapter {
     final accessKey = credentialValues['accessKey'];
     final secretKey = credentialValues['secretKey'];
     final region = source.options['region'] ?? 'us-east-1';
-    final renewal = accessKey == null || secretKey == null || uri.scheme != 'https' || uri.hasQuery || uri.hasFragment
+    final renewal = accessKey == null || secretKey == null || file.revision?.isNotEmpty != true || uri.scheme != 'https' || uri.hasQuery || uri.hasFragment
         ? null
         : <String, dynamic>{
             'provider': 's3',
