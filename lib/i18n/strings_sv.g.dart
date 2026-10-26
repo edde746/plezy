@@ -677,6 +677,13 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get dvConversionNativeDescription => 'Tvinga inbyggd DV7 och förhindra nya försök med DV-konvertering';
 	@override String get dvConversionDv81Description => 'Tvinga direkt RPU-konvertering till Dolby Vision-profil 8.1';
 	@override String get dvConversionHevcStripDescription => 'Ta bort Dolby Visions RPU-/EL-lager och använd vanlig HEVC';
+	@override String get experimentalDolbyVision => 'Experimentell Dolby Vision';
+	@override String get experimentalDolbyVisionDescription => 'Använd den experimentella FEL-renderaren vid nästa uppspelning. Kräver en separat motorversion.';
+	@override String get dvExperimentUnavailableDescription => 'Det här experimentet är för närvarande endast tillgängligt på Linux.';
+	@override String get dvCompatibilityFallback => 'Kompatibilitetsreserv';
+	@override String get dvCompatibilityFallbackDescription => 'Använd standardrenderaren om experimentet inte kan starta. FEL-data kan gå förlorade.';
+	@override String get dvExperimentDiagnostics => 'Loggning av videoexperiment';
+	@override String get dvExperimentDiagnosticsDescription => 'Aktivera detaljerade spelarloggar vid nästa uppspelning.';
 	@override String get disableDolbyVision => 'Inaktivera Dolby Vision';
 	@override String get disableDolbyVisionDescription => 'Spela upp filens HDR10- eller HLG-lager i stället för Dolby Vision när det finns';
 	@override String get hdrSdrConversion => 'HDR till SDR-konvertering';
@@ -763,13 +770,6 @@ class _Translations$settings$sv extends Translations$settings$en {
 	@override String get regionFormatDescription => 'Välj hur datum, tal och måttenheter visas.';
 	@override String get metadataLanguage => 'Språk för metadata';
 	@override String get metadataLanguageDescription => 'Föredraget språk för titlar och beskrivningar när servern stöder det. Ljud och undertexter ställs in separat.';
-	@override String get experimentalDolbyVision => 'Experimentell Dolby Vision';
-	@override String get experimentalDolbyVisionDescription => 'Använd den experimentella FEL-renderaren vid nästa uppspelning. Kräver en separat motorversion.';
-	@override String get dvExperimentUnavailableDescription => 'Det här experimentet är för närvarande endast tillgängligt på Linux.';
-	@override String get dvCompatibilityFallback => 'Kompatibilitetsreserv';
-	@override String get dvCompatibilityFallbackDescription => 'Använd standardrenderaren om experimentet inte kan starta. FEL-data kan gå förlorade.';
-	@override String get dvExperimentDiagnostics => 'Loggning av videoexperiment';
-	@override String get dvExperimentDiagnosticsDescription => 'Aktivera detaljerade spelarloggar vid nästa uppspelning.';
 }
 
 // Path: themeEditor
@@ -2910,8 +2910,12 @@ class _Translations$fileSources$sv extends Translations$fileSources$en {
 	@override String get source => 'Källa';
 	@override String get name => 'Namn';
 	@override String get endpoint => 'Server-URL';
+	@override String get smbEndpointHint => 'Exempel: smb://nas/Movies';
+	@override String get smbEndpointInvalid => 'Ange en SMB-server och en delad mapp.';
 	@override String get root => 'Föregående Föregång eller Prefix';
+	@override String get smbFolderHelp => 'Lämna tomt för att använda hela den delade mappen, eller ange en mapp i den.';
 	@override String get username => 'Användarnamn';
+	@override String get smbDomain => 'Domän (valfritt)';
 	@override String get password => 'Lösenord';
 	@override String get token => 'API token';
 	@override String get accessKey => 'Tillgångsnyckel ID';
@@ -2921,6 +2925,8 @@ class _Translations$fileSources$sv extends Translations$fileSources$en {
 	@override String get clientId => 'OAuth kundID';
 	@override String get clientSecret => 'OAuth klienthemlighet (endast Google skrivbord)';
 	@override String get allowHttp => 'Tillåt okrypterad HTTP i ett betrott nätverk';
+	@override String get smbEncryption => 'Kryptera SMB3-anslutningen';
+	@override String get smbEncryptionHint => 'Använd SMB3-kryptering när NAS-enheten stöder det.';
 	@override String get connect => 'Anslut';
 	@override String get cancel => 'Avbryt';
 	@override String get save => 'Spara';
@@ -3066,12 +3072,6 @@ class _Translations$fileSources$sv extends Translations$fileSources$en {
 	@override String get useFiles => 'Använd filer och böcker';
 	@override String get cancelScan => 'Avbryt skanning';
 	@override String get googleDrive => 'Google Drive';
-	@override String get smbEndpointHint => 'Exempel: smb://nas/Movies';
-	@override String get smbEndpointInvalid => 'Ange en SMB-server och en delad mapp.';
-	@override String get smbFolderHelp => 'Lämna tomt för att använda hela den delade mappen, eller ange en mapp i den.';
-	@override String get smbDomain => 'Domän (valfritt)';
-	@override String get smbEncryption => 'Kryptera SMB3-anslutningen';
-	@override String get smbEncryptionHint => 'Använd SMB3-kryptering när NAS-enheten stöder det.';
 }
 
 // Path: lending
@@ -3354,16 +3354,16 @@ class _Translations$games$sv extends Translations$games$en {
 	@override String get wakeSent => 'Wake request sent. The computer must support Wake-on-LAN on this network.';
 	@override String get mac => 'MAC address (optional)';
 	@override String get help => 'Games help';
-	@override String get helpBody => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Other native platforms and the Pyrowave decoder are still in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.';
+	@override String get helpBody => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.';
 	@override String get cancel => 'Cancel';
 	@override String get scanning => 'Looking for computers…';
 	@override String get saveShortcut => 'Save shortcut';
 	@override String get manualHint => 'For Moonlight use the host’s GameStream HTTP port (usually 47989), not its web settings port. Steam normally advertises on 27036.';
 	@override String get engineUnavailable => 'In-app streaming is not available here yet';
 	@override String get nativeEnginePending => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.';
-	@override String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Other platforms and Pyrowave remain under development.';
+	@override String get steamEnginePending => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.';
 	@override String get steamBetaTitle => 'Steam beta · Pyrowave';
-	@override String get steamBetaDescription => 'Steam’s Pyrowave beta is a GPU-decoded video codec. It is not enabled in this build: Steam packet framing and GPU presentation still need integration and host validation. The embedded Android Steam player currently requests H.264 or HEVC.';
+	@override String get steamBetaDescription => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.';
 	@override String get steamLibrary => 'Steam library';
 	@override String get connecting => 'Connecting…';
 	@override String get disconnect => 'Disconnect';
@@ -4923,9 +4923,16 @@ extension on TranslationsSv {
 			'settings.dvConversionNativeDescription' => 'Tvinga inbyggd DV7 och förhindra nya försök med DV-konvertering',
 			'settings.dvConversionDv81Description' => 'Tvinga direkt RPU-konvertering till Dolby Vision-profil 8.1',
 			'settings.dvConversionHevcStripDescription' => 'Ta bort Dolby Visions RPU-/EL-lager och använd vanlig HEVC',
-			'settings.disableDolbyVision' => 'Inaktivera Dolby Vision',
+			'settings.experimentalDolbyVision' => 'Experimentell Dolby Vision',
 			_ => null,
 		} ?? switch (path) {
+			'settings.experimentalDolbyVisionDescription' => 'Använd den experimentella FEL-renderaren vid nästa uppspelning. Kräver en separat motorversion.',
+			'settings.dvExperimentUnavailableDescription' => 'Det här experimentet är för närvarande endast tillgängligt på Linux.',
+			'settings.dvCompatibilityFallback' => 'Kompatibilitetsreserv',
+			'settings.dvCompatibilityFallbackDescription' => 'Använd standardrenderaren om experimentet inte kan starta. FEL-data kan gå förlorade.',
+			'settings.dvExperimentDiagnostics' => 'Loggning av videoexperiment',
+			'settings.dvExperimentDiagnosticsDescription' => 'Aktivera detaljerade spelarloggar vid nästa uppspelning.',
+			'settings.disableDolbyVision' => 'Inaktivera Dolby Vision',
 			'settings.disableDolbyVisionDescription' => 'Spela upp filens HDR10- eller HLG-lager i stället för Dolby Vision när det finns',
 			'settings.hdrSdrConversion' => 'HDR till SDR-konvertering',
 			'settings.hdrSdrConversionDescription' => 'Välj vad som konverterar HDR-video när skärmen inte kan visa HDR.',
@@ -5011,13 +5018,6 @@ extension on TranslationsSv {
 			'settings.regionFormatDescription' => 'Välj hur datum, tal och måttenheter visas.',
 			'settings.metadataLanguage' => 'Språk för metadata',
 			'settings.metadataLanguageDescription' => 'Föredraget språk för titlar och beskrivningar när servern stöder det. Ljud och undertexter ställs in separat.',
-			'settings.experimentalDolbyVision' => 'Experimentell Dolby Vision',
-			'settings.experimentalDolbyVisionDescription' => 'Använd den experimentella FEL-renderaren vid nästa uppspelning. Kräver en separat motorversion.',
-			'settings.dvExperimentUnavailableDescription' => 'Det här experimentet är för närvarande endast tillgängligt på Linux.',
-			'settings.dvCompatibilityFallback' => 'Kompatibilitetsreserv',
-			'settings.dvCompatibilityFallbackDescription' => 'Använd standardrenderaren om experimentet inte kan starta. FEL-data kan gå förlorade.',
-			'settings.dvExperimentDiagnostics' => 'Loggning av videoexperiment',
-			'settings.dvExperimentDiagnosticsDescription' => 'Aktivera detaljerade spelarloggar vid nästa uppspelning.',
 			'themeEditor.builtIn' => 'Inbyggda',
 			'themeEditor.presets' => 'Förinställda',
 			'themeEditor.custom' => 'Anpassat',
@@ -7147,8 +7147,12 @@ extension on TranslationsSv {
 			'fileSources.source' => 'Källa',
 			'fileSources.name' => 'Namn',
 			'fileSources.endpoint' => 'Server-URL',
+			'fileSources.smbEndpointHint' => 'Exempel: smb://nas/Movies',
+			'fileSources.smbEndpointInvalid' => 'Ange en SMB-server och en delad mapp.',
 			'fileSources.root' => 'Föregående Föregång eller Prefix',
+			'fileSources.smbFolderHelp' => 'Lämna tomt för att använda hela den delade mappen, eller ange en mapp i den.',
 			'fileSources.username' => 'Användarnamn',
+			'fileSources.smbDomain' => 'Domän (valfritt)',
 			'fileSources.password' => 'Lösenord',
 			'fileSources.token' => 'API token',
 			'fileSources.accessKey' => 'Tillgångsnyckel ID',
@@ -7158,6 +7162,8 @@ extension on TranslationsSv {
 			'fileSources.clientId' => 'OAuth kundID',
 			'fileSources.clientSecret' => 'OAuth klienthemlighet (endast Google skrivbord)',
 			'fileSources.allowHttp' => 'Tillåt okrypterad HTTP i ett betrott nätverk',
+			'fileSources.smbEncryption' => 'Kryptera SMB3-anslutningen',
+			'fileSources.smbEncryptionHint' => 'Använd SMB3-kryptering när NAS-enheten stöder det.',
 			'fileSources.connect' => 'Anslut',
 			'fileSources.cancel' => 'Avbryt',
 			'fileSources.save' => 'Spara',
@@ -7300,12 +7306,6 @@ extension on TranslationsSv {
 			'fileSources.useFiles' => 'Använd filer och böcker',
 			'fileSources.cancelScan' => 'Avbryt skanning',
 			'fileSources.googleDrive' => 'Google Drive',
-			'fileSources.smbEndpointHint' => 'Exempel: smb://nas/Movies',
-			'fileSources.smbEndpointInvalid' => 'Ange en SMB-server och en delad mapp.',
-			'fileSources.smbFolderHelp' => 'Lämna tomt för att använda hela den delade mappen, eller ange en mapp i den.',
-			'fileSources.smbDomain' => 'Domän (valfritt)',
-			'fileSources.smbEncryption' => 'Kryptera SMB3-anslutningen',
-			'fileSources.smbEncryptionHint' => 'Använd SMB3-kryptering när NAS-enheten stöder det.',
 			'lending.title' => 'Public bibliotek',
 			'lending.add' => 'Lägg till ett bibliotek',
 			'lending.other' => 'En annan bibliotek',
@@ -7554,16 +7554,16 @@ extension on TranslationsSv {
 			'games.wakeSent' => 'Wake request sent. The computer must support Wake-on-LAN on this network.',
 			'games.mac' => 'MAC address (optional)',
 			'games.help' => 'Games help',
-			'games.helpBody' => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Other native platforms and the Pyrowave decoder are still in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.',
+			'games.helpBody' => 'Enable Games for your profile, choose a computer and approve the first connection. Sunshine-compatible hosts load their app list into the game grid. On Android, Steam pairing opens Big Picture inside PlezyNG; saved Steam app-ID shortcuts launch directly. Steam pairing does not grant access to a private account library.\n\nBoth Android engines include touch controls and gamepad input. Pyrowave is an experimental Android option; other native platforms remain in development.\n\nPairing requires the host’s approval. Sunshine QR codes open its PIN page without carrying credentials. For access away from home, use the computer’s VPN address. Automatic discovery normally stays on the local network.\n\nDisconnecting leaves the game running on the computer.',
 			'games.cancel' => 'Cancel',
 			'games.scanning' => 'Looking for computers…',
 			'games.saveShortcut' => 'Save shortcut',
 			'games.manualHint' => 'For Moonlight use the host’s GameStream HTTP port (usually 47989), not its web settings port. Steam normally advertises on 27036.',
 			'games.engineUnavailable' => 'In-app streaming is not available here yet',
 			'games.nativeEnginePending' => 'This build does not include a streaming engine for this platform. You can save the computer, but it cannot play here yet.',
-			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Other platforms and Pyrowave remain under development.',
+			'games.steamEnginePending' => 'This build does not include the embedded Steam engine. Android builds with Games enabled bundle device pairing and in-app H.264/HEVC playback. Pyrowave is experimental on Android; other platforms remain under development.',
 			'games.steamBetaTitle' => 'Steam beta · Pyrowave',
-			'games.steamBetaDescription' => 'Steam’s Pyrowave beta is a GPU-decoded video codec. It is not enabled in this build: Steam packet framing and GPU presentation still need integration and host validation. The embedded Android Steam player currently requests H.264 or HEVC.',
+			'games.steamBetaDescription' => 'Experimental Steam beta codec. Off by default; it uses 5–10× more bandwidth than H.264/HEVC, and Valve recommends gigabit Ethernet. Android playback is limited to SDR 4:2:0 with CPU readback and has not been device-qualified.',
 			'games.steamLibrary' => 'Steam library',
 			'games.connecting' => 'Connecting…',
 			'games.disconnect' => 'Disconnect',
