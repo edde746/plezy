@@ -371,8 +371,8 @@ class PublicationDownloads {
         SourceTransport.check(response.statusCode);
         if (offset > 0 && response.statusCode != 206) offset = 0;
         final rangeHeader = RegExp(r'^bytes (\d+)-(\d+)/(\d+|\*)$').firstMatch(response.headers['content-range'] ?? '');
+        final contentLength = int.tryParse(response.headers['content-length'] ?? '');
         if (expectedSize == null) {
-          final contentLength = int.tryParse(response.headers['content-length'] ?? '');
           final rangeTotal = rangeHeader == null || rangeHeader[3] == '*' ? null : int.tryParse(rangeHeader[3]!);
           expectedSize = rangeTotal ?? (response.statusCode == 206 && contentLength != null ? offset + contentLength : contentLength);
         }
@@ -394,10 +394,20 @@ class PublicationDownloads {
           throw const SourceException(SourceFailure.conflict);
         }
         if (response.statusCode == 206) {
+          final rangeStart = rangeHeader == null ? null : int.tryParse(rangeHeader[1]!);
+          final rangeEnd = rangeHeader == null ? null : int.tryParse(rangeHeader[2]!);
+          final rangeTotal = rangeHeader == null || rangeHeader[3] == '*' ? null : int.tryParse(rangeHeader[3]!);
+          final rangeLength = rangeStart == null || rangeEnd == null || rangeEnd < rangeStart ? null : rangeEnd - rangeStart + 1;
           if (rangeHeader == null ||
-              int.parse(rangeHeader[1]!) != offset ||
-              expectedSize != null && rangeHeader[3] != '*' && rangeHeader[3] != '$expectedSize') {
+              rangeStart != offset ||
+              rangeLength == null ||
+              rangeHeader[3] != '*' && rangeTotal == null ||
+              contentLength != null && contentLength != rangeLength ||
+              rangeTotal != null && (rangeEnd! >= rangeTotal || expectedSize != null && rangeTotal != expectedSize) ||
+              rangeTotal == null && expectedSize != null && rangeEnd! + 1 != expectedSize) {
             await response.stream.listen(null).cancel();
+            if (await partial.exists()) await partial.delete();
+            if (await validatorFile.exists()) await validatorFile.delete();
             throw const SourceException(SourceFailure.invalidData);
           }
         }
@@ -495,8 +505,10 @@ class PublicationDownloads {
     await repository.setDownloadState(profile, key(sourceId, file), 'paused');
   }
 
-  void cancelSource(String profile, String sourceId) {
-    for (final task in _tasks.values.where((task) => task.profile == profile && task.adapter.source.id == sourceId).toList()) {
+  Future<void> cancelSource(String profile, String sourceId) async {
+    final tasks = _tasks.values.where((task) => task.profile == profile && task.adapter.source.id == sourceId).toList();
+    final transferKeys = tasks.map((task) => task.transferKey).toList(growable: false);
+    for (final task in tasks) {
       task.cancellation.cancel();
       if (_queue.remove(task)) {
         unawaited(repository.setDownloadState(profile, key(sourceId, task.file), 'paused').catchError((_) {}));
@@ -504,6 +516,10 @@ class PublicationDownloads {
       }
     }
     _drainQueue();
+    await Future.wait(transferKeys.map((transferKey) {
+      final transfer = _pending[transferKey];
+      return transfer == null ? Future<void>.value() : transfer.then<void>((_) {}, onError: (Object _) {});
+    }));
   }
 
   /// Profile deletion waits for file writers to retire before removing their
