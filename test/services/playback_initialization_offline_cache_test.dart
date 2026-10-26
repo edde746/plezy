@@ -8,6 +8,7 @@ import 'package:flutter_test/flutter_test.dart';
 import 'package:path_provider_platform_interface/path_provider_platform_interface.dart';
 import 'package:plezy/database/app_database.dart';
 import 'package:plezy/database/download_operations.dart';
+import 'package:plezy/media/chapter_marker_classifier.dart';
 import 'package:plezy/media/media_backend.dart';
 
 import 'package:plezy/media/media_kind.dart';
@@ -455,7 +456,7 @@ void main() {
       itemId: 'movie-1',
     );
 
-    expect(extras?.chapters.single.title, 'Intro');
+    expect(extras?.chapters.map((c) => c.title), ['Intro', 'Part A']);
     expect(extras?.markers.map((m) => m.type), ['intro', 'credits']);
   });
 
@@ -472,37 +473,48 @@ void main() {
       itemId: 'movie-1',
     );
 
-    expect(extras?.chapters.map((c) => c.title), ['Intro']);
+    expect(extras?.chapters.map((c) => c.title), ['Intro', 'Part A']);
     expect(extras?.markers.map((m) => m.type), ['intro', 'credits']);
   });
 
-  test('Plex extras parser can force chapter fallback over native marker timings', () {
-    final extras = plexPlaybackExtrasFromCacheJson({
-      'Chapter': [
-        {'id': 1, 'index': 0, 'startTimeOffset': 5000, 'endTimeOffset': 45000, 'tag': 'Intro'},
-        {'id': 2, 'index': 1, 'startTimeOffset': 90000, 'endTimeOffset': 100000, 'tag': 'Credits'},
-      ],
-      'Marker': [
-        {'id': 10, 'type': 'intro', 'startTimeOffset': 12000, 'endTimeOffset': 30000},
-        {'id': 11, 'type': 'credits', 'startTimeOffset': 93000, 'endTimeOffset': 98000},
-      ],
-    }, forceChapterFallback: true);
+  test('Plex extras parser can force chapter fallback over native marker timings', () async {
+    final classifier = await ChapterMarkerClassifier.bundled;
+    final extras = plexPlaybackExtrasFromCacheJson(
+      {
+        'Chapter': [
+          {'id': 1, 'index': 0, 'startTimeOffset': 0, 'endTimeOffset': 90000, 'tag': 'Intro'},
+          {'id': 2, 'index': 1, 'startTimeOffset': 90000, 'endTimeOffset': 1290000, 'tag': 'Episode'},
+          {'id': 3, 'index': 2, 'startTimeOffset': 1290000, 'endTimeOffset': 1380000, 'tag': 'Credits'},
+        ],
+        'Marker': [
+          {'id': 10, 'type': 'intro', 'startTimeOffset': 12000, 'endTimeOffset': 80000},
+          {'id': 11, 'type': 'credits', 'startTimeOffset': 1300000, 'endTimeOffset': 1370000},
+        ],
+      },
+      classifier: classifier,
+      forceChapterFallback: true,
+    );
 
     final intro = extras.markers.firstWhere((m) => m.type == 'intro');
     final credits = extras.markers.firstWhere((m) => m.type == 'credits');
-    expect(intro.startTimeOffset, 5000);
-    expect(intro.endTimeOffset, 45000);
-    expect(credits.startTimeOffset, 90000);
-    expect(credits.endTimeOffset, 100000);
+    expect(intro.startTimeOffset, 0);
+    expect(intro.endTimeOffset, 90000);
+    expect(credits.startTimeOffset, 1290000);
+    expect(credits.endTimeOffset, 1380000);
     expect(extras.markers.any((m) => m.id == 10 || m.id == 11), isFalse);
   });
 
-  test('Jellyfin extras parser tolerates non-string chapter names', () {
-    final extras = jellyfinPlaybackExtrasFromRaw({
-      'Chapters': [
-        {'Name': 123, 'StartPositionTicks': 10000000},
-      ],
-    }, 'item-1');
+  test('Jellyfin extras parser tolerates non-string chapter names', () async {
+    final classifier = await ChapterMarkerClassifier.bundled;
+    final extras = jellyfinPlaybackExtrasFromRaw(
+      {
+        'Chapters': [
+          {'Name': 123, 'StartPositionTicks': 10000000},
+        ],
+      },
+      'item-1',
+      classifier: classifier,
+    );
 
     expect(extras.chapters.single.title, '123');
   });
@@ -631,11 +643,12 @@ Future<void> _insertDownloaded(
 Map<String, dynamic> _plexMetadataEnvelope({bool includeSecondVersion = false, bool malformedExtras = false}) {
   final chapters = <Map<String, dynamic>>[
     if (malformedExtras) {'id': 'bad'},
-    {'id': 1, 'index': 0, 'startTimeOffset': 0, 'endTimeOffset': 10000, 'tag': 'Intro'},
+    {'id': 1, 'index': 0, 'startTimeOffset': 0, 'endTimeOffset': 90000, 'tag': 'Intro'},
+    {'id': 3, 'index': 1, 'startTimeOffset': 90000, 'endTimeOffset': 1290000, 'tag': 'Part A'},
   ];
   final markers = <Map<String, dynamic>>[
     if (malformedExtras) {'id': 99, 'type': 'broken'},
-    {'id': 2, 'type': 'credits', 'startTimeOffset': 90000, 'endTimeOffset': 100000},
+    {'id': 2, 'type': 'credits', 'startTimeOffset': 1290000, 'endTimeOffset': 1380000},
   ];
   final media = <Map<String, dynamic>>[
     _plexMediaWithAudio('English', 'eng'),

@@ -70,6 +70,8 @@ Map<String, Object?> _chapterItem({List<Map<String, Object?>>? chapters}) => {
 };
 
 void main() {
+  TestWidgetsFlutterBinding.ensureInitialized();
+
   group('MediaBrowser user-scoped routes', () {
     test('Emby scopes current-user probes while Jellyfin keeps /Users/Me', () async {
       final embyRequests = _RequestCapture((_) => jsonResponse({'Configuration': <String, Object?>{}}));
