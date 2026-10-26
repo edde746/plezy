@@ -3,6 +3,7 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
+import 'package:plezy/focus/navigator_back_handler.dart';
 import 'package:plezy/i18n/strings.g.dart';
 import 'package:plezy/providers/companion_remote_provider.dart';
 import 'package:plezy/services/settings_service.dart';
@@ -75,6 +76,20 @@ void main() {
 
     expect(find.byType(RemoteSessionDialog), findsNothing);
   });
+
+  testWidgets('Back closes the dialog through navigator back handling', (tester) async {
+    final provider = _FakeCompanionRemoteProvider();
+    addTearDown(provider.dispose);
+
+    await _pumpDialogLauncher(tester, provider);
+    await tester.tap(find.text('Open'));
+    await tester.pumpAndSettle();
+
+    await tester.sendKeyEvent(LogicalKeyboardKey.escape);
+    await tester.pumpAndSettle();
+
+    expect(find.byType(RemoteSessionDialog), findsNothing);
+  });
 }
 
 class _FakeCompanionRemoteProvider extends CompanionRemoteProvider {
@@ -105,11 +120,14 @@ class _FakeCompanionRemoteProvider extends CompanionRemoteProvider {
 }
 
 Future<void> _pumpDialogLauncher(WidgetTester tester, CompanionRemoteProvider provider) async {
+  final navigatorKey = GlobalKey<NavigatorState>();
   await tester.pumpWidget(
     ChangeNotifierProvider<CompanionRemoteProvider>.value(
       value: provider,
       child: MaterialApp(
+        navigatorKey: navigatorKey,
         theme: monoTheme(MonoPalette.dark),
+        builder: (_, child) => NavigatorBackHandler(navigatorKey: navigatorKey, child: child!),
         home: Builder(
           builder: (context) {
             return Scaffold(
