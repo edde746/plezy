@@ -40,8 +40,8 @@ Changing the install IDs means an install signed under upstream's identity canno
 | WinGet | Wired, credential-gated | `publish-winget.yml` submits fork-specific manifests as a pull request. Microsoft review and merge are still required. |
 | Chocolatey | Wired, credential-gated | `publish-chocolatey.yml` publishes the fork-specific package after a release. Chocolatey moderation may be required. |
 | Microsoft Store | Package prepared, listing identity required | Set the repository variables below to build `plezyng-windows.msixbundle`; submit it through PlezyNG's Partner Center listing. The optional signed Inno Setup installer is also retained for manual EXE/MSI listing workflows. No automated Partner Center submission is configured. |
-| Google Play | Closed testing - Alpha configured; build 156 is a draft and the track is inactive | Data safety, the default listing, category/contact details, 178 regions, and the five-member `PlezyNG Alpha testers` email list are saved. A refreshed 2.24.1 build with build code 157 is queued in [release run 40272007783](https://github.com/snapetech-org/PlezyNG/actions/runs/40272007783); replace the existing draft with its signed AAB, preview it, and send it for review. `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` is missing, so automated Play uploads are not configured; manual Console upload is available. The README opt-in URL is inactive until rollout. At least 12 testers must remain opted in continuously for 14 days before production access. |
-| Amazon Appstore / Fire TV | App record, listing, and privacy disclosures prepared; binary and IAP test remain blocked | `plezyng_lifetime_unlock` is saved at a USD $2.99 base price; Amazon calculates local-market equivalents. The Amazon public key is in the Android assets. A new Amazon security profile is mapped to App Submission API and its credentials are configured in GitHub Actions. Targeting, content rating, privacy labels, account-deletion instructions, description, icons, feature art, and screenshots are saved. The privacy questionnaire is saved for review. Amazon still returns a generic error when the IAP is submitted to Test, and no Fire TV APK has been uploaded. |
+| Google Play | Closed testing - Alpha configured; build 156 is a draft and the track is inactive | Data safety, the default listing, category/contact details, 178 regions, and the five-member `PlezyNG Alpha testers` email list are saved. The dedicated Google Cloud project and Android Publisher API are enabled; service account access is limited to this app's testing tracks, with production publishing disabled. `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` is configured. Build 157 is being prepared in [release run 40272007783](https://github.com/snapetech-org/PlezyNG/actions/runs/40272007783); replace the existing draft with its signed AAB, preview it, and send the closed test for review. The README opt-in URL is inactive until rollout. At least 12 testers must remain opted in continuously for 14 days before production access. |
+| Amazon Appstore / Fire TV | App record and listing metadata prepared; binary and IAP test remain blocked | `plezyng_lifetime_unlock` is saved at a USD $2.99 base price; Amazon calculates local-market equivalents. The Amazon public key is in the Android assets. A new Amazon security profile is mapped to App Submission API and its credentials are configured in GitHub Actions. The category, 18+ target audience, content rating, privacy URL, description, icons, feature art, and screenshots are complete; the privacy questionnaire is saved for review. Amazon still returns a generic error when the IAP is submitted to Test, no Fire TV APK has been uploaded, and the export-compliance certification remains to be completed before submission. |
 | Apple App Store (iOS) | App record and lifetime IAP created; cloud-signing build configured, not yet validated; TestFlight setup incomplete | `plezyng_lifetime_unlock` is a non-consumable with a USD $2.99 base price and a price schedule for 175 regions. English (Canada) copy is present. It remains Prepare for Submission. The previous 2.24.1 workflow failed while importing the manual PKCS#12. Apple has three active Apple Distribution certificates and disables creating another one, so the release workflow uses Xcode cloud signing through the existing App Store Connect API key and managed certificate. The next release build must verify signing before this channel is considered ready. |
 | Apple App Store (tvOS) | App record created; cloud-signing build configured, not yet validated | The app's iOS and tvOS platforms can share the lifetime IAP. The previous 2.24.1 workflow failed while importing the manual PKCS#12. The updated workflow uses Xcode cloud signing for both the app and Top Shelf extension. The next release build must verify signing before this channel is considered ready. |
 | Mac App Store | Not a Plezy upstream channel | Plezy distributes macOS through a direct DMG and Homebrew. |
@@ -90,16 +90,20 @@ For iOS and tvOS signing, Xcode automatic signing uses the App Store Connect tea
 
 GHCR uses the workflow's `GITHUB_TOKEN`; make the first package public in GitHub Packages settings if anonymous pulls are intended. The Discord publisher uses `DISCORD_RELEASE_WEBHOOK`.
 
-At the 2026-10-26 readiness check, repository secrets are configured for Android signing, Amazon
-Appstore, AUR, Apple App Store Connect API, iOS/tvOS App Store signing, Chocolatey, COPR, Discord,
-Docker Hub, Launchpad signing, Snap, Sparkle, and WinGet. The `AUR_PACKAGE_NAME`, `COPR_PROJECT`,
-`LAUNCHPAD_PPA`, and `SPARKLE_PUBLIC_KEY` variables are also configured.
-`GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` is missing, so automated Play uploads are not configured. Data
-safety and the default Play listing are complete;
-the Alpha track has 178 regions and a five-member tester list but remains inactive with draft build
-156. Release run 40272007783 is queued to build 2.24.1+157 with the refreshed branding; upload that
-AAB to replace the draft, then submit the closed test for review. The README opt-in URL is not live
-until rollout, and production access still needs 12 testers opted in for 14 continuous days.
+At the 2026-10-26 readiness check, repository secrets are configured for Android signing, Google Play,
+Amazon Appstore, AUR, Apple App Store Connect API, iOS/tvOS App Store signing, Chocolatey, COPR,
+Discord, Docker Hub, Launchpad signing, Snap, Sparkle, and WinGet. The `AUR_PACKAGE_NAME`,
+`COPR_PROJECT`, `LAUNCHPAD_PPA`, and `SPARKLE_PUBLIC_KEY` variables are also configured. Google Play
+uses the `plezyng-play-release` Cloud project and a dedicated app-level service account; its user
+permission allows testing-track releases only. The Android Publisher API is enabled and the
+`GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` repository secret is present. No production Play permission was
+granted.
+
+The Alpha track has 178 regions and a five-member tester list but remains inactive with draft build
+156. Release run 40272007783 has passed validation and is building 2.24.1+157 with the refreshed
+branding; after it completes, replace the draft with the signed AAB and submit the closed test for
+review. The README opt-in URL is not live until rollout, and production access still needs 12 testers
+opted in for 14 continuous days.
 
 The old iOS/tvOS build failed during manual PKCS#12 import. The Apple portal disables creation of
 another Apple Distribution certificate because the team has reached its certificate limit; no
@@ -117,15 +121,17 @@ registered; verify that the existing Snap credential has the package and channel
 by the publisher. The Amazon developer account has passed ID verification and a PlezyNG app record
 exists. Its `plezyng_lifetime_unlock` entitlement is saved at a USD $2.99 base price; the security
 profile is mapped to App Submission API; GitHub secrets `AMAZON_APPSTORE_CLIENT_ID` and
-`AMAZON_APPSTORE_CLIENT_SECRET` are configured. The IAP remains Ready to Submit after a generic
-Test-submission error, and app release metadata is incomplete. Google Play's Alpha track has
-inactive draft build 156, with five testers and 178 regions configured. Data safety and listing
-setup are complete; build 157 with refreshed branding is queued, while automated upload is gated by
-the missing `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` secret. The opt-in URL in the README is not live
-until rollout, and production access needs 12 testers opted in continuously for 14 days. Apple has
-iOS and tvOS records; the USD $2.99 lifetime IAP is configured with a 175-region schedule and
-remains Prepare for Submission. App Store Connect API secrets are configured; current release run
-40272007783 will test cloud signing access to Apple's managed certificate and profiles.
+`AMAZON_APPSTORE_CLIENT_SECRET` are configured. The category, age target, content rating, privacy
+URL, description, and assets are complete. The IAP remains Ready to Submit after a generic
+Test-submission error, the Fire TV APK is not uploaded, and the export-compliance certification is
+pending. Google Play's Alpha track has inactive draft build 156, with five testers and 178 regions
+configured. Data safety and listing setup are complete; the Play API service account and GitHub
+secret are configured with testing-track-only permission. Build 157 with refreshed branding is
+running in release workflow 40272007783. The opt-in URL in the README is not live until rollout, and
+production access needs 12 testers opted in continuously for 14 days. Apple has iOS and tvOS
+records; the USD $2.99 lifetime IAP is configured with a 175-region schedule and remains Prepare for
+Submission. App Store Connect API secrets are configured; release run 40272007783 will test cloud
+signing access to Apple's managed certificate and profiles.
 
 ## Relay containers
 
