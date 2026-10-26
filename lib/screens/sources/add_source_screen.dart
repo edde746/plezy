@@ -58,6 +58,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
       field('mountPort').text = old.options['mountPort'] ?? '';
       field('uid').text = old.options['uid'] ?? '';
       field('gid').text = old.options['gid'] ?? '';
+      field('readAhead').text = old.options['readAhead'] ?? '3';
       _allowHttp = old.options['allowHttp'] == 'true';
       _encryptSmb = old.options['encryptSmb'] == 'true';
       _onlineMetadata = old.options['onlineMetadata'] == 'true';
@@ -73,6 +74,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
           .where((s) => (old.options['shelves'] ?? 'ebooks,audiobooks,videos').split(',').contains(s.name))
           .toSet();
       field('syncRoot').text = old.options['syncRoot'] ?? '';
+      field('syncLibrary').text = old.options['syncLibrary'] ?? '';
       field('region').text = old.options['region'] ?? '';
     }
   }
@@ -164,6 +166,12 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
       );
     }
     return null;
+  }
+
+  String? _validateSharedLibrary(String? value) {
+    final id = value?.trim() ?? '';
+    if (id.isEmpty) return null;
+    return RegExp(r'^[a-zA-Z0-9._-]{8,100}$').hasMatch(id) ? null : t.sourceSetup.sharedLibraryInvalid;
   }
 
   Future<void> _pickNfsServerCertificate() async {
@@ -290,6 +298,8 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
         'clientId',
         'region',
         'syncRoot',
+        'syncLibrary',
+        'readAhead',
       ]) {
         preservedOptions.remove(key);
       }
@@ -312,6 +322,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
             'uid': normalizeDecimalDigits(field('uid').text.trim()),
           if (_kind == FileSourceKind.nfs && field('gid').text.trim().isNotEmpty)
             'gid': normalizeDecimalDigits(field('gid').text.trim()),
+          if (_kind == FileSourceKind.nfs) 'readAhead': field('readAhead').text.trim().isEmpty ? '3' : field('readAhead').text.trim(),
           if (_kind == FileSourceKind.nfs && _nfsRpcTls) ...{
             'rpcTls': 'required',
             'rpcTlsServerCertificatePem': field('rpcTlsServerCertificatePem').text.trim(),
@@ -321,6 +332,8 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
             'region': field('region').text.trim().isEmpty ? 'us-east-1' : field('region').text.trim(),
           if (_kind == FileSourceKind.webdav && field('syncRoot').text.trim().isNotEmpty)
             'syncRoot': field('syncRoot').text.trim(),
+          if (field('syncLibrary').text.trim().isNotEmpty)
+            'syncLibrary': field('syncLibrary').text.trim().toLowerCase(),
         },
       );
       final credentialKeys = [
@@ -490,6 +503,20 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                             ? t.fileSources.smbFolderHelp
                             : t.fileSources.folderHelp,
                       ),
+                    input(
+                      'syncLibrary',
+                      t.sourceSetup.sharedLibraryId,
+                      hint: t.sourceSetup.sharedLibraryHelp,
+                      validator: _validateSharedLibrary,
+                    ),
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: TextButton.icon(
+                        onPressed: _busy ? null : () => setState(() => field('syncLibrary').text = const Uuid().v4()),
+                        icon: const Icon(Icons.key_rounded),
+                        label: Text(t.sourceSetup.generateSharedLibraryId),
+                      ),
+                    ),
                     if (const {
                       FileSourceKind.webdav,
                       FileSourceKind.opds,
@@ -534,6 +561,20 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
                         ),
                       ],
                       if (_kind == FileSourceKind.nfs) ...[
+                        DropdownButtonFormField<int>(
+                          initialValue: int.tryParse(field('readAhead').text) ?? 3,
+                          decoration: InputDecoration(
+                            labelText: t.sourceSetup.nfsReadAhead,
+                            helperText: t.sourceSetup.nfsReadAheadHelp,
+                            helperMaxLines: 3,
+                          ),
+                          items: [
+                            for (var count = 1; count <= 4; count++)
+                              DropdownMenuItem(value: count, child: Text('$count')),
+                          ],
+                          onChanged: _busy ? null : (value) => field('readAhead').text = '${value ?? 3}',
+                        ),
+                        const SizedBox(height: 12),
                         input(
                           'mountPort',
                           t.sourceSetup.nfsMountPort,
@@ -815,4 +856,5 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
     ],
   );
 }
+
 
