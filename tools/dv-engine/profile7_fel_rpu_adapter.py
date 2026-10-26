@@ -372,8 +372,15 @@ def parse_profile7_fel_rpu(rpu: Mapping[str, object]) -> Profile7FelCcm:
     _boolean("header.disable_residual_flag", header.get("disable_residual_flag"))
     if header["disable_residual_flag"]:
         raise ValueError("RPU disables EL residual reconstruction")
+    # dovi_tool retains the field's reserved_zero_3bits name; FFmpeg parses it
+    # as dm_compression. This reference only accepts the uncompressed value.
+    dm_compression = _integer(
+        "header.reserved_zero_3bits", header.get("reserved_zero_3bits"), 0, 7
+    )
+    if dm_compression != 0:
+        raise ValueError("compressed dynamic metadata is unsupported for Profile 7 FEL")
     if _boolean("header.use_prev_vdr_rpu_flag", header.get("use_prev_vdr_rpu_flag")):
-        raise ValueError("previous-RPU mapping state is unsupported by the single-RPU adapter")
+        raise ValueError("previous-RPU mapping reuse is unsupported for Profile 7 FEL")
 
     coefficient_data_type = _integer(
         "header.coefficient_data_type", header.get("coefficient_data_type"), 0, 1

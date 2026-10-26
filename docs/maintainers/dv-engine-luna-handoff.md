@@ -146,21 +146,27 @@ the real eight-piece luma polynomial and both chroma MMR curves, including
 integer-plus-fraction coefficient fields. It handles coefficient type 1 as
 fraction-only 32-bit fixed point and rejects unsupported RPU shapes.
 
-The bounded adapter was run locally on `kspld0` on 2026-10-26, outside GitHub
-runners. It handles a single RPU with its mapping present, 10-bit BL/EL, 12-bit
-VDR, one mapping partition, and `LinearDeadzone` NLQ. It does not resolve
-previous-RPU state, spatially resample EL/chroma, convert BT.1886 to PQ, apply
-Dolby display management, compose a frame, or compare a frame to an independent
-reference. The sample vector checks pre-display code values only. The final
+The bounded adapter handles a single RPU with its mapping present, 10-bit BL/EL,
+12-bit VDR, one mapping partition, and `LinearDeadzone` NLQ. It now rejects
+nonzero `reserved_zero_3bits` and previous-RPU reuse explicitly. The pinned
+FFmpeg parser reads those three bits as `dm_compression`; its compliant-mode
+checks reject metadata compression for profiles below 8 and previous-RPU reuse
+on uncompressed RPUs ([source](https://github.com/FFmpeg/FFmpeg/blob/46f23be8b1976ed4c8ec85584daabcf0e57a7b9e/libavcodec/dovi_rpudec.c#L2583-L2610)).
+The adapter consumes parsed RPU JSON without container metadata, so container-
+level metadata-compression flags still need a separate input check. It does not
+spatially resample EL/chroma, convert BT.1886 to PQ, apply Dolby display
+management, compose a frame, or compare a frame to an independent reference.
+The sample vector checks pre-display code values only. The final
 pivot endpoint is assigned to the final RPU piece to reconcile the RPU's
 one-piece-per-pivot-interval payload with the generic CCM terminal-index
 sentinel. This matches [libplacebo's public reshape shader](https://github.com/haasn/libplacebo/blob/master/src/shaders/colorspace.c#L141-L260): it clamps to the component pivot range and selects coefficients with `>=` tests, so the upper endpoint reaches the final encoded piece. That confirms renderer behavior, not Dolby correctness; a trusted P7 sample-level oracle is still needed.
 
-### Local validation (2026-10-26)
+### Historical local validation (2026-10-26)
 
-All checks below ran directly on `kspld0`; no GitHub Actions or JIT job was
-started for this pass. These local results are useful experiment evidence, but
-they do not replace the private-JIT checks required before merge.
+The checks below were run directly on `kspld0` and record past experiment
+evidence. Current organization policy requires every new build and test to run
+on approved private JIT infrastructure; these local results do not satisfy that
+gate.
 
 - CCM and Profile 7 adapter tests: **14/14**; `tools/dv-engine` Python suite:
   **57/57**; platform DV Python suite: **47/47**; targeted Flutter
@@ -237,9 +243,14 @@ The verifier now rejects mismatched 24000/1001 rates, unexpected dimensions or
 frame counts, different decoded BL samples or sampled RPU payloads, and any EL
 luma delta outside the exact authored patch; it also requires unchanged EL
 chroma. The JSON report records these assertions. The historical report above
-predates the gates and has not been rerun because this workflow has no approved
-private-JIT route. Do not describe the old measurement as having passed the
-strengthened verifier.
+has not been rerun with the strengthened verifier. Do not describe the old
+measurement as having passed it.
+
+The current shared JIT group selects only PlezyNG's `build.yml`; `ci.yml` and
+the Dolby workflows are not selected. The ordinary CI workflow therefore has
+no approved route for this branch, and no validation run was dispatched while
+that route gap remains. Use the reviewed isolated owner-PR dispatcher before
+adding workflow access; do not route this PR's code to a shared runner group.
 
 ## What remains unproven
 
@@ -259,7 +270,7 @@ switches, launcher behavior, Apple and companion build commands, and the remaini
 cross-platform integration tasks. The real-clip helper and this evidence were
 carried forward from Luna's `552af300eee0754698fb123b5e193428528f1c7f` checkpoint.
 
-1. **Validate and extend the RPU-to-CCM pixel oracle.** Confirm the terminal-pivot rule against an independent Profile 7 implementation or trusted reference samples, add previous-RPU state and BT.1886 handling, then build frame-level BL/EL inputs whose expected code values can be derived independently from the equations. Cover residual-only and mapping-only controls, CM 2.9 and CM 4.0, preserve intermediate precision, and set a numeric error budget before recording a reference-pixel pass. ETSI GS CCM 001 V1.1.1 clause 5 defines generic BL inverse mapping, EL NLQ, residual addition and PQ conversion; it does not name P7. ETSI TS 103 572 separately specifies ST 2094-10 metadata carriage, not the composer. [ETSI GS CCM 001](https://www.etsi.org/deliver/etsi_gs/CCM/001_099/001/01.01.01_60/gs_ccm001v010101p.pdf) · [dovi_tool RPU mapping parser](https://github.com/quietvoid/dovi_tool/blob/main/dolby_vision/src/rpu/rpu_data_mapping.rs) · [libplacebo reshape metadata](https://github.com/haasn/libplacebo/blob/master/src/include/libplacebo/colorspace.h) · [ETSI TS 103 572 scope](https://www.etsi.org/deliver/etsi_ts/103500_103599/103572/01.03.01_60/ts_103572v010301p.pdf).
+1. **Validate and extend the RPU-to-CCM pixel oracle.** Confirm the terminal-pivot rule against an independent Profile 7 implementation or trusted reference samples. Keep previous-RPU state out of the Profile 7 reference path: the pinned FFmpeg decoder rejects metadata compression for profiles below 8 in compliant mode and rejects previous-RPU reuse on uncompressed streams. Add a separate container-metadata input check so the adapter can fail closed when metadata-compression configuration is present. Then implement BT.1886 handling and build frame-level BL/EL inputs whose expected code values can be derived independently from the equations. Cover residual-only and mapping-only controls, CM 2.9 and CM 4.0, preserve intermediate precision, and set a numeric error budget before recording a reference-pixel pass. ETSI GS CCM 001 V1.1.1 clause 5 defines generic BL inverse mapping, EL NLQ, residual addition and PQ conversion; it does not name P7. ETSI TS 103 572 separately specifies ST 2094-10 metadata carriage, not the composer. [ETSI GS CCM 001](https://www.etsi.org/deliver/etsi_gs/CCM/001_099/001/01.01.01_60/gs_ccm001v010101p.pdf) · [pinned FFmpeg RPU decoder](https://github.com/FFmpeg/FFmpeg/blob/46f23be8b1976ed4c8ec85584daabcf0e57a7b9/libavcodec/dovi_rpudec.c#L2583-L2644) · [dovi_tool RPU mapping parser](https://github.com/quietvoid/dovi_tool/blob/main/dolby_vision/src/rpu/rpu_data_mapping.rs) · [libplacebo reshape metadata](https://github.com/haasn/libplacebo/blob/master/src/include/libplacebo/colorspace.h) · [ETSI TS 103 572 scope](https://www.etsi.org/deliver/etsi_ts/103500_103599/103572/01.03.01_60/ts_103572v010301p.pdf).
 2. **Expand the generated graph fixture.** Add separately tracked layers, exact seek/flush/reorder boundaries, malformed/missing EL and RPU, scene changes, EOF, crop/chroma edges, stale-pair and queue-capacity faults. Keep the local Kodi sample out of the repository and public CI.
 3. **Qualify Linux app playback.** Rebase production mpv patches only after review. Run the app through PlezyNG's Wayland plane and test precision, range/PQ/HLG tags, tone-map ownership, VA-API import, seek/resize/teardown, subtitles, audio sync, suspend and output changes. Keep normal `opengl` as default and preserve recovery by removing `PLEZYNG_EXPERIMENTAL_RENDER_API`.
 4. **Build the Android engine path.** The current APK contains the production engine; add a platform adapter that exposes paired decoded BL/EL frames, carries RPU and PTS identity, composes before display mapping, and fails closed when either layer is missing. Validate with the generated fixture on a real supported Android device before advertising FEL.

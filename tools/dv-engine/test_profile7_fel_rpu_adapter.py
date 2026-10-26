@@ -107,6 +107,11 @@ class Profile7FelRpuAdapterTest(unittest.TestCase):
             parse_profile7_fel_rpu(rpu)
 
         rpu = load_fixture()
+        rpu["header"]["reserved_zero_3bits"] = 1
+        with self.assertRaisesRegex(ValueError, "compressed dynamic metadata"):
+            parse_profile7_fel_rpu(rpu)
+
+        rpu = load_fixture()
         rpu["rpu_data_mapping"]["curves"][0]["pivots"][-1] = 128
         with self.assertRaises(ValueError):
             parse_profile7_fel_rpu(rpu)

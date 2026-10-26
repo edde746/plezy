@@ -202,18 +202,24 @@ shape and coefficients but no video frames or Dolby display metadata.
 The adapter has a hand-calculated Y sample vector: BL code 512 maps to 32768;
 EL code 513 inverse-quantizes to residual 8; reconstruction rounds to 12-bit
 code 2049. The frame fixture also checks all eight luma pieces, both chroma MMR
-curves, and fractional-only Q0.32 coefficient representation. The focused
-CCM/adapter suite passed 14/14 locally on `kspld0` on 2026-10-26, outside
-GitHub runners. The complete `tools/dv-engine` Python suite passed 57/57 after
-the local verifier changes. This remains an equation-level sample check, not a
-full-frame Dolby-reference comparison.
+curves, and fractional-only Q0.32 coefficient representation. A historical
+local run on `kspld0` on 2026-10-26 passed the focused CCM/adapter suite 14/14
+and the `tools/dv-engine` Python suite 57/57. Current organization policy
+requires new builds and tests to use approved private JIT infrastructure; those
+local runs are historical evidence, not the current merge gate. This remains an
+equation-level sample check, not a full-frame Dolby-reference comparison.
 
 The scope is one RPU with an in-band mapping, 10-bit BL/EL, 12-bit VDR, one
-partition, polynomial or MMR curves, and `LinearDeadzone` NLQ. Previous-RPU
-state, extended mapping, linear-interpolation curves, BT.1886-to-PQ conversion,
-Dolby display management, spatial resampling, frame pairing and rendering are
-not implemented here; unsupported RPU forms fail closed. MMR callers must pass
-already aligned Y/Cb/Cr samples. The final RPU pivot is assigned to its last
+partition, polynomial or MMR curves, and `LinearDeadzone` NLQ. Nonzero
+`reserved_zero_3bits` (the field name retained by [the pinned dovi_tool parser](https://github.com/quietvoid/dovi_tool/blob/ef85991cfc31e26bc3ffed76364965f29f9fd281/dolby_vision/src/rpu/rpu_data_header.rs), which [pinned FFmpeg parses as `dm_compression`](https://github.com/FFmpeg/FFmpeg/blob/46f23be8b1976ed4c8ec85584daabcf0e57a7b9/libavcodec/dovi_rpudec.c#L2487-L2523)),
+previous-RPU reuse, extended mapping, and linear-interpolation curves fail
+closed. The adapter receives parsed RPU JSON rather than container metadata, so
+it cannot independently validate a container-level metadata-compression flag.
+BT.1886-to-PQ conversion, Dolby display management, spatial resampling, frame
+pairing and rendering are not implemented here. The pinned FFmpeg decoder's
+compliant-mode checks reject metadata compression for profiles below 8 and
+reject previous-RPU reuse on uncompressed RPUs ([source](https://github.com/FFmpeg/FFmpeg/blob/46f23be8b1976ed4c8ec85584daabcf0e57a7b9e/libavcodec/dovi_rpudec.c#L2583-L2610)).
+MMR callers must pass already aligned Y/Cb/Cr samples. The final RPU pivot is assigned to its last
 encoded piece because the RPU carries one piece per adjacent pivot interval;
 ETSI's generic terminal-index pseudocode leaves that single endpoint outside
 the encoded piece array. This matches [libplacebo's public reshape shader](https://github.com/haasn/libplacebo/blob/master/src/shaders/colorspace.c#L141-L260) pivot clamp and `>=` coefficient selection, which selects the final encoded piece at the upper endpoint. That confirms renderer behavior, not Dolby correctness; an independent P7 reference is still needed.

@@ -14,6 +14,7 @@
     "vdr_bit_depth_minus8": 4,
     "el_spatial_resampling_filter_flag": true,
     "disable_residual_flag": false,
+    "reserved_zero_3bits": 0,
     "use_prev_vdr_rpu_flag": false
   },
   "rpu_data_mapping": {
