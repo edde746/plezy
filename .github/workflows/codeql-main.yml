@@ -1,27 +1,117 @@
 # ng-runner-policy: private-jit-only-v1
-name: CodeQL
+name: PlezyNG CodeQL
+run-name: >-
+  ${{ github.event_name == 'workflow_dispatch' && inputs.pr_number != '' &&
+      format('owner-pr:{0}:{1}:{2}', inputs.pr_number, inputs.pr_sha, inputs.target_run_id) ||
+      'PlezyNG CodeQL' }}
 
 on:
-  push:
+  pull_request_target:
     branches: [main]
-  schedule:
-    - cron: "23 4 * * 1"
+    types: [opened, reopened, synchronize, ready_for_review]
   workflow_dispatch:
+    inputs:
+      pr_number:
+        description: Trusted owner PR number (set by the metadata dispatcher)
+        required: false
+        type: string
+      pr_sha:
+        description: Exact trusted owner PR head SHA
+        required: false
+        type: string
+      target_run_id:
+        description: Metadata-only pull_request_target run ID
+        required: false
+        type: string
 
 concurrency:
-  group: ng-scan-codeql-${{ github.workflow }}-${{ github.ref }}
+  group: codeql-owner-pr-${{ github.event.pull_request.number || inputs.pr_number }}
   cancel-in-progress: false
 
 permissions:
-  actions: read
   contents: read
-  security-events: write
 
 jobs:
+  dispatch-owner-pr:
+    name: Dispatch trusted owner PR validation
+    if: >-
+      github.event_name == 'pull_request_target' &&
+      github.actor == 'snapetech' &&
+      github.event.pull_request.user.login == 'snapetech' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.event.pull_request.head.repo.id == github.repository_id &&
+      github.event.pull_request.base.ref == 'main'
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-owner-pr-dispatcher"]}}', github.run_id)) }}
+    permissions:
+      actions: write
+      contents: none
+    steps:
+      - name: Dispatch PR-head validation from main
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          PR_SHA: ${{ github.event.pull_request.head.sha }}
+          TARGET_RUN_ID: ${{ github.run_id }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          python3 - <<'PY'
+          import json
+          import os
+          import re
+          from urllib.request import Request, urlopen
+
+          repository = os.environ["GITHUB_REPOSITORY"]
+          number = os.environ["PR_NUMBER"]
+          sha = os.environ["PR_SHA"]
+          target_run_id = os.environ["TARGET_RUN_ID"]
+          token = os.environ["GH_TOKEN"]
+          if repository != "snapetech-org/PlezyNG":
+              raise SystemExit("unexpected repository")
+          if not re.fullmatch(r"[1-9][0-9]*", number):
+              raise SystemExit("invalid pull request number")
+          if not re.fullmatch(r"[0-9a-f]{40}", sha):
+              raise SystemExit("invalid pull request head SHA")
+          if not re.fullmatch(r"[1-9][0-9]*", target_run_id):
+              raise SystemExit("invalid metadata run ID")
+
+          payload = json.dumps({
+              "ref": "main",
+              "inputs": {
+                  "pr_number": number,
+                  "pr_sha": sha,
+                  "target_run_id": target_run_id,
+              },
+          }).encode("utf-8")
+          request = Request(
+              "https://api.github.com/repos/snapetech-org/PlezyNG/actions/workflows/codeql-main.yml/dispatches",
+              data=payload,
+              headers={
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": f"Bearer {token}",
+                  "Content-Type": "application/json",
+                  "X-GitHub-Api-Version": "2022-11-28",
+              },
+              method="POST",
+          )
+          with urlopen(request, timeout=20) as response:
+              if response.status != 204:
+                  raise SystemExit(f"workflow dispatch returned HTTP {response.status}")
+          PY
+
+  # Broker-reviewed labels: gha-{0}-analyze-actions, gha-{0}-analyze-c-cpp, gha-{0}-analyze-go, gha-{0}-analyze-java-kotlin, gha-{0}-analyze-javascript-typescript, gha-{0}-analyze-python, gha-{0}-analyze-ruby.
   analyze:
-    if: github.ref == 'refs/heads/main'
+    if: >-
+      github.event_name == 'workflow_dispatch' &&
+      (github.actor == 'snapetech' || github.actor == 'github-actions[bot]') &&
+      inputs.pr_number != '' && inputs.pr_sha != '' && inputs.target_run_id != '' &&
+      github.ref == 'refs/heads/main'
     name: Analyze (${{ matrix.language }})
-    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-analyze"]}}', github.run_id, strategy.job-index)) }}
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-analyze-{1}"]}}', github.run_id, matrix.language)) }}
+    permissions:
+      actions: read
+      contents: read
+      pull-requests: read
+      security-events: write
     timeout-minutes: 90
     strategy:
       fail-fast: false
@@ -41,12 +131,59 @@ jobs:
             build-mode: none
           - language: ruby
             build-mode: none
-          # CodeQL Swift analysis requires macOS/Xcode. The org does not yet
-          # have an approved ephemeral macOS JIT runner, so Swift stays blocked.
+          # Swift analysis needs macOS/Xcode and remains unavailable until an
+          # approved ephemeral macOS JIT runner is provisioned.
     steps:
-      - name: Checkout repository
+      - name: Verify the exact trusted owner PR head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+          PR_NUMBER: ${{ inputs.pr_number }}
+          PR_SHA: ${{ inputs.pr_sha }}
+        run: |
+          python3 - <<'PYTHON'
+          import json
+          import os
+          import re
+          from urllib.request import Request, urlopen
+
+          repository = os.environ["GITHUB_REPOSITORY"]
+          number = os.environ["PR_NUMBER"]
+          sha = os.environ["PR_SHA"]
+          if repository != "snapetech-org/PlezyNG":
+              raise SystemExit("unexpected repository")
+          if not re.fullmatch(r"[1-9][0-9]*", number):
+              raise SystemExit("invalid pull request number")
+          if not re.fullmatch(r"[0-9a-f]{40}", sha):
+              raise SystemExit("invalid pull request head SHA")
+          request = Request(
+              f"https://api.github.com/repos/{repository}/pulls/{number}",
+              headers={
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                  "X-GitHub-Api-Version": "2022-11-28",
+              },
+          )
+          with urlopen(request, timeout=20) as response:
+              pull = json.load(response)
+          base = pull.get("base") or {}
+          head = pull.get("head") or {}
+          base_repo = base.get("repo") or {}
+          head_repo = head.get("repo") or {}
+          if (pull.get("state") != "open"
+                  or (pull.get("user") or {}).get("login") != "snapetech"
+                  or base.get("ref") != "main"
+                  or head.get("sha") != sha
+                  or base_repo.get("id") != head_repo.get("id")
+                  or (head_repo.get("full_name") or "").lower() != repository.lower()):
+              raise SystemExit("PR is no longer the exact trusted owner head")
+          PYTHON
+
+      - name: Check out the exact trusted owner PR head
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
+          repository: ${{ github.repository }}
+          ref: ${{ inputs.pr_sha }}
           persist-credentials: false
 
       - name: Set up Go for CodeQL
@@ -76,7 +213,74 @@ jobs:
           languages: ${{ matrix.language }}
           build-mode: ${{ matrix.build-mode }}
 
-      - name: Perform CodeQL analysis
+      - name: Perform CodeQL analysis on the PR head
         uses: github/codeql-action/analyze@9b3254085494b55a0f7c4c2b3d2d52cc712ce370 # v4.39.1
         with:
           category: /language:${{ matrix.language }}
+          ref: refs/pull/${{ inputs.pr_number }}/head
+          sha: ${{ inputs.pr_sha }}
+
+  report-owner-pr-check:
+    name: Report trusted owner PR validation
+    needs: analyze
+    if: >-
+      always() &&
+      github.event_name == 'workflow_dispatch' &&
+      inputs.pr_number != '' && inputs.pr_sha != '' && inputs.target_run_id != '' &&
+      (github.actor == 'snapetech' || github.actor == 'github-actions[bot]') &&
+      github.ref == 'refs/heads/main'
+    runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-owner-pr-reporter"]}}', github.run_id)) }}
+    permissions:
+      checks: write
+      contents: none
+    steps:
+      - name: Attach CodeQL result to the PR head
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_SHA: ${{ inputs.pr_sha }}
+          VALIDATION_RESULT: ${{ needs.analyze.result }}
+          VALIDATION_RUN_ID: ${{ github.run_id }}
+        run: |
+          python3 - <<'PYTHON'
+          import json
+          import os
+          import re
+          from urllib.request import Request, urlopen
+
+          sha = os.environ["PR_SHA"]
+          result = os.environ["VALIDATION_RESULT"]
+          if not re.fullmatch(r"[0-9a-f]{40}", sha):
+              raise SystemExit("invalid pull request head SHA")
+          conclusion = "success" if result == "success" else (
+              "cancelled" if result == "cancelled" else "failure"
+          )
+          payload = json.dumps({
+              "name": "PlezyNG CodeQL",
+              "head_sha": sha,
+              "external_id": os.environ["VALIDATION_RUN_ID"],
+              "status": "completed",
+              "conclusion": conclusion,
+              "details_url": (
+                  "https://github.com/snapetech-org/PlezyNG/actions/runs/"
+                  + os.environ["VALIDATION_RUN_ID"]
+              ),
+              "output": {
+                  "title": "PlezyNG CodeQL " + conclusion,
+                  "summary": "See the linked main-pinned CodeQL workflow run for scan details.",
+              },
+          }).encode("utf-8")
+          request = Request(
+              "https://api.github.com/repos/snapetech-org/PlezyNG/check-runs",
+              data=payload,
+              headers={
+                  "Accept": "application/vnd.github+json",
+                  "Authorization": f"Bearer {os.environ['GH_TOKEN']}",
+                  "Content-Type": "application/json",
+                  "X-GitHub-Api-Version": "2022-11-28",
+              },
+              method="POST",
+          )
+          with urlopen(request, timeout=20) as response:
+              if response.status not in {201, 202}:
+                  raise SystemExit(f"check creation returned HTTP {response.status}")
+          PYTHON
