@@ -106,7 +106,11 @@ mkdir -m 700 -- "$BUILD_ROOT/out"
 mkdir -m 700 -- "$TOOLCHAIN_ROOT" "$TOOLCHAIN_ROOT/bin"
 ARM_OUT="$BUILD_ROOT/out/linux_release_arm"
 ENGINE_ARCHIVE="$OUTPUT_ROOT/webos-arm-release.zip"
+COMMON_ARCHIVE_OUTPUT="$OUTPUT_ROOT/webos-common.zip"
 PROVENANCE="$OUTPUT_ROOT/webos-engine-provenance.json"
+NORMALIZED_ROOT="$OUTPUT_ROOT/normalized"
+NORMALIZATION_RECORD="$NORMALIZED_ROOT/webos-engine-normalization.json"
+mkdir -m 700 -- "$NORMALIZED_ROOT"
 
 # Emit only the byte-locked LG environment script with its old installation
 # prefix relocated to the verified NDK root. Keep a copy beside the logs.
@@ -149,20 +153,38 @@ run_logged "$LOG_ROOT/ninja-arm.log" "$NINJA" -C "$ARM_OUT" -j "$JOBS" libflutte
 run_logged "$LOG_ROOT/gn-host.log" "$GN" gen "$HOST_OUT" "--root=$ENGINE_ROOT" "--args=$host_args"
 run_logged "$LOG_ROOT/ninja-host.log" "$NINJA" -C "$HOST_OUT" -j "$JOBS" gen_snapshot
 
+"$PYTHON" "$ROOT/tools/webos/normalize_engine_artifacts.py" \
+  --engine "$ARM_OUT/libflutter_engine.so" \
+  --gen-snapshot "$HOST_OUT/gen_snapshot" \
+  --ndk-root "$NDK_ROOT" \
+  --output-dir "$NORMALIZED_ROOT" | tee "$LOG_ROOT/normalize.log"
+
 "$PYTHON" "$ROOT/tools/webos/assemble_engine_archive.py" \
   --base-archive "$BASE_ARCHIVE" \
-  --engine-library "$ARM_OUT/libflutter_engine.so" \
-  --gen-snapshot "$HOST_OUT/gen_snapshot" \
+  --engine-library "$NORMALIZED_ROOT/libflutter_engine.so" \
+  --gen-snapshot "$NORMALIZED_ROOT/gen_snapshot" \
   --engine-version "$SDK_ROOT/flutter/bin/internal/engine.version" \
   --common-archive "$COMMON_ARCHIVE" \
   --output "$ENGINE_ARCHIVE" | tee "$LOG_ROOT/assemble.log"
 
 "$PYTHON" "$ROOT/tools/webos/write_engine_provenance.py" \
   --archive "$ENGINE_ARCHIVE" \
-  --engine "$ARM_OUT/libflutter_engine.so" \
-  --snapshot "$HOST_OUT/gen_snapshot" \
+  --engine "$NORMALIZED_ROOT/libflutter_engine.so" \
+  --snapshot "$NORMALIZED_ROOT/gen_snapshot" \
+  --normalization-record "$NORMALIZATION_RECORD" \
   --output "$PROVENANCE" \
   --source-date-epoch "$SOURCE_DATE_EPOCH" | tee "$LOG_ROOT/provenance.log"
 
+if [[ -e "$COMMON_ARCHIVE_OUTPUT" || -L "$COMMON_ARCHIVE_OUTPUT" ]]; then
+  echo "Refusing to overwrite the webOS common-runtime output: $COMMON_ARCHIVE_OUTPUT" >&2
+  exit 1
+fi
+install -m 644 -- "$COMMON_ARCHIVE" "$COMMON_ARCHIVE_OUTPUT"
+if ! cmp -s -- "$COMMON_ARCHIVE" "$COMMON_ARCHIVE_OUTPUT"; then
+  echo "Copied webOS common-runtime archive does not match its verified input." >&2
+  exit 1
+fi
+
 printf 'Source-built webOS engine: %s\n' "$ENGINE_ARCHIVE"
-sha256sum "$ENGINE_ARCHIVE" "$PROVENANCE"
+printf 'Pinned webOS common runtime: %s\n' "$COMMON_ARCHIVE_OUTPUT"
+sha256sum "$ENGINE_ARCHIVE" "$COMMON_ARCHIVE_OUTPUT" "$PROVENANCE"
