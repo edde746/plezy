@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:qr_flutter/qr_flutter.dart';
@@ -49,6 +50,10 @@ class PlexPinAuthFlow extends StatefulWidget {
   /// Test seam for rendering the initial actions without platform services.
   final bool initializeService;
 
+  /// Upper bound for the QR code. Narrow settings panels keep the default;
+  /// the primary TV login layout can opt into a larger scan target.
+  final double qrMaxSize;
+
   /// Optional builder for the initial action buttons. The default (`null`)
   /// shows two buttons — "Sign in with Plex" (browser) and "Show QR Code".
   /// Pass a custom builder when the parent wants to integrate the buttons
@@ -65,6 +70,7 @@ class PlexPinAuthFlow extends StatefulWidget {
     required this.onTokenReceived,
     this.autoStartQrOnTV = true,
     this.initializeService = true,
+    this.qrMaxSize = 360,
     this.initialButtonsBuilder,
     this.serviceFactory,
   });
@@ -225,11 +231,12 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
     final theme = Theme.of(context);
 
     if (_isPolling) {
-      final isDesktop = MediaQuery.sizeOf(context).width > 700;
+      final screenSize = MediaQuery.sizeOf(context);
+      final scale = _qrDisplayScale(screenSize);
       if (_useQr && _qrAuthUrl != null) {
-        return _buildQr(theme, isDesktop ? 300 : 200);
+        return _buildQr(theme, _qrCodeSize(screenSize), scale: scale);
       }
-      return _buildBrowserWaiting(theme);
+      return _buildBrowserWaiting(theme, scale: scale);
     }
 
     final builder = widget.initialButtonsBuilder ?? _defaultInitialButtons;
@@ -268,16 +275,22 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
     );
   }
 
-  Widget _buildQr(ThemeData theme, double qrSize) {
+  Widget _buildQr(ThemeData theme, double qrSize, {required double scale}) {
+    final instructionSize = (16 * scale).clamp(16.0, 28.0).toDouble();
+    final gap = 24 * scale;
     return Column(
       mainAxisSize: .min,
       children: [
         Text(
           t.auth.scanQRToSignIn,
           textAlign: TextAlign.center,
-          style: theme.textTheme.bodyLarge?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+          style: theme.textTheme.bodyLarge?.copyWith(
+            fontSize: instructionSize,
+            fontWeight: scale > 1.1 ? FontWeight.w600 : null,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+          ),
         ),
-        const SizedBox(height: 24),
+        SizedBox(height: gap),
         Center(
           // Tight SizedBox so ancestors that measure intrinsics (e.g.
           // SliverFillRemaining with hasScrollBody: false) never recurse into
@@ -295,13 +308,13 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
             ),
           ),
         ),
-        const SizedBox(height: 24),
-        _buildRetryCancelRow(),
+        SizedBox(height: gap),
+        _buildRetryCancelRow(scale: scale),
         if (_errorMessage != null) ...[
-          const SizedBox(height: 12),
+          SizedBox(height: 12 * scale),
           Text(
             _errorMessage!,
-            style: TextStyle(color: theme.colorScheme.error),
+            style: theme.textTheme.bodyLarge?.copyWith(fontSize: instructionSize, color: theme.colorScheme.error),
             textAlign: TextAlign.center,
           ),
         ],
@@ -309,24 +322,28 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
     );
   }
 
-  Widget _buildBrowserWaiting(ThemeData theme) {
+  Widget _buildBrowserWaiting(ThemeData theme, {required double scale}) {
+    final instructionSize = (16 * scale).clamp(16.0, 28.0).toDouble();
     return Column(
       mainAxisSize: .min,
       children: [
         const Center(child: CircularProgressIndicator()),
-        const SizedBox(height: 16),
+        SizedBox(height: 16 * scale),
         Text(
           t.auth.waitingForAuth,
           textAlign: TextAlign.center,
-          style: theme.textTheme.bodyMedium?.copyWith(color: theme.colorScheme.onSurface.withValues(alpha: 0.7)),
+          style: theme.textTheme.bodyMedium?.copyWith(
+            fontSize: instructionSize,
+            color: theme.colorScheme.onSurface.withValues(alpha: 0.8),
+          ),
         ),
-        const SizedBox(height: 16),
-        _buildRetryCancelRow(),
+        SizedBox(height: 16 * scale),
+        _buildRetryCancelRow(scale: scale),
         if (_errorMessage != null) ...[
-          const SizedBox(height: 12),
+          SizedBox(height: 12 * scale),
           Text(
             _errorMessage!,
-            style: TextStyle(color: theme.colorScheme.error),
+            style: theme.textTheme.bodyLarge?.copyWith(fontSize: instructionSize, color: theme.colorScheme.error),
             textAlign: TextAlign.center,
           ),
         ],
@@ -334,24 +351,59 @@ class _PlexPinAuthFlowState extends State<PlexPinAuthFlow> {
     );
   }
 
-  Widget _buildRetryCancelRow() {
-    return Row(
-      mainAxisAlignment: .center,
+  Widget _buildRetryCancelRow({required double scale}) {
+    final buttonHeight = (56 * scale).clamp(56.0, 96.0).toDouble();
+    final buttonFontSize = (16 * scale).clamp(16.0, 28.0).toDouble();
+    final horizontalPadding = (20 * scale).clamp(20.0, 48.0).toDouble();
+    final actionStyle = Theme.of(context).textTheme.titleMedium?.copyWith(fontSize: buttonFontSize);
+
+    return Wrap(
+      alignment: .center,
+      spacing: 12,
+      runSpacing: 8,
       children: [
         FocusableButton(
           onPressed: _retry,
           child: OutlinedButton(
             onPressed: _retry,
-            style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 24)),
+            style: OutlinedButton.styleFrom(
+              minimumSize: Size(96, buttonHeight),
+              padding: EdgeInsets.symmetric(vertical: 12 * scale, horizontal: horizontalPadding),
+              textStyle: actionStyle,
+            ),
             child: Text(t.common.retry),
           ),
         ),
-        const SizedBox(width: 12),
         FocusableButton(
           onPressed: _cancel,
-          child: TextButton(onPressed: _cancel, child: Text(t.common.cancel)),
+          child: TextButton(
+            onPressed: _cancel,
+            style: TextButton.styleFrom(
+              minimumSize: Size(96, buttonHeight),
+              padding: EdgeInsets.symmetric(vertical: 12 * scale, horizontal: horizontalPadding),
+              textStyle: actionStyle,
+            ),
+            child: Text(t.common.cancel),
+          ),
         ),
       ],
     );
+  }
+
+  /// Scales the scan target with the viewport while keeping enough room for
+  /// the instructions and actions on smaller displays. Flutter TV surfaces
+  /// can expose large logical sizes at 4K, where the old fixed 300 px QR was
+  /// difficult to scan from a couch.
+  double _qrCodeSize(Size screenSize) {
+    final maxSize = widget.qrMaxSize.clamp(140.0, 800.0);
+    final widthLimit = (screenSize.width - 48).clamp(140.0, maxSize);
+    final heightLimit = (screenSize.height * 0.56).clamp(140.0, maxSize);
+    return math.min(widthLimit, heightLimit).toDouble();
+  }
+
+  double _qrDisplayScale(Size screenSize) {
+    final widthScale = screenSize.width / 1000;
+    final heightScale = screenSize.height / 650;
+    return math.min(widthScale, heightScale).clamp(1.0, 1.5).toDouble();
   }
 }

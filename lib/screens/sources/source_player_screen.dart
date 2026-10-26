@@ -6,6 +6,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../focus/focusable_slider.dart';
+import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../utils/formatters.dart';
 import '../../mpv/mpv.dart';
@@ -14,8 +15,10 @@ import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
 import '../../sources/listening_tools.dart';
 import '../../theme/mono_tokens.dart';
+import '../../utils/dialogs.dart';
 import '../../utils/platform_detector.dart';
 import '../../widgets/app_icon.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/overlay_sheet.dart';
 import '../../services/fullscreen_state_manager.dart';
 import '../../widgets/app_menu.dart';
@@ -237,9 +240,13 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                 title: t.audiobook.customSpeed,
                 help: t.audiobook.speedHelp,
                 initial: '${s.speed}',
-                valid: (v) => double.tryParse(v)?.isFinite == true && double.parse(v) >= .25 && double.parse(v) <= 4,
+                keyboardType: const TextInputType.numberWithOptions(decimal: true),
+                valid: (v) {
+                  final speed = _parseSpeed(v);
+                  return speed != null && speed.isFinite && speed >= .25 && speed <= 4;
+                },
               );
-              if (value != null) await s.setSpeed(double.parse(value));
+              if (value != null) await s.setSpeed(_parseSpeed(value)!);
             }),
             child: Padding(
               padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
@@ -272,6 +279,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                   title: t.audiobook.customSleep,
                   help: t.audiobook.sleepMinutes,
                   initial: '20',
+                  keyboardType: TextInputType.number,
                   valid: (v) => int.tryParse(v) != null && int.parse(v) >= 1 && int.parse(v) <= 1440,
                 );
                 if (value != null) s.sleepFor(Duration(minutes: int.parse(value)));
@@ -368,20 +376,23 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
     required String help,
     required String initial,
     required bool Function(String) valid,
+    TextInputType? keyboardType,
   }) async {
     final input = TextEditingController(text: initial);
     final form = GlobalKey<FormState>();
     try {
-      return await showDialog<String>(
+      return await showScopedDialog<String>(
         context: context,
         builder: (dialogContext) => AlertDialog(
           title: Text(title),
           content: Form(
             key: form,
-            child: TextFormField(
+            child: FocusableTextFormField(
               controller: input,
+              keyboardType: keyboardType,
               autofocus: true,
               autocorrect: false,
+              textInputAction: TextInputAction.done,
               decoration: InputDecoration(helperText: help, helperMaxLines: 3),
               validator: (v) => valid(v?.trim() ?? '') ? null : help,
               onFieldSubmitted: (_) {
@@ -390,12 +401,13 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
             ),
           ),
           actions: [
-            TextButton(onPressed: () => Navigator.pop(dialogContext), child: Text(t.common.cancel)),
-            FilledButton(
+            DialogActionButton(onPressed: () => Navigator.pop(dialogContext), label: t.common.cancel),
+            DialogActionButton(
               onPressed: () {
                 if (form.currentState!.validate()) Navigator.pop(dialogContext, input.text.trim());
               },
-              child: Text(t.audiobook.apply),
+              label: t.audiobook.apply,
+              isPrimary: true,
             ),
           ],
         ),
@@ -404,6 +416,8 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
       input.dispose();
     }
   }
+
+  double? _parseSpeed(String value) => double.tryParse(value.trim().replaceAll(',', '.'));
 
   @override
   Widget build(BuildContext context) {

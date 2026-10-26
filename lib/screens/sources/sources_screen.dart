@@ -234,14 +234,15 @@ class _SourcesScreenState extends State<SourcesScreen> {
           ),
       focusableAppBarActions: true,
       actions: [
-        AppMenuButton<PublicationSort>(
-          tooltip: t.audiobook.librarySort,
-          icon: const AppIcon(Symbols.sort_rounded),
+        AppMenuButton<String>(
+          tooltip: t.common.options,
+          icon: const AppIcon(Symbols.more_vert_rounded),
           adaptiveSheet: true,
           entriesBuilder: (_) => [
+            AppMenuHeader(label: t.common.sort),
             for (final value in PublicationSort.values)
               AppMenuItem(
-                value: value,
+                value: 'sort:${value.name}',
                 selected: _sort == value,
                 label: switch (value) {
                   PublicationSort.title => t.audiobook.sortTitle,
@@ -251,20 +252,10 @@ class _SourcesScreenState extends State<SourcesScreen> {
                   PublicationSort.recent => t.audiobook.sortRecent,
                 },
               ),
-          ],
-          onSelected: (v) {
-            setState(() => _sort = v);
-            unawaited(_saveBrowsePreference());
-          },
-        ),
-        AppMenuButton<PublicationStatus>(
-          tooltip: t.audiobook.statusFilter,
-          icon: const AppIcon(Symbols.filter_list_rounded),
-          adaptiveSheet: true,
-          entriesBuilder: (_) => [
+            AppMenuHeader(label: t.common.filters),
             for (final value in PublicationStatus.values)
               AppMenuItem(
-                value: value,
+                value: 'status:${value.name}',
                 selected: _status == value,
                 label: switch (value) {
                   PublicationStatus.all => t.audiobook.statusAll,
@@ -273,21 +264,39 @@ class _SourcesScreenState extends State<SourcesScreen> {
                   PublicationStatus.finished => t.audiobook.statusFinished,
                 },
               ),
+            if (widget.source == null) ...[
+              const AppMenuDivider(),
+              AppMenuItem(
+                value: 'reading-listening-sync',
+                label: t.audiobook.syncTitle,
+                icon: Symbols.cloud_sync_rounded,
+              ),
+            ],
+            const AppMenuDivider(),
+            AppMenuItem(
+              value: 'refresh',
+              label: t.fileSources.refresh,
+              icon: Symbols.refresh_rounded,
+              enabled: !_loading,
+            ),
           ],
-          onSelected: (v) {
-            setState(() => _status = v);
-            unawaited(_saveBrowsePreference());
-          },
-        ),
-        if (widget.source == null)
-          IconButton(
-            tooltip: t.audiobook.syncTitle,
-            icon: const AppIcon(Symbols.cloud_sync_rounded),
-            onPressed: () async {
+          onSelected: (action) async {
+            if (action.startsWith('sort:')) {
+              final value = PublicationSort.values.firstWhere((value) => value.name == action.substring(5));
+              setState(() => _sort = value);
+              unawaited(_saveBrowsePreference());
+            } else if (action.startsWith('status:')) {
+              final value = PublicationStatus.values.firstWhere((value) => value.name == action.substring(7));
+              setState(() => _status = value);
+              unawaited(_saveBrowsePreference());
+            } else if (action == 'reading-listening-sync') {
               await Navigator.push(context, MaterialPageRoute(builder: (_) => const SourceSyncScreen()));
               if (mounted) await _load();
-            },
-          ),
+            } else if (action == 'refresh') {
+              await _load();
+            }
+          },
+        ),
         if (root)
           IconButton(
             tooltip: t.fileSources.importFiles,
@@ -324,11 +333,6 @@ class _SourcesScreenState extends State<SourcesScreen> {
             }),
             icon: const AppIcon(Symbols.sync_rounded),
           ),
-        IconButton(
-          tooltip: t.fileSources.refresh,
-          onPressed: _loading ? null : () => _load(),
-          icon: const AppIcon(Symbols.refresh_rounded),
-        ),
       ],
       slivers: [
         SliverPadding(

@@ -71,7 +71,7 @@ void main() {
     TvDetectionService.debugReset();
   });
 
-  Future<void> pumpFlow(WidgetTester tester) async {
+  Future<void> pumpFlow(WidgetTester tester, {double qrMaxSize = 360}) async {
     await tester.pumpWidget(
       TranslationProvider(
         child: MaterialApp(
@@ -81,6 +81,7 @@ void main() {
               onTokenReceived: (_) async {},
               autoStartQrOnTV: false,
               serviceFactory: () async => _StalledPlexAuthService(),
+              qrMaxSize: qrMaxSize,
             ),
           ),
         ),
@@ -131,6 +132,42 @@ void main() {
 
     expect(find.byType(QrImageView), findsOneWidget);
     expect(launched, isEmpty);
+  });
+
+  testWidgets('the QR scan target grows for a 4K display', (tester) async {
+    tester.view.physicalSize = const Size(3840, 2160);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    TvDetectionService.debugSetAutomotiveOverride(true);
+    await pumpFlow(tester, qrMaxSize: 800);
+
+    await tester.tap(find.text(t.auth.signInWithPlex));
+    await tester.pump();
+    await tester.pump();
+
+    final qr = find.byType(QrImageView);
+    expect(qr, findsOneWidget);
+    expect(tester.getSize(qr), const Size.square(800));
+    expect(tester.takeException(), isNull);
+  });
+
+  testWidgets('the QR scan target stays within a phone viewport', (tester) async {
+    tester.view.physicalSize = const Size(390, 844);
+    tester.view.devicePixelRatio = 1;
+    addTearDown(tester.view.resetPhysicalSize);
+    addTearDown(tester.view.resetDevicePixelRatio);
+    TvDetectionService.debugSetAutomotiveOverride(true);
+    await pumpFlow(tester);
+
+    await tester.tap(find.text(t.auth.signInWithPlex));
+    await tester.pump();
+    await tester.pump();
+
+    final qr = find.byType(QrImageView);
+    expect(qr, findsOneWidget);
+    expect(tester.getSize(qr), const Size.square(342));
+    expect(tester.takeException(), isNull);
   });
 
   testWidgets('cancel exits the QR wait back to the initial actions', (tester) async {

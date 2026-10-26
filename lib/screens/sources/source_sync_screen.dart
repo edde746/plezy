@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
@@ -58,7 +59,6 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
 
   String _choice(SyncVersion version) {
     final data = sourceMap(version.value['data']);
-    final device = version.actor?.substring(0, 8) ?? t.audiobook.syncUnknownDevice;
     final String choice;
     if (version.value['type'] == 'annotation') {
       choice = data['deleted'] == true
@@ -71,7 +71,22 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
     } else {
       choice = sourceTime(sourceInt(data['positionMs']) ?? 0);
     }
-    return '${t.audiobook.syncDevice(device: device)} · $choice';
+    return choice;
+  }
+
+  String _device(SyncVersion version) {
+    final actor = version.actor;
+    final device = actor == null || actor.isEmpty
+        ? t.audiobook.syncUnknownDevice
+        : actor.substring(0, actor.length < 8 ? actor.length : 8);
+    return t.audiobook.syncDevice(device: device);
+  }
+
+  Future<void> _addSource() async {
+    await Navigator.push<bool>(context, MaterialPageRoute(builder: (_) => const AddSourceScreen()));
+    if (!mounted) return;
+    final sources = context.read<SourceController>().sources.where((source) => ProviderSyncStore.supports(source.kind));
+    setState(() => _source ??= sources.lastOrNull?.id);
   }
 
   @override
@@ -95,9 +110,17 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                   children: [
                     Text(t.audiobook.syncHelp),
                     const SizedBox(height: 24),
-                    if (sources.isEmpty)
-                      Text(t.audiobook.addSyncSource)
-                    else
+                    if (sources.isEmpty) ...[
+                      Text(t.audiobook.addSyncSource),
+                      Align(
+                        alignment: AlignmentDirectional.centerStart,
+                        child: TextButton.icon(
+                          onPressed: _busy ? null : _addSource,
+                          icon: const AppIcon(Symbols.add_rounded),
+                          label: Text(t.fileSources.add),
+                        ),
+                      ),
+                    ] else ...[
                       DropdownButtonFormField<String>(
                         isExpanded: true,
                         initialValue: selected?.id,
@@ -111,66 +134,69 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                         ],
                         onChanged: _busy ? null : (v) => setState(() => _source = v),
                       ),
-                    if (selected?.kind == FileSourceKind.webdav || selected?.kind == FileSourceKind.s3) ...[
+                      if (selected?.kind == FileSourceKind.webdav || selected?.kind == FileSourceKind.s3) ...[
+                        const SizedBox(height: 16),
+                        FocusableTextField(
+                          controller: _folder,
+                          enabled: !_busy,
+                          autocorrect: false,
+                          textInputAction: TextInputAction.next,
+                          decoration: InputDecoration(
+                            labelText: t.audiobook.syncFolder,
+                            helperText: t.audiobook.syncFolderHelp,
+                            helperMaxLines: 3,
+                          ),
+                        ),
+                      ],
                       const SizedBox(height: 16),
-                      TextField(
-                        controller: _folder,
+                      FocusableTextField(
+                        controller: _code,
                         enabled: !_busy,
+                        obscureText: !_reveal,
                         autocorrect: false,
+                        enableSuggestions: false,
+                        textInputAction: TextInputAction.done,
                         decoration: InputDecoration(
-                          labelText: t.audiobook.syncFolder,
-                          helperText: t.audiobook.syncFolderHelp,
-                          helperMaxLines: 3,
+                          labelText: t.audiobook.syncCode,
+                          helperText: t.audiobook.syncCodeHelp,
+                          helperMaxLines: 4,
+                          suffixIcon: IconButton(
+                            tooltip: t.audiobook.showCode,
+                            onPressed: () => setState(() => _reveal = !_reveal),
+                            icon: AppIcon(_reveal ? Symbols.visibility_off_rounded : Symbols.visibility_rounded),
+                          ),
                         ),
                       ),
-                    ],
-                    const SizedBox(height: 16),
-                    TextField(
-                      controller: _code,
-                      enabled: !_busy,
-                      obscureText: !_reveal,
-                      autocorrect: false,
-                      enableSuggestions: false,
-                      decoration: InputDecoration(
-                        labelText: t.audiobook.syncCode,
-                        helperText: t.audiobook.syncCodeHelp,
-                        helperMaxLines: 4,
-                        suffixIcon: IconButton(
-                          tooltip: t.audiobook.showCode,
-                          onPressed: () => setState(() => _reveal = !_reveal),
-                          icon: AppIcon(_reveal ? Symbols.visibility_off_rounded : Symbols.visibility_rounded),
+                      if (!configured)
+                        Align(
+                          alignment: AlignmentDirectional.centerStart,
+                          child: TextButton.icon(
+                            onPressed: _busy
+                                ? null
+                                : () => setState(() {
+                                    _code.text = SyncCipher.newCode();
+                                    _reveal = true;
+                                  }),
+                            icon: const AppIcon(Symbols.add_rounded),
+                            label: Text(t.audiobook.newSyncCode),
+                          ),
                         ),
-                      ),
-                    ),
-                    if (!configured)
-                      Align(
-                        alignment: AlignmentDirectional.centerStart,
-                        child: TextButton.icon(
-                          onPressed: _busy
-                              ? null
-                              : () => setState(() {
-                                  _code.text = SyncCipher.newCode();
-                                  _reveal = true;
-                                }),
-                          icon: const AppIcon(Symbols.add_rounded),
-                          label: Text(t.audiobook.newSyncCode),
-                        ),
-                      ),
-                    const SizedBox(height: 16),
-                    FilledButton(
-                      onPressed: _busy || selected == null
-                          ? null
-                          : () => _action(
-                              () => controller.configureCloudSync(
-                                PublicationSyncConfig(
-                                  sourceId: selected.id,
-                                  code: _code.text.trim(),
-                                  folder: _folder.text.trim(),
+                      const SizedBox(height: 16),
+                      FilledButton(
+                        onPressed: _busy || selected == null
+                            ? null
+                            : () => _action(
+                                () => controller.configureCloudSync(
+                                  PublicationSyncConfig(
+                                    sourceId: selected.id,
+                                    code: _code.text.trim(),
+                                    folder: _folder.text.trim(),
+                                  ),
                                 ),
                               ),
-                            ),
-                      child: Text(t.audiobook.saveSync),
-                    ),
+                        child: Text(t.audiobook.saveSync),
+                      ),
+                    ],
                     if (configured) ...[
                       const SizedBox(height: 12),
                       OutlinedButton.icon(
@@ -212,9 +238,8 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Text(
                           t.audiobook.lastSynced(
-                            time: MaterialLocalizations.of(
-                              context,
-                            ).formatTimeOfDay(TimeOfDay.fromDateTime(sync.lastSuccess!.toLocal())),
+                            time: MaterialLocalizations.of(context)
+                                .formatTimeOfDay(TimeOfDay.fromDateTime(sync.lastSuccess!.toLocal())),
                           ),
                         ),
                       ),
@@ -231,19 +256,19 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
                               Text(conflict.entry.title, style: Theme.of(context).textTheme.titleMedium),
-                              for (final version in conflict.values)
-                                OutlinedButton(
-                                  onPressed: _busy
+                              for (final (index, version) in conflict.values.indexed)
+                                SourceTile(
+                                  title: _device(version),
+                                  subtitle: _choice(version).isEmpty ? t.fileSources.bookmark : _choice(version),
+                                  icon: Symbols.sync_alt_rounded,
+                                  index: index,
+                                  count: conflict.values.length,
+                                  onTap: _busy
                                       ? null
                                       : () => _action(() async {
                                           await controller.stopPlayback?.call();
                                           await controller.resolveCloudConflict(conflict.key, version);
                                         }),
-                                  child: Text(
-                                    _choice(version).isEmpty ? t.fileSources.bookmark : _choice(version),
-                                    maxLines: 4,
-                                    overflow: TextOverflow.ellipsis,
-                                  ),
                                 ),
                             ],
                           ),
