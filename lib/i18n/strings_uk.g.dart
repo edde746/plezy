@@ -3069,7 +3069,7 @@ class _Translations$fileSources$uk extends Translations$fileSources$en {
 	@override String get syncLocation => 'Прогрес синхронізування папки (опціональна)';
 	@override String get syncLocationHint => 'Окрема папка WebDAV для стану PlezyNG. Використовує умовний запис; медіафайли не змінюються.';
 	@override String get audiobooks => 'Аудіокниги';
-	@override String get comics => 'Комічні';
+	@override String get comics => 'Комікси';
 	@override String get scan => 'Скенію для книг та медіа';
 	@override String get browserReader => 'Відкритий читач';
 	@override String get browserReaderHelp => 'Читач відкритий у вашому браузері. Зберігайте PlezyNG відкритим, щоб зберегти своє місце і записи.';
@@ -3094,7 +3094,7 @@ class _Translations$fileSources$uk extends Translations$fileSources$en {
 	@override String get letterSpacing => 'Письмо простір';
 	@override String get wordSpacing => 'Слово простір';
 	@override String get readerControlsHelp => 'Щоб збільшити сторінку, розведіть два пальці або скористайтеся кнопками масштабування. Перетягуйте, щоб переміщувати сторінку. Ctrl/⌘ разом із + або − змінює масштаб; Ctrl/⌘ разом із 0 скидає його. Page Up і Page Down перегортають сторінки.';
-	@override String get imagePage => 'Комічна сторінка';
+	@override String get imagePage => 'Сторінка коміксу';
 	@override String get resetReader => 'Перезавантаження переваг читання';
 	@override String get zoom => 'Масштабувати';
 	@override String get useFiles => 'Використовуйте файли та книги';
@@ -7116,7 +7116,7 @@ extension on TranslationsUk {
 			'fileSources.syncLocation' => 'Прогрес синхронізування папки (опціональна)',
 			'fileSources.syncLocationHint' => 'Окрема папка WebDAV для стану PlezyNG. Використовує умовний запис; медіафайли не змінюються.',
 			'fileSources.audiobooks' => 'Аудіокниги',
-			'fileSources.comics' => 'Комічні',
+			'fileSources.comics' => 'Комікси',
 			'fileSources.scan' => 'Скенію для книг та медіа',
 			'fileSources.browserReader' => 'Відкритий читач',
 			'fileSources.browserReaderHelp' => 'Читач відкритий у вашому браузері. Зберігайте PlezyNG відкритим, щоб зберегти своє місце і записи.',
@@ -7141,7 +7141,7 @@ extension on TranslationsUk {
 			'fileSources.letterSpacing' => 'Письмо простір',
 			'fileSources.wordSpacing' => 'Слово простір',
 			'fileSources.readerControlsHelp' => 'Щоб збільшити сторінку, розведіть два пальці або скористайтеся кнопками масштабування. Перетягуйте, щоб переміщувати сторінку. Ctrl/⌘ разом із + або − змінює масштаб; Ctrl/⌘ разом із 0 скидає його. Page Up і Page Down перегортають сторінки.',
-			'fileSources.imagePage' => 'Комічна сторінка',
+			'fileSources.imagePage' => 'Сторінка коміксу',
 			'fileSources.resetReader' => 'Перезавантаження переваг читання',
 			'fileSources.zoom' => 'Масштабувати',
 			'fileSources.useFiles' => 'Використовуйте файли та книги',

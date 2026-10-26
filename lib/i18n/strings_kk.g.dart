@@ -3033,7 +3033,7 @@ class _Translations$fileSources$kk extends Translations$fileSources$en {
 	@override String get syncLocation => 'Өнімдер мен қанағаттан (i)';
 	@override String get syncLocationHint => 'PlezyNG күйіне арналған бөлек WebDAV қалтасы. Деректер шартты түрде жазылады; медиафайлдар өзгермейді.';
 	@override String get audiobooks => 'Аудиолық';
-	@override String get comics => 'Комедиясы';
+	@override String get comics => 'Комикстер';
 	@override String get scan => 'Серіктің да салықты және медиа';
 	@override String get browserReader => 'Одан және';
 	@override String get browserReaderHelp => 'Оқу құралы браузерде ашық. Оқу орнын және жазбаларды сақтау үшін PlezyNG қолданбасын ашық ұстаңыз.';
@@ -3058,7 +3058,7 @@ class _Translations$fileSources$kk extends Translations$fileSources$en {
 	@override String get letterSpacing => 'Есімдіктің қағидалар';
 	@override String get wordSpacing => 'Әдеп ұзын';
 	@override String get readerControlsHelp => 'Бетті үлкейту үшін екі саусағыңызды алшақтатыңыз немесе масштаб түймелерін пайдаланыңыз. Бетті жылжыту үшін сүйреңіз. Ctrl/⌘ және + немесе − масштабты өзгертеді; Ctrl/⌘ және 0 оны қалпына келтіреді. Page Up және Page Down беттерді ауыстырады.';
-	@override String get imagePage => 'Комедиялық сайт';
+	@override String get imagePage => 'Комикс беті';
 	@override String get resetReader => 'Жүктесінен репетициясы';
 	@override String get zoom => 'Масштаб';
 	@override String get useFiles => 'Бірінші мезгіл файлы және книги';
@@ -7078,7 +7078,7 @@ extension on TranslationsKk {
 			'fileSources.syncLocation' => 'Өнімдер мен қанағаттан (i)',
 			'fileSources.syncLocationHint' => 'PlezyNG күйіне арналған бөлек WebDAV қалтасы. Деректер шартты түрде жазылады; медиафайлдар өзгермейді.',
 			'fileSources.audiobooks' => 'Аудиолық',
-			'fileSources.comics' => 'Комедиясы',
+			'fileSources.comics' => 'Комикстер',
 			'fileSources.scan' => 'Серіктің да салықты және медиа',
 			'fileSources.browserReader' => 'Одан және',
 			'fileSources.browserReaderHelp' => 'Оқу құралы браузерде ашық. Оқу орнын және жазбаларды сақтау үшін PlezyNG қолданбасын ашық ұстаңыз.',
@@ -7103,7 +7103,7 @@ extension on TranslationsKk {
 			'fileSources.letterSpacing' => 'Есімдіктің қағидалар',
 			'fileSources.wordSpacing' => 'Әдеп ұзын',
 			'fileSources.readerControlsHelp' => 'Бетті үлкейту үшін екі саусағыңызды алшақтатыңыз немесе масштаб түймелерін пайдаланыңыз. Бетті жылжыту үшін сүйреңіз. Ctrl/⌘ және + немесе − масштабты өзгертеді; Ctrl/⌘ және 0 оны қалпына келтіреді. Page Up және Page Down беттерді ауыстырады.',
-			'fileSources.imagePage' => 'Комедиялық сайт',
+			'fileSources.imagePage' => 'Комикс беті',
 			'fileSources.resetReader' => 'Жүктесінен репетициясы',
 			'fileSources.zoom' => 'Масштаб',
 			'fileSources.useFiles' => 'Бірінші мезгіл файлы және книги',

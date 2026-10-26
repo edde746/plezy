@@ -3033,7 +3033,7 @@ class _Translations$fileSources$hu extends Translations$fileSources$en {
 	@override String get syncLocation => 'Progress szinkronizálás (opcionális)';
 	@override String get syncLocationHint => 'A WebDAV fájl a PlezyNG állapothoz. feltételezett írásokat használ; a média változatlan marad.';
 	@override String get audiobooks => 'Audiókönyvek';
-	@override String get comics => 'Komik';
+	@override String get comics => 'Képregények';
 	@override String get scan => 'A könyv és a média szkennelése';
 	@override String get browserReader => 'Nyílt olvasó';
 	@override String get browserReaderHelp => 'A böngészőben a olvasó nyitva van. A PlezyNG nyitva tartása a hely és a jegyzetek mentéséhez.';
@@ -3058,7 +3058,7 @@ class _Translations$fileSources$hu extends Translations$fileSources$en {
 	@override String get letterSpacing => 'levél spacing';
 	@override String get wordSpacing => 'Szavak spacing';
 	@override String get readerControlsHelp => 'Két ujj széthúzásával vagy a nagyítási vezérlőkkel nagyíthatod az oldalakat. Húzással mozgathatod az oldalt. A Ctrl/⌘ és + vagy − módosítja a nagyítást; a Ctrl/⌘ és 0 visszaállítja azt. A Page Up és Page Down lapoz.';
-	@override String get imagePage => 'Komikus oldal';
+	@override String get imagePage => 'Képregényoldal';
 	@override String get resetReader => 'Újraindítás olvasási preferenciák';
 	@override String get zoom => 'Nagyítás';
 	@override String get useFiles => 'Fájlok és könyvek használata';
@@ -7078,7 +7078,7 @@ extension on TranslationsHu {
 			'fileSources.syncLocation' => 'Progress szinkronizálás (opcionális)',
 			'fileSources.syncLocationHint' => 'A WebDAV fájl a PlezyNG állapothoz. feltételezett írásokat használ; a média változatlan marad.',
 			'fileSources.audiobooks' => 'Audiókönyvek',
-			'fileSources.comics' => 'Komik',
+			'fileSources.comics' => 'Képregények',
 			'fileSources.scan' => 'A könyv és a média szkennelése',
 			'fileSources.browserReader' => 'Nyílt olvasó',
 			'fileSources.browserReaderHelp' => 'A böngészőben a olvasó nyitva van. A PlezyNG nyitva tartása a hely és a jegyzetek mentéséhez.',
@@ -7103,7 +7103,7 @@ extension on TranslationsHu {
 			'fileSources.letterSpacing' => 'levél spacing',
 			'fileSources.wordSpacing' => 'Szavak spacing',
 			'fileSources.readerControlsHelp' => 'Két ujj széthúzásával vagy a nagyítási vezérlőkkel nagyíthatod az oldalakat. Húzással mozgathatod az oldalt. A Ctrl/⌘ és + vagy − módosítja a nagyítást; a Ctrl/⌘ és 0 visszaállítja azt. A Page Up és Page Down lapoz.',
-			'fileSources.imagePage' => 'Komikus oldal',
+			'fileSources.imagePage' => 'Képregényoldal',
 			'fileSources.resetReader' => 'Újraindítás olvasási preferenciák',
 			'fileSources.zoom' => 'Nagyítás',
 			'fileSources.useFiles' => 'Fájlok és könyvek használata',

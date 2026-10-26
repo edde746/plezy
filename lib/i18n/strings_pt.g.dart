@@ -3062,7 +3062,7 @@ class Translations$fileSources$pt extends Translations$fileSources$en {
 	@override String get letterSpacing => 'Carta de espaço';
 	@override String get wordSpacing => 'Palavra espaçado';
 	@override String get readerControlsHelp => 'Afaste dois dedos ou use os controles de zoom para ampliar as páginas. Arraste para mover a página. Ctrl/⌘ com + ou − ajusta o zoom; Ctrl/⌘ com 0 o redefine. Page Up e Page Down mudam de página.';
-	@override String get imagePage => 'Página Comica';
+	@override String get imagePage => 'Página de banda desenhada';
 	@override String get resetReader => 'Resetando as preferências de leitura';
 	@override String get zoom => 'Zoom';
 	@override String get useFiles => 'Use arquivos e livros';
@@ -7107,7 +7107,7 @@ extension on TranslationsPt {
 			'fileSources.letterSpacing' => 'Carta de espaço',
 			'fileSources.wordSpacing' => 'Palavra espaçado',
 			'fileSources.readerControlsHelp' => 'Afaste dois dedos ou use os controles de zoom para ampliar as páginas. Arraste para mover a página. Ctrl/⌘ com + ou − ajusta o zoom; Ctrl/⌘ com 0 o redefine. Page Up e Page Down mudam de página.',
-			'fileSources.imagePage' => 'Página Comica',
+			'fileSources.imagePage' => 'Página de banda desenhada',
 			'fileSources.resetReader' => 'Resetando as preferências de leitura',
 			'fileSources.zoom' => 'Zoom',
 			'fileSources.useFiles' => 'Use arquivos e livros',

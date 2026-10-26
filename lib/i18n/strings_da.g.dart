@@ -3033,7 +3033,7 @@ class _Translations$fileSources$da extends Translations$fileSources$en {
 	@override String get syncLocation => 'Progress sync mappe (valglig)';
 	@override String get syncLocationHint => 'En dedikeret WebDAV mappe for PlezyNG stat. Brug betingelsesmæssige skrivere; medierne forbliver uændret.';
 	@override String get audiobooks => 'Audiobøger';
-	@override String get comics => 'Komik';
+	@override String get comics => 'Tegneserier';
 	@override String get scan => 'Skanne for bøger og medier';
 	@override String get browserReader => 'Åbent læsere';
 	@override String get browserReaderHelp => 'Læseren er åben i din browser. Hold PlezyNG åben for at gemme din plads og noter.';
@@ -3058,7 +3058,7 @@ class _Translations$fileSources$da extends Translations$fileSources$en {
 	@override String get letterSpacing => 'Brev til spænder';
 	@override String get wordSpacing => 'Ord spænder';
 	@override String get readerControlsHelp => 'Spred to fingre, eller brug zoomknapperne til at forstørre sider. Træk for at flytte siden. Ctrl/⌘ med + eller − justerer zoom; Ctrl/⌘ med 0 nulstiller den. Page Up og Page Down skifter side.';
-	@override String get imagePage => 'Comic side';
+	@override String get imagePage => 'Tegneserieside';
 	@override String get resetReader => 'Gennemføre læsning præferencer';
 	@override String get zoom => 'Zoom';
 	@override String get useFiles => 'Brug filer og bøger';
@@ -7078,7 +7078,7 @@ extension on TranslationsDa {
 			'fileSources.syncLocation' => 'Progress sync mappe (valglig)',
 			'fileSources.syncLocationHint' => 'En dedikeret WebDAV mappe for PlezyNG stat. Brug betingelsesmæssige skrivere; medierne forbliver uændret.',
 			'fileSources.audiobooks' => 'Audiobøger',
-			'fileSources.comics' => 'Komik',
+			'fileSources.comics' => 'Tegneserier',
 			'fileSources.scan' => 'Skanne for bøger og medier',
 			'fileSources.browserReader' => 'Åbent læsere',
 			'fileSources.browserReaderHelp' => 'Læseren er åben i din browser. Hold PlezyNG åben for at gemme din plads og noter.',
@@ -7103,7 +7103,7 @@ extension on TranslationsDa {
 			'fileSources.letterSpacing' => 'Brev til spænder',
 			'fileSources.wordSpacing' => 'Ord spænder',
 			'fileSources.readerControlsHelp' => 'Spred to fingre, eller brug zoomknapperne til at forstørre sider. Træk for at flytte siden. Ctrl/⌘ med + eller − justerer zoom; Ctrl/⌘ med 0 nulstiller den. Page Up og Page Down skifter side.',
-			'fileSources.imagePage' => 'Comic side',
+			'fileSources.imagePage' => 'Tegneserieside',
 			'fileSources.resetReader' => 'Gennemføre læsning præferencer',
 			'fileSources.zoom' => 'Zoom',
 			'fileSources.useFiles' => 'Brug filer og bøger',

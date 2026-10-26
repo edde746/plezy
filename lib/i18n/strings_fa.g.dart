@@ -3033,7 +3033,7 @@ class _Translations$fileSources$fa extends Translations$fileSources$en {
 	@override String get syncLocation => 'فاکتور پیشرفت (اختیاری)';
 	@override String get syncLocationHint => 'یک پوشه اختصاص داده شده WebDAV برای PlezyNG وضعیت. استفاده از نوشتن مشروط؛ رسانه ها تغییر نمی کند.';
 	@override String get audiobooks => 'کتاب های صوتی';
-	@override String get comics => 'کمدی';
+	@override String get comics => 'کمیک‌ها';
 	@override String get scan => 'اسکن برای کتاب ها و رسانه ها';
 	@override String get browserReader => 'خواننده باز';
 	@override String get browserReaderHelp => 'خواننده در مرورگر شما باز است. PlezyNG را باز نگه دارید تا محل و یادداشت های خود را ذخیره کنید.';
@@ -3058,7 +3058,7 @@ class _Translations$fileSources$fa extends Translations$fileSources$en {
 	@override String get letterSpacing => 'نامه فضایی';
 	@override String get wordSpacing => 'کلمه فضا';
 	@override String get readerControlsHelp => 'برای بزرگ‌کردن صفحه‌ها، دو انگشت را از هم باز کنید یا از کنترل‌های بزرگ‌نمایی استفاده کنید. برای جابه‌جایی صفحه بکشید. Ctrl/⌘ همراه + یا − بزرگ‌نمایی را تنظیم می‌کند؛ Ctrl/⌘ همراه 0 آن را بازنشانی می‌کند. Page Up و Page Down صفحه را عوض می‌کنند.';
-	@override String get imagePage => 'صفحه کمدی';
+	@override String get imagePage => 'صفحه کمیک';
 	@override String get resetReader => 'تنظیم مجدد ترجیحات خواندن';
 	@override String get zoom => 'پوشش دادن';
 	@override String get useFiles => 'استفاده از فایل ها و کتاب ها';
@@ -7078,7 +7078,7 @@ extension on TranslationsFa {
 			'fileSources.syncLocation' => 'فاکتور پیشرفت (اختیاری)',
 			'fileSources.syncLocationHint' => 'یک پوشه اختصاص داده شده WebDAV برای PlezyNG وضعیت. استفاده از نوشتن مشروط؛ رسانه ها تغییر نمی کند.',
 			'fileSources.audiobooks' => 'کتاب های صوتی',
-			'fileSources.comics' => 'کمدی',
+			'fileSources.comics' => 'کمیک‌ها',
 			'fileSources.scan' => 'اسکن برای کتاب ها و رسانه ها',
 			'fileSources.browserReader' => 'خواننده باز',
 			'fileSources.browserReaderHelp' => 'خواننده در مرورگر شما باز است. PlezyNG را باز نگه دارید تا محل و یادداشت های خود را ذخیره کنید.',
@@ -7103,7 +7103,7 @@ extension on TranslationsFa {
 			'fileSources.letterSpacing' => 'نامه فضایی',
 			'fileSources.wordSpacing' => 'کلمه فضا',
 			'fileSources.readerControlsHelp' => 'برای بزرگ‌کردن صفحه‌ها، دو انگشت را از هم باز کنید یا از کنترل‌های بزرگ‌نمایی استفاده کنید. برای جابه‌جایی صفحه بکشید. Ctrl/⌘ همراه + یا − بزرگ‌نمایی را تنظیم می‌کند؛ Ctrl/⌘ همراه 0 آن را بازنشانی می‌کند. Page Up و Page Down صفحه را عوض می‌کنند.',
-			'fileSources.imagePage' => 'صفحه کمدی',
+			'fileSources.imagePage' => 'صفحه کمیک',
 			'fileSources.resetReader' => 'تنظیم مجدد ترجیحات خواندن',
 			'fileSources.zoom' => 'پوشش دادن',
 			'fileSources.useFiles' => 'استفاده از فایل ها و کتاب ها',
