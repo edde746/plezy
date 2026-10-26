@@ -14,7 +14,7 @@ void main() {
   group('CredentialVault.reveal', () {
     test('round-trips a protected value', () async {
       final protected = await CredentialVault.protect('super-secret');
-      expect(protected, startsWith('enc:v1:'));
+      expect(protected, startsWith('enc:v2:'));
       expect(await CredentialVault.reveal(protected), 'super-secret');
     });
 
@@ -24,9 +24,9 @@ void main() {
 
     test('returns null instead of throwing on a tampered MAC', () async {
       final protected = await CredentialVault.protect('super-secret');
-      final payload = jsonDecode(protected.substring('enc:v1:'.length)) as Map<String, dynamic>;
+      final payload = jsonDecode(protected.substring('enc:v2:'.length)) as Map<String, dynamic>;
       payload['m'] = base64Encode(List<int>.filled(16, 0));
-      final tampered = 'enc:v1:${jsonEncode(payload)}';
+      final tampered = 'enc:v2:${jsonEncode(payload)}';
 
       expect(await CredentialVault.reveal(tampered), isNull);
     });

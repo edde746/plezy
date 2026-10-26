@@ -1,4 +1,6 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:plezy/services/credential_vault.dart';
 import 'package:plezy/services/base_shared_preferences_service.dart';
 import 'package:plezy/services/prefs_recovery.dart';
 import 'package:plezy/services/settings_service.dart';
@@ -10,6 +12,8 @@ import 'package:shared_preferences_platform_interface/shared_preferences_platfor
 /// Reset shared-prefs platform mocks AND the cached singleton instances.
 /// Call from `setUp` so each test starts with a clean slate.
 void resetSharedPreferencesForTest({Map<String, Object> initialAsync = const {}}) {
+  FlutterSecureStorage.setMockInitialValues({});
+  CredentialVault.resetKeyForTesting();
   final previousLegacyPlatform = SharedPreferencesStorePlatform.instance;
   final previousAsyncPlatform = SharedPreferencesAsyncPlatform.instance;
   addTearDown(() {

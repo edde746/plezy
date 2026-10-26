@@ -2,28 +2,34 @@ import 'dart:convert';
 import 'dart:math';
 
 import 'package:cryptography/cryptography.dart';
+import 'package:crypto/crypto.dart' as crypto;
 import 'package:flutter/foundation.dart' show visibleForTesting;
 
 import '../utils/app_logger.dart';
 import 'base_shared_preferences_service.dart';
+import 'credential_key_store.dart';
 import 'sensitive_prefs.dart';
 
 /// Encrypts credentials before they are persisted in Drift config/token
 /// columns. The database no longer stores raw server tokens; registries
 /// decrypt at their boundaries and rewrite legacy plaintext values on read.
 ///
-/// Security model: the key is stored in SharedPreferences, so this is
-/// obfuscation-at-rest against casual database inspection/export rather than
-/// OS-backed Keychain/Keystore protection. Anyone with full access to both app
-/// prefs and the database can recover the tokens.
+/// Keys live in the OS credential store. Preferences contain only opaque key
+/// identifiers. Each v2 ciphertext names its key, so concurrent first writes
+/// from different isolates cannot orphan each other's credentials. Existing
+/// v1 keys are migrated with write/read-back verification before the plaintext
+/// copy is removed; v1 ciphertext remains readable during lazy migration.
 class CredentialVault {
   CredentialVault._();
 
   static const String _keyPref = credentialVaultKeyPref;
-  static const String _prefix = 'enc:v1:';
+  static const String _legacyPrefix = 'enc:v1:';
+  static const String _prefix = 'enc:v2:';
+  static const String _activeKeyPref = 'credential_vault_active_key_id_v2';
+  static const String _legacyKeySelector = 'legacy-v1-key-id';
   static final AesGcm _algorithm = AesGcm.with256bits();
   static final Map<String, Future<String?>> _decryptionCache = {};
-  static Future<SecretKey>? _secretKey;
+  static Future<({String id, SecretKey key})>? _secretKey;
   static int _cacheGeneration = 0;
 
   /// Invalidates the memoized key and decrypted credentials after the
@@ -40,17 +46,26 @@ class CredentialVault {
     invalidateCache();
   }
 
-  static bool isProtected(String? value) => value != null && value.startsWith(_prefix);
+  static bool isProtected(String? value) =>
+      value != null && (value.startsWith(_prefix) || value.startsWith(_legacyPrefix));
+
+  static bool needsMigration(String value) => !value.startsWith(_prefix);
 
   static Future<String> protect(String value) async {
-    if (value.isEmpty || isProtected(value)) return value;
+    if (value.isEmpty || value.startsWith(_prefix)) return value;
+    if (value.startsWith(_legacyPrefix)) {
+      final revealed = await reveal(value);
+      if (revealed == null) throw StateError('Cannot migrate an unreadable credential');
+      return protect(revealed);
+    }
     while (true) {
       final generation = _cacheGeneration;
       final key = await _getSecretKey();
-      final box = await _algorithm.encrypt(utf8.encode(value), secretKey: key);
+      final box = await _algorithm.encrypt(utf8.encode(value), secretKey: key.key);
       if (generation != _cacheGeneration) continue;
 
       final payload = {
+        'k': key.id,
         'n': base64Encode(box.nonce),
         'c': base64Encode(box.cipherText),
         'm': base64Encode(box.mac.bytes),
@@ -70,20 +85,42 @@ class CredentialVault {
     if (!isProtected(value)) return value;
     while (true) {
       final generation = _cacheGeneration;
-      final clear = await _decryptionCache.putIfAbsent(value, () => _decrypt(value, generation));
+      final pending = _decryptionCache.putIfAbsent(value, () => _decrypt(value, generation));
+      final String? clear;
+      try {
+        clear = await pending;
+      } catch (_) {
+        // A locked/unavailable keychain is not a lost token. Do not cache a
+        // transient platform failure or rewrite the credential as empty.
+        if (identical(_decryptionCache[value], pending)) _decryptionCache.remove(value)?.ignore();
+        rethrow;
+      }
       if (generation == _cacheGeneration) return clear;
     }
   }
 
   static Future<String?> _decrypt(String value, int generation) async {
+    final legacy = value.startsWith(_legacyPrefix);
+    late final Map<String, dynamic> payload;
+    late final SecretBox box;
     try {
-      final payload = jsonDecode(value.substring(_prefix.length)) as Map<String, dynamic>;
-      final box = SecretBox(
+      payload = jsonDecode(value.substring(legacy ? _legacyPrefix.length : _prefix.length)) as Map<String, dynamic>;
+      box = SecretBox(
         base64Decode(payload['c'] as String),
         nonce: base64Decode(payload['n'] as String),
         mac: Mac(base64Decode(payload['m'] as String)),
       );
-      final clear = await _algorithm.decrypt(box, secretKey: await _getSecretKey());
+    } catch (_) {
+      return null;
+    }
+    // Keep platform I/O outside the corruption/MAC catch. A temporary keychain
+    // outage must propagate to the retry path rather than sign the user out.
+    final keyId = payload['k'];
+    if (!legacy && (keyId is! String || !_validKeyId(keyId))) return null;
+    final key = legacy ? await _getLegacyKey() : await _readKey(keyId as String);
+    if (key == null) return null;
+    try {
+      final clear = await _algorithm.decrypt(box, secretKey: key);
       return utf8.decode(clear);
     } catch (e) {
       if (generation != _cacheGeneration) return null;
@@ -115,7 +152,7 @@ class CredentialVault {
       final revealed = await reveal(token);
       // An undecryptable token becomes the empty string — the shared
       // "no credential, re-auth" shape — and must not be rewritten back.
-      migrated = revealed != null && !isProtected(token);
+      migrated = revealed != null && needsMigration(token);
       copy[tokenKey!] = revealed ?? '';
     }
     if (kind == 'plex') {
@@ -164,7 +201,7 @@ class CredentialVault {
       final token = server['accessToken'];
       if (token is String && token.isNotEmpty) {
         final revealed = await reveal(token);
-        migrated = migrated || (revealed != null && !isProtected(token));
+        migrated = migrated || (revealed != null && needsMigration(token));
         server['accessToken'] = revealed ?? '';
       }
       servers.add(server);
@@ -172,42 +209,72 @@ class CredentialVault {
     return (servers: servers, migrated: migrated);
   }
 
-  static Future<SecretKey> _getSecretKey() {
-    return _secretKey ??= () async {
-      final prefs = await BaseSharedPreferencesService.sharedCache();
-      // The cached snapshot can predate a key written by another isolate
-      // (background downloader, first-run migration); generating "fresh" over
-      // it would clobber the real key and orphan every stored ciphertext.
-      // Reload before deciding, and after writing re-read and adopt whatever
-      // actually landed so all isolates converge on a single key.
-      try {
-        await prefs.reloadCache();
-      } catch (e) {
-        appLogger.d('CredentialVault: prefs reload before key check failed', error: e);
-      }
-      // Tolerant read: a wrong-typed key must surface as a repairable
-      // failure, not be mistaken for 'no key yet' and silently replaced —
-      // that would orphan every ciphertext in the database (#1732).
-      final stored = readTolerantString(prefs, _keyPref);
-      if (stored != null && stored.isNotEmpty) {
-        return SecretKey(base64Decode(stored));
-      }
-      final bytes = List<int>.generate(32, (_) => Random.secure().nextInt(256));
-      await prefs.setString(_keyPref, base64Encode(bytes));
-      try {
-        await prefs.reloadCache();
-      } catch (e) {
-        appLogger.d('CredentialVault: prefs re-read after key write failed', error: e);
-      }
-      // Outside the catch: if another isolate raced us and left a wrong-typed
-      // value, swallowing it here would return a key that never durably
-      // landed, and every ciphertext written under it would be unreadable on
-      // the next launch. Surface it for repair instead (#1732).
-      final settled = readTolerantString(prefs, _keyPref);
-      if (settled != null && settled.isNotEmpty) {
-        return SecretKey(base64Decode(settled));
-      }
+  static bool _validKeyId(String id) => RegExp(r'^(?:v2-[0-9a-f]{32}|v1-[0-9a-f]{64})$').hasMatch(id);
+
+  static Future<SecretKey?> _readKey(String id) async {
+    if (!_validKeyId(id)) throw const FormatException('Invalid credential key identifier');
+    final encoded = await CredentialKeyStore.read(id);
+    if (encoded == null) return null;
+    final bytes = base64Decode(encoded);
+    if (bytes.length != 32) throw const FormatException('Invalid credential key');
+    return SecretKey(bytes);
+  }
+
+  static Future<void> _writeVerifiedKey(String id, String encoded) async {
+    await CredentialKeyStore.write(id, encoded);
+    if (await CredentialKeyStore.read(id) != encoded) {
+      throw StateError('The OS credential store did not retain the key');
+    }
+  }
+
+  static Future<SecretKey?> _getLegacyKey() async {
+    final prefs = await BaseSharedPreferencesService.sharedCache();
+    await prefs.reloadCache();
+    final legacy = readTolerantString(prefs, _keyPref);
+    if (legacy != null && legacy.isNotEmpty) {
+      final bytes = base64Decode(legacy);
+      if (bytes.length != 32) throw const FormatException('Invalid legacy credential key');
+      final id = 'v1-${crypto.sha256.convert(bytes)}';
+      // Content-addressing makes concurrent migrations of the same key
+      // idempotent. Never overwrite a different key under a shared name.
+      await _writeVerifiedKey(id, legacy);
+      await _writeVerifiedKey(_legacyKeySelector, id);
+      await prefs.remove(_keyPref);
       return SecretKey(bytes);
-    }();
+    }
+    final id = await CredentialKeyStore.read(_legacyKeySelector);
+    return id == null ? null : _readKey(id);
+  }
+
+  static Future<({String id, SecretKey key})> _getSecretKey() {
+    final existing = _secretKey;
+    if (existing != null) return existing;
+    late final Future<({String id, SecretKey key})> loading;
+    loading =
+        () async {
+          final prefs = await BaseSharedPreferencesService.sharedCache();
+          await prefs.reloadCache();
+          // Also retire the legacy plaintext key when the first operation is a
+          // write, without needing to enumerate/rewrite the whole database first.
+          await _getLegacyKey();
+          final activeId = readTolerantString(prefs, _activeKeyPref);
+          if (activeId != null) {
+            final key = await _readKey(activeId);
+            if (key != null) return (id: activeId, key: key);
+          }
+          final random = Random.secure();
+          final id = 'v2-${List.generate(16, (_) => random.nextInt(256).toRadixString(16).padLeft(2, '0')).join()}';
+          final bytes = List<int>.generate(32, (_) => random.nextInt(256));
+          await _writeVerifiedKey(id, base64Encode(bytes));
+          await prefs.setString(_activeKeyPref, id);
+          // Another isolate may choose another active ID; both keys survive and
+          // each ciphertext records the exact key that encrypted it.
+          return (id: id, key: SecretKey(bytes));
+        }().catchError((Object error, StackTrace stackTrace) {
+          if (identical(_secretKey, loading)) _secretKey = null;
+          Error.throwWithStackTrace(error, stackTrace);
+        });
+    _secretKey = loading;
+    return loading;
   }
 }

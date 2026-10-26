@@ -180,6 +180,9 @@ import wakelock_plus
     if let r = pluginRegistry.registrar(forPlugin: "SystemShelfPlugin") {
       SystemShelfPlugin.register(with: r)
     }
+    if let r = pluginRegistry.registrar(forPlugin: "CredentialKeyStorePlugin") {
+      CredentialKeyStorePlugin.register(with: r)
+    }
     if let r = pluginRegistry.registrar(forPlugin: "AppIconPlugin") {
       AppIconPlugin.register(with: r)
     }

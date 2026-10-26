@@ -1,5 +1,7 @@
 #include "flutter_window.h"
 
+#include <wincred.h>
+
 #include <optional>
 
 #include "flutter/generated_plugin_registrant.h"
@@ -165,6 +167,7 @@ bool FlutterWindow::OnCreate() {
       flutter_controller_->engine()->GetRegistrarForPlugin("MpvAudioPlayerPlugin"));
 
   RegisterWindowChannel();
+  RegisterCredentialKeyStore();
 
   SetChildContent(flutter_controller_->view()->GetNativeWindow());
 
@@ -198,6 +201,7 @@ void FlutterWindow::OnDestroy() {
   }
 
   window_channel_ = nullptr;
+  credential_channel_ = nullptr;
 
   if (flutter_controller_) {
     flutter_controller_ = nullptr;
@@ -366,4 +370,67 @@ void FlutterWindow::SetNativeFullScreen(bool fullscreen) {
 
   g_suppressPlacementSave = false;
   NotifyFullScreenChanged();
+}
+
+void FlutterWindow::RegisterCredentialKeyStore() {
+  credential_channel_ = std::make_unique<flutter::MethodChannel<flutter::EncodableValue>>(
+      flutter_controller_->engine()->messenger(), "com.plezy/credential_keys",
+      &flutter::StandardMethodCodec::GetInstance());
+  credential_channel_->SetMethodCallHandler([](const auto& call, auto result) {
+    const auto* args = call.arguments() ? std::get_if<flutter::EncodableMap>(call.arguments()) : nullptr;
+    const std::string* key = nullptr;
+    const std::string* value = nullptr;
+    if (args) {
+      const auto key_it = args->find(flutter::EncodableValue("key"));
+      const auto value_it = args->find(flutter::EncodableValue("value"));
+      if (key_it != args->end()) key = std::get_if<std::string>(&key_it->second);
+      if (value_it != args->end()) value = std::get_if<std::string>(&value_it->second);
+    }
+    if (!key || key->empty() || key->size() > 128 ||
+        key->find_first_not_of("abcdefghijklmnopqrstuvwxyz0123456789-") != std::string::npos) {
+      result->Error("invalid_argument", "Invalid credential key identifier");
+      return;
+    }
+    const std::wstring target = L"com.edde746.plezy.credential-vault/" + std::wstring(key->begin(), key->end());
+    if (call.method_name() == "read") {
+      PCREDENTIALW credential = nullptr;
+      if (!CredReadW(target.c_str(), CRED_TYPE_GENERIC, 0, &credential)) {
+        if (GetLastError() == ERROR_NOT_FOUND) {
+          result->Success();
+        } else {
+          result->Error("credentials_unavailable", "Credential key could not be read");
+        }
+        return;
+      }
+      if (!credential->CredentialBlob || credential->CredentialBlobSize == 0 || credential->CredentialBlobSize > 1024) {
+        CredFree(credential);
+        result->Error("credentials_unavailable", "Invalid stored credential key");
+        return;
+      }
+      const std::string stored(
+          reinterpret_cast<const char*>(credential->CredentialBlob), credential->CredentialBlobSize);
+      CredFree(credential);
+      result->Success(flutter::EncodableValue(stored));
+    } else if (call.method_name() == "write") {
+      if (!value || value->empty() || value->size() > 1024) {
+        result->Error("invalid_argument", "Invalid credential key value");
+        return;
+      }
+      CREDENTIALW credential{};
+      credential.Type = CRED_TYPE_GENERIC;
+      credential.TargetName = const_cast<wchar_t*>(target.c_str());
+      credential.CredentialBlob = reinterpret_cast<LPBYTE>(const_cast<char*>(value->data()));
+      credential.CredentialBlobSize = static_cast<DWORD>(value->size());
+      credential.Persist = CRED_PERSIST_LOCAL_MACHINE;
+      // Every immutable vault key has its own target. No shared wrapping key,
+      // file read/modify/write, deletion, or plaintext fallback is involved.
+      if (CredWriteW(&credential, 0)) {
+        result->Success();
+      } else {
+        result->Error("credentials_unavailable", "Credential key could not be saved");
+      }
+    } else {
+      result->NotImplemented();
+    }
+  });
 }

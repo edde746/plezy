@@ -47,7 +47,7 @@ void main() {
     // for this item. Removing those rows would shorten the sheet hundreds of ms
     // after it opens, and because sheets are bottom-anchored that slides the
     // rows above them — live rating controls — out from under the user.
-    await _seedAllTrackerSessions(_profileUuid);
+    await tester.runAsync(() => _seedAllTrackerSessions(_profileUuid));
     await _pumpRatingSheet(
       tester,
       viewport: const Size(1280, 800),
@@ -72,7 +72,7 @@ void main() {
   });
 
   testWidgets('tracker rows settle with an error when the item ids cannot be resolved', (tester) async {
-    await _seedAllTrackerSessions(_profileUuid);
+    await tester.runAsync(() => _seedAllTrackerSessions(_profileUuid));
     await _pumpRatingSheet(
       tester,
       viewport: const Size(1280, 800),
@@ -127,7 +127,7 @@ Future<void> _pumpRatingSheet(
   final trackers = TrackersProvider(httpClientFactory: () => FakeHttpClient(200, const <int>[]));
   addTearDown(trackers.dispose);
   if (profileUuid != null) {
-    await trackers.onActiveProfileChanged(profileUuid);
+    await tester.runAsync(() => trackers.onActiveProfileChanged(profileUuid));
   }
 
   final resolvedItem = item ?? testMediaItem(id: 'item-1', serverId: 'server-1', serverName: 'Living Room');

@@ -50,6 +50,8 @@ dependencies:
   drift: ^2.31.0
   crypto: ^3.0.7
   cryptography: ^2.9.0
+  # 10.x retains the win32 5.x API used by the vendored wakelock plugin.
+  flutter_secure_storage: ^10.3.4
   file_picker: ^11.0.2
   saf_util:
     # Vendored 3.1.0: fixes upstream's duplicate MethodChannel result.
@@ -97,6 +99,7 @@ dependencies:
   openwatchparty: ^1.1.0
 
 dev_dependencies:
+  flutter_secure_storage_platform_interface: ^2.1.1
   archive: ^4.0.9
   flutter_test:
     sdk: flutter
@@ -126,6 +129,8 @@ dev_dependencies:
   web_socket: ^1.0.1
 
 dependency_overrides:
+  flutter_secure_storage_linux:
+    path: packages/flutter_secure_storage_linux
   # background_downloader 9.6.2 requires hosted connectivity_plus; keep the
   # pinned git source for every consumer.
   connectivity_plus:
