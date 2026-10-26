@@ -630,8 +630,7 @@ open class TaskRunner(
      */
     private suspend fun doTask(): TaskStatus {
         try {
-            val urlString = task.url
-            val url = URL(urlString)
+            var requestUrl = URL(task.url)
             val requestTimeoutSeconds =
                 prefs.getInt(BDPlugin.keyConfigRequestTimeout, 60)
             val proxyAddress =
@@ -649,39 +648,85 @@ open class TaskRunner(
                 )
                 BDPlugin.haveLoggedProxyMessage = true
             }
-            with(withContext(Dispatchers.IO) {
-                url.openConnection(proxy ?: Proxy.NO_PROXY)
-            } as HttpURLConnection) {
-                activeConnection = this
-                try {
-                    requestMethod = task.httpRequestMethod
-                    // Authenticated leases fail closed on redirects to prevent credential forwarding.
-                    instanceFollowRedirects = !AuthTaskRegistry.isProtected(task)
-                    connectTimeout = requestTimeoutSeconds * 1000
-                    readTimeout = requestTimeoutSeconds * 1000
-                    for (header in task.headers) {
-                        // For UploadTask, copy headers unless it's "Range" or "Content-Disposition".
-                        // For other task types, copy all headers.
-                        if (!task.isUploadTask() ||
-                            (!header.key.equals("Range", ignoreCase = true) &&
-                                    !header.key.equals("Content-Disposition", ignoreCase = true))
-                        ) {
-                            setRequestProperty(header.key, header.value)
-                        }
-                    }
-                    return connectAndProcess(this)
-                } finally {
-                    activeConnection = null
+
+            val credentialedTask = AuthTaskRegistry.isProtected(task)
+            var redirectsFollowed = 0
+            while (true) {
+                val connection = withContext(Dispatchers.IO) {
+                    requestUrl.openConnection(proxy ?: Proxy.NO_PROXY) as HttpURLConnection
                 }
+                activeConnection = connection
+                connection.requestMethod = task.httpRequestMethod
+                connection.connectTimeout = requestTimeoutSeconds * 1000
+                connection.readTimeout = requestTimeoutSeconds * 1000
+                // Authenticated redirects are followed manually so credentials can only
+                // reach the same HTTPS origin. Other tasks keep HttpURLConnection behavior.
+                connection.instanceFollowRedirects = !credentialedTask
+                for (header in task.headers) {
+                    // For UploadTask, copy headers unless it's "Range" or "Content-Disposition".
+                    // For other task types, copy all headers.
+                    if (!task.isUploadTask() ||
+                        (!header.key.equals("Range", ignoreCase = true) &&
+                                !header.key.equals("Content-Disposition", ignoreCase = true))
+                    ) {
+                        connection.setRequestProperty(header.key, header.value)
+                    }
+                }
+
+                if (!credentialedTask) {
+                    return connectAndProcess(connection)
+                }
+
+                val responseCode = connection.responseCode
+                if (responseCode !in listOf(301, 302, 303, 307, 308)) {
+                    return connectAndProcess(connection)
+                }
+                val location = connection.getHeaderField("Location")
+                if (location.isNullOrBlank()) {
+                    return connectAndProcess(connection)
+                }
+                if (!task.httpRequestMethod.equals("GET", ignoreCase = true) ||
+                    redirectsFollowed >= 5
+                ) {
+                    connection.disconnect()
+                    activeConnection = null
+                    throw IOException("Authenticated request redirect limit or method blocked")
+                }
+                val nextUrl = URL(requestUrl, location)
+                if (!isSameHttpsOrigin(requestUrl, nextUrl)) {
+                    connection.disconnect()
+                    activeConnection = null
+                    throw IOException("Authenticated request cross-origin redirect blocked")
+                }
+                connection.disconnect()
+                activeConnection = null
+                requestUrl = nextUrl
+                redirectsFollowed += 1
             }
         } catch (e: Exception) {
             Log.w(
                 TAG, "Error for taskId ${task.taskId}: $e\n${e.stackTraceToString()}"
             )
             setTaskException(e)
+        } finally {
+            activeConnection = null
         }
         return TaskStatus.failed
     }
+
+    private fun isSameHttpsOrigin(first: URL, second: URL): Boolean {
+        if (!first.protocol.equals("https", ignoreCase = true) ||
+            !second.protocol.equals("https", ignoreCase = true) ||
+            first.userInfo != null ||
+            second.userInfo != null
+        ) {
+            return false
+        }
+        val firstPort = if (first.port >= 0) first.port else 443
+        val secondPort = if (second.port >= 0) second.port else 443
+        return first.host.equals(second.host, ignoreCase = true) && firstPort == secondPort
+    }
+
 
     /**
      * Further configures the connection and makes the actual request by

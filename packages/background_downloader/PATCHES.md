@@ -12,8 +12,8 @@ PlezyNG-specific changes:
   Android status, progress, resume data, and system re-enqueue paths use that
   descriptor. Both mobile native status paths omit credentialed response bodies
   and headers; Android also clears its in-memory entry on final state.
-- Disable automatic Android redirects for callback-authenticated tasks. Those
-  redirects fail closed instead of forwarding authorization headers.
+- Follow at most five same-origin HTTPS GET redirects for callback-authenticated
+  Android tasks; reject cross-origin, non-GET, and TLS downgrade redirects.
 - Reject TLS downgrades on iOS, reject cross-origin redirects for
   callback-authenticated tasks, and strip sensitive request headers from other
   cross-origin redirects.
