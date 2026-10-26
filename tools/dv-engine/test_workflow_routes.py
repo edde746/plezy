@@ -19,63 +19,75 @@ def job_block(source: str, job_id: str) -> str:
 
 
 class DolbyWorkflowRouteTests(unittest.TestCase):
-    def test_trusted_dolby_jobs_are_main_only_and_private_jit(self):
-        paths = ("dv-platforms.yml", "dv-experimental.yml")
-        for name in paths:
+    def test_trusted_dolby_workflows_use_scoped_pushes_and_private_jit(self):
+        paths = {
+            "dv-platforms.yml": "codex/dv-platform-*",
+            "dv-experimental.yml": "codex/dv-experimental-*",
+        }
+        for name, branch in paths.items():
             with self.subTest(workflow=name):
                 source = (WORKFLOWS / name).read_text()
-                self.assertIn("branches: [main]", source)
-                self.assertIn("github.ref == 'refs/heads/main'", source)
+                self.assertIn("workflow_dispatch:", source)
+                self.assertIn("push:", source)
+                self.assertIn(branch, source)
+                self.assertNotIn("pull_request:", source)
                 self.assertNotRegex(
                     source,
                     r"(?m)^\s*runs-on:\s*(?:ubuntu|windows|macos|xcode)-",
                 )
-                for hosted_label in (
-                    "ubuntu-24.04",
-                    "ubuntu-latest",
-                    "windows-2025",
-                    "windows-latest",
-                    "macos-15",
-                    "macos-latest",
-                    "xcode-27",
-                ):
-                    self.assertNotIn(hosted_label, source)
                 self.assertNotIn("|| 'ubuntu-latest'", source)
 
-    def test_linux_jobs_use_run_scoped_broker_labels(self):
+    def test_dolby_jobs_use_run_scoped_private_jit_labels(self):
         expected = {
-            "dv-platforms.yml": (
-                "linux-contracts",
-                "app-tests",
-                "felbaker-source",
-            ),
-            "dv-experimental.yml": ("linux-engine",),
+            "dv-platforms.yml": {
+                "contracts": (
+                    ("ng-shared-main-jit", "packer-windows"),
+                    "{0}-{1}-contracts",
+                ),
+                "app-tests": (("ng-shared-main-jit",), "{0}-app-tests"),
+                "felbaker-source": (
+                    ("ng-shared-main-jit",),
+                    "{0}-felbaker-source",
+                ),
+                "apple-source": (
+                    ("ng-shared-main-jit",),
+                    "{0}-apple-source",
+                ),
+            },
+            "dv-experimental.yml": {
+                "linux-engine": (("ng-shared-main-jit",), "{0}-linux-engine"),
+            },
         }
         for workflow, jobs in expected.items():
             source = (WORKFLOWS / workflow).read_text()
-            for job_id in jobs:
+            for job_id, (groups, label) in jobs.items():
                 with self.subTest(workflow=workflow, job=job_id):
                     block = job_block(source, job_id)
-                    self.assertIn("group: ng-shared-main-jit", block)
+                    for group in groups:
+                        self.assertIn(f'"group":"{group}"', block)
+                    self.assertIn("fromJSON(format(", block)
+                    self.assertIn('"ng-main-run-{0}"', block)
+                    self.assertIn("github.run_id", block)
+                    if "{1}" in label:
+                        self.assertIn("strategy.job-index", block)
                     self.assertIn(
-                        "format('ng-main-run-{0}', github.run_id)", block
-                    )
-                    self.assertIn(
-                        f"format('gha-{{0}}-{job_id}', github.run_id)", block
+                        f'"gha-{label}"',
+                        block,
                     )
 
-    def test_platform_specific_jobs_cannot_match_static_or_trusted_runners(self):
+    def test_platform_specific_jobs_route_to_private_platform_pools(self):
         platforms = (WORKFLOWS / "dv-platforms.yml").read_text()
-        windows = job_block(platforms, "windows-contracts")
-        self.assertIn("group: packer-windows", windows)
-        self.assertIn("on-demand", windows)
-        self.assertIn("PlezyNG", windows)
+        contracts = job_block(platforms, "contracts")
+        self.assertIn("windows-2025", contracts)
+        self.assertIn("matrix.os == 'windows-2025'", contracts)
+        self.assertIn('"group":"packer-windows"', contracts)
+        self.assertIn('"Windows","X64"', contracts)
+        self.assertIn("macos-15", contracts)
+        self.assertIn('"macOS","ARM64"', contracts)
 
-        for job_id in ("apple-contracts", "apple-source"):
-            with self.subTest(job=job_id):
-                block = job_block(platforms, job_id)
-                self.assertIn("group: private-apple-builds", block)
-                self.assertIn("private-apple-jit", block)
+        apple = job_block(platforms, "apple-source")
+        self.assertIn('"group":"ng-shared-main-jit"', apple)
+        self.assertIn('"macOS","ARM64"', apple)
 
     def test_untrusted_pull_requests_only_use_the_gvisor_sandbox(self):
         source = (WORKFLOWS / "dv-fork-validation.yml").read_text()
