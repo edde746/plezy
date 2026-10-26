@@ -53,9 +53,24 @@ jobs:
           repository: ${{ github.repository }}
           ref: ${{ github.sha }}
           persist-credentials: false
-      - name: Set up Python for the sandbox image
-        uses: actions/setup-python@5fda3b95a4ea91299a34e894583c3862153e4b97 # v7.0.0
-        with:
-          python-version: '3.12'
+      - name: Install Python in the disposable Debian sandbox
+        run: |
+          if ! command -v python3 >/dev/null 2>&1; then
+            if ! command -v apt-get >/dev/null 2>&1; then
+              echo "python3 and apt-get are unavailable in the sandbox" >&2
+              exit 1
+            fi
+            if [ "$(id -u)" -eq 0 ]; then
+              apt-get update
+              apt-get install -y --no-install-recommends python3
+            elif command -v sudo >/dev/null 2>&1; then
+              sudo apt-get update
+              sudo apt-get install -y --no-install-recommends python3
+            else
+              echo "python3 is missing and the sandbox has no package-install privilege" >&2
+              exit 1
+            fi
+          fi
+          python3 --version
       - name: Run Dolby experiment contracts in the isolated sandbox
         run: python3 scripts/test_dv_experiments.py
