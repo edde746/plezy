@@ -4,7 +4,6 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart' show SemanticsNode;
 import 'package:flutter/services.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:plezy/focus/input_mode_tracker.dart';
 import 'package:plezy/i18n/strings.g.dart';
@@ -347,7 +346,10 @@ void main() {
         await pumpPicker(tester, supporter: supporter, appIcons: await appIconsFor(supporter));
       }
 
-      Finder defaultLogo() => find.descendant(of: tile(defaultAppIconId), matching: find.byType(SvgPicture));
+      Finder defaultLogo() => find.descendant(
+        of: tile(defaultAppIconId),
+        matching: find.image(const AssetImage('assets/plezy_adaptive_foreground.png')),
+      );
 
       Color plate(WidgetTester tester) =>
           tester.widget<ColoredBox>(find.ancestor(of: defaultLogo(), matching: find.byType(ColoredBox)).first).color;

@@ -12,7 +12,6 @@ import 'package:flutter/gestures.dart';
 import 'package:flutter/services.dart';
 import 'package:window_manager/window_manager.dart';
 import 'package:provider/provider.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:sentry_flutter/sentry_flutter.dart';
 import 'connection/connection.dart';
 import 'connection/connection_bootstrap.dart';
@@ -2502,7 +2501,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
               child: Column(
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  SvgPicture.asset('assets/plezy_adaptive_foreground.svg', width: 160, height: 160),
+                  Image.asset('assets/plezy_adaptive_foreground.png', width: 160, height: 160),
                   _buildStatusText(context),
                   const SizedBox(height: 16),
                   Center(
@@ -2525,7 +2524,7 @@ class _SetupScreenState extends State<SetupScreen> with MountedSetStateMixin {
       color: Theme.of(context).scaffoldBackgroundColor,
       child: Stack(
         children: [
-          Center(child: SvgPicture.asset('assets/plezy_adaptive_foreground.svg', width: 288, height: 288)),
+          Center(child: Image.asset('assets/plezy_adaptive_foreground.png', width: 288, height: 288)),
           Positioned(left: 0, right: 0, bottom: height * 0.5 - 170, child: _buildStatusText(context)),
           Positioned(
             left: 0,

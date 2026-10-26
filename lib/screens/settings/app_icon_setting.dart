@@ -3,7 +3,6 @@ import 'dart:math' as math;
 
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
-import 'package:flutter_svg/flutter_svg.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
@@ -275,7 +274,7 @@ class _DefaultIconPreview extends StatelessWidget {
         : _androidDayFill;
     return ColoredBox(
       color: fill,
-      child: SvgPicture.asset('assets/plezy_adaptive_foreground.svg', fit: BoxFit.contain),
+      child: Image.asset('assets/plezy_adaptive_foreground.png', fit: BoxFit.contain),
     );
   }
 }
