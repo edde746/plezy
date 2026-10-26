@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import 'package:uuid/uuid.dart';
 import 'package:url_launcher/url_launcher.dart';
 
+import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../models/trakt/trakt_catalog_entry.dart';
 import '../../providers/trackers_provider.dart';
@@ -18,6 +19,7 @@ import '../../sources/source_playback.dart';
 import '../../theme/mono_tokens.dart';
 import '../../utils/dialogs.dart';
 import '../../utils/platform_detector.dart';
+import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/app_menu.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
@@ -130,7 +132,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
       context: context,
       builder: (dialogContext) => AlertDialog(
         title: Text(t.common.search),
-        content: TextField(
+        content: FocusableTextField(
           controller: controller,
           autofocus: true,
           textInputAction: TextInputAction.search,
@@ -211,7 +213,10 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
           .where((entry) => entry.media?.title?.trim().isNotEmpty == true)
           .take(25)
           .toList(growable: false);
-      if (candidates.isEmpty) return;
+      if (candidates.isEmpty) {
+        showAppSnackBar(context, t.messages.noResultsFound);
+        return;
+      }
       final selected = await _chooseMetadataMatch(candidates);
       if (selected == null || !mounted) return;
       final media = selected.media;
