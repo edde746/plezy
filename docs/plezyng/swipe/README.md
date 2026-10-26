@@ -63,6 +63,6 @@ All enabled and functional kinds must receive a deliberate outcome: browse/save/
 | [DELIVERY.md](DELIVERY.md) | Ordered implementation packages, concrete files, acceptance scenarios and release gates |
 | [RESEARCH.md](RESEARCH.md) | Pinned evidence, ReadMeABook/SeerrNG observations, official guidance and confidence |
 
-Start with SW01 in DELIVERY. Build complete vertical paths, then expand adapters. An unfinished adapter stays hidden or explicitly browse-only; do not advertise all-media completeness until the coverage matrix has evidence for each enabled row.
+Use the Current implementation status at the top of DELIVERY as the starting point; the package table and acceptance cases below record remaining follow-up work. Extend the existing runtime files instead of rebuilding the delivered slice. An unfinished adapter stays hidden or explicitly browse-only; do not advertise all-media completeness until the coverage matrix has evidence for each enabled row.
 
 The success measure is whether someone comfortably finds something worth starting, with fewer mistakes and less effort. Total swipes, time spent swiping and requests generated are not success targets.
