@@ -6,7 +6,15 @@ This page records what the remediation implements and what still requires a real
 
 The download table stores the source ID, validated file descriptor, fingerprint, display label, queue state, last update time, bytes written, and reserved bytes. A process restart requeues rows left in `queued` or `running`. Explicitly paused and failed jobs remain visible in Files & books and require a retry. Removing a source cancels and waits for its active transfers before closing its adapter so a late transfer cannot recreate its queue row. Failed and paused jobs can be removed from the queue to release their partial files and quota reservations; source removal also clears that source's incomplete jobs while retaining completed offline copies. Rows written by older builds have no descriptor; the app preserves their partial files for a later explicit download request instead of presenting them as restorable jobs.
 
-The per-profile cap defaults to 10 GiB and can be changed from the Files & books options menu. Known sizes are reserved before transfer. Unknown sizes are reserved as content size becomes available and then checked as bytes arrive. Completed and partial copies count against the cap. The cap applies to PlezyNG's tracked offline copies; it does not promise a minimum amount of free space for the operating system. Existing files are kept if the user lowers the cap.
+The per-profile cap defaults to 10 GiB and can be changed from the Files & books options menu. Known sizes are reserved before transfer. Unknown sizes are reserved as content size becomes available and then checked as bytes arrive. Completed and partial copies count against the cap. Lowering the cap below currently tracked usage or reservations is rejected; the user can remove copies or jobs first. The cap applies to PlezyNG's tracked offline copies and does not reserve a minimum amount of free space for the operating system or guarantee native background transfers.
+
+## Combined sync destinations
+
+Encrypted cloud sync and compatible provider-native progress/bookmark sync can run in the same cycle. The cloud document tracks its own observed values and published generation; provider events remain pending until the corresponding provider accepts them. Cloud-imported progress and annotations are also queued for compatible provider targets. A cloud error does not prevent the provider queue from running, and each target keeps its own conflict and retry state. Sync reports the first target error after attempting both. Native background-transfer guarantees are not provided by the foreground queue.
+
+## Large local directory paging
+
+Local source browsing keeps up to 20,000 entries in memory. Larger sorted directory snapshots are spooled to temporary JSON pages for reuse across cursor requests, up to 100,000 recognized entries and 128 MiB total across at most 32 directories. Snapshots expire after one minute and are removed when the adapter closes. If a spool exceeds its byte budget, browsing remains functional but later pages may re-enumerate the directory. Initial enumeration, sort, and 10,000/100,000-entry latency, memory, and I/O budgets still require measurement on target devices and filesystems.
 
 ## Shared library identity
 
