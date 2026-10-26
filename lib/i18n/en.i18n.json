@@ -3170,7 +3170,17 @@
     "zoom": "Zoom",
     "useFiles": "Use files and books",
     "cancelScan": "Cancel scan",
-    "googleDrive": "Google Drive"
+    "googleDrive": "Google Drive",
+    "offlineQuota": "Offline download limit",
+    "offlineQuotaHelp": "Set the maximum space used by offline copies and queued downloads. Lowering the limit does not remove existing copies.",
+    "offlineStorageUsage": "Offline storage",
+    "reservedStorage": "reserved",
+    "downloadQueue": "Download queue",
+    "downloadRunning": "Downloading",
+    "downloadQueued": "Waiting",
+    "downloadPaused": "Paused",
+    "downloadFailed": "Needs retry",
+    "errorQuotaExceeded": "The offline storage limit was reached. Raise the limit or remove a downloaded copy."
   },
   "lending": {
     "title": "Public libraries",
@@ -3275,7 +3285,13 @@
     "statusProgress": "In progress",
     "statusFinished": "Finished",
     "goToTime": "Go to time",
-    "timeHelp": "Hours:minutes:seconds, or minutes:seconds"
+    "timeHelp": "Hours:minutes:seconds, or minutes:seconds",
+    "recoveryHelp": "Export a recent encrypted copy before moving or repairing sync data. Imports merge with current state; they never replace local sync history. Keep the sync code separately.",
+    "recoveryExport": "Export encrypted recovery file",
+    "recoveryImport": "Import encrypted recovery file",
+    "recoveryImportConfirm": "Merge this encrypted recovery file with current reading positions and notes? Existing history will be retained.",
+    "recoveryExported": "Encrypted recovery file saved.",
+    "recoveryImported": "Recovery data merged."
   },
   "sourceSetup": {
     "savedCertificate": "Saved server certificate",
@@ -3371,6 +3387,18 @@
     "replaceFile": "Replace ${name}",
     "selectedIdentity": "Selected client identity: ${name}",
     "subtitleRating": "Rating ${rating}",
-    "subtitleDownloading": "Downloading subtitle: ${title}"
+    "subtitleDownloading": "Downloading subtitle: ${title}",
+    "sharedLibraryId": "Shared library ID (optional)",
+    "sharedLibraryHelp": "Use the same ID on devices that open the same library. This public ID helps carry reading progress and notes across different source connections; it is not a password.",
+    "sharedLibraryInvalid": "Use 8–100 letters, numbers, dots, underscores or hyphens.",
+    "generateSharedLibraryId": "Generate a shared library ID",
+    "nfsReadAhead": "NFS read-ahead requests",
+    "nfsReadAheadHelp": "More parallel reads can improve throughput on a fast NAS or network. Use 1 if the server limits concurrent requests.",
+    "nfsReadTest": "Measure NFS read performance",
+    "nfsReadTestHelp": "Reads up to 64 MiB from the first file to measure this NAS connection. This uses network bandwidth.",
+    "nfsQualificationResult": "NFS read measurement",
+    "nfsReadBytes": "Bytes read",
+    "nfsReadSpeed": "Measured speed",
+    "nfsReadRequests": "Read requests"
   }
 }
