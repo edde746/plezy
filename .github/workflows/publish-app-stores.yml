@@ -48,6 +48,7 @@ concurrency:
 jobs:
   validate-release:
     name: Validate published release
+    if: github.ref_type == 'tag' && github.ref_name == inputs.release_tag
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-validate-release"]}}', github.run_id)) }}
     outputs:
       release_tag: ${{ steps.validate.outputs.release_tag }}
@@ -56,11 +57,11 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Require the protected main branch
+      - name: Require the selected release tag
         shell: bash
         run: |
-          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
-            echo "Store submissions may only run from refs/heads/main." >&2
+          if [[ "$GITHUB_REF_TYPE" != "tag" || "$GITHUB_REF" != "refs/tags/$GITHUB_REF_NAME" ]]; then
+            echo "Store submissions must run from the selected release tag." >&2
             exit 1
           fi
 

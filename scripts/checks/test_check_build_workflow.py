@@ -187,10 +187,10 @@ class BuildWorkflowGuardTest(unittest.TestCase):
         self.assertNotEqual(result.returncode, 0)
         self.assertIn("fetch_linux_libmpv.py", result.stderr)
 
-    def test_draft_release_without_explicit_tag_is_rejected(self) -> None:
+    def test_release_without_version_tag_filter_is_rejected(self) -> None:
         workflow = self._workflow().replace(
-            "        required: true\n        type: string",
-            "        required: false\n        type: string",
+            "      - '[0-9]*.[0-9]*.[0-9]*'\n",
+            "",
             1,
         )
         self.assertNotEqual(workflow, self._workflow(), "fixture mutation no longer matches workflow")
@@ -198,11 +198,11 @@ class BuildWorkflowGuardTest(unittest.TestCase):
         result = self._run(workflow)
 
         self.assertNotEqual(result.returncode, 0)
-        self.assertIn("must require a release_tag input", result.stderr)
+        self.assertIn("must trigger only on version tags", result.stderr)
 
     def test_release_run_without_tagged_name_is_rejected(self) -> None:
         workflow = self._workflow().replace(
-            "run-name: ${{ format('Release {0}', inputs.release_tag) }}\n",
+            "run-name: ${{ format('Release {0}', github.ref_name) }}\n",
             "",
             1,
         )

@@ -1,14 +1,11 @@
 # ng-runner-policy: private-jit-only-v1
 name: PlezyNG Release
-run-name: ${{ format('Release {0}', inputs.release_tag) }}
+run-name: ${{ format('Release {0}', github.ref_name) }}
 
 on:
-  workflow_dispatch:
-    inputs:
-      release_tag:
-        description: Semantic version tag for the draft GitHub release
-        required: true
-        type: string
+  push:
+    tags:
+      - '[0-9]*.[0-9]*.[0-9]*'
 
 env:
   # Only place this workflow names the SDK; .github/actions/setup-flutter-git pins the same release.
@@ -28,6 +25,7 @@ env:
 jobs:
   validate-trusted-ref:
     name: Validate release request
+    if: github.ref_type == 'tag'
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-validate-trusted-ref"]}}', github.run_id)) }}
     permissions:
       contents: read
@@ -36,17 +34,17 @@ jobs:
         with:
           persist-credentials: false
 
-      - name: Require the protected main branch
+      - name: Require the selected release tag
         shell: bash
         run: |
-          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
-            echo "Release builds may only run from refs/heads/main." >&2
+          if [[ "$GITHUB_REF_TYPE" != "tag" || "$GITHUB_REF" != "refs/tags/$GITHUB_REF_NAME" ]]; then
+            echo "Release builds must run from the selected version tag." >&2
             exit 1
           fi
 
       - name: Validate release tag before building
         env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           VERSION=$(python3 scripts/pubspec_version.py pubspec.yaml)
@@ -1058,7 +1056,7 @@ jobs:
       - name: Package Chocolatey release
         shell: pwsh
         env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_TAG: ${{ github.ref_name }}
           PACKAGE_VERSION: ${{ steps.version.outputs.version }}
         run: |
           $ErrorActionPreference = 'Stop'
@@ -1367,7 +1365,7 @@ jobs:
       - name: Prepare Snap package inputs
         shell: bash
         env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           snap_dir=linux/packaging/snap
@@ -1397,7 +1395,7 @@ jobs:
         if: matrix.arch == 'x64'
         shell: bash
         env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_TAG: ${{ github.ref_name }}
         run: |
           set -euo pipefail
           app_dir="$RUNNER_TEMP/plezyng.AppDir"
@@ -1502,7 +1500,7 @@ jobs:
 
       - name: Generate release notes from CHANGELOG.md
         env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_TAG: ${{ github.ref_name }}
         run: python3 scripts/generate_release_notes.py "$RELEASE_TAG" > release-notes.md
 
       - name: Download Android artifacts
@@ -1583,7 +1581,7 @@ jobs:
 
       - name: Generate WinGet manifest bundle
         env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_TAG: ${{ github.ref_name }}
         run: python3 scripts/generate_winget_manifests.py "$RELEASE_TAG" artifacts/windows-installer/plezy-windows-installer.exe artifacts
 
       - name: Generate release SHA-256 checksums
@@ -1594,7 +1592,7 @@ jobs:
         with:
           subject-path: |
             artifacts/SHA256SUMS.txt
-            artifacts/plezyng-winget-manifests-${{ inputs.release_tag }}.zip
+            artifacts/plezyng-winget-manifests-${{ github.ref_name }}.zip
 
       - name: Generate appcast.xml
         run: |
@@ -1669,7 +1667,7 @@ jobs:
       - name: Collect release files
         id: release-files
         env:
-          RELEASE_TAG: ${{ inputs.release_tag }}
+          RELEASE_TAG: ${{ github.ref_name }}
         run: |
           {
             echo 'files<<EOF'
@@ -1713,8 +1711,8 @@ jobs:
           body_path: release-notes.md
           draft: true
           prerelease: false
-          name: ${{ inputs.release_tag }}
-          tag_name: ${{ inputs.release_tag }}
+          name: ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
           target_commitish: ${{ github.sha }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

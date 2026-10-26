@@ -274,27 +274,28 @@ for artifact in (
 
 require(
     re.search(
-        r"(?ms)^  workflow_dispatch:\n    inputs:\n      release_tag:\n"
-        r".*?        required: true\n        type: string\n",
+        r"(?ms)^on:\n  push:\n    tags:\n      - '\[0-9\]\*\.\[0-9\]\*\.\[0-9\]\*'\n",
         text,
     )
     is not None,
-    "release workflow must require a release_tag input",
+    "release workflow must trigger only on version tags",
 )
 require("inputs.build_" not in text, "release workflow must build every platform together")
 require(
-    re.search(r"(?m)^  (push|pull_request):", text) is None,
-    "release builds must not run on commits or pull requests",
+    re.search(r"(?m)^  workflow_dispatch:", text) is None
+    and re.search(r"(?m)^  pull_request:", text) is None
+    and re.search(r"(?m)^    branches:", text) is None,
+    "release builds must not run on branches, manual dispatch, or pull requests",
 )
 require(
-    "if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_linux_packages }}"
+    "if: github.event.pull_request.head.repo.full_name == github.repository"
     in job_block(ci_text, "linux-packages"),
-    "the optional Linux package smoke build must not run on pushes",
+    "the Linux package smoke build must run only on same-repository pull requests",
 )
 
 
 require(
-    "run-name: ${{ format('Release {0}', inputs.release_tag) }}" in text,
+    "run-name: ${{ format('Release {0}', github.ref_name) }}" in text,
     "release workflow runs must expose their release tag in the run name",
 )
 
@@ -332,8 +333,8 @@ require(
 require("draft: true" in release, "build output must remain a draft release")
 require("body_path: release-notes.md" in release, "draft notes must come from the changelog renderer")
 require(
-    "tag_name: ${{ inputs.release_tag }}" in release,
-    "release builds must bind the requested tag",
+    "tag_name: ${{ github.ref_name }}" in release,
+    "release builds must bind the triggering version tag",
 )
 require(
     "target_commitish: ${{ github.sha }}" in release,
@@ -351,8 +352,10 @@ require(
     "release request validation must have read-only repository access",
 )
 require(
-    '"$GITHUB_REF" != "refs/heads/main"' in trusted_ref,
-    "trusted-ref validation must reject non-main refs",
+    "if: github.ref_type == 'tag'" in trusted_ref
+    and '"$GITHUB_REF_TYPE" != "tag"' in trusted_ref
+    and '"$GITHUB_REF" != "refs/tags/$GITHUB_REF_NAME"' in trusted_ref,
+    "trusted-ref validation must accept only the triggering tag ref",
 )
 require(
     "Validate release tag before building" in trusted_ref

@@ -28,18 +28,21 @@ jobs:
   resolve-release:
     name: Resolve published release
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-resolve-release"]}}', github.run_id)) }}
-    if: github.event_name != 'release' || github.event.release.prerelease == false
+    if: >-
+      (github.event_name == 'release' && github.event.release.prerelease == false) ||
+      (github.event_name == 'workflow_dispatch' && github.ref_type == 'tag' &&
+       github.ref_name == inputs.release_tag)
     permissions:
       contents: read
     outputs:
       tag: ${{ steps.release.outputs.tag }}
       channel: ${{ steps.release.outputs.channel }}
     steps:
-      - name: Require main for manual publication
+      - name: Require a release tag for manual publication
         if: github.event_name == 'workflow_dispatch'
         run: |
-          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
-            echo "Snap publication may only be dispatched from main." >&2
+          if [[ "$GITHUB_REF_TYPE" != "tag" ]]; then
+            echo "Snap publication must be dispatched from a release tag." >&2
             exit 1
           fi
 

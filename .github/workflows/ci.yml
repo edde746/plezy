@@ -2,21 +2,10 @@
 name: CI - Sanity Checks
 
 on:
-  push:
-    branches:
-      - main
-  # Keep untrusted code on the read-only pull_request event. Never use pull_request_target here.
+  # A main push is quiet. Validation runs against a pull request before merge.
   pull_request:
     branches:
       - main
-  workflow_dispatch:
-    inputs:
-      build_linux_packages:
-        description: >
-          Manually smoke-build Linux packages when changing linux/packaging.
-          This is separate from release assets and does not run on ordinary pushes.
-        default: false
-        type: boolean
 
 env:
   # Only place this workflow names the SDK; .github/actions/setup-flutter-git pins the same release.
@@ -24,6 +13,7 @@ env:
 
 jobs:
   analyze:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     name: Code Analysis
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-analyze"]}}', github.run_id)) }}
     permissions:
@@ -122,6 +112,7 @@ jobs:
           fi
 
   test:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     name: Unit Tests
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-test"]}}', github.run_id)) }}
     permissions:
@@ -181,6 +172,7 @@ jobs:
           done
 
   android-test:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     name: Android JVM and Native Tests
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-android-test"]}}', github.run_id)) }}
     permissions:
@@ -250,6 +242,7 @@ jobs:
         run: ./gradlew :app:lintDebug
 
   native-format:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     name: Native Formatting
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-native-format"]}}', github.run_id)) }}
     permissions:
@@ -270,6 +263,7 @@ jobs:
         run: scripts/format_native.sh --check
 
   linux-native-test:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     name: Linux native reliability (${{ matrix.sanitizer }})
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-linux-native-test"]}}', github.run_id, strategy.job-index)) }}
     permissions:
@@ -341,6 +335,7 @@ jobs:
             --output-on-failure --no-tests=error
 
   apple-native-test:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     name: Apple native reliability (${{ matrix.platform }})
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","macOS","ARM64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-apple-native-test"]}}', github.run_id, strategy.job-index)) }}
     permissions:
@@ -486,6 +481,7 @@ jobs:
           exit "$test_status"
 
   windows-native-test:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     name: Windows native reliability (${{ matrix.arch }})
     runs-on: ${{ matrix.runner == 'windows-latest' && fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) || fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","ARM64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-{1}-windows-native-test"]}}', github.run_id, strategy.job-index)) }}
     permissions:
@@ -572,6 +568,7 @@ jobs:
           ctest --test-dir "$buildDir/runner" -C Debug --output-on-failure --no-tests=error
 
   dependency-check:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     name: Dependency Validation
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-dependency-check"]}}', github.run_id)) }}
     permissions:
@@ -604,6 +601,7 @@ jobs:
           flutter pub outdated
 
   server:
+    if: github.event.pull_request.head.repo.full_name == github.repository
     name: Server checks
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-server"]}}', github.run_id)) }}
     permissions:
@@ -625,18 +623,17 @@ jobs:
 
 
   # The only job that checks packaging against a real artifact. build.yml also
-  # packages Linux, but refuses any ref but refs/heads/main, and
+  # packages Linux for version tags, and
   # check_linux_package_deps.py can only compare a hand-written list against
   # CMake - it cannot prove the list reaches the artifact, nor see the
   # transitive libraries the bundled libmpv drags in. This can, by reading the
   # built bundle back with ldd.
   #
-  # Manual-only package smoke build for changes to linux/packaging. Release
-  # packages are built by build.yml; ordinary pushes run the lightweight CI
-  # checks above without packaging release artifacts.
+  # Package smoke build runs with the pull-request checks. Release packages are
+  # built by build.yml only when a version tag is pushed.
   linux-packages:
     name: Linux package smoke build
-    if: ${{ github.event_name == 'workflow_dispatch' && inputs.build_linux_packages }}
+    if: github.event.pull_request.head.repo.full_name == github.repository
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-linux-packages"]}}', github.run_id)) }}
     permissions:
       contents: read

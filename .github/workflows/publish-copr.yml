@@ -16,14 +16,19 @@ permissions:
 
 jobs:
   publish:
-    if: github.event_name != 'release' || github.event.release.prerelease == false
+    if: >-
+      (github.event_name == 'release' && github.event.release.prerelease == false) ||
+      (github.event_name == 'workflow_dispatch' && github.ref_type == 'tag' &&
+       github.ref_name == inputs.release_tag)
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-publish"]}}', github.run_id)) }}
     steps:
-      - name: Require main for manual publication
+      - name: Require the selected release tag
         if: github.event_name == 'workflow_dispatch'
+        env:
+          INPUT_TAG: ${{ inputs.release_tag }}
         run: |
-          if [[ "$GITHUB_REF" != "refs/heads/main" ]]; then
-            echo "COPR publication may only be dispatched from main." >&2
+          if [[ "$GITHUB_REF_TYPE" != "tag" || "$GITHUB_REF" != "refs/tags/$INPUT_TAG" ]]; then
+            echo "COPR publication must be dispatched from the selected release tag." >&2
             exit 1
           fi
 

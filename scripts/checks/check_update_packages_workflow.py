@@ -33,13 +33,17 @@ require(
     is not None,
     "workflow_dispatch must require release_tag",
 )
-require("github.ref_name" not in text, "release tags must never fall back to a branch")
+resolver = job("resolve-release")
+require(
+    "github.ref_type == 'tag'" in resolver
+    and "github.ref_name == inputs.release_tag" in resolver,
+    "manual package updates must run from the exact selected tag",
+)
 require(
     text.count("github.event.release.tag_name") == 1,
     "only the resolver may read the release event tag",
 )
 
-resolver = job("resolve-release")
 require("gh release view \"$REQUESTED_TAG\"" in resolver, "resolver must validate the tag")
 require("--json tagName,isDraft,publishedAt" in resolver, "resolver must require a published release")
 require(

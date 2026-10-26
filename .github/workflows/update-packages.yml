@@ -17,17 +17,23 @@ concurrency:
 
 jobs:
   resolve-release:
+    if: >-
+      (github.event_name == 'release' && github.event.release.prerelease == false) ||
+      (github.event_name == 'workflow_dispatch' && github.ref_type == 'tag' &&
+       github.ref_name == inputs.release_tag)
     runs-on: ${{ fromJSON(format('{{"group":"ng-shared-main-jit","labels":["self-hosted","linux","x64","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-resolve-release"]}}', github.run_id)) }}
     permissions:
       contents: read
     outputs:
       tag: ${{ steps.release.outputs.tag }}
     steps:
-      - name: Require the default branch for manual runs
+      - name: Require the selected release tag for manual runs
         if: github.event_name == 'workflow_dispatch'
+        env:
+          RELEASE_TAG: ${{ inputs.release_tag }}
         run: |
-          if [[ "$GITHUB_REF" != "refs/heads/${{ github.event.repository.default_branch }}" ]]; then
-            echo "Manual package updates may only run from the default branch." >&2
+          if [[ "$GITHUB_REF_TYPE" != "tag" || "$GITHUB_REF" != "refs/tags/$RELEASE_TAG" ]]; then
+            echo "Manual package updates must run from the selected release tag." >&2
             exit 1
           fi
 

@@ -21,7 +21,10 @@ permissions:
 
 jobs:
   submit:
-    if: github.event_name != 'release' || github.event.release.prerelease == false
+    if: >-
+      (github.event_name == 'release' && github.event.release.prerelease == false) ||
+      (github.event_name == 'workflow_dispatch' && github.ref_type == 'tag' &&
+       github.ref_name == inputs.release_tag)
     runs-on: ${{ fromJSON(format('{{"group":"packer-windows","labels":["self-hosted","Windows","X64","packer-windows","ng-shared-main-plezyng","ng-main-run-{0}","gha-{0}-submit"]}}', github.run_id)) }}
     timeout-minutes: 20
     steps:
@@ -34,8 +37,9 @@ jobs:
           INPUT_TAG: ${{ inputs.release_tag }}
         run: |
           $ErrorActionPreference = 'Stop'
-          if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch' -and $env:GITHUB_REF -ne 'refs/heads/main') {
-            throw 'Manual WinGet submissions must run from main.'
+          if ($env:GITHUB_EVENT_NAME -eq 'workflow_dispatch' -and
+              ($env:GITHUB_REF_TYPE -ne 'tag' -or $env:GITHUB_REF -ne "refs/tags/$($env:INPUT_TAG)")) {
+            throw 'Manual WinGet submissions must run from the selected release tag.'
           }
           $tag = if ($env:GITHUB_EVENT_NAME -eq 'release') { $env:EVENT_TAG } else { $env:INPUT_TAG }
           if ($tag -notmatch '^\d+\.\d+\.\d+$') { throw "Release tag must be semantic versioning: $tag" }
