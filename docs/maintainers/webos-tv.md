@@ -1,11 +1,43 @@
 # webOS TV port status
 
-**Status: experimental native ARM IPK installed and launched on one LG C6 (OLED77C6HUP, webOS 26, TV SDK 11.2.0). Plex login, artwork/cards, and video playback were user-confirmed on an earlier PlezyNG TV build; the secure-storage adapter passed a dummy write/read/delete check. The latest main-based package launched and stayed running, but its current UI frame was not captured. This is not qualification across LG generations or a release-ready package.**
+**Status: experimental native ARMv7 IPK. The latest local candidate reuses the validated app payload from `origin/main` commit `62b2ed0f4` plus the webOS work in this worktree, then repackages it with the corrected PlezyNG maintainer and description. The new IPK passed the package verifier (SHA-256 `63c9dd6d265dfb68f185f13d37c60286bf6fd47e8084d0c7b52fb8465bcc652a`); its unpacked app files match the earlier package. It has not been installed on the C6. The earlier package install returned a generic `Unable to exec`; a direct `opkg` diagnostic found its root destination full. No current-main login, visual, or playback validation is claimed. The preceding package from `dba3abd1` (SHA-256 `44de4314ca66ca2e014a8e619638388b4396d3ecb364081c8e8f40ef34814f1d`) remains installed and was relaunched after the failed update. Its captured screen was black. The user confirmed login, artwork/cards, playback, and a secure-storage write/read/delete probe on earlier builds. No other LG model or firmware is qualified, and no webOS package is published.**
+
+## Compatibility matrix
+
+The native PlezyNG target uses LG's Flutter-webOS runtime and currently builds one ARMv7-A softfp NEON IPK. LG's official native Flutter target starts at webOS 26 Re:New; a TV that originally shipped with webOS 26 also needs its Re:New update ([LG Flutter-webOS support floor](https://webostv.developer.lge.com/news/flutter-for-webos-tv-is-now-available-for-developers)). Treat the installed firmware and app runtime as the gate, not the model year. LG's Re:New eligibility and rollout vary by model and region. LG named the 2022 OLED lineup, OLED Flex, OLED Objet Collection Posé, and 2022 QNED Mini LED 8K QNED99/95 as early program cohorts; regional LG materials describe later expansion across UHD, NanoCell, QNED, and OLED models ([2022 cohort](https://www.lg.com/global/newsroom/news/media-entertainment-solution/more-lg-smart-tv-owners-set-to-enjoy-the-latest-webos-upgrade-making-their-tvs-feel-brand-new/), [later model families](https://www.lg.com/content/dam/lge/in/migration/catalogue-2024/pdf/oled-evo-g4-1.pdf)). These are candidates only: confirm the exact set's actual software update and model support page before counting it as eligible.
+
+| Installed TV firmware | LG web engine | PlezyNG native IPK | Evidence/status |
+| --- | --- | --- | --- |
+| webOS 26 Re:New | Chromium 132 | Official Flutter-webOS floor; current ARMv7 package builds | A prior PlezyNG build installed/launched on one C6 running webOS 26; exact Re:New label was not captured. The initial `origin/main` package's install attempt failed generically, and direct `opkg` showed a full root destination. The latest metadata-corrected repack has not been installed. No other model is qualified. |
+| webOS 27 and later | Not yet published for 27 | LG's Flutter-webOS guide says 26 Re:New and later; PlezyNG has no later-firmware qualification yet | Not physically tested. LG requires ACG declarations for packaging and submissions beginning March 2027. |
+| webOS 25 | Chromium 120 | Below LG's documented native Flutter floor | No PlezyNG package or browser build qualified. A future update to 26 Re:New would make the device a candidate. |
+| webOS 24 | Chromium 108 | Below LG's documented native Flutter floor | No PlezyNG package or browser build qualified. A future update to 26 Re:New would make the device a candidate. |
+| webOS 23 | Chromium 94 | Below LG's documented native Flutter floor | No PlezyNG package or browser build qualified. A future update to 26 Re:New would make the device a candidate. |
+| webOS 22 | Chromium 87 | Below LG's documented native Flutter floor | No PlezyNG package or browser build qualified. A future update to 26 Re:New would make the device a candidate. |
+| webOS 6.x | Chromium 79 | Below LG's documented native Flutter floor | No PlezyNG package or browser build qualified. |
+| webOS 5.x | Chromium 68 | Below LG's documented native Flutter floor | No PlezyNG package or browser build qualified. |
+| webOS 4.x | Chromium 53 | Below LG's documented native Flutter floor | No PlezyNG package or browser build qualified. |
+| webOS 3.x | Chromium 38 | Below LG's documented native Flutter floor | No PlezyNG package or browser build qualified. |
+| webOS 1.x–2.x | WebKit in packaged apps | Below LG's documented native Flutter floor | No PlezyNG package or browser build qualified. |
+
+Engine versions are from LG's [Web API and Web Engine table](https://webostv.developer.lge.com/develop/specifications/web-api-and-web-engine). The ARM package is 32-bit even though the tested C6 kernel reports `aarch64`; that device accepted and launched it. LG's Flutter-webOS SDK currently exposes the ARM target, not a separate x86 TV package. A simulator build is not a substitute: LG's simulator supports web apps, not native apps, and its media and DRM behavior differs from a TV ([simulator limits](https://webostv.developer.lge.com/develop/tools/simulator-introduction)).
+
+### Model cohorts and architecture
+
+The model families above are Re:New program candidates, not proof of Flutter compatibility. The TV must actually run webOS 26 Re:New, support the ARMv7 app target, and provide the required webOS media, secure-storage, and network services. Current LG Flutter-webOS tooling exposes an ARM target; PlezyNG has no ARM64 IPK. The C6 reports an AArch64 kernel but accepted an ARMv7 app previously. Other models, SoC generations, storage layouts, and 32-bit runtime compatibility remain untested.
+
+LG's public Flutter-webOS NDK release page currently lists NDK `11.2.0` only ([release list](https://github.com/lg-flutter-webos/ndk/releases)). LG's older TV SDK is documented as web-app tooling, and its Simulator does not support native apps or DRM ([SDK tools](https://webostv.developer.lge.com/develop/tools/sdk-introduction), [Simulator limits](https://webostv.developer.lge.com/develop/tools/simulator-introduction)). That older SDK is not a drop-in Flutter-native toolchain. A pre-26 native build would require a compatible target sysroot, a Flutter engine build, and ports or backports for PlezyNG's media, credential-storage, networking, input, and packaging integrations. We have not built or validated that toolchain.
+
+### Older browser firmware
+
+There is no PlezyNG browser (`type: web`) package today. A full Flutter Web compile was attempted in an isolated worktree and failed. The WebAssembly dry run reported `dart:ffi` paths through stream-buffer sizing, Drift/SQLite, SMB, Discord presence, and platform-specific Apple/Windows packages; the Dart-to-JavaScript compile then failed on native `external` FFI declarations in packages including `dart_smb2`, `sqlite3`, `objective_c`, `shared_preferences_foundation`, and `win32`. Those paths need browser-safe implementations or removal from a dedicated target. A real browser port must also provide Plex authentication, durable credentials, remote/D-pad navigation, and webOS-compatible media playback. Changing the package type or reusing the native IPK would not work. LG's Simulator supports web apps but not native apps, and cannot validate the IPK ([simulator limits](https://webostv.developer.lge.com/develop/tools/simulator-introduction)).
+
+The firmware table is a research matrix, not a support claim for firmware below 26 Re:New. A custom older native SDK would need a compatible target sysroot, engine build, media and storage plugins, and separate hardware qualification; no such legacy SDK target is currently built or validated. No minimum Chromium version has been selected for a future browser target.
 
 ## Verified milestone
 
 - App ID: `org.snapetech.plezyng`; test package version: `2.24.1`.
-- The latest main-based ARM/Wayland IPK was built, installed, and launched on the C6. Its SHA-256 is `109eb30b0eef4af3d3647f5494dc9c1f9aa27de795b2c00db1c5065983d1aa87`. The app process remained alive and hashes for the packaged app, engine, media, video, and secure-storage libraries matched the files on the TV. Logs for this full app did not expose its first frame or current screen.
+- An earlier ARM/Wayland IPK with SHA-256 `109eb30b0eef4af3d3647f5494dc9c1f9aa27de795b2c00db1c5065983d1aa87` launched on the C6. The package from `dba3abd1` with SHA-256 `44de4314ca66ca2e014a8e619638388b4396d3ecb364081c8e8f40ef34814f1d` installed and launched; the process remained alive, but the saved screen was black. The initial `origin/main` package from `62b2ed0f4dd8c287e026bcc356e65395366c6b4a` had SHA-256 `2e6fe3916d627237aaac22e3b7ac3c968863697d57dec2992d134cc5aa194dee`. Its install attempt returned a generic `Unable to exec`. A read-only diagnostic found the existing 138.3 MB app under `/media/developer/apps/usr/palm/applications`, with 2.4 GB free on the appstore partition. A separate direct `opkg` diagnostic showed its configured `dest root /` and reported 0 KB free there, 121394 KB required; `/usr` is a full 38.8 MB overlay. This identifies the direct `opkg` route's full root destination, but does not establish whether appmanager has a safe alternate install path. The latest local IPK reuses the same unpacked app files, has corrected PlezyNG control metadata, and passed the current verifier with SHA-256 `63c9dd6d265dfb68f185f13d37c60286bf6fd47e8084d0c7b52fb8465bcc652a`; it has not been installed. We did not force installation, remove the installed app, or touch its appdata; the existing app was relaunched.
 - A no-plugin smoke app reached `main`, `runApp`, and its first Flutter frame. A separate plugin smoke app initialized and played bundled H.264/AAC media through `video_player_drm` on the C6.
 - The user completed Plex sign-in, browsed media with artwork, and confirmed video playback on an earlier PlezyNG TV build. That result is not attributed to the latest main-based IPK.
 - During the playback session, `audiooutputd` logged `input_source=MEDIA`, `input_codec=ac3`, and `sound_output=tv_external_speaker`; `audiod` logged system volume 9, briefly 10. The TV's matching output-route configuration has `postProcessing` set to `use`. The user confirmed AI Sound was enabled. These facts show the player handed audio to the TV's configured media route; they do not prove which specific DSP operations were applied.
@@ -15,7 +47,7 @@
 
 ## Engine and SDK provenance
 
-LG's official [Flutter-webOS SDK](https://github.com/lg-flutter-webos/flutter-webos) was available, so a separate compatibility fork of the whole SDK was not needed for the C6. Its published engine artifact did not match the Flutter 3.47.1 / Dart 3.13.1 app toolchain. We built the matching ARM Flutter engine from the engine source bundled with LG's SDK and paired it with LG's webOS NDK 11.2.0.
+LG's official [Flutter-webOS SDK](https://github.com/lg-flutter-webos/flutter-webos) was available, so a separate compatibility fork of the whole SDK was not needed for the C6. Its published engine artifact did not match the Flutter 3.47.1 / Dart 3.13.1 app toolchain. An earlier local source build produced the engine archive listed below and was used in the prior C6 test. The maintained clean-room rebuild now compiles from the same pinned engine source, but its output hashes do not yet match that C6-tested archive; do not treat the fresh build as a replacement or release artifact.
 
 The tested toolchain was pinned as follows:
 
@@ -27,9 +59,18 @@ The tested toolchain was pinned as follows:
 | Dart | `3.13.1`, revision `852b3e3608906afbe6102573cfd4407aeedd1b78` |
 | webOS NDK | `11.2.0`, ARMv7-A softfp NEON |
 | Test engine archive SHA-256 | `5c6e6840a33079baa176cc11c553d44708f31ecf46e1fb2f371b6a270aaa1360` |
-| Test PlezyNG IPK SHA-256 | `109eb30b0eef4af3d3647f5494dc9c1f9aa27de795b2c00db1c5065983d1aa87` |
+| Earlier C6-test IPK SHA-256 | `109eb30b0eef4af3d3647f5494dc9c1f9aa27de795b2c00db1c5065983d1aa87` |
+| Previously installed C6 IPK from `dba3abd1` | `44de4314ca66ca2e014a8e619638388b4396d3ecb364081c8e8f40ef34814f1d` |
+| Initial local candidate built against `origin/main` `62b2ed0f4` plus worktree changes | `2e6fe3916d627237aaac22e3b7ac3c968863697d57dec2992d134cc5aa194dee` |
+| Latest local candidate, repackaged with corrected control metadata | `63c9dd6d265dfb68f185f13d37c60286bf6fd47e8084d0c7b52fb8465bcc652a` |
 
 The test archive replaces LG's `libflutter_engine.so` with the source-built Flutter 3.47.1 ARM engine. LG's `libflutter_common.so` and `libflutter_webos_media.so` remain unchanged; their combined dynamic imports were checked with no missing symbols. This is a C6-tested compatibility build, not a general-purpose replacement for LG's SDK. The source checkout, NDK, build configuration, archive, and logs remain local task artifacts; no SDK or IPK binary is committed or published.
+
+The repository carries the reviewed SDK compatibility patch, pinned input and output hashes, a fail-closed clean-room engine build recipe, a dependency-free Python IPK packager, and an IPK verifier in `tools/webos/`. The packager uses Python's standard library, rejects symlinks and special files, emits deterministic USTAR/gzip archives, sets bundled directories to read-only permissions except the Flutter-managed appdata directory, and writes the required `ares-package` interface expected by the pinned Flutter SDK. The verifier checks package paths and permissions, ARM ELF types, app ID/version, the exact ACG set, pinned LG runtime library hashes, and the LG OSS notice inside the IPK. The build no longer installs or runs the webOS Node CLI, whose current dependency tree reported unresolved advisories.
+
+The 2026-10-26 clean-room rebuild passed the pinned SDK, NDK, and host-tool checks and completed the ARM engine and host `gen_snapshot` builds. Archive assembly then refused the outputs: the fresh ARM engine hash was `6e472708a4f4b1a54350bd7863e05119993c2c968e2b554d27add6aa4ad4761b` versus the reviewed `638ec83182c769a23490c293b4b744fec606cfa6165e8e6033ee4093b123988b`; fresh `gen_snapshot` was `08cd15e949de174788fd6759b3c967f782fa24a3e0a7f26b05b54e0475fc3a37` versus `78ab5c5423adaabe59ca150def5922568eddb1e820b282e273acca19d62c8e01`. No archive or provenance file was emitted.
+
+Static comparison of the successful build's Ninja commands and the clean-room commands found that they used different source-relative paths. The prior ARM output was nested at `custom-engine/<build-id>/out/linux_release_arm`, while the failed attempt placed it directly under the task root; the prior host `gen_snapshot` output was under the SDK's `flutter/engine/src/out`, while the failed attempt placed it outside the SDK. The recipe now preserves those relative layouts: keep `flutter-webos/` and `custom-engine/` as siblings under one task root, put the ARM build root directly under `custom-engine/`, put its verified toolchain beside that build root, and create the host output under the SDK's `engine/src/out/`. This is a material difference identified in the build commands, but a private-JIT rebuild must still prove the exact hashes. Keep the hash checks strict and do not join this build to release automation until a clean rebuild reproduces the reviewed outputs and the resulting package passes device validation.
 
 LG's current guide says Flutter-webOS targets TVs running webOS 26 Re:New or later ([getting started](https://github.com/lg-flutter-webos/flutter-webos/blob/main/doc/getting-started.md), [LG announcement](https://webostv.developer.lge.com/news/flutter-for-webos-tv-is-now-available-for-developers)). That is the official SDK's supported floor, not proof that this PlezyNG build works across those models. Older LG TVs would need a separately maintained compatibility SDK/toolchain, their own native integrations, and a device test matrix. Building those components is an available route if LG does not publish a suitable target; it does not expand the current validation claim.
 
@@ -37,19 +78,27 @@ LG's current guide says Flutter-webOS targets TVs running webOS 26 Re:New or lat
 
 Flutter-webOS reports the Linux engine platform through `dart:io`. Every PlezyNG webOS build must set `PLEZY_WEBOS=true`; this lets `PlatformDetector` select TV layouts, D-pad focus, QR-first Plex sign-in, and the OLED default theme. The build tool regenerates `webos/flutter/main.dart`, so platform identity belongs in the compile-time define rather than edits to that generated file.
 
-Build with the matching local webOS NDK and engine archive configured:
+First build the version-matched engine from the pinned SDK source and NDK. Place the SDK and `custom-engine` as siblings under a task-scoped root, then choose a new build ID directly under `custom-engine`; `build_engine.sh` refuses to reuse an output tree, preserves the reviewed Ninja path layout, and stops if either output hash differs:
 
 ```sh
-export WEBOS_FLUTTER_NDK_ENV=/path/to/environment-setup-ca9v1-webosmllib32-linux-gnueabi
-export WEBOS_ENGINE_LOCAL_PATH=/path/to/matched/webos-arm-release.zip
-flutter-webos build webos \
-  --release \
-  --target-arch arm \
-  --target-backend-type wayland \
-  --dart-define=PLEZY_WEBOS=true
+export FLUTTER_WEBOS_SDK_ROOT=/path/to/patched/flutter-webos
+export WEBOS_NDK_ROOT=/path/to/webos-ndk-11.2.0
+export WEBOS_PYTHON_BIN=/path/to/pinned/python3.14
+export WEBOS_NINJA_BIN=/path/to/pinned/ninja
+export WEBOS_ENGINE_BASE_ARCHIVE=/path/to/webos-arm-release.zip
+export WEBOS_ENGINE_COMMON_ARCHIVE=/path/to/webos-common.zip
+export WEBOS_ENGINE_BUILD_ROOT=/absolute/path/to/task-root/custom-engine/webos-engine-<unique-id>
+tools/webos/build_engine.sh
 ```
 
-The package is written to `build/webos/arm/release/ipk/`. Do not distribute an IPK built without `PLEZY_WEBOS=true`; it uses Linux desktop behavior and can select the system light palette on a fresh install.
+Only after the engine build emits its hash-locked archive should it be used for an IPK:
+
+```sh
+export WEBOS_ENGINE_LOCAL_PATH="$WEBOS_ENGINE_BUILD_ROOT/artifacts/webos-arm-release.zip"
+tools/webos/build_ipk.sh
+```
+
+The script checks the SDK revisions and patch hash, Python packager version, lockfile stability, LG runtime archives, and resulting IPK. It writes the package to `build/webos/arm/release/ipk/`. Do not distribute an IPK built without `PLEZY_WEBOS=true`; it uses Linux desktop behavior and can select the system light palette on a fresh install.
 
 Install and launch through the existing rooted-TV Dev Manager profile:
 
@@ -73,10 +122,12 @@ The Flutter-webOS packager also merges its built-in ACG set into the IPK: `lunab
 
 The PlezyNG credential vault encrypts server tokens with AES-GCM. The vault key is kept through the webOS secure-storage plugin, which stores encrypted records in app-private SQLite and uses LG's keymanager service. Both `securitykey.operation` and the plugin registration are required. Credential failures must surface to the user; do not add a plaintext preferences or file fallback.
 
+The native package carries LG's `OSSNotice-16409_Flutter SDK_3.38.10_260626.txt` verbatim as an app asset and registers it in PlezyNG's Open Source Licenses screen only for the webOS build. The app-specific ACGs stay limited to `network.query` and `securitykey.operation`; the package validator checks the SDK-added groups explicitly and rejects wildcard or unexpected ACG entries. LG says ACG checks are active on webOS 26 Re:New and packaging/submission without `requiredACG` will be blocked starting with webOS 27 in March 2027 ([ACG requirements](https://webostv.developer.lge.com/develop/guides/acg-guide)).
+
 ## Remaining device validation
 
 - Verify that the Plex account and server tokens persist across app restarts.
 - Validate the browser sign-in callback and focus traversal with the LG remote.
 - Verify Jellyfin and Emby credential storage and server discovery.
 - Expand playback validation across pause/resume, audio and subtitle track selection, server loss, app restarts, and media formats.
-- The current IPK is a development artifact; no webOS GitHub Release asset or Homebrew submission has been published. Do not add it to a public release until the source-build recipe is reproducible from a clean environment, redistribution rights for the LG runtime components are confirmed, and the declared target matrix has been exercised on hardware.
+- The latest `origin/main` IPK is a local development candidate only; no webOS GitHub Release asset or Homebrew submission has been published. It has not been installed on the TV because `/usr` is full. The previously installed build's captured snapshot was black. The existing release workflow is manually dispatched and does not yet have a webOS job. Do not claim broad model support or publish this candidate until a clean engine rebuild reproduces the reviewed hashes, LG runtime redistribution terms are reviewed, the current package completes visual and media smoke tests, the C6 has enough supported install space, and the minimum firmware is exercised on multiple model/firmware combinations.
