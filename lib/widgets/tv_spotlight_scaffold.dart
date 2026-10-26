@@ -382,16 +382,17 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
     );
   }
 
-  Widget _buildChevron(BuildContext context, {required AlignmentDirectional alignment, required IconData icon}) {
+  Widget _buildChevron(BuildContext context, {required AlignmentDirectional alignment}) {
     final scale = TvLayoutConstants.scaleOf(context);
     final size = 44 * scale;
-    // contentLeft already includes the side nav's reserved width, so the left
-    // chevron sits just inside the content area instead of on top of the nav.
-    final isLeft = alignment.start < 0;
+    // contentLeft includes the side nav's reserved width, so the leading hint
+    // sits inside the content area instead of over the nav.
+    final isStart = alignment.start < 0;
+    final pointsLeft = isStart != (Directionality.of(context) == TextDirection.rtl);
     return Align(
       alignment: alignment,
       child: Padding(
-        padding: isLeft
+        padding: isStart
             ? EdgeInsetsDirectional.only(
                 start: (widget.contentLeft - size - 8 * scale).clamp(16 * scale, double.infinity),
               )
@@ -400,7 +401,11 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
           width: size,
           height: size,
           decoration: BoxDecoration(color: Colors.black.withValues(alpha: 0.38), shape: BoxShape.circle),
-          child: AppIcon(icon, color: Colors.white, size: size * 0.68),
+          child: AppIcon(
+            pointsLeft ? Symbols.chevron_left_rounded : Symbols.chevron_right_rounded,
+            color: Colors.white,
+            size: size * 0.68,
+          ),
         ),
       ),
     );
@@ -448,9 +453,9 @@ class _CatalogSpotlightBackgroundState extends State<_CatalogSpotlightBackground
             child: _HeroCastRow(item: widget.item!, client: widget.client),
           ),
         if (widget.hasPrevious)
-          _buildChevron(context, alignment: AlignmentDirectional.centerStart, icon: Symbols.chevron_left_rounded),
+          _buildChevron(context, alignment: AlignmentDirectional.centerStart),
         if (widget.hasNext)
-          _buildChevron(context, alignment: AlignmentDirectional.centerEnd, icon: Symbols.chevron_right_rounded),
+          _buildChevron(context, alignment: AlignmentDirectional.centerEnd),
       ],
     );
   }

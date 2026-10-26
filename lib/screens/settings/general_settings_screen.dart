@@ -26,6 +26,9 @@ import '../../widgets/settings_page.dart';
 import '../../widgets/settings_section.dart';
 import 'settings_utils.dart';
 
+IconData _inlineEndChevron(BuildContext context) =>
+    Directionality.of(context) == TextDirection.rtl ? Symbols.chevron_left_rounded : Symbols.chevron_right_rounded;
+
 /// App-level preferences that are not about looks or playback: language,
 /// what happens at startup, and desktop window behavior.
 class GeneralSettingsScreen extends StatelessWidget {
@@ -101,7 +104,7 @@ class GeneralSettingsScreen extends StatelessWidget {
             ? '${t.settings.followSystem} · ${LocaleSettings.currentLocale.nativeName}'
             : LocaleSettings.currentLocale.nativeName,
       ),
-      trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+      trailing: AppIcon(_inlineEndChevron(context), fill: 1),
       onTap: () async {
         final picked = await showSelectionDialog<String>(
           context: context,
@@ -144,7 +147,7 @@ class GeneralSettingsScreen extends StatelessWidget {
       subtitle: Text(
         '$label · ${isolateDisplayText(formatDecimal(12345.67, grouping: true))}\n${t.settings.regionFormatDescription}',
       ),
-      trailing: const AppIcon(Symbols.chevron_right_rounded),
+      trailing: AppIcon(_inlineEndChevron(context)),
       onTap: () async {
         final current = SettingsService.instance.read(SettingsService.formatLocale);
         final locales = numberFormatSymbols.keys.toList()..sort();
@@ -179,7 +182,7 @@ class GeneralSettingsScreen extends StatelessWidget {
       leading: const AppIcon(Symbols.translate_rounded),
       title: Text(t.settings.metadataLanguage),
       subtitle: Text('$label\n${t.settings.metadataLanguageDescription}'),
-      trailing: const AppIcon(Symbols.chevron_right_rounded),
+      trailing: AppIcon(_inlineEndChevron(context)),
       onTap: () async {
         final picked = await showSelectionDialog<String>(
           context: context,
@@ -247,7 +250,7 @@ class _PreferredServerTile extends StatelessWidget {
         children: [
           Text(currentLabel, overflow: TextOverflow.ellipsis),
           const SizedBox(width: 8),
-          const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+          AppIcon(_inlineEndChevron(context), fill: 1),
         ],
       ),
       onTap: () async {

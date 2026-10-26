@@ -224,7 +224,7 @@ class _QueueListState extends State<QueueList> {
             key: ValueKey('dismiss:${itemKeys[index]}'),
             direction: DismissDirection.endToStart,
             background: Container(
-              alignment: .centerRight,
+              alignment: AlignmentDirectional.centerEnd,
               padding: const EdgeInsetsDirectional.only(end: 20),
               color: Colors.red,
               child: const AppIcon(Symbols.delete_rounded, fill: 1, color: Colors.white, size: 20),

@@ -143,6 +143,7 @@ class _HorizontalScrollWithArrowsState extends State<HorizontalScrollWithArrows>
   @override
   Widget build(BuildContext context) {
     final child = widget.builder(_scrollController);
+    final isRtl = Directionality.of(context) == TextDirection.rtl;
 
     // Hover arrows need a mouse; isDesktop(context) is also true on TV where
     // the MouseRegion + scroll-notification machinery is dead weight per row.
@@ -163,13 +164,13 @@ class _HorizontalScrollWithArrowsState extends State<HorizontalScrollWithArrows>
             child,
             _buildArrowButton(
               position: 8,
-              icon: Symbols.chevron_left_rounded,
+              icon: isRtl ? Symbols.chevron_right_rounded : Symbols.chevron_left_rounded,
               onPressed: _scrollLeft,
               canScroll: _canScrollLeft,
             ),
             _buildArrowButton(
               position: -8,
-              icon: Symbols.chevron_right_rounded,
+              icon: isRtl ? Symbols.chevron_left_rounded : Symbols.chevron_right_rounded,
               onPressed: _scrollRight,
               canScroll: _canScrollRight,
             ),

@@ -108,7 +108,7 @@ class PlaylistItemCardState extends State<PlaylistItemCard> with ContextMenuTapM
                         padding: const EdgeInsetsDirectional.only(end: 4),
                         alignment: .center,
                         child: Container(
-                          padding: const EdgeInsets.fromLTRB(2, 8, 6, 8),
+                          padding: const EdgeInsetsDirectional.fromSTEB(2, 8, 6, 8),
                           decoration: isDragHandleFocused
                               ? BoxDecoration(
                                   color: colorScheme.primaryContainer,

@@ -400,6 +400,7 @@ class HeroHubSectionState extends State<HeroHubSection> {
 
   Widget _buildArrowButton({required bool isLeft, required int currentIndex}) {
     // Always enabled: paging wraps around in both directions.
+    final pointsLeft = isLeft != (Directionality.of(context) == TextDirection.rtl);
     return IconButton(
       tooltip: isLeft
           ? MaterialLocalizations.of(context).previousPageTooltip
@@ -407,7 +408,7 @@ class HeroHubSectionState extends State<HeroHubSection> {
       onPressed: () => _pageBy(isLeft ? -1 : 1, tokens(context).slow),
       style: IconButton.styleFrom(backgroundColor: Colors.black.withValues(alpha: 0.4)),
       icon: AppIcon(
-        isLeft ? Symbols.chevron_left_rounded : Symbols.chevron_right_rounded,
+        pointsLeft ? Symbols.chevron_left_rounded : Symbols.chevron_right_rounded,
         color: Colors.white,
         size: 22,
       ),

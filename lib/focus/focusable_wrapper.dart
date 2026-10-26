@@ -496,15 +496,15 @@ class _FocusableWrapperState extends State<FocusableWrapper> with SingleTickerPr
       return finish(KeyEventResult.handled, 'onNavigateDown');
     }
 
-    // LEFT arrow - if callback provided, navigate left (caller is responsible
-    // for only providing this callback when the item is at the left edge)
+    // Leading/previous direction - callers provide this callback only at the
+    // leading edge (physical right in RTL).
     if (key.isInlineStart(context) && widget.onNavigateLeft != null) {
       widget.onNavigateLeft!();
       return finish(KeyEventResult.handled, 'onNavigateLeft');
     }
 
-    // RIGHT arrow - if callback provided, navigate right (caller is responsible
-    // for only providing this callback when the item is at the right edge)
+    // Trailing/next direction - callers provide this callback only at the
+    // trailing edge (physical left in RTL).
     if (key.isInlineEnd(context) && widget.onNavigateRight != null) {
       widget.onNavigateRight!();
       return finish(KeyEventResult.handled, 'onNavigateRight');
