@@ -42,8 +42,8 @@ Changing the install IDs means an install signed under upstream's identity canno
 | Microsoft Store | Package prepared, listing identity required | Set the repository variables below to build `plezyng-windows.msixbundle`; submit it through PlezyNG's Partner Center listing. The optional signed Inno Setup installer is also retained for manual EXE/MSI listing workflows. No automated Partner Center submission is configured. |
 | Google Play | Draft app record; no closed-test release published; Play Console reports 0 opted-in testers | The current 2.24.1 GitHub draft contains `plezyng-android-play.aab`, but it has not been uploaded to Play. Foreground-service demo links are saved in Play Console and listed below. Play Console still needs the Data safety declaration and remaining app setup before a closed test can be released. `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` is missing, so automated Play uploads are not configured; a manual Console upload remains possible. The opt-in URL in the README is inactive until publication. At least 12 testers must remain opted in continuously for 14 days before production access. |
 | Amazon Appstore / Fire TV | App record and lifetime IAP created; Test submission incomplete | `plezyng_lifetime_unlock` is saved at a USD $2.99 base price; Amazon calculates local-market equivalents. The Amazon public key is in the Android assets. A new Amazon security profile is mapped to App Submission API and its credentials are configured in GitHub Actions. Amazon still returns a generic error when the IAP is submitted to Test; app release metadata is incomplete. |
-| Apple App Store (iOS) | App record and lifetime IAP created; the current certificate/password pair fails import; TestFlight setup incomplete | `plezyng_lifetime_unlock` is a non-consumable with a USD $2.99 base price and a price schedule for 175 regions. English (Canada) copy is present. It remains Prepare for Submission. The 2.24.1 workflow's PKCS#12 import failed MAC verification, and the draft contains only an unsigned developer IPA. Check the certificate/password pair or replace it without revoking the existing certificate, then upload a signed IPA before distributing through TestFlight or submitting an app version. |
-| Apple App Store (tvOS) | App record created; the current certificate/password pair fails import | The app's iOS and tvOS platforms can share the lifetime IAP. The 2.24.1 workflow's PKCS#12 import failed MAC verification, and the draft contains only an unsigned developer IPA. Check the certificate/password pair or replace it without revoking the existing certificate before uploading a signed tvOS IPA to App Store Connect. |
+| Apple App Store (iOS) | App record and lifetime IAP created; cloud-signing build configured, not yet validated; TestFlight setup incomplete | `plezyng_lifetime_unlock` is a non-consumable with a USD $2.99 base price and a price schedule for 175 regions. English (Canada) copy is present. It remains Prepare for Submission. The previous 2.24.1 workflow failed while importing the manual PKCS#12. Apple has three active Apple Distribution certificates and disables creating another one, so the release workflow uses Xcode cloud signing through the existing App Store Connect API key and managed certificate. The next release build must verify signing before this channel is considered ready. |
+| Apple App Store (tvOS) | App record created; cloud-signing build configured, not yet validated | The app's iOS and tvOS platforms can share the lifetime IAP. The previous 2.24.1 workflow failed while importing the manual PKCS#12. The updated workflow uses Xcode cloud signing for both the app and Top Shelf extension. The next release build must verify signing before this channel is considered ready. |
 | Mac App Store | Not a Plezy upstream channel | Plezy distributes macOS through a direct DMG and Homebrew. |
 | Snap Store | Name registered, credential scope needs verification | `publish-snap.yml` uploads the matching architecture package to `stable` after a published release. `SNAPCRAFT_STORE_CREDENTIALS` must authorize the registered `plezyng` snap and required channels. Manual dispatch can publish an existing release to `edge`, `beta`, `candidate`, or `stable`. |
 | AUR | Wired, package and credential-gated | `publish-aur.yml` updates the binary package recipe after a published release. Register the selected package name first, then set `AUR_PACKAGE_NAME` and `AUR_SSH_KEY`. |
@@ -57,7 +57,7 @@ For Google Play testing, upload the signed AAB to an internal or closed testing 
 
 Google Play's foreground-service declaration has separate app-use videos: [user-initiated data sync](https://drive.google.com/file/d/1UEftKbXx23gz0tCdySJ8ceySXHX655_M/view?usp=drive_link) and [user-started media playback](https://drive.google.com/file/d/14CIjy5f6Xd528IOdrE30Ln2fmGj-hr3Z/view?usp=drive_link). They are silent recordings of the app on an Android device, with no narration or slides. Google's [foreground-service guidance](https://support.google.com/googleplay/android-developer/answer/13392821?hl=en) asks each video to demonstrate the in-app steps that trigger its declared feature.
 
-For Apple testing, create the required distribution certificate and provisioning profiles, add them and an App Store Connect API key to GitHub Actions, then upload the signed iOS and tvOS builds. App Store Connect processes uploaded builds before they become available for testing. Create TestFlight groups and provide beta test information; internal testers can then receive invitations. The first external TestFlight build must be approved by TestFlight App Review before external testing starts. Add a public TestFlight link to the README when the external group is ready. The existing store workflow uploads signed IPAs but does not submit them for App Review or configure TestFlight groups. See Apple's [TestFlight overview](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview/), [API key setup](https://developer.apple.com/help/app-store-connect/get-started/app-store-connect-api/), and [App Store provisioning profiles](https://developer.apple.com/help/account/provisioning-profiles/create-an-app-store-provisioning-profile/).
+For Apple testing, the release build uses Xcode automatic signing with the existing managed distribution certificate and App Store Connect API key; no exportable P12 password or manually managed profiles are needed. The build workflow attaches signed iOS and tvOS IPAs to the GitHub draft. After a stable release is published, the store workflow uploads the selected IPA to App Store Connect without submitting it for review or configuring TestFlight groups. App Store Connect processes uploads before they become available for testing. Create TestFlight groups and provide beta test information; internal testers can then receive invitations. The first external TestFlight build must be approved by TestFlight App Review before external testing starts. Add a public TestFlight link to the README when the external group is ready. See Apple's [TestFlight overview](https://developer.apple.com/help/app-store-connect/test-a-beta-version/testflight-overview/), [API key setup](https://developer.apple.com/help/app-store-connect/get-started/app-store-connect-api/), and [App Store provisioning profiles](https://developer.apple.com/help/account/provisioning-profiles/create-an-app-store-provisioning-profile/).
 
 Store builds apply the same access rule on Google Play, Apple App Store, and Amazon Appstore: the app automatically starts a device-local seven-day full-access trial on first launch, then requires one one-time lifetime purchase. Each store sells only the lifetime unlock at a USD $2.99 base price; the app displays the store's localized price.
 
@@ -67,16 +67,15 @@ The upstream [Plezy download guide](https://github.com/edde746/plezy#download) a
 
 All credentials belong in GitHub Actions secrets or variables. Never put secret values in this document.
 
-For iOS, the base64 export-options plist must declare `method` as `app-store-connect`, the matching `teamID`, and a `provisioningProfiles` entry for `org.snapetech.plezyng`. For tvOS, the plist also needs `org.snapetech.plezyng.TopShelfExtension`; the base64 profiles ZIP must contain provisioning profiles for both IDs. The App Store Connect `.p8` key is supplied as the raw PEM value in `APPLE_API_PRIVATE_KEY`. The MSIX identity values must match the package identity Microsoft assigns to the PlezyNG Partner Center listing.
+For iOS and tvOS signing, Xcode automatic signing uses the App Store Connect team key to access Apple's cloud-managed distribution certificate and manage profiles for `org.snapetech.plezyng` and `org.snapetech.plezyng.TopShelfExtension`. The `.p8` key is supplied as the raw PEM value in `APPLE_API_PRIVATE_KEY`. The previous P12 and profile secrets remain stored for recovery but the current build workflow no longer reads them. The MSIX identity values must match the package identity Microsoft assigns to the PlezyNG Partner Center listing.
 
 | Channel | Secret names / repository variables |
 | --- | --- |
 | Android release signing (APKs, Play AAB, Amazon APK) | `ANDROID_KEYSTORE_BASE64`, `ANDROID_STORE_PASSWORD`, `ANDROID_KEY_PASSWORD`, `ANDROID_KEY_ALIAS` |
 | Google Play submission | `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` |
 | Amazon Appstore submission | `AMAZON_APPSTORE_CLIENT_ID`, `AMAZON_APPSTORE_CLIENT_SECRET` |
-| iOS App Store signing | `APPLE_DISTRIBUTION_CERTIFICATE_BASE64`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_TEAM_ID`, `IOS_PROVISIONING_PROFILE_BASE64`, `IOS_EXPORT_OPTIONS_PLIST_BASE64` |
-| tvOS App Store signing | `APPLE_DISTRIBUTION_CERTIFICATE_BASE64`, `APPLE_CERTIFICATE_PASSWORD`, `APPLE_TEAM_ID`, `TVOS_PROVISIONING_PROFILES_ZIP_BASE64`, `TVOS_EXPORT_OPTIONS_PLIST_BASE64` |
-| App Store Connect submission | `APPLE_API_KEY_ID`, `APPLE_API_ISSUER_ID`, `APPLE_API_PRIVATE_KEY` |
+| iOS App Store signing and App Store Connect submission | `APPLE_API_KEY_ID`, `APPLE_API_ISSUER_ID`, `APPLE_API_PRIVATE_KEY`, `APPLE_TEAM_ID` |
+| tvOS App Store signing and App Store Connect submission | `APPLE_API_KEY_ID`, `APPLE_API_ISSUER_ID`, `APPLE_API_PRIVATE_KEY`, `APPLE_TEAM_ID` |
 | Microsoft Store EXE installer signing | `WINDOWS_SIGNING_CERTIFICATE_BASE64`, `WINDOWS_SIGNING_CERTIFICATE_PASSWORD` |
 | Microsoft Store MSIX bundle identity | Repository variables `MSSTORE_PACKAGE_NAME`, `MSSTORE_PUBLISHER`, and `MSSTORE_PUBLISHER_DISPLAY_NAME`, copied exactly from PlezyNG's Partner Center app identity |
 | macOS Developer ID signing/notarization | `MACOS_CERTIFICATE_BASE64`, `MACOS_CERTIFICATE_PASSWORD`, `KEYCHAIN_PASSWORD`, `APPLE_ID`, `APPLE_APP_SPECIFIC_PASSWORD`, `APPLE_TEAM_ID` |
@@ -96,9 +95,11 @@ Appstore, AUR, Apple App Store Connect API, iOS/tvOS App Store signing, Chocolat
 Docker Hub, Launchpad signing, Snap, and WinGet. The `AUR_PACKAGE_NAME`, `COPR_PROJECT`, and
 `LAUNCHPAD_PPA` variables are also configured. `GOOGLE_PLAY_SERVICE_ACCOUNT_JSON` is missing, so
 the app-store workflow cannot upload to Google Play. Apple secret names are present, but the 2.24.1
-iOS/tvOS signing jobs failed during PKCS#12 import with MAC verification errors. Check the
-certificate/password pair or replace it without revoking the existing certificate. Do not treat
-the Apple store channels as ready for upload until this input error is resolved. `APPLE_ID`,
+iOS/tvOS signing jobs failed during PKCS#12 import with MAC verification errors. The Apple portal
+currently disables creation of another Apple Distribution certificate because the team has reached
+its certificate limit. Existing certificates and secrets remain untouched. The release workflow now
+uses Xcode cloud signing through the existing App Store Connect API key; validate it with a release
+build before treating Apple uploads as ready. `APPLE_ID`,
 `APPLE_APP_SPECIFIC_PASSWORD`, macOS Developer ID signing secrets, and `SPARKLE_PRIVATE_KEY` are
 missing; `APPLE_TEAM_ID` is shared with the mobile
 jobs and is not sufficient for macOS notarization. The Windows installer signing secrets and
@@ -121,9 +122,9 @@ the notarization check, and iOS/tvOS stopped at the PKCS#12 import. The macOS ch
 Production access still needs 12 closed-test participants to remain opted in for 14
 days after publication. Apple has iOS and tvOS records; its non-consumable lifetime IAP is
 configured with a USD $2.99 base price and a 175-region schedule; it remains Prepare for
-Submission. App Store Connect and mobile signing secret names are configured, but current iOS/tvOS
-signing jobs failed during PKCS#12 import, and the release draft has only unsigned developer IPAs.
-Resolve the certificate/password mismatch before claiming the Apple store channels are ready.
+Submission. App Store Connect API secrets are configured, but current iOS/tvOS signing jobs failed
+during PKCS#12 import. The build workflow now uses cloud signing; its first run must confirm that
+the existing API key can access Apple's managed certificate and profiles.
 
 ## Relay containers
 
