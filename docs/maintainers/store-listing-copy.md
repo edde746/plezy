@@ -24,6 +24,11 @@ AppStream summary, 30 characters:
 
 > PlezyNG is an enhanced Plex client that also supports Jellyfin and Emby. Browse movies, shows, and music across your servers, search connected libraries, and keep watchlists and viewing progress in sync. Download media for offline playback. Watch Live TV and DVR where your server supports them. Choose audio tracks and subtitles, adjust playback speed and audio sync, and use HDR or Dolby Vision on supported devices. Watch Together keeps playback in sync when everyone can access the same media on the same server. Use PlezyNG on phones, tablets, TVs, and desktop computers. You’ll need your own Plex, Jellyfin, or Emby server. Features vary by server, device, and media.
 
+## Store links
+
+- Privacy policy: `https://github.com/snapetech-org/PlezyNG/blob/main/PRIVACY.md`
+- Support: `https://github.com/snapetech-org/PlezyNG/issues`
+
 ## Channel audit
 
 - The shared short description is used in Homebrew, Snap, Debian, RPM, AUR, AppImage, Chocolatey, WinGet, desktop entries, and the Microsoft Store package template.
