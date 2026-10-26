@@ -134,14 +134,18 @@ class _SourcesScreenState extends State<SourcesScreen> {
           _next = page.next;
         } catch (e) {
           if (more) rethrow;
-          final cached = await controller.repository.entries(profile);
-          items = cached
-              .where((e) => e.sourceId == widget.source!.id && e.parentId == (widget.folder?.id ?? ''))
-              .toList();
+          items = await controller.repository.entries(
+            profile,
+            source: widget.source!.id,
+            parent: widget.folder?.id,
+            filterParent: true,
+          );
           _error = e;
         }
       }
-      final progress = await controller.repository.allProgress(profile);
+      final progress = widget.source == null
+          ? await controller.repository.allProgress(profile)
+          : await controller.repository.progressForEntries(profile, items.map((entry) => entry.key));
       final downloads = await controller.repository.downloads(profile);
       controller.requireSession(epoch);
       if (!mounted || request != _request) return;
@@ -228,6 +232,7 @@ class _SourcesScreenState extends State<SourcesScreen> {
     final filtered = _entries
         .where(
           (e) =>
+              (!e.unavailable || downloaded(e)) &&
               (widget.shelf == null || widget.shelf!.includes(e)) &&
               (!widget.offlineOnly || downloaded(e)) &&
               (_filter == null || e.kind == _filter) &&
@@ -535,3 +540,4 @@ class _SourcesScreenState extends State<SourcesScreen> {
     );
   }
 }
+

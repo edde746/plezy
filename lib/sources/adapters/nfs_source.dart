@@ -79,11 +79,13 @@ class NfsSourceAdapter extends SourceAdapter {
   static const int _directory = 2;
   static const int _regularFile = 1;
   static const int _maxFileHandle = 64;
-  static const int _maxRead = 256 * 1024;
+  static const int _maxRead = 1024 * 1024;
+  static const int _minimumRead = 256 * 1024;
   static const List<int> _emptyVerifier = [0, 0, 0, 0, 0, 0, 0, 0];
 
   final Map<String, List<int>> _handles = {};
   Future<List<int>>? _mount;
+  int _readLimit = _maxRead;
   bool _closed = false;
 
   @override
@@ -657,8 +659,19 @@ class NfsSourceAdapter extends SourceAdapter {
     var position = offset;
     final end = offset + length;
     while (position < end) {
-      final count = math.min(_maxRead, end - position);
-      final bytes = await _read(handle, position, count);
+      final count = math.min(_readLimit, end - position);
+      final List<int> bytes;
+      try {
+        bytes = await _read(handle, position, count);
+      } on SourceException catch (error) {
+        // Some NFS servers reject requests above their configured rsize. Fall
+        // back toward the historical 256 KiB limit and remember it per source.
+        if (error.status == 22 && _readLimit > _minimumRead) {
+          _readLimit = math.max(_minimumRead, _readLimit ~/ 2);
+          continue;
+        }
+        rethrow;
+      }
       if (bytes.isEmpty) break;
       yield bytes;
       position += bytes.length;
@@ -866,3 +879,4 @@ class _RpcWireReader {
     return parts.takeBytes();
   }
 }
+

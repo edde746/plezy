@@ -150,9 +150,13 @@ class SourceController extends ChangeNotifier {
             downloads.cancelAll();
             oauth.cancel();
             if (id != null && !blocked && current(epoch)) {
-              sources = await repository.sources(id);
+              final loadedSources = await repository.sources(id);
+              if (!current(epoch)) return;
               final config = await cloudSync.config(id);
               if (!current(epoch)) return;
+              // Keep source/config state as one profile-scoped snapshot. A
+              // slower load from the previous profile must never overwrite it.
+              sources = loadedSources.where((source) => source.profileId == id).toList(growable: false);
               cloudSync.resetStatus();
               syncConfig = config;
               await _shelves(id, epoch);
@@ -306,15 +310,20 @@ class SourceController extends ChangeNotifier {
     scanning[sourceId] = 0;
     _notify();
     final pending = <(String?, int)>[(null, 0)], seen = <String>{};
+    var pendingIndex = 0;
     try {
-      while (pending.isNotEmpty) {
+      final scanGeneration = await repository.beginSourceScan(profile, sourceId);
+      while (pendingIndex < pending.length) {
         checkScan();
-        final (parent, depth) = pending.removeAt(0);
-        if (depth > 32 || !seen.add(parent ?? '') || seen.length > 10000) continue;
+        final (parent, depth) = pending[pendingIndex++];
+        if (!seen.add(parent ?? '')) continue;
+        if (depth > 32 || seen.length > 10000) throw const SourceException(SourceFailure.invalidData);
         String? cursor;
         final cursors = <String>{};
         do {
           final page = await browse(sourceId, parent: parent, cursor: cursor);
+          checkScan();
+          await repository.markScannedEntries(profile, scanGeneration, page.entries);
           checkScan();
           scanning[sourceId] = (scanning[sourceId] ?? 0) + page.entries.length;
           _notify();
@@ -326,6 +335,14 @@ class SourceController extends ChangeNotifier {
           if (cursor != null && !cursors.add(cursor)) throw const SourceException(SourceFailure.invalidData);
         } while (cursor != null);
       }
+      checkScan();
+      await repository.finishSourceScan(
+        profile,
+        sourceId,
+        scanGeneration,
+        isCurrent: () => current(epoch) && identical(_scanSessions[sourceId], session),
+      );
+      checkScan();
       await _shelves(profile, epoch);
     } finally {
       if (current(epoch) && identical(_scanSessions[sourceId], session)) {
@@ -370,12 +387,28 @@ class SourceController extends ChangeNotifier {
 
   SourceAdapter adapter(String id) {
     requireSession();
+    final epoch = generation;
     return _adapters.putIfAbsent(id, () {
       final source = sources.where((s) => s.id == id).firstOrNull;
-      if (source == null) throw const SourceException(SourceFailure.authentication);
+      if (source == null || source.profileId != profileId) {
+        throw const SourceException(SourceFailure.authentication);
+      }
       final transport = SourceTransport(allowHttp: source.options['allowHttp'] == 'true');
-      Future<Map<String, String>> credentials() => repository.credentials(source);
-      Future<String> token({bool refresh = false}) => oauth.accessToken(source, refresh: refresh);
+      Future<Map<String, String>> credentials() async {
+        requireSession(epoch);
+        if (source.profileId != profileId) throw const SourceException(SourceFailure.cancelled);
+        final value = await repository.credentials(source);
+        requireSession(epoch);
+        return value;
+      }
+
+      Future<String> token({bool refresh = false}) async {
+        requireSession(epoch);
+        if (source.profileId != profileId) throw const SourceException(SourceFailure.cancelled);
+        final value = await oauth.accessToken(source, refresh: refresh);
+        requireSession(epoch);
+        return value;
+      }
       return switch (source.kind) {
         FileSourceKind.local => LocalSourceAdapter(source, transport),
         FileSourceKind.webdav => WebDavSourceAdapter(source, transport, credentials),
@@ -409,7 +442,9 @@ class SourceController extends ChangeNotifier {
       final cached = fresh.kind == SourceItemKind.video ? await repository.entryById(profile, source, fresh.id) : null;
       entries.add(_applyCachedOnlineMetadata(fresh, cached));
     }
+    requireSession(epoch);
     await repository.cacheEntries(profile, entries);
+    requireSession(epoch);
     shelves.addAll(PublicationShelf.values.where((s) => entries.any(s.includes)));
     _notify();
     return SourcePage(entries, next: page.next, title: page.title);
@@ -481,7 +516,7 @@ class SourceController extends ChangeNotifier {
     if (entry.kind != SourceItemKind.video) return entry;
     final profile = profileId!;
     final source = sources.where((item) => item.id == entry.sourceId).firstOrNull;
-    if (source == null || source.options['onlineMetadata'] == 'false') return entry;
+    if (source == null || source.options['onlineMetadata'] != 'true') return entry;
     final key = sourceKey(profile, entry.key);
     final cachedLookup = _onlineLookups[key];
     if (cachedLookup != null) return cachedLookup;
@@ -988,3 +1023,4 @@ class SourceController extends ChangeNotifier {
     super.dispose();
   }
 }
+

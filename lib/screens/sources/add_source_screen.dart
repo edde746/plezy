@@ -32,7 +32,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
   final _form = GlobalKey<FormState>();
   final _fields = <String, TextEditingController>{};
   FileSourceKind _kind = FileSourceKind.webdav;
-  bool _busy = false, _allowHttp = false, _encryptSmb = false, _onlineMetadata = true;
+  bool _busy = false, _allowHttp = false, _encryptSmb = false, _onlineMetadata = false;
   bool _discoveringDlna = false;
   bool _nfsRpcTls = false;
   bool _nfsTlsIdentitySelected = false;
@@ -55,9 +55,12 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
       field('endpoint').text = old.endpoint;
       field('root').text = old.root;
       field('clientId').text = old.options['clientId'] ?? '';
+      field('mountPort').text = old.options['mountPort'] ?? '';
+      field('uid').text = old.options['uid'] ?? '';
+      field('gid').text = old.options['gid'] ?? '';
       _allowHttp = old.options['allowHttp'] == 'true';
       _encryptSmb = old.options['encryptSmb'] == 'true';
-      _onlineMetadata = old.options['onlineMetadata'] != 'false';
+      _onlineMetadata = old.options['onlineMetadata'] == 'true';
       _nfsRpcTls = old.options['rpcTls'] == 'required';
       field('rpcTlsServerCertificatePem').text = old.options['rpcTlsServerCertificatePem'] ?? '';
       if (old.kind == FileSourceKind.nfs) {
@@ -271,6 +274,25 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
     try {
       await controller.ready;
       controller.requireSession(epoch);
+      final preservedOptions = widget.existing?.kind == _kind
+          ? Map<String, String>.of(widget.existing!.options)
+          : <String, String>{};
+      for (final key in const [
+        'allowHttp',
+        'encryptSmb',
+        'shelves',
+        'onlineMetadata',
+        'mountPort',
+        'uid',
+        'gid',
+        'rpcTls',
+        'rpcTlsServerCertificatePem',
+        'clientId',
+        'region',
+        'syncRoot',
+      ]) {
+        preservedOptions.remove(key);
+      }
       final source = FileSource(
         id: widget.existing?.id ?? const Uuid().v4(),
         profileId: controller.profileId!,
@@ -279,6 +301,7 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
         endpoint: field('endpoint').text.trim(),
         root: field('root').text.trim(),
         options: {
+          ...preservedOptions,
           'allowHttp': '${_kind != FileSourceKind.smb && _allowHttp}',
           if (_kind == FileSourceKind.smb) 'encryptSmb': '$_encryptSmb',
           'shelves': _shelves.map((s) => s.name).join(','),
@@ -792,3 +815,4 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
     ],
   );
 }
+

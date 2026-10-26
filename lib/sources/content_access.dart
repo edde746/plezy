@@ -82,19 +82,31 @@ class PublicationDownloads {
     final validatorFile = File('${target.path}.validator');
     var offset = await partial.exists() ? await partial.length() : 0;
     final validator = await validatorFile.exists() ? await validatorFile.readAsString() : null;
-    // A byte range is safe to append only when the server can condition it on
-    // the exact representation previously received. Otherwise restart.
-    if (offset > 0 && validator == null) offset = 0;
     var expectedSize = file.size ?? await adapter.contentSize(file);
-    final directStream = await adapter.openContent(file, offset: 0, length: expectedSize ?? 0);
+    // Provider streams can resume against the immutable file fingerprint
+    // encoded in the partial path. HTTP URLs need a representation validator.
+    final directOffset = offset > 0 &&
+            expectedSize != null &&
+            offset < expectedSize &&
+            adapter.capabilities.rangeRequests
+        ? offset
+        : 0;
+    final directStream = await adapter.openContent(
+      file,
+      offset: directOffset,
+      length: expectedSize == null ? 0 : expectedSize - directOffset,
+    );
     cancel.check();
     if (directStream != null) {
-      expectedSize = directStream.size;
-      if (directStream.offset != 0 || directStream.length != directStream.size) {
+      if (expectedSize != null && directStream.size != expectedSize) {
         throw const SourceException(SourceFailure.invalidData);
       }
-      var received = 0;
-      final sink = partial.openWrite();
+      expectedSize = directStream.size;
+      if (directStream.offset != directOffset || directStream.length != directStream.size - directOffset) {
+        throw const SourceException(SourceFailure.invalidData);
+      }
+      var received = directOffset;
+      final sink = partial.openWrite(mode: directOffset > 0 ? FileMode.append : FileMode.write);
       try {
         await sink.addStream(
           directStream.stream.timeout(const Duration(seconds: 45)).map((bytes) {
@@ -111,6 +123,9 @@ class PublicationDownloads {
       }
       if (received != directStream.size) throw const SourceException(SourceFailure.invalidData);
     } else {
+      // A byte range is safe to append only when HTTP can condition it on the
+      // exact representation previously received. Otherwise restart.
+      if (offset > 0 && validator == null) offset = 0;
       var lease = await adapter.resolve(file);
       expectedSize ??= lease.size;
       cancel.check();
@@ -411,3 +426,4 @@ class SourceStreamGateway {
     _server = null;
   }
 }
+

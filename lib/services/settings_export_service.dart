@@ -241,7 +241,15 @@ class SettingsExportService {
     Map<String, dynamic> data,
     SharedPreferencesWithCache prefs, {
     required String currentUserUuid,
+    bool Function()? isCurrent,
   }) async {
+    void checkCurrent() {
+      if (isCurrent != null && !isCurrent()) {
+        throw const SettingsExportException('The active profile changed during settings import');
+      }
+    }
+
+    checkCurrent();
     final version = data['formatVersion'];
     if (version is! int) {
       throw const InvalidExportFileException('Missing formatVersion');
@@ -336,13 +344,19 @@ class SettingsExportService {
 
     try {
       for (final mutation in pending) {
+        checkCurrent();
         await debugBeforeImportWrite?.call(mutation.targetKey);
+        checkCurrent();
         await _writeTyped(prefs, mutation.targetKey, mutation.type, mutation.value);
+        checkCurrent();
         if (mutation.obsoleteKey case final obsoleteKey?) {
           await debugBeforeImportWrite?.call(obsoleteKey);
+          checkCurrent();
           await prefs.remove(obsoleteKey);
+          checkCurrent();
         }
       }
+      checkCurrent();
     } catch (error, stackTrace) {
       try {
         await _restoreSnapshots(prefs, snapshots);
@@ -530,3 +544,4 @@ class SettingsExportService {
     return applyImportMap(data, prefs, currentUserUuid: uuid);
   }
 }
+

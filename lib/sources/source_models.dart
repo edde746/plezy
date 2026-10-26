@@ -239,6 +239,7 @@ class SourceEntry {
     this.cast = const [],
     this.onlineMetadataProvider,
     this.onlineMetadataCheckedAt,
+    this.unavailable = false,
   });
   final String sourceId;
   final String id;
@@ -265,6 +266,9 @@ class SourceEntry {
   final List<String> cast;
   final String? onlineMetadataProvider;
   final int? onlineMetadataCheckedAt;
+  /// True when the catalogue item is no longer present on its configured
+  /// source. A completed local download may still make it usable offline.
+  final bool unavailable;
 
   SourceEntry copyWith({
     String? parentId,
@@ -282,6 +286,7 @@ class SourceEntry {
     List<String>? cast,
     String? onlineMetadataProvider,
     int? onlineMetadataCheckedAt,
+    bool? unavailable,
   }) => SourceEntry(
     sourceId: sourceId,
     id: id,
@@ -308,6 +313,7 @@ class SourceEntry {
     cast: cast ?? this.cast,
     onlineMetadataProvider: onlineMetadataProvider ?? this.onlineMetadataProvider,
     onlineMetadataCheckedAt: onlineMetadataCheckedAt ?? this.onlineMetadataCheckedAt,
+    unavailable: unavailable ?? this.unavailable,
   );
 
   String get key => sourceKey(sourceId, id);
@@ -356,6 +362,7 @@ class SourceEntry {
     if (cast.isNotEmpty) 'cast': cast,
     if (onlineMetadataProvider != null) 'onlineMetadataProvider': onlineMetadataProvider,
     if (onlineMetadataCheckedAt != null) 'onlineMetadataCheckedAt': onlineMetadataCheckedAt,
+    if (unavailable) 'unavailable': true,
   };
   factory SourceEntry.fromJson(Map<String, dynamic> j) => SourceEntry(
     sourceId: j['sourceId'] as String,
@@ -383,6 +390,7 @@ class SourceEntry {
     cast: sourceList(j['cast']).whereType<String>().toList(),
     onlineMetadataProvider: j['onlineMetadataProvider'] as String?,
     onlineMetadataCheckedAt: sourceInt(j['onlineMetadataCheckedAt']),
+    unavailable: j['unavailable'] == true,
   );
 }
 
@@ -599,3 +607,4 @@ SourceItemKind classifySourceFile(String name, [String mime = '']) {
   }
   return SourceItemKind.unknown;
 }
+

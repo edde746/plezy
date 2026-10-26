@@ -112,10 +112,10 @@ class SupporterStoreState {
 ///   with a `revocationDate` for the startup check. An empty history is not a
 ///   revocation, because another Apple Account may be signed in.
 ///
-/// Known gap: the StoreKit plugin forwards a purchase StoreKit could not
-/// verify (`VerificationResult.unverified`) as purchased, and that path does
-/// not expose the verification result, so such a purchase unlocks. Every
-/// other StoreKit path (updates, history) drops unverified transactions.
+/// StoreKit purchase-stream events are not treated as proof on their own. The
+/// current plugin can forward an unverified transaction as purchased, so the
+/// App Store history API must confirm ownership before a new entitlement is
+/// granted. The history wrapper exposes verified transactions only.
 class SupporterService extends ChangeNotifier with DisposableChangeNotifierMixin {
   static const fullAccessTrialDuration = Duration(days: 7);
 
@@ -652,6 +652,23 @@ class SupporterService extends ChangeNotifier with DisposableChangeNotifierMixin
 
   Future<void> _handleLifetimeUnlockPurchase(SupporterStore store, PurchaseDetails purchase) async {
     final status = purchase.status;
+    if (store is AppStoreSupporterStore &&
+        !store.isRevocation(purchase) &&
+        (status == PurchaseStatus.purchased || status == PurchaseStatus.restored)) {
+      // StoreKit's cross-platform purchase event does not expose its
+      // VerificationResult. Confirm a verified lifetime transaction through
+      // Transaction.all before persisting a new entitlement.
+      try {
+        final history = await store.queryHistory();
+        if (history.ownership != SupporterOwnership.owned) {
+          _failPurchase(store);
+          return;
+        }
+      } on Object {
+        _failPurchase(store);
+        return;
+      }
+    }
     if (store.isRevocation(purchase)) {
       _entitlementGeneration++;
       appLogger.i('Supporter: the store revoked the purchase');
@@ -789,3 +806,4 @@ class SupporterService extends ChangeNotifier with DisposableChangeNotifierMixin
     super.dispose();
   }
 }
+

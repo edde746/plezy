@@ -12,6 +12,8 @@ PlezyNG stores app settings, server and profile details, library preferences, an
 
 When you sign in or use a feature, PlezyNG sends the requests needed for that feature to the service you selected. This can include Plex, Jellyfin, or Emby servers; Plex account and discovery services; optional services you connect for tracking, requests, recommendations, or media information; a Watch Together relay you configure; a WebDAV endpoint you configure for backups; and a Cast receiver you choose. Those services receive the information needed to answer the request, such as account credentials or tokens, server and media identifiers, playback actions, and network details. Each service handles that information under its own privacy terms.
 
+Standalone video metadata lookup is off by default for file sources. If you enable it, opening a video's details can send a cleaned filename title, optional year, detected episode numbers, or an existing NFO catalog identifier to Trakt for matching. The video file, full source path and source credentials are not sent for that lookup. If you enable encrypted progress and notes sync, the configured WebDAV or cloud-drive storage provider receives the sync files; cloud-drive write access is requested only for this feature. Settings backup is a separate WebDAV upload containing the portable settings export. Review the destination and exported settings before enabling either service.
+
 Store purchases are handled by the store where you got the app. PlezyNG does not receive your payment card details.
 
 PlezyNG does not use advertising or analytics SDKs. The standard store build workflow does not include Sentry crash reporting. Other builds can include optional crash reporting; when included and enabled in Settings, diagnostic events may be sent to Sentry. You can turn off crash reporting in the app settings.
@@ -35,3 +37,4 @@ To delete an account held by a connected service, use that service's account con
 For privacy questions, use the [PlezyNG GitHub project page](https://github.com/snapetech-org/PlezyNG/issues). GitHub issues are public; do not include passwords, access tokens, server addresses, or other sensitive information in an issue.
 
 We may update this notice when the app's data practices change. The effective date above will change with each revision.
+

@@ -123,7 +123,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
   Future<void> _identifyStandaloneMetadata(SourceController sources, int epoch) async {
     if (_entry.kind != SourceItemKind.video) return;
     final source = sources.sources.where((item) => item.id == _entry.sourceId).firstOrNull;
-    if (source == null || source.options['onlineMetadata'] == 'false') return;
+    if (source == null || source.options['onlineMetadata'] != 'true') return;
     final entryKey = _entry.key;
     setState(() {
       _metadataLookupPending = true;
@@ -488,7 +488,7 @@ class _SourceDetailScreenState extends State<SourceDetailScreen> {
     final theme = Theme.of(context), tk = tokens(context), audio = _entry.audio;
     final hasTrakt = context.watch<TrackersProvider>().traktCatalogClient != null;
     final source = context.watch<SourceController>().sources.where((item) => item.id == _entry.sourceId).firstOrNull;
-    final automaticMetadataEnabled = source?.options['onlineMetadata'] != 'false';
+    final automaticMetadataEnabled = source?.options['onlineMetadata'] == 'true';
     return FocusedScrollScaffold(
       title: Text(_entry.displayTitle),
       focusableAppBarActions: true,
@@ -932,3 +932,4 @@ class _AudioOrderState extends State<_AudioOrder> {
     ],
   );
 }
+

@@ -3,6 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 
 import '../../i18n/strings.g.dart';
 import '../../services/cloud_settings_backup_service.dart';
+import '../../services/storage_service.dart';
 import '../../utils/app_logger.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/dialog_action_button.dart';
@@ -65,8 +66,11 @@ class _CloudSettingsBackupDialogState extends State<CloudSettingsBackupDialog> {
 
   Future<void> _backUp() async {
     await _run(() async {
+      final storage = await StorageService.getInstance();
+      final expectedProfileId = storage.getActiveProfileId();
+      final expectedOwner = storage.activeUserScope();
       await _backup.saveConfiguration(url: _url.text, username: _username.text, password: _password.text);
-      await _backup.backUp();
+      await _backup.backUp(expectedProfileId: expectedProfileId, expectedOwner: expectedOwner);
       return t.settings.cloudBackupComplete;
     });
   }
@@ -85,9 +89,12 @@ class _CloudSettingsBackupDialogState extends State<CloudSettingsBackupDialog> {
     );
     if (confirmed != true || !mounted) return;
     await _run(() async {
+      final storage = await StorageService.getInstance();
+      final expectedProfileId = storage.getActiveProfileId();
+      final expectedOwner = storage.activeUserScope();
       await _backup.saveConfiguration(url: _url.text, username: _username.text, password: _password.text);
       widget.beforeRestore();
-      await _backup.restore();
+      await _backup.restore(expectedProfileId: expectedProfileId, expectedOwner: expectedOwner);
       await widget.afterRestore();
       return t.settings.cloudBackupRestored;
     });
@@ -165,3 +172,4 @@ class _CloudSettingsBackupDialogState extends State<CloudSettingsBackupDialog> {
     ],
   );
 }
+

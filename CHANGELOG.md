@@ -2,6 +2,11 @@
 
 ## [Unreleased]
 
+- Harden file-source profile isolation, option-preserving edits, scan reconciliation, discovery Undo retention, and bounded folder/progress queries.
+- Bind cloud settings backups and restore writes to the initiating profile, enforce a 4 MiB download bound, and roll back an import if ownership changes.
+- Require successful CI for the exact release commit while keeping release validation on private JIT runners.
+- Corroborate StoreKit purchase events against verified transaction history and resume eligible direct-source downloads.
+
 - Fit Find your next to the screen with persistent action buttons, mirrored swipe/TV direction cues, contextual help, and artwork that follows the current pick. Restore downloaded and alternate covers, distinguish artwork loading from missing images, and allow failed source covers to be retried.
 
 - Add experimental comic page streaming, Komga source integration and ComicInfo metadata support.

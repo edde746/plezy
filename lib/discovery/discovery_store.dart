@@ -48,7 +48,9 @@ class DiscoveryState {
     'version': 1,
     'saved': saved.map((choice) => choice.toSnapshot()).toList(),
     'seen': seen.take(240).toList(),
-    'history': history.take(500).map((decision) => decision.toJson()).toList(),
+    'history': (history.length > 500 ? history.skip(history.length - 500) : history)
+        .map((decision) => decision.toJson())
+        .toList(),
   };
 
   factory DiscoveryState.fromJson(Map<String, dynamic> json) {
@@ -62,7 +64,8 @@ class DiscoveryState {
       }
     }
     final history = <DiscoveryDecision>[];
-    for (final value in (json['history'] is List ? json['history'] as List : const []).take(500)) {
+    final storedHistory = json['history'] is List ? json['history'] as List : const [];
+    for (final value in storedHistory.skip(storedHistory.length > 500 ? storedHistory.length - 500 : 0)) {
       try {
         if (value is Map) history.add(DiscoveryDecision.fromJson(Map<String, dynamic>.from(value)));
       } catch (_) {
@@ -75,8 +78,7 @@ class DiscoveryState {
 }
 
 /// Profile-local persistence built on the existing publication preference
-/// store. A single replacement write keeps the save/decision/session update
-/// atomic without adding a second database or serializing media credentials.
+/// store. Each read/modify/write runs in one database transaction.
 class DiscoveryStore {
   const DiscoveryStore(this._sources);
   static const _preferenceKey = 'discovery.find-next.v1';
@@ -94,71 +96,74 @@ class DiscoveryStore {
   }
 
   Future<DiscoveryState> decide(String profileId, DiscoveryChoice choice, DiscoveryDecisionAction action) async {
-    final current = await load(profileId);
-    final saved = {for (final item in current.saved) item.id: item};
-    final previous = saved[choice.id];
-    final wasSeen = current.seen.contains(choice.id);
-    var savedChanged = false;
-    switch (action) {
-      case DiscoveryDecisionAction.save:
-        if (previous == null && saved.length < maxSaved) {
-          saved[choice.id] = choice;
-          savedChanged = true;
-        }
-        break;
-      case DiscoveryDecisionAction.notNow:
-        break;
-      case DiscoveryDecisionAction.removeSaved:
-        savedChanged = saved.remove(choice.id) != null;
-        break;
-    }
-    final decision = DiscoveryDecision(
-      action: action,
-      choice: choice,
-      previousSaved: savedChanged ? previous : null,
-      wasSeen: wasSeen,
-      savedChanged: savedChanged,
-    );
-    final seen = {...current.seen, choice.id};
-    final next = DiscoveryState(
-      saved: saved.values.toList(growable: false),
-      seen: seen.length > 240 ? seen.skip(seen.length - 240).toSet() : seen,
-      history: [...current.history, decision].take(_maxHistory).toList(growable: false),
-    );
-    await _write(profileId, next);
-    return next;
+    return _update(profileId, (current) {
+      final saved = {for (final item in current.saved) item.id: item};
+      final previous = saved[choice.id];
+      final wasSeen = current.seen.contains(choice.id);
+      var savedChanged = false;
+      switch (action) {
+        case DiscoveryDecisionAction.save:
+          if (previous == null && saved.length < maxSaved) {
+            saved[choice.id] = choice;
+            savedChanged = true;
+          }
+          break;
+        case DiscoveryDecisionAction.notNow:
+          break;
+        case DiscoveryDecisionAction.removeSaved:
+          savedChanged = saved.remove(choice.id) != null;
+          break;
+      }
+      final decision = DiscoveryDecision(
+        action: action,
+        choice: choice,
+        previousSaved: savedChanged ? previous : null,
+        wasSeen: wasSeen,
+        savedChanged: savedChanged,
+      );
+      final seen = {...current.seen, choice.id};
+      final history = [...current.history, decision];
+      if (history.length > _maxHistory) history.removeRange(0, history.length - _maxHistory);
+      return DiscoveryState(
+        saved: saved.values.toList(growable: false),
+        seen: seen.length > 240 ? seen.skip(seen.length - 240).toSet() : seen,
+        history: history,
+      );
+    });
   }
 
   Future<(DiscoveryState, DiscoveryChoice?)> undo(String profileId) async {
-    final current = await load(profileId);
-    if (current.history.isEmpty) return (current, null);
-    final decision = current.history.last;
-    final saved = {for (final item in current.saved) item.id: item};
-    if (decision.previousSaved != null) {
-      saved[decision.choice.id] = decision.previousSaved!;
-    } else if (decision.savedChanged) {
-      saved.remove(decision.choice.id);
-    }
-    final seen = {...current.seen};
-    if (!decision.wasSeen) seen.remove(decision.choice.id);
-    final next = DiscoveryState(
-      saved: saved.values.toList(growable: false),
-      seen: seen,
-      history: current.history.take(current.history.length - 1).toList(growable: false),
-    );
-    await _write(profileId, next);
-    return (next, decision.choice);
+    DiscoveryChoice? undone;
+    final next = await _update(profileId, (current) {
+      if (current.history.isEmpty) return current;
+      final decision = current.history.last;
+      undone = decision.choice;
+      final saved = {for (final item in current.saved) item.id: item};
+      if (decision.previousSaved != null) {
+        saved[decision.choice.id] = decision.previousSaved!;
+      } else if (decision.savedChanged) {
+        saved.remove(decision.choice.id);
+      }
+      final seen = {...current.seen};
+      if (!decision.wasSeen) seen.remove(decision.choice.id);
+      return DiscoveryState(
+        saved: saved.values.toList(growable: false),
+        seen: seen,
+        history: current.history.take(current.history.length - 1).toList(growable: false),
+      );
+    });
+    return (next, undone);
   }
 
-  Future<DiscoveryState> startFreshSession(String profileId) async {
-    final current = await load(profileId);
-    final next = DiscoveryState(saved: current.saved, history: current.history);
-    await _write(profileId, next);
-    return next;
-  }
+  Future<DiscoveryState> startFreshSession(String profileId) =>
+      _update(profileId, (current) => DiscoveryState(saved: current.saved, history: current.history));
 
-  Future<void> _write(String profileId, DiscoveryState state) =>
-      _sources.savePreference(profileId, _preferenceKey, state.toJson());
+  Future<DiscoveryState> _update(String profileId, DiscoveryState Function(DiscoveryState) update) async {
+    final value = await _sources.updatePreferenceAtomically(profileId, _preferenceKey, (raw) {
+      return update(DiscoveryState.fromJson(raw)).toJson();
+    });
+    return DiscoveryState.fromJson(value);
+  }
 }
 
 /// Fairly interleaves media families so a large film library does not drown
@@ -215,3 +220,4 @@ class _StableRandom {
     return _state % max;
   }
 }
+

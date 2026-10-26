@@ -65,13 +65,11 @@ This table is a snapshot of what PlezyNG has delivered and the limits that still
 
 ## Download
 
-PlezyNG builds are published on the [GitHub Releases page](https://github.com/snapetech-org/PlezyNG/releases). The packages below are the current desktop artifacts; mobile and TV builds are distributed separately when available.
+Published PlezyNG downloads appear on the [GitHub Releases page](https://github.com/snapetech-org/PlezyNG/releases). The 2.24.1 build is currently a draft, so there is no public “latest” download yet. Mobile and TV packages are listed when a release is published.
 
 | Platform | Download |
 | --- | --- |
-| macOS | [DMG (x64, arm64)](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-macos.dmg) |
-| Linux x64 | [.deb](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.deb) · [.rpm](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.rpm) · [.pkg.tar.zst](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.pkg.tar.zst) · [.flatpak](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.flatpak) · [portable tar.gz](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-x64.tar.gz) |
-| Linux arm64 | [.deb](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.deb) · [.rpm](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.rpm) · [.pkg.tar.zst](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.pkg.tar.zst) · [.flatpak](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.flatpak) · [portable tar.gz](https://github.com/snapetech-org/PlezyNG/releases/latest/download/plezy-linux-arm64.tar.gz) |
+| Desktop and mobile | Download links are added after the corresponding release is published. |
 | webOS TV | Experimental ARM IPK installed and launched on one LG C6 (webOS 26). Login, artwork, and playback were confirmed on an earlier test build; this is not qualification across LG generations or a published package. See the [port status](docs/maintainers/webos-tv.md) |
 
 <details>
@@ -230,7 +228,7 @@ PlezyNG's Google Play closed test is being prepared. Once the test release is pu
 - Customizable keyboard shortcuts[^desktop]
 - Metadata and artwork editing
 - Settings import/export
-- Localized in English plus 21 translations
+- Localized across 37 locale choices
 
 [^jf]: Jellyfin only.
 [^mb]: Jellyfin and Emby only.
@@ -347,3 +345,4 @@ Plezy is licensed under [GPL-3.0](LICENSE).
 - Built with [Flutter](https://flutter.dev)
 - Supports [Plex Media Server](https://www.plex.tv), [Jellyfin](https://jellyfin.org), and [Emby](https://emby.media)
 - Playback powered by [mpv](https://mpv.io) via our [mpv-build](https://github.com/edde746/mpv-build) pipeline (started as a fork of [MPVKit](https://github.com/mpvkit/MPVKit); on Android through its mpv-android library, whose Kotlin/JNI glue descends from [libmpv-android](https://github.com/jarnedemeulemeester/libmpv-android)), Android [ExoPlayer](https://developer.android.com/media/media3/exoplayer), and [libass-android](https://github.com/peerless2012/libass-android)
+
