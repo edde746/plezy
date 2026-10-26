@@ -189,7 +189,7 @@ class PublicationFile {
   final bool primary;
   final bool streamOnly;
   SourceItemKind get kind => classifySourceFile(name, mimeType);
-  String get fingerprint => sourceDigest(jsonEncode([id, revision, size]));
+  String get fingerprint => sourceDigest(jsonEncode([id, revision, size, streamOnly]));
   Map<String, dynamic> toJson() => {
     'id': id,
     'name': name,
@@ -208,7 +208,7 @@ class PublicationFile {
     revision: j['revision'] as String?,
     durationMs: sourceInt(j['durationMs']),
     primary: j['primary'] as bool? ?? true,
-    streamOnly: j['streamOnly'] == true,
+    streamOnly: j['streamOnly'] as bool? ?? false,
   );
 }
 

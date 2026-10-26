@@ -101,6 +101,13 @@ class SourceTransport {
     Object? body,
   }) async => sourceMap(jsonDecode(await text(method, uri, headers: headers, body: body)));
 
+  Future<Object?> jsonValue(
+    String method,
+    Uri uri, {
+    Map<String, String> headers = const {},
+    Object? body,
+  }) async => jsonDecode(await text(method, uri, headers: headers, body: body));
+
   void close() {
     _closed = true;
     _client.close();

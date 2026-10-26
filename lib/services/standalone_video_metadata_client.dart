@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:path/path.dart' as p;
 
 import '../models/trakt/trakt_catalog_entry.dart';
@@ -146,9 +144,9 @@ class StandaloneVideoMetadataClient {
       'limit': '30',
       if (query.year != null) 'year': query.year.toString(),
     });
-    final response = jsonDecode(
-      await _transport.text('GET', uri, headers: TraktConstants.headers()).timeout(const Duration(seconds: 12)),
-    );
+    final response = await _transport
+        .jsonValue('GET', uri, headers: TraktConstants.headers())
+        .timeout(const Duration(seconds: 12));
     if (response is! List) return const [];
     return [for (final row in response.whereType<Map<String, dynamic>>()) TraktCatalogEntry.fromJson(row)];
   }
@@ -160,9 +158,9 @@ class StandaloneVideoMetadataClient {
       '/search/$type/${Uri.encodeComponent(id)}',
       {'extended': 'full,images', 'type': ?expectedType, 'limit': '10'},
     );
-    final response = jsonDecode(
-      await _transport.text('GET', uri, headers: TraktConstants.headers()).timeout(const Duration(seconds: 12)),
-    );
+    final response = await _transport
+        .jsonValue('GET', uri, headers: TraktConstants.headers())
+        .timeout(const Duration(seconds: 12));
     if (response is! List) return const [];
     return [for (final row in response.whereType<Map<String, dynamic>>()) TraktCatalogEntry.fromJson(row)];
   }

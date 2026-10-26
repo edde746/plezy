@@ -6,6 +6,7 @@
 - Repair source-reader merge compatibility and complete missing source setup translations.
 
 - Add experimental comic page streaming, Komga source integration and ComicInfo metadata support.
+- Fix file-source metadata and listing edge cases, and validate the experimental webOS ARM build on an LG C6.
 
 ### Added
 
