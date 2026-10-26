@@ -65,6 +65,9 @@ Future<Map<String, dynamic>> _renewalJson(
     throw const SourceException(SourceFailure.permission);
   }
   final client = HttpClient()..connectionTimeout = const Duration(seconds: 10);
+  // Per-chunk idle timeouts alone allow a peer to keep a lease renewal alive
+  // indefinitely by trickling bytes. Bound the entire connection and response.
+  final hardDeadline = Timer(const Duration(seconds: 45), () => client.close(force: true));
   try {
     final request = await client.openUrl(method, uri).timeout(const Duration(seconds: 15));
     request.followRedirects = false;
@@ -88,6 +91,7 @@ Future<Map<String, dynamic>> _renewalJson(
     if (decoded is! Map) throw const SourceException(SourceFailure.invalidData);
     return Map<String, dynamic>.from(decoded);
   } finally {
+    hardDeadline.cancel();
     client.close(force: true);
   }
 }
