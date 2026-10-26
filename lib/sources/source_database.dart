@@ -612,6 +612,38 @@ class SourceRepository {
     ]);
   }
 
+  /// Applies an annotation pulled from encrypted sync and queues it for the
+  /// entry's provider target. The caller runs this inside the same transaction
+  /// that commits the cloud sync baseline.
+  Future<void> importSyncedAnnotation(String profile, BookAnnotation annotation) async {
+    _writable(profile);
+    await database.customStatement('INSERT OR REPLACE INTO annotations VALUES (?,?,?,?)', [
+      profile,
+      annotation.id,
+      annotation.entryKey,
+      jsonEncode(annotation.toJson()),
+    ]);
+    for (final event in await pendingEvents(profile)) {
+      if (event['kind'] != 'annotation' || event['key'] != annotation.entryKey) continue;
+      try {
+        final existing = BookAnnotation.fromJson(sourceMap(jsonDecode(event['payload'] as String)));
+        if (existing.id == annotation.id) {
+          await database.customStatement('UPDATE events SET pending=0 WHERE profile=? AND id=?', [profile, event['id']]);
+        }
+      } on Object {
+        // Preserve malformed events for the sync path to report and repair.
+      }
+    }
+    await database.customStatement('INSERT INTO events VALUES (?,?,?,?,?,?,1)', [
+      profile,
+      _uuid.v4(),
+      annotation.entryKey,
+      jsonEncode(annotation.toJson()),
+      'annotation',
+      annotation.updatedAt,
+    ]);
+  }
+
   Future<List<PublicationProgress>> allProgress(String profile) async =>
       (await database
               .customSelect(
@@ -869,7 +901,17 @@ class SourceRepository {
     if (bytes < minimumDownloadQuotaBytes || bytes > maximumDownloadQuotaBytes) {
       throw const SourceException(SourceFailure.invalidData);
     }
-    await savePreference(profile, 'publication-download-quota-v1', {'bytes': bytes});
+    await database.transaction(() async {
+      _writable(profile);
+      final usage = await database.customSelect(
+        'SELECT COALESCE(SUM(MAX(bytes,reserved_bytes)),0) AS reserved FROM downloads WHERE profile=?',
+        variables: [Variable(profile)],
+      ).getSingle();
+      if (usage.read<int>('reserved') > bytes) {
+        throw const SourceException(SourceFailure.quotaExceeded);
+      }
+      await savePreference(profile, 'publication-download-quota-v1', {'bytes': bytes});
+    });
   }
 
   Future<({int usedBytes, int reservedBytes})> downloadStorageUsage(String profile) async {
