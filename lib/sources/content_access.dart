@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:collection';
 import 'dart:io';
 import 'dart:math' as math;
 
@@ -25,10 +26,13 @@ class TransferCancellation {
 
 class PublicationDownloads {
   PublicationDownloads(this.repository, this.directory);
+  static const int maxConcurrentTransfers = 2;
   final SourceRepository repository;
   final Directory directory;
   final Map<String, Future<File>> _pending = {};
   final Map<String, TransferCancellation> _cancellations = {};
+  final Queue<_DownloadTask> _queue = Queue();
+  int _activeTransfers = 0;
   String key(String sourceId, PublicationFile file) => sourceKey(sourceId, file.id);
   Future<File?> local(String profile, String sourceId, PublicationFile file) async {
     final record = await repository.download(profile, key(sourceId, file));
@@ -49,11 +53,60 @@ class PublicationDownloads {
     final transferKey = sourceKey(profile, key(adapter.source.id, file));
     return _pending.putIfAbsent(
       transferKey,
-      () => _download(profile, adapter, file, transferKey, onProgress).whenComplete(() {
-        _pending.remove(transferKey);
-        _cancellations.remove(transferKey);
-      }),
+      () {
+        final cancellation = TransferCancellation();
+        final completer = Completer<File>();
+        final task = _DownloadTask(
+          profile: profile,
+          adapter: adapter,
+          file: file,
+          transferKey: transferKey,
+          onProgress: onProgress,
+          cancellation: cancellation,
+          completer: completer,
+        );
+        _cancellations[transferKey] = cancellation;
+        _queue.addLast(task);
+        _drainQueue();
+        return completer.future.whenComplete(() {
+          _pending.remove(transferKey);
+          _cancellations.remove(transferKey);
+        });
+      },
     );
+  }
+
+  void _drainQueue() {
+    while (_activeTransfers < maxConcurrentTransfers && _queue.isNotEmpty) {
+      final task = _queue.removeFirst();
+      if (task.cancellation.cancelled) {
+        if (!task.completer.isCompleted) {
+          task.completer.completeError(const SourceException(SourceFailure.cancelled));
+        }
+        continue;
+      }
+      _activeTransfers++;
+      unawaited(
+        _download(
+          task.profile,
+          task.adapter,
+          task.file,
+          task.transferKey,
+          task.cancellation,
+          task.onProgress,
+        ).then<void>(
+          (file) {
+            if (!task.completer.isCompleted) task.completer.complete(file);
+          },
+          onError: (Object error, StackTrace stackTrace) {
+            if (!task.completer.isCompleted) task.completer.completeError(error, stackTrace);
+          },
+        ).whenComplete(() {
+          _activeTransfers--;
+          _drainQueue();
+        }),
+      );
+    }
   }
 
   Future<File> _download(
@@ -61,10 +114,9 @@ class PublicationDownloads {
     SourceAdapter adapter,
     PublicationFile file,
     String transferKey,
+    TransferCancellation cancel,
     void Function(int, int?)? onProgress,
   ) async {
-    final cancel = TransferCancellation();
-    _cancellations[transferKey] = cancel;
     final cached = await local(profile, adapter.source.id, file);
     cancel.check();
     if (cached != null) return cached;
@@ -82,6 +134,17 @@ class PublicationDownloads {
     final validatorFile = File('${target.path}.validator');
     var offset = await partial.exists() ? await partial.length() : 0;
     final validator = await validatorFile.exists() ? await validatorFile.readAsString() : null;
+    // A durable incomplete row lets startup and the download surface
+    // distinguish a recoverable transfer from a completed offline edition.
+    await repository.recordDownload(
+      profile,
+      key(adapter.source.id, file),
+      partial.path,
+      file.fingerprint,
+      offset,
+      complete: false,
+    );
+    cancel.check();
     var expectedSize = file.size ?? await adapter.contentSize(file);
     // Provider streams can resume against the immutable file fingerprint
     // encoded in the partial path. HTTP URLs need a representation validator.
@@ -232,6 +295,12 @@ class PublicationDownloads {
     for (final cancellation in _cancellations.values) {
       cancellation.cancel();
     }
+    while (_queue.isNotEmpty) {
+      final task = _queue.removeFirst();
+      if (!task.completer.isCompleted) {
+        task.completer.completeError(const SourceException(SourceFailure.cancelled));
+      }
+    }
   }
 
   /// Profile deletion waits for file writers to retire before removing their
@@ -253,6 +322,26 @@ class PublicationDownloads {
     }
     await repository.forgetDownload(profile, key(sourceId, file));
   }
+}
+
+class _DownloadTask {
+  const _DownloadTask({
+    required this.profile,
+    required this.adapter,
+    required this.file,
+    required this.transferKey,
+    required this.onProgress,
+    required this.cancellation,
+    required this.completer,
+  });
+
+  final String profile;
+  final SourceAdapter adapter;
+  final PublicationFile file;
+  final String transferKey;
+  final void Function(int, int?)? onProgress;
+  final TransferCancellation cancellation;
+  final Completer<File> completer;
 }
 
 ({int offset, int length})? _byteRange(String? value, int size) {
@@ -426,4 +515,5 @@ class SourceStreamGateway {
     _server = null;
   }
 }
+
 

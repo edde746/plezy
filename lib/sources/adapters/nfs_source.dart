@@ -84,6 +84,8 @@ class NfsSourceAdapter extends SourceAdapter {
   static const List<int> _emptyVerifier = [0, 0, 0, 0, 0, 0, 0, 0];
 
   final Map<String, List<int>> _handles = {};
+  final Map<String, _RpcSession> _rpcSessions = {};
+  final Map<String, Future<_RpcSession>> _rpcSessionOpenings = {};
   Future<List<int>>? _mount;
   int _readLimit = _maxRead;
   bool _closed = false;
@@ -199,62 +201,114 @@ class NfsSourceAdapter extends SourceAdapter {
 
   Future<Uint8List> _rpc(String host, int port, int program, int version, int procedure, Uint8List arguments) async {
     if (_closed) throw const SourceException(SourceFailure.cancelled);
-    Socket? socket;
-    _RpcWireReader? wire;
-    try {
-      final securityContext = _requiresRpcTls ? await _secureRpcContext() : null;
-      socket = await Socket.connect(host, port, timeout: const Duration(seconds: 15));
-      if (securityContext != null) {
-        socket = await _upgradeRpcTls(socket, host, program, version, securityContext);
+    final securityContext = _requiresRpcTls ? await _secureRpcContext() : null;
+    final connectionKey = '$host:$port/$program/$version';
+    final xid = math.Random.secure().nextInt(0xffffffff);
+    final auth = _XdrWriter()
+      ..uint32(DateTime.now().millisecondsSinceEpoch ~/ 1000)
+      ..string('plezyng')
+      ..uint32(_identity('uid'))
+      ..uint32(_identity('gid'))
+      ..uint32(0);
+    final request = _XdrWriter()
+      ..uint32(xid)
+      ..uint32(0)
+      ..uint32(_rpcVersion)
+      ..uint32(program)
+      ..uint32(version)
+      ..uint32(procedure)
+      ..uint32(1)
+      ..opaque(auth.take())
+      ..uint32(0)
+      ..opaque(const <int>[])
+      ..raw(arguments);
+    final payload = request.take();
+    if (payload.length > 1024 * 1024) throw const SourceException(SourceFailure.invalidData);
+    final record = Uint8List(payload.length + 4);
+    ByteData.sublistView(record).setUint32(0, 0x80000000 | payload.length, Endian.big);
+    record.setRange(4, record.length, payload);
+
+    late Uint8List responseBytes;
+    for (var attempt = 0; attempt < 2; attempt++) {
+      _RpcSession? session;
+      try {
+        final acquired = await _rpcSession(connectionKey, host, port, program, version, securityContext);
+        session = acquired;
+        responseBytes = await acquired.exchange(xid, record);
+        break;
+      } on SourceException catch (error) {
+        if (session != null) await _retireRpcSession(connectionKey, session);
+        if (error.reason != SourceFailure.unavailable || attempt == 1) rethrow;
+      } on Object {
+        if (session != null) await _retireRpcSession(connectionKey, session);
+        if (attempt == 1) throw const SourceException(SourceFailure.unavailable);
       }
-      final random = math.Random.secure();
-      final xid = random.nextInt(0xffffffff);
-      final auth = _XdrWriter()
-        ..uint32(DateTime.now().millisecondsSinceEpoch ~/ 1000)
-        ..string('plezyng')
-        ..uint32(_identity('uid'))
-        ..uint32(_identity('gid'))
-        ..uint32(0);
-      final request = _XdrWriter()
-        ..uint32(xid)
-        ..uint32(0)
-        ..uint32(_rpcVersion)
-        ..uint32(program)
-        ..uint32(version)
-        ..uint32(procedure)
-        ..uint32(1)
-        ..opaque(auth.take())
-        ..uint32(0)
-        ..opaque(const <int>[])
-        ..raw(arguments);
-      final payload = request.take();
-      if (payload.length > 1024 * 1024) throw const SourceException(SourceFailure.invalidData);
-      final record = Uint8List(payload.length + 4);
-      ByteData.sublistView(record).setUint32(0, 0x80000000 | payload.length, Endian.big);
-      record.setRange(4, record.length, payload);
-      socket.add(record);
-      await socket.flush().timeout(const Duration(seconds: 15));
-      wire = _RpcWireReader(socket);
-      final responseBytes = await wire.record();
-      final response = _XdrReader(responseBytes);
-      if (response.uint32() != xid || response.uint32() != 1) {
-        throw const SourceException(SourceFailure.invalidData);
-      }
-      final replyStatus = response.uint32();
-      if (replyStatus != 0) throw const SourceException(SourceFailure.unavailable);
-      response.uint32();
-      response.opaque(maxLength: 400);
-      final acceptStatus = response.uint32();
-      if (acceptStatus != 0) throw const SourceException(SourceFailure.unsupported);
-      return response.remaining();
-    } on SourceException {
-      rethrow;
-    } on Object {
-      throw const SourceException(SourceFailure.unavailable);
-    } finally {
-      await wire?.cancel();
-      socket?.destroy();
     }
+
+    final response = _XdrReader(responseBytes);
+    response.uint32(); // XID was checked by the session.
+    response.uint32(); // The session only accepts RPC reply records.
+    final replyStatus = response.uint32();
+    if (replyStatus != 0) throw const SourceException(SourceFailure.unavailable);
+    response.uint32();
+    response.opaque(maxLength: 400);
+    final acceptStatus = response.uint32();
+    if (acceptStatus != 0) throw const SourceException(SourceFailure.unsupported);
+    return response.remaining();
+  }
+
+  Future<_RpcSession> _rpcSession(
+    String key,
+    String host,
+    int port,
+    int program,
+    int version,
+    SecurityContext? securityContext,
+  ) async {
+    final existing = _rpcSessions[key];
+    if (existing != null && !existing.isClosed) return existing;
+    if (existing != null) await _retireRpcSession(key, existing);
+    var opening = _rpcSessionOpenings[key];
+    if (opening == null) {
+      opening = _openRpcSession(host, port, program, version, securityContext);
+      _rpcSessionOpenings[key] = opening;
+    }
+    try {
+      return await opening;
+    } finally {
+      if (identical(_rpcSessionOpenings[key], opening)) _rpcSessionOpenings.remove(key);
+    }
+  }
+
+  Future<_RpcSession> _openRpcSession(
+    String host,
+    int port,
+    int program,
+    int version,
+    SecurityContext? securityContext,
+  ) async {
+    if (_closed) throw const SourceException(SourceFailure.cancelled);
+    final raw = await Socket.connect(host, port, timeout: const Duration(seconds: 15));
+    try {
+      final socket = securityContext == null
+          ? raw
+          : await _upgradeRpcTls(raw, host, program, version, securityContext);
+      if (_closed) {
+        socket.destroy();
+        throw const SourceException(SourceFailure.cancelled);
+      }
+      final session = _RpcSession(socket);
+      _rpcSessions['$host:$port/$program/$version'] = session;
+      return session;
+    } on Object {
+      raw.destroy();
+      rethrow;
+    }
+  }
+
+  Future<void> _retireRpcSession(String key, _RpcSession session) async {
+    if (identical(_rpcSessions[key], session)) _rpcSessions.remove(key);
+    await session.close();
   }
 
   Future<Socket> _upgradeRpcTls(Socket socket, String host, int program, int version, SecurityContext context) async {
@@ -699,6 +753,11 @@ class NfsSourceAdapter extends SourceAdapter {
     if (_closed) return;
     _closed = true;
     _handles.clear();
+    for (final session in _rpcSessions.values) {
+      unawaited(session.close());
+    }
+    _rpcSessions.clear();
+    _rpcSessionOpenings.clear();
     super.close();
   }
 }
@@ -824,10 +883,17 @@ class _RpcWireReader {
   Object? _error;
   bool _done = false;
   Completer<void>? _changed;
+  bool get isClosed => _done || _error != null;
 
   void _onData(List<int> chunk) {
     if (chunk.isEmpty) return;
     final rest = _buffer.sublist(_offset);
+    if (rest.length + chunk.length > 16 * 1024 * 1024 + 4) {
+      _error = const SourceException(SourceFailure.invalidData);
+      _signal();
+      unawaited(_subscription?.cancel());
+      return;
+    }
     _buffer = [...rest, ...chunk];
     _offset = 0;
     _signal();
@@ -850,7 +916,10 @@ class _RpcWireReader {
   Future<Uint8List> _readExact(int length) async {
     while (_buffer.length - _offset < length) {
       final error = _error;
-      if (error != null) throw SourceException(SourceFailure.unavailable);
+      if (error != null) {
+        if (error is SourceException) throw error;
+        throw const SourceException(SourceFailure.unavailable);
+      }
       if (_done) throw const SourceException(SourceFailure.unavailable);
       final changed = _changed ??= Completer<void>();
       try {
@@ -879,4 +948,41 @@ class _RpcWireReader {
     return parts.takeBytes();
   }
 }
+
+/// One in-flight RPC at a time per authenticated TCP session. NFSv3's record
+/// stream remains open across calls, avoiding a TCP/TLS handshake for every
+/// READ while keeping response framing and transaction IDs checked.
+class _RpcSession {
+  _RpcSession(this.socket) : _wire = _RpcWireReader(socket);
+
+  final Socket socket;
+  final _RpcWireReader _wire;
+  Future<void> _tail = Future.value();
+  bool _closed = false;
+  bool get isClosed => _closed || _wire.isClosed;
+
+  Future<Uint8List> exchange(int xid, Uint8List record) {
+    final operation = _tail.then((_) async {
+      if (isClosed) throw const SourceException(SourceFailure.unavailable);
+      socket.add(record);
+      await socket.flush().timeout(const Duration(seconds: 15));
+      final response = await _wire.record();
+      final reader = _XdrReader(response);
+      if (reader.uint32() != xid || reader.uint32() != 1) {
+        throw const SourceException(SourceFailure.invalidData);
+      }
+      return response;
+    });
+    _tail = operation.then<void>((_) {}, onError: (Object _, StackTrace __) {});
+    return operation;
+  }
+
+  Future<void> close() async {
+    if (_closed) return;
+    _closed = true;
+    socket.destroy();
+    await _wire.cancel();
+  }
+}
+
 
