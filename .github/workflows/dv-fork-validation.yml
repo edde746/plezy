@@ -1,0 +1,29 @@
+name: Dolby Vision fork validation
+
+on:
+  pull_request_target:
+    branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dv-fork-validation-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  contracts:
+    if: ${{ github.repository == 'snapetech-org/PlezyNG' }}
+    runs-on:
+      group: gvisor-sandbox
+      labels: gvisor-sandbox
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+          ref: ${{ github.event.pull_request.head.sha }}
+          persist-credentials: false
+      - name: Run Dolby experiment contracts in the isolated sandbox
+        run: python3 scripts/test_dv_experiments.py

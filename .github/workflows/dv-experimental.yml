@@ -3,8 +3,7 @@ name: Experimental Dolby Vision engine
 on:
   workflow_dispatch:
   push:
-    branches:
-      - 'codex/dv-experimental-*'
+    branches: [main]
     paths:
       - 'tools/dv-engine/**'
       - '.github/workflows/dv-experimental.yml'
@@ -18,7 +17,16 @@ concurrency:
 
 jobs:
   linux-engine:
-    runs-on: ubuntu-24.04
+    if: ${{ github.repository == 'snapetech-org/PlezyNG' && github.ref == 'refs/heads/main' }}
+    runs-on:
+      group: ng-shared-main-jit
+      labels:
+        - self-hosted
+        - linux
+        - x64
+        - ng-shared-main-plezyng
+        - ${{ format('ng-main-run-{0}', github.run_id) }}
+        - ${{ format('gha-{0}-linux-engine', github.run_id) }}
     timeout-minutes: 90
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7

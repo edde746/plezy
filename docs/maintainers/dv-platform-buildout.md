@@ -204,10 +204,43 @@ Checkpoint for source commit `9c0fb9693ad7b705e737a1829d10bfd70c6ce17e`
   check required every optional package even though SwiftPM resolved only the
   selected ffmpegbuild, libdovi, and smbclient dependencies; the branch now
   accepts a valid subset while requiring the core pins and rejecting drift.
-- These two corrections have not had a private-JIT rerun. The historical workflow
-  used GitHub-hosted runners and cannot be repeated until an approved private JIT
-  route is provisioned and authorized for this workflow. Do not dispatch the
-  hosted workflow or treat its earlier passing jobs as an overall pass.
+- These two corrections have not had a private-JIT rerun. The historic run used
+  GitHub-hosted runners; the current Dolby workflow is JIT-only, but its routes
+  are not yet authorized. Do not repeat the historic hosted route or treat its
+  earlier passing jobs as an overall pass.
+
+## Current private-JIT route and blockers (2026-10-26)
+
+A read-only organization API check found these exact routes:
+
+| Lane | Live route | Blocker |
+| --- | --- | --- |
+| Trusted Linux jobs | PlezyNG is selected in `ng-shared-main-jit` (group 10). The live allowlist contains only `build.yml@refs/heads/main`. | `dv-platforms.yml` and `dv-experimental.yml` are not in the group or broker allowlists. The workflow jobs now declare the existing per-job JIT label shape, but cannot run until the owner adds those exact workflow refs and job IDs. |
+| Apple source and contract jobs | `private-apple-builds` (group 8) has an online `kspld0-private-apple` runner. | PlezyNG is not selected. The current runner is static, so Dolby jobs require an ephemeral JIT runner with the dedicated `private-apple-jit` label plus group and broker authorization. The workflow deliberately cannot match the static runner. |
+| Windows contract job | No `packer-windows` runner group is currently returned by the organization API. | The former route is retired. Restore the Packer JIT route, then allowlist `dv-platforms.yml` and job `windows-contracts`; do not use the trusted Linux pool. |
+| Fork and untrusted PR checks | `gvisor-sandbox` (group 6) is a disposable, restricted-egress JIT sandbox. | Its live allowlist contains only smoke workflows for other repositories. `dv-fork-validation.yml` is isolated on this group, but PlezyNG and the workflow are not authorized in the group or broker. `public-fork-jit` also has no PlezyNG workflow; `private-pr-jit` (group 9) has none selected. |
+
+The trusted jobs are main-ref only and all Dolby workflows now name JIT groups;
+none has a GitHub-hosted runner or hosted fallback. The owner-side route work is:
+
+1. Add `dv-platforms.yml@refs/heads/main` and `dv-experimental.yml@refs/heads/main`
+   to group 10 and the broker. Admit Linux jobs `linux-contracts`, `app-tests`,
+   `felbaker-source`, and `linux-engine` with their run-scoped labels.
+2. Provision an ephemeral Apple JIT runner in group 8 carrying
+   `private-apple-jit`, then authorize `dv-platforms.yml@refs/heads/main` in the
+   group and its broker.
+3. Restore the Packer Windows JIT route, then authorize
+   `dv-platforms.yml@refs/heads/main` and `windows-contracts` there.
+4. Add `dv-fork-validation.yml@refs/heads/main` to group 6 and its broker. The
+   broker must accept this exact `pull_request_target` workflow and head SHA,
+   with read-only repository access, no secrets, and the isolated
+   `gvisor-sandbox` runner. Never route fork code through the trusted-main group.
+
+The app repository's general pull-request workflow (`ci.yml`) still declares
+GitHub-hosted jobs. Opening a PR from this branch would start those jobs, so do
+not open or merge a PR until that PR route is also JIT-only. No jobs were
+dispatched, and no shared group, broker allowlist, runner service, or other
+worktree was changed during this work.
 
 Private-JIT validation checks (blocked until route provisioning):
 
