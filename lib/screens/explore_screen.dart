@@ -317,7 +317,6 @@ class ExploreScreenState extends State<ExploreScreen>
           key: _actionBarKey,
           onNavigateDown: searchFocusNode.requestFocus,
           actions: [
-            if (sources.activeSource?.id == CatalogSourceId.mdblist) _manageShelvesAction(),
             FocusableAction(icon: Symbols.refresh_rounded, tooltip: t.common.refresh, onPressed: manualRefresh),
             // Append this action so existing TV and keyboard focus positions stay stable.
             FocusableAction(
@@ -328,6 +327,7 @@ class ExploreScreenState extends State<ExploreScreen>
                 MaterialPageRoute<void>(builder: (_) => const FindNextScreen(includeCatalog: true)),
               ),
             ),
+            if (sources.activeSource?.id == CatalogSourceId.mdblist) _manageShelvesAction(),
           ],
         ),
       ],
@@ -445,9 +445,9 @@ class ExploreScreenState extends State<ExploreScreen>
                 ),
                 if (_explore.activeSource?.id == CatalogSourceId.mdblist)
                   TextButton(
-                    onPressed: () => Navigator.of(
-                      context,
-                    ).push(MaterialPageRoute<void>(builder: (_) => const MdblistExploreShelvesScreen())),
+                    onPressed: () =>
+                        Navigator.of(context)
+                            .push(MaterialPageRoute<void>(builder: (_) => const MdblistExploreShelvesScreen())),
                     child: Text(t.explore.mdblistShelves.manage),
                   ),
               ],
@@ -547,7 +547,6 @@ class ExploreScreenState extends State<ExploreScreen>
             onBack: _navigateToSidebar,
             spacing: 4,
             actions: [
-              if (active?.id == CatalogSourceId.mdblist) _manageShelvesAction(),
               if (active != null && sources.connectedSources.length > 1)
                 FocusableAction(
                   debugLabel: 'ExploreSourceSwitcher',
@@ -555,9 +554,8 @@ class ExploreScreenState extends State<ExploreScreen>
                   child: _buildSourceSwitcher(
                     sources,
                     active,
-                    textStyle: Theme.of(
-                      context,
-                    ).textTheme.titleMedium?.copyWith(color: foregroundColor, fontWeight: .w600),
+                    textStyle: Theme.of(context).textTheme.titleMedium
+                        ?.copyWith(color: foregroundColor, fontWeight: .w600),
                     anchorAlignment: AppMenuAnchorAlignment.end,
                     parentOwnsFocus: true,
                   ),
@@ -567,9 +565,9 @@ class ExploreScreenState extends State<ExploreScreen>
                   icon: Symbols.search_rounded,
                   iconColor: foregroundColor,
                   tooltip: t.common.search,
-                  onPressed: () => Navigator.of(
-                    context,
-                  ).push(MaterialPageRoute<void>(builder: (_) => CatalogSearchScreen(source: active))),
+                  onPressed: () =>
+                      Navigator.of(context)
+                          .push(MaterialPageRoute<void>(builder: (_) => CatalogSearchScreen(source: active))),
                 ),
               FocusableAction(
                 icon: Symbols.refresh_rounded,
@@ -586,6 +584,7 @@ class ExploreScreenState extends State<ExploreScreen>
                   MaterialPageRoute<void>(builder: (_) => const FindNextScreen(includeCatalog: true)),
                 ),
               ),
+              if (active?.id == CatalogSourceId.mdblist) _manageShelvesAction(),
             ],
           ),
         ],

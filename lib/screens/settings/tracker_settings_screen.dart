@@ -159,7 +159,12 @@ class TrackerConfig {
         leading: const AppIcon(Symbols.view_list_rounded, fill: 1),
         title: Text(t.explore.mdblistShelves.manage),
         subtitle: Text(t.explore.mdblistShelves.manageDescription),
-        trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+        trailing: AppIcon(
+          Directionality.of(context) == TextDirection.rtl
+              ? Symbols.chevron_left_rounded
+              : Symbols.chevron_right_rounded,
+          fill: 1,
+        ),
         onTap: () =>
             Navigator.of(context).push(MaterialPageRoute<void>(builder: (_) => const MdblistExploreShelvesScreen())),
       ),

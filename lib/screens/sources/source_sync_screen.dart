@@ -3,6 +3,7 @@ import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
 import '../../focus/focusable_text_field.dart';
+import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
 import '../../sources/source_controller.dart';
 import '../../sources/source_models.dart';
@@ -129,7 +130,11 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                           for (final s in sources)
                             DropdownMenuItem(
                               value: s.id,
-                              child: Text('${s.name} · ${sourceKindName(s.kind)}', overflow: TextOverflow.ellipsis),
+                              child: Text(
+                                '${isolateDisplayText(s.name)} · ${sourceKindName(s.kind)}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                             ),
                         ],
                         onChanged: _busy ? null : (v) => setState(() => _source = v),
@@ -139,6 +144,7 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                         FocusableTextField(
                           controller: _folder,
                           enabled: !_busy,
+                          textDirection: TextDirection.ltr,
                           autocorrect: false,
                           textInputAction: TextInputAction.next,
                           decoration: InputDecoration(
@@ -152,6 +158,7 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                       FocusableTextField(
                         controller: _code,
                         enabled: !_busy,
+                        textDirection: TextDirection.ltr,
                         obscureText: !_reveal,
                         autocorrect: false,
                         enableSuggestions: false,
@@ -209,7 +216,12 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                         child: Text(t.audiobook.disableSync),
                       ),
                     ],
-                    if (_busy || sync.running) const LinearProgressIndicator(),
+                    if (_busy || sync.running)
+                      Semantics(
+                        label: _busy ? t.audiobook.saveSync : t.fileSources.sync,
+                        liveRegion: true,
+                        child: const LinearProgressIndicator(),
+                      ),
                     if (configured &&
                         selected != null &&
                         (sync.failure == SourceFailure.authentication || sync.failure == SourceFailure.permission))
@@ -231,16 +243,21 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                     if (_error != null || sync.failure != null)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 16),
-                        child: Text(sourceFailureText(_error ?? SourceException(sync.failure!))),
+                        child: Semantics(
+                          liveRegion: true,
+                          child: Text(
+                            sourceFailureText(_error ?? SourceException(sync.failure!)),
+                            style: TextStyle(color: Theme.of(context).colorScheme.error),
+                          ),
+                        ),
                       ),
                     if (sync.lastSuccess != null)
                       Padding(
                         padding: const EdgeInsets.symmetric(vertical: 8),
                         child: Text(
                           t.audiobook.lastSynced(
-                            time: MaterialLocalizations.of(
-                              context,
-                            ).formatTimeOfDay(TimeOfDay.fromDateTime(sync.lastSuccess!.toLocal())),
+                            time: MaterialLocalizations.of(context)
+                                .formatTimeOfDay(TimeOfDay.fromDateTime(sync.lastSuccess!.toLocal())),
                           ),
                         ),
                       ),
@@ -256,7 +273,12 @@ class _SourceSyncScreenState extends State<SourceSyncScreen> {
                           child: Column(
                             crossAxisAlignment: CrossAxisAlignment.stretch,
                             children: [
-                              Text(conflict.entry.title, style: Theme.of(context).textTheme.titleMedium),
+                              Text(
+                                isolateDisplayText(conflict.entry.displayTitle),
+                                style: Theme.of(context).textTheme.titleMedium,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                              ),
                               for (final (index, version) in conflict.values.indexed)
                                 SourceTile(
                                   title: _device(version),

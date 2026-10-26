@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../focus/focusable_text_field.dart';
 import '../../i18n/strings.g.dart';
 import '../../services/cloud_settings_backup_service.dart';
 import '../../utils/app_logger.dart';
@@ -126,31 +127,41 @@ class _CloudSettingsBackupDialogState extends State<CloudSettingsBackupDialog> {
                 children: [
                   Text(t.settings.cloudBackupDescription),
                   const SizedBox(height: 16),
-                  TextField(
+                  FocusableTextField(
                     controller: _url,
                     enabled: !_working,
                     keyboardType: TextInputType.url,
+                    textInputAction: TextInputAction.next,
+                    autocorrect: false,
+                    enableSuggestions: false,
                     decoration: InputDecoration(
                       labelText: t.settings.cloudBackupUrl,
                       prefixIcon: const AppIcon(Symbols.link_rounded),
                     ),
                   ),
-                  TextField(
+                  FocusableTextField(
                     controller: _username,
                     enabled: !_working,
+                    autocorrect: false,
+                    enableSuggestions: false,
                     decoration: InputDecoration(labelText: t.settings.cloudBackupUsername),
                     textInputAction: TextInputAction.next,
                   ),
-                  TextField(
+                  FocusableTextField(
                     controller: _password,
                     enabled: !_working,
                     obscureText: true,
+                    autocorrect: false,
+                    enableSuggestions: false,
                     decoration: InputDecoration(labelText: t.settings.cloudBackupPassword),
                     textInputAction: TextInputAction.done,
                   ),
                   if (_message != null) ...[
                     const SizedBox(height: 12),
-                    Align(alignment: AlignmentDirectional.centerStart, child: Text(_message!)),
+                    Align(
+                      alignment: AlignmentDirectional.centerStart,
+                      child: Semantics(liveRegion: true, child: Text(_message!)),
+                    ),
                   ],
                   if (_working) ...[const SizedBox(height: 12), const LinearProgressIndicator()],
                 ],

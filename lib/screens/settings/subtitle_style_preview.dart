@@ -92,9 +92,8 @@ class SubtitleStylePreview extends StatelessWidget {
     final textColor = hexToColor(read(SettingsService.subtitleTextColor));
     final borderColor = hexToColor(read(SettingsService.subtitleBorderColor));
     final backgroundOpacity = read(SettingsService.subtitleBackgroundOpacity) / 100;
-    final backgroundColor = hexToColor(
-      read(SettingsService.subtitleBackgroundColor),
-    ).withValues(alpha: backgroundOpacity);
+    final backgroundColor = hexToColor(read(SettingsService.subtitleBackgroundColor))
+        .withValues(alpha: backgroundOpacity);
     final bold = read(SettingsService.subtitleBold);
     final italic = read(SettingsService.subtitleItalic);
     // 0 % is the top of the frame, 100 % the bottom — the same reading as
@@ -270,15 +269,17 @@ class _FloatingPreview extends StatelessWidget {
       bottom: insets.bottom + 24,
       // Never a hit target: it sits over real controls, and a dialog behind it
       // must stay operable.
-      child: IgnorePointer(
-        child: Opacity(
-          opacity: 0.92,
-          child: DecoratedBox(
-            decoration: BoxDecoration(
-              borderRadius: const BorderRadius.all(Radius.circular(14)),
-              boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.4), blurRadius: 16)],
+      child: ExcludeSemantics(
+        child: IgnorePointer(
+          child: Opacity(
+            opacity: 0.92,
+            child: DecoratedBox(
+              decoration: BoxDecoration(
+                borderRadius: const BorderRadius.all(Radius.circular(14)),
+                boxShadow: [BoxShadow(color: Colors.black.withValues(alpha: 0.4), blurRadius: 16)],
+              ),
+              child: const SubtitleStylePreview(padding: EdgeInsets.zero),
             ),
-            child: const SubtitleStylePreview(padding: EdgeInsets.zero),
           ),
         ),
       ),

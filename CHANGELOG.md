@@ -2,6 +2,7 @@
 
 ## [Unreleased]
 
+- Align settings and navigation with localized values, RTL direction cues, and stable keyboard/TV focus order; bound long metadata and announce sync feedback.
 - Polish focus and dialog flows across playback, Settings, sources (including notes), lending, and discovery; keep compact artwork retry focusable, align subtitle previews with device preferences, keep search keyboard-safe, isolate external metadata for RTL, and filter Videos by watch progress.
 - Fit Find your next to the screen with persistent action buttons, mirrored swipe/TV direction cues, contextual help, and artwork that follows the current pick. Restore downloaded and alternate covers, distinguish artwork loading from missing images, and allow failed source covers to be retried.
 

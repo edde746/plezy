@@ -279,6 +279,24 @@ class DownloadsScreenState extends State<DownloadsScreen>
                           focusNode: _retryFailedFocusNode,
                           onPressed: () => _retryDownloads(context.read<DownloadProvider>().failedDownloadKeys),
                         ),
+                      FocusableAction(
+                        icon: Symbols.rule_settings_rounded,
+                        tooltip: t.downloads.activeSyncRules,
+                        debugLabel: 'downloads_sync_rules',
+                        onPressed: () =>
+                            Navigator.push(context, MaterialPageRoute(builder: (_) => const SyncRulesScreen())),
+                      ),
+                      // Mobile mirrors the library browse options action; desktop
+                      // and TV expose the same options as per-tab chips instead.
+                      if (PlatformDetector.isMobile(context) && tabController.index > 0)
+                        FocusableAction(
+                          icon: Symbols.tune_rounded,
+                          tooltip: t.downloads.options,
+                          debugLabel: 'downloads_options',
+                          onPressed: () => _activeOptionsTab()?.showOptionsSheet(),
+                        ),
+                      // Keep additions after the existing actions to preserve
+                      // their TV and keyboard focus positions.
                       if (showSync)
                         FocusableAction(
                           debugLabel: 'downloads_sync_now',
@@ -299,28 +317,12 @@ class DownloadsScreenState extends State<DownloadsScreen>
                                 )
                               : null,
                         ),
-                      FocusableAction(
-                        icon: Symbols.rule_settings_rounded,
-                        tooltip: t.downloads.activeSyncRules,
-                        debugLabel: 'downloads_sync_rules',
-                        onPressed: () =>
-                            Navigator.push(context, MaterialPageRoute(builder: (_) => const SyncRulesScreen())),
-                      ),
                       if (downloadProvider.canReviewOrphanDownloads)
                         FocusableAction(
                           icon: Symbols.delete_sweep_rounded,
                           tooltip: t.downloads.reviewOrphanFiles,
                           debugLabel: 'downloads_review_orphans',
                           onPressed: _reviewOrphanDownloads,
-                        ),
-                      // Mobile mirrors the library browse options action; desktop
-                      // and TV expose the same options as per-tab chips instead.
-                      if (PlatformDetector.isMobile(context) && tabController.index > 0)
-                        FocusableAction(
-                          icon: Symbols.tune_rounded,
-                          tooltip: t.downloads.options,
-                          debugLabel: 'downloads_options',
-                          onPressed: () => _activeOptionsTab()?.showOptionsSheet(),
                         ),
                       // Append this action so existing TV action positions stay stable.
                       FocusableAction(
@@ -745,7 +747,6 @@ class _OrphanDownloadReviewDialog extends StatelessWidget {
                 itemBuilder: (context, index) {
                   final file = scan.files[index];
                   return FocusableButton(
-                    autofocus: index == 0,
                     onPressed: () {},
                     child: Padding(
                       padding: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),

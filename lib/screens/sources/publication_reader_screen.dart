@@ -18,6 +18,7 @@ import '../../i18n/strings.g.dart';
 import '../../i18n/locale_preferences.dart';
 import '../../i18n/presentation_formats.dart';
 import '../../focus/focusable_slider.dart';
+import '../../focus/focusable_text_field.dart';
 import '../../services/playback_coordinator.dart';
 import '../../sources/publication_archive.dart';
 import '../../sources/source_controller.dart';
@@ -25,10 +26,12 @@ import '../../sources/source_models.dart';
 import '../../sources/source_playback.dart';
 import '../../sources/reader_preferences.dart';
 import '../../theme/mono_tokens.dart';
+import '../../utils/dialogs.dart';
 import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/app_menu.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import 'source_notes_screen.dart';
 import 'source_sync_screen.dart';
@@ -296,9 +299,11 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
         }
       case 'ready':
         _toc = sourceList(message['toc']).map(sourceMap).toList();
-        _overlays = sourceList(
-          message['overlays'],
-        ).take(100000).map(sourceMap).where((m) => _server!.archive.files.containsKey(m['audio'])).toList();
+        _overlays = sourceList(message['overlays'])
+            .take(100000)
+            .map(sourceMap)
+            .where((m) => _server!.archive.files.containsKey(m['audio']))
+            .toList();
         if (mounted) setState(() => _ready = true);
       case 'location':
         if (_progress == null) return;
@@ -503,20 +508,23 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
 
   Future<void> _jumpToPage() async {
     if (_pages < 1) return;
+    final destinationLabel = pdf || _fixed ? t.fileSources.goToPage : t.fileSources.goToSection;
     final input = TextEditingController(
       text: formatDecimal(pdf ? _pdf.pageNumber ?? 1 : (_progress?.locator?.page ?? 1), maximumDecimals: 0),
     );
     final form = GlobalKey<FormState>();
-    final page = await showDialog<int>(
+    final page = await showScopedDialog<int>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(pdf || _fixed ? t.fileSources.goToPage : t.fileSources.goToSection),
+        title: Text(destinationLabel),
         content: Form(
           key: form,
-          child: TextFormField(
+          child: FocusableTextFormField(
             controller: input,
             autofocus: true,
             keyboardType: TextInputType.number,
+            textInputAction: TextInputAction.done,
+            textDirection: TextDirection.ltr,
             decoration: InputDecoration(helperText: t.fileSources.pageRange(count: formatCount(_pages))),
             validator: (value) {
               final n = parseLocalizedInteger(value ?? '');
@@ -528,12 +536,13 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(t.fileSources.cancel)),
-          FilledButton(
+          DialogActionButton(onPressed: () => Navigator.pop(context), label: t.fileSources.cancel),
+          DialogActionButton(
             onPressed: () {
               if (form.currentState!.validate()) Navigator.pop(context, parseLocalizedInteger(input.text));
             },
-            child: Text(t.fileSources.goToPage),
+            label: destinationLabel,
+            isPrimary: true,
           ),
         ],
       ),
@@ -903,7 +912,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
           );
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.entry.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+        title: Text(isolateDisplayText(widget.entry.displayTitle), maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
           IconButton(
             tooltip: t.fileSources.contents,
@@ -1018,10 +1027,12 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
               ),
               Expanded(
                 child: Text(
-                  [
-                    _chapter,
-                    if (_progress != null) formatPercent(_progress!.fraction),
-                  ].where((part) => part.isNotEmpty).join(' · '),
+                  isolateDisplayText(
+                    [
+                      _chapter,
+                      if (_progress != null) formatPercent(_progress!.fraction),
+                    ].where((part) => part.isNotEmpty).join(' · '),
+                  ),
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   textAlign: TextAlign.center,
@@ -1089,9 +1100,17 @@ class _BookSearchScreen extends StatefulWidget {
 }
 
 class _BookSearchScreenState extends State<_BookSearchScreen> {
+  final _query = TextEditingController();
   List<Map<String, dynamic>> _results = [];
   bool _searching = false;
   int _epoch = 0;
+
+  @override
+  void dispose() {
+    _query.dispose();
+    super.dispose();
+  }
+
   Future<void> _search(String query) async {
     final epoch = ++_epoch;
     setState(() => _searching = true);
@@ -1112,9 +1131,11 @@ class _BookSearchScreenState extends State<_BookSearchScreen> {
         sliver: SliverToBoxAdapter(
           child: Column(
             children: [
-              TextField(
+              FocusableTextField(
+                controller: _query,
                 autofocus: true,
                 onSubmitted: (q) => sourceAction(context, () => _search(q)),
+                textInputAction: TextInputAction.search,
                 decoration: InputDecoration(
                   labelText: t.fileSources.searchBook,
                   suffixIcon: const AppIcon(Symbols.search_rounded),
@@ -1151,6 +1172,8 @@ class _PdfSearchScreen extends StatefulWidget {
 }
 
 class _PdfSearchScreenState extends State<_PdfSearchScreen> {
+  final _query = TextEditingController();
+
   @override
   void initState() {
     super.initState();
@@ -1164,6 +1187,7 @@ class _PdfSearchScreenState extends State<_PdfSearchScreen> {
   @override
   void dispose() {
     widget.search.removeListener(_changed);
+    _query.dispose();
     super.dispose();
   }
 
@@ -1176,9 +1200,11 @@ class _PdfSearchScreenState extends State<_PdfSearchScreen> {
         sliver: SliverToBoxAdapter(
           child: Column(
             children: [
-              TextField(
+              FocusableTextField(
+                controller: _query,
                 autofocus: true,
                 onChanged: widget.search.startTextSearch,
+                textInputAction: TextInputAction.search,
                 decoration: InputDecoration(labelText: t.fileSources.searchBook),
               ),
               if (widget.search.isSearching) const LinearProgressIndicator(),

@@ -239,8 +239,13 @@ class _AddSourceScreenState extends State<AddSourceScreen> {
               ),
               for (final device in devices)
                 FocusableListTile(
-                  title: Text(device.name),
-                  subtitle: Text(device.location.toString(), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  title: Text(isolateDisplayText(device.name), maxLines: 2, overflow: TextOverflow.ellipsis),
+                  subtitle: Text(
+                    isolateDisplayText(device.location.toString()),
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    textDirection: TextDirection.ltr,
+                  ),
                   onTap: () => Navigator.pop(sheetContext, device),
                 ),
             ],

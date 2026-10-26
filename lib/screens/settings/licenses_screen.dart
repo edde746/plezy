@@ -3,8 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:plezy/widgets/app_icon.dart';
 import 'package:material_symbols_icons/symbols.dart';
+
 import '../../widgets/focused_scroll_scaffold.dart';
 import '../../widgets/loading_indicator_box.dart';
+import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
 
 class MergedLicenseEntry {
@@ -90,9 +92,14 @@ class LicensesScreen extends StatelessWidget {
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: .bold),
                       ),
                       subtitle: mergedLicense.licenseEntries.length > 1
-                          ? Text(t.licenses.licensesCount(count: mergedLicense.licenseEntries.length))
+                          ? Text(t.licenses.licensesCount(count: formatCount(mergedLicense.licenseEntries.length)))
                           : null,
-                      trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+                      trailing: AppIcon(
+                        Directionality.of(context) == TextDirection.rtl
+                            ? Symbols.chevron_left_rounded
+                            : Symbols.chevron_right_rounded,
+                        fill: 1,
+                      ),
                       onTap: () => _showLicenseDetail(context, mergedLicense),
                     ),
                   );
@@ -163,7 +170,9 @@ class _LicenseDetailScreen extends StatelessWidget {
                           crossAxisAlignment: .start,
                           children: [
                             Text(
-                              isMultipleLicenses ? t.licenses.licenseNumber(number: index + 1) : t.licenses.license,
+                              isMultipleLicenses
+                                  ? t.licenses.licenseNumber(number: formatDecimal(index + 1, maximumDecimals: 0))
+                                  : t.licenses.license,
                               style: Theme.of(context).textTheme.titleMedium?.copyWith(fontWeight: .bold),
                             ),
                             const SizedBox(height: 16),

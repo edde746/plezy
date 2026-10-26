@@ -1,9 +1,9 @@
-import '../../i18n/presentation_formats.dart';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
 import '../../services/settings_service.dart';
 import '../../widgets/setting_tile.dart';
@@ -120,7 +120,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
               onPreviewEnd: () => setSubtitleStylePreviewOverride(SettingsService.subtitleFontSize.key, null),
               icon: Symbols.format_size_rounded,
               title: t.subtitlingStyling.fontSize,
-              subtitleBuilder: (v) => '$v',
+              subtitleBuilder: (v) => formatDecimal(v, maximumDecimals: 0),
               labelText: t.subtitlingStyling.fontSize,
               suffixText: '',
             ),
@@ -177,7 +177,7 @@ class _SubtitleStylingScreenState extends State<SubtitleStylingScreen> {
               onPreviewEnd: () => setSubtitleStylePreviewOverride(SettingsService.subtitleBorderSize.key, null),
               icon: Symbols.border_style_rounded,
               title: t.subtitlingStyling.borderSize,
-              subtitleBuilder: (v) => '$v',
+              subtitleBuilder: (v) => formatDecimal(v, maximumDecimals: 0),
               labelText: t.subtitlingStyling.borderSize,
               suffixText: '',
             ),

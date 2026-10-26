@@ -1,13 +1,18 @@
 import 'dart:async';
+
 import '../media/ids.dart';
+
 import 'dart:io' show Platform;
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
 import 'package:plezy/widgets/app_icon.dart';
+
 import '../widgets/server_activities_button.dart';
+
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
+
 import '../focus/focusable_action_bar.dart';
 import '../focus/hub_vertical_navigation.dart';
 import '../focus/locked_hub_controller.dart';
@@ -862,14 +867,6 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 onNavigateLeft: _navigateToSidebar,
                 onNavigateDown: _focusContentFromAppBar,
                 actions: [
-                  FocusableAction(
-                    icon: Symbols.auto_awesome_rounded,
-                    iconColor: foregroundColor,
-                    tooltip: t.discover.findNext.open,
-                    onPressed: () => Navigator.of(
-                      context,
-                    ).push<void>(MaterialPageRoute<void>(builder: (_) => const FindNextScreen())),
-                  ),
                   FocusableAction(icon: Symbols.refresh_rounded, iconColor: foregroundColor, onPressed: manualRefresh),
                   // Watch Together
                   FocusableAction(
@@ -947,6 +944,15 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                     ),
                   // User menu — profiles + sign out
                   _buildUserMenuAction(context),
+                  // Append this destination to preserve existing TV and keyboard focus positions.
+                  FocusableAction(
+                    icon: Symbols.auto_awesome_rounded,
+                    iconColor: foregroundColor,
+                    tooltip: t.discover.findNext.open,
+                    onPressed: () =>
+                        Navigator.of(context)
+                            .push<void>(MaterialPageRoute<void>(builder: (_) => const FindNextScreen())),
+                  ),
                 ],
               );
             },

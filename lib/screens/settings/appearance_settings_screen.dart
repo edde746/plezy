@@ -1,10 +1,10 @@
-import 'package:plezy/i18n/presentation_formats.dart';
 import 'dart:io' show Platform;
 
 import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
 import '../../providers/catalog_sources_provider.dart';
 import '../../providers/theme_provider.dart';
@@ -141,10 +141,13 @@ class AppearanceSettingsScreen extends StatelessWidget {
               pref: SettingsService.contentScreensaverDelayMinutes,
               icon: Symbols.timer_rounded,
               title: t.settings.contentScreensaverDelay,
-              subtitleBuilder: (minutes) => '$minutes ${t.settings.minutesShort}',
+              subtitleBuilder: (minutes) => '${formatDecimal(minutes, maximumDecimals: 0)} ${t.settings.minutesShort}',
               options: [
                 for (final minutes in [1, 5, 10, 15, 30, 60])
-                  DialogOption(value: minutes, title: '$minutes ${t.settings.minutesShort}'),
+                  DialogOption(
+                    value: minutes,
+                    title: '${formatDecimal(minutes, maximumDecimals: 0)} ${t.settings.minutesShort}',
+                  ),
               ],
             ),
             SettingValueBuilder<List<String>>(
@@ -156,7 +159,7 @@ class AppearanceSettingsScreen extends StatelessWidget {
                     ? t.settings.contentScreensaverAllLibraries
                     : selectedLibraries.contains('__none__')
                     ? t.settings.contentScreensaverNoLibraries
-                    : t.settings.contentScreensaverSelectedLibraries(count: selectedLibraries.length),
+                    : t.settings.contentScreensaverSelectedLibraries(count: formatCount(selectedLibraries.length)),
                 destinationBuilder: (_) => const ContentScreensaverLibrariesScreen(),
               ),
             ),

@@ -182,7 +182,12 @@ class _BackendCard extends StatelessWidget {
                     ],
                   ),
                 ),
-                const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+                AppIcon(
+                  Directionality.of(context) == TextDirection.rtl
+                      ? Symbols.chevron_left_rounded
+                      : Symbols.chevron_right_rounded,
+                  fill: 1,
+                ),
               ],
             ),
           ),

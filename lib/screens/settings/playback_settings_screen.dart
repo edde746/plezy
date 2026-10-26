@@ -5,6 +5,8 @@ import 'package:flutter/material.dart';
 import 'package:material_symbols_icons/symbols.dart';
 import 'package:provider/provider.dart';
 
+import '../../focus/input_mode_tracker.dart';
+import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
 import '../../media/library_query.dart';
 import '../../media/media_item.dart';
@@ -243,7 +245,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         pref: SettingsService.seekTimeSmall,
         icon: Symbols.replay_10_rounded,
         title: t.settings.smallSkipDuration,
-        subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v),
+        subtitleBuilder: (v) => t.settings.secondsUnit(seconds: formatDecimal(v, maximumDecimals: 0)),
         labelText: t.settings.secondsLabel,
         suffixText: t.settings.secondsShort,
       ),
@@ -251,7 +253,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         pref: SettingsService.seekTimeLarge,
         icon: Symbols.replay_30_rounded,
         title: t.settings.largeSkipDuration,
-        subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v),
+        subtitleBuilder: (v) => t.settings.secondsUnit(seconds: formatDecimal(v, maximumDecimals: 0)),
         labelText: t.settings.secondsLabel,
         suffixText: t.settings.secondsShort,
       ),
@@ -259,7 +261,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         pref: SettingsService.rewindOnResume,
         icon: Symbols.replay_rounded,
         title: t.settings.rewindOnResume,
-        subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v),
+        subtitleBuilder: (v) => t.settings.secondsUnit(seconds: formatDecimal(v, maximumDecimals: 0)),
         labelText: t.settings.secondsLabel,
         suffixText: t.settings.secondsShort,
       ),
@@ -267,7 +269,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         pref: SettingsService.sleepTimerDuration,
         icon: Symbols.bedtime_rounded,
         title: t.settings.defaultSleepTimer,
-        subtitleBuilder: (v) => t.settings.minutesUnit(minutes: v),
+        subtitleBuilder: (v) => t.settings.minutesUnit(minutes: formatDecimal(v, maximumDecimals: 0)),
         labelText: t.settings.minutesLabel,
         suffixText: t.settings.minutesShort,
       ),
@@ -411,7 +413,9 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         pref: SettingsService.playNextCountdown,
         icon: Symbols.timer_rounded,
         title: t.settings.playNextCountdown,
-        subtitleBuilder: (v) => v == 0 ? t.settings.playNextCountdownImmediate : t.settings.secondsUnit(seconds: v),
+        subtitleBuilder: (v) => v == 0
+            ? t.settings.playNextCountdownImmediate
+            : t.settings.secondsUnit(seconds: formatDecimal(v, maximumDecimals: 0)),
         labelText: t.settings.secondsLabel,
         suffixText: t.settings.secondsShort,
       ),
@@ -452,7 +456,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
         pref: SettingsService.autoSkipDelay,
         icon: Symbols.timer_rounded,
         title: t.settings.autoSkipDelay,
-        subtitleBuilder: (v) => t.settings.autoSkipDelayDescription(seconds: v.toString()),
+        subtitleBuilder: (v) => t.settings.autoSkipDelayDescription(seconds: formatDecimal(v, maximumDecimals: 0)),
         labelText: t.settings.secondsLabel,
         suffixText: t.settings.secondsShort,
       ),
@@ -528,7 +532,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
             ? t.settings.prerollSelectionPickLibraryFirst
             : selectedCount == 0
             ? t.settings.prerollSelectionNoneSelected
-            : t.settings.prerollSelectionCount(count: selectedCount.toString());
+            : t.settings.prerollSelectionCount(count: formatCount(selectedCount));
 
         return SettingsGroup(
           title: t.settings.prerolls,
@@ -773,7 +777,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     pref: SettingsService.downmixCenterBoost,
     icon: Symbols.record_voice_over_rounded,
     title: t.settings.downmixCenterBoost,
-    subtitleBuilder: (v) => t.settings.downmixCenterBoostValue(db: v.toString()),
+    subtitleBuilder: (v) => t.settings.downmixCenterBoostValue(db: formatDecimal(v, maximumDecimals: 0)),
     labelText: t.settings.downmixCenterBoostLabel,
     suffixText: t.settings.downmixCenterBoostShort,
   );
@@ -789,7 +793,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     pref: SettingsService.maxVolume,
     icon: Symbols.volume_up_rounded,
     title: t.settings.maxVolume,
-    subtitleBuilder: (v) => t.settings.maxVolumePercent(percent: v.toString()),
+    subtitleBuilder: (v) => t.settings.maxVolumePercent(percent: formatDecimal(v, maximumDecimals: 0)),
     labelText: t.settings.maxVolumeDescription,
     suffixText: '%',
   );
@@ -800,7 +804,7 @@ class _PlaybackSettingsScreenState extends State<PlaybackSettingsScreen> {
     pref: SettingsService.displaySwitchDelay,
     icon: Symbols.timer_rounded,
     title: t.settings.displaySwitchDelay,
-    subtitleBuilder: (v) => t.settings.secondsUnit(seconds: v),
+    subtitleBuilder: (v) => t.settings.secondsUnit(seconds: formatDecimal(v, maximumDecimals: 0)),
     labelText: t.settings.secondsLabel,
     suffixText: t.settings.secondsShort,
   );
@@ -1037,13 +1041,20 @@ class _PrerollItemPickerDialogState extends State<_PrerollItemPickerDialog> {
 
   @override
   Widget build(BuildContext context) {
+    final focusFirstItem = InputModeTracker.isKeyboardMode(context, listen: false);
     return AlertDialog(
       title: Text(t.settings.prerollItemPicker),
       content: SizedBox(
         width: double.maxFinite,
-        height: 400,
+        height: (MediaQuery.sizeOf(context).height * 0.45).clamp(0.0, 400.0).toDouble(),
         child: _items == null
-            ? Center(child: _error != null ? Text(_error!) : const CircularProgressIndicator())
+            ? Center(
+                child: _error != null
+                    ? Semantics(liveRegion: true, child: Text(_error!, textAlign: TextAlign.center))
+                    : const CircularProgressIndicator(),
+              )
+            : _items!.isEmpty
+            ? Center(child: Text(t.messages.noResultsFound, textAlign: TextAlign.center))
             : ListView.builder(
                 itemCount: _items!.length,
                 itemBuilder: (_, index) {
@@ -1052,11 +1063,18 @@ class _PrerollItemPickerDialogState extends State<_PrerollItemPickerDialog> {
                     title: Text(item.title ?? item.id),
                     value: _selected.contains(item.globalKey),
                     onChanged: (checked) => unawaited(_toggle(item.globalKey, checked ?? false)),
+                    autofocus: focusFirstItem && index == 0,
                   );
                 },
               ),
       ),
-      actions: [DialogActionButton(autofocus: true, onPressed: () => Navigator.pop(context), label: t.common.close)],
+      actions: [
+        DialogActionButton(
+          autofocus: !focusFirstItem || _items?.isEmpty != false,
+          onPressed: () => Navigator.pop(context),
+          label: t.common.close,
+        ),
+      ],
     );
   }
 }

@@ -468,7 +468,7 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
               ),
             )
           : FocusedScrollScaffold(
-              title: Text(isolateDisplayText(s.entry!.displayTitle)),
+              title: Text(isolateDisplayText(s.entry!.displayTitle), maxLines: 1, overflow: TextOverflow.ellipsis),
               focusableAppBarActions: true,
               actions: [
                 IconButton(
@@ -508,12 +508,23 @@ class _SourcePlayerScreenState extends State<SourcePlayerScreen> {
                                     isolateDisplayText(s.entry!.displayTitle),
                                     style: Theme.of(context).textTheme.headlineSmall,
                                     textAlign: TextAlign.center,
+                                    maxLines: 3,
+                                    overflow: TextOverflow.ellipsis,
                                   ),
-                                  if (s.entry!.author.isNotEmpty) Text(isolateDisplayText(s.entry!.author)),
+                                  if (s.entry!.author.isNotEmpty)
+                                    Text(
+                                      isolateDisplayText(s.entry!.author),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
                                   if (s.currentChapter != null)
                                     Padding(
                                       padding: const EdgeInsets.only(top: 8),
-                                      child: Text(isolateDisplayText(s.currentChapter!.title)),
+                                      child: Text(
+                                        isolateDisplayText(s.currentChapter!.title),
+                                        maxLines: 2,
+                                        overflow: TextOverflow.ellipsis,
+                                      ),
                                     ),
                                 ],
                               ),
@@ -692,7 +703,11 @@ class SourceMiniPlayer extends StatelessWidget {
                       Expanded(
                         child: ListTile(
                           leading: const AppIcon(Symbols.headphones_rounded),
-                          title: Text(isolateDisplayText(s.entry!.displayTitle), maxLines: 1, overflow: TextOverflow.ellipsis),
+                          title: Text(
+                            isolateDisplayText(s.entry!.displayTitle),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
                           subtitle: Text(
                             isolateDisplayText(s.currentChapter?.title ?? s.entry!.author),
                             maxLines: 1,

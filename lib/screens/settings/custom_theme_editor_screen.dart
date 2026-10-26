@@ -1,4 +1,3 @@
-import 'package:plezy/i18n/presentation_formats.dart';
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -10,6 +9,7 @@ import '../../focus/focusable_button.dart';
 import '../../focus/focusable_slider.dart';
 import '../../focus/focusable_text_field.dart';
 import '../../focus/input_mode_tracker.dart';
+import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
 import '../../mixins/controller_disposer_mixin.dart';
 import '../../providers/theme_provider.dart';
@@ -312,10 +312,8 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen>
                                 padding: const EdgeInsets.fromLTRB(4, 16, 0, 8),
                                 child: Text(
                                   t.themeEditor.preview,
-                                  style: Theme.of(context).textTheme.labelLarge?.copyWith(
-                                    color: tokens(context).textMuted,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                                  style: Theme.of(context).textTheme.labelLarge
+                                      ?.copyWith(color: tokens(context).textMuted, fontWeight: FontWeight.w600),
                                 ),
                               ),
                               _ThemePreview(theme: _previewThemeData),
@@ -344,7 +342,12 @@ class _CustomThemeEditorScreenState extends State<CustomThemeEditorScreen>
             leading: const AppIcon(Symbols.palette_rounded, fill: 1),
             title: Text(t.themeEditor.startFrom),
             subtitle: Text(t.themeEditor.startFromDescription),
-            trailing: const AppIcon(Symbols.chevron_right_rounded, fill: 1),
+            trailing: AppIcon(
+              Directionality.of(context) == TextDirection.rtl
+                  ? Symbols.chevron_left_rounded
+                  : Symbols.chevron_right_rounded,
+              fill: 1,
+            ),
             onTap: _startFrom,
           ),
         ],
@@ -691,8 +694,7 @@ class _ContrastWarning extends StatelessWidget {
   static String _formatRatio(double value) =>
       formatDecimal((value * 10).floor() / 10, minimumDecimals: 1, maximumDecimals: 1);
 
-  static String _formatMinimum(double value) =>
-      value == value.roundToDouble() ? formatDecimal(value, minimumDecimals: 0, maximumDecimals: 0) : value.toString();
+  static String _formatMinimum(double value) => formatDecimal(value, maximumDecimals: 1);
 
   @override
   Widget build(BuildContext context) {
@@ -853,13 +855,13 @@ class _PreviewCard extends StatelessWidget {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      t.themeEditor.previewCardTitle(number: number),
+                      t.themeEditor.previewCardTitle(number: formatDecimal(number, maximumDecimals: 0)),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: textTheme.bodyMedium?.copyWith(fontWeight: FontWeight.w600),
                     ),
                     Text(
-                      t.themeEditor.previewCardSubtitle(minutes: number * 12),
+                      t.themeEditor.previewCardSubtitle(minutes: formatDecimal(number * 12, maximumDecimals: 0)),
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: textTheme.bodySmall?.copyWith(color: tokens.textMuted),
