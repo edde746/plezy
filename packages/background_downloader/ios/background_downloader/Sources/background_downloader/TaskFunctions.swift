@@ -432,6 +432,12 @@ func updateProgress(task: Task, totalBytesExpected: Int64, totalBytesDone: Int64
 /// updates are user-visible and synthesizes terminal progress.
 func processStatusUpdate(task: Task, status: TaskStatus, taskException: TaskException? = nil, responseBody: String? = nil, responseHeaders: [AnyHashable:Any]? = nil, responseStatusCode: Int? = nil, mimeType: String? = nil, charSet: String? = nil) {
     let storageFailure = status == .failed && isStorageFailure(taskException)
+    let credentialedTask = task.options?.auth?.hasOnAuthCallback() == true
+    let safeTaskException = credentialedTask && taskException != nil
+        ? TaskException(type: .general, httpResponseCode: -1, description: "")
+        : safeTaskException
+    let safeResponseBody = credentialedTask ? nil : responseBody
+    let safeResponseHeaders = credentialedTask ? nil : responseHeaders
     let task = storageFailure ? task.copyWith(retriesRemaining: 0) : task
     // Intercept status updates resulting from re-enqueue requests, which
     // themselves are triggered by a change in WiFi requirement
@@ -462,16 +468,16 @@ func processStatusUpdate(task: Task, status: TaskStatus, taskException: TaskExce
     let finalResponseStatusCode = status == .complete || status == .notFound
         ? responseStatusCode
         : nil
-    let finalTaskException = taskException == nil
+    let finalTaskException = safeTaskException == nil
         ? TaskException(type: .general, httpResponseCode: -1, description: "")
         : taskException
     let statusUpdate = isFinalState(status: status)
         ? TaskStatusUpdate(task: task,
                            taskStatus: status,
                            exception: status == .failed ? finalTaskException : nil,
-                           responseBody: responseBody,
+                           responseBody: safeResponseBody,
                            responseStatusCode: (status == .complete || status == .notFound) ? finalResponseStatusCode : nil,
-                           responseHeaders: lowerCasedStringStringMap(responseHeaders),
+                           responseHeaders: lowerCasedStringStringMap(safeResponseHeaders),
                            mimeType: mimeType,
                            charSet: charSet)
         : TaskStatusUpdate(task: task, taskStatus: status)

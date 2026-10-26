@@ -10,8 +10,8 @@ PlezyNG-specific changes:
   encrypted leases can resolve credentials after the app process stops.
 - Retain the original encrypted task descriptor while an auth callback runs.
   Android status, progress, resume data, and system re-enqueue paths use that
-  descriptor; credentialed response bodies and headers are omitted from status
-  records, and the in-memory entry is cleared on final state.
+  descriptor. Both mobile native status paths omit credentialed response bodies
+  and headers; Android also clears its in-memory entry on final state.
 - Disable automatic Android redirects for callback-authenticated tasks. Those
   redirects fail closed instead of forwarding authorization headers.
 - Reject TLS downgrades on iOS, reject cross-origin redirects for
