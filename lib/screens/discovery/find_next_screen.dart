@@ -11,7 +11,6 @@ import '../../focus/focusable_button.dart';
 import '../../discovery/discovery_store.dart';
 import '../../i18n/presentation_formats.dart';
 import '../../i18n/strings.g.dart';
-import '../../i18n/presentation_formats.dart';
 import '../../media/ids.dart';
 import '../../media/library_query.dart';
 import '../../media/media_item.dart';

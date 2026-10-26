@@ -3,6 +3,7 @@
 ## [Unreleased]
 
 - Route compact artwork retry through shared remote focus and isolate provider text in discovery cards.
+- Keep Find your next decisions on labelled actions; D-pad arrows move focus and Select activates the focused card or action.
 - Fit Find your next to the screen with persistent action buttons, mirrored swipe/TV direction cues, contextual help, and artwork that follows the current pick. Restore downloaded and alternate covers, distinguish artwork loading from missing images, and allow failed source covers to be retried.
 
 - Add experimental comic page streaming, Komga source integration and ComicInfo metadata support.
