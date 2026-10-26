@@ -679,16 +679,18 @@ public class UrlSessionDelegate : NSObject, URLSessionDelegate, URLSessionDownlo
             }
             taskWasModified = authTask != nil
             authTask = authTask ?? task // Either original or newly authorized
-            guard let newAuth = authTask?.options?.auth else { return (authTask ?? task, taskWasModified) }
-            // Insert query parameters and headers
-            taskWasModified = true
-            let uri = newAuth.addOrUpdateQueryParams(
-                url: authTask!.url,
-                queryParams: newAuth.getExpandedAccessQueryParams()
-            )
-            var headers = authTask!.headers
-            headers.merge(newAuth.getExpandedAccessHeaders()) { (_, new) in new }
-            authTask = authTask!.copyWith(url: uri.absoluteString, headers: headers)
+            if let newAuth = authTask?.options?.auth {
+                // Insert query parameters and headers when the callback retained Auth.
+                // A callback that removes Auth has already supplied the full request.
+                taskWasModified = true
+                let uri = newAuth.addOrUpdateQueryParams(
+                    url: authTask!.url,
+                    queryParams: newAuth.getExpandedAccessQueryParams()
+                )
+                var headers = authTask!.headers
+                headers.merge(newAuth.getExpandedAccessHeaders()) { (_, new) in new }
+                authTask = authTask!.copyWith(url: uri.absoluteString, headers: headers)
+            }
         }
         authTask = authTask ?? task
         guard task.options?.hasOnStartCallback() == true else { return (authTask!, taskWasModified) }

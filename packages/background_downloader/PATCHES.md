@@ -17,6 +17,7 @@ PlezyNG-specific changes:
 - Reject TLS downgrades on iOS, reject cross-origin redirects for
   callback-authenticated tasks, and strip sensitive request headers from other
   cross-origin redirects.
+- Continue the optional task-start callback on both mobile platforms after an auth callback returns a request without its own Auth object.
 - Include a consumer shrinker rule for the reflectively loaded vault plugin.
 
 All other included source files match the pinned upstream commit. Provider
