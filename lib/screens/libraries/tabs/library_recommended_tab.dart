@@ -16,7 +16,7 @@ import '../../../mixins/watch_state_aware.dart';
 import '../../../services/settings_service.dart';
 import '../../../utils/deletion_notifier.dart';
 import '../../../utils/home_section_builder.dart'
-    show libraryContinueWatchingHeroOverrideKey, withResolvedHeroOverride, withoutWatchedItems;
+    show libraryContinueWatchingHeroOverrideKey, orderManagedHubs, withResolvedHeroOverride, withoutWatchedItems;
 import '../../../utils/hub_icons.dart';
 import '../../../utils/media_event_keys.dart';
 import '../../../utils/media_navigation_helper.dart';
@@ -246,6 +246,9 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
       hubs.insert(0, cwHub);
     }
 
+    final savedOrder = SettingsService.instance.read(SettingsService.libraryManagedRowOrder)[widget.library.globalKey];
+    final orderedHubs = orderManagedHubs(hubs, savedOrder);
+
     // Same Hero overrides the Home screen applies to this exact
     // hub (buildConfiguredHomeSections in home_section_builder.dart) — a
     // row's Hero setting is meant to follow it wherever it's
@@ -256,7 +259,7 @@ class _LibraryRecommendedTabState extends BaseLibraryTabState<MediaHub, LibraryR
     final overrides = SettingsService.instance.read(SettingsService.managedHubHeroOverrides);
     final cwOverride = overrides[libraryContinueWatchingHeroOverrideKey(widget.library.globalKey)];
     final resolved = [
-      for (final hub in hubs)
+      for (final hub in orderedHubs)
         _isContinueWatchingHub(hub)
             ? hub.copyWith(heroStyle: cwOverride?.heroStyle ?? false, heroAutoSlide: cwOverride?.heroAutoSlide ?? true)
             : withResolvedHeroOverride(hub, overrides),

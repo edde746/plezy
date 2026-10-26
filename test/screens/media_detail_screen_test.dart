@@ -75,9 +75,10 @@ void main() {
   setUpAll(() => initializeDateFormatting('en'));
   TestWidgetsFlutterBinding.ensureInitialized();
 
-  setUp(() {
+  setUp(() async {
     resetSharedPreferencesForTest();
     SettingsService.resetForTesting();
+    await initializeDateFormatting('en');
     TvDetectionService.debugSetAppleTVOverride(true);
     LocaleSettings.setLocaleSync(AppLocale.en);
   });
@@ -2303,13 +2304,13 @@ void main() {
       // 1100 wide: everything fits (test font ~13px/char puts the full strip
       // near 740px against ~1068px of hero width).
       expectChips(present: ['2017', 'PG-13', '1h 46min', '1080p', '9.2', '7.4', '6.4', rate], absent: []);
+      final wideStrip = find.ancestor(of: find.text(rate), matching: find.byType(Wrap)).first;
+      expect(find.descendant(of: wideStrip, matching: find.textContaining('Ends at')), findsOneWidget);
 
-      // The scores pill sheds badges from the end before anything else.
-      // The estimated end-time chip added to the strip needs its own width.
-      final endsAt = find.textContaining(t.detail.endsAt(time: ''));
-      final endTimeWidth = tester.getSize(endsAt).width + 28;
-      await resizeTo(660 + endTimeWidth);
-      expectChips(present: ['2017', 'PG-13', '1h 46min', '1080p', '9.2', rate], absent: ['7.4', '6.4']);
+      // The new end-time chip also consumes room, so quality and scores drop
+      // at this width while year, certification and runtime remain visible.
+      await resizeTo(660);
+      expectChips(present: ['2017', 'PG-13', '1h 46min', rate], absent: ['1080p', '9.2', '7.4', '6.4']);
 
       void expectScoresRow(List<String> scores) {
         final rateDy = tester.getCenter(find.text(rate)).dy;

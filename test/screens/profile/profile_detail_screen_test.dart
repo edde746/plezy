@@ -27,6 +27,7 @@ void main() {
 
   setUp(() async {
     resetSharedPreferencesForTest();
+    SettingsService.resetForTesting();
     await SettingsService.getInstance();
     await StorageService.getInstance();
     TvDetectionService.debugSetAppleTVOverride(null);
@@ -39,6 +40,7 @@ void main() {
   });
 
   testWidgets('remote back pops the manage profile page', (tester) async {
+    await SettingsService.getInstance();
     TvDetectionService.debugSetAppleTVOverride(true);
     // Simulated TV device, not desktop force-TV: keep locked keyboard mode.
     PlatformDetector.debugSetIsDesktopOSOverride(false);
@@ -107,26 +109,36 @@ void main() {
     );
 
     await tester.tap(find.text('Open profile'));
-    await tester.pumpAndSettle();
+    await _pumpRouteTransition(tester);
     expect(find.text(t.profiles.connectionsLabel), findsOneWidget);
     final fieldFinder = find.byType(TextField);
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
+    expect(tester.widget<TextField>(fieldFinder).readOnly, isTrue);
+    await tester.tap(fieldFinder);
+    await tester.pump();
     expect(tester.widget<TextField>(fieldFinder).readOnly, isFalse);
     await tester.showKeyboard(fieldFinder);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
-    await tester.pumpAndSettle();
+    await _pumpRouteTransition(tester);
 
     expect(find.text(t.profiles.connectionsLabel), findsOneWidget);
     expect(find.byKey(const Key('tv_virtual_keyboard_panel')), findsNothing);
     expect(tester.widget<TextField>(fieldFinder).readOnly, isTrue);
 
     await tester.sendKeyEvent(LogicalKeyboardKey.gameButtonB);
-    await tester.pumpAndSettle();
+    await _pumpRouteTransition(tester);
 
     expect(find.text('Open profile'), findsOneWidget);
     expect(find.text(t.profiles.connectionsLabel), findsNothing);
   });
+}
+
+Future<void> _pumpRouteTransition(WidgetTester tester) async {
+  // The focused TextField keeps a blinking cursor ticker alive, so pumpAndSettle
+  // can never finish even after the route transition itself has completed.
+  await tester.pump();
+  await tester.pump(const Duration(milliseconds: 500));
 }
 
 class _FakeConnectionRegistry extends ConnectionRegistry {

@@ -182,7 +182,7 @@ class LifecycleTests(unittest.TestCase):
         healthy.__enter__.return_value.read.return_value = b" Healthy\n"
 
         with (
-            patch.object(run_maestro.urllib.request, "urlopen", side_effect=[degraded, healthy]),
+            patch.object(run_maestro.safe_http, "_open_http_request", side_effect=[degraded, healthy]),
             patch.object(run_maestro.time, "sleep") as sleep,
         ):
             runner._wait_for_health("http://jellyfin.test", attempts=2, interval=0.25, service="Jellyfin")

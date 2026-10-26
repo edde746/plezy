@@ -41,6 +41,7 @@
 
 ### Security
 
+- Restrict OAuth authorization redirects to configured provider hosts, preserve relay error status for log downloads, and remove the bundled Trakt client secret.
 - Update the relay to Go 1.27.3 for GO-2026-6809 and refresh its immutable container pin.
 
 - Require a random, revocable pairing code for companion remotes and bound unauthenticated WebSocket traffic before fragmented messages can accumulate. Update both devices and pair once.

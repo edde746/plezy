@@ -51,7 +51,7 @@ mixin MemoryPressureBreadcrumbs on PaintingBinding {
     final cache = imageCache;
     final data = <String, Object>{
       ...?_megabytes('rssMb', () => ProcessInfo.currentRss),
-      ...?_megabytes('maxRssMb', () => ProcessInfo.maxRss),
+      ...?_megabytes('maxRssMb', () => math.max(ProcessInfo.maxRss, ProcessInfo.currentRss)),
       'imageCacheMb': cache.currentSizeBytes >> 20,
       'imageCacheImages': cache.currentSize,
       'liveImages': cache.liveImageCount,

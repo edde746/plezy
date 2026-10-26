@@ -109,6 +109,7 @@ PlexAccountConnection _clientlessAccount(String serverId, String baseUrl) => Ple
 void main() {
   test('clientless A registrations do not contaminate B, but expected clientless B servers stay unchecked', () async {
     resetSharedPreferencesForTest();
+    SettingsService.resetForTesting();
     await SettingsService.getInstance();
     final previousHttpOverrides = HttpOverrides.current;
     HttpOverrides.global = null;

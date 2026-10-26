@@ -54,3 +54,5 @@ ENV TZ=UTC \
 EXPOSE 8096
 STOPSIGNAL SIGTERM
 ENTRYPOINT ["/usr/local/bin/plezy-demo-entrypoint"]
+USER 1000:1000
+HEALTHCHECK --interval=30s --timeout=5s --start-period=60s --retries=5 CMD curl --noproxy 'localhost' -L -fsS http://localhost:8096/health || exit 1

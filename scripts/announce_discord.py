@@ -10,7 +10,12 @@ import time
 from pathlib import Path
 from urllib.error import HTTPError, URLError
 from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
-from urllib.request import Request, urlopen
+from urllib.request import Request
+
+try:
+    from maestro.safe_http import safe_urlopen
+except ModuleNotFoundError:
+    from scripts.maestro.safe_http import safe_urlopen
 
 
 MAX_EMBED_DESCRIPTION = 3500
@@ -68,7 +73,7 @@ def post(webhook_url: str, title: str, release_url: str, description: str) -> No
         method="POST",
     )
     try:
-        with urlopen(request, timeout=30) as response:
+        with safe_urlopen(request, timeout=30) as response:
             result = json.loads(response.read().decode("utf-8"))
     except HTTPError as error:
         raise RuntimeError(f"Discord webhook returned HTTP {error.code}.") from None

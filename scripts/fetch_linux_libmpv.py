@@ -15,8 +15,12 @@ import shutil
 import subprocess
 import sys
 import tempfile
-import urllib.request
 from pathlib import Path
+
+try:
+    from maestro.safe_http import safe_urlopen
+except ModuleNotFoundError:
+    from scripts.maestro.safe_http import safe_urlopen
 
 ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_LOCK = ROOT / "mpv-build.lock.json"
@@ -65,7 +69,7 @@ def main() -> int:
     print(f"fetching {url}", flush=True)
     digest = hashlib.sha256()
     with tempfile.NamedTemporaryFile(suffix=".tar.zst") as archive:
-        with urllib.request.urlopen(url) as response:
+        with safe_urlopen(url) as response:
             while chunk := response.read(DOWNLOAD_CHUNK_SIZE):
                 digest.update(chunk)
                 archive.write(chunk)

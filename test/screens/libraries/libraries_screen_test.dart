@@ -91,6 +91,7 @@ void main() {
 
   setUp(() {
     resetSharedPreferencesForTest();
+    SettingsService.resetForTesting();
     TvDetectionService.debugSetAppleTVOverride(false);
   });
 
@@ -111,9 +112,12 @@ void main() {
     await harness.pump(
       tester,
       onLibrarySelected: selected.add,
+      settle: false,
       onFirstPostFrame: () =>
           (tester.state(find.byType(LibrariesScreen)) as LibraryLoadable).loadLibraryByKey(_libraryB.globalKey),
     );
+    await tester.pump();
+    await tester.pump(const Duration(milliseconds: 100));
 
     // Initialization must not follow up with the default library.
     expect(selected, [_libraryB.globalKey]);

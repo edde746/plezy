@@ -24,6 +24,7 @@ import '../../utils/home_section_builder.dart'
         nextUpRowToken;
 import '../../services/home_layout_sync_service.dart';
 import '../../utils/platform_detector.dart';
+import '../../widgets/app_icon.dart';
 import '../../widgets/focusable_list_tile.dart';
 import '../../widgets/setting_tile.dart';
 import '../../widgets/settings_page.dart';
@@ -378,7 +379,7 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
   Widget _reorderLockTile({required bool unlocked, required ValueChanged<bool> onChanged}) {
     return ListTile(
       dense: true,
-      leading: Icon(unlocked ? Symbols.lock_open_rounded : Symbols.lock_rounded),
+      leading: AppIcon(unlocked ? Symbols.lock_open_rounded : Symbols.lock_rounded),
       title: Text(unlocked ? t.homeLayout.reorderingUnlocked : t.homeLayout.reorderingLocked),
       subtitle: Text(unlocked ? t.homeLayout.rowsCanBeDragged : t.homeLayout.tapLockToDrag),
       onTap: () => onChanged(!unlocked),
@@ -561,10 +562,10 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
     Future<void> Function(List<String> keys)? onReorder,
   }) {
     return FocusableListTile(
-      leading: const Icon(Symbols.reorder_rounded),
+      leading: const AppIcon(Symbols.reorder_rounded),
       title: Text(title),
       subtitle: Text(subtitle),
-      trailing: const Icon(Symbols.chevron_right_rounded),
+      trailing: const AppIcon(Symbols.chevron_right_rounded),
       onTap: () async {
         await Navigator.push(
           context,
@@ -751,7 +752,7 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
 
             final title = Text(t.homeLayout.syncAccountTitle);
             final subtitle = Text(enabled ? t.homeLayout.syncAccountOn : t.homeLayout.syncAccountOff);
-            const leading = Icon(Symbols.devices_rounded);
+            const leading = AppIcon(Symbols.devices_rounded);
             final tile = tv
                 ? FocusableListTile(
                     leading: leading,
@@ -782,7 +783,7 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
 
                     final syncTitle = Text(t.homeLayout.syncNow);
                     final syncSubtitle = Text(status);
-                    const syncLeading = Icon(Symbols.sync_rounded);
+                    const syncLeading = AppIcon(Symbols.sync_rounded);
                     return tv
                         ? FocusableListTile(
                             leading: syncLeading,
@@ -811,7 +812,7 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
         children: [
           ExpansionTile(
             initiallyExpanded: false,
-            leading: const Icon(Symbols.sync_rounded),
+            leading: const AppIcon(Symbols.sync_rounded),
             title: Text(t.homeLayout.managePlexRows),
             subtitle: Text(t.homeLayout.managePlexRowsDescription),
             children: [
@@ -850,7 +851,7 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
                           index: indexed.$1,
                           child: ListTile(
                             dense: true,
-                            leading: const Icon(Symbols.drag_indicator_rounded),
+                            leading: const AppIcon(Symbols.drag_indicator_rounded),
                             title: Text(indexed.$2.label),
                             trailing: Wrap(
                               spacing: 2,
@@ -910,7 +911,7 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
                                   )
                                 else
                                   IconButton(
-                                    icon: const Icon(Symbols.close_rounded),
+                                    icon: const AppIcon(Symbols.close_rounded),
                                     tooltip: t.homeLayout.removeFromHome,
                                     onPressed: () => _removeRowFromHome(indexed.$2.token),
                                   ),
@@ -996,7 +997,7 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
     final continueWatchingOverride = _heroOverrideForKey(libraryContinueWatchingHeroOverrideKey(library.globalKey));
     return ExpansionTile(
       initiallyExpanded: false,
-      leading: Icon(library.kind == MediaKind.show ? Symbols.tv_rounded : Symbols.movie_rounded),
+      leading: AppIcon(library.kind == MediaKind.show ? Symbols.tv_rounded : Symbols.movie_rounded),
       title: Text(library.title),
       subtitle: Text(t.homeLayout.plexManagedRows(n: rows.length)),
       children: [
@@ -1096,7 +1097,7 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
                     index: index,
                     child: ListTile(
                       dense: true,
-                      leading: const Icon(Symbols.drag_indicator_rounded),
+                      leading: const AppIcon(Symbols.drag_indicator_rounded),
                       title: Text(rows[index].title),
                       subtitle: rows[index].deletable ? Text(t.homeLayout.customPlexRow) : null,
                       trailing: Wrap(
@@ -1188,7 +1189,7 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
                           ),
                           if (rows[index].deletable)
                             IconButton(
-                              icon: const Icon(Symbols.delete_outline_rounded),
+                              icon: const AppIcon(Symbols.delete_outline_rounded),
                               tooltip: t.homeLayout.removeHub,
                               onPressed: () async {
                                 final client = context.read<MultiServerProvider>().getPlexClientForServer(
@@ -1315,7 +1316,7 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
                 subtitle: t.homeLayout.castOnHeroDescription,
               ),
             ListTile(
-              leading: const Icon(Symbols.settings_backup_restore_rounded),
+              leading: const AppIcon(Symbols.settings_backup_restore_rounded),
               title: Text(t.homeLayout.resetHeroButton),
               subtitle: Text(t.homeLayout.resetHeroButtonDescription),
               onTap: _confirmResetHeroToStock,
@@ -1330,18 +1331,18 @@ class _HomeLayoutSettingsScreenState extends State<HomeLayoutSettingsScreen> {
               ListTile(title: Text(t.homeLayout.noCustomRows), subtitle: Text(t.homeLayout.addRowHint)),
             for (final section in _sections)
               ListTile(
-                leading: const Icon(Symbols.tune_rounded),
+                leading: const AppIcon(Symbols.tune_rounded),
                 title: Text(section.title),
                 subtitle: Text(_label(section.kind)),
                 onTap: () => _editSection(section),
                 trailing: IconButton(
-                  icon: const Icon(Symbols.delete_outline_rounded),
+                  icon: const AppIcon(Symbols.delete_outline_rounded),
                   tooltip: t.homeLayout.removeRow,
                   onPressed: () => _deleteSection(section),
                 ),
               ),
             ListTile(
-              leading: const Icon(Symbols.add_rounded),
+              leading: const AppIcon(Symbols.add_rounded),
               title: Text(t.homeLayout.addHomeRow),
               subtitle: Text(t.homeLayout.addHomeRowDescription),
               onTap: _addSection,

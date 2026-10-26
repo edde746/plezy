@@ -36,14 +36,19 @@ class PrepareMediaTests(unittest.TestCase):
             nfo = movie.with_suffix(".nfo")
             first_payload = movie.read_bytes()
             self.assertGreater(len(first_payload), 0)
+            # These files were generated from fixed local fixture data above.
+            # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse
             self.assertEqual(ET.parse(nfo).findtext("title"), BASE_TITLE)
             self.assertEqual(
+                # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse
                 ET.parse(output / "guest-movies" / "guest-galaxy" / f"{GUEST_TITLE}.nfo").findtext("title"),
                 GUEST_TITLE,
             )
             episode_nfo = output / "shows" / "Maestro Show" / "Season 01" / (
                 f"Maestro Show S01E01 - {EPISODE_TITLES[0]}.nfo"
             )
+            # This is another generated local fixture, not a server response.
+            # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse
             self.assertEqual(ET.parse(episode_nfo).findtext("title"), EPISODE_TITLES[0])
 
             (output / "obsolete").mkdir()
@@ -67,6 +72,8 @@ class PrepareMediaTests(unittest.TestCase):
             for spec in MEDIA_FIXTURE_SPECS:
                 staged = output / "movies" / spec.id / f"{spec.title}.mkv"
                 self.assertTrue(staged.samefile(source / spec.filename))
+                # The staged NFO is emitted from the test's fixed media specs.
+                # nosemgrep: python.lang.security.use-defused-xml-parse.use-defused-xml-parse
                 self.assertEqual(ET.parse(staged.with_suffix(".nfo")).findtext("title"), spec.title)
 
     def test_codec_download_verifies_size_and_sha256_then_reuses_file(self) -> None:
@@ -89,7 +96,7 @@ class PrepareMediaTests(unittest.TestCase):
             response.headers = {"Content-Length": str(len(payload))}
             with (
                 patch.object(real_jellyfin, "MEDIA_FIXTURE_SPECS", (spec,)),
-                patch.object(real_jellyfin.urllib.request, "urlopen", return_value=response) as urlopen,
+                patch.object(real_jellyfin.safe_http, "_open_http_request", return_value=response) as urlopen,
             ):
                 self.assertEqual(download_codec_media(output, "https://media.example/"), [spec.filename])
                 self.assertEqual((output / spec.filename).read_bytes(), payload)
@@ -98,8 +105,8 @@ class PrepareMediaTests(unittest.TestCase):
             with (
                 patch.object(real_jellyfin, "MEDIA_FIXTURE_SPECS", (spec,)),
                 patch.object(
-                    real_jellyfin.urllib.request,
-                    "urlopen",
+                    real_jellyfin.safe_http,
+                    "_open_http_request",
                     side_effect=AssertionError("valid cached fixture must not be downloaded"),
                 ),
             ):
@@ -125,7 +132,7 @@ class PrepareMediaTests(unittest.TestCase):
             response.headers = {"Content-Length": str(len(payload))}
             with (
                 patch.object(real_jellyfin, "MEDIA_FIXTURE_SPECS", (spec,)),
-                patch.object(real_jellyfin.urllib.request, "urlopen", return_value=response),
+                patch.object(real_jellyfin.safe_http, "_open_http_request", return_value=response),
             ):
                 with self.assertRaisesRegex(ValueError, "failed SHA-256 verification"):
                     download_codec_media(output, "https://media.example/")

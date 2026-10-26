@@ -1,6 +1,7 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"crypto/rand"
 	"crypto/sha256"
@@ -1715,11 +1716,31 @@ func (s *Server) handleGetLogs(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	w.Header().Set("Content-Length", strconv.FormatInt(lookup.entry.Size, 10))
-	if written, err := w.Write(lookup.data); err != nil || written != len(lookup.data) {
+	w.Header().Set("Content-Type", "application/octet-stream")
+	w.Header().Set("Content-Disposition", `attachment; filename="plezyng-diagnostic.log"`)
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	response := &logResponseWriter{ResponseWriter: w}
+	http.ServeContent(response, r, "plezyng-diagnostic.log", time.Time{}, bytes.NewReader(lookup.data))
+	if response.writeErr != nil {
 		log.Printf("logs: response write failed")
 	}
+}
+
+type logResponseWriter struct {
+	http.ResponseWriter
+	writeErr error
+}
+
+func (w *logResponseWriter) Write(p []byte) (int, error) {
+	n, err := w.ResponseWriter.Write(p)
+	if err != nil {
+		w.writeErr = err
+	}
+	return n, err
+}
+
+func (w *logResponseWriter) Unwrap() http.ResponseWriter {
+	return w.ResponseWriter
 }
 
 var errPosterBodyReadTimeout = errors.New("poster body read timeout")

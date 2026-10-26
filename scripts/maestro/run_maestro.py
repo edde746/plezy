@@ -15,7 +15,13 @@ import sys
 import time
 from typing import Mapping, Optional, Sequence, TextIO
 import urllib.error
-import urllib.request
+
+try:
+    import safe_http
+    from safe_http import safe_urlopen
+except ModuleNotFoundError:
+    from scripts.maestro import safe_http
+    from scripts.maestro.safe_http import safe_urlopen
 
 
 ROOT_DIR = Path(__file__).resolve().parents[2]
@@ -473,11 +479,12 @@ class MaestroRunner:
         self.container_name = result.stdout.strip() or name
 
     def _wait_for_health(self, base_url: str, *, attempts: int, interval: float, service: str) -> None:
+        safe_http.validate_http_url(base_url)
         health_url = f"{base_url.rstrip('/')}/health"
         last_error: Optional[Exception] = None
         for _ in range(attempts):
             try:
-                with urllib.request.urlopen(health_url, timeout=1) as response:
+                with safe_urlopen(health_url, timeout=1) as response:
                     status = response.read().decode(errors="replace").strip()
                 if status.casefold() == "healthy":
                     return
@@ -621,7 +628,7 @@ class MaestroRunner:
                 output.write(f"jellyfin_fault={self.config.jellyfin_fault or ''}\n")
                 output.write(f"proxy_pid={self.proxy_process.pid if self.proxy_process else ''}\n")
                 try:
-                    with urllib.request.urlopen(
+                    with safe_urlopen(
                         f"{self.host_jellyfin_url.rstrip('/')}/health",
                         timeout=2,
                     ) as response:

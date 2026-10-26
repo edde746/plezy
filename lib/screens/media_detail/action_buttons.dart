@@ -326,7 +326,9 @@ extension _MediaDetailActionButtons on _MediaDetailScreenState {
               builder: (context, _) => iconActionButton(
                 state,
                 onPressed: onCastPressed,
-                icon: Icon(CastMediaService.instance.isConnected ? Icons.cast_connected : Icons.cast),
+                icon: AppIcon(
+                  CastMediaService.instance.isConnected ? Symbols.cast_connected_rounded : Symbols.cast_rounded,
+                ),
                 tooltip: CastMediaService.instance.isConnected
                     ? t.cast.connectedTo(device: CastMediaService.instance.deviceName ?? t.cast.device)
                     : t.cast.castToDevice,

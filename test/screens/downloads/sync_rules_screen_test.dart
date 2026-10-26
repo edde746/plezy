@@ -363,6 +363,7 @@ void main() {
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
     await tester.pumpAndSettle();
     expect(primaryFocusLabel(), 'sync_rule_quality');
+
     await tester.sendKeyEvent(LogicalKeyboardKey.arrowRight);
     await tester.pumpAndSettle();
     expect(primaryFocusLabel(), 'sync_rule_switch');

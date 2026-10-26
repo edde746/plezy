@@ -843,6 +843,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
     IOWebSocketChannel? attemptedChannel;
 
     try {
+      // nosemgrep: javascript.lang.security.detect-insecure-websocket.detect-insecure-websocket -- Pairing authenticates the handshake with an HMAC; all session frames use AES-GCM.
       final url = 'ws://$hostAddress/ws';
       appLogger.d('CompanionRemote: Connecting to $url');
 
@@ -1196,6 +1197,7 @@ class CompanionRemotePeerService with KeepaliveMixin {
     for (final address in hostAddresses) {
       _RaceProbeConnection? connection;
       try {
+        // nosemgrep: javascript.lang.security.detect-insecure-websocket.detect-insecure-websocket -- Pairing authenticates the handshake with an HMAC; all session frames use AES-GCM.
         final url = 'ws://$address/ws';
         connection = _raceProbeFactory(Uri.parse(url));
 
