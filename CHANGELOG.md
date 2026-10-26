@@ -89,7 +89,7 @@ This release gathers PlezyNG’s feature work since the fork, platform expansion
 - Align audiobook sync conflicts, playback input dialogs and source menus with shared Mono rows, focus and compact overflow patterns.
 - Validate Seerr sign-in fields before asking users to allow an unencrypted HTTP connection.
 - Keep Games entry points limited to supported Android handheld and TV builds; style Steam stream controls and dialogs with Mono surfaces, focus states and localized touch accessibility text.
-- Refresh sign-in with bundled plezyng.app product artwork, including high-resolution offline assets, responsive login choices and QR sizing for phone, desktop, TV and 4K screens.
+- Refresh the sign-in background with current plezyng.app artwork, including WebP and high-resolution assets for 4K screens, responsive login choices and QR sizing.
 - Keep SMB setup copy localized and show the Videos shelf by default only for local and SMB sources.
 - Polish catalog, source, TV and cross-media discovery surfaces with Plezy's Mono focus and icon styles, RTL-aware navigation, accessible controls, responsive layouts, and localized error handling.
 - Complete localization coverage across settings, playback, downloads and accessibility labels; improve right-to-left focus navigation, numeric input, localized units and native permission prompts, and correct regional wording in source setup and Find your next controls.
