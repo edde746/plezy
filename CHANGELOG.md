@@ -110,7 +110,7 @@
 
 ### Fixed
 
-- Show full workspace titles in pointer tooltips and isolate game and host metadata in right-to-left labels.
+- Restore visible keyboard and remote focus in workspace controls and Games forms; show full pane titles in pointer tooltips and isolate game and host metadata in right-to-left labels.
 - Complete discovery, source-setup and subtitle-search translations; fix reviewed library and audiobook wording, add Arabic and Asian subtitle-language choices, and preserve regional numerals, mixed-direction titles and large-text layouts.
 - Use the localized sort and filter labels in the audiobook library menu.
 - Use CocoaPods for iOS and macOS builds until the pinned WebView plugin compiles with Xcode 26’s Swift Package Manager integration.

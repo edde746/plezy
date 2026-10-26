@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:material_symbols_icons/symbols.dart';
 
+import '../focus/focusable_button.dart';
 import '../focus/focusable_wrapper.dart';
 import '../i18n/presentation_formats.dart';
 import '../i18n/strings.g.dart';
@@ -547,48 +548,42 @@ class _WorkspaceTitleBar extends StatelessWidget {
             if (floating && !fullscreen)
               Semantics(
                 hint: t.common.moveWindowHint,
-                child: IconButton(
+                child: _workspaceIconButton(
                   tooltip: moving ? t.common.finishMovingWindow : t.common.moveWindow,
-                  visualDensity: VisualDensity.standard,
-                  iconSize: 19,
+                  icon: moving ? Symbols.check_rounded : Symbols.drag_handle_rounded,
                   onPressed: onMoveToggle,
-                  icon: Icon(moving ? Symbols.check_rounded : Symbols.drag_handle_rounded),
+                  iconSize: 19,
                 ),
               ),
             if (registration.descriptor.hasAudio)
-              IconButton(
+              _workspaceIconButton(
                 tooltip: controller.audibleSessionId == id ? t.videoControls.muteButton : t.videoControls.unmuteButton,
-                visualDensity: VisualDensity.standard,
-                iconSize: 19,
+                icon: controller.audibleSessionId == id ? Symbols.volume_up_rounded : Symbols.volume_off_rounded,
                 onPressed: () => controller.setAudibleSession(controller.audibleSessionId == id ? null : id),
-                icon: Icon(controller.audibleSessionId == id ? Symbols.volume_up_rounded : Symbols.volume_off_rounded),
+                iconSize: 19,
               ),
             Semantics(
               hint: t.common.moveToSessionTrayHint,
-              child: IconButton(
+              child: _workspaceIconButton(
                 tooltip: t.common.moveToSessionTray,
-                visualDensity: VisualDensity.standard,
-                iconSize: 19,
+                icon: Symbols.keyboard_arrow_down_rounded,
                 onPressed: () => controller.park(id),
-                icon: const Icon(Symbols.keyboard_arrow_down_rounded),
+                iconSize: 19,
               ),
             ),
             if (registration.descriptor.kind != MultiviewMediaKind.game)
-              IconButton(
+              _workspaceIconButton(
                 tooltip: registration.descriptor.kind == MultiviewMediaKind.video ||
                         registration.descriptor.kind == MultiviewMediaKind.liveTv
                     ? t.videoControls.returnToFullPlayer
                     : t.common.returnToFullView,
-                visualDensity: VisualDensity.standard,
-                iconSize: 19,
+                icon: Symbols.picture_in_picture_alt_rounded,
                 onPressed: () => controller.restore(id),
-                icon: const Icon(Symbols.picture_in_picture_alt_rounded),
+                iconSize: 19,
               ),
-            IconButton(
+            _workspaceIconButton(
               tooltip: fullscreen ? t.common.exitFullscreen : t.common.fullscreen,
-              visualDensity: VisualDensity.standard,
-              iconSize: 19,
-              icon: Icon(fullscreen ? Symbols.fullscreen_exit_rounded : Symbols.open_in_full_rounded),
+              icon: fullscreen ? Symbols.fullscreen_exit_rounded : Symbols.open_in_full_rounded,
               onPressed: () {
                 if (fullscreen) {
                   controller.exitFullscreen();
@@ -596,18 +591,18 @@ class _WorkspaceTitleBar extends StatelessWidget {
                   controller.promoteToFullscreen(id);
                 }
               },
+              iconSize: 19,
             ),
             Semantics(
               hint: t.common.closeSessionHint,
-              child: IconButton(
+              child: _workspaceIconButton(
                 tooltip: registration.descriptor.kind == MultiviewMediaKind.video ||
                         registration.descriptor.kind == MultiviewMediaKind.liveTv
                     ? t.common.closeMiniPlayer
                     : t.common.closeWorkspaceWindow,
-                visualDensity: VisualDensity.standard,
-                iconSize: 19,
+                icon: Symbols.close_rounded,
                 onPressed: () => controller.close(id),
-                icon: const Icon(Symbols.close_rounded),
+                iconSize: 19,
               ),
             ),
           ],
@@ -635,35 +630,33 @@ class _WorkspaceDock extends StatelessWidget {
         mainAxisSize: MainAxisSize.min,
         children: [
           if (!fullscreen && controller.visibleSessions.length > 1)
-            IconButton(
+            _workspaceIconButton(
               tooltip: t.common.switchToNextWindow,
+              icon: Symbols.swap_horiz_rounded,
               onPressed: controller.swapFocusedWithNext,
-              icon: const Icon(Symbols.swap_horiz_rounded),
             ),
           if (fullscreen)
-            IconButton(
+            _workspaceIconButton(
               tooltip: t.common.exitFullscreen,
+              icon: Symbols.fullscreen_exit_rounded,
               onPressed: controller.exitFullscreen,
-              icon: const Icon(Symbols.fullscreen_exit_rounded),
             )
           else
-            IconButton(
+            _workspaceIconButton(
               tooltip: mode == MultiviewLayoutMode.floating ? t.common.sideBySideLayout : t.common.floatingWindows,
+              icon: mode == MultiviewLayoutMode.floating
+                  ? Symbols.grid_view_rounded
+                  : Symbols.picture_in_picture_alt_rounded,
               onPressed: () => controller.setLayoutMode(
                 mode == MultiviewLayoutMode.floating ? MultiviewLayoutMode.sideBySide : MultiviewLayoutMode.floating,
-              ),
-              icon: Icon(
-                mode == MultiviewLayoutMode.floating
-                    ? Symbols.grid_view_rounded
-                    : Symbols.picture_in_picture_alt_rounded,
               ),
             ),
           Semantics(
             expanded: controller.sessionTrayVisible,
-            child: IconButton(
+            child: _workspaceIconButton(
               tooltip: controller.sessionTrayVisible ? t.common.hideMediaSessions : t.common.manageMediaSessions,
+              icon: Symbols.dashboard_customize_rounded,
               onPressed: controller.toggleSessionTray,
-              icon: const Icon(Symbols.dashboard_customize_rounded),
             ),
           ),
         ],
@@ -705,11 +698,10 @@ class _WorkspaceSessionTray extends StatelessWidget {
                       ),
                     ),
                   ),
-                  IconButton(
+                  _workspaceIconButton(
                     tooltip: t.common.hideMediaSessions,
-                    visualDensity: VisualDensity.standard,
+                    icon: Symbols.close_rounded,
                     onPressed: () => controller.setSessionTrayVisible(false),
-                    icon: const Icon(Symbols.close_rounded),
                   ),
                 ],
               ),
@@ -769,10 +761,9 @@ class _WorkspaceSessionTray extends StatelessWidget {
                     trailing: Row(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        IconButton(
+                        _workspaceIconButton(
                           tooltip: returnLabel,
-                          visualDensity: VisualDensity.standard,
-                          icon: const Icon(Symbols.arrow_back_rounded),
+                          icon: Symbols.arrow_back_rounded,
                           onPressed: () {
                             controller.setSessionTrayVisible(false);
                             controller.restore(id);
@@ -780,10 +771,9 @@ class _WorkspaceSessionTray extends StatelessWidget {
                         ),
                         Semantics(
                           hint: t.common.closeSessionHint,
-                          child: IconButton(
+                          child: _workspaceIconButton(
                             tooltip: closeLabel,
-                            visualDensity: VisualDensity.standard,
-                            icon: const Icon(Symbols.close_rounded),
+                            icon: Symbols.close_rounded,
                             onPressed: () => controller.close(id),
                           ),
                         ),
@@ -798,6 +788,24 @@ class _WorkspaceSessionTray extends StatelessWidget {
     );
   }
 }
+
+Widget _workspaceIconButton({
+  required String tooltip,
+  required IconData icon,
+  required VoidCallback onPressed,
+  double iconSize = 24,
+}) =>
+    FocusableButton(
+      autoScroll: false,
+      onPressed: onPressed,
+      child: IconButton(
+        tooltip: tooltip,
+        visualDensity: VisualDensity.standard,
+        iconSize: iconSize,
+        onPressed: onPressed,
+        icon: Icon(icon),
+      ),
+    );
 
 class _ResizeHandle extends StatelessWidget {
   const _ResizeHandle({required this.onResize});
