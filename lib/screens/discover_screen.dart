@@ -64,6 +64,7 @@ import '../theme/mono_tokens.dart';
 import 'libraries/content_state_builder.dart';
 import 'libraries/state_messages.dart';
 import 'main_screen.dart';
+import 'discovery/find_next_screen.dart';
 import '../navigation/settings_shortcut.dart';
 import '../watch_together/watch_together.dart';
 import '../providers/companion_remote_provider.dart';
@@ -861,6 +862,14 @@ class _DiscoverScreenState extends State<DiscoverScreen>
                 onNavigateLeft: _navigateToSidebar,
                 onNavigateDown: _focusContentFromAppBar,
                 actions: [
+                  FocusableAction(
+                    icon: Symbols.auto_awesome_rounded,
+                    iconColor: foregroundColor,
+                    tooltip: t.discover.findNext.open,
+                    onPressed: () => Navigator.of(
+                      context,
+                    ).push<void>(MaterialPageRoute<void>(builder: (_) => const FindNextScreen())),
+                  ),
                   FocusableAction(icon: Symbols.refresh_rounded, iconColor: foregroundColor, onPressed: manualRefresh),
                   // Watch Together
                   FocusableAction(

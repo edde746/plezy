@@ -1,6 +1,6 @@
 # Find your next — interaction and visual contract
 
-This is a planned extension to [DESIGN.md](../../../DESIGN.md) and [UX-CONTRACT.md](../../../UX-CONTRACT.md). Existing runtime geometry wins over illustrative numbers. All proposed symbols and files are identified as new in DELIVERY; existing names below were inspected in the audited main snapshot.
+The first runtime delivery now follows this contract for the deck, filters, visible actions, saved picks and entry points. The remaining rows describe the planned extension and are not claims about implemented behavior. Existing runtime geometry wins over illustrative numbers; current scope is recorded in [DELIVERY.md](DELIVERY.md).
 
 ## Entry and exit
 

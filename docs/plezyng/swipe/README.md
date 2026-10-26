@@ -1,6 +1,6 @@
 # Find your next — cross-media swipe discovery
 
-Status: implementation plan for Luna; no swipe runtime is delivered by this change. Prepared 2026-10-25 (America/Regina). Initial main audit: `1b12fd8bb2182a67a58aa8eb949c01006d8fbc31`; final source/design reconciliation: `bea4d3f0fe8cd869e0727bbe372cae0da534b253`. Dependency snapshots are recorded in [RESEARCH.md](RESEARCH.md). Recheck them before implementation.
+Status: the first runtime delivery is implemented on this branch. It provides the bounded mixed-media deck, profile-local Saved picks/Undo, time and medium filters, swipe plus labelled actions, gated Explore catalog details, live-TV revalidation, source details, offline checks and entry points from Discover, Libraries, Explore and Downloads. Catalog rows are included only when opened through Explore after its visibility/PIN gate. It is not the full enhancement set described below: sample isolation, verified adaptation matching, shortlist voting, discovery cloud sync, AI reranking, public-library/lending candidates and physical-device evidence remain future work. Photos remain excluded because Plezy has no canonical photo viewer. Initial plan audit: `1b12fd8bb2182a67a58aa8eb949c01006d8fbc31`; source/design reconciliation: `bea4d3f0fe8cd869e0727bbe372cae0da534b253`. See [delivery status](DELIVERY.md) for exact scope and validation.
 
 ## The product decision
 
@@ -14,10 +14,10 @@ Confidence: **high** in the observed integration points and capability boundarie
 
 ## What the user experiences
 
-1. Open **Find your next**. The first eligible choice appears immediately from the selected library or the profile's enabled sources. No onboarding form, account setup or AI key is required.
-2. A small **Anything · Available now** control opens the normal adaptive sheet if the user wants to choose Watch / Listen / Read, time, mood, sources or access requirements. Entering from an audiobook shelf starts in Listen with that shelf selected.
+1. Open **Find your next** from Discover, a library, Explore or Downloads. The deck reads bounded pages from visible media libraries, enabled file sources, live TV and completed downloads; Explore catalog rows enter only through the gated Explore route. No onboarding form or AI key is required.
+2. A compact context control opens the adaptive sheet for Watch / Listen / Read and available time. The current implementation does not yet expose mood, custom source, familiarity or access filters.
 3. The page shows the cover/backdrop, title, media kind, useful duration, one factual reason, availability and a concise description. It uses the existing detail/spotlight hierarchy.
-4. **Not now** advances without a permanent dislike. **Save** adds the exact choice to **Saved picks** and advances. **Play**, **Listen**, **Read** or **Watch live** starts the normal, revalidated route. Details and sample controls are secondary and never automatic.
+4. **Not now** advances without a permanent dislike. **Save** adds the exact choice to **Saved picks** and advances. Play/listen/read/watch-live actions use existing Plezy routes; catalog-only choices open details and never imply ownership or direct play. Samples are not exposed until their progress safety is implemented.
 5. **Undo** is always reachable after a reversible decision. It restores the complete previous card and its place. The user can stop at any time; saved picks remain available.
 6. After eight decisions or three saves, show a quiet invitation to review the shortlist. It does not cover the next card or force a modal. From Saved picks, compare a few choices, select one, or explicitly ask the app to choose from those picks.
 

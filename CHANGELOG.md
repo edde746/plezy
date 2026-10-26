@@ -4,6 +4,7 @@
 
 ### Added
 
+- Add Find your next, a profile-local swipe discovery deck across media libraries, Explore catalogs, live TV, file sources and completed downloads, with format/time filters, Saved picks, Undo and normal Plezy launch routes.
 - Replace PlezyNG branding across the app, launchers, TV, desktop packages and store artwork with the selected nested-play logo and lower-right NG badge; preserve existing alternate icon selections.
 - Add a review-first cleanup for orphaned tagged downloads in PlezyNG's default app-managed folders.
 - Add an automatically started seven-day full-app trial followed by a USD $2.99 one-time lifetime unlock for Apple, Google Play, and Amazon builds.

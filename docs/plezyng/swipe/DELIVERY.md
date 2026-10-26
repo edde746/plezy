@@ -1,6 +1,19 @@
 # Luna implementation handoff
 
-This document is the execution checklist for [Find your next](README.md). Every package starts **planned**. Updating a checklist requires an implementation commit and actual validation result; a model, interface or disabled button by itself does not make an experience complete.
+This document is the execution checklist for [Find your next](README.md). The first runtime slice is implemented; the remaining package rows and acceptance cases describe follow-up scope. A package is complete only with its stated implementation and actual validation evidence; a model or unconnected screen does not count.
+
+## Current implementation status
+
+| Area | Delivered in this branch | Boundary or evidence still needed |
+| --- | --- | --- |
+| Entry and presentation | Discover, library, Explore and Downloads entry points; responsive artwork card, optional horizontal swipe, visible Save/Not now/Play/Listen/Read/Watch live/details controls, reduced-motion behavior, adaptive format/time sheet | No Item-menu entry, Home saved shelf or custom mood/source/familiarity filters |
+| Candidate adapters | Bounded pages from visible server libraries, gated Explore catalog rows (only when entered from Explore after its profile visibility/PIN gate), up to nine configured file-source roots plus a bounded local index, current live-TV guide rows, completed video/music downloads and locally available source files | Public-library/lending candidates and every platform's physical-device behavior are not included |
+| Local state | Profile-local saved snapshots, bounded neutral seen set, reversible decision history, fresh mix, persistent Undo, saved-pick removal, capacity feedback | No discovery cloud sync, taste profile, History screen or cross-device conflict handling |
+| Revalidation and actions | Server item refetch and library visibility check; source entry lookup/hydration; catalog source and exact entry resolution; current live program/channel check; completed-download check before offline play | No isolated preview/sample mode or verified alternate-edition/adaptation matching |
+| Media mapping | Movies, shows, seasons, episodes, clips, music artists/albums/tracks, collection/playlist details, supported publication/source kinds, live programs and catalog movie/show details | Photos are excluded because no canonical viewer exists; folders/unknown kinds are not recommendations. Lending, votes and AI ranking are not enabled |
+| Validation | Dart formatting, Slang translation generation, strict translation hygiene, hardcoded-string and user-facing-error guards, JSON parsing, diff whitespace, and full `flutter analyze` passed | `scripts/codegen.sh --check` could not finish because the PDFium native hook needs `clang`, which is unavailable in this environment. Tests and physical-device evidence have not been run |
+
+The core is usable without a network connection when validated local downloads or local source files are available. Catalog-only titles are explicitly detail choices and must not be mistaken for owned/playable items. No play, watchlist, request, borrowing or download write is triggered by a swipe.
 
 ## Preparation and dependency ordering
 
@@ -17,7 +30,7 @@ Resolve these dependencies explicitly:
 | Selected logo/security fixes | Concurrent branches/main work | No artwork or security rollback; this feature needs no new product logo |
 | OverDrive developer activation | Coming soon / disabled in source foundation | Preserve the gate; fixtures may test enabled behavior, release cannot enable it merely to satisfy a matrix |
 
-Planning merge contains no runtime implementation or feature enablement. Remaining cloud-sync recovery must be completed through its own verified integration, not by creating duplicate source OAuth, reader or sync implementations inside discovery.
+The planning merge preceded this runtime branch. Remaining cloud-sync recovery must be completed through its own verified integration, not by creating duplicate source OAuth, reader or sync implementations inside discovery.
 
 ## Packages and concrete ownership
 
@@ -128,7 +141,7 @@ Observe whether participants discover actions, distinguish Not now from dislike,
 
 For runtime implementation, run the repository's actual pinned toolchain and required contribution checks: formatting, `scripts/codegen.sh --check`, strict translation hygiene, `flutter analyze`/repository analyzer, native formatting where touched, icon/hardcoded-string/workflow guards and the required unit/widget suite. Run existing profile, library, catalog, playback, source/reader/lending and accessibility regressions touched by integration. Register Maestro regressions according to CONTRIBUTING rather than adding unregistered YAML.
 
-The present documentation-only plan does not modify Dart, generated strings, dependencies, workflows or native code. Validate document links, exact integration paths, media/platform completeness, contract consistency and diff whitespace for this plan. Runtime tests and hardware qualification are implementation gates, not results of planning.
+This branch contains a bounded first runtime delivery; it does not complete every planned package. Run the remaining adapter, persistence, accessibility, regression and device acceptance work before describing the full plan as complete. Do not treat static analysis as a substitute for those release gates.
 
 Before enabling the feature, all enabled adapters need meaningful paths, observed launch/return behavior and passed acceptance cases. Unqualified optional capabilities remain gated with truthful labels. Add a concise user-visible changelog entry when the runtime ships; do not announce a shipped feature from this plan merge.
 

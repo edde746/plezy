@@ -3756,6 +3756,8 @@ class Translations$discover$en {
 	/// en: 'Cast'
 	String get cast => 'Cast';
 
+	late final Translations$discover$findNext$en findNext = Translations$discover$findNext$en.internal(_root);
+
 	/// en: 'Trailers & Extras'
 	String get extras => 'Trailers & Extras';
 
@@ -8259,6 +8261,141 @@ class Translations$accountPreferences$mediaReviewsOptions$en {
 	String get nobody => 'Hidden';
 }
 
+// Path: discover.findNext
+class Translations$discover$findNext$en {
+	Translations$discover$findNext$en.internal(this._root);
+
+	final Translations _root; // ignore: unused_field
+
+	// Translations
+
+	/// en: 'Find your next'
+	String get title => 'Find your next';
+
+	/// en: 'Find your next'
+	String get open => 'Find your next';
+
+	/// en: 'Any time'
+	String get anyTime => 'Any time';
+
+	/// en: 'How much time do you have?'
+	String get timeAvailable => 'How much time do you have?';
+
+	/// en: 'Choose the moment'
+	String get filters => 'Choose the moment';
+
+	/// en: 'Watch'
+	String get watch => 'Watch';
+
+	/// en: 'Listen'
+	String get listen => 'Listen';
+
+	/// en: 'Read'
+	String get read => 'Read';
+
+	/// en: 'Finish in ${duration}'
+	String finishable({required Object duration}) => 'Finish in ${duration}';
+
+	/// en: 'About ${duration}'
+	String aboutDuration({required Object duration}) => 'About ${duration}';
+
+	/// en: 'Next chapter · ${duration}'
+	String nextUnit({required Object duration}) => 'Next chapter · ${duration}';
+
+	/// en: '${duration} total'
+	String totalDuration({required Object duration}) => '${duration} total';
+
+	/// en: 'Timing varies'
+	String get timingVaries => 'Timing varies';
+
+	/// en: 'Not now'
+	String get notNow => 'Not now';
+
+	/// en: 'Swipe, or use the buttons below'
+	String get swipeHint => 'Swipe, or use the buttons below';
+
+	/// en: 'Saved picks'
+	String get saved => 'Saved picks';
+
+	/// en: 'Saved picks · ${count}'
+	String savedCount({required Object count}) => 'Saved picks · ${count}';
+
+	/// en: 'Undo'
+	String get undo => 'Undo';
+
+	/// en: 'Details'
+	String get details => 'Details';
+
+	/// en: 'Nothing to choose from yet'
+	String get noPicks => 'Nothing to choose from yet';
+
+	/// en: 'Connect a library or add a media source to get started.'
+	String get noPicksHint => 'Connect a library or add a media source to get started.';
+
+	/// en: 'Nothing fits this moment'
+	String get noMatches => 'Nothing fits this moment';
+
+	/// en: 'Try another format or give yourself more time.'
+	String get noMatchesHint => 'Try another format or give yourself more time.';
+
+	/// en: 'You’re all caught up'
+	String get allDone => 'You’re all caught up';
+
+	/// en: 'Start a fresh mix to see these choices again.'
+	String get allDoneHint => 'Start a fresh mix to see these choices again.';
+
+	/// en: 'Find another mix'
+	String get refresh => 'Find another mix';
+
+	/// en: 'From ${source}'
+	String sourceReason({required Object source}) => 'From ${source}';
+
+	/// en: 'From ${library}'
+	String libraryReason({required Object library}) => 'From ${library}';
+
+	/// en: 'From your library'
+	String get ownedReason => 'From your library';
+
+	/// en: 'On now'
+	String get liveNow => 'On now';
+
+	/// en: 'Watch live'
+	String get watchLive => 'Watch live';
+
+	/// en: 'Anything'
+	String get filterAnything => 'Anything';
+
+	/// en: 'Watch'
+	String get filterWatch => 'Watch';
+
+	/// en: 'Listen'
+	String get filterListen => 'Listen';
+
+	/// en: 'Read'
+	String get filterRead => 'Read';
+
+	/// en: '20 min'
+	String get twentyMinutes => '20 min';
+
+	/// en: '45 min'
+	String get fortyFiveMinutes => '45 min';
+
+	/// en: '90 min'
+	String get ninetyMinutes => '90 min';
+
+	/// en: 'Apply'
+	String get apply => 'Apply';
+
+	/// en: 'This choice is no longer available. Refresh to check again.'
+	String get openFailed => 'This choice is no longer available. Refresh to check again.';
+
+	/// en: 'Could not save that change. Try again.'
+	String get changeFailed => 'Could not save that change. Try again.';
+
+	/// en: 'Saved picks is full. Remove a pick to save another.'
+	String get savedLimit => 'Saved picks is full. Remove a pick to save another.';
+}
+
 // Path: discover.person
 class Translations$discover$person$en {
 	Translations$discover$person$en.internal(this._root);
@@ -11048,6 +11185,48 @@ extension on Translations {
 			'discover.playEpisode' => ({required Object season, required Object episode}) => 'S${season}E${episode}',
 			'discover.overview' => 'Overview',
 			'discover.cast' => 'Cast',
+			'discover.findNext.title' => 'Find your next',
+			'discover.findNext.open' => 'Find your next',
+			'discover.findNext.anyTime' => 'Any time',
+			'discover.findNext.timeAvailable' => 'How much time do you have?',
+			'discover.findNext.filters' => 'Choose the moment',
+			'discover.findNext.watch' => 'Watch',
+			'discover.findNext.listen' => 'Listen',
+			'discover.findNext.read' => 'Read',
+			'discover.findNext.finishable' => ({required Object duration}) => 'Finish in ${duration}',
+			'discover.findNext.aboutDuration' => ({required Object duration}) => 'About ${duration}',
+			'discover.findNext.nextUnit' => ({required Object duration}) => 'Next chapter · ${duration}',
+			'discover.findNext.totalDuration' => ({required Object duration}) => '${duration} total',
+			'discover.findNext.timingVaries' => 'Timing varies',
+			'discover.findNext.notNow' => 'Not now',
+			'discover.findNext.swipeHint' => 'Swipe, or use the buttons below',
+			'discover.findNext.saved' => 'Saved picks',
+			'discover.findNext.savedCount' => ({required Object count}) => 'Saved picks · ${count}',
+			'discover.findNext.undo' => 'Undo',
+			'discover.findNext.details' => 'Details',
+			'discover.findNext.noPicks' => 'Nothing to choose from yet',
+			'discover.findNext.noPicksHint' => 'Connect a library or add a media source to get started.',
+			'discover.findNext.noMatches' => 'Nothing fits this moment',
+			'discover.findNext.noMatchesHint' => 'Try another format or give yourself more time.',
+			'discover.findNext.allDone' => 'You’re all caught up',
+			'discover.findNext.allDoneHint' => 'Start a fresh mix to see these choices again.',
+			'discover.findNext.refresh' => 'Find another mix',
+			'discover.findNext.sourceReason' => ({required Object source}) => 'From ${source}',
+			'discover.findNext.libraryReason' => ({required Object library}) => 'From ${library}',
+			'discover.findNext.ownedReason' => 'From your library',
+			'discover.findNext.liveNow' => 'On now',
+			'discover.findNext.watchLive' => 'Watch live',
+			'discover.findNext.filterAnything' => 'Anything',
+			'discover.findNext.filterWatch' => 'Watch',
+			'discover.findNext.filterListen' => 'Listen',
+			'discover.findNext.filterRead' => 'Read',
+			'discover.findNext.twentyMinutes' => '20 min',
+			'discover.findNext.fortyFiveMinutes' => '45 min',
+			'discover.findNext.ninetyMinutes' => '90 min',
+			'discover.findNext.apply' => 'Apply',
+			'discover.findNext.openFailed' => 'This choice is no longer available. Refresh to check again.',
+			'discover.findNext.changeFailed' => 'Could not save that change. Try again.',
+			'discover.findNext.savedLimit' => 'Saved picks is full. Remove a pick to save another.',
 			'discover.extras' => 'Trailers & Extras',
 			'discover.studio' => 'Studio',
 			'discover.rating' => 'Rating',
@@ -11298,6 +11477,8 @@ extension on Translations {
 			'explore.rows.upcomingMovies' => 'Upcoming Movies',
 			'explore.rows.upcomingShows' => 'Upcoming Shows',
 			'explore.status.airing' => 'Airing',
+			_ => null,
+		} ?? switch (path) {
 			'explore.status.ended' => 'Ended',
 			'explore.status.canceled' => 'Canceled',
 			'explore.status.upcoming' => 'Upcoming',
@@ -11340,8 +11521,6 @@ extension on Translations {
 			'explore.badge.nextAiringIn' => ({required Object duration}) => 'Next in ${duration}',
 			'explore.badge.episodesShort' => ({required Object n}) => '${n} eps',
 			'explore.badge.minutesPerEpisode' => ({required Object n}) => '${n} min/ep',
-			_ => null,
-		} ?? switch (path) {
 			'explore.badge.adult' => '18+',
 			'explore.stats.listed' => ({required Object n}) => '${n} listed',
 			'explore.stats.viewersDay' => ({required Object n}) => '${n} watched today',
@@ -11812,6 +11991,8 @@ extension on Translations {
 			'downloads.includeSpecials' => 'Include Specials',
 			'downloads.howManyEpisodes' => 'How many episodes?',
 			'downloads.invalidEpisodeCount' => 'Enter a valid episode count.',
+			_ => null,
+		} ?? switch (path) {
 			'downloads.keepSynced' => 'Keep synced',
 			'downloads.downloadOnce' => 'Download once',
 			'downloads.keepNUnwatched' => ({required Object count}) => 'Keep ${count} unwatched',
@@ -11854,8 +12035,6 @@ extension on Translations {
 			'downloads.syncRuleAccessDenied' => 'Access denied',
 			'downloads.syncRuleNotAvailableForProfile' => 'Not available for current profile',
 			'downloads.syncRuleUnknownServer' => 'Unknown server',
-			_ => null,
-		} ?? switch (path) {
 			'downloads.syncRuleListCreated' => 'Sync rule created',
 			'downloads.backgroundWarning.bannerBlocked' => 'Downloads will stop when you leave the app',
 			'downloads.backgroundWarning.bannerDegraded' => 'Background downloads may be limited',
@@ -12326,6 +12505,8 @@ extension on Translations {
 			'addServer.serverTimedOut' => 'The server did not respond in time',
 			'addServer.responseNotJson' => 'The server response was not valid JSON',
 			'addServer.responseMissingIdentity' => ({required Object product}) => 'The response is missing an ID or server name — is this a ${product} server?',
+			_ => null,
+		} ?? switch (path) {
 			'addServer.probeFailed' => ({required Object error}) => 'Could not reach the server: ${error}',
 			'addServer.enterAtLeastOneUrl' => ({required Object product}) => 'Enter at least one ${product} server URL',
 			'addServer.noReachableServer' => ({required Object product}) => 'No reachable ${product} server was found',
@@ -12368,8 +12549,6 @@ extension on Translations {
 			'homeLayout.sync' => 'Sync',
 			'homeLayout.syncAccountTitle' => 'Sync layout with your Plex account',
 			'homeLayout.syncAccountOn' => 'On: this device shares row order, rows, Hero and Auto-slide with your other devices.',
-			_ => null,
-		} ?? switch (path) {
 			'homeLayout.syncAccountOff' => 'Off: this device keeps its own layout.',
 			'homeLayout.syncNow' => 'Sync now',
 			'homeLayout.plexHomeManager' => 'Plex Home manager',
