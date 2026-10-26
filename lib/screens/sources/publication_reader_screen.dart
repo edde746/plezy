@@ -17,6 +17,7 @@ import 'package:url_launcher/url_launcher.dart';
 import '../../i18n/strings.g.dart';
 import '../../i18n/locale_preferences.dart';
 import '../../i18n/presentation_formats.dart';
+import '../../focus/focusable_text_field.dart';
 import '../../focus/focusable_slider.dart';
 import '../../focus/focusable_wrapper.dart';
 import '../../services/playback_coordinator.dart';
@@ -31,6 +32,7 @@ import '../../utils/platform_detector.dart';
 import '../../utils/snackbar_helper.dart';
 import '../../widgets/app_icon.dart';
 import '../../widgets/app_menu.dart';
+import '../../widgets/dialog_action_button.dart';
 import '../../widgets/focused_scroll_scaffold.dart';
 import 'source_notes_screen.dart';
 import 'source_sync_screen.dart';
@@ -67,6 +69,17 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
   String? _selectedCFI, _selectedText, _overlayHref;
   int _pages = 0;
   bool _fixed = false, _comic = false, _streamingComic = false;
+  String get _readerTitle {
+    final comicTitle = widget.file.kind == SourceItemKind.comic
+        ? _server?.archive.comicDocument?.metadata['Title']?.trim()
+        : null;
+    if (comicTitle?.isNotEmpty == true) return comicTitle!;
+    // Local file entries use the filename as their title; keep its format
+    // suffix in the file list but leave it out of the reading chrome.
+    if (widget.entry.title == widget.file.name) return p.withoutExtension(widget.file.name);
+    return widget.entry.title;
+  }
+
   String get _preferenceKey => widget.file.kind == SourceItemKind.comic
       ? 'comicReader:${widget.entry.key}:${widget.file.fingerprint}'
       : 'reader';
@@ -228,7 +241,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
     switch (message['type']) {
       case 'engineReady':
         await _js('open', {
-          'title': widget.entry.title,
+          'title': _readerTitle,
           'interfaceLocale': LocaleSettings.currentLocale.languageTag,
           'formattingLocale': LocalePreferences.formattingLocaleName.replaceAll('_', '-'),
           'interfaceDirection': Directionality.of(context) == TextDirection.rtl ? 'rtl' : 'ltr',
@@ -535,6 +548,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
 
   Future<void> _jumpToPage() async {
     if (_pages < 1) return;
+    final actionLabel = pdf || _fixed ? t.fileSources.goToPage : t.fileSources.goToSection;
     final input = TextEditingController(
       text: formatDecimal(pdf ? _pdf.pageNumber ?? 1 : (_progress?.locator?.page ?? 1), maximumDecimals: 0),
     );
@@ -542,10 +556,10 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
     final page = await showDialog<int>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(pdf || _fixed ? t.fileSources.goToPage : t.fileSources.goToSection),
+        title: Text(actionLabel),
         content: Form(
           key: form,
-          child: TextFormField(
+          child: FocusableTextFormField(
             controller: input,
             autofocus: true,
             keyboardType: TextInputType.number,
@@ -560,12 +574,13 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
           ),
         ),
         actions: [
-          TextButton(onPressed: () => Navigator.pop(context), child: Text(t.fileSources.cancel)),
-          FilledButton(
+          DialogActionButton(onPressed: () => Navigator.pop(context), label: t.fileSources.cancel),
+          DialogActionButton(
             onPressed: () {
               if (form.currentState!.validate()) Navigator.pop(context, parseLocalizedInteger(input.text));
             },
-            child: Text(t.fileSources.goToPage),
+            label: actionLabel,
+            isPrimary: true,
           ),
         ],
       ),
@@ -943,7 +958,7 @@ class _PublicationReaderScreenState extends State<PublicationReaderScreen> with 
           );
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.entry.title, maxLines: 1, overflow: TextOverflow.ellipsis),
+        title: Text(_readerTitle, maxLines: 1, overflow: TextOverflow.ellipsis),
         actions: [
           IconButton(
             tooltip: _comic ? t.comics.thumbnails : t.fileSources.contents,
