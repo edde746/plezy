@@ -1,28 +1,9 @@
 # ng-runner-policy: private-jit-only-v1
 name: Dolby Vision fork validation
 
+# Runs only when selected from Actions.
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - 'codex/dv-all-platforms-*'
-    paths:
-      - 'tools/dv-engine/**'
-      - 'tools/dv-apple/**'
-      - 'lib/**'
-      - 'test/**'
-      - 'linux/runner/mpv/**'
-      - '.github/workflows/dv-*.yml'
-  pull_request_target:
-    branches: [main]
-    types: [opened, synchronize, reopened, ready_for_review]
-    paths:
-      - 'tools/dv-engine/**'
-      - 'tools/dv-apple/**'
-      - 'lib/**'
-      - 'test/**'
-      - 'linux/runner/mpv/**'
-      - '.github/workflows/dv-*.yml'
 
 permissions:
   contents: read
