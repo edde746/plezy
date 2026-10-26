@@ -193,56 +193,59 @@ class _ScreenLockOverlayState extends State<ScreenLockOverlay>
             child: AnimatedOpacity(
               opacity: _hintVisible ? 1 : 0,
               duration: const Duration(milliseconds: 200),
-              child: SafeArea(
-                bottom: false,
-                minimum: const EdgeInsets.fromLTRB(12, 8, 12, 0),
-                child: Align(
-                  alignment: Alignment.topCenter,
-                  child: Container(
-                    key: const ValueKey('screen-lock-bar'),
-                    constraints: const BoxConstraints(maxWidth: 360),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.75),
-                      borderRadius: const BorderRadius.all(Radius.circular(10)),
-                    ),
-                    child: Stack(
-                      children: [
-                        Padding(
-                          padding: const EdgeInsets.fromLTRB(12, 7, 12, 12),
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              const AppIcon(Symbols.lock_rounded, color: Colors.white, size: 16),
-                              const SizedBox(width: 8),
-                              Flexible(
-                                child: Text(
-                                  widget.instruction,
-                                  style: const TextStyle(color: Colors.white, fontSize: 13),
-                                ),
-                              ),
-                              if (progressLabel != null) ...[
+              child: Padding(
+                padding: const EdgeInsets.only(top: 6),
+                child: SafeArea(
+                  bottom: false,
+                  minimum: const EdgeInsets.fromLTRB(12, 8, 12, 0),
+                  child: Align(
+                    alignment: Alignment.topCenter,
+                    child: Container(
+                      key: const ValueKey('screen-lock-bar'),
+                      constraints: const BoxConstraints(maxWidth: 360),
+                      decoration: BoxDecoration(
+                        color: Colors.black.withValues(alpha: 0.75),
+                        borderRadius: const BorderRadius.all(Radius.circular(10)),
+                      ),
+                      child: Stack(
+                        children: [
+                          Padding(
+                            padding: const EdgeInsets.fromLTRB(12, 7, 12, 12),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const AppIcon(Symbols.lock_rounded, color: Colors.white, size: 16),
                                 const SizedBox(width: 8),
-                                Text(progressLabel, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                                Flexible(
+                                  child: Text(
+                                    widget.instruction,
+                                    style: const TextStyle(color: Colors.white, fontSize: 13),
+                                  ),
+                                ),
+                                if (progressLabel != null) ...[
+                                  const SizedBox(width: 8),
+                                  Text(progressLabel, style: const TextStyle(color: Colors.white70, fontSize: 12)),
+                                ],
                               ],
-                            ],
-                          ),
-                        ),
-                        Positioned(
-                          left: 12,
-                          right: 12,
-                          bottom: 5,
-                          child: AnimatedBuilder(
-                            animation: _progress,
-                            builder: (context, _) => LinearProgressIndicator(
-                              value: _progress.value,
-                              minHeight: 2,
-                              borderRadius: const BorderRadius.all(Radius.circular(2)),
-                              color: Colors.white,
-                              backgroundColor: Colors.white24,
                             ),
                           ),
-                        ),
-                      ],
+                          Positioned(
+                            left: 12,
+                            right: 12,
+                            bottom: 5,
+                            child: AnimatedBuilder(
+                              animation: _progress,
+                              builder: (context, _) => LinearProgressIndicator(
+                                value: _progress.value,
+                                minHeight: 2,
+                                borderRadius: const BorderRadius.all(Radius.circular(2)),
+                                color: Colors.white,
+                                backgroundColor: Colors.white24,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
                 ),

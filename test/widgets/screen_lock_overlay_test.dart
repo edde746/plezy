@@ -13,11 +13,12 @@ void main() {
     String Function(int)? progressLabel,
     bool disableAnimations = false,
     bool autoHideHint = true,
+    EdgeInsets padding = EdgeInsets.zero,
   }) async {
     await tester.pumpWidget(
       MaterialApp(
         home: MediaQuery(
-          data: MediaQueryData(disableAnimations: disableAnimations),
+          data: MediaQueryData(disableAnimations: disableAnimations, padding: padding),
           child: Scaffold(
             body: ScreenLockOverlay(
               requiredFingers: fingers,
@@ -372,5 +373,17 @@ void main() {
     await tester.pump();
     expect(find.text('0 / 3'), findsNothing);
     expect(find.text('1 / 3'), findsNothing);
+  });
+
+  testWidgets('keeps a small gap above the bar including with a top safe area', (tester) async {
+    for (final topInset in [0.0, 28.0]) {
+      await pumpOverlay(
+        tester,
+        onUnlock: () {},
+        padding: EdgeInsets.only(top: topInset),
+      );
+      final bar = tester.getRect(find.byKey(const ValueKey('screen-lock-bar')));
+      expect(bar.top, topInset == 0 ? 14 : 34);
+    }
   });
 }
