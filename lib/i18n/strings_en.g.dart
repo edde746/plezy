@@ -7695,6 +7695,36 @@ class Translations$fileSources$en {
 
 	/// en: 'Google Drive'
 	String get googleDrive => 'Google Drive';
+	/// en: 'Offline download limit'
+	String get offlineQuota => 'Offline download limit';
+
+	/// en: 'Set the maximum space used by offline copies and queued downloads. Lowering the limit does not remove existing copies.'
+	String get offlineQuotaHelp => 'Set the maximum space used by offline copies and queued downloads. Lowering the limit does not remove existing copies.';
+
+	/// en: 'Offline storage'
+	String get offlineStorageUsage => 'Offline storage';
+
+	/// en: 'reserved'
+	String get reservedStorage => 'reserved';
+
+	/// en: 'Download queue'
+	String get downloadQueue => 'Download queue';
+
+	/// en: 'Downloading'
+	String get downloadRunning => 'Downloading';
+
+	/// en: 'Waiting'
+	String get downloadQueued => 'Waiting';
+
+	/// en: 'Paused'
+	String get downloadPaused => 'Paused';
+
+	/// en: 'Needs retry'
+	String get downloadFailed => 'Needs retry';
+
+	/// en: 'The offline storage limit was reached. Raise the limit or remove a downloaded copy.'
+	String get errorQuotaExceeded => 'The offline storage limit was reached. Raise the limit or remove a downloaded copy.';
+
 }
 
 // Path: lending
@@ -8016,6 +8046,24 @@ class Translations$audiobook$en {
 
 	/// en: 'Hours:minutes:seconds, or minutes:seconds'
 	String get timeHelp => 'Hours:minutes:seconds, or minutes:seconds';
+	/// en: 'Export a recent encrypted copy before moving or repairing sync data. Imports merge with current state; they never replace local sync history. Keep the sync code separately.'
+	String get recoveryHelp => 'Export a recent encrypted copy before moving or repairing sync data. Imports merge with current state; they never replace local sync history. Keep the sync code separately.';
+
+	/// en: 'Export encrypted recovery file'
+	String get recoveryExport => 'Export encrypted recovery file';
+
+	/// en: 'Import encrypted recovery file'
+	String get recoveryImport => 'Import encrypted recovery file';
+
+	/// en: 'Merge this encrypted recovery file with current reading positions and notes? Existing history will be retained.'
+	String get recoveryImportConfirm => 'Merge this encrypted recovery file with current reading positions and notes? Existing history will be retained.';
+
+	/// en: 'Encrypted recovery file saved.'
+	String get recoveryExported => 'Encrypted recovery file saved.';
+
+	/// en: 'Recovery data merged.'
+	String get recoveryImported => 'Recovery data merged.';
+
 }
 
 // Path: sourceSetup
@@ -8307,6 +8355,42 @@ class Translations$sourceSetup$en {
 
 	/// en: 'Downloading subtitle: ${title}'
 	String subtitleDownloading({required Object title}) => 'Downloading subtitle: ${title}';
+	/// en: 'Shared library ID (optional)'
+	String get sharedLibraryId => 'Shared library ID (optional)';
+
+	/// en: 'Use the same ID on devices that open the same library. This public ID helps carry reading progress and notes across different source connections; it is not a password.'
+	String get sharedLibraryHelp => 'Use the same ID on devices that open the same library. This public ID helps carry reading progress and notes across different source connections; it is not a password.';
+
+	/// en: 'Use 8–100 letters, numbers, dots, underscores or hyphens.'
+	String get sharedLibraryInvalid => 'Use 8–100 letters, numbers, dots, underscores or hyphens.';
+
+	/// en: 'Generate a shared library ID'
+	String get generateSharedLibraryId => 'Generate a shared library ID';
+
+	/// en: 'NFS read-ahead requests'
+	String get nfsReadAhead => 'NFS read-ahead requests';
+
+	/// en: 'More parallel reads can improve throughput on a fast NAS or network. Use 1 if the server limits concurrent requests.'
+	String get nfsReadAheadHelp => 'More parallel reads can improve throughput on a fast NAS or network. Use 1 if the server limits concurrent requests.';
+
+	/// en: 'Measure NFS read performance'
+	String get nfsReadTest => 'Measure NFS read performance';
+
+	/// en: 'Reads up to 64 MiB from the first file to measure this NAS connection. This uses network bandwidth.'
+	String get nfsReadTestHelp => 'Reads up to 64 MiB from the first file to measure this NAS connection. This uses network bandwidth.';
+
+	/// en: 'NFS read measurement'
+	String get nfsQualificationResult => 'NFS read measurement';
+
+	/// en: 'Bytes read'
+	String get nfsReadBytes => 'Bytes read';
+
+	/// en: 'Measured speed'
+	String get nfsReadSpeed => 'Measured speed';
+
+	/// en: 'Read requests'
+	String get nfsReadRequests => 'Read requests';
+
 }
 
 // Path: appIcon.names
