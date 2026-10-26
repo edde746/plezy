@@ -330,7 +330,8 @@ open class TaskRunner(
         suspend fun processProgressUpdate(
             task: Task, progress: Double, prefs: SharedPreferences, expectedFileSize: Long = -1,
             downloadSpeed: Double = -1.0, timeRemaining: Long = -1000
-        ) {            val safeTask = AuthTaskRegistry.persistable(task)
+        ) {
+            val safeTask = AuthTaskRegistry.persistable(task)
 
             if (safeTask.providesProgressUpdates()) {
                 postOnBackgroundChannel(
