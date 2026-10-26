@@ -51,15 +51,6 @@ void main() {
     TvDetectionService.debugSetAppleTVOverride(null);
   });
 
-  test('full bleed grid delegates use image aspect ratios', () {
-    expect(MediaGridDelegate.aspectRatioFor(fullBleedImage: true), GridLayoutConstants.fullCardPosterAspectRatio);
-    expect(
-      MediaGridDelegate.aspectRatioFor(useWideAspectRatio: true, fullBleedImage: true),
-      GridLayoutConstants.episodeThumbnailAspectRatio,
-    );
-    expect(MediaGridDelegate.aspectRatioFor(useWideAspectRatio: true), GridLayoutConstants.episodeGridCellAspectRatio);
-  });
-
   testWidgets('full bleed grid delegates use scaled gutters', (tester) async {
     TvDetectionService.debugSetAppleTVOverride(true);
     tester.view.devicePixelRatio = 1.0;

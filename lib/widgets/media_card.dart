@@ -274,6 +274,43 @@ class MediaCard extends StatefulWidget {
     this.cardShapeOverride,
   }) : usesContinueWatchingAction = usesContinueWatchingAction ?? isInContinueWatching;
 
+  /// Inset between a captioned grid card's cell and its artwork.
+  static const EdgeInsets gridCardPadding = EdgeInsets.fromLTRB(3, 3, 3, 1);
+
+  static const TextStyle _gridTitleStyle = TextStyle(fontWeight: .w600, fontSize: 13, height: 1.1);
+
+  /// Height a captioned grid card spends outside its artwork: the vertical
+  /// [gridCardPadding], the poster→title gap, and one title plus one caption
+  /// line at [context]'s text scale.
+  ///
+  /// Grid cells are sized as artwork plus this band. A fixed cell aspect ratio
+  /// cannot hold the artwork's shape: the band does not shrink with the cell,
+  /// so narrow (dense) cells squeezed the artwork and cropped it (#2830).
+  static double gridCaptionBandHeight(BuildContext context) {
+    final defaultTextStyle = DefaultTextStyle.of(context);
+    final textDirection = Directionality.of(context);
+    final textScaler = MediaQuery.textScalerOf(context);
+    final textHeightBehavior = defaultTextStyle.textHeightBehavior ?? DefaultTextHeightBehavior.maybeOf(context);
+    // Measured, not computed, so the band matches the rendered lines exactly.
+    double lineHeight(TextStyle? style) {
+      final painter = TextPainter(
+        text: TextSpan(text: 'Ag', style: defaultTextStyle.style.merge(style)),
+        textDirection: textDirection,
+        textScaler: textScaler,
+        textHeightBehavior: textHeightBehavior,
+        maxLines: 1,
+      )..layout();
+      final height = painter.height;
+      painter.dispose();
+      return height;
+    }
+
+    return gridCardPadding.vertical +
+        context.settingsRead(SettingsService.gridSpacing).posterTitleGap +
+        lineHeight(_gridTitleStyle) +
+        lineHeight(_MediaCardHelpers._captionMetricsStyle(context));
+  }
+
   @override
   State<MediaCard> createState() => MediaCardState();
 }
@@ -651,7 +688,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
         context,
         item,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(3, 3, 3, 1),
+          padding: MediaCard.gridCardPadding,
           child: Column(
             mainAxisSize: .min,
             crossAxisAlignment: .start,
@@ -660,17 +697,18 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
                 SizedBox(width: double.infinity, height: posterHeight, child: poster)
               else
                 Expanded(child: poster),
-              // Grid cells (no fixed height; the Expanded poster absorbs the
-              // delta) grow the poster→title gap with the grid-spacing
-              // setting (#2083). Fixed-height hub-row cards keep 2px — their
-              // fixed text band cannot absorb more.
+              // Grid cells (no fixed height) grow the poster→title gap with
+              // the grid-spacing setting (#2083); the grid reserves it via
+              // [MediaCard.gridCaptionBandHeight] so the poster keeps its
+              // shape. Fixed-height hub-row cards keep 2px — their fixed text
+              // band cannot absorb more.
               SizedBox(
                 height: posterHeight != null ? 2 : context.settingsRead(SettingsService.gridSpacing).posterTitleGap,
               ),
               if (widget.onTap == null && item is MediaItem && !_impliesShowTitle(item) && _hasClickableTitle(item))
                 _ClickableText(
                   text: item.displayTitle,
-                  style: const TextStyle(fontWeight: .w600, fontSize: 13, height: 1.1),
+                  style: MediaCard._gridTitleStyle,
                   onTap: () => _navigateToFocusedDetail(context, item, isOffline: widget.isOffline),
                 )
               else
@@ -683,7 +721,7 @@ class MediaCardState extends State<MediaCard> with ContextMenuTapMixin<MediaCard
                     },
                     maxLines: 1,
                     overflow: .ellipsis,
-                    style: const TextStyle(fontWeight: .w600, fontSize: 13, height: 1.1),
+                    style: MediaCard._gridTitleStyle,
                   ),
                 ),
               if (item is MediaPlaylist)
@@ -1168,18 +1206,28 @@ Widget _buildPosterImage(
 }
 
 class _MediaCardHelpers {
+  /// The caption's metrics without its color, so grid geometry can measure it
+  /// without depending on the theme's color tokens.
+  static TextStyle? _captionMetricsStyle(BuildContext context) =>
+      Theme.of(context).textTheme.bodySmall?.copyWith(fontSize: 11, height: 1.1);
+
   static TextStyle? _captionStyle(BuildContext context) =>
-      Theme.of(context).textTheme.bodySmall?.copyWith(color: tokens(context).textMuted, fontSize: 11, height: 1.1);
+      _captionMetricsStyle(context)?.copyWith(color: tokens(context).textMuted);
 
   static Widget _caption(BuildContext context, String text) => ExcludeSemantics(
     child: Text(text, maxLines: 1, overflow: .ellipsis, style: _captionStyle(context)),
   );
 
+  /// A card without a caption still occupies the caption line. Grid cells
+  /// reserve it ([MediaCard.gridCaptionBandHeight]); dropping it would hand
+  /// the line to the Expanded artwork and crop it.
+  static Widget _emptyCaption(BuildContext context) => _caption(context, '');
+
   static Widget buildPlaylistMeta(BuildContext context, MediaPlaylist playlist) {
     if (playlist.leafCount != null && playlist.leafCount! > 0) {
       return _caption(context, t.playlists.itemCount(count: playlist.leafCount!));
     }
-    return const SizedBox.shrink();
+    return _emptyCaption(context);
   }
 
   /// Builds metadata subtitle (for collections, episodes, movies, shows)
@@ -1213,7 +1261,7 @@ class _MediaCardHelpers {
     }
 
     final text = _metadataSubtitleText(mi, catalogMetadata: catalogMetadata, showTitleImplied: showTitleImplied);
-    return text == null ? const SizedBox.shrink() : _caption(context, text);
+    return text == null ? _emptyCaption(context) : _caption(context, text);
   }
 
   static String? _metadataSubtitleText(

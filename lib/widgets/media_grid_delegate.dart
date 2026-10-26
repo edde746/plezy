@@ -6,8 +6,9 @@ import '../services/settings_service.dart';
 import '../utils/grid_size_calculator.dart';
 import '../utils/layout_constants.dart';
 import '../utils/platform_detector.dart';
+import 'media_card.dart';
 
-/// Shared grid metric helpers for media item grids — spacing, aspect ratio,
+/// Shared grid metric helpers for media item grids — spacing, cell height,
 /// and max cross-axis extent. [MediaGridGeometry.resolve] is the single place
 /// that composes them into a grid delegate.
 class MediaGridDelegate {
@@ -86,21 +87,26 @@ class MediaGridDelegate {
     return math.max(base, SettingsService.instance.read(SettingsService.gridSpacing).gridGap);
   }
 
-  static double aspectRatioFor({bool useWideAspectRatio = false, bool fullBleedImage = false, CardShape? shape}) {
-    final resolved = _resolveShape(shape, useWideAspectRatio);
-    if (fullBleedImage) {
-      return switch (resolved) {
-        CardShape.wide => GridLayoutConstants.episodeThumbnailAspectRatio,
-        CardShape.square => GridLayoutConstants.squareAspectRatio,
-        CardShape.poster => GridLayoutConstants.fullCardPosterAspectRatio,
-      };
-    }
-
-    return switch (resolved) {
-      CardShape.wide => GridLayoutConstants.episodeGridCellAspectRatio,
-      CardShape.square => GridLayoutConstants.squareGridCellAspectRatio,
+  /// Height of a grid cell [itemWidth] wide. A full-bleed cell is the artwork
+  /// alone. A captioned cell is the inset artwork at its own aspect ratio plus
+  /// [MediaCard.gridCaptionBandHeight]: the caption band is a fixed height, so
+  /// sizing the cell by a fixed ratio would squeeze the artwork in narrow cells
+  /// and crop it (#2830).
+  static double cellHeightFor({
+    required BuildContext context,
+    required double itemWidth,
+    bool useWideAspectRatio = false,
+    bool fullBleedImage = false,
+    CardShape? shape,
+  }) {
+    final imageAspectRatio = switch (_resolveShape(shape, useWideAspectRatio)) {
+      CardShape.wide => GridLayoutConstants.episodeThumbnailAspectRatio,
+      CardShape.square => GridLayoutConstants.squareAspectRatio,
       CardShape.poster => GridLayoutConstants.posterAspectRatio,
     };
+    if (fullBleedImage) return itemWidth / imageAspectRatio;
+    final imageWidth = itemWidth - MediaCard.gridCardPadding.horizontal;
+    return imageWidth / imageAspectRatio + MediaCard.gridCaptionBandHeight(context);
   }
 }
 
@@ -149,11 +155,6 @@ class MediaGridGeometry {
       fullBleedImage: fullBleedImage,
       shape: shape,
     );
-    final aspectRatio = MediaGridDelegate.aspectRatioFor(
-      useWideAspectRatio: useWideAspectRatio,
-      fullBleedImage: fullBleedImage,
-      shape: shape,
-    );
     final maxCrossAxisExtent = MediaGridDelegate._maxCrossAxisExtentFor(
       context: context,
       density: density,
@@ -171,18 +172,25 @@ class MediaGridGeometry {
       columnCount,
       crossAxisSpacing: spacing,
     );
+    final itemHeight = MediaGridDelegate.cellHeightFor(
+      context: context,
+      itemWidth: itemWidth,
+      useWideAspectRatio: useWideAspectRatio,
+      fullBleedImage: fullBleedImage,
+      shape: shape,
+    );
 
     return MediaGridGeometry._(
       columnCount: columnCount,
       itemWidth: itemWidth,
-      itemHeight: itemWidth / aspectRatio,
+      itemHeight: itemHeight,
       spacing: spacing,
       delegate: SliverGridDelegateWithMaxCrossAxisExtent(
         // When the column count is pinned to a different basis width, the
         // delegate must pack exactly [columnCount] columns into the real
         // extent, so cap cells at the derived width instead.
         maxCrossAxisExtent: crossAxisExtentForColumnCount != null ? itemWidth : maxCrossAxisExtent,
-        childAspectRatio: aspectRatio,
+        mainAxisExtent: itemHeight,
         crossAxisSpacing: spacing,
         mainAxisSpacing: spacing,
       ),

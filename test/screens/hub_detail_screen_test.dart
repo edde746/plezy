@@ -136,13 +136,16 @@ void main() {
     expect(harness.client.requestedStarts, [0]);
     expect(harness.client.requestedSizes, [200]);
 
-    await tester.drag(find.byType(CustomScrollView), const Offset(0, -50000));
-    await tester.pumpAndSettle();
+    // A drag stops at the end of what is loaded; reaching it fetches the next
+    // page. How many pages one drag reaches depends on when the grid relays
+    // out, so walk to the end and assert the order instead.
+    for (var i = 0; i < 3; i++) {
+      await tester.drag(find.byType(CustomScrollView), const Offset(0, -50000));
+      await tester.pumpAndSettle();
+    }
+    expect(find.text('Item 449'), findsOneWidget);
     expect(harness.client.requestedStarts, [0, 200, 400]);
     expect(harness.client.requestedSizes, [200, 200, 50]);
-    await tester.drag(find.byType(CustomScrollView), const Offset(0, -50000));
-    await tester.pumpAndSettle();
-    expect(find.text('Item 449'), findsOneWidget);
   });
 
   testWidgets('Plex hub replaces its preview with the full-hub response', (tester) async {

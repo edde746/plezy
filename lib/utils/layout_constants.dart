@@ -35,21 +35,15 @@ class AppDurations {
 }
 
 class GridLayoutConstants {
-  static const double posterAspectRatio = 2 / 3.3;
-
-  static const double fullCardPosterAspectRatio = 2 / 3;
+  /// Artwork width:height per card shape. Captioned grid cells add the card's
+  /// caption band on top of the artwork (see `MediaGridDelegate.cellHeightFor`);
+  /// full-bleed cells are the artwork alone.
+  static const double posterAspectRatio = 2 / 3;
 
   static const double episodeThumbnailAspectRatio = 16 / 9;
 
-  static const double episodeGridCellAspectRatio = 1.4;
-
-  /// 1:1 music artwork (albums/artists/tracks). Also the full-card image
-  /// ratio for square items, mirroring [fullCardPosterAspectRatio].
+  /// 1:1 music artwork (albums/artists/tracks).
   static const double squareAspectRatio = 1 / 1;
-
-  /// Square grid cell: 1:1 image plus the same text band the poster cell
-  /// reserves ([posterAspectRatio] adds 0.3 to the 2:3 image's denominator).
-  static const double squareGridCellAspectRatio = 2 / 2.3;
 
   /// Inter-card gutter for square (music) grids on touch platforms. Cards
   /// already carry their own 3px internal padding, so the net visual gutter
