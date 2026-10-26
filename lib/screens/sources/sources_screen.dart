@@ -181,7 +181,11 @@ class _SourcesScreenState extends State<SourcesScreen> {
       if (mounted && request == _request) {
         setState(() {
           _error = e;
-          if (more && e is SourceException && e.reason == SourceFailure.cancelled) _next = null;
+          if (more &&
+              e is SourceException &&
+              const {SourceFailure.cancelled, SourceFailure.invalidData}.contains(e.reason)) {
+            _next = null;
+          }
         });
       }
     } finally {
