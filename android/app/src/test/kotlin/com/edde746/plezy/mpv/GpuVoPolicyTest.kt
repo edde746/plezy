@@ -16,6 +16,21 @@ import org.junit.Test
  * the reshaping path the only vo that composites RPU metadata (#1902).
  */
 class GpuVoPolicyTest {
+  @Test fun felEngineRoutesP7ThroughSoftwareAndPreservesEnhancement() {
+    assertFalse(GpuVoPolicy.hasFelEngine(null))
+    assertFalse(GpuVoPolicy.hasFelEngine("mpv 0.41"))
+    assertTrue(GpuVoPolicy.hasFelEngine(GpuVoPolicy.FEL_ENGINE_ID))
+    for (mode in GpuVoPolicy.DV_CONVERSION_MODES) {
+      assertTrue(GpuVoPolicy.needsDvReshaping(7L, mode, false, felEngine = true))
+      assertTrue(GpuVoPolicy.softwareDecodeNeedsDvReshaping(7L, mode, "no", felEngine = true))
+      val options = GpuVoPolicy.dvDecoderOptions(mode, false, 7L, false, felEngine = true)
+      assertTrue(options.dolbyVision)
+      assertEquals("native", options.p7Mode)
+    }
+    assertFalse(GpuVoPolicy.needsDvReshaping(7L, "auto", false))
+    assertFalse(GpuVoPolicy.softwareDecodeNeedsDvReshaping(7L, "auto", "no"))
+    assertFalse(GpuVoPolicy.softwareDecodeNeedsDvReshaping(7L, "auto", "mediacodec", felEngine = true))
+  }
   @Test
   fun `P5 without native support is routed`() {
     assertTrue(GpuVoPolicy.needsDvReshaping(5L, "auto", canPlayP5Natively = false))

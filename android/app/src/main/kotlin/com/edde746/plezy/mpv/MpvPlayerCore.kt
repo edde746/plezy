@@ -343,6 +343,10 @@ class MpvPlayerCore private constructor(
    * and by a mid-file [applyDvConversionMode]. */
   @Volatile private var pendingDvProfile: Long? = null
 
+  /** Present only in the paired-frame experimental engine, queried from the
+   * loaded libmpv after initialization rather than inferred from an AAR name. */
+  @Volatile private var felEngineAvailable: Boolean = false
+
   /** Whether this core already decided its GL surface colorspace; set by the
    * first `content-color-transfer` announcement ([applyContentColorTransfer]). */
   @Volatile private var hdrSurfaceDecided: Boolean = false
@@ -1126,6 +1130,8 @@ class MpvPlayerCore private constructor(
           }
           // libmpv and FFmpeg are loaded by now; see NativeModuleCache.
           NativeModuleCache.invalidate()
+          felEngineAvailable = GpuVoPolicy.hasFelEngine(p.getString("plezyng-dv-engine"))
+          emitLog("info", "dv-engine", if (felEngineAvailable) "paired FEL engine available" else "compatibility engine")
           if (demuxerBudget != null) {
             appliedDemuxerBudget = demuxerBudget
             steadyDemuxerBudget = demuxerBudget
@@ -1600,9 +1606,11 @@ class MpvPlayerCore private constructor(
     val needs = GpuVoPolicy.needsDvReshaping(
       dvProfile = profile,
       conversionMode = mode,
-      canPlayP5Natively = p5Decoder != null && routing.allowNativeP5
+      canPlayP5Natively = p5Decoder != null && routing.allowNativeP5,
+      felEngine = felEngineAvailable
     )
-    val options = GpuVoPolicy.dvDecoderOptions(mode, routing.displaySupportsDv, profile, canPlayP5Natively = p5Decoder != null && routing.allowNativeP5)
+    val options = GpuVoPolicy.dvDecoderOptions(mode, routing.displaySupportsDv, profile,
+      canPlayP5Natively = p5Decoder != null && routing.allowNativeP5, felEngine = felEngineAvailable)
     writeDvDecoderOptions(options)
     if (profile != null) {
       // Unconditional for every DV file: this line is what a wrong-colour
@@ -1650,7 +1658,11 @@ class MpvPlayerCore private constructor(
     val profile = track?.takeIf { it.has("dolby-vision-profile") }?.getLong("dolby-vision-profile")
     pendingDvProfile = profile
     val mode = dvRouting().conversionMode
-    val needs = GpuVoPolicy.softwareDecodeNeedsDvReshaping(profile, mode, hwdecCurrent = "no")
+    if (profile == 7L && felEngineAvailable) {
+      writeDvDecoderOptions(GpuVoPolicy.dvDecoderOptions(mode, dvRouting().displaySupportsDv,
+        profile, canPlayP5Natively = false, felEngine = true))
+    }
+    val needs = GpuVoPolicy.softwareDecodeNeedsDvReshaping(profile, mode, hwdecCurrent = "no", felEngine = felEngineAvailable)
     val output = if (needs) "gpu-next" else initialVideoOutput(hardwareDecoding = false)
     if (output == softwareVideoOutput) return
     val decision = "profile=$profile mode=$mode path=software decode, vo=$output"
@@ -1908,7 +1920,7 @@ class MpvPlayerCore private constructor(
    * file too — the next file's hook re-evaluates it.
    */
   private fun onDecoderState(hwdecCurrent: String) {
-    if (GpuVoPolicy.softwareDecodeNeedsDvReshaping(pendingDvProfile, dvRouting().conversionMode, hwdecCurrent)) {
+    if (GpuVoPolicy.softwareDecodeNeedsDvReshaping(pendingDvProfile, dvRouting().conversionMode, hwdecCurrent, felEngineAvailable)) {
       Log.i(TAG, "DV P5 decoded in software (hwdec-current=$hwdecCurrent): gpu-next reshaping")
       setGpuVoRequirement(GpuVoPolicy.REASON_DV_RESHAPE, true)
     }
