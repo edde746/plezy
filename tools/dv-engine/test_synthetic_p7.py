@@ -9,10 +9,15 @@ from generate_synthetic_p7 import (
     make_el_frame,
     validate_mp4_packets,
     validate_mp4_probe,
+    validate_rpu_access_units,
 )
 
 
 class SyntheticP7PatternTest(unittest.TestCase):
+    @staticmethod
+    def _annex_b_nal(nal_type, prefix=b"\x00\x00\x01"):
+        return prefix + bytes((nal_type << 1, 1))
+
     def test_base_layer_contains_four_static_luma_bars(self):
         width, height = 8, 4
         frame = make_bl_frame(width, height)
@@ -35,6 +40,58 @@ class SyntheticP7PatternTest(unittest.TestCase):
             make_bl_frame(7, 4)
         with self.assertRaises(ValueError):
             make_el_frame(3, 8, residual=True)
+
+    def test_mp4_annex_b_requires_one_rpu_per_access_unit(self):
+        stream = b"".join((
+            self._annex_b_nal(32, b"\x00\x00\x00\x01"),
+            self._annex_b_nal(35),
+            self._annex_b_nal(62),
+            self._annex_b_nal(1),
+            self._annex_b_nal(35, b"\x00\x00\x00\x01"),
+            self._annex_b_nal(62),
+            self._annex_b_nal(1),
+        ))
+
+        report = validate_rpu_access_units(stream, 2)
+
+        self.assertEqual(report["access_units"], 2)
+        self.assertEqual(report["rpu_nals"], 2)
+        self.assertEqual(report["rpu_nals_per_access_unit"], {"min": 1, "max": 1})
+        self.assertTrue(report["exactly_one_rpu_per_access_unit"])
+
+    def test_rpu_access_unit_check_rejects_missing_duplicate_and_unframed_rpus(self):
+        missing = b"".join((
+            self._annex_b_nal(35),
+            self._annex_b_nal(62),
+            self._annex_b_nal(1),
+            self._annex_b_nal(35),
+            self._annex_b_nal(1),
+        ))
+        with self.assertRaises(RuntimeError):
+            validate_rpu_access_units(missing, 2)
+
+        duplicate = b"".join((
+            self._annex_b_nal(35),
+            self._annex_b_nal(62),
+            self._annex_b_nal(62),
+        ))
+        with self.assertRaises(RuntimeError):
+            validate_rpu_access_units(duplicate, 1)
+
+        unframed = self._annex_b_nal(62) + self._annex_b_nal(35)
+        with self.assertRaises(ValueError):
+            validate_rpu_access_units(unframed, 1)
+
+        two_access_units = b"".join((
+            self._annex_b_nal(35),
+            self._annex_b_nal(62),
+            self._annex_b_nal(1),
+            self._annex_b_nal(35),
+            self._annex_b_nal(62),
+            self._annex_b_nal(1),
+        ))
+        with self.assertRaises(RuntimeError):
+            validate_rpu_access_units(two_access_units, 1)
 
     def test_mp4_probe_requires_timestamped_profile7_with_both_layers(self):
         probe = {

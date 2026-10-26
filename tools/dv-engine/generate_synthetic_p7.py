@@ -94,6 +94,80 @@ def _run(args: list[str], log_path: Path, *, timeout: int = 600) -> str:
     return completed.stdout
 
 
+def _annex_b_nal_types(data: bytes) -> tuple[int, ...]:
+    """Read HEVC NAL unit types from an Annex-B byte stream."""
+    if not isinstance(data, bytes) or not data:
+        raise ValueError("Annex-B input must be non-empty bytes")
+    start_codes = []
+    index = 0
+    while index < len(data) - 2:
+        if data[index:index + 4] == b"\x00\x00\x00\x01":
+            start_codes.append((index, 4))
+            index += 4
+        elif data[index:index + 3] == b"\x00\x00\x01":
+            start_codes.append((index, 3))
+            index += 3
+        else:
+            index += 1
+    if not start_codes:
+        raise ValueError("Annex-B input contains no start codes")
+
+    nal_types = []
+    for nal_index, (offset, prefix_length) in enumerate(start_codes):
+        header = offset + prefix_length
+        next_offset = (
+            start_codes[nal_index + 1][0]
+            if nal_index + 1 < len(start_codes)
+            else len(data)
+        )
+        if next_offset - header < 2:
+            raise ValueError(f"NAL unit {nal_index} has a truncated HEVC header")
+        first_header_byte = data[header]
+        if first_header_byte & 0x80:
+            raise ValueError(f"NAL unit {nal_index} has forbidden_zero_bit set")
+        nal_types.append((first_header_byte >> 1) & 0x3F)
+    return tuple(nal_types)
+
+
+def rpu_nals_per_access_unit(data: bytes) -> tuple[int, ...]:
+    """Count Dolby RPU (NAL type 62) units between HEVC AUD (type 35) units."""
+    counts = []
+    current_rpu_count = None
+    for nal_type in _annex_b_nal_types(data):
+        if nal_type == 35:
+            if current_rpu_count is not None:
+                counts.append(current_rpu_count)
+            current_rpu_count = 0
+        elif nal_type == 62:
+            if current_rpu_count is None:
+                raise ValueError("RPU NAL appears before the first HEVC access-unit delimiter")
+            current_rpu_count += 1
+    if current_rpu_count is None:
+        raise ValueError("Annex-B input contains no HEVC access-unit delimiters")
+    counts.append(current_rpu_count)
+    return tuple(counts)
+
+
+def validate_rpu_access_units(data: bytes, expected_frames: int) -> dict:
+    """Require exactly one RPU NAL in each authored HEVC access unit."""
+    if isinstance(expected_frames, bool) or not isinstance(expected_frames, int) or expected_frames < 1:
+        raise ValueError("expected_frames must be a positive integer")
+    counts = rpu_nals_per_access_unit(data)
+    if len(counts) != expected_frames:
+        raise RuntimeError(f"expected {expected_frames} access units, found {len(counts)}")
+    if any(count != 1 for count in counts):
+        distribution = {count: counts.count(count) for count in sorted(set(counts))}
+        raise RuntimeError(
+            f"expected one RPU NAL per access unit; observed distribution {distribution}"
+        )
+    return {
+        "access_units": len(counts),
+        "rpu_nals": sum(counts),
+        "rpu_nals_per_access_unit": {"min": min(counts), "max": max(counts)},
+        "exactly_one_rpu_per_access_unit": True,
+    }
+
+
 def validate_mp4_probe(probe: dict, frames: int) -> dict:
     """Require the MP4 container to identify a timestamped Profile 7 FEL track."""
     streams = probe.get("streams")
@@ -355,6 +429,15 @@ def generate(args) -> dict:
         out / "probe-p7-packets.log",
     ))
     container_check["packet_timestamps"] = validate_mp4_packets(packet_probe, frames)
+    mp4_demuxed = out / "mp4-demuxed.hevc"
+    _run(
+        [args.ffmpeg, "-v", "error", "-i", str(p7_mp4), "-map", "0:v:0", "-c:v", "copy",
+         "-bsf:v", "hevc_mp4toannexb", "-f", "hevc", str(mp4_demuxed)],
+        out / "demux-mp4.log",
+    )
+    container_check["rpu_access_units"] = validate_rpu_access_units(
+        mp4_demuxed.read_bytes(), frames
+    )
     _run([args.dovi_tool, "extract-rpu", "--input", str(p7), "--rpu-out", str(rpu)],
          out / "extract-rpu.log")
     _run([args.dovi_tool, "demux", "--input", str(p7), "--bl-out", str(demux_bl),
@@ -371,7 +454,7 @@ def generate(args) -> dict:
         raise RuntimeError("generated stream's RPU did not identify Profile 7 FEL")
     el_result = _check_el(args.ffmpeg, demux_el, EL_WIDTH, EL_HEIGHT, frames, out / "decode-el.log")
 
-    files = [template, bl, el, p7_el, p7, p7_mp4, rpu, demux_bl, demux_el]
+    files = [template, bl, el, p7_el, p7, p7_mp4, mp4_demuxed, rpu, demux_bl, demux_el]
     manifest = {
         "schema_version": 1,
         "kind": "synthetic Dolby Vision Profile 7 FEL test input",

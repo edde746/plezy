@@ -121,8 +121,11 @@ then uses a pinned 384-byte MIT-licensed FEL RPU test vector from
 [`dovi_tool`](https://github.com/quietvoid/dovi_tool/blob/ef85991cfc31e26bc3ffed76364965f29f9fd281/assets/tests/fel_orig.bin).
 It does not use film footage. The output is a single-track P7 MP4 with authored
 3840x2160 BL, 1920x1080 EL, 48 frames at 24000/1001 fps, validated RPU/EL/BL
-flags, decoded EL luma codes, and complete PTS/DTS cadence. The source vector's
-license is [MIT](https://github.com/quietvoid/dovi_tool/blob/ef85991cfc31e26bc3ffed76364965f29f9fd281/LICENSE).
+flags, decoded EL luma codes, and complete PTS/DTS cadence. It demuxes the MP4
+back to Annex-B and requires exactly one RPU NAL per access unit, recording the
+result as `container_check.rpu_access_units`. This new post-mux check is not yet
+run on an approved private-JIT job. The source vector's license is
+[MIT](https://github.com/quietvoid/dovi_tool/blob/ef85991cfc31e26bc3ffed76364965f29f9fd281/LICENSE).
 
 Requirements: `x265`, `dovi_tool`, FFmpeg/`ffprobe`, and GPAC `MP4Box`. The
 generator uses the system Python standard library; it downloads only the pinned

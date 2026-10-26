@@ -69,6 +69,12 @@ BL/EL/RPU flags, an EL decoder configuration, and complete unique PTS and
 monotonic DTS checks. Its manifest verifies the decoded EL's neutral (512) and
 residual (640) center-patch codes before rendering.
 
+The generator now also remuxes the finished MP4 to Annex-B and requires exactly
+one RPU NAL per access unit. It records this as
+`container_check.rpu_access_units`, checking the container's decoded bitstream
+rather than the pre-mux HEVC file. This added check has not yet been run on an
+approved private-JIT job.
+
 `dovi_tool` 2.3.1 parses the embedded vector as **Profile 7 FEL, CM v2.9** with
 `disable_residual_flag=false`, 10-bit BL/EL and a 12-bit VDR signal. The authored
 EL pattern was not created from this RPU's original mastering pixels, so this
