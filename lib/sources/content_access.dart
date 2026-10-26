@@ -1027,6 +1027,9 @@ class PublicationDownloads {
     task?.cancellation.cancel();
     if (_supportsNativeBackgroundDownloads) {
       unawaited(_pauseNativeTask(_nativeTaskId(profile, sourceId, file)));
+      if (task == null) {
+        unawaited(repository.setDownloadState(profile, key(sourceId, file), 'paused').catchError((_) {}));
+      }
     }
     if (task != null && _queue.remove(task)) {
       unawaited(repository.setDownloadState(profile, key(sourceId, file), 'paused').catchError((_) {}));
